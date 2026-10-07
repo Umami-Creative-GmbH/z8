@@ -3,18 +3,18 @@
     "coverage": {
       "adequate": "Personale adeguato",
       "byLocation": "Per sede:",
-      "gapCount": "{{count}} carenza di personale",
+      "gapCount": "{count} carenza di personale",
       "gaps": "lacune",
       "hideOverlay": "Nascondi sovrapposizione copertura",
-      "metSlots": "{{count}} adeguato",
-      "overSlots": "{{count}} con personale in eccesso",
+      "metSlots": "{count} adeguato",
+      "overSlots": "{count} con personale in eccesso",
       "overstaffed": "Personale in eccesso",
       "showOverlay": "Mostra sovrapposizione obiettivi di copertura",
       "summary": "Riepilogo copertura:",
       "toggleLabel": "Copertura",
-      "underSlots": "{{count}} sotto organico",
+      "underSlots": "{count} sotto organico",
       "understaffed": "Sotto organico",
-      "utilization": "{{percent}}% di utilizzo"
+      "utilization": "{percent}% di utilizzo"
     },
     "page": {
       "employeeDescription": "Visualizza i tuoi turni e prendi i turni disponibili",
@@ -100,9 +100,9 @@
     },
     "skills": {
       "expiredCertifications": "Certificazioni scadute:",
-      "expiredOn": "(Scaduto il {{date}})",
+      "expiredOn": "(Scaduto il {date})",
       "missingPreferred": "Competenze preferenziali mancanti:",
-      "missingPreferredCount": "{{count}} preferenze mancanti",
+      "missingPreferredCount": "{count} preferenze mancanti",
       "missingRequired": "Competenze richieste mancanti:",
       "preferred": "Preferenziale",
       "preferredSkillsMissing": "Competenze preferenziali mancanti",

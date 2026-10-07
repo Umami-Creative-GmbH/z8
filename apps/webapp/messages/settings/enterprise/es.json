@@ -518,7 +518,7 @@
           "review": "Revisar y activar",
           "review.description": "Activación de protección",
           "scim": "Aprovisionamiento SCIM",
-          "scim.description": "Emitir token de aprovisionamiento",
+          "scim.description": "Conecte y administre su conexión de aprovisionamiento SCIM",
           "sso": "Configuración de SSO",
           "sso.description": "Registrar OIDC o SAML",
           "ssoTest": "Usuario de prueba",

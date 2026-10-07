@@ -518,7 +518,7 @@
           "review": "Réviser et activer",
           "review.description": "Activation de la protection",
           "scim": "Provisionnement SCIM",
-          "scim.description": "Émettre un jeton de provisionnement",
+          "scim.description": "Connectez et gérez votre connexion de provisionnement SCIM",
           "sso": "Configuration SSO",
           "sso.description": "Enregistrer OIDC ou SAML",
           "ssoTest": "Utilisateur de test",

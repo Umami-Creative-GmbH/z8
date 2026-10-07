@@ -434,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Contact Administrator",
       "createOrg": "Create Organization",
-      "description": "You need an employee profile to ${feature}. Please create an organization or contact your administrator.",
+      "description": "You need an employee profile to {feature}. Please create an organization or contact your administrator.",
       "emailBody": "Hi,nnI need an employee profile set up to access the platform features. Could you please assist me with this?nnThank you!",
       "emailSubject": "Employee Profile Setup Required",
       "helpText": "If you were invited to an organization, ask your administrator to set up your employee profile.",
@@ -535,12 +535,21 @@
       "absenceRequestRejected": {
         "title": "Absence request rejected"
       },
+      "absenceRequestSubmitted": {
+        "message": "Your {categoryName} request for {dateRange} has been submitted and is pending approval.",
+        "title": "Absence request submitted"
+      },
+      "automaticClockOut": {
+        "message": "You were automatically clocked out after {duration} minutes of uninterrupted work at {cutoff} ({timezone}) because your organization's time limit was reached.",
+        "title": "Automatically clocked out"
+      },
       "employeeOffboardingReview": {
-        "approval_handover": "Approval duties need a replacement",
-        "clock_out": "Needs review: offboarding clock-out",
-        "clock_repair": "Timer repair required",
-        "employment_terms": "Future employment terms need review",
-        "future_work": "Future work needs review"
+        "approval_handover": "{employeeName}: Approval duties need a replacement (departure effective {cutoff}, {timezone}).",
+        "clock_out": "{employeeName}: Needs review: offboarding clock-out (departure effective {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Timer repair required (departure effective {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Future employment terms need review (departure effective {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: Future work needs review (departure effective {cutoff}, {timezone}).",
+        "title": "Employee offboarding needs review"
       },
       "newAbsenceRequest": {
         "title": "New absence request"
@@ -556,6 +565,10 @@
       "teamMemberAdded": {
         "message": "You have been added to the {teamName} team by {performedByName}.",
         "title": "Added to team"
+      },
+      "teamMemberRemoved": {
+        "message": "You have been removed from the {teamName} team by {performedByName}.",
+        "title": "Removed from team"
       }
     },
     "description": "Review updates, approvals, and system alerts in one timeline.",

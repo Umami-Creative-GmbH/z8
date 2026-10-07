@@ -258,7 +258,7 @@
     "notes": "Notater",
     "noTimeCorrectionApprovals": "Ingen ventende forespørsler om tidskorrigering å gjennomgå.",
     "offFrom": "fri fra",
-    "openDetailsFor": "Åpne detaljer for ${item.summary.title}",
+    "openDetailsFor": "Åpne detaljer for {title}",
     "openInbox": "Åpne innboks",
     "original": "Opprinnelig",
     "ownRequestNote": "Din egen forespørsel: en annen godkjenner avgjør den.",
@@ -335,7 +335,7 @@
     "searchLabel": "Søk i godkjenninger",
     "searchPlaceholder": "Søk etter navn eller e-post…",
     "selectAll": "Velg alle",
-    "selectedCount": "${selectedCount} valgt",
+    "selectedCount": "{selectedCount} valgt",
     "selectRow": "Velg rad",
     "timeComparison": "Tidssammenligning",
     "timeCorrectionApproved": "Timekorrigering godkjent",
@@ -345,7 +345,7 @@
     "timeline": "Tidslinje",
     "timelineActor": "{at} av {actorName}",
     "title": "Godkjenninger",
-    "totalCount": "${totalCount} venter",
+    "totalCount": "{totalCount} venter",
     "type": "Type",
     "types": {
       "absence_entry": "Fraværsforespørsler",
@@ -363,11 +363,11 @@
   },
   "fastLanes": {
     "approve": "Godkjenn",
-    "approveGroup": "Godkjenn ${label}",
+    "approveGroup": "Godkjenn {label}",
     "confirmReject": "Bekreft avvisning",
-    "confirmRejectGroup": "Bekreft avvisning av ${label}",
+    "confirmRejectGroup": "Bekreft avvisning av {label}",
     "description": "Gjennomgå lignende forespørsler med lav friksjon i puljer.",
-    "expandGroup": "Utvid ${label}",
+    "expandGroup": "Utvid {label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Fravær uten registrerte konflikter.",
@@ -386,21 +386,21 @@
         "label": "Foreldede forespørsler"
       }
     },
-    "notEligibleApprove": "${notApprovableCount} ikke kvalifisert for massegodkjenning",
-    "notEligibleReject": "${notRejectableCount} ikke kvalifisert for masseavvisning",
+    "notEligibleApprove": "{notApprovableCount} ikke kvalifisert for massegodkjenning",
+    "notEligibleReject": "{notRejectableCount} ikke kvalifisert for masseavvisning",
     "reject": "Avvis",
-    "rejectGroup": "Avvis ${label}",
+    "rejectGroup": "Avvis {label}",
     "rejectReason": "Årsak til masseavvisning",
     "risk": {
       "high": "Høy risiko",
       "low": "Lav risiko",
       "medium": "Middels risiko"
     },
-    "showGroup": "Vis ${label}",
+    "showGroup": "Vis {label}",
     "title": "Hurtigspor"
   },
   "sprint": {
-    "age": "${item.timing.ageDays}d gammel",
+    "age": "{ageDays}d gammel",
     "approve": "Godkjenn",
     "approveCurrentApproval": "Godkjenn gjeldende godkjenning",
     "capabilities": {
@@ -419,7 +419,7 @@
       "normal": "Normal prioritet",
       "urgent": "Haster"
     },
-    "progress": "${currentIndex + 1} av ${visibleItems.length}",
+    "progress": "{current} av {total}",
     "reject": "Avvis",
     "rejectCurrentApproval": "Avvis gjeldende godkjenning",
     "rejectReason": "Årsak til sprintavvisning",

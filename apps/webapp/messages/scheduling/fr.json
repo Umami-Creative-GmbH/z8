@@ -3,18 +3,18 @@
     "coverage": {
       "adequate": "Effectifs adéquats",
       "byLocation": "Par emplacement :",
-      "gapCount": "{{count}} manque de personnel",
+      "gapCount": "{count} manque de personnel",
       "gaps": "lacunes",
       "hideOverlay": "Masquer la superposition de couverture",
-      "metSlots": "{{count}} adéquat",
-      "overSlots": "{{count}} sureffectif",
+      "metSlots": "{count} adéquat",
+      "overSlots": "{count} sureffectif",
       "overstaffed": "Sureffectif",
       "showOverlay": "Afficher la superposition des objectifs de couverture",
       "summary": "Résumé de la couverture :",
       "toggleLabel": "Couverture",
-      "underSlots": "{{count}} sous-effectif",
+      "underSlots": "{count} sous-effectif",
       "understaffed": "Sous-effectif",
-      "utilization": "{{percent}}% d'utilisation"
+      "utilization": "{percent}% d'utilisation"
     },
     "page": {
       "employeeDescription": "Consultez vos quarts de travail et récupérez les quarts disponibles",
@@ -100,9 +100,9 @@
     },
     "skills": {
       "expiredCertifications": "Certifications expirées :",
-      "expiredOn": "(Expiré le {{date}})",
+      "expiredOn": "(Expiré le {date})",
       "missingPreferred": "Compétences préférées manquantes :",
-      "missingPreferredCount": "{{count}} compétence préférée manquante",
+      "missingPreferredCount": "{count} compétence préférée manquante",
       "missingRequired": "Compétences requises manquantes :",
       "preferred": "Préféré",
       "preferredSkillsMissing": "Compétences préférées manquantes",

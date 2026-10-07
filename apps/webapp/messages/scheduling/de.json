@@ -3,18 +3,18 @@
     "coverage": {
       "adequate": "Angemessene Personalbesetzung",
       "byLocation": "Nach Standort:",
-      "gapCount": "{{count}} Personalmangel",
+      "gapCount": "{count} Personalmangel",
       "gaps": "Lücken",
       "hideOverlay": "Abdeckungseinblendung ausblenden",
-      "metSlots": "{{count}} angemessen",
-      "overSlots": "{{count}} überbesetzt",
+      "metSlots": "{count} angemessen",
+      "overSlots": "{count} überbesetzt",
       "overstaffed": "Überbesetzt",
       "showOverlay": "Abdeckungsziele einblenden",
       "summary": "Abdeckungsübersicht:",
       "toggleLabel": "Abdeckung",
-      "underSlots": "{{count}} unterbesetzt",
+      "underSlots": "{count} unterbesetzt",
       "understaffed": "Unterbesetzt",
-      "utilization": "{{percent}}% Auslastung"
+      "utilization": "{percent}% Auslastung"
     },
     "page": {
       "employeeDescription": "Schichten ansehen und verfügbare Schichten übernehmen",
@@ -100,9 +100,9 @@
     },
     "skills": {
       "expiredCertifications": "Abgelaufene Zertifizierungen:",
-      "expiredOn": "(Abgelaufen am {{date}})",
+      "expiredOn": "(Abgelaufen am {date})",
       "missingPreferred": "Fehlende bevorzugte Qualifikationen:",
-      "missingPreferredCount": "{{count}} bevorzugte Qualifikationen fehlen",
+      "missingPreferredCount": "{count} bevorzugte Qualifikationen fehlen",
       "missingRequired": "Fehlende erforderliche Qualifikationen:",
       "preferred": "Bevorzugt",
       "preferredSkillsMissing": "Bevorzugte Qualifikationen fehlen",

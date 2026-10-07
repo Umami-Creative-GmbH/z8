@@ -518,7 +518,7 @@
           "review": "Granska och aktivera",
           "review.description": "Säkra aktiveringen",
           "scim": "SCIM-provisionering",
-          "scim.description": "Utfärda etableringstoken",
+          "scim.description": "Anslut och hantera din SCIM-etableringsanslutning",
           "sso": "SSO-konfiguration",
           "sso.description": "Registrera OIDC eller SAML",
           "ssoTest": "Testanvändare",

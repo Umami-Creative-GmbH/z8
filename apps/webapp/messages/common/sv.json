@@ -434,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Kontakta administratör",
       "createOrg": "Skapa organisation",
-      "description": "Du behöver en medarbetarprofil för att ${feature}. Skapa en organisation eller kontakta din administratör.",
+      "description": "Du behöver en medarbetarprofil för att {feature}. Skapa en organisation eller kontakta din administratör.",
       "emailBody": "Hej,nnjag behöver få en medarbetarprofil konfigurerad för att få tillgång till plattformens funktioner. Skulle du kunna hjälpa mig med detta?nnTack!",
       "emailSubject": "Konfiguration av medarbetarprofil krävs",
       "helpText": "Om du bjöds in till en organisation ber du din administratör att konfigurera din medarbetarprofil.",
@@ -536,11 +536,11 @@
         "title": "Frånvaroansökan avslogs"
       },
       "employeeOffboardingReview": {
-        "approval_handover": "Godkännandeuppgifter behöver en ersättare",
-        "clock_out": "Behöver granskas: utstämpling vid offboarding",
-        "clock_repair": "Timerreparation krävs",
-        "employment_terms": "Framtida anställningsvillkor behöver granskas",
-        "future_work": "Framtida arbete behöver granskas"
+        "approval_handover": "{employeeName}: Godkännandeuppgifter behöver en ersättare (avgång gäller från {cutoff}, {timezone}).",
+        "clock_out": "{employeeName}: Behöver granskas: utstämpling vid offboarding (avgång gäller från {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Timerreparation krävs (avgång gäller från {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Framtida anställningsvillkor behöver granskas (avgång gäller från {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: Framtida arbete behöver granskas (avgång gäller från {cutoff}, {timezone})."
       },
       "newAbsenceRequest": {
         "title": "Ny frånvaroansökan"

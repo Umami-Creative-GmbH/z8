@@ -85,11 +85,16 @@
       "leave": "Absänz",
       "newRequest": "Neui Gnehmigungsahfrag",
       "outcome": {
+        "recorded": "Erfasst vo {actor} am {time}. Prüef de aktuelle Status vom Aatrag in Z8.",
         "recordedTitle": "Entscheidig erfasst",
         "replayed": "Dä Chnopf-Klick isch scho erfasst worde; das isch sis ursprüngliche Ergebnis und es isch nüüt Neus entschiede worde.",
+        "requestApproved": "Genehmigt vo {actor} am {time}. De Aatrag isch genehmigt.",
         "requestApprovedTitle": "Ahfrag gnehmigt",
+        "requestRejected": "Abglehnt vo {actor} am {time}. De Aatrag isch abglehnt.",
         "requestRejectedTitle": "Ahfrag abglehnt",
+        "stepApproved": "Genehmigt vo {actor} am {time}. De Aatrag wartet no uf wiiteri Genehmigunge.",
         "stepApprovedTitle": "Gnehmigung erfasst",
+        "stepRejected": "Abglehnt vo {actor} am {time}. De Aatrag isch no nöd abgschlosse; prüef sin aktuelle Status in Z8.",
         "stepRejectedTitle": "Ablähnig erfasst"
       },
       "outcomeUnknown": "S Ergebnis vo däm Klick hät nöd chönne bestätigt werde. Überprüef d Aafrag in Z8, bevor d nomol drucksch.",

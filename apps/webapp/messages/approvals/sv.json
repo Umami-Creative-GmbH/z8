@@ -258,7 +258,7 @@
     "notes": "Anteckningar",
     "noTimeCorrectionApprovals": "Inga väntande förfrågningar om tidskorrigering att granska.",
     "offFrom": "ledig från",
-    "openDetailsFor": "Öppna detaljer för ${item.summary.title}",
+    "openDetailsFor": "Öppna detaljer för {title}",
     "openInbox": "Öppna inkorg",
     "original": "Ursprunglig",
     "ownRequestNote": "Din egen begäran: en annan godkännare beslutar om den.",
@@ -335,7 +335,7 @@
     "searchLabel": "Sök godkännanden",
     "searchPlaceholder": "Sök efter namn eller e-postadress…",
     "selectAll": "Markera alla",
-    "selectedCount": "${selectedCount} valda",
+    "selectedCount": "{selectedCount} valda",
     "selectRow": "Markera rad",
     "timeComparison": "Tidsjämförelse",
     "timeCorrectionApproved": "Tidskorrigering godkänd",
@@ -345,7 +345,7 @@
     "timeline": "Tidslinje",
     "timelineActor": "{at} av {actorName}",
     "title": "Godkännanden",
-    "totalCount": "${totalCount} väntande",
+    "totalCount": "{totalCount} väntande",
     "type": "Typ",
     "types": {
       "absence_entry": "Frånvaroansökningar",
@@ -363,11 +363,11 @@
   },
   "fastLanes": {
     "approve": "Godkänn",
-    "approveGroup": "Godkänn ${label}",
+    "approveGroup": "Godkänn {label}",
     "confirmReject": "Bekräfta avslag",
-    "confirmRejectGroup": "Bekräfta avslag för ${label}",
+    "confirmRejectGroup": "Bekräfta avslag för {label}",
     "description": "Granska liknande förfrågningar med låg friktion i batchar.",
-    "expandGroup": "Expandera ${label}",
+    "expandGroup": "Expandera {label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Frånvaro utan upptäckta konflikter.",
@@ -386,21 +386,21 @@
         "label": "Inaktuella förfrågningar"
       }
     },
-    "notEligibleApprove": "${notApprovableCount} kan inte massgodkännas",
-    "notEligibleReject": "${notRejectableCount} kan inte massavvisas",
+    "notEligibleApprove": "{notApprovableCount} kan inte massgodkännas",
+    "notEligibleReject": "{notRejectableCount} kan inte massavvisas",
     "reject": "Avvisa",
-    "rejectGroup": "Avvisa ${label}",
+    "rejectGroup": "Avvisa {label}",
     "rejectReason": "Anledning till massavvisning",
     "risk": {
       "high": "Hög risk",
       "low": "Låg risk",
       "medium": "Medelhög risk"
     },
-    "showGroup": "Visa ${label}",
+    "showGroup": "Visa {label}",
     "title": "Snabbspår"
   },
   "sprint": {
-    "age": "${item.timing.ageDays} d gammal",
+    "age": "{ageDays} d gammal",
     "approve": "Godkänn",
     "approveCurrentApproval": "Godkänn aktuellt godkännande",
     "capabilities": {
@@ -419,7 +419,7 @@
       "normal": "Normal prioritet",
       "urgent": "Brådskande prioritet"
     },
-    "progress": "${currentIndex + 1} av ${visibleItems.length}",
+    "progress": "{current} av {total}",
     "reject": "Avvisa",
     "rejectCurrentApproval": "Avvisa aktuellt godkännande",
     "rejectReason": "Anledning till sprintavvisning",

@@ -49,8 +49,8 @@
         "actions": {
           "edit": "Edytuj"
         },
-        "allowancesForYear": "Wymiary urlopu na rok {{year}}",
-        "defaultAllowanceDescription": "Domyślny wymiar: {{days}} dni w roku",
+        "allowancesForYear": "Wymiary urlopu na rok {year}",
+        "defaultAllowanceDescription": "Domyślny wymiar: {days} dni w roku",
         "defaultPolicy": "Domyślny",
         "description": "Skonfiguruj niestandardowe wymiary urlopu dla poszczególnych pracowników",
         "detail": {
@@ -62,17 +62,17 @@
           "adjustmentReasonDescription": "Wymagane przy wprowadzaniu korekt (dla ścieżki audytu)",
           "adjustmentReasonPlaceholder": "Wyjaśnij powód tej korekty...",
           "adjustments": "Korekty",
-          "allowanceForYear": "Wymiar urlopu na rok {{year}}",
+          "allowanceForYear": "Wymiar urlopu na rok {year}",
           "annualDays": "Dni rocznie",
           "assignedPolicy": "Przypisana polityka",
           "cancel": "Anuluj",
           "carryover": "Przeniesienie",
           "carryoverDaysOptional": "Dni przeniesione (opcjonalnie)",
-          "currentBalance": "Aktualne saldo: {{total}} dostępnych dni",
-          "currentlyAssigned": "Aktualnie przypisano: {{name}}",
+          "currentBalance": "Aktualne saldo: {total} dostępnych dni",
+          "currentlyAssigned": "Aktualnie przypisano: {name}",
           "customAnnualDaysOptional": "Niestandardowa liczba dni rocznie (opcjonalnie)",
           "daysCarriedOverDescription": "Dni przeniesione z poprzedniego roku",
-          "defaultDaysPlaceholder": "Domyślnie: {{days}} dni",
+          "defaultDaysPlaceholder": "Domyślnie: {days} dni",
           "employeeInformation": "Informacje o pracowniku",
           "errors": {
             "createAdjustmentFailed": "Nie udało się utworzyć korekty",
@@ -83,8 +83,8 @@
           "fallsBackToDefaultPolicy": "Przywraca domyślną politykę zespołu lub organizacji",
           "manageAllowances": "zarządzaj wymiarami urlopów pracowników",
           "managers": "Menedżerowie",
-          "overrideOrganizationDefault": "Zastąp domyślne ustawienie organizacji ({{days}} dni) dla tego pracownika",
-          "policyOptionDays": "{{name}} ({{days}} dni)",
+          "overrideOrganizationDefault": "Zastąp domyślne ustawienie organizacji ({days} dni) dla tego pracownika",
+          "policyOptionDays": "{name} ({days} dni)",
           "position": "Stanowisko",
           "primary": "Podstawowy",
           "reasonForAdjustment": "Powód korekty",
@@ -97,10 +97,10 @@
           "useOrganizationTeamDefault": "Użyj domyślnych dla organizacji/zespołu"
         },
         "edit": {
-          "description": "Skonfiguruj niestandardowy wymiar urlopu dla {{name}}",
+          "description": "Skonfiguruj niestandardowy wymiar urlopu dla {name}",
           "title": "Edytuj wymiar urlopu"
         },
-        "employeeCount": "{{count}} pracowników",
+        "employeeCount": "{count} pracowników",
         "emptyDescription": "Dodaj pracowników do swojej organizacji, aby zarządzać ich wymiarem urlopu.",
         "emptyTitle": "Nie znaleziono pracowników",
         "noOrgPolicyConfigured": " (Nie skonfigurowano zasad organizacji)",

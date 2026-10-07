@@ -100,7 +100,7 @@
         "description": "Velg datakategoriene du vil eksportere",
         "selectAll": "Velg alle",
         "selectAtLeastOne": "Vennligst velg minst én kategori",
-        "startExport": "Start eksport (${selectedCategories.size})",
+        "startExport": "Start eksport ({count})",
         "startingExport": "Starter eksport...",
         "submitError": "Kunne ikke starte eksport",
         "submitSuccess": "Eksporten er startet",
@@ -123,7 +123,7 @@
         "downloadSuccess": "Nedlasting startet",
         "emptyDescription": "Ingen eksporter ennå",
         "emptyHint": "Opprett din første eksport ved å bruke skjemaet ovenfor",
-        "moreCategories": "+${exp.categories.length - 3} flere",
+        "moreCategories": "+{count} flere",
         "statusCompleted": "Fullført",
         "statusFailed": "Mislyktes",
         "statusPending": "Venter",
@@ -148,7 +148,7 @@
         "endpointDescription": "For S3-kompatible tjenester som MinIO",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "La stå tomt for å beholde eksisterende påloggingsinformasjon",
-        "lastVerified": "Sist verifisert: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "lastVerified": "Sist verifisert: {date}",
         "region": "Region",
         "regionDescription": "AWS-region der din bucket er plassert",
         "regionPlaceholder": "us-east-1",
@@ -431,7 +431,7 @@
         "tryAgain": "Prøv igjen"
       },
       "description": "Det oppsto en feil under lasting av innstillingssiden. Dette kan være et midlertidig problem.",
-      "errorId": "Feil-ID: {{digest}}",
+      "errorId": "Feil-ID: {digest}",
       "title": "Noe gikk galt"
     },
     "export": {
@@ -552,9 +552,9 @@
       "eyebrow": "Kundeimplementering",
       "progress": {
         "ariaLabel": "Fremdrift for implementeringssjekkliste",
-        "completedCount": "{{completed}} av {{total}} fullført",
+        "completedCount": "{completed} av {total} fullført",
         "label": "Fremdrift for oppsett",
-        "percentComplete": "{{percent}}% fullført"
+        "percentComplete": "{percent}% fullført"
       },
       "status": {
         "complete": "Fullført",
@@ -753,7 +753,7 @@
       "title": "Varslingsinnstillinger"
     },
     "organizations": {
-      "description": "Administrer organisasjonsmedlemmer, invitasjoner og detaljer",
+      "description": "Administrer organisasjonsdetaljer og konfigurasjon",
       "notFound": {
         "description": "Organisasjonen ble ikke funnet, eller du har ikke tilgang til den.",
         "title": "Organisasjon ikke funnet"

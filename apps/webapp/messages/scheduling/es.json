@@ -3,18 +3,18 @@
     "coverage": {
       "adequate": "Personal adecuado",
       "byLocation": "Por ubicación:",
-      "gapCount": "{{count}} falta de personal",
+      "gapCount": "{count} falta de personal",
       "gaps": "brechas",
       "hideOverlay": "Ocultar superposición de cobertura",
-      "metSlots": "{{count}} adecuado",
-      "overSlots": "{{count}} exceso de personal",
+      "metSlots": "{count} adecuado",
+      "overSlots": "{count} exceso de personal",
       "overstaffed": "Exceso de personal",
       "showOverlay": "Mostrar superposición de objetivos de cobertura",
       "summary": "Resumen de cobertura:",
       "toggleLabel": "Cobertura",
-      "underSlots": "{{count}} con falta de personal",
+      "underSlots": "{count} con falta de personal",
       "understaffed": "Falta de personal",
-      "utilization": "{{percent}}% de utilización"
+      "utilization": "{percent}% de utilización"
     },
     "page": {
       "employeeDescription": "Vea sus turnos y elija turnos disponibles",
@@ -100,9 +100,9 @@
     },
     "skills": {
       "expiredCertifications": "Certificaciones caducadas:",
-      "expiredOn": "(Caducó el {{date}})",
+      "expiredOn": "(Caducó el {date})",
       "missingPreferred": "Habilidades preferidas faltantes:",
-      "missingPreferredCount": "{{count}} preferidas faltantes",
+      "missingPreferredCount": "{count} preferidas faltantes",
       "missingRequired": "Habilidades requeridas faltantes:",
       "preferred": "Preferido",
       "preferredSkillsMissing": "Habilidades preferidas faltantes",
