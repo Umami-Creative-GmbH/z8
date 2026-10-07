@@ -858,7 +858,9 @@ function findSiblingDefault(code, keyPosition, keyPropertyName) {
 		const valueStart = properties.get(name);
 		if (valueStart === undefined) continue;
 		const value = resolveStaticString(code, valueStart);
-		if (value !== undefined) return value;
+		// An interpolated sibling (`title: \`Break - ${duration}\``) is a computed display value,
+		// not ICU copy, so it is skipped like any other computed expression.
+		if (value !== undefined && !value.includes("${")) return value;
 	}
 	return undefined;
 }
