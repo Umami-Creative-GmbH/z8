@@ -1,4 +1,5 @@
 /* @vitest-environment jsdom */
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TravelExpenseList } from "./travel-expense-list";
@@ -44,7 +45,32 @@ describe("employee travel claim history", () => {
 	});
 });
 vi.mock("@/navigation", () => ({
+	useRouter: () => ({ push: vi.fn() }),
 	Link: ({ children, ...props }: React.ComponentProps<"a">) => (
 		<a {...props}>{children}</a>
 	),
+}));
+describe("legacy drafts in the claim history (#616)", () => {
+	const draft = { ...claim, status: "draft" };
+	it("offers to continue an open draft as a report", () => {
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<TravelExpenseList claims={[draft]} />
+			</QueryClientProvider>,
+		);
+		expect(screen.getByRole("button", { name: "Continue as report" })).toBeTruthy();
+		expect(screen.getByRole("link", { name: "View claim" })).toBeTruthy();
+	});
+	it("links a continued draft to its report instead", () => {
+		render(<TravelExpenseList claims={[{ ...draft, convertedReportId: "report-1" }]} />);
+		expect(screen.getByText("Continued as report")).toBeTruthy();
+		expect(
+			screen.getByRole("link", { name: "Open the report" }).getAttribute("href"),
+		).toBe("/travel-expenses/reports/report-1");
+		expect(screen.queryByRole("button", { name: "Continue as report" })).toBeNull();
+	});
+});
+vi.mock("@/app/[locale]/(app)/travel-expenses/legacy-draft-actions", () => ({
+	convertLegacyTravelExpenseDraftAction: vi.fn(),
+	getLegacyTravelExpenseConversion: vi.fn(),
 }));
