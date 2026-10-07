@@ -175,7 +175,7 @@ export function LegacyDraftConversionPanel({ claimId }: { claimId: string }) {
 	if (isLoading) return null;
 	return (
 		<Card>
-			<CardContent className="space-y-3 pt-6">
+			<CardContent className="space-y-3">
 				<h2 className="text-lg font-semibold">
 					{t("travelExpenses.legacyDraft.title", "Continue this draft")}
 				</h2>

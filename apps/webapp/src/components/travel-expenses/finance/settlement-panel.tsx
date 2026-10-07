@@ -95,7 +95,7 @@ function SettlementAccountCard({
 
 	return (
 		<Card>
-			<CardContent className="space-y-4 pt-6">
+			<CardContent className="space-y-4">
 				<SettlementBalance account={account} viewer={viewer} headingId={headingId} />
 
 				{account.entries.length > 0 && (

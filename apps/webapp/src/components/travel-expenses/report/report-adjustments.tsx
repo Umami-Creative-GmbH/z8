@@ -205,7 +205,7 @@ export function ReportAdjustmentsPanel({ reportId }: { reportId: string }) {
 	const headingId = `adjustments-${reportId}`;
 	return (
 		<Card>
-			<CardContent className="space-y-4 pt-6">
+			<CardContent className="space-y-4">
 				<section aria-labelledby={headingId} className="space-y-3">
 					<h2 id={headingId} className="text-lg font-semibold">
 						{t("travelExpenses.adjustment.panel.title", "Adjustments")}
