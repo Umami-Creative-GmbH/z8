@@ -535,6 +535,10 @@
       "absenceRequestRejected": {
         "title": "Abwesenheitsantrag abgelehnt"
       },
+      "absenceRequestSubmitted": {
+        "message": "Dii {categoryName}-Aafrag für {dateRange} isch ygreicht worde und wartet uf Freigab.",
+        "title": "Abwäseheitsaafrag ygreicht"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "Genehmigungsaufgaben erfordern eine Stellvertretung",
         "clock_out": "Überprüfung erforderlich: Offboarding-Ausstempeln",
@@ -556,6 +560,10 @@
       "teamMemberAdded": {
         "message": "Du bisch vo {performedByName} zum Team {teamName} hinzugefügt worde.",
         "title": "Zum Team hinzugefügt"
+      },
+      "teamMemberRemoved": {
+        "message": "Du bisch vo {performedByName} us em Team {teamName} entfernt worde.",
+        "title": "Us em Team entfernt"
       }
     },
     "description": "Updates, Freigabe und System-Mäldige uf eim Blick gseh.",

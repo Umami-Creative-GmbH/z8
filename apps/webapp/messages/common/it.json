@@ -535,6 +535,10 @@
       "absenceRequestRejected": {
         "title": "Richiesta di assenza rifiutata"
       },
+      "absenceRequestSubmitted": {
+        "message": "La tua richiesta {categoryName} per {dateRange} è stata inviata ed è in attesa di approvazione.",
+        "title": "Richiesta di assenza inviata"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "Le mansioni di approvazione richiedono un sostituto",
         "clock_out": "Da verificare: timbratura di uscita per offboarding",
@@ -556,6 +560,10 @@
       "teamMemberAdded": {
         "message": "Sei stato aggiunto al team {teamName} da {performedByName}.",
         "title": "Aggiunto al team"
+      },
+      "teamMemberRemoved": {
+        "message": "Sei stato rimosso dal team {teamName} da {performedByName}.",
+        "title": "Rimosso dal team"
       }
     },
     "description": "Controlla aggiornamenti, approvazioni e avvisi di sistema in un'unica timeline.",

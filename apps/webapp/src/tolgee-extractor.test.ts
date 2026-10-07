@@ -519,6 +519,37 @@ describe("tolgee extractor", () => {
 			);
 		});
 
+		it("keeps lookup-table fallbacks that contain ICU placeholders", () => {
+			const result = extractor(
+				`
+				const OUTCOME_TEXT = {
+					request_approved: {
+						title: { key: "bot.approval.outcome.requestApprovedTitle", fallback: "Request approved" },
+						text: {
+							key: "bot.approval.outcome.requestApproved",
+							fallback: "Approved by {actor} on {time}. The request is approved.",
+						},
+					},
+				};
+			`,
+				"approval-notice.ts",
+			);
+
+			expect(result.keys).toEqual(
+				expect.arrayContaining([
+					expect.objectContaining({
+						defaultValue: "Request approved",
+						keyName: "bot.approval.outcome.requestApprovedTitle",
+					}),
+					expect.objectContaining({
+						defaultValue: "Approved by {actor} on {time}. The request is approved.",
+						keyName: "bot.approval.outcome.requestApproved",
+						namespace: "bot",
+					}),
+				]),
+			);
+		});
+
 		it("extracts [key, fallback] message tuples", () => {
 			const result = extractor(
 				`

@@ -85,11 +85,16 @@
       "leave": "Leave",
       "newRequest": "New Approval Request",
       "outcome": {
+        "recorded": "Recorded by {actor} on {time}. Review the request's current status in Z8.",
         "recordedTitle": "Decision recorded",
         "replayed": "This button press was already recorded; this is its original result and nothing new was decided.",
+        "requestApproved": "Approved by {actor} on {time}. The request is approved.",
         "requestApprovedTitle": "Request approved",
+        "requestRejected": "Rejected by {actor} on {time}. The request is rejected.",
         "requestRejectedTitle": "Request rejected",
+        "stepApproved": "Approved by {actor} on {time}. The request still awaits further approval.",
         "stepApprovedTitle": "Approval recorded",
+        "stepRejected": "Rejected by {actor} on {time}. The request is not final yet; review its current status in Z8.",
         "stepRejectedTitle": "Rejection recorded"
       },
       "outcomeUnknown": "The result of this press could not be confirmed. Check the request in Z8 before pressing again.",

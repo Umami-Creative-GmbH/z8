@@ -32,13 +32,16 @@
     "correction": {
       "clockIn": "İşe Giriş",
       "clockInDate": "Giriş Tarihi",
+      "clockInTime": "Giriş Saati",
       "clockOut": "İşten Çıkış",
       "clockOutDate": "Çıkış Tarihi",
+      "clockOutTime": "Çıkış Saati",
       "editDescription": "Bugünkü zaman kaydınızda değişiklik yapın.",
       "editEntry": "Zaman kaydını düzenle",
       "editTitle": "Zaman Kaydını Düzenle",
       "errors": {
         "invalidTimeRange": "İşten çıkış saati, işe giriş saatinden sonra olmalıdır",
+        "noChanges": "En az bir düzeltme değeri değiştirilmelidir",
         "submitFailed": "Düzeltme gönderilemedi",
         "updateFailed": "Zaman kaydı güncellenemedi"
       },
@@ -269,7 +272,12 @@
     "unknownCategory": "Bilinmeyen kategori",
     "unknownProject": "Bilinmeyen proje",
     "welcomeBack": "Tekrar hoş geldiniz, {name}",
-    "workCategory": "Çalışma Kategorisi"
+    "workCategory": "Çalışma Kategorisi",
+    "workLocation": "Çalışma yeri",
+    "workLocationHome": "Ev",
+    "workLocationOffice": "Ofis",
+    "workLocationOther": "Diğer",
+    "workLocationRemote": "Uzaktan"
   },
   "wellness": {
     "water": {
