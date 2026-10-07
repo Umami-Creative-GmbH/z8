@@ -15,6 +15,7 @@ import type {
 	TravelExpenseExportManifest,
 	TravelExpenseExportManifestRevision,
 } from "../export-manifest";
+import { formatUnits, parseUnits, sumUnits } from "../money";
 import { calculatePerDiem, perDiemPolicyResolver } from "../per-diem";
 import { BMF_FOREIGN_PER_DIEM_2026, foreignTableRates } from "../statutory-foreign-per-diem";
 import {
@@ -715,6 +716,8 @@ describe("travel expense export files", () => {
 			receipt_files: "receipts/report-trip/001-rcpt-train-train ticket.pdf",
 			record_type: "original",
 			adjusts_report_id: "",
+			corrected_reimbursement_amount: "",
+			corrected_company_paid_amount: "",
 		});
 		// Company-paid costs stay visible but never count toward reimbursement.
 		expect(rows[1]).toMatchObject({
@@ -758,7 +761,7 @@ describe("travel expense export files", () => {
 		]);
 	});
 
-	it("names every bundled receipt object with its preserved identity", () => {
+	it("names every bundled receipt with its preserved identity, never its internal storage location", () => {
 		const rows = records(file("receipts.csv"));
 		expect(rows).toHaveLength(3);
 		expect(rows[0]).toEqual({
@@ -771,9 +774,12 @@ describe("travel expense export files", () => {
 			mime_type: "application/pdf",
 			size_bytes: "10",
 			checksum_sha256: SHA,
-			storage_key: "travel-expenses/org/reports/r/item-train/rcpt-train-x.pdf",
-			storage_version_id: "v1",
 		});
+		const all = buildTravelExpenseExportFiles(manifest())
+			.filter((candidate) => candidate.path.endsWith(".csv"))
+			.map((candidate) => candidate.content)
+			.join("\n");
+		expect(all).not.toContain("travel-expenses/org/reports/");
 	});
 
 	it("refuses a revision whose items do not add up to its frozen totals", () => {
@@ -1233,16 +1239,23 @@ describe("travel expense export files", () => {
 			delta: { amount: "-14.50", currency: "CHF" },
 		};
 		const input = manifest([standaloneRevision(), revision]);
-		expect(records(file("reports.csv", input))).toEqual([
+		const reports = records(file("reports.csv", input));
+		expect(reports).toEqual([
 			expect.objectContaining({
 				report_id: "report-solo",
+				reimbursable_total: "35.50",
+				company_paid_total: "0.00",
 				record_type: "original",
 				adjusts_report_id: "",
 				adjustment_delta: "",
+				corrected_reimbursable_total: "",
+				corrected_company_paid_total: "",
 			}),
 			expect.objectContaining({
 				report_id: "report-adjustment",
-				reimbursable_total: "35.50",
+				// The summable total is the signed delta; the corrected total has its own column.
+				reimbursable_total: "-14.50",
+				company_paid_total: "",
 				record_type: "adjustment",
 				adjusts_report_id: "report-solo-original",
 				adjustment_reason: "'=Taxi refunded part of the fare",
@@ -1250,12 +1263,29 @@ describe("travel expense export files", () => {
 				adjustment_baseline_entitlement: "50.00",
 				// A negative delta stays a number, not an escaped formula.
 				adjustment_delta: "-14.50",
+				corrected_reimbursable_total: "35.50",
+				corrected_company_paid_total: "0.00",
 			}),
 		]);
-		expect(records(file("expenses.csv", input)).map((row) => row.record_type)).toEqual([
-			"original",
-			"adjustment",
+		const expenses = records(file("expenses.csv", input));
+		expect(
+			expenses.map((row) => [
+				row.record_type,
+				row.reimbursement_amount,
+				row.company_paid_amount,
+				row.corrected_reimbursement_amount,
+				row.corrected_company_paid_amount,
+			]),
+		).toEqual([
+			["original", "35.50", "0.00", "", ""],
+			// The corrected items are reference only: summing the expense rows never double counts.
+			["adjustment", "", "", "35.50", "0.00"],
 		]);
+		// Summing the summable columns counts an adjustment's delta, never its corrected total.
+		const sum = (values: Array<string | undefined>) =>
+			formatUnits(sumUnits(values.map((value) => parseUnits(value || "0", 2) ?? BigInt(0))), 2);
+		expect(sum(reports.map((row) => row.reimbursable_total))).toBe("21.00");
+		expect(sum(expenses.map((row) => row.reimbursement_amount))).toBe("35.50");
 
 		// A delta that does not follow from its baseline is never exported.
 		const inconsistent = structuredClone(revision);

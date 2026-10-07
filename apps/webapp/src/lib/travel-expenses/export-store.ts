@@ -231,8 +231,12 @@ function batchTotals(
 	const byCurrency = new Map<string, { reimbursable: bigint[]; companyPaid: bigint[] }>();
 	for (const { facts } of revisions) {
 		const line = byCurrency.get(facts.totals.currency) ?? { reimbursable: [], companyPaid: [] };
-		line.reimbursable.push(parseUnits(facts.totals.reimbursable, STORED_AMOUNT_SCALE) ?? BigInt(0));
-		line.companyPaid.push(parseUnits(facts.totals.companyPaid, STORED_AMOUNT_SCALE) ?? BigInt(0));
+		// An adjustment (#615) adds its signed delta, never its corrected total
+		// (the same rule as the CSV's summable columns, export-adjustment.ts).
+		const reimbursable = facts.adjustment?.delta.amount ?? facts.totals.reimbursable;
+		const companyPaid = facts.adjustment ? "0.00" : facts.totals.companyPaid;
+		line.reimbursable.push(parseUnits(reimbursable, STORED_AMOUNT_SCALE) ?? BigInt(0));
+		line.companyPaid.push(parseUnits(companyPaid, STORED_AMOUNT_SCALE) ?? BigInt(0));
 		byCurrency.set(facts.totals.currency, line);
 	}
 	return [...byCurrency.entries()]
