@@ -1,0 +1,58 @@
+---
+title: Travel Expenses
+description: Configure expense review, policies and conversions, and give finance a separate workspace for exports and reimbursements.
+icon: Receipt
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+Employees collect travel costs in expense reports: a trip with several expenses, or a single receipt or mileage expense. Reports are reviewed in the Approvals inbox, then finance exports them and records reimbursements. Approval, export and reimbursement are separate facts. Z8 never executes a payment.
+
+## Settings
+
+Organization admins configure travel expenses in **Settings → Travel Expenses**.
+
+| Setting | What it does |
+| --- | --- |
+| Expense approver | Reviews reports when an employee has no direct manager or team manager other than themselves. Must be an active manager or admin. Without one, such reports cannot be submitted, and the employee is told to contact an admin. |
+| Missing-receipt exceptions | Off by default. When on, employees can explain a missing receipt, and the reviewer must accept each explanation before approving. Turning it off does not change reports that were already submitted. |
+| Reimbursement currency | EUR by default. Applies to reports created afterwards. Approval policies with amount thresholds compare EUR amounts, so they cannot route reports in another currency. |
+| Reference rates | Approves the ECB euro reference rates as a conversion source. The latest rate published on or before the expense date is used, at most 7 days earlier; the real publication date is shown and preserved. Currencies the ECB does not publish need a card charge or a documented rate. |
+| Foreign expense conversions | Lists foreign-currency draft expenses so an admin can enter a documented exchange rate with its date and reason. Employees can only enter an evidenced card charge. |
+| Project attribution exceptions | Authorizes an employee to use a project for a date range that assignment history cannot prove, with a reason and evidence. You cannot authorize your own exception. |
+| Mileage policy | Dated rates per km for cars and other motor vehicles. Each version applies from its start date until the next one starts. The German statutory default (EUR 0.30 / 0.20 per km) can be adopted from 2026-01-01; it is never applied automatically. |
+| Per diem policy | Dated domestic rates and meal deductions. The verified German 2026 defaults, including the BMF foreign rate table, can be adopted for 2026. A new table must be verified and adopted for 2027. |
+| Allowance overrides | Lists mileage and per diem expenses that Z8 cannot calculate, for example missing policy coverage, overlapping trips or a destination without a published rate. You can set a manual amount with a reason, evidence and calculation basis. You cannot override your own expenses, and an override never replaces missing facts. |
+| Earlier policy records | Read-only records from the earlier policy form. They are never used in calculations. |
+
+Saving or activating a policy happens in one transaction. Policy changes never alter a report that was already submitted, because each submission keeps the rates, conversions, projects and calculations it was submitted with.
+
+## Review
+
+Reports follow the direct manager → team manager → expense approver order and are never routed to the employee themselves. Reviewers decide the whole report in the Approvals inbox: **Approve**, **Return for changes** with a required note and optional comments per expense, or **Reject**. Rejection is final. Before an approved report is exported or reimbursed, its reviewer or an admin can **reopen** it with a reason. After that, the employee creates an adjustment, which needs its own approval. The reviewer of an adjustment can open the report it corrects.
+
+Telegram approval cards can approve or reject simple reports. Reports with missing-receipt exceptions, allowance overrides or adjustments must be reviewed in the web inbox.
+
+## Finance
+
+Finance access is separate from approval authority. Organization owners and admins have it by default. In **Settings → Custom Roles**, you can grant the permissions under **Finance** to a custom role:
+
+- **View Travel Expense Finance**: opens **Travel Expenses → Finance** with approved reports, their receipts and balances.
+- **Export Travel Expenses**: creates and downloads export batches.
+- **Record Travel Expense Reimbursements**: records reimbursements and recovered overpayments.
+
+**Exports.** Select approved report revisions and create a batch. A batch contains a CSV of reports, expenses and receipts with explicit amount, currency and date columns, and a ZIP of the receipt files. Each revision is exported once. You can download a completed batch again, and its content stays the same. A failed batch can be retried or cancelled.
+
+**Reimbursements.** Record each payment made outside Z8 with its amount, date and reference. The balance is the approved entitlement plus approved adjustments, minus reimbursements, plus recovered amounts. A negative balance is shown as an overpayment. Record the money returned as a recovery. Retrying a recording never creates a duplicate. Finance users cannot record reimbursements for their own expenses.
+
+## Earlier claims
+
+Claims from the earlier claim form are not migrated. Submitted and decided claims keep their original approval, evidence and history. Pending claims can still be decided in the inbox, and approved claims appear in the finance queue. Employees continue drafts one by one with **Continue as report**, and the original draft stays unchanged.
+
+<Callout type="warn">
+Before you rely on the new workflow, set up an expense approver, the mileage and per diem policies you need, and the finance permissions. Only then tell employees to start using reports.
+</Callout>
+
+<Callout type="info">
+Not included: payment execution, accounting integrations (the DATEV payroll export is not an expense export), customer or cost-center structures, OCR, automatic route distances, travel advances, automatic VAT or tax treatment, and policies for other countries' travel rules.
+</Callout>
