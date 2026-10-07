@@ -14,7 +14,10 @@ import {
 import { isOwnerSelfApprovalDecision } from "@/lib/travel-expenses/owner-self-approval";
 import type { TripDestination } from "@/lib/travel-expenses/trip-destination";
 import { type LegacyDecisionEvidenceRecord, listLegacyDecisionEvidence } from "../evidence/store";
-import type { TravelExpenseReportRevisionComparison } from "../evidence/travel-expense-report-facts";
+import type {
+	TravelExpenseReportRevisionComparison,
+	TravelExpenseReportSubmittedItem,
+} from "../evidence/travel-expense-report-facts";
 import {
 	loadTravelExpenseReportRevisionsByRequest,
 	loadTravelExpenseReportSubmittedRevision,
@@ -33,6 +36,7 @@ import {
 	allowanceOverrideReviewSections,
 } from "./travel-expense-report-allowance-override";
 import { conversionReviewRows } from "./travel-expense-report-conversion-review";
+import { reportItemTitle } from "./travel-expense-report-item-title";
 import { mileageReviewRows } from "./travel-expense-report-mileage";
 import { perDiemReviewRows } from "./travel-expense-report-per-diem";
 import { travelExpenseReportProjectRows } from "./travel-expense-report-project";
@@ -48,7 +52,12 @@ export interface TravelExpenseReportEarlierCycle {
 	note: string | null;
 	actorName: string | null;
 	closedAt: Instant;
-	itemComments: Array<{ itemId: string; itemLabel: string | null; body: string }>;
+	/** Each comment's item as numbered in that cycle; null when the cycle froze no such item. */
+	itemComments: Array<{
+		itemId: string;
+		itemLabel: ApprovalInboxLocalizedText | null;
+		body: string;
+	}>;
 }
 
 export type TravelExpenseReportReviewEvidence =
@@ -62,6 +71,16 @@ export type TravelExpenseReportReviewEvidence =
 			latestCycle?: boolean;
 			earlierCycles?: TravelExpenseReportEarlierCycle[];
 	  };
+
+/** An item of a closed cycle as that cycle numbered it (#688). */
+function frozenItemTitle(
+	items: readonly TravelExpenseReportSubmittedItem[],
+	itemId: string,
+): ApprovalInboxLocalizedText | null {
+	const index = items.findIndex((item) => item.itemId === itemId);
+	const item = items[index];
+	return item ? reportItemTitle(item, index) : null;
+}
 
 /** Closed cycles before `beforeCycle`, with their notes and item comments. */
 async function loadEarlierCycles(
@@ -128,7 +147,7 @@ async function loadEarlierCycles(
 				.filter((note) => note.closureId === closure.id)
 				.map((note) => ({
 					itemId: note.itemId,
-					itemLabel: items.find((item) => item.itemId === note.itemId)?.description ?? null,
+					itemLabel: frozenItemTitle(items, note.itemId),
 					body: note.body,
 				})),
 		};
@@ -451,7 +470,7 @@ export function buildTravelExpenseReportReviewSections(
 			);
 			return {
 				type: "key_value",
-				title: `${index + 1}. ${item.description}`,
+				title: reportItemTitle(item, index),
 				titleAsEntered: true,
 				rows: itemRows,
 			};

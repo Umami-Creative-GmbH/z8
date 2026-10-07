@@ -2,6 +2,7 @@
 
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { saveMileageItemDraftAction } from "@/app/[locale]/(app)/travel-expenses/mileage-actions";
@@ -32,9 +33,10 @@ export function useMileageItemDraft({
 	onDraftChange?: (draft: MileageItemDraft | null) => void;
 }) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	// The latest server view: its calculation is shown while the entries match it.
 	const [saved, setSaved] = useState(item);
-	const [initialSaved] = useState(() => toDraftInput(toFormValues(mileageDraftOf(item))));
+	const [initialSaved] = useState(() => toDraftInput(toFormValues(mileageDraftOf(item), locale)));
 	const lastSaved = useRef<MileageItemDraftInput>(initialSaved);
 
 	const { saver, state } = useDraftSaver<MileageItemDraftInput, ReportItemView>({
@@ -64,7 +66,7 @@ export function useMileageItemDraft({
 			if (!result.success) return { status: "failed", error: result.error };
 			switch (result.data.status) {
 				case "saved":
-					lastSaved.current = toDraftInput(toFormValues(mileageDraftOf(result.data.item)));
+					lastSaved.current = toDraftInput(toFormValues(mileageDraftOf(result.data.item), locale));
 					setSaved(result.data.item);
 					onSaved?.(result.data.item);
 					return errors
@@ -78,7 +80,7 @@ export function useMileageItemDraft({
 		},
 	});
 
-	const [defaultValues] = useState(() => toFormValues(mileageDraftOf(item)));
+	const [defaultValues] = useState(() => toFormValues(mileageDraftOf(item), locale));
 	const form = useForm({
 		defaultValues,
 		listeners: {
@@ -96,9 +98,9 @@ export function useMileageItemDraft({
 		const theirs = state.conflict?.item;
 		saver.resolveConflict("use_theirs");
 		if (theirs) {
-			lastSaved.current = toDraftInput(toFormValues(mileageDraftOf(theirs)));
+			lastSaved.current = toDraftInput(toFormValues(mileageDraftOf(theirs), locale));
 			setSaved(theirs);
-			form.reset(toFormValues(mileageDraftOf(theirs)), { keepDefaultValues: true });
+			form.reset(toFormValues(mileageDraftOf(theirs), locale), { keepDefaultValues: true });
 			onDraftChange?.(mileageDraftOf(theirs));
 		}
 	}

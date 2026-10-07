@@ -100,6 +100,74 @@ describe("SearchableSelect", () => {
 		await waitFor(() => expect(scrollIntoView.mock.contexts).toContain(germany));
 	});
 
+	it("keeps pinned options above the list while the list filters (#688)", async () => {
+		const user = userEvent.setup();
+		const onValueChange = vi.fn();
+		render(
+			<>
+				<span id="question">Where were you at midnight?</span>
+				<SearchableSelect
+					aria-labelledby="question"
+					emptyText="No country found"
+					onValueChange={onValueChange}
+					options={options}
+					pinnedOptions={[
+						{ code: "DE", name: "No business activity abroad" },
+						{ code: "special:other", name: "Something else" },
+					]}
+					placeholder="Choose a location"
+					searchPlaceholder="Search countries"
+					value="special:other"
+				/>
+			</>,
+		);
+		const trigger = screen.getByRole("combobox", { name: "Where were you at midnight?" });
+		expect(trigger.textContent).toContain("Something else");
+
+		await openAndExpectSearchFocus(() => user.click(trigger));
+		await user.keyboard("swi");
+		expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+			"No business activity abroad",
+			"Something else",
+			"Switzerland",
+		]);
+
+		await user.click(screen.getByRole("option", { name: "No business activity abroad" }));
+		expect(onValueChange).toHaveBeenCalledWith("DE");
+	});
+
+	it("finds options by their keywords and reports when the list closes", async () => {
+		const user = userEvent.setup();
+		const onOpenChange = vi.fn();
+		render(
+			<SearchableSelect
+				aria-label="Currency"
+				aria-invalid
+				emptyText="No currency found"
+				onOpenChange={onOpenChange}
+				onValueChange={vi.fn()}
+				options={[
+					{ code: "CHF", name: "CHF – Swiss Franc", keywords: ["CHF", "Swiss Franc"] },
+					{ code: "EUR", name: "EUR – Euro", keywords: ["EUR", "Euro"] },
+				]}
+				placeholder="Choose a currency"
+				searchPlaceholder="Search currencies"
+				value=""
+			/>,
+		);
+		const trigger = screen.getByRole("combobox", { name: "Currency" });
+		expect(trigger.getAttribute("aria-invalid")).toBe("true");
+
+		await user.click(trigger);
+		expect(onOpenChange).toHaveBeenLastCalledWith(true);
+		await user.keyboard("franc");
+		expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+			"CHF – Swiss Franc",
+		]);
+		await user.keyboard("{Escape}");
+		expect(onOpenChange).toHaveBeenLastCalledWith(false);
+	});
+
 	it("returns focus to the trigger when Escape closes the popover", async () => {
 		const user = userEvent.setup();
 		render(<CountrySelect />);

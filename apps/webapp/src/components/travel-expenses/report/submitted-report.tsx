@@ -15,9 +15,9 @@ import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
 import { formatRecordedInstant } from "./format";
 import { AdjustmentNotice, ReportAdjustmentsPanel } from "./report-adjustments";
+import { ReportHeader } from "./report-header";
 import { ReopenedNotice, ReopenReportPanel } from "./report-reopen";
 import { ReturnedNotice, SubmissionCycleLinks, WithdrawReportButton } from "./report-review-cycle";
-import { ReportStatusBadge } from "./report-status";
 import { ReportTotals } from "./report-summary";
 
 const formatInstant = formatRecordedInstant;
@@ -100,8 +100,17 @@ export function SubmittedTravelExpenseReport({
 	}
 
 	const latest = data.submissionCycle === data.latestCycle;
+	const [firstItem] = data.facts.items;
 	return (
 		<div className="space-y-4">
+			<ReportHeader
+				source={{
+					kind: data.facts.reportKind,
+					itemType: data.facts.reportKind === "trip" ? null : (firstItem?.type ?? null),
+					title: data.facts.trip ? data.facts.trip.purpose : (firstItem?.description ?? null),
+				}}
+				status={data.status}
+			/>
 			<SubmissionHeading reportId={reportId} data={data} latest={latest} />
 			<SubmissionNotices reportId={reportId} data={data} latest={latest} />
 			<DecisionNotice decision={data.decision} />
@@ -127,7 +136,7 @@ export function SubmittedTravelExpenseReport({
 	);
 }
 
-/** Status, submission date and, for the owner of a pending submission, the withdraw button. */
+/** Submission date and, for the owner of a pending submission, the withdraw button. */
 function SubmissionHeading({
 	reportId,
 	data,
@@ -141,7 +150,6 @@ function SubmissionHeading({
 	const locale = useLocale();
 	return (
 		<div className="flex flex-wrap items-center gap-2">
-			{latest && <ReportStatusBadge status={data.status} />}
 			<p className="text-sm text-muted-foreground">
 				{data.latestCycle > 1
 					? t("travelExpenses.report.submissionNumberAt", "Submission {number}, submitted {date}", {
@@ -285,9 +293,9 @@ function SubmittedExpenses({ reportId, data }: { reportId: string; data: Submitt
 			<ExpenseSummaryList
 				items={data.facts.items.map((item) => ({
 					id: item.itemId,
-					description: item.perDiem
-						? t("travelExpenses.report.perDiem.title", "Per diem")
-						: item.description,
+					type: item.type,
+					// A per diem freezes a fixed description; its title already names it.
+					description: item.type === "per_diem" ? null : item.description,
 					expenseDate: item.expenseDate,
 					category: item.category,
 					amount: item.original.amount,

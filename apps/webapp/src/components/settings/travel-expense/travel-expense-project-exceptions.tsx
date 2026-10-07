@@ -5,7 +5,6 @@ import { useForm } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useState } from "react";
 import { toast } from "sonner";
 import {
 	authorizeProjectAttributionExceptionAction,
@@ -31,12 +30,16 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { queryKeys } from "@/lib/query/keys";
+import { latestCalendarDate } from "@/lib/travel-expenses/future-dates";
 import {
 	MAX_EXCEPTION_EVIDENCE_LENGTH,
 	MAX_EXCEPTION_REASON_LENGTH,
 	type ProjectAttributionExceptionError,
+	parseProjectAttributionExceptionDraft,
 } from "@/lib/travel-expenses/project-attribution-exception";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -107,28 +110,53 @@ function errorMessages(
 	return messages;
 }
 
+/**
+ * The client side of the server's draft rules. The server judges future dates
+ * by the organization's today and knows when assignment history starts; the
+ * latest calendar date anywhere only catches dates that are future everywhere.
+ */
+function draftErrors(t: Translate, value: typeof EMPTY): Partial<Record<FieldName, string>> {
+	const parsed = parseProjectAttributionExceptionDraft(
+		value,
+		latestCalendarDate(systemClock.nowInstant()),
+	);
+	const messages = parsed.ok ? {} : errorMessages(t, parsed.errors);
+	if (!value.employeeId) {
+		messages.employeeId = t(
+			"settings.travelExpenses.projectExceptions.errors.employee",
+			"Choose an employee.",
+		);
+	}
+	if (!value.projectId) {
+		messages.projectId = t(
+			"settings.travelExpenses.projectExceptions.errors.project",
+			"Choose a project.",
+		);
+	}
+	return messages;
+}
+
+type ValidatorProps = {
+	fieldApi: { form: { state: { values: typeof EMPTY } }; state: { meta: { isTouched: boolean } } };
+};
+
+function fieldValidators(t: Translate, name: FieldName) {
+	const check = ({ fieldApi }: ValidatorProps) => draftErrors(t, fieldApi.form.state.values)[name];
+	if (name !== "validTo") return { onChange: check };
+	// The last day is checked against the first, but only once it was entered or submitted.
+	return {
+		onChangeListenTo: ["validFrom" as const],
+		onChange: (props: ValidatorProps) =>
+			props.fieldApi.state.meta.isTouched ? check(props) : undefined,
+	};
+}
+
 function ExceptionForm({ settings }: { settings: ProjectExceptionSettings }) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldName, string>>>({});
 	const form = useForm({
 		defaultValues: EMPTY,
 		onSubmit: async ({ value, formApi }) => {
-			const missing: Partial<Record<FieldName, string>> = {};
-			if (!value.employeeId) {
-				missing.employeeId = t(
-					"settings.travelExpenses.projectExceptions.errors.employee",
-					"Choose an employee.",
-				);
-			}
-			if (!value.projectId) {
-				missing.projectId = t(
-					"settings.travelExpenses.projectExceptions.errors.project",
-					"Choose a project.",
-				);
-			}
-			setFieldErrors(missing);
-			if (Object.keys(missing).length > 0) return;
 			const result = await authorizeProjectAttributionExceptionAction(value);
 			if (!result.success) {
 				toast.error(
@@ -141,7 +169,13 @@ function ExceptionForm({ settings }: { settings: ProjectExceptionSettings }) {
 				return;
 			}
 			if (result.data.status === "invalid") {
-				setFieldErrors(errorMessages(t, result.data.errors));
+				// The server's refusal stays on its field until that field changes.
+				for (const [name, message] of Object.entries(errorMessages(t, result.data.errors))) {
+					formApi.setFieldMeta(name as FieldName, (meta) => ({
+						...meta,
+						errorMap: { ...meta.errorMap, onSubmit: message },
+					}));
+				}
 				return;
 			}
 			formApi.reset();
@@ -149,8 +183,6 @@ function ExceptionForm({ settings }: { settings: ProjectExceptionSettings }) {
 			toast.success(t("settings.travelExpenses.projectExceptions.saved", "Exception authorized"));
 		},
 	});
-	const error = (field: FieldName) => fieldErrors[field];
-
 	return (
 		<form
 			noValidate
@@ -161,17 +193,17 @@ function ExceptionForm({ settings }: { settings: ProjectExceptionSettings }) {
 			}}
 		>
 			<div className="grid gap-4 sm:grid-cols-2">
-				<form.Field name="employeeId">
+				<form.Field name="employeeId" validators={fieldValidators(t, "employeeId")}>
 					{(field) => (
 						<TFormItem>
-							<TFormLabel hasError={!!error("employeeId")}>
+							<TFormLabel hasError={fieldHasError(field)}>
 								{t("settings.travelExpenses.projectExceptions.employee", "Employee")}
 							</TFormLabel>
 							<Select
 								value={field.state.value || null}
 								onValueChange={(value) => field.handleChange(value ?? "")}
 							>
-								<TFormControl hasError={!!error("employeeId")}>
+								<TFormControl hasError={fieldHasError(field)}>
 									<SelectTrigger className="w-full">
 										<SelectValue
 											placeholder={t(
@@ -189,21 +221,21 @@ function ExceptionForm({ settings }: { settings: ProjectExceptionSettings }) {
 									))}
 								</SelectContent>
 							</Select>
-							<TFormMessage>{error("employeeId")}</TFormMessage>
+							<TFormMessage field={field} />
 						</TFormItem>
 					)}
 				</form.Field>
-				<form.Field name="projectId">
+				<form.Field name="projectId" validators={fieldValidators(t, "projectId")}>
 					{(field) => (
 						<TFormItem>
-							<TFormLabel hasError={!!error("projectId")}>
+							<TFormLabel hasError={fieldHasError(field)}>
 								{t("settings.travelExpenses.projectExceptions.project", "Project")}
 							</TFormLabel>
 							<Select
 								value={field.state.value || null}
 								onValueChange={(value) => field.handleChange(value ?? "")}
 							>
-								<TFormControl hasError={!!error("projectId")}>
+								<TFormControl hasError={fieldHasError(field)}>
 									<SelectTrigger className="w-full">
 										<SelectValue
 											placeholder={t(
@@ -221,20 +253,20 @@ function ExceptionForm({ settings }: { settings: ProjectExceptionSettings }) {
 									))}
 								</SelectContent>
 							</Select>
-							<TFormMessage>{error("projectId")}</TFormMessage>
+							<TFormMessage field={field} />
 						</TFormItem>
 					)}
 				</form.Field>
-				<form.Field name="validFrom">
+				<form.Field name="validFrom" validators={fieldValidators(t, "validFrom")}>
 					{(field) => (
 						<TFormItem>
-							<TFormLabel hasError={!!error("validFrom")}>
+							<TFormLabel hasError={fieldHasError(field)}>
 								{t(
 									"settings.travelExpenses.projectExceptions.validFrom",
 									"First expense date covered",
 								)}
 							</TFormLabel>
-							<TFormControl hasError={!!error("validFrom")}>
+							<TFormControl hasError={fieldHasError(field)}>
 								<DatePicker
 									name="validFrom"
 									value={field.state.value}
@@ -242,20 +274,20 @@ function ExceptionForm({ settings }: { settings: ProjectExceptionSettings }) {
 									onBlur={field.handleBlur}
 								/>
 							</TFormControl>
-							<TFormMessage>{error("validFrom")}</TFormMessage>
+							<TFormMessage field={field} />
 						</TFormItem>
 					)}
 				</form.Field>
-				<form.Field name="validTo">
+				<form.Field name="validTo" validators={fieldValidators(t, "validTo")}>
 					{(field) => (
 						<TFormItem>
-							<TFormLabel hasError={!!error("validTo")}>
+							<TFormLabel hasError={fieldHasError(field)}>
 								{t(
 									"settings.travelExpenses.projectExceptions.validTo",
 									"Last expense date covered",
 								)}
 							</TFormLabel>
-							<TFormControl hasError={!!error("validTo")}>
+							<TFormControl hasError={fieldHasError(field)}>
 								<DatePicker
 									name="validTo"
 									value={field.state.value}
@@ -263,18 +295,18 @@ function ExceptionForm({ settings }: { settings: ProjectExceptionSettings }) {
 									onBlur={field.handleBlur}
 								/>
 							</TFormControl>
-							<TFormMessage>{error("validTo")}</TFormMessage>
+							<TFormMessage field={field} />
 						</TFormItem>
 					)}
 				</form.Field>
 			</div>
-			<form.Field name="reason">
+			<form.Field name="reason" validators={fieldValidators(t, "reason")}>
 				{(field) => (
 					<TFormItem>
-						<TFormLabel hasError={!!error("reason")}>
+						<TFormLabel hasError={fieldHasError(field)}>
 							{t("settings.travelExpenses.projectExceptions.reason", "Reason")}
 						</TFormLabel>
-						<TFormControl hasError={!!error("reason")}>
+						<TFormControl hasError={fieldHasError(field)}>
 							<Textarea
 								name="reason"
 								rows={2}
@@ -284,17 +316,17 @@ function ExceptionForm({ settings }: { settings: ProjectExceptionSettings }) {
 								onBlur={field.handleBlur}
 							/>
 						</TFormControl>
-						<TFormMessage>{error("reason")}</TFormMessage>
+						<TFormMessage field={field} />
 					</TFormItem>
 				)}
 			</form.Field>
-			<form.Field name="evidence">
+			<form.Field name="evidence" validators={fieldValidators(t, "evidence")}>
 				{(field) => (
 					<TFormItem>
-						<TFormLabel hasError={!!error("evidence")}>
+						<TFormLabel hasError={fieldHasError(field)}>
 							{t("settings.travelExpenses.projectExceptions.evidence", "Evidence")}
 						</TFormLabel>
-						<TFormControl hasError={!!error("evidence")}>
+						<TFormControl hasError={fieldHasError(field)}>
 							<Textarea
 								name="evidence"
 								rows={2}
@@ -310,7 +342,7 @@ function ExceptionForm({ settings }: { settings: ProjectExceptionSettings }) {
 								"What shows the employee worked on the project then, e.g. a staffing plan, contract or written confirmation by the project lead.",
 							)}
 						</TFormDescription>
-						<TFormMessage>{error("evidence")}</TFormMessage>
+						<TFormMessage field={field} />
 					</TFormItem>
 				)}
 			</form.Field>

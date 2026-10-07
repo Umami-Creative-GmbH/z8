@@ -1,8 +1,9 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	findForeignPerDiemTable,
 	foreignTableRates,
@@ -27,8 +28,33 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 vi.mock("next-intl", () => ({ useLocale: () => "en-US" }));
+vi.mock("@/components/ui/date-picker", () => ({
+	DatePicker: ({
+		id,
+		name,
+		value,
+		onChange,
+	}: {
+		id?: string;
+		name: string;
+		value: string;
+		onChange: (value: string) => void;
+	}) => <input id={id} name={name} value={value} onChange={(e) => onChange(e.target.value)} />,
+}));
 
 import { PerDiemPolicySettingsCard } from "./per-diem-policy-settings";
+
+beforeAll(() => {
+	vi.stubGlobal(
+		"ResizeObserver",
+		class {
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		},
+	);
+	HTMLElement.prototype.scrollIntoView = vi.fn();
+});
 
 const DOMESTIC = "German statutory domestic per diem";
 const FOREIGN = "German statutory per diem with the official foreign rates";
@@ -135,3 +161,87 @@ describe("per diem statutory catalogs (#689)", () => {
 		expect(within(foreign).getByText(/for 166 countries and 48 cities,/)).toBeTruthy();
 	});
 });
+
+describe("per diem version dialog (#688)", () => {
+	const exceeds = "This amount cannot exceed the full-day allowance.";
+	const amountError = "Enter an amount with at most two decimals, e.g. 14.00.";
+
+	async function openAddDialog() {
+		mount();
+		fireEvent.click(await screen.findByRole("button", { name: "Add rate version" }));
+		return screen.findByRole("dialog");
+	}
+
+	it("clears an amount error once the amount is valid", async () => {
+		const dialog = await openAddDialog();
+		const partialDay = within(dialog).getByLabelText("Travel day or more than 8 hours away");
+		fireEvent.change(partialDay, { target: { value: "abc" } });
+		expect(within(dialog).getAllByText(amountError)).toHaveLength(1);
+		fireEvent.change(partialDay, { target: { value: "14" } });
+		expect(within(dialog).queryByText(amountError)).toBeNull();
+	});
+
+	it("re-checks a deduction against the full day when the full day changes", async () => {
+		const dialog = await openAddDialog();
+		fireEvent.change(within(dialog).getByLabelText("Full day (24 hours away)"), {
+			target: { value: "28" },
+		});
+		fireEvent.change(within(dialog).getByLabelText("Travel day or more than 8 hours away"), {
+			target: { value: "30" },
+		});
+		expect(within(dialog).getAllByText(exceeds)).toHaveLength(1);
+		fireEvent.change(within(dialog).getByLabelText("Full day (24 hours away)"), {
+			target: { value: "40" },
+		});
+		expect(within(dialog).queryByText(exceeds)).toBeNull();
+	});
+
+	it("keeps a field error the server returned until that field changes", async () => {
+		actions.activatePerDiemPolicyVersionAction.mockResolvedValue({
+			success: true,
+			data: { status: "invalid", errors: { note: "too_long" } },
+		});
+		const dialog = await openAddDialog();
+		fillValidRates(dialog);
+		fireEvent.click(within(dialog).getByRole("button", { name: "Activate version" }));
+		expect(await within(dialog).findAllByText("This text is too long.")).toHaveLength(1);
+		fireEvent.change(within(dialog).getByLabelText("Note (optional)"), {
+			target: { value: "Shorter" },
+		});
+		expect(within(dialog).queryByText("This text is too long.")).toBeNull();
+	});
+
+	it("chooses the policy currency from a searchable list", async () => {
+		actions.activatePerDiemPolicyVersionAction.mockResolvedValue({
+			success: true,
+			data: { status: "activated", versionId: "new" },
+		});
+		const user = userEvent.setup();
+		const dialog = await openAddDialog();
+		const currency = within(dialog).getByRole("combobox", { name: "Currency" });
+		await user.click(currency);
+		await user.keyboard("chf");
+		await user.click(await screen.findByRole("option", { name: /^CHF/ }));
+		fillValidRates(dialog);
+		fireEvent.click(within(dialog).getByRole("button", { name: "Activate version" }));
+		await waitFor(() =>
+			expect(actions.activatePerDiemPolicyVersionAction).toHaveBeenCalledWith(
+				expect.objectContaining({ source: "organization", currency: "CHF" }),
+			),
+		);
+	});
+});
+
+function fillValidRates(dialog: HTMLElement) {
+	const values: Record<string, string> = {
+		"Valid from": "2026-03-01",
+		"Full day (24 hours away)": "28",
+		"Travel day or more than 8 hours away": "14",
+		"Deduction for a provided breakfast": "5.60",
+		"Deduction for a provided lunch": "11.20",
+		"Deduction for a provided dinner": "11.20",
+	};
+	for (const [label, value] of Object.entries(values)) {
+		fireEvent.change(within(dialog).getByLabelText(label), { target: { value } });
+	}
+}

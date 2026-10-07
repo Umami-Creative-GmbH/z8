@@ -186,7 +186,7 @@ export type ApprovalInboxDetailSection =
 	| {
 			type: "receipt_exception_acceptance";
 			title: string | ApprovalInboxLocalizedText;
-			items: Array<{ itemId: string; label: string; reason: string }>;
+			items: Array<{ itemId: string; label: string | ApprovalInboxLocalizedText; reason: string }>;
 	  };
 
 export interface ApprovalInboxDetailResult {

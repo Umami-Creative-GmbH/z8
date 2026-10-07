@@ -21,6 +21,39 @@ const mileageActions = vi.hoisted(() => ({
 }));
 vi.mock("@/app/[locale]/(app)/travel-expenses/report-actions", () => reportActions);
 vi.mock("@/app/[locale]/(app)/travel-expenses/mileage-actions", () => mileageActions);
+const projectActions = vi.hoisted(() => ({
+	getReportProjectChoicesAction: vi.fn(),
+	getReportProjectIssuesAction: vi.fn(),
+	saveItemProjectAction: vi.fn(),
+	saveTripProjectAction: vi.fn(),
+}));
+vi.mock("@/app/[locale]/(app)/travel-expenses/report-project-actions", () => projectActions);
+// A native select stands in for the popover select, so the test drives the field, not the widget.
+vi.mock("@/components/ui/select", () => ({
+	Select: ({
+		value,
+		onValueChange,
+		children,
+	}: {
+		value: string;
+		onValueChange: (value: string) => void;
+		children: React.ReactNode;
+	}) => (
+		<select
+			aria-label="Project"
+			value={value}
+			onChange={(event) => onValueChange(event.target.value)}
+		>
+			{children}
+		</select>
+	),
+	SelectTrigger: () => null,
+	SelectValue: () => null,
+	SelectContent: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+	SelectItem: ({ value, children }: { value: string; children: React.ReactNode }) => (
+		<option value={value}>{children}</option>
+	),
+}));
 vi.mock("@/hooks/use-travel-expense-file-upload", () => ({
 	useTravelExpenseFileUpload: () => ({
 		addFile: vi.fn(),
@@ -37,14 +70,18 @@ vi.mock("@tolgee/react", () => ({
 			fallback.replace(/\{(\w+)\}/g, (match, name) => String(params?.[name] ?? match)),
 	}),
 }));
-vi.mock("next-intl", () => ({ useLocale: () => "en-US" }));
+const viewer = vi.hoisted(() => ({ locale: "en-US" }));
+vi.mock("next-intl", () => ({ useLocale: () => viewer.locale }));
 vi.mock("@/app/[locale]/(app)/travel-expenses/report-review-actions", () => ({
 	withdrawTravelExpenseReportAction: vi.fn(),
 }));
 // #615: the adjustment notices find no adjustment for these reports.
 vi.mock("@/app/[locale]/(app)/travel-expenses/adjustment-actions", () => ({
 	createTravelExpenseAdjustmentAction: vi.fn(),
-	getTravelExpenseReportAdjustments: async () => ({ success: false, error: "Expense report not found" }),
+	getTravelExpenseReportAdjustments: async () => ({
+		success: false,
+		error: "Expense report not found",
+	}),
 }));
 vi.mock("@/navigation", () => ({
 	Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
@@ -140,6 +177,7 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
+	viewer.locale = "en-US";
 });
 
 describe("mileage expenses (#606)", () => {
@@ -221,5 +259,77 @@ describe("mileage expenses (#606)", () => {
 				accountingReference: null,
 			},
 		});
+	});
+	it("shows the distance in the viewer's locale without saving again for the format (#688)", async () => {
+		viewer.locale = "de";
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(
+			standalone(
+				mileageItem(calculated, {
+					mileage: { ...mileageItem(calculated).mileage, distanceKm: "289.70" },
+				}),
+			),
+		);
+		mileageActions.saveMileageItemDraftAction.mockResolvedValue({
+			success: true,
+			data: { status: "saved", item: mileageItem(calculated, { version: 4 }) },
+		});
+		mount();
+		const distance = (await screen.findByLabelText("Kilometres driven")) as HTMLInputElement;
+		// A reload shows the saved distance as the locale writes it.
+		expect(distance.value).toBe("289,7");
+
+		fireEvent.change(distance, { target: { value: "289.70" } });
+		// What is typed stays as typed until the field loses focus.
+		expect(distance.value).toBe("289.70");
+		await waitFor(
+			() => expect(mileageActions.saveMileageItemDraftAction).toHaveBeenCalledTimes(1),
+			{
+				timeout: 3000,
+			},
+		);
+		fireEvent.blur(distance);
+		expect(distance.value).toBe("289,7");
+		await new Promise((resolve) => setTimeout(resolve, 1200));
+		expect(mileageActions.saveMileageItemDraftAction).toHaveBeenCalledTimes(1);
+	});
+	it("lets a standalone drive name its own project (#688)", async () => {
+		const project = "6a060000-0000-4000-8000-0000000000c1";
+		projectActions.getReportProjectChoicesAction.mockResolvedValue({
+			success: true,
+			data: {
+				timeZone: "Europe/Berlin",
+				choices: [
+					{
+						id: project,
+						name: "Potsdam rollout",
+						customerName: null,
+						status: "active",
+						basis: "employee_assignment",
+					},
+				],
+				selected: null,
+			},
+		});
+		projectActions.saveItemProjectAction.mockResolvedValue({
+			success: true,
+			data: { status: "saved", version: 4 },
+		});
+		mount();
+		await screen.findByRole("option", { name: "Potsdam rollout" });
+		const select = screen.getByLabelText("Project") as HTMLSelectElement;
+		expect(select.value).toBe("none");
+		// Projects are offered for the date of the drive.
+		expect(projectActions.getReportProjectChoicesAction).toHaveBeenCalledWith(
+			expect.objectContaining({ from: "2026-09-15", to: "2026-09-15" }),
+		);
+		fireEvent.change(select, { target: { value: `project:${project}` } });
+		await waitFor(() =>
+			expect(projectActions.saveItemProjectAction).toHaveBeenCalledWith({
+				reportId,
+				itemId,
+				expectedVersion: 3,
+				choice: { mode: "project", projectId: project },
+			}),
+		);
 	});
 });

@@ -5,6 +5,7 @@ import type {
 } from "@tanstack/react-form";
 import type { useTranslate } from "@tolgee/react";
 import type { MileageItemDraft, MileageItemDraftInput } from "@/lib/travel-expenses/mileage";
+import { formatNumberInput } from "@/lib/travel-expenses/number-input-display";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 export type MileageFormValues = { [K in keyof MileageItemDraft]: string };
@@ -28,11 +29,14 @@ export type MileageItemForm = ReactFormExtendedApi<
 	unknown
 >;
 
-export function toFormValues(draft: MileageItemDraft): MileageFormValues {
+/** The form's text for a saved drive; the distance as the viewer's locale writes it (#688). */
+export function toFormValues(draft: MileageItemDraft, locale: string): MileageFormValues {
 	return {
 		expenseDate: draft.expenseDate ?? "",
 		route: draft.route ?? "",
-		distanceKm: draft.distanceKm ?? "",
+		distanceKm: draft.distanceKm
+			? formatNumberInput(locale, draft.distanceKm, { kind: "distance" })
+			: "",
 		vehicle: draft.vehicle ?? "",
 		accountingReference: draft.accountingReference ?? "",
 	};

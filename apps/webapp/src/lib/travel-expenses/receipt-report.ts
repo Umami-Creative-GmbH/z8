@@ -90,6 +90,12 @@ function parseAmountMinor(value: string, fractionDigits: number): number | null 
 	return minor > 0 && minor <= MAX_AMOUNT_MINOR ? minor : null;
 }
 
+/** An entered amount as the draft stores it ("89,1" is "89.10"); null when malformed. */
+export function normalizeReceiptAmount(value: string, fractionDigits: number): string | null {
+	const minor = parseAmountMinor(value, fractionDigits);
+	return minor === null ? null : formatMinor(minor);
+}
+
 function formatMinor(minor: number): string {
 	const sign = minor < 0 ? "-" : "";
 	const absolute = Math.abs(minor);

@@ -60,9 +60,6 @@ async function ReportContent({ params, searchParams }: ReportPageProps) {
 						{t("travelExpenses.report.backToApprovals", "Back to approvals")}
 					</Link>
 				)}
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("travelExpenses.report.submittedTitle", "Submitted expense report")}
-				</h1>
 				<SubmittedTravelExpenseReport reportId={reportId} cycle={cycle} />
 			</div>
 		);
@@ -75,9 +72,6 @@ async function ReportContent({ params, searchParams }: ReportPageProps) {
 			>
 				{t("travelExpenses.report.backToTravelExpenses", "Back to travel expenses")}
 			</Link>
-			<h1 className="text-2xl font-semibold tracking-tight">
-				{t("travelExpenses.report.title", "Expense")}
-			</h1>
 			{cycle === undefined ? (
 				<TravelExpenseReportEditor
 					reportId={reportId}
@@ -108,7 +102,7 @@ export default function TravelExpenseReportPage(props: ReportPageProps) {
 						labelDefault: "Loading travel expenses",
 					}}
 					role="status"
-					className="p-6"
+					className="mx-auto w-full max-w-3xl px-4 py-6 lg:px-6"
 				>
 					<Skeleton aria-hidden="true" className="h-96 w-full" />
 				</LoadingRegion>

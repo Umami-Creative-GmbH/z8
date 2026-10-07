@@ -103,20 +103,38 @@ describe("CurrencyConversionField (#607)", () => {
 		expect(version.adopt).toHaveBeenCalledWith(4);
 	});
 
-	it("shows the server's refusal of the charged amount", async () => {
+	const amountError = "Enter the positive amount charged in EUR, with at most 2 decimals.";
+
+	it("shows the server's refusal of the charged amount until the amount changes (#688)", async () => {
 		conversionActions.saveCardChargeConversionAction.mockResolvedValue({
 			success: true,
 			data: { kind: "invalid", errors: { chargedAmount: "invalid" } },
 		});
 		renderField();
-		fireEvent.change(screen.getByLabelText("Amount charged in EUR"), {
-			target: { value: "92.171" },
-		});
+		const amount = screen.getByLabelText("Amount charged in EUR");
+		fireEvent.change(amount, { target: { value: "92.17" } });
 		fireEvent.click(screen.getByRole("radio", { name: "card-statement.pdf" }));
 		fireEvent.click(screen.getByRole("button", { name: "Save card charge" }));
-		expect(
-			await screen.findByText("Enter the positive amount charged in EUR, with at most 2 decimals."),
-		).toBeTruthy();
+		expect(await screen.findAllByText(amountError)).toHaveLength(1);
+		fireEvent.change(amount, { target: { value: "92.18" } });
+		expect(screen.queryByText(amountError)).toBeNull();
+	});
+
+	it("checks the charge like the server and clears the error once it is valid (#688)", async () => {
+		renderField();
+		const amount = screen.getByLabelText("Amount charged in EUR");
+		fireEvent.change(amount, { target: { value: "92.171" } });
+		expect(screen.getAllByText(amountError)).toHaveLength(1);
+		fireEvent.change(amount, { target: { value: "92.17" } });
+		expect(screen.queryByText(amountError)).toBeNull();
+
+		// No attachment chosen: submitting asks for it, choosing one clears it.
+		fireEvent.click(screen.getByRole("button", { name: "Save card charge" }));
+		const evidenceError = "Select the attachment of this expense that shows the charge.";
+		expect(await screen.findAllByText(evidenceError)).toHaveLength(1);
+		expect(conversionActions.saveCardChargeConversionAction).not.toHaveBeenCalled();
+		fireEvent.click(screen.getByRole("radio", { name: "taxi.pdf" }));
+		await waitFor(() => expect(screen.queryByText(evidenceError)).toBeNull());
 	});
 
 	it("shows an authorized rate distinctly from a card charge, with its documentation", () => {

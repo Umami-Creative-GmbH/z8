@@ -2,7 +2,8 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const reportActions = vi.hoisted(() => ({
 	getMyTravelExpenseReport: vi.fn(),
@@ -54,7 +55,8 @@ vi.mock("@tolgee/react", () => ({
 			fallback.replace(/\{(\w+)\}/g, (match, name) => String(params?.[name] ?? match)),
 	}),
 }));
-vi.mock("next-intl", () => ({ useLocale: () => "en-US" }));
+const viewer = vi.hoisted(() => ({ locale: "en-US" }));
+vi.mock("next-intl", () => ({ useLocale: () => viewer.locale }));
 vi.mock("@/app/[locale]/(app)/travel-expenses/report-review-actions", () => ({
 	withdrawTravelExpenseReportAction: vi.fn(),
 }));
@@ -125,6 +127,18 @@ async function description() {
 	return (await screen.findByRole("textbox", { name: "Description" })) as HTMLTextAreaElement;
 }
 
+beforeAll(() => {
+	// The searchable currency select measures and scrolls its list.
+	vi.stubGlobal(
+		"ResizeObserver",
+		class {
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		},
+	);
+	HTMLElement.prototype.scrollIntoView = vi.fn();
+});
 beforeEach(() => {
 	reportActions.getMyTravelExpenseReport.mockResolvedValue(report());
 });
@@ -132,6 +146,7 @@ afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
 	upload.options = null;
+	viewer.locale = "en-US";
 });
 
 describe("TravelExpenseReportEditor", () => {
@@ -275,6 +290,62 @@ describe("TravelExpenseReportEditor", () => {
 		expect(screen.getByRole("textbox", { name: "Amount on the receipt" })).toHaveProperty(
 			"value",
 			"12.345",
+		);
+	});
+
+	it.each([
+		["de", "129,90", "89,10"],
+		["en-US", "129.90", "89.10"],
+	])(
+		"shows the amount in %s once it loses focus, without saving again for the format (#688)",
+		async (locale, loaded, shown) => {
+			viewer.locale = locale;
+			reportActions.saveReceiptItemDraftAction.mockResolvedValue({
+				success: true,
+				data: { status: "saved", item: item({ version: 4, amount: "89.10" }) },
+			});
+			mount();
+			const amount = (await screen.findByRole("textbox", {
+				name: "Amount on the receipt",
+			})) as HTMLInputElement;
+			expect(amount.value).toBe(loaded);
+
+			fireEvent.change(amount, { target: { value: "89,1" } });
+			expect(amount.value).toBe("89,1");
+			await waitFor(
+				() => expect(reportActions.saveReceiptItemDraftAction).toHaveBeenCalledTimes(1),
+				{ timeout: 3000 },
+			);
+			expect(reportActions.saveReceiptItemDraftAction).toHaveBeenCalledWith(
+				expect.objectContaining({ values: expect.objectContaining({ amount: "89,1" }) }),
+			);
+			fireEvent.blur(amount);
+			expect(amount.value).toBe(shown);
+			await new Promise((resolve) => setTimeout(resolve, 1200));
+			expect(reportActions.saveReceiptItemDraftAction).toHaveBeenCalledTimes(1);
+		},
+	);
+
+	it("chooses the receipt currency from a searchable list and saves its code (#688)", async () => {
+		reportActions.saveReceiptItemDraftAction.mockResolvedValue({
+			success: true,
+			data: { status: "saved", item: item({ version: 4, currency: "CHF" }) },
+		});
+		const user = userEvent.setup();
+		mount();
+		await description();
+		const currency = screen.getByRole("combobox", { name: "Currency" });
+		expect(currency.textContent).toContain("EUR – Euro");
+		await user.click(currency);
+		await user.keyboard("swiss");
+		await user.click(screen.getByRole("option", { name: "CHF – Swiss Franc" }));
+		expect(currency.textContent).toContain("CHF – Swiss Franc");
+		await waitFor(
+			() =>
+				expect(reportActions.saveReceiptItemDraftAction).toHaveBeenCalledWith(
+					expect.objectContaining({ values: expect.objectContaining({ currency: "CHF" }) }),
+				),
+			{ timeout: 3000 },
 		);
 	});
 

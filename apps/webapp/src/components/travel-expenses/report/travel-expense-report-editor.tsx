@@ -9,7 +9,7 @@ import {
 } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { type RefObject, useState } from "react";
+import { type ReactNode, type RefObject, useState } from "react";
 import { getMyTravelExpenseReport } from "@/app/[locale]/(app)/travel-expenses/report-actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,7 @@ import {
 import { useRouter } from "@/navigation";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { DeleteDraftReportButton } from "./delete-draft-report";
+import { itemTitle } from "./item-title";
 import { LegacyConversionNotice, useLegacyConversion } from "./legacy-conversion-notice";
 import { mileageDraftMatches, mileageDraftOf } from "./mileage-item-draft";
 import { MileageItemEditor } from "./mileage-item-editor";
@@ -52,8 +53,8 @@ import { perDiemDraftMatches, perDiemDraftOf } from "./per-diem-item-draft";
 import { PerDiemItemEditor } from "./per-diem-item-editor";
 import { ReceiptItemEditor } from "./receipt-item-editor";
 import { AdjustmentNotice } from "./report-adjustments";
+import { ReportHeader } from "./report-header";
 import { ReportReviewFeedback } from "./report-review-cycle";
-import { ReportStatusBadge } from "./report-status";
 import { type IncompleteExpense, ReportTotals, TripRequirements } from "./report-summary";
 import { type SubmitBlocker, SubmitReportPanel } from "./submit-report-panel";
 import { SubmittedTravelExpenseReport } from "./submitted-report";
@@ -298,20 +299,41 @@ export function TravelExpenseReportEditor({
 					<Skeleton aria-hidden="true" className="h-96 w-full" />
 				</div>
 			)}
-			{data && isEditableReportStatus(data.status) && (
-				<ReportReviewFeedback reportId={data.id} submissionCount={data.submissionCount} />
-			)}
-			{data && isEditableReportStatus(data.status) && <AdjustmentNotice reportId={data.id} />}
-			{data && isEditableReportStatus(data.status) && <LegacyConversionNotice reportId={data.id} />}
 			{data && !isEditableReportStatus(data.status) ? (
 				// Submitted reports are frozen; only their submission is shown.
 				<SubmittedTravelExpenseReport reportId={reportId} />
 			) : data?.kind === "trip" && data.trip ? (
-				<TripReportBody report={data} trip={data.trip} maxReceiptBytes={maxReceiptBytes} />
+				<TripReportBody
+					report={data}
+					trip={data.trip}
+					maxReceiptBytes={maxReceiptBytes}
+					notices={<EditableReportNotices report={data} />}
+				/>
 			) : (
-				data && <StandaloneReportBody report={data} maxReceiptBytes={maxReceiptBytes} />
+				data && (
+					<StandaloneReportBody
+						report={data}
+						maxReceiptBytes={maxReceiptBytes}
+						notices={<EditableReportNotices report={data} />}
+					/>
+				)
 			)}
 		</div>
+	);
+}
+
+/** Review feedback, adjustment and conversion notices, shown under the report header. */
+function EditableReportNotices({ report }: { report: ReportView }) {
+	return (
+		<>
+			<ReportReviewFeedback
+				reportId={report.id}
+				submissionCount={report.submissionCount}
+				liveItems={report.items}
+			/>
+			<AdjustmentNotice reportId={report.id} />
+			<LegacyConversionNotice reportId={report.id} />
+		</>
 	);
 }
 
@@ -348,11 +370,12 @@ function useReportInvalidation(reportId: string) {
 function StandaloneReportBody({
 	report,
 	maxReceiptBytes,
+	notices,
 }: {
 	report: ReportView;
 	maxReceiptBytes: number;
+	notices: ReactNode;
 }) {
-	const { t } = useTranslate();
 	const { refreshReport, refreshDrafts } = useReportInvalidation(report.id);
 	const loadSavedReport = useSavedReportLoader(report.id);
 	const [drafts, setDrafts] = useState<LiveDrafts>({});
@@ -367,62 +390,66 @@ function StandaloneReportBody({
 		: itemIncomplete(item, drafts, mileageDrafts, report, now)
 			? "incomplete"
 			: null;
+	// The name follows what is typed; a malformed entry keeps the saved one.
+	const title = isMileage
+		? (liveMileage(item, mileageDrafts)?.route ?? item.mileage?.route ?? null)
+		: (liveDraft(item, drafts)?.description ?? item.description);
 
 	return (
-		<Card>
-			<CardContent className="space-y-6">
-				<div className="flex flex-wrap items-center gap-2">
-					<h2 className="text-lg font-semibold">
-						{isMileage
-							? t("travelExpenses.report.mileage.standaloneTitle", "Mileage")
-							: t("travelExpenses.report.standaloneTitle", "Standalone receipt")}
-					</h2>
-					<ReportStatusBadge status={report.status} />
-					<DeleteDraftAction report={report} />
-				</div>
-				{isMileage ? (
-					<MileageItemEditor
-						key={item.id}
-						reportId={report.id}
-						item={item}
-						reimbursementCurrency={report.reimbursementCurrency}
-						onSaved={() => void Promise.all([refreshReport(), refreshDrafts()])}
-						onDraftChange={(draft) => setMileageDrafts({ [item.id]: draft })}
-						now={now}
+		<div className="space-y-4">
+			<ReportHeader
+				source={{ kind: "standalone", itemType: item.type, title }}
+				status={report.status}
+				actions={<DeleteDraftAction report={report} />}
+			/>
+			{notices}
+			<Card>
+				<CardContent className="space-y-6">
+					{isMileage ? (
+						<MileageItemEditor
+							key={item.id}
+							reportId={report.id}
+							item={item}
+							reimbursementCurrency={report.reimbursementCurrency}
+							onSaved={() => void Promise.all([refreshReport(), refreshDrafts()])}
+							onDraftChange={(draft) => setMileageDrafts({ [item.id]: draft })}
+							project={{ isTrip: false, tripProjectId: null }}
+							now={now}
+						/>
+					) : (
+						<ReceiptItemEditor
+							key={item.id}
+							reportId={report.id}
+							item={item}
+							receipts={item.receipts}
+							reimbursementCurrency={report.reimbursementCurrency}
+							maxReceiptBytes={maxReceiptBytes}
+							receiptExceptionsAllowed={report.receiptExceptionsAllowed}
+							onReceiptsChanged={refreshReport}
+							onSaved={(saved) => {
+								void refreshDrafts();
+								if (referenceRateReloadNeeded(report.referenceRateProvider, item, saved)) {
+									void refreshReport();
+								}
+							}}
+							onDraftChange={(draft) => setDrafts({ [item.id]: draft })}
+							project={{ isTrip: false, tripProjectId: null }}
+							now={now}
+						/>
+					)}
+					<ReportTotals
+						id={report.id}
+						totals={liveTotals(report.items, drafts, report.reimbursementCurrency, mileageDrafts)}
 					/>
-				) : (
-					<ReceiptItemEditor
-						key={item.id}
+					<SubmitReportPanel
 						reportId={report.id}
-						item={item}
-						receipts={item.receipts}
-						reimbursementCurrency={report.reimbursementCurrency}
-						maxReceiptBytes={maxReceiptBytes}
-						receiptExceptionsAllowed={report.receiptExceptionsAllowed}
-						onReceiptsChanged={refreshReport}
-						onSaved={(saved) => {
-							void refreshDrafts();
-							if (referenceRateReloadNeeded(report.referenceRateProvider, item, saved)) {
-								void refreshReport();
-							}
-						}}
-						onDraftChange={(draft) => setDrafts({ [item.id]: draft })}
-						project={{ isTrip: false, tripProjectId: null }}
-						now={now}
+						blocker={blocker}
+						loadSavedReport={() => loadSavedReport(drafts, null, mileageDrafts)}
+						onSubmitted={() => Promise.all([refreshReport(), refreshDrafts()])}
 					/>
-				)}
-				<ReportTotals
-					id={report.id}
-					totals={liveTotals(report.items, drafts, report.reimbursementCurrency, mileageDrafts)}
-				/>
-				<SubmitReportPanel
-					reportId={report.id}
-					blocker={blocker}
-					loadSavedReport={() => loadSavedReport(drafts, null, mileageDrafts)}
-					onSubmitted={() => Promise.all([refreshReport(), refreshDrafts()])}
-				/>
-			</CardContent>
-		</Card>
+				</CardContent>
+			</Card>
+		</div>
 	);
 }
 
@@ -430,10 +457,12 @@ function TripReportBody({
 	report,
 	trip,
 	maxReceiptBytes,
+	notices,
 }: {
 	report: ReportView;
 	trip: TripDetailsView;
 	maxReceiptBytes: number;
+	notices: ReactNode;
 }) {
 	const { t } = useTranslate();
 	const { refreshReport, refreshDrafts } = useReportInvalidation(report.id);
@@ -455,7 +484,9 @@ function TripReportBody({
 			tripProjectId,
 			items.map((item) => [
 				item.id,
-				liveDraft(item, drafts)?.expenseDate ?? item.expenseDate,
+				(item.type === "mileage"
+					? liveMileage(item, mileageDrafts)?.expenseDate
+					: liveDraft(item, drafts)?.expenseDate) ?? item.expenseDate,
 				item.projectId ?? null,
 				item.projectInherits ?? true,
 			]),
@@ -522,21 +553,28 @@ function TripReportBody({
 		) {
 			return [];
 		}
+		// A per diem's title already says what it is.
 		const description =
 			item.type === "per_diem"
-				? t("travelExpenses.report.perDiem.title", "Per diem")
+				? null
 				: item.type === "mileage"
 					? (liveMileage(item, mileageDrafts)?.route ?? item.mileage?.route ?? null)
 					: (liveDraft(item, drafts)?.description ?? item.description);
-		return [{ id: item.id, number: index + 1, description }];
+		return [{ id: item.id, type: item.type, number: index + 1, description }];
 	});
 
 	return (
 		<div className="space-y-4">
-			<div className="flex flex-wrap items-center gap-2">
-				<ReportStatusBadge status={report.status} />
-				<DeleteDraftAction report={report} />
-			</div>
+			<ReportHeader
+				source={{
+					kind: "trip",
+					itemType: null,
+					title: details ? details.purpose : trip.purpose,
+				}}
+				status={report.status}
+				actions={<DeleteDraftAction report={report} />}
+			/>
+			{notices}
 
 			<Card>
 				<CardContent>
@@ -569,7 +607,10 @@ function TripReportBody({
 					</p>
 				)}
 				{items.map((item, index) => {
-					const number = index + 1;
+					const title = itemTitle(t, item.type, index + 1);
+					const removeLabel = t("travelExpenses.report.items.removeItem", "Remove {item}", {
+						item: title,
+					});
 					const headingId = `expense-${item.id}`;
 					return (
 						<section key={item.id} aria-labelledby={headingId}>
@@ -580,7 +621,7 @@ function TripReportBody({
 										tabIndex={-1}
 										className="scroll-mt-20 text-base font-semibold outline-none focus-visible:underline"
 									>
-										{t("travelExpenses.report.items.heading", "Expense {number}", { number })}
+										{title}
 									</h3>
 									{removeErrors[item.id] && (
 										<Alert variant="destructive">
@@ -605,13 +646,7 @@ function TripReportBody({
 											}
 											now={now}
 											removal={{
-												label: t(
-													"travelExpenses.report.items.removeLabel",
-													"Remove expense {number}",
-													{
-														number,
-													},
-												),
+												label: removeLabel,
 												remove: (expectedVersion) => removeItem(item.id, expectedVersion),
 											}}
 										/>
@@ -620,19 +655,18 @@ function TripReportBody({
 											reportId={report.id}
 											item={item}
 											reimbursementCurrency={report.reimbursementCurrency}
-											onSaved={() => void Promise.all([refreshReport(), refreshDrafts()])}
+											onSaved={() => {
+												void Promise.all([refreshReport(), refreshDrafts()]);
+												// A saved date may change which project the expense can use.
+												void projectIssues.recheck();
+											}}
 											onDraftChange={(draft) =>
 												setMileageDrafts((current) => ({ ...current, [item.id]: draft }))
 											}
+											project={{ isTrip: true, tripProjectId }}
 											now={now}
 											removal={{
-												label: t(
-													"travelExpenses.report.items.removeLabel",
-													"Remove expense {number}",
-													{
-														number,
-													},
-												),
+												label: removeLabel,
 												remove: (expectedVersion) => removeItem(item.id, expectedVersion),
 											}}
 										/>
@@ -657,13 +691,7 @@ function TripReportBody({
 												setDrafts((current) => ({ ...current, [item.id]: draft }))
 											}
 											removal={{
-												label: t(
-													"travelExpenses.report.items.removeLabel",
-													"Remove expense {number}",
-													{
-														number,
-													},
-												),
+												label: removeLabel,
 												remove: (expectedVersion) => removeItem(item.id, expectedVersion),
 											}}
 											project={{ isTrip: true, tripProjectId }}

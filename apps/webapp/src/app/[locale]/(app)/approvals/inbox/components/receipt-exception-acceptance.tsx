@@ -2,6 +2,7 @@
 
 import { IconFileOff } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useApprovalInboxText } from "@/components/approvals/use-approval-inbox-text";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import type { ReceiptExceptionAcceptanceSection } from "./receipt-exception-acceptance-section";
@@ -24,6 +25,7 @@ export function ReceiptExceptionAcceptance({
 	disabled: boolean;
 }) {
 	const { t } = useTranslate();
+	const text = useApprovalInboxText();
 	// A static key (i18n rule 1); the section's title only ever names this heading.
 	const title = t("approvals:approvals.evidence.receiptExceptionsTitle", "Missing receipts");
 	const acceptedIds = new Set(accepted);
@@ -62,7 +64,7 @@ export function ReceiptExceptionAcceptance({
 						<li key={item.itemId} className="flex items-start gap-2">
 							{disabled ? (
 								<div>
-									<span className="text-sm font-medium">{item.label}</span>
+									<span className="text-sm font-medium">{text(item.label)}</span>
 									{reason}
 								</div>
 							) : (
@@ -83,7 +85,7 @@ export function ReceiptExceptionAcceptance({
 											{t(
 												"approvals:approvals.receiptExceptions.accept",
 												"Accept missing receipt for {label}",
-												{ label: item.label },
+												{ label: text(item.label) },
 											)}
 										</span>
 										{reason}

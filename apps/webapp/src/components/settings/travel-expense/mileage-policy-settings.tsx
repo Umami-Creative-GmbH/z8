@@ -13,6 +13,7 @@ import {
 	type MileagePolicySettings,
 	withdrawMileagePolicyVersionAction,
 } from "@/app/[locale]/(app)/settings/travel-expenses/mileage-policy-actions";
+import { CurrencySelect } from "@/components/travel-expenses/currency-select";
 import { formatPlainDate } from "@/components/travel-expenses/report/format";
 import {
 	formatRatePerKm,
@@ -48,9 +49,15 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { queryKeys } from "@/lib/query/keys";
 import { MILEAGE_VEHICLES, type MileageVehicle } from "@/lib/travel-expenses/mileage";
-import type { MileagePolicyInputErrors } from "@/lib/travel-expenses/mileage-policy-input";
+import {
+	type MileagePolicyInputErrors,
+	type MileagePolicyVersionFormInput,
+	parseMileagePolicyVersionInput,
+} from "@/lib/travel-expenses/mileage-policy-input";
+import { isSupportedCurrency } from "@/lib/travel-expenses/receipt-report";
 import type { StatutoryMileageDefault } from "@/lib/travel-expenses/statutory-allowance-defaults";
 import { CatalogAdoptedNote, catalogAdoption } from "./statutory-adoption";
 import { WithdrawVersionButton } from "./withdraw-version-button";
@@ -395,6 +402,69 @@ function WithdrawMileageVersionButton({
 	);
 }
 
+interface MileageVersionValues {
+	effectiveFrom: string;
+	currency: string;
+	car: string;
+	other_motor_vehicle: string;
+	sourceReference: string;
+	note: string;
+}
+
+type MileageVersionField = keyof MileageVersionValues;
+
+type MileageValidatorProps = {
+	fieldApi: {
+		form: { state: { values: MileageVersionValues } };
+		state: { meta: { isTouched: boolean } };
+	};
+};
+
+/** What the dialog activates; the client checks it with the server's parser too. */
+function mileageActivationInput(
+	target: DialogTarget | null,
+	value: MileageVersionValues,
+	replaceVersionId: string | null,
+): MileagePolicyVersionFormInput {
+	return target?.source === "statutory_default"
+		? {
+				source: "statutory_default",
+				defaultKey: target.entry.key,
+				effectiveFrom: value.effectiveFrom,
+				note: value.note,
+				replacesVersionId: replaceVersionId,
+			}
+		: {
+				source: "organization",
+				effectiveFrom: value.effectiveFrom,
+				currency: value.currency,
+				ratesPerKm: { car: value.car, other_motor_vehicle: value.other_motor_vehicle },
+				sourceReference: value.sourceReference,
+				note: value.note,
+				replacesVersionId: replaceVersionId,
+			};
+}
+
+/**
+ * The field an input error belongs to. "At least one rate" is shown on the
+ * car rate, which re-checks when the other vehicle's rate changes.
+ */
+function mileageErrorField(key: keyof MileagePolicyInputErrors): MileageVersionField | null {
+	switch (key) {
+		case "rates":
+			return "car";
+		case "effectiveFrom":
+		case "currency":
+		case "car":
+		case "other_motor_vehicle":
+		case "sourceReference":
+		case "note":
+			return key;
+		default:
+			return null;
+	}
+}
+
 function MileagePolicyVersionDialog({
 	target,
 	onClose,
@@ -405,12 +475,35 @@ function MileagePolicyVersionDialog({
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const queryClient = useQueryClient();
-	const [errors, setErrors] = useState<MileagePolicyInputErrors>({});
 	// Set when another active version starts the same day; saving again replaces it.
 	const [replaceVersionId, setReplaceVersionId] = useState<string | null>(
 		target?.source === "organization" ? (target.replacesVersionId ?? null) : null,
 	);
 	const isDefault = target?.source === "statutory_default";
+	const mounted: readonly MileageVersionField[] = isDefault
+		? ["effectiveFrom", "note"]
+		: ["effectiveFrom", "currency", "car", "other_motor_vehicle", "sourceReference", "note"];
+
+	const check = (name: MileageVersionField, values: MileageVersionValues) => {
+		const parsed = parseMileagePolicyVersionInput(mileageActivationInput(target, values, null));
+		if (parsed.ok) return undefined;
+		const code = Object.entries(parsed.errors).find(
+			([key]) => mileageErrorField(key as keyof MileagePolicyInputErrors) === name,
+		)?.[1];
+		return errorText(t, code);
+	};
+	const validators = (name: MileageVersionField) =>
+		name === "car"
+			? {
+					// Shown once the car rate was entered or the form submitted.
+					onChangeListenTo: ["other_motor_vehicle" as const],
+					onChange: ({ fieldApi }: MileageValidatorProps) =>
+						fieldApi.state.meta.isTouched ? check(name, fieldApi.form.state.values) : undefined,
+				}
+			: {
+					onChange: ({ fieldApi }: MileageValidatorProps) =>
+						check(name, fieldApi.form.state.values),
+				};
 
 	const form = useForm({
 		defaultValues: {
@@ -423,27 +516,10 @@ function MileagePolicyVersionDialog({
 			other_motor_vehicle: "",
 			sourceReference: "",
 			note: "",
-		},
-		onSubmit: async ({ value }) => {
-			setErrors({});
+		} satisfies MileageVersionValues,
+		onSubmit: async ({ value, formApi }) => {
 			const result = await activateMileagePolicyVersionAction(
-				target?.source === "statutory_default"
-					? {
-							source: "statutory_default",
-							defaultKey: target.entry.key,
-							effectiveFrom: value.effectiveFrom,
-							note: value.note,
-							replacesVersionId: replaceVersionId,
-						}
-					: {
-							source: "organization",
-							effectiveFrom: value.effectiveFrom,
-							currency: value.currency,
-							ratesPerKm: { car: value.car, other_motor_vehicle: value.other_motor_vehicle },
-							sourceReference: value.sourceReference,
-							note: value.note,
-							replacesVersionId: replaceVersionId,
-						},
+				mileageActivationInput(target, value, replaceVersionId),
 			);
 			if (!result.success) {
 				toast.error(
@@ -452,9 +528,29 @@ function MileagePolicyVersionDialog({
 				return;
 			}
 			switch (result.data.status) {
-				case "invalid":
-					setErrors(result.data.errors);
+				case "invalid": {
+					// The server's refusal stays on its field until that field changes.
+					let shown = false;
+					for (const [key, code] of Object.entries(result.data.errors)) {
+						const name = mileageErrorField(key as keyof MileagePolicyInputErrors);
+						if (!name || !mounted.includes(name)) continue;
+						shown = true;
+						const message = errorText(t, code);
+						formApi.setFieldMeta(name, (meta) => ({
+							...meta,
+							errorMap: { ...meta.errorMap, onSubmit: message },
+						}));
+					}
+					if (!shown) {
+						toast.error(
+							t(
+								"settings.travelExpenses.mileage.saveFailed",
+								"The mileage rate could not be saved.",
+							),
+						);
+					}
 					return;
+				}
 				case "start_taken":
 					setReplaceVersionId(result.data.existingVersionId);
 					return;
@@ -502,13 +598,13 @@ function MileagePolicyVersionDialog({
 						void form.handleSubmit();
 					}}
 				>
-					<form.Field name="effectiveFrom">
+					<form.Field name="effectiveFrom" validators={validators("effectiveFrom")}>
 						{(field) => (
 							<TFormItem>
-								<TFormLabel hasError={!!errors.effectiveFrom}>
+								<TFormLabel hasError={fieldHasError(field)}>
 									{t("settings.travelExpenses.mileage.validFrom", "Valid from")}
 								</TFormLabel>
-								<TFormControl hasError={!!errors.effectiveFrom}>
+								<TFormControl hasError={fieldHasError(field)}>
 									<DatePicker
 										name="effectiveFrom"
 										value={field.state.value}
@@ -519,7 +615,7 @@ function MileagePolicyVersionDialog({
 										onBlur={field.handleBlur}
 									/>
 								</TFormControl>
-								<TFormMessage>{errorText(t, errors.effectiveFrom)}</TFormMessage>
+								<TFormMessage field={field} />
 							</TFormItem>
 						)}
 					</form.Field>
@@ -534,20 +630,19 @@ function MileagePolicyVersionDialog({
 						</p>
 					) : (
 						<>
-							<form.Field name="currency">
+							<form.Field name="currency" validators={validators("currency")}>
 								{(field) => (
 									<TFormItem>
-										<TFormLabel hasError={!!errors.currency}>
+										<TFormLabel hasError={fieldHasError(field)}>
 											{t("settings.travelExpenses.mileage.currency", "Currency")}
 										</TFormLabel>
-										<TFormControl hasError={!!errors.currency}>
-											<Input
-												name="currency"
-												maxLength={3}
-												autoComplete="off"
+										<TFormControl hasError={fieldHasError(field)}>
+											<CurrencySelect
 												value={field.state.value}
-												onChange={(event) => field.handleChange(event.target.value.toUpperCase())}
+												onValueChange={field.handleChange}
 												onBlur={field.handleBlur}
+												accepts={isSupportedCurrency}
+												aria-invalid={fieldHasError(field)}
 											/>
 										</TFormControl>
 										<TFormDescription>
@@ -556,20 +651,20 @@ function MileagePolicyVersionDialog({
 												"Must match the reimbursement currency of reports; mileage is never converted.",
 											)}
 										</TFormDescription>
-										<TFormMessage>{errorText(t, errors.currency)}</TFormMessage>
+										<TFormMessage field={field} />
 									</TFormItem>
 								)}
 							</form.Field>
 							{MILEAGE_VEHICLES.map((vehicle) => (
-								<form.Field key={vehicle} name={vehicle}>
+								<form.Field key={vehicle} name={vehicle} validators={validators(vehicle)}>
 									{(field) => (
 										<TFormItem>
-											<TFormLabel hasError={!!errors[vehicle]}>
+											<TFormLabel hasError={fieldHasError(field)}>
 												{t("settings.travelExpenses.mileage.rateFor", "Rate per km: {vehicle}", {
 													vehicle: vehicleLabel(t, vehicle) ?? vehicle,
 												})}
 											</TFormLabel>
-											<TFormControl hasError={!!errors[vehicle]}>
+											<TFormControl hasError={fieldHasError(field)}>
 												<Input
 													name={vehicle}
 													inputMode="decimal"
@@ -580,23 +675,18 @@ function MileagePolicyVersionDialog({
 													onBlur={field.handleBlur}
 												/>
 											</TFormControl>
-											<TFormMessage>{errorText(t, errors[vehicle])}</TFormMessage>
+											<TFormMessage field={field} />
 										</TFormItem>
 									)}
 								</form.Field>
 							))}
-							{errors.rates && (
-								<p className="text-sm text-destructive" role="alert">
-									{errorText(t, errors.rates)}
-								</p>
-							)}
-							<form.Field name="sourceReference">
+							<form.Field name="sourceReference" validators={validators("sourceReference")}>
 								{(field) => (
 									<TFormItem>
-										<TFormLabel hasError={!!errors.sourceReference}>
+										<TFormLabel hasError={fieldHasError(field)}>
 											{t("settings.travelExpenses.mileage.sourceReference", "Source")}
 										</TFormLabel>
-										<TFormControl hasError={!!errors.sourceReference}>
+										<TFormControl hasError={fieldHasError(field)}>
 											<Input
 												name="sourceReference"
 												autoComplete="off"
@@ -609,20 +699,20 @@ function MileagePolicyVersionDialog({
 												onBlur={field.handleBlur}
 											/>
 										</TFormControl>
-										<TFormMessage>{errorText(t, errors.sourceReference)}</TFormMessage>
+										<TFormMessage field={field} />
 									</TFormItem>
 								)}
 							</form.Field>
 						</>
 					)}
 
-					<form.Field name="note">
+					<form.Field name="note" validators={validators("note")}>
 						{(field) => (
 							<TFormItem>
-								<TFormLabel hasError={!!errors.note}>
+								<TFormLabel hasError={fieldHasError(field)}>
 									{t("settings.travelExpenses.mileage.note", "Note (optional)")}
 								</TFormLabel>
-								<TFormControl hasError={!!errors.note}>
+								<TFormControl hasError={fieldHasError(field)}>
 									<Input
 										name="note"
 										autoComplete="off"
@@ -631,7 +721,7 @@ function MileagePolicyVersionDialog({
 										onBlur={field.handleBlur}
 									/>
 								</TFormControl>
-								<TFormMessage>{errorText(t, errors.note)}</TFormMessage>
+								<TFormMessage field={field} />
 							</TFormItem>
 						)}
 					</form.Field>

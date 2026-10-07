@@ -1107,7 +1107,17 @@ describe("return, withdraw and resubmit reports (#603)", () => {
 					kind: "returned",
 					note: "Hotel needs an itemized invoice",
 					actorName: "manager",
-					itemComments: [{ itemId: hotel.id, itemLabel: "Hotel, two nights", body: "Itemize it" }],
+					itemComments: [
+						{
+							itemId: hotel.id,
+							// Numbered as the returned cycle froze it (#688).
+							itemLabel: {
+								key: "approvals:approvals.evidence.reportItemTitle",
+								params: expect.objectContaining({ description: "Hotel, two nights" }),
+							},
+							body: "Itemize it",
+						},
+					],
 				},
 			],
 		});

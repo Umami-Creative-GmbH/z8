@@ -6,13 +6,7 @@ import { useLocale } from "next-intl";
 import { useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { TFormMessage } from "@/components/ui/tanstack-form";
 import {
 	MAX_DESTINATION_PLACE_LENGTH,
@@ -96,33 +90,28 @@ export function TripDestinationsField({
 									</form.Field>
 									<form.Field name={`destinations[${index}].countryCode`}>
 										{(field) => (
-											<Select
-												value={field.state.value || null}
-												onValueChange={(value) => field.handleChange(value ?? "")}
-											>
-												<SelectTrigger
-													className="w-full"
-													aria-label={t(
-														"travelExpenses.report.trip.fields.country",
-														"Country {number}",
-														{ number },
-													)}
-												>
-													<SelectValue
-														placeholder={t(
-															"travelExpenses.report.trip.fields.countryPlaceholder",
-															"Country",
-														)}
-													/>
-												</SelectTrigger>
-												<SelectContent>
-													{countries.map((country) => (
-														<SelectItem key={country.code} value={country.code}>
-															{country.name}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
+											<SearchableSelect
+												aria-label={t(
+													"travelExpenses.report.trip.fields.country",
+													"Country {number}",
+													{ number },
+												)}
+												options={countries}
+												value={field.state.value}
+												onValueChange={field.handleChange}
+												onOpenChange={(open) => {
+													if (!open) field.handleBlur();
+												}}
+												placeholder={t(
+													"travelExpenses.report.trip.fields.countryPlaceholder",
+													"Country",
+												)}
+												searchPlaceholder={t(
+													"travelExpenses.report.countrySearch",
+													"Search countries",
+												)}
+												emptyText={t("travelExpenses.report.countryEmpty", "No country found")}
+											/>
 										)}
 									</form.Field>
 									<Button

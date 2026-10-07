@@ -301,6 +301,51 @@ describe("settlement panel (#612)", () => {
 		).toBeTruthy();
 	});
 
+	it("clears a field error as soon as its value is valid, without submitting again (#688)", async () => {
+		mocks.getSettlement.mockResolvedValue({
+			success: true,
+			data: { viewer: "finance", canSettle: true, account: account() },
+		});
+		mount();
+		const amount = await screen.findByLabelText("Amount paid (EUR)");
+		fireEvent.change(amount, { target: { value: "0" } });
+		expect(screen.getAllByText("Enter a positive amount.")).toHaveLength(1);
+		fireEvent.change(amount, { target: { value: "12.50" } });
+		expect(screen.queryByText("Enter a positive amount.")).toBeNull();
+
+		// Untouched required fields show their error once the form is submitted.
+		fireEvent.click(screen.getByRole("button", { name: "Record reimbursement" }));
+		const missing = "Enter the payment reference, e.g. the bank transfer reference.";
+		expect(await screen.findAllByText(missing)).toHaveLength(1);
+		expect(screen.getAllByText("Enter the payment date.")).toHaveLength(1);
+		expect(mocks.record).not.toHaveBeenCalled();
+		fireEvent.change(screen.getByLabelText("Payment reference"), {
+			target: { value: "SEPA-4711" },
+		});
+		expect(screen.queryByText(missing)).toBeNull();
+		expect(screen.getByText("Enter the payment date.")).toBeTruthy();
+	});
+
+	it("keeps a field error the server returned until that field changes (#688)", async () => {
+		mocks.getSettlement.mockResolvedValue({
+			success: true,
+			data: { viewer: "finance", canSettle: true, account: account() },
+		});
+		mocks.record.mockResolvedValue({
+			success: true,
+			data: { status: "invalid", errors: [{ field: "reference", code: "too_long" }] },
+		});
+		mount();
+		await fillAndSubmit({});
+		expect(await screen.findAllByText("This text is too long.")).toHaveLength(1);
+		fireEvent.change(screen.getByLabelText("Payment date"), { target: { value: "2026-10-02" } });
+		expect(screen.getByText("This text is too long.")).toBeTruthy();
+		fireEvent.change(screen.getByLabelText("Payment reference"), {
+			target: { value: "SEPA-4712" },
+		});
+		expect(screen.queryByText("This text is too long.")).toBeNull();
+	});
+
 	it("shows an approved adjustment and lets finance record the recovery of the overpayment (#615)", async () => {
 		const overpaid = account({
 			entitlement: [

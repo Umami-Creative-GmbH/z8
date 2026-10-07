@@ -2,7 +2,8 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const reportActions = vi.hoisted(() => ({
 	getMyTravelExpenseReport: vi.fn(),
@@ -152,6 +153,19 @@ function tripSection() {
 
 const originalTimeZone = process.env.TZ;
 
+beforeAll(() => {
+	// The searchable country select measures and scrolls its list.
+	vi.stubGlobal(
+		"ResizeObserver",
+		class {
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		},
+	);
+	HTMLElement.prototype.scrollIntoView = vi.fn();
+});
+
 beforeEach(() => {
 	reportActions.getMyTravelExpenseReport.mockResolvedValue(trip());
 });
@@ -169,7 +183,7 @@ describe("trip report editor", () => {
 			"value",
 			"Hamburg",
 		);
-		const expenses = screen.getAllByRole("region", { name: /^Expense \d/ });
+		const expenses = screen.getAllByRole("region", { name: /^Receipt \d/ });
 		expect(expenses).toHaveLength(2);
 		expect(within(expenses[0]!).getByRole("textbox", { name: "Description" })).toHaveProperty(
 			"value",
@@ -204,9 +218,37 @@ describe("trip report editor", () => {
 		const needed = screen.getByRole("region", { name: "Still needed for this trip" });
 		expect(within(needed).getByText("Describe the purpose of the trip.")).toBeTruthy();
 		expect(within(needed).getByText("Add at least one destination.")).toBeTruthy();
-		const link = within(needed).getByRole("link", { name: /Expense 2: Hotel Hamburg/ });
+		const link = within(needed).getByRole("link", { name: /Receipt 2: Hotel Hamburg/ });
 		expect(link.getAttribute("href")).toBe(`#expense-${hotelId}`);
-		expect(within(needed).queryByRole("link", { name: /Expense 1/ })).toBeNull();
+		expect(within(needed).queryByRole("link", { name: /Receipt 1/ })).toBeNull();
+	});
+
+	it("heads the report with its kind, purpose and one status badge (#688)", async () => {
+		mount();
+		await purpose();
+		const header = screen.getByRole("banner");
+		expect(within(header).getByText("Trip report")).toBeTruthy();
+		expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Customer workshop");
+		expect(screen.getAllByText("Draft")).toHaveLength(1);
+		// The name follows the purpose as it is typed.
+		fireEvent.change(await purpose(), { target: { value: "Trade fair" } });
+		expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Trade fair");
+	});
+
+	it("names an untitled trip and numbers items by their type (#688)", async () => {
+		const drive = item(newId, {
+			type: "mileage",
+			mileage: { route: "Office – Airport", distanceKm: null, vehicle: null, calculation: null },
+		});
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(
+			trip({ trip: { purpose: null }, items: [train, drive] }),
+		);
+		mount();
+		await purpose();
+		expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Untitled trip");
+		expect(screen.getByRole("heading", { name: "Receipt 1" })).toBeTruthy();
+		expect(screen.getByRole("heading", { name: "Mileage 2" })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Remove Mileage 2" })).toBeTruthy();
 	});
 
 	it.each([
@@ -217,7 +259,10 @@ describe("trip report editor", () => {
 		mount();
 		await purpose();
 		const section = tripSection();
-		expect(within(section).getByText("Sep 14, 2026 – Sep 16, 2026")).toBeTruthy();
+		// The date fields show the calendar days; no summary line repeats them (#688).
+		expect(within(section).getByText("Sep 14, 2026")).toBeTruthy();
+		expect(within(section).getByText("Sep 16, 2026")).toBeTruthy();
+		expect(within(section).queryByText("Sep 14, 2026 – Sep 16, 2026")).toBeNull();
 		expect(
 			within(section).getByText("Travel dates are calendar days in Europe/Berlin.", {
 				exact: false,
@@ -280,6 +325,34 @@ describe("trip report editor", () => {
 		);
 		expect((await purpose()).value).toBe("Edited on phone");
 		expect(reportActions.saveTripDetailsDraftAction).toHaveBeenCalledTimes(1);
+	});
+
+	it("finds a destination country by typed text and saves its code (#688)", async () => {
+		reportActions.saveTripDetailsDraftAction.mockResolvedValue({
+			success: true,
+			data: { status: "saved", details: { ...tripDetails, version: 6 } },
+		});
+		const user = userEvent.setup();
+		mount();
+		await purpose();
+		await user.click(within(tripSection()).getByRole("combobox", { name: "Country 1" }));
+		await user.keyboard("fra");
+		expect(screen.queryByRole("option", { name: "Germany" })).toBeNull();
+		await user.click(screen.getByRole("option", { name: "France" }));
+		expect(
+			within(tripSection()).getByRole("combobox", { name: "Country 1" }).textContent,
+		).toContain("France");
+		await waitFor(
+			() =>
+				expect(reportActions.saveTripDetailsDraftAction).toHaveBeenCalledWith(
+					expect.objectContaining({
+						values: expect.objectContaining({
+							destinations: [{ place: "Hamburg", countryCode: "FR" }],
+						}),
+					}),
+				),
+			{ timeout: 2000 },
+		);
 	});
 
 	it("adds destinations and saves them with the trip", async () => {
@@ -348,11 +421,11 @@ describe("trip report editor", () => {
 			trip({ items: [train, hotel, item(newId)] }),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Add receipt expense" }));
-		const added = await screen.findByRole("heading", { name: "Expense 3" });
+		const added = await screen.findByRole("heading", { name: "Receipt 3" });
 		await waitFor(() => expect(document.activeElement).toBe(added));
 		expect(reportActions.addTripReportItemAction).toHaveBeenCalledWith({ reportId });
 		// Earlier expenses keep what was entered.
-		expect(screen.getAllByRole("region", { name: /^Expense \d/ })).toHaveLength(3);
+		expect(screen.getAllByRole("region", { name: /^Receipt \d/ })).toHaveLength(3);
 	});
 
 	it("removes an expense after confirmation and returns focus to the add action", async () => {
@@ -363,12 +436,12 @@ describe("trip report editor", () => {
 		mount();
 		await purpose();
 		reportActions.getMyTravelExpenseReport.mockResolvedValue(trip({ items: [hotel] }));
-		fireEvent.click(screen.getByRole("button", { name: "Remove expense 1" }));
+		fireEvent.click(screen.getByRole("button", { name: "Remove Receipt 1" }));
 		const dialog = await screen.findByRole("alertdialog");
 		fireEvent.click(within(dialog).getByRole("button", { name: "Remove expense" }));
 
 		await waitFor(() =>
-			expect(screen.getAllByRole("region", { name: /^Expense \d/ })).toHaveLength(1),
+			expect(screen.getAllByRole("region", { name: /^Receipt \d/ })).toHaveLength(1),
 		);
 		expect(reportActions.removeTripReportItemAction).toHaveBeenCalledWith({
 			reportId,
@@ -390,7 +463,7 @@ describe("trip report editor", () => {
 		});
 		mount();
 		await purpose();
-		fireEvent.click(screen.getByRole("button", { name: "Remove expense 1" }));
+		fireEvent.click(screen.getByRole("button", { name: "Remove Receipt 1" }));
 		const dialog = await screen.findByRole("alertdialog");
 		await act(async () => {
 			fireEvent.click(within(dialog).getByRole("button", { name: "Remove expense" }));
@@ -400,6 +473,6 @@ describe("trip report editor", () => {
 				"This expense changed elsewhere and was not removed. Check it and try again.",
 			),
 		).toBeTruthy();
-		expect(screen.getAllByRole("region", { name: /^Expense \d/ })).toHaveLength(2);
+		expect(screen.getAllByRole("region", { name: /^Receipt \d/ })).toHaveLength(2);
 	});
 });

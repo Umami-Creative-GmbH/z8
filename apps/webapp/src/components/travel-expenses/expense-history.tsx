@@ -35,6 +35,7 @@ import { ContinueLegacyDraftButton } from "./legacy-draft-conversion";
 import { DeleteDraftReportButton } from "./report/delete-draft-report";
 import { formatMoney, formatPlainDate, formatPlainDateRange } from "./report/format";
 import { ReportStatusBadge } from "./report/report-status";
+import { reportName } from "./report-name";
 import { TravelExpenseLoadError } from "./travel-expense-load-error";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -60,14 +61,6 @@ function filterLabel(t: Translate, filter: ExpenseHistoryFilter): string {
 		case "rejected":
 			return t("travelExpenses.history.filter.rejected", "Rejected");
 	}
-}
-
-function reportTitle(t: Translate, row: ReportHistoryRow): string {
-	if (row.title) return row.title;
-	if (row.kind === "trip") return t("travelExpenses.report.drafts.untitledTrip", "Untitled trip");
-	if (row.itemType === "mileage")
-		return t("travelExpenses.history.untitledMileage", "Untitled mileage");
-	return t("travelExpenses.report.drafts.untitled", "Untitled receipt");
 }
 
 function claimTitle(t: Translate, row: LegacyClaimHistoryRow): string {
@@ -121,7 +114,7 @@ function ReportRowContent({ row }: { row: ReportHistoryRow }) {
 						href={row.href}
 						className="truncate font-medium after:absolute after:inset-0 hover:underline focus-visible:outline-2"
 					>
-						{reportTitle(t, row)}
+						{reportName(t, row)}
 					</Link>
 					{row.adjustmentOf && (
 						<Badge variant="outline">{t("travelExpenses.history.adjustment", "Adjustment")}</Badge>
@@ -268,7 +261,7 @@ function DeleteRowDraft({ row }: { row: ReportHistoryRow }) {
 				reportId={row.id}
 				continuesLegacyClaim={row.continuedFromClaimId !== null}
 				label={t("travelExpenses.history.deleteDraft", "Delete draft “{title}”", {
-					title: reportTitle(t, row),
+					title: reportName(t, row),
 				})}
 			/>
 		</div>
