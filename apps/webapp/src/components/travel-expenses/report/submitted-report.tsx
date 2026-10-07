@@ -32,6 +32,10 @@ function historyText(
 	const texts: Record<HistoryLabel, string> = {
 		submitted: t("travelExpenses.report.history.submitted", "Submitted by {name}", { name }),
 		approved: t("travelExpenses.report.history.approved", "Approved by {name}", { name }),
+		self_approved: t(
+			"travelExpenses.report.history.selfApproved",
+			"Approved automatically: no other reviewer",
+		),
 		rejected: t("travelExpenses.report.history.rejected", "Rejected by {name}", { name }),
 		returned: t("travelExpenses.report.history.returned", "Returned for changes by {name}", {
 			name,
@@ -229,6 +233,17 @@ function DecisionNotice({ decision }: { decision: SubmittedReportView["decision"
 				</AlertTitle>
 				{decision.reason && <AlertDescription>{decision.reason}</AlertDescription>}
 			</Alert>
+		);
+	}
+	if (decision?.outcome === "approved" && decision.basis === "owner_no_other_reviewer") {
+		return (
+			<p className="text-sm">
+				{t(
+					"travelExpenses.report.selfApprovedOn",
+					"Approved automatically on {date}: this is the organization owner's report, and nobody else could review it.",
+					{ date: formatInstant(locale, decision.decidedAt) },
+				)}
+			</p>
 		);
 	}
 	if (decision?.outcome === "approved") {

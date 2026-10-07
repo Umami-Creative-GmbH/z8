@@ -718,6 +718,7 @@ describe("travel expense export files", () => {
 			adjusts_report_id: "",
 			corrected_reimbursement_amount: "",
 			corrected_company_paid_amount: "",
+			approval_basis: "",
 		});
 		// Company-paid costs stay visible but never count toward reimbursement.
 		expect(rows[1]).toMatchObject({
@@ -806,6 +807,25 @@ describe("travel expense export files", () => {
 		});
 	});
 
+	it("names an owner's self-approval as the approval basis of every row (#679)", () => {
+		const selfApproved = {
+			...standaloneRevision(),
+			approvalBasis: "owner_no_other_reviewer" as const,
+		};
+		const input = manifest([tripRevision(), selfApproved]);
+		const basisByReport = (path: string) =>
+			records(file(path, input)).map((row) => [row.report_id, row.approval_basis]);
+		expect(basisByReport("expenses.csv")).toEqual([
+			["report-trip", ""],
+			["report-trip", ""],
+			["report-solo", "owner_no_other_reviewer"],
+		]);
+		expect(basisByReport("reports.csv")).toEqual([
+			["report-trip", ""],
+			["report-solo", "owner_no_other_reviewer"],
+		]);
+	});
+
 	it("exports a v3 conversion's basis, inputs and result and reconciles converted totals", () => {
 		const revision = foreignRevision();
 		const rows = records(file("expenses.csv", manifest([revision])));
@@ -873,8 +893,11 @@ describe("travel expense export files", () => {
 			conversion_basis: "manual_rate",
 			conversion_rate_evidence: "'=Card statement 2026-09, line 14",
 		});
-		// Appended, so every earlier column keeps its position.
-		expect(TRAVEL_EXPENSE_EXPORT_EXPENSE_COLUMNS.at(-1)).toBe("conversion_rate_evidence");
+		// Appended, so every earlier column keeps its position; #679 appended one more.
+		expect(TRAVEL_EXPENSE_EXPORT_EXPENSE_COLUMNS.slice(-2)).toEqual([
+			"conversion_rate_evidence",
+			"approval_basis",
+		]);
 	});
 
 	it("refuses manual rate evidence that does not match the facts version", () => {

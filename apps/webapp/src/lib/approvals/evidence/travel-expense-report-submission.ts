@@ -7,13 +7,17 @@ import {
 	travelExpenseReportItem,
 	travelExpenseReportReceipt,
 } from "@/db/schema";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { loadAdjustmentLink } from "@/lib/travel-expenses/adjustment-link";
 import { loadReportAllowanceOverrideRows } from "@/lib/travel-expenses/allowance-override-read";
 import { loadReportConversionRows } from "@/lib/travel-expenses/conversion-read";
+import { OWNER_SELF_APPROVAL_REASON } from "@/lib/travel-expenses/owner-self-approval";
 import { loadReportPerDiemRows } from "@/lib/travel-expenses/per-diem-pricing";
 import type { ResolvePolicyAndCreateApprovalResult } from "../policies/chain-service";
 import type { ApprovalDatabase } from "../server/types";
+import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
 import { ApprovalEvidenceError } from "./errors";
+import { type LegacyDecisionEvidenceRecord, recordLegacyDecisionEvidence } from "./store";
 import {
 	compareLiveTravelExpenseReportWithRevision,
 	type TravelExpenseReportFactsInput,
@@ -95,7 +99,8 @@ export async function loadTravelExpenseReportFactsInput(
 
 /**
  * The legacy rows routing created for this submission: exactly one request of
- * the report in the expected state, and its chain when a policy matched.
+ * the report in the expected state (approved only when routing completed it,
+ * an owner's self-approval, #679), and its chain when a policy matched.
  */
 export async function verifyTravelExpenseReportLifecycle(
 	database: ApprovalDatabase,
@@ -104,7 +109,12 @@ export async function verifyTravelExpenseReportLifecycle(
 		reportId: string;
 		routing: ResolvePolicyAndCreateApprovalResult;
 	},
-): Promise<{ chainInstanceId: string | null; approverEmployeeId: string }> {
+): Promise<{
+	chainInstanceId: string | null;
+	/** The chain stage the request belongs to; null without a chain. */
+	chainStageId: string | null;
+	approverEmployeeId: string;
+}> {
 	const requests = await database
 		.select({
 			id: approvalRequest.id,
@@ -122,13 +132,15 @@ export async function verifyTravelExpenseReportLifecycle(
 		)
 		.limit(2);
 	const request = requests[0];
-	if (requests.length !== 1 || request?.status !== "pending") {
+	const expectedStatus = input.routing.kind === "auto_completed" ? "approved" : "pending";
+	if (requests.length !== 1 || request?.status !== expectedStatus) {
 		throw new ApprovalEvidenceError("evidence_incomplete", { field: "legacy_lifecycle" });
 	}
 	const approverEmployeeId = request.approverId;
+	// A completed route has its chain too when a policy of self stages matched.
 	const chainInstanceId =
-		input.routing.kind === "chain_created" ? input.routing.chainInstanceId : null;
-	if (!chainInstanceId) return { chainInstanceId: null, approverEmployeeId };
+		input.routing.kind === "default_created" ? null : input.routing.chainInstanceId;
+	if (!chainInstanceId) return { chainInstanceId: null, chainStageId: null, approverEmployeeId };
 	const [chains, stages] = await Promise.all([
 		database
 			.select({ id: approvalChainInstance.id })
@@ -154,10 +166,74 @@ export async function verifyTravelExpenseReportLifecycle(
 			)
 			.limit(2),
 	]);
-	if (chains.length !== 1 || stages.length !== 1) {
+	const stage = stages[0];
+	if (chains.length !== 1 || stages.length !== 1 || !stage) {
 		throw new ApprovalEvidenceError("evidence_incomplete", { field: "legacy_lifecycle" });
 	}
-	return { chainInstanceId, approverEmployeeId };
+	return { chainInstanceId, chainStageId: stage.id, approverEmployeeId };
+}
+
+const OWNER_SELF_APPROVAL_COMMAND = "travel-expense-report-owner-self-approval:v1";
+
+/**
+ * Records an owner's self-approval during submission (#679) as the decision
+ * of the cycle's frozen revision, in the submission transaction: a system
+ * activation, like an expense claim whose requester is its approver. The time
+ * is the report's persisted decision time; the reason names the basis that
+ * history, review evidence and exports show.
+ */
+export async function recordTravelExpenseReportOwnerSelfApproval(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		revision: TravelExpenseReportSubmittedRevisionRecord;
+		approvalRequestId: string;
+		/** The completed stage of a policy chain that named only the owner. */
+		chainStageId: string | null;
+	},
+): Promise<LegacyDecisionEvidenceRecord> {
+	const [report] = await database
+		.select({ status: travelExpenseReport.status, decidedAt: travelExpenseReport.decidedAt })
+		.from(travelExpenseReport)
+		.where(
+			and(
+				eq(travelExpenseReport.id, input.revision.reportId),
+				eq(travelExpenseReport.organizationId, input.organizationId),
+			),
+		)
+		.limit(1);
+	if (report?.status !== "approved" || !report.decidedAt) {
+		throw new ApprovalEvidenceError("evidence_incomplete", { field: "activation_outcome" });
+	}
+	const systemActor = { kind: "system", employeeId: null, userId: null } as const;
+	return recordLegacyDecisionEvidence(database, {
+		organizationId: input.organizationId,
+		submittedRevisionId: input.revision.id,
+		operationKind: "submission_activation",
+		receipt: {
+			idempotencyKey: input.revision.requestCycleKey,
+			actorFingerprint: fingerprintApprovalCommandActor(systemActor),
+			commandFingerprint: OWNER_SELF_APPROVAL_COMMAND,
+		},
+		action: "approve",
+		legacy: {
+			approvalRequestId: input.approvalRequestId,
+			chainStageId: input.chainStageId,
+			observedWorkflowId: null,
+		},
+		assignmentOutcome: null,
+		requestOutcome: "approved",
+		actor: systemActor,
+		decidedAt: instantFromDate(report.decidedAt),
+		// Resulting statuses only; no payable amount is inferred here.
+		result: {
+			reportStatus: "approved",
+			legacyRequestStatus: "approved",
+			decidedAtSource: "travel_expense_report.decided_at",
+			reason: OWNER_SELF_APPROVAL_REASON,
+		},
+		labels: { actorName: null },
+	});
 }
 
 /**

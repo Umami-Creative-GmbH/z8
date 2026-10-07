@@ -92,6 +92,10 @@ function ApproverForm({ settings }: { settings: TravelExpenseApproverSettings })
 							{t(
 								"settings.travelExpenses.approver.description",
 								"Reviews expense reports of employees who have no manager or team manager other than themselves. Only active managers and administrators can review in the Approvals inbox. Nobody ever reviews their own report.",
+							)}{" "}
+							{t(
+								"settings.travelExpenses.approver.ownerSelfApproval",
+								"While nobody else can review the organization owner's reports, they are approved automatically on submit and marked as such; reports with a missing-receipt explanation or a manually set allowance still need a reviewer.",
 							)}
 						</TFormDescription>
 					</TFormItem>

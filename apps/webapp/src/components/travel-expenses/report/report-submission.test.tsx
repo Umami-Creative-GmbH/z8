@@ -243,7 +243,7 @@ describe("report submission", () => {
 	it("explains missing reviewer setup without leaving the draft", async () => {
 		reportActions.submitTravelExpenseReportAction.mockResolvedValue({
 			success: true,
-			data: { status: "no_reviewer", reason: "no_eligible_reviewer" },
+			data: { status: "no_reviewer", reason: "no_eligible_reviewer", canAssignApprover: true },
 		});
 		mount();
 		fireEvent.click(await reviewButton());
@@ -252,6 +252,10 @@ describe("report submission", () => {
 
 		const alert = await within(dialog).findByRole("alert");
 		expect(alert.textContent).toContain("No one can review this report yet");
+		// An administrator gets the setting they can act on (#679).
+		expect(
+			within(alert).getByRole("link", { name: "Open expense approver setting" }).getAttribute("href"),
+		).toContain("/settings/travel-expenses");
 		expect(toast.success).not.toHaveBeenCalled();
 	});
 
