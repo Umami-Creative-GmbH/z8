@@ -96,6 +96,9 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 	async deletePrivateObject(input: { key: string }) {
 		harness.objects.delete(input.key);
 	},
+	async deletePrivateObjectVersions(input: { key: string }) {
+		harness.objects.delete(input.key);
+	},
 }));
 
 const { db } = await import("@/db");

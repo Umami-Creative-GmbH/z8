@@ -3,6 +3,7 @@ import {
 	GetObjectCommand,
 	HeadObjectCommand,
 	ListBucketsCommand,
+	ListObjectVersionsCommand,
 	PutObjectCommand,
 	S3Client,
 } from "@aws-sdk/client-s3";
@@ -262,6 +263,58 @@ export async function deletePrivateObject(input: {
 			...(input.versionId ? { VersionId: input.versionId } : {}),
 		}),
 	);
+}
+
+/**
+ * Delete every stored version (and delete marker) of one private object, for
+ * objects written without a recorded version. A recorded bucket that no
+ * longer matches the organization's storage configuration is refused.
+ */
+export async function deletePrivateObjectVersions(input: {
+	organizationId: string;
+	key: string;
+	bucket: string | null;
+}): Promise<void> {
+	const config = await getStorageConfig(input.organizationId);
+	if (!config) {
+		throw new Error("S3 storage is not configured for this organization");
+	}
+	if (input.bucket && input.bucket !== config.bucket) {
+		throw new Error(
+			"Private storage bucket changed; object cleanup needs review",
+		);
+	}
+
+	const client = createS3Client(config);
+	let marker: { KeyMarker: string; VersionIdMarker?: string } | undefined;
+	do {
+		const page = await client.send(
+			new ListObjectVersionsCommand({
+				Bucket: config.bucket,
+				Prefix: input.key,
+				...marker,
+			}),
+		);
+		const versions = [...(page.Versions ?? []), ...(page.DeleteMarkers ?? [])];
+		for (const version of versions) {
+			// The prefix also matches longer keys; only this exact object goes.
+			if (version.Key !== input.key || !version.VersionId) continue;
+			await client.send(
+				new DeleteObjectCommand({
+					Bucket: config.bucket,
+					Key: input.key,
+					VersionId: version.VersionId,
+				}),
+			);
+		}
+		marker =
+			page.IsTruncated && page.NextKeyMarker
+				? {
+						KeyMarker: page.NextKeyMarker,
+						VersionIdMarker: page.NextVersionIdMarker,
+					}
+				: undefined;
+	} while (marker);
 }
 
 /**

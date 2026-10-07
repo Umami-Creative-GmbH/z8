@@ -76,6 +76,10 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 		harness.deleted.push(input.key);
 		harness.objects.delete(input.key);
 	},
+	async deletePrivateObjectVersions(input: { key: string }) {
+		harness.deleted.push(input.key);
+		harness.objects.delete(input.key);
+	},
 }));
 
 const actions = await import("@/app/[locale]/(app)/travel-expenses/report-actions");

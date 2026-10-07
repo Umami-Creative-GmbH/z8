@@ -61,7 +61,12 @@ vi.mock("@aws-sdk/client-s3", () => ({
 		mockState.lastPutObjectCommand = input;
 		return { input };
 	}),
-	DeleteObjectCommand: vi.fn(),
+	DeleteObjectCommand: vi.fn().mockImplementation(function DeleteObjectCommand(input) {
+		return { kind: "delete", input };
+	}),
+	ListObjectVersionsCommand: vi.fn().mockImplementation(function ListObjectVersionsCommand(input) {
+		return { kind: "list", input };
+	}),
 	HeadObjectCommand: vi.fn(),
 	ListBucketsCommand: vi.fn(),
 }));
@@ -71,6 +76,7 @@ vi.mock("@aws-sdk/s3-request-presigner", () => ({
 }));
 
 const {
+	deletePrivateObjectVersions,
 	getPresignedUrl,
 	getStorageConfig,
 	isExportS3Configured,
@@ -168,5 +174,47 @@ describe("export S3 client", () => {
 			ContentType: "application/zip",
 		});
 		expect(mockState.send).toHaveBeenCalledTimes(1);
+	});
+
+	it("deletes every stored version of exactly one private object", async () => {
+		const key = "travel-expenses/org_1/receipt.jpg.preview-192.webp";
+		mockState.send.mockImplementation(async (command: { kind: string; input: object }) => {
+			if (command.kind !== "list") return {};
+			if (!("KeyMarker" in command.input)) {
+				return {
+					IsTruncated: true,
+					NextKeyMarker: key,
+					NextVersionIdMarker: "v2",
+					Versions: [
+						{ Key: key, VersionId: "v1" },
+						{ Key: key, VersionId: "v2" },
+					],
+				};
+			}
+			return {
+				IsTruncated: false,
+				Versions: [{ Key: `${key}.other`, VersionId: "o1" }],
+				DeleteMarkers: [{ Key: key, VersionId: "m1" }],
+			};
+		});
+
+		await deletePrivateObjectVersions({ organizationId: "org_1", key, bucket: null });
+
+		const deleted = mockState.send.mock.calls
+			.map(([command]) => command)
+			.filter((command) => command.kind === "delete")
+			.map((command) => command.input);
+		expect(deleted).toEqual([
+			{ Bucket: "private-export-bucket", Key: key, VersionId: "v1" },
+			{ Bucket: "private-export-bucket", Key: key, VersionId: "v2" },
+			{ Bucket: "private-export-bucket", Key: key, VersionId: "m1" },
+		]);
+	});
+
+	it("refuses to delete versions from a bucket other than the configured one", async () => {
+		await expect(
+			deletePrivateObjectVersions({ organizationId: "org_1", key: "k", bucket: "moved-bucket" }),
+		).rejects.toThrow("Private storage bucket changed");
+		expect(mockState.send).not.toHaveBeenCalled();
 	});
 });

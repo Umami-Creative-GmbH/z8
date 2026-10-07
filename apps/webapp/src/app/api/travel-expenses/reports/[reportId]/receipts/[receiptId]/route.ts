@@ -44,6 +44,23 @@ interface StoredReceipt {
 	checksumSha256: string;
 }
 
+/** The recorded object, refused when its content no longer matches the recorded identity. */
+async function readVerifiedReceipt(organizationId: string, stored: StoredReceipt) {
+	const bytes = await readPrivateObject({
+		organizationId,
+		key: stored.key,
+		bucket: stored.bucket,
+		versionId: stored.versionId,
+	});
+	if (
+		bytes.byteLength !== stored.sizeBytes ||
+		createHash("sha256").update(bytes).digest("hex") !== stored.checksumSha256
+	) {
+		throw new Error("Stored receipt content does not match its recorded identity");
+	}
+	return bytes;
+}
+
 /**
  * Streams a private report receipt after verifying its recorded identity: to
  * the report owner, or to a reviewer the Approvals inbox authorizes (#602), who
@@ -122,25 +139,9 @@ export async function GET(
 		if (stored.provider !== TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER) {
 			throw new Error("Unsupported recorded receipt storage provider");
 		}
-		const recorded = stored;
-		let original: Promise<Uint8Array> | undefined;
-		const readOriginal = () => {
-			original ??= readPrivateObject({
-				organizationId: report.organizationId,
-				key: recorded.key,
-				bucket: recorded.bucket,
-				versionId: recorded.versionId,
-			}).then((bytes) => {
-				if (
-					bytes.byteLength !== recorded.sizeBytes ||
-					createHash("sha256").update(bytes).digest("hex") !== recorded.checksumSha256
-				) {
-					throw new Error("Stored receipt content does not match its recorded identity");
-				}
-				return bytes;
-			});
-			return original;
-		};
+		// A closure loses the narrowing of the reassignable `stored`.
+		const found = stored;
+		const readOriginal = () => readVerifiedReceipt(report.organizationId, found);
 		const mimeType = isAllowedTravelExpenseMime(stored.mimeType)
 			? stored.mimeType
 			: "application/octet-stream";

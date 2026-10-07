@@ -95,6 +95,9 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 	async deletePrivateObject(input: { key: string }) {
 		harness.objects.delete(input.key);
 	},
+	async deletePrivateObjectVersions(input: { key: string }) {
+		harness.objects.delete(input.key);
+	},
 }));
 
 const actions = await import("@/app/[locale]/(app)/travel-expenses/report-actions");
@@ -873,9 +876,11 @@ describe("report submission through approval authority (#602)", () => {
 		const reviewerPreview = await preview(photoId);
 		expect(reviewerPreview.status).toBe(200);
 		expect(reviewerPreview.headers.get("content-type")).toBe("image/webp");
-		expect(
-			await sharp(Buffer.from(await reviewerPreview.arrayBuffer())).metadata(),
-		).toMatchObject({ format: "webp", width: 192, height: 192 });
+		expect(await sharp(Buffer.from(await reviewerPreview.arrayBuffer())).metadata()).toMatchObject({
+			format: "webp",
+			width: 192,
+			height: 192,
+		});
 		expect((await preview(pdfId)).status).toBe(404);
 
 		for (const outsider of ["colleague", "lead", "foreigner"] as const) {

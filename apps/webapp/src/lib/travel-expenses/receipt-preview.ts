@@ -2,6 +2,7 @@ import "server-only";
 import { createLogger } from "@/lib/logger";
 import {
 	deletePrivateObject,
+	deletePrivateObjectVersions,
 	readPrivateObject,
 	uploadPrivateObject,
 } from "@/lib/storage/export-s3-client";
@@ -81,8 +82,9 @@ export async function loadReceiptPreview(input: {
 }
 
 /**
- * Deletes a stored receipt object together with its preview. The preview goes
- * first, so a failure keeps the original and its cleanup work for a retry.
+ * Deletes a stored receipt object together with every version of its preview,
+ * which is stored without a recorded version. The preview goes first, so a
+ * failure keeps the original and its cleanup work for a retry.
  */
 export async function deleteTravelExpenseReceiptObject(input: {
 	organizationId: string;
@@ -90,11 +92,10 @@ export async function deleteTravelExpenseReceiptObject(input: {
 	bucket: string | null;
 	versionId: string | null;
 }): Promise<void> {
-	await deletePrivateObject({
+	await deletePrivateObjectVersions({
 		organizationId: input.organizationId,
 		key: receiptPreviewKey(input.key),
 		bucket: input.bucket,
-		versionId: null,
 	});
 	await deletePrivateObject(input);
 }

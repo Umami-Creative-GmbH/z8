@@ -22,6 +22,9 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 	async deletePrivateObject(input: { key: string }) {
 		storage.objects.delete(input.key);
 	},
+	async deletePrivateObjectVersions(input: { key: string }) {
+		storage.objects.delete(input.key);
+	},
 }));
 
 /** A noisy photo-sized JPEG, so it compresses like a real phone photo (hundreds of KB). */
@@ -29,8 +32,13 @@ async function phonePhoto() {
 	const width = 2448;
 	const height = 1836;
 	const pixels = Buffer.alloc(width * height * 3);
+	// Seeded noise, so sizes are the same on every run.
+	let seed = 690;
 	for (let index = 0; index < pixels.length; index += 1) {
-		pixels[index] = Math.floor(Math.random() * 256);
+		seed ^= seed << 13;
+		seed ^= seed >>> 17;
+		seed ^= seed << 5;
+		pixels[index] = seed & 0xff;
 	}
 	return sharp(pixels, { raw: { width, height, channels: 3 } })
 		.jpeg({ quality: 90 })
@@ -53,7 +61,6 @@ describe("renderReceiptPreview", () => {
 		expect(preview).not.toBeNull();
 		const metadata = await sharp(preview!).metadata();
 		expect(metadata).toMatchObject({ format: "webp", width: 192, height: 192 });
-		expect(RECEIPT_PREVIEW_SIZE).toBe(192);
 		expect(preview!.byteLength).toBeLessThan(30_000);
 	});
 
