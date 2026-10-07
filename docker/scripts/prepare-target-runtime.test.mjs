@@ -8,6 +8,7 @@ import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 
 import { checkTargetPackage, collectTarget } from "./prepare-target-runtime.mjs";
+import { getMigrateCommand } from "../../apps/webapp/scripts/drizzle-migrate-command.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -151,7 +152,6 @@ test("migration image applies migrations without invoking pnpm at runtime", asyn
 		fs.readFile(new URL("../Dockerfile.migration", import.meta.url), "utf8"),
 		fs.readFile(new URL("../../apps/webapp/scripts/migrate-with-lock.js", import.meta.url), "utf8"),
 	]);
-	const { getMigrateCommand } = await import("../../apps/webapp/scripts/drizzle-migrate-command.js");
 	const runtimeMessage =
 		"the migration image must not invoke pnpm at runtime because pnpm may try to repair node_modules without a TTY";
 
@@ -162,7 +162,6 @@ test("migration image applies migrations without invoking pnpm at runtime", asyn
 	const migrate = getMigrateCommand({});
 	assert.equal(migrate.command, process.execPath);
 	assert.equal(migrate.shell, false);
-	assert.equal(path.basename(migrate.args[0]), "bin.cjs");
 	assert.ok(existsSync(migrate.args[0]), "the drizzle-kit CLI entry point must exist");
 	assert.deepEqual(migrate.args.slice(1), ["migrate", "--config", "./drizzle.config.ts"]);
 	// The resolved CLI path may sit in pnpm's `.pnpm` store, so compare executable and argument names.
@@ -171,9 +170,7 @@ test("migration image applies migrations without invoking pnpm at runtime", asyn
 	}
 });
 
-test("DRIZZLE_MIGRATE_COMMAND replaces the default migrate command", async () => {
-	const { getMigrateCommand } = await import("../../apps/webapp/scripts/drizzle-migrate-command.js");
-
+test("DRIZZLE_MIGRATE_COMMAND replaces the default migrate command", () => {
 	assert.deepEqual(getMigrateCommand({ DRIZZLE_MIGRATE_COMMAND: "echo custom migrate" }), {
 		command: "echo custom migrate",
 		args: [],

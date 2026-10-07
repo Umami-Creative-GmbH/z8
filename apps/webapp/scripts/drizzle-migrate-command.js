@@ -26,7 +26,7 @@ function findDrizzleKitPackageDirectory() {
 	}
 }
 
-export function resolveDrizzleKitCli() {
+function resolveDrizzleKitCli() {
 	const { directory, manifest } = findDrizzleKitPackageDirectory();
 	const bin = typeof manifest.bin === "string" ? manifest.bin : manifest.bin?.["drizzle-kit"];
 
