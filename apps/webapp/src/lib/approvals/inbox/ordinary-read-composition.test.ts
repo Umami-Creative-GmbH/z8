@@ -343,12 +343,15 @@ describe.each([
 		expect(detail.sections[0]).toMatchObject({
 			type: "key_value",
 			rows: expect.arrayContaining([
-				{ label: "Stage", value: "Manager review (2)" },
+				{
+					label: { key: "approvals:approvals.requestStage", fallback: "Stage" },
+					value: "Manager review (2)",
+				},
 			]),
 		});
 		expect(detail.sections).toContainEqual({
 			type: "timeline",
-			title: "Timeline",
+			title: { key: "approvals:approvals.timeline", fallback: "Timeline" },
 			events: [
 				{
 					id: "timeline-created-1",

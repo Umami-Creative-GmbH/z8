@@ -8,6 +8,7 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
+import { summaryField, useApprovalInboxText } from "@/components/approvals/use-approval-inbox-text";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ApprovalReviewArrival } from "@/lib/approvals/presentation/review-arrival";
@@ -48,6 +49,7 @@ export function ApprovalReviewOutcome({
 	reviewPath: string | null;
 }) {
 	const { t } = useTranslate();
+	const text = useApprovalInboxText();
 	const router = useRouter();
 	const [open, setOpen] = useState(true);
 
@@ -66,7 +68,7 @@ export function ApprovalReviewOutcome({
 			<>
 				<ReviewCard
 					title={t("approvals:approvals.review.title", "Approval review")}
-					description={arrival.item.summary.detail}
+					description={text(summaryField(arrival.item.summary, "detail"))}
 				>
 					<Button onClick={() => setOpen(true)}>
 						<IconClipboardCheck className="mr-2 size-4" aria-hidden="true" />

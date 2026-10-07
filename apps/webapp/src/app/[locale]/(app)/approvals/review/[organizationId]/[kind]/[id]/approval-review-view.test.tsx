@@ -10,6 +10,8 @@ const state = vi.hoisted(() => ({
 	panel: vi.fn(),
 }));
 
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, string>) =>

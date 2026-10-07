@@ -98,19 +98,36 @@ describe("buildTravelExpenseReportReviewSections", () => {
 			rows: expect.arrayContaining([
 				expect.objectContaining({ value: "Customer workshop" }),
 				// Travel dates as entered, with the zone they are calendar days in.
-				expect.objectContaining({ value: "2026-09-14 – 2026-09-16" }),
+				expect.objectContaining({
+					value: { kind: "plain_date_range", start: "2026-09-14", end: "2026-09-16" },
+				}),
 				expect.objectContaining({ value: "Asia/Tokyo" }),
-				expect.objectContaining({ value: "Osaka, JP" }),
-				expect.objectContaining({ value: "89.90 EUR" }),
-				expect.objectContaining({ value: "240.00 EUR" }),
+				// Typed values the viewer formats in their locale (#687).
+				expect.objectContaining({
+					value: expect.objectContaining({
+						params: {
+							destinations: [
+								{
+									key: "approvals:approvals.evidence.destinationPlace",
+									fallback: "{place}, {country}",
+									params: { place: "Osaka", country: { kind: "country", code: "JP" } },
+								},
+							],
+						},
+					}),
+				}),
+				expect.objectContaining({ value: { kind: "money", amount: "89.90", currency: "EUR" } }),
+				expect.objectContaining({ value: { kind: "money", amount: "240.00", currency: "EUR" } }),
 			]),
 		});
 		expect(train).toMatchObject({
 			type: "key_value",
 			title: "1. Shinkansen",
+			// The description as the employee wrote it, never restyled as a heading label.
+			titleAsEntered: true,
 			rows: expect.arrayContaining([
-				expect.objectContaining({ value: "2026-09-14" }),
-				expect.objectContaining({ value: "89.90 EUR" }),
+				expect.objectContaining({ value: { kind: "plain_date", date: "2026-09-14" } }),
+				expect.objectContaining({ value: { kind: "money", amount: "89.90", currency: "EUR" } }),
 				expect.objectContaining({ value: "PRJ-7" }),
 				expect.objectContaining({ value: "1: ticket.pdf" }),
 			]),

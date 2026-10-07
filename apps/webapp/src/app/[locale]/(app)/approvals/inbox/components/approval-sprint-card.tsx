@@ -8,6 +8,7 @@ import {
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { summaryField, useApprovalInboxText } from "@/components/approvals/use-approval-inbox-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -59,6 +60,7 @@ export function ApprovalSprintCard({
 	onOpenDetails,
 }: ApprovalSprintCardProps) {
 	const { t } = useTranslate();
+	const text = useApprovalInboxText();
 	const canApprove = item.capabilities.canApprove;
 	const canReject = item.capabilities.canReject;
 
@@ -71,9 +73,11 @@ export function ApprovalSprintCard({
 							{item.requester.name}
 						</p>
 						<CardTitle className="break-words text-xl tracking-tight">
-							{item.summary.title}
+							{text(summaryField(item.summary, "title"))}
 						</CardTitle>
-						<CardDescription className="break-words">{item.summary.subtitle}</CardDescription>
+						<CardDescription className="break-words">
+							{text(summaryField(item.summary, "subtitle"))}
+						</CardDescription>
 					</div>
 					<Badge variant={RISK_BADGE_VARIANTS[item.triage.riskLevel]}>
 						{getRiskLabel(t, item.triage.riskLevel)}
@@ -86,7 +90,9 @@ export function ApprovalSprintCard({
 					<div className="text-muted-foreground text-xs uppercase tracking-wide">
 						{getTypeLabel(t, item.type)}
 					</div>
-					<p className="mt-2 break-words text-sm leading-6">{item.summary.detail}</p>
+					<p className="mt-2 break-words text-sm leading-6">
+						{text(summaryField(item.summary, "detail"))}
+					</p>
 				</div>
 
 				<div className="space-y-2 rounded-lg border bg-background p-4">
