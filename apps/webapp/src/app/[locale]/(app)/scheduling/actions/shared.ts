@@ -4,8 +4,11 @@ import { db } from "@/db";
 import { type employee, location } from "@/db/schema";
 import type { AnyAppError } from "@/lib/effect/errors";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
+import {
+	type AppServices,
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
@@ -26,11 +29,11 @@ export interface LocationWithSubareas {
 	}>;
 }
 
-export function runSchedulingAction<A, E extends AnyAppError, R>(
+export function runSchedulingAction<A, E extends AnyAppError, R extends AppServices>(
 	name: string,
 	effect: Effect.Effect<A, E, R>,
 ) {
-	return runServerActionSafe(effect.pipe(Effect.withSpan(name), Effect.provide(AppLayer)));
+	return runServerActionSafe(effect.pipe(Effect.withSpan(name)));
 }
 
 export function requireCurrentEmployee(queryName = "getCurrentEmployee") {

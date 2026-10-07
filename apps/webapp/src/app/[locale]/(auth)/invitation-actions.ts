@@ -4,9 +4,8 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import { type AnyAppError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
+import { DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 
 export async function storePendingInvitation(
@@ -59,9 +58,7 @@ export async function storePendingInvitation(
 		});
 	});
 
-	return runServerActionSafe(
-		effect.pipe(Effect.provide(AppLayer)) as Effect.Effect<void, AnyAppError, never>,
-	);
+	return runServerActionSafe(effect);
 }
 
 export async function getPendingInvitation(): Promise<ServerActionResult<string | null>> {
@@ -116,7 +113,5 @@ export async function getPendingInvitation(): Promise<ServerActionResult<string 
 		return invitation.id;
 	});
 
-	return runServerActionSafe(
-		effect.pipe(Effect.provide(AppLayer)) as Effect.Effect<string | null, AnyAppError, never>,
-	);
+	return runServerActionSafe(effect);
 }

@@ -6,7 +6,6 @@ import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import {
 	type PlatformAdminResult,
 	SetupService,
@@ -53,7 +52,7 @@ export async function createPlatformAdminAction(
 			},
 			setupToken,
 		);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	const result = await runServerActionSafe(effect);
 	if (result.success) {

@@ -74,7 +74,6 @@ import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
@@ -1298,7 +1297,6 @@ function requestAbsenceWithResolverEffect(
 
 					return Effect.fail(error);
 				}),
-				Effect.provide(AppLayer),
 			);
 		},
 	);

@@ -14,7 +14,6 @@ import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
@@ -117,7 +116,7 @@ export async function startExportAction(
 		return exportRecord;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -184,7 +183,7 @@ export async function getExportHistoryAction(
 		return exports;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -223,7 +222,7 @@ export async function regenerateDownloadUrlAction(
 		return url;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -258,7 +257,7 @@ export async function deleteExportAction(
 		yield* Effect.promise(() => deleteExportRecord(exportId, organizationId));
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================================
@@ -336,7 +335,7 @@ export async function getStorageConfigAction(
 		return config;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -449,7 +448,7 @@ export async function saveStorageConfigAction(
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -539,7 +538,7 @@ export async function testStorageConnectionAction(
 		return result;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -586,5 +585,5 @@ export async function deleteStorageConfigAction(
 		});
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }

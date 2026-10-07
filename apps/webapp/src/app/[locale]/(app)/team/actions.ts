@@ -9,7 +9,6 @@ import { getRequestSession } from "@/lib/auth/request-session";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { getEmployeeWorkBalances } from "@/lib/work-balance/service";
 import {
@@ -274,7 +273,7 @@ export async function getManagedEmployees(): Promise<ServerActionResult<ManagedE
 			managedRecords: typedManagedEmployeeRecords,
 			balances,
 		});
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

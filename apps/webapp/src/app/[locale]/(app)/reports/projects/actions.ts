@@ -7,8 +7,11 @@ import { db } from "@/db";
 import { employee, project, projectManager, workPeriod } from "@/db/schema";
 import { requireAuth } from "@/lib/auth-helpers";
 import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
+import {
+	type AppServices,
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import { buildProjectHealthFields, buildProjectHealthTotals } from "@/lib/reports/project-health";
@@ -30,6 +33,8 @@ type WorkPeriodWithEmployee = typeof workPeriod.$inferSelect & {
 	};
 };
 
+type ProjectReportEffect<T> = Effect.Effect<T, AnyAppError, AppServices>;
+
 /**
  * Get portfolio overview of all projects in the organization
  */
@@ -40,7 +45,7 @@ export async function getProjectsOverview(
 ): Promise<ServerActionResult<ProjectPortfolioData>> {
 	const tracer = trace.getTracer("project-reports");
 
-	const effect: Effect.Effect<ProjectPortfolioData, AnyAppError> = tracer.startActiveSpan(
+	const effect: ProjectReportEffect<ProjectPortfolioData> = tracer.startActiveSpan(
 		"getProjectsOverview",
 		{
 			attributes: {
@@ -237,7 +242,6 @@ export async function getProjectsOverview(
 					logger.error({ error: error.message }, "Failed to get projects overview");
 					return Effect.fail(error);
 				}),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -255,7 +259,7 @@ export async function getProjectDetailedReport(
 ): Promise<ServerActionResult<ProjectDetailedReport>> {
 	const tracer = trace.getTracer("project-reports");
 
-	const effect: Effect.Effect<ProjectDetailedReport, AnyAppError> = tracer.startActiveSpan(
+	const effect: ProjectReportEffect<ProjectDetailedReport> = tracer.startActiveSpan(
 		"getProjectDetailedReport",
 		{
 			attributes: {
@@ -510,7 +514,6 @@ export async function getProjectDetailedReport(
 					logger.error({ error: error.message, projectId }, "Failed to get project report");
 					return Effect.fail(error);
 				}),
-				Effect.provide(AppLayer),
 			);
 		},
 	);

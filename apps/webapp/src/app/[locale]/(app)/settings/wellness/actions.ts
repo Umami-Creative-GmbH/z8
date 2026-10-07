@@ -5,7 +5,6 @@ import { Effect } from "effect";
 import { userSettings } from "@/db/schema";
 import { ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
@@ -37,7 +36,7 @@ export async function getWellnessSettings(): Promise<ServerActionResult<WaterRem
 			intervalMinutes: settings?.waterReminderIntervalMinutes ?? 45,
 			dailyGoal: settings?.waterReminderDailyGoal ?? 8,
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -79,7 +78,7 @@ export async function updateWellnessSettings(
 				waterReminderDailyGoal: dailyGoal,
 			}),
 		);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

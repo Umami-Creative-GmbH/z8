@@ -14,7 +14,6 @@ import { ensureEmployeeProfilesForOrganizationMembers } from "@/lib/auth/organiz
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import type {
 	EmployeeDetailRecord,
 	EmployeeDirectoryRow,
@@ -587,7 +586,7 @@ export async function getEmployeeAction(
 			kind: "employee",
 			membership: targetEmployee.membership?.id ? targetEmployee.membership : null,
 		} as EmployeeWithRelations;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -595,7 +594,7 @@ export async function getEmployeeAction(
 export async function listEmployeesAction(
 	params: EmployeeListParams = {},
 ): Promise<ServerActionResult<PaginatedEmployeeResponse>> {
-	const effect = loadEmployeePage(params).pipe(Effect.provide(AppLayer));
+	const effect = loadEmployeePage(params);
 
 	return runServerActionSafe(effect);
 }
@@ -603,7 +602,7 @@ export async function listEmployeesAction(
 export async function listEmployeesForSelectAction(
 	params: EmployeeSelectParams = {},
 ): Promise<ServerActionResult<EmployeeSelectResponse>> {
-	const effect = loadSelectableEmployeePage(params).pipe(Effect.provide(AppLayer));
+	const effect = loadSelectableEmployeePage(params);
 
 	return runServerActionSafe(effect);
 }
@@ -666,7 +665,7 @@ export async function getEmployeesByIdsAction(
 
 		const typedRows = rows as unknown as SelectableEmployeeRow[];
 		return typedRows.map(mapSelectableEmployeeRow);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

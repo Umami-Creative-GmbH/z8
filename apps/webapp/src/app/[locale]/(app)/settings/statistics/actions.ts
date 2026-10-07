@@ -15,7 +15,6 @@ import {
 } from "@/db/schema";
 import { AuthorizationError, DatabaseError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import {
 	isSettingsAccessMembershipRole,
@@ -343,7 +342,7 @@ export async function getOrganizationStats(): Promise<ServerActionResult<Organiz
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 export async function getInstanceStats(): Promise<ServerActionResult<InstanceStats>> {
@@ -553,5 +552,5 @@ export async function getManagerStatisticsReadView(): Promise<
 		});
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }

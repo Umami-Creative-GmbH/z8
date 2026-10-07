@@ -60,20 +60,21 @@ vi.mock("@/lib/effect/services/auth.service", async () => {
 vi.mock("@/lib/effect/runtime", async () => {
 	const { Effect, Layer } = await import("effect");
 	const { AuthService } = await import("@/lib/effect/services/auth.service");
-	return {
-		AppLayer: Layer.succeed(AuthService, {
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(
+		Layer.succeed(AuthService, {
 			getSession: () => Effect.succeed({ user: { id: "user-1" }, session: {} }),
 		}),
-	};
+	);
 });
 
 vi.mock("@/lib/effect/result", async () => {
+	const { runtime } = await import("@/lib/effect/runtime");
 	const { Cause, Effect, Exit, Option, Result } = await import("effect");
 	return {
 		runServerActionSafe: async <T>(
 			effect: Parameters<typeof Effect.runPromiseExit<T>>[0],
 		) => {
-			const exit = await Effect.runPromiseExit(effect);
+			const exit = await runtime.runPromiseExit(effect);
 			return Exit.match(exit as never, {
 				onFailure: (cause) => {
 					const error =

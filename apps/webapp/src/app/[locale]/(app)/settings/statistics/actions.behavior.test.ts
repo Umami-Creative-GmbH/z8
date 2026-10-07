@@ -143,12 +143,9 @@ vi.mock("@/lib/effect/runtime", async () => {
 		getSession: vi.fn(() => Effect.succeed(mockState.session)),
 	};
 
-	return {
-		AppLayer: Layer.succeed(AuthService, authService),
-		runtime: {
-			runPromiseExit: (effect: any) => Effect.runPromiseExit(effect),
-		},
-	};
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(
+		Layer.succeed(AuthService, authService),
+	);
 });
 
 describe("statistics actions", () => {

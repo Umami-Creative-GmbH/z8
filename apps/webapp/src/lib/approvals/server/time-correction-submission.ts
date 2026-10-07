@@ -95,12 +95,9 @@ import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
-import { AppLayer, runtime } from "@/lib/effect/runtime";
+import { runtime } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
-import {
-	DatabaseService,
-	DatabaseServiceLive,
-} from "@/lib/effect/services/database.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
 import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
 import {
@@ -2739,8 +2736,6 @@ export async function requestTimeCorrectionEffect(
 				logger.error({ error }, "Failed to process time correction request"),
 			),
 		),
-		Effect.provide(AppLayer),
-		Effect.provide(DatabaseServiceLive),
 	);
 	const result = await runServerActionSafe(effect);
 	if (
@@ -2778,8 +2773,6 @@ export async function requestTimeEntryDeletion(
 					),
 				),
 			),
-			Effect.provide(AppLayer),
-			Effect.provide(DatabaseServiceLive),
 		),
 	);
 	if (

@@ -38,7 +38,6 @@ import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
@@ -6445,6 +6444,6 @@ function processAuthenticatedTimeCorrectionDecision(
 			approvalRequestId,
 			action,
 			reason,
-		).pipe(Effect.provide(AppLayer)),
+		),
 	);
 }

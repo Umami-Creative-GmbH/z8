@@ -12,8 +12,11 @@ import {
 	team,
 } from "@/db/schema";
 import { type AnyAppError, ConflictError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
+import {
+	type AppServices,
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import type {
 	HolidayPresetAssignmentFormValues,
 	HolidayPresetFormValues,
@@ -99,7 +102,7 @@ type EmployeeListItem = {
 	position: string | null;
 };
 
-function runPresetServerAction<T>(effect: Effect.Effect<T, AnyAppError, never>) {
+function runPresetServerAction<T>(effect: Effect.Effect<T, AnyAppError, AppServices>) {
 	return runServerActionSafe(effect);
 }
 
@@ -193,7 +196,7 @@ export async function getHolidayPresets(
 			);
 
 		return presets;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -335,7 +338,7 @@ export async function getHolidayPreset(
 		});
 
 		return { preset, holidays };
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runPresetServerAction(effect);
 }
@@ -418,7 +421,7 @@ export async function createHolidayPreset(
 			);
 
 		return newPreset;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runPresetServerAction(effect);
 }
@@ -526,7 +529,7 @@ export async function updateHolidayPreset(
 			);
 
 		return updatedPreset;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runPresetServerAction(effect);
 }
@@ -611,7 +614,7 @@ export async function deleteHolidayPreset(presetId: string): Promise<ServerActio
 				}),
 			);
 		}
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runPresetServerAction(effect);
 }
@@ -724,7 +727,7 @@ export async function addHolidayToPreset(
 			);
 
 		return newHoliday;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runPresetServerAction(effect);
 }
@@ -835,7 +838,7 @@ export async function bulkAddHolidaysToPreset(
 			);
 
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runPresetServerAction(effect);
 }
@@ -910,7 +913,7 @@ export async function deleteHolidayFromPreset(
 						}),
 				),
 			);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runPresetServerAction(effect);
 }
@@ -993,7 +996,7 @@ export async function getPresetAssignments(
 			manageableTeamIds,
 			managedEmployeeIds,
 		);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runPresetServerAction(effect);
 }
@@ -1201,7 +1204,7 @@ export async function createPresetAssignment(
 			);
 
 		return newAssignment;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runPresetServerAction(effect);
 }
@@ -1258,7 +1261,7 @@ export async function deletePresetAssignment(
 				}),
 			);
 		}
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runPresetServerAction(effect);
 }
@@ -1291,7 +1294,7 @@ export async function getTeamsForAssignment(
 		});
 
 		return teams;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1323,7 +1326,7 @@ export async function getEmployeesForAssignment(
 		});
 
 		return employees;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

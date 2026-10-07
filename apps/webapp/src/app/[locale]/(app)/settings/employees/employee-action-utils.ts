@@ -13,7 +13,6 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
@@ -626,7 +625,6 @@ export function runTracedEmployeeAction<T>(options: {
 				}),
 			),
 			Effect.onExit(() => Effect.sync(() => span.end())),
-			Effect.provide(AppLayer),
 		);
 
 	const effect = options.attributes

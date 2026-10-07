@@ -25,7 +25,6 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
@@ -591,7 +590,7 @@ export async function getOrganizationCategories(
 		return categories.filter((category) => visibleCategoryIds?.has(category.id));
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -680,7 +679,7 @@ export async function createOrganizationCategory(
 		return { id: created.id };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -770,7 +769,7 @@ export async function updateOrganizationCategory(
 		return { id: updated.id };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -839,7 +838,7 @@ export async function deleteOrganizationCategory(
 		return { success: true };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -928,7 +927,7 @@ export async function getWorkCategorySets(
 		return sets.filter((set) => visibleSetIds?.has(set.id));
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1041,7 +1040,7 @@ export async function getWorkCategorySetDetail(
 		return { set, categories };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -1144,7 +1143,7 @@ export async function createWorkCategorySet(
 		return { id: created.id };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1219,7 +1218,7 @@ export async function updateWorkCategorySet(
 		return { id: updated.id };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1299,7 +1298,7 @@ export async function deleteWorkCategorySet(
 		return { success: true };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1383,7 +1382,7 @@ export async function updateSetCategories(
 		return { success: true };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1455,7 +1454,7 @@ export async function reorderSetCategories(
 		return { success: true };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -1547,7 +1546,7 @@ export async function getWorkCategorySetAssignments(
 		);
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1691,7 +1690,7 @@ export async function createSetAssignment(
 		return { id: created.id };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1761,7 +1760,7 @@ export async function deleteSetAssignment(
 		return { success: true };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -1801,7 +1800,7 @@ export async function getTeamsForAssignment(
 		return teams;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1840,7 +1839,7 @@ export async function getEmployeesForAssignment(
 		return employees;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -2001,5 +2000,5 @@ export async function getAvailableCategoriesForEmployee(
 		return [];
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }

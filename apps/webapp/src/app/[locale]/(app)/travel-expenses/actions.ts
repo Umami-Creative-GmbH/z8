@@ -11,7 +11,6 @@ import {
 } from "@/lib/approvals/server/travel-expense-approvals";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
 import { listOwnLegacyConversions } from "@/lib/travel-expenses/legacy-draft-conversion-read";
@@ -79,7 +78,7 @@ function decideAsEmployee(
 			const dbService = yield* DatabaseService;
 			const approver = yield* loadTravelExpenseApprover(dbService, employeeId);
 			yield* decideTravelExpenseClaimEffect(dbService, approver, input);
-		}).pipe(Effect.provide(AppLayer)),
+		}),
 	);
 }
 

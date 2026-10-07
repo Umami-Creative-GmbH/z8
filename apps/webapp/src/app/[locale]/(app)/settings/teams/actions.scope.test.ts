@@ -222,12 +222,13 @@ vi.mock("@/lib/effect/runtime", async () => {
 			Effect.promise(() => mockState.hasTeamPermission(...args)),
 	});
 
-	return {
-		AppLayer: Layer.mergeAll(authLayer, databaseLayer, permissionsLayer),
-	};
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(
+		Layer.mergeAll(authLayer, databaseLayer, permissionsLayer),
+	);
 });
 
 vi.mock("@/lib/effect/result", async () => {
+	const { runtime } = await import("@/lib/effect/runtime");
 	const { Cause, Effect, Exit, Option, Result } = await import("effect");
 
 	const toServerActionResult = (exit: unknown) =>
@@ -256,7 +257,7 @@ vi.mock("@/lib/effect/result", async () => {
 
 	return {
 		runServerActionSafe: async <T>(effect: Parameters<typeof Effect.runPromiseExit<T>>[0]) => {
-			const exit = await Effect.runPromiseExit(effect);
+			const exit = await runtime.runPromiseExit(effect);
 			return toServerActionResult(exit);
 		},
 	};

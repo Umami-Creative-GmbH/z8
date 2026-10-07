@@ -34,7 +34,7 @@ import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
-import { AppLayer, runtime as effectRuntime } from "@/lib/effect/runtime";
+import { runtime as effectRuntime } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
@@ -2292,7 +2292,7 @@ export async function processAuthenticatedAbsenceDecision(
 		options,
 	);
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 async function markEmployeeWorkBalanceDirtyIfNeeded(

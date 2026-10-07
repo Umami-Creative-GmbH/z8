@@ -9,7 +9,6 @@ import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import {
 	getEmployeeSettingsActorContext,
 	getManagedEmployeeIdsForSettingsActor,
@@ -40,10 +39,10 @@ function normalizeEmployeeIds(employeeIds: string[]) {
 
 function resolveQueryEffect<T>(
 	operation: string,
-	value: Effect.Effect<T, AnyAppError, unknown> | Promise<T> | T,
-): Effect.Effect<T, AnyAppError, unknown> {
+	value: Effect.Effect<T, AnyAppError, never> | Promise<T> | T,
+): Effect.Effect<T, AnyAppError, never> {
 	if (Effect.isEffect(value)) {
-		return value as Effect.Effect<T, AnyAppError, unknown>;
+		return value as Effect.Effect<T, AnyAppError, never>;
 	}
 
 	if (value instanceof Promise) {
@@ -192,7 +191,7 @@ export async function getEmployeeClockStatuses(
 				];
 			}),
 		) satisfies EmployeeClockPresenceMap;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

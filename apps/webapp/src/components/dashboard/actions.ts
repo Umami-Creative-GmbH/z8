@@ -25,7 +25,6 @@ import { shouldExcludeFromCalculations } from "@/lib/calendar/holiday-service";
 import { currentTimestamp, dateFromDB } from "@/lib/datetime/drizzle-adapter";
 import { DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
@@ -145,7 +144,7 @@ export async function getManagerTodaySummary(): Promise<ManagerTodaySummaryResul
 		}
 
 		return { role, summary: briefing.summary };
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	const result = await runServerActionSafe(effect);
 
@@ -190,7 +189,7 @@ export async function getManagedEmployees(managerId: string): Promise<ServerActi
 		const managedEmployees = yield* managerService.getManagedEmployees(managerId);
 
 		return managedEmployees;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -273,7 +272,7 @@ export async function getUpcomingAbsences(limit: number = 5): Promise<ServerActi
 		});
 
 		return absences;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -399,7 +398,7 @@ export async function getTeamCalendarData(
 			year,
 			absenceDays: Array.from(absenceDayMap.values()),
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -478,7 +477,7 @@ export async function getRecentlyApprovedRequests(
 		});
 
 		return mapRecentlyApprovedRequestRows(requests);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -667,7 +666,7 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 				expectedToDate: monthExpectedToDate,
 			},
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -765,7 +764,7 @@ export async function getUpcomingBirthdays(days: number = 30): Promise<ServerAct
 		upcomingBirthdays.sort((a, b) => a.daysUntil - b.daysUntil);
 
 		return upcomingBirthdays;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -892,7 +891,7 @@ export async function getTeamOverviewStats(): Promise<
 			teamsCount: teamsCountResult,
 			avgWorkHours: Math.round(avgWorkHoursResult * 10) / 10, // Round to 1 decimal
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1173,7 +1172,7 @@ export async function getWhosOutToday(): Promise<
 			returningTomorrow,
 			totalOut: outToday.length,
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1292,7 +1291,7 @@ export async function getVacationBalance(): Promise<
 			carryoverExpiryDaysRemaining: balance.carryoverExpiryDaysRemaining,
 			hasCarryover: policy.allowCarryover,
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1530,7 +1529,7 @@ export async function getHydrationWidgetData(): Promise<
 			teamStreakLeaders,
 			organizationStreakLeaders,
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1559,7 +1558,7 @@ export async function getUserSettings(): Promise<
 		return {
 			dashboardWidgetOrder: settings?.dashboardWidgetOrder ?? null,
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1596,7 +1595,7 @@ export async function updateWidgetOrder(
 		});
 
 		return { success: true };
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
