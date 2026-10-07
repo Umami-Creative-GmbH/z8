@@ -1,5 +1,5 @@
-import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readdirSync } from "node:fs";
+import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
@@ -440,7 +440,20 @@ describe("org-admin settings route access", () => {
 		);
 
 		expect(source.includes("getEmployee(")).toBe(true);
-		expect(source.includes('redirect("/settings/employees")')).toBe(true);
+		expect(source.includes('redirectWithLocale("/settings/employees")')).toBe(true);
+	});
+
+	it("keeps the route locale on every settings redirect", () => {
+		const unprefixedRedirect = /\bredirect\(\s*["'`]\//;
+		const files = [
+			...listSourceFiles(SETTINGS_ROOT),
+			join(SETTINGS_ROOT, "../../../../lib/auth-helpers.ts"),
+		];
+		const offenders = files.filter((file) =>
+			unprefixedRedirect.test(stripComments(readTestText(file, "utf8"))),
+		);
+
+		expect(offenders.map((file) => relative(SETTINGS_ROOT, file))).toEqual([]);
 	});
 
 	it("uses shared scoped access helpers instead of admin-only checks for employee and skill actions", () => {
@@ -1049,6 +1062,20 @@ describe("org-admin settings route access", () => {
 		).toBe(true);
 	});
 });
+
+function listSourceFiles(directory: string): string[] {
+	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+		const entryPath = join(directory, entry.name);
+
+		if (entry.isDirectory()) {
+			return entry.name === "__tests__" ? [] : listSourceFiles(entryPath);
+		}
+
+		return /\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name)
+			? [entryPath]
+			: [];
+	});
+}
 
 function resolveSettingsTierFromContext(input: {
 	activeOrganizationId: string | null;

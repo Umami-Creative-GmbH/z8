@@ -17,6 +17,7 @@ const mockState = vi.hoisted(() => ({
 }));
 
 vi.mock("next/navigation", () => ({ redirect: mockState.redirect }));
+vi.mock("next-intl/server", () => ({ getLocale: async () => "en" }));
 vi.mock("@/lib/auth-helpers", () => ({
 	getCurrentSettingsRouteContext: mockState.getCurrentSettingsRouteContext,
 }));
@@ -90,7 +91,7 @@ describe("EmployeeDetailPage actor membership", () => {
 		const contentElement = getContentElement(page);
 
 		await expect(contentElement.type(contentElement.props)).rejects.toThrow(
-			"redirect:/settings",
+			"redirect:/en/settings",
 		);
 		expect(mockState.getEmployee).not.toHaveBeenCalled();
 	});

@@ -1,22 +1,22 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { SkillCatalogManagement } from "@/components/settings/skill-catalog-management";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
 async function SkillsSettingsPageContent() {
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
 	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const organizationId =
 		settingsRouteContext.authContext.session.activeOrganizationId;
 
 	if (!organizationId) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	return (

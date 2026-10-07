@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
-export default function DeprecatedNewEmployeePage() {
-	redirect("/settings/organizations");
+export default async function DeprecatedNewEmployeePage() {
+	return redirectWithLocale("/settings/organizations");
 }
