@@ -5,7 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { getTravelExpensePolicies } from "@/app/[locale]/(app)/settings/travel-expenses/actions";
 import { formatMoney, formatPlainDate } from "@/components/travel-expenses/report/format";
-import { formatRatePerKm } from "@/components/travel-expenses/report/mileage-breakdown";
+import { formatRatePerKm } from "@/components/travel-expenses/report/mileage-labels";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Table,

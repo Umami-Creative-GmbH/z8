@@ -52,7 +52,8 @@ import {
 	receiptItemMissingRequirements,
 } from "@/lib/travel-expenses/receipt-report";
 import type { ReportItemView, ReportReceiptView } from "@/lib/travel-expenses/report-store";
-import { CurrencyConversionField, conversionRequirementLabel } from "./currency-conversion-field";
+import { conversionRequirementLabel } from "./conversion-requirement-label";
+import { CurrencyConversionField } from "./currency-conversion-field";
 import { DraftSaveStatus } from "./draft-save-status";
 import { categoryLabel } from "./format";
 import { ItemProjectField } from "./project-picker";

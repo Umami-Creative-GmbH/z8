@@ -27,7 +27,6 @@ import {
 	type MileageCalculation,
 	type MileageItemDraft,
 	type MileageItemDraftInput,
-	type MileageItemRequirement,
 	mileageItemMissingRequirements,
 	parseMileageItemDraft,
 } from "@/lib/travel-expenses/mileage";
@@ -35,39 +34,15 @@ import { MAX_ACCOUNTING_REFERENCE_LENGTH } from "@/lib/travel-expenses/receipt-r
 import type { ReportItemView } from "@/lib/travel-expenses/report-store";
 import { AllowanceOverrideNotice } from "./allowance-override-notice";
 import { DraftSaveStatus } from "./draft-save-status";
-import { formatPlainDate } from "./format";
-import { MileageBreakdown, vehicleLabel } from "./mileage-breakdown";
+import { MileageBreakdown } from "./mileage-breakdown";
+import { mileageDraftMatches, mileageDraftOf } from "./mileage-item-draft";
+import { mileageRequirementLabel, vehicleLabel } from "./mileage-labels";
 import { RemoveExpenseButton } from "./receipt-item-editor";
 import { useDraftSaver } from "./use-draft-saver";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 type FormValues = { [K in keyof MileageItemDraft]: string };
 type FieldName = keyof MileageItemDraft;
-
-/** The entered mileage facts of a saved item. */
-export function mileageDraftOf(item: ReportItemView): MileageItemDraft {
-	return {
-		expenseDate: item.expenseDate,
-		route: item.mileage?.route ?? null,
-		distanceKm: item.mileage?.distanceKm ?? null,
-		vehicle: item.mileage?.vehicle ?? null,
-		accountingReference: item.accountingReference,
-	};
-}
-
-const DRAFT_FIELDS = [
-	"expenseDate",
-	"route",
-	"distanceKm",
-	"vehicle",
-	"accountingReference",
-] as const satisfies readonly FieldName[];
-
-/** Whether entered mileage facts equal the saved item, so its calculation applies to them. */
-export function mileageDraftMatches(draft: MileageItemDraft, item: ReportItemView): boolean {
-	const saved = mileageDraftOf(item);
-	return DRAFT_FIELDS.every((field) => draft[field] === saved[field]);
-}
 
 function toFormValues(draft: MileageItemDraft): FormValues {
 	return {
@@ -100,49 +75,6 @@ function fieldErrorMessage(t: Translate, field: FieldName, code: string | undefi
 		vehicle: t("travelExpenses.report.mileage.errors.vehicle", "Choose the vehicle you drove."),
 	};
 	return messages[field];
-}
-
-export function mileageRequirementLabel(
-	t: Translate,
-	requirement: MileageItemRequirement,
-	context: { locale: string; calculation: MileageCalculation | null; currency: string },
-) {
-	switch (requirement) {
-		case "expense_date":
-			return t("travelExpenses.report.mileage.requirements.date", "Enter the date of the drive.");
-		case "route":
-			return t("travelExpenses.report.mileage.requirements.route", "Describe the route.");
-		case "distance":
-			return t(
-				"travelExpenses.report.mileage.requirements.distance",
-				"Enter the kilometres driven.",
-			);
-		case "vehicle":
-			return t("travelExpenses.report.mileage.requirements.vehicle", "Choose the vehicle.");
-		case "mileage_policy_missing": {
-			const missing = context.calculation?.status === "policy_missing" ? context.calculation : null;
-			return t(
-				"travelExpenses.report.mileage.requirements.policyMissing",
-				"Your organization has no mileage rate for {vehicle} on {date}. Ask an expense administrator to add a dated rate in the travel expense settings. Nothing is calculated until then.",
-				{
-					vehicle: vehicleLabel(t, missing?.vehicle ?? null) ?? "",
-					date: missing ? formatPlainDate(context.locale, missing.expenseDate) : "",
-				},
-			);
-		}
-		case "mileage_currency":
-			return t(
-				"travelExpenses.report.mileage.requirements.currency",
-				"The mileage rate for this date is in {policyCurrency}, but this report is reimbursed in {currency}. Ask an expense administrator to add a rate in {currency}.",
-				{
-					policyCurrency:
-						context.calculation?.status === "currency_mismatch"
-							? context.calculation.policyCurrency
-							: "",
-					currency: context.currency,
-				},
-			);
-	}
 }
 
 /**

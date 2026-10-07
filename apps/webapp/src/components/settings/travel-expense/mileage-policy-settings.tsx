@@ -18,7 +18,7 @@ import {
 	formatRatePerKm,
 	policySourceLabel,
 	vehicleLabel,
-} from "@/components/travel-expenses/report/mileage-breakdown";
+} from "@/components/travel-expenses/report/mileage-labels";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
 	AlertDialog,

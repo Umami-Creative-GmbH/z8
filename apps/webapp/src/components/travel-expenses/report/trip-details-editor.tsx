@@ -49,7 +49,12 @@ interface FormValues {
 	startDate: string;
 	endDate: string;
 	timeZone: string;
-	destinations: { place: string; countryCode: string }[];
+	/** `key` identifies a row while it is edited; it is never saved. */
+	destinations: { key: string; place: string; countryCode: string }[];
+}
+
+function newDestinationRow(place = "", countryCode = ""): FormValues["destinations"][number] {
+	return { key: crypto.randomUUID(), place, countryCode };
 }
 
 function toFormValues(details: TripDetailsDraft): FormValues {
@@ -58,10 +63,9 @@ function toFormValues(details: TripDetailsDraft): FormValues {
 		startDate: details.startDate ?? "",
 		endDate: details.endDate ?? "",
 		timeZone: details.timeZone,
-		destinations: details.destinations.map((destination) => ({
-			place: destination.place ?? "",
-			countryCode: destination.countryCode ?? "",
-		})),
+		destinations: details.destinations.map((destination) =>
+			newDestinationRow(destination.place ?? "", destination.countryCode ?? ""),
+		),
 	};
 }
 
@@ -381,12 +385,10 @@ export function TripDetailsEditor({
 								</p>
 							)}
 							<ul className="space-y-3">
-								{destinationsField.state.value.map((_destination, index) => {
+								{destinationsField.state.value.map((destination, index) => {
 									const number = index + 1;
 									return (
-										// Rows have no identity of their own; their order is their meaning.
-										// biome-ignore lint/suspicious/noArrayIndexKey: see above
-										<li key={index} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+										<li key={destination.key} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
 											<form.Field name={`destinations[${index}].place`}>
 												{(field) => (
 													<Input
@@ -467,7 +469,7 @@ export function TripDetailsEditor({
 									size="sm"
 									onClick={() => {
 										const index = destinationsField.state.value.length;
-										destinationsField.pushValue({ place: "", countryCode: "" });
+										destinationsField.pushValue(newDestinationRow());
 										setFocusDestination(index);
 									}}
 								>

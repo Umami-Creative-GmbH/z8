@@ -691,9 +691,10 @@ function withoutClaimedAllowances(
 	plans: readonly DayPlan[],
 	claimedDays: readonly string[],
 ): DayPlan[] {
+	const claimedElsewhere = new Set(claimedDays);
 	const claimed = new Set(
 		plans
-			.filter((plan) => plan.allowance !== "none" && claimedDays.includes(plan.date))
+			.filter((plan) => plan.allowance !== "none" && claimedElsewhere.has(plan.date))
 			.map((plan) => plan.date),
 	);
 	if (claimed.size === 0) return [...plans];
@@ -767,8 +768,9 @@ export function calculatePerDiem(
 
 	const planned = planDays(itinerary, start, end, context);
 	// Days of this trip another report already pays; an exceptional result names them for the manual calculation.
+	const tripDates = new Set(dates);
 	const overlappingDays = [...new Set(context.overlappingDays ?? [])]
-		.filter((date) => dates.includes(date))
+		.filter((date) => tripDates.has(date))
 		.toSorted();
 	const exceptional = (reasons: readonly PerDiemExceptionReason[]): PerDiemCalculation => ({
 		status: "exceptional",

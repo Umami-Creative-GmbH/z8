@@ -25,7 +25,6 @@ import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core"
 import { withoutOverriddenRequirements } from "@/lib/travel-expenses/allowance-override";
 import type { DraftSaveOutcome } from "@/lib/travel-expenses/draft-saver";
 import {
-	emptyPerDiemItinerary,
 	MAX_PER_DIEM_DAYS,
 	PER_DIEM_MEALS,
 	type PerDiemCalculation,
@@ -33,10 +32,8 @@ import {
 	type PerDiemDraftInput,
 	type PerDiemItinerary,
 	type PerDiemMeal,
-	type PerDiemRequirement,
 	parsePerDiemDraft,
 	perDiemMissingRequirements,
-	samePerDiemItinerary,
 	tripDays,
 } from "@/lib/travel-expenses/per-diem";
 import {
@@ -47,15 +44,17 @@ import type { ReportItemView } from "@/lib/travel-expenses/report-store";
 import type { TripDestination } from "@/lib/travel-expenses/trip-destination";
 import { AllowanceOverrideNotice } from "./allowance-override-notice";
 import { DraftSaveStatus } from "./draft-save-status";
+import { formatPlainDate } from "./format";
+import { PerDiemBreakdown } from "./per-diem-breakdown";
+import { PerDiemDayLocationFields } from "./per-diem-day-location";
 import {
+	type DayLocationForm,
 	dayLocationDraft,
 	dayLocationForm,
-	type DayLocationForm,
 	NO_LOCATION,
-	PerDiemDayLocationFields,
-} from "./per-diem-day-location";
-import { formatPlainDate } from "./format";
-import { mealLabel, PerDiemBreakdown, perDiemExceptionLabel } from "./per-diem-breakdown";
+} from "./per-diem-day-location-form";
+import { perDiemDraftMatches, perDiemDraftOf } from "./per-diem-item-draft";
+import { mealLabel, perDiemExceptionLabel, perDiemRequirementLabel } from "./per-diem-labels";
 import { RemoveExpenseButton } from "./receipt-item-editor";
 import { useDraftSaver } from "./use-draft-saver";
 
@@ -82,16 +81,6 @@ const NO_MEALS: DayMealsForm = {
 	lunch: { provided: false, payment: "" },
 	dinner: { provided: false, payment: "" },
 };
-
-/** The entered per diem facts of a saved item. */
-export function perDiemDraftOf(item: ReportItemView): PerDiemItinerary {
-	return item.perDiem?.itinerary ?? emptyPerDiemItinerary(null);
-}
-
-/** Whether entered per diem facts equal the saved item, so its calculation applies to them. */
-export function perDiemDraftMatches(draft: PerDiemItinerary, item: ReportItemView): boolean {
-	return samePerDiemItinerary(draft, perDiemDraftOf(item));
-}
 
 /** The travel days of entered dates; empty while they are missing, reversed or too long. */
 function travelDays(startDate: string, endDate: string): string[] {
@@ -206,73 +195,6 @@ function fieldErrorMessage(t: Translate, code: string | undefined) {
 			);
 		default:
 			return t("travelExpenses.report.perDiem.errors.meals", "Check the meal entries.");
-	}
-}
-
-export function perDiemRequirementLabel(
-	t: Translate,
-	requirement: PerDiemRequirement,
-	context: { locale: string; calculation: PerDiemCalculation | null; currency: string },
-) {
-	switch (requirement) {
-		case "per_diem_start":
-			return t(
-				"travelExpenses.report.perDiem.requirements.start",
-				"Enter when you left home or your workplace.",
-			);
-		case "per_diem_end":
-			return t(
-				"travelExpenses.report.perDiem.requirements.end",
-				"Enter when you were back home or at your workplace.",
-			);
-		case "per_diem_overnight":
-			return t(
-				"travelExpenses.report.perDiem.requirements.overnight",
-				"Tell us whether you stayed overnight away from home.",
-			);
-		case "per_diem_trip_dates":
-			return t(
-				"travelExpenses.report.perDiem.requirements.tripDates",
-				"Your departure and return days must be the trip's first and last travel day.",
-			);
-		case "per_diem_meals":
-			return t(
-				"travelExpenses.report.perDiem.requirements.meals",
-				"Confirm the provided meals for every travel day.",
-			);
-		case "per_diem_locations":
-			return t(
-				"travelExpenses.report.perDiem.requirements.locations",
-				"Tell us for every travel day where you were at midnight and where your last business activity abroad was.",
-			);
-		case "per_diem_exceptional":
-			return t(
-				"travelExpenses.report.perDiem.requirements.exceptional",
-				"This itinerary needs a manual per diem calculation by an expense administrator. It is not calculated automatically.",
-			);
-		case "per_diem_policy_missing": {
-			const missing =
-				context.calculation?.status === "policy_missing" ? context.calculation.dates : [];
-			return t(
-				"travelExpenses.report.perDiem.requirements.policyMissing",
-				"Your organization has no per diem rates for {dates}. Ask an expense administrator to add dated rates in the travel expense settings. Nothing is calculated until then.",
-				{ dates: missing.map((date) => formatPlainDate(context.locale, date)).join(", ") },
-			);
-		}
-		case "per_diem_currency":
-			return t(
-				"travelExpenses.report.perDiem.requirements.currency",
-				"The per diem rates for these days are in {policyCurrency}, but this report is reimbursed in {currency}. Ask an expense administrator to add rates in {currency}.",
-				{
-					policyCurrency:
-						context.calculation?.status === "currency_mismatch"
-							? context.calculation.policyCurrency
-							: "",
-					currency: context.currency,
-				},
-			);
-		default:
-			return requirement;
 	}
 }
 

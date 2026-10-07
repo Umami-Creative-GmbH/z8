@@ -60,8 +60,9 @@ export function assertAllowanceOverrideScope(
 	items: ReadonlyArray<{ id: string; type: string }>,
 ): void {
 	const seen = new Set<string>();
+	const itemsById = new Map(items.map((item) => [item.id, item]));
 	for (const row of rows) {
-		const item = items.find((candidate) => candidate.id === row.itemId);
+		const item = itemsById.get(row.itemId);
 		if (
 			row.organizationId !== report.organizationId ||
 			row.reportId !== report.id ||

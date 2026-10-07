@@ -14,7 +14,7 @@ import {
 	withdrawPerDiemPolicyVersionAction,
 } from "@/app/[locale]/(app)/settings/travel-expenses/per-diem-policy-actions";
 import { formatMoney, formatPlainDate } from "@/components/travel-expenses/report/format";
-import { policySourceLabel } from "@/components/travel-expenses/report/mileage-breakdown";
+import { policySourceLabel } from "@/components/travel-expenses/report/mileage-labels";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
 	AlertDialog,
@@ -56,7 +56,6 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { queryKeys } from "@/lib/query/keys";
-import { ForeignTableSummary, foreignAreaCount } from "./per-diem-foreign-table-summary";
 import {
 	PER_DIEM_RATE_FIELDS,
 	type PerDiemPolicyInputErrors,
@@ -65,6 +64,8 @@ import type {
 	PerDiemRates,
 	StatutoryPerDiemDefault,
 } from "@/lib/travel-expenses/statutory-per-diem-defaults";
+import { foreignAreaCount } from "./per-diem-foreign-areas";
+import { ForeignTableSummary } from "./per-diem-foreign-table-summary";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 const queryKey = queryKeys.travelExpenses.perDiemPolicy();

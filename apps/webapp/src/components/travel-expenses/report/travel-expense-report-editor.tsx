@@ -47,8 +47,10 @@ import {
 	tripReportMissingRequirements,
 } from "@/lib/travel-expenses/trip-report";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
-import { MileageItemEditor, mileageDraftMatches, mileageDraftOf } from "./mileage-item-editor";
-import { PerDiemItemEditor, perDiemDraftMatches, perDiemDraftOf } from "./per-diem-item-editor";
+import { mileageDraftMatches, mileageDraftOf } from "./mileage-item-draft";
+import { MileageItemEditor } from "./mileage-item-editor";
+import { perDiemDraftMatches, perDiemDraftOf } from "./per-diem-item-draft";
+import { PerDiemItemEditor } from "./per-diem-item-editor";
 import { ReceiptItemEditor } from "./receipt-item-editor";
 import { LegacyConversionNotice } from "./legacy-conversion-notice";
 import { AdjustmentNotice } from "./report-adjustments";

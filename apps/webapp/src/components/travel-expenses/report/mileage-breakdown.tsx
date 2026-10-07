@@ -3,11 +3,9 @@
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import type { AllowancePolicySource } from "@/lib/travel-expenses/allowance-policy";
-import type { MileageVehicle } from "@/lib/travel-expenses/mileage";
 import { parseUnits } from "@/lib/travel-expenses/money";
 import { formatMoney, formatPlainDate } from "./format";
-
-type Translate = ReturnType<typeof useTranslate>["t"];
+import { formatPrecise, formatRatePerKm, policySourceLabel } from "./mileage-labels";
 
 /** The facts of a priced mileage item, live (calculated) or frozen (submitted). */
 export interface MileageBreakdownFacts {
@@ -19,34 +17,6 @@ export interface MileageBreakdownFacts {
 	policy: { effectiveFrom: string; source: AllowancePolicySource };
 }
 
-export function vehicleLabel(t: Translate, vehicle: MileageVehicle | null) {
-	switch (vehicle) {
-		case "car":
-			return t("travelExpenses.report.mileage.vehicles.car", "Car");
-		case "other_motor_vehicle":
-			return t(
-				"travelExpenses.report.mileage.vehicles.otherMotorVehicle",
-				"Other motor vehicle (e.g. motorcycle)",
-			);
-		default:
-			return null;
-	}
-}
-
-/** A precise decimal (rate per km, exact product) without money's rounding to cents. */
-function formatPrecise(locale: string, value: string, currency: string, maxDigits: number) {
-	try {
-		return new Intl.NumberFormat(locale, {
-			style: "currency",
-			currency,
-			minimumFractionDigits: 2,
-			maximumFractionDigits: maxDigits,
-		}).format(value as Intl.StringNumericLiteral);
-	} catch {
-		return `${value} ${currency}`;
-	}
-}
-
 /** Whether the exact product was rounded to the amount: compared as exact decimals. */
 function isRounded(exactAmount: string, amount: string): boolean {
 	const scale = Math.max(exactAmount.split(".")[1]?.length ?? 0, amount.split(".")[1]?.length ?? 0);
@@ -55,30 +25,10 @@ function isRounded(exactAmount: string, amount: string): boolean {
 	return exact === null || rounded === null ? exactAmount !== amount : exact !== rounded;
 }
 
-/** A rate per kilometre with up to its four stored decimals. */
-export function formatRatePerKm(locale: string, rate: string, currency: string) {
-	return formatPrecise(locale, rate, currency, 4);
-}
-
 function formatDistance(locale: string, distanceKm: string) {
 	return new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(
 		distanceKm as Intl.StringNumericLiteral,
 	);
-}
-
-export function policySourceLabel(t: Translate, source: AllowancePolicySource) {
-	if (source.kind === "statutory_default") {
-		return t(
-			"travelExpenses.report.mileage.sourceStatutory",
-			"German statutory flat rate ({version})",
-			{ version: source.version ?? "" },
-		);
-	}
-	return source.reference
-		? t("travelExpenses.report.mileage.sourceOrganization", "Organization policy: {reference}", {
-				reference: source.reference,
-			})
-		: t("travelExpenses.report.mileage.sourceOrganizationUnnamed", "Organization policy");
 }
 
 /**

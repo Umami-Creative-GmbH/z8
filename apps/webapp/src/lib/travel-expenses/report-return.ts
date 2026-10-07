@@ -49,10 +49,11 @@ export function parseReturnReportInput(
 	if (!note) return { ok: false, error: "note_required" };
 	if (note.length > RETURN_NOTE_MAX_LENGTH) return { ok: false, error: "note_too_long" };
 	const byItem = new Map<string, string>();
+	const submitted = new Set(submittedItemIds);
 	for (const comment of input.itemComments) {
 		const body = comment.body.trim();
 		if (!body) continue;
-		if (!submittedItemIds.includes(comment.itemId)) return { ok: false, error: "unknown_item" };
+		if (!submitted.has(comment.itemId)) return { ok: false, error: "unknown_item" };
 		if (byItem.has(comment.itemId)) return { ok: false, error: "duplicate_item" };
 		if (body.length > RETURN_ITEM_COMMENT_MAX_LENGTH) {
 			return { ok: false, error: "comment_too_long" };
