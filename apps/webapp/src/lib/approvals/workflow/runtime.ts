@@ -23,7 +23,7 @@ import {
 	preflightCanonicalWorkPeriodDecisionEvidence,
 	recordCanonicalWorkPeriodDecisionEvidence,
 } from "../evidence/work-period-evidence";
-import { isOwnRequestDecision } from "../policies/self-decision";
+import { isOwnRequestDecision, ownRequestDecisionError } from "../policies/self-decision";
 import { createLegacyApprovalRowWriter } from "./compatibility-writer";
 import { createLegacyApprovalObservationPlanner } from "./legacy-observation-planner";
 import { createOffboardingReassignmentAuthority } from "./offboarding-authority";
@@ -225,7 +225,12 @@ export function createApprovalWorkflowAuthorization(input: {
 					actorEmployeeId: request.actor.employeeId,
 				})
 			) {
-				return runtimeFailure("forbidden self-decision");
+				// Typed, so the decision owners' translators pass it on as a forbidden result.
+				throw ownRequestDecisionError({
+					actorEmployeeId: request.actor.employeeId,
+					resource: workflow.workflowType,
+					action: command.type,
+				});
 			}
 			if (
 				isDecision &&

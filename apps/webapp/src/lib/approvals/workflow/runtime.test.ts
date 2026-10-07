@@ -836,10 +836,10 @@ describe("approval workflow runtime", () => {
 		]) {
 			await expect(
 				authorization.authorize({ ...base, workflow, command }),
-			).rejects.toThrow(/forbidden self-decision/i);
+			).rejects.toThrow("You cannot decide your own request");
 			await expect(
 				authorization.authorize({ ...base, workflow: ownAssignmentWorkflow, command }),
-			).rejects.toThrow(/forbidden self-decision/i);
+			).rejects.toThrow("You cannot decide your own request");
 		}
 		expect(managementChecks).toEqual([]);
 		await expect(
@@ -926,16 +926,25 @@ describe("approval workflow runtime", () => {
 				command: { type: "cancel", reason: "withdrawn" },
 			}),
 		).rejects.toThrow(/scope/i);
+		const approve = {
+			type: "approve" as const,
+			stageId: ids.stage,
+			assignmentId: ids.assignment,
+		};
+		await expect(
+			authorization.authorize({ ...base, command: approve }),
+		).rejects.toThrow("You cannot decide your own request");
 		await expect(
 			authorization.authorize({
 				...base,
-				command: {
-					type: "approve",
-					stageId: ids.stage,
-					assignmentId: ids.assignment,
+				actor: {
+					kind: "employee",
+					employeeId: ids.fallbackManager,
+					userId: "unrelated-user",
 				},
+				command: approve,
 			}),
-		).rejects.toThrow(/forbidden/i);
+		).rejects.toThrow(/forbidden command actor/i);
 	});
 
 	it("loads the exact workflow source through the registered adapter and transaction", async () => {

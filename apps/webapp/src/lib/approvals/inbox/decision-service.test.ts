@@ -1017,6 +1017,31 @@ describe("approval inbox decision service", () => {
 			},
 		);
 
+		it("refuses a canonical assignment target of one's own time request", async () => {
+			const approve = vi.fn(() => Effect.succeed(undefined));
+			const error = await decideApprovalInboxItemFromRequest({
+				request: {
+					id: "assignment-1",
+					targetType: "canonical_assignment",
+					entityType: "time_entry",
+					entityId: "work-period-1",
+					organizationId: "org-1",
+					approverId: "manager-1",
+					requesterEmployeeId: "admin-1",
+					status: "pending",
+					workflowKind: "time_correction",
+				},
+				actorEmployeeId: "admin-1",
+				action: "approve",
+				allowOrganizationWideApprover: true,
+				handler: { type: "time_entry", approve, reject: vi.fn() } as never,
+			}).catch((caught) => caught);
+
+			expect(error).toBeInstanceOf(AuthorizationError);
+			expect(error.message).toBe("You cannot decide your own request");
+			expect(approve).not.toHaveBeenCalled();
+		});
+
 		it("refuses single inbox decisions on one's own request for manage-approval actors", async () => {
 			const ownRequest = {
 				id: "approval-own",

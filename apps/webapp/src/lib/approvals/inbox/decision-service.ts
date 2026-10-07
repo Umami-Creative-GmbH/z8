@@ -14,6 +14,7 @@ import type {
 } from "@/lib/approvals/domain/types";
 import {
 	isOwnRequestDecision,
+	isOwnRequestDecisionRefusal,
 	ownRequestDecisionError,
 } from "@/lib/approvals/policies/self-decision";
 import {
@@ -869,7 +870,7 @@ function mapDecisionFailure(
 
 function getSafeAuthorizationMessage(message: string): string {
 	return message === "You are not authorized to decide this request" ||
-		message.startsWith("You cannot decide your own ")
+		isOwnRequestDecisionRefusal(message)
 		? message
 		: "You are not authorized to decide this request";
 }
