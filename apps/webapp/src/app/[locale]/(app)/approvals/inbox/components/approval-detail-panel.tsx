@@ -64,10 +64,13 @@ type Translate = ReturnType<typeof useTranslate>["t"];
 function localizedText(
 	t: Translate,
 	value: string | ApprovalInboxLocalizedText,
+	locale: string,
 ) {
 	// Nested texts (e.g. a per diem day's basis inside its line) are translated first.
-	return resolveLocalizedText(value, (key, fallback, params) =>
-		params ? t(key, fallback, params) : t(key, fallback),
+	return resolveLocalizedText(
+		value,
+		(key, fallback, params) => (params ? t(key, fallback, params) : t(key, fallback)),
+		locale,
 	);
 }
 
@@ -107,17 +110,17 @@ function renderDetailSection(
 			);
 		case "key_value":
 			return (
-				<section key={localizedText(t, section.title)}>
-					<SectionTitle>{localizedText(t, section.title)}</SectionTitle>
+				<section key={localizedText(t, section.title, locale)}>
+					<SectionTitle>{localizedText(t, section.title, locale)}</SectionTitle>
 					<dl className="space-y-3 rounded-xl border bg-card/60 p-4 shadow-sm">
 						{section.rows.map((row) => (
 							<div
-								key={localizedText(t, row.label)}
+								key={localizedText(t, row.label, locale)}
 								// The label keeps up to 45%: a long value wraps instead of squeezing it.
 								className="grid grid-cols-[fit-content(45%)_minmax(0,1fr)] items-start gap-4"
 							>
 								<dt className="text-sm text-muted-foreground">
-									{localizedText(t, row.label)}
+									{localizedText(t, row.label, locale)}
 								</dt>
 								<dd
 									className={cn(
@@ -132,12 +135,12 @@ function renderDetailSection(
 											href={row.href}
 											className="rounded-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2"
 										>
-											{localizedText(t, row.value)}
+											{localizedText(t, row.value, locale)}
 										</Link>
 									) : typeof row.value === "string" ? (
 										row.value
 									) : !("kind" in row.value) ? (
-										localizedText(t, row.value)
+										localizedText(t, row.value, locale)
 									) : (
 										<span className="grid gap-1">
 											<span>
@@ -171,12 +174,12 @@ function renderDetailSection(
 			);
 		case "timeline":
 			return (
-				<section key={localizedText(t, section.title)}>
-					<SectionTitle>{localizedText(t, section.title)}</SectionTitle>
+				<section key={localizedText(t, section.title, locale)}>
+					<SectionTitle>{localizedText(t, section.title, locale)}</SectionTitle>
 					<div className="space-y-3 rounded-xl border bg-card/60 p-4 shadow-sm">
 						{section.events.map((event) => (
 							<div key={event.id} className="border-l-2 border-primary/30 pl-3">
-								<p className="text-sm font-semibold">{localizedText(t, event.label)}</p>
+								<p className="text-sm font-semibold">{localizedText(t, event.label, locale)}</p>
 								<p className="text-xs text-muted-foreground">
 									{event.actorName
 										? t(
@@ -194,7 +197,7 @@ function renderDetailSection(
 		case "callout":
 			return (
 				<section
-					key={localizedText(t, section.title)}
+					key={localizedText(t, section.title, locale)}
 					className={cn(
 						"rounded-xl border p-4 shadow-sm",
 						section.tone === "info" &&
@@ -205,9 +208,9 @@ function renderDetailSection(
 							"border-destructive/30 bg-destructive/5 text-destructive",
 					)}
 				>
-					<h4 className="text-sm font-medium">{localizedText(t, section.title)}</h4>
+					<h4 className="text-sm font-medium">{localizedText(t, section.title, locale)}</h4>
 					<p className="mt-1 text-sm leading-6 text-muted-foreground">
-						{localizedText(t, section.body)}
+						{localizedText(t, section.body, locale)}
 					</p>
 				</section>
 			);
