@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import { getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 import {
@@ -13,6 +12,7 @@ import {
 	type SaveConversionResult,
 	saveCardChargeConversion,
 } from "@/lib/travel-expenses/conversion-store";
+import { currentReportOwner as currentOwner } from "@/lib/travel-expenses/current-owner";
 import type { ReportOwner } from "@/lib/travel-expenses/report-store";
 
 /**
@@ -21,16 +21,6 @@ import type { ReportOwner } from "@/lib/travel-expenses/report-store";
  * server; the reimbursable amount is always derived from it, never taken from
  * the client. Authorized rates are an administrator action (settings).
  */
-
-async function currentOwner(): Promise<ReportOwner | null> {
-	const authContext = await getAuthContext();
-	if (!authContext?.employee) return null;
-	return {
-		organizationId: authContext.employee.organizationId,
-		employeeId: authContext.employee.id,
-		userId: authContext.user.id,
-	};
-}
 
 const itemInput = z.object({
 	reportId: z.uuid(),

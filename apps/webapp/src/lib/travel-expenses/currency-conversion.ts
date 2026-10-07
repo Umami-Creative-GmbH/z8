@@ -3,6 +3,7 @@ import {
 	currencyMinorUnitDigits,
 	divideToUnits,
 	formatUnits,
+	MAX_AMOUNT_UNITS,
 	multiplyToUnits,
 	parseUnits,
 	type RoundingMode,
@@ -52,8 +53,6 @@ export const MAX_RATE_EVIDENCE_LENGTH = 2000;
  * days (`reference-rate.ts`). Older rates are refused rather than trusted.
  */
 export const MAX_MANUAL_RATE_AGE_DAYS = 31;
-/** Largest amount of the stored `decimal(12, 2)` columns, in units. */
-const MAX_AMOUNT_UNITS = BigInt(99_999_999_999);
 const ZERO = BigInt(0);
 
 /** `1 base = value quote`; the pair is the item's two currencies, in either order. */

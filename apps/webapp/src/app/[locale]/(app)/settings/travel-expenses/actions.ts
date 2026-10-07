@@ -3,8 +3,8 @@
 import { desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { travelExpensePolicy } from "@/db/schema";
-import { canManageCurrentOrganizationSettings, getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { requireExpenseAdministrator } from "@/lib/travel-expenses/expense-administrator";
 
 /**
  * Legacy travel expense policies (read-only since #606). Their rates were
@@ -25,32 +25,7 @@ export interface LegacyTravelExpensePolicyView {
 	isActive: boolean;
 }
 
-type TravelExpenseOrgAdminAccess =
-	| { error: string }
-	| {
-			authContext: NonNullable<Awaited<ReturnType<typeof getAuthContext>>>;
-			organizationId: string;
-	  };
-
-async function requireTravelExpenseOrgAdmin(): Promise<TravelExpenseOrgAdminAccess> {
-	const authContext = await getAuthContext();
-
-	if (!authContext) {
-		return { error: "Unauthorized: Admin access required" } as const;
-	}
-
-	const organizationId = authContext.session.activeOrganizationId;
-
-	if (!organizationId) {
-		return { error: "No organization selected" } as const;
-	}
-
-	if (!(await canManageCurrentOrganizationSettings())) {
-		return { error: "Unauthorized: Admin access required" } as const;
-	}
-
-	return { authContext, organizationId } as const;
-}
+const requireTravelExpenseOrgAdmin = () => requireExpenseAdministrator();
 
 /**
  * The column is a timestamp without zone that the legacy dialog wrote as a

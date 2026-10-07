@@ -11,6 +11,7 @@ import {
 } from "@/db/schema";
 import type { TravelExpenseReportCycleClosureKind } from "@/db/schema/travel-expense-review";
 import { dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { failureOfCause as failureOf } from "@/lib/effect/cause-failure";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -124,14 +125,6 @@ export type TravelExpenseReportReturnOutcome = {
 	/** A withdrawn delivery intent of the cycle committed; kick the delivery owner. */
 	deliveryIntent: boolean;
 };
-
-function failureOf(cause: Cause.Cause<unknown>): unknown {
-	return (
-		Option.getOrNull(Cause.findErrorOption(cause)) ??
-		Result.getOrNull(Cause.findDefect(cause)) ??
-		new Error("An error has occurred")
-	);
-}
 
 function statusConflict(): ConflictError {
 	return new ConflictError({
@@ -522,6 +515,7 @@ export async function executeTravelExpenseReportReturnInTransaction(
 			"existing",
 		).pipe(
 			Effect.provideService(ApprovalAuditLogger, createApprovalReturnAuditLogger(dbService)),
+			// The shared legacy mutation is typed with an open requirement; every service it uses is provided.
 		) as Effect.Effect<unknown, AnyAppError, never>,
 	);
 	if (Exit.isFailure(exit)) throw failureOf(exit.cause);

@@ -3,9 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import { canManageCurrentOrganizationSettings, getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
+import {
+	EXPENSE_ADMIN_UNAUTHORIZED,
+	requireExpenseAdministrator as requireExpenseAdministratorAccess,
+} from "@/lib/travel-expenses/expense-administrator";
 import {
 	CURRENT_REFERENCE_RATE_ACKNOWLEDGEMENT,
 	REFERENCE_RATE_PROVIDERS,
@@ -35,17 +38,12 @@ export interface ReferenceRateSettings {
 	provider: ReferenceRateProviderStatus;
 }
 
-const UNAUTHORIZED = "Unauthorized: Admin access required";
+const UNAUTHORIZED = EXPENSE_ADMIN_UNAUTHORIZED;
 
+/** The approval is attributed to the administrator's employee profile. */
 async function requireExpenseAdministrator() {
-	const authContext = await getAuthContext();
-	if (!authContext?.employee) return null;
-	if (!(await canManageCurrentOrganizationSettings())) return null;
-	return {
-		organizationId: authContext.employee.organizationId,
-		employeeId: authContext.employee.id,
-		userId: authContext.user.id,
-	};
+	const access = await requireExpenseAdministratorAccess({ requireEmployee: true });
+	return "error" in access ? null : access;
 }
 
 export async function getReferenceRateSettings(): Promise<

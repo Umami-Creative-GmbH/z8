@@ -7,6 +7,7 @@ import {
 import {
 	currencyMinorUnitDigits,
 	formatUnits,
+	MAX_AMOUNT_UNITS,
 	parseUnits,
 	STORED_AMOUNT_SCALE,
 	sumUnits,
@@ -79,8 +80,6 @@ export interface SettlementSummary {
 }
 
 const ZERO = BigInt(0);
-/** Largest amount of the stored `decimal(12, 2)` columns, in units. */
-const MAX_AMOUNT_UNITS = BigInt(99_999_999_999);
 
 function storedUnits(value: string): bigint {
 	const units = parseUnits(value, STORED_AMOUNT_SCALE);

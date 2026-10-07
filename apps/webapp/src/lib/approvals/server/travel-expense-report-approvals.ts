@@ -8,6 +8,7 @@ import {
 	travelExpenseReport,
 } from "@/db/schema";
 import { getAbility } from "@/lib/auth-helpers";
+import { failureOfCause as failureOf } from "@/lib/effect/cause-failure";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -34,22 +35,17 @@ import {
 	recordLegacyDecisionEvidence,
 } from "../evidence/store";
 import { deriveLegacyTravelExpenseDecisionOutcome } from "../evidence/travel-expense-decision";
+import type { TravelExpenseReportSubmittedFacts } from "../evidence/travel-expense-report-facts";
 import {
 	loadTravelExpenseReportSubmittedRevision,
 	TRAVEL_EXPENSE_REPORT_SOURCE_TYPE,
 	type TravelExpenseReportSubmittedRevisionRecord,
 } from "../evidence/travel-expense-report-store";
-import type { TravelExpenseReportSubmittedFacts } from "../evidence/travel-expense-report-facts";
 import { compareTravelExpenseReportWithSubmittedRevision } from "../evidence/travel-expense-report-submission";
 import { ApprovalAuditLogger, createApprovalAuditLogger } from "../infrastructure/audit-logger";
 import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
 import { processApprovalWithCurrentEmployee } from "./shared";
 import { assertAdjustmentBaselineCurrent } from "./travel-expense-report-adjustment-guard";
-import {
-	acceptedReceiptExceptionsForCommand,
-	receiptExceptionAcceptanceResult,
-	requireReceiptExceptionAcceptance,
-} from "./travel-expense-report-receipt-exceptions";
 import {
 	beginBoundReportInvocation,
 	loadBoundReportBinding,
@@ -57,6 +53,11 @@ import {
 	type TravelExpenseReportBoundInvocation,
 } from "./travel-expense-report-bound-invocation";
 import { recordTravelExpenseReportDeliveryIntent } from "./travel-expense-report-delivery";
+import {
+	acceptedReceiptExceptionsForCommand,
+	receiptExceptionAcceptanceResult,
+	requireReceiptExceptionAcceptance,
+} from "./travel-expense-report-receipt-exceptions";
 import type { ApprovalAction, ApprovalDatabase, ApprovalDbService, CurrentApprover } from "./types";
 
 /**
@@ -478,14 +479,6 @@ async function recordReportDecisionEvidence(
 	}
 }
 
-function failureOf(cause: Cause.Cause<unknown>): unknown {
-	return (
-		Option.getOrNull(Cause.findErrorOption(cause)) ??
-		Result.getOrNull(Cause.findDefect(cause)) ??
-		new Error("An error has occurred")
-	);
-}
-
 /**
  * Runs one report decision in the caller's transaction. Order: rollout gate,
  * invocation lock, replay and admission (bound cards, #623), authority, exact
@@ -624,9 +617,7 @@ export async function executeTravelExpenseReportDecisionInTransaction(
 				persistReportDecision(decisionDbService, decisionEntityId, approver, action),
 			(decisionDbService, decisionEntityId, approver) =>
 				preflightReportDecision(decisionDbService, decisionEntityId, approver, action, reason).pipe(
-					Effect.tap(() =>
-						requireReceiptExceptionAcceptance(revision.facts, action, accepted),
-					),
+					Effect.tap(() => requireReceiptExceptionAcceptance(revision.facts, action, accepted)),
 				),
 			// A card decides only as the exact bound request's approver.
 			{ ...(binding ? {} : input.options), approvalRequestId, transactional: true },

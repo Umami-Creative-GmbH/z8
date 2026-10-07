@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import { getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 import { ADJUSTMENT_REASON_MAX_LENGTH } from "@/lib/travel-expenses/adjustment";
@@ -14,22 +13,13 @@ import {
 	loadOwnReportAdjustments,
 	type ReportAdjustmentView,
 } from "@/lib/travel-expenses/adjustment-store";
+import { currentReportOwner as currentOwner } from "@/lib/travel-expenses/current-owner";
 
 /**
  * Adjustments of exported or reimbursed reports (#615). The employee creates a
  * linked correction of their own report; it is submitted and reviewed like
  * any report, so no approval is ever skipped, whatever the sign of its delta.
  */
-
-async function currentOwner() {
-	const authContext = await getAuthContext();
-	if (!authContext?.employee) return null;
-	return {
-		organizationId: authContext.employee.organizationId,
-		employeeId: authContext.employee.id,
-		userId: authContext.user.id,
-	};
-}
 
 const createSchema = z.object({
 	originalReportId: z.uuid(),

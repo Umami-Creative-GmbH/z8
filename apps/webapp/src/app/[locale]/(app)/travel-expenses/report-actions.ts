@@ -3,12 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
+import {
+	type SubmitTravelExpenseReportResult,
+	submitTravelExpenseReport,
+} from "@/lib/approvals/server/travel-expense-report-submission";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import { getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 import { deletePrivateObject } from "@/lib/storage/export-s3-client";
 import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import { currentReportOwner as currentOwner } from "@/lib/travel-expenses/current-owner";
 import {
 	parseReceiptItemDraft,
 	type ReceiptItemDraft,
@@ -16,6 +20,12 @@ import {
 	type ReceiptItemFieldError,
 } from "@/lib/travel-expenses/receipt-report";
 import { runTravelExpenseReceiptCleanup } from "@/lib/travel-expenses/receipt-upload";
+import {
+	authorizedReportCycle,
+	loadAuthorizedTravelExpenseReport,
+	loadSubmittedReportView,
+	type SubmittedReportView,
+} from "@/lib/travel-expenses/report-read";
 import { removeReportReceipt } from "@/lib/travel-expenses/report-receipt-upload";
 import {
 	addTripReportItem,
@@ -33,12 +43,6 @@ import {
 	saveTripDetailsDraft,
 	type TripDetailsView,
 } from "@/lib/travel-expenses/report-store";
-import {
-	loadAuthorizedTravelExpenseReport,
-	authorizedReportCycle,
-	loadSubmittedReportView,
-	type SubmittedReportView,
-} from "@/lib/travel-expenses/report-read";
 import type { ReviewedReportVersions } from "@/lib/travel-expenses/report-submission";
 import {
 	parseTripDetailsDraft,
@@ -46,20 +50,6 @@ import {
 	type TripDetailsDraftInput,
 	type TripDetailsFieldError,
 } from "@/lib/travel-expenses/trip-report";
-import {
-	type SubmitTravelExpenseReportResult,
-	submitTravelExpenseReport,
-} from "@/lib/approvals/server/travel-expense-report-submission";
-
-async function currentOwner(): Promise<ReportOwner | null> {
-	const authContext = await getAuthContext();
-	if (!authContext?.employee) return null;
-	return {
-		organizationId: authContext.employee.organizationId,
-		employeeId: authContext.employee.id,
-		userId: authContext.user.id,
-	};
-}
 
 const uuid = z.uuid();
 

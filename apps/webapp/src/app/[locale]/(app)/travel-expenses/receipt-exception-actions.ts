@@ -2,25 +2,15 @@
 
 import { z } from "zod";
 import { db } from "@/db";
-import { getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
+import { currentReportOwner as currentOwner } from "@/lib/travel-expenses/current-owner";
 import { parseReceiptExceptionDraft } from "@/lib/travel-expenses/receipt-exception";
 import type { ReceiptExceptionView } from "@/lib/travel-expenses/receipt-exception-read";
 import { saveReceiptExceptionDraft } from "@/lib/travel-expenses/receipt-exception-store";
 import type { ReportOwner } from "@/lib/travel-expenses/report-store";
 
 /** Employee actions for missing-receipt exceptions of a draft expense (#604). */
-
-async function currentOwner(): Promise<ReportOwner | null> {
-	const authContext = await getAuthContext();
-	if (!authContext?.employee) return null;
-	return {
-		organizationId: authContext.employee.organizationId,
-		employeeId: authContext.employee.id,
-		userId: authContext.user.id,
-	};
-}
 
 export type SaveReceiptExceptionOutcome =
 	| { status: "saved"; receiptException: ReceiptExceptionView }

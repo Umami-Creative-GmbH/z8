@@ -13,6 +13,7 @@ import {
 	travelExpenseSettings,
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import { failureOfCause as failureOf } from "@/lib/effect/cause-failure";
 import { ValidationError } from "@/lib/effect/errors";
 import {
 	resolveSubmittedAdjustmentBaseline,
@@ -28,8 +29,8 @@ import {
 	EDITABLE_REPORT_STATUSES,
 	isEditableReportStatus,
 } from "@/lib/travel-expenses/report-return";
-import type { ReportOwner } from "@/lib/travel-expenses/report-store";
 import { resolveReportReviewer } from "@/lib/travel-expenses/report-reviewer-routing";
+import type { ReportOwner } from "@/lib/travel-expenses/report-store";
 import {
 	checkReportSubmission,
 	type ReportSubmissionTotals,
@@ -218,14 +219,6 @@ function policyContext(input: {
 	};
 }
 
-function failureOf(cause: Cause.Cause<unknown>): unknown {
-	return (
-		Option.getOrNull(Cause.findErrorOption(cause)) ??
-		Result.getOrNull(Cause.findDefect(cause)) ??
-		new Error("An error has occurred")
-	);
-}
-
 export async function submitTravelExpenseReport(
 	database: Database,
 	input: { owner: ReportOwner; reportId: string; reviewed: ReviewedReportVersions },
@@ -288,9 +281,13 @@ export async function submitTravelExpenseReport(
 			// Calculates the trip's per diem and stamps its rule edition and versions (#609).
 			const perDiem = await stampPerDiemPolicies(tx, { report, items: live.items });
 			// Read under a shared lock: a concurrent change of the setting waits (#604).
-			const receiptExceptionsAllowed = await loadReceiptExceptionsAllowed(tx, owner.organizationId, {
-				lock: "share",
-			});
+			const receiptExceptionsAllowed = await loadReceiptExceptionsAllowed(
+				tx,
+				owner.organizationId,
+				{
+					lock: "share",
+				},
+			);
 			const check = checkReportSubmission(
 				{
 					kind: report.kind,

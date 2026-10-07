@@ -3,7 +3,13 @@ import {
 	isAllowedTravelExpenseMime,
 	TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER,
 } from "./attachment-validation";
-import { currencyMinorUnitDigits, formatUnits, parseUnits, STORED_AMOUNT_SCALE } from "./money";
+import {
+	currencyMinorUnitDigits,
+	formatUnits,
+	MAX_AMOUNT_UNITS,
+	parseUnits,
+	STORED_AMOUNT_SCALE,
+} from "./money";
 import {
 	DEFAULT_REIMBURSEMENT_CURRENCY,
 	isSupportedCurrency,
@@ -153,8 +159,8 @@ function carriedAmount(
 		return { amount: null, currency: code };
 	}
 	const units = parseUnits(amount.trim(), STORED_AMOUNT_SCALE);
-	const max = BigInt("99999999999");
-	if (units === null || units <= BigInt(0) || units > max) return { amount: null, currency: code };
+	if (units === null || units <= BigInt(0) || units > MAX_AMOUNT_UNITS)
+		return { amount: null, currency: code };
 	return { amount: formatUnits(units, STORED_AMOUNT_SCALE), currency: code };
 }
 

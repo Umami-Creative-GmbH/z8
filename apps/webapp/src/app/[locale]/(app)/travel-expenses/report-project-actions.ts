@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
-import { getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
+import { currentReportOwner as currentOwner } from "@/lib/travel-expenses/current-owner";
 import type { ItemProjectChoice } from "@/lib/travel-expenses/project-attribution";
 import {
 	listReportProjectChoices,
@@ -22,16 +22,6 @@ import type { ReportOwner } from "@/lib/travel-expenses/report-store";
  * picker and the saves share one expense-date eligibility rule; the server
  * decides eligibility, the client only names the project.
  */
-
-async function currentOwner(): Promise<ReportOwner | null> {
-	const authContext = await getAuthContext();
-	if (!authContext?.employee) return null;
-	return {
-		organizationId: authContext.employee.organizationId,
-		employeeId: authContext.employee.id,
-		userId: authContext.user.id,
-	};
-}
 
 const plainDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 

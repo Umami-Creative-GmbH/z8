@@ -1,5 +1,5 @@
 import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
-import { formatUnits, STORED_AMOUNT_SCALE } from "./money";
+import { formatUnits, parseUnits, STORED_AMOUNT_SCALE } from "./money";
 import type { OfficialSource } from "./statutory-per-diem-defaults";
 
 /**
@@ -77,7 +77,15 @@ type CountryRow =
 			places: readonly PlaceRow[],
 	  ];
 
-const euros = (amount: number): string => formatUnits(BigInt(amount * 100), STORED_AMOUNT_SCALE);
+/**
+ * A table amount as a stored decimal. The literal's shortest decimal text is
+ * parsed exactly (never `amount * 100`, which a binary float can miss).
+ */
+function euros(amount: number): string {
+	const units = parseUnits(String(amount), STORED_AMOUNT_SCALE);
+	if (units === null) throw new RangeError(`Not a table amount: ${amount}`);
+	return formatUnits(units, STORED_AMOUNT_SCALE);
+}
 
 function countriesOf(rows: readonly CountryRow[]): ForeignPerDiemCountry[] {
 	return rows.map(([country, label, fullDay, partialDay, places]) => ({

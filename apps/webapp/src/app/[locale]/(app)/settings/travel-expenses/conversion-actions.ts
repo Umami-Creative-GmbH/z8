@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import { canManageCurrentOrganizationSettings, getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 import { loadOrganizationReimbursementCurrency } from "@/lib/travel-expenses/conversion-read";
@@ -18,6 +17,7 @@ import {
 	type RemoveConversionResult,
 	saveOrganizationReimbursementCurrency,
 } from "@/lib/travel-expenses/conversion-store";
+import { requireExpenseAdministrator as requireExpenseAdministratorAccess } from "@/lib/travel-expenses/expense-administrator";
 
 /**
  * Expense administrator settings of #607: the organization's reimbursement
@@ -27,17 +27,9 @@ import {
  * is scoped to their active organization.
  */
 
+/** Authorizations are attributed to the administrator's employee profile. */
 async function requireExpenseAdministrator(): Promise<{ error: string } | ConversionAdministrator> {
-	const authContext = await getAuthContext();
-	if (!authContext?.employee) return { error: "Unauthorized: Admin access required" };
-	if (!(await canManageCurrentOrganizationSettings())) {
-		return { error: "Unauthorized: Admin access required" };
-	}
-	return {
-		organizationId: authContext.employee.organizationId,
-		employeeId: authContext.employee.id,
-		userId: authContext.user.id,
-	};
+	return requireExpenseAdministratorAccess({ requireEmployee: true });
 }
 
 export async function getReimbursementCurrencySetting(): Promise<

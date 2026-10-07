@@ -151,11 +151,11 @@ export async function returnTravelExpenseReportAction(input: {
 		}
 		// A request that is no longer pending reaches the owner too: an exact retry
 		// of a committed return replays there, anything else is refused there.
-		const actor = (await db.query.employee.findFirst({
+		const actor: CurrentApprover | undefined = await db.query.employee.findFirst({
 			where: (employee, { and, eq }) =>
 				and(eq(employee.id, actorEmployee.id), eq(employee.organizationId, organizationId)),
 			with: { user: true },
-		})) as CurrentApprover | undefined;
+		});
 		if (!actor) return { success: false, error: "Approval not found" };
 		const outcome = await returnTravelExpenseReport(
 			{ db, query },

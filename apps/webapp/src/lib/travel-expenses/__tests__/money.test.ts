@@ -3,12 +3,28 @@ import {
 	currencyMinorUnitDigits,
 	divideToUnits,
 	formatUnits,
+	MAX_AMOUNT_UNITS,
 	multiplyToUnits,
 	parseUnits,
 	roundToScale,
 	STORED_AMOUNT_SCALE,
+	signedAmount,
 	sumUnits,
 } from "../money";
+
+describe("signedAmount / MAX_AMOUNT_UNITS (spec #598 review)", () => {
+	it("signs only positive differences; zero has no sign", () => {
+		expect(signedAmount("12.30")).toBe("+12.30");
+		expect(signedAmount("-12.30")).toBe("-12.30");
+		expect(signedAmount("0.00")).toBe("0.00");
+		expect(signedAmount("-0.00")).toBe("-0.00");
+		expect(signedAmount("not a number")).toBe("not a number");
+	});
+
+	it("bounds a single amount at 999 999 999.99", () => {
+		expect(formatUnits(MAX_AMOUNT_UNITS, STORED_AMOUNT_SCALE)).toBe("999999999.99");
+	});
+});
 
 const units = (value: string | number) => BigInt(value);
 

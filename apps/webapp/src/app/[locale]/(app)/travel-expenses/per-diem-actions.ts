@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
-import { getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
+import { currentReportOwner as currentOwner } from "@/lib/travel-expenses/current-owner";
 import {
 	MAX_PER_DIEM_DAYS,
 	type PerDiemDraftField,
@@ -20,16 +20,6 @@ import type { ReportItemView, ReportOwner } from "@/lib/travel-expenses/report-s
  * Per diem actions (#609). The employee sends only the itinerary and the meal
  * facts; the allowance is always the server's calculation.
  */
-
-async function currentOwner(): Promise<ReportOwner | null> {
-	const authContext = await getAuthContext();
-	if (!authContext?.employee) return null;
-	return {
-		organizationId: authContext.employee.organizationId,
-		employeeId: authContext.employee.id,
-		userId: authContext.user.id,
-	};
-}
 
 export async function addTripPerDiemItemAction(input: {
 	reportId: string;

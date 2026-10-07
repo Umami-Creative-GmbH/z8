@@ -5,9 +5,9 @@ import { z } from "zod";
 import { db } from "@/db";
 import { travelExpenseSettings } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import { canManageCurrentOrganizationSettings, getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
+import { requireExpenseAdministrator } from "@/lib/travel-expenses/expense-administrator";
 import { loadReceiptExceptionsAllowed } from "@/lib/travel-expenses/receipt-exception-read";
 
 /**
@@ -20,18 +20,7 @@ export interface ReceiptExceptionSettings {
 	missingReceiptExceptionsAllowed: boolean;
 }
 
-async function requireOrgAdmin(): Promise<
-	{ error: string } | { organizationId: string; userId: string }
-> {
-	const authContext = await getAuthContext();
-	const organizationId = authContext?.session.activeOrganizationId;
-	if (!authContext) return { error: "Unauthorized: Admin access required" };
-	if (!organizationId) return { error: "No organization selected" };
-	if (!(await canManageCurrentOrganizationSettings())) {
-		return { error: "Unauthorized: Admin access required" };
-	}
-	return { organizationId, userId: authContext.user.id };
-}
+const requireOrgAdmin = () => requireExpenseAdministrator();
 
 export async function getReceiptExceptionSettings(): Promise<
 	ServerActionResult<ReceiptExceptionSettings>

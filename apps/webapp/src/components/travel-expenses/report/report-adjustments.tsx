@@ -37,7 +37,7 @@ import {
 } from "@/lib/travel-expenses/adjustment";
 import type { ReportAdjustmentView } from "@/lib/travel-expenses/adjustment-store";
 import { Link, useRouter } from "@/navigation";
-import { formatMoney } from "./format";
+import { formatMoney, formatSignedMoney } from "./format";
 import { formatRecordedInstant, ReportStatusBadge } from "./report-status";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -45,10 +45,7 @@ type Translate = ReturnType<typeof useTranslate>["t"];
 const NOT_FOUND = "Expense report not found";
 
 /** A signed amount: "+€30.00", "-€50.00". */
-function signedMoney(locale: string, amount: string, currency: string): string {
-	const formatted = formatMoney(locale, amount, currency);
-	return amount.startsWith("-") || /^0(\.0+)?$/.test(amount) ? formatted : `+${formatted}`;
-}
+const signedMoney = formatSignedMoney;
 
 /** The owner's adjustment view of a report; null for anyone else (#615). */
 function useReportAdjustments(reportId: string) {

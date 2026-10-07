@@ -138,6 +138,25 @@ export function roundToScale(value: DecimalInput, scale: number, mode: RoundingM
  */
 export const STORED_AMOUNT_SCALE = 2;
 
+/**
+ * The largest single amount in units of `STORED_AMOUNT_SCALE`: 999 999 999.99
+ * (99 999 999 999 units), one digit below what a `decimal(12, 2)` column holds,
+ * so report sums of many such amounts still fit. Every entered or derived
+ * amount is checked against it.
+ */
+export const MAX_AMOUNT_UNITS = BigInt("99999999999");
+
+/**
+ * A signed difference as text: "+12.30" when positive, "-12.30" when negative
+ * and the plain amount for zero ("0.00", never "+0.00"). Non-decimal input is
+ * returned unchanged.
+ */
+export function signedAmount(amount: string): string {
+	const scale = DECIMAL.exec(amount)?.[3]?.length ?? 0;
+	const units = parseUnits(amount, scale);
+	return units !== null && units > ZERO ? `+${amount}` : amount;
+}
+
 /** ISO 4217 minor-unit exponent of a currency: 2 for EUR, 0 for JPY, 3 for KWD. */
 export function currencyMinorUnitDigits(currency: string): number {
 	return (

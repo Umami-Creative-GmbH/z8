@@ -4,12 +4,7 @@ import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import type { SettlementAccount } from "@/lib/travel-expenses/settlement-store";
 import { Link } from "@/navigation";
-import { formatMoney } from "../report/format";
-
-function signedMoney(locale: string, amount: string, currency: string): string {
-	const formatted = formatMoney(locale, amount, currency);
-	return amount.startsWith("-") ? formatted : `+${formatted}`;
-}
+import { formatSignedMoney as signedMoney } from "../report/format";
 
 /**
  * Approved adjustments (#615) inside a settlement's entitlement list: each

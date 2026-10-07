@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import { canManageCurrentOrganizationSettings, getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 import { activeVersionTimeline, type TimelineEntry } from "@/lib/travel-expenses/allowance-policy";
@@ -14,6 +13,7 @@ import {
 	type MileagePolicyVersionView,
 	withdrawMileagePolicyVersion,
 } from "@/lib/travel-expenses/allowance-policy-store";
+import { requireExpenseAdministrator } from "@/lib/travel-expenses/expense-administrator";
 import {
 	type MileagePolicyInputErrors,
 	type MileagePolicyVersionFormInput,
@@ -39,22 +39,7 @@ export interface MileagePolicySettings {
 	defaults: StatutoryMileageDefault[];
 }
 
-async function requireExpenseAdmin(): Promise<
-	{ error: string } | { organizationId: string; userId: string; employeeId: string | null }
-> {
-	const authContext = await getAuthContext();
-	const organizationId = authContext?.session.activeOrganizationId;
-	if (!authContext) return { error: "Unauthorized: Admin access required" };
-	if (!organizationId) return { error: "No organization selected" };
-	if (!(await canManageCurrentOrganizationSettings())) {
-		return { error: "Unauthorized: Admin access required" };
-	}
-	return {
-		organizationId,
-		userId: authContext.user.id,
-		employeeId: authContext.employee?.id ?? null,
-	};
-}
+const requireExpenseAdmin = () => requireExpenseAdministrator();
 
 export async function getMileagePolicySettings(): Promise<
 	ServerActionResult<MileagePolicySettings>

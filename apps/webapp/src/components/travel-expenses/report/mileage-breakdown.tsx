@@ -4,6 +4,7 @@ import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import type { AllowancePolicySource } from "@/lib/travel-expenses/allowance-policy";
 import type { MileageVehicle } from "@/lib/travel-expenses/mileage";
+import { parseUnits } from "@/lib/travel-expenses/money";
 import { formatMoney, formatPlainDate } from "./format";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -40,10 +41,18 @@ function formatPrecise(locale: string, value: string, currency: string, maxDigit
 			currency,
 			minimumFractionDigits: 2,
 			maximumFractionDigits: maxDigits,
-		}).format(Number(value));
+		}).format(value as Intl.StringNumericLiteral);
 	} catch {
 		return `${value} ${currency}`;
 	}
+}
+
+/** Whether the exact product was rounded to the amount: compared as exact decimals. */
+function isRounded(exactAmount: string, amount: string): boolean {
+	const scale = Math.max(exactAmount.split(".")[1]?.length ?? 0, amount.split(".")[1]?.length ?? 0);
+	const exact = parseUnits(exactAmount, scale);
+	const rounded = parseUnits(amount, scale);
+	return exact === null || rounded === null ? exactAmount !== amount : exact !== rounded;
 }
 
 /** A rate per kilometre with up to its four stored decimals. */
@@ -52,7 +61,9 @@ export function formatRatePerKm(locale: string, rate: string, currency: string) 
 }
 
 function formatDistance(locale: string, distanceKm: string) {
-	return new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(Number(distanceKm));
+	return new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(
+		distanceKm as Intl.StringNumericLiteral,
+	);
 }
 
 export function policySourceLabel(t: Translate, source: AllowancePolicySource) {
@@ -77,7 +88,7 @@ export function policySourceLabel(t: Translate, source: AllowancePolicySource) {
 export function MileageBreakdown({ facts }: { facts: MileageBreakdownFacts }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const rounded = Number(facts.exactAmount) !== Number(facts.amount);
+	const rounded = isRounded(facts.exactAmount, facts.amount);
 	return (
 		<div className="space-y-1 text-sm">
 			<p className="tabular-nums">

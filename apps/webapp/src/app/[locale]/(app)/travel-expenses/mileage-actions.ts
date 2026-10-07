@@ -4,9 +4,9 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import { getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
+import { currentReportOwner as currentOwner } from "@/lib/travel-expenses/current-owner";
 import {
 	type MileageItemDraft,
 	type MileageItemDraftInput,
@@ -24,16 +24,6 @@ import type { ReportItemView, ReportOwner } from "@/lib/travel-expenses/report-s
  * Mileage expense actions (#606). The employee sends only date, route,
  * distance and vehicle; the amount is always the server's calculation.
  */
-
-async function currentOwner(): Promise<ReportOwner | null> {
-	const authContext = await getAuthContext();
-	if (!authContext?.employee) return null;
-	return {
-		organizationId: authContext.employee.organizationId,
-		employeeId: authContext.employee.id,
-		userId: authContext.user.id,
-	};
-}
 
 export async function createStandaloneMileageReportAction(): Promise<
 	ServerActionResult<{ reportId: string }>

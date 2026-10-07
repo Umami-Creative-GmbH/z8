@@ -1,5 +1,5 @@
 import { convertToReimbursement, type ItemConversion } from "./currency-conversion";
-import { formatUnits, parseUnits, STORED_AMOUNT_SCALE } from "./money";
+import { formatUnits, MAX_AMOUNT_UNITS, parseUnits, STORED_AMOUNT_SCALE } from "./money";
 import type { ExpensePayer } from "./receipt-report";
 
 /**
@@ -53,9 +53,6 @@ export type ItemReimbursementAmount =
 			amount: string;
 	  }
 	| { counted: false; reason: ItemNotCountedReason };
-
-/** Largest amount of the stored `decimal(12, 2)` columns, in units. */
-const MAX_AMOUNT_UNITS = BigInt(99_999_999_999);
 
 function reimbursementSource(
 	item: ReimbursementItemInput,

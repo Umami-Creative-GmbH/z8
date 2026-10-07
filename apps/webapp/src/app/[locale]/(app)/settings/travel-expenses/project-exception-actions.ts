@@ -7,9 +7,9 @@ import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, project } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import { canManageCurrentOrganizationSettings, getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
+import { requireExpenseAdministrator as requireExpenseAdministratorAccess } from "@/lib/travel-expenses/expense-administrator";
 import type { ProjectAttributionExceptionError } from "@/lib/travel-expenses/project-attribution-exception";
 import {
 	authorizeProjectAttributionException,
@@ -25,20 +25,9 @@ import {
  * project must belong to the active organization.
  */
 
+/** The authorization is attributed to the administrator's employee profile. */
 async function requireExpenseAdministrator(): Promise<{ error: string } | ExceptionActor> {
-	const authContext = await getAuthContext();
-	const organizationId = authContext?.session.activeOrganizationId;
-	if (!authContext) return { error: "Unauthorized: Admin access required" };
-	if (!organizationId) return { error: "No organization selected" };
-	if (!(await canManageCurrentOrganizationSettings())) {
-		return { error: "Unauthorized: Admin access required" };
-	}
-	const actor = authContext.employee;
-	// The authorization is attributed to the administrator's employee profile.
-	if (!actor || actor.organizationId !== organizationId) {
-		return { error: "An employee profile in this organization is required" };
-	}
-	return { organizationId, employeeId: actor.id, userId: authContext.user.id };
+	return requireExpenseAdministratorAccess({ requireEmployee: true });
 }
 
 export interface ProjectExceptionSettings {

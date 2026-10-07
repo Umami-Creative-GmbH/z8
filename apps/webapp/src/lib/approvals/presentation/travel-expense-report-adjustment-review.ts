@@ -1,3 +1,4 @@
+import { signedAmount } from "@/lib/travel-expenses/money";
 import type { TravelExpenseReportSubmittedFacts } from "../evidence/travel-expense-report-facts";
 import type { ApprovalInboxDetailSection, ApprovalInboxLocalizedText } from "../inbox/types";
 
@@ -18,7 +19,7 @@ export function adjustmentReviewSections(
 	const { adjustment } = facts;
 	if (!adjustment) return [];
 	const { baseline, delta } = adjustment;
-	const signed = delta.amount.startsWith("-") ? delta.amount : `+${delta.amount}`;
+	const signed = signedAmount(delta.amount);
 	return [
 		{
 			type: "callout",

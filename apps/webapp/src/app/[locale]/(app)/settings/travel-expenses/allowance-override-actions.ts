@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import { canManageCurrentOrganizationSettings, getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 import {
@@ -16,6 +15,7 @@ import {
 	type RevokeAllowanceOverrideResult,
 	revokeAllowanceOverride,
 } from "@/lib/travel-expenses/allowance-override-store";
+import { requireExpenseAdministrator as requireExpenseAdministratorAccess } from "@/lib/travel-expenses/expense-administrator";
 
 /**
  * Audited allowance overrides (#610). Only an organization expense
@@ -24,17 +24,9 @@ import {
  * the active organization. An ordinary user is refused before any read.
  */
 
+/** Overrides are attributed to the administrator's employee profile. */
 async function requireExpenseAdministrator(): Promise<{ error: string } | AllowanceOverrideActor> {
-	const authContext = await getAuthContext();
-	if (!authContext?.employee) return { error: "Unauthorized: Admin access required" };
-	if (!(await canManageCurrentOrganizationSettings())) {
-		return { error: "Unauthorized: Admin access required" };
-	}
-	return {
-		organizationId: authContext.employee.organizationId,
-		employeeId: authContext.employee.id,
-		userId: authContext.user.id,
-	};
+	return requireExpenseAdministratorAccess({ requireEmployee: true });
 }
 
 export async function getAllowanceExceptionItems(): Promise<

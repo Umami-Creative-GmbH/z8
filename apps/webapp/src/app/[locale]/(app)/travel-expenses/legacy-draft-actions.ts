@@ -4,11 +4,11 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import { getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 import { readPrivateObject } from "@/lib/storage/export-s3-client";
 import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import { currentReportOwner as currentOwner } from "@/lib/travel-expenses/current-owner";
 import {
 	type LegacyConversionView,
 	loadOwnLegacyConversion,
@@ -26,16 +26,6 @@ import {
 
 const CLAIM_NOT_FOUND = "Travel expense claim not found";
 const REPORT_NOT_FOUND = "Expense report not found";
-
-async function currentOwner() {
-	const authContext = await getAuthContext();
-	if (!authContext?.employee) return null;
-	return {
-		organizationId: authContext.employee.organizationId,
-		employeeId: authContext.employee.id,
-		userId: authContext.user.id,
-	};
-}
 
 export type ConvertLegacyDraftOutcome = Exclude<ConvertLegacyDraftResult, { kind: "not_found" }>;
 
