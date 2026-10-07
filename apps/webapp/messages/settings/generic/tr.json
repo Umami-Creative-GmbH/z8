@@ -1192,9 +1192,9 @@
         "title": "Masraf raporu incelemesi"
       },
       "currency": {
+        "choose": "En fazla iki ondalık basamağa sahip bir para birimi seçin (ör. EUR veya CHF).",
         "description": "Yeni masraf raporları bu para biriminde geri ödenir; mevcut raporlar kendi para birimlerini korur. Onay tutarı eşikleri EUR cinsinden karşılaştırılır, bu nedenle tutara dayalı onay kuralları mevcutken başka bir para birimindeki raporlar gönderilemez.",
         "intro": "Diğer para birimlerindeki makbuzlar orijinal tutarlarını korur ve kanıtlanmış bir kart harcaması veya belgelenmiş bir kur üzerinden dönüştürülür.",
-        "invalid": "En fazla iki ondalık basamağa sahip üç harfli bir para birimi kodu girin (ör. EUR veya CHF).",
         "label": "Geri ödeme para birimi",
         "loadFailed": "Geri ödeme para birimi yüklenemedi.",
         "save": "Para birimini kaydet",

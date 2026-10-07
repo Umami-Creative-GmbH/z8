@@ -66,8 +66,15 @@
     },
     "approvals": {
       "description": "Ouvrir la boîte de réception unifiée des approbations filtrée sur les frais de déplacement.",
-      "openInbox": "Ouvrir la boîte de réception",
-      "title": "Examiner les approbations de frais de déplacement en attente"
+      "entry": {
+        "open": "Ouvrir la boîte de réception",
+        "title": "Examiner les approbations de frais de déplacement en attente"
+      }
+    },
+    "currency": {
+      "empty": "Aucune devise trouvée",
+      "placeholder": "Choisir une devise",
+      "search": "Rechercher des devises"
     },
     "decision": {
       "approve": "Approuver",
@@ -428,6 +435,8 @@
         "title": "Conversion en {currency}"
       },
       "correctAndResubmit": "Corrigez la note de frais et soumettez-la de nouveau. Les soumissions précédentes restent dans son historique.",
+      "countryEmpty": "Aucun pays trouvé",
+      "countrySearch": "Rechercher des pays",
       "cycles": {
         "approved": "approuvé",
         "entry": "Soumission {number} le {date} : {outcome}",
@@ -496,15 +505,20 @@
         "add": "Ajouter un justificatif de dépense",
         "addFailed": "Impossible d'ajouter la dépense. Veuillez réessayer.",
         "empty": "Ajoutez chaque reçu de ce voyage en tant que dépense distincte. Les détails du voyage ci-dessus s'appliquent à chacun d'entre eux.",
-        "heading": "Dépense {number}",
+        "numbered": "{type} {number}",
         "remove": "Supprimer",
         "removeConfirm": "Supprimer la dépense",
         "removeConflict": "Cette dépense a été modifiée ailleurs et n'a pas été supprimée. Vérifiez-la et réessayez.",
+        "removed": "{type} (supprimé)",
         "removeDescription": "La dépense et ses reçus joints sont supprimés de ce voyage. Cette action est irréversible.",
         "removeFailed": "Impossible de supprimer la dépense. Veuillez réessayer.",
-        "removeLabel": "Supprimer la dépense {number}",
+        "removeItem": "Supprimer {item}",
         "removeTitle": "Supprimer cette dépense ?",
         "title": "Dépenses"
+      },
+      "kind": {
+        "standaloneMileage": "Frais kilométriques autonomes",
+        "trip": "Rapport de déplacement"
       },
       "loading": "Chargement de la dépense…",
       "mileage": {
@@ -680,7 +694,7 @@
         "inheritNone": "Identique au voyage (aucun projet)",
         "label": "Projet (facultatif)",
         "loadFailed": "Impossible de charger les projets.",
-        "needsDate": "Saisissez la date du reçu pour voir les projets utilisables ce jour-là.",
+        "needsExpenseDate": "Saisissez la date de la dépense pour voir les projets disponibles ce jour-là.",
         "needsTripDates": "Saisissez les dates du voyage pour voir les projets utilisables pour ce voyage.",
         "none": "Aucun projet",
         "noneEligible": "Vous n'étiez affecté(e) à aucun projet à cette date. Si vous avez travaillé sur un projet ce jour-là, un administrateur des notes de frais peut autoriser une exception d'attribution.",
@@ -770,7 +784,8 @@
         "title": "Éléments requis"
       },
       "returnedBy": "Renvoyé pour modifications par {name} le {date}",
-      "returnedItem": "Dépense {number} ({description}) :",
+      "returnedItemNamed": "{item} ({description}) :",
+      "returnedRemovedItem": "{item}, {description} :",
       "save": {
         "conflictDescription": "Elle a été enregistrée dans une autre fenêtre ou sur un autre appareil après son ouverture. Vos dernières modifications ne sont pas encore enregistrées.",
         "conflictTitle": "Cette dépense a été modifiée ailleurs",
@@ -805,11 +820,11 @@
         "changedTitle": "La note de frais a été modifiée",
         "confirm": "Soumettre pour approbation",
         "description": "Vérifiez la note de frais enregistrée. Votre approbateur se prononcera précisément sur cette version ; elle ne peut pas être modifiée pendant son examen.",
-        "expenseRequirement": "Dépense {number} : {requirement}",
         "failed": "Une erreur s'est produite. Votre note de frais est toujours enregistrée en tant que brouillon ; veuillez réessayer.",
         "failedTitle": "La note de frais n'a pas été soumise",
         "incomplete": "Certaines informations enregistrées sont encore manquantes. Complétez tous les éléments sous « Toujours requis » et réessayez.",
         "incompleteTitle": "La note de frais est incomplète",
+        "itemRequirement": "{item} : {requirement}",
         "noReviewerAsk": "Vous n'avez pas d'autre responsable ou responsable d'équipe que vous-même, et aucun approbateur de dépenses n'est configuré. Demandez à un administrateur de choisir un approbateur de dépenses sous Paramètres, Frais de déplacement, Vérification des notes de frais. Votre note de frais reste enregistrée comme brouillon.",
         "noReviewerAssign": "Vous n'avez pas d'autre responsable ou responsable d'équipe que vous-même, et aucun approbateur de dépenses n'est configuré. Choisissez un approbateur de dépenses sous Vérification des notes de frais dans les paramètres des frais de déplacement. Votre note de frais reste enregistrée comme brouillon.",
         "noReviewerTitle": "Personne ne peut encore examiner cette note de frais",
@@ -832,12 +847,11 @@
         "unavailableTitle": "La soumission est suspendue"
       },
       "submittedAt": "Soumis le {date}",
-      "submittedTitle": "Note de frais soumise",
       "summary": {
+        "itemPrefix": "{item} :",
         "paidByCompany": "Payé par l'entreprise",
         "paidByEmployee": "Payé par vous"
       },
-      "title": "Dépense",
       "totals": {
         "companyPaid": "Payé par l'entreprise",
         "excluded": "{count, plural, one {# dépense n'est pas encore prise en compte. Les totaux incluent les dépenses en {currency} dont le montant et le payeur sont renseignés.} other {# dépenses ne sont pas encore prises en compte. Les totaux incluent les dépenses en {currency} dont le montant et le payeur sont renseignés.}}",
@@ -875,8 +889,8 @@
           "complete": "Toutes les informations pour ce déplacement ont été saisies.",
           "destination": "Ajoutez au moins une destination.",
           "expenseItem": "Ajoutez une dépense.",
-          "expenseNamed": "Dépense {number} : {description}",
           "fixFields": "Corrigez les détails du déplacement mis en évidence.",
+          "itemNamed": "{item} : {description}",
           "notEnded": "Le déplacement se termine le {date}. Vous pouvez soumettre à partir de ce jour.",
           "purpose": "Décrivez le motif du déplacement.",
           "title": "Encore requis pour ce déplacement",

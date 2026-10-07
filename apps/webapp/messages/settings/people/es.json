@@ -623,6 +623,10 @@
         "title": "Aún no hay roles personalizados"
       },
       "introduction": "Cree roles de permisos personalizados que se puedan asignar a los empleados. Los roles personalizados añaden permisos además del nivel base.",
+      "permissionCategories": {
+        "time_tracking": "Control horario",
+        "works_council": "Comité de empresa"
+      },
       "table": {
         "actions": "Acciones",
         "assigned": "Asignado",

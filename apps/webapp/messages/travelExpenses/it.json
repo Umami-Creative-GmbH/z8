@@ -66,8 +66,15 @@
     },
     "approvals": {
       "description": "Apri la posta in arrivo unificata delle approvazioni filtrata per le spese di viaggio.",
-      "openInbox": "Apri posta in arrivo",
-      "title": "Esamina le approvazioni delle spese di viaggio in sospeso"
+      "entry": {
+        "open": "Apri posta in arrivo",
+        "title": "Esamina le approvazioni in sospeso delle spese di viaggio"
+      }
+    },
+    "currency": {
+      "empty": "Nessuna valuta trovata",
+      "placeholder": "Scegli una valuta",
+      "search": "Cerca valute"
     },
     "decision": {
       "approve": "Approva",
@@ -428,6 +435,8 @@
         "title": "Conversione in {currency}"
       },
       "correctAndResubmit": "Correggi la nota spese e inviala di nuovo. I precedenti invii rimarranno nella cronologia.",
+      "countryEmpty": "Nessun paese trovato",
+      "countrySearch": "Cerca paesi",
       "cycles": {
         "approved": "approvato",
         "entry": "Invio {number} il {date}: {outcome}",
@@ -496,15 +505,20 @@
         "add": "Aggiungi spesa con ricevuta",
         "addFailed": "Impossibile aggiungere la spesa. Riprova.",
         "empty": "Aggiungi ciascuna ricevuta di questo viaggio come spesa individuale. I dettagli del viaggio riportati sopra si applicano a tutte le spese.",
-        "heading": "Spesa {number}",
+        "numbered": "{type} {number}",
         "remove": "Rimuovi",
         "removeConfirm": "Rimuovi spesa",
         "removeConflict": "Questa spesa è stata modificata altrove e non è stata rimossa. Controllala e riprova.",
+        "removed": "{type} (rimosso)",
         "removeDescription": "La spesa e le ricevute allegate vengono eliminate da questo viaggio. Questa operazione non può essere annullata.",
         "removeFailed": "Impossibile rimuovere la spesa. Riprova.",
-        "removeLabel": "Rimuovi spesa {number}",
+        "removeItem": "Rimuovi {item}",
         "removeTitle": "Rimuovere questa spesa?",
         "title": "Spese"
+      },
+      "kind": {
+        "standaloneMileage": "Chilometraggio singolo",
+        "trip": "Resoconto di viaggio"
       },
       "loading": "Caricamento spesa…",
       "mileage": {
@@ -680,7 +694,7 @@
         "inheritNone": "Uguale al viaggio (nessun progetto)",
         "label": "Progetto (facoltativo)",
         "loadFailed": "Impossibile caricare i progetti.",
-        "needsDate": "Inserisci la data della ricevuta per visualizzare i progetti utilizzabili in tale data.",
+        "needsExpenseDate": "Inserisci la data della spesa per visualizzare i progetti disponibili per quel giorno.",
         "needsTripDates": "Inserisci le date del viaggio per visualizzare i progetti utilizzabili per questo viaggio.",
         "none": "Nessun progetto",
         "noneEligible": "Non avevi alcuna assegnazione a un progetto in questa data. Se hai lavorato a un progetto in quel momento, un amministratore delle spese può autorizzare un'eccezione di attribuzione.",
@@ -770,7 +784,8 @@
         "title": "Ancora necessario"
       },
       "returnedBy": "Restituito per modifiche da {name} il {date}",
-      "returnedItem": "Spesa {number} ({description}):",
+      "returnedItemNamed": "{item} ({description}):",
+      "returnedRemovedItem": "{item}, {description}:",
       "save": {
         "conflictDescription": "È stata salvata in un'altra finestra o su un altro dispositivo dopo l'apertura. Le tue ultime modifiche non sono ancora state salvate.",
         "conflictTitle": "Questa spesa è stata modificata altrove",
@@ -805,11 +820,11 @@
         "changedTitle": "La nota spese è cambiata",
         "confirm": "Invia per l'approvazione",
         "description": "Controlla la nota spese salvata. Il revisore valuterà esattamente questa versione; non sarà possibile modificarla durante la revisione.",
-        "expenseRequirement": "Spesa {number}: {requirement}",
         "failed": "Si è verificato un errore. La nota spese è ancora salvata come bozza; riprova.",
         "failedTitle": "La nota spese non è stata inviata",
         "incomplete": "Mancano ancora alcuni dettagli salvati. Completa tutti i dati elencati in “Ancora necessari” e riprova.",
         "incompleteTitle": "La nota spese è incompleta",
+        "itemRequirement": "{item}: {requirement}",
         "noReviewerAsk": "Non hai un manager o team manager diverso da te e non è stato impostato alcun approvatore per le spese. Chiedi a un amministratore di scegliere un approvatore in Impostazioni, Spese di viaggio, Revisione nota spese. La tua nota spese rimane salvata come bozza.",
         "noReviewerAssign": "Non hai un manager o team manager diverso da te e non è stato impostato alcun approvatore per le spese. Scegli un approvatore in Revisione nota spese nelle impostazioni delle spese di viaggio. La tua nota spese rimane salvata come bozza.",
         "noReviewerTitle": "Nessuno può ancora revisionare questa nota spese",
@@ -832,12 +847,11 @@
         "unavailableTitle": "L'invio è in pausa"
       },
       "submittedAt": "Inviato il {date}",
-      "submittedTitle": "Nota spese inviata",
       "summary": {
+        "itemPrefix": "{item}:",
         "paidByCompany": "A carico dell'azienda",
         "paidByEmployee": "A tuo carico"
       },
-      "title": "Spesa",
       "totals": {
         "companyPaid": "A carico dell'azienda",
         "excluded": "{count, plural, one {# spesa non è ancora conteggiata. I totali includono le spese in {currency} di cui sono stati inseriti importo e pagatore.} other {# spese non sono ancora conteggiate. I totali includono le spese in {currency} di cui sono stati inseriti importo e pagatore.}}",
@@ -875,8 +889,8 @@
           "complete": "Tutti i dati per questo viaggio sono stati inseriti.",
           "destination": "Aggiungi almeno una destinazione.",
           "expenseItem": "Aggiungi una spesa.",
-          "expenseNamed": "Spesa {number}: {description}",
           "fixFields": "Correggi i dettagli del viaggio evidenziati.",
+          "itemNamed": "{item}: {description}",
           "notEnded": "Il viaggio termina il {date}. Puoi inviare la richiesta a partire da quel giorno.",
           "purpose": "Descrivi il motivo del viaggio.",
           "title": "Ancora necessari per questo viaggio",

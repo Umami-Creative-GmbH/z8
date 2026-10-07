@@ -1192,9 +1192,9 @@
         "title": "Prüfung der Spesenabrechnung"
       },
       "currency": {
+        "choose": "Wählen Sie eine Währung mit höchstens zwei Dezimalstellen, z. B. EUR oder CHF.",
         "description": "Neue Spesenabrechnungen werden in dieser Währung erstattet; bestehende Abrechnungen behalten ihre bei. Schwellenwerte für Genehmigungsbeträge werden in EUR verglichen. Solange betragsbasierte Genehmigungsregeln bestehen, können Abrechnungen in einer anderen Währung nicht eingereicht werden.",
         "intro": "Belege in anderen Währungen behalten ihren ursprünglichen Betrag und werden durch eine belegte Kartenbelastung oder einen dokumentierten Wechselkurs umgerechnet.",
-        "invalid": "Gänd Si en Währigscode mit drü Buechstabe und maximal zwei Dezimalstelle ii, z. B. EUR oder CHF.",
         "label": "Rückerstattigswährig",
         "loadFailed": "D Rückerstattigswährig hät nöd chönne glade werde.",
         "save": "Währig speichere",

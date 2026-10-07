@@ -32,13 +32,16 @@
     "correction": {
       "clockIn": "Stemple inn",
       "clockInDate": "Stemple inn-dato",
+      "clockInTime": "Innstemplingstid",
       "clockOut": "Stemple ut",
       "clockOutDate": "Stemple ut-dato",
+      "clockOutTime": "Utstemplingstid",
       "editDescription": "Gjør endringer i timeregistreringen din for i dag.",
       "editEntry": "Rediger timeregistrering",
       "editTitle": "Rediger timeregistrering",
       "errors": {
         "invalidTimeRange": "Tidspunkt for utstempling må være etter innstempling",
+        "noChanges": "Minst én korrigeringsverdi må endres",
         "submitFailed": "Kunne ikke sende inn korreksjon",
         "updateFailed": "Kunne ikke oppdatere timeregistrering"
       },
@@ -269,7 +272,12 @@
     "unknownCategory": "Ukjent kategori",
     "unknownProject": "Ukjent prosjekt",
     "welcomeBack": "Velkommen tilbake, {name}",
-    "workCategory": "Arbeidskategori"
+    "workCategory": "Arbeidskategori",
+    "workLocation": "Arbeidssted",
+    "workLocationHome": "Hjemme",
+    "workLocationOffice": "Kontor",
+    "workLocationOther": "Annet",
+    "workLocationRemote": "Fjernarbeid"
   },
   "wellness": {
     "water": {

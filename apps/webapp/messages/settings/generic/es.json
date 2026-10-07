@@ -1192,9 +1192,9 @@
         "title": "Revisión de informes de gastos"
       },
       "currency": {
+        "choose": "Elija una moneda con dos decimales como máximo, p. ej., EUR o CHF.",
         "description": "Los nuevos informes de gastos se reembolsan en esta divisa; los existentes conservan la suya. Los umbrales de importe de aprobación se comparan en EUR, por lo que mientras existan reglas de aprobación basadas en importes, no se podrán enviar informes en otra divisa.",
         "intro": "Los recibos en otras divisas conservan su importe original y se convierten mediante un cargo justificado con tarjeta o un tipo de cambio documentado.",
-        "invalid": "Introduzca un código de moneda de tres letras con un máximo de dos decimales, p. ej., EUR o CHF.",
         "label": "Moneda de reembolso",
         "loadFailed": "No se pudo cargar la moneda de reembolso.",
         "save": "Guardar moneda",

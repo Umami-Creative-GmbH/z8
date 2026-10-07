@@ -66,8 +66,15 @@
     },
     "approvals": {
       "description": "Abra la bandeja de entrada de aprobaciones unificada filtrada por gastos de viaje.",
-      "openInbox": "Abrir bandeja de entrada",
-      "title": "Revisar aprobaciones de gastos de viaje pendientes"
+      "entry": {
+        "open": "Abrir bandeja de entrada",
+        "title": "Revisar las aprobaciones de gastos de viaje pendientes"
+      }
+    },
+    "currency": {
+      "empty": "No se encontraron monedas",
+      "placeholder": "Elija una moneda",
+      "search": "Buscar monedas"
     },
     "decision": {
       "approve": "Aprobar",
@@ -428,6 +435,8 @@
         "title": "Conversión a {currency}"
       },
       "correctAndResubmit": "Corrija el informe y vuelva a enviarlo. Los envíos anteriores permanecerán en su historial.",
+      "countryEmpty": "No se encontraron países",
+      "countrySearch": "Buscar países",
       "cycles": {
         "approved": "aprobado",
         "entry": "Envío {number} el {date}: {outcome}",
@@ -496,15 +505,20 @@
         "add": "Añadir gasto con recibo",
         "addFailed": "No se pudo añadir el gasto. Inténtalo de nuevo.",
         "empty": "Añade cada recibo de este viaje como un gasto individual. Los detalles del viaje indicados arriba se aplican a todos ellos.",
-        "heading": "Gasto {number}",
+        "numbered": "{type} {number}",
         "remove": "Eliminar",
         "removeConfirm": "Eliminar gasto",
         "removeConflict": "Este gasto se modificó en otro lugar y no se eliminó. Compruébalo e inténtalo de nuevo.",
+        "removed": "{type} (eliminado)",
         "removeDescription": "El gasto y sus recibos adjuntos se eliminan de este viaje. Esta acción no se puede deshacer.",
         "removeFailed": "No se pudo eliminar el gasto. Inténtalo de nuevo.",
-        "removeLabel": "Eliminar gasto {number}",
+        "removeItem": "Eliminar {item}",
         "removeTitle": "¿Eliminar este gasto?",
         "title": "Gastos"
+      },
+      "kind": {
+        "standaloneMileage": "Kilometraje independiente",
+        "trip": "Informe de viaje"
       },
       "loading": "Cargando gasto…",
       "mileage": {
@@ -680,7 +694,7 @@
         "inheritNone": "Igual que el viaje (sin proyecto)",
         "label": "Proyecto (opcional)",
         "loadFailed": "No se pudieron cargar los proyectos.",
-        "needsDate": "Introduce la fecha del recibo para ver los proyectos que puedes usar ese día.",
+        "needsExpenseDate": "Introduzca la fecha del gasto para ver los proyectos que puede utilizar ese día.",
         "needsTripDates": "Introduce las fechas del viaje para ver los proyectos que puedes usar en este viaje.",
         "none": "Sin proyecto",
         "noneEligible": "No tenías ninguna asignación de proyecto en esta fecha. Si trabajaste en un proyecto en ese momento, un administrador de gastos puede autorizar una excepción de atribución.",
@@ -770,7 +784,8 @@
         "title": "Aún necesario"
       },
       "returnedBy": "Devuelto para cambios por {name} el {date}",
-      "returnedItem": "Gasto {number} ({description}):",
+      "returnedItemNamed": "{item} ({description}):",
+      "returnedRemovedItem": "{item}, {description}:",
       "save": {
         "conflictDescription": "Se guardó en otra ventana o en otro dispositivo después de que lo abriste. Tus últimas modificaciones aún no se han guardado.",
         "conflictTitle": "Este gasto se modificó en otro lugar",
@@ -805,11 +820,11 @@
         "changedTitle": "El informe ha cambiado",
         "confirm": "Enviar para aprobación",
         "description": "Compruebe el informe guardado. Su revisor tomará una decisión exactamente sobre esta versión; no se puede editar mientras se esté revisando.",
-        "expenseRequirement": "Gasto {number}: {requirement}",
         "failed": "Se ha producido un error. Su informe sigue guardado como borrador; vuelva a intentarlo.",
         "failedTitle": "No se ha enviado el informe",
         "incomplete": "Faltan algunos datos guardados. Complete todo lo que aparece en “Aún necesario” y vuelva a intentarlo.",
         "incompleteTitle": "El informe está incompleto",
+        "itemRequirement": "{item}: {requirement}",
         "noReviewerAsk": "No tienes ningún responsable ni responsable de equipo aparte de ti, y no se ha configurado ningún aprobador de gastos. Pide a un administrador que seleccione un aprobador de gastos en Ajustes, Gastos de viaje, Revisión de informes de gastos. Tu informe permanece guardado como borrador.",
         "noReviewerAssign": "No tienes ningún responsable ni responsable de equipo aparte de ti, y no se ha configurado ningún aprobador de gastos. Selecciona un aprobador de gastos en Revisión de informes de gastos, dentro de los ajustes de gastos de viaje. Tu informe permanece guardado como borrador.",
         "noReviewerTitle": "Nadie puede revisar este informe todavía",
@@ -832,12 +847,11 @@
         "unavailableTitle": "El envío está en pausa"
       },
       "submittedAt": "Enviado el {date}",
-      "submittedTitle": "Informe de gastos enviado",
       "summary": {
+        "itemPrefix": "{item}:",
         "paidByCompany": "Pagado por la empresa",
         "paidByEmployee": "Pagado por ti"
       },
-      "title": "Gasto",
       "totals": {
         "companyPaid": "Pagado por la empresa",
         "excluded": "{count, plural, one {Aún no se ha contabilizado # gasto. Los totales incluyen los gastos en {currency} cuyo importe y pagador se han introducido.} other {Aún no se han contabilizado # gastos. Los totales incluyen los gastos en {currency} cuyo importe y pagador se han introducido.}}",
@@ -875,8 +889,8 @@
           "complete": "Se han introducido todos los datos de este viaje.",
           "destination": "Añada al menos un destino.",
           "expenseItem": "Añada un gasto.",
-          "expenseNamed": "Gasto {number}: {description}",
           "fixFields": "Corrija los detalles resaltados del viaje.",
+          "itemNamed": "{item}: {description}",
           "notEnded": "El viaje finaliza el {date}. Puedes enviarlo a partir de ese día.",
           "purpose": "Describa el motivo del viaje.",
           "title": "Aún necesario para este viaje",

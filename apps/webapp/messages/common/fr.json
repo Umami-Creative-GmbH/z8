@@ -539,12 +539,17 @@
         "message": "Votre demande {categoryName} pour {dateRange} a été envoyée et est en attente d'approbation.",
         "title": "Demande d'absence envoyée"
       },
+      "automaticClockOut": {
+        "message": "Vous avez été automatiquement dépointé après {duration} minutes de travail ininterrompu à {cutoff} ({timezone}) car la limite de temps de votre organisation a été atteinte.",
+        "title": "Dépointé automatiquement"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName} : Les tâches d'approbation nécessitent un remplaçant (départ effectif le {cutoff}, {timezone}).",
         "clock_out": "{employeeName} : À vérifier : pointage de sortie (départ de l'employé) (départ effectif le {cutoff}, {timezone}).",
         "clock_repair": "{employeeName} : Correction du minuteur requise (départ effectif le {cutoff}, {timezone}).",
         "employment_terms": "{employeeName} : Les futures conditions d'emploi doivent être vérifiées (départ effectif le {cutoff}, {timezone}).",
-        "future_work": "{employeeName} : Le travail futur doit être vérifié (départ effectif le {cutoff}, {timezone})."
+        "future_work": "{employeeName} : Le travail futur doit être vérifié (départ effectif le {cutoff}, {timezone}).",
+        "title": "Le départ de l'employé doit être vérifié"
       },
       "newAbsenceRequest": {
         "title": "Nouvelle demande d'absence"

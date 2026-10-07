@@ -535,12 +535,21 @@
       "absenceRequestRejected": {
         "title": "Frånvaroansökan avslogs"
       },
+      "absenceRequestSubmitted": {
+        "message": "Din begäran om {categoryName} för {dateRange} har skickats in och väntar på godkännande.",
+        "title": "Frånvaroansökan har skickats in"
+      },
+      "automaticClockOut": {
+        "message": "Du stämplades automatiskt ut efter {duration} minuters oavbrutet arbete klockan {cutoff} ({timezone}) eftersom din organisations tidsgräns nåddes.",
+        "title": "Automatiskt utstämplad"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Godkännandeuppgifter behöver en ersättare (avgång gäller från {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Behöver granskas: utstämpling vid offboarding (avgång gäller från {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Timerreparation krävs (avgång gäller från {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Framtida anställningsvillkor behöver granskas (avgång gäller från {cutoff}, {timezone}).",
-        "future_work": "{employeeName}: Framtida arbete behöver granskas (avgång gäller från {cutoff}, {timezone})."
+        "future_work": "{employeeName}: Framtida arbete behöver granskas (avgång gäller från {cutoff}, {timezone}).",
+        "title": "Offboarding av medarbetare behöver granskas"
       },
       "newAbsenceRequest": {
         "title": "Ny frånvaroansökan"
@@ -556,6 +565,10 @@
       "teamMemberAdded": {
         "message": "Du har lagts till i teamet {teamName} av {performedByName}.",
         "title": "Tillagd i team"
+      },
+      "teamMemberRemoved": {
+        "message": "Du har tagits bort från teamet {teamName} av {performedByName}.",
+        "title": "Borttagen från team"
       }
     },
     "description": "Granska uppdateringar, godkännanden och systemvarningar i en och samma tidslinje.",

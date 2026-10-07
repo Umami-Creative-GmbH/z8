@@ -299,7 +299,11 @@
         "number": "Personalnummer"
       },
       "checks": {
-        "count": "Anzahl"
+        "count": "Anzahl",
+        "missingEmploymentHistory": {
+          "descriptionPass": "Alle aktiven Mitarbeitenden haben einen bestätigten Beschäftigungsverlauf für diesen Abrechnungszeitraum.",
+          "descriptionWarning": "Einige aktive Mitarbeitende haben keinen bestätigten Beschäftigungsverlauf für diesen Abrechnungszeitraum."
+        }
       },
       "checkStatus": {
         "fail": "Blockiert",

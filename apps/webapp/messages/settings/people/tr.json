@@ -623,6 +623,10 @@
         "title": "Henüz özel rol yok"
       },
       "introduction": "Çalışanlara atanabilecek özel izin rolleri oluşturun. Özel roller, temel seviyenin üzerine ek izinler ekler.",
+      "permissionCategories": {
+        "time_tracking": "Zaman Takibi",
+        "works_council": "İş Konseyi"
+      },
       "table": {
         "actions": "Eylemler",
         "assigned": "Atanmış",

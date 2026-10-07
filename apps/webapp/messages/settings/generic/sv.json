@@ -1192,9 +1192,9 @@
         "title": "Granskning av utgiftsrapport"
       },
       "currency": {
+        "choose": "Välj en valuta med högst två decimaler, t.ex. EUR eller CHF.",
         "description": "Nya utgiftsrapporter ersätts i denna valuta; befintliga rapporter behåller sin. Beloppsgränser för godkännande jämförs i EUR, så så länge beloppsbaserade godkännanderegler finns kan inte rapporter i en annan valuta skickas in.",
         "intro": "Kvitton i andra valutor behåller sitt ursprungliga belopp och omvandlas via en verifierad kortdebitering eller en dokumenterad växelkurs.",
-        "invalid": "Ange en valutakod med tre bokstäver och högst två decimaler, t.ex. EUR eller CHF.",
         "label": "Ersättningsvaluta",
         "loadFailed": "Det gick inte att läsa in ersättningsvalutan.",
         "save": "Spara valuta",

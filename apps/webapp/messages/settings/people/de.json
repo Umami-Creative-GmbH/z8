@@ -623,6 +623,10 @@
         "title": "Noch keine benutzerdefinierten Rollen"
       },
       "introduction": "Erstellen Sie benutzerdefinierte Berechtigungsrollen, die Mitarbeitern zugewiesen werden können. Benutzerdefinierte Rollen fügen Berechtigungen zur Basisebene hinzu.",
+      "permissionCategories": {
+        "time_tracking": "Zeiterfassung",
+        "works_council": "Betriebsrat"
+      },
       "table": {
         "actions": "Aktionen",
         "assigned": "Zugewiesen",

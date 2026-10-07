@@ -623,6 +623,10 @@
         "title": "Ancora nessun ruolo personalizzato"
       },
       "introduction": "Crea ruoli di permesso personalizzati che possono essere assegnati ai dipendenti. I ruoli personalizzati aggiungono permessi oltre al livello base.",
+      "permissionCategories": {
+        "time_tracking": "Rilevazione presenze",
+        "works_council": "Comitato aziendale"
+      },
       "table": {
         "actions": "Azioni",
         "assigned": "Assegnato",

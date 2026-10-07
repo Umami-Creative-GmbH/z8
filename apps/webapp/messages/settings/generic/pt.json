@@ -1192,9 +1192,9 @@
         "title": "Revisão do relatório de despesas"
       },
       "currency": {
+        "choose": "Escolha uma moeda com no máximo duas casas decimais, por ex., EUR ou CHF.",
         "description": "Novos relatórios de despesas são reembolsados nesta moeda; os relatórios existentes mantêm a sua. Os limites de valor de aprovação são comparados em EUR; portanto, enquanto existirem regras de aprovação baseadas em valor, relatórios em outra moeda não poderão ser enviados.",
         "intro": "Recibos em outras moedas mantêm seu valor original e são convertidos por uma cobrança comprovada no cartão ou por uma taxa documentada.",
-        "invalid": "Insira um código de moeda de três letras com no máximo duas casas decimais, ex.: EUR ou CHF.",
         "label": "Moeda de reembolso",
         "loadFailed": "Não foi possível carregar a moeda de reembolso.",
         "save": "Salvar moeda",

@@ -299,7 +299,11 @@
         "number": "Numéro d'employé"
       },
       "checks": {
-        "count": "Nombre"
+        "count": "Nombre",
+        "missingEmploymentHistory": {
+          "descriptionPass": "Tous les employés actifs ont un historique d'emploi confirmé pour cette période de paie.",
+          "descriptionWarning": "Certains employés actifs n'ont pas d'historique d'emploi confirmé pour cette période de paie."
+        }
       },
       "checkStatus": {
         "fail": "Bloqué",

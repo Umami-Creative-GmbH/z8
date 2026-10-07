@@ -66,8 +66,15 @@
     },
     "approvals": {
       "description": "Öffne de gmeinsami Genehmigungs-Inbox, filteret uf Reisechöschte.",
-      "openInbox": "Inbox öffne",
-      "title": "Pendi Genehmigunge für Reisechöschte prüefe"
+      "entry": {
+        "open": "Posteingang öffnen",
+        "title": "Ausstehende Spesengenehmigungen überprüfen"
+      }
+    },
+    "currency": {
+      "empty": "Keine Währung gefunden",
+      "placeholder": "Währung auswählen",
+      "search": "Währungen suchen"
     },
     "decision": {
       "approve": "Genehmige",
@@ -428,6 +435,8 @@
         "title": "Umrächnig in {currency}"
       },
       "correctAndResubmit": "Korrigier de Bricht und reich en nomol ii. Früeneri Iireichige bliibed im Verlauf erhalte.",
+      "countryEmpty": "Kein Land gefunden",
+      "countrySearch": "Länder suchen",
       "cycles": {
         "approved": "gnämigt",
         "entry": "Iireichig {number} am {date}: {outcome}",
@@ -496,15 +505,20 @@
         "add": "Beleg-Uusgab hinzuefüege",
         "addFailed": "D'Uusgab hät nöd chönne hinzuegfüegt werde. Bitte nomal probiere.",
         "empty": "Füeg jede Beleg vo dere Reis als eignigi Uusgab hinzue. D'Reisedetails oben dra gelted für alli.",
-        "heading": "Uusgab {number}",
+        "numbered": "{type} {number}",
         "remove": "Entferne",
         "removeConfirm": "Uusgab entferne",
         "removeConflict": "Die Uusgab isch anderswo gänderet worde und isch nöd entfernt worde. Überprüef si und probier's nomal.",
+        "removed": "{type} (entfernt)",
         "removeDescription": "D'Uusgab und di aghängte Beleg werded vo dere Reis glöscht. Das cha nöd rückgängig gmacht werde.",
         "removeFailed": "D'Uusgab hät nöd chönne entfernt werde. Bitte nomal probiere.",
-        "removeLabel": "Uusgab {number} entferne",
+        "removeItem": "{item} entfernen",
         "removeTitle": "Die Uusgab entferne?",
         "title": "Uusgabe"
+      },
+      "kind": {
+        "standaloneMileage": "Einzelne Kilometerspesen",
+        "trip": "Reisebericht"
       },
       "loading": "Uusgab wird glade…",
       "mileage": {
@@ -680,7 +694,7 @@
         "inheritNone": "Gliich wie d Reis (kei Projekt)",
         "label": "Projekt (optional)",
         "loadFailed": "D Projekt hend nöd chönne glade werde.",
-        "needsDate": "Gib s Belegdatum ii, zum d Projekt gseh, wo du a däm Tag bruuche chasch.",
+        "needsExpenseDate": "Geben Sie das Spesendatum ein, um die Projekte anzuzeigen, die Sie an diesem Tag verwenden können.",
         "needsTripDates": "Gib d Reisedate ii, zum d Projekt gseh, wo du für die Reis bruuche chasch.",
         "none": "Kei Projekt",
         "noneEligible": "Du häsch a däm Datum kei Projektzueordnig gha. Wenn du dänn a me Projekt gschaffet häsch, chan en Spese-Administrator en Uusnahm für d Zueordnig bewillige.",
@@ -770,7 +784,8 @@
         "title": "No nötig"
       },
       "returnedBy": "Vo {name} am {date} für Änderige zrugggschickt",
-      "returnedItem": "Uusgab {number} ({description}):",
+      "returnedItemNamed": "{item} ({description}):",
+      "returnedRemovedItem": "{item}, {description}:",
       "save": {
         "conflictDescription": "Es isch ime andere Fäischter oder ufeme andere Grät gspycheret worde, nachdem du's ufgmacht häsch. Dini neuschte Änderige sind nonig gspycheret.",
         "conflictTitle": "Die Uusgab isch anderswo gänderet worde",
@@ -805,11 +820,11 @@
         "changedTitle": "Die Abrechnung wurde geändert",
         "confirm": "Zur Genehmigung einreichen",
         "description": "Überprüfen Sie die gespeicherte Abrechnung. Die prüfende Person entscheidet über genau diese Version; sie kann während der Prüfung nicht bearbeitet werden.",
-        "expenseRequirement": "Spese {number}: {requirement}",
         "failed": "Etwas ist schiefgelaufen. Ihre Abrechnung ist weiterhin als Entwurf gespeichert; bitte versuchen Sie es erneut.",
         "failedTitle": "Die Abrechnung wurde nicht eingereicht",
         "incomplete": "Einige gespeicherte Angaben fehlen noch. Ergänzen Sie alle Angaben unter «Noch erforderlich» und versuchen Sie es erneut.",
         "incompleteTitle": "Die Abrechnung ist unvollständig",
+        "itemRequirement": "{item}: {requirement}",
         "noReviewerAsk": "Sie haben ausser sich selbst keinen Manager oder Team-Manager und es ist kein Spesengenehmiger eingerichtet. Bitten Sie einen Administrator, unter Einstellungen, Reisespesen, Spesenabrechnungsprüfung einen Spesengenehmiger auszuwählen. Ihre Abrechnung bleibt als Entwurf gespeichert.",
         "noReviewerAssign": "Sie haben ausser sich selbst keinen Manager oder Team-Manager und es ist kein Spesengenehmiger eingerichtet. Wählen Sie unter Spesenabrechnungsprüfung in den Reisespesen-Einstellungen einen Spesengenehmiger aus. Ihre Abrechnung bleibt als Entwurf gespeichert.",
         "noReviewerTitle": "Diese Abrechnung kann noch von niemandem geprüft werden",
@@ -832,12 +847,11 @@
         "unavailableTitle": "Iireichig isch pausiert"
       },
       "submittedAt": "Iigreicht am {date}",
-      "submittedTitle": "Iigreichte Spesebricht",
       "summary": {
+        "itemPrefix": "{item}:",
         "paidByCompany": "Vo de Firma zahlt",
         "paidByEmployee": "Vo dir zahlt"
       },
-      "title": "Uusgab",
       "totals": {
         "companyPaid": "Vo de Firma zahlt",
         "excluded": "{count, plural, one {# Uusgab wird no nöd mitzellt. D Total enthalted Uusgabe i {currency}, wo Betrag und Zahler iitrait sind.} other {# Uusgabe werded no nöd mitzellt. D Total enthalted Uusgabe i {currency}, wo Betrag und Zahler iitrait sind.}}",
@@ -875,8 +889,8 @@
           "complete": "Alles für diese Reise wurde erfasst.",
           "destination": "Mindestens ein Reiseziel hinzufügen.",
           "expenseItem": "Ausgabe hinzufügen.",
-          "expenseNamed": "Ausgabe {number}: {description}",
           "fixFields": "Hervorgehobene Reisedetails korrigieren.",
+          "itemNamed": "{item}: {description}",
           "notEnded": "Die Reise endet am {date}. Sie können ab diesem Tag einreichen.",
           "purpose": "Reisezweck beschreiben.",
           "title": "Für diese Reise noch erforderlich",

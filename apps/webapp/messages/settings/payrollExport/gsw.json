@@ -299,7 +299,11 @@
         "number": "Mitarbeiternummere"
       },
       "checks": {
-        "count": "Aazahl"
+        "count": "Aazahl",
+        "missingEmploymentHistory": {
+          "descriptionPass": "Alle aktiven Mitarbeitenden haben einen bestätigten Anstellungsverlauf für diese Lohnabrechnungsperiode.",
+          "descriptionWarning": "Einige aktive Mitarbeitende haben keinen bestätigten Anstellungsverlauf für diese Lohnabrechnungsperiode."
+        }
       },
       "checkStatus": {
         "fail": "Blockiert",

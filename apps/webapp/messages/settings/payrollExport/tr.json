@@ -299,7 +299,11 @@
         "number": "Çalışan numarası"
       },
       "checks": {
-        "count": "Sayı"
+        "count": "Sayı",
+        "missingEmploymentHistory": {
+          "descriptionPass": "Tüm aktif çalışanlar bu bordro dönemi için onaylanmış istihdam geçmişine sahip.",
+          "descriptionWarning": "Bazı aktif çalışanlar bu bordro dönemi için onaylanmış istihdam geçmişine sahip değil."
+        }
       },
       "checkStatus": {
         "fail": "Engellendi",

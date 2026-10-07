@@ -1192,9 +1192,9 @@
         "title": "Examen des notes de frais"
       },
       "currency": {
+        "choose": "Choisissez une devise comportant au maximum deux décimales, par ex. EUR ou CHF.",
         "description": "Les nouvelles notes de frais sont remboursées dans cette devise ; les notes existantes conservent la leur. Les seuils de montant pour l'approbation sont comparés en EUR, ainsi, tant que des règles d'approbation basées sur le montant existent, les notes dans une autre devise ne peuvent pas être soumises.",
         "intro": "Les justificatifs dans d'autres devises conservent leur montant d'origine et sont convertis selon un débit par carte bancaire justifié ou un taux documenté.",
-        "invalid": "Saisissez un code de devise à trois lettres comportant au maximum deux décimales, par exemple EUR ou CHF.",
         "label": "Devise de remboursement",
         "loadFailed": "Impossible de charger la devise de remboursement.",
         "save": "Enregistrer la devise",

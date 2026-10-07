@@ -66,8 +66,15 @@
     },
     "approvals": {
       "description": "Otwórz ujednoliconą skrzynkę odbiorczą zatwierdzeń przefiltrowaną pod kątem wydatków podróży.",
-      "openInbox": "Otwórz skrzynkę odbiorczą",
-      "title": "Przejrzyj oczekujące zatwierdzenia wydatków podróży"
+      "entry": {
+        "open": "Otwórz skrzynkę odbiorczą",
+        "title": "Przejrzyj oczekujące zatwierdzenia kosztów podróży"
+      }
+    },
+    "currency": {
+      "empty": "Nie znaleziono waluty",
+      "placeholder": "Wybierz walutę",
+      "search": "Szukaj walut"
     },
     "decision": {
       "approve": "Zatwierdź",
@@ -428,6 +435,8 @@
         "title": "Przeliczenie na {currency}"
       },
       "correctAndResubmit": "Popraw raport i prześlij go ponownie. Wcześniejsze zgłoszenia pozostaną w jego historii.",
+      "countryEmpty": "Nie znaleziono kraju",
+      "countrySearch": "Szukaj krajów",
       "cycles": {
         "approved": "zatwierdzone",
         "entry": "Zgłoszenie {number} w dniu {date}: {outcome}",
@@ -496,15 +505,20 @@
         "add": "Dodaj wydatek na podstawie rachunku",
         "addFailed": "Nie udało się dodać wydatku. Spróbuj ponownie.",
         "empty": "Dodaj każdy rachunek z tej podróży jako osobny wydatek. Powyższe szczegóły podróży mają zastosowanie do wszystkich z nich.",
-        "heading": "Wydatek {number}",
+        "numbered": "{type} {number}",
         "remove": "Usuń",
         "removeConfirm": "Usuń wydatek",
         "removeConflict": "Ten wydatek został zmieniony w innym miejscu i nie został usunięty. Sprawdź go i spróbuj ponownie.",
+        "removed": "{type} (usunięto)",
         "removeDescription": "Wydatek i załączone do niego rachunki zostaną usunięte z tej podróży. Tej operacji nie można cofnąć.",
         "removeFailed": "Nie udało się usunąć wydatku. Spróbuj ponownie.",
-        "removeLabel": "Usuń wydatek {number}",
+        "removeItem": "Usuń {item}",
         "removeTitle": "Usunąć ten wydatek?",
         "title": "Wydatki"
+      },
+      "kind": {
+        "standaloneMileage": "Samodzielna kilometrówka",
+        "trip": "Raport z podróży"
       },
       "loading": "Wczytywanie wydatku…",
       "mileage": {
@@ -680,7 +694,7 @@
         "inheritNone": "Taki sam jak dla podróży (brak projektu)",
         "label": "Projekt (opcjonalnie)",
         "loadFailed": "Nie udało się załadować projektów.",
-        "needsDate": "Wprowadź datę rachunku, aby zobaczyć projekty dostępne w tym dniu.",
+        "needsExpenseDate": "Wprowadź datę wydatku, aby wyświetlić projekty, których możesz użyć w tym dniu.",
         "needsTripDates": "Wprowadź daty podróży, aby zobaczyć projekty dostępne dla tej podróży.",
         "none": "Brak projektu",
         "noneEligible": "W tym dniu nie przypisano Cię do żadnego projektu. Jeśli wtedy pracowano nad projektem, administrator wydatków może zezwolić na wyjątek przypisania.",
@@ -770,7 +784,8 @@
         "title": "Nadal wymagane"
       },
       "returnedBy": "Zwrócono do poprawy przez {name} w dniu {date}",
-      "returnedItem": "Wydatek {number} ({description}):",
+      "returnedItemNamed": "{item} ({description}):",
+      "returnedRemovedItem": "{item}, {description}:",
       "save": {
         "conflictDescription": "Element został zapisany w innym oknie lub na innym urządzeniu po jego otwarciu. Twoje ostatnie zmiany nie zostały jeszcze zapisane.",
         "conflictTitle": "Ten wydatek został zmieniony w innym miejscu",
@@ -805,11 +820,11 @@
         "changedTitle": "Raport się zmienił",
         "confirm": "Prześlij do zatwierdzenia",
         "description": "Sprawdź zapisany raport. Osoba weryfikująca podejmuje decyzję dokładnie na podstawie tej wersji; nie można jej edytować w trakcie weryfikacji.",
-        "expenseRequirement": "Wydatek {number}: {requirement}",
         "failed": "Coś poszło nie tak. Twój raport jest nadal zapisany jako wersja robocza; spróbuj ponownie.",
         "failedTitle": "Raport nie został przesłany",
         "incomplete": "Nadal brakuje niektórych zapisanych szczegółów. Uzupełnij wszystkie elementy wymienione w sekcji „Nadal wymagane” i spróbuj ponownie.",
         "incompleteTitle": "Raport jest niekompletny",
+        "itemRequirement": "{item}: {requirement}",
         "noReviewerAsk": "Nie masz innego przełożonego ani kierownika zespołu poza sobą, a osoba zatwierdzająca wydatki nie jest ustawiona. Poproś administratora o wybranie osoby zatwierdzającej wydatki w sekcji Ustawienia, Koszty podróży, Weryfikacja raportów z wydatków. Twój raport pozostaje zapisany jako wersja robocza.",
         "noReviewerAssign": "Nie masz innego przełożonego ani kierownika zespołu poza sobą, a osoba zatwierdzająca wydatki nie jest ustawiona. Wybierz osobę zatwierdzającą wydatki w sekcji Weryfikacja raportów z wydatków w ustawieniach kosztów podróży. Twój raport pozostaje zapisany jako wersja robocza.",
         "noReviewerTitle": "Nikt nie może jeszcze zweryfikować tego raportu",
@@ -832,12 +847,11 @@
         "unavailableTitle": "Przesyłanie jest wstrzymane"
       },
       "submittedAt": "Przesłano {date}",
-      "submittedTitle": "Przesłany raport z wydatków",
       "summary": {
+        "itemPrefix": "{item}:",
         "paidByCompany": "Opłacone przez firmę",
         "paidByEmployee": "Opłacone przez Ciebie"
       },
-      "title": "Wydatek",
       "totals": {
         "companyPaid": "Opłacone przez firmę",
         "excluded": "{count, plural, one {# wydatek nie został jeszcze uwzględniony. Sumy obejmują wydatki w {currency}, dla których wprowadzono kwotę i płatnika.} few {# wydatki nie zostały jeszcze uwzględnione. Sumy obejmują wydatki w {currency}, dla których wprowadzono kwotę i płatnika.} other {# wydatków nie zostało jeszcze uwzględnionych. Sumy obejmują wydatki w {currency}, dla których wprowadzono kwotę i płatnika.} }",
@@ -875,8 +889,8 @@
           "complete": "Wszystkie dane dotyczące tej podróży zostały wprowadzone.",
           "destination": "Dodaj co najmniej jedno miejsce docelowe.",
           "expenseItem": "Dodaj wydatek.",
-          "expenseNamed": "Wydatek {number}: {description}",
           "fixFields": "Popraw wyróżnione szczegóły podróży.",
+          "itemNamed": "{item}: {description}",
           "notEnded": "Podróż kończy się {date}. Możesz przesłać raport od tego dnia.",
           "purpose": "Opisz cel podróży.",
           "title": "Wciąż wymagane dla tej podróży",

@@ -66,8 +66,15 @@
     },
     "approvals": {
       "description": "Abra a caixa de entrada de aprovações unificada filtrada para despesas de viagem.",
-      "openInbox": "Abrir Caixa de Entrada",
-      "title": "Revisar Aprovações de Despesas de Viagem Pendentes"
+      "entry": {
+        "open": "Abrir caixa de entrada",
+        "title": "Revisar aprovações pendentes de despesas de viagem"
+      }
+    },
+    "currency": {
+      "empty": "Nenhuma moeda encontrada",
+      "placeholder": "Escolha uma moeda",
+      "search": "Pesquisar moedas"
     },
     "decision": {
       "approve": "Aprovar",
@@ -428,6 +435,8 @@
         "title": "Conversão para {currency}"
       },
       "correctAndResubmit": "Corrija o relatório e envie-o novamente. Os envios anteriores permanecerão no histórico.",
+      "countryEmpty": "Nenhum país encontrado",
+      "countrySearch": "Pesquisar países",
       "cycles": {
         "approved": "aprovado",
         "entry": "Envio {number} em {date}: {outcome}",
@@ -496,15 +505,20 @@
         "add": "Adicionar despesa com recibo",
         "addFailed": "Não foi possível adicionar a despesa. Tente novamente.",
         "empty": "Adicione cada recibo desta viagem como uma despesa individual. Os detalhes da viagem acima se aplicam a todas elas.",
-        "heading": "Despesa {number}",
+        "numbered": "{type} {number}",
         "remove": "Remover",
         "removeConfirm": "Remover despesa",
         "removeConflict": "Esta despesa foi alterada em outro local e não foi removida. Verifique-a e tente novamente.",
+        "removed": "{type} (removido)",
         "removeDescription": "A despesa e seus recibos anexados serão excluídos desta viagem. Isso não pode ser desfeito.",
         "removeFailed": "Não foi possível remover a despesa. Tente novamente.",
-        "removeLabel": "Remover despesa {number}",
+        "removeItem": "Remover {item}",
         "removeTitle": "Remover esta despesa?",
         "title": "Despesas"
+      },
+      "kind": {
+        "standaloneMileage": "Quilometragem avulsa",
+        "trip": "Relatório de viagem"
       },
       "loading": "Carregando despesa…",
       "mileage": {
@@ -680,7 +694,7 @@
         "inheritNone": "Igual à viagem (sem projeto)",
         "label": "Projeto (opcional)",
         "loadFailed": "Não foi possível carregar os projetos.",
-        "needsDate": "Insira a data do comprovante para ver os projetos que você pode usar nesse dia.",
+        "needsExpenseDate": "Insira a data da despesa para ver os projetos disponíveis nesse dia.",
         "needsTripDates": "Insira as datas da viagem para ver os projetos que você pode usar nesta viagem.",
         "none": "Nenhum projeto",
         "noneEligible": "Você não tinha nenhuma atribuição de projeto nesta data. Se você trabalhou em um projeto nessa ocasião, um administrador de despesas pode autorizar uma exceção de atribuição.",
@@ -770,7 +784,8 @@
         "title": "Ainda necessário"
       },
       "returnedBy": "Devolvido para alterações por {name} em {date}",
-      "returnedItem": "Despesa {number} ({description}):",
+      "returnedItemNamed": "{item} ({description}):",
+      "returnedRemovedItem": "{item}, {description}:",
       "save": {
         "conflictDescription": "Foi salva em outra janela ou em outro dispositivo depois que você a abriu. Suas edições mais recentes ainda não foram salvas.",
         "conflictTitle": "Esta despesa foi alterada em outro lugar",
@@ -805,11 +820,11 @@
         "changedTitle": "O relatório foi alterado",
         "confirm": "Enviar para aprovação",
         "description": "Verifique o relatório salvo. O revisor tomará a decisão exatamente com base nesta versão; ela não poderá ser editada enquanto estiver em revisão.",
-        "expenseRequirement": "Despesa {number}: {requirement}",
         "failed": "Algo deu errado. Seu relatório ainda está salvo como rascunho; tente novamente.",
         "failedTitle": "O relatório não foi enviado",
         "incomplete": "Alguns detalhes salvos ainda estão ausentes. Preencha tudo o que está listado em “Ainda necessário” e tente novamente.",
         "incompleteTitle": "O relatório está incompleto",
+        "itemRequirement": "{item}: {requirement}",
         "noReviewerAsk": "Você não tem nenhum gerente ou gerente de equipe além de você mesmo, e nenhum aprovador de despesas está configurado. Peça a um administrador para escolher um aprovador de despesas em Configurações, Despesas de viagem, Revisão de relatórios de despesas. Seu relatório continuará salvo como rascunho.",
         "noReviewerAssign": "Você não tem nenhum gerente ou gerente de equipe além de você mesmo, e nenhum aprovador de despesas está configurado. Escolha um aprovador de despesas em Revisão de relatórios de despesas nas configurações de despesas de viagem. Seu relatório continuará salvo como rascunho.",
         "noReviewerTitle": "Ninguém pode revisar este relatório ainda",
@@ -832,12 +847,11 @@
         "unavailableTitle": "O envio está pausado"
       },
       "submittedAt": "Enviado em {date}",
-      "submittedTitle": "Relatório de despesas enviado",
       "summary": {
+        "itemPrefix": "{item}:",
         "paidByCompany": "Pago pela empresa",
         "paidByEmployee": "Pago por você"
       },
-      "title": "Despesa",
       "totals": {
         "companyPaid": "Pago pela empresa",
         "excluded": "{count, plural, one {# despesa ainda não foi contabilizada. Os totais incluem despesas em {currency} cujo valor e pagador foram inseridos.} other {# despesas ainda não foram contabilizadas. Os totais incluem despesas em {currency} cujo valor e pagador foram inseridos.}}",
@@ -875,8 +889,8 @@
           "complete": "Todas as informações desta viagem foram inseridas.",
           "destination": "Adicione pelo menos um destino.",
           "expenseItem": "Adicionar uma despesa.",
-          "expenseNamed": "Despesa {number}: {description}",
           "fixFields": "Corrija os detalhes destacados da viagem.",
+          "itemNamed": "{item}: {description}",
           "notEnded": "A viagem termina em {date}. Você poderá enviar a partir desse dia.",
           "purpose": "Descreva o motivo da viagem.",
           "title": "Ainda necessário para esta viagem",

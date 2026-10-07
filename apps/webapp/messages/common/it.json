@@ -539,12 +539,17 @@
         "message": "La tua richiesta {categoryName} per {dateRange} è stata inviata ed è in attesa di approvazione.",
         "title": "Richiesta di assenza inviata"
       },
+      "automaticClockOut": {
+        "message": "La timbratura di uscita è stata registrata automaticamente dopo {duration} minuti di lavoro ininterrotto alle {cutoff} ({timezone}) perché è stato raggiunto il limite di tempo della tua organizzazione.",
+        "title": "Uscita registrata automaticamente"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Le mansioni di approvazione richiedono un sostituto (uscita effettiva il {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Da verificare: timbratura di uscita per offboarding (uscita effettiva il {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Riparazione del timer richiesta (uscita effettiva il {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Le condizioni contrattuali future richiedono una revisione (uscita effettiva il {cutoff}, {timezone}).",
-        "future_work": "{employeeName}: Il lavoro futuro richiede una revisione (uscita effettiva il {cutoff}, {timezone})."
+        "future_work": "{employeeName}: Il lavoro futuro richiede una revisione (uscita effettiva il {cutoff}, {timezone}).",
+        "title": "L'offboarding del dipendente richiede una revisione"
       },
       "newAbsenceRequest": {
         "title": "Nuova richiesta di assenza"

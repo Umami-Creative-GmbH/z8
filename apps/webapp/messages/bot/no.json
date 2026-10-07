@@ -85,11 +85,16 @@
       "leave": "Permisjon",
       "newRequest": "Ny godkjenningsforespørsel",
       "outcome": {
+        "recorded": "Registrert av {actor} {time}. Se forespørselens nåværende status i Z8.",
         "recordedTitle": "Beslutning registrert",
         "replayed": "Dette knappetrykket var allerede registrert; dette er det opprinnelige resultatet, og det ble ikke tatt noen ny beslutning.",
+        "requestApproved": "Godkjent av {actor} {time}. Forespørselen er godkjent.",
         "requestApprovedTitle": "Forespørsel godkjent",
+        "requestRejected": "Avvist av {actor} {time}. Forespørselen er avvist.",
         "requestRejectedTitle": "Forespørsel avslått",
+        "stepApproved": "Godkjent av {actor} {time}. Forespørselen avventer fortsatt ytterligere godkjenning.",
         "stepApprovedTitle": "Godkjenning registrert",
+        "stepRejected": "Avvist av {actor} {time}. Forespørselen er ikke endelig ennå; se nåværende status i Z8.",
         "stepRejectedTitle": "Avvisning registrert"
       },
       "outcomeUnknown": "Resultatet av dette trykket kunne ikke bekreftes. Sjekk forespørselen i Z8 før du trykker igjen.",

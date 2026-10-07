@@ -623,6 +623,10 @@
         "title": "Aucun rôle personnalisé pour le moment"
       },
       "introduction": "Créez des rôles de permission personnalisés pouvant être attribués aux employés. Les rôles personnalisés ajoutent des permissions en plus du niveau de base.",
+      "permissionCategories": {
+        "time_tracking": "Suivi du temps",
+        "works_council": "Comité d'entreprise"
+      },
       "table": {
         "actions": "Actions",
         "assigned": "Assigné",

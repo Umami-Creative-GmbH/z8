@@ -623,6 +623,10 @@
         "title": "Brak ról niestandardowych"
       },
       "introduction": "Twórz niestandardowe role uprawnień, które można przypisywać pracownikom. Role niestandardowe dodają uprawnienia ponad poziom podstawowy.",
+      "permissionCategories": {
+        "time_tracking": "Rejestracja czasu pracy",
+        "works_council": "Rada pracowników"
+      },
       "table": {
         "actions": "Akcje",
         "assigned": "Przypisano",

@@ -539,12 +539,17 @@
         "message": "Το αίτημά σας για {categoryName} για {dateRange} υποβλήθηκε και εκκρεμεί έγκριση.",
         "title": "Το αίτημα απουσίας υποβλήθηκε"
       },
+      "automaticClockOut": {
+        "message": "Καταγράφηκε αυτόματα η έξοδός σας μετά από {duration} λεπτά αδιάλειπτης εργασίας στις {cutoff} ({timezone}) επειδή συμπληρώθηκε το χρονικό όριο του οργανισμού σας.",
+        "title": "Αυτόματη καταγραφή εξόδου"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Τα καθήκοντα έγκρισης χρειάζονται αντικαταστάτη (αποχώρηση σε ισχύ από {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Απαιτείται έλεγχος: καταγραφή εξόδου offboarding (αποχώρηση σε ισχύ από {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Απαιτείται επιδιόρθωση χρονομέτρου (αποχώρηση σε ισχύ από {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Οι μελλοντικοί όροι απασχόλησης χρειάζονται έλεγχο (αποχώρηση σε ισχύ από {cutoff}, {timezone}).",
-        "future_work": "{employeeName}: Η μελλοντική εργασία χρειάζεται έλεγχο (αποχώρηση σε ισχύ από {cutoff}, {timezone})."
+        "future_work": "{employeeName}: Η μελλοντική εργασία χρειάζεται έλεγχο (αποχώρηση σε ισχύ από {cutoff}, {timezone}).",
+        "title": "Η αποχώρηση εργαζομένου χρειάζεται έλεγχο"
       },
       "newAbsenceRequest": {
         "title": "Νέο αίτημα απουσίας"

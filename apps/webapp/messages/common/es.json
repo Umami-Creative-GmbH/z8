@@ -539,12 +539,17 @@
         "message": "Tu solicitud de {categoryName} para {dateRange} se ha enviado y está pendiente de aprobación.",
         "title": "Solicitud de ausencia enviada"
       },
+      "automaticClockOut": {
+        "message": "Se registró su salida automáticamente tras {duration} minutos de trabajo ininterrumpido a las {cutoff} ({timezone}) porque se alcanzó el límite de tiempo de su organización.",
+        "title": "Salida registrada automáticamente"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Las tareas de aprobación requieren un sustituto (salida efectiva el {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Requiere revisión: fichaje de salida por baja (salida efectiva el {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Se requiere corregir el temporizador (salida efectiva el {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Las condiciones de empleo futuras requieren revisión (salida efectiva el {cutoff}, {timezone}).",
-        "future_work": "{employeeName}: El trabajo futuro requiere revisión (salida efectiva el {cutoff}, {timezone})."
+        "future_work": "{employeeName}: El trabajo futuro requiere revisión (salida efectiva el {cutoff}, {timezone}).",
+        "title": "La desvinculación del empleado requiere revisión"
       },
       "newAbsenceRequest": {
         "title": "Nueva solicitud de ausencia"

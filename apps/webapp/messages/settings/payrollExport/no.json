@@ -30,6 +30,7 @@
         "dateRange": "Datoperiode",
         "description": "Eksporter arbeidsperioder og fravær til DATEV Lohn & Gehalt-format",
         "employees": "Ansatte",
+        "employeesSelected": "{count} valgt",
         "endDate": "Sluttdato",
         "error": "Eksport mislyktes",
         "exportButtonDatev": "Eksporter til DATEV",
@@ -52,9 +53,11 @@
         "month": "Måned",
         "monthSelection": "Velg måned",
         "projects": "Prosjekter",
+        "projectsSelected": "{count} valgt",
         "startDate": "Startdato",
         "success": "Eksport lastet ned",
         "teams": "Team",
+        "teamsSelected": "{count} valgt",
         "title": "Eksporter lønnsdata",
         "unavailable": {
           "missingConfiguration": "konfigurasjon",
@@ -296,7 +299,11 @@
         "number": "Ansattnummer"
       },
       "checks": {
-        "count": "Antall"
+        "count": "Antall",
+        "missingEmploymentHistory": {
+          "descriptionPass": "Alle aktive ansatte har bekreftet ansettelseshistorikk for denne lønnsperioden.",
+          "descriptionWarning": "Noen aktive ansatte har ikke bekreftet ansettelseshistorikk for denne lønnsperioden."
+        }
       },
       "checkStatus": {
         "fail": "Blokkert",

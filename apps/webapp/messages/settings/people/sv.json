@@ -164,6 +164,8 @@
         "deactivateTitle": "Inaktivera medarbetare?",
         "deactivating": "Inaktiverar...",
         "deactivatingStatus": "Inaktiverar medarbetare",
+        "finalOwnerDeactivateGuidance": "Tilldela och aktivera en annan godkänd ägare innan du inaktiverar den här medarbetaren.",
+        "finalOwnerRemoveGuidance": "Tilldela och aktivera en annan godkänd ägare innan du tar bort den här medarbetarens åtkomst.",
         "reactivate": "Återaktivera",
         "reactivateDescription": "Detta återställer åtkomsten till denna organisation med hjälp av befintliga medarbetaruppgifter.",
         "reactivateError": "Kunde inte återaktivera medarbetare",
@@ -621,6 +623,10 @@
         "title": "Inga anpassade roller ännu"
       },
       "introduction": "Skapa anpassade behörighetsroller som kan tilldelas medarbetare. Anpassade roller lägger till behörigheter utöver basnivån.",
+      "permissionCategories": {
+        "time_tracking": "Tidsregistrering",
+        "works_council": "Företagsråd"
+      },
       "table": {
         "actions": "Åtgärder",
         "assigned": "Tilldelad",

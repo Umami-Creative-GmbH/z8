@@ -539,12 +539,17 @@
         "message": "Twój wniosek {categoryName} na {dateRange} został wysłany i oczekuje na zatwierdzenie.",
         "title": "Wniosek o nieobecność wysłany"
       },
+      "automaticClockOut": {
+        "message": "Automatycznie zarejestrowano wyjście po {duration} minutach nieprzerwanej pracy o {cutoff} ({timezone}), ponieważ osiągnięto limit czasu w Twojej organizacji.",
+        "title": "Automatycznie zarejestrowano wyjście"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Obowiązki zatwierdzania wymagają zastępstwa (odejście z dniem {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Wymaga weryfikacji: rejestracja wyjścia (offboarding) (odejście z dniem {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Wymagana naprawa licznika czasu (odejście z dniem {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Przyszłe warunki zatrudnienia wymagają weryfikacji (odejście z dniem {cutoff}, {timezone}).",
-        "future_work": "{employeeName}: Przyszła praca wymaga weryfikacji (odejście z dniem {cutoff}, {timezone})."
+        "future_work": "{employeeName}: Przyszła praca wymaga weryfikacji (odejście z dniem {cutoff}, {timezone}).",
+        "title": "Offboarding pracownika wymaga weryfikacji"
       },
       "newAbsenceRequest": {
         "title": "Nowy wniosek o nieobecność"

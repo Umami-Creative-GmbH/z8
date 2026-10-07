@@ -623,6 +623,10 @@
         "title": "No custom roles yet"
       },
       "introduction": "Create custom permission roles that can be assigned to employees. Custom roles add permissions on top of the base tier.",
+      "permissionCategories": {
+        "time_tracking": "Time Tracking",
+        "works_council": "Works Council"
+      },
       "table": {
         "actions": "Actions",
         "assigned": "Assigned",

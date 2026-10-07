@@ -1192,9 +1192,9 @@
         "title": "Weryfikacja raportu z wydatków"
       },
       "currency": {
+        "choose": "Wybierz walutę z maksymalnie dwoma miejscami po przecinku, np. EUR lub CHF.",
         "description": "Nowe raporty z wydatków są zwracane w tej walucie; istniejące raporty zachowują swoją. Progi kwotowe zatwierdzania są porównywane w EUR, więc dopóki istnieją reguły zatwierdzania oparte na kwotach, raporty w innej walucie nie mogą być przesyłane.",
         "intro": "Rachunki w innych walutach zachowują pierwotną kwotę i są przeliczane według udokumentowanego obciążenia karty lub udokumentowanego kursu.",
-        "invalid": "Wprowadź trzyliterowy kod waluty z maksymalnie dwoma miejscami po przecinku, np. EUR lub CHF.",
         "label": "Waluta zwrotu kosztów",
         "loadFailed": "Nie udało się załadować waluty zwrotu kosztów.",
         "save": "Zapisz walutę",

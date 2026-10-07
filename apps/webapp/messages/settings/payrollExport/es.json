@@ -299,7 +299,11 @@
         "number": "Número de empleado"
       },
       "checks": {
-        "count": "Cantidad"
+        "count": "Cantidad",
+        "missingEmploymentHistory": {
+          "descriptionPass": "Todos los empleados activos tienen confirmado el historial laboral para este periodo de nómina.",
+          "descriptionWarning": "Algunos empleados activos no tienen confirmado el historial laboral para este periodo de nómina."
+        }
       },
       "checkStatus": {
         "fail": "Bloqueado",

@@ -30,6 +30,7 @@
         "dateRange": "Datumintervall",
         "description": "Exportera arbetsperioder och frånvaro till DATEV Lohn & Gehalt-format",
         "employees": "Anställda",
+        "employeesSelected": "{count} valda",
         "endDate": "Slutdatum",
         "error": "Exporten misslyckades",
         "exportButtonDatev": "Exportera till DATEV",
@@ -52,9 +53,11 @@
         "month": "Månad",
         "monthSelection": "Välj månad",
         "projects": "Projekt",
+        "projectsSelected": "{count} valda",
         "startDate": "Startdatum",
         "success": "Export nedladdad",
         "teams": "Team",
+        "teamsSelected": "{count} valda",
         "title": "Exportera löneuppgifter",
         "unavailable": {
           "missingConfiguration": "konfiguration",
@@ -296,7 +299,11 @@
         "number": "Anställningsnummer"
       },
       "checks": {
-        "count": "Antal"
+        "count": "Antal",
+        "missingEmploymentHistory": {
+          "descriptionPass": "Alla aktiva anställda har bekräftad anställningshistorik för den här löneperioden.",
+          "descriptionWarning": "Vissa aktiva anställda har inte bekräftad anställningshistorik för den här löneperioden."
+        }
       },
       "checkStatus": {
         "fail": "Blockerad",

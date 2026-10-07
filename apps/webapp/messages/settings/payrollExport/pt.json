@@ -299,7 +299,11 @@
         "number": "Número do funcionário"
       },
       "checks": {
-        "count": "Contagem"
+        "count": "Contagem",
+        "missingEmploymentHistory": {
+          "descriptionPass": "Todos os colaboradores ativos têm histórico de trabalho confirmado para este período de folha de pagamento.",
+          "descriptionWarning": "Alguns colaboradores ativos não têm histórico de trabalho confirmado para este período de folha de pagamento."
+        }
       },
       "checkStatus": {
         "fail": "Bloqueado",

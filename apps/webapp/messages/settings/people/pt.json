@@ -623,6 +623,10 @@
         "title": "Ainda não há funções personalizadas"
       },
       "introduction": "Crie funções de permissão personalizadas que podem ser atribuídas aos funcionários. As funções personalizadas adicionam permissões além do nível base.",
+      "permissionCategories": {
+        "time_tracking": "Controle de ponto",
+        "works_council": "Conselho de empresa"
+      },
       "table": {
         "actions": "Ações",
         "assigned": "Atribuído",

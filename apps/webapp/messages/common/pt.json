@@ -539,12 +539,17 @@
         "message": "Sua solicitação de {categoryName} para {dateRange} foi enviada e está aguardando aprovação.",
         "title": "Solicitação de ausência enviada"
       },
+      "automaticClockOut": {
+        "message": "Sua saída foi registrada automaticamente após {duration} minutos de trabalho ininterrupto às {cutoff} ({timezone}) porque o limite de tempo da sua organização foi atingido.",
+        "title": "Saída registrada automaticamente"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: As funções de aprovação precisam de um substituto (saída efetiva em {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Requer revisão: registro de saída de desligamento (saída efetiva em {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Reparo do temporizador necessário (saída efetiva em {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Os termos de contratação futuros precisam de revisão (saída efetiva em {cutoff}, {timezone}).",
-        "future_work": "{employeeName}: O trabalho futuro precisa de revisão (saída efetiva em {cutoff}, {timezone})."
+        "future_work": "{employeeName}: O trabalho futuro precisa de revisão (saída efetiva em {cutoff}, {timezone}).",
+        "title": "O desligamento do colaborador precisa de revisão"
       },
       "newAbsenceRequest": {
         "title": "Nova solicitação de ausência"

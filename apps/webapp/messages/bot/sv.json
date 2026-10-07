@@ -85,11 +85,16 @@
       "leave": "Ledighet",
       "newRequest": "Ny begäran om godkännande",
       "outcome": {
+        "recorded": "Registrerades av {actor} {time}. Granska begärans aktuella status i Z8.",
         "recordedTitle": "Beslut registrerat",
         "replayed": "Denna knapptryckning har redan registrerats; detta är dess ursprungliga resultat och inget nytt beslutades.",
+        "requestApproved": "Godkändes av {actor} {time}. Begäran är godkänd.",
         "requestApprovedTitle": "Begäran godkänd",
+        "requestRejected": "Avslogs av {actor} {time}. Begäran har avslagits.",
         "requestRejectedTitle": "Begäran avslagen",
+        "stepApproved": "Godkändes av {actor} {time}. Begäran väntar fortfarande på ytterligare godkännande.",
         "stepApprovedTitle": "Godkännande registrerat",
+        "stepRejected": "Avslogs av {actor} {time}. Begäran är inte slutgiltig än; granska dess aktuella status i Z8.",
         "stepRejectedTitle": "Avvisning registrerad"
       },
       "outcomeUnknown": "Resultatet av denna tryckning kunde inte bekräftas. Kontrollera förfrågan i Z8 innan du trycker igen.",

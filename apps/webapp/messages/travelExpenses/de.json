@@ -66,8 +66,15 @@
     },
     "approvals": {
       "description": "Öffnen Sie den einheitlichen Genehmigungsposteingang, gefiltert nach Reisekosten.",
-      "openInbox": "Posteingang öffnen",
-      "title": "Ausstehende Reisekostengenehmigungen prüfen"
+      "entry": {
+        "open": "Posteingang öffnen",
+        "title": "Ausstehende Reisekostengenehmigungen prüfen"
+      }
+    },
+    "currency": {
+      "empty": "Keine Währung gefunden",
+      "placeholder": "Währung auswählen",
+      "search": "Währungen suchen"
     },
     "decision": {
       "approve": "Genehmigen",
@@ -428,6 +435,8 @@
         "title": "Umrechnung in {currency}"
       },
       "correctAndResubmit": "Korrigieren Sie den Bericht und reichen Sie ihn erneut ein. Frühere Einreichungen bleiben im Verlauf erhalten.",
+      "countryEmpty": "Kein Land gefunden",
+      "countrySearch": "Länder suchen",
       "cycles": {
         "approved": "genehmigt",
         "entry": "Einreichung {number} am {date}: {outcome}",
@@ -496,15 +505,20 @@
         "add": "Belegausgabe hinzufügen",
         "addFailed": "Die Ausgabe konnte nicht hinzugefügt werden. Bitte versuchen Sie es erneut.",
         "empty": "Fügen Sie jeden Beleg dieser Reise als separate Ausgabe hinzu. Die oben angegebenen Reisedetails gelten für alle.",
-        "heading": "Ausgabe {number}",
+        "numbered": "{type} {number}",
         "remove": "Entfernen",
         "removeConfirm": "Ausgabe entfernen",
         "removeConflict": "Diese Ausgabe wurde an anderer Stelle geändert und nicht entfernt. Prüfen Sie diese und versuchen Sie es erneut.",
+        "removed": "{type} (entfernt)",
         "removeDescription": "Die Ausgabe und die angehängten Belege werden aus dieser Reise gelöscht. Dies kann nicht rückgängig gemacht werden.",
         "removeFailed": "Die Ausgabe konnte nicht entfernt werden. Bitte versuchen Sie es erneut.",
-        "removeLabel": "Ausgabe {number} entfernen",
+        "removeItem": "{item} entfernen",
         "removeTitle": "Diese Ausgabe entfernen?",
         "title": "Ausgaben"
+      },
+      "kind": {
+        "standaloneMileage": "Einzelne Kilometerabrechnung",
+        "trip": "Reisebericht"
       },
       "loading": "Ausgabe wird geladen…",
       "mileage": {
@@ -680,7 +694,7 @@
         "inheritNone": "Wie bei der Reise (kein Projekt)",
         "label": "Projekt (optional)",
         "loadFailed": "Die Projekte konnten nicht geladen werden.",
-        "needsDate": "Geben Sie das Belegdatum ein, um die Projekte anzuzeigen, die Sie an diesem Tag verwenden können.",
+        "needsExpenseDate": "Geben Sie das Ausgabendatum ein, um die Projekte zu sehen, die Sie an diesem Tag verwenden können.",
         "needsTripDates": "Geben Sie die Reisedaten ein, um die Projekte anzuzeigen, die Sie für diese Reise verwenden können.",
         "none": "Kein Projekt",
         "noneEligible": "An diesem Datum waren Sie keinem Projekt zugewiesen. Wenn Sie zu diesem Zeitpunkt an einem Projekt gearbeitet haben, kann ein Spesenadministrator eine Zuordnungsausnahme genehmigen.",
@@ -770,7 +784,8 @@
         "title": "Noch erforderlich"
       },
       "returnedBy": "Zur Überarbeitung zurückgegeben von {name} am {date}",
-      "returnedItem": "Ausgabe {number} ({description}):",
+      "returnedItemNamed": "{item} ({description}):",
+      "returnedRemovedItem": "{item}, {description}:",
       "save": {
         "conflictDescription": "Es wurde nach dem Öffnen in einem anderen Fenster oder auf einem anderen Gerät gespeichert. Ihre letzten Änderungen sind noch nicht gespeichert.",
         "conflictTitle": "Diese Ausgabe wurde an anderer Stelle geändert",
@@ -805,11 +820,11 @@
         "changedTitle": "Der Bericht wurde geändert",
         "confirm": "Zur Genehmigung einreichen",
         "description": "Überprüfen Sie den gespeicherten Bericht. Die prüfende Person entscheidet über genau diese Version; während der Prüfung kann er nicht bearbeitet werden.",
-        "expenseRequirement": "Ausgabe {number}: {requirement}",
         "failed": "Etwas ist schiefgelaufen. Ihr Bericht ist weiterhin als Entwurf gespeichert; bitte versuchen Sie es erneut.",
         "failedTitle": "Der Bericht wurde nicht eingereicht",
         "incomplete": "Einige gespeicherte Angaben fehlen noch. Vervollständigen Sie alle unter „Noch benötigt“ aufgeführten Punkte und versuchen Sie es erneut.",
         "incompleteTitle": "Der Bericht ist unvollständig",
+        "itemRequirement": "{item}: {requirement}",
         "noReviewerAsk": "Sie haben außer sich selbst keine Führungskraft oder keinen Teamleiter und es ist kein Ausgabengenehmiger eingerichtet. Bitten Sie einen Administrator, unter Einstellungen, Reisekosten, Prüfung von Spesenabrechnungen einen Ausgabengenehmiger auszuwählen. Ihre Abrechnung bleibt als Entwurf gespeichert.",
         "noReviewerAssign": "Sie haben außer sich selbst keine Führungskraft oder keinen Teamleiter und es ist kein Ausgabengenehmiger eingerichtet. Wählen Sie unter Prüfung von Spesenabrechnungen in den Reisekosten-Einstellungen einen Ausgabengenehmiger aus. Ihre Abrechnung bleibt als Entwurf gespeichert.",
         "noReviewerTitle": "Dieser Bericht kann derzeit von niemandem geprüft werden",
@@ -832,12 +847,11 @@
         "unavailableTitle": "Einreichung ist pausiert"
       },
       "submittedAt": "Eingereicht am {date}",
-      "submittedTitle": "Eingereichte Reisekostenabrechnung",
       "summary": {
+        "itemPrefix": "{item}:",
         "paidByCompany": "Vom Unternehmen bezahlt",
         "paidByEmployee": "Von Ihnen bezahlt"
       },
-      "title": "Ausgabe",
       "totals": {
         "companyPaid": "Vom Unternehmen bezahlt",
         "excluded": "{count, plural, one {# Ausgabe wird noch nicht mitgezählt. Die Gesamtsummen enthalten Ausgaben in {currency}, deren Betrag und Kostenträger eingegeben wurden.} other {# Ausgaben werden noch nicht mitgezählt. Die Gesamtsummen enthalten Ausgaben in {currency}, deren Betrag und Kostenträger eingegeben wurden.}}",
@@ -875,8 +889,8 @@
           "complete": "Alle Angaben für diese Reise wurden erfasst.",
           "destination": "Fügen Sie mindestens ein Reiseziel hinzu.",
           "expenseItem": "Fügen Sie eine Ausgabe hinzu.",
-          "expenseNamed": "Ausgabe {number}: {description}",
           "fixFields": "Korrigieren Sie die hervorgehobenen Reisedetails.",
+          "itemNamed": "{item}: {description}",
           "notEnded": "Die Reise endet am {date}. Sie können ab diesem Tag einreichen.",
           "purpose": "Beschreiben Sie den Zweck der Reise.",
           "title": "Für diese Reise noch erforderlich",

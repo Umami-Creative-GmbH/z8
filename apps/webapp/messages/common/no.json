@@ -535,12 +535,21 @@
       "absenceRequestRejected": {
         "title": "Fraværsforespørsel avslått"
       },
+      "absenceRequestSubmitted": {
+        "message": "Forespørselen din om {categoryName} for {dateRange} er sendt inn og venter på godkjenning.",
+        "title": "Fraværsforespørsel sendt inn"
+      },
+      "automaticClockOut": {
+        "message": "Du ble automatisk stemplet ut etter {duration} minutter med uavbrutt arbeid kl. {cutoff} ({timezone}) fordi organisasjonens tidsgrense ble nådd.",
+        "title": "Automatisk stemplet ut"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Godkjenningsoppgaver trenger en stedfortreder (fratredelse gjelder fra {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Må gjennomgås: utstempling ved offboarding (fratredelse gjelder fra {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Tidtakerreparasjon påkrevd (fratredelse gjelder fra {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Fremtidige ansettelsesvilkår må gjennomgås (fratredelse gjelder fra {cutoff}, {timezone}).",
-        "future_work": "{employeeName}: Fremtidig arbeid må gjennomgås (fratredelse gjelder fra {cutoff}, {timezone})."
+        "future_work": "{employeeName}: Fremtidig arbeid må gjennomgås (fratredelse gjelder fra {cutoff}, {timezone}).",
+        "title": "Offboarding av ansatt må gjennomgås"
       },
       "newAbsenceRequest": {
         "title": "Ny fraværsforespørsel"
@@ -556,6 +565,10 @@
       "teamMemberAdded": {
         "message": "Du har blitt lagt til i teamet {teamName} av {performedByName}.",
         "title": "Lagt til i team"
+      },
+      "teamMemberRemoved": {
+        "message": "Du har blitt fjernet fra teamet {teamName} av {performedByName}.",
+        "title": "Fjernet fra team"
       }
     },
     "description": "Gjennomgå oppdateringer, godkjenninger og systemvarsler på én tidslinje.",

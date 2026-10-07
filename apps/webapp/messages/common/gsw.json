@@ -539,12 +539,17 @@
         "message": "Dii {categoryName}-Aafrag für {dateRange} isch ygreicht worde und wartet uf Freigab.",
         "title": "Abwäseheitsaafrag ygreicht"
       },
+      "automaticClockOut": {
+        "message": "Sie wurden nach {duration} Minuten ununterbrochener Arbeit um {cutoff} ({timezone}) automatisch ausgestempelt, da das Zeitlimit Ihrer Organisation erreicht wurde.",
+        "title": "Automatisch ausgestempelt"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Genehmigungsaufgaben erfordern eine Stellvertretung (Austritt wirksam {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Überprüfung erforderlich: Offboarding-Ausstempeln (Austritt wirksam {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Timer-Reparatur erforderlich (Austritt wirksam {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Zukünftige Anstellungsbedingungen müssen überprüft werden (Austritt wirksam {cutoff}, {timezone}).",
-        "future_work": "{employeeName}: Zukünftige Arbeit muss überprüft werden (Austritt wirksam {cutoff}, {timezone})."
+        "future_work": "{employeeName}: Zukünftige Arbeit muss überprüft werden (Austritt wirksam {cutoff}, {timezone}).",
+        "title": "Offboarding von Mitarbeitenden muss überprüft werden"
       },
       "newAbsenceRequest": {
         "title": "Neue Abwesenheitsanfrage"

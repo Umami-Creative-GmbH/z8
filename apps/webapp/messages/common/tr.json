@@ -539,12 +539,17 @@
         "message": "{dateRange} için {categoryName} talebiniz gönderildi ve onay bekliyor.",
         "title": "Devamsızlık talebi gönderildi"
       },
+      "automaticClockOut": {
+        "message": "Kuruluşunuzun zaman sınırına ulaşıldığı için {cutoff} ({timezone}) itibarıyla {duration} dakikalık kesintisiz çalışmanın ardından otomatik olarak çıkışınız yapıldı.",
+        "title": "Otomatik olarak çıkış yapıldı"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Onay görevleri için bir vekil gerekiyor (ayrılış geçerlilik tarihi {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: İnceleme gerekiyor: işten ayrılış çıkış kaydı (ayrılış geçerlilik tarihi {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Zamanlayıcı onarımı gerekiyor (ayrılış geçerlilik tarihi {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Gelecekteki istihdam koşullarının incelenmesi gerekiyor (ayrılış geçerlilik tarihi {cutoff}, {timezone}).",
-        "future_work": "{employeeName}: Gelecekteki çalışmaların incelenmesi gerekiyor (ayrılış geçerlilik tarihi {cutoff}, {timezone})."
+        "future_work": "{employeeName}: Gelecekteki çalışmaların incelenmesi gerekiyor (ayrılış geçerlilik tarihi {cutoff}, {timezone}).",
+        "title": "Çalışan işten ayrılış sürecinin incelenmesi gerekiyor"
       },
       "newAbsenceRequest": {
         "title": "Yeni izin talebi"

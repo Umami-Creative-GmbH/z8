@@ -66,8 +66,15 @@
     },
     "approvals": {
       "description": "Seyahat masraflarına göre filtrelenmiş birleşik onay gelen kutusunu açın.",
-      "openInbox": "Gelen Kutusunu Aç",
-      "title": "Bekleyen Seyahat Masrafı Onaylarını İncele"
+      "entry": {
+        "open": "Gelen kutusunu aç",
+        "title": "Bekleyen seyahat masrafı onaylarını inceleyin"
+      }
+    },
+    "currency": {
+      "empty": "Para birimi bulunamadı",
+      "placeholder": "Bir para birimi seçin",
+      "search": "Para birimi ara"
     },
     "decision": {
       "approve": "Onayla",
@@ -428,6 +435,8 @@
         "title": "{currency} para birimine dönüştürme"
       },
       "correctAndResubmit": "Raporu düzeltip tekrar gönderin. Önceki gönderimler geçmişinde kalır.",
+      "countryEmpty": "Ülke bulunamadı",
+      "countrySearch": "Ülke ara",
       "cycles": {
         "approved": "onaylandı",
         "entry": "{date} tarihindeki {number}. gönderim: {outcome}",
@@ -496,15 +505,20 @@
         "add": "Fiş masrafı ekle",
         "addFailed": "Masraf eklenemedi. Lütfen tekrar deneyin.",
         "empty": "Bu seyahatin her fişini ayrı bir masraf olarak ekleyin. Yukarıdaki seyahat ayrıntıları tümü için geçerlidir.",
-        "heading": "Masraf {number}",
+        "numbered": "{type} {number}",
         "remove": "Kaldır",
         "removeConfirm": "Masrafı kaldır",
         "removeConflict": "Bu masraf başka bir yerde değiştirildi ve kaldırılamadı. Kontrol edip tekrar deneyin.",
+        "removed": "{type} (kaldırıldı)",
         "removeDescription": "Masraf ve ekli fişleri bu seyahatten silinir. Bu işlem geri alınamaz.",
         "removeFailed": "Masraf kaldırılamadı. Lütfen tekrar deneyin.",
-        "removeLabel": "{number} numaralı masrafı kaldır",
+        "removeItem": "{item} öğesini kaldır",
         "removeTitle": "Bu masraf kaldırılsın mı?",
         "title": "Masraflar"
+      },
+      "kind": {
+        "standaloneMileage": "Bağımsız kilometre",
+        "trip": "Seyahat raporu"
       },
       "loading": "Masraf yükleniyor…",
       "mileage": {
@@ -680,7 +694,7 @@
         "inheritNone": "Seyahat ile aynı (proje yok)",
         "label": "Proje (isteğe bağlı)",
         "loadFailed": "Projeler yüklenemedi.",
-        "needsDate": "O gün kullanabileceğiniz projeleri görmek için fiş tarihini girin.",
+        "needsExpenseDate": "O gün kullanabileceğiniz projeleri görmek için masraf tarihini girin.",
         "needsTripDates": "Bu seyahatte kullanabileceğiniz projeleri görmek için seyahat tarihlerini girin.",
         "none": "Proje yok",
         "noneEligible": "Bu tarihte bir proje atamanız yoktu. O tarihte bir projede çalıştıysanız, masraf yöneticisi bir ilişkilendirme istisnası yetkisi verebilir.",
@@ -770,7 +784,8 @@
         "title": "Hâlâ gerekenler"
       },
       "returnedBy": "{name} tarafından {date} tarihinde değişiklik için iade edildi",
-      "returnedItem": "Masraf {number} ({description}):",
+      "returnedItemNamed": "{item} ({description}):",
+      "returnedRemovedItem": "{item}, {description}:",
       "save": {
         "conflictDescription": "Açtıktan sonra başka bir pencerede veya başka bir cihazda kaydedildi. En son düzenlemeleriniz henüz kaydedilmedi.",
         "conflictTitle": "Bu masraf başka bir yerde değiştirildi",
@@ -805,11 +820,11 @@
         "changedTitle": "Rapor değişti",
         "confirm": "Onaya gönder",
         "description": "Kaydedilen raporu kontrol edin. İnceleyen kişi tam olarak bu sürüm üzerinden karar verir; rapor incelenirken düzenlenemez.",
-        "expenseRequirement": "Masraf {number}: {requirement}",
         "failed": "Bir şeyler ters gitti. Raporunuz hâlâ taslak olarak kayıtlı; lütfen tekrar deneyin.",
         "failedTitle": "Rapor gönderilmedi",
         "incomplete": "Kaydedilen bazı ayrıntılar hâlâ eksik. “Hâlâ gerekenler” altında listelenen her şeyi tamamlayın ve tekrar deneyin.",
         "incompleteTitle": "Rapor eksik",
+        "itemRequirement": "{item}: {requirement}",
         "noReviewerAsk": "Kendiniz dışında bir yöneticiniz veya ekip yöneticiniz yok ve belirlenmiş bir masraf onaylayıcısı bulunmuyor. Bir yöneticiden Ayarlar, Seyahat masrafları, Masraf raporu incelemesi altından bir masraf onaylayıcı seçmesini isteyin. Raporunuz taslak olarak kayıtlı kalır.",
         "noReviewerAssign": "Kendiniz dışında bir yöneticiniz veya ekip yöneticiniz yok ve belirlenmiş bir masraf onaylayıcısı bulunmuyor. Seyahat masrafları ayarlarındaki Masraf raporu incelemesi altından bir masraf onaylayıcı seçin. Raporunuz taslak olarak kayıtlı kalır.",
         "noReviewerTitle": "Bu raporu henüz kimse inceleyemez",
@@ -832,12 +847,11 @@
         "unavailableTitle": "Gönderim duraklatıldı"
       },
       "submittedAt": "{date} tarihinde gönderildi",
-      "submittedTitle": "Gönderilen masraf raporu",
       "summary": {
+        "itemPrefix": "{item}:",
         "paidByCompany": "Şirket tarafından ödendi",
         "paidByEmployee": "Sizin tarafınızdan ödendi"
       },
-      "title": "Masraf",
       "totals": {
         "companyPaid": "Şirket tarafından ödendi",
         "excluded": "{count, plural, other {# masraf henüz hesaba katılmadı. Toplamlara, tutarı ve ödeyeni girilen {currency} cinsinden masraflar dahildir.} }",
@@ -875,8 +889,8 @@
           "complete": "Bu seyahat için her şey girildi.",
           "destination": "En az bir varış noktası ekleyin.",
           "expenseItem": "Masraf ekleyin.",
-          "expenseNamed": "Masraf {number}: {description}",
           "fixFields": "Vurgulanan seyahat ayrıntılarını düzeltin.",
+          "itemNamed": "{item}: {description}",
           "notEnded": "Seyahat {date} tarihinde sona eriyor. O günden itibaren gönderebilirsiniz.",
           "purpose": "Seyahatin amacını açıklayın.",
           "title": "Bu seyahat için hâlâ gerekenler",

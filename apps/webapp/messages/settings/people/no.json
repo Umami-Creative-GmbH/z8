@@ -164,6 +164,8 @@
         "deactivateTitle": "Deaktivere ansatt?",
         "deactivating": "Deaktiverer...",
         "deactivatingStatus": "Deaktiverer ansatt",
+        "finalOwnerDeactivateGuidance": "Tilordne og aktiver en annen godkjent eier før du deaktiverer denne ansatte.",
+        "finalOwnerRemoveGuidance": "Tilordne og aktiver en annen godkjent eier før du fjerner denne ansattes tilgang.",
         "reactivate": "Reaktiver",
         "reactivateDescription": "Dette gjenoppretter tilgangen til denne organisasjonen ved å bruke den eksisterende ansattoppføringen.",
         "reactivateError": "Kunne ikke reaktivere ansatt",
@@ -621,6 +623,10 @@
         "title": "Ingen egendefinerte roller ennå"
       },
       "introduction": "Opprett egendefinerte tillatelsesroller som kan tildeles ansatte. Egendefinerte roller legger til tillatelser på toppen av basisnivået.",
+      "permissionCategories": {
+        "time_tracking": "Tidsregistrering",
+        "works_council": "Bedriftsutvalg"
+      },
       "table": {
         "actions": "Handlinger",
         "assigned": "Tildelt",

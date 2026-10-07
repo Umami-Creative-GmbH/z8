@@ -299,7 +299,11 @@
         "number": "Employee number"
       },
       "checks": {
-        "count": "Count"
+        "count": "Count",
+        "missingEmploymentHistory": {
+          "descriptionPass": "All active employees have confirmed employment history for this payroll period.",
+          "descriptionWarning": "Some active employees do not have confirmed employment history for this payroll period."
+        }
       },
       "checkStatus": {
         "fail": "Blocked",

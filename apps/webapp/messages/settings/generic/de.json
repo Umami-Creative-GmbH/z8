@@ -1192,9 +1192,9 @@
         "title": "Prüfung von Ausgabenberichten"
       },
       "currency": {
+        "choose": "Wählen Sie eine Währung mit höchstens zwei Dezimalstellen, z. B. EUR oder CHF.",
         "description": "Neue Ausgabenberichte werden in dieser Währung erstattet; bestehende Berichte behalten ihre Währung bei. Schwellenwerte für Genehmigungsbeträge werden in EUR verglichen. Solange betragsbasierte Genehmigungsregeln existieren, können Berichte in einer anderen Währung daher nicht eingereicht werden.",
         "intro": "Belege in anderen Währungen behalten ihren ursprünglichen Betrag und werden anhand einer nachgewiesenen Kartenbelastung oder eines dokumentierten Wechselkurses umgerechnet.",
-        "invalid": "Geben Sie einen dreistelligen Währungscode mit höchstens zwei Dezimalstellen ein, z. B. EUR oder CHF.",
         "label": "Erstattungswährung",
         "loadFailed": "Die Erstattungswährung konnte nicht geladen werden.",
         "save": "Währung speichern",

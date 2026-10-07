@@ -623,6 +623,10 @@
         "title": "No kei eigeni Rolle"
       },
       "introduction": "Erstelle eigeni Berechtigungsrolle, wo Mitarbeiter chönd zuegwise werde. Eigeni Rolle ergänzed d'Berechtigunge vo de Basis-Stufe.",
+      "permissionCategories": {
+        "time_tracking": "Zeiterfassung",
+        "works_council": "Betriebskommission"
+      },
       "table": {
         "actions": "Aaktione",
         "assigned": "Zuegwise",

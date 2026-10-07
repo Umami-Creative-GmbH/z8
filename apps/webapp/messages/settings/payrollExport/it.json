@@ -299,7 +299,11 @@
         "number": "Numero dipendente"
       },
       "checks": {
-        "count": "Conteggio"
+        "count": "Conteggio",
+        "missingEmploymentHistory": {
+          "descriptionPass": "Tutti i dipendenti attivi dispongono di uno storico lavorativo confermato per questo periodo di paga.",
+          "descriptionWarning": "Alcuni dipendenti attivi non dispongono di uno storico lavorativo confermato per questo periodo di paga."
+        }
       },
       "checkStatus": {
         "fail": "Bloccato",

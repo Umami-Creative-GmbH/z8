@@ -1192,9 +1192,9 @@
         "title": "Revisione nota spese"
       },
       "currency": {
+        "choose": "Scegli una valuta con al massimo due cifre decimali, ad es. EUR o CHF.",
         "description": "Le nuove note spese vengono rimborsate in questa valuta; quelle esistenti mantengono la propria. Le soglie di importo per l'approvazione vengono confrontate in EUR, pertanto se esistono regole di approvazione basate sull'importo, non è possibile inviare note spese in un'altra valuta.",
         "intro": "Le ricevute in altre valute mantengono l'importo originale e vengono convertite tramite un addebito su carta comprovato o un tasso documentato.",
-        "invalid": "Inserisci un codice valuta di tre lettere con al massimo due decimali, ad es. EUR o CHF.",
         "label": "Valuta di rimborso",
         "loadFailed": "Impossibile caricare la valuta di rimborso.",
         "save": "Salva valuta",

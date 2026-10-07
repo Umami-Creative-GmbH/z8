@@ -1192,9 +1192,9 @@
         "title": "Expense report review"
       },
       "currency": {
+        "choose": "Choose a currency with at most two decimal places, e.g. EUR or CHF.",
         "description": "New expense reports are reimbursed in this currency; existing reports keep theirs. Approval amount thresholds are compared in EUR, so while amount-based approval rules exist, reports in another currency cannot be submitted.",
         "intro": "Receipts in other currencies keep their original amount and are converted by an evidenced card charge or a documented rate.",
-        "invalid": "Enter a three-letter currency code with at most two decimal places, e.g. EUR or CHF.",
         "label": "Reimbursement currency",
         "loadFailed": "The reimbursement currency could not be loaded.",
         "save": "Save currency",

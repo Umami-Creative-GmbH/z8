@@ -66,8 +66,15 @@
     },
     "approvals": {
       "description": "Open the unified approvals inbox filtered to travel expenses.",
-      "openInbox": "Open Inbox",
-      "title": "Review Pending Travel Expense Approvals"
+      "entry": {
+        "open": "Open inbox",
+        "title": "Review pending travel expense approvals"
+      }
+    },
+    "currency": {
+      "empty": "No currency found",
+      "placeholder": "Choose a currency",
+      "search": "Search currencies"
     },
     "decision": {
       "approve": "Approve",
@@ -428,6 +435,8 @@
         "title": "Conversion into {currency}"
       },
       "correctAndResubmit": "Correct the report and submit it again. Earlier submissions stay in its history.",
+      "countryEmpty": "No country found",
+      "countrySearch": "Search countries",
       "cycles": {
         "approved": "approved",
         "entry": "Submission {number} on {date}: {outcome}",
@@ -496,15 +505,20 @@
         "add": "Add receipt expense",
         "addFailed": "The expense could not be added. Please retry.",
         "empty": "Add each receipt of this trip as its own expense. The trip details above apply to all of them.",
-        "heading": "Expense {number}",
+        "numbered": "{type} {number}",
         "remove": "Remove",
         "removeConfirm": "Remove expense",
         "removeConflict": "This expense changed elsewhere and was not removed. Check it and try again.",
+        "removed": "{type} (removed)",
         "removeDescription": "The expense and its attached receipts are deleted from this trip. This cannot be undone.",
         "removeFailed": "The expense could not be removed. Please retry.",
-        "removeLabel": "Remove expense {number}",
+        "removeItem": "Remove {item}",
         "removeTitle": "Remove this expense?",
         "title": "Expenses"
+      },
+      "kind": {
+        "standaloneMileage": "Standalone mileage",
+        "trip": "Trip report"
       },
       "loading": "Loading expense…",
       "mileage": {
@@ -680,7 +694,7 @@
         "inheritNone": "Same as the trip (no project)",
         "label": "Project (optional)",
         "loadFailed": "The projects could not be loaded.",
-        "needsDate": "Enter the receipt date to see the projects you can use on that day.",
+        "needsExpenseDate": "Enter the expense date to see the projects you can use on that day.",
         "needsTripDates": "Enter the travel dates to see the projects you can use on this trip.",
         "none": "No project",
         "noneEligible": "You had no project assignment on this date. If you worked on a project then, an expense administrator can authorize an attribution exception.",
@@ -770,7 +784,8 @@
         "title": "Still needed"
       },
       "returnedBy": "Returned for changes by {name} on {date}",
-      "returnedItem": "Expense {number} ({description}):",
+      "returnedItemNamed": "{item} ({description}):",
+      "returnedRemovedItem": "{item}, {description}:",
       "save": {
         "conflictDescription": "It was saved in another window or on another device after you opened it. Your latest edits are not saved yet.",
         "conflictTitle": "This expense changed elsewhere",
@@ -805,11 +820,11 @@
         "changedTitle": "The report changed",
         "confirm": "Submit for approval",
         "description": "Check the saved report. Your reviewer decides on exactly this version; it cannot be edited while it is being reviewed.",
-        "expenseRequirement": "Expense {number}: {requirement}",
         "failed": "Something went wrong. Your report is still saved as a draft; please retry.",
         "failedTitle": "The report was not submitted",
         "incomplete": "Some saved details are still missing. Complete everything listed under “Still needed” and try again.",
         "incompleteTitle": "The report is incomplete",
+        "itemRequirement": "{item}: {requirement}",
         "noReviewerAsk": "You have no manager or team manager other than yourself, and no expense approver is set up. Ask an administrator to choose an expense approver under Settings, Travel expenses, Expense report review. Your report stays saved as a draft.",
         "noReviewerAssign": "You have no manager or team manager other than yourself, and no expense approver is set up. Choose an expense approver under Expense report review in the travel expense settings. Your report stays saved as a draft.",
         "noReviewerTitle": "No one can review this report yet",
@@ -832,12 +847,11 @@
         "unavailableTitle": "Submission is paused"
       },
       "submittedAt": "Submitted {date}",
-      "submittedTitle": "Submitted expense report",
       "summary": {
+        "itemPrefix": "{item}:",
         "paidByCompany": "Paid by the company",
         "paidByEmployee": "Paid by you"
       },
-      "title": "Expense",
       "totals": {
         "companyPaid": "Paid by the company",
         "excluded": "{count, plural, one {# expense is not counted yet. Totals include expenses in {currency} whose amount and payer are entered.} other {# expenses are not counted yet. Totals include expenses in {currency} whose amount and payer are entered.}}",
@@ -875,8 +889,8 @@
           "complete": "Everything for this trip is entered.",
           "destination": "Add at least one destination.",
           "expenseItem": "Add an expense.",
-          "expenseNamed": "Expense {number}: {description}",
           "fixFields": "Correct the highlighted trip details.",
+          "itemNamed": "{item}: {description}",
           "notEnded": "The trip ends on {date}. You can submit from that day.",
           "purpose": "Describe the purpose of the trip.",
           "title": "Still needed for this trip",

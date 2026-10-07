@@ -66,8 +66,15 @@
     },
     "approvals": {
       "description": "Åpne den felles innboksen for godkjenninger filtrert etter reiseutgifter.",
-      "openInbox": "Åpne innboks",
-      "title": "Gå gjennom ventende godkjenninger av reiseutgifter"
+      "entry": {
+        "open": "Åpne innboks",
+        "title": "Gjennomgå ventende godkjenninger av reiseutgifter"
+      }
+    },
+    "currency": {
+      "empty": "Ingen valuta funnet",
+      "placeholder": "Velg en valuta",
+      "search": "Søk etter valutaer"
     },
     "decision": {
       "approve": "Godkjenn",
@@ -428,6 +435,8 @@
         "title": "Omregning til {currency}"
       },
       "correctAndResubmit": "Korriger rapporten og send den inn på nytt. Tidligere innsendinger forblir i loggen.",
+      "countryEmpty": "Ingen land funnet",
+      "countrySearch": "Søk etter land",
       "cycles": {
         "approved": "godkjent",
         "entry": "Innsending {number} den {date}: {outcome}",
@@ -496,15 +505,20 @@
         "add": "Legg til kvitteringsutgift",
         "addFailed": "Kunne ikke legge til utgiften. Prøv på nytt.",
         "empty": "Legg til hver kvittering for denne reisen som en egen utgift. Reisedetaljene ovenfor gjelder for alle sammen.",
-        "heading": "Utgift {number}",
+        "numbered": "{type} {number}",
         "remove": "Fjern",
         "removeConfirm": "Fjern utgift",
         "removeConflict": "Denne utgiften ble endret et annet sted og ble ikke fjernet. Kontroller den og prøv igjen.",
+        "removed": "{type} (fjernet)",
         "removeDescription": "Utgiften og de vedlagte kvitteringene slettes fra denne reisen. Dette kan ikke angres.",
         "removeFailed": "Kunne ikke fjerne utgiften. Prøv på nytt.",
-        "removeLabel": "Fjern utgift {number}",
+        "removeItem": "Fjern {item}",
         "removeTitle": "Fjerne denne utgiften?",
         "title": "Utgifter"
+      },
+      "kind": {
+        "standaloneMileage": "Frittstående kjøregodtgjørelse",
+        "trip": "Reiserapport"
       },
       "loading": "Laster inn utgift…",
       "mileage": {
@@ -680,7 +694,7 @@
         "inheritNone": "Samme som reisen (ingen prosjekt)",
         "label": "Prosjekt (valgfritt)",
         "loadFailed": "Kunne ikke laste inn prosjektene.",
-        "needsDate": "Angi kvitteringsdatoen for å se prosjektene du kan bruke denne dagen.",
+        "needsExpenseDate": "Angi utgiftsdatoen for å se prosjektene du kan bruke den dagen.",
         "needsTripDates": "Angi reisedatoene for å se prosjektene du kan bruke på denne reisen.",
         "none": "Ingen prosjekt",
         "noneEligible": "Du var ikke tildelt noe prosjekt på denne datoen. Hvis du jobbet på et prosjekt da, kan en utgiftsadministrator godkjenne et unntak for tilordning.",
@@ -770,7 +784,8 @@
         "title": "Mangler fortsatt"
       },
       "returnedBy": "Returnert for endringer av {name} {date}",
-      "returnedItem": "Utgift {number} ({description}):",
+      "returnedItemNamed": "{item} ({description}):",
+      "returnedRemovedItem": "{item}, {description}:",
       "save": {
         "conflictDescription": "Den ble lagret i et annet vindu eller på en annen enhet etter at du åpnet den. De siste endringene dine er ikke lagret ennå.",
         "conflictTitle": "Denne utgiften ble endret et annet sted",
@@ -805,11 +820,11 @@
         "changedTitle": "Rapporten ble endret",
         "confirm": "Send til godkjenning",
         "description": "Kontroller den lagrede rapporten. Den som skal vurdere den, tar stilling til akkurat denne versjonen; den kan ikke redigeres mens den vurderes.",
-        "expenseRequirement": "Utgift {number}: {requirement}",
         "failed": "Noe gikk galt. Rapporten din er fortsatt lagret som et utkast. Prøv på nytt.",
         "failedTitle": "Rapporten ble ikke sendt inn",
         "incomplete": "Noen lagrede detaljer mangler fortsatt. Fyll ut alt som er oppført under «Mangler fortsatt», og prøv igjen.",
         "incompleteTitle": "Rapporten er ufullstendig",
+        "itemRequirement": "{item}: {requirement}",
         "noReviewerAsk": "Du har ingen annen leder eller teamleder enn deg selv, og det er ikke angitt noen utgiftsgodkjenner. Be en administrator om å velge en utgiftsgodkjenner under Innstillinger, Reiseutgifter, Gjennomgang av utgiftsrapporter. Rapporten din forblir lagret som et utkast.",
         "noReviewerAssign": "Du har ingen annen leder eller teamleder enn deg selv, og det er ikke angitt noen utgiftsgodkjenner. Velg en utgiftsgodkjenner under Gjennomgang av utgiftsrapporter i innstillingene for reiseutgifter. Rapporten din forblir lagret som et utkast.",
         "noReviewerTitle": "Ingen kan gjennomgå denne rapporten ennå",
@@ -832,12 +847,11 @@
         "unavailableTitle": "Innsending er satt på pause"
       },
       "submittedAt": "Sendt inn {date}",
-      "submittedTitle": "Innsendt utgiftsrapport",
       "summary": {
+        "itemPrefix": "{item}:",
         "paidByCompany": "Betalt av selskapet",
         "paidByEmployee": "Betalt av deg"
       },
-      "title": "Utgift",
       "totals": {
         "companyPaid": "Betalt av selskapet",
         "excluded": "{count, plural, one {# utgift er ikke telt med ennå. Totalsummer inkluderer utgifter i {currency} der beløp og betaler er angitt.} other {# utgifter er ikke telt med ennå. Totalsummer inkluderer utgifter i {currency} der beløp og betaler er angitt.}}",
@@ -875,8 +889,8 @@
           "complete": "Alt for denne reisen er lagt inn.",
           "destination": "Legg til minst ett reisemål.",
           "expenseItem": "Legg til en utgift.",
-          "expenseNamed": "Utgift {number}: {description}",
           "fixFields": "Korriger de uthevede reisedetaljene.",
+          "itemNamed": "{item}: {description}",
           "notEnded": "Reisen avsluttes {date}. Du kan sende inn fra den dagen.",
           "purpose": "Beskriv formålet med reisen.",
           "title": "Gjenstår for denne reisen",

@@ -1192,9 +1192,9 @@
         "title": "Gjennomgang av utgiftsrapport"
       },
       "currency": {
+        "choose": "Velg en valuta med maksimalt to desimaler, f.eks. EUR eller CHF.",
         "description": "Nye utgiftsrapporter refunderes i denne valutaen; eksisterende rapporter beholder sin. Terskelbeløp for godkjenning sammenlignes i EUR, så så lenge det finnes beløpsbaserte godkjenningsregler, kan ikke rapporter i en annen valuta sendes inn.",
         "intro": "Kvitteringer i andre valutaer beholder sitt opprinnelige beløp og regnes om ved hjelp av en dokumentert kortbelastning eller en dokumentert valutakurs.",
-        "invalid": "Angi en valutakode på tre bokstaver med maksimalt to desimaler, f.eks. EUR eller CHF.",
         "label": "Refusjonsvaluta",
         "loadFailed": "Kunne ikke laste inn refusjonsvalutaen.",
         "save": "Lagre valuta",

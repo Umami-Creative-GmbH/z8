@@ -66,8 +66,15 @@
     },
     "approvals": {
       "description": "Öppna den samlade inkorgen för godkännanden filtrerad efter reseutlägg.",
-      "openInbox": "Öppna inkorgen",
-      "title": "Granska väntande godkännanden av reseräkningar"
+      "entry": {
+        "open": "Öppna inkorg",
+        "title": "Granska väntande godkännanden av reseutlägg"
+      }
+    },
+    "currency": {
+      "empty": "Ingen valuta hittades",
+      "placeholder": "Välj en valuta",
+      "search": "Sök valutor"
     },
     "decision": {
       "approve": "Godkänn",
@@ -428,6 +435,8 @@
         "title": "Omräkning till {currency}"
       },
       "correctAndResubmit": "Korrigera rapporten och skicka in den igen. Tidigare inlämningar finns kvar i dess historik.",
+      "countryEmpty": "Inget land hittades",
+      "countrySearch": "Sök länder",
       "cycles": {
         "approved": "godkänd",
         "entry": "Inlämning {number} den {date}: {outcome}",
@@ -496,15 +505,20 @@
         "add": "Lägg till kvittoutlägg",
         "addFailed": "Utlägget kunde inte läggas till. Försök igen.",
         "empty": "Lägg till varje kvitto för denna resa som ett eget utlägg. Reseuppgifterna ovan gäller för dem alla.",
-        "heading": "Utlägg {number}",
+        "numbered": "{type} {number}",
         "remove": "Ta bort",
         "removeConfirm": "Ta bort utlägg",
         "removeConflict": "Det här utlägget har ändrats någon annanstans och togs inte bort. Kontrollera det och försök igen.",
+        "removed": "{type} (borttagen)",
         "removeDescription": "Utlägget och dess bifogade kvitton raderas från denna resa. Detta kan inte ångras.",
         "removeFailed": "Utlägget kunde inte tas bort. Försök igen.",
-        "removeLabel": "Ta bort utlägg {number}",
+        "removeItem": "Ta bort {item}",
         "removeTitle": "Ta bort det här utlägget?",
         "title": "Utlägg"
+      },
+      "kind": {
+        "standaloneMileage": "Fristående milersättning",
+        "trip": "Reserapport"
       },
       "loading": "Läser in utlägg…",
       "mileage": {
@@ -680,7 +694,7 @@
         "inheritNone": "Samma som resan (inget projekt)",
         "label": "Projekt (valfritt)",
         "loadFailed": "Projekten kunde inte läsas in.",
-        "needsDate": "Ange kvittodatumet för att se vilka projekt du kan använda den dagen.",
+        "needsExpenseDate": "Ange utgiftsdatumet för att se vilka projekt du kan använda den dagen.",
         "needsTripDates": "Ange resedatumen för att se vilka projekt du kan använda på den här resan.",
         "none": "Inget projekt",
         "noneEligible": "Du hade ingen projekttilldelning detta datum. Om du arbetade i ett projekt då kan en utläggsadministratör godkänna ett allokeringsundantag.",
@@ -770,7 +784,8 @@
         "title": "Krävs fortfarande"
       },
       "returnedBy": "Returnerad för ändringar av {name} den {date}",
-      "returnedItem": "Utgift {number} ({description}):",
+      "returnedItemNamed": "{item} ({description}):",
+      "returnedRemovedItem": "{item}, {description}:",
       "save": {
         "conflictDescription": "Den sparades i ett annat fönster eller på en annan enhet efter att du öppnade den. Dina senaste ändringar har inte sparats än.",
         "conflictTitle": "Den här utgiften ändrades någon annanstans",
@@ -805,11 +820,11 @@
         "changedTitle": "Rapporten har ändrats",
         "confirm": "Skicka för godkännande",
         "description": "Kontrollera den sparade rapporten. Din granskare fattar beslut om exakt denna version; den kan inte redigeras medan den granskas.",
-        "expenseRequirement": "Utlägg {number}: {requirement}",
         "failed": "Något gick fel. Din rapport är fortfarande sparad som ett utkast; försök igen.",
         "failedTitle": "Rapporten skickades inte in",
         "incomplete": "Vissa sparade uppgifter saknas fortfarande. Fyll i allt som listas under ”Behövs fortfarande” och försök igen.",
         "incompleteTitle": "Rapporten är ofullständig",
+        "itemRequirement": "{item}: {requirement}",
         "noReviewerAsk": "Du har ingen chef eller teamchef förutom dig själv, och ingen godkännare av utlägg har ställts in. Be en administratör att välja en godkännare av utlägg under Inställningar, Reseräkningar, Granskning av utläggsrapporter. Din rapport förblir sparad som ett utkast.",
         "noReviewerAssign": "Du har ingen chef eller teamchef förutom dig själv, och ingen godkännare av utlägg har ställts in. Välj en godkännare av utlägg under Granskning av utläggsrapporter i inställningarna för reseräkningar. Din rapport förblir sparad som ett utkast.",
         "noReviewerTitle": "Ingen kan granska den här rapporten än",
@@ -832,12 +847,11 @@
         "unavailableTitle": "Inlämningen är pausad"
       },
       "submittedAt": "Inlämnad {date}",
-      "submittedTitle": "Inlämnad utläggsrapport",
       "summary": {
+        "itemPrefix": "{item}:",
         "paidByCompany": "Betalat av företaget",
         "paidByEmployee": "Betalat av dig"
       },
-      "title": "Utlägg",
       "totals": {
         "companyPaid": "Betalat av företaget",
         "excluded": "{count, plural, other {# utlägg räknas inte ännu. Totalsummor inkluderar utlägg i {currency} där belopp och betalare har angetts.} }",
@@ -875,8 +889,8 @@
           "complete": "Allt för den här resan har angetts.",
           "destination": "Lägg till minst en destination.",
           "expenseItem": "Lägg till ett utlägg.",
-          "expenseNamed": "Utlägg {number}: {description}",
           "fixFields": "Korrigera de markerade reseuppgifterna.",
+          "itemNamed": "{item}: {description}",
           "notEnded": "Resan avslutas den {date}. Du kan skicka in från och med den dagen.",
           "purpose": "Beskriv resans syfte.",
           "title": "Krävs fortfarande för den här resan",
