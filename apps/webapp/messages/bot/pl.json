@@ -85,16 +85,11 @@
       "leave": "Urlop",
       "newRequest": "Nowy wniosek o zatwierdzenie",
       "outcome": {
-        "recorded": "Zapisane przez {actor} {time}. Sprawdź aktualny status wniosku w Z8.",
         "recordedTitle": "Zarejestrowano decyzję",
         "replayed": "To naciśnięcie przycisku zostało już zarejestrowane; to jest jego pierwotny wynik i nie podjęto nowej decyzji.",
-        "requestApproved": "Zatwierdzone przez {actor} {time}. Wniosek jest zatwierdzony.",
         "requestApprovedTitle": "Wniosek zatwierdzony",
-        "requestRejected": "Odrzucone przez {actor} {time}. Wniosek jest odrzucony.",
         "requestRejectedTitle": "Wniosek odrzucony",
-        "stepApproved": "Zatwierdzone przez {actor} {time}. Wniosek czeka jeszcze na dalsze zatwierdzenia.",
         "stepApprovedTitle": "Zarejestrowano zatwierdzenie",
-        "stepRejected": "Odrzucone przez {actor} {time}. Wniosek nie jest jeszcze ostateczny; sprawdź jego aktualny status w Z8.",
         "stepRejectedTitle": "Zarejestrowano odrzucenie"
       },
       "outcomeUnknown": "Nie udało się potwierdzić wyniku tego naciśnięcia. Sprawdź wniosek w Z8 przed ponownym naciśnięciem.",

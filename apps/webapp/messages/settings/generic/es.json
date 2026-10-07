@@ -1185,6 +1185,7 @@
         "label": "Aprobador de gastos",
         "loadFailed": "No se pudo cargar el aprobador de gastos.",
         "none": "Sin aprobador de gastos",
+        "ownerSelfApproval": "Mientras nadie más pueda revisar los informes del propietario de la organización, estos se aprueban automáticamente al enviarse y se marcan como tales; los informes con una justificación de falta de recibo o una dieta asignada manualmente siguen necesitando un revisor.",
         "save": "Guardar aprobador",
         "saved": "Aprobador de gastos guardado",
         "saveFailed": "Error al guardar el aprobador de gastos",
@@ -1201,7 +1202,6 @@
         "saveFailed": "No se pudo guardar la moneda de reembolso.",
         "title": "Moneda de reembolso"
       },
-      "description": "Configure las tasas de reembolso y los periodos de vigencia para las reclamaciones de kilometraje y dietas.",
       "effectiveFrom": "Vigente desde",
       "effectiveTo": "Vigente hasta",
       "legacy": {
@@ -1262,6 +1262,8 @@
         "withdrawTitle": "¿Retirar esta versión de la tarifa?"
       },
       "mileageRate": "Kilometraje / km",
+      "navDescription": "Revisión de informes de gastos, recibos, monedas, tarifas de kilometraje y dietas, y excepciones.",
+      "pageDescription": "Elija quién revisa los informes de gastos, cómo se gestionan los recibos faltantes y las monedas extranjeras, qué tarifas de kilometraje y dietas se aplican y qué excepciones se autorizan.",
       "perDiem": {
         "activate": "Activar versión",
         "add": "Añadir versión de tarifa",
@@ -1289,7 +1291,6 @@
           "invalid": "Compruebe este valor.",
           "tooLong": "Este texto es demasiado largo."
         },
-        "foreignAreas": "Tarifas para el extranjero: {count} países y lugares",
         "foreignTable": "Incluye las tarifas oficiales para el extranjero ({version}) para {countries} países y {places} ciudades, aplicadas a los días de viaje del {from} al {through}. Los países y territorios que no figuran en la lista siguen las reglas oficiales por defecto; cualquier otro caso se marca para un cálculo manual.",
         "fullDay": "Día completo (24 horas de ausencia)",
         "germanDefaultTitle": "Dieta legal nacional alemana",

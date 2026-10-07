@@ -197,6 +197,7 @@
       "claimed": "Solicitado",
       "companyPaid": "Pagado por la empresa {amount}",
       "continuedFrom": "Continuación de una solicitud anterior",
+      "deleteDraft": "Eliminar borrador “{title}”",
       "emptyDescription": "Inicie un viaje para reunir varios gastos con los mismos datos de viaje, o añada un único recibo o gasto de kilometraje. Los borradores se guardan automáticamente para que pueda terminarlos más tarde.",
       "emptyFilter": "No hay gastos con este estado.",
       "emptyTitle": "Aún no hay gastos de viaje",
@@ -268,6 +269,92 @@
       "emptyTitle": "Aún no hay solicitudes de gastos de viaje",
       "status": "Estado",
       "type": "Tipo"
+    },
+    "perDiemPlaces": {
+      "AU": {
+        "canberra": "Canberra",
+        "sydney": "Sídney"
+      },
+      "BR": {
+        "brasilia": "Brasilia",
+        "rio-de-janeiro": "Río de Janeiro",
+        "sao-paulo": "São Paulo"
+      },
+      "CA": {
+        "ottawa": "Ottawa",
+        "toronto": "Toronto",
+        "vancouver": "Vancouver"
+      },
+      "CH": {
+        "bern": "Berna",
+        "genf": "Ginebra"
+      },
+      "CN": {
+        "hongkong": "Hong Kong",
+        "peking": "Pekín",
+        "shanghai": "Shanghái"
+      },
+      "ES": {
+        "barcelona": "Barcelona",
+        "kanarische-inseln": "Islas Canarias",
+        "madrid": "Madrid",
+        "palma-de-mallorca": "Palma de Mallorca"
+      },
+      "FR": {
+        "paris": "París y departamentos 77, 78, 91–95"
+      },
+      "GB": {
+        "london": "Londres"
+      },
+      "GR": {
+        "athen": "Atenas"
+      },
+      "IN": {
+        "bangalore": "Bengaluru",
+        "chennai": "Chennai",
+        "kalkutta": "Calcuta",
+        "mumbai": "Bombay",
+        "neu-delhi": "Nueva Delhi"
+      },
+      "IT": {
+        "mailand": "Milán",
+        "rom": "Roma"
+      },
+      "JP": {
+        "osaka": "Osaka",
+        "tokio": "Tokio"
+      },
+      "PL": {
+        "breslau": "Breslavia",
+        "warschau": "Varsovia"
+      },
+      "RU": {
+        "moskau": "Moscú",
+        "st-petersburg": "San Petersburgo"
+      },
+      "SA": {
+        "djidda": "Yeda",
+        "riad": "Riad"
+      },
+      "TR": {
+        "ankara": "Ankara",
+        "izmir": "Esmirna"
+      },
+      "US": {
+        "atlanta": "Atlanta",
+        "boston": "Boston",
+        "chicago": "Chicago",
+        "houston": "Houston",
+        "los-angeles": "Los Ángeles",
+        "miami": "Miami",
+        "new-york-city": "Ciudad de Nueva York",
+        "san-francisco": "San Francisco",
+        "washington-dc": "Washington, D.C."
+      },
+      "ZA": {
+        "johannesburg": "Johannesburgo",
+        "kapstadt": "Ciudad del Cabo"
+      }
     },
     "report": {
       "actions": {
@@ -352,6 +439,15 @@
         "withdrawn": "retirado"
       },
       "decideInInbox": "Apruebe, devuelva o rechace el informe completo en la bandeja de entrada de Aprobaciones.",
+      "delete": {
+        "action": "Eliminar borrador",
+        "description": "Se eliminarán el borrador, sus gastos y sus recibos. Esta acción no se puede deshacer.",
+        "descriptionLegacy": "Se eliminarán el borrador, sus gastos y sus recibos, junto con el borrador de solicitud anterior que continúa. Esta acción no se puede deshacer.",
+        "done": "Borrador eliminado.",
+        "failed": "No se pudo eliminar el borrador. Inténtelo de nuevo.",
+        "notDeletable": "Este informe ya se ha enviado, por lo que ya no se puede eliminar.",
+        "title": "¿Eliminar este borrador?"
+      },
       "drafts": {
         "expenses": "{count, plural, one {# gasto} other {# gastos}}",
         "noDate": "Aún no hay fecha",
@@ -391,6 +487,7 @@
         "rejected": "Rechazado por {name}",
         "reopened": "Reabierto para corrección por {name}",
         "returned": "Devuelto para cambios por {name}",
+        "selfApproved": "Aprobado automáticamente: no hay otro revisor",
         "submitted": "Enviado por {name}",
         "title": "Historial",
         "withdrawn": "Retirado por {name}"
@@ -524,6 +621,8 @@
           "assigned": "Importes que la notificación oficial asigna a este país",
           "atSea": "A bordo de un barco todo el día (sin embarcar ni desembarcar)",
           "choose": "Elija una ubicación",
+          "countryElsewhere": "{country} – otro lugar",
+          "countryPlace": "{country} – {place}",
           "elsewhere": "Cualquier otro lugar",
           "fallbackFlight": "Regla oficial: todo el día en vuelo, importes de Austria",
           "fallbackLuxembourg": "Regla subsidiaria oficial: no figura en la lista, importes de Luxemburgo",
@@ -560,6 +659,7 @@
           "exceptional": "Este itinerario requiere un cálculo manual de dietas por parte de un administrador de gastos. No se calcula automáticamente.",
           "locations": "Indíquenos para cada día de viaje dónde se encontraba a medianoche y dónde tuvo lugar su última actividad laboral en el extranjero.",
           "meals": "Confirme las comidas proporcionadas para cada día de viaje.",
+          "notReturned": "Regresas el {date} a las {time} ({timeZone}). Puedes enviarlo después de esa hora.",
           "overnight": "Indíquenos si pernoctó fuera de casa.",
           "policyMissing": "Su organización no tiene tarifas de dietas para {dates}. Solicite a un administrador de gastos que agregue tarifas con fecha en la configuración de gastos de viaje. No se calculará nada hasta entonces.",
           "start": "Indique cuándo salió de casa o de su lugar de trabajo.",
@@ -617,6 +717,12 @@
         "chooseFile": "Seleccionar archivo",
         "description": "Tome una foto o adjunte un PDF o imagen del recibo.",
         "downloadNamed": "Descargar {fileName}",
+        "errors": {
+          "locked": "Este gasto ya no se puede editar.",
+          "retry": "Por favor, inténtelo de nuevo.",
+          "tooLarge": "El archivo es demasiado grande. Adjunte un archivo de como máximo {size} MB.",
+          "unsupportedType": "Adjunte un PDF o una imagen (JPEG, PNG, WebP, GIF, BMP o TIFF)."
+        },
         "none": "Aún no se ha adjuntado ningún recibo.",
         "previewNamed": "Vista previa de {fileName}",
         "progress": "Progreso de subida",
@@ -656,6 +762,7 @@
         "description": "Describa el gasto.",
         "expenseDate": "Añada la fecha del recibo.",
         "fixFields": "Corrija primero los campos resaltados.",
+        "futureDate": "Esta fecha está en el futuro. Corrígela o envíala a partir del {date}.",
         "paidBy": "Indique si pagó usted o la empresa.",
         "receipt": "Adjunte el recibo.",
         "receiptExceptionNotAllowed": "Adjunte el recibo. Su organización no permite excepciones por falta de recibos.",
@@ -678,6 +785,7 @@
         "unsavedAfterClose": "No se pudieron guardar tus últimos cambios en un gasto. Ábrelo de nuevo para comprobarlo.",
         "useTheirs": "Cargar la versión guardada"
       },
+      "selfApprovedOn": "Aprobado automáticamente el {date}: este es el informe del propietario de la organización y nadie más pudo revisarlo.",
       "standaloneTitle": "Recibo independiente",
       "status": {
         "approved": "Aprobado",
@@ -697,13 +805,16 @@
         "changedTitle": "El informe ha cambiado",
         "confirm": "Enviar para aprobación",
         "description": "Compruebe el informe guardado. Su revisor tomará una decisión exactamente sobre esta versión; no se puede editar mientras se esté revisando.",
+        "expenseRequirement": "Gasto {number}: {requirement}",
         "failed": "Se ha producido un error. Su informe sigue guardado como borrador; vuelva a intentarlo.",
         "failedTitle": "No se ha enviado el informe",
         "incomplete": "Faltan algunos datos guardados. Complete todo lo que aparece en “Aún necesario” y vuelva a intentarlo.",
         "incompleteTitle": "El informe está incompleto",
-        "noReviewer": "No tiene ningún responsable ni jefe de equipo aparte de usted, y no hay ningún aprobador de gastos configurado. Pida a un administrador que asigne uno. Su informe permanecerá guardado como borrador.",
+        "noReviewerAsk": "No tienes ningún responsable ni responsable de equipo aparte de ti, y no se ha configurado ningún aprobador de gastos. Pide a un administrador que seleccione un aprobador de gastos en Ajustes, Gastos de viaje, Revisión de informes de gastos. Tu informe permanece guardado como borrador.",
+        "noReviewerAssign": "No tienes ningún responsable ni responsable de equipo aparte de ti, y no se ha configurado ningún aprobador de gastos. Selecciona un aprobador de gastos en Revisión de informes de gastos, dentro de los ajustes de gastos de viaje. Tu informe permanece guardado como borrador.",
         "noReviewerTitle": "Nadie puede revisar este informe todavía",
         "notSaved": "Algunos cambios aún no se han guardado. Espere a que se guarden y, a continuación, revise el informe de nuevo.",
+        "openApproverSetting": "Abrir configuración del aprobador de gastos",
         "project": "{count, plural, one {Un gasto está atribuido a un proyecto al que no estaba asignado en la fecha del gasto. Elija otro proyecto o solicite a un administrador de gastos una excepción de atribución. Su informe permanecerá guardado como borrador.} other {# gastos están atribuidos a un proyecto al que no estaba asignado en la fecha del gasto. Elija otro proyecto o solicite a un administrador de gastos una excepción de atribución. Su informe permanecerá guardado como borrador.}}",
         "projectTitle": "No se puede usar un proyecto",
         "ready": "Sus entradas se han guardado. Revise el informe y envíelo para aprobación.",
@@ -712,6 +823,8 @@
         "routing": "Las reglas de aprobación de su organización no han podido encontrar a un revisor. Pida a un administrador que las compruebe. Su informe permanecerá guardado como borrador.",
         "routingTitle": "No se ha podido enrutar el informe",
         "selfApproval": "Las reglas de aprobación de su organización le permitirían aprobar su propio informe. Pida a un administrador que las ajuste. Su informe permanecerá guardado como borrador.",
+        "selfApprovalBlocked": "Como propietario de la organización, tus informes se aprueban automáticamente mientras nadie más pueda revisarlos. Este informe incluye una justificación de falta de recibo o una dieta asignada manualmente, que otra persona debe aceptar. Selecciona un aprobador de gastos o modifica el informe. Tu informe permanece guardado como borrador.",
+        "selfApproved": "Informe aprobado automáticamente: nadie más puede revisarlo",
         "success": "Informe enviado para aprobación",
         "thresholdCurrency": "Las reglas de aprobación de su organización comparan importes en EUR, pero este informe está en {currency}. Pida a un administrador que las compruebe. Su informe permanecerá guardado como borrador.",
         "title": "Enviar informe de gastos",
@@ -764,6 +877,7 @@
           "expenseItem": "Añada un gasto.",
           "expenseNamed": "Gasto {number}: {description}",
           "fixFields": "Corrija los detalles resaltados del viaje.",
+          "notEnded": "El viaje finaliza el {date}. Puedes enviarlo a partir de ese día.",
           "purpose": "Describa el motivo del viaje.",
           "title": "Aún necesario para este viaje",
           "travelDates": "Introduzca el primer y el último día de viaje."
@@ -782,6 +896,20 @@
       },
       "withdrawnNotice": "Ha retirado el envío {number}. Vuelva a enviar el informe cuando esté listo.",
       "withdrawnSubmission": "Esta solicitud se retiró antes de que se tomara una decisión."
+    },
+    "settings": {
+      "catalogAdopted": "Adoptado el {date}, válido a partir del {effectiveFrom}",
+      "perDiem": {
+        "adoptForeignTitle": "Adoptar las dietas legales alemanas con las tarifas oficiales en el extranjero",
+        "foreignAreas": "Tarifas extranjeras: {countries} países y {places} ciudades"
+      },
+      "tabs": {
+        "currencies": "Monedas",
+        "exceptions": "Excepciones",
+        "exceptionsPending": "{label}, {count} pendientes",
+        "rates": "Tarifas",
+        "review": "Revisar"
+      }
     },
     "settlement": {
       "adjustment": "Incluye el ajuste aprobado",

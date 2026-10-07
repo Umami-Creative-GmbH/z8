@@ -128,11 +128,6 @@
     }
   },
   "calendar": {
-    "calendar": {
-      "break": {
-        "titleWithDuration": "Pause – {duration}"
-      }
-    },
     "clockOutOnBehalf": {
       "confirm": "Usstemplä",
       "description": "Das erstellt en prüfbare Usstemplig zum aktuelle Server-Ziitpunkt. Falls im Nachhinein öppis aagpasst werde muess, benutz bitte d'Korrekture.",
@@ -293,7 +288,6 @@
       "weekSum": "Summe"
     },
     "requirements": {
-      "dayLabel": "{date}: {actual} erfasst, {required} nötig, {delta} {status}.",
       "includesRunningWork": "Enthält laufende Arbeiten",
       "status": {
         "met": "Vorgab erfüllt",

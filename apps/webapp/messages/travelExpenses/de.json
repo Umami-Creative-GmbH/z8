@@ -197,6 +197,7 @@
       "claimed": "Eingereicht",
       "companyPaid": "Vom Unternehmen bezahlt: {amount}",
       "continuedFrom": "Fortsetzung einer früheren Abrechnung",
+      "deleteDraft": "Entwurf „{title}“ löschen",
       "emptyDescription": "Starten Sie eine Reise, um mehrere Ausgaben mit gemeinsamen Reisedetails zu erfassen, oder fügen Sie einen einzelnen Beleg oder Kilometerkosten hinzu. Entwürfe werden automatisch gespeichert, sodass Sie sie später fertigstellen können.",
       "emptyFilter": "Keine Ausgaben mit diesem Status.",
       "emptyTitle": "Noch keine Reisekosten",
@@ -268,6 +269,92 @@
       "emptyTitle": "Noch keine Reisekostenabrechnungen vorhanden",
       "status": "Status",
       "type": "Typ"
+    },
+    "perDiemPlaces": {
+      "AU": {
+        "canberra": "Canberra",
+        "sydney": "Sydney"
+      },
+      "BR": {
+        "brasilia": "Brasília",
+        "rio-de-janeiro": "Rio de Janeiro",
+        "sao-paulo": "São Paulo"
+      },
+      "CA": {
+        "ottawa": "Ottawa",
+        "toronto": "Toronto",
+        "vancouver": "Vancouver"
+      },
+      "CH": {
+        "bern": "Bern",
+        "genf": "Genf"
+      },
+      "CN": {
+        "hongkong": "Hongkong",
+        "peking": "Peking",
+        "shanghai": "Shanghai"
+      },
+      "ES": {
+        "barcelona": "Barcelona",
+        "kanarische-inseln": "Kanarische Inseln",
+        "madrid": "Madrid",
+        "palma-de-mallorca": "Palma de Mallorca"
+      },
+      "FR": {
+        "paris": "Paris und Departements 77, 78, 91–95"
+      },
+      "GB": {
+        "london": "London"
+      },
+      "GR": {
+        "athen": "Athen"
+      },
+      "IN": {
+        "bangalore": "Bengaluru",
+        "chennai": "Chennai",
+        "kalkutta": "Kalkutta",
+        "mumbai": "Mumbai",
+        "neu-delhi": "Neu-Delhi"
+      },
+      "IT": {
+        "mailand": "Mailand",
+        "rom": "Rom"
+      },
+      "JP": {
+        "osaka": "Osaka",
+        "tokio": "Tokio"
+      },
+      "PL": {
+        "breslau": "Breslau",
+        "warschau": "Warschau"
+      },
+      "RU": {
+        "moskau": "Moskau",
+        "st-petersburg": "Sankt Petersburg"
+      },
+      "SA": {
+        "djidda": "Dschidda",
+        "riad": "Riad"
+      },
+      "TR": {
+        "ankara": "Ankara",
+        "izmir": "Izmir"
+      },
+      "US": {
+        "atlanta": "Atlanta",
+        "boston": "Boston",
+        "chicago": "Chicago",
+        "houston": "Houston",
+        "los-angeles": "Los Angeles",
+        "miami": "Miami",
+        "new-york-city": "New York City",
+        "san-francisco": "San Francisco",
+        "washington-dc": "Washington, D.C."
+      },
+      "ZA": {
+        "johannesburg": "Johannesburg",
+        "kapstadt": "Kapstadt"
+      }
     },
     "report": {
       "actions": {
@@ -352,6 +439,15 @@
         "withdrawn": "zurückgezogen"
       },
       "decideInInbox": "Genehmigen, zurückgeben oder lehnen Sie den gesamten Bericht im Genehmigungsposteingang ab.",
+      "delete": {
+        "action": "Entwurf löschen",
+        "description": "Der Entwurf, die zugehörigen Ausgaben und Belege werden gelöscht. Dieser Vorgang kann nicht rückgängig gemacht werden.",
+        "descriptionLegacy": "Der Entwurf, die zugehörigen Ausgaben und Belege werden zusammen mit dem vorherigen Antragsentwurf, den er fortführt, gelöscht. Dieser Vorgang kann nicht rückgängig gemacht werden.",
+        "done": "Entwurf gelöscht.",
+        "failed": "Der Entwurf konnte nicht gelöscht werden. Bitte versuchen Sie es erneut.",
+        "notDeletable": "Dieser Bericht wurde bereits eingereicht und kann daher nicht mehr gelöscht werden.",
+        "title": "Diesen Entwurf löschen?"
+      },
       "drafts": {
         "expenses": "{count, plural, one {# Ausgabe} other {# Ausgaben}}",
         "noDate": "Noch kein Datum",
@@ -391,6 +487,7 @@
         "rejected": "Abgelehnt von {name}",
         "reopened": "Zur Korrektur wiedereröffnet von {name}",
         "returned": "Zur Überarbeitung zurückgegeben von {name}",
+        "selfApproved": "Automatisch genehmigt: kein anderer Prüfer",
         "submitted": "Eingereicht von {name}",
         "title": "Verlauf",
         "withdrawn": "Zurückgezogen von {name}"
@@ -524,6 +621,8 @@
           "assigned": "Beträge gemäß amtlicher Bekanntmachung für dieses Land",
           "atSea": "Ganztägig an Bord eines Schiffes (ohne Ein- oder Ausschiffung)",
           "choose": "Ort auswählen",
+          "countryElsewhere": "{country} – sonstige",
+          "countryPlace": "{country} – {place}",
           "elsewhere": "Anderer Ort",
           "fallbackFlight": "Amtliche Regelung: ganztägiger Flug, Beträge für Österreich",
           "fallbackLuxembourg": "Amtliche Auffangregelung: nicht aufgeführt, Beträge für Luxemburg",
@@ -560,6 +659,7 @@
           "exceptional": "Dieser Reiseverlauf erfordert eine manuelle Berechnung der Tagespauschale durch einen Ausgabenadministrator. Sie wird nicht automatisch berechnet.",
           "locations": "Geben Sie für jeden Reisetag an, wo Sie sich um Mitternacht befanden und wo Ihre letzte geschäftliche Aktivität im Ausland stattfand.",
           "meals": "Bestätigen Sie die bereitgestellten Mahlzeiten für jeden Reisetag.",
+          "notReturned": "Sie kehren am {date} um {time} ({timeZone}) zurück. Danach können Sie einreichen.",
           "overnight": "Geben Sie an, ob Sie auswärts übernachtet haben.",
           "policyMissing": "Ihre Organisation hat keine Tagespauschalen für {dates}. Bitten Sie einen Ausgabenadministrator, datierte Sätze in den Reisekosteneinstellungen hinzuzufügen. Bis dahin wird nichts berechnet.",
           "start": "Geben Sie an, wann Sie Ihr Zuhause oder Ihre Arbeitsstätte verlassen haben.",
@@ -617,6 +717,12 @@
         "chooseFile": "Datei auswählen",
         "description": "Machen Sie ein Foto oder hängen Sie ein PDF oder Bild des Belegs an.",
         "downloadNamed": "{fileName} herunterladen",
+        "errors": {
+          "locked": "Diese Ausgabe kann nicht mehr bearbeitet werden.",
+          "retry": "Bitte versuchen Sie es erneut.",
+          "tooLarge": "Die Datei ist zu groß. Hängen Sie eine Datei mit maximal {size} MB an.",
+          "unsupportedType": "Hängen Sie eine PDF-Datei oder ein Bild an (JPEG, PNG, WebP, GIF, BMP oder TIFF)."
+        },
         "none": "Noch kein Beleg angehängt.",
         "previewNamed": "Vorschau für {fileName}",
         "progress": "Upload-Fortschritt",
@@ -656,6 +762,7 @@
         "description": "Beschreiben Sie die Ausgabe.",
         "expenseDate": "Geben Sie das Datum auf dem Beleg an.",
         "fixFields": "Korrigieren Sie zuerst die hervorgehobenen Felder.",
+        "futureDate": "Dieses Datum liegt in der Zukunft. Korrigieren Sie es oder reichen Sie ab dem {date} ein.",
         "paidBy": "Geben Sie an, ob Sie oder das Unternehmen bezahlt haben.",
         "receipt": "Hängen Sie den Beleg an.",
         "receiptExceptionNotAllowed": "Hängen Sie den Beleg an. Ihre Organisation erlaubt keine Ausnahmen für fehlende Belege.",
@@ -678,6 +785,7 @@
         "unsavedAfterClose": "Ihre letzten Änderungen an einer Ausgabe konnten nicht gespeichert werden. Öffnen Sie sie erneut, um sie zu überprüfen.",
         "useTheirs": "Gespeicherte Version laden"
       },
+      "selfApprovedOn": "Automatisch genehmigt am {date}: Dies ist die Abrechnung des Organisationseigentümers und niemand sonst konnte sie prüfen.",
       "standaloneTitle": "Eigenständiger Beleg",
       "status": {
         "approved": "Genehmigt",
@@ -697,13 +805,16 @@
         "changedTitle": "Der Bericht wurde geändert",
         "confirm": "Zur Genehmigung einreichen",
         "description": "Überprüfen Sie den gespeicherten Bericht. Die prüfende Person entscheidet über genau diese Version; während der Prüfung kann er nicht bearbeitet werden.",
+        "expenseRequirement": "Ausgabe {number}: {requirement}",
         "failed": "Etwas ist schiefgelaufen. Ihr Bericht ist weiterhin als Entwurf gespeichert; bitte versuchen Sie es erneut.",
         "failedTitle": "Der Bericht wurde nicht eingereicht",
         "incomplete": "Einige gespeicherte Angaben fehlen noch. Vervollständigen Sie alle unter „Noch benötigt“ aufgeführten Punkte und versuchen Sie es erneut.",
         "incompleteTitle": "Der Bericht ist unvollständig",
-        "noReviewer": "Außer Ihnen selbst ist keine Führungskraft oder Teamleitung eingerichtet und es wurde keine genehmigende Person für Ausgaben festgelegt. Bitten Sie einen Administrator, eine zuzuweisen. Ihr Bericht bleibt als Entwurf gespeichert.",
+        "noReviewerAsk": "Sie haben außer sich selbst keine Führungskraft oder keinen Teamleiter und es ist kein Ausgabengenehmiger eingerichtet. Bitten Sie einen Administrator, unter Einstellungen, Reisekosten, Prüfung von Spesenabrechnungen einen Ausgabengenehmiger auszuwählen. Ihre Abrechnung bleibt als Entwurf gespeichert.",
+        "noReviewerAssign": "Sie haben außer sich selbst keine Führungskraft oder keinen Teamleiter und es ist kein Ausgabengenehmiger eingerichtet. Wählen Sie unter Prüfung von Spesenabrechnungen in den Reisekosten-Einstellungen einen Ausgabengenehmiger aus. Ihre Abrechnung bleibt als Entwurf gespeichert.",
         "noReviewerTitle": "Dieser Bericht kann derzeit von niemandem geprüft werden",
         "notSaved": "Einige Änderungen sind noch nicht gespeichert. Warten Sie, bis sie gespeichert wurden, und prüfen Sie den Bericht dann erneut.",
+        "openApproverSetting": "Einstellung für Ausgabengenehmiger öffnen",
         "project": "{count, plural, one {Eine Ausgabe ist einem Projekt zugeordnet, dem Sie am Ausgabendatum nicht zugewiesen waren. Wählen Sie ein anderes Projekt oder bitten Sie einen Ausgabenadministrator um eine Ausnahme für die Zuordnung. Ihr Bericht bleibt als Entwurf gespeichert.} other {# Ausgaben sind einem Projekt zugeordnet, dem Sie am Ausgabendatum nicht zugewiesen waren. Wählen Sie ein anderes Projekt oder bitten Sie einen Ausgabenadministrator um eine Ausnahme für die Zuordnung. Ihr Bericht bleibt als Entwurf gespeichert.}}",
         "projectTitle": "Ein Projekt kann nicht verwendet werden",
         "ready": "Ihre Angaben sind gespeichert. Prüfen Sie den Bericht und reichen Sie ihn zur Genehmigung ein.",
@@ -712,6 +823,8 @@
         "routing": "Über die Genehmigungsregeln Ihrer Organisation konnte keine prüfende Person ermittelt werden. Bitten Sie einen Administrator, diese zu überprüfen. Ihr Bericht bleibt als Entwurf gespeichert.",
         "routingTitle": "Der Bericht konnte nicht weitergeleitet werden",
         "selfApproval": "Nach den Genehmigungsregeln Ihrer Organisation könnten Sie Ihren eigenen Bericht genehmigen. Bitten Sie einen Administrator, diese anzupassen. Ihr Bericht bleibt als Entwurf gespeichert.",
+        "selfApprovalBlocked": "Als Organisationseigentümer werden Ihre Abrechnungen automatisch genehmigt, solange niemand sonst sie prüfen kann. Diese Abrechnung enthält eine Erklärung für fehlende Belege oder eine manuell festgelegte Pauschale, die von jemand anderem akzeptiert werden muss. Wählen Sie einen Ausgabengenehmiger aus oder ändern Sie die Abrechnung. Ihre Abrechnung bleibt als Entwurf gespeichert.",
+        "selfApproved": "Abrechnung automatisch genehmigt: Niemand sonst kann sie prüfen",
         "success": "Bericht zur Genehmigung eingereicht",
         "thresholdCurrency": "Die Genehmigungsregeln Ihrer Organisation vergleichen Beträge in EUR, dieser Bericht ist jedoch in {currency}. Bitten Sie einen Administrator, diese zu überprüfen. Ihr Bericht bleibt als Entwurf gespeichert.",
         "title": "Ausgabenbericht einreichen",
@@ -764,6 +877,7 @@
           "expenseItem": "Fügen Sie eine Ausgabe hinzu.",
           "expenseNamed": "Ausgabe {number}: {description}",
           "fixFields": "Korrigieren Sie die hervorgehobenen Reisedetails.",
+          "notEnded": "Die Reise endet am {date}. Sie können ab diesem Tag einreichen.",
           "purpose": "Beschreiben Sie den Zweck der Reise.",
           "title": "Für diese Reise noch erforderlich",
           "travelDates": "Geben Sie den ersten und letzten Reisetag ein."
@@ -782,6 +896,20 @@
       },
       "withdrawnNotice": "Sie haben Einreichung {number} zurückgezogen. Reichen Sie den Bericht erneut ein, sobald er fertig ist.",
       "withdrawnSubmission": "Diese Einreichung wurde vor einer Entscheidung zurückgezogen."
+    },
+    "settings": {
+      "catalogAdopted": "Übernommen am {date}, gültig ab {effectiveFrom}",
+      "perDiem": {
+        "adoptForeignTitle": "Deutsche gesetzliche Verpflegungspauschalen mit den offiziellen Auslandssätzen übernehmen",
+        "foreignAreas": "Auslandssätze: {countries} Länder und {places} Städte"
+      },
+      "tabs": {
+        "currencies": "Währungen",
+        "exceptions": "Ausnahmen",
+        "exceptionsPending": "{label}, {count} ausstehend",
+        "rates": "Sätze",
+        "review": "Überprüfen"
+      }
     },
     "settlement": {
       "adjustment": "Inklusive genehmigter Anpassung",

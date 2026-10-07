@@ -535,10 +535,6 @@
       "absenceRequestRejected": {
         "title": "İzin talebi reddedildi"
       },
-      "absenceRequestSubmitted": {
-        "message": "{dateRange} için {categoryName} talebiniz gönderildi ve onay bekliyor.",
-        "title": "Devamsızlık talebi gönderildi"
-      },
       "employeeOffboardingReview": {
         "approval_handover": "Onay görevleri için bir vekil gerekiyor",
         "clock_out": "İnceleme gerekiyor: işten ayrılış çıkış kaydı",
@@ -560,10 +556,6 @@
       "teamMemberAdded": {
         "message": "{performedByName} tarafından {teamName} ekibine eklendiniz.",
         "title": "Ekibe eklendi"
-      },
-      "teamMemberRemoved": {
-        "message": "{performedByName} tarafından {teamName} ekibinden çıkarıldınız.",
-        "title": "Ekipten çıkarıldı"
       }
     },
     "description": "Güncellemeleri, onayları ve sistem uyarılarını tek bir zaman çizelgesinde inceleyin.",

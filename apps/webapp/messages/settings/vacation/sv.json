@@ -142,7 +142,6 @@
         "allowCarryoverDescription": "Låt medarbetare spara outnyttjade dagar till nästa år",
         "carryoverExpiryMonths": "Förfallotid för sparade dagar (månader, valfritt)",
         "carryoverExpiryMonthsDescription": "Antal månader innan sparade dagar förfaller (valfritt)",
-        "clearDate": "Rensa datum",
         "companyDefault": "Ange som företagsstandard",
         "companyDefaultDescription": "Denna policy gäller för alla medarbetare utan specifika undantag. Detta ersätter eventuell befintlig företagsstandard.",
         "defaultAnnualDays": "Standardantal dagar per år",

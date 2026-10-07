@@ -6,6 +6,7 @@
       "description": "Anfragen, die auf eine Entscheidung des Managers warten.",
       "empty": "Es warten keine Genehmigungen.",
       "openInbox": "Posteingang öffnen",
+      "ownRequest": "Eigener Antrag: Ein anderer Genehmiger entscheidet darüber.",
       "pendingAriaLabel": "Ausstehende Genehmigungen",
       "reject": "Ablehnen",
       "rejectLabel": "{title} ablehnen",

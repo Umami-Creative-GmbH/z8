@@ -1185,6 +1185,7 @@
         "label": "Approbateur de dépenses",
         "loadFailed": "Impossible de charger l'approbateur de dépenses.",
         "none": "Aucun approbateur de dépenses",
+        "ownerSelfApproval": "Tant que personne d'autre ne peut vérifier les notes de frais du propriétaire de l'organisation, elles sont approuvées automatiquement lors de la soumission et marquées comme telles ; les notes de frais comportant une justification de reçu manquant ou une indemnité définie manuellement nécessitent toujours un vérificateur.",
         "save": "Enregistrer l'approbateur",
         "saved": "Approbateur de dépenses enregistré",
         "saveFailed": "Échec de l'enregistrement de l'approbateur de dépenses",
@@ -1201,7 +1202,6 @@
         "saveFailed": "Impossible d'enregistrer la devise de remboursement.",
         "title": "Devise de remboursement"
       },
-      "description": "Configurez les taux de remboursement et les périodes d'application pour les indemnités kilométriques et les frais journaliers.",
       "effectiveFrom": "Date d'effet",
       "effectiveTo": "Date de fin",
       "legacy": {
@@ -1262,6 +1262,8 @@
         "withdrawTitle": "Retirer cette version du barème ?"
       },
       "mileageRate": "Kilométrage / km",
+      "navDescription": "Vérification des notes de frais, justificatifs, devises, indemnités kilométriques et forfaits journaliers, et exceptions.",
+      "pageDescription": "Choisissez qui vérifie les notes de frais, comment sont gérés les justificatifs manquants et les devises étrangères, quels taux d'indemnités kilométriques et forfaits journaliers s'appliquent, et quelles exceptions sont autorisées.",
       "perDiem": {
         "activate": "Activer la version",
         "add": "Ajouter une version de barème",
@@ -1289,7 +1291,6 @@
           "invalid": "Vérifiez cette valeur.",
           "tooLong": "Ce texte est trop long."
         },
-        "foreignAreas": "Barèmes pour l'étranger : {count} pays et lieux",
         "foreignTable": "Comprend les barèmes officiels pour l'étranger ({version}) pour {countries} pays et {places} villes, appliqués aux jours de déplacement du {from} au {through}. Les pays et territoires non répertoriés suivent les règles de repli officielles ; tout autre cas est signalé pour un calcul manuel.",
         "fullDay": "Journée complète (24 heures d'absence)",
         "germanDefaultTitle": "Indemnités journalières légales allemandes pour les déplacements nationaux",

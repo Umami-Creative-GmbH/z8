@@ -6,6 +6,7 @@
       "description": "Wnioski oczekujące na decyzję menedżera.",
       "empty": "Brak oczekujących zatwierdzeń.",
       "openInbox": "Otwórz skrzynkę odbiorczą",
+      "ownRequest": "Twój własny wniosek: decyduje o nim inna osoba zatwierdzająca.",
       "pendingAriaLabel": "Oczekujące zatwierdzenia",
       "reject": "Odrzuć",
       "rejectLabel": "Odrzuć {title}",

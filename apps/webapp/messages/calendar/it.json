@@ -128,11 +128,6 @@
     }
   },
   "calendar": {
-    "calendar": {
-      "break": {
-        "titleWithDuration": "Pausa – {duration}"
-      }
-    },
     "clockOutOnBehalf": {
       "confirm": "Uscita",
       "description": "Questo crea una registrazione di uscita verificabile all'orario corrente del server. Se è necessario apportare modifiche in seguito, utilizzare le correzioni.",
@@ -293,7 +288,6 @@
       "weekSum": "Somma"
     },
     "requirements": {
-      "dayLabel": "{date}: {actual} registrato, {required} richiesto, {delta} {status}.",
       "includesRunningWork": "Include il lavoro in corso",
       "status": {
         "met": "requisito soddisfatto",

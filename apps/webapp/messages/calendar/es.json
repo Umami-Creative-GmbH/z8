@@ -128,11 +128,6 @@
     }
   },
   "calendar": {
-    "calendar": {
-      "break": {
-        "titleWithDuration": "Descanso – {duration}"
-      }
-    },
     "clockOutOnBehalf": {
       "confirm": "Registrar salida",
       "description": "Esto crea una entrada de registro de salida auditable según la hora actual del servidor. Si se necesita algún ajuste posterior, utilice las correcciones.",
@@ -293,7 +288,6 @@
       "weekSum": "Suma"
     },
     "requirements": {
-      "dayLabel": "{date}: {actual} registrado, {required} requerido, {delta} {status}.",
       "includesRunningWork": "Incluye trabajo en curso",
       "status": {
         "met": "requisito cumplido",

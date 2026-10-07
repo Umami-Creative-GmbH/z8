@@ -6,6 +6,7 @@
       "description": "Yönetici kararı bekleyen talepler.",
       "empty": "Bekleyen onay bulunmuyor.",
       "openInbox": "Gelen kutusunu aç",
+      "ownRequest": "Kendi talebiniz: başka bir onaylayıcı karar verir.",
       "pendingAriaLabel": "Bekleyen onaylar",
       "reject": "Reddet",
       "rejectLabel": "{title} öğesini reddet",

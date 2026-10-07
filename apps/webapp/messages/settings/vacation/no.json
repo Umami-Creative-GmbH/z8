@@ -142,7 +142,6 @@
         "allowCarryoverDescription": "Tillat ansatte å overføre ubrukte dager til neste år",
         "carryoverExpiryMonths": "Utløp for overføring (måneder, valgfritt)",
         "carryoverExpiryMonthsDescription": "Antall måneder før overførte dager utløper (valgfritt)",
-        "clearDate": "Fjern dato",
         "companyDefault": "Angi som bedriftsstandard",
         "companyDefaultDescription": "Denne policyen vil gjelde for alle ansatte uten spesifikke overstyringer. Hvis du angir dette, erstattes eventuelle eksisterende bedriftsstandarder.",
         "defaultAnnualDays": "Standard årlige dager",

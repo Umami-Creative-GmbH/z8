@@ -197,6 +197,7 @@
       "claimed": "Krevd",
       "companyPaid": "Betalt av selskapet {amount}",
       "continuedFrom": "Fortsettelse fra et tidligere krav",
+      "deleteDraft": "Slett utkast “{title}”",
       "emptyDescription": "Start en reise for å samle flere utgifter med felles reisedetaljer, eller legg til en enkelt kvittering eller kjøregodtgjørelse. Utkast lagres automatisk, slik at du kan fullføre dem senere.",
       "emptyFilter": "Ingen utgifter med denne statusen.",
       "emptyTitle": "Ingen reiseutgifter ennå",
@@ -268,6 +269,92 @@
       "emptyTitle": "Ingen reiseregninger ennå",
       "status": "Status",
       "type": "Type"
+    },
+    "perDiemPlaces": {
+      "AU": {
+        "canberra": "Canberra",
+        "sydney": "Sydney"
+      },
+      "BR": {
+        "brasilia": "Brasília",
+        "rio-de-janeiro": "Rio de Janeiro",
+        "sao-paulo": "São Paulo"
+      },
+      "CA": {
+        "ottawa": "Ottawa",
+        "toronto": "Toronto",
+        "vancouver": "Vancouver"
+      },
+      "CH": {
+        "bern": "Bern",
+        "genf": "Genève"
+      },
+      "CN": {
+        "hongkong": "Hongkong",
+        "peking": "Beijing",
+        "shanghai": "Shanghai"
+      },
+      "ES": {
+        "barcelona": "Barcelona",
+        "kanarische-inseln": "Kanariøyene",
+        "madrid": "Madrid",
+        "palma-de-mallorca": "Palma de Mallorca"
+      },
+      "FR": {
+        "paris": "Paris og departementene 77, 78, 91–95"
+      },
+      "GB": {
+        "london": "London"
+      },
+      "GR": {
+        "athen": "Athen"
+      },
+      "IN": {
+        "bangalore": "Bengaluru",
+        "chennai": "Chennai",
+        "kalkutta": "Kolkata",
+        "mumbai": "Mumbai",
+        "neu-delhi": "New Delhi"
+      },
+      "IT": {
+        "mailand": "Milano",
+        "rom": "Roma"
+      },
+      "JP": {
+        "osaka": "Osaka",
+        "tokio": "Tokyo"
+      },
+      "PL": {
+        "breslau": "Wrocław",
+        "warschau": "Warszawa"
+      },
+      "RU": {
+        "moskau": "Moskva",
+        "st-petersburg": "Sankt Petersburg"
+      },
+      "SA": {
+        "djidda": "Jeddah",
+        "riad": "Riyadh"
+      },
+      "TR": {
+        "ankara": "Ankara",
+        "izmir": "Izmir"
+      },
+      "US": {
+        "atlanta": "Atlanta",
+        "boston": "Boston",
+        "chicago": "Chicago",
+        "houston": "Houston",
+        "los-angeles": "Los Angeles",
+        "miami": "Miami",
+        "new-york-city": "New York City",
+        "san-francisco": "San Francisco",
+        "washington-dc": "Washington, D.C."
+      },
+      "ZA": {
+        "johannesburg": "Johannesburg",
+        "kapstadt": "Cape Town"
+      }
     },
     "report": {
       "actions": {
@@ -352,6 +439,15 @@
         "withdrawn": "trukket tilbake"
       },
       "decideInInbox": "Godkjenn, returner eller avvis hele rapporten i innboksen for godkjenninger.",
+      "delete": {
+        "action": "Slett utkast",
+        "description": "Utkastet, utgiftene og kvitteringene slettes. Dette kan ikke angres.",
+        "descriptionLegacy": "Utkastet, utgiftene og kvitteringene slettes, sammen med det tidligere kravutkastet det viderefører. Dette kan ikke angres.",
+        "done": "Utkast slettet.",
+        "failed": "Kunne ikke slette utkastet. Prøv igjen.",
+        "notDeletable": "Denne rapporten er allerede sendt inn, så den kan ikke lenger slettes.",
+        "title": "Vil du slette dette utkastet?"
+      },
       "drafts": {
         "expenses": "{count, plural, one {# utgift} other {# utgifter}}",
         "noDate": "Ingen dato ennå",
@@ -391,6 +487,7 @@
         "rejected": "Avvist av {name}",
         "reopened": "Gjenåpnet for korrigering av {name}",
         "returned": "Returnert for endringer av {name}",
+        "selfApproved": "Godkjent automatisk: ingen annen kontrollør",
         "submitted": "Sendt inn av {name}",
         "title": "Historikk",
         "withdrawn": "Trukket tilbake av {name}"
@@ -524,6 +621,8 @@
           "assigned": "Beløp som den offisielle kunngjøringen tilordner dette landet",
           "atSea": "Om bord på et skip hele dagen (ingen ombordstigning eller landgang)",
           "choose": "Velg et sted",
+          "countryElsewhere": "{country} – andre steder",
+          "countryPlace": "{country} – {place}",
           "elsewhere": "Et annet sted",
           "fallbackFlight": "Offisiell regel: hele dagen i fly, østerrikske beløp",
           "fallbackLuxembourg": "Offisiell reserveløsning: ikke oppført, luxembourgske beløp",
@@ -560,6 +659,7 @@
           "exceptional": "Denne reiseruten krever manuell diettberegning av en utgiftsadministrator. Den beregnes ikke automatisk.",
           "locations": "Oppgi for hver reisedag hvor du var ved midnatt og hvor din siste forretningsaktivitet i utlandet fant sted.",
           "meals": "Bekreft de inkluderte måltidene for hver reisedag.",
+          "notReturned": "Du kommer tilbake {date} kl. {time} ({timeZone}). Du kan sende inn etter dette.",
           "overnight": "Oppgi om du overnattet borte fra hjemmet.",
           "policyMissing": "Organisasjonen din har ingen diettsatser for {dates}. Be en utgiftsadministrator om å legge til datofestede satser i innstillingene for reiseutgifter. Ingenting blir beregnet før dette er gjort.",
           "start": "Oppgi når du dro hjemmefra eller fra arbeidsplassen din.",
@@ -617,6 +717,12 @@
         "chooseFile": "Velg fil",
         "description": "Ta et bilde eller legg ved en PDF eller et bilde av kvitteringen.",
         "downloadNamed": "Last ned {fileName}",
+        "errors": {
+          "locked": "Denne utgiften kan ikke lenger redigeres.",
+          "retry": "Vennligst prøv igjen.",
+          "tooLarge": "Filen er for stor. Legg ved en fil på maksimalt {size} MB.",
+          "unsupportedType": "Legg ved en PDF eller et bilde (JPEG, PNG, WebP, GIF, BMP eller TIFF)."
+        },
         "none": "Ingen kvittering er lagt ved ennå.",
         "previewNamed": "Forhåndsvis {fileName}",
         "progress": "Opplastingsfremdrift",
@@ -656,6 +762,7 @@
         "description": "Beskriv utgiften.",
         "expenseDate": "Legg til datoen på kvitteringen.",
         "fixFields": "Korriger de uthevede feltene først.",
+        "futureDate": "Denne datoen er i fremtiden. Korriger den, eller send inn fra {date}.",
         "paidBy": "Oppgi om du eller selskapet betalte.",
         "receipt": "Legg ved kvitteringen.",
         "receiptExceptionNotAllowed": "Legg ved kvitteringen. Organisasjonen din tillater ikke unntak for manglende kvitteringer.",
@@ -678,6 +785,7 @@
         "unsavedAfterClose": "De siste endringene dine i en utgift kunne ikke lagres. Åpne den på nytt for å kontrollere den.",
         "useTheirs": "Last inn den lagrede versjonen"
       },
+      "selfApprovedOn": "Godkjent automatisk {date}: dette er organisasjonseierens rapport, og ingen andre kunne kontrollere den.",
       "standaloneTitle": "Frittstående kvittering",
       "status": {
         "approved": "Godkjent",
@@ -697,13 +805,16 @@
         "changedTitle": "Rapporten ble endret",
         "confirm": "Send til godkjenning",
         "description": "Kontroller den lagrede rapporten. Den som skal vurdere den, tar stilling til akkurat denne versjonen; den kan ikke redigeres mens den vurderes.",
+        "expenseRequirement": "Utgift {number}: {requirement}",
         "failed": "Noe gikk galt. Rapporten din er fortsatt lagret som et utkast. Prøv på nytt.",
         "failedTitle": "Rapporten ble ikke sendt inn",
         "incomplete": "Noen lagrede detaljer mangler fortsatt. Fyll ut alt som er oppført under «Mangler fortsatt», og prøv igjen.",
         "incompleteTitle": "Rapporten er ufullstendig",
-        "noReviewer": "Du har ingen annen leder eller teamleder enn deg selv, og ingen utgiftsgodkjenner er konfigurert. Be en administrator om å tildele en. Rapporten din forblir lagret som et utkast.",
+        "noReviewerAsk": "Du har ingen annen leder eller teamleder enn deg selv, og det er ikke angitt noen utgiftsgodkjenner. Be en administrator om å velge en utgiftsgodkjenner under Innstillinger, Reiseutgifter, Gjennomgang av utgiftsrapporter. Rapporten din forblir lagret som et utkast.",
+        "noReviewerAssign": "Du har ingen annen leder eller teamleder enn deg selv, og det er ikke angitt noen utgiftsgodkjenner. Velg en utgiftsgodkjenner under Gjennomgang av utgiftsrapporter i innstillingene for reiseutgifter. Rapporten din forblir lagret som et utkast.",
         "noReviewerTitle": "Ingen kan gjennomgå denne rapporten ennå",
         "notSaved": "Noen endringer er ikke lagret ennå. Vent til de er lagret, og gå deretter gjennom rapporten på nytt.",
+        "openApproverSetting": "Åpne innstilling for utgiftsgodkjenner",
         "project": "{count, plural, one {Én utgift er tilordnet et prosjekt du ikke var tildelt på utgiftsdatoen. Velg et annet prosjekt, eller be en utgiftsadministrator om et unntak for tilordning. Rapporten din forblir lagret som et utkast.} other {# utgifter er tilordnet et prosjekt du ikke var tildelt på utgiftsdatoen. Velg et annet prosjekt, eller be en utgiftsadministrator om et unntak for tilordning. Rapporten din forblir lagret som et utkast.}}",
         "projectTitle": "Et prosjekt kan ikke brukes",
         "ready": "Oppføringene dine er lagret. Se over rapporten og send den til godkjenning.",
@@ -712,6 +823,8 @@
         "routing": "Organisasjonens godkjenningsregler fant ingen godkjenner. Be en administrator om å kontrollere dem. Rapporten din forblir lagret som et utkast.",
         "routingTitle": "Rapporten kunne ikke videresendes",
         "selfApproval": "Organisasjonens godkjenningsregler ville tillatt deg å godkjenne din egen rapport. Be en administrator om å justere dem. Rapporten din forblir lagret som et utkast.",
+        "selfApprovalBlocked": "Som organisasjonseier godkjennes rapportene dine automatisk så lenge ingen andre kan kontrollere dem. Denne rapporten har en forklaring på manglende kvittering eller en manuelt angitt godtgjørelse, som noen andre må godta. Velg en utgiftsgodkjenner, eller endre rapporten. Rapporten din forblir lagret som et utkast.",
+        "selfApproved": "Rapport godkjent automatisk: ingen andre kan kontrollere den",
         "success": "Rapporten er sendt til godkjenning",
         "thresholdCurrency": "Organisasjonens godkjenningsregler sammenligner beløp i EUR, men denne rapporten er i {currency}. Be en administrator om å kontrollere dem. Rapporten din forblir lagret som et utkast.",
         "title": "Send inn utgiftsrapport",
@@ -764,6 +877,7 @@
           "expenseItem": "Legg til en utgift.",
           "expenseNamed": "Utgift {number}: {description}",
           "fixFields": "Korriger de uthevede reisedetaljene.",
+          "notEnded": "Reisen avsluttes {date}. Du kan sende inn fra den dagen.",
           "purpose": "Beskriv formålet med reisen.",
           "title": "Gjenstår for denne reisen",
           "travelDates": "Angi første og siste reisedag."
@@ -782,6 +896,20 @@
       },
       "withdrawnNotice": "Du trakk tilbake innsending {number}. Send inn rapporten på nytt når den er klar.",
       "withdrawnSubmission": "Dette innsendte kravet ble trukket tilbake før en beslutning ble tatt."
+    },
+    "settings": {
+      "catalogAdopted": "Vedtatt {date}, gyldig fra {effectiveFrom}",
+      "perDiem": {
+        "adoptForeignTitle": "Ta i bruk de tyske lovfestede diettsatsene med offisielle utenlandssatser",
+        "foreignAreas": "Utenlandssatser: {countries} land og {places} byer"
+      },
+      "tabs": {
+        "currencies": "Valutaer",
+        "exceptions": "Unntak",
+        "exceptionsPending": "{label}, {count} venter",
+        "rates": "Satser",
+        "review": "Gjennomgå"
+      }
     },
     "settlement": {
       "adjustment": "Inkludert godkjent justering",

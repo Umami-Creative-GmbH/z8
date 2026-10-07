@@ -142,7 +142,6 @@
         "allowCarryoverDescription": "Permitir que os funcionários transfiram dias não utilizados para o próximo ano",
         "carryoverExpiryMonths": "Expiração do acúmulo (meses, opcional)",
         "carryoverExpiryMonthsDescription": "Número de meses antes que os dias acumulados expirem (opcional)",
-        "clearDate": "Limpar data",
         "companyDefault": "Definir como padrão da empresa",
         "companyDefaultDescription": "Esta política será aplicada a todos os funcionários sem substituições específicas. Definir isto substituirá qualquer padrão da empresa existente.",
         "defaultAnnualDays": "Dias anuais padrão",

@@ -164,8 +164,6 @@
         "deactivateTitle": "Deactivate employee?",
         "deactivating": "Deactivating...",
         "deactivatingStatus": "Deactivating employee",
-        "finalOwnerDeactivateGuidance": "Assign and activate another approved owner before deactivating this employee.",
-        "finalOwnerRemoveGuidance": "Assign and activate another approved owner before removing this employee's access.",
         "reactivate": "Reactivate",
         "reactivateDescription": "This restores access to this organization using the existing employee record.",
         "reactivateError": "Failed to reactivate employee",

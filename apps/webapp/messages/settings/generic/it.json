@@ -1185,6 +1185,7 @@
         "label": "Approvatore delle spese",
         "loadFailed": "Impossibile caricare l'approvatore delle spese.",
         "none": "Nessun approvatore delle spese",
+        "ownerSelfApproval": "Poiché nessun altro può revisionare le note spese del proprietario dell'organizzazione, queste vengono approvate automaticamente all'invio e contrassegnate come tali; le note spese con una motivazione per ricevuta mancante o un'indennità impostata manualmente richiedono comunque un revisore.",
         "save": "Salva approvatore",
         "saved": "Approvatore delle spese salvato",
         "saveFailed": "Impossibile salvare l'approvatore delle spese",
@@ -1201,7 +1202,6 @@
         "saveFailed": "Impossibile salvare la valuta di rimborso.",
         "title": "Valuta di rimborso"
       },
-      "description": "Configura le tariffe di rimborso e i periodi di validità per le richieste di chilometraggio e indennità giornaliera.",
       "effectiveFrom": "Valida dal",
       "effectiveTo": "Valida fino al",
       "legacy": {
@@ -1262,6 +1262,8 @@
         "withdrawTitle": "Ritirare questa versione della tariffa?"
       },
       "mileageRate": "Chilometraggio / km",
+      "navDescription": "Revisione delle note spese, ricevute, valute, tariffe chilometriche e diarie ed eccezioni.",
+      "pageDescription": "Scegli chi esamina le note spese, come vengono gestite le ricevute mancanti e le valute estere, quali tariffe chilometriche e diarie applicare e quali eccezioni autorizzare.",
       "perDiem": {
         "activate": "Attiva versione",
         "add": "Aggiungi versione della tariffa",
@@ -1289,7 +1291,6 @@
           "invalid": "Verifica questo valore.",
           "tooLong": "Questo testo è troppo lungo."
         },
-        "foreignAreas": "Tariffe estere: {count} paesi e località",
         "foreignTable": "Include le tariffe estere ufficiali ({version}) per {countries} paesi e {places} città, applicate ai giorni di viaggio dal {from} al {through}. I paesi e i territori non inclusi nell'elenco seguono le regole di fallback ufficiali; qualsiasi altra casistica viene contrassegnata per il calcolo manuale.",
         "fullDay": "Giornata intera (24 ore fuori sede)",
         "germanDefaultTitle": "Diaria nazionale prevista dalla legge tedesca",

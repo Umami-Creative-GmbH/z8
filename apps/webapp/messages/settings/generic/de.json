@@ -1185,6 +1185,7 @@
         "label": "Ausgabengenehmiger",
         "loadFailed": "Der Ausgabengenehmiger konnte nicht geladen werden.",
         "none": "Kein Ausgabengenehmiger",
+        "ownerSelfApproval": "Solange niemand sonst die Abrechnungen des Organisationseigentümers prüfen kann, werden sie beim Einreichen automatisch genehmigt und als solche gekennzeichnet; Abrechnungen mit einer Erklärung für fehlende Belege oder einer manuell festgelegten Pauschale benötigen dennoch einen Prüfer.",
         "save": "Genehmiger speichern",
         "saved": "Ausgabengenehmiger gespeichert",
         "saveFailed": "Fehler beim Speichern des Ausgabengenehmigers",
@@ -1201,7 +1202,6 @@
         "saveFailed": "Die Erstattungswährung konnte nicht gespeichert werden.",
         "title": "Erstattungswährung"
       },
-      "description": "Konfigurieren Sie Erstattungssätze und Gültigkeitszeiträume für Kilometer- und Tagesspesenansprüche.",
       "effectiveFrom": "Gültig ab",
       "effectiveTo": "Gültig bis",
       "legacy": {
@@ -1262,6 +1262,8 @@
         "withdrawTitle": "Diese Satzversion zurückziehen?"
       },
       "mileageRate": "Kilometer / km",
+      "navDescription": "Prüfung von Spesenabrechnungen, Belege, Währungen, Kilometer- und Tagegeldsätze sowie Ausnahmen.",
+      "pageDescription": "Legen Sie fest, wer Spesenabrechnungen prüft, wie mit fehlenden Belegen und Fremdwährungen umgegangen wird, welche Kilometer- und Tagegeldsätze gelten und welche Ausnahmen zulässig sind.",
       "perDiem": {
         "activate": "Version aktivieren",
         "add": "Satzversion hinzufügen",
@@ -1289,7 +1291,6 @@
           "invalid": "Überprüfen Sie diesen Wert.",
           "tooLong": "Dieser Text ist zu lang."
         },
-        "foreignAreas": "Auslandspauschalen: {count} Länder und Orte",
         "foreignTable": "Enthält die amtlichen Auslandspauschalen ({version}) für {countries} Länder und {places} Städte, angewendet auf Reisetage von {from} bis {through}. Für nicht aufgeführte Länder und Gebiete gelten die offiziellen Auffangregeln; alles andere wird für eine manuelle Berechnung markiert.",
         "fullDay": "Ganzer Tag (24 Stunden Abwesenheit)",
         "germanDefaultTitle": "Gesetzliche deutsche Verpflegungspauschale (Inland)",

@@ -197,6 +197,7 @@
       "claimed": "Talep edilen",
       "companyPaid": "Şirket tarafından ödenen {amount}",
       "continuedFrom": "Önceki bir talepten devam ettirildi",
+      "deleteDraft": "“{title}” taslağını sil",
       "emptyDescription": "Ortak seyahat ayrıntılarına sahip birden fazla masrafı toplamak için bir seyahat başlatın veya tek bir makbuz ya da kilometre masrafı ekleyin. Taslaklar otomatik olarak kaydedilir, böylece onları daha sonra tamamlayabilirsiniz.",
       "emptyFilter": "Bu durumda hiçbir masraf yok.",
       "emptyTitle": "Henüz seyahat masrafı yok",
@@ -268,6 +269,92 @@
       "emptyTitle": "Henüz seyahat masraf talebi yok",
       "status": "Durum",
       "type": "Tür"
+    },
+    "perDiemPlaces": {
+      "AU": {
+        "canberra": "Canberra",
+        "sydney": "Sidney"
+      },
+      "BR": {
+        "brasilia": "Brasília",
+        "rio-de-janeiro": "Rio de Janeiro",
+        "sao-paulo": "São Paulo"
+      },
+      "CA": {
+        "ottawa": "Ottawa",
+        "toronto": "Toronto",
+        "vancouver": "Vancouver"
+      },
+      "CH": {
+        "bern": "Bern",
+        "genf": "Cenevre"
+      },
+      "CN": {
+        "hongkong": "Hong Kong",
+        "peking": "Pekin",
+        "shanghai": "Şanghay"
+      },
+      "ES": {
+        "barcelona": "Barselona",
+        "kanarische-inseln": "Kanarya Adaları",
+        "madrid": "Madrid",
+        "palma-de-mallorca": "Palma de Mallorca"
+      },
+      "FR": {
+        "paris": "Paris ve 77, 78, 91–95 departmanları"
+      },
+      "GB": {
+        "london": "Londra"
+      },
+      "GR": {
+        "athen": "Atina"
+      },
+      "IN": {
+        "bangalore": "Bengaluru",
+        "chennai": "Chennai",
+        "kalkutta": "Kalküta",
+        "mumbai": "Mumbai",
+        "neu-delhi": "Yeni Delhi"
+      },
+      "IT": {
+        "mailand": "Milano",
+        "rom": "Roma"
+      },
+      "JP": {
+        "osaka": "Osaka",
+        "tokio": "Tokyo"
+      },
+      "PL": {
+        "breslau": "Wrocław",
+        "warschau": "Varşova"
+      },
+      "RU": {
+        "moskau": "Moskova",
+        "st-petersburg": "Sankt Petersburg"
+      },
+      "SA": {
+        "djidda": "Cidde",
+        "riad": "Riyad"
+      },
+      "TR": {
+        "ankara": "Ankara",
+        "izmir": "İzmir"
+      },
+      "US": {
+        "atlanta": "Atlanta",
+        "boston": "Boston",
+        "chicago": "Chicago",
+        "houston": "Houston",
+        "los-angeles": "Los Angeles",
+        "miami": "Miami",
+        "new-york-city": "New York City",
+        "san-francisco": "San Francisco",
+        "washington-dc": "Washington, D.C."
+      },
+      "ZA": {
+        "johannesburg": "Johannesburg",
+        "kapstadt": "Cape Town"
+      }
     },
     "report": {
       "actions": {
@@ -352,6 +439,15 @@
         "withdrawn": "geri çekildi"
       },
       "decideInInbox": "Onaylar gelen kutusunda raporun tamamını onaylayın, iade edin veya reddedin.",
+      "delete": {
+        "action": "Taslağı sil",
+        "description": "Taslak, harcamaları ve fişleri silinir. Bu işlem geri alınamaz.",
+        "descriptionLegacy": "Taslak, harcamaları ve fişleri, devamı olduğu önceki talep taslağıyla birlikte silinir. Bu işlem geri alınamaz.",
+        "done": "Taslak silindi.",
+        "failed": "Taslak silinemedi. Lütfen tekrar deneyin.",
+        "notDeletable": "Bu rapor zaten gönderildi, bu nedenle artık silinemez.",
+        "title": "Bu taslak silinsin mi?"
+      },
       "drafts": {
         "expenses": "{count, plural, other {# masraf} }",
         "noDate": "Henüz tarih yok",
@@ -391,6 +487,7 @@
         "rejected": "{name} tarafından reddedildi",
         "reopened": "{name} tarafından düzeltme için yeniden açıldı",
         "returned": "{name} tarafından değişiklik yapılması için geri gönderildi",
+        "selfApproved": "Otomatik olarak onaylandı: başka inceleyen yok",
         "submitted": "{name} tarafından gönderildi",
         "title": "Geçmiş",
         "withdrawn": "{name} tarafından geri çekildi"
@@ -524,6 +621,8 @@
           "assigned": "Resmi bildirimin bu ülke için belirlediği tutarlar",
           "atSea": "Tüm gün gemide (biniş veya iniş olmadan)",
           "choose": "Bir konum seçin",
+          "countryElsewhere": "{country} – diğer",
+          "countryPlace": "{country} – {place}",
           "elsewhere": "Başka bir yer",
           "fallbackFlight": "Resmi kural: Tüm gün uçuşta, Avusturya tutarları",
           "fallbackLuxembourg": "Resmi varsayılan: Listede yok, Lüksemburg tutarları",
@@ -560,6 +659,7 @@
           "exceptional": "Bu seyahat planı için bir masraf yöneticisi tarafından manuel harcırah hesaplaması yapılması gerekir. Otomatik olarak hesaplanmaz.",
           "locations": "Her seyahat günü için gece yarısı nerede olduğunuzu ve yurt dışındaki son iş faaliyetinizin nerede gerçekleştiğini belirtin.",
           "meals": "Her seyahat günü için sağlanan yemekleri onaylayın.",
+          "notReturned": "{date} tarihinde saat {time} ({timeZone}) itibarıyla dönüyorsunuz. Bu süreden sonra gönderebilirsiniz.",
           "overnight": "Evden uzakta gece konaklayıp konaklamadığınızı belirtin.",
           "policyMissing": "Kuruluşunuzun {dates} için harcırah oranı bulunmuyor. Bir masraf yöneticisinden seyahat masrafı ayarlarına tarihli oranlar eklemesini isteyin. O zamana kadar hiçbir hesaplama yapılmaz.",
           "start": "Evden veya iş yerinizden ne zaman ayrıldığınızı girin.",
@@ -617,6 +717,12 @@
         "chooseFile": "Dosya seç",
         "description": "Fişin bir fotoğrafını çekin ya da bir PDF veya görsel ekleyin.",
         "downloadNamed": "{fileName} dosyasını indir",
+        "errors": {
+          "locked": "Bu harcama artık düzenlenemez.",
+          "retry": "Lütfen tekrar deneyin.",
+          "tooLarge": "Dosya çok büyük. En fazla {size} MB boyutunda bir dosya ekleyin.",
+          "unsupportedType": "Bir PDF veya görsel (JPEG, PNG, WebP, GIF, BMP veya TIFF) ekleyin."
+        },
         "none": "Henüz fiş eklenmedi.",
         "previewNamed": "{fileName} dosyasını önizle",
         "progress": "Yükleme ilerlemesi",
@@ -656,6 +762,7 @@
         "description": "Masrafı açıklayın.",
         "expenseDate": "Fiş/fatura üzerindeki tarihi ekleyin.",
         "fixFields": "Önce vurgulanan alanları düzeltin.",
+        "futureDate": "Bu tarih gelecekte. Tarihi düzeltin veya {date} tarihinden itibaren gönderin.",
         "paidBy": "Ödemeyi sizin mi yoksa şirketin mi yaptığını belirtin.",
         "receipt": "Fişi/faturayı ekleyin.",
         "receiptExceptionNotAllowed": "Fişi/faturayı ekleyin. Kuruluşunuz eksik fiş/fatura istisnalarına izin vermemektedir.",
@@ -678,6 +785,7 @@
         "unsavedAfterClose": "Bir masrafta yaptığınız son değişiklikler kaydedilemedi. Kontrol etmek için masrafı tekrar açın.",
         "useTheirs": "Kaydedilen sürümü yükle"
       },
+      "selfApprovedOn": "{date} tarihinde otomatik olarak onaylandı: Bu rapor kuruluş sahibine ait ve başka hiç kimse inceleyemezdi.",
       "standaloneTitle": "Bağımsız fiş",
       "status": {
         "approved": "Onaylandı",
@@ -697,13 +805,16 @@
         "changedTitle": "Rapor değişti",
         "confirm": "Onaya gönder",
         "description": "Kaydedilen raporu kontrol edin. İnceleyen kişi tam olarak bu sürüm üzerinden karar verir; rapor incelenirken düzenlenemez.",
+        "expenseRequirement": "Masraf {number}: {requirement}",
         "failed": "Bir şeyler ters gitti. Raporunuz hâlâ taslak olarak kayıtlı; lütfen tekrar deneyin.",
         "failedTitle": "Rapor gönderilmedi",
         "incomplete": "Kaydedilen bazı ayrıntılar hâlâ eksik. “Hâlâ gerekenler” altında listelenen her şeyi tamamlayın ve tekrar deneyin.",
         "incompleteTitle": "Rapor eksik",
-        "noReviewer": "Kendiniz dışında bir yöneticiniz veya ekip yöneticiniz yok ve herhangi bir masraf onaylayıcı ayarlanmamış. Bir sistem yöneticisinden bir onaylayıcı atamasını isteyin. Raporunuz taslak olarak kayıtlı kalır.",
+        "noReviewerAsk": "Kendiniz dışında bir yöneticiniz veya ekip yöneticiniz yok ve belirlenmiş bir masraf onaylayıcısı bulunmuyor. Bir yöneticiden Ayarlar, Seyahat masrafları, Masraf raporu incelemesi altından bir masraf onaylayıcı seçmesini isteyin. Raporunuz taslak olarak kayıtlı kalır.",
+        "noReviewerAssign": "Kendiniz dışında bir yöneticiniz veya ekip yöneticiniz yok ve belirlenmiş bir masraf onaylayıcısı bulunmuyor. Seyahat masrafları ayarlarındaki Masraf raporu incelemesi altından bir masraf onaylayıcı seçin. Raporunuz taslak olarak kayıtlı kalır.",
         "noReviewerTitle": "Bu raporu henüz kimse inceleyemez",
         "notSaved": "Bazı değişiklikler henüz kaydedilmedi. Kaydedilmelerini bekleyin, ardından raporu yeniden inceleyin.",
+        "openApproverSetting": "Masraf onaylayıcı ayarını aç",
         "project": "{count, plural, one {Bir masraf, masraf tarihinde atanmadığınız bir projeyle ilişkilendirilmiş. Başka bir proje seçin veya bir masraf yöneticisinden ilişkilendirme istisnası talep edin. Raporunuz taslak olarak kayıtlı kalır.} other {# masraf, masraf tarihinde atanmadığınız bir projeyle ilişkilendirilmiş. Başka bir proje seçin veya bir masraf yöneticisinden ilişkilendirme istisnası talep edin. Raporunuz taslak olarak kayıtlı kalır.}}",
         "projectTitle": "Bir proje kullanılamıyor",
         "ready": "Girişleriniz kaydedildi. Raporu inceleyin ve onaya gönderin.",
@@ -712,6 +823,8 @@
         "routing": "Kuruluşunuzun onay kuralları bir inceleyen bulamadı. Bir sistem yöneticisinden kuralları kontrol etmesini isteyin. Raporunuz taslak olarak kayıtlı kalır.",
         "routingTitle": "Rapor yönlendirilemedi",
         "selfApproval": "Kuruluşunuzun onay kuralları kendi raporunuzu onaylamanıza izin veriyor. Bir sistem yöneticisinden kuralları düzenlemesini isteyin. Raporunuz taslak olarak kayıtlı kalır.",
+        "selfApprovalBlocked": "Kuruluş sahibi olarak, başka kimse inceleyemediği için raporlarınız otomatik olarak onaylanır. Bu raporda eksik fiş açıklaması veya manuel olarak belirlenmiş bir harcırah yer alıyor ve bunu başka birinin kabul etmesi gerekir. Bir masraf onaylayıcı seçin veya raporu değiştirin. Raporunuz taslak olarak kayıtlı kalır.",
+        "selfApproved": "Rapor otomatik olarak onaylandı: Başka kimse inceleyemez",
         "success": "Rapor onaya gönderildi",
         "thresholdCurrency": "Kuruluşunuzun onay kuralları tutarları EUR cinsinden karşılaştırıyor ancak bu rapor {currency} para biriminde. Bir sistem yöneticisinden kuralları kontrol etmesini isteyin. Raporunuz taslak olarak kayıtlı kalır.",
         "title": "Masraf raporunu gönder",
@@ -764,6 +877,7 @@
           "expenseItem": "Masraf ekleyin.",
           "expenseNamed": "Masraf {number}: {description}",
           "fixFields": "Vurgulanan seyahat ayrıntılarını düzeltin.",
+          "notEnded": "Seyahat {date} tarihinde sona eriyor. O günden itibaren gönderebilirsiniz.",
           "purpose": "Seyahatin amacını açıklayın.",
           "title": "Bu seyahat için hâlâ gerekenler",
           "travelDates": "İlk ve son seyahat gününü girin."
@@ -782,6 +896,20 @@
       },
       "withdrawnNotice": "{number} numaralı gönderimi geri çektiniz. Hazır olduğunda raporu tekrar gönderin.",
       "withdrawnSubmission": "Bu gönderim, bir karar verilmeden önce geri çekildi."
+    },
+    "settings": {
+      "catalogAdopted": "{date} tarihinde kabul edildi, {effectiveFrom} tarihinden itibaren geçerli",
+      "perDiem": {
+        "adoptForeignTitle": "Resmi yurt dışı oranlarıyla Alman yasal harcırahını uygulayın",
+        "foreignAreas": "Yurt dışı oranları: {countries} ülke ve {places} şehir"
+      },
+      "tabs": {
+        "currencies": "Para birimleri",
+        "exceptions": "İstisnalar",
+        "exceptionsPending": "{label}, {count} beklemede",
+        "rates": "Oranlar",
+        "review": "İncele"
+      }
     },
     "settlement": {
       "adjustment": "Onaylanan düzeltme dahil",

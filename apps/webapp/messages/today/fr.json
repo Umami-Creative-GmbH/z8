@@ -6,6 +6,7 @@
       "description": "Requêtes en attente d'une décision du responsable.",
       "empty": "Aucune approbation en attente.",
       "openInbox": "Ouvrir la boîte de réception",
+      "ownRequest": "Votre propre demande : un autre approbateur prend la décision.",
       "pendingAriaLabel": "Approbations en attente",
       "reject": "Rejeter",
       "rejectLabel": "Rejeter {title}",

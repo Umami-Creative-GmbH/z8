@@ -6,6 +6,7 @@
       "description": "Solicitudes a la espera de una decisión del gerente.",
       "empty": "No hay aprobaciones pendientes.",
       "openInbox": "Abrir bandeja de entrada",
+      "ownRequest": "Tu propia solicitud: la decide otro aprobador.",
       "pendingAriaLabel": "Aprobaciones pendientes",
       "reject": "Rechazar",
       "rejectLabel": "Rechazar {title}",

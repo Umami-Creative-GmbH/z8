@@ -6,6 +6,7 @@
       "description": "Förfrågningar som väntar på ett chefsbeslut.",
       "empty": "Inga godkännanden väntar.",
       "openInbox": "Öppna inkorgen",
+      "ownRequest": "Din egen begäran: en annan godkännare beslutar.",
       "pendingAriaLabel": "Väntande godkännanden",
       "reject": "Avvisa",
       "rejectLabel": "Avvisa {title}",

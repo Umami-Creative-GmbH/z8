@@ -197,6 +197,7 @@
       "claimed": "Begärt",
       "companyPaid": "Betalt av företaget {amount}",
       "continuedFrom": "Fortsättning från ett tidigare utlägg",
+      "deleteDraft": "Ta bort utkast ”{title}”",
       "emptyDescription": "Starta en resa för att samla flera utlägg med gemensamma reseuppgifter, eller lägg till ett enskilt kvitto eller en milersättning. Utkast sparas automatiskt så att du kan slutföra dem senare.",
       "emptyFilter": "Inga utlägg med denna status.",
       "emptyTitle": "Inga reseutlägg ännu",
@@ -268,6 +269,92 @@
       "emptyTitle": "Inga reseräkningar ännu",
       "status": "Status",
       "type": "Typ"
+    },
+    "perDiemPlaces": {
+      "AU": {
+        "canberra": "Canberra",
+        "sydney": "Sydney"
+      },
+      "BR": {
+        "brasilia": "Brasília",
+        "rio-de-janeiro": "Rio de Janeiro",
+        "sao-paulo": "São Paulo"
+      },
+      "CA": {
+        "ottawa": "Ottawa",
+        "toronto": "Toronto",
+        "vancouver": "Vancouver"
+      },
+      "CH": {
+        "bern": "Bern",
+        "genf": "Genève"
+      },
+      "CN": {
+        "hongkong": "Hongkong",
+        "peking": "Peking",
+        "shanghai": "Shanghai"
+      },
+      "ES": {
+        "barcelona": "Barcelona",
+        "kanarische-inseln": "Kanarieöarna",
+        "madrid": "Madrid",
+        "palma-de-mallorca": "Palma de Mallorca"
+      },
+      "FR": {
+        "paris": "Paris och departementen 77, 78, 91–95"
+      },
+      "GB": {
+        "london": "London"
+      },
+      "GR": {
+        "athen": "Aten"
+      },
+      "IN": {
+        "bangalore": "Bengaluru",
+        "chennai": "Chennai",
+        "kalkutta": "Kolkata",
+        "mumbai": "Mumbai",
+        "neu-delhi": "New Delhi"
+      },
+      "IT": {
+        "mailand": "Milano",
+        "rom": "Rom"
+      },
+      "JP": {
+        "osaka": "Osaka",
+        "tokio": "Tokyo"
+      },
+      "PL": {
+        "breslau": "Wrocław",
+        "warschau": "Warszawa"
+      },
+      "RU": {
+        "moskau": "Moskva",
+        "st-petersburg": "Sankt Petersburg"
+      },
+      "SA": {
+        "djidda": "Jidda",
+        "riad": "Riyadh"
+      },
+      "TR": {
+        "ankara": "Ankara",
+        "izmir": "Izmir"
+      },
+      "US": {
+        "atlanta": "Atlanta",
+        "boston": "Boston",
+        "chicago": "Chicago",
+        "houston": "Houston",
+        "los-angeles": "Los Angeles",
+        "miami": "Miami",
+        "new-york-city": "New York City",
+        "san-francisco": "San Francisco",
+        "washington-dc": "Washington, D.C."
+      },
+      "ZA": {
+        "johannesburg": "Johannesburg",
+        "kapstadt": "Kapstaden"
+      }
     },
     "report": {
       "actions": {
@@ -352,6 +439,15 @@
         "withdrawn": "tillbakadragen"
       },
       "decideInInbox": "Godkänn, returnera eller avvisa hela rapporten i inkorgen för godkännanden.",
+      "delete": {
+        "action": "Ta bort utkast",
+        "description": "Utkastet, dess utlägg och tillhörande kvitton tas bort. Detta kan inte ångras.",
+        "descriptionLegacy": "Utkastet, dess utlägg och tillhörande kvitton tas bort, tillsammans med det tidigare utkastet som det fortsätter på. Detta kan inte ångras.",
+        "done": "Utkastet har tagits bort.",
+        "failed": "Utkastet kunde inte tas bort. Försök igen.",
+        "notDeletable": "Den här rapporten har redan skickats in och kan därför inte längre tas bort.",
+        "title": "Vill du ta bort det här utkastet?"
+      },
       "drafts": {
         "expenses": "{count, plural, one {# utgift} other {# utgifter}}",
         "noDate": "Inget datum än",
@@ -391,6 +487,7 @@
         "rejected": "Avvisad av {name}",
         "reopened": "Återöppnad för korrigering av {name}",
         "returned": "Returnerad för ändringar av {name}",
+        "selfApproved": "Godkänd automatiskt: ingen annan granskare",
         "submitted": "Inskickad av {name}",
         "title": "Historik",
         "withdrawn": "Tillbakadragen av {name}"
@@ -524,6 +621,8 @@
           "assigned": "Belopp som det officiella meddelandet anger för detta land",
           "atSea": "Ombord på ett fartyg hela dagen (ingen ombord- eller landstigning)",
           "choose": "Välj en plats",
+          "countryElsewhere": "{country} – övrigt",
+          "countryPlace": "{country} – {place}",
           "elsewhere": "Någon annanstans",
           "fallbackFlight": "Officiell regel: hela dagen i luften, österrikiska belopp",
           "fallbackLuxembourg": "Officiell reservregel: ej listad, luxemburgska belopp",
@@ -560,6 +659,7 @@
           "exceptional": "Denna resplan kräver en manuell traktamentsberäkning av en utläggsadministratör. Den beräknas inte automatiskt.",
           "locations": "Ange för varje resdag var du befann dig vid midnatt och var din sista affärsaktivitet utomlands ägde rum.",
           "meals": "Bekräfta tillhandahållna måltider för varje resdag.",
+          "notReturned": "Du återvänder den {date} kl. {time} ({timeZone}). Du kan skicka in efter det.",
           "overnight": "Ange om du övernattade borta från hemmet.",
           "policyMissing": "Din organisation har inga traktamentssatser för {dates}. Be en utläggsadministratör att lägga till daterade satser i inställningarna för reseutlägg. Ingenting beräknas förrän dess.",
           "start": "Ange när du lämnade hemmet eller din arbetsplats.",
@@ -617,6 +717,12 @@
         "chooseFile": "Välj fil",
         "description": "Ta ett foto eller bifoga en PDF eller bild på kvittot.",
         "downloadNamed": "Ladda ner {fileName}",
+        "errors": {
+          "locked": "Det här utlägget kan inte längre redigeras.",
+          "retry": "Försök igen.",
+          "tooLarge": "Filen är för stor. Bifoga en fil på högst {size} MB.",
+          "unsupportedType": "Bifoga en PDF-fil eller en bild (JPEG, PNG, WebP, GIF, BMP eller TIFF)."
+        },
         "none": "Inget kvitto har bifogats än.",
         "previewNamed": "Förhandsgranska {fileName}",
         "progress": "Uppladdningsförlopp",
@@ -656,6 +762,7 @@
         "description": "Beskriv utgiften.",
         "expenseDate": "Lägg till datumet på kvittot.",
         "fixFields": "Korrigera de markerade fälten först.",
+        "futureDate": "Detta datum ligger i framtiden. Korrigera det, eller skicka in från och med {date}.",
         "paidBy": "Ange om du eller företaget betalade.",
         "receipt": "Bifoga kvittot.",
         "receiptExceptionNotAllowed": "Bifoga kvittot. Din organisation tillåter inte undantag för saknade kvitton.",
@@ -678,6 +785,7 @@
         "unsavedAfterClose": "Dina senaste ändringar av en utgift kunde inte sparas. Öppna den igen för att kontrollera den.",
         "useTheirs": "Läs in den sparade versionen"
       },
+      "selfApprovedOn": "Godkändes automatiskt den {date}: detta är organisationsägarens rapport och ingen annan kunde granska den.",
       "standaloneTitle": "Fristående kvitto",
       "status": {
         "approved": "Godkänd",
@@ -697,13 +805,16 @@
         "changedTitle": "Rapporten har ändrats",
         "confirm": "Skicka för godkännande",
         "description": "Kontrollera den sparade rapporten. Din granskare fattar beslut om exakt denna version; den kan inte redigeras medan den granskas.",
+        "expenseRequirement": "Utlägg {number}: {requirement}",
         "failed": "Något gick fel. Din rapport är fortfarande sparad som ett utkast; försök igen.",
         "failedTitle": "Rapporten skickades inte in",
         "incomplete": "Vissa sparade uppgifter saknas fortfarande. Fyll i allt som listas under ”Behövs fortfarande” och försök igen.",
         "incompleteTitle": "Rapporten är ofullständig",
-        "noReviewer": "Du har ingen chef eller teamchef förutom dig själv, och ingen utgiftsgodkännare har konfigurerats. Be en administratör att tilldela en. Din rapport förblir sparad som ett utkast.",
+        "noReviewerAsk": "Du har ingen chef eller teamchef förutom dig själv, och ingen godkännare av utlägg har ställts in. Be en administratör att välja en godkännare av utlägg under Inställningar, Reseräkningar, Granskning av utläggsrapporter. Din rapport förblir sparad som ett utkast.",
+        "noReviewerAssign": "Du har ingen chef eller teamchef förutom dig själv, och ingen godkännare av utlägg har ställts in. Välj en godkännare av utlägg under Granskning av utläggsrapporter i inställningarna för reseräkningar. Din rapport förblir sparad som ett utkast.",
         "noReviewerTitle": "Ingen kan granska den här rapporten än",
         "notSaved": "Vissa ändringar har inte sparats än. Vänta tills de har sparats och granska sedan rapporten igen.",
+        "openApproverSetting": "Öppna inställning för godkännare av utlägg",
         "project": "{count, plural, one {En utgift är kopplad till ett projekt du inte var tilldelad på utgiftsdatumet. Välj ett annat projekt eller be en utgiftsadministratör om ett undantag för tilldelning. Din rapport förblir sparad som ett utkast.} other {# utgifter är kopplade till ett projekt du inte var tilldelad på utgiftsdatumet. Välj ett annat projekt eller be en utgiftsadministratör om ett undantag för tilldelning. Din rapport förblir sparad som ett utkast.}}",
         "projectTitle": "Ett projekt kan inte användas",
         "ready": "Dina uppgifter har sparats. Granska rapporten och skicka den för godkännande.",
@@ -712,6 +823,8 @@
         "routing": "Din organisations godkännanderegler kunde inte hitta någon granskare. Be en administratör att kontrollera dem. Din rapport förblir sparad som ett utkast.",
         "routingTitle": "Rapporten kunde inte vidarebefordras",
         "selfApproval": "Din organisations godkännanderegler skulle tillåta dig att godkänna din egen rapport. Be en administratör att justera dem. Din rapport förblir sparad som ett utkast.",
+        "selfApprovalBlocked": "Som organisationsägare godkänns dina rapporter automatiskt eftersom ingen annan kan granska dem. Den här rapporten innehåller en förklaring för saknat kvitto eller ett manuellt angivet traktamente, vilket någon annan måste godkänna. Välj en godkännare av utlägg eller ändra rapporten. Din rapport förblir sparad som ett utkast.",
+        "selfApproved": "Rapporten godkändes automatiskt: ingen annan kan granska den",
         "success": "Rapporten har skickats för godkännande",
         "thresholdCurrency": "Din organisations godkännanderegler jämför belopp i EUR, men den här rapporten är i {currency}. Be en administratör att kontrollera dem. Din rapport förblir sparad som ett utkast.",
         "title": "Skicka in utgiftsrapport",
@@ -764,6 +877,7 @@
           "expenseItem": "Lägg till ett utlägg.",
           "expenseNamed": "Utlägg {number}: {description}",
           "fixFields": "Korrigera de markerade reseuppgifterna.",
+          "notEnded": "Resan avslutas den {date}. Du kan skicka in från och med den dagen.",
           "purpose": "Beskriv resans syfte.",
           "title": "Krävs fortfarande för den här resan",
           "travelDates": "Ange första och sista resdagen."
@@ -782,6 +896,20 @@
       },
       "withdrawnNotice": "Du återkallade inskickning {number}. Skicka in rapporten igen när den är klar.",
       "withdrawnSubmission": "Den här inskickade rapporten drogs tillbaka innan ett beslut fattades."
+    },
+    "settings": {
+      "catalogAdopted": "Antogs den {date}, giltig från {effectiveFrom}",
+      "perDiem": {
+        "adoptForeignTitle": "Tillämpa det tyska lagstadgade traktamentet med de officiella utlandssatserna",
+        "foreignAreas": "Utlandssatser: {countries} länder och {places} städer"
+      },
+      "tabs": {
+        "currencies": "Valutor",
+        "exceptions": "Undantag",
+        "exceptionsPending": "{label}, {count} väntande",
+        "rates": "Satser",
+        "review": "Granska"
+      }
     },
     "settlement": {
       "adjustment": "Inklusive godkänd justering",

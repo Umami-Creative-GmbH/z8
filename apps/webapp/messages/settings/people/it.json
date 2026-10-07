@@ -164,8 +164,6 @@
         "deactivateTitle": "Disattivare il dipendente?",
         "deactivating": "Disattivazione in corso...",
         "deactivatingStatus": "Disattivazione dipendente",
-        "finalOwnerDeactivateGuidance": "Assegna e attiva prima un altro proprietario approvato prima di disattivare questo dipendente.",
-        "finalOwnerRemoveGuidance": "Assegna e attiva prima un altro proprietario approvato prima di rimuovere l'accesso di questo dipendente.",
         "reactivate": "Riattiva",
         "reactivateDescription": "Questa operazione ripristina l'accesso a questa organizzazione utilizzando il record del dipendente esistente.",
         "reactivateError": "Impossibile riattivare il dipendente",

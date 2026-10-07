@@ -1185,6 +1185,7 @@
         "label": "Expense approver",
         "loadFailed": "The expense approver could not be loaded.",
         "none": "No expense approver",
+        "ownerSelfApproval": "While nobody else can review the organization owner's reports, they are approved automatically on submit and marked as such; reports with a missing-receipt explanation or a manually set allowance still need a reviewer.",
         "save": "Save approver",
         "saved": "Expense approver saved",
         "saveFailed": "Failed to save the expense approver",
@@ -1201,7 +1202,6 @@
         "saveFailed": "The reimbursement currency could not be saved.",
         "title": "Reimbursement currency"
       },
-      "description": "Configure reimbursement rates and effective periods for mileage and per diem claims.",
       "effectiveFrom": "Effective From",
       "effectiveTo": "Effective To",
       "legacy": {
@@ -1262,6 +1262,8 @@
         "withdrawTitle": "Withdraw this rate version?"
       },
       "mileageRate": "Mileage / km",
+      "navDescription": "Expense report review, receipts, currencies, mileage and per diem rates, and exceptions.",
+      "pageDescription": "Choose who reviews expense reports, how missing receipts and foreign currencies are handled, which mileage and per diem rates apply, and which exceptions are authorized.",
       "perDiem": {
         "activate": "Activate version",
         "add": "Add rate version",
@@ -1289,7 +1291,6 @@
           "invalid": "Check this value.",
           "tooLong": "This text is too long."
         },
-        "foreignAreas": "Foreign rates: {count} countries and places",
         "foreignTable": "Includes the official foreign rates ({version}) for {countries} countries and {places} cities, applied to travel days from {from} to {through}. Unlisted countries and territories follow the official fallback rules; anything else is flagged for a manual calculation.",
         "fullDay": "Full day (24 hours away)",
         "germanDefaultTitle": "German statutory domestic per diem",

@@ -197,6 +197,7 @@
       "claimed": "Demandé",
       "companyPaid": "Payé par l'entreprise : {amount}",
       "continuedFrom": "Suite d'une demande antérieure",
+      "deleteDraft": "Supprimer le brouillon “{title}”",
       "emptyDescription": "Démarrez un déplacement pour regrouper plusieurs dépenses avec les mêmes détails de voyage, ou ajoutez un reçu unique ou une indemnité kilométrique. Les brouillons sont enregistrés automatiquement afin que vous puissiez les terminer plus tard.",
       "emptyFilter": "Aucune dépense avec ce statut.",
       "emptyTitle": "Aucun frais de déplacement pour l'instant",
@@ -268,6 +269,92 @@
       "emptyTitle": "Aucune note de frais de déplacement pour le moment",
       "status": "Statut",
       "type": "Type"
+    },
+    "perDiemPlaces": {
+      "AU": {
+        "canberra": "Canberra",
+        "sydney": "Sydney"
+      },
+      "BR": {
+        "brasilia": "Brasília",
+        "rio-de-janeiro": "Rio de Janeiro",
+        "sao-paulo": "São Paulo"
+      },
+      "CA": {
+        "ottawa": "Ottawa",
+        "toronto": "Toronto",
+        "vancouver": "Vancouver"
+      },
+      "CH": {
+        "bern": "Berne",
+        "genf": "Genève"
+      },
+      "CN": {
+        "hongkong": "Hong Kong",
+        "peking": "Pékin",
+        "shanghai": "Shanghai"
+      },
+      "ES": {
+        "barcelona": "Barcelone",
+        "kanarische-inseln": "Îles Canaries",
+        "madrid": "Madrid",
+        "palma-de-mallorca": "Palma de Majorque"
+      },
+      "FR": {
+        "paris": "Paris et départements 77, 78, 91–95"
+      },
+      "GB": {
+        "london": "Londres"
+      },
+      "GR": {
+        "athen": "Athènes"
+      },
+      "IN": {
+        "bangalore": "Bengaluru",
+        "chennai": "Chennai",
+        "kalkutta": "Calcutta",
+        "mumbai": "Mumbai",
+        "neu-delhi": "New Delhi"
+      },
+      "IT": {
+        "mailand": "Milan",
+        "rom": "Rome"
+      },
+      "JP": {
+        "osaka": "Osaka",
+        "tokio": "Tokyo"
+      },
+      "PL": {
+        "breslau": "Wrocław",
+        "warschau": "Varsovie"
+      },
+      "RU": {
+        "moskau": "Moscou",
+        "st-petersburg": "Saint-Pétersbourg"
+      },
+      "SA": {
+        "djidda": "Djeddah",
+        "riad": "Riyad"
+      },
+      "TR": {
+        "ankara": "Ankara",
+        "izmir": "Izmir"
+      },
+      "US": {
+        "atlanta": "Atlanta",
+        "boston": "Boston",
+        "chicago": "Chicago",
+        "houston": "Houston",
+        "los-angeles": "Los Angeles",
+        "miami": "Miami",
+        "new-york-city": "New York",
+        "san-francisco": "San Francisco",
+        "washington-dc": "Washington, D.C."
+      },
+      "ZA": {
+        "johannesburg": "Johannesburg",
+        "kapstadt": "Le Cap"
+      }
     },
     "report": {
       "actions": {
@@ -352,6 +439,15 @@
         "withdrawn": "retiré"
       },
       "decideInInbox": "Approuvez, renvoyez ou rejetez toute la note de frais dans la boîte de réception des approbations.",
+      "delete": {
+        "action": "Supprimer le brouillon",
+        "description": "Le brouillon, ses dépenses et leurs reçus sont supprimés. Cette action est irréversible.",
+        "descriptionLegacy": "Le brouillon, ses dépenses et leurs reçus sont supprimés, ainsi que le précédent brouillon de demande qu'il prolonge. Cette action est irréversible.",
+        "done": "Brouillon supprimé.",
+        "failed": "Impossible de supprimer le brouillon. Veuillez réessayer.",
+        "notDeletable": "Ce rapport a déjà été soumis, il ne peut donc plus être supprimé.",
+        "title": "Supprimer ce brouillon ?"
+      },
       "drafts": {
         "expenses": "{count, plural, one {# dépense} other {# dépenses}}",
         "noDate": "Aucune date pour le moment",
@@ -391,6 +487,7 @@
         "rejected": "Rejeté par {name}",
         "reopened": "Rouvert pour correction par {name}",
         "returned": "Renvoyé pour modifications par {name}",
+        "selfApproved": "Approuvé automatiquement : aucun autre vérificateur",
         "submitted": "Soumis par {name}",
         "title": "Historique",
         "withdrawn": "Retiré par {name}"
@@ -524,6 +621,8 @@
           "assigned": "Montants fixés par l'avis officiel pour ce pays",
           "atSea": "À bord d'un navire toute la journée (sans embarquement ni débarquement)",
           "choose": "Sélectionnez un lieu",
+          "countryElsewhere": "{country} – ailleurs",
+          "countryPlace": "{country} – {place}",
           "elsewhere": "Autre lieu",
           "fallbackFlight": "Règle officielle : journée entière en vol, montants autrichiens",
           "fallbackLuxembourg": "Règle subsidiaire officielle : non répertorié, montants luxembourgeois",
@@ -560,6 +659,7 @@
           "exceptional": "Cet itinéraire nécessite un calcul manuel des indemnités journalières par un administrateur des notes de frais. Il n'est pas calculé automatiquement.",
           "locations": "Indiquez pour chaque jour de voyage où vous vous trouviez à minuit et où s'est déroulée votre dernière activité professionnelle à l'étranger.",
           "meals": "Confirmez les repas fournis pour chaque jour de voyage.",
+          "notReturned": "Vous rentrez le {date} à {time} ({timeZone}). Vous pouvez soumettre après cela.",
           "overnight": "Indiquez si vous avez passé la nuit hors de votre domicile.",
           "policyMissing": "Votre organisation ne dispose d'aucun barème d'indemnité journalière pour {dates}. Demandez à un administrateur des notes de frais d'ajouter des barèmes datés dans les paramètres des frais de déplacement. Rien ne sera calculé d'ici là.",
           "start": "Indiquez quand vous avez quitté votre domicile ou votre lieu de travail.",
@@ -617,6 +717,12 @@
         "chooseFile": "Choisir un fichier",
         "description": "Prenez une photo ou joignez un PDF ou une image du reçu.",
         "downloadNamed": "Télécharger {fileName}",
+        "errors": {
+          "locked": "Cette dépense ne peut plus être modifiée.",
+          "retry": "Veuillez réessayer.",
+          "tooLarge": "Le fichier est trop volumineux. Joignez un fichier de {size} Mo maximum.",
+          "unsupportedType": "Joignez un PDF ou une image (JPEG, PNG, WebP, GIF, BMP ou TIFF)."
+        },
         "none": "Aucun reçu joint pour le moment.",
         "previewNamed": "Aperçu de {fileName}",
         "progress": "Progression du téléversement",
@@ -656,6 +762,7 @@
         "description": "Décrivez la dépense.",
         "expenseDate": "Ajoutez la date figurant sur le reçu.",
         "fixFields": "Corrigez d'abord les champs mis en surbrillance.",
+        "futureDate": "Cette date est dans le futur. Corrigez-la ou soumettez à partir du {date}.",
         "paidBy": "Indiquez si c'est vous ou l'entreprise qui avez payé.",
         "receipt": "Joignez le reçu.",
         "receiptExceptionNotAllowed": "Joignez le reçu. Votre organisation n'autorise pas les dérogations pour reçu manquant.",
@@ -678,6 +785,7 @@
         "unsavedAfterClose": "Vos dernières modifications apportées à une dépense n'ont pas pu être enregistrées. Rouvrez-la pour vérifier.",
         "useTheirs": "Charger la version enregistrée"
       },
+      "selfApprovedOn": "Approuvé automatiquement le {date} : il s'agit de la note de frais du propriétaire de l'organisation et personne d'autre ne pouvait la vérifier.",
       "standaloneTitle": "Reçu indépendant",
       "status": {
         "approved": "Approuvé",
@@ -697,13 +805,16 @@
         "changedTitle": "La note de frais a été modifiée",
         "confirm": "Soumettre pour approbation",
         "description": "Vérifiez la note de frais enregistrée. Votre approbateur se prononcera précisément sur cette version ; elle ne peut pas être modifiée pendant son examen.",
+        "expenseRequirement": "Dépense {number} : {requirement}",
         "failed": "Une erreur s'est produite. Votre note de frais est toujours enregistrée en tant que brouillon ; veuillez réessayer.",
         "failedTitle": "La note de frais n'a pas été soumise",
         "incomplete": "Certaines informations enregistrées sont encore manquantes. Complétez tous les éléments sous « Toujours requis » et réessayez.",
         "incompleteTitle": "La note de frais est incomplète",
-        "noReviewer": "Vous n'avez aucun responsable ou chef d'équipe autre que vous-même, et aucun approbateur de notes de frais n'est configuré. Demandez à un administrateur d'en désigner un. Votre note de frais reste enregistrée en tant que brouillon.",
+        "noReviewerAsk": "Vous n'avez pas d'autre responsable ou responsable d'équipe que vous-même, et aucun approbateur de dépenses n'est configuré. Demandez à un administrateur de choisir un approbateur de dépenses sous Paramètres, Frais de déplacement, Vérification des notes de frais. Votre note de frais reste enregistrée comme brouillon.",
+        "noReviewerAssign": "Vous n'avez pas d'autre responsable ou responsable d'équipe que vous-même, et aucun approbateur de dépenses n'est configuré. Choisissez un approbateur de dépenses sous Vérification des notes de frais dans les paramètres des frais de déplacement. Votre note de frais reste enregistrée comme brouillon.",
         "noReviewerTitle": "Personne ne peut encore examiner cette note de frais",
         "notSaved": "Certaines modifications ne sont pas encore enregistrées. Attendez qu'elles soient enregistrées, puis vérifiez à nouveau la note de frais.",
+        "openApproverSetting": "Ouvrir le paramètre d'approbateur de dépenses",
         "project": "{count, plural, one {Une dépense est attribuée à un projet auquel vous n'étiez pas affecté à la date de la dépense. Choisissez un autre projet ou demandez une exception d'attribution à un administrateur des dépenses. Votre note de frais reste enregistrée en tant que brouillon.} other {# dépenses sont attribuées à un projet auquel vous n'étiez pas affecté à la date de la dépense. Choisissez un autre projet ou demandez une exception d'attribution à un administrateur des dépenses. Votre note de frais reste enregistrée en tant que brouillon.}}",
         "projectTitle": "Un projet ne peut pas être utilisé",
         "ready": "Vos saisies sont enregistrées. Vérifiez la note de frais et envoyez-la pour approbation.",
@@ -712,6 +823,8 @@
         "routing": "Les règles d'approbation de votre organisation n'ont pas pu trouver d'approbateur. Demandez à un administrateur de les vérifier. Votre note de frais reste enregistrée en tant que brouillon.",
         "routingTitle": "La note de frais n'a pas pu être transmise",
         "selfApproval": "Les règles d'approbation de votre organisation vous permettraient d'approuver votre propre note de frais. Demandez à un administrateur de les ajuster. Votre note de frais reste enregistrée en tant que brouillon.",
+        "selfApprovalBlocked": "En tant que propriétaire de l'organisation, vos notes de frais sont approuvées automatiquement tant que personne d'autre ne peut les vérifier. Cette note de frais comporte une justification de reçu manquant ou une indemnité définie manuellement, qui doit être acceptée par quelqu'un d'autre. Choisissez un approbateur de dépenses ou modifiez la note de frais. Votre note de frais reste enregistrée comme brouillon.",
+        "selfApproved": "Note de frais approuvée automatiquement : personne d'autre ne peut la vérifier",
         "success": "Note de frais soumise pour approbation",
         "thresholdCurrency": "Les règles d'approbation de votre organisation comparent les montants en EUR, mais cette note de frais est en {currency}. Demandez à un administrateur de les vérifier. Votre note de frais reste enregistrée en tant que brouillon.",
         "title": "Soumettre la note de frais",
@@ -764,6 +877,7 @@
           "expenseItem": "Ajoutez une dépense.",
           "expenseNamed": "Dépense {number} : {description}",
           "fixFields": "Corrigez les détails du déplacement mis en évidence.",
+          "notEnded": "Le déplacement se termine le {date}. Vous pouvez soumettre à partir de ce jour.",
           "purpose": "Décrivez le motif du déplacement.",
           "title": "Encore requis pour ce déplacement",
           "travelDates": "Indiquez le premier et le dernier jour de déplacement."
@@ -782,6 +896,20 @@
       },
       "withdrawnNotice": "Vous avez retiré la soumission {number}. Soumettez à nouveau le rapport lorsqu'il sera prêt.",
       "withdrawnSubmission": "Cette soumission a été retirée avant qu'une décision ne soit prise."
+    },
+    "settings": {
+      "catalogAdopted": "Adopté le {date}, valable à compter du {effectiveFrom}",
+      "perDiem": {
+        "adoptForeignTitle": "Adopter les indemnités journalières légales allemandes avec les barèmes officiels pour l'étranger",
+        "foreignAreas": "Taux à l'étranger : {countries} pays et {places} villes"
+      },
+      "tabs": {
+        "currencies": "Devises",
+        "exceptions": "Exceptions",
+        "exceptionsPending": "{label}, {count} en attente",
+        "rates": "Taux",
+        "review": "Examiner"
+      }
     },
     "settlement": {
       "adjustment": "Ajustement approuvé inclus",

@@ -6,6 +6,7 @@
       "description": "Richieste in attesa di una decisione del manager.",
       "empty": "Nessuna approvazione in attesa.",
       "openInbox": "Apri posta in arrivo",
+      "ownRequest": "La tua richiesta: la decisione spetta a un altro approvatore.",
       "pendingAriaLabel": "Approvazioni in sospeso",
       "reject": "Rifiuta",
       "rejectLabel": "Rifiuta {title}",

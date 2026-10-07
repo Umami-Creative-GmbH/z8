@@ -1185,6 +1185,7 @@
         "label": "Utgiftsgodkjenner",
         "loadFailed": "Utgiftsgodkjenneren kunne ikke lastes inn.",
         "none": "Ingen utgiftsgodkjenner",
+        "ownerSelfApproval": "Så lenge ingen andre kan kontrollere organisasjonseierens rapporter, godkjennes de automatisk ved innsending og merkes som dette; rapporter med forklaring på manglende kvittering eller en manuelt angitt godtgjørelse trenger fortsatt en kontrollør.",
         "save": "Lagre godkjenner",
         "saved": "Utgiftsgodkjenner lagret",
         "saveFailed": "Kunne ikke lagre utgiftsgodkjenneren",
@@ -1201,7 +1202,6 @@
         "saveFailed": "Kunne ikke lagre refusjonsvalutaen.",
         "title": "Refusjonsvaluta"
       },
-      "description": "Konfigurer refusjonssatser og gyldighetsperioder for kilometergodtgjørelse og diettkrav.",
       "effectiveFrom": "Gyldig fra",
       "effectiveTo": "Gyldig til",
       "legacy": {
@@ -1262,6 +1262,8 @@
         "withdrawTitle": "Vil du trekke tilbake denne satsversjonen?"
       },
       "mileageRate": "Kilometergodtgjørelse / km",
+      "navDescription": "Gjennomgang av utgiftsrapporter, kvitteringer, valutaer, satser for kjøregodtgjørelse og diett, og unntak.",
+      "pageDescription": "Velg hvem som går gjennom utgiftsrapporter, hvordan manglende kvitteringer og utenlandsk valuta håndteres, hvilke satser for kjøregodtgjørelse og diett som gjelder, og hvilke unntak som autoriseres.",
       "perDiem": {
         "activate": "Aktiver versjon",
         "add": "Legg til satsversjon",
@@ -1289,7 +1291,6 @@
           "invalid": "Kontroller denne verdien.",
           "tooLong": "Denne teksten er for lang."
         },
-        "foreignAreas": "Utenlandssatser: {count} land og steder",
         "foreignTable": "Inkluderer de offisielle utenlandssatsene ({version}) for {countries} land og {places} byer, gjeldende for reisedager fra {from} til og med {through}. Ikke-oppførte land og territorier følger de offisielle reserveløsningsreglene; alt annet flagges for manuell beregning.",
         "fullDay": "Hel dag (24 timer borte)",
         "germanDefaultTitle": "Tysk lovfestet innenlands diettgodtgjørelse",

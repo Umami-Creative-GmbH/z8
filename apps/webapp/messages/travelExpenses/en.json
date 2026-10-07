@@ -197,6 +197,7 @@
       "claimed": "Claimed",
       "companyPaid": "Company-paid {amount}",
       "continuedFrom": "Continued from an earlier claim",
+      "deleteDraft": "Delete draft “{title}”",
       "emptyDescription": "Start a trip to collect several expenses with shared travel details, or add a single receipt or mileage expense. Drafts save automatically, so you can finish them later.",
       "emptyFilter": "No expenses with this status.",
       "emptyTitle": "No travel expenses yet",
@@ -268,6 +269,92 @@
       "emptyTitle": "No travel expense claims yet",
       "status": "Status",
       "type": "Type"
+    },
+    "perDiemPlaces": {
+      "AU": {
+        "canberra": "Canberra",
+        "sydney": "Sydney"
+      },
+      "BR": {
+        "brasilia": "Brasília",
+        "rio-de-janeiro": "Rio de Janeiro",
+        "sao-paulo": "São Paulo"
+      },
+      "CA": {
+        "ottawa": "Ottawa",
+        "toronto": "Toronto",
+        "vancouver": "Vancouver"
+      },
+      "CH": {
+        "bern": "Bern",
+        "genf": "Geneva"
+      },
+      "CN": {
+        "hongkong": "Hong Kong",
+        "peking": "Beijing",
+        "shanghai": "Shanghai"
+      },
+      "ES": {
+        "barcelona": "Barcelona",
+        "kanarische-inseln": "Canary Islands",
+        "madrid": "Madrid",
+        "palma-de-mallorca": "Palma de Mallorca"
+      },
+      "FR": {
+        "paris": "Paris and departments 77, 78, 91–95"
+      },
+      "GB": {
+        "london": "London"
+      },
+      "GR": {
+        "athen": "Athens"
+      },
+      "IN": {
+        "bangalore": "Bengaluru",
+        "chennai": "Chennai",
+        "kalkutta": "Kolkata",
+        "mumbai": "Mumbai",
+        "neu-delhi": "New Delhi"
+      },
+      "IT": {
+        "mailand": "Milan",
+        "rom": "Rome"
+      },
+      "JP": {
+        "osaka": "Osaka",
+        "tokio": "Tokyo"
+      },
+      "PL": {
+        "breslau": "Wrocław",
+        "warschau": "Warsaw"
+      },
+      "RU": {
+        "moskau": "Moscow",
+        "st-petersburg": "Saint Petersburg"
+      },
+      "SA": {
+        "djidda": "Jeddah",
+        "riad": "Riyadh"
+      },
+      "TR": {
+        "ankara": "Ankara",
+        "izmir": "Izmir"
+      },
+      "US": {
+        "atlanta": "Atlanta",
+        "boston": "Boston",
+        "chicago": "Chicago",
+        "houston": "Houston",
+        "los-angeles": "Los Angeles",
+        "miami": "Miami",
+        "new-york-city": "New York City",
+        "san-francisco": "San Francisco",
+        "washington-dc": "Washington, D.C."
+      },
+      "ZA": {
+        "johannesburg": "Johannesburg",
+        "kapstadt": "Cape Town"
+      }
     },
     "report": {
       "actions": {
@@ -352,6 +439,15 @@
         "withdrawn": "withdrawn"
       },
       "decideInInbox": "Approve, return or reject the whole report in the Approvals inbox.",
+      "delete": {
+        "action": "Delete draft",
+        "description": "The draft, its expenses and their receipts are deleted. This cannot be undone.",
+        "descriptionLegacy": "The draft, its expenses and their receipts are deleted, together with the earlier claim draft it continues. This cannot be undone.",
+        "done": "Draft deleted.",
+        "failed": "The draft could not be deleted. Please retry.",
+        "notDeletable": "This report was already submitted, so it can no longer be deleted.",
+        "title": "Delete this draft?"
+      },
       "drafts": {
         "expenses": "{count, plural, one {# expense} other {# expenses}}",
         "noDate": "No date yet",
@@ -391,6 +487,7 @@
         "rejected": "Rejected by {name}",
         "reopened": "Reopened for correction by {name}",
         "returned": "Returned for changes by {name}",
+        "selfApproved": "Approved automatically: no other reviewer",
         "submitted": "Submitted by {name}",
         "title": "History",
         "withdrawn": "Withdrawn by {name}"
@@ -524,6 +621,8 @@
           "assigned": "Amounts the official notice assigns to this country",
           "atSea": "On board a ship all day (not embarking or disembarking)",
           "choose": "Choose a location",
+          "countryElsewhere": "{country} – elsewhere",
+          "countryPlace": "{country} – {place}",
           "elsewhere": "Anywhere else",
           "fallbackFlight": "Official rule: whole day in flight, Austrian amounts",
           "fallbackLuxembourg": "Official fallback: not listed, Luxembourg amounts",
@@ -560,6 +659,7 @@
           "exceptional": "This itinerary needs a manual per diem calculation by an expense administrator. It is not calculated automatically.",
           "locations": "Tell us for every travel day where you were at midnight and where your last business activity abroad was.",
           "meals": "Confirm the provided meals for every travel day.",
+          "notReturned": "You return on {date} at {time} ({timeZone}). You can submit after that.",
           "overnight": "Tell us whether you stayed overnight away from home.",
           "policyMissing": "Your organization has no per diem rates for {dates}. Ask an expense administrator to add dated rates in the travel expense settings. Nothing is calculated until then.",
           "start": "Enter when you left home or your workplace.",
@@ -617,6 +717,12 @@
         "chooseFile": "Choose file",
         "description": "Take a photo or attach a PDF or image of the receipt.",
         "downloadNamed": "Download {fileName}",
+        "errors": {
+          "locked": "This expense can no longer be edited.",
+          "retry": "Please try again.",
+          "tooLarge": "The file is too large. Attach a file of at most {size} MB.",
+          "unsupportedType": "Attach a PDF or an image (JPEG, PNG, WebP, GIF, BMP or TIFF)."
+        },
         "none": "No receipt attached yet.",
         "previewNamed": "Preview {fileName}",
         "progress": "Upload progress",
@@ -656,6 +762,7 @@
         "description": "Describe the expense.",
         "expenseDate": "Add the date on the receipt.",
         "fixFields": "Correct the highlighted fields first.",
+        "futureDate": "This date is in the future. Correct it, or submit from {date}.",
         "paidBy": "Say whether you or the company paid.",
         "receipt": "Attach the receipt.",
         "receiptExceptionNotAllowed": "Attach the receipt. Your organization does not allow missing-receipt exceptions.",
@@ -678,6 +785,7 @@
         "unsavedAfterClose": "Your latest changes to an expense could not be saved. Open it again to check it.",
         "useTheirs": "Load the saved version"
       },
+      "selfApprovedOn": "Approved automatically on {date}: this is the organization owner's report, and nobody else could review it.",
       "standaloneTitle": "Standalone receipt",
       "status": {
         "approved": "Approved",
@@ -697,13 +805,16 @@
         "changedTitle": "The report changed",
         "confirm": "Submit for approval",
         "description": "Check the saved report. Your reviewer decides on exactly this version; it cannot be edited while it is being reviewed.",
+        "expenseRequirement": "Expense {number}: {requirement}",
         "failed": "Something went wrong. Your report is still saved as a draft; please retry.",
         "failedTitle": "The report was not submitted",
         "incomplete": "Some saved details are still missing. Complete everything listed under “Still needed” and try again.",
         "incompleteTitle": "The report is incomplete",
-        "noReviewer": "You have no manager or team manager other than yourself, and no expense approver is set up. Ask an administrator to assign one. Your report stays saved as a draft.",
+        "noReviewerAsk": "You have no manager or team manager other than yourself, and no expense approver is set up. Ask an administrator to choose an expense approver under Settings, Travel expenses, Expense report review. Your report stays saved as a draft.",
+        "noReviewerAssign": "You have no manager or team manager other than yourself, and no expense approver is set up. Choose an expense approver under Expense report review in the travel expense settings. Your report stays saved as a draft.",
         "noReviewerTitle": "No one can review this report yet",
         "notSaved": "Some changes are not saved yet. Wait for them to save, then review the report again.",
+        "openApproverSetting": "Open expense approver setting",
         "project": "{count, plural, one {One expense is attributed to a project you were not assigned to on the expense date. Choose another project, or ask an expense administrator for an attribution exception. Your report stays saved as a draft.} other {# expenses are attributed to a project you were not assigned to on the expense date. Choose another project, or ask an expense administrator for an attribution exception. Your report stays saved as a draft.}}",
         "projectTitle": "A project cannot be used",
         "ready": "Your entries are saved. Review the report and send it for approval.",
@@ -712,6 +823,8 @@
         "routing": "Your organization's approval rules could not find a reviewer. Ask an administrator to check them. Your report stays saved as a draft.",
         "routingTitle": "The report could not be routed",
         "selfApproval": "Your organization's approval rules would let you approve your own report. Ask an administrator to adjust them. Your report stays saved as a draft.",
+        "selfApprovalBlocked": "As the organization owner, your reports are approved automatically while nobody else can review them. This report has a missing-receipt explanation or a manually set allowance, which someone else must accept. Choose an expense approver, or change the report. Your report stays saved as a draft.",
+        "selfApproved": "Report approved automatically: nobody else can review it",
         "success": "Report submitted for approval",
         "thresholdCurrency": "Your organization's approval rules compare amounts in EUR, but this report is in {currency}. Ask an administrator to check them. Your report stays saved as a draft.",
         "title": "Submit expense report",
@@ -764,6 +877,7 @@
           "expenseItem": "Add an expense.",
           "expenseNamed": "Expense {number}: {description}",
           "fixFields": "Correct the highlighted trip details.",
+          "notEnded": "The trip ends on {date}. You can submit from that day.",
           "purpose": "Describe the purpose of the trip.",
           "title": "Still needed for this trip",
           "travelDates": "Enter the first and last travel day."
@@ -782,6 +896,20 @@
       },
       "withdrawnNotice": "You withdrew submission {number}. Submit the report again when it is ready.",
       "withdrawnSubmission": "This submission was withdrawn before a decision."
+    },
+    "settings": {
+      "catalogAdopted": "Adopted on {date}, valid from {effectiveFrom}",
+      "perDiem": {
+        "adoptForeignTitle": "Adopt the German statutory per diem with the official foreign rates",
+        "foreignAreas": "Foreign rates: {countries} countries and {places} cities"
+      },
+      "tabs": {
+        "currencies": "Currencies",
+        "exceptions": "Exceptions",
+        "exceptionsPending": "{label}, {count} pending",
+        "rates": "Rates",
+        "review": "Review"
+      }
     },
     "settlement": {
       "adjustment": "Including approved adjustment",

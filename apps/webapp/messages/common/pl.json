@@ -535,10 +535,6 @@
       "absenceRequestRejected": {
         "title": "Wniosek o nieobecność odrzucony"
       },
-      "absenceRequestSubmitted": {
-        "message": "Twój wniosek {categoryName} na {dateRange} został wysłany i oczekuje na zatwierdzenie.",
-        "title": "Wniosek o nieobecność wysłany"
-      },
       "employeeOffboardingReview": {
         "approval_handover": "Obowiązki zatwierdzania wymagają zastępstwa",
         "clock_out": "Wymaga weryfikacji: rejestracja wyjścia (offboarding)",
@@ -560,10 +556,6 @@
       "teamMemberAdded": {
         "message": "Zostałeś dodany do zespołu {teamName} przez {performedByName}.",
         "title": "Dodano do zespołu"
-      },
-      "teamMemberRemoved": {
-        "message": "Zostałeś usunięty z zespołu {teamName} przez {performedByName}.",
-        "title": "Usunięto z zespołu"
       }
     },
     "description": "Przeglądaj aktualizacje, zatwierdzenia i alerty systemowe na jednej osi czasu.",

@@ -142,7 +142,6 @@
         "allowCarryoverDescription": "Permitir a los empleados trasladar los días no utilizados al año siguiente",
         "carryoverExpiryMonths": "Caducidad de la acumulación (meses, opcional)",
         "carryoverExpiryMonthsDescription": "Número de meses antes de que caduquen los días acumulados (opcional)",
-        "clearDate": "Borrar fecha",
         "companyDefault": "Establecer como predeterminado de la empresa",
         "companyDefaultDescription": "Esta política se aplicará a todos los empleados sin anulaciones específicas. Establecer esto reemplazará cualquier valor predeterminado de la empresa existente.",
         "defaultAnnualDays": "Días anuales predeterminados",

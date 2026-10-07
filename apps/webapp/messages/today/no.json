@@ -6,6 +6,7 @@
       "description": "Forespørsler som venter på lederbeslutning.",
       "empty": "Ingen godkjenninger venter.",
       "openInbox": "Åpne innboks",
+      "ownRequest": "Din egen forespørsel: en annen godkjenner avgjør den.",
       "pendingAriaLabel": "Ventende godkjenninger",
       "reject": "Avvis",
       "rejectLabel": "Avvis {title}",

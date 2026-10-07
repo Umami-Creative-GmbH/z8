@@ -164,8 +164,6 @@
         "deactivateTitle": "Dezaktywować pracownika?",
         "deactivating": "Dezaktywowanie...",
         "deactivatingStatus": "Dezaktywowanie pracownika",
-        "finalOwnerDeactivateGuidance": "Najpierw przypisz i aktywuj innego zatwierdzonego właściciela, zanim dezaktywujesz tego pracownika.",
-        "finalOwnerRemoveGuidance": "Najpierw przypisz i aktywuj innego zatwierdzonego właściciela, zanim odbierzesz temu pracownikowi dostęp.",
         "reactivate": "Aktywuj ponownie",
         "reactivateDescription": "Spowoduje to przywrócenie dostępu do tej organizacji przy użyciu istniejącego rekordu pracownika.",
         "reactivateError": "Nie udało się ponownie aktywować pracownika",

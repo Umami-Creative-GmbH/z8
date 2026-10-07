@@ -197,6 +197,7 @@
       "claimed": "Zgłoszone",
       "companyPaid": "Opłacone przez firmę {amount}",
       "continuedFrom": "Kontynuacja wcześniejszego wniosku",
+      "deleteDraft": "Usuń wersję roboczą „{title}”",
       "emptyDescription": "Rozpocznij podróż, aby zebrać kilka wydatków ze wspólnymi szczegółami podróży, lub dodaj pojedynczy rachunek bądź wydatek za kilometrówkę. Wersje robocze zapisują się automatycznie, więc możesz dokończyć je później.",
       "emptyFilter": "Brak wydatków o tym statusie.",
       "emptyTitle": "Brak wydatków na podróż",
@@ -268,6 +269,92 @@
       "emptyTitle": "Brak jeszcze roszczeń dotyczących wydatków podróży",
       "status": "Status",
       "type": "Typ"
+    },
+    "perDiemPlaces": {
+      "AU": {
+        "canberra": "Canberra",
+        "sydney": "Sydney"
+      },
+      "BR": {
+        "brasilia": "Brasília",
+        "rio-de-janeiro": "Rio de Janeiro",
+        "sao-paulo": "São Paulo"
+      },
+      "CA": {
+        "ottawa": "Ottawa",
+        "toronto": "Toronto",
+        "vancouver": "Vancouver"
+      },
+      "CH": {
+        "bern": "Berno",
+        "genf": "Genewa"
+      },
+      "CN": {
+        "hongkong": "Hongkong",
+        "peking": "Pekin",
+        "shanghai": "Szanghaj"
+      },
+      "ES": {
+        "barcelona": "Barcelona",
+        "kanarische-inseln": "Wyspy Kanaryjskie",
+        "madrid": "Madryt",
+        "palma-de-mallorca": "Palma de Mallorca"
+      },
+      "FR": {
+        "paris": "Paryż i departamenty 77, 78, 91–95"
+      },
+      "GB": {
+        "london": "Londyn"
+      },
+      "GR": {
+        "athen": "Ateny"
+      },
+      "IN": {
+        "bangalore": "Bengaluru",
+        "chennai": "Ćennaj",
+        "kalkutta": "Kalkuta",
+        "mumbai": "Mumbaj",
+        "neu-delhi": "Nowe Delhi"
+      },
+      "IT": {
+        "mailand": "Mediolan",
+        "rom": "Rzym"
+      },
+      "JP": {
+        "osaka": "Osaka",
+        "tokio": "Tokio"
+      },
+      "PL": {
+        "breslau": "Wrocław",
+        "warschau": "Warszawa"
+      },
+      "RU": {
+        "moskau": "Moskwa",
+        "st-petersburg": "Sankt Petersburg"
+      },
+      "SA": {
+        "djidda": "Dżudda",
+        "riad": "Rijad"
+      },
+      "TR": {
+        "ankara": "Ankara",
+        "izmir": "Izmir"
+      },
+      "US": {
+        "atlanta": "Atlanta",
+        "boston": "Boston",
+        "chicago": "Chicago",
+        "houston": "Houston",
+        "los-angeles": "Los Angeles",
+        "miami": "Miami",
+        "new-york-city": "Nowy Jork",
+        "san-francisco": "San Francisco",
+        "washington-dc": "Waszyngton, D.C."
+      },
+      "ZA": {
+        "johannesburg": "Johannesburg",
+        "kapstadt": "Kapsztad"
+      }
     },
     "report": {
       "actions": {
@@ -352,6 +439,15 @@
         "withdrawn": "wycofane"
       },
       "decideInInbox": "Zatwierdź, zwróć lub odrzuć cały raport w skrzynce zatwierdzeń.",
+      "delete": {
+        "action": "Usuń wersję roboczą",
+        "description": "Wersja robocza, jej wydatki oraz ich rachunki zostaną usunięte. Tej operacji nie można cofnąć.",
+        "descriptionLegacy": "Wersja robocza, jej wydatki oraz ich rachunki zostaną usunięte wraz z wcześniejszą wersją roboczą wniosku, którą kontynuuje. Tej operacji nie można cofnąć.",
+        "done": "Usunięto wersję roboczą.",
+        "failed": "Nie udało się usunąć wersji roboczej. Spróbuj ponownie.",
+        "notDeletable": "Ten raport został już przesłany, więc nie można go już usunąć.",
+        "title": "Usunąć tę wersję roboczą?"
+      },
       "drafts": {
         "expenses": "{count, plural, one {# wydatek} few {# wydatki} other {# wydatków} }",
         "noDate": "Brak daty",
@@ -391,6 +487,7 @@
         "rejected": "Odrzucone przez {name}",
         "reopened": "Ponownie otwarte do poprawy przez: {name}",
         "returned": "Zwrócone do wprowadzenia zmian przez: {name}",
+        "selfApproved": "Zatwierdzono automatycznie: brak innego weryfikatora",
         "submitted": "Przesłane przez: {name}",
         "title": "Historia",
         "withdrawn": "Wycofane przez: {name}"
@@ -524,6 +621,8 @@
           "assigned": "Kwoty przypisane do tego kraju w oficjalnym obwieszczeniu",
           "atSea": "Cały dzień na pokładzie statku (bez zaokrętowania i wyokrętowania)",
           "choose": "Wybierz lokalizację",
+          "countryElsewhere": "{country} – pozostałe miejscowości",
+          "countryPlace": "{country} – {place}",
           "elsewhere": "Gdzie indziej",
           "fallbackFlight": "Oficjalna zasada: cały dzień w locie, stawki austriackie",
           "fallbackLuxembourg": "Oficjalna reguła rezerwowa: brak na liście, stawki luksemburskie",
@@ -560,6 +659,7 @@
           "exceptional": "Ten plan podróży wymaga ręcznego naliczenia diety przez administratora wydatków. Nie jest obliczany automatycznie.",
           "locations": "Podaj dla każdego dnia podróży, gdzie przebywałeś(-aś) o północy oraz gdzie odbyła się Twoja ostatnia aktywność służbowa za granicą.",
           "meals": "Potwierdź zapewnione posiłki dla każdego dnia podróży.",
+          "notReturned": "Wracasz {date} o {time} ({timeZone}). Możesz przesłać raport po tym czasie.",
           "overnight": "Określ, czy nocowałeś(-aś) poza domem.",
           "policyMissing": "Twoja organizacja nie ma stawek diet dla: {dates}. Poproś administratora wydatków o dodanie stawek z określonymi datami w ustawieniach wydatków na podróż. Do tego czasu nic nie zostanie naliczone.",
           "start": "Wprowadź czas wyjazdu z domu lub z miejsca pracy.",
@@ -617,6 +717,12 @@
         "chooseFile": "Wybierz plik",
         "description": "Zrób zdjęcie lub załącz plik PDF albo obraz rachunku.",
         "downloadNamed": "Pobierz {fileName}",
+        "errors": {
+          "locked": "Tego wydatku nie można już edytować.",
+          "retry": "Spróbuj ponownie.",
+          "tooLarge": "Plik jest zbyt duży. Załącz plik o rozmiarze maksymalnie {size} MB.",
+          "unsupportedType": "Załącz plik PDF lub obraz (JPEG, PNG, WebP, GIF, BMP lub TIFF)."
+        },
         "none": "Nie załączono jeszcze żadnego rachunku.",
         "previewNamed": "Podgląd {fileName}",
         "progress": "Postęp przesyłania",
@@ -656,6 +762,7 @@
         "description": "Opisz wydatek.",
         "expenseDate": "Dodaj datę z rachunku.",
         "fixFields": "Najpierw popraw wyróżnione pola.",
+        "futureDate": "Ta data przypada w przyszłości. Popraw ją lub prześlij raport od {date}.",
         "paidBy": "Określ, kto dokonał płatności: Ty czy firma.",
         "receipt": "Dołącz rachunek.",
         "receiptExceptionNotAllowed": "Dołącz rachunek. Twoja organizacja nie dopuszcza wyjątków dotyczących braku rachunku.",
@@ -678,6 +785,7 @@
         "unsavedAfterClose": "Nie udało się zapisać Twoich ostatnich zmian w wydatku. Otwórz go ponownie, aby to sprawdzić.",
         "useTheirs": "Wczytaj zapisaną wersję"
       },
+      "selfApprovedOn": "Zatwierdzono automatycznie w dniu {date}: to raport właściciela organizacji i nikt inny nie mógł go zweryfikować.",
       "standaloneTitle": "Samodzielny rachunek",
       "status": {
         "approved": "Zatwierdzono",
@@ -697,13 +805,16 @@
         "changedTitle": "Raport się zmienił",
         "confirm": "Prześlij do zatwierdzenia",
         "description": "Sprawdź zapisany raport. Osoba weryfikująca podejmuje decyzję dokładnie na podstawie tej wersji; nie można jej edytować w trakcie weryfikacji.",
+        "expenseRequirement": "Wydatek {number}: {requirement}",
         "failed": "Coś poszło nie tak. Twój raport jest nadal zapisany jako wersja robocza; spróbuj ponownie.",
         "failedTitle": "Raport nie został przesłany",
         "incomplete": "Nadal brakuje niektórych zapisanych szczegółów. Uzupełnij wszystkie elementy wymienione w sekcji „Nadal wymagane” i spróbuj ponownie.",
         "incompleteTitle": "Raport jest niekompletny",
-        "noReviewer": "Poza sobą nie masz przypisanego żadnego menedżera ani kierownika zespołu, a osoba zatwierdzająca wydatki nie jest skonfigurowana. Poproś administratora o jej przypisanie. Twój raport pozostaje zapisany jako wersja robocza.",
+        "noReviewerAsk": "Nie masz innego przełożonego ani kierownika zespołu poza sobą, a osoba zatwierdzająca wydatki nie jest ustawiona. Poproś administratora o wybranie osoby zatwierdzającej wydatki w sekcji Ustawienia, Koszty podróży, Weryfikacja raportów z wydatków. Twój raport pozostaje zapisany jako wersja robocza.",
+        "noReviewerAssign": "Nie masz innego przełożonego ani kierownika zespołu poza sobą, a osoba zatwierdzająca wydatki nie jest ustawiona. Wybierz osobę zatwierdzającą wydatki w sekcji Weryfikacja raportów z wydatków w ustawieniach kosztów podróży. Twój raport pozostaje zapisany jako wersja robocza.",
         "noReviewerTitle": "Nikt nie może jeszcze zweryfikować tego raportu",
         "notSaved": "Niektóre zmiany nie zostały jeszcze zapisane. Poczekaj na ich zapisanie, a następnie przejrzyj raport ponownie.",
+        "openApproverSetting": "Otwórz ustawienia osoby zatwierdzającej wydatki",
         "project": "{count, plural, one {Jeden wydatek jest przypisany do projektu, do którego Cię nie przypisano w dniu poniesienia wydatku. Wybierz inny projekt lub poproś administratora wydatków o wyjątek od przypisania. Twój raport pozostaje zapisany jako wersja robocza.} other {# wydatków jest przypisanych do projektu, do którego Cię nie przypisano w dniu poniesienia wydatku. Wybierz inny projekt lub poproś administratora wydatków o wyjątek od przypisania. Twój raport pozostaje zapisany jako wersja robocza.}}",
         "projectTitle": "Nie można użyć projektu",
         "ready": "Wprowadzone dane zostały zapisane. Przejrzyj raport i prześlij go do zatwierdzenia.",
@@ -712,6 +823,8 @@
         "routing": "Reguły zatwierdzania w Twojej organizacji nie pozwoliły znaleźć osoby weryfikującej. Poproś administratora o ich sprawdzenie. Twój raport pozostaje zapisany jako wersja robocza.",
         "routingTitle": "Nie udało się przekazać raportu",
         "selfApproval": "Reguły zatwierdzania w Twojej organizacji zezwoliłyby Ci na zatwierdzenie własnego raportu. Poproś administratora o ich dostosowanie. Twój raport pozostaje zapisany jako wersja robocza.",
+        "selfApprovalBlocked": "Jako właściciel organizacji Twoje raporty są zatwierdzane automatycznie, dopóki nikt inny nie może ich weryfikować. Ten raport zawiera wyjaśnienie braku paragonu lub ręcznie ustaloną dietę, co musi zaakceptować ktoś inny. Wybierz osobę zatwierdzającą wydatki lub zmień raport. Twój raport pozostaje zapisany jako wersja robocza.",
+        "selfApproved": "Raport zatwierdzony automatycznie: nikt inny nie może go zweryfikować",
         "success": "Raport przesłany do zatwierdzenia",
         "thresholdCurrency": "Reguły zatwierdzania w Twojej organizacji porównują kwoty w EUR, ale ten raport jest w {currency}. Poproś administratora o ich sprawdzenie. Twój raport pozostaje zapisany jako wersja robocza.",
         "title": "Prześlij raport wydatków",
@@ -764,6 +877,7 @@
           "expenseItem": "Dodaj wydatek.",
           "expenseNamed": "Wydatek {number}: {description}",
           "fixFields": "Popraw wyróżnione szczegóły podróży.",
+          "notEnded": "Podróż kończy się {date}. Możesz przesłać raport od tego dnia.",
           "purpose": "Opisz cel podróży.",
           "title": "Wciąż wymagane dla tej podróży",
           "travelDates": "Wprowadź pierwszy i ostatni dzień podróży."
@@ -782,6 +896,20 @@
       },
       "withdrawnNotice": "Wycofano zgłoszenie {number}. Prześlij raport ponownie, gdy będzie gotowy.",
       "withdrawnSubmission": "To zgłoszenie zostało wycofane przed podjęciem decyzji."
+    },
+    "settings": {
+      "catalogAdopted": "Przyjęto {date}, obowiązuje od {effectiveFrom}",
+      "perDiem": {
+        "adoptForeignTitle": "Zastosuj niemieckie ustawowe diety z oficjalnymi stawkami zagranicznymi",
+        "foreignAreas": "Stawki zagraniczne: {countries} krajów i {places} miast"
+      },
+      "tabs": {
+        "currencies": "Waluty",
+        "exceptions": "Wyjątki",
+        "exceptionsPending": "{label}, {count} oczekujących",
+        "rates": "Stawki",
+        "review": "Przejrzyj"
+      }
     },
     "settlement": {
       "adjustment": "W tym zatwierdzona korekta",

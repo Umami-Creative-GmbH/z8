@@ -197,6 +197,7 @@
       "claimed": "Iigreicht",
       "companyPaid": "Vo de Firma zahlt: {amount}",
       "continuedFrom": "Witergfüehrt vonere früenere Iigab",
+      "deleteDraft": "Entwurf «{title}» lösche",
       "emptyDescription": "Starte e Reis, zum mehreri Späse mit de gliiche Reisedetails z'erfasse, oder tue en einzelne Beleg oder e Kilometerabrächnig derzue. Entwürf werdet automatisch gspycheret, sodass du si spöter chasch fertig mache.",
       "emptyFilter": "Käi Späse mit däm Status.",
       "emptyTitle": "No käi Reisespäse vorhande",
@@ -268,6 +269,92 @@
       "emptyTitle": "Noch keine Reisekostenabrechnungen vorhanden",
       "status": "Status",
       "type": "Typ"
+    },
+    "perDiemPlaces": {
+      "AU": {
+        "canberra": "Canberra",
+        "sydney": "Sydney"
+      },
+      "BR": {
+        "brasilia": "Brasília",
+        "rio-de-janeiro": "Rio de Janeiro",
+        "sao-paulo": "São Paulo"
+      },
+      "CA": {
+        "ottawa": "Ottawa",
+        "toronto": "Toronto",
+        "vancouver": "Vancouver"
+      },
+      "CH": {
+        "bern": "Bern",
+        "genf": "Genf"
+      },
+      "CN": {
+        "hongkong": "Hongkong",
+        "peking": "Peking",
+        "shanghai": "Shanghai"
+      },
+      "ES": {
+        "barcelona": "Barcelona",
+        "kanarische-inseln": "Kanarischi Insle",
+        "madrid": "Madrid",
+        "palma-de-mallorca": "Palma de Mallorca"
+      },
+      "FR": {
+        "paris": "Paris und Departements 77, 78, 91–95"
+      },
+      "GB": {
+        "london": "London"
+      },
+      "GR": {
+        "athen": "Athen"
+      },
+      "IN": {
+        "bangalore": "Bengaluru",
+        "chennai": "Chennai",
+        "kalkutta": "Kalkutta",
+        "mumbai": "Mumbai",
+        "neu-delhi": "Neu-Delhi"
+      },
+      "IT": {
+        "mailand": "Mailand",
+        "rom": "Rom"
+      },
+      "JP": {
+        "osaka": "Osaka",
+        "tokio": "Tokio"
+      },
+      "PL": {
+        "breslau": "Breslau",
+        "warschau": "Warschau"
+      },
+      "RU": {
+        "moskau": "Moskau",
+        "st-petersburg": "St. Petersburg"
+      },
+      "SA": {
+        "djidda": "Dschidda",
+        "riad": "Riad"
+      },
+      "TR": {
+        "ankara": "Ankara",
+        "izmir": "Izmir"
+      },
+      "US": {
+        "atlanta": "Atlanta",
+        "boston": "Boston",
+        "chicago": "Chicago",
+        "houston": "Houston",
+        "los-angeles": "Los Angeles",
+        "miami": "Miami",
+        "new-york-city": "New York City",
+        "san-francisco": "San Francisco",
+        "washington-dc": "Washington, D.C."
+      },
+      "ZA": {
+        "johannesburg": "Johannesburg",
+        "kapstadt": "Kapstadt"
+      }
     },
     "report": {
       "actions": {
@@ -352,6 +439,15 @@
         "withdrawn": "zruggzoge"
       },
       "decideInInbox": "De ganz Bricht im Gnämigungs-Iigang gnämige, zruggschicke oder ablehne.",
+      "delete": {
+        "action": "Entwurf lösche",
+        "description": "De Entwurf, sini Späse und d Beleg werded glöscht. Das cha nüme rückgängig gmacht werde.",
+        "descriptionLegacy": "De Entwurf, sini Späse und d Beleg werded zäme mit em früenere Abrechnigsentwurf glöscht, won er wiiterfüehrt. Das cha nüme rückgängig gmacht werde.",
+        "done": "Entwurf glöscht.",
+        "failed": "De Entwurf hät nöd chönne glöscht werde. Bitte nomal probiere.",
+        "notDeletable": "Dä Bricht isch scho iigreicht worde und cha drum nüme glöscht werde.",
+        "title": "Dä Entwurf lösche?"
+      },
       "drafts": {
         "expenses": "{count, plural, one {# Uusgab} other {# Uusgabe}}",
         "noDate": "No keis Datum",
@@ -391,6 +487,7 @@
         "rejected": "Abglehnt vo {name}",
         "reopened": "Für Korrekture widereröffnet dur {name}",
         "returned": "Für Änderige zrugggschickt dur {name}",
+        "selfApproved": "Automatisch genehmigt: kein anderer Prüfer",
         "submitted": "Igreicht dur {name}",
         "title": "Verlauf",
         "withdrawn": "Zruggzoge dur {name}"
@@ -524,6 +621,8 @@
           "assigned": "Beträg, wo di offiziell Bekanntmachig däm Land zueordnet",
           "atSea": "De ganz Tag a Bord vome Schiff (ohni I- oder Usschiffe)",
           "choose": "Wähl en Ort us",
+          "countryElsewhere": "{country} – anderschwo",
+          "countryPlace": "{country} – {place}",
           "elsewhere": "Sust irgendwo",
           "fallbackFlight": "Offizielli Regle: de ganz Tag im Flug, öschtriichischi Beträg",
           "fallbackLuxembourg": "Offizielli Uffangreglig: nöd ufgführt, luxemburgischi Beträg",
@@ -560,6 +659,7 @@
           "exceptional": "Dieser Reiseplan erfordert eine manuelle Taggeldberechnung durch einen Spesenadministrator. Er wird nicht automatisch berechnet.",
           "locations": "Geben Sie für jeden Reisetag an, wo Sie um Mitternacht waren und wo Ihre letzte geschäftliche Aktivität im Ausland stattfand.",
           "meals": "Bestätigen Sie die bereitgestellten Mahlzeiten für jeden Reisetag.",
+          "notReturned": "Sie kehren am {date} um {time} ({timeZone}) zurück. Danach können Sie einreichen.",
           "overnight": "Geben Sie an, ob Sie auswärts übernachtet haben.",
           "policyMissing": "Ihre Organisation hat keine Taggeldansätze für {dates}. Bitten Sie einen Spesenadministrator, datierte Ansätze in den Reisespesen-Einstellungen hinzuzufügen. Bis dahin wird nichts berechnet.",
           "start": "Geben Sie an, wann Sie von zu Hause oder von Ihrem Arbeitsplatz abgereist sind.",
@@ -617,6 +717,12 @@
         "chooseFile": "Datei uswähle",
         "description": "Mach es Foti oder häng es PDF oder Bild vo de Quittig a.",
         "downloadNamed": "{fileName} abelade",
+        "errors": {
+          "locked": "Die Späse chönd nüme bearbeitet werde.",
+          "retry": "Bitte nomal probiere.",
+          "tooLarge": "D Datei isch z gross. Häng e Datei mit maximal {size} MB aa.",
+          "unsupportedType": "Häng es PDF oder es Bild (JPEG, PNG, WebP, GIF, BMP oder TIFF) aa."
+        },
         "none": "No kei Quittig aghänkt.",
         "previewNamed": "Vorschau vo {fileName}",
         "progress": "Upload-Fortschritt",
@@ -656,6 +762,7 @@
         "description": "Beschriib die Uusgab.",
         "expenseDate": "Gib s'Datum uf em Beleg aa.",
         "fixFields": "Korrigier zersch di markierte Felder.",
+        "futureDate": "Dieses Datum liegt in der Zukunft. Korrigieren Sie es oder reichen Sie ab dem {date} ein.",
         "paidBy": "Gib aa, öb du oder d'Firma zahlt hät.",
         "receipt": "Häng de Beleg aa.",
         "receiptExceptionNotAllowed": "Häng de Beleg aa. Dini Organisation erlaubt kei Uusnahme für fählendi Beleg.",
@@ -678,6 +785,7 @@
         "unsavedAfterClose": "Dini neuschte Änderige anere Uusgab hend nöd chönne gspycheret werde. Mach si nomal uf, zum si z'überprüefe.",
         "useTheirs": "Die gspychereti Version lade"
       },
+      "selfApprovedOn": "Automatisch genehmigt am {date}: Dies ist die Abrechnung des Organisationsinhabers und niemand sonst konnte sie prüfen.",
       "standaloneTitle": "Einzelbeleg",
       "status": {
         "approved": "Gnämigt",
@@ -697,13 +805,16 @@
         "changedTitle": "Die Abrechnung wurde geändert",
         "confirm": "Zur Genehmigung einreichen",
         "description": "Überprüfen Sie die gespeicherte Abrechnung. Die prüfende Person entscheidet über genau diese Version; sie kann während der Prüfung nicht bearbeitet werden.",
+        "expenseRequirement": "Spese {number}: {requirement}",
         "failed": "Etwas ist schiefgelaufen. Ihre Abrechnung ist weiterhin als Entwurf gespeichert; bitte versuchen Sie es erneut.",
         "failedTitle": "Die Abrechnung wurde nicht eingereicht",
         "incomplete": "Einige gespeicherte Angaben fehlen noch. Ergänzen Sie alle Angaben unter «Noch erforderlich» und versuchen Sie es erneut.",
         "incompleteTitle": "Die Abrechnung ist unvollständig",
-        "noReviewer": "Sie haben ausser sich selbst keine vorgesetzte Person oder Teamleitung, und es ist keine Spesenprüfperson eingerichtet. Bitten Sie eine zuständige Administratorperson, eine zuzuweisen. Ihre Abrechnung bleibt als Entwurf gespeichert.",
+        "noReviewerAsk": "Sie haben ausser sich selbst keinen Manager oder Team-Manager und es ist kein Spesengenehmiger eingerichtet. Bitten Sie einen Administrator, unter Einstellungen, Reisespesen, Spesenabrechnungsprüfung einen Spesengenehmiger auszuwählen. Ihre Abrechnung bleibt als Entwurf gespeichert.",
+        "noReviewerAssign": "Sie haben ausser sich selbst keinen Manager oder Team-Manager und es ist kein Spesengenehmiger eingerichtet. Wählen Sie unter Spesenabrechnungsprüfung in den Reisespesen-Einstellungen einen Spesengenehmiger aus. Ihre Abrechnung bleibt als Entwurf gespeichert.",
         "noReviewerTitle": "Diese Abrechnung kann noch von niemandem geprüft werden",
         "notSaved": "Einige Änderungen sind noch nicht gespeichert. Warten Sie, bis sie gespeichert wurden, und überprüfen Sie die Abrechnung dann erneut.",
+        "openApproverSetting": "Einstellung für Spesengenehmiger öffnen",
         "project": "{count, plural, one {Eine Ausgabe ist einem Projekt zugeordnet, dem Sie am Ausgabendatum nicht zugewiesen waren. Wählen Sie ein anderes Projekt oder bitten Sie die Spesenadministration um eine Ausnahmebewilligung. Ihre Abrechnung bleibt als Entwurf gespeichert.} other {# Ausgaben sind einem Projekt zugeordnet, dem Sie am Ausgabendatum nicht zugewiesen waren. Wählen Sie ein anderes Projekt oder bitten Sie die Spesenadministration um eine Ausnahmebewilligung. Ihre Abrechnung bleibt als Entwurf gespeichert.}}",
         "projectTitle": "Ein Projekt kann nicht verwendet werden",
         "ready": "Ihre Angaben sind gespeichert. Überprüfen Sie die Abrechnung und reichen Sie sie zur Genehmigung ein.",
@@ -712,6 +823,8 @@
         "routing": "Anhand der Genehmigungsregeln Ihrer Organisation konnte keine prüfende Person gefunden werden. Bitten Sie die Administration, diese zu prüfen. Ihre Abrechnung bleibt als Entwurf gespeichert.",
         "routingTitle": "Die Abrechnung konnte nicht weitergeleitet werden",
         "selfApproval": "Gemäss den Genehmigungsregeln Ihrer Organisation könnten Sie Ihre eigene Abrechnung genehmigen. Bitten Sie die Administration, die Regeln anzupassen. Ihre Abrechnung bleibt als Entwurf gespeichert.",
+        "selfApprovalBlocked": "Als Organisationsinhaber werden Ihre Abrechnungen automatisch genehmigt, solange niemand sonst diese prüfen kann. Diese Abrechnung enthält eine Begründung für einen fehlenden Beleg oder eine manuell festgelegte Pauschale, was von jemand anderem akzeptiert werden muss. Wählen Sie einen Spesengenehmiger aus oder ändern Sie die Abrechnung. Ihre Abrechnung bleibt als Entwurf gespeichert.",
+        "selfApproved": "Abrechnung automatisch genehmigt: Niemand sonst kann sie prüfen",
         "success": "Abrechnung zur Genehmigung eingereicht",
         "thresholdCurrency": "Die Genehmigungsregeln Ihrer Organisation vergleichen Beträge in EUR, aber diese Abrechnung ist in {currency}. Bitten Sie die Administration, diese zu prüfen. Ihre Abrechnung bleibt als Entwurf gespeichert.",
         "title": "Spesenabrechnung einreichen",
@@ -764,6 +877,7 @@
           "expenseItem": "Ausgabe hinzufügen.",
           "expenseNamed": "Ausgabe {number}: {description}",
           "fixFields": "Hervorgehobene Reisedetails korrigieren.",
+          "notEnded": "Die Reise endet am {date}. Sie können ab diesem Tag einreichen.",
           "purpose": "Reisezweck beschreiben.",
           "title": "Für diese Reise noch erforderlich",
           "travelDates": "Ersten und letzten Reisetag eingeben."
@@ -782,6 +896,20 @@
       },
       "withdrawnNotice": "Sie haben Einreichung {number} zurückgezogen. Reichen Sie den Bericht erneut ein, sobald er bereit ist.",
       "withdrawnSubmission": "Diese Einreichung wurde vor einem Entscheid zurückgezogen."
+    },
+    "settings": {
+      "catalogAdopted": "Aagnoo am {date}, gültig ab {effectiveFrom}",
+      "perDiem": {
+        "adoptForeignTitle": "Di dütsche gsetzliche Verpflegigspuuschale mit de offizielle Usslandssätz übernäh",
+        "foreignAreas": "Usslandssätz: {countries} Länder und {places} Städt"
+      },
+      "tabs": {
+        "currencies": "Währige",
+        "exceptions": "Usnahme",
+        "exceptionsPending": "{label}, {count} pendänt",
+        "rates": "Sätz",
+        "review": "Überprüefe"
+      }
     },
     "settlement": {
       "adjustment": "Inklusive genehmigter Anpassung",

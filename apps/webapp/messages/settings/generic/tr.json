@@ -1185,6 +1185,7 @@
         "label": "Masraf onaylayıcısı",
         "loadFailed": "Masraf onaylayıcısı yüklenemedi.",
         "none": "Masraf onaylayıcısı yok",
+        "ownerSelfApproval": "Kuruluş sahibinin raporlarını başka kimse inceleyemeyeceğinden, bu raporlar gönderildiğinde otomatik olarak onaylanır ve bu şekilde işaretlenir; ancak eksik fiş açıklaması veya manuel olarak belirlenmiş ödenek içeren raporlar için yine de bir inceleyen gerekir.",
         "save": "Onaylayıcıyı kaydet",
         "saved": "Masraf onaylayıcısı kaydedildi",
         "saveFailed": "Masraf onaylayıcısı kaydedilemedi",
@@ -1201,7 +1202,6 @@
         "saveFailed": "Geri ödeme para birimi kaydedilemedi.",
         "title": "Geri ödeme para birimi"
       },
-      "description": "Kilometre ve harcırah talepleri için geri ödeme oranlarını ve geçerlilik sürelerini yapılandırın.",
       "effectiveFrom": "Başlangıç Tarihi",
       "effectiveTo": "Bitiş Tarihi",
       "legacy": {
@@ -1262,6 +1262,8 @@
         "withdrawTitle": "Bu oran sürümü geri çekilsin mi?"
       },
       "mileageRate": "Kilometre / km",
+      "navDescription": "Masraf raporu incelemesi, fişler, para birimleri, kilometre ve harcırah oranları ile istisnalar.",
+      "pageDescription": "Masraf raporlarını kimin inceleyeceğini, eksik fişlerin ve yabancı para birimlerinin nasıl ele alınacağını, hangi kilometre ve harcırah oranlarının geçerli olacağını ve hangi istisnaların yetkilendirileceğini seçin.",
       "perDiem": {
         "activate": "Sürümü etkinleştir",
         "add": "Oran sürümü ekle",
@@ -1289,7 +1291,6 @@
           "invalid": "Bu değeri kontrol edin.",
           "tooLong": "Bu metin çok uzun."
         },
-        "foreignAreas": "Yurt dışı oranları: {count} ülke ve yer",
         "foreignTable": "{countries} ülke ve {places} şehir için resmi yurt dışı oranlarını ({version}) içerir ve {from} ile {through} arasındaki seyahat günlerine uygulanır. Listelenmemiş ülkeler ve bölgeler resmi varsayılan kuralları takip eder; diğer her durum manuel hesaplama için işaretlenir.",
         "fullDay": "Tam gün (24 saat uzakta)",
         "germanDefaultTitle": "Almanya yasal yurt içi harcırahı",

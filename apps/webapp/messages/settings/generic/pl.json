@@ -1185,6 +1185,7 @@
         "label": "Osoba zatwierdzająca wydatki",
         "loadFailed": "Nie udało się załadować osoby zatwierdzającej wydatki.",
         "none": "Brak osoby zatwierdzającej wydatki",
+        "ownerSelfApproval": "Dopóki nikt inny nie może weryfikować raportów właściciela organizacji, są one zatwierdzane automatycznie po przesłaniu i odpowiednio oznaczane; raporty z wyjaśnieniem braku paragonu lub ręcznie ustaloną dietą nadal wymagają weryfikatora.",
         "save": "Zapisz osobę zatwierdzającą",
         "saved": "Zapisano osobę zatwierdzającą wydatki",
         "saveFailed": "Nie udało się zapisać osoby zatwierdzającej wydatki",
@@ -1201,7 +1202,6 @@
         "saveFailed": "Nie udało się zapisać waluty zwrotu kosztów.",
         "title": "Waluta zwrotu kosztów"
       },
-      "description": "Skonfiguruj stawki zwrotu kosztów i okresy obowiązywania dla przebiegu oraz diet.",
       "effectiveFrom": "Obowiązuje od",
       "effectiveTo": "Obowiązuje do",
       "legacy": {
@@ -1262,6 +1262,8 @@
         "withdrawTitle": "Wycofać tę wersję stawki?"
       },
       "mileageRate": "Przebieg / km",
+      "navDescription": "Weryfikacja raportów wydatków, rachunki, waluty, stawki kilometrówki i diet oraz wyjątki.",
+      "pageDescription": "Wybierz, kto weryfikuje raporty wydatków, jak traktowane są brakujące rachunki i waluty obce, jakie stawki kilometrówki i diet mają zastosowanie oraz które wyjątki są zatwierdzone.",
       "perDiem": {
         "activate": "Aktywuj wersję",
         "add": "Dodaj wersję stawki",
@@ -1289,7 +1291,6 @@
           "invalid": "Sprawdź tę wartość.",
           "tooLong": "Ten tekst jest za długi."
         },
-        "foreignAreas": "Stawki zagraniczne: {count} krajów i miejscowości",
         "foreignTable": "Obejmuje oficjalne stawki zagraniczne ({version}) dla {countries} krajów i {places} miast, mające zastosowanie do dni podróży od {from} do {through}. Niewymienione kraje i terytoria podlegają oficjalnym zasadom domyślnym; wszelkie inne przypadki są oznaczane do ręcznego przeliczenia.",
         "fullDay": "Pełny dzień (24 godziny nieobecności)",
         "germanDefaultTitle": "Niemiecka ustawowa dieta krajowa",

@@ -197,6 +197,7 @@
       "claimed": "Richiesto",
       "companyPaid": "Pagato dall'azienda {amount}",
       "continuedFrom": "Proseguimento di una richiesta precedente",
+      "deleteDraft": "Elimina bozza “{title}”",
       "emptyDescription": "Avvia una trasferta per raggruppare diverse spese con gli stessi dettagli di viaggio, oppure aggiungi una singola ricevuta o una spesa chilometrica. Le bozze vengono salvate automaticamente, così potrai completarle in seguito.",
       "emptyFilter": "Nessuna spesa con questo stato.",
       "emptyTitle": "Ancora nessuna spesa di viaggio",
@@ -268,6 +269,92 @@
       "emptyTitle": "Nessuna richiesta di rimborso spese di viaggio ancora presente",
       "status": "Stato",
       "type": "Tipo"
+    },
+    "perDiemPlaces": {
+      "AU": {
+        "canberra": "Canberra",
+        "sydney": "Sydney"
+      },
+      "BR": {
+        "brasilia": "Brasilia",
+        "rio-de-janeiro": "Rio de Janeiro",
+        "sao-paulo": "San Paolo"
+      },
+      "CA": {
+        "ottawa": "Ottawa",
+        "toronto": "Toronto",
+        "vancouver": "Vancouver"
+      },
+      "CH": {
+        "bern": "Berna",
+        "genf": "Ginevra"
+      },
+      "CN": {
+        "hongkong": "Hong Kong",
+        "peking": "Pechino",
+        "shanghai": "Shanghai"
+      },
+      "ES": {
+        "barcelona": "Barcellona",
+        "kanarische-inseln": "Isole Canarie",
+        "madrid": "Madrid",
+        "palma-de-mallorca": "Palma di Maiorca"
+      },
+      "FR": {
+        "paris": "Parigi e dipartimenti 77, 78, 91–95"
+      },
+      "GB": {
+        "london": "Londra"
+      },
+      "GR": {
+        "athen": "Atene"
+      },
+      "IN": {
+        "bangalore": "Bengaluru",
+        "chennai": "Chennai",
+        "kalkutta": "Calcutta",
+        "mumbai": "Mumbai",
+        "neu-delhi": "Nuova Delhi"
+      },
+      "IT": {
+        "mailand": "Milano",
+        "rom": "Roma"
+      },
+      "JP": {
+        "osaka": "Osaka",
+        "tokio": "Tokyo"
+      },
+      "PL": {
+        "breslau": "Breslavia",
+        "warschau": "Varsavia"
+      },
+      "RU": {
+        "moskau": "Mosca",
+        "st-petersburg": "San Pietroburgo"
+      },
+      "SA": {
+        "djidda": "Gedda",
+        "riad": "Riad"
+      },
+      "TR": {
+        "ankara": "Ankara",
+        "izmir": "Smirne"
+      },
+      "US": {
+        "atlanta": "Atlanta",
+        "boston": "Boston",
+        "chicago": "Chicago",
+        "houston": "Houston",
+        "los-angeles": "Los Angeles",
+        "miami": "Miami",
+        "new-york-city": "New York City",
+        "san-francisco": "San Francisco",
+        "washington-dc": "Washington, D.C."
+      },
+      "ZA": {
+        "johannesburg": "Johannesburg",
+        "kapstadt": "Città del Capo"
+      }
     },
     "report": {
       "actions": {
@@ -352,6 +439,15 @@
         "withdrawn": "ritirato"
       },
       "decideInInbox": "Approva, restituisci o rifiuta l'intera nota spese nella casella Approvazioni.",
+      "delete": {
+        "action": "Elimina bozza",
+        "description": "La bozza, le relative spese e le ricevute verranno eliminate. Questa operazione non può essere annullata.",
+        "descriptionLegacy": "La bozza, le relative spese e le ricevute verranno eliminate, insieme alla precedente bozza di richiesta a cui fa seguito. Questa operazione non può essere annullata.",
+        "done": "Bozza eliminata.",
+        "failed": "Impossibile eliminare la bozza. Riprova.",
+        "notDeletable": "Questa nota spese è già stata inviata, quindi non può più essere eliminata.",
+        "title": "Eliminare questa bozza?"
+      },
       "drafts": {
         "expenses": "{count, plural, one {# spesa} other {# spese}}",
         "noDate": "Nessuna data",
@@ -391,6 +487,7 @@
         "rejected": "Rifiutata da {name}",
         "reopened": "Riaperto per correzione da {name}",
         "returned": "Restituito per modifiche da {name}",
+        "selfApproved": "Approvato automaticamente: nessun altro revisore",
         "submitted": "Inviato da {name}",
         "title": "Cronologia",
         "withdrawn": "Ritirato da {name}"
@@ -524,6 +621,8 @@
           "assigned": "Importi assegnati a questo paese dalla circolare ufficiale",
           "atSea": "A bordo di una nave per l'intera giornata (senza imbarco o sbarco)",
           "choose": "Scegli una località",
+          "countryElsewhere": "{country} – altrove",
+          "countryPlace": "{country} – {place}",
           "elsewhere": "Altrove",
           "fallbackFlight": "Regola ufficiale: intera giornata in volo, importi per l'Austria",
           "fallbackLuxembourg": "Fallback ufficiale: non in elenco, importi per il Lussemburgo",
@@ -560,6 +659,7 @@
           "exceptional": "Questo itinerario richiede il calcolo manuale della diaria da parte di un amministratore delle note spese. Non viene calcolato automaticamente.",
           "locations": "Indica per ogni giorno di viaggio dove ti trovavi a mezzanotte e dove si è svolta la tua ultima attività lavorativa all'estero.",
           "meals": "Conferma i pasti forniti per ogni giorno di viaggio.",
+          "notReturned": "Il rientro è previsto il {date} alle {time} ({timeZone}). Potrai inviare la richiesta successivamente.",
           "overnight": "Indica se hai pernottato fuori casa.",
           "policyMissing": "La tua organizzazione non dispone di tariffe per le diarie per {dates}. Chiedi a un amministratore delle note spese di aggiungere tariffe con data nelle impostazioni delle spese di viaggio. Fino ad allora non verrà calcolato nulla.",
           "start": "Inserisci quando sei uscito di casa o dal posto di lavoro.",
@@ -617,6 +717,12 @@
         "chooseFile": "Scegli file",
         "description": "Scatta una foto o allega un PDF o un'immagine della ricevuta.",
         "downloadNamed": "Scarica {fileName}",
+        "errors": {
+          "locked": "Questa spesa non può più essere modificata.",
+          "retry": "Riprova.",
+          "tooLarge": "Il file è troppo grande. Allega un file di massimo {size} MB.",
+          "unsupportedType": "Allega un PDF o un'immagine (JPEG, PNG, WebP, GIF, BMP o TIFF)."
+        },
         "none": "Nessuna ricevuta ancora allegata.",
         "previewNamed": "Anteprima di {fileName}",
         "progress": "Avanzamento caricamento",
@@ -656,6 +762,7 @@
         "description": "Descrivi la spesa.",
         "expenseDate": "Aggiungi la data indicata sulla ricevuta.",
         "fixFields": "Correggi prima i campi evidenziati.",
+        "futureDate": "Questa data è nel futuro. Correggila o invia a partire dal {date}.",
         "paidBy": "Indica se il pagamento è stato effettuato da te o dall'azienda.",
         "receipt": "Allega la ricevuta.",
         "receiptExceptionNotAllowed": "Allega la ricevuta. La tua organizzazione non consente eccezioni per ricevute mancanti.",
@@ -678,6 +785,7 @@
         "unsavedAfterClose": "Impossibile salvare le ultime modifiche a una spesa. Riaprila per verificare.",
         "useTheirs": "Carica la versione salvata"
       },
+      "selfApprovedOn": "Approvata automaticamente il {date}: questa è la nota spese del proprietario dell'organizzazione e nessun altro poteva revisionarla.",
       "standaloneTitle": "Ricevuta singola",
       "status": {
         "approved": "Approvato",
@@ -697,13 +805,16 @@
         "changedTitle": "La nota spese è cambiata",
         "confirm": "Invia per l'approvazione",
         "description": "Controlla la nota spese salvata. Il revisore valuterà esattamente questa versione; non sarà possibile modificarla durante la revisione.",
+        "expenseRequirement": "Spesa {number}: {requirement}",
         "failed": "Si è verificato un errore. La nota spese è ancora salvata come bozza; riprova.",
         "failedTitle": "La nota spese non è stata inviata",
         "incomplete": "Mancano ancora alcuni dettagli salvati. Completa tutti i dati elencati in “Ancora necessari” e riprova.",
         "incompleteTitle": "La nota spese è incompleta",
-        "noReviewer": "Non hai altri responsabili o team manager oltre a te stesso e non è stato impostato alcun approvatore delle spese. Chiedi a un amministratore di assegnarne uno. La nota spese rimane salvata come bozza.",
+        "noReviewerAsk": "Non hai un manager o team manager diverso da te e non è stato impostato alcun approvatore per le spese. Chiedi a un amministratore di scegliere un approvatore in Impostazioni, Spese di viaggio, Revisione nota spese. La tua nota spese rimane salvata come bozza.",
+        "noReviewerAssign": "Non hai un manager o team manager diverso da te e non è stato impostato alcun approvatore per le spese. Scegli un approvatore in Revisione nota spese nelle impostazioni delle spese di viaggio. La tua nota spese rimane salvata come bozza.",
         "noReviewerTitle": "Nessuno può ancora revisionare questa nota spese",
         "notSaved": "Alcune modifiche non sono state ancora salvate. Attendi il salvataggio, quindi verifica nuovamente la nota spese.",
+        "openApproverSetting": "Apri impostazioni approvatore spese",
         "project": "{count, plural, one {Una spesa è attribuita a un progetto a cui non eri assegnato alla data della spesa. Scegli un altro progetto o richiedi a un amministratore delle spese una deroga di attribuzione. La nota spese rimane salvata come bozza.} other {# spese sono attribuite a un progetto a cui non eri assegnato alla data della spesa. Scegli un altro progetto o richiedi a un amministratore delle spese una deroga di attribuzione. La nota spese rimane salvata come bozza.}}",
         "projectTitle": "Impossibile utilizzare un progetto",
         "ready": "I dati inseriti sono stati salvati. Verifica la nota spese e inviala per l'approvazione.",
@@ -712,6 +823,8 @@
         "routing": "Le regole di approvazione della tua organizzazione non sono riuscite a individuare un revisore. Chiedi a un amministratore di controllarle. La nota spese rimane salvata come bozza.",
         "routingTitle": "Impossibile instradare la nota spese",
         "selfApproval": "Le regole di approvazione della tua organizzazione ti consentirebbero di approvare la tua stessa nota spese. Chiedi a un amministratore di modificarle. La nota spese rimane salvata come bozza.",
+        "selfApprovalBlocked": "In qualità di proprietario dell'organizzazione, le tue note spese vengono approvate automaticamente finché nessun altro può revisionarle. Questa nota spese contiene una motivazione per ricevuta mancante o un'indennità impostata manualmente, che qualcun altro deve accettare. Scegli un approvatore per le spese o modifica la nota spese. La tua nota spese rimane salvata come bozza.",
+        "selfApproved": "Nota spese approvata automaticamente: nessun altro può revisionarla",
         "success": "Nota spese inviata per l'approvazione",
         "thresholdCurrency": "Le regole di approvazione della tua organizzazione confrontano gli importi in EUR, ma questa nota spese è in {currency}. Chiedi a un amministratore di controllarle. La nota spese rimane salvata come bozza.",
         "title": "Invia nota spese",
@@ -764,6 +877,7 @@
           "expenseItem": "Aggiungi una spesa.",
           "expenseNamed": "Spesa {number}: {description}",
           "fixFields": "Correggi i dettagli del viaggio evidenziati.",
+          "notEnded": "Il viaggio termina il {date}. Puoi inviare la richiesta a partire da quel giorno.",
           "purpose": "Descrivi il motivo del viaggio.",
           "title": "Ancora necessari per questo viaggio",
           "travelDates": "Inserisci il primo e l'ultimo giorno di viaggio."
@@ -782,6 +896,20 @@
       },
       "withdrawnNotice": "Hai ritirato l'invio {number}. Invia di nuovo il report quando è pronto.",
       "withdrawnSubmission": "Questa richiesta è stata ritirata prima di una decisione."
+    },
+    "settings": {
+      "catalogAdopted": "Adottato il {date}, valido dal {effectiveFrom}",
+      "perDiem": {
+        "adoptForeignTitle": "Adotta la diaria legale tedesca con le tariffe ufficiali per l'estero",
+        "foreignAreas": "Tariffe estere: {countries} paesi e {places} città"
+      },
+      "tabs": {
+        "currencies": "Valute",
+        "exceptions": "Eccezioni",
+        "exceptionsPending": "{label}, {count} in sospeso",
+        "rates": "Tariffe",
+        "review": "Rivedi"
+      }
     },
     "settlement": {
       "adjustment": "Inclusa rettifica approvata",

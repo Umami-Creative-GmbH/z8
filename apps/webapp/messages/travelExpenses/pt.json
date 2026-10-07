@@ -197,6 +197,7 @@
       "claimed": "Solicitado",
       "companyPaid": "Pago pela empresa {amount}",
       "continuedFrom": "Continuação de uma solicitação anterior",
+      "deleteDraft": "Excluir rascunho “{title}”",
       "emptyDescription": "Inicie uma viagem para reunir várias despesas com detalhes de viagem compartilhados ou adicione um recibo avulso ou despesa de quilometragem. Os rascunhos são salvos automaticamente para que você possa finalizá-los mais tarde.",
       "emptyFilter": "Nenhuma despesa com este status.",
       "emptyTitle": "Nenhuma despesa de viagem ainda",
@@ -268,6 +269,92 @@
       "emptyTitle": "Nenhuma solicitação de despesa de viagem ainda",
       "status": "Status",
       "type": "Tipo"
+    },
+    "perDiemPlaces": {
+      "AU": {
+        "canberra": "Camberra",
+        "sydney": "Sydney"
+      },
+      "BR": {
+        "brasilia": "Brasília",
+        "rio-de-janeiro": "Rio de Janeiro",
+        "sao-paulo": "São Paulo"
+      },
+      "CA": {
+        "ottawa": "Ottawa",
+        "toronto": "Toronto",
+        "vancouver": "Vancouver"
+      },
+      "CH": {
+        "bern": "Berna",
+        "genf": "Genebra"
+      },
+      "CN": {
+        "hongkong": "Hong Kong",
+        "peking": "Pequim",
+        "shanghai": "Xangai"
+      },
+      "ES": {
+        "barcelona": "Barcelona",
+        "kanarische-inseln": "Ilhas Canárias",
+        "madrid": "Madri",
+        "palma-de-mallorca": "Palma de Maiorca"
+      },
+      "FR": {
+        "paris": "Paris e departamentos 77, 78, 91–95"
+      },
+      "GB": {
+        "london": "Londres"
+      },
+      "GR": {
+        "athen": "Atenas"
+      },
+      "IN": {
+        "bangalore": "Bengaluru",
+        "chennai": "Chennai",
+        "kalkutta": "Calcutá",
+        "mumbai": "Mumbai",
+        "neu-delhi": "Nova Deli"
+      },
+      "IT": {
+        "mailand": "Milão",
+        "rom": "Roma"
+      },
+      "JP": {
+        "osaka": "Osaka",
+        "tokio": "Tóquio"
+      },
+      "PL": {
+        "breslau": "Wrocław",
+        "warschau": "Varsóvia"
+      },
+      "RU": {
+        "moskau": "Moscou",
+        "st-petersburg": "São Petersburgo"
+      },
+      "SA": {
+        "djidda": "Jidá",
+        "riad": "Riade"
+      },
+      "TR": {
+        "ankara": "Ancara",
+        "izmir": "Izmir"
+      },
+      "US": {
+        "atlanta": "Atlanta",
+        "boston": "Boston",
+        "chicago": "Chicago",
+        "houston": "Houston",
+        "los-angeles": "Los Angeles",
+        "miami": "Miami",
+        "new-york-city": "Nova York",
+        "san-francisco": "São Francisco",
+        "washington-dc": "Washington, D.C."
+      },
+      "ZA": {
+        "johannesburg": "Joanesburgo",
+        "kapstadt": "Cidade do Cabo"
+      }
     },
     "report": {
       "actions": {
@@ -352,6 +439,15 @@
         "withdrawn": "retirado"
       },
       "decideInInbox": "Aprove, devolva ou rejeite todo o relatório na caixa de entrada de Aprovações.",
+      "delete": {
+        "action": "Excluir rascunho",
+        "description": "O rascunho, as suas despesas e os seus comprovantes são excluídos. Esta ação não pode ser desfeita.",
+        "descriptionLegacy": "O rascunho, as suas despesas e os seus comprovantes são excluídos, juntamente com o rascunho da solicitação anterior da qual ele é continuação. Esta ação não pode ser desfeita.",
+        "done": "Rascunho excluído.",
+        "failed": "Não foi possível excluir o rascunho. Tente novamente.",
+        "notDeletable": "Este relatório já foi enviado e não pode mais ser excluído.",
+        "title": "Excluir este rascunho?"
+      },
       "drafts": {
         "expenses": "{count, plural, one {# despesa} other {# despesas}}",
         "noDate": "Nenhuma data ainda",
@@ -391,6 +487,7 @@
         "rejected": "Rejeitado por {name}",
         "reopened": "Reaberto para correção por {name}",
         "returned": "Devolvido para alterações por {name}",
+        "selfApproved": "Aprovado automaticamente: nenhum outro revisor",
         "submitted": "Enviado por {name}",
         "title": "Histórico",
         "withdrawn": "Retirado por {name}"
@@ -524,6 +621,8 @@
           "assigned": "Valores que o aviso oficial atribui a este país",
           "atSea": "A bordo de um navio o dia todo (sem embarque ou desembarque)",
           "choose": "Escolha um local",
+          "countryElsewhere": "{country} – outros locais",
+          "countryPlace": "{country} – {place}",
           "elsewhere": "Qualquer outro lugar",
           "fallbackFlight": "Regra oficial: dia inteiro em voo, valores da Áustria",
           "fallbackLuxembourg": "Critério oficial: não listado, valores de Luxemburgo",
@@ -560,6 +659,7 @@
           "exceptional": "Este itinerário precisa de um cálculo manual de diárias por um administrador de despesas. Ele não é calculado automaticamente.",
           "locations": "Informe para cada dia de viagem onde você estava à meia-noite e onde foi sua última atividade profissional no exterior.",
           "meals": "Confirme as refeições fornecidas para cada dia de viagem.",
+          "notReturned": "Você retorna em {date} às {time} ({timeZone}). Você poderá enviar depois disso.",
           "overnight": "Informe se você pernoitou fora de casa.",
           "policyMissing": "Sua organização não possui diárias para {dates}. Peça a um administrador de despesas para adicionar taxas datadas nas configurações de despesas de viagem. Nada será calculado até lá.",
           "start": "Informe quando você saiu de casa ou do seu local de trabalho.",
@@ -617,6 +717,12 @@
         "chooseFile": "Escolher arquivo",
         "description": "Tire uma foto ou anexe um PDF ou imagem do comprovante.",
         "downloadNamed": "Baixar {fileName}",
+        "errors": {
+          "locked": "Esta despesa não pode mais ser editada.",
+          "retry": "Tente novamente.",
+          "tooLarge": "O arquivo é muito grande. Anexe um arquivo com no máximo {size} MB.",
+          "unsupportedType": "Anexe um PDF ou uma imagem (JPEG, PNG, WebP, GIF, BMP ou TIFF)."
+        },
         "none": "Nenhum comprovante anexado ainda.",
         "previewNamed": "Visualizar {fileName}",
         "progress": "Progresso do envio",
@@ -656,6 +762,7 @@
         "description": "Descreva a despesa.",
         "expenseDate": "Adicione a data constante no comprovante.",
         "fixFields": "Corrija os campos destacados primeiro.",
+        "futureDate": "Esta data está no futuro. Corrija-a ou envie a partir de {date}.",
         "paidBy": "Informe se foi você ou a empresa que pagou.",
         "receipt": "Anexe o comprovante.",
         "receiptExceptionNotAllowed": "Anexe o comprovante. Sua organização não permite exceções para comprovantes ausentes.",
@@ -678,6 +785,7 @@
         "unsavedAfterClose": "Não foi possível salvar suas alterações mais recentes em uma despesa. Abra-a novamente para verificar.",
         "useTheirs": "Carregar a versão salva"
       },
+      "selfApprovedOn": "Aprovado automaticamente em {date}: este é o relatório do proprietário da organização e ninguém mais pôde revisá-lo.",
       "standaloneTitle": "Comprovante avulso",
       "status": {
         "approved": "Aprovado",
@@ -697,13 +805,16 @@
         "changedTitle": "O relatório foi alterado",
         "confirm": "Enviar para aprovação",
         "description": "Verifique o relatório salvo. O revisor tomará a decisão exatamente com base nesta versão; ela não poderá ser editada enquanto estiver em revisão.",
+        "expenseRequirement": "Despesa {number}: {requirement}",
         "failed": "Algo deu errado. Seu relatório ainda está salvo como rascunho; tente novamente.",
         "failedTitle": "O relatório não foi enviado",
         "incomplete": "Alguns detalhes salvos ainda estão ausentes. Preencha tudo o que está listado em “Ainda necessário” e tente novamente.",
         "incompleteTitle": "O relatório está incompleto",
-        "noReviewer": "Você não tem outro gerente ou gerente de equipe além de você mesmo, e nenhum aprovador de despesas está configurado. Peça a um administrador para atribuir um. Seu relatório permanece salvo como rascunho.",
+        "noReviewerAsk": "Você não tem nenhum gerente ou gerente de equipe além de você mesmo, e nenhum aprovador de despesas está configurado. Peça a um administrador para escolher um aprovador de despesas em Configurações, Despesas de viagem, Revisão de relatórios de despesas. Seu relatório continuará salvo como rascunho.",
+        "noReviewerAssign": "Você não tem nenhum gerente ou gerente de equipe além de você mesmo, e nenhum aprovador de despesas está configurado. Escolha um aprovador de despesas em Revisão de relatórios de despesas nas configurações de despesas de viagem. Seu relatório continuará salvo como rascunho.",
         "noReviewerTitle": "Ninguém pode revisar este relatório ainda",
         "notSaved": "Algumas alterações ainda não foram salvas. Aguarde até que sejam salvas e revise o relatório novamente.",
+        "openApproverSetting": "Abrir configuração de aprovador de despesas",
         "project": "{count, plural, one {Uma despesa está atribuída a um projeto ao qual você não estava vinculado na data da despesa. Escolha outro projeto ou peça uma exceção de atribuição a um administrador de despesas. Seu relatório permanece salvo como rascunho.} other {# despesas estão atribuídas a um projeto ao qual você não estava vinculado na data da despesa. Escolha outro projeto ou peça uma exceção de atribuição a um administrador de despesas. Seu relatório permanece salvo como rascunho.}}",
         "projectTitle": "Um projeto não pode ser usado",
         "ready": "Suas entradas foram salvas. Revise o relatório e envie-o para aprovação.",
@@ -712,6 +823,8 @@
         "routing": "As regras de aprovação da sua organização não conseguiram encontrar um revisor. Peça a um administrador para verificá-las. Seu relatório permanece salvo como rascunho.",
         "routingTitle": "Não foi possível encaminhar o relatório",
         "selfApproval": "As regras de aprovação da sua organização permitiriam que você aprovasse seu próprio relatório. Peça a um administrador para ajustá-las. Seu relatório permanece salvo como rascunho.",
+        "selfApprovalBlocked": "Como proprietário da organização, seus relatórios são aprovados automaticamente quando ninguém mais pode revisá-los. Este relatório contém uma justificativa de comprovante ausente ou uma ajuda de custo definida manualmente, que outra pessoa deve aceitar. Escolha um aprovador de despesas ou altere o relatório. Seu relatório continuará salvo como rascunho.",
+        "selfApproved": "Relatório aprovado automaticamente: ninguém mais pode revisá-lo",
         "success": "Relatório enviado para aprovação",
         "thresholdCurrency": "As regras de aprovação da sua organização comparam valores em EUR, mas este relatório está em {currency}. Peça a um administrador para verificá-las. Seu relatório permanece salvo como rascunho.",
         "title": "Enviar relatório de despesas",
@@ -764,6 +877,7 @@
           "expenseItem": "Adicionar uma despesa.",
           "expenseNamed": "Despesa {number}: {description}",
           "fixFields": "Corrija os detalhes destacados da viagem.",
+          "notEnded": "A viagem termina em {date}. Você poderá enviar a partir desse dia.",
           "purpose": "Descreva o motivo da viagem.",
           "title": "Ainda necessário para esta viagem",
           "travelDates": "Insira o primeiro e o último dia de viagem."
@@ -782,6 +896,20 @@
       },
       "withdrawnNotice": "Você retirou o envio {number}. Envie o relatório novamente quando estiver pronto.",
       "withdrawnSubmission": "Esta submissão foi retirada antes de uma decisão."
+    },
+    "settings": {
+      "catalogAdopted": "Adotado em {date}, válido a partir de {effectiveFrom}",
+      "perDiem": {
+        "adoptForeignTitle": "Adotar as diárias legais alemãs com as taxas oficiais para o exterior",
+        "foreignAreas": "Taxas para o exterior: {countries} países e {places} cidades"
+      },
+      "tabs": {
+        "currencies": "Moedas",
+        "exceptions": "Exceções",
+        "exceptionsPending": "{label}, {count} pendente(s)",
+        "rates": "Taxas",
+        "review": "Revisão"
+      }
     },
     "settlement": {
       "adjustment": "Incluindo ajuste aprovado",

@@ -1185,6 +1185,7 @@
         "label": "Aprovador de despesas",
         "loadFailed": "Não foi possível carregar o aprovador de despesas.",
         "none": "Nenhum aprovador de despesas",
+        "ownerSelfApproval": "Como ninguém mais pode revisar os relatórios do proprietário da organização, eles são aprovados automaticamente no envio e marcados como tal; relatórios com justificativa de comprovante ausente ou com diária definida manualmente ainda precisam de um revisor.",
         "save": "Salvar aprovador",
         "saved": "Aprovador de despesas salvo",
         "saveFailed": "Falha ao salvar o aprovador de despesas",
@@ -1201,7 +1202,6 @@
         "saveFailed": "Não foi possível salvar a moeda de reembolso.",
         "title": "Moeda de reembolso"
       },
-      "description": "Configure taxas de reembolso e períodos de vigência para solicitações de quilometragem e diárias.",
       "effectiveFrom": "Vigente a partir de",
       "effectiveTo": "Vigente até",
       "legacy": {
@@ -1262,6 +1262,8 @@
         "withdrawTitle": "Revogar esta versão da taxa?"
       },
       "mileageRate": "Quilometragem / km",
+      "navDescription": "Revisão de relatórios de despesas, recibos, moedas, taxas de quilometragem e diárias, e exceções.",
+      "pageDescription": "Escolha quem revisa relatórios de despesas, como recibos ausentes e moedas estrangeiras são tratados, quais taxas de quilometragem e diárias se aplicam e quais exceções são autorizadas.",
       "perDiem": {
         "activate": "Ativar versão",
         "add": "Adicionar versão da taxa",
@@ -1289,7 +1291,6 @@
           "invalid": "Verifique este valor.",
           "tooLong": "Este texto é muito longo."
         },
-        "foreignAreas": "Taxas internacionais: {count} países e locais",
         "foreignTable": "Inclui as taxas internacionais oficiais ({version}) para {countries} países e {places} cidades, aplicadas a dias de viagem de {from} a {through}. Países e territórios não listados seguem as regras padrão oficiais; qualquer outro caso é sinalizado para cálculo manual.",
         "fullDay": "Dia inteiro (24 horas de ausência)",
         "germanDefaultTitle": "Diária doméstica legal alemã",

@@ -1185,6 +1185,7 @@
         "label": "Utgiftsgodkännare",
         "loadFailed": "Utgiftsgodkännaren kunde inte läsas in.",
         "none": "Ingen utgiftsgodkännare",
+        "ownerSelfApproval": "Eftersom ingen annan kan granska organisationsägarens rapporter godkänns de automatiskt när de skickas in och markeras som sådana; rapporter med en förklaring om saknat kvitto eller ett manuellt angett traktamente behöver fortfarande en granskare.",
         "save": "Spara godkännare",
         "saved": "Utgiftsgodkännare har sparats",
         "saveFailed": "Det gick inte att spara utgiftsgodkännaren",
@@ -1201,7 +1202,6 @@
         "saveFailed": "Det gick inte att spara ersättningsvalutan.",
         "title": "Ersättningsvaluta"
       },
-      "description": "Konfigurera ersättningsnivåer och giltighetsperioder för milersättning och traktamente.",
       "effectiveFrom": "Gäller från",
       "effectiveTo": "Gäller till",
       "legacy": {
@@ -1262,6 +1262,8 @@
         "withdrawTitle": "Vill du återkalla den här taxeversionen?"
       },
       "mileageRate": "Milersättning / km",
+      "navDescription": "Granskning av utläggsrapporter, kvitton, valutor, milersättning och traktamentessatser samt undantag.",
+      "pageDescription": "Välj vem som granskar utläggsrapporter, hur saknade kvitton och utländska valutor hanteras, vilka satser för milersättning och traktamente som tillämpas och vilka undantag som godkänns.",
       "perDiem": {
         "activate": "Aktivera version",
         "add": "Lägg till taxeversion",
@@ -1289,7 +1291,6 @@
           "invalid": "Kontrollera detta värde.",
           "tooLong": "Texten är för lång."
         },
-        "foreignAreas": "Utlandstraktamenten: {count} länder och platser",
         "foreignTable": "Inkluderar de officiella utlandstraktamentena ({version}) för {countries} länder och {places} städer, tillämpade på resdagar från {from} till och med {through}. Onämnda länder och territorier följer officiella reservregler; allt annat flaggas för manuell beräkning.",
         "fullDay": "Heldag (borta 24 timmar)",
         "germanDefaultTitle": "Tyskt lagstadgat inrikestraktamente",

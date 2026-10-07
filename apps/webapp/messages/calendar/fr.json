@@ -128,11 +128,6 @@
     }
   },
   "calendar": {
-    "calendar": {
-      "break": {
-        "titleWithDuration": "Pause – {duration}"
-      }
-    },
     "clockOutOnBehalf": {
       "confirm": "Pointer la sortie",
       "description": "Ceci crée une entrée de pointage de sortie auditable à l'heure actuelle du serveur. Si un ajustement est nécessaire par la suite, utilisez les corrections.",
@@ -293,7 +288,6 @@
       "weekSum": "Somme"
     },
     "requirements": {
-      "dayLabel": "{date} : {actual} enregistré, {required} requis, {delta} {status}.",
       "includesRunningWork": "Inclut le travail en cours",
       "status": {
         "met": "exigence satisfaite",

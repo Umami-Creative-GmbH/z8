@@ -535,10 +535,6 @@
       "absenceRequestRejected": {
         "title": "Το αίτημα απουσίας απορρίφθηκε"
       },
-      "absenceRequestSubmitted": {
-        "message": "Το αίτημά σας για {categoryName} για {dateRange} υποβλήθηκε και εκκρεμεί έγκριση.",
-        "title": "Το αίτημα απουσίας υποβλήθηκε"
-      },
       "employeeOffboardingReview": {
         "approval_handover": "Τα καθήκοντα έγκρισης χρειάζονται αντικαταστάτη",
         "clock_out": "Απαιτείται έλεγχος: καταγραφή εξόδου offboarding",
@@ -560,10 +556,6 @@
       "teamMemberAdded": {
         "message": "Προστέθηκατε στην ομάδα {teamName} από τον/την {performedByName}.",
         "title": "Προσθήκη στην ομάδα"
-      },
-      "teamMemberRemoved": {
-        "message": "Αφαιρεθήκατε από την ομάδα {teamName} από τον/την {performedByName}.",
-        "title": "Αφαίρεση από την ομάδα"
       }
     },
     "description": "Ελέγξτε ενημερώσεις, εγκρίσεις και ειδοποιήσεις συστήματος σε ένα χρονολόγιο.",

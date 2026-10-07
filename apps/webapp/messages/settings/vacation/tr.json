@@ -142,7 +142,6 @@
         "allowCarryoverDescription": "Çalışanların kullanılmayan günleri bir sonraki yıla devretmesine izin ver",
         "carryoverExpiryMonths": "Devir Süresi Sonu (ay, isteğe bağlı)",
         "carryoverExpiryMonthsDescription": "Devredilen günlerin sona ermesinden önceki ay sayısı (isteğe bağlı)",
-        "clearDate": "Tarihi temizle",
         "companyDefault": "Şirket Varsayılanı Olarak Ayarla",
         "companyDefaultDescription": "Bu politika, özel geçersiz kılma ayarı olmayan tüm çalışanlar için geçerli olacaktır. Bunu ayarlamak, mevcut tüm şirket varsayılanlarının yerini alacaktır.",
         "defaultAnnualDays": "Varsayılan Yıllık Gün Sayısı",

@@ -142,7 +142,6 @@
         "allowCarryoverDescription": "Autoriser les employés à reporter les jours non utilisés à l'année suivante",
         "carryoverExpiryMonths": "Expiration du report (mois, optionnel)",
         "carryoverExpiryMonthsDescription": "Nombre de mois avant l'expiration des jours reportés (optionnel)",
-        "clearDate": "Effacer la date",
         "companyDefault": "Définir comme valeur par défaut de l'entreprise",
         "companyDefaultDescription": "Cette politique s'appliquera à tous les employés sans dérogations spécifiques. Ce paramètre remplacera toute valeur par défaut existante de l'entreprise.",
         "defaultAnnualDays": "Jours annuels par défaut",

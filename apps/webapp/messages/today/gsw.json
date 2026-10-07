@@ -6,6 +6,7 @@
       "description": "Aaträg, wo uf en Entscheid vom Vorgesetzte warte.",
       "empty": "Es sind keini Genehmigige offe.",
       "openInbox": "Postig öffne",
+      "ownRequest": "Eigene Anfrage: Ein anderer Genehmiger entscheidet darüber.",
       "pendingAriaLabel": "Offeni Genehmigige",
       "reject": "Ablehne",
       "rejectLabel": "{title} ablehne",

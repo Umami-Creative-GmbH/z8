@@ -535,10 +535,6 @@
       "absenceRequestRejected": {
         "title": "Solicitação de ausência rejeitada"
       },
-      "absenceRequestSubmitted": {
-        "message": "Sua solicitação de {categoryName} para {dateRange} foi enviada e está aguardando aprovação.",
-        "title": "Solicitação de ausência enviada"
-      },
       "employeeOffboardingReview": {
         "approval_handover": "As funções de aprovação precisam de um substituto",
         "clock_out": "Requer revisão: registro de saída de desligamento",
@@ -560,10 +556,6 @@
       "teamMemberAdded": {
         "message": "Você foi adicionado à equipe {teamName} por {performedByName}.",
         "title": "Adicionado à equipe"
-      },
-      "teamMemberRemoved": {
-        "message": "Você foi removido da equipe {teamName} por {performedByName}.",
-        "title": "Removido da equipe"
       }
     },
     "description": "Revise atualizações, aprovações e alertas do sistema em uma única linha do tempo.",

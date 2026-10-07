@@ -142,7 +142,6 @@
         "allowCarryoverDescription": "Zezwalaj pracownikom na przenoszenie niewykorzystanych dni na kolejny rok",
         "carryoverExpiryMonths": "Ważność przeniesienia (miesiące, opcjonalnie)",
         "carryoverExpiryMonthsDescription": "Liczba miesięcy, po których przeniesione dni wygasają (opcjonalnie)",
-        "clearDate": "Wyczyść datę",
         "companyDefault": "Ustaw jako domyślne dla firmy",
         "companyDefaultDescription": "Ta polityka będzie miała zastosowanie do wszystkich pracowników bez określonych nadpisań. Ustawienie to zastąpi każdą istniejącą domyślną politykę firmy.",
         "defaultAnnualDays": "Domyślna liczba dni w roku",

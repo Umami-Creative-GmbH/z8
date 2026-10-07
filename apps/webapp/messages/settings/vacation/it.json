@@ -142,7 +142,6 @@
         "allowCarryoverDescription": "Consenti ai dipendenti di riportare i giorni non utilizzati all'anno successivo",
         "carryoverExpiryMonths": "Scadenza riporto (mesi, opzionale)",
         "carryoverExpiryMonthsDescription": "Numero di mesi prima della scadenza dei giorni riportati (opzionale)",
-        "clearDate": "Cancella data",
         "companyDefault": "Imposta come predefinito aziendale",
         "companyDefaultDescription": "Questa policy si applicherà a tutti i dipendenti senza override specifici. L'impostazione di questa opzione sostituirà qualsiasi impostazione predefinita aziendale esistente.",
         "defaultAnnualDays": "Giorni annuali predefiniti",

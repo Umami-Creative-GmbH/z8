@@ -1185,6 +1185,7 @@
         "label": "Spesengenehmiger",
         "loadFailed": "Der Spesengenehmiger konnte nicht geladen werden.",
         "none": "Kein Spesengenehmiger",
+        "ownerSelfApproval": "Solange niemand sonst die Abrechnungen des Organisationsinhabers prüfen kann, werden sie beim Einreichen automatisch genehmigt und als solche gekennzeichnet; Abrechnungen mit einer Begründung für einen fehlenden Beleg oder einer manuell festgelegten Pauschale benötigen weiterhin einen Prüfer.",
         "save": "Genehmiger speichern",
         "saved": "Spesengenehmiger gespeichert",
         "saveFailed": "Der Spesengenehmiger konnte nicht gespeichert werden",
@@ -1201,7 +1202,6 @@
         "saveFailed": "D Rückerstattigswährig hät nöd chönne gspeicheret werde.",
         "title": "Rückerstattigswährig"
       },
-      "description": "Rückerstattigssätz und Gültigkeitsziite für Kilometer- und Tagespauschale konfiguriere.",
       "effectiveFrom": "Gültig ab",
       "effectiveTo": "Gültig bis",
       "legacy": {
@@ -1262,6 +1262,8 @@
         "withdrawTitle": "Diese Tarifversion zurückziehen?"
       },
       "mileageRate": "Kilometer / km",
+      "navDescription": "Prüefig vo Spesebrichter, Beleg, Währige, Kilometer- und Tagessätz und Usnahme.",
+      "pageDescription": "Wähl us, wer Spesebrichter prüeft, wie mit fehlende Beleg und Fremdwährige umgange wird, weli Kilometer- und Tagessätz gälted und weli Usnahme bewilligt sind.",
       "perDiem": {
         "activate": "Version aktivieren",
         "add": "Tarifversion hinzufügen",
@@ -1289,7 +1291,6 @@
           "invalid": "Überprüfen Sie diesen Wert.",
           "tooLong": "Dieser Text ist zu lang."
         },
-        "foreignAreas": "Auslandssätze: {count} Länder und Orte",
         "foreignTable": "Enthält die offiziellen Auslandssätze ({version}) für {countries} Länder und {places} Städte, angewendet auf Reisetage von {from} bis {through}. Nicht aufgeführte Länder und Gebiete folgen den offiziellen Auffangregeln; alles andere wird für eine manuelle Berechnung markiert.",
         "fullDay": "Ganzer Tag (24 Stunden Abwesenheit)",
         "germanDefaultTitle": "Deutsche gesetzliche Inlandspauschale",

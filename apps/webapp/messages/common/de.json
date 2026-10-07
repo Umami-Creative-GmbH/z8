@@ -535,21 +535,12 @@
       "absenceRequestRejected": {
         "title": "Abwesenheitsantrag abgelehnt"
       },
-      "absenceRequestSubmitted": {
-        "message": "Ihre Anfrage für {categoryName} für {dateRange} wurde eingereicht und wartet auf Genehmigung.",
-        "title": "Abwesenheitsanfrage eingereicht"
-      },
-      "automaticClockOut": {
-        "message": "Du wurdest nach {duration} Minuten ununterbrochener Arbeit am {cutoff} ({timezone}) automatisch ausgestempelt, weil das Zeitlimit deiner Organisation erreicht wurde.",
-        "title": "Automatisch ausgestempelt"
-      },
       "employeeOffboardingReview": {
         "approval_handover": "Genehmigungsaufgaben erfordern eine Vertretung",
         "clock_out": "Prüfung erforderlich: Offboarding-Ausstempeln",
         "clock_repair": "Timer-Reparatur erforderlich",
         "employment_terms": "Zukünftige Anstellungsbedingungen müssen überprüft werden",
-        "future_work": "Zukünftige Arbeit muss überprüft werden",
-        "title": "Offboarding benötigt eine Prüfung"
+        "future_work": "Zukünftige Arbeit muss überprüft werden"
       },
       "newAbsenceRequest": {
         "title": "Neuer Abwesenheitsantrag"
@@ -565,10 +556,6 @@
       "teamMemberAdded": {
         "message": "Du wurdest von {performedByName} zum Team {teamName} hinzugefügt.",
         "title": "Zum Team hinzugefügt"
-      },
-      "teamMemberRemoved": {
-        "message": "Sie wurden von {performedByName} aus dem Team {teamName} entfernt.",
-        "title": "Aus dem Team entfernt"
       }
     },
     "description": "Überprüfen Sie Updates, Genehmigungen und Systemmeldungen in einer Zeitleiste.",

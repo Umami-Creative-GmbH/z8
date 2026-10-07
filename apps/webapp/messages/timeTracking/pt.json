@@ -32,16 +32,13 @@
     "correction": {
       "clockIn": "Entrada",
       "clockInDate": "Data de entrada",
-      "clockInTime": "Hora de entrada",
       "clockOut": "Saída",
       "clockOutDate": "Data de saída",
-      "clockOutTime": "Hora de saída",
       "editDescription": "Faça alterações no seu registro de tempo para hoje.",
       "editEntry": "Editar registro de tempo",
       "editTitle": "Editar Registro de Tempo",
       "errors": {
         "invalidTimeRange": "O horário de saída deve ser posterior ao horário de entrada",
-        "noChanges": "É necessário alterar pelo menos um valor da correção",
         "submitFailed": "Falha ao enviar correção",
         "updateFailed": "Falha ao atualizar registro de tempo"
       },
@@ -272,12 +269,7 @@
     "unknownCategory": "Categoria desconhecida",
     "unknownProject": "Projeto desconhecido",
     "welcomeBack": "Bem-vindo de volta, {name}",
-    "workCategory": "Categoria de Trabalho",
-    "workLocation": "Local de trabalho",
-    "workLocationHome": "Casa",
-    "workLocationOffice": "Escritório",
-    "workLocationOther": "Outro",
-    "workLocationRemote": "Remoto"
+    "workCategory": "Categoria de Trabalho"
   },
   "wellness": {
     "water": {

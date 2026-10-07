@@ -164,8 +164,6 @@
         "deactivateTitle": "Çalışan devre dışı bırakılsın mı?",
         "deactivating": "Devre dışı bırakılıyor...",
         "deactivatingStatus": "Çalışan devre dışı bırakılıyor",
-        "finalOwnerDeactivateGuidance": "Bu çalışanı devre dışı bırakmadan önce onaylanmış başka bir sahip atayın ve etkinleştirin.",
-        "finalOwnerRemoveGuidance": "Bu çalışanın erişimini kaldırmadan önce onaylanmış başka bir sahip atayın ve etkinleştirin.",
         "reactivate": "Yeniden etkinleştir",
         "reactivateDescription": "Bu işlem, mevcut çalışan kaydını kullanarak bu kuruluşa erişimi geri yükler.",
         "reactivateError": "Çalışan yeniden etkinleştirilemedi",

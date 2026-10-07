@@ -142,7 +142,6 @@
         "allowCarryoverDescription": "Allow employees to carry unused days to next year",
         "carryoverExpiryMonths": "Carryover Expiry (months, optional)",
         "carryoverExpiryMonthsDescription": "Number of months before carried-over days expire (optional)",
-        "clearDate": "Clear date",
         "companyDefault": "Set as Company Default",
         "companyDefaultDescription": "This policy will apply to all employees without specific overrides. Setting this will supersede any existing company default.",
         "defaultAnnualDays": "Default Annual Days",

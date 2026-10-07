@@ -142,7 +142,6 @@
         "allowCarryoverDescription": "Mitarbeitern erlauben, ungenutzte Tage ins nächste Jahr zu übertragen",
         "carryoverExpiryMonths": "Ablauf des Übertrags (Monate, optional)",
         "carryoverExpiryMonthsDescription": "Anzahl der Monate, bevor übertragene Tage verfallen (optional)",
-        "clearDate": "Datum löschen",
         "companyDefault": "Als Unternehmensstandard festlegen",
         "companyDefaultDescription": "Diese Richtlinie gilt für alle Mitarbeiter ohne spezifische Ausnahmen. Dies ersetzt jeden bestehenden Unternehmensstandard.",
         "defaultAnnualDays": "Standard-Jahrestage",

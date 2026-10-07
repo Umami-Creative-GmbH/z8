@@ -6,6 +6,7 @@
       "description": "Solicitações aguardando decisão do gerente.",
       "empty": "Não há aprovações pendentes.",
       "openInbox": "Abrir caixa de entrada",
+      "ownRequest": "Sua própria solicitação: outro aprovador decide.",
       "pendingAriaLabel": "Aprovações pendentes",
       "reject": "Rejeitar",
       "rejectLabel": "Rejeitar {title}",
