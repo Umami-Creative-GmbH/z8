@@ -155,6 +155,20 @@ describe("buildTravelExpenseReportReviewSections", () => {
 		).toBe("Report rejected");
 	});
 
+	it("labels an owner's self-approval as automatic, not as a reviewer's approval (#679)", () => {
+		expect(
+			travelExpenseReportDecisionLabel({
+				operationKind: "submission_activation",
+				requestOutcome: "approved",
+				assignmentOutcome: null,
+				result: { reportStatus: "approved", reason: "owner_no_other_reviewer" },
+			}),
+		).toEqual({
+			key: "approvals:approvals.evidence.reportSelfApproved",
+			fallback: "Approved automatically: no other reviewer",
+		});
+	});
+
 	it("shows an earlier cycle as history with the earlier cycles' return notes", () => {
 		const earlier = revision();
 		const { sections, decisionsBlocked } = buildTravelExpenseReportReviewSections({

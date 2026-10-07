@@ -111,6 +111,13 @@ const { TravelExpenseReportHandler } = await import(
 );
 const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
+const { db } = await import("@/db");
+const { listFinanceQueue } = await import("@/lib/travel-expenses/settlement-store");
+const { createTravelExpenseExportBatch } = await import("@/lib/travel-expenses/export-store");
+const { buildTravelExpenseExportFiles } = await import("@/lib/travel-expenses/export-csv");
+const exceptionActions = await import(
+	"@/app/[locale]/(app)/travel-expenses/receipt-exception-actions"
+);
 
 const ids = {
 	requester: "e6020000-0000-4000-8000-000000000001",
@@ -264,6 +271,60 @@ async function completeTrip(options: { companyPaidOnly?: boolean } = {}) {
 	return reportId;
 }
 
+/** A complete standalone receipt report: one employee-paid dinner, with its receipt unless `withoutReceipt`. */
+async function completeReceipt(options: { withoutReceipt?: boolean } = {}) {
+	signIn("requester");
+	const created = await actions.createStandaloneReceiptReportAction();
+	if (!created.success) throw new Error(created.error);
+	const reportId = created.data.reportId;
+	const [item] = (await load(reportId)).items;
+	if (!item) throw new Error("item missing");
+	await saveItem(reportId, item, {
+		category: "meals",
+		description: "Customer dinner",
+		amount: "64.20",
+	});
+	if (!options.withoutReceipt) expect((await upload(reportId, item.id)).status).toBe(200);
+	return { reportId, itemId: item.id };
+}
+
+/** RFC 4180 rows: quoted cells may hold commas, quotes and line breaks. */
+function csvRows(content: string): string[][] {
+	const rows: string[][] = [];
+	let row: string[] = [];
+	let cell = "";
+	let quoted = false;
+	for (let index = 0; index < content.length; index += 1) {
+		const char = content[index];
+		if (quoted) {
+			if (char === '"' && content[index + 1] === '"') {
+				cell += '"';
+				index += 1;
+			} else if (char === '"') quoted = false;
+			else cell += char;
+		} else if (char === '"') quoted = true;
+		else if (char === ",") {
+			row.push(cell);
+			cell = "";
+		} else if (char === "\n" || char === "\r") {
+			if (char === "\r" && content[index + 1] === "\n") index += 1;
+			row.push(cell);
+			rows.push(row);
+			row = [];
+			cell = "";
+		} else cell += char;
+	}
+	if (cell || row.length > 0) rows.push([...row, cell]);
+	return rows;
+}
+
+/** The requester becomes the organization owner (Better Auth member role) without a manager. */
+async function makeRequesterSoleOwner() {
+	await admin.query("update member set role = 'owner' where id = 't602-member-requester'");
+	await admin.query("update employee set role = 'admin' where id = $1", [ids.requester]);
+	await linkManager(null);
+}
+
 async function reviewed(reportId: string) {
 	const report = await load(reportId);
 	return {
@@ -272,6 +333,7 @@ async function reviewed(reportId: string) {
 			id: item.id,
 			version: item.version,
 			receiptIds: item.receipts.map((receipt) => receipt.id),
+			receiptExceptionVersion: item.receiptException.version,
 		})),
 	};
 }
@@ -538,7 +600,7 @@ describe("report submission through approval authority (#602)", () => {
 		const unrouted = await completeTrip();
 		expect(await submit(unrouted)).toEqual({
 			success: true,
-			data: { status: "no_reviewer", reason: "no_eligible_reviewer" },
+			data: { status: "no_reviewer", reason: "no_eligible_reviewer", canAssignApprover: false },
 		});
 		expect(await reportState(unrouted)).toMatchObject({ status: "draft", requests: [] });
 
@@ -556,7 +618,7 @@ describe("report submission through approval authority (#602)", () => {
 		const selfOnly = await completeTrip();
 		expect(await submit(selfOnly)).toEqual({
 			success: true,
-			data: { status: "no_reviewer", reason: "no_eligible_reviewer" },
+			data: { status: "no_reviewer", reason: "no_eligible_reviewer", canAssignApprover: false },
 		});
 	});
 
@@ -587,6 +649,135 @@ describe("report submission through approval authority (#602)", () => {
 			data: { status: "self_approval_route" },
 		});
 		expect(await reportState(selfRouted)).toMatchObject({ status: "draft", requests: [] });
+	});
+
+	it("approves the owner's reports on submit when nobody else can review them, labelled everywhere (#679)", async () => {
+		await makeRequesterSoleOwner();
+		const trip = await completeTrip();
+		const { reportId: receipt } = await completeReceipt();
+
+		for (const reportId of [trip, receipt]) {
+			expect(await submit(reportId)).toEqual({ success: true, data: { status: "self_approved" } });
+			const state = await reportState(reportId);
+			// Approved immediately: no request waits for a decision in anyone's inbox.
+			expect(state).toMatchObject({
+				status: "approved",
+				submission_count: 1,
+				revisions: 1,
+				decisions: 1,
+			});
+			expect(state.requests).toEqual([
+				expect.objectContaining({ status: "approved", approver_id: ids.requester }),
+			]);
+			const revision = await revisionOf(reportId);
+			const { rows: evidence } = await admin.query(
+				"select * from approval_decision_evidence where submitted_revision_id = $1",
+				[revision.id],
+			);
+			const { rows: reports } = await admin.query(
+				"select decided_at, submitted_at from travel_expense_report where id = $1",
+				[reportId],
+			);
+			expect(evidence).toEqual([
+				expect.objectContaining({
+					operation_kind: "submission_activation",
+					actor_kind: "system",
+					actor_employee_id: null,
+					request_outcome: "approved",
+					legacy_approval_request_id: state.requests[0]?.id,
+					receipt_idempotency_key: revision.request_cycle_key,
+					decided_at: reports[0]?.decided_at,
+					result: expect.objectContaining({
+						reportStatus: "approved",
+						reason: "owner_no_other_reviewer",
+					}),
+				}),
+			]);
+			expect(reports[0]?.decided_at).toEqual(reports[0]?.submitted_at);
+
+			// The report page says it was approved automatically.
+			signIn("requester");
+			const view = await actions.getTravelExpenseReportSubmission(reportId);
+			if (!view.success) throw new Error(view.error);
+			expect(view.data).toMatchObject({
+				status: "approved",
+				cycleOutcome: "approved",
+				reviewerName: null,
+				decision: { outcome: "approved", basis: "owner_no_other_reviewer" },
+			});
+			expect(view.data.history.map((event) => event.label)).toEqual(["submitted", "self_approved"]);
+		}
+		// The owner is not told about their own automatic approval.
+		expect(harness.notifications).toEqual([]);
+
+		// Finance sees both reports as approved and can export them, labelled.
+		const queue = await listFinanceQueue(db, { organizationId: "t602-org", filter: "all" });
+		const approved = queue.accounts.filter((account) => account.approved);
+		expect(approved.map((account) => account.source.id).toSorted()).toEqual(
+			[trip, receipt].toSorted(),
+		);
+		const created = await createTravelExpenseExportBatch(db, {
+			actor: { organizationId: "t602-org", employeeId: ids.finance, userId: "t602-finance" },
+			idempotencyKey: "t679-export",
+			selection: approved.map((account) => ({
+				reportId: account.source.id,
+				revisionId: account.basis?.revisionId ?? "",
+			})),
+		});
+		if (created.status !== "created") throw new Error(created.status);
+		const { rows: batches } = await admin.query(
+			"select manifest from travel_expense_export_batch where id = $1",
+			[created.batch.id],
+		);
+		const files = buildTravelExpenseExportFiles(batches[0]?.manifest);
+		for (const path of ["reports.csv", "expenses.csv"]) {
+			const [header, ...rows] = csvRows(files.find((file) => file.path === path)?.content ?? "");
+			const column = header?.indexOf("approval_basis") ?? -1;
+			expect(column).toBeGreaterThan(-1);
+			expect(rows.length).toBeGreaterThan(0);
+			for (const row of rows) expect(row[column]).toBe("owner_no_other_reviewer");
+		}
+	});
+
+	it("keeps normal review for an owner once someone else can review, and never self-accepts exceptions (#679)", async () => {
+		await makeRequesterSoleOwner();
+		await admin.query(
+			`insert into travel_expense_settings (organization_id, expense_approver_employee_id, missing_receipt_exceptions_allowed)
+			 values ('t602-org', $1, true)`,
+			[ids.finance],
+		);
+		const routed = await completeTrip();
+		expect(await submit(routed)).toEqual({ success: true, data: { status: "submitted" } });
+		expect(await reportState(routed)).toMatchObject({
+			status: "submitted",
+			requests: [expect.objectContaining({ status: "pending", approver_id: ids.finance })],
+		});
+
+		// Alone again: a missing-receipt exception needs someone else's acceptance.
+		await admin.query(
+			"update travel_expense_settings set expense_approver_employee_id = null where organization_id = 't602-org'",
+		);
+		const { reportId, itemId } = await completeReceipt({ withoutReceipt: true });
+		signIn("requester");
+		const item = (await load(reportId)).items.find((candidate) => candidate.id === itemId);
+		const exception = await exceptionActions.saveReceiptExceptionAction({
+			reportId,
+			itemId,
+			expectedVersion: item?.receiptException.version ?? 0,
+			requested: true,
+			reason: "The restaurant could not print a receipt",
+		});
+		expect(exception).toMatchObject({ success: true, data: { status: "saved" } });
+		expect(await submit(reportId)).toEqual({
+			success: true,
+			data: { status: "self_approval_blocked", blockers: ["receipt_exception"] },
+		});
+		expect(await reportState(reportId)).toMatchObject({
+			status: "draft",
+			submission_count: 0,
+			requests: [],
+			revisions: 0,
+		});
 	});
 
 	/**

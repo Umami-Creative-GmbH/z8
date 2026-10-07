@@ -8,11 +8,13 @@ import {
 	submitTravelExpenseReport,
 } from "@/lib/approvals/server/travel-expense-report-submission";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
+import { canManageCurrentOrganizationSettings } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 import { deletePrivateObject } from "@/lib/storage/export-s3-client";
 import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { currentReportOwner as currentOwner } from "@/lib/travel-expenses/current-owner";
+import { OWNER_SELF_APPROVAL_REASON } from "@/lib/travel-expenses/owner-self-approval";
 import {
 	parseReceiptItemDraft,
 	type ReceiptItemDraft,
@@ -332,16 +334,24 @@ export async function removeTripReportItemAction(input: {
 
 type SubmitRefusal = Exclude<
 	SubmitTravelExpenseReportResult,
-	{ kind: "submitted" | "not_found" | "not_draft" }
+	{ kind: "submitted" | "self_approved" | "not_found" | "not_draft" | "no_reviewer" }
 >;
 
 /**
- * What the employee is told: submitted, or the submission owner's refusal
- * (e.g. changed since review, incomplete, no reviewer) with its guidance data.
- * Server-side routing messages stay in the logs.
+ * What the employee is told: submitted, approved on submit (an owner alone
+ * in review, #679), or the submission owner's refusal (e.g. changed since
+ * review, incomplete, no reviewer) with its guidance data. Server-side
+ * routing messages stay in the logs.
  */
 export type SubmitTravelExpenseReportOutcome =
 	| { status: "submitted" }
+	| { status: "self_approved" }
+	| {
+			status: "no_reviewer";
+			reason: Extract<SubmitTravelExpenseReportResult, { kind: "no_reviewer" }>["reason"];
+			/** The submitter can choose the expense approver themselves (settings access). */
+			canAssignApprover: boolean;
+	  }
 	| {
 			[K in SubmitRefusal["kind"]]: { status: K } & Omit<
 				Extract<SubmitRefusal, { kind: K }>,
@@ -392,6 +402,7 @@ export async function submitTravelExpenseReportAction(input: {
 			case "not_draft":
 				return { success: false, error: "This expense report was already submitted" };
 			case "submitted":
+			case "self_approved":
 				break;
 			case "routing_failed":
 				logger.warn(
@@ -404,7 +415,16 @@ export async function submitTravelExpenseReportAction(input: {
 			case "project_ineligible":
 				return { success: true, data: { status: result.kind, itemIds: result.itemIds } };
 			case "no_reviewer":
-				return { success: true, data: { status: result.kind, reason: result.reason } };
+				return {
+					success: true,
+					data: {
+						status: result.kind,
+						reason: result.reason,
+						canAssignApprover: await canManageCurrentOrganizationSettings().catch(() => false),
+					},
+				};
+			case "self_approval_blocked":
+				return { success: true, data: { status: result.kind, blockers: result.blockers } };
 			case "threshold_currency_unsupported":
 				return { success: true, data: { status: result.kind, currency: result.currency } };
 			case "adjustment_unavailable":
@@ -423,14 +443,16 @@ export async function submitTravelExpenseReportAction(input: {
 			organizationId: owner.organizationId,
 			metadata: {
 				model: "report",
-				approverId: result.reviewerEmployeeId,
+				...(result.kind === "self_approved"
+					? { approverId: owner.employeeId, selfApproval: OWNER_SELF_APPROVAL_REASON }
+					: { approverId: result.reviewerEmployeeId }),
 				submissionCycle: result.submissionCycle,
 				submittedRevisionId: result.submittedRevisionId,
 			},
 			timestamp: new Date(),
 		}).catch((error) => logger.error({ error }, "Failed to log expense report submission"));
 		revalidatePath("/travel-expenses");
-		return { success: true, data: { status: "submitted" } };
+		return { success: true, data: { status: result.kind } };
 	} catch (error) {
 		logger.error({ error }, "Failed to submit expense report");
 		return { success: false, error: "Failed to submit expense report" };

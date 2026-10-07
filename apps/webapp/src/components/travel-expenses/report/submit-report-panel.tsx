@@ -24,6 +24,7 @@ import { receiptReportTotals } from "@/lib/travel-expenses/receipt-report";
 import { referenceRateReviewKey } from "@/lib/travel-expenses/reference-rate-conversion";
 import type { ReportView } from "@/lib/travel-expenses/report-store";
 import { reviewedItemAmount } from "@/lib/travel-expenses/report-submission";
+import { Link } from "@/navigation";
 import type { ExpenseProjectSummary } from "./expense-project-line";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
 import { pendingReceiptException } from "./pending-receipt-exception";
@@ -35,10 +36,20 @@ type Translate = ReturnType<typeof useTranslate>["t"];
 /** Why the report cannot be reviewed for submission yet; null when it can. */
 export type SubmitBlocker = "incomplete" | "unsaved" | null;
 
+/** Where an administrator chooses the expense approver (#679). */
+const EXPENSE_APPROVER_SETTING_HREF = "/settings/travel-expenses";
+
+interface OutcomeMessage {
+	title: string;
+	body: string;
+	/** A link the submitter can act on themselves. */
+	action?: { href: string; label: string };
+}
+
 function outcomeMessage(
 	t: Translate,
-	outcome: Exclude<SubmitTravelExpenseReportOutcome, { status: "submitted" }>,
-): { title: string; body: string } {
+	outcome: Exclude<SubmitTravelExpenseReportOutcome, { status: "submitted" | "self_approved" }>,
+): OutcomeMessage {
 	switch (outcome.status) {
 		case "changed_since_review":
 			return {
@@ -65,22 +76,60 @@ function outcomeMessage(
 					{ count: outcome.itemIds.length },
 				),
 			};
-		case "no_reviewer":
+		case "no_reviewer": {
+			const title = t(
+				"travelExpenses.report.submit.noReviewerTitle",
+				"No one can review this report yet",
+			);
+			if (outcome.reason === "requester_inactive") {
+				return {
+					title,
+					body: t(
+						"travelExpenses.report.submit.requesterInactive",
+						"Your employee profile is not active in this organization, so the report cannot be routed for review.",
+					),
+				};
+			}
+			return outcome.canAssignApprover
+				? {
+						title,
+						body: t(
+							"travelExpenses.report.submit.noReviewerAssign",
+							"You have no manager or team manager other than yourself, and no expense approver is set up. Choose an expense approver under Expense report review in the travel expense settings. Your report stays saved as a draft.",
+						),
+						action: {
+							href: EXPENSE_APPROVER_SETTING_HREF,
+							label: t(
+								"travelExpenses.report.submit.openApproverSetting",
+								"Open expense approver setting",
+							),
+						},
+					}
+				: {
+						title,
+						body: t(
+							"travelExpenses.report.submit.noReviewerAsk",
+							"You have no manager or team manager other than yourself, and no expense approver is set up. Ask an administrator to choose an expense approver under Settings, Travel expenses, Expense report review. Your report stays saved as a draft.",
+						),
+					};
+		}
+		case "self_approval_blocked":
 			return {
 				title: t(
 					"travelExpenses.report.submit.noReviewerTitle",
 					"No one can review this report yet",
 				),
-				body:
-					outcome.reason === "requester_inactive"
-						? t(
-								"travelExpenses.report.submit.requesterInactive",
-								"Your employee profile is not active in this organization, so the report cannot be routed for review.",
-							)
-						: t(
-								"travelExpenses.report.submit.noReviewer",
-								"You have no manager or team manager other than yourself, and no expense approver is set up. Ask an administrator to assign one. Your report stays saved as a draft.",
-							),
+				body: t(
+					"travelExpenses.report.submit.selfApprovalBlocked",
+					"As the organization owner, your reports are approved automatically while nobody else can review them. This report has a missing-receipt explanation or a manually set allowance, which someone else must accept. Choose an expense approver, or change the report. Your report stays saved as a draft.",
+				),
+				action: {
+					href: EXPENSE_APPROVER_SETTING_HREF,
+					label: t(
+						"travelExpenses.report.submit.openApproverSetting",
+						"Open expense approver setting",
+					),
+				},
 			};
 		case "self_approval_route":
 			return {
@@ -178,7 +227,7 @@ export function SubmitReportPanel({
 	const [loading, setLoading] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [report, setReport] = useState<ReportView | null>(null);
-	const [problem, setProblem] = useState<{ title: string; body: string } | null>(null);
+	const [problem, setProblem] = useState<OutcomeMessage | null>(null);
 	const totals = report ? receiptReportTotals(report.items, report.reimbursementCurrency) : null;
 
 	async function openReview() {
@@ -231,12 +280,19 @@ export function SubmitReportPanel({
 					title: t("travelExpenses.report.submit.failedTitle", "The report was not submitted"),
 					body: result.error,
 				});
-			} else if (result.data.status !== "submitted") {
-				setProblem(outcomeMessage(t, result.data));
-			} else {
-				toast.success(t("travelExpenses.report.submit.success", "Report submitted for approval"));
+			} else if (result.data.status === "submitted" || result.data.status === "self_approved") {
+				toast.success(
+					result.data.status === "self_approved"
+						? t(
+								"travelExpenses.report.submit.selfApproved",
+								"Report approved automatically: nobody else can review it",
+							)
+						: t("travelExpenses.report.submit.success", "Report submitted for approval"),
+				);
 				setOpen(false);
 				await onSubmitted();
+			} else {
+				setProblem(outcomeMessage(t, result.data));
 			}
 		} catch {
 			setProblem({
@@ -348,7 +404,17 @@ export function SubmitReportPanel({
 							<Alert variant="destructive" role="alert">
 								<IconAlertTriangle aria-hidden="true" className="size-4" />
 								<AlertTitle>{problem.title}</AlertTitle>
-								<AlertDescription>{problem.body}</AlertDescription>
+								<AlertDescription>
+									<p>{problem.body}</p>
+									{problem.action && (
+										<Link
+											className="font-medium underline underline-offset-4"
+											href={problem.action.href}
+										>
+											{problem.action.label}
+										</Link>
+									)}
+								</AlertDescription>
 							</Alert>
 						)}
 					</div>

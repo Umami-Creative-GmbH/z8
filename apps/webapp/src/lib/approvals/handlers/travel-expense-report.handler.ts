@@ -318,12 +318,16 @@ export const TravelExpenseReportHandler: ApprovalTypeHandler<TravelExpenseReport
 				},
 			];
 			if (request.status === "approved" && request.approvedAt) {
+				// #679: routing completed the owner's own request; nobody decided it.
+				const selfApproved = Boolean(request.metadata?.ownerSelfApproval);
 				timeline.push({
 					id: `${request.id}-approved`,
 					type: "approved",
-					performedBy: approver,
+					performedBy: selfApproved ? null : approver,
 					timestamp: request.approvedAt,
-					message: "Expense report approved",
+					message: selfApproved
+						? "Approved automatically: no other reviewer"
+						: "Expense report approved",
 				});
 			}
 			const requestId: string = request.id;

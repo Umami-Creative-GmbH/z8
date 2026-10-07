@@ -9,9 +9,16 @@ import {
  * manager, then the team manager, then the organization's configured expense
  * approver. The requester never reviews their own report, at any level; when
  * nobody else is eligible the report is not routed, never approved silently.
+ * The one exception is the organization owner (#679): with nobody else
+ * eligible, their report is approved on submit, and labelled as such.
  */
 
-export type ReportReviewerSource = "direct_manager" | "team_manager" | "expense_approver";
+export type ReportReviewerSource =
+	| "direct_manager"
+	| "team_manager"
+	| "expense_approver"
+	/** The organization owner, alone: nobody else can review their report (#679). */
+	| "owner_self_approval";
 
 export type ReportReviewerResult =
 	| { ok: true; reviewerId: string; source: ReportReviewerSource }
@@ -21,6 +28,8 @@ export interface ResolveReportReviewerInput
 	extends Omit<ResolveEligibleManagersInput, "requesterMode"> {
 	/** Organization setting; an active manager or admin of the organization. */
 	expenseApproverEmployeeId: string | null;
+	/** The requester's Better Auth membership in the organization is `owner`. */
+	requesterIsOrganizationOwner?: boolean;
 }
 
 function primaryFirst(
@@ -69,6 +78,9 @@ export function resolveReportReviewer(input: ResolveReportReviewerInput): Report
 		: undefined;
 	if (approver && notRequester(approver.id)) {
 		return { ok: true, reviewerId: approver.id, source: "expense_approver" };
+	}
+	if (input.requesterIsOrganizationOwner) {
+		return { ok: true, reviewerId: requester.id, source: "owner_self_approval" };
 	}
 	return { ok: false, reason: "no_eligible_reviewer" };
 }
