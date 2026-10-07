@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { Client } from "pg";
+import { getMigrateCommand } from "./drizzle-migrate-command.js";
 
 const utcPostgresOption = "-c timezone=UTC";
 
@@ -86,9 +87,7 @@ if (!databaseUrl) {
 	);
 }
 
-const migrateCommand =
-	process.env.DRIZZLE_MIGRATE_COMMAND ??
-	"pnpm exec drizzle-kit migrate --config ./drizzle.config.ts";
+const migrateCommand = getMigrateCommand();
 
 const hasExplicitSslConfig =
 	process.env.POSTGRES_SSL_MODE ||
@@ -106,14 +105,15 @@ const run = async () => {
 	try {
 		await client.query("SELECT pg_advisory_lock($1);", [lockId]);
 
-		const result = spawnSync(migrateCommand, {
-			shell: true,
+		const result = spawnSync(migrateCommand.command, migrateCommand.args, {
+			shell: migrateCommand.shell,
 			stdio: "inherit",
 		});
 
 		if (result.status !== 0) {
 			throw new Error(
 				`Migration command failed with exit code ${result.status ?? "unknown"}.`,
+				{ cause: result.error },
 			);
 		}
 	} finally {

@@ -1,11 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 
 import { checkTargetPackage, collectTarget } from "./prepare-target-runtime.mjs";
+import { getMigrateCommand } from "../../apps/webapp/scripts/drizzle-migrate-command.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -142,6 +145,37 @@ test("Next.js runtime Dockerfiles start without pnpm dependency status checks", 
 			`${dockerfile} must not invoke pnpm at runtime because pnpm may try to repair node_modules without a TTY`,
 		);
 	}
+});
+
+test("migration image applies migrations without invoking pnpm at runtime", async () => {
+	const [dockerfile, runner] = await Promise.all([
+		fs.readFile(new URL("../Dockerfile.migration", import.meta.url), "utf8"),
+		fs.readFile(new URL("../../apps/webapp/scripts/migrate-with-lock.js", import.meta.url), "utf8"),
+	]);
+	const runtimeMessage =
+		"the migration image must not invoke pnpm at runtime because pnpm may try to repair node_modules without a TTY";
+
+	const cmd = JSON.parse(dockerfile.match(/^CMD (\[.*\])\s*$/m)?.[1] ?? "null");
+	assert.deepEqual(cmd, ["node", "./scripts/migrate-with-lock.js"]);
+	assert.doesNotMatch(runner, /\bpnpm\b/, runtimeMessage);
+
+	const migrate = getMigrateCommand({});
+	assert.equal(migrate.command, process.execPath);
+	assert.equal(migrate.shell, false);
+	assert.ok(existsSync(migrate.args[0]), "the drizzle-kit CLI entry point must exist");
+	assert.deepEqual(migrate.args.slice(1), ["migrate", "--config", "./drizzle.config.ts"]);
+	// The resolved CLI path may sit in pnpm's `.pnpm` store, so compare executable and argument names.
+	for (const token of [migrate.command, ...migrate.args]) {
+		assert.doesNotMatch(path.basename(token), /^(?:pnpm|pnpx)\b/, runtimeMessage);
+	}
+});
+
+test("DRIZZLE_MIGRATE_COMMAND replaces the default migrate command", () => {
+	assert.deepEqual(getMigrateCommand({ DRIZZLE_MIGRATE_COMMAND: "echo custom migrate" }), {
+		command: "echo custom migrate",
+		args: [],
+		shell: true,
+	});
 });
 
 test("font size preferences provide a static server snapshot", async () => {
@@ -301,7 +335,10 @@ test("collectTarget lists traced migration runtime files and packages", async ()
   assert.ok(Array.isArray(result.files));
   assert.ok(Array.isArray(result.packages));
   assert.ok(result.files.includes("scripts/migrate-with-lock.js"));
+  // Traced (not listed) files use platform separators.
+  assert.ok(result.files.map((file) => file.replaceAll("\\", "/")).includes("scripts/drizzle-migrate-command.js"));
   assert.ok(result.files.includes("drizzle.config.ts"));
+  assert.ok(result.packages.includes("drizzle-kit"));
   assert.ok(result.packages.includes("pg"));
 });
 
