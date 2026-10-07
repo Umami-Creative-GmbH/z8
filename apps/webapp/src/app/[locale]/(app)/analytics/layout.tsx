@@ -6,7 +6,6 @@ import {
 	IconUsers,
 } from "@tabler/icons-react";
 import { eq } from "drizzle-orm";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { LoadingRegion } from "@/components/ui/loading-region";
@@ -15,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { getRequestSession } from "@/lib/auth/request-session";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { Link } from "@/navigation";
 import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 import { getTranslate } from "@/tolgee/server";
@@ -69,7 +69,7 @@ async function AnalyticsLayoutContent({
 }) {
 	const [t, session] = await Promise.all([getTranslate(), getRequestSession()]);
 	if (!session?.user) {
-		redirect("/sign-in");
+		return redirectWithLocale("/sign-in");
 	}
 
 	const currentEmployee = await getCurrentEmployee(session.user.id);

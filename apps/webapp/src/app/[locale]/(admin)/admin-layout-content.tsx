@@ -1,10 +1,10 @@
 import { IconShield } from "@tabler/icons-react";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
 import { getRequestSession } from "@/lib/auth/request-session";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 import { PlatformAdminHeaderActions } from "./platform-admin-header-actions";
@@ -38,12 +38,12 @@ export async function AdminLayoutContent({
 
 	// Redirect if not authenticated
 	if (!session?.user) {
-		redirect("/sign-in");
+		return redirectWithLocale("/sign-in");
 	}
 
 	// Redirect if not a platform admin
 	if (session.user.role !== "admin") {
-		redirect("/");
+		return redirectWithLocale("/");
 	}
 
 	const t = await getTranslate();
