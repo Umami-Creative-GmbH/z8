@@ -407,7 +407,7 @@ describe("audited allowance overrides (#610)", () => {
 
 		expect(await submit(reportId)).toEqual(SUBMITTED);
 		const [revision] = await revisions(reportId);
-		expect(revision?.schema_version).toBe(10);
+		expect(revision?.schema_version).toBe(11);
 		const facts = revision?.facts as {
 			items: Array<Record<string, unknown>>;
 			totals: Record<string, string>;

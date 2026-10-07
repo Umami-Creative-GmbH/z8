@@ -163,6 +163,7 @@ function requirementLabel(t: Translate, requirement: ReceiptItemRequirement, cur
 		case "conversion_missing":
 		case "conversion_unsupported":
 		case "conversion_evidence":
+		case "conversion_rate_date":
 			return conversionRequirementLabel(t, requirement, currency);
 	}
 }

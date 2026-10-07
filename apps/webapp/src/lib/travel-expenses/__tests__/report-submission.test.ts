@@ -76,6 +76,7 @@ describe("checkReportSubmission", () => {
 						rate: { base: "EUR", quote: "USD", value: "1.25" },
 						rateDate: "2026-09-14",
 						reason: "Hotel invoice rate",
+						evidence: "Hotel invoice no. 88",
 						authorizedBy: { employeeId: "admin", name: "Admin" },
 						authorizedAt: "2026-09-20T08:00:00Z",
 					},

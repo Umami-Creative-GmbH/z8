@@ -1,4 +1,4 @@
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
 import {
 	currencyMinorUnitDigits,
 	divideToUnits,
@@ -17,7 +17,9 @@ import {
  * - `card_charge`: the employee's evidenced actual charge in the reimbursement
  *   currency (e.g. the card statement line). It is used exactly, never rounded.
  * - `manual_rate`: a documented rate an expense administrator authorized,
- *   with its rate date and reason. The result is rounded once, half up, to
+ *   with its rate date (fitting the expense date), reason and evidence
+ *   reference. The administrator never authorizes a rate on their own
+ *   report (`conversion-store.ts`). The result is rounded once, half up, to
  *   the reimbursement currency's minor units.
  * Nothing is guessed: without a basis for the item's exact currency pair the
  * item is "missing" a conversion, and a result that cannot be represented is
@@ -35,6 +37,21 @@ export const CONVERSION_ROUNDING_MODE: RoundingMode = "half_up";
 export const MAX_RATE_FRACTION_DIGITS = 10;
 export const MAX_RATE_INTEGER_DIGITS = 12;
 export const MAX_CONVERSION_REASON_LENGTH = 500;
+/**
+ * Evidence reference of an authorized manual rate (e.g. "Bank statement
+ * 2026-09, line 14" or a document ID); the same bound as an allowance
+ * override's evidence (#610).
+ */
+export const MAX_RATE_EVIDENCE_LENGTH = 2000;
+/**
+ * How long before the expense date a documented rate may be dated. A rate is
+ * never dated after the expense (it cannot have been known then). 31 days
+ * still admits rates published monthly for the expense's month or the month
+ * before (official monthly conversion tables, a card issuer's monthly
+ * statement rate), while the automatic reference-rate fallback stays at 7
+ * days (`reference-rate.ts`). Older rates are refused rather than trusted.
+ */
+export const MAX_MANUAL_RATE_AGE_DAYS = 31;
 /** Largest amount of the stored `decimal(12, 2)` columns, in units. */
 const MAX_AMOUNT_UNITS = BigInt(99_999_999_999);
 const ZERO = BigInt(0);
@@ -69,6 +86,8 @@ export interface ManualRateConversion extends ConversionPair {
 	rateDate: string;
 	/** Why and from which source the administrator documented this rate. */
 	reason: string;
+	/** Where the rate can be verified: the document, statement line or reference (0131). */
+	evidence: string;
 	authorizedBy: { employeeId: string; name: string };
 	/** Canonical UTC instant of the authorization. */
 	authorizedAt: string;
@@ -105,10 +124,15 @@ export type ItemConversion = CardChargeConversion | ManualRateConversion | Refer
 
 type ConversionRounding = { rounding: { mode: RoundingMode; minorUnitDigits: number } };
 
-/** What a conversion applied, as frozen with a submission. */
+/**
+ * What a conversion applied, as frozen with a submission. A manual rate's
+ * `evidence` is absent from revisions frozen before facts version 11.
+ */
 export type AppliedConversion =
 	| { basis: "card_charge"; evidenceReceiptId: string | null }
-	| (Omit<ManualRateConversion, "sourceCurrency" | "targetCurrency"> & ConversionRounding)
+	| (Omit<ManualRateConversion, "sourceCurrency" | "targetCurrency" | "evidence"> & {
+			evidence?: string;
+	  } & ConversionRounding)
 	| (Omit<ReferenceRateConversion, "sourceCurrency" | "targetCurrency"> & ConversionRounding);
 
 export type ConversionOutcome =
@@ -244,11 +268,16 @@ export type ConversionRequirement =
 	/** The recorded conversion cannot be applied (currency or result range). */
 	| "conversion_unsupported"
 	/** A card charge needs the attachment that shows it. */
-	| "conversion_evidence";
+	| "conversion_evidence"
+	/**
+	 * An authorized rate's date no longer fits the expense date (the employee
+	 * changed the date afterwards): an administrator must document a new rate.
+	 */
+	| "conversion_rate_date";
 
 /** What keeps an item's conversion from being submittable; empty when none is needed. */
 export function conversionRequirements(
-	original: { amount: string | null; currency: string | null },
+	original: { amount: string | null; currency: string | null; expenseDate?: string | null },
 	reimbursementCurrency: string,
 	conversion: ItemConversion | null | undefined,
 ): ConversionRequirement[] {
@@ -266,10 +295,43 @@ export function conversionRequirements(
 		case "unsupported":
 			return ["conversion_unsupported"];
 		case "converted":
-			return outcome.applied.basis === "card_charge" && !outcome.applied.evidenceReceiptId
-				? ["conversion_evidence"]
-				: [];
+			if (outcome.applied.basis === "card_charge" && !outcome.applied.evidenceReceiptId) {
+				return ["conversion_evidence"];
+			}
+			// A missing expense date is reported as `expense_date` by the item itself.
+			if (
+				outcome.applied.basis === "manual_rate" &&
+				original.expenseDate &&
+				manualRateDateProblem(outcome.applied.rateDate, original.expenseDate) !== null
+			) {
+				return ["conversion_rate_date"];
+			}
+			return [];
 	}
+}
+
+export type ManualRateDateProblem = "after_expense_date" | "too_early";
+
+/**
+ * Whether a documented rate's date fits the expense date: not after it and at
+ * most `MAX_MANUAL_RATE_AGE_DAYS` before it. Both are zoneless calendar dates;
+ * an unparsable date counts as not fitting.
+ */
+export function manualRateDateProblem(
+	rateDate: string,
+	expenseDate: string,
+): ManualRateDateProblem | null {
+	let rate: ReturnType<typeof parsePlainDate>;
+	let expense: ReturnType<typeof parsePlainDate>;
+	try {
+		rate = parsePlainDate(rateDate);
+		expense = parsePlainDate(expenseDate);
+	} catch {
+		return "too_early";
+	}
+	if (comparePlainDates(rate, expense) > 0) return "after_expense_date";
+	const earliest = expense.subtract({ days: MAX_MANUAL_RATE_AGE_DAYS });
+	return comparePlainDates(rate, earliest) < 0 ? "too_early" : null;
 }
 
 /**
@@ -306,28 +368,46 @@ export interface ManualRateInput {
 	rate: string;
 	rateDate: string;
 	reason: string;
+	/** Where the rate can be verified (document, statement line, reference). */
+	evidence: string;
 }
 
 export type ManualRateFieldError =
 	| "invalid_pair"
 	| "invalid_rate"
 	| "invalid_date"
+	/** The rate is dated after the expense date. */
+	| "after_expense_date"
+	/** The rate is dated more than `MAX_MANUAL_RATE_AGE_DAYS` before the expense date. */
+	| "too_early"
+	/** The expense has no date yet, so no rate date can be checked against it. */
+	| "expense_date_missing"
 	| "required"
 	| "too_long";
 
 export type ParseManualRateResult =
-	| { ok: true; value: { rate: ExchangeRate; rateDate: string; reason: string } }
+	| {
+			ok: true;
+			value: { rate: ExchangeRate; rateDate: string; reason: string; evidence: string };
+	  }
 	| {
 			ok: false;
-			errors: Partial<Record<"pair" | "rate" | "rateDate" | "reason", ManualRateFieldError>>;
+			errors: Partial<
+				Record<"pair" | "rate" | "rateDate" | "reason" | "evidence", ManualRateFieldError>
+			>;
 	  };
 
 const PLAIN_RATE = /^(\d+)(?:\.(\d+))?$/;
 
-/** Validates an administrator's documented rate for the item's currency pair. */
+/**
+ * Validates an administrator's documented rate for the item's currency pair
+ * and expense date: the rate date must fit the expense date
+ * (`manualRateDateProblem`), and the rate needs a reason and evidence.
+ */
 export function parseManualRateInput(
 	input: ManualRateInput,
 	pair: { sourceCurrency: string; targetCurrency: string },
+	expenseDate: string | null,
 ): ParseManualRateResult {
 	const errors: Extract<ParseManualRateResult, { ok: false }>["errors"] = {};
 	const base = input.base.trim().toUpperCase();
@@ -352,14 +432,28 @@ export function parseManualRateInput(
 	} catch {
 		errors.rateDate = "invalid_date";
 	}
+	if (rateDate) {
+		if (!expenseDate) errors.rateDate = "expense_date_missing";
+		else {
+			const problem = manualRateDateProblem(rateDate, expenseDate);
+			if (problem) errors.rateDate = problem;
+		}
+	}
 
 	const reason = input.reason.trim();
 	if (!reason) errors.reason = "required";
 	else if (reason.length > MAX_CONVERSION_REASON_LENGTH) errors.reason = "too_long";
 
+	const evidence = input.evidence.trim();
+	if (!evidence) errors.evidence = "required";
+	else if (evidence.length > MAX_RATE_EVIDENCE_LENGTH) errors.evidence = "too_long";
+
 	const normalized = normalizeRate(value);
 	if (Object.keys(errors).length > 0 || !normalized) return { ok: false, errors };
-	return { ok: true, value: { rate: { base, quote, value: normalized }, rateDate, reason } };
+	return {
+		ok: true,
+		value: { rate: { base, quote, value: normalized }, rateDate, reason, evidence },
+	};
 }
 
 /**

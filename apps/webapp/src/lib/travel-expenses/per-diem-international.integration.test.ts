@@ -345,8 +345,8 @@ describe("international per diem from the daily itinerary (#611)", () => {
 		expect(await submit(reportId)).toEqual({ success: true, data: { status: "submitted" } });
 
 		const frozen = await revisionFacts(reportId);
-		expect(frozen.schema_version).toBe(10);
-		expect(frozen.material_fingerprint).toMatch(/^travel_expense_report:v10:[0-9a-f]{64}$/);
+		expect(frozen.schema_version).toBe(11);
+		expect(frozen.material_fingerprint).toMatch(/^travel_expense_report:v11:[0-9a-f]{64}$/);
 		const perDiem = frozen.facts.items[0]?.perDiem as {
 			days: Array<{ date: string; location: { area: string; basis: string; rule: string } }>;
 			meals: Array<Record<string, unknown>>;

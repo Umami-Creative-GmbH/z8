@@ -252,7 +252,7 @@ async function recordCardCharge(
 async function authorizeRate(
 	who: Person,
 	target: { reportId: string; itemId: string },
-	rate: { base: string; quote: string; rate: string },
+	rate: { base: string; quote: string; rate: string; rateDate?: string; evidence?: string },
 	expectedVersion?: number,
 ) {
 	const version = expectedVersion ?? (await item(target.reportId)).version;
@@ -261,11 +261,20 @@ async function authorizeRate(
 		...target,
 		expectedVersion: version,
 		rate: {
-			...rate,
 			rateDate: "2026-09-13",
 			reason: "Rate of the bank statement of the travel card",
+			evidence: "Card statement 2026-09, line 14",
+			...rate,
 		},
 	});
+}
+
+async function storedConversion(itemId: string) {
+	const { rows } = await admin.query(
+		"select basis, rate_evidence, rate_date::text as rate_date from travel_expense_report_item_conversion where item_id = $1",
+		[itemId],
+	);
+	return rows[0] ?? null;
 }
 
 describe("foreign-currency conversion (#607)", () => {
@@ -445,6 +454,7 @@ describe("foreign-currency conversion (#607)", () => {
 			rate: { base: "EUR", quote: "USD", value: "1.085" },
 			rateDate: "2026-09-13",
 			reason: "Rate of the bank statement of the travel card",
+			evidence: "Card statement 2026-09, line 14",
 			authorizedBy: { employeeId: ids.admin, name: "Admin" },
 			rounding: { mode: "half_up", minorUnitDigits: 2 },
 			reimbursement: { amount: "92.17", currency: "EUR" },
@@ -454,6 +464,111 @@ describe("foreign-currency conversion (#607)", () => {
 		expect(
 			await authorizeRate("admin", target, { base: "EUR", quote: "USD", rate: "1.2" }),
 		).toEqual({ success: true, data: { kind: "not_draft" } });
+	});
+
+	it("never lets an expense administrator authorize a rate on their own report", async () => {
+		signIn("admin");
+		const created = await actions.createStandaloneReceiptReportAction();
+		if (!created.success) throw new Error(created.error);
+		const own = await actions.getMyTravelExpenseReport(created.data.reportId);
+		if (!own.success || !own.data.items[0]) throw new Error("own report missing");
+		const ownItem = own.data.items[0];
+		const saved = await actions.saveReceiptItemDraftAction({
+			reportId: created.data.reportId,
+			itemId: ownItem.id,
+			expectedVersion: ownItem.version,
+			values: {
+				expenseDate: "2026-09-14",
+				category: "transport",
+				description: "Taxi in New York",
+				amount: "100.00",
+				currency: "USD",
+				paidBy: "employee",
+				accountingReference: null,
+			},
+		});
+		if (!saved.success || saved.data.status !== "saved") throw new Error("save failed");
+		const reloaded = await actions.getMyTravelExpenseReport(created.data.reportId);
+		if (!reloaded.success || !reloaded.data.items[0]) throw new Error("own report missing");
+
+		expect(
+			await authorizeRate(
+				"admin",
+				{ reportId: created.data.reportId, itemId: ownItem.id },
+				{ base: "EUR", quote: "USD", rate: "1.085" },
+				reloaded.data.items[0].version,
+			),
+		).toEqual({ success: true, data: { kind: "self_authorization" } });
+		expect(await storedConversion(ownItem.id)).toBeNull();
+	});
+
+	it("requires the rate's evidence and a rate date that fits the expense date", async () => {
+		const target = await foreignReceipt();
+		const usdRate = { base: "EUR", quote: "USD", rate: "1.085" };
+
+		expect(await authorizeRate("admin", target, { ...usdRate, evidence: "  " })).toEqual({
+			success: true,
+			data: { kind: "invalid", errors: { evidence: "required" } },
+		});
+		// The expense is dated 2026-09-14: never a later rate, at most 31 days earlier.
+		expect(await authorizeRate("admin", target, { ...usdRate, rateDate: "2026-09-15" })).toEqual({
+			success: true,
+			data: { kind: "invalid", errors: { rateDate: "after_expense_date" } },
+		});
+		expect(await authorizeRate("admin", target, { ...usdRate, rateDate: "2026-08-13" })).toEqual({
+			success: true,
+			data: { kind: "invalid", errors: { rateDate: "too_early" } },
+		});
+		expect(await storedConversion(target.itemId)).toBeNull();
+
+		expect(
+			await authorizeRate("admin", target, {
+				...usdRate,
+				rateDate: "2026-08-14",
+				evidence: "  Card statement 2026-08, line 3  ",
+			}),
+		).toMatchObject({ success: true, data: { kind: "saved" } });
+		expect(await storedConversion(target.itemId)).toEqual({
+			basis: "manual_rate",
+			rate_evidence: "Card statement 2026-08, line 3",
+			rate_date: "2026-08-14",
+		});
+		expect((await item(target.reportId)).conversion).toMatchObject({
+			basis: "manual_rate",
+			evidence: "Card statement 2026-08, line 3",
+		});
+		// The database refuses a manual rate without evidence, and evidence on another basis.
+		await expect(
+			admin.query(
+				"update travel_expense_report_item_conversion set rate_evidence = null where item_id = $1",
+				[target.itemId],
+			),
+		).rejects.toThrow(/rate_evidence_check/);
+
+		// Moving the expense date away from the rate date asks for a new rate.
+		signIn("requester");
+		const current = await item(target.reportId);
+		const moved = await actions.saveReceiptItemDraftAction({
+			reportId: target.reportId,
+			itemId: target.itemId,
+			expectedVersion: current.version,
+			values: {
+				expenseDate: "2026-09-20",
+				category: "transport",
+				description: "Taxi to the customer in New York",
+				amount: "100.00",
+				currency: "USD",
+				paidBy: "employee",
+				accountingReference: null,
+			},
+		});
+		expect(moved).toMatchObject({ success: true, data: { status: "saved" } });
+		expect(await submit(target.reportId)).toMatchObject({
+			data: {
+				status: "incomplete",
+				missing: { items: [{ id: target.itemId, missing: ["conversion_rate_date"] }] },
+			},
+		});
 	});
 
 	it("drops a conversion recorded for another currency once the receipt currency changes", async () => {

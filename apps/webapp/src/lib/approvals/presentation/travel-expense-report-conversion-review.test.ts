@@ -73,6 +73,28 @@ describe("conversionReviewRows (#607)", () => {
 		]);
 	});
 
+	it("shows an authorized rate's evidence reference frozen from facts version 11", () => {
+		const rows = conversionReviewRows(
+			{
+				...item,
+				conversion: {
+					basis: "manual_rate",
+					rate: { base: "EUR", quote: "USD", value: "1.085" },
+					rateDate: "2026-09-13",
+					reason: "Bank statement rate",
+					evidence: "Card statement 2026-09, line 14",
+					authorizedBy: { employeeId: "admin-1", name: "Alex Admin" },
+					authorizedAt: "2026-09-20T08:00:00Z",
+					rounding: { mode: "half_up", minorUnitDigits: 2 },
+					reimbursement: { amount: "92.17", currency: "EUR" },
+				},
+			},
+			{},
+		);
+		expect(values(rows).at(-1)).toEqual(["Rate evidence", "Card statement 2026-09, line 14"]);
+		expect(rows.at(-1)?.label.key).toBe("approvals:approvals.evidence.conversionRateEvidence");
+	});
+
 	it("shows an approved reference rate with its source, publication and fallback (#608)", () => {
 		const rows = conversionReviewRows(
 			{

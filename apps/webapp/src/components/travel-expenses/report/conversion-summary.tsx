@@ -87,6 +87,13 @@ export function ConversionSummary({
 					<dd>{conversion.authorizedBy.name}</dd>
 					<dt>{t("travelExpenses.report.conversion.reason", "Documentation")}</dt>
 					<dd className="whitespace-pre-wrap">{conversion.reason}</dd>
+					{/* Absent from submissions frozen before facts version 11. */}
+					{conversion.evidence && (
+						<>
+							<dt>{t("travelExpenses.report.conversion.rateEvidence", "Rate evidence")}</dt>
+							<dd className="whitespace-pre-wrap break-words">{conversion.evidence}</dd>
+						</>
+					)}
 				</dl>
 			)}
 		</div>

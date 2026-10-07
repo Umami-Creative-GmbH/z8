@@ -114,6 +114,7 @@ const rateInput = itemInput.extend({
 		rate: z.string().max(40),
 		rateDate: z.string().max(10),
 		reason: z.string().max(2000),
+		evidence: z.string().max(4000),
 	}),
 });
 

@@ -11,7 +11,8 @@ const text = (key: string, fallback: string): ApprovalInboxLocalizedText => ({
 /**
  * Review rows of a foreign-currency expense's frozen conversion (#607): the
  * reimbursed amount, a visibly distinct basis, and the card charge evidence
- * or the authorized rate with its date, rounding, authorizer and reason.
+ * or the authorized rate with its date, rounding, authorizer, reason and
+ * evidence reference (v11+).
  * Empty for an expense in the reimbursement currency.
  */
 export function conversionReviewRows(
@@ -100,6 +101,10 @@ export function conversionReviewRows(
 		roundingRow,
 		{ label: text("conversionAuthorizedBy", "Authorized by"), value: conversion.authorizedBy.name },
 		{ label: text("conversionReason", "Documentation"), value: conversion.reason },
+		// Frozen from facts version 11; earlier revisions recorded none.
+		...(conversion.evidence
+			? [{ label: text("conversionRateEvidence", "Rate evidence"), value: conversion.evidence }]
+			: []),
 	);
 	return rows;
 }

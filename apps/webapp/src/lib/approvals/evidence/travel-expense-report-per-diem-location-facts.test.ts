@@ -140,7 +140,7 @@ function input(row: Partial<TravelExpenseReportPerDiemRow> = {}): TravelExpenseR
 describe("frozen daily per diem locations", () => {
 	it("freezes each day's location decision, the answers and the table edition", () => {
 		const facts = buildTravelExpenseReportSubmittedFacts(input());
-		expect(facts.schemaVersion).toBe(10);
+		expect(facts.schemaVersion).toBe(11);
 		const perDiem = facts.items[0]?.perDiem;
 		// Paris arrival 39; Geneva full day 70 - breakfast 14 (20 % of 70); departure 47 - 14.
 		expect(perDiem?.days.map((day) => [day.location?.area, day.rate, day.amount])).toEqual([

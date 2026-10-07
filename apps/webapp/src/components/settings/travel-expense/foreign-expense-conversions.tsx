@@ -48,6 +48,8 @@ import type { ForeignDraftItem } from "@/lib/travel-expenses/conversion-store";
 import {
 	appliedConversion,
 	MAX_CONVERSION_REASON_LENGTH,
+	MAX_MANUAL_RATE_AGE_DAYS,
+	MAX_RATE_EVIDENCE_LENGTH,
 	type ManualRateFieldError,
 	parseManualRateInput,
 } from "@/lib/travel-expenses/currency-conversion";
@@ -71,6 +73,22 @@ function rateErrorMessage(t: Translate, code: ManualRateFieldError | undefined) 
 			);
 		case "invalid_date":
 			return t("settings.travelExpenses.rates.errors.date", "Enter the date of the rate.");
+		case "after_expense_date":
+			return t(
+				"settings.travelExpenses.rates.errors.afterExpenseDate",
+				"The rate cannot be dated after the expense.",
+			);
+		case "too_early":
+			return t(
+				"settings.travelExpenses.rates.errors.tooEarly",
+				"Use a rate dated at most {days} days before the expense.",
+				{ days: MAX_MANUAL_RATE_AGE_DAYS },
+			);
+		case "expense_date_missing":
+			return t(
+				"settings.travelExpenses.rates.errors.expenseDateMissing",
+				"The expense has no date yet. Ask the employee to add it first.",
+			);
 		case "required":
 			return t(
 				"settings.travelExpenses.rates.errors.reasonRequired",
@@ -79,6 +97,15 @@ function rateErrorMessage(t: Translate, code: ManualRateFieldError | undefined) 
 		case "too_long":
 			return t("settings.travelExpenses.rates.errors.tooLong", "This text is too long.");
 	}
+}
+
+function evidenceErrorMessage(t: Translate, code: ManualRateFieldError | undefined) {
+	return code === "required"
+		? t(
+				"settings.travelExpenses.rates.errors.evidenceRequired",
+				"Name the document or statement line that shows the rate.",
+			)
+		: rateErrorMessage(t, code);
 }
 
 /** Records a documented rate for one foreign-currency expense. */
@@ -100,6 +127,7 @@ function ManualRateDialog({
 			rate: "",
 			rateDate: expense.expenseDate ?? "",
 			reason: "",
+			evidence: "",
 		},
 		onSubmit: async ({ value }) => {
 			const base = value.direction === "source" ? pair.sourceCurrency : pair.targetCurrency;
@@ -108,7 +136,14 @@ function ManualRateDialog({
 				reportId: expense.reportId,
 				itemId: expense.itemId,
 				expectedVersion: expense.itemVersion,
-				rate: { base, quote, rate: value.rate, rateDate: value.rateDate, reason: value.reason },
+				rate: {
+					base,
+					quote,
+					rate: value.rate,
+					rateDate: value.rateDate,
+					reason: value.reason,
+					evidence: value.evidence,
+				},
 			});
 			if (!result.success) {
 				toast.error(
@@ -131,6 +166,14 @@ function ManualRateDialog({
 						t(
 							"settings.travelExpenses.rates.outOfRange",
 							"With this rate the expense would round to nothing or exceed the allowed amount.",
+						),
+					);
+					return;
+				case "self_authorization":
+					toast.error(
+						t(
+							"settings.travelExpenses.rates.self",
+							"You cannot authorize a rate on your own report. Ask another expense administrator.",
 						),
 					);
 					return;
@@ -190,8 +233,10 @@ function ManualRateDialog({
 									rate: values.rate,
 									rateDate: values.rateDate,
 									reason: values.reason,
+									evidence: values.evidence,
 								},
 								pair,
+								expense.expenseDate,
 							);
 							const preview =
 								parsed.ok && expense.amount
@@ -207,8 +252,21 @@ function ManualRateDialog({
 											},
 										)
 									: null;
+							// A rate date that cannot fit the expense date is shown right away;
+							// other client checks only gate the preview while typing.
+							const dateProblem =
+								!parsed.ok &&
+								(parsed.errors.rateDate === "after_expense_date" ||
+									parsed.errors.rateDate === "too_early" ||
+									parsed.errors.rateDate === "expense_date_missing")
+									? parsed.errors.rateDate
+									: undefined;
 							const fieldError = (field: "rate" | "rateDate" | "reason") =>
-								rateErrorMessage(t, serverErrors[field]);
+								rateErrorMessage(
+									t,
+									serverErrors[field] ?? (field === "rateDate" ? dateProblem : undefined),
+								);
+							const evidenceError = evidenceErrorMessage(t, serverErrors.evidence);
 							return (
 								<>
 									<div className="grid gap-4 sm:grid-cols-[1fr_1fr]">
@@ -300,6 +358,32 @@ function ManualRateDialog({
 											</TFormItem>
 										)}
 									</form.Field>
+									<form.Field name="evidence">
+										{(field) => (
+											<TFormItem>
+												<TFormLabel hasError={!!evidenceError}>
+													{t("settings.travelExpenses.rates.evidence", "Rate evidence")}
+												</TFormLabel>
+												<TFormControl hasError={!!evidenceError}>
+													<Input
+														name="evidence"
+														autoComplete="off"
+														maxLength={MAX_RATE_EVIDENCE_LENGTH}
+														value={field.state.value}
+														onChange={(event) => field.handleChange(event.target.value)}
+														onBlur={field.handleBlur}
+													/>
+												</TFormControl>
+												<TFormDescription>
+													{t(
+														"settings.travelExpenses.rates.evidenceDescription",
+														"Where the rate can be verified, e.g. the card statement and line, or the document number of the published rate.",
+													)}
+												</TFormDescription>
+												<TFormMessage>{evidenceError}</TFormMessage>
+											</TFormItem>
+										)}
+									</form.Field>
 									<p className="text-sm" aria-live="polite">
 										{preview
 											? t("settings.travelExpenses.rates.preview", "Counts as {amount}.", {
@@ -311,7 +395,7 @@ function ManualRateDialog({
 												})
 											: t(
 													"settings.travelExpenses.rates.noPreview",
-													"Enter a valid rate, date and documentation to see the result.",
+													"Enter a valid rate, date, documentation and evidence to see the result.",
 												)}
 									</p>
 									<DialogFooter>

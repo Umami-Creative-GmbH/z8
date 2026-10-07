@@ -56,6 +56,11 @@ export function conversionRequirementLabel(
 				"travelExpenses.report.requirements.conversionEvidence",
 				"Select the attachment that shows the card charge.",
 			);
+		case "conversion_rate_date":
+			return t(
+				"travelExpenses.report.requirements.conversionRateDate",
+				"The authorized rate's date no longer fits the expense date. Enter your card charge, or ask an expense administrator to document a rate for the new date.",
+			);
 	}
 }
 
