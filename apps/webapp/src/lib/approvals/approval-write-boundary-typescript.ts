@@ -63,8 +63,6 @@ type Provenance =
 	| "drizzle_node_pg_namespace"
 	| "drizzle_factory"
 	| "drizzle_sql"
-	| "effect_generator_adapter"
-	| "effect_namespace"
 	| "pg_namespace"
 	| "pg_pool_constructor"
 	| "schema_namespace"
@@ -339,18 +337,14 @@ function isDatabaseServiceModule(
 	moduleName: string,
 	fileName: string,
 ): boolean {
-	if (DATABASE_SERVICE_MODULES.has(moduleName)) return true;
-	if (!moduleName.startsWith(".")) return false;
-	const resolved = relativeModulePath(fileName, moduleName);
-	return [...DATABASE_SERVICE_MODULES].some((module) =>
-		resolved.endsWith(`/apps/webapp/src/${module.slice(2)}`),
+	return (
+		moduleName === "@/lib/effect/services/database.service" ||
+		(moduleName.startsWith(".") &&
+			relativeModulePath(fileName, moduleName).endsWith(
+				"/apps/webapp/src/lib/effect/services/database.service",
+			))
 	);
 }
-
-const EFFECT_MODULES = new Set(["effect"]);
-const DATABASE_SERVICE_MODULES = new Set([
-	"@/lib/effect/services/database.service",
-]);
 
 export function isApprovalWriteDatabaseServiceModuleSpecifier(
 	moduleName: string,
@@ -629,10 +623,6 @@ function analyzeApprovalWriteMutationsInContext(
 		ts.FunctionLikeDeclaration
 	>();
 	const possibleHelperCalls: ts.CallExpression[] = [];
-	const effectGeneratorCallbacks: Array<{
-		parameter: ts.BindingName;
-		target: ts.Expression;
-	}> = [];
 	const enclosingFunction = (node: ts.Node): ts.SignatureDeclaration | null => {
 		for (let parent = node.parent; parent; parent = parent.parent) {
 			if (ts.isFunctionLikeDeclaration(parent)) return parent;
@@ -1045,8 +1035,7 @@ function analyzeApprovalWriteMutationsInContext(
 			const moduleName = node.moduleSpecifier.text;
 			const bindings = node.importClause.namedBindings;
 			if (bindings && ts.isNamespaceImport(bindings)) {
-				if (EFFECT_MODULES.has(moduleName)) addRoot(bindings.name, "effect_namespace");
-				else if (moduleName === "drizzle-orm")
+				if (moduleName === "drizzle-orm")
 					addRoot(bindings.name, "drizzle_namespace");
 				else if (moduleName === "drizzle-orm/node-postgres") {
 					addRoot(bindings.name, "drizzle_node_pg_namespace");
@@ -1065,9 +1054,7 @@ function analyzeApprovalWriteMutationsInContext(
 					)
 						? TABLE_EXPORTS[importedName]
 						: undefined;
-					if (EFFECT_MODULES.has(moduleName) && importedName === "Effect") {
-						addRoot(element.name, "effect_namespace");
-					} else if (table) addRoot(element.name, `table:${table}`);
+					if (table) addRoot(element.name, `table:${table}`);
 					else if (moduleName === "drizzle-orm" && importedName === "sql") {
 						addRoot(element.name, "drizzle_sql");
 					} else if (
@@ -1187,17 +1174,6 @@ function analyzeApprovalWriteMutationsInContext(
 			}
 			const callback = node.arguments[0];
 			if (
-				access?.name === "gen" &&
-				callback &&
-				(ts.isArrowFunction(callback) || ts.isFunctionExpression(callback)) &&
-				callback.parameters[0]
-			) {
-				effectGeneratorCallbacks.push({
-					parameter: callback.parameters[0].name,
-					target: access.target,
-				});
-			}
-			if (
 				access?.name === "transaction" &&
 				callback &&
 				(ts.isArrowFunction(callback) || ts.isFunctionExpression(callback)) &&
@@ -1265,14 +1241,6 @@ function analyzeApprovalWriteMutationsInContext(
 			addTypedBinding(element.name, applyProperty(provenance, propertyName));
 		}
 	};
-	for (const callback of effectGeneratorCallbacks) {
-		const target = unwrap(callback.target);
-		if (!ts.isIdentifier(target)) continue;
-		const symbol = checker.getSymbolAtLocation(target);
-		if (symbol && roots.get(symbol)?.has("effect_namespace")) {
-			addTypedBinding(callback.parameter, "effect_generator_adapter");
-		}
-	}
 	for (const declaration of typedDeclarations) {
 		addTypedBinding(declaration.name, typeProvenance(declaration.type));
 	}
@@ -1503,18 +1471,6 @@ function analyzeApprovalWriteMutationsInContext(
 				: new Set();
 		}
 		if (ts.isCallExpression(candidate)) {
-			if (
-				candidate.arguments.length === 1 &&
-				candidate.arguments[0] &&
-				resolveExpression(candidate.expression, usePosition, depth + 1).has(
-					"effect_generator_adapter",
-				) &&
-				resolveExpression(candidate.arguments[0], usePosition, depth + 1).has(
-					"database_service_tag",
-				)
-			) {
-				return new Set(["approval_db_service"]);
-			}
 			const moduleName =
 				candidate.arguments[0] &&
 				ts.isStringLiteralLikeNode(candidate.arguments[0])
