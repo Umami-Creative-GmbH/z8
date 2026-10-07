@@ -115,6 +115,7 @@ const { db } = await import("@/db");
 const { listFinanceQueue } = await import("@/lib/travel-expenses/settlement-store");
 const { createTravelExpenseExportBatch } = await import("@/lib/travel-expenses/export-store");
 const { buildTravelExpenseExportFiles } = await import("@/lib/travel-expenses/export-csv");
+const { processApprovalDeliveries } = await import("@/lib/approvals/delivery/owner");
 const exceptionActions = await import(
 	"@/app/[locale]/(app)/travel-expenses/receipt-exception-actions"
 );
@@ -737,6 +738,71 @@ describe("report submission through approval authority (#602)", () => {
 			expect(rows.length).toBeGreaterThan(0);
 			for (const row of rows) expect(row[column]).toBe("owner_no_other_reviewer");
 		}
+	});
+
+	it("records an owner's self-approval like a decision, also through a policy that only names them (#679)", async () => {
+		await makeRequesterSoleOwner();
+		await admin.query(
+			`insert into approval_delivery_control (organization_id, workflow_type, provider, activated_at)
+			 values ('t602-org', 'travel_expense', 'telegram', now())`,
+		);
+		// Every stage of the matching policy resolves to the owner: nobody else is named.
+		await admin.query(
+			`insert into approval_policy (id, organization_id, name, is_active, priority, created_by, updated_at)
+			 values ($1, 't602-org', 'T679 owner', true, 1, 't602-manager', now())`,
+			[ids.policy],
+		);
+		await admin.query(
+			`insert into approval_policy_stage (id, organization_id, policy_id, step_order, label, approver_type,
+			   approver_employee_id, fallback_behavior, updated_at)
+			 values ($1, 't602-org', $2, 1, 'Owner', 'specific_employee', $3, 'fail', now())`,
+			[ids.firstStage, ids.policy, ids.requester],
+		);
+		const reportId = await completeTrip();
+		expect(await submit(reportId)).toEqual({ success: true, data: { status: "self_approved" } });
+
+		const state = await reportState(reportId);
+		expect(state).toMatchObject({ status: "approved", revisions: 1, decisions: 1 });
+		const requestId = state.requests[0]?.id;
+		const revision = await revisionOf(reportId);
+		const { rows: chains } = await admin.query(
+			"select id from approval_chain_instance where entity_id = $1 and status = 'approved'",
+			[reportId],
+		);
+		expect(revision.legacy_chain_instance_id).toBe(chains[0]?.id);
+		const { rows: evidence } = await admin.query(
+			`select d.legacy_chain_stage_id, s.approval_request_id from approval_decision_evidence d
+			 join approval_chain_stage_instance s on s.id = d.legacy_chain_stage_id
+			 where d.submitted_revision_id = $1`,
+			[revision.id],
+		);
+		expect(evidence).toEqual([expect.objectContaining({ approval_request_id: requestId })]);
+
+		// The decision log names the owner's automatic approval of the request.
+		const { rows: audit } = await admin.query(
+			`select performed_by, changes::jsonb as changes, metadata::jsonb as metadata from audit_log
+			 where entity_type = 'approval_request' and entity_id = $1 and action = 'approve'`,
+			[requestId],
+		);
+		expect(audit).toEqual([
+			expect.objectContaining({
+				performed_by: "t602-requester",
+				changes: expect.objectContaining({ from: "pending", to: "approved" }),
+				metadata: expect.objectContaining({ selfApproval: "owner_no_other_reviewer" }),
+			}),
+		]);
+
+		// The cycle's decided intent is written; nothing waits, so no card is ever planned.
+		const { rows: intents } = await admin.query(
+			"select event, legacy_cycle_id from approval_delivery_intent where source_id = $1",
+			[reportId],
+		);
+		expect(intents).toEqual([{ event: "decided", legacy_cycle_id: chains[0]?.id }]);
+		await processApprovalDeliveries({ organizationId: "t602-org", limit: 10 });
+		const { rows: work } = await admin.query(
+			"select id from approval_delivery_work where organization_id = 't602-org'",
+		);
+		expect(work).toEqual([]);
 	});
 
 	it("keeps normal review for an owner once someone else can review, and never self-accepts exceptions (#679)", async () => {

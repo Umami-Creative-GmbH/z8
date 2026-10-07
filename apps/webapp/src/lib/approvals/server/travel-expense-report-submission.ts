@@ -54,6 +54,7 @@ import {
 	recordTravelExpenseReportOwnerSelfApproval,
 	verifyTravelExpenseReportLifecycle,
 } from "../evidence/travel-expense-report-submission";
+import { createApprovalAuditLogger } from "../infrastructure/audit-logger";
 import { resolvePolicyAndCreateApproval } from "../policies/chain-service";
 import {
 	APPROVAL_AMOUNT_THRESHOLD_CURRENCY,
@@ -474,10 +475,9 @@ export async function submitTravelExpenseReport(
 				throw failure;
 			}
 			const routing = routingExit.value;
-			// The owner's default request, completed without a policy; any other
-			// completed route (a policy of self stages) is still refused.
-			const selfApproved =
-				ownerAlone && routing.kind === "auto_completed" && routing.chainInstanceId === null;
+			// The owner alone: their default request, or a matching policy whose
+			// stages all named them, completed. Anyone else's completed route is refused.
+			const selfApproved = ownerAlone && routing.kind === "auto_completed";
 			if (routing.kind === "auto_completed" && !selfApproved) {
 				refuse({ kind: "self_approval_route" });
 			}
@@ -567,8 +567,30 @@ export async function submitTravelExpenseReport(
 					organizationId: owner.organizationId,
 					revision,
 					approvalRequestId: routing.approvalRequestId,
+					chainStageId: lifecycle.chainStageId,
 				});
-				// No lifecycle intent: no request waits for a decision, so no card is sent.
+				// The decision log entry a reviewer's approval writes, naming the basis.
+				await Effect.runPromise(
+					createApprovalAuditLogger(dbService).log({
+						organizationId: owner.organizationId,
+						approvalId: routing.approvalRequestId,
+						approvalType: "travel_expense_report",
+						entityId: input.reportId,
+						action: "approve",
+						performedBy: owner.userId,
+						previousStatus: "pending",
+						newStatus: "approved",
+						metadata: { selfApproval: OWNER_SELF_APPROVAL_REASON },
+					}),
+				);
+				// The cycle's `decided` intent (#623): no request waits, so no card is planned.
+				deliveryIntent = await recordTravelExpenseReportDeliveryIntent(tx, {
+					organizationId: owner.organizationId,
+					reportId: input.reportId,
+					approvalRequestId: routing.approvalRequestId,
+					revision: revision.legacy,
+					event: "decided",
+				});
 				return {
 					kind: "self_approved",
 					approvalRequestId: routing.approvalRequestId,

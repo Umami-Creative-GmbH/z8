@@ -216,7 +216,11 @@ export function travelExpenseReportDecisionLabel(
 		return text("reportReturnedForChanges", "Report returned for changes");
 	// #679: no reviewer decided; the owner's report approved itself on submit.
 	if (isOwnerSelfApprovalDecision(decision))
-		return text("reportSelfApproved", "Approved automatically: no other reviewer");
+		// A static key, so the Tolgee extractor sees it.
+		return {
+			key: "approvals:approvals.evidence.reportSelfApproved",
+			fallback: "Approved automatically: no other reviewer",
+		};
 	if (decision.requestOutcome === "approved") return text("reportApproved", "Report approved");
 	if (decision.requestOutcome === "rejected") return text("reportRejected", "Report rejected");
 	if (decision.assignmentOutcome === "approved")

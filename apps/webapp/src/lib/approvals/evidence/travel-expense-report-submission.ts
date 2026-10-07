@@ -109,7 +109,12 @@ export async function verifyTravelExpenseReportLifecycle(
 		reportId: string;
 		routing: ResolvePolicyAndCreateApprovalResult;
 	},
-): Promise<{ chainInstanceId: string | null; approverEmployeeId: string }> {
+): Promise<{
+	chainInstanceId: string | null;
+	/** The chain stage the request belongs to; null without a chain. */
+	chainStageId: string | null;
+	approverEmployeeId: string;
+}> {
 	const requests = await database
 		.select({
 			id: approvalRequest.id,
@@ -132,9 +137,10 @@ export async function verifyTravelExpenseReportLifecycle(
 		throw new ApprovalEvidenceError("evidence_incomplete", { field: "legacy_lifecycle" });
 	}
 	const approverEmployeeId = request.approverId;
+	// A completed route has its chain too when a policy of self stages matched.
 	const chainInstanceId =
-		input.routing.kind === "chain_created" ? input.routing.chainInstanceId : null;
-	if (!chainInstanceId) return { chainInstanceId: null, approverEmployeeId };
+		input.routing.kind === "default_created" ? null : input.routing.chainInstanceId;
+	if (!chainInstanceId) return { chainInstanceId: null, chainStageId: null, approverEmployeeId };
 	const [chains, stages] = await Promise.all([
 		database
 			.select({ id: approvalChainInstance.id })
@@ -160,10 +166,11 @@ export async function verifyTravelExpenseReportLifecycle(
 			)
 			.limit(2),
 	]);
-	if (chains.length !== 1 || stages.length !== 1) {
+	const stage = stages[0];
+	if (chains.length !== 1 || stages.length !== 1 || !stage) {
 		throw new ApprovalEvidenceError("evidence_incomplete", { field: "legacy_lifecycle" });
 	}
-	return { chainInstanceId, approverEmployeeId };
+	return { chainInstanceId, chainStageId: stage.id, approverEmployeeId };
 }
 
 const OWNER_SELF_APPROVAL_COMMAND = "travel-expense-report-owner-self-approval:v1";
@@ -181,6 +188,8 @@ export async function recordTravelExpenseReportOwnerSelfApproval(
 		organizationId: string;
 		revision: TravelExpenseReportSubmittedRevisionRecord;
 		approvalRequestId: string;
+		/** The completed stage of a policy chain that named only the owner. */
+		chainStageId: string | null;
 	},
 ): Promise<LegacyDecisionEvidenceRecord> {
 	const [report] = await database
@@ -209,7 +218,7 @@ export async function recordTravelExpenseReportOwnerSelfApproval(
 		action: "approve",
 		legacy: {
 			approvalRequestId: input.approvalRequestId,
-			chainStageId: null,
+			chainStageId: input.chainStageId,
 			observedWorkflowId: null,
 		},
 		assignmentOutcome: null,
