@@ -61,8 +61,15 @@ vi.mock("@aws-sdk/client-s3", () => ({
 		mockState.lastPutObjectCommand = input;
 		return { input };
 	}),
-	DeleteObjectCommand: vi.fn(),
-	HeadObjectCommand: vi.fn(),
+	DeleteObjectCommand: vi.fn().mockImplementation(function DeleteObjectCommand(input) {
+		return { kind: "delete", input };
+	}),
+	ListObjectVersionsCommand: vi.fn().mockImplementation(function ListObjectVersionsCommand(input) {
+		return { kind: "list", input };
+	}),
+	HeadObjectCommand: vi.fn().mockImplementation(function HeadObjectCommand(input) {
+		return { kind: "head", input };
+	}),
 	ListBucketsCommand: vi.fn(),
 }));
 
@@ -71,7 +78,9 @@ vi.mock("@aws-sdk/s3-request-presigner", () => ({
 }));
 
 const {
+	deletePrivateObjectVersions,
 	getPresignedUrl,
+	privateObjectExists,
 	getStorageConfig,
 	isExportS3Configured,
 	isExportS3ConfiguredSync,
@@ -168,5 +177,67 @@ describe("export S3 client", () => {
 			ContentType: "application/zip",
 		});
 		expect(mockState.send).toHaveBeenCalledTimes(1);
+	});
+
+	it("deletes every stored version of exactly one private object", async () => {
+		const key = "travel-expenses/org_1/receipt.jpg.preview-192.webp";
+		mockState.send.mockImplementation(async (command: { kind: string; input: object }) => {
+			if (command.kind !== "list") return {};
+			if (!("KeyMarker" in command.input)) {
+				return {
+					IsTruncated: true,
+					NextKeyMarker: key,
+					NextVersionIdMarker: "v2",
+					Versions: [
+						{ Key: key, VersionId: "v1" },
+						{ Key: key, VersionId: "v2" },
+					],
+				};
+			}
+			return {
+				IsTruncated: false,
+				Versions: [{ Key: `${key}.other`, VersionId: "o1" }],
+				DeleteMarkers: [{ Key: key, VersionId: "m1" }],
+			};
+		});
+
+		await deletePrivateObjectVersions({ organizationId: "org_1", key, bucket: null });
+
+		const deleted = mockState.send.mock.calls
+			.map(([command]) => command)
+			.filter((command) => command.kind === "delete")
+			.map((command) => command.input);
+		expect(deleted).toEqual([
+			{ Bucket: "private-export-bucket", Key: key, VersionId: "v1" },
+			{ Bucket: "private-export-bucket", Key: key, VersionId: "v2" },
+			{ Bucket: "private-export-bucket", Key: key, VersionId: "m1" },
+		]);
+	});
+
+	it("tells whether the recorded version of a private object still exists", async () => {
+		const object = { organizationId: "org_1", key: "receipt.jpg", bucket: null, versionId: "v1" };
+		mockState.send.mockResolvedValueOnce({});
+		await expect(privateObjectExists(object)).resolves.toBe(true);
+		expect(mockState.send.mock.calls[0]?.[0].input).toEqual({
+			Bucket: "private-export-bucket",
+			Key: "receipt.jpg",
+			VersionId: "v1",
+		});
+
+		mockState.send.mockRejectedValueOnce(
+			Object.assign(new Error("Not Found"), { name: "NotFound" }),
+		);
+		await expect(privateObjectExists(object)).resolves.toBe(false);
+
+		// An unreachable store is not mistaken for a deleted object.
+		mockState.send.mockRejectedValueOnce(new Error("connect ETIMEDOUT"));
+		await expect(privateObjectExists(object)).rejects.toThrow("ETIMEDOUT");
+	});
+
+	it("refuses to delete versions from a bucket other than the configured one", async () => {
+		await expect(
+			deletePrivateObjectVersions({ organizationId: "org_1", key: "k", bucket: "moved-bucket" }),
+		).rejects.toThrow("Private storage bucket changed");
+		expect(mockState.send).not.toHaveBeenCalled();
 	});
 });

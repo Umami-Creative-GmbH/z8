@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { deletePrivateObject } from "@/lib/storage/export-s3-client";
+import { deleteTravelExpenseReceiptObject } from "@/lib/travel-expenses/receipt-preview";
 import {
 	countOutstandingTravelExpenseReceiptCleanup,
 	type ReceiptCleanupResult,
@@ -15,7 +15,7 @@ export interface TravelExpenseReceiptCleanupJobResult extends ReceiptCleanupResu
 /** Removes private receipt objects that were rejected, failed or abandoned before attaching. */
 export async function runTravelExpenseReceiptCleanupJob(): Promise<TravelExpenseReceiptCleanupJobResult> {
 	const result = await runTravelExpenseReceiptCleanup(db, {
-		deleteObject: deletePrivateObject,
+		deleteObject: deleteTravelExpenseReceiptObject,
 	});
 	const outstanding = await countOutstandingTravelExpenseReceiptCleanup(db);
 	return { success: true, ...result, outstanding };
