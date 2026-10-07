@@ -100,7 +100,7 @@
         "description": "Wählen Sie die Datenkategorien aus, die Sie exportieren möchten",
         "selectAll": "Alle auswählen",
         "selectAtLeastOne": "Bitte wählen Sie mindestens eine Kategorie aus",
-        "startExport": "Export starten (${selectedCategories.size})",
+        "startExport": "Export starten ({count})",
         "startingExport": "Export wird gestartet...",
         "submitError": "Starten des Exports fehlgeschlagen",
         "submitSuccess": "Export erfolgreich gestartet",
@@ -123,7 +123,7 @@
         "downloadSuccess": "Download gestartet",
         "emptyDescription": "Noch keine Exporte vorhanden",
         "emptyHint": "Erstellen Sie Ihren ersten Export über das obige Formular",
-        "moreCategories": "+${exp.categories.length - 3} weitere",
+        "moreCategories": "+{count} weitere",
         "statusCompleted": "Abgeschlossen",
         "statusFailed": "Fehlgeschlagen",
         "statusPending": "Ausstehend",
@@ -148,7 +148,7 @@
         "endpointDescription": "Für S3-kompatible Dienste wie MinIO",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "Leer lassen, um bestehende Anmeldedaten beizubehalten",
-        "lastVerified": "Zuletzt überprüft: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "lastVerified": "Zuletzt überprüft: {date}",
         "region": "Region",
         "regionDescription": "AWS-Region, in der sich Ihr Bucket befindet",
         "regionPlaceholder": "us-east-1",
@@ -431,7 +431,7 @@
         "tryAgain": "Erneut versuchen"
       },
       "description": "Beim Laden der Einstellungsseite ist ein Fehler aufgetreten. Dies könnte ein vorübergehendes Problem sein.",
-      "errorId": "Fehler-ID: {{digest}}",
+      "errorId": "Fehler-ID: {digest}",
       "title": "Etwas ist schiefgelaufen"
     },
     "export": {
@@ -552,9 +552,9 @@
       "eyebrow": "Kundenimplementierung",
       "progress": {
         "ariaLabel": "Fortschritt der Implementierungs-Checkliste",
-        "completedCount": "{{completed}} von {{total}} abgeschlossen",
+        "completedCount": "{completed} von {total} abgeschlossen",
         "label": "Einrichtungsfortschritt",
-        "percentComplete": "{{percent}}% abgeschlossen"
+        "percentComplete": "{percent}% abgeschlossen"
       },
       "status": {
         "complete": "Abgeschlossen",
@@ -753,7 +753,7 @@
       "title": "Benachrichtigungseinstellungen"
     },
     "organizations": {
-      "description": "Verwalten Sie Organisationsmitglieder, Einladungen und Details",
+      "description": "Organisationsdetails und Konfiguration verwalten",
       "notFound": {
         "description": "Die Organisation konnte nicht gefunden werden oder Sie haben keinen Zugriff darauf.",
         "title": "Organisation nicht gefunden"

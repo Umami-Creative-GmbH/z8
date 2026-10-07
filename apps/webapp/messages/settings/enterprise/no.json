@@ -518,7 +518,7 @@
           "review": "Se gjennom og aktiver",
           "review.description": "Sikre aktivering",
           "scim": "SCIM-provisjonering",
-          "scim.description": "Utsted klargjøringstoken",
+          "scim.description": "Koble til og administrer SCIM-klargjøringstilkoblingen",
           "sso": "SSO-konfigurasjon",
           "sso.description": "Registrer OIDC eller SAML",
           "ssoTest": "Testbruker",

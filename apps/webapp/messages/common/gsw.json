@@ -434,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Administrator kontaktiere",
       "createOrg": "Organisation erstelle",
-      "description": "Du bruchsch es Mitarbeiterprofil für ${feature}. Bitte erstel en Organisation oder kontaktier din Administrator.",
+      "description": "Du bruchsch es Mitarbeiterprofil für {feature}. Bitte erstel en Organisation oder kontaktier din Administrator.",
       "emailBody": "Hallo,\n\nich bruche es Mitarbeiterprofil, zum uf d'Plattform-Funktione zuegriffe. Chöntsch du mir bitte debi hälfe?\n\nDanke!",
       "emailSubject": "Mitarbeiterprofil-Irichtig erforderlich",
       "helpText": "Wenn du zu ere Organisation iglade worde bisch, bitt din Administrator, dis Mitarbeiterprofil izrichte.",
@@ -540,11 +540,11 @@
         "title": "Abwäseheitsaafrag ygreicht"
       },
       "employeeOffboardingReview": {
-        "approval_handover": "Genehmigungsaufgaben erfordern eine Stellvertretung",
-        "clock_out": "Überprüfung erforderlich: Offboarding-Ausstempeln",
-        "clock_repair": "Timer-Reparatur erforderlich",
-        "employment_terms": "Zukünftige Anstellungsbedingungen müssen überprüft werden",
-        "future_work": "Zukünftige Arbeit muss überprüft werden"
+        "approval_handover": "{employeeName}: Genehmigungsaufgaben erfordern eine Stellvertretung (Austritt wirksam {cutoff}, {timezone}).",
+        "clock_out": "{employeeName}: Überprüfung erforderlich: Offboarding-Ausstempeln (Austritt wirksam {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Timer-Reparatur erforderlich (Austritt wirksam {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Zukünftige Anstellungsbedingungen müssen überprüft werden (Austritt wirksam {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: Zukünftige Arbeit muss überprüft werden (Austritt wirksam {cutoff}, {timezone})."
       },
       "newAbsenceRequest": {
         "title": "Neue Abwesenheitsanfrage"

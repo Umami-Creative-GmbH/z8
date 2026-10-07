@@ -12,7 +12,7 @@
       "title": "Grupos de funcionários"
     },
     "employees": {
-      "description": "Gerenciar perfis, equipes e permissões de funcionários",
+      "description": "Gerenciar funcionários, membros e convites",
       "details": "Detalhes do funcionário",
       "detailsDescription": "Ver e editar informações do colaborador",
       "detailsTitle": "Detalhes do colaborador",
@@ -156,7 +156,7 @@
         "title": "Convites"
       },
       "lifecycle": {
-        "actionsLabel": "Ações do funcionário para ${target.displayName}",
+        "actionsLabel": "Ações do funcionário para {name}",
         "deactivate": "Desativar",
         "deactivateDescription": "Isso suspende o acesso a esta organização e encerra as sessões que a utilizam atualmente. O histórico do funcionário é mantido.",
         "deactivateError": "Falha ao desativar funcionário",
@@ -672,8 +672,8 @@
       "employeeSkills": "Habilidades e Qualificações",
       "employeeSkillsDescription": "Certificações e habilidades atribuídas a este funcionário",
       "expired": "Expirado",
-      "expiredOn": "Expirou em {{date}}",
-      "expiresOn": "Expira em {{date}}",
+      "expiredOn": "Expirou em {date}",
+      "expiresOn": "Expira em {date}",
       "expiringSoon": "Expirando em breve",
       "expiry": "Rastreamento de Expiração",
       "expiryDate": "Data de Expiração",

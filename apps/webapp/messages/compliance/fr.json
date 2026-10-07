@@ -142,7 +142,7 @@
     "pendingExceptions": "Demandes d'exception en attente",
     "pendingExceptionsDescription": "Examinez les demandes d'exception qui nécessitent votre approbation",
     "requestException": "Demander une exception",
-    "restPeriodMessage": "Vous avez besoin de {{time}} de repos supplémentaire avant de pouvoir pointer. Prochain pointage autorisé : {{nextTime}}",
+    "restPeriodMessage": "Vous avez besoin de {time} de repos supplémentaire avant de pouvoir pointer. Prochain pointage autorisé : {nextTime}",
     "restPeriodRequired": "Période de repos requise"
   }
 }

@@ -49,8 +49,8 @@
         "actions": {
           "edit": "Modifica"
         },
-        "allowancesForYear": "Ferie spettanti per il {{year}}",
-        "defaultAllowanceDescription": "Spettanza predefinita: {{days}} giorni all'anno",
+        "allowancesForYear": "Ferie spettanti per il {year}",
+        "defaultAllowanceDescription": "Spettanza predefinita: {days} giorni all'anno",
         "defaultPolicy": "Predefinito",
         "description": "Configura ferie spettanti personalizzate per singoli dipendenti",
         "detail": {
@@ -62,17 +62,17 @@
           "adjustmentReasonDescription": "Obbligatorio quando si effettuano rettifiche (per la traccia di controllo)",
           "adjustmentReasonPlaceholder": "Spiega perché questa rettifica viene effettuata...",
           "adjustments": "Rettifiche",
-          "allowanceForYear": "Permesso ferie per il {{year}}",
+          "allowanceForYear": "Permesso ferie per il {year}",
           "annualDays": "Giorni annuali",
           "assignedPolicy": "Policy assegnata",
           "cancel": "Annulla",
           "carryover": "Riporto",
           "carryoverDaysOptional": "Giorni di riporto (opzionale)",
-          "currentBalance": "Saldo attuale: {{total}} giorni disponibili",
-          "currentlyAssigned": "Attualmente assegnato: {{name}}",
+          "currentBalance": "Saldo attuale: {total} giorni disponibili",
+          "currentlyAssigned": "Attualmente assegnato: {name}",
           "customAnnualDaysOptional": "Giorni annuali personalizzati (opzionale)",
           "daysCarriedOverDescription": "Giorni riportati dall'anno precedente",
-          "defaultDaysPlaceholder": "Predefinito: {{days}} giorni",
+          "defaultDaysPlaceholder": "Predefinito: {days} giorni",
           "employeeInformation": "Informazioni dipendente",
           "errors": {
             "createAdjustmentFailed": "Impossibile creare la rettifica",
@@ -83,8 +83,8 @@
           "fallsBackToDefaultPolicy": "Ripristina la policy predefinita del team o dell'organizzazione",
           "manageAllowances": "gestisci i permessi ferie dei dipendenti",
           "managers": "Manager",
-          "overrideOrganizationDefault": "Sovrascrivi l'impostazione predefinita dell'organizzazione ({{days}} giorni) per questo dipendente",
-          "policyOptionDays": "{{name}} ({{days}} giorni)",
+          "overrideOrganizationDefault": "Sovrascrivi l'impostazione predefinita dell'organizzazione ({days} giorni) per questo dipendente",
+          "policyOptionDays": "{name} ({days} giorni)",
           "position": "Posizione",
           "primary": "Principale",
           "reasonForAdjustment": "Motivo della modifica",
@@ -97,10 +97,10 @@
           "useOrganizationTeamDefault": "Usa predefinito dell'organizzazione/team"
         },
         "edit": {
-          "description": "Configura indennità ferie personalizzata per {{name}}",
+          "description": "Configura indennità ferie personalizzata per {name}",
           "title": "Modifica indennità ferie"
         },
-        "employeeCount": "{{count}} dipendenti",
+        "employeeCount": "{count} dipendenti",
         "emptyDescription": "Aggiungi dipendenti alla tua organizzazione per gestire le loro ferie spettanti.",
         "emptyTitle": "Nessun dipendente trovato",
         "noOrgPolicyConfigured": " (Nessuna politica dell'organizzazione configurata)",

@@ -434,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Administrator kontaktieren",
       "createOrg": "Organisation erstellen",
-      "description": "Sie benötigen ein Mitarbeiterprofil, um ${feature}. Bitte erstellen Sie eine Organisation oder wenden Sie sich an Ihren Administrator.",
+      "description": "Sie benötigen ein Mitarbeiterprofil, um {feature}. Bitte erstellen Sie eine Organisation oder wenden Sie sich an Ihren Administrator.",
       "emailBody": "Hallo,\n\nich benötige ein eingerichtetes Mitarbeiterprofil, um auf die Plattformfunktionen zugreifen zu können. Könnten Sie mir bitte dabei helfen?\n\nVielen Dank!",
       "emailSubject": "Einrichtung des Mitarbeiterprofils erforderlich",
       "helpText": "Wenn Sie zu einer Organisation eingeladen wurden, bitten Sie Ihren Administrator, Ihr Mitarbeiterprofil einzurichten.",
@@ -544,11 +544,11 @@
         "title": "Automatisch ausgestempelt"
       },
       "employeeOffboardingReview": {
-        "approval_handover": "Genehmigungsaufgaben erfordern eine Vertretung",
-        "clock_out": "Prüfung erforderlich: Offboarding-Ausstempeln",
-        "clock_repair": "Timer-Reparatur erforderlich",
-        "employment_terms": "Zukünftige Anstellungsbedingungen müssen überprüft werden",
-        "future_work": "Zukünftige Arbeit muss überprüft werden",
+        "approval_handover": "{employeeName}: Genehmigungsaufgaben erfordern eine Vertretung (Austritt wirksam {cutoff}, {timezone}).",
+        "clock_out": "{employeeName}: Prüfung erforderlich: Offboarding-Ausstempeln (Austritt wirksam {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Timer-Reparatur erforderlich (Austritt wirksam {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Zukünftige Anstellungsbedingungen müssen überprüft werden (Austritt wirksam {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: Zukünftige Arbeit muss überprüft werden (Austritt wirksam {cutoff}, {timezone}).",
         "title": "Offboarding benötigt eine Prüfung"
       },
       "newAbsenceRequest": {

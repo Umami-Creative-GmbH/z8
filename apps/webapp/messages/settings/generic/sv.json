@@ -100,7 +100,7 @@
         "description": "Välj de datakategorier du vill exportera",
         "selectAll": "Markera alla",
         "selectAtLeastOne": "Välj minst en kategori",
-        "startExport": "Starta export (${selectedCategories.size})",
+        "startExport": "Starta export ({count})",
         "startingExport": "Startar export...",
         "submitError": "Kunde inte starta exporten",
         "submitSuccess": "Exporten har startats",
@@ -123,7 +123,7 @@
         "downloadSuccess": "Nedladdningen har startat",
         "emptyDescription": "Inga exporter ännu",
         "emptyHint": "Skapa din första export med formuläret ovan",
-        "moreCategories": "+${exp.categories.length - 3} fler",
+        "moreCategories": "+{count} fler",
         "statusCompleted": "Slutförd",
         "statusFailed": "Misslyckades",
         "statusPending": "Väntar",
@@ -148,7 +148,7 @@
         "endpointDescription": "För S3-kompatibla tjänster som MinIO",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "Lämna tomt för att behålla befintliga autentiseringsuppgifter",
-        "lastVerified": "Senast verifierad: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "lastVerified": "Senast verifierad: {date}",
         "region": "Region",
         "regionDescription": "AWS-region där din bucket finns",
         "regionPlaceholder": "us-east-1",
@@ -431,7 +431,7 @@
         "tryAgain": "Försök igen"
       },
       "description": "Ett fel inträffade när inställningssidan lästes in. Det här kan vara ett tillfälligt problem.",
-      "errorId": "Fel-ID: {{digest}}",
+      "errorId": "Fel-ID: {digest}",
       "title": "Något gick fel"
     },
     "export": {
@@ -552,9 +552,9 @@
       "eyebrow": "Kundimplementering",
       "progress": {
         "ariaLabel": "Förlopp för implementeringschecklista",
-        "completedCount": "{{completed}} av {{total}} klara",
+        "completedCount": "{completed} av {total} klara",
         "label": "Konfigurationsförlopp",
-        "percentComplete": "{{percent}} % slutfört"
+        "percentComplete": "{percent} % slutfört"
       },
       "status": {
         "complete": "Klar",
@@ -753,7 +753,7 @@
       "title": "Aviseringsinställningar"
     },
     "organizations": {
-      "description": "Hantera organisationsmedlemmar, inbjudningar och uppgifter",
+      "description": "Hantera organisationsuppgifter och konfiguration",
       "notFound": {
         "description": "Organisationen kunde inte hittas eller så har du inte behörighet till den.",
         "title": "Organisationen hittades inte"

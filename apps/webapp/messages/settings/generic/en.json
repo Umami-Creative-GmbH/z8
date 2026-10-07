@@ -100,7 +100,7 @@
         "description": "Select the data categories you want to export",
         "selectAll": "Select All",
         "selectAtLeastOne": "Please select at least one category",
-        "startExport": "Start Export (${selectedCategories.size})",
+        "startExport": "Start Export ({count})",
         "startingExport": "Starting Export...",
         "submitError": "Failed to start export",
         "submitSuccess": "Export started successfully",
@@ -123,7 +123,7 @@
         "downloadSuccess": "Download started",
         "emptyDescription": "No exports yet",
         "emptyHint": "Create your first export using the form above",
-        "moreCategories": "+${exp.categories.length - 3} more",
+        "moreCategories": "+{count} more",
         "statusCompleted": "Completed",
         "statusFailed": "Failed",
         "statusPending": "Pending",
@@ -148,7 +148,7 @@
         "endpointDescription": "For S3-compatible services like MinIO",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "Leave blank to keep existing credentials",
-        "lastVerified": "Last verified: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "lastVerified": "Last verified: {date}",
         "region": "Region",
         "regionDescription": "AWS region where your bucket is located",
         "regionPlaceholder": "us-east-1",
@@ -431,7 +431,7 @@
         "tryAgain": "Try Again"
       },
       "description": "An error occurred while loading the settings page. This might be a temporary issue.",
-      "errorId": "Error ID: {{digest}}",
+      "errorId": "Error ID: {digest}",
       "title": "Something went wrong"
     },
     "export": {
@@ -552,9 +552,9 @@
       "eyebrow": "Customer implementation",
       "progress": {
         "ariaLabel": "Implementation checklist progress",
-        "completedCount": "{{completed}} of {{total}} complete",
+        "completedCount": "{completed} of {total} complete",
         "label": "Setup progress",
-        "percentComplete": "{{percent}}% complete"
+        "percentComplete": "{percent}% complete"
       },
       "status": {
         "complete": "Complete",
@@ -753,7 +753,7 @@
       "title": "Notification Settings"
     },
     "organizations": {
-      "description": "Manage organization members, invitations, and details",
+      "description": "Manage organization details and configuration",
       "notFound": {
         "description": "The organization could not be found or you don't have access to it.",
         "title": "Organization Not Found"

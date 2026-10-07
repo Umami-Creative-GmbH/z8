@@ -100,7 +100,7 @@
         "description": "Επιλέξτε τις κατηγορίες δεδομένων που θέλετε να εξαγάγετε",
         "selectAll": "Επιλογή όλων",
         "selectAtLeastOne": "Παρακαλούμε επιλέξτε τουλάχιστον μία κατηγορία",
-        "startExport": "Έναρξη εξαγωγής (${selectedCategories.size})",
+        "startExport": "Έναρξη εξαγωγής ({count})",
         "startingExport": "Έναρξη εξαγωγής...",
         "submitError": "Αποτυχία έναρξης εξαγωγής",
         "submitSuccess": "Η εξαγωγή ξεκίνησε με επιτυχία",
@@ -123,7 +123,7 @@
         "downloadSuccess": "Η λήψη ξεκίνησε",
         "emptyDescription": "Δεν υπάρχουν ακόμη εξαγωγές",
         "emptyHint": "Δημιουργήστε την πρώτη σας εξαγωγή χρησιμοποιώντας την παραπάνω φόρμα",
-        "moreCategories": "+${exp.categories.length - 3} ακόμη",
+        "moreCategories": "+{count} ακόμη",
         "statusCompleted": "Ολοκληρώθηκε",
         "statusFailed": "Απέτυχε",
         "statusPending": "Σε εκκρεμότητα",
@@ -148,7 +148,7 @@
         "endpointDescription": "Για υπηρεσίες συμβατές με S3, όπως το MinIO",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "Αφήστε κενό για να διατηρήσετε τα υπάρχοντα διαπιστευτήρια",
-        "lastVerified": "Τελευταία επαλήθευση: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "lastVerified": "Τελευταία επαλήθευση: {date}",
         "region": "Περιοχή",
         "regionDescription": "Περιοχή AWS όπου βρίσκεται ο κάδος (bucket) σας",
         "regionPlaceholder": "us-east-1",
@@ -431,7 +431,7 @@
         "tryAgain": "Προσπάθεια ξανά"
       },
       "description": "Προέκυψε σφάλμα κατά τη φόρτωση της σελίδας ρυθμίσεων. Αυτό μπορεί να είναι προσωρινό ζήτημα.",
-      "errorId": "Αναγνωριστικό σφάλματος: {{digest}}",
+      "errorId": "Αναγνωριστικό σφάλματος: {digest}",
       "title": "Κάτι πήγε στραβά"
     },
     "export": {
@@ -552,9 +552,9 @@
       "eyebrow": "Υλοποίηση πελάτη",
       "progress": {
         "ariaLabel": "Πρόοδος λίστας ελέγχου υλοποίησης",
-        "completedCount": "{{completed}} από {{total}} ολοκληρώθηκαν",
+        "completedCount": "{completed} από {total} ολοκληρώθηκαν",
         "label": "Πρόοδος εγκατάστασης",
-        "percentComplete": "{{percent}}% ολοκληρώθηκε"
+        "percentComplete": "{percent}% ολοκληρώθηκε"
       },
       "status": {
         "complete": "Ολοκληρώθηκε",
@@ -753,7 +753,7 @@
       "title": "Ρυθμίσεις ειδοποιήσεων"
     },
     "organizations": {
-      "description": "Διαχείριση μελών οργανισμού, προσκλήσεων και λεπτομερειών",
+      "description": "Διαχείριση λεπτομερειών και ρυθμίσεων του οργανισμού",
       "notFound": {
         "description": "Ο οργανισμός δεν βρέθηκε ή δεν έχετε πρόσβαση σε αυτόν.",
         "title": "Ο οργανισμός δεν βρέθηκε"

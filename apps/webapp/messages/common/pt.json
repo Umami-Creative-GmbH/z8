@@ -434,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Contactar administrador",
       "createOrg": "Criar organização",
-      "description": "Precisa de um perfil de funcionário para ${feature}. Por favor crie uma organização ou contacte o seu administrador.",
+      "description": "Precisa de um perfil de funcionário para {feature}. Por favor crie uma organização ou contacte o seu administrador.",
       "emailBody": "Olá,\n\npreciso que seja configurado um perfil de funcionário para aceder às funcionalidades da plataforma. Poderia ajudar-me com isto?\n\nObrigado!",
       "emailSubject": "Configuração do perfil de funcionário necessária",
       "helpText": "Se foi convidado para uma organização, peça ao seu administrador para configurar o seu perfil de funcionário.",
@@ -540,11 +540,11 @@
         "title": "Solicitação de ausência enviada"
       },
       "employeeOffboardingReview": {
-        "approval_handover": "As funções de aprovação precisam de um substituto",
-        "clock_out": "Requer revisão: registro de saída de desligamento",
-        "clock_repair": "Reparo do temporizador necessário",
-        "employment_terms": "Os termos de contratação futuros precisam de revisão",
-        "future_work": "O trabalho futuro precisa de revisão"
+        "approval_handover": "{employeeName}: As funções de aprovação precisam de um substituto (saída efetiva em {cutoff}, {timezone}).",
+        "clock_out": "{employeeName}: Requer revisão: registro de saída de desligamento (saída efetiva em {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Reparo do temporizador necessário (saída efetiva em {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Os termos de contratação futuros precisam de revisão (saída efetiva em {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: O trabalho futuro precisa de revisão (saída efetiva em {cutoff}, {timezone})."
       },
       "newAbsenceRequest": {
         "title": "Nova solicitação de ausência"

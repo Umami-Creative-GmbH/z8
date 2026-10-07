@@ -100,7 +100,7 @@
         "description": "Wähl d Datekategorie us, wo du exportiere wotsch",
         "selectAll": "Alli uswähle",
         "selectAtLeastOne": "Bitte wähl mindischtens eini Kategorie us",
-        "startExport": "Export starte (${selectedCategories.size})",
+        "startExport": "Export starte ({count})",
         "startingExport": "Export wird gstartet...",
         "submitError": "Export-Start isch fählgschlage",
         "submitSuccess": "Export erfolgriich gstartet",
@@ -123,7 +123,7 @@
         "downloadSuccess": "Download gstartet",
         "emptyDescription": "No kei Export vorhande",
         "emptyHint": "Erstell dine erschte Export mit em Formular obe",
-        "moreCategories": "+${exp.categories.length - 3} meh",
+        "moreCategories": "+{count} meh",
         "statusCompleted": "Abgschlosse",
         "statusFailed": "Fählgschlage",
         "statusPending": "Usstehend",
@@ -148,7 +148,7 @@
         "endpointDescription": "Für S3-kompatibli Dienscht wie MinIO",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "Leer lah, zum die bestehende Zugangsdate z'bhalte",
-        "lastVerified": "Zuletscht prüeft: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "lastVerified": "Zuletscht prüeft: {date}",
         "region": "Region",
         "regionDescription": "AWS-Region, wo Ihr Bucket sich befindet",
         "regionPlaceholder": "us-east-1",
@@ -431,7 +431,7 @@
         "tryAgain": "Nochli probiere"
       },
       "description": "Es isch en Fehler bim Lade vo de Iistellige ufträtte. Das chönnt es vorübergehends Problem sii.",
-      "errorId": "Fehler-ID: {{digest}}",
+      "errorId": "Fehler-ID: {digest}",
       "title": "Es isch öppis schiefgange"
     },
     "export": {
@@ -552,9 +552,9 @@
       "eyebrow": "Kunde-Implementierig",
       "progress": {
         "ariaLabel": "Fortschritt vo de Implementierigs-Checkliste",
-        "completedCount": "{{completed}} vo {{total}} erledigt",
+        "completedCount": "{completed} vo {total} erledigt",
         "label": "Iirichtigs-Fortschritt",
-        "percentComplete": "{{percent}}% erledigt"
+        "percentComplete": "{percent}% erledigt"
       },
       "status": {
         "complete": "Erledigt",
@@ -753,7 +753,7 @@
       "title": "Benachrichtigungseistellige"
     },
     "organizations": {
-      "description": "Organisationsmitglieder, Iiladige und Details verwalte",
+      "description": "Organisationsdetails und Konfiguration verwalte",
       "notFound": {
         "description": "D'Organisation isch nöd gfunde worde oder du häsch kei Zuegriff druf.",
         "title": "Organisation nöd gfunde"

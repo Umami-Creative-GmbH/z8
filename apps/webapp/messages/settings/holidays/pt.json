@@ -189,7 +189,7 @@
         "presetName": "Nome da Predefinição",
         "presetNameHint": "Este nome será usado para identificar a predefinição ao atribuí-la a equipes ou funcionários",
         "presetNamePlaceholder": "ex.: Alemanha - Baviera",
-        "presetSuccess": "Predefinição \"{name}\" criada com ${holidaysToImport.length} feriados",
+        "presetSuccess": "Predefinição \"{name}\" criada com {count} feriados",
         "region": "Região",
         "searchCountry": "Pesquisar países...",
         "searchRegion": "Pesquisar regiões...",

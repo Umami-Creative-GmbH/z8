@@ -12,7 +12,7 @@
       "title": "Groupes d'employés"
     },
     "employees": {
-      "description": "Gérer les profils, les équipes et les autorisations des employés",
+      "description": "Gérer les employés, les membres et les invitations",
       "details": "Détails de l'employé",
       "detailsDescription": "Afficher et modifier les informations sur l'employé",
       "detailsTitle": "Détails de l'employé",
@@ -156,7 +156,7 @@
         "title": "Invitations"
       },
       "lifecycle": {
-        "actionsLabel": "Actions de l'employé pour ${target.displayName}",
+        "actionsLabel": "Actions de l'employé pour {name}",
         "deactivate": "Désactiver",
         "deactivateDescription": "Ceci suspend l'accès à cette organisation et met fin aux sessions en cours l'utilisant. L'historique de l'employé est conservé.",
         "deactivateError": "Échec de la désactivation de l'employé",
@@ -658,7 +658,7 @@
       "catalogDescription": "Définissez les compétences pouvant être requises pour les sous-zones et les modèles de quart",
       "category": "Catégorie",
       "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette compétence ?",
-      "confirmRemove": "Retirer « ${skillName} » de cet employé ?",
+      "confirmRemove": "Retirer « {skillName} » de cet employé ?",
       "createError": "Échec de la création de la compétence",
       "createSkill": "Créer une compétence",
       "createSkillDescription": "Créez une nouvelle compétence pouvant être assignée aux employés",
@@ -672,8 +672,8 @@
       "employeeSkills": "Compétences et qualifications",
       "employeeSkillsDescription": "Certifications et compétences assignées à cet employé",
       "expired": "Expiré",
-      "expiredOn": "Expiré le {{date}}",
-      "expiresOn": "Expire le {{date}}",
+      "expiredOn": "Expiré le {date}",
+      "expiresOn": "Expire le {date}",
       "expiringSoon": "Expire bientôt",
       "expiry": "Suivi des expirations",
       "expiryDate": "Date d'expiration",

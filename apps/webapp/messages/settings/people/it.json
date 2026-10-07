@@ -12,7 +12,7 @@
       "title": "Gruppi di dipendenti"
     },
     "employees": {
-      "description": "Gestisci profili dipendenti, team e autorizzazioni",
+      "description": "Gestisci dipendenti, membri e inviti",
       "details": "Dettagli dipendente",
       "detailsDescription": "Visualizza e modifica le informazioni del dipendente",
       "detailsTitle": "Dettagli dipendente",
@@ -156,7 +156,7 @@
         "title": "Inviti"
       },
       "lifecycle": {
-        "actionsLabel": "Azioni dipendente per ${target.displayName}",
+        "actionsLabel": "Azioni dipendente per {name}",
         "deactivate": "Disattiva",
         "deactivateDescription": "Questa operazione sospende l'accesso a questa organizzazione e termina le sessioni attualmente in uso. La cronologia del dipendente viene conservata.",
         "deactivateError": "Impossibile disattivare il dipendente",
@@ -672,8 +672,8 @@
       "employeeSkills": "Competenze e qualifiche",
       "employeeSkillsDescription": "Certificazioni e competenze assegnate a questo dipendente",
       "expired": "Scaduto",
-      "expiredOn": "Scaduto il {{date}}",
-      "expiresOn": "Scade il {{date}}",
+      "expiredOn": "Scaduto il {date}",
+      "expiresOn": "Scade il {date}",
       "expiringSoon": "In scadenza",
       "expiry": "Monitoraggio scadenze",
       "expiryDate": "Data di scadenza",

@@ -134,7 +134,7 @@
       "expired": "Expirado",
       "expires": "Expira em",
       "inactive": "Inativo",
-      "invitationActionsLabel": "Ações para o convite para ${row.original.email}",
+      "invitationActionsLabel": "Ações para o convite para {email}",
       "invitationCancelError": "Falha ao cancelar convite",
       "invitationCancelSuccess": "Convite cancelado",
       "invitationResendError": "Falha ao reenviar convite",
@@ -142,7 +142,7 @@
       "invitationsWaiting": "{count, plural, other {{count} convite(s) aguardando aceitação}}",
       "invitedBy": "Convidado por",
       "member": "Membro",
-      "memberActionsLabel": "Ações para ${row.original.user.name}",
+      "memberActionsLabel": "Ações para {name}",
       "memberCount": "{count, plural, other {{count} membro(s) nesta organização}}",
       "noInvitationResults": "Nenhum convite corresponde à sua pesquisa.",
       "noInvitations": "Nenhum convite pendente.",
@@ -275,7 +275,7 @@
       "description": "Defina o fuso horário padrão para a sua organização. Isto é usado para monitorização de ausências, relatórios e outras funcionalidades baseadas em datas. Utilizadores individuais podem substituir isto nas suas definições de perfil.",
       "owner-only": "Apenas os proprietários da organização podem alterar a definição de fuso horário.",
       "title": "Fuso horário",
-      "updated": "Fuso horário da organização atualizado para {{timezone}}",
+      "updated": "Fuso horário da organização atualizado para {timezone}",
       "update-failed": "Falha ao atualizar o fuso horário da organização"
     },
     "title": "Explorador Organizacional"
