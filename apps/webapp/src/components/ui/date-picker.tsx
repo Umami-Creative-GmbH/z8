@@ -71,15 +71,12 @@ function DatePicker({
 			<PopoverTrigger asChild>
 				<Button
 					aria-required={required || undefined}
-					className={cn(
-						"w-full justify-start text-left font-normal",
-						!displayValue && "text-muted-foreground",
-						className,
-					)}
+					className={cn("w-full justify-start text-left", className)}
+					data-placeholder={displayValue ? undefined : ""}
 					disabled={disabled}
 					onBlur={onBlur}
 					type="button"
-					variant="outline"
+					variant="field"
 					{...props}
 				>
 					<IconCalendar className="size-4" />

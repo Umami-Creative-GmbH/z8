@@ -1,11 +1,6 @@
 "use client";
 
-import {
-	IconCalendarEvent,
-	IconCheck,
-	IconLoader2,
-	IconSelector,
-} from "@tabler/icons-react";
+import { IconCalendarEvent, IconLoader2 } from "@tabler/icons-react";
 import {
 	type FormAsyncValidateOrFn,
 	type FormValidateOrFn,
@@ -15,7 +10,7 @@ import {
 } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
@@ -27,23 +22,10 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import {
-	Command,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-	CommandList,
-} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
 import { useRouter } from "@/navigation";
 import { runOnboardingAction } from "../run-onboarding-action";
 import {
@@ -162,16 +144,6 @@ function CountryField({
 	status: { countriesLoading: boolean; loading: boolean };
 	t: TranslationFunction;
 }) {
-	const [countryOpen, setCountryOpen] = useState(false);
-	const countryListboxId = useId();
-	const selectedCountry = useStore(
-		form.store,
-		(state) => state.values.countryCode,
-	);
-	const selectedCountryName = countries.find(
-		(country) => country.code === selectedCountry,
-	)?.name;
-
 	return (
 		<form.Field
 			name="countryCode"
@@ -182,67 +154,26 @@ function CountryField({
 					<Label htmlFor="holiday-country">
 						{t("onboarding.holidaySetup.country", "Country")}
 					</Label>
-					<Popover open={countryOpen} onOpenChange={setCountryOpen}>
-						<PopoverTrigger asChild>
-							<Button
-								id="holiday-country"
-								variant="outline"
-								role="combobox"
-								aria-expanded={countryOpen}
-								aria-controls={countryListboxId}
-								className="w-full justify-between font-normal"
-								disabled={status.countriesLoading || status.loading}
-							>
-								{selectedCountryName ||
-									t(
-										"onboarding.holidaySetup.selectCountry",
-										"Select a country",
-									)}
-								<IconSelector className="ml-2 size-4 shrink-0 opacity-50" />
-							</Button>
-						</PopoverTrigger>
-						<PopoverContent className="w-(--anchor-width) p-0" align="start">
-							<Command>
-								<CommandInput
-									placeholder={t(
-										"onboarding.holidaySetup.searchCountry",
-										"Search countries...",
-									)}
-								/>
-								<CommandList id={countryListboxId}>
-									<CommandEmpty>
-										{t("onboarding.holidaySetup.noCountry", "No country found")}
-									</CommandEmpty>
-									<CommandGroup>
-										{countries.map((country) => (
-											<CommandItem
-												key={country.code}
-												value={country.name}
-												onSelect={() => {
-													field.handleChange(country.code);
-													form.setFieldValue(
-														"presetName",
-														`${country.name} Holidays`,
-													);
-													setCountryOpen(false);
-												}}
-											>
-												<IconCheck
-													className={cn(
-														"mr-2 size-4",
-														field.state.value === country.code
-															? "opacity-100"
-															: "opacity-0",
-													)}
-												/>
-												{country.name}
-											</CommandItem>
-										))}
-									</CommandGroup>
-								</CommandList>
-							</Command>
-						</PopoverContent>
-					</Popover>
+					<SearchableSelect
+						aria-invalid={field.state.meta.errors.length > 0}
+						disabled={status.countriesLoading || status.loading}
+						emptyText={t("onboarding.holidaySetup.noCountry", "No country found")}
+						id="holiday-country"
+						onValueChange={(countryCode) => {
+							const country = countries.find((option) => option.code === countryCode);
+							field.handleChange(countryCode);
+							if (country) {
+								form.setFieldValue("presetName", `${country.name} Holidays`);
+							}
+						}}
+						options={countries}
+						placeholder={t("onboarding.holidaySetup.selectCountry", "Select a country")}
+						searchPlaceholder={t(
+							"onboarding.holidaySetup.searchCountry",
+							"Search countries...",
+						)}
+						value={field.state.value}
+					/>
 					<p className="text-sm text-muted-foreground">
 						{t(
 							"onboarding.holidaySetup.countryDesc",
