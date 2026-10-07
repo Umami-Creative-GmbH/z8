@@ -1,7 +1,7 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import { getEmployee } from "../actions";
 import { getCurrentApprovedMembership } from "../current-approved-membership";
@@ -35,12 +35,12 @@ async function EmployeeDetailPageContent({
 		: null;
 
 	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 	const organizationId =
 		settingsRouteContext.authContext.session.activeOrganizationId;
 	if (!organizationId) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 	const currentUserId = settingsRouteContext.authContext.user.id;
 	const currentMember = await getCurrentApprovedMembership({
@@ -49,13 +49,13 @@ async function EmployeeDetailPageContent({
 	});
 
 	if (!currentMember) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const employeeResult = await getEmployee(employeeId);
 
 	if (!employeeResult.success) {
-		redirect("/settings/employees");
+		return redirectWithLocale("/settings/employees");
 	}
 
 	return (

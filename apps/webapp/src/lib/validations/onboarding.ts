@@ -83,7 +83,7 @@ export const ADMIN_ONLY_STEPS: OnboardingStep[] = [
 // Base steps configuration
 export const ONBOARDING_STEPS: Record<
 	OnboardingStep,
-	{ order: number; path: string; required: boolean; label: string; adminOnly: boolean }
+	{ order: number; path: `/${string}`; required: boolean; label: string; adminOnly: boolean }
 > = {
 	welcome: {
 		order: 1,
@@ -158,7 +158,7 @@ export const ONBOARDING_STEPS: Record<
 } as const;
 
 // Helper to get the correct path for a step
-export function getOnboardingStepPath(step: string | null): string {
+export function getOnboardingStepPath(step: string | null): `/${string}` {
 	if (!step) return ONBOARDING_STEPS.welcome.path;
 	const stepConfig = ONBOARDING_STEPS[step as OnboardingStep];
 	return stepConfig?.path ?? ONBOARDING_STEPS.welcome.path;

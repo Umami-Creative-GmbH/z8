@@ -5,6 +5,8 @@ import { describe, expect, it, vi } from "vitest";
 import type { ApprovalInboxItem } from "@/lib/approvals/inbox/types";
 import { ApprovalInboxTable } from "./approval-inbox-table";
 
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback?: string, values?: Record<string, unknown>) =>
@@ -117,5 +119,33 @@ describe("ApprovalInboxTable", () => {
 		fireEvent.click(detailsButton);
 		expect(onRowClick).toHaveBeenCalledWith(item);
 		expect(onSelectItem).toHaveBeenCalledTimes(1);
+	});
+
+	it("does not let the viewer select their own request and says who decides it (#686)", () => {
+		const own: ApprovalInboxItem = {
+			...makeApprovalInboxItem(),
+			capabilities: {
+				canApprove: false,
+				canReject: false,
+				canBulkApprove: false,
+				requiresRejectReason: true,
+				ownRequest: true,
+			},
+		};
+
+		render(
+			<ApprovalInboxTable
+				items={[own]}
+				selectedIds={new Set()}
+				onSelectItem={vi.fn()}
+				onRowClick={vi.fn()}
+				isFetching={false}
+			/>,
+		);
+
+		expect(
+			(screen.getByRole("checkbox", { name: "Select row" }) as HTMLInputElement).disabled,
+		).toBe(true);
+		expect(screen.getByText("Your own request: another approver decides it.")).toBeTruthy();
 	});
 });

@@ -117,6 +117,68 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		expect(structuredClone(result)).toEqual(result);
 	});
 
+	it("states the request's status, type and summary as translatable texts (#687)", async () => {
+		const result = await getApprovalInboxDetailFromRequest({ request, handler: createHandler() });
+		const [requestSection, timeline] = result.sections;
+		expect(requestSection).toEqual({
+			type: "key_value",
+			title: { key: "approvals:approvals.request", fallback: "Request" },
+			rows: [
+				{
+					label: { key: "approvals:approvals.requestType", fallback: "Type" },
+					value: "Absence Request",
+				},
+				{
+					label: { key: "approvals:approvals.requestSummary", fallback: "Summary" },
+					value: "1 day off",
+				},
+				{
+					label: { key: "approvals:approvals.requestStatus", fallback: "Status" },
+					// The report pages' wording, never the raw status value.
+					value: { key: "approvals:approvals.requestStatusPending", fallback: "Awaiting review" },
+				},
+			],
+		});
+		expect(timeline).toMatchObject({
+			title: { key: "approvals:approvals.timeline", fallback: "Timeline" },
+		});
+
+		const localized = {
+			title: { key: "x.tripTitle", fallback: "Trip expense report" },
+			subtitle: { key: "x.subtitle", fallback: "Workshop" },
+			summary: { key: "x.summary", fallback: "2 expenses" },
+		};
+		const report = await getApprovalInboxDetailFromRequest({
+			request: { ...request, status: "rejected" },
+			handler: createHandler(
+				createDetail({
+					status: "rejected",
+					closedAs: "returned",
+					typeName: "Expense report",
+					display: { title: "Trip expense report", subtitle: "", summary: "", localized },
+				}),
+			),
+		});
+		expect(report.item.summary.localized).toEqual({
+			title: localized.title,
+			subtitle: localized.subtitle,
+			detail: localized.summary,
+		});
+		expect(report.sections[0]).toMatchObject({
+			rows: [
+				// The localized title names a trip report as the list row does.
+				{ value: localized.title },
+				{ value: localized.summary },
+				{
+					value: {
+						key: "approvals:approvals.requestStatusReturned",
+						fallback: "Returned for changes",
+					},
+				},
+			],
+		});
+	});
+
 	it("inserts canonical absence evidence and mirrors the server-side material-change hold", async () => {
 		const entity = { id: "absence-1", approvalWorkflowId: "workflow-1" };
 		const loadAbsenceReviewEvidence = vi.fn(async () => ({
@@ -241,7 +303,7 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		});
 		expect(result.sections).toContainEqual({
 			type: "timeline",
-			title: "Timeline",
+			title: { key: "approvals:approvals.timeline", fallback: "Timeline" },
 			events: [
 				{
 					id: "created",

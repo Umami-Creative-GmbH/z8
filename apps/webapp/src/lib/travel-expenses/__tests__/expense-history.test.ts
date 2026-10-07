@@ -11,6 +11,7 @@ function report(overrides: Partial<DraftReportSummary> & { id: string }): DraftR
 	return {
 		kind: "standalone",
 		status: "draft",
+		submissionCount: 0,
 		updatedAt: "2026-10-01T10:00:00.000Z",
 		expenseDate: "2026-09-14",
 		description: "Hotel Hamburg",
@@ -153,6 +154,24 @@ describe("unified expense history", () => {
 		);
 		expect(rows.find((row) => row.id === "draft")?.balance).toBeNull();
 		expect(rows.find((row) => row.id === "claim-1")?.balance).toBe(settled);
+	});
+
+	it("offers deleting only drafts that were never submitted (#684)", () => {
+		const rows = buildExpenseHistory(
+			input({
+				reports: [
+					report({ id: "new-draft", status: "draft", submissionCount: 0 }),
+					report({ id: "withdrawn", status: "draft", submissionCount: 1 }),
+					report({ id: "returned", status: "returned", submissionCount: 1 }),
+					report({ id: "submitted", status: "submitted", submissionCount: 1 }),
+					report({ id: "approved", status: "approved", submissionCount: 1 }),
+				],
+			}),
+		);
+		const deletable = rows.flatMap((row) =>
+			row.source === "report" && row.deletable ? [row.id] : [],
+		);
+		expect(deletable).toEqual(["new-draft"]);
 	});
 });
 

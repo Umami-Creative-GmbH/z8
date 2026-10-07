@@ -1,4 +1,5 @@
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
+import type { PerDiemDayLocation } from "@/lib/travel-expenses/per-diem";
 import type { WorkCategoryReviewValue } from "../server/time-correction-review-metadata";
 
 export const SUPPORTED_APPROVAL_INBOX_TYPES = [
@@ -33,6 +34,12 @@ export interface ApprovalInboxSummary {
 	detail: string;
 	badge: { label: string; color: string | null } | null;
 	stage?: { name: string; order: number };
+	/** Localized forms the client prefers over the English strings above (#687). */
+	localized?: {
+		title: ApprovalInboxLocalizedText;
+		subtitle: ApprovalInboxLocalizedText;
+		detail: ApprovalInboxLocalizedText;
+	};
 }
 
 export interface ApprovalInboxTiming {
@@ -61,6 +68,8 @@ export interface ApprovalInboxCapabilities {
 	 * sprint approve stay off and send the reviewer to the details.
 	 */
 	requiresDetailReview?: boolean;
+	/** The viewer requested this; someone else decides it, so every decision is off (#686). */
+	ownRequest?: boolean;
 }
 
 export interface ApprovalInboxItem {
@@ -78,14 +87,34 @@ export interface ApprovalInboxItem {
 }
 
 /**
- * A `{name}` value of a localized text: plain, itself localized, or a list of
- * localized texts the client joins with "; " after translating each one.
+ * A typed value the viewer formats in their own locale (#687), like the report
+ * pages: calendar days exactly as entered (never shifted by a zone), a recorded
+ * UTC instant (shown in UTC), a frozen decimal amount with its currency, an
+ * ISO 3166 country code.
+ */
+export type ApprovalInboxValue =
+	| { kind: "plain_date"; date: string }
+	| { kind: "instant"; at: string }
+	| { kind: "plain_date_range"; start: string; end: string }
+	| { kind: "money"; amount: string; currency: string; signed?: true }
+	| { kind: "country"; code: string };
+
+/**
+ * A `{name}` value of a localized text: plain, typed, itself localized, or a
+ * list the client joins with "; " after rendering each entry.
  */
 export type ApprovalInboxTextParam =
 	| string
 	| number
+	| ApprovalInboxValue
 	| ApprovalInboxLocalizedText
-	| ApprovalInboxLocalizedText[];
+	| Array<string | ApprovalInboxValue | ApprovalInboxLocalizedText>
+	| ApprovalInboxPerDiemLocationParam;
+
+/** A per diem day's applied location (#681), named in the reader's language when rendered. */
+export interface ApprovalInboxPerDiemLocationParam {
+	perDiemLocation: Pick<PerDiemDayLocation, "country" | "place" | "label">;
+}
 
 export interface ApprovalInboxLocalizedText {
 	key: string;
@@ -126,9 +155,11 @@ export type ApprovalInboxDetailSection =
 	| {
 			type: "key_value";
 			title: string | ApprovalInboxLocalizedText;
+			/** The title is text a person entered (an expense's description), shown as written. */
+			titleAsEntered?: true;
 			rows: Array<{
 				label: string | ApprovalInboxLocalizedText;
-				value: string | ApprovalInboxLocalizedText | ApprovalInboxDetailChange;
+				value: string | ApprovalInboxLocalizedText | ApprovalInboxValue | ApprovalInboxDetailChange;
 				tone?: "default" | "warning" | "danger";
 				/** An in-app page the value links to (e.g. the report an adjustment corrects). */
 				href?: string;

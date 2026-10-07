@@ -31,6 +31,7 @@ import {
 	receiptReportTotals,
 } from "@/lib/travel-expenses/receipt-report";
 import { referenceRateReloadNeeded } from "@/lib/travel-expenses/reference-rate-conversion";
+import { isDeletableDraftReport } from "@/lib/travel-expenses/report-deletion";
 import { isEditableReportStatus } from "@/lib/travel-expenses/report-return";
 import type {
 	ReportItemView,
@@ -41,8 +42,10 @@ import {
 	type TripDetailsDraft,
 	tripReportMissingRequirements,
 } from "@/lib/travel-expenses/trip-report";
+import { useRouter } from "@/navigation";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
-import { LegacyConversionNotice } from "./legacy-conversion-notice";
+import { DeleteDraftReportButton } from "./delete-draft-report";
+import { LegacyConversionNotice, useLegacyConversion } from "./legacy-conversion-notice";
 import { mileageDraftMatches, mileageDraftOf } from "./mileage-item-draft";
 import { MileageItemEditor } from "./mileage-item-editor";
 import { perDiemDraftMatches, perDiemDraftOf } from "./per-diem-item-draft";
@@ -312,6 +315,26 @@ export function TravelExpenseReportEditor({
 	);
 }
 
+/** Deletes a draft that was never submitted (#684) and returns to the expenses. */
+function DeleteDraftAction({ report }: { report: ReportView }) {
+	if (!isDeletableDraftReport(report)) return null;
+	return <DeleteDraftButton reportId={report.id} />;
+}
+
+function DeleteDraftButton({ reportId }: { reportId: string }) {
+	const router = useRouter();
+	const { data: conversion } = useLegacyConversion(reportId);
+	return (
+		<div className="ml-auto">
+			<DeleteDraftReportButton
+				reportId={reportId}
+				continuesLegacyClaim={Boolean(conversion)}
+				onDeleted={() => router.push("/travel-expenses")}
+			/>
+		</div>
+	);
+}
+
 function useReportInvalidation(reportId: string) {
 	const queryClient = useQueryClient();
 	return {
@@ -355,6 +378,7 @@ function StandaloneReportBody({
 							: t("travelExpenses.report.standaloneTitle", "Standalone receipt")}
 					</h2>
 					<ReportStatusBadge status={report.status} />
+					<DeleteDraftAction report={report} />
 				</div>
 				{isMileage ? (
 					<MileageItemEditor
@@ -511,6 +535,7 @@ function TripReportBody({
 		<div className="space-y-4">
 			<div className="flex flex-wrap items-center gap-2">
 				<ReportStatusBadge status={report.status} />
+				<DeleteDraftAction report={report} />
 			</div>
 
 			<Card>

@@ -8,7 +8,14 @@ const reportActions = vi.hoisted(() => ({
 	getMyTravelExpenseReport: vi.fn(),
 	saveReceiptItemDraftAction: vi.fn(),
 	removeReportReceiptAction: vi.fn(),
+	deleteDraftTravelExpenseReportAction: vi.fn(),
 }));
+const legacyDraftActions = vi.hoisted(() => ({
+	getLegacyTravelExpenseConversion: vi.fn(async () => ({ success: true, data: null })),
+}));
+vi.mock("@/app/[locale]/(app)/travel-expenses/legacy-draft-actions", () => legacyDraftActions);
+const router = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock("@/app/[locale]/(app)/travel-expenses/report-actions", () => reportActions);
 vi.mock("@/app/[locale]/(app)/travel-expenses/report-project-actions", () => ({
 	getReportProjectChoicesAction: async () => ({
@@ -62,6 +69,7 @@ vi.mock("@/navigation", () => ({
 			{children}
 		</a>
 	),
+	useRouter: () => router,
 }));
 
 import { TravelExpenseReportEditor } from "./travel-expense-report-editor";
@@ -364,5 +372,47 @@ describe("TravelExpenseReportEditor", () => {
 		mount();
 		fireEvent.click(await screen.findByRole("button", { name: "Retry" }));
 		expect((await description()).value).toBe("Hotel Hamburg");
+	});
+});
+
+describe("deleting a draft (#684)", () => {
+	function withSubmissions(submissionCount: number) {
+		const loaded = report();
+		return { ...loaded, data: { ...loaded.data, submissionCount } };
+	}
+
+	it("deletes a never-submitted draft after confirmation and returns to the expenses", async () => {
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(withSubmissions(0));
+		reportActions.deleteDraftTravelExpenseReportAction.mockResolvedValueOnce({
+			success: true,
+			data: { reportId },
+		});
+		mount();
+		fireEvent.click(await screen.findByRole("button", { name: "Delete draft" }));
+		const dialog = await screen.findByRole("alertdialog");
+		expect(dialog.textContent).toContain("This cannot be undone.");
+		expect(reportActions.deleteDraftTravelExpenseReportAction).not.toHaveBeenCalled();
+
+		fireEvent.click(within(dialog).getByRole("button", { name: "Delete draft" }));
+		await waitFor(() => expect(router.push).toHaveBeenCalledWith("/travel-expenses"));
+		expect(reportActions.deleteDraftTravelExpenseReportAction).toHaveBeenCalledWith({ reportId });
+	});
+
+	it("keeps a cancelled draft", async () => {
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(withSubmissions(0));
+		mount();
+		fireEvent.click(await screen.findByRole("button", { name: "Delete draft" }));
+		fireEvent.click(
+			within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Cancel" }),
+		);
+		await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+		expect(reportActions.deleteDraftTravelExpenseReportAction).not.toHaveBeenCalled();
+	});
+
+	it("does not offer deleting a draft that was submitted before", async () => {
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(withSubmissions(1));
+		mount();
+		await description();
+		expect(screen.queryByRole("button", { name: "Delete draft" })).toBeNull();
 	});
 });

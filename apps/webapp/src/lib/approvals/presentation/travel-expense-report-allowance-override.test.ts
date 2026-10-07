@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TravelExpenseReportSubmittedItem } from "../evidence/travel-expense-report-facts";
-import { localizedTextFallback } from "../inbox/localized-text";
+import { isApprovalInboxDetailChange, localizedTextFallback } from "../inbox/localized-text";
 import {
 	allowanceOverrideReviewRows,
 	allowanceOverrideReviewSections,
@@ -39,7 +39,9 @@ const mileage: TravelExpenseReportSubmittedItem = {
 };
 
 function values(rows: ReturnType<typeof allowanceOverrideReviewRows>) {
-	return rows.map((row) => (typeof row.value === "string" ? row.value : row.value.fallback));
+	return rows.map((row) =>
+		isApprovalInboxDetailChange(row.value) ? null : localizedTextFallback(row.value),
+	);
 }
 
 describe("allowance override review (#610)", () => {

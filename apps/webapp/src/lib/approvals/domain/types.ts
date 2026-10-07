@@ -10,6 +10,7 @@ import type { Effect } from "effect";
 import type { ComponentType } from "react";
 import type { AnyAppError } from "@/lib/effect/errors";
 import type { DatabaseService } from "@/lib/effect/services/database.service";
+import type { ApprovalInboxLocalizedText } from "../inbox/types";
 
 // ============================================
 // APPROVAL ITEM (Unified Format)
@@ -160,6 +161,17 @@ export interface ApprovalDisplayMetadata {
 
 	/** Public current-stage display. Internal stage identifiers are never exposed. */
 	stage?: { name: string; order: number };
+
+	/**
+	 * Localized forms of title, subtitle and summary with typed values (#687),
+	 * which the inbox renders in the viewer's language and locale instead of the
+	 * English strings above.
+	 */
+	localized?: {
+		title: ApprovalInboxLocalizedText;
+		subtitle: ApprovalInboxLocalizedText;
+		summary: ApprovalInboxLocalizedText;
+	};
 }
 
 // ============================================

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TravelExpenseReportSubmittedItem } from "../evidence/travel-expense-report-facts";
+import { isApprovalInboxDetailChange, localizedTextFallback } from "../inbox/localized-text";
 import { travelExpenseReportProjectRows } from "./travel-expense-report-project";
 
 const item = {
@@ -17,8 +18,8 @@ const item = {
 
 const value = (rows: ReturnType<typeof travelExpenseReportProjectRows>) =>
 	rows.map((row) => [
-		typeof row.label === "string" ? row.label : row.label.fallback,
-		typeof row.value === "string" ? row.value : row.value.fallback,
+		localizedTextFallback(row.label),
+		isApprovalInboxDetailChange(row.value) ? null : localizedTextFallback(row.value),
 	]);
 
 describe("travelExpenseReportProjectRows", () => {

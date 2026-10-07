@@ -132,10 +132,11 @@ describe("formatPlainDate", () => {
 		);
 	});
 
-	it("supports medium date, month-day, month-year, and short-weekday presets", () => {
+	it("supports medium date, month-day, month, month-year, and short-weekday presets", () => {
 		const dateMedium = formatPlainDate(date, "en-US", "dateMedium");
 		const monthDay = formatPlainDate(date, "en-US", "monthDay");
 		const monthDayLong = formatPlainDate(date, "en-US", "monthDayLong");
+		const month = formatPlainDate(date, "en-US", "monthLong");
 		const monthYear = formatPlainDate(date, "en-US", "monthYear");
 		const weekday = formatPlainDate(date, "en-US", "weekdayShort");
 
@@ -145,6 +146,8 @@ describe("formatPlainDate", () => {
 		expect(numericParts(monthDay)).toEqual([10]);
 		expect(monthDayLong).toContain("July");
 		expect(numericParts(monthDayLong)).toEqual([10]);
+		expect(month).toBe("July");
+		expect(formatPlainDate(date, "de", "monthLong")).toBe("Juli");
 		expect(monthYear).toContain("July");
 		expect(numericParts(monthYear)).toEqual([2026]);
 		expect(weekday).toContain("Fri");

@@ -1,10 +1,10 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { TwoFactorVerificationForm } from "@/components/two-factor-verification-form";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getRequestSession } from "@/lib/auth/request-session";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
 export default function Verify2FAPage() {
 	return (
@@ -19,7 +19,7 @@ export async function Verify2FAPageContent() {
 
 	// Pending 2FA uses Better Auth's temporary 2FA cookie before a full session exists.
 	if (session) {
-		redirect("/");
+		return redirectWithLocale("/");
 	}
 
 	return (

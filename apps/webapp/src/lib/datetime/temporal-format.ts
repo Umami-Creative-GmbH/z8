@@ -14,6 +14,7 @@ export type PlainDateFormatPreset =
 	| "dateMedium"
 	| "monthDay"
 	| "monthDayLong"
+	| "monthLong"
 	| "monthYear"
 	| "weekdayShort";
 
@@ -62,6 +63,7 @@ const PLAIN_DATE_FORMAT_OPTIONS: Readonly<
 	dateMedium: { year: "numeric", month: "short", day: "numeric" },
 	monthDay: { month: "short", day: "numeric" },
 	monthDayLong: { month: "long", day: "numeric" },
+	monthLong: { month: "long" },
 	monthYear: { year: "numeric", month: "long" },
 	weekdayShort: { weekday: "short" },
 };

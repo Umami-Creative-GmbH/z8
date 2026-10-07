@@ -103,7 +103,8 @@ describe("buildTravelExpenseReportCardFacts", () => {
 			Report: "Trip",
 			Purpose: "Customer workshop",
 			"Trip dates": "Sep 14, 2026 – Sep 16, 2026",
-			Destination: "Hamburg, DE; Vienna, AT",
+			// Country names in the recipient's language, as on the report pages (#687).
+			Destination: "Hamburg, Germany; Vienna, Austria",
 			Expenses: "2",
 			"Reimbursable to employee": "89.90 EUR",
 			"Paid by company": "1,240.00 EUR",
@@ -113,6 +114,15 @@ describe("buildTravelExpenseReportCardFacts", () => {
 		// Descriptions and receipt files stay in authenticated review.
 		expect(JSON.stringify(facts)).not.toContain("Private description");
 		expect(JSON.stringify(facts)).not.toContain("private-hotel");
+		expect(
+			asMap(
+				buildTravelExpenseReportCardFacts(
+					revision(),
+					{ locale: "de", timezone: "UTC", timeFormat: "24h" },
+					t,
+				),
+			).Destination,
+		).toBe("Hamburg, Deutschland; Vienna, Österreich");
 	});
 
 	it("states a standalone report without trip facts or a zero company total", () => {

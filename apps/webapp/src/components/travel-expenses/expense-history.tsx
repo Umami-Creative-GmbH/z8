@@ -32,6 +32,7 @@ import {
 import { Link } from "@/navigation";
 import { BalanceText } from "./finance/settlement-status";
 import { ContinueLegacyDraftButton } from "./legacy-draft-conversion";
+import { DeleteDraftReportButton } from "./report/delete-draft-report";
 import { formatMoney, formatPlainDate, formatPlainDateRange } from "./report/format";
 import { ReportStatusBadge } from "./report/report-status";
 import { TravelExpenseLoadError } from "./travel-expense-load-error";
@@ -257,6 +258,23 @@ function ClaimRowContent({ row }: { row: LegacyClaimHistoryRow }) {
 	);
 }
 
+/** Deletes a draft that was never submitted (#684) from its row. */
+function DeleteRowDraft({ row }: { row: ReportHistoryRow }) {
+	const { t } = useTranslate();
+	return (
+		<div className="relative z-10 -my-1.5">
+			<DeleteDraftReportButton
+				compact
+				reportId={row.id}
+				continuesLegacyClaim={row.continuedFromClaimId !== null}
+				label={t("travelExpenses.history.deleteDraft", "Delete draft “{title}”", {
+					title: reportTitle(t, row),
+				})}
+			/>
+		</div>
+	);
+}
+
 function HistoryList({ rows, busy }: { rows: ExpenseHistoryRow[]; busy: boolean }) {
 	return (
 		<Card className="overflow-hidden py-0">
@@ -277,8 +295,9 @@ function HistoryList({ rows, busy }: { rows: ExpenseHistoryRow[]; busy: boolean 
 									)}
 								</div>
 							</div>
-							<div className="shrink-0 pl-7 sm:pl-0">
+							<div className="flex shrink-0 items-start gap-1 pl-7 sm:pl-0">
 								<ReportStatusBadge status={row.status} />
+								{row.source === "report" && row.deletable && <DeleteRowDraft row={row} />}
 							</div>
 						</li>
 					))}

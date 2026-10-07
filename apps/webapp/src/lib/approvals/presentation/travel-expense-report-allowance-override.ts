@@ -14,19 +14,27 @@ import type { ApprovalInboxDetailSection, ApprovalInboxLocalizedText } from "../
 
 type Row = Extract<ApprovalInboxDetailSection, { type: "key_value" }>["rows"][number];
 
-const text = (key: string, fallback: string): ApprovalInboxLocalizedText => ({
-	key: `approvals:approvals.evidence.${key}`,
+const text = (
+	key: string,
+	fallback: string,
+	params?: ApprovalInboxLocalizedText["params"],
+): ApprovalInboxLocalizedText => ({
+	key,
 	fallback,
+	...(params ? { params } : {}),
 });
 
 const SITUATIONS: Record<string, ApprovalInboxLocalizedText> = {
-	missing_coverage: text("allowanceSituationMissingCoverage", "No organization policy covers it"),
+	missing_coverage: text(
+		"approvals:approvals.evidence.allowanceSituationMissingCoverage",
+		"No organization policy covers it",
+	),
 	unsupported_case: text(
-		"allowanceSituationUnsupported",
+		"approvals:approvals.evidence.allowanceSituationUnsupported",
 		"Not covered by the supported calculation rules",
 	),
 	official_fallback: text(
-		"allowanceSituationFallback",
+		"approvals:approvals.evidence.allowanceSituationFallback",
 		"Calculated with an official fallback rate",
 	),
 };
@@ -55,13 +63,11 @@ function factsLine(override: Override): string {
 		.join(", ");
 }
 
-function ordinaryResult(
-	item: TravelExpenseReportSubmittedItem,
-): string | ApprovalInboxLocalizedText {
+function ordinaryResult(item: TravelExpenseReportSubmittedItem): Row["value"] {
 	const ordinary = item.mileage ?? item.perDiem;
 	return ordinary
-		? `${ordinary.amount} ${ordinary.currency}`
-		: text("allowanceNoOrdinaryResult", "No ordinary policy result");
+		? { kind: "money", amount: ordinary.amount, currency: ordinary.currency }
+		: text("approvals:approvals.evidence.allowanceNoOrdinaryResult", "No ordinary policy result");
 }
 
 /** Rows of an expense whose allowance was set manually; none otherwise. */
@@ -70,27 +76,42 @@ export function allowanceOverrideReviewRows(item: TravelExpenseReportSubmittedIt
 	if (!override) return [];
 	const rows: Row[] = [
 		{
-			label: text("allowanceOverrideAmount", "Manually set allowance"),
-			value: `${override.amount} ${override.currency}`,
+			label: text("approvals:approvals.evidence.allowanceOverrideAmount", "Manually set allowance"),
+			value: { kind: "money", amount: override.amount, currency: override.currency },
 		},
 		{
-			label: text("allowanceOverrideSituation", "Why it was not calculated"),
+			label: text(
+				"approvals:approvals.evidence.allowanceOverrideSituation",
+				"Why it was not calculated",
+			),
 			value: SITUATIONS[override.situation.kind] ?? override.situation.kind,
 		},
-		{ label: text("allowanceOverrideReason", "Reason"), value: override.reason },
-		{ label: text("allowanceOverrideEvidence", "Evidence"), value: override.evidence },
 		{
-			label: text("allowanceOverrideBasis", "Calculation basis"),
+			label: text("approvals:approvals.evidence.allowanceOverrideReason", "Reason"),
+			value: override.reason,
+		},
+		{
+			label: text("approvals:approvals.evidence.allowanceOverrideEvidence", "Evidence"),
+			value: override.evidence,
+		},
+		{
+			label: text("approvals:approvals.evidence.allowanceOverrideBasis", "Calculation basis"),
 			value: override.calculationBasis,
 		},
-		{ label: text("allowanceOverrideFacts", "Entered facts"), value: factsLine(override) },
 		{
-			label: text("allowanceOrdinaryResult", "Ordinary policy result"),
+			label: text("approvals:approvals.evidence.allowanceOverrideFacts", "Entered facts"),
+			value: factsLine(override),
+		},
+		{
+			label: text("approvals:approvals.evidence.allowanceOrdinaryResult", "Ordinary policy result"),
 			value: ordinaryResult(item),
 		},
 		{
-			label: text("allowanceOverrideAuthorizedBy", "Authorized by"),
-			value: `${override.authorizedBy.name}, ${override.authorizedAt}`,
+			label: text("approvals:approvals.evidence.allowanceOverrideAuthorizedBy", "Authorized by"),
+			value: text("approvals:approvals.evidence.allowanceOverrideAuthorization", "{name}, {at}", {
+				name: override.authorizedBy.name,
+				at: { kind: "instant", at: override.authorizedAt },
+			}),
 		},
 	];
 	return rows.map((row) => ({ ...row, tone: "warning" }));
@@ -100,10 +121,17 @@ export function allowanceOverrideReviewRows(item: TravelExpenseReportSubmittedIt
 export function allowanceOverrideReviewSections(
 	facts: Pick<TravelExpenseReportSubmittedFacts, "items">,
 ): ApprovalInboxDetailSection[] {
-	const overridden = facts.items.flatMap((item, index) =>
+	const overridden = facts.items.flatMap((item, index): ApprovalInboxLocalizedText[] =>
 		item.allowanceOverride
 			? [
-					`${index + 1}. ${item.description} (${item.allowanceOverride.amount} ${item.allowanceOverride.currency})`,
+					text("approvals:approvals.evidence.allowanceOverrideCalloutItem", "{item} ({amount})", {
+						item: `${index + 1}. ${item.description}`,
+						amount: {
+							kind: "money",
+							amount: item.allowanceOverride.amount,
+							currency: item.allowanceOverride.currency,
+						},
+					}),
 				]
 			: [],
 	);
@@ -111,13 +139,16 @@ export function allowanceOverrideReviewSections(
 	return [
 		{
 			type: "callout",
-			title: text("allowanceOverrideCalloutTitle", "Allowances set manually"),
+			title: text(
+				"approvals:approvals.evidence.allowanceOverrideCalloutTitle",
+				"Allowances set manually",
+			),
 			body: {
 				...text(
-					"allowanceOverrideCalloutBody",
+					"approvals:approvals.evidence.allowanceOverrideCalloutBody",
 					"An expense administrator set these allowances manually instead of the calculated amount: {items}. Check the reason and evidence before deciding.",
 				),
-				params: { items: overridden.join("; ") },
+				params: { items: overridden },
 			},
 			tone: "warning",
 		},

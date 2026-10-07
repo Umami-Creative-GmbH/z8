@@ -43,6 +43,7 @@ import {
 	ApprovalAuditLogger,
 	createApprovalReturnAuditLogger,
 } from "../infrastructure/audit-logger";
+import { isOwnRequestDecision, ownRequestDecisionError } from "../policies/self-decision";
 import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
 import { processApprovalWithCurrentEmployee } from "./shared";
 import {
@@ -161,13 +162,13 @@ function preflightReportReturn(
 				}),
 			);
 		}
-		if (report.employeeId === actor.id) {
+		if (isOwnRequestDecision({ requesterEmployeeId: report.employeeId, actorEmployeeId: actor.id })) {
 			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "You cannot decide your own expense report",
-					userId: actor.id,
+				ownRequestDecisionError({
+					actorEmployeeId: actor.id,
 					resource: ENTITY_TYPE,
 					action: "reject",
+					subject: "expense report",
 				}),
 			);
 		}

@@ -20,6 +20,10 @@ import {
 	type PerDiemSpecialLocation,
 	perDiemLocationFields,
 } from "@/lib/travel-expenses/per-diem-location";
+import {
+	perDiemLocationName,
+	perDiemPlaceName,
+} from "@/lib/travel-expenses/per-diem-location-name";
 import { TRIP_COUNTRY_CODES } from "@/lib/travel-expenses/trip-report";
 import { formatCountry } from "./format";
 import { type DayLocationForm, dayLocationDraft } from "./per-diem-day-location-form";
@@ -131,7 +135,7 @@ function LocationSelect({
 							</SelectItem>
 							{places.map((place) => (
 								<SelectItem key={place.key} value={place.key}>
-									{place.label}
+									{perDiemPlaceName(country, place, locale, t)}
 								</SelectItem>
 							))}
 						</SelectContent>
@@ -223,6 +227,8 @@ export function PerDiemDayLocationFields({
 /** The applied location of a calculated day, marking official fallbacks. */
 export function PerDiemDayLocationLabel({ location }: { location: PerDiemDayLocation }) {
 	const { t } = useTranslate();
+	const locale = useLocale();
+	const name = perDiemLocationName(location, locale, t);
 	const note = (() => {
 		switch (location.rule) {
 			case "luxembourg":
@@ -255,8 +261,12 @@ export function PerDiemDayLocationLabel({ location }: { location: PerDiemDayLoca
 		}
 	})();
 	return (
-		<span className="block font-medium">
-			{location.label}
+		// The official name of the notice stays at hand where it differs (#681).
+		<span
+			className="block font-medium"
+			title={name === location.label ? undefined : location.label}
+		>
+			{name}
 			{note && <span className="block text-xs font-normal text-muted-foreground">{note}</span>}
 		</span>
 	);

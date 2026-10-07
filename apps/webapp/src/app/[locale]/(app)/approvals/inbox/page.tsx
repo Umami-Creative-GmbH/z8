@@ -176,6 +176,11 @@ function groupFastLaneItems(
 	}));
 }
 
+/** The viewer's own requests are never selected, sprinted or fast-laned (#686). */
+function isDecidableByViewer(item: ApprovalInboxItem): boolean {
+	return item.capabilities.ownRequest !== true;
+}
+
 function sortSprintItems(items: ApprovalInboxItem[]): ApprovalInboxItem[] {
 	return items.toSorted((first, second) => {
 		const riskDifference =
@@ -495,6 +500,8 @@ function ApprovalInboxRequestsCard({
 	onRowClick: (approval: ApprovalInboxItem) => void;
 	onFetchNextPage: () => void;
 }) {
+	const selectableCount = items.filter(isDecidableByViewer).length;
+
 	return (
 		<div className="px-4 lg:px-6">
 			<ApprovalInboxWarnings warnings={warnings} />
@@ -529,7 +536,7 @@ function ApprovalInboxRequestsCard({
 							onFiltersChange={onFiltersChange}
 							selectedCount={selectedCount}
 							totalCount={totalCount}
-							allSelected={items.length > 0 && selectedCount === items.length}
+							allSelected={selectableCount > 0 && selectedCount === selectableCount}
 							onSelectAll={onSelectAll}
 							supportedTypes={supportedTypes}
 						/>
@@ -831,9 +838,11 @@ function ApprovalInboxContent({
 		uiState.selectedIdDraft.itemIdsKey === itemIdsKey
 			? uiState.selectedIdDraft.ids
 			: new Set<string>();
-	const pendingItems = items.filter((item) => item.status === "pending");
-	const fastLaneGroups = groupFastLaneItems(pendingItems);
-	const sprintItems = sortSprintItems(pendingItems);
+	const decidableItems = items.filter(
+		(item) => item.status === "pending" && isDecidableByViewer(item),
+	);
+	const fastLaneGroups = groupFastLaneItems(decidableItems);
+	const sprintItems = sortSprintItems(decidableItems);
 	const selectedItems = items.filter((item) => selectedIds.has(item.id));
 	const selectedBulkApproveIds = selectedItems.flatMap((item) =>
 		item.capabilities.canApprove && item.capabilities.canBulkApprove
@@ -848,7 +857,9 @@ function ApprovalInboxContent({
 		dispatch({
 			type: "selectionChanged",
 			itemIdsKey,
-			ids: checked ? new Set(items.map((item) => item.id)) : new Set(),
+			ids: checked
+				? new Set(items.filter(isDecidableByViewer).map((item) => item.id))
+				: new Set(),
 		});
 	};
 

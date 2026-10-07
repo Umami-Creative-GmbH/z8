@@ -7,6 +7,10 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { TimeCorrectionComparison } from "@/components/approvals/time-correction-comparison";
 import { TravelExpenseReportReturnButton } from "@/components/approvals/travel-expense-report-return";
+import {
+	summaryField,
+	useApprovalInboxText,
+} from "@/components/approvals/use-approval-inbox-text";
 import { formatRecordedInstant } from "@/components/travel-expenses/report/format";
 import { ReopenReportPanel } from "@/components/travel-expenses/report/report-reopen";
 import { Badge } from "@/components/ui/badge";
@@ -26,9 +30,8 @@ import type {
 	ApprovalInboxDetailChangeValue,
 	ApprovalInboxDetailSection,
 	ApprovalInboxItem,
-	ApprovalInboxLocalizedText,
 } from "@/lib/approvals/inbox/types";
-import { resolveLocalizedText } from "@/lib/approvals/inbox/localized-text";
+import { isApprovalInboxDetailChange } from "@/lib/approvals/inbox/localized-text";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import {
 	useApprovalDetail,
@@ -37,6 +40,7 @@ import {
 } from "@/lib/query/use-approval-inbox";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
+import { getOwnRequestNote } from "./own-request-note";
 import { ReceiptExceptionAcceptance } from "./receipt-exception-acceptance";
 import {
 	allReceiptExceptionsAccepted,
@@ -50,25 +54,30 @@ interface ApprovalDetailPanelProps {
 	onActioned: () => void;
 }
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
+function SectionTitle({
+	children,
+	asEntered = false,
+}: {
+	children: React.ReactNode;
+	/** Text a person entered (an expense's description) keeps its own casing. */
+	asEntered?: boolean;
+}) {
 	return (
-		<h4 className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+		<h4
+			className={cn(
+				"mb-2 font-semibold",
+				asEntered
+					? "text-sm text-foreground"
+					: "text-xs text-muted-foreground uppercase tracking-wide",
+			)}
+		>
 			{children}
 		</h4>
 	);
 }
 
 type Translate = ReturnType<typeof useTranslate>["t"];
-
-function localizedText(
-	t: Translate,
-	value: string | ApprovalInboxLocalizedText,
-) {
-	// Nested texts (e.g. a per diem day's basis inside its line) are translated first.
-	return resolveLocalizedText(value, (key, fallback, params) =>
-		params ? t(key, fallback, params) : t(key, fallback),
-	);
-}
+type InboxText = ReturnType<typeof useApprovalInboxText>;
 
 function workLocationText(t: Translate, value: string) {
 	const labels: Record<string, [string, string]> = {
@@ -95,7 +104,8 @@ function changeValueText(t: Translate, value: ApprovalInboxDetailChangeValue) {
 }
 
 function renderDetailSection(
-	t: ReturnType<typeof useTranslate>["t"],
+	t: Translate,
+	text: InboxText,
 	section: ApprovalInboxDetailSection,
 	locale: string,
 ) {
@@ -106,17 +116,19 @@ function renderDetailSection(
 			);
 		case "key_value":
 			return (
-				<section key={localizedText(t, section.title)}>
-					<SectionTitle>{localizedText(t, section.title)}</SectionTitle>
+				<section key={text(section.title)}>
+					<SectionTitle asEntered={section.titleAsEntered}>
+						{text(section.title)}
+					</SectionTitle>
 					<dl className="space-y-3 rounded-xl border bg-card/60 p-4 shadow-sm">
 						{section.rows.map((row) => (
 							<div
-								key={localizedText(t, row.label)}
+								key={text(row.label)}
 								// The label keeps up to 45%: a long value wraps instead of squeezing it.
 								className="grid grid-cols-[fit-content(45%)_minmax(0,1fr)] items-start gap-4"
 							>
 								<dt className="text-sm text-muted-foreground">
-									{localizedText(t, row.label)}
+									{text(row.label)}
 								</dt>
 								<dd
 									className={cn(
@@ -126,17 +138,17 @@ function renderDetailSection(
 										row.tone === "danger" && "text-destructive",
 									)}
 								>
-									{row.href && (typeof row.value === "string" || !("kind" in row.value)) ? (
-										<Link
-											href={row.href}
-											className="rounded-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2"
-										>
-											{localizedText(t, row.value)}
-										</Link>
-									) : typeof row.value === "string" ? (
-										row.value
-									) : !("kind" in row.value) ? (
-										localizedText(t, row.value)
+									{!isApprovalInboxDetailChange(row.value) ? (
+										row.href ? (
+											<Link
+												href={row.href}
+												className="rounded-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2"
+											>
+												{text(row.value)}
+											</Link>
+										) : (
+											text(row.value)
+										)
 									) : (
 										<span className="grid gap-1">
 											<span>
@@ -170,12 +182,12 @@ function renderDetailSection(
 			);
 		case "timeline":
 			return (
-				<section key={localizedText(t, section.title)}>
-					<SectionTitle>{localizedText(t, section.title)}</SectionTitle>
+				<section key={text(section.title)}>
+					<SectionTitle>{text(section.title)}</SectionTitle>
 					<div className="space-y-3 rounded-xl border bg-card/60 p-4 shadow-sm">
 						{section.events.map((event) => (
 							<div key={event.id} className="border-l-2 border-primary/30 pl-3">
-								<p className="text-sm font-semibold">{localizedText(t, event.label)}</p>
+								<p className="text-sm font-semibold">{text(event.label)}</p>
 								<p className="text-xs text-muted-foreground">
 									{event.actorName
 										? t(
@@ -193,7 +205,7 @@ function renderDetailSection(
 		case "callout":
 			return (
 				<section
-					key={localizedText(t, section.title)}
+					key={text(section.title)}
 					className={cn(
 						"rounded-xl border p-4 shadow-sm",
 						section.tone === "info" &&
@@ -204,9 +216,9 @@ function renderDetailSection(
 							"border-destructive/30 bg-destructive/5 text-destructive",
 					)}
 				>
-					<h4 className="text-sm font-medium">{localizedText(t, section.title)}</h4>
+					<h4 className="text-sm font-medium">{text(section.title)}</h4>
 					<p className="mt-1 text-sm leading-6 text-muted-foreground">
-						{localizedText(t, section.body)}
+						{text(section.body)}
 					</p>
 				</section>
 			);
@@ -240,6 +252,7 @@ export function ApprovalDetailPanel({
 	onActioned,
 }: ApprovalDetailPanelProps) {
 	const { t } = useTranslate();
+	const text = useApprovalInboxText();
 	const locale = useLocale();
 	const [isRejecting, setIsRejecting] = useState(false);
 	const [rejectionReason, setRejectionReason] = useState("");
@@ -335,7 +348,7 @@ export function ApprovalDetailPanel({
 								{t("approvals:approvals.detailTitle", "Approval details")}
 							</SheetTitle>
 							<SheetDescription className="mt-1 line-clamp-2">
-								{panelItem.summary.detail}
+								{text(summaryField(panelItem.summary, "detail"))}
 							</SheetDescription>
 						</div>
 						{panelItem.summary.badge && (
@@ -401,13 +414,15 @@ export function ApprovalDetailPanel({
 								disabled={!panelActions.canApprove}
 							/>
 						) : (
-							renderDetailSection(t, section, locale)
+							renderDetailSection(t, text, section, locale)
 						),
 					)}
 				</div>
 
 				<SheetFooter className="border-t bg-muted/95 px-5 py-4 sm:px-6">
-					{isRejecting ? (
+					{panelActions.ownRequest ? (
+						<p className="text-muted-foreground text-sm">{getOwnRequestNote(t)}</p>
+					) : isRejecting ? (
 						<div className="w-full space-y-4">
 							<div>
 								<label
