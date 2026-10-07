@@ -55,6 +55,27 @@ const getCustomerEmailFromObject = (
 ) => (typeof customer === "object" && customer && "email" in customer ? customer.email : undefined);
 
 /**
+ * Legacy: invoices rendered in webhook API versions before 2025-03-31.basil carry a
+ * top-level `subscription`, which the current types no longer declare. Remove once every
+ * webhook endpoint is on basil or later.
+ */
+const getLegacyInvoiceSubscriptionId = (invoice: Stripe.Invoice): string | undefined => {
+	if (!("subscription" in invoice)) return undefined;
+	const legacy = invoice.subscription;
+	if (typeof legacy === "string") return legacy;
+	return legacy && typeof legacy === "object" && "id" in legacy && typeof legacy.id === "string"
+		? legacy.id
+		: undefined;
+};
+
+/** The subscription an invoice bills, or undefined for invoices outside a subscription. */
+const getInvoiceSubscriptionId = (invoice: Stripe.Invoice): string | undefined => {
+	const subscription = invoice.parent?.subscription_details?.subscription;
+	if (subscription) return typeof subscription === "string" ? subscription : subscription.id;
+	return getLegacyInvoiceSubscriptionId(invoice);
+};
+
+/**
  * BillingEventsService - Processes Stripe webhook events
  * Handles idempotency and state synchronization
  */
@@ -111,6 +132,26 @@ export const BillingEventsServiceLive = Layer.effect(
 				}),
 			);
 		};
+
+		/** Best-effort: a missing invoice must not fail webhook processing. */
+		const findPaymentIntentInvoice = (
+			paymentIntentId: string,
+		): Effect.Effect<Stripe.Invoice | null, never> =>
+			stripeService.getInvoiceForPaymentIntent(paymentIntentId).pipe(
+				Effect.match({
+					onFailure: (error) => ({ invoice: null, error }),
+					onSuccess: (invoice) => ({ invoice, error: undefined }),
+				}),
+				Effect.map(({ invoice, error }) => {
+					if (!invoice) {
+						logger.warn(
+							{ paymentIntentId, error },
+							"No invoice resolved for failed payment intent",
+						);
+					}
+					return invoice;
+				}),
+			);
 
 		const sendBillingEmail = (params: Parameters<typeof sendBillingSystemEmail>[0]) =>
 			Effect.tryPromise({
@@ -252,14 +293,7 @@ export const BillingEventsServiceLive = Layer.effect(
 			invoice: Stripe.Invoice,
 		): Effect.Effect<void, DatabaseError> =>
 			Effect.gen(function* () {
-				// Access subscription from invoice - it can be string, Subscription object, or null
-				const invoiceWithSub = invoice as unknown as {
-					subscription?: string | { id: string } | null;
-				};
-				const subscriptionId =
-					typeof invoiceWithSub.subscription === "string"
-						? invoiceWithSub.subscription
-						: invoiceWithSub.subscription?.id;
+				const subscriptionId = getInvoiceSubscriptionId(invoice);
 
 				if (!subscriptionId) return;
 
@@ -289,14 +323,7 @@ export const BillingEventsServiceLive = Layer.effect(
 			invoice: Stripe.Invoice,
 		): Effect.Effect<void, DatabaseError> =>
 			Effect.gen(function* () {
-				// Access subscription from invoice - it can be string, Subscription object, or null
-				const invoiceWithSub = invoice as unknown as {
-					subscription?: string | { id: string } | null;
-				};
-				const subscriptionId =
-					typeof invoiceWithSub.subscription === "string"
-						? invoiceWithSub.subscription
-						: invoiceWithSub.subscription?.id;
+				const subscriptionId = getInvoiceSubscriptionId(invoice);
 
 				if (!subscriptionId) return;
 
@@ -458,14 +485,7 @@ export const BillingEventsServiceLive = Layer.effect(
 			Effect.gen(function* () {
 				const customerEmail = yield* resolveCustomerEmail(invoice.customer, invoice.customer_email);
 
-				// Get subscription ID from invoice
-				const invoiceWithSub = invoice as unknown as {
-					subscription?: string | { id: string } | null;
-				};
-				const subscriptionId =
-					typeof invoiceWithSub.subscription === "string"
-						? invoiceWithSub.subscription
-						: invoiceWithSub.subscription?.id;
+				const subscriptionId = getInvoiceSubscriptionId(invoice);
 
 				if (!subscriptionId) return;
 
@@ -544,16 +564,12 @@ export const BillingEventsServiceLive = Layer.effect(
 				const failureMessage = lastError?.message ?? "Payment failed";
 				const declineCode = lastError?.decline_code;
 
+				const invoice = yield* findPaymentIntentInvoice(paymentIntent.id);
+				const invoiceId = invoice?.id;
 				// Try to find subscription from metadata or invoice
-				const subscriptionId = paymentIntent.metadata?.subscriptionId;
-				// invoice can be string, Invoice object, or null (expandable field)
-				const paymentIntentWithInvoice = paymentIntent as unknown as {
-					invoice?: string | { id: string } | null;
-				};
-				const invoiceId =
-					typeof paymentIntentWithInvoice.invoice === "string"
-						? paymentIntentWithInvoice.invoice
-						: paymentIntentWithInvoice.invoice?.id;
+				const subscriptionId =
+					paymentIntent.metadata?.subscriptionId ||
+					(invoice ? getInvoiceSubscriptionId(invoice) : undefined);
 				const customerEmail = yield* resolveCustomerEmail(
 					paymentIntent.customer,
 					paymentIntent.receipt_email,

@@ -34,6 +34,7 @@ describe("SeatSyncService", () => {
 				getSubscription: vi.fn(),
 				updateSubscription: vi.fn(),
 				cancelSubscription: vi.fn(),
+				getInvoiceForPaymentIntent: vi.fn(),
 				constructWebhookEvent: vi.fn(),
 			}),
 		),
