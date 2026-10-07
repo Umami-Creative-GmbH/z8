@@ -18,6 +18,7 @@ import { useTravelExpenseFileUpload } from "@/hooks/use-travel-expense-file-uplo
 import {
 	ALLOWED_TRAVEL_EXPENSE_MIME_TYPES,
 	isAllowedTravelExpenseMime,
+	isTravelExpenseImageMime,
 } from "@/lib/travel-expenses/attachment-validation";
 import type { ReportReceiptView } from "@/lib/travel-expenses/report-store";
 
@@ -90,8 +91,15 @@ function uploadFailureMessage(t: Translate, error: Error, maxFileSize: number) {
 	}
 }
 
-function receiptHref(reportId: string, receiptId: string, download = false) {
-	return `/api/travel-expenses/reports/${encodeURIComponent(reportId)}/receipts/${encodeURIComponent(receiptId)}${download ? "?download=1" : ""}`;
+const RECEIPT_QUERY = { open: "", download: "?download=1", thumb: "?variant=thumb" } as const;
+
+/** The original to open or download, or the small preview a tile shows (#690). */
+function receiptHref(
+	reportId: string,
+	receiptId: string,
+	purpose: keyof typeof RECEIPT_QUERY = "open",
+) {
+	return `/api/travel-expenses/reports/${encodeURIComponent(reportId)}/receipts/${encodeURIComponent(receiptId)}${RECEIPT_QUERY[purpose]}`;
 }
 
 /**
@@ -265,7 +273,7 @@ export function ReceiptAttachments({
 				<ul className="grid gap-3 sm:grid-cols-2">
 					{receipts.map((receipt) => {
 						const href = receiptHref(reportId, receipt.id);
-						const isImage = receipt.mimeType.startsWith("image/");
+						const isImage = isTravelExpenseImageMime(receipt.mimeType);
 						return (
 							<li key={receipt.id} className="flex gap-3 rounded-lg border p-3">
 								<a
@@ -284,7 +292,7 @@ export function ReceiptAttachments({
 									{isImage ? (
 										// biome-ignore lint/performance/noImgElement: private, authenticated receipt preview
 										<img
-											src={href}
+											src={receiptHref(reportId, receipt.id, "thumb")}
 											alt=""
 											loading="lazy"
 											className="size-16 rounded-md object-cover"
@@ -300,7 +308,7 @@ export function ReceiptAttachments({
 									<div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
 										<a
 											className="rounded-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2"
-											href={receiptHref(reportId, receipt.id, true)}
+											href={receiptHref(reportId, receipt.id, "download")}
 											target="_blank"
 											rel="noopener noreferrer"
 											aria-label={t(

@@ -5,7 +5,8 @@ import { db } from "@/db";
 import { env } from "@/env";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { createLogger } from "@/lib/logger";
-import { deletePrivateObject, uploadPrivateObject } from "@/lib/storage/export-s3-client";
+import { uploadPrivateObject } from "@/lib/storage/export-s3-client";
+import { deleteTravelExpenseReceiptObject } from "@/lib/travel-expenses/receipt-preview";
 import { deleteTusUpload, readUploadedReceipt } from "@/lib/travel-expenses/receipt-processing";
 import {
 	runTravelExpenseReceiptCleanup,
@@ -128,7 +129,7 @@ export async function POST(request: NextRequest) {
 			// The report changed while this file was uploading. The stored object
 			// stays recorded for cleanup; try to remove it right away.
 			await runTravelExpenseReceiptCleanup(db, {
-				deleteObject: deletePrivateObject,
+				deleteObject: deleteTravelExpenseReceiptObject,
 				only: { attachmentId: receiptId, organizationId: owner.organizationId },
 			}).catch((error) => logger.error({ error }, "Deferred report receipt upload cleanup"));
 			return NextResponse.json(

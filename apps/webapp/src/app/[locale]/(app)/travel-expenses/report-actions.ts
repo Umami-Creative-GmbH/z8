@@ -15,6 +15,7 @@ import { deletePrivateObject } from "@/lib/storage/export-s3-client";
 import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { currentReportOwner as currentOwner } from "@/lib/travel-expenses/current-owner";
 import { OWNER_SELF_APPROVAL_REASON } from "@/lib/travel-expenses/owner-self-approval";
+import { deleteTravelExpenseReceiptObject } from "@/lib/travel-expenses/receipt-preview";
 import {
 	parseReceiptItemDraft,
 	type ReceiptItemDraft,
@@ -322,7 +323,7 @@ export async function removeTripReportItemAction(input: {
 		for (const receiptId of result.receiptIds) {
 			// react-doctor-disable-next-line react-doctor/async-await-in-loop
 			await runTravelExpenseReceiptCleanup(db, {
-				deleteObject: deletePrivateObject,
+				deleteObject: deleteTravelExpenseReceiptObject,
 				only: { attachmentId: receiptId, organizationId: owner.organizationId },
 			}).catch((error) => logger.warn({ error }, "Deferred removed receipt cleanup"));
 		}
@@ -550,7 +551,7 @@ export async function removeReportReceiptAction(input: {
 		if (result.kind === "not_found") return { success: false, error: "Receipt not found" };
 		// The object is already recorded for durable cleanup; try to delete it now.
 		await runTravelExpenseReceiptCleanup(db, {
-			deleteObject: deletePrivateObject,
+			deleteObject: deleteTravelExpenseReceiptObject,
 			only: { attachmentId: result.receiptId, organizationId: owner.organizationId },
 		}).catch((error) => logger.warn({ error }, "Deferred removed receipt cleanup"));
 		return { success: true, data: { receiptId: result.receiptId } };

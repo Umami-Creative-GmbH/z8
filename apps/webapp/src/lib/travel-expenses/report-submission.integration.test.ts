@@ -10,6 +10,7 @@ import { createHash } from "node:crypto";
 import { Effect } from "effect";
 import type { NextRequest } from "next/server";
 import type { PoolClient } from "pg";
+import sharp from "sharp";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -88,10 +89,16 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 	},
 	async readPrivateObject(input: { key: string }) {
 		const bytes = harness.objects.get(input.key);
-		if (!bytes) throw new Error("NoSuchKey");
+		if (!bytes) throw Object.assign(new Error("NoSuchKey"), { name: "NoSuchKey" });
 		return bytes;
 	},
+	async privateObjectExists(input: { key: string }) {
+		return harness.objects.has(input.key);
+	},
 	async deletePrivateObject(input: { key: string }) {
+		harness.objects.delete(input.key);
+	},
+	async deletePrivateObjectVersions(input: { key: string }) {
 		harness.objects.delete(input.key);
 	},
 }));
@@ -1102,6 +1109,44 @@ describe("report submission through approval authority (#602)", () => {
 		signIn("finance");
 		expect((await decide("approve", await pendingRequestId(reportId))).status).toBe(200);
 		expect(await reportState(reportId)).toMatchObject({ status: "approved", decisions: 2 });
+	});
+
+	it("serves receipt previews to the reviewer of the cycle, and not to others (#690)", async () => {
+		const reportId = await completeTrip();
+		const itemId = (await load(reportId)).items[0]?.id ?? "";
+		const photo = await sharp({
+			create: { width: 400, height: 300, channels: 3, background: "#f0ece4" },
+		})
+			.png({ compressionLevel: 9 })
+			.toBuffer();
+		expect((await upload(reportId, itemId, photo)).status).toBe(200);
+		expect((await submit(reportId)).success).toBe(true);
+		const receipts = (await load(reportId)).items[0]?.receipts ?? [];
+		const photoId = receipts.find((receipt) => receipt.mimeType === "image/png")?.id ?? "";
+		const pdfId = receipts.find((receipt) => receipt.mimeType === "application/pdf")?.id ?? "";
+		const preview = (receiptId: string) =>
+			getReceipt(
+				new Request(
+					`http://localhost/api/travel-expenses/reports/${reportId}/receipts/${receiptId}?variant=thumb`,
+				) as unknown as NextRequest,
+				{ params: Promise.resolve({ reportId, receiptId }) },
+			);
+
+		signIn("manager");
+		const reviewerPreview = await preview(photoId);
+		expect(reviewerPreview.status).toBe(200);
+		expect(reviewerPreview.headers.get("content-type")).toBe("image/webp");
+		expect(await sharp(Buffer.from(await reviewerPreview.arrayBuffer())).metadata()).toMatchObject({
+			format: "webp",
+			width: 192,
+			height: 192,
+		});
+		expect((await preview(pdfId)).status).toBe(404);
+
+		for (const outsider of ["colleague", "lead", "foreigner"] as const) {
+			signIn(outsider);
+			expect((await preview(photoId)).status).toBe(404);
+		}
 	});
 
 	it("refuses self-decisions and keeps reports and receipts invisible to others", async () => {

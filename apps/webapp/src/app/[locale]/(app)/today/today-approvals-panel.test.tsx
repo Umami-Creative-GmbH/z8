@@ -2,6 +2,7 @@
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { BriefingApprovalActionItem } from "@/lib/manager-daily-briefing/types";
 import { TodayApprovalsPanel } from "./today-approvals-panel";
 
 const { refreshMock, toastErrorMock, toastSuccessMock } = vi.hoisted(() => ({
@@ -128,6 +129,23 @@ describe("TodayApprovalsPanel", () => {
 		expect(refreshMock).not.toHaveBeenCalled();
 	});
 
+	it("offers no decisions on the viewer's own request", () => {
+		render(
+			<TodayApprovalsPanel
+				items={[
+					approvalItem({ id: "approval:own", title: "Own vacation request", ownRequest: true }),
+					approvalItem(),
+				]}
+			/>,
+		);
+
+		expect(screen.getByText("Own vacation request")).toBeTruthy();
+		expect(screen.getByText("Your own request: another approver decides it.")).toBeTruthy();
+		expect(screen.queryByRole("button", { name: /own vacation request/i })).toBeNull();
+		expect(screen.getByRole("button", { name: "Approve Vacation request" })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Reject Vacation request" })).toBeTruthy();
+	});
+
 	it("renders the empty state", () => {
 		render(<TodayApprovalsPanel items={[]} />);
 
@@ -139,7 +157,9 @@ describe("TodayApprovalsPanel", () => {
 	});
 });
 
-function approvalItem() {
+function approvalItem(
+	overrides: Partial<BriefingApprovalActionItem> = {},
+): BriefingApprovalActionItem {
 	return {
 		id: "approval:approval-1",
 		category: "approval" as const,
@@ -152,5 +172,6 @@ function approvalItem() {
 		entityId: "absence-1",
 		requesterName: "Ada Lovelace",
 		summary: "Vacation on Apr 28",
+		...overrides,
 	};
 }
