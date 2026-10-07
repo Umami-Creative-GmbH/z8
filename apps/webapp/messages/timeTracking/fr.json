@@ -32,13 +32,16 @@
     "correction": {
       "clockIn": "Entrée",
       "clockInDate": "Date d'arrivée",
+      "clockInTime": "Heure d'arrivée",
       "clockOut": "Sortie",
       "clockOutDate": "Date de départ",
+      "clockOutTime": "Heure de départ",
       "editDescription": "Apporter des modifications à votre entrée de temps pour aujourd'hui.",
       "editEntry": "Modifier l'entrée de temps",
       "editTitle": "Modifier l'entrée de temps",
       "errors": {
         "invalidTimeRange": "L'heure de sortie doit être postérieure à l'heure d'entrée",
+        "noChanges": "Au moins une valeur de correction doit être modifiée",
         "submitFailed": "Échec de l'envoi de la correction",
         "updateFailed": "Échec de la mise à jour de l'entrée de temps"
       },
@@ -269,7 +272,12 @@
     "unknownCategory": "Catégorie inconnue",
     "unknownProject": "Projet inconnu",
     "welcomeBack": "Ravi de vous revoir, {name}",
-    "workCategory": "Catégorie de travail"
+    "workCategory": "Catégorie de travail",
+    "workLocation": "Lieu de travail",
+    "workLocationHome": "Domicile",
+    "workLocationOffice": "Bureau",
+    "workLocationOther": "Autre",
+    "workLocationRemote": "À distance"
   },
   "wellness": {
     "water": {

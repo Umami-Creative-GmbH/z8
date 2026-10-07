@@ -5,7 +5,7 @@
         "delete": "Delete",
         "edit": "Edit",
         "runNow": "Run Now",
-        "viewHistory": "View IconHistory"
+        "viewHistory": "View History"
       },
       "cronPreview": {
         "error": "Failed to calculate next runs",
@@ -143,7 +143,7 @@
         "statusPending": "Pending",
         "statusProcessing": "Processing",
         "tableRegion": "Execution history table",
-        "title": "Execution IconHistory",
+        "title": "Execution History",
         "viewError": "View error details"
       },
       "newSchedule": "New Schedule",
@@ -206,7 +206,7 @@
         "runNow": "Run Now",
         "starting": "Starting...",
         "success": "Export started",
-        "successDesc": "The export has been queued and will run shortly. IconCheck the execution history for progress.",
+        "successDesc": "The export has been queued and will run shortly. Check the execution history for progress.",
         "title": "Run Export Now"
       },
       "schedule": {

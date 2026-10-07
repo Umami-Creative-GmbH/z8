@@ -3,18 +3,18 @@
     "coverage": {
       "adequate": "Adequati Personalbesetzig",
       "byLocation": "Nach Standort:",
-      "gapCount": "{{count}} Personalmangel",
+      "gapCount": "{count} Personalmangel",
       "gaps": "Lücke",
       "hideOverlay": "Abdeckungs-Overlay usblände",
-      "metSlots": "{{count}} gnueg Personal",
-      "overSlots": "{{count}} überbesetzt",
+      "metSlots": "{count} gnueg Personal",
+      "overSlots": "{count} überbesetzt",
       "overstaffed": "Überbesetzt",
       "showOverlay": "Abdeckigsziel-Overlay iiblände",
       "summary": "Zämefassig vo de Abdeckig:",
       "toggleLabel": "Abdeckig",
-      "underSlots": "{{count}} unterbesetzt",
+      "underSlots": "{count} unterbesetzt",
       "understaffed": "Unterbesetzt",
-      "utilization": "{{percent}}% Usglaschtig"
+      "utilization": "{percent}% Usglaschtig"
     },
     "page": {
       "employeeDescription": "Lueg dini Schichte a und nimm verfüegbari Schichte aa",
@@ -100,9 +100,9 @@
     },
     "skills": {
       "expiredCertifications": "Abglaufeni Zertifizierige:",
-      "expiredOn": "(Abglaufe am {{date}})",
+      "expiredOn": "(Abglaufe am {date})",
       "missingPreferred": "Fehlendi bevorzugti Fähigkeite:",
-      "missingPreferredCount": "{{count}} bevorzugti Fähigkeite fehle",
+      "missingPreferredCount": "{count} bevorzugti Fähigkeite fehle",
       "missingRequired": "Fehlendi erforderlechi Fähigkeite:",
       "preferred": "Bevorzugt",
       "preferredSkillsMissing": "Bevorzugti Fähigkeite fehle",

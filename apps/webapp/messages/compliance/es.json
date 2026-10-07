@@ -142,7 +142,7 @@
     "pendingExceptions": "Solicitudes de excepción pendientes",
     "pendingExceptionsDescription": "Revise las solicitudes de excepción que requieren su aprobación",
     "requestException": "Solicitar excepción",
-    "restPeriodMessage": "Necesita {{time}} más de descanso antes de poder registrar su entrada. Próximo registro permitido: {{nextTime}}",
+    "restPeriodMessage": "Necesita {time} más de descanso antes de poder registrar su entrada. Próximo registro permitido: {nextTime}",
     "restPeriodRequired": "Periodo de descanso requerido"
   }
 }

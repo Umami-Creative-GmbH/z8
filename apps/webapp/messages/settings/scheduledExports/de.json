@@ -143,7 +143,7 @@
         "statusPending": "Ausstehend",
         "statusProcessing": "Wird verarbeitet",
         "tableRegion": "Tabelle des Ausführungsverlaufs",
-        "title": "Ausführungssymbol-Verlauf",
+        "title": "Ausführungsverlauf",
         "viewError": "Fehlerdetails anzeigen"
       },
       "newSchedule": "Neuer Zeitplan",

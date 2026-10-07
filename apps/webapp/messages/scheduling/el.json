@@ -3,18 +3,18 @@
     "coverage": {
       "adequate": "Επαρκής στελέχωση",
       "byLocation": "Ανά τοποθεσία:",
-      "gapCount": "{{count}} έλλειψη προσωπικού",
+      "gapCount": "{count} έλλειψη προσωπικού",
       "gaps": "κενά",
       "hideOverlay": "Απόκρυψη επικάλυψης κάλυψης",
-      "metSlots": "{{count}} επαρκές",
-      "overSlots": "{{count}} υπεράριθμο προσωπικό",
+      "metSlots": "{count} επαρκές",
+      "overSlots": "{count} υπεράριθμο προσωπικό",
       "overstaffed": "Υπεράριθμο προσωπικό",
       "showOverlay": "Εμφάνιση επικάλυψης στόχων κάλυψης",
       "summary": "Σύνοψη κάλυψης:",
       "toggleLabel": "Κάλυψη",
-      "underSlots": "{{count}} υποστελεχωμένο",
+      "underSlots": "{count} υποστελεχωμένο",
       "understaffed": "Υποστελεχωμένο",
-      "utilization": "{{percent}}% αξιοποίηση"
+      "utilization": "{percent}% αξιοποίηση"
     },
     "page": {
       "employeeDescription": "Δείτε τις βάρδιές σας και επιλέξτε διαθέσιμες βάρδιες",
@@ -100,9 +100,9 @@
     },
     "skills": {
       "expiredCertifications": "Ληγμένες πιστοποιήσεις:",
-      "expiredOn": "(Έληξε στις {{date}})",
+      "expiredOn": "(Έληξε στις {date})",
       "missingPreferred": "Ελλείπουσες προτιμώμενες δεξιότητες:",
-      "missingPreferredCount": "{{count}} προτιμώμενες λείπουν",
+      "missingPreferredCount": "{count} προτιμώμενες λείπουν",
       "missingRequired": "Ελλείπουσες απαιτούμενες δεξιότητες:",
       "preferred": "Προτιμώμενο",
       "preferredSkillsMissing": "Λείπουν προτιμώμενες δεξιότητες",

@@ -434,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Yöneticiyle İletişime Geçin",
       "createOrg": "Organizasyon Oluştur",
-      "description": "${feature} için bir çalışan profiline ihtiyacınız var. Lütfen bir organizasyon oluşturun veya yöneticinizle iletişime geçin.",
+      "description": "{feature} için bir çalışan profiline ihtiyacınız var. Lütfen bir organizasyon oluşturun veya yöneticinizle iletişime geçin.",
       "emailBody": "Merhaba,\n\nPlatform özelliklerine erişebilmek için bir çalışan profiline ihtiyacım var. Bu konuda bana yardımcı olabilir misiniz?\n\nTeşekkürler!",
       "emailSubject": "Çalışan Profili Kurulumu Gerekli",
       "helpText": "Bir organizasyona davet edildiyseniz, yöneticinizden çalışan profilinizi oluşturmasını isteyin.",
@@ -535,12 +535,16 @@
       "absenceRequestRejected": {
         "title": "İzin talebi reddedildi"
       },
+      "absenceRequestSubmitted": {
+        "message": "{dateRange} için {categoryName} talebiniz gönderildi ve onay bekliyor.",
+        "title": "Devamsızlık talebi gönderildi"
+      },
       "employeeOffboardingReview": {
-        "approval_handover": "Onay görevleri için bir vekil gerekiyor",
-        "clock_out": "İnceleme gerekiyor: işten ayrılış çıkış kaydı",
-        "clock_repair": "Zamanlayıcı onarımı gerekiyor",
-        "employment_terms": "Gelecekteki istihdam koşullarının incelenmesi gerekiyor",
-        "future_work": "Gelecekteki çalışmaların incelenmesi gerekiyor"
+        "approval_handover": "{employeeName}: Onay görevleri için bir vekil gerekiyor (ayrılış geçerlilik tarihi {cutoff}, {timezone}).",
+        "clock_out": "{employeeName}: İnceleme gerekiyor: işten ayrılış çıkış kaydı (ayrılış geçerlilik tarihi {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Zamanlayıcı onarımı gerekiyor (ayrılış geçerlilik tarihi {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Gelecekteki istihdam koşullarının incelenmesi gerekiyor (ayrılış geçerlilik tarihi {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: Gelecekteki çalışmaların incelenmesi gerekiyor (ayrılış geçerlilik tarihi {cutoff}, {timezone})."
       },
       "newAbsenceRequest": {
         "title": "Yeni izin talebi"
@@ -556,6 +560,10 @@
       "teamMemberAdded": {
         "message": "{performedByName} tarafından {teamName} ekibine eklendiniz.",
         "title": "Ekibe eklendi"
+      },
+      "teamMemberRemoved": {
+        "message": "{performedByName} tarafından {teamName} ekibinden çıkarıldınız.",
+        "title": "Ekipten çıkarıldı"
       }
     },
     "description": "Güncellemeleri, onayları ve sistem uyarılarını tek bir zaman çizelgesinde inceleyin.",

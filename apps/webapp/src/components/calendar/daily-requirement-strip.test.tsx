@@ -28,10 +28,16 @@ const baseSummary: DailyWorkHoursSummary = {
 };
 
 const fallbackOnly = (_key: string, fallback: string) => fallback;
+// Interpolates {name} placeholders like Tolgee does for a missing translation.
+const interpolating = (_key: string, fallback: string, params?: Record<string, string>) =>
+	Object.entries(params ?? {}).reduce(
+		(text, [key, value]) => text.replaceAll(`{${key}}`, value),
+		fallback,
+	);
 
 describe("requirement header helpers", () => {
 	it("builds compact header content for an over-requirement day", () => {
-		const content = buildRequirementHeaderContent(baseSummary, "Friday, May 22", fallbackOnly);
+		const content = buildRequirementHeaderContent(baseSummary, "Friday, May 22", interpolating);
 
 		expect(content.requiredHours).toBe("8:00h");
 		expect(content.deltaHours).toBe("+1:33h");
@@ -61,7 +67,7 @@ describe("requirement header helpers", () => {
 		const content = buildRequirementHeaderContent(
 			{ actualMinutes: 150, includesLiveWork: false, requirement: null },
 			"Saturday, May 23",
-			fallbackOnly,
+			interpolating,
 		);
 
 		expect(content).toEqual({
@@ -78,7 +84,7 @@ describe("requirement header helpers", () => {
 		const content = buildRequirementHeaderContent(
 			{ ...baseSummary, includesLiveWork: true },
 			"Friday, May 22",
-			fallbackOnly,
+			interpolating,
 		);
 
 		expect(content.liveLabel).toBe("Includes running work");

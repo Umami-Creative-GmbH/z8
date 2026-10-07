@@ -434,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Contactar con el administrador",
       "createOrg": "Crear organización",
-      "description": "Necesita un perfil de empleado para ${feature}. Por favor cree una organización o contacte a su administrador.",
+      "description": "Necesita un perfil de empleado para {feature}. Por favor cree una organización o contacte a su administrador.",
       "emailBody": "Hola,\n\nnecesito que se configure un perfil de empleado para acceder a las funciones de la plataforma. ¿Podría ayudarme con esto?\n\n¡Gracias!",
       "emailSubject": "Configuración del perfil de empleado requerida",
       "helpText": "Si fue invitado a una organización, pida a su administrador que configure su perfil de empleado.",
@@ -535,12 +535,16 @@
       "absenceRequestRejected": {
         "title": "Solicitud de ausencia rechazada"
       },
+      "absenceRequestSubmitted": {
+        "message": "Tu solicitud de {categoryName} para {dateRange} se ha enviado y está pendiente de aprobación.",
+        "title": "Solicitud de ausencia enviada"
+      },
       "employeeOffboardingReview": {
-        "approval_handover": "Las tareas de aprobación requieren un sustituto",
-        "clock_out": "Requiere revisión: fichaje de salida por baja",
-        "clock_repair": "Se requiere corregir el temporizador",
-        "employment_terms": "Las condiciones de empleo futuras requieren revisión",
-        "future_work": "El trabajo futuro requiere revisión"
+        "approval_handover": "{employeeName}: Las tareas de aprobación requieren un sustituto (salida efectiva el {cutoff}, {timezone}).",
+        "clock_out": "{employeeName}: Requiere revisión: fichaje de salida por baja (salida efectiva el {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Se requiere corregir el temporizador (salida efectiva el {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Las condiciones de empleo futuras requieren revisión (salida efectiva el {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: El trabajo futuro requiere revisión (salida efectiva el {cutoff}, {timezone})."
       },
       "newAbsenceRequest": {
         "title": "Nueva solicitud de ausencia"
@@ -556,6 +560,10 @@
       "teamMemberAdded": {
         "message": "Has sido añadido al equipo {teamName} por {performedByName}.",
         "title": "Añadido al equipo"
+      },
+      "teamMemberRemoved": {
+        "message": "Has sido eliminado del equipo {teamName} por {performedByName}.",
+        "title": "Eliminado del equipo"
       }
     },
     "description": "Revisa actualizaciones, aprobaciones y alertas del sistema en una sola línea de tiempo.",

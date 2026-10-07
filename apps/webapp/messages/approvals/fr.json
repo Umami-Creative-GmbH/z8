@@ -258,7 +258,7 @@
     "notes": "Notes",
     "noTimeCorrectionApprovals": "Aucune demande de correction de temps en attente à examiner.",
     "offFrom": "congé du",
-    "openDetailsFor": "Ouvrir les détails pour ${item.summary.title}",
+    "openDetailsFor": "Ouvrir les détails pour {title}",
     "openInbox": "Ouvrir la boîte de réception",
     "original": "Original",
     "ownRequestNote": "Votre propre demande : un autre approbateur prend la décision.",
@@ -335,7 +335,7 @@
     "searchLabel": "Rechercher des approbations",
     "searchPlaceholder": "Rechercher par nom ou e-mail…",
     "selectAll": "Tout sélectionner",
-    "selectedCount": "${selectedCount} sélectionné(s)",
+    "selectedCount": "{selectedCount} sélectionné(s)",
     "selectRow": "Sélectionner la ligne",
     "timeComparison": "Comparaison des heures",
     "timeCorrectionApproved": "Correction de temps approuvée",
@@ -345,7 +345,7 @@
     "timeline": "Chronologie",
     "timelineActor": "{at} par {actorName}",
     "title": "Approbations",
-    "totalCount": "${totalCount} en attente",
+    "totalCount": "{totalCount} en attente",
     "type": "Type",
     "types": {
       "absence_entry": "Demandes d'absence",
@@ -363,11 +363,11 @@
   },
   "fastLanes": {
     "approve": "Approuver",
-    "approveGroup": "Approuver ${label}",
+    "approveGroup": "Approuver {label}",
     "confirmReject": "Confirmer le rejet",
-    "confirmRejectGroup": "Confirmer le rejet de ${label}",
+    "confirmRejectGroup": "Confirmer le rejet de {label}",
     "description": "Examiner les demandes similaires à faible friction par lots.",
-    "expandGroup": "Développer ${label}",
+    "expandGroup": "Développer {label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Absences sans conflit détecté.",
@@ -386,21 +386,21 @@
         "label": "Demandes obsolètes"
       }
     },
-    "notEligibleApprove": "${notApprovableCount} non éligible(s) à l'approbation en masse",
-    "notEligibleReject": "${notRejectableCount} non éligible(s) au rejet en masse",
+    "notEligibleApprove": "{notApprovableCount} non éligible(s) à l'approbation en masse",
+    "notEligibleReject": "{notRejectableCount} non éligible(s) au rejet en masse",
     "reject": "Rejeter",
-    "rejectGroup": "Rejeter ${label}",
+    "rejectGroup": "Rejeter {label}",
     "rejectReason": "Motif de rejet en masse",
     "risk": {
       "high": "Risque élevé",
       "low": "Risque faible",
       "medium": "Risque moyen"
     },
-    "showGroup": "Afficher ${label}",
+    "showGroup": "Afficher {label}",
     "title": "Voies rapides"
   },
   "sprint": {
-    "age": "${item.timing.ageDays}j d'ancienneté",
+    "age": "{ageDays}j d'ancienneté",
     "approve": "Approuver",
     "approveCurrentApproval": "Approuver l'approbation actuelle",
     "capabilities": {
@@ -419,7 +419,7 @@
       "normal": "Priorité normale",
       "urgent": "Priorité urgente"
     },
-    "progress": "${currentIndex + 1} sur ${visibleItems.length}",
+    "progress": "{current} sur {total}",
     "reject": "Rejeter",
     "rejectCurrentApproval": "Rejeter l'approbation actuelle",
     "rejectReason": "Motif de rejet du sprint",

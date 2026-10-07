@@ -128,6 +128,11 @@
     }
   },
   "calendar": {
+    "calendar": {
+      "break": {
+        "titleWithDuration": "Pausa – {duration}"
+      }
+    },
     "clockOutOnBehalf": {
       "confirm": "Registrar saída",
       "description": "Isso cria uma entrada de registro de saída auditável no horário atual do servidor. Se algo precisar de ajuste posteriormente, use as correções.",
@@ -288,6 +293,7 @@
       "weekSum": "Soma"
     },
     "requirements": {
+      "dayLabel": "{date}: {actual} registrado, {required} necessário, {delta} {status}.",
       "includesRunningWork": "Inclui trabalho em andamento",
       "status": {
         "met": "requisito atendido",

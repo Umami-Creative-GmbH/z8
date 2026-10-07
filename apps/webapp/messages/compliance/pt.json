@@ -142,7 +142,7 @@
     "pendingExceptions": "Solicitações de exceção pendentes",
     "pendingExceptionsDescription": "Analise as solicitações de exceção que requerem sua aprovação",
     "requestException": "Solicitar exceção",
-    "restPeriodMessage": "Você precisa de mais {{time}} de descanso antes de poder registrar o ponto. Próximo registro permitido: {{nextTime}}",
+    "restPeriodMessage": "Você precisa de mais {time} de descanso antes de poder registrar o ponto. Próximo registro permitido: {nextTime}",
     "restPeriodRequired": "Período de descanso necessário"
   }
 }

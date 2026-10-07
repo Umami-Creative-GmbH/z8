@@ -142,7 +142,7 @@
     "pendingExceptions": "Oczekujące wnioski o wyjątek",
     "pendingExceptionsDescription": "Przejrzyj wnioski o wyjątek wymagające Twojego zatwierdzenia",
     "requestException": "Zawnioskuj o wyjątek",
-    "restPeriodMessage": "Potrzebujesz jeszcze {{time}} odpoczynku, zanim będziesz mógł się odbić. Następne dozwolone odbicie: {{nextTime}}",
+    "restPeriodMessage": "Potrzebujesz jeszcze {time} odpoczynku, zanim będziesz mógł się odbić. Następne dozwolone odbicie: {nextTime}",
     "restPeriodRequired": "Wymagany okres odpoczynku"
   }
 }

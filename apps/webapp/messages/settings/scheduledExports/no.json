@@ -143,7 +143,7 @@
         "statusPending": "Venter",
         "statusProcessing": "Behandler",
         "tableRegion": "Tabell for kjøringshistorikk",
-        "title": "Kjøring IconHistory",
+        "title": "Kjøringshistorikk",
         "viewError": "Vis feildetaljer"
       },
       "newSchedule": "Ny tidsplan",
@@ -206,7 +206,7 @@
         "runNow": "Kjør nå",
         "starting": "Starter...",
         "success": "Eksport startet",
-        "successDesc": "Eksporten er satt i kø og vil kjøre om kort tid. IconCheck kjøringshistorikken for fremdrift.",
+        "successDesc": "Eksporten er satt i kø og vil kjøre om kort tid. Sjekk kjøringshistorikken for fremdrift.",
         "title": "Kjør eksport nå"
       },
       "schedule": {

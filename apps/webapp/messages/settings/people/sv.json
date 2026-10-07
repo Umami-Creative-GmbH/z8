@@ -12,7 +12,7 @@
       "title": "Medarbetargrupper"
     },
     "employees": {
-      "description": "Hantera medarbetarprofiler, team och behörigheter",
+      "description": "Hantera medarbetare, medlemmar och inbjudningar",
       "details": "Information om anställd",
       "detailsDescription": "Visa och redigera medarbetarinformation",
       "detailsTitle": "Medarbetaruppgifter",
@@ -156,7 +156,7 @@
         "title": "Inbjudningar"
       },
       "lifecycle": {
-        "actionsLabel": "Medarbetaråtgärder för ${target.displayName}",
+        "actionsLabel": "Medarbetaråtgärder för {name}",
         "deactivate": "Inaktivera",
         "deactivateDescription": "Detta stänger av åtkomsten till denna organisation och avslutar sessioner som för närvarande använder den. Medarbetarhistorik behålls.",
         "deactivateError": "Kunde inte inaktivera medarbetare",
@@ -656,7 +656,7 @@
       "catalogDescription": "Definiera kompetenser som kan krävas för delområden och passmallar",
       "category": "Kategori",
       "confirmDelete": "Är du säker på att du vill ta bort den här kompetensen?",
-      "confirmRemove": "Ta bort \"${skillName}\" från den här medarbetaren?",
+      "confirmRemove": "Ta bort \"{skillName}\" från den här medarbetaren?",
       "createError": "Det gick inte att skapa kompetensen",
       "createSkill": "Skapa kompetens",
       "createSkillDescription": "Skapa en ny kompetens som kan tilldelas medarbetare",
@@ -670,8 +670,8 @@
       "employeeSkills": "Kompetenser & kvalifikationer",
       "employeeSkillsDescription": "Certifieringar och kompetenser tilldelade den här medarbetaren",
       "expired": "Utgången",
-      "expiredOn": "Gick ut {{date}}",
-      "expiresOn": "Går ut {{date}}",
+      "expiredOn": "Gick ut {date}",
+      "expiresOn": "Går ut {date}",
       "expiringSoon": "Löper ut snart",
       "expiry": "Spårning av utgångsdatum",
       "expiryDate": "Utgångsdatum",

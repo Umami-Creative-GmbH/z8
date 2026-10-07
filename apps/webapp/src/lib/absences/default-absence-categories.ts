@@ -1,12 +1,13 @@
 import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { absenceCategory } from "@/db/schema";
+import { builtInAbsenceCategoryText } from "./category-display";
 
 export const defaultAbsenceCategories = [
 	{
 		type: "vacation",
-		name: "Vacation",
-		description: "Paid time off",
+		name: builtInAbsenceCategoryText.vacation.name,
+		description: builtInAbsenceCategoryText.vacation.description,
 		requiresWorkTime: false,
 		requiresApproval: true,
 		countsAgainstVacation: true,
@@ -14,8 +15,8 @@ export const defaultAbsenceCategories = [
 	},
 	{
 		type: "sick",
-		name: "Sick Leave",
-		description: "Sick day",
+		name: builtInAbsenceCategoryText.sick.name,
+		description: builtInAbsenceCategoryText.sick.description,
 		requiresWorkTime: false,
 		requiresApproval: false,
 		countsAgainstVacation: false,
@@ -23,8 +24,8 @@ export const defaultAbsenceCategories = [
 	},
 	{
 		type: "personal",
-		name: "Personal Day",
-		description: "Personal time off",
+		name: builtInAbsenceCategoryText.personal.name,
+		description: builtInAbsenceCategoryText.personal.description,
 		requiresWorkTime: false,
 		requiresApproval: true,
 		countsAgainstVacation: false,
@@ -32,8 +33,8 @@ export const defaultAbsenceCategories = [
 	},
 	{
 		type: "home_office",
-		name: "Home Office",
-		description: "Remote work day",
+		name: builtInAbsenceCategoryText.home_office.name,
+		description: builtInAbsenceCategoryText.home_office.description,
 		requiresWorkTime: true,
 		requiresApproval: false,
 		countsAgainstVacation: false,
@@ -41,8 +42,8 @@ export const defaultAbsenceCategories = [
 	},
 	{
 		type: "unpaid",
-		name: "Unpaid Leave",
-		description: "Unpaid absence",
+		name: builtInAbsenceCategoryText.unpaid.name,
+		description: builtInAbsenceCategoryText.unpaid.description,
 		requiresWorkTime: false,
 		requiresApproval: true,
 		countsAgainstVacation: false,
@@ -50,8 +51,8 @@ export const defaultAbsenceCategories = [
 	},
 	{
 		type: "parental",
-		name: "Parental Leave",
-		description: "Parental leave absence",
+		name: builtInAbsenceCategoryText.parental.name,
+		description: builtInAbsenceCategoryText.parental.description,
 		requiresWorkTime: false,
 		requiresApproval: true,
 		countsAgainstVacation: false,
@@ -59,45 +60,14 @@ export const defaultAbsenceCategories = [
 	},
 	{
 		type: "bereavement",
-		name: "Bereavement",
-		description: "Bereavement leave",
+		name: builtInAbsenceCategoryText.bereavement.name,
+		description: builtInAbsenceCategoryText.bereavement.description,
 		requiresWorkTime: false,
 		requiresApproval: true,
 		countsAgainstVacation: false,
 		color: "#64748b",
 	},
 ] satisfies Array<Omit<typeof absenceCategory.$inferInsert, "organizationId" | "isActive">>;
-
-export const defaultAbsenceCategoryI18n = {
-	vacation: {
-		nameKey: "settings.absenceCategories.defaults.vacation.name",
-		descriptionKey: "settings.absenceCategories.defaults.vacation.description",
-	},
-	sick: {
-		nameKey: "settings.absenceCategories.defaults.sick.name",
-		descriptionKey: "settings.absenceCategories.defaults.sick.description",
-	},
-	personal: {
-		nameKey: "settings.absenceCategories.defaults.personal.name",
-		descriptionKey: "settings.absenceCategories.defaults.personal.description",
-	},
-	home_office: {
-		nameKey: "settings.absenceCategories.defaults.homeOffice.name",
-		descriptionKey: "settings.absenceCategories.defaults.homeOffice.description",
-	},
-	unpaid: {
-		nameKey: "settings.absenceCategories.defaults.unpaid.name",
-		descriptionKey: "settings.absenceCategories.defaults.unpaid.description",
-	},
-	parental: {
-		nameKey: "settings.absenceCategories.defaults.parental.name",
-		descriptionKey: "settings.absenceCategories.defaults.parental.description",
-	},
-	bereavement: {
-		nameKey: "settings.absenceCategories.defaults.bereavement.name",
-		descriptionKey: "settings.absenceCategories.defaults.bereavement.description",
-	},
-} as const;
 
 export async function ensureDefaultAbsenceCategoriesForOrganization(organizationId: string) {
 	return db.transaction(async (tx) => {

@@ -403,28 +403,29 @@ export const PERMISSION_REGISTRY: Record<string, PermissionDefinition> = Object.
 // HELPERS
 // ============================================
 
-const CATEGORY_LABELS: Record<PermissionCategory, string> = {
-	workforce: "Workforce",
-	time_tracking: "Time Tracking",
-	approvals: "Approvals",
-	reporting: "Reporting & Exports",
-	organization: "Organization",
-	projects: "Projects",
-	scheduling: "Scheduling",
-	works_council: "Works Council",
-	finance: "Finance",
-};
-
-const CATEGORY_LABEL_KEYS: Record<PermissionCategory, string> = {
-	workforce: "settings.roles.permissionCategories.workforce",
-	time_tracking: "settings.roles.permissionCategories.time_tracking",
-	approvals: "settings.roles.permissionCategories.approvals",
-	reporting: "settings.roles.permissionCategories.reporting",
-	organization: "settings.roles.permissionCategories.organization",
-	projects: "settings.roles.permissionCategories.projects",
-	scheduling: "settings.roles.permissionCategories.scheduling",
-	works_council: "settings.roles.permissionCategories.works_council",
-	finance: "settings.roles.permissionCategories.finance",
+// Each key sits next to its English label so the Tolgee extractor reads the label as its default.
+const CATEGORY_LABELS: Record<PermissionCategory, { labelKey: string; label: string }> = {
+	workforce: { labelKey: "settings.roles.permissionCategories.workforce", label: "Workforce" },
+	time_tracking: {
+		labelKey: "settings.roles.permissionCategories.time_tracking",
+		label: "Time Tracking",
+	},
+	approvals: { labelKey: "settings.roles.permissionCategories.approvals", label: "Approvals" },
+	reporting: {
+		labelKey: "settings.roles.permissionCategories.reporting",
+		label: "Reporting & Exports",
+	},
+	organization: {
+		labelKey: "settings.roles.permissionCategories.organization",
+		label: "Organization",
+	},
+	projects: { labelKey: "settings.roles.permissionCategories.projects", label: "Projects" },
+	scheduling: { labelKey: "settings.roles.permissionCategories.scheduling", label: "Scheduling" },
+	works_council: {
+		labelKey: "settings.roles.permissionCategories.works_council",
+		label: "Works Council",
+	},
+	finance: { labelKey: "settings.roles.permissionCategories.finance", label: "Finance" },
 };
 
 /**
@@ -451,9 +452,9 @@ export function getPermissionCategories(): Array<{
 	labelKey: string;
 	label: string;
 }> {
-	return Object.entries(CATEGORY_LABELS).map(([id, label]) => ({
+	return Object.entries(CATEGORY_LABELS).map(([id, { labelKey, label }]) => ({
 		id: id as PermissionCategory,
-		labelKey: CATEGORY_LABEL_KEYS[id as PermissionCategory],
+		labelKey,
 		label,
 	}));
 }

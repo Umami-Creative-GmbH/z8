@@ -46,7 +46,7 @@ function getAgeLabel(t: ReturnType<typeof useTranslate>["t"], ageDays: number): 
 		return t("approvals:approvals.requestedToday", "Today");
 	}
 
-	return t("approvals:approvals.requestAgeDays", ageDays === 1 ? "1 day" : `${ageDays} days`, {
+	return t("approvals:approvals.requestAgeDays", "{count, plural, one {# day} other {# days}}", {
 		count: ageDays,
 	});
 }

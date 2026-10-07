@@ -434,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Contatta amministratore",
       "createOrg": "Crea organizzazione",
-      "description": "Hai bisogno di un profilo dipendente per ${feature}. Crea un'organizzazione o contatta il tuo amministratore.",
+      "description": "Hai bisogno di un profilo dipendente per {feature}. Crea un'organizzazione o contatta il tuo amministratore.",
       "emailBody": "Ciao,\n\nho bisogno di configurare un profilo dipendente per accedere alle funzionalità della piattaforma. Potresti aiutarmi con questo?\n\nGrazie!",
       "emailSubject": "Configurazione profilo dipendente richiesta",
       "helpText": "Se sei stato invitato in un'organizzazione, chiedi al tuo amministratore di configurare il tuo profilo dipendente.",
@@ -535,12 +535,16 @@
       "absenceRequestRejected": {
         "title": "Richiesta di assenza rifiutata"
       },
+      "absenceRequestSubmitted": {
+        "message": "La tua richiesta {categoryName} per {dateRange} è stata inviata ed è in attesa di approvazione.",
+        "title": "Richiesta di assenza inviata"
+      },
       "employeeOffboardingReview": {
-        "approval_handover": "Le mansioni di approvazione richiedono un sostituto",
-        "clock_out": "Da verificare: timbratura di uscita per offboarding",
-        "clock_repair": "Riparazione del timer richiesta",
-        "employment_terms": "Le condizioni contrattuali future richiedono una revisione",
-        "future_work": "Il lavoro futuro richiede una revisione"
+        "approval_handover": "{employeeName}: Le mansioni di approvazione richiedono un sostituto (uscita effettiva il {cutoff}, {timezone}).",
+        "clock_out": "{employeeName}: Da verificare: timbratura di uscita per offboarding (uscita effettiva il {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Riparazione del timer richiesta (uscita effettiva il {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Le condizioni contrattuali future richiedono una revisione (uscita effettiva il {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: Il lavoro futuro richiede una revisione (uscita effettiva il {cutoff}, {timezone})."
       },
       "newAbsenceRequest": {
         "title": "Nuova richiesta di assenza"
@@ -556,6 +560,10 @@
       "teamMemberAdded": {
         "message": "Sei stato aggiunto al team {teamName} da {performedByName}.",
         "title": "Aggiunto al team"
+      },
+      "teamMemberRemoved": {
+        "message": "Sei stato rimosso dal team {teamName} da {performedByName}.",
+        "title": "Rimosso dal team"
       }
     },
     "description": "Controlla aggiornamenti, approvazioni e avvisi di sistema in un'unica timeline.",

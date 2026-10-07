@@ -100,7 +100,7 @@
         "description": "Selecciona las categorías de datos que deseas exportar",
         "selectAll": "Seleccionar todo",
         "selectAtLeastOne": "Por favor, selecciona al menos una categoría",
-        "startExport": "Iniciar exportación (${selectedCategories.size})",
+        "startExport": "Iniciar exportación ({count})",
         "startingExport": "Iniciando exportación...",
         "submitError": "Error al iniciar la exportación",
         "submitSuccess": "Exportación iniciada correctamente",
@@ -123,7 +123,7 @@
         "downloadSuccess": "Descarga iniciada",
         "emptyDescription": "Aún no hay exportaciones",
         "emptyHint": "Cree su primera exportación usando el formulario de arriba",
-        "moreCategories": "+${exp.categories.length - 3} más",
+        "moreCategories": "+{count} más",
         "statusCompleted": "Completado",
         "statusFailed": "Fallido",
         "statusPending": "Pendiente",
@@ -148,7 +148,7 @@
         "endpointDescription": "Para servicios compatibles con S3 como MinIO",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "Deje en blanco para mantener las credenciales existentes",
-        "lastVerified": "Última verificación: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "lastVerified": "Última verificación: {date}",
         "region": "Región",
         "regionDescription": "Región de AWS donde se encuentra su bucket",
         "regionPlaceholder": "us-east-1",
@@ -431,7 +431,7 @@
         "tryAgain": "Intentar de nuevo"
       },
       "description": "Ocurrió un error al cargar la página de configuración. Podría ser un problema temporal.",
-      "errorId": "ID de error: {{digest}}",
+      "errorId": "ID de error: {digest}",
       "title": "Algo salió mal"
     },
     "export": {
@@ -552,9 +552,9 @@
       "eyebrow": "Implementación de cliente",
       "progress": {
         "ariaLabel": "Progreso de la lista de verificación de implementación",
-        "completedCount": "{{completed}} de {{total}} completado",
+        "completedCount": "{completed} de {total} completado",
         "label": "Progreso de la configuración",
-        "percentComplete": "{{percent}}% completado"
+        "percentComplete": "{percent}% completado"
       },
       "status": {
         "complete": "Completado",
@@ -753,7 +753,7 @@
       "title": "Configuración de notificaciones"
     },
     "organizations": {
-      "description": "Gestiona los miembros, invitaciones y detalles de la organización",
+      "description": "Gestiona los detalles y la configuración de la organización",
       "notFound": {
         "description": "No se pudo encontrar la organización o no tienes acceso a ella.",
         "title": "Organización no encontrada"
@@ -1136,7 +1136,7 @@
           "pacificHonolulu": "Hora de Hawái (Honolulu)",
           "utc": "Tiempo universal coordinado (UTC)"
         },
-        "search": "IconSearch zona horaria…"
+        "search": "Buscar zona horaria…"
       },
       "save": "Guardar zona horaria",
       "title": "Zona horaria",

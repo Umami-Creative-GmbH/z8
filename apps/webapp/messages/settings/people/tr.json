@@ -12,7 +12,7 @@
       "title": "Çalışan Grupları"
     },
     "employees": {
-      "description": "Çalışan profillerini, ekipleri ve izinleri yönetin",
+      "description": "Çalışanları, üyeleri ve davetleri yönetin",
       "details": "Çalışan Detayları",
       "detailsDescription": "Çalışan bilgilerini görüntüleyin ve düzenleyin",
       "detailsTitle": "Çalışan Ayrıntıları",
@@ -156,7 +156,7 @@
         "title": "Davetler"
       },
       "lifecycle": {
-        "actionsLabel": "${target.displayName} için çalışan işlemleri",
+        "actionsLabel": "{name} için çalışan işlemleri",
         "deactivate": "Devre dışı bırak",
         "deactivateDescription": "Bu işlem, bu kuruluşa erişimi askıya alır ve şu anda onu kullanan oturumları sonlandırır. Çalışan geçmişi korunur.",
         "deactivateError": "Çalışan devre dışı bırakılamadı",
@@ -164,6 +164,8 @@
         "deactivateTitle": "Çalışan devre dışı bırakılsın mı?",
         "deactivating": "Devre dışı bırakılıyor...",
         "deactivatingStatus": "Çalışan devre dışı bırakılıyor",
+        "finalOwnerDeactivateGuidance": "Bu çalışanı devre dışı bırakmadan önce onaylanmış başka bir sahip atayın ve etkinleştirin.",
+        "finalOwnerRemoveGuidance": "Bu çalışanın erişimini kaldırmadan önce onaylanmış başka bir sahip atayın ve etkinleştirin.",
         "reactivate": "Yeniden etkinleştir",
         "reactivateDescription": "Bu işlem, mevcut çalışan kaydını kullanarak bu kuruluşa erişimi geri yükler.",
         "reactivateError": "Çalışan yeniden etkinleştirilemedi",
@@ -656,7 +658,7 @@
       "catalogDescription": "Alt alanlar ve vardiya şablonları için gerekli olabilecek yetenekleri tanımlayın",
       "category": "Kategori",
       "confirmDelete": "Bu yeteneği silmek istediğinizden emin misiniz?",
-      "confirmRemove": "\"${skillName}\" bu çalışandan kaldırılsın mı?",
+      "confirmRemove": "\"{skillName}\" bu çalışandan kaldırılsın mı?",
       "createError": "Yetenek oluşturulamadı",
       "createSkill": "Yetenek Oluştur",
       "createSkillDescription": "Çalışanlara atanabilecek yeni bir yetenek oluşturun",
@@ -670,8 +672,8 @@
       "employeeSkills": "Yetenekler ve Nitelikler",
       "employeeSkillsDescription": "Bu çalışana atanan sertifikalar ve yetenekler",
       "expired": "Süresi dolmuş",
-      "expiredOn": "{{date}} tarihinde süresi doldu",
-      "expiresOn": "Son kullanma tarihi: {{date}}",
+      "expiredOn": "{date} tarihinde süresi doldu",
+      "expiresOn": "Son kullanma tarihi: {date}",
       "expiringSoon": "Süresi Yakında Dolacak",
       "expiry": "Son Kullanma Tarihi Takibi",
       "expiryDate": "Son Kullanma Tarihi",

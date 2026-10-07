@@ -12,7 +12,7 @@
       "title": "Mitarbeiter-Gruppe"
     },
     "employees": {
-      "description": "Mitarbeiterprofile, Teams und Berechtigungen verwalten",
+      "description": "Mitarbeiter, Mitglieder und Iiladige verwalte",
       "details": "Mitarbeiterdetails",
       "detailsDescription": "Mitarbeiter-Informatione aaluege und bearbeite",
       "detailsTitle": "Mitarbeiter-Details",
@@ -156,7 +156,7 @@
         "title": "Einladungen"
       },
       "lifecycle": {
-        "actionsLabel": "Mitarbeiteraktionen für ${target.displayName}",
+        "actionsLabel": "Mitarbeiteraktionen für {name}",
         "deactivate": "Deaktivieren",
         "deactivateDescription": "Dies sperrt den Zugriff auf diese Organisation und beendet laufende Sitzungen. Die Mitarbeiterhistorie bleibt erhalten.",
         "deactivateError": "Mitarbeiter konnte nicht deaktiviert werden",
@@ -164,6 +164,8 @@
         "deactivateTitle": "Mitarbeiter deaktivieren?",
         "deactivating": "Wird deaktiviert...",
         "deactivatingStatus": "Mitarbeiter wird deaktiviert",
+        "finalOwnerDeactivateGuidance": "Wis zerscht en andere bestätigte Bsitzer zue und aktivier en, bevor du dä Mitarbeiter deaktiviersch.",
+        "finalOwnerRemoveGuidance": "Wis zerscht en andere bestätigte Bsitzer zue und aktivier en, bevor du däm Mitarbeiter de Zuegriff entziehsch.",
         "reactivate": "Reaktivieren",
         "reactivateDescription": "Dies stellt den Zugriff auf diese Organisation unter Verwendung des bestehenden Mitarbeiterdatensatzes wieder her.",
         "reactivateError": "Mitarbeiter konnte nicht reaktiviert werden",
@@ -656,7 +658,7 @@
       "catalogDescription": "Definier Fähigkeite, wo für Teilberiich und Schichtvorlage verlangt wärde chönd",
       "category": "Kategorie",
       "confirmDelete": "Bisch sicher, dass die Fähigkeit lösche wotsch?",
-      "confirmRemove": "Wotsch \"${skillName}\" vo däm Aagstellte entferne?",
+      "confirmRemove": "Wotsch \"{skillName}\" vo däm Aagstellte entferne?",
       "createError": "Fähigkeit hät nöd chöne erstellt wärde",
       "createSkill": "Fähigkeit erstelle",
       "createSkillDescription": "Erstell e neui Fähigkeit, wo Aagstellte zuegwise wärde chan",
@@ -670,8 +672,8 @@
       "employeeSkills": "Fähigkeite & Qualifikazione",
       "employeeSkillsDescription": "Zertifikat und Fähigkeite, wo däm Aagstellte zuegwise sind",
       "expired": "Abglaufe",
-      "expiredOn": "Abglaufe am {{date}}",
-      "expiresOn": "Läuft ab am {{date}}",
+      "expiredOn": "Abglaufe am {date}",
+      "expiresOn": "Läuft ab am {date}",
       "expiringSoon": "Läuft bald ab",
       "expiry": "Ablaufverfolgig",
       "expiryDate": "Ablaufdatum",

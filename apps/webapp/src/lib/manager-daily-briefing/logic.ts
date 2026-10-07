@@ -16,12 +16,63 @@ const severityRank: Record<BriefingActionItem["severity"], number> = {
 	info: 3,
 };
 
-const briefingCopy = {
-	notClockedInTitle: (employeeName: string) => `${employeeName} has not clocked in`,
-	clockedInLateTitle: (employeeName: string) => `${employeeName} clocked in late`,
-	absentTitle: (employeeName: string) => `${employeeName} is absent`,
-	understaffedTitle: (subareaName: string) => `${subareaName} is understaffed`,
-};
+type BriefingParams = Record<string, string | number>;
+
+// Item copy as ICU templates. Each key sits next to its English template, so the Tolgee
+// extractor reads the template as the key's default. `formatBriefingText` renders the English
+// title and description that items carry for sorting and as the translation fallback.
+const briefingItemText = {
+	notClockedIn: {
+		titleKey: "today.briefing.items.attendance.notClockedIn.title",
+		title: "{employeeName} has not clocked in",
+		descriptionKey: "today.briefing.items.attendance.notClockedIn.description",
+		description: "{employeeName} was scheduled to start at {startTime}{teamSuffix}.",
+	},
+	clockedInLate: {
+		titleKey: "today.briefing.items.attendance.clockedInLate.title",
+		title: "{employeeName} clocked in late",
+		descriptionKey: "today.briefing.items.attendance.clockedInLate.description",
+		description:
+			"{employeeName} was scheduled to start at {startTime} and clocked in at {clockInTime}{teamSuffix}.",
+	},
+	absent: {
+		titleKey: "today.briefing.items.absence.isAbsent.title",
+		title: "{employeeName} is absent",
+		descriptionKey: "today.briefing.items.absence.isAbsent.description",
+		description: "{categoryName}{teamSuffix}.",
+	},
+	understaffed: {
+		titleKey: "today.briefing.items.coverage.understaffed.title",
+		title: "{subareaName} is understaffed",
+		descriptionKey: "today.briefing.items.coverage.understaffed.description",
+		description:
+			"{scheduledStaffCount} scheduled for {startTime}-{endTime}; minimum is {minimumStaffCount}.",
+	},
+} as const;
+
+function formatBriefingText(template: string, params: BriefingParams): string {
+	return template.replace(/\{(\w+)\}/g, (match, name: string) =>
+		name in params ? String(params[name]) : match,
+	);
+}
+
+function briefingItemCopy(
+	text: (typeof briefingItemText)[keyof typeof briefingItemText],
+	titleParams: BriefingParams,
+	descriptionParams: BriefingParams,
+): Pick<
+	BriefingActionItem,
+	"title" | "titleKey" | "titleParams" | "description" | "descriptionKey" | "descriptionParams"
+> {
+	return {
+		title: formatBriefingText(text.title, titleParams),
+		titleKey: text.titleKey,
+		titleParams,
+		description: formatBriefingText(text.description, descriptionParams),
+		descriptionKey: text.descriptionKey,
+		descriptionParams,
+	};
+}
 
 export function sortActionItems(items: BriefingActionItem[]): BriefingActionItem[] {
 	return items.toSorted((left, right) => {
@@ -81,16 +132,15 @@ export function detectAttendanceExceptions({
 					id: `attendance:${shift.id}`,
 					category: "attendance",
 					severity: "critical",
-					title: briefingCopy.notClockedInTitle(shift.employeeName),
-					titleKey: "today.briefing.items.attendance.notClockedIn.title",
-					titleParams: { employeeName: shift.employeeName },
-					description: `${shift.employeeName} was scheduled to start at ${shift.startTime}${formatTeamSuffix(shift.teamName)}.`,
-					descriptionKey: "today.briefing.items.attendance.notClockedIn.description",
-					descriptionParams: {
-						employeeName: shift.employeeName,
-						startTime: shift.startTime,
-						teamSuffix: formatTeamSuffix(shift.teamName),
-					},
+					...briefingItemCopy(
+						briefingItemText.notClockedIn,
+						{ employeeName: shift.employeeName },
+						{
+							employeeName: shift.employeeName,
+							startTime: shift.startTime,
+							teamSuffix: formatTeamSuffix(shift.teamName),
+						},
+					),
 					href: "/time-tracking",
 				},
 			];
@@ -102,17 +152,16 @@ export function detectAttendanceExceptions({
 					id: `attendance:${shift.id}`,
 					category: "attendance",
 					severity: "high",
-					title: briefingCopy.clockedInLateTitle(shift.employeeName),
-					titleKey: "today.briefing.items.attendance.clockedInLate.title",
-					titleParams: { employeeName: shift.employeeName },
-					description: `${shift.employeeName} was scheduled to start at ${shift.startTime} and clocked in at ${firstClockIn.toFormat("HH:mm")}${formatTeamSuffix(shift.teamName)}.`,
-					descriptionKey: "today.briefing.items.attendance.clockedInLate.description",
-					descriptionParams: {
-						employeeName: shift.employeeName,
-						startTime: shift.startTime,
-						clockInTime: firstClockIn.toFormat("HH:mm"),
-						teamSuffix: formatTeamSuffix(shift.teamName),
-					},
+					...briefingItemCopy(
+						briefingItemText.clockedInLate,
+						{ employeeName: shift.employeeName },
+						{
+							employeeName: shift.employeeName,
+							startTime: shift.startTime,
+							clockInTime: firstClockIn.toFormat("HH:mm"),
+							teamSuffix: formatTeamSuffix(shift.teamName),
+						},
+					),
 					href: "/time-tracking",
 				},
 			];
@@ -154,15 +203,14 @@ export function detectAbsencesToday({
 					id: `absence:${absence.id}`,
 					category: "absence",
 					severity: "info",
-					title: briefingCopy.absentTitle(absence.employeeName),
-					titleKey: "today.briefing.items.absence.isAbsent.title",
-					titleParams: { employeeName: absence.employeeName },
-					description: `${absence.categoryName}${formatTeamSuffix(absence.teamName)}.`,
-					descriptionKey: "today.briefing.items.absence.isAbsent.description",
-					descriptionParams: {
-						categoryName: absence.categoryName,
-						teamSuffix: formatTeamSuffix(absence.teamName),
-					},
+					...briefingItemCopy(
+						briefingItemText.absent,
+						{ employeeName: absence.employeeName },
+						{
+							categoryName: absence.categoryName,
+							teamSuffix: formatTeamSuffix(absence.teamName),
+						},
+					),
 					href: "/absences",
 				},
 			];
@@ -198,17 +246,16 @@ export function detectCoverageRisks({
 					id: `coverage:${rule.id}`,
 					category: "coverage",
 					severity: "high",
-					title: briefingCopy.understaffedTitle(rule.subareaName),
-					titleKey: "today.briefing.items.coverage.understaffed.title",
-					titleParams: { subareaName: rule.subareaName },
-					description: `${scheduledStaffCount} scheduled for ${rule.startTime}-${rule.endTime}; minimum is ${rule.minimumStaffCount}.`,
-					descriptionKey: "today.briefing.items.coverage.understaffed.description",
-					descriptionParams: {
-						scheduledStaffCount,
-						startTime: rule.startTime,
-						endTime: rule.endTime,
-						minimumStaffCount: rule.minimumStaffCount,
-					},
+					...briefingItemCopy(
+						briefingItemText.understaffed,
+						{ subareaName: rule.subareaName },
+						{
+							scheduledStaffCount,
+							startTime: rule.startTime,
+							endTime: rule.endTime,
+							minimumStaffCount: rule.minimumStaffCount,
+						},
+					),
 					href: "/scheduling",
 				},
 			];

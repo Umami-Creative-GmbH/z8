@@ -152,7 +152,7 @@ export function AbsencePlanPreviewPanel({
 								<p className="text-sm">
 									{t(
 										"absences.planPreview.coverageWarnings",
-										coverageRiskCount === 1 ? "1 coverage warning" : "{count} coverage warnings",
+										"{count, plural, one {# coverage warning} other {# coverage warnings}}",
 										{ count: coverageRiskCount },
 									)}
 								</p>

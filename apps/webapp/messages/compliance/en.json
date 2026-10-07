@@ -142,7 +142,7 @@
     "pendingExceptions": "Pending Exception Requests",
     "pendingExceptionsDescription": "Review exception requests that require your approval",
     "requestException": "Request Exception",
-    "restPeriodMessage": "You need {{time}} more rest before you can clock in. Next allowed clock-in: {{nextTime}}",
+    "restPeriodMessage": "You need {time} more rest before you can clock in. Next allowed clock-in: {nextTime}",
     "restPeriodRequired": "Rest Period Required"
   }
 }
