@@ -9,7 +9,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import {
 	authorizeAllowanceOverrideAction,
-	getAllowanceExceptionItems,
 	revokeAllowanceOverrideAction,
 } from "@/app/[locale]/(app)/settings/travel-expenses/allowance-override-actions";
 import { allowanceSituationLabel } from "@/components/travel-expenses/report/allowance-override-labels";
@@ -37,7 +36,6 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
-import { queryKeys } from "@/lib/query/keys";
 import {
 	type AllowanceOverrideError,
 	MAX_OVERRIDE_BASIS_LENGTH,
@@ -47,11 +45,12 @@ import {
 } from "@/lib/travel-expenses/allowance-override";
 import type { AllowanceExceptionItem } from "@/lib/travel-expenses/allowance-override-store";
 import type { PerDiemExceptionReason } from "@/lib/travel-expenses/per-diem";
+import { allowanceExceptionsQuery } from "./pending-exceptions";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 type FieldName = "amount" | "reason" | "evidence" | "calculationBasis";
 
-const queryKey = queryKeys.travelExpenses.allowanceExceptions();
+const queryKey = allowanceExceptionsQuery.queryKey;
 
 function fieldErrors(t: Translate, errors: AllowanceOverrideError[]) {
 	const messages: Partial<Record<FieldName, string>> = {};
@@ -439,14 +438,7 @@ function ExceptionRow({
 export function AllowanceOverridesSettingsCard() {
 	const { t } = useTranslate();
 	const [editing, setEditing] = useState<AllowanceExceptionItem | null>(null);
-	const { data, isLoading, isError, isFetching, refetch } = useQuery({
-		queryKey,
-		queryFn: async () => {
-			const result = await getAllowanceExceptionItems();
-			if (!result.success) throw new Error(result.error);
-			return result.data;
-		},
-	});
+	const { data, isLoading, isError, isFetching, refetch } = useQuery(allowanceExceptionsQuery);
 	return (
 		<Card>
 			<CardHeader>
