@@ -7,7 +7,11 @@ import {
 	renderReceiptPreview,
 } from "../receipt-preview";
 
-const storage = vi.hoisted(() => ({ objects: new Map<string, Uint8Array>() }));
+const storage = vi.hoisted(() => ({
+	objects: new Map<string, Uint8Array>(),
+	deleted: [] as string[],
+	readFailure: null as Error | null,
+}));
 
 vi.mock("@/lib/storage/export-s3-client", () => ({
 	async uploadPrivateObject(_organizationId: string, key: string, data: Uint8Array) {
@@ -15,14 +19,21 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 		return { bucket: "private", versionId: null };
 	},
 	async readPrivateObject(input: { key: string }) {
+		if (storage.readFailure) throw storage.readFailure;
 		const bytes = storage.objects.get(input.key);
-		if (!bytes) throw new Error("NoSuchKey");
+		if (!bytes)
+			throw Object.assign(new Error("The specified key does not exist."), { name: "NoSuchKey" });
 		return bytes;
 	},
+	async privateObjectExists(input: { key: string }) {
+		return storage.objects.has(input.key);
+	},
 	async deletePrivateObject(input: { key: string }) {
+		storage.deleted.push(input.key);
 		storage.objects.delete(input.key);
 	},
 	async deletePrivateObjectVersions(input: { key: string }) {
+		storage.deleted.push(input.key);
 		storage.objects.delete(input.key);
 	},
 }));
@@ -111,6 +122,8 @@ describe("stored receipt previews", () => {
 
 	beforeEach(() => {
 		storage.objects.clear();
+		storage.deleted.length = 0;
+		storage.readFailure = null;
 	});
 
 	it("renders the preview once and reuses it without reading the original again", async () => {
@@ -151,5 +164,47 @@ describe("stored receipt previews", () => {
 		await deleteTravelExpenseReceiptObject(receipt);
 
 		expect([...storage.objects.keys()]).toEqual([]);
+		// The original goes first: a preview rendered meanwhile then finds it gone.
+		expect(storage.deleted[0]).toBe(receipt.key);
+	});
+
+	it("tries an image it cannot read only once, then shows the original", async () => {
+		const broken = Buffer.from("not really a jpeg");
+		storage.objects.set(receipt.key, broken);
+		const readOriginal = vi.fn(async () => broken);
+
+		const first = await loadReceiptPreview({ ...receipt, mimeType: "image/jpeg", readOriginal });
+		const second = await loadReceiptPreview({ ...receipt, mimeType: "image/jpeg", readOriginal });
+
+		expect(first).toBeNull();
+		expect(second).toBeNull();
+		expect(readOriginal).toHaveBeenCalledTimes(1);
+	});
+
+	it("leaves no preview behind when the receipt was deleted while it was rendered", async () => {
+		const photo = await phonePhoto();
+		// The original is already gone when the rendered preview is stored.
+		const preview = await loadReceiptPreview({
+			...receipt,
+			mimeType: "image/jpeg",
+			readOriginal: async () => photo,
+		});
+
+		expect(preview).not.toBeNull();
+		expect([...storage.objects.keys()]).toEqual([]);
+	});
+
+	it("still renders the preview when reading the stored one fails", async () => {
+		const photo = await phonePhoto();
+		storage.objects.set(receipt.key, photo);
+		storage.readFailure = new Error("connect ETIMEDOUT");
+
+		const preview = await loadReceiptPreview({
+			...receipt,
+			mimeType: "image/jpeg",
+			readOriginal: async () => photo,
+		});
+
+		expect(preview).not.toBeNull();
 	});
 });

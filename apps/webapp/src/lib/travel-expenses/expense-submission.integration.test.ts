@@ -112,6 +112,10 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 		harness.deletedPrivate.push({ key: input.key, versionId: input.versionId });
 		harness.privateObjects.delete(input.key);
 	},
+	// Receipt cleanup also removes report receipt previews (#690); claims have none.
+	deletePrivateObjectVersions: async (input: { key: string }) => {
+		harness.privateObjects.delete(input.key);
+	},
 }));
 
 const { approveTravelExpenseClaim } = await import("@/app/[locale]/(app)/travel-expenses/actions");

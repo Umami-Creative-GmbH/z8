@@ -76,8 +76,11 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 	},
 	async readPrivateObject(input: { key: string }) {
 		const bytes = harness.objects.get(input.key);
-		if (!bytes) throw new Error("NoSuchKey");
+		if (!bytes) throw Object.assign(new Error("NoSuchKey"), { name: "NoSuchKey" });
 		return bytes;
+	},
+	async privateObjectExists(input: { key: string }) {
+		return harness.objects.has(input.key);
 	},
 	async deletePrivateObject(input: { key: string }) {
 		harness.objects.delete(input.key);
@@ -110,6 +113,7 @@ const ids = {
 type Person = "requester" | "manager" | "lead" | "finance" | "accountant" | "foreigner";
 
 const admin = integrationAdminPool();
+const pdfBytes = Buffer.from("%PDF-1.4\n% receipt\n%%EOF");
 /** A receipt photo, so finance can also be checked for its preview (#690). */
 const receiptPhoto = await sharp({
 	create: { width: 400, height: 300, channels: 3, background: "#f0ece4" },
@@ -203,20 +207,23 @@ function signIn(name: Person) {
 	harness.organizationId = name === "foreigner" ? "t612-foreign" : "t612-org";
 }
 
-async function upload(reportId: string, itemId: string) {
+async function upload(reportId: string, itemId: string, bytes: Buffer) {
 	signIn("requester");
 	const tusFileKey = createOwnedTusFileKey("t612-requester");
-	harness.tus.set(tusFileKey, receiptPhoto);
+	harness.tus.set(tusFileKey, bytes);
 	return processReceipt(
 		new Request("http://localhost/api/upload/travel-expense/report-receipt", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ tusFileKey, reportId, itemId, fileName: "receipt.png" }),
+			body: JSON.stringify({ tusFileKey, reportId, itemId, fileName: "receipt" }),
 		}) as unknown as NextRequest,
 	);
 }
 
-/** A submitted trip: an employee-paid EUR 89.90 train and a company-paid EUR 240.00 hotel. */
+/**
+ * A submitted trip: an employee-paid EUR 89.90 train with a receipt photo and a
+ * company-paid EUR 240.00 hotel with a PDF receipt.
+ */
 async function submittedTrip() {
 	signIn("requester");
 	const created = await actions.createTripReportAction();
@@ -235,10 +242,16 @@ async function submittedTrip() {
 			destinations: [{ place: "Hamburg", countryCode: "DE" }],
 		},
 	});
-	for (const values of [
-		{ category: "transport", description: "Train", amount: "89.90", paidBy: "employee" },
-		{ category: "accommodation", description: "Hotel", amount: "240.00", paidBy: "company" },
-	]) {
+	for (const [values, receipt] of [
+		[
+			{ category: "transport", description: "Train", amount: "89.90", paidBy: "employee" },
+			receiptPhoto,
+		],
+		[
+			{ category: "accommodation", description: "Hotel", amount: "240.00", paidBy: "company" },
+			pdfBytes,
+		],
+	] as const) {
 		signIn("requester");
 		const added = await actions.addTripReportItemAction({ reportId });
 		if (!added.success) throw new Error("add failed");
@@ -254,7 +267,7 @@ async function submittedTrip() {
 			},
 		});
 		if (!saved.success) throw new Error("save failed");
-		expect((await upload(reportId, added.data.item.id)).status).toBe(200);
+		expect((await upload(reportId, added.data.item.id, receipt)).status).toBe(200);
 	}
 	signIn("requester");
 	const report = await actions.getMyTravelExpenseReport(reportId);
@@ -274,6 +287,7 @@ async function submittedTrip() {
 	return {
 		reportId,
 		receiptId: report.data.items[0]?.receipts[0]?.id ?? "",
+		pdfReceiptId: report.data.items[1]?.receipts[0]?.id ?? "",
 	};
 }
 
@@ -426,6 +440,12 @@ describe("finance queue and recorded reimbursements (#612)", () => {
 		const preview = await receipt(approved.reportId, approved.receiptId, "?variant=thumb");
 		expect(preview.status).toBe(200);
 		expect(preview.headers.get("content-type")).toBe("image/webp");
+		const pdf = await receipt(approved.reportId, approved.pdfReceiptId);
+		expect(pdf.headers.get("content-type")).toBe("application/pdf");
+		expect(Buffer.from(await pdf.arrayBuffer())).toEqual(pdfBytes);
+		expect((await receipt(approved.reportId, approved.pdfReceiptId, "?variant=thumb")).status).toBe(
+			404,
+		);
 		expect((await actions.getTravelExpenseReportSubmission(pending.reportId)).success).toBe(false);
 		expect((await receipt(pending.reportId, pending.receiptId)).status).toBe(404);
 		expect((await receipt(pending.reportId, pending.receiptId, "?variant=thumb")).status).toBe(404);

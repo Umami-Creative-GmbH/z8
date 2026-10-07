@@ -13,6 +13,7 @@ import { db, exportStorageConfig } from "@/db";
 import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import { getOrgSecret } from "@/lib/vault";
+import { isMissingObjectError } from "./missing-object";
 
 const logger = createLogger("ExportS3Client");
 
@@ -263,6 +264,36 @@ export async function deletePrivateObject(input: {
 			...(input.versionId ? { VersionId: input.versionId } : {}),
 		}),
 	);
+}
+
+/**
+ * Whether the recorded private object/version still exists. A missing object
+ * is false; any other storage failure is thrown, never read as deleted.
+ */
+export async function privateObjectExists(input: {
+	organizationId: string;
+	key: string;
+	bucket: string | null;
+	versionId: string | null;
+}): Promise<boolean> {
+	const config = await getStorageConfig(input.organizationId);
+	if (!config)
+		throw new Error("S3 storage is not configured for this organization");
+	if (input.bucket && input.bucket !== config.bucket)
+		throw new Error("Recorded receipt bucket is unavailable");
+	try {
+		await createS3Client(config).send(
+			new HeadObjectCommand({
+				Bucket: config.bucket,
+				Key: input.key,
+				...(input.versionId ? { VersionId: input.versionId } : {}),
+			}),
+		);
+		return true;
+	} catch (error) {
+		if (isMissingObjectError(error)) return false;
+		throw error;
+	}
 }
 
 /**

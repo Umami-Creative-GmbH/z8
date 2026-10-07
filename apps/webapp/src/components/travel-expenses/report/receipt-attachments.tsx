@@ -18,6 +18,7 @@ import { useTravelExpenseFileUpload } from "@/hooks/use-travel-expense-file-uplo
 import {
 	ALLOWED_TRAVEL_EXPENSE_MIME_TYPES,
 	isAllowedTravelExpenseMime,
+	isTravelExpenseImageMime,
 } from "@/lib/travel-expenses/attachment-validation";
 import type { ReportReceiptView } from "@/lib/travel-expenses/report-store";
 
@@ -272,7 +273,7 @@ export function ReceiptAttachments({
 				<ul className="grid gap-3 sm:grid-cols-2">
 					{receipts.map((receipt) => {
 						const href = receiptHref(reportId, receipt.id);
-						const isImage = receipt.mimeType.startsWith("image/");
+						const isImage = isTravelExpenseImageMime(receipt.mimeType);
 						return (
 							<li key={receipt.id} className="flex gap-3 rounded-lg border p-3">
 								<a

@@ -67,7 +67,9 @@ vi.mock("@aws-sdk/client-s3", () => ({
 	ListObjectVersionsCommand: vi.fn().mockImplementation(function ListObjectVersionsCommand(input) {
 		return { kind: "list", input };
 	}),
-	HeadObjectCommand: vi.fn(),
+	HeadObjectCommand: vi.fn().mockImplementation(function HeadObjectCommand(input) {
+		return { kind: "head", input };
+	}),
 	ListBucketsCommand: vi.fn(),
 }));
 
@@ -78,6 +80,7 @@ vi.mock("@aws-sdk/s3-request-presigner", () => ({
 const {
 	deletePrivateObjectVersions,
 	getPresignedUrl,
+	privateObjectExists,
 	getStorageConfig,
 	isExportS3Configured,
 	isExportS3ConfiguredSync,
@@ -209,6 +212,26 @@ describe("export S3 client", () => {
 			{ Bucket: "private-export-bucket", Key: key, VersionId: "v2" },
 			{ Bucket: "private-export-bucket", Key: key, VersionId: "m1" },
 		]);
+	});
+
+	it("tells whether the recorded version of a private object still exists", async () => {
+		const object = { organizationId: "org_1", key: "receipt.jpg", bucket: null, versionId: "v1" };
+		mockState.send.mockResolvedValueOnce({});
+		await expect(privateObjectExists(object)).resolves.toBe(true);
+		expect(mockState.send.mock.calls[0]?.[0].input).toEqual({
+			Bucket: "private-export-bucket",
+			Key: "receipt.jpg",
+			VersionId: "v1",
+		});
+
+		mockState.send.mockRejectedValueOnce(
+			Object.assign(new Error("Not Found"), { name: "NotFound" }),
+		);
+		await expect(privateObjectExists(object)).resolves.toBe(false);
+
+		// An unreachable store is not mistaken for a deleted object.
+		mockState.send.mockRejectedValueOnce(new Error("connect ETIMEDOUT"));
+		await expect(privateObjectExists(object)).rejects.toThrow("ETIMEDOUT");
 	});
 
 	it("refuses to delete versions from a bucket other than the configured one", async () => {

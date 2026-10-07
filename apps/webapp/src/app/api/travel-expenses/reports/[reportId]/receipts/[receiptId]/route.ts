@@ -8,6 +8,7 @@ import { createLogger } from "@/lib/logger";
 import { readPrivateObject } from "@/lib/storage/export-s3-client";
 import {
 	isAllowedTravelExpenseMime,
+	isTravelExpenseImageMime,
 	TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER,
 } from "@/lib/travel-expenses/attachment-validation";
 import {
@@ -150,6 +151,8 @@ export async function GET(
 			const preview = await loadReceiptPreview({
 				organizationId: report.organizationId,
 				key: stored.key,
+				bucket: stored.bucket,
+				versionId: stored.versionId,
 				mimeType,
 				readOriginal,
 			});
@@ -163,7 +166,7 @@ export async function GET(
 					},
 				});
 			}
-			if (!mimeType.startsWith("image/")) return notFound();
+			if (!isTravelExpenseImageMime(mimeType)) return notFound();
 			// An image the preview cannot be rendered from is shown as its original.
 		}
 		const bytes = await readOriginal();

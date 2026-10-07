@@ -69,8 +69,11 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 	},
 	async readPrivateObject(input: { key: string }) {
 		const bytes = harness.objects.get(input.key);
-		if (!bytes) throw new Error("NoSuchKey");
+		if (!bytes) throw Object.assign(new Error("NoSuchKey"), { name: "NoSuchKey" });
 		return bytes;
+	},
+	async privateObjectExists(input: { key: string }) {
+		return harness.objects.has(input.key);
 	},
 	async deletePrivateObject(input: { key: string }) {
 		harness.deleted.push(input.key);
@@ -494,8 +497,9 @@ describe("standalone receipt report drafts (#600)", () => {
 			receiptId: body.receipt.id,
 		});
 		expect(removed).toEqual({ success: true, data: { receiptId: body.receipt.id } });
+		// The original first, then its preview.
 		expect(harness.deleted).toHaveLength(2);
-		expect(harness.deleted.at(-1)).toBe(rows[0].storage_key);
+		expect(harness.deleted[0]).toBe(rows[0].storage_key);
 		expect([...harness.objects.keys()]).toEqual([]);
 		const remaining = await admin.query(
 			"select (select count(*)::int from travel_expense_report_receipt where report_id = $1) as attached, (select count(*)::int from travel_expense_receipt_upload where organization_id = 't600-org') as staged",

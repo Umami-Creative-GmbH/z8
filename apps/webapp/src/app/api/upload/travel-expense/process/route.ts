@@ -5,7 +5,8 @@ import { db } from "@/db";
 import { travelExpenseClaim } from "@/db/schema";
 import { env } from "@/env";
 import { getAuthContext } from "@/lib/auth-helpers";
-import { deletePrivateObject, uploadPrivateObject } from "@/lib/storage/export-s3-client";
+import { uploadPrivateObject } from "@/lib/storage/export-s3-client";
+import { deleteTravelExpenseReceiptObject } from "@/lib/travel-expenses/receipt-preview";
 import {
 	deleteTusUpload,
 	readUploadedReceipt,
@@ -138,7 +139,7 @@ export async function POST(request: NextRequest) {
 			// The claim was submitted while this file was uploading. The stored
 			// object stays recorded for cleanup; try to remove it right away.
 			await runTravelExpenseReceiptCleanup(db, {
-				deleteObject: deletePrivateObject,
+				deleteObject: deleteTravelExpenseReceiptObject,
 				only: {
 					attachmentId: staged.attachmentId,
 					organizationId: staged.organizationId,

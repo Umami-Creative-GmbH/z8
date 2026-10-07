@@ -89,8 +89,11 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 	},
 	async readPrivateObject(input: { key: string }) {
 		const bytes = harness.objects.get(input.key);
-		if (!bytes) throw new Error("NoSuchKey");
+		if (!bytes) throw Object.assign(new Error("NoSuchKey"), { name: "NoSuchKey" });
 		return bytes;
+	},
+	async privateObjectExists(input: { key: string }) {
+		return harness.objects.has(input.key);
 	},
 	async deletePrivateObject(input: { key: string }) {
 		harness.objects.delete(input.key);
