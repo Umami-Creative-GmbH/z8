@@ -267,8 +267,10 @@ describe("TravelExpenseReportEditor", () => {
 		// The uploader refuses files above the server limit before uploading.
 		expect(upload.maxFileSize).toBe(1024);
 
-		act(() => upload.options?.onError?.(new Error("Unsupported file type")));
-		expect(screen.getByText(/The receipt was not attached\. Unsupported file type/)).toBeTruthy();
+		// The uploader's own English wording is never shown.
+		act(() => upload.options?.onError?.(new Error("Network glitch")));
+		expect(screen.getByText(/The receipt was not attached\. Please try again\./)).toBeTruthy();
+		expect(screen.queryByText(/Network glitch/)).toBeNull();
 
 		reportActions.getMyTravelExpenseReport.mockResolvedValue(
 			report({
