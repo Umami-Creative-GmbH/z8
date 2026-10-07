@@ -1,8 +1,9 @@
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
-import { Cause, Effect, Exit, Option, Result } from "effect";
+import { Cause, Effect, Exit } from "effect";
 import { approvalRequest, employee } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { failureOfCause } from "@/lib/effect/cause-failure";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -266,10 +267,7 @@ function runAfterCommitBestEffort<T>(
 		.afterCommit(result, dbService, entityId, currentEmployee)
 		.pipe(
 			Effect.catchCause((cause) => {
-				const error =
-					Option.getOrNull(Cause.findErrorOption(cause)) ??
-					Result.getOrNull(Cause.findDefect(cause)) ??
-					Cause.pretty(cause);
+				const error = Cause.hasInterruptsOnly(cause) ? Cause.pretty(cause) : failureOfCause(cause);
 				return Effect.sync(() =>
 					logger.error(
 						{
@@ -511,9 +509,7 @@ export function processApprovalWithCurrentEmployee<T>(
 					);
 
 					if (Exit.isFailure(exit)) {
-						const failure = Option.getOrNull(Cause.findErrorOption(exit.cause));
-						const defect = Result.getOrNull(Cause.findDefect(exit.cause));
-						throw failure ?? defect ?? new Error("An error has occurred");
+						throw failureOfCause(exit.cause);
 					}
 
 					result = exit.value;

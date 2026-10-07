@@ -5,8 +5,9 @@
  * sorting, and cursor-based pagination.
  */
 
-import { Context, Effect, Layer } from "effect";
+import { Cause, Context, Effect, Layer } from "effect";
 import type { AnyAppError } from "@/lib/effect/errors";
+import { createLogger } from "@/lib/logger";
 import { getAllApprovalHandlers } from "../domain/registry";
 import { comparePriority } from "../domain/sla-calculator";
 import type {
@@ -16,6 +17,8 @@ import type {
 	PaginatedApprovalResult,
 	UnifiedApprovalItem,
 } from "../domain/types";
+
+const logger = createLogger("ApprovalQueryService");
 
 interface ApprovalCursor {
 	priority: ApprovalPriority;
@@ -151,9 +154,23 @@ export const ApprovalQueryServiceLive = Layer.succeed(
 				const allItems: UnifiedApprovalItem[] = [];
 
 				for (const handler of activeHandlers) {
-					const items = yield* handler
-						.getApprovals(params)
-						.pipe(Effect.catchCause(() => Effect.succeed([])));
+					// One failing handler must not empty the whole list, but a defect
+					// (e.g. a missing service) is logged so wiring bugs stay visible.
+					const items = yield* handler.getApprovals(params).pipe(
+						Effect.catchCause((cause) => {
+							if (Cause.hasDies(cause)) {
+								logger.error(
+									{
+										approvalType: handler.type,
+										organizationId: params.organizationId,
+										cause: Cause.pretty(cause),
+									},
+									"Approval handler defect while listing approvals",
+								);
+							}
+							return Effect.succeed([]);
+						}),
+					);
 					allItems.push(...items);
 				}
 

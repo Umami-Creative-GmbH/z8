@@ -1,7 +1,6 @@
 import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import type { AnyAppError } from "@/lib/effect/errors";
 import {
 	buildSummaryCounts,
 	detectAbsencesToday,
@@ -303,7 +302,7 @@ export async function getManagerDailyBriefing({
 	});
 }
 
-const databaseSources: ManagerDailyBriefingSources = {
+export const databaseSources: ManagerDailyBriefingSources = {
 	async getScopedEmployees({ organizationId, currentEmployeeId, role }) {
 		const { db, employee, employeeManagers, team, user } = await import("@/db");
 
@@ -553,12 +552,15 @@ const databaseSources: ManagerDailyBriefingSources = {
 
 	async getApprovals({ organizationId, approverId, employeeIds, includeAllApprovers }) {
 		await import("@/lib/approvals/init");
-		const { ApprovalQueryService, ApprovalQueryServiceLive } = await import(
-			"@/lib/approvals/application/approval-query.service"
-		);
+		const [{ ApprovalQueryService, ApprovalQueryServiceLive }, { runtime }] = await Promise.all([
+			import("@/lib/approvals/application/approval-query.service"),
+			import("@/lib/effect/runtime"),
+		]);
 		const scopedEmployeeIds = new Set(employeeIds);
 
-		const result = await Effect.runPromise(
+		// The handlers need DatabaseService, which the shared runtime provides;
+		// ApprovalQueryService is not part of AppLayer, so it is provided on top.
+		const result = await runtime.runPromise(
 			Effect.gen(function* () {
 				const approvalQueryService = yield* ApprovalQueryService;
 				return yield* approvalQueryService.getApprovals({
@@ -569,11 +571,7 @@ const databaseSources: ManagerDailyBriefingSources = {
 					includeAllApprovers,
 					limit: 25,
 				});
-			}).pipe(Effect.provide(ApprovalQueryServiceLive)) as Effect.Effect<
-				import("@/lib/approvals/domain/types").PaginatedApprovalResult,
-				AnyAppError,
-				never
-			>,
+			}).pipe(Effect.provide(ApprovalQueryServiceLive)),
 		);
 
 		return result.items.filter((approval) => scopedEmployeeIds.has(approval.requester.id));
