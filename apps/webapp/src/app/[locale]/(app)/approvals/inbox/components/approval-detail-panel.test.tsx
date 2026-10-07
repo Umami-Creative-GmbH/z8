@@ -26,11 +26,15 @@ vi.mock("@tolgee/react", () => ({
 									? "Keine Kategorie (100 %)"
 									: key === "approvals:approvals.workCategoryUnavailable"
 										? "Kategorie nicht verfügbar"
-										: fallback,
+										: fallback.replace(/\{(\w+)\}/g, (match, name: string) =>
+												params && name in params ? String(params[name]) : match,
+											),
 	}),
 }));
 
-vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+const localeState = vi.hoisted(() => ({ locale: "en" }));
+
+vi.mock("next-intl", () => ({ useLocale: () => localeState.locale }));
 
 vi.mock("sonner", () => ({
 	toast: { success: vi.fn(), error: vi.fn() },
@@ -166,6 +170,7 @@ describe("normalizeTravelExpenseDetailEntity", () => {
 
 describe("ApprovalDetailPanel", () => {
 	beforeEach(() => {
+		localeState.locale = "en";
 		mockState.detailItem = null;
 		mockState.actions = { ...approvalItem.capabilities };
 		mockState.approveIsPending = false;
@@ -247,6 +252,114 @@ describe("ApprovalDetailPanel", () => {
 		);
 		expect(await screen.findByText("Evidence history")).toBeTruthy();
 		expect(screen.getByText("Report returned for changes")).toBeTruthy();
+	});
+
+	it("formats report dates, amounts and countries in the viewer's locale (#687)", async () => {
+		localeState.locale = "de";
+		const report: ApprovalInboxItem = {
+			...approvalItem,
+			type: "travel_expense_report",
+			entityId: "report-1",
+			summary: {
+				title: "Trip expense report",
+				subtitle: "Workshop · 2026-10-01 – 2026-10-03",
+				detail: "2 expenses · reimbursable EUR 440.61",
+				badge: null,
+				localized: {
+					title: { key: "x.tripTitle", fallback: "Trip expense report" },
+					subtitle: {
+						key: "x.subtitle",
+						fallback: "{name}",
+						params: { name: "Workshop" },
+					},
+					detail: {
+						key: "x.detail",
+						fallback: "reimbursable {reimbursable}",
+						params: {
+							reimbursable: { kind: "money", amount: "440.61", currency: "EUR" },
+						},
+					},
+				},
+			},
+		};
+		mockState.detailItem = report;
+		mockState.sections = [
+			{
+				type: "key_value",
+				title: { key: "x.report", fallback: "Submitted report" },
+				rows: [
+					{
+						label: { key: "x.dates", fallback: "Trip dates" },
+						value: {
+							kind: "plain_date_range",
+							start: "2026-10-01",
+							end: "2026-10-03",
+						},
+					},
+					{
+						label: { key: "x.destination", fallback: "Destination" },
+						value: {
+							key: "x.destinations",
+							fallback: "{destinations}",
+							params: {
+								destinations: [
+									{
+										key: "x.place",
+										fallback: "{place}, {country}",
+										params: {
+											place: "Hamburg",
+											country: { kind: "country", code: "DE" },
+										},
+									},
+									{ kind: "country", code: "FR" },
+								],
+							},
+						},
+					},
+				],
+			},
+			{
+				type: "key_value",
+				title: "1. Hotel Zurich layover, 1 night",
+				titleAsEntered: true,
+				rows: [
+					{ label: "Date", value: { kind: "plain_date", date: "2026-10-02" } },
+					{
+						label: "Amount",
+						value: { kind: "money", amount: "240.50", currency: "CHF" },
+					},
+				],
+			},
+		];
+		render(
+			<ApprovalDetailPanel
+				approval={report}
+				open={true}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		// Intl may separate a currency with a (narrow) no-break space; `\s` matches both.
+		const normalized = (text: string | null | undefined) =>
+			text?.replace(/\s/g, " ");
+		const valueFor = (label: string) =>
+			normalized(screen.getByText(label).nextElementSibling?.textContent);
+		await screen.findByText("Submitted report");
+		expect(valueFor("Trip dates")).toBe("01.10.2026 – 03.10.2026");
+		expect(valueFor("Destination")).toBe("Hamburg, Deutschland; Frankreich");
+		expect(valueFor("Date")).toBe("02.10.2026");
+		expect(valueFor("Amount")).toBe("240,50 CHF");
+		expect(normalized(screen.getByText(/^reimbursable/).textContent)).toBe(
+			"reimbursable 440,61 €",
+		);
+		// An expense's description keeps the employee's casing.
+		expect(
+			screen.getByText("1. Hotel Zurich layover, 1 night").className,
+		).not.toContain("uppercase");
+		expect(screen.getByText("Submitted report").className).toContain(
+			"uppercase",
+		);
 	});
 
 	it("offers reopening an approved expense report from the inbox (#614)", async () => {
