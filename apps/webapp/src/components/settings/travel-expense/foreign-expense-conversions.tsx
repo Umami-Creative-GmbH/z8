@@ -41,6 +41,7 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import type { ForeignDraftItem } from "@/lib/travel-expenses/conversion-store";
 import {
@@ -109,14 +110,45 @@ function evidenceErrorMessage(t: Translate, code: ManualRateFieldError | undefin
 
 type CurrencyPair = { sourceCurrency: string; targetCurrency: string };
 
+interface ManualRateValues {
+	direction: string;
+	rate: string;
+	rateDate: string;
+	reason: string;
+	evidence: string;
+}
+
+type ManualRateField = "rate" | "rateDate" | "reason" | "evidence";
+
+/** The rate as the server receives it: quoted in the chosen direction. */
+function manualRateInput(pair: CurrencyPair, value: ManualRateValues) {
+	const forward = value.direction === "source";
+	return {
+		base: forward ? pair.sourceCurrency : pair.targetCurrency,
+		quote: forward ? pair.targetCurrency : pair.sourceCurrency,
+		rate: value.rate,
+		rateDate: value.rateDate,
+		reason: value.reason,
+		evidence: value.evidence,
+	};
+}
+
+function manualRateFieldMessage(
+	t: Translate,
+	field: ManualRateField | "pair",
+	code: ManualRateFieldError | undefined,
+) {
+	return field === "evidence" ? evidenceErrorMessage(t, code) : rateErrorMessage(t, code);
+}
+
 /**
- * The manual-rate form: saves the documented rate and keeps the field errors
- * the server returned, closing the dialog once the list is refreshed.
+ * The manual-rate form: checks each field with the server's parser, keeps the
+ * field errors the server returned until the field changes, and closes the
+ * dialog once the list is refreshed.
  */
 function useManualRateForm(expense: ForeignDraftItem, pair: CurrencyPair, onClose: () => void) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const [serverErrors, setServerErrors] = useState<Record<string, ManualRateFieldError>>({});
 	const form = useForm({
 		defaultValues: {
 			direction: "source",
@@ -124,22 +156,13 @@ function useManualRateForm(expense: ForeignDraftItem, pair: CurrencyPair, onClos
 			rateDate: expense.expenseDate ?? "",
 			reason: "",
 			evidence: "",
-		},
-		onSubmit: async ({ value }) => {
-			const base = value.direction === "source" ? pair.sourceCurrency : pair.targetCurrency;
-			const quote = value.direction === "source" ? pair.targetCurrency : pair.sourceCurrency;
+		} satisfies ManualRateValues,
+		onSubmit: async ({ value, formApi }) => {
 			const result = await authorizeManualConversionRateAction({
 				reportId: expense.reportId,
 				itemId: expense.itemId,
 				expectedVersion: expense.itemVersion,
-				rate: {
-					base,
-					quote,
-					rate: value.rate,
-					rateDate: value.rateDate,
-					reason: value.reason,
-					evidence: value.evidence,
-				},
+				rate: manualRateInput(pair, value),
 			});
 			if (!result.success) {
 				toast.error(
@@ -155,7 +178,15 @@ function useManualRateForm(expense: ForeignDraftItem, pair: CurrencyPair, onClos
 					toast.success(t("settings.travelExpenses.rates.saved", "Documented rate saved"));
 					break;
 				case "invalid":
-					setServerErrors(result.data.errors);
+					// The server's refusal stays on its field until that field changes.
+					for (const [key, code] of Object.entries(result.data.errors)) {
+						const name = key === "pair" ? "direction" : (key as ManualRateField);
+						const message = manualRateFieldMessage(t, key as ManualRateField | "pair", code);
+						formApi.setFieldMeta(name, (meta) => ({
+							...meta,
+							errorMap: { ...meta.errorMap, onSubmit: message },
+						}));
+					}
 					return;
 				case "out_of_range":
 					toast.error(
@@ -185,7 +216,18 @@ function useManualRateForm(expense: ForeignDraftItem, pair: CurrencyPair, onClos
 			onClose();
 		},
 	});
-	return { form, serverErrors };
+	// The server's parser over the whole entry, so a field's error clears once it is valid.
+	const validators = (name: ManualRateField) => ({
+		onChange: ({ fieldApi }: { fieldApi: { form: { state: { values: ManualRateValues } } } }) => {
+			const parsed = parseManualRateInput(
+				manualRateInput(pair, fieldApi.form.state.values),
+				pair,
+				expense.expenseDate,
+			);
+			return parsed.ok ? undefined : manualRateFieldMessage(t, name, parsed.errors[name]);
+		},
+	});
+	return { form, validators };
 }
 
 /** Records a documented rate for one foreign-currency expense. */
@@ -199,7 +241,7 @@ function ManualRateDialog({
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const pair = { sourceCurrency: expense.currency, targetCurrency: expense.reimbursementCurrency };
-	const { form, serverErrors } = useManualRateForm(expense, pair, onClose);
+	const { form, validators } = useManualRateForm(expense, pair, onClose);
 
 	return (
 		<Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -231,21 +273,126 @@ function ManualRateDialog({
 						void form.handleSubmit();
 					}}
 				>
+					<div className="grid gap-4 sm:grid-cols-[1fr_1fr]">
+						<form.Field name="direction">
+							{(field) => (
+								<TFormItem>
+									<TFormLabel hasError={fieldHasError(field)}>
+										{t("settings.travelExpenses.rates.direction", "Quoted as")}
+									</TFormLabel>
+									<Select
+										value={field.state.value}
+										onValueChange={(value) => field.handleChange(value ?? "source")}
+									>
+										<TFormControl hasError={fieldHasError(field)}>
+											<SelectTrigger className="w-full">
+												<SelectValue />
+											</SelectTrigger>
+										</TFormControl>
+										<SelectContent>
+											<SelectItem value="source">{`1 ${pair.sourceCurrency} = x ${pair.targetCurrency}`}</SelectItem>
+											<SelectItem value="target">{`1 ${pair.targetCurrency} = x ${pair.sourceCurrency}`}</SelectItem>
+										</SelectContent>
+									</Select>
+									<TFormMessage field={field} />
+								</TFormItem>
+							)}
+						</form.Field>
+						<form.Field name="rate" validators={validators("rate")}>
+							{(field) => (
+								<TFormItem>
+									<TFormLabel hasError={fieldHasError(field)}>
+										{t("settings.travelExpenses.rates.rate", "Rate (x)")}
+									</TFormLabel>
+									<TFormControl hasError={fieldHasError(field)}>
+										<Input
+											name="rate"
+											inputMode="decimal"
+											autoComplete="off"
+											value={field.state.value}
+											onChange={(event) => field.handleChange(event.target.value)}
+											onBlur={field.handleBlur}
+										/>
+									</TFormControl>
+									<TFormMessage field={field} />
+								</TFormItem>
+							)}
+						</form.Field>
+					</div>
+					<form.Field name="rateDate" validators={validators("rateDate")}>
+						{(field) => (
+							<TFormItem>
+								<TFormLabel hasError={fieldHasError(field)}>
+									{t("settings.travelExpenses.rates.rateDate", "Rate date")}
+								</TFormLabel>
+								<TFormControl hasError={fieldHasError(field)}>
+									<DatePicker
+										name="rateDate"
+										value={field.state.value}
+										onChange={field.handleChange}
+										onBlur={field.handleBlur}
+									/>
+								</TFormControl>
+								<TFormMessage field={field} />
+							</TFormItem>
+						)}
+					</form.Field>
+					<form.Field name="reason" validators={validators("reason")}>
+						{(field) => (
+							<TFormItem>
+								<TFormLabel hasError={fieldHasError(field)}>
+									{t("settings.travelExpenses.rates.reason", "Documentation")}
+								</TFormLabel>
+								<TFormControl hasError={fieldHasError(field)}>
+									<Textarea
+										name="reason"
+										rows={3}
+										maxLength={MAX_CONVERSION_REASON_LENGTH}
+										value={field.state.value}
+										onChange={(event) => field.handleChange(event.target.value)}
+										onBlur={field.handleBlur}
+									/>
+								</TFormControl>
+								<TFormDescription>
+									{t(
+										"settings.travelExpenses.rates.reasonDescription",
+										"Where the rate comes from and why no card charge is used, e.g. the bank statement rate of the travel card.",
+									)}
+								</TFormDescription>
+								<TFormMessage field={field} />
+							</TFormItem>
+						)}
+					</form.Field>
+					<form.Field name="evidence" validators={validators("evidence")}>
+						{(field) => (
+							<TFormItem>
+								<TFormLabel hasError={fieldHasError(field)}>
+									{t("settings.travelExpenses.rates.evidence", "Rate evidence")}
+								</TFormLabel>
+								<TFormControl hasError={fieldHasError(field)}>
+									<Input
+										name="evidence"
+										autoComplete="off"
+										maxLength={MAX_RATE_EVIDENCE_LENGTH}
+										value={field.state.value}
+										onChange={(event) => field.handleChange(event.target.value)}
+										onBlur={field.handleBlur}
+									/>
+								</TFormControl>
+								<TFormDescription>
+									{t(
+										"settings.travelExpenses.rates.evidenceDescription",
+										"Where the rate can be verified, e.g. the card statement and line, or the document number of the published rate.",
+									)}
+								</TFormDescription>
+								<TFormMessage field={field} />
+							</TFormItem>
+						)}
+					</form.Field>
 					<form.Subscribe selector={(state) => state.values}>
 						{(values) => {
-							const base =
-								values.direction === "source" ? pair.sourceCurrency : pair.targetCurrency;
-							const quote =
-								values.direction === "source" ? pair.targetCurrency : pair.sourceCurrency;
 							const parsed = parseManualRateInput(
-								{
-									base,
-									quote,
-									rate: values.rate,
-									rateDate: values.rateDate,
-									reason: values.reason,
-									evidence: values.evidence,
-								},
+								manualRateInput(pair, values),
 								pair,
 								expense.expenseDate,
 							);
@@ -263,171 +410,39 @@ function ManualRateDialog({
 											},
 										)
 									: null;
-							// A rate date that cannot fit the expense date is shown right away;
-							// other client checks only gate the preview while typing.
-							const dateProblem =
-								!parsed.ok &&
-								(parsed.errors.rateDate === "after_expense_date" ||
-									parsed.errors.rateDate === "too_early" ||
-									parsed.errors.rateDate === "expense_date_missing")
-									? parsed.errors.rateDate
-									: undefined;
-							const fieldError = (field: "rate" | "rateDate" | "reason") =>
-								rateErrorMessage(
-									t,
-									serverErrors[field] ?? (field === "rateDate" ? dateProblem : undefined),
-								);
-							const evidenceError = evidenceErrorMessage(t, serverErrors.evidence);
 							return (
-								<>
-									<div className="grid gap-4 sm:grid-cols-[1fr_1fr]">
-										<form.Field name="direction">
-											{(field) => (
-												<TFormItem>
-													<TFormLabel>
-														{t("settings.travelExpenses.rates.direction", "Quoted as")}
-													</TFormLabel>
-													<Select
-														value={field.state.value}
-														onValueChange={(value) => field.handleChange(value ?? "source")}
-													>
-														<TFormControl>
-															<SelectTrigger className="w-full">
-																<SelectValue />
-															</SelectTrigger>
-														</TFormControl>
-														<SelectContent>
-															<SelectItem value="source">{`1 ${pair.sourceCurrency} = x ${pair.targetCurrency}`}</SelectItem>
-															<SelectItem value="target">{`1 ${pair.targetCurrency} = x ${pair.sourceCurrency}`}</SelectItem>
-														</SelectContent>
-													</Select>
-												</TFormItem>
+								<p className="text-sm" aria-live="polite">
+									{preview
+										? t("settings.travelExpenses.rates.preview", "Counts as {amount}.", {
+												amount: formatMoney(
+													locale,
+													preview.reimbursement.amount,
+													preview.reimbursement.currency,
+												),
+											})
+										: t(
+												"settings.travelExpenses.rates.noPreview",
+												"Enter a valid rate, date, documentation and evidence to see the result.",
 											)}
-										</form.Field>
-										<form.Field name="rate">
-											{(field) => (
-												<TFormItem>
-													<TFormLabel hasError={!!fieldError("rate")}>
-														{t("settings.travelExpenses.rates.rate", "Rate (x)")}
-													</TFormLabel>
-													<TFormControl hasError={!!fieldError("rate")}>
-														<Input
-															name="rate"
-															inputMode="decimal"
-															autoComplete="off"
-															value={field.state.value}
-															onChange={(event) => field.handleChange(event.target.value)}
-															onBlur={field.handleBlur}
-														/>
-													</TFormControl>
-													<TFormMessage>{fieldError("rate")}</TFormMessage>
-												</TFormItem>
-											)}
-										</form.Field>
-									</div>
-									<form.Field name="rateDate">
-										{(field) => (
-											<TFormItem>
-												<TFormLabel hasError={!!fieldError("rateDate")}>
-													{t("settings.travelExpenses.rates.rateDate", "Rate date")}
-												</TFormLabel>
-												<TFormControl hasError={!!fieldError("rateDate")}>
-													<DatePicker
-														name="rateDate"
-														value={field.state.value}
-														onChange={field.handleChange}
-														onBlur={field.handleBlur}
-													/>
-												</TFormControl>
-												<TFormMessage>{fieldError("rateDate")}</TFormMessage>
-											</TFormItem>
-										)}
-									</form.Field>
-									<form.Field name="reason">
-										{(field) => (
-											<TFormItem>
-												<TFormLabel hasError={!!fieldError("reason")}>
-													{t("settings.travelExpenses.rates.reason", "Documentation")}
-												</TFormLabel>
-												<TFormControl hasError={!!fieldError("reason")}>
-													<Textarea
-														name="reason"
-														rows={3}
-														maxLength={MAX_CONVERSION_REASON_LENGTH}
-														value={field.state.value}
-														onChange={(event) => field.handleChange(event.target.value)}
-														onBlur={field.handleBlur}
-													/>
-												</TFormControl>
-												<TFormDescription>
-													{t(
-														"settings.travelExpenses.rates.reasonDescription",
-														"Where the rate comes from and why no card charge is used, e.g. the bank statement rate of the travel card.",
-													)}
-												</TFormDescription>
-												<TFormMessage>{fieldError("reason")}</TFormMessage>
-											</TFormItem>
-										)}
-									</form.Field>
-									<form.Field name="evidence">
-										{(field) => (
-											<TFormItem>
-												<TFormLabel hasError={!!evidenceError}>
-													{t("settings.travelExpenses.rates.evidence", "Rate evidence")}
-												</TFormLabel>
-												<TFormControl hasError={!!evidenceError}>
-													<Input
-														name="evidence"
-														autoComplete="off"
-														maxLength={MAX_RATE_EVIDENCE_LENGTH}
-														value={field.state.value}
-														onChange={(event) => field.handleChange(event.target.value)}
-														onBlur={field.handleBlur}
-													/>
-												</TFormControl>
-												<TFormDescription>
-													{t(
-														"settings.travelExpenses.rates.evidenceDescription",
-														"Where the rate can be verified, e.g. the card statement and line, or the document number of the published rate.",
-													)}
-												</TFormDescription>
-												<TFormMessage>{evidenceError}</TFormMessage>
-											</TFormItem>
-										)}
-									</form.Field>
-									<p className="text-sm" aria-live="polite">
-										{preview
-											? t("settings.travelExpenses.rates.preview", "Counts as {amount}.", {
-													amount: formatMoney(
-														locale,
-														preview.reimbursement.amount,
-														preview.reimbursement.currency,
-													),
-												})
-											: t(
-													"settings.travelExpenses.rates.noPreview",
-													"Enter a valid rate, date, documentation and evidence to see the result.",
-												)}
-									</p>
-									<DialogFooter>
-										<Button type="button" variant="outline" onClick={onClose}>
-											{t("common.cancel", "Cancel")}
-										</Button>
-										<form.Subscribe selector={(state) => state.isSubmitting}>
-											{(isSubmitting) => (
-												<Button type="submit" disabled={isSubmitting || !preview}>
-													{isSubmitting && (
-														<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
-													)}
-													{t("settings.travelExpenses.rates.save", "Authorize rate")}
-												</Button>
-											)}
-										</form.Subscribe>
-									</DialogFooter>
-								</>
+								</p>
 							);
 						}}
 					</form.Subscribe>
+					<DialogFooter>
+						<Button type="button" variant="outline" onClick={onClose}>
+							{t("common.cancel", "Cancel")}
+						</Button>
+						<form.Subscribe selector={(state) => state.isSubmitting}>
+							{(isSubmitting) => (
+								<Button type="submit" disabled={isSubmitting}>
+									{isSubmitting && (
+										<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
+									)}
+									{t("settings.travelExpenses.rates.save", "Authorize rate")}
+								</Button>
+							)}
+						</form.Subscribe>
+					</DialogFooter>
 				</form>
 			</DialogContent>
 		</Dialog>

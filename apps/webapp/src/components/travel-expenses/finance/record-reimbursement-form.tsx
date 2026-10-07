@@ -21,6 +21,7 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { latestCalendarDate } from "@/lib/travel-expenses/future-dates";
@@ -36,7 +37,12 @@ import {
 import type { SettlementAccount, SettlementSource } from "@/lib/travel-expenses/settlement-store";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
-type FormField = "amount" | "occurredOn" | "reference" | "note";
+const FORM_FIELDS = ["amount", "occurredOn", "reference", "note"] as const;
+type FormField = (typeof FORM_FIELDS)[number];
+
+function isFormField(field: string): field is FormField {
+	return (FORM_FIELDS as readonly string[]).includes(field);
+}
 
 interface FormValues {
 	amount: string;
@@ -161,8 +167,20 @@ export function RecordReimbursementForm({
 	// The overpayment is the negative balance; a recovery is entered as a positive amount.
 	const suggested = recovery ? line.balance.replace(/^-/, "") : line.balance;
 	const attempt = useRef<{ values: string; key: string } | null>(null);
-	const [errors, setErrors] = useState<SettlementCommandFieldError[]>([]);
 	const [problem, setProblem] = useState<string | null>(null);
+	const parse = (value: FormValues) =>
+		parseSettlementCommand(
+			{ kind, currency: line.currency, ...value },
+			{ latestDate: latestCalendarDate(systemClock.nowInstant()) },
+		);
+	// The same parser the server runs, so a field's error clears as soon as its value is valid.
+	const validators = (name: FormField) => ({
+		onChange: ({ fieldApi }: { fieldApi: { form: { state: { values: FormValues } } } }) => {
+			const parsed = parse(fieldApi.form.state.values);
+			const error = parsed.ok ? undefined : parsed.errors.find((e) => e.field === name);
+			return error ? fieldMessage(t, error) : undefined;
+		},
+	});
 
 	const form = useForm({
 		defaultValues: {
@@ -173,15 +191,32 @@ export function RecordReimbursementForm({
 		} satisfies FormValues,
 		onSubmit: async ({ value, formApi }) => {
 			setProblem(null);
-			const parsed = parseSettlementCommand(
-				{ kind, currency: line.currency, ...value },
-				{ latestDate: latestCalendarDate(systemClock.nowInstant()) },
-			);
+			// A refusal stays on its field until that field changes.
+			const showFieldErrors = (errors: SettlementCommandFieldError[]) => {
+				let shown = false;
+				for (const error of errors) {
+					if (!isFormField(error.field)) continue;
+					shown = true;
+					const message = fieldMessage(t, error);
+					formApi.setFieldMeta(error.field, (meta) => ({
+						...meta,
+						errorMap: { ...meta.errorMap, onSubmit: message },
+					}));
+				}
+				if (!shown) {
+					setProblem(
+						t(
+							"travelExpenses.settlement.errors.failed",
+							"The payment could not be recorded. Please retry.",
+						),
+					);
+				}
+			};
+			const parsed = parse(value);
 			if (!parsed.ok) {
-				setErrors(parsed.errors);
+				showFieldErrors(parsed.errors);
 				return;
 			}
-			setErrors([]);
 			const values = JSON.stringify(parsed.command);
 			if (attempt.current?.values !== values) {
 				attempt.current = { values, key: crypto.randomUUID() };
@@ -207,7 +242,7 @@ export function RecordReimbursementForm({
 			}
 			const outcome = result.data;
 			if (outcome.status === "invalid") {
-				setErrors(outcome.errors);
+				showFieldErrors(outcome.errors);
 				return;
 			}
 			attempt.current = null;
@@ -227,11 +262,6 @@ export function RecordReimbursementForm({
 			onSettled(outcome.status === "refused" ? outcome.account : null);
 		},
 	});
-
-	const errorFor = (field: FormField) => {
-		const error = errors.find((candidate) => candidate.field === field);
-		return error ? fieldMessage(t, error) : null;
-	};
 
 	return (
 		<form
@@ -259,10 +289,10 @@ export function RecordReimbursementForm({
 						)}
 			</p>
 			<div className="grid gap-4 sm:grid-cols-2">
-				<form.Field name="amount">
+				<form.Field name="amount" validators={validators("amount")}>
 					{(field) => (
 						<TFormItem>
-							<TFormLabel hasError={!!errorFor("amount")}>
+							<TFormLabel hasError={fieldHasError(field)}>
 								{recovery
 									? t("travelExpenses.settlement.recoveryForm.amount", "Amount recovered ({currency})", {
 											currency: line.currency,
@@ -271,7 +301,7 @@ export function RecordReimbursementForm({
 											currency: line.currency,
 										})}
 							</TFormLabel>
-							<TFormControl hasError={!!errorFor("amount")}>
+							<TFormControl hasError={fieldHasError(field)}>
 								<Input
 									name="amount"
 									inputMode="decimal"
@@ -281,19 +311,19 @@ export function RecordReimbursementForm({
 									onBlur={field.handleBlur}
 								/>
 							</TFormControl>
-							<TFormMessage>{errorFor("amount")}</TFormMessage>
+							<TFormMessage field={field} />
 						</TFormItem>
 					)}
 				</form.Field>
-				<form.Field name="occurredOn">
+				<form.Field name="occurredOn" validators={validators("occurredOn")}>
 					{(field) => (
 						<TFormItem>
-							<TFormLabel hasError={!!errorFor("occurredOn")}>
+							<TFormLabel hasError={fieldHasError(field)}>
 								{recovery
 									? t("travelExpenses.settlement.recoveryForm.date", "Recovery date")
 									: t("travelExpenses.settlement.form.date", "Payment date")}
 							</TFormLabel>
-							<TFormControl hasError={!!errorFor("occurredOn")}>
+							<TFormControl hasError={fieldHasError(field)}>
 								<DatePicker
 									name="occurredOn"
 									value={field.state.value}
@@ -301,18 +331,18 @@ export function RecordReimbursementForm({
 									onBlur={field.handleBlur}
 								/>
 							</TFormControl>
-							<TFormMessage>{errorFor("occurredOn")}</TFormMessage>
+							<TFormMessage field={field} />
 						</TFormItem>
 					)}
 				</form.Field>
 			</div>
-			<form.Field name="reference">
+			<form.Field name="reference" validators={validators("reference")}>
 				{(field) => (
 					<TFormItem>
-						<TFormLabel hasError={!!errorFor("reference")}>
+						<TFormLabel hasError={fieldHasError(field)}>
 							{t("travelExpenses.settlement.form.reference", "Payment reference")}
 						</TFormLabel>
-						<TFormControl hasError={!!errorFor("reference")}>
+						<TFormControl hasError={fieldHasError(field)}>
 							<Input
 								name="reference"
 								autoComplete="off"
@@ -328,17 +358,17 @@ export function RecordReimbursementForm({
 								"For example the bank transfer or payroll run reference.",
 							)}
 						</TFormDescription>
-						<TFormMessage>{errorFor("reference")}</TFormMessage>
+						<TFormMessage field={field} />
 					</TFormItem>
 				)}
 			</form.Field>
-			<form.Field name="note">
+			<form.Field name="note" validators={validators("note")}>
 				{(field) => (
 					<TFormItem>
-						<TFormLabel hasError={!!errorFor("note")}>
+						<TFormLabel hasError={fieldHasError(field)}>
 							{t("travelExpenses.settlement.form.note", "Note (optional)")}
 						</TFormLabel>
-						<TFormControl hasError={!!errorFor("note")}>
+						<TFormControl hasError={fieldHasError(field)}>
 							<Textarea
 								name="note"
 								rows={2}
@@ -348,7 +378,7 @@ export function RecordReimbursementForm({
 								onBlur={field.handleBlur}
 							/>
 						</TFormControl>
-						<TFormMessage>{errorFor("note")}</TFormMessage>
+						<TFormMessage field={field} />
 					</TFormItem>
 				)}
 			</form.Field>

@@ -1002,8 +1002,10 @@ describe("report submission through approval authority (#602)", () => {
 		expect(detail.actions).toMatchObject({ canApprove: true, canReject: true });
 		const text = JSON.stringify(detail.sections);
 		expect(text).toContain("Customer workshop");
-		expect(text).toContain("1. Train to Hamburg");
-		expect(text).toContain("2. Hotel, two nights");
+		// Each expense is titled by its type and running number (#688).
+		expect(text).toContain("approvals:approvals.evidence.reportItemTitle");
+		expect(text).toContain("Train to Hamburg");
+		expect(text).toContain("Hotel, two nights");
 		// Money is a typed value the viewer formats in their locale (#687).
 		expect(detail.sections).toContainEqual(
 			expect.objectContaining({

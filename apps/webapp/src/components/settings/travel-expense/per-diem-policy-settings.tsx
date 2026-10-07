@@ -13,6 +13,7 @@ import {
 	type PerDiemPolicySettings,
 	withdrawPerDiemPolicyVersionAction,
 } from "@/app/[locale]/(app)/settings/travel-expenses/per-diem-policy-actions";
+import { CurrencySelect } from "@/components/travel-expenses/currency-select";
 import { formatMoney, formatPlainDate } from "@/components/travel-expenses/report/format";
 import { policySourceLabel } from "@/components/travel-expenses/report/mileage-labels";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -44,11 +45,14 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { queryKeys } from "@/lib/query/keys";
 import {
 	PER_DIEM_RATE_FIELDS,
-	type PerDiemPolicyInputErrors,
+	type PerDiemPolicyVersionFormInput,
+	parsePerDiemPolicyVersionInput,
 } from "@/lib/travel-expenses/per-diem-policy-input";
+import { isSupportedCurrency } from "@/lib/travel-expenses/receipt-report";
 import type {
 	PerDiemRates,
 	StatutoryPerDiemDefault,
@@ -453,6 +457,52 @@ function WithdrawPerDiemVersionButton({
 	);
 }
 
+type PerDiemVersionField =
+	| "effectiveFrom"
+	| "currency"
+	| "sourceReference"
+	| "note"
+	| keyof PerDiemRates;
+type PerDiemVersionValues = Record<PerDiemVersionField, string>;
+
+type PerDiemValidatorProps = {
+	fieldApi: {
+		form: { state: { values: PerDiemVersionValues } };
+		state: { meta: { isTouched: boolean } };
+	};
+};
+
+/** What the dialog activates; the client checks it with the server's parser too. */
+function perDiemActivationInput(
+	target: DialogTarget | null,
+	value: PerDiemVersionValues,
+	replaceVersionId: string | null,
+): PerDiemPolicyVersionFormInput {
+	return target?.source === "statutory_default"
+		? {
+				source: "statutory_default",
+				defaultKey: target.entry.key,
+				effectiveFrom: value.effectiveFrom,
+				note: value.note,
+				replacesVersionId: replaceVersionId,
+			}
+		: {
+				source: "organization",
+				effectiveFrom: value.effectiveFrom,
+				currency: value.currency,
+				rates: {
+					fullDay: value.fullDay,
+					partialDay: value.partialDay,
+					breakfastDeduction: value.breakfastDeduction,
+					lunchDeduction: value.lunchDeduction,
+					dinnerDeduction: value.dinnerDeduction,
+				},
+				sourceReference: value.sourceReference,
+				note: value.note,
+				replacesVersionId: replaceVersionId,
+			};
+}
+
 function PerDiemPolicyVersionDialog({
 	target,
 	onClose,
@@ -463,10 +513,30 @@ function PerDiemPolicyVersionDialog({
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const queryClient = useQueryClient();
-	const [errors, setErrors] = useState<PerDiemPolicyInputErrors>({});
 	const [replaceVersionId, setReplaceVersionId] = useState<string | null>(
 		target?.source === "organization" ? (target.replacesVersionId ?? null) : null,
 	);
+	const mounted: readonly PerDiemVersionField[] =
+		target?.source === "statutory_default"
+			? ["effectiveFrom", "note"]
+			: ["effectiveFrom", "currency", ...PER_DIEM_RATE_FIELDS, "sourceReference", "note"];
+
+	const check = (name: PerDiemVersionField, values: PerDiemVersionValues) => {
+		const parsed = parsePerDiemPolicyVersionInput(perDiemActivationInput(target, values, null));
+		return parsed.ok ? undefined : errorText(t, parsed.errors[name]);
+	};
+	const validators = (name: PerDiemVersionField) =>
+		(PER_DIEM_RATE_FIELDS as readonly string[]).includes(name) && name !== "fullDay"
+			? {
+					// Checked against the full day too, once entered or submitted.
+					onChangeListenTo: ["fullDay" as const],
+					onChange: ({ fieldApi }: PerDiemValidatorProps) =>
+						fieldApi.state.meta.isTouched ? check(name, fieldApi.form.state.values) : undefined,
+				}
+			: {
+					onChange: ({ fieldApi }: PerDiemValidatorProps) =>
+						check(name, fieldApi.form.state.values),
+				};
 
 	const form = useForm({
 		defaultValues: {
@@ -482,33 +552,10 @@ function PerDiemPolicyVersionDialog({
 			dinnerDeduction: "",
 			sourceReference: "",
 			note: "",
-		},
-		onSubmit: async ({ value }) => {
-			setErrors({});
+		} satisfies PerDiemVersionValues,
+		onSubmit: async ({ value, formApi }) => {
 			const result = await activatePerDiemPolicyVersionAction(
-				target?.source === "statutory_default"
-					? {
-							source: "statutory_default",
-							defaultKey: target.entry.key,
-							effectiveFrom: value.effectiveFrom,
-							note: value.note,
-							replacesVersionId: replaceVersionId,
-						}
-					: {
-							source: "organization",
-							effectiveFrom: value.effectiveFrom,
-							currency: value.currency,
-							rates: {
-								fullDay: value.fullDay,
-								partialDay: value.partialDay,
-								breakfastDeduction: value.breakfastDeduction,
-								lunchDeduction: value.lunchDeduction,
-								dinnerDeduction: value.dinnerDeduction,
-							},
-							sourceReference: value.sourceReference,
-							note: value.note,
-							replacesVersionId: replaceVersionId,
-						},
+				perDiemActivationInput(target, value, replaceVersionId),
 			);
 			if (!result.success) {
 				toast.error(
@@ -517,9 +564,29 @@ function PerDiemPolicyVersionDialog({
 				return;
 			}
 			switch (result.data.status) {
-				case "invalid":
-					setErrors(result.data.errors);
+				case "invalid": {
+					// The server's refusal stays on its field until that field changes.
+					let shown = false;
+					for (const [key, code] of Object.entries(result.data.errors)) {
+						const name = mounted.find((field) => field === key);
+						if (!name) continue;
+						shown = true;
+						const message = errorText(t, code);
+						formApi.setFieldMeta(name, (meta) => ({
+							...meta,
+							errorMap: { ...meta.errorMap, onSubmit: message },
+						}));
+					}
+					if (!shown) {
+						toast.error(
+							t(
+								"settings.travelExpenses.perDiem.saveFailed",
+								"The per diem rates could not be saved.",
+							),
+						);
+					}
 					return;
+				}
 				case "start_taken":
 					setReplaceVersionId(result.data.existingVersionId);
 					return;
@@ -548,28 +615,33 @@ function PerDiemPolicyVersionDialog({
 		label: string,
 		options: { description?: string; placeholder?: string; decimal?: boolean } = {},
 	) => (
-		<form.Field name={name}>
+		<form.Field name={name} validators={validators(name)}>
 			{(field) => (
 				<TFormItem>
-					<TFormLabel hasError={!!errors[name]}>{label}</TFormLabel>
-					<TFormControl hasError={!!errors[name]}>
-						<Input
-							name={name}
-							autoComplete="off"
-							inputMode={options.decimal ? "decimal" : undefined}
-							placeholder={options.placeholder}
-							maxLength={name === "currency" ? 3 : undefined}
-							value={field.state.value}
-							onChange={(event) =>
-								field.handleChange(
-									name === "currency" ? event.target.value.toUpperCase() : event.target.value,
-								)
-							}
-							onBlur={field.handleBlur}
-						/>
+					<TFormLabel hasError={fieldHasError(field)}>{label}</TFormLabel>
+					<TFormControl hasError={fieldHasError(field)}>
+						{name === "currency" ? (
+							<CurrencySelect
+								value={field.state.value}
+								onValueChange={field.handleChange}
+								onBlur={field.handleBlur}
+								accepts={isSupportedCurrency}
+								aria-invalid={fieldHasError(field)}
+							/>
+						) : (
+							<Input
+								name={name}
+								autoComplete="off"
+								inputMode={options.decimal ? "decimal" : undefined}
+								placeholder={options.placeholder}
+								value={field.state.value}
+								onChange={(event) => field.handleChange(event.target.value)}
+								onBlur={field.handleBlur}
+							/>
+						)}
 					</TFormControl>
 					{options.description && <TFormDescription>{options.description}</TFormDescription>}
-					<TFormMessage>{errorText(t, errors[name])}</TFormMessage>
+					<TFormMessage field={field} />
 				</TFormItem>
 			)}
 		</form.Field>
@@ -607,13 +679,13 @@ function PerDiemPolicyVersionDialog({
 						void form.handleSubmit();
 					}}
 				>
-					<form.Field name="effectiveFrom">
+					<form.Field name="effectiveFrom" validators={validators("effectiveFrom")}>
 						{(field) => (
 							<TFormItem>
-								<TFormLabel hasError={!!errors.effectiveFrom}>
+								<TFormLabel hasError={fieldHasError(field)}>
 									{t("settings.travelExpenses.perDiem.validFrom", "Valid from")}
 								</TFormLabel>
-								<TFormControl hasError={!!errors.effectiveFrom}>
+								<TFormControl hasError={fieldHasError(field)}>
 									<DatePicker
 										name="effectiveFrom"
 										value={field.state.value}
@@ -624,7 +696,7 @@ function PerDiemPolicyVersionDialog({
 										onBlur={field.handleBlur}
 									/>
 								</TFormControl>
-								<TFormMessage>{errorText(t, errors.effectiveFrom)}</TFormMessage>
+								<TFormMessage field={field} />
 							</TFormItem>
 						)}
 					</form.Field>
