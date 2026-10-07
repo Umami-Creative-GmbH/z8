@@ -13,3 +13,8 @@ export function plainDateFromCalendarDate(value: Date): PlainDate {
 		day: value.getDate(),
 	});
 }
+
+/** Convert a civil date into the local-midnight Date a calendar control expects. */
+export function calendarDateFromPlainDate(value: PlainDate): Date {
+	return new Date(value.year, value.month - 1, value.day);
+}
