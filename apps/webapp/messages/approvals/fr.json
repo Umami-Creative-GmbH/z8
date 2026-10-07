@@ -21,6 +21,7 @@
     "clockIn": "Pointer l'arrivée",
     "clockOut": "Pointer le départ",
     "confirmReject": "Confirmer le rejet",
+    "confirmReturn": "Renvoyer pour modifications",
     "date": "Date",
     "dates": "Dates",
     "days": "Jours",
@@ -62,6 +63,7 @@
       "outcomeApproved": "Approuvé",
       "outcomeRejected": "Rejeté",
       "project": "Projet",
+      "receiptExceptionsTitle": "Reçus manquants",
       "receipts": "Reçus",
       "request": "Demande",
       "requestedBy": "Demandé par",
@@ -93,12 +95,18 @@
     "notes": "Notes",
     "noTimeCorrectionApprovals": "Aucune demande de correction de temps en attente à examiner.",
     "offFrom": "congé du",
-    "openDetailsFor": "Ouvrir les détails pour {title}",
+    "openDetailsFor": "Ouvrir les détails pour ${item.summary.title}",
     "openInbox": "Ouvrir la boîte de réception",
     "original": "Original",
     "pendingRequests": "Demandes en attente",
     "pendingRequestsDescription": "Sélectionnez les demandes à approuver en bloc, ou cliquez sur une ligne pour voir les détails",
     "reason": "Motif",
+    "receiptExceptions": {
+      "accept": "Accepter le justificatif manquant pour {label}",
+      "instructions": "Ces dépenses ne comportent aucun justificatif. Pour approuver la note de frais, acceptez chaque explication. Vous pouvez rejeter la note de frais sans les accepter.",
+      "readOnly": "Ces dépenses ont été soumises sans justificatif, avec l'explication de l'employé.",
+      "reason": "Explication :"
+    },
     "reject": "Rejeter",
     "rejected": "Demande rejetée",
     "rejectFailed": "Échec du rejet",
@@ -110,12 +118,29 @@
     "rejectSelected": "Rejeter la sélection",
     "rejectTimeCorrectionTitle": "Rejeter la correction de temps",
     "rejectTitle": "Rejeter la demande d'absence",
+    "reportReturned": "Note de frais renvoyée pour modifications",
     "requested": "Demandé",
     "requestedCorrection": "Correction demandée",
     "requestedToday": "Aujourd'hui",
     "requester": "Demandeur",
     "requestingCorrection": "demande une correction de temps pour",
     "requestingOff": "demande",
+    "retry": "Réessayer",
+    "returnCommentTooLong": "Le commentaire ne doit pas dépasser {max} caractères.",
+    "returnItemComments": "Commentaires sur les dépenses (facultatif)",
+    "returnItemLabel": "Dépense {number}",
+    "returnNote": "Note pour l'employé",
+    "returnNoteRequired": "Indiquez à l'employé les modifications à apporter.",
+    "returnNoteTooLong": "La note ne doit pas dépasser {max} caractères.",
+    "returnReport": "Renvoyer",
+    "returnReportConflict": "Cette note de frais a été traitée, renvoyée ou modifiée entre-temps. Rechargez-la pour afficher son état actuel.",
+    "returnReportDescription": "L'employé peut corriger la note de frais et la soumettre de nouveau. Cet envoi, votre note et vos commentaires seront conservés dans son historique.",
+    "returnReportFailed": "Impossible de renvoyer la note de frais. Veuillez réessayer.",
+    "returnReportInvalid": "Vérifiez la note et les commentaires : une note est requise et chaque texte doit respecter la limite imposée.",
+    "returnReportLoadFailed": "Impossible de charger la note de frais soumise. Veuillez réessayer.",
+    "returnReportLoading": "Chargement de la note de frais soumise…",
+    "returnReportNotFound": "Vous n'avez plus à examiner cette note de frais.",
+    "returnReportTitle": "Renvoyer la note de frais pour modifications",
     "review": {
       "showDetails": "Afficher les détails",
       "switchOrganizationAction": "Basculer vers {organization}",
@@ -128,7 +153,7 @@
     "searchLabel": "Rechercher des approbations",
     "searchPlaceholder": "Rechercher par nom ou e-mail…",
     "selectAll": "Tout sélectionner",
-    "selectedCount": "{selectedCount} sélectionné(s)",
+    "selectedCount": "${selectedCount} sélectionné(s)",
     "selectRow": "Sélectionner la ligne",
     "timeComparison": "Comparaison des heures",
     "timeCorrectionApproved": "Correction de temps approuvée",
@@ -137,26 +162,29 @@
     "timeCorrectionsDescription": "Examinez et approuvez les demandes de correction de saisie de temps des membres de votre équipe",
     "timelineActor": "{at} par {actorName}",
     "title": "Approbations",
-    "totalCount": "{totalCount} en attente",
+    "totalCount": "${totalCount} en attente",
     "type": "Type",
     "types": {
       "absence_entry": "Demandes d'absence",
       "time_entry": "Corrections d'heures",
-      "travel_expense_claim": "Frais de déplacement"
+      "travel_expense_claim": "Frais de déplacement",
+      "travel_expense_report": "Notes de frais"
     },
     "unifiedInboxBannerDescription": "Visualisez tous les types d'approbation au même endroit avec filtrage, actions groupées et suivi des SLA.",
     "unifiedInboxBannerTitle": "Essayez la nouvelle boîte de réception unifiée",
+    "viewExpenseClaim": "Afficher la demande et les reçus",
+    "viewExpenseReport": "Afficher la note de frais soumise et les justificatifs",
     "workCategory": "Catégorie de travail",
     "workCategoryUnavailable": "Catégorie inconnue (indisponible)",
     "workLocation": "Lieu de travail"
   },
   "fastLanes": {
     "approve": "Approuver",
-    "approveGroup": "Approuver {label}",
+    "approveGroup": "Approuver ${label}",
     "confirmReject": "Confirmer le rejet",
-    "confirmRejectGroup": "Confirmer le rejet de {label}",
+    "confirmRejectGroup": "Confirmer le rejet de ${label}",
     "description": "Examiner les demandes similaires à faible friction par lots.",
-    "expandGroup": "Développer {label}",
+    "expandGroup": "Développer ${label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Absences sans conflit détecté.",
@@ -175,24 +203,25 @@
         "label": "Demandes obsolètes"
       }
     },
-    "notEligibleApprove": "{notApprovableCount} non éligible(s) à l'approbation en masse",
-    "notEligibleReject": "{notRejectableCount} non éligible(s) au rejet en masse",
+    "notEligibleApprove": "${notApprovableCount} non éligible(s) à l'approbation en masse",
+    "notEligibleReject": "${notRejectableCount} non éligible(s) au rejet en masse",
     "reject": "Rejeter",
-    "rejectGroup": "Rejeter {label}",
+    "rejectGroup": "Rejeter ${label}",
     "rejectReason": "Motif de rejet en masse",
     "risk": {
       "high": "Risque élevé",
       "low": "Risque faible",
       "medium": "Risque moyen"
     },
-    "showGroup": "Afficher {label}",
+    "showGroup": "Afficher ${label}",
     "title": "Voies rapides"
   },
   "sprint": {
-    "age": "{ageDays}j d'ancienneté",
+    "age": "${item.timing.ageDays}j d'ancienneté",
     "approve": "Approuver",
     "approveCurrentApproval": "Approuver l'approbation actuelle",
     "capabilities": {
+      "approveInDetails": "Ouvrez les détails pour accepter les exceptions et approuver",
       "approveUnavailable": "Approbation indisponible",
       "bulkApprove": "Éligible à l'action en masse",
       "rejectUnavailable": "Rejet indisponible"
@@ -207,7 +236,7 @@
       "normal": "Priorité normale",
       "urgent": "Priorité urgente"
     },
-    "progress": "{current} sur {total}",
+    "progress": "${currentIndex + 1} sur ${visibleItems.length}",
     "reject": "Rejeter",
     "rejectCurrentApproval": "Rejeter l'approbation actuelle",
     "rejectReason": "Motif de rejet du sprint",
@@ -231,7 +260,8 @@
     "types": {
       "absenceEntry": "Demande d'absence",
       "timeEntry": "Saisie de temps",
-      "travelExpenseClaim": "Note de frais de déplacement"
+      "travelExpenseClaim": "Note de frais de déplacement",
+      "travelExpenseReport": "Note de frais"
     }
   }
 }

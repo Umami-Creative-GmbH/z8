@@ -283,17 +283,18 @@
       "monthTotal": "Σύνολο μήνα",
       "nextMonth": "Επόμενος μήνας",
       "previousMonth": "Προηγούμενος μήνας",
+      "recordedOnlyDayLabel": "{date}: Καταγράφηκαν {actual}.",
       "totalDescription": "Καταγεγραμμένος χρόνος σε σύγκριση με τις ώρες πολιτικής",
       "weekSum": "Άθροισμα"
     },
     "requirements": {
+      "includesRunningWork": "Περιλαμβάνει εργασία σε εξέλιξη",
       "status": {
         "met": "καλύφθηκε η απαίτηση",
         "missing": "λείπει καταγεγραμμένος χρόνος",
         "over": "πάνω από την απαίτηση",
         "under": "κάτω από την απαίτηση"
-      },
-      "dayLabel": "{date}: {actual} καταγράφηκαν, {required} απαιτούνται, {delta} {status}."
+      }
     },
     "split": {
       "ambiguousTime": "Επιλέξτε ποια εμφάνιση θα χρησιμοποιήσετε",
@@ -346,11 +347,6 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
-    },
-    "calendar": {
-      "break": {
-        "titleWithDuration": "Διάλειμμα – {duration}"
-      }
     }
   }
 }

@@ -156,7 +156,7 @@
         "title": "Zaproszenia"
       },
       "lifecycle": {
-        "actionsLabel": "Działania dotyczące pracownika {name}",
+        "actionsLabel": "Działania dotyczące pracownika ${target.displayName}",
         "deactivate": "Dezaktywuj",
         "deactivateDescription": "Spowoduje to zawieszenie dostępu do tej organizacji i zakończenie bieżących sesji. Historia pracownika zostanie zachowana.",
         "deactivateError": "Nie udało się dezaktywować pracownika",
@@ -178,9 +178,7 @@
         "removeSuccess": "Dostęp do organizacji został usunięty",
         "removeTitle": "Usunąć dostęp do organizacji?",
         "removing": "Usuwanie dostępu...",
-        "removingStatus": "Usuwanie dostępu do organizacji",
-        "finalOwnerDeactivateGuidance": "Najpierw przypisz i aktywuj innego zatwierdzonego właściciela, zanim dezaktywujesz tego pracownika.",
-        "finalOwnerRemoveGuidance": "Najpierw przypisz i aktywuj innego zatwierdzonego właściciela, zanim odbierzesz temu pracownikowi dostęp."
+        "removingStatus": "Usuwanie dostępu do organizacji"
       },
       "offboarding": {
         "acknowledgeDuties": "Administratorzy rozpatrzą {count} otwartych zadań zatwierdzania.",

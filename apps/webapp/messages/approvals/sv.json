@@ -21,6 +21,7 @@
     "clockIn": "Stämpla in",
     "clockOut": "Stämpla ut",
     "confirmReject": "Bekräfta avvisning",
+    "confirmReturn": "Skicka tillbaka för ändringar",
     "date": "Datum",
     "dates": "Datum",
     "days": "Dagar",
@@ -62,6 +63,7 @@
       "outcomeApproved": "Godkänd",
       "outcomeRejected": "Avvisad",
       "project": "Projekt",
+      "receiptExceptionsTitle": "Saknade kvitton",
       "receipts": "Kvitton",
       "request": "Begäran",
       "requestedBy": "Begärd av",
@@ -99,6 +101,12 @@
     "pendingRequests": "Väntande förfrågningar",
     "pendingRequestsDescription": "Välj förfrågningar för att massgodkänna, eller klicka på en rad för detaljer",
     "reason": "Anledning",
+    "receiptExceptions": {
+      "accept": "Godkänn saknat kvitto för {label}",
+      "instructions": "Dessa utlägg saknar kvitto. För att godkänna rapporten måste du godkänna varje förklaring. Du kan avvisa rapporten utan att godkänna dem.",
+      "readOnly": "Dessa utlägg skickades in utan kvitto, tillsammans med medarbetarens förklaring.",
+      "reason": "Förklaring:"
+    },
     "reject": "Avvisa",
     "rejected": "Förfrågan avvisades",
     "rejectFailed": "Kunde inte avvisa",
@@ -110,12 +118,29 @@
     "rejectSelected": "Avvisa markerade",
     "rejectTimeCorrectionTitle": "Avvisa tidskorrigering",
     "rejectTitle": "Avvisa frånvaroansökan",
+    "reportReturned": "Rapporten har returnerats för ändringar",
     "requested": "Begärd",
     "requestedCorrection": "Begärd korrigering",
     "requestedToday": "Idag",
     "requester": "Förfrågare",
     "requestingCorrection": "begär en tidskorrigering för",
     "requestingOff": "begär",
+    "retry": "Försök igen",
+    "returnCommentTooLong": "Håll kommentaren under {max} tecken.",
+    "returnItemComments": "Kommentarer om utlägg (valfritt)",
+    "returnItemLabel": "Utlägg {number}",
+    "returnNote": "Meddelande till medarbetaren",
+    "returnNoteRequired": "Berätta för medarbetaren vad som behöver ändras.",
+    "returnNoteTooLong": "Håll meddelandet under {max} tecken.",
+    "returnReport": "Returnera",
+    "returnReportConflict": "Den här rapporten har beslutats, returnerats eller ändrats under tiden. Ladda om den för att se dess aktuella status.",
+    "returnReportDescription": "Medarbetaren kan korrigera rapporten och skicka in den igen. Denna inskickning, ditt meddelande och dina kommentarer sparas i historiken.",
+    "returnReportFailed": "Rapporten kunde inte returneras. Försök igen.",
+    "returnReportInvalid": "Kontrollera meddelandet och kommentarerna: ett meddelande krävs och varje text måste rymmas inom sin gräns.",
+    "returnReportLoadFailed": "Det gick inte att läsa in den inskickade rapporten. Försök igen.",
+    "returnReportLoading": "Läser in den inskickade rapporten…",
+    "returnReportNotFound": "Den här rapporten ligger inte längre hos dig för granskning.",
+    "returnReportTitle": "Returnera rapport för ändringar",
     "review": {
       "showDetails": "Visa detaljer",
       "switchOrganizationAction": "Växla till {organization}",
@@ -142,10 +167,13 @@
     "types": {
       "absence_entry": "Frånvaroansökningar",
       "time_entry": "Tidskorrigeringar",
-      "travel_expense_claim": "Resekostnader"
+      "travel_expense_claim": "Resekostnader",
+      "travel_expense_report": "Utläggsrapporter"
     },
     "unifiedInboxBannerDescription": "Visa alla typer av godkännanden på ett ställe med filtrering, massåtgärder och SLA-uppföljning.",
     "unifiedInboxBannerTitle": "Prova den nya enhetliga inkorgen",
+    "viewExpenseClaim": "Visa reseräkning och kvitton",
+    "viewExpenseReport": "Visa inskickad rapport och kvitton",
     "workCategory": "Arbetskategori",
     "workCategoryUnavailable": "Okänd kategori (otillgänglig)",
     "workLocation": "Arbetsplats"
@@ -193,6 +221,7 @@
     "approve": "Godkänn",
     "approveCurrentApproval": "Godkänn aktuellt godkännande",
     "capabilities": {
+      "approveInDetails": "Öppna detaljerna för att godkänna dess undantag och godkänna",
       "approveUnavailable": "Godkännande ej tillgängligt",
       "bulkApprove": "Kan masshanteras",
       "rejectUnavailable": "Avvisning ej tillgänglig"
@@ -231,7 +260,8 @@
     "types": {
       "absenceEntry": "Frånvaroansökan",
       "timeEntry": "Tidsregistrering",
-      "travelExpenseClaim": "Reseräkning"
+      "travelExpenseClaim": "Reseräkning",
+      "travelExpenseReport": "Utläggsrapport"
     }
   }
 }

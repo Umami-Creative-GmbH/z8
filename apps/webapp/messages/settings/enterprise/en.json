@@ -518,7 +518,7 @@
           "review": "Review & Activate",
           "review.description": "Guard activation",
           "scim": "SCIM Provisioning",
-          "scim.description": "Connect and manage your SCIM provisioning connection",
+          "scim.description": "Issue provisioning token",
           "sso": "SSO Configuration",
           "sso.description": "Register OIDC or SAML",
           "ssoTest": "Test User",

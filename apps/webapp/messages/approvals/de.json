@@ -21,6 +21,7 @@
     "clockIn": "Einstempeln",
     "clockOut": "Ausstempeln",
     "confirmReject": "Ablehnung bestätigen",
+    "confirmReturn": "Zur Überarbeitung zurücksenden",
     "date": "Datum",
     "dates": "Daten",
     "days": "Tage",
@@ -62,6 +63,7 @@
       "outcomeApproved": "Genehmigt",
       "outcomeRejected": "Abgelehnt",
       "project": "Projekt",
+      "receiptExceptionsTitle": "Fehlende Belege",
       "receipts": "Belege",
       "request": "Antrag",
       "requestedBy": "Beantragt von",
@@ -93,12 +95,18 @@
     "notes": "Notizen",
     "noTimeCorrectionApprovals": "Keine ausstehenden Zeitkorrekturanfragen zur Überprüfung.",
     "offFrom": "frei ab",
-    "openDetailsFor": "Details öffnen für {title}",
+    "openDetailsFor": "Details öffnen für ${item.summary.title}",
     "openInbox": "Posteingang öffnen",
     "original": "Original",
     "pendingRequests": "Ausstehende Anfragen",
     "pendingRequestsDescription": "Wählen Sie Anfragen zur Sammelgenehmigung aus oder klicken Sie auf eine Zeile für Details",
     "reason": "Grund",
+    "receiptExceptions": {
+      "accept": "Fehlenden Beleg für {label} akzeptieren",
+      "instructions": "Für diese Ausgaben liegt kein Beleg vor. Um den Bericht zu genehmigen, akzeptieren Sie jede Begründung. Sie können den Bericht ablehnen, ohne diese zu akzeptieren.",
+      "readOnly": "Diese Ausgaben wurden ohne Beleg mit der Begründung des Mitarbeiters eingereicht.",
+      "reason": "Begründung:"
+    },
     "reject": "Ablehnen",
     "rejected": "Anfrage abgelehnt",
     "rejectFailed": "Ablehnung fehlgeschlagen",
@@ -110,12 +118,29 @@
     "rejectSelected": "Ausgewählte ablehnen",
     "rejectTimeCorrectionTitle": "Zeitkorrektur ablehnen",
     "rejectTitle": "Abwesenheitsanfrage ablehnen",
+    "reportReturned": "Bericht zur Überarbeitung zurückgegeben",
     "requested": "Angefordert",
     "requestedCorrection": "Angeforderte Korrektur",
     "requestedToday": "Heute",
     "requester": "Antragsteller",
     "requestingCorrection": "beantragt eine Zeitkorrektur für",
     "requestingOff": "beantragt",
+    "retry": "Erneut versuchen",
+    "returnCommentTooLong": "Der Kommentar darf maximal {max} Zeichen lang sein.",
+    "returnItemComments": "Kommentare zu Ausgaben (optional)",
+    "returnItemLabel": "Ausgabe {number}",
+    "returnNote": "Hinweis an den Mitarbeiter",
+    "returnNoteRequired": "Teilen Sie dem Mitarbeiter mit, was geändert werden soll.",
+    "returnNoteTooLong": "Der Hinweis darf maximal {max} Zeichen lang sein.",
+    "returnReport": "Zurückgeben",
+    "returnReportConflict": "Über diesen Bericht wurde in der Zwischenzeit entschieden, er wurde zurückgegeben oder geändert. Laden Sie ihn neu, um den aktuellen Status zu sehen.",
+    "returnReportDescription": "Der Mitarbeiter kann den Bericht korrigieren und erneut einreichen. Diese Einreichung, Ihr Hinweis und Ihre Kommentare bleiben im Verlauf erhalten.",
+    "returnReportFailed": "Der Bericht konnte nicht zurückgegeben werden. Bitte versuchen Sie es erneut.",
+    "returnReportInvalid": "Überprüfen Sie den Hinweis und die Kommentare: Ein Hinweis ist erforderlich und jeder Text darf die Zeichenbegrenzung nicht überschreiten.",
+    "returnReportLoadFailed": "Der eingereichte Bericht konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "returnReportLoading": "Eingereichter Bericht wird geladen …",
+    "returnReportNotFound": "Dieser Bericht liegt nicht mehr zur Prüfung bei Ihnen.",
+    "returnReportTitle": "Bericht zur Überarbeitung zurückgeben",
     "review": {
       "showDetails": "Details anzeigen",
       "switchOrganizationAction": "Zu {organization} wechseln",
@@ -128,7 +153,7 @@
     "searchLabel": "Genehmigungen durchsuchen",
     "searchPlaceholder": "Suche nach Name oder E-Mail…",
     "selectAll": "Alle auswählen",
-    "selectedCount": "{selectedCount} ausgewählt",
+    "selectedCount": "${selectedCount} ausgewählt",
     "selectRow": "Zeile auswählen",
     "timeComparison": "Zeitvergleich",
     "timeCorrectionApproved": "Zeitkorrektur genehmigt",
@@ -137,26 +162,29 @@
     "timeCorrectionsDescription": "Überprüfen und genehmigen Sie Anträge auf Zeitkorrekturen Ihrer Teammitglieder",
     "timelineActor": "{at} von {actorName}",
     "title": "Genehmigungen",
-    "totalCount": "{totalCount} ausstehend",
+    "totalCount": "${totalCount} ausstehend",
     "type": "Typ",
     "types": {
       "absence_entry": "Abwesenheitsanträge",
       "time_entry": "Zeitkorrekturen",
-      "travel_expense_claim": "Reisekosten"
+      "travel_expense_claim": "Reisekosten",
+      "travel_expense_report": "Ausgabenberichte"
     },
     "unifiedInboxBannerDescription": "Sehen Sie alle Genehmigungsarten an einem Ort mit Filtern, Massenaktionen und SLA-Nachverfolgung.",
     "unifiedInboxBannerTitle": "Probieren Sie den neuen einheitlichen Posteingang aus",
+    "viewExpenseClaim": "Antrag und Belege anzeigen",
+    "viewExpenseReport": "Eingereichten Bericht und Belege anzeigen",
     "workCategory": "Arbeitskategorie",
     "workCategoryUnavailable": "Unbekannte Kategorie (nicht verfügbar)",
     "workLocation": "Arbeitsort"
   },
   "fastLanes": {
     "approve": "Genehmigen",
-    "approveGroup": "{label} genehmigen",
+    "approveGroup": "${label} genehmigen",
     "confirmReject": "Ablehnung bestätigen",
-    "confirmRejectGroup": "Ablehnung von {label} bestätigen",
+    "confirmRejectGroup": "Ablehnung von ${label} bestätigen",
     "description": "Ähnliche unkomplizierte Anfragen stapelweise prüfen.",
-    "expandGroup": "{label} aufklappen",
+    "expandGroup": "${label} aufklappen",
     "groups": {
       "lowRiskAbsence": {
         "description": "Abwesenheiten ohne erkannte Konflikte.",
@@ -175,24 +203,25 @@
         "label": "Veraltete Anfragen"
       }
     },
-    "notEligibleApprove": "{notApprovableCount} nicht für Massengenehmigung geeignet",
-    "notEligibleReject": "{notRejectableCount} nicht für Massenablehnung geeignet",
+    "notEligibleApprove": "${notApprovableCount} nicht für Massengenehmigung geeignet",
+    "notEligibleReject": "${notRejectableCount} nicht für Massenablehnung geeignet",
     "reject": "Ablehnen",
-    "rejectGroup": "{label} ablehnen",
+    "rejectGroup": "${label} ablehnen",
     "rejectReason": "Grund für Massenablehnung",
     "risk": {
       "high": "Hohes Risiko",
       "low": "Geringes Risiko",
       "medium": "Mittleres Risiko"
     },
-    "showGroup": "{label} anzeigen",
+    "showGroup": "${label} anzeigen",
     "title": "Schnellverfahren"
   },
   "sprint": {
-    "age": "{ageDays} Tage alt",
+    "age": "${item.timing.ageDays} Tage alt",
     "approve": "Genehmigen",
     "approveCurrentApproval": "Aktuelle Genehmigung bestätigen",
     "capabilities": {
+      "approveInDetails": "Öffnen Sie die Details, um die Ausnahmen zu akzeptieren und zu genehmigen",
       "approveUnavailable": "Genehmigung nicht verfügbar",
       "bulkApprove": "Für Massenbearbeitung geeignet",
       "rejectUnavailable": "Ablehnung nicht verfügbar"
@@ -207,7 +236,7 @@
       "normal": "Normale Priorität",
       "urgent": "Dringende Priorität"
     },
-    "progress": "{current} von {total}",
+    "progress": "${currentIndex + 1} von ${visibleItems.length}",
     "reject": "Ablehnen",
     "rejectCurrentApproval": "Aktuelle Genehmigung ablehnen",
     "rejectReason": "Grund für Sprint-Ablehnung",
@@ -231,7 +260,8 @@
     "types": {
       "absenceEntry": "Abwesenheitsantrag",
       "timeEntry": "Zeiterfassung",
-      "travelExpenseClaim": "Reisekostenabrechnung"
+      "travelExpenseClaim": "Reisekostenabrechnung",
+      "travelExpenseReport": "Ausgabenbericht"
     }
   }
 }

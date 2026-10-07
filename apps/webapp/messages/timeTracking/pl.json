@@ -40,8 +40,7 @@
       "errors": {
         "invalidTimeRange": "Godzina zakończenia pracy musi być późniejsza niż godzina rozpoczęcia",
         "submitFailed": "Nie udało się przesłać korekty",
-        "updateFailed": "Nie udało się zaktualizować wpisu czasu",
-        "noChanges": "Należy zmienić co najmniej jedną wartość korekty"
+        "updateFailed": "Nie udało się zaktualizować wpisu czasu"
       },
       "noteLabel": "Notatka (opcjonalnie)",
       "notePlaceholder": "Dodaj notatkę o tej zmianie…",
@@ -55,13 +54,11 @@
       "submitRequest": "Prześlij prośbę",
       "submitting": "Przesyłanie…",
       "success": {
-        "applied": "Korekta została pomyślnie zastosowana",
+        "applied": "Pomyślnie zastosowano korektę",
         "submitted": "Prośba o korektę została przesłana do zatwierdzenia przez przełożonego",
         "updated": "Wpis czasu został pomyślnie zaktualizowany"
       },
-      "timezoneNote": "Czasy są podane w Twojej lokalnej strefie czasowej ({timezone})",
-      "clockInTime": "Godzina rozpoczęcia pracy",
-      "clockOutTime": "Godzina zakończenia pracy"
+      "timezoneNote": "Czasy są podane w Twojej lokalnej strefie czasowej ({timezone})"
     },
     "currentlyClockedIn": "Aktualnie pracujesz",
     "deadline": "Termin",
@@ -272,12 +269,7 @@
     "unknownCategory": "Nieznana kategoria",
     "unknownProject": "Nieznany projekt",
     "welcomeBack": "Witaj ponownie, {name}",
-    "workCategory": "Kategoria pracy",
-    "workLocation": "Miejsce pracy",
-    "workLocationHome": "Dom",
-    "workLocationOffice": "Biuro",
-    "workLocationOther": "Inne",
-    "workLocationRemote": "Zdalnie"
+    "workCategory": "Kategoria pracy"
   },
   "wellness": {
     "water": {

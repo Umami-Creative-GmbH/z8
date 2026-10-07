@@ -21,6 +21,7 @@
     "clockIn": "Registrar entrada",
     "clockOut": "Registrar saída",
     "confirmReject": "Confirmar rejeição",
+    "confirmReturn": "Devolver para alterações",
     "date": "Data",
     "dates": "Datas",
     "days": "Dias",
@@ -62,6 +63,7 @@
       "outcomeApproved": "Aprovado",
       "outcomeRejected": "Rejeitado",
       "project": "Projeto",
+      "receiptExceptionsTitle": "Recibos ausentes",
       "receipts": "Recibos",
       "request": "Solicitação",
       "requestedBy": "Solicitado por",
@@ -93,12 +95,18 @@
     "notes": "Notas",
     "noTimeCorrectionApprovals": "Nenhuma solicitação de correção de horário pendente para revisar.",
     "offFrom": "ausente de",
-    "openDetailsFor": "Abrir detalhes de {title}",
+    "openDetailsFor": "Abrir detalhes de ${item.summary.title}",
     "openInbox": "Abrir Caixa de Entrada",
     "original": "Original",
     "pendingRequests": "Solicitações Pendentes",
     "pendingRequestsDescription": "Selecione solicitações para aprovar em massa ou clique em uma linha para ver detalhes",
     "reason": "Motivo",
+    "receiptExceptions": {
+      "accept": "Aceitar comprovante ausente para {label}",
+      "instructions": "Estas despesas não têm comprovante. Para aprovar o relatório, aceite cada explicação. Você pode rejeitar o relatório sem aceitá-las.",
+      "readOnly": "Estas despesas foram enviadas sem comprovante, com a explicação do funcionário.",
+      "reason": "Explicação:"
+    },
     "reject": "Rejeitar",
     "rejected": "Solicitação rejeitada",
     "rejectFailed": "Falha ao rejeitar",
@@ -110,12 +118,29 @@
     "rejectSelected": "Rejeitar Selecionados",
     "rejectTimeCorrectionTitle": "Rejeitar Correção de Horário",
     "rejectTitle": "Rejeitar Solicitação de Ausência",
+    "reportReturned": "Relatório devolvido para alterações",
     "requested": "Solicitado",
     "requestedCorrection": "Correção Solicitada",
     "requestedToday": "Hoje",
     "requester": "Solicitante",
     "requestingCorrection": "está solicitando uma correção de horário para",
     "requestingOff": "está solicitando",
+    "retry": "Tentar novamente",
+    "returnCommentTooLong": "Mantenha o comentário com menos de {max} caracteres.",
+    "returnItemComments": "Comentários sobre as despesas (opcional)",
+    "returnItemLabel": "Despesa {number}",
+    "returnNote": "Observação para o funcionário",
+    "returnNoteRequired": "Informe ao funcionário o que alterar.",
+    "returnNoteTooLong": "Mantenha a observação com menos de {max} caracteres.",
+    "returnReport": "Devolver",
+    "returnReportConflict": "Este relatório foi decidido, devolvido ou alterado entretanto. Recarregue-o para ver seu estado atual.",
+    "returnReportDescription": "O funcionário pode corrigir o relatório e enviá-lo novamente. Este envio, sua observação e os comentários permanecerão no histórico.",
+    "returnReportFailed": "Não foi possível devolver o relatório. Tente novamente.",
+    "returnReportInvalid": "Verifique a observação e os comentários: é obrigatório incluir uma observação e cada texto deve respeitar seu limite.",
+    "returnReportLoadFailed": "Não foi possível carregar o relatório enviado. Tente novamente.",
+    "returnReportLoading": "Carregando o relatório enviado…",
+    "returnReportNotFound": "Este relatório não está mais sob sua responsabilidade para revisão.",
+    "returnReportTitle": "Devolver relatório para alterações",
     "review": {
       "showDetails": "Mostrar detalhes",
       "switchOrganizationAction": "Alternar para {organization}",
@@ -128,7 +153,7 @@
     "searchLabel": "Pesquisar aprovações",
     "searchPlaceholder": "Pesquisar por nome ou e-mail…",
     "selectAll": "Selecionar tudo",
-    "selectedCount": "{selectedCount} selecionado(s)",
+    "selectedCount": "${selectedCount} selecionado(s)",
     "selectRow": "Selecionar linha",
     "timeComparison": "Comparação de horários",
     "timeCorrectionApproved": "Correção de tempo aprovada",
@@ -137,26 +162,29 @@
     "timeCorrectionsDescription": "Revise e aprove as solicitações de correção de registro de horas dos membros da sua equipe",
     "timelineActor": "{at} por {actorName}",
     "title": "Aprovações",
-    "totalCount": "{totalCount} pendente(s)",
+    "totalCount": "${totalCount} pendente(s)",
     "type": "Tipo",
     "types": {
       "absence_entry": "Solicitações de ausência",
       "time_entry": "Correções de ponto",
-      "travel_expense_claim": "Despesas de viagem"
+      "travel_expense_claim": "Despesas de viagem",
+      "travel_expense_report": "Relatórios de despesas"
     },
     "unifiedInboxBannerDescription": "Visualize todos os tipos de aprovação em um só lugar com filtragem, ações em massa e rastreamento de SLA.",
     "unifiedInboxBannerTitle": "Experimente a nova Caixa de Entrada Unificada",
+    "viewExpenseClaim": "Ver solicitação e recibos",
+    "viewExpenseReport": "Visualizar relatório enviado e comprovantes",
     "workCategory": "Categoria de trabalho",
     "workCategoryUnavailable": "Categoria desconhecida (indisponível)",
     "workLocation": "Local de trabalho"
   },
   "fastLanes": {
     "approve": "Aprovar",
-    "approveGroup": "Aprovar {label}",
+    "approveGroup": "Aprovar ${label}",
     "confirmReject": "Confirmar rejeição",
-    "confirmRejectGroup": "Confirmar rejeição de {label}",
+    "confirmRejectGroup": "Confirmar rejeição de ${label}",
     "description": "Analise solicitações semelhantes de baixo atrito em lote.",
-    "expandGroup": "Expandir {label}",
+    "expandGroup": "Expandir ${label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Ausências sem conflitos detectados.",
@@ -175,24 +203,25 @@
         "label": "Solicitações obsoletas"
       }
     },
-    "notEligibleApprove": "{notApprovableCount} não elegível para aprovação em massa",
-    "notEligibleReject": "{notRejectableCount} não elegível para rejeição em massa",
+    "notEligibleApprove": "${notApprovableCount} não elegível para aprovação em massa",
+    "notEligibleReject": "${notRejectableCount} não elegível para rejeição em massa",
     "reject": "Rejeitar",
-    "rejectGroup": "Rejeitar {label}",
+    "rejectGroup": "Rejeitar ${label}",
     "rejectReason": "Motivo da rejeição em massa",
     "risk": {
       "high": "Alto risco",
       "low": "Baixo risco",
       "medium": "Médio risco"
     },
-    "showGroup": "Mostrar {label}",
+    "showGroup": "Mostrar ${label}",
     "title": "Vias rápidas"
   },
   "sprint": {
-    "age": "{ageDays}d atrás",
+    "age": "${item.timing.ageDays}d atrás",
     "approve": "Aprovar",
     "approveCurrentApproval": "Aprovar aprovação atual",
     "capabilities": {
+      "approveInDetails": "Abra os detalhes para aceitar as exceções e aprovar",
       "approveUnavailable": "Aprovação indisponível",
       "bulkApprove": "Elegível para massa",
       "rejectUnavailable": "Rejeição indisponível"
@@ -207,7 +236,7 @@
       "normal": "Prioridade normal",
       "urgent": "Prioridade urgente"
     },
-    "progress": "{current} de {total}",
+    "progress": "${currentIndex + 1} de ${visibleItems.length}",
     "reject": "Rejeitar",
     "rejectCurrentApproval": "Rejeitar aprovação atual",
     "rejectReason": "Motivo da rejeição da sprint",
@@ -231,7 +260,8 @@
     "types": {
       "absenceEntry": "Solicitação de ausência",
       "timeEntry": "Registro de horas",
-      "travelExpenseClaim": "Reembolso de despesas de viagem"
+      "travelExpenseClaim": "Reembolso de despesas de viagem",
+      "travelExpenseReport": "Relatório de despesas"
     }
   }
 }

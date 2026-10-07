@@ -21,6 +21,7 @@
     "clockIn": "Stemple inn",
     "clockOut": "Stemple ut",
     "confirmReject": "Bekreft avvisning",
+    "confirmReturn": "Send tilbake for endringer",
     "date": "Dato",
     "dates": "Datoer",
     "days": "Dager",
@@ -62,6 +63,7 @@
       "outcomeApproved": "Godkjent",
       "outcomeRejected": "Avvist",
       "project": "Prosjekt",
+      "receiptExceptionsTitle": "Manglende kvitteringer",
       "receipts": "Kvitteringer",
       "request": "Forespørsel",
       "requestedBy": "Forespurt av",
@@ -99,6 +101,12 @@
     "pendingRequests": "Ventende forespørsler",
     "pendingRequestsDescription": "Velg forespørsler for å godkjenne flere samtidig, eller klikk på en rad for detaljer",
     "reason": "Årsak",
+    "receiptExceptions": {
+      "accept": "Godta manglende kvittering for {label}",
+      "instructions": "Disse utgiftene mangler kvittering. For å godkjenne rapporten må du godta hver forklaring. Du kan avvise rapporten uten å godta dem.",
+      "readOnly": "Disse utgiftene ble sendt inn uten kvittering, med den ansattes forklaring.",
+      "reason": "Forklaring:"
+    },
     "reject": "Avvis",
     "rejected": "Forespørsel avvist",
     "rejectFailed": "Kunne ikke avvise",
@@ -110,12 +118,29 @@
     "rejectSelected": "Avvis valgte",
     "rejectTimeCorrectionTitle": "Avvis tidskorrigering",
     "rejectTitle": "Avvis fraværsforespørsel",
+    "reportReturned": "Rapporten er returnert for endringer",
     "requested": "Forespurt",
     "requestedCorrection": "Forespurt korrigering",
     "requestedToday": "I dag",
     "requester": "Innsender",
     "requestingCorrection": "ber om en tidskorrigering for",
     "requestingOff": "ber om",
+    "retry": "Prøv på nytt",
+    "returnCommentTooLong": "Hold kommentaren under {max} tegn.",
+    "returnItemComments": "Kommentarer til utgifter (valgfritt)",
+    "returnItemLabel": "Utgift {number}",
+    "returnNote": "Melding til den ansatte",
+    "returnNoteRequired": "Fortell den ansatte hva som må endres.",
+    "returnNoteTooLong": "Hold meldingen under {max} tegn.",
+    "returnReport": "Returner",
+    "returnReportConflict": "Denne rapporten har i mellomtiden blitt avgjort, returnert eller endret. Last den inn på nytt for å se gjeldende status.",
+    "returnReportDescription": "Den ansatte kan korrigere rapporten og sende den inn på nytt. Denne innsendingen, meldingen din og kommentarene blir værende i loggen.",
+    "returnReportFailed": "Kunne ikke returnere rapporten. Vennligst prøv på nytt.",
+    "returnReportInvalid": "Sjekk meldingen og kommentarene: melding er påkrevd, og hver tekst må være innenfor grensen.",
+    "returnReportLoadFailed": "Kunne ikke laste den innsendte rapporten. Vennligst prøv på nytt.",
+    "returnReportLoading": "Laster inn den innsendte rapporten…",
+    "returnReportNotFound": "Denne rapporten er ikke lenger tilgjengelig for din gjennomgang.",
+    "returnReportTitle": "Returner rapport for endringer",
     "review": {
       "showDetails": "Vis detaljer",
       "switchOrganizationAction": "Bytt til {organization}",
@@ -142,10 +167,13 @@
     "types": {
       "absence_entry": "Fraværsforespørsler",
       "time_entry": "Tidskorrigeringer",
-      "travel_expense_claim": "Reiseutgifter"
+      "travel_expense_claim": "Reiseutgifter",
+      "travel_expense_report": "Utgiftsrapporter"
     },
     "unifiedInboxBannerDescription": "Se alle godkjenningstyper på ett sted med filtrering, massehandlinger og SLA-sporing.",
     "unifiedInboxBannerTitle": "Prøv den nye samlede innboksen",
+    "viewExpenseClaim": "Vis krav og kvitteringer",
+    "viewExpenseReport": "Vis innsendt rapport og kvitteringer",
     "workCategory": "Arbeidskategori",
     "workCategoryUnavailable": "Ukjent kategori (utilgjengelig)",
     "workLocation": "Arbeidssted"
@@ -193,6 +221,7 @@
     "approve": "Godkjenn",
     "approveCurrentApproval": "Godkjenn gjeldende godkjenning",
     "capabilities": {
+      "approveInDetails": "Åpne detaljene for å godta unntakene og godkjenne",
       "approveUnavailable": "Godkjenning utilgjengelig",
       "bulkApprove": "Kvalifisert for massebehandling",
       "rejectUnavailable": "Avvisning utilgjengelig"
@@ -231,7 +260,8 @@
     "types": {
       "absenceEntry": "Fraværsforespørsel",
       "timeEntry": "Timeregistrering",
-      "travelExpenseClaim": "Reiseregning"
+      "travelExpenseClaim": "Reiseregning",
+      "travelExpenseReport": "Utgiftsrapport"
     }
   }
 }

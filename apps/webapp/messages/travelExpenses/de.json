@@ -1,17 +1,73 @@
 {
   "travelExpenses": {
     "actions": {
-      "newClaim": "Neuer Anspruch"
+      "backToClaims": "Zurück zu den Anträgen",
+      "download": "Herunterladen",
+      "preview": "Vorschau",
+      "retry": "Wiederholen",
+      "viewClaim": "Antrag anzeigen"
+    },
+    "adjustment": {
+      "create": {
+        "action": "Mit einer Anpassung korrigieren",
+        "confirm": "Anpassung erstellen",
+        "description": "Sie erhalten eine Kopie der genehmigten Ausgaben zur Korrektur. Durch das Einreichen wird der gesamte korrigierte Bericht zur erneuten Genehmigung vorgelegt; nur die Differenz zum genehmigten Betrag wird beglichen.",
+        "failed": "Die Anpassung konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+        "ineligible": "Dieser Bericht kann nicht mehr angepasst werden. Laden Sie die Seite neu, um den aktuellen Status anzuzeigen.",
+        "reason": "Grund für die Korrektur",
+        "reasonRequired": "Erklären Sie, was korrigiert werden muss.",
+        "reasonTooLong": "Halten Sie die Begründung unter {max} Zeichen.",
+        "title": "Verknüpfte Anpassung erstellen?"
+      },
+      "ineligible": {
+        "adjustment": "Eine Anpassung wird über den Bericht korrigiert, den sie anpasst."
+      },
+      "notice": {
+        "baseline": "Genehmigter Betrag, der korrigiert wird",
+        "delta": "Vorzeichenbehaftete Differenz",
+        "editing": "Korrigieren Sie die Ausgaben unten. Wenn Sie einreichen, wird die Differenz zum genehmigten Betrag zur Überprüfung angezeigt und anschließend erneut geprüft. Der ursprüngliche Bericht und dessen Zahlungen bleiben unverändert.",
+        "original": "Ursprünglichen Bericht öffnen",
+        "title": "Anpassung eines genehmigten Berichts"
+      },
+      "panel": {
+        "applied": "Angewendet",
+        "description": "Dieser Bericht wurde bereits exportiert oder erstattet und bleibt daher wie genehmigt bestehen. Eine Korrektur ist eine verknüpfte Anpassung: Sie wird erneut geprüft und ändert nach der Genehmigung den genehmigten Betrag um die vorzeichenbehaftete Differenz.",
+        "effective": "Genehmigter Betrag einschließlich Anpassungen: {amount}",
+        "open": "Anpassung öffnen",
+        "title": "Anpassungen"
+      },
+      "preview": {
+        "currency": "Der korrigierte Gesamtbetrag entspricht nicht der Währung des ursprünglichen Berichts und kann daher nicht als Anpassung eingereicht werden.",
+        "delta": "Diese Anpassung ändert den genehmigten Betrag von {baseline} um {delta}.",
+        "review": "Der gesamte Bericht muss erneut genehmigt werden, auch wenn der Betrag sinkt."
+      },
+      "reviewerHint": "Der Mitarbeiter erstellt die Anpassung aus diesem Bericht; sie wird Ihnen mit der vorzeichenbehafteten Differenz zur erneuten Prüfung vorgelegt."
+    },
+    "allowanceOverride": {
+      "amount": "Betrag",
+      "authorizedBy": "Autorisiert von",
+      "authorizedByValue": "{name}, {date}",
+      "basis": "Berechnung",
+      "evidence": "Nachweis",
+      "noOrdinary": "Für diesen Sachverhalt liegt keine reguläre Berechnung vor.",
+      "ordinary": "Die Richtlinie würde {amount} berechnen.",
+      "reason": "Grund",
+      "situation": {
+        "calculated": "Gemäß Richtlinie berechnet",
+        "fallback": "Mit einem offiziellen Ausweichsatz berechnet",
+        "missingCoverage": "Wird von keiner Unternehmensrichtlinie abgedeckt",
+        "missingFacts": "Erforderliche Reiseangaben fehlen",
+        "unsupported": "Nicht durch die unterstützten Berechnungsregeln abgedeckt"
+      },
+      "situationLabel": "Warum nicht berechnet",
+      "situationResolved": "Diese manuelle Pauschale gilt nicht mehr: Der Grund für die Autorisierung hat sich geändert (z. B. deckt eine Richtlinie diesen Sachverhalt nun ab). Sofern vorhanden, gilt die berechnete Pauschale; andernfalls muss ein Spesenadministrator dies prüfen.",
+      "stale": "Diese manuelle Pauschale wurde für einen anderen Sachverhalt autorisiert und gilt nicht mehr. Ein Spesenadministrator muss die geänderten Angaben prüfen.",
+      "title": "Pauschale manuell von einem Spesenadministrator festgelegt"
     },
     "approvals": {
       "description": "Öffnen Sie den einheitlichen Genehmigungsposteingang, gefiltert nach Reisekosten.",
       "openInbox": "Posteingang öffnen",
       "title": "Ausstehende Reisekostengenehmigungen prüfen"
-    },
-    "claimTypes": {
-      "mileage": "Kilometergeld",
-      "per_diem": "Tagegeld",
-      "receipt": "Beleg"
     },
     "decision": {
       "approve": "Genehmigen",
@@ -33,41 +89,179 @@
       "rejected": "Antrag erfolgreich abgelehnt",
       "rejectTitle": "Antrag ablehnen"
     },
-    "description": "Erstellen und verfolgen Sie Ihre Reisekostenanträge",
+    "detail": {
+      "created": "Erstellt",
+      "decisionRecorded": "Entscheidung erfasst",
+      "destination": "Reiseziel",
+      "history": "Entscheidungsverlauf",
+      "intermediateApproval": "Genehmigung erfasst — weitere Genehmigung ausstehend",
+      "legacyReceiptIdentity": "Altsystem-Beleg: Inhaltsprüfsumme wurde nicht erfasst.",
+      "loading": "Antrag wird geladen…",
+      "noReceipts": "Keine Belege erfasst",
+      "notRecorded": "Nicht erfasst",
+      "originalAmount": "Ursprünglicher Betrag",
+      "receipts": "Belege",
+      "refreshing": "Antrag wird aktualisiert…",
+      "submitted": "Eingereicht",
+      "title": "Reisekostenabrechnung",
+      "unknownDates": "Reisedatumskontext nicht erfasst (Altantrag)"
+    },
     "errors": {
-      "loadClaims": "Reisekostenanträge konnten nicht geladen werden"
+      "loadDetailRetry": "Dieser Antrag konnte nicht geladen werden. Bitte versuchen Sie es erneut."
     },
     "feature": "Reisekosten verwalten",
-    "form": {
-      "amount": "Betrag",
-      "claimType": "Antragstyp",
-      "created": "Reisekostenentwurf erstellt",
-      "createDraft": "Entwurf erstellen",
-      "currency": "Währung",
-      "currencyDescription": "ISO 4217-Code, z. B. EUR oder USD",
-      "currencyPlaceholder": "EUR",
-      "description": "Erstellen Sie einen neuen Reisekostenentwurf für Ihre kürzlichen Reiseausgaben.",
-      "destinationCity": "Zielstadt",
-      "destinationCityPlaceholder": "Berlin",
-      "destinationCountry": "Zielland",
-      "destinationCountryPlaceholder": "Deutschland",
-      "errors": {
-        "createDraft": "Erstellung des Reisekostenentwurfs fehlgeschlagen",
-        "positiveAmount": "Der Betrag muss eine positive Zahl sein",
-        "tripEndBeforeStart": "Das Reiseenddatum darf nicht vor dem Reisestartdatum liegen",
-        "validTripDates": "Bitte geben Sie ein gültiges Reisestart- und Enddatum an",
-        "validTripEnd": "Bitte geben Sie ein gültiges Reiseenddatum an",
-        "validTripStart": "Bitte geben Sie ein gültiges Reisestartdatum an"
+    "finance": {
+      "approvedOn": "Genehmigt am {date}",
+      "back": "Zurück zu Spesen & Finanzen",
+      "companyPaid": "Vom Unternehmen bezahlt {amount}",
+      "description": "Genehmigte Ausgaben und noch ausstehende Beträge an Mitarbeiter. Das Erfassen einer Erstattung dokumentiert eine Zahlung außerhalb von Z8; es wird kein Geld überwiesen.",
+      "employeePaid": "Vom Mitarbeiter bezahlt {amount}",
+      "empty": {
+        "any": "Noch keine genehmigten Ausgaben.",
+        "open": "Nichts abzurechnen: Alle genehmigten Ausgaben sind beglichen."
       },
-      "notes": "Notizen",
-      "notesPlaceholder": "Fügen Sie optionalen Kontext für Ihren Genehmiger hinzu",
-      "receiptAttachmentHint": "Belegansprüche erfordern mindestens einen Anhang. Der Upload von Anhängen ist nach der Erstellung des Entwurfs möglich.",
-      "selectClaimType": "Anspruchstyp auswählen",
-      "title": "Reisekostenabrechnung erstellen",
-      "tripEnd": "Reiseende",
-      "tripStart": "Reisestart"
+      "entry": {
+        "description": "Genehmigte Ausgaben, offene Salden und erfasste Erstattungen prüfen.",
+        "open": "Finanz-Warteschlange öffnen",
+        "title": "Ausgaben – Finanzen"
+      },
+      "errors": {
+        "load": "Die Finanz-Warteschlange konnte nicht geladen werden. Bitte versuchen Sie es erneut."
+      },
+      "exports": {
+        "adjustment": "Anpassung: {name}",
+        "cancel": "Abbrechen",
+        "cancelledByFinance": "Von der Finanzabteilung abgebrochen.",
+        "cancelledReopenedHint": "Abgebrochen, da ein enthaltener Bericht zur Korrektur wiedereröffnet wurde. Alle anderen darin enthaltenen Berichte können wieder exportiert werden: Erstellen Sie dafür einen neuen Export.",
+        "counts": "{reports} Berichte · {items} Ausgaben · {receipts} Belege",
+        "created": "Export in Warteschlange eingereiht. Er wird unten angezeigt, sobald er bereit ist.",
+        "description": "Genehmigte Ausgaben als CSV mit ihren Belegen für die Buchhaltung exportieren. Jede genehmigte Einreichung wird einmal exportiert; Sie können einen Export jederzeit erneut herunterladen.",
+        "download": "Herunterladen",
+        "empty": "Es warten keine genehmigten Ausgaben auf den Export.",
+        "errors": {
+          "alreadyExported": "Einige ausgewählte Ausgaben sind bereits Teil eines anderen Exports. Laden Sie stattdessen diesen Export herunter.",
+          "cancel": "Der Export konnte nicht abgebrochen werden.",
+          "conflict": "Ein früherer Versuch mit einer anderen Auswahl wurde bereits erfasst. Überprüfen Sie den Exportverlauf.",
+          "failed": "Der Export konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+          "invalid": "Wählen Sie zwischen einer und der maximalen Anzahl an Ausgaben aus.",
+          "load": "Exporte konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+          "retry": "Der Export konnte nicht wiederholt werden.",
+          "stale": "Einige ausgewählte Ausgaben sind nicht mehr wie angezeigt genehmigt. Die Liste wurde aktualisiert; überprüfen Sie die Auswahl und exportieren Sie erneut."
+        },
+        "failure": {
+          "enqueue": "Der Export konnte nicht in die Warteschlange eingereiht werden. Bitte versuchen Sie es erneut.",
+          "inconsistent": "Die genehmigten Daten konnten nicht konsistent exportiert werden. Wenden Sie sich an den Support.",
+          "receiptMismatch": "Ein gespeicherter Beleg stimmt nicht mehr mit seiner erfassten Prüfsumme überein. Wenden Sie sich an den Support, bevor Sie es erneut versuchen.",
+          "receiptUnavailable": "Eine Belegdatei konnte nicht gelesen werden. Versuchen Sie es erneut, sobald der Speicher verfügbar ist.",
+          "storage": "Die Exportdatei konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+          "unknown": "Der Export ist fehlgeschlagen. Bitte versuchen Sie es erneut."
+        },
+        "form": {
+          "label": "Export erstellen",
+          "selectAll": "Alle auswählen",
+          "submit": "Export erstellen ({count})"
+        },
+        "history": "Exportverlauf",
+        "loading": "Exporte werden geladen…",
+        "notPayment": "Keine Zahlung: Durch den Export wird nichts als erstattet markiert.",
+        "requested": "Angefordert am {date} von {name}",
+        "retry": "Erneut versuchen",
+        "status": {
+          "cancelled": "Abgebrochen",
+          "completed": "Abgeschlossen",
+          "failed": "Fehlgeschlagen",
+          "processing": "In Bearbeitung",
+          "queued": "In Warteschlange"
+        },
+        "title": "Exporte"
+      },
+      "filter": {
+        "all": "Alle genehmigt",
+        "label": "Ausgaben anzeigen",
+        "open": "Offen",
+        "settled": "Abgerechnet"
+      },
+      "legacyClaim": "Alter {type}-Antrag",
+      "loading": "Finanz-Warteschlange wird geladen…",
+      "title": "Ausgaben-Finanzen",
+      "truncated": "Die {count} zuletzt genehmigten Ausgaben werden angezeigt. Ältere übereinstimmende Ausgaben sind nicht aufgeführt."
+    },
+    "form": {
+      "currency": "Währung",
+      "notes": "Notizen"
+    },
+    "history": {
+      "adjustment": "Anpassung",
+      "adjustmentOf": "Anpassung von “{title}”",
+      "adjustmentOfUntitled": "Korrektur einer früheren Abrechnung",
+      "claimed": "Eingereicht",
+      "companyPaid": "Vom Unternehmen bezahlt: {amount}",
+      "continuedFrom": "Fortsetzung einer früheren Abrechnung",
+      "emptyDescription": "Starten Sie eine Reise, um mehrere Ausgaben mit gemeinsamen Reisedetails zu erfassen, oder fügen Sie einen einzelnen Beleg oder Kilometerkosten hinzu. Entwürfe werden automatisch gespeichert, sodass Sie sie später fertigstellen können.",
+      "emptyFilter": "Keine Ausgaben mit diesem Status.",
+      "emptyTitle": "Noch keine Reisekosten",
+      "errors": {
+        "load": "Ihre Reisekosten konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+        "refresh": "Ihre Ausgaben konnten nicht aktualisiert werden; die folgende Liste ist möglicherweise veraltet. Bitte versuchen Sie es erneut."
+      },
+      "filter": {
+        "all": "Alle",
+        "approved": "Genehmigt",
+        "inReview": "In Prüfung",
+        "label": "Ausgaben anzeigen",
+        "needsAction": "Fertigzustellen",
+        "rejected": "Abgelehnt"
+      },
+      "legacy": {
+        "badge": "Frühere Abrechnung",
+        "mileage": "Kilometerabrechnung",
+        "perDiem": "Tagegeldabrechnung",
+        "receipt": "Belegabrechnung"
+      },
+      "loading": "Ihre Reisekosten werden geladen…",
+      "notCounted": "{count, plural, one {# Ausgabe noch nicht berücksichtigt} other {# Ausgaben noch nicht berücksichtigt}}",
+      "refreshing": "Wird aktualisiert…",
+      "reimbursable": "Ihnen zu erstatten",
+      "showAll": "Alle Ausgaben anzeigen",
+      "title": "Ihre Ausgaben",
+      "untitledMileage": "Unbenannte Fahrtstrecke"
+    },
+    "legacyDraft": {
+      "continue": "Als Abrechnung fortsetzen",
+      "converted": "Sie haben diesen Entwurf als Abrechnung fortgesetzt. Dieser Antrag bleibt hier als Referenz unverändert erhalten.",
+      "description": "Entwürfe aus dem früheren Antragsformular werden jetzt als Abrechnungen fertiggestellt. Ihr Betrag, Ihre Daten, Notizen und Belege werden übernommen; alles, was das neue Formular benötigt und in diesem Entwurf nicht erfasst wurde, können Sie noch vervollständigen. Dieser Antrag selbst bleibt unverändert.",
+      "failed": "Der Entwurf konnte nicht fortgesetzt werden. Bitte versuchen Sie es erneut.",
+      "flags": {
+        "amount": "Der eingegebene Betrag {amount} ist kein gültiger Belegbetrag. Geben Sie den Betrag und die Währung vom Beleg ein.",
+        "conversion": "Der Beleg ist in einer Fremdwährung ausgestellt. Im Entwurf wurde keine Umrechnung erfasst. Geben Sie daher vor dem Einreichen an, wie der Betrag umgerechnet wurde (Kreditkartenabrechnung oder Wechselkurs).",
+        "destination": "Das Reiseziel \"{destination}\" konnte keinem Land zugeordnet werden. Wählen Sie eines aus.",
+        "expenseDate": "Der Entwurf umfasste {range}. Wählen Sie den Tag dieser Ausgabe.",
+        "manualTotal": "Der Entwurf enthielt einen manuell eingegebenen Gesamtbetrag von {amount}. Dieser wird nicht verwendet: Diese Ausgabe wird nun anhand Ihrer nachfolgenden Eingaben berechnet.",
+        "notes": "Ihre Notizen werden unten angezeigt; übernehmen Sie das, was weiterhin zutrifft.",
+        "project": "Das Projekt des Entwurfs wurde beibehalten. Sofern Ihre Zuweisung am Ausgabendatum nicht erfasst ist, muss ein Ausgabenadministrator dies genehmigen, bevor Sie einreichen können.",
+        "projectMissing": "Das Projekt des Entwurfs existiert nicht mehr. Wählen Sie gegebenenfalls ein Projekt aus.",
+        "tripDates": "Der Entwurf wurde erstellt, bevor Reisedaten erfasst wurden. Geben Sie die Reisedaten ein."
+      },
+      "loadFailed": "Dieser Entwurf konnte nicht überprüft werden. Bitte versuchen Sie es erneut.",
+      "notDraft": "Dieser Antrag wurde bereits eingereicht. Er behält seine ursprüngliche Genehmigung und kann nicht als Abrechnung fortgesetzt werden.",
+      "notice": {
+        "description": "Ihre Eingaben wurden übernommen, soweit dieses Formular sie exakt abbilden kann, einschließlich {count} Belegen. Vervollständigen Sie die restlichen Felder vor dem Einreichen.",
+        "original": "Ursprünglichen Entwurf anzeigen",
+        "title": "Aus einem früheren Antragsentwurf fortgesetzt"
+      },
+      "openReport": "Abrechnung öffnen",
+      "receipt": {
+        "mismatch": "die gespeicherte Datei stimmt nicht mehr mit der hochgeladenen überein",
+        "unreadable": "die gespeicherte Datei kann derzeit nicht gelesen werden",
+        "unsupportedStorage": "die Datei wird in einem nicht unterstützten Speicher aufbewahrt",
+        "unsupportedType": "die gespeicherte Datei ist kein unterstützter Belegtyp"
+      },
+      "receiptUnavailable": "Es wurde nichts geändert, da ein Beleg nicht sicher übertragen werden konnte: {receipts}. Bitte versuchen Sie es später erneut oder bitten Sie Ihren Administrator, die Datei wiederherzustellen.",
+      "status": "Als Bericht fortgeführt",
+      "title": "Diesen Entwurf fortsetzen"
     },
     "list": {
+      "actions": "Aktionen",
       "amount": "Betrag",
       "dateRange": "Zeitraum",
       "emptyDescription": "Erstellen Sie Ihren ersten Anspruch, um den Genehmigungsprozess zu starten.",
@@ -75,6 +269,595 @@
       "status": "Status",
       "type": "Typ"
     },
-    "title": "Reisekosten"
+    "report": {
+      "actions": {
+        "newMileage": "Neue Kilometer",
+        "newReceipt": "Neuer Beleg",
+        "newTrip": "Neue Reise"
+      },
+      "approvedBy": "Genehmigt von {name} am {date}.",
+      "awaitingReview": "Wartet auf Prüfung.",
+      "awaitingReviewer": "Wartet auf Prüfung durch {name}.",
+      "backToApprovals": "Zurück zu Genehmigungen",
+      "backToCurrent": "Zurück zum aktuellen Bericht",
+      "backToTravelExpenses": "Zurück zu Reisekosten",
+      "categories": {
+        "accommodation": "Unterkunft",
+        "meals": "Verpflegung",
+        "other": "Sonstiges",
+        "parking": "Parkgebühren",
+        "transport": "Transport"
+      },
+      "conversion": {
+        "attachFirst": "Hängen Sie zuerst die Kartenabrechnung oder den Beleg an, der die obige Belastung ausweist.",
+        "authorizedBy": "Autorisiert von",
+        "basis": {
+          "cardCharge": "Kartenbelastung",
+          "manualRate": "Autorisierter Kurs",
+          "referenceRate": "EZB-Referenzkurs"
+        },
+        "chargedAmount": "Belasteter Betrag in {currency}",
+        "chargedAmountDescription": "Der Betrag auf Ihrer Karten- oder Bankabrechnung, einschließlich aller damit berechneten Umrechnungsgebühren.",
+        "conflict": "Diese Ausgabe wurde an anderer Stelle geändert. Überprüfen Sie sie und speichern Sie die Kartenbelastung erneut.",
+        "errors": {
+          "chargedAmount": "Geben Sie den positiven abgebuchten Betrag in {currency} mit maximal {digits} Dezimalstellen ein.",
+          "evidence": "Wählen Sie den Anhang dieser Ausgabe aus, der die Belastung zeigt."
+        },
+        "evidence": "Nachweis:",
+        "evidenceLabel": "Anhang mit Nachweis der Belastung",
+        "evidenceMissing": "Der Anhang, der die Kartenbelastung zeigt, fehlt.",
+        "formLabel": "Kartenbelastung",
+        "none": "Es wird kein Wechselkurs geschätzt. Geben Sie den Betrag in {currency} ein, mit dem Ihre Karte belastet wurde, und wählen Sie den Anhang aus, der dies belegt, z. B. die Kartenabrechnung. Ohne Kartenbelastung kann ein Spesenadministrator einen dokumentierten Kurs erfassen.",
+        "notSaved": "Die Kartenbelastung konnte für diese Ausgabe nicht gespeichert werden.",
+        "publicationDate": "Veröffentlicht am",
+        "publicationFallback": "Am {expenseDate} wurde kein Kurs veröffentlicht, daher gilt die letzte vorherige Veröffentlichung.",
+        "rate": "Kurs",
+        "rateDate": "Kursdatum",
+        "rateEvidence": "Kursnachweis",
+        "rateValue": "1 {base} = {value} {quote}",
+        "reason": "Dokumentation",
+        "reference": {
+          "alternatives": "Ihr Bericht bleibt ein Entwurf, bis Sie Ihre Kartenbelastung in {reimbursementCurrency} zusammen mit dem entsprechenden Beleg eingeben oder ein Spesenadministrator einen dokumentierten Kurs erfasst.",
+          "currencyUnavailable": "Die Europäische Zentralbank veröffentlicht für dieses Datum keinen Kurs für {currency}.",
+          "expenseDateMissing": "Geben Sie das Belegdatum ein, um den Referenzkurs abzurufen.",
+          "historyUnavailable": "Für dieses Datum gibt es keinen Referenzkurs.",
+          "notYetPublished": "Der Referenzkurs für dieses Datum wurde noch nicht veröffentlicht. Er erscheint an Arbeitstagen in der Regel nach 16:00 Uhr Frankfurter Zeit.",
+          "pairUnsupported": "Die Europäische Zentralbank veröffentlicht nur Kurse gegenüber dem Euro, daher ist keiner zwischen {currency} und {reimbursementCurrency} anwendbar.",
+          "providerUnavailable": "Der Referenzkurs für dieses Datum konnte noch nicht abgerufen werden. Versuchen Sie es später erneut.",
+          "rateStale": "Für dieses Datum ist kein aktueller Referenzkurs verfügbar."
+        },
+        "referencePending": "Der Referenzkurs wird für das neue Datum erneut abgerufen, sobald Ihre Änderung gespeichert wird.",
+        "remove": "Kartenbelastung entfernen",
+        "removeFailed": "Die Kartenbelastung konnte nicht entfernt werden. Laden Sie die Ausgabe neu und versuchen Sie es erneut.",
+        "replaceWithCardCharge": "Stattdessen meine Kartenzahlung verwenden",
+        "result": "{original} gilt als {reimbursement}",
+        "rounding": "Rundung",
+        "roundingValue": "Kaufmännisch auf {digits} Nachkommastellen gerundet",
+        "saveCardCharge": "Kartenzahlung speichern",
+        "saved": "Kartenzahlung gespeichert",
+        "saveFailed": "Die Kartenzahlung konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+        "source": "Quelle",
+        "sourceEcb": "Euro-Referenzkurs der Europäischen Zentralbank, von Ihrer Organisation genehmigt",
+        "title": "Umrechnung in {currency}"
+      },
+      "correctAndResubmit": "Korrigieren Sie den Bericht und reichen Sie ihn erneut ein. Frühere Einreichungen bleiben im Verlauf erhalten.",
+      "cycles": {
+        "approved": "genehmigt",
+        "entry": "Einreichung {number} am {date}: {outcome}",
+        "pending": "wartet auf Prüfung",
+        "rejected": "abgelehnt",
+        "reopened": "genehmigt, dann zur Korrektur wieder geöffnet",
+        "returned": "zur Überarbeitung zurückgegeben",
+        "title": "Einreichungen",
+        "withdrawn": "zurückgezogen"
+      },
+      "decideInInbox": "Genehmigen, zurückgeben oder lehnen Sie den gesamten Bericht im Genehmigungsposteingang ab.",
+      "drafts": {
+        "expenses": "{count, plural, one {# Ausgabe} other {# Ausgaben}}",
+        "noDate": "Noch kein Datum",
+        "noTravelDates": "Noch keine Reisedaten",
+        "receipts": "{count, plural, one {# Beleg} other {# Belege}}",
+        "untitled": "Unbenannter Beleg",
+        "untitledTrip": "Unbenannte Reise"
+      },
+      "earlierSubmission": "Dies ist eine frühere Einreichung des Berichts, die genau so aufbewahrt wird, wie sie eingereicht wurde.",
+      "errors": {
+        "amount": "Geben Sie einen positiven Betrag mit maximal zwei Nachkommastellen ein, z. B. 12,50.",
+        "category": "Wählen Sie eine der aufgeführten Kategorien.",
+        "create": "Die Ausgabe konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+        "currency": "Geben Sie einen dreistelligen Währungscode ein, z. B. EUR.",
+        "expenseDate": "Geben Sie ein gültiges Datum ein.",
+        "load": "Diese Ausgabe konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
+        "loadSubmission": "Der eingereichte Bericht konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
+        "paidBy": "Wählen Sie aus, wer bezahlt hat.",
+        "tooLong": "Dieser Text ist zu lang."
+      },
+      "fields": {
+        "accountingReference": "Buchungsreferenz (optional)",
+        "accountingReferenceDescription": "Eine Referenz, um deren Angabe die Buchhaltung gebeten hat, z. B. eine Auftragsnummer.",
+        "amount": "Betrag auf dem Beleg",
+        "category": "Kategorie",
+        "categoryPlaceholder": "Kategorie auswählen",
+        "description": "Beschreibung",
+        "descriptionPlaceholder": "z. B. Zugticket Berlin–Hamburg für den Kundenworkshop",
+        "expenseDate": "Belegdatum",
+        "paidBy": "Wer hat bezahlt?"
+      },
+      "frozenNotice": "Der eingereichte Bericht kann nicht mehr bearbeitet werden.",
+      "history": {
+        "approvalRecorded": "Genehmigung durch {name} erfasst; weitere Genehmigung ausstehend",
+        "approved": "Genehmigt von {name}",
+        "cycle": "Einreichung {number}:",
+        "rejected": "Abgelehnt von {name}",
+        "reopened": "Zur Korrektur wiedereröffnet von {name}",
+        "returned": "Zur Überarbeitung zurückgegeben von {name}",
+        "submitted": "Eingereicht von {name}",
+        "title": "Verlauf",
+        "withdrawn": "Zurückgezogen von {name}"
+      },
+      "items": {
+        "add": "Belegausgabe hinzufügen",
+        "addFailed": "Die Ausgabe konnte nicht hinzugefügt werden. Bitte versuchen Sie es erneut.",
+        "empty": "Fügen Sie jeden Beleg dieser Reise als separate Ausgabe hinzu. Die oben angegebenen Reisedetails gelten für alle.",
+        "heading": "Ausgabe {number}",
+        "remove": "Entfernen",
+        "removeConfirm": "Ausgabe entfernen",
+        "removeConflict": "Diese Ausgabe wurde an anderer Stelle geändert und nicht entfernt. Prüfen Sie diese und versuchen Sie es erneut.",
+        "removeDescription": "Die Ausgabe und die angehängten Belege werden aus dieser Reise gelöscht. Dies kann nicht rückgängig gemacht werden.",
+        "removeFailed": "Die Ausgabe konnte nicht entfernt werden. Bitte versuchen Sie es erneut.",
+        "removeLabel": "Ausgabe {number} entfernen",
+        "removeTitle": "Diese Ausgabe entfernen?",
+        "title": "Ausgaben"
+      },
+      "loading": "Ausgabe wird geladen…",
+      "mileage": {
+        "add": "Kilometer hinzufügen",
+        "appliedPolicy": "Satz gültig ab {date} · {source}",
+        "calculation": "{distance} km × {rate} pro km = {amount}",
+        "calculationTitle": "Berechnete Kilometer",
+        "enterFacts": "Geben Sie Datum, Kilometer und Fahrzeug ein, um den Betrag anzuzeigen.",
+        "errors": {
+          "distance": "Geben Sie die gefahrenen Kilometer als positive Zahl mit maximal zwei Dezimalstellen ein, z. B. 61,5.",
+          "vehicle": "Wählen Sie das Fahrzeug aus, mit dem Sie gefahren sind."
+        },
+        "fields": {
+          "date": "Datum der Fahrt",
+          "distance": "Gefahrene Kilometer",
+          "route": "Strecke",
+          "routePlaceholder": "z. B. Büro Berlin – Kunde Potsdam – zurück",
+          "vehicle": "Fahrzeug",
+          "vehicleDescription": "Ihr eigenes Fahrzeug. Firmenwagen und öffentliche Verkehrsmittel zählen nicht als Kilometerpauschale; fügen Sie stattdessen deren Belege hinzu."
+        },
+        "noRate": "Es wird kein Satz erfunden: Diese Ausgabe bleibt im Entwurf, bis ein Ausgabenadministrator eine Kilometerpauschale für dieses Datum hinzufügt.",
+        "noRateTitle": "Keine Kilometerpauschale anwendbar",
+        "otherCurrency": "Die Pauschale für dieses Datum ist nicht in {currency}; Kilometerpauschalen werden nie umgerechnet.",
+        "pending": "Wird mit dem Satz Ihrer Organisation berechnet, sobald Ihre Änderungen gespeichert sind.",
+        "requirements": {
+          "currency": "Die Kilometerpauschale für dieses Datum ist in {policyCurrency}, aber dieser Bericht wird in {currency} erstattet. Bitten Sie einen Ausgabenadministrator, eine Pauschale in {currency} hinzuzufügen.",
+          "date": "Geben Sie das Datum der Fahrt ein.",
+          "distance": "Geben Sie die gefahrenen Kilometer ein.",
+          "policyMissing": "Ihre Organisation hat keine Kilometerpauschale für {vehicle} am {date}. Bitten Sie einen Ausgabenadministrator, eine datierte Pauschale in den Reisekosteneinstellungen hinzuzufügen. Bis dahin wird nichts berechnet.",
+          "route": "Beschreiben Sie die Strecke.",
+          "vehicle": "Wählen Sie das Fahrzeug aus."
+        },
+        "rounded": "(exakt {exact}, auf den Cent gerundet)",
+        "sourceOrganization": "Organisationsrichtlinie: {reference}",
+        "sourceOrganizationUnnamed": "Organisationsrichtlinie",
+        "sourceStatutory": "Deutsche gesetzliche Pauschale ({version})",
+        "standaloneTitle": "Kilometerpauschale",
+        "vehicles": {
+          "car": "Pkw",
+          "otherMotorVehicle": "Anderes Kraftfahrzeug (z. B. Motorrad)"
+        }
+      },
+      "paidBy": {
+        "company": "Vom Unternehmen bezahlt (z. B. Firmenkarte)",
+        "employee": "Von mir bezahlt (zu erstatten)"
+      },
+      "perDiem": {
+        "absenceDuration": "{hours}:{minutes} h abwesend",
+        "add": "Tagegeld hinzufügen",
+        "appliedPolicy": "Sätze gültig ab {date} · {source}",
+        "basis": {
+          "absence24h": "Ganztägig abwesend (24 Stunden)",
+          "claimedInOtherReport": "Bereits in einer anderen Ihrer Abrechnungen erfasst: nur eine Pauschale pro Tag",
+          "over8h": "Mehr als 8 Stunden abwesend",
+          "overnightMajority": "Überwiegender Teil der Abwesenheit über Nacht",
+          "overnightMinority": "Wird auf den anderen Tag der Abwesenheit über Nacht angerechnet",
+          "travelDay": "Reisetag einer Reise mit Übernachtung",
+          "upTo8h": "8 Stunden oder weniger abwesend: keine Pauschale"
+        },
+        "breakdownCaption": "Tagegeld nach Kalendertag",
+        "calculationTitle": "Berechnetes Tagegeld",
+        "columns": {
+          "amount": "Betrag",
+          "day": "Tag",
+          "eligibility": "Anspruch",
+          "meals": "Gestellte Mahlzeiten",
+          "rate": "Pauschale"
+        },
+        "deductionNote": "Gestellte Mahlzeiten reduzieren die Tagespauschale, jedoch nie unter null; Ihre Zuzahlungen für eine Mahlzeit verringern den Abzug.",
+        "departure": "Abreise",
+        "enterFacts": "Geben Sie Abreise, Rückreise und Mahlzeiten ein, um die Tagespauschalen anzuzeigen.",
+        "errors": {
+          "clockChange": "Diese Uhrzeit existiert an diesem Tag nicht, da die Uhren vorgestellt werden. Geben Sie eine Uhrzeit außerhalb der übersprungenen Stunde ein.",
+          "clockChangeRepeated": "Diese Uhrzeit tritt an diesem Tag zweimal auf, da die Uhren zurückgestellt werden. Geben Sie eine Uhrzeit außerhalb der doppelten Stunde ein.",
+          "endBeforeStart": "Ihre Rückreise muss nach der Abreise liegen.",
+          "location": "Wählen Sie für jeden Tag einen aufgelisteten Ort aus.",
+          "meals": "Prüfen Sie die Angaben zu den Mahlzeiten.",
+          "payment": "Geben Sie den von Ihnen gezahlten Betrag mit maximal zwei Nachkommastellen ein, z. B. 2,50.",
+          "time": "Geben Sie eine Uhrzeit in Stunden und Minuten ein."
+        },
+        "exceptionalTitle": "Erfordert eine manuelle Berechnung",
+        "exceptions": {
+          "destinationNotListed": "Ein Aufenthaltsort wird nicht von der offiziellen Auslandstabelle oder den entsprechenden Auffangregeln abgedeckt.",
+          "foreignTimeZone": "Die Reisezeiten sind nicht in deutscher Ortszeit angegeben.",
+          "foreignWithoutOvernight": "Eine Tätigkeit über Nacht im Ausland ohne Übernachtung wird nicht automatisch berechnet.",
+          "international": "Ein Reiseziel liegt außerhalb von Deutschland. Der Auslandstagegeldsatz wird noch nicht berechnet.",
+          "majorityTie": "Die Abwesenheit über Nacht teilt sich exakt gleichmäßig auf beide Tage auf.",
+          "mixedTimeZones": "Abreise und Rückkehr liegen in verschiedenen Zeitzonen.",
+          "multiDayWithoutOvernight": "Die Reise erstreckt sich über mehr als zwei Kalendertage ohne Übernachtung.",
+          "nightsAtHome": "Sie haben während der Reise einige Nächte zu Hause verbracht.",
+          "overlappingDays": "In einer anderen Ihrer Abrechnungen wird bereits für einige dieser Tage Verpflegungsmehraufwand erstattet; da nur eine Pauschale pro Tag zulässig ist, schließen Sie diese von der manuellen Berechnung aus.",
+          "prolongedWorkplace": "Längere Tätigkeit an derselben Tätigkeitsstätte: Der Verpflegungsmehraufwand ist auf die ersten drei Monate begrenzt.",
+          "rulesNotVerified": "Für diese Reisedaten liegen noch keine geprüften deutschen Regelungen vor.",
+          "specialLocation": "Ein Tag wurde als Sondersituation markiert (Sonstiges oder ein ganzer Tag im Flugzeug bzw. auf See am ersten oder letzten Reisetag)."
+        },
+        "fields": {
+          "endDate": "Tag der Rückkehr",
+          "endTime": "Uhrzeit der Rückkehr nach Hause oder an die Arbeitsstätte",
+          "meals": "Vom Arbeitgeber gestellte Mahlzeiten",
+          "mealsDescription": "Haken Sie jede Mahlzeit an, die von Ihrem Arbeitgeber oder in dessen Auftrag von einem Hotel oder Gastgeber bereitgestellt wurde – auch wenn Sie diese ausgelassen haben. Geben Sie an, was Sie gegebenenfalls selbst dafür bezahlt haben.",
+          "mealsNeedDates": "Geben Sie das Abreise- und Rückreisedatum ein, um die Reisetage aufzulisten.",
+          "overnight": "Übernachtungen während der Reise",
+          "payment": "Was Sie für {meal} am {date} bezahlt haben",
+          "paymentPlaceholder": "Von Ihnen bezahlt (optional)",
+          "prolongedWorkplace": "Ich bin seit mehr als drei Monaten an derselben Tätigkeitsstätte tätig",
+          "prolongedWorkplaceDescription": "Der Verpflegungsmehraufwand gilt nur für die ersten drei Monate an derselben Tätigkeitsstätte; solche Reisen erfordern eine manuelle Berechnung.",
+          "startDate": "Abreisetag",
+          "startTime": "Uhrzeit des Verlassens von Wohnung oder Arbeitsstätte",
+          "timeZone": "Zeitzone"
+        },
+        "foreignRates": "Auslandspauschalen: {reference} ({version})",
+        "location": {
+          "activityToday": "Wo fand an diesem Tag Ihre letzte berufliche Tätigkeit im Ausland statt?",
+          "assigned": "Beträge gemäß amtlicher Bekanntmachung für dieses Land",
+          "atSea": "Ganztägig an Bord eines Schiffes (ohne Ein- oder Ausschiffung)",
+          "choose": "Ort auswählen",
+          "elsewhere": "Anderer Ort",
+          "fallbackFlight": "Amtliche Regelung: ganztägiger Flug, Beträge für Österreich",
+          "fallbackLuxembourg": "Amtliche Auffangregelung: nicht aufgeführt, Beträge für Luxemburg",
+          "fallbackMotherCountry": "Amtliche Auffangregelung: Überseegebiet, Beträge des Mutterlandes",
+          "fallbackShip": "Amtliche Regelung: ganztägig auf See, Beträge für Luxemburg",
+          "germany": "Deutschland",
+          "inFlight": "Ganztägig im Flug (zwischen Abflug- und Landetag)",
+          "lastActivityTrip": "Wo fand auf dieser Reise Ihre letzte berufliche Tätigkeit im Ausland statt?",
+          "night": "Wo befanden Sie sich um Mitternacht? (der letzte vor 24:00 Uhr Ortszeit erreichte Ort; ein Land gilt mit der Landung des Flugzeugs als erreicht)",
+          "noActivityAbroad": "Keine berufliche Tätigkeit im Ausland",
+          "other": "Sonstiges (erfordert manuelle Berechnung)",
+          "place": "Ort in {country}"
+        },
+        "meal": "{meal}: −{deduction}",
+        "mealPaid": "{meal}: −{deduction} (Sie haben {payment} bezahlt)",
+        "meals": {
+          "breakfast": "Frühstück",
+          "dinner": "Abendessen",
+          "lunch": "Mittagessen"
+        },
+        "mealsCountToward": "Abgezogen am {date}",
+        "noRate": "Es wird kein Satz erfunden: Diese Ausgabe bleibt im Entwurf, bis ein Ausgabenadministrator Tagespauschalen hinzufügt, die diese Tage abdecken.",
+        "noRateTitle": "Es gilt keine Tagespauschale",
+        "otherCurrency": "Die Sätze für diese Tage sind nicht in {currency}; Tagespauschalen werden nie umgerechnet.",
+        "overnight": {
+          "away": "Ich habe jede Nacht auswärts übernachtet",
+          "mixed": "Ich habe einige Nächte zu Hause verbracht",
+          "none": "Ich habe die Nacht ohne Übernachtung durchgearbeitet"
+        },
+        "pending": "Wird mit den datierten Sätzen Ihrer Organisation berechnet, sobald Ihre Änderungen gespeichert sind.",
+        "requirements": {
+          "currency": "Die Tagespauschalen für diese Tage sind in {policyCurrency}, diese Abrechnung wird jedoch in {currency} erstattet. Bitten Sie einen Ausgabenadministrator, Sätze in {currency} hinzuzufügen.",
+          "end": "Geben Sie an, wann Sie wieder zu Hause oder an Ihrer Arbeitsstätte waren.",
+          "exceptional": "Dieser Reiseverlauf erfordert eine manuelle Berechnung der Tagespauschale durch einen Ausgabenadministrator. Sie wird nicht automatisch berechnet.",
+          "locations": "Geben Sie für jeden Reisetag an, wo Sie sich um Mitternacht befanden und wo Ihre letzte geschäftliche Aktivität im Ausland stattfand.",
+          "meals": "Bestätigen Sie die bereitgestellten Mahlzeiten für jeden Reisetag.",
+          "overnight": "Geben Sie an, ob Sie auswärts übernachtet haben.",
+          "policyMissing": "Ihre Organisation hat keine Tagespauschalen für {dates}. Bitten Sie einen Ausgabenadministrator, datierte Sätze in den Reisekosteneinstellungen hinzuzufügen. Bis dahin wird nichts berechnet.",
+          "start": "Geben Sie an, wann Sie Ihr Zuhause oder Ihre Arbeitsstätte verlassen haben.",
+          "tripDates": "Ihr Abreise- und Rückreisetag müssen der erste und der letzte Reisetag der Reise sein."
+        },
+        "return": "Rückreise",
+        "rulesApplied": "Regeln: {reference} ({version})",
+        "title": "Tagespauschale",
+        "total": "Tagespauschale"
+      },
+      "project": {
+        "exceptionBadge": "Zuordnungsausnahme",
+        "exceptionDates": "Deckt ab",
+        "exceptionEvidence": "Nachweis",
+        "exceptionReason": "Grund",
+        "fromTrip": "(Reiseprojekt)",
+        "inheritNamed": "Wie bei der Reise ({name})",
+        "inheritNone": "Wie bei der Reise (kein Projekt)",
+        "label": "Projekt (optional)",
+        "loadFailed": "Die Projekte konnten nicht geladen werden.",
+        "needsDate": "Geben Sie das Belegdatum ein, um die Projekte anzuzeigen, die Sie an diesem Tag verwenden können.",
+        "needsTripDates": "Geben Sie die Reisedaten ein, um die Projekte anzuzeigen, die Sie für diese Reise verwenden können.",
+        "none": "Kein Projekt",
+        "noneEligible": "An diesem Datum waren Sie keinem Projekt zugewiesen. Wenn Sie zu diesem Zeitpunkt an einem Projekt gearbeitet haben, kann ein Spesenadministrator eine Zuordnungsausnahme genehmigen.",
+        "notEligible": "{name} kann an diesem Datum nicht verwendet werden: Sie waren dem Projekt damals nicht zugewiesen. Wählen Sie ein anderes Projekt oder bitten Sie einen Spesenadministrator um eine Zuordnungsausnahme.",
+        "refused": {
+          "conflict": "Diese Ausgabe wurde an anderer Stelle geändert. Lösen Sie den obigen Speicherkonflikt und wählen Sie das Projekt dann erneut aus.",
+          "dateRequired": "Geben Sie zuerst das Datum ein: Projekte werden für das Datum der Ausgabe angeboten.",
+          "failed": "Das Projekt konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+          "ineligible": "Sie waren diesem Projekt an diesem Datum nicht zugewiesen. Bitten Sie einen Spesenadministrator um eine Zuordnungsausnahme, falls Sie daran gearbeitet haben.",
+          "notFound": "Dieses Projekt ist nicht verfügbar."
+        },
+        "saving": "Projekt wird gespeichert…",
+        "tripDescription": "Ausgaben verwenden das Projekt der Reise, sofern Sie kein anderes dafür auswählen. Jede Ausgabe muss durch Ihre Projektzuweisung an ihrem jeweiligen Datum abgedeckt sein.",
+        "tripLabel": "Reiseprojekt (optional)",
+        "unavailableOption": "{name} (an diesem Datum nicht verfügbar)",
+        "unavailableTripOption": "{name} (an diesen Daten nicht verfügbar)",
+        "viaException": "Genehmigte Ausnahme"
+      },
+      "receiptException": {
+        "badge": "Beleg fehlt – Ausnahme",
+        "disabled": "Ihre Organisation erlaubt keine Ausnahmen für fehlende Belege mehr. Fügen Sie den Beleg an oder entfernen Sie Ihre Erklärung.",
+        "notAllowed": "Ihre Organisation erlaubt keine Ausnahmen für fehlende Belege.",
+        "reason": "Warum fehlt der Beleg?",
+        "reasonDescription": "Ihre prüfende Person sieht diese Begründung und muss sie akzeptieren, um die Abrechnung zu genehmigen.",
+        "reasonLabel": "Warum er fehlt:",
+        "reasonRequired": "Begründen Sie, warum der Beleg fehlt.",
+        "receiptAttached": "Ein Beleg ist angehängt, daher wird Ihre Begründung für den fehlenden Beleg nicht übermittelt.",
+        "request": "Ich kann den Beleg nicht einreichen und beantrage eine Ausnahme",
+        "title": "Kein Beleg?",
+        "unsavedAfterClose": "Ihre Begründung für den fehlenden Beleg konnte nicht gespeichert werden. Öffnen Sie die Ausgabe erneut, um sie zu überprüfen.",
+        "withdraw": "Begründung entfernen"
+      },
+      "receipts": {
+        "chooseFile": "Datei auswählen",
+        "description": "Machen Sie ein Foto oder hängen Sie ein PDF oder Bild des Belegs an.",
+        "downloadNamed": "{fileName} herunterladen",
+        "none": "Noch kein Beleg angehängt.",
+        "previewNamed": "Vorschau für {fileName}",
+        "progress": "Upload-Fortschritt",
+        "remove": "Entfernen",
+        "removeFailed": "Der Beleg konnte nicht entfernt werden.",
+        "removeNamed": "{fileName} entfernen",
+        "takePhoto": "Foto aufnehmen",
+        "title": "Beleg",
+        "uploadFailed": "Der Beleg wurde nicht angehängt.",
+        "uploading": "Beleg wird hochgeladen…",
+        "verifying": "Beleg wird geprüft…"
+      },
+      "rejectedBy": "Abgelehnt von {name}",
+      "reopen": {
+        "action": "Zur Korrektur erneut öffnen",
+        "changed": "Die Abrechnung wurde zwischenzeitlich geändert und nicht erneut geöffnet. Überprüfen Sie sie nochmals.",
+        "confirm": "Bericht erneut öffnen",
+        "description": "Der Mitarbeiter kann den Bericht korrigieren und muss ihn für eine erneute Genehmigung wieder einreichen. Bis dahin kann er weder ausgezahlt noch exportiert werden. Die genehmigte Einreichung bleibt im Verlauf erhalten.",
+        "done": "Bericht zur Korrektur erneut geöffnet",
+        "exported": "Dieser Bericht wurde bereits an die Buchhaltung exportiert und kann daher nicht mehr erneut geöffnet werden. Korrekturen erfordern eine verknüpfte Anpassung.",
+        "failed": "Der Bericht konnte nicht erneut geöffnet werden. Er wurde möglicherweise geändert oder Sie haben keinen Zugriff mehr darauf. Laden Sie ihn neu und versuchen Sie es erneut.",
+        "reason": "Begründung für den Mitarbeiter",
+        "reasonRequired": "Teilen Sie dem Mitarbeiter mit, was korrigiert werden muss.",
+        "reasonTooLong": "Beschränken Sie die Begründung auf maximal {max} Zeichen.",
+        "reimbursed": "Für diesen Bericht wurde bereits eine Erstattung erfasst, daher kann er nicht mehr erneut geöffnet werden. Korrekturen erfordern eine verknüpfte Anpassung.",
+        "reopenedBy": "Zur Korrektur erneut geöffnet von {name} am {date}",
+        "title": "Diesen genehmigten Bericht erneut öffnen?"
+      },
+      "requirements": {
+        "amount": "Geben Sie den Belegbetrag ein.",
+        "category": "Wählen Sie eine Kategorie aus.",
+        "complete": "Alle Angaben für diese Ausgabe wurden erfasst.",
+        "conversionEvidence": "Wählen Sie den Anhang aus, der die Kartenzahlung belegt.",
+        "conversionMissing": "Diesen Beleg in {currency} umrechnen: Geben Sie Ihre Kartenzahlung mit dem entsprechenden Anhang ein, oder bitten Sie einen Ausgabenadministrator um einen dokumentierten Wechselkurs.",
+        "conversionRateDate": "Das Datum des autorisierten Wechselkurses stimmt nicht mehr mit dem Ausgabendatum überein. Geben Sie Ihre Kartenzahlung ein oder bitten Sie einen Ausgabenadministrator, einen Wechselkurs für das neue Datum zu hinterlegen.",
+        "conversionUnsupported": "Diese Umrechnung kann für {currency} nicht verwendet werden. Bitten Sie einen Ausgabenadministrator, dies zu überprüfen.",
+        "description": "Beschreiben Sie die Ausgabe.",
+        "expenseDate": "Geben Sie das Datum auf dem Beleg an.",
+        "fixFields": "Korrigieren Sie zuerst die hervorgehobenen Felder.",
+        "paidBy": "Geben Sie an, ob Sie oder das Unternehmen bezahlt haben.",
+        "receipt": "Hängen Sie den Beleg an.",
+        "receiptExceptionNotAllowed": "Hängen Sie den Beleg an. Ihre Organisation erlaubt keine Ausnahmen für fehlende Belege.",
+        "receiptExceptionReason": "Erklären Sie, warum der Beleg fehlt.",
+        "title": "Noch erforderlich"
+      },
+      "returnedBy": "Zur Überarbeitung zurückgegeben von {name} am {date}",
+      "returnedItem": "Ausgabe {number} ({description}):",
+      "save": {
+        "conflictDescription": "Es wurde nach dem Öffnen in einem anderen Fenster oder auf einem anderen Gerät gespeichert. Ihre letzten Änderungen sind noch nicht gespeichert.",
+        "conflictTitle": "Diese Ausgabe wurde an anderer Stelle geändert",
+        "failedDescription": "Ihre Änderungen bleiben auf dieser Seite erhalten. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+        "failedTitle": "Ihre Änderungen konnten nicht gespeichert werden",
+        "invalid": "Korrigieren Sie die hervorgehobenen Felder, um sie zu speichern",
+        "keepMine": "Stattdessen meine Änderungen speichern",
+        "pending": "Ungespeicherte Änderungen",
+        "retry": "Erneut versuchen",
+        "saved": "Alle Änderungen gespeichert",
+        "saving": "Wird gespeichert…",
+        "unsavedAfterClose": "Ihre letzten Änderungen an einer Ausgabe konnten nicht gespeichert werden. Öffnen Sie sie erneut, um sie zu überprüfen.",
+        "useTheirs": "Gespeicherte Version laden"
+      },
+      "standaloneTitle": "Eigenständiger Beleg",
+      "status": {
+        "approved": "Genehmigt",
+        "rejected": "Abgelehnt",
+        "returned": "Zur Überarbeitung zurückgegeben",
+        "submitted": "Wartet auf Überprüfung"
+      },
+      "submissionNumberAt": "Einreichung {number}, eingereicht am {date}",
+      "submit": {
+        "adjustment": "Die Abrechnung, die diese Anpassung korrigiert, ist in dieser Währung nicht mehr genehmigt, sodass keine vorzeichenbehaftete Differenz berechnet werden kann. Ihre Anpassung bleibt als Entwurf gespeichert.",
+        "adjustmentSuperseded": "Eine andere Anpassung derselben Abrechnung wurde genehmigt, nachdem Sie diese begonnen haben, und diese Kopie enthält jene Korrektur nicht. Starten Sie eine neue Anpassung von der ursprünglichen Abrechnung, damit beide Korrekturen beibehalten werden.",
+        "adjustmentTitle": "Diese Anpassung kann nicht eingereicht werden",
+        "blockedIncomplete": "Vollständigen Sie alle unter „Noch erforderlich“ aufgeführten Punkte vor dem Einreichen.",
+        "blockedUnsaved": "Warten Sie, bis alle Änderungen gespeichert wurden, oder korrigieren Sie die markierten Felder vor dem Einreichen.",
+        "cancel": "Weiter bearbeiten",
+        "changed": "Der Bericht wurde nach Ihrer Prüfung geändert. Schließen Sie diesen Dialog, überprüfen Sie Ihre Angaben und prüfen Sie ihn erneut.",
+        "changedTitle": "Der Bericht wurde geändert",
+        "confirm": "Zur Genehmigung einreichen",
+        "description": "Überprüfen Sie den gespeicherten Bericht. Die prüfende Person entscheidet über genau diese Version; während der Prüfung kann er nicht bearbeitet werden.",
+        "failed": "Etwas ist schiefgelaufen. Ihr Bericht ist weiterhin als Entwurf gespeichert; bitte versuchen Sie es erneut.",
+        "failedTitle": "Der Bericht wurde nicht eingereicht",
+        "incomplete": "Einige gespeicherte Angaben fehlen noch. Vervollständigen Sie alle unter „Noch benötigt“ aufgeführten Punkte und versuchen Sie es erneut.",
+        "incompleteTitle": "Der Bericht ist unvollständig",
+        "noReviewer": "Außer Ihnen selbst ist keine Führungskraft oder Teamleitung eingerichtet und es wurde keine genehmigende Person für Ausgaben festgelegt. Bitten Sie einen Administrator, eine zuzuweisen. Ihr Bericht bleibt als Entwurf gespeichert.",
+        "noReviewerTitle": "Dieser Bericht kann derzeit von niemandem geprüft werden",
+        "notSaved": "Einige Änderungen sind noch nicht gespeichert. Warten Sie, bis sie gespeichert wurden, und prüfen Sie den Bericht dann erneut.",
+        "project": "{count, plural, one {Eine Ausgabe ist einem Projekt zugeordnet, dem Sie am Ausgabendatum nicht zugewiesen waren. Wählen Sie ein anderes Projekt oder bitten Sie einen Ausgabenadministrator um eine Ausnahme für die Zuordnung. Ihr Bericht bleibt als Entwurf gespeichert.} other {# Ausgaben sind einem Projekt zugeordnet, dem Sie am Ausgabendatum nicht zugewiesen waren. Wählen Sie ein anderes Projekt oder bitten Sie einen Ausgabenadministrator um eine Ausnahme für die Zuordnung. Ihr Bericht bleibt als Entwurf gespeichert.}}",
+        "projectTitle": "Ein Projekt kann nicht verwendet werden",
+        "ready": "Ihre Angaben sind gespeichert. Prüfen Sie den Bericht und reichen Sie ihn zur Genehmigung ein.",
+        "requesterInactive": "Ihr Mitarbeiterprofil ist in dieser Organisation nicht aktiv, daher kann der Bericht nicht zur Prüfung weitergeleitet werden.",
+        "review": "Prüfen und einreichen",
+        "routing": "Über die Genehmigungsregeln Ihrer Organisation konnte keine prüfende Person ermittelt werden. Bitten Sie einen Administrator, diese zu überprüfen. Ihr Bericht bleibt als Entwurf gespeichert.",
+        "routingTitle": "Der Bericht konnte nicht weitergeleitet werden",
+        "selfApproval": "Nach den Genehmigungsregeln Ihrer Organisation könnten Sie Ihren eigenen Bericht genehmigen. Bitten Sie einen Administrator, diese anzupassen. Ihr Bericht bleibt als Entwurf gespeichert.",
+        "success": "Bericht zur Genehmigung eingereicht",
+        "thresholdCurrency": "Die Genehmigungsregeln Ihrer Organisation vergleichen Beträge in EUR, dieser Bericht ist jedoch in {currency}. Bitten Sie einen Administrator, diese zu überprüfen. Ihr Bericht bleibt als Entwurf gespeichert.",
+        "title": "Ausgabenbericht einreichen",
+        "unavailable": "Ihre Organisation ändert derzeit den Genehmigungsablauf für Ausgaben, weshalb Berichte aktuell nicht eingereicht werden können. Ihr Bericht bleibt als Entwurf gespeichert.",
+        "unavailableTitle": "Einreichung ist pausiert"
+      },
+      "submittedAt": "Eingereicht am {date}",
+      "submittedTitle": "Eingereichte Reisekostenabrechnung",
+      "summary": {
+        "paidByCompany": "Vom Unternehmen bezahlt",
+        "paidByEmployee": "Von Ihnen bezahlt"
+      },
+      "title": "Ausgabe",
+      "totals": {
+        "companyPaid": "Vom Unternehmen bezahlt",
+        "excluded": "{count, plural, one {# Ausgabe wird noch nicht mitgezählt. Die Gesamtsummen enthalten Ausgaben in {currency}, deren Betrag und Kostenträger eingegeben wurden.} other {# Ausgaben werden noch nicht mitgezählt. Die Gesamtsummen enthalten Ausgaben in {currency}, deren Betrag und Kostenträger eingegeben wurden.}}",
+        "reimbursable": "An Sie erstattet",
+        "title": "Gesamtsummen"
+      },
+      "trip": {
+        "dates": "Reisedaten",
+        "datesZone": "(Kalendertage in {timeZone})",
+        "destinations": "Reiseziele",
+        "errors": {
+          "destination": "Wählen Sie ein aufgeführtes Land aus.",
+          "endBeforeStart": "Der letzte Reisetag darf nicht vor dem ersten liegen.",
+          "timeZone": "Wählen Sie eine aufgeführte Zeitzone aus.",
+          "tooManyDestinations": "Geben Sie maximal {max} Reiseziele ein."
+        },
+        "fields": {
+          "addDestination": "Reiseziel hinzufügen",
+          "country": "Land {number}",
+          "countryPlaceholder": "Land",
+          "destinations": "Reiseziele",
+          "endDate": "Letzter Reisetag",
+          "noDestinations": "Fügen Sie die Orte hinzu, zu denen Sie reisen.",
+          "place": "Ort {number}",
+          "placePlaceholder": "Stadt oder Ort",
+          "purpose": "Reisezweck",
+          "purposePlaceholder": "z. B. Kunden-Workshop in Hamburg",
+          "removeDestination": "Reiseziel {number} entfernen",
+          "startDate": "Erster Reisetag",
+          "timeZone": "Zeitzone der Reisedaten",
+          "timeZoneDescription": "Reisedaten sind Kalendertage in {timeZone}. Prüfende sehen dieselben Daten, unabhängig von ihrem Standort."
+        },
+        "purpose": "Reisezweck",
+        "requirements": {
+          "complete": "Alle Angaben für diese Reise wurden erfasst.",
+          "destination": "Fügen Sie mindestens ein Reiseziel hinzu.",
+          "expenseItem": "Fügen Sie eine Ausgabe hinzu.",
+          "expenseNamed": "Ausgabe {number}: {description}",
+          "fixFields": "Korrigieren Sie die hervorgehobenen Reisedetails.",
+          "purpose": "Beschreiben Sie den Zweck der Reise.",
+          "title": "Für diese Reise noch erforderlich",
+          "travelDates": "Geben Sie den ersten und letzten Reisetag ein."
+        },
+        "title": "Reisedetails",
+        "unsavedAfterClose": "Ihre letzten Änderungen an den Reisedetails konnten nicht gespeichert werden. Öffnen Sie die Reise erneut, um sie zu überprüfen."
+      },
+      "withdraw": {
+        "action": "Bericht zurückziehen",
+        "confirm": "Zurückziehen",
+        "description": "Die Prüfung wird gestoppt und der Bericht wird wieder zu einem bearbeitbaren Entwurf. Diese Einreichung bleibt im Verlauf des Berichts erhalten.",
+        "done": "Bericht zurückgezogen. Sie können ihn wieder bearbeiten.",
+        "failed": "Der Bericht konnte nicht zurückgezogen werden. Bitte versuchen Sie es erneut.",
+        "notPending": "Über diese Einreichung wurde bereits entschieden oder sie wurde zurückgegeben, daher kann sie nicht mehr zurückgezogen werden.",
+        "title": "Diesen Bericht zurückziehen?"
+      },
+      "withdrawnNotice": "Sie haben Einreichung {number} zurückgezogen. Reichen Sie den Bericht erneut ein, sobald er fertig ist.",
+      "withdrawnSubmission": "Diese Einreichung wurde vor einer Entscheidung zurückgezogen."
+    },
+    "settlement": {
+      "adjustment": "Inklusive genehmigter Anpassung",
+      "balance": {
+        "outstanding": "{amount} ausstehend",
+        "overpaid": "{amount} überzahlt",
+        "settled": "Beglichen"
+      },
+      "companyPaid": "Vom Unternehmen bezahlte Kosten in Höhe von {amount} werden dem Mitarbeiter nicht geschuldet.",
+      "entitlement": "Genehmigter, vom Mitarbeiter bezahlter Betrag",
+      "entry": {
+        "recordedBy": "Erfasst von {name}, {date}",
+        "recovery": "{amount} zurückerhalten",
+        "reimbursement": "{amount} gezahlt"
+      },
+      "errors": {
+        "amountInvalid": "Geben Sie einen positiven Betrag ein.",
+        "amountPrecision": "Diese Währung hat nicht so viele Dezimalstellen.",
+        "amountRequired": "Geben Sie den gezahlten Betrag ein.",
+        "conflict": "Ein früherer Versuch mit anderen Werten wurde bereits erfasst. Überprüfen Sie den Verlauf vor einer erneuten Erfassung.",
+        "dateFuture": "Das Zahlungsdatum darf nicht in der Zukunft liegen.",
+        "dateInvalid": "Geben Sie ein gültiges Datum ein.",
+        "dateRequired": "Geben Sie das Zahlungsdatum ein.",
+        "exceedsOutstanding": "Der Betrag ist höher als der ausstehende Betrag.",
+        "exceedsOverpayment": "Der Betrag ist höher als der überzahlte Betrag.",
+        "failed": "Die Zahlung konnte nicht erfasst werden. Bitte versuchen Sie es erneut.",
+        "load": "Der Erstattungssaldo konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
+        "noOverpayment": "Für diese Ausgabe wurde nichts überzahlt.",
+        "notApproved": "Diese Ausgabe ist nicht mehr genehmigt, daher kann keine Zahlung erfasst werden.",
+        "nothingOutstanding": "Für diese Ausgabe ist kein Betrag ausstehend.",
+        "ownExpense": "Sie können keine Zahlungen für Ihre eigenen Ausgaben erfassen.",
+        "referenceRequired": "Geben Sie die Zahlungsreferenz ein, z. B. die Referenz der Banküberweisung.",
+        "refused": "Diese Zahlung kann für diese Ausgabe nicht erfasst werden.",
+        "staleBalance": "Der Saldo hat sich geändert, während Sie diese Zahlung eingegeben haben. Prüfen Sie den aktualisierten Saldo und erfassen Sie ihn erneut.",
+        "tooLong": "Dieser Text ist zu lang."
+      },
+      "form": {
+        "amount": "Gezahlter Betrag ({currency})",
+        "date": "Zahlungsdatum",
+        "label": "Eine Erstattung erfassen",
+        "note": "Notiz (optional)",
+        "notice": "Erfassen Sie Beträge, die bereits an den Mitarbeiter ausgezahlt wurden. Z8 führt keine Überweisungen durch.",
+        "reference": "Zahlungsreferenz",
+        "referenceHint": "Zum Beispiel die Referenz der Banküberweisung oder des Gehaltslaufs.",
+        "submit": "Erstattung erfassen"
+      },
+      "history": "Erfasste Zahlungen",
+      "loading": "Erstattungssaldo wird geladen…",
+      "ownerOutstanding": "Die Finanzabteilung erfasst Ihre Erstattung hier, sobald sie ausgezahlt wurde.",
+      "ownerOverpaid": "Es wurde mehr ausgezahlt, als jetzt genehmigt ist. Die Finanzabteilung erfasst hier, wenn die Differenz zurückgezahlt wurde; Z8 führt keine Geldbewegungen durch.",
+      "recorded": "Erstattung erfasst.",
+      "recordedAlready": "Diese Zahlung wurde bereits erfasst.",
+      "recovered": "Zurückgezahlt",
+      "recoveryForm": {
+        "amount": "Zurückgezahlter Betrag ({currency})",
+        "date": "Rückzahlungsdatum",
+        "label": "Eine Rückzahlung erfassen",
+        "notice": "Dem Mitarbeiter wurde mehr ausgezahlt, als jetzt genehmigt ist. Erfassen Sie Beträge, die zur Begleichung der Überzahlung bereits zurückgezahlt wurden; die ursprüngliche Erstattung bleibt wie erfasst bestehen und es wird nichts mit anderen Abrechnungen verrechnet. Z8 überweist kein Geld.",
+        "submit": "Rückzahlung erfassen"
+      },
+      "recoveryRecorded": "Rückzahlung erfasst.",
+      "reimbursed": "Erstattet",
+      "state": {
+        "mixed": "Prüfung erforderlich",
+        "outstanding": "Ausstehend",
+        "overpaid": "Überzahlt",
+        "settled": "Beglichen"
+      },
+      "title": "Erstattung"
+    },
+    "status": {
+      "draft": "Entwurf"
+    },
+    "title": "Reisekosten",
+    "workspace": {
+      "description": "Erfassen Sie Reise- und Einzelausgaben, reichen Sie diese zur Prüfung ein und verfolgen Sie deren Erstattung."
+    }
   }
 }

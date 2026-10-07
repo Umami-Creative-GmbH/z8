@@ -1,17 +1,73 @@
 {
   "travelExpenses": {
     "actions": {
-      "newClaim": "Nytt krav"
+      "backToClaims": "Tilbake til krav",
+      "download": "Last ned",
+      "preview": "Forhåndsvis",
+      "retry": "Prøv på nytt",
+      "viewClaim": "Vis krav"
+    },
+    "adjustment": {
+      "create": {
+        "action": "Korriger med en justering",
+        "confirm": "Opprett justering",
+        "description": "Du får en kopi av de godkjente utgiftene som kan korrigeres. Når du sender den inn, sendes hele den korrigerte rapporten til ny godkjenning; bare differansen mot det godkjente beløpet gjøres opp.",
+        "failed": "Kunne ikke opprette justeringen. Vennligst prøv igjen.",
+        "ineligible": "Denne rapporten kan ikke lenger justeres. Last inn siden på nytt for å se gjeldende status.",
+        "reason": "Årsak til korrigeringen",
+        "reasonRequired": "Forklar hva som må korrigeres.",
+        "reasonTooLong": "Hold årsaken under {max} tegn.",
+        "title": "Opprette en koblet justering?"
+      },
+      "ineligible": {
+        "adjustment": "En justering korrigeres via rapporten den justerer."
+      },
+      "notice": {
+        "baseline": "Godkjent beløp den korrigerer",
+        "delta": "Differanse med fortegn",
+        "editing": "Korriger utgiftene nedenfor. Når du sender inn, vises differansen mot det godkjente beløpet til gjennomgang, og vurderes deretter på nytt. Den opprinnelige rapporten og utbetalingene forblir uendret.",
+        "original": "Åpne den opprinnelige rapporten",
+        "title": "Justering av en godkjent rapport"
+      },
+      "panel": {
+        "applied": "Anvendt",
+        "description": "Denne rapporten er allerede eksportert eller refundert, så den forblir godkjent. En korrigering er en koblet justering: den vurderes på nytt og endrer det godkjente beløpet med differansen når den er godkjent.",
+        "effective": "Godkjent beløp inkludert justeringer: {amount}",
+        "open": "Åpne justering",
+        "title": "Justeringer"
+      },
+      "preview": {
+        "currency": "Det korrigerte totalbeløpet er ikke i den opprinnelige rapportens valuta, og kan derfor ikke sendes inn som en justering.",
+        "delta": "Denne justeringen endrer det godkjente beløpet på {baseline} med {delta}.",
+        "review": "Den krever en ny godkjenning av hele rapporten, også når beløpet reduseres."
+      },
+      "reviewerHint": "Den ansatte oppretter justeringen fra denne rapporten; den kommer tilbake til deg for en ny vurdering med differanse med fortegn."
+    },
+    "allowanceOverride": {
+      "amount": "Beløp",
+      "authorizedBy": "Autorisert av",
+      "authorizedByValue": "{name}, {date}",
+      "basis": "Beregning",
+      "evidence": "Dokumentasjon",
+      "noOrdinary": "Det finnes ingen ordinær beregning for disse opplysningene.",
+      "ordinary": "Retningslinjene ville beregnet {amount}.",
+      "reason": "Årsak",
+      "situation": {
+        "calculated": "Beregnet av retningslinjene",
+        "fallback": "Beregnet med en offisiell reservesats",
+        "missingCoverage": "Ingen av organisasjonens retningslinjer dekker det",
+        "missingFacts": "Nødvendige reiseopplysninger mangler",
+        "unsupported": "Dekkes ikke av de støttede beregningsreglene"
+      },
+      "situationLabel": "Hvorfor ikke beregnet",
+      "situationResolved": "Denne manuelle godtgjørelsen gjelder ikke lenger: årsaken til at den ble autorisert har endret seg (for eksempel dekker retningslinjene nå disse opplysningene). Den beregnede godtgjørelsen gjelder hvis den finnes; ellers må en utgiftsadministrator gå gjennom den.",
+      "stale": "Denne manuelle godtgjørelsen ble autorisert for andre opplysninger og gjelder ikke lenger. En utgiftsadministrator må gå gjennom de endrede opplysningene.",
+      "title": "Godtgjørelse satt manuelt av en utgiftsadministrator"
     },
     "approvals": {
       "description": "Åpne den felles innboksen for godkjenninger filtrert etter reiseutgifter.",
       "openInbox": "Åpne innboks",
       "title": "Gå gjennom ventende godkjenninger av reiseutgifter"
-    },
-    "claimTypes": {
-      "mileage": "Kilometergodtgjørelse",
-      "per_diem": "Diett",
-      "receipt": "Kvittering"
     },
     "decision": {
       "approve": "Godkjenn",
@@ -33,41 +89,179 @@
       "rejected": "Kravet ble avvist",
       "rejectTitle": "Avvis krav"
     },
-    "description": "Opprett og følg opp reiseutgiftskravene dine",
+    "detail": {
+      "created": "Opprettet",
+      "decisionRecorded": "Beslutning registrert",
+      "destination": "Destinasjon",
+      "history": "Beslutningshistorikk",
+      "intermediateApproval": "Godkjenning registrert — venter på ytterligere godkjenning",
+      "legacyReceiptIdentity": "Eldre kvittering: sjekksum for innhold ble ikke registrert.",
+      "loading": "Laster inn krav…",
+      "noReceipts": "Ingen kvitteringer registrert",
+      "notRecorded": "Ikke registrert",
+      "originalAmount": "Opprinnelig beløp",
+      "receipts": "Kvitteringer",
+      "refreshing": "Oppdaterer krav…",
+      "submitted": "Sendt inn",
+      "title": "Reiseregning",
+      "unknownDates": "Kontekst for reisedato ble ikke registrert (eldre krav)"
+    },
     "errors": {
-      "loadClaims": "Kunne ikke laste inn reiseutgiftskrav"
+      "loadDetailRetry": "Kunne ikke laste inn dette kravet. Prøv på nytt."
     },
     "feature": "administrere reiseutgifter",
-    "form": {
-      "amount": "Beløp",
-      "claimType": "Kravtype",
-      "created": "Utkast til reiseutgift opprettet",
-      "createDraft": "Opprett utkast",
-      "currency": "Valuta",
-      "currencyDescription": "ISO 4217-kode, f.eks. EUR eller USD",
-      "currencyPlaceholder": "EUR",
-      "description": "Opprett et nytt utkast for dine nylige reiseutgifter.",
-      "destinationCity": "Destinasjonsby",
-      "destinationCityPlaceholder": "Berlin",
-      "destinationCountry": "Destinasjonsland",
-      "destinationCountryPlaceholder": "Tyskland",
-      "errors": {
-        "createDraft": "Kunne ikke opprette utkast til reiseutgift",
-        "positiveAmount": "Beløpet må være et positivt tall",
-        "tripEndBeforeStart": "Sluttdato for reisen kan ikke være før startdato for reisen",
-        "validTripDates": "Vennligst oppgi en gyldig start- og sluttdato for reisen",
-        "validTripEnd": "Vennligst oppgi en gyldig sluttdato for reisen",
-        "validTripStart": "Vennligst oppgi en gyldig startdato for reisen"
+    "finance": {
+      "approvedOn": "Godkjent {date}",
+      "back": "Tilbake til utgiftsøkonomi",
+      "companyPaid": "Betalt av selskapet {amount}",
+      "description": "Godkjente utgifter og hva som fortsatt skyldes ansatte. Registrering av en refusjon dokumenterer en betaling foretatt utenfor Z8; ingen penger overføres.",
+      "employeePaid": "Betalt av ansatt {amount}",
+      "empty": {
+        "any": "Ingen godkjente utgifter ennå.",
+        "open": "Ingenting å gjøre opp: alle godkjente utgifter er gjort opp."
       },
-      "notes": "Notater",
-      "notesPlaceholder": "Legg til valgfri kontekst for godkjenneren",
-      "receiptAttachmentHint": "Krav med kvittering krever minst ett vedlegg. Opplasting av vedlegg vil være tilgjengelig etter at utkastet er opprettet.",
-      "selectClaimType": "Velg kravtype",
-      "title": "Opprett reiseutgiftskrav",
-      "tripEnd": "Reiseslutt",
-      "tripStart": "Reisestart"
+      "entry": {
+        "description": "Gå gjennom godkjente utgifter, utestående saldoer og registrerte refusjoner.",
+        "open": "Åpne økonomikø",
+        "title": "Utgiftsøkonomi"
+      },
+      "errors": {
+        "load": "Kunne ikke laste økonomikøen. Vennligst prøv igjen."
+      },
+      "exports": {
+        "adjustment": "Justering: {name}",
+        "cancel": "Avbryt",
+        "cancelledByFinance": "Kansellert av økonomi.",
+        "cancelledReopenedHint": "Kansellert fordi en rapport i den ble gjenåpnet for korrigering. Eventuelle andre rapporter i den er klare til å eksporteres på nytt: opprett en ny eksport for dem.",
+        "counts": "{reports} rapporter · {items} utgifter · {receipts} kvitteringer",
+        "created": "Eksport satt i kø. Den vises nedenfor når den er klar.",
+        "description": "Eksporter godkjente utgifter som en CSV-fil med kvitteringer for regnskap. Hver godkjente innsending eksporteres én gang; last ned en eksport på nytt når du trenger det.",
+        "download": "Last ned",
+        "empty": "Ingen godkjente utgifter venter på eksport.",
+        "errors": {
+          "alreadyExported": "Noen valgte utgifter er allerede en del av en annen eksport. Last ned den eksporten i stedet.",
+          "cancel": "Eksporten kunne ikke avbrytes.",
+          "conflict": "Et tidligere forsøk med et annet utvalg er allerede registrert. Sjekk eksporthistorikken.",
+          "failed": "Eksporten kunne ikke opprettes. Vennligst prøv igjen.",
+          "invalid": "Velg mellom én og det maksimale antallet utgifter.",
+          "load": "Kunne ikke laste eksporter. Vennligst prøv igjen.",
+          "retry": "Kunne ikke prøve eksporten på nytt.",
+          "stale": "Noen valgte utgifter er ikke lenger godkjent som vist. Listen ble oppdatert; kontroller utvalget og eksporter på nytt."
+        },
+        "failure": {
+          "enqueue": "Eksporten kunne ikke settes i kø. Vennligst prøv igjen.",
+          "inconsistent": "De godkjente dataene kunne ikke eksporteres konsekvent. Kontakt kundestøtte.",
+          "receiptMismatch": "En lagret kvittering samsvarer ikke lenger med kontrollsummen. Kontakt kundestøtte før du prøver igjen.",
+          "receiptUnavailable": "En kvitteringsfil kunne ikke leses. Prøv på nytt når lagringen er tilgjengelig.",
+          "storage": "Eksportfilen kunne ikke lagres. Vennligst prøv igjen.",
+          "unknown": "Eksporten mislyktes. Prøv igjen."
+        },
+        "form": {
+          "label": "Opprett en eksport",
+          "selectAll": "Velg alle",
+          "submit": "Opprett eksport ({count})"
+        },
+        "history": "Eksporthistorikk",
+        "loading": "Laster inn eksporter…",
+        "notPayment": "Ikke en betaling: eksportering markerer ikke noe som refundert.",
+        "requested": "Forespurt {date} av {name}",
+        "retry": "Prøv igjen",
+        "status": {
+          "cancelled": "Avbrutt",
+          "completed": "Fullført",
+          "failed": "Mislyktes",
+          "processing": "Behandler",
+          "queued": "I kø"
+        },
+        "title": "Eksporter"
+      },
+      "filter": {
+        "all": "Alle godkjente",
+        "label": "Vis utgifter",
+        "open": "Åpen",
+        "settled": "Oppgjort"
+      },
+      "legacyClaim": "Eldre {type}-krav",
+      "loading": "Laster inn økonomikø…",
+      "title": "Utgiftsøkonomi",
+      "truncated": "Viser de {count} sist godkjente utgiftene. Eldre samsvarende utgifter er ikke oppført."
+    },
+    "form": {
+      "currency": "Valuta",
+      "notes": "Notater"
+    },
+    "history": {
+      "adjustment": "Justering",
+      "adjustmentOf": "Justering av “{title}”",
+      "adjustmentOfUntitled": "Justering av en tidligere rapport",
+      "claimed": "Krevd",
+      "companyPaid": "Betalt av selskapet {amount}",
+      "continuedFrom": "Fortsettelse fra et tidligere krav",
+      "emptyDescription": "Start en reise for å samle flere utgifter med felles reisedetaljer, eller legg til en enkelt kvittering eller kjøregodtgjørelse. Utkast lagres automatisk, slik at du kan fullføre dem senere.",
+      "emptyFilter": "Ingen utgifter med denne statusen.",
+      "emptyTitle": "Ingen reiseutgifter ennå",
+      "errors": {
+        "load": "Kunne ikke laste inn reiseutgiftene dine. Prøv på nytt.",
+        "refresh": "Kunne ikke oppdatere utgiftene dine. Listen nedenfor kan være utdatert. Prøv på nytt."
+      },
+      "filter": {
+        "all": "Alle",
+        "approved": "Godkjent",
+        "inReview": "Til vurdering",
+        "label": "Vis utgifter",
+        "needsAction": "Til fullføring",
+        "rejected": "Avvist"
+      },
+      "legacy": {
+        "badge": "Tidligere krav",
+        "mileage": "Kjøregodtgjørelseskrav",
+        "perDiem": "Diettkrav",
+        "receipt": "Kvitteringskrav"
+      },
+      "loading": "Laster inn reiseutgiftene dine…",
+      "notCounted": "{count, plural, one {# utgift er ikke telt med ennå} other {# utgifter er ikke telt med ennå}}",
+      "refreshing": "Oppdaterer…",
+      "reimbursable": "Refunderes til deg",
+      "showAll": "Vis alle utgifter",
+      "title": "Dine utgifter",
+      "untitledMileage": "Kjøregodtgjørelse uten tittel"
+    },
+    "legacyDraft": {
+      "continue": "Fortsett som rapport",
+      "converted": "Du fortsatte dette utkastet som en utgiftsrapport. Dette kravet forblir uendret her som referanse.",
+      "description": "Utkast fra det tidligere kravskjemaet fullføres nå som utgiftsrapporter. Beløp, datoer, notater og kvitteringer videreføres; alt det nye skjemaet krever som dette utkastet ikke registrerte, må fylles ut av deg. Selve kravet forblir uendret.",
+      "failed": "Kunne ikke fortsette utkastet. Prøv igjen.",
+      "flags": {
+        "amount": "Det angitte beløpet {amount} er ikke et gyldig kvitteringsbeløp. Angi beløpet og valutaen fra kvitteringen.",
+        "conversion": "Kvitteringen er i en utenlandsk valuta. Det ble ikke registrert noen omregning i utkastet, så legg til hvordan den ble konvertert (kortbelastning eller kurs) før du sender inn.",
+        "destination": "Destinasjonen \"{destination}\" kunne ikke knyttes til et land. Velg det.",
+        "expenseDate": "Utkastet dekket {range}. Velg datoen for denne utgiften.",
+        "manualTotal": "Utkastet hadde en inntastet totalsum på {amount}. Den brukes ikke: Denne utgiften beregnes nå ut fra det du oppgir nedenfor.",
+        "notes": "Notatene dine vises nedenfor. Kopier det som fortsatt er relevant.",
+        "project": "Prosjektet fra utkastet ble beholdt. Med mindre tildelingen din på utgiftsdatoen er registrert, må en utgiftsadministrator godkjenne det før du kan sende inn.",
+        "projectMissing": "Prosjektet fra utkastet finnes ikke lenger. Velg et prosjekt hvis det er aktuelt.",
+        "tripDates": "Utkastet ble opprettet før reisedatoer ble registrert. Angi datoene."
+      },
+      "loadFailed": "Kunne ikke kontrollere dette utkastet. Prøv igjen.",
+      "notDraft": "Dette kravet er allerede sendt inn. Det beholder sin opprinnelige godkjenning og kan ikke fortsettes som en rapport.",
+      "notice": {
+        "description": "Det du oppga, ble overført der dette skjemaet har nøyaktig plass til det, inkludert {count} kvitteringer. Fyll ut de gjenværende feltene før du sender inn.",
+        "original": "Vis det opprinnelige utkastet",
+        "title": "Fortsatt fra et tidligere kravutkast"
+      },
+      "openReport": "Åpne rapporten",
+      "receipt": {
+        "mismatch": "den lagrede filen samsvarer ikke lenger med det som ble lastet opp",
+        "unreadable": "den lagrede filen kan ikke leses akkurat nå",
+        "unsupportedStorage": "filen oppbevares på en lagringsplass som ikke støttes",
+        "unsupportedType": "den lagrede filen er ikke en støttet kvitteringstype"
+      },
+      "receiptUnavailable": "Ingenting ble endret fordi en kvittering ikke kunne overføres trygt: {receipts}. Prøv igjen senere, eller be administratoren om å gjenopprette filen.",
+      "status": "Videreført som rapport",
+      "title": "Fortsett dette utkastet"
     },
     "list": {
+      "actions": "Handlinger",
       "amount": "Beløp",
       "dateRange": "Datointervall",
       "emptyDescription": "Opprett ditt første krav for å starte godkjenningsprosessen.",
@@ -75,6 +269,595 @@
       "status": "Status",
       "type": "Type"
     },
-    "title": "Reiseutgifter"
+    "report": {
+      "actions": {
+        "newMileage": "Ny kjøregodtgjørelse",
+        "newReceipt": "Ny kvittering",
+        "newTrip": "Ny reise"
+      },
+      "approvedBy": "Godkjent av {name} den {date}.",
+      "awaitingReview": "Venter på gjennomgang.",
+      "awaitingReviewer": "Venter på gjennomgang av {name}.",
+      "backToApprovals": "Tilbake til godkjenninger",
+      "backToCurrent": "Tilbake til gjeldende rapport",
+      "backToTravelExpenses": "Tilbake til reiseutgifter",
+      "categories": {
+        "accommodation": "Overnatting",
+        "meals": "Måltider",
+        "other": "Annet",
+        "parking": "Parkering",
+        "transport": "Transport"
+      },
+      "conversion": {
+        "attachFirst": "Legg ved kortutskriften eller kvitteringen som viser belastningen ovenfor først.",
+        "authorizedBy": "Autorisert av",
+        "basis": {
+          "cardCharge": "Kortbelastning",
+          "manualRate": "Autorisert kurs",
+          "referenceRate": "ECB-referansekurs"
+        },
+        "chargedAmount": "Beløp belastet i {currency}",
+        "chargedAmountDescription": "Beløpet på kort- eller kontoutskriften din, inkludert eventuelle vekslingsgebyrer.",
+        "conflict": "Denne utgiften er endret et annet sted. Kontroller den og lagre kortbelastningen på nytt.",
+        "errors": {
+          "chargedAmount": "Angi det positive beløpet belastet i {currency}, med maksimalt {digits} desimaler.",
+          "evidence": "Velg vedlegget for denne utgiften som viser belastningen."
+        },
+        "evidence": "Dokumentasjon:",
+        "evidenceLabel": "Vedlegg som viser belastningen",
+        "evidenceMissing": "Vedlegget som viser kortbelastningen mangler.",
+        "formLabel": "Kortbelastning",
+        "none": "Ingen valutakurs gjettes. Angi beløpet kortet ditt ble belastet i {currency}, og velg vedlegget som viser det, for eksempel kontoutskriften. Uten en kortbelastning kan en utgiftsadministrator registrere en dokumentert kurs.",
+        "notSaved": "Kortbelastningen kunne ikke lagres for denne utgiften.",
+        "publicationDate": "Publisert",
+        "publicationFallback": "Ingen kurs ble publisert den {expenseDate}, så den siste tidligere publiseringen gjelder.",
+        "rate": "Kurs",
+        "rateDate": "Kursdato",
+        "rateEvidence": "Kursdokumentasjon",
+        "rateValue": "1 {base} = {value} {quote}",
+        "reason": "Dokumentasjon",
+        "reference": {
+          "alternatives": "Rapporten din forblir et utkast til du oppgir kortbelastningen i {reimbursementCurrency} med vedlegget som viser den, eller en utgiftsadministrator registrerer en dokumentert kurs.",
+          "currencyUnavailable": "Den europeiske sentralbanken publiserer ikke en kurs for {currency} på denne datoen.",
+          "expenseDateMissing": "Angi utgiftsdatoen for å slå opp referansekursen.",
+          "historyUnavailable": "Det finnes ingen referansekurs for denne datoen.",
+          "notYetPublished": "Referansekursen for denne datoen er ikke publisert ennå. Den er vanligvis tilgjengelig etter kl. 16.00 Frankfurt-tid på virkedager.",
+          "pairUnsupported": "Den europeiske sentralbanken publiserer kun kurser mot euro, så ingen gjelder mellom {currency} og {reimbursementCurrency}.",
+          "providerUnavailable": "Referansekursen for denne datoen kunne ikke hentes ennå. Prøv igjen senere.",
+          "rateStale": "Ingen gjeldende referansekurs er tilgjengelig for denne datoen."
+        },
+        "referencePending": "Referansekursen slås opp på nytt for den nye datoen når endringen din er lagret.",
+        "remove": "Fjern kortbelastning",
+        "removeFailed": "Kortbelastningen kunne ikke fjernes. Last inn utgiften på nytt og prøv igjen.",
+        "replaceWithCardCharge": "Bruk kortbelastningen min i stedet",
+        "result": "{original} regnes som {reimbursement}",
+        "rounding": "Avrunding",
+        "roundingValue": "Avrundet oppover ved 0,5 til {digits} desimaler",
+        "saveCardCharge": "Lagre kortbelastning",
+        "saved": "Kortbelastning lagret",
+        "saveFailed": "Kunne ikke lagre kortbelastningen. Prøv på nytt.",
+        "source": "Kilde",
+        "sourceEcb": "Den europeiske sentralbankens referansekurs for euro, godkjent av organisasjonen din",
+        "title": "Omregning til {currency}"
+      },
+      "correctAndResubmit": "Korriger rapporten og send den inn på nytt. Tidligere innsendinger forblir i loggen.",
+      "cycles": {
+        "approved": "godkjent",
+        "entry": "Innsending {number} den {date}: {outcome}",
+        "pending": "avventer gjennomgang",
+        "rejected": "avvist",
+        "reopened": "godkjent, deretter gjenåpnet for korrigering",
+        "returned": "returnert for endringer",
+        "title": "Innsendinger",
+        "withdrawn": "trukket tilbake"
+      },
+      "decideInInbox": "Godkjenn, returner eller avvis hele rapporten i innboksen for godkjenninger.",
+      "drafts": {
+        "expenses": "{count, plural, one {# utgift} other {# utgifter}}",
+        "noDate": "Ingen dato ennå",
+        "noTravelDates": "Ingen reisedatoer ennå",
+        "receipts": "{count, plural, one {# kvittering} other {# kvitteringer}}",
+        "untitled": "Kvittering uten tittel",
+        "untitledTrip": "Reise uten tittel"
+      },
+      "earlierSubmission": "Dette er en tidligere innsending av rapporten, beholdt nøyaktig slik den ble sendt inn.",
+      "errors": {
+        "amount": "Angi et positivt beløp med maksimalt to desimaler, f.eks. 12,50.",
+        "category": "Velg en oppført kategori.",
+        "create": "Utgiften kunne ikke opprettes. Prøv igjen.",
+        "currency": "Angi en valutakode på tre bokstaver, f.eks. EUR.",
+        "expenseDate": "Angi en gyldig dato.",
+        "load": "Kunne ikke laste inn denne utgiften. Prøv igjen.",
+        "loadSubmission": "Kunne ikke laste inn den innsendte rapporten. Prøv igjen.",
+        "paidBy": "Velg hvem som betalte.",
+        "tooLong": "Denne teksten er for lang."
+      },
+      "fields": {
+        "accountingReference": "Regnskapsreferanse (valgfritt)",
+        "accountingReferenceDescription": "En referanse økonomiavdelingen ba deg bruke, som for eksempel et ordrenummer.",
+        "amount": "Beløp på kvitteringen",
+        "category": "Kategori",
+        "categoryPlaceholder": "Velg en kategori",
+        "description": "Beskrivelse",
+        "descriptionPlaceholder": "f.eks. Togbillett Berlin–Hamburg til kundeworkshopen",
+        "expenseDate": "Kvitteringsdato",
+        "paidBy": "Hvem betalte?"
+      },
+      "frozenNotice": "Den innsendte rapporten kan ikke lenger redigeres.",
+      "history": {
+        "approvalRecorded": "Godkjenning registrert av {name}; venter på videre godkjenning",
+        "approved": "Godkjent av {name}",
+        "cycle": "Innsending {number}:",
+        "rejected": "Avvist av {name}",
+        "reopened": "Gjenåpnet for korrigering av {name}",
+        "returned": "Returnert for endringer av {name}",
+        "submitted": "Sendt inn av {name}",
+        "title": "Historikk",
+        "withdrawn": "Trukket tilbake av {name}"
+      },
+      "items": {
+        "add": "Legg til kvitteringsutgift",
+        "addFailed": "Kunne ikke legge til utgiften. Prøv på nytt.",
+        "empty": "Legg til hver kvittering for denne reisen som en egen utgift. Reisedetaljene ovenfor gjelder for alle sammen.",
+        "heading": "Utgift {number}",
+        "remove": "Fjern",
+        "removeConfirm": "Fjern utgift",
+        "removeConflict": "Denne utgiften ble endret et annet sted og ble ikke fjernet. Kontroller den og prøv igjen.",
+        "removeDescription": "Utgiften og de vedlagte kvitteringene slettes fra denne reisen. Dette kan ikke angres.",
+        "removeFailed": "Kunne ikke fjerne utgiften. Prøv på nytt.",
+        "removeLabel": "Fjern utgift {number}",
+        "removeTitle": "Fjerne denne utgiften?",
+        "title": "Utgifter"
+      },
+      "loading": "Laster inn utgift…",
+      "mileage": {
+        "add": "Legg til kjøregodtgjørelse",
+        "appliedPolicy": "Sats gyldig fra {date} · {source}",
+        "calculation": "{distance} km × {rate} per km = {amount}",
+        "calculationTitle": "Beregnet kjøregodtgjørelse",
+        "enterFacts": "Angi dato, kilometer og kjøretøy for å se beløpet.",
+        "errors": {
+          "distance": "Angi antall kjørte kilometer som et positivt tall med maksimalt to desimaler, f.eks. 61,5.",
+          "vehicle": "Velg kjøretøyet du kjørte."
+        },
+        "fields": {
+          "date": "Dato for kjøringen",
+          "distance": "Kjørte kilometer",
+          "route": "Rute",
+          "routePlaceholder": "f.eks. Kontor Berlin – kunde Potsdam – retur",
+          "vehicle": "Kjøretøy",
+          "vehicleDescription": "Ditt eget kjøretøy. Firmabiler og offentlig transport regnes ikke som kilometergodtgjørelse; legg til kvitteringene for disse i stedet."
+        },
+        "noRate": "Ingen sats blir funnet på: denne utgiften forblir et utkast til en utgiftsadministrator legger til en kilometersats som dekker datoen.",
+        "noRateTitle": "Ingen kilometersats gjelder",
+        "otherCurrency": "Satsen for denne datoen er ikke i {currency}; kilometergodtgjørelse regnes aldri om.",
+        "pending": "Beregnes med organisasjonens sats så snart endringene dine er lagret.",
+        "requirements": {
+          "currency": "Kilometersatsen for denne datoen er i {policyCurrency}, men denne rapporten refunderes i {currency}. Be en utgiftsadministrator om å legge til en sats i {currency}.",
+          "date": "Angi dato for kjøringen.",
+          "distance": "Angi kjørte kilometer.",
+          "policyMissing": "Organisasjonen din har ingen kilometersats for {vehicle} den {date}. Be en utgiftsadministrator om å legge til en datofestet sats i innstillingene for reiseutgifter. Ingenting beregnes før det.",
+          "route": "Beskriv ruten.",
+          "vehicle": "Velg kjøretøy."
+        },
+        "rounded": "(nøyaktig {exact}, avrundet til cent)",
+        "sourceOrganization": "Organisasjonens retningslinjer: {reference}",
+        "sourceOrganizationUnnamed": "Organisasjonens retningslinjer",
+        "sourceStatutory": "Tysk lovfestet standardsats ({version})",
+        "standaloneTitle": "Kilometergodtgjørelse",
+        "vehicles": {
+          "car": "Bil",
+          "otherMotorVehicle": "Annet motorkjøretøy (f.eks. motorsykkel)"
+        }
+      },
+      "paidBy": {
+        "company": "Bedriften betalte (f.eks. firmakort)",
+        "employee": "Jeg betalte (refunder meg)"
+      },
+      "perDiem": {
+        "absenceDuration": "{hours}:{minutes} t borte",
+        "add": "Legg til diett",
+        "appliedPolicy": "Satser gyldige fra {date} · {source}",
+        "basis": {
+          "absence24h": "Full dag borte (24 timer)",
+          "claimedInOtherReport": "Allerede utbetalt i en annen av rapportene dine: bare én godtgjørelse per dag",
+          "over8h": "Mer enn 8 timer borte",
+          "overnightMajority": "Størsteparten av fraværet over natten",
+          "overnightMinority": "Beregnet på den andre dagen av fraværet over natten",
+          "travelDay": "Reisedag for en reise med overnatting",
+          "upTo8h": "8 timer eller mindre borte: ingen godtgjørelse"
+        },
+        "breakdownCaption": "Diett per kalenderdag",
+        "calculationTitle": "Beregnet diett",
+        "columns": {
+          "amount": "Beløp",
+          "day": "Dag",
+          "eligibility": "Rettighet",
+          "meals": "Dekkede måltider",
+          "rate": "Godtgjørelse"
+        },
+        "deductionNote": "Dekkede måltider reduserer dagens godtgjørelse, aldri under null; det du betalte for et måltid, reduserer trekket.",
+        "departure": "Avreise",
+        "enterFacts": "Angi avreise, retur og måltider for å se daglige godtgjørelser.",
+        "errors": {
+          "clockChange": "Dette klokkeslettet finnes ikke denne dagen fordi klokken stilles frem. Angi et klokkeslett utenfor timen som hoppes over.",
+          "clockChangeRepeated": "Dette klokkeslettet forekommer to ganger denne dagen fordi klokken stilles tilbake. Angi et klokkeslett utenfor timen som gjentas.",
+          "endBeforeStart": "Returen må være etter avreisen.",
+          "location": "Velg et oppført sted for hver dag.",
+          "meals": "Kontroller måltidsregistreringene.",
+          "payment": "Oppgi det du betalte som et beløp med maksimalt to desimaler, f.eks. 2,50.",
+          "time": "Angi et klokkeslett i timer og minutter."
+        },
+        "exceptionalTitle": "Krever manuell beregning",
+        "exceptions": {
+          "destinationNotListed": "Et daglig oppholdssted dekkes ikke av den offisielle utenlandstabellen eller reserveløsningene.",
+          "foreignTimeZone": "Reisetidene er ikke i tysk lokal tid.",
+          "foreignWithoutOvernight": "Aktivitet over natten i utlandet uten overnatting beregnes ikke automatisk.",
+          "international": "Et reisemål er utenfor Tyskland. Utenlandsdiett beregnes ikke ennå.",
+          "majorityTie": "Fraværet over natten er delt nøyaktig likt mellom begge dager.",
+          "mixedTimeZones": "Avreise og hjemkomst er i forskjellige tidssoner.",
+          "multiDayWithoutOvernight": "Reisen strekker seg over mer enn to kalenderdager uten overnatting.",
+          "nightsAtHome": "Du tilbrakte noen netter hjemme i løpet av reisen.",
+          "overlappingDays": "En annen av rapportene dine utbetaler allerede diett for noen av disse dagene. Kun én godtgjørelse per dag er tillatt, så utelat dem fra den manuelle beregningen.",
+          "prolongedWorkplace": "Lengre oppdrag på samme arbeidssted: diett er begrenset til de første tre månedene.",
+          "rulesNotVerified": "Ingen bekreftede tyske regler dekker disse reisedatoene ennå.",
+          "specialLocation": "En dag ble markert som en spesiell situasjon (annet, eller en hel dag under flyreise eller til sjøs på den første eller siste reisedagen)."
+        },
+        "fields": {
+          "endDate": "Dagen du kom tilbake",
+          "endTime": "Klokkeslett du var tilbake hjemme eller på jobb",
+          "meals": "Måltider dekket av arbeidsgiver",
+          "mealsDescription": "Kryss av for hvert måltid som arbeidsgiveren din, eller et hotell eller vert på vegne av arbeidsgiveren, stilte til rådighet, selv om du hoppet over det. Angi hva du eventuelt betalte for det.",
+          "mealsNeedDates": "Angi avreise- og hjemkomstdato for å vise reisedagene.",
+          "overnight": "Netter i løpet av reisen",
+          "payment": "Hva du betalte for {meal} den {date}",
+          "paymentPlaceholder": "Du betalte (valgfritt)",
+          "prolongedWorkplace": "Jeg har jobbet på dette samme stedet i mer enn tre måneder",
+          "prolongedWorkplaceDescription": "Diett gjelder bare for de første tre månedene på samme arbeidssted. Slike reiser krever manuell beregning.",
+          "startDate": "Dagen du dro",
+          "startTime": "Tidspunkt du dro hjemmefra eller fra jobb",
+          "timeZone": "Tidssone"
+        },
+        "foreignRates": "Utenlandssatser: {reference} ({version})",
+        "location": {
+          "activityToday": "Hvor var din siste forretningsaktivitet i utlandet denne dagen?",
+          "assigned": "Beløp som den offisielle kunngjøringen tilordner dette landet",
+          "atSea": "Om bord på et skip hele dagen (ingen ombordstigning eller landgang)",
+          "choose": "Velg et sted",
+          "elsewhere": "Et annet sted",
+          "fallbackFlight": "Offisiell regel: hele dagen i fly, østerrikske beløp",
+          "fallbackLuxembourg": "Offisiell reserveløsning: ikke oppført, luxembourgske beløp",
+          "fallbackMotherCountry": "Offisiell reserveløsning: territorium, moderlandets beløp",
+          "fallbackShip": "Offisiell regel: hele dagen til sjøs, luxembourgske beløp",
+          "germany": "Tyskland",
+          "inFlight": "I flyvning hele dagen (mellom avgangsdag og ankomstdag)",
+          "lastActivityTrip": "Hvor var din siste forretningsaktivitet i utlandet på denne reisen?",
+          "night": "Hvor var du ved midnatt? (det siste stedet du ankom før 24:00 lokal tid; et land regnes som nådd når flyet ditt lander)",
+          "noActivityAbroad": "Ingen forretningsaktivitet i utlandet",
+          "other": "Noe annet (krever manuell beregning)",
+          "place": "Sted i {country}"
+        },
+        "meal": "{meal}: −{deduction}",
+        "mealPaid": "{meal}: −{deduction} (du betalte {payment})",
+        "meals": {
+          "breakfast": "Frokost",
+          "dinner": "Middag",
+          "lunch": "Lunsj"
+        },
+        "mealsCountToward": "Trukket den {date}",
+        "noRate": "Ingen satser blir funnet på: denne utgiften forblir et utkast til en utgiftsadministrator legger til diettsatser som dekker disse dagene.",
+        "noRateTitle": "Ingen diettsats gjelder",
+        "otherCurrency": "Satsene for disse dagene er ikke i {currency}; diett konverteres aldri.",
+        "overnight": {
+          "away": "Jeg overnattet borte fra hjemmet hver natt",
+          "mixed": "Jeg tilbrakte noen netter hjemme",
+          "none": "Jeg jobbet gjennom natten uten overnatting"
+        },
+        "pending": "Beregnes med organisasjonens datofestede satser så snart endringene dine er lagret.",
+        "requirements": {
+          "currency": "Diettsatsene for disse dagene er i {policyCurrency}, men denne rapporten refunderes i {currency}. Be en utgiftsadministrator om å legge til satser i {currency}.",
+          "end": "Oppgi når du var tilbake hjemme eller på arbeidsplassen din.",
+          "exceptional": "Denne reiseruten krever manuell diettberegning av en utgiftsadministrator. Den beregnes ikke automatisk.",
+          "locations": "Oppgi for hver reisedag hvor du var ved midnatt og hvor din siste forretningsaktivitet i utlandet fant sted.",
+          "meals": "Bekreft de inkluderte måltidene for hver reisedag.",
+          "overnight": "Oppgi om du overnattet borte fra hjemmet.",
+          "policyMissing": "Organisasjonen din har ingen diettsatser for {dates}. Be en utgiftsadministrator om å legge til datofestede satser i innstillingene for reiseutgifter. Ingenting blir beregnet før dette er gjort.",
+          "start": "Oppgi når du dro hjemmefra eller fra arbeidsplassen din.",
+          "tripDates": "Avreise- og returdagene må være reisens første og siste reisedag."
+        },
+        "return": "Retur",
+        "rulesApplied": "Regler: {reference} ({version})",
+        "title": "Diett",
+        "total": "Diett"
+      },
+      "project": {
+        "exceptionBadge": "Tilordningsunntak",
+        "exceptionDates": "Dekker",
+        "exceptionEvidence": "Dokumentasjon",
+        "exceptionReason": "Årsak",
+        "fromTrip": "(reiseprosjekt)",
+        "inheritNamed": "Samme som reisen ({name})",
+        "inheritNone": "Samme som reisen (ingen prosjekt)",
+        "label": "Prosjekt (valgfritt)",
+        "loadFailed": "Kunne ikke laste inn prosjektene.",
+        "needsDate": "Angi kvitteringsdatoen for å se prosjektene du kan bruke denne dagen.",
+        "needsTripDates": "Angi reisedatoene for å se prosjektene du kan bruke på denne reisen.",
+        "none": "Ingen prosjekt",
+        "noneEligible": "Du var ikke tildelt noe prosjekt på denne datoen. Hvis du jobbet på et prosjekt da, kan en utgiftsadministrator godkjenne et unntak for tilordning.",
+        "notEligible": "{name} kan ikke brukes på denne datoen: du var ikke tildelt det da. Velg et annet prosjekt, eller be en utgiftsadministrator om et unntak for tilordning.",
+        "refused": {
+          "conflict": "Denne utgiften ble endret et annet sted. Løs lagringskonflikten ovenfor, og velg deretter prosjektet på nytt.",
+          "dateRequired": "Angi datoen først: prosjekter tilbys for utgiftsdatoen.",
+          "failed": "Kunne ikke lagre prosjektet. Prøv på nytt.",
+          "ineligible": "Du var ikke tildelt dette prosjektet på denne datoen. Be en utgiftsadministrator om et unntak for tilordning hvis du jobbet på det.",
+          "notFound": "Dette prosjektet er ikke tilgjengelig."
+        },
+        "saving": "Lagrer prosjekt…",
+        "tripDescription": "Utgifter bruker reisens prosjekt med mindre du velger et annet for dem. Hver utgift må dekkes av prosjekttildelingen din på sin egen dato.",
+        "tripLabel": "Reiseprosjekt (valgfritt)",
+        "unavailableOption": "{name} (ikke tilgjengelig på denne datoen)",
+        "unavailableTripOption": "{name} (ikke tilgjengelig på disse datoene)",
+        "viaException": "godkjent unntak"
+      },
+      "receiptException": {
+        "badge": "Kvittering mangler — unntak",
+        "disabled": "Organisasjonen din tillater ikke lenger unntak for manglende kvittering. Legg ved kvitteringen, eller fjern forklaringen din.",
+        "notAllowed": "Organisasjonen din tillater ikke unntak for manglende kvittering.",
+        "reason": "Hvorfor mangler kvitteringen?",
+        "reasonDescription": "Kontrolløren din ser denne forklaringen og må godta den for å godkjenne rapporten.",
+        "reasonLabel": "Hvorfor den mangler:",
+        "reasonRequired": "Forklar hvorfor kvitteringen mangler.",
+        "receiptAttached": "En kvittering er lagt ved, så forklaringen på manglende kvittering sendes ikke inn.",
+        "request": "Jeg kan ikke fremlegge kvitteringen og ber om et unntak",
+        "title": "Ingen kvittering?",
+        "unsavedAfterClose": "Forklaringen på manglende kvittering kunne ikke lagres. Åpne utgiften på nytt for å sjekke den.",
+        "withdraw": "Fjern forklaring"
+      },
+      "receipts": {
+        "chooseFile": "Velg fil",
+        "description": "Ta et bilde eller legg ved en PDF eller et bilde av kvitteringen.",
+        "downloadNamed": "Last ned {fileName}",
+        "none": "Ingen kvittering er lagt ved ennå.",
+        "previewNamed": "Forhåndsvis {fileName}",
+        "progress": "Opplastingsfremdrift",
+        "remove": "Fjern",
+        "removeFailed": "Kvitteringen kunne ikke fjernes.",
+        "removeNamed": "Fjern {fileName}",
+        "takePhoto": "Ta bilde",
+        "title": "Kvittering",
+        "uploadFailed": "Kvitteringen ble ikke lagt ved.",
+        "uploading": "Laster opp kvittering…",
+        "verifying": "Kontrollerer kvitteringen…"
+      },
+      "rejectedBy": "Avvist av {name}",
+      "reopen": {
+        "action": "Gjenåpne for korrigering",
+        "changed": "Rapporten ble endret i mellomtiden og ble ikke gjenåpnet. Gå gjennom den på nytt.",
+        "confirm": "Gjenåpne rapport",
+        "description": "Den ansatte kan korrigere rapporten og må sende den inn på nytt for ny godkjenning. Frem til da kan den verken utbetales eller eksporteres. Den godkjente innsendingen beholdes i historikken.",
+        "done": "Rapporten er gjenåpnet for korrigering",
+        "exported": "Denne rapporten er allerede eksportert til regnskap, så den kan ikke lenger gjenåpnes. Korrigeringer krever en tilknyttet justering.",
+        "failed": "Rapporten kunne ikke gjenåpnes. Den kan ha blitt endret, eller du har kanskje ikke lenger tilgang. Last inn på nytt og prøv igjen.",
+        "reason": "Begrunnelse til den ansatte",
+        "reasonRequired": "Fortell den ansatte hva som må korrigeres.",
+        "reasonTooLong": "Hold begrunnelsen under {max} tegn.",
+        "reimbursed": "En refusjon er allerede registrert for denne rapporten, så den kan ikke lenger gjenåpnes. Korrigeringer krever en tilknyttet justering.",
+        "reopenedBy": "Gjenåpnet for korrigering av {name} den {date}",
+        "title": "Vil du gjenåpne denne godkjente rapporten?"
+      },
+      "requirements": {
+        "amount": "Angi kvitteringsbeløpet.",
+        "category": "Velg en kategori.",
+        "complete": "Alt for denne utgiften er lagt inn.",
+        "conversionEvidence": "Velg vedlegget som viser kortbelastningen.",
+        "conversionMissing": "Konverter denne kvitteringen til {currency}: angi kortbelastningen din sammen med vedlegget som viser den, eller be en utgiftsadministrator om en dokumentert kurs.",
+        "conversionRateDate": "Datoen for den autoriserte kursen samsvarer ikke lenger med utgiftsdatoen. Angi kortbelastningen din, eller be en utgiftsadministrator om å dokumentere en kurs for den nye datoen.",
+        "conversionUnsupported": "Denne konverteringen kan ikke brukes for {currency}. Be en utgiftsadministrator om å kontrollere den.",
+        "description": "Beskriv utgiften.",
+        "expenseDate": "Legg til datoen på kvitteringen.",
+        "fixFields": "Korriger de uthevede feltene først.",
+        "paidBy": "Oppgi om du eller selskapet betalte.",
+        "receipt": "Legg ved kvitteringen.",
+        "receiptExceptionNotAllowed": "Legg ved kvitteringen. Organisasjonen din tillater ikke unntak for manglende kvitteringer.",
+        "receiptExceptionReason": "Forklar hvorfor kvitteringen mangler.",
+        "title": "Mangler fortsatt"
+      },
+      "returnedBy": "Returnert for endringer av {name} {date}",
+      "returnedItem": "Utgift {number} ({description}):",
+      "save": {
+        "conflictDescription": "Den ble lagret i et annet vindu eller på en annen enhet etter at du åpnet den. De siste endringene dine er ikke lagret ennå.",
+        "conflictTitle": "Denne utgiften ble endret et annet sted",
+        "failedDescription": "Endringene dine beholdes på denne siden. Sjekk tilkoblingen din og prøv på nytt.",
+        "failedTitle": "Endringene dine kunne ikke lagres",
+        "invalid": "Korriger de fremhevede feltene for å lagre dem",
+        "keepMine": "Lagre mine endringer i stedet",
+        "pending": "Ulagrede endringer",
+        "retry": "Prøv på nytt",
+        "saved": "Alle endringer er lagret",
+        "saving": "Lagrer…",
+        "unsavedAfterClose": "De siste endringene dine i en utgift kunne ikke lagres. Åpne den på nytt for å kontrollere den.",
+        "useTheirs": "Last inn den lagrede versjonen"
+      },
+      "standaloneTitle": "Frittstående kvittering",
+      "status": {
+        "approved": "Godkjent",
+        "rejected": "Avvist",
+        "returned": "Returnert for endringer",
+        "submitted": "Venter på gjennomgang"
+      },
+      "submissionNumberAt": "Innsending {number}, sendt inn {date}",
+      "submit": {
+        "adjustment": "Rapporten denne justeringen korrigerer, er ikke lenger godkjent i denne valutaen, så ingen signert differanse kan beregnes. Justeringen din forblir lagret som et utkast.",
+        "adjustmentSuperseded": "En annen justering av samme rapport ble godkjent etter at du startet denne, og denne kopien inneholder ikke den korreksjonen. Start en ny justering fra den opprinnelige rapporten slik at begge korreksjonene beholdes.",
+        "adjustmentTitle": "Denne justeringen kan ikke sendes inn",
+        "blockedIncomplete": "Fullfør alt som er oppført under «Mangler fortsatt» før du sender inn.",
+        "blockedUnsaved": "Vent til alle endringer er lagret, eller rett opp i de fremhevede feltene, før du sender inn.",
+        "cancel": "Fortsett å redigere",
+        "changed": "Rapporten ble endret etter at du gjennomgikk den. Lukk denne dialogboksen, kontroller oppføringene dine og gå gjennom den på nytt.",
+        "changedTitle": "Rapporten ble endret",
+        "confirm": "Send til godkjenning",
+        "description": "Kontroller den lagrede rapporten. Den som skal vurdere den, tar stilling til akkurat denne versjonen; den kan ikke redigeres mens den vurderes.",
+        "failed": "Noe gikk galt. Rapporten din er fortsatt lagret som et utkast. Prøv på nytt.",
+        "failedTitle": "Rapporten ble ikke sendt inn",
+        "incomplete": "Noen lagrede detaljer mangler fortsatt. Fyll ut alt som er oppført under «Mangler fortsatt», og prøv igjen.",
+        "incompleteTitle": "Rapporten er ufullstendig",
+        "noReviewer": "Du har ingen annen leder eller teamleder enn deg selv, og ingen utgiftsgodkjenner er konfigurert. Be en administrator om å tildele en. Rapporten din forblir lagret som et utkast.",
+        "noReviewerTitle": "Ingen kan gjennomgå denne rapporten ennå",
+        "notSaved": "Noen endringer er ikke lagret ennå. Vent til de er lagret, og gå deretter gjennom rapporten på nytt.",
+        "project": "{count, plural, one {Én utgift er tilordnet et prosjekt du ikke var tildelt på utgiftsdatoen. Velg et annet prosjekt, eller be en utgiftsadministrator om et unntak for tilordning. Rapporten din forblir lagret som et utkast.} other {# utgifter er tilordnet et prosjekt du ikke var tildelt på utgiftsdatoen. Velg et annet prosjekt, eller be en utgiftsadministrator om et unntak for tilordning. Rapporten din forblir lagret som et utkast.}}",
+        "projectTitle": "Et prosjekt kan ikke brukes",
+        "ready": "Oppføringene dine er lagret. Se over rapporten og send den til godkjenning.",
+        "requesterInactive": "Ansattprofilen din er ikke aktiv i denne organisasjonen, så rapporten kan ikke videresendes til gjennomgang.",
+        "review": "Se over og send inn",
+        "routing": "Organisasjonens godkjenningsregler fant ingen godkjenner. Be en administrator om å kontrollere dem. Rapporten din forblir lagret som et utkast.",
+        "routingTitle": "Rapporten kunne ikke videresendes",
+        "selfApproval": "Organisasjonens godkjenningsregler ville tillatt deg å godkjenne din egen rapport. Be en administrator om å justere dem. Rapporten din forblir lagret som et utkast.",
+        "success": "Rapporten er sendt til godkjenning",
+        "thresholdCurrency": "Organisasjonens godkjenningsregler sammenligner beløp i EUR, men denne rapporten er i {currency}. Be en administrator om å kontrollere dem. Rapporten din forblir lagret som et utkast.",
+        "title": "Send inn utgiftsrapport",
+        "unavailable": "Organisasjonen din endrer hvordan utgiftsgodkjenninger fungerer, så rapporter kan ikke sendes inn akkurat nå. Rapporten din forblir lagret som et utkast.",
+        "unavailableTitle": "Innsending er satt på pause"
+      },
+      "submittedAt": "Sendt inn {date}",
+      "submittedTitle": "Innsendt utgiftsrapport",
+      "summary": {
+        "paidByCompany": "Betalt av selskapet",
+        "paidByEmployee": "Betalt av deg"
+      },
+      "title": "Utgift",
+      "totals": {
+        "companyPaid": "Betalt av selskapet",
+        "excluded": "{count, plural, one {# utgift er ikke telt med ennå. Totalsummer inkluderer utgifter i {currency} der beløp og betaler er angitt.} other {# utgifter er ikke telt med ennå. Totalsummer inkluderer utgifter i {currency} der beløp og betaler er angitt.}}",
+        "reimbursable": "Refundert til deg",
+        "title": "Totalsummer"
+      },
+      "trip": {
+        "dates": "Reisedatoer",
+        "datesZone": "(kalenderdager i {timeZone})",
+        "destinations": "Reisemål",
+        "errors": {
+          "destination": "Velg et land fra listen.",
+          "endBeforeStart": "Siste reisedag kan ikke være før den første.",
+          "timeZone": "Velg en tidssone fra listen.",
+          "tooManyDestinations": "Angi maksimalt {max} reisemål."
+        },
+        "fields": {
+          "addDestination": "Legg til reisemål",
+          "country": "Land {number}",
+          "countryPlaceholder": "Land",
+          "destinations": "Reisemål",
+          "endDate": "Siste reisedag",
+          "noDestinations": "Legg til stedene du reiser til.",
+          "place": "Sted {number}",
+          "placePlaceholder": "By eller sted",
+          "purpose": "Formål med reisen",
+          "purposePlaceholder": "f.eks. kundeworkshop i Hamburg",
+          "removeDestination": "Fjern reisemål {number}",
+          "startDate": "Første reisedag",
+          "timeZone": "Tidssone for reisedatoene",
+          "timeZoneDescription": "Reisedatoer er kalenderdager i {timeZone}. Gjennomgåere ser de samme datoene, uansett hvor de er."
+        },
+        "purpose": "Formål med reisen",
+        "requirements": {
+          "complete": "Alt for denne reisen er lagt inn.",
+          "destination": "Legg til minst ett reisemål.",
+          "expenseItem": "Legg til en utgift.",
+          "expenseNamed": "Utgift {number}: {description}",
+          "fixFields": "Korriger de uthevede reisedetaljene.",
+          "purpose": "Beskriv formålet med reisen.",
+          "title": "Gjenstår for denne reisen",
+          "travelDates": "Angi første og siste reisedag."
+        },
+        "title": "Reisedetaljer",
+        "unsavedAfterClose": "De siste endringene dine i reisedetaljene kunne ikke lagres. Åpne reisen igjen for å kontrollere dem."
+      },
+      "withdraw": {
+        "action": "Trekk tilbake rapport",
+        "confirm": "Trekk tilbake",
+        "description": "Gjennomgangen stopper, og rapporten blir et redigerbart utkast igjen. Denne innsendingen blir stående i rapportens historikk.",
+        "done": "Rapporten er trukket tilbake. Du kan redigere den igjen.",
+        "failed": "Rapporten kunne ikke trekkes tilbake. Prøv på nytt.",
+        "notPending": "Denne innsendingen er allerede avgjort eller returnert, så den kan ikke lenger trekkes tilbake.",
+        "title": "Vil du trekke tilbake denne rapporten?"
+      },
+      "withdrawnNotice": "Du trakk tilbake innsending {number}. Send inn rapporten på nytt når den er klar.",
+      "withdrawnSubmission": "Dette innsendte kravet ble trukket tilbake før en beslutning ble tatt."
+    },
+    "settlement": {
+      "adjustment": "Inkludert godkjent justering",
+      "balance": {
+        "outstanding": "{amount} utestående",
+        "overpaid": "{amount} for mye betalt",
+        "settled": "Oppgjort"
+      },
+      "companyPaid": "Firmabetalte kostnader på {amount} skyldes ikke den ansatte.",
+      "entitlement": "Godkjent beløp betalt av ansatt",
+      "entry": {
+        "recordedBy": "Registrert av {name}, {date}",
+        "recovery": "Gjenvunnet {amount}",
+        "reimbursement": "Betalt {amount}"
+      },
+      "errors": {
+        "amountInvalid": "Angi et positivt beløp.",
+        "amountPrecision": "Denne valutaen har ikke så mange desimaler.",
+        "amountRequired": "Angi det innbetalte beløpet.",
+        "conflict": "Et tidligere forsøk med andre verdier er allerede registrert. Sjekk historikken før du registrerer på nytt.",
+        "dateFuture": "En betaling kan ikke dateres i fremtiden.",
+        "dateInvalid": "Angi en gyldig dato.",
+        "dateRequired": "Angi betalingsdatoen.",
+        "exceedsOutstanding": "Beløpet er høyere enn det som er utestående.",
+        "exceedsOverpayment": "Beløpet er høyere enn det som ble betalt for mye.",
+        "failed": "Betalingen kunne ikke registreres. Vennligst prøv igjen.",
+        "load": "Kunne ikke laste refusjonssaldoen. Vennligst prøv igjen.",
+        "noOverpayment": "Ingenting ble overbetalt for denne utgiften.",
+        "notApproved": "Denne utgiften er ikke lenger godkjent, så ingen betaling kan registreres.",
+        "nothingOutstanding": "Ingenting er utestående for denne utgiften.",
+        "ownExpense": "Du kan ikke registrere betalinger for dine egne utgifter.",
+        "referenceRequired": "Angi betalingsreferansen, f.eks. referansen for bankoverføringen.",
+        "refused": "Denne betalingen kan ikke registreres for denne utgiften.",
+        "staleBalance": "Saldoen ble endret mens du la inn denne betalingen. Kontroller den oppdaterte saldoen og registrer på nytt.",
+        "tooLong": "Denne teksten er for lang."
+      },
+      "form": {
+        "amount": "Betalt beløp ({currency})",
+        "date": "Betalingsdato",
+        "label": "Registrer en refusjon",
+        "note": "Notat (valgfritt)",
+        "notice": "Registrer penger som allerede er utbetalt til den ansatte. Z8 overfører ikke penger.",
+        "reference": "Betalingsreferanse",
+        "referenceHint": "For eksempel referansen for bankoverføringen eller lønnskjøringen.",
+        "submit": "Registrer refusjon"
+      },
+      "history": "Registrerte betalinger",
+      "loading": "Laster inn refusjonssaldo…",
+      "ownerOutstanding": "Økonomi registrerer refusjonen din her når den er utbetalt.",
+      "ownerOverpaid": "Det ble utbetalt mer enn det som nå er godkjent. Økonomi registrerer her når differansen er tilbakebetalt; Z8 flytter ikke penger.",
+      "recorded": "Refusjon registrert.",
+      "recordedAlready": "Denne betalingen er allerede registrert.",
+      "recovered": "Tilbakebetalt",
+      "recoveryForm": {
+        "amount": "Tilbakebetalt beløp ({currency})",
+        "date": "Tilbakebetalingsdato",
+        "label": "Registrer en tilbakebetaling",
+        "notice": "Den ansatte fikk utbetalt mer enn det som nå er godkjent. Registrer penger de allerede har tilbakebetalt for å gjøre opp overbetalingen; den opprinnelige refusjonen forblir som registrert, og ingenting motregnes mot andre rapporter. Z8 overfører ikke penger.",
+        "submit": "Registrer tilbakebetaling"
+      },
+      "recoveryRecorded": "Tilbakebetaling registrert.",
+      "reimbursed": "Refundert",
+      "state": {
+        "mixed": "Må gjennomgås",
+        "outstanding": "Utestående",
+        "overpaid": "Overbetalt",
+        "settled": "Oppgjort"
+      },
+      "title": "Refusjon"
+    },
+    "status": {
+      "draft": "Utkast"
+    },
+    "title": "Reiseutgifter",
+    "workspace": {
+      "description": "Samle reiseutgifter og frittstående utgifter, send dem til gjennomgang og følg refusjonen."
+    }
   }
 }

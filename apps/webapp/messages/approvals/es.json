@@ -21,6 +21,7 @@
     "clockIn": "Registrar entrada",
     "clockOut": "Registrar salida",
     "confirmReject": "Confirmar rechazo",
+    "confirmReturn": "Devolver para cambios",
     "date": "Fecha",
     "dates": "Fechas",
     "days": "Días",
@@ -62,6 +63,7 @@
       "outcomeApproved": "Aprobado",
       "outcomeRejected": "Rechazado",
       "project": "Proyecto",
+      "receiptExceptionsTitle": "Recibos faltantes",
       "receipts": "Recibos",
       "request": "Solicitud",
       "requestedBy": "Solicitado por",
@@ -93,12 +95,18 @@
     "notes": "Notas",
     "noTimeCorrectionApprovals": "No hay solicitudes de corrección de tiempo pendientes por revisar.",
     "offFrom": "ausente desde",
-    "openDetailsFor": "Abrir detalles de {title}",
+    "openDetailsFor": "Abrir detalles de ${item.summary.title}",
     "openInbox": "Abrir bandeja de entrada",
     "original": "Original",
     "pendingRequests": "Solicitudes pendientes",
     "pendingRequestsDescription": "Seleccione las solicitudes para aprobar en bloque, o haga clic en una fila para ver los detalles",
     "reason": "Motivo",
+    "receiptExceptions": {
+      "accept": "Aceptar recibo faltante para {label}",
+      "instructions": "Estos gastos no tienen recibo. Para aprobar el informe, acepte cada explicación. Puede rechazar el informe sin aceptarlas.",
+      "readOnly": "Estos gastos se enviaron sin recibo, junto con la explicación del empleado.",
+      "reason": "Explicación:"
+    },
     "reject": "Rechazar",
     "rejected": "Solicitud rechazada",
     "rejectFailed": "Error al rechazar",
@@ -110,12 +118,29 @@
     "rejectSelected": "Rechazar seleccionados",
     "rejectTimeCorrectionTitle": "Rechazar corrección de tiempo",
     "rejectTitle": "Rechazar solicitud de ausencia",
+    "reportReturned": "Informe devuelto para cambios",
     "requested": "Solicitado",
     "requestedCorrection": "Corrección solicitada",
     "requestedToday": "Hoy",
     "requester": "Solicitante",
     "requestingCorrection": "está solicitando una corrección de tiempo para",
     "requestingOff": "está solicitando",
+    "retry": "Reintentar",
+    "returnCommentTooLong": "Mantenga el comentario en menos de {max} caracteres.",
+    "returnItemComments": "Comentarios sobre los gastos (opcional)",
+    "returnItemLabel": "Gasto {number}",
+    "returnNote": "Nota para el empleado",
+    "returnNoteRequired": "Indique al empleado qué debe cambiar.",
+    "returnNoteTooLong": "Mantenga la nota en menos de {max} caracteres.",
+    "returnReport": "Devolver",
+    "returnReportConflict": "Mientras tanto, este informe se resolvió, devolvió o modificó. Vuelva a cargarlo para ver su estado actual.",
+    "returnReportDescription": "El empleado puede corregir el informe y enviarlo de nuevo. Este envío, su nota y los comentarios permanecerán en su historial.",
+    "returnReportFailed": "No se pudo devolver el informe. Vuelva a intentarlo.",
+    "returnReportInvalid": "Revise la nota y los comentarios: se requiere una nota y cada texto debe respetar su límite.",
+    "returnReportLoadFailed": "No se puede cargar el informe enviado. Vuelva a intentarlo.",
+    "returnReportLoading": "Cargando el informe enviado…",
+    "returnReportNotFound": "Ya no le corresponde revisar este informe.",
+    "returnReportTitle": "Devolver informe para cambios",
     "review": {
       "showDetails": "Mostrar detalles",
       "switchOrganizationAction": "Cambiar a {organization}",
@@ -128,7 +153,7 @@
     "searchLabel": "Buscar aprobaciones",
     "searchPlaceholder": "Buscar por nombre o correo electrónico…",
     "selectAll": "Seleccionar todo",
-    "selectedCount": "{selectedCount} seleccionados",
+    "selectedCount": "${selectedCount} seleccionados",
     "selectRow": "Seleccionar fila",
     "timeComparison": "Comparación de tiempo",
     "timeCorrectionApproved": "Corrección de tiempo aprobada",
@@ -137,26 +162,29 @@
     "timeCorrectionsDescription": "Revise y apruebe las solicitudes de corrección de registro de tiempo de los miembros de su equipo",
     "timelineActor": "{at} por {actorName}",
     "title": "Aprobaciones",
-    "totalCount": "{totalCount} pendientes",
+    "totalCount": "${totalCount} pendientes",
     "type": "Tipo",
     "types": {
       "absence_entry": "Solicitudes de ausencia",
       "time_entry": "Correcciones de tiempo",
-      "travel_expense_claim": "Gastos de viaje"
+      "travel_expense_claim": "Gastos de viaje",
+      "travel_expense_report": "Informes de gastos"
     },
     "unifiedInboxBannerDescription": "Vea todos los tipos de aprobación en un solo lugar con filtrado, acciones masivas y seguimiento de SLA.",
     "unifiedInboxBannerTitle": "Pruebe la nueva bandeja de entrada unificada",
+    "viewExpenseClaim": "Ver solicitud y recibos",
+    "viewExpenseReport": "Ver informe enviado y recibos",
     "workCategory": "Categoría de trabajo",
     "workCategoryUnavailable": "Categoría desconocida (no disponible)",
     "workLocation": "Ubicación de trabajo"
   },
   "fastLanes": {
     "approve": "Aprobar",
-    "approveGroup": "Aprobar {label}",
+    "approveGroup": "Aprobar ${label}",
     "confirmReject": "Confirmar rechazo",
-    "confirmRejectGroup": "Confirmar rechazo de {label}",
+    "confirmRejectGroup": "Confirmar rechazo de ${label}",
     "description": "Revisar solicitudes similares de baja fricción en lotes.",
-    "expandGroup": "Expandir {label}",
+    "expandGroup": "Expandir ${label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Ausencias sin conflictos detectados.",
@@ -175,24 +203,25 @@
         "label": "Solicitudes antiguas"
       }
     },
-    "notEligibleApprove": "{notApprovableCount} no elegibles para aprobación masiva",
-    "notEligibleReject": "{notRejectableCount} no elegibles para rechazo masivo",
+    "notEligibleApprove": "${notApprovableCount} no elegibles para aprobación masiva",
+    "notEligibleReject": "${notRejectableCount} no elegibles para rechazo masivo",
     "reject": "Rechazar",
-    "rejectGroup": "Rechazar {label}",
+    "rejectGroup": "Rechazar ${label}",
     "rejectReason": "Motivo de rechazo masivo",
     "risk": {
       "high": "Alto riesgo",
       "low": "Bajo riesgo",
       "medium": "Riesgo medio"
     },
-    "showGroup": "Mostrar {label}",
+    "showGroup": "Mostrar ${label}",
     "title": "Vías rápidas"
   },
   "sprint": {
-    "age": "Hace {ageDays} días",
+    "age": "Hace ${item.timing.ageDays} días",
     "approve": "Aprobar",
     "approveCurrentApproval": "Aprobar solicitud actual",
     "capabilities": {
+      "approveInDetails": "Abra los detalles para aceptar sus excepciones y aprobar",
       "approveUnavailable": "Aprobación no disponible",
       "bulkApprove": "Elegible para aprobación masiva",
       "rejectUnavailable": "Rechazo no disponible"
@@ -207,7 +236,7 @@
       "normal": "Prioridad normal",
       "urgent": "Prioridad urgente"
     },
-    "progress": "{current} de {total}",
+    "progress": "${currentIndex + 1} de ${visibleItems.length}",
     "reject": "Rechazar",
     "rejectCurrentApproval": "Rechazar solicitud actual",
     "rejectReason": "Motivo de rechazo del sprint",
@@ -231,7 +260,8 @@
     "types": {
       "absenceEntry": "Solicitud de ausencia",
       "timeEntry": "Registro de tiempo",
-      "travelExpenseClaim": "Reclamación de gastos de viaje"
+      "travelExpenseClaim": "Reclamación de gastos de viaje",
+      "travelExpenseReport": "Informe de gastos"
     }
   }
 }

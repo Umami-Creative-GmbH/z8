@@ -283,10 +283,12 @@
       "monthTotal": "Månadstotalt",
       "nextMonth": "Nästa månad",
       "previousMonth": "Föregående månad",
+      "recordedOnlyDayLabel": "{date}: {actual} registrerat.",
       "totalDescription": "Registrerad tid jämfört med policytimmar",
       "weekSum": "Summa"
     },
     "requirements": {
+      "includesRunningWork": "Inkluderar pågående arbete",
       "status": {
         "met": "krav uppfyllt",
         "missing": "saknar registrerad tid",

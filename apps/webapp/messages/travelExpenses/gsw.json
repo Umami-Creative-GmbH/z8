@@ -1,17 +1,73 @@
 {
   "travelExpenses": {
     "actions": {
-      "newClaim": "Neui Speseabrechnig"
+      "backToClaims": "Zurück zu den Abrechnungen",
+      "download": "Herunterladen",
+      "preview": "Vorschau",
+      "retry": "Erneut versuchen",
+      "viewClaim": "Abrechnung anzeigen"
+    },
+    "adjustment": {
+      "create": {
+        "action": "Mit einer Anpassung korrigieren",
+        "confirm": "Anpassung erstellen",
+        "description": "Sie erhalten eine Kopie der genehmigten Spesen zur Korrektur. Nach dem Einreichen wird die gesamte korrigierte Abrechnung erneut zur Genehmigung vorgelegt; nur die Differenz zum genehmigten Betrag wird beglichen.",
+        "failed": "Die Anpassung konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+        "ineligible": "Diese Abrechnung kann nicht mehr angepasst werden. Laden Sie die Seite neu, um den aktuellen Status anzuzeigen.",
+        "reason": "Grund für die Korrektur",
+        "reasonRequired": "Erklären Sie, was korrigiert werden muss.",
+        "reasonTooLong": "Der Grund darf maximal {max} Zeichen lang sein.",
+        "title": "Verknüpfte Anpassung erstellen?"
+      },
+      "ineligible": {
+        "adjustment": "Eine Anpassung wird über die Abrechnung korrigiert, die sie anpasst."
+      },
+      "notice": {
+        "baseline": "Genehmigter Betrag, der korrigiert wird",
+        "delta": "Vorzeichenbehaftete Differenz",
+        "editing": "Korrigieren Sie die unten stehenden Spesen. Nach dem Einreichen wird die Differenz zum genehmigten Betrag zur Überprüfung angezeigt und anschliessend erneut geprüft. Die ursprüngliche Abrechnung und deren Auszahlungen bleiben unverändert.",
+        "original": "Ursprüngliche Abrechnung öffnen",
+        "title": "Anpassung einer genehmigten Abrechnung"
+      },
+      "panel": {
+        "applied": "Angewendet",
+        "description": "Diese Abrechnung wurde bereits exportiert oder rückvergütet und bleibt daher wie genehmigt bestehen. Eine Korrektur ist eine verknüpfte Anpassung: Sie wird erneut geprüft und ändert nach der Genehmigung den genehmigten Betrag um ihre vorzeichenbehaftete Differenz.",
+        "effective": "Genehmigter Betrag einschliesslich Anpassungen: {amount}",
+        "open": "Anpassung öffnen",
+        "title": "Anpassungen"
+      },
+      "preview": {
+        "currency": "Der korrigierte Gesamtbetrag ist nicht in der Währung der ursprünglichen Abrechnung und kann daher nicht als Anpassung eingereicht werden.",
+        "delta": "Diese Anpassung ändert den genehmigten Betrag von {baseline} um {delta}.",
+        "review": "Die gesamte Abrechnung muss erneut genehmigt werden, auch wenn der Betrag sinkt."
+      },
+      "reviewerHint": "Die Mitarbeiterin oder der Mitarbeiter erstellt die Anpassung aus dieser Abrechnung; sie geht mit ihrer vorzeichenbehafteten Differenz zur erneuten Prüfung an Sie zurück."
+    },
+    "allowanceOverride": {
+      "amount": "Betrag",
+      "authorizedBy": "Autorisiert vo",
+      "authorizedByValue": "{name}, {date}",
+      "basis": "Berächnig",
+      "evidence": "Beleg",
+      "noOrdinary": "Für die Fakte git s kei normali Berächnig.",
+      "ordinary": "D Richtlinie würdi {amount} berächne.",
+      "reason": "Grund",
+      "situation": {
+        "calculated": "Vo de Richtlinie berächnet",
+        "fallback": "Mit emene offizielle Fallback-Ansatz berächnet",
+        "missingCoverage": "Kei Richtlinie vo de Organisation deckt das ab",
+        "missingFacts": "Erforderlichi Reiseaagabe fähled",
+        "unsupported": "Nöd vo de unterstützte Berächnigsregle abdeckt"
+      },
+      "situationLabel": "Wieso nöd berächnet",
+      "situationResolved": "Die manuelli Pauschale gilt nüme: De Grund, worum si bewilligt worde isch, hät sich gänderet (zum Bispiel deckt jetzt e Richtlinie die Fakte ab). Die berächneti Pauschale zellt, wenn s eini git; andernefalls muess en Spese-Administrator si überprüefe.",
+      "stale": "Die manuelli Pauschale isch für anderi Fakte bewilligt worde und gilt nüme. En Spese-Administrator muess die gänderete Fakte überprüefe.",
+      "title": "Pauschale manuell dur en Spese-Administrator feschtgleit"
     },
     "approvals": {
       "description": "Öffne de gmeinsami Genehmigungs-Inbox, filteret uf Reisechöschte.",
       "openInbox": "Inbox öffne",
       "title": "Pendi Genehmigunge für Reisechöschte prüefe"
-    },
-    "claimTypes": {
-      "mileage": "Kilometerentschädigung",
-      "per_diem": "Tagespauschale",
-      "receipt": "Beleg"
     },
     "decision": {
       "approve": "Genehmige",
@@ -33,41 +89,179 @@
       "rejected": "Aaspruch erfolgriich abglehnt",
       "rejectTitle": "Aaspruch ablehne"
     },
-    "description": "Erstell und verwalte dini Reisechöschte-Aasprüch",
+    "detail": {
+      "created": "Erstellt",
+      "decisionRecorded": "Entscheidung erfasst",
+      "destination": "Reiseziel",
+      "history": "Entscheidungsverlauf",
+      "intermediateApproval": "Genehmigung erfasst – wartet auf weitere Genehmigung",
+      "legacyReceiptIdentity": "Altsystem-Beleg: Inhaltsprüfsumme wurde nicht erfasst.",
+      "loading": "Abrechnung wird geladen …",
+      "noReceipts": "Keine Belege erfasst",
+      "notRecorded": "Nicht erfasst",
+      "originalAmount": "Ursprünglicher Betrag",
+      "receipts": "Belege",
+      "refreshing": "Abrechnung wird aktualisiert …",
+      "submitted": "Eingereicht",
+      "title": "Spesenabrechnung",
+      "unknownDates": "Reisedatumskontext nicht erfasst (Altabrechnung)"
+    },
     "errors": {
-      "loadClaims": "Reisechöschte-Aasprüch händ nöd chönne glade werde"
+      "loadDetailRetry": "Diese Abrechnung konnte nicht geladen werden. Bitte erneut versuchen."
     },
     "feature": "Reisechöschte verwalte",
-    "form": {
-      "amount": "Betrag",
-      "claimType": "Aaspruchstyp",
-      "created": "Reisechöschte-Entwurf erstellt",
-      "createDraft": "Entwurf erstelle",
-      "currency": "Währig",
-      "currencyDescription": "ISO 4217 Code, z.B. EUR oder USD",
-      "currencyPlaceholder": "EUR",
-      "description": "Erstell en neue Entwurf für dini aktuelle Reisechöschte.",
-      "destinationCity": "Ziilort",
-      "destinationCityPlaceholder": "Berlin",
-      "destinationCountry": "Ziilland",
-      "destinationCountryPlaceholder": "Dütschland",
-      "errors": {
-        "createDraft": "Reisechöschte-Entwurf het nöd chönne erstellt werde",
-        "positiveAmount": "Betrag muess e positivi Zahl sii",
-        "tripEndBeforeStart": "Reiseenddatum cha nöd vor em Reisestartdatum sii",
-        "validTripDates": "Bitte gib es gültigs Reisestart- und Enddatum aa",
-        "validTripEnd": "Bitte gib es gültigs Reiseenddatum aa",
-        "validTripStart": "Bitte gib es gültigs Reisestartdatum aa"
+    "finance": {
+      "approvedOn": "Bewilligt am {date}",
+      "back": "Zrugg zu de Spesefinanze",
+      "companyPaid": "Vo de Firma zahlt {amount}",
+      "description": "Bewilligti Spese und was de Mitarbeitende no gschuldet wird. D Erfassig vonere Rückerstattig dokumentiert e Zahlig, wo usserhalb vo Z8 gmacht worde isch; es wird keis Gäld überträit.",
+      "employeePaid": "Vo Mitarbeitende zahlt {amount}",
+      "empty": {
+        "any": "No kei bewilligti Spese.",
+        "open": "Nüt zum Usgliiche: Jedi bewilligti Spese isch begliche."
       },
-      "notes": "Notize",
-      "notesPlaceholder": "Füeg en optionale Kontext für dini Genehmigungsinstanz dezue",
-      "receiptAttachmentHint": "Beleg-Aasprüch bruched mindestens en Aahang. De Aahang-Upload isch nach de Entwurfserstellig verfügbar.",
-      "selectClaimType": "Aaspruchstyp uswähle",
-      "title": "Reisechöschte-Aaspruch erstelle",
-      "tripEnd": "Reiseend",
-      "tripStart": "Reisestart"
+      "entry": {
+        "description": "Bewilligti Spese, offeni Beträg und erfassti Rückerstattige überprüefe.",
+        "open": "Finanz-Warteschlang öffne",
+        "title": "Späse Finanze"
+      },
+      "errors": {
+        "load": "D Finanz-Warteschlang hät nöd chönne glade werde. Bitte nomal probiere."
+      },
+      "exports": {
+        "adjustment": "Apassig: {name}",
+        "cancel": "Abbreche",
+        "cancelledByFinance": "Vo de Finanze abbroche.",
+        "cancelledReopenedHint": "Abbroche, will en Bricht dadrin für e Korrektur nomal göffnet worde isch. Alli andere Bricht dadrin chönd nomal exportiert werde: Erstell en neue Export für si.",
+        "counts": "{reports} Bricht · {items} Späse · {receipts} Beleg",
+        "created": "Export i d Warteschlang iigreiht. Er erschiint une, sobald er parat isch.",
+        "description": "Genehmigti Späse als CSV zäme mit ihrne Beleg für d Buechhaltig exportiere. Jedi genehmigti Iigab wird eimol exportiert; lad en Export nomal abe, wänn immer du en bruuchsch.",
+        "download": "Abelade",
+        "empty": "Es warted keini genehmigte Späse uf de Export.",
+        "errors": {
+          "alreadyExported": "Teil vo de usgwählte Späse sind scho Teil vome andere Export. Lad stattdesse säb Export abe.",
+          "cancel": "De Export hät nöd chönne abbroche werde.",
+          "conflict": "En früenere Versuech mitere andere Uswahl isch bereits erfasst worde. Prüef de Export-Verlauf.",
+          "failed": "De Export hät nöd chönne erstellt werde. Bitte nomal probiere.",
+          "invalid": "Wähl zwüschet einere und de maximale Anzahl vo Späse us.",
+          "load": "Exporte händ nöd chönne glade werde. Bitte nomal probiere.",
+          "retry": "De Export hät nöd nomal chönne probiert werde.",
+          "stale": "Einigi usgwählti Späse sind nümme wie aazeigt genehmigt. D Lischte isch aktualisiert worde; überprüef d Uswahl und exportier nomal."
+        },
+        "failure": {
+          "enqueue": "De Export hät nöd i d Warteschlang gstellt werde chönne. Bitte nomal probiere.",
+          "inconsistent": "D genehmigte Date händ nöd konsistent exportiert werde chönne. Kontaktier de Support.",
+          "receiptMismatch": "En gspycherete Beleg stimmt nümme mit de erfasste Prüfsumme überii. Kontaktier de Support, bevor du's nomal probiersch.",
+          "receiptUnavailable": "En Beleg-Datei hät nöd chönne gläse werde. Probier's nomal, sobald de Spycherplatz verfügbar isch.",
+          "storage": "D Export-Datei hät nöd chönne gspycheret werde. Bitte nomal probiere.",
+          "unknown": "De Export isch fählgschlage. Bitte nomal probiere."
+        },
+        "form": {
+          "label": "En Export erstelle",
+          "selectAll": "Alli uswähle",
+          "submit": "Export erstelle ({count})"
+        },
+        "history": "Export-Verlauf",
+        "loading": "Exporte wärded glade…",
+        "notPayment": "Kä Zahlig: Bim Exportiere wird nüt als rückvergüetet markiert.",
+        "requested": "Aagforderet am {date} vo {name}",
+        "retry": "Nomal probiere",
+        "status": {
+          "cancelled": "Annulliert",
+          "completed": "Abgschlosse",
+          "failed": "Fählgschlage",
+          "processing": "Wird verarbeitet",
+          "queued": "I de Warteschlange"
+        },
+        "title": "Exporte"
+      },
+      "filter": {
+        "all": "Alli gnämiget",
+        "label": "Spese aazeige",
+        "open": "Offe",
+        "settled": "Abgrechnet"
+      },
+      "legacyClaim": "Veralteti {type}-Aaforderig",
+      "loading": "Finanz-Warteschlange wird glade…",
+      "title": "Spesefinanze",
+      "truncated": "Es wärded di {count} zletscht gnämigte Spese aazeigt. Älteri passendi Spese wärded nöd ufgfüehrt."
+    },
+    "form": {
+      "currency": "Währig",
+      "notes": "Notize"
+    },
+    "history": {
+      "adjustment": "Aapassig",
+      "adjustmentOf": "Aapassig vo “{title}”",
+      "adjustmentOfUntitled": "Aapassig vomene früenere Bricht",
+      "claimed": "Iigreicht",
+      "companyPaid": "Vo de Firma zahlt: {amount}",
+      "continuedFrom": "Witergfüehrt vonere früenere Iigab",
+      "emptyDescription": "Starte e Reis, zum mehreri Späse mit de gliiche Reisedetails z'erfasse, oder tue en einzelne Beleg oder e Kilometerabrächnig derzue. Entwürf werdet automatisch gspycheret, sodass du si spöter chasch fertig mache.",
+      "emptyFilter": "Käi Späse mit däm Status.",
+      "emptyTitle": "No käi Reisespäse vorhande",
+      "errors": {
+        "load": "Dini Reisespäse händ nöd chönne glade werde. Bitte nomol probiere.",
+        "refresh": "Dini Späse händ nöd chönne aktualisiert werde; d'Lischte unde isch villicht nüme aktuell. Bitte nomol probiere."
+      },
+      "filter": {
+        "all": "Alli",
+        "approved": "Gnämigt",
+        "inReview": "In Überprüefig",
+        "label": "Späse aazeige",
+        "needsAction": "No fertigstelle",
+        "rejected": "Abglehnt"
+      },
+      "legacy": {
+        "badge": "Früeneri Iigab",
+        "mileage": "Kilometerabrächnig",
+        "perDiem": "Tagspäse-Iigab",
+        "receipt": "Belegabrächnig"
+      },
+      "loading": "Dini Reisespäse werdet glade…",
+      "notCounted": "{count, plural, one {# Usgab no nöd mitzellt} other {# Usgabe no nöd mitzellt}}",
+      "refreshing": "Wird aktualisiert…",
+      "reimbursable": "Wird dir zruggvergüetet",
+      "showAll": "Alli Späse aazeige",
+      "title": "Dini Späse",
+      "untitledMileage": "Kilometerstand ohni Titel"
+    },
+    "legacyDraft": {
+      "continue": "Als Bricht wiitermache",
+      "converted": "Du hesch dä Entwurf als Spesebricht wiitergfüehrt. Dä Aatrag bliibt da zur Referenz unveränderet stah.",
+      "description": "Entwürf usem früenere Aatragsformular werdet jetzt als Spesebricht abgschlosse. Dä Betrag, d'Date, d'Notize und d'Beleg werdet übernaa; alles, was s'neue Formular bruucht, wo i däm Entwurf aber nie erfasst worde isch, chasch no ergänze. Dä Aatrag sälber bliibt unveränderet.",
+      "failed": "Dä Entwurf het nöd chönne wiitergfüehrt werde. Bitte probier's namal.",
+      "flags": {
+        "amount": "Dä iigäbeni Betrag {amount} isch kei gültige Belegbetrag. Gib dä Betrag und d'Währig vom Beleg ii.",
+        "conversion": "Dä Beleg isch inere Främdwährig. Im Entwurf isch kei Umrächnig erfasst, also trag ii, wie's umgrächnet worde isch (Chartebelaschtig oder Kurs), bevor'd iireichsch.",
+        "destination": "S'Reiseziil \"{destination}\" het keim Land chönne zuegordnet werde. Wähl es uus.",
+        "expenseDate": "Dä Entwurf het {range} abdeckt. Wähl dä Tag vo däre Usgab uus.",
+        "manualTotal": "Dä Entwurf het en iitippte Gsamtbetrag vo {amount} ghaa. Dä wird nöd bruucht: die Usgab wird jetzt anhand vo däm berächnet, was une iigisch.",
+        "notes": "Dini Notize werdet une aazeigt; kopier das, was no gilt.",
+        "project": "S'Projekt usem Entwurf isch bhalte worde. Usser dini Zueordnig am Spesedatum isch erfasst, muess es en Spese-Administrator gnähmige, bevor'd es iireiche chasch.",
+        "projectMissing": "S'Projekt usem Entwurf git's nümme. Wähl es Projekt uus, falls eis zuetrifft.",
+        "tripDates": "Dä Entwurf isch erstellt worde, bevor Reisedate erfasst worde sind. Gib d'Date ii."
+      },
+      "loadFailed": "Dä Entwurf het nöd chönne überprüeft werde. Bitte probier's namal.",
+      "notDraft": "Dä Aatrag isch scho iigreicht worde. Er bhaltet di ursprünglichi Gnähmigung und cha nöd als Bricht wiitergfüehrt werde.",
+      "notice": {
+        "description": "Dini Iigabe sind übernaa worde, sowiit s'neue Formular si gnau cha ufnäh, inklusiv {count} Beleg. Füll die restliche Fälder uus, bevor'd iireichsch.",
+        "original": "Ursprüngliche Entwurf aaluege",
+        "title": "Wiitergfüehrt usemne früenere Aatragsentwurf"
+      },
+      "openReport": "Bricht öffne",
+      "receipt": {
+        "mismatch": "die gspychereti Datei stimmt nümme mit däm überii, wo ufeeglade worde isch",
+        "unreadable": "die gspychereti Datei cha grad nöd gläse werde",
+        "unsupportedStorage": "die Datei wird ime nöd unterstützte Spycheroort ufbewahrt",
+        "unsupportedType": "die gspychereti Datei isch kei unterstützte Belegtyp"
+      },
+      "receiptUnavailable": "Es isch nüt gänderet worde, will en Beleg nöd sicher het chönne übernaa werde: {receipts}. Bitte probier's spöter namal oder bitte din Administrator, d'Datei wiederherzstelle.",
+      "status": "Als Bricht wiitergfüehrt",
+      "title": "Dä Entwurf wiitermache"
     },
     "list": {
+      "actions": "Aktionen",
       "amount": "Betrag",
       "dateRange": "Datumsbereich",
       "emptyDescription": "Erstelle deine erste Abrechnung, um den Genehmigungsprozess zu starten.",
@@ -75,6 +269,595 @@
       "status": "Status",
       "type": "Typ"
     },
-    "title": "Reisekosten"
+    "report": {
+      "actions": {
+        "newMileage": "Neui Kilometer",
+        "newReceipt": "Neui Quittig",
+        "newTrip": "Neui Reis"
+      },
+      "approvedBy": "Genehmigt vo {name} am {date}.",
+      "awaitingReview": "Wartet uf Überprüefig.",
+      "awaitingReviewer": "Wartet uf Überprüefig dur {name}.",
+      "backToApprovals": "Zrugg zu de Genehmigunge",
+      "backToCurrent": "Zrugg zum aktuelle Bricht",
+      "backToTravelExpenses": "Zrugg zu de Reisespese",
+      "categories": {
+        "accommodation": "Unterkunft",
+        "meals": "Verpflägig",
+        "other": "Suschtigs",
+        "parking": "Parkiere",
+        "transport": "Transport"
+      },
+      "conversion": {
+        "attachFirst": "Häng zerscht d Charteabrächnig oder Quittig aa, wo d Belaschtig oben aazeigt.",
+        "authorizedBy": "Autorisiert vo",
+        "basis": {
+          "cardCharge": "Chartebelaschtig",
+          "manualRate": "Autorisierte Kurs",
+          "referenceRate": "EZB-Referänzkurs"
+        },
+        "chargedAmount": "Belaschtete Betrag in {currency}",
+        "chargedAmountDescription": "De Betrag uf dinere Charte- oder Bankabrächnig, inklusive allfällige Umrechnigsgebühre.",
+        "conflict": "Die Spese het sich woanderscht gänderet. Überprüef si und spychere d Chartebelaschtig nomal.",
+        "errors": {
+          "chargedAmount": "Gib de positiv belaschteti Betrag in {currency} ii, mit maximal {digits} Dezimalstelle.",
+          "evidence": "Wähl de Aahang vo däre Usgab us, wo d Belaschtig zeigt."
+        },
+        "evidence": "Naawiis:",
+        "evidenceLabel": "Aahang, wo d Belaschtig zeigt",
+        "evidenceMissing": "De Aahang, wo d Chartebelaschtig zeigt, fählt.",
+        "formLabel": "Chartebelaschtig",
+        "none": "Es wird kei Wächselkurs gschätzt. Gib ii, was dinere Charte in {currency} belaschtet worde isch, und wähl de Aahang us, wo das zeigt, wie z. B. de Charteuuszug. Ohni Chartebelaschtig cha en Spese-Administrator en beleite Kurs erfasse.",
+        "notSaved": "D Chartebelaschtig hät für die Usgab nöd chönne gspycheret wärde.",
+        "publicationDate": "Publiziert am",
+        "publicationFallback": "Am {expenseDate} isch kei Kurs publiziert worde, drum gilt die letschti früeneri Publikation.",
+        "rate": "Kurs",
+        "rateDate": "Kursdatum",
+        "rateEvidence": "Kursnaawiis",
+        "rateValue": "1 {base} = {value} {quote}",
+        "reason": "Dokumentation",
+        "reference": {
+          "alternatives": "Din Bricht bliibt en Entwurf, bis du dini Chartebelaschtig in {reimbursementCurrency} mit em Aahang iigisch, wo das zeigt, oder en Spese-Administrator en beleite Kurs erfasst.",
+          "currencyUnavailable": "D Europäischi Zentralbank publiziert für das Datum kei Kurs für {currency}.",
+          "expenseDateMissing": "Gib s Usgabedatum ii, zum de Referänzkurs naazluege.",
+          "historyUnavailable": "Für das Datum git s kei Referänzkurs.",
+          "notYetPublished": "De Referänzkurs für das Datum isch no nöd publiziert worde. Er erschynt a Wärchtag normalerwys nach 16:00 Uhr Frankfurther Ziit.",
+          "pairUnsupported": "D Europäischi Zentralbank publiziert d Kürs nur gägenüber em Euro, drum gilt keine zwüschet {currency} und {reimbursementCurrency}.",
+          "providerUnavailable": "De Referänzkurs für das Datum hät no nöd chönne abgrüeft wärde. Probier s spöter namal.",
+          "rateStale": "Für das Datum isch kei aktuelle Referänzkurs verfüegbar."
+        },
+        "referencePending": "De Referänzkurs wird fürs neue Datum namal naagluegt, sobald dini Änderig gspycheret isch.",
+        "remove": "Chartebelaschtig entferne",
+        "removeFailed": "D Chartebelaschtig hät nöd chönne entfernt wärde. Lad die Usgab neu und probier s namal.",
+        "replaceWithCardCharge": "Stattdesse mini Chartebelaschtig bruuche",
+        "result": "{original} zellt als {reimbursement}",
+        "rounding": "Rundig",
+        "roundingValue": "Kaufmännisch grundet uf {digits} Dezimalstelle",
+        "saveCardCharge": "Chartebelaschtig spichere",
+        "saved": "Chartebelaschtig gspicheret",
+        "saveFailed": "D Chartebelaschtig hät nöd chönne gspicheret werde. Bitte nomol probiere.",
+        "source": "Quelle",
+        "sourceEcb": "Euro-Referänzkurs vo de Europäische Zentralbank, vo dinere Organisation gnämigt",
+        "title": "Umrächnig in {currency}"
+      },
+      "correctAndResubmit": "Korrigier de Bricht und reich en nomol ii. Früeneri Iireichige bliibed im Verlauf erhalte.",
+      "cycles": {
+        "approved": "gnämigt",
+        "entry": "Iireichig {number} am {date}: {outcome}",
+        "pending": "wartet uf Überprüefig",
+        "rejected": "abglehnt",
+        "reopened": "gnämigt, dänn zur Korrektur wider göffnet",
+        "returned": "zrugggschickt für Änderige",
+        "title": "Iireichige",
+        "withdrawn": "zruggzoge"
+      },
+      "decideInInbox": "De ganz Bricht im Gnämigungs-Iigang gnämige, zruggschicke oder ablehne.",
+      "drafts": {
+        "expenses": "{count, plural, one {# Uusgab} other {# Uusgabe}}",
+        "noDate": "No keis Datum",
+        "noTravelDates": "No keini Reisedate",
+        "receipts": "{count, plural, one {# Quittig} other {# Quittige}}",
+        "untitled": "Unbenannti Quittig",
+        "untitledTrip": "Reis ohni Titel"
+      },
+      "earlierSubmission": "Das isch e früecheri Yreichig vom Bricht, gnau so bhalte, wie si ygereicht worde isch.",
+      "errors": {
+        "amount": "Gib en positive Betrag mit maximal zwei Dezimalstelle yy, z. B. 12.50.",
+        "category": "Wähl e ufgfüehrti Kategori us.",
+        "create": "D Uusgab hät nöd chönne erstellt werde. Bitte probier's nomal.",
+        "currency": "Gib en drüstellige Währigscode yy, z. B. EUR.",
+        "expenseDate": "Gib es gültigs Datum yy.",
+        "load": "Die Uusgab hät nöd chönne glade werde. Bitte probier's nomal.",
+        "loadSubmission": "De ygereichti Bricht hät nöd chönne glade werde. Bitte probier's nomal.",
+        "paidBy": "Wähl us, wer zahlt hät.",
+        "tooLong": "Dä Text isch z lang."
+      },
+      "fields": {
+        "accountingReference": "Buechigsreferenz (optional)",
+        "accountingReferenceDescription": "E Referenz, wo d Finanze verlangt händ, wie z. B. e Bestellnummere.",
+        "amount": "Betrag uf em Beleg",
+        "category": "Kategori",
+        "categoryPlaceholder": "Wähl e Kategori",
+        "description": "Beschribig",
+        "descriptionPlaceholder": "z. B. Zugbillett Berlin–Hamburg für de Chundeworkshop",
+        "expenseDate": "Belegdatum",
+        "paidBy": "Wer hät zahlt?"
+      },
+      "frozenNotice": "De ygereichti Bricht cha nümme bearbeitet werde.",
+      "history": {
+        "approvalRecorded": "Gnämigung dur {name} erfasst; wartet uf wyteri Gnämigung",
+        "approved": "Gnämigt vo {name}",
+        "cycle": "Yreichig {number}:",
+        "rejected": "Abglehnt vo {name}",
+        "reopened": "Für Korrekture widereröffnet dur {name}",
+        "returned": "Für Änderige zrugggschickt dur {name}",
+        "submitted": "Igreicht dur {name}",
+        "title": "Verlauf",
+        "withdrawn": "Zruggzoge dur {name}"
+      },
+      "items": {
+        "add": "Beleg-Uusgab hinzuefüege",
+        "addFailed": "D'Uusgab hät nöd chönne hinzuegfüegt werde. Bitte nomal probiere.",
+        "empty": "Füeg jede Beleg vo dere Reis als eignigi Uusgab hinzue. D'Reisedetails oben dra gelted für alli.",
+        "heading": "Uusgab {number}",
+        "remove": "Entferne",
+        "removeConfirm": "Uusgab entferne",
+        "removeConflict": "Die Uusgab isch anderswo gänderet worde und isch nöd entfernt worde. Überprüef si und probier's nomal.",
+        "removeDescription": "D'Uusgab und di aghängte Beleg werded vo dere Reis glöscht. Das cha nöd rückgängig gmacht werde.",
+        "removeFailed": "D'Uusgab hät nöd chönne entfernt werde. Bitte nomal probiere.",
+        "removeLabel": "Uusgab {number} entferne",
+        "removeTitle": "Die Uusgab entferne?",
+        "title": "Uusgabe"
+      },
+      "loading": "Uusgab wird glade…",
+      "mileage": {
+        "add": "Kilometer hinzuefüege",
+        "appliedPolicy": "Ansatz gültig ab {date} · {source}",
+        "calculation": "{distance} km × {rate} pro km = {amount}",
+        "calculationTitle": "Berechneti Kilometer",
+        "enterFacts": "Gib s'Datum, d'Kilometer und s'Fahrzüüg ii, zum de Betrag z'gseh.",
+        "errors": {
+          "distance": "Gib die gfahrene Kilometer als positivi Zahl mit maximal zwei Dezimalstelle ii, z. B. 61.5.",
+          "vehicle": "Wähl s'Fahrzüüg us, wo du gfahre bisch."
+        },
+        "fields": {
+          "date": "Datum der Fahrt",
+          "distance": "Gefahrene Kilometer",
+          "route": "Strecke",
+          "routePlaceholder": "z. B. Büro Berlin – Kunde Potsdam – zurück",
+          "vehicle": "Fahrzeug",
+          "vehicleDescription": "Ihr eigenes Fahrzeug. Firmenwagen und öffentliche Verkehrsmittel zählen nicht als Kilometerentschädigung; fügen Sie stattdessen deren Belege hinzu."
+        },
+        "noRate": "Kein Ansatz erfunden: Diese Ausgabe bleibt im Entwurf, bis ein Spesenadministrator einen Kilometersatz für dieses Datum hinzufügt.",
+        "noRateTitle": "Kein Kilometersatz anwendbar",
+        "otherCurrency": "Der Ansatz für dieses Datum ist nicht in {currency}; Kilometerentschädigungen werden nie umgerechnet.",
+        "pending": "Wird mit dem Ansatz Ihrer Organisation berechnet, sobald Ihre Änderungen gespeichert sind.",
+        "requirements": {
+          "currency": "Der Kilometersatz für dieses Datum ist in {policyCurrency}, dieser Bericht wird jedoch in {currency} zurückerstattet. Bitten Sie einen Spesenadministrator, einen Ansatz in {currency} hinzuzufügen.",
+          "date": "Geben Sie das Datum der Fahrt ein.",
+          "distance": "Geben Sie die gefahrenen Kilometer ein.",
+          "policyMissing": "Ihre Organisation hat für {date} keinen Kilometersatz für {vehicle}. Bitten Sie einen Spesenadministrator, in den Reisespesen-Einstellungen einen datierten Ansatz hinzuzufügen. Bis dahin wird nichts berechnet.",
+          "route": "Beschreiben Sie die Strecke.",
+          "vehicle": "Wählen Sie das Fahrzeug aus."
+        },
+        "rounded": "(genau {exact}, auf den Cent gerundet)",
+        "sourceOrganization": "Organisationsrichtlinie: {reference}",
+        "sourceOrganizationUnnamed": "Organisationsrichtlinie",
+        "sourceStatutory": "Deutsche gesetzliche Pauschale ({version})",
+        "standaloneTitle": "Kilometerpauschale",
+        "vehicles": {
+          "car": "Auto",
+          "otherMotorVehicle": "Anderes Motorfahrzeug (z. B. Motorrad)"
+        }
+      },
+      "paidBy": {
+        "company": "Vom Unternehmen bezahlt (z. B. Firmenkarte)",
+        "employee": "Von mir bezahlt (zur Rückerstattung)"
+      },
+      "perDiem": {
+        "absenceDuration": "{hours}:{minutes} h abwesend",
+        "add": "Tagespauschale dezuefüege",
+        "appliedPolicy": "Ansätz gültig ab {date} · {source}",
+        "basis": {
+          "absence24h": "Ganze Tag abwesend (24 Stund)",
+          "claimedInOtherReport": "Scho inere andere vo dine Abrechnige uszahlt: nume ei Pauschale pro Tag",
+          "over8h": "Meh als 8 Stund abwesend",
+          "overnightMajority": "De gröscht Teil vo de Abweseheit über Nacht",
+          "overnightMinority": "Aagrächnet am andere Tag vo de Abweseheit über Nacht",
+          "travelDay": "Reisetag vonere Reis mit Übernachtig",
+          "upTo8h": "8 Stund oder weniger abwesend: kei Pauschale"
+        },
+        "breakdownCaption": "Tagespauschale nach Kalendertag",
+        "calculationTitle": "Berächneti Tagespauschale",
+        "columns": {
+          "amount": "Betrag",
+          "day": "Tag",
+          "eligibility": "Berechtigung",
+          "meals": "Zur Verfüegig gstellti Mahlzyte",
+          "rate": "Pauschale"
+        },
+        "deductionNote": "Zur Verfüegig gstellti Mahlzyte reduziered d Tagespauschale, aber nie under null; was du für es Ässe zahlt häsch, verringeret de Abzug.",
+        "departure": "Abreis",
+        "enterFacts": "Gib dini Abreis, Ruckkehr und Mahlzyte ii, zum d Tagespauschale gseh.",
+        "errors": {
+          "clockChange": "Die Uhrziit git's a däm Tag nöd, will d Uhr vorgstellt wird. Gib e Ziit usserhalb vo de übersprungene Stund ii.",
+          "clockChangeRepeated": "Die Uhrziit chunt a däm Tag zweimal vor, will d Uhr zrugggstellt wird. Gib e Ziit usserhalb vo de widerholte Stund ii.",
+          "endBeforeStart": "Dini Ruckkehr muess nach dinere Abreis sii.",
+          "location": "Wähl für jede Tag en ufgfüehrte Ort uus.",
+          "meals": "Überprüef d Mahlzyt-Iiträg.",
+          "payment": "Gib ii, was du zahlt häsch, als Betrag mit maximal zwei Dezimalstelle, z. B. 2.50.",
+          "time": "Gib d Ziit in Schtunde und Minute ii."
+        },
+        "exceptionalTitle": "Bruucht e manuelli Berächnig",
+        "exceptions": {
+          "destinationNotListed": "En Tagesort wird vo de offizielle Usslandstabelle oder ihrne Fallback-Regle nöd abdeckt.",
+          "foreignTimeZone": "D Reiseziite sind nöd i de dütsche Ortsziit.",
+          "foreignWithoutOvernight": "En Iisatz über Nacht im Ussland ohni Übernachtig wird nöd automatisch berächnet.",
+          "international": "E Destination liit usserhalb vo Dütschland. Usslands-Tagesspese werded no nöd berächnet.",
+          "majorityTie": "D Abweseheit über Nacht wird genau gliichmässig uf beidi Täg ufteilt.",
+          "mixedTimeZones": "Abreis und Rückreis sind i verschidnige Ziitzone.",
+          "multiDayWithoutOvernight": "D Reis duuret meh als zwei Kalendertäg ohni Übernachtig.",
+          "nightsAtHome": "Du häsch während de Reis es paar Nächt dihei verbrocht.",
+          "overlappingDays": "En andere Bricht vo dir zahlt für einigi vo dene Täg scho Tagesspese; es isch nur ei Pauschale pro Tag erlaubt, drum laas bi de manuelle Berächnig weg.",
+          "prolongedWorkplace": "Längeri Tätigkeit am gliche Arbetsplatz: Tagesspese sind uf die erschte drei Mönet bschränkt.",
+          "rulesNotVerified": "Es git no kei überprüefti dütschi Regle für die Reisedate.",
+          "specialLocation": "En Tag isch als Spezialsituation markiert worde (anders, oder en ganze Tag im Flugzüüg oder uf See am erschte oder letschte Reisetag)."
+        },
+        "fields": {
+          "endDate": "Tag, wo du zruggcho bisch",
+          "endTime": "Uhrziit, wo du wider dihei oder bi de Arbet gsi bisch",
+          "meals": "Vom Arbeitgeber bereitgstellti Mahlziite",
+          "mealsDescription": "Chrüz jedi Mahlziit aa, wo din Arbeitgeber oder i sim Uftrag es Hotel oder en Gaschtgeber bereitgstellt hät, au wenn du si usglah häsch. Gib ii, was du defür zahlt häsch, falls überhaupt öppis.",
+          "mealsNeedDates": "Gib de Abreise- und Rückreisetag ii, zum d Reisetäg ufzliste.",
+          "overnight": "Nächt während de Reis",
+          "payment": "Was du für {meal} am {date} zahlt häsch",
+          "paymentPlaceholder": "Du häsch zahlt (optional)",
+          "prolongedWorkplace": "Ich schaffe sit meh als drei Mönet am gliche Ort",
+          "prolongedWorkplaceDescription": "Tagesspese gelted nur für die erschte drei Mönet am gliche Arbetsplatz; sonigi Reise bruuchend e manuelli Berächnig.",
+          "startDate": "Tag, wo du abgreist bisch",
+          "startTime": "Zit, wo du dihei oder vo de Arbet losgfahre bisch",
+          "timeZone": "Zitzone"
+        },
+        "foreignRates": "Uslandssätz: {reference} ({version})",
+        "location": {
+          "activityToday": "Wo isch dini letscht gschäftlich Aktivität im Usland a däm Tag gsi?",
+          "assigned": "Beträg, wo di offiziell Bekanntmachig däm Land zueordnet",
+          "atSea": "De ganz Tag a Bord vome Schiff (ohni I- oder Usschiffe)",
+          "choose": "Wähl en Ort us",
+          "elsewhere": "Sust irgendwo",
+          "fallbackFlight": "Offizielli Regle: de ganz Tag im Flug, öschtriichischi Beträg",
+          "fallbackLuxembourg": "Offizielli Uffangreglig: nöd ufgführt, luxemburgischi Beträg",
+          "fallbackMotherCountry": "Offizielli Uffangreglig: Hoheitsgebiet, Beträg vom Mueterland",
+          "fallbackShip": "Offizielli Regle: de ganz Tag uf See, luxemburgischi Beträg",
+          "germany": "Dütschland",
+          "inFlight": "De ganz Tag im Flug (zwüschem Start- und Landetag)",
+          "lastActivityTrip": "Wo isch dini letscht gschäftlich Aktivität im Usland uf dere Reis gsi?",
+          "night": "Wo bisch um Mitternacht gsi? (de letscht Ort, wo vor 24:00 Lokalzit erreicht hesch; es Land gilt als erreicht, wenn dis Flugzüg landet)",
+          "noActivityAbroad": "Käi gschäftlichi Aktivität im Usland",
+          "other": "Öppis anders (bruucht e manuelli Berächnig)",
+          "place": "Ort in {country}"
+        },
+        "meal": "{meal}: −{deduction}",
+        "mealPaid": "{meal}: −{deduction} (du hesch {payment} zahlt)",
+        "meals": {
+          "breakfast": "Zmorge",
+          "dinner": "Znacht",
+          "lunch": "Zmittag"
+        },
+        "mealsCountToward": "Abgezogen am {date}",
+        "noRate": "Es wird kein Ansatz erfunden: Diese Ausgabe bleibt im Entwurf, bis ein Spesenadministrator Taggeldansätze für die betreffenden Tage hinzufügt.",
+        "noRateTitle": "Es gilt kein Taggeldansatz",
+        "otherCurrency": "Die Ansätze für diese Tage sind nicht in {currency}; Taggelder werden nie umgerechnet.",
+        "overnight": {
+          "away": "Ich habe jede Nacht auswärts übernachtet",
+          "mixed": "Ich habe einige Nächte zu Hause verbracht",
+          "none": "Ich habe die Nacht ohne Übernachtung durchgearbeitet"
+        },
+        "pending": "Wird mit den datierten Ansätzen Ihrer Organisation berechnet, sobald Ihre Änderungen gespeichert sind.",
+        "requirements": {
+          "currency": "Die Taggeldansätze für diese Tage sind in {policyCurrency}, aber dieser Bericht wird in {currency} zurückerstattet. Bitten Sie einen Spesenadministrator, Ansätze in {currency} hinzuzufügen.",
+          "end": "Geben Sie an, wann Sie wieder zu Hause oder an Ihrem Arbeitsplatz waren.",
+          "exceptional": "Dieser Reiseplan erfordert eine manuelle Taggeldberechnung durch einen Spesenadministrator. Er wird nicht automatisch berechnet.",
+          "locations": "Geben Sie für jeden Reisetag an, wo Sie um Mitternacht waren und wo Ihre letzte geschäftliche Aktivität im Ausland stattfand.",
+          "meals": "Bestätigen Sie die bereitgestellten Mahlzeiten für jeden Reisetag.",
+          "overnight": "Geben Sie an, ob Sie auswärts übernachtet haben.",
+          "policyMissing": "Ihre Organisation hat keine Taggeldansätze für {dates}. Bitten Sie einen Spesenadministrator, datierte Ansätze in den Reisespesen-Einstellungen hinzuzufügen. Bis dahin wird nichts berechnet.",
+          "start": "Geben Sie an, wann Sie von zu Hause oder von Ihrem Arbeitsplatz abgereist sind.",
+          "tripDates": "Ihre Abreise- und Rückreisetage müssen der erste und der letzte Reisetag der Reise sein."
+        },
+        "return": "Rückreise",
+        "rulesApplied": "Regeln: {reference} ({version})",
+        "title": "Taggeld",
+        "total": "Taggeld"
+      },
+      "project": {
+        "exceptionBadge": "Zuweisungsausnahme",
+        "exceptionDates": "Deckt ab",
+        "exceptionEvidence": "Nachweis",
+        "exceptionReason": "Begründung",
+        "fromTrip": "(Reiseprojekt)",
+        "inheritNamed": "Gliich wie d Reis ({name})",
+        "inheritNone": "Gliich wie d Reis (kei Projekt)",
+        "label": "Projekt (optional)",
+        "loadFailed": "D Projekt hend nöd chönne glade werde.",
+        "needsDate": "Gib s Belegdatum ii, zum d Projekt gseh, wo du a däm Tag bruuche chasch.",
+        "needsTripDates": "Gib d Reisedate ii, zum d Projekt gseh, wo du für die Reis bruuche chasch.",
+        "none": "Kei Projekt",
+        "noneEligible": "Du häsch a däm Datum kei Projektzueordnig gha. Wenn du dänn a me Projekt gschaffet häsch, chan en Spese-Administrator en Uusnahm für d Zueordnig bewillige.",
+        "notEligible": "{name} chan a däm Datum nöd bruucht werde: Du bisch dänn nöd dezue teilt gsi. Wähl es anders Projekt, oder frag en Spese-Administrator nachere Uusnahm für d Zueordnig.",
+        "refused": {
+          "conflict": "Die Uusgab isch woanders gänderet worde. Löös de Spycherkonflikt obedra und wähl s Projekt dänn nomal uus.",
+          "dateRequired": "Gib zersch s Datum ii: Projekt werded für s Datum vo de Uusgab aabotte.",
+          "failed": "S Projekt hät nöd chönne gspycheret werde. Bitte probier's nomal.",
+          "ineligible": "Du bisch a däm Datum däm Projekt nöd zuegwise gsi. Frag en Spese-Administrator nachere Uusnahm für d Zueordnig, wenn du dra gschaffet häsch.",
+          "notFound": "Das Projekt isch nöd verfüegbar."
+        },
+        "saving": "Projekt wird gspycheret…",
+        "tripDescription": "Uusgabe übernämed s Projekt vo de Reis, usser du wählsch es anders für si uus. Jedi Uusgab mues dur dini Projektzueordnig am jewiilige Datum deckt sii.",
+        "tripLabel": "Reiseprojekt (optional)",
+        "unavailableOption": "{name} (a däm Datum nöd verfüegbar)",
+        "unavailableTripOption": "{name} (a däne Date nöd verfüegbar)",
+        "viaException": "bewilligti Uusnahm"
+      },
+      "receiptException": {
+        "badge": "Beleg fählt — Uusnahm",
+        "disabled": "Dini Organisation erlaubt kei Uusnahme me für fählendi Beleg. Häng de Beleg aa, oder entfern dini Erchlärig.",
+        "notAllowed": "Dini Organisation erlaubt kei Uusnahme für fählendi Beleg.",
+        "reason": "Warum fählt de Beleg?",
+        "reasonDescription": "Dini Prüefperson gseht die Erchlärig und muess si akzeptiere, damit de Bricht genehmigt wird.",
+        "reasonLabel": "Wieso si fählt:",
+        "reasonRequired": "Erklär, wieso d Quittig fählt.",
+        "receiptAttached": "Es isch e Quittig aghänkt, drum wird dini Erchlärig für die fählend Quittig nöd übermittlet.",
+        "request": "Ich cha d Quittig nöd vorlege und beaaträge en Usnahm",
+        "title": "Kei Quittig?",
+        "unsavedAfterClose": "Dini Erchlärig für die fählend Quittig hät nöd chönne gspeicheret wärde. Mach d Usgab nomal uf, zum si überprüefe.",
+        "withdraw": "Erchlärig entferne"
+      },
+      "receipts": {
+        "chooseFile": "Datei uswähle",
+        "description": "Mach es Foti oder häng es PDF oder Bild vo de Quittig a.",
+        "downloadNamed": "{fileName} abelade",
+        "none": "No kei Quittig aghänkt.",
+        "previewNamed": "Vorschau vo {fileName}",
+        "progress": "Upload-Fortschritt",
+        "remove": "Entferne",
+        "removeFailed": "D Quittig hät nöd chönne entfernt wärde.",
+        "removeNamed": "{fileName} entferne",
+        "takePhoto": "Foti mache",
+        "title": "Quittig",
+        "uploadFailed": "D Quittig isch nöd aghänkt worde.",
+        "uploading": "Quittig wird ueglade…",
+        "verifying": "Quittig wird überprüeft…"
+      },
+      "rejectedBy": "Abglehnt vo {name}",
+      "reopen": {
+        "action": "Für Korrektur wider ufmache",
+        "changed": "De Bricht hät sich zwüschezitlich gänderet und isch nöd wider ufgmacht worde. Überprüef en nomal.",
+        "confirm": "Bricht wider öffne",
+        "description": "De Mitarbeiter chan de Bricht korrigiere und muess en nomol für e neui Gnähmigung iireiche. Bis dänn isch er weder zahlbar no exportierbar. Di gnähmigti Iireichig bliibt im Verlauf erhalte.",
+        "done": "Bricht zur Korrektur wider göffnet",
+        "exported": "Dä Bricht isch scho ad Buechhaltig exportiert worde und chan drum nümme göffnet werde. Korrekture bruched e verchnüpfti Aapassig.",
+        "failed": "De Bricht hät nöd chönne wider göffnet werde. Er hät sich villicht gänderet oder du häsch kein Zuegriff meh. Lad en neu und probier's nomol.",
+        "reason": "Grund für de Mitarbeiter",
+        "reasonRequired": "Seg em Mitarbeiter, was er korrigiere muess.",
+        "reasonTooLong": "Halt de Grund under {max} Zeiche.",
+        "reimbursed": "Für dä Bricht isch scho e Rückerstattig erfasst worde, drum chan er nümme göffnet werde. Korrekture bruched e verchnüpfti Aapassig.",
+        "reopenedBy": "Zur Korrektur wider göffnet dur {name} am {date}",
+        "title": "Dä gnähmigti Bricht wider öffne?"
+      },
+      "requirements": {
+        "amount": "Gib de Belegbetrag ii.",
+        "category": "Wähl e Kategorie uus.",
+        "complete": "Alles für die Uusgab isch erfasst.",
+        "conversionEvidence": "Wähl de Aahang uus, wo d'Chartebelaschtig zeigt.",
+        "conversionMissing": "Rechne dä Beleg in {currency} um: Gib dini Chartebelaschtig mit em Aahang ii, wo das zeigt, oder frag en Spese-Administrator nach emene beleite Kurs.",
+        "conversionRateDate": "S'Datum vom bewilligte Kurs passt nümme zum Datum vo de Uusgab. Gib dini Chartebelaschtig ii oder frag en Spese-Administrator, en Kurs für s'neue Datum z'belege.",
+        "conversionUnsupported": "Die Umrechnig chan nöd für {currency} brucht werde. Frag en Spese-Administrator, das z'überprüefe.",
+        "description": "Beschriib die Uusgab.",
+        "expenseDate": "Gib s'Datum uf em Beleg aa.",
+        "fixFields": "Korrigier zersch di markierte Felder.",
+        "paidBy": "Gib aa, öb du oder d'Firma zahlt hät.",
+        "receipt": "Häng de Beleg aa.",
+        "receiptExceptionNotAllowed": "Häng de Beleg aa. Dini Organisation erlaubt kei Uusnahme für fählendi Beleg.",
+        "receiptExceptionReason": "Erchlär, werum de Beleg fählt.",
+        "title": "No nötig"
+      },
+      "returnedBy": "Vo {name} am {date} für Änderige zrugggschickt",
+      "returnedItem": "Uusgab {number} ({description}):",
+      "save": {
+        "conflictDescription": "Es isch ime andere Fäischter oder ufeme andere Grät gspycheret worde, nachdem du's ufgmacht häsch. Dini neuschte Änderige sind nonig gspycheret.",
+        "conflictTitle": "Die Uusgab isch anderswo gänderet worde",
+        "failedDescription": "Dini Änderige blybed uf dere Syte erhalte. Überprüef dini Verbindig und probier's nomal.",
+        "failedTitle": "Dini Änderige hend nöd chönne gspycheret werde",
+        "invalid": "Korrigier die markierte Fälder, zum si z'spychere",
+        "keepMine": "Stattdesse mini Änderige spychere",
+        "pending": "Nöd gspychereti Änderige",
+        "retry": "Nomal probiere",
+        "saved": "Alli Änderige gspycheret",
+        "saving": "Am Spychere…",
+        "unsavedAfterClose": "Dini neuschte Änderige anere Uusgab hend nöd chönne gspycheret werde. Mach si nomal uf, zum si z'überprüefe.",
+        "useTheirs": "Die gspychereti Version lade"
+      },
+      "standaloneTitle": "Einzelbeleg",
+      "status": {
+        "approved": "Gnämigt",
+        "rejected": "Abglehnt",
+        "returned": "Für Änderige zrugggschickt",
+        "submitted": "Wartet uf Überprüefig"
+      },
+      "submissionNumberAt": "Iireichig {number}, iigreicht am {date}",
+      "submit": {
+        "adjustment": "De Bricht, wo dur die Aapassig korrigiert wird, isch i dere Währig nüme gnämigt, drum cha kei Differänz mit Vorzeiche berächnet werde. Dini Aapassig blybt als Entwurf gspycheret.",
+        "adjustmentSuperseded": "E anderi Aapassig vom gliche Bricht isch gnämigt worde, nachdem du mit dere aagfange häsch, und die Kopie enthaltet die Korrektur nöd. Fang e neui Aapassig vom ursprüngliche Bricht aa, damit beidi Korrekture bhalte werded.",
+        "adjustmentTitle": "Die Aapassig cha nöd iigreicht werde",
+        "blockedIncomplete": "Erledig alles, wo under “No nötig” ufgfüehrt isch, bevor du iireichsch.",
+        "blockedUnsaved": "Warten Sie, bis alle Änderungen gespeichert sind, oder korrigieren Sie die markierten Felder, bevor Sie die Abrechnung einreichen.",
+        "cancel": "Weiter bearbeiten",
+        "changed": "Die Abrechnung wurde geändert, nachdem Sie sie überprüft haben. Schliessen Sie diesen Dialog, prüfen Sie Ihre Angaben und überprüfen Sie sie erneut.",
+        "changedTitle": "Die Abrechnung wurde geändert",
+        "confirm": "Zur Genehmigung einreichen",
+        "description": "Überprüfen Sie die gespeicherte Abrechnung. Die prüfende Person entscheidet über genau diese Version; sie kann während der Prüfung nicht bearbeitet werden.",
+        "failed": "Etwas ist schiefgelaufen. Ihre Abrechnung ist weiterhin als Entwurf gespeichert; bitte versuchen Sie es erneut.",
+        "failedTitle": "Die Abrechnung wurde nicht eingereicht",
+        "incomplete": "Einige gespeicherte Angaben fehlen noch. Ergänzen Sie alle Angaben unter «Noch erforderlich» und versuchen Sie es erneut.",
+        "incompleteTitle": "Die Abrechnung ist unvollständig",
+        "noReviewer": "Sie haben ausser sich selbst keine vorgesetzte Person oder Teamleitung, und es ist keine Spesenprüfperson eingerichtet. Bitten Sie eine zuständige Administratorperson, eine zuzuweisen. Ihre Abrechnung bleibt als Entwurf gespeichert.",
+        "noReviewerTitle": "Diese Abrechnung kann noch von niemandem geprüft werden",
+        "notSaved": "Einige Änderungen sind noch nicht gespeichert. Warten Sie, bis sie gespeichert wurden, und überprüfen Sie die Abrechnung dann erneut.",
+        "project": "{count, plural, one {Eine Ausgabe ist einem Projekt zugeordnet, dem Sie am Ausgabendatum nicht zugewiesen waren. Wählen Sie ein anderes Projekt oder bitten Sie die Spesenadministration um eine Ausnahmebewilligung. Ihre Abrechnung bleibt als Entwurf gespeichert.} other {# Ausgaben sind einem Projekt zugeordnet, dem Sie am Ausgabendatum nicht zugewiesen waren. Wählen Sie ein anderes Projekt oder bitten Sie die Spesenadministration um eine Ausnahmebewilligung. Ihre Abrechnung bleibt als Entwurf gespeichert.}}",
+        "projectTitle": "Ein Projekt kann nicht verwendet werden",
+        "ready": "Ihre Angaben sind gespeichert. Überprüfen Sie die Abrechnung und reichen Sie sie zur Genehmigung ein.",
+        "requesterInactive": "Ihr Mitarbeiterprofil ist in dieser Organisation nicht aktiv, daher kann die Abrechnung nicht zur Prüfung weitergeleitet werden.",
+        "review": "Überprüfen und einreichen",
+        "routing": "Anhand der Genehmigungsregeln Ihrer Organisation konnte keine prüfende Person gefunden werden. Bitten Sie die Administration, diese zu prüfen. Ihre Abrechnung bleibt als Entwurf gespeichert.",
+        "routingTitle": "Die Abrechnung konnte nicht weitergeleitet werden",
+        "selfApproval": "Gemäss den Genehmigungsregeln Ihrer Organisation könnten Sie Ihre eigene Abrechnung genehmigen. Bitten Sie die Administration, die Regeln anzupassen. Ihre Abrechnung bleibt als Entwurf gespeichert.",
+        "success": "Abrechnung zur Genehmigung eingereicht",
+        "thresholdCurrency": "Die Genehmigungsregeln Ihrer Organisation vergleichen Beträge in EUR, aber diese Abrechnung ist in {currency}. Bitten Sie die Administration, diese zu prüfen. Ihre Abrechnung bleibt als Entwurf gespeichert.",
+        "title": "Spesenabrechnung einreichen",
+        "unavailable": "Ihre Organisation stellt derzeit den Genehmigungsprozess für Spesen um, weshalb Abrechnungen im Moment nicht eingereicht werden können. Ihre Abrechnung bleibt als Entwurf gespeichert.",
+        "unavailableTitle": "Iireichig isch pausiert"
+      },
+      "submittedAt": "Iigreicht am {date}",
+      "submittedTitle": "Iigreichte Spesebricht",
+      "summary": {
+        "paidByCompany": "Vo de Firma zahlt",
+        "paidByEmployee": "Vo dir zahlt"
+      },
+      "title": "Uusgab",
+      "totals": {
+        "companyPaid": "Vo de Firma zahlt",
+        "excluded": "{count, plural, one {# Uusgab wird no nöd mitzellt. D Total enthalted Uusgabe i {currency}, wo Betrag und Zahler iitrait sind.} other {# Uusgabe werded no nöd mitzellt. D Total enthalted Uusgabe i {currency}, wo Betrag und Zahler iitrait sind.}}",
+        "reimbursable": "Dir zruggzahlt",
+        "title": "Total"
+      },
+      "trip": {
+        "dates": "Reisedate",
+        "datesZone": "(Kaländertäg i {timeZone})",
+        "destinations": "Reiseziil",
+        "errors": {
+          "destination": "Wähl es Land us de Lischte uus.",
+          "endBeforeStart": "De letscht Reisetag chan nöd vor em erschte sii.",
+          "timeZone": "Wähl e Ziitzone us de Lischte uus.",
+          "tooManyDestinations": "Gib höchschtens {max} Reiseziil ii."
+        },
+        "fields": {
+          "addDestination": "Reiseziil dezuefüege",
+          "country": "Land {number}",
+          "countryPlaceholder": "Land",
+          "destinations": "Reiseziil",
+          "endDate": "Letschte Reisetag",
+          "noDestinations": "Füeg d Ort dezue, wo d anereisisch.",
+          "place": "Ort {number}",
+          "placePlaceholder": "Stadt oder Ort",
+          "purpose": "Reisezweck",
+          "purposePlaceholder": "z. B. Kunden-Workshop in Hamburg",
+          "removeDestination": "Reiseziel {number} entfernen",
+          "startDate": "Erster Reisetag",
+          "timeZone": "Zeitzone der Reisedaten",
+          "timeZoneDescription": "Reisedaten sind Kalendertage in {timeZone}. Prüfende sehen die gleichen Daten, egal wo sie sich befinden."
+        },
+        "purpose": "Reisezweck",
+        "requirements": {
+          "complete": "Alles für diese Reise wurde erfasst.",
+          "destination": "Mindestens ein Reiseziel hinzufügen.",
+          "expenseItem": "Ausgabe hinzufügen.",
+          "expenseNamed": "Ausgabe {number}: {description}",
+          "fixFields": "Hervorgehobene Reisedetails korrigieren.",
+          "purpose": "Reisezweck beschreiben.",
+          "title": "Für diese Reise noch erforderlich",
+          "travelDates": "Ersten und letzten Reisetag eingeben."
+        },
+        "title": "Reisedetails",
+        "unsavedAfterClose": "Ihre letzten Änderungen an den Reisedetails konnten nicht gespeichert werden. Öffnen Sie die Reise erneut, um sie zu überprüfen."
+      },
+      "withdraw": {
+        "action": "Bericht zurückziehen",
+        "confirm": "Zurückziehen",
+        "description": "Die Prüfung wird gestoppt und der Bericht wird wieder zu einem bearbeitbaren Entwurf. Diese Einreichung bleibt im Verlauf des Berichts erhalten.",
+        "done": "Bericht zurückgezogen. Sie können ihn wieder bearbeiten.",
+        "failed": "Der Bericht konnte nicht zurückgezogen werden. Bitte versuchen Sie es erneut.",
+        "notPending": "Über diese Einreichung wurde bereits entschieden oder sie wurde zurückgesendet, daher kann sie nicht mehr zurückgezogen werden.",
+        "title": "Diesen Bericht zurückziehen?"
+      },
+      "withdrawnNotice": "Sie haben Einreichung {number} zurückgezogen. Reichen Sie den Bericht erneut ein, sobald er bereit ist.",
+      "withdrawnSubmission": "Diese Einreichung wurde vor einem Entscheid zurückgezogen."
+    },
+    "settlement": {
+      "adjustment": "Inklusive genehmigter Anpassung",
+      "balance": {
+        "outstanding": "{amount} ausstehend",
+        "overpaid": "{amount} zu viel bezahlt",
+        "settled": "Beglichen"
+      },
+      "companyPaid": "Vom Unternehmen bezahlte Kosten von {amount} werden dem Mitarbeiter nicht geschuldet.",
+      "entitlement": "Genehmigter vom Mitarbeiter bezahlter Betrag",
+      "entry": {
+        "recordedBy": "Erfasst von {name}, {date}",
+        "recovery": "{amount} zurückerhalten",
+        "reimbursement": "{amount} bezahlt"
+      },
+      "errors": {
+        "amountInvalid": "Geben Sie einen positiven Betrag ein.",
+        "amountPrecision": "Diese Währung hat nicht so viele Dezimalstellen.",
+        "amountRequired": "Geben Sie den bezahlten Betrag ein.",
+        "conflict": "Ein früherer Versuch mit anderen Werten wurde bereits erfasst. Überprüfen Sie den Verlauf, bevor Sie ihn erneut erfassen.",
+        "dateFuture": "Ein Zahlungsdatum darf nicht in der Zukunft liegen.",
+        "dateInvalid": "Geben Sie ein gültiges Datum ein.",
+        "dateRequired": "Geben Sie das Zahlungsdatum ein.",
+        "exceedsOutstanding": "Der Betrag ist höher als der ausstehende Betrag.",
+        "exceedsOverpayment": "Der Betrag ist höher als der zu viel bezahlte Betrag.",
+        "failed": "Die Zahlung konnte nicht erfasst werden. Bitte versuchen Sie es erneut.",
+        "load": "Der Rückerstattungssaldo konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
+        "noOverpayment": "Für diese Ausgabe wurde nichts zu viel bezahlt.",
+        "notApproved": "Diese Ausgabe ist nicht mehr genehmigt, daher kann keine Zahlung erfasst werden.",
+        "nothingOutstanding": "Für diese Ausgabe ist nichts ausstehend.",
+        "ownExpense": "Sie können keine Zahlungen für Ihre eigenen Ausgaben erfassen.",
+        "referenceRequired": "Gib d Zahligsreferenz ii, z. B. d Referenz vo de Banküberwisig.",
+        "refused": "Die Zahlig cha für die Usgab nöd erfasst werde.",
+        "staleBalance": "De Saldo hät sich gänderet, während du die Zahlig erfasst häsch. Überprüf de aktualisierti Saldo und erfass si nomol.",
+        "tooLong": "Dä Text isch z lang."
+      },
+      "form": {
+        "amount": "Zahlte Betrag ({currency})",
+        "date": "Zahligsdatum",
+        "label": "E Rückerstattig erfasse",
+        "note": "Notiz (optional)",
+        "notice": "Erfass Gäld, wo em Mitarbeiter scho uszahlt worde isch. Z8 überwiist kes Gäld.",
+        "reference": "Zahligsreferenz",
+        "referenceHint": "Zum Bispiel d Referenz vo de Banküberwisig oder vom Lohnlauf.",
+        "submit": "Rückerstattig erfasse"
+      },
+      "history": "Erfassti Zahlige",
+      "loading": "Rückerstattigssaldo wird glade…",
+      "ownerOutstanding": "D Buechhaltig erfasst dini Rückerstattig do, sobald si uszahlt worde isch.",
+      "ownerOverpaid": "Es isch meh uszahlt worde, als jetzt gnähmigt isch. D Buechhaltig erfasst do, wenn d Differenz zruggzahlt worde isch; Z8 bewegt kes Gäld.",
+      "recorded": "Rückerstattig erfasst.",
+      "recordedAlready": "Die Zahlig isch scho erfasst worde.",
+      "recovered": "Zruggzahlt",
+      "recoveryForm": {
+        "amount": "Zruggzahlte Betrag ({currency})",
+        "date": "Rückzahligsdatum",
+        "label": "E Rückzahlig erfasse",
+        "notice": "Em Mitarbeiter isch meh uszahlt worde, als jetzt gnähmigt isch. Erfass Gäld, wo scho zruggzahlt worde isch, zum d Überzahlig uszgliche; die ursprünglechi Rückerstattig bliibt wie erfasst und es wird nüt mit andere Abrechnige verrechnet. Z8 überwiist kes Gäld.",
+        "submit": "Rückzahlig erfasse"
+      },
+      "recoveryRecorded": "Rückzahlig erfasst.",
+      "reimbursed": "Zruggzahlt",
+      "state": {
+        "mixed": "Überprüfig nötig",
+        "outstanding": "Uusstehend",
+        "overpaid": "Zviel zahlt",
+        "settled": "Begliche"
+      },
+      "title": "Rückvergüetig"
+    },
+    "status": {
+      "draft": "Entwurf"
+    },
+    "title": "Reisekosten",
+    "workspace": {
+      "description": "Sammle Reise- und Einzelausgabe, schick si zur Überprüfig und verfolg d Rückvergüetig."
+    }
   }
 }

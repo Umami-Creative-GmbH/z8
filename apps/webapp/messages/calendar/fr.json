@@ -283,17 +283,18 @@
       "monthTotal": "Total du mois",
       "nextMonth": "Mois suivant",
       "previousMonth": "Mois précédent",
+      "recordedOnlyDayLabel": "{date} : {actual} enregistré.",
       "totalDescription": "Temps enregistré comparé aux heures de politique",
       "weekSum": "Somme"
     },
     "requirements": {
+      "includesRunningWork": "Inclut le travail en cours",
       "status": {
         "met": "exigence satisfaite",
         "missing": "temps enregistré manquant",
         "over": "au-delà de l'exigence",
         "under": "en deçà de l'exigence"
-      },
-      "dayLabel": "{date} : {actual} enregistré, {required} requis, {delta} {status}."
+      }
     },
     "split": {
       "ambiguousTime": "Choisir l'occurrence à utiliser",
@@ -346,11 +347,6 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
-    },
-    "calendar": {
-      "break": {
-        "titleWithDuration": "Pause – {duration}"
-      }
     }
   }
 }

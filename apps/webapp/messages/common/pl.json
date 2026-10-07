@@ -556,14 +556,6 @@
       "teamMemberAdded": {
         "message": "Zostałeś dodany do zespołu {teamName} przez {performedByName}.",
         "title": "Dodano do zespołu"
-      },
-      "absenceRequestSubmitted": {
-        "message": "Twój wniosek {categoryName} na {dateRange} został wysłany i oczekuje na zatwierdzenie.",
-        "title": "Wniosek o nieobecność wysłany"
-      },
-      "teamMemberRemoved": {
-        "message": "Zostałeś usunięty z zespołu {teamName} przez {performedByName}.",
-        "title": "Usunięto z zespołu"
       }
     },
     "description": "Przeglądaj aktualizacje, zatwierdzenia i alerty systemowe na jednej osi czasu.",

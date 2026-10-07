@@ -21,6 +21,7 @@
     "clockIn": "Einstempeln",
     "clockOut": "Ausstempeln",
     "confirmReject": "Ablehnig bestätige",
+    "confirmReturn": "Zur Überarbeitung zurücksenden",
     "date": "Datum",
     "dates": "Date",
     "days": "Täg",
@@ -62,6 +63,7 @@
       "outcomeApproved": "Gnämiget",
       "outcomeRejected": "Abglehnt",
       "project": "Projekt",
+      "receiptExceptionsTitle": "Fehlende Belege",
       "receipts": "Beleg",
       "request": "Aatrag",
       "requestedBy": "Aagforderet vo",
@@ -93,12 +95,18 @@
     "notes": "Notize",
     "noTimeCorrectionApprovals": "Kei offeni Zitkorrekturaträg zum Prüefe.",
     "offFrom": "abwesend vom",
-    "openDetailsFor": "Details öffne für {title}",
+    "openDetailsFor": "Details öffne für ${item.summary.title}",
     "openInbox": "Postig öffne",
     "original": "Original",
     "pendingRequests": "Offeni Aaträg",
     "pendingRequestsDescription": "Wähl Aaträg für d Sammelgenehmigung us oder klick uf e Ziile für Details",
     "reason": "Grund",
+    "receiptExceptions": {
+      "accept": "Fehlende Beleg für {label} akzeptiere",
+      "instructions": "Die Usgabe hend kein Beleg. Zum de Bricht z'genehmige, muesch jedi Erchlärig akzeptiere. Du chasch de Bricht au ablehne, ohni si z'akzeptiere.",
+      "readOnly": "Die Usgabe sind ohni Beleg iigreicht worde, zäme mit de Erchlärig vo de agstellte Person.",
+      "reason": "Erchlärig:"
+    },
     "reject": "Ablehne",
     "rejected": "Aatrag abglehnt",
     "rejectFailed": "Ablehnig fehlgschlage",
@@ -110,12 +118,29 @@
     "rejectSelected": "Usgwählti ablehne",
     "rejectTimeCorrectionTitle": "Zitkorrektur ablehne",
     "rejectTitle": "Abwesenheitsantrag ablehne",
+    "reportReturned": "Bricht für Änderige zrugggschickt",
     "requested": "Angefordert",
     "requestedCorrection": "Aagfordereti Korrektur",
     "requestedToday": "Hüt",
     "requester": "Aastellende",
     "requestingCorrection": "beaaträget e Ziitkorrektur für",
     "requestingOff": "beaaträget",
+    "retry": "Nomol probiere",
+    "returnCommentTooLong": "Bhalt de Kommentar unter {max} Zeiche.",
+    "returnItemComments": "Kommentar zu de Usgabe (optional)",
+    "returnItemLabel": "Usgab {number}",
+    "returnNote": "Notiz an Mitarbeiter",
+    "returnNoteRequired": "Schriib am Mitarbeiter, was z'ändere isch.",
+    "returnNoteTooLong": "Bhalt d'Notiz unter {max} Zeiche.",
+    "returnReport": "Zruggschicke",
+    "returnReportConflict": "Über de Bricht isch zwüschezytlich entschide worde, er isch zrugggschickt oder gänderet worde. Lads neu, zum de aktuell Status z'gseh.",
+    "returnReportDescription": "De Mitarbeiter cha de Bricht korrigiere und nomol iireiche. Die Iireichig, dini Notiz und d'Kommentar bliibed im Verlauf erhalte.",
+    "returnReportFailed": "De Bricht het nöd chönne zrugggschickt werde. Bitte probiers nomol.",
+    "returnReportInvalid": "Überprüef d'Notiz und d'Kommentar: E Notiz isch erforderlich und jede Text mues i de Limite bliibe.",
+    "returnReportLoadFailed": "De iigreichti Bricht het nöd chönne glade werde. Bitte probiers nomol.",
+    "returnReportLoading": "Iigreichte Bricht wird glade…",
+    "returnReportNotFound": "De Bricht isch nüme bi dir zur Überprüefig.",
+    "returnReportTitle": "Bricht für Änderige zruggschicke",
     "review": {
       "showDetails": "Details aazeige",
       "switchOrganizationAction": "Zu {organization} wechsle",
@@ -128,7 +153,7 @@
     "searchLabel": "Gsuech dureueche",
     "searchPlaceholder": "Suche nach Name oder E-Mail…",
     "selectAll": "Alli uswähle",
-    "selectedCount": "{selectedCount} usgwählt",
+    "selectedCount": "${selectedCount} usgwählt",
     "selectRow": "Ziile uswähle",
     "timeComparison": "Ziitvergliich",
     "timeCorrectionApproved": "Ziitkorrektur gnähmigt",
@@ -137,26 +162,29 @@
     "timeCorrectionsDescription": "Prüfe und genehmige Aaträg für Ziitkorrekture vo dim Team",
     "timelineActor": "{at} von {actorName}",
     "title": "Genehmigunge",
-    "totalCount": "{totalCount} usstehend",
+    "totalCount": "${totalCount} usstehend",
     "type": "Typ",
     "types": {
       "absence_entry": "Abwäseheitsaaträg",
       "time_entry": "Ziitkorrekture",
-      "travel_expense_claim": "Reisespäse"
+      "travel_expense_claim": "Reisespäse",
+      "travel_expense_report": "Späsebricht"
     },
     "unifiedInboxBannerDescription": "Gseh alli Genehmigungsarte uf eim Blick mit Filter, Sammelaktione und SLA-Tracking.",
     "unifiedInboxBannerTitle": "Probier de neu zentrali Postig us",
+    "viewExpenseClaim": "Abrechnung und Belege anzeigen",
+    "viewExpenseReport": "Iigreichte Bricht und Beleg aaluege",
     "workCategory": "Arbeitskategorie",
     "workCategoryUnavailable": "Unbekannte Kategorie (nicht verfügbar)",
     "workLocation": "Arbetsort"
   },
   "fastLanes": {
     "approve": "Genehmige",
-    "approveGroup": "{label} genehmige",
+    "approveGroup": "${label} genehmige",
     "confirmReject": "Ablehnig bestätige",
-    "confirmRejectGroup": "{label} ablehne bestätige",
+    "confirmRejectGroup": "${label} ablehne bestätige",
     "description": "Ähnlichi, unkomplizierti Aafroge in Stapel überprüfe.",
-    "expandGroup": "{label} uufklappe",
+    "expandGroup": "${label} uufklappe",
     "groups": {
       "lowRiskAbsence": {
         "description": "Absänze ohni erkennbari Konflikt.",
@@ -175,24 +203,25 @@
         "label": "Veralteti Aafroge"
       }
     },
-    "notEligibleApprove": "{notApprovableCount} nöd für Sammelfreigab geeignet",
-    "notEligibleReject": "{notRejectableCount} nöd für Sammelablehnig geeignet",
+    "notEligibleApprove": "${notApprovableCount} nöd für Sammelfreigab geeignet",
+    "notEligibleReject": "${notRejectableCount} nöd für Sammelablehnig geeignet",
     "reject": "Ablehne",
-    "rejectGroup": "{label} ablehne",
+    "rejectGroup": "${label} ablehne",
     "rejectReason": "Grund für Sammel-Ablehnig",
     "risk": {
       "high": "Hohes Risiko",
       "low": "Niidriges Risiko",
       "medium": "Mittlers Risiko"
     },
-    "showGroup": "{label} aazeige",
+    "showGroup": "${label} aazeige",
     "title": "Schnellspure"
   },
   "sprint": {
-    "age": "{ageDays} Täg alt",
+    "age": "${item.timing.ageDays} Täg alt",
     "approve": "Genehmige",
     "approveCurrentApproval": "Aktuelli Genehmigung freigäh",
     "capabilities": {
+      "approveInDetails": "Details ufmache, zum Uusnahme z'akzeptiere und z'genehmige",
       "approveUnavailable": "Freigab nöd möglich",
       "bulkApprove": "Für Sammelverarbeitig geeignet",
       "rejectUnavailable": "Ablehnig nöd möglich"
@@ -207,7 +236,7 @@
       "normal": "Normali Priorität",
       "urgent": "Dringendi Priorität"
     },
-    "progress": "{current} vo {total}",
+    "progress": "${currentIndex + 1} vo ${visibleItems.length}",
     "reject": "Ablehne",
     "rejectCurrentApproval": "Aktuelli Freigab ablehne",
     "rejectReason": "Grund für d'Ablehnig vom Sprint",
@@ -231,7 +260,8 @@
     "types": {
       "absenceEntry": "Abweseheitsaafrog",
       "timeEntry": "Ziiterfassig",
-      "travelExpenseClaim": "Speseabrechnig"
+      "travelExpenseClaim": "Speseabrechnig",
+      "travelExpenseReport": "Späsebricht"
     }
   }
 }

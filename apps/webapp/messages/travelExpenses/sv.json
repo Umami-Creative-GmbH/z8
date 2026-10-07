@@ -1,17 +1,73 @@
 {
   "travelExpenses": {
     "actions": {
-      "newClaim": "Nytt utlägg"
+      "backToClaims": "Tillbaka till reseräkningar",
+      "download": "Ladda ner",
+      "preview": "Förhandsgranska",
+      "retry": "Försök igen",
+      "viewClaim": "Visa reseräkning"
+    },
+    "adjustment": {
+      "create": {
+        "action": "Korrigera med en justering",
+        "confirm": "Skapa justering",
+        "description": "Du får en kopia av de godkända utgifterna att korrigera. När du skickar in den skickas hela den korrigerade rapporten för ett nytt godkännande; endast differensen mot det godkända beloppet regleras.",
+        "failed": "Justeringen kunde inte skapas. Försök igen.",
+        "ineligible": "Den här rapporten kan inte längre justeras. Ladda om sidan för att se dess aktuella status.",
+        "reason": "Orsak till korrigeringen",
+        "reasonRequired": "Förklara vad som behöver korrigeras.",
+        "reasonTooLong": "Håll anledningen under {max} tecken.",
+        "title": "Skapa en länkad justering?"
+      },
+      "ineligible": {
+        "adjustment": "En justering korrigeras via rapporten den justerar."
+      },
+      "notice": {
+        "baseline": "Godkänt belopp som den korrigerar",
+        "delta": "Differens med förtecken",
+        "editing": "Korrigera utgifterna nedan. När du skickar in visas differensen mot det godkända beloppet för din granskning och granskas sedan på nytt. Den ursprungliga rapporten och dess utbetalningar förblir oförändrade.",
+        "original": "Öppna den ursprungliga rapporten",
+        "title": "Justering av en godkänd rapport"
+      },
+      "panel": {
+        "applied": "Tillämpad",
+        "description": "Den här rapporten har redan exporterats eller ersatts, så den förblir godkänd. En korrigering är en länkad justering: den granskas på nytt och ändrar det godkända beloppet med sin differens med förtecken när den har godkänts.",
+        "effective": "Godkänt belopp inklusive justeringar: {amount}",
+        "open": "Öppna justering",
+        "title": "Justeringar"
+      },
+      "preview": {
+        "currency": "Den korrigerade totalsumman är inte i den ursprungliga rapportens valuta, så den kan inte skickas in som en justering.",
+        "delta": "Den här justeringen ändrar det godkända beloppet för {baseline} med {delta}.",
+        "review": "Det krävs ett nytt godkännande av hela rapporten, även när beloppet minskar."
+      },
+      "reviewerHint": "Den anställde skapar justeringen från den här rapporten; den kommer tillbaka till dig för en ny granskning med sin differens med förtecken."
+    },
+    "allowanceOverride": {
+      "amount": "Belopp",
+      "authorizedBy": "Attesterad av",
+      "authorizedByValue": "{name}, {date}",
+      "basis": "Beräkning",
+      "evidence": "Underlag",
+      "noOrdinary": "Det finns ingen ordinarie beräkning för dessa uppgifter.",
+      "ordinary": "Policyn skulle beräkna {amount}.",
+      "reason": "Orsak",
+      "situation": {
+        "calculated": "Beräknat enligt policyn",
+        "fallback": "Beräknat med en officiell reservsats",
+        "missingCoverage": "Täcks inte av någon organisationspolicy",
+        "missingFacts": "Obligatoriska reseuppgifter saknas",
+        "unsupported": "Omfattas inte av de beräkningsregler som stöds"
+      },
+      "situationLabel": "Varför inte beräknat",
+      "situationResolved": "Denna manuella ersättning gäller inte längre: orsaken till att den godkändes har ändrats (till exempel täcker en policy nu dessa uppgifter). Den beräknade ersättningen gäller om det finns en sådan, annars måste en utläggsadministratör granska den.",
+      "stale": "Denna manuella ersättning godkändes för andra uppgifter och gäller inte längre. En utläggsadministratör måste granska de ändrade uppgifterna.",
+      "title": "Ersättning fastställd manuellt av en utläggsadministratör"
     },
     "approvals": {
       "description": "Öppna den samlade inkorgen för godkännanden filtrerad efter reseutlägg.",
       "openInbox": "Öppna inkorgen",
       "title": "Granska väntande godkännanden av reseräkningar"
-    },
-    "claimTypes": {
-      "mileage": "Milersättning",
-      "per_diem": "Traktamente",
-      "receipt": "Kvitto"
     },
     "decision": {
       "approve": "Godkänn",
@@ -33,41 +89,179 @@
       "rejected": "Reseräkningen har avvisats",
       "rejectTitle": "Avvisa reseräkning"
     },
-    "description": "Skapa och följ dina reseräkningar",
+    "detail": {
+      "created": "Skapad",
+      "decisionRecorded": "Beslut registrerat",
+      "destination": "Destination",
+      "history": "Beslutshistorik",
+      "intermediateApproval": "Godkännande registrerat — inväntar ytterligare godkännande",
+      "legacyReceiptIdentity": "Äldre kvitto: innehållets kontrollsumma registrerades inte.",
+      "loading": "Läser in reseräkning…",
+      "noReceipts": "Inga kvitton registrerade",
+      "notRecorded": "Ej registrerat",
+      "originalAmount": "Ursprungligt belopp",
+      "receipts": "Kvitton",
+      "refreshing": "Uppdaterar reseräkning…",
+      "submitted": "Inskickad",
+      "title": "Reseräkning",
+      "unknownDates": "Resedatumkontext registrerades inte (äldre reseräkning)"
+    },
     "errors": {
-      "loadClaims": "Kunde inte läsa in reseräkningar"
+      "loadDetailRetry": "Det gick inte att läsa in denna reseräkning. Försök igen."
     },
     "feature": "hantera reseutlägg",
-    "form": {
-      "amount": "Belopp",
-      "claimType": "Utläggstyp",
-      "created": "Utkast för reseutlägg skapat",
-      "createDraft": "Skapa utkast",
-      "currency": "Valuta",
-      "currencyDescription": "ISO 4217-kod, t.ex. EUR eller USD",
-      "currencyPlaceholder": "EUR",
-      "description": "Skapa ett nytt utkast för dina senaste reseutlägg.",
-      "destinationCity": "Destinationsstad",
-      "destinationCityPlaceholder": "Berlin",
-      "destinationCountry": "Destinationsland",
-      "destinationCountryPlaceholder": "Tyskland",
-      "errors": {
-        "createDraft": "Kunde inte skapa utkast för reseutlägg",
-        "positiveAmount": "Beloppet måste vara ett positivt tal",
-        "tripEndBeforeStart": "Resans slutdatum kan inte vara före resans startdatum",
-        "validTripDates": "Ange ett giltigt start- och slutdatum för resan",
-        "validTripEnd": "Ange ett giltigt slutdatum för resan",
-        "validTripStart": "Ange ett giltigt startdatum för resan"
+    "finance": {
+      "approvedOn": "Godkänd {date}",
+      "back": "Tillbaka till utläggsekonomi",
+      "companyPaid": "Betalt av företaget {amount}",
+      "description": "Godkända utlägg och vad som fortfarande ska betalas till anställda. Registrering av en återbetalning dokumenterar en betalning som gjorts utanför Z8; inga pengar överförs.",
+      "employeePaid": "Betalt av anställd {amount}",
+      "empty": {
+        "any": "Inga godkända utlägg ännu.",
+        "open": "Inget att reglera: alla godkända utlägg är reglerade."
       },
-      "notes": "Anteckningar",
-      "notesPlaceholder": "Lägg till valfri information till din godkännare",
-      "receiptAttachmentHint": "Kvittoutlägg kräver minst en bilaga. Uppladdning av bilagor blir tillgänglig efter att utkastet har skapats.",
-      "selectClaimType": "Välj utläggstyp",
-      "title": "Skapa reseutlägg",
-      "tripEnd": "Resans slut",
-      "tripStart": "Resans start"
+      "entry": {
+        "description": "Granska godkända utlägg, utestående saldon och registrerade återbetalningar.",
+        "open": "Öppna ekonomikön",
+        "title": "Utläggsekonomi"
+      },
+      "errors": {
+        "load": "Det gick inte att läsa in ekonomikön. Försök igen."
+      },
+      "exports": {
+        "adjustment": "Justering: {name}",
+        "cancel": "Avbryt",
+        "cancelledByFinance": "Avbruten av ekonomi.",
+        "cancelledReopenedHint": "Avbröts eftersom en rapport i den öppnades igen för korrigering. Alla andra rapporter i den är redo att exporteras igen: skapa en ny export för dem.",
+        "counts": "{reports} rapporter · {items} utlägg · {receipts} kvitton",
+        "created": "Exporten har lagts i kö. Den visas nedan när den är klar.",
+        "description": "Exportera godkända utlägg som en CSV med tillhörande kvitton för bokföring. Varje godkänd inskickning exporteras en gång; ladda ner en export igen när du behöver den.",
+        "download": "Ladda ner",
+        "empty": "Inga godkända utlägg väntar på export.",
+        "errors": {
+          "alreadyExported": "Vissa markerade utlägg ingår redan i en annan export. Ladda ner den exporten istället.",
+          "cancel": "Exporten kunde inte avbrytas.",
+          "conflict": "Ett tidigare försök med ett annat urval har redan registrerats. Kontrollera exporthistoriken.",
+          "failed": "Exporten kunde inte skapas. Försök igen.",
+          "invalid": "Välj mellan ett och det maximala antalet utlägg.",
+          "load": "Det gick inte att läsa in exporter. Försök igen.",
+          "retry": "Exporten kunde inte köras igen.",
+          "stale": "Vissa markerade utlägg är inte längre godkända så som visas. Listan har uppdaterats; kontrollera urvalet och exportera igen."
+        },
+        "failure": {
+          "enqueue": "Exporten kunde inte läggas i kö. Försök igen.",
+          "inconsistent": "Godkända data kunde inte exporteras konsekvent. Kontakta support.",
+          "receiptMismatch": "Ett lagrat kvitto matchar inte längre sin registrerade kontrollsumma. Kontakta support innan du försöker igen.",
+          "receiptUnavailable": "En kvittofil kunde inte läsas. Försök igen när lagringsutrymmet är tillgängligt.",
+          "storage": "Exportfilen kunde inte sparas. Försök igen.",
+          "unknown": "Exporten misslyckades. Försök igen."
+        },
+        "form": {
+          "label": "Skapa en export",
+          "selectAll": "Markera alla",
+          "submit": "Skapa export ({count})"
+        },
+        "history": "Exporthistorik",
+        "loading": "Läser in exporter…",
+        "notPayment": "Inte en betalning: export markerar ingenting som återbetalt.",
+        "requested": "Begärdes {date} av {name}",
+        "retry": "Försök igen",
+        "status": {
+          "cancelled": "Avbruten",
+          "completed": "Slutförd",
+          "failed": "Misslyckades",
+          "processing": "Behandlas",
+          "queued": "I kö"
+        },
+        "title": "Exporter"
+      },
+      "filter": {
+        "all": "Alla godkända",
+        "label": "Visa utlägg",
+        "open": "Öppna",
+        "settled": "Reglerade"
+      },
+      "legacyClaim": "Äldre {type}-anspråk",
+      "loading": "Läser in ekonomikön…",
+      "title": "Utläggsekonomi",
+      "truncated": "Visar de {count} senast godkända utläggen. Äldre matchande utlägg visas inte."
+    },
+    "form": {
+      "currency": "Valuta",
+      "notes": "Anteckningar"
+    },
+    "history": {
+      "adjustment": "Justering",
+      "adjustmentOf": "Justering av ”{title}”",
+      "adjustmentOfUntitled": "Justering av en tidigare rapport",
+      "claimed": "Begärt",
+      "companyPaid": "Betalt av företaget {amount}",
+      "continuedFrom": "Fortsättning från ett tidigare utlägg",
+      "emptyDescription": "Starta en resa för att samla flera utlägg med gemensamma reseuppgifter, eller lägg till ett enskilt kvitto eller en milersättning. Utkast sparas automatiskt så att du kan slutföra dem senare.",
+      "emptyFilter": "Inga utlägg med denna status.",
+      "emptyTitle": "Inga reseutlägg ännu",
+      "errors": {
+        "load": "Det gick inte att läsa in dina reseutlägg. Försök igen.",
+        "refresh": "Dina utlägg kunde inte uppdateras; listan nedan kan vara inaktuell. Försök igen."
+      },
+      "filter": {
+        "all": "Alla",
+        "approved": "Godkända",
+        "inReview": "Under granskning",
+        "label": "Visa utlägg",
+        "needsAction": "Att slutföra",
+        "rejected": "Avvisade"
+      },
+      "legacy": {
+        "badge": "Tidigare utlägg",
+        "mileage": "Milersättning",
+        "perDiem": "Traktamente",
+        "receipt": "Kvittoutlägg"
+      },
+      "loading": "Läser in dina reseutlägg…",
+      "notCounted": "{count, plural, other {# utlägg har inte räknats med ännu} }",
+      "refreshing": "Uppdaterar…",
+      "reimbursable": "Ersätts till dig",
+      "showAll": "Visa alla utlägg",
+      "title": "Dina utlägg",
+      "untitledMileage": "Namnlös körsträcka"
+    },
+    "legacyDraft": {
+      "continue": "Fortsätt som rapport",
+      "converted": "Du fortsatte det här utkastet som en utläggsrapport. Denna begäran ligger kvar här oförändrad som referens.",
+      "description": "Utkast från det tidigare ersättningsformuläret slutförs nu som utläggsrapporter. Belopp, datum, anteckningar och kvitton förs över. Allt som det nya formuläret kräver och som inte fanns i det här utkastet återstår för dig att fylla i. Själva begäran förblir oförändrad.",
+      "failed": "Utkastet kunde inte fortsättas. Försök igen.",
+      "flags": {
+        "amount": "Det angivna beloppet {amount} är inte ett giltigt kvittobelopp. Ange beloppet och valutan från kvittot.",
+        "conversion": "Kvittot är i en utländsk valuta. Ingen växling registrerades i utkastet, så ange hur det växlades (kortdebitering eller växelkurs) innan du skickar in.",
+        "destination": "Destinationen \"{destination}\" kunde inte matchas mot ett land. Välj ett.",
+        "expenseDate": "Utkastet omfattade {range}. Välj datum för detta utlägg.",
+        "manualTotal": "Utkastet hade en inskriven totalsumma på {amount}. Den används inte: detta utlägg beräknas nu utifrån vad du anger nedan.",
+        "notes": "Dina anteckningar visas nedan; kopiera det som fortfarande gäller.",
+        "project": "Projektet från utkastet behölls. Såvida ditt uppdrag på utläggsdatumet inte finns registrerat måste en utläggsadministratör godkänna det innan du kan skicka in.",
+        "projectMissing": "Projektet från utkastet finns inte längre. Välj ett projekt om det är tillämpligt.",
+        "tripDates": "Utkastet skapades innan resedatum registrerades. Ange datumen."
+      },
+      "loadFailed": "Det gick inte att kontrollera det här utkastet. Försök igen.",
+      "notDraft": "Den här begäran har redan skickats in. Den behåller sitt ursprungliga godkännande och kan inte fortsättas som en rapport.",
+      "notice": {
+        "description": "Det du angav fördes över i den mån det nya formuläret har stöd för det, inklusive {count} kvitton. Fyll i återstående fält innan du skickar in.",
+        "original": "Visa det ursprungliga utkastet",
+        "title": "Fortsättning från ett tidigare utkast"
+      },
+      "openReport": "Öppna rapporten",
+      "receipt": {
+        "mismatch": "den sparade filen matchar inte längre det som laddades upp",
+        "unreadable": "den sparade filen kan inte läsas just nu",
+        "unsupportedStorage": "filen lagras i ett lagringsutrymme som inte stöds",
+        "unsupportedType": "den sparade filen är inte en kvittotyp som stöds"
+      },
+      "receiptUnavailable": "Ingenting ändrades eftersom ett kvitto inte kunde föras över på ett säkert sätt: {receipts}. Försök igen senare eller be administratören att återställa filen.",
+      "status": "Fortsatt som rapport",
+      "title": "Fortsätt med detta utkast"
     },
     "list": {
+      "actions": "Åtgärder",
       "amount": "Belopp",
       "dateRange": "Datumintervall",
       "emptyDescription": "Skapa din första reseräkning för att starta godkännandeprocessen.",
@@ -75,6 +269,595 @@
       "status": "Status",
       "type": "Typ"
     },
-    "title": "Reseutlägg"
+    "report": {
+      "actions": {
+        "newMileage": "Ny milersättning",
+        "newReceipt": "Nytt kvitto",
+        "newTrip": "Ny resa"
+      },
+      "approvedBy": "Godkänd av {name} den {date}.",
+      "awaitingReview": "Väntar på granskning.",
+      "awaitingReviewer": "Väntar på granskning av {name}.",
+      "backToApprovals": "Tillbaka till godkännanden",
+      "backToCurrent": "Tillbaka till den aktuella rapporten",
+      "backToTravelExpenses": "Tillbaka till resekostnader",
+      "categories": {
+        "accommodation": "Boende",
+        "meals": "Måltider",
+        "other": "Övrigt",
+        "parking": "Parkering",
+        "transport": "Transport"
+      },
+      "conversion": {
+        "attachFirst": "Bifoga kortutdraget eller kvittot som visar debiteringen ovan först.",
+        "authorizedBy": "Auktoriserad av",
+        "basis": {
+          "cardCharge": "Kortdebitering",
+          "manualRate": "Auktoriserad kurs",
+          "referenceRate": "ECB:s referenskurs"
+        },
+        "chargedAmount": "Debiterat belopp i {currency}",
+        "chargedAmountDescription": "Beloppet på ditt kort- eller kontoutdrag, inklusive eventuell växlingsavgift som debiterats med det.",
+        "conflict": "Det här utlägget har ändrats någon annanstans. Kontrollera det och spara kortdebiteringen igen.",
+        "errors": {
+          "chargedAmount": "Ange det positiva beloppet som debiterats i {currency}, med högst {digits} decimaler.",
+          "evidence": "Välj den bilaga för detta utlägg som visar debiteringen."
+        },
+        "evidence": "Underlag:",
+        "evidenceLabel": "Bilaga som visar debiteringen",
+        "evidenceMissing": "Bilagan som visar kortdebiteringen saknas.",
+        "formLabel": "Kortdebitering",
+        "none": "Ingen växelkurs uppskattas. Ange vad som debiterades på ditt kort i {currency} och välj bilagan som visar det, till exempel kontoutdraget för kortet. Utan en kortdebitering kan en utläggsadministratör registrera en dokumenterad kurs.",
+        "notSaved": "Kortdebiteringen kunde inte sparas för detta utlägg.",
+        "publicationDate": "Publicerad den",
+        "publicationFallback": "Ingen kurs publicerades den {expenseDate}, så den senaste tidigare publiceringen gäller.",
+        "rate": "Kurs",
+        "rateDate": "Kursdatum",
+        "rateEvidence": "Kursunderlag",
+        "rateValue": "1 {base} = {value} {quote}",
+        "reason": "Dokumentation",
+        "reference": {
+          "alternatives": "Din rapport förblir ett utkast tills du anger din kortdebitering i {reimbursementCurrency} tillsammans med bilagan som visar den, eller tills en utläggsadministratör registrerar en dokumenterad kurs.",
+          "currencyUnavailable": "Europeiska centralbanken publicerar inte någon kurs för {currency} detta datum.",
+          "expenseDateMissing": "Ange utläggsdatumet för att slå upp referenskursen.",
+          "historyUnavailable": "Det finns ingen referenskurs för detta datum.",
+          "notYetPublished": "Referenskursen för detta datum har inte publicerats ännu. Den visas vanligtvis efter kl. 16.00 Frankfurttid på vardagar.",
+          "pairUnsupported": "Europeiska centralbanken publicerar endast kurser mot euron, så ingen kurs gäller mellan {currency} och {reimbursementCurrency}.",
+          "providerUnavailable": "Referenskursen för detta datum kunde inte hämtas ännu. Försök igen senare.",
+          "rateStale": "Det finns ingen aktuell referenskurs tillgänglig för detta datum."
+        },
+        "referencePending": "Referenskursen slås upp på nytt för det nya datumet när din ändring har sparats.",
+        "remove": "Ta bort kortdebitering",
+        "removeFailed": "Kortdebiteringen kunde inte tas bort. Läs in utlägget igen och försök på nytt.",
+        "replaceWithCardCharge": "Använd min korttransaktion i stället",
+        "result": "{original} räknas som {reimbursement}",
+        "rounding": "Avrundning",
+        "roundingValue": "Avrundat halva uppåt till {digits} decimaler",
+        "saveCardCharge": "Spara korttransaktion",
+        "saved": "Korttransaktionen har sparats",
+        "saveFailed": "Korttransaktionen kunde inte sparas. Försök igen.",
+        "source": "Källa",
+        "sourceEcb": "Europeiska centralbankens referenskurs för euro, godkänd av din organisation",
+        "title": "Omräkning till {currency}"
+      },
+      "correctAndResubmit": "Korrigera rapporten och skicka in den igen. Tidigare inlämningar finns kvar i dess historik.",
+      "cycles": {
+        "approved": "godkänd",
+        "entry": "Inlämning {number} den {date}: {outcome}",
+        "pending": "väntar på granskning",
+        "rejected": "avvisad",
+        "reopened": "godkänd, sedan återöppnad för korrigering",
+        "returned": "returnerad för ändringar",
+        "title": "Inlämningar",
+        "withdrawn": "tillbakadragen"
+      },
+      "decideInInbox": "Godkänn, returnera eller avvisa hela rapporten i inkorgen för godkännanden.",
+      "drafts": {
+        "expenses": "{count, plural, one {# utgift} other {# utgifter}}",
+        "noDate": "Inget datum än",
+        "noTravelDates": "Inga resedatum än",
+        "receipts": "{count, plural, one {# kvitto} other {# kvitton}}",
+        "untitled": "Namnlöst kvitto",
+        "untitledTrip": "Namnlös resa"
+      },
+      "earlierSubmission": "Detta är en tidigare inskickad version av rapporten, sparad exakt som den skickades in.",
+      "errors": {
+        "amount": "Ange ett positivt belopp med högst två decimaler, t.ex. 12,50.",
+        "category": "Välj en kategori i listan.",
+        "create": "Utlägget kunde inte skapas. Försök igen.",
+        "currency": "Ange en valutakod med tre bokstäver, t.ex. EUR.",
+        "expenseDate": "Ange ett giltigt datum.",
+        "load": "Det gick inte att läsa in det här utlägget. Försök igen.",
+        "loadSubmission": "Det gick inte att läsa in den inskickade rapporten. Försök igen.",
+        "paidBy": "Välj vem som betalade.",
+        "tooLong": "Den här texten är för lång."
+      },
+      "fields": {
+        "accountingReference": "Bokföringsreferens (valfritt)",
+        "accountingReferenceDescription": "En referens som ekonomiavdelningen bett dig använda, till exempel ett ordernummer.",
+        "amount": "Belopp på kvittot",
+        "category": "Kategori",
+        "categoryPlaceholder": "Välj en kategori",
+        "description": "Beskrivning",
+        "descriptionPlaceholder": "t.ex. Tågbiljett Berlin–Hamburg för kundworkshoppen",
+        "expenseDate": "Kvittodatum",
+        "paidBy": "Vem betalade?"
+      },
+      "frozenNotice": "Den inskickade rapporten kan inte längre redigeras.",
+      "history": {
+        "approvalRecorded": "Godkännande registrerat av {name}; inväntar ytterligare godkännande",
+        "approved": "Godkänd av {name}",
+        "cycle": "Inskickning {number}:",
+        "rejected": "Avvisad av {name}",
+        "reopened": "Återöppnad för korrigering av {name}",
+        "returned": "Returnerad för ändringar av {name}",
+        "submitted": "Inskickad av {name}",
+        "title": "Historik",
+        "withdrawn": "Tillbakadragen av {name}"
+      },
+      "items": {
+        "add": "Lägg till kvittoutlägg",
+        "addFailed": "Utlägget kunde inte läggas till. Försök igen.",
+        "empty": "Lägg till varje kvitto för denna resa som ett eget utlägg. Reseuppgifterna ovan gäller för dem alla.",
+        "heading": "Utlägg {number}",
+        "remove": "Ta bort",
+        "removeConfirm": "Ta bort utlägg",
+        "removeConflict": "Det här utlägget har ändrats någon annanstans och togs inte bort. Kontrollera det och försök igen.",
+        "removeDescription": "Utlägget och dess bifogade kvitton raderas från denna resa. Detta kan inte ångras.",
+        "removeFailed": "Utlägget kunde inte tas bort. Försök igen.",
+        "removeLabel": "Ta bort utlägg {number}",
+        "removeTitle": "Ta bort det här utlägget?",
+        "title": "Utlägg"
+      },
+      "loading": "Läser in utlägg…",
+      "mileage": {
+        "add": "Lägg till milersättning",
+        "appliedPolicy": "Taxa giltig från {date} · {source}",
+        "calculation": "{distance} km × {rate} per km = {amount}",
+        "calculationTitle": "Beräknad milersättning",
+        "enterFacts": "Ange datum, kilometer och fordon för att se beloppet.",
+        "errors": {
+          "distance": "Ange körda kilometer som ett positivt tal med högst två decimaler, t.ex. 61,5.",
+          "vehicle": "Välj fordonet du körde."
+        },
+        "fields": {
+          "date": "Kördatum",
+          "distance": "Körda kilometer",
+          "route": "Rutt",
+          "routePlaceholder": "t.ex. Kontor Berlin – kund Potsdam – tillbaka",
+          "vehicle": "Fordon",
+          "vehicleDescription": "Ditt eget fordon. Tjänstebilar och kollektivtrafik räknas inte som milersättning; lägg till deras kvitton i stället."
+        },
+        "noRate": "Ingen taxa hittas på: det här utlägget förblir ett utkast tills en utläggsadministratör lägger till en milersättningstaxa som täcker datumet.",
+        "noRateTitle": "Ingen milersättningstaxa gäller",
+        "otherCurrency": "Taxan för detta datum är inte i {currency}; milersättning omräknas aldrig.",
+        "pending": "Beräknas med din organisations taxa när dina ändringar har sparats.",
+        "requirements": {
+          "currency": "Milersättningstaxan för detta datum är i {policyCurrency}, men denna rapport ersätts i {currency}. Be en utläggsadministratör att lägga till en taxa i {currency}.",
+          "date": "Ange kördatum.",
+          "distance": "Ange körda kilometer.",
+          "policyMissing": "Din organisation har ingen milersättningstaxa för {vehicle} den {date}. Be en utläggsadministratör att lägga till en daterad taxa i inställningarna för reseutlägg. Inget beräknas förrän dess.",
+          "route": "Beskriv rutten.",
+          "vehicle": "Välj fordon."
+        },
+        "rounded": "(exakt {exact}, avrundat till närmaste cent)",
+        "sourceOrganization": "Organisationspolicy: {reference}",
+        "sourceOrganizationUnnamed": "Organisationspolicy",
+        "sourceStatutory": "Tysk lagstadgad schablon ({version})",
+        "standaloneTitle": "Milersättning",
+        "vehicles": {
+          "car": "Bil",
+          "otherMotorVehicle": "Annat motorfordon (t.ex. motorcykel)"
+        }
+      },
+      "paidBy": {
+        "company": "Företaget betalade (t.ex. företagskort)",
+        "employee": "Jag betalade (ersätt mig)"
+      },
+      "perDiem": {
+        "absenceDuration": "{hours}:{minutes} h borta",
+        "add": "Lägg till traktamente",
+        "appliedPolicy": "Satser giltiga från {date} · {source}",
+        "basis": {
+          "absence24h": "Hel dag borta (24 timmar)",
+          "claimedInOtherReport": "Redan utbetalt i en annan av dina rapporter: endast ett traktamente per dag",
+          "over8h": "Mer än 8 timmar borta",
+          "overnightMajority": "Större delen av frånvaron över natten",
+          "overnightMinority": "Räknas på den andra dagen av frånvaron över natten",
+          "travelDay": "Resdag för en resa med övernattning",
+          "upTo8h": "8 timmar eller mindre borta: inget traktamente"
+        },
+        "breakdownCaption": "Traktamente per kalenderdag",
+        "calculationTitle": "Beräknat traktamente",
+        "columns": {
+          "amount": "Belopp",
+          "day": "Dag",
+          "eligibility": "Berättigande",
+          "meals": "Tillhandahållna måltider",
+          "rate": "Traktamente"
+        },
+        "deductionNote": "Tillhandahållna måltider minskar dagens traktamente, dock aldrig under noll; vad du betalat för en måltid minskar dess avdrag.",
+        "departure": "Avresa",
+        "enterFacts": "Ange din avresa, återresa och måltider för att se dagtraktamentena.",
+        "errors": {
+          "clockChange": "Det här klockslaget finns inte denna dag eftersom klockan ställs fram. Ange en tid utanför den överhoppade timmen.",
+          "clockChangeRepeated": "Det här klockslaget inträffar två gånger denna dag eftersom klockan ställs tillbaka. Ange en tid utanför den upprepade timmen.",
+          "endBeforeStart": "Din återresa måste vara efter din avresa.",
+          "location": "Välj en plats från listan för varje dag.",
+          "meals": "Kontrollera måltidsuppgifterna.",
+          "payment": "Ange vad du betalade som ett belopp med högst två decimaler, t.ex. 2,50.",
+          "time": "Ange en tid i timmar och minuter."
+        },
+        "exceptionalTitle": "Kräver manuell beräkning",
+        "exceptions": {
+          "destinationNotListed": "En dagsplats omfattas inte av den officiella utlandstabellen eller dess reservregler.",
+          "foreignTimeZone": "Restiderna är inte i tysk lokal tid.",
+          "foreignWithoutOvernight": "En aktivitet över natten utomlands utan övernattning beräknas inte automatiskt.",
+          "international": "Ett resmål är utanför Tyskland. Utlandstraktamente beräknas inte än.",
+          "majorityTie": "Frånvaron över natten är fördelad exakt lika mellan båda dagarna.",
+          "mixedTimeZones": "Avresa och hemkomst sker i olika tidszoner.",
+          "multiDayWithoutOvernight": "Resan sträcker sig över mer än två kalenderdagar utan övernattning.",
+          "nightsAtHome": "Du tillbringade några nätter hemma under resan.",
+          "overlappingDays": "En annan av dina rapporter betalar redan ut traktamente för några av dessa dagar; endast ett traktamente per dag är tillåtet, så uteslut dem från den manuella beräkningen.",
+          "prolongedWorkplace": "Längre aktivitet på samma arbetsplats: traktamente begränsas till de första tre månaderna.",
+          "rulesNotVerified": "Inga verifierade tyska regler täcker dessa resedatum än.",
+          "specialLocation": "En dag markerades som en särskild situation (övrigt, eller en hel dag med flyg eller till sjöss under den första eller sista resdagen)."
+        },
+        "fields": {
+          "endDate": "Dagen då du kom tillbaka",
+          "endTime": "Tidpunkten då du var tillbaka hemma eller på jobbet",
+          "meals": "Måltider som tillhandahålls av din arbetsgivare",
+          "mealsDescription": "Kryssa för varje måltid som din arbetsgivare, eller ett hotell eller värd på dess vägnar, tillhandahöll, även om du hoppade över den. Ange vad du betalade för den, om något.",
+          "mealsNeedDates": "Ange avrese- och återresedag för att visa resdagarna.",
+          "overnight": "Nätter under resan",
+          "payment": "Vad du betalade för {meal} den {date}",
+          "paymentPlaceholder": "Du betalade (valfritt)",
+          "prolongedWorkplace": "Jag har arbetat på samma plats i mer än tre månader",
+          "prolongedWorkplaceDescription": "Traktamente gäller endast för de första tre månaderna på samma arbetsplats; sådana resor kräver en manuell beräkning.",
+          "startDate": "Dagen du reste",
+          "startTime": "Tid då du lämnade hemmet eller arbetet",
+          "timeZone": "Tidszon"
+        },
+        "foreignRates": "Utlandssatser: {reference} ({version})",
+        "location": {
+          "activityToday": "Var ägde din sista tjänsteaktivitet utomlands rum denna dag?",
+          "assigned": "Belopp som det officiella meddelandet anger för detta land",
+          "atSea": "Ombord på ett fartyg hela dagen (ingen ombord- eller landstigning)",
+          "choose": "Välj en plats",
+          "elsewhere": "Någon annanstans",
+          "fallbackFlight": "Officiell regel: hela dagen i luften, österrikiska belopp",
+          "fallbackLuxembourg": "Officiell reservregel: ej listad, luxemburgska belopp",
+          "fallbackMotherCountry": "Officiell reservregel: territorium, moderlandets belopp",
+          "fallbackShip": "Officiell regel: hela dagen till sjöss, luxemburgska belopp",
+          "germany": "Tyskland",
+          "inFlight": "Under flygning hela dagen (mellan avgångsdag och ankomstdag)",
+          "lastActivityTrip": "Var ägde din sista tjänsteaktivitet utomlands rum under denna resa?",
+          "night": "Var befann du dig vid midnatt? (den sista platsen du nådde före 24:00 lokal tid; ett land räknas som nått när ditt plan landar)",
+          "noActivityAbroad": "Ingen tjänsteaktivitet utomlands",
+          "other": "Något annat (kräver manuell beräkning)",
+          "place": "Plats i {country}"
+        },
+        "meal": "{meal}: −{deduction}",
+        "mealPaid": "{meal}: −{deduction} (du betalade {payment})",
+        "meals": {
+          "breakfast": "Frukost",
+          "dinner": "Middag",
+          "lunch": "Lunch"
+        },
+        "mealsCountToward": "Avdraget den {date}",
+        "noRate": "Ingen sats hittas på: detta utlägg förblir ett utkast tills en utläggsadministratör lägger till traktamentssatser som täcker dess dagar.",
+        "noRateTitle": "Ingen traktamentssats gäller",
+        "otherCurrency": "Satserna för dessa dagar är inte i {currency}; traktamente omvandlas aldrig.",
+        "overnight": {
+          "away": "Jag övernattade borta från hemmet varje natt",
+          "mixed": "Jag tillbringade några nätter hemma",
+          "none": "Jag arbetade under natten utan övernattning"
+        },
+        "pending": "Beräknas med din organisations daterade satser när dina ändringar har sparats.",
+        "requirements": {
+          "currency": "Traktamentssatserna för dessa dagar är i {policyCurrency}, men denna rapport ersätts i {currency}. Be en utläggsadministratör att lägga till satser i {currency}.",
+          "end": "Ange när du var tillbaka hemma eller på din arbetsplats.",
+          "exceptional": "Denna resplan kräver en manuell traktamentsberäkning av en utläggsadministratör. Den beräknas inte automatiskt.",
+          "locations": "Ange för varje resdag var du befann dig vid midnatt och var din sista affärsaktivitet utomlands ägde rum.",
+          "meals": "Bekräfta tillhandahållna måltider för varje resdag.",
+          "overnight": "Ange om du övernattade borta från hemmet.",
+          "policyMissing": "Din organisation har inga traktamentssatser för {dates}. Be en utläggsadministratör att lägga till daterade satser i inställningarna för reseutlägg. Ingenting beräknas förrän dess.",
+          "start": "Ange när du lämnade hemmet eller din arbetsplats.",
+          "tripDates": "Dina avrese- och återresedagar måste vara resans första och sista resdag."
+        },
+        "return": "Återresa",
+        "rulesApplied": "Regler: {reference} ({version})",
+        "title": "Traktamente",
+        "total": "Traktamente"
+      },
+      "project": {
+        "exceptionBadge": "Tillskrivningsundantag",
+        "exceptionDates": "Omfattar",
+        "exceptionEvidence": "Underlag",
+        "exceptionReason": "Anledning",
+        "fromTrip": "(resans projekt)",
+        "inheritNamed": "Samma som resan ({name})",
+        "inheritNone": "Samma som resan (inget projekt)",
+        "label": "Projekt (valfritt)",
+        "loadFailed": "Projekten kunde inte läsas in.",
+        "needsDate": "Ange kvittodatumet för att se vilka projekt du kan använda den dagen.",
+        "needsTripDates": "Ange resedatumen för att se vilka projekt du kan använda på den här resan.",
+        "none": "Inget projekt",
+        "noneEligible": "Du hade ingen projekttilldelning detta datum. Om du arbetade i ett projekt då kan en utläggsadministratör godkänna ett allokeringsundantag.",
+        "notEligible": "{name} kan inte användas detta datum: du var inte tilldelad det då. Välj ett annat projekt eller be en utläggsadministratör om ett allokeringsundantag.",
+        "refused": {
+          "conflict": "Det här utlägget har ändrats på annat håll. Lös spakonflikten ovan och välj sedan projektet igen.",
+          "dateRequired": "Ange datumet först: projekt visas utifrån utläggsdatumet.",
+          "failed": "Projektet kunde inte sparas. Försök igen.",
+          "ineligible": "Du var inte tilldelad det här projektet det datumet. Be en utläggsadministratör om ett allokeringsundantag om du arbetade i det.",
+          "notFound": "Det här projektet är inte tillgängligt."
+        },
+        "saving": "Sparar projekt…",
+        "tripDescription": "Utlägg använder resans projekt såvida du inte väljer ett annat för dem. Varje utlägg måste täckas av din projekttilldelning på dess eget datum.",
+        "tripLabel": "Resans projekt (valfritt)",
+        "unavailableOption": "{name} (inte tillgängligt detta datum)",
+        "unavailableTripOption": "{name} (inte tillgängligt dessa datum)",
+        "viaException": "godkänt undantag"
+      },
+      "receiptException": {
+        "badge": "Kvitto saknas – undantag",
+        "disabled": "Din organisation tillåter inte längre undantag för saknade kvitton. Bifoga kvittot eller ta bort din förklaring.",
+        "notAllowed": "Din organisation tillåter inte undantag för saknade kvitton.",
+        "reason": "Varför saknas kvittot?",
+        "reasonDescription": "Din granskare ser den här förklaringen och måste acceptera den för att godkänna rapporten.",
+        "reasonLabel": "Varför det saknas:",
+        "reasonRequired": "Förklara varför kvittot saknas.",
+        "receiptAttached": "Ett kvitto är bifogat, så din förklaring om saknat kvitto skickas inte in.",
+        "request": "Jag kan inte tillhandahålla kvittot och begär ett undantag",
+        "title": "Inget kvitto?",
+        "unsavedAfterClose": "Din förklaring om saknat kvitto kunde inte sparas. Öppna utlägget igen för att kontrollera det.",
+        "withdraw": "Ta bort förklaring"
+      },
+      "receipts": {
+        "chooseFile": "Välj fil",
+        "description": "Ta ett foto eller bifoga en PDF eller bild på kvittot.",
+        "downloadNamed": "Ladda ner {fileName}",
+        "none": "Inget kvitto har bifogats än.",
+        "previewNamed": "Förhandsgranska {fileName}",
+        "progress": "Uppladdningsförlopp",
+        "remove": "Ta bort",
+        "removeFailed": "Kvittot kunde inte tas bort.",
+        "removeNamed": "Ta bort {fileName}",
+        "takePhoto": "Ta foto",
+        "title": "Kvitto",
+        "uploadFailed": "Kvittot bifogades inte.",
+        "uploading": "Laddar upp kvitto…",
+        "verifying": "Kontrollerar kvittot…"
+      },
+      "rejectedBy": "Avvisad av {name}",
+      "reopen": {
+        "action": "Återöppna för korrigering",
+        "changed": "Rapporten ändrades under tiden och öppnades inte igen. Granska den igen.",
+        "confirm": "Återöppna rapport",
+        "description": "Den anställde kan korrigera rapporten och måste skicka in den igen för ett nytt godkännande. Tills dess kan den varken betalas ut eller exporteras. Den godkända inskickningen sparas i historiken.",
+        "done": "Rapporten har återöppnats för korrigering",
+        "exported": "Den här rapporten har redan exporterats till bokföringen och kan därför inte längre återöppnas. Korrigeringar kräver en länkad justering.",
+        "failed": "Rapporten kunde inte återöppnas. Den kan ha ändrats, eller så har du inte längre behörighet. Ladda om och försök igen.",
+        "reason": "Orsak till den anställde",
+        "reasonRequired": "Berätta för den anställde vad som behöver korrigeras.",
+        "reasonTooLong": "Håll orsaken under {max} tecken.",
+        "reimbursed": "En ersättning har redan registrerats för den här rapporten, så den kan inte längre återöppnas. Korrigeringar kräver en länkad justering.",
+        "reopenedBy": "Återöppnad för korrigering av {name} den {date}",
+        "title": "Vill du återöppna den här godkända rapporten?"
+      },
+      "requirements": {
+        "amount": "Ange kvittobeloppet.",
+        "category": "Välj en kategori.",
+        "complete": "Allt för den här utgiften är ifyllt.",
+        "conversionEvidence": "Välj bilagan som visar kortdebiteringen.",
+        "conversionMissing": "Konvertera detta kvitto till {currency}: ange din kortdebitering med bilagan som visar den, eller be en utgiftsadministratör om en dokumenterad växelkurs.",
+        "conversionRateDate": "Den auktoriserade kursens datum matchar inte längre utgiftsdatumet. Ange din kortdebitering, eller be en utgiftsadministratör att dokumentera en kurs för det nya datumet.",
+        "conversionUnsupported": "Den här konverteringen kan inte användas för {currency}. Be en utgiftsadministratör att kontrollera den.",
+        "description": "Beskriv utgiften.",
+        "expenseDate": "Lägg till datumet på kvittot.",
+        "fixFields": "Korrigera de markerade fälten först.",
+        "paidBy": "Ange om du eller företaget betalade.",
+        "receipt": "Bifoga kvittot.",
+        "receiptExceptionNotAllowed": "Bifoga kvittot. Din organisation tillåter inte undantag för saknade kvitton.",
+        "receiptExceptionReason": "Förklara varför kvittot saknas.",
+        "title": "Krävs fortfarande"
+      },
+      "returnedBy": "Returnerad för ändringar av {name} den {date}",
+      "returnedItem": "Utgift {number} ({description}):",
+      "save": {
+        "conflictDescription": "Den sparades i ett annat fönster eller på en annan enhet efter att du öppnade den. Dina senaste ändringar har inte sparats än.",
+        "conflictTitle": "Den här utgiften ändrades någon annanstans",
+        "failedDescription": "Dina ändringar finns kvar på den här sidan. Kontrollera din anslutning och försök igen.",
+        "failedTitle": "Dina ändringar kunde inte sparas",
+        "invalid": "Korrigera de markerade fälten för att spara dem",
+        "keepMine": "Spara mina ändringar istället",
+        "pending": "Osparade ändringar",
+        "retry": "Försök igen",
+        "saved": "Alla ändringar sparade",
+        "saving": "Sparar…",
+        "unsavedAfterClose": "Dina senaste ändringar av en utgift kunde inte sparas. Öppna den igen för att kontrollera den.",
+        "useTheirs": "Läs in den sparade versionen"
+      },
+      "standaloneTitle": "Fristående kvitto",
+      "status": {
+        "approved": "Godkänd",
+        "rejected": "Avvisad",
+        "returned": "Returnerad för ändringar",
+        "submitted": "Väntar på granskning"
+      },
+      "submissionNumberAt": "Inlämning {number}, skickades {date}",
+      "submit": {
+        "adjustment": "Rapporten som denna justering korrigerar är inte längre godkänd i den här valutan, så ingen beräknad skillnad kan tas fram. Din justering förblir sparad som ett utkast.",
+        "adjustmentSuperseded": "En annan justering av samma rapport godkändes efter att du påbörjade denna, och den här kopian innehåller inte den korrigeringen. Starta en ny justering från den ursprungliga rapporten så att båda korrigeringarna behålls.",
+        "adjustmentTitle": "Den här justeringen kan inte skickas in",
+        "blockedIncomplete": "Slutför allt som listas under ”Krävs fortfarande” innan du skickar in.",
+        "blockedUnsaved": "Vänta tills alla ändringar har sparats, eller korrigera de markerade fälten, innan du skickar in.",
+        "cancel": "Fortsätt redigera",
+        "changed": "Rapporten ändrades efter att du granskade den. Stäng den här dialogrutan, kontrollera dina uppgifter och granska den igen.",
+        "changedTitle": "Rapporten har ändrats",
+        "confirm": "Skicka för godkännande",
+        "description": "Kontrollera den sparade rapporten. Din granskare fattar beslut om exakt denna version; den kan inte redigeras medan den granskas.",
+        "failed": "Något gick fel. Din rapport är fortfarande sparad som ett utkast; försök igen.",
+        "failedTitle": "Rapporten skickades inte in",
+        "incomplete": "Vissa sparade uppgifter saknas fortfarande. Fyll i allt som listas under ”Behövs fortfarande” och försök igen.",
+        "incompleteTitle": "Rapporten är ofullständig",
+        "noReviewer": "Du har ingen chef eller teamchef förutom dig själv, och ingen utgiftsgodkännare har konfigurerats. Be en administratör att tilldela en. Din rapport förblir sparad som ett utkast.",
+        "noReviewerTitle": "Ingen kan granska den här rapporten än",
+        "notSaved": "Vissa ändringar har inte sparats än. Vänta tills de har sparats och granska sedan rapporten igen.",
+        "project": "{count, plural, one {En utgift är kopplad till ett projekt du inte var tilldelad på utgiftsdatumet. Välj ett annat projekt eller be en utgiftsadministratör om ett undantag för tilldelning. Din rapport förblir sparad som ett utkast.} other {# utgifter är kopplade till ett projekt du inte var tilldelad på utgiftsdatumet. Välj ett annat projekt eller be en utgiftsadministratör om ett undantag för tilldelning. Din rapport förblir sparad som ett utkast.}}",
+        "projectTitle": "Ett projekt kan inte användas",
+        "ready": "Dina uppgifter har sparats. Granska rapporten och skicka den för godkännande.",
+        "requesterInactive": "Din medarbetarprofil är inte aktiv i den här organisationen, så rapporten kan inte vidarebefordras för granskning.",
+        "review": "Granska och skicka in",
+        "routing": "Din organisations godkännanderegler kunde inte hitta någon granskare. Be en administratör att kontrollera dem. Din rapport förblir sparad som ett utkast.",
+        "routingTitle": "Rapporten kunde inte vidarebefordras",
+        "selfApproval": "Din organisations godkännanderegler skulle tillåta dig att godkänna din egen rapport. Be en administratör att justera dem. Din rapport förblir sparad som ett utkast.",
+        "success": "Rapporten har skickats för godkännande",
+        "thresholdCurrency": "Din organisations godkännanderegler jämför belopp i EUR, men den här rapporten är i {currency}. Be en administratör att kontrollera dem. Din rapport förblir sparad som ett utkast.",
+        "title": "Skicka in utgiftsrapport",
+        "unavailable": "Din organisation ändrar hur utgiftsgodkännanden fungerar, så rapporter kan inte skickas in just nu. Din rapport förblir sparad som ett utkast.",
+        "unavailableTitle": "Inlämningen är pausad"
+      },
+      "submittedAt": "Inlämnad {date}",
+      "submittedTitle": "Inlämnad utläggsrapport",
+      "summary": {
+        "paidByCompany": "Betalat av företaget",
+        "paidByEmployee": "Betalat av dig"
+      },
+      "title": "Utlägg",
+      "totals": {
+        "companyPaid": "Betalat av företaget",
+        "excluded": "{count, plural, other {# utlägg räknas inte ännu. Totalsummor inkluderar utlägg i {currency} där belopp och betalare har angetts.} }",
+        "reimbursable": "Återbetalas till dig",
+        "title": "Totalsummor"
+      },
+      "trip": {
+        "dates": "Resedatum",
+        "datesZone": "(kalenderdagar i {timeZone})",
+        "destinations": "Resmål",
+        "errors": {
+          "destination": "Välj ett land i listan.",
+          "endBeforeStart": "Den sista resdagen kan inte vara före den första.",
+          "timeZone": "Välj en tidszon i listan.",
+          "tooManyDestinations": "Ange högst {max} resmål."
+        },
+        "fields": {
+          "addDestination": "Lägg till resmål",
+          "country": "Land {number}",
+          "countryPlaceholder": "Land",
+          "destinations": "Resmål",
+          "endDate": "Sista resdag",
+          "noDestinations": "Lägg till platserna du reser till.",
+          "place": "Plats {number}",
+          "placePlaceholder": "Stad eller plats",
+          "purpose": "Resans syfte",
+          "purposePlaceholder": "t.ex. kundworkshop i Hamburg",
+          "removeDestination": "Ta bort destination {number}",
+          "startDate": "Första resdagen",
+          "timeZone": "Tidszon för resedatumen",
+          "timeZoneDescription": "Resedatum är kalenderdagar i {timeZone}. Granskare ser samma datum, oavsett var de befinner sig."
+        },
+        "purpose": "Resans syfte",
+        "requirements": {
+          "complete": "Allt för den här resan har angetts.",
+          "destination": "Lägg till minst en destination.",
+          "expenseItem": "Lägg till ett utlägg.",
+          "expenseNamed": "Utlägg {number}: {description}",
+          "fixFields": "Korrigera de markerade reseuppgifterna.",
+          "purpose": "Beskriv resans syfte.",
+          "title": "Krävs fortfarande för den här resan",
+          "travelDates": "Ange första och sista resdagen."
+        },
+        "title": "Reseuppgifter",
+        "unsavedAfterClose": "Dina senaste ändringar av reseuppgifterna kunde inte sparas. Öppna resan igen för att kontrollera dem."
+      },
+      "withdraw": {
+        "action": "Återkalla rapport",
+        "confirm": "Återkalla",
+        "description": "Granskningen avbryts och rapporten blir ett redigerbart utkast igen. Den här inskickade versionen finns kvar i rapportens historik.",
+        "done": "Rapporten har återkallats. Du kan redigera den igen.",
+        "failed": "Rapporten kunde inte återkallas. Försök igen.",
+        "notPending": "Den här inskickade versionen har redan beslutats eller returnerats och kan därför inte längre återkallas.",
+        "title": "Vill du återkalla den här rapporten?"
+      },
+      "withdrawnNotice": "Du återkallade inskickning {number}. Skicka in rapporten igen när den är klar.",
+      "withdrawnSubmission": "Den här inskickade rapporten drogs tillbaka innan ett beslut fattades."
+    },
+    "settlement": {
+      "adjustment": "Inklusive godkänd justering",
+      "balance": {
+        "outstanding": "{amount} utestående",
+        "overpaid": "{amount} överbetalt",
+        "settled": "Reglerad"
+      },
+      "companyPaid": "Företagsbetalda kostnader på {amount} ska inte ersättas till den anställde.",
+      "entitlement": "Godkänt belopp betalt av anställd",
+      "entry": {
+        "recordedBy": "Registrerad av {name}, {date}",
+        "recovery": "Återfått {amount}",
+        "reimbursement": "Betalat {amount}"
+      },
+      "errors": {
+        "amountInvalid": "Ange ett positivt belopp.",
+        "amountPrecision": "Den här valutan har inte så många decimaler.",
+        "amountRequired": "Ange det betalda beloppet.",
+        "conflict": "Ett tidigare försök med andra värden har redan registrerats. Kontrollera historiken innan du registrerar igen.",
+        "dateFuture": "En betalning kan inte ha ett framtida datum.",
+        "dateInvalid": "Ange ett giltigt datum.",
+        "dateRequired": "Ange betalningsdatum.",
+        "exceedsOutstanding": "Beloppet är högre än det utestående beloppet.",
+        "exceedsOverpayment": "Beloppet är högre än det som betalades för mycket.",
+        "failed": "Betalningen kunde inte registreras. Försök igen.",
+        "load": "Det gick inte att läsa in ersättningssaldot. Försök igen.",
+        "noOverpayment": "Inget betalades för mycket för det här utlägget.",
+        "notApproved": "Det här utlägget är inte längre godkänt, så ingen betalning kan registreras.",
+        "nothingOutstanding": "Det finns inget utestående för det här utlägget.",
+        "ownExpense": "Du kan inte registrera betalningar för dina egna utlägg.",
+        "referenceRequired": "Ange betalningsreferensen, t.ex. referensen för banköverföringen.",
+        "refused": "Denna betalning kan inte registreras för detta utlägg.",
+        "staleBalance": "Saldot ändrades medan du registrerade betalningen. Kontrollera det uppdaterade saldot och registrera den igen.",
+        "tooLong": "Den här texten är för lång."
+      },
+      "form": {
+        "amount": "Betalat belopp ({currency})",
+        "date": "Betalningsdatum",
+        "label": "Registrera en ersättning",
+        "note": "Anteckning (valfritt)",
+        "notice": "Registrera pengar som redan har betalats till den anställde. Z8 överför inga pengar.",
+        "reference": "Betalningsreferens",
+        "referenceHint": "Till exempel referensen för banköverföringen eller lönekörningen.",
+        "submit": "Registrera ersättning"
+      },
+      "history": "Registrerade betalningar",
+      "loading": "Läser in ersättningssaldo…",
+      "ownerOutstanding": "Ekonomiavdelningen registrerar din ersättning här när den har betalats.",
+      "ownerOverpaid": "Mer betalades ut än vad som nu är godkänt. Ekonomiavdelningen registrerar här när mellanskillnaden har återbetalats; Z8 överför inga pengar.",
+      "recorded": "Ersättning registrerad.",
+      "recordedAlready": "Denna betalning har redan registrerats.",
+      "recovered": "Återvunnet",
+      "recoveryForm": {
+        "amount": "Återbetalat belopp ({currency})",
+        "date": "Återbetalningsdatum",
+        "label": "Registrera en återbetalning",
+        "notice": "Den anställde fick mer utbetalt än vad som nu är godkänt. Registrera pengar som denne redan har återbetalat för att reglera överbetalningen; den ursprungliga ersättningen förblir oförändrad och ingenting kvittas mot andra rapporter. Z8 överför inga pengar.",
+        "submit": "Registrera återbetalning"
+      },
+      "recoveryRecorded": "Återbetalning registrerad.",
+      "reimbursed": "Återbetald",
+      "state": {
+        "mixed": "Kräver granskning",
+        "outstanding": "Utestående",
+        "overpaid": "Överbetald",
+        "settled": "Reglerad"
+      },
+      "title": "Återbetalning"
+    },
+    "status": {
+      "draft": "Utkast"
+    },
+    "title": "Reseutlägg",
+    "workspace": {
+      "description": "Samla reseutlägg och fristående utlägg, skicka dem för granskning och följ deras återbetalning."
+    }
   }
 }

@@ -156,7 +156,7 @@
         "title": "Einladungen"
       },
       "lifecycle": {
-        "actionsLabel": "Mitarbeiteraktionen für {name}",
+        "actionsLabel": "Mitarbeiteraktionen für ${target.displayName}",
         "deactivate": "Deaktivieren",
         "deactivateDescription": "Dies sperrt den Zugriff auf diese Organisation und beendet laufende Sitzungen. Der Mitarbeiterverlauf bleibt erhalten.",
         "deactivateError": "Mitarbeiter konnte nicht deaktiviert werden",
@@ -178,9 +178,7 @@
         "removeSuccess": "Organisationszugriff entfernt",
         "removeTitle": "Organisationszugriff entfernen?",
         "removing": "Zugriff wird entfernt...",
-        "removingStatus": "Organisationszugriff wird entfernt",
-        "finalOwnerDeactivateGuidance": "Weisen Sie zuerst einen anderen bestätigten Eigentümer zu und aktivieren Sie ihn, bevor Sie diesen Mitarbeiter deaktivieren.",
-        "finalOwnerRemoveGuidance": "Weisen Sie zuerst einen anderen bestätigten Eigentümer zu und aktivieren Sie ihn, bevor Sie diesem Mitarbeiter den Zugriff entziehen."
+        "removingStatus": "Organisationszugriff wird entfernt"
       },
       "offboarding": {
         "acknowledgeDuties": "Admins werden die {count} offenen Genehmigungsaufgaben erledigen.",

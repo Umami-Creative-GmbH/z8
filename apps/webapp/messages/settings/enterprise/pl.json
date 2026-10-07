@@ -518,7 +518,7 @@
           "review": "Przejrzyj i aktywuj",
           "review.description": "Aktywacja zabezpieczenia",
           "scim": "Aprowizacja SCIM",
-          "scim.description": "Połącz i zarządzaj połączeniem aprowizacji SCIM",
+          "scim.description": "Wydaj token aprowizacyjny",
           "sso": "Konfiguracja SSO",
           "sso.description": "Zarejestruj OIDC lub SAML",
           "ssoTest": "Użytkownik testowy",

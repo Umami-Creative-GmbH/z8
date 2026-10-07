@@ -518,7 +518,7 @@
           "review": "Überprüfe & Aktiviere",
           "review.description": "Aktivierigsschutz",
           "scim": "SCIM-Provisioning",
-          "scim.description": "SCIM-Provisioning-Verbindig verbinde und verwalte",
+          "scim.description": "Provisioning-Token usgäh",
           "sso": "SSO-Konfiguration",
           "sso.description": "OIDC oder SAML registriere",
           "ssoTest": "Test-Benutzer",

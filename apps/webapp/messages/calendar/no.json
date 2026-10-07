@@ -283,10 +283,12 @@
       "monthTotal": "Månedstotal",
       "nextMonth": "Neste måned",
       "previousMonth": "Forrige måned",
+      "recordedOnlyDayLabel": "{date}: {actual} registrert.",
       "totalDescription": "Registrert tid sammenlignet med retningslinjetimer",
       "weekSum": "Sum"
     },
     "requirements": {
+      "includesRunningWork": "Inkluderer pågående arbeid",
       "status": {
         "met": "krav oppfylt",
         "missing": "mangler registrert tid",

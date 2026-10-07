@@ -283,17 +283,18 @@
       "monthTotal": "Ay toplamı",
       "nextMonth": "Gelecek ay",
       "previousMonth": "Önceki ay",
+      "recordedOnlyDayLabel": "{date}: {actual} kaydedildi.",
       "totalDescription": "Politika saatleri ile karşılaştırılan kaydedilmiş zaman",
       "weekSum": "Toplam"
     },
     "requirements": {
+      "includesRunningWork": "Devam eden çalışmaları içerir",
       "status": {
         "met": "gereksinim karşılandı",
         "missing": "eksik kaydedilen süre",
         "over": "gereksinimin üzerinde",
         "under": "gereksinimin altında"
-      },
-      "dayLabel": "{date}: {actual} kaydedildi, {required} gerekli, {delta} {status}."
+      }
     },
     "split": {
       "ambiguousTime": "Hangi yinelemenin kullanılacağını seçin",
@@ -346,11 +347,6 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
-    },
-    "calendar": {
-      "break": {
-        "titleWithDuration": "Mola – {duration}"
-      }
     }
   }
 }

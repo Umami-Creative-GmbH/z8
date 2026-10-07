@@ -40,8 +40,7 @@
       "errors": {
         "invalidTimeRange": "O horário de saída deve ser posterior ao horário de entrada",
         "submitFailed": "Falha ao enviar correção",
-        "updateFailed": "Falha ao atualizar registro de tempo",
-        "noChanges": "É necessário alterar pelo menos um valor da correção"
+        "updateFailed": "Falha ao atualizar registro de tempo"
       },
       "noteLabel": "Nota (opcional)",
       "notePlaceholder": "Adicione uma nota sobre esta alteração...",
@@ -59,9 +58,7 @@
         "submitted": "Solicitação de correção enviada para aprovação do gerente",
         "updated": "Registro de tempo atualizado com sucesso"
       },
-      "timezoneNote": "Os horários estão no seu fuso horário local ({timezone})",
-      "clockInTime": "Hora de entrada",
-      "clockOutTime": "Hora de saída"
+      "timezoneNote": "Os horários estão no seu fuso horário local ({timezone})"
     },
     "currentlyClockedIn": "Você registrou a entrada atualmente",
     "deadline": "Prazo",
@@ -272,12 +269,7 @@
     "unknownCategory": "Categoria desconhecida",
     "unknownProject": "Projeto desconhecido",
     "welcomeBack": "Bem-vindo de volta, {name}",
-    "workCategory": "Categoria de Trabalho",
-    "workLocation": "Local de trabalho",
-    "workLocationHome": "Casa",
-    "workLocationOffice": "Escritório",
-    "workLocationOther": "Outro",
-    "workLocationRemote": "Remoto"
+    "workCategory": "Categoria de Trabalho"
   },
   "wellness": {
     "water": {

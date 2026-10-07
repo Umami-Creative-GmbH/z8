@@ -21,6 +21,7 @@
     "clockIn": "Clock in",
     "clockOut": "Clock out",
     "confirmReject": "Confirm Rejection",
+    "confirmReturn": "Return for changes",
     "date": "Date",
     "dates": "Dates",
     "days": "Days",
@@ -62,6 +63,7 @@
       "outcomeApproved": "Approved",
       "outcomeRejected": "Rejected",
       "project": "Project",
+      "receiptExceptionsTitle": "Missing receipts",
       "receipts": "Receipts",
       "request": "Request",
       "requestedBy": "Requested by",
@@ -93,12 +95,18 @@
     "notes": "Notes",
     "noTimeCorrectionApprovals": "No pending time correction requests to review.",
     "offFrom": "off from",
-    "openDetailsFor": "Open details for {title}",
+    "openDetailsFor": "Open details for ${item.summary.title}",
     "openInbox": "Open Inbox",
     "original": "Original",
     "pendingRequests": "Pending Requests",
     "pendingRequestsDescription": "Select requests to approve in bulk, or click a row for details",
     "reason": "Reason",
+    "receiptExceptions": {
+      "accept": "Accept missing receipt for {label}",
+      "instructions": "These expenses have no receipt. To approve the report, accept each explanation. You can reject the report without accepting them.",
+      "readOnly": "These expenses were submitted without a receipt, with the employee's explanation.",
+      "reason": "Explanation:"
+    },
     "reject": "Reject",
     "rejected": "Request rejected",
     "rejectFailed": "Failed to reject",
@@ -110,12 +118,29 @@
     "rejectSelected": "Reject Selected",
     "rejectTimeCorrectionTitle": "Reject Time Correction",
     "rejectTitle": "Reject Absence Request",
+    "reportReturned": "Report returned for changes",
     "requested": "Requested",
     "requestedCorrection": "Requested Correction",
     "requestedToday": "Today",
     "requester": "Requester",
     "requestingCorrection": "is requesting a time correction for",
     "requestingOff": "is requesting",
+    "retry": "Retry",
+    "returnCommentTooLong": "Keep the comment under {max} characters.",
+    "returnItemComments": "Comments on expenses (optional)",
+    "returnItemLabel": "Expense {number}",
+    "returnNote": "Note to the employee",
+    "returnNoteRequired": "Tell the employee what to change.",
+    "returnNoteTooLong": "Keep the note under {max} characters.",
+    "returnReport": "Return",
+    "returnReportConflict": "This report was decided, returned or changed meanwhile. Reload it to see its current state.",
+    "returnReportDescription": "The employee can correct the report and submit it again. This submission, your note and comments stay in its history.",
+    "returnReportFailed": "The report could not be returned. Please retry.",
+    "returnReportInvalid": "Check the note and comments: a note is required and each text must fit its limit.",
+    "returnReportLoadFailed": "Unable to load the submitted report. Please retry.",
+    "returnReportLoading": "Loading the submitted report…",
+    "returnReportNotFound": "This report is no longer yours to review.",
+    "returnReportTitle": "Return report for changes",
     "review": {
       "showDetails": "Show details",
       "switchOrganizationAction": "Switch to {organization}",
@@ -128,7 +153,7 @@
     "searchLabel": "Search approvals",
     "searchPlaceholder": "Search by name or email…",
     "selectAll": "Select all",
-    "selectedCount": "{selectedCount} selected",
+    "selectedCount": "${selectedCount} selected",
     "selectRow": "Select row",
     "timeComparison": "Time comparison",
     "timeCorrectionApproved": "Time correction approved",
@@ -137,27 +162,29 @@
     "timeCorrectionsDescription": "Review and approve time entry correction requests from your team members",
     "timelineActor": "{at} by {actorName}",
     "title": "Approvals",
-    "totalCount": "{totalCount} pending",
+    "totalCount": "${totalCount} pending",
     "type": "Type",
     "types": {
       "absence_entry": "Absence Requests",
       "time_entry": "Time Corrections",
-      "travel_expense_claim": "Travel Expenses"
+      "travel_expense_claim": "Travel Expenses",
+      "travel_expense_report": "Expense Reports"
     },
     "unifiedInboxBannerDescription": "View all approval types in one place with filtering, bulk actions, and SLA tracking.",
     "unifiedInboxBannerTitle": "Try the new Unified Inbox",
+    "viewExpenseClaim": "View claim and receipts",
+    "viewExpenseReport": "View submitted report and receipts",
     "workCategory": "Work category",
     "workCategoryUnavailable": "Unknown category (unavailable)",
-    "workLocation": "Work location",
-    "viewExpenseClaim": "View claim and receipts"
+    "workLocation": "Work location"
   },
   "fastLanes": {
     "approve": "Approve",
-    "approveGroup": "Approve {label}",
+    "approveGroup": "Approve ${label}",
     "confirmReject": "Confirm reject",
-    "confirmRejectGroup": "Confirm reject {label}",
+    "confirmRejectGroup": "Confirm reject ${label}",
     "description": "Review similar low-friction requests in batches.",
-    "expandGroup": "Expand {label}",
+    "expandGroup": "Expand ${label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Absences with no detected conflicts.",
@@ -176,24 +203,25 @@
         "label": "Stale requests"
       }
     },
-    "notEligibleApprove": "{notApprovableCount} not eligible for bulk approve",
-    "notEligibleReject": "{notRejectableCount} not eligible for bulk reject",
+    "notEligibleApprove": "${notApprovableCount} not eligible for bulk approve",
+    "notEligibleReject": "${notRejectableCount} not eligible for bulk reject",
     "reject": "Reject",
-    "rejectGroup": "Reject {label}",
+    "rejectGroup": "Reject ${label}",
     "rejectReason": "Bulk reject reason",
     "risk": {
       "high": "High risk",
       "low": "Low risk",
       "medium": "Medium risk"
     },
-    "showGroup": "Show {label}",
+    "showGroup": "Show ${label}",
     "title": "Fast lanes"
   },
   "sprint": {
-    "age": "{ageDays}d old",
+    "age": "${item.timing.ageDays}d old",
     "approve": "Approve",
     "approveCurrentApproval": "Approve current approval",
     "capabilities": {
+      "approveInDetails": "Open the details to accept its exceptions and approve",
       "approveUnavailable": "Approval unavailable",
       "bulkApprove": "Bulk eligible",
       "rejectUnavailable": "Rejection unavailable"
@@ -208,7 +236,7 @@
       "normal": "Normal priority",
       "urgent": "Urgent priority"
     },
-    "progress": "{current} of {total}",
+    "progress": "${currentIndex + 1} of ${visibleItems.length}",
     "reject": "Reject",
     "rejectCurrentApproval": "Reject current approval",
     "rejectReason": "Sprint reject reason",
@@ -232,7 +260,8 @@
     "types": {
       "absenceEntry": "Absence request",
       "timeEntry": "Time entry",
-      "travelExpenseClaim": "Travel expense claim"
+      "travelExpenseClaim": "Travel expense claim",
+      "travelExpenseReport": "Expense report"
     }
   }
 }

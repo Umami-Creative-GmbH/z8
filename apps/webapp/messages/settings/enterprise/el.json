@@ -518,7 +518,7 @@
           "review": "Επανεξέταση & Ενεργοποίηση",
           "review.description": "Ενεργοποίηση διασφάλισης",
           "scim": "Παροχή SCIM",
-          "scim.description": "Συνδέστε και διαχειριστείτε τη σύνδεση παροχής SCIM",
+          "scim.description": "Διακριτικό παροχής (provisioning token) έκδοσης",
           "sso": "Διαμόρφωση SSO",
           "sso.description": "Εγγραφή OIDC ή SAML",
           "ssoTest": "Χρήστης δοκιμής",

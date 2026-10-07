@@ -21,6 +21,7 @@
     "clockIn": "Giriş yap",
     "clockOut": "Çıkış yap",
     "confirmReject": "Reddi Onayla",
+    "confirmReturn": "Değişiklik için geri gönder",
     "date": "Tarih",
     "dates": "Tarihler",
     "days": "Günler",
@@ -62,6 +63,7 @@
       "outcomeApproved": "Onaylandı",
       "outcomeRejected": "Reddedildi",
       "project": "Proje",
+      "receiptExceptionsTitle": "Eksik fişler",
       "receipts": "Makbuzlar",
       "request": "Talep",
       "requestedBy": "Talep eden",
@@ -93,12 +95,18 @@
     "notes": "Notlar",
     "noTimeCorrectionApprovals": "İncelenecek bekleyen zaman düzeltme talebi yok.",
     "offFrom": "başlangıç tarihi",
-    "openDetailsFor": "{title} için detayları aç",
+    "openDetailsFor": "${item.summary.title} için detayları aç",
     "openInbox": "Gelen Kutusunu Aç",
     "original": "Orijinal",
     "pendingRequests": "Bekleyen Talepler",
     "pendingRequestsDescription": "Toplu onaylamak için talepleri seçin veya detaylar için bir satıra tıklayın",
     "reason": "Neden",
+    "receiptExceptions": {
+      "accept": "{label} için eksik fişi kabul et",
+      "instructions": "Bu harcamaların fişi yok. Raporu onaylamak için her açıklamayı kabul edin. Açıklamaları kabul etmeden de raporu reddedebilirsiniz.",
+      "readOnly": "Bu harcamalar fiş olmadan, çalışanın açıklamasıyla birlikte gönderildi.",
+      "reason": "Açıklama:"
+    },
     "reject": "Reddet",
     "rejected": "Talep reddedildi",
     "rejectFailed": "Reddetme başarısız oldu",
@@ -110,12 +118,29 @@
     "rejectSelected": "Seçilenleri Reddet",
     "rejectTimeCorrectionTitle": "Zaman Düzeltmesini Reddet",
     "rejectTitle": "İzin Talebini Reddet",
+    "reportReturned": "Rapor değişiklik için geri gönderildi",
     "requested": "Talep edilen",
     "requestedCorrection": "Talep Edilen Düzeltme",
     "requestedToday": "Bugün",
     "requester": "Talep eden",
     "requestingCorrection": "şunun için bir zaman düzeltmesi talep ediyor:",
     "requestingOff": "talep ediyor",
+    "retry": "Yeniden Dene",
+    "returnCommentTooLong": "Yorumu {max} karakterin altında tutun.",
+    "returnItemComments": "Harcamalara ilişkin yorumlar (isteğe bağlı)",
+    "returnItemLabel": "Harcama {number}",
+    "returnNote": "Çalışana not",
+    "returnNoteRequired": "Çalışana neleri değiştirmesi gerektiğini belirtin.",
+    "returnNoteTooLong": "Notu {max} karakterin altında tutun.",
+    "returnReport": "Geri Gönder",
+    "returnReportConflict": "Bu rapor bu sırada karara bağlandı, geri gönderildi veya değiştirildi. Güncel durumunu görmek için yeniden yükleyin.",
+    "returnReportDescription": "Çalışan raporu düzelterek tekrar gönderebilir. Bu gönderim, notunuz ve yorumlarınız raporun geçmişinde saklanır.",
+    "returnReportFailed": "Rapor geri gönderilemedi. Lütfen tekrar deneyin.",
+    "returnReportInvalid": "Notu ve yorumları kontrol edin: Not girilmesi zorunludur ve her metin karakter sınırına uygun olmalıdır.",
+    "returnReportLoadFailed": "Gönderilen rapor yüklenemedi. Lütfen tekrar deneyin.",
+    "returnReportLoading": "Gönderilen rapor yükleniyor…",
+    "returnReportNotFound": "Bu rapor artık sizin incelemenizde değil.",
+    "returnReportTitle": "Raporu değişiklik için geri gönder",
     "review": {
       "showDetails": "Ayrıntıları göster",
       "switchOrganizationAction": "{organization} kuruluşuna geç",
@@ -128,7 +153,7 @@
     "searchLabel": "Onayları ara",
     "searchPlaceholder": "İsim veya e-posta ile ara…",
     "selectAll": "Tümünü seç",
-    "selectedCount": "{selectedCount} seçildi",
+    "selectedCount": "${selectedCount} seçildi",
     "selectRow": "Satırı seç",
     "timeComparison": "Zaman karşılaştırması",
     "timeCorrectionApproved": "Zaman düzeltmesi onaylandı",
@@ -137,26 +162,29 @@
     "timeCorrectionsDescription": "Ekip üyelerinizden gelen zaman girişi düzeltme taleplerini inceleyin ve onaylayın",
     "timelineActor": "{at} {actorName} tarafından",
     "title": "Onaylar",
-    "totalCount": "{totalCount} beklemede",
+    "totalCount": "${totalCount} beklemede",
     "type": "Tür",
     "types": {
       "absence_entry": "İzin Talepleri",
       "time_entry": "Zaman Düzeltmeleri",
-      "travel_expense_claim": "Seyahat Masrafları"
+      "travel_expense_claim": "Seyahat Masrafları",
+      "travel_expense_report": "Harcama Raporları"
     },
     "unifiedInboxBannerDescription": "Tüm onay türlerini filtreleme, toplu işlemler ve SLA takibi ile tek bir yerden görüntüleyin.",
     "unifiedInboxBannerTitle": "Yeni Birleşik Gelen Kutusunu deneyin",
+    "viewExpenseClaim": "Talebi ve fişleri görüntüle",
+    "viewExpenseReport": "Gönderilen raporu ve fişleri görüntüle",
     "workCategory": "İş kategorisi",
     "workCategoryUnavailable": "Bilinmeyen kategori (kullanılamıyor)",
     "workLocation": "Çalışma konumu"
   },
   "fastLanes": {
     "approve": "Onayla",
-    "approveGroup": "{label} öğesini onayla",
+    "approveGroup": "${label} öğesini onayla",
     "confirmReject": "Reddetmeyi onayla",
-    "confirmRejectGroup": "{label} öğesini reddetmeyi onayla",
+    "confirmRejectGroup": "${label} öğesini reddetmeyi onayla",
     "description": "Benzer düşük sürtünmeli talepleri toplu olarak inceleyin.",
-    "expandGroup": "{label} öğesini genişlet",
+    "expandGroup": "${label} öğesini genişlet",
     "groups": {
       "lowRiskAbsence": {
         "description": "Çakışma tespit edilmeyen devamsızlıklar.",
@@ -175,24 +203,25 @@
         "label": "Eski talepler"
       }
     },
-    "notEligibleApprove": "{notApprovableCount} toplu onay için uygun değil",
-    "notEligibleReject": "{notRejectableCount} toplu reddetme için uygun değil",
+    "notEligibleApprove": "${notApprovableCount} toplu onay için uygun değil",
+    "notEligibleReject": "${notRejectableCount} toplu reddetme için uygun değil",
     "reject": "Reddet",
-    "rejectGroup": "{label} öğesini reddet",
+    "rejectGroup": "${label} öğesini reddet",
     "rejectReason": "Toplu reddetme nedeni",
     "risk": {
       "high": "Yüksek risk",
       "low": "Düşük risk",
       "medium": "Orta risk"
     },
-    "showGroup": "{label} öğesini göster",
+    "showGroup": "${label} öğesini göster",
     "title": "Hızlı şeritler"
   },
   "sprint": {
-    "age": "{ageDays} gün önce",
+    "age": "${item.timing.ageDays} gün önce",
     "approve": "Onayla",
     "approveCurrentApproval": "Mevcut onayı onayla",
     "capabilities": {
+      "approveInDetails": "İstisnaları kabul etmek ve onaylamak için ayrıntıları açın",
       "approveUnavailable": "Onay kullanılamıyor",
       "bulkApprove": "Toplu işlem için uygun",
       "rejectUnavailable": "Reddetme kullanılamıyor"
@@ -207,7 +236,7 @@
       "normal": "Normal öncelik",
       "urgent": "Acil öncelik"
     },
-    "progress": "{total} üzerinden {current}",
+    "progress": "${visibleItems.length} üzerinden ${currentIndex + 1}",
     "reject": "Reddet",
     "rejectCurrentApproval": "Mevcut onayı reddet",
     "rejectReason": "Sprint reddetme nedeni",
@@ -231,7 +260,8 @@
     "types": {
       "absenceEntry": "İzin talebi",
       "timeEntry": "Zaman girişi",
-      "travelExpenseClaim": "Seyahat masrafı talebi"
+      "travelExpenseClaim": "Seyahat masrafı talebi",
+      "travelExpenseReport": "Harcama raporu"
     }
   }
 }

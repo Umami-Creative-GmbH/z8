@@ -156,7 +156,7 @@
         "title": "Convites"
       },
       "lifecycle": {
-        "actionsLabel": "Ações do funcionário para {name}",
+        "actionsLabel": "Ações do funcionário para ${target.displayName}",
         "deactivate": "Desativar",
         "deactivateDescription": "Isso suspende o acesso a esta organização e encerra as sessões que a utilizam atualmente. O histórico do funcionário é mantido.",
         "deactivateError": "Falha ao desativar funcionário",
@@ -178,9 +178,7 @@
         "removeSuccess": "Acesso à organização removido",
         "removeTitle": "Remover acesso à organização?",
         "removing": "Removendo acesso...",
-        "removingStatus": "Removendo acesso à organização",
-        "finalOwnerDeactivateGuidance": "Atribua e ative primeiro outro proprietário aprovado antes de desativar este funcionário.",
-        "finalOwnerRemoveGuidance": "Atribua e ative primeiro outro proprietário aprovado antes de remover o acesso deste funcionário."
+        "removingStatus": "Removendo acesso à organização"
       },
       "offboarding": {
         "acknowledgeDuties": "Os administradores resolverão as {count} tarefas de aprovação pendentes.",

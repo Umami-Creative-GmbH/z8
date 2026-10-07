@@ -283,17 +283,18 @@
       "monthTotal": "Monatssumme",
       "nextMonth": "Nächster Monat",
       "previousMonth": "Vorheriger Monat",
+      "recordedOnlyDayLabel": "{date}: {actual} erfasst.",
       "totalDescription": "Erfasste Zeit im Vergleich zu den Richtlinienstunden",
       "weekSum": "Summe"
     },
     "requirements": {
+      "includesRunningWork": "Enthält laufende Arbeiten",
       "status": {
         "met": "Vorgabe erfüllt",
         "missing": "Fehlende erfasste Zeit",
         "over": "Über Vorgabe",
         "under": "Unter Vorgabe"
-      },
-      "dayLabel": "{date}: {required} Sollzeit, {actual} erfasst, {delta} Differenz, {status}"
+      }
     },
     "split": {
       "ambiguousTime": "Wählen Sie das zu verwendende Vorkommen",
@@ -346,11 +347,6 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
-    },
-    "calendar": {
-      "break": {
-        "titleWithDuration": "Pause – {duration}"
-      }
     }
   }
 }
