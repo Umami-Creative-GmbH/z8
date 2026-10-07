@@ -1,3 +1,4 @@
+import { formatCountry } from "./country-name";
 import type { PerDiemDayLocation } from "./per-diem";
 import { listedPlaces } from "./per-diem-location";
 import { foreignAreaKey } from "./statutory-foreign-per-diem";
@@ -78,14 +79,6 @@ function readsOfficialNames(locale: string): boolean {
 	return language === "de" || language === "gsw";
 }
 
-function countryName(locale: string, code: string): string {
-	try {
-		return new Intl.DisplayNames([locale], { type: "region" }).of(code) ?? code;
-	} catch {
-		return code;
-	}
-}
-
 /** A listed place; a place without an English name keeps its official one. */
 function placeName(country: string, place: string, t: PerDiemNameTranslate): string {
 	const entry = PLACE_NAMES[foreignAreaKey(country, place)];
@@ -111,7 +104,7 @@ export function perDiemLocationName(
 	t: PerDiemNameTranslate,
 ): string {
 	if (readsOfficialNames(locale)) return location.label;
-	const country = countryName(locale, location.country);
+	const country = formatCountry(locale, location.country);
 	if (location.place) {
 		return t("travelExpenses.report.perDiem.location.countryPlace", "{country} – {place}", {
 			country,

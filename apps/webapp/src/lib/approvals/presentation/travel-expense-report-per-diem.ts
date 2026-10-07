@@ -60,15 +60,15 @@ const FALLBACK: Partial<Record<PerDiemDestinationRule, ApprovalInboxLocalizedTex
  * language (#681), and why when it is not the entered place.
  */
 function locationText(location: PerDiemDayLocation): ApprovalInboxLocalizedText {
-	const label = {
+	const name = {
 		perDiemLocation: { country: location.country, place: location.place, label: location.label },
 	};
 	const why = FALLBACK[location.rule];
-	if (!why) return text("perDiemLocation", "{label}", { label });
+	if (!why) return text("perDiemLocation", "{label}", { label: name });
 	const entered =
 		"special" in location.entered ? location.entered.special : location.entered.country;
 	return text("perDiemLocationFallback", "{label} ({entered}: {why})", {
-		label,
+		label: name,
 		entered,
 		why,
 	});
