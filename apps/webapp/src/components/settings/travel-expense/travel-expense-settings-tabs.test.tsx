@@ -195,4 +195,27 @@ describe("travel expense settings tabs (#689)", () => {
 		await client.invalidateQueries({ queryKey: ["travel-expenses", "settings"] });
 		expect(await screen.findByRole("tab", { name: "Exceptions, 2 pending" })).toBeTruthy();
 	});
+
+	it("follows the cards' cache when an allowance override is authorized or revoked", async () => {
+		actions.getAllowanceExceptionItems.mockResolvedValue({
+			success: true,
+			data: [allowanceItem("a1", false)],
+		});
+		const client = mount();
+		expect(await screen.findByRole("tab", { name: "Exceptions, 1 pending" })).toBeTruthy();
+
+		actions.getAllowanceExceptionItems.mockResolvedValue({
+			success: true,
+			data: [allowanceItem("a1", true)],
+		});
+		await client.invalidateQueries({ queryKey: ["travel-expenses", "settings"] });
+		expect(await screen.findByRole("tab", { name: "Exceptions" })).toBeTruthy();
+
+		actions.getAllowanceExceptionItems.mockResolvedValue({
+			success: true,
+			data: [allowanceItem("a1", false)],
+		});
+		await client.invalidateQueries({ queryKey: ["travel-expenses", "settings"] });
+		expect(await screen.findByRole("tab", { name: "Exceptions, 1 pending" })).toBeTruthy();
+	});
 });
