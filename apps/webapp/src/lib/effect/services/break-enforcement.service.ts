@@ -399,10 +399,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 						cause instanceof NotFoundError
 							? cause
 							: new DatabaseError({
-									message:
-										cause instanceof Error
-											? cause.message
-											: "Automatic break adjustment failed",
+									message: "Automatic break adjustment failed",
 									operation: "adjustAutomaticBreak",
 									cause,
 								}),

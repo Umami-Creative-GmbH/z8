@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { Cause, Effect, Exit } from "effect";
 import { approvalRequest, employee } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { failureOfCause } from "@/lib/effect/cause-failure";
+import { failureOfCause, isInterruptOnly } from "@/lib/effect/cause-failure";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -278,7 +278,7 @@ function runAfterCommitBestEffort<T, R>(
 		.afterCommit(result, dbService, entityId, currentEmployee)
 		.pipe(
 			Effect.catchCause((cause) => {
-				const error = Cause.hasInterruptsOnly(cause) ? Cause.pretty(cause) : failureOfCause(cause);
+				const error = isInterruptOnly(cause) ? Cause.pretty(cause) : failureOfCause(cause);
 				return Effect.sync(() =>
 					logger.error(
 						{
@@ -475,6 +475,9 @@ export function processApprovalWithCurrentEmployee<T, R = never>(
 			try: async () => {
 				let result: ApprovalExecutionResult<T> | undefined;
 				await dbService.db.transaction(async (tx) => {
+					// Keeps the caller's query instead of makeDatabaseService(tx): callers that pass
+					// the Effect.promise shape rely on domain errors thrown inside a query reaching
+					// them unwrapped (docs/refs/effect.md, Database Access).
 					const transactionalDbService: ApprovalDbService = {
 						db: tx,
 						query: dbService.query,

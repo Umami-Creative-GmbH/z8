@@ -18,8 +18,7 @@ import {
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import type { ServerActionResult } from "@/lib/effect/result";
-import { runtime } from "@/lib/effect/runtime";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
 import {
@@ -328,13 +327,7 @@ export async function getProjects(
 		},
 	);
 
-	return runtime
-		.runPromise(effect)
-		.then((data) => ({ success: true as const, data }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to get projects",
-		}));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -477,13 +470,7 @@ export async function createProject(
 		},
 	);
 
-	return runtime
-		.runPromise(effect)
-		.then((data) => ({ success: true as const, data }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to create project",
-		}));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -628,13 +615,7 @@ export async function updateProject(
 		},
 	);
 
-	return runtime
-		.runPromise(effect)
-		.then(() => ({ success: true as const, data: undefined }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to update project",
-		}));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -744,13 +725,7 @@ export async function addProjectManager(
 		},
 	);
 
-	return runtime
-		.runPromise(effect)
-		.then(() => ({ success: true as const, data: undefined }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to add project manager",
-		}));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -834,13 +809,7 @@ export async function removeProjectManager(
 		},
 	);
 
-	return runtime
-		.runPromise(effect)
-		.then(() => ({ success: true as const, data: undefined }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to remove project manager",
-		}));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -961,13 +930,7 @@ export async function addProjectAssignment(
 		},
 	);
 
-	return runtime
-		.runPromise(effect)
-		.then(() => ({ success: true as const, data: undefined }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to add project assignment",
-		}));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1080,13 +1043,7 @@ export async function removeProjectAssignment(
 		},
 	);
 
-	return runtime
-		.runPromise(effect)
-		.then(() => ({ success: true as const, data: undefined }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to remove project assignment",
-		}));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1134,13 +1091,7 @@ export async function getTeamsForSelection(
 		},
 	);
 
-	return runtime
-		.runPromise(effect)
-		.then((data) => ({ success: true as const, data }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to get teams",
-		}));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1198,11 +1149,5 @@ export async function getEmployeesForSelection(
 		},
 	);
 
-	return runtime
-		.runPromise(effect)
-		.then((data) => ({ success: true as const, data }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to get employees",
-		}));
+	return runServerActionSafe(effect);
 }

@@ -5,12 +5,11 @@ import { Effect, Exit } from "effect";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { timeEntry, workPeriod } from "@/db/schema";
-
+import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/server/work-period-approvals";
 import { failureOfCause, typedFailureOfCause } from "@/lib/effect/cause-failure";
-import { ConflictError, DatabaseError } from "@/lib/effect/errors";
+import { ConflictError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { makeDatabaseService } from "@/lib/effect/services/database.service";
 import { getCurrentEmployee, getCurrentSession } from "./auth";
 import { updateWorkPeriodProject as updateWorkPeriodProjectAction } from "../actions";
 import { logger } from "./shared";
@@ -64,9 +63,16 @@ export async function approveWorkPeriod(input: {
 			};
 		}
 
+		// A failed query becomes a defect, not a DatabaseError, so a domain error thrown
+		// inside one (an unresolved review or evidence conflict) reaches the owner's
+		// catch unwrapped and comes back as its ConflictError.
+		const dbService: ApprovalDbService = {
+			db,
+			query: <T>(_name: string, operation: () => Promise<T>) => Effect.promise(operation),
+		};
 		const exit = await Effect.runPromiseExit(
 			decideOrdinaryWorkPeriodWithStableTargetEffect(
-				makeDatabaseService(db),
+				dbService,
 				{
 					...currentEmployee,
 					user: {
@@ -101,15 +107,14 @@ export async function approveWorkPeriod(input: {
 	}
 }
 
-// Only a typed ConflictError or DatabaseError reaches the caller; a defect is redacted even
-// when it is one.
+// Only a typed ConflictError reaches the caller; a defect is redacted even when it is one.
 function approveWorkPeriodFailure(
 	error: unknown,
 	typedFailure: unknown,
 	workPeriodId: string,
 ): ServerActionResult<{ workPeriodId: string }> {
 	logger.error({ error, workPeriodId }, "Approve work period error");
-	if (typedFailure instanceof ConflictError || typedFailure instanceof DatabaseError) {
+	if (typedFailure instanceof ConflictError) {
 		return {
 			success: false,
 			error: typedFailure.message,

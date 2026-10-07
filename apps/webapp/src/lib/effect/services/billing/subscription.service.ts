@@ -180,15 +180,18 @@ export const SubscriptionServiceLive = Layer.effect(
 
 			ensureLocalTrial: ({ organizationId, now = new Date() }) =>
 				dbService.query("subscription.ensureLocalTrial", async () =>
-					mapToSubscriptionInfo(await provisionLocalTrial(organizationId, now)),
+					mapToSubscriptionInfo(await provisionLocalTrial(dbService.db, organizationId, now)),
 				),
 
 			create: (params) =>
 				dbService.query("subscription.create", () =>
-					withOrganizationBillingMutation(params.organizationId, async (transaction) => {
-						const existing = await transaction.query.subscription.findFirst({
-							where: eq(subscription.organizationId, params.organizationId),
-						});
+					withOrganizationBillingMutation(
+						dbService.db,
+						params.organizationId,
+						async (transaction) => {
+							const existing = await transaction.query.subscription.findFirst({
+								where: eq(subscription.organizationId, params.organizationId),
+							});
 
 						if (existing) {
 							await transaction
@@ -229,6 +232,7 @@ export const SubscriptionServiceLive = Layer.effect(
 			updateFromStripe: (params) =>
 				dbService.query("subscription.updateFromStripe", async () => {
 					await withStripeSubscriptionMutation(
+						dbService.db,
 						params.stripeSubscriptionId,
 						async (transaction, scope) => {
 							await transaction
@@ -261,7 +265,7 @@ export const SubscriptionServiceLive = Layer.effect(
 
 			setStripeCustomerId: (organizationId, stripeCustomerId) =>
 				dbService.query("subscription.setStripeCustomerId", () =>
-					withOrganizationBillingMutation(organizationId, async (transaction) => {
+					withOrganizationBillingMutation(dbService.db, organizationId, async (transaction) => {
 						await transaction
 							.insert(subscription)
 							.values({

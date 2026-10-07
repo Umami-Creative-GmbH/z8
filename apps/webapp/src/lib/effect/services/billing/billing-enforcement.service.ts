@@ -35,7 +35,7 @@ function checkBillingAccess(
 		}
 
 		const sub = yield* dbService.query("billing.checkAccess", async () => {
-			if (createTrialIfMissing) return provisionLocalTrial(organizationId, now);
+			if (createTrialIfMissing) return provisionLocalTrial(dbService.db, organizationId, now);
 			const existing = await dbService.db.query.subscription.findFirst({
 				where: eq(subscription.organizationId, organizationId),
 			});

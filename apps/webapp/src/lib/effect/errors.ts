@@ -61,6 +61,13 @@ export class BillingError extends Data.TaggedError("BillingError")<{
 	organizationId?: string;
 }> {}
 
+/** A failed job-queue (BullMQ/Redis) call. */
+export class QueueError extends Data.TaggedError("QueueError")<{
+	message: string;
+	operation: string;
+	cause?: unknown;
+}> {}
+
 export type AnyAppError =
 	| ValidationError
 	| AuthenticationError
@@ -70,4 +77,5 @@ export type AnyAppError =
 	| NotFoundError
 	| ConflictError
 	| StripeError
-	| BillingError;
+	| BillingError
+	| QueueError;

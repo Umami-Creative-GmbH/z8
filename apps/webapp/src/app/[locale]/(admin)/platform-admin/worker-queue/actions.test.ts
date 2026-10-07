@@ -275,6 +275,23 @@ describe("getWorkerQueueStats", () => {
 		}
 		expect(result.data.isPaused).toBeNull();
 	});
+
+	it("reports a failed job-count read as a queue failure", async () => {
+		mocks.isQueueHealthy.mockResolvedValue(true);
+		mocks.getJobQueue.mockReturnValue({
+			getJobCounts: vi.fn().mockRejectedValue(new Error("Redis unavailable")),
+			getJobSchedulers: vi.fn().mockResolvedValue([]),
+			isPaused: vi.fn().mockResolvedValue(false),
+		});
+
+		const result = await getWorkerQueueStats();
+
+		expect(result).toEqual({
+			success: false,
+			error: "Failed to fetch job counts",
+			code: "QueueError",
+		});
+	});
 });
 
 describe("getWorkerQueueJobExecutions", () => {

@@ -77,15 +77,30 @@ vi.mock("@/lib/time-tracking/validation", () => ({
 // A rejected stub becomes the Effect's typed failure, as the owner's decision fails.
 // A set decideStableTargetDefect makes the decision die with it instead, and a set
 // decideStableTargetQueryFailure rejects a query run through the action's db service.
+// Like the owner, that query runs at a Promise boundary and the owner's catch keeps a
+// ConflictError it receives, turning anything else into its generic conflict.
 vi.mock("@/lib/approvals/server/work-period-approvals", async () => {
 	const { Effect } = await import("effect");
+	const { ConflictError } = await import("@/lib/effect/errors");
 	return {
 		decideOrdinaryWorkPeriodWithStableTargetEffect: (...args: unknown[]) => {
 			if (mockState.decideStableTargetQueryFailure !== undefined) {
 				const dbService = args[0] as ApprovalDbService;
-				return dbService.query("workPeriodApproval.decide", () =>
-					Promise.reject(mockState.decideStableTargetQueryFailure),
-				);
+				return Effect.tryPromise({
+					try: () =>
+						Effect.runPromise(
+							dbService.query("workPeriodApproval.decide", () =>
+								Promise.reject(mockState.decideStableTargetQueryFailure),
+							),
+						),
+					catch: (error) =>
+						error instanceof ConflictError
+							? error
+							: new ConflictError({
+									message: "Ordinary work-period decision failed",
+									conflictType: "approval_decision",
+								}),
+				});
 			}
 			return mockState.decideStableTargetDefect === undefined
 				? Effect.tryPromise({
@@ -248,7 +263,26 @@ describe("approveWorkPeriod", () => {
 		});
 	});
 
-	it("returns a typed DatabaseError when a decision query fails", async () => {
+	it("keeps a conflict thrown inside a decision query typed", async () => {
+		mockState.findMember.mockResolvedValue({ role: "admin" });
+		mockState.decideStableTargetQueryFailure = new ConflictError({
+			message: "Resolve the pending break review first",
+			conflictType: "work_period_pending_approval",
+		});
+
+		const result = await approveWorkPeriod({
+			workPeriodId: "period-1",
+			approvalRequestId: "approval-1",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Resolve the pending break review first",
+			code: "ConflictError",
+		});
+	});
+
+	it("keeps a failed decision query generic", async () => {
 		mockState.findMember.mockResolvedValue({ role: "admin" });
 		mockState.decideStableTargetQueryFailure = new Error("connection reset by peer");
 
@@ -259,8 +293,8 @@ describe("approveWorkPeriod", () => {
 
 		expect(result).toEqual({
 			success: false,
-			error: "Database query failed: workPeriodApproval.decide",
-			code: "DatabaseError",
+			error: "Ordinary work-period decision failed",
+			code: "ConflictError",
 		});
 	});
 

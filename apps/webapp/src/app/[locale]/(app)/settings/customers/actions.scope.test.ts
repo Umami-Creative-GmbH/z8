@@ -339,6 +339,10 @@ describe("customer settings manager scope", () => {
 
 		const result = await updateCustomer("customer-2", { name: "Changed" });
 
-		expect(result).toMatchObject({ success: false });
+		expect(result).toEqual({
+			success: false,
+			error: "You do not have access to update this customer",
+			code: "AuthorizationError",
+		});
 	});
 });

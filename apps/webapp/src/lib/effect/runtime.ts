@@ -17,28 +17,26 @@ import { SkillServiceLive } from "./services/skill.service";
 import { TimeEntryServiceLive } from "./services/time-entry.service";
 import { WorkPolicyServiceLive } from "./services/work-policy.service";
 
+// DatabaseServiceLive reaches every member through the one provideMerge, which also
+// keeps it in the output.
 export const AppLayer = Layer.mergeAll(
-	DatabaseServiceLive,
 	AuthServiceLive,
 	EmailServiceLive,
-	AnalyticsService.Live.pipe(
-		Layer.provide(WorkPolicyServiceLive),
-		Layer.provide(DatabaseServiceLive),
-	),
-	TimeEntryServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
-	PlatformAdminServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
-	SetupServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
-	CustomRoleServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
-	OnboardingServiceLive.pipe(Layer.provide(AuthServiceLive), Layer.provide(DatabaseServiceLive)),
-	ChangePolicyServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
-	WorkPolicyServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
-	PermissionsServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
-	ManagerServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
-	ShiftServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
-	ShiftRequestServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
-	SkillServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
-	CoverageServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
-);
+	AnalyticsService.Live.pipe(Layer.provide(WorkPolicyServiceLive)),
+	TimeEntryServiceLive,
+	PlatformAdminServiceLive,
+	SetupServiceLive,
+	CustomRoleServiceLive,
+	OnboardingServiceLive.pipe(Layer.provide(AuthServiceLive)),
+	ChangePolicyServiceLive,
+	WorkPolicyServiceLive,
+	PermissionsServiceLive,
+	ManagerServiceLive,
+	ShiftServiceLive,
+	ShiftRequestServiceLive,
+	SkillServiceLive,
+	CoverageServiceLive,
+).pipe(Layer.provideMerge(DatabaseServiceLive));
 
 // Runtime for executing effects
 export const runtime = ManagedRuntime.make(AppLayer);

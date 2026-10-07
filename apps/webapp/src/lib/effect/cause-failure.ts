@@ -15,6 +15,14 @@ export function failureOfCause(cause: Cause.Cause<unknown>): unknown {
 }
 
 /**
+ * True when a cause holds neither a typed failure nor a defect (an interruption):
+ * `failureOfCause` would only return `Cause.squash`'s internal value for it.
+ */
+export function isInterruptOnly(cause: Cause.Cause<unknown>): boolean {
+	return !Cause.hasFails(cause) && !Cause.hasDies(cause);
+}
+
+/**
  * Only the typed failure of an Effect cause, or `undefined` when it died or was
  * interrupted. For callers that must not expose a defect to the user.
  */

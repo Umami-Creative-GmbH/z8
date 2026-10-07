@@ -174,7 +174,7 @@ export async function generateEmployeeReport(
 				organizationId,
 				startDate,
 				endDate,
-				calendarRange?.timezone,
+				calendarRange?.timezone ?? "utc",
 			),
 		),
 	]);

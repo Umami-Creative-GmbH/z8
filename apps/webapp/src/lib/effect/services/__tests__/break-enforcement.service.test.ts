@@ -709,6 +709,46 @@ describe("legacy break enforcement failures", () => {
 			entityId: "period-missing",
 		});
 	});
+
+	test("keeps an unexpected adjustment failure's own message out of its DatabaseError", async () => {
+		const { Layer } = await import("effect");
+		const { DatabaseError } = await import("@/lib/effect/errors");
+		const { DatabaseServiceLive } = await import("../database.service");
+		const { WorkPolicyService } = await import("../work-policy.service");
+		const { BreakEnforcementService, BreakEnforcementServiceLive } = await import(
+			"../break-enforcement.service"
+		);
+		const { runAutomaticBreakAdjustment } = await import(
+			"@/lib/time-tracking/automatic-break-adjustment"
+		);
+		const cause = new Error('relation "work_period" violates constraint wp_private_check');
+		vi.mocked(runAutomaticBreakAdjustment).mockRejectedValueOnce(cause);
+
+		const failure = await Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* BreakEnforcementService;
+				return yield* service.enforceBreaksAfterClockOut({
+					employeeId: "emp-123",
+					organizationId: "org-123",
+					workPeriodId: "period-123",
+					sessionDurationMinutes: 420,
+					timezone: "Europe/Berlin",
+					createdBy: "user-123",
+				});
+			}).pipe(
+				Effect.flip,
+				Effect.provide(
+					BreakEnforcementServiceLive.pipe(
+						Layer.provide(Layer.succeed(WorkPolicyService, mockWorkPolicyService as never)),
+						Layer.provide(DatabaseServiceLive),
+					),
+				),
+			),
+		);
+
+		expect(failure).toBeInstanceOf(DatabaseError);
+		expect(failure).toMatchObject({ message: "Automatic break adjustment failed", cause });
+	});
 });
 
 describe("Break Enforcement Result Types", () => {

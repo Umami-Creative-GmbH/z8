@@ -145,6 +145,7 @@ export async function refreshEmployeeTimeBalances(input: {
 						input.organizationId,
 						startDate,
 						endDate,
+						"utc",
 					),
 				),
 				calculateAbsenceAdjustedMinutes({
@@ -240,6 +241,7 @@ async function calculateAbsenceAdjustedMinutes(input: {
 						input.organizationId,
 						date,
 						date,
+						"utc",
 					),
 				);
 				const fraction = getAbsenceDayFraction({

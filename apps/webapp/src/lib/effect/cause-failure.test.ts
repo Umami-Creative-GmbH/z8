@@ -1,6 +1,6 @@
 import { Cause } from "effect";
 import { describe, expect, it } from "vitest";
-import { failureOfCause, typedFailureOfCause } from "./cause-failure";
+import { failureOfCause, isInterruptOnly, typedFailureOfCause } from "./cause-failure";
 import { ValidationError } from "./errors";
 
 describe("failureOfCause", () => {
@@ -30,6 +30,17 @@ describe("failureOfCause", () => {
 
 		expect(failure).toBeInstanceOf(Error);
 		expect((failure as Error).message).toBe("All fibers interrupted without error");
+	});
+});
+
+describe("isInterruptOnly", () => {
+	it("is true only for a cause without a typed failure or defect", () => {
+		const error = new ValidationError({ message: "Invalid date", field: "date" });
+
+		expect(isInterruptOnly(Cause.interrupt())).toBe(true);
+		expect(isInterruptOnly(Cause.fail(error))).toBe(false);
+		expect(isInterruptOnly(Cause.die(new Error("connection reset")))).toBe(false);
+		expect(isInterruptOnly(Cause.combine(Cause.interrupt(), Cause.fail(error)))).toBe(false);
 	});
 });
 

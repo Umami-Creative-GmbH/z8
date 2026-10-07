@@ -3,13 +3,17 @@ import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const SOURCE_ROOT = join(process.cwd(), "src");
-const TRY_PROMISE_CALL = /\bEffect\.tryPromise\s*\(/g;
+const TRY_PROMISE_CALL = /\b(?:Effect\.tryPromise|tryPromiseWithRunner)\s*\(/g;
 const FUNCTION_DECLARATION = /\bfunction\s+(\w+)\s*[<(]/g;
 /**
- * Calls that are not database work but keep their DatabaseError: the worker-queue
- * BullMQ job counts have no fitting tagged error (#668).
+ * Promise code that calls back into effects through `tryPromiseWithRunner`, which
+ * `DatabaseService.query` cannot hand a runner to. Their DatabaseError keeps a generic
+ * message: the seat delivery (Stripe port) and the automatic break adjustment
+ * (`planLegacy` hook).
  */
-const NOT_DATABASE_WORK = ["queue.getJobCounts()"];
+const NEEDS_CALLBACK_RUNNER = ["deliverOrganizationSeats(", "runAutomaticBreakAdjustment("];
+/** A DatabaseError message read from the failure leaks driver or SQL details. */
+const MESSAGE_FROM_CAUSE = /\bmessage:[^,]*\b(?:cause|error|e|err)\.message\b/;
 
 function collectSourceFiles(directory: string): string[] {
 	return readdirSync(directory).flatMap((entry) => {
@@ -66,7 +70,11 @@ function hardBuiltDatabaseErrorSites(): string[] {
 			const buildsDatabaseError =
 				/\bDatabaseError\b/.test(argumentsText) ||
 				factories.some((name) => new RegExp(`\\b${name}\\b`).test(argumentsText));
-			if (!buildsDatabaseError || NOT_DATABASE_WORK.some((call) => argumentsText.includes(call))) {
+			if (
+				!buildsDatabaseError ||
+				(NEEDS_CALLBACK_RUNNER.some((call) => argumentsText.includes(call)) &&
+					!MESSAGE_FROM_CAUSE.test(argumentsText))
+			) {
 				return [];
 			}
 			const line = source.slice(0, match.index).split("\n").length;
@@ -76,7 +84,7 @@ function hardBuiltDatabaseErrorSites(): string[] {
 }
 
 describe("DatabaseError construction", () => {
-	it("routes every database tryPromise through DatabaseService.query", () => {
+	it("routes every database tryPromise and tryPromiseWithRunner through DatabaseService.query", () => {
 		const sites = hardBuiltDatabaseErrorSites().filter(
 			(site) => !site.startsWith("lib/effect/services/database.service.ts:"),
 		);

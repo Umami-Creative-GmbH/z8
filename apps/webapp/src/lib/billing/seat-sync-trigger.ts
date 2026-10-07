@@ -15,7 +15,7 @@ async function getSeatSyncRuntime() {
 		import("@/lib/effect/services/billing"),
 	]);
 
-	return { Effect, runtime, SeatSyncService, layers: BillingServicesLive };
+	return { Effect, runtime, SeatSyncService, BillingServicesLive };
 }
 
 export async function reconcileBillingSeatsForOrganization(
@@ -31,13 +31,13 @@ export async function reconcileBillingSeatsForOrganization(
 		if (options.run) {
 			await options.run();
 		} else {
-			const { Effect, runtime, SeatSyncService, layers } = await getSeatSyncRuntime();
+			const { Effect, runtime, SeatSyncService, BillingServicesLive } = await getSeatSyncRuntime();
 			const program = Effect.gen(function* () {
 				const seatSyncService = yield* SeatSyncService;
 				yield* seatSyncService.syncSeatsForOrganization(organizationId);
 			});
 
-			await runtime.runPromise(program.pipe(Effect.provide(layers)));
+			await runtime.runPromise(program.pipe(Effect.provide(BillingServicesLive)));
 		}
 	} catch (error) {
 		logger.error(
@@ -64,7 +64,7 @@ export async function syncBillingSeatsAfterMemberChange({
 	}
 
 	try {
-		const { Effect, runtime, SeatSyncService, layers } = await getSeatSyncRuntime();
+		const { Effect, runtime, SeatSyncService, BillingServicesLive } = await getSeatSyncRuntime();
 
 		const program = Effect.gen(function* () {
 			const seatSyncService = yield* SeatSyncService;
@@ -85,7 +85,7 @@ export async function syncBillingSeatsAfterMemberChange({
 			);
 		});
 
-		await runtime.runPromise(program.pipe(Effect.provide(layers)));
+		await runtime.runPromise(program.pipe(Effect.provide(BillingServicesLive)));
 	} catch (error) {
 		logger.error(
 			{ error, organizationId },

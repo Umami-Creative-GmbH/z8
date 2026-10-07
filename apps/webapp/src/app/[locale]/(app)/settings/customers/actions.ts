@@ -8,8 +8,7 @@ import { db } from "@/db";
 import { customer, project } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import type { ServerActionResult } from "@/lib/effect/result";
-import { runtime } from "@/lib/effect/runtime";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
 import {
@@ -110,13 +109,7 @@ export async function getCustomers(
 		},
 	);
 
-	return runtime
-		.runPromise(effect)
-		.then((data) => ({ success: true as const, data }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to get customers",
-		}));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -269,13 +262,7 @@ export async function createCustomer(
 		},
 	);
 
-	return runtime
-		.runPromise(effect)
-		.then((data) => ({ success: true as const, data }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to create customer",
-		}));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -396,13 +383,7 @@ export async function updateCustomer(
 		},
 	);
 
-	return runtime
-		.runPromise(effect)
-		.then(() => ({ success: true as const, data: undefined }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to update customer",
-		}));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -488,13 +469,7 @@ export async function deleteCustomer(customerId: string): Promise<ServerActionRe
 		},
 	);
 
-	return runtime
-		.runPromise(effect)
-		.then(() => ({ success: true as const, data: undefined }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to delete customer",
-		}));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -546,11 +521,5 @@ export async function getCustomersForSelection(
 		},
 	);
 
-	return runtime
-		.runPromise(effect)
-		.then((data) => ({ success: true as const, data }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to get customers",
-		}));
+	return runServerActionSafe(effect);
 }

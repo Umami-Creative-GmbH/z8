@@ -12,6 +12,7 @@ import {
 	startOfDay,
 	toDateKey,
 } from "@/lib/datetime/luxon-utils";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	type EffectiveWorkPolicy,
 	WorkPolicyService,
@@ -278,14 +279,15 @@ export type ExpectedWorkHoursSummary = WorkHoursSummary & {
 
 /**
  * Calculate expected work hours for an employee in a date range
- * Uses the employee's effective work policy schedule for accurate calculations
+ * Uses the employee's effective work policy schedule for accurate calculations.
+ * `timezone` is the IANA zone whose calendar days are counted.
  */
 export function calculateExpectedWorkHoursForEmployee(
 	employeeId: string,
 	organizationId: string,
 	startDate: Date,
 	endDate: Date,
-	timezone?: string,
+	timezone: string,
 ): Effect.Effect<ExpectedWorkHoursSummary, never, WorkPolicyService> {
 	return getEmployeePolicy(employeeId, organizationId).pipe(
 		Effect.flatMap((policy) =>
@@ -298,14 +300,15 @@ export function calculateExpectedWorkHoursForEmployee(
 
 /**
  * Expected work hours in a date range under an already resolved policy (see
- * `getEmployeePolicy`); without one, eight-hour weekdays.
+ * `getEmployeePolicy`); without one, eight-hour weekdays. `timezone` is the IANA zone
+ * whose calendar days are counted.
  */
 export async function calculateExpectedWorkHoursForPolicy(
 	policy: EffectiveWorkPolicy | null,
 	organizationId: string,
 	startDate: Date,
 	endDate: Date,
-	timezone?: string,
+	timezone: string,
 ): Promise<ExpectedWorkHoursSummary> {
 	let currentDT = fromJSDate(startDate, timezone);
 	const endDT = fromJSDate(endDate, timezone);
@@ -367,10 +370,14 @@ export const compareWorkHours = Effect.fn("compareWorkHours")(function* (
 	startDate: Date,
 	endDate: Date,
 ) {
+	const dbService = yield* DatabaseService;
 	const [actual, expected] = yield* Effect.all(
 		[
-			Effect.promise(() => calculateWorkHours(employeeId, organizationId, startDate, endDate)),
-			calculateExpectedWorkHoursForEmployee(employeeId, organizationId, startDate, endDate),
+			dbService.query("workHours.calculate", () =>
+				calculateWorkHours(employeeId, organizationId, startDate, endDate),
+			),
+			// calculateWorkHours counts UTC days, so the expected side does too.
+			calculateExpectedWorkHoursForEmployee(employeeId, organizationId, startDate, endDate, "utc"),
 		],
 		{ concurrency: "unbounded" },
 	);

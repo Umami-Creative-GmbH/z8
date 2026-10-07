@@ -20,7 +20,7 @@ import {
 	getJobExecutionHistory,
 	getRecentExecutions,
 } from "@/lib/cron/tracking";
-import { DatabaseError, ValidationError } from "@/lib/effect/errors";
+import { QueueError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { PlatformAdminService } from "@/lib/effect/services/platform-admin.service";
@@ -262,15 +262,14 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 		if (isConnected) {
 			const queue = getJobQueue();
 
-			// A Redis/BullMQ read, not a database query. No tagged error fits a queue
-			// failure, so it keeps its DatabaseError (the page's data-store failure)
-			// instead of passing through DatabaseService.query.
+			// A Redis/BullMQ read, not a database query.
 			const jobCounts = yield* Effect.tryPromise({
 				try: () => queue.getJobCounts(),
-				catch: () =>
-					new DatabaseError({
+				catch: (cause) =>
+					new QueueError({
 						message: "Failed to fetch job counts",
-						operation: "query",
+						operation: "workerQueue.getJobCounts",
+						cause,
 					}),
 			});
 

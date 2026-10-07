@@ -300,9 +300,13 @@ export const BillingEventsServiceLive = Layer.effect(
 
 				// Update subscription status to active
 				yield* dbService.query("billingEvents.markInvoicePaid", async () => {
-					await withStripeSubscriptionMutation(subscriptionId, async (transaction, scope) => {
-						await transaction.update(subscription).set({ status: "active" }).where(scope);
-					});
+					await withStripeSubscriptionMutation(
+						dbService.db,
+						subscriptionId,
+						async (transaction, scope) => {
+							await transaction.update(subscription).set({ status: "active" }).where(scope);
+						},
+					);
 				});
 
 				logger.info(
@@ -321,9 +325,13 @@ export const BillingEventsServiceLive = Layer.effect(
 
 				// Mark subscription as past_due
 				yield* dbService.query("billingEvents.markInvoicePaymentFailed", async () => {
-					await withStripeSubscriptionMutation(subscriptionId, async (transaction, scope) => {
-						await transaction.update(subscription).set({ status: "past_due" }).where(scope);
-					});
+					await withStripeSubscriptionMutation(
+						dbService.db,
+						subscriptionId,
+						async (transaction, scope) => {
+							await transaction.update(subscription).set({ status: "past_due" }).where(scope);
+						},
+					);
 				});
 
 				logger.warn(
@@ -371,18 +379,22 @@ export const BillingEventsServiceLive = Layer.effect(
 				const customerEmail = yield* resolveCustomerEmail(stripeSub.customer);
 
 				yield* dbService.query("billingEvents.pauseSubscription", async () => {
-					await withStripeSubscriptionMutation(stripeSub.id, async (transaction, scope) => {
-						await transaction
-							.update(subscription)
-							.set({
-								status: "paused",
-								metadata: {
-									pausedAt: new Date().toISOString(),
-									pauseReason: stripeSub.pause_collection?.behavior ?? "unknown",
-								},
-							})
-							.where(scope);
-					});
+					await withStripeSubscriptionMutation(
+						dbService.db,
+						stripeSub.id,
+						async (transaction, scope) => {
+							await transaction
+								.update(subscription)
+								.set({
+									status: "paused",
+									metadata: {
+										pausedAt: new Date().toISOString(),
+										pauseReason: stripeSub.pause_collection?.behavior ?? "unknown",
+									},
+								})
+								.where(scope);
+						},
+					);
 				});
 
 				logger.info(
@@ -413,23 +425,27 @@ export const BillingEventsServiceLive = Layer.effect(
 				const customerEmail = yield* resolveCustomerEmail(stripeSub.customer);
 
 				yield* dbService.query("billingEvents.resumeSubscription", async () => {
-					await withStripeSubscriptionMutation(stripeSub.id, async (transaction, scope) => {
-						await transaction
-							.update(subscription)
-							.set({
-								status: stripeSub.status, // Will be 'active' or 'trialing'
-								currentPeriodStart: item?.current_period_start
-									? new Date(item.current_period_start * 1000)
-									: new Date(),
-								currentPeriodEnd: item?.current_period_end
-									? new Date(item.current_period_end * 1000)
-									: new Date(),
-								metadata: {
-									resumedAt: new Date().toISOString(),
-								},
-							})
-							.where(scope);
-					});
+					await withStripeSubscriptionMutation(
+						dbService.db,
+						stripeSub.id,
+						async (transaction, scope) => {
+							await transaction
+								.update(subscription)
+								.set({
+									status: stripeSub.status, // Will be 'active' or 'trialing'
+									currentPeriodStart: item?.current_period_start
+										? new Date(item.current_period_start * 1000)
+										: new Date(),
+									currentPeriodEnd: item?.current_period_end
+										? new Date(item.current_period_end * 1000)
+										: new Date(),
+									metadata: {
+										resumedAt: new Date().toISOString(),
+									},
+								})
+								.where(scope);
+						},
+					);
 				});
 
 				logger.info(

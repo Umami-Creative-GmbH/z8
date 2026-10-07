@@ -48,14 +48,18 @@ function memberPattern(member: string): RegExp {
 }
 
 /**
- * The layers `AppLayer` is composed of, read from its `Layer.mergeAll(...)` in the
- * runtime module, so a service added there is guarded without editing this test.
+ * The layers `AppLayer` is composed of, read from its `Layer.mergeAll(...)` and the
+ * `.pipe(...)` that provides into it in the runtime module, so a service added there is
+ * guarded without editing this test.
  */
 function appLayerMembers(runtimeSource: string): string[] {
 	const start = runtimeSource.search(/export const AppLayer = Layer\.mergeAll\(/);
 	if (start === -1) throw new Error(`AppLayer composition not found in ${RUNTIME_MODULE}`);
-	const body = callArguments(runtimeSource, runtimeSource.indexOf("(", start));
-	const members = body.match(/\b[A-Z]\w*(?:\.Live\b|Live\b)/g) ?? [];
+	const open = runtimeSource.indexOf("(", start);
+	const body = callArguments(runtimeSource, open);
+	const rest = runtimeSource.slice(open + body.length + 2);
+	const provided = /^\s*\.pipe\(/.test(rest) ? callArguments(rest, rest.indexOf("(")) : "";
+	const members = `${body} ${provided}`.match(/\b[A-Z]\w*(?:\.Live\b|Live\b)/g) ?? [];
 	return [...new Set(members)].sort();
 }
 

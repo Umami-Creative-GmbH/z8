@@ -1,6 +1,6 @@
-import { Cause, type Effect, Exit, type Layer } from "effect";
+import { type Effect, Exit, type Layer } from "effect";
 import { env } from "@/env";
-import { failureOfCause } from "./cause-failure";
+import { failureOfCause, isInterruptOnly } from "./cause-failure";
 import type { AnyAppError } from "./errors";
 import { type AppLayer, runtime } from "./runtime";
 
@@ -13,7 +13,7 @@ export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): Server
 		onFailure: (cause) => {
 			// Without a typed failure or defect (interrupt-only), keep the cause so the
 			// client gets the generic message instead of Cause.squash's internal one.
-			const error = Cause.hasFails(cause) || Cause.hasDies(cause) ? failureOfCause(cause) : cause;
+			const error = isInterruptOnly(cause) ? cause : failureOfCause(cause);
 			const taggedError =
 				error && typeof error === "object" && "_tag" in error ? (error as AnyAppError) : null;
 			const isBuildPhase = env.NEXT_PHASE === "phase-production-build";

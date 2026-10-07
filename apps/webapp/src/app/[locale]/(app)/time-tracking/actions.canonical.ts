@@ -14,7 +14,7 @@ type Transaction = Pick<
 function transactionDatabaseLayer(transaction: Transaction) {
 	return Layer.succeed(
 		DatabaseService,
-		DatabaseService.of(makeDatabaseService(transaction as unknown as typeof db)),
+		DatabaseService.of(makeDatabaseService(transaction as typeof db)),
 	);
 }
 

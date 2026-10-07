@@ -365,7 +365,11 @@ describe("project settings manager scope", () => {
 
 		const result = await updateProject("project-1", { customerId: "customer-2" });
 
-		expect(result).toMatchObject({ success: false });
+		expect(result).toEqual({
+			success: false,
+			error: "You do not have access to assign this customer",
+			code: "AuthorizationError",
+		});
 	});
 
 	it("keeps owner membership parity with org admins for project reads", async () => {

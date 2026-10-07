@@ -18,7 +18,11 @@ vi.mock("@/lib/calendar/holiday-service", () => ({
 	shouldExcludeFromCalculations: mocks.shouldExcludeFromCalculations,
 }));
 
-import { calculateExpectedWorkHoursForEmployee, getEmployeePolicy } from "./calculations";
+import {
+	calculateExpectedWorkHoursForEmployee,
+	compareWorkHours,
+	getEmployeePolicy,
+} from "./calculations";
 
 /** The real work-policy service over a fake database that records employee lookups. */
 function workPolicyOverFakeDatabase(queryError?: unknown) {
@@ -147,5 +151,39 @@ describe("calculateExpectedWorkHoursForEmployee", () => {
 		);
 
 		expect(expected).toMatchObject({ totalMinutes: 2400, workDays: 5, scheduleInfo: null });
+	});
+});
+
+describe("compareWorkHours", () => {
+	it("fails with the work-hours read's DatabaseError instead of dying", async () => {
+		// The mocked `@/db` has no `select`, so the actual-hours read rejects.
+		const databaseLayer = Layer.succeed(
+			DatabaseService,
+			DatabaseService.of({
+				db: {} as never,
+				query: (name, query) =>
+					Effect.tryPromise({
+						try: query,
+						catch: (cause) =>
+							new DatabaseError({
+								message: `Database query failed: ${name}`,
+								operation: name,
+								cause,
+							}),
+					}),
+			}),
+		);
+
+		const failure = await Effect.runPromise(
+			compareWorkHours(
+				"employee-1",
+				"organization-1",
+				new Date("2026-10-05T12:00:00.000Z"),
+				new Date("2026-10-11T12:00:00.000Z"),
+			).pipe(Effect.flip, Effect.provide(Layer.mergeAll(databaseLayer, fixedPolicyLayer(null)))),
+		);
+
+		expect(failure).toBeInstanceOf(DatabaseError);
+		expect(failure).toMatchObject({ operation: "workHours.calculate" });
 	});
 });

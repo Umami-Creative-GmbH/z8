@@ -114,31 +114,14 @@ export async function getManagerTodaySummary(): Promise<ManagerTodaySummaryResul
 			return { role, summary: null };
 		}
 
-		const briefing = yield* dbService
-			.query("dashboard.getManagerDailyBriefing", () =>
-				getManagerDailyBriefing({
-					currentEmployee: {
-						id: currentEmployee.id,
-						role,
-						organizationId: currentEmployee.organizationId,
-					},
-				}),
-			)
-			.pipe(
-				Effect.catch(() =>
-					Effect.succeed({
-						role,
-						summary: null,
-						error: "Manager Today counts could not be loaded.",
-					}),
-				),
-			);
-
-		if ("error" in briefing) {
-			return briefing;
-		}
-
-		return { role, summary: briefing.summary };
+		return {
+			role,
+			briefingFor: {
+				id: currentEmployee.id,
+				role,
+				organizationId: currentEmployee.organizationId,
+			},
+		};
 	});
 
 	const result = await runServerActionSafe(effect);
@@ -147,7 +130,20 @@ export async function getManagerTodaySummary(): Promise<ManagerTodaySummaryResul
 		throw new Error(String(result.error));
 	}
 
-	return result.data;
+	const target = result.data;
+	if (!target.briefingFor) {
+		return target;
+	}
+
+	// The briefing is Promise code that starts its own runtime runs, so it runs here,
+	// after the effect, instead of nested inside it.
+	const { role, briefingFor } = target;
+	try {
+		const briefing = await getManagerDailyBriefing({ currentEmployee: briefingFor });
+		return { role, summary: briefing.summary };
+	} catch {
+		return { role, summary: null, error: "Manager Today counts could not be loaded." };
+	}
 }
 
 /**

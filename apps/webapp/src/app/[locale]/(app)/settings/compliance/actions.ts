@@ -46,13 +46,6 @@ type ComplianceExceptionWithEmployee = typeof complianceException.$inferSelect &
 };
 
 // =============================================================================
-// Layer composition for compliance service
-// =============================================================================
-
-// The shared runtime supplies the guardrail service's WorkPolicyService and DatabaseService.
-const ComplianceLayer = ComplianceGuardrailServiceLive;
-
-// =============================================================================
 // Helper: Get current employee
 // =============================================================================
 
@@ -92,6 +85,16 @@ async function getCurrentEmployeeWithTimezone() {
 		userId: authContext.user.id,
 	};
 }
+
+/**
+ * The current employee as an effect. Its NotFoundError and the auth helpers' errors stay
+ * typed. ComplianceGuardrailServiceLive is provided per run on top of the shared
+ * runtime, which supplies its WorkPolicyService and DatabaseService.
+ */
+const currentEmployeeWithTimezone = Effect.tryPromise({
+	try: () => getCurrentEmployeeWithTimezone(),
+	catch: (error) => error as AnyAppError,
+});
 
 function typeEmployeeWithUser<T>(employeeRecord: T) {
 	return employeeRecord as T & EmployeeWithUser;
@@ -189,10 +192,7 @@ export async function checkRestPeriod(): Promise<ServerActionResult<RestPeriodCh
 
 	const effect = tracer.startActiveSpan("checkRestPeriod", (span) => {
 		return Effect.gen(function* () {
-			const { employee: emp, timezone } = yield* Effect.tryPromise({
-				try: () => getCurrentEmployeeWithTimezone(),
-				catch: (e) => e as AnyAppError,
-			});
+			const { employee: emp, timezone } = yield* currentEmployeeWithTimezone;
 
 			span.setAttribute("employee.id", emp.id);
 
@@ -217,7 +217,7 @@ export async function checkRestPeriod(): Promise<ServerActionResult<RestPeriodCh
 				}),
 			),
 			Effect.onExit(() => Effect.sync(() => span.end())),
-			Effect.provide(ComplianceLayer),
+			Effect.provide(ComplianceGuardrailServiceLive),
 		);
 	});
 
@@ -235,10 +235,7 @@ export async function getProactiveAlerts(
 	currentSessionMinutes: number,
 ): Promise<ServerActionResult<ComplianceAlert[]>> {
 	const effect = Effect.gen(function* () {
-		const { employee: emp, timezone } = yield* Effect.tryPromise({
-			try: () => getCurrentEmployeeWithTimezone(),
-			catch: (e) => e as AnyAppError,
-		});
+		const { employee: emp, timezone } = yield* currentEmployeeWithTimezone;
 
 		const complianceService = yield* ComplianceGuardrailService;
 		return yield* complianceService.getProactiveAlerts({
@@ -246,7 +243,7 @@ export async function getProactiveAlerts(
 			currentSessionMinutes,
 			timezone,
 		});
-	}).pipe(Effect.provide(ComplianceLayer));
+	}).pipe(Effect.provide(ComplianceGuardrailServiceLive));
 
 	return runServerActionSafe(effect);
 }
@@ -262,10 +259,7 @@ export async function getComplianceStatus(
 	currentSessionMinutes: number,
 ): Promise<ServerActionResult<ComplianceStatus>> {
 	const effect = Effect.gen(function* () {
-		const { employee: emp, timezone } = yield* Effect.tryPromise({
-			try: () => getCurrentEmployeeWithTimezone(),
-			catch: (e) => e as AnyAppError,
-		});
+		const { employee: emp, timezone } = yield* currentEmployeeWithTimezone;
 
 		const complianceService = yield* ComplianceGuardrailService;
 		return yield* complianceService.getComplianceStatus({
@@ -273,7 +267,7 @@ export async function getComplianceStatus(
 			currentSessionMinutes,
 			timezone,
 		});
-	}).pipe(Effect.provide(ComplianceLayer));
+	}).pipe(Effect.provide(ComplianceGuardrailServiceLive));
 
 	return runServerActionSafe(effect);
 }
@@ -287,17 +281,14 @@ export async function getComplianceStatus(
  */
 export async function getOvertimeStats(): Promise<ServerActionResult<OvertimeStats>> {
 	const effect = Effect.gen(function* () {
-		const { employee: emp, timezone } = yield* Effect.tryPromise({
-			try: () => getCurrentEmployeeWithTimezone(),
-			catch: (e) => e as AnyAppError,
-		});
+		const { employee: emp, timezone } = yield* currentEmployeeWithTimezone;
 
 		const complianceService = yield* ComplianceGuardrailService;
 		return yield* complianceService.getOvertimeStats({
 			employeeId: emp.id,
 			timezone,
 		});
-	}).pipe(Effect.provide(ComplianceLayer));
+	}).pipe(Effect.provide(ComplianceGuardrailServiceLive));
 
 	return runServerActionSafe(effect);
 }
@@ -325,10 +316,7 @@ export async function requestComplianceException(input: {
 		},
 		(span) => {
 			return Effect.gen(function* () {
-				const { employee: emp, userId } = yield* Effect.tryPromise({
-					try: () => getCurrentEmployeeWithTimezone(),
-					catch: (e) => e as AnyAppError,
-				});
+				const { employee: emp, userId } = yield* currentEmployeeWithTimezone;
 
 				span.setAttribute("employee.id", emp.id);
 				span.setAttribute("organization.id", emp.organizationId);
@@ -389,7 +377,7 @@ export async function requestComplianceException(input: {
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(ComplianceLayer),
+				Effect.provide(ComplianceGuardrailServiceLive),
 			);
 		},
 	);
@@ -404,17 +392,14 @@ export async function hasValidException(
 	exceptionType: string,
 ): Promise<ServerActionResult<{ hasException: boolean; exceptionId?: string }>> {
 	const effect = Effect.gen(function* () {
-		const { employee: emp } = yield* Effect.tryPromise({
-			try: () => getCurrentEmployeeWithTimezone(),
-			catch: (e) => e as AnyAppError,
-		});
+		const { employee: emp } = yield* currentEmployeeWithTimezone;
 
 		const complianceService = yield* ComplianceGuardrailService;
 		return yield* complianceService.hasValidException({
 			employeeId: emp.id,
 			exceptionType,
 		});
-	}).pipe(Effect.provide(ComplianceLayer));
+	}).pipe(Effect.provide(ComplianceGuardrailServiceLive));
 
 	return runServerActionSafe(effect);
 }
@@ -426,17 +411,14 @@ export async function getMyExceptions(
 	includeExpired = false,
 ): Promise<ServerActionResult<ExceptionWithDetails[]>> {
 	const effect = Effect.gen(function* () {
-		const { employee: emp } = yield* Effect.tryPromise({
-			try: () => getCurrentEmployeeWithTimezone(),
-			catch: (e) => e as AnyAppError,
-		});
+		const { employee: emp } = yield* currentEmployeeWithTimezone;
 
 		const complianceService = yield* ComplianceGuardrailService;
 		return yield* complianceService.getMyExceptions({
 			employeeId: emp.id,
 			includeExpired,
 		});
-	}).pipe(Effect.provide(ComplianceLayer));
+	}).pipe(Effect.provide(ComplianceGuardrailServiceLive));
 
 	return runServerActionSafe(effect);
 }
@@ -450,10 +432,7 @@ export async function getMyExceptions(
  */
 export async function getPendingExceptions(): Promise<ServerActionResult<ExceptionWithDetails[]>> {
 	const effect = Effect.gen(function* () {
-		const { employee: emp } = yield* Effect.tryPromise({
-			try: async () => await getCurrentEmployeeWithTimezone(),
-			catch: (error) => error as AnyAppError,
-		});
+		const { employee: emp } = yield* currentEmployeeWithTimezone;
 		const ability = yield* Effect.tryPromise({
 			try: async () => await requireAbility(),
 			catch: () =>
@@ -479,7 +458,7 @@ export async function getPendingExceptions(): Promise<ServerActionResult<Excepti
 			organizationId: emp.organizationId,
 			managerId: canManageAll ? undefined : emp.id,
 		});
-	}).pipe(Effect.provide(ComplianceLayer));
+	}).pipe(Effect.provide(ComplianceGuardrailServiceLive));
 
 	return runServerActionSafe(effect);
 }
@@ -552,7 +531,7 @@ export async function approveComplianceException(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(ComplianceLayer),
+				Effect.provide(ComplianceGuardrailServiceLive),
 			);
 		},
 	);
@@ -631,7 +610,7 @@ export async function rejectComplianceException(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(ComplianceLayer),
+				Effect.provide(ComplianceGuardrailServiceLive),
 			);
 		},
 	);
@@ -648,10 +627,7 @@ export async function rejectComplianceException(
  */
 export async function expireOldExceptions(): Promise<ServerActionResult<{ expiredCount: number }>> {
 	const effect = Effect.gen(function* () {
-		const { employee: emp } = yield* Effect.tryPromise({
-			try: async () => await getCurrentEmployeeWithTimezone(),
-			catch: (error) => error as AnyAppError,
-		});
+		const { employee: emp } = yield* currentEmployeeWithTimezone;
 		const organizationId = emp.organizationId;
 		const ability = yield* Effect.tryPromise({
 			try: async () => await requireAbility(),
@@ -674,7 +650,7 @@ export async function expireOldExceptions(): Promise<ServerActionResult<{ expire
 
 		const complianceService = yield* ComplianceGuardrailService;
 		return yield* complianceService.expireOldExceptions(organizationId);
-	}).pipe(Effect.provide(ComplianceLayer));
+	}).pipe(Effect.provide(ComplianceGuardrailServiceLive));
 
 	return runServerActionSafe(effect);
 }
