@@ -1,4 +1,5 @@
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
+import type { PerDiemDayLocation } from "@/lib/travel-expenses/per-diem";
 import type { WorkCategoryReviewValue } from "../server/time-correction-review-metadata";
 
 export const SUPPORTED_APPROVAL_INBOX_TYPES = [
@@ -85,7 +86,13 @@ export type ApprovalInboxTextParam =
 	| string
 	| number
 	| ApprovalInboxLocalizedText
-	| ApprovalInboxLocalizedText[];
+	| ApprovalInboxLocalizedText[]
+	| ApprovalInboxPerDiemLocationParam;
+
+/** A per diem day's applied location (#681), named in the reader's language when rendered. */
+export interface ApprovalInboxPerDiemLocationParam {
+	perDiemLocation: Pick<PerDiemDayLocation, "country" | "place" | "label">;
+}
 
 export interface ApprovalInboxLocalizedText {
 	key: string;
