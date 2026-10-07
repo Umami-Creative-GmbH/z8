@@ -20,13 +20,6 @@ export interface RequirementHeaderContent {
 	accessibleLabel: string;
 }
 
-function formatRequirementLabel(fallback: string, params: Record<string, string>): string {
-	return Object.entries(params).reduce(
-		(text, [key, value]) => text.replaceAll(`{${key}}`, value),
-		fallback,
-	);
-}
-
 export function getRequirementStatusLabel(
 	status: DailyWorkHoursStatus,
 	t: RequirementTranslate,
@@ -65,17 +58,14 @@ export function buildRequirementHeaderContent(
 		};
 		accessibleLabel = t(
 			"calendar.requirements.dayLabel",
-			formatRequirementLabel(
-				"{date}: {required} required, {actual} recorded, {delta} delta, {status}",
-				labelParams,
-			),
+			"{date}: {required} required, {actual} recorded, {delta} delta, {status}",
 			labelParams,
 		);
 	} else {
 		const labelParams = { date: dateLabel, actual: actualHours };
 		accessibleLabel = t(
 			"calendar.requirements.recordedOnlyDayLabel",
-			formatRequirementLabel("{date}: {actual} recorded", labelParams),
+			"{date}: {actual} recorded",
 			labelParams,
 		);
 	}

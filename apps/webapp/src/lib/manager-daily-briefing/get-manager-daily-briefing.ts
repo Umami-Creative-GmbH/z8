@@ -82,17 +82,12 @@ type GetManagerDailyBriefingInput = {
 
 const SECTION_LOAD_ERROR = "Section could not be loaded.";
 
-const briefingSectionCopy = {
-	approvalsTitle: "Approvals",
-	approvalsDescription: "Pending requests waiting for a decision.",
-} as const;
-
 const SECTION_METADATA = {
 	approvals: {
 		id: "approvals",
-		title: briefingSectionCopy.approvalsTitle,
+		title: "Approvals",
 		titleKey: "today.briefing.sections.approvals.title",
-		description: briefingSectionCopy.approvalsDescription,
+		description: "Pending requests waiting for a decision.",
 		descriptionKey: "today.briefing.sections.approvals.description",
 		emptyState: "No approvals are waiting.",
 		emptyStateKey: "today.briefing.sections.approvals.empty",

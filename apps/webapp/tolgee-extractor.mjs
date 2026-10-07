@@ -6,6 +6,8 @@
  * 4. Multi-line t() calls
  * 5. i18n key mapping objects
  * 6. Namespace inference from key prefixes
+ * 7. `fooKey` properties whose default sits in a sibling (`foo`, `fooDefault`, `fooFallback`)
+ * 8. Defaults bound to a same-file string constant (`t("key", FALLBACK)`)
  *
  * @type {import('@tolgee/cli/extractor').Extractor}
  */
@@ -450,7 +452,11 @@ function findObjectEnd(code, objectStart) {
 	while (pos < code.length && braceCount > 0) {
 		if (code[pos] === "{") braceCount++;
 		else if (code[pos] === "}") braceCount--;
-		else if (code[pos] === '"' || code[pos] === "'" || code[pos] === "`") {
+		else if (code[pos] === "/" && code[pos + 1] === "/") {
+			// A line comment can hold an apostrophe ("// don't") that would open a bogus string.
+			const lineEnd = code.indexOf("\n", pos);
+			pos = lineEnd < 0 ? code.length : lineEnd;
+		} else if (code[pos] === '"' || code[pos] === "'" || code[pos] === "`") {
 			const strResult = extractString(code, pos);
 			if (strResult) {
 				pos = strResult.endIndex;
@@ -510,6 +516,9 @@ function extractTCalls(code) {
 					defaultValue = defaultResult.value;
 					pos = defaultResult.endIndex + 1;
 				}
+			} else if (/[A-Za-z_$]/.test(code[pos])) {
+				// t("key", LOAD_FAILED_FALLBACK) with `const LOAD_FAILED_FALLBACK = "..."` in this file
+				defaultValue = resolveStaticString(code, pos);
 			} else if (code[pos] === "{") {
 				// Parse object argument for defaultValue and ns
 				const objectStart = pos;
@@ -773,11 +782,25 @@ function extractKeyMappingObjects(code) {
 	return results;
 }
 
+// `*Key` properties whose dotted values are data paths, not translation keys
+// (TanStack Table's `accessorKey: "user.name"` would otherwise become a junk key).
+const NON_TRANSLATION_KEY_PROPERTIES = new Set([
+	"accessorKey",
+	"cacheKey",
+	"idempotencyKey",
+	"queryKey",
+	"storageKey",
+]);
+
 /**
  * Extract translation keys from properties whose names end with "Key"
  * (e.g. titleKey: "tour.sidebar.title", descriptionKey: "tour.sidebar.description").
  * This handles data-driven patterns where keys are stored in objects/arrays
  * and later passed to t() dynamically.
+ *
+ * The default comes from a sibling property of the same object (see `findSiblingDefault`).
+ * A key extracted without one is created empty by `tolgee sync`, and the next pull omits it,
+ * so every locale shows the English code fallback.
  */
 function extractKeyProperties(code) {
 	const results = [];
@@ -789,9 +812,10 @@ function extractKeyProperties(code) {
 
 		// Must have at least one dot to be a translation key
 		if (!keyValue.includes(".") || isDynamicKey(keyValue)) continue;
+		if (NON_TRANSLATION_KEY_PROPERTIES.has(match[1])) continue;
 
 		const resolved = resolveKeyAndNamespace(keyValue);
-		const defaultValue = extractAdjacentDefaultValue(code, match.index, match[1]);
+		const defaultValue = findSiblingDefault(code, match.index, match[1]);
 
 		results.push({
 			keyName: resolved.keyName,
@@ -804,19 +828,142 @@ function extractKeyProperties(code) {
 	return results;
 }
 
-function extractAdjacentDefaultValue(code, keyPosition, keyPropertyName) {
-	const objectStart = code.lastIndexOf("{", keyPosition);
-	if (objectStart < 0) return undefined;
+/**
+ * Read the default for a `fooKey` property from a sibling property of the same object, in
+ * priority order: `fooDefault`, `fooFallback`, `fallbackFoo`, `defaultFoo`, then `foo` itself
+ * (`{ title: "Time", titleKey: "...title" }`). When `fooKey` is the object's only `*Key`
+ * property, a generic `fallback`, `defaultValue` or `default` sibling also counts.
+ * Only properties of the object itself are considered, never those of nested objects.
+ */
+function findSiblingDefault(code, keyPosition, keyPropertyName) {
+	const object = findEnclosingObject(code, keyPosition);
+	if (!object) return undefined;
 
-	const objectEnd = findObjectEnd(code, objectStart);
-	if (objectEnd === undefined) return undefined;
+	const properties = readTopLevelProperties(code, object.start, object.end);
+	const prefix = keyPropertyName.slice(0, -3);
+	const capitalized = prefix[0].toUpperCase() + prefix.slice(1);
+	const candidates = [
+		`${prefix}Default`,
+		`${prefix}Fallback`,
+		`fallback${capitalized}`,
+		`default${capitalized}`,
+		prefix,
+	];
+	const keyProperties = [...properties.keys()].filter(
+		(name) => /\wKey$/.test(name) && !NON_TRANSLATION_KEY_PROPERTIES.has(name),
+	);
+	if (keyProperties.length === 1) candidates.push("fallback", "defaultValue", "default");
 
-	const objectContent = code.slice(objectStart, objectEnd);
-	const fallbackPropertyName = `${keyPropertyName.slice(0, -3)}Default`;
-	const fallbackMatch = objectContent.match(new RegExp(`${fallbackPropertyName}\\s*:\\s*["']`));
-	if (!fallbackMatch) return undefined;
+	for (const name of candidates) {
+		const valueStart = properties.get(name);
+		if (valueStart === undefined) continue;
+		const value = resolveStaticString(code, valueStart);
+		if (value !== undefined) return value;
+	}
+	return undefined;
+}
 
-	const fallbackStart = objectContent.indexOf(fallbackMatch[0]) + fallbackMatch[0].length - 1;
-	const fallbackResult = extractString(objectContent, fallbackStart);
-	return fallbackResult?.value;
+/**
+ * Find the innermost object literal that contains `position`. Closed objects that end before
+ * the position (e.g. `meta: { a: 1 }, titleKey: ...`) are skipped.
+ */
+function findEnclosingObject(code, position) {
+	for (
+		let start = code.lastIndexOf("{", position);
+		start >= 0;
+		start = code.lastIndexOf("{", start - 1)
+	) {
+		const end = findObjectEnd(code, start);
+		if (end !== undefined && end > position) return { start, end };
+	}
+	return undefined;
+}
+
+/**
+ * Map each property declared directly in the object `code[start, end)` to the index where its
+ * value starts. A shorthand property (`{ titleDefault }`) maps to its own name's index.
+ */
+function readTopLevelProperties(code, start, end) {
+	const properties = new Map();
+	const identifier = /[A-Za-z_$][\w$]*/y;
+	let depth = 0;
+	let expectName = false;
+
+	for (let i = start; i < end; i++) {
+		const char = code[i];
+		if (char === "/" && (code[i + 1] === "/" || code[i + 1] === "*")) {
+			const close = code[i + 1] === "/" ? "\n" : "*/";
+			const commentEnd = code.indexOf(close, i + 2);
+			i = commentEnd < 0 ? end : commentEnd + close.length - 1;
+			continue;
+		}
+		if (char === '"' || char === "'" || char === "`") {
+			const str = extractString(code, i);
+			if (str) i = str.endIndex;
+			expectName = false;
+			continue;
+		}
+		if (char === "{" || char === "[" || char === "(") {
+			depth++;
+			expectName = depth === 1;
+			continue;
+		}
+		if (char === "}" || char === "]" || char === ")") {
+			depth--;
+			continue;
+		}
+		if (depth !== 1 || /\s/.test(char)) continue;
+		if (char === ",") {
+			expectName = true;
+			continue;
+		}
+		if (!expectName) continue;
+		expectName = false;
+
+		identifier.lastIndex = i;
+		const name = identifier.exec(code)?.[0];
+		if (!name) continue;
+
+		let next = i + name.length;
+		while (next < end && /\s/.test(code[next])) next++;
+		if (code[next] === ":") {
+			let valueStart = next + 1;
+			while (valueStart < end && /\s/.test(code[valueStart])) valueStart++;
+			properties.set(name, valueStart);
+		} else if (code[next] === "," || code[next] === "}") {
+			properties.set(name, i);
+		}
+		i += name.length - 1;
+	}
+
+	return properties;
+}
+
+/**
+ * Read a static string at `position`: a string literal, or an identifier bound once in this
+ * file to a string literal (`const titleDefault = "Automatically clocked out";`).
+ * Anything computed (calls, member access, concatenation, `.join()`) yields undefined.
+ */
+function resolveStaticString(code, position) {
+	const literal = extractString(code, position);
+	if (literal) return literal.value;
+
+	const identifier = /^[A-Za-z_$][\w$]*(?=\s*[,)}\n])/.exec(code.slice(position, position + 200));
+	return identifier ? resolveConstString(code, identifier[0]) : undefined;
+}
+
+function resolveConstString(code, name) {
+	const declaration = new RegExp(
+		`(?<![\\w$.])const\\s+${name.replaceAll("$", "\\$")}\\s*(?::\\s*string\\s*)?=\\s*(?=["'\`])`,
+		"g",
+	);
+	const matches = [...code.matchAll(declaration)];
+	if (matches.length !== 1) return undefined;
+
+	const valueStart = matches[0].index + matches[0][0].length;
+	const literal = extractString(code, valueStart);
+	if (!literal) return undefined;
+	// Reject `const x = "a" + b` and similar: the literal must be the whole initializer.
+	const rest = code.slice(literal.endIndex + 1, literal.endIndex + 40);
+	return /^[ \t]*(?:as\s+const\s*)?(?:;|\r?\n|$)/.test(rest) ? literal.value : undefined;
 }

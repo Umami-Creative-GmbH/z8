@@ -21,6 +21,12 @@ describe("absence category display helpers", () => {
 		).toBe("settings.absenceCategories.defaults.vacation.name:Vacation");
 	});
 
+	it("uses the camelCase key for home office categories", () => {
+		expect(
+			getAbsenceCategoryDisplayName({ type: "home_office", name: "Home Office" }, "de", t),
+		).toBe("settings.absenceCategories.defaults.homeOffice.name:Home Office");
+	});
+
 	it("uses custom category translations for the active locale", () => {
 		expect(
 			getAbsenceCategoryDisplayName(
