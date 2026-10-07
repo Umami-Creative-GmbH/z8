@@ -21,6 +21,39 @@ const mileageActions = vi.hoisted(() => ({
 }));
 vi.mock("@/app/[locale]/(app)/travel-expenses/report-actions", () => reportActions);
 vi.mock("@/app/[locale]/(app)/travel-expenses/mileage-actions", () => mileageActions);
+const projectActions = vi.hoisted(() => ({
+	getReportProjectChoicesAction: vi.fn(),
+	getReportProjectIssuesAction: vi.fn(),
+	saveItemProjectAction: vi.fn(),
+	saveTripProjectAction: vi.fn(),
+}));
+vi.mock("@/app/[locale]/(app)/travel-expenses/report-project-actions", () => projectActions);
+// A native select stands in for the popover select, so the test drives the field, not the widget.
+vi.mock("@/components/ui/select", () => ({
+	Select: ({
+		value,
+		onValueChange,
+		children,
+	}: {
+		value: string;
+		onValueChange: (value: string) => void;
+		children: React.ReactNode;
+	}) => (
+		<select
+			aria-label="Project"
+			value={value}
+			onChange={(event) => onValueChange(event.target.value)}
+		>
+			{children}
+		</select>
+	),
+	SelectTrigger: () => null,
+	SelectValue: () => null,
+	SelectContent: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+	SelectItem: ({ value, children }: { value: string; children: React.ReactNode }) => (
+		<option value={value}>{children}</option>
+	),
+}));
 vi.mock("@/hooks/use-travel-expense-file-upload", () => ({
 	useTravelExpenseFileUpload: () => ({
 		addFile: vi.fn(),
@@ -258,5 +291,45 @@ describe("mileage expenses (#606)", () => {
 		expect(distance.value).toBe("289,7");
 		await new Promise((resolve) => setTimeout(resolve, 1200));
 		expect(mileageActions.saveMileageItemDraftAction).toHaveBeenCalledTimes(1);
+	});
+	it("lets a standalone drive name its own project (#688)", async () => {
+		const project = "6a060000-0000-4000-8000-0000000000c1";
+		projectActions.getReportProjectChoicesAction.mockResolvedValue({
+			success: true,
+			data: {
+				timeZone: "Europe/Berlin",
+				choices: [
+					{
+						id: project,
+						name: "Potsdam rollout",
+						customerName: null,
+						status: "active",
+						basis: "employee_assignment",
+					},
+				],
+				selected: null,
+			},
+		});
+		projectActions.saveItemProjectAction.mockResolvedValue({
+			success: true,
+			data: { status: "saved", version: 4 },
+		});
+		mount();
+		await screen.findByRole("option", { name: "Potsdam rollout" });
+		const select = screen.getByLabelText("Project") as HTMLSelectElement;
+		expect(select.value).toBe("none");
+		// Projects are offered for the date of the drive.
+		expect(projectActions.getReportProjectChoicesAction).toHaveBeenCalledWith(
+			expect.objectContaining({ from: "2026-09-15", to: "2026-09-15" }),
+		);
+		fireEvent.change(select, { target: { value: `project:${project}` } });
+		await waitFor(() =>
+			expect(projectActions.saveItemProjectAction).toHaveBeenCalledWith({
+				reportId,
+				itemId,
+				expectedVersion: 3,
+				choice: { mode: "project", projectId: project },
+			}),
+		);
 	});
 });

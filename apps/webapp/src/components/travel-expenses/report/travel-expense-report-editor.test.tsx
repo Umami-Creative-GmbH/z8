@@ -2,7 +2,8 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const reportActions = vi.hoisted(() => ({
 	getMyTravelExpenseReport: vi.fn(),
@@ -126,6 +127,18 @@ async function description() {
 	return (await screen.findByRole("textbox", { name: "Description" })) as HTMLTextAreaElement;
 }
 
+beforeAll(() => {
+	// The searchable currency select measures and scrolls its list.
+	vi.stubGlobal(
+		"ResizeObserver",
+		class {
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		},
+	);
+	HTMLElement.prototype.scrollIntoView = vi.fn();
+});
 beforeEach(() => {
 	reportActions.getMyTravelExpenseReport.mockResolvedValue(report());
 });
@@ -313,7 +326,31 @@ describe("TravelExpenseReportEditor", () => {
 		},
 	);
 
-	it("separates company-paid costs from the reimbursement total", async () => {		reportActions.getMyTravelExpenseReport.mockResolvedValue(report({ paidBy: "company" }));
+	it("chooses the receipt currency from a searchable list and saves its code (#688)", async () => {
+		reportActions.saveReceiptItemDraftAction.mockResolvedValue({
+			success: true,
+			data: { status: "saved", item: item({ version: 4, currency: "CHF" }) },
+		});
+		const user = userEvent.setup();
+		mount();
+		await description();
+		const currency = screen.getByRole("combobox", { name: "Currency" });
+		expect(currency.textContent).toContain("EUR – Euro");
+		await user.click(currency);
+		await user.keyboard("swiss");
+		await user.click(screen.getByRole("option", { name: "CHF – Swiss Franc" }));
+		expect(currency.textContent).toContain("CHF – Swiss Franc");
+		await waitFor(
+			() =>
+				expect(reportActions.saveReceiptItemDraftAction).toHaveBeenCalledWith(
+					expect.objectContaining({ values: expect.objectContaining({ currency: "CHF" }) }),
+				),
+			{ timeout: 3000 },
+		);
+	});
+
+	it("separates company-paid costs from the reimbursement total", async () => {
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(report({ paidBy: "company" }));
 		mount();
 		await description();
 		const totals = screen.getByRole("region", { name: "Totals" });

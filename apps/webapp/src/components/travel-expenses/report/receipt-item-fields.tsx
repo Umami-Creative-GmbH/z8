@@ -23,10 +23,12 @@ import {
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import {
+	isSupportedCurrency,
 	MAX_ACCOUNTING_REFERENCE_LENGTH,
 	MAX_DESCRIPTION_LENGTH,
 	RECEIPT_EXPENSE_CATEGORIES,
 } from "@/lib/travel-expenses/receipt-report";
+import { CurrencySelect } from "../currency-select";
 import { categoryLabel } from "./format";
 import { reformatNumberField } from "./number-field";
 import type { ReceiptItemFieldName, ReceiptItemFormApi } from "./receipt-item-form";
@@ -174,12 +176,10 @@ export function ReceiptItemFields({
 								{t("travelExpenses.form.currency", "Currency")}
 							</TFormLabel>
 							<TFormControl hasError={!!fieldError("currency")}>
-								<Input
-									name="currency"
-									autoComplete="off"
-									maxLength={3}
+								<CurrencySelect
+									accepts={isSupportedCurrency}
 									value={field.state.value}
-									onChange={(event) => field.handleChange(event.target.value.toUpperCase())}
+									onValueChange={field.handleChange}
 									onBlur={field.handleBlur}
 								/>
 							</TFormControl>

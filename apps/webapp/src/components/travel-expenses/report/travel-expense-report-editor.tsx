@@ -413,6 +413,7 @@ function StandaloneReportBody({
 							reimbursementCurrency={report.reimbursementCurrency}
 							onSaved={() => void Promise.all([refreshReport(), refreshDrafts()])}
 							onDraftChange={(draft) => setMileageDrafts({ [item.id]: draft })}
+							project={{ isTrip: false, tripProjectId: null }}
 							now={now}
 						/>
 					) : (
@@ -483,7 +484,9 @@ function TripReportBody({
 			tripProjectId,
 			items.map((item) => [
 				item.id,
-				liveDraft(item, drafts)?.expenseDate ?? item.expenseDate,
+				(item.type === "mileage"
+					? liveMileage(item, mileageDrafts)?.expenseDate
+					: liveDraft(item, drafts)?.expenseDate) ?? item.expenseDate,
 				item.projectId ?? null,
 				item.projectInherits ?? true,
 			]),
@@ -652,10 +655,15 @@ function TripReportBody({
 											reportId={report.id}
 											item={item}
 											reimbursementCurrency={report.reimbursementCurrency}
-											onSaved={() => void Promise.all([refreshReport(), refreshDrafts()])}
+											onSaved={() => {
+												void Promise.all([refreshReport(), refreshDrafts()]);
+												// A saved date may change which project the expense can use.
+												void projectIssues.recheck();
+											}}
 											onDraftChange={(draft) =>
 												setMileageDrafts((current) => ({ ...current, [item.id]: draft }))
 											}
+											project={{ isTrip: true, tripProjectId }}
 											now={now}
 											removal={{
 												label: removeLabel,

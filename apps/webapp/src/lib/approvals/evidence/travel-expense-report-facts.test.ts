@@ -563,6 +563,26 @@ describe("mileage items (#606)", () => {
 		});
 	});
 
+	it("freezes a drive's own project attribution like a receipt's (#688)", () => {
+		const project = {
+			projectId: "p4",
+			name: "Customer site rollout",
+			customerId: null,
+			customerName: null,
+			inheritedFromTrip: false,
+			basis: "employee_assignment",
+		} as const;
+		const facts = freeze(
+			input({
+				report: { ...input().report, projectId: null },
+				items: [...input().items, { ...drive, projectId: "p4", projectInherits: false }],
+				projectAttribution: { drive: project },
+			}),
+		);
+		expect(facts.items[2]?.project).toEqual(project);
+		expect(facts.items[2]?.mileage?.route).toBe("Hamburg hotel – customer site – back");
+	});
+
 	it("refuses a mileage item that was not priced under the submission lock", () => {
 		for (const row of [
 			{ ...drive, mileagePolicy: null },

@@ -146,7 +146,7 @@ describe("ItemProjectField", () => {
 
 	it("asks for the date before offering projects", () => {
 		renderField({ expenseDate: null });
-		expect(screen.getByText(/Enter the receipt date/)).toBeTruthy();
+		expect(screen.getByText(/Enter the expense date/)).toBeTruthy();
 		expect(actions.getReportProjectChoicesAction).not.toHaveBeenCalled();
 	});
 

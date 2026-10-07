@@ -400,8 +400,8 @@ export function ItemProjectField({
 			<ChoicesStatus
 				query={query}
 				needsDate={t(
-					"travelExpenses.report.project.needsDate",
-					"Enter the receipt date to see the projects you can use on that day.",
+					"travelExpenses.report.project.needsExpenseDate",
+					"Enter the expense date to see the projects you can use on that day.",
 				)}
 			/>
 			<IneligibleProjectProblem effectiveProjectId={effectiveProjectId} selected={selected} />

@@ -251,7 +251,8 @@ describe("trip report editor", () => {
 		expect(screen.getByRole("button", { name: "Remove Mileage 2" })).toBeTruthy();
 	});
 
-	it.each([		["Pacific/Kiritimati", "UTC+14"],
+	it.each([
+		["Pacific/Kiritimati", "UTC+14"],
 		["Pacific/Pago_Pago", "UTC-11"],
 	])("shows the travel dates as entered for a viewer in %s (%s)", async (zone) => {
 		process.env.TZ = zone;
@@ -338,9 +339,9 @@ describe("trip report editor", () => {
 		await user.keyboard("fra");
 		expect(screen.queryByRole("option", { name: "Germany" })).toBeNull();
 		await user.click(screen.getByRole("option", { name: "France" }));
-		expect(within(tripSection()).getByRole("combobox", { name: "Country 1" }).textContent).toContain(
-			"France",
-		);
+		expect(
+			within(tripSection()).getByRole("combobox", { name: "Country 1" }).textContent,
+		).toContain("France");
 		await waitFor(
 			() =>
 				expect(reportActions.saveTripDetailsDraftAction).toHaveBeenCalledWith(
@@ -354,7 +355,8 @@ describe("trip report editor", () => {
 		);
 	});
 
-	it("adds destinations and saves them with the trip", async () => {		reportActions.saveTripDetailsDraftAction.mockResolvedValue({
+	it("adds destinations and saves them with the trip", async () => {
+		reportActions.saveTripDetailsDraftAction.mockResolvedValue({
 			success: true,
 			data: { status: "saved", details: { ...tripDetails, version: 6 } },
 		});
