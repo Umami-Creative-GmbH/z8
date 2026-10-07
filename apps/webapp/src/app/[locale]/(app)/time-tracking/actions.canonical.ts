@@ -1,12 +1,9 @@
 import { Effect, Layer } from "effect";
-import { db } from "@/db";
-import { DatabaseError } from "@/lib/effect/errors";
+import type { db } from "@/db";
+
 import { runtime } from "@/lib/effect/runtime";
-import { DatabaseService } from "@/lib/effect/services/database.service";
-import {
-	TimeEntryService,
-	TimeEntryServiceLive,
-} from "@/lib/effect/services/time-entry.service";
+import { DatabaseService, makeDatabaseService } from "@/lib/effect/services/database.service";
+import { TimeEntryService, TimeEntryServiceLive } from "@/lib/effect/services/time-entry.service";
 import type { TimeEntryTimezoneSource } from "@/lib/time-tracking/timezone-capture";
 
 type Transaction = Pick<
@@ -17,19 +14,7 @@ type Transaction = Pick<
 function transactionDatabaseLayer(transaction: Transaction) {
 	return Layer.succeed(
 		DatabaseService,
-		DatabaseService.of({
-			db: transaction as unknown as typeof db,
-			query: (name, fn) =>
-				Effect.tryPromise({
-					try: fn,
-					catch: (error) =>
-						new DatabaseError({
-							message: `Database query failed: ${name}`,
-							operation: name,
-							cause: error,
-						}),
-				}),
-		}),
+		DatabaseService.of(makeDatabaseService(transaction as unknown as typeof db)),
 	);
 }
 
@@ -95,9 +80,7 @@ export const canonicalTimeEntryClient = {
 	) => {
 		const effect = Effect.gen(function* () {
 			const service = yield* TimeEntryService;
-			return yield* service.createCorrectionEntry(
-				transaction ? { ...input, transaction } : input,
-			);
+			return yield* service.createCorrectionEntry(transaction ? { ...input, transaction } : input);
 		});
 
 		return runTimeEntryEffect(effect, transaction);

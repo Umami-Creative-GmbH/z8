@@ -2,19 +2,14 @@
 
 import { Effect, Exit } from "effect";
 import { z } from "zod";
-import { db } from "@/db";
 import { requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
 import { getRequestSession } from "@/lib/auth/request-session";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { typedFailureOfCause } from "@/lib/effect/cause-failure";
-import {
-	AuthenticationError,
-	AuthorizationError,
-	DatabaseError,
-	ValidationError,
-} from "@/lib/effect/errors";
+import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { runtime } from "@/lib/effect/runtime";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { saveAutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/settings";
 import type { AutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/types";
 
@@ -61,18 +56,13 @@ export async function updateAutoClockOutSettings(input: {
 			resource: "organization",
 			action: "update",
 		});
-		return yield* Effect.tryPromise({
-			try: () =>
-				saveAutoClockOutSettings(parsed.data, {
-					database: db,
-					clock: systemClock,
-				}),
-			catch: () =>
-				new DatabaseError({
-					message: "Failed to update automatic clock-out settings",
-					operation: "saveAutoClockOutSettings",
-				}),
-		});
+		const dbService = yield* DatabaseService;
+		return yield* dbService.query("autoClockOut.saveSettings", () =>
+			saveAutoClockOutSettings(parsed.data, {
+				database: dbService.db,
+				clock: systemClock,
+			}),
+		);
 	});
 	const exit = await runtime.runPromiseExit(effect);
 	if (Exit.isSuccess(exit)) return { success: true, data: exit.value };

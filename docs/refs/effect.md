@@ -36,6 +36,14 @@ A service shape or callback type declares the real requirement type (`R`) of the
 
 In tests, `vi.mock` factories import `effect`, and stub services with `Context.Service<any>("Name")`.
 
+## Database Queries
+
+- **One wrapper:** database work in an effect runs through `DatabaseService.query(name, fn)`. It traces a `db.query.<name>` span and maps a rejection to `DatabaseError { operation: name, cause }` with the generic message `Database query failed: <name>`. Don't build a `DatabaseError` in an `Effect.tryPromise` catch; `database-error-sites.test.ts` fails on it.
+- **Names:** use `<area>.<operation>`, such as `subscription.getByOrganization`.
+- **Several calls:** a multi-call body or a whole transaction can run inside one `query`. A typed error thrown inside arrives as the `DatabaseError`'s `cause`. When the caller must keep its type, map it back with `Effect.mapError`, as the project and work-category configuration writes do.
+- **Transactions:** build a transaction-bound service with `makeDatabaseService(tx)` from `database.service.ts`, the constructor `DatabaseServiceLive` uses too. Don't hand-build `{ db: tx, query }` objects.
+- **Services** that touch the database yield `DatabaseService` in their layer instead of importing the global `db`, so a transaction-bound service can reach them.
+
 ## Runtime
 
 `runtime` in `lib/effect/runtime.ts` is the one shared `ManagedRuntime`, built from `AppLayer`. Don't create another one.

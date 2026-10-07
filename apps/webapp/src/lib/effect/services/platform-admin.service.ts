@@ -1,6 +1,5 @@
 import { and, count, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { db } from "@/db";
 import { member, organization, session, user } from "@/db/auth-schema";
 import { organizationSuspension, platformAdminAuditLog } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -8,7 +7,13 @@ import { isAccountBanned } from "@/lib/auth/account-ban";
 import { getRequestSession } from "@/lib/auth/request-session";
 import { addOrganizationDeletionNotificationJob } from "@/lib/queue";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
-import { AuthorizationError, ConflictError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
+import {
+	AuthorizationError,
+	ConflictError,
+	type DatabaseError,
+	NotFoundError,
+} from "@/lib/effect/errors";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 
 // Types
 export interface PlatformUserOrganization {
@@ -201,23 +206,25 @@ export async function requirePlatformAdmin(): Promise<{
 }
 
 // Service implementation
-export const PlatformAdminServiceLive = Layer.succeed(
+export const PlatformAdminServiceLive = Layer.effect(
 	PlatformAdminService,
-	PlatformAdminService.of({
-		requirePlatformAdmin: () =>
-			Effect.tryPromise({
-				try: requirePlatformAdmin,
-				catch: () =>
-					new AuthorizationError({
-						message: "Platform admin access required",
-						resource: "platform_admin",
-						action: "access",
-					}),
-			}),
+	Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
-		listUsers: (filters, pagination) =>
-			Effect.tryPromise({
-				try: async () => {
+		return PlatformAdminService.of({
+			requirePlatformAdmin: () =>
+				Effect.tryPromise({
+					try: requirePlatformAdmin,
+					catch: () =>
+						new AuthorizationError({
+							message: "Platform admin access required",
+							resource: "platform_admin",
+							action: "access",
+						}),
+				}),
+
+			listUsers: (filters, pagination) =>
+				dbService.query("platformAdmin.listUsers", async () => {
 					const { search, status, organizationId } = filters;
 					const { page, pageSize } = pagination;
 					const offset = (page - 1) * pageSize;
@@ -247,8 +254,8 @@ export const PlatformAdminServiceLive = Layer.succeed(
 					const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
 					const [[{ total }], users] = await Promise.all([
-						db.select({ total: count() }).from(user).where(whereClause),
-						db
+						dbService.db.select({ total: count() }).from(user).where(whereClause),
+						dbService.db
 							.select({
 								id: user.id,
 								email: user.email,
@@ -269,7 +276,7 @@ export const PlatformAdminServiceLive = Layer.succeed(
 					const userIds = users.map((platformUser) => platformUser.id);
 					const memberships =
 						userIds.length > 0
-							? await db
+							? await dbService.db
 									.select({
 										userId: member.userId,
 										id: organization.id,
@@ -316,138 +323,128 @@ export const PlatformAdminServiceLive = Layer.succeed(
 						pageSize,
 						totalPages: Math.ceil(total / pageSize),
 					};
-				},
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to list users",
-						operation: "listUsers",
-						cause: error,
-					}),
-			}),
+				}),
 
-		banUser: (userId, reason, expiresAt, adminId) =>
-			Effect.tryPromise({
-				try: async () => {
-					// Manual interpretation re-reads ban status under the user's shared
-					// access guard in every organization (#312): the ban commits under
-					// the exclusive guard, so it cannot land inside a submission.
-					await db.transaction(async (tx) => {
-						await acquireExclusiveUserConfigurationAccessGuards(tx, [userId]);
-						const [existingUser] = await tx
-							.select({ id: user.id })
-							.from(user)
-							.where(eq(user.id, userId))
-							.limit(1);
+			banUser: (userId, reason, expiresAt, adminId) =>
+				dbService
+					.query("platformAdmin.banUser", async () => {
+						// Manual interpretation re-reads ban status under the user's shared
+						// access guard in every organization (#312): the ban commits under
+						// the exclusive guard, so it cannot land inside a submission.
+						await dbService.db.transaction(async (tx) => {
+							await acquireExclusiveUserConfigurationAccessGuards(tx, [userId]);
+							const [existingUser] = await tx
+								.select({ id: user.id })
+								.from(user)
+								.where(eq(user.id, userId))
+								.limit(1);
 
-						if (!existingUser) {
-							throw { type: "not_found" };
-						}
+							if (!existingUser) {
+								throw { type: "not_found" };
+							}
 
-						await tx
-							.update(user)
-							.set({
-								banned: true,
-								banReason: reason,
-								banExpires: expiresAt,
-							})
-							.where(eq(user.id, userId));
-					});
-
-					// Keep the ban committed even if revocation fails. Store-level
-					// validation denies access immediately; revocation also prevents
-					// old tokens becoming usable again when the ban is later lifted.
-					await (await auth.$context).internalAdapter.deleteUserSessions(userId);
-
-					// Log action
-					await db.insert(platformAdminAuditLog).values({
-						adminUserId: adminId,
-						action: "ban_user",
-						targetType: "user",
-						targetId: userId,
-						metadata: JSON.stringify({ reason, expiresAt }),
-					});
-				},
-				catch: (error) => {
-					if (
-						error &&
-						typeof error === "object" &&
-						"type" in error &&
-						error.type === "not_found"
-					) {
-						return new NotFoundError({
-							message: "User not found",
-							entityType: "user",
-							entityId: userId,
+							await tx
+								.update(user)
+								.set({
+									banned: true,
+									banReason: reason,
+									banExpires: expiresAt,
+								})
+								.where(eq(user.id, userId));
 						});
-					}
-					return new DatabaseError({
-						message: "Failed to ban user",
-						operation: "banUser",
-						cause: error,
-					});
-				},
-			}),
 
-		unbanUser: (userId, adminId) =>
-			Effect.tryPromise({
-				try: async () => {
-					// Same protection as banUser: restored access is ordered against
-					// in-flight manual interpretation (#312).
-					await db.transaction(async (tx) => {
-						await acquireExclusiveUserConfigurationAccessGuards(tx, [userId]);
-						const [existingUser] = await tx
-							.select({ id: user.id })
-							.from(user)
-							.where(eq(user.id, userId))
-							.limit(1);
+						// Keep the ban committed even if revocation fails. Store-level
+						// validation denies access immediately; revocation also prevents
+						// old tokens becoming usable again when the ban is later lifted.
+						await (await auth.$context).internalAdapter.deleteUserSessions(userId);
 
-						if (!existingUser) {
-							throw { type: "not_found" };
-						}
-
-						await tx
-							.update(user)
-							.set({
-								banned: false,
-								banReason: null,
-								banExpires: null,
-							})
-							.where(eq(user.id, userId));
-					});
-
-					// Log action
-					await db.insert(platformAdminAuditLog).values({
-						adminUserId: adminId,
-						action: "unban_user",
-						targetType: "user",
-						targetId: userId,
-					});
-				},
-				catch: (error) => {
-					if (
-						error &&
-						typeof error === "object" &&
-						"type" in error &&
-						error.type === "not_found"
-					) {
-						return new NotFoundError({
-							message: "User not found",
-							entityType: "user",
-							entityId: userId,
+						// Log action
+						await dbService.db.insert(platformAdminAuditLog).values({
+							adminUserId: adminId,
+							action: "ban_user",
+							targetType: "user",
+							targetId: userId,
+							metadata: JSON.stringify({ reason, expiresAt }),
 						});
-					}
-					return new DatabaseError({
-						message: "Failed to unban user",
-						operation: "unbanUser",
-						cause: error,
-					});
-				},
-			}),
+					})
+					.pipe(
+						Effect.mapError((failure) => {
+							const error = failure.cause;
 
-		listUserSessions: (userId) =>
-			Effect.tryPromise({
-				try: async () => {
-					const sessions = await db
+							if (
+								error &&
+								typeof error === "object" &&
+								"type" in error &&
+								error.type === "not_found"
+							) {
+								return new NotFoundError({
+									message: "User not found",
+									entityType: "user",
+									entityId: userId,
+								});
+							}
+							return failure;
+						}),
+					),
+
+			unbanUser: (userId, adminId) =>
+				dbService
+					.query("platformAdmin.unbanUser", async () => {
+						// Same protection as banUser: restored access is ordered against
+						// in-flight manual interpretation (#312).
+						await dbService.db.transaction(async (tx) => {
+							await acquireExclusiveUserConfigurationAccessGuards(tx, [userId]);
+							const [existingUser] = await tx
+								.select({ id: user.id })
+								.from(user)
+								.where(eq(user.id, userId))
+								.limit(1);
+
+							if (!existingUser) {
+								throw { type: "not_found" };
+							}
+
+							await tx
+								.update(user)
+								.set({
+									banned: false,
+									banReason: null,
+									banExpires: null,
+								})
+								.where(eq(user.id, userId));
+						});
+
+						// Log action
+						await dbService.db.insert(platformAdminAuditLog).values({
+							adminUserId: adminId,
+							action: "unban_user",
+							targetType: "user",
+							targetId: userId,
+						});
+					})
+					.pipe(
+						Effect.mapError((failure) => {
+							const error = failure.cause;
+
+							if (
+								error &&
+								typeof error === "object" &&
+								"type" in error &&
+								error.type === "not_found"
+							) {
+								return new NotFoundError({
+									message: "User not found",
+									entityType: "user",
+									entityId: userId,
+								});
+							}
+							return failure;
+						}),
+					),
+
+			listUserSessions: (userId) =>
+				dbService.query("platformAdmin.listUserSessions", async () => {
+					const sessions = await dbService.db
 						.select({
 							id: session.id,
 							token: session.token,
@@ -463,76 +460,67 @@ export const PlatformAdminServiceLive = Layer.succeed(
 						.orderBy(desc(session.createdAt));
 
 					return sessions;
-				},
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to list user sessions",
-						operation: "listUserSessions",
-						cause: error,
-					}),
-			}),
+				}),
 
-		revokeSession: (sessionId, adminId) =>
-			Effect.tryPromise({
-				try: async () => {
-					// Get session to find userId for audit
-					const [existingSession] = await db
-						.select({ id: session.id, userId: session.userId })
-						.from(session)
-						.where(eq(session.id, sessionId))
-						.limit(1);
+			revokeSession: (sessionId, adminId) =>
+				dbService
+					.query("platformAdmin.revokeSession", async () => {
+						// Get session to find userId for audit
+						const [existingSession] = await dbService.db
+							.select({ id: session.id, userId: session.userId })
+							.from(session)
+							.where(eq(session.id, sessionId))
+							.limit(1);
 
-					if (!existingSession) {
-						throw { type: "not_found" };
-					}
+						if (!existingSession) {
+							throw { type: "not_found" };
+						}
 
-					// Delete session
-					await db.delete(session).where(eq(session.id, sessionId));
+						// Delete session
+						await dbService.db.delete(session).where(eq(session.id, sessionId));
 
-					// Log action
-					await db.insert(platformAdminAuditLog).values({
-						adminUserId: adminId,
-						action: "revoke_session",
-						targetType: "session",
-						targetId: sessionId,
-						metadata: JSON.stringify({ userId: existingSession.userId }),
-					});
-				},
-				catch: (error) => {
-					if (
-						error &&
-						typeof error === "object" &&
-						"type" in error &&
-						error.type === "not_found"
-					) {
-						return new NotFoundError({
-							message: "Session not found",
-							entityType: "session",
-							entityId: sessionId,
+						// Log action
+						await dbService.db.insert(platformAdminAuditLog).values({
+							adminUserId: adminId,
+							action: "revoke_session",
+							targetType: "session",
+							targetId: sessionId,
+							metadata: JSON.stringify({ userId: existingSession.userId }),
 						});
-					}
-					return new DatabaseError({
-						message: "Failed to revoke session",
-						operation: "revokeSession",
-						cause: error,
-					});
-				},
-			}),
+					})
+					.pipe(
+						Effect.mapError((failure) => {
+							const error = failure.cause;
 
-		revokeAllUserSessions: (userId, adminId) =>
-			Effect.tryPromise({
-				try: async () => {
+							if (
+								error &&
+								typeof error === "object" &&
+								"type" in error &&
+								error.type === "not_found"
+							) {
+								return new NotFoundError({
+									message: "Session not found",
+									entityType: "session",
+									entityId: sessionId,
+								});
+							}
+							return failure;
+						}),
+					),
+
+			revokeAllUserSessions: (userId, adminId) =>
+				dbService.query("platformAdmin.revokeAllUserSessions", async () => {
 					// Count sessions before deleting
-					const [{ sessionCount }] = await db
+					const [{ sessionCount }] = await dbService.db
 						.select({ sessionCount: count() })
 						.from(session)
 						.where(eq(session.userId, userId));
 
 					// Delete all sessions
-					await db.delete(session).where(eq(session.userId, userId));
+					await dbService.db.delete(session).where(eq(session.userId, userId));
 
 					// Log action
-					await db.insert(platformAdminAuditLog).values({
+					await dbService.db.insert(platformAdminAuditLog).values({
 						adminUserId: adminId,
 						action: "revoke_all_sessions",
 						targetType: "user",
@@ -541,18 +529,10 @@ export const PlatformAdminServiceLive = Layer.succeed(
 					});
 
 					return sessionCount;
-				},
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to revoke all user sessions",
-						operation: "revokeAllUserSessions",
-						cause: error,
-					}),
-			}),
+				}),
 
-		listOrganizations: (filters, pagination) =>
-			Effect.tryPromise({
-				try: async () => {
+			listOrganizations: (filters, pagination) =>
+				dbService.query("platformAdmin.listOrganizations", async () => {
 					const { search, status } = filters;
 					const { page, pageSize } = pagination;
 					const offset = (page - 1) * pageSize;
@@ -562,10 +542,7 @@ export const PlatformAdminServiceLive = Layer.succeed(
 
 					if (search) {
 						conditions.push(
-							or(
-								ilike(organization.name, `%${search}%`),
-								ilike(organization.slug, `%${search}%`),
-							),
+							or(ilike(organization.name, `%${search}%`), ilike(organization.slug, `%${search}%`)),
 						);
 					}
 
@@ -579,7 +556,7 @@ export const PlatformAdminServiceLive = Layer.succeed(
 					const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
 					// Get organizations with counts
-					const orgsWithCounts = await db
+					const orgsWithCounts = await dbService.db
 						.select({
 							id: organization.id,
 							name: organization.name,
@@ -607,7 +584,7 @@ export const PlatformAdminServiceLive = Layer.succeed(
 					const orgIds = orgsWithCounts.map((o) => o.id);
 					const suspensions =
 						orgIds.length > 0
-							? await db
+							? await dbService.db
 									.select({
 										organizationId: organizationSuspension.organizationId,
 										reason: organizationSuspension.reason,
@@ -624,7 +601,7 @@ export const PlatformAdminServiceLive = Layer.succeed(
 					const suspensionMap = new Map(suspensions.map((s) => [s.organizationId, s.reason]));
 
 					// Get total count
-					const [{ total }] = await db
+					const [{ total }] = await dbService.db
 						.select({ total: count() })
 						.from(organization)
 						.where(whereClause);
@@ -655,236 +632,225 @@ export const PlatformAdminServiceLive = Layer.succeed(
 						pageSize,
 						totalPages: Math.ceil(total / pageSize),
 					};
-				},
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to list organizations",
-						operation: "listOrganizations",
-						cause: error,
-					}),
-			}),
+				}),
 
-		suspendOrganization: (orgId, reason, adminId) =>
-			Effect.tryPromise({
-				try: async () => {
-					// Check if org exists
-					const [existingOrg] = await db
-						.select({ id: organization.id })
-						.from(organization)
-						.where(eq(organization.id, orgId))
-						.limit(1);
-
-					if (!existingOrg) {
-						throw { type: "not_found" };
-					}
-
-					// Check if already suspended
-					const [existingSuspension] = await db
-						.select({ id: organizationSuspension.id })
-						.from(organizationSuspension)
-						.where(
-							and(
-								eq(organizationSuspension.organizationId, orgId),
-								eq(organizationSuspension.isActive, true),
-							),
-						)
-						.limit(1);
-
-					if (existingSuspension) {
-						throw { type: "conflict" };
-					}
-
-					// Create suspension record
-					await db.insert(organizationSuspension).values({
-						organizationId: orgId,
-						reason,
-						suspendedBy: adminId,
-					});
-
-					// Log action
-					await db.insert(platformAdminAuditLog).values({
-						adminUserId: adminId,
-						action: "suspend_org",
-						targetType: "organization",
-						targetId: orgId,
-						metadata: JSON.stringify({ reason }),
-					});
-				},
-				catch: (error) => {
-					if (error && typeof error === "object" && "type" in error) {
-						if (error.type === "not_found") {
-							return new NotFoundError({
-								message: "Organization not found",
-								entityType: "organization",
-								entityId: orgId,
-							});
-						}
-						if (error.type === "conflict") {
-							return new ConflictError({
-								message: "Organization is already suspended",
-								conflictType: "already_suspended",
-							});
-						}
-					}
-					return new DatabaseError({
-						message: "Failed to suspend organization",
-						operation: "suspendOrganization",
-						cause: error,
-					});
-				},
-			}),
-
-		unsuspendOrganization: (orgId, adminId) =>
-			Effect.tryPromise({
-				try: async () => {
-					// Find active suspension
-					const [existingSuspension] = await db
-						.select({ id: organizationSuspension.id })
-						.from(organizationSuspension)
-						.where(
-							and(
-								eq(organizationSuspension.organizationId, orgId),
-								eq(organizationSuspension.isActive, true),
-							),
-						)
-						.limit(1);
-
-					if (!existingSuspension) {
-						throw { type: "not_found" };
-					}
-
-					// Deactivate suspension
-					await db
-						.update(organizationSuspension)
-						.set({
-							isActive: false,
-							unsuspendedAt: new Date(),
-							unsuspendedBy: adminId,
-						})
-						.where(eq(organizationSuspension.id, existingSuspension.id));
-
-					// Log action
-					await db.insert(platformAdminAuditLog).values({
-						adminUserId: adminId,
-						action: "unsuspend_org",
-						targetType: "organization",
-						targetId: orgId,
-					});
-				},
-				catch: (error) => {
-					if (
-						error &&
-						typeof error === "object" &&
-						"type" in error &&
-						error.type === "not_found"
-					) {
-						return new NotFoundError({
-							message: "No active suspension found for organization",
-							entityType: "organization_suspension",
-							entityId: orgId,
-						});
-					}
-					return new DatabaseError({
-						message: "Failed to unsuspend organization",
-						operation: "unsuspendOrganization",
-						cause: error,
-					});
-				},
-			}),
-
-		deleteOrganization: (orgId, immediate, skipNotification, adminId) =>
-			Effect.tryPromise({
-				try: async () => {
-					// Check if org exists
-					const [existingOrg] = await db
-						.select({ id: organization.id, name: organization.name })
-						.from(organization)
-						.where(eq(organization.id, orgId))
-						.limit(1);
-
-					if (!existingOrg) {
-						throw { type: "not_found" };
-					}
-
-					const deletionDate = new Date();
-
-					if (!immediate) {
-						deletionDate.setDate(deletionDate.getDate() + 5);
-					}
-
-					if (immediate) {
-						// Set deletedAt to now - the cleanup job will handle actual deletion
-						// For truly immediate deletion, we'd call the cleanup function directly
-						await db
-							.update(organization)
-							.set({
-								deletedAt: deletionDate,
-								deletedBy: adminId,
-							})
-							.where(eq(organization.id, orgId));
-					} else {
-						await db
-							.update(organization)
-							.set({
-								deletedAt: deletionDate,
-								deletedBy: adminId,
-							})
-							.where(eq(organization.id, orgId));
-					}
-
-					// Log action
-					await db.insert(platformAdminAuditLog).values({
-						adminUserId: adminId,
-						action: "delete_org",
-						targetType: "organization",
-						targetId: orgId,
-						metadata: JSON.stringify({
-							immediate,
-							skipNotification,
-							organizationName: existingOrg.name,
-						}),
-					});
-
-					if (!skipNotification) {
-						const [adminUser] = await db
-							.select({ email: user.email })
-							.from(user)
-							.where(eq(user.id, adminId))
+			suspendOrganization: (orgId, reason, adminId) =>
+				dbService
+					.query("platformAdmin.suspendOrganization", async () => {
+						// Check if org exists
+						const [existingOrg] = await dbService.db
+							.select({ id: organization.id })
+							.from(organization)
+							.where(eq(organization.id, orgId))
 							.limit(1);
 
-						await addOrganizationDeletionNotificationJob({
-							organizationId: orgId,
-							organizationName: existingOrg.name,
-							deletedByName: adminUser?.email ?? adminId,
-							deletionDate: deletionDate.toISOString(),
-						});
-					}
-				},
-				catch: (error) => {
-					if (
-						error &&
-						typeof error === "object" &&
-						"type" in error &&
-						error.type === "not_found"
-					) {
-						return new NotFoundError({
-							message: "Organization not found",
-							entityType: "organization",
-							entityId: orgId,
-						});
-					}
-					return new DatabaseError({
-						message: "Failed to delete organization",
-						operation: "deleteOrganization",
-						cause: error,
-					});
-				},
-			}),
+						if (!existingOrg) {
+							throw { type: "not_found" };
+						}
 
-		isOrganizationSuspended: (orgId) =>
-			Effect.tryPromise({
-				try: async () => {
-					const [suspension] = await db
+						// Check if already suspended
+						const [existingSuspension] = await dbService.db
+							.select({ id: organizationSuspension.id })
+							.from(organizationSuspension)
+							.where(
+								and(
+									eq(organizationSuspension.organizationId, orgId),
+									eq(organizationSuspension.isActive, true),
+								),
+							)
+							.limit(1);
+
+						if (existingSuspension) {
+							throw { type: "conflict" };
+						}
+
+						// Create suspension record
+						await dbService.db.insert(organizationSuspension).values({
+							organizationId: orgId,
+							reason,
+							suspendedBy: adminId,
+						});
+
+						// Log action
+						await dbService.db.insert(platformAdminAuditLog).values({
+							adminUserId: adminId,
+							action: "suspend_org",
+							targetType: "organization",
+							targetId: orgId,
+							metadata: JSON.stringify({ reason }),
+						});
+					})
+					.pipe(
+						Effect.mapError((failure) => {
+							const error = failure.cause;
+
+							if (error && typeof error === "object" && "type" in error) {
+								if (error.type === "not_found") {
+									return new NotFoundError({
+										message: "Organization not found",
+										entityType: "organization",
+										entityId: orgId,
+									});
+								}
+								if (error.type === "conflict") {
+									return new ConflictError({
+										message: "Organization is already suspended",
+										conflictType: "already_suspended",
+									});
+								}
+							}
+							return failure;
+						}),
+					),
+
+			unsuspendOrganization: (orgId, adminId) =>
+				dbService
+					.query("platformAdmin.unsuspendOrganization", async () => {
+						// Find active suspension
+						const [existingSuspension] = await dbService.db
+							.select({ id: organizationSuspension.id })
+							.from(organizationSuspension)
+							.where(
+								and(
+									eq(organizationSuspension.organizationId, orgId),
+									eq(organizationSuspension.isActive, true),
+								),
+							)
+							.limit(1);
+
+						if (!existingSuspension) {
+							throw { type: "not_found" };
+						}
+
+						// Deactivate suspension
+						await dbService.db
+							.update(organizationSuspension)
+							.set({
+								isActive: false,
+								unsuspendedAt: new Date(),
+								unsuspendedBy: adminId,
+							})
+							.where(eq(organizationSuspension.id, existingSuspension.id));
+
+						// Log action
+						await dbService.db.insert(platformAdminAuditLog).values({
+							adminUserId: adminId,
+							action: "unsuspend_org",
+							targetType: "organization",
+							targetId: orgId,
+						});
+					})
+					.pipe(
+						Effect.mapError((failure) => {
+							const error = failure.cause;
+
+							if (
+								error &&
+								typeof error === "object" &&
+								"type" in error &&
+								error.type === "not_found"
+							) {
+								return new NotFoundError({
+									message: "No active suspension found for organization",
+									entityType: "organization_suspension",
+									entityId: orgId,
+								});
+							}
+							return failure;
+						}),
+					),
+
+			deleteOrganization: (orgId, immediate, skipNotification, adminId) =>
+				dbService
+					.query("platformAdmin.deleteOrganization", async () => {
+						// Check if org exists
+						const [existingOrg] = await dbService.db
+							.select({ id: organization.id, name: organization.name })
+							.from(organization)
+							.where(eq(organization.id, orgId))
+							.limit(1);
+
+						if (!existingOrg) {
+							throw { type: "not_found" };
+						}
+
+						const deletionDate = new Date();
+
+						if (!immediate) {
+							deletionDate.setDate(deletionDate.getDate() + 5);
+						}
+
+						if (immediate) {
+							// Set deletedAt to now - the cleanup job will handle actual deletion
+							// For truly immediate deletion, we'd call the cleanup function directly
+							await dbService.db
+								.update(organization)
+								.set({
+									deletedAt: deletionDate,
+									deletedBy: adminId,
+								})
+								.where(eq(organization.id, orgId));
+						} else {
+							await dbService.db
+								.update(organization)
+								.set({
+									deletedAt: deletionDate,
+									deletedBy: adminId,
+								})
+								.where(eq(organization.id, orgId));
+						}
+
+						// Log action
+						await dbService.db.insert(platformAdminAuditLog).values({
+							adminUserId: adminId,
+							action: "delete_org",
+							targetType: "organization",
+							targetId: orgId,
+							metadata: JSON.stringify({
+								immediate,
+								skipNotification,
+								organizationName: existingOrg.name,
+							}),
+						});
+
+						if (!skipNotification) {
+							const [adminUser] = await dbService.db
+								.select({ email: user.email })
+								.from(user)
+								.where(eq(user.id, adminId))
+								.limit(1);
+
+							await addOrganizationDeletionNotificationJob({
+								organizationId: orgId,
+								organizationName: existingOrg.name,
+								deletedByName: adminUser?.email ?? adminId,
+								deletionDate: deletionDate.toISOString(),
+							});
+						}
+					})
+					.pipe(
+						Effect.mapError((failure) => {
+							const error = failure.cause;
+
+							if (
+								error &&
+								typeof error === "object" &&
+								"type" in error &&
+								error.type === "not_found"
+							) {
+								return new NotFoundError({
+									message: "Organization not found",
+									entityType: "organization",
+									entityId: orgId,
+								});
+							}
+							return failure;
+						}),
+					),
+
+			isOrganizationSuspended: (orgId) =>
+				dbService.query("platformAdmin.isOrganizationSuspended", async () => {
+					const [suspension] = await dbService.db
 						.select({ id: organizationSuspension.id })
 						.from(organizationSuspension)
 						.where(
@@ -896,38 +862,22 @@ export const PlatformAdminServiceLive = Layer.succeed(
 						.limit(1);
 
 					return !!suspension;
-				},
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to check organization suspension status",
-						operation: "isOrganizationSuspended",
-						cause: error,
-					}),
-			}),
+				}),
 
-		logAction: (adminId, action, targetType, targetId, metadata) =>
-			Effect.tryPromise({
-				try: async () => {
-					await db.insert(platformAdminAuditLog).values({
+			logAction: (adminId, action, targetType, targetId, metadata) =>
+				dbService.query("platformAdmin.logAction", async () => {
+					await dbService.db.insert(platformAdminAuditLog).values({
 						adminUserId: adminId,
 						action,
 						targetType,
 						targetId,
 						metadata: metadata ? JSON.stringify(metadata) : null,
 					});
-				},
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to log admin action",
-						operation: "logAction",
-						cause: error,
-					}),
-			}),
+				}),
 
-		getRecentAuditLogs: (limit = 50) =>
-			Effect.tryPromise({
-				try: async () => {
-					const logs = await db
+			getRecentAuditLogs: (limit = 50) =>
+				dbService.query("platformAdmin.getRecentAuditLogs", async () => {
+					const logs = await dbService.db
 						.select({
 							action: platformAdminAuditLog.action,
 							targetType: platformAdminAuditLog.targetType,
@@ -941,13 +891,7 @@ export const PlatformAdminServiceLive = Layer.succeed(
 						.limit(limit);
 
 					return logs;
-				},
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to get audit logs",
-						operation: "getRecentAuditLogs",
-						cause: error,
-					}),
-			}),
+				}),
+		});
 	}),
 );

@@ -1,5 +1,6 @@
 import { Effect, Exit, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { typedFailureOfCause } from "@/lib/effect/cause-failure";
 import { StripeError } from "@/lib/effect/errors";
 import { SeatDeliveryUncertainError } from "./seat-delivery";
@@ -26,6 +27,7 @@ vi.mock("@/lib/effect/services/billing/billable-seat-count", () => ({ countBilla
 
 describe("SeatSyncService", () => {
 	const appLayer = Layer.mergeAll(
+		DatabaseServiceLive,
 		Layer.succeed(
 			StripeService,
 			StripeService.of({

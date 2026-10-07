@@ -1,6 +1,7 @@
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import { Settings } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import { SubscriptionService, SubscriptionServiceLive } from "./subscription.service";
@@ -125,7 +126,7 @@ describe("SubscriptionService", () => {
 					currentPeriodEnd: new Date("2026-06-18T00:00:00.000Z"),
 					seats: 5,
 				});
-			}).pipe(Effect.provide(SubscriptionServiceLive)),
+			}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
 		);
 
 		expect(setValues).toHaveBeenCalledWith(
@@ -159,7 +160,7 @@ describe("SubscriptionService", () => {
 				const subscriptionService = yield* SubscriptionService;
 
 				return yield* subscriptionService.getByOrganization("org_123");
-			}).pipe(Effect.provide(SubscriptionServiceLive)),
+			}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
 		);
 
 		expect(result).toMatchObject({
@@ -194,7 +195,7 @@ describe("SubscriptionService", () => {
 					organizationId: "org_123",
 					now,
 				});
-			}).pipe(Effect.provide(SubscriptionServiceLive)),
+			}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
 		);
 
 		expect(insertValues).toHaveBeenCalledWith({
@@ -249,7 +250,7 @@ describe("SubscriptionService", () => {
 						organizationId: "org_123",
 						now,
 					});
-				}).pipe(Effect.provide(SubscriptionServiceLive)),
+				}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
 			);
 
 			const insertedTrialEnd = insertValues.mock.calls[0]?.[0]?.trialEnd;
@@ -270,7 +271,7 @@ describe("SubscriptionService", () => {
 					organizationId: "org_123",
 					now: new Date("2026-05-20T10:00:00.000Z"),
 				});
-			}).pipe(Effect.provide(SubscriptionServiceLive)),
+			}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
 		);
 
 		expect(result).toMatchObject({
@@ -306,7 +307,7 @@ describe("SubscriptionService", () => {
 					organizationId: "org_123",
 					now,
 				});
-			}).pipe(Effect.provide(SubscriptionServiceLive)),
+			}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
 		);
 
 		expect(result).toMatchObject({
@@ -332,7 +333,7 @@ describe("SubscriptionService", () => {
 					const subscriptionService = yield* SubscriptionService;
 
 					return yield* subscriptionService.canMutateData("org_123");
-				}).pipe(Effect.provide(SubscriptionServiceLive)),
+				}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
 			);
 
 			expect(result).toBe(false);
@@ -357,7 +358,7 @@ describe("SubscriptionService", () => {
 					const subscriptionService = yield* SubscriptionService;
 
 					return yield* subscriptionService.canMutateData("org_123");
-				}).pipe(Effect.provide(SubscriptionServiceLive)),
+				}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
 			);
 
 			expect(result).toBe(false);
@@ -382,7 +383,7 @@ describe("SubscriptionService", () => {
 					const subscriptionService = yield* SubscriptionService;
 
 					return yield* subscriptionService.canMutateData("org_123");
-				}).pipe(Effect.provide(SubscriptionServiceLive)),
+				}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
 			);
 
 			expect(result).toBe(true);
@@ -391,27 +392,26 @@ describe("SubscriptionService", () => {
 		}
 	});
 
-	it.each([
-		"incomplete",
-		"paused",
-		"unknown_status",
-	])("returns false for %s status when checking mutation access", async (status) => {
-		(env as { BILLING_ENABLED: "true" | "false" }).BILLING_ENABLED = "true";
-		findFirst.mockResolvedValueOnce({
-			...existingSubscriptionRow,
-			status,
-		});
+	it.each(["incomplete", "paused", "unknown_status"])(
+		"returns false for %s status when checking mutation access",
+		async (status) => {
+			(env as { BILLING_ENABLED: "true" | "false" }).BILLING_ENABLED = "true";
+			findFirst.mockResolvedValueOnce({
+				...existingSubscriptionRow,
+				status,
+			});
 
-		const result = await Effect.runPromise(
-			Effect.gen(function* () {
-				const subscriptionService = yield* SubscriptionService;
+			const result = await Effect.runPromise(
+				Effect.gen(function* () {
+					const subscriptionService = yield* SubscriptionService;
 
-				return yield* subscriptionService.canMutateData("org_123");
-			}).pipe(Effect.provide(SubscriptionServiceLive)),
-		);
+					return yield* subscriptionService.canMutateData("org_123");
+				}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
+			);
 
-		expect(result).toBe(false);
-	});
+			expect(result).toBe(false);
+		},
+	);
 
 	it("sets Stripe customer ID with conflict-safe insert update", async () => {
 		insertValues.mockReturnValueOnce({ onConflictDoUpdate });
@@ -421,7 +421,7 @@ describe("SubscriptionService", () => {
 				const subscriptionService = yield* SubscriptionService;
 
 				yield* subscriptionService.setStripeCustomerId("org_123", "cus_test_123");
-			}).pipe(Effect.provide(SubscriptionServiceLive)),
+			}).pipe(Effect.provide(SubscriptionServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
 		);
 
 		expect(findFirst).not.toHaveBeenCalled();

@@ -5,11 +5,12 @@ import { Effect, Exit } from "effect";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { timeEntry, workPeriod } from "@/db/schema";
-import type { ApprovalDbService } from "@/lib/approvals/server/types";
+
 import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/server/work-period-approvals";
 import { failureOfCause, typedFailureOfCause } from "@/lib/effect/cause-failure";
-import { ConflictError } from "@/lib/effect/errors";
+import { ConflictError, DatabaseError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { makeDatabaseService } from "@/lib/effect/services/database.service";
 import { getCurrentEmployee, getCurrentSession } from "./auth";
 import { updateWorkPeriodProject as updateWorkPeriodProjectAction } from "../actions";
 import { logger } from "./shared";
@@ -63,14 +64,9 @@ export async function approveWorkPeriod(input: {
 			};
 		}
 
-		const dbService: ApprovalDbService = {
-			db,
-			query: <T>(_name: string, operation: () => Promise<T>) =>
-				Effect.promise(operation),
-		};
 		const exit = await Effect.runPromiseExit(
 			decideOrdinaryWorkPeriodWithStableTargetEffect(
-				dbService,
+				makeDatabaseService(db),
 				{
 					...currentEmployee,
 					user: {
@@ -105,14 +101,15 @@ export async function approveWorkPeriod(input: {
 	}
 }
 
-// Only a typed ConflictError reaches the caller; a defect is redacted even when it is one.
+// Only a typed ConflictError or DatabaseError reaches the caller; a defect is redacted even
+// when it is one.
 function approveWorkPeriodFailure(
 	error: unknown,
 	typedFailure: unknown,
 	workPeriodId: string,
 ): ServerActionResult<{ workPeriodId: string }> {
 	logger.error({ error, workPeriodId }, "Approve work period error");
-	if (typedFailure instanceof ConflictError) {
+	if (typedFailure instanceof ConflictError || typedFailure instanceof DatabaseError) {
 		return {
 			success: false,
 			error: typedFailure.message,

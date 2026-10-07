@@ -38,12 +38,16 @@ vi.mock("@/lib/cron/reconciliation", () => ({
 vi.mock("@/lib/effect/runtime", async () => {
 	const { Layer } = await import("effect");
 	const { PlatformAdminService } = await import("@/lib/effect/services/platform-admin.service");
+	const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
 
 	return {
-		AppLayer: Layer.succeed(PlatformAdminService, {
-			logAction: mocks.logAction,
-			requirePlatformAdmin: mocks.requirePlatformAdmin,
-		} as never),
+		AppLayer: Layer.merge(
+			Layer.succeed(PlatformAdminService, {
+				logAction: mocks.logAction,
+				requirePlatformAdmin: mocks.requirePlatformAdmin,
+			} as never),
+			DatabaseServiceLive,
+		),
 	};
 });
 

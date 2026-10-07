@@ -1,10 +1,11 @@
 import { Context, Effect, Layer } from "effect";
-import { db } from "@/db";
+
 import { billingSeatAudit } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { DatabaseError, StripeError } from "@/lib/effect/errors";
 import { type CallbackRunner, tryPromiseWithRunner } from "@/lib/effect/promise-callback";
 import { countBillableSeats } from "@/lib/effect/services/billing/billable-seat-count";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	deliverOrganizationSeats,
 	SeatDeliveryUncertainError,
@@ -14,10 +15,6 @@ import { StripeService } from "./stripe.service";
 import { SubscriptionService } from "./subscription.service";
 
 const logger = createLogger("SeatSyncService");
-
-function countBillableMembers(organizationId: string): Promise<number> {
-	return countBillableSeats(db, organizationId);
-}
 
 /**
  * SeatSyncService - Real-time seat counting and Stripe usage reporting
@@ -64,6 +61,7 @@ export const SeatSyncServiceLive = Layer.effect(
 	Effect.gen(function* () {
 		const stripeService = yield* StripeService;
 		const subscriptionService = yield* SubscriptionService;
+		const dbService = yield* DatabaseService;
 
 		/** Stripe calls for the seat delivery, run on the calling fiber through `run`. */
 		const stripePortFor = (run: CallbackRunner<never>): SeatStripePort => ({
@@ -98,7 +96,7 @@ export const SeatSyncServiceLive = Layer.effect(
 			tryPromiseWithRunner({
 				try: async (run) => {
 					const outcome = await deliverOrganizationSeats({
-						pool: db.$client,
+						pool: dbService.db.$client,
 						organizationId,
 						stripe: stripeService.config.enabled ? stripePortFor(run) : null,
 					});
@@ -121,16 +119,9 @@ export const SeatSyncServiceLive = Layer.effect(
 			});
 
 		const getCurrentSeatCount = (organizationId: string): Effect.Effect<number, DatabaseError> =>
-			Effect.tryPromise({
-				try: () => countBillableMembers(organizationId),
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to get current billable seat count",
-						operation: "getCurrentSeatCount",
-						table: "member",
-						cause: error,
-					}),
-			});
+			dbService.query("seatSync.countBillableMembers", () =>
+				countBillableSeats(dbService.db, organizationId),
+			);
 
 		return SeatSyncService.of({
 			syncSeatsForOrganization,
@@ -147,25 +138,16 @@ export const SeatSyncServiceLive = Layer.effect(
 					const newSeats = yield* syncSeatsForOrganization(organizationId);
 
 					// Log audit entry
-					yield* Effect.tryPromise({
-						try: async () => {
-							await db.insert(billingSeatAudit).values({
-								organizationId,
-								action: "member_added",
-								previousSeats,
-								newSeats,
-								memberId,
-								userId,
-								stripeReported: stripeService.config.enabled && !!sub?.stripeSubscriptionId,
-							});
-						},
-						catch: (error) =>
-							new DatabaseError({
-								message: "Failed to log seat audit",
-								operation: "handleMemberAdded",
-								table: "billing_seat_audit",
-								cause: error,
-							}),
+					yield* dbService.query("seatSync.auditMemberAdded", async () => {
+						await dbService.db.insert(billingSeatAudit).values({
+							organizationId,
+							action: "member_added",
+							previousSeats,
+							newSeats,
+							memberId,
+							userId,
+							stripeReported: stripeService.config.enabled && !!sub?.stripeSubscriptionId,
+						});
 					});
 
 					logger.info(
@@ -184,25 +166,16 @@ export const SeatSyncServiceLive = Layer.effect(
 					const newSeats = yield* syncSeatsForOrganization(organizationId);
 
 					// Log audit entry
-					yield* Effect.tryPromise({
-						try: async () => {
-							await db.insert(billingSeatAudit).values({
-								organizationId,
-								action: "member_removed",
-								previousSeats,
-								newSeats,
-								memberId,
-								userId,
-								stripeReported: stripeService.config.enabled && !!sub?.stripeSubscriptionId,
-							});
-						},
-						catch: (error) =>
-							new DatabaseError({
-								message: "Failed to log seat audit",
-								operation: "handleMemberRemoved",
-								table: "billing_seat_audit",
-								cause: error,
-							}),
+					yield* dbService.query("seatSync.auditMemberRemoved", async () => {
+						await dbService.db.insert(billingSeatAudit).values({
+							organizationId,
+							action: "member_removed",
+							previousSeats,
+							newSeats,
+							memberId,
+							userId,
+							stripeReported: stripeService.config.enabled && !!sub?.stripeSubscriptionId,
+						});
 					});
 
 					logger.info(

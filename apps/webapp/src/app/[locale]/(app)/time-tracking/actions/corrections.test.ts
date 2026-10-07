@@ -189,9 +189,9 @@ describe("time correction request safety", () => {
 	it("preserves unexpected submission failures for server-side diagnostics", () => {
 		const body = functionBody(modularSource, "submissionFailure");
 
-		expect(body).toContain("new DatabaseError({");
-		expect(body).toContain('operation: "submit_time_correction"');
-		expect(body).toContain("cause: error");
+		// The submission's own DatabaseError (operation "timeCorrection.submit") keeps the cause.
+		expect(body).toContain("const error = failure.cause;");
+		expect(body).toContain("return failure;");
 		expect(body).toContain("logger.error(");
 		expect(body).toContain("{ err: error }");
 	});

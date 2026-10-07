@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { ConflictError } from "@/lib/effect/errors";
 
 const mockState = vi.hoisted(() => ({
@@ -8,6 +9,7 @@ const mockState = vi.hoisted(() => ({
 	findApprovalRequests: vi.fn(),
 	decideStableTarget: vi.fn(),
 	decideStableTargetDefect: undefined as unknown,
+	decideStableTargetQueryFailure: undefined as unknown,
 	selectWhere: vi.fn(),
 	selectLimit: vi.fn(),
 	updateSet: vi.fn(),
@@ -73,17 +75,25 @@ vi.mock("@/lib/time-tracking/validation", () => ({
 }));
 
 // A rejected stub becomes the Effect's typed failure, as the owner's decision fails.
-// A set decideStableTargetDefect makes the decision die with it instead.
+// A set decideStableTargetDefect makes the decision die with it instead, and a set
+// decideStableTargetQueryFailure rejects a query run through the action's db service.
 vi.mock("@/lib/approvals/server/work-period-approvals", async () => {
 	const { Effect } = await import("effect");
 	return {
-		decideOrdinaryWorkPeriodWithStableTargetEffect: (...args: unknown[]) =>
-			mockState.decideStableTargetDefect === undefined
+		decideOrdinaryWorkPeriodWithStableTargetEffect: (...args: unknown[]) => {
+			if (mockState.decideStableTargetQueryFailure !== undefined) {
+				const dbService = args[0] as ApprovalDbService;
+				return dbService.query("workPeriodApproval.decide", () =>
+					Promise.reject(mockState.decideStableTargetQueryFailure),
+				);
+			}
+			return mockState.decideStableTargetDefect === undefined
 				? Effect.tryPromise({
 						try: () => mockState.decideStableTarget(...args),
 						catch: (error) => error,
 					})
-				: Effect.die(mockState.decideStableTargetDefect),
+				: Effect.die(mockState.decideStableTargetDefect);
+		},
 	};
 });
 
@@ -129,6 +139,7 @@ describe("approveWorkPeriod", () => {
 		mockState.updateWhere.mockResolvedValue(undefined);
 		mockState.decideStableTarget.mockResolvedValue(undefined);
 		mockState.decideStableTargetDefect = undefined;
+		mockState.decideStableTargetQueryFailure = undefined;
 		mockState.findApprovalRequests.mockResolvedValue([
 			{
 				id: "approval-1",
@@ -237,11 +248,25 @@ describe("approveWorkPeriod", () => {
 		});
 	});
 
+	it("returns a typed DatabaseError when a decision query fails", async () => {
+		mockState.findMember.mockResolvedValue({ role: "admin" });
+		mockState.decideStableTargetQueryFailure = new Error("connection reset by peer");
+
+		const result = await approveWorkPeriod({
+			workPeriodId: "period-1",
+			approvalRequestId: "approval-1",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Database query failed: workPeriodApproval.decide",
+			code: "DatabaseError",
+		});
+	});
+
 	it("redacts non-domain failures", async () => {
 		mockState.findMember.mockResolvedValue({ role: "admin" });
-		mockState.decideStableTarget.mockRejectedValue(
-			new Error("private target mismatch"),
-		);
+		mockState.decideStableTarget.mockRejectedValue(new Error("private target mismatch"));
 
 		const result = await approveWorkPeriod({
 			workPeriodId: "period-1",

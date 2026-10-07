@@ -7,12 +7,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { customer, project } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import {
-	AuthorizationError,
-	DatabaseError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
+import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { runtime } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -215,42 +210,34 @@ export async function createCustomer(
 					);
 				}
 
-				const created = yield* Effect.tryPromise({
-					try: async () => {
-						return await db.transaction(async (tx) => {
-							const [newCustomer] = await tx
-								.insert(customer)
-								.values({
-									organizationId: input.organizationId,
-									name: input.name,
-									address: input.address || null,
-									vatId: input.vatId || null,
-									email: input.email || null,
-									contactPerson: input.contactPerson || null,
-									phone: input.phone || null,
-									website: input.website || null,
-									isActive: true,
-									createdBy: session.user.id,
-									updatedAt: new Date(),
-								})
-								.returning();
+				const created = yield* dbService.query("customer.create", async () => {
+					return await db.transaction(async (tx) => {
+						const [newCustomer] = await tx
+							.insert(customer)
+							.values({
+								organizationId: input.organizationId,
+								name: input.name,
+								address: input.address || null,
+								vatId: input.vatId || null,
+								email: input.email || null,
+								contactPerson: input.contactPerson || null,
+								phone: input.phone || null,
+								website: input.website || null,
+								isActive: true,
+								createdBy: session.user.id,
+								updatedAt: new Date(),
+							})
+							.returning();
 
-							if (scopedProjectId && scopedProjectOrganizationId === input.organizationId) {
-								await tx
-									.update(project)
-									.set({ customerId: newCustomer.id, updatedBy: session.user.id })
-									.where(eq(project.id, scopedProjectId));
-							}
+						if (scopedProjectId && scopedProjectOrganizationId === input.organizationId) {
+							await tx
+								.update(project)
+								.set({ customerId: newCustomer.id, updatedBy: session.user.id })
+								.where(eq(project.id, scopedProjectId));
+						}
 
-							return newCustomer;
-						});
-					},
-					catch: (error) =>
-						new DatabaseError({
-							message: error instanceof Error ? error.message : "Failed to create customer",
-							operation: "transaction",
-							table: "customer",
-						}),
+						return newCustomer;
+					});
 				});
 
 				// Log audit (fire-and-forget)
@@ -377,16 +364,8 @@ export async function updateCustomer(
 				if (input.website !== undefined) updateData.website = input.website;
 
 				// Update the customer
-				yield* Effect.tryPromise({
-					try: async () => {
-						await db.update(customer).set(updateData).where(eq(customer.id, customerId));
-					},
-					catch: (error) =>
-						new DatabaseError({
-							message: error instanceof Error ? error.message : "Failed to update customer",
-							operation: "update",
-							table: "customer",
-						}),
+				yield* dbService.query("customer.update", async () => {
+					await db.update(customer).set(updateData).where(eq(customer.id, customerId));
 				});
 
 				// Log audit (fire-and-forget)
@@ -474,19 +453,11 @@ export async function deleteCustomer(customerId: string): Promise<ServerActionRe
 				});
 
 				// Soft delete
-				yield* Effect.tryPromise({
-					try: async () => {
-						await db
-							.update(customer)
-							.set({ isActive: false, updatedBy: session.user.id })
-							.where(eq(customer.id, customerId));
-					},
-					catch: (error) =>
-						new DatabaseError({
-							message: error instanceof Error ? error.message : "Failed to delete customer",
-							operation: "update",
-							table: "customer",
-						}),
+				yield* dbService.query("customer.delete", async () => {
+					await db
+						.update(customer)
+						.set({ isActive: false, updatedBy: session.user.id })
+						.where(eq(customer.id, customerId));
 				});
 
 				// Log audit (fire-and-forget)

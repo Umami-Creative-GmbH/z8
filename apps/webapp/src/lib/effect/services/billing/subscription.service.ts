@@ -1,9 +1,9 @@
 import { eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { db } from "@/db";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
-import { DatabaseError, NotFoundError } from "@/lib/effect/errors";
+import { type DatabaseError, NotFoundError } from "@/lib/effect/errors";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { countBillableSeats } from "@/lib/effect/services/billing/billable-seat-count";
 import {
 	provisionLocalTrial,
@@ -120,116 +120,71 @@ function mapToSubscriptionInfo(sub: typeof subscription.$inferSelect): Subscript
 	};
 }
 
-function countBillableOrganizationMembers(organizationId: string): Promise<number> {
-	return countBillableSeats(db, organizationId);
-}
-
-export const SubscriptionServiceLive = Layer.succeed(
+export const SubscriptionServiceLive = Layer.effect(
 	SubscriptionService,
-	SubscriptionService.of({
-		getByOrganization: (organizationId) =>
-			Effect.tryPromise({
-				try: async () => {
-					const sub = await db.query.subscription.findFirst({
+	Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+
+		return SubscriptionService.of({
+			getByOrganization: (organizationId) =>
+				dbService.query("subscription.getByOrganization", async () => {
+					const sub = await dbService.db.query.subscription.findFirst({
 						where: eq(subscription.organizationId, organizationId),
 					});
 
 					if (!sub) return null;
-					const currentSeats = await countBillableOrganizationMembers(organizationId);
+					const currentSeats = await countBillableSeats(dbService.db, organizationId);
 					return mapToSubscriptionInfo({ ...sub, currentSeats });
-				},
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to get subscription",
-						operation: "getByOrganization",
-						table: "subscription",
-						cause: error,
-					}),
-			}),
+				}),
 
-		getByStripeCustomerId: (stripeCustomerId) =>
-			Effect.tryPromise({
-				try: async () => {
-					const sub = await db.query.subscription.findFirst({
+			getByStripeCustomerId: (stripeCustomerId) =>
+				dbService.query("subscription.getByStripeCustomerId", async () => {
+					const sub = await dbService.db.query.subscription.findFirst({
 						where: eq(subscription.stripeCustomerId, stripeCustomerId),
 					});
 
 					if (!sub) return null;
 					return mapToSubscriptionInfo(sub);
-				},
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to get subscription by customer ID",
-						operation: "getByStripeCustomerId",
-						table: "subscription",
-						cause: error,
-					}),
-			}),
+				}),
 
-		getByStripeSubscriptionId: (stripeSubscriptionId) =>
-			Effect.tryPromise({
-				try: async () => {
-					const sub = await db.query.subscription.findFirst({
+			getByStripeSubscriptionId: (stripeSubscriptionId) =>
+				dbService.query("subscription.getByStripeSubscriptionId", async () => {
+					const sub = await dbService.db.query.subscription.findFirst({
 						where: eq(subscription.stripeSubscriptionId, stripeSubscriptionId),
 					});
 
 					if (!sub) return null;
 					return mapToSubscriptionInfo(sub);
-				},
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to get subscription by subscription ID",
-						operation: "getByStripeSubscriptionId",
-						table: "subscription",
-						cause: error,
-					}),
-			}),
+				}),
 
-		requireActiveSubscription: (organizationId) =>
-			Effect.gen(function* () {
-				const sub = yield* Effect.tryPromise({
-					try: async () => {
-						return await db.query.subscription.findFirst({
+			requireActiveSubscription: (organizationId) =>
+				Effect.gen(function* () {
+					const sub = yield* dbService.query("subscription.requireActive", async () => {
+						return await dbService.db.query.subscription.findFirst({
 							where: eq(subscription.organizationId, organizationId),
 						});
-					},
-					catch: (error) =>
-						new DatabaseError({
-							message: "Failed to get subscription",
-							operation: "requireActiveSubscription",
-							table: "subscription",
-							cause: error,
-						}),
-				});
+					});
 
-				if (!sub) {
-					return yield* Effect.fail(
-						new NotFoundError({
-							message: "No subscription found",
-							entityType: "subscription",
-							entityId: organizationId,
-						}),
-					);
-				}
+					if (!sub) {
+						return yield* Effect.fail(
+							new NotFoundError({
+								message: "No subscription found",
+								entityType: "subscription",
+								entityId: organizationId,
+							}),
+						);
+					}
 
-				return mapToSubscriptionInfo(sub);
-			}),
+					return mapToSubscriptionInfo(sub);
+				}),
 
-		ensureLocalTrial: ({ organizationId, now = new Date() }) =>
-			Effect.tryPromise({
-				try: async () => mapToSubscriptionInfo(await provisionLocalTrial(organizationId, now)),
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to ensure local trial subscription",
-						operation: "ensureLocalTrial",
-						table: "subscription",
-						cause: error,
-					}),
-			}),
+			ensureLocalTrial: ({ organizationId, now = new Date() }) =>
+				dbService.query("subscription.ensureLocalTrial", async () =>
+					mapToSubscriptionInfo(await provisionLocalTrial(organizationId, now)),
+				),
 
-		create: (params) =>
-			Effect.tryPromise({
-				try: () =>
+			create: (params) =>
+				dbService.query("subscription.create", () =>
 					withOrganizationBillingMutation(params.organizationId, async (transaction) => {
 						const existing = await transaction.query.subscription.findFirst({
 							where: eq(subscription.organizationId, params.organizationId),
@@ -269,18 +224,10 @@ export const SubscriptionServiceLive = Layer.succeed(
 							currentSeats: params.seats,
 						});
 					}),
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to create subscription",
-						operation: "create",
-						table: "subscription",
-						cause: error,
-					}),
-			}),
+				),
 
-		updateFromStripe: (params) =>
-			Effect.tryPromise({
-				try: async () => {
+			updateFromStripe: (params) =>
+				dbService.query("subscription.updateFromStripe", async () => {
 					await withStripeSubscriptionMutation(
 						params.stripeSubscriptionId,
 						async (transaction, scope) => {
@@ -299,39 +246,21 @@ export const SubscriptionServiceLive = Layer.succeed(
 								.where(scope);
 						},
 					);
-				},
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to update subscription",
-						operation: "updateFromStripe",
-						table: "subscription",
-						cause: error,
-					}),
-			}),
+				}),
 
-		updateSeatCount: (organizationId, seats) =>
-			Effect.tryPromise({
-				try: async () => {
-					await db
+			updateSeatCount: (organizationId, seats) =>
+				dbService.query("subscription.updateSeatCount", async () => {
+					await dbService.db
 						.update(subscription)
 						.set({
 							currentSeats: seats,
 							lastSeatReportedAt: new Date(),
 						})
 						.where(eq(subscription.organizationId, organizationId));
-				},
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to update seat count",
-						operation: "updateSeatCount",
-						table: "subscription",
-						cause: error,
-					}),
-			}),
+				}),
 
-		setStripeCustomerId: (organizationId, stripeCustomerId) =>
-			Effect.tryPromise({
-				try: () =>
+			setStripeCustomerId: (organizationId, stripeCustomerId) =>
+				dbService.query("subscription.setStripeCustomerId", () =>
 					withOrganizationBillingMutation(organizationId, async (transaction) => {
 						await transaction
 							.insert(subscription)
@@ -349,45 +278,30 @@ export const SubscriptionServiceLive = Layer.succeed(
 								},
 							});
 					}),
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to set Stripe customer ID",
-						operation: "setStripeCustomerId",
-						table: "subscription",
-						cause: error,
-					}),
-			}),
+				),
 
-		canMutateData: (organizationId) =>
-			Effect.gen(function* () {
-				// If billing is not enabled, allow all mutations
-				if (env.BILLING_ENABLED !== "true") {
-					return true;
-				}
+			canMutateData: (organizationId) =>
+				Effect.gen(function* () {
+					// If billing is not enabled, allow all mutations
+					if (env.BILLING_ENABLED !== "true") {
+						return true;
+					}
 
-				const sub = yield* Effect.tryPromise({
-					try: async () => {
-						return await db.query.subscription.findFirst({
+					const sub = yield* dbService.query("subscription.canMutateData", async () => {
+						return await dbService.db.query.subscription.findFirst({
 							where: eq(subscription.organizationId, organizationId),
 						});
-					},
-					catch: (error) =>
-						new DatabaseError({
-							message: "Failed to check subscription",
-							operation: "canMutateData",
-							table: "subscription",
-							cause: error,
-						}),
-				});
+					});
 
-				// No subscription = cannot mutate (needs to subscribe)
-				if (!sub) return false;
+					// No subscription = cannot mutate (needs to subscribe)
+					if (!sub) return false;
 
-				if (sub.status === "trialing") {
-					return sub.trialEnd !== null && sub.trialEnd.getTime() > Date.now();
-				}
+					if (sub.status === "trialing") {
+						return sub.trialEnd !== null && sub.trialEnd.getTime() > Date.now();
+					}
 
-				return sub.status === "active";
-			}),
+					return sub.status === "active";
+				}),
+		});
 	}),
 );

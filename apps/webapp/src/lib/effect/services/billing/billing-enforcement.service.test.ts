@@ -1,5 +1,6 @@
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import {
@@ -99,7 +100,9 @@ describe("BillingEnforcementService", () => {
 				const enforcementService = yield* BillingEnforcementService;
 
 				return yield* enforcementService.checkBillingAccess("org_123", { now });
-			}).pipe(Effect.provide(BillingEnforcementServiceLive)),
+			}).pipe(
+				Effect.provide(BillingEnforcementServiceLive.pipe(Layer.provide(DatabaseServiceLive))),
+			),
 		);
 
 		expect(insertValues).toHaveBeenCalledWith({
@@ -131,7 +134,9 @@ describe("BillingEnforcementService", () => {
 				const enforcementService = yield* BillingEnforcementService;
 
 				return yield* enforcementService.checkBillingAccess("org_123", { now });
-			}).pipe(Effect.provide(BillingEnforcementServiceLive)),
+			}).pipe(
+				Effect.provide(BillingEnforcementServiceLive.pipe(Layer.provide(DatabaseServiceLive))),
+			),
 		);
 
 		expect(result).toEqual({ canAccess: true, state: "disabled" });
@@ -150,7 +155,9 @@ describe("BillingEnforcementService", () => {
 					now,
 					createTrialIfMissing: false,
 				});
-			}).pipe(Effect.provide(BillingEnforcementServiceLive)),
+			}).pipe(
+				Effect.provide(BillingEnforcementServiceLive.pipe(Layer.provide(DatabaseServiceLive))),
+			),
 		);
 
 		expect(result).toEqual({
@@ -173,7 +180,9 @@ describe("BillingEnforcementService", () => {
 				const enforcementService = yield* BillingEnforcementService;
 
 				return yield* enforcementService.requireActiveSubscription("org_123").pipe(Effect.flip);
-			}).pipe(Effect.provide(BillingEnforcementServiceLive)),
+			}).pipe(
+				Effect.provide(BillingEnforcementServiceLive.pipe(Layer.provide(DatabaseServiceLive))),
+			),
 		);
 
 		expect(error).toMatchObject({
@@ -195,7 +204,9 @@ describe("BillingEnforcementService", () => {
 				const enforcementService = yield* BillingEnforcementService;
 
 				return yield* enforcementService.requireActiveSubscription("org_123").pipe(Effect.flip);
-			}).pipe(Effect.provide(BillingEnforcementServiceLive)),
+			}).pipe(
+				Effect.provide(BillingEnforcementServiceLive.pipe(Layer.provide(DatabaseServiceLive))),
+			),
 		);
 
 		expect(error).toMatchObject({

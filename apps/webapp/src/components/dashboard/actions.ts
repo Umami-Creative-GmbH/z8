@@ -23,7 +23,7 @@ import {
 import { getEnhancedVacationBalance } from "@/lib/absences/vacation.service";
 import { shouldExcludeFromCalculations } from "@/lib/calendar/holiday-service";
 import { currentTimestamp, dateFromDB } from "@/lib/datetime/drizzle-adapter";
-import { DatabaseError, NotFoundError } from "@/lib/effect/errors";
+import { NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
@@ -115,8 +115,8 @@ export async function getManagerTodaySummary(): Promise<ManagerTodaySummaryResul
 			return { role, summary: null };
 		}
 
-		const briefing = yield* Effect.tryPromise({
-			try: () =>
+		const briefing = yield* dbService
+			.query("dashboard.getManagerDailyBriefing", () =>
 				getManagerDailyBriefing({
 					currentEmployee: {
 						id: currentEmployee.id,
@@ -124,21 +124,16 @@ export async function getManagerTodaySummary(): Promise<ManagerTodaySummaryResul
 						organizationId: currentEmployee.organizationId,
 					},
 				}),
-			catch: (error) =>
-				new DatabaseError({
-					message: "Failed to load manager today summary",
-					operation: "getManagerTodaySummary",
-					cause: error,
-				}),
-		}).pipe(
-			Effect.catch(() =>
-				Effect.succeed({
-					role,
-					summary: null,
-					error: "Manager Today counts could not be loaded.",
-				}),
-			),
-		);
+			)
+			.pipe(
+				Effect.catch(() =>
+					Effect.succeed({
+						role,
+						summary: null,
+						error: "Manager Today counts could not be loaded.",
+					}),
+				),
+			);
 
 		if ("error" in briefing) {
 			return briefing;
@@ -1370,8 +1365,8 @@ export async function getHydrationWidgetData(): Promise<
 		const goalProgress = Math.min(100, Math.round((todayIntake / dailyGoal) * 100));
 		const activeOrganizationId = session.session.activeOrganizationId;
 
-		const teamStreakLeaders = yield* Effect.tryPromise({
-			try: async () => {
+		const teamStreakLeaders = yield* dbService
+			.query("dashboard.getHydrationTeamStreakLeaders", async () => {
 				if (!activeOrganizationId) {
 					return [];
 				}
@@ -1457,17 +1452,11 @@ export async function getHydrationWidgetData(): Promise<
 					cacheConfig.keyParts,
 					cacheConfig.options,
 				)();
-			},
-			catch: (error) =>
-				new DatabaseError({
-					message: "Failed to load hydration team streak leaders",
-					operation: "getHydrationWidgetData.teamStreakLeaders",
-					cause: error,
-				}),
-		}).pipe(Effect.catch(() => Effect.succeed([])));
+			})
+			.pipe(Effect.catch(() => Effect.succeed([])));
 
-		const organizationStreakLeaders = yield* Effect.tryPromise({
-			try: async () => {
+		const organizationStreakLeaders = yield* dbService
+			.query("dashboard.getHydrationOrganizationStreakLeaders", async () => {
 				if (!activeOrganizationId) {
 					return [];
 				}
@@ -1511,14 +1500,8 @@ export async function getHydrationWidgetData(): Promise<
 					session.user.id,
 					{ limit: 5 },
 				);
-			},
-			catch: (error) =>
-				new DatabaseError({
-					message: "Failed to load hydration organization streak leaders",
-					operation: "getHydrationWidgetData.organizationStreakLeaders",
-					cause: error,
-				}),
-		}).pipe(Effect.catch(() => Effect.succeed([])));
+			})
+			.pipe(Effect.catch(() => Effect.succeed([])));
 
 		return {
 			enabled: true,

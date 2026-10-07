@@ -1,5 +1,6 @@
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 
 const mocks = vi.hoisted(() => ({
 	update: vi.fn(),
@@ -65,14 +66,14 @@ const ban = () =>
 		Effect.gen(function* () {
 			const service = yield* PlatformAdminService;
 			yield* service.banUser("user-1", "Policy violation", null, "admin-1");
-		}).pipe(Effect.provide(PlatformAdminServiceLive)),
+		}).pipe(Effect.provide(PlatformAdminServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
 	);
 const unban = () =>
 	Effect.runPromise(
 		Effect.gen(function* () {
 			const service = yield* PlatformAdminService;
 			yield* service.unbanUser("user-1", "admin-1");
-		}).pipe(Effect.provide(PlatformAdminServiceLive)),
+		}).pipe(Effect.provide(PlatformAdminServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
 	);
 
 beforeEach(() => {
@@ -116,7 +117,7 @@ describe("platform account ban lifecycle", () => {
 	});
 	it("does not report success when session revocation fails", async () => {
 		mocks.revoke.mockRejectedValue(new Error("storage unavailable"));
-		await expect(ban()).rejects.toThrow("Failed to ban user");
+		await expect(ban()).rejects.toThrow("Database query failed: platformAdmin.banUser");
 		expect(mocks.audit).not.toHaveBeenCalled();
 	});
 	it("changes the ban under the user's exclusive access protection, then revokes after commit", async () => {

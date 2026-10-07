@@ -1,5 +1,6 @@
-import { Effect, Exit } from "effect";
+import { Effect, Exit, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 
 const pool = vi.hoisted(() => ({
 	occupied: false,
@@ -46,7 +47,7 @@ const createAdmin = () =>
 				},
 				"a".repeat(64),
 			);
-		}).pipe(Effect.provide(SetupServiceLive)),
+		}).pipe(Effect.provide(SetupServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
 	);
 
 describe("setup with a single-slot database pool", () => {

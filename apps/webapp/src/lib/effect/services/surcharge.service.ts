@@ -28,7 +28,7 @@ import type {
 	PolicyClockOutSurchargeSnapshot,
 } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import { isValidIanaTimezone } from "@/lib/time-tracking/timezone-capture";
-import { DatabaseError, NotFoundError } from "@/lib/effect/errors";
+import { type DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "./database.service";
 
 // ============================================
@@ -824,16 +824,9 @@ export const SurchargeServiceLive = Layer.effect(
 
 		return SurchargeService.of({
 			reconcileWorkPeriods: (input) =>
-				Effect.tryPromise({
-					try: () =>
-						reconcileSurchargeWorkPeriodsWithDatabase(dbService.db, input),
-					catch: (error) =>
-						new DatabaseError({
-							message: "Surcharge reconciliation failed",
-							operation: "reconcileWorkPeriods",
-							cause: error,
-						}),
-				}),
+				dbService.query("surcharge.reconcileWorkPeriods", () =>
+					reconcileSurchargeWorkPeriodsWithDatabase(dbService.db, input),
+				),
 			getEffectiveSurchargeModel: (employeeId) =>
 				Effect.gen(function* () {
 					// 1. Get employee with team info
@@ -1027,8 +1020,9 @@ export const SurchargeServiceLive = Layer.effect(
 					}
 
 					// Get effective surcharge model
-					const effectiveModel = yield* Effect.tryPromise({
-						try: async () => {
+					const effectiveModel = yield* dbService.query(
+						"surcharge.resolveModelForCalculation",
+						async () => {
 							// Inline resolution to avoid recursive call issues
 							const emp = period.employee;
 							if (!emp) return null;
@@ -1130,13 +1124,7 @@ export const SurchargeServiceLive = Layer.effect(
 
 							return null;
 						},
-						catch: (error) =>
-							new DatabaseError({
-								message: "Failed to resolve surcharge model",
-								operation: "calculateSurcharges",
-								cause: error,
-							}),
-					});
+					);
 
 					if (!effectiveModel || effectiveModel.rules.length === 0) {
 						return null;
@@ -1208,8 +1196,9 @@ export const SurchargeServiceLive = Layer.effect(
 
 					// Get effective model using Effect.tryPromise to wrap async calls
 					const emp = period.employee;
-					const effectiveModel = yield* Effect.tryPromise({
-						try: async () => {
+					const effectiveModel = yield* dbService.query(
+						"surcharge.resolveModelForPersist",
+						async () => {
 							const now = new Date();
 
 							// Employee-level
@@ -1307,13 +1296,7 @@ export const SurchargeServiceLive = Layer.effect(
 
 							return null;
 						},
-						catch: (error) =>
-							new DatabaseError({
-								message: "Failed to resolve surcharge model",
-								operation: "persistSurchargeCalculation",
-								cause: error,
-							}),
-					});
+					);
 
 					if (!effectiveModel || effectiveModel.rules.length === 0) {
 						return null;
@@ -1402,8 +1385,9 @@ export const SurchargeServiceLive = Layer.effect(
 					const emp = period.employee;
 
 					// Resolve effective model using hierarchical lookup
-					const effectiveModel = yield* Effect.tryPromise({
-						try: async () => {
+					const effectiveModel = yield* dbService.query(
+						"surcharge.resolveModelForRecalculation",
+						async () => {
 							const now = new Date();
 							let model: EffectiveSurchargeModel | null = null;
 
@@ -1501,13 +1485,7 @@ export const SurchargeServiceLive = Layer.effect(
 
 							return model;
 						},
-						catch: (error) =>
-							new DatabaseError({
-								message: "Failed to resolve surcharge model",
-								operation: "recalculateSurcharges",
-								cause: error,
-							}),
-					});
+					);
 
 					if (!effectiveModel || effectiveModel.rules.length === 0) {
 						return null;

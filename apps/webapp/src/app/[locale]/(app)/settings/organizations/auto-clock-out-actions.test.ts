@@ -145,7 +145,8 @@ describe("updateAutoClockOutSettings", () => {
 		mocks.save.mockRejectedValue(new Error("secret connection string"));
 		expect(await updateAutoClockOutSettings(input)).toMatchObject({
 			success: false,
-			error: "Failed to update automatic clock-out settings",
+			error: "Database query failed: autoClockOut.saveSettings",
+			code: "DatabaseError",
 		});
 	});
 });

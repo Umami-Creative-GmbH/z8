@@ -5,6 +5,7 @@ import type Stripe from "stripe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { env } from "@/env";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { BillingServicesLive } from "./index";
 import { STRIPE_API_VERSION, StripeService, StripeServiceLive } from "./stripe.service";
 
@@ -214,6 +215,7 @@ describe("StripeService", () => {
 			Effect.runPromise(
 				Effect.map(StripeService, (service) => service.client).pipe(
 					Effect.provide(BillingServicesLive),
+					Effect.provide(DatabaseServiceLive),
 				),
 			);
 
