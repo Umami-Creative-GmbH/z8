@@ -85,6 +85,7 @@ const nextConfig: NextConfig = {
 		unoptimized: false,
 	},
 	experimental: {
+		agentUpgrade: "latest",
 		useTypeScriptCli: true,
 		optimizePackageImports: ["@tabler/icons-react", "recharts"],
 	},

@@ -37,6 +37,16 @@ minimumReleaseAgeExclude:
   - '@better-auth/sso@1.7.2'
   - '@better-auth/telemetry@1.7.2'
   - better-auth@1.7.2
+  - '@next/env@16.4.0'
+  - '@next/swc-darwin-arm64@16.4.0'
+  - '@next/swc-darwin-x64@16.4.0'
+  - '@next/swc-linux-arm64-gnu@16.4.0'
+  - '@next/swc-linux-arm64-musl@16.4.0'
+  - '@next/swc-linux-x64-gnu@16.4.0'
+  - '@next/swc-linux-x64-musl@16.4.0'
+  - '@next/swc-win32-arm64-msvc@16.4.0'
+  - '@next/swc-win32-x64-msvc@16.4.0'
+  - next@16.4.0
 
 overrides:
   # Keep React types aligned across workspace packages.
