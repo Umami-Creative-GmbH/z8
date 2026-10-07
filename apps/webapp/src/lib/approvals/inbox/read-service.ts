@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { approvalRequest } from "@/db/schema";
 import type {
 	ApprovalDetail,
+	ApprovalHandlerServices,
 	ApprovalQueryParams,
 	ApprovalTypeHandler,
 	UnifiedApprovalItem,
@@ -104,15 +105,10 @@ interface GetApprovalInboxDetailFromRequestInput {
 
 const DEFAULT_LIMIT = 50;
 
-function provideDatabase<A>(
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	effect: Effect.Effect<A, unknown, any>,
-): Effect.Effect<A, unknown, never> {
-	return effect.pipe(Effect.provide(DatabaseServiceLive)) as Effect.Effect<
-		A,
-		unknown,
-		never
-	>;
+function provideDatabase<A, E>(
+	effect: Effect.Effect<A, E, ApprovalHandlerServices>,
+): Effect.Effect<A, E> {
+	return effect.pipe(Effect.provide(DatabaseServiceLive));
 }
 
 const riskRank: Record<ApprovalInboxRiskLevel, number> = {

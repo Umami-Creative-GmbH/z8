@@ -730,7 +730,7 @@ export async function executeTravelExpenseDecisionInTransaction(
 			"existing",
 		).pipe(
 			Effect.provideService(ApprovalAuditLogger, createApprovalAuditLogger(dbService)),
-		) as Effect.Effect<unknown, AnyAppError, never>,
+		),
 	);
 	if (Exit.isFailure(exit)) throw failureOf(exit.cause);
 

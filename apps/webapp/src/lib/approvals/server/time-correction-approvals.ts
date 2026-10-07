@@ -5475,7 +5475,7 @@ export function createLegacyTimeCorrectionDecisionProcessor(input: {
 					ApprovalAuditLogger,
 					createApprovalAuditLogger(transactionDbService),
 				),
-			) as Effect.Effect<unknown, AnyAppError, never>,
+			),
 		);
 		if (Exit.isSuccess(exit)) return exit.value;
 		// The owner's typed failure, else its defect: what translateCorrectionWorkError reads.
@@ -6445,6 +6445,6 @@ function processAuthenticatedTimeCorrectionDecision(
 			approvalRequestId,
 			action,
 			reason,
-		).pipe(Effect.provide(AppLayer)) as Effect.Effect<void, AnyAppError, never>,
+		).pipe(Effect.provide(AppLayer)),
 	);
 }

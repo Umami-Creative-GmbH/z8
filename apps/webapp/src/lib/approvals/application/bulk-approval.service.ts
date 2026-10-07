@@ -19,6 +19,7 @@ import {
 import { getApprovalHandler } from "../domain/registry";
 import type {
 	ApprovalDecisionAction,
+	ApprovalHandlerServices,
 	ApprovalType,
 	BulkDecisionFailure,
 	BulkDecisionResult,
@@ -84,7 +85,6 @@ export class BulkApprovalService extends Context.Service<
 		/**
 		 * Execute a shared bulk decision across multiple approvals.
 		 */
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		readonly bulkDecide: (
 			approvalIds: string[],
 			approverId: string,
@@ -92,7 +92,7 @@ export class BulkApprovalService extends Context.Service<
 			action: ApprovalDecisionAction,
 			reason?: string,
 			actorUserId?: string,
-		) => Effect.Effect<BulkDecisionResult, AnyAppError, any>;
+		) => Effect.Effect<BulkDecisionResult, AnyAppError, ApprovalHandlerServices>;
 	}
 >()("BulkApprovalService") {}
 
