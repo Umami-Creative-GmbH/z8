@@ -457,14 +457,19 @@ export async function getPayrollReadiness(
 			group: "payrollSetup",
 			title: "Employment history coverage",
 			titleKey: "settings.payrollReadiness.checks.missingEmploymentHistory.title",
-			description:
-				missingEmploymentHistory.length > 0
-					? "Some active employees do not have confirmed employment history for this payroll period."
-					: "All active employees have confirmed employment history for this payroll period.",
-			descriptionKey:
-				missingEmploymentHistory.length > 0
-					? "settings.payrollReadiness.checks.missingEmploymentHistory.descriptionWarning"
-					: "settings.payrollReadiness.checks.missingEmploymentHistory.descriptionPass",
+			...(missingEmploymentHistory.length > 0
+				? {
+						description:
+							"Some active employees do not have confirmed employment history for this payroll period.",
+						descriptionKey:
+							"settings.payrollReadiness.checks.missingEmploymentHistory.descriptionWarning",
+					}
+				: {
+						description:
+							"All active employees have confirmed employment history for this payroll period.",
+						descriptionKey:
+							"settings.payrollReadiness.checks.missingEmploymentHistory.descriptionPass",
+					}),
 			status: missingEmploymentHistory.length > 0 ? "warning" : "pass",
 			severity: "warning",
 			required: false,

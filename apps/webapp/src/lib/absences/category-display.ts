@@ -20,18 +20,62 @@ type DisplayCategory = {
 	descriptionTranslations?: LocaleTranslationMap | null;
 };
 
-const builtInTypes = new Set<AbsenceCategoryDisplayType>([
-	"home_office",
-	"sick",
-	"vacation",
-	"personal",
-	"unpaid",
-	"parental",
-	"bereavement",
-]);
+type BuiltInType = Exclude<AbsenceCategoryDisplayType, "custom">;
 
-function isBuiltInType(type: AbsenceCategoryDisplayType) {
-	return builtInTypes.has(type);
+/**
+ * Translation keys for the seeded categories, with the seeded English copy as their default.
+ * Keys are static so the Tolgee extractor sees them with these defaults.
+ */
+export const builtInAbsenceCategoryText: Record<
+	BuiltInType,
+	{ nameKey: string; name: string; descriptionKey: string; description: string }
+> = {
+	vacation: {
+		nameKey: "settings.absenceCategories.defaults.vacation.name",
+		name: "Vacation",
+		descriptionKey: "settings.absenceCategories.defaults.vacation.description",
+		description: "Paid time off",
+	},
+	sick: {
+		nameKey: "settings.absenceCategories.defaults.sick.name",
+		name: "Sick Leave",
+		descriptionKey: "settings.absenceCategories.defaults.sick.description",
+		description: "Sick day",
+	},
+	personal: {
+		nameKey: "settings.absenceCategories.defaults.personal.name",
+		name: "Personal Day",
+		descriptionKey: "settings.absenceCategories.defaults.personal.description",
+		description: "Personal time off",
+	},
+	home_office: {
+		nameKey: "settings.absenceCategories.defaults.homeOffice.name",
+		name: "Home Office",
+		descriptionKey: "settings.absenceCategories.defaults.homeOffice.description",
+		description: "Remote work day",
+	},
+	unpaid: {
+		nameKey: "settings.absenceCategories.defaults.unpaid.name",
+		name: "Unpaid Leave",
+		descriptionKey: "settings.absenceCategories.defaults.unpaid.description",
+		description: "Unpaid absence",
+	},
+	parental: {
+		nameKey: "settings.absenceCategories.defaults.parental.name",
+		name: "Parental Leave",
+		descriptionKey: "settings.absenceCategories.defaults.parental.description",
+		description: "Parental leave absence",
+	},
+	bereavement: {
+		nameKey: "settings.absenceCategories.defaults.bereavement.name",
+		name: "Bereavement",
+		descriptionKey: "settings.absenceCategories.defaults.bereavement.description",
+		description: "Bereavement leave",
+	},
+};
+
+function isBuiltInType(type: AbsenceCategoryDisplayType): type is BuiltInType {
+	return type !== "custom";
 }
 
 function trimmedValue(value: string | null | undefined) {
@@ -50,7 +94,7 @@ export function getAbsenceCategoryDisplayName(
 ) {
 	if (isBuiltInType(category.type)) {
 		const fallback = trimmedValue(category.name) ?? category.type;
-		return t(`settings.absenceCategories.defaults.${category.type}.name`, fallback);
+		return t(builtInAbsenceCategoryText[category.type].nameKey, fallback);
 	}
 
 	return (
@@ -72,7 +116,7 @@ export function getAbsenceCategoryDisplayDescription(
 			return null;
 		}
 
-		return t(`settings.absenceCategories.defaults.${category.type}.description`, fallback);
+		return t(builtInAbsenceCategoryText[category.type].descriptionKey, fallback);
 	}
 
 	return translatedValue(category.descriptionTranslations, locale) ?? fallback;

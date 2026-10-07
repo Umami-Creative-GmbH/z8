@@ -132,6 +132,245 @@ describe("tolgee extractor", () => {
 		]);
 	});
 
+	// A key extracted without a default is created empty by `tolgee sync` and omitted by the
+	// next pull, so every locale shows the English code fallback.
+	describe("reads *Key defaults from sibling properties", () => {
+		it("uses the property named after the key prefix", () => {
+			const result = extractor(
+				`
+				const GROUPS = {
+					travelExpenses: {
+						title: "Travel expenses",
+						titleKey: "settings.payrollReadiness.groups.travelExpenses.title",
+					},
+				};
+				buildCheck({
+					id: "pending-approvals",
+					title: "Pending approvals",
+					titleKey: "settings.payrollReadiness.checks.pendingApprovals.title",
+					description:
+						"All approval requests must be resolved before payroll export.",
+					descriptionKey: "settings.payrollReadiness.checks.pendingApprovals.description",
+					status: count > 0 ? "fail" : "pass",
+				});
+			`,
+				"get-payroll-readiness.ts",
+			);
+
+			expect(result.keys).toEqual([
+				expect.objectContaining({
+					defaultValue: "Travel expenses",
+					keyName: "settings.payrollReadiness.groups.travelExpenses.title",
+					namespace: "settings/payrollExport",
+				}),
+				expect.objectContaining({
+					defaultValue: "Pending approvals",
+					keyName: "settings.payrollReadiness.checks.pendingApprovals.title",
+				}),
+				expect.objectContaining({
+					defaultValue: "All approval requests must be resolved before payroll export.",
+					keyName: "settings.payrollReadiness.checks.pendingApprovals.description",
+				}),
+			]);
+		});
+
+		it("prefers fooDefault, fooFallback and fallbackFoo over foo", () => {
+			const result = extractor(
+				`
+				const CARDS = [
+					{
+						title: "{employeeName} is absent",
+						titleKey: "today.briefing.summary.a.title",
+						titleDefault: "Absent today",
+					},
+					{
+						label: "unused",
+						labelKey: "settings.permissions.createTeams",
+						labelFallback: "Create Teams",
+					},
+					{
+						titleKey: "today.briefing.summary.criticalIssues.title",
+						fallbackTitle: "Critical issues",
+					},
+				];
+			`,
+				"cards.ts",
+			);
+
+			expect(result.keys).toEqual([
+				expect.objectContaining({
+					defaultValue: "Absent today",
+					keyName: "today.briefing.summary.a.title",
+				}),
+				expect.objectContaining({
+					defaultValue: "Create Teams",
+					keyName: "settings.permissions.createTeams",
+				}),
+				expect.objectContaining({
+					defaultValue: "Critical issues",
+					keyName: "today.briefing.summary.criticalIssues.title",
+				}),
+			]);
+		});
+
+		it("uses a generic fallback only when the object has a single *Key property", () => {
+			const result = extractor(
+				`
+				const TYPES = [
+					{ value: "all", labelKey: "settings.auditLog.entityType.all", fallback: "All Types" },
+					{
+						titleKey: "settings.import.review.issueGroups.duplicates.title",
+						descriptionKey: "settings.import.review.issueGroups.duplicates.description",
+						fallback: "Duplicates",
+					},
+				];
+			`,
+				"audit-log-viewer.tsx",
+			);
+
+			expect(result.keys).toEqual([
+				expect.objectContaining({
+					defaultValue: "All Types",
+					keyName: "settings.auditLog.entityType.all",
+				}),
+				expect.objectContaining({
+					defaultValue: undefined,
+					keyName: "settings.import.review.issueGroups.duplicates.title",
+				}),
+				expect.objectContaining({
+					defaultValue: undefined,
+					keyName: "settings.import.review.issueGroups.duplicates.description",
+				}),
+			]);
+		});
+
+		it("resolves shorthand and identifier siblings bound to a string constant", () => {
+			const result = extractor(
+				`
+				export const OFFBOARDING_REVIEW_TITLE = "Employee offboarding needs review";
+
+				function build() {
+					const titleDefault = "Automatically clocked out";
+					const messageDefault =
+						"You were automatically clocked out after {duration} minutes.";
+					return [
+						{
+							titleKey: "common:notifications.content.automaticClockOut.title",
+							titleDefault,
+							messageKey: "common:notifications.content.automaticClockOut.message",
+							messageDefault,
+						},
+						{
+							titleKey: "common:notifications.content.employeeOffboardingReview.title",
+							titleDefault: OFFBOARDING_REVIEW_TITLE,
+						},
+					];
+				}
+			`,
+				"notifications.ts",
+			);
+
+			expect(result.keys).toEqual([
+				expect.objectContaining({
+					defaultValue: "Automatically clocked out",
+					keyName: "notifications.content.automaticClockOut.title",
+				}),
+				expect.objectContaining({
+					defaultValue: "You were automatically clocked out after {duration} minutes.",
+					keyName: "notifications.content.automaticClockOut.message",
+				}),
+				expect.objectContaining({
+					defaultValue: "Employee offboarding needs review",
+					keyName: "notifications.content.employeeOffboardingReview.title",
+				}),
+			]);
+		});
+
+		it("does not resolve computed or ambiguous identifiers", () => {
+			const result = extractor(
+				`
+				const JOINED = ["Failed", "to load"].join(" ");
+				const COPY = { title: "Approvals" };
+				function a() { const label = "One"; }
+				function b() { const label = "Two"; }
+				const rows = [
+					{ titleKey: "today.briefing.sections.a.title", titleDefault: JOINED },
+					{ titleKey: "today.briefing.sections.b.title", title: COPY.title },
+					{ labelKey: "today.briefing.sections.c.title", label },
+				];
+			`,
+				"briefing.ts",
+			);
+
+			expect(result.keys.map((key) => key.defaultValue)).toEqual([undefined, undefined, undefined]);
+		});
+
+		it("ignores properties of nested objects and skips comments and earlier closed objects", () => {
+			const result = extractor(
+				`
+				const PRESETS = {
+					custom: {
+						metadata: { title: "Nested title" },
+						intervalMinutes: 45, // Default when switching to custom (don't change)
+						label: "Custom",
+						labelKey: "settings.wellness.presets.custom.label",
+						titleKey: "settings.wellness.presets.custom.title",
+					},
+				};
+			`,
+				"water-presets.ts",
+			);
+
+			expect(result.keys).toEqual([
+				expect.objectContaining({
+					defaultValue: "Custom",
+					keyName: "settings.wellness.presets.custom.label",
+				}),
+				expect.objectContaining({
+					defaultValue: undefined,
+					keyName: "settings.wellness.presets.custom.title",
+				}),
+			]);
+		});
+
+		it("skips data-path *Key properties such as table accessors", () => {
+			const result = extractor(
+				`const columns = [{ accessorKey: "team.name", header: t("team.table.team", "Team") }];`,
+				"team-members-list.tsx",
+			);
+
+			expect(result.keys).toEqual([
+				expect.objectContaining({ defaultValue: "Team", keyName: "team.table.team" }),
+			]);
+		});
+	});
+
+	it("resolves a t() default passed as a string constant from the same file", () => {
+		const result = extractor(
+			`
+			const CREATE_FAILED = "Failed to create team";
+			const LOAD_FAILED = ["Unable to load", "preferences"].join(" ");
+			toast.error(t("settings.organization.teams.createDialog.createFailed", CREATE_FAILED));
+			toast.error(t("common:notifications.preferences.loadFailed", LOAD_FAILED));
+		`,
+			"create-team-dialog.tsx",
+		);
+
+		expect(result.keys).toHaveLength(2);
+		expect(result.keys).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					defaultValue: "Failed to create team",
+					keyName: "settings.organization.teams.createDialog.createFailed",
+				}),
+				expect.objectContaining({
+					defaultValue: undefined,
+					keyName: "notifications.preferences.loadFailed",
+				}),
+			]),
+		);
+	});
+
 	it("infers namespaces for module translation prefixes that should not be ungrouped", () => {
 		const result = extractor(
 			`

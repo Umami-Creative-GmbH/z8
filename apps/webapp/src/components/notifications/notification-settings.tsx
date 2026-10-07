@@ -41,11 +41,6 @@ import {
 } from "@/lib/notifications/types";
 import { PushPermissionModal } from "./push-permission-modal";
 
-const LOAD_FAILED_FALLBACK = [
-	"Unable to load",
-	"notification preferences",
-].join(" ");
-
 // Group notification types by category for better UX
 const NOTIFICATION_CATEGORIES = [
 	{
@@ -446,7 +441,7 @@ function NotificationSettingsView({
 					<p className="text-muted-foreground">
 						{t(
 							"common:notifications.preferences.loadFailed",
-							LOAD_FAILED_FALLBACK,
+							"Unable to load notification preferences",
 						)}
 					</p>
 				</CardContent>

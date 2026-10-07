@@ -1,10 +1,32 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
+/**
+ * Matches `"text"` used as raw copy, but not as the static default of a `t("key", "text")`
+ * call. Static defaults are what the Tolgee extractor needs to seed the key's English source.
+ */
+function rawLiteral(text: string): RegExp {
+	const escaped = text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	return new RegExp(`(?<!\\bt\\(\\s*"[^"]+",\\s*)"${escaped}"`);
+}
+
+/**
+ * Matches `name: "text"` unless the next property is its translation key (`nameKey`), whose
+ * default the Tolgee extractor reads from this sibling.
+ */
+function rawProperty(name: string, text: string): RegExp {
+	const escaped = text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	return new RegExp(`${name}: "${escaped}",(?!\\s*${name}Key:)`);
+}
+
 const checks: Array<{ file: string; patterns: RegExp[] }> = [
 	{
 		file: "src/app/[locale]/(app)/analytics/page.tsx",
-		patterns: [/"Failed to load analytics data"/, />Total Employees</, />Work Hours by Team</],
+		patterns: [
+			rawLiteral("Failed to load analytics data"),
+			/>Total Employees</,
+			/>Work Hours by Team</,
+		],
 	},
 	{
 		file: "src/app/[locale]/(app)/today/today-briefing.tsx",
@@ -12,7 +34,7 @@ const checks: Array<{ file: string; patterns: RegExp[] }> = [
 	},
 	{
 		file: "src/components/organization/create-team-dialog.tsx",
-		patterns: [/>Create Team</, /"Failed to create team"/, /placeholder="Team name"/],
+		patterns: [/>Create Team</, rawLiteral("Failed to create team"), /placeholder="Team name"/],
 	},
 	{
 		file: "src/components/organization/organization-tab.tsx",
@@ -35,7 +57,7 @@ const checks: Array<{ file: string; patterns: RegExp[] }> = [
 		patterns: [
 			/>Notification Preferences</,
 			/>Enable Push Notifications</,
-			/"Unable to load notification preferences"/,
+			rawLiteral("Unable to load notification preferences"),
 		],
 	},
 	{
@@ -143,8 +165,8 @@ const checks: Array<{ file: string; patterns: RegExp[] }> = [
 	{
 		file: "src/lib/manager-daily-briefing/get-manager-daily-briefing.ts",
 		patterns: [
-			/title: "Approvals"/,
-			/description: "Pending requests waiting for a decision\."/,
+			rawProperty("title", "Approvals"),
+			rawProperty("description", "Pending requests waiting for a decision."),
 			/return "Section could not be loaded\."/,
 		],
 	},

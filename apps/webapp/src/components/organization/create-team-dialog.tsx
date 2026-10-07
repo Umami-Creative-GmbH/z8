@@ -30,7 +30,6 @@ import type { team } from "@/db/schema";
 import { queryKeys } from "@/lib/query";
 
 const NO_MANAGER_VALUE = "none";
-const CREATE_TEAM_FAILED_FALLBACK = ["Failed", "to create team"].join(" ");
 
 export interface TeamManagerOption {
 	employeeId: string;
@@ -73,7 +72,7 @@ export function CreateTeamDialog({
 			if (!result.success) {
 				toast.error(
 					result.error ||
-						t("settings.organization.teams.createDialog.createFailed", CREATE_TEAM_FAILED_FALLBACK),
+						t("settings.organization.teams.createDialog.createFailed", "Failed to create team"),
 				);
 				return;
 			}
@@ -87,7 +86,7 @@ export function CreateTeamDialog({
 		},
 		onError: () => {
 			toast.error(
-				t("settings.organization.teams.createDialog.createFailed", CREATE_TEAM_FAILED_FALLBACK),
+				t("settings.organization.teams.createDialog.createFailed", "Failed to create team"),
 			);
 		},
 	});

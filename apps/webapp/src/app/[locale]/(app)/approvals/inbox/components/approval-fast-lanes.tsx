@@ -104,7 +104,7 @@ export function ApprovalFastLanes({
 									<div className="text-sm font-medium text-muted-foreground">
 										{t(
 											"approvals:fastLanes.requestCount",
-											group.items.length === 1 ? "1 request" : `${group.items.length} requests`,
+											"{count, plural, one {# request} other {# requests}}",
 											{ count: group.items.length },
 										)}
 									</div>
