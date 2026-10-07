@@ -1,7 +1,7 @@
-import { redirect } from "next/navigation";
 import { loadTeamSettingsPageData } from "@/app/[locale]/(app)/settings/teams/team-settings-page-data";
 import { TeamsTab } from "@/components/organization/teams-tab";
 import { getCurrentSettingsRouteContext, getPrincipalContext } from "@/lib/auth-helpers";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getTranslate } from "@/tolgee/server";
 
 export default async function TeamsPage() {
@@ -12,17 +12,17 @@ export default async function TeamsPage() {
 	]);
 
 	if (!settingsRouteContext || !principalContext) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	if (settingsRouteContext.accessTier === "member") {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
 
 	if (!organizationId) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const { teamSurface, scopedMembers } = await loadTeamSettingsPageData({

@@ -1,7 +1,17 @@
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { receiptExceptionContext } from "../receipt-exception";
 import type { ReceiptItemDraft } from "../receipt-report";
-import { checkReportSubmission } from "../report-submission";
+import {
+	checkReportSubmission,
+	type ReviewedReportVersions,
+	type SubmissionReportFacts,
+} from "../report-submission";
+
+/** Evaluated after every date of the fixtures (#685). */
+const now = parseInstant("2026-10-07T12:00:00Z");
+const check = (report: SubmissionReportFacts, reviewed: ReviewedReportVersions) =>
+	checkReportSubmission(report, reviewed, now);
 
 const dinner: ReceiptItemDraft = {
 	expenseDate: "2026-09-14",
@@ -41,7 +51,7 @@ const reviewed = (receiptExceptionVersion?: number) => ({
 describe("checkReportSubmission with missing-receipt exceptions (#604)", () => {
 	it("submits an explained exception the organization allows", () => {
 		expect(
-			checkReportSubmission(
+			check(
 				standalone({
 					receiptException: receiptExceptionContext("Restaurant card terminal only", true),
 					receiptExceptionVersion: 2,
@@ -56,7 +66,7 @@ describe("checkReportSubmission with missing-receipt exceptions (#604)", () => {
 
 	it("keeps the report incomplete once the organization no longer allows exceptions", () => {
 		expect(
-			checkReportSubmission(
+			check(
 				standalone({
 					receiptException: receiptExceptionContext("Restaurant card terminal only", false),
 					receiptExceptionVersion: 2,
@@ -71,7 +81,7 @@ describe("checkReportSubmission with missing-receipt exceptions (#604)", () => {
 	});
 
 	it("keeps a report without receipt or exception incomplete", () => {
-		expect(checkReportSubmission(standalone({}), reviewed())).toEqual({
+		expect(check(standalone({}), reviewed())).toEqual({
 			ok: false,
 			reason: "incomplete",
 			missing: { trip: [], items: [{ id: "dinner", missing: ["receipt"] }] },
@@ -83,12 +93,12 @@ describe("checkReportSubmission with missing-receipt exceptions (#604)", () => {
 			receiptException: receiptExceptionContext("Edited later", true),
 			receiptExceptionVersion: 3,
 		});
-		expect(checkReportSubmission(report, reviewed(2))).toEqual({
+		expect(check(report, reviewed(2))).toEqual({
 			ok: false,
 			reason: "changed_since_review",
 		});
 		// A review that did not see any exception version saw version 0.
-		expect(checkReportSubmission(report, reviewed())).toEqual({
+		expect(check(report, reviewed())).toEqual({
 			ok: false,
 			reason: "changed_since_review",
 		});

@@ -1,22 +1,80 @@
 {
   "travelExpenses": {
     "actions": {
-      "newClaim": "New Claim",
       "backToClaims": "Back to claims",
       "download": "Download",
       "preview": "Preview",
       "retry": "Retry",
       "viewClaim": "View claim"
     },
+    "adjustment": {
+      "create": {
+        "action": "Correct with an adjustment",
+        "confirm": "Create adjustment",
+        "description": "You get a copy of the approved expenses to correct. Submitting it sends the whole corrected report for a fresh approval; only the difference to the approved amount is settled.",
+        "failed": "The adjustment could not be created. Please retry.",
+        "ineligible": "This report can no longer be adjusted. Reload the page to see its current state.",
+        "reason": "Reason for the correction",
+        "reasonRequired": "Explain what needs correcting.",
+        "reasonTooLong": "Keep the reason under {max} characters.",
+        "title": "Create a linked adjustment?"
+      },
+      "ineligible": {
+        "adjustment": "An adjustment is corrected through the report it adjusts."
+      },
+      "notice": {
+        "baseline": "Approved amount it corrects",
+        "delta": "Signed difference",
+        "editing": "Correct the expenses below. When you submit, the difference to the approved amount is shown for your review and then reviewed afresh. The original report and its payments stay unchanged.",
+        "original": "Open the original report",
+        "title": "Adjustment of an approved report"
+      },
+      "panel": {
+        "applied": "Applied",
+        "description": "This report was already exported or reimbursed, so it stays as approved. A correction is a linked adjustment: it is reviewed afresh and, once approved, changes the approved amount by its signed difference.",
+        "effective": "Approved amount including adjustments: {amount}",
+        "open": "Open adjustment",
+        "title": "Adjustments"
+      },
+      "preview": {
+        "currency": "The corrected total is not in the original report's currency, so it cannot be submitted as an adjustment.",
+        "delta": "This adjustment changes the approved amount of {baseline} by {delta}.",
+        "review": "It needs a fresh approval of the whole report, also when the amount goes down."
+      },
+      "reviewerHint": "The employee creates the adjustment from this report; it comes back to you for a fresh review with its signed difference."
+    },
+    "allowanceOverride": {
+      "amount": "Amount",
+      "authorizedBy": "Authorized by",
+      "authorizedByValue": "{name}, {date}",
+      "basis": "Calculation",
+      "evidence": "Evidence",
+      "noOrdinary": "No ordinary calculation exists for these facts.",
+      "ordinary": "The policy would calculate {amount}.",
+      "reason": "Reason",
+      "situation": {
+        "calculated": "Calculated by the policy",
+        "fallback": "Calculated with an official fallback rate",
+        "missingCoverage": "No organization policy covers it",
+        "missingFacts": "Required travel facts are missing",
+        "unsupported": "Not covered by the supported calculation rules"
+      },
+      "situationLabel": "Why not calculated",
+      "situationResolved": "This manual allowance no longer applies: the reason it was authorized for has changed (for example, a policy now covers these facts). The calculated allowance counts where there is one; otherwise an expense administrator must review it.",
+      "stale": "This manual allowance was authorized for different facts and no longer applies. An expense administrator must review the changed facts.",
+      "title": "Allowance set manually by an expense administrator"
+    },
     "approvals": {
       "description": "Open the unified approvals inbox filtered to travel expenses.",
-      "openInbox": "Open Inbox",
-      "title": "Review Pending Travel Expense Approvals"
+      "entry": {
+        "open": "Open inbox",
+        "title": "Review pending travel expense approvals"
+      }
     },
-    "claimTypes": {
-      "mileage": "Mileage",
-      "per_diem": "Per Diem",
-      "receipt": "Receipt"
+    "currency": {
+      "empty": "No currency found",
+      "placeholder": "Choose a currency",
+      "search": "Search currencies"
     },
     "decision": {
       "approve": "Approve",
@@ -38,53 +96,6 @@
       "rejected": "Claim rejected successfully",
       "rejectTitle": "Reject Claim"
     },
-    "description": "Create and track your travel expense claims",
-    "errors": {
-      "loadClaims": "Failed to load travel expense claims",
-      "loadClaimsRetry": "Unable to load claims. Please retry.",
-      "loadDetailRetry": "Unable to load this claim. Please retry."
-    },
-    "feature": "manage travel expenses",
-    "form": {
-      "amount": "Amount",
-      "claimType": "Claim Type",
-      "created": "Travel expense draft created",
-      "createDraft": "Create Draft",
-      "currency": "Currency",
-      "currencyDescription": "ISO 4217 code, e.g. EUR or USD",
-      "currencyPlaceholder": "EUR",
-      "description": "Create a new draft claim for your recent travel expenses.",
-      "destinationCity": "Destination City",
-      "destinationCityPlaceholder": "Berlin",
-      "destinationCountry": "Destination Country",
-      "destinationCountryPlaceholder": "Germany",
-      "errors": {
-        "createDraft": "Failed to create travel expense draft",
-        "positiveAmount": "Amount must be a positive number",
-        "tripEndBeforeStart": "Trip end date cannot be before trip start date",
-        "validTripDates": "Please provide a valid trip start and end date",
-        "validTripEnd": "Please provide a valid trip end date",
-        "validTripStart": "Please provide a valid trip start date"
-      },
-      "notes": "Notes",
-      "notesPlaceholder": "Add optional context for your approver",
-      "receiptAttachmentHint": "Receipt claims require at least one attachment. Attachment upload will be available after draft creation.",
-      "selectClaimType": "Select claim type",
-      "title": "Create Travel Expense Claim",
-      "tripEnd": "Trip End",
-      "tripStart": "Trip Start"
-    },
-    "list": {
-      "amount": "Amount",
-      "dateRange": "Date Range",
-      "emptyDescription": "Create your first claim to start the approval process.",
-      "emptyTitle": "No travel expense claims yet",
-      "status": "Status",
-      "type": "Type",
-      "actions": "Actions",
-      "refreshing": "Refreshing claims…"
-    },
-    "title": "Travel Expenses",
     "detail": {
       "created": "Created",
       "decisionRecorded": "Decision recorded",
@@ -101,6 +112,894 @@
       "submitted": "Submitted",
       "title": "Travel expense claim",
       "unknownDates": "Trip date context not recorded (legacy claim)"
+    },
+    "errors": {
+      "loadDetailRetry": "Unable to load this claim. Please retry."
+    },
+    "feature": "manage travel expenses",
+    "finance": {
+      "approvedOn": "Approved {date}",
+      "back": "Back to expense finance",
+      "companyPaid": "Company-paid {amount}",
+      "description": "Approved expenses and what is still owed to employees. Recording a reimbursement documents a payment made outside Z8; no money is transferred.",
+      "employeePaid": "Employee-paid {amount}",
+      "empty": {
+        "any": "No approved expenses yet.",
+        "open": "Nothing to settle: every approved expense is settled."
+      },
+      "entry": {
+        "description": "Review approved expenses, outstanding balances and recorded reimbursements.",
+        "open": "Open finance queue",
+        "title": "Expense finance"
+      },
+      "errors": {
+        "load": "Unable to load the finance queue. Please retry."
+      },
+      "exports": {
+        "adjustment": "Adjustment: {name}",
+        "cancel": "Cancel",
+        "cancelledByFinance": "Cancelled by finance.",
+        "cancelledReopenedHint": "Cancelled because a report in it was reopened for correction. Any other reports in it are ready to export again: create a new export for them.",
+        "counts": "{reports} reports · {items} expenses · {receipts} receipts",
+        "created": "Export queued. It appears below when ready.",
+        "description": "Export approved expenses as a CSV with their receipts for accounting. Each approved submission is exported once; download an export again whenever you need it.",
+        "download": "Download",
+        "empty": "No approved expenses are waiting for export.",
+        "errors": {
+          "alreadyExported": "Some selected expenses are already part of another export. Download that export instead.",
+          "cancel": "The export could not be cancelled.",
+          "conflict": "An earlier attempt with another selection was already recorded. Check the export history.",
+          "failed": "The export could not be created. Please retry.",
+          "invalid": "Select between one and the maximum number of expenses.",
+          "load": "Unable to load exports. Please retry.",
+          "retry": "The export could not be retried.",
+          "stale": "Some selected expenses are no longer approved as shown. The list was refreshed; check the selection and export again."
+        },
+        "failure": {
+          "enqueue": "The export could not be queued. Please retry.",
+          "inconsistent": "The approved data could not be exported consistently. Contact support.",
+          "receiptMismatch": "A stored receipt no longer matches its recorded checksum. Contact support before retrying.",
+          "receiptUnavailable": "A receipt file could not be read. Retry once storage is available.",
+          "storage": "The export file could not be stored. Please retry.",
+          "unknown": "The export failed. Please retry."
+        },
+        "form": {
+          "label": "Create an export",
+          "selectAll": "Select all",
+          "submit": "Create export ({count})"
+        },
+        "history": "Export history",
+        "loading": "Loading exports…",
+        "notPayment": "Not a payment: exporting does not mark anything as reimbursed.",
+        "requested": "Requested {date} by {name}",
+        "retry": "Retry",
+        "status": {
+          "cancelled": "Cancelled",
+          "completed": "Completed",
+          "failed": "Failed",
+          "processing": "Processing",
+          "queued": "Queued"
+        },
+        "title": "Exports"
+      },
+      "filter": {
+        "all": "All approved",
+        "label": "Show expenses",
+        "open": "Open",
+        "settled": "Settled"
+      },
+      "legacyClaim": "Legacy {type} claim",
+      "loading": "Loading finance queue…",
+      "title": "Expense finance",
+      "truncated": "Showing the {count} most recently approved expenses. Older matching expenses are not listed."
+    },
+    "form": {
+      "currency": "Currency",
+      "notes": "Notes"
+    },
+    "history": {
+      "adjustment": "Adjustment",
+      "adjustmentOf": "Adjustment of “{title}”",
+      "adjustmentOfUntitled": "Adjustment of an earlier report",
+      "claimed": "Claimed",
+      "companyPaid": "Company-paid {amount}",
+      "continuedFrom": "Continued from an earlier claim",
+      "deleteDraft": "Delete draft “{title}”",
+      "emptyDescription": "Start a trip to collect several expenses with shared travel details, or add a single receipt or mileage expense. Drafts save automatically, so you can finish them later.",
+      "emptyFilter": "No expenses with this status.",
+      "emptyTitle": "No travel expenses yet",
+      "errors": {
+        "load": "Unable to load your travel expenses. Please retry.",
+        "refresh": "Your expenses could not be refreshed; the list below may be out of date. Please retry."
+      },
+      "filter": {
+        "all": "All",
+        "approved": "Approved",
+        "inReview": "In review",
+        "label": "Show expenses",
+        "needsAction": "To finish",
+        "rejected": "Rejected"
+      },
+      "legacy": {
+        "badge": "Earlier claim",
+        "mileage": "Mileage claim",
+        "perDiem": "Per diem claim",
+        "receipt": "Receipt claim"
+      },
+      "loading": "Loading your travel expenses…",
+      "notCounted": "{count, plural, one {# expense not counted yet} other {# expenses not counted yet}}",
+      "refreshing": "Refreshing…",
+      "reimbursable": "Reimbursable to you",
+      "showAll": "Show all expenses",
+      "title": "Your expenses",
+      "untitledMileage": "Untitled mileage"
+    },
+    "legacyDraft": {
+      "continue": "Continue as report",
+      "converted": "You continued this draft as an expense report. This claim stays here unchanged for reference.",
+      "description": "Drafts from the earlier claim form are now finished as expense reports. Your amount, dates, notes and receipts are carried over; anything the new form needs that this draft never recorded is left for you to complete. This claim itself stays unchanged.",
+      "failed": "The draft could not be continued. Please retry.",
+      "flags": {
+        "amount": "The entered amount {amount} is not a valid receipt amount. Enter the amount and currency from the receipt.",
+        "conversion": "The receipt is in a foreign currency. The draft recorded no conversion, so add how it was converted (card charge or rate) before you submit.",
+        "destination": "The destination \"{destination}\" could not be matched to a country. Choose it.",
+        "expenseDate": "The draft covered {range}. Choose the day of this expense.",
+        "manualTotal": "The draft had a typed total of {amount}. It is not used: this expense is now calculated from what you enter below.",
+        "notes": "Your notes are shown below; copy what still applies.",
+        "project": "The draft's project was kept. Unless your assignment on the expense date is on record, an expense administrator must authorize it before you can submit.",
+        "projectMissing": "The draft's project no longer exists. Choose a project if one applies.",
+        "tripDates": "The draft was created before travel dates were recorded. Enter the dates."
+      },
+      "loadFailed": "Unable to check this draft. Please retry.",
+      "notDraft": "This claim was already submitted. It keeps its original approval and cannot be continued as a report.",
+      "notice": {
+        "description": "What you entered was carried over where this form can hold it exactly, including {count} receipts. Complete the remaining fields before submitting.",
+        "original": "View the original draft",
+        "title": "Continued from an earlier claim draft"
+      },
+      "openReport": "Open the report",
+      "receipt": {
+        "mismatch": "the stored file no longer matches what was uploaded",
+        "unreadable": "the stored file cannot be read right now",
+        "unsupportedStorage": "the file is kept in an unsupported storage",
+        "unsupportedType": "the stored file is not a supported receipt type"
+      },
+      "receiptUnavailable": "Nothing was changed because a receipt could not be carried over safely: {receipts}. Please retry later or ask your administrator to restore the file.",
+      "status": "Continued as report",
+      "title": "Continue this draft"
+    },
+    "list": {
+      "actions": "Actions",
+      "amount": "Amount",
+      "dateRange": "Date Range",
+      "emptyDescription": "Create your first claim to start the approval process.",
+      "emptyTitle": "No travel expense claims yet",
+      "status": "Status",
+      "type": "Type"
+    },
+    "perDiemPlaces": {
+      "AU": {
+        "canberra": "Canberra",
+        "sydney": "Sydney"
+      },
+      "BR": {
+        "brasilia": "Brasília",
+        "rio-de-janeiro": "Rio de Janeiro",
+        "sao-paulo": "São Paulo"
+      },
+      "CA": {
+        "ottawa": "Ottawa",
+        "toronto": "Toronto",
+        "vancouver": "Vancouver"
+      },
+      "CH": {
+        "bern": "Bern",
+        "genf": "Geneva"
+      },
+      "CN": {
+        "hongkong": "Hong Kong",
+        "peking": "Beijing",
+        "shanghai": "Shanghai"
+      },
+      "ES": {
+        "barcelona": "Barcelona",
+        "kanarische-inseln": "Canary Islands",
+        "madrid": "Madrid",
+        "palma-de-mallorca": "Palma de Mallorca"
+      },
+      "FR": {
+        "paris": "Paris and departments 77, 78, 91–95"
+      },
+      "GB": {
+        "london": "London"
+      },
+      "GR": {
+        "athen": "Athens"
+      },
+      "IN": {
+        "bangalore": "Bengaluru",
+        "chennai": "Chennai",
+        "kalkutta": "Kolkata",
+        "mumbai": "Mumbai",
+        "neu-delhi": "New Delhi"
+      },
+      "IT": {
+        "mailand": "Milan",
+        "rom": "Rome"
+      },
+      "JP": {
+        "osaka": "Osaka",
+        "tokio": "Tokyo"
+      },
+      "PL": {
+        "breslau": "Wrocław",
+        "warschau": "Warsaw"
+      },
+      "RU": {
+        "moskau": "Moscow",
+        "st-petersburg": "Saint Petersburg"
+      },
+      "SA": {
+        "djidda": "Jeddah",
+        "riad": "Riyadh"
+      },
+      "TR": {
+        "ankara": "Ankara",
+        "izmir": "Izmir"
+      },
+      "US": {
+        "atlanta": "Atlanta",
+        "boston": "Boston",
+        "chicago": "Chicago",
+        "houston": "Houston",
+        "los-angeles": "Los Angeles",
+        "miami": "Miami",
+        "new-york-city": "New York City",
+        "san-francisco": "San Francisco",
+        "washington-dc": "Washington, D.C."
+      },
+      "ZA": {
+        "johannesburg": "Johannesburg",
+        "kapstadt": "Cape Town"
+      }
+    },
+    "report": {
+      "actions": {
+        "newMileage": "New mileage",
+        "newReceipt": "New receipt",
+        "newTrip": "New trip"
+      },
+      "approvedBy": "Approved by {name} on {date}.",
+      "awaitingReview": "Waiting for review.",
+      "awaitingReviewer": "Waiting for review by {name}.",
+      "backToApprovals": "Back to approvals",
+      "backToCurrent": "Back to the current report",
+      "backToTravelExpenses": "Back to travel expenses",
+      "categories": {
+        "accommodation": "Accommodation",
+        "meals": "Meals",
+        "other": "Other",
+        "parking": "Parking",
+        "transport": "Transport"
+      },
+      "conversion": {
+        "attachFirst": "Attach the card statement or receipt that shows the charge above first.",
+        "authorizedBy": "Authorized by",
+        "basis": {
+          "cardCharge": "Card charge",
+          "manualRate": "Authorized rate",
+          "referenceRate": "ECB reference rate"
+        },
+        "chargedAmount": "Amount charged in {currency}",
+        "chargedAmountDescription": "The amount on your card or bank statement, including any conversion fee charged with it.",
+        "conflict": "This expense changed elsewhere. Check it and save the card charge again.",
+        "errors": {
+          "chargedAmount": "Enter the positive amount charged in {currency}, with at most {digits} decimals.",
+          "evidence": "Select the attachment of this expense that shows the charge."
+        },
+        "evidence": "Evidence:",
+        "evidenceLabel": "Attachment showing the charge",
+        "evidenceMissing": "The attachment showing the card charge is missing.",
+        "formLabel": "Card charge",
+        "none": "No exchange rate is guessed. Enter what your card was charged in {currency} and select the attachment that shows it, such as the card statement. Without a card charge, an expense administrator can record a documented rate.",
+        "notSaved": "The card charge could not be saved for this expense.",
+        "publicationDate": "Published on",
+        "publicationFallback": "No rate was published on {expenseDate}, so the latest earlier publication applies.",
+        "rate": "Rate",
+        "rateDate": "Rate date",
+        "rateEvidence": "Rate evidence",
+        "rateValue": "1 {base} = {value} {quote}",
+        "reason": "Documentation",
+        "reference": {
+          "alternatives": "Your report stays a draft until you enter your card charge in {reimbursementCurrency} with the attachment that shows it, or an expense administrator records a documented rate.",
+          "currencyUnavailable": "The European Central Bank does not publish a rate for {currency} on this date.",
+          "expenseDateMissing": "Enter the expense date to look up the reference rate.",
+          "historyUnavailable": "There is no reference rate for this date.",
+          "notYetPublished": "The reference rate for this date has not been published yet. It usually appears after 16:00 Frankfurt time on working days.",
+          "pairUnsupported": "The European Central Bank publishes rates against the euro only, so none applies between {currency} and {reimbursementCurrency}.",
+          "providerUnavailable": "The reference rate for this date could not be retrieved yet. Try again later.",
+          "rateStale": "No current reference rate is available for this date."
+        },
+        "referencePending": "The reference rate is looked up again for the new date once your change is saved.",
+        "remove": "Remove card charge",
+        "removeFailed": "The card charge could not be removed. Reload the expense and try again.",
+        "replaceWithCardCharge": "Use my card charge instead",
+        "result": "{original} counts as {reimbursement}",
+        "rounding": "Rounding",
+        "roundingValue": "Rounded half up to {digits} decimals",
+        "saveCardCharge": "Save card charge",
+        "saved": "Card charge saved",
+        "saveFailed": "The card charge could not be saved. Please retry.",
+        "source": "Source",
+        "sourceEcb": "European Central Bank euro reference rate, approved by your organization",
+        "title": "Conversion into {currency}"
+      },
+      "correctAndResubmit": "Correct the report and submit it again. Earlier submissions stay in its history.",
+      "countryEmpty": "No country found",
+      "countrySearch": "Search countries",
+      "cycles": {
+        "approved": "approved",
+        "entry": "Submission {number} on {date}: {outcome}",
+        "pending": "awaiting review",
+        "rejected": "rejected",
+        "reopened": "approved, then reopened for correction",
+        "returned": "returned for changes",
+        "title": "Submissions",
+        "withdrawn": "withdrawn"
+      },
+      "decideInInbox": "Approve, return or reject the whole report in the Approvals inbox.",
+      "delete": {
+        "action": "Delete draft",
+        "description": "The draft, its expenses and their receipts are deleted. This cannot be undone.",
+        "descriptionLegacy": "The draft, its expenses and their receipts are deleted, together with the earlier claim draft it continues. This cannot be undone.",
+        "done": "Draft deleted.",
+        "failed": "The draft could not be deleted. Please retry.",
+        "notDeletable": "This report was already submitted, so it can no longer be deleted.",
+        "title": "Delete this draft?"
+      },
+      "drafts": {
+        "expenses": "{count, plural, one {# expense} other {# expenses}}",
+        "noDate": "No date yet",
+        "noTravelDates": "No travel dates yet",
+        "receipts": "{count, plural, one {# receipt} other {# receipts}}",
+        "untitled": "Untitled receipt",
+        "untitledTrip": "Untitled trip"
+      },
+      "earlierSubmission": "This is an earlier submission of the report, kept exactly as it was submitted.",
+      "errors": {
+        "amount": "Enter a positive amount with at most two decimals, e.g. 12.50.",
+        "category": "Choose a listed category.",
+        "create": "The expense could not be created. Please retry.",
+        "currency": "Enter a three-letter currency code, e.g. EUR.",
+        "expenseDate": "Enter a valid date.",
+        "load": "Unable to load this expense. Please retry.",
+        "loadSubmission": "Unable to load the submitted report. Please retry.",
+        "paidBy": "Choose who paid.",
+        "tooLong": "This text is too long."
+      },
+      "fields": {
+        "accountingReference": "Accounting reference (optional)",
+        "accountingReferenceDescription": "A reference finance asked you to use, such as an order number.",
+        "amount": "Amount on the receipt",
+        "category": "Category",
+        "categoryPlaceholder": "Choose a category",
+        "description": "Description",
+        "descriptionPlaceholder": "e.g. Train ticket Berlin–Hamburg for the customer workshop",
+        "expenseDate": "Receipt date",
+        "paidBy": "Who paid?"
+      },
+      "frozenNotice": "The submitted report can no longer be edited.",
+      "history": {
+        "approvalRecorded": "Approval recorded by {name}; awaiting further approval",
+        "approved": "Approved by {name}",
+        "cycle": "Submission {number}:",
+        "rejected": "Rejected by {name}",
+        "reopened": "Reopened for correction by {name}",
+        "returned": "Returned for changes by {name}",
+        "selfApproved": "Approved automatically: no other reviewer",
+        "submitted": "Submitted by {name}",
+        "title": "History",
+        "withdrawn": "Withdrawn by {name}"
+      },
+      "items": {
+        "add": "Add receipt expense",
+        "addFailed": "The expense could not be added. Please retry.",
+        "empty": "Add each receipt of this trip as its own expense. The trip details above apply to all of them.",
+        "numbered": "{type} {number}",
+        "remove": "Remove",
+        "removeConfirm": "Remove expense",
+        "removeConflict": "This expense changed elsewhere and was not removed. Check it and try again.",
+        "removed": "{type} (removed)",
+        "removeDescription": "The expense and its attached receipts are deleted from this trip. This cannot be undone.",
+        "removeFailed": "The expense could not be removed. Please retry.",
+        "removeItem": "Remove {item}",
+        "removeTitle": "Remove this expense?",
+        "title": "Expenses"
+      },
+      "kind": {
+        "standaloneMileage": "Standalone mileage",
+        "trip": "Trip report"
+      },
+      "loading": "Loading expense…",
+      "mileage": {
+        "add": "Add mileage",
+        "appliedPolicy": "Rate valid from {date} · {source}",
+        "calculation": "{distance} km × {rate} per km = {amount}",
+        "calculationTitle": "Calculated mileage",
+        "enterFacts": "Enter the date, kilometres and vehicle to see the amount.",
+        "errors": {
+          "distance": "Enter the kilometres driven as a positive number with at most two decimals, e.g. 61.5.",
+          "vehicle": "Choose the vehicle you drove."
+        },
+        "fields": {
+          "date": "Date of the drive",
+          "distance": "Kilometres driven",
+          "route": "Route",
+          "routePlaceholder": "e.g. Office Berlin – customer Potsdam – back",
+          "vehicle": "Vehicle",
+          "vehicleDescription": "Your own vehicle. Company cars and public transport are not mileage; add their receipts instead."
+        },
+        "noRate": "No rate is invented: this expense stays in draft until an expense administrator adds a mileage rate covering its date.",
+        "noRateTitle": "No mileage rate applies",
+        "otherCurrency": "The rate for this date is not in {currency}; mileage is never converted.",
+        "pending": "Calculated with your organization's rate once your changes are saved.",
+        "requirements": {
+          "currency": "The mileage rate for this date is in {policyCurrency}, but this report is reimbursed in {currency}. Ask an expense administrator to add a rate in {currency}.",
+          "date": "Enter the date of the drive.",
+          "distance": "Enter the kilometres driven.",
+          "policyMissing": "Your organization has no mileage rate for {vehicle} on {date}. Ask an expense administrator to add a dated rate in the travel expense settings. Nothing is calculated until then.",
+          "route": "Describe the route.",
+          "vehicle": "Choose the vehicle."
+        },
+        "rounded": "(exactly {exact}, rounded to the cent)",
+        "sourceOrganization": "Organization policy: {reference}",
+        "sourceOrganizationUnnamed": "Organization policy",
+        "sourceStatutory": "German statutory flat rate ({version})",
+        "standaloneTitle": "Mileage",
+        "vehicles": {
+          "car": "Car",
+          "otherMotorVehicle": "Other motor vehicle (e.g. motorcycle)"
+        }
+      },
+      "paidBy": {
+        "company": "The company paid (e.g. company card)",
+        "employee": "I paid (reimburse me)"
+      },
+      "perDiem": {
+        "absenceDuration": "{hours}:{minutes} h away",
+        "add": "Add per diem",
+        "appliedPolicy": "Rates valid from {date} · {source}",
+        "basis": {
+          "absence24h": "Full day away (24 hours)",
+          "claimedInOtherReport": "Already paid in another of your reports: only one allowance per day",
+          "over8h": "More than 8 hours away",
+          "overnightMajority": "Most of the over-night absence",
+          "overnightMinority": "Counted on the other day of the over-night absence",
+          "travelDay": "Travel day of a trip with an overnight stay",
+          "upTo8h": "8 hours or less away: no allowance"
+        },
+        "breakdownCaption": "Per diem by calendar day",
+        "calculationTitle": "Calculated per diem",
+        "columns": {
+          "amount": "Amount",
+          "day": "Day",
+          "eligibility": "Eligibility",
+          "meals": "Provided meals",
+          "rate": "Allowance"
+        },
+        "deductionNote": "Provided meals reduce a day's allowance, never below zero; what you paid for a meal reduces its deduction.",
+        "departure": "Departure",
+        "enterFacts": "Enter your departure, return and meals to see the daily allowances.",
+        "errors": {
+          "clockChange": "This time does not exist on this day because the clocks are put forward. Enter a time outside the skipped hour.",
+          "clockChangeRepeated": "This time occurs twice on this day because the clocks are put back. Enter a time outside the repeated hour.",
+          "endBeforeStart": "Your return must be after your departure.",
+          "location": "Choose a listed location for each day.",
+          "meals": "Check the meal entries.",
+          "payment": "Enter what you paid as an amount with at most two decimals, e.g. 2.50.",
+          "time": "Enter a time as hours and minutes."
+        },
+        "exceptionalTitle": "Needs a manual calculation",
+        "exceptions": {
+          "destinationNotListed": "A daily location is not covered by the official foreign table or its fallback rules.",
+          "foreignTimeZone": "The travel times are not in German local time.",
+          "foreignWithoutOvernight": "An over-night activity abroad without an overnight stay is not calculated automatically.",
+          "international": "A destination is outside Germany. International per diem is not calculated yet.",
+          "majorityTie": "The over-night absence is split exactly evenly between both days.",
+          "mixedTimeZones": "Departure and return are in different time zones.",
+          "multiDayWithoutOvernight": "The trip spans more than two calendar days without an overnight stay.",
+          "nightsAtHome": "You spent some nights at home during the trip.",
+          "overlappingDays": "Another of your reports already pays per diem for some of these days; only one allowance per day is allowed, so leave them out of the manual calculation.",
+          "prolongedWorkplace": "Longer activity at the same workplace: per diem is limited to the first three months.",
+          "rulesNotVerified": "No verified German rules cover these travel dates yet.",
+          "specialLocation": "A day was marked as a special situation (other, or a whole day in flight or at sea on the first or last travel day)."
+        },
+        "fields": {
+          "endDate": "Day you came back",
+          "endTime": "Time you were back home or at work",
+          "meals": "Meals provided by your employer",
+          "mealsDescription": "Tick each meal your employer, or a hotel or host on its behalf, provided, even if you skipped it. Enter what you paid for it, if anything.",
+          "mealsNeedDates": "Enter the departure and return days to list the travel days.",
+          "overnight": "Nights during the trip",
+          "payment": "What you paid for {meal} on {date}",
+          "paymentPlaceholder": "You paid (optional)",
+          "prolongedWorkplace": "I have been working at this same place for more than three months",
+          "prolongedWorkplaceDescription": "Per diem only applies to the first three months at the same workplace; such trips need a manual calculation.",
+          "startDate": "Day you left",
+          "startTime": "Time you left home or work",
+          "timeZone": "Time zone"
+        },
+        "foreignRates": "Foreign rates: {reference} ({version})",
+        "location": {
+          "activityToday": "Where was your last business activity abroad on this day?",
+          "assigned": "Amounts the official notice assigns to this country",
+          "atSea": "On board a ship all day (not embarking or disembarking)",
+          "choose": "Choose a location",
+          "countryElsewhere": "{country} – elsewhere",
+          "countryPlace": "{country} – {place}",
+          "elsewhere": "Anywhere else",
+          "fallbackFlight": "Official rule: whole day in flight, Austrian amounts",
+          "fallbackLuxembourg": "Official fallback: not listed, Luxembourg amounts",
+          "fallbackMotherCountry": "Official fallback: territory, amounts of the mother country",
+          "fallbackShip": "Official rule: whole day at sea, Luxembourg amounts",
+          "germany": "Germany",
+          "inFlight": "In flight all day (between take-off day and landing day)",
+          "lastActivityTrip": "Where was your last business activity abroad on this trip?",
+          "night": "Where were you at midnight? (the last place you reached before 24:00 local time; a country counts as reached when your plane lands)",
+          "noActivityAbroad": "No business activity abroad",
+          "other": "Something else (needs a manual calculation)",
+          "place": "Place in {country}"
+        },
+        "meal": "{meal}: −{deduction}",
+        "mealPaid": "{meal}: −{deduction} (you paid {payment})",
+        "meals": {
+          "breakfast": "Breakfast",
+          "dinner": "Dinner",
+          "lunch": "Lunch"
+        },
+        "mealsCountToward": "Deducted on {date}",
+        "noRate": "No rate is invented: this expense stays in draft until an expense administrator adds per diem rates covering its days.",
+        "noRateTitle": "No per diem rate applies",
+        "otherCurrency": "The rates for these days are not in {currency}; per diem is never converted.",
+        "overnight": {
+          "away": "I stayed overnight away from home every night",
+          "mixed": "I spent some nights at home",
+          "none": "I worked through the night without an overnight stay"
+        },
+        "pending": "Calculated with your organization's dated rates once your changes are saved.",
+        "requirements": {
+          "currency": "The per diem rates for these days are in {policyCurrency}, but this report is reimbursed in {currency}. Ask an expense administrator to add rates in {currency}.",
+          "end": "Enter when you were back home or at your workplace.",
+          "exceptional": "This itinerary needs a manual per diem calculation by an expense administrator. It is not calculated automatically.",
+          "locations": "Tell us for every travel day where you were at midnight and where your last business activity abroad was.",
+          "meals": "Confirm the provided meals for every travel day.",
+          "notReturned": "You return on {date} at {time} ({timeZone}). You can submit after that.",
+          "overnight": "Tell us whether you stayed overnight away from home.",
+          "policyMissing": "Your organization has no per diem rates for {dates}. Ask an expense administrator to add dated rates in the travel expense settings. Nothing is calculated until then.",
+          "start": "Enter when you left home or your workplace.",
+          "tripDates": "Your departure and return days must be the trip's first and last travel day."
+        },
+        "return": "Return",
+        "rulesApplied": "Rules: {reference} ({version})",
+        "title": "Per diem",
+        "total": "Per diem"
+      },
+      "project": {
+        "exceptionBadge": "Attribution exception",
+        "exceptionDates": "Covers",
+        "exceptionEvidence": "Evidence",
+        "exceptionReason": "Reason",
+        "fromTrip": "(trip project)",
+        "inheritNamed": "Same as the trip ({name})",
+        "inheritNone": "Same as the trip (no project)",
+        "label": "Project (optional)",
+        "loadFailed": "The projects could not be loaded.",
+        "needsExpenseDate": "Enter the expense date to see the projects you can use on that day.",
+        "needsTripDates": "Enter the travel dates to see the projects you can use on this trip.",
+        "none": "No project",
+        "noneEligible": "You had no project assignment on this date. If you worked on a project then, an expense administrator can authorize an attribution exception.",
+        "notEligible": "{name} cannot be used on this date: you were not assigned to it then. Choose another project, or ask an expense administrator for an attribution exception.",
+        "refused": {
+          "conflict": "This expense changed elsewhere. Resolve the save conflict above, then choose the project again.",
+          "dateRequired": "Enter the date first: projects are offered for the date of the expense.",
+          "failed": "The project could not be saved. Please retry.",
+          "ineligible": "You were not assigned to this project on that date. Ask an expense administrator for an attribution exception if you worked on it.",
+          "notFound": "This project is not available."
+        },
+        "saving": "Saving project…",
+        "tripDescription": "Expenses use the trip's project unless you choose another one for them. Each expense must be covered by your project assignment on its own date.",
+        "tripLabel": "Trip project (optional)",
+        "unavailableOption": "{name} (not available on this date)",
+        "unavailableTripOption": "{name} (not available on these dates)",
+        "viaException": "authorized exception"
+      },
+      "receiptException": {
+        "badge": "Receipt missing — exception",
+        "disabled": "Your organization no longer allows missing-receipt exceptions. Attach the receipt, or remove your explanation.",
+        "notAllowed": "Your organization does not allow missing-receipt exceptions.",
+        "reason": "Why is the receipt missing?",
+        "reasonDescription": "Your reviewer sees this explanation and must accept it to approve the report.",
+        "reasonLabel": "Why it is missing:",
+        "reasonRequired": "Explain why the receipt is missing.",
+        "receiptAttached": "A receipt is attached, so your missing-receipt explanation is not submitted.",
+        "request": "I cannot provide the receipt and request an exception",
+        "title": "No receipt?",
+        "unsavedAfterClose": "Your missing-receipt explanation could not be saved. Open the expense again to check it.",
+        "withdraw": "Remove explanation"
+      },
+      "receipts": {
+        "chooseFile": "Choose file",
+        "description": "Take a photo or attach a PDF or image of the receipt.",
+        "downloadNamed": "Download {fileName}",
+        "errors": {
+          "locked": "This expense can no longer be edited.",
+          "retry": "Please try again.",
+          "tooLarge": "The file is too large. Attach a file of at most {size} MB.",
+          "unsupportedType": "Attach a PDF or an image (JPEG, PNG, WebP, GIF, BMP or TIFF)."
+        },
+        "none": "No receipt attached yet.",
+        "previewNamed": "Preview {fileName}",
+        "progress": "Upload progress",
+        "remove": "Remove",
+        "removeFailed": "The receipt could not be removed.",
+        "removeNamed": "Remove {fileName}",
+        "takePhoto": "Take photo",
+        "title": "Receipt",
+        "uploadFailed": "The receipt was not attached.",
+        "uploading": "Uploading receipt…",
+        "verifying": "Checking the receipt…"
+      },
+      "rejectedBy": "Rejected by {name}",
+      "reopen": {
+        "action": "Reopen for correction",
+        "changed": "The report changed meanwhile and was not reopened. Review it again.",
+        "confirm": "Reopen report",
+        "description": "The employee can correct the report and must submit it again for a fresh approval. Until then it is not payable or exportable. The approved submission stays in its history.",
+        "done": "Report reopened for correction",
+        "exported": "This report was already exported to accounting, so it can no longer be reopened. Corrections need a linked adjustment.",
+        "failed": "The report could not be reopened. It may have changed, or you may no longer have access. Reload it and try again.",
+        "reason": "Reason for the employee",
+        "reasonRequired": "Tell the employee what to correct.",
+        "reasonTooLong": "Keep the reason under {max} characters.",
+        "reimbursed": "A reimbursement was already recorded for this report, so it can no longer be reopened. Corrections need a linked adjustment.",
+        "reopenedBy": "Reopened for correction by {name} on {date}",
+        "title": "Reopen this approved report?"
+      },
+      "requirements": {
+        "amount": "Enter the receipt amount.",
+        "category": "Choose a category.",
+        "complete": "Everything for this expense is entered.",
+        "conversionEvidence": "Select the attachment that shows the card charge.",
+        "conversionMissing": "Convert this receipt into {currency}: enter your card charge with the attachment that shows it, or ask an expense administrator for a documented rate.",
+        "conversionRateDate": "The authorized rate's date no longer fits the expense date. Enter your card charge, or ask an expense administrator to document a rate for the new date.",
+        "conversionUnsupported": "This conversion cannot be used for {currency}. Ask an expense administrator to check it.",
+        "description": "Describe the expense.",
+        "expenseDate": "Add the date on the receipt.",
+        "fixFields": "Correct the highlighted fields first.",
+        "futureDate": "This date is in the future. Correct it, or submit from {date}.",
+        "paidBy": "Say whether you or the company paid.",
+        "receipt": "Attach the receipt.",
+        "receiptExceptionNotAllowed": "Attach the receipt. Your organization does not allow missing-receipt exceptions.",
+        "receiptExceptionReason": "Explain why the receipt is missing.",
+        "title": "Still needed"
+      },
+      "returnedBy": "Returned for changes by {name} on {date}",
+      "returnedItemNamed": "{item} ({description}):",
+      "returnedRemovedItem": "{item}, {description}:",
+      "save": {
+        "conflictDescription": "It was saved in another window or on another device after you opened it. Your latest edits are not saved yet.",
+        "conflictTitle": "This expense changed elsewhere",
+        "failedDescription": "Your edits are kept on this page. Check your connection and try again.",
+        "failedTitle": "Your changes could not be saved",
+        "invalid": "Correct the highlighted fields to save them",
+        "keepMine": "Save my edits instead",
+        "pending": "Unsaved changes",
+        "retry": "Try again",
+        "saved": "All changes saved",
+        "saving": "Saving…",
+        "unsavedAfterClose": "Your latest changes to an expense could not be saved. Open it again to check it.",
+        "useTheirs": "Load the saved version"
+      },
+      "selfApprovedOn": "Approved automatically on {date}: this is the organization owner's report, and nobody else could review it.",
+      "standaloneTitle": "Standalone receipt",
+      "status": {
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "returned": "Returned for changes",
+        "submitted": "Awaiting review"
+      },
+      "submissionNumberAt": "Submission {number}, submitted {date}",
+      "submit": {
+        "adjustment": "The report this adjustment corrects is no longer approved in this currency, so no signed difference can be calculated. Your adjustment stays saved as a draft.",
+        "adjustmentSuperseded": "Another adjustment of the same report was approved after you started this one, and this copy does not include that correction. Start a new adjustment from the original report so both corrections are kept.",
+        "adjustmentTitle": "This adjustment cannot be submitted",
+        "blockedIncomplete": "Complete everything listed under “Still needed” before submitting.",
+        "blockedUnsaved": "Wait until all changes are saved, or correct the highlighted fields, before submitting.",
+        "cancel": "Keep editing",
+        "changed": "The report changed after you reviewed it. Close this dialog, check your entries and review it again.",
+        "changedTitle": "The report changed",
+        "confirm": "Submit for approval",
+        "description": "Check the saved report. Your reviewer decides on exactly this version; it cannot be edited while it is being reviewed.",
+        "failed": "Something went wrong. Your report is still saved as a draft; please retry.",
+        "failedTitle": "The report was not submitted",
+        "incomplete": "Some saved details are still missing. Complete everything listed under “Still needed” and try again.",
+        "incompleteTitle": "The report is incomplete",
+        "itemRequirement": "{item}: {requirement}",
+        "noReviewerAsk": "You have no manager or team manager other than yourself, and no expense approver is set up. Ask an administrator to choose an expense approver under Settings, Travel expenses, Expense report review. Your report stays saved as a draft.",
+        "noReviewerAssign": "You have no manager or team manager other than yourself, and no expense approver is set up. Choose an expense approver under Expense report review in the travel expense settings. Your report stays saved as a draft.",
+        "noReviewerTitle": "No one can review this report yet",
+        "notSaved": "Some changes are not saved yet. Wait for them to save, then review the report again.",
+        "openApproverSetting": "Open expense approver setting",
+        "project": "{count, plural, one {One expense is attributed to a project you were not assigned to on the expense date. Choose another project, or ask an expense administrator for an attribution exception. Your report stays saved as a draft.} other {# expenses are attributed to a project you were not assigned to on the expense date. Choose another project, or ask an expense administrator for an attribution exception. Your report stays saved as a draft.}}",
+        "projectTitle": "A project cannot be used",
+        "ready": "Your entries are saved. Review the report and send it for approval.",
+        "requesterInactive": "Your employee profile is not active in this organization, so the report cannot be routed for review.",
+        "review": "Review and submit",
+        "routing": "Your organization's approval rules could not find a reviewer. Ask an administrator to check them. Your report stays saved as a draft.",
+        "routingTitle": "The report could not be routed",
+        "selfApproval": "Your organization's approval rules would let you approve your own report. Ask an administrator to adjust them. Your report stays saved as a draft.",
+        "selfApprovalBlocked": "As the organization owner, your reports are approved automatically while nobody else can review them. This report has a missing-receipt explanation or a manually set allowance, which someone else must accept. Choose an expense approver, or change the report. Your report stays saved as a draft.",
+        "selfApproved": "Report approved automatically: nobody else can review it",
+        "success": "Report submitted for approval",
+        "thresholdCurrency": "Your organization's approval rules compare amounts in EUR, but this report is in {currency}. Ask an administrator to check them. Your report stays saved as a draft.",
+        "title": "Submit expense report",
+        "unavailable": "Your organization is changing how expense approvals work, so reports cannot be submitted right now. Your report stays saved as a draft.",
+        "unavailableTitle": "Submission is paused"
+      },
+      "submittedAt": "Submitted {date}",
+      "summary": {
+        "itemPrefix": "{item}:",
+        "paidByCompany": "Paid by the company",
+        "paidByEmployee": "Paid by you"
+      },
+      "totals": {
+        "companyPaid": "Paid by the company",
+        "excluded": "{count, plural, one {# expense is not counted yet. Totals include expenses in {currency} whose amount and payer are entered.} other {# expenses are not counted yet. Totals include expenses in {currency} whose amount and payer are entered.}}",
+        "reimbursable": "Reimbursed to you",
+        "title": "Totals"
+      },
+      "trip": {
+        "dates": "Travel dates",
+        "datesZone": "(calendar days in {timeZone})",
+        "destinations": "Destinations",
+        "errors": {
+          "destination": "Choose a listed country.",
+          "endBeforeStart": "The last travel day cannot be before the first.",
+          "timeZone": "Choose a listed time zone.",
+          "tooManyDestinations": "Enter at most {max} destinations."
+        },
+        "fields": {
+          "addDestination": "Add destination",
+          "country": "Country {number}",
+          "countryPlaceholder": "Country",
+          "destinations": "Destinations",
+          "endDate": "Last travel day",
+          "noDestinations": "Add the places you are traveling to.",
+          "place": "Place {number}",
+          "placePlaceholder": "City or place",
+          "purpose": "Purpose of the trip",
+          "purposePlaceholder": "e.g. Customer workshop in Hamburg",
+          "removeDestination": "Remove destination {number}",
+          "startDate": "First travel day",
+          "timeZone": "Time zone of the travel dates",
+          "timeZoneDescription": "Travel dates are calendar days in {timeZone}. Reviewers see the same dates, wherever they are."
+        },
+        "purpose": "Purpose of the trip",
+        "requirements": {
+          "complete": "Everything for this trip is entered.",
+          "destination": "Add at least one destination.",
+          "expenseItem": "Add an expense.",
+          "fixFields": "Correct the highlighted trip details.",
+          "itemNamed": "{item}: {description}",
+          "notEnded": "The trip ends on {date}. You can submit from that day.",
+          "purpose": "Describe the purpose of the trip.",
+          "title": "Still needed for this trip",
+          "travelDates": "Enter the first and last travel day."
+        },
+        "title": "Trip details",
+        "unsavedAfterClose": "Your latest changes to the trip details could not be saved. Open the trip again to check them."
+      },
+      "withdraw": {
+        "action": "Withdraw report",
+        "confirm": "Withdraw",
+        "description": "The review stops and the report becomes an editable draft again. This submission stays in the report's history.",
+        "done": "Report withdrawn. You can edit it again.",
+        "failed": "The report could not be withdrawn. Please retry.",
+        "notPending": "This submission was already decided or returned, so it can no longer be withdrawn.",
+        "title": "Withdraw this report?"
+      },
+      "withdrawnNotice": "You withdrew submission {number}. Submit the report again when it is ready.",
+      "withdrawnSubmission": "This submission was withdrawn before a decision."
+    },
+    "settings": {
+      "catalogAdopted": "Adopted on {date}, valid from {effectiveFrom}",
+      "perDiem": {
+        "adoptForeignTitle": "Adopt the German statutory per diem with the official foreign rates",
+        "foreignAreas": "Foreign rates: {countries} countries and {places} cities"
+      },
+      "tabs": {
+        "currencies": "Currencies",
+        "exceptions": "Exceptions",
+        "exceptionsPending": "{label}, {count} pending",
+        "rates": "Rates",
+        "review": "Review"
+      }
+    },
+    "settlement": {
+      "adjustment": "Including approved adjustment",
+      "balance": {
+        "outstanding": "{amount} outstanding",
+        "overpaid": "{amount} overpaid",
+        "settled": "Settled"
+      },
+      "companyPaid": "Company-paid costs of {amount} are not owed to the employee.",
+      "entitlement": "Approved employee-paid amount",
+      "entry": {
+        "recordedBy": "Recorded by {name}, {date}",
+        "recovery": "Recovered {amount}",
+        "reimbursement": "Paid {amount}"
+      },
+      "errors": {
+        "amountInvalid": "Enter a positive amount.",
+        "amountPrecision": "This currency does not have that many decimal places.",
+        "amountRequired": "Enter the amount paid.",
+        "conflict": "An earlier attempt with other values was already recorded. Check the history before recording again.",
+        "dateFuture": "A payment cannot be dated in the future.",
+        "dateInvalid": "Enter a valid date.",
+        "dateRequired": "Enter the payment date.",
+        "exceedsOutstanding": "The amount is more than is outstanding.",
+        "exceedsOverpayment": "The amount is more than was overpaid.",
+        "failed": "The payment could not be recorded. Please retry.",
+        "load": "Unable to load the reimbursement balance. Please retry.",
+        "noOverpayment": "Nothing was overpaid for this expense.",
+        "notApproved": "This expense is no longer approved, so no payment can be recorded.",
+        "nothingOutstanding": "Nothing is outstanding for this expense.",
+        "ownExpense": "You cannot record payments for your own expenses.",
+        "referenceRequired": "Enter the payment reference, e.g. the bank transfer reference.",
+        "refused": "This payment cannot be recorded for this expense.",
+        "staleBalance": "The balance changed while you were entering this payment. Check the updated balance and record it again.",
+        "tooLong": "This text is too long."
+      },
+      "form": {
+        "amount": "Amount paid ({currency})",
+        "date": "Payment date",
+        "label": "Record a reimbursement",
+        "note": "Note (optional)",
+        "notice": "Record money already paid to the employee. Z8 does not transfer any money.",
+        "reference": "Payment reference",
+        "referenceHint": "For example the bank transfer or payroll run reference.",
+        "submit": "Record reimbursement"
+      },
+      "history": "Recorded payments",
+      "loading": "Loading reimbursement balance…",
+      "ownerOutstanding": "Finance records your reimbursement here once it has been paid.",
+      "ownerOverpaid": "More was paid than is now approved. Finance records here when the difference has been returned; Z8 does not move any money.",
+      "recorded": "Reimbursement recorded.",
+      "recordedAlready": "This payment was already recorded.",
+      "recovered": "Recovered",
+      "recoveryForm": {
+        "amount": "Amount recovered ({currency})",
+        "date": "Recovery date",
+        "label": "Record a recovery",
+        "notice": "The employee was paid more than is now approved. Record money they already returned to settle the overpayment; the original reimbursement stays as recorded and nothing is offset against other reports. Z8 does not transfer any money.",
+        "submit": "Record recovery"
+      },
+      "recoveryRecorded": "Recovery recorded.",
+      "reimbursed": "Reimbursed",
+      "state": {
+        "mixed": "Needs review",
+        "outstanding": "Outstanding",
+        "overpaid": "Overpaid",
+        "settled": "Settled"
+      },
+      "title": "Reimbursement"
+    },
+    "status": {
+      "draft": "Draft"
+    },
+    "title": "Travel Expenses",
+    "workspace": {
+      "description": "Collect trip and standalone expenses, send them for review and follow their reimbursement."
     }
   }
 }

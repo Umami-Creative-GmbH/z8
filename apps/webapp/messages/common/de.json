@@ -434,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Administrator kontaktieren",
       "createOrg": "Organisation erstellen",
-      "description": "Sie benötigen ein Mitarbeiterprofil, um ${feature}. Bitte erstellen Sie eine Organisation oder wenden Sie sich an Ihren Administrator.",
+      "description": "Sie benötigen ein Mitarbeiterprofil, um {feature}. Bitte erstellen Sie eine Organisation oder wenden Sie sich an Ihren Administrator.",
       "emailBody": "Hallo,\n\nich benötige ein eingerichtetes Mitarbeiterprofil, um auf die Plattformfunktionen zugreifen zu können. Könnten Sie mir bitte dabei helfen?\n\nVielen Dank!",
       "emailSubject": "Einrichtung des Mitarbeiterprofils erforderlich",
       "helpText": "Wenn Sie zu einer Organisation eingeladen wurden, bitten Sie Ihren Administrator, Ihr Mitarbeiterprofil einzurichten.",
@@ -535,12 +535,21 @@
       "absenceRequestRejected": {
         "title": "Abwesenheitsantrag abgelehnt"
       },
+      "absenceRequestSubmitted": {
+        "message": "Ihre Anfrage für {categoryName} für {dateRange} wurde eingereicht und wartet auf Genehmigung.",
+        "title": "Abwesenheitsanfrage eingereicht"
+      },
+      "automaticClockOut": {
+        "message": "Du wurdest nach {duration} Minuten ununterbrochener Arbeit am {cutoff} ({timezone}) automatisch ausgestempelt, weil das Zeitlimit deiner Organisation erreicht wurde.",
+        "title": "Automatisch ausgestempelt"
+      },
       "employeeOffboardingReview": {
-        "approval_handover": "Genehmigungsaufgaben erfordern eine Vertretung",
-        "clock_out": "Prüfung erforderlich: Offboarding-Ausstempeln",
-        "clock_repair": "Timer-Reparatur erforderlich",
-        "employment_terms": "Zukünftige Anstellungsbedingungen müssen überprüft werden",
-        "future_work": "Zukünftige Arbeit muss überprüft werden"
+        "approval_handover": "{employeeName}: Genehmigungsaufgaben erfordern eine Vertretung (Austritt wirksam {cutoff}, {timezone}).",
+        "clock_out": "{employeeName}: Prüfung erforderlich: Offboarding-Ausstempeln (Austritt wirksam {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Timer-Reparatur erforderlich (Austritt wirksam {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Zukünftige Anstellungsbedingungen müssen überprüft werden (Austritt wirksam {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: Zukünftige Arbeit muss überprüft werden (Austritt wirksam {cutoff}, {timezone}).",
+        "title": "Offboarding benötigt eine Prüfung"
       },
       "newAbsenceRequest": {
         "title": "Neuer Abwesenheitsantrag"
@@ -556,10 +565,6 @@
       "teamMemberAdded": {
         "message": "Du wurdest von {performedByName} zum Team {teamName} hinzugefügt.",
         "title": "Zum Team hinzugefügt"
-      },
-      "absenceRequestSubmitted": {
-        "message": "Ihre Anfrage für {categoryName} für {dateRange} wurde eingereicht und wartet auf Genehmigung.",
-        "title": "Abwesenheitsanfrage eingereicht"
       },
       "teamMemberRemoved": {
         "message": "Sie wurden von {performedByName} aus dem Team {teamName} entfernt.",

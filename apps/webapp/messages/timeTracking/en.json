@@ -32,16 +32,18 @@
     "correction": {
       "clockIn": "Clock In",
       "clockInDate": "Clock In Date",
+      "clockInTime": "Clock In Time",
       "clockOut": "Clock Out",
       "clockOutDate": "Clock Out Date",
+      "clockOutTime": "Clock Out Time",
       "editDescription": "Make changes to your time entry for today.",
       "editEntry": "Edit time entry",
       "editTitle": "Edit Time Entry",
       "errors": {
         "invalidTimeRange": "Clock out time must be after clock in time",
+        "noChanges": "At least one correction value must change",
         "submitFailed": "Failed to submit correction",
-        "updateFailed": "Failed to update time entry",
-        "noChanges": "At least one correction value must change"
+        "updateFailed": "Failed to update time entry"
       },
       "noteLabel": "Note (optional)",
       "notePlaceholder": "Add a note about this change…",
@@ -59,9 +61,7 @@
         "submitted": "Correction request submitted for manager approval",
         "updated": "Time entry updated successfully"
       },
-      "timezoneNote": "Times are in your local timezone ({timezone})",
-      "clockInTime": "Clock In Time",
-      "clockOutTime": "Clock Out Time"
+      "timezoneNote": "Times are in your local timezone ({timezone})"
     },
     "currentlyClockedIn": "You're currently clocked in",
     "deadline": "Deadline",

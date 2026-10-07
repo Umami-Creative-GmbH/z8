@@ -11,6 +11,7 @@ import {
 	formatUnits,
 	MAX_AMOUNT_UNITS,
 	multiplyToUnits,
+	normalizeDecimalInput,
 	parseUnits,
 	type RoundingMode,
 	roundToScale,
@@ -303,7 +304,7 @@ export function convertPolicyAmount(
 export function parseCardChargeAmount(value: string, reimbursementCurrency: string): string | null {
 	const digits = storableDigits(reimbursementCurrency);
 	if (digits === null) return null;
-	const units = parseUnits(value.trim(), digits);
+	const units = parseUnits(normalizeDecimalInput(value), digits);
 	if (units === null) return null;
 	const stored = roundToScale({ units, scale: digits }, STORED_AMOUNT_SCALE, "half_up");
 	return inRange(stored) ? formatUnits(stored, STORED_AMOUNT_SCALE) : null;
@@ -365,7 +366,7 @@ export function parseManualRateInput(
 		errors.pair = "invalid_pair";
 	}
 
-	const value = input.rate.trim();
+	const value = normalizeDecimalInput(input.rate);
 	const match = PLAIN_RATE.exec(value);
 	const units = match ? parseUnits(value, MAX_RATE_FRACTION_DIGITS) : null;
 	const integerDigits = match?.[1]?.replace(/^0+(?=\d)/, "").length ?? 0;

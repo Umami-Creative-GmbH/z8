@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	type AllowanceOverride,
 	mileageOverrideScope,
@@ -19,6 +20,13 @@ import {
 	compareLiveTravelExpenseReportWithRevision,
 	type TravelExpenseReportFactsInput,
 } from "./travel-expense-report-facts";
+
+/** Freezes as submitting does, at an instant after every date of the fixtures (#685). */
+const freeze = (input: TravelExpenseReportFactsInput) =>
+	buildTravelExpenseReportSubmittedFacts({
+		...input,
+		submittedAt: parseInstant("2026-10-07T12:00:00Z"),
+	});
 
 /** #610: frozen allowance overrides (schema version 9). */
 
@@ -176,9 +184,7 @@ const mileageOverride: AllowanceOverride = {
 
 describe("allowance override facts", () => {
 	it("freezes an exceptional per diem with its override, the facts and the authorizer", () => {
-		const facts = buildTravelExpenseReportSubmittedFacts(
-			perDiemInput([overrideRow("pd", perDiemOverride())]),
-		);
+		const facts = freeze(perDiemInput([overrideRow("pd", perDiemOverride())]));
 		expect(facts.schemaVersion).toBe(11);
 		const [item] = facts.items;
 		expect(item).toMatchObject({
@@ -205,9 +211,7 @@ describe("allowance override facts", () => {
 	});
 
 	it("freezes a mileage override without a policy, keeping the entered distance", () => {
-		const facts = buildTravelExpenseReportSubmittedFacts(
-			mileageInput([overrideRow("km", mileageOverride)]),
-		);
+		const facts = freeze(mileageInput([overrideRow("km", mileageOverride)]));
 		const [item] = facts.items;
 		expect(item).toMatchObject({
 			type: "mileage",
@@ -278,23 +282,19 @@ describe("allowance override facts", () => {
 			};
 		};
 		// The claimed day is still claimed: the override for it applies beside the calculation.
-		const facts = buildTravelExpenseReportSubmittedFacts(
-			input({ kind: "unsupported_case", reasons: ["overlapping_days"] }),
-		);
+		const facts = freeze(input({ kind: "unsupported_case", reasons: ["overlapping_days"] }));
 		expect(facts.items[0]?.perDiem?.amount).toBe(calculation.amount);
 		expect(facts.items[0]?.perDiem?.days.at(-1)?.basis).toBe("claimed_in_other_report");
 		expect(facts.items[0]?.original.amount).toBe("50.40");
 		expect(facts.items[0]?.allowanceOverride?.amount).toBe("50.40");
 		// An override recorded for another situation no longer applies: the calculation counts.
-		const resolved = buildTravelExpenseReportSubmittedFacts(
-			input({ kind: "missing_coverage", reasons: ["policy_missing"] }),
-		);
+		const resolved = freeze(input({ kind: "missing_coverage", reasons: ["policy_missing"] }));
 		expect(resolved.items[0]?.allowanceOverride).toBeUndefined();
 		expect(resolved.items[0]?.original.amount).toBe(calculation.amount);
 	});
 
 	it("drops a mileage override once the stamped policy prices its facts", () => {
-		const facts = buildTravelExpenseReportSubmittedFacts({
+		const facts = freeze({
 			...mileageInput([overrideRow("km", mileageOverride)]),
 			items: [
 				{
@@ -320,12 +320,10 @@ describe("allowance override facts", () => {
 
 	it("refuses an override authorized for other facts: the item stays unpriced", () => {
 		expect(() =>
-			buildTravelExpenseReportSubmittedFacts(
-				mileageInput([overrideRow("km", mileageOverride)], { mileageDistanceKm: "70.00" }),
-			),
+			freeze(mileageInput([overrideRow("km", mileageOverride)], { mileageDistanceKm: "70.00" })),
 		).toThrow(ApprovalEvidenceError);
 		expect(() =>
-			buildTravelExpenseReportSubmittedFacts(
+			freeze(
 				perDiemInput([overrideRow("pd", perDiemOverride())], { ...itinerary, endTime: "20:00" }),
 			),
 		).toThrow(ApprovalEvidenceError);
@@ -336,12 +334,12 @@ describe("allowance override facts", () => {
 			...perDiemInput([overrideRow("pd", perDiemOverride())]),
 		};
 		shifted.report = { ...shifted.report, tripStartDate: "2026-09-13" };
-		expect(() => buildTravelExpenseReportSubmittedFacts(shifted)).toThrow(ApprovalEvidenceError);
+		expect(() => freeze(shifted)).toThrow(ApprovalEvidenceError);
 	});
 
 	it("compares as current while the override and facts are unchanged", () => {
 		const live = perDiemInput([overrideRow("pd", perDiemOverride())]);
-		const facts = buildTravelExpenseReportSubmittedFacts(live);
+		const facts = freeze(live);
 		expect(compareLiveTravelExpenseReportWithRevision(facts, live)).toEqual({ kind: "current" });
 		expect(
 			compareLiveTravelExpenseReportWithRevision(
@@ -356,18 +354,18 @@ describe("allowance override facts", () => {
 
 	it("refuses an override row of another report or item type", () => {
 		const foreign = { ...overrideRow("pd", perDiemOverride()), reportId: "report-2" };
-		expect(() => buildTravelExpenseReportSubmittedFacts(perDiemInput([foreign]))).toThrow(
+		expect(() => freeze(perDiemInput([foreign]))).toThrow(
 			expect.objectContaining({ code: "invariant" }),
 		);
 		const wrongKind = overrideRow("pd", { ...mileageOverride });
-		expect(() => buildTravelExpenseReportSubmittedFacts(perDiemInput([wrongKind]))).toThrow(
+		expect(() => freeze(perDiemInput([wrongKind]))).toThrow(
 			expect.objectContaining({ code: "invariant" }),
 		);
 	});
 
 	it("ignores overrides when snapshotting an older revision version", () => {
 		const live = perDiemInput([overrideRow("pd", perDiemOverride())]);
-		const v8 = { ...buildTravelExpenseReportSubmittedFacts(live), schemaVersion: 8 };
+		const v8 = { ...freeze(live), schemaVersion: 8 };
 		// A v8 revision never had an override, so the live override cannot match it.
 		expect(compareLiveTravelExpenseReportWithRevision(v8, live).kind).toBe("material_change");
 	});

@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util";
 import { describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { TravelExpenseReportSubmittedRevisionRecord } from "../evidence/travel-expense-report-store";
@@ -58,6 +59,17 @@ describe("missing-receipt exceptions in report review (#604)", () => {
 		decisions: [],
 	});
 
+	// The expense's type and running number name it (#688).
+	const dinnerTitle = {
+		key: "approvals:approvals.evidence.reportItemTitle",
+		fallback: "{type} {number}: {description}",
+		params: {
+			type: { key: "approvals:approvals.evidence.claimTypeReceipt", fallback: "Receipt" },
+			number: 1,
+			description: "Customer dinner",
+		},
+	};
+
 	it("asks the reviewer to accept each exception right after the report summary", () => {
 		expect(sections[1]).toEqual({
 			type: "receipt_exception_acceptance",
@@ -68,7 +80,7 @@ describe("missing-receipt exceptions in report review (#604)", () => {
 			items: [
 				{
 					itemId: "dinner",
-					label: "1. Customer dinner",
+					label: dinnerTitle,
 					reason: "The restaurant printer was broken",
 				},
 			],
@@ -77,7 +89,7 @@ describe("missing-receipt exceptions in report review (#604)", () => {
 
 	it("flags the expense itself instead of listing an attached receipt", () => {
 		const expense = sections.find(
-			(section) => section.type === "key_value" && section.title === "1. Customer dinner",
+			(section) => section.type === "key_value" && isDeepStrictEqual(section.title, dinnerTitle),
 		);
 		expect(expense).toMatchObject({
 			rows: expect.arrayContaining([

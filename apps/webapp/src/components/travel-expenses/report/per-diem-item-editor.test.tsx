@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	calculatePerDiem,
@@ -64,6 +64,7 @@ vi.mock("@/navigation", () => ({
 	Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
 		<a href={href}>{children}</a>
 	),
+	useRouter: () => ({ push: vi.fn() }),
 }));
 
 import { TravelExpenseReportEditor } from "./travel-expense-report-editor";
@@ -209,6 +210,49 @@ describe("per diem (#609)", () => {
 		).toBe(true);
 	});
 
+	describe("before the trip has happened (#685)", () => {
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
+		const submit = () =>
+			screen.getByRole("button", { name: "Review and submit" }) as HTMLButtonElement;
+
+		it("names the trip end and the return, and blocks submission", async () => {
+			// 2026-09-14 is already today in Pacific/Kiritimati; 2026-09-15 is not yet anywhere.
+			vi.useFakeTimers({ now: new Date("2026-09-14T09:00:00Z"), shouldAdvanceTime: true });
+			mount();
+			expect(
+				await screen.findByText("The trip ends on Sep 15, 2026. You can submit from that day."),
+			).toBeTruthy();
+			expect(
+				screen.getByText(
+					"You return on Sep 15, 2026 at 6:00 PM (Europe/Berlin). You can submit after that.",
+				),
+			).toBeTruthy();
+			expect(submit().disabled).toBe(true);
+		});
+
+		it("unblocks on its own once the return has passed, without a save or reload", async () => {
+			// 18:00 in Berlin on 2026-09-15 is 16:00Z; the trip end is already today in UTC+14.
+			vi.useFakeTimers({ now: new Date("2026-09-15T15:00:00Z"), shouldAdvanceTime: true });
+			mount();
+			const returnLabel =
+				"You return on Sep 15, 2026 at 6:00 PM (Europe/Berlin). You can submit after that.";
+			expect(await screen.findByText(returnLabel)).toBeTruthy();
+			expect(screen.queryByText(/The trip ends on/)).toBeNull();
+			expect(submit().disabled).toBe(true);
+
+			await act(async () => {
+				vi.advanceTimersByTime(60 * 60 * 1000);
+			});
+			expect(screen.queryByText(returnLabel)).toBeNull();
+			expect(submit().disabled).toBe(false);
+			expect(reportActions.getMyTravelExpenseReport).toHaveBeenCalledTimes(1);
+			expect(perDiemActions.savePerDiemDraftAction).not.toHaveBeenCalled();
+		});
+	});
+
 	it("saves only the itinerary and meals, never an amount", async () => {
 		perDiemActions.savePerDiemDraftAction.mockResolvedValue({
 			success: true,
@@ -304,9 +348,8 @@ describe("per diem (#609)", () => {
 		mount();
 		const panel = await screen.findByRole("region", { name: "Calculated per diem" });
 		const rows = within(panel).getAllByRole("row");
-		expect(rows[1]?.textContent).toContain(
-			"Frankreich – Paris sowie die Departments 77, 78, 91 bis 95",
-		);
+		// #681: named in the reader's language, not by the German notice.
+		expect(rows[1]?.textContent).toContain("France – Paris and departments 77, 78, 91–95");
 		// Paris: 39 € arrival; departure 39 € − breakfast 11.60 € (20 % of 58 €).
 		expect(rows[2]?.textContent).toContain("Breakfast: −€11.60");
 		expect(rows[3]?.textContent).toContain("€66.40");

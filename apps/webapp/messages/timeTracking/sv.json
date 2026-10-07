@@ -32,13 +32,16 @@
     "correction": {
       "clockIn": "Stämpla in",
       "clockInDate": "Instämplingsdatum",
+      "clockInTime": "Instämplingstid",
       "clockOut": "Stämpla ut",
       "clockOutDate": "Utstämplingsdatum",
+      "clockOutTime": "Utstämplingstid",
       "editDescription": "Gör ändringar i din tidsregistrering för idag.",
       "editEntry": "Redigera tidsregistrering",
       "editTitle": "Redigera tidsregistrering",
       "errors": {
         "invalidTimeRange": "Utstämplingstiden måste vara efter instämplingstiden",
+        "noChanges": "Minst ett korrigeringsvärde måste ändras",
         "submitFailed": "Kunde inte skicka korrigering",
         "updateFailed": "Kunde inte uppdatera tidsregistrering"
       },
@@ -269,7 +272,12 @@
     "unknownCategory": "Okänd kategori",
     "unknownProject": "Okänt projekt",
     "welcomeBack": "Välkommen tillbaka, {name}",
-    "workCategory": "Arbetskategori"
+    "workCategory": "Arbetskategori",
+    "workLocation": "Arbetsplats",
+    "workLocationHome": "Hem",
+    "workLocationOffice": "Kontor",
+    "workLocationOther": "Annat",
+    "workLocationRemote": "Distans"
   },
   "wellness": {
     "water": {

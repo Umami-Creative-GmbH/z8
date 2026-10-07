@@ -350,6 +350,7 @@ export async function createTravelExpenseExportBatch(
 				submissionCycle: revision.submissionCycle,
 				materialFingerprint: revision.materialFingerprint,
 				approvedAt: basis.approvedAt,
+				...(basis.approvalBasis ? { approvalBasis: basis.approvalBasis } : {}),
 				employeeId: account.employeeId,
 				employeeName: account.employeeName,
 				facts: revision.facts,

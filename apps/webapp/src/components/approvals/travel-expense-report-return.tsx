@@ -8,6 +8,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { getTravelExpenseReportSubmission } from "@/app/[locale]/(app)/travel-expenses/report-actions";
 import { returnTravelExpenseReportAction } from "@/app/[locale]/(app)/travel-expenses/report-review-actions";
+import { itemTitle } from "@/components/travel-expenses/report/item-title";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +29,7 @@ import {
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
+import type { TravelExpenseReportItemType } from "@/db/schema/travel-expense";
 import { queryKeys } from "@/lib/query/keys";
 import type { SubmittedReportView } from "@/lib/travel-expenses/report-read";
 import {
@@ -157,6 +159,7 @@ function ReturnFormLoader({
 			approvalId={approvalId}
 			items={data.facts.items.map((item, index) => ({
 				itemId: item.itemId,
+				type: item.type,
 				number: index + 1,
 				description: item.description,
 			}))}
@@ -211,7 +214,12 @@ function ReturnForm({
 	onReturned,
 }: {
 	approvalId: string;
-	items: Array<{ itemId: string; number: number; description: string }>;
+	items: Array<{
+		itemId: string;
+		type: TravelExpenseReportItemType;
+		number: number;
+		description: string;
+	}>;
 	onCancel: () => void;
 	onReturned: () => void;
 }) {
@@ -296,11 +304,11 @@ function ReturnForm({
 							{(field) => (
 								<TFormItem>
 									<TFormLabel hasError={fieldHasError(field)}>
-										{t("approvals:approvals.returnItemLabel", "Expense {number}", {
-											number: item.number,
-										})}
+										{itemTitle(t, item.type, item.number)}
 									</TFormLabel>
-									<TFormDescription className="line-clamp-2">{item.description}</TFormDescription>
+									{item.type !== "per_diem" && (
+										<TFormDescription className="line-clamp-2">{item.description}</TFormDescription>
+									)}
 									<TFormControl hasError={fieldHasError(field)}>
 										<Textarea
 											value={field.state.value}

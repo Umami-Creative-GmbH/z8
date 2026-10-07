@@ -3,18 +3,18 @@
     "coverage": {
       "adequate": "Yeterli personel",
       "byLocation": "Konuma göre:",
-      "gapCount": "{{count}} personel eksikliği",
+      "gapCount": "{count} personel eksikliği",
       "gaps": "boşluklar",
       "hideOverlay": "Kapsam katmanını gizle",
-      "metSlots": "{{count}} yeterli",
-      "overSlots": "{{count}} fazla personel",
+      "metSlots": "{count} yeterli",
+      "overSlots": "{count} fazla personel",
       "overstaffed": "Fazla personel",
       "showOverlay": "Kapsam hedefleri katmanını göster",
       "summary": "Kapsam Özeti:",
       "toggleLabel": "Kapsam",
-      "underSlots": "{{count}} eksik personel",
+      "underSlots": "{count} eksik personel",
       "understaffed": "Eksik personel",
-      "utilization": "%{{percent}} kullanım"
+      "utilization": "%{percent} kullanım"
     },
     "page": {
       "employeeDescription": "Vardiyalarınızı görüntüleyin ve uygun vardiyaları alın",
@@ -100,9 +100,9 @@
     },
     "skills": {
       "expiredCertifications": "Süresi Dolan Sertifikalar:",
-      "expiredOn": "(Süresi dolma tarihi: {{date}})",
+      "expiredOn": "(Süresi dolma tarihi: {date})",
       "missingPreferred": "Eksik Tercih Edilen Beceriler:",
-      "missingPreferredCount": "{{count}} tercih edilen beceri eksik",
+      "missingPreferredCount": "{count} tercih edilen beceri eksik",
       "missingRequired": "Eksik Zorunlu Beceriler:",
       "preferred": "Tercih edilen",
       "preferredSkillsMissing": "Tercih Edilen Beceriler Eksik",

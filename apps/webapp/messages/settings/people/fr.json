@@ -12,7 +12,7 @@
       "title": "Groupes d'employés"
     },
     "employees": {
-      "description": "Gérer les profils, les équipes et les autorisations des employés",
+      "description": "Gérer les employés, les membres et les invitations",
       "details": "Détails de l'employé",
       "detailsDescription": "Afficher et modifier les informations sur l'employé",
       "detailsTitle": "Détails de l'employé",
@@ -164,6 +164,8 @@
         "deactivateTitle": "Désactiver l'employé ?",
         "deactivating": "Désactivation en cours...",
         "deactivatingStatus": "Désactivation de l'employé",
+        "finalOwnerDeactivateGuidance": "Désignez et activez d'abord un autre propriétaire approuvé avant de désactiver cet employé.",
+        "finalOwnerRemoveGuidance": "Désignez et activez d'abord un autre propriétaire approuvé avant de retirer l'accès de cet employé.",
         "reactivate": "Réactiver",
         "reactivateDescription": "Ceci restaure l'accès à cette organisation en utilisant le dossier d'employé existant.",
         "reactivateError": "Échec de la réactivation de l'employé",
@@ -178,9 +180,7 @@
         "removeSuccess": "Accès à l'organisation supprimé",
         "removeTitle": "Supprimer l'accès à l'organisation ?",
         "removing": "Suppression de l'accès en cours...",
-        "removingStatus": "Suppression de l'accès à l'organisation",
-        "finalOwnerDeactivateGuidance": "Désignez et activez d'abord un autre propriétaire approuvé avant de désactiver cet employé.",
-        "finalOwnerRemoveGuidance": "Désignez et activez d'abord un autre propriétaire approuvé avant de retirer l'accès de cet employé."
+        "removingStatus": "Suppression de l'accès à l'organisation"
       },
       "offboarding": {
         "acknowledgeDuties": "Les administrateurs traiteront les {count} tâches d'approbation en attente.",
@@ -623,6 +623,10 @@
         "title": "Aucun rôle personnalisé pour le moment"
       },
       "introduction": "Créez des rôles de permission personnalisés pouvant être attribués aux employés. Les rôles personnalisés ajoutent des permissions en plus du niveau de base.",
+      "permissionCategories": {
+        "time_tracking": "Suivi du temps",
+        "works_council": "Comité d'entreprise"
+      },
       "table": {
         "actions": "Actions",
         "assigned": "Assigné",
@@ -658,7 +662,7 @@
       "catalogDescription": "Définissez les compétences pouvant être requises pour les sous-zones et les modèles de quart",
       "category": "Catégorie",
       "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette compétence ?",
-      "confirmRemove": "Retirer « ${skillName} » de cet employé ?",
+      "confirmRemove": "Retirer « {skillName} » de cet employé ?",
       "createError": "Échec de la création de la compétence",
       "createSkill": "Créer une compétence",
       "createSkillDescription": "Créez une nouvelle compétence pouvant être assignée aux employés",
@@ -672,8 +676,8 @@
       "employeeSkills": "Compétences et qualifications",
       "employeeSkillsDescription": "Certifications et compétences assignées à cet employé",
       "expired": "Expiré",
-      "expiredOn": "Expiré le {{date}}",
-      "expiresOn": "Expire le {{date}}",
+      "expiredOn": "Expiré le {date}",
+      "expiresOn": "Expire le {date}",
       "expiringSoon": "Expire bientôt",
       "expiry": "Suivi des expirations",
       "expiryDate": "Date d'expiration",

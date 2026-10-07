@@ -1,8 +1,8 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { CalendarSettingsForm } from "@/components/settings/calendar-settings-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getTranslate } from "@/tolgee/server";
 import { getCalendarSettings, getManagerCalendarReadView } from "./actions";
 
@@ -13,14 +13,14 @@ async function CalendarSettingsPageContent() {
 	]);
 
 	if (!settingsRouteContext) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const { authContext, accessTier } = settingsRouteContext;
 	const organizationId = authContext.session.activeOrganizationId;
 
 	if (accessTier === "member" || !organizationId) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const canManageCalendarSettings = accessTier === "orgAdmin";
@@ -30,7 +30,7 @@ async function CalendarSettingsPageContent() {
 		: getManagerCalendarReadView());
 
 	if (!settingsResult.success) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const settings = canManageCalendarSettings

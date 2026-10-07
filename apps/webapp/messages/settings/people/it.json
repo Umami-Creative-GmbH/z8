@@ -12,7 +12,7 @@
       "title": "Gruppi di dipendenti"
     },
     "employees": {
-      "description": "Gestisci profili dipendenti, team e autorizzazioni",
+      "description": "Gestisci dipendenti, membri e inviti",
       "details": "Dettagli dipendente",
       "detailsDescription": "Visualizza e modifica le informazioni del dipendente",
       "detailsTitle": "Dettagli dipendente",
@@ -164,6 +164,8 @@
         "deactivateTitle": "Disattivare il dipendente?",
         "deactivating": "Disattivazione in corso...",
         "deactivatingStatus": "Disattivazione dipendente",
+        "finalOwnerDeactivateGuidance": "Assegna e attiva prima un altro proprietario approvato prima di disattivare questo dipendente.",
+        "finalOwnerRemoveGuidance": "Assegna e attiva prima un altro proprietario approvato prima di rimuovere l'accesso di questo dipendente.",
         "reactivate": "Riattiva",
         "reactivateDescription": "Questa operazione ripristina l'accesso a questa organizzazione utilizzando il record del dipendente esistente.",
         "reactivateError": "Impossibile riattivare il dipendente",
@@ -178,9 +180,7 @@
         "removeSuccess": "Accesso all'organizzazione rimosso",
         "removeTitle": "Rimuovere l'accesso all'organizzazione?",
         "removing": "Rimozione dell'accesso in corso...",
-        "removingStatus": "Rimozione dell'accesso all'organizzazione",
-        "finalOwnerDeactivateGuidance": "Assegna e attiva prima un altro proprietario approvato prima di disattivare questo dipendente.",
-        "finalOwnerRemoveGuidance": "Assegna e attiva prima un altro proprietario approvato prima di rimuovere l'accesso di questo dipendente."
+        "removingStatus": "Rimozione dell'accesso all'organizzazione"
       },
       "offboarding": {
         "acknowledgeDuties": "Gli amministratori gestiranno i {count} compiti di approvazione in sospeso.",
@@ -623,6 +623,10 @@
         "title": "Ancora nessun ruolo personalizzato"
       },
       "introduction": "Crea ruoli di permesso personalizzati che possono essere assegnati ai dipendenti. I ruoli personalizzati aggiungono permessi oltre al livello base.",
+      "permissionCategories": {
+        "time_tracking": "Rilevazione presenze",
+        "works_council": "Comitato aziendale"
+      },
       "table": {
         "actions": "Azioni",
         "assigned": "Assegnato",
@@ -672,8 +676,8 @@
       "employeeSkills": "Competenze e qualifiche",
       "employeeSkillsDescription": "Certificazioni e competenze assegnate a questo dipendente",
       "expired": "Scaduto",
-      "expiredOn": "Scaduto il {{date}}",
-      "expiresOn": "Scade il {{date}}",
+      "expiredOn": "Scaduto il {date}",
+      "expiresOn": "Scade il {date}",
       "expiringSoon": "In scadenza",
       "expiry": "Monitoraggio scadenze",
       "expiryDate": "Data di scadenza",

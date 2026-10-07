@@ -128,6 +128,11 @@
     }
   },
   "calendar": {
+    "calendar": {
+      "break": {
+        "titleWithDuration": "Break – {duration}"
+      }
+    },
     "clockOutOnBehalf": {
       "confirm": "Clock Out",
       "description": "This creates an auditable clock-out entry at the current server time. If anything needs adjustment afterward, use corrections.",
@@ -283,17 +288,19 @@
       "monthTotal": "Month total",
       "nextMonth": "Next month",
       "previousMonth": "Previous month",
+      "recordedOnlyDayLabel": "{date}: {actual} recorded.",
       "totalDescription": "Recorded time compared with policy hours",
       "weekSum": "Sum"
     },
     "requirements": {
+      "dayLabel": "{date}: {required} required, {actual} recorded, {delta} delta, {status}",
+      "includesRunningWork": "Includes running work",
       "status": {
         "met": "requirement met",
         "missing": "missing recorded time",
         "over": "over requirement",
         "under": "under requirement"
-      },
-      "dayLabel": "{date}: {required} required, {actual} recorded, {delta} delta, {status}"
+      }
     },
     "split": {
       "ambiguousTime": "Choose which occurrence to use",
@@ -346,11 +353,6 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
-    },
-    "calendar": {
-      "break": {
-        "titleWithDuration": "Break – {duration}"
-      }
     }
   }
 }

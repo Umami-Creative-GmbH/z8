@@ -12,7 +12,7 @@
       "title": "Grupos de empleados"
     },
     "employees": {
-      "description": "Gestionar perfiles de empleados, equipos y permisos",
+      "description": "Gestionar empleados, miembros e invitaciones",
       "details": "Detalles del empleado",
       "detailsDescription": "Ver y editar la información de los empleados",
       "detailsTitle": "Detalles del Empleado",
@@ -164,6 +164,8 @@
         "deactivateTitle": "¿Desactivar al empleado?",
         "deactivating": "Desactivando...",
         "deactivatingStatus": "Desactivando empleado",
+        "finalOwnerDeactivateGuidance": "Asigna y activa primero a otro propietario aprobado antes de desactivar a este empleado.",
+        "finalOwnerRemoveGuidance": "Asigna y activa primero a otro propietario aprobado antes de retirar el acceso de este empleado.",
         "reactivate": "Reactivar",
         "reactivateDescription": "Esto restaura el acceso a esta organización utilizando el registro de empleado existente.",
         "reactivateError": "Error al reactivar al empleado",
@@ -178,9 +180,7 @@
         "removeSuccess": "Acceso a la organización eliminado",
         "removeTitle": "¿Eliminar el acceso a la organización?",
         "removing": "Eliminando acceso...",
-        "removingStatus": "Eliminando acceso a la organización",
-        "finalOwnerDeactivateGuidance": "Asigna y activa primero a otro propietario aprobado antes de desactivar a este empleado.",
-        "finalOwnerRemoveGuidance": "Asigna y activa primero a otro propietario aprobado antes de retirar el acceso de este empleado."
+        "removingStatus": "Eliminando acceso a la organización"
       },
       "offboarding": {
         "acknowledgeDuties": "Los administradores resolverán las {count} tareas de aprobación pendientes.",
@@ -623,6 +623,10 @@
         "title": "Aún no hay roles personalizados"
       },
       "introduction": "Cree roles de permisos personalizados que se puedan asignar a los empleados. Los roles personalizados añaden permisos además del nivel base.",
+      "permissionCategories": {
+        "time_tracking": "Control horario",
+        "works_council": "Comité de empresa"
+      },
       "table": {
         "actions": "Acciones",
         "assigned": "Asignado",
@@ -658,7 +662,7 @@
       "catalogDescription": "Definir habilidades que pueden ser requeridas para subáreas y plantillas de turnos",
       "category": "Categoría",
       "confirmDelete": "¿Está seguro de que desea eliminar esta habilidad?",
-      "confirmRemove": "¿Eliminar \"${skillName}\" de este empleado?",
+      "confirmRemove": "¿Eliminar \"{skillName}\" de este empleado?",
       "createError": "Error al crear la habilidad",
       "createSkill": "Crear habilidad",
       "createSkillDescription": "Crear una nueva habilidad que pueda ser asignada a los empleados",
@@ -672,8 +676,8 @@
       "employeeSkills": "Habilidades y cualificaciones",
       "employeeSkillsDescription": "Certificaciones y habilidades asignadas a este empleado",
       "expired": "Caducado",
-      "expiredOn": "Caducó el {{date}}",
-      "expiresOn": "Caduca el {{date}}",
+      "expiredOn": "Caducó el {date}",
+      "expiresOn": "Caduca el {date}",
       "expiringSoon": "Caduca pronto",
       "expiry": "Seguimiento de caducidad",
       "expiryDate": "Fecha de caducidad",

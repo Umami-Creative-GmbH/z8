@@ -65,7 +65,9 @@ function ToggleGroup({
 	return (
 		<ToggleGroupPrimitive
 			className={cn(
-				"group/toggle-group flex w-fit items-center rounded-md data-[variant=outline]:shadow-xs",
+				// Items share the width equally only in a full-width group; in a fit-content group
+				// equal shares squeeze the longest label into its neighbours.
+				"group/toggle-group flex w-fit items-center rounded-md data-[variant=outline]:shadow-xs [&.w-full>[data-slot=toggle-group-item]]:flex-1",
 				className,
 			)}
 			defaultValue={baseDefaultValue}
@@ -125,7 +127,7 @@ function ToggleGroupItem({
 					variant: context.variant || variant,
 					size: context.size || size,
 				}),
-				"min-w-0 flex-1 shrink-0 rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l",
+				"min-w-0 flex-none rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l",
 				className,
 			)}
 			data-size={context.size || size}

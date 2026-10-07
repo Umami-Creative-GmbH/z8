@@ -8,11 +8,13 @@ import {
 	submitTravelExpenseReport,
 } from "@/lib/approvals/server/travel-expense-report-submission";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
+import { canManageCurrentOrganizationSettings } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
-import { deletePrivateObject } from "@/lib/storage/export-s3-client";
 import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { currentReportOwner as currentOwner } from "@/lib/travel-expenses/current-owner";
+import { OWNER_SELF_APPROVAL_REASON } from "@/lib/travel-expenses/owner-self-approval";
+import { deleteTravelExpenseReceiptObject } from "@/lib/travel-expenses/receipt-preview";
 import {
 	parseReceiptItemDraft,
 	type ReceiptItemDraft,
@@ -20,6 +22,7 @@ import {
 	type ReceiptItemFieldError,
 } from "@/lib/travel-expenses/receipt-report";
 import { runTravelExpenseReceiptCleanup } from "@/lib/travel-expenses/receipt-upload";
+import { deleteOwnDraftReport } from "@/lib/travel-expenses/report-deletion-store";
 import {
 	authorizedReportCycle,
 	loadAuthorizedTravelExpenseReport,
@@ -319,7 +322,7 @@ export async function removeTripReportItemAction(input: {
 		for (const receiptId of result.receiptIds) {
 			// react-doctor-disable-next-line react-doctor/async-await-in-loop
 			await runTravelExpenseReceiptCleanup(db, {
-				deleteObject: deletePrivateObject,
+				deleteObject: deleteTravelExpenseReceiptObject,
 				only: { attachmentId: receiptId, organizationId: owner.organizationId },
 			}).catch((error) => logger.warn({ error }, "Deferred removed receipt cleanup"));
 		}
@@ -332,16 +335,24 @@ export async function removeTripReportItemAction(input: {
 
 type SubmitRefusal = Exclude<
 	SubmitTravelExpenseReportResult,
-	{ kind: "submitted" | "not_found" | "not_draft" }
+	{ kind: "submitted" | "self_approved" | "not_found" | "not_draft" | "no_reviewer" }
 >;
 
 /**
- * What the employee is told: submitted, or the submission owner's refusal
- * (e.g. changed since review, incomplete, no reviewer) with its guidance data.
- * Server-side routing messages stay in the logs.
+ * What the employee is told: submitted, approved on submit (an owner alone
+ * in review, #679), or the submission owner's refusal (e.g. changed since
+ * review, incomplete, no reviewer) with its guidance data. Server-side
+ * routing messages stay in the logs.
  */
 export type SubmitTravelExpenseReportOutcome =
 	| { status: "submitted" }
+	| { status: "self_approved" }
+	| {
+			status: "no_reviewer";
+			reason: Extract<SubmitTravelExpenseReportResult, { kind: "no_reviewer" }>["reason"];
+			/** The submitter can choose the expense approver themselves (settings access). */
+			canAssignApprover: boolean;
+	  }
 	| {
 			[K in SubmitRefusal["kind"]]: { status: K } & Omit<
 				Extract<SubmitRefusal, { kind: K }>,
@@ -392,6 +403,7 @@ export async function submitTravelExpenseReportAction(input: {
 			case "not_draft":
 				return { success: false, error: "This expense report was already submitted" };
 			case "submitted":
+			case "self_approved":
 				break;
 			case "routing_failed":
 				logger.warn(
@@ -404,7 +416,16 @@ export async function submitTravelExpenseReportAction(input: {
 			case "project_ineligible":
 				return { success: true, data: { status: result.kind, itemIds: result.itemIds } };
 			case "no_reviewer":
-				return { success: true, data: { status: result.kind, reason: result.reason } };
+				return {
+					success: true,
+					data: {
+						status: result.kind,
+						reason: result.reason,
+						canAssignApprover: await canManageCurrentOrganizationSettings().catch(() => false),
+					},
+				};
+			case "self_approval_blocked":
+				return { success: true, data: { status: result.kind, blockers: result.blockers } };
 			case "threshold_currency_unsupported":
 				return { success: true, data: { status: result.kind, currency: result.currency } };
 			case "adjustment_unavailable":
@@ -423,14 +444,16 @@ export async function submitTravelExpenseReportAction(input: {
 			organizationId: owner.organizationId,
 			metadata: {
 				model: "report",
-				approverId: result.reviewerEmployeeId,
+				...(result.kind === "self_approved"
+					? { approverId: owner.employeeId, selfApproval: OWNER_SELF_APPROVAL_REASON }
+					: { approverId: result.reviewerEmployeeId }),
 				submissionCycle: result.submissionCycle,
 				submittedRevisionId: result.submittedRevisionId,
 			},
 			timestamp: new Date(),
 		}).catch((error) => logger.error({ error }, "Failed to log expense report submission"));
 		revalidatePath("/travel-expenses");
-		return { success: true, data: { status: "submitted" } };
+		return { success: true, data: { status: result.kind } };
 	} catch (error) {
 		logger.error({ error }, "Failed to submit expense report");
 		return { success: false, error: "Failed to submit expense report" };
@@ -463,6 +486,54 @@ export async function getTravelExpenseReportSubmission(
 	}
 }
 
+/**
+ * Deletes one of the employee's drafts that was never submitted (#684), with
+ * its expenses and receipts, and the legacy draft it continued (#616).
+ */
+export async function deleteDraftTravelExpenseReportAction(input: {
+	reportId: string;
+}): Promise<ServerActionResult<{ reportId: string }>> {
+	try {
+		const owner = await currentOwner();
+		if (!owner) return { success: false, error: "Unauthorized" };
+		if (!uuid.safeParse(input.reportId).success)
+			return { success: false, error: "Expense report not found" };
+		const result = await deleteOwnDraftReport(db, owner, { reportId: input.reportId });
+		switch (result.kind) {
+			case "not_found":
+				return { success: false, error: "Expense report not found" };
+			case "not_deletable":
+				return { success: false, error: "This expense report can no longer be deleted" };
+			case "deleted":
+				break;
+		}
+		logAudit({
+			action: AuditAction.TRAVEL_EXPENSE_DRAFT_DELETED,
+			actorId: owner.userId,
+			employeeId: owner.employeeId,
+			targetId: input.reportId,
+			targetType: "approval",
+			organizationId: owner.organizationId,
+			metadata: { model: "report", legacyClaimId: result.legacyClaimId },
+			timestamp: new Date(),
+		}).catch((error) => logger.error({ error }, "Failed to log expense report deletion"));
+		// The objects are already recorded for durable cleanup; try to delete them now.
+		// One at a time on purpose: this is best effort, so it keeps storage load bounded.
+		for (const attachmentId of result.cleanupIds) {
+			// react-doctor-disable-next-line react-doctor/async-await-in-loop
+			await runTravelExpenseReceiptCleanup(db, {
+				deleteObject: deleteTravelExpenseReceiptObject,
+				only: { attachmentId, organizationId: owner.organizationId },
+			}).catch((error) => logger.warn({ error }, "Deferred deleted report receipt cleanup"));
+		}
+		revalidatePath("/travel-expenses");
+		return { success: true, data: { reportId: input.reportId } };
+	} catch (error) {
+		logger.error({ error }, "Failed to delete expense report");
+		return { success: false, error: "Failed to delete expense report" };
+	}
+}
+
 export async function removeReportReceiptAction(input: {
 	reportId: string;
 	itemId: string;
@@ -479,7 +550,7 @@ export async function removeReportReceiptAction(input: {
 		if (result.kind === "not_found") return { success: false, error: "Receipt not found" };
 		// The object is already recorded for durable cleanup; try to delete it now.
 		await runTravelExpenseReceiptCleanup(db, {
-			deleteObject: deletePrivateObject,
+			deleteObject: deleteTravelExpenseReceiptObject,
 			only: { attachmentId: result.receiptId, organizationId: owner.organizationId },
 		}).catch((error) => logger.warn({ error }, "Deferred removed receipt cleanup"));
 		return { success: true, data: { receiptId: result.receiptId } };

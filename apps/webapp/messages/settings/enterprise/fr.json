@@ -257,7 +257,7 @@
         "testEmailRequired": "Veuillez saisir une adresse e-mail de test",
         "testFailed": "Échec de l'envoi de l'e-mail de test",
         "testFailure": "Échec",
-        "testSection": "IcôneEnvoyer un e-mail de test",
+        "testSection": "Envoyer un e-mail de test",
         "testSent": "E-mail de test envoyé avec succès",
         "testSuccess": "Succès",
         "title": "Configuration de l'e-mail",

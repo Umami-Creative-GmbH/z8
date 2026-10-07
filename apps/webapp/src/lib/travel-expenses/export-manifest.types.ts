@@ -15,6 +15,12 @@ export interface TravelExpenseExportManifestRevisionRecord<TFacts = unknown> {
 	materialFingerprint: string;
 	/** UTC instant the revision was approved (decision evidence). */
 	approvedAt: string;
+	/**
+	 * Why no reviewer decided it, when none did (#679): the organization owner's
+	 * report, approved on submit because nobody else could review it. Absent in
+	 * manifests stored before it existed.
+	 */
+	approvalBasis?: "owner_no_other_reviewer";
 	employeeId: string;
 	/** Display name when the batch was created; descriptive only. */
 	employeeName: string | null;

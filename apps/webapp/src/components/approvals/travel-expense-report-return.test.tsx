@@ -92,7 +92,7 @@ describe("returning a travel expense report from the inbox (#603)", () => {
 		fireEvent.change(within(dialog).getByRole("textbox", { name: /Note to the employee/ }), {
 			target: { value: "The hotel invoice is not itemized." },
 		});
-		fireEvent.change(within(dialog).getByRole("textbox", { name: "Expense 2" }), {
+		fireEvent.change(within(dialog).getByRole("textbox", { name: "Receipt 2" }), {
 			target: { value: "Upload the itemized invoice" },
 		});
 		fireEvent.click(within(dialog).getByRole("button", { name: "Return for changes" }));

@@ -185,9 +185,9 @@ describe("platform admin layout", () => {
 		const source = readAdminLayoutSource();
 
 		expect(source).toContain("const session = await getRequestSession();");
-		expect(source).toContain('redirect("/sign-in")');
+		expect(source).toContain('redirectWithLocale("/sign-in")');
 		expect(source).toContain('session.user.role !== "admin"');
-		expect(source).toContain('redirect("/")');
+		expect(source).toContain('redirectWithLocale("/")');
 		expect(source).toContain("getTranslate()");
 		expect(source).toContain("session.user.name");
 		expect(source).toContain("session.user.email");

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { ItemConversion } from "@/lib/travel-expenses/currency-conversion";
 import { REFERENCE_RATE_FACTS_SCHEMA_VERSION } from "./travel-expense-report-conversion";
 import {
@@ -6,6 +7,13 @@ import {
 	compareLiveTravelExpenseReportWithRevision,
 	type TravelExpenseReportFactsInput,
 } from "./travel-expense-report-facts";
+
+/** Freezes as submitting does, at an instant after every date of the fixtures (#685). */
+const freeze = (input: TravelExpenseReportFactsInput) =>
+	buildTravelExpenseReportSubmittedFacts({
+		...input,
+		submittedAt: parseInstant("2026-10-07T12:00:00Z"),
+	});
 
 /** #608: frozen reference-rate conversions. */
 
@@ -78,7 +86,7 @@ function input(conversion: ItemConversion = reference): TravelExpenseReportFacts
 
 describe("frozen reference-rate conversion facts", () => {
 	it("freezes the publication, its real date, the expense date and the rounded result", () => {
-		const facts = buildTravelExpenseReportSubmittedFacts(input());
+		const facts = freeze(input());
 		expect(facts.schemaVersion).toBeGreaterThanOrEqual(REFERENCE_RATE_FACTS_SCHEMA_VERSION);
 		expect(facts.items[0]?.conversion).toEqual({
 			basis: "reference_rate",
@@ -93,7 +101,7 @@ describe("frozen reference-rate conversion facts", () => {
 	});
 
 	it("holds a decision when the stored conversion names another publication version", () => {
-		const submitted = buildTravelExpenseReportSubmittedFacts(input());
+		const submitted = freeze(input());
 		expect(compareLiveTravelExpenseReportWithRevision(submitted, input())).toEqual({
 			kind: "current",
 		});
@@ -110,7 +118,7 @@ describe("frozen reference-rate conversion facts", () => {
 
 	it("never emits a reference conversion into a revision of an older schema version", () => {
 		expect(REFERENCE_RATE_FACTS_SCHEMA_VERSION).toBe(6);
-		const v5 = { ...buildTravelExpenseReportSubmittedFacts(input()), schemaVersion: 5 };
+		const v5 = { ...freeze(input()), schemaVersion: 5 };
 		// The v5 snapshot of the same rows has no conversion for the expense: it changed.
 		expect(compareLiveTravelExpenseReportWithRevision(v5, input())).not.toEqual({
 			kind: "current",

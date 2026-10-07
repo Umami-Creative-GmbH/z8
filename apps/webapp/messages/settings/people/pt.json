@@ -12,7 +12,7 @@
       "title": "Grupos de funcionários"
     },
     "employees": {
-      "description": "Gerenciar perfis, equipes e permissões de funcionários",
+      "description": "Gerenciar funcionários, membros e convites",
       "details": "Detalhes do funcionário",
       "detailsDescription": "Ver e editar informações do colaborador",
       "detailsTitle": "Detalhes do colaborador",
@@ -164,6 +164,8 @@
         "deactivateTitle": "Desativar funcionário?",
         "deactivating": "Desativando...",
         "deactivatingStatus": "Desativando funcionário",
+        "finalOwnerDeactivateGuidance": "Atribua e ative primeiro outro proprietário aprovado antes de desativar este funcionário.",
+        "finalOwnerRemoveGuidance": "Atribua e ative primeiro outro proprietário aprovado antes de remover o acesso deste funcionário.",
         "reactivate": "Reativar",
         "reactivateDescription": "Isso restaura o acesso a esta organização usando o registro de funcionário existente.",
         "reactivateError": "Falha ao reativar funcionário",
@@ -178,9 +180,7 @@
         "removeSuccess": "Acesso à organização removido",
         "removeTitle": "Remover acesso à organização?",
         "removing": "Removendo acesso...",
-        "removingStatus": "Removendo acesso à organização",
-        "finalOwnerDeactivateGuidance": "Atribua e ative primeiro outro proprietário aprovado antes de desativar este funcionário.",
-        "finalOwnerRemoveGuidance": "Atribua e ative primeiro outro proprietário aprovado antes de remover o acesso deste funcionário."
+        "removingStatus": "Removendo acesso à organização"
       },
       "offboarding": {
         "acknowledgeDuties": "Os administradores resolverão as {count} tarefas de aprovação pendentes.",
@@ -623,6 +623,10 @@
         "title": "Ainda não há funções personalizadas"
       },
       "introduction": "Crie funções de permissão personalizadas que podem ser atribuídas aos funcionários. As funções personalizadas adicionam permissões além do nível base.",
+      "permissionCategories": {
+        "time_tracking": "Controle de ponto",
+        "works_council": "Conselho de empresa"
+      },
       "table": {
         "actions": "Ações",
         "assigned": "Atribuído",
@@ -672,8 +676,8 @@
       "employeeSkills": "Habilidades e Qualificações",
       "employeeSkillsDescription": "Certificações e habilidades atribuídas a este funcionário",
       "expired": "Expirado",
-      "expiredOn": "Expirou em {{date}}",
-      "expiresOn": "Expira em {{date}}",
+      "expiredOn": "Expirou em {date}",
+      "expiresOn": "Expira em {date}",
       "expiringSoon": "Expirando em breve",
       "expiry": "Rastreamento de Expiração",
       "expiryDate": "Data de Expiração",

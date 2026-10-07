@@ -32,16 +32,18 @@
     "correction": {
       "clockIn": "İşe Giriş",
       "clockInDate": "Giriş Tarihi",
+      "clockInTime": "Giriş Saati",
       "clockOut": "İşten Çıkış",
       "clockOutDate": "Çıkış Tarihi",
+      "clockOutTime": "Çıkış Saati",
       "editDescription": "Bugünkü zaman kaydınızda değişiklik yapın.",
       "editEntry": "Zaman kaydını düzenle",
       "editTitle": "Zaman Kaydını Düzenle",
       "errors": {
         "invalidTimeRange": "İşten çıkış saati, işe giriş saatinden sonra olmalıdır",
+        "noChanges": "En az bir düzeltme değeri değiştirilmelidir",
         "submitFailed": "Düzeltme gönderilemedi",
-        "updateFailed": "Zaman kaydı güncellenemedi",
-        "noChanges": "En az bir düzeltme değeri değiştirilmelidir"
+        "updateFailed": "Zaman kaydı güncellenemedi"
       },
       "noteLabel": "Not (isteğe bağlı)",
       "notePlaceholder": "Bu değişiklik hakkında bir not ekleyin…",
@@ -59,9 +61,7 @@
         "submitted": "Düzeltme talebi yönetici onayı için gönderildi",
         "updated": "Zaman kaydı başarıyla güncellendi"
       },
-      "timezoneNote": "Saatler yerel saat diliminizdedir ({timezone})",
-      "clockInTime": "Giriş Saati",
-      "clockOutTime": "Çıkış Saati"
+      "timezoneNote": "Saatler yerel saat diliminizdedir ({timezone})"
     },
     "currentlyClockedIn": "Şu anda işe giriş yapmış durumdasınız",
     "deadline": "Son teslim tarihi",

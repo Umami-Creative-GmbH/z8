@@ -233,6 +233,40 @@ describe("getManagerDailyBriefingFromSources", () => {
 		]);
 	});
 
+	it("marks the viewer's own pending request so no decision is offered", async () => {
+		const sources = createSources({
+			getScopedEmployees: vi.fn().mockResolvedValue([
+				{ id: "admin-1", name: "Alan Turing", teamName: null },
+				{ id: "emp-1", name: "Ada Lovelace", teamName: "Operations" },
+			]),
+			getApprovals: vi
+				.fn()
+				.mockResolvedValue([
+					createApproval({
+						id: "approval-own",
+						requesterId: "admin-1",
+						requesterName: "Alan Turing",
+					}),
+					createApproval({ id: "approval-1", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+				]),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "admin-1", role: "admin" },
+			now: DateTime.fromISO("2026-04-28T09:20:00.000+02:00", { setZone: true }),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		const byApprovalId = new Map(
+			briefing.sections.approvals.items.map((item) => [item.approvalId, item]),
+		);
+		expect(byApprovalId.get("approval-own")?.ownRequest).toBe(true);
+		expect(byApprovalId.get("approval-1")?.ownRequest).toBeUndefined();
+		expect(briefing.summary.openApprovals).toBe(2);
+	});
+
 	it("excludes approval items from needs action while keeping approval sections and summary counts", async () => {
 		const sources = createSources({
 			getApprovals: vi

@@ -29,6 +29,7 @@ const ids = {
 	source: "20000000-0000-4000-8000-000000000001",
 	requester: "30000000-0000-4000-8000-000000000001",
 	approver: "40000000-0000-4000-8000-000000000001",
+	fallbackManager: "40000000-0000-4000-8000-000000000002",
 	stage: "50000000-0000-4000-8000-000000000001",
 	assignment: "60000000-0000-4000-8000-000000000001",
 	event: "70000000-0000-4000-8000-000000000001",
@@ -796,6 +797,60 @@ describe("approval workflow runtime", () => {
 		).rejects.toThrow(/offboarding/i);
 	});
 
+	it("refuses the requester's own approve and reject whatever authority they hold", async () => {
+		const managementChecks: unknown[] = [];
+		const authorization = createApprovalWorkflowAuthorization({
+			canManageApproval: async (input) => {
+				managementChecks.push(input);
+				return true;
+			},
+		});
+		const workflow = snapshot();
+		const ownAssignmentWorkflow = snapshot({
+			stages: workflow.stages.map((stage) => ({
+				...stage,
+				assignments: stage.assignments.map((assignment) => ({
+					...assignment,
+					approverEmployeeId: ids.requester,
+				})),
+			})),
+		});
+		const base = {
+			dbService: dbService().service,
+			organizationId: "org-1",
+			actor: {
+				kind: "employee" as const,
+				employeeId: ids.requester,
+				userId: "requester-user",
+			},
+		};
+
+		for (const command of [
+			{ type: "approve" as const, stageId: ids.stage, assignmentId: ids.assignment },
+			{
+				type: "reject" as const,
+				stageId: ids.stage,
+				assignmentId: ids.assignment,
+				reason: "no",
+			},
+		]) {
+			await expect(
+				authorization.authorize({ ...base, workflow, command }),
+			).rejects.toThrow("You cannot decide your own request");
+			await expect(
+				authorization.authorize({ ...base, workflow: ownAssignmentWorkflow, command }),
+			).rejects.toThrow("You cannot decide your own request");
+		}
+		expect(managementChecks).toEqual([]);
+		await expect(
+			authorization.authorize({
+				...base,
+				workflow,
+				command: { type: "cancel", reason: "withdrawn" },
+			}),
+		).resolves.toBe("requester");
+	});
+
 	it("allows only a transaction-scoped eligible fallback manager decision", async () => {
 		const transaction = dbService();
 		let eligible = true;
@@ -819,7 +874,7 @@ describe("approval workflow runtime", () => {
 			workflow,
 			actor: {
 				kind: "employee" as const,
-				employeeId: ids.requester,
+				employeeId: ids.fallbackManager,
 				userId: "fallback-user",
 			},
 			command: {
@@ -871,16 +926,25 @@ describe("approval workflow runtime", () => {
 				command: { type: "cancel", reason: "withdrawn" },
 			}),
 		).rejects.toThrow(/scope/i);
+		const approve = {
+			type: "approve" as const,
+			stageId: ids.stage,
+			assignmentId: ids.assignment,
+		};
+		await expect(
+			authorization.authorize({ ...base, command: approve }),
+		).rejects.toThrow("You cannot decide your own request");
 		await expect(
 			authorization.authorize({
 				...base,
-				command: {
-					type: "approve",
-					stageId: ids.stage,
-					assignmentId: ids.assignment,
+				actor: {
+					kind: "employee",
+					employeeId: ids.fallbackManager,
+					userId: "unrelated-user",
 				},
+				command: approve,
 			}),
-		).rejects.toThrow(/forbidden/i);
+		).rejects.toThrow(/forbidden command actor/i);
 	});
 
 	it("loads the exact workflow source through the registered adapter and transaction", async () => {

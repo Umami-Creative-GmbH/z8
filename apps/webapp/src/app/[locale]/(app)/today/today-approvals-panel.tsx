@@ -103,31 +103,40 @@ export function TodayApprovalsPanel({ items, error }: TodayApprovalsPanelProps) 
 										{item.requesterName} - {item.description}
 									</p>
 								</div>
-								<div className="flex shrink-0 gap-2">
-									<Button
-										aria-label={t("today.approvals.rejectLabel", "Reject {title}", {
-											title: item.title,
-										})}
-										disabled={isBusy}
-										onClick={() => decideApproval(item, "reject")}
-										size="sm"
-										type="button"
-										variant="outline"
-									>
-										{t("today.approvals.reject", "Reject")}
-									</Button>
-									<Button
-										aria-label={t("today.approvals.approveLabel", "Approve {title}", {
-											title: item.title,
-										})}
-										disabled={isBusy}
-										onClick={() => decideApproval(item, "approve")}
-										size="sm"
-										type="button"
-									>
-										{t("today.approvals.approve", "Approve")}
-									</Button>
-								</div>
+								{item.ownRequest ? (
+									<p className="shrink-0 font-medium text-muted-foreground text-xs leading-5 sm:max-w-48 sm:text-right">
+										{t(
+											"today.approvals.ownRequest",
+											"Your own request: another approver decides it.",
+										)}
+									</p>
+								) : (
+									<div className="flex shrink-0 gap-2">
+										<Button
+											aria-label={t("today.approvals.rejectLabel", "Reject {title}", {
+												title: item.title,
+											})}
+											disabled={isBusy}
+											onClick={() => decideApproval(item, "reject")}
+											size="sm"
+											type="button"
+											variant="outline"
+										>
+											{t("today.approvals.reject", "Reject")}
+										</Button>
+										<Button
+											aria-label={t("today.approvals.approveLabel", "Approve {title}", {
+												title: item.title,
+											})}
+											disabled={isBusy}
+											onClick={() => decideApproval(item, "approve")}
+											size="sm"
+											type="button"
+										>
+											{t("today.approvals.approve", "Approve")}
+										</Button>
+									</div>
+								)}
 							</li>
 						))}
 					</ul>

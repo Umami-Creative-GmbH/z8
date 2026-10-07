@@ -208,8 +208,22 @@ describe("parseCardChargeAmount", () => {
 		expect(parseCardChargeAmount("14956", "JPY")).toBe("14956.00");
 	});
 
+	it("accepts a decimal comma like the other amount fields", () => {
+		expect(parseCardChargeAmount("257,30", "EUR")).toBe("257.30");
+		expect(parseCardChargeAmount(" 92,1 ", "EUR")).toBe("92.10");
+	});
+
 	it("refuses zero, negative, oversized, over-precise and malformed charges", () => {
-		for (const value of ["0", "-1.00", "1000000000.00", "92.171", "92,17", "abc", ""]) {
+		for (const value of [
+			"0",
+			"-1.00",
+			"1000000000.00",
+			"92.171",
+			"92,171",
+			"1.234,50",
+			"abc",
+			"",
+		]) {
 			expect(parseCardChargeAmount(value, "EUR")).toBeNull();
 		}
 		expect(parseCardChargeAmount("14956.5", "JPY")).toBeNull();
@@ -243,6 +257,17 @@ describe("parseManualRateInput", () => {
 		});
 		expect(parse({ ...valid, base: "EUR", quote: "USD", rate: "1.085" })).toEqual(
 			expect.objectContaining({ ok: true }),
+		);
+	});
+
+	it("accepts a rate entered with a decimal comma", () => {
+		expect(parse({ ...valid, rate: "0,9215" })).toEqual(
+			expect.objectContaining({
+				ok: true,
+				value: expect.objectContaining({
+					rate: { base: "USD", quote: "EUR", value: "0.9215" },
+				}),
+			}),
 		);
 	});
 

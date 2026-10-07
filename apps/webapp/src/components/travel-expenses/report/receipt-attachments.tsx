@@ -15,8 +15,26 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useTravelExpenseFileUpload } from "@/hooks/use-travel-expense-file-upload";
-import { ALLOWED_TRAVEL_EXPENSE_MIME_TYPES } from "@/lib/travel-expenses/attachment-validation";
+import {
+	ALLOWED_TRAVEL_EXPENSE_MIME_TYPES,
+	isAllowedTravelExpenseMime,
+	isTravelExpenseImageMime,
+} from "@/lib/travel-expenses/attachment-validation";
 import type { ReportReceiptView } from "@/lib/travel-expenses/report-store";
+
+const DEFAULT_MAX_RECEIPT_SIZE = 10 * 1024 * 1024;
+
+type Translate = ReturnType<typeof useTranslate>["t"];
+
+/** A refused receipt upload; the status says why, the server message is not shown. */
+class ReceiptUploadError extends Error {
+	constructor(
+		message: string,
+		readonly status: number,
+	) {
+		super(message);
+	}
+}
 
 async function processReportReceipt(input: {
 	reportId: string;
@@ -31,14 +49,57 @@ async function processReportReceipt(input: {
 	});
 	if (!response.ok) {
 		const failure = await response.json().catch(() => ({}));
-		throw new Error(typeof failure.error === "string" ? failure.error : "Upload failed");
+		throw new ReceiptUploadError(
+			typeof failure.error === "string" ? failure.error : "Upload failed",
+			response.status,
+		);
 	}
 	const body = await response.json();
 	return body.receipt as ReportReceiptView;
 }
 
-function receiptHref(reportId: string, receiptId: string, download = false) {
-	return `/api/travel-expenses/reports/${encodeURIComponent(reportId)}/receipts/${encodeURIComponent(receiptId)}${download ? "?download=1" : ""}`;
+function unsupportedTypeMessage(t: Translate) {
+	return t(
+		"travelExpenses.report.receipts.errors.unsupportedType",
+		"Attach a PDF or an image (JPEG, PNG, WebP, GIF, BMP or TIFF).",
+	);
+}
+
+function tooLargeMessage(t: Translate, maxFileSize: number) {
+	return t(
+		"travelExpenses.report.receipts.errors.tooLarge",
+		"The file is too large. Attach a file of at most {size} MB.",
+		{ size: Math.floor(maxFileSize / (1024 * 1024)) },
+	);
+}
+
+/** Why an upload failed, in the user's language rather than the server's wording. */
+function uploadFailureMessage(t: Translate, error: Error, maxFileSize: number) {
+	const status = error instanceof ReceiptUploadError ? error.status : null;
+	switch (status) {
+		case 400:
+			return unsupportedTypeMessage(t);
+		case 413:
+			return tooLargeMessage(t, maxFileSize);
+		case 409:
+			return t(
+				"travelExpenses.report.receipts.errors.locked",
+				"This expense can no longer be edited.",
+			);
+		default:
+			return t("travelExpenses.report.receipts.errors.retry", "Please try again.");
+	}
+}
+
+const RECEIPT_QUERY = { open: "", download: "?download=1", thumb: "?variant=thumb" } as const;
+
+/** The original to open or download, or the small preview a tile shows (#690). */
+function receiptHref(
+	reportId: string,
+	receiptId: string,
+	purpose: keyof typeof RECEIPT_QUERY = "open",
+) {
+	return `/api/travel-expenses/reports/${encodeURIComponent(reportId)}/receipts/${encodeURIComponent(receiptId)}${RECEIPT_QUERY[purpose]}`;
 }
 
 /**
@@ -52,7 +113,7 @@ export function ReceiptAttachments({
 	receipts,
 	onChanged,
 	onBusyChange,
-	maxFileSize,
+	maxFileSize = DEFAULT_MAX_RECEIPT_SIZE,
 }: {
 	reportId: string;
 	itemId: string;
@@ -77,7 +138,7 @@ export function ReceiptAttachments({
 			void onChanged();
 		},
 		onError: (uploadError) => {
-			setError(uploadError.message);
+			setError(uploadFailureMessage(t, uploadError, maxFileSize));
 		},
 	});
 	useEffect(() => {
@@ -91,6 +152,15 @@ export function ReceiptAttachments({
 		// Allows choosing the same file again after a failure.
 		event.target.value = "";
 		if (!file) return;
+		// Checked here too, so the uploader's own English restriction messages never show.
+		if (file.size > maxFileSize) {
+			setError(tooLargeMessage(t, maxFileSize));
+			return;
+		}
+		if (file.type && !isAllowedTravelExpenseMime(file.type)) {
+			setError(unsupportedTypeMessage(t));
+			return;
+		}
 		setError(null);
 		upload.addFile(file);
 	}
@@ -203,7 +273,7 @@ export function ReceiptAttachments({
 				<ul className="grid gap-3 sm:grid-cols-2">
 					{receipts.map((receipt) => {
 						const href = receiptHref(reportId, receipt.id);
-						const isImage = receipt.mimeType.startsWith("image/");
+						const isImage = isTravelExpenseImageMime(receipt.mimeType);
 						return (
 							<li key={receipt.id} className="flex gap-3 rounded-lg border p-3">
 								<a
@@ -222,7 +292,7 @@ export function ReceiptAttachments({
 									{isImage ? (
 										// biome-ignore lint/performance/noImgElement: private, authenticated receipt preview
 										<img
-											src={href}
+											src={receiptHref(reportId, receipt.id, "thumb")}
 											alt=""
 											loading="lazy"
 											className="size-16 rounded-md object-cover"
@@ -238,7 +308,7 @@ export function ReceiptAttachments({
 									<div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
 										<a
 											className="rounded-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2"
-											href={receiptHref(reportId, receipt.id, true)}
+											href={receiptHref(reportId, receipt.id, "download")}
 											target="_blank"
 											rel="noopener noreferrer"
 											aria-label={t(

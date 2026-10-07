@@ -1,7 +1,6 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { useLocale } from "next-intl";
 import { TimezonePicker } from "@/components/settings/timezone-picker";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
@@ -15,7 +14,6 @@ import {
 import type { TripDetailsView } from "@/lib/travel-expenses/report-store";
 import { MAX_TRIP_PURPOSE_LENGTH, type TripDetailsDraft } from "@/lib/travel-expenses/trip-report";
 import { DraftSaveStatus } from "./draft-save-status";
-import { formatPlainDateRange } from "./format";
 import { TripProjectField } from "./project-picker";
 import { TripDestinationsField } from "./trip-destinations-field";
 import { fieldErrorMessage, type TripDetailsFieldName } from "./trip-details-form";
@@ -39,7 +37,6 @@ export function TripDetailsEditor({
 	project?: { initialProjectId: string | null; onSaved: (projectId: string | null) => void };
 }) {
 	const { t } = useTranslate();
-	const locale = useLocale();
 	const { saver, state, form, changed, resolveWithTheirs } = useTripDetailsDraft({
 		reportId,
 		details,
@@ -52,21 +49,9 @@ export function TripDetailsEditor({
 
 	return (
 		<section aria-labelledby={`${reportId}-trip`} className="space-y-4">
-			<div className="space-y-1">
-				<h2 id={`${reportId}-trip`} className="text-lg font-semibold">
-					{t("travelExpenses.report.trip.title", "Trip details")}
-				</h2>
-				<form.Subscribe selector={(formState) => formState.values}>
-					{(values) => {
-						const range = formatPlainDateRange(
-							locale,
-							values.startDate || null,
-							values.endDate || null,
-						);
-						return range ? <p className="text-sm text-muted-foreground">{range}</p> : null;
-					}}
-				</form.Subscribe>
-			</div>
+			<h2 id={`${reportId}-trip`} className="text-lg font-semibold">
+				{t("travelExpenses.report.trip.title", "Trip details")}
+			</h2>
 
 			<DraftSaveStatus
 				state={state}

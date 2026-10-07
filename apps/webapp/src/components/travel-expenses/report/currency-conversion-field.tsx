@@ -20,7 +20,12 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
-import { appliedConversion, type ItemConversion } from "@/lib/travel-expenses/currency-conversion";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
+import {
+	appliedConversion,
+	type ItemConversion,
+	parseCardChargeAmount,
+} from "@/lib/travel-expenses/currency-conversion";
 import { currencyMinorUnitDigits } from "@/lib/travel-expenses/money";
 import type { ReferenceRateItemStatus } from "@/lib/travel-expenses/reference-rate-conversion";
 import type { ReportReceiptView } from "@/lib/travel-expenses/report-store";
@@ -251,30 +256,24 @@ function CardChargeForm({
 	onChanged: () => void | Promise<void>;
 }) {
 	const { t } = useTranslate();
-	const [errors, setErrors] = useState<{ chargedAmount?: string; evidenceReceiptId?: string }>({});
 	const cardCharge = conversion?.basis === "card_charge" ? conversion : null;
 	const digits = currencyMinorUnitDigits(reimbursementCurrency);
+	const amountError = t(
+		"travelExpenses.report.conversion.errors.chargedAmount",
+		"Enter the positive amount charged in {currency}, with at most {digits} decimals.",
+		{ currency: reimbursementCurrency, digits },
+	);
+	const evidenceError = t(
+		"travelExpenses.report.conversion.errors.evidence",
+		"Select the attachment of this expense that shows the charge.",
+	);
 	const form = useForm({
 		defaultValues: {
 			chargedAmount: cardCharge?.chargedAmount ?? "",
 			evidenceReceiptId:
 				cardCharge?.evidenceReceiptId ?? (receipts.length === 1 ? (receipts[0]?.id ?? "") : ""),
 		},
-		onSubmit: async ({ value }) => {
-			setErrors({});
-			const amountError = t(
-				"travelExpenses.report.conversion.errors.chargedAmount",
-				"Enter the positive amount charged in {currency}, with at most {digits} decimals.",
-				{ currency: reimbursementCurrency, digits },
-			);
-			const evidenceError = t(
-				"travelExpenses.report.conversion.errors.evidence",
-				"Select the attachment of this expense that shows the charge.",
-			);
-			if (!value.evidenceReceiptId) {
-				setErrors({ evidenceReceiptId: evidenceError });
-				return;
-			}
+		onSubmit: async ({ value, formApi }) => {
 			await version.flush();
 			const result = await saveCardChargeConversionAction({
 				reportId,
@@ -297,12 +296,21 @@ function CardChargeForm({
 					version.adopt(result.data.itemVersion);
 					toast.success(t("travelExpenses.report.conversion.saved", "Card charge saved"));
 					break;
-				case "invalid":
-					setErrors({
-						...(result.data.errors.chargedAmount ? { chargedAmount: amountError } : {}),
-						...(result.data.errors.evidenceReceiptId ? { evidenceReceiptId: evidenceError } : {}),
-					});
+				case "invalid": {
+					// The server's refusal stays on its field until that field changes.
+					const refused = [
+						["chargedAmount", result.data.errors.chargedAmount ? amountError : undefined],
+						["evidenceReceiptId", result.data.errors.evidenceReceiptId ? evidenceError : undefined],
+					] as const;
+					for (const [name, message] of refused) {
+						if (!message) continue;
+						formApi.setFieldMeta(name, (meta) => ({
+							...meta,
+							errorMap: { ...meta.errorMap, onSubmit: message },
+						}));
+					}
 					return;
+				}
 				case "conflict":
 					toast.error(
 						t(
@@ -334,15 +342,22 @@ function CardChargeForm({
 				void form.handleSubmit();
 			}}
 		>
-			<form.Field name="chargedAmount">
+			<form.Field
+				name="chargedAmount"
+				validators={{
+					// The server's rule for the charge, so the error clears once the amount is valid.
+					onChange: ({ value }) =>
+						parseCardChargeAmount(value, reimbursementCurrency) === null ? amountError : undefined,
+				}}
+			>
 				{(field) => (
 					<TFormItem>
-						<TFormLabel hasError={!!errors.chargedAmount}>
+						<TFormLabel hasError={fieldHasError(field)}>
 							{t("travelExpenses.report.conversion.chargedAmount", "Amount charged in {currency}", {
 								currency: reimbursementCurrency,
 							})}
 						</TFormLabel>
-						<TFormControl hasError={!!errors.chargedAmount}>
+						<TFormControl hasError={fieldHasError(field)}>
 							<Input
 								name="chargedAmount"
 								inputMode="decimal"
@@ -359,11 +374,14 @@ function CardChargeForm({
 								"The amount on your card or bank statement, including any conversion fee charged with it.",
 							)}
 						</TFormDescription>
-						<TFormMessage>{errors.chargedAmount}</TFormMessage>
+						<TFormMessage field={field} />
 					</TFormItem>
 				)}
 			</form.Field>
-			<form.Field name="evidenceReceiptId">
+			<form.Field
+				name="evidenceReceiptId"
+				validators={{ onChange: ({ value }) => (value ? undefined : evidenceError) }}
+			>
 				{(field) => (
 					<TFormItem>
 						<RadioGroup
@@ -377,7 +395,7 @@ function CardChargeForm({
 						>
 							<p
 								className="text-sm font-medium data-[error=true]:text-destructive"
-								data-error={!!errors.evidenceReceiptId}
+								data-error={fieldHasError(field)}
 							>
 								{t(
 									"travelExpenses.report.conversion.evidenceLabel",
@@ -400,7 +418,7 @@ function CardChargeForm({
 								))
 							)}
 						</RadioGroup>
-						<TFormMessage>{errors.evidenceReceiptId}</TFormMessage>
+						<TFormMessage field={field} />
 					</TFormItem>
 				)}
 			</form.Field>

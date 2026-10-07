@@ -1,17 +1,80 @@
 {
   "travelExpenses": {
     "actions": {
-      "newClaim": "Nowy wniosek"
+      "backToClaims": "Wróć do wniosków",
+      "download": "Pobierz",
+      "preview": "Podgląd",
+      "retry": "Ponów próbę",
+      "viewClaim": "Wyświetl wniosek"
+    },
+    "adjustment": {
+      "create": {
+        "action": "Popraw za pomocą korekty",
+        "confirm": "Utwórz korektę",
+        "description": "Otrzymujesz kopię zatwierdzonych wydatków do poprawienia. Jej przesłanie powoduje wysłanie całego poprawionego raportu do ponownego zatwierdzenia; rozliczana jest tylko różnica w stosunku do zatwierdzonej kwoty.",
+        "failed": "Nie udało się utworzyć korekty. Spróbuj ponownie.",
+        "ineligible": "Ten raport nie może już być skorygowany. Odśwież stronę, aby zobaczyć jego aktualny stan.",
+        "reason": "Powód korekty",
+        "reasonRequired": "Wyjaśnij, co wymaga poprawy.",
+        "reasonTooLong": "Powód nie może przekraczać {max} znaków.",
+        "title": "Utworzyć powiązaną korektę?"
+      },
+      "ineligible": {
+        "adjustment": "Korektę poprawia się poprzez raport, którego ona dotyczy."
+      },
+      "notice": {
+        "baseline": "Zatwierdzona kwota podlegająca korekcie",
+        "delta": "Różnica ze znakiem",
+        "editing": "Popraw poniższe wydatki. Po przesłaniu różnica w stosunku do zatwierdzonej kwoty zostanie wyświetlona do wglądu, a następnie ponownie zweryfikowana. Pierwotny raport i jego płatności pozostają bez zmian.",
+        "original": "Otwórz pierwotny raport",
+        "title": "Korekta zatwierdzonego raportu"
+      },
+      "panel": {
+        "applied": "Zastosowano",
+        "description": "Ten raport został już wyeksportowany lub zwrócony, dlatego pozostaje w stanie zatwierdzonym. Korekta jest powiązanym dostosowaniem: podlega ponownej weryfikacji i po zatwierdzeniu zmienia zatwierdzoną kwotę o wartość różnicy ze znakiem.",
+        "effective": "Zatwierdzona kwota z uwzględnieniem korekt: {amount}",
+        "open": "Otwórz korektę",
+        "title": "Korekty"
+      },
+      "preview": {
+        "currency": "Skorygowana suma nie jest w walucie pierwotnego raportu, dlatego nie można jej przesłać jako korekty.",
+        "delta": "Ta korekta zmienia zatwierdzoną kwotę {baseline} o {delta}.",
+        "review": "Wymaga ponownego zatwierdzenia całego raportu, również wtedy, gdy kwota ulega zmniejszeniu."
+      },
+      "reviewerHint": "Pracownik tworzy korektę na podstawie tego raportu; wraca ona do Ciebie do ponownej weryfikacji wraz z różnicą ze znakiem."
+    },
+    "allowanceOverride": {
+      "amount": "Kwota",
+      "authorizedBy": "Autoryzowane przez",
+      "authorizedByValue": "{name}, {date}",
+      "basis": "Kalkulacja",
+      "evidence": "Dowód",
+      "noOrdinary": "Brak standardowego wyliczenia dla tych okoliczności.",
+      "ordinary": "Zgodnie z polityką kwota wynosiłaby {amount}.",
+      "reason": "Powód",
+      "situation": {
+        "calculated": "Wyliczone zgodnie z polityką",
+        "fallback": "Wyliczone według oficjalnej stawki rezerwowej",
+        "missingCoverage": "Żadna polityka organizacji tego nie obejmuje",
+        "missingFacts": "Brak wymaganych danych dotyczących podróży",
+        "unsupported": "Nieobjęte obsługiwanymi regułami kalkulacji"
+      },
+      "situationLabel": "Dlaczego nie wyliczono",
+      "situationResolved": "Ta ręcznie ustalona dieta już nie obowiązuje: powód jej autoryzacji uległ zmianie (na przykład polityka obejmuje teraz te okoliczności). Obowiązuje wyliczona dieta, o ile istnieje; w przeciwnym razie administrator wydatków musi dokonać weryfikacji.",
+      "stale": "Ta ręcznie ustalona dieta została autoryzowana dla innych okoliczności i już nie obowiązuje. Administrator wydatków musi zweryfikować zmienione okoliczności.",
+      "title": "Dieta ustalona ręcznie przez administratora wydatków"
     },
     "approvals": {
       "description": "Otwórz ujednoliconą skrzynkę odbiorczą zatwierdzeń przefiltrowaną pod kątem wydatków podróży.",
-      "openInbox": "Otwórz skrzynkę odbiorczą",
-      "title": "Przejrzyj oczekujące zatwierdzenia wydatków podróży"
+      "entry": {
+        "open": "Otwórz skrzynkę odbiorczą",
+        "title": "Przejrzyj oczekujące zatwierdzenia kosztów podróży"
+      }
     },
-    "claimTypes": {
-      "mileage": "Przebieg",
-      "per_diem": "Dieta",
-      "receipt": "Rachunek"
+    "currency": {
+      "empty": "Nie znaleziono waluty",
+      "placeholder": "Wybierz walutę",
+      "search": "Szukaj walut"
     },
     "decision": {
       "approve": "Zatwierdź",
@@ -33,41 +96,180 @@
       "rejected": "Wniosek został pomyślnie odrzucony",
       "rejectTitle": "Odrzuć wniosek"
     },
-    "description": "Twórz i śledź swoje wnioski o zwrot kosztów podróży",
+    "detail": {
+      "created": "Utworzono",
+      "decisionRecorded": "Zarejestrowano decyzję",
+      "destination": "Miejsce docelowe",
+      "history": "Historia decyzji",
+      "intermediateApproval": "Zarejestrowano zatwierdzenie — oczekiwanie na dalsze zatwierdzenie",
+      "legacyReceiptIdentity": "Archiwalny rachunek: suma kontrolna zawartości nie została zarejestrowana.",
+      "loading": "Wczytywanie wniosku…",
+      "noReceipts": "Brak zarejestrowanych rachunków",
+      "notRecorded": "Nie zarejestrowano",
+      "originalAmount": "Kwota pierwotna",
+      "receipts": "Rachunki",
+      "refreshing": "Odświeżanie wniosku…",
+      "submitted": "Złożono",
+      "title": "Wniosek o zwrot kosztów podróży",
+      "unknownDates": "Kontekst daty podróży nie został zarejestrowany (archiwalny wniosek)"
+    },
     "errors": {
-      "loadClaims": "Nie udało się załadować wniosków o zwrot kosztów podróży"
+      "loadDetailRetry": "Nie udało się wczytać tego wniosku. Ponów próbę."
     },
     "feature": "zarządzaj wydatkami podróży",
-    "form": {
-      "amount": "Kwota",
-      "claimType": "Typ wniosku",
-      "created": "Utworzono szkic wydatków podróży",
-      "createDraft": "Utwórz szkic",
-      "currency": "Waluta",
-      "currencyDescription": "Kod ISO 4217, np. EUR lub USD",
-      "currencyPlaceholder": "EUR",
-      "description": "Utwórz nowy szkic wniosku dla swoich ostatnich wydatków podróży.",
-      "destinationCity": "Miasto docelowe",
-      "destinationCityPlaceholder": "Berlin",
-      "destinationCountry": "Kraj docelowy",
-      "destinationCountryPlaceholder": "Niemcy",
-      "errors": {
-        "createDraft": "Nie udało się utworzyć szkicu wydatków podróży",
-        "positiveAmount": "Kwota musi być liczbą dodatnią",
-        "tripEndBeforeStart": "Data zakończenia podróży nie może być wcześniejsza niż data rozpoczęcia",
-        "validTripDates": "Proszę podać prawidłową datę rozpoczęcia i zakończenia podróży",
-        "validTripEnd": "Proszę podać prawidłową datę zakończenia podróży",
-        "validTripStart": "Proszę podać prawidłową datę rozpoczęcia podróży"
+    "finance": {
+      "approvedOn": "Zatwierdzono {date}",
+      "back": "Powrót do finansów wydatków",
+      "companyPaid": "Opłacone przez firmę {amount}",
+      "description": "Zatwierdzone wydatki i kwoty nadal należne pracownikom. Zarejestrowanie zwrotu kosztów dokumentuje płatność dokonaną poza Z8; żadne środki nie są przekazywane.",
+      "employeePaid": "Opłacone przez pracownika {amount}",
+      "empty": {
+        "any": "Brak zatwierdzonych wydatków.",
+        "open": "Brak pozycji do rozliczenia: wszystkie zatwierdzone wydatki zostały rozliczone."
       },
-      "notes": "Notatki",
-      "notesPlaceholder": "Dodaj opcjonalny kontekst dla osoby zatwierdzającej",
-      "receiptAttachmentHint": "Wnioski oparte na rachunkach wymagają co najmniej jednego załącznika. Przesyłanie załączników będzie możliwe po utworzeniu szkicu.",
-      "selectClaimType": "Wybierz typ wniosku",
-      "title": "Utwórz wniosek o zwrot kosztów podróży",
-      "tripEnd": "Koniec podróży",
-      "tripStart": "Początek podróży"
+      "entry": {
+        "description": "Przeglądaj zatwierdzone wydatki, nierozliczone salda i zarejestrowane zwroty kosztów.",
+        "open": "Otwórz kolejkę finansową",
+        "title": "Finanse wydatków"
+      },
+      "errors": {
+        "load": "Nie można załadować kolejki finansowej. Spróbuj ponownie."
+      },
+      "exports": {
+        "adjustment": "Korekta: {name}",
+        "cancel": "Anuluj",
+        "cancelledByFinance": "Anulowano przez dział finansowy.",
+        "cancelledReopenedHint": "Anulowano, ponieważ zawarty w nim raport został ponownie otwarty do poprawki. Wszelkie inne raporty w nim zawarte są gotowe do ponownego wyeksportowania: utwórz dla nich nowy eksport.",
+        "counts": "{reports} raportów · {items} wydatków · {receipts} rachunków",
+        "created": "Eksport dodany do kolejki. Pojawi się poniżej, gdy będzie gotowy.",
+        "description": "Eksportuj zatwierdzone wydatki jako plik CSV wraz z rachunkami na potrzeby księgowości. Każde zatwierdzone zgłoszenie jest eksportowane raz; w razie potrzeby możesz pobrać eksport ponownie w dowolnym momencie.",
+        "download": "Pobierz",
+        "empty": "Brak zatwierdzonych wydatków oczekujących na eksport.",
+        "errors": {
+          "alreadyExported": "Niektóre wybrane wydatki są już częścią innego eksportu. Zamiast tego pobierz tamten eksport.",
+          "cancel": "Nie udało się anulować eksportu.",
+          "conflict": "Wcześniejsza próba z innym wyborem została już zarejestrowana. Sprawdź historię eksportu.",
+          "failed": "Nie udało się utworzyć eksportu. Spróbuj ponownie.",
+          "invalid": "Wybierz od jednego do maksymalnej dozwolonej liczby wydatków.",
+          "load": "Nie można załadować eksportów. Spróbuj ponownie.",
+          "retry": "Nie udało się ponowić próby eksportu.",
+          "stale": "Niektóre wybrane wydatki nie są już zatwierdzone, jak wyświetlano wcześniej. Lista została odświeżona; sprawdź zaznaczenie i wyeksportuj ponownie."
+        },
+        "failure": {
+          "enqueue": "Nie udało się dodać eksportu do kolejki. Spróbuj ponownie.",
+          "inconsistent": "Zatwierdzone dane nie mogły zostać spójnie wyeksportowane. Skontaktuj się z pomocą techniczną.",
+          "receiptMismatch": "Zapisany rachunek nie zgadza się ze swoją zarejestrowaną sumą kontrolną. Skontaktuj się z pomocą techniczną przed ponowną próbą.",
+          "receiptUnavailable": "Nie udało się odczytać pliku rachunku. Spróbuj ponownie, gdy magazyn danych będzie dostępny.",
+          "storage": "Nie udało się zapisać pliku eksportu. Spróbuj ponownie.",
+          "unknown": "Eksport nie powiódł się. Spróbuj ponownie."
+        },
+        "form": {
+          "label": "Utwórz eksport",
+          "selectAll": "Zaznacz wszystko",
+          "submit": "Utwórz eksport ({count})"
+        },
+        "history": "Historia eksportu",
+        "loading": "Wczytywanie eksportów…",
+        "notPayment": "To nie jest płatność: wyeksportowanie nie oznacza żadnych pozycji jako zwróconych.",
+        "requested": "Zgłoszono {date} przez: {name}",
+        "retry": "Ponów próbę",
+        "status": {
+          "cancelled": "Anulowano",
+          "completed": "Zakończono",
+          "failed": "Nie powiodło się",
+          "processing": "Przetwarzanie",
+          "queued": "W kolejce"
+        },
+        "title": "Eksporty"
+      },
+      "filter": {
+        "all": "Wszystkie zatwierdzone",
+        "label": "Pokaż wydatki",
+        "open": "Otwarte",
+        "settled": "Rozliczone"
+      },
+      "legacyClaim": "Archiwalny wniosek: {type}",
+      "loading": "Wczytywanie kolejki finansowej…",
+      "title": "Finanse wydatków",
+      "truncated": "Wyświetlanie {count} ostatnio zatwierdzonych wydatków. Starsze pasujące wydatki nie są widoczne na liście."
+    },
+    "form": {
+      "currency": "Waluta",
+      "notes": "Notatki"
+    },
+    "history": {
+      "adjustment": "Korekta",
+      "adjustmentOf": "Korekta „{title}”",
+      "adjustmentOfUntitled": "Korekta wcześniejszego raportu",
+      "claimed": "Zgłoszone",
+      "companyPaid": "Opłacone przez firmę {amount}",
+      "continuedFrom": "Kontynuacja wcześniejszego wniosku",
+      "deleteDraft": "Usuń wersję roboczą „{title}”",
+      "emptyDescription": "Rozpocznij podróż, aby zebrać kilka wydatków ze wspólnymi szczegółami podróży, lub dodaj pojedynczy rachunek bądź wydatek za kilometrówkę. Wersje robocze zapisują się automatycznie, więc możesz dokończyć je później.",
+      "emptyFilter": "Brak wydatków o tym statusie.",
+      "emptyTitle": "Brak wydatków na podróż",
+      "errors": {
+        "load": "Nie można załadować Twoich wydatków na podróż. Spróbuj ponownie.",
+        "refresh": "Nie udało się odświeżyć Twoich wydatków; poniższa lista może być nieaktualna. Spróbuj ponownie."
+      },
+      "filter": {
+        "all": "Wszystkie",
+        "approved": "Zatwierdzone",
+        "inReview": "W trakcie weryfikacji",
+        "label": "Pokaż wydatki",
+        "needsAction": "Do dokończenia",
+        "rejected": "Odrzucone"
+      },
+      "legacy": {
+        "badge": "Wcześniejszy wniosek",
+        "mileage": "Wniosek o kilometrówkę",
+        "perDiem": "Wniosek o dietę",
+        "receipt": "Wniosek na podstawie rachunku"
+      },
+      "loading": "Wczytywanie Twoich wydatków na podróż…",
+      "notCounted": "{count, plural, one {# wydatek jeszcze niepodliczony} other {# wydatków jeszcze niepodliczonych}}",
+      "refreshing": "Odświeżanie…",
+      "reimbursable": "Do zwrotu dla Ciebie",
+      "showAll": "Pokaż wszystkie wydatki",
+      "title": "Twoje wydatki",
+      "untitledMileage": "Przebieg bez nazwy"
+    },
+    "legacyDraft": {
+      "continue": "Kontynuuj jako raport",
+      "converted": "Kontynuowano tę wersję roboczą jako raport wydatków. To zgłoszenie pozostaje tutaj bez zmian do wglądu.",
+      "description": "Wersje robocze z wcześniejszego formularza zgłoszenia są teraz finalizowane jako raporty wydatków. Kwota, daty, notatki i rachunki zostały przeniesione; wszelkie informacje wymagane przez nowy formularz, których ta wersja robocza nie zawierała, należy uzupełnić samodzielnie. Samo zgłoszenie pozostaje bez zmian.",
+      "failed": "Nie można kontynuować wersji roboczej. Spróbuj ponownie.",
+      "flags": {
+        "amount": "Wprowadzona kwota {amount} nie jest prawidłową kwotą rachunku. Wprowadź kwotę i walutę z rachunku.",
+        "conversion": "Rachunek jest w walucie obcej. W wersji roboczej nie zarejestrowano przewalutowania, więc przed przesłaniem wskaż, jak zostało wykonane (obciążenie karty lub kurs wymiany).",
+        "destination": "Nie udało się dopasować miejsca docelowego „{destination}” do kraju. Wybierz go.",
+        "expenseDate": "Wersja robocza obejmowała {range}. Wybierz dzień tego wydatku.",
+        "manualTotal": "Wersja robocza zawierała wpisaną łączną kwotę {amount}. Nie jest ona używana: ten wydatek jest teraz obliczany na podstawie danych wprowadzonych poniżej.",
+        "notes": "Poniżej wyświetlane są Twoje notatki; skopiuj to, co nadal ma zastosowanie.",
+        "project": "Projekt z wersji roboczej został zachowany. Jeśli Twoje przypisanie w dniu wydatku nie jest zarejestrowane, administrator wydatków musi je autoryzować przed przesłaniem.",
+        "projectMissing": "Projekt z wersji roboczej już nie istnieje. Wybierz projekt, jeśli dotyczy.",
+        "tripDates": "Wersja robocza została utworzona przed zarejestrowaniem dat podróży. Wprowadź daty."
+      },
+      "loadFailed": "Nie można sprawdzić tej wersji roboczej. Spróbuj ponownie.",
+      "notDraft": "To zgłoszenie zostało już przesłane. Zachowuje ono pierwotne zatwierdzenie i nie może być kontynuowane jako raport.",
+      "notice": {
+        "description": "Wprowadzone dane zostały przeniesione tam, gdzie ten formularz pozwala na ich dokładne zachowanie, w tym {count} rachunków. Przed przesłaniem uzupełnij pozostałe pola.",
+        "original": "Wyświetl pierwotną wersję roboczą",
+        "title": "Kontynuacja z wcześniejszej wersji roboczej zgłoszenia"
+      },
+      "openReport": "Otwórz raport",
+      "receipt": {
+        "mismatch": "zapisany plik nie jest już zgodny z przesłanym",
+        "unreadable": "zapisany plik nie może być teraz odczytany",
+        "unsupportedStorage": "plik jest przechowywany w nieobsługiwanym magazynie",
+        "unsupportedType": "zapisany plik nie jest obsługiwanym typem rachunku"
+      },
+      "receiptUnavailable": "Nic nie zostało zmienione, ponieważ nie można było bezpiecznie przenieść rachunku: {receipts}. Spróbuj ponownie później lub poproś administratora o przywrócenie pliku.",
+      "status": "Kontynuowano jako raport",
+      "title": "Kontynuuj ten szkic"
     },
     "list": {
+      "actions": "Działania",
       "amount": "Kwota",
       "dateRange": "Zakres dat",
       "emptyDescription": "Utwórz swoje pierwsze roszczenie, aby rozpocząć proces zatwierdzania.",
@@ -75,6 +277,729 @@
       "status": "Status",
       "type": "Typ"
     },
-    "title": "Wydatki podróży"
+    "perDiemPlaces": {
+      "AU": {
+        "canberra": "Canberra",
+        "sydney": "Sydney"
+      },
+      "BR": {
+        "brasilia": "Brasília",
+        "rio-de-janeiro": "Rio de Janeiro",
+        "sao-paulo": "São Paulo"
+      },
+      "CA": {
+        "ottawa": "Ottawa",
+        "toronto": "Toronto",
+        "vancouver": "Vancouver"
+      },
+      "CH": {
+        "bern": "Berno",
+        "genf": "Genewa"
+      },
+      "CN": {
+        "hongkong": "Hongkong",
+        "peking": "Pekin",
+        "shanghai": "Szanghaj"
+      },
+      "ES": {
+        "barcelona": "Barcelona",
+        "kanarische-inseln": "Wyspy Kanaryjskie",
+        "madrid": "Madryt",
+        "palma-de-mallorca": "Palma de Mallorca"
+      },
+      "FR": {
+        "paris": "Paryż i departamenty 77, 78, 91–95"
+      },
+      "GB": {
+        "london": "Londyn"
+      },
+      "GR": {
+        "athen": "Ateny"
+      },
+      "IN": {
+        "bangalore": "Bengaluru",
+        "chennai": "Ćennaj",
+        "kalkutta": "Kalkuta",
+        "mumbai": "Mumbaj",
+        "neu-delhi": "Nowe Delhi"
+      },
+      "IT": {
+        "mailand": "Mediolan",
+        "rom": "Rzym"
+      },
+      "JP": {
+        "osaka": "Osaka",
+        "tokio": "Tokio"
+      },
+      "PL": {
+        "breslau": "Wrocław",
+        "warschau": "Warszawa"
+      },
+      "RU": {
+        "moskau": "Moskwa",
+        "st-petersburg": "Sankt Petersburg"
+      },
+      "SA": {
+        "djidda": "Dżudda",
+        "riad": "Rijad"
+      },
+      "TR": {
+        "ankara": "Ankara",
+        "izmir": "Izmir"
+      },
+      "US": {
+        "atlanta": "Atlanta",
+        "boston": "Boston",
+        "chicago": "Chicago",
+        "houston": "Houston",
+        "los-angeles": "Los Angeles",
+        "miami": "Miami",
+        "new-york-city": "Nowy Jork",
+        "san-francisco": "San Francisco",
+        "washington-dc": "Waszyngton, D.C."
+      },
+      "ZA": {
+        "johannesburg": "Johannesburg",
+        "kapstadt": "Kapsztad"
+      }
+    },
+    "report": {
+      "actions": {
+        "newMileage": "Nowa kilometrówka",
+        "newReceipt": "Nowy rachunek",
+        "newTrip": "Nowa podróż"
+      },
+      "approvedBy": "Zatwierdzono przez {name} w dniu {date}.",
+      "awaitingReview": "Oczekuje na weryfikację.",
+      "awaitingReviewer": "Oczekuje na weryfikację przez {name}.",
+      "backToApprovals": "Powrót do zatwierdzeń",
+      "backToCurrent": "Powrót do bieżącego raportu",
+      "backToTravelExpenses": "Powrót do kosztów podróży",
+      "categories": {
+        "accommodation": "Zakwaterowanie",
+        "meals": "Posiłki",
+        "other": "Inne",
+        "parking": "Parking",
+        "transport": "Transport"
+      },
+      "conversion": {
+        "attachFirst": "Najpierw załącz wyciąg z karty lub rachunek potwierdzający powyższe obciążenie.",
+        "authorizedBy": "Autoryzowano przez",
+        "basis": {
+          "cardCharge": "Obciążenie karty",
+          "manualRate": "Autoryzowany kurs",
+          "referenceRate": "Kurs referencyjny EBC"
+        },
+        "chargedAmount": "Kwota obciążenia w {currency}",
+        "chargedAmountDescription": "Kwota na wyciągu z karty lub konta bankowego, w tym wszelkie opłaty za przewalutowanie.",
+        "conflict": "Ten wydatek został zmieniony w innym miejscu. Sprawdź go i zapisz obciążenie karty ponownie.",
+        "errors": {
+          "chargedAmount": "Wprowadź dodatnią kwotę obciążenia w {currency}, maksymalnie z {digits} miejscami po przecinku.",
+          "evidence": "Wybierz załącznik do tego wydatku, który przedstawia obciążenie."
+        },
+        "evidence": "Potwierdzenie:",
+        "evidenceLabel": "Załącznik przedstawiający obciążenie",
+        "evidenceMissing": "Brakuje załącznika przedstawiającego obciążenie karty.",
+        "formLabel": "Obciążenie karty",
+        "none": "Kurs wymiany nie jest szacowany. Wprowadź kwotę obciążenia karty w {currency} i wybierz załącznik, który ją potwierdza, np. wyciąg z karty. W przypadku braku obciążenia karty administrator wydatków może zarejestrować udokumentowany kurs.",
+        "notSaved": "Nie udało się zapisać obciążenia karty dla tego wydatku.",
+        "publicationDate": "Opublikowano",
+        "publicationFallback": "W dniu {expenseDate} nie opublikowano żadnego kursu, dlatego obowiązuje ostatnia wcześniejsza publikacja.",
+        "rate": "Kurs",
+        "rateDate": "Data kursu",
+        "rateEvidence": "Potwierdzenie kursu",
+        "rateValue": "1 {base} = {value} {quote}",
+        "reason": "Dokumentacja",
+        "reference": {
+          "alternatives": "Twój raport pozostanie wersją roboczą, dopóki nie wprowadzisz obciążenia karty w {reimbursementCurrency} wraz z potwierdzającym je załącznikiem lub dopóki administrator wydatków nie zarejestruje udokumentowanego kursu.",
+          "currencyUnavailable": "Europejski Bank Centralny nie publikuje kursu dla {currency} w tym dniu.",
+          "expenseDateMissing": "Wprowadź datę wydatku, aby wyszukać kurs referencyjny.",
+          "historyUnavailable": "Brak kursu referencyjnego dla tej daty.",
+          "notYetPublished": "Kurs referencyjny dla tej daty nie został jeszcze opublikowany. Zazwyczaj pojawia się w dni robocze po godzinie 16:00 czasu frankfurckiego.",
+          "pairUnsupported": "Europejski Bank Centralny publikuje kursy wyłącznie w odniesieniu do euro, dlatego żaden nie ma zastosowania między {currency} a {reimbursementCurrency}.",
+          "providerUnavailable": "Nie udało się jeszcze pobrać kursu referencyjnego dla tej daty. Spróbuj ponownie później.",
+          "rateStale": "Brak aktualnego kursu referencyjnego dla tej daty."
+        },
+        "referencePending": "Po zapisaniu zmian kurs referencyjny zostanie ponownie wyszukany dla nowej daty.",
+        "remove": "Usuń obciążenie karty",
+        "removeFailed": "Nie udało się usunąć obciążenia karty. Odśwież wydatek i spróbuj ponownie.",
+        "replaceWithCardCharge": "Użyj zamiast tego obciążenia mojej karty",
+        "result": "{original} liczy się jako {reimbursement}",
+        "rounding": "Zaokrąglenie",
+        "roundingValue": "Zaokrąglono w górę od połowy do {digits} miejsc po przecinku",
+        "saveCardCharge": "Zapisz obciążenie karty",
+        "saved": "Zapisano obciążenie karty",
+        "saveFailed": "Nie udało się zapisać obciążenia karty. Spróbuj ponownie.",
+        "source": "Źródło",
+        "sourceEcb": "Kurs referencyjny euro Europejskiego Banku Centralnego, zatwierdzony przez Twoją organizację",
+        "title": "Przeliczenie na {currency}"
+      },
+      "correctAndResubmit": "Popraw raport i prześlij go ponownie. Wcześniejsze zgłoszenia pozostaną w jego historii.",
+      "countryEmpty": "Nie znaleziono kraju",
+      "countrySearch": "Szukaj krajów",
+      "cycles": {
+        "approved": "zatwierdzone",
+        "entry": "Zgłoszenie {number} w dniu {date}: {outcome}",
+        "pending": "oczekujące na weryfikację",
+        "rejected": "odrzucone",
+        "reopened": "zatwierdzone, a następnie ponownie otwarte do poprawy",
+        "returned": "zwrócone do wprowadzenia zmian",
+        "title": "Zgłoszenia",
+        "withdrawn": "wycofane"
+      },
+      "decideInInbox": "Zatwierdź, zwróć lub odrzuć cały raport w skrzynce zatwierdzeń.",
+      "delete": {
+        "action": "Usuń wersję roboczą",
+        "description": "Wersja robocza, jej wydatki oraz ich rachunki zostaną usunięte. Tej operacji nie można cofnąć.",
+        "descriptionLegacy": "Wersja robocza, jej wydatki oraz ich rachunki zostaną usunięte wraz z wcześniejszą wersją roboczą wniosku, którą kontynuuje. Tej operacji nie można cofnąć.",
+        "done": "Usunięto wersję roboczą.",
+        "failed": "Nie udało się usunąć wersji roboczej. Spróbuj ponownie.",
+        "notDeletable": "Ten raport został już przesłany, więc nie można go już usunąć.",
+        "title": "Usunąć tę wersję roboczą?"
+      },
+      "drafts": {
+        "expenses": "{count, plural, one {# wydatek} few {# wydatki} other {# wydatków} }",
+        "noDate": "Brak daty",
+        "noTravelDates": "Brak dat podróży",
+        "receipts": "{count, plural, one {# rachunek} few {# rachunki} other {# rachunków} }",
+        "untitled": "Rachunek bez tytułu",
+        "untitledTrip": "Podróż bez tytułu"
+      },
+      "earlierSubmission": "To jest wcześniejsza wersja raportu, zachowana dokładnie w takiej postaci, w jakiej została przesłana.",
+      "errors": {
+        "amount": "Wprowadź dodatnią kwotę z maksymalnie dwoma miejscami po przecinku, np. 12,50.",
+        "category": "Wybierz kategorię z listy.",
+        "create": "Nie udało się utworzyć wydatku. Spróbuj ponownie.",
+        "currency": "Wprowadź trzyliterowy kod waluty, np. EUR.",
+        "expenseDate": "Wprowadź prawidłową datę.",
+        "load": "Nie udało się załadować tego wydatku. Spróbuj ponownie.",
+        "loadSubmission": "Nie udało się załadować przesłanego raportu. Spróbuj ponownie.",
+        "paidBy": "Wybierz osobę płacącą.",
+        "tooLong": "Ten tekst jest za długi."
+      },
+      "fields": {
+        "accountingReference": "Numer referencyjny księgowości (opcjonalnie)",
+        "accountingReferenceDescription": "Numer referencyjny wymagany przez dział finansowy, np. numer zamówienia.",
+        "amount": "Kwota na rachunku",
+        "category": "Kategoria",
+        "categoryPlaceholder": "Wybierz kategorię",
+        "description": "Opis",
+        "descriptionPlaceholder": "np. Bilet na pociąg Berlin–Hamburg na warsztaty z klientem",
+        "expenseDate": "Data rachunku",
+        "paidBy": "Kto zapłacił?"
+      },
+      "frozenNotice": "Przesłany raport nie może być już edytowany.",
+      "history": {
+        "approvalRecorded": "Zatwierdzenie zarejestrowane przez {name}; oczekiwanie na dalsze zatwierdzenie",
+        "approved": "Zatwierdzone przez {name}",
+        "cycle": "Zgłoszenie {number}:",
+        "rejected": "Odrzucone przez {name}",
+        "reopened": "Ponownie otwarte do poprawy przez: {name}",
+        "returned": "Zwrócone do wprowadzenia zmian przez: {name}",
+        "selfApproved": "Zatwierdzono automatycznie: brak innego weryfikatora",
+        "submitted": "Przesłane przez: {name}",
+        "title": "Historia",
+        "withdrawn": "Wycofane przez: {name}"
+      },
+      "items": {
+        "add": "Dodaj wydatek na podstawie rachunku",
+        "addFailed": "Nie udało się dodać wydatku. Spróbuj ponownie.",
+        "empty": "Dodaj każdy rachunek z tej podróży jako osobny wydatek. Powyższe szczegóły podróży mają zastosowanie do wszystkich z nich.",
+        "numbered": "{type} {number}",
+        "remove": "Usuń",
+        "removeConfirm": "Usuń wydatek",
+        "removeConflict": "Ten wydatek został zmieniony w innym miejscu i nie został usunięty. Sprawdź go i spróbuj ponownie.",
+        "removed": "{type} (usunięto)",
+        "removeDescription": "Wydatek i załączone do niego rachunki zostaną usunięte z tej podróży. Tej operacji nie można cofnąć.",
+        "removeFailed": "Nie udało się usunąć wydatku. Spróbuj ponownie.",
+        "removeItem": "Usuń {item}",
+        "removeTitle": "Usunąć ten wydatek?",
+        "title": "Wydatki"
+      },
+      "kind": {
+        "standaloneMileage": "Samodzielna kilometrówka",
+        "trip": "Raport z podróży"
+      },
+      "loading": "Wczytywanie wydatku…",
+      "mileage": {
+        "add": "Dodaj przebieg",
+        "appliedPolicy": "Stawka ważna od {date} · {source}",
+        "calculation": "{distance} km × {rate} za km = {amount}",
+        "calculationTitle": "Obliczony przebieg",
+        "enterFacts": "Wprowadź datę, liczbę kilometrów i pojazd, aby zobaczyć kwotę.",
+        "errors": {
+          "distance": "Wprowadź liczbę przejechanych kilometrów jako liczbę dodatnią z maksymalnie dwoma miejscami po przecinku, np. 61,5.",
+          "vehicle": "Wybierz prowadzony pojazd."
+        },
+        "fields": {
+          "date": "Data przejazdu",
+          "distance": "Przejechane kilometry",
+          "route": "Trasa",
+          "routePlaceholder": "np. Biuro Berlin – klient Poczdam – powrót",
+          "vehicle": "Pojazd",
+          "vehicleDescription": "Twój własny pojazd. Samochody służbowe i transport publiczny to nie kilometrówka; zamiast tego dodaj rachunki."
+        },
+        "noRate": "Żadna stawka nie jest wymyślana: ten wydatek pozostaje w wersji roboczej, dopóki administrator wydatków nie doda stawki kilometrówki obejmującej tę datę.",
+        "noRateTitle": "Brak obowiązującej stawki kilometrówki",
+        "otherCurrency": "Stawka dla tej daty nie jest wyrażona w {currency}; kilometrówka nigdy nie jest przeliczana.",
+        "pending": "Obliczone według stawki Twojej organizacji po zapisaniu zmian.",
+        "requirements": {
+          "currency": "Stawka kilometrówki dla tej daty jest w walucie {policyCurrency}, ale ten raport jest rozliczany w {currency}. Poproś administratora wydatków o dodanie stawki w {currency}.",
+          "date": "Wprowadź datę przejazdu.",
+          "distance": "Wprowadź liczbę przejechanych kilometrów.",
+          "policyMissing": "Twoja organizacja nie ma stawki kilometrówki dla pojazdu {vehicle} na dzień {date}. Poproś administratora wydatków o dodanie stawki z datą w ustawieniach kosztów podróży. Do tego czasu nic nie zostanie naliczone.",
+          "route": "Opisz trasę.",
+          "vehicle": "Wybierz pojazd."
+        },
+        "rounded": "(dokładnie {exact}, zaokrąglone do centa)",
+        "sourceOrganization": "Polityka organizacji: {reference}",
+        "sourceOrganizationUnnamed": "Polityka organizacji",
+        "sourceStatutory": "Niemiecka ustawowa stawka ryczałtowa ({version})",
+        "standaloneTitle": "Kilometrówka",
+        "vehicles": {
+          "car": "Samochód",
+          "otherMotorVehicle": "Inny pojazd silnikowy (np. motocykl)"
+        }
+      },
+      "paidBy": {
+        "company": "Opłacone przez firmę (np. karta firmowa)",
+        "employee": "Opłacone przeze mnie (do zwrotu)"
+      },
+      "perDiem": {
+        "absenceDuration": "{hours}:{minutes} godz. w podróży",
+        "add": "Dodaj dietę",
+        "appliedPolicy": "Stawki obowiązują od {date} · {source}",
+        "basis": {
+          "absence24h": "Cały dzień w podróży (24 godziny)",
+          "claimedInOtherReport": "Już rozliczono w innym Twoim raporcie: przysługuje tylko jedna dieta dziennie",
+          "over8h": "Ponad 8 godzin w podróży",
+          "overnightMajority": "Większa część nieobecności nocnej",
+          "overnightMinority": "Uwzględniono w drugim dniu nieobecności nocnej",
+          "travelDay": "Dzień podróży w ramach wyjazdu z noclegiem",
+          "upTo8h": "8 godzin lub mniej w podróży: brak diety"
+        },
+        "breakdownCaption": "Dieta według dnia kalendarzowego",
+        "calculationTitle": "Naliczona dieta",
+        "columns": {
+          "amount": "Kwota",
+          "day": "Dzień",
+          "eligibility": "Uprawnienie",
+          "meals": "Zapewnione posiłki",
+          "rate": "Dieta"
+        },
+        "deductionNote": "Zapewnione posiłki pomniejszają dzienną dietę, jednak nigdy poniżej zera; kwota zapłacona za posiłek zmniejsza to potrącenie.",
+        "departure": "Wyjazd",
+        "enterFacts": "Wprowadź wyjazd, powrót i posiłki, aby zobaczyć dzienne diety.",
+        "errors": {
+          "clockChange": "Ta godzina nie występuje w tym dniu z powodu przestawienia zegarów do przodu. Wprowadź godzinę spoza pominiętego przedziału.",
+          "clockChangeRepeated": "Ta godzina występuje dwukrotnie w tym dniu z powodu cofnięcia zegarów. Wprowadź godzinę spoza powtórzonego przedziału.",
+          "endBeforeStart": "Powrót musi nastąpić po wyjeździe.",
+          "location": "Wybierz lokalizację z listy dla każdego dnia.",
+          "meals": "Sprawdź wprowadzone posiłki.",
+          "payment": "Wprowadź zapłaconą kwotę z maksymalnie dwoma miejscami po przecinku, np. 2.50.",
+          "time": "Wprowadź godzinę w formacie godzin i minut."
+        },
+        "exceptionalTitle": "Wymaga ręcznego obliczenia",
+        "exceptions": {
+          "destinationNotListed": "Dziennej lokalizacji nie obejmuje oficjalna tabela stawek zagranicznych ani jej reguły rezerwowe.",
+          "foreignTimeZone": "Godziny podróży nie są podane w niemieckim czasie lokalnym.",
+          "foreignWithoutOvernight": "Nocna aktywność za granicą bez noclegu nie jest obliczana automatycznie.",
+          "international": "Miejsce docelowe znajduje się poza granicami Niemiec. Diety zagraniczne nie są jeszcze obliczane.",
+          "majorityTie": "Nieobecność w nocy jest podzielona dokładnie po równo na oba dni.",
+          "mixedTimeZones": "Wyjazd i powrót odbywają się w różnych strefach czasowych.",
+          "multiDayWithoutOvernight": "Podróż trwa dłużej niż dwa dni kalendarzowe bez noclegu.",
+          "nightsAtHome": "Niektóre noce podczas podróży spędzono w domu.",
+          "overlappingDays": "W innym Twoim raporcie rozliczono już diety za niektóre z tych dni; dozwolona jest tylko jedna dieta na dzień, więc pomiń je w obliczeniach ręcznych.",
+          "prolongedWorkplace": "Dłuższy pobyt w tym samym miejscu pracy: diety są ograniczone do pierwszych trzech miesięcy.",
+          "rulesNotVerified": "Żadne zweryfikowane niemieckie przepisy nie obejmują jeszcze tych dat podróży.",
+          "specialLocation": "Dzień został oznaczony jako sytuacja szczególna (inna lub cały dzień w locie bądź na morzu w pierwszym albo ostatnim dniu podróży)."
+        },
+        "fields": {
+          "endDate": "Dzień powrotu",
+          "endTime": "Godzina powrotu do domu lub do pracy",
+          "meals": "Posiłki zapewnione przez pracodawcę",
+          "mealsDescription": "Zaznacz każdy posiłek zapewniony przez pracodawcę lub w jego imieniu przez hotel bądź gospodarza, nawet jeśli został pominięty. Wprowadź kwotę, którą za niego zapłacono (jeśli dotyczy).",
+          "mealsNeedDates": "Wprowadź daty wyjazdu i powrotu, aby wyświetlić listę dni podróży.",
+          "overnight": "Noclegi podczas podróży",
+          "payment": "Kwota zapłacona za {meal} w dniu {date}",
+          "paymentPlaceholder": "Zapłacona kwota (opcjonalnie)",
+          "prolongedWorkplace": "Pracuję w tym samym miejscu od ponad trzech miesięcy",
+          "prolongedWorkplaceDescription": "Diety przysługują tylko przez pierwsze trzy miesiące w tym samym miejscu pracy; takie podróże wymagają ręcznego obliczenia.",
+          "startDate": "Dzień wyjazdu",
+          "startTime": "Godzina wyjazdu z domu lub pracy",
+          "timeZone": "Strefa czasowa"
+        },
+        "foreignRates": "Stawki zagraniczne: {reference} ({version})",
+        "location": {
+          "activityToday": "Gdzie odbyła się Twoja ostatnia aktywność służbowa za granicą w tym dniu?",
+          "assigned": "Kwoty przypisane do tego kraju w oficjalnym obwieszczeniu",
+          "atSea": "Cały dzień na pokładzie statku (bez zaokrętowania i wyokrętowania)",
+          "choose": "Wybierz lokalizację",
+          "countryElsewhere": "{country} – pozostałe miejscowości",
+          "countryPlace": "{country} – {place}",
+          "elsewhere": "Gdzie indziej",
+          "fallbackFlight": "Oficjalna zasada: cały dzień w locie, stawki austriackie",
+          "fallbackLuxembourg": "Oficjalna reguła rezerwowa: brak na liście, stawki luksemburskie",
+          "fallbackMotherCountry": "Oficjalna reguła rezerwowa: terytorium zależne, stawki kraju macierzystego",
+          "fallbackShip": "Oficjalna zasada: cały dzień na morzu, stawki luksemburskie",
+          "germany": "Niemcy",
+          "inFlight": "Cały dzień w locie (między dniem wylotu a dniem lądowania)",
+          "lastActivityTrip": "Gdzie odbyła się Twoja ostatnia aktywność służbowa za granicą podczas tej podróży?",
+          "night": "Gdzie byłeś o północy? (ostatnie miejsce, do którego dotarłeś przed 24:00 czasu lokalnego; kraj uznaje się za osiągnięty po wylądowaniu samolotu)",
+          "noActivityAbroad": "Brak aktywności służbowej za granicą",
+          "other": "Coś innego (wymaga ręcznego obliczenia)",
+          "place": "Miejscowość w: {country}"
+        },
+        "meal": "{meal}: −{deduction}",
+        "mealPaid": "{meal}: −{deduction} (zapłacono {payment})",
+        "meals": {
+          "breakfast": "Śniadanie",
+          "dinner": "Kolacja",
+          "lunch": "Obiad"
+        },
+        "mealsCountToward": "Odliczono w dniu {date}",
+        "noRate": "Żadna stawka nie jest ustalana domyślnie: ten wydatek pozostanie w wersji roboczej, dopóki administrator wydatków nie doda stawek diet obejmujących te dni.",
+        "noRateTitle": "Nie obowiązuje żadna stawka diety",
+        "otherCurrency": "Stawki na te dni nie są podane w walucie {currency}; diety nigdy nie są przeliczane.",
+        "overnight": {
+          "away": "Każdą noc spędziłem(-am) poza domem",
+          "mixed": "Niektóre noce spędziłem(-am) w domu",
+          "none": "Pracowałem(-am) w nocy bez noclegu"
+        },
+        "pending": "Zostanie obliczone na podstawie stawek Twojej organizacji z danego okresu po zapisaniu zmian.",
+        "requirements": {
+          "currency": "Stawki diet na te dni są w walucie {policyCurrency}, ale ten raport jest rozliczany w walucie {currency}. Poproś administratora wydatków o dodanie stawek w walucie {currency}.",
+          "end": "Wprowadź czas powrotu do domu lub do miejsca pracy.",
+          "exceptional": "Ten plan podróży wymaga ręcznego naliczenia diety przez administratora wydatków. Nie jest obliczany automatycznie.",
+          "locations": "Podaj dla każdego dnia podróży, gdzie przebywałeś(-aś) o północy oraz gdzie odbyła się Twoja ostatnia aktywność służbowa za granicą.",
+          "meals": "Potwierdź zapewnione posiłki dla każdego dnia podróży.",
+          "notReturned": "Wracasz {date} o {time} ({timeZone}). Możesz przesłać raport po tym czasie.",
+          "overnight": "Określ, czy nocowałeś(-aś) poza domem.",
+          "policyMissing": "Twoja organizacja nie ma stawek diet dla: {dates}. Poproś administratora wydatków o dodanie stawek z określonymi datami w ustawieniach wydatków na podróż. Do tego czasu nic nie zostanie naliczone.",
+          "start": "Wprowadź czas wyjazdu z domu lub z miejsca pracy.",
+          "tripDates": "Dni wyjazdu i powrotu muszą być pierwszym i ostatnim dniem podróży."
+        },
+        "return": "Powrót",
+        "rulesApplied": "Zasady: {reference} ({version})",
+        "title": "Dieta",
+        "total": "Dieta"
+      },
+      "project": {
+        "exceptionBadge": "Wyjątek dotyczący przypisania",
+        "exceptionDates": "Obejmuje",
+        "exceptionEvidence": "Dowód",
+        "exceptionReason": "Powód",
+        "fromTrip": "(projekt podróży)",
+        "inheritNamed": "Taki sam jak dla podróży ({name})",
+        "inheritNone": "Taki sam jak dla podróży (brak projektu)",
+        "label": "Projekt (opcjonalnie)",
+        "loadFailed": "Nie udało się załadować projektów.",
+        "needsExpenseDate": "Wprowadź datę wydatku, aby wyświetlić projekty, których możesz użyć w tym dniu.",
+        "needsTripDates": "Wprowadź daty podróży, aby zobaczyć projekty dostępne dla tej podróży.",
+        "none": "Brak projektu",
+        "noneEligible": "W tym dniu nie przypisano Cię do żadnego projektu. Jeśli wtedy pracowano nad projektem, administrator wydatków może zezwolić na wyjątek przypisania.",
+        "notEligible": "Projekt {name} nie może być użyty w tym dniu: brak przypisania w tym terminie. Wybierz inny projekt lub poproś administratora wydatków o wyjątek przypisania.",
+        "refused": {
+          "conflict": "Ten wydatek został zmieniony w innym miejscu. Rozwiąż powyższy konflikt zapisu, a następnie wybierz projekt ponownie.",
+          "dateRequired": "Najpierw wprowadź datę: projekty są proponowane na podstawie daty wydatku.",
+          "failed": "Nie udało się zapisać projektu. Spróbuj ponownie.",
+          "ineligible": "Brak przypisania do tego projektu w tym dniu. Poproś administratora wydatków o wyjątek przypisania, jeśli praca była wykonywana w ramach tego projektu.",
+          "notFound": "Ten projekt jest niedostępny."
+        },
+        "saving": "Zapisywanie projektu…",
+        "tripDescription": "Wydatki korzystają z projektu podróży, chyba że wybierzesz dla nich inny. Każdy wydatek musi być objęty przypisaniem do projektu w dniu jego poniesienia.",
+        "tripLabel": "Projekt podróży (opcjonalnie)",
+        "unavailableOption": "{name} (niedostępny w tym dniu)",
+        "unavailableTripOption": "{name} (niedostępny w tych dniach)",
+        "viaException": "zatwierdzony wyjątek"
+      },
+      "receiptException": {
+        "badge": "Brak rachunku — wyjątek",
+        "disabled": "Twoja organizacja nie zezwala już na wyjątki z powodu braku rachunku. Dołącz rachunek lub usuń swoje wyjaśnienie.",
+        "notAllowed": "Twoja organizacja nie zezwala na wyjątki z powodu braku rachunku.",
+        "reason": "Dlaczego brakuje rachunku?",
+        "reasonDescription": "Osoba weryfikująca widzi to wyjaśnienie i musi je zaakceptować, aby zatwierdzić raport.",
+        "reasonLabel": "Dlaczego go brakuje:",
+        "reasonRequired": "Wyjaśnij, dlaczego brakuje rachunku.",
+        "receiptAttached": "Rachunek został załączony, więc Twoje wyjaśnienie braku rachunku nie zostało przesłane.",
+        "request": "Nie mogę dostarczyć rachunku i proszę o wyjątek",
+        "title": "Brak rachunku?",
+        "unsavedAfterClose": "Nie udało się zapisać Twojego wyjaśnienia braku rachunku. Otwórz wydatek ponownie, aby to sprawdzić.",
+        "withdraw": "Usuń wyjaśnienie"
+      },
+      "receipts": {
+        "chooseFile": "Wybierz plik",
+        "description": "Zrób zdjęcie lub załącz plik PDF albo obraz rachunku.",
+        "downloadNamed": "Pobierz {fileName}",
+        "errors": {
+          "locked": "Tego wydatku nie można już edytować.",
+          "retry": "Spróbuj ponownie.",
+          "tooLarge": "Plik jest zbyt duży. Załącz plik o rozmiarze maksymalnie {size} MB.",
+          "unsupportedType": "Załącz plik PDF lub obraz (JPEG, PNG, WebP, GIF, BMP lub TIFF)."
+        },
+        "none": "Nie załączono jeszcze żadnego rachunku.",
+        "previewNamed": "Podgląd {fileName}",
+        "progress": "Postęp przesyłania",
+        "remove": "Usuń",
+        "removeFailed": "Nie udało się usunąć rachunku.",
+        "removeNamed": "Usuń {fileName}",
+        "takePhoto": "Zrób zdjęcie",
+        "title": "Rachunek",
+        "uploadFailed": "Rachunek nie został załączony.",
+        "uploading": "Przesyłanie rachunku…",
+        "verifying": "Sprawdzanie rachunku…"
+      },
+      "rejectedBy": "Odrzucone przez {name}",
+      "reopen": {
+        "action": "Otwórz ponownie do poprawy",
+        "changed": "Raport zmienił się w międzyczasie i nie został ponownie otwarty. Przejrzyj go ponownie.",
+        "confirm": "Otwórz ponownie raport",
+        "description": "Pracownik może poprawić raport i musi przesłać go ponownie do ponownego zatwierdzenia. Do tego czasu raport nie podlega wypłacie ani eksportowi. Zatwierdzone zgłoszenie pozostaje w historii.",
+        "done": "Raport został ponownie otwarty do poprawy",
+        "exported": "Ten raport został już wyeksportowany do księgowości, dlatego nie można go ponownie otworzyć. Korekty wymagają powiązanej korekty.",
+        "failed": "Nie udało się ponownie otworzyć raportu. Być może uległ zmianie lub nie masz już do niego dostępu. Odśwież go i spróbuj ponownie.",
+        "reason": "Powód dla pracownika",
+        "reasonRequired": "Poinformuj pracownika, co należy poprawić.",
+        "reasonTooLong": "Powód nie może przekraczać {max} znaków.",
+        "reimbursed": "Dla tego raportu zarejestrowano już zwrot kosztów, dlatego nie można go ponownie otworzyć. Korekty wymagają powiązanej korekty.",
+        "reopenedBy": "Otwarto ponownie do poprawy przez: {name} w dniu {date}",
+        "title": "Otworzyć ponownie ten zatwierdzony raport?"
+      },
+      "requirements": {
+        "amount": "Wprowadź kwotę z rachunku.",
+        "category": "Wybierz kategorię.",
+        "complete": "Wszystkie dane tego wydatku zostały wprowadzone.",
+        "conversionEvidence": "Wybierz załącznik przedstawiający obciążenie karty.",
+        "conversionMissing": "Przelicz ten rachunek na walutę {currency}: wprowadź obciążenie karty wraz z potwierdzającym je załącznikiem lub poproś administratora wydatków o udokumentowany kurs.",
+        "conversionRateDate": "Data zatwierdzonego kursu nie jest już zgodna z datą wydatku. Wprowadź obciążenie karty lub poproś administratora wydatków o udokumentowanie kursu dla nowej daty.",
+        "conversionUnsupported": "Tego przeliczenia nie można zastosować dla waluty {currency}. Poproś administratora wydatków o jego sprawdzenie.",
+        "description": "Opisz wydatek.",
+        "expenseDate": "Dodaj datę z rachunku.",
+        "fixFields": "Najpierw popraw wyróżnione pola.",
+        "futureDate": "Ta data przypada w przyszłości. Popraw ją lub prześlij raport od {date}.",
+        "paidBy": "Określ, kto dokonał płatności: Ty czy firma.",
+        "receipt": "Dołącz rachunek.",
+        "receiptExceptionNotAllowed": "Dołącz rachunek. Twoja organizacja nie dopuszcza wyjątków dotyczących braku rachunku.",
+        "receiptExceptionReason": "Wyjaśnij powód braku rachunku.",
+        "title": "Nadal wymagane"
+      },
+      "returnedBy": "Zwrócono do poprawy przez {name} w dniu {date}",
+      "returnedItemNamed": "{item} ({description}):",
+      "returnedRemovedItem": "{item}, {description}:",
+      "save": {
+        "conflictDescription": "Element został zapisany w innym oknie lub na innym urządzeniu po jego otwarciu. Twoje ostatnie zmiany nie zostały jeszcze zapisane.",
+        "conflictTitle": "Ten wydatek został zmieniony w innym miejscu",
+        "failedDescription": "Twoje zmiany zostały zachowane na tej stronie. Sprawdź połączenie i spróbuj ponownie.",
+        "failedTitle": "Nie udało się zapisać zmian",
+        "invalid": "Popraw wyróżnione pola, aby je zapisać",
+        "keepMine": "Zapisz zamiast tego moje zmiany",
+        "pending": "Niezapisane zmiany",
+        "retry": "Spróbuj ponownie",
+        "saved": "Wszystkie zmiany zostały zapisane",
+        "saving": "Zapisywanie…",
+        "unsavedAfterClose": "Nie udało się zapisać Twoich ostatnich zmian w wydatku. Otwórz go ponownie, aby to sprawdzić.",
+        "useTheirs": "Wczytaj zapisaną wersję"
+      },
+      "selfApprovedOn": "Zatwierdzono automatycznie w dniu {date}: to raport właściciela organizacji i nikt inny nie mógł go zweryfikować.",
+      "standaloneTitle": "Samodzielny rachunek",
+      "status": {
+        "approved": "Zatwierdzono",
+        "rejected": "Odrzucono",
+        "returned": "Zwrócono do poprawy",
+        "submitted": "Oczekuje na weryfikację"
+      },
+      "submissionNumberAt": "Zgłoszenie {number}, przesłano {date}",
+      "submit": {
+        "adjustment": "Raport, którego dotyczy ta korekta, nie jest już zatwierdzony w tej walucie, dlatego nie można obliczyć różnicy ze znakiem. Korekta pozostaje zapisana jako wersja robocza.",
+        "adjustmentSuperseded": "Po rozpoczęciu tej korekty zatwierdzono inną korektę tego samego raportu, a ta kopia nie uwzględnia tamtej poprawki. Rozpocznij nową korektę na podstawie oryginalnego raportu, aby zachować obie poprawki.",
+        "adjustmentTitle": "Nie można przesłać tej korekty",
+        "blockedIncomplete": "Przed przesłaniem uzupełnij wszystkie pozycje z sekcji „Nadal wymagane”.",
+        "blockedUnsaved": "Poczekaj na zapisanie wszystkich zmian lub popraw wyróżnione pola przed przesłaniem.",
+        "cancel": "Kontynuuj edycję",
+        "changed": "Raport zmienił się po jego przejrzeniu. Zamknij to okno, sprawdź wprowadzone dane i przejrzyj go ponownie.",
+        "changedTitle": "Raport się zmienił",
+        "confirm": "Prześlij do zatwierdzenia",
+        "description": "Sprawdź zapisany raport. Osoba weryfikująca podejmuje decyzję dokładnie na podstawie tej wersji; nie można jej edytować w trakcie weryfikacji.",
+        "failed": "Coś poszło nie tak. Twój raport jest nadal zapisany jako wersja robocza; spróbuj ponownie.",
+        "failedTitle": "Raport nie został przesłany",
+        "incomplete": "Nadal brakuje niektórych zapisanych szczegółów. Uzupełnij wszystkie elementy wymienione w sekcji „Nadal wymagane” i spróbuj ponownie.",
+        "incompleteTitle": "Raport jest niekompletny",
+        "itemRequirement": "{item}: {requirement}",
+        "noReviewerAsk": "Nie masz innego przełożonego ani kierownika zespołu poza sobą, a osoba zatwierdzająca wydatki nie jest ustawiona. Poproś administratora o wybranie osoby zatwierdzającej wydatki w sekcji Ustawienia, Koszty podróży, Weryfikacja raportów z wydatków. Twój raport pozostaje zapisany jako wersja robocza.",
+        "noReviewerAssign": "Nie masz innego przełożonego ani kierownika zespołu poza sobą, a osoba zatwierdzająca wydatki nie jest ustawiona. Wybierz osobę zatwierdzającą wydatki w sekcji Weryfikacja raportów z wydatków w ustawieniach kosztów podróży. Twój raport pozostaje zapisany jako wersja robocza.",
+        "noReviewerTitle": "Nikt nie może jeszcze zweryfikować tego raportu",
+        "notSaved": "Niektóre zmiany nie zostały jeszcze zapisane. Poczekaj na ich zapisanie, a następnie przejrzyj raport ponownie.",
+        "openApproverSetting": "Otwórz ustawienia osoby zatwierdzającej wydatki",
+        "project": "{count, plural, one {Jeden wydatek jest przypisany do projektu, do którego Cię nie przypisano w dniu poniesienia wydatku. Wybierz inny projekt lub poproś administratora wydatków o wyjątek od przypisania. Twój raport pozostaje zapisany jako wersja robocza.} other {# wydatków jest przypisanych do projektu, do którego Cię nie przypisano w dniu poniesienia wydatku. Wybierz inny projekt lub poproś administratora wydatków o wyjątek od przypisania. Twój raport pozostaje zapisany jako wersja robocza.}}",
+        "projectTitle": "Nie można użyć projektu",
+        "ready": "Wprowadzone dane zostały zapisane. Przejrzyj raport i prześlij go do zatwierdzenia.",
+        "requesterInactive": "Twój profil pracownika nie jest aktywny w tej organizacji, dlatego raport nie może zostać przekazany do weryfikacji.",
+        "review": "Przejrzyj i prześlij",
+        "routing": "Reguły zatwierdzania w Twojej organizacji nie pozwoliły znaleźć osoby weryfikującej. Poproś administratora o ich sprawdzenie. Twój raport pozostaje zapisany jako wersja robocza.",
+        "routingTitle": "Nie udało się przekazać raportu",
+        "selfApproval": "Reguły zatwierdzania w Twojej organizacji zezwoliłyby Ci na zatwierdzenie własnego raportu. Poproś administratora o ich dostosowanie. Twój raport pozostaje zapisany jako wersja robocza.",
+        "selfApprovalBlocked": "Jako właściciel organizacji Twoje raporty są zatwierdzane automatycznie, dopóki nikt inny nie może ich weryfikować. Ten raport zawiera wyjaśnienie braku paragonu lub ręcznie ustaloną dietę, co musi zaakceptować ktoś inny. Wybierz osobę zatwierdzającą wydatki lub zmień raport. Twój raport pozostaje zapisany jako wersja robocza.",
+        "selfApproved": "Raport zatwierdzony automatycznie: nikt inny nie może go zweryfikować",
+        "success": "Raport przesłany do zatwierdzenia",
+        "thresholdCurrency": "Reguły zatwierdzania w Twojej organizacji porównują kwoty w EUR, ale ten raport jest w {currency}. Poproś administratora o ich sprawdzenie. Twój raport pozostaje zapisany jako wersja robocza.",
+        "title": "Prześlij raport wydatków",
+        "unavailable": "Twoja organizacja zmienia sposób zatwierdzania wydatków, dlatego raporty nie mogą być teraz przesyłane. Twój raport pozostaje zapisany jako wersja robocza.",
+        "unavailableTitle": "Przesyłanie jest wstrzymane"
+      },
+      "submittedAt": "Przesłano {date}",
+      "summary": {
+        "itemPrefix": "{item}:",
+        "paidByCompany": "Opłacone przez firmę",
+        "paidByEmployee": "Opłacone przez Ciebie"
+      },
+      "totals": {
+        "companyPaid": "Opłacone przez firmę",
+        "excluded": "{count, plural, one {# wydatek nie został jeszcze uwzględniony. Sumy obejmują wydatki w {currency}, dla których wprowadzono kwotę i płatnika.} few {# wydatki nie zostały jeszcze uwzględnione. Sumy obejmują wydatki w {currency}, dla których wprowadzono kwotę i płatnika.} other {# wydatków nie zostało jeszcze uwzględnionych. Sumy obejmują wydatki w {currency}, dla których wprowadzono kwotę i płatnika.} }",
+        "reimbursable": "Zwrócone Tobie",
+        "title": "Sumy"
+      },
+      "trip": {
+        "dates": "Daty podróży",
+        "datesZone": "(dni kalendarzowe w {timeZone})",
+        "destinations": "Miejsca docelowe",
+        "errors": {
+          "destination": "Wybierz kraj z listy.",
+          "endBeforeStart": "Ostatni dzień podróży nie może być wcześniejszy niż pierwszy.",
+          "timeZone": "Wybierz strefę czasową z listy.",
+          "tooManyDestinations": "Wprowadź maksymalnie {max} miejsc docelowych."
+        },
+        "fields": {
+          "addDestination": "Dodaj miejsce docelowe",
+          "country": "Kraj {number}",
+          "countryPlaceholder": "Kraj",
+          "destinations": "Miejsca docelowe",
+          "endDate": "Ostatni dzień podróży",
+          "noDestinations": "Dodaj miejsca, do których podróżujesz.",
+          "place": "Miejsce {number}",
+          "placePlaceholder": "Miasto lub miejsce",
+          "purpose": "Cel podróży",
+          "purposePlaceholder": "np. warsztaty z klientem w Hamburgu",
+          "removeDestination": "Usuń miejsce docelowe {number}",
+          "startDate": "Pierwszy dzień podróży",
+          "timeZone": "Strefa czasowa dat podróży",
+          "timeZoneDescription": "Daty podróży to dni kalendarzowe w strefie {timeZone}. Osoby weryfikujące widzą te same daty, niezależnie od tego, gdzie się znajdują."
+        },
+        "purpose": "Cel podróży",
+        "requirements": {
+          "complete": "Wszystkie dane dotyczące tej podróży zostały wprowadzone.",
+          "destination": "Dodaj co najmniej jedno miejsce docelowe.",
+          "expenseItem": "Dodaj wydatek.",
+          "fixFields": "Popraw wyróżnione szczegóły podróży.",
+          "itemNamed": "{item}: {description}",
+          "notEnded": "Podróż kończy się {date}. Możesz przesłać raport od tego dnia.",
+          "purpose": "Opisz cel podróży.",
+          "title": "Wciąż wymagane dla tej podróży",
+          "travelDates": "Wprowadź pierwszy i ostatni dzień podróży."
+        },
+        "title": "Szczegóły podróży",
+        "unsavedAfterClose": "Nie udało się zapisać ostatnich zmian w szczegółach podróży. Otwórz podróż ponownie, aby je sprawdzić."
+      },
+      "withdraw": {
+        "action": "Wycofaj raport",
+        "confirm": "Wycofaj",
+        "description": "Weryfikacja zostanie przerwana, a raport stanie się ponownie edytowalną wersją roboczą. To zgłoszenie pozostanie w historii raportu.",
+        "done": "Raport został wycofany. Możesz go ponownie edytować.",
+        "failed": "Nie udało się wycofać raportu. Spróbuj ponownie.",
+        "notPending": "To zgłoszenie zostało już rozpatrzone lub zwrócone, dlatego nie można go już wycofać.",
+        "title": "Wycofać ten raport?"
+      },
+      "withdrawnNotice": "Wycofano zgłoszenie {number}. Prześlij raport ponownie, gdy będzie gotowy.",
+      "withdrawnSubmission": "To zgłoszenie zostało wycofane przed podjęciem decyzji."
+    },
+    "settings": {
+      "catalogAdopted": "Przyjęto {date}, obowiązuje od {effectiveFrom}",
+      "perDiem": {
+        "adoptForeignTitle": "Zastosuj niemieckie ustawowe diety z oficjalnymi stawkami zagranicznymi",
+        "foreignAreas": "Stawki zagraniczne: {countries} krajów i {places} miast"
+      },
+      "tabs": {
+        "currencies": "Waluty",
+        "exceptions": "Wyjątki",
+        "exceptionsPending": "{label}, {count} oczekujących",
+        "rates": "Stawki",
+        "review": "Przejrzyj"
+      }
+    },
+    "settlement": {
+      "adjustment": "W tym zatwierdzona korekta",
+      "balance": {
+        "outstanding": "{amount} do uregulowania",
+        "overpaid": "{amount} nadpłaty",
+        "settled": "Rozliczono"
+      },
+      "companyPaid": "Koszty opłacone przez firmę w wysokości {amount} nie są należne pracownikowi.",
+      "entitlement": "Zatwierdzona kwota opłacona przez pracownika",
+      "entry": {
+        "recordedBy": "Zarejestrowane przez: {name}, {date}",
+        "recovery": "Odzyskano {amount}",
+        "reimbursement": "Zapłacono {amount}"
+      },
+      "errors": {
+        "amountInvalid": "Wprowadź kwotę dodatnią.",
+        "amountPrecision": "Ta waluta nie ma tylu miejsc po przecinku.",
+        "amountRequired": "Wprowadź zapłaconą kwotę.",
+        "conflict": "Wcześniejsza próba z innymi wartościami została już zarejestrowana. Sprawdź historię przed ponownym zarejestrowaniem.",
+        "dateFuture": "Data płatności nie może przypadać w przyszłości.",
+        "dateInvalid": "Wprowadź prawidłową datę.",
+        "dateRequired": "Wprowadź datę płatności.",
+        "exceedsOutstanding": "Kwota jest wyższa niż kwota do uregulowania.",
+        "exceedsOverpayment": "Kwota jest wyższa niż nadpłata.",
+        "failed": "Nie udało się zarejestrować płatności. Spróbuj ponownie.",
+        "load": "Nie udało się załadować salda zwrotu kosztów. Spróbuj ponownie.",
+        "noOverpayment": "Brak nadpłaty dla tego wydatku.",
+        "notApproved": "Ten wydatek nie jest już zatwierdzony, więc nie można zarejestrować płatności.",
+        "nothingOutstanding": "Brak kwot do uregulowania dla tego wydatku.",
+        "ownExpense": "Nie możesz rejestrować płatności za własne wydatki.",
+        "referenceRequired": "Wprowadź numer referencyjny płatności, np. tytuł przelewu bankowego.",
+        "refused": "Tej płatności nie można zarejestrować dla tego wydatku.",
+        "staleBalance": "Saldo uległo zmianie podczas wprowadzania tej płatności. Sprawdź zaktualizowane saldo i zarejestruj ją ponownie.",
+        "tooLong": "Ten tekst jest zbyt długi."
+      },
+      "form": {
+        "amount": "Zapłacona kwota ({currency})",
+        "date": "Data płatności",
+        "label": "Zarejestruj zwrot kosztów",
+        "note": "Notatka (opcjonalnie)",
+        "notice": "Zarejestruj środki już wypłacone pracownikowi. Aplikacja Z8 nie wykonuje przelewów pieniężnych.",
+        "reference": "Numer referencyjny płatności",
+        "referenceHint": "Na przykład tytuł przelewu bankowego lub identyfikator listy płac.",
+        "submit": "Zarejestruj zwrot kosztów"
+      },
+      "history": "Zarejestrowane płatności",
+      "loading": "Wczytywanie salda zwrotu kosztów…",
+      "ownerOutstanding": "Dział finansowy zarejestruje tutaj Twój zwrot kosztów po jego wypłaceniu.",
+      "ownerOverpaid": "Wypłacono więcej, niż obecnie zatwierdzono. Dział finansowy rejestruje tutaj zwrot różnicy; aplikacja Z8 nie dokonuje transferu środków.",
+      "recorded": "Zwrot kosztów został zarejestrowany.",
+      "recordedAlready": "Ta płatność została już zarejestrowana.",
+      "recovered": "Odzyskano",
+      "recoveryForm": {
+        "amount": "Odzyskana kwota ({currency})",
+        "date": "Data odzyskania",
+        "label": "Zarejestruj odzyskanie środków",
+        "notice": "Pracownikowi wypłacono więcej, niż obecnie zatwierdzono. Zarejestruj środki zwrócone przez niego w celu uregulowania nadpłaty; pierwotny zwrot kosztów pozostaje bez zmian i nic nie jest kompensowane z innymi raportami. Aplikacja Z8 nie wykonuje przelewów pieniężnych.",
+        "submit": "Zarejestruj odzyskanie środków"
+      },
+      "recoveryRecorded": "Odzyskanie środków zostało zarejestrowane.",
+      "reimbursed": "Zwrócone",
+      "state": {
+        "mixed": "Wymaga weryfikacji",
+        "outstanding": "Nierozliczone",
+        "overpaid": "Nadpłacone",
+        "settled": "Rozliczone"
+      },
+      "title": "Zwrot kosztów"
+    },
+    "status": {
+      "draft": "Wersja robocza"
+    },
+    "title": "Wydatki podróży",
+    "workspace": {
+      "description": "Gromadź wydatki z podróży i pojedyncze koszty, przesyłaj je do weryfikacji i śledź ich zwrot."
+    }
   }
 }

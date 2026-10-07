@@ -32,8 +32,10 @@ import {
 import { Link } from "@/navigation";
 import { BalanceText } from "./finance/settlement-status";
 import { ContinueLegacyDraftButton } from "./legacy-draft-conversion";
+import { DeleteDraftReportButton } from "./report/delete-draft-report";
 import { formatMoney, formatPlainDate, formatPlainDateRange } from "./report/format";
 import { ReportStatusBadge } from "./report/report-status";
+import { reportName } from "./report-name";
 import { TravelExpenseLoadError } from "./travel-expense-load-error";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -59,14 +61,6 @@ function filterLabel(t: Translate, filter: ExpenseHistoryFilter): string {
 		case "rejected":
 			return t("travelExpenses.history.filter.rejected", "Rejected");
 	}
-}
-
-function reportTitle(t: Translate, row: ReportHistoryRow): string {
-	if (row.title) return row.title;
-	if (row.kind === "trip") return t("travelExpenses.report.drafts.untitledTrip", "Untitled trip");
-	if (row.itemType === "mileage")
-		return t("travelExpenses.history.untitledMileage", "Untitled mileage");
-	return t("travelExpenses.report.drafts.untitled", "Untitled receipt");
 }
 
 function claimTitle(t: Translate, row: LegacyClaimHistoryRow): string {
@@ -120,7 +114,7 @@ function ReportRowContent({ row }: { row: ReportHistoryRow }) {
 						href={row.href}
 						className="truncate font-medium after:absolute after:inset-0 hover:underline focus-visible:outline-2"
 					>
-						{reportTitle(t, row)}
+						{reportName(t, row)}
 					</Link>
 					{row.adjustmentOf && (
 						<Badge variant="outline">{t("travelExpenses.history.adjustment", "Adjustment")}</Badge>
@@ -257,6 +251,23 @@ function ClaimRowContent({ row }: { row: LegacyClaimHistoryRow }) {
 	);
 }
 
+/** Deletes a draft that was never submitted (#684) from its row. */
+function DeleteRowDraft({ row }: { row: ReportHistoryRow }) {
+	const { t } = useTranslate();
+	return (
+		<div className="relative z-10 -my-1.5">
+			<DeleteDraftReportButton
+				compact
+				reportId={row.id}
+				continuesLegacyClaim={row.continuedFromClaimId !== null}
+				label={t("travelExpenses.history.deleteDraft", "Delete draft “{title}”", {
+					title: reportName(t, row),
+				})}
+			/>
+		</div>
+	);
+}
+
 function HistoryList({ rows, busy }: { rows: ExpenseHistoryRow[]; busy: boolean }) {
 	return (
 		<Card className="overflow-hidden py-0">
@@ -277,8 +288,9 @@ function HistoryList({ rows, busy }: { rows: ExpenseHistoryRow[]; busy: boolean 
 									)}
 								</div>
 							</div>
-							<div className="shrink-0 pl-7 sm:pl-0">
+							<div className="flex shrink-0 items-start gap-1 pl-7 sm:pl-0">
 								<ReportStatusBadge status={row.status} />
+								{row.source === "report" && row.deletable && <DeleteRowDraft row={row} />}
 							</div>
 						</li>
 					))}

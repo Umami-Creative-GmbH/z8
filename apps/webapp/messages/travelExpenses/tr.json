@@ -1,17 +1,80 @@
 {
   "travelExpenses": {
     "actions": {
-      "newClaim": "Yeni Talep"
+      "backToClaims": "Taleplere dön",
+      "download": "İndir",
+      "preview": "Önizleme",
+      "retry": "Yeniden dene",
+      "viewClaim": "Talebi görüntüle"
+    },
+    "adjustment": {
+      "create": {
+        "action": "Bir düzeltmeyle düzelt",
+        "confirm": "Düzeltme oluştur",
+        "description": "Düzeltmek üzere onaylanmış masrafların bir kopyasını alırsınız. Bunu göndermek, düzeltilen tüm raporu yeniden onaya gönderir; yalnızca onaylanan tutarla arasındaki fark kapatılır.",
+        "failed": "Düzeltme oluşturulamadı. Lütfen tekrar deneyin.",
+        "ineligible": "Bu rapor artık düzeltilemez. Güncel durumunu görmek için sayfayı yeniden yükleyin.",
+        "reason": "Düzeltme nedeni",
+        "reasonRequired": "Neyin düzeltilmesi gerektiğini açıklayın.",
+        "reasonTooLong": "Nedeni {max} karakterin altında tutun.",
+        "title": "Bağlantılı bir düzeltme oluşturulsun mu?"
+      },
+      "ineligible": {
+        "adjustment": "Bir düzeltme, düzelttiği rapor aracılığıyla düzeltilir."
+      },
+      "notice": {
+        "baseline": "Düzelttiği onaylanmış tutar",
+        "delta": "İşaretli fark",
+        "editing": "Aşağıdaki masrafları düzeltin. Gönderdiğinizde, onaylanmış tutarla arasındaki fark incelemeniz için gösterilir ve ardından yeniden incelenir. Orijinal rapor ve ödemeleri değişmeden kalır.",
+        "original": "Orijinal raporu aç",
+        "title": "Onaylanmış bir raporun düzeltmesi"
+      },
+      "panel": {
+        "applied": "Uygulandı",
+        "description": "Bu rapor daha önce dışa aktarıldı veya geri ödendi; bu nedenle onaylanmış haliyle kalır. Düzeltme işlemi bağlantılı bir düzeltmedir: yeniden incelenir ve onaylandığında onaylanmış tutarı işaretli fark kadar değiştirir.",
+        "effective": "Düzeltmeler dahil onaylanan tutar: {amount}",
+        "open": "Düzeltmeyi aç",
+        "title": "Düzeltmeler"
+      },
+      "preview": {
+        "currency": "Düzeltilen toplam, orijinal raporun para biriminde değil; bu nedenle düzeltme olarak gönderilemez.",
+        "delta": "Bu düzeltme, {baseline} tutarındaki onaylanmış tutarı {delta} kadar değiştirir.",
+        "review": "Tutar azaldığında bile tüm raporun yeniden onaylanması gerekir."
+      },
+      "reviewerHint": "Çalışan, düzeltmeyi bu rapordan oluşturur; işaretli farkıyla birlikte yeniden incelemeniz için size geri gelir."
+    },
+    "allowanceOverride": {
+      "amount": "Tutar",
+      "authorizedBy": "Yetkilendiren",
+      "authorizedByValue": "{name}, {date}",
+      "basis": "Hesaplama",
+      "evidence": "Kanıt",
+      "noOrdinary": "Bu veriler için olağan bir hesaplama bulunmuyor.",
+      "ordinary": "Politikaya göre hesaplanan tutar: {amount}.",
+      "reason": "Neden",
+      "situation": {
+        "calculated": "Politika tarafından hesaplandı",
+        "fallback": "Resmi varsayılan oranla hesaplandı",
+        "missingCoverage": "Kapsayan bir kuruluş politikası yok",
+        "missingFacts": "Gerekli seyahat bilgileri eksik",
+        "unsupported": "Desteklenen hesaplama kuralları kapsamında değil"
+      },
+      "situationLabel": "Neden hesaplanmadı",
+      "situationResolved": "Bu manuel harcırah artık geçerli değil: onaylanma gerekçesi değişti (örneğin, artık bir politika bu verileri kapsıyor). Varsa hesaplanan harcırah geçerli sayılır; aksi takdirde bir masraf yöneticisinin bunu incelemesi gerekir.",
+      "stale": "Bu manuel harcırah farklı veriler için onaylanmıştı ve artık geçerli değil. Bir masraf yöneticisinin değişen verileri incelemesi gerekir.",
+      "title": "Masraf yöneticisi tarafından manuel olarak belirlenen harcırah"
     },
     "approvals": {
       "description": "Seyahat masraflarına göre filtrelenmiş birleşik onay gelen kutusunu açın.",
-      "openInbox": "Gelen Kutusunu Aç",
-      "title": "Bekleyen Seyahat Masrafı Onaylarını İncele"
+      "entry": {
+        "open": "Gelen kutusunu aç",
+        "title": "Bekleyen seyahat masrafı onaylarını inceleyin"
+      }
     },
-    "claimTypes": {
-      "mileage": "Kilometre",
-      "per_diem": "Günlük Harcırah",
-      "receipt": "Makbuz"
+    "currency": {
+      "empty": "Para birimi bulunamadı",
+      "placeholder": "Bir para birimi seçin",
+      "search": "Para birimi ara"
     },
     "decision": {
       "approve": "Onayla",
@@ -33,41 +96,180 @@
       "rejected": "Talep başarıyla reddedildi",
       "rejectTitle": "Talebi Reddet"
     },
-    "description": "Seyahat masrafı taleplerinizi oluşturun ve takip edin",
+    "detail": {
+      "created": "Oluşturuldu",
+      "decisionRecorded": "Karar kaydedildi",
+      "destination": "Varış noktası",
+      "history": "Karar geçmişi",
+      "intermediateApproval": "Onay kaydedildi — ek onay bekleniyor",
+      "legacyReceiptIdentity": "Eski fiş: içerik sağlama toplamı kaydedilmedi.",
+      "loading": "Talep yükleniyor…",
+      "noReceipts": "Kayıtlı fiş yok",
+      "notRecorded": "Kaydedilmedi",
+      "originalAmount": "Orijinal tutar",
+      "receipts": "Fişler",
+      "refreshing": "Talep yenileniyor…",
+      "submitted": "Gönderildi",
+      "title": "Seyahat masrafı talebi",
+      "unknownDates": "Seyahat tarihi bağlamı kaydedilmedi (eski talep)"
+    },
     "errors": {
-      "loadClaims": "Seyahat masrafı talepleri yüklenemedi"
+      "loadDetailRetry": "Bu talep yüklenemedi. Lütfen yeniden deneyin."
     },
     "feature": "seyahat masraflarını yönet",
-    "form": {
-      "amount": "Tutar",
-      "claimType": "Talep Türü",
-      "created": "Seyahat masrafı taslağı oluşturuldu",
-      "createDraft": "Taslak Oluştur",
-      "currency": "Para Birimi",
-      "currencyDescription": "ISO 4217 kodu, örn. EUR veya USD",
-      "currencyPlaceholder": "EUR",
-      "description": "Son seyahat masraflarınız için yeni bir taslak talep oluşturun.",
-      "destinationCity": "Varış Şehri",
-      "destinationCityPlaceholder": "Berlin",
-      "destinationCountry": "Varış Ülkesi",
-      "destinationCountryPlaceholder": "Almanya",
-      "errors": {
-        "createDraft": "Seyahat masrafı taslağı oluşturulamadı",
-        "positiveAmount": "Tutar pozitif bir sayı olmalıdır",
-        "tripEndBeforeStart": "Seyahat bitiş tarihi, seyahat başlangıç tarihinden önce olamaz",
-        "validTripDates": "Lütfen geçerli bir seyahat başlangıç ve bitiş tarihi girin",
-        "validTripEnd": "Lütfen geçerli bir seyahat bitiş tarihi girin",
-        "validTripStart": "Lütfen geçerli bir seyahat başlangıç tarihi girin"
+    "finance": {
+      "approvedOn": "Onaylandı: {date}",
+      "back": "Masraf finansmanına geri dön",
+      "companyPaid": "Şirket tarafından ödenen: {amount}",
+      "description": "Onaylanan masraflar ve çalışanlara hâlâ borçlu olunan tutarlar. Geri ödeme kaydetmek, Z8 dışında yapılan bir ödemeyi belgeler; para transferi gerçekleştirilmez.",
+      "employeePaid": "Çalışan tarafından ödenen: {amount}",
+      "empty": {
+        "any": "Henüz onaylanmış masraf yok.",
+        "open": "Mahsuplaşılacak bir şey yok: onaylanan tüm masraflar ödendi."
       },
-      "notes": "Notlar",
-      "notesPlaceholder": "Onaylayıcınız için isteğe bağlı bağlam ekleyin",
-      "receiptAttachmentHint": "Makbuz talepleri en az bir ek gerektirir. Ek yükleme özelliği taslak oluşturulduktan sonra kullanılabilir olacaktır.",
-      "selectClaimType": "Talep türünü seçin",
-      "title": "Seyahat Masrafı Talebi Oluştur",
-      "tripEnd": "Seyahat Bitişi",
-      "tripStart": "Seyahat Başlangıcı"
+      "entry": {
+        "description": "Onaylanan masrafları, kalan bakiyeleri ve kaydedilen geri ödemeleri inceleyin.",
+        "open": "Finans kuyruğunu aç",
+        "title": "Masraf finansmanı"
+      },
+      "errors": {
+        "load": "Finans kuyruğu yüklenemedi. Lütfen tekrar deneyin."
+      },
+      "exports": {
+        "adjustment": "Düzeltme: {name}",
+        "cancel": "İptal",
+        "cancelledByFinance": "Finans tarafından iptal edildi.",
+        "cancelledReopenedHint": "İçindeki bir rapor düzeltme için yeniden açıldığından iptal edildi. İçindeki diğer raporlar tekrar dışa aktarılmaya hazır: onlar için yeni bir dışa aktarma oluşturun.",
+        "counts": "{reports} rapor · {items} masraf · {receipts} fiş",
+        "created": "Dışa aktarma sıraya alındı. Hazır olduğunda aşağıda görünecektir.",
+        "description": "Onaylanan masrafları muhasebe için fişleriyle birlikte CSV olarak dışa aktarın. Onaylanan her gönderim bir kez dışa aktarılır; ihtiyacınız olduğunda dışa aktarımı tekrar indirin.",
+        "download": "İndir",
+        "empty": "Dışa aktarılmayı bekleyen onaylanmış masraf yok.",
+        "errors": {
+          "alreadyExported": "Seçilen bazı masraflar zaten başka bir dışa aktarımın parçası. Bunun yerine o dışa aktarımı indirin.",
+          "cancel": "Dışa aktarma iptal edilemedi.",
+          "conflict": "Başka bir seçimle yapılan daha önceki bir girişim zaten kaydedilmiş. Dışa aktarma geçmişini kontrol edin.",
+          "failed": "Dışa aktarma oluşturulamadı. Lütfen tekrar deneyin.",
+          "invalid": "Bir ile izin verilen maksimum sayı arasında masraf seçin.",
+          "load": "Dışa aktarımlar yüklenemedi. Lütfen tekrar deneyin.",
+          "retry": "Dışa aktarma yeniden denenemedi.",
+          "stale": "Seçilen bazı masraflar artık gösterildiği gibi onaylanmış durumda değil. Liste yenilendi; seçimi kontrol edip tekrar dışa aktarın."
+        },
+        "failure": {
+          "enqueue": "Dışa aktarma sıraya alınamadı. Lütfen tekrar deneyin.",
+          "inconsistent": "Onaylanan veriler tutarlı bir şekilde dışa aktarılamadı. Destek ekibiyle iletişime geçin.",
+          "receiptMismatch": "Kayıtlı bir fiş artık kayıtlı sağlama toplamıyla eşleşmiyor. Tekrar denemeden önce destek ekibiyle iletişime geçin.",
+          "receiptUnavailable": "Bir fiş dosyası okunamadı. Depolama alanı kullanılabilir olduğunda tekrar deneyin.",
+          "storage": "Dışa aktarma dosyası kaydedilemedi. Lütfen tekrar deneyin.",
+          "unknown": "Dışa aktarma başarısız oldu. Lütfen tekrar deneyin."
+        },
+        "form": {
+          "label": "Dışa aktarma oluştur",
+          "selectAll": "Tümünü seç",
+          "submit": "Dışa aktarma oluştur ({count})"
+        },
+        "history": "Dışa aktarma geçmişi",
+        "loading": "Dışa aktarmalar yükleniyor…",
+        "notPayment": "Ödeme değildir: Dışa aktarma işlemi hiçbir şeyi geri ödendi olarak işaretlemez.",
+        "requested": "{date} tarihinde {name} tarafından talep edildi",
+        "retry": "Tekrar dene",
+        "status": {
+          "cancelled": "İptal edildi",
+          "completed": "Tamamlandı",
+          "failed": "Başarısız",
+          "processing": "İşleniyor",
+          "queued": "Kuyrukta"
+        },
+        "title": "Dışa aktarmalar"
+      },
+      "filter": {
+        "all": "Tümü onaylandı",
+        "label": "Masrafları göster",
+        "open": "Açık",
+        "settled": "Kapatıldı"
+      },
+      "legacyClaim": "Eski {type} talebi",
+      "loading": "Finans kuyruğu yükleniyor…",
+      "title": "Masraf finansı",
+      "truncated": "En son onaylanan {count} masraf gösteriliyor. Eşleşen daha eski masraflar listelenmez."
+    },
+    "form": {
+      "currency": "Para Birimi",
+      "notes": "Notlar"
+    },
+    "history": {
+      "adjustment": "Düzeltme",
+      "adjustmentOf": "“{title}” düzeltmesi",
+      "adjustmentOfUntitled": "Önceki bir raporun düzeltmesi",
+      "claimed": "Talep edilen",
+      "companyPaid": "Şirket tarafından ödenen {amount}",
+      "continuedFrom": "Önceki bir talepten devam ettirildi",
+      "deleteDraft": "“{title}” taslağını sil",
+      "emptyDescription": "Ortak seyahat ayrıntılarına sahip birden fazla masrafı toplamak için bir seyahat başlatın veya tek bir makbuz ya da kilometre masrafı ekleyin. Taslaklar otomatik olarak kaydedilir, böylece onları daha sonra tamamlayabilirsiniz.",
+      "emptyFilter": "Bu durumda hiçbir masraf yok.",
+      "emptyTitle": "Henüz seyahat masrafı yok",
+      "errors": {
+        "load": "Seyahat masraflarınız yüklenemedi. Lütfen tekrar deneyin.",
+        "refresh": "Masraflarınız yenilenemedi; aşağıdaki liste güncel olmayabilir. Lütfen tekrar deneyin."
+      },
+      "filter": {
+        "all": "Tümü",
+        "approved": "Onaylandı",
+        "inReview": "İnceleniyor",
+        "label": "Masrafları göster",
+        "needsAction": "Tamamlanacak",
+        "rejected": "Reddedildi"
+      },
+      "legacy": {
+        "badge": "Önceki talep",
+        "mileage": "Kilometre talebi",
+        "perDiem": "Harcırah talebi",
+        "receipt": "Makbuz talebi"
+      },
+      "loading": "Seyahat masraflarınız yükleniyor…",
+      "notCounted": "{count, plural, other {# masraf henüz sayılmadı} }",
+      "refreshing": "Yenileniyor…",
+      "reimbursable": "Size geri ödenebilir",
+      "showAll": "Tüm masrafları göster",
+      "title": "Masraflarınız",
+      "untitledMileage": "Başlıksız kilometre"
+    },
+    "legacyDraft": {
+      "continue": "Rapor olarak devam et",
+      "converted": "Bu taslağa bir masraf raporu olarak devam ettiniz. Bu talep, referans amacıyla burada değiştirilmeden kalır.",
+      "description": "Önceki talep formundaki taslaklar artık masraf raporu olarak tamamlanıyor. Tutarınız, tarihleriniz, notlarınız ve makbuzlarınız aktarılır; yeni formun gerektirdiği ancak bu taslakta hiç kaydedilmemiş olan alanları doldurmanız gerekir. Bu talebin kendisi değişmeden kalır.",
+      "failed": "Taslağa devam edilemedi. Lütfen tekrar deneyin.",
+      "flags": {
+        "amount": "Girilen {amount} tutarı geçerli bir makbuz tutarı değil. Makbuzdaki tutarı ve para birimini girin.",
+        "conversion": "Makbuz yabancı bir para biriminde. Taslakta herhangi bir dönüştürme kaydedilmedi; bu nedenle göndermeden önce nasıl dönüştürüldüğünü (kart masrafı veya kur) ekleyin.",
+        "destination": "\"{destination}\" varış noktası bir ülkeyle eşleştirilemedi. Seçin.",
+        "expenseDate": "Taslak {range} aralığını kapsıyordu. Bu masrafın gününü seçin.",
+        "manualTotal": "Taslakta {amount} olarak girilen bir toplam vardı. Bu kullanılmaz: bu masraf artık aşağıda girdiklerinizden hesaplanır.",
+        "notes": "Notlarınız aşağıda gösterilmektedir; hâlâ geçerli olanları kopyalayın.",
+        "project": "Taslağın projesi korundu. Masraf tarihindeki görevlendirmeniz kayıtlı olmadığı sürece, gönderebilmeniz için önce bir masraf yöneticisinin bunu onaylaması gerekir.",
+        "projectMissing": "Taslağın projesi artık mevcut değil. Varsa bir proje seçin.",
+        "tripDates": "Taslak, seyahat tarihleri kaydedilmeden önce oluşturulmuştu. Tarihleri girin."
+      },
+      "loadFailed": "Bu taslak kontrol edilemedi. Lütfen tekrar deneyin.",
+      "notDraft": "Bu talep zaten gönderilmiş. Orijinal onayını korur ve rapor olarak devam ettirilemez.",
+      "notice": {
+        "description": "Girdiğiniz bilgiler, {count} makbuz dahil olmak üzere bu formun tam olarak tutabildiği yerlere aktarıldı. Göndermeden önce kalan alanları doldurun.",
+        "original": "Orijinal taslağı görüntüle",
+        "title": "Önceki bir talep taslağından devam ettirildi"
+      },
+      "openReport": "Raporu aç",
+      "receipt": {
+        "mismatch": "depolanan dosya artık yüklenenle eşleşmiyor",
+        "unreadable": "depolanan dosya şu anda okunamıyor",
+        "unsupportedStorage": "dosya desteklenmeyen bir depolama alanında tutuluyor",
+        "unsupportedType": "depolanan dosya desteklenen bir makbuz türü değil"
+      },
+      "receiptUnavailable": "Bir makbuz güvenli bir şekilde aktarılamadığı için hiçbir şey değiştirilmedi: {receipts}. Lütfen daha sonra tekrar deneyin veya yöneticinizden dosyayı geri yüklemesini isteyin.",
+      "status": "Rapor olarak devam ettirildi",
+      "title": "Bu taslağa devam et"
     },
     "list": {
+      "actions": "İşlemler",
       "amount": "Tutar",
       "dateRange": "Tarih Aralığı",
       "emptyDescription": "Onay sürecini başlatmak için ilk masraf talebinizi oluşturun.",
@@ -75,6 +277,729 @@
       "status": "Durum",
       "type": "Tür"
     },
-    "title": "Seyahat Masrafları"
+    "perDiemPlaces": {
+      "AU": {
+        "canberra": "Canberra",
+        "sydney": "Sidney"
+      },
+      "BR": {
+        "brasilia": "Brasília",
+        "rio-de-janeiro": "Rio de Janeiro",
+        "sao-paulo": "São Paulo"
+      },
+      "CA": {
+        "ottawa": "Ottawa",
+        "toronto": "Toronto",
+        "vancouver": "Vancouver"
+      },
+      "CH": {
+        "bern": "Bern",
+        "genf": "Cenevre"
+      },
+      "CN": {
+        "hongkong": "Hong Kong",
+        "peking": "Pekin",
+        "shanghai": "Şanghay"
+      },
+      "ES": {
+        "barcelona": "Barselona",
+        "kanarische-inseln": "Kanarya Adaları",
+        "madrid": "Madrid",
+        "palma-de-mallorca": "Palma de Mallorca"
+      },
+      "FR": {
+        "paris": "Paris ve 77, 78, 91–95 departmanları"
+      },
+      "GB": {
+        "london": "Londra"
+      },
+      "GR": {
+        "athen": "Atina"
+      },
+      "IN": {
+        "bangalore": "Bengaluru",
+        "chennai": "Chennai",
+        "kalkutta": "Kalküta",
+        "mumbai": "Mumbai",
+        "neu-delhi": "Yeni Delhi"
+      },
+      "IT": {
+        "mailand": "Milano",
+        "rom": "Roma"
+      },
+      "JP": {
+        "osaka": "Osaka",
+        "tokio": "Tokyo"
+      },
+      "PL": {
+        "breslau": "Wrocław",
+        "warschau": "Varşova"
+      },
+      "RU": {
+        "moskau": "Moskova",
+        "st-petersburg": "Sankt Petersburg"
+      },
+      "SA": {
+        "djidda": "Cidde",
+        "riad": "Riyad"
+      },
+      "TR": {
+        "ankara": "Ankara",
+        "izmir": "İzmir"
+      },
+      "US": {
+        "atlanta": "Atlanta",
+        "boston": "Boston",
+        "chicago": "Chicago",
+        "houston": "Houston",
+        "los-angeles": "Los Angeles",
+        "miami": "Miami",
+        "new-york-city": "New York City",
+        "san-francisco": "San Francisco",
+        "washington-dc": "Washington, D.C."
+      },
+      "ZA": {
+        "johannesburg": "Johannesburg",
+        "kapstadt": "Cape Town"
+      }
+    },
+    "report": {
+      "actions": {
+        "newMileage": "Yeni kilometre",
+        "newReceipt": "Yeni fiş",
+        "newTrip": "Yeni seyahat"
+      },
+      "approvedBy": "{name} tarafından {date} tarihinde onaylandı.",
+      "awaitingReview": "İnceleme bekleniyor.",
+      "awaitingReviewer": "{name} tarafından inceleme bekleniyor.",
+      "backToApprovals": "Onaylara geri dön",
+      "backToCurrent": "Mevcut rapora geri dön",
+      "backToTravelExpenses": "Seyahat masraflarına geri dön",
+      "categories": {
+        "accommodation": "Konaklama",
+        "meals": "Yemek",
+        "other": "Diğer",
+        "parking": "Otopark",
+        "transport": "Ulaşım"
+      },
+      "conversion": {
+        "attachFirst": "Öncelikle yukarıdaki harcamayı gösteren kart ekstresini veya fişi ekleyin.",
+        "authorizedBy": "Yetkilendiren",
+        "basis": {
+          "cardCharge": "Kart harcaması",
+          "manualRate": "Yetkili kur",
+          "referenceRate": "ECB referans kuru"
+        },
+        "chargedAmount": "{currency} cinsinden tahsil edilen tutar",
+        "chargedAmountDescription": "Birlikte yansıtılan tüm dönüştürme ücretleri dahil kart veya banka ekstrenizdeki tutar.",
+        "conflict": "Bu harcama başka bir yerde değiştirildi. Kontrol edin ve kart harcamasını tekrar kaydedin.",
+        "errors": {
+          "chargedAmount": "{currency} cinsinden tahsil edilen, en fazla {digits} ondalık basamağa sahip pozitif bir tutar girin.",
+          "evidence": "Bu harcamanın tahsilatı gösteren ekini seçin."
+        },
+        "evidence": "Kanıt:",
+        "evidenceLabel": "Tahsilatı gösteren ek",
+        "evidenceMissing": "Kart çekimini gösteren ek eksik.",
+        "formLabel": "Kart çekimi",
+        "none": "Hiçbir döviz kuru tahmin edilmez. Kartınızdan {currency} cinsinden tahsil edilen tutarı girin ve hesap özeti gibi bunu gösteren eki seçin. Kart çekimi olmadan, bir harcama yöneticisi belgelenmiş bir kur kaydedebilir.",
+        "notSaved": "Kart çekimi bu harcama için kaydedilemedi.",
+        "publicationDate": "Yayınlanma tarihi",
+        "publicationFallback": "{expenseDate} tarihinde herhangi bir kur yayınlanmadı; bu nedenle daha önce yayınlanmış en son kur geçerlidir.",
+        "rate": "Kur",
+        "rateDate": "Kur tarihi",
+        "rateEvidence": "Kur kanıtı",
+        "rateValue": "1 {base} = {value} {quote}",
+        "reason": "Belgeler",
+        "reference": {
+          "alternatives": "Raporunuz, bunu gösteren ek ile birlikte {reimbursementCurrency} cinsinden kart çekiminizi girene veya bir harcama yöneticisi belgelenmiş bir kur kaydedene kadar taslak olarak kalır.",
+          "currencyUnavailable": "Avrupa Merkez Bankası bu tarihte {currency} için bir kur yayınlamamaktadır.",
+          "expenseDateMissing": "Referans kurunu aramak için harcama tarihini girin.",
+          "historyUnavailable": "Bu tarih için referans kur bulunmuyor.",
+          "notYetPublished": "Bu tarih için referans kur henüz yayınlanmadı. Genellikle iş günlerinde Frankfurt saatiyle 16:00'dan sonra yayınlanır.",
+          "pairUnsupported": "Avrupa Merkez Bankası kurları yalnızca euro karşısında yayınlar; bu nedenle {currency} ve {reimbursementCurrency} arasında geçerli bir kur yoktur.",
+          "providerUnavailable": "Bu tarih için referans kur henüz alınamadı. Daha sonra tekrar deneyin.",
+          "rateStale": "Bu tarih için geçerli bir referans kur bulunmamaktadır."
+        },
+        "referencePending": "Değişikliğiniz kaydedildiğinde yeni tarih için referans kur tekrar aranır.",
+        "remove": "Kart çekimini kaldır",
+        "removeFailed": "Kart çekimi kaldırılamadı. Harcamayı yeniden yükleyin ve tekrar deneyin.",
+        "replaceWithCardCharge": "Bunun yerine kart harcamamı kullan",
+        "result": "{original}, {reimbursement} sayılır",
+        "rounding": "Yuvarlama",
+        "roundingValue": "{digits} ondalık basamağa yarı yukarı yuvarlandı",
+        "saveCardCharge": "Kart harcamasını kaydet",
+        "saved": "Kart harcaması kaydedildi",
+        "saveFailed": "Kart harcaması kaydedilemedi. Lütfen tekrar deneyin.",
+        "source": "Kaynak",
+        "sourceEcb": "Kuruluşunuz tarafından onaylanan Avrupa Merkez Bankası euro referans kuru",
+        "title": "{currency} para birimine dönüştürme"
+      },
+      "correctAndResubmit": "Raporu düzeltip tekrar gönderin. Önceki gönderimler geçmişinde kalır.",
+      "countryEmpty": "Ülke bulunamadı",
+      "countrySearch": "Ülke ara",
+      "cycles": {
+        "approved": "onaylandı",
+        "entry": "{date} tarihindeki {number}. gönderim: {outcome}",
+        "pending": "inceleme bekleniyor",
+        "rejected": "reddedildi",
+        "reopened": "onaylandı, ardından düzeltme için yeniden açıldı",
+        "returned": "değişiklik için iade edildi",
+        "title": "Gönderimler",
+        "withdrawn": "geri çekildi"
+      },
+      "decideInInbox": "Onaylar gelen kutusunda raporun tamamını onaylayın, iade edin veya reddedin.",
+      "delete": {
+        "action": "Taslağı sil",
+        "description": "Taslak, harcamaları ve fişleri silinir. Bu işlem geri alınamaz.",
+        "descriptionLegacy": "Taslak, harcamaları ve fişleri, devamı olduğu önceki talep taslağıyla birlikte silinir. Bu işlem geri alınamaz.",
+        "done": "Taslak silindi.",
+        "failed": "Taslak silinemedi. Lütfen tekrar deneyin.",
+        "notDeletable": "Bu rapor zaten gönderildi, bu nedenle artık silinemez.",
+        "title": "Bu taslak silinsin mi?"
+      },
+      "drafts": {
+        "expenses": "{count, plural, other {# masraf} }",
+        "noDate": "Henüz tarih yok",
+        "noTravelDates": "Henüz seyahat tarihi yok",
+        "receipts": "{count, plural, other {# makbuz} }",
+        "untitled": "Başlıksız makbuz",
+        "untitledTrip": "Başlıksız seyahat"
+      },
+      "earlierSubmission": "Bu, raporun daha önceki bir gönderimidir ve gönderildiği şekliyle saklanmıştır.",
+      "errors": {
+        "amount": "En fazla iki ondalık basamaklı pozitif bir tutar girin, örn. 12.50.",
+        "category": "Listelenen bir kategori seçin.",
+        "create": "Masraf oluşturulamadı. Lütfen tekrar deneyin.",
+        "currency": "Üç harfli bir para birimi kodu girin, örn. EUR.",
+        "expenseDate": "Geçerli bir tarih girin.",
+        "load": "Bu masraf yüklenemedi. Lütfen tekrar deneyin.",
+        "loadSubmission": "Gönderilen rapor yüklenemedi. Lütfen tekrar deneyin.",
+        "paidBy": "Ödemeyi kimin yaptığını seçin.",
+        "tooLong": "Bu metin çok uzun."
+      },
+      "fields": {
+        "accountingReference": "Muhasebe referansı (isteğe bağlı)",
+        "accountingReferenceDescription": "Finans biriminin kullanmanızı istediği sipariş numarası gibi bir referans.",
+        "amount": "Fişteki tutar",
+        "category": "Kategori",
+        "categoryPlaceholder": "Bir kategori seçin",
+        "description": "Açıklama",
+        "descriptionPlaceholder": "örn. Müşteri çalıştayı için Berlin–Hamburg tren bileti",
+        "expenseDate": "Fiş tarihi",
+        "paidBy": "Ödemeyi kim yaptı?"
+      },
+      "frozenNotice": "Gönderilen rapor artık düzenlenemez.",
+      "history": {
+        "approvalRecorded": "Onay {name} tarafından kaydedildi; sonraki onay bekleniyor",
+        "approved": "{name} tarafından onaylandı",
+        "cycle": "Gönderim {number}:",
+        "rejected": "{name} tarafından reddedildi",
+        "reopened": "{name} tarafından düzeltme için yeniden açıldı",
+        "returned": "{name} tarafından değişiklik yapılması için geri gönderildi",
+        "selfApproved": "Otomatik olarak onaylandı: başka inceleyen yok",
+        "submitted": "{name} tarafından gönderildi",
+        "title": "Geçmiş",
+        "withdrawn": "{name} tarafından geri çekildi"
+      },
+      "items": {
+        "add": "Fiş masrafı ekle",
+        "addFailed": "Masraf eklenemedi. Lütfen tekrar deneyin.",
+        "empty": "Bu seyahatin her fişini ayrı bir masraf olarak ekleyin. Yukarıdaki seyahat ayrıntıları tümü için geçerlidir.",
+        "numbered": "{type} {number}",
+        "remove": "Kaldır",
+        "removeConfirm": "Masrafı kaldır",
+        "removeConflict": "Bu masraf başka bir yerde değiştirildi ve kaldırılamadı. Kontrol edip tekrar deneyin.",
+        "removed": "{type} (kaldırıldı)",
+        "removeDescription": "Masraf ve ekli fişleri bu seyahatten silinir. Bu işlem geri alınamaz.",
+        "removeFailed": "Masraf kaldırılamadı. Lütfen tekrar deneyin.",
+        "removeItem": "{item} öğesini kaldır",
+        "removeTitle": "Bu masraf kaldırılsın mı?",
+        "title": "Masraflar"
+      },
+      "kind": {
+        "standaloneMileage": "Bağımsız kilometre",
+        "trip": "Seyahat raporu"
+      },
+      "loading": "Masraf yükleniyor…",
+      "mileage": {
+        "add": "Kilometre ekle",
+        "appliedPolicy": "{date} tarihinden itibaren geçerli oran · {source}",
+        "calculation": "{distance} km × km başına {rate} = {amount}",
+        "calculationTitle": "Hesaplanan kilometre",
+        "enterFacts": "Tutarı görmek için tarihi, kilometreyi ve aracı girin.",
+        "errors": {
+          "distance": "Kat edilen kilometreyi en fazla iki ondalık basamaklı pozitif bir sayı olarak girin, örn. 61,5.",
+          "vehicle": "Kullandığınız aracı seçin."
+        },
+        "fields": {
+          "date": "Sürüş tarihi",
+          "distance": "Kat edilen kilometre",
+          "route": "Güzergâh",
+          "routePlaceholder": "örn. Berlin ofisi – Potsdam müşterisi – dönüş",
+          "vehicle": "Araç",
+          "vehicleDescription": "Kendi aracınız. Şirket araçları ve toplu taşıma kilometre kapsamında değildir; bunun yerine makbuzlarını ekleyin."
+        },
+        "noRate": "Hiçbir oran varsayılmaz: Bir masraf yöneticisi bu tarihi kapsayan bir kilometre oranı ekleyene kadar bu masraf taslak olarak kalır.",
+        "noRateTitle": "Geçerli kilometre oranı yok",
+        "otherCurrency": "Bu tarih için oran {currency} cinsinden değildir; kilometre hiçbir zaman dönüştürülmez.",
+        "pending": "Değişiklikleriniz kaydedildikten sonra kuruluşunuzun oranıyla hesaplanır.",
+        "requirements": {
+          "currency": "Bu tarih için kilometre oranı {policyCurrency} cinsindedir ancak bu raporun geri ödemesi {currency} cinsinden yapılır. Bir masraf yöneticisinden {currency} cinsinden bir oran eklemesini isteyin.",
+          "date": "Sürüş tarihini girin.",
+          "distance": "Kat edilen kilometreyi girin.",
+          "policyMissing": "Kuruluşunuzun {date} tarihinde {vehicle} için bir kilometre oranı bulunmamaktadır. Bir masraf yöneticisinden seyahat masrafı ayarlarında tarihli bir oran eklemesini isteyin. O zamana kadar hiçbir hesaplama yapılmaz.",
+          "route": "Güzergâhı açıklayın.",
+          "vehicle": "Aracı seçin."
+        },
+        "rounded": "(tam olarak {exact}, sente yuvarlanmış)",
+        "sourceOrganization": "Kuruluş politikası: {reference}",
+        "sourceOrganizationUnnamed": "Kuruluş politikası",
+        "sourceStatutory": "Alman yasal götürü oranı ({version})",
+        "standaloneTitle": "Kilometre",
+        "vehicles": {
+          "car": "Otomobil",
+          "otherMotorVehicle": "Diğer motorlu taşıt (örn. motosiklet)"
+        }
+      },
+      "paidBy": {
+        "company": "Şirket ödedi (örn. şirket kartı)",
+        "employee": "Ben ödedim (bana geri ödeyin)"
+      },
+      "perDiem": {
+        "absenceDuration": "{hours}:{minutes} sa dışarıda",
+        "add": "Harcırah ekle",
+        "appliedPolicy": "{date} tarihinden itibaren geçerli oranlar · {source}",
+        "basis": {
+          "absence24h": "Tam gün dışarıda (24 saat)",
+          "claimedInOtherReport": "Başka bir raporunuzda zaten ödendi: günde yalnızca bir harcırah verilir",
+          "over8h": "8 saatten fazla dışarıda",
+          "overnightMajority": "Gece konaklamalı sürenin büyük kısmı",
+          "overnightMinority": "Gece konaklamalı sürenin diğer gününe sayıldı",
+          "travelDay": "Gece konaklamalı bir seyahatin yolculuk günü",
+          "upTo8h": "8 saat veya daha az dışarıda: harcırah yok"
+        },
+        "breakdownCaption": "Takvim gününe göre harcırah",
+        "calculationTitle": "Hesaplanan harcırah",
+        "columns": {
+          "amount": "Tutar",
+          "day": "Gün",
+          "eligibility": "Uygunluk",
+          "meals": "Sağlanan yemekler",
+          "rate": "Harcırah"
+        },
+        "deductionNote": "Sağlanan yemekler bir günün harcırahını sıfırın altına düşmeyecek şekilde azaltır; yemek için ödediğiniz tutar ise kesintiyi azaltır.",
+        "departure": "Ayrılış",
+        "enterFacts": "Günlük harcırahları görmek için ayrılış, dönüş ve yemek bilgilerinizi girin.",
+        "errors": {
+          "clockChange": "Saatler ileri alındığı için bu saat bu günde mevcut değildir. Atlanan saatin dışında bir saat girin.",
+          "clockChangeRepeated": "Saatler geri alındığı için bu saat bu günde iki kez tekrarlanır. Tekrarlanan saatin dışında bir saat girin.",
+          "endBeforeStart": "Dönüşünüz ayrılışınızdan sonra olmalıdır.",
+          "location": "Her gün için listeden bir konum seçin.",
+          "meals": "Yemek girişlerini kontrol edin.",
+          "payment": "Ödediğiniz tutarı en fazla iki ondalık basamaklı bir miktar olarak girin, örn. 2.50.",
+          "time": "Saati, saat ve dakika olarak girin."
+        },
+        "exceptionalTitle": "Manuel hesaplama gerektirir",
+        "exceptions": {
+          "destinationNotListed": "Günlük bir konum resmi yurtdışı tablosu veya bunun yedek kuralları kapsamında yer almıyor.",
+          "foreignTimeZone": "Seyahat saatleri Almanya yerel saatine göre değildir.",
+          "foreignWithoutOvernight": "Yurt dışında konaklama içermeyen gece boyu bir faaliyet otomatik olarak hesaplanmaz.",
+          "international": "Varış noktalarından biri Almanya dışındadır. Uluslararası harcırah henüz hesaplanmıyor.",
+          "majorityTie": "Gece boyu dışarıda bulunma süresi her iki gün arasında tam olarak eşit paylaştırılmıştır.",
+          "mixedTimeZones": "Gidiş ve dönüş farklı saat dilimlerindedir.",
+          "multiDayWithoutOvernight": "Seyahat, gece konaklaması olmaksızın iki takvim gününden uzun sürmektedir.",
+          "nightsAtHome": "Seyahat sırasında bazı geceleri evde geçirdiniz.",
+          "overlappingDays": "Başka bir raporunuz bu günlerin bazıları için zaten harcırah ödüyor; günde yalnızca tek bir ödenek verilebilir, bu nedenle bunları manuel hesaplamanın dışında tutun.",
+          "prolongedWorkplace": "Aynı iş yerinde uzun süreli faaliyet: Harcırah ilk üç ayla sınırlıdır.",
+          "rulesNotVerified": "Bu seyahat tarihlerini kapsayan doğrulanmış bir Almanya kuralı henüz bulunmuyor.",
+          "specialLocation": "Bir gün özel bir durum olarak işaretlendi (diğer veya ilk ya da son seyahat gününde tüm gün uçuşta veya denizde)."
+        },
+        "fields": {
+          "endDate": "Döndüğünüz gün",
+          "endTime": "Eve veya iş yerine döndüğünüz saat",
+          "meals": "İşvereniniz tarafından sağlanan yemekler",
+          "mealsDescription": "Öğünü atlamış olsanız bile işvereninizin veya onun adına bir otelin ya da ev sahibinin sağladığı her yemeği işaretleyin. Varsa bunun için ödediğiniz tutarı girin.",
+          "mealsNeedDates": "Seyahat günlerini listelemek için gidiş ve dönüş günlerini girin.",
+          "overnight": "Seyahat sırasındaki geceler",
+          "payment": "{date} tarihindeki {meal} için ödediğiniz tutar",
+          "paymentPlaceholder": "Ödediğiniz tutar (isteğe bağlı)",
+          "prolongedWorkplace": "Üç aydan uzun süredir bu aynı yerde çalışıyorum",
+          "prolongedWorkplaceDescription": "Harcırah yalnızca aynı iş yerindeki ilk üç ay için geçerlidir; bu tür seyahatler manuel hesaplama gerektirir.",
+          "startDate": "Ayrıldığınız gün",
+          "startTime": "Evden veya işten ayrıldığınız saat",
+          "timeZone": "Saat dilimi"
+        },
+        "foreignRates": "Yurt dışı oranları: {reference} ({version})",
+        "location": {
+          "activityToday": "Bu gün yurt dışındaki son iş faaliyetiniz neredeydi?",
+          "assigned": "Resmi bildirimin bu ülke için belirlediği tutarlar",
+          "atSea": "Tüm gün gemide (biniş veya iniş olmadan)",
+          "choose": "Bir konum seçin",
+          "countryElsewhere": "{country} – diğer",
+          "countryPlace": "{country} – {place}",
+          "elsewhere": "Başka bir yer",
+          "fallbackFlight": "Resmi kural: Tüm gün uçuşta, Avusturya tutarları",
+          "fallbackLuxembourg": "Resmi varsayılan: Listede yok, Lüksemburg tutarları",
+          "fallbackMotherCountry": "Resmi varsayılan: Bölge, ana ülkenin tutarları",
+          "fallbackShip": "Resmi kural: Tüm gün denizde, Lüksemburg tutarları",
+          "germany": "Almanya",
+          "inFlight": "Tüm gün uçuşta (kalkış günü ile iniş günü arasında)",
+          "lastActivityTrip": "Bu seyahatte yurt dışındaki son iş faaliyetiniz neredeydi?",
+          "night": "Gece yarısı neredeydiniz? (yerel saatle 24:00'ten önce ulaştığınız son yer; uçağınız indiğinde ülkeye ulaşılmış sayılır)",
+          "noActivityAbroad": "Yurt dışında iş faaliyeti yok",
+          "other": "Başka bir durum (manuel hesaplama gerektirir)",
+          "place": "{country} içinde bir yer"
+        },
+        "meal": "{meal}: −{deduction}",
+        "mealPaid": "{meal}: −{deduction} ({payment} ödediniz)",
+        "meals": {
+          "breakfast": "Kahvaltı",
+          "dinner": "Akşam yemeği",
+          "lunch": "Öğle yemeği"
+        },
+        "mealsCountToward": "{date} tarihinde düşüldü",
+        "noRate": "Hiçbir oran varsayılmaz: Bir masraf yöneticisi bu günleri kapsayan harcırah oranlarını ekleyene kadar bu masraf taslak durumunda kalır.",
+        "noRateTitle": "Geçerli bir harcırah oranı yok",
+        "otherCurrency": "Bu günlerin oranları {currency} cinsinden değildir; harcırah asla dönüştürülmez.",
+        "overnight": {
+          "away": "Her gece evimden uzakta konakladım",
+          "mixed": "Bazı geceleri evde geçirdim",
+          "none": "Konaklama yapmadan gece boyunca çalıştım"
+        },
+        "pending": "Değişiklikleriniz kaydedildiğinde kuruluşunuzun tarihli oranlarıyla hesaplanır.",
+        "requirements": {
+          "currency": "Bu günlere ait harcırah oranları {policyCurrency} cinsindedir ancak bu raporun geri ödemesi {currency} cinsinden yapılmaktadır. Masraf yöneticisinden {currency} cinsinden oran eklemesini isteyin.",
+          "end": "Evinize veya iş yerinize ne zaman döndüğünüzü girin.",
+          "exceptional": "Bu seyahat planı için bir masraf yöneticisi tarafından manuel harcırah hesaplaması yapılması gerekir. Otomatik olarak hesaplanmaz.",
+          "locations": "Her seyahat günü için gece yarısı nerede olduğunuzu ve yurt dışındaki son iş faaliyetinizin nerede gerçekleştiğini belirtin.",
+          "meals": "Her seyahat günü için sağlanan yemekleri onaylayın.",
+          "notReturned": "{date} tarihinde saat {time} ({timeZone}) itibarıyla dönüyorsunuz. Bu süreden sonra gönderebilirsiniz.",
+          "overnight": "Evden uzakta gece konaklayıp konaklamadığınızı belirtin.",
+          "policyMissing": "Kuruluşunuzun {dates} için harcırah oranı bulunmuyor. Bir masraf yöneticisinden seyahat masrafı ayarlarına tarihli oranlar eklemesini isteyin. O zamana kadar hiçbir hesaplama yapılmaz.",
+          "start": "Evden veya iş yerinizden ne zaman ayrıldığınızı girin.",
+          "tripDates": "Gidiş ve dönüş günleriniz, seyahatin ilk ve son seyahat günü olmalıdır."
+        },
+        "return": "Dönüş",
+        "rulesApplied": "Kurallar: {reference} ({version})",
+        "title": "Harcırah",
+        "total": "Harcırah"
+      },
+      "project": {
+        "exceptionBadge": "Tahsis istisnası",
+        "exceptionDates": "Kapsar",
+        "exceptionEvidence": "Kanıt",
+        "exceptionReason": "Gerekçe",
+        "fromTrip": "(seyahat projesi)",
+        "inheritNamed": "Seyahat ile aynı ({name})",
+        "inheritNone": "Seyahat ile aynı (proje yok)",
+        "label": "Proje (isteğe bağlı)",
+        "loadFailed": "Projeler yüklenemedi.",
+        "needsExpenseDate": "O gün kullanabileceğiniz projeleri görmek için masraf tarihini girin.",
+        "needsTripDates": "Bu seyahatte kullanabileceğiniz projeleri görmek için seyahat tarihlerini girin.",
+        "none": "Proje yok",
+        "noneEligible": "Bu tarihte bir proje atamanız yoktu. O tarihte bir projede çalıştıysanız, masraf yöneticisi bir ilişkilendirme istisnası yetkisi verebilir.",
+        "notEligible": "{name} bu tarihte kullanılamaz: o tarihte bu projeye atanmamıştınız. Başka bir proje seçin veya masraf yöneticisinden bir ilişkilendirme istisnası isteyin.",
+        "refused": {
+          "conflict": "Bu masraf başka bir yerde değiştirildi. Yukarıdaki kaydetme çakışmasını giderin, ardından projeyi tekrar seçin.",
+          "dateRequired": "Önce tarihi girin: projeler masraf tarihine göre sunulur.",
+          "failed": "Proje kaydedilemedi. Lütfen tekrar deneyin.",
+          "ineligible": "O tarihte bu projeye atanmamıştınız. Projede çalıştıysanız, masraf yöneticisinden bir ilişkilendirme istisnası isteyin.",
+          "notFound": "Bu proje kullanılamıyor."
+        },
+        "saving": "Proje kaydediliyor…",
+        "tripDescription": "Aksi yönde bir seçim yapmadığınız sürece masraflar için seyahatin projesi kullanılır. Her masraf, kendi tarihindeki proje atamanız kapsamında olmalıdır.",
+        "tripLabel": "Seyahat projesi (isteğe bağlı)",
+        "unavailableOption": "{name} (bu tarihte kullanılamaz)",
+        "unavailableTripOption": "{name} (bu tarihlerde kullanılamaz)",
+        "viaException": "yetkilendirilmiş istisna"
+      },
+      "receiptException": {
+        "badge": "Fiş eksik — istisna",
+        "disabled": "Kuruluşunuz artık eksik fiş istisnalarına izin vermiyor. Fişi ekleyin veya açıklamanızı kaldırın.",
+        "notAllowed": "Kuruluşunuz eksik fiş istisnalarına izin vermiyor.",
+        "reason": "Fiş neden eksik?",
+        "reasonDescription": "İnceleyiciniz bu açıklamayı görür ve raporu onaylamak için bunu kabul etmelidir.",
+        "reasonLabel": "Neden eksik:",
+        "reasonRequired": "Fişin neden eksik olduğunu açıklayın.",
+        "receiptAttached": "Bir fiş eklendi, bu nedenle eksik fiş açıklamanız gönderilmedi.",
+        "request": "Fişi sağlayamıyorum ve istisna talep ediyorum",
+        "title": "Fiş yok mu?",
+        "unsavedAfterClose": "Eksik fiş açıklamanız kaydedilemedi. Kontrol etmek için masrafı tekrar açın.",
+        "withdraw": "Açıklamayı kaldır"
+      },
+      "receipts": {
+        "chooseFile": "Dosya seç",
+        "description": "Fişin bir fotoğrafını çekin ya da bir PDF veya görsel ekleyin.",
+        "downloadNamed": "{fileName} dosyasını indir",
+        "errors": {
+          "locked": "Bu harcama artık düzenlenemez.",
+          "retry": "Lütfen tekrar deneyin.",
+          "tooLarge": "Dosya çok büyük. En fazla {size} MB boyutunda bir dosya ekleyin.",
+          "unsupportedType": "Bir PDF veya görsel (JPEG, PNG, WebP, GIF, BMP veya TIFF) ekleyin."
+        },
+        "none": "Henüz fiş eklenmedi.",
+        "previewNamed": "{fileName} dosyasını önizle",
+        "progress": "Yükleme ilerlemesi",
+        "remove": "Kaldır",
+        "removeFailed": "Fiş kaldırılamadı.",
+        "removeNamed": "{fileName} dosyasını kaldır",
+        "takePhoto": "Fotoğraf çek",
+        "title": "Fiş",
+        "uploadFailed": "Fiş eklenmedi.",
+        "uploading": "Fiş yükleniyor…",
+        "verifying": "Fiş kontrol ediliyor…"
+      },
+      "rejectedBy": "{name} tarafından reddedildi",
+      "reopen": {
+        "action": "Düzeltme için yeniden aç",
+        "changed": "Bu sırada rapor değişti ve yeniden açılmadı. Raporu tekrar inceleyin.",
+        "confirm": "Raporu yeniden aç",
+        "description": "Çalışan raporu düzeltebilir ve yeni bir onay için tekrar göndermelidir. O zamana kadar ödenemez veya dışa aktarılamaz. Onaylanan gönderim geçmişte kalır.",
+        "done": "Rapor düzeltme için yeniden açıldı",
+        "exported": "Bu rapor zaten muhasebeye aktarıldı, bu nedenle artık yeniden açılamaz. Düzeltmeler için bağlantılı bir düzeltme kaydı gerekir.",
+        "failed": "Rapor yeniden açılamadı. Değiştirilmiş olabilir veya artık erişiminiz olmayabilir. Raporu yeniden yükleyip tekrar deneyin.",
+        "reason": "Çalışana iletilecek neden",
+        "reasonRequired": "Çalışana neyi düzeltmesi gerektiğini bildirin.",
+        "reasonTooLong": "Nedeni {max} karakterin altında tutun.",
+        "reimbursed": "Bu rapor için zaten bir geri ödeme kaydedildi, bu nedenle artık yeniden açılamaz. Düzeltmeler için bağlantılı bir düzeltme kaydı gerekir.",
+        "reopenedBy": "Düzeltme için {date} tarihinde {name} tarafından yeniden açıldı",
+        "title": "Bu onaylanmış rapor yeniden açılsın mı?"
+      },
+      "requirements": {
+        "amount": "Fiş/fatura tutarını girin.",
+        "category": "Bir kategori seçin.",
+        "complete": "Bu masrafa ait her şey girildi.",
+        "conversionEvidence": "Kart çekimini gösteren eki seçin.",
+        "conversionMissing": "Bu fişi/faturayı {currency} para birimine dönüştürün: Kart çekiminizi bunu gösteren ek ile birlikte girin veya bir masraf yöneticisinden belgelenmiş bir kur isteyin.",
+        "conversionRateDate": "Yetkilendirilen kurun tarihi artık masraf tarihiyle uyuşmuyor. Kart çekiminizi girin veya bir masraf yöneticisinden yeni tarih için bir kur belgelemesini isteyin.",
+        "conversionUnsupported": "Bu dönüşüm {currency} için kullanılamaz. Bir masraf yöneticisinden bunu kontrol etmesini isteyin.",
+        "description": "Masrafı açıklayın.",
+        "expenseDate": "Fiş/fatura üzerindeki tarihi ekleyin.",
+        "fixFields": "Önce vurgulanan alanları düzeltin.",
+        "futureDate": "Bu tarih gelecekte. Tarihi düzeltin veya {date} tarihinden itibaren gönderin.",
+        "paidBy": "Ödemeyi sizin mi yoksa şirketin mi yaptığını belirtin.",
+        "receipt": "Fişi/faturayı ekleyin.",
+        "receiptExceptionNotAllowed": "Fişi/faturayı ekleyin. Kuruluşunuz eksik fiş/fatura istisnalarına izin vermemektedir.",
+        "receiptExceptionReason": "Fişin/faturanın neden eksik olduğunu açıklayın.",
+        "title": "Hâlâ gerekenler"
+      },
+      "returnedBy": "{name} tarafından {date} tarihinde değişiklik için iade edildi",
+      "returnedItemNamed": "{item} ({description}):",
+      "returnedRemovedItem": "{item}, {description}:",
+      "save": {
+        "conflictDescription": "Açtıktan sonra başka bir pencerede veya başka bir cihazda kaydedildi. En son düzenlemeleriniz henüz kaydedilmedi.",
+        "conflictTitle": "Bu masraf başka bir yerde değiştirildi",
+        "failedDescription": "Düzenlemeleriniz bu sayfada tutuluyor. Bağlantınızı kontrol edin ve tekrar deneyin.",
+        "failedTitle": "Değişiklikleriniz kaydedilemedi",
+        "invalid": "Kaydetmek için vurgulanan alanları düzeltin",
+        "keepMine": "Bunun yerine benim düzenlemelerimi kaydet",
+        "pending": "Kaydedilmemiş değişiklikler",
+        "retry": "Tekrar deneyin",
+        "saved": "Tüm değişiklikler kaydedildi",
+        "saving": "Kaydediliyor…",
+        "unsavedAfterClose": "Bir masrafta yaptığınız son değişiklikler kaydedilemedi. Kontrol etmek için masrafı tekrar açın.",
+        "useTheirs": "Kaydedilen sürümü yükle"
+      },
+      "selfApprovedOn": "{date} tarihinde otomatik olarak onaylandı: Bu rapor kuruluş sahibine ait ve başka hiç kimse inceleyemezdi.",
+      "standaloneTitle": "Bağımsız fiş",
+      "status": {
+        "approved": "Onaylandı",
+        "rejected": "Reddedildi",
+        "returned": "Değişiklik için iade edildi",
+        "submitted": "İnceleme bekleniyor"
+      },
+      "submissionNumberAt": "Gönderim {number}, {date} tarihinde gönderildi",
+      "submit": {
+        "adjustment": "Bu düzeltmenin ait olduğu rapor artık bu para biriminde onaylanmadığından işaretli fark hesaplanamıyor. Düzeltmeniz taslak olarak kaydedilmiş şekilde kalır.",
+        "adjustmentSuperseded": "Siz bu işleme başladıktan sonra aynı raporun başka bir düzeltmesi onaylandı ve bu kopya ilgili düzeltmeyi içermiyor. Her iki düzeltmenin de korunması için orijinal rapordan yeni bir düzeltme başlatın.",
+        "adjustmentTitle": "Bu düzeltme gönderilemez",
+        "blockedIncomplete": "Göndermeden önce “Hâlâ gerekenler” altında listelenen her şeyi tamamlayın.",
+        "blockedUnsaved": "Göndermeden önce tüm değişiklikler kaydedilene kadar bekleyin veya vurgulanan alanları düzeltin.",
+        "cancel": "Düzenlemeye devam et",
+        "changed": "Rapor siz inceledikten sonra değişti. Bu iletişim kutusunu kapatın, girişlerinizi kontrol edin ve raporu yeniden inceleyin.",
+        "changedTitle": "Rapor değişti",
+        "confirm": "Onaya gönder",
+        "description": "Kaydedilen raporu kontrol edin. İnceleyen kişi tam olarak bu sürüm üzerinden karar verir; rapor incelenirken düzenlenemez.",
+        "failed": "Bir şeyler ters gitti. Raporunuz hâlâ taslak olarak kayıtlı; lütfen tekrar deneyin.",
+        "failedTitle": "Rapor gönderilmedi",
+        "incomplete": "Kaydedilen bazı ayrıntılar hâlâ eksik. “Hâlâ gerekenler” altında listelenen her şeyi tamamlayın ve tekrar deneyin.",
+        "incompleteTitle": "Rapor eksik",
+        "itemRequirement": "{item}: {requirement}",
+        "noReviewerAsk": "Kendiniz dışında bir yöneticiniz veya ekip yöneticiniz yok ve belirlenmiş bir masraf onaylayıcısı bulunmuyor. Bir yöneticiden Ayarlar, Seyahat masrafları, Masraf raporu incelemesi altından bir masraf onaylayıcı seçmesini isteyin. Raporunuz taslak olarak kayıtlı kalır.",
+        "noReviewerAssign": "Kendiniz dışında bir yöneticiniz veya ekip yöneticiniz yok ve belirlenmiş bir masraf onaylayıcısı bulunmuyor. Seyahat masrafları ayarlarındaki Masraf raporu incelemesi altından bir masraf onaylayıcı seçin. Raporunuz taslak olarak kayıtlı kalır.",
+        "noReviewerTitle": "Bu raporu henüz kimse inceleyemez",
+        "notSaved": "Bazı değişiklikler henüz kaydedilmedi. Kaydedilmelerini bekleyin, ardından raporu yeniden inceleyin.",
+        "openApproverSetting": "Masraf onaylayıcı ayarını aç",
+        "project": "{count, plural, one {Bir masraf, masraf tarihinde atanmadığınız bir projeyle ilişkilendirilmiş. Başka bir proje seçin veya bir masraf yöneticisinden ilişkilendirme istisnası talep edin. Raporunuz taslak olarak kayıtlı kalır.} other {# masraf, masraf tarihinde atanmadığınız bir projeyle ilişkilendirilmiş. Başka bir proje seçin veya bir masraf yöneticisinden ilişkilendirme istisnası talep edin. Raporunuz taslak olarak kayıtlı kalır.}}",
+        "projectTitle": "Bir proje kullanılamıyor",
+        "ready": "Girişleriniz kaydedildi. Raporu inceleyin ve onaya gönderin.",
+        "requesterInactive": "Çalışan profiliniz bu kuruluşta etkin değil, bu nedenle rapor inceleme için yönlendirilemiyor.",
+        "review": "İncele ve gönder",
+        "routing": "Kuruluşunuzun onay kuralları bir inceleyen bulamadı. Bir sistem yöneticisinden kuralları kontrol etmesini isteyin. Raporunuz taslak olarak kayıtlı kalır.",
+        "routingTitle": "Rapor yönlendirilemedi",
+        "selfApproval": "Kuruluşunuzun onay kuralları kendi raporunuzu onaylamanıza izin veriyor. Bir sistem yöneticisinden kuralları düzenlemesini isteyin. Raporunuz taslak olarak kayıtlı kalır.",
+        "selfApprovalBlocked": "Kuruluş sahibi olarak, başka kimse inceleyemediği için raporlarınız otomatik olarak onaylanır. Bu raporda eksik fiş açıklaması veya manuel olarak belirlenmiş bir harcırah yer alıyor ve bunu başka birinin kabul etmesi gerekir. Bir masraf onaylayıcı seçin veya raporu değiştirin. Raporunuz taslak olarak kayıtlı kalır.",
+        "selfApproved": "Rapor otomatik olarak onaylandı: Başka kimse inceleyemez",
+        "success": "Rapor onaya gönderildi",
+        "thresholdCurrency": "Kuruluşunuzun onay kuralları tutarları EUR cinsinden karşılaştırıyor ancak bu rapor {currency} para biriminde. Bir sistem yöneticisinden kuralları kontrol etmesini isteyin. Raporunuz taslak olarak kayıtlı kalır.",
+        "title": "Masraf raporunu gönder",
+        "unavailable": "Kuruluşunuz masraf onaylarının işleyişini değiştiriyor, bu nedenle şu anda raporlar gönderilemiyor. Raporunuz taslak olarak kayıtlı kalır.",
+        "unavailableTitle": "Gönderim duraklatıldı"
+      },
+      "submittedAt": "{date} tarihinde gönderildi",
+      "summary": {
+        "itemPrefix": "{item}:",
+        "paidByCompany": "Şirket tarafından ödendi",
+        "paidByEmployee": "Sizin tarafınızdan ödendi"
+      },
+      "totals": {
+        "companyPaid": "Şirket tarafından ödendi",
+        "excluded": "{count, plural, other {# masraf henüz hesaba katılmadı. Toplamlara, tutarı ve ödeyeni girilen {currency} cinsinden masraflar dahildir.} }",
+        "reimbursable": "Size geri ödendi",
+        "title": "Toplamlar"
+      },
+      "trip": {
+        "dates": "Seyahat tarihleri",
+        "datesZone": "({timeZone} saat dilimindeki takvim günleri)",
+        "destinations": "Varış noktaları",
+        "errors": {
+          "destination": "Listelenen bir ülkeyi seçin.",
+          "endBeforeStart": "Son seyahat günü ilk günden önce olamaz.",
+          "timeZone": "Listelenen bir saat dilimini seçin.",
+          "tooManyDestinations": "En fazla {max} varış noktası girin."
+        },
+        "fields": {
+          "addDestination": "Varış noktası ekle",
+          "country": "Ülke {number}",
+          "countryPlaceholder": "Ülke",
+          "destinations": "Varış noktaları",
+          "endDate": "Son seyahat günü",
+          "noDestinations": "Seyahat edeceğiniz yerleri ekleyin.",
+          "place": "Yer {number}",
+          "placePlaceholder": "Şehir veya yer",
+          "purpose": "Seyahat amacı",
+          "purposePlaceholder": "Örn. Hamburg'da müşteri çalıştayı",
+          "removeDestination": "{number} numaralı varış noktasını kaldır",
+          "startDate": "İlk seyahat günü",
+          "timeZone": "Seyahat tarihlerinin saat dilimi",
+          "timeZoneDescription": "Seyahat tarihleri, {timeZone} saat dilimindeki takvim günleridir. İnceleyenler nerede olurlarsa olsunlar aynı tarihleri görür."
+        },
+        "purpose": "Seyahat amacı",
+        "requirements": {
+          "complete": "Bu seyahat için her şey girildi.",
+          "destination": "En az bir varış noktası ekleyin.",
+          "expenseItem": "Masraf ekleyin.",
+          "fixFields": "Vurgulanan seyahat ayrıntılarını düzeltin.",
+          "itemNamed": "{item}: {description}",
+          "notEnded": "Seyahat {date} tarihinde sona eriyor. O günden itibaren gönderebilirsiniz.",
+          "purpose": "Seyahatin amacını açıklayın.",
+          "title": "Bu seyahat için hâlâ gerekenler",
+          "travelDates": "İlk ve son seyahat gününü girin."
+        },
+        "title": "Seyahat ayrıntıları",
+        "unsavedAfterClose": "Seyahat ayrıntılarında yaptığınız son değişiklikler kaydedilemedi. Kontrol etmek için seyahati tekrar açın."
+      },
+      "withdraw": {
+        "action": "Raporu geri çek",
+        "confirm": "Geri çek",
+        "description": "İnceleme durdurulur ve rapor yeniden düzenlenebilir bir taslak haline gelir. Bu gönderim raporun geçmişinde kalır.",
+        "done": "Rapor geri çekildi. Tekrar düzenleyebilirsiniz.",
+        "failed": "Rapor geri çekilemedi. Lütfen tekrar deneyin.",
+        "notPending": "Bu gönderim hakkında zaten karar verilmiş veya gönderim iade edilmiş olduğundan artık geri çekilemez.",
+        "title": "Bu rapor geri çekilsin mi?"
+      },
+      "withdrawnNotice": "{number} numaralı gönderimi geri çektiniz. Hazır olduğunda raporu tekrar gönderin.",
+      "withdrawnSubmission": "Bu gönderim, bir karar verilmeden önce geri çekildi."
+    },
+    "settings": {
+      "catalogAdopted": "{date} tarihinde kabul edildi, {effectiveFrom} tarihinden itibaren geçerli",
+      "perDiem": {
+        "adoptForeignTitle": "Resmi yurt dışı oranlarıyla Alman yasal harcırahını uygulayın",
+        "foreignAreas": "Yurt dışı oranları: {countries} ülke ve {places} şehir"
+      },
+      "tabs": {
+        "currencies": "Para birimleri",
+        "exceptions": "İstisnalar",
+        "exceptionsPending": "{label}, {count} beklemede",
+        "rates": "Oranlar",
+        "review": "İncele"
+      }
+    },
+    "settlement": {
+      "adjustment": "Onaylanan düzeltme dahil",
+      "balance": {
+        "outstanding": "{amount} ödenmemiş",
+        "overpaid": "{amount} fazla ödenmiş",
+        "settled": "Kapatıldı"
+      },
+      "companyPaid": "Şirket tarafından ödenen {amount} tutarındaki masraflar için çalışana borç bulunmamaktadır.",
+      "entitlement": "Çalışan tarafından ödenen onaylı tutar",
+      "entry": {
+        "recordedBy": "{name} tarafından kaydedildi, {date}",
+        "recovery": "{amount} geri tahsil edildi",
+        "reimbursement": "{amount} ödendi"
+      },
+      "errors": {
+        "amountInvalid": "Pozitif bir tutar girin.",
+        "amountPrecision": "Bu para biriminde bu kadar çok ondalık basamak bulunmuyor.",
+        "amountRequired": "Ödenen tutarı girin.",
+        "conflict": "Daha önce farklı değerlerle yapılmış bir işlem zaten kaydedildi. Tekrar kaydetmeden önce geçmişi kontrol edin.",
+        "dateFuture": "Ödeme tarihi gelecekteki bir tarih olamaz.",
+        "dateInvalid": "Geçerli bir tarih girin.",
+        "dateRequired": "Ödeme tarihini girin.",
+        "exceedsOutstanding": "Tutar, ödenmemiş tutardan daha fazla.",
+        "exceedsOverpayment": "Tutar, fazla ödenen tutardan daha fazla.",
+        "failed": "Ödeme kaydedilemedi. Lütfen tekrar deneyin.",
+        "load": "Geri ödeme bakiyesi yüklenemedi. Lütfen tekrar deneyin.",
+        "noOverpayment": "Bu masraf için herhangi bir fazla ödeme yapılmadı.",
+        "notApproved": "Bu masraf artık onaylı olmadığından ödeme kaydedilemez.",
+        "nothingOutstanding": "Bu masraf için ödenmemiş tutar bulunmuyor.",
+        "ownExpense": "Kendi masraflarınız için ödeme kaydedemezsiniz.",
+        "referenceRequired": "Ödeme referansını girin; örn. banka havalesi referansı.",
+        "refused": "Bu ödeme bu masraf için kaydedilemez.",
+        "staleBalance": "Siz bu ödemeyi girerken bakiye değişti. Güncel bakiyeyi kontrol edip tekrar kaydedin.",
+        "tooLong": "Bu metin çok uzun."
+      },
+      "form": {
+        "amount": "Ödenen tutar ({currency})",
+        "date": "Ödeme tarihi",
+        "label": "Geri ödeme kaydet",
+        "note": "Not (isteğe bağlı)",
+        "notice": "Çalışana önceden ödenmiş parayı kaydedin. Z8 herhangi bir para transferi yapmaz.",
+        "reference": "Ödeme referansı",
+        "referenceHint": "Örneğin banka havalesi veya bordro işlemi referansı.",
+        "submit": "Geri ödemeyi kaydet"
+      },
+      "history": "Kaydedilen ödemeler",
+      "loading": "Geri ödeme bakiyesi yükleniyor…",
+      "ownerOutstanding": "Ödeme yapıldıktan sonra Finans departmanı geri ödemenizi buraya kaydeder.",
+      "ownerOverpaid": "Şu anda onaylanandan daha fazla ödeme yapıldı. Fark iade edildiğinde Finans buraya kaydeder; Z8 herhangi bir para transferi yapmaz.",
+      "recorded": "Geri ödeme kaydedildi.",
+      "recordedAlready": "Bu ödeme zaten kaydedilmişti.",
+      "recovered": "Geri alındı",
+      "recoveryForm": {
+        "amount": "Geri alınan tutar ({currency})",
+        "date": "Geri alma tarihi",
+        "label": "Geri alma kaydet",
+        "notice": "Çalışana şu anda onaylanandan daha fazla ödeme yapıldı. Fazla ödemeyi kapatmak için çalışanın önceden iade ettiği parayı kaydedin; ilk geri ödeme kaydedildiği şekilde kalır ve diğer raporlarla mahsup edilmez. Z8 herhangi bir para transferi yapmaz.",
+        "submit": "Geri almayı kaydet"
+      },
+      "recoveryRecorded": "Geri alma kaydedildi.",
+      "reimbursed": "Geri ödendi",
+      "state": {
+        "mixed": "İnceleme gerekiyor",
+        "outstanding": "Ödenmemiş",
+        "overpaid": "Fazla ödendi",
+        "settled": "Kapatıldı"
+      },
+      "title": "Geri ödeme"
+    },
+    "status": {
+      "draft": "Taslak"
+    },
+    "title": "Seyahat Masrafları",
+    "workspace": {
+      "description": "Seyahat masraflarını ve bağımsız masrafları toplayın, incelemeye gönderin ve geri ödemelerini takip edin."
+    }
   }
 }

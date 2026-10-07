@@ -7,6 +7,7 @@ import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
 import { getAuthContext } from "@/lib/auth-helpers";
+import { loadFinanceActor } from "@/lib/travel-expenses/finance-access";
 import { loadAuthorizedTravelExpenseReport } from "@/lib/travel-expenses/report-read";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
@@ -37,9 +38,14 @@ async function ReportContent({ params, searchParams }: ReportPageProps) {
 	if (authorized.access !== "owner") {
 		// Reviewers see only the frozen submission the Approvals inbox lets them
 		// decide; finance (#612) sees the approved frozen submission and its settlement.
+		// An approved report has left the inbox, so its reviewer with finance access
+		// goes back to expense finance too.
+		const financeReader =
+			authorized.access === "finance" ||
+			(authorized.report.status === "approved" && Boolean((await loadFinanceActor())?.canRead));
 		return (
 			<div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-6 lg:px-6">
-				{authorized.access === "finance" ? (
+				{financeReader ? (
 					<Link
 						className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
 						href="/travel-expenses/finance"
@@ -54,9 +60,6 @@ async function ReportContent({ params, searchParams }: ReportPageProps) {
 						{t("travelExpenses.report.backToApprovals", "Back to approvals")}
 					</Link>
 				)}
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("travelExpenses.report.submittedTitle", "Submitted expense report")}
-				</h1>
 				<SubmittedTravelExpenseReport reportId={reportId} cycle={cycle} />
 			</div>
 		);
@@ -69,9 +72,6 @@ async function ReportContent({ params, searchParams }: ReportPageProps) {
 			>
 				{t("travelExpenses.report.backToTravelExpenses", "Back to travel expenses")}
 			</Link>
-			<h1 className="text-2xl font-semibold tracking-tight">
-				{t("travelExpenses.report.title", "Expense")}
-			</h1>
 			{cycle === undefined ? (
 				<TravelExpenseReportEditor
 					reportId={reportId}
@@ -102,7 +102,7 @@ export default function TravelExpenseReportPage(props: ReportPageProps) {
 						labelDefault: "Loading travel expenses",
 					}}
 					role="status"
-					className="p-6"
+					className="mx-auto w-full max-w-3xl px-4 py-6 lg:px-6"
 				>
 					<Skeleton aria-hidden="true" className="h-96 w-full" />
 				</LoadingRegion>

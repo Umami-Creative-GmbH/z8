@@ -32,16 +32,18 @@
     "correction": {
       "clockIn": "Einstempeln",
       "clockInDate": "Datum Arbeitsbeginn",
+      "clockInTime": "Uhrzeit Arbeitsbeginn",
       "clockOut": "Ausstempeln",
       "clockOutDate": "Datum Arbeitsende",
+      "clockOutTime": "Uhrzeit Arbeitsende",
       "editDescription": "Änderungen an Ihrem Zeiteintrag für heute vornehmen.",
       "editEntry": "Zeiteintrag bearbeiten",
       "editTitle": "Zeiteintrag bearbeiten",
       "errors": {
         "invalidTimeRange": "Ausstempelzeit muss nach der Einstempelzeit liegen",
+        "noChanges": "Mindestens ein Korrekturwert muss geändert werden",
         "submitFailed": "Fehler beim Senden der Korrektur",
-        "updateFailed": "Fehler beim Aktualisieren des Zeiteintrags",
-        "noChanges": "Mindestens ein Korrekturwert muss geändert werden"
+        "updateFailed": "Fehler beim Aktualisieren des Zeiteintrags"
       },
       "noteLabel": "Notiz (optional)",
       "notePlaceholder": "Notiz zu dieser Änderung hinzufügen...",
@@ -59,9 +61,7 @@
         "submitted": "Korrekturanfrage zur Genehmigung durch Manager gesendet",
         "updated": "Zeiteintrag erfolgreich aktualisiert"
       },
-      "timezoneNote": "Zeiten sind in Ihrer lokalen Zeitzone ({timezone})",
-      "clockInTime": "Uhrzeit Arbeitsbeginn",
-      "clockOutTime": "Uhrzeit Arbeitsende"
+      "timezoneNote": "Zeiten sind in Ihrer lokalen Zeitzone ({timezone})"
     },
     "currentlyClockedIn": "Sie sind derzeit eingestempelt",
     "deadline": "Deadline",

@@ -128,6 +128,11 @@
     }
   },
   "calendar": {
+    "calendar": {
+      "break": {
+        "titleWithDuration": "Διάλειμμα – {duration}"
+      }
+    },
     "clockOutOnBehalf": {
       "confirm": "Έξοδος",
       "description": "Αυτό δημιουργεί μια ελέγξιμη εγγραφή εξόδου στην τρέχουσα ώρα διακομιστή. Εάν χρειάζεται οποιαδήποτε προσαρμογή στη συνέχεια, χρησιμοποιήστε τις διορθώσεις.",
@@ -283,17 +288,19 @@
       "monthTotal": "Σύνολο μήνα",
       "nextMonth": "Επόμενος μήνας",
       "previousMonth": "Προηγούμενος μήνας",
+      "recordedOnlyDayLabel": "{date}: Καταγράφηκαν {actual}.",
       "totalDescription": "Καταγεγραμμένος χρόνος σε σύγκριση με τις ώρες πολιτικής",
       "weekSum": "Άθροισμα"
     },
     "requirements": {
+      "dayLabel": "{date}: {actual} καταγράφηκαν, {required} απαιτούνται, {delta} {status}.",
+      "includesRunningWork": "Περιλαμβάνει εργασία σε εξέλιξη",
       "status": {
         "met": "καλύφθηκε η απαίτηση",
         "missing": "λείπει καταγεγραμμένος χρόνος",
         "over": "πάνω από την απαίτηση",
         "under": "κάτω από την απαίτηση"
-      },
-      "dayLabel": "{date}: {actual} καταγράφηκαν, {required} απαιτούνται, {delta} {status}."
+      }
     },
     "split": {
       "ambiguousTime": "Επιλέξτε ποια εμφάνιση θα χρησιμοποιήσετε",
@@ -346,11 +353,6 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
-    },
-    "calendar": {
-      "break": {
-        "titleWithDuration": "Διάλειμμα – {duration}"
-      }
     }
   }
 }

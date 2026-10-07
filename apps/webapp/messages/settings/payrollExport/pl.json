@@ -30,6 +30,7 @@
         "dateRange": "Zakres dat",
         "description": "Eksportuj okresy pracy i nieobecności do formatu DATEV Lohn & Gehalt",
         "employees": "Pracownicy",
+        "employeesSelected": "Wybrano {count}",
         "endDate": "Data końcowa",
         "error": "Eksport nie powiódł się",
         "exportButtonDatev": "Eksportuj do DATEV",
@@ -52,9 +53,11 @@
         "month": "Miesiąc",
         "monthSelection": "Wybierz miesiąc",
         "projects": "Projekty",
+        "projectsSelected": "Wybrano {count}",
         "startDate": "Data początkowa",
         "success": "Eksport pobrany",
         "teams": "Zespoły",
+        "teamsSelected": "Wybrano {count}",
         "title": "Eksportuj dane płacowe",
         "unavailable": {
           "missingConfiguration": "konfiguracja",
@@ -296,7 +299,11 @@
         "number": "Numer pracownika"
       },
       "checks": {
-        "count": "Liczba"
+        "count": "Liczba",
+        "missingEmploymentHistory": {
+          "descriptionPass": "Wszyscy aktywni pracownicy mają potwierdzoną historię zatrudnienia dla tego okresu rozliczeniowego.",
+          "descriptionWarning": "Niektórzy aktywni pracownicy nie mają potwierdzonej historii zatrudnienia dla tego okresu rozliczeniowego."
+        }
       },
       "checkStatus": {
         "fail": "Zablokowane",

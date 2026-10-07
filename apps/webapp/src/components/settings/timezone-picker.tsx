@@ -92,9 +92,15 @@ interface TimezonePickerProps {
 	value?: string;
 	onChange: (timezone: string) => void;
 	disabled?: boolean;
+	"aria-invalid"?: boolean;
 }
 
-export function TimezonePicker({ value = "UTC", onChange, disabled }: TimezonePickerProps) {
+export function TimezonePicker({
+	value = "UTC",
+	onChange,
+	disabled,
+	"aria-invalid": ariaInvalid,
+}: TimezonePickerProps) {
 	const { t } = useTranslate();
 	const [open, setOpen] = React.useState(false);
 	const listboxId = React.useId();
@@ -247,11 +253,12 @@ export function TimezonePicker({ value = "UTC", onChange, disabled }: TimezonePi
 		<Popover open={open} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
 				<Button
-					variant="outline"
+					variant="field"
 					role="combobox"
 					aria-expanded={open}
 					aria-controls={listboxId}
-					className="w-full justify-between"
+					aria-invalid={ariaInvalid || undefined}
+					className="w-full"
 					disabled={disabled}
 				>
 					<div className="flex items-center gap-2 truncate">
@@ -262,9 +269,9 @@ export function TimezonePicker({ value = "UTC", onChange, disabled }: TimezonePi
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className="w-[400px] p-0" align="start">
-				<Command>
+				<Command defaultValue={value}>
 					<CommandInput
-						placeholder={t("settings.timezone.picker.search", "IconSearch timezone…")}
+						placeholder={t("settings.timezone.picker.search", "Search timezone…")}
 					/>
 					<CommandEmpty>{t("settings.timezone.picker.empty", "No timezone found.")}</CommandEmpty>
 					<CommandList id={listboxId}>

@@ -150,7 +150,7 @@ describe("GET /api/approvals/inbox/[id]", () => {
 			status: "pending",
 		});
 		mockState.getApprovalInboxDetail.mockResolvedValue({
-			item: { id: "approval-1" },
+			item: { id: "approval-1", requester: { id: "requester-1" } },
 			sections: [],
 			actions: {},
 		});

@@ -21,6 +21,7 @@ import {
 	loadTravelExpenseReportRevisionsByRequest,
 	loadTravelExpenseReportSubmittedRevision,
 } from "../evidence/travel-expense-report-store";
+import { travelExpenseReportDisplay } from "../presentation/travel-expense-report-display";
 import { loadTravelExpenseApprover } from "../server/travel-expense-approvals";
 import { decideTravelExpenseReportEffect } from "../server/travel-expense-report-approvals";
 import type { ApprovalDatabase } from "../server/types";
@@ -149,32 +150,7 @@ function withRequestRevision(
 }
 
 function getDisplayMetadata(entity: TravelExpenseReportApprovalEntity): ApprovalDisplayMetadata {
-	const facts = entity.submitted;
-	if (!facts) {
-		return {
-			title: "Expense report",
-			subtitle: "Submitted facts unavailable",
-			summary: "",
-			icon: "receipt",
-		};
-	}
-	const { trip, totals, items } = facts;
-	const dates = trip
-		? trip.startDate === trip.endDate
-			? trip.startDate
-			: `${trip.startDate} – ${trip.endDate}`
-		: (items[0]?.expenseDate ?? "");
-	const subtitle = trip
-		? `${trip.purpose} · ${dates}`
-		: `${items[0]?.description ?? ""} · ${dates}`;
-	const companyPaid =
-		totals.companyPaid === "0.00" ? "" : ` · company-paid ${totals.currency} ${totals.companyPaid}`;
-	return {
-		title: trip ? "Trip expense report" : "Expense report",
-		subtitle,
-		summary: `${items.length} ${items.length === 1 ? "expense" : "expenses"} · reimbursable ${totals.currency} ${totals.reimbursable}${companyPaid}`,
-		icon: "receipt",
-	};
+	return travelExpenseReportDisplay(entity.submitted);
 }
 
 function requesterOf(entity: TravelExpenseReportApprovalEntity): UnifiedApprovalItem["requester"] {
@@ -318,12 +294,16 @@ export const TravelExpenseReportHandler: ApprovalTypeHandler<TravelExpenseReport
 				},
 			];
 			if (request.status === "approved" && request.approvedAt) {
+				// #679: routing completed the owner's own request; nobody decided it.
+				const selfApproved = Boolean(request.metadata?.ownerSelfApproval);
 				timeline.push({
 					id: `${request.id}-approved`,
 					type: "approved",
-					performedBy: approver,
+					performedBy: selfApproved ? null : approver,
 					timestamp: request.approvedAt,
-					message: "Expense report approved",
+					message: selfApproved
+						? "Approved automatically: no other reviewer"
+						: "Expense report approved",
 				});
 			}
 			const requestId: string = request.id;

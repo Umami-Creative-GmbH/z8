@@ -11,6 +11,7 @@ import {
 	formatInstant,
 	formatPlainDate,
 } from "@/lib/datetime/temporal-format";
+import { formatCountry } from "@/lib/travel-expenses/format";
 import { readApprovalAuthoritySnapshot } from "../authority";
 import { readApprovalPresentationMode } from "../evidence/invocation";
 import { isLegacyRequestInRevisionLifecycle, issueLegacyReviewBinding } from "../evidence/store";
@@ -133,7 +134,14 @@ export function buildTravelExpenseReportCardFacts(
 	});
 	if (facts.trip && tripDates) {
 		const destinations = facts.trip.destinations
-			.map((destination) => [destination.place, destination.countryCode].filter(Boolean).join(", "))
+			.map((destination) =>
+				[
+					destination.place,
+					destination.countryCode && formatCountry(display.locale, destination.countryCode),
+				]
+					.filter(Boolean)
+					.join(", "),
+			)
 			.filter((destination) => destination.length > 0)
 			.join("; ");
 		result.push(

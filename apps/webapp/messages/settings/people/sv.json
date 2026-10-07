@@ -12,7 +12,7 @@
       "title": "Medarbetargrupper"
     },
     "employees": {
-      "description": "Hantera medarbetarprofiler, team och behörigheter",
+      "description": "Hantera medarbetare, medlemmar och inbjudningar",
       "details": "Information om anställd",
       "detailsDescription": "Visa och redigera medarbetarinformation",
       "detailsTitle": "Medarbetaruppgifter",
@@ -156,7 +156,7 @@
         "title": "Inbjudningar"
       },
       "lifecycle": {
-        "actionsLabel": "Medarbetaråtgärder för ${target.displayName}",
+        "actionsLabel": "Medarbetaråtgärder för {name}",
         "deactivate": "Inaktivera",
         "deactivateDescription": "Detta stänger av åtkomsten till denna organisation och avslutar sessioner som för närvarande använder den. Medarbetarhistorik behålls.",
         "deactivateError": "Kunde inte inaktivera medarbetare",
@@ -164,6 +164,8 @@
         "deactivateTitle": "Inaktivera medarbetare?",
         "deactivating": "Inaktiverar...",
         "deactivatingStatus": "Inaktiverar medarbetare",
+        "finalOwnerDeactivateGuidance": "Tilldela och aktivera en annan godkänd ägare innan du inaktiverar den här medarbetaren.",
+        "finalOwnerRemoveGuidance": "Tilldela och aktivera en annan godkänd ägare innan du tar bort den här medarbetarens åtkomst.",
         "reactivate": "Återaktivera",
         "reactivateDescription": "Detta återställer åtkomsten till denna organisation med hjälp av befintliga medarbetaruppgifter.",
         "reactivateError": "Kunde inte återaktivera medarbetare",
@@ -621,6 +623,10 @@
         "title": "Inga anpassade roller ännu"
       },
       "introduction": "Skapa anpassade behörighetsroller som kan tilldelas medarbetare. Anpassade roller lägger till behörigheter utöver basnivån.",
+      "permissionCategories": {
+        "time_tracking": "Tidsregistrering",
+        "works_council": "Företagsråd"
+      },
       "table": {
         "actions": "Åtgärder",
         "assigned": "Tilldelad",
@@ -656,7 +662,7 @@
       "catalogDescription": "Definiera kompetenser som kan krävas för delområden och passmallar",
       "category": "Kategori",
       "confirmDelete": "Är du säker på att du vill ta bort den här kompetensen?",
-      "confirmRemove": "Ta bort \"${skillName}\" från den här medarbetaren?",
+      "confirmRemove": "Ta bort \"{skillName}\" från den här medarbetaren?",
       "createError": "Det gick inte att skapa kompetensen",
       "createSkill": "Skapa kompetens",
       "createSkillDescription": "Skapa en ny kompetens som kan tilldelas medarbetare",
@@ -670,8 +676,8 @@
       "employeeSkills": "Kompetenser & kvalifikationer",
       "employeeSkillsDescription": "Certifieringar och kompetenser tilldelade den här medarbetaren",
       "expired": "Utgången",
-      "expiredOn": "Gick ut {{date}}",
-      "expiresOn": "Går ut {{date}}",
+      "expiredOn": "Gick ut {date}",
+      "expiresOn": "Går ut {date}",
       "expiringSoon": "Löper ut snart",
       "expiry": "Spårning av utgångsdatum",
       "expiryDate": "Utgångsdatum",

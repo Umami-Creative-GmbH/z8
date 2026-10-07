@@ -3,6 +3,7 @@
 import { IconFileText } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
+import type { TravelExpenseReportItemType } from "@/db/schema/travel-expense";
 import type { ConversionResult } from "@/lib/travel-expenses/currency-conversion";
 import { type AllowanceOverrideSummary, AllowanceOverrideNotice } from "./allowance-override-notice";
 import { ConversionSummary } from "./conversion-summary";
@@ -14,12 +15,15 @@ import {
 	formatPlainDate,
 	formatPlainDateRange,
 } from "./format";
+import { itemTitle } from "./item-title";
 import { MileageBreakdown, type MileageBreakdownFacts } from "./mileage-breakdown";
 import { PerDiemBreakdown, type PerDiemBreakdownFacts } from "./per-diem-breakdown";
 import { ReceiptExceptionNotice } from "./receipt-exception-notice";
 
 export interface ExpenseSummary {
 	id: string;
+	type: TravelExpenseReportItemType;
+	/** What the employee entered: a receipt's description or a mileage route; null for a per diem. */
 	description: string | null;
 	expenseDate: string | null;
 	category: string | null;
@@ -100,8 +104,18 @@ export function ExpenseSummaryList({ items }: { items: ExpenseSummary[] }) {
 				<li key={item.id} className="rounded-lg border p-3">
 					<div className="flex flex-wrap items-baseline justify-between gap-2">
 						<p className="font-medium">
-							<span className="text-muted-foreground">{index + 1}. </span>
-							{item.description}
+							{item.description ? (
+								<>
+									<span className="text-muted-foreground">
+										{t("travelExpenses.report.summary.itemPrefix", "{item}:", {
+											item: itemTitle(t, item.type, index + 1),
+										})}{" "}
+									</span>
+									{item.description}
+								</>
+							) : (
+								itemTitle(t, item.type, index + 1)
+							)}
 						</p>
 						{item.amount && item.currency && (
 							<p className="tabular-nums font-medium">

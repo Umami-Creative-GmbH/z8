@@ -5,6 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import type { Instant } from "@/lib/datetime/temporal-core";
 import { withoutOverriddenRequirements } from "@/lib/travel-expenses/allowance-override";
 import {
 	type MileageCalculation,
@@ -12,6 +13,7 @@ import {
 	mileageItemMissingRequirements,
 	parseMileageItemDraft,
 } from "@/lib/travel-expenses/mileage";
+import { itemProjectChoice } from "@/lib/travel-expenses/project-attribution";
 import type { ReportItemView } from "@/lib/travel-expenses/report-store";
 import { AllowanceOverrideNotice } from "./allowance-override-notice";
 import { DraftSaveStatus } from "./draft-save-status";
@@ -26,6 +28,7 @@ import {
 	toDraftInput,
 } from "./mileage-item-form";
 import { mileageRequirementLabel } from "./mileage-labels";
+import { ItemProjectField } from "./project-picker";
 import { RemoveExpenseButton } from "./receipt-item-editor";
 import { useMileageItemDraft } from "./use-mileage-item-draft";
 
@@ -41,6 +44,8 @@ export function MileageItemEditor({
 	onSaved,
 	onDraftChange,
 	removal,
+	project,
+	now,
 }: {
 	reportId: string;
 	/** The item as last loaded; later loads never reset entered values. */
@@ -50,6 +55,10 @@ export function MileageItemEditor({
 	/** The entered values as they change; null while any of them is malformed. */
 	onDraftChange?: (draft: MileageItemDraft | null) => void;
 	removal?: { label: string; remove: (expectedVersion: number) => Promise<boolean> };
+	/** Project attribution (#688), as receipts have it: the trip's project is what "inherit" means. */
+	project?: { isTrip: boolean; tripProjectId: string | null; onSaved?: () => void };
+	/** The report's submission clock (`useSubmissionNow`): a future-dated drive waits (#685). */
+	now: Instant;
 }) {
 	const { t } = useTranslate();
 	const [removing, setRemoving] = useState(false);
@@ -110,6 +119,22 @@ export function MileageItemEditor({
 				className="grid gap-4"
 			>
 				<MileageItemFields form={form} fieldError={fieldError} />
+				{project && (
+					<form.Subscribe selector={(formState) => formState.values.expenseDate}>
+						{(expenseDate) => (
+							<ItemProjectField
+								reportId={reportId}
+								itemId={item.id}
+								isTrip={project.isTrip}
+								expenseDate={/^\d{4}-\d{2}-\d{2}$/.test(expenseDate) ? expenseDate : null}
+								initialChoice={itemProjectChoice(item)}
+								tripProjectId={project.tripProjectId}
+								saver={saver}
+								onSaved={project.onSaved}
+							/>
+						)}
+					</form.Subscribe>
+				)}
 			</form>
 
 			<form.Subscribe selector={(formState) => formState.values}>
@@ -119,6 +144,7 @@ export function MileageItemEditor({
 						values={values}
 						saved={saved}
 						currency={reimbursementCurrency}
+						now={now}
 					/>
 				)}
 			</form.Subscribe>
@@ -132,12 +158,14 @@ function MileageItemOutcome({
 	values,
 	saved,
 	currency,
+	now,
 }: {
 	id: string;
 	values: MileageFormValues;
 	/** The latest server view: its calculation is shown while the entries match it. */
 	saved: ReportItemView;
 	currency: string;
+	now: Instant;
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
@@ -150,7 +178,7 @@ function MileageItemOutcome({
 		draft && mileageDraftMatches(draft, saved) ? (saved.mileage?.override ?? null) : null;
 	const missing = draft
 		? withoutOverriddenRequirements(
-				mileageItemMissingRequirements(draft, calculation ?? { status: "incomplete" }),
+				mileageItemMissingRequirements(draft, calculation ?? { status: "incomplete" }, now),
 				override,
 			)
 		: null;
@@ -173,7 +201,12 @@ function MileageItemOutcome({
 				headingId={`${id}-requirements`}
 				missing={missing}
 				label={(requirement) =>
-					mileageRequirementLabel(t, requirement, { locale, calculation, currency })
+					mileageRequirementLabel(t, requirement, {
+						locale,
+						calculation,
+						currency,
+						expenseDate: draft?.expenseDate ?? null,
+					})
 				}
 			/>
 		</div>

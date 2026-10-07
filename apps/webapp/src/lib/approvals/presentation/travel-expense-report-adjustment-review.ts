@@ -1,10 +1,18 @@
-import { signedAmount } from "@/lib/travel-expenses/money";
 import type { TravelExpenseReportSubmittedFacts } from "../evidence/travel-expense-report-facts";
-import type { ApprovalInboxDetailSection, ApprovalInboxLocalizedText } from "../inbox/types";
+import type {
+	ApprovalInboxDetailSection,
+	ApprovalInboxLocalizedText,
+	ApprovalInboxValue,
+} from "../inbox/types";
 
-const text = (key: string, fallback: string): ApprovalInboxLocalizedText => ({
-	key: `approvals:approvals.evidence.${key}`,
+const text = (
+	key: string,
+	fallback: string,
+	params?: ApprovalInboxLocalizedText["params"],
+): ApprovalInboxLocalizedText => ({
+	key,
 	fallback,
+	...(params ? { params } : {}),
 });
 
 /**
@@ -19,51 +27,81 @@ export function adjustmentReviewSections(
 	const { adjustment } = facts;
 	if (!adjustment) return [];
 	const { baseline, delta } = adjustment;
-	const signed = signedAmount(delta.amount);
+	const signedDelta: ApprovalInboxValue = {
+		kind: "money",
+		amount: delta.amount,
+		currency: delta.currency,
+		signed: true,
+	};
 	return [
 		{
 			type: "callout",
-			title: text("adjustmentCalloutTitle", "Adjustment of an approved report"),
+			title: text(
+				"approvals:approvals.evidence.adjustmentCalloutTitle",
+				"Adjustment of an approved report",
+			),
 			body: {
 				...text(
-					"adjustmentCalloutBody",
-					"This corrects an already exported or reimbursed report. Approving it changes the employee's approved amount by {delta} {currency}; the original report and its payments stay unchanged.",
+					"approvals:approvals.evidence.adjustmentCalloutBody",
+					"This corrects an already exported or reimbursed report. Approving it changes the employee's approved amount by {delta}; the original report and its payments stay unchanged.",
 				),
-				params: { delta: signed, currency: delta.currency },
+				params: { delta: signedDelta },
 			},
 			tone: delta.amount.startsWith("-") ? "warning" : "info",
 		},
 		{
 			type: "key_value",
-			title: text("adjustmentTitle", "Adjustment"),
+			title: text("approvals:approvals.evidence.adjustmentTitle", "Adjustment"),
 			rows: [
 				{
-					label: text("adjustmentOriginalReport", "Corrects report"),
-					value: text("adjustmentOpenOriginal", "Open the approved report"),
+					label: text("approvals:approvals.evidence.adjustmentOriginalReport", "Corrects report"),
+					value: text(
+						"approvals:approvals.evidence.adjustmentOpenOriginal",
+						"Open the approved report",
+					),
 					href: `/travel-expenses/reports/${adjustment.originalReportId}`,
 				},
-				{ label: text("adjustmentReason", "Reason"), value: adjustment.reason },
 				{
-					label: text("adjustmentBaseline", "Approved amount before this adjustment"),
-					value: `${baseline.entitlement} ${baseline.currency}`,
+					label: text("approvals:approvals.evidence.adjustmentReason", "Reason"),
+					value: adjustment.reason,
+				},
+				{
+					label: text(
+						"approvals:approvals.evidence.adjustmentBaseline",
+						"Approved amount before this adjustment",
+					),
+					value: { kind: "money", amount: baseline.entitlement, currency: baseline.currency },
 				},
 				...(baseline.adjustments.length > 0
 					? [
 							{
-								label: text("adjustmentBaselineComposition", "Of which earlier adjustments"),
-								value: baseline.adjustments
-									.map((entry) => `${entry.delta} ${baseline.currency}`)
-									.join("; "),
+								label: text(
+									"approvals:approvals.evidence.adjustmentBaselineComposition",
+									"Of which earlier adjustments",
+								),
+								value: text("approvals:approvals.evidence.adjustmentBaselineEntries", "{entries}", {
+									entries: baseline.adjustments.map(
+										(entry): ApprovalInboxValue => ({
+											kind: "money",
+											amount: entry.delta,
+											currency: baseline.currency,
+										}),
+									),
+								}),
 							},
 						]
 					: []),
 				{
-					label: text("adjustmentCorrected", "Corrected amount"),
-					value: `${facts.totals.reimbursable} ${facts.totals.currency}`,
+					label: text("approvals:approvals.evidence.adjustmentCorrected", "Corrected amount"),
+					value: {
+						kind: "money",
+						amount: facts.totals.reimbursable,
+						currency: facts.totals.currency,
+					},
 				},
 				{
-					label: text("adjustmentDelta", "Signed difference"),
-					value: `${signed} ${delta.currency}`,
+					label: text("approvals:approvals.evidence.adjustmentDelta", "Signed difference"),
+					value: signedDelta,
 				},
 			],
 		},

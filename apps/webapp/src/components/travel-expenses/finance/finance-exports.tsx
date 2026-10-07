@@ -29,6 +29,7 @@ import {
 	formatPlainDateRange,
 	formatRecordedInstant,
 } from "../report/format";
+import { reportName } from "../report-name";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -45,13 +46,13 @@ function baseRowTitle(t: Translate, locale: string, row: ExportableRevisionRow) 
 	const { title } = row;
 	if (title.kind === "trip") {
 		return {
-			name: title.purpose ?? t("travelExpenses.report.drafts.untitledTrip", "Untitled trip"),
+			name: reportName(t, { kind: "trip", itemType: null, title: title.purpose }),
 			dates: formatPlainDateRange(locale, title.startDate, title.endDate),
 		};
 	}
 	if (title.kind === "standalone") {
 		return {
-			name: title.description ?? t("travelExpenses.report.drafts.untitled", "Untitled receipt"),
+			name: reportName(t, { kind: "standalone", itemType: null, title: title.description }),
 			dates: title.expenseDate ? formatPlainDate(locale, title.expenseDate) : null,
 		};
 	}
@@ -404,7 +405,7 @@ function BatchItem({
 				<p className="text-sm text-muted-foreground">
 					{t(
 						"travelExpenses.finance.exports.counts",
-						"{reports} reports · {items} expenses · {receipts} receipts",
+						"{reports, plural, one {# report} other {# reports}} · {items, plural, one {# expense} other {# expenses}} · {receipts, plural, one {# receipt} other {# receipts}}",
 						{
 							reports: batch.revisionCount,
 							items: batch.itemCount,

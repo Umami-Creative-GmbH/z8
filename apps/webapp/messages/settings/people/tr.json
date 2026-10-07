@@ -12,7 +12,7 @@
       "title": "Çalışan Grupları"
     },
     "employees": {
-      "description": "Çalışan profillerini, ekipleri ve izinleri yönetin",
+      "description": "Çalışanları, üyeleri ve davetleri yönetin",
       "details": "Çalışan Detayları",
       "detailsDescription": "Çalışan bilgilerini görüntüleyin ve düzenleyin",
       "detailsTitle": "Çalışan Ayrıntıları",
@@ -164,6 +164,8 @@
         "deactivateTitle": "Çalışan devre dışı bırakılsın mı?",
         "deactivating": "Devre dışı bırakılıyor...",
         "deactivatingStatus": "Çalışan devre dışı bırakılıyor",
+        "finalOwnerDeactivateGuidance": "Bu çalışanı devre dışı bırakmadan önce onaylanmış başka bir sahip atayın ve etkinleştirin.",
+        "finalOwnerRemoveGuidance": "Bu çalışanın erişimini kaldırmadan önce onaylanmış başka bir sahip atayın ve etkinleştirin.",
         "reactivate": "Yeniden etkinleştir",
         "reactivateDescription": "Bu işlem, mevcut çalışan kaydını kullanarak bu kuruluşa erişimi geri yükler.",
         "reactivateError": "Çalışan yeniden etkinleştirilemedi",
@@ -178,9 +180,7 @@
         "removeSuccess": "Kuruluş erişimi kaldırıldı",
         "removeTitle": "Kuruluş erişimi kaldırılsın mı?",
         "removing": "Erişim kaldırılıyor...",
-        "removingStatus": "Kuruluş erişimi kaldırılıyor",
-        "finalOwnerDeactivateGuidance": "Bu çalışanı devre dışı bırakmadan önce onaylanmış başka bir sahip atayın ve etkinleştirin.",
-        "finalOwnerRemoveGuidance": "Bu çalışanın erişimini kaldırmadan önce onaylanmış başka bir sahip atayın ve etkinleştirin."
+        "removingStatus": "Kuruluş erişimi kaldırılıyor"
       },
       "offboarding": {
         "acknowledgeDuties": "Yöneticiler bekleyen {count} onay görevini çözümleyecek.",
@@ -623,6 +623,10 @@
         "title": "Henüz özel rol yok"
       },
       "introduction": "Çalışanlara atanabilecek özel izin rolleri oluşturun. Özel roller, temel seviyenin üzerine ek izinler ekler.",
+      "permissionCategories": {
+        "time_tracking": "Zaman Takibi",
+        "works_council": "İş Konseyi"
+      },
       "table": {
         "actions": "Eylemler",
         "assigned": "Atanmış",
@@ -658,7 +662,7 @@
       "catalogDescription": "Alt alanlar ve vardiya şablonları için gerekli olabilecek yetenekleri tanımlayın",
       "category": "Kategori",
       "confirmDelete": "Bu yeteneği silmek istediğinizden emin misiniz?",
-      "confirmRemove": "\"${skillName}\" bu çalışandan kaldırılsın mı?",
+      "confirmRemove": "\"{skillName}\" bu çalışandan kaldırılsın mı?",
       "createError": "Yetenek oluşturulamadı",
       "createSkill": "Yetenek Oluştur",
       "createSkillDescription": "Çalışanlara atanabilecek yeni bir yetenek oluşturun",
@@ -672,8 +676,8 @@
       "employeeSkills": "Yetenekler ve Nitelikler",
       "employeeSkillsDescription": "Bu çalışana atanan sertifikalar ve yetenekler",
       "expired": "Süresi dolmuş",
-      "expiredOn": "{{date}} tarihinde süresi doldu",
-      "expiresOn": "Son kullanma tarihi: {{date}}",
+      "expiredOn": "{date} tarihinde süresi doldu",
+      "expiresOn": "Son kullanma tarihi: {date}",
       "expiringSoon": "Süresi Yakında Dolacak",
       "expiry": "Son Kullanma Tarihi Takibi",
       "expiryDate": "Son Kullanma Tarihi",

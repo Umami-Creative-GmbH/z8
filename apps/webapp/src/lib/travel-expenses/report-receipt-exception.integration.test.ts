@@ -449,7 +449,17 @@ describe("missing-receipt exceptions (#604)", () => {
 			expect.arrayContaining([
 				expect.objectContaining({
 					type: "receipt_exception_acceptance",
-					items: [{ itemId, label: "1. Customer dinner", reason: "The printer was broken" }],
+					items: [
+						{
+							itemId,
+							// Named by its type and running number (#688).
+							label: expect.objectContaining({
+								key: "approvals:approvals.evidence.reportItemTitle",
+								params: expect.objectContaining({ number: 1, description: "Customer dinner" }),
+							}),
+							reason: "The printer was broken",
+						},
+					],
 				}),
 			]),
 		);

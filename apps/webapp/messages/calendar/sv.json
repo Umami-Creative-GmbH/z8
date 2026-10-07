@@ -128,6 +128,11 @@
     }
   },
   "calendar": {
+    "calendar": {
+      "break": {
+        "titleWithDuration": "Paus – {duration}"
+      }
+    },
     "clockOutOnBehalf": {
       "confirm": "Stämpla ut",
       "description": "Detta skapar en spårbar utstämplingspost vid aktuell servertid. Om något behöver justeras i efterhand, använd korrigeringar.",
@@ -283,10 +288,13 @@
       "monthTotal": "Månadstotalt",
       "nextMonth": "Nästa månad",
       "previousMonth": "Föregående månad",
+      "recordedOnlyDayLabel": "{date}: {actual} registrerat.",
       "totalDescription": "Registrerad tid jämfört med policytimmar",
       "weekSum": "Summa"
     },
     "requirements": {
+      "dayLabel": "{date}: {required} krävs, {actual} registrerat, {delta} delta, {status}",
+      "includesRunningWork": "Inkluderar pågående arbete",
       "status": {
         "met": "krav uppfyllt",
         "missing": "saknar registrerad tid",

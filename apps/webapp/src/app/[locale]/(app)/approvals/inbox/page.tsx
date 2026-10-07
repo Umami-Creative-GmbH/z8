@@ -56,14 +56,44 @@ import { ApprovalInboxTable } from "./components/approval-inbox-table";
 import { ApprovalInboxToolbar } from "./components/approval-inbox-toolbar";
 import { ApprovalSprintPanel } from "./components/approval-sprint-panel";
 
+type BulkDecision = "approve" | "reject";
+
+function getBulkSuccessMessage(
+	t: ReturnType<typeof useTranslate>["t"],
+	count: number,
+	decision: BulkDecision,
+): string {
+	return decision === "approve"
+		? t(
+				"approvals:approvals.bulkApprovedCount",
+				"{count, plural, one {# request approved} other {# requests approved}}",
+				{ count },
+			)
+		: t(
+				"approvals:approvals.bulkRejectedCount",
+				"{count, plural, one {# request rejected} other {# requests rejected}}",
+				{ count },
+			);
+}
+
 function getBulkFailureMessage(
 	t: ReturnType<typeof useTranslate>["t"],
 	failed: ApprovalInboxDecisionFailure[],
-	fallbackKey: string,
+	decision: BulkDecision,
 ): string {
-	const summary = t(fallbackKey, `${failed.length} request(s) failed`, {
-		count: failed.length,
-	});
+	const count = failed.length;
+	const summary =
+		decision === "approve"
+			? t(
+					"approvals:approvals.bulkApproveFailed",
+					"{count, plural, one {# request failed} other {# requests failed}}",
+					{ count },
+				)
+			: t(
+					"approvals:approvals.bulkRejectFailed",
+					"{count, plural, one {# request failed} other {# requests failed}}",
+					{ count },
+				);
 	const details = failed.map((item) => item.message).join("\n");
 
 	return details ? `${summary}\n${details}` : summary;
@@ -72,20 +102,14 @@ function getBulkFailureMessage(
 function handleBulkDecisionToasts(
 	t: ReturnType<typeof useTranslate>["t"],
 	result: ApprovalInboxBulkDecisionResult,
-	successKey: string,
-	successLabel: string,
-	failureKey: string,
+	decision: BulkDecision,
 ) {
 	if (result.succeeded.length > 0) {
-		toast.success(
-			t(successKey, `${result.succeeded.length} request(s) ${successLabel}`, {
-				count: result.succeeded.length,
-			}),
-		);
+		toast.success(getBulkSuccessMessage(t, result.succeeded.length, decision));
 	}
 
 	if (result.failed.length > 0) {
-		toast.error(getBulkFailureMessage(t, result.failed, failureKey));
+		toast.error(getBulkFailureMessage(t, result.failed, decision));
 	}
 }
 
@@ -174,6 +198,11 @@ function groupFastLaneItems(
 		key,
 		items: groupedItems,
 	}));
+}
+
+/** The viewer's own requests are never selected, sprinted or fast-laned (#686). */
+function isDecidableByViewer(item: ApprovalInboxItem): boolean {
+	return item.capabilities.ownRequest !== true;
 }
 
 function sortSprintItems(items: ApprovalInboxItem[]): ApprovalInboxItem[] {
@@ -495,6 +524,8 @@ function ApprovalInboxRequestsCard({
 	onRowClick: (approval: ApprovalInboxItem) => void;
 	onFetchNextPage: () => void;
 }) {
+	const selectableCount = items.filter(isDecidableByViewer).length;
+
 	return (
 		<div className="px-4 lg:px-6">
 			<ApprovalInboxWarnings warnings={warnings} />
@@ -529,7 +560,7 @@ function ApprovalInboxRequestsCard({
 							onFiltersChange={onFiltersChange}
 							selectedCount={selectedCount}
 							totalCount={totalCount}
-							allSelected={items.length > 0 && selectedCount === items.length}
+							allSelected={selectableCount > 0 && selectedCount === selectableCount}
 							onSelectAll={onSelectAll}
 							supportedTypes={supportedTypes}
 						/>
@@ -831,9 +862,11 @@ function ApprovalInboxContent({
 		uiState.selectedIdDraft.itemIdsKey === itemIdsKey
 			? uiState.selectedIdDraft.ids
 			: new Set<string>();
-	const pendingItems = items.filter((item) => item.status === "pending");
-	const fastLaneGroups = groupFastLaneItems(pendingItems);
-	const sprintItems = sortSprintItems(pendingItems);
+	const decidableItems = items.filter(
+		(item) => item.status === "pending" && isDecidableByViewer(item),
+	);
+	const fastLaneGroups = groupFastLaneItems(decidableItems);
+	const sprintItems = sortSprintItems(decidableItems);
 	const selectedItems = items.filter((item) => selectedIds.has(item.id));
 	const selectedBulkApproveIds = selectedItems.flatMap((item) =>
 		item.capabilities.canApprove && item.capabilities.canBulkApprove
@@ -848,7 +881,9 @@ function ApprovalInboxContent({
 		dispatch({
 			type: "selectionChanged",
 			itemIdsKey,
-			ids: checked ? new Set(items.map((item) => item.id)) : new Set(),
+			ids: checked
+				? new Set(items.filter(isDecidableByViewer).map((item) => item.id))
+				: new Set(),
 		});
 	};
 
@@ -871,13 +906,7 @@ function ApprovalInboxContent({
 			const result = await bulkApproveMutation.mutateAsync(
 				selectedBulkApproveIds,
 			);
-			handleBulkDecisionToasts(
-				t,
-				result,
-				"approvals:approvals.bulkApproveSuccess",
-				"approved",
-				"approvals:approvals.bulkApproveFailed",
-			);
+			handleBulkDecisionToasts(t, result, "approve");
 
 			dispatch({ type: "selectionCleared", itemIdsKey });
 			refetch();
@@ -913,13 +942,7 @@ function ApprovalInboxContent({
 				approvalIds: selectedBulkRejectIds,
 				reason,
 			});
-			handleBulkDecisionToasts(
-				t,
-				result,
-				"approvals:approvals.bulkRejectSuccess",
-				"rejected",
-				"approvals:approvals.bulkRejectFailed",
-			);
+			handleBulkDecisionToasts(t, result, "reject");
 
 			dispatch({ type: "bulkRejectOpenChanged", open: false });
 			dispatch({ type: "selectionCleared", itemIdsKey });
@@ -947,13 +970,7 @@ function ApprovalInboxContent({
 		bulkActionInFlightRef.current = true;
 		try {
 			const result = await bulkApproveMutation.mutateAsync(approvalIds);
-			handleBulkDecisionToasts(
-				t,
-				result,
-				"approvals:approvals.bulkApproveSuccess",
-				"approved",
-				"approvals:approvals.bulkApproveFailed",
-			);
+			handleBulkDecisionToasts(t, result, "approve");
 
 			dispatch({ type: "selectionCleared", itemIdsKey });
 			refetch();
@@ -992,13 +1009,7 @@ function ApprovalInboxContent({
 				approvalIds,
 				reason: trimmedReason,
 			});
-			handleBulkDecisionToasts(
-				t,
-				result,
-				"approvals:approvals.bulkRejectSuccess",
-				"rejected",
-				"approvals:approvals.bulkRejectFailed",
-			);
+			handleBulkDecisionToasts(t, result, "reject");
 
 			dispatch({ type: "selectionCleared", itemIdsKey });
 			refetch();

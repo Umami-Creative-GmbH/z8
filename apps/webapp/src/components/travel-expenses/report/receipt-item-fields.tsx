@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import type { ReactNode } from "react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
@@ -22,11 +23,14 @@ import {
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import {
+	isSupportedCurrency,
 	MAX_ACCOUNTING_REFERENCE_LENGTH,
 	MAX_DESCRIPTION_LENGTH,
 	RECEIPT_EXPENSE_CATEGORIES,
 } from "@/lib/travel-expenses/receipt-report";
+import { CurrencySelect } from "../currency-select";
 import { categoryLabel } from "./format";
+import { reformatNumberField } from "./number-field";
 import type { ReceiptItemFieldName, ReceiptItemFormApi } from "./receipt-item-form";
 
 /**
@@ -47,6 +51,7 @@ export function ReceiptItemFields({
 	children?: ReactNode;
 }) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	return (
 		<form
 			noValidate
@@ -150,7 +155,13 @@ export function ReceiptItemFields({
 									placeholder="0.00"
 									value={field.state.value}
 									onChange={(event) => field.handleChange(event.target.value)}
-									onBlur={field.handleBlur}
+									onBlur={() => {
+										reformatNumberField(field, locale, {
+											kind: "amount",
+											currency: form.getFieldValue("currency").trim().toUpperCase() || null,
+										});
+										field.handleBlur();
+									}}
 								/>
 							</TFormControl>
 							<TFormMessage>{fieldError("amount")}</TFormMessage>
@@ -165,12 +176,10 @@ export function ReceiptItemFields({
 								{t("travelExpenses.form.currency", "Currency")}
 							</TFormLabel>
 							<TFormControl hasError={!!fieldError("currency")}>
-								<Input
-									name="currency"
-									autoComplete="off"
-									maxLength={3}
+								<CurrencySelect
+									accepts={isSupportedCurrency}
 									value={field.state.value}
-									onChange={(event) => field.handleChange(event.target.value.toUpperCase())}
+									onValueChange={field.handleChange}
 									onBlur={field.handleBlur}
 								/>
 							</TFormControl>

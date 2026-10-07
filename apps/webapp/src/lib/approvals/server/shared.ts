@@ -31,6 +31,10 @@ import {
 } from "../infrastructure/audit-logger";
 import { progressApprovalChainIfLinked } from "../policies/chain-service";
 import { isEligibleManagerForApprovalRequest } from "../policies/manager-eligibility-db";
+import {
+	isOwnRequestDecision,
+	ownRequestDecisionError,
+} from "../policies/self-decision";
 import type {
 	ApprovalAction,
 	ApprovalDbService,
@@ -136,6 +140,22 @@ function loadPendingApprovalRequest(
 								message:
 									"Approval request not found, already processed, or you are not the approver",
 								userId: approverId,
+								resource: entityType,
+								action,
+							}),
+						);
+					}
+
+					// Whatever ApprovalActionOptions grant, a requester never decides their own request.
+					if (
+						isOwnRequestDecision({
+							requesterEmployeeId: request.requestedBy,
+							actorEmployeeId: approverId,
+						})
+					) {
+						return Effect.fail(
+							ownRequestDecisionError({
+								actorEmployeeId: approverId,
 								resource: entityType,
 								action,
 							}),

@@ -1,5 +1,4 @@
 import { and, eq, inArray } from "drizzle-orm";
-import { redirect } from "next/navigation";
 import type {
 	InvitationWithInviter,
 	MemberWithUserAndEmployee,
@@ -9,6 +8,7 @@ import * as authSchema from "@/db/auth-schema";
 import { employee, team } from "@/db/schema";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { systemClock } from "@/lib/datetime/temporal-core";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getCurrentApprovedMembership } from "./current-approved-membership";
 import { EmployeesPageClient } from "./employees-page-client";
 
@@ -54,7 +54,7 @@ async function loadPeopleManagementData(input: {
 	]);
 
 	if (!organization) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const targetTeamIds = Array.from(
@@ -102,14 +102,14 @@ export default async function EmployeesPage() {
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
 	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const organizationId =
 		settingsRouteContext.authContext.session.activeOrganizationId;
 
 	if (!organizationId) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 	const currentUserId = settingsRouteContext.authContext.user.id;
 	const currentMember = await getCurrentApprovedMembership({
@@ -118,7 +118,7 @@ export default async function EmployeesPage() {
 	});
 
 	if (!currentMember) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const people =

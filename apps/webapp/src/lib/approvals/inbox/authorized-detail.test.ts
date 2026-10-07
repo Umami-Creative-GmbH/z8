@@ -57,7 +57,11 @@ function managerAbility() {
 	});
 }
 
-const detail = { item: { id: "approval-1" }, sections: [], actions: {} };
+const detail = {
+	item: { id: "approval-1", requester: { id: "requester-1" } },
+	sections: [],
+	actions: {},
+};
 
 describe("loadAuthorizedApprovalDetail", () => {
 	beforeEach(() => {
@@ -161,6 +165,51 @@ describe("loadAuthorizedApprovalDetail", () => {
 			}),
 		).resolves.toEqual({ status: "forbidden" });
 		expect(state.getApprovalInboxDetail).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["compatibility", { approverId: "employee-2", requestedBy: "employee-1" }],
+		["canonical", null],
+	] as const)("offers the viewer no decision on their own %s request (#686)", async (kind, request) => {
+		state.findApprovalRequest.mockResolvedValue(
+			request && { id: "approval-1", entityType: "travel_expense_report", organizationId: "org-1", ...request },
+		);
+		state.isEligibleManagerForApprovalRequest.mockResolvedValue(true);
+		const decisions = {
+			canApprove: true,
+			canReject: true,
+			canBulkApprove: true,
+			requiresRejectReason: true,
+		};
+		state.getApprovalInboxDetail.mockResolvedValue({
+			item: {
+				id: "approval-1",
+				status: "pending",
+				requester: { id: "employee-1" },
+				capabilities: decisions,
+			},
+			sections: [],
+			actions: decisions,
+		});
+
+		const result = await loadAuthorizedApprovalDetail({
+			userId: "user-1",
+			organizationId: "org-1",
+			approvalId: "approval-1",
+			kind,
+		});
+
+		const ownDecisions = {
+			canApprove: false,
+			canReject: false,
+			canBulkApprove: false,
+			requiresRejectReason: true,
+			ownRequest: true,
+		};
+		expect(result).toMatchObject({
+			status: "found",
+			detail: { item: { capabilities: ownDecisions }, actions: ownDecisions },
+		});
 	});
 
 	it("propagates infrastructure failures instead of reporting absence", async () => {

@@ -12,6 +12,7 @@ import {
 	travelExpenseReportCycleClosure,
 	travelExpenseReportReviewNote,
 } from "@/db/schema";
+import type { TravelExpenseReportItemType } from "@/db/schema/travel-expense";
 import {
 	type LegacyDecisionEvidenceRecord,
 	listLegacyDecisionEvidence,
@@ -31,6 +32,7 @@ import { loadAuthorizedApprovalDetail } from "@/lib/approvals/inbox/authorized-d
 import { getAuthContext } from "@/lib/auth-helpers";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
 import { loadFinanceActor } from "./finance-access";
+import { isOwnerSelfApprovalDecision, OWNER_SELF_APPROVAL_REASON } from "./owner-self-approval";
 import { sortHistoryByInstant } from "./report-history";
 
 /**
@@ -207,6 +209,8 @@ export type SubmittedReportHistoryLabel =
 	| "submitted"
 	| "approval_recorded"
 	| "approved"
+	/** Approved automatically on submit: an owner nobody else could review (#679). */
+	| "self_approved"
 	| "rejected"
 	| "returned"
 	| "withdrawn"
@@ -229,13 +233,22 @@ export interface SubmittedReportView {
 		deciderName: string | null;
 		/** Rejection reason as the reviewer recorded it. */
 		reason: string | null;
+		/** Set when no reviewer decided: the owner's self-approval (#679). */
+		basis: typeof OWNER_SELF_APPROVAL_REASON | null;
 	} | null;
 	/** The reviewer's note and item comments when this cycle was returned. */
 	returned: {
 		note: string;
 		returnedAt: string;
 		reviewerName: string | null;
-		itemComments: Array<{ itemId: string; number: number; description: string; body: string }>;
+		itemComments: Array<{
+			itemId: string;
+			type: TravelExpenseReportItemType;
+			/** The item's running number in this frozen cycle. */
+			number: number;
+			description: string;
+			body: string;
+		}>;
 	} | null;
 	/** Why and by whom this approved cycle was reopened for correction (#614). */
 	reopened?: { reason: string; reopenedAt: string; actorName: string | null } | null;
@@ -413,9 +426,11 @@ export async function loadSubmittedReportView(
 				cycle: submissionCycle,
 				label: isReturnEvidence(decision)
 					? ("returned" as const)
-					: decision.requestOutcome === "approved" || decision.requestOutcome === "rejected"
-						? decision.requestOutcome
-						: ("approval_recorded" as const),
+					: isOwnerSelfApprovalDecision(decision)
+						? ("self_approved" as const)
+						: decision.requestOutcome === "approved" || decision.requestOutcome === "rejected"
+							? decision.requestOutcome
+							: ("approval_recorded" as const),
 				at: instantToCanonicalString(decision.decidedAt),
 				actorName: decision.labels.actorName,
 			})),
@@ -461,6 +476,7 @@ export async function loadSubmittedReportView(
 						deciderName: final.labels.actorName,
 						reason:
 							final.requestOutcome === "rejected" ? (finalRequest?.rejectionReason ?? null) : null,
+						basis: isOwnerSelfApprovalDecision(final) ? OWNER_SELF_APPROVAL_REASON : null,
 					}
 				: null,
 		returned:
@@ -475,6 +491,7 @@ export async function loadSubmittedReportView(
 								? [
 										{
 											itemId: item.itemId,
+											type: item.type,
 											number: index + 1,
 											description: item.description,
 											body: note.body,

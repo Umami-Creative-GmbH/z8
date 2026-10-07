@@ -2,13 +2,21 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const reportActions = vi.hoisted(() => ({
 	getMyTravelExpenseReport: vi.fn(),
 	saveReceiptItemDraftAction: vi.fn(),
 	removeReportReceiptAction: vi.fn(),
+	deleteDraftTravelExpenseReportAction: vi.fn(),
 }));
+const legacyDraftActions = vi.hoisted(() => ({
+	getLegacyTravelExpenseConversion: vi.fn(async () => ({ success: true, data: null })),
+}));
+vi.mock("@/app/[locale]/(app)/travel-expenses/legacy-draft-actions", () => legacyDraftActions);
+const router = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock("@/app/[locale]/(app)/travel-expenses/report-actions", () => reportActions);
 vi.mock("@/app/[locale]/(app)/travel-expenses/report-project-actions", () => ({
 	getReportProjectChoicesAction: async () => ({
@@ -47,7 +55,8 @@ vi.mock("@tolgee/react", () => ({
 			fallback.replace(/\{(\w+)\}/g, (match, name) => String(params?.[name] ?? match)),
 	}),
 }));
-vi.mock("next-intl", () => ({ useLocale: () => "en-US" }));
+const viewer = vi.hoisted(() => ({ locale: "en-US" }));
+vi.mock("next-intl", () => ({ useLocale: () => viewer.locale }));
 vi.mock("@/app/[locale]/(app)/travel-expenses/report-review-actions", () => ({
 	withdrawTravelExpenseReportAction: vi.fn(),
 }));
@@ -62,6 +71,7 @@ vi.mock("@/navigation", () => ({
 			{children}
 		</a>
 	),
+	useRouter: () => router,
 }));
 
 import { TravelExpenseReportEditor } from "./travel-expense-report-editor";
@@ -117,6 +127,18 @@ async function description() {
 	return (await screen.findByRole("textbox", { name: "Description" })) as HTMLTextAreaElement;
 }
 
+beforeAll(() => {
+	// The searchable currency select measures and scrolls its list.
+	vi.stubGlobal(
+		"ResizeObserver",
+		class {
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		},
+	);
+	HTMLElement.prototype.scrollIntoView = vi.fn();
+});
 beforeEach(() => {
 	reportActions.getMyTravelExpenseReport.mockResolvedValue(report());
 });
@@ -124,6 +146,7 @@ afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
 	upload.options = null;
+	viewer.locale = "en-US";
 });
 
 describe("TravelExpenseReportEditor", () => {
@@ -138,6 +161,33 @@ describe("TravelExpenseReportEditor", () => {
 		expect(screen.getByText("Attach the receipt.")).toBeTruthy();
 		const totals = screen.getByRole("region", { name: "Totals" });
 		expect(within(totals).getByText("€129.90")).toBeTruthy();
+	});
+
+	it("keeps a future-dated receipt from being submitted and says from when (#685)", async () => {
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(
+			report({
+				expenseDate: "2099-01-15",
+				receipts: [
+					{
+						id: "6a000000-0000-4000-8000-000000000003",
+						fileName: "invoice.pdf",
+						mimeType: "application/pdf",
+						sizeBytes: 4,
+						createdAt: "2026-10-05T10:05:00.000Z",
+					},
+				],
+			}),
+		);
+		mount();
+		expect(
+			await screen.findByText(
+				"This date is in the future. Correct it, or submit from Jan 15, 2099.",
+			),
+		).toBeTruthy();
+		expect(screen.queryByText("Attach the receipt.")).toBeNull();
+		expect(
+			(screen.getByRole("button", { name: "Review and submit" }) as HTMLButtonElement).disabled,
+		).toBe(true);
 	});
 
 	it("autosaves edits on the loaded version and reports saving, then saved", async () => {
@@ -243,6 +293,62 @@ describe("TravelExpenseReportEditor", () => {
 		);
 	});
 
+	it.each([
+		["de", "129,90", "89,10"],
+		["en-US", "129.90", "89.10"],
+	])(
+		"shows the amount in %s once it loses focus, without saving again for the format (#688)",
+		async (locale, loaded, shown) => {
+			viewer.locale = locale;
+			reportActions.saveReceiptItemDraftAction.mockResolvedValue({
+				success: true,
+				data: { status: "saved", item: item({ version: 4, amount: "89.10" }) },
+			});
+			mount();
+			const amount = (await screen.findByRole("textbox", {
+				name: "Amount on the receipt",
+			})) as HTMLInputElement;
+			expect(amount.value).toBe(loaded);
+
+			fireEvent.change(amount, { target: { value: "89,1" } });
+			expect(amount.value).toBe("89,1");
+			await waitFor(
+				() => expect(reportActions.saveReceiptItemDraftAction).toHaveBeenCalledTimes(1),
+				{ timeout: 3000 },
+			);
+			expect(reportActions.saveReceiptItemDraftAction).toHaveBeenCalledWith(
+				expect.objectContaining({ values: expect.objectContaining({ amount: "89,1" }) }),
+			);
+			fireEvent.blur(amount);
+			expect(amount.value).toBe(shown);
+			await new Promise((resolve) => setTimeout(resolve, 1200));
+			expect(reportActions.saveReceiptItemDraftAction).toHaveBeenCalledTimes(1);
+		},
+	);
+
+	it("chooses the receipt currency from a searchable list and saves its code (#688)", async () => {
+		reportActions.saveReceiptItemDraftAction.mockResolvedValue({
+			success: true,
+			data: { status: "saved", item: item({ version: 4, currency: "CHF" }) },
+		});
+		const user = userEvent.setup();
+		mount();
+		await description();
+		const currency = screen.getByRole("combobox", { name: "Currency" });
+		expect(currency.textContent).toContain("EUR – Euro");
+		await user.click(currency);
+		await user.keyboard("swiss");
+		await user.click(screen.getByRole("option", { name: "CHF – Swiss Franc" }));
+		expect(currency.textContent).toContain("CHF – Swiss Franc");
+		await waitFor(
+			() =>
+				expect(reportActions.saveReceiptItemDraftAction).toHaveBeenCalledWith(
+					expect.objectContaining({ values: expect.objectContaining({ currency: "CHF" }) }),
+				),
+			{ timeout: 3000 },
+		);
+	});
+
 	it("separates company-paid costs from the reimbursement total", async () => {
 		reportActions.getMyTravelExpenseReport.mockResolvedValue(report({ paidBy: "company" }));
 		mount();
@@ -267,8 +373,10 @@ describe("TravelExpenseReportEditor", () => {
 		// The uploader refuses files above the server limit before uploading.
 		expect(upload.maxFileSize).toBe(1024);
 
-		act(() => upload.options?.onError?.(new Error("Unsupported file type")));
-		expect(screen.getByText(/The receipt was not attached\. Unsupported file type/)).toBeTruthy();
+		// The uploader's own English wording is never shown.
+		act(() => upload.options?.onError?.(new Error("Network glitch")));
+		expect(screen.getByText(/The receipt was not attached\. Please try again\./)).toBeTruthy();
+		expect(screen.queryByText(/Network glitch/)).toBeNull();
 
 		reportActions.getMyTravelExpenseReport.mockResolvedValue(
 			report({
@@ -301,6 +409,10 @@ describe("TravelExpenseReportEditor", () => {
 		const preview = await screen.findByRole("link", { name: "Preview taxi.jpg" });
 		expect(preview.getAttribute("href")).toBe(
 			`/api/travel-expenses/reports/${reportId}/receipts/${receipt.id}`,
+		);
+		// The tile loads the small preview, not the full photo (#690).
+		expect(preview.querySelector("img")?.getAttribute("src")).toBe(
+			`/api/travel-expenses/reports/${reportId}/receipts/${receipt.id}?variant=thumb`,
 		);
 		expect(screen.getByRole("link", { name: "Download taxi.jpg" }).getAttribute("href")).toBe(
 			`/api/travel-expenses/reports/${reportId}/receipts/${receipt.id}?download=1`,
@@ -335,5 +447,47 @@ describe("TravelExpenseReportEditor", () => {
 		mount();
 		fireEvent.click(await screen.findByRole("button", { name: "Retry" }));
 		expect((await description()).value).toBe("Hotel Hamburg");
+	});
+});
+
+describe("deleting a draft (#684)", () => {
+	function withSubmissions(submissionCount: number) {
+		const loaded = report();
+		return { ...loaded, data: { ...loaded.data, submissionCount } };
+	}
+
+	it("deletes a never-submitted draft after confirmation and returns to the expenses", async () => {
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(withSubmissions(0));
+		reportActions.deleteDraftTravelExpenseReportAction.mockResolvedValueOnce({
+			success: true,
+			data: { reportId },
+		});
+		mount();
+		fireEvent.click(await screen.findByRole("button", { name: "Delete draft" }));
+		const dialog = await screen.findByRole("alertdialog");
+		expect(dialog.textContent).toContain("This cannot be undone.");
+		expect(reportActions.deleteDraftTravelExpenseReportAction).not.toHaveBeenCalled();
+
+		fireEvent.click(within(dialog).getByRole("button", { name: "Delete draft" }));
+		await waitFor(() => expect(router.push).toHaveBeenCalledWith("/travel-expenses"));
+		expect(reportActions.deleteDraftTravelExpenseReportAction).toHaveBeenCalledWith({ reportId });
+	});
+
+	it("keeps a cancelled draft", async () => {
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(withSubmissions(0));
+		mount();
+		fireEvent.click(await screen.findByRole("button", { name: "Delete draft" }));
+		fireEvent.click(
+			within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Cancel" }),
+		);
+		await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+		expect(reportActions.deleteDraftTravelExpenseReportAction).not.toHaveBeenCalled();
+	});
+
+	it("does not offer deleting a draft that was submitted before", async () => {
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(withSubmissions(1));
+		mount();
+		await description();
+		expect(screen.queryByRole("button", { name: "Delete draft" })).toBeNull();
 	});
 });

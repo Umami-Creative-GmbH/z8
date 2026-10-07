@@ -9,6 +9,7 @@ import { parseInstant } from "@/lib/datetime/temporal-core";
 import { queryKeys } from "@/lib/query/keys";
 import type { TravelExpenseClaimDetailData } from "@/lib/travel-expenses/claim-detail-types";
 import { SettlementPanel } from "./finance/settlement-panel";
+import { legacyClaimStatusLabel, legacyClaimTypeLabel } from "./legacy-claim-labels";
 import { LegacyDraftConversionPanel } from "./legacy-draft-conversion";
 import { TravelExpenseDateRange } from "./travel-expense-date-range";
 import { TravelExpenseLoadError } from "./travel-expense-load-error";
@@ -45,7 +46,7 @@ function TravelExpenseDecisionHistory({
 		`${parseInstant(at).toZonedDateTimeISO("UTC").toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" })} UTC`;
 	return (
 		<Card>
-			<CardContent className="space-y-3 pt-6">
+			<CardContent className="space-y-3">
 				<h2 className="text-lg font-semibold">
 					{t("travelExpenses.detail.history", "Decision history")}
 				</h2>
@@ -94,10 +95,7 @@ function TravelExpenseDecisionHistory({
 											"travelExpenses.detail.intermediateApproval",
 											"Approval recorded — awaiting further approval",
 										)
-									: t(
-											`travelExpenses.status.${decision.action}`,
-											decision.action,
-										)}
+									: legacyClaimStatusLabel(t, decision.action)}
 								{decision.actorName ? ` · ${decision.actorName}` : ""}
 							</p>
 							<time
@@ -182,13 +180,10 @@ export function TravelExpenseClaimDetail({
 			{claim && data && (
 				<>
 					<Card>
-						<CardContent className="space-y-4 pt-6">
+						<CardContent className="space-y-4">
 							<h2 className="text-lg font-semibold">
-								{t(
-									`travelExpenses.claimTypes.${claim.type}`,
-									claim.type.replaceAll("_", " "),
-								)}{" "}
-								· {t(`travelExpenses.status.${claim.status}`, claim.status)}
+								{legacyClaimTypeLabel(t, claim.type)} ·{" "}
+								{legacyClaimStatusLabel(t, claim.status)}
 							</h2>
 							<dl className="grid gap-4 sm:grid-cols-2">
 								<div>
@@ -259,7 +254,7 @@ export function TravelExpenseClaimDetail({
 						</CardContent>
 					</Card>
 					<Card>
-						<CardContent className="space-y-3 pt-6">
+						<CardContent className="space-y-3">
 							<h2 className="text-lg font-semibold">
 								{t("travelExpenses.detail.receipts", "Receipts")}
 							</h2>

@@ -9,7 +9,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import {
 	authorizeAllowanceOverrideAction,
-	getAllowanceExceptionItems,
 	revokeAllowanceOverrideAction,
 } from "@/app/[locale]/(app)/settings/travel-expenses/allowance-override-actions";
 import { allowanceSituationLabel } from "@/components/travel-expenses/report/allowance-override-labels";
@@ -36,8 +35,8 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
-import { queryKeys } from "@/lib/query/keys";
 import {
 	type AllowanceOverrideError,
 	MAX_OVERRIDE_BASIS_LENGTH,
@@ -47,11 +46,13 @@ import {
 } from "@/lib/travel-expenses/allowance-override";
 import type { AllowanceExceptionItem } from "@/lib/travel-expenses/allowance-override-store";
 import type { PerDiemExceptionReason } from "@/lib/travel-expenses/per-diem";
+import { allowanceExceptionsQuery } from "./pending-exceptions";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 type FieldName = "amount" | "reason" | "evidence" | "calculationBasis";
+type OverrideValues = Record<FieldName, string>;
 
-const queryKey = queryKeys.travelExpenses.allowanceExceptions();
+const queryKey = allowanceExceptionsQuery.queryKey;
 
 function fieldErrors(t: Translate, errors: AllowanceOverrideError[]) {
 	const messages: Partial<Record<FieldName, string>> = {};
@@ -120,19 +121,22 @@ function OverrideDialog({ item, onClose }: { item: AllowanceExceptionItem; onClo
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const queryClient = useQueryClient();
-	const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
+	const context = { kind: item.kind, currency: item.reimbursementCurrency };
+	// The server's parser over the whole entry, so a field's error clears once it is valid.
+	const validators = (name: FieldName) => ({
+		onChange: ({ fieldApi }: { fieldApi: { form: { state: { values: OverrideValues } } } }) => {
+			const parsed = parseAllowanceOverrideDraft(fieldApi.form.state.values, context);
+			return parsed.ok ? undefined : fieldErrors(t, parsed.errors)[name];
+		},
+	});
 	const form = useForm({
-		defaultValues: { amount: "", reason: "", evidence: "", calculationBasis: "" },
-		onSubmit: async ({ value }) => {
-			const parsed = parseAllowanceOverrideDraft(value, {
-				kind: item.kind,
-				currency: item.reimbursementCurrency,
-			});
-			if (!parsed.ok) {
-				setErrors(fieldErrors(t, parsed.errors));
-				return;
-			}
-			setErrors({});
+		defaultValues: {
+			amount: "",
+			reason: "",
+			evidence: "",
+			calculationBasis: "",
+		} satisfies OverrideValues,
+		onSubmit: async ({ value, formApi }) => {
 			const result = await authorizeAllowanceOverrideAction({
 				reportId: item.reportId,
 				itemId: item.itemId,
@@ -156,7 +160,13 @@ function OverrideDialog({ item, onClose }: { item: AllowanceExceptionItem; onClo
 					);
 					break;
 				case "invalid":
-					setErrors(fieldErrors(t, result.data.errors));
+					// The server's refusal stays on its field until that field changes.
+					for (const [name, message] of Object.entries(fieldErrors(t, result.data.errors))) {
+						formApi.setFieldMeta(name as FieldName, (meta) => ({
+							...meta,
+							errorMap: { ...meta.errorMap, onSubmit: message },
+						}));
+					}
 					return;
 				case "self_authorization":
 					toast.error(
@@ -178,8 +188,6 @@ function OverrideDialog({ item, onClose }: { item: AllowanceExceptionItem; onClo
 			onClose();
 		},
 	});
-	const field = (name: FieldName) => errors[name];
-
 	return (
 		<Dialog open onOpenChange={(open) => !open && onClose()}>
 			<DialogContent className="sm:max-w-lg">
@@ -206,15 +214,15 @@ function OverrideDialog({ item, onClose }: { item: AllowanceExceptionItem; onClo
 						void form.handleSubmit();
 					}}
 				>
-					<form.Field name="amount">
+					<form.Field name="amount" validators={validators("amount")}>
 						{(input) => (
 							<TFormItem>
-								<TFormLabel hasError={!!field("amount")}>
+								<TFormLabel hasError={fieldHasError(input)}>
 									{t("settings.travelExpenses.allowanceOverrides.amount", "Amount ({currency})", {
 										currency: item.reimbursementCurrency,
 									})}
 								</TFormLabel>
-								<TFormControl hasError={!!field("amount")}>
+								<TFormControl hasError={fieldHasError(input)}>
 									<Input
 										name="amount"
 										inputMode="decimal"
@@ -224,17 +232,17 @@ function OverrideDialog({ item, onClose }: { item: AllowanceExceptionItem; onClo
 										onBlur={input.handleBlur}
 									/>
 								</TFormControl>
-								<TFormMessage>{field("amount")}</TFormMessage>
+								<TFormMessage field={input} />
 							</TFormItem>
 						)}
 					</form.Field>
-					<form.Field name="calculationBasis">
+					<form.Field name="calculationBasis" validators={validators("calculationBasis")}>
 						{(input) => (
 							<TFormItem>
-								<TFormLabel hasError={!!field("calculationBasis")}>
+								<TFormLabel hasError={fieldHasError(input)}>
 									{t("settings.travelExpenses.allowanceOverrides.basis", "Calculation")}
 								</TFormLabel>
-								<TFormControl hasError={!!field("calculationBasis")}>
+								<TFormControl hasError={fieldHasError(input)}>
 									<Textarea
 										name="calculationBasis"
 										rows={2}
@@ -250,17 +258,17 @@ function OverrideDialog({ item, onClose }: { item: AllowanceExceptionItem; onClo
 										"E.g. 2 partial days × 39.00 EUR + 1 full day × 58.00 EUR − breakfast 11.60 EUR.",
 									)}
 								</TFormDescription>
-								<TFormMessage>{field("calculationBasis")}</TFormMessage>
+								<TFormMessage field={input} />
 							</TFormItem>
 						)}
 					</form.Field>
-					<form.Field name="reason">
+					<form.Field name="reason" validators={validators("reason")}>
 						{(input) => (
 							<TFormItem>
-								<TFormLabel hasError={!!field("reason")}>
+								<TFormLabel hasError={fieldHasError(input)}>
 									{t("settings.travelExpenses.allowanceOverrides.reason", "Reason")}
 								</TFormLabel>
-								<TFormControl hasError={!!field("reason")}>
+								<TFormControl hasError={fieldHasError(input)}>
 									<Textarea
 										name="reason"
 										rows={2}
@@ -270,17 +278,17 @@ function OverrideDialog({ item, onClose }: { item: AllowanceExceptionItem; onClo
 										onBlur={input.handleBlur}
 									/>
 								</TFormControl>
-								<TFormMessage>{field("reason")}</TFormMessage>
+								<TFormMessage field={input} />
 							</TFormItem>
 						)}
 					</form.Field>
-					<form.Field name="evidence">
+					<form.Field name="evidence" validators={validators("evidence")}>
 						{(input) => (
 							<TFormItem>
-								<TFormLabel hasError={!!field("evidence")}>
+								<TFormLabel hasError={fieldHasError(input)}>
 									{t("settings.travelExpenses.allowanceOverrides.evidence", "Evidence")}
 								</TFormLabel>
-								<TFormControl hasError={!!field("evidence")}>
+								<TFormControl hasError={fieldHasError(input)}>
 									<Textarea
 										name="evidence"
 										rows={2}
@@ -296,7 +304,7 @@ function OverrideDialog({ item, onClose }: { item: AllowanceExceptionItem; onClo
 										"What the amount rests on, e.g. the official rate table and edition, or a written confirmation.",
 									)}
 								</TFormDescription>
-								<TFormMessage>{field("evidence")}</TFormMessage>
+								<TFormMessage field={input} />
 							</TFormItem>
 						)}
 					</form.Field>
@@ -439,14 +447,7 @@ function ExceptionRow({
 export function AllowanceOverridesSettingsCard() {
 	const { t } = useTranslate();
 	const [editing, setEditing] = useState<AllowanceExceptionItem | null>(null);
-	const { data, isLoading, isError, isFetching, refetch } = useQuery({
-		queryKey,
-		queryFn: async () => {
-			const result = await getAllowanceExceptionItems();
-			if (!result.success) throw new Error(result.error);
-			return result.data;
-		},
-	});
+	const { data, isLoading, isError, isFetching, refetch } = useQuery(allowanceExceptionsQuery);
 	return (
 		<Card>
 			<CardHeader>

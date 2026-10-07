@@ -32,16 +32,18 @@
     "correction": {
       "clockIn": "Entrata",
       "clockInDate": "Data di entrata",
+      "clockInTime": "Ora di entrata",
       "clockOut": "Uscita",
       "clockOutDate": "Data di uscita",
+      "clockOutTime": "Ora di uscita",
       "editDescription": "Modifica la tua voce oraria per oggi.",
       "editEntry": "Modifica voce oraria",
       "editTitle": "Modifica voce oraria",
       "errors": {
         "invalidTimeRange": "L'ora di uscita deve essere successiva all'ora di entrata",
+        "noChanges": "È necessario modificare almeno un valore della correzione",
         "submitFailed": "Invio correzione non riuscito",
-        "updateFailed": "Aggiornamento voce oraria non riuscito",
-        "noChanges": "È necessario modificare almeno un valore della correzione"
+        "updateFailed": "Aggiornamento voce oraria non riuscito"
       },
       "noteLabel": "Nota (opzionale)",
       "notePlaceholder": "Aggiungi una nota su questa modifica...",
@@ -59,9 +61,7 @@
         "submitted": "Richiesta di correzione inviata per approvazione del manager",
         "updated": "Voce oraria aggiornata con successo"
       },
-      "timezoneNote": "Gli orari sono nel tuo fuso orario locale ({timezone})",
-      "clockInTime": "Ora di entrata",
-      "clockOutTime": "Ora di uscita"
+      "timezoneNote": "Gli orari sono nel tuo fuso orario locale ({timezone})"
     },
     "currentlyClockedIn": "Attualmente hai timbrato l'entrata",
     "deadline": "Scadenza",

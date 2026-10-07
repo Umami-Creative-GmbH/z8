@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +17,7 @@ import { MAX_ROUTE_LENGTH, MILEAGE_VEHICLES } from "@/lib/travel-expenses/mileag
 import { MAX_ACCOUNTING_REFERENCE_LENGTH } from "@/lib/travel-expenses/receipt-report";
 import type { MileageFieldName, MileageItemForm } from "./mileage-item-form";
 import { vehicleLabel } from "./mileage-labels";
+import { reformatNumberField } from "./number-field";
 
 /** The entered facts of one drive: date, distance, route, vehicle and accounting reference. */
 export function MileageItemFields({
@@ -27,6 +29,7 @@ export function MileageItemFields({
 	fieldError: (field: MileageFieldName) => string | undefined;
 }) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	return (
 		<>
 			<div className="grid gap-4 sm:grid-cols-2">
@@ -63,7 +66,10 @@ export function MileageItemFields({
 									placeholder="0.0"
 									value={field.state.value}
 									onChange={(event) => field.handleChange(event.target.value)}
-									onBlur={field.handleBlur}
+									onBlur={() => {
+										reformatNumberField(field, locale, { kind: "distance" });
+										field.handleBlur();
+									}}
 								/>
 							</TFormControl>
 							<TFormMessage>{fieldError("distanceKm")}</TFormMessage>

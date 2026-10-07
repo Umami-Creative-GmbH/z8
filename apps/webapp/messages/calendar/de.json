@@ -128,6 +128,11 @@
     }
   },
   "calendar": {
+    "calendar": {
+      "break": {
+        "titleWithDuration": "Pause – {duration}"
+      }
+    },
     "clockOutOnBehalf": {
       "confirm": "Ausstempeln",
       "description": "Dies erstellt einen prüfbaren Ausstempel-Eintrag zur aktuellen Serverzeit. Falls nachträglich Anpassungen erforderlich sind, verwenden Sie bitte Korrekturen.",
@@ -283,17 +288,19 @@
       "monthTotal": "Monatssumme",
       "nextMonth": "Nächster Monat",
       "previousMonth": "Vorheriger Monat",
+      "recordedOnlyDayLabel": "{date}: {actual} erfasst.",
       "totalDescription": "Erfasste Zeit im Vergleich zu den Richtlinienstunden",
       "weekSum": "Summe"
     },
     "requirements": {
+      "dayLabel": "{date}: {required} Sollzeit, {actual} erfasst, {delta} Differenz, {status}",
+      "includesRunningWork": "Enthält laufende Arbeiten",
       "status": {
         "met": "Vorgabe erfüllt",
         "missing": "Fehlende erfasste Zeit",
         "over": "Über Vorgabe",
         "under": "Unter Vorgabe"
-      },
-      "dayLabel": "{date}: {required} Sollzeit, {actual} erfasst, {delta} Differenz, {status}"
+      }
     },
     "split": {
       "ambiguousTime": "Wählen Sie das zu verwendende Vorkommen",
@@ -346,11 +353,6 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
-    },
-    "calendar": {
-      "break": {
-        "titleWithDuration": "Pause – {duration}"
-      }
     }
   }
 }

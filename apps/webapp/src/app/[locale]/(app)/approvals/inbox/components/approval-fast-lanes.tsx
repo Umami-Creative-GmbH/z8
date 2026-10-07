@@ -3,6 +3,7 @@
 import { IconCheck, IconChevronDown, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
+import { summaryField, useApprovalInboxText } from "@/components/approvals/use-approval-inbox-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,6 +47,7 @@ export function ApprovalFastLanes({
 	onBulkReject,
 }: ApprovalFastLanesProps) {
 	const { t } = useTranslate();
+	const text = useApprovalInboxText();
 	const [rejectingGroupKey, setRejectingGroupKey] = useState<string | null>(null);
 	const [rejectReason, setRejectReason] = useState("");
 
@@ -102,7 +104,7 @@ export function ApprovalFastLanes({
 									<div className="text-sm font-medium text-muted-foreground">
 										{t(
 											"approvals:fastLanes.requestCount",
-											group.items.length === 1 ? "1 request" : `${group.items.length} requests`,
+											"{count, plural, one {# request} other {# requests}}",
 											{ count: group.items.length },
 										)}
 									</div>
@@ -216,7 +218,7 @@ export function ApprovalFastLanes({
 														{item.requester.name}
 													</div>
 													<div className="break-words text-sm text-muted-foreground">
-														{item.summary.detail}
+														{text(summaryField(item.summary, "detail"))}
 													</div>
 												</div>
 											))}

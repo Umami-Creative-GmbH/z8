@@ -1,7 +1,7 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { getManagerDailyBriefing } from "@/lib/manager-daily-briefing/get-manager-daily-briefing";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getCurrentEmployee } from "../team/actions";
 import { TodayBriefing } from "./today-briefing";
 import { TodayPageLoading } from "./today-loading";
@@ -18,7 +18,7 @@ async function TodayPageContent() {
 	}
 
 	if (currentEmployee.role !== "manager" && currentEmployee.role !== "admin") {
-		redirect("/");
+		return redirectWithLocale("/");
 	}
 
 	if (!currentEmployee.organizationId) {

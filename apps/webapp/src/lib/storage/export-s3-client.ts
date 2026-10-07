@@ -3,6 +3,7 @@ import {
 	GetObjectCommand,
 	HeadObjectCommand,
 	ListBucketsCommand,
+	ListObjectVersionsCommand,
 	PutObjectCommand,
 	S3Client,
 } from "@aws-sdk/client-s3";
@@ -12,6 +13,7 @@ import { db, exportStorageConfig } from "@/db";
 import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import { getOrgSecret } from "@/lib/vault";
+import { isMissingObjectError } from "./missing-object";
 
 const logger = createLogger("ExportS3Client");
 
@@ -262,6 +264,92 @@ export async function deletePrivateObject(input: {
 			...(input.versionId ? { VersionId: input.versionId } : {}),
 		}),
 	);
+}
+
+/**
+ * Whether the recorded private object/version still exists. A missing object
+ * is false; any other storage failure is thrown, never read as deleted.
+ */
+export async function privateObjectExists(input: {
+	organizationId: string;
+	key: string;
+	bucket: string | null;
+	versionId: string | null;
+}): Promise<boolean> {
+	const config = await getStorageConfig(input.organizationId);
+	if (!config)
+		throw new Error("S3 storage is not configured for this organization");
+	if (input.bucket && input.bucket !== config.bucket)
+		throw new Error("Recorded receipt bucket is unavailable");
+	try {
+		await createS3Client(config).send(
+			new HeadObjectCommand({
+				Bucket: config.bucket,
+				Key: input.key,
+				...(input.versionId ? { VersionId: input.versionId } : {}),
+			}),
+		);
+		return true;
+	} catch (error) {
+		if (isMissingObjectError(error)) return false;
+		throw error;
+	}
+}
+
+/**
+ * Delete every stored version (and delete marker) of one private object, for
+ * objects written without a recorded version. A recorded bucket that no
+ * longer matches the organization's storage configuration is refused.
+ */
+export async function deletePrivateObjectVersions(input: {
+	organizationId: string;
+	key: string;
+	bucket: string | null;
+}): Promise<void> {
+	const config = await getStorageConfig(input.organizationId);
+	if (!config) {
+		throw new Error("S3 storage is not configured for this organization");
+	}
+	if (input.bucket && input.bucket !== config.bucket) {
+		throw new Error(
+			"Private storage bucket changed; object cleanup needs review",
+		);
+	}
+
+	const client = createS3Client(config);
+	let marker: { KeyMarker: string; VersionIdMarker?: string } | undefined;
+	do {
+		const page = await client.send(
+			new ListObjectVersionsCommand({
+				Bucket: config.bucket,
+				Prefix: input.key,
+				...marker,
+			}),
+		);
+		// The prefix also matches longer keys; only this exact object goes.
+		const versionIds = [...(page.Versions ?? []), ...(page.DeleteMarkers ?? [])].flatMap(
+			(version) => (version.Key === input.key && version.VersionId ? [version.VersionId] : []),
+		);
+		// Each version is deleted on its own, so the deletes of one page are independent.
+		await Promise.all(
+			versionIds.map((versionId) =>
+				client.send(
+					new DeleteObjectCommand({
+						Bucket: config.bucket,
+						Key: input.key,
+						VersionId: versionId,
+					}),
+				),
+			),
+		);
+		marker =
+			page.IsTruncated && page.NextKeyMarker
+				? {
+						KeyMarker: page.NextKeyMarker,
+						VersionIdMarker: page.NextVersionIdMarker,
+					}
+				: undefined;
+	} while (marker);
 }
 
 /**

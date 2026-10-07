@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, asc, desc, eq, inArray, max, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, max, type SQL, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { user } from "@/db/auth-schema";
 import {
@@ -21,6 +21,7 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { loadAdjustmentOriginals, loadApprovedAdjustments } from "./adjustment-read";
+import { OWNER_SELF_APPROVAL_REASON } from "./owner-self-approval";
 import {
 	computeSettlement,
 	type EntitlementComponent,
@@ -77,6 +78,8 @@ export interface SettlementBasis {
 	revisionId: string | null;
 	submissionCycle: number | null;
 	approvedAt: string | null;
+	/** Set when no reviewer decided: the owner's self-approval (#679). Null for claims. */
+	approvalBasis: typeof OWNER_SELF_APPROVAL_REASON | null;
 	/** Company-paid costs of the approved revision; never owed to the employee. Null for claims. */
 	companyPaid: string | null;
 }
@@ -182,17 +185,25 @@ function plainDateText(value: Date | string | null): string | null {
 	return typeof value === "string" ? value : value.toISOString().slice(0, 10);
 }
 
+interface ApprovedRevisionDecision {
+	approvedAt: Instant;
+	/** Set when no reviewer decided: the owner's self-approval (#679). */
+	approvalBasis: typeof OWNER_SELF_APPROVAL_REASON | null;
+}
+
 async function loadApprovedRevisionDecisions(
 	database: Executor,
 	organizationId: string,
 	revisionIds: string[],
-): Promise<Map<string, Instant>> {
-	const decided = new Map<string, Instant>();
+): Promise<Map<string, ApprovedRevisionDecision>> {
+	const decided = new Map<string, ApprovedRevisionDecision>();
 	if (revisionIds.length === 0) return decided;
 	const rows = await database
 		.select({
 			revisionId: approvalDecisionEvidence.submittedRevisionId,
 			decidedAt: max(approvalDecisionEvidence.decidedAt),
+			// `isOwnerSelfApprovalDecision` (owner-self-approval.ts) as an aggregate.
+			selfApproved: sql<boolean>`bool_or(${approvalDecisionEvidence.operationKind} = 'submission_activation' and ${approvalDecisionEvidence.result}->>'reason' = ${OWNER_SELF_APPROVAL_REASON})`,
 		})
 		.from(approvalDecisionEvidence)
 		.where(
@@ -205,7 +216,11 @@ async function loadApprovedRevisionDecisions(
 		)
 		.groupBy(approvalDecisionEvidence.submittedRevisionId);
 	for (const row of rows) {
-		if (row.decidedAt) decided.set(row.revisionId, instantFromDate(row.decidedAt));
+		if (!row.decidedAt) continue;
+		decided.set(row.revisionId, {
+			approvedAt: instantFromDate(row.decidedAt),
+			approvalBasis: row.selfApproved ? OWNER_SELF_APPROVAL_REASON : null,
+		});
 	}
 	return decided;
 }
@@ -320,7 +335,8 @@ async function buildAccounts(
 	for (const { row, employeeName } of reports) {
 		const source: SettlementSource = { type: "report", id: row.id };
 		const revision = row.status === "approved" ? revisions.get(row.id) : undefined;
-		const approvedAt = revision ? decisions.get(revision.id) : undefined;
+		const decision = revision ? decisions.get(revision.id) : undefined;
+		const approvedAt = decision?.approvedAt;
 		// Approved means: the report is approved now, its current cycle is frozen
 		// and the decision evidence of that revision records the approval.
 		const approved = Boolean(revision && approvedAt);
@@ -354,6 +370,7 @@ async function buildAccounts(
 							revisionId: revision.id,
 							submissionCycle: revision.submissionCycle,
 							approvedAt: instantToCanonicalString(approvedAt),
+							approvalBasis: decision?.approvalBasis ?? null,
 							companyPaid: revision.facts.totals.companyPaid,
 						}
 					: null,
@@ -398,6 +415,7 @@ async function buildAccounts(
 						approvedAt: row.decidedAt
 							? instantToCanonicalString(instantFromDate(row.decidedAt))
 							: null,
+						approvalBasis: null,
 						companyPaid: null,
 					}
 				: null,

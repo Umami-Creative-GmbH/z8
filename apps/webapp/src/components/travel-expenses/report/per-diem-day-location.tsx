@@ -4,6 +4,7 @@ import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useMemo } from "react";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
 	Select,
 	SelectContent,
@@ -20,6 +21,10 @@ import {
 	type PerDiemSpecialLocation,
 	perDiemLocationFields,
 } from "@/lib/travel-expenses/per-diem-location";
+import {
+	perDiemLocationName,
+	perDiemPlaceName,
+} from "@/lib/travel-expenses/per-diem-location-name";
 import { TRIP_COUNTRY_CODES } from "@/lib/travel-expenses/trip-report";
 import { formatCountry } from "./format";
 import { type DayLocationForm, dayLocationDraft } from "./per-diem-day-location-form";
@@ -83,28 +88,25 @@ function LocationSelect({
 				{label}
 			</Label>
 			<div className="grid gap-2 sm:grid-cols-2">
-				<Select value={countryValue} onValueChange={(next) => onChange(next ?? "")}>
-					<SelectTrigger className="w-full" aria-labelledby={`${id}-label`}>
-						<SelectValue
-							placeholder={t("travelExpenses.report.perDiem.location.choose", "Choose a location")}
-						/>
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="DE">
-							{noneLabel ?? t("travelExpenses.report.perDiem.location.germany", "Germany")}
-						</SelectItem>
-						{countries.map((entry) => (
-							<SelectItem key={entry.code} value={entry.code}>
-								{entry.name}
-							</SelectItem>
-						))}
-						{specials.map((special) => (
-							<SelectItem key={special} value={`special:${special}`}>
-								{specialLabel(t, special)}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+				<SearchableSelect
+					aria-labelledby={`${id}-label`}
+					pinnedOptions={[
+						{
+							code: "DE",
+							name: noneLabel ?? t("travelExpenses.report.perDiem.location.germany", "Germany"),
+						},
+						...specials.map((special) => ({
+							code: `special:${special}`,
+							name: specialLabel(t, special),
+						})),
+					]}
+					options={countries}
+					value={countryValue ?? ""}
+					onValueChange={onChange}
+					placeholder={t("travelExpenses.report.perDiem.location.choose", "Choose a location")}
+					searchPlaceholder={t("travelExpenses.report.countrySearch", "Search countries")}
+					emptyText={t("travelExpenses.report.countryEmpty", "No country found")}
+				/>
 				{country && places.length > 0 && (
 					<Select
 						value={location && "country" in location ? (location.place ?? ELSEWHERE) : ELSEWHERE}
@@ -131,7 +133,7 @@ function LocationSelect({
 							</SelectItem>
 							{places.map((place) => (
 								<SelectItem key={place.key} value={place.key}>
-									{place.label}
+									{perDiemPlaceName(country, place, locale, t)}
 								</SelectItem>
 							))}
 						</SelectContent>
@@ -223,6 +225,8 @@ export function PerDiemDayLocationFields({
 /** The applied location of a calculated day, marking official fallbacks. */
 export function PerDiemDayLocationLabel({ location }: { location: PerDiemDayLocation }) {
 	const { t } = useTranslate();
+	const locale = useLocale();
+	const name = perDiemLocationName(location, locale, t);
 	const note = (() => {
 		switch (location.rule) {
 			case "luxembourg":
@@ -255,8 +259,12 @@ export function PerDiemDayLocationLabel({ location }: { location: PerDiemDayLoca
 		}
 	})();
 	return (
-		<span className="block font-medium">
-			{location.label}
+		// The official name of the notice stays at hand where it differs (#681).
+		<span
+			className="block font-medium"
+			title={name === location.label ? undefined : location.label}
+		>
+			{name}
 			{note && <span className="block text-xs font-normal text-muted-foreground">{note}</span>}
 		</span>
 	);

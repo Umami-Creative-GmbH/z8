@@ -3,6 +3,7 @@
 import { IconLoader2, IconTrash } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { saveReceiptItemDraftAction } from "@/app/[locale]/(app)/travel-expenses/report-actions";
@@ -19,7 +20,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
+import type { Instant } from "@/lib/datetime/temporal-core";
 import type { DraftSaveOutcome } from "@/lib/travel-expenses/draft-saver";
+import { formatNumberInput } from "@/lib/travel-expenses/number-input-display";
 import { itemProjectChoice } from "@/lib/travel-expenses/project-attribution";
 import {
 	type ReceiptExceptionContext,
@@ -36,6 +39,7 @@ import type { ReportItemView, ReportReceiptView } from "@/lib/travel-expenses/re
 import { conversionRequirementLabel } from "./conversion-requirement-label";
 import { CurrencyConversionField } from "./currency-conversion-field";
 import { DraftSaveStatus } from "./draft-save-status";
+import { futureDateLabel } from "./future-date-labels";
 import { ItemProjectField } from "./project-picker";
 import { ReceiptAttachments } from "./receipt-attachments";
 import { ReceiptExceptionField } from "./receipt-exception-field";
@@ -48,12 +52,15 @@ import { useDraftSaver } from "./use-draft-saver";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
-function toFormValues(item: ReceiptItemDraft): FormValues {
+/** The form's text for a saved item; the amount as the viewer's locale writes it (#688). */
+function toFormValues(item: ReceiptItemDraft, locale: string): FormValues {
 	return {
 		expenseDate: item.expenseDate ?? "",
 		category: item.category ?? "",
 		description: item.description ?? "",
-		amount: item.amount ?? "",
+		amount: item.amount
+			? formatNumberInput(locale, item.amount, { kind: "amount", currency: item.currency })
+			: "",
 		currency: item.currency ?? "",
 		paidBy: item.paidBy ?? "",
 		accountingReference: item.accountingReference ?? "",
@@ -110,10 +117,16 @@ function fieldErrorMessage(t: Translate, field: FieldName, code: string | undefi
 	return messages[field];
 }
 
-function requirementLabel(t: Translate, requirement: ReceiptItemRequirement, currency: string) {
+function requirementLabel(
+	t: Translate,
+	requirement: ReceiptItemRequirement,
+	context: { currency: string; locale: string; expenseDate: string | null },
+) {
 	switch (requirement) {
 		case "expense_date":
 			return t("travelExpenses.report.requirements.expenseDate", "Add the date on the receipt.");
+		case "future_date":
+			return futureDateLabel(t, context.locale, context.expenseDate);
 		case "category":
 			return t("travelExpenses.report.requirements.category", "Choose a category.");
 		case "description":
@@ -138,7 +151,7 @@ function requirementLabel(t: Translate, requirement: ReceiptItemRequirement, cur
 		case "conversion_unsupported":
 		case "conversion_evidence":
 		case "conversion_rate_date":
-			return conversionRequirementLabel(t, requirement, currency);
+			return conversionRequirementLabel(t, requirement, context.currency);
 	}
 }
 
@@ -155,6 +168,7 @@ export function ReceiptItemEditor({
 	maxReceiptBytes,
 	receiptExceptionsAllowed = false,
 	project,
+	now,
 }: {
 	reportId: string;
 	/** The item as last loaded; later loads never reset entered values. */
@@ -173,8 +187,11 @@ export function ReceiptItemEditor({
 	receiptExceptionsAllowed?: boolean;
 	/** Project attribution (#605); the trip's project is what "inherit" means. */
 	project?: { isTrip: boolean; tripProjectId: string | null; onSaved?: () => void };
+	/** The report's submission clock (`useSubmissionNow`): a future-dated expense waits (#685). */
+	now: Instant;
 }) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const [uploading, setUploading] = useState(false);
 	const [removing, setRemoving] = useState(false);
 	const [receiptException, setReceiptException] = useState(() =>
@@ -182,7 +199,7 @@ export function ReceiptItemEditor({
 	);
 
 	// The last values the server confirmed; malformed fields fall back to them.
-	const [initialSaved] = useState(() => toDraftInput(toFormValues(item)));
+	const [initialSaved] = useState(() => toDraftInput(toFormValues(item, locale)));
 	const lastSaved = useRef<ReceiptItemDraftInput>(initialSaved);
 
 	const { saver, state } = useDraftSaver<ReceiptItemDraftInput, ReportItemView>({
@@ -211,7 +228,7 @@ export function ReceiptItemEditor({
 			if (!result.success) return { status: "failed", error: result.error };
 			switch (result.data.status) {
 				case "saved":
-					lastSaved.current = toDraftInput(toFormValues(result.data.item));
+					lastSaved.current = toDraftInput(toFormValues(result.data.item, locale));
 					onSaved?.(result.data.item);
 					return errors
 						? { status: "invalid", errors, version: result.data.item.version }
@@ -229,7 +246,7 @@ export function ReceiptItemEditor({
 	});
 
 	// Later loads must not replace defaults: that would reset untouched fields.
-	const [defaultValues] = useState(() => toFormValues(item));
+	const [defaultValues] = useState(() => toFormValues(item, locale));
 	const form = useForm({
 		defaultValues,
 		listeners: {
@@ -274,9 +291,9 @@ export function ReceiptItemEditor({
 							const theirs = state.conflict?.item;
 							saver.resolveConflict("use_theirs");
 							if (theirs) {
-								lastSaved.current = toDraftInput(toFormValues(theirs));
+								lastSaved.current = toDraftInput(toFormValues(theirs, locale));
 								// Keeps the mount defaults so the next render does not undo the reset.
-								form.reset(toFormValues(theirs), { keepDefaultValues: true });
+								form.reset(toFormValues(theirs, locale), { keepDefaultValues: true });
 								onDraftChange?.(theirs);
 							}
 							// The newer version may also have different receipts.
@@ -360,6 +377,7 @@ export function ReceiptItemEditor({
 						reimbursementCurrency={reimbursementCurrency}
 						receiptException={{ ...receiptException, allowed: receiptExceptionsAllowed }}
 						conversion={item.conversion}
+						now={now}
 					/>
 				)}
 			</form.Subscribe>
@@ -375,6 +393,7 @@ function ReceiptItemRequirements({
 	reimbursementCurrency,
 	receiptException,
 	conversion,
+	now,
 }: {
 	itemId: string;
 	values: FormValues;
@@ -382,8 +401,10 @@ function ReceiptItemRequirements({
 	reimbursementCurrency: string;
 	receiptException: ReceiptExceptionContext;
 	conversion: ReportItemView["conversion"];
+	now: Instant;
 }) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const parsed = parseReceiptItemDraft(toDraftInput(values));
 	const draft = parsed.ok ? parsed.draft : null;
 	const missing = draft
@@ -392,6 +413,7 @@ function ReceiptItemRequirements({
 				reimbursementCurrency,
 				receiptException,
 				conversion,
+				now,
 			})
 		: null;
 	return (
@@ -416,7 +438,13 @@ function ReceiptItemRequirements({
 			) : (
 				<ul className="list-disc space-y-1 pl-5 text-sm">
 					{missing.map((requirement) => (
-						<li key={requirement}>{requirementLabel(t, requirement, reimbursementCurrency)}</li>
+						<li key={requirement}>
+							{requirementLabel(t, requirement, {
+								currency: reimbursementCurrency,
+								locale,
+								expenseDate: draft?.expenseDate ?? null,
+							})}
+						</li>
 					))}
 				</ul>
 			)}

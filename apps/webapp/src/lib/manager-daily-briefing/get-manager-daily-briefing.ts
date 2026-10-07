@@ -82,17 +82,12 @@ type GetManagerDailyBriefingInput = {
 
 const SECTION_LOAD_ERROR = "Section could not be loaded.";
 
-const briefingSectionCopy = {
-	approvalsTitle: "Approvals",
-	approvalsDescription: "Pending requests waiting for a decision.",
-} as const;
-
 const SECTION_METADATA = {
 	approvals: {
 		id: "approvals",
-		title: briefingSectionCopy.approvalsTitle,
+		title: "Approvals",
 		titleKey: "today.briefing.sections.approvals.title",
-		description: briefingSectionCopy.approvalsDescription,
+		description: "Pending requests waiting for a decision.",
 		descriptionKey: "today.briefing.sections.approvals.description",
 		emptyState: "No approvals are waiting.",
 		emptyStateKey: "today.briefing.sections.approvals.empty",
@@ -206,7 +201,9 @@ export async function getManagerDailyBriefingFromSources({
 		: settledValue(coverageRulesResult, []);
 	const scopedEmployeeIds = new Set(employeeIds);
 	const approvalItems = settledValue(approvalsResult, []).flatMap((approval) =>
-		scopedEmployeeIds.has(approval.requester.id) ? [approvalToBriefingItem(approval)] : [],
+		scopedEmployeeIds.has(approval.requester.id)
+			? [approvalToBriefingItem(approval, currentEmployee.id)]
+			: [],
 	);
 	const overtimeItems = settledValue(overtimeResult, []);
 	const payrollItems = settledValue(payrollResult, []);

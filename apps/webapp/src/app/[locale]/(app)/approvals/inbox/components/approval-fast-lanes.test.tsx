@@ -5,12 +5,18 @@ import { describe, expect, it, vi } from "vitest";
 import type { ApprovalInboxFastLaneGroup, ApprovalInboxItem } from "@/lib/approvals/inbox/types";
 import { ApprovalFastLanes } from "./approval-fast-lanes";
 
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback?: string, values?: Record<string, unknown>) =>
-			(fallback ?? _key).replace(/\{(\w+)\}/g, (match, name: string) =>
-				values?.[name] === undefined ? match : String(values[name]),
-			),
+			(fallback ?? _key)
+				.replace(/\{count, plural, one \{# (\w+)\} other \{# (\w+)\}\}/, (_m, one, other) =>
+					values?.count === 1 ? `1 ${one}` : `${String(values?.count)} ${other}`,
+				)
+				.replace(/\{(\w+)\}/g, (match, name: string) =>
+					values?.[name] === undefined ? match : String(values[name]),
+				),
 	}),
 }));
 

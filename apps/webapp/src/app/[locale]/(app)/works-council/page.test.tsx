@@ -35,6 +35,8 @@ vi.mock("next/navigation", () => ({
 	redirect: mockState.redirect,
 }));
 
+vi.mock("next-intl/server", () => ({ getLocale: async () => "en" }));
+
 vi.mock("next/server", () => ({
 	connection: mockState.connection,
 }));
@@ -205,9 +207,9 @@ describe("WorksCouncilPage", () => {
 			worksCouncilEnabled: false,
 		});
 
-		await expect(renderWorksCouncilContent()).rejects.toThrow("redirect:/");
+		await expect(renderWorksCouncilContent()).rejects.toThrow("redirect:/en");
 
-		expect(mockState.redirect).toHaveBeenCalledWith("/");
+		expect(mockState.redirect).toHaveBeenCalledWith("/en");
 		expect(mockState.loadWorksCouncilSettings).not.toHaveBeenCalled();
 		expect(mockState.auditWorksCouncilPortalViewed).not.toHaveBeenCalled();
 		expect(mockState.buildWorksCouncilPortalModel).not.toHaveBeenCalled();

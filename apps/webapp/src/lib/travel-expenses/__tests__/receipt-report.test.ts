@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	parseReceiptItemDraft,
 	type ReceiptItemDraft,
@@ -96,7 +97,11 @@ describe("parseReceiptItemDraft", () => {
 });
 
 describe("receiptItemMissingRequirements", () => {
-	const context = { receiptCount: 1, reimbursementCurrency: "EUR" };
+	const context = {
+		receiptCount: 1,
+		reimbursementCurrency: "EUR",
+		now: parseInstant("2026-10-07T12:00:00Z"),
+	};
 
 	it("reports nothing for a complete same-currency receipt item", () => {
 		expect(receiptItemMissingRequirements(complete(), context)).toEqual([]);

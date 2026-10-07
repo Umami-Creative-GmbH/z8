@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { canonicalJson } from "./absence-facts";
 import { ApprovalEvidenceError } from "./errors";
 import {
@@ -9,6 +10,13 @@ import {
 	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION,
 	type TravelExpenseReportFactsInput,
 } from "./travel-expense-report-facts";
+
+/** Freezes as submitting does, at an instant after every date of the fixtures (#685). */
+const freeze = (input: TravelExpenseReportFactsInput) =>
+	buildTravelExpenseReportSubmittedFacts({
+		...input,
+		submittedAt: parseInstant("2026-10-07T12:00:00Z"),
+	});
 
 const checksumA = "a".repeat(64);
 const checksumB = "b".repeat(64);
@@ -100,7 +108,7 @@ function expectEvidenceError(fn: () => unknown, code: string, field: string) {
 
 describe("buildTravelExpenseReportSubmittedFacts", () => {
 	it("freezes the trip, every expense in report order with its exact receipts, and the totals", () => {
-		const facts = buildTravelExpenseReportSubmittedFacts(input());
+		const facts = freeze(input());
 
 		expect(facts).toEqual({
 			schemaVersion: TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION,
@@ -167,7 +175,7 @@ describe("buildTravelExpenseReportSubmittedFacts", () => {
 	});
 
 	it("freezes a standalone report without inventing trip facts", () => {
-		const facts = buildTravelExpenseReportSubmittedFacts(
+		const facts = freeze(
 			input({
 				report: {
 					...input().report,
@@ -188,21 +196,18 @@ describe("buildTravelExpenseReportSubmittedFacts", () => {
 
 	it("refuses incomplete facts instead of freezing a guess", () => {
 		expectEvidenceError(
-			() => buildTravelExpenseReportSubmittedFacts(input({ receipts: [receipt("r-1", "train")] })),
+			() => freeze(input({ receipts: [receipt("r-1", "train")] })),
 			"evidence_incomplete",
 			"items",
 		);
 		expectEvidenceError(
-			() =>
-				buildTravelExpenseReportSubmittedFacts(
-					input({ report: { ...input().report, tripPurpose: null } }),
-				),
+			() => freeze(input({ report: { ...input().report, tripPurpose: null } })),
 			"evidence_incomplete",
 			"trip",
 		);
 		expectEvidenceError(
 			() =>
-				buildTravelExpenseReportSubmittedFacts(
+				freeze(
 					input({
 						receipts: [
 							receipt("r-1", "train", { checksumSha256: "not-a-checksum" }),
@@ -215,10 +220,40 @@ describe("buildTravelExpenseReportSubmittedFacts", () => {
 		);
 	});
 
+	it("never freezes a future-dated trip or expense, but compares one as it is (#685)", () => {
+		// 2026-09-16 starts in Pacific/Kiritimati (UTC+14) at 2026-09-15T10:00Z.
+		const beforeTripEnd = parseInstant("2026-09-15T09:59:59Z");
+		expectEvidenceError(
+			() => buildTravelExpenseReportSubmittedFacts({ ...input(), submittedAt: beforeTripEnd }),
+			"evidence_incomplete",
+			"trip",
+		);
+		const futureTrain = input({
+			report: { ...input().report, tripEndDate: "2026-09-15" },
+			items: [
+				item("hotel", 1, { paidBy: "company" }),
+				item("train", 0, { expenseDate: "2026-09-16" }),
+			],
+		});
+		expectEvidenceError(
+			() => buildTravelExpenseReportSubmittedFacts({ ...futureTrain, submittedAt: beforeTripEnd }),
+			"evidence_incomplete",
+			"items",
+		);
+		// Deciding later never re-checks dates: they only move into the past.
+		const submitted = freeze(input());
+		expect(compareLiveTravelExpenseReportWithRevision(submitted, input())).toEqual({
+			kind: "current",
+		});
+		expect(() => buildTravelExpenseReportSubmittedFacts(input() as never)).toThrow(
+			expect.objectContaining({ code: "invariant" }),
+		);
+	});
+
 	it("never freezes a row from another organization or report", () => {
 		expectEvidenceError(
 			() =>
-				buildTravelExpenseReportSubmittedFacts(
+				freeze(
 					input({
 						receipts: [
 							receipt("r-1", "train", { organizationId: "org-2" }),
@@ -231,9 +266,7 @@ describe("buildTravelExpenseReportSubmittedFacts", () => {
 		);
 		expectEvidenceError(
 			() =>
-				buildTravelExpenseReportSubmittedFacts(
-					input({ items: [item("train", 0, { reportId: "report-2" }), item("hotel", 1)] }),
-				),
+				freeze(input({ items: [item("train", 0, { reportId: "report-2" }), item("hotel", 1)] })),
 			"invariant",
 			"item_scope",
 		);
@@ -251,7 +284,7 @@ describe("schema version 1 revisions", () => {
 		// Later versions only add optional facts this report does not have
 		// (receipt exceptions, #604; mileage, #606), so its facts as of version 1
 		// are today's facts at version 1.
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(input()), schemaVersion: 1 };
+		const facts = { ...freeze(input()), schemaVersion: 1 };
 		expect(createHash("sha256").update(canonicalJson(facts)).digest("hex")).toBe(V1_FACTS_SHA256);
 		expect(fingerprintTravelExpenseReportFacts(facts)).toBe(V1_FINGERPRINT);
 		expect(compareLiveTravelExpenseReportWithRevision(facts, input())).toEqual({
@@ -260,7 +293,7 @@ describe("schema version 1 revisions", () => {
 	});
 
 	it("fingerprints facts under the version they were frozen with", () => {
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(input()), schemaVersion: 7 };
+		const facts = { ...freeze(input()), schemaVersion: 7 };
 		expect(fingerprintTravelExpenseReportFacts(facts)).toMatch(
 			/^travel_expense_report:v7:[0-9a-f]{64}$/,
 		);
@@ -268,7 +301,7 @@ describe("schema version 1 revisions", () => {
 });
 
 describe("compareLiveTravelExpenseReportWithRevision", () => {
-	const submitted = buildTravelExpenseReportSubmittedFacts(input());
+	const submitted = freeze(input());
 
 	it("accepts unchanged live rows", () => {
 		expect(compareLiveTravelExpenseReportWithRevision(submitted, input())).toEqual({
@@ -371,7 +404,7 @@ describe("project attribution (schema version 4)", () => {
 	}
 
 	it("freezes each expense's effective project with how its use was proven", () => {
-		const facts = buildTravelExpenseReportSubmittedFacts(attributed());
+		const facts = freeze(attributed());
 		expect(facts.items.map((frozen) => [frozen.itemId, frozen.project])).toEqual([
 			["train", projectP1],
 			["hotel", projectP2],
@@ -379,7 +412,7 @@ describe("project attribution (schema version 4)", () => {
 	});
 
 	it("omits the project of an expense without one", () => {
-		const facts = buildTravelExpenseReportSubmittedFacts(
+		const facts = freeze(
 			attributed({
 				report: { ...input().report, projectId: null },
 				projectAttribution: { hotel: projectP2 },
@@ -391,13 +424,13 @@ describe("project attribution (schema version 4)", () => {
 
 	it("refuses an attributed expense whose eligibility was not resolved", () => {
 		expectEvidenceError(
-			() => buildTravelExpenseReportSubmittedFacts(attributed({ projectAttribution: { train: projectP1 } })),
+			() => freeze(attributed({ projectAttribution: { train: projectP1 } })),
 			"evidence_incomplete",
 			"project_attribution",
 		);
 		expectEvidenceError(
 			() =>
-				buildTravelExpenseReportSubmittedFacts(
+				freeze(
 					attributed({
 						projectAttribution: { train: projectP1, hotel: { ...projectP2, projectId: "p3" } },
 					}),
@@ -408,7 +441,7 @@ describe("project attribution (schema version 4)", () => {
 	});
 
 	it("keeps the frozen names when only the project's live name changed", () => {
-		const submitted = buildTravelExpenseReportSubmittedFacts(attributed());
+		const submitted = freeze(attributed());
 		// Live rows carry project ids only; renames never reach the comparison.
 		expect(
 			compareLiveTravelExpenseReportWithRevision(
@@ -419,7 +452,7 @@ describe("project attribution (schema version 4)", () => {
 	});
 
 	it("holds a report whose live project attribution changed after submission", () => {
-		const submitted = buildTravelExpenseReportSubmittedFacts(attributed());
+		const submitted = freeze(attributed());
 		const changed = (overrides: Partial<TravelExpenseReportFactsInput>) =>
 			compareLiveTravelExpenseReportWithRevision(submitted, attributed(overrides));
 		expect(changed({ report: { ...input().report, projectId: "p9" } })).toEqual({
@@ -433,7 +466,7 @@ describe("project attribution (schema version 4)", () => {
 	});
 
 	it("adds project facts only from schema version 4, after #607's version 3", () => {
-		const current = buildTravelExpenseReportSubmittedFacts(attributed());
+		const current = freeze(attributed());
 		expect(current.schemaVersion).toBeGreaterThanOrEqual(4);
 		// A version 3 snapshot of the same live rows never carries the key.
 		const v3 = {
@@ -450,7 +483,7 @@ describe("project attribution (schema version 4)", () => {
 		// Golden values computed at schema version 4 (#605), before v5 (#606) added
 		// mileage facts; this report has no mileage item, so nothing changes.
 		const V4_FACTS_SHA256 = "db69c7a1b8a974179c05deac39f8a05ec05bab5a9748ffa2087c06bc5f4ef162";
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(attributed()), schemaVersion: 4 };
+		const facts = { ...freeze(attributed()), schemaVersion: 4 };
 		expect(createHash("sha256").update(canonicalJson(facts)).digest("hex")).toBe(V4_FACTS_SHA256);
 		expect(fingerprintTravelExpenseReportFacts(facts)).toBe(
 			`travel_expense_report:v4:${V4_FACTS_SHA256}`,
@@ -493,7 +526,7 @@ describe("mileage items (#606)", () => {
 	const withDrive = (row: ItemRow = drive) => input({ items: [...input().items, row] });
 
 	it("freezes the route, distance, applied policy version and breakdown, and counts the amount", () => {
-		const facts = buildTravelExpenseReportSubmittedFacts(withDrive());
+		const facts = freeze(withDrive());
 
 		expect(facts.items[2]).toEqual({
 			itemId: "drive",
@@ -530,6 +563,26 @@ describe("mileage items (#606)", () => {
 		});
 	});
 
+	it("freezes a drive's own project attribution like a receipt's (#688)", () => {
+		const project = {
+			projectId: "p4",
+			name: "Customer site rollout",
+			customerId: null,
+			customerName: null,
+			inheritedFromTrip: false,
+			basis: "employee_assignment",
+		} as const;
+		const facts = freeze(
+			input({
+				report: { ...input().report, projectId: null },
+				items: [...input().items, { ...drive, projectId: "p4", projectInherits: false }],
+				projectAttribution: { drive: project },
+			}),
+		);
+		expect(facts.items[2]?.project).toEqual(project);
+		expect(facts.items[2]?.mileage?.route).toBe("Hamburg hotel – customer site – back");
+	});
+
 	it("refuses a mileage item that was not priced under the submission lock", () => {
 		for (const row of [
 			{ ...drive, mileagePolicy: null },
@@ -537,16 +590,12 @@ describe("mileage items (#606)", () => {
 			{ ...drive, mileagePolicy: { ...stamp, currency: "CHF" } },
 			{ ...drive, mileageRoute: null },
 		]) {
-			expectEvidenceError(
-				() => buildTravelExpenseReportSubmittedFacts(withDrive(row)),
-				"evidence_incomplete",
-				"mileage",
-			);
+			expectEvidenceError(() => freeze(withDrive(row)), "evidence_incomplete", "mileage");
 		}
 	});
 
 	it("compares against the stamped policy, so later policy changes never hold the decision", () => {
-		const submitted = buildTravelExpenseReportSubmittedFacts(withDrive());
+		const submitted = freeze(withDrive());
 		// The live rows keep their stamp; today's policy is never consulted.
 		expect(compareLiveTravelExpenseReportWithRevision(submitted, withDrive())).toEqual({
 			kind: "current",
@@ -566,7 +615,7 @@ describe("mileage items (#606)", () => {
 	});
 
 	it("adds mileage facts only from schema version 5, after #605's version 4", () => {
-		const current = buildTravelExpenseReportSubmittedFacts(withDrive());
+		const current = freeze(withDrive());
 		expect(current.schemaVersion).toBeGreaterThanOrEqual(5);
 		expect(current.items[2]?.mileage).toBeDefined();
 		// A version 4 snapshot of the same live rows never carries the key.
@@ -595,7 +644,7 @@ describe("mileage items (#606)", () => {
 			receipts: [],
 			projectAttribution: { drive: project },
 		});
-		const facts = buildTravelExpenseReportSubmittedFacts(attributed);
+		const facts = freeze(attributed);
 		expect(facts.items[0]?.project).toEqual(project);
 		expect(compareLiveTravelExpenseReportWithRevision(facts, attributed)).toEqual({
 			kind: "current",

@@ -257,7 +257,7 @@
         "testEmailRequired": "Inserisci un indirizzo email di prova",
         "testFailed": "Invio dell'email di prova non riuscito",
         "testFailure": "Non riuscito",
-        "testSection": "IconaInvia email di prova",
+        "testSection": "Invia email di prova",
         "testSent": "Email di prova inviata correttamente",
         "testSuccess": "Operazione riuscita",
         "title": "Configurazione email",

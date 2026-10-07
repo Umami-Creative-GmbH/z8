@@ -70,6 +70,10 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 		harness.deleted.push(input.key);
 		harness.objects.delete(input.key);
 	},
+	async deletePrivateObjectVersions(input: { key: string }) {
+		harness.deleted.push(input.key);
+		harness.objects.delete(input.key);
+	},
 }));
 
 const actions = await import("@/app/[locale]/(app)/travel-expenses/report-actions");
@@ -379,7 +383,11 @@ describe("trip report drafts (#601)", () => {
 			expectedVersion: 1,
 		});
 		expect(removed).toEqual({ success: true, data: { status: "removed", itemId: train.id } });
-		expect(harness.deleted).toEqual([expect.stringContaining(`/${train.id}/`)]);
+		// The receipt and its preview (#690).
+		expect(harness.deleted).toEqual([
+			expect.stringContaining(`/${train.id}/`),
+			expect.stringContaining(`/${train.id}/`),
+		]);
 		expect((await load(trip.id)).items.map((item) => item.id)).toEqual([hotel.id]);
 		const { rows } = await admin.query(
 			"select (select count(*)::int from travel_expense_report_receipt where report_id = $1) as attached, (select count(*)::int from travel_expense_receipt_upload where organization_id = 't601-org') as staged",

@@ -168,20 +168,29 @@ function SavingProject() {
 	);
 }
 
+type ProjectSelectOption = { value: string; label: string; disabled?: boolean };
+
+/**
+ * Called, not rendered as a component: the select resolves its trigger label
+ * only from `SelectItem` elements placed directly in its content.
+ */
+function projectSelectItems(options: ProjectSelectOption[]) {
+	return options.map((option) => (
+		<SelectItem key={option.value} value={option.value} disabled={option.disabled}>
+			{option.label}
+		</SelectItem>
+	));
+}
+
 /** The projects the server offers for the date(s), as select options. */
-function ProjectOptionItems({ options }: { options: ProjectChoicesView["choices"] }) {
-	const { t } = useTranslate();
-	return (
-		<>
-			{options.map((option) => (
-				<SelectItem key={option.id} value={`project:${option.id}`}>
-					{option.name}
-					{option.customerName ? ` · ${option.customerName}` : ""}
-					{basisSuffix(t, option.basis)}
-				</SelectItem>
-			))}
-		</>
-	);
+function offeredProjectOptions(
+	t: Translate,
+	options: ProjectChoicesView["choices"],
+): ProjectSelectOption[] {
+	return options.map((option) => ({
+		value: `project:${option.id}`,
+		label: `${option.name}${option.customerName ? ` · ${option.customerName}` : ""}${basisSuffix(t, option.basis)}`,
+	}));
 }
 
 const encode = (choice: ItemProjectChoice) =>
@@ -204,49 +213,50 @@ function itemEffectiveProjectId(
 }
 
 /** An expense's options: the trip's project, none, the offered ones, an unavailable own one. */
-function ItemProjectOptions({
-	choice,
-	isTrip,
-	tripProjectId,
-	options,
-	selectedName,
-}: {
-	choice: ItemProjectChoice;
-	isTrip: boolean;
-	tripProjectId: string | null;
-	options: ProjectChoicesView["choices"];
-	selectedName: string | null;
-}) {
-	const { t } = useTranslate();
-	const ownSelectionMissing =
-		choice.mode === "project" && !options.some((option) => option.id === choice.projectId);
+function itemProjectOptions(
+	t: Translate,
+	{
+		choice,
+		isTrip,
+		tripProjectId,
+		options,
+		selectedName,
+	}: {
+		choice: ItemProjectChoice;
+		isTrip: boolean;
+		tripProjectId: string | null;
+		options: ProjectChoicesView["choices"];
+		selectedName: string | null;
+	},
+): ProjectSelectOption[] {
 	const inheritedName = isTrip && tripProjectId && choice.mode === "inherit" ? selectedName : null;
-	return (
-		<>
-			{isTrip && (
-				<SelectItem value="inherit">
-					{tripProjectId
-						? t("travelExpenses.report.project.inheritNamed", "Same as the trip ({name})", {
-								name: inheritedName ?? "…",
-							})
-						: t("travelExpenses.report.project.inheritNone", "Same as the trip (no project)")}
-				</SelectItem>
-			)}
-			<SelectItem value="none">{t("travelExpenses.report.project.none", "No project")}</SelectItem>
-			<ProjectOptionItems options={options} />
-			{ownSelectionMissing && choice.mode === "project" && (
-				<SelectItem value={`project:${choice.projectId}`} disabled>
-					{t(
-						"travelExpenses.report.project.unavailableOption",
-						"{name} (not available on this date)",
-						{
-							name: selectedName ?? "…",
-						},
-					)}
-				</SelectItem>
-			)}
-		</>
-	);
+	const result: ProjectSelectOption[] = [];
+	if (isTrip) {
+		result.push({
+			value: "inherit",
+			label: tripProjectId
+				? t("travelExpenses.report.project.inheritNamed", "Same as the trip ({name})", {
+						name: inheritedName ?? "…",
+					})
+				: t("travelExpenses.report.project.inheritNone", "Same as the trip (no project)"),
+		});
+	}
+	result.push({ value: "none", label: t("travelExpenses.report.project.none", "No project") });
+	result.push(...offeredProjectOptions(t, options));
+	if (choice.mode === "project" && !options.some((option) => option.id === choice.projectId)) {
+		result.push({
+			value: `project:${choice.projectId}`,
+			label: t(
+				"travelExpenses.report.project.unavailableOption",
+				"{name} (not available on this date)",
+				{
+					name: selectedName ?? "…",
+				},
+			),
+			disabled: true,
+		});
+	}
+	return result;
 }
 
 /** Warns that the attributed project was not assigned on the expense date. */
@@ -375,21 +385,23 @@ export function ItemProjectField({
 					<SelectValue />
 				</SelectTrigger>
 				<SelectContent>
-					<ItemProjectOptions
-						choice={choice}
-						isTrip={isTrip}
-						tripProjectId={tripProjectId}
-						options={query.data?.choices ?? []}
-						selectedName={selected?.name ?? null}
-					/>
+					{projectSelectItems(
+						itemProjectOptions(t, {
+							choice,
+							isTrip,
+							tripProjectId,
+							options: query.data?.choices ?? [],
+							selectedName: selected?.name ?? null,
+						}),
+					)}
 				</SelectContent>
 			</Select>
 			{saving && <SavingProject />}
 			<ChoicesStatus
 				query={query}
 				needsDate={t(
-					"travelExpenses.report.project.needsDate",
-					"Enter the receipt date to see the projects you can use on that day.",
+					"travelExpenses.report.project.needsExpenseDate",
+					"Enter the expense date to see the projects you can use on that day.",
 				)}
 			/>
 			<IneligibleProjectProblem effectiveProjectId={effectiveProjectId} selected={selected} />
@@ -476,7 +488,7 @@ export function TripProjectField({
 					<SelectItem value="none">
 						{t("travelExpenses.report.project.none", "No project")}
 					</SelectItem>
-					<ProjectOptionItems options={options} />
+					{projectSelectItems(offeredProjectOptions(t, options))}
 					{projectId && !options.some((option) => option.id === projectId) && (
 						<SelectItem value={`project:${projectId}`} disabled>
 							{t(

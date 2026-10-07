@@ -24,6 +24,7 @@ import {
 	formatPlainDateRange,
 	formatRecordedInstant,
 } from "../report/format";
+import { reportName } from "../report-name";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { BalanceText, SettlementStateBadge } from "./settlement-status";
 
@@ -42,12 +43,12 @@ function accountTitle(t: Translate, locale: string, account: SettlementAccount) 
 	switch (title.kind) {
 		case "trip":
 			return {
-				name: title.purpose ?? t("travelExpenses.report.drafts.untitledTrip", "Untitled trip"),
+				name: reportName(t, { kind: "trip", itemType: null, title: title.purpose }),
 				dates: formatPlainDateRange(locale, title.startDate, title.endDate),
 			};
 		case "standalone":
 			return {
-				name: title.description ?? t("travelExpenses.report.drafts.untitled", "Untitled receipt"),
+				name: reportName(t, { kind: "standalone", itemType: null, title: title.description }),
 				dates: title.expenseDate ? formatPlainDate(locale, title.expenseDate) : null,
 			};
 		case "legacy_claim":
@@ -106,7 +107,7 @@ export function FinanceQueue() {
 				aria-label={t("travelExpenses.finance.filter.label", "Show expenses")}
 			>
 				{FILTERS.map((value) => (
-					<ToggleGroupItem key={value} value={value}>
+					<ToggleGroupItem key={value} value={value} className="whitespace-nowrap px-3">
 						{filterLabel[value]}
 					</ToggleGroupItem>
 				))}

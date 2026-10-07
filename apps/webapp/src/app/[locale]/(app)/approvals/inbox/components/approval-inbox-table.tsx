@@ -8,6 +8,8 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { getApprovalTypeLabels } from "./approval-type-labels";
+import { summaryField, useApprovalInboxText } from "@/components/approvals/use-approval-inbox-text";
+import { getOwnRequestNote } from "./own-request-note";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/user-avatar";
@@ -44,7 +46,7 @@ function getAgeLabel(t: ReturnType<typeof useTranslate>["t"], ageDays: number): 
 		return t("approvals:approvals.requestedToday", "Today");
 	}
 
-	return t("approvals:approvals.requestAgeDays", ageDays === 1 ? "1 day" : `${ageDays} days`, {
+	return t("approvals:approvals.requestAgeDays", "{count, plural, one {# day} other {# days}}", {
 		count: ageDays,
 	});
 }
@@ -57,6 +59,7 @@ export function ApprovalInboxTable({
 	isFetching,
 }: ApprovalInboxTableProps) {
 	const { t } = useTranslate();
+	const text = useApprovalInboxText();
 	const typeLabels = getApprovalTypeLabels(t);
 	const ariaLabel = t("approvals:approvals.selectRow", "Select row");
 	const presence = useEmployeeClockStatuses(
@@ -84,6 +87,7 @@ export function ApprovalInboxTable({
 						const TypeIcon = TYPE_ICONS[item.type];
 						const isSelected = selectedIds.has(item.id);
 						const isHighRisk = item.triage.riskLevel === "high";
+						const isOwnRequest = item.capabilities.ownRequest === true;
 
 						return (
 							<div
@@ -99,6 +103,7 @@ export function ApprovalInboxTable({
 										checked={isSelected}
 										onCheckedChange={(checked) => onSelectItem(item.id, !!checked)}
 										onClick={(event) => event.stopPropagation()}
+										disabled={isOwnRequest}
 										aria-label={ariaLabel}
 									/>
 								</div>
@@ -110,7 +115,7 @@ export function ApprovalInboxTable({
 									aria-label={t(
 										"approvals:approvals.openDetailsFor",
 										"Open details for {title}",
-										{ title: item.summary.title },
+										{ title: text(summaryField(item.summary, "title")) },
 									)}
 								>
 									<div className="flex min-w-0 items-center gap-3">
@@ -146,14 +151,21 @@ export function ApprovalInboxTable({
 											</Badge>
 										</div>
 										<div>
-											<div className="truncate font-medium text-sm">{item.summary.title}</div>
+											<div className="truncate font-medium text-sm">
+												{text(summaryField(item.summary, "title"))}
+											</div>
 											<div className="truncate text-muted-foreground text-sm">
-												{item.summary.detail}
+												{text(summaryField(item.summary, "detail"))}
 											</div>
 										</div>
 										<p className="text-muted-foreground text-xs leading-5">
 											{item.triage.explanation}
 										</p>
+										{isOwnRequest && (
+											<p className="font-medium text-muted-foreground text-xs leading-5">
+												{getOwnRequestNote(t)}
+											</p>
+										)}
 									</div>
 
 									<div className="text-muted-foreground text-sm md:text-right">

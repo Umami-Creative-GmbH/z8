@@ -1,17 +1,80 @@
 {
   "travelExpenses": {
     "actions": {
-      "newClaim": "Nueva reclamación"
+      "backToClaims": "Volver a las solicitudes",
+      "download": "Descargar",
+      "preview": "Vista previa",
+      "retry": "Reintentar",
+      "viewClaim": "Ver solicitud"
+    },
+    "adjustment": {
+      "create": {
+        "action": "Corregir con un ajuste",
+        "confirm": "Crear ajuste",
+        "description": "Obtendrá una copia de los gastos aprobados para corregirlos. Al enviarla, se remite todo el informe corregido para una nueva aprobación; solo se liquida la diferencia respecto al importe aprobado.",
+        "failed": "No se pudo crear el ajuste. Vuelva a intentarlo.",
+        "ineligible": "Este informe ya no se puede ajustar. Recargue la página para ver su estado actual.",
+        "reason": "Motivo de la corrección",
+        "reasonRequired": "Explique qué debe corregirse.",
+        "reasonTooLong": "Mantenga el motivo por debajo de {max} caracteres.",
+        "title": "¿Crear un ajuste vinculado?"
+      },
+      "ineligible": {
+        "adjustment": "Un ajuste se corrige a través del informe que modifica."
+      },
+      "notice": {
+        "baseline": "Importe aprobado que corrige",
+        "delta": "Diferencia con signo",
+        "editing": "Corrija los gastos a continuación. Al realizar el envío, se mostrará la diferencia respecto al importe aprobado para su revisión y, a continuación, se revisará de nuevo. El informe original y sus pagos permanecerán sin cambios.",
+        "original": "Abrir el informe original",
+        "title": "Ajuste de un informe aprobado"
+      },
+      "panel": {
+        "applied": "Aplicado",
+        "description": "Este informe ya se ha exportado o reembolsado, por lo que se mantiene como aprobado. Una corrección es un ajuste vinculado: se revisa de nuevo y, una vez aprobada, modifica el importe aprobado según su diferencia con signo.",
+        "effective": "Importe aprobado incluidos los ajustes: {amount}",
+        "open": "Abrir ajuste",
+        "title": "Ajustes"
+      },
+      "preview": {
+        "currency": "El total corregido no está en la divisa del informe original, por lo que no se puede enviar como un ajuste.",
+        "delta": "Este ajuste modifica el importe aprobado de {baseline} en {delta}.",
+        "review": "Requiere una nueva aprobación de todo el informe, incluso cuando el importe disminuye."
+      },
+      "reviewerHint": "El empleado crea el ajuste a partir de este informe; este volverá a usted para una nueva revisión con su diferencia con signo."
+    },
+    "allowanceOverride": {
+      "amount": "Importe",
+      "authorizedBy": "Autorizado por",
+      "authorizedByValue": "{name}, {date}",
+      "basis": "Cálculo",
+      "evidence": "Comprobante",
+      "noOrdinary": "No existe un cálculo ordinario para estos datos.",
+      "ordinary": "La política calcularía {amount}.",
+      "reason": "Motivo",
+      "situation": {
+        "calculated": "Calculado según la política",
+        "fallback": "Calculado con una tarifa oficial alternativa",
+        "missingCoverage": "Ninguna política de la organización lo cubre",
+        "missingFacts": "Faltan datos obligatorios del viaje",
+        "unsupported": "No está cubierto por las reglas de cálculo compatibles"
+      },
+      "situationLabel": "Por qué no se calculó",
+      "situationResolved": "Esta asignación manual ya no es válida: el motivo por el que se autorizó ha cambiado (por ejemplo, una política cubre ahora estos datos). La asignación calculada se aplica si existe; de lo contrario, un administrador de gastos debe revisarla.",
+      "stale": "Esta asignación manual se autorizó para datos diferentes y ya no es válida. Un administrador de gastos debe revisar los datos modificados.",
+      "title": "Asignación establecida manualmente por un administrador de gastos"
     },
     "approvals": {
       "description": "Abra la bandeja de entrada de aprobaciones unificada filtrada por gastos de viaje.",
-      "openInbox": "Abrir bandeja de entrada",
-      "title": "Revisar aprobaciones de gastos de viaje pendientes"
+      "entry": {
+        "open": "Abrir bandeja de entrada",
+        "title": "Revisar las aprobaciones de gastos de viaje pendientes"
+      }
     },
-    "claimTypes": {
-      "mileage": "Kilometraje",
-      "per_diem": "Viáticos",
-      "receipt": "Recibo"
+    "currency": {
+      "empty": "No se encontraron monedas",
+      "placeholder": "Elija una moneda",
+      "search": "Buscar monedas"
     },
     "decision": {
       "approve": "Aprobar",
@@ -33,41 +96,180 @@
       "rejected": "Reclamación rechazada correctamente",
       "rejectTitle": "Rechazar reclamación"
     },
-    "description": "Cree y realice un seguimiento de sus reclamaciones de gastos de viaje",
+    "detail": {
+      "created": "Creado",
+      "decisionRecorded": "Decisión registrada",
+      "destination": "Destino",
+      "history": "Historial de decisiones",
+      "intermediateApproval": "Aprobación registrada — en espera de aprobación adicional",
+      "legacyReceiptIdentity": "Recibo heredado: no se registró la suma de comprobación del contenido.",
+      "loading": "Cargando solicitud…",
+      "noReceipts": "No hay recibos registrados",
+      "notRecorded": "No registrado",
+      "originalAmount": "Importe original",
+      "receipts": "Recibos",
+      "refreshing": "Actualizando solicitud…",
+      "submitted": "Enviado",
+      "title": "Solicitud de gastos de viaje",
+      "unknownDates": "Contexto de fechas del viaje no registrado (solicitud heredada)"
+    },
     "errors": {
-      "loadClaims": "Error al cargar las reclamaciones de gastos de viaje"
+      "loadDetailRetry": "No se puede cargar esta solicitud. Inténtalo de nuevo."
     },
     "feature": "gestionar gastos de viaje",
-    "form": {
-      "amount": "Importe",
-      "claimType": "Tipo de reclamación",
-      "created": "Borrador de gastos de viaje creado",
-      "createDraft": "Crear borrador",
-      "currency": "Moneda",
-      "currencyDescription": "Código ISO 4217, p. ej. EUR o USD",
-      "currencyPlaceholder": "EUR",
-      "description": "Cree un nuevo borrador de solicitud para sus gastos de viaje recientes.",
-      "destinationCity": "Ciudad de destino",
-      "destinationCityPlaceholder": "Berlín",
-      "destinationCountry": "País de destino",
-      "destinationCountryPlaceholder": "Alemania",
-      "errors": {
-        "createDraft": "Error al crear el borrador de gastos de viaje",
-        "positiveAmount": "El importe debe ser un número positivo",
-        "tripEndBeforeStart": "La fecha de fin del viaje no puede ser anterior a la fecha de inicio",
-        "validTripDates": "Por favor, proporcione una fecha de inicio y fin de viaje válida",
-        "validTripEnd": "Por favor, proporcione una fecha de fin de viaje válida",
-        "validTripStart": "Por favor, proporcione una fecha de inicio de viaje válida"
+    "finance": {
+      "approvedOn": "Aprobado el {date}",
+      "back": "Volver a finanzas de gastos",
+      "companyPaid": "Pagado por la empresa {amount}",
+      "description": "Gastos aprobados y saldo pendiente con los empleados. Registrar un reembolso documenta un pago realizado fuera de Z8; no se transfiere dinero.",
+      "employeePaid": "Pagado por el empleado {amount}",
+      "empty": {
+        "any": "Aún no hay gastos aprobados.",
+        "open": "Nada que liquidar: todos los gastos aprobados están liquidados."
       },
-      "notes": "Notas",
-      "notesPlaceholder": "Añada contexto opcional para su aprobador",
-      "receiptAttachmentHint": "Las solicitudes con recibo requieren al menos un archivo adjunto. La carga de archivos adjuntos estará disponible después de crear el borrador.",
-      "selectClaimType": "Seleccione el tipo de solicitud",
-      "title": "Crear solicitud de gastos de viaje",
-      "tripEnd": "Fin del viaje",
-      "tripStart": "Inicio del viaje"
+      "entry": {
+        "description": "Revise los gastos aprobados, los saldos pendientes y los reembolsos registrados.",
+        "open": "Abrir la cola de finanzas",
+        "title": "Finanzas de gastos"
+      },
+      "errors": {
+        "load": "No se pudo cargar la cola de finanzas. Vuelva a intentarlo."
+      },
+      "exports": {
+        "adjustment": "Ajuste: {name}",
+        "cancel": "Cancelar",
+        "cancelledByFinance": "Cancelado por finanzas.",
+        "cancelledReopenedHint": "Cancelado porque se reabrió un informe incluido para su corrección. El resto de los informes incluidos están listos para exportarse de nuevo: cree una nueva exportación para ellos.",
+        "counts": "{reports} informes · {items} gastos · {receipts} recibos",
+        "created": "Exportación en cola. Aparecerá a continuación cuando esté lista.",
+        "description": "Exporte los gastos aprobados como un archivo CSV junto con sus recibos para contabilidad. Cada envío aprobado se exporta una sola vez; vuelva a descargar una exportación cuando lo necesite.",
+        "download": "Descargar",
+        "empty": "No hay gastos aprobados en espera de exportación.",
+        "errors": {
+          "alreadyExported": "Algunos gastos seleccionados ya forman parte de otra exportación. Descargue esa exportación en su lugar.",
+          "cancel": "No se pudo cancelar la exportación.",
+          "conflict": "Ya se registró un intento anterior con otra selección. Revise el historial de exportaciones.",
+          "failed": "No se pudo crear la exportación. Vuelva a intentarlo.",
+          "invalid": "Seleccione entre uno y el número máximo de gastos.",
+          "load": "No se pudieron cargar las exportaciones. Vuelva a intentarlo.",
+          "retry": "No se pudo reintentar la exportación.",
+          "stale": "Algunos gastos seleccionados ya no están aprobados como se mostraba. La lista se ha actualizado; revise la selección y vuelva a exportar."
+        },
+        "failure": {
+          "enqueue": "No se pudo poner en cola la exportación. Vuelva a intentarlo.",
+          "inconsistent": "No se pudieron exportar los datos aprobados de forma coherente. Póngase en contacto con el soporte técnico.",
+          "receiptMismatch": "Un recibo almacenado ya no coincide con su suma de comprobación registrada. Póngase en contacto con el soporte técnico antes de reintentarlo.",
+          "receiptUnavailable": "No se pudo leer un archivo de recibo. Vuelva a intentarlo cuando el almacenamiento esté disponible.",
+          "storage": "No se pudo almacenar el archivo de exportación. Vuelva a intentarlo.",
+          "unknown": "La exportación falló. Vuelve a intentarlo."
+        },
+        "form": {
+          "label": "Crear una exportación",
+          "selectAll": "Seleccionar todo",
+          "submit": "Crear exportación ({count})"
+        },
+        "history": "Historial de exportaciones",
+        "loading": "Cargando exportaciones…",
+        "notPayment": "No es un pago: exportar no marca nada como reembolsado.",
+        "requested": "Solicitado el {date} por {name}",
+        "retry": "Reintentar",
+        "status": {
+          "cancelled": "Cancelado",
+          "completed": "Completado",
+          "failed": "Fallido",
+          "processing": "Procesando",
+          "queued": "En cola"
+        },
+        "title": "Exportaciones"
+      },
+      "filter": {
+        "all": "Todos aprobados",
+        "label": "Mostrar gastos",
+        "open": "Abierto",
+        "settled": "Liquidado"
+      },
+      "legacyClaim": "Solicitud de {type} heredada",
+      "loading": "Cargando cola de finanzas…",
+      "title": "Finanzas de gastos",
+      "truncated": "Mostrando los {count} gastos aprobados más recientemente. Los gastos coincidentes más antiguos no aparecen en la lista."
+    },
+    "form": {
+      "currency": "Moneda",
+      "notes": "Notas"
+    },
+    "history": {
+      "adjustment": "Ajuste",
+      "adjustmentOf": "Ajuste de “{title}”",
+      "adjustmentOfUntitled": "Ajuste de un informe anterior",
+      "claimed": "Solicitado",
+      "companyPaid": "Pagado por la empresa {amount}",
+      "continuedFrom": "Continuación de una solicitud anterior",
+      "deleteDraft": "Eliminar borrador “{title}”",
+      "emptyDescription": "Inicie un viaje para reunir varios gastos con los mismos datos de viaje, o añada un único recibo o gasto de kilometraje. Los borradores se guardan automáticamente para que pueda terminarlos más tarde.",
+      "emptyFilter": "No hay gastos con este estado.",
+      "emptyTitle": "Aún no hay gastos de viaje",
+      "errors": {
+        "load": "No se han podido cargar sus gastos de viaje. Inténtelo de nuevo.",
+        "refresh": "No se han podido actualizar sus gastos; la lista que aparece a continuación podría estar desactualizada. Inténtelo de nuevo."
+      },
+      "filter": {
+        "all": "Todos",
+        "approved": "Aprobado",
+        "inReview": "En revisión",
+        "label": "Mostrar gastos",
+        "needsAction": "Por terminar",
+        "rejected": "Rechazado"
+      },
+      "legacy": {
+        "badge": "Solicitud anterior",
+        "mileage": "Solicitud de kilometraje",
+        "perDiem": "Solicitud de dietas",
+        "receipt": "Solicitud con recibo"
+      },
+      "loading": "Cargando sus gastos de viaje…",
+      "notCounted": "{count, plural, one {# gasto aún no contabilizado} other {# gastos aún no contabilizados}}",
+      "refreshing": "Actualizando…",
+      "reimbursable": "Reembolsable a usted",
+      "showAll": "Mostrar todos los gastos",
+      "title": "Sus gastos",
+      "untitledMileage": "Kilometraje sin título"
+    },
+    "legacyDraft": {
+      "continue": "Continuar como informe",
+      "converted": "Ha continuado este borrador como un informe de gastos. Esta solicitud se mantiene aquí sin cambios para referencia.",
+      "description": "Los borradores del formulario de solicitud anterior ahora se completan como informes de gastos. Se transferirán el importe, las fechas, las notas y los recibos; cualquier dato que requiera el nuevo formulario y que no se haya registrado en este borrador quedará pendiente para que lo complete. Esta solicitud se mantendrá sin cambios.",
+      "failed": "No se pudo continuar con el borrador. Vuelva a intentarlo.",
+      "flags": {
+        "amount": "El importe introducido {amount} no es un importe de recibo válido. Introduzca el importe y la divisa que figuran en el recibo.",
+        "conversion": "El recibo está en moneda extranjera. El borrador no registró ninguna conversión, por lo que debe añadir cómo se convirtió (cargo en tarjeta o tipo de cambio) antes de enviarlo.",
+        "destination": "El destino \"{destination}\" no se pudo asociar a ningún país. Selecciónelo.",
+        "expenseDate": "El borrador abarcaba {range}. Elija el día de este gasto.",
+        "manualTotal": "El borrador tenía un total introducido de {amount}. No se utilizará: este gasto se calcula ahora a partir de lo que introduzca a continuación.",
+        "notes": "Sus notas se muestran a continuación; copie lo que aún sea aplicable.",
+        "project": "Se conservó el proyecto del borrador. A menos que su asignación en la fecha del gasto esté registrada, un administrador de gastos debe autorizarlo antes de que pueda enviarlo.",
+        "projectMissing": "El proyecto del borrador ya no existe. Elija un proyecto si corresponde.",
+        "tripDates": "El borrador se creó antes de que se registraran las fechas del viaje. Introduzca las fechas."
+      },
+      "loadFailed": "No se puede comprobar este borrador. Vuelva a intentarlo.",
+      "notDraft": "Esta solicitud ya se ha enviado. Mantiene su aprobación original y no se puede continuar como informe.",
+      "notice": {
+        "description": "La información que introdujo se ha transferido a los campos correspondientes de este formulario, incluidos {count} recibos. Complete los campos restantes antes de enviarla.",
+        "original": "Ver el borrador original",
+        "title": "Continuado a partir de un borrador de solicitud anterior"
+      },
+      "openReport": "Abrir el informe",
+      "receipt": {
+        "mismatch": "el archivo almacenado ya no coincide con lo que se subió",
+        "unreadable": "el archivo almacenado no se puede leer en este momento",
+        "unsupportedStorage": "el archivo se encuentra en un almacenamiento no compatible",
+        "unsupportedType": "el archivo almacenado no es un tipo de recibo compatible"
+      },
+      "receiptUnavailable": "No se ha modificado nada porque no se pudo transferir un recibo de forma segura: {receipts}. Vuelva a intentarlo más tarde o solicite a su administrador que restaure el archivo.",
+      "status": "Continuado como informe",
+      "title": "Continuar con este borrador"
     },
     "list": {
+      "actions": "Acciones",
       "amount": "Importe",
       "dateRange": "Rango de fechas",
       "emptyDescription": "Cree su primera solicitud para iniciar el proceso de aprobación.",
@@ -75,6 +277,729 @@
       "status": "Estado",
       "type": "Tipo"
     },
-    "title": "Gastos de viaje"
+    "perDiemPlaces": {
+      "AU": {
+        "canberra": "Canberra",
+        "sydney": "Sídney"
+      },
+      "BR": {
+        "brasilia": "Brasilia",
+        "rio-de-janeiro": "Río de Janeiro",
+        "sao-paulo": "São Paulo"
+      },
+      "CA": {
+        "ottawa": "Ottawa",
+        "toronto": "Toronto",
+        "vancouver": "Vancouver"
+      },
+      "CH": {
+        "bern": "Berna",
+        "genf": "Ginebra"
+      },
+      "CN": {
+        "hongkong": "Hong Kong",
+        "peking": "Pekín",
+        "shanghai": "Shanghái"
+      },
+      "ES": {
+        "barcelona": "Barcelona",
+        "kanarische-inseln": "Islas Canarias",
+        "madrid": "Madrid",
+        "palma-de-mallorca": "Palma de Mallorca"
+      },
+      "FR": {
+        "paris": "París y departamentos 77, 78, 91–95"
+      },
+      "GB": {
+        "london": "Londres"
+      },
+      "GR": {
+        "athen": "Atenas"
+      },
+      "IN": {
+        "bangalore": "Bengaluru",
+        "chennai": "Chennai",
+        "kalkutta": "Calcuta",
+        "mumbai": "Bombay",
+        "neu-delhi": "Nueva Delhi"
+      },
+      "IT": {
+        "mailand": "Milán",
+        "rom": "Roma"
+      },
+      "JP": {
+        "osaka": "Osaka",
+        "tokio": "Tokio"
+      },
+      "PL": {
+        "breslau": "Breslavia",
+        "warschau": "Varsovia"
+      },
+      "RU": {
+        "moskau": "Moscú",
+        "st-petersburg": "San Petersburgo"
+      },
+      "SA": {
+        "djidda": "Yeda",
+        "riad": "Riad"
+      },
+      "TR": {
+        "ankara": "Ankara",
+        "izmir": "Esmirna"
+      },
+      "US": {
+        "atlanta": "Atlanta",
+        "boston": "Boston",
+        "chicago": "Chicago",
+        "houston": "Houston",
+        "los-angeles": "Los Ángeles",
+        "miami": "Miami",
+        "new-york-city": "Ciudad de Nueva York",
+        "san-francisco": "San Francisco",
+        "washington-dc": "Washington, D.C."
+      },
+      "ZA": {
+        "johannesburg": "Johannesburgo",
+        "kapstadt": "Ciudad del Cabo"
+      }
+    },
+    "report": {
+      "actions": {
+        "newMileage": "Nuevo kilometraje",
+        "newReceipt": "Nuevo recibo",
+        "newTrip": "Nuevo viaje"
+      },
+      "approvedBy": "Aprobado por {name} el {date}.",
+      "awaitingReview": "Pendiente de revisión.",
+      "awaitingReviewer": "Pendiente de revisión por {name}.",
+      "backToApprovals": "Volver a aprobaciones",
+      "backToCurrent": "Volver al informe actual",
+      "backToTravelExpenses": "Volver a gastos de viaje",
+      "categories": {
+        "accommodation": "Alojamiento",
+        "meals": "Comidas",
+        "other": "Otros",
+        "parking": "Aparcamiento",
+        "transport": "Transporte"
+      },
+      "conversion": {
+        "attachFirst": "Adjunte primero el extracto de la tarjeta o el recibo que muestre el cargo anterior.",
+        "authorizedBy": "Autorizado por",
+        "basis": {
+          "cardCharge": "Cargo en tarjeta",
+          "manualRate": "Tipo autorizado",
+          "referenceRate": "Tipo de referencia del BCE"
+        },
+        "chargedAmount": "Importe cargado en {currency}",
+        "chargedAmountDescription": "El importe que figura en el extracto bancario o de la tarjeta, incluida cualquier comisión de cambio aplicada.",
+        "conflict": "Este gasto ha cambiado en otro lugar. Compruébelo y vuelva a guardar el cargo en la tarjeta.",
+        "errors": {
+          "chargedAmount": "Introduzca el importe positivo cargado en {currency}, con un máximo de {digits} decimales.",
+          "evidence": "Seleccione el archivo adjunto de este gasto que muestra el cargo."
+        },
+        "evidence": "Comprobante:",
+        "evidenceLabel": "Archivo adjunto que muestra el cargo",
+        "evidenceMissing": "Falta el archivo adjunto que muestra el cargo en la tarjeta.",
+        "formLabel": "Cargo en la tarjeta",
+        "none": "No se estiman tipos de cambio. Introduzca el importe cargado en su tarjeta en {currency} y seleccione el archivo adjunto que lo demuestre, como el extracto de la tarjeta. Sin un cargo en la tarjeta, un administrador de gastos puede registrar un tipo de cambio documentado.",
+        "notSaved": "No se pudo guardar el cargo en la tarjeta para este gasto.",
+        "publicationDate": "Publicado el",
+        "publicationFallback": "No se publicó ningún tipo de cambio el {expenseDate}, por lo que se aplica la publicación anterior más reciente.",
+        "rate": "Tipo de cambio",
+        "rateDate": "Fecha del tipo de cambio",
+        "rateEvidence": "Comprobante del tipo de cambio",
+        "rateValue": "1 {base} = {value} {quote}",
+        "reason": "Documentación",
+        "reference": {
+          "alternatives": "Su informe permanecerá como borrador hasta que introduzca el cargo en la tarjeta en {reimbursementCurrency} con el archivo adjunto que lo demuestre, o hasta que un administrador de gastos registre un tipo de cambio documentado.",
+          "currencyUnavailable": "El Banco Central Europeo no publica ningún tipo de cambio para {currency} en esta fecha.",
+          "expenseDateMissing": "Introduzca la fecha del gasto para consultar el tipo de cambio de referencia.",
+          "historyUnavailable": "No hay ningún tipo de cambio de referencia para esta fecha.",
+          "notYetPublished": "El tipo de cambio de referencia para esta fecha aún no se ha publicado. Suele aparecer después de las 16:00 (hora de Fráncfort) en días laborables.",
+          "pairUnsupported": "El Banco Central Europeo solo publica tipos de cambio frente al euro, por lo que no se aplica ninguno entre {currency} y {reimbursementCurrency}.",
+          "providerUnavailable": "Aún no se ha podido obtener el tipo de cambio de referencia para esta fecha. Inténtelo de nuevo más tarde.",
+          "rateStale": "No hay disponible ningún tipo de cambio de referencia actual para esta fecha."
+        },
+        "referencePending": "El tipo de cambio de referencia se volverá a consultar para la nueva fecha una vez que guarde el cambio.",
+        "remove": "Eliminar cargo en la tarjeta",
+        "removeFailed": "No se pudo eliminar el cargo en la tarjeta. Vuelva a cargar el gasto e inténtelo de nuevo.",
+        "replaceWithCardCharge": "Usar el cargo de mi tarjeta en su lugar",
+        "result": "{original} cuenta como {reimbursement}",
+        "rounding": "Redondeo",
+        "roundingValue": "Redondeado a {digits} decimales (mitad hacia arriba)",
+        "saveCardCharge": "Guardar cargo de tarjeta",
+        "saved": "Cargo de tarjeta guardado",
+        "saveFailed": "No se pudo guardar el cargo de la tarjeta. Inténtelo de nuevo.",
+        "source": "Fuente",
+        "sourceEcb": "Tipo de cambio de referencia del euro del Banco Central Europeo, aprobado por su organización",
+        "title": "Conversión a {currency}"
+      },
+      "correctAndResubmit": "Corrija el informe y vuelva a enviarlo. Los envíos anteriores permanecerán en su historial.",
+      "countryEmpty": "No se encontraron países",
+      "countrySearch": "Buscar países",
+      "cycles": {
+        "approved": "aprobado",
+        "entry": "Envío {number} el {date}: {outcome}",
+        "pending": "pendiente de revisión",
+        "rejected": "rechazado",
+        "reopened": "aprobado, luego reabierto para corrección",
+        "returned": "devuelto para cambios",
+        "title": "Envíos",
+        "withdrawn": "retirado"
+      },
+      "decideInInbox": "Apruebe, devuelva o rechace el informe completo en la bandeja de entrada de Aprobaciones.",
+      "delete": {
+        "action": "Eliminar borrador",
+        "description": "Se eliminarán el borrador, sus gastos y sus recibos. Esta acción no se puede deshacer.",
+        "descriptionLegacy": "Se eliminarán el borrador, sus gastos y sus recibos, junto con el borrador de solicitud anterior que continúa. Esta acción no se puede deshacer.",
+        "done": "Borrador eliminado.",
+        "failed": "No se pudo eliminar el borrador. Inténtelo de nuevo.",
+        "notDeletable": "Este informe ya se ha enviado, por lo que ya no se puede eliminar.",
+        "title": "¿Eliminar este borrador?"
+      },
+      "drafts": {
+        "expenses": "{count, plural, one {# gasto} other {# gastos}}",
+        "noDate": "Aún no hay fecha",
+        "noTravelDates": "Aún no hay fechas de viaje",
+        "receipts": "{count, plural, one {# recibo} other {# recibos}}",
+        "untitled": "Recibo sin título",
+        "untitledTrip": "Viaje sin título"
+      },
+      "earlierSubmission": "Esta es una versión anterior del informe, conservada exactamente como se envió.",
+      "errors": {
+        "amount": "Introduce un importe positivo con dos decimales como máximo, p. ej., 12.50.",
+        "category": "Selecciona una categoría de la lista.",
+        "create": "No se pudo crear el gasto. Inténtalo de nuevo.",
+        "currency": "Introduce un código de moneda de tres letras, p. ej., EUR.",
+        "expenseDate": "Introduce una fecha válida.",
+        "load": "No se pudo cargar este gasto. Inténtalo de nuevo.",
+        "loadSubmission": "No se pudo cargar el informe enviado. Inténtalo de nuevo.",
+        "paidBy": "Selecciona quién pagó.",
+        "tooLong": "Este texto es demasiado largo."
+      },
+      "fields": {
+        "accountingReference": "Referencia contable (opcional)",
+        "accountingReferenceDescription": "Una referencia que el departamento de finanzas te pidió usar, como un número de pedido.",
+        "amount": "Importe del recibo",
+        "category": "Categoría",
+        "categoryPlaceholder": "Elige una categoría",
+        "description": "Descripción",
+        "descriptionPlaceholder": "p. ej., Billete de tren Berlín–Hamburgo para el taller con clientes",
+        "expenseDate": "Fecha del recibo",
+        "paidBy": "¿Quién pagó?"
+      },
+      "frozenNotice": "El informe enviado ya no se puede editar.",
+      "history": {
+        "approvalRecorded": "Aprobación registrada por {name}; a la espera de aprobación adicional",
+        "approved": "Aprobado por {name}",
+        "cycle": "Envío {number}:",
+        "rejected": "Rechazado por {name}",
+        "reopened": "Reabierto para corrección por {name}",
+        "returned": "Devuelto para cambios por {name}",
+        "selfApproved": "Aprobado automáticamente: no hay otro revisor",
+        "submitted": "Enviado por {name}",
+        "title": "Historial",
+        "withdrawn": "Retirado por {name}"
+      },
+      "items": {
+        "add": "Añadir gasto con recibo",
+        "addFailed": "No se pudo añadir el gasto. Inténtalo de nuevo.",
+        "empty": "Añade cada recibo de este viaje como un gasto individual. Los detalles del viaje indicados arriba se aplican a todos ellos.",
+        "numbered": "{type} {number}",
+        "remove": "Eliminar",
+        "removeConfirm": "Eliminar gasto",
+        "removeConflict": "Este gasto se modificó en otro lugar y no se eliminó. Compruébalo e inténtalo de nuevo.",
+        "removed": "{type} (eliminado)",
+        "removeDescription": "El gasto y sus recibos adjuntos se eliminan de este viaje. Esta acción no se puede deshacer.",
+        "removeFailed": "No se pudo eliminar el gasto. Inténtalo de nuevo.",
+        "removeItem": "Eliminar {item}",
+        "removeTitle": "¿Eliminar este gasto?",
+        "title": "Gastos"
+      },
+      "kind": {
+        "standaloneMileage": "Kilometraje independiente",
+        "trip": "Informe de viaje"
+      },
+      "loading": "Cargando gasto…",
+      "mileage": {
+        "add": "Añadir kilometraje",
+        "appliedPolicy": "Tarifa válida desde {date} · {source}",
+        "calculation": "{distance} km × {rate} por km = {amount}",
+        "calculationTitle": "Kilometraje calculado",
+        "enterFacts": "Introduce la fecha, los kilómetros y el vehículo para ver el importe.",
+        "errors": {
+          "distance": "Introduce los kilómetros recorridos como un número positivo con dos decimales como máximo, p. ej., 61.5.",
+          "vehicle": "Elige el vehículo que condujiste."
+        },
+        "fields": {
+          "date": "Fecha del trayecto",
+          "distance": "Kilómetros recorridos",
+          "route": "Ruta",
+          "routePlaceholder": "p. ej., Oficina Berlín – cliente Potsdam – vuelta",
+          "vehicle": "Vehículo",
+          "vehicleDescription": "Tu propio vehículo. Los vehículos de empresa y el transporte público no son kilometraje; añade sus recibos en su lugar."
+        },
+        "noRate": "No se inventa ninguna tarifa: este gasto permanece como borrador hasta que un administrador de gastos añada una tarifa de kilometraje que cubra su fecha.",
+        "noRateTitle": "No se aplica ninguna tarifa de kilometraje",
+        "otherCurrency": "La tarifa para esta fecha no está en {currency}; el kilometraje nunca se convierte.",
+        "pending": "Se calcula con la tarifa de tu organización una vez que se guarden los cambios.",
+        "requirements": {
+          "currency": "La tarifa de kilometraje para esta fecha está en {policyCurrency}, pero este informe se reembolsa en {currency}. Pide a un administrador de gastos que añada una tarifa en {currency}.",
+          "date": "Introduce la fecha del trayecto.",
+          "distance": "Introduce los kilómetros recorridos.",
+          "policyMissing": "Tu organización no tiene ninguna tarifa de kilometraje para {vehicle} el {date}. Pide a un administrador de gastos que añada una tarifa con fecha en la configuración de gastos de viaje. No se calculará nada hasta entonces.",
+          "route": "Describe la ruta.",
+          "vehicle": "Selecciona el vehículo."
+        },
+        "rounded": "(exactamente {exact}, redondeado al céntimo)",
+        "sourceOrganization": "Política de la organización: {reference}",
+        "sourceOrganizationUnnamed": "Política de la organización",
+        "sourceStatutory": "Tarifa fija legal alemana ({version})",
+        "standaloneTitle": "Kilometraje",
+        "vehicles": {
+          "car": "Coche",
+          "otherMotorVehicle": "Otro vehículo de motor (p. ej., motocicleta)"
+        }
+      },
+      "paidBy": {
+        "company": "Pagó la empresa (p. ej., tarjeta de empresa)",
+        "employee": "Pagué yo (reembolsarme)"
+      },
+      "perDiem": {
+        "absenceDuration": "{hours}:{minutes} h fuera",
+        "add": "Añadir dieta",
+        "appliedPolicy": "Tarifas válidas a partir de {date} · {source}",
+        "basis": {
+          "absence24h": "Día completo fuera (24 horas)",
+          "claimedInOtherReport": "Ya abonado en otro de tus informes: solo una dieta por día",
+          "over8h": "Más de 8 horas fuera",
+          "overnightMajority": "Mayor parte de la ausencia nocturna",
+          "overnightMinority": "Contabilizado en el otro día de la ausencia nocturna",
+          "travelDay": "Día de viaje de un trayecto con pernocta",
+          "upTo8h": "8 horas o menos fuera: sin dieta"
+        },
+        "breakdownCaption": "Dieta por día natural",
+        "calculationTitle": "Dieta calculada",
+        "columns": {
+          "amount": "Importe",
+          "day": "Día",
+          "eligibility": "Elegibilidad",
+          "meals": "Comidas proporcionadas",
+          "rate": "Dieta"
+        },
+        "deductionNote": "Las comidas proporcionadas reducen la dieta del día, nunca por debajo de cero; lo que hayas pagado por una comida reduce su deducción.",
+        "departure": "Salida",
+        "enterFacts": "Introduce tu salida, regreso y comidas para ver las dietas diarias.",
+        "errors": {
+          "clockChange": "Esta hora no existe en este día porque se adelanta el reloj. Introduce una hora fuera de la hora omitida.",
+          "clockChangeRepeated": "Esta hora se repite en este día porque se retrasa el reloj. Introduce una hora fuera de la hora repetida.",
+          "endBeforeStart": "El regreso debe ser posterior a la salida.",
+          "location": "Elige una ubicación de la lista para cada día.",
+          "meals": "Comprueba las entradas de comidas.",
+          "payment": "Introduce el importe que pagaste con un máximo de dos decimales, p. ej. 2.50.",
+          "time": "Introduce una hora en horas y minutos."
+        },
+        "exceptionalTitle": "Requiere un cálculo manual",
+        "exceptions": {
+          "destinationNotListed": "Una ubicación diaria no está cubierta por la tabla oficial para el extranjero ni por sus reglas alternativas.",
+          "foreignTimeZone": "Las horas de viaje no están en la hora local alemana.",
+          "foreignWithoutOvernight": "Una actividad nocturna en el extranjero sin pernoctación no se calcula automáticamente.",
+          "international": "Un destino está fuera de Alemania. Las dietas internacionales aún no se calculan.",
+          "majorityTie": "La ausencia nocturna se divide exactamente a partes iguales entre ambos días.",
+          "mixedTimeZones": "La salida y el regreso están en diferentes zonas horarias.",
+          "multiDayWithoutOvernight": "El viaje abarca más de dos días naturales sin pernoctación.",
+          "nightsAtHome": "Has pasado algunas noches en casa durante el viaje.",
+          "overlappingDays": "Otro de tus informes ya abona dietas para algunos de estos días; solo se permite una indemnización por día, así que exclúyelos del cálculo manual.",
+          "prolongedWorkplace": "Actividad prolongada en el mismo lugar de trabajo: las dietas se limitan a los primeros tres meses.",
+          "rulesNotVerified": "Todavía no hay normativas alemanas verificadas que cubran estas fechas de viaje.",
+          "specialLocation": "Un día se marcó como situación especial (otro, o un día entero en vuelo o en el mar en el primer o último día de viaje)."
+        },
+        "fields": {
+          "endDate": "Día en que regresaste",
+          "endTime": "Hora a la que regresaste a casa o al trabajo",
+          "meals": "Comidas proporcionadas por tu empleador",
+          "mealsDescription": "Marca cada comida que tu empleador, o un hotel o anfitrión en su nombre, haya proporcionado, incluso si te la saltaste. Introduce lo que pagaste por ella, si corresponde.",
+          "mealsNeedDates": "Introduce los días de salida y de regreso para mostrar los días de viaje.",
+          "overnight": "Noches durante el viaje",
+          "payment": "Lo que pagaste por {meal} el {date}",
+          "paymentPlaceholder": "Pagaste (opcional)",
+          "prolongedWorkplace": "He estado trabajando en este mismo lugar durante más de tres meses",
+          "prolongedWorkplaceDescription": "Las dietas solo se aplican a los primeros tres meses en el mismo lugar de trabajo; este tipo de viajes requiere un cálculo manual.",
+          "startDate": "Día de salida",
+          "startTime": "Hora en que salió de casa o del trabajo",
+          "timeZone": "Zona horaria"
+        },
+        "foreignRates": "Tarifas en el extranjero: {reference} ({version})",
+        "location": {
+          "activityToday": "¿Dónde fue su última actividad profesional en el extranjero en este día?",
+          "assigned": "Importes que la notificación oficial asigna a este país",
+          "atSea": "A bordo de un barco todo el día (sin embarcar ni desembarcar)",
+          "choose": "Elija una ubicación",
+          "countryElsewhere": "{country} – otro lugar",
+          "countryPlace": "{country} – {place}",
+          "elsewhere": "Cualquier otro lugar",
+          "fallbackFlight": "Regla oficial: todo el día en vuelo, importes de Austria",
+          "fallbackLuxembourg": "Regla subsidiaria oficial: no figura en la lista, importes de Luxemburgo",
+          "fallbackMotherCountry": "Regla subsidiaria oficial: territorio, importes de la metrópoli",
+          "fallbackShip": "Regla oficial: todo el día en el mar, importes de Luxemburgo",
+          "germany": "Alemania",
+          "inFlight": "En vuelo todo el día (entre el día de despegue y el de aterrizaje)",
+          "lastActivityTrip": "¿Dónde fue su última actividad profesional en el extranjero en este viaje?",
+          "night": "¿Dónde se encontraba a medianoche? (el último lugar al que llegó antes de las 24:00 hora local; se considera que se ha llegado a un país cuando aterriza el avión)",
+          "noActivityAbroad": "Sin actividad profesional en el extranjero",
+          "other": "Otro caso (requiere un cálculo manual)",
+          "place": "Lugar en {country}"
+        },
+        "meal": "{meal}: −{deduction}",
+        "mealPaid": "{meal}: −{deduction} (usted pagó {payment})",
+        "meals": {
+          "breakfast": "Desayuno",
+          "dinner": "Cena",
+          "lunch": "Almuerzo"
+        },
+        "mealsCountToward": "Deducido el {date}",
+        "noRate": "No se inventa ninguna tarifa: este gasto permanece en borrador hasta que un administrador de gastos agregue tarifas de dietas que cubran sus días.",
+        "noRateTitle": "No se aplica ninguna tarifa de dietas",
+        "otherCurrency": "Las tarifas para estos días no están en {currency}; las dietas nunca se convierten.",
+        "overnight": {
+          "away": "Pernocté fuera de casa todas las noches",
+          "mixed": "Pasé algunas noches en casa",
+          "none": "Trabajé durante la noche sin pernoctar"
+        },
+        "pending": "Se calculará con las tarifas fechadas de su organización una vez que guarde los cambios.",
+        "requirements": {
+          "currency": "Las tarifas de dietas para estos días están en {policyCurrency}, pero este informe se reembolsa en {currency}. Solicite a un administrador de gastos que agregue tarifas en {currency}.",
+          "end": "Indique cuándo regresó a casa o a su lugar de trabajo.",
+          "exceptional": "Este itinerario requiere un cálculo manual de dietas por parte de un administrador de gastos. No se calcula automáticamente.",
+          "locations": "Indíquenos para cada día de viaje dónde se encontraba a medianoche y dónde tuvo lugar su última actividad laboral en el extranjero.",
+          "meals": "Confirme las comidas proporcionadas para cada día de viaje.",
+          "notReturned": "Regresas el {date} a las {time} ({timeZone}). Puedes enviarlo después de esa hora.",
+          "overnight": "Indíquenos si pernoctó fuera de casa.",
+          "policyMissing": "Su organización no tiene tarifas de dietas para {dates}. Solicite a un administrador de gastos que agregue tarifas con fecha en la configuración de gastos de viaje. No se calculará nada hasta entonces.",
+          "start": "Indique cuándo salió de casa o de su lugar de trabajo.",
+          "tripDates": "Sus días de salida y regreso deben ser el primer y el último día del viaje."
+        },
+        "return": "Regreso",
+        "rulesApplied": "Reglas: {reference} ({version})",
+        "title": "Dietas",
+        "total": "Dietas"
+      },
+      "project": {
+        "exceptionBadge": "Excepción de atribución",
+        "exceptionDates": "Cubre",
+        "exceptionEvidence": "Justificante",
+        "exceptionReason": "Motivo",
+        "fromTrip": "(proyecto del viaje)",
+        "inheritNamed": "Igual que el viaje ({name})",
+        "inheritNone": "Igual que el viaje (sin proyecto)",
+        "label": "Proyecto (opcional)",
+        "loadFailed": "No se pudieron cargar los proyectos.",
+        "needsExpenseDate": "Introduzca la fecha del gasto para ver los proyectos que puede utilizar ese día.",
+        "needsTripDates": "Introduce las fechas del viaje para ver los proyectos que puedes usar en este viaje.",
+        "none": "Sin proyecto",
+        "noneEligible": "No tenías ninguna asignación de proyecto en esta fecha. Si trabajaste en un proyecto en ese momento, un administrador de gastos puede autorizar una excepción de atribución.",
+        "notEligible": "{name} no se puede usar en esta fecha: no estabas asignado a él en ese momento. Elige otro proyecto o solicita una excepción de atribución a un administrador de gastos.",
+        "refused": {
+          "conflict": "Este gasto cambió en otro lugar. Resuelve el conflicto de guardado anterior y luego vuelve a elegir el proyecto.",
+          "dateRequired": "Introduce primero la fecha: los proyectos se muestran según la fecha del gasto.",
+          "failed": "No se pudo guardar el proyecto. Inténtalo de nuevo.",
+          "ineligible": "No estabas asignado a este proyecto en esa fecha. Solicita una excepción de atribución a un administrador de gastos si trabajaste en él.",
+          "notFound": "Este proyecto no está disponible."
+        },
+        "saving": "Guardando proyecto…",
+        "tripDescription": "Los gastos usan el proyecto del viaje a menos que elijas otro para ellos. Cada gasto debe estar cubierto por tu asignación de proyecto en su propia fecha.",
+        "tripLabel": "Proyecto del viaje (opcional)",
+        "unavailableOption": "{name} (no disponible en esta fecha)",
+        "unavailableTripOption": "{name} (no disponible en estas fechas)",
+        "viaException": "excepción autorizada"
+      },
+      "receiptException": {
+        "badge": "Falta el recibo — excepción",
+        "disabled": "Tu organización ya no permite excepciones por falta de recibo. Adjunta el recibo o elimina tu explicación.",
+        "notAllowed": "Tu organización no permite excepciones por falta de recibo.",
+        "reason": "¿Por qué falta el recibo?",
+        "reasonDescription": "Su revisor verá esta explicación y debe aceptarla para aprobar el informe.",
+        "reasonLabel": "Por qué falta:",
+        "reasonRequired": "Explique por qué falta el recibo.",
+        "receiptAttached": "Se adjuntó un recibo, por lo que no se enviará la explicación de recibo faltante.",
+        "request": "No puedo proporcionar el recibo y solicito una excepción",
+        "title": "¿No tiene recibo?",
+        "unsavedAfterClose": "No se pudo guardar la explicación de recibo faltante. Abra el gasto de nuevo para comprobarlo.",
+        "withdraw": "Eliminar explicación"
+      },
+      "receipts": {
+        "chooseFile": "Seleccionar archivo",
+        "description": "Tome una foto o adjunte un PDF o imagen del recibo.",
+        "downloadNamed": "Descargar {fileName}",
+        "errors": {
+          "locked": "Este gasto ya no se puede editar.",
+          "retry": "Por favor, inténtelo de nuevo.",
+          "tooLarge": "El archivo es demasiado grande. Adjunte un archivo de como máximo {size} MB.",
+          "unsupportedType": "Adjunte un PDF o una imagen (JPEG, PNG, WebP, GIF, BMP o TIFF)."
+        },
+        "none": "Aún no se ha adjuntado ningún recibo.",
+        "previewNamed": "Vista previa de {fileName}",
+        "progress": "Progreso de subida",
+        "remove": "Eliminar",
+        "removeFailed": "No se pudo eliminar el recibo.",
+        "removeNamed": "Eliminar {fileName}",
+        "takePhoto": "Tomar foto",
+        "title": "Recibo",
+        "uploadFailed": "No se adjuntó el recibo.",
+        "uploading": "Subiendo recibo…",
+        "verifying": "Comprobando el recibo…"
+      },
+      "rejectedBy": "Rechazado por {name}",
+      "reopen": {
+        "action": "Reabrir para corrección",
+        "changed": "El informe cambió mientras tanto y no se reabrió. Revíselo de nuevo.",
+        "confirm": "Reabrir informe",
+        "description": "El empleado puede corregir el informe y debe enviarlo de nuevo para una nueva aprobación. Hasta entonces, no se puede pagar ni exportar. El envío aprobado permanece en su historial.",
+        "done": "Informe reabierto para corrección",
+        "exported": "Este informe ya se exportó a contabilidad, por lo que ya no se puede reabrir. Las correcciones requieren un ajuste vinculado.",
+        "failed": "No se pudo reabrir el informe. Es posible que haya cambiado o que ya no tenga acceso. Vuelva a cargarlo e inténtelo de nuevo.",
+        "reason": "Motivo para el empleado",
+        "reasonRequired": "Indique al empleado qué debe corregir.",
+        "reasonTooLong": "Mantenga el motivo por debajo de {max} caracteres.",
+        "reimbursed": "Ya se registró un reembolso para este informe, por lo que ya no se puede reabrir. Las correcciones requieren un ajuste vinculado.",
+        "reopenedBy": "Reabierto para corrección por {name} el {date}",
+        "title": "¿Reabrir este informe aprobado?"
+      },
+      "requirements": {
+        "amount": "Introduzca el importe del recibo.",
+        "category": "Seleccione una categoría.",
+        "complete": "Se han introducido todos los datos de este gasto.",
+        "conversionEvidence": "Seleccione el archivo adjunto que muestra el cargo en la tarjeta.",
+        "conversionMissing": "Convierta este recibo a {currency}: introduzca el cargo de su tarjeta con el archivo adjunto que lo muestra, o solicite a un administrador de gastos un tipo de cambio documentado.",
+        "conversionRateDate": "La fecha del tipo de cambio autorizado ya no coincide con la fecha del gasto. Introduzca el cargo de su tarjeta o solicite a un administrador de gastos que documente un tipo de cambio para la nueva fecha.",
+        "conversionUnsupported": "Esta conversión no se puede utilizar para {currency}. Solicite a un administrador de gastos que la revise.",
+        "description": "Describa el gasto.",
+        "expenseDate": "Añada la fecha del recibo.",
+        "fixFields": "Corrija primero los campos resaltados.",
+        "futureDate": "Esta fecha está en el futuro. Corrígela o envíala a partir del {date}.",
+        "paidBy": "Indique si pagó usted o la empresa.",
+        "receipt": "Adjunte el recibo.",
+        "receiptExceptionNotAllowed": "Adjunte el recibo. Su organización no permite excepciones por falta de recibos.",
+        "receiptExceptionReason": "Explique por qué falta el recibo.",
+        "title": "Aún necesario"
+      },
+      "returnedBy": "Devuelto para cambios por {name} el {date}",
+      "returnedItemNamed": "{item} ({description}):",
+      "returnedRemovedItem": "{item}, {description}:",
+      "save": {
+        "conflictDescription": "Se guardó en otra ventana o en otro dispositivo después de que lo abriste. Tus últimas modificaciones aún no se han guardado.",
+        "conflictTitle": "Este gasto se modificó en otro lugar",
+        "failedDescription": "Tus modificaciones se conservan en esta página. Comprueba tu conexión e inténtalo de nuevo.",
+        "failedTitle": "No se pudieron guardar tus cambios",
+        "invalid": "Corrige los campos resaltados para guardarlos",
+        "keepMine": "Guardar mis cambios en su lugar",
+        "pending": "Cambios sin guardar",
+        "retry": "Reintentar",
+        "saved": "Todos los cambios guardados",
+        "saving": "Guardando…",
+        "unsavedAfterClose": "No se pudieron guardar tus últimos cambios en un gasto. Ábrelo de nuevo para comprobarlo.",
+        "useTheirs": "Cargar la versión guardada"
+      },
+      "selfApprovedOn": "Aprobado automáticamente el {date}: este es el informe del propietario de la organización y nadie más pudo revisarlo.",
+      "standaloneTitle": "Recibo independiente",
+      "status": {
+        "approved": "Aprobado",
+        "rejected": "Rechazado",
+        "returned": "Devuelto para cambios",
+        "submitted": "Pendiente de revisión"
+      },
+      "submissionNumberAt": "Envío {number}, enviado el {date}",
+      "submit": {
+        "adjustment": "El informe que corrige este ajuste ya no está aprobado en esta moneda, por lo que no se puede calcular una diferencia con signo. Tu ajuste se mantendrá guardado como borrador.",
+        "adjustmentSuperseded": "Se aprobó otro ajuste del mismo informe después de que iniciaste este, y esta copia no incluye esa corrección. Inicia un nuevo ajuste a partir del informe original para conservar ambas correcciones.",
+        "adjustmentTitle": "No se puede enviar este ajuste",
+        "blockedIncomplete": "Completa todo lo que aparece en “Aún necesario” antes de enviar.",
+        "blockedUnsaved": "Espere a que se guarden todos los cambios o corrija los campos resaltados antes de enviar.",
+        "cancel": "Seguir editando",
+        "changed": "El informe cambió después de que lo revisara. Cierre este cuadro de diálogo, compruebe sus entradas y revíselo de nuevo.",
+        "changedTitle": "El informe ha cambiado",
+        "confirm": "Enviar para aprobación",
+        "description": "Compruebe el informe guardado. Su revisor tomará una decisión exactamente sobre esta versión; no se puede editar mientras se esté revisando.",
+        "failed": "Se ha producido un error. Su informe sigue guardado como borrador; vuelva a intentarlo.",
+        "failedTitle": "No se ha enviado el informe",
+        "incomplete": "Faltan algunos datos guardados. Complete todo lo que aparece en “Aún necesario” y vuelva a intentarlo.",
+        "incompleteTitle": "El informe está incompleto",
+        "itemRequirement": "{item}: {requirement}",
+        "noReviewerAsk": "No tienes ningún responsable ni responsable de equipo aparte de ti, y no se ha configurado ningún aprobador de gastos. Pide a un administrador que seleccione un aprobador de gastos en Ajustes, Gastos de viaje, Revisión de informes de gastos. Tu informe permanece guardado como borrador.",
+        "noReviewerAssign": "No tienes ningún responsable ni responsable de equipo aparte de ti, y no se ha configurado ningún aprobador de gastos. Selecciona un aprobador de gastos en Revisión de informes de gastos, dentro de los ajustes de gastos de viaje. Tu informe permanece guardado como borrador.",
+        "noReviewerTitle": "Nadie puede revisar este informe todavía",
+        "notSaved": "Algunos cambios aún no se han guardado. Espere a que se guarden y, a continuación, revise el informe de nuevo.",
+        "openApproverSetting": "Abrir configuración del aprobador de gastos",
+        "project": "{count, plural, one {Un gasto está atribuido a un proyecto al que no estaba asignado en la fecha del gasto. Elija otro proyecto o solicite a un administrador de gastos una excepción de atribución. Su informe permanecerá guardado como borrador.} other {# gastos están atribuidos a un proyecto al que no estaba asignado en la fecha del gasto. Elija otro proyecto o solicite a un administrador de gastos una excepción de atribución. Su informe permanecerá guardado como borrador.}}",
+        "projectTitle": "No se puede usar un proyecto",
+        "ready": "Sus entradas se han guardado. Revise el informe y envíelo para aprobación.",
+        "requesterInactive": "Su perfil de empleado no está activo en esta organización, por lo que el informe no se puede enviar a revisión.",
+        "review": "Revisar y enviar",
+        "routing": "Las reglas de aprobación de su organización no han podido encontrar a un revisor. Pida a un administrador que las compruebe. Su informe permanecerá guardado como borrador.",
+        "routingTitle": "No se ha podido enrutar el informe",
+        "selfApproval": "Las reglas de aprobación de su organización le permitirían aprobar su propio informe. Pida a un administrador que las ajuste. Su informe permanecerá guardado como borrador.",
+        "selfApprovalBlocked": "Como propietario de la organización, tus informes se aprueban automáticamente mientras nadie más pueda revisarlos. Este informe incluye una justificación de falta de recibo o una dieta asignada manualmente, que otra persona debe aceptar. Selecciona un aprobador de gastos o modifica el informe. Tu informe permanece guardado como borrador.",
+        "selfApproved": "Informe aprobado automáticamente: nadie más puede revisarlo",
+        "success": "Informe enviado para aprobación",
+        "thresholdCurrency": "Las reglas de aprobación de su organización comparan importes en EUR, pero este informe está en {currency}. Pida a un administrador que las compruebe. Su informe permanecerá guardado como borrador.",
+        "title": "Enviar informe de gastos",
+        "unavailable": "Su organización está cambiando el funcionamiento de las aprobaciones de gastos, por lo que no se pueden enviar informes en este momento. Su informe permanecerá guardado como borrador.",
+        "unavailableTitle": "El envío está en pausa"
+      },
+      "submittedAt": "Enviado el {date}",
+      "summary": {
+        "itemPrefix": "{item}:",
+        "paidByCompany": "Pagado por la empresa",
+        "paidByEmployee": "Pagado por ti"
+      },
+      "totals": {
+        "companyPaid": "Pagado por la empresa",
+        "excluded": "{count, plural, one {Aún no se ha contabilizado # gasto. Los totales incluyen los gastos en {currency} cuyo importe y pagador se han introducido.} other {Aún no se han contabilizado # gastos. Los totales incluyen los gastos en {currency} cuyo importe y pagador se han introducido.}}",
+        "reimbursable": "Reembolsado a ti",
+        "title": "Totales"
+      },
+      "trip": {
+        "dates": "Fechas del viaje",
+        "datesZone": "(días naturales en {timeZone})",
+        "destinations": "Destinos",
+        "errors": {
+          "destination": "Elige un país de la lista.",
+          "endBeforeStart": "El último día del viaje no puede ser anterior al primero.",
+          "timeZone": "Elige una zona horaria de la lista.",
+          "tooManyDestinations": "Introduce como máximo {max} destinos."
+        },
+        "fields": {
+          "addDestination": "Añadir destino",
+          "country": "País {number}",
+          "countryPlaceholder": "País",
+          "destinations": "Destinos",
+          "endDate": "Último día del viaje",
+          "noDestinations": "Añade los lugares a los que vas a viajar.",
+          "place": "Lugar {number}",
+          "placePlaceholder": "Ciudad o lugar",
+          "purpose": "Motivo del viaje",
+          "purposePlaceholder": "P. ej., taller con clientes en Hamburgo",
+          "removeDestination": "Eliminar destino {number}",
+          "startDate": "Primer día de viaje",
+          "timeZone": "Zona horaria de las fechas del viaje",
+          "timeZoneDescription": "Las fechas del viaje son días naturales en {timeZone}. Los revisores verán las mismas fechas, independientemente de dónde se encuentren."
+        },
+        "purpose": "Motivo del viaje",
+        "requirements": {
+          "complete": "Se han introducido todos los datos de este viaje.",
+          "destination": "Añada al menos un destino.",
+          "expenseItem": "Añada un gasto.",
+          "fixFields": "Corrija los detalles resaltados del viaje.",
+          "itemNamed": "{item}: {description}",
+          "notEnded": "El viaje finaliza el {date}. Puedes enviarlo a partir de ese día.",
+          "purpose": "Describa el motivo del viaje.",
+          "title": "Aún necesario para este viaje",
+          "travelDates": "Introduzca el primer y el último día de viaje."
+        },
+        "title": "Detalles del viaje",
+        "unsavedAfterClose": "No se pudieron guardar los últimos cambios en los detalles del viaje. Abra el viaje de nuevo para revisarlos."
+      },
+      "withdraw": {
+        "action": "Retirar informe",
+        "confirm": "Retirar",
+        "description": "La revisión se detiene y el informe vuelve a ser un borrador editable. Este envío permanecerá en el historial del informe.",
+        "done": "Informe retirado. Puede volver a editarlo.",
+        "failed": "No se pudo retirar el informe. Inténtelo de nuevo.",
+        "notPending": "Este envío ya se ha resuelto o devuelto, por lo que ya no se puede retirar.",
+        "title": "¿Retirar este informe?"
+      },
+      "withdrawnNotice": "Ha retirado el envío {number}. Vuelva a enviar el informe cuando esté listo.",
+      "withdrawnSubmission": "Esta solicitud se retiró antes de que se tomara una decisión."
+    },
+    "settings": {
+      "catalogAdopted": "Adoptado el {date}, válido a partir del {effectiveFrom}",
+      "perDiem": {
+        "adoptForeignTitle": "Adoptar las dietas legales alemanas con las tarifas oficiales en el extranjero",
+        "foreignAreas": "Tarifas extranjeras: {countries} países y {places} ciudades"
+      },
+      "tabs": {
+        "currencies": "Monedas",
+        "exceptions": "Excepciones",
+        "exceptionsPending": "{label}, {count} pendientes",
+        "rates": "Tarifas",
+        "review": "Revisar"
+      }
+    },
+    "settlement": {
+      "adjustment": "Incluye el ajuste aprobado",
+      "balance": {
+        "outstanding": "{amount} pendiente",
+        "overpaid": "{amount} pagado en exceso",
+        "settled": "Liquidado"
+      },
+      "companyPaid": "Los costos de {amount} pagados por la empresa no se adeudan al empleado.",
+      "entitlement": "Monto aprobado pagado por el empleado",
+      "entry": {
+        "recordedBy": "Registrado por {name}, {date}",
+        "recovery": "Recuperado {amount}",
+        "reimbursement": "Pagado {amount}"
+      },
+      "errors": {
+        "amountInvalid": "Ingrese un monto positivo.",
+        "amountPrecision": "Esta moneda no tiene tantos decimales.",
+        "amountRequired": "Ingrese el monto pagado.",
+        "conflict": "Ya se registró un intento anterior con otros valores. Revise el historial antes de volver a registrar.",
+        "dateFuture": "Un pago no puede tener una fecha futura.",
+        "dateInvalid": "Ingrese una fecha válida.",
+        "dateRequired": "Ingrese la fecha de pago.",
+        "exceedsOutstanding": "El monto es mayor que el saldo pendiente.",
+        "exceedsOverpayment": "El monto es mayor que lo pagado en exceso.",
+        "failed": "No se pudo registrar el pago. Vuelva a intentarlo.",
+        "load": "No se pudo cargar el saldo del reembolso. Vuelva a intentarlo.",
+        "noOverpayment": "No se pagó nada en exceso para este gasto.",
+        "notApproved": "Este gasto ya no está aprobado, por lo que no se puede registrar ningún pago.",
+        "nothingOutstanding": "No hay nada pendiente para este gasto.",
+        "ownExpense": "No puede registrar pagos de sus propios gastos.",
+        "referenceRequired": "Introduce la referencia del pago, p. ej., la referencia de la transferencia bancaria.",
+        "refused": "No se puede registrar este pago para este gasto.",
+        "staleBalance": "El saldo ha cambiado mientras introducías este pago. Comprueba el saldo actualizado y regístralo de nuevo.",
+        "tooLong": "Este texto es demasiado largo."
+      },
+      "form": {
+        "amount": "Importe pagado ({currency})",
+        "date": "Fecha de pago",
+        "label": "Registrar un reembolso",
+        "note": "Nota (opcional)",
+        "notice": "Registra el dinero ya pagado al empleado. Z8 no transfiere dinero.",
+        "reference": "Referencia del pago",
+        "referenceHint": "Por ejemplo, la referencia de la transferencia bancaria o de la liquidación de nómina.",
+        "submit": "Registrar reembolso"
+      },
+      "history": "Pagos registrados",
+      "loading": "Cargando el saldo de reembolso…",
+      "ownerOutstanding": "Finanzas registra tu reembolso aquí una vez que se haya pagado.",
+      "ownerOverpaid": "Se pagó más de lo que está aprobado actualmente. Finanzas registra aquí cuándo se ha devuelto la diferencia; Z8 no transfiere dinero.",
+      "recorded": "Reembolso registrado.",
+      "recordedAlready": "Este pago ya se ha registrado.",
+      "recovered": "Recuperado",
+      "recoveryForm": {
+        "amount": "Importe recuperado ({currency})",
+        "date": "Fecha de recuperación",
+        "label": "Registrar una recuperación",
+        "notice": "Se pagó al empleado más de lo que está aprobado actualmente. Registra el dinero que ya haya devuelto para liquidar el pago en exceso; el reembolso original se mantiene como está registrado y no se compensa nada con otros informes. Z8 no transfiere dinero.",
+        "submit": "Registrar recuperación"
+      },
+      "recoveryRecorded": "Recuperación registrada.",
+      "reimbursed": "Reembolsado",
+      "state": {
+        "mixed": "Requiere revisión",
+        "outstanding": "Pendiente",
+        "overpaid": "Pagado en exceso",
+        "settled": "Liquidado"
+      },
+      "title": "Reembolso"
+    },
+    "status": {
+      "draft": "Borrador"
+    },
+    "title": "Gastos de viaje",
+    "workspace": {
+      "description": "Recopile los gastos de viaje e individuales, envíelos para su revisión y realice el seguimiento de su reembolso."
+    }
   }
 }

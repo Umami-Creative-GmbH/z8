@@ -30,6 +30,7 @@
         "dateRange": "Intervalo de datas",
         "description": "Exportar períodos de trabalho e ausências para o formato DATEV Lohn & Gehalt",
         "employees": "Funcionários",
+        "employeesSelected": "{count} selecionado(s)",
         "endDate": "Data de término",
         "error": "Falha na exportação",
         "exportButtonDatev": "Exportar para DATEV",
@@ -52,9 +53,11 @@
         "month": "Mês",
         "monthSelection": "Selecionar mês",
         "projects": "Projetos",
+        "projectsSelected": "{count} selecionado(s)",
         "startDate": "Data de início",
         "success": "Exportação baixada",
         "teams": "Equipes",
+        "teamsSelected": "{count} selecionado(s)",
         "title": "Exportar dados da folha de pagamento",
         "unavailable": {
           "missingConfiguration": "configuração",
@@ -296,7 +299,11 @@
         "number": "Número do funcionário"
       },
       "checks": {
-        "count": "Contagem"
+        "count": "Contagem",
+        "missingEmploymentHistory": {
+          "descriptionPass": "Todos os colaboradores ativos têm histórico de trabalho confirmado para este período de folha de pagamento.",
+          "descriptionWarning": "Alguns colaboradores ativos não têm histórico de trabalho confirmado para este período de folha de pagamento."
+        }
       },
       "checkStatus": {
         "fail": "Bloqueado",

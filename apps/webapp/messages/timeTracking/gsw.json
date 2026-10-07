@@ -32,16 +32,18 @@
     "correction": {
       "clockIn": "Iistämple",
       "clockInDate": "Datum vom Iistämpfle",
+      "clockInTime": "Ziit vom Iistämpfle",
       "clockOut": "Usstämple",
       "clockOutDate": "Datum vom Uusstämpfle",
+      "clockOutTime": "Ziit vom Uusstämpfle",
       "editDescription": "Änderige a dim Ziiteintrag für hüt vorneh.",
       "editEntry": "Ziiteintrag bearbeite",
       "editTitle": "Ziiteintrag bearbeite",
       "errors": {
         "invalidTimeRange": "D'Usstämplizit muess nach de Iistämplizit sii",
+        "noChanges": "Mindeschtens en Korrekturwert muess gänderet werde",
         "submitFailed": "Korrektur het nöd chönne übermittle wärde",
-        "updateFailed": "Ziiteintrag het nöd chönne aktualisiert wärde",
-        "noChanges": "Mindeschtens en Korrekturwert muess gänderet werde"
+        "updateFailed": "Ziiteintrag het nöd chönne aktualisiert wärde"
       },
       "noteLabel": "Notiz (optional)",
       "notePlaceholder": "E Notiz zu dere Änderig dezuefüege…",
@@ -55,13 +57,11 @@
       "submitRequest": "Aatrag iireiche",
       "submitting": "Am Iireiche…",
       "success": {
-        "applied": "Korrektur erfolgriich aagwendet",
+        "applied": "Korrektur erfolgreich angewendet",
         "submitted": "Korrektur-Aatrag zur Genehmigung dur de Manager iigreicht",
         "updated": "Ziiteintrag erfolgriich aktualisiert"
       },
-      "timezoneNote": "D'Ziite sind in dinere lokale Ziitzone ({timezone})",
-      "clockInTime": "Ziit vom Iistämpfle",
-      "clockOutTime": "Ziit vom Uusstämpfle"
+      "timezoneNote": "D'Ziite sind in dinere lokale Ziitzone ({timezone})"
     },
     "currentlyClockedIn": "Du bisch momentan iigstämplet",
     "deadline": "Frist",

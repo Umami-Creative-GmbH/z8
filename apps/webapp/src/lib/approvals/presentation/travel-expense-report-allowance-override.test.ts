@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TravelExpenseReportSubmittedItem } from "../evidence/travel-expense-report-facts";
-import { localizedTextFallback } from "../inbox/localized-text";
+import { isApprovalInboxDetailChange, localizedTextFallback } from "../inbox/localized-text";
 import {
 	allowanceOverrideReviewRows,
 	allowanceOverrideReviewSections,
@@ -39,7 +39,9 @@ const mileage: TravelExpenseReportSubmittedItem = {
 };
 
 function values(rows: ReturnType<typeof allowanceOverrideReviewRows>) {
-	return rows.map((row) => (typeof row.value === "string" ? row.value : row.value.fallback));
+	return rows.map((row) =>
+		isApprovalInboxDetailChange(row.value) ? null : localizedTextFallback(row.value),
+	);
 }
 
 describe("allowance override review (#610)", () => {
@@ -96,7 +98,7 @@ describe("allowance override review (#610)", () => {
 			key: "approvals:approvals.evidence.allowanceOverrideCalloutBody",
 		});
 		expect(localizedTextFallback(callout.body)).toBe(
-			"An expense administrator set these allowances manually instead of the calculated amount: 1. Berlin – Potsdam (18.45 EUR). Check the reason and evidence before deciding.",
+			"An expense administrator set these allowances manually instead of the calculated amount: Mileage 1: Berlin – Potsdam (18.45 EUR). Check the reason and evidence before deciding.",
 		);
 	});
 });

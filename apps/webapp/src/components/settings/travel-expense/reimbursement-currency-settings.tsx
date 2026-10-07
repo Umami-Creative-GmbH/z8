@@ -9,9 +9,9 @@ import {
 	getReimbursementCurrencySetting,
 	saveReimbursementCurrencySetting,
 } from "@/app/[locale]/(app)/settings/travel-expenses/conversion-actions";
+import { CurrencySelect } from "@/components/travel-expenses/currency-select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	TFormControl,
@@ -20,6 +20,7 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { queryKeys } from "@/lib/query/keys";
 import { isReimbursementCurrencySupported } from "@/lib/travel-expenses/currency-conversion";
 
@@ -28,6 +29,13 @@ const queryKey = queryKeys.travelExpenses.reimbursementCurrency();
 function CurrencyForm({ currency }: { currency: string }) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
+	const currencyError = (value: string) =>
+		isReimbursementCurrencySupported(value)
+			? undefined
+			: t(
+					"settings.travelExpenses.currency.choose",
+					"Choose a currency with at most two decimal places, e.g. EUR or CHF.",
+				);
 	const form = useForm({
 		defaultValues: { currency },
 		onSubmit: async ({ value }) => {
@@ -47,6 +55,8 @@ function CurrencyForm({ currency }: { currency: string }) {
 	});
 
 	return (
+		// Client-side TanStack Form submit (docs/refs/forms.md); the settings page needs JS.
+		// react-doctor-disable-next-line react-doctor/no-prevent-default
 		<form
 			className="space-y-4"
 			noValidate
@@ -57,44 +67,32 @@ function CurrencyForm({ currency }: { currency: string }) {
 		>
 			<form.Field
 				name="currency"
-				validators={{
-					onSubmit: ({ value }) =>
-						isReimbursementCurrencySupported(value.trim().toUpperCase())
-							? undefined
-							: t(
-									"settings.travelExpenses.currency.invalid",
-									"Enter a three-letter currency code with at most two decimal places, e.g. EUR or CHF.",
-								),
-				}}
+				// Also runs on submit, so a stored currency no longer offered is refused.
+				validators={{ onChange: ({ value }) => currencyError(value) }}
 			>
-				{(field) => {
-					const error = field.state.meta.errors[0];
-					return (
-						<TFormItem>
-							<TFormLabel hasError={!!error}>
-								{t("settings.travelExpenses.currency.label", "Reimbursement currency")}
-							</TFormLabel>
-							<TFormControl hasError={!!error}>
-								<Input
-									name="currency"
-									autoComplete="off"
-									maxLength={3}
-									className="w-28 uppercase"
-									value={field.state.value}
-									onChange={(event) => field.handleChange(event.target.value.toUpperCase())}
-									onBlur={field.handleBlur}
-								/>
-							</TFormControl>
-							<TFormDescription>
-								{t(
-									"settings.travelExpenses.currency.description",
-									"New expense reports are reimbursed in this currency; existing reports keep theirs. Approval amount thresholds are compared in EUR, so while amount-based approval rules exist, reports in another currency cannot be submitted.",
-								)}
-							</TFormDescription>
-							<TFormMessage>{typeof error === "string" ? error : undefined}</TFormMessage>
-						</TFormItem>
-					);
-				}}
+				{(field) => (
+					<TFormItem>
+						<TFormLabel hasError={fieldHasError(field)}>
+							{t("settings.travelExpenses.currency.label", "Reimbursement currency")}
+						</TFormLabel>
+						<TFormControl hasError={fieldHasError(field)}>
+							<CurrencySelect
+								className="sm:w-80"
+								accepts={isReimbursementCurrencySupported}
+								value={field.state.value}
+								onValueChange={field.handleChange}
+								onBlur={field.handleBlur}
+							/>
+						</TFormControl>
+						<TFormDescription>
+							{t(
+								"settings.travelExpenses.currency.description",
+								"New expense reports are reimbursed in this currency; existing reports keep theirs. Approval amount thresholds are compared in EUR, so while amount-based approval rules exist, reports in another currency cannot be submitted.",
+							)}
+						</TFormDescription>
+						<TFormMessage field={field} />
+					</TFormItem>
+				)}
 			</form.Field>
 			<form.Subscribe selector={(state) => state.isSubmitting}>
 				{(isSubmitting) => (

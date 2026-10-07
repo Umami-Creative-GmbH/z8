@@ -12,7 +12,7 @@
       "title": "Mitarbeitergruppen"
     },
     "employees": {
-      "description": "Mitarbeiterprofile, Teams und Berechtigungen verwalten",
+      "description": "Mitarbeiter, Mitglieder und Einladungen verwalten",
       "details": "Mitarbeiterdetails",
       "detailsDescription": "Mitarbeiterinformationen anzeigen und bearbeiten",
       "detailsTitle": "Mitarbeiterdetails",
@@ -164,6 +164,8 @@
         "deactivateTitle": "Mitarbeiter deaktivieren?",
         "deactivating": "Wird deaktiviert...",
         "deactivatingStatus": "Mitarbeiter wird deaktiviert",
+        "finalOwnerDeactivateGuidance": "Weisen Sie zuerst einen anderen bestätigten Eigentümer zu und aktivieren Sie ihn, bevor Sie diesen Mitarbeiter deaktivieren.",
+        "finalOwnerRemoveGuidance": "Weisen Sie zuerst einen anderen bestätigten Eigentümer zu und aktivieren Sie ihn, bevor Sie diesem Mitarbeiter den Zugriff entziehen.",
         "reactivate": "Reaktivieren",
         "reactivateDescription": "Dies stellt den Zugriff auf diese Organisation unter Verwendung des bestehenden Mitarbeiterdatensatzes wieder her.",
         "reactivateError": "Mitarbeiter konnte nicht reaktiviert werden",
@@ -178,9 +180,7 @@
         "removeSuccess": "Organisationszugriff entfernt",
         "removeTitle": "Organisationszugriff entfernen?",
         "removing": "Zugriff wird entfernt...",
-        "removingStatus": "Organisationszugriff wird entfernt",
-        "finalOwnerDeactivateGuidance": "Weisen Sie zuerst einen anderen bestätigten Eigentümer zu und aktivieren Sie ihn, bevor Sie diesen Mitarbeiter deaktivieren.",
-        "finalOwnerRemoveGuidance": "Weisen Sie zuerst einen anderen bestätigten Eigentümer zu und aktivieren Sie ihn, bevor Sie diesem Mitarbeiter den Zugriff entziehen."
+        "removingStatus": "Organisationszugriff wird entfernt"
       },
       "offboarding": {
         "acknowledgeDuties": "Admins werden die {count} offenen Genehmigungsaufgaben erledigen.",
@@ -623,6 +623,10 @@
         "title": "Noch keine benutzerdefinierten Rollen"
       },
       "introduction": "Erstellen Sie benutzerdefinierte Berechtigungsrollen, die Mitarbeitern zugewiesen werden können. Benutzerdefinierte Rollen fügen Berechtigungen zur Basisebene hinzu.",
+      "permissionCategories": {
+        "time_tracking": "Zeiterfassung",
+        "works_council": "Betriebsrat"
+      },
       "table": {
         "actions": "Aktionen",
         "assigned": "Zugewiesen",
@@ -672,8 +676,8 @@
       "employeeSkills": "Fähigkeiten & Qualifikationen",
       "employeeSkillsDescription": "Diesem Mitarbeiter zugewiesene Zertifizierungen und Fähigkeiten",
       "expired": "Abgelaufen",
-      "expiredOn": "Abgelaufen am {{date}}",
-      "expiresOn": "Läuft am {{date}} ab",
+      "expiredOn": "Abgelaufen am {date}",
+      "expiresOn": "Läuft am {date} ab",
       "expiringSoon": "Läuft bald ab",
       "expiry": "Ablaufverfolgung",
       "expiryDate": "Ablaufdatum",

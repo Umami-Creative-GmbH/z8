@@ -134,7 +134,7 @@
       "expired": "Scaduto",
       "expires": "Scade",
       "inactive": "Inattivo",
-      "invitationActionsLabel": "Azioni per l'invito a ${row.original.email}",
+      "invitationActionsLabel": "Azioni per l'invito a {email}",
       "invitationCancelError": "Impossibile annullare l'invito",
       "invitationCancelSuccess": "Invito annullato",
       "invitationResendError": "Impossibile reinviare l'invito",
@@ -142,7 +142,7 @@
       "invitationsWaiting": "{count, plural, other {{count} invito/i in attesa di essere accettato/i}}",
       "invitedBy": "Invitato da",
       "member": "Membro",
-      "memberActionsLabel": "Azioni per ${row.original.user.name}",
+      "memberActionsLabel": "Azioni per {name}",
       "memberCount": "{count, plural, other {{count} membro/i in questa organizzazione}}",
       "noInvitationResults": "Nessun invito corrisponde alla ricerca.",
       "noInvitations": "Nessun invito in sospeso.",
@@ -275,7 +275,7 @@
       "description": "Imposta il fuso orario predefinito per la tua organizzazione. Viene utilizzato per il monitoraggio delle assenze, i report e altre funzionalità basate sulla data. I singoli utenti possono sovrascriverlo nelle impostazioni del loro profilo.",
       "owner-only": "Solo i proprietari dell'organizzazione possono modificare l'impostazione del fuso orario.",
       "title": "Fuso orario",
-      "updated": "Fuso orario dell'organizzazione aggiornato a {{timezone}}",
+      "updated": "Fuso orario dell'organizzazione aggiornato a {timezone}",
       "update-failed": "Impossibile aggiornare il fuso orario dell'organizzazione"
     },
     "title": "Esplora organizzazione"

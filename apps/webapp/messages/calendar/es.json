@@ -128,6 +128,11 @@
     }
   },
   "calendar": {
+    "calendar": {
+      "break": {
+        "titleWithDuration": "Descanso – {duration}"
+      }
+    },
     "clockOutOnBehalf": {
       "confirm": "Registrar salida",
       "description": "Esto crea una entrada de registro de salida auditable según la hora actual del servidor. Si se necesita algún ajuste posterior, utilice las correcciones.",
@@ -283,17 +288,19 @@
       "monthTotal": "Total del mes",
       "nextMonth": "Mes siguiente",
       "previousMonth": "Mes anterior",
+      "recordedOnlyDayLabel": "{date}: {actual} registrado.",
       "totalDescription": "Tiempo registrado comparado con las horas de política",
       "weekSum": "Suma"
     },
     "requirements": {
+      "dayLabel": "{date}: {actual} registrado, {required} requerido, {delta} {status}.",
+      "includesRunningWork": "Incluye trabajo en curso",
       "status": {
         "met": "requisito cumplido",
         "missing": "falta tiempo registrado",
         "over": "por encima del requisito",
         "under": "por debajo del requisito"
-      },
-      "dayLabel": "{date}: {actual} registrado, {required} requerido, {delta} {status}."
+      }
     },
     "split": {
       "ambiguousTime": "Elige qué ocurrencia usar",
@@ -346,11 +353,6 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
-    },
-    "calendar": {
-      "break": {
-        "titleWithDuration": "Descanso – {duration}"
-      }
     }
   }
 }

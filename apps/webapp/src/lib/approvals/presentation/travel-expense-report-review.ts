@@ -11,15 +11,24 @@ import {
 	instantFromDate,
 	instantToCanonicalString,
 } from "@/lib/datetime/temporal-core";
+import { isOwnerSelfApprovalDecision } from "@/lib/travel-expenses/owner-self-approval";
+import type { TripDestination } from "@/lib/travel-expenses/trip-destination";
 import { type LegacyDecisionEvidenceRecord, listLegacyDecisionEvidence } from "../evidence/store";
-import type { TravelExpenseReportRevisionComparison } from "../evidence/travel-expense-report-facts";
+import type {
+	TravelExpenseReportRevisionComparison,
+	TravelExpenseReportSubmittedItem,
+} from "../evidence/travel-expense-report-facts";
 import {
 	loadTravelExpenseReportRevisionsByRequest,
 	loadTravelExpenseReportSubmittedRevision,
 	type TravelExpenseReportSubmittedRevisionRecord,
 } from "../evidence/travel-expense-report-store";
 import { compareTravelExpenseReportWithSubmittedRevision } from "../evidence/travel-expense-report-submission";
-import type { ApprovalInboxDetailSection, ApprovalInboxLocalizedText } from "../inbox/types";
+import type {
+	ApprovalInboxDetailSection,
+	ApprovalInboxLocalizedText,
+	ApprovalInboxValue,
+} from "../inbox/types";
 import type { ApprovalDatabase } from "../server/types";
 import { adjustmentReviewSections } from "./travel-expense-report-adjustment-review";
 import {
@@ -27,9 +36,10 @@ import {
 	allowanceOverrideReviewSections,
 } from "./travel-expense-report-allowance-override";
 import { conversionReviewRows } from "./travel-expense-report-conversion-review";
-import { travelExpenseReportProjectRows } from "./travel-expense-report-project";
+import { reportItemTitle } from "./travel-expense-report-item-title";
 import { mileageReviewRows } from "./travel-expense-report-mileage";
 import { perDiemReviewRows } from "./travel-expense-report-per-diem";
+import { travelExpenseReportProjectRows } from "./travel-expense-report-project";
 import {
 	receiptExceptionAcceptanceSections,
 	receiptExceptionRows,
@@ -42,7 +52,12 @@ export interface TravelExpenseReportEarlierCycle {
 	note: string | null;
 	actorName: string | null;
 	closedAt: Instant;
-	itemComments: Array<{ itemId: string; itemLabel: string | null; body: string }>;
+	/** Each comment's item as numbered in that cycle; null when the cycle froze no such item. */
+	itemComments: Array<{
+		itemId: string;
+		itemLabel: ApprovalInboxLocalizedText | null;
+		body: string;
+	}>;
 }
 
 export type TravelExpenseReportReviewEvidence =
@@ -56,6 +71,16 @@ export type TravelExpenseReportReviewEvidence =
 			latestCycle?: boolean;
 			earlierCycles?: TravelExpenseReportEarlierCycle[];
 	  };
+
+/** An item of a closed cycle as that cycle numbered it (#688). */
+function frozenItemTitle(
+	items: readonly TravelExpenseReportSubmittedItem[],
+	itemId: string,
+): ApprovalInboxLocalizedText | null {
+	const index = items.findIndex((item) => item.itemId === itemId);
+	const item = items[index];
+	return item ? reportItemTitle(item, index) : null;
+}
 
 /** Closed cycles before `beforeCycle`, with their notes and item comments. */
 async function loadEarlierCycles(
@@ -122,7 +147,7 @@ async function loadEarlierCycles(
 				.filter((note) => note.closureId === closure.id)
 				.map((note) => ({
 					itemId: note.itemId,
-					itemLabel: items.find((item) => item.itemId === note.itemId)?.description ?? null,
+					itemLabel: frozenItemTitle(items, note.itemId),
 					body: note.body,
 				})),
 		};
@@ -188,17 +213,39 @@ export async function prepareTravelExpenseReportReviewEvidence(
 
 type Row = Extract<ApprovalInboxDetailSection, { type: "key_value" }>["rows"][number];
 
-const text = (key: string, fallback: string): ApprovalInboxLocalizedText => ({
-	key: `approvals:approvals.evidence.${key}`,
+const text = (
+	key: string,
+	fallback: string,
+	params?: ApprovalInboxLocalizedText["params"],
+): ApprovalInboxLocalizedText => ({
+	key,
 	fallback,
+	...(params ? { params } : {}),
 });
 
+/** A destination as the report pages show it: "Hamburg, Germany", in the viewer's language. */
+function destinationText(
+	destination: TripDestination,
+): Array<string | ApprovalInboxValue | ApprovalInboxLocalizedText> {
+	const { place, countryCode } = destination;
+	if (place && countryCode) {
+		return [
+			text("approvals:approvals.evidence.destinationPlace", "{place}, {country}", {
+				place,
+				country: { kind: "country", code: countryCode },
+			}),
+		];
+	}
+	if (countryCode) return [{ kind: "country", code: countryCode }];
+	return place ? [place] : [];
+}
+
 const CATEGORIES: Record<string, ApprovalInboxLocalizedText> = {
-	transport: text("categoryTransport", "Transport"),
-	accommodation: text("categoryAccommodation", "Accommodation"),
-	meals: text("categoryMeals", "Meals"),
-	parking: text("categoryParking", "Parking"),
-	other: text("categoryOther", "Other"),
+	transport: text("approvals:approvals.evidence.categoryTransport", "Transport"),
+	accommodation: text("approvals:approvals.evidence.categoryAccommodation", "Accommodation"),
+	meals: text("approvals:approvals.evidence.categoryMeals", "Meals"),
+	parking: text("approvals:approvals.evidence.categoryParking", "Parking"),
+	other: text("approvals:approvals.evidence.categoryOther", "Other"),
 };
 
 /**
@@ -206,23 +253,51 @@ const CATEGORIES: Record<string, ApprovalInboxLocalizedText> = {
  * names the returned report; it is never labelled as a rejection.
  */
 export function travelExpenseReportDecisionLabel(
-	decision: Pick<LegacyDecisionEvidenceRecord, "requestOutcome" | "assignmentOutcome" | "result">,
+	decision: Pick<
+		LegacyDecisionEvidenceRecord,
+		"operationKind" | "requestOutcome" | "assignmentOutcome" | "result"
+	>,
 ): ApprovalInboxLocalizedText {
 	if (decision.result?.disposition === "returned" || decision.result?.reportStatus === "returned")
-		return text("reportReturnedForChanges", "Report returned for changes");
-	if (decision.requestOutcome === "approved") return text("reportApproved", "Report approved");
-	if (decision.requestOutcome === "rejected") return text("reportRejected", "Report rejected");
+		return text(
+			"approvals:approvals.evidence.reportReturnedForChanges",
+			"Report returned for changes",
+		);
+	// #679: no reviewer decided; the owner's report approved itself on submit.
+	if (isOwnerSelfApprovalDecision(decision))
+		return text(
+			"approvals:approvals.evidence.reportSelfApproved",
+			"Approved automatically: no other reviewer",
+		);
+	if (decision.requestOutcome === "approved")
+		return text("approvals:approvals.evidence.reportApproved", "Report approved");
+	if (decision.requestOutcome === "rejected")
+		return text("approvals:approvals.evidence.reportRejected", "Report rejected");
 	if (decision.assignmentOutcome === "approved")
-		return text("reportApprovalRecorded", "Approval recorded — awaiting further approval");
-	return text("reportDecisionRecorded", "Decision recorded");
+		return text(
+			"approvals:approvals.evidence.reportApprovalRecorded",
+			"Approval recorded — awaiting further approval",
+		);
+	return text("approvals:approvals.evidence.reportDecisionRecorded", "Decision recorded");
 }
 
-const EARLIER_CYCLE_LABELS: Record<TravelExpenseReportEarlierCycle["kind"], ApprovalInboxLocalizedText> =
-	{
-		returned: text("reportCycleReturned", "Submission {cycle} returned for changes"),
-		withdrawn: text("reportCycleWithdrawn", "Submission {cycle} withdrawn by the employee"),
-		reopened: text("reportCycleReopened", "Submission {cycle} reopened for correction"),
-	};
+const EARLIER_CYCLE_LABELS: Record<
+	TravelExpenseReportEarlierCycle["kind"],
+	ApprovalInboxLocalizedText
+> = {
+	returned: text(
+		"approvals:approvals.evidence.reportCycleReturned",
+		"Submission {cycle} returned for changes",
+	),
+	withdrawn: text(
+		"approvals:approvals.evidence.reportCycleWithdrawn",
+		"Submission {cycle} withdrawn by the employee",
+	),
+	reopened: text(
+		"approvals:approvals.evidence.reportCycleReopened",
+		"Submission {cycle} reopened for correction",
+	),
+};
 
 /** Earlier cycles' return notes and item comments, so a resubmission can be checked against them. */
 function earlierCycleSections(cycles: TravelExpenseReportEarlierCycle[]): ApprovalInboxDetailSection[] {
@@ -230,20 +305,30 @@ function earlierCycleSections(cycles: TravelExpenseReportEarlierCycle[]): Approv
 		const label = EARLIER_CYCLE_LABELS[cycle.kind];
 		const rows: Row[] = [
 			{
-				label: text("reportCycleClosedBy", "By"),
-				value: cycle.actorName ?? text("unavailable", "Unavailable"),
+				label: text("approvals:approvals.evidence.reportCycleClosedBy", "By"),
+				value: cycle.actorName ?? text("approvals:approvals.evidence.unavailable", "Unavailable"),
 			},
-			{ label: text("reportCycleClosedAt", "When"), value: instantToCanonicalString(cycle.closedAt) },
+			{
+				label: text("approvals:approvals.evidence.reportCycleClosedAt", "When"),
+				value: { kind: "instant", at: instantToCanonicalString(cycle.closedAt) },
+			},
 		];
-		if (cycle.note) rows.push({ label: text("reportCycleNote", "Note"), value: cycle.note });
+		if (cycle.note)
+			rows.push({
+				label: text("approvals:approvals.evidence.reportCycleNote", "Note"),
+				value: cycle.note,
+			});
 		for (const comment of cycle.itemComments) {
 			rows.push({
 				label: comment.itemLabel
 					? {
-							...text("reportCycleItemComment", "Comment on {item}"),
+							...text("approvals:approvals.evidence.reportCycleItemComment", "Comment on {item}"),
 							params: { item: comment.itemLabel },
 						}
-					: text("reportCycleRemovedItemComment", "Comment on a removed expense"),
+					: text(
+							"approvals:approvals.evidence.reportCycleRemovedItemComment",
+							"Comment on a removed expense",
+						),
 				value: comment.body,
 			});
 		}
@@ -268,9 +353,12 @@ export function buildTravelExpenseReportReviewSections(
 			sections: [
 				{
 					type: "callout",
-					title: text("reportUnavailableTitle", "Submitted report unavailable"),
+					title: text(
+						"approvals:approvals.evidence.reportUnavailableTitle",
+						"Submitted report unavailable",
+					),
 					body: text(
-						"reportUnavailableBody",
+						"approvals:approvals.evidence.reportUnavailableBody",
 						"The facts submitted for this report were not found, so a decision cannot be bound to them. The report is held for review.",
 					),
 					tone: "warning",
@@ -284,49 +372,54 @@ export function buildTravelExpenseReportReviewSections(
 	const rows: Row[] = [
 		{
 			label: { key: "approvals:approvals.employee", fallback: "Employee" },
-			value: labels.subjectName ?? text("unavailable", "Unavailable"),
+			value: labels.subjectName ?? text("approvals:approvals.evidence.unavailable", "Unavailable"),
 		},
 		{
-			label: text("reportKind", "Report"),
+			label: text("approvals:approvals.evidence.reportKind", "Report"),
 			value: facts.trip
-				? text("reportKindTrip", "Trip")
-				: text("reportKindStandalone", "Standalone expense"),
+				? text("approvals:approvals.evidence.reportKindTrip", "Trip")
+				: text("approvals:approvals.evidence.reportKindStandalone", "Standalone expense"),
 		},
 	];
 	if (facts.trip) {
 		const { purpose, startDate, endDate, timeZone, destinations } = facts.trip;
 		rows.push(
-			{ label: text("tripPurpose", "Purpose"), value: purpose },
+			{ label: text("approvals:approvals.evidence.tripPurpose", "Purpose"), value: purpose },
 			{
-				label: text("tripDates", "Trip dates"),
+				label: text("approvals:approvals.evidence.tripDates", "Trip dates"),
 				// Calendar days as entered; they never shift with the viewer's zone.
-				value: startDate === endDate ? startDate : `${startDate} – ${endDate}`,
+				value: { kind: "plain_date_range", start: startDate, end: endDate },
 			},
-			{ label: text("tripDatesZone", "Dates entered in"), value: timeZone },
 			{
-				label: text("destination", "Destination"),
-				value: destinations
-					.map((destination) =>
-						[destination.place, destination.countryCode].filter(Boolean).join(", "),
-					)
-					.join("; "),
+				label: text("approvals:approvals.evidence.tripDatesZone", "Dates entered in"),
+				value: timeZone,
+			},
+			{
+				label: text("approvals:approvals.evidence.destination", "Destination"),
+				value: text("approvals:approvals.evidence.destinations", "{destinations}", {
+					destinations: destinations.flatMap(destinationText),
+				}),
 			},
 		);
 	}
 	rows.push(
 		{
-			label: text("reimbursableTotal", "Reimbursable to employee"),
-			value: `${facts.totals.reimbursable} ${facts.totals.currency}`,
+			label: text("approvals:approvals.evidence.reimbursableTotal", "Reimbursable to employee"),
+			value: { kind: "money", amount: facts.totals.reimbursable, currency: facts.totals.currency },
 		},
 		{
-			label: text("companyPaidTotal", "Paid by company"),
-			value: `${facts.totals.companyPaid} ${facts.totals.currency}`,
+			label: text("approvals:approvals.evidence.companyPaidTotal", "Paid by company"),
+			value: { kind: "money", amount: facts.totals.companyPaid, currency: facts.totals.currency },
 		},
 	);
 
 	const sections: ApprovalInboxDetailSection[] = [
 		...adjustmentReviewSections(facts),
-		{ type: "key_value", title: text("submittedReportTitle", "Submitted report"), rows },
+		{
+			type: "key_value",
+			title: text("approvals:approvals.evidence.submittedReportTitle", "Submitted report"),
+			rows,
+		},
 		...receiptExceptionAcceptanceSections(facts),
 		...allowanceOverrideReviewSections(facts),
 		...facts.items.map((item, index): ApprovalInboxDetailSection => {
@@ -334,24 +427,30 @@ export function buildTravelExpenseReportReviewSections(
 				(receipt) => labels.receiptFileNames[receipt.receiptId] ?? receipt.receiptId,
 			);
 			const itemRows: Row[] = [
-				{ label: text("expenseDate", "Date"), value: item.expenseDate },
-				{ label: text("category", "Category"), value: CATEGORIES[item.category] ?? item.category },
 				{
-					label: text("amount", "Amount"),
-					value: `${item.original.amount} ${item.original.currency}`,
+					label: text("approvals:approvals.evidence.expenseDate", "Date"),
+					value: { kind: "plain_date", date: item.expenseDate },
+				},
+				{
+					label: text("approvals:approvals.evidence.category", "Category"),
+					value: CATEGORIES[item.category] ?? item.category,
+				},
+				{
+					label: text("approvals:approvals.evidence.amount", "Amount"),
+					value: { kind: "money", amount: item.original.amount, currency: item.original.currency },
 				},
 				...conversionReviewRows(item, labels.receiptFileNames),
 				{
-					label: text("paidBy", "Paid by"),
+					label: text("approvals:approvals.evidence.paidBy", "Paid by"),
 					value:
 						item.paidBy === "company"
-							? text("paidByCompany", "Company")
-							: text("paidByEmployee", "Employee"),
+							? text("approvals:approvals.evidence.paidByCompany", "Company")
+							: text("approvals:approvals.evidence.paidByEmployee", "Employee"),
 				},
 			];
 			if (item.accountingReference) {
 				itemRows.push({
-					label: text("accountingReference", "Accounting reference"),
+					label: text("approvals:approvals.evidence.accountingReference", "Accounting reference"),
 					value: item.accountingReference,
 				});
 			}
@@ -364,23 +463,31 @@ export function buildTravelExpenseReportReviewSections(
 					? receiptExceptionRows(item.receiptException)
 					: [
 							{
-								label: text("receipts", "Receipts"),
+								label: text("approvals:approvals.evidence.receipts", "Receipts"),
 								value: `${names.length}: ${names.join(", ")}`,
 							},
 						]),
 			);
-			return { type: "key_value", title: `${index + 1}. ${item.description}`, rows: itemRows };
+			return {
+				type: "key_value",
+				title: reportItemTitle(item, index),
+				titleAsEntered: true,
+				rows: itemRows,
+			};
 		}),
 	];
 	if (!latestCycle) {
 		sections.unshift({
 			type: "callout",
 			title: {
-				...text("reportEarlierCycleTitle", "Submission {cycle} of this report"),
+				...text(
+					"approvals:approvals.evidence.reportEarlierCycleTitle",
+					"Submission {cycle} of this report",
+				),
 				params: { cycle: facts.submissionCycle },
 			},
 			body: text(
-				"reportEarlierCycleBody",
+				"approvals:approvals.evidence.reportEarlierCycleBody",
 				"The report was resubmitted after this cycle closed. These are the facts reviewed in this cycle.",
 			),
 			tone: "info",
@@ -389,10 +496,13 @@ export function buildTravelExpenseReportReviewSections(
 	if (comparison.kind === "material_change") {
 		sections.push({
 			type: "callout",
-			title: text("reportChangedTitle", "Report changed after submission"),
+			title: text(
+				"approvals:approvals.evidence.reportChangedTitle",
+				"Report changed after submission",
+			),
 			body: {
 				...text(
-					"reportChangedBody",
+					"approvals:approvals.evidence.reportChangedBody",
 					"The live report no longer matches what was submitted for approval (changed: {fields}). A decision cannot be recorded.",
 				),
 				params: { fields: comparison.changedFields.join(", ") },
@@ -403,11 +513,11 @@ export function buildTravelExpenseReportReviewSections(
 	sections.push(...earlierCycleSections(earlierCycles));
 	sections.push({
 		type: "timeline",
-		title: text("evidenceHistory", "Evidence history"),
+		title: text("approvals:approvals.evidence.evidenceHistory", "Evidence history"),
 		events: [
 			{
 				id: `evidence-submitted-${revision.id}`,
-				label: text("submitted", "Submitted"),
+				label: text("approvals:approvals.evidence.submitted", "Submitted"),
 				at: instantToCanonicalString(revision.submittedAt),
 				actorName: labels.submitterName,
 			},

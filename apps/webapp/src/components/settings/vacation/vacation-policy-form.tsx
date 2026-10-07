@@ -1,17 +1,18 @@
 "use client";
 
-import { IconCalendar, IconLoader2 } from "@tabler/icons-react";
+import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import {
 	createVacationPolicy,
 	updateVacationPolicy,
 } from "@/app/[locale]/(app)/settings/vacation/actions";
+import { useAppLocale } from "@/components/providers/app-locale-provider";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -22,11 +23,10 @@ import {
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
 	Select,
 	SelectContent,
@@ -35,7 +35,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { useRouter } from "@/navigation";
 import { runWithBusyState } from "../run-with-busy-state";
 
@@ -58,22 +58,16 @@ interface VacationPolicyFormProps {
 	};
 }
 
-// Helper to format date string to Date object
-const parseDate = (dateStr: string): Date => {
-	const [year, month, day] = dateStr.split("-").map(Number);
-	return new Date(year, month - 1, day);
-};
+// Get default start date (Jan 1 of next year) as YYYY-MM-DD
+const getDefaultStartDate = (): string =>
+	Temporal.PlainDate.from({
+		year: Temporal.Now.plainDateISO().year + 1,
+		month: 1,
+		day: 1,
+	}).toString();
 
-// Helper to format Date to YYYY-MM-DD string
-const formatDateStr = (date: Date): string => {
-	return DateTime.fromJSDate(date).toFormat("yyyy-MM-dd");
-};
-
-// Get default start date (Jan 1 of next year)
-const getDefaultStartDate = (): Date => {
-	const now = new Date();
-	return new Date(now.getFullYear() + 1, 0, 1);
-};
+const formatMonthName = (month: number, locale: string): string =>
+	formatPlainDate(Temporal.PlainDate.from({ year: 2000, month, day: 1 }), locale, "monthLong");
 
 const getFieldErrorMessage = (error: unknown): string => {
 	if (typeof error === "string") {
@@ -98,19 +92,16 @@ export function VacationPolicyForm({
 	existingPolicy,
 }: VacationPolicyFormProps) {
 	const { t } = useTranslate();
+	const locale = useAppLocale();
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
-	const [startDateOpen, setStartDateOpen] = useState(false);
-	const [validUntilOpen, setValidUntilOpen] = useState(false);
 
 	const form = useForm({
 		defaultValues: existingPolicy
 			? {
 					name: existingPolicy.name,
-					startDate: parseDate(existingPolicy.startDate),
-					validUntil: existingPolicy.validUntil
-						? parseDate(existingPolicy.validUntil)
-						: (null as Date | null),
+					startDate: existingPolicy.startDate,
+					validUntil: existingPolicy.validUntil,
 					isCompanyDefault: existingPolicy.isCompanyDefault,
 					defaultAnnualDays: existingPolicy.defaultAnnualDays,
 					accrualType: existingPolicy.accrualType as "annual" | "monthly" | "biweekly",
@@ -123,7 +114,7 @@ export function VacationPolicyForm({
 			: {
 					name: "",
 					startDate: getDefaultStartDate(),
-					validUntil: null as Date | null,
+					validUntil: null as string | null,
 					isCompanyDefault: false,
 					defaultAnnualDays: "20",
 					accrualType: "annual" as "annual" | "monthly" | "biweekly",
@@ -138,8 +129,8 @@ export function VacationPolicyForm({
 					const result = existingPolicy
 						? await updateVacationPolicy(existingPolicy.id, {
 								name: value.name,
-								startDate: formatDateStr(value.startDate),
-								validUntil: value.validUntil ? formatDateStr(value.validUntil) : undefined,
+								startDate: value.startDate,
+								validUntil: value.validUntil ?? undefined,
 								isCompanyDefault: value.isCompanyDefault,
 								defaultAnnualDays: value.defaultAnnualDays,
 								accrualType: value.accrualType,
@@ -150,8 +141,8 @@ export function VacationPolicyForm({
 							})
 						: await createVacationPolicy({
 								organizationId,
-								startDate: formatDateStr(value.startDate),
-								validUntil: value.validUntil ? formatDateStr(value.validUntil) : undefined,
+								startDate: value.startDate,
+								validUntil: value.validUntil ?? undefined,
 								isCompanyDefault: value.isCompanyDefault,
 								name: value.name,
 								defaultAnnualDays: value.defaultAnnualDays,
@@ -256,40 +247,17 @@ export function VacationPolicyForm({
 							<form.Field name="startDate">
 								{(field) => (
 									<div className="space-y-2">
-										<Label>
+										<Label htmlFor="policyStartDate">
 											{t("settings.vacation.policyForm.effectiveFrom", "Effective From")}
 										</Label>
-										<Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
-											<PopoverTrigger asChild>
-												<Button
-													variant="outline"
-													className={cn(
-														"w-full justify-start text-left font-normal",
-														!field.state.value && "text-muted-foreground",
-													)}
-												>
-													<IconCalendar className="mr-2 size-4" />
-													{field.state.value ? (
-														DateTime.fromJSDate(field.state.value).toLocaleString(DateTime.DATE_MED)
-													) : (
-														<span>{t("settings.vacation.policyForm.pickDate", "Pick a date")}</span>
-													)}
-												</Button>
-											</PopoverTrigger>
-											<PopoverContent className="w-auto p-0" align="start">
-												<Calendar
-													mode="single"
-													selected={field.state.value}
-													onSelect={(date) => {
-														if (date) {
-															field.handleChange(date);
-															setStartDateOpen(false);
-														}
-													}}
-													autoFocus
-												/>
-											</PopoverContent>
-										</Popover>
+										<DatePicker
+											id="policyStartDate"
+											required
+											value={field.state.value}
+											onChange={field.handleChange}
+											onBlur={field.handleBlur}
+											placeholder={t("settings.vacation.policyForm.pickDate", "Pick a date")}
+										/>
 										<p className="text-sm text-muted-foreground">
 											{t(
 												"settings.vacation.policyForm.effectiveFromDescription",
@@ -303,53 +271,16 @@ export function VacationPolicyForm({
 							<form.Field name="validUntil">
 								{(field) => (
 									<div className="space-y-2">
-										<Label>
+										<Label htmlFor="policyValidUntil">
 											{t("settings.vacation.policyForm.validUntil", "Valid Until (optional)")}
 										</Label>
-										<Popover open={validUntilOpen} onOpenChange={setValidUntilOpen}>
-											<PopoverTrigger asChild>
-												<Button
-													variant="outline"
-													className={cn(
-														"w-full justify-start text-left font-normal",
-														!field.state.value && "text-muted-foreground",
-													)}
-												>
-													<IconCalendar className="mr-2 size-4" />
-													{field.state.value ? (
-														DateTime.fromJSDate(field.state.value).toLocaleString(DateTime.DATE_MED)
-													) : (
-														<span>
-															{t("settings.vacation.policyForm.noEndDate", "No end date")}
-														</span>
-													)}
-												</Button>
-											</PopoverTrigger>
-											<PopoverContent className="w-auto p-0" align="start">
-												<div className="p-2 border-b">
-													<Button
-														variant="ghost"
-														size="sm"
-														className="w-full"
-														onClick={() => {
-															field.handleChange(null);
-															setValidUntilOpen(false);
-														}}
-													>
-														{t("settings.vacation.policyForm.clearDate", "Clear date")}
-													</Button>
-												</div>
-												<Calendar
-													mode="single"
-													selected={field.state.value || undefined}
-													onSelect={(date) => {
-														field.handleChange(date || null);
-														setValidUntilOpen(false);
-													}}
-													autoFocus
-												/>
-											</PopoverContent>
-										</Popover>
+										<DatePicker
+											id="policyValidUntil"
+											value={field.state.value}
+											onChange={(value) => field.handleChange(value || null)}
+											onBlur={field.handleBlur}
+											placeholder={t("settings.vacation.policyForm.noEndDate", "No end date")}
+										/>
 										<p className="text-sm text-muted-foreground">
 											{t(
 												"settings.vacation.policyForm.validUntilDescription",
@@ -484,9 +415,7 @@ export function VacationPolicyForm({
 										<SelectContent>
 											{Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
 												<SelectItem key={month} value={month.toString()}>
-													{new Date(2000, month - 1).toLocaleString("default", {
-														month: "long",
-													})}
+													{formatMonthName(month, locale)}
 												</SelectItem>
 											))}
 										</SelectContent>

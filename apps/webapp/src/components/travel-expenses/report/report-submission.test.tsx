@@ -243,7 +243,7 @@ describe("report submission", () => {
 	it("explains missing reviewer setup without leaving the draft", async () => {
 		reportActions.submitTravelExpenseReportAction.mockResolvedValue({
 			success: true,
-			data: { status: "no_reviewer", reason: "no_eligible_reviewer" },
+			data: { status: "no_reviewer", reason: "no_eligible_reviewer", canAssignApprover: true },
 		});
 		mount();
 		fireEvent.click(await reviewButton());
@@ -252,6 +252,37 @@ describe("report submission", () => {
 
 		const alert = await within(dialog).findByRole("alert");
 		expect(alert.textContent).toContain("No one can review this report yet");
+		// An administrator gets the setting they can act on (#679).
+		expect(
+			within(alert).getByRole("link", { name: "Open expense approver setting" }).getAttribute("href"),
+		).toContain("/settings/travel-expenses");
+		expect(toast.success).not.toHaveBeenCalled();
+	});
+
+	it("names the future date the server refused, even when the editor did not show it (#685)", async () => {
+		reportActions.submitTravelExpenseReportAction.mockResolvedValue({
+			success: true,
+			data: {
+				status: "incomplete",
+				missing: {
+					trip: ["trip_not_ended"],
+					items: [{ id: hotelId, missing: ["future_date"] }],
+				},
+			},
+		});
+		mount();
+		fireEvent.click(await reviewButton());
+		const dialog = await screen.findByRole("dialog", { name: "Submit expense report" });
+		fireEvent.click(within(dialog).getByRole("button", { name: "Submit for approval" }));
+
+		const alert = await within(dialog).findByRole("alert");
+		const details = within(alert)
+			.getAllByRole("listitem")
+			.map((item) => item.textContent);
+		expect(details).toEqual([
+			"The trip ends on Sep 16, 2026. You can submit from that day.",
+			"Receipt 2: This date is in the future. Correct it, or submit from Sep 15, 2026.",
+		]);
 		expect(toast.success).not.toHaveBeenCalled();
 	});
 

@@ -1,5 +1,4 @@
 import { IconArrowRight, IconInbox } from "@tabler/icons-react";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AbsenceApprovalsTable } from "@/components/approvals/absence-approvals-table";
 import { TimeCorrectionApprovalsTable } from "@/components/approvals/time-correction-approvals-table";
@@ -9,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 import { getCurrentEmployee } from "./actions";
@@ -27,7 +27,7 @@ async function ApprovalsContent() {
 
 	// Only managers and admins can access approvals
 	if (currentEmployee.role !== "manager" && currentEmployee.role !== "admin") {
-		redirect("/");
+		return redirectWithLocale("/");
 	}
 
 	return (

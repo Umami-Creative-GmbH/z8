@@ -128,6 +128,11 @@
     }
   },
   "calendar": {
+    "calendar": {
+      "break": {
+        "titleWithDuration": "Pause – {duration}"
+      }
+    },
     "clockOutOnBehalf": {
       "confirm": "Pointer la sortie",
       "description": "Ceci crée une entrée de pointage de sortie auditable à l'heure actuelle du serveur. Si un ajustement est nécessaire par la suite, utilisez les corrections.",
@@ -283,17 +288,19 @@
       "monthTotal": "Total du mois",
       "nextMonth": "Mois suivant",
       "previousMonth": "Mois précédent",
+      "recordedOnlyDayLabel": "{date} : {actual} enregistré.",
       "totalDescription": "Temps enregistré comparé aux heures de politique",
       "weekSum": "Somme"
     },
     "requirements": {
+      "dayLabel": "{date} : {actual} enregistré, {required} requis, {delta} {status}.",
+      "includesRunningWork": "Inclut le travail en cours",
       "status": {
         "met": "exigence satisfaite",
         "missing": "temps enregistré manquant",
         "over": "au-delà de l'exigence",
         "under": "en deçà de l'exigence"
-      },
-      "dayLabel": "{date} : {actual} enregistré, {required} requis, {delta} {status}."
+      }
     },
     "split": {
       "ambiguousTime": "Choisir l'occurrence à utiliser",
@@ -346,11 +353,6 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
-    },
-    "calendar": {
-      "break": {
-        "titleWithDuration": "Pause – {duration}"
-      }
     }
   }
 }

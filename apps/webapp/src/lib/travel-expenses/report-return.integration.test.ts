@@ -70,6 +70,10 @@ vi.mock("@/lib/notifications/triggers", async (original) => ({
 		});
 	},
 }));
+// An unawaited delivery pass would outlive its test and deadlock the next cleanup.
+vi.mock("@/lib/approvals/delivery/kick", async () =>
+	(await import("@/test/integration-harness")).deliveryKick(),
+);
 vi.mock("@/lib/storage/s3-client", () => ({
 	S3_PUBLIC_BUCKET: "t603-public",
 	s3Client: {
@@ -98,6 +102,9 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 		return bytes;
 	},
 	async deletePrivateObject(input: { key: string }) {
+		harness.objects.delete(input.key);
+	},
+	async deletePrivateObjectVersions(input: { key: string }) {
 		harness.objects.delete(input.key);
 	},
 }));
@@ -455,6 +462,32 @@ describe("return, withdraw and resubmit reports (#603)", () => {
 		harness.notifications = [];
 	});
 	afterAll(cleanup);
+
+	it("refuses to resubmit a returned report while an expense is future-dated (#685)", async () => {
+		const reportId = await completeTrip();
+		expect((await submit(reportId)).success).toBe(true);
+		signIn("manager");
+		expect(await returnReport(await pendingRequestId(reportId), "Check the dates")).toEqual({
+			success: true,
+			data: { status: "returned" },
+		});
+		const [train] = (await load(reportId)).items;
+		if (!train) throw new Error("item missing");
+		await saveItem(reportId, train, { expenseDate: "2099-01-15" });
+
+		expect(await submit(reportId)).toEqual({
+			success: true,
+			data: {
+				status: "incomplete",
+				missing: { trip: [], items: [{ id: train.id, missing: ["future_date"] }] },
+			},
+		});
+		expect(await reportState(reportId)).toMatchObject({
+			status: "returned",
+			submission_count: 1,
+			revisions: 1,
+		});
+	});
 
 	it("returns a report with a required note and item comments, then resubmits the correction as a new cycle", async () => {
 		const reportId = await completeTrip();
@@ -1078,7 +1111,17 @@ describe("return, withdraw and resubmit reports (#603)", () => {
 					kind: "returned",
 					note: "Hotel needs an itemized invoice",
 					actorName: "manager",
-					itemComments: [{ itemId: hotel.id, itemLabel: "Hotel, two nights", body: "Itemize it" }],
+					itemComments: [
+						{
+							itemId: hotel.id,
+							// Numbered as the returned cycle froze it (#688).
+							itemLabel: {
+								key: "approvals:approvals.evidence.reportItemTitle",
+								params: expect.objectContaining({ description: "Hotel, two nights" }),
+							},
+							body: "Itemize it",
+						},
+					],
 				},
 			],
 		});

@@ -224,7 +224,8 @@ export const employeeRateHistory = pgTable(
 // EMPLOYEE MANAGERS (Many-to-Many)
 // ============================================
 
-// Junction table for multiple managers per employee
+// Junction table for multiple managers per employee. Both employees share one
+// organization: guarded by triggers in drizzle/0134_employee_manager_same_organization.sql.
 export const employeeManagers = pgTable(
 	"employee_managers",
 	{

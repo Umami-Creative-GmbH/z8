@@ -28,6 +28,8 @@ export interface BriefingApprovalActionItem extends BriefingActionItem {
 	entityId: string;
 	requesterName: string;
 	summary: string;
+	/** The viewer requested it, so someone else decides it (#686, #697). */
+	ownRequest?: boolean;
 }
 
 export interface BriefingSummaryCounts {
@@ -133,7 +135,10 @@ export interface BriefingApproval {
 	};
 }
 
-export function approvalToBriefingItem(approval: BriefingApproval): BriefingApprovalActionItem {
+export function approvalToBriefingItem(
+	approval: BriefingApproval,
+	viewerEmployeeId: string,
+): BriefingApprovalActionItem {
 	return {
 		id: `approval:${approval.id}`,
 		category: "approval",
@@ -151,5 +156,6 @@ export function approvalToBriefingItem(approval: BriefingApproval): BriefingAppr
 		entityId: approval.entityId,
 		requesterName: approval.requester.name,
 		summary: approval.display.summary,
+		...(approval.requester.id === viewerEmployeeId ? { ownRequest: true } : {}),
 	};
 }

@@ -32,16 +32,18 @@
     "correction": {
       "clockIn": "Entrée",
       "clockInDate": "Date d'arrivée",
+      "clockInTime": "Heure d'arrivée",
       "clockOut": "Sortie",
       "clockOutDate": "Date de départ",
+      "clockOutTime": "Heure de départ",
       "editDescription": "Apporter des modifications à votre entrée de temps pour aujourd'hui.",
       "editEntry": "Modifier l'entrée de temps",
       "editTitle": "Modifier l'entrée de temps",
       "errors": {
         "invalidTimeRange": "L'heure de sortie doit être postérieure à l'heure d'entrée",
+        "noChanges": "Au moins une valeur de correction doit être modifiée",
         "submitFailed": "Échec de l'envoi de la correction",
-        "updateFailed": "Échec de la mise à jour de l'entrée de temps",
-        "noChanges": "Au moins une valeur de correction doit être modifiée"
+        "updateFailed": "Échec de la mise à jour de l'entrée de temps"
       },
       "noteLabel": "Note (optionnel)",
       "notePlaceholder": "Ajouter une note sur ce changement...",
@@ -59,9 +61,7 @@
         "submitted": "Demande de correction soumise pour approbation du manager",
         "updated": "Entrée de temps mise à jour avec succès"
       },
-      "timezoneNote": "Les heures sont dans votre fuseau horaire local ({timezone})",
-      "clockInTime": "Heure d'arrivée",
-      "clockOutTime": "Heure de départ"
+      "timezoneNote": "Les heures sont dans votre fuseau horaire local ({timezone})"
     },
     "currentlyClockedIn": "Vous êtes actuellement pointé à l'entrée",
     "deadline": "Échéance",

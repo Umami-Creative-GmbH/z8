@@ -30,6 +30,7 @@
         "dateRange": "Intervallo di date",
         "description": "Esporta periodi di lavoro e assenze nel formato DATEV Lohn & Gehalt",
         "employees": "Dipendenti",
+        "employeesSelected": "{count} selezionati",
         "endDate": "Data di fine",
         "error": "Esportazione fallita",
         "exportButtonDatev": "Esporta in DATEV",
@@ -52,9 +53,11 @@
         "month": "Mese",
         "monthSelection": "Seleziona mese",
         "projects": "Progetti",
+        "projectsSelected": "{count} selezionati",
         "startDate": "Data di inizio",
         "success": "Esportazione scaricata",
         "teams": "Team",
+        "teamsSelected": "{count} selezionati",
         "title": "Esporta dati buste paga",
         "unavailable": {
           "missingConfiguration": "configurazione",
@@ -296,7 +299,11 @@
         "number": "Numero dipendente"
       },
       "checks": {
-        "count": "Conteggio"
+        "count": "Conteggio",
+        "missingEmploymentHistory": {
+          "descriptionPass": "Tutti i dipendenti attivi dispongono di uno storico lavorativo confermato per questo periodo di paga.",
+          "descriptionWarning": "Alcuni dipendenti attivi non dispongono di uno storico lavorativo confermato per questo periodo di paga."
+        }
       },
       "checkStatus": {
         "fail": "Bloccato",

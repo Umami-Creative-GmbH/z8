@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { TravelExpenseReportSubmittedItem } from "../evidence/travel-expense-report-facts";
-import { localizedTextFallback } from "../inbox/localized-text";
-import type { ApprovalInboxDetailChange, ApprovalInboxLocalizedText } from "../inbox/types";
+import { isApprovalInboxDetailChange, localizedTextFallback } from "../inbox/localized-text";
 import { perDiemReviewRows } from "./travel-expense-report-per-diem";
 
-function text(value: string | ApprovalInboxLocalizedText | ApprovalInboxDetailChange | undefined) {
-	if (value === undefined || (typeof value === "object" && "kind" in value)) return undefined;
+type RowValue = ReturnType<typeof perDiemReviewRows>[number]["value"];
+
+function text(value: RowValue | undefined) {
+	if (value === undefined || isApprovalInboxDetailChange(value)) return undefined;
 	return localizedTextFallback(value);
 }
 
@@ -104,19 +105,23 @@ describe("perDiemReviewRows", () => {
 			expect.objectContaining({ fallback: "Left home or workplace" }),
 			expect.objectContaining({ fallback: "Back home or at workplace" }),
 			expect.objectContaining({ fallback: "Overnight" }),
-			"2026-09-14",
-			"2026-09-15",
+			// Logical days the viewer's locale formats (#687).
+			expect.objectContaining({ params: { date: { kind: "plain_date", date: "2026-09-14" } } }),
+			expect.objectContaining({ params: { date: { kind: "plain_date", date: "2026-09-15" } } }),
 			expect.objectContaining({ fallback: "Per diem" }),
 			expect.objectContaining({ fallback: "Rules applied" }),
 			expect.objectContaining({ fallback: "Applied rates" }),
 		]);
-		expect(rows[0]?.value).toBe("2026-09-14 07:15 (Europe/Berlin)");
+		expect(rows[0]?.value).toMatchObject({
+			params: { date: { kind: "plain_date", date: "2026-09-14" }, time: "07:15" },
+		});
+		expect(text(rows[0]?.value)).toBe("2026-09-14 07:15 (Europe/Berlin)");
 		// Localized texts (spec #598 review): every word is a translation key with an English default.
 		expect(rows[4]?.value).toMatchObject({ key: "approvals:approvals.evidence.perDiemDayLine" });
 		expect(text(rows[4]?.value)).toBe(
 			"travel day with overnight stay (19 h 40 min) — 14.00 − 3.60 [breakfast provided, paid 2.00 (−3.60)] = 10.40 EUR",
 		);
-		expect(rows[5]?.value).toBe("24.40 EUR");
+		expect(rows[5]?.value).toEqual({ kind: "money", amount: "24.40", currency: "EUR" });
 		expect(text(rows[7]?.value)).toBe(
 			"Version v1, valid from 2026-01-01: full day 28.00, partial day 14.00, breakfast −5.60, lunch −11.20, dinner −11.20 EUR (organization policy: Travel policy)",
 		);
@@ -167,10 +172,11 @@ describe("perDiemReviewRows", () => {
 			},
 		} satisfies TravelExpenseReportSubmittedItem;
 		const rows = perDiemReviewRows(international);
+		// #681: locations are named in the reader's language, not by the German notice.
 		expect(text(rows[3]?.value)).toMatch(
-			/^Luxemburg \(IQ: official fallback, unlisted state\) — travel day with overnight stay/,
+			/^Luxembourg \(IQ: official fallback, unlisted state\) — travel day with overnight stay/,
 		);
-		expect(text(rows[4]?.value)).toMatch(/^Deutschland — travel day/);
+		expect(text(rows[4]?.value)).toMatch(/^Germany — travel day/);
 		expect(rows.at(-2)).toEqual({
 			label: expect.objectContaining({ fallback: "Foreign rates" }),
 			value: "BMF letter of 05.12.2025 (BStBl I S. 2078) (LStH 2026, Anhang 25 I)",

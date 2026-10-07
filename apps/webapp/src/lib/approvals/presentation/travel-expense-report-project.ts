@@ -3,9 +3,14 @@ import type { ApprovalInboxDetailSection, ApprovalInboxLocalizedText } from "../
 
 type Row = Extract<ApprovalInboxDetailSection, { type: "key_value" }>["rows"][number];
 
-const text = (key: string, fallback: string): ApprovalInboxLocalizedText => ({
-	key: `approvals:approvals.evidence.${key}`,
+const text = (
+	key: string,
+	fallback: string,
+	params?: ApprovalInboxLocalizedText["params"],
+): ApprovalInboxLocalizedText => ({
+	key,
 	fallback,
+	...(params ? { params } : {}),
 });
 
 /**
@@ -20,34 +25,50 @@ export function travelExpenseReportProjectRows(item: TravelExpenseReportSubmitte
 	const name = [project.name, project.customerName].filter(Boolean).join(" · ");
 	const rows: Row[] = [
 		{
-			label: text("project", "Project"),
-			value: project.inheritedFromTrip ? `${name} (trip project)` : name,
+			label: text("approvals:approvals.evidence.project", "Project"),
+			value: project.inheritedFromTrip
+				? text("approvals:approvals.evidence.projectInheritedFromTrip", "{name} (trip project)", {
+						name,
+					})
+				: name,
 		},
 	];
 	if (project.basis === "exception" && project.exception) {
 		const { validFrom, validTo, reason, evidence } = project.exception;
 		rows.push(
 			{
-				label: text("projectBasis", "Project eligibility"),
+				label: text("approvals:approvals.evidence.projectBasis", "Project eligibility"),
 				value: text(
-					"projectBasisException",
+					"approvals:approvals.evidence.projectBasisException",
 					"Authorized attribution exception — not proven by assignment history",
 				),
 			},
 			{
-				label: text("projectExceptionDates", "Exception covers"),
-				value: validFrom === validTo ? validFrom : `${validFrom} – ${validTo}`,
+				label: text("approvals:approvals.evidence.projectExceptionDates", "Exception covers"),
+				value: { kind: "plain_date_range", start: validFrom, end: validTo },
 			},
-			{ label: text("projectExceptionReason", "Exception reason"), value: reason },
-			{ label: text("projectExceptionEvidence", "Exception evidence"), value: evidence },
+			{
+				label: text("approvals:approvals.evidence.projectExceptionReason", "Exception reason"),
+				value: reason,
+			},
+			{
+				label: text("approvals:approvals.evidence.projectExceptionEvidence", "Exception evidence"),
+				value: evidence,
+			},
 		);
 	} else {
 		rows.push({
-			label: text("projectBasis", "Project eligibility"),
+			label: text("approvals:approvals.evidence.projectBasis", "Project eligibility"),
 			value:
 				project.basis === "team_assignment"
-					? text("projectBasisTeam", "Team assigned to the project on the expense date")
-					: text("projectBasisEmployee", "Assigned to the project on the expense date"),
+					? text(
+							"approvals:approvals.evidence.projectBasisTeam",
+							"Team assigned to the project on the expense date",
+						)
+					: text(
+							"approvals:approvals.evidence.projectBasisEmployee",
+							"Assigned to the project on the expense date",
+						),
 		});
 	}
 	return rows;

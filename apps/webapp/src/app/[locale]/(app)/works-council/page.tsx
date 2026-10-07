@@ -1,6 +1,5 @@
 import { eq } from "drizzle-orm";
 import { DateTime } from "luxon";
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { LoadingRegion } from "@/components/ui/loading-region";
@@ -9,6 +8,7 @@ import { WorksCouncilDashboard } from "@/components/works-council/works-council-
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { requireAbility, requireUser } from "@/lib/auth-helpers";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { auditWorksCouncilPortalViewed } from "@/lib/works-council/access-audit";
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
 import { buildWorksCouncilPortalModel } from "@/lib/works-council/review-data";
@@ -50,7 +50,7 @@ async function WorksCouncilPageContent({
 	const organizationId = authContext.session.activeOrganizationId;
 
 	if (!organizationId) {
-		redirect("/");
+		return redirectWithLocale("/");
 	}
 
 	const ability = await requireAbility();
@@ -61,7 +61,7 @@ async function WorksCouncilPageContent({
 			authContext.session.activeOrganizationId,
 		)
 	) {
-		redirect("/");
+		return redirectWithLocale("/");
 	}
 
 	const currentOrganization = await db.query.organization.findFirst({
@@ -69,7 +69,7 @@ async function WorksCouncilPageContent({
 		where: eq(organization.id, organizationId),
 	});
 	if (!currentOrganization?.worksCouncilEnabled) {
-		redirect("/");
+		return redirectWithLocale("/");
 	}
 
 	const settings = await loadWorksCouncilSettings(organizationId);

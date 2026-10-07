@@ -8,8 +8,13 @@ import { createLogger } from "@/lib/logger";
 import { readPrivateObject } from "@/lib/storage/export-s3-client";
 import {
 	isAllowedTravelExpenseMime,
+	isTravelExpenseImageMime,
 	TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER,
 } from "@/lib/travel-expenses/attachment-validation";
+import {
+	loadReceiptPreview,
+	RECEIPT_PREVIEW_MIME_TYPE,
+} from "@/lib/travel-expenses/receipt-preview";
 import {
 	authorizedReportCycle,
 	loadAuthorizedTravelExpenseReport,
@@ -40,10 +45,28 @@ interface StoredReceipt {
 	checksumSha256: string;
 }
 
+/** The recorded object, refused when its content no longer matches the recorded identity. */
+async function readVerifiedReceipt(organizationId: string, stored: StoredReceipt) {
+	const bytes = await readPrivateObject({
+		organizationId,
+		key: stored.key,
+		bucket: stored.bucket,
+		versionId: stored.versionId,
+	});
+	if (
+		bytes.byteLength !== stored.sizeBytes ||
+		createHash("sha256").update(bytes).digest("hex") !== stored.checksumSha256
+	) {
+		throw new Error("Stored receipt content does not match its recorded identity");
+	}
+	return bytes;
+}
+
 /**
  * Streams a private report receipt after verifying its recorded identity: to
  * the report owner, or to a reviewer the Approvals inbox authorizes (#602), who
  * receives only the exact object frozen in the current submission.
+ * `?variant=thumb` serves a small preview of an image instead (#690).
  */
 export async function GET(
 	request: NextRequest,
@@ -61,9 +84,12 @@ export async function GET(
 		}
 		if (authorized.status !== "found") return notFound();
 		const { report } = authorized;
+		const { searchParams } = new URL(request.url);
+		const variant = searchParams.get("variant");
+		if (variant !== null && variant !== "thumb") return notFound();
 		// `cycle` names a frozen submission (#603): its exact receipt, also after
 		// the owner corrected or removed it in a returned or withdrawn report.
-		const cycleParam = new URL(request.url).searchParams.get("cycle");
+		const cycleParam = searchParams.get("cycle");
 		const cycle = cycleParam === null ? undefined : Number(cycleParam);
 		if (cycle !== undefined && (!Number.isInteger(cycle) || cycle < 1)) return notFound();
 		let stored: StoredReceipt | null = null;
@@ -114,24 +140,38 @@ export async function GET(
 		if (stored.provider !== TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER) {
 			throw new Error("Unsupported recorded receipt storage provider");
 		}
-		const bytes = await readPrivateObject({
-			organizationId: report.organizationId,
-			key: stored.key,
-			bucket: stored.bucket,
-			versionId: stored.versionId,
-		});
-		if (
-			bytes.byteLength !== stored.sizeBytes ||
-			createHash("sha256").update(bytes).digest("hex") !== stored.checksumSha256
-		) {
-			throw new Error("Stored receipt content does not match its recorded identity");
-		}
+		// A closure loses the narrowing of the reassignable `stored`.
+		const found = stored;
+		const readOriginal = () => readVerifiedReceipt(report.organizationId, found);
 		const mimeType = isAllowedTravelExpenseMime(stored.mimeType)
 			? stored.mimeType
 			: "application/octet-stream";
+		if (variant === "thumb") {
+			// The small preview an expense tile shows (#690), under the same access as the original.
+			const preview = await loadReceiptPreview({
+				organizationId: report.organizationId,
+				key: stored.key,
+				bucket: stored.bucket,
+				versionId: stored.versionId,
+				mimeType,
+				readOriginal,
+			});
+			if (preview) {
+				return new Response(new Uint8Array(preview), {
+					headers: {
+						...privateHeaders,
+						"Content-Type": RECEIPT_PREVIEW_MIME_TYPE,
+						"Content-Disposition": "inline",
+						"Content-Security-Policy": "sandbox",
+					},
+				});
+			}
+			if (!isTravelExpenseImageMime(mimeType)) return notFound();
+			// An image the preview cannot be rendered from is shown as its original.
+		}
+		const bytes = await readOriginal();
 		const disposition =
-			new URL(request.url).searchParams.get("download") === "1" ||
-			mimeType === "application/octet-stream"
+			searchParams.get("download") === "1" || mimeType === "application/octet-stream"
 				? "attachment"
 				: "inline";
 		const encodedName = encodeURIComponent(stored.fileName).replace(

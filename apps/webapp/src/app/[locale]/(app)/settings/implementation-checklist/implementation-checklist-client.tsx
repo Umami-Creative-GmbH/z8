@@ -103,7 +103,7 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 						<span>
 							{t(
 								"settings.implementationChecklist.progress.completedCount",
-								"{{completed}} of {{total}} complete",
+								"{completed} of {total} complete",
 								{
 									completed: checklist.completedCount,
 									total: checklist.totalCount,
@@ -113,7 +113,7 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 						<span className="font-semibold text-muted-foreground text-sm tabular-nums">
 							{t(
 								"settings.implementationChecklist.progress.percentComplete",
-								"{{percent}}% complete",
+								"{percent}% complete",
 								{
 									percent: progressPercent,
 								},

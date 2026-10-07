@@ -23,6 +23,9 @@ const transport = isDev
 export const logger = pino({
 	level: env.LOG_LEVEL || (isDev ? "debug" : "info"),
 	transport,
+	// Pino serializes errors only under `err`; this codebase logs them as `{ error }`,
+	// whose Error properties are not enumerable and would otherwise log as `{}`.
+	serializers: { error: pino.stdSerializers.err },
 	mixin() {
 		const span = trace.getActiveSpan();
 		if (!span) return {};

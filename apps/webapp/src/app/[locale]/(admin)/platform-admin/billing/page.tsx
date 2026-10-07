@@ -8,7 +8,6 @@ import {
 } from "@tabler/icons-react";
 import { and, count, desc, eq, inArray, like, notLike } from "drizzle-orm";
 import { DateTime } from "luxon";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -26,6 +25,7 @@ import { db } from "@/db";
 import { member, organization, user } from "@/db/auth-schema";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { cn } from "@/lib/utils";
 import { getTranslate } from "@/tolgee/server";
 import { SyncSeatsButton } from "./sync-seats-button";
@@ -56,7 +56,7 @@ export default function AdminBillingPage() {
 async function AdminBillingPageContent() {
 	// Check if billing is enabled
 	if (env.BILLING_ENABLED !== "true") {
-		redirect("/platform-admin");
+		return redirectWithLocale("/platform-admin");
 	}
 
 	const t = await getTranslate();

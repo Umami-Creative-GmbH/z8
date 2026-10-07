@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { perDiemSituation } from "../allowance-override";
 import {
 	calculatePerDiem,
@@ -265,7 +266,9 @@ describe("unsupported or incomplete international facts are never guessed", () =
 			status: "incomplete",
 			missingLocations: ["2026-03-02", "2026-03-03"],
 		});
-		expect(perDiemMissingRequirements(itinerary, calculation, {})).toEqual(["per_diem_locations"]);
+		expect(
+			perDiemMissingRequirements(itinerary, calculation, {}, parseInstant("2026-10-07T12:00:00Z")),
+		).toEqual(["per_diem_locations"]);
 		expect(perDiemSituation(calculation).kind).toBe("missing_facts");
 	});
 

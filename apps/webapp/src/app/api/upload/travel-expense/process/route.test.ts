@@ -16,7 +16,7 @@ const mockState = vi.hoisted(() => ({
 	finalize: vi.fn(),
 	markFailed: vi.fn(),
 	runCleanup: vi.fn(),
-	deletePrivateObject: vi.fn(),
+	deleteReceiptObject: vi.fn(),
 }));
 
 vi.mock("next/server", () => ({
@@ -77,7 +77,10 @@ vi.mock("@/lib/storage/s3-client", () => ({
 
 vi.mock("@/lib/storage/export-s3-client", () => ({
 	uploadPrivateObject: mockState.uploadPrivateObject,
-	deletePrivateObject: mockState.deletePrivateObject,
+}));
+
+vi.mock("@/lib/travel-expenses/receipt-preview", () => ({
+	deleteTravelExpenseReceiptObject: mockState.deleteReceiptObject,
 }));
 
 vi.mock("@/lib/travel-expenses/receipt-upload", async (importOriginal) => ({
@@ -322,7 +325,7 @@ describe("travel expense upload processing", () => {
 		expect(response.status).toBe(409);
 		const [, staged] = mockState.stage.mock.calls[0] ?? [];
 		expect(mockState.runCleanup).toHaveBeenCalledWith(expect.anything(), {
-			deleteObject: mockState.deletePrivateObject,
+			deleteObject: mockState.deleteReceiptObject,
 			only: { attachmentId: staged.attachmentId, organizationId: "org_1" },
 		});
 		expect(mockState.markFailed).not.toHaveBeenCalled();

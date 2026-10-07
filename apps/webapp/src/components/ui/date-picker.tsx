@@ -2,8 +2,8 @@
 
 import { IconCalendar } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import * as React from "react";
+import { useAppLocale } from "@/components/providers/app-locale-provider";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -11,6 +11,10 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+	calendarDateFromPlainDate,
+	plainDateFromCalendarDate,
+} from "@/lib/datetime/calendar-date";
 import { cn } from "@/lib/utils";
 import { formatDateOnly, parseDateOnly } from "./date-picker-utils";
 
@@ -39,15 +43,16 @@ function DatePicker({
 	...props
 }: DatePickerProps) {
 	const { t } = useTranslate();
+	const locale = useAppLocale();
 	const [open, setOpen] = React.useState(false);
 	const selectedDate = parseDateOnly(value);
-	const displayValue = formatDateOnly(value);
+	const displayValue = formatDateOnly(value, locale);
 	const hasValue = Boolean(value);
 
 	function handleSelect(date?: Date) {
 		if (!date) return;
 
-		onChange(DateTime.fromJSDate(date).toFormat("yyyy-MM-dd"));
+		onChange(plainDateFromCalendarDate(date).toString());
 		setOpen(false);
 	}
 
@@ -57,7 +62,7 @@ function DatePicker({
 	}
 
 	function isDateDisabled(date: Date) {
-		const dateOnly = DateTime.fromJSDate(date).toFormat("yyyy-MM-dd");
+		const dateOnly = plainDateFromCalendarDate(date).toString();
 		return Boolean((min && dateOnly < min) || (max && dateOnly > max));
 	}
 
@@ -66,15 +71,12 @@ function DatePicker({
 			<PopoverTrigger asChild>
 				<Button
 					aria-required={required || undefined}
-					className={cn(
-						"w-full justify-start text-left font-normal",
-						!displayValue && "text-muted-foreground",
-						className,
-					)}
+					className={cn("w-full justify-start text-left", className)}
+					data-placeholder={displayValue ? undefined : ""}
 					disabled={disabled}
 					onBlur={onBlur}
 					type="button"
-					variant="outline"
+					variant="field"
 					{...props}
 				>
 					<IconCalendar className="size-4" />
@@ -86,7 +88,8 @@ function DatePicker({
 			<PopoverContent align="start" className="w-auto p-0">
 				<Calendar
 					mode="single"
-					selected={selectedDate?.toJSDate()}
+					selected={selectedDate ? calendarDateFromPlainDate(selectedDate) : undefined}
+					defaultMonth={selectedDate ? calendarDateFromPlainDate(selectedDate) : undefined}
 					onSelect={handleSelect}
 					disabled={isDateDisabled}
 				/>

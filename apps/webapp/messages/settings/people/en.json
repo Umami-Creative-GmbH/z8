@@ -164,6 +164,8 @@
         "deactivateTitle": "Deactivate employee?",
         "deactivating": "Deactivating...",
         "deactivatingStatus": "Deactivating employee",
+        "finalOwnerDeactivateGuidance": "Assign and activate another approved owner before deactivating this employee.",
+        "finalOwnerRemoveGuidance": "Assign and activate another approved owner before removing this employee's access.",
         "reactivate": "Reactivate",
         "reactivateDescription": "This restores access to this organization using the existing employee record.",
         "reactivateError": "Failed to reactivate employee",
@@ -178,9 +180,7 @@
         "removeSuccess": "Organization access removed",
         "removeTitle": "Remove organization access?",
         "removing": "Removing access...",
-        "removingStatus": "Removing organization access",
-        "finalOwnerDeactivateGuidance": "Assign and activate another approved owner before deactivating this employee.",
-        "finalOwnerRemoveGuidance": "Assign and activate another approved owner before removing this employee's access."
+        "removingStatus": "Removing organization access"
       },
       "offboarding": {
         "acknowledgeDuties": "Admins will resolve the {count} open approval duties.",
@@ -623,6 +623,10 @@
         "title": "No custom roles yet"
       },
       "introduction": "Create custom permission roles that can be assigned to employees. Custom roles add permissions on top of the base tier.",
+      "permissionCategories": {
+        "time_tracking": "Time Tracking",
+        "works_council": "Works Council"
+      },
       "table": {
         "actions": "Actions",
         "assigned": "Assigned",
@@ -658,7 +662,7 @@
       "catalogDescription": "Define skills that can be required for subareas and shift templates",
       "category": "Category",
       "confirmDelete": "Are you sure you want to delete this skill?",
-      "confirmRemove": "Remove \"${skillName}\" from this employee?",
+      "confirmRemove": "Remove \"{skillName}\" from this employee?",
       "createError": "Failed to create skill",
       "createSkill": "Create Skill",
       "createSkillDescription": "Create a new skill that can be assigned to employees",
@@ -672,8 +676,8 @@
       "employeeSkills": "Skills & Qualifications",
       "employeeSkillsDescription": "Certifications and skills assigned to this employee",
       "expired": "Expired",
-      "expiredOn": "Expired on {{date}}",
-      "expiresOn": "Expires {{date}}",
+      "expiredOn": "Expired on {date}",
+      "expiresOn": "Expires {date}",
       "expiringSoon": "Expiring Soon",
       "expiry": "Expiry Tracking",
       "expiryDate": "Expiry Date",

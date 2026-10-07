@@ -1,17 +1,80 @@
 {
   "travelExpenses": {
     "actions": {
-      "newClaim": "Nouvelle réclamation"
+      "backToClaims": "Retour aux demandes",
+      "download": "Télécharger",
+      "preview": "Aperçu",
+      "retry": "Réessayer",
+      "viewClaim": "Afficher la demande"
+    },
+    "adjustment": {
+      "create": {
+        "action": "Corriger avec un ajustement",
+        "confirm": "Créer un ajustement",
+        "description": "Vous obtenez une copie des dépenses approuvées à corriger. Sa soumission envoie l'intégralité du rapport corrigé pour une nouvelle approbation ; seule la différence par rapport au montant approuvé est réglée.",
+        "failed": "Impossible de créer l'ajustement. Veuillez réessayer.",
+        "ineligible": "Ce rapport ne peut plus être ajusté. Rechargez la page pour voir son état actuel.",
+        "reason": "Motif de la correction",
+        "reasonRequired": "Expliquez ce qui doit être corrigé.",
+        "reasonTooLong": "Le motif doit comporter moins de {max} caractères.",
+        "title": "Créer un ajustement lié ?"
+      },
+      "ineligible": {
+        "adjustment": "Un ajustement se corrige via le rapport qu'il ajuste."
+      },
+      "notice": {
+        "baseline": "Montant approuvé qu'il corrige",
+        "delta": "Différence signée",
+        "editing": "Corrigez les dépenses ci-dessous. Lorsque vous soumettez, la différence par rapport au montant approuvé s'affiche pour vérification, puis fait l'objet d'un nouvel examen. Le rapport d'origine et ses paiements restent inchangés.",
+        "original": "Ouvrir le rapport d'origine",
+        "title": "Ajustement d'un rapport approuvé"
+      },
+      "panel": {
+        "applied": "Appliqué",
+        "description": "Ce rapport a déjà été exporté ou remboursé, il reste donc tel qu'approuvé. Une correction est un ajustement lié : elle fait l'objet d'un nouvel examen et, une fois approuvée, modifie le montant approuvé de sa différence signée.",
+        "effective": "Montant approuvé incluant les ajustements : {amount}",
+        "open": "Ouvrir l'ajustement",
+        "title": "Ajustements"
+      },
+      "preview": {
+        "currency": "Le total corrigé n'est pas dans la devise du rapport d'origine et ne peut donc pas être soumis en tant qu'ajustement.",
+        "delta": "Cet ajustement modifie le montant approuvé de {baseline} de {delta}.",
+        "review": "Une nouvelle approbation de l'ensemble du rapport est nécessaire, même si le montant diminue."
+      },
+      "reviewerHint": "L'employé crée l'ajustement à partir de ce rapport ; il vous revient pour un nouvel examen avec sa différence signée."
+    },
+    "allowanceOverride": {
+      "amount": "Montant",
+      "authorizedBy": "Autorisé par",
+      "authorizedByValue": "{name}, {date}",
+      "basis": "Calcul",
+      "evidence": "Justificatif",
+      "noOrdinary": "Aucun calcul standard n'existe pour ces éléments.",
+      "ordinary": "La politique calculerait {amount}.",
+      "reason": "Motif",
+      "situation": {
+        "calculated": "Calculé selon la politique",
+        "fallback": "Calculé avec un taux de repli officiel",
+        "missingCoverage": "Aucune politique de l'organisation ne le couvre",
+        "missingFacts": "Des informations de voyage requises sont manquantes",
+        "unsupported": "Non couvert par les règles de calcul prises en charge"
+      },
+      "situationLabel": "Pourquoi non calculé",
+      "situationResolved": "Cette indemnité manuelle ne s'applique plus : le motif pour lequel elle a été autorisée a changé (par exemple, une politique s'applique désormais à ces données). L'indemnité calculée est prise en compte lorsqu'il en existe une ; sinon, un administrateur des notes de frais doit l'examiner.",
+      "stale": "Cette indemnité manuelle a été autorisée pour des données différentes et ne s'applique plus. Un administrateur des notes de frais doit examiner les éléments modifiés.",
+      "title": "Indemnité définie manuellement par un administrateur des notes de frais"
     },
     "approvals": {
       "description": "Ouvrir la boîte de réception unifiée des approbations filtrée sur les frais de déplacement.",
-      "openInbox": "Ouvrir la boîte de réception",
-      "title": "Examiner les approbations de frais de déplacement en attente"
+      "entry": {
+        "open": "Ouvrir la boîte de réception",
+        "title": "Examiner les approbations de frais de déplacement en attente"
+      }
     },
-    "claimTypes": {
-      "mileage": "Kilométrage",
-      "per_diem": "Indemnité journalière",
-      "receipt": "Reçu"
+    "currency": {
+      "empty": "Aucune devise trouvée",
+      "placeholder": "Choisir une devise",
+      "search": "Rechercher des devises"
     },
     "decision": {
       "approve": "Approuver",
@@ -33,41 +96,180 @@
       "rejected": "Demande rejetée avec succès",
       "rejectTitle": "Rejeter la demande"
     },
-    "description": "Créez et suivez vos demandes de frais de déplacement",
+    "detail": {
+      "created": "Créé",
+      "decisionRecorded": "Décision enregistrée",
+      "destination": "Destination",
+      "history": "Historique des décisions",
+      "intermediateApproval": "Approbation enregistrée — en attente d'une autre approbation",
+      "legacyReceiptIdentity": "Reçu hérité : la somme de contrôle du contenu n'a pas été enregistrée.",
+      "loading": "Chargement de la demande…",
+      "noReceipts": "Aucun reçu enregistré",
+      "notRecorded": "Non enregistré",
+      "originalAmount": "Montant d'origine",
+      "receipts": "Reçus",
+      "refreshing": "Actualisation de la demande…",
+      "submitted": "Soumis",
+      "title": "Demande de frais de déplacement",
+      "unknownDates": "Contexte de la date du voyage non enregistré (ancienne demande)"
+    },
     "errors": {
-      "loadClaims": "Échec du chargement des demandes de frais de déplacement"
+      "loadDetailRetry": "Impossible de charger cette demande. Veuillez réessayer."
     },
     "feature": "gérer les frais de déplacement",
-    "form": {
-      "amount": "Montant",
-      "claimType": "Type de demande",
-      "created": "Brouillon de frais de déplacement créé",
-      "createDraft": "Créer un brouillon",
-      "currency": "Devise",
-      "currencyDescription": "Code ISO 4217, par ex. EUR ou USD",
-      "currencyPlaceholder": "EUR",
-      "description": "Créez un nouveau brouillon de note de frais pour vos récents déplacements.",
-      "destinationCity": "Ville de destination",
-      "destinationCityPlaceholder": "Berlin",
-      "destinationCountry": "Pays de destination",
-      "destinationCountryPlaceholder": "Allemagne",
-      "errors": {
-        "createDraft": "Échec de la création du brouillon de note de frais",
-        "positiveAmount": "Le montant doit être un nombre positif",
-        "tripEndBeforeStart": "La date de fin du voyage ne peut pas être antérieure à la date de début",
-        "validTripDates": "Veuillez fournir une date de début et de fin de voyage valide",
-        "validTripEnd": "Veuillez fournir une date de fin de voyage valide",
-        "validTripStart": "Veuillez fournir une date de début de voyage valide"
+    "finance": {
+      "approvedOn": "Approuvé le {date}",
+      "back": "Retour aux finances des dépenses",
+      "companyPaid": "Payé par l'entreprise {amount}",
+      "description": "Dépenses approuvées et montants restant dus aux employés. L'enregistrement d'un remboursement consigne un paiement effectué en dehors de Z8 ; aucun transfert d'argent n'est effectué.",
+      "employeePaid": "Payé par l'employé {amount}",
+      "empty": {
+        "any": "Aucune dépense approuvée pour le moment.",
+        "open": "Rien à régler : toutes les dépenses approuvées sont réglées."
       },
-      "notes": "Notes",
-      "notesPlaceholder": "Ajoutez un contexte optionnel pour votre approbateur",
-      "receiptAttachmentHint": "Les notes de frais avec justificatifs nécessitent au moins une pièce jointe. Le téléchargement de pièces jointes sera disponible après la création du brouillon.",
-      "selectClaimType": "Sélectionner le type de note de frais",
-      "title": "Créer une note de frais de déplacement",
-      "tripEnd": "Fin du voyage",
-      "tripStart": "Début du voyage"
+      "entry": {
+        "description": "Consultez les dépenses approuvées, les soldes restants et les remboursements enregistrés.",
+        "open": "Ouvrir la file d'attente financière",
+        "title": "Finances des dépenses"
+      },
+      "errors": {
+        "load": "Impossible de charger la file d'attente financière. Veuillez réessayer."
+      },
+      "exports": {
+        "adjustment": "Ajustement : {name}",
+        "cancel": "Annuler",
+        "cancelledByFinance": "Annulé par le service financier.",
+        "cancelledReopenedHint": "Annulé car une note de frais incluse a été rouverte pour correction. Les autres notes de frais sont prêtes à être exportées à nouveau : créez un nouvel export pour celles-ci.",
+        "counts": "{reports} notes de frais · {items} dépenses · {receipts} reçus",
+        "created": "Export mis en file d'attente. Il apparaîtra ci-dessous dès qu'il sera prêt.",
+        "description": "Exportez les dépenses approuvées au format CSV avec leurs reçus pour la comptabilité. Chaque soumission approuvée est exportée une seule fois ; téléchargez à nouveau un export dès que vous en avez besoin.",
+        "download": "Télécharger",
+        "empty": "Aucune dépense approuvée n'est en attente d'exportation.",
+        "errors": {
+          "alreadyExported": "Certaines dépenses sélectionnées font déjà partie d'un autre export. Téléchargez plutôt cet export.",
+          "cancel": "L'export n'a pas pu être annulé.",
+          "conflict": "Une tentative antérieure avec une autre sélection a déjà été enregistrée. Consultez l'historique des exports.",
+          "failed": "L'export n'a pas pu être créé. Veuillez réessayer.",
+          "invalid": "Sélectionnez entre une et le nombre maximum de dépenses.",
+          "load": "Impossible de charger les exports. Veuillez réessayer.",
+          "retry": "L'export n'a pas pu être relancé.",
+          "stale": "Certaines dépenses sélectionnées ne sont plus approuvées comme indiqué. La liste a été actualisée ; vérifiez la sélection et exportez à nouveau."
+        },
+        "failure": {
+          "enqueue": "L'export n'a pas pu être mis en file d'attente. Veuillez réessayer.",
+          "inconsistent": "Les données approuvées n'ont pas pu être exportées de manière cohérente. Contactez l'assistance.",
+          "receiptMismatch": "Un reçu stocké ne correspond plus à sa somme de contrôle enregistrée. Contactez l'assistance avant de réessayer.",
+          "receiptUnavailable": "Un fichier de reçu n'a pas pu être lu. Réessayez dès que le stockage sera disponible.",
+          "storage": "Le fichier d'export n'a pas pu être enregistré. Veuillez réessayer.",
+          "unknown": "L'exportation a échoué. Veuillez réessayer."
+        },
+        "form": {
+          "label": "Créer une exportation",
+          "selectAll": "Tout sélectionner",
+          "submit": "Créer l'exportation ({count})"
+        },
+        "history": "Historique des exportations",
+        "loading": "Chargement des exportations…",
+        "notPayment": "Ceci n'est pas un paiement : l'exportation ne marque aucun élément comme remboursé.",
+        "requested": "Demandé le {date} par {name}",
+        "retry": "Réessayer",
+        "status": {
+          "cancelled": "Annulé",
+          "completed": "Terminé",
+          "failed": "Échec",
+          "processing": "Traitement en cours",
+          "queued": "En file d'attente"
+        },
+        "title": "Exportations"
+      },
+      "filter": {
+        "all": "Toutes approuvées",
+        "label": "Afficher les dépenses",
+        "open": "Ouvrir",
+        "settled": "Réglé"
+      },
+      "legacyClaim": "Ancienne demande de {type}",
+      "loading": "Chargement de la file d'attente financière…",
+      "title": "Finances des dépenses",
+      "truncated": "Affichage des {count} dépenses les plus récemment approuvées. Les dépenses correspondantes plus anciennes ne sont pas répertoriées."
+    },
+    "form": {
+      "currency": "Devise",
+      "notes": "Notes"
+    },
+    "history": {
+      "adjustment": "Ajustement",
+      "adjustmentOf": "Ajustement de « {title} »",
+      "adjustmentOfUntitled": "Ajustement d'une note antérieure",
+      "claimed": "Demandé",
+      "companyPaid": "Payé par l'entreprise : {amount}",
+      "continuedFrom": "Suite d'une demande antérieure",
+      "deleteDraft": "Supprimer le brouillon “{title}”",
+      "emptyDescription": "Démarrez un déplacement pour regrouper plusieurs dépenses avec les mêmes détails de voyage, ou ajoutez un reçu unique ou une indemnité kilométrique. Les brouillons sont enregistrés automatiquement afin que vous puissiez les terminer plus tard.",
+      "emptyFilter": "Aucune dépense avec ce statut.",
+      "emptyTitle": "Aucun frais de déplacement pour l'instant",
+      "errors": {
+        "load": "Impossible de charger vos frais de déplacement. Veuillez réessayer.",
+        "refresh": "Impossible d'actualiser vos dépenses ; la liste ci-dessous n'est peut-être pas à jour. Veuillez réessayer."
+      },
+      "filter": {
+        "all": "Tout",
+        "approved": "Approuvé",
+        "inReview": "En cours d'examen",
+        "label": "Afficher les dépenses",
+        "needsAction": "À terminer",
+        "rejected": "Rejeté"
+      },
+      "legacy": {
+        "badge": "Demande antérieure",
+        "mileage": "Indemnité kilométrique",
+        "perDiem": "Indemnité journalière",
+        "receipt": "Demande avec justificatif"
+      },
+      "loading": "Chargement de vos frais de déplacement…",
+      "notCounted": "{count, plural, one {# dépense non comptabilisée pour le moment} other {# dépenses non comptabilisées pour le moment}}",
+      "refreshing": "Actualisation…",
+      "reimbursable": "À vous rembourser",
+      "showAll": "Afficher toutes les dépenses",
+      "title": "Vos dépenses",
+      "untitledMileage": "Kilométrage sans titre"
+    },
+    "legacyDraft": {
+      "continue": "Poursuivre sous forme de note de frais",
+      "converted": "Vous avez poursuivi ce brouillon sous la forme d'une note de frais. Cette demande reste ici inchangée à titre de référence.",
+      "description": "Les brouillons de l'ancien formulaire de demande sont désormais finalisés en tant que notes de frais. Votre montant, vos dates, vos remarques et vos justificatifs sont conservés ; tous les éléments requis par le nouveau formulaire qui n'avaient pas été enregistrés dans ce brouillon restent à renseigner. Cette demande en elle-même reste inchangée.",
+      "failed": "Impossible de poursuivre le brouillon. Veuillez réessayer.",
+      "flags": {
+        "amount": "Le montant saisi {amount} n'est pas un montant de reçu valide. Saisissez le montant et la devise figurant sur le justificatif.",
+        "conversion": "Le justificatif est dans une devise étrangère. Le brouillon n'a enregistré aucune conversion ; indiquez son mode de conversion (débit de carte ou taux de change) avant de soumettre.",
+        "destination": "La destination \"{destination}\" n'a pas pu être associée à un pays. Choisissez-le.",
+        "expenseDate": "Le brouillon couvrait {range}. Choisissez le jour de cette dépense.",
+        "manualTotal": "Le brouillon indiquait un total saisi de {amount}. Il n'est pas utilisé : cette dépense est désormais calculée à partir des informations saisies ci-dessous.",
+        "notes": "Vos remarques s'affichent ci-dessous ; copiez ce qui s'applique toujours.",
+        "project": "Le projet du brouillon a été conservé. À moins que votre affectation à la date de la dépense ne soit enregistrée, un administrateur des notes de frais doit l'autoriser avant que vous ne puissiez la soumettre.",
+        "projectMissing": "Le projet du brouillon n'existe plus. Choisissez un projet si applicable.",
+        "tripDates": "Le brouillon a été créé avant que les dates de déplacement ne soient enregistrées. Saisissez les dates."
+      },
+      "loadFailed": "Impossible de vérifier ce brouillon. Veuillez réessayer.",
+      "notDraft": "Cette demande a déjà été soumise. Elle conserve son approbation initiale et ne peut pas être poursuivie sous forme de note de frais.",
+      "notice": {
+        "description": "Les informations que vous avez saisies ont été reprises dans la mesure où ce formulaire peut les accueillir à l'identique, y compris {count} justificatifs. Complétez les champs restants avant de soumettre.",
+        "original": "Afficher le brouillon d'origine",
+        "title": "Poursuivi à partir d'un ancien brouillon de demande"
+      },
+      "openReport": "Ouvrir la note de frais",
+      "receipt": {
+        "mismatch": "le fichier stocké ne correspond plus à ce qui a été téléversé",
+        "unreadable": "le fichier stocké ne peut pas être lu pour le moment",
+        "unsupportedStorage": "le fichier est conservé dans un espace de stockage non pris en charge",
+        "unsupportedType": "le fichier stocké n'est pas un type de justificatif pris en charge"
+      },
+      "receiptUnavailable": "Aucune modification n'a été apportée car un justificatif n'a pas pu être transféré de manière sécurisée : {receipts}. Veuillez réessayer plus tard ou demander à votre administrateur de restaurer le fichier.",
+      "status": "Poursuivi en tant que note de frais",
+      "title": "Continuer ce brouillon"
     },
     "list": {
+      "actions": "Actions",
       "amount": "Montant",
       "dateRange": "Plage de dates",
       "emptyDescription": "Créez votre première note de frais pour lancer le processus d'approbation.",
@@ -75,6 +277,729 @@
       "status": "Statut",
       "type": "Type"
     },
-    "title": "Notes de frais"
+    "perDiemPlaces": {
+      "AU": {
+        "canberra": "Canberra",
+        "sydney": "Sydney"
+      },
+      "BR": {
+        "brasilia": "Brasília",
+        "rio-de-janeiro": "Rio de Janeiro",
+        "sao-paulo": "São Paulo"
+      },
+      "CA": {
+        "ottawa": "Ottawa",
+        "toronto": "Toronto",
+        "vancouver": "Vancouver"
+      },
+      "CH": {
+        "bern": "Berne",
+        "genf": "Genève"
+      },
+      "CN": {
+        "hongkong": "Hong Kong",
+        "peking": "Pékin",
+        "shanghai": "Shanghai"
+      },
+      "ES": {
+        "barcelona": "Barcelone",
+        "kanarische-inseln": "Îles Canaries",
+        "madrid": "Madrid",
+        "palma-de-mallorca": "Palma de Majorque"
+      },
+      "FR": {
+        "paris": "Paris et départements 77, 78, 91–95"
+      },
+      "GB": {
+        "london": "Londres"
+      },
+      "GR": {
+        "athen": "Athènes"
+      },
+      "IN": {
+        "bangalore": "Bengaluru",
+        "chennai": "Chennai",
+        "kalkutta": "Calcutta",
+        "mumbai": "Mumbai",
+        "neu-delhi": "New Delhi"
+      },
+      "IT": {
+        "mailand": "Milan",
+        "rom": "Rome"
+      },
+      "JP": {
+        "osaka": "Osaka",
+        "tokio": "Tokyo"
+      },
+      "PL": {
+        "breslau": "Wrocław",
+        "warschau": "Varsovie"
+      },
+      "RU": {
+        "moskau": "Moscou",
+        "st-petersburg": "Saint-Pétersbourg"
+      },
+      "SA": {
+        "djidda": "Djeddah",
+        "riad": "Riyad"
+      },
+      "TR": {
+        "ankara": "Ankara",
+        "izmir": "Izmir"
+      },
+      "US": {
+        "atlanta": "Atlanta",
+        "boston": "Boston",
+        "chicago": "Chicago",
+        "houston": "Houston",
+        "los-angeles": "Los Angeles",
+        "miami": "Miami",
+        "new-york-city": "New York",
+        "san-francisco": "San Francisco",
+        "washington-dc": "Washington, D.C."
+      },
+      "ZA": {
+        "johannesburg": "Johannesburg",
+        "kapstadt": "Le Cap"
+      }
+    },
+    "report": {
+      "actions": {
+        "newMileage": "Nouvelles indemnités kilométriques",
+        "newReceipt": "Nouveau reçu",
+        "newTrip": "Nouveau déplacement"
+      },
+      "approvedBy": "Approuvé par {name} le {date}.",
+      "awaitingReview": "En attente de révision.",
+      "awaitingReviewer": "En attente de révision par {name}.",
+      "backToApprovals": "Retour aux approbations",
+      "backToCurrent": "Retour à la note de frais actuelle",
+      "backToTravelExpenses": "Retour aux frais de déplacement",
+      "categories": {
+        "accommodation": "Hébergement",
+        "meals": "Repas",
+        "other": "Autre",
+        "parking": "Stationnement",
+        "transport": "Transport"
+      },
+      "conversion": {
+        "attachFirst": "Joignez d'abord le relevé de carte ou le reçu indiquant le débit ci-dessus.",
+        "authorizedBy": "Autorisé par",
+        "basis": {
+          "cardCharge": "Débit de carte",
+          "manualRate": "Taux autorisé",
+          "referenceRate": "Taux de référence de la BCE"
+        },
+        "chargedAmount": "Montant débité en {currency}",
+        "chargedAmountDescription": "Le montant figurant sur votre relevé bancaire ou de carte, y compris les éventuels frais de conversion associés.",
+        "conflict": "Cette dépense a été modifiée ailleurs. Vérifiez-la et enregistrez à nouveau le débit de carte.",
+        "errors": {
+          "chargedAmount": "Saisissez le montant positif débité en {currency}, avec au maximum {digits} décimales.",
+          "evidence": "Sélectionnez la pièce jointe de cette dépense qui indique le débit."
+        },
+        "evidence": "Justificatif :",
+        "evidenceLabel": "Pièce jointe indiquant le débit",
+        "evidenceMissing": "La pièce jointe indiquant le débit par carte est manquante.",
+        "formLabel": "Débit par carte",
+        "none": "Aucun taux de change n'est estimé. Saisissez le montant débité sur votre carte en {currency} et sélectionnez la pièce jointe qui l'indique, telle que le relevé de carte. Sans débit par carte, un administrateur des dépenses peut enregistrer un taux documenté.",
+        "notSaved": "Impossible d'enregistrer le débit par carte pour cette dépense.",
+        "publicationDate": "Publié le",
+        "publicationFallback": "Aucun taux n'a été publié le {expenseDate} ; la publication antérieure la plus récente s'applique donc.",
+        "rate": "Taux",
+        "rateDate": "Date du taux",
+        "rateEvidence": "Justificatif du taux",
+        "rateValue": "1 {base} = {value} {quote}",
+        "reason": "Documentation",
+        "reference": {
+          "alternatives": "Votre rapport reste à l'état de brouillon jusqu'à ce que vous saisissiez votre débit par carte en {reimbursementCurrency} avec la pièce jointe justificative, ou qu'un administrateur des dépenses enregistre un taux documenté.",
+          "currencyUnavailable": "La Banque centrale européenne ne publie aucun taux pour {currency} à cette date.",
+          "expenseDateMissing": "Saisissez la date de la dépense pour rechercher le taux de référence.",
+          "historyUnavailable": "Il n'y a aucun taux de référence pour cette date.",
+          "notYetPublished": "Le taux de référence pour cette date n'a pas encore été publié. Il est généralement disponible après 16 h 00 (heure de Francfort) les jours ouvrés.",
+          "pairUnsupported": "La Banque centrale européenne ne publie des taux que par rapport à l'euro ; aucun ne s'applique donc entre {currency} et {reimbursementCurrency}.",
+          "providerUnavailable": "Impossible de récupérer le taux de référence pour cette date pour le moment. Réessayez ultérieurement.",
+          "rateStale": "Aucun taux de référence actuel n'est disponible pour cette date."
+        },
+        "referencePending": "Le taux de référence sera à nouveau recherché pour la nouvelle date une fois votre modification enregistrée.",
+        "remove": "Supprimer le débit par carte",
+        "removeFailed": "Impossible de supprimer le débit par carte. Rechargez la dépense et réessayez.",
+        "replaceWithCardCharge": "Utiliser plutôt le débit de ma carte",
+        "result": "{original} compte comme {reimbursement}",
+        "rounding": "Arrondi",
+        "roundingValue": "Arrondi au demi supérieur à {digits} décimales",
+        "saveCardCharge": "Enregistrer le débit de la carte",
+        "saved": "Débit de la carte enregistré",
+        "saveFailed": "Le débit de la carte n'a pas pu être enregistré. Veuillez réessayer.",
+        "source": "Source",
+        "sourceEcb": "Taux de référence en euros de la Banque centrale européenne, approuvé par votre organisation",
+        "title": "Conversion en {currency}"
+      },
+      "correctAndResubmit": "Corrigez la note de frais et soumettez-la de nouveau. Les soumissions précédentes restent dans son historique.",
+      "countryEmpty": "Aucun pays trouvé",
+      "countrySearch": "Rechercher des pays",
+      "cycles": {
+        "approved": "approuvé",
+        "entry": "Soumission {number} le {date} : {outcome}",
+        "pending": "en attente d'examen",
+        "rejected": "rejeté",
+        "reopened": "approuvé, puis rouvert pour correction",
+        "returned": "renvoyé pour modifications",
+        "title": "Soumissions",
+        "withdrawn": "retiré"
+      },
+      "decideInInbox": "Approuvez, renvoyez ou rejetez toute la note de frais dans la boîte de réception des approbations.",
+      "delete": {
+        "action": "Supprimer le brouillon",
+        "description": "Le brouillon, ses dépenses et leurs reçus sont supprimés. Cette action est irréversible.",
+        "descriptionLegacy": "Le brouillon, ses dépenses et leurs reçus sont supprimés, ainsi que le précédent brouillon de demande qu'il prolonge. Cette action est irréversible.",
+        "done": "Brouillon supprimé.",
+        "failed": "Impossible de supprimer le brouillon. Veuillez réessayer.",
+        "notDeletable": "Ce rapport a déjà été soumis, il ne peut donc plus être supprimé.",
+        "title": "Supprimer ce brouillon ?"
+      },
+      "drafts": {
+        "expenses": "{count, plural, one {# dépense} other {# dépenses}}",
+        "noDate": "Aucune date pour le moment",
+        "noTravelDates": "Aucune date de voyage pour le moment",
+        "receipts": "{count, plural, one {# reçu} other {# reçus}}",
+        "untitled": "Reçu sans titre",
+        "untitledTrip": "Voyage sans titre"
+      },
+      "earlierSubmission": "Il s'agit d'une version antérieure du rapport, conservée exactement telle qu'elle a été soumise.",
+      "errors": {
+        "amount": "Saisissez un montant positif comportant au maximum deux décimales, par ex. 12,50.",
+        "category": "Choisissez une catégorie dans la liste.",
+        "create": "Impossible de créer la dépense. Veuillez réessayer.",
+        "currency": "Saisissez un code de devise à trois lettres, par ex. EUR.",
+        "expenseDate": "Saisissez une date valide.",
+        "load": "Impossible de charger cette dépense. Veuillez réessayer.",
+        "loadSubmission": "Impossible de charger le rapport soumis. Veuillez réessayer.",
+        "paidBy": "Choisissez qui a payé.",
+        "tooLong": "Ce texte est trop long."
+      },
+      "fields": {
+        "accountingReference": "Référence comptable (facultatif)",
+        "accountingReferenceDescription": "Une référence demandée par le service financier, comme un numéro de commande.",
+        "amount": "Montant sur le reçu",
+        "category": "Catégorie",
+        "categoryPlaceholder": "Choisir une catégorie",
+        "description": "Description",
+        "descriptionPlaceholder": "par ex. Billet de train Berlin–Hambourg pour l'atelier client",
+        "expenseDate": "Date du reçu",
+        "paidBy": "Qui a payé ?"
+      },
+      "frozenNotice": "Le rapport soumis ne peut plus être modifié.",
+      "history": {
+        "approvalRecorded": "Approbation enregistrée par {name} ; en attente d'une approbation supplémentaire",
+        "approved": "Approuvé par {name}",
+        "cycle": "Soumission {number} :",
+        "rejected": "Rejeté par {name}",
+        "reopened": "Rouvert pour correction par {name}",
+        "returned": "Renvoyé pour modifications par {name}",
+        "selfApproved": "Approuvé automatiquement : aucun autre vérificateur",
+        "submitted": "Soumis par {name}",
+        "title": "Historique",
+        "withdrawn": "Retiré par {name}"
+      },
+      "items": {
+        "add": "Ajouter un justificatif de dépense",
+        "addFailed": "Impossible d'ajouter la dépense. Veuillez réessayer.",
+        "empty": "Ajoutez chaque reçu de ce voyage en tant que dépense distincte. Les détails du voyage ci-dessus s'appliquent à chacun d'entre eux.",
+        "numbered": "{type} {number}",
+        "remove": "Supprimer",
+        "removeConfirm": "Supprimer la dépense",
+        "removeConflict": "Cette dépense a été modifiée ailleurs et n'a pas été supprimée. Vérifiez-la et réessayez.",
+        "removed": "{type} (supprimé)",
+        "removeDescription": "La dépense et ses reçus joints sont supprimés de ce voyage. Cette action est irréversible.",
+        "removeFailed": "Impossible de supprimer la dépense. Veuillez réessayer.",
+        "removeItem": "Supprimer {item}",
+        "removeTitle": "Supprimer cette dépense ?",
+        "title": "Dépenses"
+      },
+      "kind": {
+        "standaloneMileage": "Frais kilométriques autonomes",
+        "trip": "Rapport de déplacement"
+      },
+      "loading": "Chargement de la dépense…",
+      "mileage": {
+        "add": "Ajouter des indemnités kilométriques",
+        "appliedPolicy": "Tarif valide à partir du {date} · {source}",
+        "calculation": "{distance} km × {rate} par km = {amount}",
+        "calculationTitle": "Indemnités kilométriques calculées",
+        "enterFacts": "Saisissez la date, les kilomètres et le véhicule pour voir le montant.",
+        "errors": {
+          "distance": "Saisissez les kilomètres parcourus sous forme de nombre positif avec au maximum deux décimales, par ex. 61,5.",
+          "vehicle": "Choisissez le véhicule que vous avez conduit."
+        },
+        "fields": {
+          "date": "Date du trajet",
+          "distance": "Kilomètres parcourus",
+          "route": "Itinéraire",
+          "routePlaceholder": "ex. Bureau Berlin – client Potsdam – retour",
+          "vehicle": "Véhicule",
+          "vehicleDescription": "Votre propre véhicule. Les voitures de société et les transports en commun ne relèvent pas des indemnités kilométriques ; ajoutez plutôt leurs reçus."
+        },
+        "noRate": "Aucun taux n'est inventé : cette dépense reste à l'état de brouillon jusqu'à ce qu'un administrateur des dépenses ajoute un barème kilométrique couvrant sa date.",
+        "noRateTitle": "Aucun barème kilométrique applicable",
+        "otherCurrency": "Le barème pour cette date n'est pas en {currency} ; les indemnités kilométriques ne sont jamais converties.",
+        "pending": "Calculé selon le barème de votre organisation une fois vos modifications enregistrées.",
+        "requirements": {
+          "currency": "Le barème kilométrique pour cette date est en {policyCurrency}, mais cette note de frais est remboursée en {currency}. Demandez à un administrateur des dépenses d'ajouter un barème en {currency}.",
+          "date": "Saisissez la date du trajet.",
+          "distance": "Saisissez les kilomètres parcourus.",
+          "policyMissing": "Votre organisation n'a aucun barème kilométrique pour {vehicle} le {date}. Demandez à un administrateur des dépenses d'ajouter un barème daté dans les paramètres des frais de déplacement. Rien ne sera calculé d'ici là.",
+          "route": "Décrivez l'itinéraire.",
+          "vehicle": "Choisissez le véhicule."
+        },
+        "rounded": "(exactement {exact}, arrondi au centime)",
+        "sourceOrganization": "Politique de l'organisation : {reference}",
+        "sourceOrganizationUnnamed": "Politique de l'organisation",
+        "sourceStatutory": "Forfait légal allemand ({version})",
+        "standaloneTitle": "Indemnités kilométriques",
+        "vehicles": {
+          "car": "Voiture",
+          "otherMotorVehicle": "Autre véhicule à moteur (ex. moto)"
+        }
+      },
+      "paidBy": {
+        "company": "Payé par l'entreprise (ex. carte d'entreprise)",
+        "employee": "Payé par moi-même (à me rembourser)"
+      },
+      "perDiem": {
+        "absenceDuration": "{hours}:{minutes} h d'absence",
+        "add": "Ajouter une indemnité journalière",
+        "appliedPolicy": "Taux valables à partir du {date} · {source}",
+        "basis": {
+          "absence24h": "Journée complète d'absence (24 heures)",
+          "claimedInOtherReport": "Déjà payé dans une autre de vos notes de frais : une seule indemnité par jour",
+          "over8h": "Plus de 8 heures d'absence",
+          "overnightMajority": "Majeure partie de l'absence avec nuitée",
+          "overnightMinority": "Comptabilisé sur l'autre jour de l'absence avec nuitée",
+          "travelDay": "Jour de déplacement d'un voyage avec nuitée",
+          "upTo8h": "8 heures d'absence ou moins : aucune indemnité"
+        },
+        "breakdownCaption": "Indemnité journalière par jour calendaire",
+        "calculationTitle": "Indemnité journalière calculée",
+        "columns": {
+          "amount": "Montant",
+          "day": "Jour",
+          "eligibility": "Éligibilité",
+          "meals": "Repas fournis",
+          "rate": "Indemnité"
+        },
+        "deductionNote": "Les repas fournis réduisent l'indemnité journalière, sans jamais descendre sous zéro ; ce que vous avez payé pour un repas réduit sa déduction.",
+        "departure": "Départ",
+        "enterFacts": "Saisissez votre départ, votre retour et vos repas pour voir les indemnités journalières.",
+        "errors": {
+          "clockChange": "Cette heure n'existe pas ce jour-là car les horloges sont avancées. Saisissez une heure en dehors de l'heure sautée.",
+          "clockChangeRepeated": "Cette heure se produit deux fois ce jour-là car les horloges sont reculées. Saisissez une heure en dehors de l'heure répétée.",
+          "endBeforeStart": "Votre retour doit être postérieur à votre départ.",
+          "location": "Choisissez un lieu de la liste pour chaque jour.",
+          "meals": "Vérifiez les repas saisis.",
+          "payment": "Saisissez ce que vous avez payé sous forme de montant comportant au maximum deux décimales, par ex. 2,50.",
+          "time": "Saisissez une heure au format heures et minutes."
+        },
+        "exceptionalTitle": "Nécessite un calcul manuel",
+        "exceptions": {
+          "destinationNotListed": "Un lieu journalier n'est pas couvert par le barème officiel pour l'étranger ou par ses règles de substitution.",
+          "foreignTimeZone": "Les heures de voyage ne sont pas à l'heure locale allemande.",
+          "foreignWithoutOvernight": "Une activité de nuit à l'étranger sans nuitée n'est pas calculée automatiquement.",
+          "international": "Une destination se trouve hors d'Allemagne. Les indemnités journalières internationales ne sont pas encore calculées.",
+          "majorityTie": "L'absence de nuit est répartie de manière égale entre les deux jours.",
+          "mixedTimeZones": "Le départ et le retour se trouvent dans des fuseaux horaires différents.",
+          "multiDayWithoutOvernight": "Le voyage s'étend sur plus de deux jours civils sans nuitée.",
+          "nightsAtHome": "Vous avez passé certaines nuits à votre domicile pendant le voyage.",
+          "overlappingDays": "Une autre de vos notes de frais verse déjà des indemnités journalières pour certains de ces jours ; une seule indemnité par jour étant autorisée, excluez-les du calcul manuel.",
+          "prolongedWorkplace": "Activité prolongée sur le même lieu de travail : les indemnités journalières sont limitées aux trois premiers mois.",
+          "rulesNotVerified": "Aucune règle allemande vérifiée ne couvre encore ces dates de voyage.",
+          "specialLocation": "Un jour a été marqué comme situation particulière (autre, ou journée entière en vol ou en mer lors du premier ou dernier jour de voyage)."
+        },
+        "fields": {
+          "endDate": "Jour de votre retour",
+          "endTime": "Heure de retour à domicile ou au travail",
+          "meals": "Repas fournis par votre employeur",
+          "mealsDescription": "Cochez chaque repas fourni par votre employeur, ou par un hôtel ou un hôte pour son compte, même si vous ne l'avez pas pris. Indiquez ce que vous avez payé, le cas échéant.",
+          "mealsNeedDates": "Saisissez les dates de départ et de retour pour afficher la liste des jours de voyage.",
+          "overnight": "Nuits pendant le voyage",
+          "payment": "Ce que vous avez payé pour {meal} le {date}",
+          "paymentPlaceholder": "Vous avez payé (facultatif)",
+          "prolongedWorkplace": "Je travaille à ce même endroit depuis plus de trois mois",
+          "prolongedWorkplaceDescription": "Les indemnités journalières ne s'appliquent qu'aux trois premiers mois sur un même lieu de travail ; ces voyages nécessitent un calcul manuel.",
+          "startDate": "Jour de départ",
+          "startTime": "Heure de départ du domicile ou du travail",
+          "timeZone": "Fuseau horaire"
+        },
+        "foreignRates": "Barèmes pour l'étranger : {reference} ({version})",
+        "location": {
+          "activityToday": "Où a eu lieu votre dernière activité professionnelle à l'étranger ce jour-là ?",
+          "assigned": "Montants fixés par l'avis officiel pour ce pays",
+          "atSea": "À bord d'un navire toute la journée (sans embarquement ni débarquement)",
+          "choose": "Sélectionnez un lieu",
+          "countryElsewhere": "{country} – ailleurs",
+          "countryPlace": "{country} – {place}",
+          "elsewhere": "Autre lieu",
+          "fallbackFlight": "Règle officielle : journée entière en vol, montants autrichiens",
+          "fallbackLuxembourg": "Règle subsidiaire officielle : non répertorié, montants luxembourgeois",
+          "fallbackMotherCountry": "Règle subsidiaire officielle : territoire, montants de la métropole",
+          "fallbackShip": "Règle officielle : journée entière en mer, montants luxembourgeois",
+          "germany": "Allemagne",
+          "inFlight": "En vol toute la journée (entre le jour de décollage et le jour d'atterrissage)",
+          "lastActivityTrip": "Où a eu lieu votre dernière activité professionnelle à l'étranger lors de ce voyage ?",
+          "night": "Où étiez-vous à minuit ? (le dernier lieu atteint avant 24:00, heure locale ; un pays est considéré comme atteint à l'atterrissage de l'avion)",
+          "noActivityAbroad": "Aucune activité professionnelle à l'étranger",
+          "other": "Autre cas (nécessite un calcul manuel)",
+          "place": "Lieu situé en/au {country}"
+        },
+        "meal": "{meal} : −{deduction}",
+        "mealPaid": "{meal} : −{deduction} (vous avez payé {payment})",
+        "meals": {
+          "breakfast": "Petit-déjeuner",
+          "dinner": "Dîner",
+          "lunch": "Déjeuner"
+        },
+        "mealsCountToward": "Déduit le {date}",
+        "noRate": "Aucun barème n'est inventé : cette dépense reste à l'état de brouillon jusqu'à ce qu'un administrateur des notes de frais ajoute des indemnités journalières couvrant ces jours.",
+        "noRateTitle": "Aucun barème d'indemnité journalière ne s'applique",
+        "otherCurrency": "Les taux pour ces jours ne sont pas en {currency} ; les indemnités journalières ne sont jamais converties.",
+        "overnight": {
+          "away": "J'ai passé chaque nuit hors de mon domicile",
+          "mixed": "J'ai passé certaines nuits à mon domicile",
+          "none": "J'ai travaillé toute la nuit sans nuitée"
+        },
+        "pending": "Calculé selon les barèmes datés de votre organisation une fois vos modifications enregistrées.",
+        "requirements": {
+          "currency": "Les barèmes d'indemnités journalières pour ces jours sont en {policyCurrency}, mais cette note de frais est remboursée en {currency}. Demandez à un administrateur des notes de frais d'ajouter des barèmes en {currency}.",
+          "end": "Indiquez quand vous êtes rentré à votre domicile ou sur votre lieu de travail.",
+          "exceptional": "Cet itinéraire nécessite un calcul manuel des indemnités journalières par un administrateur des notes de frais. Il n'est pas calculé automatiquement.",
+          "locations": "Indiquez pour chaque jour de voyage où vous vous trouviez à minuit et où s'est déroulée votre dernière activité professionnelle à l'étranger.",
+          "meals": "Confirmez les repas fournis pour chaque jour de voyage.",
+          "notReturned": "Vous rentrez le {date} à {time} ({timeZone}). Vous pouvez soumettre après cela.",
+          "overnight": "Indiquez si vous avez passé la nuit hors de votre domicile.",
+          "policyMissing": "Votre organisation ne dispose d'aucun barème d'indemnité journalière pour {dates}. Demandez à un administrateur des notes de frais d'ajouter des barèmes datés dans les paramètres des frais de déplacement. Rien ne sera calculé d'ici là.",
+          "start": "Indiquez quand vous avez quitté votre domicile ou votre lieu de travail.",
+          "tripDates": "Vos jours de départ et de retour doivent être le premier et le dernier jour de voyage."
+        },
+        "return": "Retour",
+        "rulesApplied": "Règles : {reference} ({version})",
+        "title": "Indemnités journalières",
+        "total": "Indemnités journalières"
+      },
+      "project": {
+        "exceptionBadge": "Exception d'attribution",
+        "exceptionDates": "Couvre",
+        "exceptionEvidence": "Justificatif",
+        "exceptionReason": "Motif",
+        "fromTrip": "(projet du voyage)",
+        "inheritNamed": "Identique au voyage ({name})",
+        "inheritNone": "Identique au voyage (aucun projet)",
+        "label": "Projet (facultatif)",
+        "loadFailed": "Impossible de charger les projets.",
+        "needsExpenseDate": "Saisissez la date de la dépense pour voir les projets disponibles ce jour-là.",
+        "needsTripDates": "Saisissez les dates du voyage pour voir les projets utilisables pour ce voyage.",
+        "none": "Aucun projet",
+        "noneEligible": "Vous n'étiez affecté(e) à aucun projet à cette date. Si vous avez travaillé sur un projet ce jour-là, un administrateur des notes de frais peut autoriser une exception d'attribution.",
+        "notEligible": "{name} ne peut pas être utilisé à cette date : vous n'y étiez pas affecté(e) à ce moment-là. Choisissez un autre projet ou demandez une exception d'attribution à un administrateur des notes de frais.",
+        "refused": {
+          "conflict": "Cette dépense a été modifiée ailleurs. Résolvez le conflit d'enregistrement ci-dessus, puis sélectionnez à nouveau le projet.",
+          "dateRequired": "Saisissez d'abord la date : les projets proposés dépendent de la date de la dépense.",
+          "failed": "Impossible d'enregistrer le projet. Veuillez réessayer.",
+          "ineligible": "Vous n'étiez pas affecté(e) à ce projet à cette date. Demandez une exception d'attribution à un administrateur des notes de frais si vous y avez travaillé.",
+          "notFound": "Ce projet n'est pas disponible."
+        },
+        "saving": "Enregistrement du projet…",
+        "tripDescription": "Les dépenses utilisent le projet du voyage, sauf si vous en choisissez un autre pour celles-ci. Chaque dépense doit être couverte par votre affectation de projet à sa propre date.",
+        "tripLabel": "Projet du voyage (facultatif)",
+        "unavailableOption": "{name} (non disponible à cette date)",
+        "unavailableTripOption": "{name} (non disponible à ces dates)",
+        "viaException": "exception autorisée"
+      },
+      "receiptException": {
+        "badge": "Reçu manquant — exception",
+        "disabled": "Votre organisation n'autorise plus les exceptions pour reçu manquant. Joignez le reçu ou supprimez votre explication.",
+        "notAllowed": "Votre organisation n'autorise pas les exceptions pour reçu manquant.",
+        "reason": "Pourquoi le reçu est-il manquant ?",
+        "reasonDescription": "Votre vérificateur voit cette explication et doit l'accepter pour approuver le rapport.",
+        "reasonLabel": "Pourquoi il est manquant :",
+        "reasonRequired": "Expliquez pourquoi le reçu est manquant.",
+        "receiptAttached": "Un reçu est joint, votre explication pour reçu manquant n'est donc pas envoyée.",
+        "request": "Je ne peux pas fournir le reçu et je demande une dérogation",
+        "title": "Pas de reçu ?",
+        "unsavedAfterClose": "Votre explication pour reçu manquant n'a pas pu être enregistrée. Ouvrez à nouveau la dépense pour la vérifier.",
+        "withdraw": "Supprimer l'explication"
+      },
+      "receipts": {
+        "chooseFile": "Choisir un fichier",
+        "description": "Prenez une photo ou joignez un PDF ou une image du reçu.",
+        "downloadNamed": "Télécharger {fileName}",
+        "errors": {
+          "locked": "Cette dépense ne peut plus être modifiée.",
+          "retry": "Veuillez réessayer.",
+          "tooLarge": "Le fichier est trop volumineux. Joignez un fichier de {size} Mo maximum.",
+          "unsupportedType": "Joignez un PDF ou une image (JPEG, PNG, WebP, GIF, BMP ou TIFF)."
+        },
+        "none": "Aucun reçu joint pour le moment.",
+        "previewNamed": "Aperçu de {fileName}",
+        "progress": "Progression du téléversement",
+        "remove": "Supprimer",
+        "removeFailed": "Impossible de supprimer le reçu.",
+        "removeNamed": "Supprimer {fileName}",
+        "takePhoto": "Prendre une photo",
+        "title": "Reçu",
+        "uploadFailed": "Le reçu n'a pas été joint.",
+        "uploading": "Téléversement du reçu…",
+        "verifying": "Vérification du reçu…"
+      },
+      "rejectedBy": "Rejeté par {name}",
+      "reopen": {
+        "action": "Rouvrir pour correction",
+        "changed": "Le rapport a été modifié entre-temps et n'a pas été rouvert. Veuillez le vérifier à nouveau.",
+        "confirm": "Rouvrir la note de frais",
+        "description": "L'employé peut corriger la note de frais et doit la soumettre à nouveau pour une nouvelle approbation. D'ici là, elle ne peut être ni payée ni exportée. La soumission approuvée est conservée dans son historique.",
+        "done": "Note de frais rouverte pour correction",
+        "exported": "Cette note de frais a déjà été exportée en comptabilité et ne peut donc plus être rouverte. Les corrections nécessitent un ajustement lié.",
+        "failed": "La note de frais n'a pas pu être rouverte. Elle a peut-être été modifiée, ou vous n'y avez plus accès. Rechargez-la et réessayez.",
+        "reason": "Motif pour l'employé",
+        "reasonRequired": "Indiquez à l'employé ce qu'il doit corriger.",
+        "reasonTooLong": "Le motif doit comporter moins de {max} caractères.",
+        "reimbursed": "Un remboursement a déjà été enregistré pour cette note de frais, elle ne peut donc plus être rouverte. Les corrections nécessitent un ajustement lié.",
+        "reopenedBy": "Rouverte pour correction par {name} le {date}",
+        "title": "Rouvrir cette note de frais approuvée ?"
+      },
+      "requirements": {
+        "amount": "Saisissez le montant du reçu.",
+        "category": "Choisissez une catégorie.",
+        "complete": "Toutes les informations pour cette dépense ont été saisies.",
+        "conversionEvidence": "Sélectionnez la pièce jointe montrant le débit sur la carte.",
+        "conversionMissing": "Convertissez ce reçu en {currency} : saisissez le débit de votre carte avec la pièce jointe qui l'indique, ou demandez un taux documenté à un administrateur des notes de frais.",
+        "conversionRateDate": "La date du taux autorisé ne correspond plus à la date de la dépense. Saisissez le débit de votre carte ou demandez à un administrateur des notes de frais de documenter un taux pour la nouvelle date.",
+        "conversionUnsupported": "Cette conversion ne peut pas être utilisée pour {currency}. Demandez à un administrateur des notes de frais de la vérifier.",
+        "description": "Décrivez la dépense.",
+        "expenseDate": "Ajoutez la date figurant sur le reçu.",
+        "fixFields": "Corrigez d'abord les champs mis en surbrillance.",
+        "futureDate": "Cette date est dans le futur. Corrigez-la ou soumettez à partir du {date}.",
+        "paidBy": "Indiquez si c'est vous ou l'entreprise qui avez payé.",
+        "receipt": "Joignez le reçu.",
+        "receiptExceptionNotAllowed": "Joignez le reçu. Votre organisation n'autorise pas les dérogations pour reçu manquant.",
+        "receiptExceptionReason": "Expliquez pourquoi le reçu est manquant.",
+        "title": "Éléments requis"
+      },
+      "returnedBy": "Renvoyé pour modifications par {name} le {date}",
+      "returnedItemNamed": "{item} ({description}) :",
+      "returnedRemovedItem": "{item}, {description} :",
+      "save": {
+        "conflictDescription": "Elle a été enregistrée dans une autre fenêtre ou sur un autre appareil après son ouverture. Vos dernières modifications ne sont pas encore enregistrées.",
+        "conflictTitle": "Cette dépense a été modifiée ailleurs",
+        "failedDescription": "Vos modifications sont conservées sur cette page. Vérifiez votre connexion et réessayez.",
+        "failedTitle": "Vos modifications n'ont pas pu être enregistrées",
+        "invalid": "Corrigez les champs en surbrillance pour les enregistrer",
+        "keepMine": "Enregistrer plutôt mes modifications",
+        "pending": "Modifications non enregistrées",
+        "retry": "Réessayer",
+        "saved": "Toutes les modifications ont été enregistrées",
+        "saving": "Enregistrement en cours…",
+        "unsavedAfterClose": "Vos dernières modifications apportées à une dépense n'ont pas pu être enregistrées. Rouvrez-la pour vérifier.",
+        "useTheirs": "Charger la version enregistrée"
+      },
+      "selfApprovedOn": "Approuvé automatiquement le {date} : il s'agit de la note de frais du propriétaire de l'organisation et personne d'autre ne pouvait la vérifier.",
+      "standaloneTitle": "Reçu indépendant",
+      "status": {
+        "approved": "Approuvé",
+        "rejected": "Rejeté",
+        "returned": "Renvoyé pour modifications",
+        "submitted": "En attente de vérification"
+      },
+      "submissionNumberAt": "Soumission {number}, soumise le {date}",
+      "submit": {
+        "adjustment": "La note de frais que cet ajustement corrige n'est plus approuvée dans cette devise, aucun écart signé ne peut donc être calculé. Votre ajustement reste enregistré en tant que brouillon.",
+        "adjustmentSuperseded": "Un autre ajustement de la même note de frais a été approuvé après que vous avez commencé celui-ci, et cette copie n'inclut pas cette correction. Démarrez un nouvel ajustement à partir de la note de frais d'origine afin de conserver les deux corrections.",
+        "adjustmentTitle": "Cet ajustement ne peut pas être soumis",
+        "blockedIncomplete": "Complétez tout ce qui figure sous « Éléments requis » avant de soumettre.",
+        "blockedUnsaved": "Attendez que toutes les modifications soient enregistrées ou corrigez les champs mis en surbrillance avant de soumettre.",
+        "cancel": "Continuer à modifier",
+        "changed": "La note de frais a été modifiée après votre vérification. Fermez cette boîte de dialogue, vérifiez vos saisies et examinez-la à nouveau.",
+        "changedTitle": "La note de frais a été modifiée",
+        "confirm": "Soumettre pour approbation",
+        "description": "Vérifiez la note de frais enregistrée. Votre approbateur se prononcera précisément sur cette version ; elle ne peut pas être modifiée pendant son examen.",
+        "failed": "Une erreur s'est produite. Votre note de frais est toujours enregistrée en tant que brouillon ; veuillez réessayer.",
+        "failedTitle": "La note de frais n'a pas été soumise",
+        "incomplete": "Certaines informations enregistrées sont encore manquantes. Complétez tous les éléments sous « Toujours requis » et réessayez.",
+        "incompleteTitle": "La note de frais est incomplète",
+        "itemRequirement": "{item} : {requirement}",
+        "noReviewerAsk": "Vous n'avez pas d'autre responsable ou responsable d'équipe que vous-même, et aucun approbateur de dépenses n'est configuré. Demandez à un administrateur de choisir un approbateur de dépenses sous Paramètres, Frais de déplacement, Vérification des notes de frais. Votre note de frais reste enregistrée comme brouillon.",
+        "noReviewerAssign": "Vous n'avez pas d'autre responsable ou responsable d'équipe que vous-même, et aucun approbateur de dépenses n'est configuré. Choisissez un approbateur de dépenses sous Vérification des notes de frais dans les paramètres des frais de déplacement. Votre note de frais reste enregistrée comme brouillon.",
+        "noReviewerTitle": "Personne ne peut encore examiner cette note de frais",
+        "notSaved": "Certaines modifications ne sont pas encore enregistrées. Attendez qu'elles soient enregistrées, puis vérifiez à nouveau la note de frais.",
+        "openApproverSetting": "Ouvrir le paramètre d'approbateur de dépenses",
+        "project": "{count, plural, one {Une dépense est attribuée à un projet auquel vous n'étiez pas affecté à la date de la dépense. Choisissez un autre projet ou demandez une exception d'attribution à un administrateur des dépenses. Votre note de frais reste enregistrée en tant que brouillon.} other {# dépenses sont attribuées à un projet auquel vous n'étiez pas affecté à la date de la dépense. Choisissez un autre projet ou demandez une exception d'attribution à un administrateur des dépenses. Votre note de frais reste enregistrée en tant que brouillon.}}",
+        "projectTitle": "Un projet ne peut pas être utilisé",
+        "ready": "Vos saisies sont enregistrées. Vérifiez la note de frais et envoyez-la pour approbation.",
+        "requesterInactive": "Votre profil d'employé n'est pas actif dans cette organisation, la note de frais ne peut donc pas être transmise pour approbation.",
+        "review": "Vérifier et soumettre",
+        "routing": "Les règles d'approbation de votre organisation n'ont pas pu trouver d'approbateur. Demandez à un administrateur de les vérifier. Votre note de frais reste enregistrée en tant que brouillon.",
+        "routingTitle": "La note de frais n'a pas pu être transmise",
+        "selfApproval": "Les règles d'approbation de votre organisation vous permettraient d'approuver votre propre note de frais. Demandez à un administrateur de les ajuster. Votre note de frais reste enregistrée en tant que brouillon.",
+        "selfApprovalBlocked": "En tant que propriétaire de l'organisation, vos notes de frais sont approuvées automatiquement tant que personne d'autre ne peut les vérifier. Cette note de frais comporte une justification de reçu manquant ou une indemnité définie manuellement, qui doit être acceptée par quelqu'un d'autre. Choisissez un approbateur de dépenses ou modifiez la note de frais. Votre note de frais reste enregistrée comme brouillon.",
+        "selfApproved": "Note de frais approuvée automatiquement : personne d'autre ne peut la vérifier",
+        "success": "Note de frais soumise pour approbation",
+        "thresholdCurrency": "Les règles d'approbation de votre organisation comparent les montants en EUR, mais cette note de frais est en {currency}. Demandez à un administrateur de les vérifier. Votre note de frais reste enregistrée en tant que brouillon.",
+        "title": "Soumettre la note de frais",
+        "unavailable": "Votre organisation modifie actuellement le fonctionnement de l'approbation des dépenses ; les notes de frais ne peuvent donc pas être soumises pour le moment. Votre note de frais reste enregistrée en tant que brouillon.",
+        "unavailableTitle": "La soumission est suspendue"
+      },
+      "submittedAt": "Soumis le {date}",
+      "summary": {
+        "itemPrefix": "{item} :",
+        "paidByCompany": "Payé par l'entreprise",
+        "paidByEmployee": "Payé par vous"
+      },
+      "totals": {
+        "companyPaid": "Payé par l'entreprise",
+        "excluded": "{count, plural, one {# dépense n'est pas encore prise en compte. Les totaux incluent les dépenses en {currency} dont le montant et le payeur sont renseignés.} other {# dépenses ne sont pas encore prises en compte. Les totaux incluent les dépenses en {currency} dont le montant et le payeur sont renseignés.}}",
+        "reimbursable": "Remboursé à vous",
+        "title": "Totaux"
+      },
+      "trip": {
+        "dates": "Dates de voyage",
+        "datesZone": "(jours calendaires en {timeZone})",
+        "destinations": "Destinations",
+        "errors": {
+          "destination": "Choisissez un pays dans la liste.",
+          "endBeforeStart": "Le dernier jour du voyage ne peut pas être antérieur au premier.",
+          "timeZone": "Choisissez un fuseau horaire dans la liste.",
+          "tooManyDestinations": "Saisissez au maximum {max} destinations."
+        },
+        "fields": {
+          "addDestination": "Ajouter une destination",
+          "country": "Pays {number}",
+          "countryPlaceholder": "Pays",
+          "destinations": "Destinations",
+          "endDate": "Dernier jour du voyage",
+          "noDestinations": "Ajoutez les lieux où vous vous rendez.",
+          "place": "Lieu {number}",
+          "placePlaceholder": "Ville ou lieu",
+          "purpose": "Motif du déplacement",
+          "purposePlaceholder": "Par ex. atelier client à Hambourg",
+          "removeDestination": "Supprimer la destination {number}",
+          "startDate": "Premier jour de déplacement",
+          "timeZone": "Fuseau horaire des dates de déplacement",
+          "timeZoneDescription": "Les dates de déplacement correspondent aux jours civils dans le fuseau {timeZone}. Les approbateurs voient les mêmes dates, où qu'ils se trouvent."
+        },
+        "purpose": "Motif du déplacement",
+        "requirements": {
+          "complete": "Toutes les informations pour ce déplacement ont été saisies.",
+          "destination": "Ajoutez au moins une destination.",
+          "expenseItem": "Ajoutez une dépense.",
+          "fixFields": "Corrigez les détails du déplacement mis en évidence.",
+          "itemNamed": "{item} : {description}",
+          "notEnded": "Le déplacement se termine le {date}. Vous pouvez soumettre à partir de ce jour.",
+          "purpose": "Décrivez le motif du déplacement.",
+          "title": "Encore requis pour ce déplacement",
+          "travelDates": "Indiquez le premier et le dernier jour de déplacement."
+        },
+        "title": "Détails du déplacement",
+        "unsavedAfterClose": "Vos dernières modifications apportées aux détails du déplacement n'ont pas pu être enregistrées. Ouvrez à nouveau le déplacement pour les vérifier."
+      },
+      "withdraw": {
+        "action": "Retirer le rapport",
+        "confirm": "Retirer",
+        "description": "La révision s'arrête et le rapport redevient un brouillon modifiable. Cette soumission reste dans l'historique du rapport.",
+        "done": "Rapport retiré. Vous pouvez à nouveau le modifier.",
+        "failed": "Le rapport n'a pas pu être retiré. Veuillez réessayer.",
+        "notPending": "Cette soumission a déjà fait l'objet d'une décision ou a été renvoyée, elle ne peut donc plus être retirée.",
+        "title": "Retirer ce rapport ?"
+      },
+      "withdrawnNotice": "Vous avez retiré la soumission {number}. Soumettez à nouveau le rapport lorsqu'il sera prêt.",
+      "withdrawnSubmission": "Cette soumission a été retirée avant qu'une décision ne soit prise."
+    },
+    "settings": {
+      "catalogAdopted": "Adopté le {date}, valable à compter du {effectiveFrom}",
+      "perDiem": {
+        "adoptForeignTitle": "Adopter les indemnités journalières légales allemandes avec les barèmes officiels pour l'étranger",
+        "foreignAreas": "Taux à l'étranger : {countries} pays et {places} villes"
+      },
+      "tabs": {
+        "currencies": "Devises",
+        "exceptions": "Exceptions",
+        "exceptionsPending": "{label}, {count} en attente",
+        "rates": "Taux",
+        "review": "Examiner"
+      }
+    },
+    "settlement": {
+      "adjustment": "Ajustement approuvé inclus",
+      "balance": {
+        "outstanding": "{amount} restant dû",
+        "overpaid": "{amount} trop-perçu",
+        "settled": "Réglé"
+      },
+      "companyPaid": "Les frais de {amount} payés par l'entreprise ne sont pas dus à l'employé.",
+      "entitlement": "Montant approuvé payé par l'employé",
+      "entry": {
+        "recordedBy": "Enregistré par {name}, {date}",
+        "recovery": "{amount} récupéré",
+        "reimbursement": "{amount} payé"
+      },
+      "errors": {
+        "amountInvalid": "Saisissez un montant positif.",
+        "amountPrecision": "Cette devise ne comporte pas autant de décimales.",
+        "amountRequired": "Saisissez le montant payé.",
+        "conflict": "Une tentative antérieure avec d'autres valeurs a déjà été enregistrée. Vérifiez l'historique avant de procéder à un nouvel enregistrement.",
+        "dateFuture": "Un paiement ne peut pas être daté dans le futur.",
+        "dateInvalid": "Saisissez une date valide.",
+        "dateRequired": "Saisissez la date du paiement.",
+        "exceedsOutstanding": "Le montant est supérieur au montant restant dû.",
+        "exceedsOverpayment": "Le montant est supérieur au trop-perçu.",
+        "failed": "Impossible d'enregistrer le paiement. Veuillez réessayer.",
+        "load": "Impossible de charger le solde du remboursement. Veuillez réessayer.",
+        "noOverpayment": "Il n'y a aucun trop-perçu pour cette dépense.",
+        "notApproved": "Cette dépense n'est plus approuvée, aucun paiement ne peut donc être enregistré.",
+        "nothingOutstanding": "Aucun montant n'est dû pour cette dépense.",
+        "ownExpense": "Vous ne pouvez pas enregistrer de paiements pour vos propres dépenses.",
+        "referenceRequired": "Saisissez la référence du paiement, par exemple la référence du virement bancaire.",
+        "refused": "Ce paiement ne peut pas être enregistré pour cette dépense.",
+        "staleBalance": "Le solde a changé pendant que vous saisissiez ce paiement. Vérifiez le solde actualisé et enregistrez-le à nouveau.",
+        "tooLong": "Ce texte est trop long."
+      },
+      "form": {
+        "amount": "Montant payé ({currency})",
+        "date": "Date du paiement",
+        "label": "Enregistrer un remboursement",
+        "note": "Note (facultatif)",
+        "notice": "Enregistrez le montant déjà versé à l'employé. Z8 n'effectue aucun transfert d'argent.",
+        "reference": "Référence du paiement",
+        "referenceHint": "Par exemple, la référence du virement bancaire ou du cycle de paie.",
+        "submit": "Enregistrer le remboursement"
+      },
+      "history": "Paiements enregistrés",
+      "loading": "Chargement du solde du remboursement…",
+      "ownerOutstanding": "Le service financier enregistre votre remboursement ici une fois qu'il a été versé.",
+      "ownerOverpaid": "Un montant supérieur à ce qui est désormais approuvé a été versé. Le service financier enregistre ici lorsque la différence a été restituée ; Z8 n'effectue aucun mouvement de fonds.",
+      "recorded": "Remboursement enregistré.",
+      "recordedAlready": "Ce paiement a déjà été enregistré.",
+      "recovered": "Récupéré",
+      "recoveryForm": {
+        "amount": "Montant récupéré ({currency})",
+        "date": "Date de récupération",
+        "label": "Enregistrer une récupération",
+        "notice": "L'employé a reçu un montant supérieur à ce qui est désormais approuvé. Enregistrez les sommes qu'il a déjà restituées pour régler le trop-perçu ; le remboursement initial reste tel qu'enregistré et rien n'est déduit d'autres notes de frais. Z8 n'effectue aucun transfert d'argent.",
+        "submit": "Enregistrer la récupération"
+      },
+      "recoveryRecorded": "Récupération enregistrée.",
+      "reimbursed": "Remboursé",
+      "state": {
+        "mixed": "À vérifier",
+        "outstanding": "Non réglé",
+        "overpaid": "Trop-perçu",
+        "settled": "Réglé"
+      },
+      "title": "Remboursement"
+    },
+    "status": {
+      "draft": "Brouillon"
+    },
+    "title": "Notes de frais",
+    "workspace": {
+      "description": "Rassemblez les dépenses de voyage et les dépenses individuelles, envoyez-les pour vérification et suivez leur remboursement."
+    }
   }
 }

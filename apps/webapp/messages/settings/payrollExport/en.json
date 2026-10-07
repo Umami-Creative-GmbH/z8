@@ -30,6 +30,7 @@
         "dateRange": "Date Range",
         "description": "Export work periods and absences to DATEV Lohn & Gehalt format",
         "employees": "Employees",
+        "employeesSelected": "{count} selected",
         "endDate": "End Date",
         "error": "Export failed",
         "exportButtonDatev": "Export to DATEV",
@@ -52,9 +53,11 @@
         "month": "Month",
         "monthSelection": "Select Month",
         "projects": "Projects",
+        "projectsSelected": "{count} selected",
         "startDate": "Start Date",
         "success": "Export downloaded",
         "teams": "Teams",
+        "teamsSelected": "{count} selected",
         "title": "Export Payroll Data",
         "unavailable": {
           "missingConfiguration": "config",
@@ -296,7 +299,11 @@
         "number": "Employee number"
       },
       "checks": {
-        "count": "Count"
+        "count": "Count",
+        "missingEmploymentHistory": {
+          "descriptionPass": "All active employees have confirmed employment history for this payroll period.",
+          "descriptionWarning": "Some active employees do not have confirmed employment history for this payroll period."
+        }
       },
       "checkStatus": {
         "fail": "Blocked",

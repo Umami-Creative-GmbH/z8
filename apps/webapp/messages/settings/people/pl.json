@@ -12,7 +12,7 @@
       "title": "Grupy pracowników"
     },
     "employees": {
-      "description": "Zarządzaj profilami pracowników, zespołami i uprawnieniami",
+      "description": "Zarządzaj pracownikami, członkami i zaproszeniami",
       "details": "Szczegóły pracownika",
       "detailsDescription": "Wyświetlaj i edytuj informacje o pracowniku",
       "detailsTitle": "Szczegóły pracownika",
@@ -164,6 +164,8 @@
         "deactivateTitle": "Dezaktywować pracownika?",
         "deactivating": "Dezaktywowanie...",
         "deactivatingStatus": "Dezaktywowanie pracownika",
+        "finalOwnerDeactivateGuidance": "Najpierw przypisz i aktywuj innego zatwierdzonego właściciela, zanim dezaktywujesz tego pracownika.",
+        "finalOwnerRemoveGuidance": "Najpierw przypisz i aktywuj innego zatwierdzonego właściciela, zanim odbierzesz temu pracownikowi dostęp.",
         "reactivate": "Aktywuj ponownie",
         "reactivateDescription": "Spowoduje to przywrócenie dostępu do tej organizacji przy użyciu istniejącego rekordu pracownika.",
         "reactivateError": "Nie udało się ponownie aktywować pracownika",
@@ -178,9 +180,7 @@
         "removeSuccess": "Dostęp do organizacji został usunięty",
         "removeTitle": "Usunąć dostęp do organizacji?",
         "removing": "Usuwanie dostępu...",
-        "removingStatus": "Usuwanie dostępu do organizacji",
-        "finalOwnerDeactivateGuidance": "Najpierw przypisz i aktywuj innego zatwierdzonego właściciela, zanim dezaktywujesz tego pracownika.",
-        "finalOwnerRemoveGuidance": "Najpierw przypisz i aktywuj innego zatwierdzonego właściciela, zanim odbierzesz temu pracownikowi dostęp."
+        "removingStatus": "Usuwanie dostępu do organizacji"
       },
       "offboarding": {
         "acknowledgeDuties": "Administratorzy rozpatrzą {count} otwartych zadań zatwierdzania.",
@@ -623,6 +623,10 @@
         "title": "Brak ról niestandardowych"
       },
       "introduction": "Twórz niestandardowe role uprawnień, które można przypisywać pracownikom. Role niestandardowe dodają uprawnienia ponad poziom podstawowy.",
+      "permissionCategories": {
+        "time_tracking": "Rejestracja czasu pracy",
+        "works_council": "Rada pracowników"
+      },
       "table": {
         "actions": "Akcje",
         "assigned": "Przypisano",
@@ -658,7 +662,7 @@
       "catalogDescription": "Zdefiniuj umiejętności, które mogą być wymagane dla podobszarów i szablonów zmian",
       "category": "Kategoria",
       "confirmDelete": "Czy na pewno chcesz usunąć tę umiejętność?",
-      "confirmRemove": "Usunąć „${skillName}” od tego pracownika?",
+      "confirmRemove": "Usunąć „{skillName}” od tego pracownika?",
       "createError": "Nie udało się utworzyć umiejętności",
       "createSkill": "Utwórz umiejętność",
       "createSkillDescription": "Utwórz nową umiejętność, którą można przypisać do pracowników",
@@ -672,8 +676,8 @@
       "employeeSkills": "Umiejętności i kwalifikacje",
       "employeeSkillsDescription": "Certyfikaty i umiejętności przypisane do tego pracownika",
       "expired": "Wygasło",
-      "expiredOn": "Wygasło {{date}}",
-      "expiresOn": "Wygasa {{date}}",
+      "expiredOn": "Wygasło {date}",
+      "expiresOn": "Wygasa {date}",
       "expiringSoon": "Wkrótce wygasa",
       "expiry": "Śledzenie ważności",
       "expiryDate": "Data ważności",

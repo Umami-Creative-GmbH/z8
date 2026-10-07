@@ -6,6 +6,7 @@
       "description": "Requests waiting for a manager decision.",
       "empty": "No approvals are waiting.",
       "openInbox": "Open inbox",
+      "ownRequest": "Your own request: another approver decides it.",
       "pendingAriaLabel": "Pending approvals",
       "reject": "Reject",
       "rejectLabel": "Reject {title}",

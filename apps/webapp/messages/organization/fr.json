@@ -134,7 +134,7 @@
       "expired": "Expiré",
       "expires": "Expire le",
       "inactive": "Inactif",
-      "invitationActionsLabel": "Actions pour l'invitation à ${row.original.email}",
+      "invitationActionsLabel": "Actions pour l'invitation à {email}",
       "invitationCancelError": "Échec de l'annulation de l'invitation",
       "invitationCancelSuccess": "Invitation annulée",
       "invitationResendError": "Échec du renvoi de l'invitation",
@@ -142,7 +142,7 @@
       "invitationsWaiting": "{count, plural, other {{count} invitation(s) en attente d'acceptation}}",
       "invitedBy": "Invité par",
       "member": "Membre",
-      "memberActionsLabel": "Actions pour ${row.original.user.name}",
+      "memberActionsLabel": "Actions pour {name}",
       "memberCount": "{count, plural, other {{count} membre(s) dans cette organisation}}",
       "noInvitationResults": "Aucune invitation ne correspond à votre recherche.",
       "noInvitations": "Aucune invitation en attente.",
@@ -275,7 +275,7 @@
       "description": "Définissez le fuseau horaire par défaut de votre organisation. Il est utilisé pour le suivi des absences, les rapports et d'autres fonctionnalités basées sur la date. Les utilisateurs individuels peuvent le remplacer dans les paramètres de leur profil.",
       "owner-only": "Seuls les propriétaires de l'organisation peuvent modifier le paramètre de fuseau horaire.",
       "title": "Fuseau horaire",
-      "updated": "Fuseau horaire de l'organisation mis à jour vers {{timezone}}",
+      "updated": "Fuseau horaire de l'organisation mis à jour vers {timezone}",
       "update-failed": "Échec de la mise à jour du fuseau horaire de l'organisation"
     },
     "title": "Explorateur d'organisation"

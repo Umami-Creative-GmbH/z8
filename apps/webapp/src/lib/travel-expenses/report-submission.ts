@@ -1,4 +1,5 @@
 import type { TravelExpenseReportItemType, TravelExpenseReportKind } from "@/db/schema";
+import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ItemConversion } from "./currency-conversion";
 import { itemReimbursementAmount, type ReimbursementItemInput } from "./item-amount";
 import { reportItemMissingRequirements } from "./item-requirements";
@@ -139,7 +140,10 @@ function matchesReview(report: SubmissionReportFacts, reviewed: ReviewedReportVe
 	});
 }
 
-function missingRequirements(report: SubmissionReportFacts): TripReportMissingRequirements {
+function missingRequirements(
+	report: SubmissionReportFacts,
+	now: Instant,
+): TripReportMissingRequirements {
 	if (report.kind === "trip" && report.details) {
 		return tripReportMissingRequirements({
 			details: report.details,
@@ -154,6 +158,7 @@ function missingRequirements(report: SubmissionReportFacts): TripReportMissingRe
 				conversion: item.conversion,
 			})),
 			reimbursementCurrency: report.reimbursementCurrency,
+			now,
 		});
 	}
 	const trip: TripRequirement[] = report.items.length === 1 ? [] : ["expense_item"];
@@ -170,19 +175,21 @@ function missingRequirements(report: SubmissionReportFacts): TripReportMissingRe
 					receiptException: item.receiptException,
 					conversion: item.conversion,
 				},
-				{ reimbursementCurrency: report.reimbursementCurrency },
+				{ reimbursementCurrency: report.reimbursementCurrency, now },
 			),
 		}))
 		.filter((item) => item.missing.length > 0);
 	return { trip, items };
 }
 
+/** `now`: the submission instant; a future-dated report is incomplete until its dates have happened (#685). */
 export function checkReportSubmission(
 	report: SubmissionReportFacts,
 	reviewed: ReviewedReportVersions,
+	now: Instant,
 ): ReportSubmissionCheck {
 	if (!matchesReview(report, reviewed)) return { ok: false, reason: "changed_since_review" };
-	const missing = missingRequirements(report);
+	const missing = missingRequirements(report, now);
 	if (missing.trip.length > 0 || missing.items.length > 0) {
 		return { ok: false, reason: "incomplete", missing };
 	}

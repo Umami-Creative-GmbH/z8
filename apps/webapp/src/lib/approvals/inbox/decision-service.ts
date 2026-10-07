@@ -13,6 +13,11 @@ import type {
 	ApprovalTypeHandler,
 } from "@/lib/approvals/domain/types";
 import {
+	isOwnRequestDecision,
+	isOwnRequestDecisionRefusal,
+	ownRequestDecisionError,
+} from "@/lib/approvals/policies/self-decision";
+import {
 	classifyTimeApprovalRequest,
 	type TimeApprovalKind,
 } from "@/lib/approvals/time-request-kind";
@@ -104,6 +109,20 @@ export async function decideApprovalInboxItemFromRequest({
 
 	if (handler.type !== requestType) {
 		throw new Error(`Unsupported approval type: ${request.entityType}`);
+	}
+
+	// Single and bulk decisions both land here, whatever authority admitted the actor.
+	if (
+		isOwnRequestDecision({
+			requesterEmployeeId: request.requesterEmployeeId,
+			actorEmployeeId,
+		})
+	) {
+		throw ownRequestDecisionError({
+			actorEmployeeId,
+			resource: requestType,
+			action,
+		});
 	}
 
 	if (!canAttemptApprovalInboxDecisionTarget(request)) {
@@ -850,7 +869,8 @@ function mapDecisionFailure(
 }
 
 function getSafeAuthorizationMessage(message: string): string {
-	return message === "You are not authorized to decide this request"
+	return message === "You are not authorized to decide this request" ||
+		isOwnRequestDecisionRefusal(message)
 		? message
 		: "You are not authorized to decide this request";
 }

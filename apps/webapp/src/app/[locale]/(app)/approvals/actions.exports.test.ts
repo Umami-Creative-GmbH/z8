@@ -45,8 +45,9 @@ describe("approvals actions module structure", () => {
 	});
 
 	it("routes travel expense approvals through the unified inbox entry point", () => {
+		// The travel expenses page shows this entry under its header (#688).
 		const travelExpensesPageSource = readFileSync(
-			join(approvalsDir, "../travel-expenses/page.tsx"),
+			join(approvalsDir, "../../../../components/travel-expenses/approvals-entry.tsx"),
 			"utf8",
 		);
 

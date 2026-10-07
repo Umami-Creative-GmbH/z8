@@ -1,5 +1,4 @@
 import { IconCalendar } from "@tabler/icons-react";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { VacationManagement } from "@/components/settings/vacation/vacation-management";
@@ -13,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { ensureDefaultAbsenceCategoriesForOrganization } from "@/lib/absences/default-absence-categories";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getTranslate } from "@/tolgee/server";
 
 async function VacationSettingsContent() {
@@ -22,14 +22,14 @@ async function VacationSettingsContent() {
 	]);
 
 	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const organizationId =
 		settingsRouteContext.authContext.session.activeOrganizationId;
 
 	if (!organizationId) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const canManagePolicies = settingsRouteContext.accessTier === "orgAdmin";

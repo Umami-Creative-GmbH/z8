@@ -126,7 +126,7 @@ export default function AnalyticsOverviewPage() {
 	const { loading, teamData, absenceData, managerData, managerDataUnavailable } = analyticsData;
 	const loadAnalyticsError = t(
 		"analytics.overview.errors.loadData",
-		["Failed to load analytics", "data"].join(" "),
+		"Failed to load analytics data",
 	);
 
 	useEffect(() => {

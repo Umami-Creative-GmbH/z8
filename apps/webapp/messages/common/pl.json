@@ -434,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Skontaktuj się z administratorem",
       "createOrg": "Utwórz organizację",
-      "description": "Potrzebujesz profilu pracownika, aby ${feature}. Utwórz organizację lub skontaktuj się z administratorem.",
+      "description": "Potrzebujesz profilu pracownika, aby {feature}. Utwórz organizację lub skontaktuj się z administratorem.",
       "emailBody": "Cześć,\n\nPotrzebuję skonfigurowanego profilu pracownika, aby uzyskać dostęp do funkcji platformy. Czy mógłbyś mi w tym pomóc?\n\nDziękuję!",
       "emailSubject": "Wymagana konfiguracja profilu pracownika",
       "helpText": "Jeśli otrzymałeś zaproszenie do organizacji, poproś administratora o skonfigurowanie Twojego profilu pracownika.",
@@ -535,12 +535,21 @@
       "absenceRequestRejected": {
         "title": "Wniosek o nieobecność odrzucony"
       },
+      "absenceRequestSubmitted": {
+        "message": "Twój wniosek {categoryName} na {dateRange} został wysłany i oczekuje na zatwierdzenie.",
+        "title": "Wniosek o nieobecność wysłany"
+      },
+      "automaticClockOut": {
+        "message": "Automatycznie zarejestrowano wyjście po {duration} minutach nieprzerwanej pracy o {cutoff} ({timezone}), ponieważ osiągnięto limit czasu w Twojej organizacji.",
+        "title": "Automatycznie zarejestrowano wyjście"
+      },
       "employeeOffboardingReview": {
-        "approval_handover": "Obowiązki zatwierdzania wymagają zastępstwa",
-        "clock_out": "Wymaga weryfikacji: rejestracja wyjścia (offboarding)",
-        "clock_repair": "Wymagana naprawa licznika czasu",
-        "employment_terms": "Przyszłe warunki zatrudnienia wymagają weryfikacji",
-        "future_work": "Przyszła praca wymaga weryfikacji"
+        "approval_handover": "{employeeName}: Obowiązki zatwierdzania wymagają zastępstwa (odejście z dniem {cutoff}, {timezone}).",
+        "clock_out": "{employeeName}: Wymaga weryfikacji: rejestracja wyjścia (offboarding) (odejście z dniem {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Wymagana naprawa licznika czasu (odejście z dniem {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Przyszłe warunki zatrudnienia wymagają weryfikacji (odejście z dniem {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: Przyszła praca wymaga weryfikacji (odejście z dniem {cutoff}, {timezone}).",
+        "title": "Offboarding pracownika wymaga weryfikacji"
       },
       "newAbsenceRequest": {
         "title": "Nowy wniosek o nieobecność"
@@ -556,10 +565,6 @@
       "teamMemberAdded": {
         "message": "Zostałeś dodany do zespołu {teamName} przez {performedByName}.",
         "title": "Dodano do zespołu"
-      },
-      "absenceRequestSubmitted": {
-        "message": "Twój wniosek {categoryName} na {dateRange} został wysłany i oczekuje na zatwierdzenie.",
-        "title": "Wniosek o nieobecność wysłany"
       },
       "teamMemberRemoved": {
         "message": "Zostałeś usunięty z zespołu {teamName} przez {performedByName}.",

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	calculatePerDiem,
 	type PerDiemItinerary,
@@ -20,6 +21,13 @@ import {
 	type TravelExpenseReportFactsInput,
 } from "./travel-expense-report-facts";
 import type { TravelExpenseReportPerDiemRow } from "./travel-expense-report-per-diem";
+
+/** Freezes as submitting does, at an instant after every date of the fixtures (#685). */
+const freeze = (input: TravelExpenseReportFactsInput) =>
+	buildTravelExpenseReportSubmittedFacts({
+		...input,
+		submittedAt: parseInstant("2026-10-07T12:00:00Z"),
+	});
 
 /** #611: frozen daily locations of an international per diem (schema version 10). */
 
@@ -139,7 +147,7 @@ function input(row: Partial<TravelExpenseReportPerDiemRow> = {}): TravelExpenseR
 
 describe("frozen daily per diem locations", () => {
 	it("freezes each day's location decision, the answers and the table edition", () => {
-		const facts = buildTravelExpenseReportSubmittedFacts(input());
+		const facts = freeze(input());
 		expect(facts.schemaVersion).toBe(11);
 		const perDiem = facts.items[0]?.perDiem;
 		// Paris arrival 39; Geneva full day 70 - breakfast 14 (20 % of 70); departure 47 - 14.
@@ -164,7 +172,7 @@ describe("frozen daily per diem locations", () => {
 	});
 
 	it("compares unchanged locations as current and a moved day as a material change", () => {
-		const facts = buildTravelExpenseReportSubmittedFacts(input());
+		const facts = freeze(input());
 		expect(compareLiveTravelExpenseReportWithRevision(facts, input())).toEqual({
 			kind: "current",
 		});
@@ -176,7 +184,7 @@ describe("frozen daily per diem locations", () => {
 	});
 
 	it("never matches daily locations against a revision frozen before version 10", () => {
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(input()), schemaVersion: 9 };
+		const facts = { ...freeze(input()), schemaVersion: 9 };
 		expect(compareLiveTravelExpenseReportWithRevision(facts, input())).toMatchObject({
 			kind: "material_change",
 		});

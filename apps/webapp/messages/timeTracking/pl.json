@@ -32,16 +32,18 @@
     "correction": {
       "clockIn": "Rozpocznij pracę",
       "clockInDate": "Data rozpoczęcia pracy",
+      "clockInTime": "Godzina rozpoczęcia pracy",
       "clockOut": "Zakończ pracę",
       "clockOutDate": "Data zakończenia pracy",
+      "clockOutTime": "Godzina zakończenia pracy",
       "editDescription": "Wprowadź zmiany w dzisiejszym wpisie czasu.",
       "editEntry": "Edytuj wpis czasu",
       "editTitle": "Edytuj wpis czasu",
       "errors": {
         "invalidTimeRange": "Godzina zakończenia pracy musi być późniejsza niż godzina rozpoczęcia",
+        "noChanges": "Należy zmienić co najmniej jedną wartość korekty",
         "submitFailed": "Nie udało się przesłać korekty",
-        "updateFailed": "Nie udało się zaktualizować wpisu czasu",
-        "noChanges": "Należy zmienić co najmniej jedną wartość korekty"
+        "updateFailed": "Nie udało się zaktualizować wpisu czasu"
       },
       "noteLabel": "Notatka (opcjonalnie)",
       "notePlaceholder": "Dodaj notatkę o tej zmianie…",
@@ -55,13 +57,11 @@
       "submitRequest": "Prześlij prośbę",
       "submitting": "Przesyłanie…",
       "success": {
-        "applied": "Korekta została pomyślnie zastosowana",
+        "applied": "Pomyślnie zastosowano korektę",
         "submitted": "Prośba o korektę została przesłana do zatwierdzenia przez przełożonego",
         "updated": "Wpis czasu został pomyślnie zaktualizowany"
       },
-      "timezoneNote": "Czasy są podane w Twojej lokalnej strefie czasowej ({timezone})",
-      "clockInTime": "Godzina rozpoczęcia pracy",
-      "clockOutTime": "Godzina zakończenia pracy"
+      "timezoneNote": "Czasy są podane w Twojej lokalnej strefie czasowej ({timezone})"
     },
     "currentlyClockedIn": "Aktualnie pracujesz",
     "deadline": "Termin",

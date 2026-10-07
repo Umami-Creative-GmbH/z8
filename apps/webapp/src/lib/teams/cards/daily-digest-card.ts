@@ -71,15 +71,15 @@ export function buildDailyDigestCard(
 				text:
 					data.pendingApprovals === 0
 						? t("teamsBot:digest.noPendingApprovals", "No pending approvals")
-						: t(
-								data.pendingApprovals === 1
-									? "teamsBot:digest.pendingApprovalsCount"
-									: "teamsBot:digest.pendingApprovalsCountPlural",
-								data.pendingApprovals === 1
-									? "You have {count} pending approval"
-									: "You have {count} pending approvals",
-								{ count: data.pendingApprovals },
-							),
+						: data.pendingApprovals === 1
+							? t("teamsBot:digest.pendingApprovalsCount", "You have {count} pending approval", {
+									count: data.pendingApprovals,
+								})
+							: t(
+									"teamsBot:digest.pendingApprovalsCountPlural",
+									"You have {count} pending approvals",
+									{ count: data.pendingApprovals },
+								),
 				wrap: true,
 			},
 		],

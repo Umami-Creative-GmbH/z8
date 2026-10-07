@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -5,6 +7,8 @@ const mocks = vi.hoisted(() => ({
 	runStartupChecks: vi.fn(async () => true),
 	sdkStart: vi.fn(),
 	initializeSetupOnStartup: vi.fn(async () => undefined),
+	otlpExporter: vi.fn(),
+	batchSpanProcessor: vi.fn(),
 }));
 
 vi.mock("@opentelemetry/api", () => ({
@@ -14,7 +18,11 @@ vi.mock("@opentelemetry/auto-instrumentations-node", () => ({
 	getNodeAutoInstrumentations: vi.fn(() => []),
 }));
 vi.mock("@opentelemetry/exporter-trace-otlp-http", () => ({
-	OTLPTraceExporter: class {},
+	OTLPTraceExporter: class {
+		constructor(options: unknown) {
+			mocks.otlpExporter(options);
+		}
+	},
 }));
 vi.mock("@opentelemetry/resources", () => ({
 	resourceFromAttributes: vi.fn(() => ({})),
@@ -26,7 +34,11 @@ vi.mock("@opentelemetry/sdk-node", () => ({
 	},
 }));
 vi.mock("@opentelemetry/sdk-trace-base", () => ({
-	BatchSpanProcessor: class {},
+	BatchSpanProcessor: class {
+		constructor(exporter: unknown) {
+			mocks.batchSpanProcessor(exporter);
+		}
+	},
 	ConsoleSpanExporter: class {
 		export = vi.fn();
 		shutdown = vi.fn(async () => undefined);
@@ -79,5 +91,42 @@ describe("instrumentation registration", () => {
 			mocks.initializeSetupOnStartup.mock.invocationCallOrder[0],
 		).toBeGreaterThan(mocks.runStartupChecks.mock.invocationCallOrder[0]);
 		on.mockRestore();
+	});
+
+	it("exports traces over OTLP in production when an endpoint is configured", async () => {
+		vi.stubEnv("NEXT_RUNTIME", "nodejs");
+		vi.stubEnv("NEXT_PHASE", "phase-production-build");
+		vi.stubEnv("NODE_ENV", "production");
+		vi.stubEnv(
+			"OTEL_EXPORTER_OTLP_ENDPOINT",
+			"http://collector:4318/v1/traces",
+		);
+
+		await register();
+
+		expect(mocks.otlpExporter).toHaveBeenCalledWith({
+			url: "http://collector:4318/v1/traces",
+		});
+		expect(mocks.batchSpanProcessor).toHaveBeenCalledOnce();
+		expect(mocks.sdkStart).toHaveBeenCalledOnce();
+	});
+
+	it("does not start the Node SDK in the Edge runtime", async () => {
+		vi.stubEnv("NEXT_RUNTIME", "edge");
+
+		await register();
+
+		expect(mocks.sdkStart).not.toHaveBeenCalled();
+	});
+
+	it("keeps Node-only OpenTelemetry modules out of the Edge-compiled entry", () => {
+		// Turbopack compiles instrumentation.ts for Edge too; a static import here
+		// pulls the Node SDK and its auto-instrumentations into that bundle.
+		const source = readFileSync(
+			fileURLToPath(new URL("./instrumentation.ts", import.meta.url)),
+			"utf8",
+		);
+
+		expect(source).not.toMatch(/^import(?!\s+type)[^;]*["']@opentelemetry\//m);
 	});
 });

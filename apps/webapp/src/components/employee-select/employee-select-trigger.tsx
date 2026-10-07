@@ -16,6 +16,81 @@ function getEmployeeName(employee: SelectableEmployee): string {
 	return pronouns ? `${name} (${pronouns})` : name;
 }
 
+type Translate = ReturnType<typeof useTranslate>["t"];
+
+/** How many selected employees the multiple-selection trigger shows avatars for. */
+const MAX_DISPLAYED_AVATARS = 3;
+
+/** The count text of a multiple selection with at least one employee. */
+function multipleSelectionLabel(t: Translate, selectedEmployees: SelectableEmployee[]): string {
+	const count = selectedEmployees.length;
+	if (count === 1) return getEmployeeName(selectedEmployees[0]);
+	const remaining = count - MAX_DISPLAYED_AVATARS;
+	return remaining > 0
+		? t("common:employeeSelect.countWithMore", "{count} employees (+{more} more)", {
+				count: MAX_DISPLAYED_AVATARS,
+				more: remaining,
+			})
+		: t("common:employeeSelect.countSelected", "{count} employees selected", { count });
+}
+
+/** The selection content inside the trigger, in single or multiple mode. */
+function TriggerSelection({
+	mode,
+	selectedEmployees,
+	placeholder,
+}: Pick<EmployeeSelectTriggerProps, "mode" | "selectedEmployees"> & { placeholder: string }) {
+	const { t } = useTranslate();
+
+	if (mode === "single") {
+		const employee = selectedEmployees[0];
+		if (!employee) return <span>{placeholder}</span>;
+		return (
+			<div className="flex items-center gap-2 truncate">
+				<UserAvatar
+					seed={employee.userId}
+					image={employee.user.image}
+					name={getEmployeeName(employee)}
+					size="xs"
+					clockStatus={employee.clockStatus ?? "unknown"}
+				/>
+				<span className="truncate">{getEmployeeName(employee)}</span>
+			</div>
+		);
+	}
+
+	if (selectedEmployees.length === 0) {
+		return (
+			<div className="flex items-center gap-2">
+				<IconUsers className="size-4" />
+				<span>{placeholder}</span>
+			</div>
+		);
+	}
+
+	return (
+		<div className="flex items-center gap-2 flex-wrap">
+			{/* Stacked avatars */}
+			<div className="flex -gap-x-2">
+				{selectedEmployees.slice(0, MAX_DISPLAYED_AVATARS).map((employee) => (
+					<UserAvatar
+						key={employee.id}
+						seed={employee.userId}
+						image={employee.user.image}
+						name={getEmployeeName(employee)}
+						size="xs"
+						bordered
+						clockStatus={employee.clockStatus ?? "unknown"}
+					/>
+				))}
+			</div>
+
+			{/* Count text */}
+			<span className="text-sm">{multipleSelectionLabel(t, selectedEmployees)}</span>
+		</div>
+	);
+}
+
 /**
  * Trigger button that displays current selection and opens the modal
  */
@@ -37,126 +112,29 @@ export function EmployeeSelectTrigger({
 		mode === "single"
 			? t("common:employeeSelect.selectEmployee", "Select employee")
 			: t("common:employeeSelect.selectEmployees", "Select employees");
-
-	const displayPlaceholder = placeholder || defaultPlaceholder;
-
-	// Single selection display
-	if (mode === "single") {
-		const employee = selectedEmployees[0];
-
-		return (
-			<Button
-				id={id}
-				type="button"
-				variant="outline"
-				role="combobox"
-				aria-expanded={expanded}
-				aria-controls={controlsId}
-				disabled={disabled}
-				onClick={onClick}
-				className={cn(
-					"w-full justify-between font-normal",
-					!employee && "text-muted-foreground",
-					error && "border-destructive focus-visible:ring-destructive",
-					className,
-				)}
-			>
-				{employee ? (
-					<div className="flex items-center gap-2 truncate">
-						<UserAvatar
-							seed={employee.userId}
-							image={employee.user.image}
-							name={getEmployeeName(employee)}
-							size="xs"
-							clockStatus={employee.clockStatus ?? "unknown"}
-						/>
-						<span className="truncate">{getEmployeeName(employee)}</span>
-					</div>
-				) : (
-					<span>{displayPlaceholder}</span>
-				)}
-				<IconChevronDown className="ml-2 size-4 shrink-0 opacity-50" />
-			</Button>
-		);
-	}
-
-	// Multiple selection display
-	const count = selectedEmployees.length;
-
-	if (count === 0) {
-		return (
-			<Button
-				id={id}
-				type="button"
-				variant="outline"
-				role="combobox"
-				aria-expanded={expanded}
-				aria-controls={controlsId}
-				disabled={disabled}
-				onClick={onClick}
-				className={cn(
-					"w-full justify-between font-normal text-muted-foreground",
-					error && "border-destructive focus-visible:ring-destructive",
-					className,
-				)}
-			>
-				<div className="flex items-center gap-2">
-					<IconUsers className="size-4" />
-					<span>{displayPlaceholder}</span>
-				</div>
-				<IconChevronDown className="ml-2 size-4 shrink-0 opacity-50" />
-			</Button>
-		);
-	}
-
-	// Show up to 3 avatars + count
-	const displayedEmployees = selectedEmployees.slice(0, 3);
-	const remaining = count - 3;
+	const isEmpty = selectedEmployees.length === 0;
+	// Multiple selected employees wrap their avatars and count onto more lines.
+	const wraps = mode !== "single" && !isEmpty;
 
 	return (
 		<Button
 			id={id}
 			type="button"
-			variant="outline"
+			variant="field"
 			role="combobox"
 			aria-expanded={expanded}
 			aria-controls={controlsId}
+			aria-invalid={error ? true : undefined}
+			data-placeholder={isEmpty ? "" : undefined}
 			disabled={disabled}
 			onClick={onClick}
-			className={cn(
-				"w-full justify-between font-normal min-h-[40px] h-auto py-1.5",
-				error && "border-destructive focus-visible:ring-destructive",
-				className,
-			)}
+			className={cn(wraps ? "h-auto min-h-9 w-full py-1.5" : "w-full", className)}
 		>
-			<div className="flex items-center gap-2 flex-wrap">
-				{/* Stacked avatars */}
-				<div className="flex -gap-x-2">
-					{displayedEmployees.map((employee) => (
-						<UserAvatar
-							key={employee.id}
-							seed={employee.userId}
-							image={employee.user.image}
-							name={getEmployeeName(employee)}
-							size="xs"
-							bordered
-							clockStatus={employee.clockStatus ?? "unknown"}
-						/>
-					))}
-				</div>
-
-				{/* Count text */}
-				<span className="text-sm">
-					{count === 1
-						? getEmployeeName(selectedEmployees[0])
-						: remaining > 0
-							? t("common:employeeSelect.countWithMore", "{count} employees (+{more} more)", {
-									count: displayedEmployees.length,
-									more: remaining,
-								})
-							: t("common:employeeSelect.countSelected", "{count} employees selected", { count })}
-				</span>
-			</div>
+			<TriggerSelection
+				mode={mode}
+				selectedEmployees={selectedEmployees}
+				placeholder={placeholder || defaultPlaceholder}
+			/>
 			<IconChevronDown className="ml-2 size-4 shrink-0 opacity-50" />
 		</Button>
 	);

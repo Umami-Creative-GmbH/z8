@@ -434,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Contacter l'administrateur",
       "createOrg": "Créer une organisation",
-      "description": "Vous avez besoin d'un profil d'employé pour ${feature}. Veuillez créer une organisation ou contacter votre administrateur.",
+      "description": "Vous avez besoin d'un profil d'employé pour {feature}. Veuillez créer une organisation ou contacter votre administrateur.",
       "emailBody": "Bonjour,\n\nj'ai besoin qu'un profil d'employé soit configuré pour accéder aux fonctionnalités de la plateforme. Pourriez-vous m'aider avec cela ?\n\nMerci !",
       "emailSubject": "Configuration du profil d'employé requise",
       "helpText": "Si vous avez été invité dans une organisation, demandez à votre administrateur de configurer votre profil d'employé.",
@@ -535,12 +535,21 @@
       "absenceRequestRejected": {
         "title": "Demande d'absence refusée"
       },
+      "absenceRequestSubmitted": {
+        "message": "Votre demande {categoryName} pour {dateRange} a été envoyée et est en attente d'approbation.",
+        "title": "Demande d'absence envoyée"
+      },
+      "automaticClockOut": {
+        "message": "Vous avez été automatiquement dépointé après {duration} minutes de travail ininterrompu à {cutoff} ({timezone}) car la limite de temps de votre organisation a été atteinte.",
+        "title": "Dépointé automatiquement"
+      },
       "employeeOffboardingReview": {
-        "approval_handover": "Les tâches d'approbation nécessitent un remplaçant",
-        "clock_out": "À vérifier : pointage de sortie (départ de l'employé)",
-        "clock_repair": "Correction du minuteur requise",
-        "employment_terms": "Les futures conditions d'emploi doivent être vérifiées",
-        "future_work": "Le travail futur doit être vérifié"
+        "approval_handover": "{employeeName} : Les tâches d'approbation nécessitent un remplaçant (départ effectif le {cutoff}, {timezone}).",
+        "clock_out": "{employeeName} : À vérifier : pointage de sortie (départ de l'employé) (départ effectif le {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName} : Correction du minuteur requise (départ effectif le {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName} : Les futures conditions d'emploi doivent être vérifiées (départ effectif le {cutoff}, {timezone}).",
+        "future_work": "{employeeName} : Le travail futur doit être vérifié (départ effectif le {cutoff}, {timezone}).",
+        "title": "Le départ de l'employé doit être vérifié"
       },
       "newAbsenceRequest": {
         "title": "Nouvelle demande d'absence"
@@ -556,10 +565,6 @@
       "teamMemberAdded": {
         "message": "Vous avez été ajouté à l'équipe {teamName} par {performedByName}.",
         "title": "Ajouté à l'équipe"
-      },
-      "absenceRequestSubmitted": {
-        "message": "Votre demande {categoryName} pour {dateRange} a été envoyée et est en attente d'approbation.",
-        "title": "Demande d'absence envoyée"
       },
       "teamMemberRemoved": {
         "message": "Vous avez été retiré de l'équipe {teamName} par {performedByName}.",

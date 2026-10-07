@@ -30,6 +30,7 @@
         "dateRange": "Rango de fechas",
         "description": "Exportar periodos de trabajo y ausencias al formato DATEV Lohn & Gehalt",
         "employees": "Empleados",
+        "employeesSelected": "{count} seleccionado",
         "endDate": "Fecha de fin",
         "error": "Error en la exportación",
         "exportButtonDatev": "Exportar a DATEV",
@@ -52,9 +53,11 @@
         "month": "Mes",
         "monthSelection": "Seleccionar mes",
         "projects": "Proyectos",
+        "projectsSelected": "{count} seleccionado",
         "startDate": "Fecha de inicio",
         "success": "Exportación descargada",
         "teams": "Equipos",
+        "teamsSelected": "{count} seleccionado",
         "title": "Exportar datos de nómina",
         "unavailable": {
           "missingConfiguration": "configuración",
@@ -296,7 +299,11 @@
         "number": "Número de empleado"
       },
       "checks": {
-        "count": "Cantidad"
+        "count": "Cantidad",
+        "missingEmploymentHistory": {
+          "descriptionPass": "Todos los empleados activos tienen confirmado el historial laboral para este periodo de nómina.",
+          "descriptionWarning": "Algunos empleados activos no tienen confirmado el historial laboral para este periodo de nómina."
+        }
       },
       "checkStatus": {
         "fail": "Bloqueado",

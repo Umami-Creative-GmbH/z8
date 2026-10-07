@@ -2,10 +2,12 @@ import type { useTranslate } from "@tolgee/react";
 import type {
 	PerDiemCalculation,
 	PerDiemExceptionReason,
+	PerDiemItinerary,
 	PerDiemMeal,
 	PerDiemRequirement,
 } from "@/lib/travel-expenses/per-diem";
 import { formatPlainDate } from "./format";
+import { perDiemNotReturnedLabel } from "./future-date-labels";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -88,7 +90,13 @@ export function perDiemExceptionLabel(t: Translate, reason: PerDiemExceptionReas
 export function perDiemRequirementLabel(
 	t: Translate,
 	requirement: PerDiemRequirement,
-	context: { locale: string; calculation: PerDiemCalculation | null; currency: string },
+	context: {
+		locale: string;
+		calculation: PerDiemCalculation | null;
+		currency: string;
+		/** The itinerary the requirements were derived from; it names the return (#685). */
+		itinerary: PerDiemItinerary | null;
+	},
 ) {
 	switch (requirement) {
 		case "per_diem_start":
@@ -147,6 +155,8 @@ export function perDiemRequirementLabel(
 					currency: context.currency,
 				},
 			);
+		case "per_diem_not_returned":
+			return perDiemNotReturnedLabel(t, context.locale, context.itinerary);
 		default:
 			return requirement;
 	}

@@ -1,4 +1,5 @@
 import type { TravelExpenseReportItemType } from "@/db/schema/travel-expense";
+import type { Instant } from "@/lib/datetime/temporal-core";
 import { withoutOverriddenRequirements } from "./allowance-override";
 import type { ItemConversion } from "./currency-conversion";
 import {
@@ -53,6 +54,8 @@ export function reportItemMissingRequirements(
 		reimbursementCurrency: string;
 		/** The trip's travel dates, which a per diem's itinerary must match (#609). */
 		trip?: { startDate: string | null; endDate: string | null };
+		/** When submission is (or would be) asked for: future-dated items wait (#685). */
+		now: Instant;
 	},
 ): ReportItemRequirement[] {
 	if (item.type === "per_diem") {
@@ -62,25 +65,31 @@ export function reportItemMissingRequirements(
 				item.perDiem?.itinerary ?? emptyPerDiemItinerary(null),
 				item.perDiem?.calculation ?? { status: "incomplete" },
 				context.trip ?? { startDate: null, endDate: null },
+				context.now,
 			),
 			item.perDiem?.override,
 		);
 	}
 	if (item.type === "mileage") {
 		const mileage = item.mileage;
-		return withoutOverriddenRequirements(mileageItemRequirements(item, mileage), mileage?.override);
+		return withoutOverriddenRequirements(
+			mileageItemRequirements(item, mileage, context.now),
+			mileage?.override,
+		);
 	}
 	return receiptItemMissingRequirements(item.draft, {
 		receiptCount: item.receiptCount,
 		reimbursementCurrency: context.reimbursementCurrency,
 		receiptException: item.receiptException,
 		conversion: item.conversion,
+		now: context.now,
 	});
 }
 
 function mileageItemRequirements(
 	item: RequirementItem,
 	mileage: MileageItemView | null | undefined,
+	now: Instant,
 ): MileageItemRequirement[] {
 	return mileageItemMissingRequirements(
 		{
@@ -91,5 +100,6 @@ function mileageItemRequirements(
 			accountingReference: item.draft.accountingReference,
 		},
 		mileage?.calculation ?? { status: "incomplete" },
+		now,
 	);
 }

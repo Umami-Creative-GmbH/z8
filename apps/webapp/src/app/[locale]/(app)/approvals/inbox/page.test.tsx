@@ -448,6 +448,14 @@ describe("ApprovalInboxPage", () => {
 			],
 			failed: [{ id: "approval-2", code: "stale", message: "Already handled" }],
 		});
+		translateMock.mockImplementation(
+			(_key: string, defaultValue?: string, params?: { count?: number }) =>
+				(defaultValue ?? _key).replace(
+					/\{count, plural, one \{# ([^}]+)\} other \{# ([^}]+)\}\}/,
+					(_match, one: string, other: string) =>
+						`${params?.count} ${params?.count === 1 ? one : other}`,
+				),
+		);
 
 		render(<ApprovalInboxPage />);
 
@@ -463,9 +471,9 @@ describe("ApprovalInboxPage", () => {
 				approvalIds: ["approval-1"],
 				reason: "Missing receipt",
 			});
-			expect(toastSuccessMock).toHaveBeenCalledWith("1 request(s) rejected");
+			expect(toastSuccessMock).toHaveBeenCalledWith("1 request rejected");
 			expect(toastErrorMock).toHaveBeenCalledWith(
-				"1 request(s) failed\nAlready handled",
+				"1 request failed\nAlready handled",
 			);
 		});
 		expect(refetchMock).toHaveBeenCalled();
@@ -647,6 +655,44 @@ describe("ApprovalInboxPage", () => {
 				reason: "Missing receipt",
 			});
 		});
+	});
+
+	it("select all leaves out the viewer's own requests (#686)", () => {
+		approvalInboxMock.mockReturnValue({
+			data: {
+				pages: [
+					makeApprovalInboxPage([
+						makeApprovalInboxItem({ id: "approval-1" }),
+						makeApprovalInboxItem({
+							id: "own-approval",
+							capabilities: {
+								canApprove: false,
+								canReject: false,
+								canBulkApprove: false,
+								requiresRejectReason: true,
+								ownRequest: true,
+							},
+						}),
+					]),
+				],
+			},
+			isLoading: false,
+			isError: false,
+			error: null,
+			isFetching: false,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+
+		render(<ApprovalInboxPage />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Select All" }));
+
+		expect(
+			screen.getByRole("button", { name: /Approve Selected \(\s*1\s*\)/ }),
+		).toBeTruthy();
 	});
 
 	it("bulk reject selected approvals no-ops when no selected items are eligible", () => {

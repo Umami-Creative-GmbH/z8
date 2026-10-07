@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	checkReceiptExceptionAcceptance,
 	frozenReceiptException,
@@ -79,7 +80,7 @@ describe("missing receipt requirements", () => {
 	});
 
 	it("applies inside the receipt item requirements, and an attached receipt needs no exception", () => {
-		const context = { reimbursementCurrency: "EUR" };
+		const context = { reimbursementCurrency: "EUR", now: parseInstant("2026-10-07T12:00:00Z") };
 		expect(receiptItemMissingRequirements(complete, { ...context, receiptCount: 0 })).toEqual([
 			"receipt",
 		]);

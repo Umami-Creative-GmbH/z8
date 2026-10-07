@@ -2,6 +2,7 @@
 
 import { IconAlertTriangle, IconLoader2, IconSend } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -24,8 +25,12 @@ import { receiptReportTotals } from "@/lib/travel-expenses/receipt-report";
 import { referenceRateReviewKey } from "@/lib/travel-expenses/reference-rate-conversion";
 import type { ReportView } from "@/lib/travel-expenses/report-store";
 import { reviewedItemAmount } from "@/lib/travel-expenses/report-submission";
+import type { TripReportMissingRequirements } from "@/lib/travel-expenses/trip-report";
+import { Link } from "@/navigation";
 import type { ExpenseProjectSummary } from "./expense-project-line";
-import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
+import { type ExpenseSummary, ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
+import { futureDateLabel, perDiemNotReturnedLabel, tripNotEndedLabel } from "./future-date-labels";
+import { itemTitle } from "./item-title";
 import { pendingReceiptException } from "./pending-receipt-exception";
 import { AdjustmentDeltaPreview } from "./report-adjustments";
 import { ReportTotals } from "./report-summary";
@@ -35,10 +40,59 @@ type Translate = ReturnType<typeof useTranslate>["t"];
 /** Why the report cannot be reviewed for submission yet; null when it can. */
 export type SubmitBlocker = "incomplete" | "unsaved" | null;
 
+/** Where an administrator chooses the expense approver (#679). */
+const EXPENSE_APPROVER_SETTING_HREF = "/settings/travel-expenses";
+
+interface Problem {
+	title: string;
+	body: string;
+	/** What exactly is still needed, when the server names it. */
+	details?: string[];
+	/** A link the submitter can act on themselves. */
+	action?: { href: string; label: string };
+}
+
+/**
+ * The future-dated dates and returns the server refused (#685), named even
+ * when the editor's clock had not caught up with them yet.
+ */
+function futureDateRefusals(
+	t: Translate,
+	locale: string,
+	report: ReportView,
+	missing: TripReportMissingRequirements,
+): string[] {
+	const details = missing.trip.includes("trip_not_ended")
+		? [tripNotEndedLabel(t, locale, report.trip?.endDate ?? null)]
+		: [];
+	const indexById = new Map(report.items.map((item, index) => [item.id, index]));
+	for (const { id, missing: itemMissing } of missing.items) {
+		const index = indexById.get(id);
+		if (index === undefined) continue;
+		const item = report.items[index];
+		const label = itemMissing.includes("per_diem_not_returned")
+			? perDiemNotReturnedLabel(t, locale, item.perDiem?.itinerary ?? null)
+			: itemMissing.includes("future_date")
+				? futureDateLabel(t, locale, item.expenseDate)
+				: null;
+		if (!label) continue;
+		details.push(
+			report.items.length > 1
+				? t("travelExpenses.report.submit.itemRequirement", "{item}: {requirement}", {
+						item: itemTitle(t, item.type, index + 1),
+						requirement: label,
+					})
+				: label,
+		);
+	}
+	return details;
+}
+
 function outcomeMessage(
 	t: Translate,
-	outcome: Exclude<SubmitTravelExpenseReportOutcome, { status: "submitted" }>,
-): { title: string; body: string } {
+	outcome: Exclude<SubmitTravelExpenseReportOutcome, { status: "submitted" | "self_approved" }>,
+	context: { locale: string; report: ReportView },
+): Problem {
 	switch (outcome.status) {
 		case "changed_since_review":
 			return {
@@ -55,6 +109,7 @@ function outcomeMessage(
 					"travelExpenses.report.submit.incomplete",
 					"Some saved details are still missing. Complete everything listed under “Still needed” and try again.",
 				),
+				details: futureDateRefusals(t, context.locale, context.report, outcome.missing),
 			};
 		case "project_ineligible":
 			return {
@@ -65,22 +120,60 @@ function outcomeMessage(
 					{ count: outcome.itemIds.length },
 				),
 			};
-		case "no_reviewer":
+		case "no_reviewer": {
+			const title = t(
+				"travelExpenses.report.submit.noReviewerTitle",
+				"No one can review this report yet",
+			);
+			if (outcome.reason === "requester_inactive") {
+				return {
+					title,
+					body: t(
+						"travelExpenses.report.submit.requesterInactive",
+						"Your employee profile is not active in this organization, so the report cannot be routed for review.",
+					),
+				};
+			}
+			return outcome.canAssignApprover
+				? {
+						title,
+						body: t(
+							"travelExpenses.report.submit.noReviewerAssign",
+							"You have no manager or team manager other than yourself, and no expense approver is set up. Choose an expense approver under Expense report review in the travel expense settings. Your report stays saved as a draft.",
+						),
+						action: {
+							href: EXPENSE_APPROVER_SETTING_HREF,
+							label: t(
+								"travelExpenses.report.submit.openApproverSetting",
+								"Open expense approver setting",
+							),
+						},
+					}
+				: {
+						title,
+						body: t(
+							"travelExpenses.report.submit.noReviewerAsk",
+							"You have no manager or team manager other than yourself, and no expense approver is set up. Ask an administrator to choose an expense approver under Settings, Travel expenses, Expense report review. Your report stays saved as a draft.",
+						),
+					};
+		}
+		case "self_approval_blocked":
 			return {
 				title: t(
 					"travelExpenses.report.submit.noReviewerTitle",
 					"No one can review this report yet",
 				),
-				body:
-					outcome.reason === "requester_inactive"
-						? t(
-								"travelExpenses.report.submit.requesterInactive",
-								"Your employee profile is not active in this organization, so the report cannot be routed for review.",
-							)
-						: t(
-								"travelExpenses.report.submit.noReviewer",
-								"You have no manager or team manager other than yourself, and no expense approver is set up. Ask an administrator to assign one. Your report stays saved as a draft.",
-							),
+				body: t(
+					"travelExpenses.report.submit.selfApprovalBlocked",
+					"As the organization owner, your reports are approved automatically while nobody else can review them. This report has a missing-receipt explanation or a manually set allowance, which someone else must accept. Choose an expense approver, or change the report. Your report stays saved as a draft.",
+				),
+				action: {
+					href: EXPENSE_APPROVER_SETTING_HREF,
+					label: t(
+						"travelExpenses.report.submit.openApproverSetting",
+						"Open expense approver setting",
+					),
+				},
 			};
 		case "self_approval_route":
 			return {
@@ -153,6 +246,79 @@ function reviewedProject(
 	return { ...named, inheritedFromTrip: effective.inheritedFromTrip };
 }
 
+/** One saved expense as the submission review lists it. */
+function reviewedSummary(report: ReportView, item: ReportView["items"][number]): ExpenseSummary {
+	return {
+		id: item.id,
+		type: item.type,
+		description: item.description ?? item.mileage?.route ?? null,
+		expenseDate: item.expenseDate,
+		category: item.category,
+		amount: item.amount ?? item.mileage?.amount ?? item.perDiem?.amount ?? null,
+		currency: item.currency ?? item.mileage?.currency ?? item.perDiem?.currency ?? null,
+		paidBy: item.paidBy,
+		conversion: appliedConversion(item, report.reimbursementCurrency, item.conversion),
+		receipts: item.receipts.map((receipt) => ({
+			id: receipt.id,
+			fileName: receipt.fileName,
+		})),
+		mileage: item.mileage?.calculation?.status === "calculated" ? item.mileage.calculation : null,
+		perDiem: item.perDiem?.calculation?.status === "calculated" ? item.perDiem.calculation : null,
+		receiptException: pendingReceiptException(item),
+		project: reviewedProject(report, item),
+		// An applying administrator override (#610) is what the expense counts.
+		allowanceOverride: [item.mileage?.override, item.perDiem?.override].find(
+			(override) => override?.applies,
+		),
+	};
+}
+
+/** What the submit button's hint tells the employee. */
+function submitHint(t: Translate, blocker: SubmitBlocker): string {
+	switch (blocker) {
+		case "incomplete":
+			return t(
+				"travelExpenses.report.submit.blockedIncomplete",
+				"Complete everything listed under “Still needed” before submitting.",
+			);
+		case "unsaved":
+			return t(
+				"travelExpenses.report.submit.blockedUnsaved",
+				"Wait until all changes are saved, or correct the highlighted fields, before submitting.",
+			);
+		default:
+			return t(
+				"travelExpenses.report.submit.ready",
+				"Your entries are saved. Review the report and send it for approval.",
+			);
+	}
+}
+
+/** Why the last submission attempt was refused. */
+function SubmitProblemAlert({ problem }: { problem: Problem }) {
+	return (
+		<Alert variant="destructive" role="alert">
+			<IconAlertTriangle aria-hidden="true" className="size-4" />
+			<AlertTitle>{problem.title}</AlertTitle>
+			<AlertDescription>
+				<p>{problem.body}</p>
+				{problem.details && problem.details.length > 0 && (
+					<ul className="list-disc space-y-1 pl-5">
+						{problem.details.map((detail) => (
+							<li key={detail}>{detail}</li>
+						))}
+					</ul>
+				)}
+				{problem.action && (
+					<Link className="font-medium underline underline-offset-4" href={problem.action.href}>
+						{problem.action.label}
+					</Link>
+				)}
+			</AlertDescription>
+		</Alert>
+	);
+}
+
 /**
  * Submission review step of a draft report (#602): the employee checks the
  * saved expenses, receipts and totals, then sends that exact version for
@@ -174,11 +340,12 @@ export function SubmitReportPanel({
 	onSubmitted: () => Promise<unknown>;
 }) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const [open, setOpen] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [report, setReport] = useState<ReportView | null>(null);
-	const [problem, setProblem] = useState<{ title: string; body: string } | null>(null);
+	const [problem, setProblem] = useState<Problem | null>(null);
 	const totals = report ? receiptReportTotals(report.items, report.reimbursementCurrency) : null;
 
 	async function openReview() {
@@ -231,12 +398,19 @@ export function SubmitReportPanel({
 					title: t("travelExpenses.report.submit.failedTitle", "The report was not submitted"),
 					body: result.error,
 				});
-			} else if (result.data.status !== "submitted") {
-				setProblem(outcomeMessage(t, result.data));
-			} else {
-				toast.success(t("travelExpenses.report.submit.success", "Report submitted for approval"));
+			} else if (result.data.status === "submitted" || result.data.status === "self_approved") {
+				toast.success(
+					result.data.status === "self_approved"
+						? t(
+								"travelExpenses.report.submit.selfApproved",
+								"Report approved automatically: nobody else can review it",
+							)
+						: t("travelExpenses.report.submit.success", "Report submitted for approval"),
+				);
 				setOpen(false);
 				await onSubmitted();
+			} else {
+				setProblem(outcomeMessage(t, result.data, { locale, report }));
 			}
 		} catch {
 			setProblem({
@@ -250,27 +424,12 @@ export function SubmitReportPanel({
 		setSubmitting(false);
 	}
 
-	const blockedHint =
-		blocker === "incomplete"
-			? t(
-					"travelExpenses.report.submit.blockedIncomplete",
-					"Complete everything listed under “Still needed” before submitting.",
-				)
-			: blocker === "unsaved"
-				? t(
-						"travelExpenses.report.submit.blockedUnsaved",
-						"Wait until all changes are saved, or correct the highlighted fields, before submitting.",
-					)
-				: t(
-						"travelExpenses.report.submit.ready",
-						"Your entries are saved. Review the report and send it for approval.",
-					);
 	const hintId = `${reportId}-submit-hint`;
 
 	return (
 		<section className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
 			<p id={hintId} className="text-sm text-muted-foreground">
-				{blockedHint}
+				{submitHint(t, blocker)}
 			</p>
 			<Button
 				type="button"
@@ -301,56 +460,16 @@ export function SubmitReportPanel({
 					<div className="space-y-4">
 						{report?.trip && <TripSummaryList trip={report.trip} />}
 						<ExpenseSummaryList
-							items={(report?.items ?? []).map((item) => ({
-								id: item.id,
-								description:
-									item.description ??
-									item.mileage?.route ??
-									(item.perDiem ? t("travelExpenses.report.perDiem.title", "Per diem") : null),
-								expenseDate: item.expenseDate,
-								category: item.category,
-								amount: item.amount ?? item.mileage?.amount ?? item.perDiem?.amount ?? null,
-								currency: item.currency ?? item.mileage?.currency ?? item.perDiem?.currency ?? null,
-								paidBy: item.paidBy,
-								conversion: appliedConversion(
-									item,
-									report?.reimbursementCurrency ?? "",
-									item.conversion,
-								),
-								receipts: item.receipts.map((receipt) => ({
-									id: receipt.id,
-									fileName: receipt.fileName,
-								})),
-								mileage:
-									item.mileage?.calculation?.status === "calculated"
-										? item.mileage.calculation
-										: null,
-								perDiem:
-									item.perDiem?.calculation?.status === "calculated"
-										? item.perDiem.calculation
-										: null,
-								receiptException: pendingReceiptException(item),
-								project: reviewedProject(report, item),
-								// An applying administrator override (#610) is what the expense counts.
-								allowanceOverride: [item.mileage?.override, item.perDiem?.override].find(
-									(override) => override?.applies,
-								),
-							}))}
+							items={report ? report.items.map((item) => reviewedSummary(report, item)) : []}
 						/>
 						{totals && <ReportTotals id={`${reportId}-review`} totals={totals} />}
-					{totals && (
-						<AdjustmentDeltaPreview
-							reportId={reportId}
-							corrected={{ amount: totals.reimbursable, currency: totals.currency }}
-						/>
-					)}
-						{problem && (
-							<Alert variant="destructive" role="alert">
-								<IconAlertTriangle aria-hidden="true" className="size-4" />
-								<AlertTitle>{problem.title}</AlertTitle>
-								<AlertDescription>{problem.body}</AlertDescription>
-							</Alert>
+						{totals && (
+							<AdjustmentDeltaPreview
+								reportId={reportId}
+								corrected={{ amount: totals.reimbursable, currency: totals.currency }}
+							/>
 						)}
+						{problem && <SubmitProblemAlert problem={problem} />}
 					</div>
 					<DialogFooter>
 						<Button
