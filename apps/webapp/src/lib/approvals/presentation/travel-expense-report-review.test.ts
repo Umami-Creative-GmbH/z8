@@ -138,6 +138,7 @@ describe("buildTravelExpenseReportReviewSections", () => {
 	it("labels a return as a return, never as a rejection (#603)", () => {
 		expect(
 			travelExpenseReportDecisionLabel({
+				operationKind: "command",
 				requestOutcome: "rejected",
 				assignmentOutcome: "rejected",
 				result: { reportStatus: "returned", disposition: "returned" },
@@ -148,6 +149,7 @@ describe("buildTravelExpenseReportReviewSections", () => {
 		});
 		expect(
 			travelExpenseReportDecisionLabel({
+				operationKind: "command",
 				requestOutcome: "rejected",
 				assignmentOutcome: "rejected",
 				result: { reportStatus: "rejected" },

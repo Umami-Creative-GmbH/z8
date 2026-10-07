@@ -2,7 +2,10 @@
  * Owner self-approval of expense reports (#679). An organization owner whom
  * nobody else can review has their report approved on submit, recorded as a
  * system activation of the submission whose `result.reason` names this basis.
- * History, review evidence and exports label it from that one record.
+ * History, review evidence and exports label it from that one record (the
+ * settlement read repeats this predicate in SQL). The completed request's
+ * `metadata.ownerSelfApproval`, written in the same transaction, only labels
+ * the inbox timeline, which reads requests rather than evidence.
  */
 
 /** `result.reason` of the activation evidence; also the export's approval basis. */

@@ -209,14 +209,13 @@ const CATEGORIES: Record<string, ApprovalInboxLocalizedText> = {
 export function travelExpenseReportDecisionLabel(
 	decision: Pick<
 		LegacyDecisionEvidenceRecord,
-		"requestOutcome" | "assignmentOutcome" | "result"
-	> &
-		Partial<Pick<LegacyDecisionEvidenceRecord, "operationKind">>,
+		"operationKind" | "requestOutcome" | "assignmentOutcome" | "result"
+	>,
 ): ApprovalInboxLocalizedText {
 	if (decision.result?.disposition === "returned" || decision.result?.reportStatus === "returned")
 		return text("reportReturnedForChanges", "Report returned for changes");
 	// #679: no reviewer decided; the owner's report approved itself on submit.
-	if (isOwnerSelfApprovalDecision({ operationKind: "command", ...decision }))
+	if (isOwnerSelfApprovalDecision(decision))
 		return text("reportSelfApproved", "Approved automatically: no other reviewer");
 	if (decision.requestOutcome === "approved") return text("reportApproved", "Report approved");
 	if (decision.requestOutcome === "rejected") return text("reportRejected", "Report rejected");

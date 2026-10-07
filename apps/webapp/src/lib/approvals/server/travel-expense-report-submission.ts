@@ -548,7 +548,12 @@ export async function submitTravelExpenseReport(
 				// Decided with the submission: the report's decision time is its submission time.
 				const [decided] = await tx
 					.update(travelExpenseReport)
-					.set({ status: "approved", decidedAt: submittedAt })
+					.set({
+						status: "approved",
+						decidedAt: submittedAt,
+						updatedAt: submittedAt,
+						updatedBy: owner.userId,
+					})
 					.where(
 						and(
 							eq(travelExpenseReport.id, input.reportId),

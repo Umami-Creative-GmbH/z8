@@ -202,6 +202,7 @@ async function loadApprovedRevisionDecisions(
 		.select({
 			revisionId: approvalDecisionEvidence.submittedRevisionId,
 			decidedAt: max(approvalDecisionEvidence.decidedAt),
+			// `isOwnerSelfApprovalDecision` (owner-self-approval.ts) as an aggregate.
 			selfApproved: sql<boolean>`bool_or(${approvalDecisionEvidence.operationKind} = 'submission_activation' and ${approvalDecisionEvidence.result}->>'reason' = ${OWNER_SELF_APPROVAL_REASON})`,
 		})
 		.from(approvalDecisionEvidence)
