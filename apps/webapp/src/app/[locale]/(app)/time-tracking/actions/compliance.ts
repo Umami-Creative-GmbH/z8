@@ -9,7 +9,7 @@ import { Effect } from "effect";
 import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { runtime } from "@/lib/effect/runtime";
 import {
 	calculateSurchargeForWorkPeriod,
 	SurchargeService,
@@ -72,12 +72,9 @@ export async function calculateAndPersistSurcharges(
 				organizationId,
 				immutableEvidence,
 			});
-		}).pipe(
-			Effect.provide(SurchargeServiceLive),
-			Effect.provide(DatabaseServiceLive),
-		);
+		});
 
-		await Effect.runPromise(surchargeEffect);
+		await runtime.runPromise(surchargeEffect.pipe(Effect.provide(SurchargeServiceLive)));
 	} catch (error) {
 		logger.error(
 			{ error, workPeriodId },

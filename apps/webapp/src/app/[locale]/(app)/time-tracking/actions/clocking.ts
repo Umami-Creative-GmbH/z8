@@ -29,11 +29,8 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
-import {
-	WorkPolicyService,
-	WorkPolicyServiceLive,
-} from "@/lib/effect/services/work-policy.service";
+import { runtime } from "@/lib/effect/runtime";
+import { WorkPolicyService } from "@/lib/effect/services/work-policy.service";
 import type { WorkCategoryReader } from "@/lib/query/work-category.queries";
 import { canonicalWorkRecordClient } from "@/lib/time-tracking/canonical-work-record";
 import { attributionIntent, type ClockChannel } from "@/lib/time-tracking/close-active-work";
@@ -866,12 +863,9 @@ export async function getBreakReminderStatus(): Promise<
 						}
 					: null,
 			};
-		}).pipe(
-			Effect.provide(WorkPolicyServiceLive),
-			Effect.provide(DatabaseServiceLive),
-		);
+		});
 
-		return { success: true, data: await Effect.runPromise(breakStatusEffect) };
+		return { success: true, data: await runtime.runPromise(breakStatusEffect) };
 	} catch (error) {
 		logger.error({ error }, "Failed to get break reminder status");
 		return { success: false, error: "Failed to check break status" };

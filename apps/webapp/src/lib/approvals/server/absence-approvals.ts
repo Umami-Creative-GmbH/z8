@@ -33,7 +33,7 @@ import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
+import { AppLayer, runtime as effectRuntime } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
@@ -2186,9 +2186,7 @@ export async function decideBoundLegacyAbsenceInvocation(input: {
 						input.reason ?? "",
 						execution.domainResult as RejectedAbsenceResult,
 					);
-		await Effect.runPromise(
-			postCommit.pipe(Effect.provide(AppLayer)) as Effect.Effect<void, AnyAppError, never>,
-		).catch((error) =>
+		await effectRuntime.runPromise(postCommit).catch((error) =>
 			logger.error(
 				{ error, absenceId, organizationId: input.organizationId },
 				"Absence card decision after-commit work failed",
@@ -2275,10 +2273,8 @@ export async function executeAuthenticatedAbsenceDecision(
 	reason?: string,
 	options?: ApprovalActionOptions,
 ): Promise<void> {
-	return Effect.runPromise(
-		authenticatedAbsenceDecisionEffect(absenceId, action, reason, options).pipe(
-			Effect.provide(AppLayer),
-		) as Effect.Effect<void, AnyAppError, never>,
+	return effectRuntime.runPromise(
+		authenticatedAbsenceDecisionEffect(absenceId, action, reason, options),
 	);
 }
 

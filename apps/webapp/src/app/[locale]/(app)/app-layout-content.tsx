@@ -20,11 +20,8 @@ import { member } from "@/db/auth-schema";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import { getRenderSession } from "@/lib/auth/render-session";
-import {
-	type BillingAccessResult,
-	BillingEnforcementService,
-	BillingEnforcementServiceLive,
-} from "@/lib/effect/services/billing/billing-enforcement.service";
+import { runtime } from "@/lib/effect/runtime";
+import type { BillingAccessResult } from "@/lib/effect/services/billing/billing-enforcement.service";
 import { createLogger } from "@/lib/logger";
 import { getOrganizationSettings } from "@/lib/organization-settings";
 import { getRenderUserPreferences } from "@/lib/user-preferences/render-snapshot";
@@ -41,6 +38,18 @@ const billingCheckFailedAccess: BillingAccessResult = {
 	reason: "subscription_required",
 	status: "billing_check_failed",
 };
+
+/** Billing runs on the shared runtime; it is imported only once billing is enabled. */
+async function checkBillingAccess(organizationId: string): Promise<BillingAccessResult> {
+	const { BillingEnforcementService, BillingServicesLive } = await import(
+		"@/lib/effect/services/billing"
+	);
+	return runtime.runPromise(
+		Effect.flatMap(BillingEnforcementService, (enforcementService) =>
+			enforcementService.checkBillingAccess(organizationId),
+		).pipe(Effect.provide(BillingServicesLive)),
+	);
+}
 
 interface AuthenticatedAppContentProps {
 	children: ReactNode;
@@ -103,11 +112,7 @@ export async function AuthenticatedAppContent({
 	const billingEnabled = env.BILLING_ENABLED === "true";
 	const billingAccess =
 		activeOrganizationId && billingEnabled
-			? await Effect.runPromise(
-					Effect.flatMap(BillingEnforcementService, (enforcementService) =>
-						enforcementService.checkBillingAccess(activeOrganizationId),
-					).pipe(Effect.provide(BillingEnforcementServiceLive)),
-				).catch((error) => {
+			? await checkBillingAccess(activeOrganizationId).catch((error) => {
 					logger.error(
 						{ error, organizationId: activeOrganizationId },
 						"Billing access check failed",

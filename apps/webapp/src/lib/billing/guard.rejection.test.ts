@@ -10,6 +10,9 @@ vi.mock("@/env", () => ({ env: mockState.env }));
 vi.mock("@/lib/effect/services/billing/billing-configuration", () => ({
 	provisionLocalTrial: mockState.provisionLocalTrial,
 }));
+vi.mock("@/lib/effect/runtime", async () =>
+	(await import("@/test/effect-runtime")).runtimeModuleOver(),
+);
 
 const { requireBillingForMutation } = await import("./guard");
 

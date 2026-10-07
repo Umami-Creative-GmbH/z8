@@ -79,6 +79,22 @@ export class StripeService extends Context.Service<
 	}
 >()("StripeService") {}
 
+/**
+ * Stripe clients by secret key. Billing layers are built for every run (a layer provided
+ * on top of the shared runtime is not memoized past its run), so the client lives here:
+ * one per process and key, constructed on first use.
+ */
+const stripeClients = new Map<string, Stripe>();
+
+function stripeClientFor(secretKey: string): Stripe {
+	let client = stripeClients.get(secretKey);
+	if (!client) {
+		client = new Stripe(secretKey, { apiVersion: STRIPE_API_VERSION, typescript: true });
+		stripeClients.set(secretKey, client);
+	}
+	return client;
+}
+
 export const StripeServiceLive = Layer.effect(
 	StripeService,
 	Effect.sync(() => {
@@ -90,10 +106,7 @@ export const StripeServiceLive = Layer.effect(
 			enabled: env.BILLING_ENABLED === "true",
 		};
 
-		const stripe =
-			config.enabled && config.secretKey
-				? new Stripe(config.secretKey, { apiVersion: STRIPE_API_VERSION, typescript: true })
-				: null;
+		const stripe = config.enabled && config.secretKey ? stripeClientFor(config.secretKey) : null;
 
 		return StripeService.of({
 			client: stripe,

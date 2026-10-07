@@ -22,7 +22,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import { ConflictError } from "@/lib/effect/errors";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { runtime } from "@/lib/effect/runtime";
 import {
 	SurchargeService,
 	SurchargeServiceLive,
@@ -2342,7 +2342,7 @@ export async function reconcileOrdinaryWorkPeriodMaintenanceAfterCommit(
 		markWorkBalanceDirty: typeof markEmployeeWorkBalanceDirty;
 	} = {
 		reconcileSurcharges: (facts) =>
-			Effect.runPromise(
+			runtime.runPromise(
 				Effect.gen(function* () {
 					const service = yield* SurchargeService;
 					yield* service.reconcileWorkPeriods({
@@ -2352,10 +2352,7 @@ export async function reconcileOrdinaryWorkPeriodMaintenanceAfterCommit(
 						staleSurchargePeriodIds: facts.staleSurchargePeriodIds,
 						surchargeSnapshot: facts.surchargeSnapshot,
 					});
-				}).pipe(
-					Effect.provide(SurchargeServiceLive),
-					Effect.provide(DatabaseServiceLive),
-				),
+				}).pipe(Effect.provide(SurchargeServiceLive)),
 			),
 		markWorkBalanceDirty: markEmployeeWorkBalanceDirty,
 	},

@@ -12,7 +12,7 @@ import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { dateFromInstant, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
-import { CoverageService, CoverageServiceFullLive } from "@/lib/effect/services/coverage.service";
+import { CoverageService } from "@/lib/effect/services/coverage.service";
 import { createLogger } from "@/lib/logger";
 import { buildCoverageCard } from "../cards/coverage-card";
 import { getCommandTemporalContext } from "./command-temporal";
@@ -81,7 +81,10 @@ async function coverageHandler(ctx: BotCommandContext): Promise<BotCommandRespon
 			});
 		});
 
-		const summary = await Effect.runPromise(program.pipe(Effect.provide(CoverageServiceFullLive)));
+		// The runtime is server-only; a static import would keep the shared bot command
+		// registry from loading in a plain-Node worker (escalation-worker-imports.test.ts).
+		const { runtime } = await import("@/lib/effect/runtime");
+		const summary = await runtime.runPromise(program);
 
 		// If no coverage data, return text response
 		if (summary.snapshots.length === 0) {

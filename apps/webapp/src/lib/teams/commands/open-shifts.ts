@@ -12,7 +12,7 @@ import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bo
 import { dateFromInstant, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import {
 	OpenShiftsService,
-	OpenShiftsServiceFullLive,
+	OpenShiftsServiceLive,
 } from "@/lib/effect/services/open-shifts.service";
 import { createLogger } from "@/lib/logger";
 import { buildOpenShiftsCard } from "../cards/open-shifts-card";
@@ -117,7 +117,10 @@ async function openShiftsHandler(ctx: BotCommandContext): Promise<BotCommandResp
 			});
 		});
 
-		const shifts = await Effect.runPromise(program.pipe(Effect.provide(OpenShiftsServiceFullLive)));
+		// The runtime is server-only; a static import would keep the shared bot command
+		// registry from loading in a plain-Node worker (escalation-worker-imports.test.ts).
+		const { runtime } = await import("@/lib/effect/runtime");
+		const shifts = await runtime.runPromise(program.pipe(Effect.provide(OpenShiftsServiceLive)));
 
 		// If no open shifts, return text response
 		if (shifts.length === 0) {

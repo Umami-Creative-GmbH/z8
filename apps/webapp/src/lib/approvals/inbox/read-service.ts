@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { Effect, Exit } from "effect";
+import { type Effect, Exit } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { approvalRequest } from "@/db/schema";
@@ -9,7 +9,8 @@ import type {
 	ApprovalTypeHandler,
 	UnifiedApprovalItem,
 } from "@/lib/approvals/domain/types";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { runtime } from "@/lib/effect/runtime";
+import type { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	buildAbsenceReviewSections,
 	prepareAbsenceReviewEvidence,
@@ -104,15 +105,12 @@ interface GetApprovalInboxDetailFromRequestInput {
 
 const DEFAULT_LIMIT = 50;
 
-function provideDatabase<A>(
+/** A handler effect, typed by the one service it reads: the shared runtime's `DatabaseService`. */
+function onDatabase<A>(
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	effect: Effect.Effect<A, unknown, any>,
-): Effect.Effect<A, unknown, never> {
-	return effect.pipe(Effect.provide(DatabaseServiceLive)) as Effect.Effect<
-		A,
-		unknown,
-		never
-	>;
+): Effect.Effect<A, unknown, DatabaseService> {
+	return effect;
 }
 
 const riskRank: Record<ApprovalInboxRiskLevel, number> = {
@@ -149,9 +147,7 @@ export async function getApprovalInboxListFromSources({
 	const approvalResults = await Promise.all(
 		selectedSources.map(async (source) => ({
 			source,
-			approvalsExit: await Effect.runPromiseExit(
-				provideDatabase(source.handler.getApprovals(params)),
-			),
+			approvalsExit: await runtime.runPromiseExit(onDatabase(source.handler.getApprovals(params))),
 		})),
 	);
 	for (const { source, approvalsExit } of approvalResults) {
@@ -172,8 +168,8 @@ export async function getApprovalInboxListFromSources({
 	const countResults = await Promise.all(
 		sources.map(async (source) => ({
 			source,
-			countExit: await Effect.runPromiseExit(
-				provideDatabase(
+			countExit: await runtime.runPromiseExit(
+				onDatabase(
 					source.handler.getCount(params.approverId, params.organizationId, {
 						eligibleApprovalScopes: params.eligibleApprovalScopes,
 						includeAllApprovers: params.includeAllApprovers,
@@ -311,8 +307,8 @@ export async function getApprovalInboxDetailFromRequest({
 		throw new ApprovalInboxBadRequestError("Approval detail mismatch");
 	}
 
-	const detail = await Effect.runPromise(
-		provideDatabase(
+	const detail = await runtime.runPromise(
+		onDatabase(
 			handler.getDetail(request.entityId, request.organizationId, {
 				approvalId: request.id,
 			}),

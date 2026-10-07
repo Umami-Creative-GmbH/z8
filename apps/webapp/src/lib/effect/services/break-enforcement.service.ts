@@ -7,19 +7,15 @@ import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import {
 	type AutomaticBreakAdjustmentOutcome,
 	type LegacyBreakPlan,
-	processAutomaticBreakIntents,
 	runAutomaticBreakAdjustment,
 } from "@/lib/time-tracking/automatic-break-adjustment";
 import { calculateBreakDeficit } from "@/lib/time-tracking/break-policy-calculation";
 import { readBreakMinutesTakenBefore } from "@/lib/time-tracking/breaks-taken";
 import { capturedZone } from "@/lib/time-tracking/timezone-capture";
 import { DatabaseError, NotFoundError } from "@/lib/effect/errors";
-import { DatabaseService, DatabaseServiceLive } from "./database.service";
-import { SurchargeService, SurchargeServiceLive } from "./surcharge.service";
-import {
-	WorkPolicyService,
-	WorkPolicyServiceLive,
-} from "./work-policy.service";
+import { tryPromiseWithRunner } from "@/lib/effect/promise-callback";
+import { DatabaseService } from "./database.service";
+import { WorkPolicyService } from "./work-policy.service";
 
 // ============================================
 // TYPES
@@ -386,8 +382,8 @@ export const BreakEnforcementServiceLive = Layer.effect(
 			input: EnforceBreaksInput,
 		): Effect.Effect<BreakEnforcementResult, NotFoundError | DatabaseError> =>
 			Effect.gen(function* () {
-				const outcome = yield* Effect.tryPromise({
-					try: () =>
+				const outcome = yield* tryPromiseWithRunner({
+					try: (run) =>
 						runAutomaticBreakAdjustment({
 							organizationId: input.organizationId,
 							employeeId: input.employeeId,
@@ -397,8 +393,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 									input.createdBy === SYSTEM_CRON_ACTOR ? null : input.createdBy,
 								closureEntryId: null,
 							},
-							planLegacy: () =>
-								Effect.runPromise(planLegacyBreakEnforcement(input)),
+							planLegacy: () => run(planLegacyBreakEnforcement(input)),
 						}),
 					catch: (cause) =>
 						cause instanceof NotFoundError
@@ -515,84 +510,6 @@ export const BreakEnforcementServiceLive = Layer.effect(
 		});
 	}),
 );
-
-// ============================================
-// LAYER DEPENDENCIES
-// ============================================
-
-/**
- * Full layer with all dependencies for running break enforcement
- */
-export const BreakEnforcementServiceFullLive = BreakEnforcementServiceLive.pipe(
-	Layer.provide(WorkPolicyServiceLive),
-	Layer.provide(DatabaseServiceLive),
-);
-
-// ============================================
-// STANDALONE RUNNER FOR WORKER/CRON
-// ============================================
-
-/**
- * Run break enforcement check for all unprocessed work periods.
- * This is a standalone function that can be called from workers/cron jobs.
- *
- * @param options - Optional configuration
- * @param options.date - Target date (defaults to today)
- * @param options.organizationId - Filter to specific organization
- */
-export async function runBreakEnforcementCheck(options?: {
-	date?: Date;
-	organizationId?: string;
-}): Promise<{
-	processedCount: number;
-	adjustedCount: number;
-	/** Intents still held by unresolved review or another blocker. */
-	deferredCount: number;
-	errors: Array<{ workPeriodId: string; error: string }>;
-}> {
-	// Committed intents first, whatever the work's date: deferred adjustments recover
-	// here once their review resolves, and lost immediate runs are retried.
-	const recovered = await processAutomaticBreakIntents({
-		organizationId: options?.organizationId,
-		afterAdjusted: async (outcome, target) => {
-			if (!outcome.surchargeSnapshot) return;
-			const snapshot = outcome.surchargeSnapshot;
-			await Effect.runPromise(
-				Effect.gen(function* () {
-					const surchargeService = yield* SurchargeService;
-					yield* surchargeService.reconcileWorkPeriods({
-						organizationId: target.organizationId,
-						employeeId: target.employeeId,
-						surchargePeriodIds: [outcome.workPeriodId, outcome.generatedWorkPeriodId],
-						staleSurchargePeriodIds: [],
-						surchargeSnapshot: snapshot,
-					});
-				}).pipe(Effect.provide(SurchargeServiceLive), Effect.provide(DatabaseServiceLive)),
-			);
-		},
-	});
-
-	const effect = Effect.gen(function* () {
-		const breakService = yield* BreakEnforcementService;
-
-		return yield* breakService.processUnprocessedPeriods({
-			date: options?.date,
-			organizationId: options?.organizationId,
-		});
-	}).pipe(
-		Effect.provide(BreakEnforcementServiceLive),
-		Effect.provide(WorkPolicyServiceLive),
-		Effect.provide(DatabaseServiceLive),
-	);
-
-	const daily = await Effect.runPromise(effect);
-	return {
-		processedCount: recovered.processed + daily.processedCount,
-		adjustedCount: recovered.adjusted + daily.adjustedCount,
-		deferredCount: recovered.deferred,
-		errors: [...recovered.errors, ...daily.errors],
-	};
-}
 
 // ============================================
 // TESTING HELPERS

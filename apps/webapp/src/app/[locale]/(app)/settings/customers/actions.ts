@@ -14,8 +14,8 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { AuthServiceLive } from "@/lib/effect/services/auth.service";
-import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { runtime } from "@/lib/effect/runtime";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
 import {
 	ensureSettingsActorCanAccessCustomerTarget,
@@ -111,13 +111,12 @@ export async function getCustomers(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
+	return runtime
+		.runPromise(effect)
 		.then((data) => ({ success: true as const, data }))
 		.catch((error) => ({
 			success: false as const,
@@ -279,13 +278,12 @@ export async function createCustomer(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
+	return runtime
+		.runPromise(effect)
 		.then((data) => ({ success: true as const, data }))
 		.catch((error) => ({
 			success: false as const,
@@ -415,13 +413,12 @@ export async function updateCustomer(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
+	return runtime
+		.runPromise(effect)
 		.then(() => ({ success: true as const, data: undefined }))
 		.catch((error) => ({
 			success: false as const,
@@ -516,13 +513,12 @@ export async function deleteCustomer(customerId: string): Promise<ServerActionRe
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
+	return runtime
+		.runPromise(effect)
 		.then(() => ({ success: true as const, data: undefined }))
 		.catch((error) => ({
 			success: false as const,
@@ -575,13 +571,12 @@ export async function getCustomersForSelection(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
+	return runtime
+		.runPromise(effect)
 		.then((data) => ({ success: true as const, data }))
 		.catch((error) => ({
 			success: false as const,

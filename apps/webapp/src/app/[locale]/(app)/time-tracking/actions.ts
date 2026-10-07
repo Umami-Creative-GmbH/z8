@@ -33,22 +33,15 @@ import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
+import { AppLayer, runtime } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import {
 	ChangePolicyService,
-	ChangePolicyServiceLive,
 	type EditCapability,
 } from "@/lib/effect/services/change-policy.service";
-import {
-	DatabaseService,
-	DatabaseServiceLive,
-} from "@/lib/effect/services/database.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
-import {
-	WorkPolicyService,
-	WorkPolicyServiceLive,
-} from "@/lib/effect/services/work-policy.service";
+import { WorkPolicyService } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
 import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
@@ -542,12 +535,9 @@ export async function getBreakReminderStatus(): Promise<
 						}
 					: null,
 			};
-		}).pipe(
-			Effect.provide(WorkPolicyServiceLive),
-			Effect.provide(DatabaseServiceLive),
-		);
+		});
 
-		const breakStatus = await Effect.runPromise(breakStatusEffect);
+		const breakStatus = await runtime.runPromise(breakStatusEffect);
 		return { success: true, data: breakStatus };
 	} catch (error) {
 		logger.error({ error }, "Failed to get break reminder status");
@@ -1035,7 +1025,7 @@ export async function getWorkPeriodEditCapability(
 	}
 
 	try {
-		const result = await Effect.runPromise(
+		const result = await runtime.runPromise(
 			Effect.gen(function* () {
 				const policyService = yield* ChangePolicyService;
 
@@ -1053,10 +1043,7 @@ export async function getWorkPeriodEditCapability(
 					capability,
 					policyName: policy?.policyName || null,
 				};
-			}).pipe(
-				Effect.provide(ChangePolicyServiceLive),
-				Effect.provide(DatabaseServiceLive),
-			),
+			}),
 		);
 
 		return { success: true, data: result };

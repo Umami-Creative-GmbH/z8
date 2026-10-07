@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { billingSeatAudit } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { DatabaseError, StripeError } from "@/lib/effect/errors";
+import { type CallbackRunner, tryPromiseWithRunner } from "@/lib/effect/promise-callback";
 import { countBillableSeats } from "@/lib/effect/services/billing/billable-seat-count";
 import {
 	deliverOrganizationSeats,
@@ -64,17 +65,16 @@ export const SeatSyncServiceLive = Layer.effect(
 		const stripeService = yield* StripeService;
 		const subscriptionService = yield* SubscriptionService;
 
-		const stripePort: SeatStripePort = {
+		/** Stripe calls for the seat delivery, run on the calling fiber through `run`. */
+		const stripePortFor = (run: CallbackRunner<never>): SeatStripePort => ({
 			getQuantity: async (subscriptionId) => {
-				const stripeSubscription = await Effect.runPromise(
-					stripeService.getSubscription(subscriptionId),
-				);
+				const stripeSubscription = await run(stripeService.getSubscription(subscriptionId));
 				const item = stripeSubscription.items.data[0];
 				if (!item) throw new Error("Stripe subscription has no seat item");
 				return { itemId: item.id, quantity: item.quantity ?? 0 };
 			},
 			setQuantity: async (input) => {
-				await Effect.runPromise(
+				await run(
 					stripeService.updateSubscription(
 						input.subscriptionId,
 						{
@@ -85,7 +85,7 @@ export const SeatSyncServiceLive = Layer.effect(
 					),
 				);
 			},
-		};
+		});
 
 		/**
 		 * Recomputes current billable seats and delivers them in order under the
@@ -95,12 +95,12 @@ export const SeatSyncServiceLive = Layer.effect(
 		const syncSeatsForOrganization = (
 			organizationId: string,
 		): Effect.Effect<number, DatabaseError | StripeError> =>
-			Effect.tryPromise({
-				try: async () => {
+			tryPromiseWithRunner({
+				try: async (run) => {
 					const outcome = await deliverOrganizationSeats({
 						pool: db.$client,
 						organizationId,
-						stripe: stripeService.config.enabled ? stripePort : null,
+						stripe: stripeService.config.enabled ? stripePortFor(run) : null,
 					});
 					logger.info({ organizationId, ...outcome }, "Synced billable seats");
 					return outcome.seats;

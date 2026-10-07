@@ -22,7 +22,10 @@ export const AppLayer = Layer.mergeAll(
 	DatabaseServiceLive,
 	AuthServiceLive,
 	EmailServiceLive,
-	AnalyticsService.Live.pipe(Layer.provide(DatabaseServiceLive)),
+	AnalyticsService.Live.pipe(
+		Layer.provide(WorkPolicyServiceLive),
+		Layer.provide(DatabaseServiceLive),
+	),
 	TimeEntryServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
 	PlatformAdminServiceLive,
 	SetupServiceLive,

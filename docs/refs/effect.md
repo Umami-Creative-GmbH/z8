@@ -31,3 +31,19 @@ These differ from v3, so code and examples written for v3 get them wrong.
 Define services as `class X extends Context.Service<X, Shape>()("X") {}` and provide them with `Layer.succeed` or `Layer.effect`. `lib/effect/services/database.service.ts` is the canonical example. Add a new service to the `AppLayer` in `lib/effect/runtime.ts`. Server actions run their effect through `runServerActionSafe` in `lib/effect/result.ts`, which turns an `Exit` into `ServerActionResult`.
 
 In tests, `vi.mock` factories import `effect`, and stub services with `Context.Service<any>("Name")`.
+
+## Runtime
+
+`runtime` in `lib/effect/runtime.ts` is the one shared `ManagedRuntime`, built from `AppLayer`. Don't create another one.
+
+1. **AppLayer services:** code that needs any `AppLayer` service runs on the shared runtime: `runServerActionSafe`, `runtime.runPromise` or `runtime.runPromiseExit`.
+2. **No self-provided AppLayer:** never provide `AppLayer`, or a layer that is a member of it, yourself. The runtime already holds them.
+3. **Services outside AppLayer** (billing, surcharge, break enforcement, schedule and Teams compliance, open shifts, invite code, time record, approval query): provide their own `*Live` layer with `Effect.provide(...)` on top of a shared-runtime run. The layer then reads `DatabaseService`, `WorkPolicyService` and the rest from the runtime instead of rebuilding them. Don't add `*FullLive` layers that bundle `DatabaseServiceLive`.
+4. **Bare runs:** `Effect.runPromise` and `Effect.runPromiseExit` are only for effects that need no services (`R = never`), such as calendar provider calls or effects that take their dependencies as arguments.
+5. **Transactions:** transaction overrides stay inside the transaction. Pass a transaction-bound instance with `Effect.provideService(Tag, instance)`, as the approval audit logger does, or rebuild a layer against the transaction with `Effect.provide(layer, { local: true })`, as the canonical time-entry client does.
+6. **Nested runs:** service methods compose with `yield*`. Run an effect from inside a running one only at a Promise callback boundary, such as a port, a `planLegacy` hook or a `db.transaction(async (tx) => …)` callback. Use `tryPromiseWithRunner` from `lib/effect/promise-callback.ts` there: its runner keeps the caller's services, tracing span and interruption.
+7. **Billing** stays out of `AppLayer`. Every billing run provides `BillingServicesLive` from `lib/effect/services/billing` and runs on the shared runtime. Import that module lazily outside the billing routes and jobs, and gate on `BILLING_ENABLED`. The Stripe client is created once per process and secret key.
+
+A layer provided on top of the runtime is built for that run only, and its own new layers are not memoized past it. Keep process-wide resources, such as the Stripe client, in module scope.
+
+A module that `AppLayer` itself imports, such as the time-tracking calculations that `AnalyticsService` uses, must not import the runtime, because that closes an import cycle. Export an effect that requires the service instead, and let callers on the runtime run it.

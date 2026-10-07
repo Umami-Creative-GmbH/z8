@@ -95,7 +95,7 @@ import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
+import { AppLayer, runtime } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import {
 	DatabaseService,
@@ -2272,7 +2272,7 @@ export async function dispatchCommittedTimeCorrectionSubmission(
 			dispatchSubmissionPostCommit({ ...input, dbService, emailService }),
 		);
 	});
-	await Effect.runPromise(effect.pipe(Effect.provide(AppLayer)));
+	await runtime.runPromise(effect);
 }
 
 async function loadSubmissionActor(

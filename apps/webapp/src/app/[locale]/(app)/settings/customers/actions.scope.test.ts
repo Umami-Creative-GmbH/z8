@@ -113,6 +113,16 @@ vi.mock("@/lib/effect/services/database.service", async () => {
 	return { DatabaseService, DatabaseServiceLive };
 });
 
+// The shared runtime over the stub AppLayer members the actions read.
+vi.mock("@/lib/effect/runtime", async () => {
+	const { Layer } = await import("effect");
+	const { AuthServiceLive } = await import("@/lib/effect/services/auth.service");
+	const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(
+		Layer.mergeAll(AuthServiceLive, DatabaseServiceLive),
+	);
+});
+
 vi.mock("@/db", () => ({
 	db: {
 		query: {

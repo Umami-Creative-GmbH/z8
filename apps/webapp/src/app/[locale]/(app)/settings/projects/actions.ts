@@ -19,8 +19,7 @@ import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { AuthServiceLive } from "@/lib/effect/services/auth.service";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { runtime } from "@/lib/effect/runtime";
 import { logger } from "@/lib/logger";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
 import {
@@ -330,13 +329,12 @@ export async function getProjects(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
+	return runtime
+		.runPromise(effect)
 		.then((data) => ({ success: true as const, data }))
 		.catch((error) => ({
 			success: false as const,
@@ -488,13 +486,12 @@ export async function createProject(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
+	return runtime
+		.runPromise(effect)
 		.then((data) => ({ success: true as const, data }))
 		.catch((error) => ({
 			success: false as const,
@@ -648,13 +645,12 @@ export async function updateProject(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
+	return runtime
+		.runPromise(effect)
 		.then(() => ({ success: true as const, data: undefined }))
 		.catch((error) => ({
 			success: false as const,
@@ -778,13 +774,12 @@ export async function addProjectManager(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
+	return runtime
+		.runPromise(effect)
 		.then(() => ({ success: true as const, data: undefined }))
 		.catch((error) => ({
 			success: false as const,
@@ -876,13 +871,12 @@ export async function removeProjectManager(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
+	return runtime
+		.runPromise(effect)
 		.then(() => ({ success: true as const, data: undefined }))
 		.catch((error) => ({
 			success: false as const,
@@ -1010,13 +1004,12 @@ export async function addProjectAssignment(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
+	return runtime
+		.runPromise(effect)
 		.then(() => ({ success: true as const, data: undefined }))
 		.catch((error) => ({
 			success: false as const,
@@ -1136,13 +1129,12 @@ export async function removeProjectAssignment(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
+	return runtime
+		.runPromise(effect)
 		.then(() => ({ success: true as const, data: undefined }))
 		.catch((error) => ({
 			success: false as const,
@@ -1191,13 +1183,12 @@ export async function getTeamsForSelection(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
+	return runtime
+		.runPromise(effect)
 		.then((data) => ({ success: true as const, data }))
 		.catch((error) => ({
 			success: false as const,
@@ -1256,13 +1247,12 @@ export async function getEmployeesForSelection(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
+	return runtime
+		.runPromise(effect)
 		.then((data) => ({ success: true as const, data }))
 		.catch((error) => ({
 			success: false as const,

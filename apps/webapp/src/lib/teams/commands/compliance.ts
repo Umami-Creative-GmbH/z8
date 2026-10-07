@@ -12,7 +12,7 @@ import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bo
 import {
 	type ComplianceSummary,
 	TeamsComplianceService,
-	TeamsComplianceServiceFullLive,
+	TeamsComplianceServiceLive,
 } from "@/lib/effect/services/teams-compliance.service";
 import { createLogger } from "@/lib/logger";
 import { buildComplianceCard } from "../cards/compliance-card";
@@ -68,12 +68,11 @@ async function complianceHandler(ctx: BotCommandContext): Promise<BotCommandResp
 			});
 		});
 
-		const summary = await Effect.runPromise(
-			program.pipe(Effect.provide(TeamsComplianceServiceFullLive)) as Effect.Effect<
-				ComplianceSummary,
-				never,
-				never
-			>,
+		// The runtime is server-only; a static import would keep the shared bot command
+		// registry from loading in a plain-Node worker (escalation-worker-imports.test.ts).
+		const { runtime } = await import("@/lib/effect/runtime");
+		const summary: ComplianceSummary = await runtime.runPromise(
+			program.pipe(Effect.provide(TeamsComplianceServiceLive)),
 		);
 
 		// If no compliance data, return text response

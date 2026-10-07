@@ -2,6 +2,7 @@ import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import type { AnyAppError } from "@/lib/effect/errors";
+import { runtime } from "@/lib/effect/runtime";
 import {
 	buildSummaryCounts,
 	detectAbsencesToday,
@@ -558,7 +559,7 @@ const databaseSources: ManagerDailyBriefingSources = {
 		);
 		const scopedEmployeeIds = new Set(employeeIds);
 
-		const result = await Effect.runPromise(
+		const result = await runtime.runPromise(
 			Effect.gen(function* () {
 				const approvalQueryService = yield* ApprovalQueryService;
 				return yield* approvalQueryService.getApprovals({

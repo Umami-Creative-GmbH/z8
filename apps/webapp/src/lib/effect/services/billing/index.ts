@@ -7,7 +7,6 @@ export * from "./seat-sync.service";
 export * from "./stripe.service";
 export * from "./subscription.service";
 
-// Re-export combined layer for convenience
 import { Layer } from "effect";
 import { BillingEnforcementServiceLive } from "./billing-enforcement.service";
 import { BillingEventsServiceLive } from "./billing-events.service";
@@ -16,30 +15,15 @@ import { StripeServiceLive } from "./stripe.service";
 import { SubscriptionServiceLive } from "./subscription.service";
 
 /**
- * Combined layer for all billing services
- * Use this in route handlers and server actions
+ * The one billing layer: Stripe, Subscription, BillingEnforcement, SeatSync and
+ * BillingEvents, each built once per run. Billing is not part of `AppLayer`; every
+ * billing run provides this layer on top of the shared runtime, and callers outside
+ * the billing routes import this module lazily.
  */
 export const BillingServicesLive = Layer.mergeAll(
-	StripeServiceLive,
-	SubscriptionServiceLive,
+	BillingEventsServiceLive,
 	BillingEnforcementServiceLive,
 ).pipe(
-	Layer.provideMerge(
-		SeatSyncServiceLive.pipe(
-			Layer.provide(StripeServiceLive),
-			Layer.provide(SubscriptionServiceLive),
-		),
-	),
-	Layer.provideMerge(
-		BillingEventsServiceLive.pipe(
-			Layer.provide(StripeServiceLive),
-			Layer.provide(SubscriptionServiceLive),
-			Layer.provide(
-				SeatSyncServiceLive.pipe(
-					Layer.provide(StripeServiceLive),
-					Layer.provide(SubscriptionServiceLive),
-				),
-			),
-		),
-	),
+	Layer.provideMerge(SeatSyncServiceLive),
+	Layer.provideMerge(Layer.mergeAll(StripeServiceLive, SubscriptionServiceLive)),
 );

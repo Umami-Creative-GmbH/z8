@@ -19,8 +19,8 @@ import {
 	type PrincipalContext,
 } from "@/lib/authorization";
 import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-loader";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
-import { ManagerService, ManagerServiceLive } from "@/lib/effect/services/manager.service";
+import { runtime } from "@/lib/effect/runtime";
+import { ManagerService } from "@/lib/effect/services/manager.service";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
 import {
@@ -295,9 +295,7 @@ export async function isManagerOf(targetEmployeeId: string): Promise<boolean> {
 	});
 
 	try {
-		return await Effect.runPromise(
-			effect.pipe(Effect.provide(ManagerServiceLive), Effect.provide(DatabaseServiceLive)),
-		);
+		return await runtime.runPromise(effect);
 	} catch (_error) {
 		// If there's an error checking the relationship, return false
 		return false;

@@ -4,7 +4,8 @@ import { Cause, Effect, Exit, Option } from "effect";
 import { DateTime } from "luxon";
 import { getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { type DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { runtime } from "@/lib/effect/runtime";
+import type { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	TimeRecordService,
 	TimeRecordServiceLive,
@@ -39,9 +40,7 @@ function parseOptionalIsoDate(
 async function runTimeRecordEffect<T, E>(
 	effect: Effect.Effect<T, E, TimeRecordService | DatabaseService>,
 ): Promise<ServerActionResult<T>> {
-	const exit = await Effect.runPromiseExit(
-		effect.pipe(Effect.provide(TimeRecordServiceLive), Effect.provide(DatabaseServiceLive)),
-	);
+	const exit = await runtime.runPromiseExit(effect.pipe(Effect.provide(TimeRecordServiceLive)));
 
 	if (Exit.isSuccess(exit)) {
 		return { success: true, data: exit.value };

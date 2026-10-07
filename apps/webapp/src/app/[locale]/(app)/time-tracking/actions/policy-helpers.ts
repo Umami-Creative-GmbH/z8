@@ -1,12 +1,11 @@
 import "server-only";
 
 import { Effect } from "effect";
+import { runtime } from "@/lib/effect/runtime";
 import {
 	ChangePolicyService,
-	ChangePolicyServiceLive,
 	type EditCapability,
 } from "@/lib/effect/services/change-policy.service";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 
 export async function getEditCapabilityForPeriod(params: {
 	employeeId: string;
@@ -17,7 +16,7 @@ export async function getEditCapabilityForPeriod(params: {
 		const policyService = yield* ChangePolicyService;
 
 		return yield* policyService.getEditCapability(params);
-	}).pipe(Effect.provide(ChangePolicyServiceLive), Effect.provide(DatabaseServiceLive));
+	});
 
-	return Effect.runPromise(effect);
+	return runtime.runPromise(effect);
 }

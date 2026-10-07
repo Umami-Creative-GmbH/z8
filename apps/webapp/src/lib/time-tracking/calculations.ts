@@ -1,6 +1,7 @@
 import "server-only";
 
 import { and, eq, gte, isNotNull, lte } from "drizzle-orm";
+import { Effect } from "effect";
 import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
 import { shouldExcludeFromCalculations } from "@/lib/calendar/holiday-service";
@@ -11,8 +12,10 @@ import {
 	startOfDay,
 	toDateKey,
 } from "@/lib/datetime/luxon-utils";
-import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.service";
-import { runEmployeePolicyLookup } from "@/lib/effect/work-policy-runtime";
+import {
+	type EffectiveWorkPolicy,
+	WorkPolicyService,
+} from "@/lib/effect/services/work-policy.service";
 
 export interface WorkHoursSummary {
 	totalMinutes: number;
@@ -200,19 +203,19 @@ export async function calculateWorkHoursByEmployee(
 }
 
 /**
- * Get employee's effective work policy
- * Returns null if no policy is assigned
+ * The employee's effective work policy within the organization, or null when none is
+ * assigned or the lookup fails. It requires `WorkPolicyService`: callers run it on the
+ * shared runtime, or provide the service they already hold. This module never imports
+ * the runtime: `AnalyticsService`, which is part of `AppLayer`, imports it.
  */
-export async function getEmployeePolicy(
+export function getEmployeePolicy(
 	employeeId: string,
 	organizationId: string,
-): Promise<EffectiveWorkPolicy | null> {
-	try {
-		return await runEmployeePolicyLookup(employeeId, organizationId);
-	} catch {
-		// Return null if service fails or employee not found
-		return null;
-	}
+): Effect.Effect<EffectiveWorkPolicy | null, never, WorkPolicyService> {
+	return Effect.gen(function* () {
+		const workPolicyService = yield* WorkPolicyService;
+		return yield* workPolicyService.getEffectivePolicy(employeeId, organizationId);
+	}).pipe(Effect.catchCause(() => Effect.succeed(null)));
 }
 
 /**
@@ -269,22 +272,41 @@ export async function calculateExpectedWorkHours(
 	};
 }
 
+export type ExpectedWorkHoursSummary = WorkHoursSummary & {
+	scheduleInfo: { name: string; source: string } | null;
+};
+
 /**
  * Calculate expected work hours for an employee in a date range
  * Uses the employee's effective work policy schedule for accurate calculations
  */
-export async function calculateExpectedWorkHoursForEmployee(
+export function calculateExpectedWorkHoursForEmployee(
 	employeeId: string,
 	organizationId: string,
 	startDate: Date,
 	endDate: Date,
 	timezone?: string,
-): Promise<
-	WorkHoursSummary & { scheduleInfo: { name: string; source: string } | null }
-> {
-	// Get employee's effective policy
-	const policy = await getEmployeePolicy(employeeId, organizationId);
+): Effect.Effect<ExpectedWorkHoursSummary, never, WorkPolicyService> {
+	return getEmployeePolicy(employeeId, organizationId).pipe(
+		Effect.flatMap((policy) =>
+			Effect.promise(() =>
+				calculateExpectedWorkHoursForPolicy(policy, organizationId, startDate, endDate, timezone),
+			),
+		),
+	);
+}
 
+/**
+ * Expected work hours in a date range under an already resolved policy (see
+ * `getEmployeePolicy`); without one, eight-hour weekdays.
+ */
+export async function calculateExpectedWorkHoursForPolicy(
+	policy: EffectiveWorkPolicy | null,
+	organizationId: string,
+	startDate: Date,
+	endDate: Date,
+	timezone?: string,
+): Promise<ExpectedWorkHoursSummary> {
 	let currentDT = fromJSDate(startDate, timezone);
 	const endDT = fromJSDate(endDate, timezone);
 
@@ -339,29 +361,19 @@ export async function calculateExpectedWorkHoursForEmployee(
  * Compare actual vs expected work hours
  * Uses employee's work schedule for accurate expected hours calculation
  */
-export async function compareWorkHours(
+export const compareWorkHours = Effect.fn("compareWorkHours")(function* (
 	employeeId: string,
 	organizationId: string,
 	startDate: Date,
 	endDate: Date,
-): Promise<{
-	actual: WorkHoursSummary;
-	expected: WorkHoursSummary & {
-		scheduleInfo: { name: string; source: string } | null;
-	};
-	differenceMinutes: number;
-	differenceHours: number;
-	percentageOfExpected: number;
-}> {
-	const [actual, expected] = await Promise.all([
-		calculateWorkHours(employeeId, organizationId, startDate, endDate),
-		calculateExpectedWorkHoursForEmployee(
-			employeeId,
-			organizationId,
-			startDate,
-			endDate,
-		),
-	]);
+) {
+	const [actual, expected] = yield* Effect.all(
+		[
+			Effect.promise(() => calculateWorkHours(employeeId, organizationId, startDate, endDate)),
+			calculateExpectedWorkHoursForEmployee(employeeId, organizationId, startDate, endDate),
+		],
+		{ concurrency: "unbounded" },
+	);
 
 	const differenceMinutes = actual.totalMinutes - expected.totalMinutes;
 	const percentageOfExpected =
@@ -376,4 +388,4 @@ export async function compareWorkHours(
 		differenceHours: Math.round((differenceMinutes / 60) * 100) / 100,
 		percentageOfExpected,
 	};
-}
+});

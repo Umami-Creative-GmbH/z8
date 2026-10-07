@@ -10,7 +10,7 @@ import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import { employee, location, locationSubarea, shift, shiftRequest } from "@/db/schema";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { DatabaseService, DatabaseServiceLive } from "./database.service";
+import { DatabaseService } from "./database.service";
 
 // ============================================
 // TYPES
@@ -332,12 +332,4 @@ export const OpenShiftsServiceLive = Layer.effect(
 				}),
 		});
 	}),
-);
-
-// ============================================
-// LAYER DEPENDENCIES
-// ============================================
-
-export const OpenShiftsServiceFullLive = OpenShiftsServiceLive.pipe(
-	Layer.provide(DatabaseServiceLive),
 );

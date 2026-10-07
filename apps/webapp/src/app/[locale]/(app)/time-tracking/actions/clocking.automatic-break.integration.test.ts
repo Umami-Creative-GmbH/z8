@@ -123,9 +123,7 @@ const { approveApprovalInboxItem, rejectApprovalInboxItem } = await import(
 	"@/lib/approvals/inbox/decision-service"
 );
 const { cancelMyTimeCorrectionRequest } = await import("../../my-requests/actions");
-const { runBreakEnforcementCheck } = await import(
-	"@/lib/effect/services/break-enforcement.service"
-);
+const { runBreakEnforcementCheck } = await import("@/lib/jobs/break-enforcement");
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
 const { deriveAutomaticBreakIntentId, deriveAutomaticBreakOperationId } = await import(
 	"@/lib/time-tracking/automatic-break-adjustment"

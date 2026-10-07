@@ -1,13 +1,11 @@
-import { Effect, Layer } from "effect";
+import { Effect } from "effect";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { env } from "@/env";
+import { runtime } from "@/lib/effect/runtime";
 import {
 	BillingEventsService,
-	BillingEventsServiceLive,
-	SeatSyncServiceLive,
+	BillingServicesLive,
 	StripeService,
-	StripeServiceLive,
-	SubscriptionServiceLive,
 } from "@/lib/effect/services/billing";
 import { createLogger } from "@/lib/logger";
 
@@ -47,28 +45,6 @@ export async function POST(request: NextRequest) {
 
 	const body = await request.text();
 
-	// Build service layers
-	const layers = Layer.mergeAll(StripeServiceLive, SubscriptionServiceLive).pipe(
-		Layer.provideMerge(
-			SeatSyncServiceLive.pipe(
-				Layer.provide(StripeServiceLive),
-				Layer.provide(SubscriptionServiceLive),
-			),
-		),
-		Layer.provideMerge(
-			BillingEventsServiceLive.pipe(
-				Layer.provide(StripeServiceLive),
-				Layer.provide(SubscriptionServiceLive),
-				Layer.provide(
-					SeatSyncServiceLive.pipe(
-						Layer.provide(StripeServiceLive),
-						Layer.provide(SubscriptionServiceLive),
-					),
-				),
-			),
-		),
-	);
-
 	const program = Effect.gen(function* () {
 		const stripeService = yield* StripeService;
 		const billingEventsService = yield* BillingEventsService;
@@ -85,7 +61,7 @@ export async function POST(request: NextRequest) {
 	});
 
 	try {
-		const result = await Effect.runPromise(program.pipe(Effect.provide(layers)));
+		const result = await runtime.runPromise(program.pipe(Effect.provide(BillingServicesLive)));
 		return NextResponse.json(result);
 	} catch (error) {
 		logger.error({ error }, "Webhook processing failed");

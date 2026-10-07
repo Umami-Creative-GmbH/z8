@@ -8,11 +8,11 @@ import { env } from "@/env";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
+import { runtime } from "@/lib/effect/runtime";
 import {
+	BillingServicesLive,
 	StripeService,
-	StripeServiceLive,
 	SubscriptionService,
-	SubscriptionServiceLive,
 } from "@/lib/effect/services/billing";
 import { countBillableSeats } from "@/lib/effect/services/billing/billable-seat-count";
 import { getDaysRemaining } from "@/lib/effect/services/billing/billing-access";
@@ -138,9 +138,7 @@ export async function POST(request: NextRequest) {
 	});
 
 	try {
-		const result = await Effect.runPromise(
-			program.pipe(Effect.provide(StripeServiceLive), Effect.provide(SubscriptionServiceLive)),
-		);
+		const result = await runtime.runPromise(program.pipe(Effect.provide(BillingServicesLive)));
 		return NextResponse.json(result);
 	} catch (error) {
 		logger.error({ error, organizationId }, "Failed to create checkout session");

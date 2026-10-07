@@ -43,8 +43,11 @@ vi.mock("effect", () => ({
 	Effect: {
 		flatMap: vi.fn(() => ({ pipe: vi.fn(() => undefined) })),
 		provide: vi.fn(),
-		runPromise: vi.fn(() => mockState.checkBillingAccess()),
 	},
+}));
+
+vi.mock("@/lib/effect/runtime", () => ({
+	runtime: { runPromise: vi.fn(() => mockState.checkBillingAccess()) },
 }));
 
 vi.mock("@/components/billing/trial-banner", () => ({
@@ -165,9 +168,9 @@ vi.mock("@/lib/auth", () => ({
 	auth: { api: { getSession: mockState.getSession } },
 }));
 
-vi.mock("@/lib/effect/services/billing/billing-enforcement.service", () => ({
+vi.mock("@/lib/effect/services/billing", () => ({
 	BillingEnforcementService: {},
-	BillingEnforcementServiceLive: {},
+	BillingServicesLive: {},
 }));
 
 vi.mock("@/lib/logger", () => ({

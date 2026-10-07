@@ -64,10 +64,13 @@ vi.mock("@/lib/effect/services/billing", async () => {
 	return {
 		SeatSyncService,
 		SeatSyncServiceLive,
-		StripeServiceLive: Layer.empty,
-		SubscriptionServiceLive: Layer.empty,
+		BillingServicesLive: SeatSyncServiceLive,
 	};
 });
+
+vi.mock("@/lib/effect/runtime", async () =>
+	(await import("@/test/effect-runtime")).runtimeModuleOver(),
+);
 
 import { runBillingSeatReconciliation } from "./billing-seat-reconciliation";
 

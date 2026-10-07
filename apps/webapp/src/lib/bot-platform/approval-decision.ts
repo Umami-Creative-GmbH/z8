@@ -25,10 +25,8 @@ import {
 import { decideBoundLegacyTravelExpenseInvocation } from "@/lib/approvals/server/travel-expense-report-bound-decision";
 import type { ApprovalAction } from "@/lib/approvals/server/types";
 import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/server/work-period-approvals";
-import {
-	DatabaseService,
-	DatabaseServiceLive,
-} from "@/lib/effect/services/database.service";
+import { runtime } from "@/lib/effect/runtime";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { BotPlatform } from "./types";
 
 const platformNames: Record<BotPlatform, string> = {
@@ -96,7 +94,7 @@ export async function attemptBotApproval(
 	// No first-read source facts are handed to rendering. The owner reloads the
 	// exact target and verifies committed matching; it cannot fall through to a
 	// fresh decision even if discovery raced with reassignment or source edits.
-	const verified = await Effect.runPromise(
+	const verified = await runtime.runPromise(
 		Effect.gen(function* () {
 			const service = yield* DatabaseService;
 			return yield* decideOrdinaryWorkPeriodWithStableTargetEffect(
@@ -115,7 +113,7 @@ export async function attemptBotApproval(
 								},
 				},
 			).pipe(Effect.result);
-		}).pipe(Effect.provide(DatabaseServiceLive)),
+		}),
 	);
 	return verified._tag === "Success"
 		? { status: "historical", action: input.action }

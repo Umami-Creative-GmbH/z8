@@ -26,6 +26,7 @@ import {
 	instantFromDate,
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
+import { runtime } from "@/lib/effect/runtime";
 import { calculateExpectedWorkHoursForEmployee } from "@/lib/time-tracking/calculations";
 import { formatDateRangeLabel } from "./date-ranges";
 import { calculateHourlyEarningsFromIntervals } from "./hourly-earnings";
@@ -167,12 +168,14 @@ export async function generateEmployeeReport(
 			endDate,
 			calendarRange,
 		),
-		calculateExpectedWorkHoursForEmployee(
-			employeeId,
-			organizationId,
-			startDate,
-			endDate,
-			calendarRange?.timezone,
+		runtime.runPromise(
+			calculateExpectedWorkHoursForEmployee(
+				employeeId,
+				organizationId,
+				startDate,
+				endDate,
+				calendarRange?.timezone,
+			),
 		),
 	]);
 	const workHours = aggregateWorkHoursFromPeriods(periods, reportRange);
