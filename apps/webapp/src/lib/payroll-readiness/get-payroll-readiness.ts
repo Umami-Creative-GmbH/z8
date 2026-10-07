@@ -8,7 +8,13 @@ import {
 	payrollWageTypeMapping,
 	timeRecord,
 } from "@/db";
-import { employeeEmploymentHistory, travelExpenseClaim } from "@/db/schema";
+import {
+	employeeEmploymentHistory,
+	travelExpenseClaim,
+	travelExpenseLegacyDraftConversion,
+	travelExpenseReport,
+	travelExpenseReportItem,
+} from "@/db/schema";
 import { findOpenDepartureClockRepairs } from "@/lib/employee-lifecycle/reviews";
 
 export type PayrollReadinessStatus = "ready" | "blocked" | "unavailable";
@@ -219,6 +225,7 @@ export async function getPayrollReadiness(
 		exportConfigs,
 		latestExportJobs,
 		travelExpenseClaims,
+		pendingTravelExpenseReports,
 		clockRepairLookup,
 	] = await Promise.all([
 		db.query.timeRecord.findMany({
@@ -290,6 +297,11 @@ export async function getPayrollReadiness(
 				or(eq(travelExpenseClaim.status, "submitted"), eq(travelExpenseClaim.status, "draft")),
 				lte(travelExpenseClaim.tripStart, end.toJSDate()),
 				gte(travelExpenseClaim.tripEnd, start.toJSDate()),
+				// A legacy draft continued as a report (#616) keeps its `draft` status
+				// forever; the report it became is checked below instead.
+				sql`not exists (select 1 from ${travelExpenseLegacyDraftConversion} conversion
+					where conversion.organization_id = ${travelExpenseClaim.organizationId}
+					and conversion.claim_id = ${travelExpenseClaim.id})`,
 			),
 			with: {
 				employee: {
@@ -298,6 +310,25 @@ export async function getPayrollReadiness(
 					},
 				},
 			},
+		}),
+		// Submitted travel expense reports awaiting a decision: a trip overlapping
+		// the period, or any expense dated inside it (logical calendar dates).
+		db.query.travelExpenseReport.findMany({
+			where: and(
+				eq(travelExpenseReport.organizationId, organizationId),
+				eq(travelExpenseReport.status, "submitted"),
+				or(
+					and(
+						lte(travelExpenseReport.tripStartDate, selectedEndDate),
+						gte(travelExpenseReport.tripEndDate, selectedStartDate),
+					),
+					sql`exists (select 1 from ${travelExpenseReportItem} report_item
+						where report_item.organization_id = ${travelExpenseReport.organizationId}
+						and report_item.report_id = ${travelExpenseReport.id}
+						and report_item.expense_date between ${selectedStartDate} and ${selectedEndDate})`,
+				),
+			),
+			columns: { id: true, employeeId: true },
 		}),
 		// A failed lookup must surface as unavailable, never as ready.
 		findOpenDepartureClockRepairs(db, {
@@ -333,6 +364,18 @@ export async function getPayrollReadiness(
 		(activeEmployee) => !employeesWithEmploymentHistory.has(activeEmployee.id),
 	);
 	const latestExportJob = latestExportJobs.find((job) => isExportForPeriod(job, start, end));
+	// Reports load no relations; name their employees from the active employee list.
+	const activeEmployeesById = new Map(
+		activeEmployees.map((activeEmployee) => [activeEmployee.id, activeEmployee]),
+	);
+	const travelExpenseSources: EmployeeSource[] = [
+		...travelExpenseClaims,
+		...pendingTravelExpenseReports.map((report) => ({
+			employeeId: report.employeeId,
+			employee: activeEmployeesById.get(report.employeeId) ?? null,
+		})),
+	];
+	const travelExpenseCount = travelExpenseClaims.length + pendingTravelExpenseReports.length;
 
 	const checks: PayrollReadinessCheck[] = [
 		buildCheck({
@@ -489,14 +532,14 @@ export async function getPayrollReadiness(
 			title: "Travel expense warnings",
 			titleKey: "settings.payrollReadiness.checks.travelExpenseWarnings.title",
 			description:
-				"Draft or submitted travel expense claims may need review but do not block payroll readiness.",
+				"Submitted travel expense reports and open legacy claims may need review but do not block payroll readiness.",
 			descriptionKey: "settings.payrollReadiness.checks.travelExpenseWarnings.description",
-			status: travelExpenseClaims.length > 0 ? "warning" : "pass",
-			severity: travelExpenseClaims.length > 0 ? "warning" : "info",
+			status: travelExpenseCount > 0 ? "warning" : "pass",
+			severity: travelExpenseCount > 0 ? "warning" : "info",
 			required: false,
-			count: travelExpenseClaims.length,
-			actionHref: "/approvals/inbox?types=travel_expense_claim",
-			affectedEmployees: uniqueAffectedEmployees(travelExpenseClaims),
+			count: travelExpenseCount,
+			actionHref: "/approvals/inbox?types=travel_expense_report,travel_expense_claim",
+			affectedEmployees: uniqueAffectedEmployees(travelExpenseSources),
 		}),
 	];
 

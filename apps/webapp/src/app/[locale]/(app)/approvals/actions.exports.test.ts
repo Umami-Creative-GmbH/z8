@@ -64,7 +64,7 @@ describe("approvals actions module structure", () => {
 		);
 
 		expect(payrollReadinessSource).toContain(
-			'actionHref: "/approvals/inbox?types=travel_expense_claim"',
+			'actionHref: "/approvals/inbox?types=travel_expense_report,travel_expense_claim"',
 		);
 		expect(payrollReadinessSource).not.toContain('actionHref: "/travel-expenses/approvals"');
 	});
