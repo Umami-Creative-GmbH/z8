@@ -12,10 +12,20 @@ const approvalQueryTestState = vi.hoisted(() => ({
 		getApprovals: ReturnType<typeof vi.fn>;
 		getCount: ReturnType<typeof vi.fn>;
 	}>,
+	logError: vi.fn(),
 }));
 
 vi.mock("@/lib/approvals/domain/registry", () => ({
 	getAllApprovalHandlers: () => approvalQueryTestState.handlers,
+}));
+
+vi.mock("@/lib/logger", () => ({
+	createLogger: () => ({
+		error: approvalQueryTestState.logError,
+		warn: vi.fn(),
+		info: vi.fn(),
+		debug: vi.fn(),
+	}),
 }));
 
 vi.mock("@/lib/effect/services/database.service", async () => {
@@ -216,6 +226,77 @@ describe("ApprovalQueryService", () => {
 
 		expect(result.items.map((item) => item.approvalType)).toEqual(["absence_entry"]);
 		expect(result.total).toBe(1);
+	});
+
+	it("logs a handler defect with the handler type instead of hiding it", async () => {
+		approvalQueryTestState.logError.mockClear();
+		approvalQueryTestState.handlers = [
+			{
+				type: "absence_entry",
+				getApprovals: vi.fn(() => Effect.succeed([])),
+				getCount: vi.fn(() => Effect.succeed(0)),
+			},
+			{
+				type: "travel_expense_claim",
+				getApprovals: vi.fn(() => Effect.die(new TypeError("Service not found: DatabaseService"))),
+				getCount: vi.fn(() => Effect.succeed(0)),
+			},
+		];
+
+		await runApprovalQuery(
+			Effect.gen(function* () {
+				const service = yield* ApprovalQueryService;
+				return yield* service.getApprovals({
+					approverId: "manager-1",
+					organizationId: "org-1",
+					status: "pending",
+					limit: 10,
+				});
+			}),
+		);
+
+		expect(approvalQueryTestState.logError).toHaveBeenCalledTimes(1);
+		expect(approvalQueryTestState.logError).toHaveBeenCalledWith(
+			expect.objectContaining({
+				approvalType: "travel_expense_claim",
+				organizationId: "org-1",
+				cause: expect.stringContaining("Service not found: DatabaseService"),
+			}),
+			expect.any(String),
+		);
+	});
+
+	it("does not log a typed handler failure as a defect", async () => {
+		approvalQueryTestState.logError.mockClear();
+		approvalQueryTestState.handlers = [
+			{
+				type: "travel_expense_claim",
+				getApprovals: vi.fn(() =>
+					Effect.fail(
+						new DatabaseError({
+							message: "Database query failed: batchGetTravelExpenseClaims",
+							operation: "batchGetTravelExpenseClaims",
+						}),
+					),
+				),
+				getCount: vi.fn(() => Effect.succeed(0)),
+			},
+		];
+
+		const result = await runApprovalQuery(
+			Effect.gen(function* () {
+				const service = yield* ApprovalQueryService;
+				return yield* service.getApprovals({
+					approverId: "manager-1",
+					organizationId: "org-1",
+					status: "pending",
+					limit: 10,
+				});
+			}),
+		);
+
+		expect(result.items).toEqual([]);
+		expect(approvalQueryTestState.logError).not.toHaveBeenCalled();
 	});
 
 	it("keeps filtered inbox results available when one requested approval handler dies", async () => {
