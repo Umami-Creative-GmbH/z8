@@ -796,6 +796,39 @@ describe("return, withdraw and resubmit reports (#603)", () => {
 		expect(await closuresOf(reportId)).toEqual([]);
 	});
 
+	it("follows a chain stage decided while the withdrawal waits, and keeps inconsistent cycles an error", async () => {
+		await addPolicyChain();
+		const reportId = await completeTrip();
+		expect((await submit(reportId)).success).toBe(true);
+		const firstStage = await pendingRequestId(reportId);
+		signIn("manager");
+		const [approved, withdrawn] = await raceOnRequestLock(
+			firstStage,
+			() => decide("approve", firstStage),
+			() => withdraw(reportId, 1),
+		);
+		// The first stage was approved; the withdrawal retired the second stage instead.
+		expect(approved.status).toBe(200);
+		expect(withdrawn).toEqual({ success: true, data: { status: "withdrawn" } });
+		expect(await reportState(reportId)).toMatchObject({ status: "draft" });
+		expect(await closuresOf(reportId)).toEqual([
+			expect.objectContaining({ submission_cycle: 1, kind: "withdrawn" }),
+		]);
+
+		// A submitted cycle without any pending request is not a race: it stays an integrity error.
+		const broken = await completeTrip();
+		expect((await submit(broken)).success).toBe(true);
+		await admin.query("update approval_request set status = 'approved' where id = $1", [
+			await pendingRequestId(broken),
+		]);
+		expect(await withdraw(broken, 1)).toEqual({
+			success: false,
+			error: "Failed to withdraw expense report",
+		});
+		expect((await reportState(broken)).status).toBe("submitted");
+		expect(await closuresOf(broken)).toEqual([]);
+	});
+
 	it("only lets reviewers authorized for the report return it", async () => {
 		const reportId = await completeTrip();
 		expect((await submit(reportId)).success).toBe(true);
