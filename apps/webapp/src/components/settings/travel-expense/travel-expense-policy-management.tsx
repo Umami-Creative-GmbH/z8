@@ -50,6 +50,8 @@ export function TravelExpensePolicyManagement() {
 			</CardHeader>
 			<CardContent className="overflow-x-auto">
 				<Table>
+					{/* Incidental: unrelated audit/export tables merely share a 4-column header. */}
+					{/* react-doctor-disable-next-line react-doctor/duplicate-jsx-subtree */}
 					<TableHeader>
 						<TableRow>
 							<TableHead>{t("settings.travelExpenses.effectiveFrom", "Effective From")}</TableHead>

@@ -20,17 +20,6 @@ import {
 	vehicleLabel,
 } from "@/components/travel-expenses/report/mileage-labels";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-	AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -63,6 +52,7 @@ import { queryKeys } from "@/lib/query/keys";
 import { MILEAGE_VEHICLES, type MileageVehicle } from "@/lib/travel-expenses/mileage";
 import type { MileagePolicyInputErrors } from "@/lib/travel-expenses/mileage-policy-input";
 import type { StatutoryMileageDefault } from "@/lib/travel-expenses/statutory-allowance-defaults";
+import { WithdrawVersionButton } from "./withdraw-version-button";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 const queryKey = queryKeys.travelExpenses.mileagePolicy();
@@ -260,7 +250,7 @@ function MileagePolicyContent({
 										>
 											{t("settings.travelExpenses.mileage.replace", "Replace")}
 										</Button>
-										<WithdrawVersionButton
+										<WithdrawMileageVersionButton
 											versionId={version.id}
 											effectiveFrom={version.effectiveFrom}
 										/>
@@ -361,7 +351,8 @@ function MileagePolicyContent({
 	);
 }
 
-function WithdrawVersionButton({
+/** Withdraws one mileage rate version, in the mileage card's wording. */
+function WithdrawMileageVersionButton({
 	versionId,
 	effectiveFrom,
 }: {
@@ -370,56 +361,26 @@ function WithdrawVersionButton({
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const queryClient = useQueryClient();
-	const [busy, setBusy] = useState(false);
-	async function withdraw() {
-		setBusy(true);
-		// Promise#finally rather than try/finally: the React Compiler cannot
-		// compile try statements without a catch clause.
-		await withdrawAndRefresh().finally(() => setBusy(false));
-	}
-	async function withdrawAndRefresh() {
-		const result = await withdrawMileagePolicyVersionAction({ versionId });
-		if (!result.success) {
-			toast.error(
-				t(
+	return (
+		<WithdrawVersionButton
+			withdraw={() => withdrawMileagePolicyVersionAction({ versionId })}
+			queryKey={queryKey}
+			copy={{
+				trigger: t("settings.travelExpenses.mileage.withdraw", "Withdraw"),
+				title: t("settings.travelExpenses.mileage.withdrawTitle", "Withdraw this rate version?"),
+				description: t(
+					"settings.travelExpenses.mileage.withdrawDescription",
+					"Mileage dated from {date} falls back to the previous version, or stays uncalculated if none exists. Submitted reports keep the rate they were calculated with.",
+					{ date: formatPlainDate(locale, effectiveFrom) },
+				),
+				confirm: t("settings.travelExpenses.mileage.withdrawConfirm", "Withdraw version"),
+				failed: t(
 					"settings.travelExpenses.mileage.withdrawFailed",
 					"The rate version could not be withdrawn. Reload the versions and try again.",
 				),
-			);
-			return;
-		}
-		toast.success(t("settings.travelExpenses.mileage.withdrawn", "Rate version withdrawn"));
-		await queryClient.invalidateQueries({ queryKey });
-	}
-	return (
-		<AlertDialog>
-			<AlertDialogTrigger asChild>
-				<Button type="button" variant="ghost" size="sm" disabled={busy}>
-					{t("settings.travelExpenses.mileage.withdraw", "Withdraw")}
-				</Button>
-			</AlertDialogTrigger>
-			<AlertDialogContent>
-				<AlertDialogHeader>
-					<AlertDialogTitle>
-						{t("settings.travelExpenses.mileage.withdrawTitle", "Withdraw this rate version?")}
-					</AlertDialogTitle>
-					<AlertDialogDescription>
-						{t(
-							"settings.travelExpenses.mileage.withdrawDescription",
-							"Mileage dated from {date} falls back to the previous version, or stays uncalculated if none exists. Submitted reports keep the rate they were calculated with.",
-							{ date: formatPlainDate(locale, effectiveFrom) },
-						)}
-					</AlertDialogDescription>
-				</AlertDialogHeader>
-				<AlertDialogFooter>
-					<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-					<AlertDialogAction onClick={() => void withdraw()}>
-						{t("settings.travelExpenses.mileage.withdrawConfirm", "Withdraw version")}
-					</AlertDialogAction>
-				</AlertDialogFooter>
-			</AlertDialogContent>
-		</AlertDialog>
+				withdrawn: t("settings.travelExpenses.mileage.withdrawn", "Rate version withdrawn"),
+			}}
+		/>
 	);
 }
 
