@@ -3,6 +3,9 @@
 import { useTranslate } from "@tolgee/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { WorkBalanceCard } from "@/components/work-balance/work-balance-card";
+import { useLiveWorkNow } from "@/hooks/use-live-work-now";
+import type { LiveWork } from "@/lib/calendar/types";
+import { summarizeDayTotals } from "@/lib/time-tracking/day-totals";
 import { formatDuration } from "@/lib/time-tracking/time-utils";
 import type { TimeSummary } from "@/lib/time-tracking/types";
 import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
@@ -54,8 +57,15 @@ function SummaryCard({
 	);
 }
 
-export function WeeklySummaryCards({ summary, workBalance }: Props) {
+const NO_LIVE_WORK: LiveWork[] = [];
+
+export function WeeklySummaryCards({ summary: serverSummary, workBalance }: Props) {
 	const { t } = useTranslate();
+	const { dayTotalBasis } = serverSummary;
+	const liveWorkNow = useLiveWorkNow(dayTotalBasis?.liveWork ?? NO_LIVE_WORK);
+	// Day totals count live work as it runs, advancing on each elapsed minute.
+	const summary =
+		dayTotalBasis && liveWorkNow ? summarizeDayTotals(dayTotalBasis, liveWorkNow) : serverSummary;
 
 	const baseWorkedLabel = t("timeTracking.summary.baseWorked", "Base worked");
 	const surchargeLabel = t("timeTracking.summary.surcharge", "Surcharge");

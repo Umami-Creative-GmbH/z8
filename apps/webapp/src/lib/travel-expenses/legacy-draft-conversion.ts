@@ -120,14 +120,19 @@ function normalizedName(value: string): string {
 		.replace(/[^a-z]/g, "");
 }
 
+/** The languages the legacy form's free text was entered in: English and German. */
+const LEGACY_REGION_NAMES = [
+	new Intl.DisplayNames(["en"], { type: "region" }),
+	new Intl.DisplayNames(["de"], { type: "region" }),
+];
+
 let countryNames: Map<string, string> | null = null;
 
 /** English and German country names, which the legacy form's free text was entered in. */
 function countryNameIndex(): Map<string, string> {
 	if (countryNames) return countryNames;
 	const index = new Map<string, string>();
-	for (const locale of ["en", "de"]) {
-		const names = new Intl.DisplayNames([locale], { type: "region" });
+	for (const names of LEGACY_REGION_NAMES) {
 		for (const code of TRIP_COUNTRY_CODES) {
 			const name = names.of(code);
 			if (name && name !== code) index.set(normalizedName(name), code);

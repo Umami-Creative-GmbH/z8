@@ -157,6 +157,33 @@ function SaveProblem({ message }: { message: string | null }) {
 	);
 }
 
+/** The saving indicator while a project choice is being saved. */
+function SavingProject() {
+	const { t } = useTranslate();
+	return (
+		<p className="flex items-center gap-1 text-sm text-muted-foreground" role="status">
+			<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
+			{t("travelExpenses.report.project.saving", "Saving project…")}
+		</p>
+	);
+}
+
+/** The projects the server offers for the date(s), as select options. */
+function ProjectOptionItems({ options }: { options: ProjectChoicesView["choices"] }) {
+	const { t } = useTranslate();
+	return (
+		<>
+			{options.map((option) => (
+				<SelectItem key={option.id} value={`project:${option.id}`}>
+					{option.name}
+					{option.customerName ? ` · ${option.customerName}` : ""}
+					{basisSuffix(t, option.basis)}
+				</SelectItem>
+			))}
+		</>
+	);
+}
+
 const encode = (choice: ItemProjectChoice) =>
 	choice.mode === "project" ? `project:${choice.projectId}` : choice.mode;
 
@@ -166,47 +193,102 @@ function decode(value: string): ItemProjectChoice | null {
 	return null;
 }
 
-/** Project of one expense: inherited from the trip, its own, or none. */
-export function ItemProjectField({
+/** The project an expense is attributed to under its choice, or null. */
+function itemEffectiveProjectId(
+	choice: ItemProjectChoice,
+	isTrip: boolean,
+	tripProjectId: string | null,
+) {
+	if (choice.mode === "project") return choice.projectId;
+	return choice.mode === "inherit" && isTrip ? tripProjectId : null;
+}
+
+/** An expense's options: the trip's project, none, the offered ones, an unavailable own one. */
+function ItemProjectOptions({
+	choice,
+	isTrip,
+	tripProjectId,
+	options,
+	selectedName,
+}: {
+	choice: ItemProjectChoice;
+	isTrip: boolean;
+	tripProjectId: string | null;
+	options: ProjectChoicesView["choices"];
+	selectedName: string | null;
+}) {
+	const { t } = useTranslate();
+	const ownSelectionMissing =
+		choice.mode === "project" && !options.some((option) => option.id === choice.projectId);
+	const inheritedName = isTrip && tripProjectId && choice.mode === "inherit" ? selectedName : null;
+	return (
+		<>
+			{isTrip && (
+				<SelectItem value="inherit">
+					{tripProjectId
+						? t("travelExpenses.report.project.inheritNamed", "Same as the trip ({name})", {
+								name: inheritedName ?? "…",
+							})
+						: t("travelExpenses.report.project.inheritNone", "Same as the trip (no project)")}
+				</SelectItem>
+			)}
+			<SelectItem value="none">{t("travelExpenses.report.project.none", "No project")}</SelectItem>
+			<ProjectOptionItems options={options} />
+			{ownSelectionMissing && choice.mode === "project" && (
+				<SelectItem value={`project:${choice.projectId}`} disabled>
+					{t(
+						"travelExpenses.report.project.unavailableOption",
+						"{name} (not available on this date)",
+						{
+							name: selectedName ?? "…",
+						},
+					)}
+				</SelectItem>
+			)}
+		</>
+	);
+}
+
+/** Warns that the attributed project was not assigned on the expense date. */
+function IneligibleProjectProblem({
+	effectiveProjectId,
+	selected,
+}: {
+	effectiveProjectId: string | null;
+	selected: ProjectChoicesView["selected"];
+}) {
+	const { t } = useTranslate();
+	if (!effectiveProjectId || !selected || selected.eligible) return null;
+	return (
+		<SaveProblem
+			message={t(
+				"travelExpenses.report.project.notEligible",
+				"{name} cannot be used on this date: you were not assigned to it then. Choose another project, or ask an expense administrator for an attribution exception.",
+				{ name: selected.name },
+			)}
+		/>
+	);
+}
+
+/** The expense's project choice and its save through the editor's draft saver. */
+function useItemProjectChoice({
 	reportId,
 	itemId,
-	isTrip,
-	expenseDate,
 	initialChoice,
-	tripProjectId,
 	saver,
 	onSaved,
 }: {
 	reportId: string;
 	itemId: string;
-	isTrip: boolean;
-	/** The entered (well-formed) expense date, or null. */
-	expenseDate: string | null;
 	initialChoice: ItemProjectChoice;
-	/** The trip's project its expenses inherit; null without one. */
-	tripProjectId: string | null;
 	saver: VersionedSaver;
 	onSaved?: () => void;
 }) {
 	const { t } = useTranslate();
-	const id = useId();
 	const queryClient = useQueryClient();
 	const [choice, setChoice] = useState(initialChoice);
 	const [saving, setSaving] = useState(false);
 	const [problem, setProblem] = useState<string | null>(null);
-	const effectiveProjectId =
-		choice.mode === "project"
-			? choice.projectId
-			: choice.mode === "inherit" && isTrip
-				? tripProjectId
-				: null;
-	const query = useProjectChoices({
-		reportId,
-		from: expenseDate,
-		to: expenseDate,
-		selectedProjectId: effectiveProjectId,
-	});
-	const selected = query.data?.selected ?? null;
 
 	async function change(value: string | null) {
 		const next = value ? decode(value) : null;
@@ -237,11 +319,48 @@ export function ItemProjectField({
 		setProblem(refusalMessage(t, outcome.status === "conflict" ? "conflict" : outcome.error));
 	}
 
-	const options = query.data?.choices ?? [];
-	const ownSelectionMissing =
-		choice.mode === "project" && !options.some((option) => option.id === choice.projectId);
-	const inheritedName =
-		isTrip && tripProjectId && choice.mode === "inherit" ? (selected?.name ?? null) : null;
+	return { choice, saving, problem, change };
+}
+
+/** Project of one expense: inherited from the trip, its own, or none. */
+export function ItemProjectField({
+	reportId,
+	itemId,
+	isTrip,
+	expenseDate,
+	initialChoice,
+	tripProjectId,
+	saver,
+	onSaved,
+}: {
+	reportId: string;
+	itemId: string;
+	isTrip: boolean;
+	/** The entered (well-formed) expense date, or null. */
+	expenseDate: string | null;
+	initialChoice: ItemProjectChoice;
+	/** The trip's project its expenses inherit; null without one. */
+	tripProjectId: string | null;
+	saver: VersionedSaver;
+	onSaved?: () => void;
+}) {
+	const { t } = useTranslate();
+	const id = useId();
+	const { choice, saving, problem, change } = useItemProjectChoice({
+		reportId,
+		itemId,
+		initialChoice,
+		saver,
+		onSaved,
+	});
+	const effectiveProjectId = itemEffectiveProjectId(choice, isTrip, tripProjectId);
+	const query = useProjectChoices({
+		reportId,
+		from: expenseDate,
+		to: expenseDate,
+		selectedProjectId: effectiveProjectId,
+	});
+	const selected = query.data?.selected ?? null;
 
 	return (
 		<div className="space-y-2">
@@ -256,44 +375,16 @@ export function ItemProjectField({
 					<SelectValue />
 				</SelectTrigger>
 				<SelectContent>
-					{isTrip && (
-						<SelectItem value="inherit">
-							{tripProjectId
-								? t("travelExpenses.report.project.inheritNamed", "Same as the trip ({name})", {
-										name: inheritedName ?? "…",
-									})
-								: t("travelExpenses.report.project.inheritNone", "Same as the trip (no project)")}
-						</SelectItem>
-					)}
-					<SelectItem value="none">
-						{t("travelExpenses.report.project.none", "No project")}
-					</SelectItem>
-					{options.map((option) => (
-						<SelectItem key={option.id} value={`project:${option.id}`}>
-							{option.name}
-							{option.customerName ? ` · ${option.customerName}` : ""}
-							{basisSuffix(t, option.basis)}
-						</SelectItem>
-					))}
-					{ownSelectionMissing && choice.mode === "project" && (
-						<SelectItem value={`project:${choice.projectId}`} disabled>
-							{t(
-								"travelExpenses.report.project.unavailableOption",
-								"{name} (not available on this date)",
-								{
-									name: selected?.name ?? "…",
-								},
-							)}
-						</SelectItem>
-					)}
+					<ItemProjectOptions
+						choice={choice}
+						isTrip={isTrip}
+						tripProjectId={tripProjectId}
+						options={query.data?.choices ?? []}
+						selectedName={selected?.name ?? null}
+					/>
 				</SelectContent>
 			</Select>
-			{saving && (
-				<p className="flex items-center gap-1 text-sm text-muted-foreground" role="status">
-					<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
-					{t("travelExpenses.report.project.saving", "Saving project…")}
-				</p>
-			)}
+			{saving && <SavingProject />}
 			<ChoicesStatus
 				query={query}
 				needsDate={t(
@@ -301,15 +392,7 @@ export function ItemProjectField({
 					"Enter the receipt date to see the projects you can use on that day.",
 				)}
 			/>
-			{effectiveProjectId && selected && !selected.eligible && (
-				<SaveProblem
-					message={t(
-						"travelExpenses.report.project.notEligible",
-						"{name} cannot be used on this date: you were not assigned to it then. Choose another project, or ask an expense administrator for an attribution exception.",
-						{ name: selected.name },
-					)}
-				/>
-			)}
+			<IneligibleProjectProblem effectiveProjectId={effectiveProjectId} selected={selected} />
 			<SaveProblem message={problem} />
 		</div>
 	);
@@ -393,13 +476,7 @@ export function TripProjectField({
 					<SelectItem value="none">
 						{t("travelExpenses.report.project.none", "No project")}
 					</SelectItem>
-					{options.map((option) => (
-						<SelectItem key={option.id} value={`project:${option.id}`}>
-							{option.name}
-							{option.customerName ? ` · ${option.customerName}` : ""}
-							{basisSuffix(t, option.basis)}
-						</SelectItem>
-					))}
+					<ProjectOptionItems options={options} />
 					{projectId && !options.some((option) => option.id === projectId) && (
 						<SelectItem value={`project:${projectId}`} disabled>
 							{t(
@@ -419,12 +496,7 @@ export function TripProjectField({
 					"Expenses use the trip's project unless you choose another one for them. Each expense must be covered by your project assignment on its own date.",
 				)}
 			</p>
-			{saving && (
-				<p className="flex items-center gap-1 text-sm text-muted-foreground" role="status">
-					<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
-					{t("travelExpenses.report.project.saving", "Saving project…")}
-				</p>
-			)}
+			{saving && <SavingProject />}
 			<ChoicesStatus
 				query={query}
 				needsDate={t(

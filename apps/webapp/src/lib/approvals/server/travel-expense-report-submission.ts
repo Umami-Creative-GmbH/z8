@@ -279,6 +279,8 @@ export async function submitTravelExpenseReport(
 				items: live.items,
 			});
 			// Calculates the trip's per diem and stamps its rule edition and versions (#609).
+			// Ordered writes in the submission transaction, after the mileage stamps.
+			// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
 			const perDiem = await stampPerDiemPolicies(tx, { report, items: live.items });
 			// Read under a shared lock: a concurrent change of the setting waits (#604).
 			const receiptExceptionsAllowed = await loadReceiptExceptionsAllowed(

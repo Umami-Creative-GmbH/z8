@@ -298,11 +298,11 @@ export async function getManagerDailyBriefing({
 		currentEmployee,
 		now,
 		timezone: resolveEffectiveTimezone(undefined, persistedOrganization?.timezone),
-		sources: databaseSources,
+		sources: managerDailyBriefingDatabaseSources,
 	});
 }
 
-export const databaseSources: ManagerDailyBriefingSources = {
+export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = {
 	async getScopedEmployees({ organizationId, currentEmployeeId, role }) {
 		const { db, employee, employeeManagers, team, user } = await import("@/db");
 

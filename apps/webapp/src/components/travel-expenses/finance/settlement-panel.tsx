@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { type QueryKey, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import {
@@ -19,6 +19,10 @@ import { BalanceText, SettlementStateBadge } from "./settlement-status";
 
 const NOT_VISIBLE = "Not found";
 
+type SettlementViewer = SettlementAccountView["viewer"];
+type SettlementLine = SettlementAccount["summary"]["currencies"][number];
+type SettlementEntry = SettlementAccount["entries"][number];
+
 /**
  * The settlement of one approved expense (#612): what the employee is
  * entitled to, what finance recorded as paid and the derived balance. The
@@ -27,8 +31,6 @@ const NOT_VISIBLE = "Not found";
  */
 export function SettlementPanel({ source }: { source: SettlementSource }) {
 	const { t } = useTranslate();
-	const locale = useLocale();
-	const queryClient = useQueryClient();
 	const queryKey = queryKeys.travelExpenses.settlement(source.type, source.id);
 	const { data, isError, error, isFetching, refetch } = useQuery({
 		queryKey,
@@ -65,6 +67,20 @@ export function SettlementPanel({ source }: { source: SettlementSource }) {
 			</div>
 		);
 	}
+	return <SettlementAccountCard source={source} queryKey={queryKey} data={data} />;
+}
+
+/** The loaded settlement: balance, recorded payments and, for finance, the record forms. */
+function SettlementAccountCard({
+	source,
+	queryKey,
+	data,
+}: {
+	source: SettlementSource;
+	queryKey: QueryKey;
+	data: SettlementAccountView;
+}) {
+	const queryClient = useQueryClient();
 	const { account, viewer, canSettle } = data;
 	if (!account.approved && account.entries.length === 0) return null;
 	// An adjustment report (#615) is settled through the report it corrects.
@@ -80,124 +96,203 @@ export function SettlementPanel({ source }: { source: SettlementSource }) {
 	return (
 		<Card>
 			<CardContent className="space-y-4 pt-6">
-				<section aria-labelledby={headingId} className="space-y-3">
-					<div className="flex flex-wrap items-center justify-between gap-2">
-						<h2 id={headingId} className="text-lg font-semibold">
-							{t("travelExpenses.settlement.title", "Reimbursement")}
-						</h2>
-						<SettlementStateBadge state={account.summary.state} />
-					</div>
-					{account.summary.currencies.map((line) => (
-						<div key={line.currency} className="space-y-2">
-							<p className="text-base font-medium tabular-nums">
-								<BalanceText line={line} />
-							</p>
-							<dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm">
-								<dt className="text-muted-foreground">
-									{t("travelExpenses.settlement.entitlement", "Approved employee-paid amount")}
-								</dt>
-								<dd className="text-right tabular-nums">
-									{formatMoney(locale, line.entitlement, line.currency)}
-								</dd>
-								<SettlementAdjustmentLines account={account} currency={line.currency} />
-								<dt className="text-muted-foreground">
-									{t("travelExpenses.settlement.reimbursed", "Reimbursed")}
-								</dt>
-								<dd className="text-right tabular-nums">
-									{formatMoney(locale, line.reimbursed, line.currency)}
-								</dd>
-								{line.recovered !== "0.00" && (
-									<>
-										<dt className="text-muted-foreground">
-											{t("travelExpenses.settlement.recovered", "Recovered")}
-										</dt>
-										<dd className="text-right tabular-nums">
-											{formatMoney(locale, line.recovered, line.currency)}
-										</dd>
-									</>
-								)}
-							</dl>
-						</div>
-					))}
-					{account.basis?.companyPaid &&
-						account.basis.companyPaid !== "0.00" &&
-						account.currency && (
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"travelExpenses.settlement.companyPaid",
-									"Company-paid costs of {amount} are not owed to the employee.",
-									{ amount: formatMoney(locale, account.basis.companyPaid, account.currency) },
-								)}
-							</p>
-						)}
-					{viewer === "owner" && <OverpaidOwnerNotice account={account} />}
-					{viewer === "owner" && account.summary.state === "outstanding" && (
-						<p className="text-sm text-muted-foreground">
-							{t(
-								"travelExpenses.settlement.ownerOutstanding",
-								"Finance records your reimbursement here once it has been paid.",
-							)}
-						</p>
-					)}
-				</section>
+				<SettlementBalance account={account} viewer={viewer} headingId={headingId} />
 
 				{account.entries.length > 0 && (
-					<section aria-labelledby={`${headingId}-history`} className="space-y-2">
-						<h3 id={`${headingId}-history`} className="text-sm font-semibold">
-							{t("travelExpenses.settlement.history", "Recorded payments")}
-						</h3>
-						<ul className="divide-y rounded-md border text-sm">
-							{account.entries.map((entry) => (
-								<li
-									key={entry.id}
-									className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-3 py-2"
-								>
-									<span className="font-medium tabular-nums">
-										{entry.kind === "recovery"
-											? t("travelExpenses.settlement.entry.recovery", "Recovered {amount}", {
-													amount: formatMoney(locale, entry.amount, entry.currency),
-												})
-											: t("travelExpenses.settlement.entry.reimbursement", "Paid {amount}", {
-													amount: formatMoney(locale, entry.amount, entry.currency),
-												})}
-									</span>
-									<span>{formatPlainDate(locale, entry.occurredOn)}</span>
-									<span className="break-all text-muted-foreground">{entry.reference}</span>
-									{viewer === "finance" && (
-										<span className="w-full text-xs text-muted-foreground">
-											{t(
-												"travelExpenses.settlement.entry.recordedBy",
-												"Recorded by {name}, {date}",
-												{
-													name: entry.recordedByName ?? "—",
-													date: formatRecordedInstant(locale, entry.recordedAt),
-												},
-											)}
-										</span>
-									)}
-									{entry.note && <span className="w-full text-muted-foreground">{entry.note}</span>}
-								</li>
-							))}
-						</ul>
-					</section>
+					<SettlementHistory entries={account.entries} viewer={viewer} headingId={headingId} />
 				)}
 
-				{viewer === "finance" &&
-					canSettle &&
-					account.approved &&
-					account.summary.currencies
-						.filter((line) => line.state !== "settled" && line.currency === account.currency)
-						.map((line) => (
-							<RecordReimbursementForm
-								key={`${line.currency}:${line.balance}`}
-								source={source}
-								line={line}
-								onSettled={settled}
-								// An overpayment (#615) is settled by recording money recovered.
-								kind={line.state === "overpaid" ? "recovery" : "reimbursement"}
-							/>
-						))}
+				{viewer === "finance" && canSettle && account.approved && (
+					<RecordReimbursementForms source={source} account={account} onSettled={settled} />
+				)}
 			</CardContent>
 		</Card>
+	);
+}
+
+/** The balance per currency with its entitlement, adjustments and payments. */
+function SettlementBalance({
+	account,
+	viewer,
+	headingId,
+}: {
+	account: SettlementAccount;
+	viewer: SettlementViewer;
+	headingId: string;
+}) {
+	const { t } = useTranslate();
+	return (
+		<section aria-labelledby={headingId} className="space-y-3">
+			<div className="flex flex-wrap items-center justify-between gap-2">
+				<h2 id={headingId} className="text-lg font-semibold">
+					{t("travelExpenses.settlement.title", "Reimbursement")}
+				</h2>
+				<SettlementStateBadge state={account.summary.state} />
+			</div>
+			{account.summary.currencies.map((line) => (
+				<SettlementCurrencyLine key={line.currency} account={account} line={line} />
+			))}
+			<CompanyPaidNote account={account} />
+			{viewer === "owner" && <OverpaidOwnerNotice account={account} />}
+			{viewer === "owner" && account.summary.state === "outstanding" && (
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"travelExpenses.settlement.ownerOutstanding",
+						"Finance records your reimbursement here once it has been paid.",
+					)}
+				</p>
+			)}
+		</section>
+	);
+}
+
+/** One currency's balance and how it is made up. */
+function SettlementCurrencyLine({
+	account,
+	line,
+}: {
+	account: SettlementAccount;
+	line: SettlementLine;
+}) {
+	const { t } = useTranslate();
+	const locale = useLocale();
+	return (
+		<div className="space-y-2">
+			<p className="text-base font-medium tabular-nums">
+				<BalanceText line={line} />
+			</p>
+			<dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm">
+				<dt className="text-muted-foreground">
+					{t("travelExpenses.settlement.entitlement", "Approved employee-paid amount")}
+				</dt>
+				<dd className="text-right tabular-nums">
+					{formatMoney(locale, line.entitlement, line.currency)}
+				</dd>
+				<SettlementAdjustmentLines account={account} currency={line.currency} />
+				<dt className="text-muted-foreground">
+					{t("travelExpenses.settlement.reimbursed", "Reimbursed")}
+				</dt>
+				<dd className="text-right tabular-nums">
+					{formatMoney(locale, line.reimbursed, line.currency)}
+				</dd>
+				{line.recovered !== "0.00" && (
+					<>
+						<dt className="text-muted-foreground">
+							{t("travelExpenses.settlement.recovered", "Recovered")}
+						</dt>
+						<dd className="text-right tabular-nums">
+							{formatMoney(locale, line.recovered, line.currency)}
+						</dd>
+					</>
+				)}
+			</dl>
+		</div>
+	);
+}
+
+/** Company-paid costs, which are part of the expense but not owed to the employee. */
+function CompanyPaidNote({ account }: { account: SettlementAccount }) {
+	const { t } = useTranslate();
+	const locale = useLocale();
+	if (!account.basis?.companyPaid || account.basis.companyPaid === "0.00" || !account.currency) {
+		return null;
+	}
+	return (
+		<p className="text-sm text-muted-foreground">
+			{t(
+				"travelExpenses.settlement.companyPaid",
+				"Company-paid costs of {amount} are not owed to the employee.",
+				{ amount: formatMoney(locale, account.basis.companyPaid, account.currency) },
+			)}
+		</p>
+	);
+}
+
+/** The reimbursements and recoveries finance recorded. */
+function SettlementHistory({
+	entries,
+	viewer,
+	headingId,
+}: {
+	entries: SettlementEntry[];
+	viewer: SettlementViewer;
+	headingId: string;
+}) {
+	const { t } = useTranslate();
+	return (
+		<section aria-labelledby={`${headingId}-history`} className="space-y-2">
+			<h3 id={`${headingId}-history`} className="text-sm font-semibold">
+				{t("travelExpenses.settlement.history", "Recorded payments")}
+			</h3>
+			<ul className="divide-y rounded-md border text-sm">
+				{entries.map((entry) => (
+					<SettlementEntryRow key={entry.id} entry={entry} viewer={viewer} />
+				))}
+			</ul>
+		</section>
+	);
+}
+
+/** One recorded payment; finance also sees who recorded it and when. */
+function SettlementEntryRow({
+	entry,
+	viewer,
+}: {
+	entry: SettlementEntry;
+	viewer: SettlementViewer;
+}) {
+	const { t } = useTranslate();
+	const locale = useLocale();
+	return (
+		<li className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-3 py-2">
+			<span className="font-medium tabular-nums">
+				{entry.kind === "recovery"
+					? t("travelExpenses.settlement.entry.recovery", "Recovered {amount}", {
+							amount: formatMoney(locale, entry.amount, entry.currency),
+						})
+					: t("travelExpenses.settlement.entry.reimbursement", "Paid {amount}", {
+							amount: formatMoney(locale, entry.amount, entry.currency),
+						})}
+			</span>
+			<span>{formatPlainDate(locale, entry.occurredOn)}</span>
+			<span className="break-all text-muted-foreground">{entry.reference}</span>
+			{viewer === "finance" && (
+				<span className="w-full text-xs text-muted-foreground">
+					{t("travelExpenses.settlement.entry.recordedBy", "Recorded by {name}, {date}", {
+						name: entry.recordedByName ?? "—",
+						date: formatRecordedInstant(locale, entry.recordedAt),
+					})}
+				</span>
+			)}
+			{entry.note && <span className="w-full text-muted-foreground">{entry.note}</span>}
+		</li>
+	);
+}
+
+/** Finance's record forms, one per unsettled line in the reimbursement currency. */
+function RecordReimbursementForms({
+	source,
+	account,
+	onSettled,
+}: {
+	source: SettlementSource;
+	account: SettlementAccount;
+	onSettled: (next: SettlementAccount | null) => void;
+}) {
+	return (
+		<>
+			{account.summary.currencies
+				.filter((line) => line.state !== "settled" && line.currency === account.currency)
+				.map((line) => (
+					<RecordReimbursementForm
+						key={`${line.currency}:${line.balance}`}
+						source={source}
+						line={line}
+						onSettled={onSettled}
+						// An overpayment (#615) is settled by recording money recovered.
+						kind={line.state === "overpaid" ? "recovery" : "reimbursement"}
+					/>
+				))}
+		</>
 	);
 }

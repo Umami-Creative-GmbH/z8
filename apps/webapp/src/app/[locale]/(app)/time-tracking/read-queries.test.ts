@@ -160,35 +160,52 @@ describe("organization scoped render readers", () => {
 			fixture.summary.mockResolvedValue([
 				{
 					startTime: new Date("2026-03-29T00:30:00Z"),
-					durationMinutes: 120,
+					endTime: new Date("2026-03-29T02:30:00Z"),
 					surchargeMinutes: 30,
 				},
 				{
 					startTime: new Date("2026-03-29T22:30:00Z"),
-					durationMinutes: 60,
+					endTime: new Date("2026-03-29T23:30:00Z"),
 					surchargeMinutes: 15,
 				},
 				{
 					startTime: new Date("2026-03-01T08:00:00Z"),
-					durationMinutes: 20,
+					endTime: new Date("2026-03-01T08:20:00Z"),
+					surchargeMinutes: null,
+				},
+				// Live work for 30 minutes.
+				{
+					startTime: new Date("2026-03-30T09:30:00Z"),
+					endTime: null,
 					surchargeMinutes: null,
 				},
 			]);
-			await expect(
-				readTimeSummary(scope, "Europe/Berlin", weekStart),
-			).resolves.toEqual({
-				todayMinutes: 60,
-				weekMinutes: weekStart === "sunday" ? 180 : 60,
-				monthMinutes: 200,
+			const { dayTotalBasis, ...totals } = await readTimeSummary(
+				scope,
+				"Europe/Berlin",
+				weekStart,
+			);
+			expect(totals).toEqual({
+				todayMinutes: 90,
+				weekMinutes: weekStart === "sunday" ? 210 : 90,
+				monthMinutes: 230,
 				todaySurchargeMinutes: 15,
 				weekSurchargeMinutes: weekStart === "sunday" ? 45 : 15,
 				monthSurchargeMinutes: 45,
 			});
+			expect(dayTotalBasis?.liveWork).toEqual([
+				{ startedAt: new Date("2026-03-30T09:30:00Z") },
+			]);
 		},
 	);
 
 	it("keeps zero-summary defaults without optional surcharges", async () => {
-		await expect(readTimeSummary(scope, "UTC", "sunday")).resolves.toEqual({
+		const { dayTotalBasis: _, ...totals } = await readTimeSummary(
+			scope,
+			"UTC",
+			"sunday",
+		);
+		expect(totals).toEqual({
 			todayMinutes: 0,
 			weekMinutes: 0,
 			monthMinutes: 0,

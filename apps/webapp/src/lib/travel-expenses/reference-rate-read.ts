@@ -85,12 +85,13 @@ export async function loadReferenceRateProviderStatus(
 	database: Reader,
 	provider: ReferenceRateProvider = ECB_REFERENCE_RATES.provider,
 ): Promise<ReferenceRateProviderStatus> {
-	// Sequential: the reader may be a transaction, which runs one query at a time.
 	const [state] = await database
 		.select()
 		.from(travelExpenseReferenceRateProviderState)
 		.where(eq(travelExpenseReferenceRateProviderState.provider, provider))
 		.limit(1);
+	// Sequential: the reader may be a transaction, which runs one query at a time.
+	// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
 	const [latest] = await database
 		.select({ date: max(travelExpenseReferenceRatePublication.publicationDate) })
 		.from(travelExpenseReferenceRatePublication)
@@ -146,6 +147,8 @@ async function loadCandidates(
 			.limit(1);
 	const candidates = new Map<string, ReferencePublicationCandidates>();
 	for (const date of new Set(dates)) {
+		// Sequential: submission passes its transaction here, which runs one query at a time.
+		// react-doctor-disable-next-line react-doctor/async-await-in-loop
 		const [onOrBefore] = await current(date, false);
 		const [later] = await current(date, true);
 		candidates.set(date, {
@@ -191,6 +194,8 @@ export async function resolveReportConversions(
 		organizationId: scope.organizationId,
 		reportIds: scope.reports.map((report) => report.id),
 	});
+	// Sequential: submission passes its transaction here, which runs one query at a time.
+	// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
 	const policy = await loadReferenceRatePolicy(database, scope.organizationId);
 
 	const pending: { itemId: string; date: string; pair: [string, string] }[] = [];
@@ -226,6 +231,8 @@ export async function resolveReportConversions(
 	if (!policy || pending.length === 0) return result;
 
 	const status = await loadReferenceRateProviderStatus(database, policy.provider);
+	// Sequential: submission passes its transaction here, which runs one query at a time.
+	// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
 	const candidates = await loadCandidates(
 		database,
 		policy.provider,

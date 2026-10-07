@@ -108,18 +108,15 @@ function evidenceErrorMessage(t: Translate, code: ManualRateFieldError | undefin
 		: rateErrorMessage(t, code);
 }
 
-/** Records a documented rate for one foreign-currency expense. */
-function ManualRateDialog({
-	expense,
-	onClose,
-}: {
-	expense: ForeignDraftItem;
-	onClose: () => void;
-}) {
+type CurrencyPair = { sourceCurrency: string; targetCurrency: string };
+
+/**
+ * The manual-rate form: saves the documented rate and keeps the field errors
+ * the server returned, closing the dialog once the list is refreshed.
+ */
+function useManualRateForm(expense: ForeignDraftItem, pair: CurrencyPair, onClose: () => void) {
 	const { t } = useTranslate();
-	const locale = useLocale();
 	const queryClient = useQueryClient();
-	const pair = { sourceCurrency: expense.currency, targetCurrency: expense.reimbursementCurrency };
 	const [serverErrors, setServerErrors] = useState<Record<string, ManualRateFieldError>>({});
 	const form = useForm({
 		defaultValues: {
@@ -189,6 +186,21 @@ function ManualRateDialog({
 			onClose();
 		},
 	});
+	return { form, serverErrors };
+}
+
+/** Records a documented rate for one foreign-currency expense. */
+function ManualRateDialog({
+	expense,
+	onClose,
+}: {
+	expense: ForeignDraftItem;
+	onClose: () => void;
+}) {
+	const { t } = useTranslate();
+	const locale = useLocale();
+	const pair = { sourceCurrency: expense.currency, targetCurrency: expense.reimbursementCurrency };
+	const { form, serverErrors } = useManualRateForm(expense, pair, onClose);
 
 	return (
 		<Dialog open onOpenChange={(open) => !open && onClose()}>

@@ -1,13 +1,7 @@
 import { randomUUID } from "node:crypto";
-import {
-	afterAll,
-	afterEach,
-	beforeEach,
-	describe,
-	expect,
-	it,
-	vi,
-} from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { type Clock, parseInstant } from "@/lib/datetime/temporal-core";
+import { readComplianceTotals } from "@/lib/time-tracking/compliance-totals";
 import { integrationAdminPool } from "@/test/integration-database";
 import {
 	getActiveWorkPeriod,
@@ -24,6 +18,10 @@ const actor = vi.hoisted(() => ({
 	userId: "render-read-user",
 	organizationId: "render-read-org",
 }));
+function clockAt(instant: string): Clock {
+	return { nowInstant: () => parseInstant(instant) };
+}
+
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
 );
@@ -176,7 +174,6 @@ describe("scoped rendering reads on disposable PostgreSQL", () => {
 			[employeeId, user, org],
 		);
 	});
-	afterEach(() => vi.useRealTimers());
 	afterAll(cleanup);
 
 	it("isolates active/history rows by organization and excludes deleted history", async () => {
@@ -330,11 +327,13 @@ describe("scoped rendering reads on disposable PostgreSQL", () => {
 				surcharge: 15,
 				deleted: true,
 			});
-			vi.useFakeTimers({ toFake: ["Date"] });
-			vi.setSystemTime(new Date("2026-03-30T10:00:00Z"));
-			await expect(
-				readTimeSummary(scope, "Europe/Berlin", weekStart),
-			).resolves.toEqual({
+			const { dayTotalBasis: _, ...totals } = await readTimeSummary(
+				scope,
+				"Europe/Berlin",
+				weekStart,
+				clockAt("2026-03-30T10:00:00Z"),
+			);
+			expect(totals).toEqual({
 				todayMinutes: 60,
 				weekMinutes: weekStart === "sunday" ? 180 : 60,
 				monthMinutes: 200,
@@ -344,6 +343,49 @@ describe("scoped rendering reads on disposable PostgreSQL", () => {
 			});
 		},
 	);
+
+	it("counts live work and splits work that crosses into the month at local midnight", async () => {
+		// 31 March 22:00 → 1 April 01:30 in Berlin (CEST).
+		await period({
+			at: "2026-03-31T20:00:00Z",
+			end: "2026-03-31T23:30:00Z",
+			minutes: 210,
+			surcharge: 40,
+		});
+		// Live work, started 45 minutes before now.
+		await period({ at: "2026-04-01T09:15:00Z" });
+		// Live work in the other organization stays out.
+		await period({ organizationId: foreignOrg, at: "2026-04-01T09:00:00Z" });
+		const now = clockAt("2026-04-01T10:00:00Z");
+
+		const { dayTotalBasis, ...totals } = await readTimeSummary(
+			scope,
+			"Europe/Berlin",
+			"monday",
+			now,
+		);
+
+		expect(totals).toEqual({
+			todayMinutes: 90 + 45,
+			weekMinutes: 210 + 45,
+			monthMinutes: 90 + 45,
+			// Surcharge stays on 31 March, the day its work period started.
+			todaySurchargeMinutes: 0,
+			weekSurchargeMinutes: 40,
+			monthSurchargeMinutes: 0,
+		});
+		expect(dayTotalBasis?.liveWork).toEqual([
+			{ startedAt: new Date("2026-04-01T09:15:00Z") },
+		]);
+		// The compliance check's day leaves out live work and work started yesterday.
+		await expect(
+			readComplianceTotals({
+				...scope,
+				workStart: now.nowInstant(),
+				timezone: "Europe/Berlin",
+			}),
+		).resolves.toMatchObject({ dailyMinutes: 0 });
+	});
 
 	it("fresh guarded wrappers deny revoked membership and an organization switch", async () => {
 		const own = await period({ at: "2026-03-30T08:00:00Z" });

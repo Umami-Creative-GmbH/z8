@@ -111,6 +111,10 @@ function isItemAfterCursor(
 // SERVICE DEFINITION
 // ============================================
 
+/**
+ * The handlers read through `DatabaseService` (`ApprovalHandlerServices`);
+ * the layer does not provide it, so run these effects on the shared runtime.
+ */
 export class ApprovalQueryService extends Context.Service<
 	ApprovalQueryService,
 	{
@@ -153,22 +157,24 @@ export const ApprovalQueryServiceLive = Layer.succeed(
 				const allItems: UnifiedApprovalItem[] = [];
 
 				for (const handler of activeHandlers) {
-					// One failing handler must not empty the whole list, but a defect
-					// (e.g. a missing service) is logged so wiring bugs stay visible.
 					const items = yield* handler.getApprovals(params).pipe(
-						Effect.catchCause((cause) => {
-							if (Cause.hasDies(cause)) {
-								logger.error(
-									{
-										approvalType: handler.type,
-										organizationId: params.organizationId,
-										cause: Cause.pretty(cause),
-									},
-									"Approval handler defect while listing approvals",
-								);
-							}
-							return Effect.succeed([]);
-						}),
+						// One failing type must not empty the whole list. Typed failures
+						// degrade quietly; defects (e.g. a missing service) are logged.
+						Effect.catchCause((cause) =>
+							Effect.sync(() => {
+								if (Cause.hasDies(cause)) {
+									logger.error(
+										{
+											approvalType: handler.type,
+											organizationId: params.organizationId,
+											cause: Cause.pretty(cause),
+										},
+										"Approval handler died while loading approvals",
+									);
+								}
+								return [];
+							}),
+						),
 					);
 					allItems.push(...items);
 				}

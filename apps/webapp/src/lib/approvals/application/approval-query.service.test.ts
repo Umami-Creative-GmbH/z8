@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
 	ApprovalPriority,
 	ApprovalType,
@@ -12,7 +12,7 @@ const approvalQueryTestState = vi.hoisted(() => ({
 		getApprovals: ReturnType<typeof vi.fn>;
 		getCount: ReturnType<typeof vi.fn>;
 	}>,
-	logError: vi.fn(),
+	logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
 vi.mock("@/lib/approvals/domain/registry", () => ({
@@ -20,12 +20,7 @@ vi.mock("@/lib/approvals/domain/registry", () => ({
 }));
 
 vi.mock("@/lib/logger", () => ({
-	createLogger: () => ({
-		error: approvalQueryTestState.logError,
-		warn: vi.fn(),
-		info: vi.fn(),
-		debug: vi.fn(),
-	}),
+	createLogger: () => approvalQueryTestState.logger,
 }));
 
 vi.mock("@/lib/effect/services/database.service", async () => {
@@ -43,10 +38,7 @@ import {
 	ApprovalQueryServiceLive,
 } from "@/lib/approvals/application/approval-query.service";
 import { type AnyAppError, DatabaseError } from "@/lib/effect/errors";
-import {
-	type DatabaseService,
-	DatabaseServiceLive,
-} from "@/lib/effect/services/database.service";
+import { type DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 
 function createUnifiedApprovalItem(params: {
 	id: string;
@@ -97,6 +89,10 @@ async function runApprovalQuery<T>(
 }
 
 describe("ApprovalQueryService", () => {
+	beforeEach(() => {
+		approvalQueryTestState.logger.error.mockClear();
+	});
+
 	it("returns mixed-type inbox results that include travel expense claims", async () => {
 		approvalQueryTestState.handlers = [
 			{
@@ -234,8 +230,7 @@ describe("ApprovalQueryService", () => {
 		expect(result.total).toBe(1);
 	});
 
-	it("logs a handler defect with the handler type instead of hiding it", async () => {
-		approvalQueryTestState.logError.mockClear();
+	it("logs a dying approval handler with its type instead of hiding it as no approvals", async () => {
 		approvalQueryTestState.handlers = [
 			{
 				type: "absence_entry",
@@ -243,13 +238,13 @@ describe("ApprovalQueryService", () => {
 				getCount: vi.fn(() => Effect.succeed(0)),
 			},
 			{
-				type: "travel_expense_claim",
-				getApprovals: vi.fn(() => Effect.die(new TypeError("Service not found: DatabaseService"))),
+				type: "time_entry",
+				getApprovals: vi.fn(() => Effect.die(new Error("Service not found: DatabaseService"))),
 				getCount: vi.fn(() => Effect.succeed(0)),
 			},
 		];
 
-		await runApprovalQuery(
+		const result = await runApprovalQuery(
 			Effect.gen(function* () {
 				const service = yield* ApprovalQueryService;
 				return yield* service.getApprovals({
@@ -261,10 +256,11 @@ describe("ApprovalQueryService", () => {
 			}),
 		);
 
-		expect(approvalQueryTestState.logError).toHaveBeenCalledTimes(1);
-		expect(approvalQueryTestState.logError).toHaveBeenCalledWith(
+		expect(result.items).toEqual([]);
+		expect(approvalQueryTestState.logger.error).toHaveBeenCalledTimes(1);
+		expect(approvalQueryTestState.logger.error).toHaveBeenCalledWith(
 			expect.objectContaining({
-				approvalType: "travel_expense_claim",
+				approvalType: "time_entry",
 				organizationId: "org-1",
 				cause: expect.stringContaining("Service not found: DatabaseService"),
 			}),
@@ -272,8 +268,7 @@ describe("ApprovalQueryService", () => {
 		);
 	});
 
-	it("does not log a typed handler failure as a defect", async () => {
-		approvalQueryTestState.logError.mockClear();
+	it("does not log typed approval handler failures as defects", async () => {
 		approvalQueryTestState.handlers = [
 			{
 				type: "travel_expense_claim",
@@ -302,7 +297,7 @@ describe("ApprovalQueryService", () => {
 		);
 
 		expect(result.items).toEqual([]);
-		expect(approvalQueryTestState.logError).not.toHaveBeenCalled();
+		expect(approvalQueryTestState.logger.error).not.toHaveBeenCalled();
 	});
 
 	it("keeps filtered inbox results available when one requested approval handler dies", async () => {

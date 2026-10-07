@@ -19,50 +19,34 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import {
-	TFormControl,
-	TFormDescription,
-	TFormItem,
-	TFormLabel,
-	TFormMessage,
-} from "@/components/ui/tanstack-form";
-import { Textarea } from "@/components/ui/textarea";
 import type { DraftSaveOutcome } from "@/lib/travel-expenses/draft-saver";
 import { itemProjectChoice } from "@/lib/travel-expenses/project-attribution";
-import { receiptExceptionContext } from "@/lib/travel-expenses/receipt-exception";
 import {
-	MAX_ACCOUNTING_REFERENCE_LENGTH,
-	MAX_DESCRIPTION_LENGTH,
+	type ReceiptExceptionContext,
+	receiptExceptionContext,
+} from "@/lib/travel-expenses/receipt-exception";
+import {
 	parseReceiptItemDraft,
-	RECEIPT_EXPENSE_CATEGORIES,
 	type ReceiptItemDraft,
 	type ReceiptItemDraftInput,
 	type ReceiptItemRequirement,
 	receiptItemMissingRequirements,
 } from "@/lib/travel-expenses/receipt-report";
 import type { ReportItemView, ReportReceiptView } from "@/lib/travel-expenses/report-store";
-import { CurrencyConversionField, conversionRequirementLabel } from "./currency-conversion-field";
+import { conversionRequirementLabel } from "./conversion-requirement-label";
+import { CurrencyConversionField } from "./currency-conversion-field";
 import { DraftSaveStatus } from "./draft-save-status";
-import { categoryLabel } from "./format";
 import { ItemProjectField } from "./project-picker";
 import { ReceiptAttachments } from "./receipt-attachments";
 import { ReceiptExceptionField } from "./receipt-exception-field";
+import { ReceiptItemFields } from "./receipt-item-fields";
+import type {
+	ReceiptItemFieldName as FieldName,
+	ReceiptItemFormValues as FormValues,
+} from "./receipt-item-form";
 import { useDraftSaver } from "./use-draft-saver";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
-type FormValues = { [K in keyof ReceiptItemDraft]: string };
-type FieldName = keyof ReceiptItemDraft;
 
 function toFormValues(item: ReceiptItemDraft): FormValues {
 	return {
@@ -309,202 +293,7 @@ export function ReceiptItemEditor({
 				)}
 			</div>
 
-			<form
-				noValidate
-				onSubmit={(event) => {
-					event.preventDefault();
-					void saver.flush();
-				}}
-				className="grid gap-4"
-			>
-				<div className="grid gap-4 sm:grid-cols-2">
-					<form.Field name="expenseDate">
-						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={!!fieldError("expenseDate")}>
-									{t("travelExpenses.report.fields.expenseDate", "Receipt date")}
-								</TFormLabel>
-								<TFormControl hasError={!!fieldError("expenseDate")}>
-									<DatePicker
-										name="expenseDate"
-										value={field.state.value}
-										onChange={field.handleChange}
-										onBlur={field.handleBlur}
-									/>
-								</TFormControl>
-								<TFormMessage>{fieldError("expenseDate")}</TFormMessage>
-							</TFormItem>
-						)}
-					</form.Field>
-
-					<form.Field name="category">
-						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={!!fieldError("category")}>
-									{t("travelExpenses.report.fields.category", "Category")}
-								</TFormLabel>
-								<Select
-									value={field.state.value || null}
-									onValueChange={(value) => field.handleChange(value ?? "")}
-								>
-									<TFormControl hasError={!!fieldError("category")}>
-										<SelectTrigger className="w-full">
-											<SelectValue
-												placeholder={t(
-													"travelExpenses.report.fields.categoryPlaceholder",
-													"Choose a category",
-												)}
-											/>
-										</SelectTrigger>
-									</TFormControl>
-									<SelectContent>
-										{RECEIPT_EXPENSE_CATEGORIES.map((category) => (
-											<SelectItem key={category} value={category}>
-												{categoryLabel(t, category)}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-								<TFormMessage>{fieldError("category")}</TFormMessage>
-							</TFormItem>
-						)}
-					</form.Field>
-				</div>
-
-				<form.Field name="description">
-					{(field) => (
-						<TFormItem>
-							<TFormLabel hasError={!!fieldError("description")}>
-								{t("travelExpenses.report.fields.description", "Description")}
-							</TFormLabel>
-							<TFormControl hasError={!!fieldError("description")}>
-								<Textarea
-									name="description"
-									rows={3}
-									maxLength={MAX_DESCRIPTION_LENGTH}
-									placeholder={t(
-										"travelExpenses.report.fields.descriptionPlaceholder",
-										"e.g. Train ticket Berlin–Hamburg for the customer workshop",
-									)}
-									value={field.state.value}
-									onChange={(event) => field.handleChange(event.target.value)}
-									onBlur={field.handleBlur}
-								/>
-							</TFormControl>
-							<TFormMessage>{fieldError("description")}</TFormMessage>
-						</TFormItem>
-					)}
-				</form.Field>
-
-				<div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
-					<form.Field name="amount">
-						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={!!fieldError("amount")}>
-									{t("travelExpenses.report.fields.amount", "Amount on the receipt")}
-								</TFormLabel>
-								<TFormControl hasError={!!fieldError("amount")}>
-									<Input
-										name="amount"
-										inputMode="decimal"
-										autoComplete="off"
-										placeholder="0.00"
-										value={field.state.value}
-										onChange={(event) => field.handleChange(event.target.value)}
-										onBlur={field.handleBlur}
-									/>
-								</TFormControl>
-								<TFormMessage>{fieldError("amount")}</TFormMessage>
-							</TFormItem>
-						)}
-					</form.Field>
-
-					<form.Field name="currency">
-						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={!!fieldError("currency")}>
-									{t("travelExpenses.form.currency", "Currency")}
-								</TFormLabel>
-								<TFormControl hasError={!!fieldError("currency")}>
-									<Input
-										name="currency"
-										autoComplete="off"
-										maxLength={3}
-										value={field.state.value}
-										onChange={(event) => field.handleChange(event.target.value.toUpperCase())}
-										onBlur={field.handleBlur}
-									/>
-								</TFormControl>
-								<TFormMessage>{fieldError("currency")}</TFormMessage>
-							</TFormItem>
-						)}
-					</form.Field>
-				</div>
-
-				<form.Field name="paidBy">
-					{(field) => (
-						<TFormItem>
-							<RadioGroup
-								aria-label={t("travelExpenses.report.fields.paidBy", "Who paid?")}
-								value={field.state.value}
-								onValueChange={(value) => field.handleChange(value)}
-								className="gap-2"
-							>
-								<p
-									className="text-sm font-medium data-[error=true]:text-destructive"
-									data-error={!!fieldError("paidBy")}
-								>
-									{t("travelExpenses.report.fields.paidBy", "Who paid?")}
-								</p>
-								<div className="flex flex-wrap gap-x-6 gap-y-2">
-									<Label className="flex items-center gap-2 font-normal">
-										<RadioGroupItem value="employee" />
-										{t("travelExpenses.report.paidBy.employee", "I paid (reimburse me)")}
-									</Label>
-									<Label className="flex items-center gap-2 font-normal">
-										<RadioGroupItem value="company" />
-										{t(
-											"travelExpenses.report.paidBy.company",
-											"The company paid (e.g. company card)",
-										)}
-									</Label>
-								</div>
-							</RadioGroup>
-							<TFormMessage>{fieldError("paidBy")}</TFormMessage>
-						</TFormItem>
-					)}
-				</form.Field>
-
-				<form.Field name="accountingReference">
-					{(field) => (
-						<TFormItem>
-							<TFormLabel hasError={!!fieldError("accountingReference")}>
-								{t(
-									"travelExpenses.report.fields.accountingReference",
-									"Accounting reference (optional)",
-								)}
-							</TFormLabel>
-							<TFormControl hasError={!!fieldError("accountingReference")}>
-								<Input
-									name="accountingReference"
-									autoComplete="off"
-									maxLength={MAX_ACCOUNTING_REFERENCE_LENGTH}
-									value={field.state.value}
-									onChange={(event) => field.handleChange(event.target.value)}
-									onBlur={field.handleBlur}
-								/>
-							</TFormControl>
-							<TFormDescription>
-								{t(
-									"travelExpenses.report.fields.accountingReferenceDescription",
-									"A reference finance asked you to use, such as an order number.",
-								)}
-							</TFormDescription>
-							<TFormMessage>{fieldError("accountingReference")}</TFormMessage>
-						</TFormItem>
-					)}
-				</form.Field>
-
+			<ReceiptItemFields form={form} fieldError={fieldError} onSubmit={() => void saver.flush()}>
 				{project && (
 					<form.Subscribe selector={(formState) => formState.values.expenseDate}>
 						{(expenseDate) => (
@@ -521,7 +310,7 @@ export function ReceiptItemEditor({
 						)}
 					</form.Subscribe>
 				)}
-			</form>
+			</ReceiptItemFields>
 
 			<ReceiptAttachments
 				reportId={reportId}
@@ -563,53 +352,75 @@ export function ReceiptItemEditor({
 			</form.Subscribe>
 
 			<form.Subscribe selector={(formState) => formState.values}>
-				{(values) => {
-					const parsed = parseReceiptItemDraft(toDraftInput(values));
-					const draft = parsed.ok ? parsed.draft : null;
-					const missing = draft
-						? receiptItemMissingRequirements(draft, {
-								receiptCount: receipts.length,
-								reimbursementCurrency,
-								receiptException: { ...receiptException, allowed: receiptExceptionsAllowed },
-								conversion: item.conversion,
-							})
-						: null;
-					return (
-						<section
-							aria-labelledby={`${item.id}-requirements`}
-							className="space-y-2 rounded-lg border p-4"
-						>
-							<h3 id={`${item.id}-requirements`} className="text-base font-semibold">
-								{t("travelExpenses.report.requirements.title", "Still needed")}
-							</h3>
-							{missing === null ? (
-								<p className="text-sm text-muted-foreground">
-									{t(
-										"travelExpenses.report.requirements.fixFields",
-										"Correct the highlighted fields first.",
-									)}
-								</p>
-							) : missing.length === 0 ? (
-								<p className="text-sm text-muted-foreground">
-									{t(
-										"travelExpenses.report.requirements.complete",
-										"Everything for this expense is entered.",
-									)}
-								</p>
-							) : (
-								<ul className="list-disc space-y-1 pl-5 text-sm">
-									{missing.map((requirement) => (
-										<li key={requirement}>
-											{requirementLabel(t, requirement, reimbursementCurrency)}
-										</li>
-									))}
-								</ul>
-							)}
-						</section>
-					);
-				}}
+				{(values) => (
+					<ReceiptItemRequirements
+						itemId={item.id}
+						values={values}
+						receiptCount={receipts.length}
+						reimbursementCurrency={reimbursementCurrency}
+						receiptException={{ ...receiptException, allowed: receiptExceptionsAllowed }}
+						conversion={item.conversion}
+					/>
+				)}
 			</form.Subscribe>
 		</div>
+	);
+}
+
+/** What the expense still needs before it can be submitted, from the entered values. */
+function ReceiptItemRequirements({
+	itemId,
+	values,
+	receiptCount,
+	reimbursementCurrency,
+	receiptException,
+	conversion,
+}: {
+	itemId: string;
+	values: FormValues;
+	receiptCount: number;
+	reimbursementCurrency: string;
+	receiptException: ReceiptExceptionContext;
+	conversion: ReportItemView["conversion"];
+}) {
+	const { t } = useTranslate();
+	const parsed = parseReceiptItemDraft(toDraftInput(values));
+	const draft = parsed.ok ? parsed.draft : null;
+	const missing = draft
+		? receiptItemMissingRequirements(draft, {
+				receiptCount,
+				reimbursementCurrency,
+				receiptException,
+				conversion,
+			})
+		: null;
+	return (
+		<section aria-labelledby={`${itemId}-requirements`} className="space-y-2 rounded-lg border p-4">
+			<h3 id={`${itemId}-requirements`} className="text-base font-semibold">
+				{t("travelExpenses.report.requirements.title", "Still needed")}
+			</h3>
+			{missing === null ? (
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"travelExpenses.report.requirements.fixFields",
+						"Correct the highlighted fields first.",
+					)}
+				</p>
+			) : missing.length === 0 ? (
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"travelExpenses.report.requirements.complete",
+						"Everything for this expense is entered.",
+					)}
+				</p>
+			) : (
+				<ul className="list-disc space-y-1 pl-5 text-sm">
+					{missing.map((requirement) => (
+						<li key={requirement}>{requirementLabel(t, requirement, reimbursementCurrency)}</li>
+					))}
+				</ul>
+			)}
+		</section>
 	);
 }
 

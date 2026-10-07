@@ -414,7 +414,7 @@ vi.mock("./policy-helpers", () => ({
 
 vi.mock("./queries", () => ({
 	getActiveWorkPeriod: mockState.getActiveWorkPeriod,
-	getTimeSummary: vi.fn(),
+	getComplianceDailyMinutes: vi.fn(),
 }));
 
 vi.mock("./shared", () => ({

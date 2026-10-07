@@ -249,18 +249,22 @@ export async function loadTravelExpenseReportRevisionsByRequest(
 	const revisions = rows.map((row) =>
 		parseRevision(row, { organizationId: input.organizationId, reportId: row.sourceId }),
 	);
+	// The first revision of each chain, as a scan in row order would find it.
+	const byChain = new Map<string | null, TravelExpenseReportSubmittedRevisionRecord>();
 	for (const revision of revisions) {
 		byRequest.set(revision.legacy.approvalRequestId, revision);
+		if (!byChain.has(revision.legacy.chainInstanceId)) {
+			byChain.set(revision.legacy.chainInstanceId, revision);
+		}
 	}
 	for (const stage of stages) {
 		if (!stage.approvalRequestId || byRequest.has(stage.approvalRequestId)) continue;
-		const revision = revisions.find(
-			(candidate) => candidate.legacy.chainInstanceId === stage.chainInstanceId,
-		);
+		const revision = byChain.get(stage.chainInstanceId);
 		if (revision) byRequest.set(stage.approvalRequestId, revision);
 	}
+	const requested = new Set(requestIds);
 	for (const id of [...byRequest.keys()]) {
-		if (!requestIds.includes(id)) byRequest.delete(id);
+		if (!requested.has(id)) byRequest.delete(id);
 	}
 	return byRequest;
 }

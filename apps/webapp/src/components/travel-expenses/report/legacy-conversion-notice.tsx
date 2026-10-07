@@ -15,7 +15,7 @@ import { formatMoney, formatPlainDateRange } from "./format";
 type Translate = ReturnType<typeof useTranslate>["t"];
 
 /** Why a field of the continued draft is empty, in the employee's terms. */
-export function legacyConversionFlagText(
+function legacyConversionFlagText(
 	t: Translate,
 	flag: LegacyConversionFlag,
 	legacy: LegacyConversionView["legacy"],

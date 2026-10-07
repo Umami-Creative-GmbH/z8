@@ -533,6 +533,8 @@ export async function executeTravelExpenseReportReturnInTransaction(
 		approvalRequestId,
 		actorId: actor.id,
 	});
+	// Inside the return transaction: its queries share one connection and run in order anyway.
+	// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
 	const actorLabel = await loadEvidenceActorLabel(database, {
 		organizationId,
 		employeeId: actor.id,
@@ -574,6 +576,8 @@ export async function executeTravelExpenseReportReturnInTransaction(
 	});
 	// The returned cycle can no longer be decided: its sent cards (#623) are
 	// retired like a withdrawn cycle's, keyed by the cycle's revision.
+	// Ordered writes in the return transaction, after the cycle closure.
+	// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
 	const deliveryIntent = await recordTravelExpenseReportDeliveryIntent(database, {
 		organizationId,
 		reportId,

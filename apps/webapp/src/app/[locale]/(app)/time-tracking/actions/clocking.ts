@@ -99,7 +99,7 @@ import {
 	resolveManualEntryTargetZone,
 } from "./manual-entry-target";
 import { getEditCapabilityForPeriod } from "./policy-helpers";
-import { getActiveWorkPeriod, getTimeSummary } from "./queries";
+import { getActiveWorkPeriod, getComplianceDailyMinutes } from "./queries";
 import {
 	BREAK_WARNING_THRESHOLD_MINUTES,
 	EMPTY_BREAK_REMINDER_STATUS,
@@ -816,8 +816,8 @@ export async function getBreakReminderStatus(): Promise<
 			activeWorkPeriod.startTime,
 			new Date(),
 		);
-		const [timeSummary, breaksTaken] = await Promise.all([
-			getTimeSummary(currentEmployee.id, timezone),
+		const [completedMinutesToday, breaksTaken] = await Promise.all([
+			getComplianceDailyMinutes(currentEmployee.id, timezone),
 			calculateBreaksTakenToday(currentEmployee.id, timezone),
 		]);
 
@@ -834,7 +834,7 @@ export async function getBreakReminderStatus(): Promise<
 
 			const breakRequirement = workPolicyService.calculateBreakRequirements({
 				regulation: policy.regulation,
-				workedMinutes: timeSummary.todayMinutes + currentSessionMinutes,
+				workedMinutes: completedMinutesToday + currentSessionMinutes,
 				breaksTakenMinutes: breaksTaken,
 			});
 

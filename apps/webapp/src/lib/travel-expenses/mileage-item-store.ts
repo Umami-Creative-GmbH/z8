@@ -173,6 +173,8 @@ export async function saveMileageItemDraft(
 					eq(travelExpenseReport.organizationId, owner.organizationId),
 				),
 			);
+		// Inside the save transaction: its queries share one connection and run in order anyway.
+		// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
 		const price = await loadMileagePricer(tx, owner.organizationId, [current]);
 		const reimbursementCurrency = reportRow?.currency ?? DEFAULT_REIMBURSEMENT_CURRENCY;
 		const overrides = await loadMileageOverrides(tx, owner.organizationId, [current]);
@@ -203,6 +205,8 @@ export async function stampMileagePolicies(
 	const mileageItems = input.items.filter((item) => item.type === "mileage");
 	if (mileageItems.length === 0) return views;
 	const price = await loadMileagePricer(tx, input.organizationId, mileageItems);
+	// Inside the submission transaction: its queries share one connection and run in order anyway.
+	// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
 	const overrides = await loadMileageOverrides(tx, input.organizationId, mileageItems);
 	for (const item of mileageItems) {
 		const calculation = price(item, {
@@ -213,6 +217,8 @@ export async function stampMileagePolicies(
 			calculation.status === "calculated" && item.expenseDate
 				? { ...calculation.policy, expenseDate: item.expenseDate }
 				: null;
+		// One stamp per item, each a different value, on the submission transaction's connection.
+		// react-doctor-disable-next-line react-doctor/async-await-in-loop
 		await tx
 			.update(travelExpenseReportItem)
 			.set({ mileagePolicy: stamp })

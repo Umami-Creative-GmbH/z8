@@ -423,6 +423,8 @@ export async function listAllowanceExceptionItems(
 	});
 	const result: AllowanceExceptionItem[] = [];
 	for (const { report, item, employeeName } of rows) {
+		// One item at a time on purpose: up to `limit` items each price with several queries.
+		// react-doctor-disable-next-line react-doctor/async-await-in-loop
 		const ordinary = await ordinaryAllowance(database, report, item);
 		if (!ordinary) continue;
 		const override = overrides.get(item.id) ?? null;

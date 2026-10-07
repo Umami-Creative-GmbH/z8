@@ -89,10 +89,11 @@ export function checkReceiptExceptionAcceptance(
 ): ReceiptExceptionAcceptanceCheck {
 	if (action !== "approve") return { ok: true, accepted: [] };
 	const exceptions = new Set(items.flatMap((item) => (item.receiptException ? [item.itemId] : [])));
-	const accepted = [...new Set(acceptedItemIds ?? [])].toSorted();
+	const acceptedIds = new Set(acceptedItemIds ?? []);
+	const accepted = [...acceptedIds].toSorted();
 	const unknown = accepted.filter((itemId) => !exceptions.has(itemId));
 	if (unknown.length > 0) return { ok: false, reason: "unknown_item", itemIds: unknown };
-	const notAccepted = [...exceptions].filter((itemId) => !accepted.includes(itemId)).toSorted();
+	const notAccepted = [...exceptions].filter((itemId) => !acceptedIds.has(itemId)).toSorted();
 	if (notAccepted.length > 0) return { ok: false, reason: "not_accepted", itemIds: notAccepted };
 	return { ok: true, accepted };
 }
