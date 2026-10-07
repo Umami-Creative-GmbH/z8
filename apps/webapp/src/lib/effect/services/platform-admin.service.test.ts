@@ -4,10 +4,16 @@ import { describe, expect, it } from "vitest";
 
 const SERVICE_SOURCE = fileURLToPath(new URL("./platform-admin.service.ts", import.meta.url));
 
+/** Finds the next service member definition, whatever its indentation. */
+function indexOfMember(source: string, member: string, from: number): number {
+	const match = new RegExp(`\\n\\t+${member}:`).exec(source.slice(from));
+	return match ? from + match.index : -1;
+}
+
 function getListUsersSource(): string {
 	const source = readFileSync(SERVICE_SOURCE, "utf8");
 	const start = source.indexOf("listUsers: (filters, pagination) =>");
-	const end = source.indexOf("\n\t\t\tbanUser:", start);
+	const end = indexOfMember(source, "banUser", start);
 
 	expect(start).toBeGreaterThan(-1);
 	expect(end).toBeGreaterThan(start);
@@ -18,7 +24,7 @@ function getListUsersSource(): string {
 function getListOrganizationsSource(): string {
 	const source = readFileSync(SERVICE_SOURCE, "utf8");
 	const start = source.indexOf("listOrganizations: (filters, pagination) =>");
-	const end = source.indexOf("\n\t\t\tsuspendOrganization:", start);
+	const end = indexOfMember(source, "suspendOrganization", start);
 
 	expect(start).toBeGreaterThan(-1);
 	expect(end).toBeGreaterThan(start);
@@ -31,7 +37,7 @@ function getDeleteOrganizationSource(): string {
 	const start = source.indexOf(
 		"deleteOrganization: (orgId, immediate, skipNotification, adminId) =>",
 	);
-	const end = source.indexOf("\n\t\t\tisOrganizationSuspended:", start);
+	const end = indexOfMember(source, "isOrganizationSuspended", start);
 
 	expect(start).toBeGreaterThan(-1);
 	expect(end).toBeGreaterThan(start);

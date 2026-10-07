@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect";
+import { Effect, Exit } from "effect";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import {
@@ -25,6 +25,7 @@ import {
 	parseInstant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import { failureOfCause } from "@/lib/effect/cause-failure";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -5479,8 +5480,7 @@ export function createLegacyTimeCorrectionDecisionProcessor(input: {
 		);
 		if (Exit.isSuccess(exit)) return exit.value;
 		// The owner's typed failure, else its defect: what translateCorrectionWorkError reads.
-		const failure = Cause.findErrorOption(exit.cause);
-		throw Option.isSome(failure) ? failure.value : Cause.squash(exit.cause);
+		throw failureOfCause(exit.cause);
 	};
 }
 

@@ -1,5 +1,5 @@
 import { and, eq, inArray, or } from "drizzle-orm";
-import { Cause, type Effect, Exit, Option, Result } from "effect";
+import { type Effect, Exit } from "effect";
 import { db } from "@/db";
 import {
 	approvalRequest,
@@ -16,6 +16,7 @@ import {
 	classifyTimeApprovalRequest,
 	type TimeApprovalKind,
 } from "@/lib/approvals/time-request-kind";
+import { failureOfCause } from "@/lib/effect/cause-failure";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runtime } from "@/lib/effect/runtime";
 import { createLogger } from "@/lib/logger";
@@ -139,7 +140,7 @@ export async function decideApprovalInboxItemFromRequest({
 
 	return Exit.match(exit, {
 		onFailure: (cause) => {
-			throw extractEffectError(cause);
+			throw failureOfCause(cause);
 		},
 		onSuccess: () => ({
 			id: request.id,
@@ -792,14 +793,6 @@ function canDecideRequest({
 				scope.eligibleApproverIds.includes(actorEmployeeId) &&
 				scope.eligibleApproverIds.includes(request.approverId),
 		) ?? false
-	);
-}
-
-function extractEffectError(cause: Cause.Cause<unknown>): unknown {
-	return (
-		Option.getOrNull(Cause.findErrorOption(cause)) ??
-		Result.getOrNull(Cause.findDefect(cause)) ??
-		cause
 	);
 }
 

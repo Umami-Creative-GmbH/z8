@@ -1,8 +1,9 @@
 "use server";
 
-import { Cause, Effect, Exit, Option } from "effect";
+import { Effect, Exit } from "effect";
 import { DateTime } from "luxon";
 import { getAuthContext } from "@/lib/auth-helpers";
+import { typedFailureOfCause } from "@/lib/effect/cause-failure";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { type DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
@@ -47,7 +48,7 @@ async function runTimeRecordEffect<T, E>(
 		return { success: true, data: exit.value };
 	}
 
-	const failure = Option.getOrNull(Cause.findErrorOption(exit.cause));
+	const failure = typedFailureOfCause(exit.cause);
 	if (
 		failure &&
 		typeof failure === "object" &&

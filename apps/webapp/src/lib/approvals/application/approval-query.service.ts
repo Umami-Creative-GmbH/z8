@@ -7,7 +7,6 @@
 
 import { Cause, Context, Effect, Layer } from "effect";
 import type { AnyAppError } from "@/lib/effect/errors";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import { getAllApprovalHandlers } from "../domain/registry";
 import { comparePriority } from "../domain/sla-calculator";
@@ -137,90 +136,86 @@ export class ApprovalQueryService extends Context.Service<
 // LIVE IMPLEMENTATION
 // ============================================
 
-export const ApprovalQueryServiceLive = Layer.effect(
+export const ApprovalQueryServiceLive = Layer.succeed(
 	ApprovalQueryService,
-	Effect.gen(function* () {
-		return ApprovalQueryService.of({
-				getApprovals: (params) =>
-					Effect.gen(function* () {
-						const handlers = getAllApprovalHandlers();
-						const requestedTypeSet = params.types ? new Set(params.types) : null;
+	ApprovalQueryService.of({
+		getApprovals: (params) =>
+			Effect.gen(function* () {
+				const handlers = getAllApprovalHandlers();
+				const requestedTypeSet = params.types ? new Set(params.types) : null;
 
-						// Filter handlers by type if specified
-						const activeHandlers = requestedTypeSet
-							? handlers.filter((h) => requestedTypeSet.has(h.type))
-							: handlers;
+				// Filter handlers by type if specified
+				const activeHandlers = requestedTypeSet
+					? handlers.filter((h) => requestedTypeSet.has(h.type))
+					: handlers;
 
-					// Fetch approvals from all active handlers in parallel
-					const allItems: UnifiedApprovalItem[] = [];
+				// Fetch approvals from all active handlers in parallel
+				const allItems: UnifiedApprovalItem[] = [];
 
-					for (const handler of activeHandlers) {
-						// One failing handler must not empty the whole list, but a defect
-						// (e.g. a missing service) is logged so wiring bugs stay visible.
-						const items = yield* handler.getApprovals(params).pipe(
-							Effect.catchCause((cause) => {
-								if (Cause.hasDies(cause)) {
-									logger.error(
-										{
-											approvalType: handler.type,
-											organizationId: params.organizationId,
-											cause: Cause.pretty(cause),
-										},
-										"Approval handler defect while listing approvals",
-									);
-								}
-								return Effect.succeed([]);
-							}),
-						);
-						allItems.push(...items);
+				for (const handler of activeHandlers) {
+					// One failing handler must not empty the whole list, but a defect
+					// (e.g. a missing service) is logged so wiring bugs stay visible.
+					const items = yield* handler.getApprovals(params).pipe(
+						Effect.catchCause((cause) => {
+							if (Cause.hasDies(cause)) {
+								logger.error(
+									{
+										approvalType: handler.type,
+										organizationId: params.organizationId,
+										cause: Cause.pretty(cause),
+									},
+									"Approval handler defect while listing approvals",
+								);
+							}
+							return Effect.succeed([]);
+						}),
+					);
+					allItems.push(...items);
+				}
+
+				const requesterEmployeeIds = params.requesterEmployeeIds;
+				const requesterEmployeeIdSet = requesterEmployeeIds ? new Set(requesterEmployeeIds) : null;
+				const filteredItems = requesterEmployeeIdSet
+					? allItems.filter((item) => requesterEmployeeIdSet.has(item.requester.id))
+					: allItems;
+
+				// Sort by priority (ascending: urgent first) then by createdAt (descending: newest first)
+				filteredItems.sort(compareApprovalItems);
+
+				// Apply cursor pagination after sorting
+				let paginatedItems = filteredItems;
+
+				if (params.cursor) {
+					const cursor = parseApprovalCursor(params.cursor);
+					if (cursor) {
+						paginatedItems = filteredItems.filter((item) => isItemAfterCursor(item, cursor));
 					}
+				}
 
-					const requesterEmployeeIds = params.requesterEmployeeIds;
-					const requesterEmployeeIdSet = requesterEmployeeIds
-						? new Set(requesterEmployeeIds)
-						: null;
-					const filteredItems = requesterEmployeeIdSet
-						? allItems.filter((item) => requesterEmployeeIdSet.has(item.requester.id))
-						: allItems;
+				// Limit results
+				const hasMore = paginatedItems.length > params.limit;
+				const items = paginatedItems.slice(0, params.limit);
+				const nextCursor = hasMore ? serializeApprovalCursor(items[items.length - 1]) : null;
 
-					// Sort by priority (ascending: urgent first) then by createdAt (descending: newest first)
-					filteredItems.sort(compareApprovalItems);
+				return {
+					items,
+					nextCursor,
+					hasMore,
+					total: filteredItems.length,
+				};
+			}),
 
-					// Apply cursor pagination after sorting
-					let paginatedItems = filteredItems;
+		getCounts: (approverId, organizationId, visibility) =>
+			Effect.gen(function* () {
+				const handlers = getAllApprovalHandlers();
+				const counts = { ...ZERO_APPROVAL_COUNTS };
 
-					if (params.cursor) {
-						const cursor = parseApprovalCursor(params.cursor);
-						if (cursor) {
-							paginatedItems = filteredItems.filter((item) => isItemAfterCursor(item, cursor));
-						}
-					}
+				for (const handler of handlers) {
+					const count = yield* handler.getCount(approverId, organizationId, visibility);
+					counts[handler.type] = count;
+				}
 
-					// Limit results
-					const hasMore = paginatedItems.length > params.limit;
-					const items = paginatedItems.slice(0, params.limit);
-					const nextCursor = hasMore ? serializeApprovalCursor(items[items.length - 1]) : null;
-
-					return {
-						items,
-						nextCursor,
-						hasMore,
-						total: filteredItems.length,
-					};
-				}),
-
-			getCounts: (approverId, organizationId, visibility) =>
-				Effect.gen(function* () {
-					const handlers = getAllApprovalHandlers();
-					const counts = { ...ZERO_APPROVAL_COUNTS };
-
-					for (const handler of handlers) {
-						const count = yield* handler.getCount(approverId, organizationId, visibility);
-						counts[handler.type] = count;
-					}
-
-					return counts;
-				}),
-		});
+				return counts;
+			}),
 	}),
-).pipe(Layer.provide(DatabaseServiceLive));
+);

@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { Cause, Effect, Exit, Option, Result } from "effect";
+import { Effect, Exit } from "effect";
 import { member } from "@/db/auth-schema";
 import {
 	approvalRequest,
@@ -8,6 +8,7 @@ import {
 	travelExpenseDecisionLog,
 } from "@/db/schema";
 import { getAbility } from "@/lib/auth-helpers";
+import { failureOfCause } from "@/lib/effect/cause-failure";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -544,14 +545,6 @@ async function findPendingTravelExpenseRequestForApprover(
 	return rows[0]?.id;
 }
 
-function failureOf(cause: Cause.Cause<unknown>): unknown {
-	return (
-		Option.getOrNull(Cause.findErrorOption(cause)) ??
-		Result.getOrNull(Cause.findDefect(cause)) ??
-		new Error("An error has occurred")
-	);
-}
-
 /**
  * Runs one expense decision in the caller's transaction. Order: rollout gate,
  * invocation lock and replay, presentation admission (bound only), exact target
@@ -732,7 +725,7 @@ export async function executeTravelExpenseDecisionInTransaction(
 			Effect.provideService(ApprovalAuditLogger, createApprovalAuditLogger(dbService)),
 		),
 	);
-	if (Exit.isFailure(exit)) throw failureOf(exit.cause);
+	if (Exit.isFailure(exit)) throw failureOfCause(exit.cause);
 
 	let evidence: LegacyDecisionEvidenceRecord | null = null;
 	if (revision) {

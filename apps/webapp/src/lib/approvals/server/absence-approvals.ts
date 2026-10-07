@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect";
+import { Effect, Exit } from "effect";
 import { DateTime } from "luxon";
 import { enqueueVacationOverrideCalendarSyncJobs } from "@/app/[locale]/(app)/absences/request-absence-effect-helpers";
 import { member } from "@/db/auth-schema";
@@ -22,6 +22,7 @@ import {
 	type Instant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import { failureOfCause } from "@/lib/effect/cause-failure";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -1714,8 +1715,7 @@ export function createLegacyAbsenceDecisionProcessor(input: {
 		);
 		if (Exit.isSuccess(exit)) return exit.value;
 		// The owner's refusals are its typed failures; a defect passes as itself.
-		const failure = Cause.findErrorOption(exit.cause);
-		throw Option.isSome(failure) ? failure.value : Cause.squash(exit.cause);
+		throw failureOfCause(exit.cause);
 	};
 }
 
