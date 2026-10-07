@@ -649,6 +649,44 @@ describe("ApprovalInboxPage", () => {
 		});
 	});
 
+	it("select all leaves out the viewer's own requests (#686)", () => {
+		approvalInboxMock.mockReturnValue({
+			data: {
+				pages: [
+					makeApprovalInboxPage([
+						makeApprovalInboxItem({ id: "approval-1" }),
+						makeApprovalInboxItem({
+							id: "own-approval",
+							capabilities: {
+								canApprove: false,
+								canReject: false,
+								canBulkApprove: false,
+								requiresRejectReason: true,
+								ownRequest: true,
+							},
+						}),
+					]),
+				],
+			},
+			isLoading: false,
+			isError: false,
+			error: null,
+			isFetching: false,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+
+		render(<ApprovalInboxPage />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Select All" }));
+
+		expect(
+			screen.getByRole("button", { name: /Approve Selected \(\s*1\s*\)/ }),
+		).toBeTruthy();
+	});
+
 	it("bulk reject selected approvals no-ops when no selected items are eligible", () => {
 		approvalInboxMock.mockReturnValue({
 			data: {

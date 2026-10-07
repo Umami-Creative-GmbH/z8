@@ -61,6 +61,8 @@ export interface ApprovalInboxCapabilities {
 	 * sprint approve stay off and send the reviewer to the details.
 	 */
 	requiresDetailReview?: boolean;
+	/** The viewer requested this; someone else decides it, so every decision is off (#686). */
+	ownRequest?: boolean;
 }
 
 export interface ApprovalInboxItem {

@@ -767,4 +767,66 @@ describe("getApprovalInboxListFromSources", () => {
 			},
 		});
 	});
+
+	it("offers no decision on the viewer's own requests and leaves others unchanged (#686)", async () => {
+		const viewerAsRequester = {
+			id: "manager-1",
+			userId: "user-manager-1",
+			name: "Morgan Manager",
+			email: "morgan@example.com",
+			image: null,
+			teamId: null,
+		};
+		const ownCanonical = canonicalItem(
+			"own-canonical",
+			"2026-05-30T09:00:00.000Z",
+			"normal",
+			"low",
+		);
+		ownCanonical.item.requester = {
+			id: "manager-1",
+			name: "Morgan Manager",
+			email: "morgan@example.com",
+			image: null,
+			teamId: null,
+		};
+
+		const result = await getApprovalInboxListFromSources({
+			sources: [
+				source("travel_expense_report", [
+					item({
+						id: "own-report",
+						approvalType: "travel_expense_report",
+						requester: viewerAsRequester,
+						approverId: "approver-2",
+					}),
+				]),
+				source("absence_entry", [item({ id: "other-absence" })]),
+				source("time_entry", []),
+			],
+			params: {
+				approverId: "manager-1",
+				organizationId: "org-1",
+				includeAllApprovers: true,
+				limit: 20,
+			},
+			loadCanonicalOrdinaryApprovals: async () => [ownCanonical],
+		});
+
+		const byId = new Map(result.items.map((entry) => [entry.id, entry]));
+		const ownDecisions = {
+			canApprove: false,
+			canReject: false,
+			canBulkApprove: false,
+			ownRequest: true,
+		};
+		expect(byId.get("own-report")?.capabilities).toMatchObject(ownDecisions);
+		expect(byId.get("own-canonical")?.capabilities).toMatchObject(ownDecisions);
+		expect(byId.get("other-absence")?.capabilities).toEqual({
+			canApprove: true,
+			canReject: true,
+			canBulkApprove: true,
+			requiresRejectReason: true,
+		});
+	});
 });

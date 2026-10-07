@@ -407,6 +407,35 @@ describe("ApprovalDetailPanel", () => {
 		});
 	});
 
+	it("offers no decision buttons on the viewer's own request (#686)", () => {
+		const ownDecisions = {
+			canApprove: false,
+			canReject: false,
+			canBulkApprove: false,
+			requiresRejectReason: true,
+			ownRequest: true,
+		};
+		const ownReport: ApprovalInboxItem = {
+			...approvalItem,
+			type: "travel_expense_report",
+			entityId: "report-1",
+			capabilities: ownDecisions,
+		};
+		mockState.detailItem = ownReport;
+		mockState.actions = ownDecisions;
+		render(
+			<ApprovalDetailPanel
+				approval={ownReport}
+				open={true}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		expect(screen.queryAllByRole("button", { name: /Approve|Reject|Return/ })).toHaveLength(0);
+		expect(screen.getByText("Your own request: another approver decides it.")).toBeTruthy();
+	});
+
 	it("does not approve when approval is disabled", () => {
 		mockState.actions = { ...approvalItem.capabilities, canApprove: false };
 		render(
