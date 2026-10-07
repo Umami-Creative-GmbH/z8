@@ -49,8 +49,8 @@
         "actions": {
           "edit": "Edit"
         },
-        "allowancesForYear": "Vacation Allowances for {{year}}",
-        "defaultAllowanceDescription": "Default allowance: {{days}} days per year",
+        "allowancesForYear": "Vacation Allowances for {year}",
+        "defaultAllowanceDescription": "Default allowance: {days} days per year",
         "defaultPolicy": "Default",
         "description": "Configure custom vacation allowances for individual employees",
         "detail": {
@@ -62,17 +62,17 @@
           "adjustmentReasonDescription": "Required when making adjustments (for audit trail)",
           "adjustmentReasonPlaceholder": "Explain why this adjustment is being made...",
           "adjustments": "Adjustments",
-          "allowanceForYear": "Vacation Allowance for {{year}}",
+          "allowanceForYear": "Vacation Allowance for {year}",
           "annualDays": "Annual Days",
           "assignedPolicy": "Assigned Policy",
           "cancel": "Cancel",
           "carryover": "Carryover",
           "carryoverDaysOptional": "Carryover Days (Optional)",
-          "currentBalance": "Current balance: {{total}} days available",
-          "currentlyAssigned": "Currently assigned: {{name}}",
+          "currentBalance": "Current balance: {total} days available",
+          "currentlyAssigned": "Currently assigned: {name}",
           "customAnnualDaysOptional": "Custom Annual Days (Optional)",
           "daysCarriedOverDescription": "Days carried over from previous year",
-          "defaultDaysPlaceholder": "Default: {{days}} days",
+          "defaultDaysPlaceholder": "Default: {days} days",
           "employeeInformation": "Employee Information",
           "errors": {
             "createAdjustmentFailed": "Failed to create adjustment",
@@ -83,8 +83,8 @@
           "fallsBackToDefaultPolicy": "Falls back to team or organization default policy",
           "manageAllowances": "manage employee vacation allowances",
           "managers": "Managers",
-          "overrideOrganizationDefault": "Override the organization default ({{days}} days) for this employee",
-          "policyOptionDays": "{{name}} ({{days}} days)",
+          "overrideOrganizationDefault": "Override the organization default ({days} days) for this employee",
+          "policyOptionDays": "{name} ({days} days)",
           "position": "Position",
           "primary": "Primary",
           "reasonForAdjustment": "Reason for Adjustment",
@@ -97,10 +97,10 @@
           "useOrganizationTeamDefault": "Use organization/team default"
         },
         "edit": {
-          "description": "Configure custom vacation allowance for {{name}}",
+          "description": "Configure custom vacation allowance for {name}",
           "title": "Edit Vacation Allowance"
         },
-        "employeeCount": "{{count}} employees",
+        "employeeCount": "{count} employees",
         "emptyDescription": "Add employees to your organization to manage their vacation allowances.",
         "emptyTitle": "No employees found",
         "noOrgPolicyConfigured": " (No org policy configured)",

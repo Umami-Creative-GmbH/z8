@@ -134,7 +134,7 @@
       "expired": "Süresi dolmuş",
       "expires": "Son kullanma tarihi",
       "inactive": "Etkin değil",
-      "invitationActionsLabel": "${row.original.email} adresine yapılan davet için işlemler",
+      "invitationActionsLabel": "{email} adresine yapılan davet için işlemler",
       "invitationCancelError": "Davetiye iptal edilemedi",
       "invitationCancelSuccess": "Davetiye iptal edildi",
       "invitationResendError": "Davetiye tekrar gönderilemedi",
@@ -142,7 +142,7 @@
       "invitationsWaiting": "{count, plural, other {{count} davetiye kabul edilmeyi bekliyor}}",
       "invitedBy": "Davet Eden",
       "member": "Üye",
-      "memberActionsLabel": "${row.original.user.name} için işlemler",
+      "memberActionsLabel": "{name} için işlemler",
       "memberCount": "{count, plural, other {bu organizasyonda {count} üye var}}",
       "noInvitationResults": "Aramanızla eşleşen davetiye bulunamadı.",
       "noInvitations": "Bekleyen davetiye yok.",
@@ -275,7 +275,7 @@
       "description": "Kuruluşunuz için varsayılan saat dilimini ayarlayın. Bu, izin takibi, raporlar ve diğer tarih tabanlı özellikler için kullanılır. Bireysel kullanıcılar bunu profil ayarlarından geçersiz kılabilir.",
       "owner-only": "Yalnızca kuruluş sahipleri saat dilimi ayarını değiştirebilir.",
       "title": "Saat Dilimi",
-      "updated": "Kuruluş saat dilimi {{timezone}} olarak güncellendi",
+      "updated": "Kuruluş saat dilimi {timezone} olarak güncellendi",
       "update-failed": "Kuruluş saat dilimi güncellenemedi"
     },
     "title": "Kuruluş Gezgini"

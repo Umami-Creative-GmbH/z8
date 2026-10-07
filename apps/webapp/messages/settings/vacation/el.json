@@ -49,8 +49,8 @@
         "actions": {
           "edit": "Επεξεργασία"
         },
-        "allowancesForYear": "Δικαιώματα άδειας για το {{year}}",
-        "defaultAllowanceDescription": "Προεπιλεγμένο δικαίωμα: {{days}} ημέρες ανά έτος",
+        "allowancesForYear": "Δικαιώματα άδειας για το {year}",
+        "defaultAllowanceDescription": "Προεπιλεγμένο δικαίωμα: {days} ημέρες ανά έτος",
         "defaultPolicy": "Προεπιλογή",
         "description": "Διαμορφώστε προσαρμοσμένα δικαιώματα άδειας για μεμονωμένους εργαζομένους",
         "detail": {
@@ -62,17 +62,17 @@
           "adjustmentReasonDescription": "Απαιτείται κατά την πραγματοποίηση προσαρμογών (για ίχνος ελέγχου)",
           "adjustmentReasonPlaceholder": "Εξηγήστε γιατί γίνεται αυτή η προσαρμογή...",
           "adjustments": "Προσαρμογές",
-          "allowanceForYear": "Άδεια διακοπών για το {{year}}",
+          "allowanceForYear": "Άδεια διακοπών για το {year}",
           "annualDays": "Ετήσιες ημέρες",
           "assignedPolicy": "Ανατεθείσα πολιτική",
           "cancel": "Ακύρωση",
           "carryover": "Μεταφορά",
           "carryoverDaysOptional": "Ημέρες μεταφοράς (Προαιρετικά)",
-          "currentBalance": "Τρέχον υπόλοιπο: {{total}} διαθέσιμες ημέρες",
-          "currentlyAssigned": "Τρέχουσα ανάθεση: {{name}}",
+          "currentBalance": "Τρέχον υπόλοιπο: {total} διαθέσιμες ημέρες",
+          "currentlyAssigned": "Τρέχουσα ανάθεση: {name}",
           "customAnnualDaysOptional": "Προσαρμοσμένες ετήσιες ημέρες (Προαιρετικά)",
           "daysCarriedOverDescription": "Ημέρες που μεταφέρθηκαν από το προηγούμενο έτος",
-          "defaultDaysPlaceholder": "Προεπιλογή: {{days}} ημέρες",
+          "defaultDaysPlaceholder": "Προεπιλογή: {days} ημέρες",
           "employeeInformation": "Πληροφορίες υπαλλήλου",
           "errors": {
             "createAdjustmentFailed": "Αποτυχία δημιουργίας προσαρμογής",
@@ -83,8 +83,8 @@
           "fallsBackToDefaultPolicy": "Επαναφορά στην προεπιλεγμένη πολιτική ομάδας ή οργανισμού",
           "manageAllowances": "διαχείριση αδειών διακοπών υπαλλήλων",
           "managers": "Διευθυντές",
-          "overrideOrganizationDefault": "Παράκαμψη της προεπιλογής οργανισμού ({{days}} ημέρες) για αυτόν τον υπάλληλο",
-          "policyOptionDays": "{{name}} ({{days}} ημέρες)",
+          "overrideOrganizationDefault": "Παράκαμψη της προεπιλογής οργανισμού ({days} ημέρες) για αυτόν τον υπάλληλο",
+          "policyOptionDays": "{name} ({days} ημέρες)",
           "position": "Θέση",
           "primary": "Κύρια",
           "reasonForAdjustment": "Λόγος προσαρμογής",
@@ -97,10 +97,10 @@
           "useOrganizationTeamDefault": "Χρήση προεπιλογής οργανισμού/ομάδας"
         },
         "edit": {
-          "description": "Διαμόρφωση προσαρμοσμένου επιδόματος διακοπών για τον/την {{name}}",
+          "description": "Διαμόρφωση προσαρμοσμένου επιδόματος διακοπών για τον/την {name}",
           "title": "Επεξεργασία επιδόματος διακοπών"
         },
-        "employeeCount": "{{count}} εργαζόμενοι",
+        "employeeCount": "{count} εργαζόμενοι",
         "emptyDescription": "Προσθέστε εργαζομένους στον οργανισμό σας για να διαχειριστείτε τα δικαιώματα άδειάς τους.",
         "emptyTitle": "Δεν βρέθηκαν εργαζόμενοι",
         "noOrgPolicyConfigured": " (Δεν έχει διαμορφωθεί πολιτική οργανισμού)",

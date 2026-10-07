@@ -189,7 +189,7 @@
         "presetName": "Nombre del preajuste",
         "presetNameHint": "Este nombre se utilizará para identificar el ajuste preestablecido al asignarlo a equipos o empleados",
         "presetNamePlaceholder": "p. ej., Alemania - Baviera",
-        "presetSuccess": "Ajuste preestablecido \"{name}\" creado con ${holidaysToImport.length} días festivos",
+        "presetSuccess": "Ajuste preestablecido \"{name}\" creado con {count} días festivos",
         "region": "Región",
         "searchCountry": "Buscar países...",
         "searchRegion": "Buscar regiones...",

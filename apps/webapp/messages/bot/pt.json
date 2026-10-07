@@ -85,11 +85,16 @@
       "leave": "Licença",
       "newRequest": "Nova Solicitação de Aprovação",
       "outcome": {
+        "recorded": "Registado por {actor} em {time}. Consulte o estado atual do pedido no Z8.",
         "recordedTitle": "Decisão registrada",
         "replayed": "Este clique no botão já foi registrado; este é seu resultado original e nenhuma nova decisão foi tomada.",
+        "requestApproved": "Aprovado por {actor} em {time}. O pedido está aprovado.",
         "requestApprovedTitle": "Solicitação aprovada",
+        "requestRejected": "Rejeitado por {actor} em {time}. O pedido está rejeitado.",
         "requestRejectedTitle": "Solicitação rejeitada",
+        "stepApproved": "Aprovado por {actor} em {time}. O pedido ainda aguarda outras aprovações.",
         "stepApprovedTitle": "Aprovação registrada",
+        "stepRejected": "Rejeitado por {actor} em {time}. O pedido ainda não é definitivo; consulte o seu estado atual no Z8.",
         "stepRejectedTitle": "Rejeição registrada"
       },
       "outcomeUnknown": "O resultado deste acionamento não pôde ser confirmado. Verifique a solicitação no Z8 antes de pressionar novamente.",

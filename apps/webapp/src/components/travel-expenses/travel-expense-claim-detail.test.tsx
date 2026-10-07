@@ -10,8 +10,11 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const catalog = vi.hoisted(() => ({ messages: {} as Record<string, string> }));
 vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+	useTranslate: () => ({
+		t: (key: string, fallback: string) => catalog.messages[key] ?? fallback,
+	}),
 }));
 vi.mock("next-intl", () => ({ useLocale: () => "de-DE" }));
 // The settlement of an approved claim (#612) has its own tests.
@@ -39,6 +42,7 @@ import { TravelExpenseClaimDetail } from "./travel-expense-claim-detail";
 afterEach(() => {
 	cleanup();
 	vi.unstubAllGlobals();
+	catalog.messages = {};
 });
 const storedDetail = {
 	claim: {
@@ -163,6 +167,22 @@ describe("stored travel claim detail", () => {
 				.getByRole("link", { name: "Download hotel.pdf" })
 				.getAttribute("href"),
 		).toBe("/api/travel-expenses/old-claim/receipts/receipt?download=1");
+		client.clear();
+	});
+	it("labels the claim type, status and decisions with catalog keys (#680)", async () => {
+		catalog.messages = {
+			"travelExpenses.report.receipts.title": "Beleg",
+			"travelExpenses.report.status.approved": "Genehmigt",
+		};
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () => Response.json(storedDetail)),
+		);
+		const client = mount();
+		expect(
+			await screen.findByRole("heading", { name: "Beleg · Genehmigt" }),
+		).toBeTruthy();
+		expect(screen.getByText("Genehmigt · Morgan Manager")).toBeTruthy();
 		client.clear();
 	});
 	it("offers retry after a failed detail load and restores the claim", async () => {

@@ -189,7 +189,7 @@
         "presetName": "Vorlagenname",
         "presetNameHint": "Dieser Name wird verwendet, um die Voreinstellung bei der Zuweisung an Teams oder Mitarbeiter zu identifizieren",
         "presetNamePlaceholder": "z. B. Deutschland - Bayern",
-        "presetSuccess": "Voreinstellung \"{name}\" mit ${holidaysToImport.length} Feiertagen erstellt",
+        "presetSuccess": "Voreinstellung \"{name}\" mit {count} Feiertagen erstellt",
         "region": "Region",
         "searchCountry": "Länder suchen...",
         "searchRegion": "Regionen suchen...",

@@ -241,7 +241,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.timezone.picker.labels.pacificHonolulu",
 		"settings.timezone.picker.labels.utc",
 		"settings.timezone.picker.search",
-		"settings.travelExpenses.description",
+		"settings.travelExpenses.navDescription",
 		"settings.travelExpenses.title",
 		"settings.webhooks.description",
 		"settings.webhooks.title",

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { applyCatalogRecords } from "./catalog-store";
 import { loadCatalogSlice, loadShellTranslations } from "./load-translations";
+import { getRouteCatalogScope } from "./route-catalog-scopes";
 import { getNamespacesForRoute, TolgeeBase } from "./shared";
 
 vi.mock("server-only", () => ({}));
@@ -73,8 +74,38 @@ describe("German route catalogs", () => {
 			"calendar.requirements.status.missing",
 			"Fehlende erfasste Zeit",
 		],
+		["/travel-expenses","travelExpenses.history.emptyTitle", "Noch keine Reisekosten"],
+		["/travel-expenses", "travelExpenses.report.actions.newReceipt", "Neuer Beleg"],
+		["/travel-expenses", "travelExpenses.report.actions.newTrip", "Neue Reise"],
+		["/travel-expenses", "common.loadingRegions.travelExpenses", "Reisekosten werden geladen"],
+		["/travel-expenses/reports/report-1", "travelExpenses.report.trip.title", "Reisedetails"],
+		[
+			"/travel-expenses/reports/report-1",
+			"travelExpenses.report.status.submitted",
+			"Wartet auf Überprüfung",
+		],
+		["/travel-expenses/finance", "travelExpenses.finance.title", "Ausgaben-Finanzen"],
+		[
+			"/approvals/inbox",
+			"approvals:approvals.types.travel_expense_report",
+			"Ausgabenberichte",
+		],
+		[
+			"/approvals/inbox",
+			"travelExpenses.report.status.submitted",
+			"Wartet auf Überprüfung",
+		],
+		["/settings/travel-expenses", "settings.travelExpenses.title", "Reisekostenrichtlinien"],
+		["/settings/travel-expenses", "travelExpenses.settings.tabs.rates", "Sätze"],
+		[
+			"/settings/travel-expenses",
+			"common.loadingRegions.travelExpenseSettings",
+			"Reisekosteneinstellungen werden geladen",
+		],
 	])("provides German copy for %s: %s", async (route, key, expected) => {
-		const slice = await loadCatalogSlice("de", getNamespacesForRoute(route));
+		const namespaces = getRouteCatalogScope(route)?.namespaces;
+		if (!namespaces) throw new Error(`No catalog scope for ${route}`);
+		const slice = await loadCatalogSlice("de", namespaces);
 		const tolgee = TolgeeBase({ loadAllLanguageCatalogs: false }).init({
 			language: "de",
 			staticData: slice.records,

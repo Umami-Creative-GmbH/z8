@@ -49,8 +49,8 @@
         "actions": {
           "edit": "Editar"
         },
-        "allowancesForYear": "Asignaciones de vacaciones para {{year}}",
-        "defaultAllowanceDescription": "Asignación predeterminada: {{days}} días al año",
+        "allowancesForYear": "Asignaciones de vacaciones para {year}",
+        "defaultAllowanceDescription": "Asignación predeterminada: {days} días al año",
         "defaultPolicy": "Predeterminado",
         "description": "Configurar asignaciones de vacaciones personalizadas para empleados individuales",
         "detail": {
@@ -62,17 +62,17 @@
           "adjustmentReasonDescription": "Requerido al realizar ajustes (para el registro de auditoría)",
           "adjustmentReasonPlaceholder": "Explique por qué se realiza este ajuste...",
           "adjustments": "Ajustes",
-          "allowanceForYear": "Asignación de vacaciones para {{year}}",
+          "allowanceForYear": "Asignación de vacaciones para {year}",
           "annualDays": "Días anuales",
           "assignedPolicy": "Política asignada",
           "cancel": "Cancelar",
           "carryover": "Traslado",
           "carryoverDaysOptional": "Días de traslado (opcional)",
-          "currentBalance": "Saldo actual: {{total}} días disponibles",
-          "currentlyAssigned": "Asignado actualmente: {{name}}",
+          "currentBalance": "Saldo actual: {total} días disponibles",
+          "currentlyAssigned": "Asignado actualmente: {name}",
           "customAnnualDaysOptional": "Días anuales personalizados (opcional)",
           "daysCarriedOverDescription": "Días trasladados del año anterior",
-          "defaultDaysPlaceholder": "Predeterminado: {{days}} días",
+          "defaultDaysPlaceholder": "Predeterminado: {days} días",
           "employeeInformation": "Información del empleado",
           "errors": {
             "createAdjustmentFailed": "Error al crear el ajuste",
@@ -83,8 +83,8 @@
           "fallsBackToDefaultPolicy": "Vuelve a la política predeterminada del equipo o de la organización",
           "manageAllowances": "gestionar asignaciones de vacaciones de los empleados",
           "managers": "Gerentes",
-          "overrideOrganizationDefault": "Anular el valor predeterminado de la organización ({{days}} días) para este empleado",
-          "policyOptionDays": "{{name}} ({{days}} días)",
+          "overrideOrganizationDefault": "Anular el valor predeterminado de la organización ({days} días) para este empleado",
+          "policyOptionDays": "{name} ({days} días)",
           "position": "Puesto",
           "primary": "Principal",
           "reasonForAdjustment": "Motivo del ajuste",
@@ -97,10 +97,10 @@
           "useOrganizationTeamDefault": "Usar predeterminado de la organización/equipo"
         },
         "edit": {
-          "description": "Configurar asignación de vacaciones personalizada para {{name}}",
+          "description": "Configurar asignación de vacaciones personalizada para {name}",
           "title": "Editar asignación de vacaciones"
         },
-        "employeeCount": "{{count}} empleados",
+        "employeeCount": "{count} empleados",
         "emptyDescription": "Añada empleados a su organización para gestionar sus asignaciones de vacaciones.",
         "emptyTitle": "No se encontraron empleados",
         "noOrgPolicyConfigured": " (Sin directiva de organización configurada)",

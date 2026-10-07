@@ -142,7 +142,7 @@
     "pendingExceptions": "Ventende unntaksforespørsler",
     "pendingExceptionsDescription": "Gå gjennom unntaksforespørsler som krever din godkjenning",
     "requestException": "Be om unntak",
-    "restPeriodMessage": "Du trenger {{time}} mer hvile før du kan stemple inn. Neste tillatte innstempling: {{nextTime}}",
+    "restPeriodMessage": "Du trenger {time} mer hvile før du kan stemple inn. Neste tillatte innstempling: {nextTime}",
     "restPeriodRequired": "Hvileperiode påkrevd"
   }
 }
