@@ -50,6 +50,11 @@ export function perDiemBasisLabel(t: Translate, basis: PerDiemDayBreakdown["basi
 				"travelExpenses.report.perDiem.basis.overnightMinority",
 				"Counted on the other day of the over-night absence",
 			);
+		case "claimed_in_other_report":
+			return t(
+				"travelExpenses.report.perDiem.basis.claimedInOtherReport",
+				"Already paid in another of your reports: only one allowance per day",
+			);
 	}
 }
 
@@ -124,7 +129,7 @@ export function perDiemExceptionLabel(t: Translate, reason: PerDiemExceptionReas
 		case "overlapping_days":
 			return t(
 				"travelExpenses.report.perDiem.exceptions.overlappingDays",
-				"Another of your reports already claims per diem for some of these days; only one allowance per day is allowed.",
+				"Another of your reports already pays per diem for some of these days; only one allowance per day is allowed, so leave them out of the manual calculation.",
 			);
 	}
 }

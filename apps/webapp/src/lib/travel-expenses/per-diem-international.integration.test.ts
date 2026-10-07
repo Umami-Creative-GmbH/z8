@@ -386,7 +386,7 @@ describe("international per diem from the daily itinerary (#611)", () => {
 		});
 	});
 
-	it("calculates an official fallback visibly and lets an administrator override it", async () => {
+	it("calculates an official fallback visibly and never overrides it", async () => {
 		await adopt(FOREIGN_DEFAULT);
 		const { reportId, item } = await trip("2026-09-07", "2026-09-08", ["IQ"]);
 		const answered = await saved(reportId, item, {
@@ -415,13 +415,8 @@ describe("international per diem from the daily itinerary (#611)", () => {
 			evidence: "Travel office confirmation",
 			calculationBasis: "2 × 45.00",
 		});
-		expect(authorized).toMatchObject({
-			success: true,
-			data: {
-				kind: "authorized",
-				override: { situation: { kind: "official_fallback", reasons: ["luxembourg"] } },
-			},
-		});
+		// An official fallback is a calculated result under the official rules, not an exception.
+		expect(authorized).toEqual({ success: true, data: { kind: "not_exceptional" } });
 	});
 
 	it("refuses unknown places and flags destinations the rules do not resolve", async () => {
@@ -459,16 +454,20 @@ describe("international per diem from the daily itinerary (#611)", () => {
 			end: "2026-06-09T14:00",
 			answers: [{ night: place("FR") }, { activityAbroad: place("FR") }],
 		});
+		expect(await submit(first.reportId)).toMatchObject({ data: { status: "submitted" } });
 		const second = await trip("2026-06-09", "2026-06-10", ["DK"]);
 		const overlapping = await saved(second.reportId, second.item, {
 			start: "2026-06-09T16:00",
 			end: "2026-06-10T20:00",
 			answers: [{ night: place("DK") }, { activityAbroad: place("DK") }],
 		});
-		expect(overlapping.perDiem?.calculation).toMatchObject({
-			status: "exceptional",
-			reasons: ["overlapping_days"],
-			overlappingDays: ["2026-06-09"],
-		});
+		// Only Tuesday, which the submitted Strasbourg trip pays, carries no allowance here.
+		const calculation = overlapping.perDiem?.calculation;
+		if (calculation?.status !== "calculated") throw new Error("not calculated");
+		expect(calculation.days.map((day) => [day.date, day.basis, day.amount])).toEqual([
+			["2026-06-09", "claimed_in_other_report", "0.00"],
+			["2026-06-10", "travel_day_with_overnight", calculation.days[1]?.rate],
+		]);
+		expect(Number(calculation.amount)).toBeGreaterThan(0);
 	});
 });

@@ -54,4 +54,15 @@ describe("AllowanceOverrideNotice (#610)", () => {
 			),
 		).toBeTruthy();
 	});
+
+	it("explains that an override whose situation was resolved no longer counts", () => {
+		render(
+			<AllowanceOverrideNotice
+				override={{ ...override, applies: false, staleReason: "situation_resolved" }}
+				ordinary={{ amount: "100.00", currency: "EUR" }}
+			/>,
+		);
+		expect(screen.getByText(/the reason it was authorized for has changed/)).toBeTruthy();
+		expect(screen.queryByText(/authorized for different facts/)).toBeNull();
+	});
 });

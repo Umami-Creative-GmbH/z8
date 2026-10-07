@@ -459,6 +459,7 @@ function mileageItemFacts(
 		row,
 		reimbursementCurrency,
 		schemaVersion,
+		calculation,
 	);
 	if (
 		mode === "submit" &&

@@ -1119,6 +1119,31 @@ describe("travel expense export files", () => {
 		);
 	});
 
+	it("marks a day another report already paid in the per diem days", () => {
+		const revision = perDiemRevision();
+		const [item] = revision.facts.items;
+		if (!item?.perDiem?.days[1]) throw new Error("no per diem");
+		item.perDiem.days[1] = {
+			...item.perDiem.days[1],
+			allowance: "none",
+			basis: "claimed_in_other_report",
+			rate: "0.00",
+			versionId: null,
+			mealsCountToward: null,
+			deductions: "0.00",
+			amount: "0.00",
+		};
+		item.perDiem.amount = "14.00";
+		item.original.amount = "14.00";
+		revision.facts.totals.reimbursable = "14.00";
+		expect(records(file("expenses.csv", manifest([revision])))[0]).toMatchObject({
+			per_diem_partial_days: "1",
+			per_diem_amount: "14.00",
+			per_diem_days:
+				"2026-09-14 partial_day 14.00-0.00=14.00; 2026-09-15 none 0.00-0.00=0.00 claimed_in_other_report",
+		});
+	});
+
 	it("refuses per diem facts in a revision older than version 7", () => {
 		const revision = perDiemRevision();
 		revision.facts.schemaVersion = 6;

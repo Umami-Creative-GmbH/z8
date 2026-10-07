@@ -195,14 +195,14 @@ describe("per diem (#609)", () => {
 			trip(
 				perDiemItem({
 					status: "exceptional",
-					reasons: ["overlapping_days"],
+					reasons: ["prolonged_workplace", "overlapping_days"],
 					overlappingDays: ["2026-09-15"],
 				}),
 			),
 		);
 		mount();
 		expect(await screen.findByText("Needs a manual calculation")).toBeTruthy();
-		expect(screen.getByText(/Another of your reports already claims per diem/)).toBeTruthy();
+		expect(screen.getByText(/Another of your reports already pays per diem/)).toBeTruthy();
 		expect(screen.getByText(/Sep 15, 2026/, { selector: "li" })).toBeTruthy();
 		expect(
 			(screen.getByRole("button", { name: "Review and submit" }) as HTMLButtonElement).disabled,

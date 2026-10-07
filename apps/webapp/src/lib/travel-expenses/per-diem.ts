@@ -57,9 +57,10 @@ import type { TripDestination } from "./trip-destination";
  *
  * Anything the rules here do not cover (travel abroad, mixed zones, nights at
  * home, longer activity at the same workplace, days outside a verified rule
- * edition, days another report already claims) is reported as `exceptional`
- * with its reasons, for an audited manual calculation (#610), and is never
- * approximated.
+ * edition) is reported as `exceptional` with its reasons, for an audited
+ * manual calculation (#610), and is never approximated. A day another report
+ * already pays carries no allowance here (`claimed_in_other_report`); only
+ * that day is affected.
  *
  * International trips (#611) answer per travel day where the employee was
  * (`per-diem-location.ts`); each day is priced with the amounts of the
@@ -151,7 +152,10 @@ export type PerDiemFieldError =
 	| "invalid_date"
 	| "invalid_time"
 	| "invalid_time_zone"
+	/** The clocks are put forward over this local time: it never happens on this day. */
 	| "nonexistent_local_time"
+	/** The clocks are put back over this local time: it happens twice on this day. */
+	| "ambiguous_local_time"
 	| "end_before_start"
 	| "invalid_overnight"
 	| "invalid_meals"
@@ -193,11 +197,32 @@ export function parseMealPayment(value: string): string | null {
 
 function zoned(date: string, time: string, timeZone: string): ZonedDateTime | null {
 	try {
-		return Temporal.PlainDateTime.from(`${date}T${time}`).toZonedDateTime(timeZone, {
-			disambiguation: "reject",
-		});
+		const result = zonedLocalTime(date, time, timeZone);
+		return typeof result === "string" ? null : result;
 	} catch {
 		return null;
+	}
+}
+
+/**
+ * The zoned time of an entered local time, or why it has none: skipped by a
+ * clock change (`nonexistent_local_time`) or repeated by one
+ * (`ambiguous_local_time`). Both are refused rather than guessed.
+ */
+function zonedLocalTime(
+	date: string,
+	time: string,
+	timeZone: string,
+): ZonedDateTime | "nonexistent_local_time" | "ambiguous_local_time" {
+	const local = Temporal.PlainDateTime.from(`${date}T${time}`);
+	try {
+		return local.toZonedDateTime(timeZone, { disambiguation: "reject" });
+	} catch {
+		// A repeated time keeps its wall-clock reading under either offset; a skipped one is shifted.
+		const earlier = local.toZonedDateTime(timeZone, { disambiguation: "earlier" });
+		return Temporal.PlainDateTime.compare(earlier.toPlainDateTime(), local) === 0
+			? "ambiguous_local_time"
+			: "nonexistent_local_time";
 	}
 }
 
@@ -255,16 +280,18 @@ export function parsePerDiemDraft(input: PerDiemDraftInput): ParsePerDiemDraftRe
 		} else errors.overnight = "invalid_overnight";
 	}
 
-	const start =
+	const startResult =
 		itinerary.startDate && itinerary.startTime && itinerary.startTimeZone
-			? zoned(itinerary.startDate, itinerary.startTime, itinerary.startTimeZone)
+			? zonedLocalTime(itinerary.startDate, itinerary.startTime, itinerary.startTimeZone)
 			: undefined;
-	if (start === null) errors.startTime = "nonexistent_local_time";
-	const end =
+	if (typeof startResult === "string") errors.startTime = startResult;
+	const endResult =
 		itinerary.endDate && itinerary.endTime && itinerary.endTimeZone
-			? zoned(itinerary.endDate, itinerary.endTime, itinerary.endTimeZone)
+			? zonedLocalTime(itinerary.endDate, itinerary.endTime, itinerary.endTimeZone)
 			: undefined;
-	if (end === null) errors.endTime = "nonexistent_local_time";
+	if (typeof endResult === "string") errors.endTime = endResult;
+	const start = typeof startResult === "string" ? null : startResult;
+	const end = typeof endResult === "string" ? null : endResult;
 	let rangeValid = true;
 	if (start && end && Temporal.Instant.compare(end.toInstant(), start.toInstant()) <= 0) {
 		errors.endTime = "end_before_start";
@@ -409,6 +436,11 @@ export interface StampedPerDiemPolicy {
 	foreignTableKey?: string;
 	/** Policy version ID by allowance day. */
 	days: Record<string, string>;
+	/**
+	 * Days another report already paid at submission (`claimed_in_other_report`);
+	 * absent when none, so older stamps reproduce unchanged.
+	 */
+	claimedDays?: string[];
 	/** One entry per applied version and rate area. */
 	policies: AppliedPerDiemPolicy[];
 }
@@ -445,7 +477,13 @@ export type PerDiemBasis =
 	| "absence_8h_or_less"
 	/** Nr. 3, second half: the day holding most of an over-night absence. */
 	| "overnight_majority"
-	| "overnight_minority";
+	| "overnight_minority"
+	/**
+	 * The day would carry an allowance, but another report of the employee
+	 * already pays a positive allowance for it: one allowance per calendar day,
+	 * so this report pays none for it (see `calculatePerDiem`).
+	 */
+	| "claimed_in_other_report";
 
 export interface PerDiemDayBreakdown {
 	date: string;
@@ -501,6 +539,13 @@ export type PerDiemExceptionReason =
 	| "prolonged_workplace"
 	| "rules_not_verified"
 	| "majority_tie"
+	/**
+	 * Another report already pays allowances for days of this trip
+	 * (`overlappingDays`). Alone it never makes a per diem exceptional: a
+	 * calculated per diem marks those days `claimed_in_other_report`. It is
+	 * added to the reasons of an otherwise exceptional per diem, so the
+	 * manual calculation leaves those days out.
+	 */
 	| "overlapping_days";
 
 export type PerDiemCalculation =
@@ -541,7 +586,10 @@ export interface PerDiemContext {
 	trip: { destinations: readonly TripDestination[] };
 	reimbursementCurrency: string;
 	resolvePolicy: PerDiemPolicyResolver;
-	/** Days other reports of the employee already claim (store-provided; empty when comparing). */
+	/**
+	 * Days another report of the employee already pays a positive allowance for
+	 * (store-provided, `loadPerDiemOverlaps`; from the stamp when comparing).
+	 */
 	overlappingDays?: readonly string[];
 	/** The stamped rule edition; the edition covering each day otherwise. */
 	rulesKey?: string;
@@ -676,6 +724,43 @@ function planDays(
 	return { rules, days };
 }
 
+/**
+ * One allowance per calendar day: a day that would carry an allowance here
+ * but that another report already pays (a positive allowance there) carries
+ * none here, and the meals counting toward it reduce nothing. Only that day
+ * is affected; the rest of the trip is calculated as usual.
+ *
+ * No "highest allowance" netting is applied. R 9.6 Abs. 2 LStR ("Soweit für
+ * denselben Kalendertag Verpflegungsmehraufwendungen wegen einer
+ * Auswärtstätigkeit oder wegen einer doppelten Haushaltsführung anzuerkennen
+ * sind, ist jeweils nur der höchste Pauschbetrag anzusetzen") concerns a trip
+ * meeting a double household (§ 9 Abs. 4a Satz 12 EStG), not two trips. For
+ * two trips on one day the combined day may be worth more than either report's
+ * own day (BMF 25.11.2020 Rz. 49 Beispiel 33: 28 € when the change of trips
+ * keeps the employee away for 24 hours, otherwise 14 €), which neither report
+ * can decide alone; the day stays visible as claimed, for an administrator's
+ * override (#610) when more is owed.
+ */
+function withoutClaimedAllowances(
+	plans: readonly DayPlan[],
+	claimedDays: readonly string[],
+): DayPlan[] {
+	const claimed = new Set(
+		plans
+			.filter((plan) => plan.allowance !== "none" && claimedDays.includes(plan.date))
+			.map((plan) => plan.date),
+	);
+	if (claimed.size === 0) return [...plans];
+	return plans.map((plan) => ({
+		...plan,
+		...(claimed.has(plan.date)
+			? { allowance: "none" as const, basis: "claimed_in_other_report" as const }
+			: {}),
+		mealsCountToward:
+			plan.mealsCountToward && claimed.has(plan.mealsCountToward) ? null : plan.mealsCountToward,
+	}));
+}
+
 function mealsCover(meals: readonly PerDiemMealDay[], days: readonly string[]): boolean {
 	return meals.length === days.length && meals.every((meal, index) => meal.date === days[index]);
 }
@@ -735,28 +820,27 @@ export function calculatePerDiem(
 	const missingLocations = locationsNeeded ? missingLocationDates(dates, itinerary.meals) : [];
 
 	const planned = planDays(itinerary, start, end, context);
-	const overlappingDays = [...(context.overlappingDays ?? [])].toSorted();
-	if ("reasons" in planned || overlappingDays.length > 0) {
-		const reasons = "reasons" in planned ? [...planned.reasons] : [];
-		if (overlappingDays.length > 0) reasons.push("overlapping_days");
-		return {
-			status: "exceptional",
-			reasons,
-			overlappingDays,
-			...(missingLocations.length > 0 ? { missingLocations } : {}),
-		};
-	}
+	// Days of this trip another report already pays; an exceptional result names them for the manual calculation.
+	const overlappingDays = [...new Set(context.overlappingDays ?? [])]
+		.filter((date) => dates.includes(date))
+		.toSorted();
+	const exceptional = (reasons: readonly PerDiemExceptionReason[]): PerDiemCalculation => ({
+		status: "exceptional",
+		reasons: overlappingDays.length > 0 ? [...reasons, "overlapping_days"] : [...reasons],
+		overlappingDays,
+		...(missingLocations.length > 0 ? { missingLocations } : {}),
+	});
+	if ("reasons" in planned) return exceptional(planned.reasons);
 	if (missingLocations.length > 0) return { status: "incomplete", missingLocations };
-	const { days: plans, rules } = planned;
+	const { rules } = planned;
+	const plans = withoutClaimedAllowances(planned.days, overlappingDays);
 	if (!mealsCover(itinerary.meals, tripDays(plans[0]?.date ?? "", plans.at(-1)?.date ?? ""))) {
 		return { status: "incomplete" };
 	}
 	const located = locationsNeeded
 		? locateDays(itinerary, dates, context)
 		: { locations: null, table: null };
-	if ("reasons" in located) {
-		return { status: "exceptional", reasons: located.reasons, overlappingDays: [] };
-	}
+	if ("reasons" in located) return exceptional(located.reasons);
 	const { locations, table } = located;
 
 	const policies = new Map<string, AppliedPerDiemPolicy>();
@@ -921,10 +1005,20 @@ export function perDiemFallbackRules(
 	return [...new Set(rules)];
 }
 
-/** The stamp of a calculation: its rule edition and each allowance day's version. */
+/** Days of a calculation that another report already paid (`claimed_in_other_report`). */
+export function perDiemClaimedDays(
+	calculation: Extract<PerDiemCalculation, { status: "calculated" }>,
+): string[] {
+	return calculation.days
+		.filter((day) => day.basis === "claimed_in_other_report")
+		.map((day) => day.date);
+}
+
+/** The stamp of a calculation: its rule edition, each allowance day's version and the claimed days. */
 export function perDiemStampOf(
 	calculation: Extract<PerDiemCalculation, { status: "calculated" }>,
 ): StampedPerDiemPolicy {
+	const claimedDays = perDiemClaimedDays(calculation);
 	return {
 		rulesKey: calculation.rules.key,
 		...(calculation.rules.foreignTable
@@ -933,6 +1027,7 @@ export function perDiemStampOf(
 		days: Object.fromEntries(
 			calculation.days.flatMap((day) => (day.versionId ? [[day.date, day.versionId]] : [])),
 		),
+		...(claimedDays.length > 0 ? { claimedDays } : {}),
 		policies: calculation.policies.map((policy) => structuredClone(policy)),
 	};
 }

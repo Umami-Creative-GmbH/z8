@@ -6,6 +6,7 @@ import { useLocale } from "next-intl";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type {
 	AllowanceOverride,
+	AllowanceOverrideStaleReason,
 	AllowanceSituation,
 } from "@/lib/travel-expenses/allowance-override";
 import { formatMoney } from "./format";
@@ -25,8 +26,10 @@ export type AllowanceOverrideSummary = Pick<
 	| "authorizedBy"
 	| "authorizedAt"
 > & {
-	/** False when the facts changed since it was authorized; frozen overrides always apply. */
+	/** False when the facts or the situation changed since it was authorized; frozen overrides always apply. */
 	applies?: boolean;
+	/** Why it no longer applies. */
+	staleReason?: AllowanceOverrideStaleReason | null;
 };
 
 export function allowanceSituationLabel(t: Translate, situation: AllowanceSituation) {
@@ -93,10 +96,15 @@ export function AllowanceOverrideNotice({
 			<AlertDescription>
 				{stale && (
 					<p className="font-medium text-foreground">
-						{t(
-							"travelExpenses.allowanceOverride.stale",
-							"This manual allowance was authorized for different facts and no longer applies. An expense administrator must review the changed facts.",
-						)}
+						{override.staleReason === "situation_resolved"
+							? t(
+									"travelExpenses.allowanceOverride.situationResolved",
+									"This manual allowance no longer applies: the reason it was authorized for has changed (for example, a policy now covers these facts). The calculated allowance counts where there is one; otherwise an expense administrator must review it.",
+								)
+							: t(
+									"travelExpenses.allowanceOverride.stale",
+									"This manual allowance was authorized for different facts and no longer applies. An expense administrator must review the changed facts.",
+								)}
 					</p>
 				)}
 				<dl className="grid gap-x-3 gap-y-0.5 text-sm sm:grid-cols-[auto_1fr]">

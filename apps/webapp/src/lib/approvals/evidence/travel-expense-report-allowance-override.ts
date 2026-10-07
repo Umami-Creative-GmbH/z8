@@ -5,10 +5,12 @@ import {
 	type AllowanceSituation,
 	allowanceOverrideView,
 	mileageOverrideScope,
+	mileageSituation,
 	perDiemOverrideScope,
+	perDiemSituation,
 } from "@/lib/travel-expenses/allowance-override";
-import type { MileageVehicle } from "@/lib/travel-expenses/mileage";
-import { itineraryOf } from "@/lib/travel-expenses/per-diem-pricing";
+import type { MileageCalculation, MileageVehicle } from "@/lib/travel-expenses/mileage";
+import { calculateStampedPerDiem, itineraryOf } from "@/lib/travel-expenses/per-diem-pricing";
 import type { TripDestination } from "@/lib/travel-expenses/trip-destination";
 import { ApprovalEvidenceError } from "./errors";
 import type { TravelExpenseReportPerDiemRow } from "./travel-expense-report-per-diem";
@@ -74,8 +76,9 @@ export function assertAllowanceOverrideScope(
 
 /**
  * The override applying to a mileage item's live facts, or null when there
- * is none, it was authorized for other facts, or the facts are built below
- * version 9 (an older revision never had one).
+ * is none, it was authorized for other facts, the situation it resolved is
+ * gone (`stamped`: the item's calculation from its stamp, null without one),
+ * or the facts are built below version 9 (an older revision never had one).
  */
 export function applyingMileageOverride(
 	rows: readonly TravelExpenseReportAllowanceOverrideRow[] | undefined,
@@ -88,6 +91,7 @@ export function applyingMileageOverride(
 	},
 	reimbursementCurrency: string,
 	schemaVersion: number,
+	stamped: MileageCalculation | null = null,
 ): AllowanceOverride | null {
 	if (schemaVersion < ALLOWANCE_OVERRIDE_FACTS_SCHEMA_VERSION) return null;
 	const override = rows?.find((candidate) => candidate.itemId === row.id)?.override;
@@ -98,10 +102,17 @@ export function applyingMileageOverride(
 		distanceKm: row.mileageDistanceKm ?? null,
 		vehicle: row.mileageVehicle ?? null,
 	});
-	return allowanceOverrideView(override, scope, reimbursementCurrency).applies ? override : null;
+	const situation = stamped ? mileageSituation(stamped) : null;
+	return allowanceOverrideView(override, scope, reimbursementCurrency, situation).applies
+		? override
+		: null;
 }
 
-/** The override applying to a per diem's live itinerary and the trip's destinations. */
+/**
+ * The override applying to a per diem's live itinerary and the trip's
+ * destinations, while the situation it resolved still holds for the
+ * calculation from the stamp (none without a stamp: the recorded one stands).
+ */
 export function applyingPerDiemOverride(
 	rows: readonly TravelExpenseReportAllowanceOverrideRow[] | undefined,
 	perDiemRow: TravelExpenseReportPerDiemRow | undefined,
@@ -111,8 +122,11 @@ export function applyingPerDiemOverride(
 	if (schemaVersion < ALLOWANCE_OVERRIDE_FACTS_SCHEMA_VERSION || !perDiemRow) return null;
 	const override = rows?.find((candidate) => candidate.itemId === perDiemRow.itemId)?.override;
 	if (!override) return null;
-	const scope = perDiemOverrideScope(itineraryOf(perDiemRow), report.tripDestinations);
-	return allowanceOverrideView(override, scope, report.reimbursementCurrency).applies
+	const itinerary = itineraryOf(perDiemRow);
+	const scope = perDiemOverrideScope(itinerary, report.tripDestinations);
+	const stamped = calculateStampedPerDiem(report, itinerary, perDiemRow.policy);
+	const situation = stamped ? perDiemSituation(stamped) : null;
+	return allowanceOverrideView(override, scope, report.reimbursementCurrency, situation).applies
 		? override
 		: null;
 }
