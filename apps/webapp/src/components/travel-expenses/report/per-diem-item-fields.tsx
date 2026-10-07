@@ -146,7 +146,8 @@ function PerDiemTimeFields({
 	labels: { date: string; time: string; zone: string };
 }) {
 	return (
-		<div className="grid gap-4 sm:grid-cols-3">
+		// The zone gets its own row: its labels do not fit a third column of the editor card.
+		<div className="grid gap-4 sm:grid-cols-2">
 			<form.Field name={dateName}>
 				{(field) => (
 					<TFormItem>
@@ -182,7 +183,7 @@ function PerDiemTimeFields({
 			</form.Field>
 			<form.Field name={zoneName}>
 				{(field) => (
-					<TFormItem>
+					<TFormItem className="sm:col-span-2">
 						<TFormLabel hasError={!!fieldError(zoneName)}>{labels.zone}</TFormLabel>
 						<TFormControl hasError={!!fieldError(zoneName)}>
 							<TimezonePicker value={field.state.value} onChange={field.handleChange} />
