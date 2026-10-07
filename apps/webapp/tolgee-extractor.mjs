@@ -268,10 +268,13 @@ function dedupeKeys(keys) {
 /**
  * Find the string value of the first `name: "..."` (or `name="..."` in JSX) inside `source`.
  */
+// `names` is in priority order: a `fallback` wins over a display `label` declared before it.
 function findStringProperty(source, names, separator) {
-	const match = source.match(new RegExp(`\\b(?:${names.join("|")})\\s*${separator}\\s*["'\`]`));
-	if (!match) return undefined;
-	return extractString(source, match.index + match[0].length - 1)?.value;
+	for (const name of names) {
+		const match = source.match(new RegExp(`\\b${name}\\s*${separator}\\s*["'\`]`));
+		if (match) return extractString(source, match.index + match[0].length - 1)?.value;
+	}
+	return undefined;
 }
 
 function toKeyResult(rawKey, defaultValue, line) {
