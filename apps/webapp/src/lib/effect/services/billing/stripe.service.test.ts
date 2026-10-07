@@ -1,10 +1,11 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Effect } from "effect";
+import type Stripe from "stripe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { env } from "@/env";
-import { StripeService, StripeServiceLive } from "./stripe.service";
+import { STRIPE_API_VERSION, StripeService, StripeServiceLive } from "./stripe.service";
 
 const checkoutSessionsCreate = vi.fn(async (params: Record<string, unknown>) => ({
 	id: "cs_test_123",
@@ -12,21 +13,38 @@ const checkoutSessionsCreate = vi.fn(async (params: Record<string, unknown>) => 
 	params,
 }));
 
-vi.mock("stripe", () => ({
-	default: vi.fn().mockImplementation(function StripeMock() {
-		return {
-			checkout: {
-				sessions: {
-					create: checkoutSessionsCreate,
-				},
-			},
-		};
-	}),
+const { StripeMock, invoicePaymentsList, invoicesRetrieve } = vi.hoisted(() => ({
+	StripeMock: vi.fn(),
+	invoicePaymentsList: vi.fn(),
+	invoicesRetrieve: vi.fn(),
 }));
+
+vi.mock("stripe", () => ({ default: StripeMock }));
+
+const stubInvoice = { id: "in_test_123", object: "invoice" } as Stripe.Invoice;
+
+function getInvoiceForPaymentIntent(paymentIntentId: string) {
+	return Effect.runPromise(
+		Effect.flatMap(StripeService, (service) =>
+			service.getInvoiceForPaymentIntent(paymentIntentId),
+		).pipe(Effect.provide(StripeServiceLive)),
+	);
+}
 
 describe("StripeService", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		StripeMock.mockImplementation(function StripeMockClient() {
+			return {
+				checkout: {
+					sessions: {
+						create: checkoutSessionsCreate,
+					},
+				},
+				invoicePayments: { list: invoicePaymentsList },
+				invoices: { retrieve: invoicesRetrieve },
+			};
+		});
 		(env as { BILLING_ENABLED: "true" | "false" }).BILLING_ENABLED = "true";
 		(env as { STRIPE_SECRET_KEY: string }).STRIPE_SECRET_KEY = "rk_test_123";
 		(env as { STRIPE_WEBHOOK_SECRET: string }).STRIPE_WEBHOOK_SECRET = "whsec_test_123";
@@ -172,5 +190,60 @@ describe("StripeService", () => {
 		expect(routeSource).toContain("getDaysRemaining");
 		expect(routeSource).toContain("getDaysRemaining(existing.trialEnd)");
 		expect(routeSource).not.toContain("trialPeriodDays: 14");
+	});
+
+	it("pins the installed SDK's default API version", async () => {
+		const { default: ActualStripe } = await vi.importActual<typeof import("stripe")>("stripe");
+		invoicePaymentsList.mockResolvedValue({ data: [] });
+
+		await getInvoiceForPaymentIntent("pi_test_123");
+
+		expect(STRIPE_API_VERSION).toBe(ActualStripe.API_VERSION);
+		expect(StripeMock).toHaveBeenCalledWith("rk_test_123", {
+			apiVersion: STRIPE_API_VERSION,
+			typescript: true,
+		});
+	});
+
+	describe("getInvoiceForPaymentIntent", () => {
+		it("finds the invoice through the payment intent's invoice payment", async () => {
+			invoicePaymentsList.mockResolvedValue({ data: [{ invoice: stubInvoice }] });
+
+			await expect(getInvoiceForPaymentIntent("pi_test_123")).resolves.toBe(stubInvoice);
+			expect(invoicePaymentsList).toHaveBeenCalledWith({
+				payment: { type: "payment_intent", payment_intent: "pi_test_123" },
+				expand: ["data.invoice"],
+				limit: 1,
+			});
+		});
+
+		it("retrieves the invoice when the list did not expand it", async () => {
+			invoicePaymentsList.mockResolvedValue({ data: [{ invoice: "in_test_123" }] });
+			invoicesRetrieve.mockResolvedValue(stubInvoice);
+
+			await expect(getInvoiceForPaymentIntent("pi_test_123")).resolves.toBe(stubInvoice);
+			expect(invoicesRetrieve).toHaveBeenCalledWith("in_test_123");
+		});
+
+		it.each([
+			{ payment: "has no invoice payment", data: [] },
+			{
+				payment: "pays a deleted invoice",
+				data: [{ invoice: { id: "in_test_123", deleted: true } }],
+			},
+		])("returns null when the payment intent $payment", async ({ data }) => {
+			invoicePaymentsList.mockResolvedValue({ data });
+
+			await expect(getInvoiceForPaymentIntent("pi_test_123")).resolves.toBeNull();
+		});
+
+		it("fails with a StripeError when the lookup fails", async () => {
+			invoicePaymentsList.mockRejectedValue(new Error("network down"));
+
+			await expect(getInvoiceForPaymentIntent("pi_test_123")).rejects.toMatchObject({
+				_tag: "StripeError",
+				operation: "getInvoiceForPaymentIntent",
+			});
+		});
 	});
 });

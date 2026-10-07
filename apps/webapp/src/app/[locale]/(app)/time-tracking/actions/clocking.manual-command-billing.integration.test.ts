@@ -125,6 +125,17 @@ function stripeEvent(type: string, object: Record<string, unknown>): Stripe.Even
 	} as unknown as Stripe.Event;
 }
 
+/** An invoice in the current API shape: its subscription sits under `parent` since 2025-03-31.basil. */
+const subscriptionInvoice = (id: string, fields: Record<string, unknown> = {}) => ({
+	id,
+	parent: {
+		type: "subscription_details",
+		quote_details: null,
+		subscription_details: { metadata: null, subscription: ids.stripeSubscription },
+	},
+	...fields,
+});
+
 const stripeSubscription = (status: string) => ({
 	id: ids.stripeSubscription,
 	object: "subscription",
@@ -365,10 +376,7 @@ describe("manual command billing revalidation on PostgreSQL", () => {
 			const row = await holdSubscriptionRow();
 			// The webhook owner takes exclusive protection, then waits on the row.
 			const webhook = processStripeEvent(
-				stripeEvent("invoice.payment_failed", {
-					id: "in_t317",
-					subscription: ids.stripeSubscription,
-				}),
+				stripeEvent("invoice.payment_failed", subscriptionInvoice("in_t317")),
 			);
 			await waitForLockWaiters(1);
 			// The public guard still sees an active subscription; the transaction waits.
@@ -395,10 +403,7 @@ describe("manual command billing revalidation on PostgreSQL", () => {
 
 			const row = await holdSubscriptionRow();
 			const webhook = processStripeEvent(
-				stripeEvent("invoice.payment_failed", {
-					id: "in_t317",
-					subscription: ids.stripeSubscription,
-				}),
+				stripeEvent("invoice.payment_failed", subscriptionInvoice("in_t317")),
 			);
 			await waitForLockWaiters(1);
 			const replay = submit(structuredClone(command));
@@ -412,10 +417,7 @@ describe("manual command billing revalidation on PostgreSQL", () => {
 			});
 
 			await processStripeEvent(
-				stripeEvent("invoice.payment_succeeded", {
-					id: "in_t317_paid",
-					subscription: ids.stripeSubscription,
-				}),
+				stripeEvent("invoice.payment_succeeded", subscriptionInvoice("in_t317_paid")),
 			);
 			await expect(submit(structuredClone(command))).resolves.toEqual(
 				committed.success
@@ -433,10 +435,7 @@ describe("manual command billing revalidation on PostgreSQL", () => {
 			);
 			const row = await holdSubscriptionRow();
 			const webhook = processStripeEvent(
-				stripeEvent("invoice.payment_failed", {
-					id: "in_t317",
-					subscription: ids.stripeSubscription,
-				}),
+				stripeEvent("invoice.payment_failed", subscriptionInvoice("in_t317")),
 			);
 			await waitForLockWaiters(1);
 			const pending = submit(manualCommand());
@@ -505,9 +504,17 @@ describe("manual command billing revalidation on PostgreSQL", () => {
 				initial: "active",
 				expected: "past_due",
 				run: () =>
+					processStripeEvent(stripeEvent("invoice.payment_failed", subscriptionInvoice("in_t317"))),
+			},
+			{
+				name: "invoice.payment_failed (legacy top-level subscription)",
+				initial: "active",
+				expected: "past_due",
+				run: () =>
 					processStripeEvent(
+						// Endpoints still rendering pre-basil webhook versions send this shape.
 						stripeEvent("invoice.payment_failed", {
-							id: "in_t317",
+							id: "in_t317_legacy",
 							subscription: ids.stripeSubscription,
 						}),
 					),
@@ -518,10 +525,7 @@ describe("manual command billing revalidation on PostgreSQL", () => {
 				expected: "active",
 				run: () =>
 					processStripeEvent(
-						stripeEvent("invoice.payment_succeeded", {
-							id: "in_t317",
-							subscription: ids.stripeSubscription,
-						}),
+						stripeEvent("invoice.payment_succeeded", subscriptionInvoice("in_t317")),
 					),
 			},
 			{
@@ -612,16 +616,17 @@ describe("manual command billing revalidation on PostgreSQL", () => {
 			const work = await holdConfiguration("shared");
 			try {
 				await processStripeEvent(
-					stripeEvent("invoice.finalized", {
-						id: "in_t317_final",
-						number: "T317-1",
-						subscription: ids.stripeSubscription,
-						customer: ids.stripeCustomer,
-						amount_due: 1000,
-						amount_paid: 0,
-						currency: "eur",
-						status: "open",
-					}),
+					stripeEvent(
+						"invoice.finalized",
+						subscriptionInvoice("in_t317_final", {
+							number: "T317-1",
+							customer: ids.stripeCustomer,
+							amount_due: 1000,
+							amount_paid: 0,
+							currency: "eur",
+							status: "open",
+						}),
+					),
 				);
 			} finally {
 				await work.release();
