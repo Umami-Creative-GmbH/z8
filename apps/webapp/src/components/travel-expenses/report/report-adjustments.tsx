@@ -37,8 +37,8 @@ import {
 } from "@/lib/travel-expenses/adjustment";
 import type { ReportAdjustmentView } from "@/lib/travel-expenses/adjustment-store";
 import { Link, useRouter } from "@/navigation";
-import { formatMoney, formatSignedMoney } from "./format";
-import { formatRecordedInstant, ReportStatusBadge } from "./report-status";
+import { formatMoney, formatRecordedInstant, formatSignedMoney } from "./format";
+import { ReportStatusBadge } from "./report-status";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 

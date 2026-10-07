@@ -33,8 +33,8 @@ import type { TravelExpenseReportReopenState } from "@/lib/approvals/server/trav
 import { queryKeys } from "@/lib/query/keys";
 import type { SubmittedReportView } from "@/lib/travel-expenses/report-read";
 import { REOPEN_REASON_MAX_LENGTH } from "@/lib/travel-expenses/report-reopen";
+import { formatRecordedInstant } from "./format";
 import { AdjustmentRequiredHint } from "./report-adjustments";
-import { formatRecordedInstant } from "./report-status";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 

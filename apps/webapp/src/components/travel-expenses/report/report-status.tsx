@@ -3,7 +3,6 @@
 import { useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import type { TravelExpenseReportStatus } from "@/db/schema/travel-expense";
-import { parseInstant } from "@/lib/datetime/temporal-core";
 
 /** Review status of an expense report (#602). */
 export function ReportStatusBadge({ status }: { status: TravelExpenseReportStatus }) {
@@ -34,19 +33,5 @@ export function ReportStatusBadge({ status }: { status: TravelExpenseReportStatu
 					{t("travelExpenses.report.status.returned", "Returned for changes")}
 				</Badge>
 			);
-	}
-}
-
-/**
- * A recorded instant (submission, decision) shown in UTC with its zone, like
- * the claim history: never in the viewer's zone.
- */
-export function formatRecordedInstant(locale: string, iso: string): string {
-	try {
-		return `${parseInstant(iso)
-			.toZonedDateTimeISO("UTC")
-			.toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" })} UTC`;
-	} catch {
-		return iso;
 	}
 }

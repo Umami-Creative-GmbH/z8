@@ -54,6 +54,7 @@ import {
 import type { ReportItemView, ReportReceiptView } from "@/lib/travel-expenses/report-store";
 import { CurrencyConversionField, conversionRequirementLabel } from "./currency-conversion-field";
 import { DraftSaveStatus } from "./draft-save-status";
+import { categoryLabel } from "./format";
 import { ItemProjectField } from "./project-picker";
 import { ReceiptAttachments } from "./receipt-attachments";
 import { ReceiptExceptionField } from "./receipt-exception-field";
@@ -100,17 +101,6 @@ function parsedOriginal(values: FormValues) {
 	return parsed.ok
 		? { amount: parsed.draft.amount, currency: parsed.draft.currency }
 		: { amount: null, currency: null };
-}
-
-export function categoryLabel(t: Translate, category: string) {
-	const labels: Record<string, string> = {
-		transport: t("travelExpenses.report.categories.transport", "Transport"),
-		accommodation: t("travelExpenses.report.categories.accommodation", "Accommodation"),
-		meals: t("travelExpenses.report.categories.meals", "Meals"),
-		parking: t("travelExpenses.report.categories.parking", "Parking"),
-		other: t("travelExpenses.report.categories.other", "Other"),
-	};
-	return labels[category] ?? category;
 }
 
 function fieldErrorMessage(t: Translate, field: FieldName, code: string | undefined) {
@@ -208,7 +198,8 @@ export function ReceiptItemEditor({
 	);
 
 	// The last values the server confirmed; malformed fields fall back to them.
-	const lastSaved = useRef<ReceiptItemDraftInput>(toDraftInput(toFormValues(item)));
+	const [initialSaved] = useState(() => toDraftInput(toFormValues(item)));
+	const lastSaved = useRef<ReceiptItemDraftInput>(initialSaved);
 
 	const { saver, state } = useDraftSaver<ReceiptItemDraftInput, ReportItemView>({
 		version: item.version,
@@ -270,13 +261,16 @@ export function ReceiptItemEditor({
 	async function remove() {
 		if (!removal) return;
 		setRemoving(true);
-		try {
-			// Removes on top of the latest saved version, including pending edits.
-			await saver.flush();
-			if (await removal.remove(saver.getState().version)) saver.discard();
-		} finally {
-			setRemoving(false);
-		}
+		// Removes on top of the latest saved version, including pending edits.
+		// Promise#finally rather than try/finally: the React Compiler cannot
+		// compile try statements without a catch clause.
+		await saver
+			.flush()
+			.then(() => removal.remove(saver.getState().version))
+			.then((removed) => {
+				if (removed) saver.discard();
+			})
+			.finally(() => setRemoving(false));
 	}
 
 	const fieldError = (field: FieldName) =>

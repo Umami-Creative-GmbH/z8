@@ -25,8 +25,8 @@ import { queryKeys } from "@/lib/query/keys";
 import type { SubmittedCycleOutcome, SubmittedReportView } from "@/lib/travel-expenses/report-read";
 import { Link } from "@/navigation";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
+import { formatRecordedInstant } from "./format";
 import { ReopenedNotice } from "./report-reopen";
-import { formatRecordedInstant } from "./report-status";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 

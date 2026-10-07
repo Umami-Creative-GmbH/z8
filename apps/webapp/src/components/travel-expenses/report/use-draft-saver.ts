@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from "react";
 import {
 	createDraftSaver,
 	type DraftSaveOutcome,
@@ -8,6 +8,17 @@ import {
 } from "@/lib/travel-expenses/draft-saver";
 
 const AUTOSAVE_DELAY_MS = 800;
+
+/** Holds the latest value for callbacks that outlive the render that created them. */
+function createLatestBox<T>(initial: T) {
+	let current = initial;
+	return {
+		get: () => current,
+		set: (next: T) => {
+			current = next;
+		},
+	};
+}
 
 /**
  * Binds one draft saver to the component's lifetime. Pending edits are saved
@@ -22,17 +33,17 @@ export function useDraftSaver<Values, Item>(options: {
 	/** Reports edits that could not be saved after the editor was closed. */
 	onUnsavedAfterClose: () => void;
 }) {
-	const save = useRef(options.save);
-	const onLostAfterUnmount = useRef(options.onUnsavedAfterClose);
+	// A box rather than refs: the saver is created during render, and the React
+	// Compiler refuses closures over refs there.
+	const [latest] = useState(() => createLatestBox(options));
 	useLayoutEffect(() => {
-		save.current = options.save;
-		onLostAfterUnmount.current = options.onUnsavedAfterClose;
+		latest.set(options);
 	});
 	const [saver] = useState<DraftSaver<Values, Item>>(() =>
 		createDraftSaver<Values, Item>({
 			version: options.version,
 			delayMs: AUTOSAVE_DELAY_MS,
-			save: (values, version) => save.current(values, version),
+			save: (values, version) => latest.get().save(values, version),
 		}),
 	);
 	const state = useSyncExternalStore(saver.subscribe, saver.getState, saver.getState);
@@ -48,10 +59,10 @@ export function useDraftSaver<Values, Item>(options: {
 			// left to show its outcome, a failure is reported as a notice.
 			void saver.flush().then(() => {
 				const { status } = saver.getState();
-				if (status === "failed" || status === "conflict") onLostAfterUnmount.current();
+				if (status === "failed" || status === "conflict") latest.get().onUnsavedAfterClose();
 			});
 		};
-	}, [saver]);
+	}, [latest, saver]);
 
 	const unsaved = state.status !== "saved" || Boolean(options.isBusy);
 	useEffect(() => {

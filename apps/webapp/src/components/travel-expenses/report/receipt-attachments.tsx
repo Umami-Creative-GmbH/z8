@@ -29,14 +29,15 @@ async function processReportReceipt(input: {
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(input),
 	});
-	const body = await response.json().catch(() => ({}));
 	if (!response.ok) {
-		throw new Error(typeof body.error === "string" ? body.error : "Upload failed");
+		const failure = await response.json().catch(() => ({}));
+		throw new Error(typeof failure.error === "string" ? failure.error : "Upload failed");
 	}
+	const body = await response.json();
 	return body.receipt as ReportReceiptView;
 }
 
-export function receiptHref(reportId: string, receiptId: string, download = false) {
+function receiptHref(reportId: string, receiptId: string, download = false) {
 	return `/api/travel-expenses/reports/${encodeURIComponent(reportId)}/receipts/${encodeURIComponent(receiptId)}${download ? "?download=1" : ""}`;
 }
 
@@ -95,20 +96,17 @@ export function ReceiptAttachments({
 	async function remove(receipt: ReportReceiptView) {
 		setError(null);
 		setRemovingId(receipt.id);
+		// No `finally`: the React Compiler cannot compile try statements with one.
 		try {
 			const result = await removeReportReceiptAction({ reportId, itemId, receiptId: receipt.id });
-			if (!result.success) {
-				setError(result.error);
-				return;
-			}
-			await onChanged();
+			if (result.success) await onChanged();
+			else setError(result.error);
 		} catch {
 			setError(
 				t("travelExpenses.report.receipts.removeFailed", "The receipt could not be removed."),
 			);
-		} finally {
-			setRemovingId(null);
 		}
+		setRemovingId(null);
 	}
 
 	const busy = upload.isUploading;

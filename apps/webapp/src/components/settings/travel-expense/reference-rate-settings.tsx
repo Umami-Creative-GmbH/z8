@@ -13,8 +13,7 @@ import {
 	type ReferenceRateSettings,
 	revokeReferenceRateSource,
 } from "@/app/[locale]/(app)/settings/travel-expenses/reference-rate-actions";
-import { formatPlainDate } from "@/components/travel-expenses/report/format";
-import { formatRecordedInstant } from "@/components/travel-expenses/report/report-status";
+import { formatPlainDate, formatRecordedInstant } from "@/components/travel-expenses/report/format";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

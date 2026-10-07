@@ -9,8 +9,7 @@ import type {
 	AllowanceOverrideStaleReason,
 	AllowanceSituation,
 } from "@/lib/travel-expenses/allowance-override";
-import { formatMoney } from "./format";
-import { formatRecordedInstant } from "./report-status";
+import { formatMoney, formatRecordedInstant } from "./format";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 

@@ -13,10 +13,11 @@ import type { SubmittedReportView } from "@/lib/travel-expenses/report-read";
 import { SettlementPanel } from "../finance/settlement-panel";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
+import { formatRecordedInstant } from "./format";
 import { AdjustmentNotice, ReportAdjustmentsPanel } from "./report-adjustments";
 import { ReopenedNotice, ReopenReportPanel } from "./report-reopen";
 import { ReturnedNotice, SubmissionCycleLinks, WithdrawReportButton } from "./report-review-cycle";
-import { formatRecordedInstant, ReportStatusBadge } from "./report-status";
+import { ReportStatusBadge } from "./report-status";
 import { ReportTotals } from "./report-summary";
 
 const formatInstant = formatRecordedInstant;

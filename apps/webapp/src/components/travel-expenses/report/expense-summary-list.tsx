@@ -6,12 +6,17 @@ import { useLocale } from "next-intl";
 import type { ConversionResult } from "@/lib/travel-expenses/currency-conversion";
 import { type AllowanceOverrideSummary, AllowanceOverrideNotice } from "./allowance-override-notice";
 import { ConversionSummary } from "./conversion-summary";
-import { formatCountry, formatMoney, formatPlainDate, formatPlainDateRange } from "./format";
 import { type ExpenseProjectSummary, ExpenseProjectLine } from "./expense-project-line";
+import {
+	categoryLabel,
+	formatCountry,
+	formatMoney,
+	formatPlainDate,
+	formatPlainDateRange,
+} from "./format";
 import { MileageBreakdown, type MileageBreakdownFacts } from "./mileage-breakdown";
 import { PerDiemBreakdown, type PerDiemBreakdownFacts } from "./per-diem-breakdown";
 import { ReceiptExceptionNotice } from "./receipt-exception-notice";
-import { categoryLabel } from "./receipt-item-editor";
 
 export interface ExpenseSummary {
 	id: string;

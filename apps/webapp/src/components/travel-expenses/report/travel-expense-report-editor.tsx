@@ -380,6 +380,8 @@ function TripReportBody({
 	const { t } = useTranslate();
 	const { refreshReport, refreshDrafts } = useReportInvalidation(report.id);
 	const loadSavedReport = useSavedReportLoader(report.id);
+	// The live draft only starts from the saved trip; later loads must not reset entered values.
+	// react-doctor-disable-next-line react-doctor/no-derived-useState
 	const [details, setDetails] = useState<TripDetailsDraft | null>(trip);
 	const [drafts, setDrafts] = useState<LiveDrafts>({});
 	const [mileageDrafts, setMileageDrafts] = useState<MileageDrafts>({});
@@ -409,6 +411,8 @@ function TripReportBody({
 	useEffect(() => {
 		if (focusTarget === "add") {
 			if (addButton.current) addButton.current.focus();
+			// Focus can only move once the change is in the DOM, i.e. after render.
+			// react-doctor-disable-next-line react-hooks-js/set-state-in-effect
 			setFocusTarget(null);
 		} else if (focusTarget) {
 			const heading = document.getElementById(`expense-${focusTarget.itemId}`);
@@ -421,6 +425,7 @@ function TripReportBody({
 
 	async function addItem(type: "receipt" | "mileage" | "per_diem" = "receipt") {
 		setAdding(true);
+		// No `finally`: the React Compiler cannot compile try statements with one.
 		try {
 			const add =
 				type === "per_diem"
@@ -429,28 +434,29 @@ function TripReportBody({
 						? addTripMileageItemAction
 						: addTripReportItemAction;
 			const result = await add({ reportId: report.id });
-			if (!result.success) {
+			if (result.success) {
+				setFocusTarget({ itemId: result.data.item.id });
+				await Promise.all([refreshReport(), refreshDrafts()]);
+			} else {
 				toast.error(
 					t(
 						"travelExpenses.report.items.addFailed",
 						"The expense could not be added. Please retry.",
 					),
 				);
-				return;
 			}
-			setFocusTarget({ itemId: result.data.item.id });
-			await Promise.all([refreshReport(), refreshDrafts()]);
 		} catch {
 			toast.error(
 				t("travelExpenses.report.items.addFailed", "The expense could not be added. Please retry."),
 			);
-		} finally {
-			setAdding(false);
 		}
+		setAdding(false);
 	}
 
 	async function removeItem(itemId: string, expectedVersion: number): Promise<boolean> {
-		setRemoveErrors(({ [itemId]: _cleared, ...rest }) => rest);
+		setRemoveErrors((errors) =>
+			Object.fromEntries(Object.entries(errors).filter(([id]) => id !== itemId)),
+		);
 		const failed = (message: string) => {
 			setRemoveErrors((errors) => ({ ...errors, [itemId]: message }));
 			return false;

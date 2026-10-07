@@ -315,7 +315,9 @@ export async function removeTripReportItemAction(input: {
 				break;
 		}
 		// The objects are already recorded for durable cleanup; try to delete them now.
+		// One at a time on purpose: this is best effort, so it keeps storage load bounded.
 		for (const receiptId of result.receiptIds) {
+			// react-doctor-disable-next-line react-doctor/async-await-in-loop
 			await runTravelExpenseReceiptCleanup(db, {
 				deleteObject: deletePrivateObject,
 				only: { attachmentId: receiptId, organizationId: owner.organizationId },

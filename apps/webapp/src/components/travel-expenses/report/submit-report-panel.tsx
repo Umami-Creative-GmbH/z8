@@ -184,26 +184,27 @@ export function SubmitReportPanel({
 	async function openReview() {
 		setProblem(null);
 		setLoading(true);
+		// No `finally` here or in submit: the React Compiler cannot compile try
+		// statements with one.
 		try {
 			const saved = await loadSavedReport();
-			if (!saved) {
+			if (saved) {
+				setReport(saved);
+				setOpen(true);
+			} else {
 				toast.error(
 					t(
 						"travelExpenses.report.submit.notSaved",
 						"Some changes are not saved yet. Wait for them to save, then review the report again.",
 					),
 				);
-				return;
 			}
-			setReport(saved);
-			setOpen(true);
 		} catch {
 			toast.error(
 				t("travelExpenses.report.errors.load", "Unable to load this expense. Please retry."),
 			);
-		} finally {
-			setLoading(false);
 		}
+		setLoading(false);
 	}
 
 	async function submit() {
@@ -230,15 +231,13 @@ export function SubmitReportPanel({
 					title: t("travelExpenses.report.submit.failedTitle", "The report was not submitted"),
 					body: result.error,
 				});
-				return;
-			}
-			if (result.data.status !== "submitted") {
+			} else if (result.data.status !== "submitted") {
 				setProblem(outcomeMessage(t, result.data));
-				return;
+			} else {
+				toast.success(t("travelExpenses.report.submit.success", "Report submitted for approval"));
+				setOpen(false);
+				await onSubmitted();
 			}
-			toast.success(t("travelExpenses.report.submit.success", "Report submitted for approval"));
-			setOpen(false);
-			await onSubmitted();
 		} catch {
 			setProblem({
 				title: t("travelExpenses.report.submit.failedTitle", "The report was not submitted"),
@@ -247,9 +246,8 @@ export function SubmitReportPanel({
 					"Something went wrong. Your report is still saved as a draft; please retry.",
 				),
 			});
-		} finally {
-			setSubmitting(false);
 		}
+		setSubmitting(false);
 	}
 
 	const blockedHint =
