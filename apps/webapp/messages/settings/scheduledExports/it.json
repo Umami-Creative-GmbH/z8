@@ -5,7 +5,7 @@
         "delete": "Elimina",
         "edit": "Modifica",
         "runNow": "Esegui ora",
-        "viewHistory": "Visualizza cronologia icone"
+        "viewHistory": "Visualizza cronologia"
       },
       "cronPreview": {
         "error": "Calcolo delle prossime esecuzioni non riuscito",
@@ -143,7 +143,7 @@
         "statusPending": "In attesa",
         "statusProcessing": "In elaborazione",
         "tableRegion": "Tabella cronologia esecuzioni",
-        "title": "Icona cronologia esecuzioni",
+        "title": "Cronologia esecuzioni",
         "viewError": "Visualizza dettagli errore"
       },
       "newSchedule": "Nuova pianificazione",
