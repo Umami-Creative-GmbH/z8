@@ -326,7 +326,7 @@ export async function getApprovalInboxDetailFromRequest({
 		supportsBulkApprove: handler.supportsBulkApprove,
 		handler,
 	};
-	const item = toInboxItem(source, detail.approval, undefined);
+	const item = toInboxItem(source, detail.approval, undefined, { inDetail: true });
 	let actions = isOrphanedTimeCorrectionDetail(detail)
 		? { ...item.capabilities, canApprove: false, canBulkApprove: false }
 		: item.capabilities;
@@ -485,7 +485,10 @@ function toInboxItem(
 	source: ApprovalInboxSource,
 	approval: UnifiedApprovalItem,
 	now: Date | undefined,
+	options: { inDetail?: boolean } = {},
 ): ApprovalInboxItem {
+	// Outside the detail view, an approval needing its acceptances is not offered (#604).
+	const quickApproveBlocked = approval.requiresDetailReview === true && !options.inDetail;
 	const triage = buildInboxTriage({
 		type: source.type,
 		priority: approval.priority,
@@ -526,14 +529,18 @@ function toInboxItem(
 		triage,
 		capabilities: {
 			canApprove:
-				approval.status === "pending" && approval.isActionable !== false,
+				approval.status === "pending" &&
+				approval.isActionable !== false &&
+				!quickApproveBlocked,
 			canReject:
 				approval.status === "pending" && approval.isActionable !== false,
 			canBulkApprove:
 				approval.status === "pending" &&
 				approval.isActionable !== false &&
-				source.supportsBulkApprove,
+				source.supportsBulkApprove &&
+				approval.requiresDetailReview !== true,
 			requiresRejectReason: true,
+			...(approval.requiresDetailReview ? { requiresDetailReview: true } : {}),
 		},
 	};
 }

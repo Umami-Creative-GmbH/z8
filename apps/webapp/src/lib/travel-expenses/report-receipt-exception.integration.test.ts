@@ -432,7 +432,19 @@ describe("missing-receipt exceptions (#604)", () => {
 		const detail = await (
 			await getApprovalDetail({} as NextRequest, { params: Promise.resolve({ id: requestId }) })
 		).json();
-		expect(detail.actions).toMatchObject({ canApprove: true });
+		expect(detail.actions).toMatchObject({ canApprove: true, requiresDetailReview: true });
+		// The inbox list (and its sprint) cannot approve it: only the details collect acceptance.
+		const { GET: listRoute } = await import("@/app/api/approvals/inbox/route");
+		const list = await (
+			await listRoute(
+				new Request(
+					"http://localhost/api/approvals/inbox?status=pending&types=travel_expense_report",
+				) as unknown as NextRequest,
+			)
+		).json();
+		expect(
+			list.items.find((candidate: { id: string }) => candidate.id === requestId)?.capabilities,
+		).toMatchObject({ canApprove: false, requiresDetailReview: true });
 		expect(detail.sections).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({

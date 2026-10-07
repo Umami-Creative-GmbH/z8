@@ -56,6 +56,11 @@ export interface ApprovalInboxCapabilities {
 	canReject: boolean;
 	canBulkApprove: boolean;
 	requiresRejectReason: boolean;
+	/**
+	 * Approval needs acceptances only the detail view collects (#604); list and
+	 * sprint approve stay off and send the reviewer to the details.
+	 */
+	requiresDetailReview?: boolean;
 }
 
 export interface ApprovalInboxItem {

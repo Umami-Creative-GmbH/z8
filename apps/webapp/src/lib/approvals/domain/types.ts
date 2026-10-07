@@ -103,6 +103,12 @@ export interface UnifiedApprovalItem {
 	/** Whether the request can be decided without reconciliation. */
 	isActionable?: boolean;
 
+	/**
+	 * Approving needs the detail view's explicit acceptances (e.g. an expense
+	 * report's missing-receipt exceptions, #604): quick approve paths are off.
+	 */
+	requiresDetailReview?: boolean;
+
 	/** Explicit warning shown for requests requiring reconciliation. */
 	warning?: string | null;
 

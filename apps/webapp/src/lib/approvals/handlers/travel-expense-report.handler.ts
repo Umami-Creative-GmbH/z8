@@ -135,6 +135,11 @@ async function loadRequestContexts(
 	);
 }
 
+/** Missing-receipt exceptions must be accepted in the detail view before approving (#604). */
+function requiresDetailReview(entity: TravelExpenseReportApprovalEntity): boolean {
+	return entity.submitted?.items.some((item) => Boolean(item.receiptException)) ?? false;
+}
+
 /** The entity as the request's own cycle froze it; falls back to the latest cycle. */
 function withRequestRevision(
 	entity: TravelExpenseReportApprovalEntity,
@@ -241,6 +246,7 @@ export const TravelExpenseReportHandler: ApprovalTypeHandler<TravelExpenseReport
 					organizationId: request.organizationId,
 					status: request.status,
 					...(context?.closedAs ? { closedAs: context.closedAs } : {}),
+					...(requiresDetailReview(cycleEntity) ? { requiresDetailReview: true } : {}),
 					createdAt: request.createdAt,
 					resolvedAt: request.approvedAt,
 					priority: TravelExpenseReportHandler.calculatePriority(entity, request.createdAt),
@@ -368,6 +374,7 @@ export const TravelExpenseReportHandler: ApprovalTypeHandler<TravelExpenseReport
 					organizationId: entity.organizationId,
 					status: request.status,
 					...(closedAs ? { closedAs } : {}),
+					...(requiresDetailReview(cycleEntity) ? { requiresDetailReview: true } : {}),
 					createdAt: request.createdAt,
 					resolvedAt: request.approvedAt,
 					priority: TravelExpenseReportHandler.calculatePriority(entity, request.createdAt),
