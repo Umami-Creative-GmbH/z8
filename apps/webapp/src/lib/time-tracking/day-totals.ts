@@ -121,21 +121,16 @@ export function summarizeDayTotals(basis: DayTotalBasis, now: Instant): DayTotal
 	const weekStartKey = weekStart.toString();
 	const weekEndKey = weekStart.add({ days: 7 }).toString();
 	const monthKey = today.slice(0, 7);
-	const totals = {
-		todayMinutes: 0,
-		weekMinutes: 0,
-		monthMinutes: 0,
-		todaySurchargeMinutes: 0,
-		weekSurchargeMinutes: 0,
-		monthSurchargeMinutes: 0,
-	};
 
 	// ISO date keys sort chronologically, so plain string comparison selects a range.
-	const addTo = (dateKey: string, minutes: number, kind: "Minutes" | "SurchargeMinutes") => {
-		if (dateKey === today) totals[`today${kind}`] += minutes;
-		if (dateKey >= weekStartKey && dateKey < weekEndKey) totals[`week${kind}`] += minutes;
-		if (dateKey.slice(0, 7) === monthKey) totals[`month${kind}`] += minutes;
-	};
+	const isToday = (dateKey: string) => dateKey === today;
+	const isThisWeek = (dateKey: string) => dateKey >= weekStartKey && dateKey < weekEndKey;
+	const isThisMonth = (dateKey: string) => dateKey.slice(0, 7) === monthKey;
+	const sumWhere = (minutesByDate: [string, number][], inRange: (dateKey: string) => boolean) =>
+		minutesByDate.reduce(
+			(total, [dateKey, minutes]) => total + (inRange(dateKey) ? minutes : 0),
+			0,
+		);
 
 	const dayTotals = buildDailyWorkHoursSummaries({
 		dailyRequirements: {},
@@ -144,14 +139,22 @@ export function summarizeDayTotals(basis: DayTotalBasis, now: Instant): DayTotal
 		timezone,
 		now,
 	});
-	for (const [dateKey, dayTotal] of dayTotals) addTo(dateKey, dayTotal.actualMinutes, "Minutes");
-	for (const [dateKey, minutes] of Object.entries(basis.surchargeMinutesByDate)) {
-		addTo(dateKey, minutes, "SurchargeMinutes");
-	}
+	const dayTotalMinutes = [...dayTotals].map(([dateKey, dayTotal]): [string, number] => [
+		dateKey,
+		dayTotal.actualMinutes,
+	]);
+	const surchargeMinutes = Object.entries(basis.surchargeMinutesByDate);
+	const summary: DayTotalSummary = {
+		todayMinutes: sumWhere(dayTotalMinutes, isToday),
+		weekMinutes: sumWhere(dayTotalMinutes, isThisWeek),
+		monthMinutes: sumWhere(dayTotalMinutes, isThisMonth),
+	};
 
-	const { todaySurchargeMinutes, weekSurchargeMinutes, monthSurchargeMinutes, ...minutes } = totals;
+	const todaySurchargeMinutes = sumWhere(surchargeMinutes, isToday);
+	const weekSurchargeMinutes = sumWhere(surchargeMinutes, isThisWeek);
+	const monthSurchargeMinutes = sumWhere(surchargeMinutes, isThisMonth);
 	const hasSurcharge = todaySurchargeMinutes + weekSurchargeMinutes + monthSurchargeMinutes > 0;
 	return hasSurcharge
-		? { ...minutes, todaySurchargeMinutes, weekSurchargeMinutes, monthSurchargeMinutes }
-		: minutes;
+		? { ...summary, todaySurchargeMinutes, weekSurchargeMinutes, monthSurchargeMinutes }
+		: summary;
 }

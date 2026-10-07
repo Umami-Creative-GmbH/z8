@@ -52,7 +52,7 @@ describe("WeeklySummaryCards", () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-10-07T12:00:00Z"));
 		// 240 completed minutes today and live work started 45 minutes ago.
-		const dayTotals = buildDayTotalBasis({
+		const dayTotalBasis = buildDayTotalBasis({
 			periods: [
 				{
 					startTime: new Date("2026-10-07T06:00:00Z"),
@@ -65,8 +65,8 @@ describe("WeeklySummaryCards", () => {
 			weekStartDay: "monday",
 		});
 		const liveSummary = {
-			...summarizeDayTotals(dayTotals, parseInstant("2026-10-07T12:00:00Z")),
-			dayTotals,
+			...summarizeDayTotals(dayTotalBasis, parseInstant("2026-10-07T12:00:00Z")),
+			dayTotalBasis,
 		};
 
 		render(<WeeklySummaryCards summary={liveSummary} workBalance={null} />);

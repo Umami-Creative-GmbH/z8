@@ -3,7 +3,6 @@ import { PgDialect } from "drizzle-orm/pg-core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	readActiveWorkPeriod,
-	readComplianceDayCompletedMinutes,
 	readTimeSummary,
 	readWorkPeriods,
 } from "./read-queries";
@@ -14,7 +13,6 @@ const fixture = vi.hoisted(() => ({
 	requests: vi.fn(),
 	workflows: vi.fn(),
 	summary: vi.fn(),
-	complianceDay: vi.fn(),
 }));
 vi.mock("@/db", () => ({
 	db: {
@@ -24,10 +22,7 @@ vi.mock("@/db", () => ({
 			approvalWorkflow: { findMany: fixture.workflows },
 		},
 		select: () => ({
-			from: () => ({
-				leftJoin: () => ({ where: fixture.summary }),
-				where: fixture.complianceDay,
-			}),
+			from: () => ({ leftJoin: () => ({ where: fixture.summary }) }),
 		}),
 	},
 }));
@@ -50,23 +45,19 @@ describe("organization scoped render readers", () => {
 		fixture.requests.mockResolvedValue([]);
 		fixture.workflows.mockResolvedValue([]);
 		fixture.summary.mockResolvedValue([]);
-		fixture.complianceDay.mockResolvedValue([]);
 	});
 	afterEach(() => vi.useRealTimers());
 
-	it("scopes active, history, summary and compliance-day work period queries with both IDs", async () => {
+	it("scopes active, history and summary work period queries with both IDs", async () => {
 		await readActiveWorkPeriod(scope);
 		await readWorkPeriods(scope, start, end);
 		await readTimeSummary(scope, "Europe/Berlin", "monday");
-		await readComplianceDayCompletedMinutes(scope, "Europe/Berlin");
 		assertScope(fixture.active.mock.calls[0][0].where);
 		assertScope(fixture.periods.mock.calls[0][0].where);
 		assertScope(fixture.summary.mock.calls[0][0]);
-		assertScope(fixture.complianceDay.mock.calls[0][0]);
 		for (const where of [
 			fixture.periods.mock.calls[0][0].where,
 			fixture.summary.mock.calls[0][0],
-			fixture.complianceDay.mock.calls[0][0],
 		]) {
 			expect(new PgDialect().sqlToQuery(where).sql).toContain(
 				'"deleted_at" is null',
@@ -189,7 +180,7 @@ describe("organization scoped render readers", () => {
 					surchargeMinutes: null,
 				},
 			]);
-			const { dayTotals, ...totals } = await readTimeSummary(
+			const { dayTotalBasis, ...totals } = await readTimeSummary(
 				scope,
 				"Europe/Berlin",
 				weekStart,
@@ -202,14 +193,14 @@ describe("organization scoped render readers", () => {
 				weekSurchargeMinutes: weekStart === "sunday" ? 45 : 15,
 				monthSurchargeMinutes: 45,
 			});
-			expect(dayTotals?.liveWork).toEqual([
+			expect(dayTotalBasis?.liveWork).toEqual([
 				{ startedAt: new Date("2026-03-30T09:30:00Z") },
 			]);
 		},
 	);
 
 	it("keeps zero-summary defaults without optional surcharges", async () => {
-		const { dayTotals: _, ...totals } = await readTimeSummary(
+		const { dayTotalBasis: _, ...totals } = await readTimeSummary(
 			scope,
 			"UTC",
 			"sunday",
@@ -219,15 +210,5 @@ describe("organization scoped render readers", () => {
 			weekMinutes: 0,
 			monthMinutes: 0,
 		});
-	});
-
-	it("counts the compliance day's completed work whole and leaves out live work", async () => {
-		fixture.complianceDay.mockResolvedValue([
-			{ durationMinutes: 240 },
-			{ durationMinutes: null },
-		]);
-		await expect(
-			readComplianceDayCompletedMinutes(scope, "Europe/Berlin"),
-		).resolves.toBe(240);
 	});
 });

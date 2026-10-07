@@ -39,7 +39,7 @@ export interface DayTotalBasis {
 
 export interface TimeSummary extends DayTotalSummary {
 	/** Lets the client advance the totals as live work runs. */
-	dayTotals?: DayTotalBasis;
+	dayTotalBasis?: DayTotalBasis;
 }
 
 export interface CorrectionRequest {

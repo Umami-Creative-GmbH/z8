@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Clock, parseInstant } from "@/lib/datetime/temporal-core";
+import { readComplianceTotals } from "@/lib/time-tracking/compliance-totals";
 import { integrationAdminPool } from "@/test/integration-database";
 import {
 	getActiveWorkPeriod,
@@ -9,7 +10,6 @@ import {
 } from "./actions/queries";
 import {
 	readActiveWorkPeriod,
-	readComplianceDayCompletedMinutes,
 	readTimeSummary,
 	readWorkPeriods,
 } from "./read-queries";
@@ -329,7 +329,7 @@ describe("scoped rendering reads on disposable PostgreSQL", () => {
 				surcharge: 15,
 				deleted: true,
 			});
-			const { dayTotals: _, ...totals } = await readTimeSummary(
+			const { dayTotalBasis: _, ...totals } = await readTimeSummary(
 				scope,
 				"Europe/Berlin",
 				weekStart,
@@ -360,7 +360,7 @@ describe("scoped rendering reads on disposable PostgreSQL", () => {
 		await period({ organizationId: foreignOrg, at: "2026-04-01T09:00:00Z" });
 		const now = clockAt("2026-04-01T10:00:00Z");
 
-		const { dayTotals, ...totals } = await readTimeSummary(
+		const { dayTotalBasis, ...totals } = await readTimeSummary(
 			scope,
 			"Europe/Berlin",
 			"monday",
@@ -376,13 +376,17 @@ describe("scoped rendering reads on disposable PostgreSQL", () => {
 			weekSurchargeMinutes: 40,
 			monthSurchargeMinutes: 0,
 		});
-		expect(dayTotals?.liveWork).toEqual([
+		expect(dayTotalBasis?.liveWork).toEqual([
 			{ startedAt: new Date("2026-04-01T09:15:00Z") },
 		]);
 		// The compliance check's day leaves out live work and work started yesterday.
 		await expect(
-			readComplianceDayCompletedMinutes(scope, "Europe/Berlin", now),
-		).resolves.toBe(0);
+			readComplianceTotals({
+				...scope,
+				workStart: now.nowInstant(),
+				timezone: "Europe/Berlin",
+			}),
+		).resolves.toMatchObject({ dailyMinutes: 0 });
 	});
 
 	it("fresh guarded wrappers deny revoked membership and an organization switch", async () => {

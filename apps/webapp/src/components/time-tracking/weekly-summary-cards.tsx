@@ -61,11 +61,11 @@ const NO_LIVE_WORK: LiveWork[] = [];
 
 export function WeeklySummaryCards({ summary: serverSummary, workBalance }: Props) {
 	const { t } = useTranslate();
-	const { dayTotals } = serverSummary;
-	const liveWorkNow = useLiveWorkNow(dayTotals?.liveWork ?? NO_LIVE_WORK);
+	const { dayTotalBasis } = serverSummary;
+	const liveWorkNow = useLiveWorkNow(dayTotalBasis?.liveWork ?? NO_LIVE_WORK);
 	// Day totals count live work as it runs, advancing on each elapsed minute.
 	const summary =
-		dayTotals && liveWorkNow ? summarizeDayTotals(dayTotals, liveWorkNow) : serverSummary;
+		dayTotalBasis && liveWorkNow ? summarizeDayTotals(dayTotalBasis, liveWorkNow) : serverSummary;
 
 	const baseWorkedLabel = t("timeTracking.summary.baseWorked", "Base worked");
 	const surchargeLabel = t("timeTracking.summary.surcharge", "Surcharge");
