@@ -1711,7 +1711,7 @@ export function createLegacyAbsenceDecisionProcessor(input: {
 					ApprovalAuditLogger,
 					createApprovalAuditLogger(transactionDbService),
 				),
-			) as Effect.Effect<unknown, AnyAppError, never>,
+			),
 		);
 		if (Exit.isSuccess(exit)) return exit.value;
 		// The owner's refusals are its typed failures; a defect passes as itself.
@@ -1802,7 +1802,8 @@ function authenticatedAbsenceDecisionEffect(
 						options,
 					}),
 				}),
-			catch: translateAbsenceDecisionError,
+			// Server actions surface the translated failure as an application error.
+			catch: (error) => translateAbsenceDecisionError(error) as AnyAppError,
 		});
 
 		if (
@@ -2187,7 +2188,7 @@ export async function decideBoundLegacyAbsenceInvocation(input: {
 						execution.domainResult as RejectedAbsenceResult,
 					);
 		await Effect.runPromise(
-			postCommit.pipe(Effect.provide(AppLayer)) as Effect.Effect<void, AnyAppError, never>,
+			postCommit.pipe(Effect.provide(AppLayer)),
 		).catch((error) =>
 			logger.error(
 				{ error, absenceId, organizationId: input.organizationId },
@@ -2278,7 +2279,7 @@ export async function executeAuthenticatedAbsenceDecision(
 	return Effect.runPromise(
 		authenticatedAbsenceDecisionEffect(absenceId, action, reason, options).pipe(
 			Effect.provide(AppLayer),
-		) as Effect.Effect<void, AnyAppError, never>,
+		),
 	);
 }
 
@@ -2295,13 +2296,7 @@ export async function processAuthenticatedAbsenceDecision(
 		options,
 	);
 
-	return runServerActionSafe(
-		effect.pipe(Effect.provide(AppLayer)) as Effect.Effect<
-			void,
-			AnyAppError,
-			never
-		>,
-	);
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
 }
 
 async function markEmployeeWorkBalanceDirtyIfNeeded(

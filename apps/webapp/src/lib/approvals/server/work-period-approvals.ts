@@ -1038,11 +1038,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 								query: input.dbService.query,
 							}),
 						),
-					) as Effect.Effect<
-						WorkPeriodApprovalResult | undefined,
-						unknown,
-						never
-					>,
+					),
 				);
 				if (Exit.isFailure(exit)) {
 					// The owner's typed failure, else its defect: what

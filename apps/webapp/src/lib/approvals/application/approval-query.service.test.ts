@@ -43,6 +43,10 @@ import {
 	ApprovalQueryServiceLive,
 } from "@/lib/approvals/application/approval-query.service";
 import { type AnyAppError, DatabaseError } from "@/lib/effect/errors";
+import {
+	type DatabaseService,
+	DatabaseServiceLive,
+} from "@/lib/effect/services/database.service";
 
 function createUnifiedApprovalItem(params: {
 	id: string;
@@ -84,9 +88,11 @@ function createUnifiedApprovalItem(params: {
 	};
 }
 
-async function runApprovalQuery<T>(effect: Effect.Effect<T, AnyAppError, any>): Promise<T> {
+async function runApprovalQuery<T>(
+	effect: Effect.Effect<T, AnyAppError, ApprovalQueryService | DatabaseService>,
+): Promise<T> {
 	return Effect.runPromise(
-		effect.pipe(Effect.provide(ApprovalQueryServiceLive)) as Effect.Effect<T, AnyAppError, never>,
+		effect.pipe(Effect.provide(ApprovalQueryServiceLive), Effect.provide(DatabaseServiceLive)),
 	);
 }
 

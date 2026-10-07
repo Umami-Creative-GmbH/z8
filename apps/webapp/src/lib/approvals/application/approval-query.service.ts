@@ -11,6 +11,7 @@ import { createLogger } from "@/lib/logger";
 import { getAllApprovalHandlers } from "../domain/registry";
 import { comparePriority } from "../domain/sla-calculator";
 import type {
+	ApprovalHandlerServices,
 	ApprovalPriority,
 	ApprovalQueryParams,
 	ApprovalType,
@@ -116,20 +117,18 @@ export class ApprovalQueryService extends Context.Service<
 		/**
 		 * Get unified approvals with pagination and filtering.
 		 */
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		readonly getApprovals: (
 			params: ApprovalQueryParams,
-		) => Effect.Effect<PaginatedApprovalResult, AnyAppError, any>;
+		) => Effect.Effect<PaginatedApprovalResult, AnyAppError, ApprovalHandlerServices>;
 
 		/**
 		 * Get total counts per approval type.
 		 */
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		readonly getCounts: (
 			approverId: string,
 			organizationId: string,
 			visibility?: Pick<ApprovalQueryParams, "eligibleApprovalScopes" | "includeAllApprovers">,
-		) => Effect.Effect<Record<ApprovalType, number>, AnyAppError, any>;
+		) => Effect.Effect<Record<ApprovalType, number>, AnyAppError, ApprovalHandlerServices>;
 	}
 >()("ApprovalQueryService") {}
 

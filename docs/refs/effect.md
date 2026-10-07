@@ -32,4 +32,6 @@ Define services as `class X extends Context.Service<X, Shape>()("X") {}`. Provid
 
 `runServerActionSafe` in `lib/effect/result.ts` is the only server-action runner. It runs the effect on the shared runtime and turns the `Exit` into the shared `ServerActionResult`: a typed failure comes back with its `message` and its `_tag` as `code`, so failure messages must be safe to show users. Don't add another runner or a local result type.
 
+A service shape or callback type declares the real requirement type (`R`) of the effects it returns, never `any` or `unknown`. A missing service then fails to compile instead of failing at run time. Runners provide those services; they don't cast to `Effect<…, never>`. The approval handler contract is the example: its effects require `ApprovalHandlerServices` (`lib/approvals/domain/types.ts`), and the shared legacy decision owner passes its callbacks' requirements through as a type parameter.
+
 In tests, `vi.mock` factories import `effect`, and stub services with `Context.Service<any>("Name")`.
