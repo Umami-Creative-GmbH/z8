@@ -1,5 +1,5 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
-import { approvalSubmittedRevision } from "@/db/schema";
+import { and, desc, eq, inArray, or } from "drizzle-orm";
+import { approvalChainStageInstance, approvalSubmittedRevision } from "@/db/schema";
 import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import type { ApprovalDatabase } from "../server/types";
 import { ApprovalEvidenceError } from "./errors";
@@ -202,6 +202,67 @@ export async function loadTravelExpenseReportSubmittedRevisions(
 		);
 	}
 	return revisions;
+}
+
+/**
+ * The frozen revision each legacy approval request was created for, keyed by
+ * request id. A cycle's first request is named on its revision; a later chain
+ * stage's request belongs to the revision of its chain. Inbox rows of earlier
+ * cycles therefore show the facts their reviewer saw, not the latest cycle's.
+ */
+export async function loadTravelExpenseReportRevisionsByRequest(
+	database: ApprovalDatabase,
+	input: { organizationId: string; approvalRequestIds: readonly string[] },
+): Promise<Map<string, TravelExpenseReportSubmittedRevisionRecord>> {
+	const byRequest = new Map<string, TravelExpenseReportSubmittedRevisionRecord>();
+	const requestIds = [...new Set(input.approvalRequestIds)];
+	if (requestIds.length === 0) return byRequest;
+	const stages = await database
+		.select({
+			approvalRequestId: approvalChainStageInstance.approvalRequestId,
+			chainInstanceId: approvalChainStageInstance.chainInstanceId,
+		})
+		.from(approvalChainStageInstance)
+		.where(
+			and(
+				eq(approvalChainStageInstance.organizationId, input.organizationId),
+				inArray(approvalChainStageInstance.approvalRequestId, requestIds),
+			),
+		);
+	const chainIds = [...new Set(stages.map((stage) => stage.chainInstanceId))];
+	const rows = await database
+		.select()
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.organizationId, input.organizationId),
+				eq(approvalSubmittedRevision.authority, "legacy"),
+				eq(approvalSubmittedRevision.sourceType, TRAVEL_EXPENSE_REPORT_SOURCE_TYPE),
+				chainIds.length > 0
+					? or(
+							inArray(approvalSubmittedRevision.legacyApprovalRequestId, requestIds),
+							inArray(approvalSubmittedRevision.legacyChainInstanceId, chainIds),
+						)
+					: inArray(approvalSubmittedRevision.legacyApprovalRequestId, requestIds),
+			),
+		);
+	const revisions = rows.map((row) =>
+		parseRevision(row, { organizationId: input.organizationId, reportId: row.sourceId }),
+	);
+	for (const revision of revisions) {
+		byRequest.set(revision.legacy.approvalRequestId, revision);
+	}
+	for (const stage of stages) {
+		if (!stage.approvalRequestId || byRequest.has(stage.approvalRequestId)) continue;
+		const revision = revisions.find(
+			(candidate) => candidate.legacy.chainInstanceId === stage.chainInstanceId,
+		);
+		if (revision) byRequest.set(stage.approvalRequestId, revision);
+	}
+	for (const id of [...byRequest.keys()]) {
+		if (!requestIds.includes(id)) byRequest.delete(id);
+	}
+	return byRequest;
 }
 
 /**

@@ -75,6 +75,12 @@ export interface UnifiedApprovalItem {
 	/** Current status */
 	status: ApprovalStatus;
 
+	/**
+	 * A travel expense report request retired without a decision (#603): its
+	 * legacy status is `rejected`, but it was returned or withdrawn.
+	 */
+	closedAs?: "returned" | "withdrawn";
+
 	/** When the request was created */
 	createdAt: Date;
 
@@ -235,7 +241,16 @@ export interface ApprovalDetail<TEntity = unknown> {
 
 export interface ApprovalTimelineEvent {
 	id: string;
-	type: "created" | "approved" | "rejected" | "escalated" | "reminder";
+	type:
+		| "created"
+		| "approved"
+		| "rejected"
+		| "escalated"
+		| "reminder"
+		/** A travel expense report returned for changes (#603). */
+		| "returned"
+		/** A travel expense report withdrawn by its employee (#603). */
+		| "withdrawn";
 	performedBy: {
 		name: string;
 		image: string | null;

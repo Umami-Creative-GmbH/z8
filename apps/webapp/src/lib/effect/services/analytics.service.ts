@@ -42,6 +42,7 @@ import type {
 import { allocateAnalyticsWorkPeriodMinutes } from "@/lib/analytics/work-period-allocation";
 import { calculateSLADeadline, calculateSLAStatus } from "@/lib/approvals/domain/sla-calculator";
 import type { ApprovalPriority, ApprovalType } from "@/lib/approvals/domain/types";
+import { loadTravelExpenseReportRequestClosures } from "@/lib/approvals/travel-expense-report-request-closure";
 import { differenceInDays, format } from "@/lib/datetime/luxon-utils";
 import { instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { resolveReportDateRange } from "@/lib/reports/report-date-range";
@@ -1123,6 +1124,24 @@ export class AnalyticsService extends Context.Service<
 							},
 						);
 
+						// Returned and withdrawn report cycles keep the legacy status
+						// `rejected` (#603); classify them by their cycle closure.
+						const reportClosures = yield* dbService.query(
+							"getTravelExpenseReportClosuresForEffectiveness",
+							() =>
+								loadTravelExpenseReportRequestClosures(
+									dbService.db,
+									organizationId,
+									approvals
+										.filter(
+											(approval) =>
+												approval.entityType === "travel_expense_report" &&
+												approval.status === "rejected",
+										)
+										.map((approval) => approval.id),
+								),
+						);
+
 						const approvalRows: ApprovalAnalyticsRow[] = approvals.map((approval) => ({
 							source: "approval_request",
 							type: approval.entityType,
@@ -1132,7 +1151,7 @@ export class AnalyticsService extends Context.Service<
 							requesterTeamName: approval.requester?.team?.name ?? null,
 							approverEmployeeId: approval.approverId,
 							approverName: approval.approver?.user.name ?? null,
-							status: approval.status,
+							status: reportClosures.get(approval.id) ?? approval.status,
 							submittedAt: approval.createdAt,
 							decidedAt: approval.approvedAt,
 							slaStatus: getSlaStatusForAnalytics(

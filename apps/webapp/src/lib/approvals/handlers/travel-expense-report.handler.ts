@@ -17,10 +17,18 @@ import type {
 	UnifiedApprovalItem,
 } from "../domain/types";
 import type { TravelExpenseReportSubmittedFacts } from "../evidence/travel-expense-report-facts";
-import { loadTravelExpenseReportSubmittedRevision } from "../evidence/travel-expense-report-store";
+import {
+	loadTravelExpenseReportRevisionsByRequest,
+	loadTravelExpenseReportSubmittedRevision,
+} from "../evidence/travel-expense-report-store";
 import { loadTravelExpenseApprover } from "../server/travel-expense-approvals";
 import { decideTravelExpenseReportEffect } from "../server/travel-expense-report-approvals";
 import type { ApprovalDatabase } from "../server/types";
+import {
+	isNotTravelExpenseReportNonDecision,
+	loadTravelExpenseReportRequestClosures,
+	type TravelExpenseReportRequestClosure,
+} from "../travel-expense-report-request-closure";
 import { buildSLAInfo, fetchApprovals, getApprovalCount } from "./base-handler";
 
 /**
@@ -104,6 +112,37 @@ async function loadReportEntities(
 	);
 }
 
+interface ReportRequestContext {
+	/** The frozen submission this request was created for (its own cycle). */
+	submitted: TravelExpenseReportSubmittedFacts | null;
+	closedAs: TravelExpenseReportRequestClosure | null;
+}
+
+async function loadRequestContexts(
+	database: ApprovalDatabase,
+	organizationId: string,
+	approvalRequestIds: string[],
+): Promise<Map<string, ReportRequestContext>> {
+	const [revisions, closures] = await Promise.all([
+		loadTravelExpenseReportRevisionsByRequest(database, { organizationId, approvalRequestIds }),
+		loadTravelExpenseReportRequestClosures(database, organizationId, approvalRequestIds),
+	]);
+	return new Map(
+		approvalRequestIds.map((id) => [
+			id,
+			{ submitted: revisions.get(id)?.facts ?? null, closedAs: closures.get(id) ?? null },
+		]),
+	);
+}
+
+/** The entity as the request's own cycle froze it; falls back to the latest cycle. */
+function withRequestRevision(
+	entity: TravelExpenseReportApprovalEntity,
+	context: ReportRequestContext | undefined,
+): TravelExpenseReportApprovalEntity {
+	return context?.submitted ? { ...entity, submitted: context.submitted } : entity;
+}
+
 function getDisplayMetadata(entity: TravelExpenseReportApprovalEntity): ApprovalDisplayMetadata {
 	const facts = entity.submitted;
 	if (!facts) {
@@ -155,11 +194,27 @@ export const TravelExpenseReportHandler: ApprovalTypeHandler<TravelExpenseReport
 		fetchApprovals({
 			entityType: "travel_expense_report",
 			params,
+			// Returned and withdrawn cycles retire their request as `rejected`
+			// (#603); they are not rejections and never appear as one.
+			...(params.status === "rejected"
+				? { extraConditions: [isNotTravelExpenseReportNonDecision()] }
+				: {}),
 			fetchEntitiesByIds: (entityIds) =>
 				Effect.gen(function* () {
 					const dbService = yield* DatabaseService;
 					return yield* dbService.query("batchGetTravelExpenseReports", () =>
 						loadReportEntities(dbService.db, params.organizationId, entityIds),
+					);
+				}),
+			fetchRequestContexts: (requests) =>
+				Effect.gen(function* () {
+					const dbService = yield* DatabaseService;
+					return yield* dbService.query("batchGetTravelExpenseReportRequestContexts", () =>
+						loadRequestContexts(
+							dbService.db,
+							params.organizationId,
+							requests.map((request) => request.id),
+						),
 					);
 				}),
 			filterEntity: (entity, queryParams) => {
@@ -174,23 +229,27 @@ export const TravelExpenseReportHandler: ApprovalTypeHandler<TravelExpenseReport
 				}
 				return true;
 			},
-			transformToItem: (request, entity) => ({
-				id: request.id,
-				approvalType: "travel_expense_report",
-				entityId: request.entityId,
-				typeName: "Expense report",
-				requester: requesterOf(entity),
-				approverId: request.approverId,
-				organizationId: request.organizationId,
-				status: request.status,
-				createdAt: request.createdAt,
-				resolvedAt: request.approvedAt,
-				priority: TravelExpenseReportHandler.calculatePriority(entity, request.createdAt),
-				sla: buildSLAInfo(
-					TravelExpenseReportHandler.calculateSLADeadline(entity, request.createdAt),
-				),
-				display: getDisplayMetadata(entity),
-			}),
+			transformToItem: (request, entity, context) => {
+				const cycleEntity = withRequestRevision(entity, context);
+				return {
+					id: request.id,
+					approvalType: "travel_expense_report",
+					entityId: request.entityId,
+					typeName: "Expense report",
+					requester: requesterOf(entity),
+					approverId: request.approverId,
+					organizationId: request.organizationId,
+					status: request.status,
+					...(context?.closedAs ? { closedAs: context.closedAs } : {}),
+					createdAt: request.createdAt,
+					resolvedAt: request.approvedAt,
+					priority: TravelExpenseReportHandler.calculatePriority(entity, request.createdAt),
+					sla: buildSLAInfo(
+						TravelExpenseReportHandler.calculateSLADeadline(entity, request.createdAt),
+					),
+					display: getDisplayMetadata(cycleEntity),
+				};
+			},
 		}),
 
 	getCount: (approverId, organizationId, visibility) =>
@@ -261,7 +320,32 @@ export const TravelExpenseReportHandler: ApprovalTypeHandler<TravelExpenseReport
 					message: "Expense report approved",
 				});
 			}
-			if (request.status === "rejected") {
+			const requestId: string = request.id;
+			const contexts: Map<string, ReportRequestContext> = yield* dbService.query(
+				"getTravelExpenseReportRequestContext",
+				() => loadRequestContexts(dbService.db, entity.organizationId, [requestId]),
+			);
+			const requestContext = contexts.get(requestId);
+			const closedAs = requestContext?.closedAs ?? null;
+			if (request.status === "rejected" && closedAs === "withdrawn") {
+				timeline.push({
+					id: `${request.id}-withdrawn`,
+					type: "withdrawn",
+					performedBy: { name: entity.employee.user.name, image: entity.employee.user.image },
+					timestamp: request.updatedAt,
+					message: "Expense report withdrawn by the employee",
+				});
+			} else if (request.status === "rejected" && closedAs === "returned") {
+				timeline.push({
+					id: `${request.id}-returned`,
+					type: "returned",
+					performedBy: approver,
+					timestamp: request.updatedAt,
+					message: request.rejectionReason
+						? `Expense report returned for changes: ${request.rejectionReason}`
+						: "Expense report returned for changes",
+				});
+			} else if (request.status === "rejected") {
 				timeline.push({
 					id: `${request.id}-rejected`,
 					type: "rejected",
@@ -272,6 +356,7 @@ export const TravelExpenseReportHandler: ApprovalTypeHandler<TravelExpenseReport
 						: "Expense report rejected",
 				});
 			}
+			const cycleEntity = withRequestRevision(entity, requestContext);
 			return {
 				approval: {
 					id: request.id,
@@ -282,15 +367,16 @@ export const TravelExpenseReportHandler: ApprovalTypeHandler<TravelExpenseReport
 					approverId: request.approverId,
 					organizationId: entity.organizationId,
 					status: request.status,
+					...(closedAs ? { closedAs } : {}),
 					createdAt: request.createdAt,
 					resolvedAt: request.approvedAt,
 					priority: TravelExpenseReportHandler.calculatePriority(entity, request.createdAt),
 					sla: buildSLAInfo(
 						TravelExpenseReportHandler.calculateSLADeadline(entity, request.createdAt),
 					),
-					display: getDisplayMetadata(entity),
+					display: getDisplayMetadata(cycleEntity),
 				},
-				entity,
+				entity: cycleEntity,
 				timeline,
 			} satisfies ApprovalDetail<TravelExpenseReportApprovalEntity>;
 		}),

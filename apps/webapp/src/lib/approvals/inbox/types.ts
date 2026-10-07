@@ -63,6 +63,8 @@ export interface ApprovalInboxItem {
 	type: ApprovalInboxType;
 	entityId: string;
 	status: ApprovalInboxStatus;
+	/** A report cycle retired as returned or withdrawn; its legacy status is `rejected` (#603). */
+	closedAs?: "returned" | "withdrawn";
 	requester: ApprovalInboxRequester;
 	summary: ApprovalInboxSummary;
 	timing: ApprovalInboxTiming;
@@ -73,6 +75,8 @@ export interface ApprovalInboxItem {
 export interface ApprovalInboxLocalizedText {
 	key: string;
 	fallback: string;
+	/** Interpolation values for `{name}` placeholders in the key and fallback. */
+	params?: Record<string, string | number>;
 }
 
 export type ApprovalInboxDetailChangeValue =
@@ -118,18 +122,18 @@ export type ApprovalInboxDetailSection =
 	| { type: "text"; title: string; body: string }
 	| {
 			type: "timeline";
-			title: string;
+			title: string | ApprovalInboxLocalizedText;
 			events: Array<{
 				id: string;
-				label: string;
+				label: string | ApprovalInboxLocalizedText;
 				at: string;
 				actorName: string | null;
 			}>;
 	  }
 	| {
 			type: "callout";
-			title: string;
-			body: string;
+			title: string | ApprovalInboxLocalizedText;
+			body: string | ApprovalInboxLocalizedText;
 			tone: "info" | "warning" | "danger";
 	  }
 	/** Expense report missing-receipt exceptions an approval must accept (#604). */

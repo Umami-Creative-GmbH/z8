@@ -95,6 +95,7 @@ interface GetApprovalInboxDetailFromRequestInput {
 	loadTravelExpenseReportReviewEvidence?: (input: {
 		organizationId: string;
 		reportId: string;
+		approvalRequestId?: string;
 	}) => ReturnType<typeof prepareTravelExpenseReportReviewEvidence>;
 	loadTimeReviewEvidence?: (
 		input: Parameters<typeof prepareTimeReviewEvidence>[0],
@@ -368,6 +369,8 @@ export async function getApprovalInboxDetailFromRequest({
 			await loadTravelExpenseReportReviewEvidence({
 				organizationId: request.organizationId,
 				reportId: request.entityId,
+				// An earlier cycle's request shows the facts its reviewer saw.
+				approvalRequestId: request.id,
 			}),
 		);
 	} else if (timeEvidence) {
@@ -499,6 +502,7 @@ function toInboxItem(
 		type: source.type,
 		entityId: approval.entityId,
 		status: approval.status,
+		...(approval.closedAs ? { closedAs: approval.closedAs } : {}),
 		requester: {
 			id: approval.requester.id,
 			name: approval.requester.name,
@@ -547,7 +551,8 @@ function buildDetailSections(
 			rows: [
 				{ label: "Type", value: detail.approval.typeName },
 				{ label: "Summary", value: detail.approval.display.summary },
-				{ label: "Status", value: detail.approval.status },
+				// A returned or withdrawn report cycle is not a rejection (#603).
+				{ label: "Status", value: detail.approval.closedAs ?? detail.approval.status },
 				...(stage
 					? [{ label: "Stage", value: `${stage.name} (${stage.order})` }]
 					: []),

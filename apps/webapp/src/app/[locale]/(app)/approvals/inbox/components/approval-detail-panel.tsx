@@ -60,7 +60,8 @@ function localizedText(
 	t: Translate,
 	value: string | ApprovalInboxLocalizedText,
 ) {
-	return typeof value === "string" ? value : t(value.key, value.fallback);
+	if (typeof value === "string") return value;
+	return value.params ? t(value.key, value.fallback, value.params) : t(value.key, value.fallback);
 }
 
 function workLocationText(t: Translate, value: string) {
@@ -161,12 +162,12 @@ function renderDetailSection(
 			);
 		case "timeline":
 			return (
-				<section key={section.title}>
-					<SectionTitle>{section.title}</SectionTitle>
+				<section key={localizedText(t, section.title)}>
+					<SectionTitle>{localizedText(t, section.title)}</SectionTitle>
 					<div className="space-y-3 rounded-xl border bg-card/60 p-4 shadow-sm">
 						{section.events.map((event) => (
 							<div key={event.id} className="border-l-2 border-primary/30 pl-3">
-								<p className="text-sm font-semibold">{event.label}</p>
+								<p className="text-sm font-semibold">{localizedText(t, event.label)}</p>
 								<p className="text-xs text-muted-foreground">
 									{event.actorName
 										? t(
@@ -184,7 +185,7 @@ function renderDetailSection(
 		case "callout":
 			return (
 				<section
-					key={section.title}
+					key={localizedText(t, section.title)}
 					className={cn(
 						"rounded-xl border p-4 shadow-sm",
 						section.tone === "info" &&
@@ -195,9 +196,9 @@ function renderDetailSection(
 							"border-destructive/30 bg-destructive/5 text-destructive",
 					)}
 				>
-					<h4 className="text-sm font-medium">{section.title}</h4>
+					<h4 className="text-sm font-medium">{localizedText(t, section.title)}</h4>
 					<p className="mt-1 text-sm leading-6 text-muted-foreground">
-						{section.body}
+						{localizedText(t, section.body)}
 					</p>
 				</section>
 			);

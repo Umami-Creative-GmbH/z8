@@ -39,7 +39,10 @@ import {
 	recordLegacyDecisionEvidence,
 } from "../evidence/store";
 import { TRAVEL_EXPENSE_REPORT_SOURCE_TYPE } from "../evidence/travel-expense-report-store";
-import { ApprovalAuditLogger, createApprovalAuditLogger } from "../infrastructure/audit-logger";
+import {
+	ApprovalAuditLogger,
+	createApprovalReturnAuditLogger,
+} from "../infrastructure/audit-logger";
 import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
 import { processApprovalWithCurrentEmployee } from "./shared";
 import {
@@ -518,7 +521,7 @@ export async function executeTravelExpenseReportReturnInTransaction(
 			undefined,
 			"existing",
 		).pipe(
-			Effect.provideService(ApprovalAuditLogger, createApprovalAuditLogger(dbService)),
+			Effect.provideService(ApprovalAuditLogger, createApprovalReturnAuditLogger(dbService)),
 		) as Effect.Effect<unknown, AnyAppError, never>,
 	);
 	if (Exit.isFailure(exit)) throw failureOf(exit.cause);

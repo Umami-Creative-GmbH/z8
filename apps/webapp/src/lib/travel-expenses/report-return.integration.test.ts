@@ -861,4 +861,114 @@ describe("return, withdraw and resubmit reports (#603)", () => {
 		);
 		expect(rows.map((row) => row.id).sort()).toEqual(receipts.sort());
 	});
+
+	it("never shows a returned or withdrawn cycle as a rejection and keeps each cycle's own facts", async () => {
+		const { prepareTravelExpenseReportReviewEvidence } = await import(
+			"@/lib/approvals/presentation/travel-expense-report-review"
+		);
+		const reportId = await completeTrip();
+		expect((await submit(reportId)).success).toBe(true);
+		const returnedRequest = await pendingRequestId(reportId);
+		const [, hotel] = (await load(reportId)).items;
+		if (!hotel) throw new Error("item missing");
+		signIn("manager");
+		expect(
+			(
+				await returnReport(returnedRequest, "Hotel needs an itemized invoice", [
+					{ itemId: hotel.id, body: "Itemize it" },
+				])
+			).success,
+		).toBe(true);
+		await saveItem(reportId, (await load(reportId)).items[1] ?? hotel, {
+			category: "accommodation",
+			description: "Hotel, two nights (itemized)",
+			amount: "250.00",
+			paidBy: "company",
+		});
+		expect((await submit(reportId)).success).toBe(true);
+		const rejectedRequest = await pendingRequestId(reportId);
+		signIn("manager");
+		expect((await decide("reject", rejectedRequest, "Not a business trip")).status).toBe(200);
+
+		const withdrawnReport = await completeTrip();
+		expect((await submit(withdrawnReport)).success).toBe(true);
+		const withdrawnRequest = await pendingRequestId(withdrawnReport);
+		expect((await withdraw(withdrawnReport, 1)).success).toBe(true);
+
+		const run = <A>(effect: Effect.Effect<A, unknown, unknown>) =>
+			Effect.runPromise(
+				effect.pipe(Effect.provide(DatabaseServiceLive)) as Effect.Effect<A, unknown, never>,
+			);
+		// Only the real rejection is listed as rejected.
+		const rejected = await run(
+			TravelExpenseReportHandler.getApprovals({
+				approverId: ids.manager,
+				organizationId: "t603-org",
+				status: "rejected",
+				limit: 50,
+			}),
+		);
+		expect(rejected.map((item) => item.id)).toEqual([rejectedRequest]);
+
+		// The returned cycle's detail is a return, with the facts its reviewer saw.
+		const returnedDetail = await run(
+			TravelExpenseReportHandler.getDetail(reportId, "t603-org", { approvalId: returnedRequest }),
+		);
+		expect(returnedDetail.approval).toMatchObject({ status: "rejected", closedAs: "returned" });
+		expect(returnedDetail.timeline.map((event) => event.type)).toEqual(["created", "returned"]);
+		expect(returnedDetail.timeline[1]?.message).toContain("returned for changes");
+		expect(returnedDetail.approval.display.summary).toContain("company-paid EUR 240.00");
+		const rejectedDetail = await run(
+			TravelExpenseReportHandler.getDetail(reportId, "t603-org", { approvalId: rejectedRequest }),
+		);
+		expect(rejectedDetail.approval.closedAs).toBeUndefined();
+		expect(rejectedDetail.timeline.map((event) => event.type)).toEqual(["created", "rejected"]);
+		expect(rejectedDetail.approval.display.summary).toContain("company-paid EUR 250.00");
+		const withdrawnDetail = await run(
+			TravelExpenseReportHandler.getDetail(withdrawnReport, "t603-org", {
+				approvalId: withdrawnRequest,
+			}),
+		);
+		expect(withdrawnDetail.approval).toMatchObject({ closedAs: "withdrawn" });
+		expect(withdrawnDetail.timeline.map((event) => event.type)).toEqual(["created", "withdrawn"]);
+
+		// The review evidence of each request is its own cycle, with earlier return notes.
+		const cycleOne = await prepareTravelExpenseReportReviewEvidence({
+			organizationId: "t603-org",
+			reportId,
+			approvalRequestId: returnedRequest,
+		});
+		expect(cycleOne).toMatchObject({
+			status: "evidenced",
+			latestCycle: false,
+			revision: { submissionCycle: 1 },
+			comparison: { kind: "current" },
+		});
+		const cycleTwo = await prepareTravelExpenseReportReviewEvidence({
+			organizationId: "t603-org",
+			reportId,
+			approvalRequestId: rejectedRequest,
+		});
+		expect(cycleTwo).toMatchObject({
+			status: "evidenced",
+			latestCycle: true,
+			revision: { submissionCycle: 2 },
+			earlierCycles: [
+				{
+					submissionCycle: 1,
+					kind: "returned",
+					note: "Hotel needs an itemized invoice",
+					actorName: "manager",
+					itemComments: [{ itemId: hotel.id, itemLabel: "Hotel, two nights", body: "Itemize it" }],
+				},
+			],
+		});
+
+		// The audit log records the return as a return.
+		const { rows: audit } = await admin.query<{ action: string }>(
+			"select action from audit_log where entity_id = $1 order by timestamp",
+			[returnedRequest],
+		);
+		expect(audit.map((row) => row.action)).toEqual(["return"]);
+	});
 });

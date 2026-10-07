@@ -5,7 +5,7 @@
  * and optimize database queries.
  */
 
-import { and, count, desc, eq, inArray, lte, or } from "drizzle-orm";
+import { and, count, desc, eq, inArray, lte, or, type SQL } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { approvalRequest } from "@/db/schema";
@@ -49,6 +49,8 @@ interface ApprovalQueryConfig<TEntity, TRequestContext = never> {
 	 * Optional filter to apply after fetching entities
 	 */
 	filterEntity?: (entity: TEntity, params: ApprovalQueryParams) => boolean;
+	/** Type-specific request conditions added to the base query (e.g. status semantics). */
+	extraConditions?: SQL[];
 }
 
 /**
@@ -152,7 +154,10 @@ export function fetchApprovals<TEntity, TRequestContext = never>(
 		} = config;
 
 		// Build filter conditions
-		const conditions = buildBaseConditions(entityType, params);
+		const conditions = [
+			...buildBaseConditions(entityType, params),
+			...(config.extraConditions ?? []),
+		];
 
 		// Fetch approval requests
 		const requests = yield* dbService.query(
