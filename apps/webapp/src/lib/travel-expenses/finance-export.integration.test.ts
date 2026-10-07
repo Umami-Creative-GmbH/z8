@@ -619,6 +619,75 @@ describe("travel expense export batches (#613)", () => {
 		expect(await runWorker()).toEqual([{ status: "completed" }]);
 	});
 
+	it("lets a batch stuck in queued (lost job) be retried once it is stale, and a failing claim mark it failed", async () => {
+		const { instantFromDate } = await import("@/lib/datetime/temporal-core");
+		const reportId = await approve(await submittedReceipt());
+		const created = await createExport([await currentRevision(reportId)]);
+		if (created.status !== "created") throw new Error(created.status);
+		// The queue lost the job: nothing will ever claim attempt 1.
+		harness.jobs.length = 0;
+		const scope = { organizationId: "t613-org", batchId: created.batchId };
+		const { rows } = await admin.query<{ queued_at: Date }>(
+			"select queued_at from travel_expense_export_batch where id = $1",
+			[created.batchId],
+		);
+		const queued = rows[0]?.queued_at;
+		if (!queued) throw new Error("queued_at not recorded");
+		const queuedAt = instantFromDate(queued);
+		const minutesLater = (minutes: number) =>
+			queuedAt.add({ minutes: store.TRAVEL_EXPENSE_EXPORT_STALE_MINUTES + minutes });
+
+		// Freshly queued: not retryable yet, nothing changes.
+		signIn("finance");
+		expect(await exportActions.retryTravelExpenseExportAction(created.batchId)).toEqual({
+			success: true,
+			data: { status: "not_retryable" },
+		});
+		const stale = await store.listTravelExpenseExportBatches(
+			db,
+			{ organizationId: "t613-org" },
+			minutesLater(1),
+		);
+		expect(stale[0]).toMatchObject({ id: created.batchId, status: "queued", retryable: true });
+
+		const retried = await store.retryTravelExpenseExportBatch(db, scope, minutesLater(1));
+		expect(retried).toMatchObject({ status: "queued", batch: { attempt: 2, retryable: false } });
+		// The fresh attempt is not stale again right away: a double retry changes nothing.
+		expect(await store.retryTravelExpenseExportBatch(db, scope, minutesLater(2))).toMatchObject({
+			status: "not_retryable",
+			batch: { attempt: 2 },
+		});
+
+		// The claim of attempt 2 fails (here: the clock throws inside the claim):
+		// the attempt is recorded as failed and retryable instead of staying queued.
+		let calls = 0;
+		const failingClaimClock = () => {
+			calls += 1;
+			if (calls === 1) throw new Error("claim failed");
+			return minutesLater(3);
+		};
+		expect(
+			await processTravelExpenseExportBatch(db, { ...scope, attempt: 2 }, failingClaimClock),
+		).toEqual({ status: "failed", errorCode: "unexpected" });
+		expect(await batchRow(created.batchId)).toMatchObject({
+			status: "failed",
+			attempt: 2,
+			error_code: "unexpected",
+		});
+
+		signIn("finance");
+		expect(await exportActions.retryTravelExpenseExportAction(created.batchId)).toEqual({
+			success: true,
+			data: { status: "queued" },
+		});
+		// The lost attempt 1 job showing up late does nothing; attempt 3 completes.
+		expect(await processTravelExpenseExportBatch(db, { ...scope, attempt: 1 })).toEqual({
+			status: "skipped",
+		});
+		expect(await runWorker()).toEqual([{ status: "completed" }]);
+		expect(await batchRow(created.batchId)).toMatchObject({ status: "completed", attempt: 3 });
+	});
+
 	it("lets finance cancel an unfinished batch, releasing its revisions, but never a completed one", async () => {
 		const reportId = await approve(await submittedReceipt());
 		const selection = [await currentRevision(reportId)];

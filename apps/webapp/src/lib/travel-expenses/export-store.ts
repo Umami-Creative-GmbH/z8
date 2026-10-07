@@ -59,7 +59,10 @@ type BatchRow = typeof travelExpenseExportBatch.$inferSelect;
 
 /** Most revisions one batch may contain (the ZIP is assembled in memory). */
 export const TRAVEL_EXPENSE_EXPORT_MAX_REVISIONS = 100;
-/** A run that has been processing this long may be retried. */
+/**
+ * A run that has been processing this long, or an attempt whose job has not
+ * started for this long (a lost queue job, a failed claim), may be retried.
+ */
 export const TRAVEL_EXPENSE_EXPORT_STALE_MINUTES = 30;
 
 export interface TravelExpenseExportActor {
@@ -107,7 +110,7 @@ export interface TravelExpenseExportBatchView {
 	fileName: string | null;
 	sizeBytes: number | null;
 	checksumSha256: string | null;
-	/** Failed, or processing for longer than the stale limit. */
+	/** Failed, or queued or processing for longer than the stale limit. */
 	retryable: boolean;
 	/** Not yet completed nor cancelled. */
 	cancellable: boolean;
@@ -118,17 +121,24 @@ function instantText(value: Date | null): string | null {
 	return value ? instantToCanonicalString(instantFromDate(value)) : null;
 }
 
-function isStaleProcessing(row: BatchRow, now: Instant): boolean {
-	if (row.status !== "processing" || !row.startedAt) return false;
-	const started = instantFromDate(row.startedAt);
+function isStaleSince(since: Date, now: Instant): boolean {
 	return (
-		now.epochMilliseconds - started.epochMilliseconds >=
+		now.epochMilliseconds - instantFromDate(since).epochMilliseconds >=
 		TRAVEL_EXPENSE_EXPORT_STALE_MINUTES * 60_000
 	);
 }
 
+function isStaleProcessing(row: BatchRow, now: Instant): boolean {
+	return row.status === "processing" && row.startedAt !== null && isStaleSince(row.startedAt, now);
+}
+
+/** Queued, but its job never claimed it within the stale limit (lost job, failed claim). */
+function isStaleQueued(row: BatchRow, now: Instant): boolean {
+	return row.status === "queued" && isStaleSince(row.queuedAt ?? row.requestedAt, now);
+}
+
 function isRetryable(row: BatchRow, now: Instant): boolean {
-	return row.status === "failed" || isStaleProcessing(row, now);
+	return row.status === "failed" || isStaleProcessing(row, now) || isStaleQueued(row, now);
 }
 
 function batchReports(manifest: TravelExpenseExportManifest): TravelExpenseExportBatchReport[] {
@@ -393,6 +403,7 @@ export async function createTravelExpenseExportBatch(
 				requestedByEmployeeId: actor.employeeId,
 				requestedByUserId: actor.userId,
 				requestedAt: dateFromInstant(now),
+				queuedAt: dateFromInstant(now),
 			})
 			.onConflictDoNothing({
 				target: [travelExpenseExportBatch.organizationId, travelExpenseExportBatch.idempotencyKey],
@@ -499,9 +510,10 @@ export type RetryTravelExpenseExportBatchResult =
 	| { status: "not_found" };
 
 /**
- * Re-queues a failed (or stale processing) batch as its next attempt. The
- * batch, its manifest and its revisions stay the same; a double retry finds
- * the batch already queued and changes nothing.
+ * Re-queues a failed batch, or one stuck queued or processing beyond the
+ * stale limit, as its next attempt. The batch, its manifest and its revisions
+ * stay the same; a double retry finds the batch freshly queued and changes
+ * nothing. A late job of the superseded attempt is skipped at its claim.
  */
 export async function retryTravelExpenseExportBatch(
 	database: Database,
@@ -517,6 +529,7 @@ export async function retryTravelExpenseExportBatch(
 				.set({
 					status: "queued",
 					attempt: row.attempt + 1,
+					queuedAt: dateFromInstant(now),
 					startedAt: null,
 					failedAt: null,
 					errorCode: null,
