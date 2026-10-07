@@ -18,6 +18,10 @@ import {
 	createZ8SCIMPlugin,
 } from "./auth-configuration";
 import { guardSCIMSubjectAcquisitions } from "./projection-guards";
+import {
+	createSCIMProjectionReplayLoader,
+	isSCIMProjectionSubjectConflict,
+} from "./projection-replay-api";
 
 const runId = randomUUID();
 const seededOrganizationIds: string[] = [];
@@ -360,8 +364,11 @@ describe("SCIM projected-user callback PostgreSQL atomicity", () => {
 		]);
 	});
 
-	it("serializes concurrent projection replays before the downstream outbox check", async () => {
-		const graph = await seedGraph({ templateActive: true });
+	/** Starts two replays that both block on the subject row, then releases it. */
+	async function raceReplaysOnSubjectLock(
+		graph: SeededGraph,
+		start: () => Promise<unknown>,
+	) {
 		let lockClient: PoolClient | undefined;
 		let lockReleased = false;
 		const attempts: Promise<unknown>[] = [];
@@ -373,20 +380,12 @@ describe("SCIM projected-user callback PostgreSQL atomicity", () => {
 				[graph.userId],
 			);
 
-			attempts.push(replay(graph.organizationId), replay(graph.organizationId));
+			attempts.push(start(), start());
 			await waitForSubjectCASBlockers();
 			await lockClient.query("commit");
 			lockReleased = true;
 
-			const results = await Promise.allSettled(attempts);
-			expect(
-				results.filter((result) => result.status === "fulfilled"),
-			).toHaveLength(2);
-
-			await expect(replay(graph.organizationId)).resolves.toMatchObject({
-				provisioningDomainId: graph.organizationId,
-				reconciledUsers: 1,
-			});
+			return await Promise.allSettled(attempts);
 		} finally {
 			if (lockClient) {
 				try {
@@ -397,10 +396,49 @@ describe("SCIM projected-user callback PostgreSQL atomicity", () => {
 			}
 			await Promise.allSettled(attempts);
 		}
+	}
+
+	it("rejects exactly one raw API replay that loses the subject revision race", async () => {
+		const graph = await seedGraph({ templateActive: true });
+
+		const results = await raceReplaysOnSubjectLock(graph, () =>
+			replay(graph.organizationId),
+		);
+
+		const rejections = results.flatMap((result) =>
+			result.status === "rejected" ? [result.reason] : [],
+		);
+		expect(rejections).toHaveLength(1);
+		expect(isSCIMProjectionSubjectConflict(rejections[0])).toBe(true);
+		expect(await subjectRevision(graph)).toEqual([{ revision: 1 }]);
+	});
+
+	it("serializes concurrent projection replays before the downstream outbox check", async () => {
+		const graph = await seedGraph({ templateActive: true });
+		let reconcileCalls = 0;
+		const replayer = await createSCIMProjectionReplayLoader({
+			reconcileSCIMProjection: (input) => {
+				reconcileCalls += 1;
+				return auth.api.reconcileSCIMProjection(input);
+			},
+		})();
+
+		const results = await raceReplaysOnSubjectLock(graph, () =>
+			replayer(graph.organizationId),
+		);
+		expect(results).toEqual([
+			{ status: "fulfilled", value: undefined },
+			{ status: "fulfilled", value: undefined },
+		]);
+		// The replay that lost the compare-and-set was retried once.
+		expect(reconcileCalls).toBe(3);
+
+		await expect(replayer(graph.organizationId)).resolves.toBeUndefined();
 
 		expect(await lifecycleMembershipRevision(graph)).toEqual([
 			{ membership_revision: 1 },
 		]);
+		// One increment per successful call: both racers and the follow-up replay.
 		expect(await subjectRevision(graph)).toEqual([{ revision: 3 }]);
 		expect(await counts(graph)).toMatchObject({
 			team_permission: 1,
