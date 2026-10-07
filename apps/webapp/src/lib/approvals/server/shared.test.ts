@@ -1,7 +1,9 @@
 import { Cause, Context, Effect, Exit, Option, Result } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApprovalActionOptions } from "@/lib/approvals/domain/types";
+import type { ApprovalEntityType } from "@/lib/approvals/server/types";
 import {
+	AuthorizationError,
 	ConflictError,
 	DatabaseError,
 	NotFoundError,
@@ -99,11 +101,12 @@ function collectColumnNames(value: unknown): string[] {
 function createSharedApprovalTestContext(
 	action: "approve" | "reject" = "approve",
 	options?: ApprovalActionOptions,
+	entityType: ApprovalEntityType = "travel_expense_claim",
 ) {
 	const approvalFindFirst = vi.fn().mockResolvedValue({
 		id: "approval-1",
 		entityId: "claim-1",
-		entityType: "travel_expense_claim",
+		entityType,
 		approverId: "employee-1",
 		organizationId: "org-1",
 		status: "pending",
@@ -166,7 +169,7 @@ function createSharedApprovalTestContext(
 		processApprovalWithCurrentEmployee(
 			dbService,
 			currentEmployee,
-			"travel_expense_claim",
+			entityType,
 			"claim-1",
 			action,
 			action === "reject" ? "missing details" : undefined,
@@ -184,12 +187,99 @@ function createSharedApprovalTestContext(
 	return {
 		approvalFindFirst,
 		dbService,
+		log,
 		returning,
 		updateEntity,
 		run,
 		runExit,
 	};
 }
+
+describe("self-decision refusal (#697)", () => {
+	const authorities = [
+		{ authority: "assigned approver", options: undefined },
+		{
+			authority: "eligible manager",
+			options: { approvalRequestId: "approval-1", allowAnyApprover: true },
+		},
+		{
+			authority: "manage Approval",
+			options: { approvalRequestId: "approval-1", allowOrganizationWideApprover: true },
+		},
+	] as const;
+	const cases = (
+		["absence_entry", "time_entry", "travel_expense_claim"] as const
+	).flatMap((entityType) =>
+		(["approve", "reject"] as const).flatMap((action) =>
+			authorities.map(({ authority, options }) => ({
+				entityType,
+				action,
+				authority,
+				options,
+			})),
+		),
+	);
+
+	it.each(cases)(
+		"refuses to $action one's own $entityType as $authority",
+		async ({ entityType, action, options }) => {
+			managerEligibilityMocks.isEligibleManagerForApprovalRequest.mockResolvedValue(true);
+			const { approvalFindFirst, log, returning, runExit, updateEntity } =
+				createSharedApprovalTestContext(
+					action,
+					options ? { ...options, transactional: true } : undefined,
+					entityType,
+				);
+			approvalFindFirst.mockResolvedValueOnce({
+				id: "approval-1",
+				entityId: "claim-1",
+				entityType,
+				approverId: options ? "assigned-employee-1" : "employee-1",
+				organizationId: "org-1",
+				requestedBy: "employee-1",
+				status: "pending",
+			});
+
+			const exit = await runExit(undefined, "existing");
+
+			expect(Exit.isFailure(exit)).toBe(true);
+			if (Exit.isFailure(exit)) {
+				const error = Option.getOrNull(Cause.findErrorOption(exit.cause));
+				expect(error).toBeInstanceOf(AuthorizationError);
+				expect((error as AuthorizationError).message).toBe(
+					"You cannot decide your own request",
+				);
+			}
+			expect(returning).not.toHaveBeenCalled();
+			expect(updateEntity).not.toHaveBeenCalled();
+			expect(log).not.toHaveBeenCalled();
+			expect(chainServiceMocks.progressApprovalChainIfLinked).not.toHaveBeenCalled();
+		},
+	);
+
+	it.each(authorities)(
+		"still lets a $authority decide another employee's request",
+		async ({ options }) => {
+			managerEligibilityMocks.isEligibleManagerForApprovalRequest.mockResolvedValue(true);
+			const { approvalFindFirst, run, updateEntity } = createSharedApprovalTestContext(
+				"approve",
+				options ? { ...options, transactional: true } : undefined,
+			);
+			approvalFindFirst.mockResolvedValueOnce({
+				id: "approval-1",
+				entityId: "claim-1",
+				entityType: "travel_expense_claim",
+				approverId: options ? "assigned-employee-1" : "employee-1",
+				organizationId: "org-1",
+				requestedBy: "requester-1",
+				status: "pending",
+			});
+
+			await expect(run(undefined, "existing")).resolves.toBeUndefined();
+			expect(updateEntity).toHaveBeenCalledOnce();
+		},
+	);
+});
 
 describe("getApprovalStatusUpdate", () => {
 	it.each([
