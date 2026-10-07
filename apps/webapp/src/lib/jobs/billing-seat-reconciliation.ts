@@ -1,12 +1,8 @@
-import { Effect, Layer } from "effect";
+import { Effect } from "effect";
 import { db } from "@/db";
 import { env } from "@/env";
-import {
-	SeatSyncService,
-	SeatSyncServiceLive,
-	StripeServiceLive,
-	SubscriptionServiceLive,
-} from "@/lib/effect/services/billing";
+import { runtime } from "@/lib/effect/runtime";
+import { BillingServicesLive, SeatSyncService } from "@/lib/effect/services/billing";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("BillingSeatReconciliation");
@@ -35,21 +31,17 @@ export async function runBillingSeatReconciliation(): Promise<BillingSeatReconci
 	const subscriptions = await db.query.subscription.findMany({
 		columns: { organizationId: true },
 	});
-	const layers = SeatSyncServiceLive.pipe(
-		Layer.provide(StripeServiceLive),
-		Layer.provide(SubscriptionServiceLive),
-	);
 	const errors: BillingSeatReconciliationResult["errors"] = [];
 
 	const syncResults = await Promise.all(
 		subscriptions.map(async (item) => {
-		try {
-			await Effect.runPromise(
-				Effect.gen(function* () {
-					const seatSyncService = yield* SeatSyncService;
+			try {
+				await runtime.runPromise(
+					Effect.gen(function* () {
+						const seatSyncService = yield* SeatSyncService;
 
 					return yield* seatSyncService.syncSeatsForOrganization(item.organizationId);
-				}).pipe(Effect.provide(layers)),
+				}).pipe(Effect.provide(BillingServicesLive)),
 			);
 			return { synced: true as const };
 		} catch (error) {

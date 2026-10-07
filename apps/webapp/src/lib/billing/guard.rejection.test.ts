@@ -10,6 +10,11 @@ vi.mock("@/env", () => ({ env: mockState.env }));
 vi.mock("@/lib/effect/services/billing/billing-configuration", () => ({
 	provisionLocalTrial: mockState.provisionLocalTrial,
 }));
+vi.mock("@/lib/effect/runtime", async () =>
+	(await import("@/test/effect-runtime")).runtimeModuleOver(
+		(await import("@/lib/effect/services/database.service")).DatabaseServiceLive,
+	),
+);
 
 const { requireBillingForMutation } = await import("./guard");
 
@@ -26,8 +31,9 @@ describe("requireBillingForMutation rejection", () => {
 		await expect(rejection).rejects.toBeInstanceOf(DatabaseError);
 		await expect(rejection).rejects.toMatchObject({
 			_tag: "DatabaseError",
-			message: "Failed to check billing access",
-			operation: "checkBillingAccess",
+			message: "Database query failed: billing.checkAccess",
+			operation: "billing.checkAccess",
+			cause: expect.objectContaining({ message: "connection refused" }),
 		});
 	});
 });

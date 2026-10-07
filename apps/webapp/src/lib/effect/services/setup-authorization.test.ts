@@ -1,5 +1,6 @@
-import { Effect, Exit } from "effect";
+import { Effect, Exit, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 
 const mocks = vi.hoisted(() => ({
 	transaction: vi.fn(),
@@ -42,7 +43,7 @@ const run = (token?: string) =>
 		Effect.gen(function* () {
 			const service = yield* SetupService;
 			return yield* service.createPlatformAdmin(input, token);
-		}).pipe(Effect.provide(SetupServiceLive)),
+		}).pipe(Effect.provide(SetupServiceLive.pipe(Layer.provide(DatabaseServiceLive)))),
 	);
 
 describe("platform admin setup authorization", () => {

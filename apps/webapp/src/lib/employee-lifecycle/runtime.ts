@@ -4,17 +4,12 @@
  * (`src/worker-preload.mjs`). Free of Next.js request APIs at call time.
  */
 import { and, eq } from "drizzle-orm";
-import { Effect, Layer } from "effect";
+import { Effect } from "effect";
 import { db } from "@/db";
 import { type DepartureTaskKind, employeeDeparture } from "@/db/schema/employee-lifecycle";
 import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
 import { type Instant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
-import {
-	SeatSyncService,
-	SeatSyncServiceLive,
-	StripeServiceLive,
-	SubscriptionServiceLive,
-} from "@/lib/effect/services/billing";
+import { runtime } from "@/lib/effect/runtime";
 import {
 	deliverNotificationToChannel,
 	insertInAppNotification,
@@ -65,18 +60,17 @@ export function createProductionDepartureTaskHandlers(options: {
 	return {
 		dispatch_departure: createDispatchDepartureHandler(options.scheduleDepartureJob),
 		billing_sync: async (claim) => {
-			await Effect.runPromise(
+			// Billing loads on first use, outside the web bundles that import this module.
+			// No BILLING_ENABLED gate: like the seat reconciliation job, the local seat count
+			// is recomputed while billing is disabled; the seat sync then skips Stripe.
+			const { BillingServicesLive, SeatSyncService } = await import(
+				"@/lib/effect/services/billing"
+			);
+			await runtime.runPromise(
 				Effect.gen(function* () {
 					const seatSyncService = yield* SeatSyncService;
 					return yield* seatSyncService.syncSeatsForOrganization(claim.organizationId);
-				}).pipe(
-					Effect.provide(
-						SeatSyncServiceLive.pipe(
-							Layer.provide(StripeServiceLive),
-							Layer.provide(SubscriptionServiceLive),
-						),
-					),
-				),
+				}).pipe(Effect.provide(BillingServicesLive)),
 			);
 		},
 		session_revocation: createSessionRevocationHandler((token) =>

@@ -13,7 +13,7 @@
  * in its own protected transaction, never under a shared guard.
  */
 import { and, eq, inArray, type SQL } from "drizzle-orm";
-import { db } from "@/db";
+import type { db } from "@/db";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import { dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
@@ -26,6 +26,8 @@ import { countBillableSeats } from "./billable-seat-count";
 import { type BillingAccessResult, evaluateBillingAccess } from "./billing-access";
 
 type SubscriptionRow = typeof subscription.$inferSelect;
+/** The client of the caller's `DatabaseService`: the global database or a transaction. */
+type BillingDatabase = Pick<typeof db, "query" | "transaction">;
 /** The subscription rows of one Stripe subscription within the protected organizations. */
 type ProtectedSubscriptionScope = SQL | undefined;
 
@@ -57,10 +59,11 @@ export async function readBillingAccessInTransaction(
 
 /** A billing mutation for a known organization, under exclusive configuration protection. */
 export function withOrganizationBillingMutation<T>(
+	database: BillingDatabase,
 	organizationId: string,
 	mutate: (transaction: Transaction) => Promise<T>,
 ): Promise<T> {
-	return withOrganizationConfigurationMutation(db, organizationId, mutate);
+	return withOrganizationConfigurationMutation(database, organizationId, mutate);
 }
 
 /**
@@ -69,6 +72,7 @@ export function withOrganizationBillingMutation<T>(
  * to them. Ownership that moves while waiting restarts the attempt.
  */
 export async function withStripeSubscriptionMutation<T>(
+	database: BillingDatabase,
 	stripeSubscriptionId: string,
 	mutate: (transaction: Transaction, scope: ProtectedSubscriptionScope) => Promise<T>,
 ): Promise<T | undefined> {
@@ -82,7 +86,7 @@ export async function withStripeSubscriptionMutation<T>(
 			.map(({ organizationId }) => organizationId)
 			.sort();
 	for (let attempt = 0; attempt < OWNERSHIP_ATTEMPTS; attempt += 1) {
-		const outcome = await db.transaction(async (transaction) => {
+		const outcome = await database.transaction(async (transaction) => {
 			const organizationIds = await owners(transaction);
 			// No local subscription: the update would match nothing, as before.
 			if (organizationIds.length === 0) return { done: true as const, value: undefined };
@@ -111,15 +115,16 @@ export async function withStripeSubscriptionMutation<T>(
  * inside a work transaction.
  */
 export async function provisionLocalTrial(
+	database: BillingDatabase,
 	organizationId: string,
 	now: Date = new Date(),
 ): Promise<SubscriptionRow> {
-	const existing = await db.query.subscription.findFirst({
+	const existing = await database.query.subscription.findFirst({
 		where: eq(subscription.organizationId, organizationId),
 	});
 	if (existing) return existing;
 
-	return withOrganizationBillingMutation(organizationId, async (transaction) => {
+	return withOrganizationBillingMutation(database, organizationId, async (transaction) => {
 		// Exact UTC days: elapsed hours, independent of any zone's DST.
 		const trialEnd = dateFromInstant(instantFromDate(now).add({ hours: TRIAL_DAYS * 24 }));
 		const currentSeats = await countBillableSeats(transaction, organizationId);

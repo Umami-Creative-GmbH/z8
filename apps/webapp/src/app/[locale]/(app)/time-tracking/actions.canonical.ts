@@ -1,14 +1,9 @@
 import { Effect, Layer } from "effect";
-import { db } from "@/db";
-import { DatabaseError } from "@/lib/effect/errors";
-import {
-	DatabaseService,
-	DatabaseServiceLive,
-} from "@/lib/effect/services/database.service";
-import {
-	TimeEntryService,
-	TimeEntryServiceLive,
-} from "@/lib/effect/services/time-entry.service";
+import type { db } from "@/db";
+
+import { runtime } from "@/lib/effect/runtime";
+import { DatabaseService, makeDatabaseService } from "@/lib/effect/services/database.service";
+import { TimeEntryService, TimeEntryServiceLive } from "@/lib/effect/services/time-entry.service";
 import type { TimeEntryTimezoneSource } from "@/lib/time-tracking/timezone-capture";
 
 type Transaction = Pick<
@@ -19,28 +14,27 @@ type Transaction = Pick<
 function transactionDatabaseLayer(transaction: Transaction) {
 	return Layer.succeed(
 		DatabaseService,
-		DatabaseService.of({
-			db: transaction as unknown as typeof db,
-			query: (name, fn) =>
-				Effect.tryPromise({
-					try: fn,
-					catch: (error) =>
-						new DatabaseError({
-							message: `Database query failed: ${name}`,
-							operation: name,
-							cause: error,
-						}),
-				}),
-		}),
+		DatabaseService.of(makeDatabaseService(transaction as typeof db)),
 	);
 }
 
-// TimeEntryServiceLive is also in the v4 AppLayer. Callers build it locally so it
-// always binds to this call's database layer, never to one shared for global db.
-function timeEntryDatabaseLayer(transaction?: Transaction) {
-	return transaction
-		? transactionDatabaseLayer(transaction)
-		: DatabaseServiceLive;
+/**
+ * Runs a TimeEntryService effect. Without a transaction it runs on the shared runtime,
+ * whose AppLayer already holds the service over the global database. Inside a
+ * transaction it builds TimeEntryServiceLive locally against that transaction, so the
+ * service never binds to the runtime's shared instance.
+ */
+function runTimeEntryEffect<A, E>(
+	effect: Effect.Effect<A, E, TimeEntryService>,
+	transaction?: Transaction,
+): Promise<A> {
+	if (!transaction) return runtime.runPromise(effect);
+	return Effect.runPromise(
+		effect.pipe(
+			Effect.provide(TimeEntryServiceLive, { local: true }),
+			Effect.provide(transactionDatabaseLayer(transaction)),
+		),
+	);
 }
 
 export const canonicalTimeEntryClient = {
@@ -63,12 +57,9 @@ export const canonicalTimeEntryClient = {
 		const effect = Effect.gen(function* () {
 			const service = yield* TimeEntryService;
 			return yield* service.createTimeEntry(input);
-		}).pipe(
-			Effect.provide(TimeEntryServiceLive, { local: true }),
-			Effect.provide(timeEntryDatabaseLayer(transaction)),
-		);
+		});
 
-		return Effect.runPromise(effect);
+		return runTimeEntryEffect(effect, transaction);
 	},
 	createCorrectionEntry: async (
 		input: {
@@ -89,14 +80,9 @@ export const canonicalTimeEntryClient = {
 	) => {
 		const effect = Effect.gen(function* () {
 			const service = yield* TimeEntryService;
-			return yield* service.createCorrectionEntry(
-				transaction ? { ...input, transaction } : input,
-			);
-		}).pipe(
-			Effect.provide(TimeEntryServiceLive, { local: true }),
-			Effect.provide(timeEntryDatabaseLayer(transaction)),
-		);
+			return yield* service.createCorrectionEntry(transaction ? { ...input, transaction } : input);
+		});
 
-		return Effect.runPromise(effect);
+		return runTimeEntryEffect(effect, transaction);
 	},
 };

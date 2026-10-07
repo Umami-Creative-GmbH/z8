@@ -17,7 +17,12 @@
  */
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import {
+	type Instant,
+	instantFromDate,
+	instantToCanonicalString,
+	parseInstant,
+} from "@/lib/datetime/temporal-core";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -118,9 +123,7 @@ const { approveApprovalInboxItem, rejectApprovalInboxItem } = await import(
 	"@/lib/approvals/inbox/decision-service"
 );
 const { cancelMyTimeCorrectionRequest } = await import("../../my-requests/actions");
-const { runBreakEnforcementCheck } = await import(
-	"@/lib/effect/services/break-enforcement.service"
-);
+const { runBreakEnforcementCheck } = await import("@/lib/jobs/break-enforcement");
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
 const { deriveAutomaticBreakIntentId, deriveAutomaticBreakOperationId } = await import(
 	"@/lib/time-tracking/automatic-break-adjustment"
@@ -864,7 +867,8 @@ describe("automatic break adjustment on PostgreSQL", () => {
 		expect(receipt.result.deferral).toEqual({
 			blocker: "pending_time_correction_approval",
 			observedGraphRevision: deferred.observed_graph_revision,
-			deferredAt: deferred.deferred_at?.toISOString().replace(".000Z", "Z"),
+			deferredAt:
+				deferred.deferred_at && instantToCanonicalString(instantFromDate(deferred.deferred_at)),
 		});
 		expect(await intents()).toEqual([]);
 	});

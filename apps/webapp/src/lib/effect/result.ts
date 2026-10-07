@@ -1,7 +1,8 @@
-import { Cause, type Effect, Exit, Option, Result } from "effect";
+import { type Effect, Exit, type Layer } from "effect";
 import { env } from "@/env";
+import { failureOfCause, isInterruptOnly } from "./cause-failure";
 import type { AnyAppError } from "./errors";
-import { runtime } from "./runtime";
+import { type AppLayer, runtime } from "./runtime";
 
 export type ServerActionResult<T> =
 	| { success: true; data: T }
@@ -10,12 +11,9 @@ export type ServerActionResult<T> =
 export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): ServerActionResult<T> {
 	return Exit.match(exit, {
 		onFailure: (cause) => {
-			// Extract defect or failure from cause
-			const defectResult = Cause.findDefect(cause);
-			const defect = Result.isSuccess(defectResult) ? (defectResult.success ?? null) : null;
-			const failure = Option.getOrNull(Cause.findErrorOption(cause));
-
-			const error = defect ?? failure ?? cause;
+			// Without a typed failure or defect (interrupt-only), keep the cause so the
+			// client gets the generic message instead of Cause.squash's internal one.
+			const error = isInterruptOnly(cause) ? cause : failureOfCause(cause);
 			const taggedError =
 				error && typeof error === "object" && "_tag" in error ? (error as AnyAppError) : null;
 			const isBuildPhase = env.NEXT_PHASE === "phase-production-build";
@@ -66,11 +64,12 @@ export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): Server
 	});
 }
 
+/** The services the shared runtime provides: every `AppLayer` member. */
+export type AppServices = Layer.Success<typeof AppLayer>;
+
 export async function runServerActionSafe<T>(
-	// biome-ignore lint/suspicious/noExplicitAny: it is what it is
-	effect: Effect.Effect<T, AnyAppError, any>,
+	effect: Effect.Effect<T, AnyAppError, AppServices>,
 ): Promise<ServerActionResult<T>> {
-	// Use the runtime which provides all required layers
 	const exit = await runtime.runPromiseExit(effect);
 	return toServerActionResult(exit);
 }

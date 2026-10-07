@@ -3,7 +3,6 @@
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import {
 	type PaginatedResult,
 	PlatformAdminService,
@@ -24,7 +23,7 @@ export async function listOrganizationsAction(
 
 		// List organizations
 		return yield* adminService.listOrganizations(filters, { page, pageSize });
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -43,7 +42,7 @@ export async function suspendOrganizationAction(
 		yield* adminService.suspendOrganization(organizationId, reason, admin.userId);
 
 		revalidatePath("/platform-admin/organizations");
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -61,7 +60,7 @@ export async function unsuspendOrganizationAction(
 		yield* adminService.unsuspendOrganization(organizationId, admin.userId);
 
 		revalidatePath("/platform-admin/organizations");
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -86,7 +85,7 @@ export async function deleteOrganizationAction(
 		);
 
 		revalidatePath("/platform-admin/organizations");
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

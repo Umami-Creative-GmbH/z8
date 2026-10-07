@@ -26,6 +26,12 @@ vi.mock("@/lib/time-tracking/automatic-clock-out/settings", () => ({
 	saveAutoClockOutSettings: mocks.save,
 }));
 
+// The shared runtime over the real DatabaseServiceLive, which reads the mocked db.
+vi.mock("@/lib/effect/runtime", async () => {
+	const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(DatabaseServiceLive);
+});
+
 import { updateAutoClockOutSettings } from "./auto-clock-out-actions";
 
 const input = {
@@ -139,7 +145,8 @@ describe("updateAutoClockOutSettings", () => {
 		mocks.save.mockRejectedValue(new Error("secret connection string"));
 		expect(await updateAutoClockOutSettings(input)).toMatchObject({
 			success: false,
-			error: "Failed to update automatic clock-out settings",
+			error: "Database query failed: autoClockOut.saveSettings",
+			code: "DatabaseError",
 		});
 	});
 });

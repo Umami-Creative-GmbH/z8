@@ -58,8 +58,8 @@ vi.mock("@/lib/effect/runtime", async () => {
 	const { DatabaseService } = await import("@/lib/effect/services/database.service");
 	const { CustomRoleService } = await import("@/lib/effect/services/custom-role.service");
 
-	return {
-		AppLayer: Layer.mergeAll(
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(
+		Layer.mergeAll(
 			Layer.succeed(AuthService, {
 				getSession: () => Effect.succeed(mockState.session),
 			}),
@@ -87,10 +87,11 @@ vi.mock("@/lib/effect/runtime", async () => {
 				getEmployeeRoles: vi.fn(),
 			}),
 		),
-	};
+	);
 });
 
 vi.mock("@/lib/effect/result", async () => {
+	const { runtime } = await import("@/lib/effect/runtime");
 	const { Cause, Effect, Exit, Option, Result } = await import("effect");
 
 	const toServerActionResult = <_T>(exit: unknown) =>
@@ -119,7 +120,7 @@ vi.mock("@/lib/effect/result", async () => {
 
 	return {
 		runServerActionSafe: async <T>(effect: Parameters<typeof Effect.runPromiseExit<T>>[0]) => {
-			const exit = await Effect.runPromiseExit(effect);
+			const exit = await runtime.runPromiseExit(effect);
 			return toServerActionResult(exit);
 		},
 	};

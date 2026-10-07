@@ -203,6 +203,8 @@ export async function ingestReferenceRateDays(
 			.from(travelExpenseReferenceRateProviderState)
 			.where(eq(travelExpenseReferenceRateProviderState.provider, provider))
 			.for("update");
+		// Read only once the provider state lock above serializes ingest runs.
+		// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
 		const [stored] = await tx
 			.select({
 				latest: sql<
@@ -243,6 +245,8 @@ export async function ingestReferenceRateDays(
 			} else if (existing.contentSha256 === contentSha256) {
 				unchanged += 1;
 			} else {
+				// A correction supersedes the current row before its next version is inserted.
+				// react-doctor-disable-next-line react-doctor/async-await-in-loop
 				await tx
 					.update(travelExpenseReferenceRatePublication)
 					.set({ supersededAt: at })
@@ -254,6 +258,8 @@ export async function ingestReferenceRateDays(
 			}
 		}
 		for (let index = 0; index < fresh.length; index += INSERT_CHUNK) {
+			// Chunked on purpose: it bounds statement size, in the ingest transaction.
+			// react-doctor-disable-next-line react-doctor/async-await-in-loop
 			await tx
 				.insert(travelExpenseReferenceRatePublication)
 				.values(fresh.slice(index, index + INSERT_CHUNK));

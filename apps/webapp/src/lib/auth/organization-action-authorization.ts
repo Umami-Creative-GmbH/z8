@@ -4,10 +4,8 @@ import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { getRequestSession } from "@/lib/auth/request-session";
 import { AuthorizationError } from "@/lib/effect/errors";
-import {
-	DatabaseService,
-	DatabaseServiceLive,
-} from "@/lib/effect/services/database.service";
+import { runtime } from "@/lib/effect/runtime";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
 import { hasOrganizationRole } from "./organization-role";
 
@@ -86,9 +84,5 @@ export function requireActiveOrganizationActionActor(input: {
 export function runActiveOrganizationActionActorCheck(
 	input: Parameters<typeof requireActiveOrganizationActionActor>[0],
 ) {
-	return Effect.runPromise(
-		requireActiveOrganizationActionActor(input).pipe(
-			Effect.provide(DatabaseServiceLive),
-		),
-	);
+	return runtime.runPromise(requireActiveOrganizationActionActor(input));
 }

@@ -38,21 +38,26 @@ vi.mock("@/lib/cron/reconciliation", () => ({
 vi.mock("@/lib/effect/runtime", async () => {
 	const { Layer } = await import("effect");
 	const { PlatformAdminService } = await import("@/lib/effect/services/platform-admin.service");
+	const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
 
-	return {
-		AppLayer: Layer.succeed(PlatformAdminService, {
-			logAction: mocks.logAction,
-			requirePlatformAdmin: mocks.requirePlatformAdmin,
-		} as never),
-	};
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(
+		Layer.merge(
+			Layer.succeed(PlatformAdminService, {
+				logAction: mocks.logAction,
+				requirePlatformAdmin: mocks.requirePlatformAdmin,
+			} as never),
+			DatabaseServiceLive,
+		),
+	);
 });
 
 vi.mock("@/lib/effect/result", async () => {
-	const { Cause, Effect, Exit, Option, Result } = await import("effect");
+	const { runtime } = await import("@/lib/effect/runtime");
+	const { Cause, Exit, Option, Result } = await import("effect");
 
 	return {
 		runServerActionSafe: async <T, E, R>(effect: Effect.Effect<T, E, R>) => {
-			const exit = await Effect.runPromiseExit(effect as Effect.Effect<T, E, never>);
+			const exit = await runtime.runPromiseExit(effect as Effect.Effect<T, E, never>);
 
 			return Exit.match(exit, {
 				onFailure: (cause) => {
@@ -269,6 +274,23 @@ describe("getWorkerQueueStats", () => {
 			throw new Error(result.error);
 		}
 		expect(result.data.isPaused).toBeNull();
+	});
+
+	it("reports a failed job-count read as a queue failure", async () => {
+		mocks.isQueueHealthy.mockResolvedValue(true);
+		mocks.getJobQueue.mockReturnValue({
+			getJobCounts: vi.fn().mockRejectedValue(new Error("Redis unavailable")),
+			getJobSchedulers: vi.fn().mockResolvedValue([]),
+			isPaused: vi.fn().mockResolvedValue(false),
+		});
+
+		const result = await getWorkerQueueStats();
+
+		expect(result).toEqual({
+			success: false,
+			error: "Failed to fetch job counts",
+			code: "QueueError",
+		});
 	});
 });
 

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, isNull, or } from "drizzle-orm";
-import { Cause, Effect, Exit, Option, Result } from "effect";
+import { Effect, Exit } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { getUserTimezone } from "@/app/[locale]/(app)/time-tracking/actions/auth";
@@ -8,7 +8,6 @@ import { logger } from "@/app/[locale]/(app)/time-tracking/actions/shared";
 import { db } from "@/db";
 import { employee, timeEntry, workPeriod } from "@/db/schema";
 import {
-	createTransactionalApprovalDbService,
 	dispatchCommittedTimeCorrectionSubmission,
 	getForbiddenCorrectionEditMessage,
 	submitCorrection,
@@ -21,6 +20,7 @@ import {
 	instantToCanonicalString,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import { failureOfCause } from "@/lib/effect/cause-failure";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -28,6 +28,7 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import { runtime } from "@/lib/effect/runtime";
+import { makeDatabaseService } from "@/lib/effect/services/database.service";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import {
 	AMEND_COMPLETED_WORK_COMMAND_VERSION,
@@ -85,12 +86,7 @@ function getOrThrowExit<A, E>(exit: Exit.Exit<A, E>): A {
 	if (Exit.isSuccess(exit)) {
 		return exit.value;
 	}
-	const failure = Cause.findErrorOption(exit.cause);
-	if (Option.isSome(failure)) {
-		throw failure.value;
-	}
-	const defect = Cause.findDefect(exit.cause);
-	throw Result.isSuccess(defect) ? defect.success : Cause.squash(exit.cause);
+	throw failureOfCause(exit.cause);
 }
 
 async function markWorkBalanceDirtyAfterDirectCorrectionBestEffort(input: {
@@ -418,7 +414,7 @@ export async function POST(request: NextRequest) {
 				return NextResponse.json({ error: forbiddenMessage }, { status: 403 });
 			}
 			const approvalResult = await submitCorrection({
-				dbService: createTransactionalApprovalDbService(db),
+				dbService: makeDatabaseService(db),
 				organizationId: activeOrgId,
 				employeeId: currentEmployee.id,
 				userId: session.user.id,

@@ -26,7 +26,6 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { markOrganizationWorkBalancesDirty } from "@/lib/work-balance/service";
@@ -230,7 +229,7 @@ export async function getWorkPolicies(
 		});
 
 		return policies as WorkPolicyWithDetails[];
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -274,7 +273,7 @@ export async function getWorkPolicy(
 		});
 
 		return policy as WorkPolicyWithDetails;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -485,7 +484,7 @@ export async function createWorkPolicy(
 		yield* Effect.promise(() => markOrganizationWorkBalancesDirty({ organizationId }));
 
 		return completePolicy as WorkPolicyWithDetails;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -745,7 +744,7 @@ export async function updateWorkPolicy(
 		}
 
 		return updatedPolicy as WorkPolicyWithDetails;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -809,7 +808,7 @@ export async function deleteWorkPolicy(policyId: string): Promise<ServerActionRe
 		);
 
 		return undefined;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -870,7 +869,7 @@ export async function getWorkPolicyAssignments(
 			typedAssignments.filter((assignment) => assignment.assignmentType === "employee"),
 			managedEmployeeIds,
 		) as WorkPolicyAssignmentWithDetails[];
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -982,7 +981,7 @@ export async function createWorkPolicyAssignment(
 		);
 
 		return { id: assignment.id };
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1049,7 +1048,7 @@ export async function deleteWorkPolicyAssignment(
 		yield* Effect.promise(() =>
 			markOrganizationWorkBalancesDirty({ organizationId: assignment.organizationId }),
 		);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1272,7 +1271,7 @@ export async function getWorkPolicyPresets(
 			source: preset.organizationId ? "custom" : "system",
 			sourceLabel: preset.organizationId ? "Custom" : "System",
 		})) satisfies WorkPolicyPresetWithSource[];
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1337,7 +1336,7 @@ export async function getWorkPolicyViolations(
 					}
 				: null,
 		})) satisfies WorkPolicyViolationWithDetails[];
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1384,7 +1383,7 @@ export async function acknowledgeWorkPolicyViolation(
 					),
 				);
 		});
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1463,7 +1462,7 @@ export async function setDefaultWorkPolicy(policyId: string): Promise<ServerActi
 		);
 
 		return undefined;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1513,7 +1512,7 @@ export async function createWorkPolicyPreset(
 		});
 
 		return createdPreset;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1588,7 +1587,7 @@ export async function updateWorkPolicyPreset(
 					),
 				);
 		});
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1658,7 +1657,7 @@ export async function archiveWorkPolicyPreset(
 					),
 				);
 		});
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1729,7 +1728,7 @@ export async function copySystemWorkPolicyPreset(
 		});
 
 		return createdPreset;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1804,7 +1803,7 @@ export async function createWorkPolicyFromPreset(
 		}
 
 		return createResult.data;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1874,7 +1873,7 @@ export async function importWorkPolicyPreset(
 		}
 
 		return result.data;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -2105,7 +2104,7 @@ export async function getEmployeeEffectiveScheduleDetails(
 		}
 
 		return null;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -2131,7 +2130,7 @@ export async function getTeamsForAssignment(
 		});
 
 		return teams;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -2174,7 +2173,7 @@ export async function getEmployeesForAssignment(organizationId: string): Promise
 		}
 
 		return employees.filter((employeeRecord) => managedEmployeeIds.has(employeeRecord.id));
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -2405,7 +2404,7 @@ export async function duplicateWorkPolicy(
 		}
 
 		return completePolicy as WorkPolicyWithDetails;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

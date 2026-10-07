@@ -317,6 +317,8 @@ export async function createTravelExpenseExportBatch(
 		for (const entry of selection.toSorted((left, right) =>
 			left.reportId < right.reportId ? -1 : 1,
 		)) {
+			// In order on purpose: the transaction locks each account in report-ID order.
+			// react-doctor-disable-next-line react-doctor/async-await-in-loop
 			const account = await loadSettlementAccount(
 				tx,
 				{ organizationId: actor.organizationId, source: { type: "report", id: entry.reportId } },
@@ -702,6 +704,8 @@ export async function cancelUncompletedTravelExpenseExportsForReport(
 	const batchIds = [...new Set(held.map((row) => row.batchId))].toSorted();
 	const locked: BatchRow[] = [];
 	for (const batchId of batchIds) {
+		// In order on purpose: the transaction locks the batches in sorted ID order.
+		// react-doctor-disable-next-line react-doctor/async-await-in-loop
 		const row = await lockBatch(tx, input.organizationId, batchId);
 		if (row && row.status !== "cancelled") locked.push(row);
 	}
@@ -710,6 +714,8 @@ export async function cancelUncompletedTravelExpenseExportsForReport(
 		return { status: "exported", batchIds: completed.map((row) => row.id) };
 	}
 	for (const row of locked) {
+		// Writes of one transaction on one connection, in the order the batches were locked.
+		// react-doctor-disable-next-line react-doctor/async-await-in-loop
 		await cancelLockedBatch(
 			tx,
 			row,

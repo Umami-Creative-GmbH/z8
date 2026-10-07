@@ -5,7 +5,6 @@ import { Effect } from "effect";
 import { z } from "zod";
 import { EmailError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { PlatformAdminService } from "@/lib/effect/services/platform-admin.service";
 import { sendEmail } from "@/lib/email/email-service";
 import { SmtpTransport } from "@/lib/email/transports";
@@ -52,7 +51,7 @@ export async function refreshPlatformDiagnosticsAction(): Promise<
 		return yield* Effect.promise(() => collectPlatformDiagnostics());
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 export async function sendPlatformDiagnosticsTestEmailAction(input: {
@@ -147,7 +146,7 @@ export async function sendPlatformDiagnosticsTestEmailAction(input: {
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 export async function testPlatformKeyManagerEncryptionAction(): Promise<
@@ -161,5 +160,5 @@ export async function testPlatformKeyManagerEncryptionAction(): Promise<
 		return yield* Effect.promise(() => testPlatformKeyManagerEncryption(testValue));
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }

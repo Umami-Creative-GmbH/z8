@@ -83,6 +83,8 @@ export async function storeSubmittedReferenceConversions(
 			updatedAt: at,
 		};
 		// A row recorded for the item's former currency pair never applied; it is replaced.
+		// Each upsert sets its own values, on the submission transaction's connection.
+		// react-doctor-disable-next-line react-doctor/async-await-in-loop
 		await tx
 			.insert(travelExpenseReportItemConversion)
 			.values({ organizationId: scope.organizationId, reportId: scope.reportId, itemId, ...values })

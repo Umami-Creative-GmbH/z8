@@ -9,6 +9,8 @@ const ALLOWED_DIRECT_ENV_READERS = new Set([
 	"instrumentation.ts",
 	// Reads Z8_TEST_PROJECT directly so a suite that mocks "@/env" cannot disable the guard.
 	join("db", "unit-project-guard.ts"),
+	// Loaded by drizzle.config.ts; the migration image has only POSTGRES_* variables (#660).
+	join("db", "postgres-ssl.ts"),
 ]);
 const RUNTIME_FILE_EXTENSIONS = [".ts", ".tsx"] as const;
 

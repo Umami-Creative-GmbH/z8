@@ -39,6 +39,7 @@ vi.mock("./employee-action-utils", async (importOriginal) => ({
 	revalidateEmployeesCache: vi.fn(),
 }));
 
+import { makeDatabaseService } from "@/lib/effect/services/database.service";
 import { ResolveDepartureReviewError } from "@/lib/employee-lifecycle/reviews";
 import {
 	assignDepartureReplacementAction,
@@ -59,6 +60,7 @@ function actorContext(accessTier: "orgAdmin" | "manager" = "orgAdmin") {
 		accessTier,
 		organizationId: "org-1",
 		session: { user: { id: "user-1" } },
+		dbService: makeDatabaseService({}),
 	});
 }
 

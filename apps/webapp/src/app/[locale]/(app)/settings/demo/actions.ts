@@ -33,7 +33,6 @@ import {
 import { type GenerateEmployeesResult, generateDemoEmployees } from "@/lib/demo/employee-generator";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 
@@ -165,7 +164,7 @@ export async function generateDemoDataAction(
 		);
 
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -265,7 +264,7 @@ export async function generateTeamsStepAction(
 
 		const result = yield* Effect.promise(() => generateDemoTeams(options));
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -308,7 +307,7 @@ export async function generateProjectsStepAction(
 
 		const result = yield* Effect.promise(() => generateDemoProjects(options));
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -350,7 +349,7 @@ export async function generateManagersStepAction(
 
 		const result = yield* Effect.promise(() => generateDemoManagerAssignments(options));
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -396,7 +395,7 @@ export async function generateTimeEntriesStepAction(input: StepGenerationInput):
 
 		const result = yield* Effect.promise(() => generateDemoTimeEntries(options));
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -438,7 +437,7 @@ export async function generateAbsencesStepAction(
 
 		const result = yield* Effect.promise(() => generateDemoAbsences(options));
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -478,7 +477,7 @@ export async function generatePendingAbsenceApprovalsStepAction(
 
 		const result = yield* Effect.promise(() => generateDemoPendingAbsenceApprovals(options));
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -518,7 +517,7 @@ export async function generatePendingTimeCorrectionApprovalsStepAction(
 
 		const result = yield* Effect.promise(() => generateDemoPendingTimeCorrectionApprovals(options));
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -567,7 +566,7 @@ export async function generateLocationsStepAction(input: StepGenerationInput): P
 
 		const result = yield* Effect.promise(() => generateDemoLocations(options));
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -616,7 +615,7 @@ export async function generateWorkCategoriesStepAction(input: StepGenerationInpu
 
 		const result = yield* Effect.promise(() => generateDemoWorkCategories(options));
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -663,7 +662,7 @@ export async function generateChangePoliciesStepAction(input: StepGenerationInpu
 
 		const result = yield* Effect.promise(() => generateDemoChangePolicies(options));
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -707,7 +706,7 @@ export async function generateShiftTemplatesStepAction(
 
 		const result = yield* Effect.promise(() => generateDemoShiftTemplates(options));
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -755,7 +754,7 @@ export async function generateShiftsStepAction(input: StepGenerationInput): Prom
 
 		const result = yield* Effect.promise(() => generateDemoShifts(options));
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -798,7 +797,7 @@ export async function assignWorkCategoriesToPeriodsStepAction(
 
 		const result = yield* Effect.promise(() => assignWorkCategoriesToPeriods(options));
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -858,7 +857,7 @@ export async function clearTimeDataAction(
 		);
 
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -903,7 +902,7 @@ export async function getOrganizationEmployees(
 			id: emp.id,
 			name: emp.user?.name || emp.userId,
 		}));
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -949,7 +948,7 @@ export async function generateDemoEmployeesAction(
 		);
 
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -985,7 +984,7 @@ export async function deleteNonAdminDataAction(
 		);
 
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

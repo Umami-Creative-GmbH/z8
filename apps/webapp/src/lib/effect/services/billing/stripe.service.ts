@@ -3,6 +3,13 @@ import Stripe from "stripe";
 import { env } from "@/env";
 import { StripeError } from "@/lib/effect/errors";
 
+/**
+ * Pinned Stripe API version for outbound calls: the default of the installed SDK.
+ * Bump it deliberately with SDK upgrades. Webhook payloads use the version configured
+ * on the Stripe endpoint instead.
+ */
+export const STRIPE_API_VERSION = "2026-09-30.endive";
+
 export interface StripeConfig {
 	secretKey: string;
 	webhookSecret: string;
@@ -60,12 +67,33 @@ export class StripeService extends Context.Service<
 			params?: { cancelAtPeriodEnd?: boolean },
 		) => Effect.Effect<Stripe.Subscription, StripeError>;
 
+		/** The invoice a payment intent pays, or null when it pays none. */
+		readonly getInvoiceForPaymentIntent: (
+			paymentIntentId: string,
+		) => Effect.Effect<Stripe.Invoice | null, StripeError>;
+
 		readonly constructWebhookEvent: (
 			body: string,
 			signature: string,
 		) => Effect.Effect<Stripe.Event, StripeError>;
 	}
 >()("StripeService") {}
+
+/**
+ * Stripe clients by secret key. Billing layers are built for every run (a layer provided
+ * on top of the shared runtime is not memoized past its run), so the client lives here:
+ * one per process and key, constructed on first use.
+ */
+const stripeClients = new Map<string, Stripe>();
+
+function stripeClientFor(secretKey: string): Stripe {
+	let client = stripeClients.get(secretKey);
+	if (!client) {
+		client = new Stripe(secretKey, { apiVersion: STRIPE_API_VERSION, typescript: true });
+		stripeClients.set(secretKey, client);
+	}
+	return client;
+}
 
 export const StripeServiceLive = Layer.effect(
 	StripeService,
@@ -78,10 +106,7 @@ export const StripeServiceLive = Layer.effect(
 			enabled: env.BILLING_ENABLED === "true",
 		};
 
-		const stripe =
-			config.enabled && config.secretKey
-				? new Stripe(config.secretKey, { typescript: true })
-				: null;
+		const stripe = config.enabled && config.secretKey ? stripeClientFor(config.secretKey) : null;
 
 		return StripeService.of({
 			client: stripe,
@@ -255,6 +280,33 @@ export const StripeServiceLive = Layer.effect(
 						new StripeError({
 							message: "Failed to cancel subscription",
 							operation: "cancelSubscription",
+							stripeCode: (error as Stripe.StripeRawError)?.code,
+							cause: error,
+						}),
+				}),
+
+			getInvoiceForPaymentIntent: (paymentIntentId) =>
+				Effect.tryPromise({
+					try: async () => {
+						if (!stripe) {
+							throw new Error("Stripe not configured");
+						}
+						// Since 2025-03-31.basil the invoice link lives on InvoicePayment, not PaymentIntent.
+						const payments = await stripe.invoicePayments.list({
+							payment: { type: "payment_intent", payment_intent: paymentIntentId },
+							expand: ["data.invoice"],
+							limit: 1,
+						});
+						const invoice = payments.data[0]?.invoice;
+						if (!invoice) return null;
+						const resolved =
+							typeof invoice === "string" ? await stripe.invoices.retrieve(invoice) : invoice;
+						return resolved.deleted ? null : resolved;
+					},
+					catch: (error) =>
+						new StripeError({
+							message: "Failed to get invoice for payment intent",
+							operation: "getInvoiceForPaymentIntent",
 							stripeCode: (error as Stripe.StripeRawError)?.code,
 							cause: error,
 						}),

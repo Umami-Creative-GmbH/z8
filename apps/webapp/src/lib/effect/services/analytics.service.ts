@@ -50,10 +50,13 @@ import { computeOvertimeDelta } from "@/lib/time-record/overtime";
 import {
 	calculateExpectedWorkHours,
 	calculateExpectedWorkHoursForEmployee,
+	calculateExpectedWorkHoursForPolicy,
 	calculateWorkHours,
+	getEmployeePolicy,
 } from "@/lib/time-tracking/calculations";
 import type { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "./database.service";
+import { WorkPolicyService } from "./work-policy.service";
 
 /**
  * Calculate clustering score for vacation absences (0-100)
@@ -346,6 +349,8 @@ export class AnalyticsService extends Context.Service<
 		AnalyticsService,
 		Effect.gen(function* () {
 			const dbService = yield* DatabaseService;
+			const workPolicyService = yield* WorkPolicyService;
+			const withWorkPolicy = Effect.provideService(WorkPolicyService, workPolicyService);
 
 			return {
 				getTeamPerformance: (params: TeamPerformanceParams) =>
@@ -403,22 +408,20 @@ export class AnalyticsService extends Context.Service<
 						);
 						const allocation = allocateAnalyticsWorkPeriodMinutes(workPeriods, reportRange);
 						const expectedByEmployee = new Map(
-							yield* Effect.promise(() =>
-								Promise.all(
-									employees.map(
-										async (employee) =>
-											[
-												employee.id,
-												await calculateExpectedWorkHoursForEmployee(
-													employee.id,
-													organizationId,
-													dateRange.start,
-													dateRange.end,
-													calendarRange.timezone,
-												),
-											] as const,
+							yield* Effect.forEach(
+								employees,
+								(employee) =>
+									calculateExpectedWorkHoursForEmployee(
+										employee.id,
+										organizationId,
+										dateRange.start,
+										dateRange.end,
+										calendarRange.timezone,
+									).pipe(
+										Effect.map((expectedHours) => [employee.id, expectedHours] as const),
+										withWorkPolicy,
 									),
-								),
+								{ concurrency: "unbounded" },
 							),
 						);
 						const employeeHours = employees.map((emp) => {
@@ -1342,6 +1345,19 @@ export class AnalyticsService extends Context.Service<
 							);
 						}
 
+						// One policy lookup per employee, not per week.
+						const policyByEmployee = new Map(
+							yield* Effect.forEach(
+								scopedEmployees,
+								(emp) =>
+									getEmployeePolicy(emp.id, organizationId).pipe(
+										Effect.map((policy) => [emp.id, policy] as const),
+										withWorkPolicy,
+									),
+								{ concurrency: "unbounded" },
+							),
+						);
+
 						const nestedRecords = yield* Effect.promise(async () => {
 							return await Promise.all(
 								scopedEmployees.map(async (emp) => {
@@ -1362,8 +1378,8 @@ export class AnalyticsService extends Context.Service<
 													weekStart.toJSDate(),
 													weekEnd.toJSDate(),
 												),
-												calculateExpectedWorkHoursForEmployee(
-													emp.id,
+												calculateExpectedWorkHoursForPolicy(
+													policyByEmployee.get(emp.id) ?? null,
 													organizationId,
 													weekStart.toJSDate(),
 													weekEnd.toJSDate(),

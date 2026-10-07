@@ -110,6 +110,25 @@ export function buildDailyActualMinutes(
 	timezone?: string | null,
 	requestedRange?: { start: Date; endExclusive: Date },
 ): DailyWorkActualMinutes {
+	const completedWork: CompletedWork[] = [];
+	for (const event of events) {
+		if (event.type !== "work_period" || !event.endDate) continue;
+		completedWork.push({ startedAt: event.date, endedAt: event.endDate });
+	}
+	return buildDailyCompletedMinutes(completedWork, timezone, requestedRange);
+}
+
+export interface CompletedWork {
+	startedAt: Date;
+	endedAt: Date;
+}
+
+/** Completed work per local day, clipped to the requested range and split at local midnight. */
+export function buildDailyCompletedMinutes(
+	completedWork: CompletedWork[],
+	timezone?: string | null,
+	requestedRange?: { start: Date; endExclusive: Date },
+): DailyWorkActualMinutes {
 	const actualByDate: DailyWorkActualMinutes = {};
 	const resolvedTimezone = timezone || "UTC";
 	const range: InstantRange | undefined = requestedRange && {
@@ -117,10 +136,9 @@ export function buildDailyActualMinutes(
 		endExclusive: instantFromDate(requestedRange.endExclusive),
 	};
 
-	for (const event of events) {
-		if (event.type !== "work_period" || !event.endDate) continue;
-		const eventStart = instantFromDate(event.date);
-		const eventEnd = instantFromDate(event.endDate);
+	for (const work of completedWork) {
+		const eventStart = instantFromDate(work.startedAt);
+		const eventEnd = instantFromDate(work.endedAt);
 		const start = range && compareInstants(eventStart, range.start) < 0 ? range.start : eventStart;
 		const endExclusive =
 			range && compareInstants(eventEnd, range.endExclusive) > 0 ? range.endExclusive : eventEnd;

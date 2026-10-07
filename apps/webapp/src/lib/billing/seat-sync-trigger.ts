@@ -4,23 +4,18 @@ import { createLogger } from "@/lib/logger";
 const logger = createLogger("BillingSeatSyncTrigger");
 const BILLING_ENABLED = env.BILLING_ENABLED === "true";
 
+/**
+ * Billing and the shared runtime, imported on first use: billing stays out of the main
+ * bundle, and the runtime import would otherwise close a cycle through `@/lib/auth`.
+ */
 async function getSeatSyncRuntime() {
-	const [{ Effect, Layer }, billingServices] = await Promise.all([
+	const [{ Effect }, { runtime }, { BillingServicesLive, SeatSyncService }] = await Promise.all([
 		import("effect"),
+		import("@/lib/effect/runtime"),
 		import("@/lib/effect/services/billing"),
 	]);
-	const {
-		SeatSyncService,
-		SeatSyncServiceLive,
-		StripeServiceLive,
-		SubscriptionServiceLive,
-	} = billingServices;
-	const layers = SeatSyncServiceLive.pipe(
-		Layer.provide(StripeServiceLive),
-		Layer.provide(SubscriptionServiceLive),
-	);
 
-	return { Effect, SeatSyncService, layers };
+	return { Effect, runtime, SeatSyncService, BillingServicesLive };
 }
 
 export async function reconcileBillingSeatsForOrganization(
@@ -36,13 +31,13 @@ export async function reconcileBillingSeatsForOrganization(
 		if (options.run) {
 			await options.run();
 		} else {
-			const { Effect, SeatSyncService, layers } = await getSeatSyncRuntime();
+			const { Effect, runtime, SeatSyncService, BillingServicesLive } = await getSeatSyncRuntime();
 			const program = Effect.gen(function* () {
 				const seatSyncService = yield* SeatSyncService;
 				yield* seatSyncService.syncSeatsForOrganization(organizationId);
 			});
 
-			await Effect.runPromise(program.pipe(Effect.provide(layers)));
+			await runtime.runPromise(program.pipe(Effect.provide(BillingServicesLive)));
 		}
 	} catch (error) {
 		logger.error(
@@ -69,7 +64,7 @@ export async function syncBillingSeatsAfterMemberChange({
 	}
 
 	try {
-		const { Effect, SeatSyncService, layers } = await getSeatSyncRuntime();
+		const { Effect, runtime, SeatSyncService, BillingServicesLive } = await getSeatSyncRuntime();
 
 		const program = Effect.gen(function* () {
 			const seatSyncService = yield* SeatSyncService;
@@ -90,7 +85,7 @@ export async function syncBillingSeatsAfterMemberChange({
 			);
 		});
 
-		await Effect.runPromise(program.pipe(Effect.provide(layers)));
+		await runtime.runPromise(program.pipe(Effect.provide(BillingServicesLive)));
 	} catch (error) {
 		logger.error(
 			{ error, organizationId },

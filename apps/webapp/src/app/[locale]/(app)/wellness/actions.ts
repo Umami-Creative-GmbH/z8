@@ -2,7 +2,6 @@
 
 import { Effect } from "effect";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import type { DatabaseService } from "@/lib/effect/services/database.service";
 import type {
@@ -37,7 +36,7 @@ function buildWellnessActionEffect<T, E>(
 			userId: session.user.id,
 			activeOrganizationId: session.session?.activeOrganizationId ?? null,
 		});
-	}).pipe(Effect.provide(AppLayer));
+	});
 }
 
 /**

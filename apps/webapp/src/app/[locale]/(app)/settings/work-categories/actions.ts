@@ -25,7 +25,6 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
@@ -284,18 +283,17 @@ function runWorkCategoryEligibilityMutation<T>(
 	dbService: WorkCategorySettingsActor["dbService"],
 	organizationId: string,
 	write: (tx: Transaction) => Promise<T>,
-	failure: { message: string; operation: string; table: string },
+	name: string,
 ) {
-	return Effect.tryPromise({
-		try: () => withOrganizationConfigurationMutation(dbService.db, organizationId, write),
-		catch: (error) =>
-			error instanceof NotFoundError || error instanceof ValidationError
-				? error
-				: new DatabaseError({
-						...failure,
-						cause: error instanceof Error ? error : undefined,
-					}),
-	});
+	return dbService
+		.query(name, () => withOrganizationConfigurationMutation(dbService.db, organizationId, write))
+		.pipe(
+			Effect.mapError((error) =>
+				error.cause instanceof NotFoundError || error.cause instanceof ValidationError
+					? error.cause
+					: error,
+			),
+		);
 }
 
 function getScopedWorkCategoryAccessContext(organizationId: string | undefined, queryName: string) {
@@ -591,7 +589,7 @@ export async function getOrganizationCategories(
 		return categories.filter((category) => visibleCategoryIds?.has(category.id));
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -652,35 +650,27 @@ export async function createOrganizationCategory(
 		}
 
 		// Create the category
-		const [created] = yield* Effect.tryPromise({
-			try: async () =>
-				dbService.db
-					.insert(workCategory)
-					.values({
-						organizationId: input.organizationId,
-						name: input.name,
-						description: input.description ?? null,
-						factor: input.factor,
-						color: input.color ?? null,
-						createdBy: actor.session.user.id,
-						updatedAt: new Date(),
-					})
-					.returning(),
-			catch: (error) =>
-				new DatabaseError({
-					message: "Failed to create work category",
-					operation: "insert",
-					table: "work_category",
-					cause: error instanceof Error ? error : undefined,
-				}),
-		});
+		const [created] = yield* dbService.query("workCategory.create", async () =>
+			dbService.db
+				.insert(workCategory)
+				.values({
+					organizationId: input.organizationId,
+					name: input.name,
+					description: input.description ?? null,
+					factor: input.factor,
+					color: input.color ?? null,
+					createdBy: actor.session.user.id,
+					updatedAt: new Date(),
+				})
+				.returning(),
+		);
 
 		revalidatePath("/settings/work-categories");
 
 		return { id: created.id };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -728,32 +718,24 @@ export async function updateOrganizationCategory(
 		}
 
 		// Update the category
-		const [updated] = yield* Effect.tryPromise({
-			try: async () =>
-				dbService.db
-					.update(workCategory)
-					.set({
-						...(input.name !== undefined && { name: input.name }),
-						...(input.description !== undefined && { description: input.description }),
-						...(input.factor !== undefined && { factor: input.factor }),
-						...(input.color !== undefined && { color: input.color }),
-						updatedBy: actor.session.user.id,
-					})
-					.where(
-						and(
-							eq(workCategory.id, input.categoryId),
-							eq(workCategory.organizationId, actor.organizationId),
-						),
-					)
-					.returning(),
-			catch: (error) =>
-				new DatabaseError({
-					message: "Failed to update work category",
-					operation: "update",
-					table: "work_category",
-					cause: error instanceof Error ? error : undefined,
-				}),
-		});
+		const [updated] = yield* dbService.query("workCategory.update", async () =>
+			dbService.db
+				.update(workCategory)
+				.set({
+					...(input.name !== undefined && { name: input.name }),
+					...(input.description !== undefined && { description: input.description }),
+					...(input.factor !== undefined && { factor: input.factor }),
+					...(input.color !== undefined && { color: input.color }),
+					updatedBy: actor.session.user.id,
+				})
+				.where(
+					and(
+						eq(workCategory.id, input.categoryId),
+						eq(workCategory.organizationId, actor.organizationId),
+					),
+				)
+				.returning(),
+		);
 
 		if (!updated) {
 			yield* Effect.fail(
@@ -770,7 +752,7 @@ export async function updateOrganizationCategory(
 		return { id: updated.id };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -831,7 +813,7 @@ export async function deleteOrganizationCategory(
 					.delete(workCategorySetCategory)
 					.where(eq(workCategorySetCategory.categoryId, categoryId));
 			},
-			{ message: "Failed to delete work category", operation: "update", table: "work_category" },
+			"workCategory.delete",
 		);
 
 		revalidatePath("/settings/work-categories");
@@ -839,7 +821,7 @@ export async function deleteOrganizationCategory(
 		return { success: true };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -928,7 +910,7 @@ export async function getWorkCategorySets(
 		return sets.filter((set) => visibleSetIds?.has(set.id));
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1041,7 +1023,7 @@ export async function getWorkCategorySetDetail(
 		return { set, categories };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -1097,45 +1079,28 @@ export async function createWorkCategorySet(
 		}
 
 		// Create the set
-		const [created] = yield* Effect.tryPromise({
-			try: async () =>
-				dbService.db
-					.insert(workCategorySet)
-					.values({
-						organizationId: input.organizationId,
-						name: input.name,
-						description: input.description ?? null,
-						createdBy: actor.session.user.id,
-						updatedAt: new Date(),
-					})
-					.returning(),
-			catch: (error) =>
-				new DatabaseError({
-					message: "Failed to create work category set",
-					operation: "insert",
-					table: "work_category_set",
-					cause: error instanceof Error ? error : undefined,
-				}),
-		});
+		const [created] = yield* dbService.query("workCategorySet.create", async () =>
+			dbService.db
+				.insert(workCategorySet)
+				.values({
+					organizationId: input.organizationId,
+					name: input.name,
+					description: input.description ?? null,
+					createdBy: actor.session.user.id,
+					updatedAt: new Date(),
+				})
+				.returning(),
+		);
 
 		// If initial category IDs provided, add them to the set
 		if (input.categoryIds && input.categoryIds.length > 0) {
-			yield* Effect.tryPromise({
-				try: async () => {
-					const junctionEntries = input.categoryIds!.map((categoryId, index) => ({
-						setId: created.id,
-						categoryId,
-						sortOrder: index,
-					}));
-					return dbService.db.insert(workCategorySetCategory).values(junctionEntries);
-				},
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to add categories to set",
-						operation: "insert",
-						table: "work_category_set_category",
-						cause: error instanceof Error ? error : undefined,
-					}),
+			yield* dbService.query("workCategorySet.addCategories", async () => {
+				const junctionEntries = input.categoryIds!.map((categoryId, index) => ({
+					setId: created.id,
+					categoryId,
+					sortOrder: index,
+				}));
+				return dbService.db.insert(workCategorySetCategory).values(junctionEntries);
 			});
 		}
 
@@ -1144,7 +1109,7 @@ export async function createWorkCategorySet(
 		return { id: created.id };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1179,30 +1144,22 @@ export async function updateWorkCategorySet(
 		}
 
 		// Update the set
-		const [updated] = yield* Effect.tryPromise({
-			try: async () =>
-				dbService.db
-					.update(workCategorySet)
-					.set({
-						name: input.name,
-						description: input.description,
-						updatedBy: actor.session.user.id,
-					})
-					.where(
-						and(
-							eq(workCategorySet.id, input.setId),
-							eq(workCategorySet.organizationId, actor.organizationId),
-						),
-					)
-					.returning(),
-			catch: (error) =>
-				new DatabaseError({
-					message: "Failed to update work category set",
-					operation: "update",
-					table: "work_category_set",
-					cause: error instanceof Error ? error : undefined,
-				}),
-		});
+		const [updated] = yield* dbService.query("workCategorySet.update", async () =>
+			dbService.db
+				.update(workCategorySet)
+				.set({
+					name: input.name,
+					description: input.description,
+					updatedBy: actor.session.user.id,
+				})
+				.where(
+					and(
+						eq(workCategorySet.id, input.setId),
+						eq(workCategorySet.organizationId, actor.organizationId),
+					),
+				)
+				.returning(),
+		);
 
 		if (!updated) {
 			yield* Effect.fail(
@@ -1219,7 +1176,7 @@ export async function updateWorkCategorySet(
 		return { id: updated.id };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1287,11 +1244,7 @@ export async function deleteWorkCategorySet(
 					);
 				await tx.delete(workCategorySetCategory).where(eq(workCategorySetCategory.setId, setId));
 			},
-			{
-				message: "Failed to delete work category set",
-				operation: "update",
-				table: "work_category_set",
-			},
+			"workCategorySet.delete",
 		);
 
 		revalidatePath("/settings/work-categories");
@@ -1299,7 +1252,7 @@ export async function deleteWorkCategorySet(
 		return { success: true };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1371,11 +1324,7 @@ export async function updateSetCategories(
 					);
 				}
 			},
-			{
-				message: "Failed to update set categories",
-				operation: "update",
-				table: "work_category_set_category",
-			},
+			"workCategorySet.updateCategories",
 		);
 
 		revalidatePath("/settings/work-categories");
@@ -1383,7 +1332,7 @@ export async function updateSetCategories(
 		return { success: true };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1425,11 +1374,10 @@ export async function reorderSetCategories(
 		);
 
 		// Update sort order for each category in the junction table
-		yield* Effect.tryPromise({
-			try: async () => {
-				await Promise.all(
-					categoryIds.map((categoryId, sortOrder) =>
-						dbService.db
+		yield* dbService.query("workCategorySet.reorderCategories", async () => {
+			await Promise.all(
+				categoryIds.map((categoryId, sortOrder) =>
+					dbService.db
 						.update(workCategorySetCategory)
 						.set({ sortOrder })
 						.where(
@@ -1438,16 +1386,8 @@ export async function reorderSetCategories(
 								eq(workCategorySetCategory.categoryId, categoryId),
 							),
 						),
-					),
-				);
-			},
-			catch: (error) =>
-				new DatabaseError({
-					message: "Failed to reorder categories",
-					operation: "update",
-					table: "work_category_set_category",
-					cause: error instanceof Error ? error : undefined,
-				}),
+				),
+			);
 		});
 
 		revalidatePath("/settings/work-categories");
@@ -1455,7 +1395,7 @@ export async function reorderSetCategories(
 		return { success: true };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -1547,7 +1487,7 @@ export async function getWorkCategorySetAssignments(
 		);
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1679,11 +1619,7 @@ export async function createSetAssignment(
 					.returning({ id: workCategorySetAssignment.id });
 				return inserted;
 			},
-			{
-				message: "Failed to create set assignment",
-				operation: "insert",
-				table: "work_category_set_assignment",
-			},
+			"workCategorySetAssignment.create",
 		);
 
 		revalidatePath("/settings/work-categories");
@@ -1691,7 +1627,7 @@ export async function createSetAssignment(
 		return { id: created.id };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1749,11 +1685,7 @@ export async function deleteSetAssignment(
 					});
 				}
 			},
-			{
-				message: "Failed to delete set assignment",
-				operation: "update",
-				table: "work_category_set_assignment",
-			},
+			"workCategorySetAssignment.delete",
 		);
 
 		revalidatePath("/settings/work-categories");
@@ -1761,7 +1693,7 @@ export async function deleteSetAssignment(
 		return { success: true };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -1801,7 +1733,7 @@ export async function getTeamsForAssignment(
 		return teams;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1840,7 +1772,7 @@ export async function getEmployeesForAssignment(
 		return employees;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -2001,5 +1933,5 @@ export async function getAvailableCategoriesForEmployee(
 		return [];
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }

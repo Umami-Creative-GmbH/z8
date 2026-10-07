@@ -34,7 +34,7 @@ import { snapshotToHeatmapDataPoint } from "@/lib/coverage/domain/entities/cover
 import { dateFromInstant, instantFromDate, type PlainDate } from "@/lib/datetime/temporal-core";
 import { parseIanaTimeZone } from "@/lib/timezone/validation";
 import type { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { DatabaseService, DatabaseServiceLive } from "./database.service";
+import { DatabaseService } from "./database.service";
 
 // ============================================
 // TYPES
@@ -1169,9 +1169,3 @@ export const CoverageServiceLive = Layer.effect(
 		});
 	}),
 );
-
-// ============================================
-// LAYER DEPENDENCIES
-// ============================================
-
-export const CoverageServiceFullLive = CoverageServiceLive.pipe(Layer.provide(DatabaseServiceLive));

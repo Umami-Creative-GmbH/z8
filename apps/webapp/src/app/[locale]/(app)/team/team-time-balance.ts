@@ -9,6 +9,7 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
+import { runtime } from "@/lib/effect/runtime";
 import { calculateExpectedWorkHoursForEmployee } from "@/lib/time-tracking/calculations";
 import type { EmployeeTimeBalancePayload } from "./team-time-balance-types";
 
@@ -138,7 +139,15 @@ export async function refreshEmployeeTimeBalances(input: {
 	const balanceRows = await Promise.all(
 		employeeIds.map(async (employeeId) => {
 			const [expected, absenceAdjustedMinutes] = await Promise.all([
-				calculateExpectedWorkHoursForEmployee(employeeId, input.organizationId, startDate, endDate),
+				runtime.runPromise(
+					calculateExpectedWorkHoursForEmployee(
+						employeeId,
+						input.organizationId,
+						startDate,
+						endDate,
+						"utc",
+					),
+				),
 				calculateAbsenceAdjustedMinutes({
 					employeeId,
 					organizationId: input.organizationId,
@@ -226,11 +235,14 @@ async function calculateAbsenceAdjustedMinutes(input: {
 
 		const dayAdjustments = await Promise.all(
 			absenceDates.map(async ({ isoDate, date }) => {
-				const expected = await calculateExpectedWorkHoursForEmployee(
-					input.employeeId,
-					input.organizationId,
-					date,
-					date,
+				const expected = await runtime.runPromise(
+					calculateExpectedWorkHoursForEmployee(
+						input.employeeId,
+						input.organizationId,
+						date,
+						date,
+						"utc",
+					),
 				);
 				const fraction = getAbsenceDayFraction({
 					date: isoDate,

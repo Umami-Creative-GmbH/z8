@@ -6,7 +6,6 @@ import { notificationPreference } from "@/db/schema";
 import { isDiscordEnabledForOrganization } from "@/lib/discord";
 import { ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
@@ -89,7 +88,7 @@ export async function getNotificationPreferences(): Promise<
 			matrix,
 			availableChannels,
 		} satisfies UserPreferencesResponse;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -161,7 +160,7 @@ export async function updateNotificationPreference(data: {
 				});
 			}
 		});
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -241,7 +240,7 @@ export async function bulkUpdateNotificationPreferences(
 		});
 
 		return { updated: preferences.length };
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

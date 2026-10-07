@@ -81,6 +81,8 @@ export function ReceiptAttachments({
 		},
 	});
 	useEffect(() => {
+		// Busy comes from Uppy events inside the upload hook; lifting it would move the uploader.
+		// react-doctor-disable-next-line react-doctor/no-pass-data-to-parent, react-doctor/no-pass-live-state-to-parent
 		onBusyChange?.(upload.isUploading);
 	}, [onBusyChange, upload.isUploading]);
 

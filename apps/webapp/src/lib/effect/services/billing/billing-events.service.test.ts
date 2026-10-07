@@ -1,7 +1,10 @@
+import { eq } from "drizzle-orm";
 import { Effect, Layer } from "effect";
 import type Stripe from "stripe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { sendBillingSystemEmail } from "@/lib/billing/billing-system-email";
+import { StripeError } from "@/lib/effect/errors";
 import { BillingEventsService, BillingEventsServiceLive } from "./billing-events.service";
 import { SeatSyncService } from "./seat-sync.service";
 import { StripeService } from "./stripe.service";
@@ -17,6 +20,7 @@ const {
 	onConflictDoNothing,
 	setValues,
 	updateWhere,
+	logger,
 } = vi.hoisted(() => ({
 	stripeEventFindFirst: vi.fn(),
 	subscriptionFindFirst: vi.fn(),
@@ -24,6 +28,11 @@ const {
 	onConflictDoNothing: vi.fn(),
 	setValues: vi.fn(),
 	updateWhere: vi.fn(),
+	logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+}));
+
+vi.mock("@/lib/logger", () => ({
+	createLogger: () => logger,
 }));
 
 vi.mock("@/db", () => {
@@ -65,8 +74,10 @@ const sendBillingSystemEmailMock = vi.mocked(sendBillingSystemEmail);
 
 describe("BillingEventsService", () => {
 	const getCustomer = vi.fn();
+	const getInvoiceForPaymentIntent = vi.fn();
 	const updateFromStripe = vi.fn((_: UpdateSubscriptionFromStripeParams) => Effect.void);
 	const appLayer = Layer.mergeAll(
+		DatabaseServiceLive,
 		Layer.succeed(
 			StripeService,
 			StripeService.of({
@@ -85,6 +96,7 @@ describe("BillingEventsService", () => {
 				getSubscription: vi.fn(),
 				updateSubscription: vi.fn(),
 				cancelSubscription: vi.fn(),
+				getInvoiceForPaymentIntent,
 				constructWebhookEvent: vi.fn(),
 			}),
 		),
@@ -132,6 +144,7 @@ describe("BillingEventsService", () => {
 				email: "billing@example.com",
 			} as Stripe.Customer),
 		);
+		getInvoiceForPaymentIntent.mockReturnValue(Effect.succeed(createStripeInvoice()));
 		sendBillingSystemEmailMock.mockResolvedValue({ sent: true });
 	});
 
@@ -262,6 +275,173 @@ describe("BillingEventsService", () => {
 		expect(setValues).toHaveBeenCalledWith(expect.objectContaining({ processed: true }));
 	});
 
+	describe.each([
+		{
+			shape: "current shape with a subscription ID",
+			invoice: () => createStripeInvoice({ parent: subscriptionParent("sub_shape_123") }),
+		},
+		{
+			shape: "current shape with an expanded subscription",
+			invoice: () =>
+				createStripeInvoice({
+					parent: subscriptionParent(createStripeSubscription({ id: "sub_shape_123" })),
+				}),
+		},
+		{
+			shape: "legacy shape with a subscription ID",
+			invoice: () => createLegacyStripeInvoice("sub_shape_123"),
+		},
+		{
+			shape: "legacy shape with an expanded subscription",
+			invoice: () => createLegacyStripeInvoice({ id: "sub_shape_123", object: "subscription" }),
+		},
+	])("invoice in the $shape", ({ invoice }) => {
+		it("activates the subscription when the payment succeeds", async () => {
+			await processEvent({ type: "invoice.payment_succeeded", object: invoice() });
+
+			expect(eq).toHaveBeenCalledWith(expect.anything(), "sub_shape_123");
+			expect(setValues).toHaveBeenCalledWith({ status: "active" });
+		});
+
+		it("marks the subscription past due when the payment fails", async () => {
+			await processEvent({ type: "invoice.payment_failed", object: invoice() });
+
+			expect(eq).toHaveBeenCalledWith(expect.anything(), "sub_shape_123");
+			expect(setValues).toHaveBeenCalledWith({ status: "past_due" });
+		});
+
+		it("stores the finalized invoice and sends the invoice email", async () => {
+			await processEvent({ type: "invoice.finalized", object: invoice() });
+
+			expect(eq).toHaveBeenCalledWith(expect.anything(), "sub_shape_123");
+			expect(setValues).toHaveBeenCalledWith({
+				metadata: {
+					lastInvoice: expect.objectContaining({ id: "in_test_123", number: "INV-123" }),
+				},
+			});
+			expect(sendBillingSystemEmailMock).toHaveBeenCalledWith(
+				expect.objectContaining({ templateKey: "billing-invoice-ready" }),
+			);
+		});
+	});
+
+	it.each(["invoice.payment_succeeded", "invoice.payment_failed", "invoice.finalized"] as const)(
+		"ignores a %s invoice without a subscription",
+		async (type) => {
+			await processEvent({ type, object: createStripeInvoice({ parent: null }) });
+
+			expect(setValues).not.toHaveBeenCalledWith(
+				expect.objectContaining({ status: expect.anything() }),
+			);
+			expect(setValues).not.toHaveBeenCalledWith(
+				expect.objectContaining({ metadata: expect.anything() }),
+			);
+			expect(sendBillingSystemEmailMock).not.toHaveBeenCalled();
+			expect(setValues).toHaveBeenCalledWith(expect.objectContaining({ processed: true }));
+		},
+	);
+
+	describe("failed payment intent", () => {
+		it("logs the looked-up invoice and links it in the payment failed email", async () => {
+			getInvoiceForPaymentIntent.mockReturnValue(
+				Effect.succeed(createStripeInvoice({ id: "in_lookup_123" })),
+			);
+
+			await processEvent({
+				type: "payment_intent.payment_failed",
+				object: createStripePaymentIntent(),
+			});
+
+			expect(getInvoiceForPaymentIntent).toHaveBeenCalledWith("pi_test_123");
+			expect(logger.warn).toHaveBeenCalledWith(
+				expect.objectContaining({ paymentIntentId: "pi_test_123", invoiceId: "in_lookup_123" }),
+				"Payment intent failed",
+			);
+			expect(sendBillingSystemEmailMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					templateKey: "billing-payment-failed",
+					data: expect.objectContaining({
+						invoiceUrl: "https://app.z8-time.app/settings/billing",
+					}),
+				}),
+			);
+		});
+
+		it("prefers the payment intent's subscription metadata", async () => {
+			getInvoiceForPaymentIntent.mockReturnValue(
+				Effect.succeed(createStripeInvoice({ parent: subscriptionParent("sub_invoice_123") })),
+			);
+
+			await processEvent({
+				type: "payment_intent.payment_failed",
+				object: createStripePaymentIntent(),
+			});
+
+			expect(eq).toHaveBeenCalledWith(expect.anything(), "sub_test_123");
+			expect(eq).not.toHaveBeenCalledWith(expect.anything(), "sub_invoice_123");
+		});
+
+		it("stores the failure on the invoice's subscription when metadata has none", async () => {
+			getInvoiceForPaymentIntent.mockReturnValue(
+				Effect.succeed(createStripeInvoice({ parent: subscriptionParent("sub_invoice_123") })),
+			);
+
+			await processEvent({
+				type: "payment_intent.payment_failed",
+				object: createStripePaymentIntent({ metadata: {} }),
+			});
+
+			expect(eq).toHaveBeenCalledWith(expect.anything(), "sub_invoice_123");
+			expect(setValues).toHaveBeenCalledWith({
+				metadata: {
+					lastPaymentFailure: expect.objectContaining({
+						paymentIntentId: "pi_test_123",
+						failureCode: "card_declined",
+					}),
+				},
+			});
+		});
+
+		it.each([
+			{
+				lookup: "fails",
+				result: () =>
+					Effect.fail(
+						new StripeError({
+							message: "Failed to look up invoice",
+							operation: "getInvoiceForPaymentIntent",
+						}),
+					),
+			},
+			{ lookup: "finds no invoice", result: () => Effect.succeed(null) },
+		])("still processes the event when the invoice lookup $lookup", async ({ result }) => {
+			getInvoiceForPaymentIntent.mockReturnValue(result());
+
+			await expect(
+				processEvent({
+					type: "payment_intent.payment_failed",
+					object: createStripePaymentIntent({ metadata: {} }),
+				}),
+			).resolves.toBeUndefined();
+
+			expect(logger.warn).toHaveBeenCalledWith(
+				expect.objectContaining({ paymentIntentId: "pi_test_123" }),
+				"No invoice resolved for failed payment intent",
+			);
+			expect(logger.warn).toHaveBeenCalledWith(
+				expect.objectContaining({ invoiceId: undefined }),
+				"Payment intent failed",
+			);
+			expect(sendBillingSystemEmailMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					templateKey: "billing-payment-failed",
+					data: expect.objectContaining({ invoiceUrl: undefined }),
+				}),
+			);
+			expect(setValues).toHaveBeenCalledWith(expect.objectContaining({ processed: true }));
+		});
+	});
+
 	async function processEvent({
 		type,
 		stripeSub,
@@ -273,6 +453,8 @@ describe("BillingEventsService", () => {
 			| "customer.subscription.trial_will_end"
 			| "customer.subscription.paused"
 			| "customer.subscription.resumed"
+			| "invoice.payment_succeeded"
+			| "invoice.payment_failed"
 			| "invoice.finalized"
 			| "payment_intent.payment_failed";
 		stripeSub?: Stripe.Subscription;
@@ -339,9 +521,24 @@ function createStripeInvoice(overrides: Partial<Stripe.Invoice> = {}): Stripe.In
 		invoice_pdf: "https://invoice.stripe.test/in_test_123.pdf",
 		number: "INV-123",
 		status: "open",
-		subscription: "sub_test_123",
+		parent: subscriptionParent("sub_test_123"),
 		...overrides,
 	} as Stripe.Invoice;
+}
+
+function subscriptionParent(subscription: string | Stripe.Subscription): Stripe.Invoice.Parent {
+	return {
+		type: "subscription_details",
+		quote_details: null,
+		subscription_details: { metadata: null, subscription },
+	};
+}
+
+/** An invoice rendered in a webhook API version before 2025-03-31.basil. */
+function createLegacyStripeInvoice(
+	subscription: string | Pick<Stripe.Subscription, "id" | "object">,
+): Stripe.Invoice {
+	return { ...createStripeInvoice({ parent: null }), subscription } as Stripe.Invoice;
 }
 
 function createStripePaymentIntent(
@@ -353,7 +550,6 @@ function createStripePaymentIntent(
 		amount: 12_300,
 		currency: "eur",
 		customer: "cus_test_123",
-		invoice: "in_test_123",
 		last_payment_error: {
 			code: "card_declined",
 			decline_code: "generic_decline",

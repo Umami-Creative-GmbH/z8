@@ -176,8 +176,9 @@ function ExportSelection({
 		defaultValues: { revisionIds: [] as string[] },
 		onSubmit: async ({ value, formApi }) => {
 			setProblem(null);
+			const chosen = new Set(value.revisionIds);
 			const selection = rows
-				.filter((row) => value.revisionIds.includes(row.revisionId))
+				.filter((row) => chosen.has(row.revisionId))
 				.map(({ reportId, revisionId }) => ({ reportId, revisionId }));
 			if (selection.length === 0) return;
 			const fingerprint = JSON.stringify(selection);
@@ -223,6 +224,8 @@ function ExportSelection({
 	}
 
 	return (
+		// Client-side TanStack Form submit (docs/refs/forms.md); the finance page needs JS.
+		// react-doctor-disable-next-line react-doctor/no-prevent-default
 		<form
 			noValidate
 			onSubmit={(event) => {
@@ -237,6 +240,7 @@ function ExportSelection({
 					const selected = field.state.value.filter((id) =>
 						rows.some((row) => row.revisionId === id),
 					);
+					const selectedIds = new Set(selected);
 					const allSelected = selected.length === Math.min(rows.length, maxRevisions);
 					return (
 						<Card>
@@ -260,7 +264,7 @@ function ExportSelection({
 								<ul className="divide-y">
 									{rows.map((row) => {
 										const title = rowTitle(t, locale, row);
-										const checked = selected.includes(row.revisionId);
+										const checked = selectedIds.has(row.revisionId);
 										const label = `${row.employeeName ?? "—"} · ${title.name}`;
 										return (
 											<li key={row.revisionId}>

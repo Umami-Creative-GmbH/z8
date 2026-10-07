@@ -206,6 +206,8 @@ export function createDraftSaver<Values, Item>(options: {
 			if (disposed) return { status: "failed", error: "disposed" };
 			if (timer) clearTimeout(timer);
 			timer = null;
+			// Waits out each save in turn: another can start while the previous one settles.
+			// react-doctor-disable-next-line react-doctor/async-await-in-loop
 			while (inFlight) await inFlight;
 			await run();
 			if (disposed) return { status: "failed", error: "disposed" };

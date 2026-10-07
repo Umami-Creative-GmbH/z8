@@ -5,7 +5,7 @@ import type { ZodType } from "zod";
 import {
 	type AnyAppError,
 	AuthorizationError,
-	DatabaseError,
+	type DatabaseError,
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
@@ -88,13 +88,10 @@ const authorizationCodes = new Set<DepartureCommandErrorCode>([
 	"initiator_authorization_lost",
 ]);
 
-function toAppError(error: unknown, actor: LifecycleActor, action: string): AnyAppError {
+function toAppError(failure: DatabaseError, actor: LifecycleActor, action: string): AnyAppError {
+	const error = failure.cause;
 	if (!(error instanceof DepartureCommandError)) {
-		return new DatabaseError({
-			message: "Employee departure could not be saved. Please try again.",
-			operation: action,
-			cause: error,
-		});
+		return failure;
 	}
 	const message = commandMessages[error.code];
 	if (authorizationCodes.has(error.code)) {
@@ -152,10 +149,11 @@ function runDepartureCommand<TInput, TResult>(options: {
 					organizationId: actorContext.organizationId,
 				};
 
-				const result = yield* Effect.tryPromise({
-					try: () => options.run(getDepartureCommands(), actor, input),
-					catch: (error) => toAppError(error, actor, options.name),
-				});
+				const result = yield* actorContext.dbService
+					.query(`employeeOffboarding.${options.name}`, () =>
+						options.run(getDepartureCommands(), actor, input),
+					)
+					.pipe(Effect.mapError((error) => toAppError(error, actor, options.name)));
 				revalidateEmployeesCache(actor.organizationId);
 				return result;
 			}),
@@ -227,7 +225,12 @@ const followUpMessages = {
 	string
 >;
 
-function toFollowUpError(error: unknown, actor: LifecycleActor, action: string): AnyAppError {
+function toFollowUpError(
+	failure: DatabaseError,
+	actor: LifecycleActor,
+	action: string,
+): AnyAppError {
+	const error = failure.cause;
 	if (
 		error instanceof ResolveDepartureReviewError ||
 		error instanceof RetryDepartureTaskError ||
@@ -244,11 +247,7 @@ function toFollowUpError(error: unknown, actor: LifecycleActor, action: string):
 		}
 		return new ValidationError({ message, field: error.code });
 	}
-	return new DatabaseError({
-		message: "Offboarding follow-up could not be saved. Please try again.",
-		operation: action,
-		cause: error,
-	});
+	return failure;
 }
 
 /**
@@ -281,10 +280,9 @@ function runFollowUpCommand<TInput, TResult>(options: {
 					userId: actorContext.session.user.id,
 					organizationId: actorContext.organizationId,
 				};
-				const result = yield* Effect.tryPromise({
-					try: () => options.run(actor, input),
-					catch: (error) => toFollowUpError(error, actor, options.name),
-				});
+				const result = yield* actorContext.dbService
+					.query(`employeeOffboarding.${options.name}`, () => options.run(actor, input))
+					.pipe(Effect.mapError((error) => toFollowUpError(error, actor, options.name)));
 				revalidateEmployeesCache(actor.organizationId);
 				return result;
 			}),
@@ -309,20 +307,13 @@ export async function getEmployeeOffboardingViewAction(
 					queryName: "getEmployeeOffboardingView:actor",
 				});
 				const { employeeId } = yield* validateInput(employeeOffboardingViewSchema, input);
-				const result = yield* Effect.tryPromise({
-					try: () =>
-						getOffboardingQueries().view({
-							organizationId: actorContext.organizationId,
-							employeeId,
-							actorUserId: actorContext.session.user.id,
-						}),
-					catch: (cause) =>
-						new DatabaseError({
-							message: "Employee offboarding could not be loaded.",
-							operation: "getEmployeeOffboardingView",
-							cause,
-						}),
-				});
+				const result = yield* actorContext.dbService.query("employeeOffboarding.view", () =>
+					getOffboardingQueries().view({
+						organizationId: actorContext.organizationId,
+						employeeId,
+						actorUserId: actorContext.session.user.id,
+					}),
+				);
 				if (result.kind === "not_found") {
 					return yield* Effect.fail(
 						new NotFoundError({ message: "Employee not found.", entityType: "employee" }),

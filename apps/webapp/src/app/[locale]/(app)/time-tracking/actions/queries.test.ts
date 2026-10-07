@@ -24,11 +24,9 @@ vi.mock("./entry-helpers", () => ({ getAssignedProjectsWithHours: vi.fn() }));
 vi.mock("./shared", () => ({ logger: { error: vi.fn() } }));
 vi.mock("@/lib/effect/services/change-policy.service", () => ({
 	ChangePolicyService: {},
-	ChangePolicyServiceLive: {},
 }));
-vi.mock("@/lib/effect/services/database.service", () => ({
-	DatabaseServiceLive: {},
-}));
+// No test here reads the edit capability, the one runtime run in this module.
+vi.mock("@/lib/effect/runtime", () => ({ runtime: {} }));
 
 const start = new Date("2026-03-01T00:00:00Z");
 const end = new Date("2026-03-31T23:59:59Z");

@@ -75,9 +75,14 @@ vi.mock("@/lib/effect/services/billing", async () => {
 	return {
 		SeatSyncService,
 		SeatSyncServiceLive,
-		StripeServiceLive: Layer.empty,
-		SubscriptionServiceLive: Layer.empty,
+		BillingServicesLive: SeatSyncServiceLive,
 	};
+});
+
+// The shared runtime holds the AppLayer member the action reads: PlatformAdminService.
+vi.mock("@/lib/effect/runtime", async () => {
+	const { PlatformAdminServiceLive } = await import("@/lib/effect/services/platform-admin.service");
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(PlatformAdminServiceLive);
 });
 
 async function importActions() {

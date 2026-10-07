@@ -170,6 +170,8 @@ export async function loadPerDiemOverlaps(
 			let calculation = calculateStampedPerDiem(report, itinerary, row.policy);
 			if (!calculation && report.status === "returned") {
 				resolvePolicy ??= perDiemPolicyResolver(
+					// Loaded at most once, and only when a returned per diem has no stamp.
+					// react-doctor-disable-next-line react-doctor/async-await-in-loop
 					await loadPerDiemPolicyVersions(database, input.organizationId),
 				);
 				calculation = calculatePerDiem(itinerary, {
@@ -279,6 +281,8 @@ export async function loadPerDiemViews(
 					trip: { destinations: report.tripDestinations },
 					reimbursementCurrency: report.reimbursementCurrency,
 					resolvePolicy,
+					// A trip has one per diem, and save/submission callers pass their transaction here.
+					// react-doctor-disable-next-line react-doctor/async-await-in-loop
 					overlappingDays: await overlapsOf(database, report, itinerary),
 				})
 			: calculateStampedPerDiem(report, itinerary, row.policy);

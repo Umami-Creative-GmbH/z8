@@ -9,27 +9,20 @@ import {
 } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
-import {
-	addTripReportItemAction,
-	getMyTravelExpenseReport,
-	removeTripReportItemAction,
-} from "@/app/[locale]/(app)/travel-expenses/report-actions";
-import { addTripMileageItemAction } from "@/app/[locale]/(app)/travel-expenses/mileage-actions";
-import { addTripPerDiemItemAction } from "@/app/[locale]/(app)/travel-expenses/per-diem-actions";
+import { type RefObject, useState } from "react";
+import { getMyTravelExpenseReport } from "@/app/[locale]/(app)/travel-expenses/report-actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query/keys";
-import { savedReceiptException } from "@/lib/travel-expenses/receipt-exception";
 import {
 	type RequirementItem,
 	reportItemMissingRequirements,
 } from "@/lib/travel-expenses/item-requirements";
 import type { MileageItemDraft } from "@/lib/travel-expenses/mileage";
 import type { PerDiemItinerary } from "@/lib/travel-expenses/per-diem";
+import { savedReceiptException } from "@/lib/travel-expenses/receipt-exception";
 import {
 	type ReceiptItemDraft,
 	receiptItemMissingRequirements,
@@ -47,10 +40,12 @@ import {
 	tripReportMissingRequirements,
 } from "@/lib/travel-expenses/trip-report";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
-import { MileageItemEditor, mileageDraftMatches, mileageDraftOf } from "./mileage-item-editor";
-import { PerDiemItemEditor, perDiemDraftMatches, perDiemDraftOf } from "./per-diem-item-editor";
-import { ReceiptItemEditor } from "./receipt-item-editor";
 import { LegacyConversionNotice } from "./legacy-conversion-notice";
+import { mileageDraftMatches, mileageDraftOf } from "./mileage-item-draft";
+import { MileageItemEditor } from "./mileage-item-editor";
+import { perDiemDraftMatches, perDiemDraftOf } from "./per-diem-item-draft";
+import { PerDiemItemEditor } from "./per-diem-item-editor";
+import { ReceiptItemEditor } from "./receipt-item-editor";
 import { AdjustmentNotice } from "./report-adjustments";
 import { ReportReviewFeedback } from "./report-review-cycle";
 import { ReportStatusBadge } from "./report-status";
@@ -59,6 +54,7 @@ import { type SubmitBlocker, SubmitReportPanel } from "./submit-report-panel";
 import { SubmittedTravelExpenseReport } from "./submitted-report";
 import { TripDetailsEditor } from "./trip-details-editor";
 import { useReportProjectIssues } from "./use-report-project-issues";
+import { useTripExpenseItems } from "./use-trip-expense-items";
 
 /** Live entered values per expense; null while an expense has malformed fields. */
 type LiveDrafts = Record<string, ReceiptItemDraft | null>;
@@ -386,11 +382,7 @@ function TripReportBody({
 	const [drafts, setDrafts] = useState<LiveDrafts>({});
 	const [mileageDrafts, setMileageDrafts] = useState<MileageDrafts>({});
 	const [perDiemDrafts, setPerDiemDrafts] = useState<PerDiemDrafts>({});
-	const [adding, setAdding] = useState(false);
-	const [removeErrors, setRemoveErrors] = useState<Record<string, string>>({});
-	const [focusTarget, setFocusTarget] = useState<{ itemId: string } | "add" | null>(null);
 	const [tripProjectId, setTripProjectId] = useState(report.projectId ?? null);
-	const addButton = useRef<HTMLButtonElement>(null);
 	const { items } = report;
 	const projectIssues = useReportProjectIssues(
 		report.id,
@@ -405,97 +397,12 @@ function TripReportBody({
 		]),
 	);
 
-	// Moves focus once the added expense is rendered, or back to the add
-	// action once the removed one is gone, so keyboard users keep their place.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: retried whenever the rendered expenses change
-	useEffect(() => {
-		if (focusTarget === "add") {
-			if (addButton.current) addButton.current.focus();
-			// Focus can only move once the change is in the DOM, i.e. after render.
-			// react-doctor-disable-next-line react-hooks-js/set-state-in-effect
-			setFocusTarget(null);
-		} else if (focusTarget) {
-			const heading = document.getElementById(`expense-${focusTarget.itemId}`);
-			if (heading) {
-				heading.focus();
-				setFocusTarget(null);
-			}
-		}
-	}, [focusTarget, items]);
-
-	async function addItem(type: "receipt" | "mileage" | "per_diem" = "receipt") {
-		setAdding(true);
-		// No `finally`: the React Compiler cannot compile try statements with one.
-		try {
-			const add =
-				type === "per_diem"
-					? addTripPerDiemItemAction
-					: type === "mileage"
-						? addTripMileageItemAction
-						: addTripReportItemAction;
-			const result = await add({ reportId: report.id });
-			if (result.success) {
-				setFocusTarget({ itemId: result.data.item.id });
-				await Promise.all([refreshReport(), refreshDrafts()]);
-			} else {
-				toast.error(
-					t(
-						"travelExpenses.report.items.addFailed",
-						"The expense could not be added. Please retry.",
-					),
-				);
-			}
-		} catch {
-			toast.error(
-				t("travelExpenses.report.items.addFailed", "The expense could not be added. Please retry."),
-			);
-		}
-		setAdding(false);
-	}
-
-	async function removeItem(itemId: string, expectedVersion: number): Promise<boolean> {
-		setRemoveErrors((errors) =>
-			Object.fromEntries(Object.entries(errors).filter(([id]) => id !== itemId)),
-		);
-		const failed = (message: string) => {
-			setRemoveErrors((errors) => ({ ...errors, [itemId]: message }));
-			return false;
-		};
-		try {
-			const result = await removeTripReportItemAction({
-				reportId: report.id,
-				itemId,
-				expectedVersion,
-			});
-			if (!result.success) {
-				return failed(
-					t(
-						"travelExpenses.report.items.removeFailed",
-						"The expense could not be removed. Please retry.",
-					),
-				);
-			}
-			if (result.data.status === "conflict") {
-				void refreshReport();
-				return failed(
-					t(
-						"travelExpenses.report.items.removeConflict",
-						"This expense changed elsewhere and was not removed. Check it and try again.",
-					),
-				);
-			}
-			setFocusTarget("add");
-			await Promise.all([refreshReport(), refreshDrafts()]);
-			return true;
-		} catch {
-			return failed(
-				t(
-					"travelExpenses.report.items.removeFailed",
-					"The expense could not be removed. Please retry.",
-				),
-			);
-		}
-	}
+	const { adding, removeErrors, addButton, addItem, removeItem } = useTripExpenseItems({
+		reportId: report.id,
+		items,
+		refreshReport,
+		refreshDrafts,
+	});
 
 	const requirements = details
 		? tripReportMissingRequirements({
@@ -698,42 +605,12 @@ function TripReportBody({
 						</section>
 					);
 				})}
-				<div className="flex flex-wrap gap-2">
-					<Button
-						ref={addButton}
-						type="button"
-						variant="outline"
-						onClick={() => void addItem()}
-						disabled={adding}
-					>
-						{adding ? (
-							<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
-						) : (
-							<IconPlus aria-hidden="true" className="mr-2 size-4" />
-						)}
-						{t("travelExpenses.report.items.add", "Add receipt expense")}
-					</Button>
-					<Button
-						type="button"
-						variant="outline"
-						onClick={() => void addItem("mileage")}
-						disabled={adding}
-					>
-						<IconCar aria-hidden="true" className="mr-2 size-4" />
-						{t("travelExpenses.report.mileage.add", "Add mileage")}
-					</Button>
-					{!items.some((item) => item.type === "per_diem") && (
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => void addItem("per_diem")}
-							disabled={adding}
-						>
-							<IconToolsKitchen2 aria-hidden="true" className="mr-2 size-4" />
-							{t("travelExpenses.report.perDiem.add", "Add per diem")}
-						</Button>
-					)}
-				</div>
+				<AddExpenseButtons
+					addButton={addButton}
+					adding={adding}
+					canAddPerDiem={!items.some((item) => item.type === "per_diem")}
+					onAdd={(type) => void addItem(type)}
+				/>
 			</section>
 
 			<div className="grid gap-4 sm:grid-cols-2">
@@ -772,6 +649,50 @@ function TripReportBody({
 				loadSavedReport={() => loadSavedReport(drafts, details, mileageDrafts, perDiemDrafts)}
 				onSubmitted={() => Promise.all([refreshReport(), refreshDrafts()])}
 			/>
+		</div>
+	);
+}
+
+/** Adds a receipt, mileage or (once per trip) per diem expense to the trip. */
+function AddExpenseButtons({
+	addButton,
+	adding,
+	canAddPerDiem,
+	onAdd,
+}: {
+	/** The add-receipt action, where focus returns after a removal. */
+	addButton: RefObject<HTMLButtonElement | null>;
+	adding: boolean;
+	canAddPerDiem: boolean;
+	onAdd: (type: "receipt" | "mileage" | "per_diem") => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="flex flex-wrap gap-2">
+			<Button
+				ref={addButton}
+				type="button"
+				variant="outline"
+				onClick={() => onAdd("receipt")}
+				disabled={adding}
+			>
+				{adding ? (
+					<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
+				) : (
+					<IconPlus aria-hidden="true" className="mr-2 size-4" />
+				)}
+				{t("travelExpenses.report.items.add", "Add receipt expense")}
+			</Button>
+			<Button type="button" variant="outline" onClick={() => onAdd("mileage")} disabled={adding}>
+				<IconCar aria-hidden="true" className="mr-2 size-4" />
+				{t("travelExpenses.report.mileage.add", "Add mileage")}
+			</Button>
+			{canAddPerDiem && (
+				<Button type="button" variant="outline" onClick={() => onAdd("per_diem")} disabled={adding}>
+					<IconToolsKitchen2 aria-hidden="true" className="mr-2 size-4" />
+					{t("travelExpenses.report.perDiem.add", "Add per diem")}
+				</Button>
+			)}
 		</div>
 	);
 }

@@ -13,7 +13,6 @@ import type { TravelExpenseReportCycleClosureKind } from "@/db/schema/travel-exp
 import { dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { failureOfCause as failureOf } from "@/lib/effect/cause-failure";
 import {
-	type AnyAppError,
 	AuthorizationError,
 	ConflictError,
 	NotFoundError,
@@ -515,8 +514,7 @@ export async function executeTravelExpenseReportReturnInTransaction(
 			"existing",
 		).pipe(
 			Effect.provideService(ApprovalAuditLogger, createApprovalReturnAuditLogger(dbService)),
-			// The shared legacy mutation is typed with an open requirement; every service it uses is provided.
-		) as Effect.Effect<unknown, AnyAppError, never>,
+		),
 	);
 	if (Exit.isFailure(exit)) throw failureOf(exit.cause);
 
@@ -535,6 +533,8 @@ export async function executeTravelExpenseReportReturnInTransaction(
 		approvalRequestId,
 		actorId: actor.id,
 	});
+	// Inside the return transaction: its queries share one connection and run in order anyway.
+	// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
 	const actorLabel = await loadEvidenceActorLabel(database, {
 		organizationId,
 		employeeId: actor.id,
@@ -576,6 +576,8 @@ export async function executeTravelExpenseReportReturnInTransaction(
 	});
 	// The returned cycle can no longer be decided: its sent cards (#623) are
 	// retired like a withdrawn cycle's, keyed by the cycle's revision.
+	// Ordered writes in the return transaction, after the cycle closure.
+	// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
 	const deliveryIntent = await recordTravelExpenseReportDeliveryIntent(database, {
 		organizationId,
 		reportId,

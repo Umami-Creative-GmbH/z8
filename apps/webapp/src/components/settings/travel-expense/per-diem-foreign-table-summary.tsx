@@ -3,14 +3,8 @@
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { formatPlainDate } from "@/components/travel-expenses/report/format";
-import { DOMESTIC_PER_DIEM_AREA } from "@/lib/travel-expenses/per-diem";
 import { findForeignPerDiemTable } from "@/lib/travel-expenses/statutory-foreign-per-diem";
 import type { StatutoryPerDiemDefault } from "@/lib/travel-expenses/statutory-per-diem-defaults";
-
-/** Foreign rate areas ("FR", "FR:paris") of a per diem version (#611). */
-export function foreignAreaCount(rates: Record<string, unknown>): number {
-	return Object.keys(rates).filter((area) => area !== DOMESTIC_PER_DIEM_AREA).length;
-}
 
 /**
  * What adopting a statutory default with a verified foreign table adds

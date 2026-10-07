@@ -363,22 +363,25 @@ export async function loadOwnReport(
 		loadReceiptExceptionsAllowed(database, owner.organizationId),
 		loadReferenceRatePolicy(database, owner.organizationId),
 	]);
-	const { conversions, referenceRates } = await resolveReportConversions(database, {
-		organizationId: owner.organizationId,
-		reports: [{ ...report, items }],
-	});
-	const price = await loadMileagePricer(database, owner.organizationId, items);
 	const pricing = {
 		reimbursementCurrency: report.reimbursementCurrency,
 		// Editable reports are priced afresh; submitted ones keep their stamp.
 		useStamp: !isEditableReportStatus(report.status),
 	};
-	const perDiems = await loadPerDiemViews(database, report, items, pricing);
-	const overrides = await loadMileageOverrides(database, owner.organizationId, items);
-	const projectNames = await loadProjectNames(database, owner.organizationId, [
-		report.projectId,
-		...items.map((item) => item.projectId),
-	]);
+	const [{ conversions, referenceRates }, price, perDiems, overrides, projectNames] =
+		await Promise.all([
+			resolveReportConversions(database, {
+				organizationId: owner.organizationId,
+				reports: [{ ...report, items }],
+			}),
+			loadMileagePricer(database, owner.organizationId, items),
+			loadPerDiemViews(database, report, items, pricing),
+			loadMileageOverrides(database, owner.organizationId, items),
+			loadProjectNames(database, owner.organizationId, [
+				report.projectId,
+				...items.map((item) => item.projectId),
+			]),
+		]);
 	return {
 		projectNames,
 		id: report.id,
@@ -500,15 +503,17 @@ async function listOwnReports(
 			)
 			.groupBy(travelExpenseReportReceipt.reportId),
 	]);
-	const { conversions } = await resolveReportConversions(database, {
-		organizationId: owner.organizationId,
-		reports: reports.map((report) => ({
-			...report,
-			items: items.filter((item) => item.reportId === report.id),
-		})),
-	});
-	const price = await loadMileagePricer(database, owner.organizationId, items);
-	const mileageOverrides = await loadMileageOverrides(database, owner.organizationId, items);
+	const [{ conversions }, price, mileageOverrides] = await Promise.all([
+		resolveReportConversions(database, {
+			organizationId: owner.organizationId,
+			reports: reports.map((report) => ({
+				...report,
+				items: items.filter((item) => item.reportId === report.id),
+			})),
+		}),
+		loadMileagePricer(database, owner.organizationId, items),
+		loadMileageOverrides(database, owner.organizationId, items),
+	]);
 	// Per diem (#609): only trips have one; each is calculated with its own report.
 	const perDiems = new Map<string, PerDiemItemView>();
 	for (const report of reports) {

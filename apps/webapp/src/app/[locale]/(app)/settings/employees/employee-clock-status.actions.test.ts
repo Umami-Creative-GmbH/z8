@@ -158,19 +158,19 @@ function createDbService({
 	const query = vi.fn((name: string, fn: () => unknown) => {
 		if (name === "getEmployeeClockStatuses:organizationEmployees") {
 			void fn();
-			return Promise.resolve(organizationEmployeeRows);
+			return Effect.succeed(organizationEmployeeRows);
 		}
 
 		if (name === "getEmployeeClockStatuses:activeWorkPeriods") {
-			return Promise.resolve(activeRows);
+			return Effect.succeed(activeRows);
 		}
 
 		if (name === "getEmployeeClockStatuses:activity") {
 			void fn();
-			return Promise.resolve(activityRows);
+			return Effect.succeed(activityRows);
 		}
 
-		return fn();
+		return Effect.promise(async () => fn());
 	});
 
 	return {

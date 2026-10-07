@@ -607,9 +607,7 @@ describe("stamp", () => {
 describe("samePerDiemItinerary", () => {
 	it("ignores meal order and stored key order but not a changed fact", () => {
 		const trip = itinerary("2026-06-01T08:00", "2026-06-02T18:00");
-		const stored = JSON.parse(
-			JSON.stringify({ ...trip, meals: [...trip.meals].reverse() }),
-		) as PerDiemItinerary;
+		const stored: PerDiemItinerary = structuredClone({ ...trip, meals: [...trip.meals].reverse() });
 		expect(samePerDiemItinerary(trip, stored)).toBe(true);
 		expect(samePerDiemItinerary(trip, { ...trip, endTime: "18:01" })).toBe(false);
 		const changedMeal = structuredClone(trip);

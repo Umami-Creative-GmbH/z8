@@ -20,6 +20,7 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	assertPayrollOfficerSettingsContext,
 	buildValidatedPayrollAccessInput,
@@ -333,18 +334,10 @@ async function runPayrollAccessAdminAction<T>(
 	action: () => Promise<T>,
 ): Promise<ServerActionResult<T>> {
 	return runServerActionSafe(
-		Effect.tryPromise({
-			try: action,
-			catch: (error) => {
-				if (isAppError(error)) return error;
-
-				return new DatabaseError({
-					message: "Payroll access action failed",
-					operation: "payroll_access_admin_action",
-					cause: error,
-				});
-			},
-		}),
+		DatabaseService.use((dbService) => dbService.query("payrollAccess.adminAction", action)).pipe(
+			// Typed failures thrown by the action keep their type.
+			Effect.mapError((error) => (isAppError(error.cause) ? error.cause : error)),
+		),
 	);
 }
 

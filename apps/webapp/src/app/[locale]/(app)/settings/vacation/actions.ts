@@ -26,7 +26,6 @@ import {
 	NotFoundError,
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,
@@ -187,7 +186,7 @@ export async function getVacationPolicy(
 		}
 
 		return policy;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -234,7 +233,7 @@ export async function getCompanyDefaultVacationPolicy(
 		});
 
 		return policy || null;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -335,7 +334,7 @@ export async function createVacationPolicy(data: {
 		revalidateTag(CACHE_TAGS.VACATION_POLICY(data.organizationId), "max");
 
 		return policy;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -445,7 +444,7 @@ export async function updateVacationPolicy(
 		revalidateTag(CACHE_TAGS.VACATION_POLICY(policy.organizationId), "max");
 
 		return updated;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -482,7 +481,7 @@ export async function getEmployeesWithAllowances(
 		}
 
 		return employees.filter((employeeRecord) => managedEmployeeIds.has(employeeRecord.id));
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -538,7 +537,7 @@ export async function getEmployeeAllowance(
 		});
 
 		return emp;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -618,7 +617,7 @@ export async function updateEmployeeAllowance(
 			);
 
 		return allowance;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -706,7 +705,7 @@ export async function createVacationAdjustmentAction(
 		});
 
 		return adjustment;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -737,7 +736,7 @@ export async function getVacationPolicies(
 		});
 
 		return policies;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -784,7 +783,7 @@ export async function getAbsenceCategoriesForSettings(
 						}),
 				),
 			);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -852,7 +851,7 @@ export async function createAbsenceCategory(
 			);
 
 		return created;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -968,7 +967,7 @@ export async function updateAbsenceCategory(
 		}
 
 		return updateResult.category;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1042,7 +1041,7 @@ export async function setAbsenceCategoryActive(
 		}
 
 		return updated;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1179,7 +1178,7 @@ export async function deleteAbsenceCategory(
 		}
 
 		return { id: categoryId };
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1281,7 +1280,7 @@ export async function deleteVacationPolicy(policyId: string): Promise<ServerActi
 			);
 
 		revalidateTag(CACHE_TAGS.VACATION_POLICY(policy.organizationId), "max");
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1322,7 +1321,7 @@ export async function getEmployeeAdjustmentTotal(
 		});
 
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

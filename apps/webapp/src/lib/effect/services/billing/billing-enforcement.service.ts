@@ -1,11 +1,15 @@
 import { eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { db } from "@/db";
+
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
-import { BillingError, DatabaseError } from "@/lib/effect/errors";
-import { type BillingAccessResult, evaluateBillingAccess } from "@/lib/effect/services/billing/billing-access";
+import { BillingError, type DatabaseError } from "@/lib/effect/errors";
+import {
+	type BillingAccessResult,
+	evaluateBillingAccess,
+} from "@/lib/effect/services/billing/billing-access";
 import { provisionLocalTrial } from "@/lib/effect/services/billing/billing-configuration";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 
 export type { BillingAccessResult } from "@/lib/effect/services/billing/billing-access";
 
@@ -19,6 +23,7 @@ export interface CheckBillingAccessOptions {
 }
 
 function checkBillingAccess(
+	dbService: DatabaseService["Service"],
 	organizationId: string,
 	{ now = new Date(), createTrialIfMissing = true }: CheckBillingAccessOptions = {},
 ) {
@@ -29,21 +34,12 @@ function checkBillingAccess(
 			return evaluateBillingAccess({ billingEnabled, subscription: null, now });
 		}
 
-		const sub = yield* Effect.tryPromise({
-			try: async () => {
-				if (createTrialIfMissing) return provisionLocalTrial(organizationId, now);
-				const existing = await db.query.subscription.findFirst({
-					where: eq(subscription.organizationId, organizationId),
-				});
-				return existing ?? null;
-			},
-			catch: (error) =>
-				new DatabaseError({
-					message: "Failed to check billing access",
-					operation: "checkBillingAccess",
-					table: "subscription",
-					cause: error,
-				}),
+		const sub = yield* dbService.query("billing.checkAccess", async () => {
+			if (createTrialIfMissing) return provisionLocalTrial(dbService.db, organizationId, now);
+			const existing = await dbService.db.query.subscription.findFirst({
+				where: eq(subscription.organizationId, organizationId),
+			});
+			return existing ?? null;
 		});
 
 		return evaluateBillingAccess({ billingEnabled, subscription: sub, now });
@@ -79,28 +75,33 @@ export class BillingEnforcementService extends Context.Service<
 	}
 >()("BillingEnforcementService") {}
 
-export const BillingEnforcementServiceLive = Layer.succeed(
+export const BillingEnforcementServiceLive = Layer.effect(
 	BillingEnforcementService,
-	BillingEnforcementService.of({
-		isBillingEnabled: () => env.BILLING_ENABLED === "true",
+	Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
-		checkBillingAccess,
+		return BillingEnforcementService.of({
+			isBillingEnabled: () => env.BILLING_ENABLED === "true",
 
-		requireActiveSubscription: (organizationId) =>
-			Effect.gen(function* () {
-				const access = yield* checkBillingAccess(organizationId);
+			checkBillingAccess: (organizationId, options) =>
+				checkBillingAccess(dbService, organizationId, options),
 
-				if (!access.canAccess) {
-					return yield* Effect.fail(
-						new BillingError({
-							message: access.reason
-								? `Billing access denied: ${access.reason}`
-								: "Billing access denied",
-							reason: access.reason ?? "subscription_required",
-							organizationId,
-						}),
-					);
-				}
-			}),
+			requireActiveSubscription: (organizationId) =>
+				Effect.gen(function* () {
+					const access = yield* checkBillingAccess(dbService, organizationId);
+
+					if (!access.canAccess) {
+						return yield* Effect.fail(
+							new BillingError({
+								message: access.reason
+									? `Billing access denied: ${access.reason}`
+									: "Billing access denied",
+								reason: access.reason ?? "subscription_required",
+								organizationId,
+							}),
+						);
+					}
+				}),
+		});
 	}),
 );

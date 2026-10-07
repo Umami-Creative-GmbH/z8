@@ -35,11 +35,11 @@ import {
 } from "@/lib/query/use-approval-inbox";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
+import { ReceiptExceptionAcceptance } from "./receipt-exception-acceptance";
 import {
 	allReceiptExceptionsAccepted,
 	findReceiptExceptionAcceptance,
-	ReceiptExceptionAcceptance,
-} from "./receipt-exception-acceptance";
+} from "./receipt-exception-acceptance-section";
 
 interface ApprovalDetailPanelProps {
 	approval: ApprovalInboxItem | null;

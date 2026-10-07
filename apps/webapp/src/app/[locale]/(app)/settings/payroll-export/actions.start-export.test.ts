@@ -142,12 +142,13 @@ vi.mock("@/lib/effect/runtime", async () => {
 		query: <T>(_key: string, fn: () => Promise<T>) => Effect.promise(fn),
 	});
 
-	return {
-		AppLayer: Layer.merge(authLayer, databaseLayer),
-	};
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(
+		Layer.merge(authLayer, databaseLayer),
+	);
 });
 
 vi.mock("@/lib/effect/result", async () => {
+	const { runtime } = await import("@/lib/effect/runtime");
 	const { Cause, Effect, Exit, Option, Result } = await import("effect");
 
 	const toServerActionResult = <_T>(exit: unknown) =>
@@ -184,7 +185,7 @@ vi.mock("@/lib/effect/result", async () => {
 
 	return {
 		runServerActionSafe: async <T>(effect: Parameters<typeof Effect.runPromiseExit<T>>[0]) => {
-			const exit = await Effect.runPromiseExit(effect);
+			const exit = await runtime.runPromiseExit(effect);
 			return toServerActionResult(exit);
 		},
 		toServerActionResult,

@@ -1,5 +1,5 @@
 import { and, eq, isNull } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect";
+import { Effect, Exit } from "effect";
 import {
 	approvalRequest,
 	approvalStageAssignment,
@@ -21,8 +21,9 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
+import { failureOfCause } from "@/lib/effect/cause-failure";
 import { ConflictError } from "@/lib/effect/errors";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { runtime } from "@/lib/effect/runtime";
 import {
 	SurchargeService,
 	SurchargeServiceLive,
@@ -1037,17 +1038,12 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 								query: input.dbService.query,
 							}),
 						),
-					) as Effect.Effect<
-						WorkPeriodApprovalResult | undefined,
-						unknown,
-						never
-					>,
+					),
 				);
 				if (Exit.isFailure(exit)) {
 					// The owner's typed failure, else its defect: what
 					// unresolvedWorkPeriodReviewFrom reads.
-					const failure = Cause.findErrorOption(exit.cause);
-					throw Option.isSome(failure) ? failure.value : Cause.squash(exit.cause);
+					throw failureOfCause(exit.cause);
 				}
 				mutationResult = exit.value;
 				return mutationResult;
@@ -2342,7 +2338,7 @@ export async function reconcileOrdinaryWorkPeriodMaintenanceAfterCommit(
 		markWorkBalanceDirty: typeof markEmployeeWorkBalanceDirty;
 	} = {
 		reconcileSurcharges: (facts) =>
-			Effect.runPromise(
+			runtime.runPromise(
 				Effect.gen(function* () {
 					const service = yield* SurchargeService;
 					yield* service.reconcileWorkPeriods({
@@ -2352,10 +2348,7 @@ export async function reconcileOrdinaryWorkPeriodMaintenanceAfterCommit(
 						staleSurchargePeriodIds: facts.staleSurchargePeriodIds,
 						surchargeSnapshot: facts.surchargeSnapshot,
 					});
-				}).pipe(
-					Effect.provide(SurchargeServiceLive),
-					Effect.provide(DatabaseServiceLive),
-				),
+				}).pipe(Effect.provide(SurchargeServiceLive)),
 			),
 		markWorkBalanceDirty: markEmployeeWorkBalanceDirty,
 	},
