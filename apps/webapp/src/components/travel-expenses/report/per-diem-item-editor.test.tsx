@@ -64,6 +64,7 @@ vi.mock("@/navigation", () => ({
 	Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
 		<a href={href}>{children}</a>
 	),
+	useRouter: () => ({ push: vi.fn() }),
 }));
 
 import { TravelExpenseReportEditor } from "./travel-expense-report-editor";

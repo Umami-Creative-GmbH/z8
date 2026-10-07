@@ -20,6 +20,7 @@ import {
 	type ReceiptItemFieldError,
 } from "@/lib/travel-expenses/receipt-report";
 import { runTravelExpenseReceiptCleanup } from "@/lib/travel-expenses/receipt-upload";
+import { deleteOwnDraftReport } from "@/lib/travel-expenses/report-deletion-store";
 import {
 	authorizedReportCycle,
 	loadAuthorizedTravelExpenseReport,
@@ -460,6 +461,54 @@ export async function getTravelExpenseReportSubmission(
 	} catch (error) {
 		logger.error({ error }, "Failed to load submitted expense report");
 		return { success: false, error: "Failed to load expense report" };
+	}
+}
+
+/**
+ * Deletes one of the employee's drafts that was never submitted (#684), with
+ * its expenses and receipts, and the legacy draft it continued (#616).
+ */
+export async function deleteDraftTravelExpenseReportAction(input: {
+	reportId: string;
+}): Promise<ServerActionResult<{ reportId: string }>> {
+	try {
+		const owner = await currentOwner();
+		if (!owner) return { success: false, error: "Unauthorized" };
+		if (!uuid.safeParse(input.reportId).success)
+			return { success: false, error: "Expense report not found" };
+		const result = await deleteOwnDraftReport(db, owner, { reportId: input.reportId });
+		switch (result.kind) {
+			case "not_found":
+				return { success: false, error: "Expense report not found" };
+			case "not_deletable":
+				return { success: false, error: "This expense report can no longer be deleted" };
+			case "deleted":
+				break;
+		}
+		logAudit({
+			action: AuditAction.TRAVEL_EXPENSE_DRAFT_DELETED,
+			actorId: owner.userId,
+			employeeId: owner.employeeId,
+			targetId: input.reportId,
+			targetType: "approval",
+			organizationId: owner.organizationId,
+			metadata: { model: "report", legacyClaimId: result.legacyClaimId },
+			timestamp: new Date(),
+		}).catch((error) => logger.error({ error }, "Failed to log expense report deletion"));
+		// The objects are already recorded for durable cleanup; try to delete them now.
+		// One at a time on purpose: this is best effort, so it keeps storage load bounded.
+		for (const attachmentId of result.cleanupIds) {
+			// react-doctor-disable-next-line react-doctor/async-await-in-loop
+			await runTravelExpenseReceiptCleanup(db, {
+				deleteObject: deletePrivateObject,
+				only: { attachmentId, organizationId: owner.organizationId },
+			}).catch((error) => logger.warn({ error }, "Deferred deleted report receipt cleanup"));
+		}
+		revalidatePath("/travel-expenses");
+		return { success: true, data: { reportId: input.reportId } };
+	} catch (error) {
+		logger.error({ error }, "Failed to delete expense report");
+		return { success: false, error: "Failed to delete expense report" };
 	}
 }
 

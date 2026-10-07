@@ -61,6 +61,7 @@ export enum AuditAction {
 	APPROVAL_APPROVED = "approval.approved",
 	APPROVAL_REJECTED = "approval.rejected",
 	TRAVEL_EXPENSE_DRAFT_CREATED = "travel_expense.draft_created",
+	TRAVEL_EXPENSE_DRAFT_DELETED = "travel_expense.draft_deleted",
 	TRAVEL_EXPENSE_SUBMITTED = "travel_expense.submitted",
 	TRAVEL_EXPENSE_CONVERSION_RECORDED = "travel_expense.conversion_recorded",
 	TRAVEL_EXPENSE_CONVERSION_REMOVED = "travel_expense.conversion_removed",
