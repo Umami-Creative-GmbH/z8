@@ -198,7 +198,7 @@ export function RestPeriodBlocker({
 				<p>
 					{t(
 						"compliance:compliance.restPeriodMessage",
-						"You need {{time}} more rest before you can clock in. Next allowed clock-in: {{nextTime}}",
+						"You need {time} more rest before you can clock in. Next allowed clock-in: {nextTime}",
 						{ time: timeStr, nextTime: formattedNextAllowed },
 					)}
 				</p>

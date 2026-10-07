@@ -100,7 +100,7 @@
         "description": "Dışa aktarmak istediğiniz veri kategorilerini seçin",
         "selectAll": "Tümünü Seç",
         "selectAtLeastOne": "Lütfen en az bir kategori seçin",
-        "startExport": "Dışa Aktarmayı Başlat (${selectedCategories.size})",
+        "startExport": "Dışa Aktarmayı Başlat ({count})",
         "startingExport": "Dışa Aktarma Başlatılıyor...",
         "submitError": "Dışa aktarma başlatılamadı",
         "submitSuccess": "Dışa aktarma başarıyla başlatıldı",
@@ -123,7 +123,7 @@
         "downloadSuccess": "İndirme başlatıldı",
         "emptyDescription": "Henüz dışa aktarma yok",
         "emptyHint": "Yukarıdaki formu kullanarak ilk dışa aktarmanızı oluşturun",
-        "moreCategories": "+${exp.categories.length - 3} daha",
+        "moreCategories": "+{count} daha",
         "statusCompleted": "Tamamlandı",
         "statusFailed": "Başarısız",
         "statusPending": "Beklemede",
@@ -148,7 +148,7 @@
         "endpointDescription": "MinIO gibi S3 uyumlu hizmetler için",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "Mevcut kimlik bilgilerini korumak için boş bırakın",
-        "lastVerified": "Son doğrulama: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "lastVerified": "Son doğrulama: {date}",
         "region": "Bölge",
         "regionDescription": "Bucket'ınızın bulunduğu AWS bölgesi",
         "regionPlaceholder": "us-east-1",
@@ -431,7 +431,7 @@
         "tryAgain": "Tekrar Dene"
       },
       "description": "Ayarlar sayfası yüklenirken bir hata oluştu. Bu geçici bir sorun olabilir.",
-      "errorId": "Hata Kimliği: {{digest}}",
+      "errorId": "Hata Kimliği: {digest}",
       "title": "Bir şeyler ters gitti"
     },
     "export": {
@@ -552,9 +552,9 @@
       "eyebrow": "Müşteri uygulaması",
       "progress": {
         "ariaLabel": "Uygulama kontrol listesi ilerlemesi",
-        "completedCount": "{{total}} üzerinden {{completed}} tamamlandı",
+        "completedCount": "{total} üzerinden {completed} tamamlandı",
         "label": "Kurulum ilerlemesi",
-        "percentComplete": "%{{percent}} tamamlandı"
+        "percentComplete": "%{percent} tamamlandı"
       },
       "status": {
         "complete": "Tamamla",
@@ -753,7 +753,7 @@
       "title": "Bildirim Ayarları"
     },
     "organizations": {
-      "description": "Organizasyon üyelerini, davetleri ve ayrıntıları yönetin",
+      "description": "Organizasyon ayrıntılarını ve yapılandırmasını yönetin",
       "notFound": {
         "description": "Organizasyon bulunamadı veya erişiminiz yok.",
         "title": "Organizasyon Bulunamadı"

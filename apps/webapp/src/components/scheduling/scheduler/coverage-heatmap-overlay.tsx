@@ -133,13 +133,13 @@ export function CoverageDayIndicator({ dataPoints }: { dataPoints: HeatmapDataPo
 						</p>
 						{totalGaps > 0 && (
 							<p className="text-sm text-muted-foreground">
-								{t("scheduling:scheduling.coverage.gapCount", "{{count}} staff shortage", {
+								{t("scheduling:scheduling.coverage.gapCount", "{count} staff shortage", {
 									count: totalGaps,
 								})}
 							</p>
 						)}
 						<p className="text-sm text-muted-foreground">
-							{t("scheduling:scheduling.coverage.utilization", "{{percent}}% utilization", {
+							{t("scheduling:scheduling.coverage.utilization", "{percent}% utilization", {
 								percent: avgUtilization.toFixed(0),
 							})}
 						</p>
@@ -205,7 +205,7 @@ export function CoverageSummaryBar({
 				<div className="flex items-center gap-1 text-red-600 dark:text-red-400">
 					<IconAlertTriangle className="size-4" />
 					<span>
-						{t("scheduling:scheduling.coverage.underSlots", "{{count}} understaffed", {
+						{t("scheduling:scheduling.coverage.underSlots", "{count} understaffed", {
 							count: underCount,
 						})}
 						{totalGaps > 0 && ` (${totalGaps} ${t("scheduling:scheduling.coverage.gaps", "gaps")})`}
@@ -217,7 +217,7 @@ export function CoverageSummaryBar({
 				<div className="flex items-center gap-1 text-green-600 dark:text-green-400">
 					<IconCheck className="size-4" />
 					<span>
-						{t("scheduling:scheduling.coverage.metSlots", "{{count}} adequate", {
+						{t("scheduling:scheduling.coverage.metSlots", "{count} adequate", {
 							count: metCount,
 						})}
 					</span>
@@ -228,7 +228,7 @@ export function CoverageSummaryBar({
 				<div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
 					<IconTrendingUp className="size-4" />
 					<span>
-						{t("scheduling:scheduling.coverage.overSlots", "{{count}} overstaffed", {
+						{t("scheduling:scheduling.coverage.overSlots", "{count} overstaffed", {
 							count: overCount,
 						})}
 					</span>

@@ -142,7 +142,7 @@
     "pendingExceptions": "Ausstehende Ausnahmeanträge",
     "pendingExceptionsDescription": "Überprüfen Sie Ausnahmeanträge, die Ihre Genehmigung erfordern",
     "requestException": "Ausnahme beantragen",
-    "restPeriodMessage": "Sie benötigen noch {{time}} Ruhezeit, bevor Sie sich einstempeln können. Nächste erlaubte Einstempelzeit: {{nextTime}}",
+    "restPeriodMessage": "Sie benötigen noch {time} Ruhezeit, bevor Sie sich einstempeln können. Nächste erlaubte Einstempelzeit: {nextTime}",
     "restPeriodRequired": "Ruhezeit erforderlich"
   }
 }

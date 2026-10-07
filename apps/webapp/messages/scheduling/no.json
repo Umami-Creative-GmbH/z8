@@ -3,18 +3,18 @@
     "coverage": {
       "adequate": "Tilstrekkelig bemanning",
       "byLocation": "Etter lokasjon:",
-      "gapCount": "{{count}} bemanningsmangel",
+      "gapCount": "{count} bemanningsmangel",
       "gaps": "hull",
       "hideOverlay": "Skjul dekningsoverlegg",
-      "metSlots": "{{count}} tilstrekkelig",
-      "overSlots": "{{count}} overbemannet",
+      "metSlots": "{count} tilstrekkelig",
+      "overSlots": "{count} overbemannet",
       "overstaffed": "Overbemannet",
       "showOverlay": "Vis overlegg for dekningsmål",
       "summary": "Dekningsoversikt:",
       "toggleLabel": "Dekning",
-      "underSlots": "{{count}} underbemannet",
+      "underSlots": "{count} underbemannet",
       "understaffed": "Underbemannet",
-      "utilization": "{{percent}} % utnyttelse"
+      "utilization": "{percent} % utnyttelse"
     },
     "page": {
       "employeeDescription": "Se vaktene dine og ta ledige vakter",
@@ -100,9 +100,9 @@
     },
     "skills": {
       "expiredCertifications": "Utløpte sertifiseringer:",
-      "expiredOn": "(Utløpt {{date}})",
+      "expiredOn": "(Utløpt {date})",
       "missingPreferred": "Mangler foretrukne ferdigheter:",
-      "missingPreferredCount": "{{count}} foretrukne mangler",
+      "missingPreferredCount": "{count} foretrukne mangler",
       "missingRequired": "Mangler påkrevde ferdigheter:",
       "preferred": "Foretrukket",
       "preferredSkillsMissing": "Foretrukne ferdigheter mangler",

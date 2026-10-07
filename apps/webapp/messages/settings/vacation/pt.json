@@ -49,8 +49,8 @@
         "actions": {
           "edit": "Editar"
         },
-        "allowancesForYear": "Concessões de férias para {{year}}",
-        "defaultAllowanceDescription": "Concessão padrão: {{days}} dias por ano",
+        "allowancesForYear": "Concessões de férias para {year}",
+        "defaultAllowanceDescription": "Concessão padrão: {days} dias por ano",
         "defaultPolicy": "Padrão",
         "description": "Configure concessões de férias personalizadas para funcionários individuais",
         "detail": {
@@ -62,17 +62,17 @@
           "adjustmentReasonDescription": "Obrigatório ao fazer ajustes (para trilha de auditoria)",
           "adjustmentReasonPlaceholder": "Explique por que este ajuste está sendo feito...",
           "adjustments": "Ajustes",
-          "allowanceForYear": "Licença de Férias para {{year}}",
+          "allowanceForYear": "Licença de Férias para {year}",
           "annualDays": "Dias Anuais",
           "assignedPolicy": "Política Atribuída",
           "cancel": "Cancelar",
           "carryover": "Saldo remanescente",
           "carryoverDaysOptional": "Dias de Saldo Remanescente (Opcional)",
-          "currentBalance": "Saldo atual: {{total}} dias disponíveis",
-          "currentlyAssigned": "Atualmente atribuído: {{name}}",
+          "currentBalance": "Saldo atual: {total} dias disponíveis",
+          "currentlyAssigned": "Atualmente atribuído: {name}",
           "customAnnualDaysOptional": "Dias Anuais Personalizados (Opcional)",
           "daysCarriedOverDescription": "Dias remanescentes do ano anterior",
-          "defaultDaysPlaceholder": "Padrão: {{days}} dias",
+          "defaultDaysPlaceholder": "Padrão: {days} dias",
           "employeeInformation": "Informações do Funcionário",
           "errors": {
             "createAdjustmentFailed": "Falha ao criar ajuste",
@@ -83,8 +83,8 @@
           "fallsBackToDefaultPolicy": "Retorna à política padrão da equipe ou da organização",
           "manageAllowances": "gerenciar licenças de férias dos funcionários",
           "managers": "Gerentes",
-          "overrideOrganizationDefault": "Substitua o padrão da organização ({{days}} dias) para este funcionário",
-          "policyOptionDays": "{{name}} ({{days}} dias)",
+          "overrideOrganizationDefault": "Substitua o padrão da organização ({days} dias) para este funcionário",
+          "policyOptionDays": "{name} ({days} dias)",
           "position": "Cargo",
           "primary": "Principal",
           "reasonForAdjustment": "Motivo do ajuste",
@@ -97,10 +97,10 @@
           "useOrganizationTeamDefault": "Usar padrão da organização/equipe"
         },
         "edit": {
-          "description": "Configurar subsídio de férias personalizado para {{name}}",
+          "description": "Configurar subsídio de férias personalizado para {name}",
           "title": "Editar subsídio de férias"
         },
-        "employeeCount": "{{count}} funcionários",
+        "employeeCount": "{count} funcionários",
         "emptyDescription": "Adicione funcionários à sua organização para gerenciar suas concessões de férias.",
         "emptyTitle": "Nenhum funcionário encontrado",
         "noOrgPolicyConfigured": " (Nenhuma política da organização configurada)",

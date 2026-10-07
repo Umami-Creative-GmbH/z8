@@ -118,7 +118,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 										<span className="size-1.5 rounded-full bg-destructive" />
 										{skill.name}
 										<span className="text-xs text-muted-foreground">
-											{t("scheduling:scheduling.skills.expiredOn", "(Expired {{date}})", {
+											{t("scheduling:scheduling.skills.expiredOn", "(Expired {date})", {
 												date: DateTime.fromJSDate(skill.expiresAt).toLocaleString(
 													DateTime.DATE_SHORT,
 												),
@@ -174,7 +174,7 @@ export function SkillWarningBadge({
 
 	return (
 		<Badge variant="secondary" className="text-xs">
-			{t("scheduling:scheduling.skills.missingPreferredCount", "{{count}} preferred missing", {
+			{t("scheduling:scheduling.skills.missingPreferredCount", "{count} preferred missing", {
 				count: totalIssues,
 			})}
 		</Badge>

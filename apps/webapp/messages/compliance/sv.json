@@ -142,7 +142,7 @@
     "pendingExceptions": "Väntande begäranden om undantag",
     "pendingExceptionsDescription": "Granska begäranden om undantag som kräver ditt godkännande",
     "requestException": "Begär undantag",
-    "restPeriodMessage": "Du behöver {{time}} mer vila innan du kan stämpla in. Nästa tillåtna instämpling: {{nextTime}}",
+    "restPeriodMessage": "Du behöver {time} mer vila innan du kan stämpla in. Nästa tillåtna instämpling: {nextTime}",
     "restPeriodRequired": "Viloperiod krävs"
   }
 }

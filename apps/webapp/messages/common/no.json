@@ -434,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Kontakt administrator",
       "createOrg": "Opprett organisasjon",
-      "description": "Du trenger en ansattprofil for å ${feature}. Vennligst opprett en organisasjon eller kontakt administratoren din.",
+      "description": "Du trenger en ansattprofil for å {feature}. Vennligst opprett en organisasjon eller kontakt administratoren din.",
       "emailBody": "Hei,nnJeg trenger en ansattprofil konfigurert for å få tilgang til plattformfunksjonene. Kan du hjelpe meg med dette?nnTakk!",
       "emailSubject": "Oppsett av ansattprofil kreves",
       "helpText": "Hvis du ble invitert til en organisasjon, kan du be administratoren din om å opprette ansattprofilen din.",
@@ -536,11 +536,11 @@
         "title": "Fraværsforespørsel avslått"
       },
       "employeeOffboardingReview": {
-        "approval_handover": "Godkjenningsoppgaver trenger en stedfortreder",
-        "clock_out": "Må gjennomgås: utstempling ved offboarding",
-        "clock_repair": "Tidtakerreparasjon påkrevd",
-        "employment_terms": "Fremtidige ansettelsesvilkår må gjennomgås",
-        "future_work": "Fremtidig arbeid må gjennomgås"
+        "approval_handover": "{employeeName}: Godkjenningsoppgaver trenger en stedfortreder (fratredelse gjelder fra {cutoff}, {timezone}).",
+        "clock_out": "{employeeName}: Må gjennomgås: utstempling ved offboarding (fratredelse gjelder fra {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Tidtakerreparasjon påkrevd (fratredelse gjelder fra {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Fremtidige ansettelsesvilkår må gjennomgås (fratredelse gjelder fra {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: Fremtidig arbeid må gjennomgås (fratredelse gjelder fra {cutoff}, {timezone})."
       },
       "newAbsenceRequest": {
         "title": "Ny fraværsforespørsel"

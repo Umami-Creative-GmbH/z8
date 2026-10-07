@@ -12,7 +12,7 @@
       "title": "Mitarbeitergruppen"
     },
     "employees": {
-      "description": "Mitarbeiterprofile, Teams und Berechtigungen verwalten",
+      "description": "Mitarbeiter, Mitglieder und Einladungen verwalten",
       "details": "Mitarbeiterdetails",
       "detailsDescription": "Mitarbeiterinformationen anzeigen und bearbeiten",
       "detailsTitle": "Mitarbeiterdetails",
@@ -156,7 +156,7 @@
         "title": "Einladungen"
       },
       "lifecycle": {
-        "actionsLabel": "Mitarbeiteraktionen für ${target.displayName}",
+        "actionsLabel": "Mitarbeiteraktionen für {name}",
         "deactivate": "Deaktivieren",
         "deactivateDescription": "Dies sperrt den Zugriff auf diese Organisation und beendet laufende Sitzungen. Der Mitarbeiterverlauf bleibt erhalten.",
         "deactivateError": "Mitarbeiter konnte nicht deaktiviert werden",
@@ -672,8 +672,8 @@
       "employeeSkills": "Fähigkeiten & Qualifikationen",
       "employeeSkillsDescription": "Diesem Mitarbeiter zugewiesene Zertifizierungen und Fähigkeiten",
       "expired": "Abgelaufen",
-      "expiredOn": "Abgelaufen am {{date}}",
-      "expiresOn": "Läuft am {{date}} ab",
+      "expiredOn": "Abgelaufen am {date}",
+      "expiresOn": "Läuft am {date} ab",
       "expiringSoon": "Läuft bald ab",
       "expiry": "Ablaufverfolgung",
       "expiryDate": "Ablaufdatum",

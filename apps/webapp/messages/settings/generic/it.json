@@ -100,7 +100,7 @@
         "description": "Seleziona le categorie di dati che desideri esportare",
         "selectAll": "Seleziona tutto",
         "selectAtLeastOne": "Seleziona almeno una categoria",
-        "startExport": "Avvia esportazione (${selectedCategories.size})",
+        "startExport": "Avvia esportazione ({count})",
         "startingExport": "Avvio esportazione in corso...",
         "submitError": "Impossibile avviare l'esportazione",
         "submitSuccess": "Esportazione avviata correttamente",
@@ -123,7 +123,7 @@
         "downloadSuccess": "Download avviato",
         "emptyDescription": "Nessun export ancora presente",
         "emptyHint": "Crea il tuo primo export usando il modulo qui sopra",
-        "moreCategories": "+${exp.categories.length - 3} altri",
+        "moreCategories": "+{count} altri",
         "statusCompleted": "Completato",
         "statusFailed": "Fallito",
         "statusPending": "In attesa",
@@ -148,7 +148,7 @@
         "endpointDescription": "Per servizi compatibili con S3 come MinIO",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "Lascia vuoto per mantenere le credenziali esistenti",
-        "lastVerified": "Ultima verifica: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "lastVerified": "Ultima verifica: {date}",
         "region": "Regione",
         "regionDescription": "Regione AWS in cui si trova il tuo bucket",
         "regionPlaceholder": "us-east-1",
@@ -431,7 +431,7 @@
         "tryAgain": "Riprova"
       },
       "description": "Si è verificato un errore durante il caricamento della pagina delle impostazioni. Potrebbe trattarsi di un problema temporaneo.",
-      "errorId": "ID errore: {{digest}}",
+      "errorId": "ID errore: {digest}",
       "title": "Qualcosa è andato storto"
     },
     "export": {
@@ -552,9 +552,9 @@
       "eyebrow": "Implementazione cliente",
       "progress": {
         "ariaLabel": "Avanzamento della checklist di implementazione",
-        "completedCount": "{{completed}} di {{total}} completati",
+        "completedCount": "{completed} di {total} completati",
         "label": "Avanzamento configurazione",
-        "percentComplete": "{{percent}}% completato"
+        "percentComplete": "{percent}% completato"
       },
       "status": {
         "complete": "Completato",
@@ -753,7 +753,7 @@
       "title": "Impostazioni notifiche"
     },
     "organizations": {
-      "description": "Gestisci membri dell'organizzazione, inviti e dettagli",
+      "description": "Gestisci dettagli e configurazione dell'organizzazione",
       "notFound": {
         "description": "L'organizzazione non è stata trovata o non hai l'accesso necessario.",
         "title": "Organizzazione non trovata"

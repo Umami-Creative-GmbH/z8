@@ -155,7 +155,7 @@ function getStepCopy(
 				label: t("settings.enterprise.identity.step.scim", "SCIM Provisioning"),
 				description: t(
 					"settings.enterprise.identity.step.scim.description",
-					"Provision access from your identity provider",
+					"Connect and manage your SCIM provisioning connection",
 				),
 			};
 		case "accessPolicy":

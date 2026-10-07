@@ -24,7 +24,7 @@ vi.mock("@tolgee/react", () => ({
 			}
 
 			return Object.entries(values).reduce(
-				(text, [name, value]) => text.replaceAll(`{{${name}}}`, String(value)),
+				(text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
 				fallback,
 			);
 		},
