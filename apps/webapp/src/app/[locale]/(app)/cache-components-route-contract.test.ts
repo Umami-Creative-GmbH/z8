@@ -445,7 +445,7 @@ const SHELL_WORK_QUEUE = [
 		fallbackComponent: "TravelExpensesPageLoading",
 		contentComponent: "TravelExpensesPageContent",
 		fallbackFrameClass:
-			"@container/main flex flex-1 flex-col gap-4 py-4 md:py-6",
+			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
 		fallbackAriaLabel: "Loading travel expenses",
 		requiresSynchronousDefaultExport: true,
 	},
