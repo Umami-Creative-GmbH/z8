@@ -23,6 +23,21 @@ import { type ExchangeRate, normalizeRate } from "./currency-conversion";
 export const REFERENCE_RATE_PROVIDERS = ["ecb"] as const;
 export type ReferenceRateProvider = (typeof REFERENCE_RATE_PROVIDERS)[number];
 
+/**
+ * Versioned statements an administrator acknowledges when approving a source
+ * (0131). `ecb_information_only_v1`: the ECB publishes its euro reference
+ * rates for information only, for a limited set of currencies and only on
+ * TARGET working days, and the organization chooses to reimburse with them.
+ * Changing the wording shown means adding a new version, never editing one.
+ */
+export const REFERENCE_RATE_ACKNOWLEDGEMENTS = ["ecb_information_only_v1"] as const;
+export type ReferenceRateAcknowledgement = (typeof REFERENCE_RATE_ACKNOWLEDGEMENTS)[number];
+
+/** The statement each source's approval form currently shows. */
+export const CURRENT_REFERENCE_RATE_ACKNOWLEDGEMENT = {
+	ecb: "ecb_information_only_v1",
+} as const satisfies Record<ReferenceRateProvider, ReferenceRateAcknowledgement>;
+
 export const ECB_REFERENCE_RATES = {
 	provider: "ecb",
 	/** Every rate is quoted against the euro. */

@@ -11,7 +11,10 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import type { ReferenceRateProvider } from "@/lib/travel-expenses/reference-rate";
+import type {
+	ReferenceRateAcknowledgement,
+	ReferenceRateProvider,
+} from "@/lib/travel-expenses/reference-rate";
 import { organization, user } from "../auth-schema";
 
 // Reference exchange rates as a conversion basis (#608). ECB reference rates
@@ -32,9 +35,17 @@ export const travelExpenseReferenceRatePolicy = pgTable(
 		approvedBy: text("approved_by").references(() => user.id, { onDelete: "set null" }),
 		approvedByName: text("approved_by_name").notNull(),
 		approvedAt: timestamp("approved_at", { withTimezone: true }).notNull(),
+		// 0131: the versioned statement the approver acknowledged with this
+		// approval, and when (the approver above is who acknowledged it).
+		acknowledgement: text("acknowledgement").$type<ReferenceRateAcknowledgement>().notNull(),
+		acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }).notNull(),
 	},
 	(table) => [
 		check("travel_expense_reference_rate_policy_provider_check", sql`${table.provider} IN ('ecb')`),
+		check(
+			"travel_expense_reference_rate_policy_acknowledgement_check",
+			sql`${table.provider} = 'ecb' AND ${table.acknowledgement} IN ('ecb_information_only_v1')`,
+		),
 	],
 );
 

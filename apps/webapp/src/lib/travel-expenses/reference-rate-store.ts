@@ -16,6 +16,7 @@ import {
 import {
 	ECB_REFERENCE_RATES,
 	parseEcbReferenceRateXml,
+	type ReferenceRateAcknowledgement,
 	type ReferenceRateDay,
 	type ReferenceRateProvider,
 } from "./reference-rate";
@@ -128,12 +129,18 @@ export async function refreshReferenceRates(
 
 /**
  * Records an expense administrator's explicit approval of a reference source
- * for the organization (the caller checks the permission). Approving again
- * renews the approval; the approver is kept by name.
+ * for the organization (the caller checks the permission), with the versioned
+ * statement they acknowledged for it. Approving again renews the approval and
+ * its acknowledgement; the approver is kept by name.
  */
 export async function approveReferenceRatePolicy(
 	database: Database,
-	input: { organizationId: string; userId: string; provider: ReferenceRateProvider },
+	input: {
+		organizationId: string;
+		userId: string;
+		provider: ReferenceRateProvider;
+		acknowledgement: ReferenceRateAcknowledgement;
+	},
 	now: Instant = systemClock.nowInstant(),
 ): Promise<ReferenceRatePolicyView | null> {
 	const [approver] = await database
@@ -142,11 +149,14 @@ export async function approveReferenceRatePolicy(
 		.where(eq(user.id, input.userId))
 		.limit(1);
 	if (!approver) return null;
+	const at = dateFromInstant(now);
 	const values = {
 		provider: input.provider,
 		approvedBy: input.userId,
 		approvedByName: approver.name,
-		approvedAt: dateFromInstant(now),
+		approvedAt: at,
+		acknowledgement: input.acknowledgement,
+		acknowledgedAt: at,
 	};
 	await database
 		.insert(travelExpenseReferenceRatePolicy)

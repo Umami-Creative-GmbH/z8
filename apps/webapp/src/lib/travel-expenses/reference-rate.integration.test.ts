@@ -387,10 +387,37 @@ describe("approved reference rates (#608)", () => {
 		expect(
 			await settings.approveReferenceRateSource({ provider: "ecb", acknowledged: false }),
 		).toMatchObject({ success: false });
-		expect(await approveSource()).toMatchObject({
+		expect(
+			await admin.query(
+				"select count(*)::int as n from travel_expense_reference_rate_policy where organization_id = 't608-org'",
+			),
+		).toMatchObject({ rows: [{ n: 0 }] });
+		const approved = await approveSource();
+		expect(approved).toMatchObject({
 			success: true,
-			data: { policy: { provider: "ecb", approvedByName: "Admin" } },
+			data: {
+				policy: {
+					provider: "ecb",
+					approvedByName: "Admin",
+					acknowledgement: "ecb_information_only_v1",
+				},
+			},
 		});
+		// Who acknowledged which statement for which source, and when, is kept with the approval.
+		const { rows: acknowledged } = await admin.query(
+			`select provider, approved_by, acknowledgement, acknowledged_at = approved_at as same_instant
+			 from travel_expense_reference_rate_policy where organization_id = 't608-org'`,
+		);
+		expect(acknowledged).toEqual([
+			{
+				provider: "ecb",
+				approved_by: "t608-admin",
+				acknowledgement: "ecb_information_only_v1",
+				same_instant: true,
+			},
+		]);
+		if (!approved.success) throw new Error(approved.error);
+		expect(approved.data.policy.acknowledgedAt).toBe(approved.data.policy.approvedAt);
 		expect(await settings.getReferenceRateSettings()).toMatchObject({
 			success: true,
 			data: {
@@ -448,7 +475,7 @@ describe("approved reference rates (#608)", () => {
 
 		const revision = await frozenFacts(target.reportId);
 		// Frozen at the current facts version (v9 since #610 allowance overrides).
-		expect(revision.material_fingerprint).toMatch(/^travel_expense_report:v10:[0-9a-f]{64}$/);
+		expect(revision.material_fingerprint).toMatch(/^travel_expense_report:v11:[0-9a-f]{64}$/);
 		const [frozen] = revision.facts.items;
 		expect(frozen.original).toEqual({ amount: "100.00", currency: "USD" });
 		// 100.00 / 1.1525 = 86.7678… → 86.77, rounded once, half up.

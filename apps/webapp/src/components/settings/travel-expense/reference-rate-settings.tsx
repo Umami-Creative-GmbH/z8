@@ -186,12 +186,26 @@ function ApprovedPolicy({ policy }: { policy: NonNullable<ReferenceRateSettings[
 
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-3">
-			<p className="text-sm">
-				{t("settings.travelExpenses.referenceRates.approvedBy", "Approved by {name} on {date}.", {
-					name: policy.approvedByName,
-					date: formatInstant(locale, policy.approvedAt),
-				})}
-			</p>
+			<div className="space-y-1 text-sm">
+				<p>
+					{t("settings.travelExpenses.referenceRates.approvedBy", "Approved by {name} on {date}.", {
+						name: policy.approvedByName,
+						date: formatInstant(locale, policy.approvedAt),
+					})}
+				</p>
+				{policy.acknowledgement === "ecb_information_only_v1" && (
+					<p className="text-muted-foreground">
+						{t(
+							"settings.travelExpenses.referenceRates.acknowledgedEcb",
+							"{name} acknowledged on {date} that the ECB publishes these rates for information only, for a limited set of currencies and only on working days.",
+							{
+								name: policy.approvedByName,
+								date: formatInstant(locale, policy.acknowledgedAt),
+							},
+						)}
+					</p>
+				)}
+			</div>
 			<Button type="button" variant="outline" disabled={revoking} onClick={() => void revoke()}>
 				{revoking && <IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />}
 				{t("settings.travelExpenses.referenceRates.revoke", "Stop using reference rates")}
