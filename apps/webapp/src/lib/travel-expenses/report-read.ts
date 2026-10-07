@@ -141,23 +141,26 @@ async function authorizedRequestsOf(
 				inArray(approvalRequest.entityId, reportIds),
 			),
 		);
-	const authorized: string[] = [];
-	for (const request of requests) {
-		const review = await loadAuthorizedApprovalDetail({
-			userId: actor.userId,
-			organizationId: actor.organizationId,
-			approvalId: request.id,
-			kind: "compatibility",
-		});
-		if (
-			review.status === "found" &&
-			review.detail.item.entityId === request.entityId &&
-			review.detail.item.type === TRAVEL_EXPENSE_REPORT_SOURCE_TYPE
-		) {
-			authorized.push(request.id);
-		}
-	}
-	return authorized;
+	const reviews = await Promise.all(
+		requests.map((request) =>
+			loadAuthorizedApprovalDetail({
+				userId: actor.userId,
+				organizationId: actor.organizationId,
+				approvalId: request.id,
+				kind: "compatibility",
+			}),
+		),
+	);
+	return requests
+		.filter((request, index) => {
+			const review = reviews[index];
+			return (
+				review?.status === "found" &&
+				review.detail.item.entityId === request.entityId &&
+				review.detail.item.type === TRAVEL_EXPENSE_REPORT_SOURCE_TYPE
+			);
+		})
+		.map((request) => request.id);
 }
 
 async function reviewsAnyRequestOf(

@@ -34,6 +34,8 @@ export async function assembleTravelExpenseExportZip(
 				}
 				let content: Uint8Array;
 				try {
+					// One object at a time on purpose: it keeps storage load bounded for large batches.
+					// react-doctor-disable-next-line react-doctor/async-await-in-loop
 					content = await readObject({
 						bucket: receipt.object.bucket,
 						key: receipt.object.key,

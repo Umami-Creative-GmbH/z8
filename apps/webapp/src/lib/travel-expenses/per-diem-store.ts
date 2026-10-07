@@ -79,6 +79,8 @@ export async function addTripPerDiemItem(
 			.select({ position: sql<number | null>`max(${travelExpenseReportItem.position})` })
 			.from(travelExpenseReportItem)
 			.where(scope);
+		// Inside the add transaction: its queries share one connection and run in order anyway.
+		// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
 		const [trip] = await tx
 			.select({ timeZone: travelExpenseReport.tripTimeZone })
 			.from(travelExpenseReport)
@@ -244,6 +246,8 @@ export async function stampPerDiemPolicies(
 	const views = await loadPerDiemViews(tx, input.report, input.items, { useStamp: false });
 	for (const [itemId, view] of views) {
 		const calculation = view.calculation;
+		// A trip has one per diem; the stamp is written on the submission transaction's connection.
+		// react-doctor-disable-next-line react-doctor/async-await-in-loop
 		await tx
 			.update(travelExpenseReportPerDiem)
 			.set({ policy: calculation?.status === "calculated" ? perDiemStampOf(calculation) : null })

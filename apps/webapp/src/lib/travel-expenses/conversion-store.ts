@@ -261,6 +261,8 @@ export async function saveCardChargeConversion(
 			recordedBy: owner.userId,
 			updatedAt: at,
 		});
+		// Ordered writes in the save transaction: the conversion is stored, then the item version moves.
+		// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
 		const itemVersion = await bumpItemVersion(tx, item, owner.userId, at);
 		await touchReport(tx, owner, input.reportId, at);
 		return { kind: "saved", itemVersion, conversion };
@@ -441,6 +443,8 @@ export async function authorizeManualConversionRate(
 			recordedBy: actor.userId,
 			updatedAt: at,
 		});
+		// Ordered writes in the save transaction: the conversion is stored, then the item version moves.
+		// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
 		const itemVersion = await bumpItemVersion(tx, item, actor.userId, at);
 		await touchReportAsAdministrator(tx, actor, input.reportId, at);
 		return { kind: "saved", itemVersion, conversion };

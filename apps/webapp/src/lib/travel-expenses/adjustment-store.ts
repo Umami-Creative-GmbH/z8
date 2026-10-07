@@ -130,46 +130,54 @@ async function copyApprovedReport(
 			),
 	]);
 	const itemIds = new Map<string, string>();
-	for (const item of items) {
-		const [copy] = await tx
+	if (items.length > 0) {
+		// One statement: positions are unique per report, so each copy maps back by its position.
+		const copies = await tx
 			.insert(travelExpenseReportItem)
-			.values({
-				organizationId: owner.organizationId,
-				reportId: report.id,
-				type: item.type,
-				position: item.position,
-				expenseDate: item.expenseDate,
-				category: item.category,
-				description: item.description,
-				originalAmount: item.originalAmount,
-				originalCurrency: item.originalCurrency,
-				paidBy: item.paidBy,
-				accountingReference: item.accountingReference,
-				mileageRoute: item.mileageRoute,
-				mileageDistanceKm: item.mileageDistanceKm,
-				mileageVehicle: item.mileageVehicle,
-				// Priced afresh while a draft and stamped again at submission (#606).
-				mileagePolicy: null,
-				receiptExceptionReason: item.receiptExceptionReason,
-				receiptExceptionVersion: item.receiptExceptionVersion,
-				projectId: item.projectId,
-				projectInherits: item.projectInherits,
-				createdAt: at,
-				updatedAt: at,
-				updatedBy: owner.userId,
-			})
-			.returning({ id: travelExpenseReportItem.id });
-		if (!copy) throw new Error("Failed to copy an adjustment item");
-		itemIds.set(item.id, copy.id);
+			.values(
+				items.map((item) => ({
+					organizationId: owner.organizationId,
+					reportId: report.id,
+					type: item.type,
+					position: item.position,
+					expenseDate: item.expenseDate,
+					category: item.category,
+					description: item.description,
+					originalAmount: item.originalAmount,
+					originalCurrency: item.originalCurrency,
+					paidBy: item.paidBy,
+					accountingReference: item.accountingReference,
+					mileageRoute: item.mileageRoute,
+					mileageDistanceKm: item.mileageDistanceKm,
+					mileageVehicle: item.mileageVehicle,
+					// Priced afresh while a draft and stamped again at submission (#606).
+					mileagePolicy: null,
+					receiptExceptionReason: item.receiptExceptionReason,
+					receiptExceptionVersion: item.receiptExceptionVersion,
+					projectId: item.projectId,
+					projectInherits: item.projectInherits,
+					createdAt: at,
+					updatedAt: at,
+					updatedBy: owner.userId,
+				})),
+			)
+			.returning({ id: travelExpenseReportItem.id, position: travelExpenseReportItem.position });
+		const copyIdByPosition = new Map(copies.map((copy) => [copy.position, copy.id]));
+		for (const item of items) {
+			const copyId = copyIdByPosition.get(item.position);
+			if (!copyId) throw new Error("Failed to copy an adjustment item");
+			itemIds.set(item.id, copyId);
+		}
 	}
 	// The copies name the same stored objects: the evidence is not uploaded again.
 	const receiptIds = new Map<string, string>();
+	const receiptCopies: (typeof travelExpenseReportReceipt.$inferInsert)[] = [];
 	for (const receipt of receipts) {
 		const itemId = itemIds.get(receipt.itemId);
 		if (!itemId) continue;
 		const id = randomUUID();
 		receiptIds.set(receipt.id, id);
-		await tx.insert(travelExpenseReportReceipt).values({
+		receiptCopies.push({
 			id,
 			organizationId: owner.organizationId,
 			reportId: report.id,
@@ -186,6 +194,7 @@ async function copyApprovedReport(
 			createdAt: receipt.createdAt,
 		});
 	}
+	if (receiptCopies.length > 0) await tx.insert(travelExpenseReportReceipt).values(receiptCopies);
 	// Per diem itineraries (#609); the policy is stamped again at submission.
 	const perDiems = await tx
 		.select()
@@ -196,18 +205,19 @@ async function copyApprovedReport(
 				eq(travelExpenseReportPerDiem.organizationId, owner.organizationId),
 			),
 		);
+	const perDiemCopies: (typeof travelExpenseReportPerDiem.$inferInsert)[] = [];
 	for (const perDiem of perDiems) {
 		const itemId = itemIds.get(perDiem.itemId);
 		if (!itemId) continue;
-		await tx
-			.insert(travelExpenseReportPerDiem)
-			.values({ ...perDiem, itemId, reportId: report.id, policy: null });
+		perDiemCopies.push({ ...perDiem, itemId, reportId: report.id, policy: null });
 	}
+	if (perDiemCopies.length > 0) await tx.insert(travelExpenseReportPerDiem).values(perDiemCopies);
+	const conversionCopies: (typeof travelExpenseReportItemConversion.$inferInsert)[] = [];
 	for (const conversion of conversions) {
 		const itemId = itemIds.get(conversion.itemId);
 		if (!itemId) continue;
 		const { id: _id, reportId: _reportId, itemId: _itemId, ...facts } = conversion;
-		await tx.insert(travelExpenseReportItemConversion).values({
+		conversionCopies.push({
 			...facts,
 			reportId: report.id,
 			itemId,
@@ -217,6 +227,9 @@ async function copyApprovedReport(
 			createdAt: at,
 			updatedAt: at,
 		});
+	}
+	if (conversionCopies.length > 0) {
+		await tx.insert(travelExpenseReportItemConversion).values(conversionCopies);
 	}
 	// Authorized allowance overrides (#610) are copied like manual rates.
 	await copyAllowanceOverrides(tx, {
@@ -491,27 +504,28 @@ export async function loadOwnReportAdjustments(
 	const appliedIds = new Set(
 		baseline?.status === "ok" ? baseline.approved.map((entry) => entry.reportId) : [],
 	);
-	const adjustments: ReportAdjustmentSummary[] = [];
-	for (const row of links) {
-		const revision =
-			row.submissionCount > 0
-				? await loadTravelExpenseReportSubmittedRevision(database, {
-						organizationId: owner.organizationId,
-						reportId: row.reportId,
-						submissionCycle: row.submissionCount,
-					})
-				: null;
-		const adjustment = revision?.facts.adjustment;
-		adjustments.push({
-			reportId: row.reportId,
-			status: row.status,
-			reason: row.reason,
-			createdAt: instantToCanonicalString(instantFromDate(row.createdAt)),
-			delta: adjustment?.delta.amount ?? null,
-			currency: adjustment?.delta.currency ?? null,
-			applied: appliedIds.has(row.reportId),
-		});
-	}
+	const adjustments = await Promise.all(
+		links.map(async (row): Promise<ReportAdjustmentSummary> => {
+			const revision =
+				row.submissionCount > 0
+					? await loadTravelExpenseReportSubmittedRevision(database, {
+							organizationId: owner.organizationId,
+							reportId: row.reportId,
+							submissionCycle: row.submissionCount,
+						})
+					: null;
+			const adjustment = revision?.facts.adjustment;
+			return {
+				reportId: row.reportId,
+				status: row.status,
+				reason: row.reason,
+				createdAt: instantToCanonicalString(instantFromDate(row.createdAt)),
+				delta: adjustment?.delta.amount ?? null,
+				currency: adjustment?.delta.currency ?? null,
+				applied: appliedIds.has(row.reportId),
+			};
+		}),
+	);
 	return {
 		role: "original",
 		eligibility: adjustmentEligibility({
