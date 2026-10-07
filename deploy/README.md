@@ -357,7 +357,7 @@ Recommended observability stack:
 docker compose -f docker-compose.prod.yml logs migration
 
 # Run migration manually with verbose output
-docker compose -f docker-compose.prod.yml run --rm migration pnpm exec drizzle-kit push --verbose
+docker compose -f docker-compose.prod.yml run --rm migration node ./node_modules/drizzle-kit/bin.cjs push --verbose --config ./drizzle.config.ts
 ```
 
 ### Webapp won't start
