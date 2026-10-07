@@ -11,7 +11,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { Link } from "@/navigation";
+import { LegacyClaimActions } from "./legacy-draft-conversion";
 import { TravelExpenseDateRange } from "./travel-expense-date-range";
 
 interface TravelExpenseListItem {
@@ -22,6 +22,8 @@ interface TravelExpenseListItem {
 	calculatedCurrency: string;
 	tripStartDate?: string | null;
 	tripEndDate?: string | null;
+	/** The report a legacy draft was continued as (#616). */
+	convertedReportId?: string | null;
 }
 
 interface TravelExpenseListProps {
@@ -103,10 +105,12 @@ export function TravelExpenseList({
 									)}
 								</TableCell>
 								<TableCell>
-									{t(
-										`travelExpenses.status.${claim.status}`,
-										prettify(claim.status),
-									)}
+									{claim.convertedReportId
+										? t("travelExpenses.legacyDraft.status", "Continued as report")
+										: t(
+												`travelExpenses.status.${claim.status}`,
+												prettify(claim.status),
+											)}
 								</TableCell>
 								<TableCell>
 									{claim.calculatedAmount} {claim.calculatedCurrency}
@@ -118,12 +122,7 @@ export function TravelExpenseList({
 									/>
 								</TableCell>
 								<TableCell>
-									<Link
-										className="rounded-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2"
-										href={`/travel-expenses/${claim.id}`}
-									>
-										{t("travelExpenses.actions.viewClaim", "View claim")}
-									</Link>
+									<LegacyClaimActions claim={claim} />
 								</TableCell>
 							</TableRow>
 						))}

@@ -1,30 +1,64 @@
 ---
 title: Travel Expenses
-description: Submit and track travel expense claims.
+description: Collect trip and standalone expenses, submit them for review and follow their reimbursement.
 icon: Receipt
 ---
 
-Travel expenses let you submit work-related costs for review when your organization enables this workflow. Claims may include mileage, meals, lodging, transit, or other categories configured by your admins.
+import { Callout } from "fumadocs-ui/components/callout";
 
-## Before You Submit
+Travel expenses are collected in **expense reports**. A trip report groups several expenses that share travel details. A standalone expense is a single receipt or mileage expense without a trip. Your reviewer decides on the whole report, and finance records the reimbursement. Z8 does not transfer money.
 
-- Confirm the expense is related to work.
-- Add the correct date, amount, category, and description.
-- Attach receipt evidence if your organization requires it.
-- Check whether the expense belongs to a project, customer, or cost center.
+## Your expenses
 
-## Submit a Claim
+Open **Travel Expenses** from the app navigation. The page lists all your reports and any claims from the earlier claim form, newest activity first. Each row shows:
 
-1. Open **Travel Expenses** from the app navigation.
-2. Select **New expense** or the equivalent create action.
-3. Enter the expense details.
-4. Attach receipt evidence when required.
-5. Submit the claim for review.
+- the travel dates or the expense date, exactly as you entered them
+- the review status: Draft, Returned for changes, Awaiting review, Approved or Rejected
+- the amount reimbursable to you, plus company-paid costs if there are any
+- for approved expenses, the balance: an amount still outstanding, **Settled**, or an amount overpaid
 
-## Track Review
+Use the filters above the list to show only reports **To finish** (drafts and returned reports), **In review**, **Approved** or **Rejected**. If the list cannot be loaded, an error with a **Retry** button appears. Rows that are already loaded stay visible while the list refreshes.
 
-After submission, check **My Requests** for the current approval status. If a manager opens approvals from the Travel Expenses page, the approval inbox can be filtered to travel expense requests.
+## Create a report
 
-## Corrections
+- **New trip**: for a business trip. Enter the purpose, travel dates, time zone and destinations once. Then add receipts, mileage and per diem to the trip.
+- **New receipt**: a single receipt without trip details.
+- **New mileage**: a single mileage expense without trip details.
 
-If a claim needs changes, open the request details, review the manager note, and submit the corrected information. Do not create a duplicate claim unless your organization asks you to.
+Drafts save automatically. The save status beside each expense shows whether your changes are saved, still saving, or failed to save. A draft you leave stays in the list under **To finish**.
+
+## Expense types
+
+**Receipts.** Enter the date, category (transport, accommodation, meals, parking or other), amount and currency, a description and who paid: you or the company. Attach a photo or PDF of the receipt. On a phone you can take the photo directly. Company-paid expenses stay visible on the report but are not reimbursed to you.
+
+**Missing receipts.** If your organization allows it, you can explain why a receipt is missing instead of attaching one. Your reviewer must accept each explanation before approving the report.
+
+**Foreign currencies.** The amount and currency on the receipt are always kept. When the receipt is not in your organization's reimbursement currency, enter what your card was actually charged and attach evidence such as a card statement. If your organization approved the ECB reference rates, the conversion is calculated automatically, and the rate's real publication date is shown. Otherwise an expense administrator can enter a documented exchange rate. Z8 never guesses a missing rate.
+
+**Mileage.** Enter the date, route and distance. Z8 calculates the amount with your organization's mileage rate valid on that date and shows the rate it used.
+
+**Per diem.** Per diem belongs to a trip. Enter your departure and return times, whether you stayed overnight, the meals that were provided on each day, and for trips abroad, where you were each day. Z8 shows a daily breakdown with the applicable German statutory or organization rates. If a trip is an exceptional case, for example overlapping trips or a destination without a published rate, Z8 explains why and an expense administrator can enter a manual amount.
+
+**Projects.** You can assign a trip to a project, and each expense inherits it or uses its own. You can only choose projects you were assigned to on the expense date, including projects that have since been closed. For older expenses, an expense administrator can authorize an exception.
+
+## Submit for review
+
+When everything listed under **Still needed** is complete and all changes are saved, select **Review and submit**. Check the expenses, receipts, projects and totals, then select **Submit for approval**. Your reviewer is your direct manager, then your team manager, then your organization's expense approver. You can never approve your own report. If nobody can review it, Z8 tells you what to ask your administrator, and the report stays a draft.
+
+While a report is awaiting review you can **withdraw** it to make more changes. Withdrawing or resubmitting never deletes an earlier submission. You can open each earlier submission from the report page.
+
+## After the review
+
+- **Returned for changes**: your reviewer explains what to fix, and may comment on individual expenses. Correct the report and submit it again.
+- **Rejected**: the decision is final. Create a new report if your reviewer asks you to.
+- **Approved**: finance can export the report and record your reimbursement. The report page shows the balance and every recorded payment.
+
+If an approved report needs a correction before it was exported or reimbursed, ask your reviewer to **reopen** it. After it was exported or reimbursed, open the report and create an **adjustment** with a reason. The adjustment is a corrected copy of the report that needs a new approval. Only the difference to the approved amount is applied, which can be negative. If you were overpaid, finance records the money you return. If another adjustment of the same report is approved while yours is still open, yours can no longer be submitted, because it does not include that correction. Start a new adjustment instead: it starts from the corrected report.
+
+## Earlier claims
+
+Claims from the earlier claim form appear in the same list with the label **Earlier claim**. Submitted and decided claims keep their original approval and history, and a pending claim can still be decided. To finish a draft claim, select **Continue as report**. Its amount, dates, notes and receipts are carried over into a new report, and anything the new form needs is left for you to complete. The original claim stays unchanged.
+
+<Callout type="info">
+Not supported yet: receipt text recognition (OCR), automatic route distances, travel advances, automatic VAT or tax treatment, and policies for organizations that follow another country's travel rules.
+</Callout>

@@ -32,7 +32,8 @@ export type Action =
 	| "export"
 	| "invite"
 	| "generate" // For reports
-	| "configure"; // For policies/settings
+	| "configure" // For policies/settings
+	| "settle"; // Record money moved outside Z8 (travel expense reimbursements)
 
 // ============================================
 // SUBJECTS
@@ -64,6 +65,7 @@ export type OrganizationSubject =
 	| "PayrollOfficerSettings" // Payroll officer access grants
 	| "ScheduledExport" // Scheduled exports
 	| "WorksCouncil" // Works council review portal
+	| "TravelExpenseFinance" // Travel expense finance queue, exports and settlement
 	| "DemoData"; // Demo data management
 
 /**
@@ -218,6 +220,7 @@ export type SubjectTypeMap = {
 	PayrollOfficerSettings: OrgScopedSubject;
 	ScheduledExport: OrgScopedSubject;
 	WorksCouncil: OrgScopedSubject;
+	TravelExpenseFinance: OrgScopedSubject;
 	DemoData: OrgScopedSubject;
 
 	// Workforce subjects

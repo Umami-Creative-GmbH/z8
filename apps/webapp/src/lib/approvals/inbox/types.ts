@@ -56,6 +56,11 @@ export interface ApprovalInboxCapabilities {
 	canReject: boolean;
 	canBulkApprove: boolean;
 	requiresRejectReason: boolean;
+	/**
+	 * Approval needs acceptances only the detail view collects (#604); list and
+	 * sprint approve stay off and send the reviewer to the details.
+	 */
+	requiresDetailReview?: boolean;
 }
 
 export interface ApprovalInboxItem {
@@ -63,6 +68,8 @@ export interface ApprovalInboxItem {
 	type: ApprovalInboxType;
 	entityId: string;
 	status: ApprovalInboxStatus;
+	/** A report cycle retired as returned or withdrawn; its legacy status is `rejected` (#603). */
+	closedAs?: "returned" | "withdrawn";
 	requester: ApprovalInboxRequester;
 	summary: ApprovalInboxSummary;
 	timing: ApprovalInboxTiming;
@@ -70,9 +77,21 @@ export interface ApprovalInboxItem {
 	capabilities: ApprovalInboxCapabilities;
 }
 
+/**
+ * A `{name}` value of a localized text: plain, itself localized, or a list of
+ * localized texts the client joins with "; " after translating each one.
+ */
+export type ApprovalInboxTextParam =
+	| string
+	| number
+	| ApprovalInboxLocalizedText
+	| ApprovalInboxLocalizedText[];
+
 export interface ApprovalInboxLocalizedText {
 	key: string;
 	fallback: string;
+	/** Interpolation values for `{name}` placeholders in the key and fallback. */
+	params?: Record<string, ApprovalInboxTextParam>;
 }
 
 export type ApprovalInboxDetailChangeValue =
@@ -111,24 +130,32 @@ export type ApprovalInboxDetailSection =
 				label: string | ApprovalInboxLocalizedText;
 				value: string | ApprovalInboxLocalizedText | ApprovalInboxDetailChange;
 				tone?: "default" | "warning" | "danger";
+				/** An in-app page the value links to (e.g. the report an adjustment corrects). */
+				href?: string;
 			}>;
 	  }
 	| { type: "text"; title: string; body: string }
 	| {
 			type: "timeline";
-			title: string;
+			title: string | ApprovalInboxLocalizedText;
 			events: Array<{
 				id: string;
-				label: string;
+				label: string | ApprovalInboxLocalizedText;
 				at: string;
 				actorName: string | null;
 			}>;
 	  }
 	| {
 			type: "callout";
-			title: string;
-			body: string;
+			title: string | ApprovalInboxLocalizedText;
+			body: string | ApprovalInboxLocalizedText;
 			tone: "info" | "warning" | "danger";
+	  }
+	/** Expense report missing-receipt exceptions an approval must accept (#604). */
+	| {
+			type: "receipt_exception_acceptance";
+			title: string | ApprovalInboxLocalizedText;
+			items: Array<{ itemId: string; label: string; reason: string }>;
 	  };
 
 export interface ApprovalInboxDetailResult {

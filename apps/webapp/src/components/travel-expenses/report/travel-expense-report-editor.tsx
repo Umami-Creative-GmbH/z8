@@ -1,6 +1,12 @@
 "use client";
 
-import { IconAlertTriangle, IconLoader2, IconPlus } from "@tabler/icons-react";
+import {
+	IconAlertTriangle,
+	IconCar,
+	IconLoader2,
+	IconPlus,
+	IconToolsKitchen2,
+} from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useRef, useState } from "react";
@@ -10,17 +16,27 @@ import {
 	getMyTravelExpenseReport,
 	removeTripReportItemAction,
 } from "@/app/[locale]/(app)/travel-expenses/report-actions";
+import { addTripMileageItemAction } from "@/app/[locale]/(app)/travel-expenses/mileage-actions";
+import { addTripPerDiemItemAction } from "@/app/[locale]/(app)/travel-expenses/per-diem-actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query/keys";
+import { savedReceiptException } from "@/lib/travel-expenses/receipt-exception";
+import {
+	type RequirementItem,
+	reportItemMissingRequirements,
+} from "@/lib/travel-expenses/item-requirements";
+import type { MileageItemDraft } from "@/lib/travel-expenses/mileage";
+import type { PerDiemItinerary } from "@/lib/travel-expenses/per-diem";
 import {
 	type ReceiptItemDraft,
 	receiptItemMissingRequirements,
 	receiptReportTotals,
 } from "@/lib/travel-expenses/receipt-report";
+import { referenceRateReloadNeeded } from "@/lib/travel-expenses/reference-rate-conversion";
+import { isEditableReportStatus } from "@/lib/travel-expenses/report-return";
 import type {
 	ReportItemView,
 	ReportView,
@@ -31,11 +47,18 @@ import {
 	tripReportMissingRequirements,
 } from "@/lib/travel-expenses/trip-report";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
+import { MileageItemEditor, mileageDraftMatches, mileageDraftOf } from "./mileage-item-editor";
+import { PerDiemItemEditor, perDiemDraftMatches, perDiemDraftOf } from "./per-diem-item-editor";
 import { ReceiptItemEditor } from "./receipt-item-editor";
+import { LegacyConversionNotice } from "./legacy-conversion-notice";
+import { AdjustmentNotice } from "./report-adjustments";
+import { ReportReviewFeedback } from "./report-review-cycle";
+import { ReportStatusBadge } from "./report-status";
 import { type IncompleteExpense, ReportTotals, TripRequirements } from "./report-summary";
 import { type SubmitBlocker, SubmitReportPanel } from "./submit-report-panel";
 import { SubmittedTravelExpenseReport } from "./submitted-report";
 import { TripDetailsEditor } from "./trip-details-editor";
+import { useReportProjectIssues } from "./use-report-project-issues";
 
 /** Live entered values per expense; null while an expense has malformed fields. */
 type LiveDrafts = Record<string, ReceiptItemDraft | null>;
@@ -54,17 +77,87 @@ const ITEM_FIELDS = [
 	"accountingReference",
 ] as const satisfies readonly (keyof ReceiptItemDraft)[];
 
+/** Live entered mileage facts per mileage expense (#606); null while malformed. */
+type MileageDrafts = Record<string, MileageItemDraft | null>;
+
+function liveMileage(item: ReportItemView, drafts: MileageDrafts): MileageItemDraft | null {
+	return item.id in drafts ? (drafts[item.id] ?? null) : mileageDraftOf(item);
+}
+
+/** Whether a mileage expense on screen is saved, so its server calculation applies. */
+function mileageSaved(item: ReportItemView, drafts: MileageDrafts): boolean {
+	const live = liveMileage(item, drafts);
+	return live !== null && mileageDraftMatches(live, item);
+}
+
+/** Live entered per diem facts of the trip's per diem (#609); null while malformed. */
+type PerDiemDrafts = Record<string, PerDiemItinerary | null>;
+
+/** Whether the per diem on screen is saved, so its server calculation applies. */
+function perDiemSaved(item: ReportItemView, drafts: PerDiemDrafts): boolean {
+	const live = item.id in drafts ? (drafts[item.id] ?? null) : perDiemDraftOf(item);
+	return live !== null && perDiemDraftMatches(live, item);
+}
+
+/** Whether an expense on screen is not yet submittable (or not saved, for mileage). */
+function itemIncomplete(
+	item: ReportItemView,
+	drafts: LiveDrafts,
+	mileageDrafts: MileageDrafts,
+	report: Pick<ReportView, "reimbursementCurrency" | "receiptExceptionsAllowed" | "trip">,
+	perDiemDrafts: PerDiemDrafts = {},
+): boolean {
+	const { reimbursementCurrency } = report;
+	if (item.type === "per_diem") {
+		return (
+			!perDiemSaved(item, perDiemDrafts) ||
+			reportItemMissingRequirements(
+				{ type: item.type, draft: item, receiptCount: item.receipts.length, perDiem: item.perDiem },
+				{
+					reimbursementCurrency,
+					trip: {
+						startDate: report.trip?.startDate ?? null,
+						endDate: report.trip?.endDate ?? null,
+					},
+				},
+			).length > 0
+		);
+	}
+	if (item.type === "mileage") {
+		return (
+			!mileageSaved(item, mileageDrafts) ||
+			reportItemMissingRequirements(
+				{ type: item.type, draft: item, receiptCount: item.receipts.length, mileage: item.mileage },
+				{ reimbursementCurrency },
+			).length > 0
+		);
+	}
+	const draft = liveDraft(item, drafts);
+	return draft
+		? receiptItemMissingRequirements(draft, {
+				receiptCount: item.receipts.length,
+				reimbursementCurrency,
+				receiptException: savedReceiptException(item, report.receiptExceptionsAllowed),
+				conversion: item.conversion,
+			}).length > 0
+		: true;
+}
+
 /** Whether everything on screen equals the saved report, so reviewing it reviews this. */
 function liveMatchesSaved(
 	saved: ReportView,
 	drafts: LiveDrafts,
 	details: TripDetailsDraft | null,
+	mileageDrafts: MileageDrafts = {},
+	perDiemDrafts: PerDiemDrafts = {},
 ): boolean {
 	const itemsMatch = saved.items.every((item) => {
+		if (item.type === "mileage") return mileageSaved(item, mileageDrafts);
+		if (item.type === "per_diem") return perDiemSaved(item, perDiemDrafts);
 		const live = liveDraft(item, drafts);
 		return live !== null && ITEM_FIELDS.every((field) => live[field] === item[field]);
 	});
-	if (!itemsMatch || saved.status !== "draft") return false;
+	if (!itemsMatch || !isEditableReportStatus(saved.status)) return false;
 	if (saved.kind !== "trip") return true;
 	const trip = saved.trip;
 	return (
@@ -81,18 +174,47 @@ function liveMatchesSaved(
 /** Reloads the saved report; null while the entries on screen are not all saved. */
 function useSavedReportLoader(reportId: string) {
 	const queryClient = useQueryClient();
-	return async (drafts: LiveDrafts, details: TripDetailsDraft | null) => {
+	return async (
+		drafts: LiveDrafts,
+		details: TripDetailsDraft | null,
+		mileageDrafts: MileageDrafts = {},
+		perDiemDrafts: PerDiemDrafts = {},
+	) => {
 		const queryKey = queryKeys.travelExpenses.report(reportId);
 		await queryClient.refetchQueries({ queryKey, exact: true });
 		const saved = queryClient.getQueryData<ReportView>(queryKey);
-		return saved && liveMatchesSaved(saved, drafts, details) ? saved : null;
+		return saved && liveMatchesSaved(saved, drafts, details, mileageDrafts, perDiemDrafts)
+			? saved
+			: null;
 	};
 }
 
-/** Totals of the entered values; malformed expenses are not counted. */
-function liveTotals(items: ReportItemView[], drafts: LiveDrafts, reimbursementCurrency: string) {
+/**
+ * Totals of the entered values; malformed expenses are not counted. Mileage
+ * counts with the server's calculation, and only while its entries are saved.
+ */
+function liveTotals(
+	items: ReportItemView[],
+	drafts: LiveDrafts,
+	reimbursementCurrency: string,
+	mileageDrafts: MileageDrafts = {},
+	perDiemDrafts: PerDiemDrafts = {},
+) {
 	return receiptReportTotals(
-		items.map((item) => liveDraft(item, drafts) ?? { amount: null, currency: null, paidBy: null }),
+		items.map((item) =>
+			item.type === "per_diem"
+				? perDiemSaved(item, perDiemDrafts)
+					? item
+					: { ...item, perDiem: null }
+				: item.type === "mileage"
+					? mileageSaved(item, mileageDrafts)
+						? item
+						: { ...item, mileage: null }
+					: {
+							...(liveDraft(item, drafts) ?? { amount: null, currency: null, paidBy: null }),
+							conversion: item.conversion,
+						},
+		),
 		reimbursementCurrency,
 	);
 }
@@ -142,7 +264,12 @@ export function TravelExpenseReportEditor({
 					<Skeleton aria-hidden="true" className="h-96 w-full" />
 				</div>
 			)}
-			{data && data.status !== "draft" ? (
+			{data && isEditableReportStatus(data.status) && (
+				<ReportReviewFeedback reportId={data.id} submissionCount={data.submissionCount} />
+			)}
+			{data && isEditableReportStatus(data.status) && <AdjustmentNotice reportId={data.id} />}
+			{data && isEditableReportStatus(data.status) && <LegacyConversionNotice reportId={data.id} />}
+			{data && !isEditableReportStatus(data.status) ? (
 				// Submitted reports are frozen; only their submission is shown.
 				<SubmittedTravelExpenseReport reportId={reportId} />
 			) : data?.kind === "trip" && data.trip ? (
@@ -160,10 +287,7 @@ function useReportInvalidation(reportId: string) {
 		refreshReport: () =>
 			queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.report(reportId) }),
 		refreshDrafts: () =>
-			Promise.all([
-				queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.draftReports() }),
-				queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.submittedReports() }),
-			]),
+			queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.history() }),
 	};
 }
 
@@ -178,15 +302,14 @@ function StandaloneReportBody({
 	const { refreshReport, refreshDrafts } = useReportInvalidation(report.id);
 	const loadSavedReport = useSavedReportLoader(report.id);
 	const [drafts, setDrafts] = useState<LiveDrafts>({});
+	const [mileageDrafts, setMileageDrafts] = useState<MileageDrafts>({});
 	const item = report.items[0];
 	if (!item) return null;
-	const live = liveDraft(item, drafts);
-	const blocker: SubmitBlocker = !live
+	const isMileage = item.type === "mileage";
+	const unsaved = isMileage ? !mileageSaved(item, mileageDrafts) : !liveDraft(item, drafts);
+	const blocker: SubmitBlocker = unsaved
 		? "unsaved"
-		: receiptItemMissingRequirements(live, {
-					receiptCount: item.receipts.length,
-					reimbursementCurrency: report.reimbursementCurrency,
-				}).length > 0
+		: itemIncomplete(item, drafts, mileageDrafts, report)
 			? "incomplete"
 			: null;
 
@@ -195,29 +318,49 @@ function StandaloneReportBody({
 			<CardContent className="space-y-6 pt-6">
 				<div className="flex flex-wrap items-center gap-2">
 					<h2 className="text-lg font-semibold">
-						{t("travelExpenses.report.standaloneTitle", "Standalone receipt")}
+						{isMileage
+							? t("travelExpenses.report.mileage.standaloneTitle", "Mileage")
+							: t("travelExpenses.report.standaloneTitle", "Standalone receipt")}
 					</h2>
-					<Badge variant="secondary">{t("travelExpenses.status.draft", "Draft")}</Badge>
+					<ReportStatusBadge status={report.status} />
 				</div>
-				<ReceiptItemEditor
-					key={item.id}
-					reportId={report.id}
-					item={item}
-					receipts={item.receipts}
-					reimbursementCurrency={report.reimbursementCurrency}
-					maxReceiptBytes={maxReceiptBytes}
-					onReceiptsChanged={refreshReport}
-					onSaved={() => void refreshDrafts()}
-					onDraftChange={(draft) => setDrafts({ [item.id]: draft })}
-				/>
+				{isMileage ? (
+					<MileageItemEditor
+						key={item.id}
+						reportId={report.id}
+						item={item}
+						reimbursementCurrency={report.reimbursementCurrency}
+						onSaved={() => void Promise.all([refreshReport(), refreshDrafts()])}
+						onDraftChange={(draft) => setMileageDrafts({ [item.id]: draft })}
+					/>
+				) : (
+					<ReceiptItemEditor
+						key={item.id}
+						reportId={report.id}
+						item={item}
+						receipts={item.receipts}
+						reimbursementCurrency={report.reimbursementCurrency}
+						maxReceiptBytes={maxReceiptBytes}
+						receiptExceptionsAllowed={report.receiptExceptionsAllowed}
+						onReceiptsChanged={refreshReport}
+						onSaved={(saved) => {
+							void refreshDrafts();
+							if (referenceRateReloadNeeded(report.referenceRateProvider, item, saved)) {
+								void refreshReport();
+							}
+						}}
+						onDraftChange={(draft) => setDrafts({ [item.id]: draft })}
+						project={{ isTrip: false, tripProjectId: null }}
+					/>
+				)}
 				<ReportTotals
 					id={report.id}
-					totals={liveTotals(report.items, drafts, report.reimbursementCurrency)}
+					totals={liveTotals(report.items, drafts, report.reimbursementCurrency, mileageDrafts)}
 				/>
 				<SubmitReportPanel
 					reportId={report.id}
 					blocker={blocker}
-					loadSavedReport={() => loadSavedReport(drafts, null)}
+					loadSavedReport={() => loadSavedReport(drafts, null, mileageDrafts)}
 					onSubmitted={() => Promise.all([refreshReport(), refreshDrafts()])}
 				/>
 			</CardContent>
@@ -241,11 +384,26 @@ function TripReportBody({
 	// react-doctor-disable-next-line react-doctor/no-derived-useState
 	const [details, setDetails] = useState<TripDetailsDraft | null>(trip);
 	const [drafts, setDrafts] = useState<LiveDrafts>({});
+	const [mileageDrafts, setMileageDrafts] = useState<MileageDrafts>({});
+	const [perDiemDrafts, setPerDiemDrafts] = useState<PerDiemDrafts>({});
 	const [adding, setAdding] = useState(false);
 	const [removeErrors, setRemoveErrors] = useState<Record<string, string>>({});
 	const [focusTarget, setFocusTarget] = useState<{ itemId: string } | "add" | null>(null);
+	const [tripProjectId, setTripProjectId] = useState(report.projectId ?? null);
 	const addButton = useRef<HTMLButtonElement>(null);
 	const { items } = report;
+	const projectIssues = useReportProjectIssues(
+		report.id,
+		JSON.stringify([
+			tripProjectId,
+			items.map((item) => [
+				item.id,
+				liveDraft(item, drafts)?.expenseDate ?? item.expenseDate,
+				item.projectId ?? null,
+				item.projectInherits ?? true,
+			]),
+		]),
+	);
 
 	// Moves focus once the added expense is rendered, or back to the add
 	// action once the removed one is gone, so keyboard users keep their place.
@@ -265,11 +423,17 @@ function TripReportBody({
 		}
 	}, [focusTarget, items]);
 
-	async function addItem() {
+	async function addItem(type: "receipt" | "mileage" | "per_diem" = "receipt") {
 		setAdding(true);
 		// No `finally`: the React Compiler cannot compile try statements with one.
 		try {
-			const result = await addTripReportItemAction({ reportId: report.id });
+			const add =
+				type === "per_diem"
+					? addTripPerDiemItemAction
+					: type === "mileage"
+						? addTripMileageItemAction
+						: addTripReportItemAction;
+			const result = await add({ reportId: report.id });
 			if (result.success) {
 				setFocusTarget({ itemId: result.data.item.id });
 				await Promise.all([refreshReport(), refreshDrafts()]);
@@ -336,30 +500,68 @@ function TripReportBody({
 	const requirements = details
 		? tripReportMissingRequirements({
 				details,
-				items: items.flatMap((item) => {
+				items: items.flatMap((item): ({ id: string } & RequirementItem)[] => {
+					if (item.type === "per_diem") {
+						return [
+							{
+								id: item.id,
+								type: item.type,
+								draft: item,
+								receiptCount: item.receipts.length,
+								perDiem: item.perDiem,
+							},
+						];
+					}
+					if (item.type === "mileage") {
+						return [
+							{
+								id: item.id,
+								type: item.type,
+								draft: item,
+								receiptCount: item.receipts.length,
+								mileage: item.mileage,
+							},
+						];
+					}
 					const draft = liveDraft(item, drafts);
-					return draft ? [{ id: item.id, draft, receiptCount: item.receipts.length }] : [];
+					return draft
+						? [
+								{
+									id: item.id,
+									draft,
+									receiptCount: item.receipts.length,
+									receiptException: savedReceiptException(item, report.receiptExceptionsAllowed),
+									conversion: item.conversion,
+								},
+							]
+						: [];
 				}),
 				reimbursementCurrency: report.reimbursementCurrency,
 			})
 		: null;
+	// The per diem must match the travel dates as entered on screen.
+	const liveReport = { ...report, trip: details ? { ...trip, ...details } : report.trip };
 	const incompleteExpenses: IncompleteExpense[] = items.flatMap((item, index) => {
-		const draft = liveDraft(item, drafts);
-		const incomplete = draft
-			? receiptItemMissingRequirements(draft, {
-					receiptCount: item.receipts.length,
-					reimbursementCurrency: report.reimbursementCurrency,
-				}).length > 0
-			: true;
-		return incomplete
-			? [{ id: item.id, number: index + 1, description: draft?.description ?? item.description }]
-			: [];
+		// An expense whose project is not proven on its date is refused at submission.
+		if (
+			!itemIncomplete(item, drafts, mileageDrafts, liveReport, perDiemDrafts) &&
+			!projectIssues.ineligibleItemIds.has(item.id)
+		) {
+			return [];
+		}
+		const description =
+			item.type === "per_diem"
+				? t("travelExpenses.report.perDiem.title", "Per diem")
+				: item.type === "mileage"
+					? (liveMileage(item, mileageDrafts)?.route ?? item.mileage?.route ?? null)
+					: (liveDraft(item, drafts)?.description ?? item.description);
+		return [{ id: item.id, number: index + 1, description }];
 	});
 
 	return (
 		<div className="space-y-4">
 			<div className="flex flex-wrap items-center gap-2">
-				<Badge variant="secondary">{t("travelExpenses.status.draft", "Draft")}</Badge>
+				<ReportStatusBadge status={report.status} />
 			</div>
 
 			<Card>
@@ -368,7 +570,14 @@ function TripReportBody({
 						reportId={report.id}
 						details={trip}
 						onDetailsChange={setDetails}
-						onSaved={() => void refreshDrafts()}
+						onSaved={() =>
+							// A per diem is calculated from the saved trip's destinations (#609).
+							void Promise.all([
+								refreshDrafts(),
+								...(items.some((item) => item.type === "per_diem") ? [refreshReport()] : []),
+							])
+						}
+						project={{ initialProjectId: report.projectId ?? null, onSaved: setTripProjectId }}
 					/>
 				</CardContent>
 			</Card>
@@ -405,53 +614,138 @@ function TripReportBody({
 											<AlertDescription>{removeErrors[item.id]}</AlertDescription>
 										</Alert>
 									)}
-									<ReceiptItemEditor
-										reportId={report.id}
-										item={item}
-										receipts={item.receipts}
-										reimbursementCurrency={report.reimbursementCurrency}
-										maxReceiptBytes={maxReceiptBytes}
-										onReceiptsChanged={refreshReport}
-										onSaved={() => void refreshDrafts()}
-										onDraftChange={(draft) =>
-											setDrafts((current) => ({ ...current, [item.id]: draft }))
-										}
-										removal={{
-											label: t(
-												"travelExpenses.report.items.removeLabel",
-												"Remove expense {number}",
-												{
-													number,
-												},
-											),
-											remove: (expectedVersion) => removeItem(item.id, expectedVersion),
-										}}
-									/>
+									{item.type === "per_diem" ? (
+										<PerDiemItemEditor
+											reportId={report.id}
+											item={item}
+											reimbursementCurrency={report.reimbursementCurrency}
+											trip={{
+												startDate: details?.startDate ?? trip.startDate,
+												endDate: details?.endDate ?? trip.endDate,
+												timeZone: details?.timeZone ?? trip.timeZone,
+												destinations: details?.destinations ?? trip.destinations,
+											}}
+											onSaved={() => void Promise.all([refreshReport(), refreshDrafts()])}
+											onDraftChange={(draft) =>
+												setPerDiemDrafts((current) => ({ ...current, [item.id]: draft }))
+											}
+											removal={{
+												label: t(
+													"travelExpenses.report.items.removeLabel",
+													"Remove expense {number}",
+													{
+														number,
+													},
+												),
+												remove: (expectedVersion) => removeItem(item.id, expectedVersion),
+											}}
+										/>
+									) : item.type === "mileage" ? (
+										<MileageItemEditor
+											reportId={report.id}
+											item={item}
+											reimbursementCurrency={report.reimbursementCurrency}
+											onSaved={() => void Promise.all([refreshReport(), refreshDrafts()])}
+											onDraftChange={(draft) =>
+												setMileageDrafts((current) => ({ ...current, [item.id]: draft }))
+											}
+											removal={{
+												label: t(
+													"travelExpenses.report.items.removeLabel",
+													"Remove expense {number}",
+													{
+														number,
+													},
+												),
+												remove: (expectedVersion) => removeItem(item.id, expectedVersion),
+											}}
+										/>
+									) : (
+										<ReceiptItemEditor
+											reportId={report.id}
+											item={item}
+											receipts={item.receipts}
+											reimbursementCurrency={report.reimbursementCurrency}
+											maxReceiptBytes={maxReceiptBytes}
+											receiptExceptionsAllowed={report.receiptExceptionsAllowed}
+											onReceiptsChanged={refreshReport}
+											onSaved={(saved) => {
+												void refreshDrafts();
+												// A saved date may change which project the expense can use.
+												void projectIssues.recheck();
+												if (referenceRateReloadNeeded(report.referenceRateProvider, item, saved)) {
+													void refreshReport();
+												}
+											}}
+											onDraftChange={(draft) =>
+												setDrafts((current) => ({ ...current, [item.id]: draft }))
+											}
+											removal={{
+												label: t(
+													"travelExpenses.report.items.removeLabel",
+													"Remove expense {number}",
+													{
+														number,
+													},
+												),
+												remove: (expectedVersion) => removeItem(item.id, expectedVersion),
+											}}
+											project={{ isTrip: true, tripProjectId }}
+										/>
+									)}
 								</CardContent>
 							</Card>
 						</section>
 					);
 				})}
-				<Button
-					ref={addButton}
-					type="button"
-					variant="outline"
-					onClick={() => void addItem()}
-					disabled={adding}
-				>
-					{adding ? (
-						<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
-					) : (
-						<IconPlus aria-hidden="true" className="mr-2 size-4" />
+				<div className="flex flex-wrap gap-2">
+					<Button
+						ref={addButton}
+						type="button"
+						variant="outline"
+						onClick={() => void addItem()}
+						disabled={adding}
+					>
+						{adding ? (
+							<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
+						) : (
+							<IconPlus aria-hidden="true" className="mr-2 size-4" />
+						)}
+						{t("travelExpenses.report.items.add", "Add receipt expense")}
+					</Button>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => void addItem("mileage")}
+						disabled={adding}
+					>
+						<IconCar aria-hidden="true" className="mr-2 size-4" />
+						{t("travelExpenses.report.mileage.add", "Add mileage")}
+					</Button>
+					{!items.some((item) => item.type === "per_diem") && (
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => void addItem("per_diem")}
+							disabled={adding}
+						>
+							<IconToolsKitchen2 aria-hidden="true" className="mr-2 size-4" />
+							{t("travelExpenses.report.perDiem.add", "Add per diem")}
+						</Button>
 					)}
-					{t("travelExpenses.report.items.add", "Add receipt expense")}
-				</Button>
+				</div>
 			</section>
 
 			<div className="grid gap-4 sm:grid-cols-2">
 				<ReportTotals
 					id={report.id}
-					totals={liveTotals(items, drafts, report.reimbursementCurrency)}
+					totals={liveTotals(
+						items,
+						drafts,
+						report.reimbursementCurrency,
+						mileageDrafts,
+						perDiemDrafts,
+					)}
 				/>
 				<TripRequirements
 					id={report.id}
@@ -462,13 +756,20 @@ function TripReportBody({
 			<SubmitReportPanel
 				reportId={report.id}
 				blocker={
-					!details || items.some((item) => liveDraft(item, drafts) === null)
+					!details ||
+					items.some((item) =>
+						item.type === "per_diem"
+							? !perDiemSaved(item, perDiemDrafts)
+							: item.type === "mileage"
+								? !mileageSaved(item, mileageDrafts)
+								: liveDraft(item, drafts) === null,
+					)
 						? "unsaved"
 						: (requirements?.trip.length ?? 0) > 0 || incompleteExpenses.length > 0
 							? "incomplete"
 							: null
 				}
-				loadSavedReport={() => loadSavedReport(drafts, details)}
+				loadSavedReport={() => loadSavedReport(drafts, details, mileageDrafts, perDiemDrafts)}
 				onSubmitted={() => Promise.all([refreshReport(), refreshDrafts()])}
 			/>
 		</div>

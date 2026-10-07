@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { TravelExpenseReportSubmittedRevisionRecord } from "../evidence/travel-expense-report-store";
-import { buildTravelExpenseReportReviewSections } from "./travel-expense-report-review";
+import {
+	buildTravelExpenseReportReviewSections,
+	travelExpenseReportDecisionLabel,
+} from "./travel-expense-report-review";
 
 function revision(): TravelExpenseReportSubmittedRevisionRecord {
 	const receipt = (receiptId: string, itemId: string) => ({
@@ -123,8 +126,86 @@ describe("buildTravelExpenseReportReviewSections", () => {
 		});
 		expect(sections.at(-1)).toMatchObject({
 			type: "timeline",
-			events: [expect.objectContaining({ label: "Submitted", at: "2026-09-17T08:00:00Z" })],
+			events: [
+				expect.objectContaining({
+					label: { key: "approvals:approvals.evidence.submitted", fallback: "Submitted" },
+					at: "2026-09-17T08:00:00Z",
+				}),
+			],
 		});
+	});
+
+	it("labels a return as a return, never as a rejection (#603)", () => {
+		expect(
+			travelExpenseReportDecisionLabel({
+				requestOutcome: "rejected",
+				assignmentOutcome: "rejected",
+				result: { reportStatus: "returned", disposition: "returned" },
+			}),
+		).toEqual({
+			key: "approvals:approvals.evidence.reportReturnedForChanges",
+			fallback: "Report returned for changes",
+		});
+		expect(
+			travelExpenseReportDecisionLabel({
+				requestOutcome: "rejected",
+				assignmentOutcome: "rejected",
+				result: { reportStatus: "rejected" },
+			}).fallback,
+		).toBe("Report rejected");
+	});
+
+	it("shows an earlier cycle as history with the earlier cycles' return notes", () => {
+		const earlier = revision();
+		const { sections, decisionsBlocked } = buildTravelExpenseReportReviewSections({
+			status: "evidenced",
+			revision: { ...earlier, facts: { ...earlier.facts, submissionCycle: 2 } },
+			comparison: { kind: "current" },
+			decisions: [],
+			latestCycle: false,
+			earlierCycles: [
+				{
+					submissionCycle: 1,
+					kind: "returned",
+					note: "Please attach the hotel folio",
+					actorName: "Riley Reviewer",
+					closedAt: parseInstant("2026-09-16T10:00:00Z"),
+					itemComments: [
+						{ itemId: "item-2", itemLabel: "Hotel", body: "Folio missing" },
+						{ itemId: "item-gone", itemLabel: null, body: "Duplicate" },
+					],
+				},
+			],
+		});
+		expect(decisionsBlocked).toBe(false);
+		expect(sections[0]).toMatchObject({
+			type: "callout",
+			tone: "info",
+			title: { key: "approvals:approvals.evidence.reportEarlierCycleTitle", params: { cycle: 2 } },
+		});
+		expect(sections).toContainEqual(
+			expect.objectContaining({
+				type: "key_value",
+				title: expect.objectContaining({
+					key: "approvals:approvals.evidence.reportCycleReturned",
+					params: { cycle: 1 },
+				}),
+				rows: expect.arrayContaining([
+					expect.objectContaining({ value: "Riley Reviewer" }),
+					expect.objectContaining({ value: "Please attach the hotel folio" }),
+					expect.objectContaining({
+						label: expect.objectContaining({ params: { item: "Hotel" } }),
+						value: "Folio missing",
+					}),
+					expect.objectContaining({
+						label: expect.objectContaining({
+							key: "approvals:approvals.evidence.reportCycleRemovedItemComment",
+						}),
+						value: "Duplicate",
+					}),
+				]),
+			}),
+		);
 	});
 
 	it("blocks decisions when the live report no longer matches its submission", () => {

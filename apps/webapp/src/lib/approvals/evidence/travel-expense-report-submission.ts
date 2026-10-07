@@ -7,6 +7,10 @@ import {
 	travelExpenseReportItem,
 	travelExpenseReportReceipt,
 } from "@/db/schema";
+import { loadAdjustmentLink } from "@/lib/travel-expenses/adjustment-link";
+import { loadReportAllowanceOverrideRows } from "@/lib/travel-expenses/allowance-override-read";
+import { loadReportConversionRows } from "@/lib/travel-expenses/conversion-read";
+import { loadReportPerDiemRows } from "@/lib/travel-expenses/per-diem-pricing";
 import type { ResolvePolicyAndCreateApprovalResult } from "../policies/chain-service";
 import type { ApprovalDatabase } from "../server/types";
 import { ApprovalEvidenceError } from "./errors";
@@ -35,7 +39,8 @@ export async function loadTravelExpenseReportFactsInput(
 	  })
 	| null
 > {
-	const [reports, items, receipts] = await Promise.all([
+	const [reports, items, receipts, conversions, perDiems, adjustment, allowanceOverrides] =
+		await Promise.all([
 		database
 			.select()
 			.from(travelExpenseReport)
@@ -54,6 +59,12 @@ export async function loadTravelExpenseReportFactsInput(
 			.select()
 			.from(travelExpenseReportReceipt)
 			.where(eq(travelExpenseReportReceipt.reportId, scope.reportId)),
+		loadReportConversionRows(database, scope.reportId),
+		loadReportPerDiemRows(database, scope.reportId),
+		// The report it corrects when it is an adjustment report (#615).
+		loadAdjustmentLink(database, scope),
+		// Administrator overrides of allowance items (#610).
+		loadReportAllowanceOverrideRows(database, scope.reportId),
 	]);
 	const report = reports[0];
 	if (reports.length !== 1 || !report) return null;
@@ -70,9 +81,14 @@ export async function loadTravelExpenseReportFactsInput(
 			tripEndDate: report.tripEndDate,
 			tripTimeZone: report.tripTimeZone,
 			tripDestinations: report.tripDestinations,
+			projectId: report.projectId,
 		},
 		items,
 		receipts,
+		conversions,
+		perDiems,
+		adjustment,
+		allowanceOverrides,
 		fileNames: Object.fromEntries(receipts.map((receipt) => [receipt.id, receipt.fileName])),
 	};
 }

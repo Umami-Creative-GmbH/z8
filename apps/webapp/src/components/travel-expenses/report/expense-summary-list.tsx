@@ -3,6 +3,10 @@
 import { IconFileText } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
+import type { ConversionResult } from "@/lib/travel-expenses/currency-conversion";
+import { type AllowanceOverrideSummary, AllowanceOverrideNotice } from "./allowance-override-notice";
+import { ConversionSummary } from "./conversion-summary";
+import { type ExpenseProjectSummary, ExpenseProjectLine } from "./expense-project-line";
 import {
 	categoryLabel,
 	formatCountry,
@@ -10,6 +14,9 @@ import {
 	formatPlainDate,
 	formatPlainDateRange,
 } from "./format";
+import { MileageBreakdown, type MileageBreakdownFacts } from "./mileage-breakdown";
+import { PerDiemBreakdown, type PerDiemBreakdownFacts } from "./per-diem-breakdown";
+import { ReceiptExceptionNotice } from "./receipt-exception-notice";
 
 export interface ExpenseSummary {
 	id: string;
@@ -20,6 +27,18 @@ export interface ExpenseSummary {
 	currency: string | null;
 	paidBy: "employee" | "company" | null;
 	receipts: { id: string; fileName: string; href?: string }[];
+	/** A mileage expense's calculation (#606). */
+	mileage?: MileageBreakdownFacts | null;
+	/** A per diem's daily breakdown (#609). */
+	perDiem?: PerDiemBreakdownFacts | null;
+	/** Missing-receipt exception submitted instead of a receipt (#604). */
+	receiptException?: { reason: string } | null;
+	/** How a foreign-currency expense converts (#607); absent otherwise. */
+	conversion?: ConversionResult | null;
+	/** Frozen project attribution (#605). */
+	project?: ExpenseProjectSummary;
+	/** An allowance an expense administrator set manually (#610); `amount` is its amount. */
+	allowanceOverride?: AllowanceOverrideSummary | null;
 }
 
 export interface TripSummary {
@@ -103,6 +122,24 @@ export function ExpenseSummaryList({ items }: { items: ExpenseSummary[] }) {
 							.filter(Boolean)
 							.join(" · ")}
 					</p>
+					{item.conversion && item.amount && item.currency && (
+						<div className="mt-2">
+							<ConversionSummary
+								original={{ amount: item.amount, currency: item.currency }}
+								conversion={item.conversion}
+								receipts={item.receipts}
+							/>
+						</div>
+					)}
+					{item.project && <ExpenseProjectLine project={item.project} />}
+					{item.allowanceOverride && (
+						<AllowanceOverrideNotice
+							override={item.allowanceOverride}
+							ordinary={item.mileage ?? item.perDiem ?? null}
+						/>
+					)}
+					{item.mileage && <MileageBreakdown facts={item.mileage} />}
+					{item.perDiem && <PerDiemBreakdown facts={item.perDiem} />}
 					{item.receipts.length > 0 && (
 						<ul className="mt-2 flex flex-wrap gap-2 text-sm">
 							{item.receipts.map((receipt) => (
@@ -124,6 +161,7 @@ export function ExpenseSummaryList({ items }: { items: ExpenseSummary[] }) {
 							))}
 						</ul>
 					)}
+					{item.receiptException && <ReceiptExceptionNotice exception={item.receiptException} />}
 				</li>
 			))}
 		</ol>

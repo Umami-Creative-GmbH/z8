@@ -39,6 +39,8 @@ import {
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import type { DraftSaveOutcome } from "@/lib/travel-expenses/draft-saver";
+import { itemProjectChoice } from "@/lib/travel-expenses/project-attribution";
+import { receiptExceptionContext } from "@/lib/travel-expenses/receipt-exception";
 import {
 	MAX_ACCOUNTING_REFERENCE_LENGTH,
 	MAX_DESCRIPTION_LENGTH,
@@ -50,9 +52,12 @@ import {
 	receiptItemMissingRequirements,
 } from "@/lib/travel-expenses/receipt-report";
 import type { ReportItemView, ReportReceiptView } from "@/lib/travel-expenses/report-store";
+import { CurrencyConversionField, conversionRequirementLabel } from "./currency-conversion-field";
 import { DraftSaveStatus } from "./draft-save-status";
 import { categoryLabel } from "./format";
+import { ItemProjectField } from "./project-picker";
 import { ReceiptAttachments } from "./receipt-attachments";
+import { ReceiptExceptionField } from "./receipt-exception-field";
 import { useDraftSaver } from "./use-draft-saver";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -88,6 +93,14 @@ function withSavedValues(
 	const merged = { ...values };
 	for (const field of Object.keys(errors) as FieldName[]) merged[field] = saved[field];
 	return merged;
+}
+
+/** The entered amount and currency when both are well-formed. */
+function parsedOriginal(values: FormValues) {
+	const parsed = parseReceiptItemDraft(toDraftInput(values));
+	return parsed.ok
+		? { amount: parsed.draft.amount, currency: parsed.draft.currency }
+		: { amount: null, currency: null };
 }
 
 function fieldErrorMessage(t: Translate, field: FieldName, code: string | undefined) {
@@ -127,12 +140,21 @@ function requirementLabel(t: Translate, requirement: ReceiptItemRequirement, cur
 			return t("travelExpenses.report.requirements.paidBy", "Say whether you or the company paid.");
 		case "receipt":
 			return t("travelExpenses.report.requirements.receipt", "Attach the receipt.");
-		case "same_currency":
+		case "receipt_exception_reason":
 			return t(
-				"travelExpenses.report.requirements.sameCurrency",
-				"Only receipts in {currency} are supported so far. Other currencies need a conversion that is not available yet.",
-				{ currency },
+				"travelExpenses.report.requirements.receiptExceptionReason",
+				"Explain why the receipt is missing.",
 			);
+		case "receipt_exception_not_allowed":
+			return t(
+				"travelExpenses.report.requirements.receiptExceptionNotAllowed",
+				"Attach the receipt. Your organization does not allow missing-receipt exceptions.",
+			);
+		case "conversion_missing":
+		case "conversion_unsupported":
+		case "conversion_evidence":
+		case "conversion_rate_date":
+			return conversionRequirementLabel(t, requirement, currency);
 	}
 }
 
@@ -147,6 +169,8 @@ export function ReceiptItemEditor({
 	onDraftChange,
 	removal,
 	maxReceiptBytes,
+	receiptExceptionsAllowed = false,
+	project,
 }: {
 	reportId: string;
 	/** The item as last loaded; later loads never reset entered values. */
@@ -161,10 +185,17 @@ export function ReceiptItemEditor({
 	removal?: { label: string; remove: (expectedVersion: number) => Promise<boolean> };
 	/** The server's receipt size limit, so the uploader refuses larger files up front. */
 	maxReceiptBytes: number;
+	/** Whether the organization allows missing-receipt exceptions (#604). */
+	receiptExceptionsAllowed?: boolean;
+	/** Project attribution (#605); the trip's project is what "inherit" means. */
+	project?: { isTrip: boolean; tripProjectId: string | null; onSaved?: () => void };
 }) {
 	const { t } = useTranslate();
 	const [uploading, setUploading] = useState(false);
 	const [removing, setRemoving] = useState(false);
+	const [receiptException, setReceiptException] = useState(() =>
+		receiptExceptionContext(item.receiptException.reason, receiptExceptionsAllowed),
+	);
 
 	// The last values the server confirmed; malformed fields fall back to them.
 	const [initialSaved] = useState(() => toDraftInput(toFormValues(item)));
@@ -466,13 +497,30 @@ export function ReceiptItemEditor({
 							<TFormDescription>
 								{t(
 									"travelExpenses.report.fields.accountingReferenceDescription",
-									"A reference finance asked you to use, such as an order number. Project assignment follows later.",
+									"A reference finance asked you to use, such as an order number.",
 								)}
 							</TFormDescription>
 							<TFormMessage>{fieldError("accountingReference")}</TFormMessage>
 						</TFormItem>
 					)}
 				</form.Field>
+
+				{project && (
+					<form.Subscribe selector={(formState) => formState.values.expenseDate}>
+						{(expenseDate) => (
+							<ItemProjectField
+								reportId={reportId}
+								itemId={item.id}
+								isTrip={project.isTrip}
+								expenseDate={/^\d{4}-\d{2}-\d{2}$/.test(expenseDate) ? expenseDate : null}
+								initialChoice={itemProjectChoice(item)}
+								tripProjectId={project.tripProjectId}
+								saver={saver}
+								onSaved={project.onSaved}
+							/>
+						)}
+					</form.Subscribe>
+				)}
 			</form>
 
 			<ReceiptAttachments
@@ -483,6 +531,36 @@ export function ReceiptItemEditor({
 				onBusyChange={setUploading}
 				maxFileSize={maxReceiptBytes}
 			/>
+			<ReceiptExceptionField
+				reportId={reportId}
+				itemId={item.id}
+				exception={item.receiptException}
+				receiptCount={receipts.length}
+				allowed={receiptExceptionsAllowed}
+				onContextChange={setReceiptException}
+				onSaved={onReceiptsChanged}
+			/>
+
+			<form.Subscribe selector={(formState) => formState.values}>
+				{(values) => (
+					<CurrencyConversionField
+						reportId={reportId}
+						itemId={item.id}
+						original={parsedOriginal(values)}
+						expenseDate={values.expenseDate.trim() || null}
+						reimbursementCurrency={reimbursementCurrency}
+						conversion={item.conversion ?? null}
+						referenceRate={item.referenceRate}
+						receipts={receipts}
+						version={{
+							flush: () => saver.flush(),
+							current: () => saver.getState().version,
+							adopt: (version) => saver.adoptVersion(version),
+						}}
+						onChanged={onReceiptsChanged}
+					/>
+				)}
+			</form.Subscribe>
 
 			<form.Subscribe selector={(formState) => formState.values}>
 				{(values) => {
@@ -492,6 +570,8 @@ export function ReceiptItemEditor({
 						? receiptItemMissingRequirements(draft, {
 								receiptCount: receipts.length,
 								reimbursementCurrency,
+								receiptException: { ...receiptException, allowed: receiptExceptionsAllowed },
+								conversion: item.conversion,
 							})
 						: null;
 					return (
@@ -534,7 +614,7 @@ export function ReceiptItemEditor({
 }
 
 /** Removes an expense, and its receipts, after an explicit confirmation. */
-function RemoveExpenseButton({
+export function RemoveExpenseButton({
 	label,
 	busy,
 	onConfirm,

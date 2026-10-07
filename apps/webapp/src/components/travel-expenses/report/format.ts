@@ -1,15 +1,28 @@
 import type { useTranslate } from "@tolgee/react";
 import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { signedAmount } from "@/lib/travel-expenses/money";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
-/** Formats a stored decimal amount; falls back to the raw value for unknown currencies. */
+/**
+ * Formats a stored decimal amount; falls back to the raw value for unknown
+ * currencies. The decimal string itself is formatted, so no binary float can
+ * change a digit.
+ */
 export function formatMoney(locale: string, amount: string, currency: string) {
 	try {
-		return new Intl.NumberFormat(locale, { style: "currency", currency }).format(Number(amount));
+		return new Intl.NumberFormat(locale, { style: "currency", currency }).format(
+			amount as Intl.StringNumericLiteral,
+		);
 	} catch {
 		return `${amount} ${currency}`;
 	}
+}
+
+/** A signed difference (#615): "+" only when positive; zero carries no sign. */
+export function formatSignedMoney(locale: string, amount: string, currency: string) {
+	const formatted = formatMoney(locale, amount, currency);
+	return signedAmount(amount).startsWith("+") ? `+${formatted}` : formatted;
 }
 
 /** Formats a calendar date (YYYY-MM-DD) without any timezone conversion. */

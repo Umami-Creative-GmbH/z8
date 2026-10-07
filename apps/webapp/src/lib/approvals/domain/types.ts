@@ -75,6 +75,12 @@ export interface UnifiedApprovalItem {
 	/** Current status */
 	status: ApprovalStatus;
 
+	/**
+	 * A travel expense report request retired without a decision (#603): its
+	 * legacy status is `rejected`, but it was returned or withdrawn.
+	 */
+	closedAs?: "returned" | "withdrawn";
+
 	/** When the request was created */
 	createdAt: Date;
 
@@ -96,6 +102,12 @@ export interface UnifiedApprovalItem {
 
 	/** Whether the request can be decided without reconciliation. */
 	isActionable?: boolean;
+
+	/**
+	 * Approving needs the detail view's explicit acceptances (e.g. an expense
+	 * report's missing-receipt exceptions, #604): quick approve paths are off.
+	 */
+	requiresDetailReview?: boolean;
 
 	/** Explicit warning shown for requests requiring reconciliation. */
 	warning?: string | null;
@@ -235,7 +247,16 @@ export interface ApprovalDetail<TEntity = unknown> {
 
 export interface ApprovalTimelineEvent {
 	id: string;
-	type: "created" | "approved" | "rejected" | "escalated" | "reminder";
+	type:
+		| "created"
+		| "approved"
+		| "rejected"
+		| "escalated"
+		| "reminder"
+		/** A travel expense report returned for changes (#603). */
+		| "returned"
+		/** A travel expense report withdrawn by its employee (#603). */
+		| "withdrawn";
 	performedBy: {
 		name: string;
 		image: string | null;
@@ -251,6 +272,8 @@ export interface ApprovalActionOptions {
 	allowOrganizationWideApprover?: boolean;
 	/** Opaque reviewed-view handle; a supporting decision owner revalidates it. */
 	reviewedBindingId?: string;
+	/** Expense reports (#604): missing-receipt exceptions the approver explicitly accepts. */
+	acceptedReceiptExceptionItemIds?: readonly string[];
 }
 
 /**

@@ -725,6 +725,92 @@ check passes with `0093` in the chain. Unit seams: `travel-expense-decision.test
 `travel-expense-card.test.ts`, `travel-expense-review.test.ts`, the handler,
 action and maintenance tests.
 
+## Expense report cards and bound decisions (#623)
+
+Expense reports (#602) are always frozen per submission cycle and decided by
+legacy authority under the shared `travel_expense` kind. #623 brings them to
+claim parity on the card channels:
+
+- **Card.** `presentation/travel-expense-report-card.ts` prepares a bound card
+  for the recipient's exact pending report request only when: the provider is
+  admitted for reports (`TRAVEL_EXPENSE_REPORT_ACTIONABLE_PROVIDERS`, Telegram
+  only), the kind has legacy authority, the presentation control is
+  `actionable`, the report is `submitted`, the frozen revision of its current
+  cycle exists, the request belongs to that revision's lifecycle, the live rows
+  still match it, and the essential facts are intelligible. The capture control
+  is not consulted: reports are frozen at every submission. Facts: employee,
+  submitter when different, report kind, trip purpose, days and destinations,
+  expense count, frozen reimbursable and company-paid totals, receipt count and
+  submission instant. Item descriptions and receipt files stay in authenticated
+  review. The card is review-only, and the web inbox decides, when any
+  receipt expense lacks its receipt or carries a missing-receipt exception
+  (#604: a card never approves an exception without acceptance), when an
+  allowance was set manually (#610: its reason and evidence are reviewed on the
+  web), and for an adjustment report (#615: its baseline and signed delta are
+  reviewed on the web). Mileage and per diem expenses carry no receipt by
+  design and stay actionable. In the inbox list and sprint, a report with
+  missing-receipt exceptions cannot be approved either
+  (`capabilities.requiresDetailReview`); only the detail view collects the
+  acceptances.
+- **Bound decision.** The report decision owner takes an optional `bound`
+  invocation (`server/travel-expense-report-bound-invocation.ts`): under the
+  rollout gate it locks the invocation and replays an exact committed one
+  before any fresh check, requires current admission, loads the binding for
+  exactly this recipient, decides only the bound request, refuses a binding
+  whose revision is not the current cycle's (`binding_mismatch`), never passes
+  management or eligible-manager options, records the decision evidence with
+  `reviewed_binding_id` and the invocation receipt key, and records the
+  invocation in the same transaction. The decision path stays approve/reject;
+  #603's return decision can be added as another action of the same owner.
+- **Routing.** `attemptBoundBotApproval` sends every legacy `travel_expense`
+  binding to `decideBoundLegacyTravelExpenseInvocation`, which reads the
+  binding's immutable revision source type and calls the report owner
+  (`decideBoundTravelExpenseReportInvocation`) or the unchanged claim owner.
+
+### Report reads, returns and withdrawals
+
+- **Returned and withdrawn cycles are not rejections.** A return (#603) closes
+  the cycle's legacy request through the shared reject mutation and a
+  withdrawal retires it, so both leave the legacy status `rejected`. Every
+  reader classifies them by their `travel_expense_report_cycle_closure`
+  (`lib/approvals/travel-expense-report-request-closure.ts`): the inbox's
+  `rejected` filter excludes them, the detail shows `closedAs` and a
+  returned/withdrawn timeline entry, review evidence labels a return "returned
+  for changes", the approval audit log records action `return`, and manager
+  analytics count neither as a rejection (withdrawals are left out entirely).
+- **Each request shows its own cycle.** Inbox rows, details and review
+  evidence of a request read the frozen revision the request was created for
+  (`loadTravelExpenseReportRevisionsByRequest`), plus earlier cycles' return
+  notes and item comments; only the current cycle is compared with live rows.
+- **Who reads a report.** The owner reads every cycle. A reviewer reads only
+  the cycles whose request the Approvals inbox authorizes them for
+  (`reviewerCycles`; default view = the latest of those), including those
+  cycles' frozen receipts. The reviewer of an adjustment (#615) also reads the
+  approved report it corrects (#617), without a cycle restriction: the
+  adjustment's own facts are a copy of that report and the review needs the
+  link, so it reveals no other expense. Finance (#612) reads approved reports'
+  current submission only.
+- **Deleting a reviewer.** Closures keep their actor by value; migration 0130
+  clears `actor_employee_id`/`actor_user_id` (and report/item `updated_by`)
+  when that employee or user is deleted. Privileged maintenance purges a
+  cycle's closure with the approval lifecycle it belongs to and finds cycles a
+  purged employee closed.
+
+### Verification (#623)
+
+PostgreSQL 16 (`lib/travel-expenses/report-review-cards.integration.test.ts`),
+driving the real report actions and upload route, delivery owner, Telegram
+webhook, shared bot attempt, inbox decision routes, escalation discovery,
+transfer and replacement delivery, pilot readiness and maintenance: the bound
+card with frozen facts through the committed cycle intent; Telegram decide,
+exact replay, conflicting command, fresh press after the decision and card
+refresh; concurrent presses into one decision; changed, paused, moved,
+web-decided, foreign and other-member cards decide nothing; a two-stage chain
+(next stage's card, superseded first card, final status); scheduled transfer
+with the former holder's card refused as reassigned and the replacement card
+deciding; chain and canonical-mode holds; readiness counts; privileged purge
+of one cycle. Unit seam: `travel-expense-report-card.test.ts`.
+
 ## Telegram absence cards with reviewed bindings (#290 / T26)
 
 A canonical absence card on Telegram can carry Approve/Reject controls bound to

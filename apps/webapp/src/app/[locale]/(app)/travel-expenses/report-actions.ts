@@ -3,12 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
+import {
+	type SubmitTravelExpenseReportResult,
+	submitTravelExpenseReport,
+} from "@/lib/approvals/server/travel-expense-report-submission";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import { getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 import { deletePrivateObject } from "@/lib/storage/export-s3-client";
 import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import { currentReportOwner as currentOwner } from "@/lib/travel-expenses/current-owner";
 import {
 	parseReceiptItemDraft,
 	type ReceiptItemDraft,
@@ -16,6 +20,12 @@ import {
 	type ReceiptItemFieldError,
 } from "@/lib/travel-expenses/receipt-report";
 import { runTravelExpenseReceiptCleanup } from "@/lib/travel-expenses/receipt-upload";
+import {
+	authorizedReportCycle,
+	loadAuthorizedTravelExpenseReport,
+	loadSubmittedReportView,
+	type SubmittedReportView,
+} from "@/lib/travel-expenses/report-read";
 import { removeReportReceipt } from "@/lib/travel-expenses/report-receipt-upload";
 import {
 	addTripReportItem,
@@ -33,11 +43,6 @@ import {
 	saveTripDetailsDraft,
 	type TripDetailsView,
 } from "@/lib/travel-expenses/report-store";
-import {
-	loadAuthorizedTravelExpenseReport,
-	loadSubmittedReportView,
-	type SubmittedReportView,
-} from "@/lib/travel-expenses/report-read";
 import type { ReviewedReportVersions } from "@/lib/travel-expenses/report-submission";
 import {
 	parseTripDetailsDraft,
@@ -45,20 +50,6 @@ import {
 	type TripDetailsDraftInput,
 	type TripDetailsFieldError,
 } from "@/lib/travel-expenses/trip-report";
-import {
-	type SubmitTravelExpenseReportResult,
-	submitTravelExpenseReport,
-} from "@/lib/approvals/server/travel-expense-report-submission";
-
-async function currentOwner(): Promise<ReportOwner | null> {
-	const authContext = await getAuthContext();
-	if (!authContext?.employee) return null;
-	return {
-		organizationId: authContext.employee.organizationId,
-		employeeId: authContext.employee.id,
-		userId: authContext.user.id,
-	};
-}
 
 const uuid = z.uuid();
 
@@ -368,6 +359,9 @@ const submitSchema = z.object({
 					id: z.uuid(),
 					version: z.number().int().positive(),
 					receiptIds: z.array(z.uuid()).max(100),
+					receiptExceptionVersion: z.number().int().nonnegative().optional(),
+					referenceRate: z.string().max(200).nullable().optional(),
+					amount: z.string().max(20).nullable().optional(),
 				}),
 			)
 			.max(200),
@@ -407,10 +401,14 @@ export async function submitTravelExpenseReportAction(input: {
 				return { success: true, data: { status: "routing_failed" } };
 			case "incomplete":
 				return { success: true, data: { status: result.kind, missing: result.missing } };
+			case "project_ineligible":
+				return { success: true, data: { status: result.kind, itemIds: result.itemIds } };
 			case "no_reviewer":
 				return { success: true, data: { status: result.kind, reason: result.reason } };
 			case "threshold_currency_unsupported":
 				return { success: true, data: { status: result.kind, currency: result.currency } };
+			case "adjustment_unavailable":
+				return { success: true, data: { status: result.kind, reason: result.reason } };
 			case "changed_since_review":
 			case "self_approval_route":
 			case "authority_unsupported":
@@ -439,16 +437,23 @@ export async function submitTravelExpenseReportAction(input: {
 	}
 }
 
-/** The latest frozen submission, for the report's owner or an authorized reviewer. */
+/**
+ * A frozen submission, for the report's owner or an authorized reviewer: the
+ * latest, or the earlier cycle `cycle` names (#603).
+ */
 export async function getTravelExpenseReportSubmission(
 	reportId: string,
+	cycle?: number,
 ): Promise<ServerActionResult<SubmittedReportView>> {
 	try {
 		const authorized = await loadAuthorizedTravelExpenseReport(reportId);
 		if (authorized.status === "unauthorized") return { success: false, error: "Unauthorized" };
+		// A reviewer reads only the cycles they are authorized to review.
+		const readableCycle =
+			authorized.status === "found" ? authorizedReportCycle(authorized, cycle) : null;
 		const view =
-			authorized.status === "found"
-				? await loadSubmittedReportView(authorized.report, authorized.access)
+			authorized.status === "found" && readableCycle !== null
+				? await loadSubmittedReportView(authorized.report, authorized.access, readableCycle)
 				: null;
 		if (!view) return { success: false, error: "Expense report not found" };
 		return { success: true, data: view };

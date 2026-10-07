@@ -82,12 +82,38 @@ export const queryKeys = {
 		all: ["travel-expenses"] as const,
 		list: <T extends object>(params?: T) => ["travel-expenses", "list", params] as const,
 		detail: (claimId: string) => ["travel-expenses", "detail", claimId] as const,
-		draftReports: () => ["travel-expenses", "draft-reports"] as const,
-		submittedReports: () => ["travel-expenses", "submitted-reports"] as const,
+		/** The employee's unified report and claim history (#617). */
+		history: (scope?: { organizationId: string; employeeId: string }) =>
+			scope
+				? (["travel-expenses", "history", scope.organizationId, scope.employeeId] as const)
+				: (["travel-expenses", "history"] as const),
 		report: (reportId: string) => ["travel-expenses", "reports", reportId] as const,
 		approverSettings: () => ["travel-expenses", "settings", "approver"] as const,
-		reportSubmission: (reportId: string) =>
-			["travel-expenses", "reports", reportId, "submission"] as const,
+		reimbursementCurrency: () => ["travel-expenses", "settings", "reimbursement-currency"] as const,
+		foreignDraftExpenses: () => ["travel-expenses", "settings", "foreign-draft-expenses"] as const,
+		mileagePolicy: () => ["travel-expenses", "settings", "mileage-policy"] as const,
+		perDiemPolicy: () => ["travel-expenses", "settings", "per-diem-policy"] as const,
+		allowanceExceptions: () => ["travel-expenses", "settings", "allowance-exceptions"] as const,
+		legacyPolicies: () => ["travel-expenses", "settings", "legacy-policies"] as const,
+		reportSubmission: (reportId: string, cycle?: number) =>
+			["travel-expenses", "reports", reportId, "submission", cycle ?? "latest"] as const,
+		financeQueue: (filter: string) => ["travel-expenses", "finance", "queue", filter] as const,
+		settlement: (sourceType: string, sourceId: string) =>
+			["travel-expenses", "settlement", sourceType, sourceId] as const,
+		receiptExceptionSettings: () => ["travel-expenses", "settings", "receipt-exceptions"] as const,
+		projectChoices: (reportId: string, from: string, to: string, selected: string | null) =>
+			["travel-expenses", "reports", reportId, "projects", from, to, selected] as const,
+		/** Expenses whose project is not proven on their date; `fingerprint` = saved dates and projects. */
+		reportProjectIssues: (reportId: string, fingerprint: string) =>
+			["travel-expenses", "reports", reportId, "project-issues", fingerprint] as const,
+		projectExceptions: () => ["travel-expenses", "settings", "project-exceptions"] as const,
+		financeExports: () => ["travel-expenses", "finance", "exports"] as const,
+		reportReopen: (reportId: string) => ["travel-expenses", "reports", reportId, "reopen"] as const,
+		referenceRateSettings: () => ["travel-expenses", "settings", "reference-rates"] as const,
+		reportAdjustments: (reportId: string) =>
+			["travel-expenses", "reports", reportId, "adjustments"] as const,
+		legacyConversion: (reportId: string) =>
+			["travel-expenses", "reports", reportId, "legacy-conversion"] as const,
 	},
 
 	// Employees

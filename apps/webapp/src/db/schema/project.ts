@@ -7,6 +7,7 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
@@ -69,6 +70,8 @@ export const project = pgTable(
 		index("project_isActive_idx").on(table.isActive),
 		index("project_customerId_idx").on(table.customerId),
 		uniqueIndex("project_org_name_idx").on(table.organizationId, table.name),
+		// Target of organization-scoped references (#605 expense attribution).
+		unique("project_id_organizationId_idx").on(table.id, table.organizationId),
 	],
 );
 

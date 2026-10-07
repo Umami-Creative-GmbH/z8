@@ -21,7 +21,9 @@ export type ApprovalAuditAction =
 	| "escalate"
 	| "bulk_approve"
 	| "bulk_reject"
-	| "cancel";
+	| "cancel"
+	/** A travel expense report returned for changes (#603); not a rejection. */
+	| "return";
 
 export interface ApprovalAuditEntry {
 	organizationId: string;
@@ -162,6 +164,22 @@ export function createApprovalAuditLogger(dbService: ApprovalDbService) {
 					await dbService.db.insert(auditLog).values(entries.map(normalizeEntry));
 				});
 			}),
+	});
+}
+
+/**
+ * The return owner closes the request through the shared legacy reject
+ * mutation (#603); its audit entry records a return, never a rejection.
+ */
+export function createApprovalReturnAuditLogger(dbService: ApprovalDbService) {
+	const base = createApprovalAuditLogger(dbService);
+	const asReturn = (entry: ApprovalAuditEntry): ApprovalAuditEntry =>
+		entry.action === "reject"
+			? { ...entry, action: "return", metadata: { ...entry.metadata, disposition: "returned" } }
+			: entry;
+	return ApprovalAuditLogger.of({
+		log: (entry) => base.log(asReturn(entry)),
+		logBatch: (entries) => base.logBatch(entries.map(asReturn)),
 	});
 }
 

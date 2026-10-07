@@ -216,4 +216,96 @@ describe("createDraftSaver", () => {
 		expect(calls).toHaveLength(1);
 		expect(saver.getState().status).toBe("saved");
 	});
+
+	it("continues from a newer version another save of the same draft produced (#607)", async () => {
+		const { saver, calls, pending } = setup(3);
+		// e.g. a currency conversion saved separately advanced the item to version 4.
+		saver.adoptVersion(4);
+		expect(saver.getState()).toMatchObject({ status: "saved", version: 4 });
+		saver.adoptVersion(2);
+		expect(saver.getState().version).toBe(4);
+
+		saver.change({ description: "Hotel" });
+		await vi.advanceTimersByTimeAsync(500);
+		expect(calls).toEqual([{ values: { description: "Hotel" }, version: 4 }]);
+		pending[0]!.resolve({ status: "saved", version: 5 });
+		await vi.runAllTimersAsync();
+		expect(saver.getState()).toMatchObject({ status: "saved", version: 5 });
+	});
+
+	it("does not adopt a version while a conflict waits for the user", async () => {
+		const { saver, pending } = setup(1);
+		saver.change({ description: "Hotel" });
+		await vi.advanceTimersByTimeAsync(500);
+		pending[0]!.resolve({ status: "conflict", version: 2, item: { description: "Train" } });
+		await vi.runAllTimersAsync();
+		saver.adoptVersion(3);
+		expect(saver.getState()).toMatchObject({ status: "conflict", version: 1 });
+	});
+
+	describe("runExclusive", () => {
+		it("saves pending edits first, then runs the other write on the confirmed version", async () => {
+			const { saver, calls, pending } = setup();
+			saver.change({ description: "Hotel" });
+			const versions: number[] = [];
+			const write = saver.runExclusive(async (version) => {
+				versions.push(version);
+				return { status: "saved", version: version + 1 };
+			});
+			await vi.advanceTimersByTimeAsync(0);
+			expect(calls).toEqual([{ values: { description: "Hotel" }, version: 1 }]);
+			expect(versions).toEqual([]);
+
+			pending[0]!.resolve({ status: "saved", version: 2 });
+			await expect(write).resolves.toEqual({ status: "saved", version: 3 });
+			expect(versions).toEqual([2]);
+			expect(saver.getState()).toMatchObject({ status: "saved", version: 3 });
+		});
+
+		it("holds edits made during the write and saves them on the version it produced", async () => {
+			const { saver, calls, pending } = setup();
+			const gate = deferred<void>();
+			const write = saver.runExclusive(async (version) => {
+				await gate.promise;
+				return { status: "saved", version: version + 1 };
+			});
+			await vi.advanceTimersByTimeAsync(0);
+			saver.change({ description: "Taxi" });
+			await vi.advanceTimersByTimeAsync(1000);
+			expect(calls).toHaveLength(0);
+
+			gate.resolve();
+			await write;
+			await vi.advanceTimersByTimeAsync(0);
+			expect(calls).toEqual([{ values: { description: "Taxi" }, version: 2 }]);
+			pending[0]!.resolve({ status: "saved", version: 3 });
+			await vi.runAllTimersAsync();
+			expect(saver.getState()).toMatchObject({ status: "saved", version: 3 });
+		});
+
+		it("keeps the confirmed version when the write is refused or conflicts", async () => {
+			const { saver } = setup(4);
+			await expect(
+				saver.runExclusive(async () => ({ status: "conflict", version: 6 })),
+			).resolves.toEqual({ status: "conflict", version: 6 });
+			await expect(
+				saver.runExclusive(async () => ({ status: "failed", error: "Not eligible" })),
+			).resolves.toEqual({ status: "failed", error: "Not eligible" });
+			expect(saver.getState()).toMatchObject({ status: "saved", version: 4 });
+		});
+
+		it("does not write while the draft is in conflict", async () => {
+			const { saver, pending } = setup();
+			saver.change({ description: "Hotel" });
+			await vi.advanceTimersByTimeAsync(500);
+			pending[0]!.resolve({ status: "conflict", version: 5, item: { description: "Theirs" } });
+			await vi.runAllTimersAsync();
+			const write = vi.fn();
+			await expect(saver.runExclusive(write)).resolves.toEqual({
+				status: "failed",
+				error: "conflict",
+			});
+			expect(write).not.toHaveBeenCalled();
+		});
+	});
 });

@@ -115,8 +115,27 @@ describe("receiptItemMissingRequirements", () => {
 
 	it("flags a foreign-currency receipt instead of guessing a conversion", () => {
 		expect(receiptItemMissingRequirements(complete({ currency: "USD" }), context)).toEqual([
-			"same_currency",
+			"conversion_missing",
 		]);
+	});
+
+	it("accepts a foreign-currency receipt with an evidenced card charge (#607)", () => {
+		const conversion = {
+			basis: "card_charge" as const,
+			sourceCurrency: "USD",
+			targetCurrency: "EUR",
+			chargedAmount: "92.17",
+			evidenceReceiptId: null,
+		};
+		expect(
+			receiptItemMissingRequirements(complete({ currency: "USD" }), { ...context, conversion }),
+		).toEqual(["conversion_evidence"]);
+		expect(
+			receiptItemMissingRequirements(complete({ currency: "USD" }), {
+				...context,
+				conversion: { ...conversion, evidenceReceiptId: "r1" },
+			}),
+		).toEqual([]);
 	});
 
 	it("does not ask for an optional accounting reference", () => {
@@ -164,6 +183,31 @@ describe("receiptReportTotals", () => {
 			reimbursable: "5.00",
 			companyPaid: "0.00",
 			excludedItemCount: 3,
+		});
+	});
+
+	it("counts a converted foreign item at its reimbursement amount (#607)", () => {
+		const totals = receiptReportTotals(
+			[
+				{
+					...complete({ currency: "USD", amount: "100.00" }),
+					conversion: {
+						basis: "card_charge",
+						sourceCurrency: "USD",
+						targetCurrency: "EUR",
+						chargedAmount: "92.17",
+						evidenceReceiptId: "r1",
+					},
+				},
+				complete({ amount: "7.83" }),
+			],
+			"EUR",
+		);
+		expect(totals).toEqual({
+			currency: "EUR",
+			reimbursable: "100.00",
+			companyPaid: "0.00",
+			excludedItemCount: 0,
 		});
 	});
 

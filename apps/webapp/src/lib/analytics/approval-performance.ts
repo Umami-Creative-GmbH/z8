@@ -2,7 +2,18 @@ import { DateTime } from "luxon";
 
 import type { ApprovalBottleneckRow, ManagerEffectivenessData } from "./types";
 
-export type ApprovalAnalyticsStatus = "approved" | "rejected" | "pending" | "draft";
+/**
+ * `returned` (a reviewer sent a travel expense report back for changes) and
+ * `withdrawn` (its employee took it back) close a request without a decision
+ * (#603); neither is a manager rejection.
+ */
+export type ApprovalAnalyticsStatus =
+	| "approved"
+	| "rejected"
+	| "pending"
+	| "draft"
+	| "returned"
+	| "withdrawn";
 
 export type ApprovalAnalyticsSource = "approval_request" | "travel_expense_claim";
 
@@ -51,7 +62,9 @@ const RESPONSE_TIME_BUCKETS = ["< 1 day", "1-3 days", "3-7 days", "> 7 days"] as
 export function buildApprovalPerformanceData(
 	inputRows: ApprovalAnalyticsRow[],
 ): ApprovalPerformanceData {
-	const rows = inputRows.filter((row) => row.status !== "draft");
+	// A withdrawn request was never answered by its approver; it is not counted.
+	// A returned one stays in the manager's volume but is neither approved nor rejected.
+	const rows = inputRows.filter((row) => row.status !== "draft" && row.status !== "withdrawn");
 	const approvedRows = rows.filter((row) => row.status === "approved");
 	const rejectedRows = rows.filter((row) => row.status === "rejected");
 	const decisionTimeHours = rows.flatMap((row) => decisionTimeHoursFor(row));

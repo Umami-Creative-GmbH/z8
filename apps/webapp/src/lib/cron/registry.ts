@@ -19,6 +19,7 @@ import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-re
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
 import type { SCIMMaintenanceResult } from "@/lib/jobs/scim-maintenance";
 import type { TravelExpenseReceiptCleanupJobResult } from "@/lib/jobs/travel-expense-receipt-cleanup";
+import type { TravelExpenseReferenceRatesJobResult } from "@/lib/jobs/travel-expense-reference-rates";
 import type { WorkBalanceRebuildResult } from "@/lib/work-balance/rebuild-intents";
 
 // ============================================
@@ -345,6 +346,19 @@ export const CRON_JOBS = {
 				"@/lib/jobs/travel-expense-receipt-cleanup"
 			);
 			return runTravelExpenseReceiptCleanupJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 9 },
+	},
+
+	"cron:travel-expense-reference-rates": {
+		schedule: "0 * * * *", // Hourly; ECB publishes around 16:00 Frankfurt time
+		description:
+			"Fetch ECB euro reference rates for organizations that approved them as a travel expense conversion basis",
+		processor: async (): Promise<TravelExpenseReferenceRatesJobResult> => {
+			const { runTravelExpenseReferenceRatesJob } = await import(
+				"@/lib/jobs/travel-expense-reference-rates"
+			);
+			return runTravelExpenseReferenceRatesJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 9 },
 	},

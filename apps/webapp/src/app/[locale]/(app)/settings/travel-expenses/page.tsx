@@ -1,19 +1,33 @@
 import { Suspense } from "react";
+import { AllowanceOverridesSettingsCard } from "@/components/settings/travel-expense/allowance-overrides-settings";
+import { ForeignExpenseConversionsCard } from "@/components/settings/travel-expense/foreign-expense-conversions";
+import { MileagePolicySettingsCard } from "@/components/settings/travel-expense/mileage-policy-settings";
+import { PerDiemPolicySettingsCard } from "@/components/settings/travel-expense/per-diem-policy-settings";
+import { ReferenceRateSettingsCard } from "@/components/settings/travel-expense/reference-rate-settings";
+import { ReimbursementCurrencySettingsCard } from "@/components/settings/travel-expense/reimbursement-currency-settings";
 import { TravelExpenseApproverSettingsCard } from "@/components/settings/travel-expense/travel-expense-approver-settings";
 import { TravelExpensePolicyManagement } from "@/components/settings/travel-expense/travel-expense-policy-management";
+import { TravelExpenseProjectExceptionsCard } from "@/components/settings/travel-expense/travel-expense-project-exceptions";
+import { TravelExpenseReceiptExceptionSettingsCard } from "@/components/settings/travel-expense/travel-expense-receipt-exception-settings";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 
 async function TravelExpenseSettingsPageContent() {
-	const { organizationId } = await requireOrgAdminSettingsAccess();
+	await requireOrgAdminSettingsAccess();
 
 	return (
-		<div className="flex flex-1 flex-col">
-			<div className="px-4 pt-4">
-				<TravelExpenseApproverSettingsCard />
-			</div>
-			<TravelExpensePolicyManagement organizationId={organizationId} />
+		<div className="flex flex-1 flex-col gap-4 p-4">
+			<TravelExpenseApproverSettingsCard />
+			<TravelExpenseReceiptExceptionSettingsCard />
+			<ReimbursementCurrencySettingsCard />
+			<ReferenceRateSettingsCard />
+			<ForeignExpenseConversionsCard />
+			<TravelExpenseProjectExceptionsCard />
+			<MileagePolicySettingsCard />
+			<PerDiemPolicySettingsCard />
+			<AllowanceOverridesSettingsCard />
+			<TravelExpensePolicyManagement />
 		</div>
 	);
 }

@@ -62,6 +62,28 @@ export enum AuditAction {
 	APPROVAL_REJECTED = "approval.rejected",
 	TRAVEL_EXPENSE_DRAFT_CREATED = "travel_expense.draft_created",
 	TRAVEL_EXPENSE_SUBMITTED = "travel_expense.submitted",
+	TRAVEL_EXPENSE_CONVERSION_RECORDED = "travel_expense.conversion_recorded",
+	TRAVEL_EXPENSE_CONVERSION_REMOVED = "travel_expense.conversion_removed",
+	TRAVEL_EXPENSE_REIMBURSEMENT_CURRENCY_UPDATED = "travel_expense.reimbursement_currency_updated",
+	TRAVEL_EXPENSE_POLICY_VERSION_ACTIVATED = "travel_expense.policy_version_activated",
+	TRAVEL_EXPENSE_POLICY_VERSION_WITHDRAWN = "travel_expense.policy_version_withdrawn",
+	TRAVEL_EXPENSE_REFERENCE_RATE_APPROVED = "travel_expense.reference_rate_approved",
+	TRAVEL_EXPENSE_REFERENCE_RATE_REVOKED = "travel_expense.reference_rate_revoked",
+	TRAVEL_EXPENSE_RECEIPT_EXCEPTIONS_CHANGED = "travel_expense.receipt_exceptions_changed",
+	TRAVEL_EXPENSE_RETURNED = "travel_expense.returned",
+	TRAVEL_EXPENSE_WITHDRAWN = "travel_expense.withdrawn",
+	TRAVEL_EXPENSE_REOPENED = "travel_expense.reopened",
+	TRAVEL_EXPENSE_REIMBURSEMENT_RECORDED = "travel_expense.reimbursement_recorded",
+	TRAVEL_EXPENSE_PROJECT_EXCEPTION_AUTHORIZED = "travel_expense.project_exception_authorized",
+	TRAVEL_EXPENSE_EXPORT_CREATED = "travel_expense.export_created",
+	TRAVEL_EXPENSE_EXPORT_RETRIED = "travel_expense.export_retried",
+	TRAVEL_EXPENSE_EXPORT_CANCELLED = "travel_expense.export_cancelled",
+	TRAVEL_EXPENSE_EXPORT_DOWNLOADED = "travel_expense.export_downloaded",
+	TRAVEL_EXPENSE_ADJUSTMENT_CREATED = "travel_expense.adjustment_created",
+	TRAVEL_EXPENSE_LEGACY_DRAFT_CONVERTED = "travel_expense.legacy_draft_converted",
+	TRAVEL_EXPENSE_RECOVERY_RECORDED = "travel_expense.recovery_recorded",
+	TRAVEL_EXPENSE_ALLOWANCE_OVERRIDE_AUTHORIZED = "travel_expense.allowance_override_authorized",
+	TRAVEL_EXPENSE_ALLOWANCE_OVERRIDE_REVOKED = "travel_expense.allowance_override_revoked",
 
 	// Approval Escalation Management
 	APPROVAL_ESCALATION_POLICY_UPDATED = "approval_escalation.policy_updated",
@@ -190,7 +212,9 @@ export interface AuditLogEntry {
 		| "user"
 		| "audit_pack_request"
 		| "works_council_settings"
-		| "works_council_export";
+		| "works_council_export"
+		| "travel_expense_policy_version"
+		| "travel_expense_export";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates

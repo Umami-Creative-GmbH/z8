@@ -117,7 +117,14 @@ export function ApprovalSprintCard({
 							{getRiskReasonLabel(t, reason)}
 						</Badge>
 					))}
-					{canApprove ? null : (
+					{canApprove ? null : item.capabilities.requiresDetailReview ? (
+						<Badge variant="outline">
+							{t(
+								"approvals:sprint.capabilities.approveInDetails",
+								"Open the details to accept its exceptions and approve",
+							)}
+						</Badge>
+					) : (
 						<Badge variant="outline">
 							{t("approvals:sprint.capabilities.approveUnavailable", "Approval unavailable")}
 						</Badge>

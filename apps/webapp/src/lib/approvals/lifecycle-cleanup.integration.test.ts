@@ -969,5 +969,55 @@ describe("lifecycle cleanup across adopted lifecycles (PostgreSQL)", () => {
 			).toHaveLength(1);
 			expect(await tenantRows(survivor.organization)).toEqual(survivorBefore);
 		});
+
+		it("deletes a reviewer who returned a kept employee's expense report (spec #598 review)", async () => {
+			await populate(target);
+			const reportId = randomUUID();
+			// The admin's report, returned by the (deleted) manager; the cycle's
+			// lifecycle rows are referenced by value only.
+			await admin.query(
+				`insert into travel_expense_report (id, organization_id, employee_id, kind, status,
+				   reimbursement_currency, submission_count, submitted_at, decided_at, created_by, updated_by)
+				 values ($1, $2, $3, 'standalone', 'returned', 'EUR', 1, now(), now(), $4, $5)`,
+				[reportId, target.organization, target.admin, target.adminUser, target.managerUser],
+			);
+			const { rows: closures } = await admin.query<{ id: string }>(
+				`insert into travel_expense_report_cycle_closure (organization_id, report_id, submission_cycle,
+				   kind, note, submitted_revision_id, approval_request_id, decision_evidence_id,
+				   actor_employee_id, actor_user_id)
+				 values ($1, $2, 1, 'returned', 'Fix the hotel', gen_random_uuid(), gen_random_uuid(),
+				   gen_random_uuid(), $3, $4)
+				 returning id`,
+				[target.organization, reportId, target.manager, target.managerUser],
+			);
+
+			actAs(target.adminUser, null);
+			const result = await deleteNonAdminDataAction(target.organization);
+			expect(result).toMatchObject({ success: true, data: { employeesDeleted: 2 } });
+			// The report and its history stay; only the deleted reviewer's identity is cleared.
+			expect(
+				(
+					await admin.query(
+						"select actor_employee_id, actor_user_id from travel_expense_report_cycle_closure where id = $1",
+						[only(closures).id],
+					)
+				).rows,
+			).toEqual([{ actor_employee_id: null, actor_user_id: expect.anything() }]);
+			expect(
+				(await admin.query("select status from travel_expense_report where id = $1", [reportId]))
+					.rows,
+			).toEqual([{ status: "returned" }]);
+			// Deleting the reviewer's user account is not blocked either.
+			await admin.query('delete from "user" where id = $1', [target.managerUser]);
+			expect(
+				(
+					await admin.query(
+						`select c.actor_user_id, r.updated_by from travel_expense_report_cycle_closure c
+						 join travel_expense_report r on r.id = c.report_id where c.id = $1`,
+						[only(closures).id],
+					)
+				).rows,
+			).toEqual([{ actor_user_id: null, updated_by: null }]);
+		});
 	});
 });

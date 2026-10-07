@@ -51,7 +51,10 @@ describe("approvals actions module structure", () => {
 		);
 
 		expect(existsSync(join(approvalsDir, "../travel-expenses/approvals/page.tsx"))).toBe(false);
-		expect(travelExpensesPageSource).toContain('"/approvals/inbox?types=travel_expense_claim"');
+		// Reports (#602) and legacy claims (#617) share one filtered inbox entry.
+		expect(travelExpensesPageSource).toContain(
+			'"/approvals/inbox?types=travel_expense_report,travel_expense_claim"',
+		);
 	});
 
 	it("routes payroll readiness travel expense actions through the filtered unified inbox", () => {
@@ -61,7 +64,7 @@ describe("approvals actions module structure", () => {
 		);
 
 		expect(payrollReadinessSource).toContain(
-			'actionHref: "/approvals/inbox?types=travel_expense_claim"',
+			'actionHref: "/approvals/inbox?types=travel_expense_report,travel_expense_claim"',
 		);
 		expect(payrollReadinessSource).not.toContain('actionHref: "/travel-expenses/approvals"');
 	});

@@ -146,6 +146,14 @@ without it keep the source-scoped expense lifecycle above, unchanged.
   owners (web and card) `decided`, and requester correction cancellation
   `withdrawn`, each keyed by the work period and the cycle, only while a
   delivery control exists for `(organization, kind)`.
+  Expense reports (#623) are cycle-keyed too, although they share the
+  `travel_expense` kind and control with source-scoped claims: a report is
+  resubmitted (#603), so each submission is its own cycle. The report
+  submission owner writes `submitted` and the report decision owner (web and
+  card) `decided`, keyed by the report and the cycle named in the cycle's frozen
+  revision (`server/travel-expense-report-delivery.ts`); #603's withdrawal and
+  return write `withdrawn` with the same key. Reports have no old notification
+  path to suppress.
 - **Membership.** The cycle's live requests are its single request, or the stage
   requests of its chain. Initial cards, cancellation of initial work and
   refreshes are scoped to the cycle's rows.
@@ -162,7 +170,7 @@ without it keep the source-scoped expense lifecycle above, unchanged.
   deleted absence or request reads as `cancelled` (the card says the request
   was withdrawn). A time cycle with a `withdrawn` intent reads as `cancelled`:
   cancelling a direct legacy correction keeps its request as a tombstone that
-  looks rejected (#301).
+  looks rejected (#301). So does a report cycle (#623), and a deleted report.
 - **Surviving cancellation.** Ordinary absence cancellation deletes the absence
   and its pending legacy requests. The delivery rows' request FKs are dropped
   (`0108`), so the cycle's work, messages and intents stay until privileged

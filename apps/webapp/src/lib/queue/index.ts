@@ -49,6 +49,7 @@ export type JobType =
 	| "organization-deletion-notification"
 	| "audit-pack"
 	| "payroll-export"
+	| "travel-expense-export"
 	| "import-review-scan"
 	| "import-review-commit";
 
@@ -72,6 +73,14 @@ export interface PayrollExportJobData {
 	type: "payroll-export";
 	jobId: string;
 	organizationId: string;
+}
+
+/** One attempt of a travel expense export batch (#613). */
+export interface TravelExpenseExportJobData {
+	type: "travel-expense-export";
+	organizationId: string;
+	batchId: string;
+	attempt: number;
 }
 
 export interface EmailJobData {
@@ -142,6 +151,7 @@ export type JobData =
 	| ReportJobData
 	| ExportJobData
 	| PayrollExportJobData
+	| TravelExpenseExportJobData
 	| EmailJobData
 	| CleanupJobData
 	| CronJobData

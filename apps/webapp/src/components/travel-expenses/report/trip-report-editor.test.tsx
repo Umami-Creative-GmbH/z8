@@ -13,6 +13,12 @@ const reportActions = vi.hoisted(() => ({
 	removeTripReportItemAction: vi.fn(),
 }));
 vi.mock("@/app/[locale]/(app)/travel-expenses/report-actions", () => reportActions);
+vi.mock("@/app/[locale]/(app)/travel-expenses/report-project-actions", () => ({
+	getReportProjectChoicesAction: async () => ({
+		success: true,
+		data: { timeZone: "Europe/Berlin", choices: [], selected: null },
+	}),
+}));
 vi.mock("@/hooks/use-travel-expense-file-upload", () => ({
 	useTravelExpenseFileUpload: () => ({
 		addFile: vi.fn(),
@@ -33,6 +39,21 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 vi.mock("next-intl", () => ({ useLocale: () => "en-US" }));
+vi.mock("@/app/[locale]/(app)/travel-expenses/report-review-actions", () => ({
+	withdrawTravelExpenseReportAction: vi.fn(),
+}));
+// #615: the adjustment notices find no adjustment for these reports.
+vi.mock("@/app/[locale]/(app)/travel-expenses/adjustment-actions", () => ({
+	createTravelExpenseAdjustmentAction: vi.fn(),
+	getTravelExpenseReportAdjustments: async () => ({ success: false, error: "Expense report not found" }),
+}));
+vi.mock("@/navigation", () => ({
+	Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
+		<a href={href} {...props}>
+			{children}
+		</a>
+	),
+}));
 
 import { TravelExpenseReportEditor } from "./travel-expense-report-editor";
 
@@ -54,6 +75,7 @@ function item(id: string, overrides: Record<string, unknown> = {}) {
 		currency: "EUR",
 		paidBy: null,
 		accountingReference: null,
+		receiptException: { reason: null, version: 0 },
 		receipts: [] as unknown[],
 		...overrides,
 	};

@@ -1,4 +1,18 @@
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import {
+	type ConversionRequirement,
+	conversionRequirements,
+	type ItemConversion,
+} from "./currency-conversion";
+import { itemReimbursementAmount, type ReimbursementItemInput } from "./item-amount";
+import { currencyMinorUnitDigits, formatUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
+import { missingReceiptRequirements, type ReceiptExceptionContext } from "./receipt-exception";
+import {
+	EXPENSE_PAYERS,
+	type ExpensePayer,
+	RECEIPT_EXPENSE_CATEGORIES,
+	type ReceiptExpenseCategory,
+} from "./receipt-report.types";
 
 /**
  * Receipt expense items of a travel expense report (#600). A draft item may be
@@ -6,17 +20,12 @@ import { parsePlainDate } from "@/lib/datetime/temporal-core";
  * strings and are summed in minor units, never as floating point numbers.
  */
 
-export const RECEIPT_EXPENSE_CATEGORIES = [
-	"transport",
-	"accommodation",
-	"meals",
-	"parking",
-	"other",
-] as const;
-export type ReceiptExpenseCategory = (typeof RECEIPT_EXPENSE_CATEGORIES)[number];
-
-export const EXPENSE_PAYERS = ["employee", "company"] as const;
-export type ExpensePayer = (typeof EXPENSE_PAYERS)[number];
+export {
+	EXPENSE_PAYERS,
+	type ExpensePayer,
+	RECEIPT_EXPENSE_CATEGORIES,
+	type ReceiptExpenseCategory,
+} from "./receipt-report.types";
 
 export const DEFAULT_REIMBURSEMENT_CURRENCY = "EUR";
 export const MAX_DESCRIPTION_LENGTH = 500;
@@ -66,10 +75,7 @@ export function isSupportedCurrency(code: string): boolean {
 
 /** Minor-unit digits of a currency, e.g. 2 for EUR and 0 for JPY. */
 export function currencyFractionDigits(code: string): number {
-	return (
-		new Intl.NumberFormat("en", { style: "currency", currency: code }).resolvedOptions()
-			.maximumFractionDigits ?? 2
-	);
+	return currencyMinorUnitDigits(code);
 }
 
 /** Parses a positive decimal amount ("12.5" or "12,5") into minor units of two decimals. */
@@ -165,22 +171,35 @@ export type ReceiptItemRequirement =
 	| "amount"
 	| "payment_ownership"
 	| "receipt"
-	/** Conversion of foreign receipts is not supported yet; nothing is guessed. */
-	| "same_currency";
+	/** A missing-receipt exception was requested without an explanation (#604). */
+	| "receipt_exception_reason"
+	/** A missing-receipt exception was requested, but the organization does not allow them (#604). */
+	| "receipt_exception_not_allowed"
+	/** A foreign receipt's conversion (#607); nothing is guessed. */
+	| ConversionRequirement;
 
 /** What still keeps a receipt item from being submittable, in form order. */
 export function receiptItemMissingRequirements(
 	draft: ReceiptItemDraft,
-	context: { receiptCount: number; reimbursementCurrency: string },
+	context: {
+		receiptCount: number;
+		reimbursementCurrency: string;
+		receiptException?: ReceiptExceptionContext;
+		conversion?: ItemConversion | null;
+	},
 ): ReceiptItemRequirement[] {
 	const missing: ReceiptItemRequirement[] = [];
 	if (!draft.expenseDate) missing.push("expense_date");
 	if (!draft.category) missing.push("category");
 	if (!draft.description) missing.push("description");
 	if (!draft.amount || !draft.currency) missing.push("amount");
-	else if (draft.currency !== context.reimbursementCurrency) missing.push("same_currency");
+	else
+		missing.push(
+			...conversionRequirements(draft, context.reimbursementCurrency, context.conversion),
+		);
 	if (!draft.paidBy) missing.push("payment_ownership");
-	if (context.receiptCount < 1) missing.push("receipt");
+	if (context.receiptCount < 1)
+		missing.push(...missingReceiptRequirements(context.receiptException));
 	return missing;
 }
 
@@ -194,30 +213,25 @@ export interface ReceiptReportTotals {
 	excludedItemCount: number;
 }
 
+/** Each item counts as `itemReimbursementAmount` prices it; amounts are summed exactly. */
 export function receiptReportTotals(
-	items: readonly Pick<ReceiptItemDraft, "amount" | "currency" | "paidBy">[],
+	items: readonly ReimbursementItemInput[],
 	reimbursementCurrency: string,
 ): ReceiptReportTotals {
-	let reimbursable = 0;
-	let companyPaid = 0;
-	let excludedItemCount = 0;
-	for (const item of items) {
-		const minor =
-			item.amount && item.currency === reimbursementCurrency
-				? parseAmountMinor(item.amount, 2)
-				: null;
-		if (minor === null || !item.paidBy) {
-			excludedItemCount += 1;
-		} else if (item.paidBy === "employee") {
-			reimbursable += minor;
-		} else {
-			companyPaid += minor;
-		}
-	}
+	const amounts = items.map((item) => itemReimbursementAmount(item, reimbursementCurrency));
+	const sumPaidBy = (payer: ExpensePayer) =>
+		formatUnits(
+			sumUnits(
+				amounts.flatMap((amount) =>
+					amount.counted && amount.paidBy === payer ? [amount.units] : [],
+				),
+			),
+			STORED_AMOUNT_SCALE,
+		);
 	return {
 		currency: reimbursementCurrency,
-		reimbursable: formatMinor(reimbursable),
-		companyPaid: formatMinor(companyPaid),
-		excludedItemCount,
+		reimbursable: sumPaidBy("employee"),
+		companyPaid: sumPaidBy("company"),
+		excludedItemCount: amounts.filter((amount) => !amount.counted).length,
 	};
 }

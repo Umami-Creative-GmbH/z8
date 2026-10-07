@@ -1,5 +1,5 @@
-import { and, desc, eq } from "drizzle-orm";
-import { approvalSubmittedRevision } from "@/db/schema";
+import { and, desc, eq, inArray, or } from "drizzle-orm";
+import { approvalChainStageInstance, approvalSubmittedRevision } from "@/db/schema";
 import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import type { ApprovalDatabase } from "../server/types";
 import { ApprovalEvidenceError } from "./errors";
@@ -56,6 +56,20 @@ function nullableString(value: unknown): boolean {
 	return value === null || typeof value === "string";
 }
 
+/**
+ * Every version up to the current one stays readable: a revision keeps the
+ * version (and fingerprint prefix) it was frozen with, and later versions
+ * only add optional facts, so older revisions parse unchanged.
+ */
+function isReadableSchemaVersion(version: unknown): version is number {
+	return (
+		typeof version === "number" &&
+		Number.isInteger(version) &&
+		version >= 1 &&
+		version <= TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION
+	);
+}
+
 function parseRevision(
 	row: SubmittedRevisionRow,
 	scope: { organizationId: string; reportId: string },
@@ -69,12 +83,12 @@ function parseRevision(
 		row.workflowType !== "travel_expense" ||
 		row.sourceType !== TRAVEL_EXPENSE_REPORT_SOURCE_TYPE ||
 		row.sourceId !== scope.reportId ||
-		row.schemaVersion !== TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION ||
+		!isReadableSchemaVersion(row.schemaVersion) ||
 		row.provenance !== "captured_at_submission" ||
 		row.submitterActorKind !== "employee" ||
 		!isRecord(facts) ||
 		facts.kind !== "travel_expense_report" ||
-		facts.schemaVersion !== TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION ||
+		facts.schemaVersion !== row.schemaVersion ||
 		facts.organizationId !== row.organizationId ||
 		facts.reportId !== row.sourceId ||
 		typeof facts.submissionCycle !== "number" ||
@@ -153,6 +167,102 @@ export async function loadTravelExpenseReportSubmittedRevision(
 		.limit(1);
 	const row = rows[0];
 	return row ? parseRevision(row, input) : null;
+}
+
+/**
+ * The frozen revisions of many reports' named cycles in one read (#612 finance
+ * queue), keyed by report id. Reports without that cycle are absent.
+ */
+export async function loadTravelExpenseReportSubmittedRevisions(
+	database: ApprovalDatabase,
+	input: { organizationId: string; cycles: ReadonlyArray<{ reportId: string; submissionCycle: number }> },
+): Promise<Map<string, TravelExpenseReportSubmittedRevisionRecord>> {
+	const revisions = new Map<string, TravelExpenseReportSubmittedRevisionRecord>();
+	if (input.cycles.length === 0) return revisions;
+	const rows = await database
+		.select()
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.organizationId, input.organizationId),
+				eq(approvalSubmittedRevision.authority, "legacy"),
+				eq(approvalSubmittedRevision.sourceType, TRAVEL_EXPENSE_REPORT_SOURCE_TYPE),
+				inArray(
+					approvalSubmittedRevision.requestCycleKey,
+					input.cycles.map(({ reportId, submissionCycle }) =>
+						travelExpenseReportRequestCycleKey(reportId, submissionCycle),
+					),
+				),
+			),
+		);
+	for (const row of rows) {
+		revisions.set(
+			row.sourceId,
+			parseRevision(row, { organizationId: input.organizationId, reportId: row.sourceId }),
+		);
+	}
+	return revisions;
+}
+
+/**
+ * The frozen revision each legacy approval request was created for, keyed by
+ * request id. A cycle's first request is named on its revision; a later chain
+ * stage's request belongs to the revision of its chain. Inbox rows of earlier
+ * cycles therefore show the facts their reviewer saw, not the latest cycle's.
+ */
+export async function loadTravelExpenseReportRevisionsByRequest(
+	database: ApprovalDatabase,
+	input: { organizationId: string; approvalRequestIds: readonly string[] },
+): Promise<Map<string, TravelExpenseReportSubmittedRevisionRecord>> {
+	const byRequest = new Map<string, TravelExpenseReportSubmittedRevisionRecord>();
+	const requestIds = [...new Set(input.approvalRequestIds)];
+	if (requestIds.length === 0) return byRequest;
+	const stages = await database
+		.select({
+			approvalRequestId: approvalChainStageInstance.approvalRequestId,
+			chainInstanceId: approvalChainStageInstance.chainInstanceId,
+		})
+		.from(approvalChainStageInstance)
+		.where(
+			and(
+				eq(approvalChainStageInstance.organizationId, input.organizationId),
+				inArray(approvalChainStageInstance.approvalRequestId, requestIds),
+			),
+		);
+	const chainIds = [...new Set(stages.map((stage) => stage.chainInstanceId))];
+	const rows = await database
+		.select()
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.organizationId, input.organizationId),
+				eq(approvalSubmittedRevision.authority, "legacy"),
+				eq(approvalSubmittedRevision.sourceType, TRAVEL_EXPENSE_REPORT_SOURCE_TYPE),
+				chainIds.length > 0
+					? or(
+							inArray(approvalSubmittedRevision.legacyApprovalRequestId, requestIds),
+							inArray(approvalSubmittedRevision.legacyChainInstanceId, chainIds),
+						)
+					: inArray(approvalSubmittedRevision.legacyApprovalRequestId, requestIds),
+			),
+		);
+	const revisions = rows.map((row) =>
+		parseRevision(row, { organizationId: input.organizationId, reportId: row.sourceId }),
+	);
+	for (const revision of revisions) {
+		byRequest.set(revision.legacy.approvalRequestId, revision);
+	}
+	for (const stage of stages) {
+		if (!stage.approvalRequestId || byRequest.has(stage.approvalRequestId)) continue;
+		const revision = revisions.find(
+			(candidate) => candidate.legacy.chainInstanceId === stage.chainInstanceId,
+		);
+		if (revision) byRequest.set(stage.approvalRequestId, revision);
+	}
+	for (const id of [...byRequest.keys()]) {
+		if (!requestIds.includes(id)) byRequest.delete(id);
+	}
+	return byRequest;
 }
 
 /**

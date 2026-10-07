@@ -24,5 +24,14 @@ export function ReportStatusBadge({ status }: { status: TravelExpenseReportStatu
 					{t("travelExpenses.report.status.rejected", "Rejected")}
 				</Badge>
 			);
+		case "returned":
+			return (
+				<Badge
+					variant="outline"
+					className="border-amber-500/60 text-amber-700 dark:border-amber-400/60 dark:text-amber-300"
+				>
+					{t("travelExpenses.report.status.returned", "Returned for changes")}
+				</Badge>
+			);
 	}
 }

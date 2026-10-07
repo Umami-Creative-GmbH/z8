@@ -14,6 +14,25 @@ vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
 vi.mock("next-intl", () => ({ useLocale: () => "de-DE" }));
+// The settlement of an approved claim (#612) has its own tests.
+vi.mock("./finance/settlement-panel", () => ({ SettlementPanel: () => null }));
+const legacyDraft = vi.hoisted(() => ({
+	push: vi.fn(),
+	convert: vi.fn(),
+	conversion: vi.fn(async () => ({ success: true, data: null as unknown })),
+}));
+vi.mock("@/navigation", () => ({
+	Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
+		<a href={href} {...props}>
+			{children}
+		</a>
+	),
+	useRouter: () => ({ push: legacyDraft.push }),
+}));
+vi.mock("@/app/[locale]/(app)/travel-expenses/legacy-draft-actions", () => ({
+	convertLegacyTravelExpenseDraftAction: legacyDraft.convert,
+	getLegacyTravelExpenseConversion: legacyDraft.conversion,
+}));
 
 import { TravelExpenseClaimDetail } from "./travel-expense-claim-detail";
 
@@ -184,6 +203,80 @@ describe("stored travel claim detail", () => {
 		expect(
 			screen.getByRole("link", { name: "Preview hotel.pdf" }),
 		).toBeTruthy();
+		client.clear();
+	});
+});
+
+describe("legacy draft continuation (#616)", () => {
+	const ownDraft = {
+		...storedDetail,
+		claim: {
+			...storedDetail.claim,
+			status: "draft",
+			employeeId: "owner",
+			submittedAt: null,
+		},
+		decisions: [],
+	};
+
+	it("continues the owner's draft as a report and opens it", async () => {
+		vi.stubGlobal("fetch", vi.fn(async () => Response.json(ownDraft)));
+		legacyDraft.convert.mockResolvedValueOnce({
+			success: true,
+			data: { kind: "converted", reportId: "new-report", replayed: false },
+		});
+		const client = mount();
+		fireEvent.click(await screen.findByRole("button", { name: "Continue as report" }));
+		await vi.waitFor(() =>
+			expect(legacyDraft.push).toHaveBeenCalledWith("/travel-expenses/reports/new-report"),
+		);
+		expect(legacyDraft.convert).toHaveBeenCalledWith("old-claim");
+		client.clear();
+	});
+
+	it("explains a refused conversion and changes nothing", async () => {
+		vi.stubGlobal("fetch", vi.fn(async () => Response.json(ownDraft)));
+		legacyDraft.convert.mockResolvedValueOnce({
+			success: true,
+			data: {
+				kind: "receipt_unavailable",
+				attachments: [{ attachmentId: "a", fileName: "hotel.pdf", reason: "unreadable" }],
+			},
+		});
+		const client = mount();
+		fireEvent.click(await screen.findByRole("button", { name: "Continue as report" }));
+		// The test translator returns the default text without parameters.
+		expect(
+			await screen.findByText(/a receipt could not be carried over safely/),
+		).toBeTruthy();
+		expect(legacyDraft.push).not.toHaveBeenCalledWith("/travel-expenses/reports/new-report");
+		client.clear();
+	});
+
+	it("links a converted draft to its report", async () => {
+		vi.stubGlobal("fetch", vi.fn(async () => Response.json(ownDraft)));
+		legacyDraft.conversion.mockResolvedValueOnce({
+			success: true,
+			data: { reportId: "existing-report" },
+		});
+		const client = mount();
+		expect(
+			(await screen.findByRole("link", { name: /Open the report/ })).getAttribute("href"),
+		).toBe("/travel-expenses/reports/existing-report");
+		expect(screen.queryByRole("button", { name: "Continue as report" })).toBeNull();
+		client.clear();
+	});
+
+	it("never offers continuation for a submitted claim or someone else's draft", async () => {
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () =>
+				Response.json({ ...ownDraft, claim: { ...ownDraft.claim, employeeId: "colleague" } }),
+			),
+		);
+		const client = mount();
+		await screen.findByText("Original context");
+		expect(screen.queryByRole("button", { name: "Continue as report" })).toBeNull();
 		client.clear();
 	});
 });

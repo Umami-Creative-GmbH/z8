@@ -6,14 +6,17 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TravelExpenseFinanceEntry } from "@/components/travel-expenses/finance/finance-entry";
 import { getAuthContext } from "@/lib/auth-helpers";
+import { loadFinanceActor } from "@/lib/travel-expenses/finance-access";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 
 async function TravelExpensesPageContent() {
-	const [t, authContext] = await Promise.all([
+	const [t, authContext, financeActor] = await Promise.all([
 		getTranslate(),
 		getAuthContext(),
+		loadFinanceActor(),
 	]);
 
 	if (!authContext?.employee) {
@@ -47,13 +50,18 @@ async function TravelExpensesPageContent() {
 								)}
 							</span>
 							<Button asChild size="sm" variant="outline">
-								<Link href="/approvals/inbox?types=travel_expense_claim">
+								<Link href="/approvals/inbox?types=travel_expense_report,travel_expense_claim">
 									{t("travelExpenses.approvals.openInbox", "Open Inbox")}
 									<IconArrowRight aria-hidden="true" className="ml-2 size-4" />
 								</Link>
 							</Button>
 						</AlertDescription>
 					</Alert>
+				</div>
+			)}
+			{financeActor?.canRead && (
+				<div className="px-4 lg:px-6">
+					<TravelExpenseFinanceEntry />
 				</div>
 			)}
 

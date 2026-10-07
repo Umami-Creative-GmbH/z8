@@ -305,6 +305,17 @@ test("collectTarget lists traced migration runtime files and packages", async ()
   assert.ok(result.packages.includes("pg"));
 });
 
+test("migration trace reaches no app runtime packages through schema type imports", async () => {
+	const result = await collectTarget("migration");
+
+	for (const packageName of ["next", "pino", "@opentelemetry/api", "country-flag-icons"]) {
+		assert.ok(
+			!result.packages.includes(packageName),
+			`migration must not trace ${packageName}; move schema-referenced types into dependency-free modules`,
+		);
+	}
+});
+
 test("collectTarget lists traced db-seed runtime files and packages", async () => {
   const result = await collectTarget("db-seed");
 

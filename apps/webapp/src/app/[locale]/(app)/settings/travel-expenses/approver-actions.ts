@@ -5,9 +5,9 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, travelExpenseSettings } from "@/db/schema";
-import { canManageCurrentOrganizationSettings, getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
+import { requireExpenseAdministrator } from "@/lib/travel-expenses/expense-administrator";
 
 /**
  * The organization expense approver (#602): the last reviewer fallback, after
@@ -20,18 +20,7 @@ export interface TravelExpenseApproverSettings {
 	candidates: { id: string; name: string; role: "manager" | "admin" }[];
 }
 
-async function requireOrgAdmin(): Promise<
-	{ error: string } | { organizationId: string; userId: string }
-> {
-	const authContext = await getAuthContext();
-	const organizationId = authContext?.session.activeOrganizationId;
-	if (!authContext) return { error: "Unauthorized: Admin access required" };
-	if (!organizationId) return { error: "No organization selected" };
-	if (!(await canManageCurrentOrganizationSettings())) {
-		return { error: "Unauthorized: Admin access required" };
-	}
-	return { organizationId, userId: authContext.user.id };
-}
+const requireOrgAdmin = () => requireExpenseAdministrator();
 
 async function loadApproverCandidates(
 	organizationId: string,

@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { Cause, Effect, Exit, Option, Result } from "effect";
 import type { db as appDb } from "@/db";
 import {
@@ -13,9 +13,24 @@ import {
 	travelExpenseSettings,
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import { failureOfCause as failureOf } from "@/lib/effect/cause-failure";
 import { ValidationError } from "@/lib/effect/errors";
-import type { ReportOwner } from "@/lib/travel-expenses/report-store";
+import {
+	resolveSubmittedAdjustmentBaseline,
+	type SubmittedAdjustmentRefusal,
+} from "@/lib/travel-expenses/adjustment-store";
+import { stampMileagePolicies } from "@/lib/travel-expenses/mileage-item-store";
+import { stampPerDiemPolicies } from "@/lib/travel-expenses/per-diem-store";
+import { resolveReportProjectAttribution } from "@/lib/travel-expenses/project-attribution-store";
+import { receiptExceptionContext } from "@/lib/travel-expenses/receipt-exception";
+import { loadReceiptExceptionsAllowed } from "@/lib/travel-expenses/receipt-exception-read";
+import { storeSubmittedReferenceConversions } from "@/lib/travel-expenses/reference-rate-freeze";
+import {
+	EDITABLE_REPORT_STATUSES,
+	isEditableReportStatus,
+} from "@/lib/travel-expenses/report-return";
 import { resolveReportReviewer } from "@/lib/travel-expenses/report-reviewer-routing";
+import type { ReportOwner } from "@/lib/travel-expenses/report-store";
 import {
 	checkReportSubmission,
 	type ReportSubmissionTotals,
@@ -23,6 +38,7 @@ import {
 } from "@/lib/travel-expenses/report-submission";
 import type { TripReportMissingRequirements } from "@/lib/travel-expenses/trip-report";
 import { acquireApprovalWriteGate } from "../authority";
+import { kickApprovalDelivery } from "../delivery/kick";
 import { loadEmployeeLabel } from "../evidence/absence-submission";
 import { buildTravelExpenseReportSubmittedFacts } from "../evidence/travel-expense-report-facts";
 import { captureTravelExpenseReportSubmittedRevision } from "../evidence/travel-expense-report-store";
@@ -35,6 +51,7 @@ import {
 	APPROVAL_AMOUNT_THRESHOLD_CURRENCY,
 	type ApprovalPolicyEvaluationContext,
 } from "../policies/types";
+import { recordTravelExpenseReportDeliveryIntent } from "./travel-expense-report-delivery";
 import type { ApprovalDbService } from "./types";
 
 /**
@@ -62,6 +79,8 @@ export type SubmitTravelExpenseReportResult =
 	| { kind: "not_draft" }
 	| { kind: "changed_since_review" }
 	| { kind: "incomplete"; missing: TripReportMissingRequirements }
+	/** These expenses' projects are not proven on their expense dates (#605). */
+	| { kind: "project_ineligible"; itemIds: string[] }
 	/** Nobody but the requester could review it; setup guidance applies. */
 	| { kind: "no_reviewer"; reason: "requester_inactive" | "no_eligible_reviewer" }
 	/** A matched approval policy would let the requester approve their own report. */
@@ -71,7 +90,13 @@ export type SubmitTravelExpenseReportResult =
 	/** Amount-threshold policies exist, but the report is not in their currency. */
 	| { kind: "threshold_currency_unsupported"; currency: string }
 	/** The organization moved `travel_expense` to canonical authority, which has no report adapter. */
-	| { kind: "authority_unsupported" };
+	| { kind: "authority_unsupported" }
+	/**
+	 * An adjustment (#615) whose original report is no longer approved, is in
+	 * another currency, or was corrected by another approved adjustment since
+	 * this one was copied (`source_superseded`).
+	 */
+	| { kind: "adjustment_unavailable"; reason: SubmittedAdjustmentRefusal };
 
 type Refusal = Exclude<SubmitTravelExpenseReportResult, { kind: "submitted" }>;
 
@@ -194,14 +219,6 @@ function policyContext(input: {
 	};
 }
 
-function failureOf(cause: Cause.Cause<unknown>): unknown {
-	return (
-		Option.getOrNull(Cause.findErrorOption(cause)) ??
-		Result.getOrNull(Cause.findDefect(cause)) ??
-		new Error("An error has occurred")
-	);
-}
-
 export async function submitTravelExpenseReport(
 	database: Database,
 	input: { owner: ReportOwner; reportId: string; reviewed: ReviewedReportVersions },
@@ -209,8 +226,9 @@ export async function submitTravelExpenseReport(
 ): Promise<SubmitTravelExpenseReportResult> {
 	const { owner } = input;
 	const submittedAt = dateFromInstant(now);
+	let deliveryIntent = false;
 	try {
-		return await database.transaction(async (tx) => {
+		const result = await database.transaction(async (tx) => {
 			const dbService: ApprovalDbService = {
 				db: tx,
 				query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
@@ -227,6 +245,7 @@ export async function submitTravelExpenseReport(
 					status: travelExpenseReport.status,
 					submissionCount: travelExpenseReport.submissionCount,
 					detailsVersion: travelExpenseReport.detailsVersion,
+					reimbursementCurrency: travelExpenseReport.reimbursementCurrency,
 				})
 				.from(travelExpenseReport)
 				.where(
@@ -238,7 +257,14 @@ export async function submitTravelExpenseReport(
 				)
 				.for("update");
 			if (!locked) refuse({ kind: "not_found" });
-			if (locked.status !== "draft") refuse({ kind: "not_draft" });
+			// A returned report (#603) is resubmitted as the next cycle.
+			if (!isEditableReportStatus(locked.status)) refuse({ kind: "not_draft" });
+			// #608: store the reference conversions this cycle freezes, so they are read below.
+			await storeSubmittedReferenceConversions(
+				tx,
+				{ ...owner, reportId: input.reportId, ...locked },
+				now,
+			);
 
 			const live = await loadTravelExpenseReportFactsInput(tx, {
 				organizationId: owner.organizationId,
@@ -246,6 +272,22 @@ export async function submitTravelExpenseReport(
 			});
 			if (!live) refuse({ kind: "not_found" });
 			const report = live.report;
+			// Prices mileage with the policy effective today and stamps it for the frozen facts (#606).
+			const mileage = await stampMileagePolicies(tx, {
+				organizationId: owner.organizationId,
+				reimbursementCurrency: report.reimbursementCurrency,
+				items: live.items,
+			});
+			// Calculates the trip's per diem and stamps its rule edition and versions (#609).
+			const perDiem = await stampPerDiemPolicies(tx, { report, items: live.items });
+			// Read under a shared lock: a concurrent change of the setting waits (#604).
+			const receiptExceptionsAllowed = await loadReceiptExceptionsAllowed(
+				tx,
+				owner.organizationId,
+				{
+					lock: "share",
+				},
+			);
 			const check = checkReportSubmission(
 				{
 					kind: report.kind,
@@ -266,9 +308,13 @@ export async function submitTravelExpenseReport(
 						.map((item) => ({
 							id: item.id,
 							version: item.version,
+							type: item.type,
+							mileage: mileage.get(item.id) ?? null,
+							perDiem: perDiem.get(item.id) ?? null,
 							receiptIds: live.receipts
 								.filter((receipt) => receipt.itemId === item.id)
 								.map((receipt) => receipt.id),
+							conversion: live.conversions?.find((row) => row.itemId === item.id)?.conversion,
 							draft: {
 								expenseDate: item.expenseDate,
 								category: item.category,
@@ -278,6 +324,11 @@ export async function submitTravelExpenseReport(
 								paidBy: item.paidBy,
 								accountingReference: item.accountingReference,
 							},
+							receiptException: receiptExceptionContext(
+								item.receiptExceptionReason,
+								receiptExceptionsAllowed,
+							),
+							receiptExceptionVersion: item.receiptExceptionVersion,
 						})),
 				},
 				input.reviewed,
@@ -288,6 +339,17 @@ export async function submitTravelExpenseReport(
 						? { kind: "incomplete", missing: check.missing }
 						: { kind: "changed_since_review" },
 				);
+			}
+			const projects = await resolveReportProjectAttribution(tx, owner, live);
+			if (!projects.ok) refuse({ kind: "project_ineligible", itemIds: projects.itemIds });
+			// An adjustment report (#615) freezes its delta against the baseline in force now.
+			const adjustment = await resolveSubmittedAdjustmentBaseline(tx, {
+				organizationId: owner.organizationId,
+				reportId: input.reportId,
+				reimbursementCurrency: report.reimbursementCurrency,
+			});
+			if (adjustment.status === "refused") {
+				refuse({ kind: "adjustment_unavailable", reason: adjustment.reason });
 			}
 
 			const directory = await loadRoutingDirectory(tx, {
@@ -326,7 +388,7 @@ export async function submitTravelExpenseReport(
 					and(
 						eq(travelExpenseReport.id, input.reportId),
 						eq(travelExpenseReport.organizationId, owner.organizationId),
-						eq(travelExpenseReport.status, "draft"),
+						inArray(travelExpenseReport.status, [...EDITABLE_REPORT_STATUSES]),
 					),
 				)
 				.returning({ submissionCount: travelExpenseReport.submissionCount });
@@ -391,7 +453,12 @@ export async function submitTravelExpenseReport(
 				reportId: input.reportId,
 			});
 			if (!frozen) refuse({ kind: "not_found" });
-			const facts = buildTravelExpenseReportSubmittedFacts(frozen);
+			const facts = buildTravelExpenseReportSubmittedFacts({
+				...frozen,
+				receiptExceptionsAllowed,
+				projectAttribution: projects.attribution,
+				...(adjustment.status === "ok" ? { adjustmentBaseline: adjustment.baseline } : {}),
+			});
 			const [subject, submitter] = await Promise.all([
 				loadEmployeeLabel(tx, owner.organizationId, { employeeId: owner.employeeId }),
 				loadEmployeeLabel(tx, owner.organizationId, { userId: owner.userId }),
@@ -415,6 +482,14 @@ export async function submitTravelExpenseReport(
 					observedWorkflowId: null,
 				},
 			});
+			// The cycle's first lifecycle intent, only while a delivery control exists (#623).
+			deliveryIntent = await recordTravelExpenseReportDeliveryIntent(tx, {
+				organizationId: owner.organizationId,
+				reportId: input.reportId,
+				approvalRequestId: routing.approvalRequestId,
+				revision: revision.legacy,
+				event: "submitted",
+			});
 			return {
 				kind: "submitted",
 				approvalRequestId: routing.approvalRequestId,
@@ -424,6 +499,8 @@ export async function submitTravelExpenseReport(
 				totals: check.totals,
 			} as const;
 		});
+		if (deliveryIntent) kickApprovalDelivery({ organizationId: owner.organizationId });
+		return result;
 	} catch (error) {
 		if (error instanceof SubmissionRefused) return error.result;
 		throw error;

@@ -10,11 +10,24 @@ import {
 	travelExpenseReportReceipt,
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import { type AllowanceOverride, overriddenMileageView } from "./allowance-override";
+import { loadOrganizationReimbursementCurrency } from "./conversion-read";
+import type { ItemConversion } from "./currency-conversion";
+import { type MileageCalculation, type MileageItemView, mileageItemView } from "./mileage";
+import { loadMileageOverrides, loadMileagePricer } from "./mileage-pricing";
+import type { PerDiemItemView } from "./per-diem";
+import { loadPerDiemViews } from "./per-diem-pricing";
+import { loadProjectNames } from "./project-names";
 import {
-	DEFAULT_REIMBURSEMENT_CURRENCY,
-	type ReceiptItemDraft,
-	receiptReportTotals,
-} from "./receipt-report";
+	loadReceiptExceptionsAllowed,
+	type ReceiptExceptionView,
+	receiptExceptionItemView,
+} from "./receipt-exception-read";
+import { type ReceiptItemDraft, type ReceiptReportTotals, receiptReportTotals } from "./receipt-report";
+import type { ReferenceRateProvider } from "./reference-rate";
+import type { ReferenceRateItemStatus } from "./reference-rate-conversion";
+import { loadReferenceRatePolicy, resolveReportConversions } from "./reference-rate-read";
+import { EDITABLE_REPORT_STATUSES, isEditableReportStatus } from "./report-return";
 import type { TripDetailsDraft } from "./trip-report";
 
 /**
@@ -66,6 +79,19 @@ export interface ReportItemView extends ReceiptItemDraft {
 	version: number;
 	updatedAt: string;
 	receipts: ReportReceiptView[];
+	/** Mileage items only (#606): entered facts and the server's calculation. */
+	mileage: MileageItemView | null;
+	/** Missing-receipt exception (#604), saved separately from the other fields. */
+	receiptException: ReceiptExceptionView;
+	/** Its currency conversion (#607); loaded by `loadOwnReport` only. */
+	conversion?: ItemConversion | null;
+	/** Why an approved reference rate does or does not convert it (#608); `loadOwnReport` only. */
+	referenceRate?: ReferenceRateItemStatus | null;
+	/** Per diem items only (#609): itinerary, meals and the server's calculation. */
+	perDiem?: PerDiemItemView | null;
+	/** Project attribution (#605): `project-attribution.ts` `itemProjectChoice` reads these. */
+	projectId?: string | null;
+	projectInherits?: boolean;
 }
 
 /** Shared travel details of a trip report and the version they were saved at. */
@@ -77,12 +103,22 @@ export interface ReportView {
 	id: string;
 	kind: TravelExpenseReportKind;
 	status: TravelExpenseReportStatus;
+	/** Submission cycles so far; a withdrawn or returned report has history (#603). */
+	submissionCount: number;
 	reimbursementCurrency: string;
 	createdAt: string;
 	updatedAt: string;
 	/** Null for standalone reports, which have no trip. */
 	trip: TripDetailsView | null;
 	items: ReportItemView[];
+	/** Whether the organization allows missing-receipt exceptions (#604). */
+	receiptExceptionsAllowed: boolean;
+	/** The reference-rate source the organization approved (#608), if any. */
+	referenceRateProvider?: ReferenceRateProvider | null;
+	/** The trip's project its expenses inherit (#605). */
+	projectId?: string | null;
+	/** Current names of the projects the report and its items name, by id (#617 review step). */
+	projectNames?: Record<string, { name: string; customerName: string | null }>;
 }
 
 type ReportRow = typeof travelExpenseReport.$inferSelect;
@@ -106,6 +142,7 @@ export async function createStandaloneReceiptReport(
 ): Promise<{ reportId: string; itemId: string }> {
 	const at = dateFromInstant(now);
 	return database.transaction(async (tx) => {
+		const currency = await loadOrganizationReimbursementCurrency(tx, owner.organizationId);
 		const [report] = await tx
 			.insert(travelExpenseReport)
 			.values({
@@ -113,7 +150,7 @@ export async function createStandaloneReceiptReport(
 				employeeId: owner.employeeId,
 				kind: "standalone",
 				status: "draft",
-				reimbursementCurrency: DEFAULT_REIMBURSEMENT_CURRENCY,
+				reimbursementCurrency: currency,
 				createdAt: at,
 				createdBy: owner.userId,
 				updatedAt: at,
@@ -128,8 +165,8 @@ export async function createStandaloneReceiptReport(
 				reportId: report.id,
 				type: "receipt",
 				position: 0,
-				// Same-currency receipts are the supported case; the employee can change it.
-				originalCurrency: DEFAULT_REIMBURSEMENT_CURRENCY,
+				// Receipts start in the reimbursement currency; the employee can change it.
+				originalCurrency: currency,
 				createdAt: at,
 				updatedAt: at,
 				updatedBy: owner.userId,
@@ -151,6 +188,7 @@ export async function createTripReport(
 	now: Instant = systemClock.nowInstant(),
 ): Promise<{ reportId: string }> {
 	const at = dateFromInstant(now);
+	const currency = await loadOrganizationReimbursementCurrency(database, owner.organizationId);
 	const [report] = await database
 		.insert(travelExpenseReport)
 		.values({
@@ -158,7 +196,7 @@ export async function createTripReport(
 			employeeId: owner.employeeId,
 			kind: "trip",
 			status: "draft",
-			reimbursementCurrency: DEFAULT_REIMBURSEMENT_CURRENCY,
+			reimbursementCurrency: currency,
 			tripTimeZone: input.timeZone,
 			createdAt: at,
 			createdBy: owner.userId,
@@ -204,7 +242,8 @@ export async function lockOwnDraftReport(
 		.where(ownedReport(owner, reportId))
 		.for("update");
 	if (!report) return { status: "not_found" };
-	return report.status === "draft"
+	// A returned report (#603) is edited like a draft; the result keeps its tag.
+	return isEditableReportStatus(report.status)
 		? { status: "draft", kind: report.kind }
 		: { status: "not_draft" };
 }
@@ -239,7 +278,7 @@ export async function isOwnDraftReportItem(
 		.where(
 			and(
 				ownedReport(owner, input.reportId),
-				eq(travelExpenseReport.status, "draft"),
+				inArray(travelExpenseReport.status, [...EDITABLE_REPORT_STATUSES]),
 				eq(travelExpenseReportItem.id, input.itemId),
 			),
 		)
@@ -249,8 +288,28 @@ export async function isOwnDraftReportItem(
 
 type ItemRow = typeof travelExpenseReportItem.$inferSelect;
 
-function toItemView(row: ItemRow, receipts: ReportReceiptView[]): ReportItemView {
+export function toItemView(
+	row: ItemRow,
+	receipts: ReportReceiptView[],
+	mileageCalculation: MileageCalculation | null = null,
+	/**
+	 * A mileage item's administrator override (#610) and the report currency it
+	 * must match; `calculationIsOrdinary` as in `overriddenMileageView`.
+	 */
+	allowance?: {
+		override: AllowanceOverride | undefined;
+		reimbursementCurrency: string;
+		calculationIsOrdinary?: boolean;
+	},
+): ReportItemView {
 	return {
+		mileage: overriddenMileageView(
+			mileageItemView(row, mileageCalculation),
+			row.expenseDate,
+			allowance?.override,
+			allowance?.reimbursementCurrency ?? "",
+			allowance?.calculationIsOrdinary,
+		),
 		id: row.id,
 		type: row.type,
 		version: row.version,
@@ -263,6 +322,9 @@ function toItemView(row: ItemRow, receipts: ReportReceiptView[]): ReportItemView
 		paidBy: row.paidBy,
 		accountingReference: row.accountingReference,
 		receipts,
+		...receiptExceptionItemView(row),
+		projectId: row.projectId,
+		projectInherits: row.projectInherits,
 	};
 }
 
@@ -277,7 +339,7 @@ export async function loadOwnReport(
 		.where(ownedReport(owner, reportId))
 		.limit(1);
 	if (!report) return null;
-	const [items, receipts] = await Promise.all([
+	const [items, receipts, receiptExceptionsAllowed, policy] = await Promise.all([
 		database
 			.select()
 			.from(travelExpenseReportItem)
@@ -298,18 +360,54 @@ export async function loadOwnReport(
 				),
 			)
 			.orderBy(asc(travelExpenseReportReceipt.createdAt), asc(travelExpenseReportReceipt.id)),
+		loadReceiptExceptionsAllowed(database, owner.organizationId),
+		loadReferenceRatePolicy(database, owner.organizationId),
+	]);
+	const { conversions, referenceRates } = await resolveReportConversions(database, {
+		organizationId: owner.organizationId,
+		reports: [{ ...report, items }],
+	});
+	const price = await loadMileagePricer(database, owner.organizationId, items);
+	const pricing = {
+		reimbursementCurrency: report.reimbursementCurrency,
+		// Editable reports are priced afresh; submitted ones keep their stamp.
+		useStamp: !isEditableReportStatus(report.status),
+	};
+	const perDiems = await loadPerDiemViews(database, report, items, pricing);
+	const overrides = await loadMileageOverrides(database, owner.organizationId, items);
+	const projectNames = await loadProjectNames(database, owner.organizationId, [
+		report.projectId,
+		...items.map((item) => item.projectId),
 	]);
 	return {
+		projectNames,
 		id: report.id,
 		kind: report.kind,
 		status: report.status,
+		submissionCount: report.submissionCount,
 		reimbursementCurrency: report.reimbursementCurrency,
 		createdAt: report.createdAt.toISOString(),
 		updatedAt: report.updatedAt.toISOString(),
 		trip: toTripDetailsView(report),
-		items: items.map((item) =>
-			toItemView(item, receipts.filter((receipt) => receipt.itemId === item.id).map(toReceiptView)),
-		),
+		projectId: report.projectId,
+		items: items.map((item) => ({
+			...toItemView(
+				item,
+				receipts.filter((receipt) => receipt.itemId === item.id).map(toReceiptView),
+				item.type === "mileage" ? price(item, pricing) : null,
+				{
+					override: overrides.get(item.id),
+					reimbursementCurrency: report.reimbursementCurrency,
+					// A frozen item without a stamp is priced with today's policy, not its ordinary result.
+					calculationIsOrdinary: !pricing.useStamp || item.mileagePolicy !== null,
+				},
+			),
+			conversion: conversions.get(item.id) ?? null,
+			referenceRate: referenceRates.get(item.id) ?? null,
+			...(item.type === "per_diem" ? { perDiem: perDiems.get(item.id) ?? null } : {}),
+		})),
+		receiptExceptionsAllowed,
+		referenceRateProvider: policy?.provider ?? null,
 	};
 }
 
@@ -326,6 +424,11 @@ export interface DraftReportSummary {
 	receiptCount: number;
 	/** Null for standalone reports. */
 	trip: DraftTripSummary | null;
+	/** The first expense's type (a standalone report has exactly one). */
+	itemType: TravelExpenseReportItemType | null;
+	itemCount: number;
+	/** Employee-paid and company-paid totals of the countable expenses (#617). */
+	totals: ReceiptReportTotals;
 }
 
 export interface DraftTripSummary {
@@ -351,7 +454,7 @@ export function listOwnSubmittedReports(
 	database: Database,
 	owner: ReportOwner,
 ): Promise<DraftReportSummary[]> {
-	return listOwnReports(database, owner, ["submitted", "approved", "rejected"]);
+	return listOwnReports(database, owner, ["submitted", "approved", "rejected", "returned"]);
 }
 
 async function listOwnReports(
@@ -397,33 +500,105 @@ async function listOwnReports(
 			)
 			.groupBy(travelExpenseReportReceipt.reportId),
 	]);
+	const { conversions } = await resolveReportConversions(database, {
+		organizationId: owner.organizationId,
+		reports: reports.map((report) => ({
+			...report,
+			items: items.filter((item) => item.reportId === report.id),
+		})),
+	});
+	const price = await loadMileagePricer(database, owner.organizationId, items);
+	const mileageOverrides = await loadMileageOverrides(database, owner.organizationId, items);
+	// Per diem (#609): only trips have one; each is calculated with its own report.
+	const perDiems = new Map<string, PerDiemItemView>();
+	for (const report of reports) {
+		const reportItems = items.filter((item) => item.reportId === report.id);
+		const useStamp = !isEditableReportStatus(report.status);
+		for (const entry of await loadPerDiemViews(database, report, reportItems, { useStamp })) {
+			perDiems.set(...entry);
+		}
+	}
 	return reports.map((report) => {
 		const reportItems = items.filter((candidate) => candidate.reportId === report.id);
-		const item = reportItems[0];
+		const priced = reportItems.map((row) => ({
+			perDiem: perDiems.get(row.id) ?? null,
+			row,
+			mileage:
+				row.type === "mileage"
+					? overriddenMileageView(
+							mileageItemView(
+								row,
+								price(row, {
+									reimbursementCurrency: report.reimbursementCurrency,
+									useStamp: !isEditableReportStatus(report.status),
+								}),
+							),
+							row.expenseDate,
+							mileageOverrides.get(row.id),
+							report.reimbursementCurrency,
+							isEditableReportStatus(report.status) || row.mileagePolicy !== null,
+						)
+					: null,
+		}));
+		const first = priced[0];
+		const item = first?.row;
+		const totals = reportListTotals(report, priced, conversions);
 		return {
 			id: report.id,
 			kind: report.kind,
 			status: report.status,
 			updatedAt: report.updatedAt.toISOString(),
 			expenseDate: item?.expenseDate ?? null,
-			description: item?.description ?? null,
-			amount: item?.originalAmount ?? null,
-			currency: item?.originalCurrency ?? null,
+			description: item?.description ?? item?.mileageRoute ?? null,
+			amount: item?.originalAmount ?? first?.mileage?.amount ?? null,
+			currency: item?.originalCurrency ?? first?.mileage?.currency ?? null,
 			receiptCount: receiptCounts.find((row) => row.reportId === report.id)?.count ?? 0,
-			trip: report.kind === "trip" ? tripDraftSummary(report, reportItems) : null,
+			trip: report.kind === "trip" ? tripDraftSummary(report, priced, totals) : null,
+			itemType: item?.type ?? null,
+			itemCount: priced.length,
+			totals,
 		};
 	});
 }
 
-function tripDraftSummary(report: ReportRow, items: ItemRow[]): DraftTripSummary {
-	const totals = receiptReportTotals(
-		items.map((row) => ({
+/** Every report of the owner, whatever its status, for the unified history (#617). */
+export function listOwnReportSummaries(
+	database: Database,
+	owner: ReportOwner,
+): Promise<DraftReportSummary[]> {
+	return listOwnReports(database, owner, [
+		"draft",
+		"returned",
+		"submitted",
+		"approved",
+		"rejected",
+	]);
+}
+
+function reportListTotals(
+	report: ReportRow,
+	items: { row: ItemRow; mileage: MileageItemView | null; perDiem?: PerDiemItemView | null }[],
+	conversions: ReadonlyMap<string, ItemConversion>,
+): ReceiptReportTotals {
+	return receiptReportTotals(
+		items.map(({ row, mileage, perDiem }) => ({
+			perDiem,
 			amount: row.originalAmount,
 			currency: row.originalCurrency,
 			paidBy: row.paidBy,
+			conversion: conversions.get(row.id),
+			type: row.type,
+			mileage,
 		})),
 		report.reimbursementCurrency,
 	);
+}
+
+function tripDraftSummary(
+	report: ReportRow,
+	items: readonly unknown[],
+	totals: ReceiptReportTotals,
+): DraftTripSummary {
 	return {
 		purpose: report.tripPurpose,
 		startDate: report.tripStartDate,
@@ -465,6 +640,7 @@ export async function saveReceiptItemDraft(
 			eq(travelExpenseReportItem.id, input.itemId),
 			eq(travelExpenseReportItem.reportId, input.reportId),
 			eq(travelExpenseReportItem.organizationId, owner.organizationId),
+			eq(travelExpenseReportItem.type, "receipt"),
 		);
 		const [saved] = await tx
 			.update(travelExpenseReportItem)
@@ -579,7 +755,8 @@ export async function addTripReportItem(
 				reportId: input.reportId,
 				type: "receipt",
 				position: (last?.position ?? -1) + 1,
-				originalCurrency: DEFAULT_REIMBURSEMENT_CURRENCY,
+				// The report's reimbursement currency (#607), like a standalone receipt.
+				originalCurrency: sql`(select ${travelExpenseReport.reimbursementCurrency} from ${travelExpenseReport} where ${ownedReport(owner, input.reportId)})`,
 				createdAt: at,
 				updatedAt: at,
 				updatedBy: owner.userId,

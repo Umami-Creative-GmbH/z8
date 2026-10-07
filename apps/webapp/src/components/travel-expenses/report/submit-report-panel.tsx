@@ -18,9 +18,16 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { appliedConversion } from "@/lib/travel-expenses/currency-conversion";
+import { effectiveItemProject } from "@/lib/travel-expenses/project-attribution";
 import { receiptReportTotals } from "@/lib/travel-expenses/receipt-report";
+import { referenceRateReviewKey } from "@/lib/travel-expenses/reference-rate-conversion";
 import type { ReportView } from "@/lib/travel-expenses/report-store";
+import { reviewedItemAmount } from "@/lib/travel-expenses/report-submission";
+import type { ExpenseProjectSummary } from "./expense-project-line";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
+import { pendingReceiptException } from "./receipt-exception-notice";
+import { AdjustmentDeltaPreview } from "./report-adjustments";
 import { ReportTotals } from "./report-summary";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -47,6 +54,15 @@ function outcomeMessage(
 				body: t(
 					"travelExpenses.report.submit.incomplete",
 					"Some saved details are still missing. Complete everything listed under “Still needed” and try again.",
+				),
+			};
+		case "project_ineligible":
+			return {
+				title: t("travelExpenses.report.submit.projectTitle", "A project cannot be used"),
+				body: t(
+					"travelExpenses.report.submit.project",
+					"{count, plural, one {One expense is} other {# expenses are}} attributed to a project you were not assigned to on the expense date. Choose another project, or ask an expense administrator for an attribution exception. Your report stays saved as a draft.",
+					{ count: outcome.itemIds.length },
 				),
 			};
 		case "no_reviewer":
@@ -102,7 +118,39 @@ function outcomeMessage(
 					"Your organization is changing how expense approvals work, so reports cannot be submitted right now. Your report stays saved as a draft.",
 				),
 			};
+		case "adjustment_unavailable":
+			if (outcome.reason === "source_superseded") {
+				return {
+					title: t(
+						"travelExpenses.report.submit.adjustmentTitle",
+						"This adjustment cannot be submitted",
+					),
+					body: t(
+						"travelExpenses.report.submit.adjustmentSuperseded",
+						"Another adjustment of the same report was approved after you started this one, and this copy does not include that correction. Start a new adjustment from the original report so both corrections are kept.",
+					),
+				};
+			}
+			return {
+				title: t("travelExpenses.report.submit.adjustmentTitle", "This adjustment cannot be submitted"),
+				body: t(
+					"travelExpenses.report.submit.adjustment",
+					"The report this adjustment corrects is no longer approved in this currency, so no signed difference can be calculated. Your adjustment stays saved as a draft.",
+				),
+			};
 	}
+}
+
+/** The project an expense will be submitted under, with its current name (#605, #617). */
+function reviewedProject(
+	report: ReportView | null,
+	item: ReportView["items"][number],
+): ExpenseProjectSummary | undefined {
+	if (!report) return undefined;
+	const effective = effectiveItemProject(report, item);
+	const named = effective ? report.projectNames?.[effective.projectId] : undefined;
+	if (!effective || !named) return undefined;
+	return { ...named, inheritedFromTrip: effective.inheritedFromTrip };
 }
 
 /**
@@ -172,6 +220,9 @@ export function SubmitReportPanel({
 						id: item.id,
 						version: item.version,
 						receiptIds: item.receipts.map((receipt) => receipt.id),
+						receiptExceptionVersion: item.receiptException.version,
+						referenceRate: referenceRateReviewKey(item.conversion),
+						amount: reviewedItemAmount(item, report.reimbursementCurrency),
 					})),
 				},
 			});
@@ -252,19 +303,47 @@ export function SubmitReportPanel({
 						<ExpenseSummaryList
 							items={(report?.items ?? []).map((item) => ({
 								id: item.id,
-								description: item.description,
+								description:
+									item.description ??
+									item.mileage?.route ??
+									(item.perDiem ? t("travelExpenses.report.perDiem.title", "Per diem") : null),
 								expenseDate: item.expenseDate,
 								category: item.category,
-								amount: item.amount,
-								currency: item.currency,
+								amount: item.amount ?? item.mileage?.amount ?? item.perDiem?.amount ?? null,
+								currency: item.currency ?? item.mileage?.currency ?? item.perDiem?.currency ?? null,
 								paidBy: item.paidBy,
+								conversion: appliedConversion(
+									item,
+									report?.reimbursementCurrency ?? "",
+									item.conversion,
+								),
 								receipts: item.receipts.map((receipt) => ({
 									id: receipt.id,
 									fileName: receipt.fileName,
 								})),
+								mileage:
+									item.mileage?.calculation?.status === "calculated"
+										? item.mileage.calculation
+										: null,
+								perDiem:
+									item.perDiem?.calculation?.status === "calculated"
+										? item.perDiem.calculation
+										: null,
+								receiptException: pendingReceiptException(item),
+								project: reviewedProject(report, item),
+								// An applying administrator override (#610) is what the expense counts.
+								allowanceOverride: [item.mileage?.override, item.perDiem?.override].find(
+									(override) => override?.applies,
+								),
 							}))}
 						/>
 						{totals && <ReportTotals id={`${reportId}-review`} totals={totals} />}
+					{totals && (
+						<AdjustmentDeltaPreview
+							reportId={reportId}
+							corrected={{ amount: totals.reimbursable, currency: totals.currency }}
+						/>
+					)}
 						{problem && (
 							<Alert variant="destructive" role="alert">
 								<IconAlertTriangle aria-hidden="true" className="size-4" />

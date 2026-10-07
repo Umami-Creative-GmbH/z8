@@ -9,6 +9,7 @@ import {
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER } from "./attachment-validation";
+import { isLegacyDraftConverted } from "./legacy-draft-conversion-read";
 
 /**
  * Receipt upload coordination (#295). A private receipt object is staged
@@ -118,8 +119,15 @@ export async function finalizeTravelExpenseReceiptUpload(
 				),
 			)
 			.for("update");
+		// A draft continued as a report (#616) keeps its attachments but takes no more.
+		const converted =
+			claim?.status === "draft" &&
+			(await isLegacyDraftConverted(tx, {
+				organizationId: input.organizationId,
+				claimId: input.claimId,
+			}));
 
-		if (claim?.status !== "draft") {
+		if (claim?.status !== "draft" || converted) {
 			await tx
 				.update(travelExpenseReceiptUpload)
 				.set({
