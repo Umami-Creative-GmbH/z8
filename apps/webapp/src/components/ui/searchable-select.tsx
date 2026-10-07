@@ -31,6 +31,7 @@ export interface SearchableSelectProps {
 	emptyLabel?: string;
 	className?: string;
 	id?: string;
+	"aria-invalid"?: boolean;
 }
 
 export function SearchableSelect({
@@ -45,6 +46,7 @@ export function SearchableSelect({
 	emptyLabel,
 	className,
 	id,
+	"aria-invalid": ariaInvalid,
 }: SearchableSelectProps) {
 	const [open, setOpen] = useState(false);
 	const listboxId = useId();
@@ -55,19 +57,21 @@ export function SearchableSelect({
 			<PopoverTrigger asChild>
 				<Button
 					id={id}
-					variant="outline"
+					variant="field"
 					role="combobox"
 					aria-expanded={open}
 					aria-controls={listboxId}
-					className={cn("w-full justify-between font-normal", className)}
+					aria-invalid={ariaInvalid || undefined}
+					className={cn("w-full", className)}
+					data-placeholder={selectedOption ? undefined : ""}
 					disabled={disabled}
 				>
-					{selectedOption ? selectedOption.name : placeholder}
+					<span className="truncate">{selectedOption ? selectedOption.name : placeholder}</span>
 					<IconSelector className="ml-2 size-4 shrink-0 opacity-50" />
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className="w-(--anchor-width) p-0" align="start">
-				<Command>
+				<Command defaultValue={selectedOption?.name}>
 					<CommandInput placeholder={searchPlaceholder} />
 					<CommandList id={listboxId}>
 						<CommandEmpty>{emptyText}</CommandEmpty>

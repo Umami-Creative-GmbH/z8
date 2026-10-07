@@ -736,8 +736,13 @@ function ClockodoSelectionStep({
 							<Popover>
 								<PopoverTrigger asChild>
 									<Button
-										variant="outline"
-										className="w-full justify-start text-left font-normal"
+										variant="field"
+										className="w-full justify-start text-left"
+										data-placeholder={
+											selections.dateRange.startDate && selections.dateRange.endDate
+												? undefined
+												: ""
+										}
 									>
 										<IconCalendar className="mr-2 size-4" aria-hidden="true" />
 										{selections.dateRange.startDate &&

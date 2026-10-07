@@ -56,7 +56,7 @@ export function FilterSelector({
 			<Popover>
 				<PopoverTrigger asChild>
 					<Button
-						variant="outline"
+						variant="field"
 						className="w-full justify-start"
 						aria-label={ariaLabel || `Select ${label.toLowerCase()}`}
 					>

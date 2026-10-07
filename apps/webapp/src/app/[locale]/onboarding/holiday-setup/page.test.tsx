@@ -7,6 +7,7 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { StrictMode } from "react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -70,6 +71,36 @@ function deferred<T>() {
 	});
 	return { promise, reject, resolve };
 }
+
+describe("HolidaySetupPage country picker", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+	});
+
+	it.each(["click", "{Enter}", " "])(
+		"opens with %s and focuses the search field, Escape returns to the trigger",
+		async (opener) => {
+			const user = userEvent.setup();
+			render(<HolidaySetupPage />);
+
+			const trigger = await screen.findByLabelText("Country");
+			expect(trigger.hasAttribute("data-placeholder")).toBe(true);
+			if (opener === "click") {
+				await user.click(trigger);
+			} else {
+				trigger.focus();
+				await user.keyboard(opener);
+			}
+
+			const search = await screen.findByPlaceholderText("Search countries...");
+			await waitFor(() => expect(document.activeElement).toBe(search));
+
+			await user.keyboard("{Escape}");
+			await waitFor(() => expect(document.activeElement).toBe(trigger));
+		},
+	);
+});
 
 describe("HolidaySetupPage load effect", () => {
 	beforeEach(() => {

@@ -48,18 +48,15 @@ export function EmployeeSelectTrigger({
 			<Button
 				id={id}
 				type="button"
-				variant="outline"
+				variant="field"
 				role="combobox"
 				aria-expanded={expanded}
 				aria-controls={controlsId}
+				aria-invalid={error ? true : undefined}
+				data-placeholder={employee ? undefined : ""}
 				disabled={disabled}
 				onClick={onClick}
-				className={cn(
-					"w-full justify-between font-normal",
-					!employee && "text-muted-foreground",
-					error && "border-destructive focus-visible:ring-destructive",
-					className,
-				)}
+				className={cn("w-full", className)}
 			>
 				{employee ? (
 					<div className="flex items-center gap-2 truncate">
@@ -88,17 +85,15 @@ export function EmployeeSelectTrigger({
 			<Button
 				id={id}
 				type="button"
-				variant="outline"
+				variant="field"
 				role="combobox"
 				aria-expanded={expanded}
 				aria-controls={controlsId}
+				aria-invalid={error ? true : undefined}
+				data-placeholder=""
 				disabled={disabled}
 				onClick={onClick}
-				className={cn(
-					"w-full justify-between font-normal text-muted-foreground",
-					error && "border-destructive focus-visible:ring-destructive",
-					className,
-				)}
+				className={cn("w-full", className)}
 			>
 				<div className="flex items-center gap-2">
 					<IconUsers className="size-4" />
@@ -117,17 +112,14 @@ export function EmployeeSelectTrigger({
 		<Button
 			id={id}
 			type="button"
-			variant="outline"
+			variant="field"
 			role="combobox"
 			aria-expanded={expanded}
 			aria-controls={controlsId}
+			aria-invalid={error ? true : undefined}
 			disabled={disabled}
 			onClick={onClick}
-			className={cn(
-				"w-full justify-between font-normal min-h-[40px] h-auto py-1.5",
-				error && "border-destructive focus-visible:ring-destructive",
-				className,
-			)}
+			className={cn("h-auto min-h-9 w-full py-1.5", className)}
 		>
 			<div className="flex items-center gap-2 flex-wrap">
 				{/* Stacked avatars */}

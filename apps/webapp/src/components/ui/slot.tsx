@@ -62,4 +62,4 @@ function Slot({ children, ref: forwardedRef, ...slotProps }: SlotProps) {
 	return React.cloneElement(child, props);
 }
 
-export { Slot };
+export { composeRefs, Slot };
