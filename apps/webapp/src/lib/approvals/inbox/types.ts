@@ -33,6 +33,12 @@ export interface ApprovalInboxSummary {
 	detail: string;
 	badge: { label: string; color: string | null } | null;
 	stage?: { name: string; order: number };
+	/** Localized forms the client prefers over the English strings above (#687). */
+	localized?: {
+		title: ApprovalInboxLocalizedText;
+		subtitle: ApprovalInboxLocalizedText;
+		detail: ApprovalInboxLocalizedText;
+	};
 }
 
 export interface ApprovalInboxTiming {
@@ -78,14 +84,28 @@ export interface ApprovalInboxItem {
 }
 
 /**
- * A `{name}` value of a localized text: plain, itself localized, or a list of
- * localized texts the client joins with "; " after translating each one.
+ * A typed value the viewer formats in their own locale (#687), like the report
+ * pages: calendar days exactly as entered (never shifted by a zone), a recorded
+ * UTC instant (shown in UTC), a frozen decimal amount with its currency, an
+ * ISO 3166 country code.
+ */
+export type ApprovalInboxValue =
+	| { kind: "plain_date"; date: string }
+	| { kind: "instant"; at: string }
+	| { kind: "plain_date_range"; start: string; end: string }
+	| { kind: "money"; amount: string; currency: string; signed?: true }
+	| { kind: "country"; code: string };
+
+/**
+ * A `{name}` value of a localized text: plain, typed, itself localized, or a
+ * list the client joins with "; " after rendering each entry.
  */
 export type ApprovalInboxTextParam =
 	| string
 	| number
+	| ApprovalInboxValue
 	| ApprovalInboxLocalizedText
-	| ApprovalInboxLocalizedText[];
+	| Array<string | ApprovalInboxValue | ApprovalInboxLocalizedText>;
 
 export interface ApprovalInboxLocalizedText {
 	key: string;
@@ -126,9 +146,11 @@ export type ApprovalInboxDetailSection =
 	| {
 			type: "key_value";
 			title: string | ApprovalInboxLocalizedText;
+			/** The title is text a person entered (an expense's description), shown as written. */
+			titleAsEntered?: true;
 			rows: Array<{
 				label: string | ApprovalInboxLocalizedText;
-				value: string | ApprovalInboxLocalizedText | ApprovalInboxDetailChange;
+				value: string | ApprovalInboxLocalizedText | ApprovalInboxValue | ApprovalInboxDetailChange;
 				tone?: "default" | "warning" | "danger";
 				/** An in-app page the value links to (e.g. the report an adjustment corrects). */
 				href?: string;

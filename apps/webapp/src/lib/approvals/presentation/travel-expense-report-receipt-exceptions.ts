@@ -13,7 +13,7 @@ import type { ApprovalInboxDetailSection, ApprovalInboxLocalizedText } from "../
 type Row = Extract<ApprovalInboxDetailSection, { type: "key_value" }>["rows"][number];
 
 const text = (key: string, fallback: string): ApprovalInboxLocalizedText => ({
-	key: `approvals:approvals.evidence.${key}`,
+	key,
 	fallback,
 });
 
@@ -21,12 +21,18 @@ const text = (key: string, fallback: string): ApprovalInboxLocalizedText => ({
 export function receiptExceptionRows(exception: { reason: string }): Row[] {
 	return [
 		{
-			label: text("receipts", "Receipts"),
-			value: text("receiptMissingException", "Missing — exception requested"),
+			label: text("approvals:approvals.evidence.receipts", "Receipts"),
+			value: text(
+				"approvals:approvals.evidence.receiptMissingException",
+				"Missing — exception requested",
+			),
 			tone: "warning",
 		},
 		{
-			label: text("receiptExceptionReason", "Why the receipt is missing"),
+			label: text(
+				"approvals:approvals.evidence.receiptExceptionReason",
+				"Why the receipt is missing",
+			),
 			value: exception.reason,
 			tone: "warning",
 		},
@@ -52,7 +58,7 @@ export function receiptExceptionAcceptanceSections(
 	return [
 		{
 			type: "receipt_exception_acceptance",
-			title: text("receiptExceptionsTitle", "Missing receipts"),
+			title: text("approvals:approvals.evidence.receiptExceptionsTitle", "Missing receipts"),
 			items,
 		},
 	];

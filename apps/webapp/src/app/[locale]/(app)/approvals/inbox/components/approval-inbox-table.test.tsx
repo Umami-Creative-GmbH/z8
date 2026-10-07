@@ -5,6 +5,8 @@ import { describe, expect, it, vi } from "vitest";
 import type { ApprovalInboxItem } from "@/lib/approvals/inbox/types";
 import { ApprovalInboxTable } from "./approval-inbox-table";
 
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback?: string, values?: Record<string, unknown>) =>

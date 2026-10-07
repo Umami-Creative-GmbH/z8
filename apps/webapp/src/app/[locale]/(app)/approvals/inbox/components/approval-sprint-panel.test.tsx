@@ -9,6 +9,8 @@ import { ApprovalSprintPanel } from "./approval-sprint-panel";
 const approveMutation = vi.fn();
 const rejectMutation = vi.fn();
 
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));

@@ -8,7 +8,7 @@ const text = (
 	fallback: string,
 	params?: ApprovalInboxLocalizedText["params"],
 ): ApprovalInboxLocalizedText => ({
-	key: `approvals:approvals.evidence.${key}`,
+	key,
 	fallback,
 	...(params ? { params } : {}),
 });
@@ -27,22 +27,24 @@ export function mileageReviewRows(item: TravelExpenseReportSubmittedItem): Row[]
 			? `${policy.source.reference ?? ""} (${policy.source.version ?? ""})`
 			: [policy.source.reference, policy.source.version].filter(Boolean).join(", ") || null;
 	return [
-		{ label: text("mileageRoute", "Route"), value: mileage.route },
+		{ label: text("approvals:approvals.evidence.mileageRoute", "Route"), value: mileage.route },
 		{
-			label: text("mileageDistance", "Distance"),
-			value: text("mileageDistanceValue", "{distance} km", { distance: mileage.distanceKm }),
+			label: text("approvals:approvals.evidence.mileageDistance", "Distance"),
+			value: text("approvals:approvals.evidence.mileageDistanceValue", "{distance} km", {
+				distance: mileage.distanceKm,
+			}),
 		},
 		{
-			label: text("mileageVehicle", "Vehicle"),
+			label: text("approvals:approvals.evidence.mileageVehicle", "Vehicle"),
 			value:
 				mileage.vehicle === "car"
-					? text("mileageVehicleCar", "Car")
-					: text("mileageVehicleOther", "Other motor vehicle"),
+					? text("approvals:approvals.evidence.mileageVehicleCar", "Car")
+					: text("approvals:approvals.evidence.mileageVehicleOther", "Other motor vehicle"),
 		},
 		{
-			label: text("mileageCalculation", "Calculation"),
+			label: text("approvals:approvals.evidence.mileageCalculation", "Calculation"),
 			value: text(
-				"mileageCalculationValue",
+				"approvals:approvals.evidence.mileageCalculationValue",
 				"{distance} km × {rate} {currency}/km = {exact} → {amount} {currency} ({rounding})",
 				{
 					distance: mileage.distanceKm,
@@ -52,30 +54,48 @@ export function mileageReviewRows(item: TravelExpenseReportSubmittedItem): Row[]
 					amount: mileage.amount,
 					rounding:
 						mileage.rounding === "half_up"
-							? text("mileageRoundingHalfUp", "rounded half up")
-							: text("mileageRoundingHalfEven", "rounded half to even"),
+							? text("approvals:approvals.evidence.mileageRoundingHalfUp", "rounded half up")
+							: text(
+									"approvals:approvals.evidence.mileageRoundingHalfEven",
+									"rounded half to even",
+								),
 				},
 			),
 		},
 		{
-			label: text("mileagePolicy", "Applied rate"),
-			value: text("mileagePolicyValue", "Version {version}, valid from {from}", {
-				version: policy.versionId,
-				from: policy.effectiveFrom,
-			}),
+			label: text("approvals:approvals.evidence.mileagePolicy", "Applied rate"),
+			value: text(
+				"approvals:approvals.evidence.mileagePolicyValue",
+				"Version {version}, valid from {from}",
+				{
+					version: policy.versionId,
+					from: policy.effectiveFrom,
+				},
+			),
 		},
 		{
-			label: text("mileagePolicySource", "Rate source"),
+			label: text("approvals:approvals.evidence.mileagePolicySource", "Rate source"),
 			value:
 				policy.source.kind === "statutory_default"
-					? text("mileagePolicySourceStatutory", "Statutory default: {source}", {
-							source: source ?? "",
-						})
+					? text(
+							"approvals:approvals.evidence.mileagePolicySourceStatutory",
+							"Statutory default: {source}",
+							{
+								source: source ?? "",
+							},
+						)
 					: source
-						? text("mileagePolicySourceOrganizationNamed", "Organization policy: {source}", {
-								source,
-							})
-						: text("mileagePolicySourceOrganization", "Organization policy"),
+						? text(
+								"approvals:approvals.evidence.mileagePolicySourceOrganizationNamed",
+								"Organization policy: {source}",
+								{
+									source,
+								},
+							)
+						: text(
+								"approvals:approvals.evidence.mileagePolicySourceOrganization",
+								"Organization policy",
+							),
 		},
 	];
 }

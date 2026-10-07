@@ -48,7 +48,9 @@ import type {
 	ApprovalInboxDetailSection,
 	ApprovalInboxItem,
 	ApprovalInboxListResult,
+	ApprovalInboxLocalizedText,
 	ApprovalInboxRiskLevel,
+	ApprovalInboxStatus,
 	ApprovalInboxTimeComparison,
 	ApprovalInboxType,
 	ApprovalInboxWarning,
@@ -502,6 +504,15 @@ function toInboxItem(
 			detail: approval.display.summary,
 			badge: approval.display.badge ?? null,
 			...(approval.display.stage ? { stage: approval.display.stage } : {}),
+			...(approval.display.localized
+				? {
+						localized: {
+							title: approval.display.localized.title,
+							subtitle: approval.display.localized.subtitle,
+							detail: approval.display.localized.summary,
+						},
+					}
+				: {}),
 		},
 		timing: {
 			createdAt: serializeDate(approval.createdAt) ?? "",
@@ -528,23 +539,75 @@ function toInboxItem(
 	};
 }
 
+/** A request's status in the report pages' wording (#687), never the raw value. */
+const REQUEST_STATUS_TEXT: Record<
+	ApprovalInboxStatus | "returned" | "withdrawn",
+	ApprovalInboxLocalizedText
+> = {
+	pending: {
+		key: "approvals:approvals.requestStatusPending",
+		fallback: "Awaiting review",
+	},
+	approved: {
+		key: "approvals:approvals.requestStatusApproved",
+		fallback: "Approved",
+	},
+	rejected: {
+		key: "approvals:approvals.requestStatusRejected",
+		fallback: "Rejected",
+	},
+	returned: {
+		key: "approvals:approvals.requestStatusReturned",
+		fallback: "Returned for changes",
+	},
+	withdrawn: {
+		key: "approvals:approvals.requestStatusWithdrawn",
+		fallback: "Withdrawn",
+	},
+};
+
 function buildDetailSections(
 	detail: ApprovalDetail,
 	options: { liveCorrection: boolean },
 ): ApprovalInboxDetailSection[] {
 	const stage = detail.approval.display.stage;
 	const useDisplayLocalTimelineIds = isOrdinaryTimeApprovalDetail(detail);
+	const { localized } = detail.approval.display;
 	const sections: ApprovalInboxDetailSection[] = [
 		{
 			type: "key_value",
-			title: "Request",
+			title: { key: "approvals:approvals.request", fallback: "Request" },
 			rows: [
-				{ label: "Type", value: detail.approval.typeName },
-				{ label: "Summary", value: detail.approval.display.summary },
-				// A returned or withdrawn report cycle is not a rejection (#603).
-				{ label: "Status", value: detail.approval.closedAs ?? detail.approval.status },
+				{
+					label: { key: "approvals:approvals.requestType", fallback: "Type" },
+					// A localized title names the kind as specifically as the list row.
+					value: localized?.title ?? detail.approval.typeName,
+				},
+				{
+					label: {
+						key: "approvals:approvals.requestSummary",
+						fallback: "Summary",
+					},
+					value: localized?.summary ?? detail.approval.display.summary,
+				},
+				{
+					label: { key: "approvals:approvals.requestStatus", fallback: "Status" },
+					// A returned or withdrawn report cycle is not a rejection (#603).
+					value:
+						REQUEST_STATUS_TEXT[
+							detail.approval.closedAs ?? detail.approval.status
+						],
+				},
 				...(stage
-					? [{ label: "Stage", value: `${stage.name} (${stage.order})` }]
+					? [
+							{
+								label: {
+									key: "approvals:approvals.requestStage",
+									fallback: "Stage",
+								},
+								value: `${stage.name} (${stage.order})`,
+							},
+						]
 					: []),
 			],
 		},
@@ -564,7 +627,7 @@ function buildDetailSections(
 	if (detail.timeline.length > 0) {
 		sections.push({
 			type: "timeline",
-			title: "Timeline",
+			title: { key: "approvals:approvals.timeline", fallback: "Timeline" },
 			events: detail.timeline.map((event, index) => ({
 				id: useDisplayLocalTimelineIds
 					? `timeline-${event.type}-${index + 1}`
