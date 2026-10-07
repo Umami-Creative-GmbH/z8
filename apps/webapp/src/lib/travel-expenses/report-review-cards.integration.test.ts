@@ -611,7 +611,8 @@ describe("expense report cards, escalation and readiness (#623, PostgreSQL)", ()
 			expect(text).toContain("Report: Trip");
 			expect(text).toContain("Purpose: Customer workshop");
 			expect(text).toContain("Trip dates: Sep 14, 2026 – Sep 16, 2026");
-			expect(text).toContain("Destination: Hamburg, DE");
+			// Country names in the recipient's language (#687).
+			expect(text).toContain("Destination: Hamburg, Germany");
 			expect(text).toContain("Expenses: 2");
 			expect(text).toContain("Reimbursable to employee: 89.90 EUR");
 			expect(text).toContain("Paid by company: 240.00 EUR");
