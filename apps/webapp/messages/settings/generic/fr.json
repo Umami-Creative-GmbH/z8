@@ -100,7 +100,7 @@
         "description": "Sélectionnez les catégories de données que vous souhaitez exporter",
         "selectAll": "Tout sélectionner",
         "selectAtLeastOne": "Veuillez sélectionner au moins une catégorie",
-        "startExport": "Démarrer l'exportation (${selectedCategories.size})",
+        "startExport": "Démarrer l'exportation ({count})",
         "startingExport": "Démarrage de l'exportation...",
         "submitError": "Échec du démarrage de l'exportation",
         "submitSuccess": "Exportation démarrée avec succès",
@@ -123,7 +123,7 @@
         "downloadSuccess": "Téléchargement lancé",
         "emptyDescription": "Aucune exportation pour le moment",
         "emptyHint": "Créez votre première exportation en utilisant le formulaire ci-dessus",
-        "moreCategories": "+${exp.categories.length - 3} de plus",
+        "moreCategories": "+{count} de plus",
         "statusCompleted": "Terminé",
         "statusFailed": "Échoué",
         "statusPending": "En attente",
@@ -148,7 +148,7 @@
         "endpointDescription": "Pour les services compatibles S3 comme MinIO",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "Laisser vide pour conserver les identifiants existants",
-        "lastVerified": "Dernière vérification : ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "lastVerified": "Dernière vérification : {date}",
         "region": "Région",
         "regionDescription": "Région AWS où se trouve votre bucket",
         "regionPlaceholder": "us-east-1",
@@ -431,7 +431,7 @@
         "tryAgain": "Réessayer"
       },
       "description": "Une erreur est survenue lors du chargement de la page des paramètres. Il peut s'agir d'un problème temporaire.",
-      "errorId": "ID d'erreur : {{digest}}",
+      "errorId": "ID d'erreur : {digest}",
       "title": "Une erreur est survenue"
     },
     "export": {
@@ -552,9 +552,9 @@
       "eyebrow": "Implémentation client",
       "progress": {
         "ariaLabel": "Progression de la liste de contrôle d'implémentation",
-        "completedCount": "{{completed}} sur {{total}} terminés",
+        "completedCount": "{completed} sur {total} terminés",
         "label": "Progression de la configuration",
-        "percentComplete": "{{percent}}% terminé"
+        "percentComplete": "{percent}% terminé"
       },
       "status": {
         "complete": "Terminé",
@@ -753,7 +753,7 @@
       "title": "Paramètres de notification"
     },
     "organizations": {
-      "description": "Gérer les membres, les invitations et les détails de l'organisation",
+      "description": "Gérer les détails et la configuration de l'organisation",
       "notFound": {
         "description": "L'organisation est introuvable ou vous n'y avez pas accès.",
         "title": "Organisation introuvable"

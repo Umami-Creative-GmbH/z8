@@ -49,8 +49,8 @@
         "actions": {
           "edit": "Redigera"
         },
-        "allowancesForYear": "Semestertilldelning för {{year}}",
-        "defaultAllowanceDescription": "Standardtilldelning: {{days}} dagar per år",
+        "allowancesForYear": "Semestertilldelning för {year}",
+        "defaultAllowanceDescription": "Standardtilldelning: {days} dagar per år",
         "defaultPolicy": "Standard",
         "description": "Konfigurera anpassad semestertilldelning för enskilda medarbetare",
         "detail": {
@@ -62,17 +62,17 @@
           "adjustmentReasonDescription": "Krävs vid justeringar (för granskningshistorik)",
           "adjustmentReasonPlaceholder": "Förklara varför denna justering görs...",
           "adjustments": "Justeringar",
-          "allowanceForYear": "Semestertilldelning för {{year}}",
+          "allowanceForYear": "Semestertilldelning för {year}",
           "annualDays": "Årliga dagar",
           "assignedPolicy": "Tilldelad policy",
           "cancel": "Avbryt",
           "carryover": "Sparade dagar",
           "carryoverDaysOptional": "Sparade dagar (valfritt)",
-          "currentBalance": "Aktuellt saldo: {{total}} dagar tillgängliga",
-          "currentlyAssigned": "För närvarande tilldelad: {{name}}",
+          "currentBalance": "Aktuellt saldo: {total} dagar tillgängliga",
+          "currentlyAssigned": "För närvarande tilldelad: {name}",
           "customAnnualDaysOptional": "Anpassade årliga dagar (valfritt)",
           "daysCarriedOverDescription": "Dagar överförda från föregående år",
-          "defaultDaysPlaceholder": "Standard: {{days}} dagar",
+          "defaultDaysPlaceholder": "Standard: {days} dagar",
           "employeeInformation": "Medarbetarinformation",
           "errors": {
             "createAdjustmentFailed": "Kunde inte skapa justering",
@@ -83,8 +83,8 @@
           "fallsBackToDefaultPolicy": "Faller tillbaka på teamets eller organisationens standardpolicy",
           "manageAllowances": "hantera medarbetares semesterkvoter",
           "managers": "Chefer",
-          "overrideOrganizationDefault": "Åsidosätt organisationens standard ({{days}} dagar) för denna medarbetare",
-          "policyOptionDays": "{{name}} ({{days}} dagar)",
+          "overrideOrganizationDefault": "Åsidosätt organisationens standard ({days} dagar) för denna medarbetare",
+          "policyOptionDays": "{name} ({days} dagar)",
           "position": "Befattning",
           "primary": "Primär",
           "reasonForAdjustment": "Orsak till justering",
@@ -97,10 +97,10 @@
           "useOrganizationTeamDefault": "Använd organisationens/teamets standard"
         },
         "edit": {
-          "description": "Konfigurera anpassad semesterkvot för {{name}}",
+          "description": "Konfigurera anpassad semesterkvot för {name}",
           "title": "Redigera semesterkvot"
         },
-        "employeeCount": "{{count}} medarbetare",
+        "employeeCount": "{count} medarbetare",
         "emptyDescription": "Lägg till medarbetare i din organisation för att hantera deras semestertilldelning.",
         "emptyTitle": "Inga medarbetare hittades",
         "noOrgPolicyConfigured": " (Ingen organisationspolicy konfigurerad)",

@@ -258,7 +258,7 @@
     "notes": "Notizen",
     "noTimeCorrectionApprovals": "Keine ausstehenden Zeitkorrekturanfragen zur Überprüfung.",
     "offFrom": "frei ab",
-    "openDetailsFor": "Details öffnen für ${item.summary.title}",
+    "openDetailsFor": "Details öffnen für {title}",
     "openInbox": "Posteingang öffnen",
     "original": "Original",
     "ownRequestNote": "Eigener Antrag: Ein anderer Genehmigender entscheidet darüber.",
@@ -335,7 +335,7 @@
     "searchLabel": "Genehmigungen durchsuchen",
     "searchPlaceholder": "Suche nach Name oder E-Mail…",
     "selectAll": "Alle auswählen",
-    "selectedCount": "${selectedCount} ausgewählt",
+    "selectedCount": "{selectedCount} ausgewählt",
     "selectRow": "Zeile auswählen",
     "timeComparison": "Zeitvergleich",
     "timeCorrectionApproved": "Zeitkorrektur genehmigt",
@@ -345,7 +345,7 @@
     "timeline": "Verlauf",
     "timelineActor": "{at} von {actorName}",
     "title": "Genehmigungen",
-    "totalCount": "${totalCount} ausstehend",
+    "totalCount": "{totalCount} ausstehend",
     "type": "Typ",
     "types": {
       "absence_entry": "Abwesenheitsanträge",
@@ -363,11 +363,11 @@
   },
   "fastLanes": {
     "approve": "Genehmigen",
-    "approveGroup": "${label} genehmigen",
+    "approveGroup": "{label} genehmigen",
     "confirmReject": "Ablehnung bestätigen",
-    "confirmRejectGroup": "Ablehnung von ${label} bestätigen",
+    "confirmRejectGroup": "Ablehnung von {label} bestätigen",
     "description": "Ähnliche unkomplizierte Anfragen stapelweise prüfen.",
-    "expandGroup": "${label} aufklappen",
+    "expandGroup": "{label} aufklappen",
     "groups": {
       "lowRiskAbsence": {
         "description": "Abwesenheiten ohne erkannte Konflikte.",
@@ -386,21 +386,21 @@
         "label": "Veraltete Anfragen"
       }
     },
-    "notEligibleApprove": "${notApprovableCount} nicht für Massengenehmigung geeignet",
-    "notEligibleReject": "${notRejectableCount} nicht für Massenablehnung geeignet",
+    "notEligibleApprove": "{notApprovableCount} nicht für Massengenehmigung geeignet",
+    "notEligibleReject": "{notRejectableCount} nicht für Massenablehnung geeignet",
     "reject": "Ablehnen",
-    "rejectGroup": "${label} ablehnen",
+    "rejectGroup": "{label} ablehnen",
     "rejectReason": "Grund für Massenablehnung",
     "risk": {
       "high": "Hohes Risiko",
       "low": "Geringes Risiko",
       "medium": "Mittleres Risiko"
     },
-    "showGroup": "${label} anzeigen",
+    "showGroup": "{label} anzeigen",
     "title": "Schnellverfahren"
   },
   "sprint": {
-    "age": "${item.timing.ageDays} Tage alt",
+    "age": "{ageDays} Tage alt",
     "approve": "Genehmigen",
     "approveCurrentApproval": "Aktuelle Genehmigung bestätigen",
     "capabilities": {
@@ -419,7 +419,7 @@
       "normal": "Normale Priorität",
       "urgent": "Dringende Priorität"
     },
-    "progress": "${currentIndex + 1} von ${visibleItems.length}",
+    "progress": "{current} von {total}",
     "reject": "Ablehnen",
     "rejectCurrentApproval": "Aktuelle Genehmigung ablehnen",
     "rejectReason": "Grund für Sprint-Ablehnung",

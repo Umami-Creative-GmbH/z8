@@ -134,7 +134,7 @@
       "expired": "Expired",
       "expires": "Expires",
       "inactive": "Inactive",
-      "invitationActionsLabel": "Actions for invitation to ${row.original.email}",
+      "invitationActionsLabel": "Actions for invitation to {email}",
       "invitationCancelError": "Failed to cancel invitation",
       "invitationCancelSuccess": "Invitation cancelled",
       "invitationResendError": "Failed to resend invitation",
@@ -142,7 +142,7 @@
       "invitationsWaiting": "{count, plural, other {{count} invitation(s) waiting to be accepted}}",
       "invitedBy": "Invited By",
       "member": "Member",
-      "memberActionsLabel": "Actions for ${row.original.user.name}",
+      "memberActionsLabel": "Actions for {name}",
       "memberCount": "{count, plural, other {{count} member(s) in this organization}}",
       "noInvitationResults": "No invitations match your search.",
       "noInvitations": "No pending invitations.",
@@ -275,7 +275,7 @@
       "description": "Set the default timezone for your organization. This is used for absence tracking, reports, and other date-based features. Individual users can override this in their profile settings.",
       "owner-only": "Only organization owners can change the timezone setting.",
       "title": "Timezone",
-      "updated": "Organization timezone updated to {{timezone}}",
+      "updated": "Organization timezone updated to {timezone}",
       "update-failed": "Failed to update organization timezone"
     },
     "title": "Org Explorer"

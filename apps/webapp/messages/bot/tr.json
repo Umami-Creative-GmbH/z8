@@ -85,11 +85,16 @@
       "leave": "İzin",
       "newRequest": "Yeni Onay Talebi",
       "outcome": {
+        "recorded": "{actor} tarafından {time} tarihinde kaydedildi. Talebin güncel durumunu Z8'de inceleyin.",
         "recordedTitle": "Karar kaydedildi",
         "replayed": "Bu düğmeye basma işlemi zaten kaydedilmişti; bu, orijinal sonucudur ve yeni bir karar verilmemiştir.",
+        "requestApproved": "{actor} tarafından {time} tarihinde onaylandı. Talep onaylandı.",
         "requestApprovedTitle": "Talep onaylandı",
+        "requestRejected": "{actor} tarafından {time} tarihinde reddedildi. Talep reddedildi.",
         "requestRejectedTitle": "Talep reddedildi",
+        "stepApproved": "{actor} tarafından {time} tarihinde onaylandı. Talep hâlâ başka onaylar bekliyor.",
         "stepApprovedTitle": "Onay kaydedildi",
+        "stepRejected": "{actor} tarafından {time} tarihinde reddedildi. Talep henüz kesinleşmedi; güncel durumunu Z8'de inceleyin.",
         "stepRejectedTitle": "Ret kaydedildi"
       },
       "outcomeUnknown": "Bu basma işleminin sonucu doğrulanamadı. Tekrar basmadan önce Z8'deki isteği kontrol edin.",

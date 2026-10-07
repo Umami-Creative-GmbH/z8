@@ -3,18 +3,18 @@
     "coverage": {
       "adequate": "Adequate staffing",
       "byLocation": "By location:",
-      "gapCount": "{{count}} staff shortage",
+      "gapCount": "{count} staff shortage",
       "gaps": "gaps",
       "hideOverlay": "Hide coverage overlay",
-      "metSlots": "{{count}} adequate",
-      "overSlots": "{{count}} overstaffed",
+      "metSlots": "{count} adequate",
+      "overSlots": "{count} overstaffed",
       "overstaffed": "Overstaffed",
       "showOverlay": "Show coverage targets overlay",
       "summary": "Coverage Summary:",
       "toggleLabel": "Coverage",
-      "underSlots": "{{count}} understaffed",
+      "underSlots": "{count} understaffed",
       "understaffed": "Understaffed",
-      "utilization": "{{percent}}% utilization"
+      "utilization": "{percent}% utilization"
     },
     "page": {
       "employeeDescription": "View your shifts and pick up available shifts",
@@ -100,9 +100,9 @@
     },
     "skills": {
       "expiredCertifications": "Expired Certifications:",
-      "expiredOn": "(Expired {{date}})",
+      "expiredOn": "(Expired {date})",
       "missingPreferred": "Missing Preferred Skills:",
-      "missingPreferredCount": "{{count}} preferred missing",
+      "missingPreferredCount": "{count} preferred missing",
       "missingRequired": "Missing Required Skills:",
       "preferred": "Preferred",
       "preferredSkillsMissing": "Preferred Skills Missing",

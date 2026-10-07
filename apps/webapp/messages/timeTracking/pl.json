@@ -32,13 +32,16 @@
     "correction": {
       "clockIn": "Rozpocznij pracę",
       "clockInDate": "Data rozpoczęcia pracy",
+      "clockInTime": "Godzina rozpoczęcia pracy",
       "clockOut": "Zakończ pracę",
       "clockOutDate": "Data zakończenia pracy",
+      "clockOutTime": "Godzina zakończenia pracy",
       "editDescription": "Wprowadź zmiany w dzisiejszym wpisie czasu.",
       "editEntry": "Edytuj wpis czasu",
       "editTitle": "Edytuj wpis czasu",
       "errors": {
         "invalidTimeRange": "Godzina zakończenia pracy musi być późniejsza niż godzina rozpoczęcia",
+        "noChanges": "Należy zmienić co najmniej jedną wartość korekty",
         "submitFailed": "Nie udało się przesłać korekty",
         "updateFailed": "Nie udało się zaktualizować wpisu czasu"
       },
@@ -269,7 +272,12 @@
     "unknownCategory": "Nieznana kategoria",
     "unknownProject": "Nieznany projekt",
     "welcomeBack": "Witaj ponownie, {name}",
-    "workCategory": "Kategoria pracy"
+    "workCategory": "Kategoria pracy",
+    "workLocation": "Miejsce pracy",
+    "workLocationHome": "Dom",
+    "workLocationOffice": "Biuro",
+    "workLocationOther": "Inne",
+    "workLocationRemote": "Zdalnie"
   },
   "wellness": {
     "water": {

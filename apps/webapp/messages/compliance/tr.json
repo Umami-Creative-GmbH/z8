@@ -142,7 +142,7 @@
     "pendingExceptions": "Bekleyen İstisna Talepleri",
     "pendingExceptionsDescription": "Onayınızı gerektiren istisna taleplerini inceleyin",
     "requestException": "İstisna Talep Et",
-    "restPeriodMessage": "Giriş yapabilmeniz için {{time}} daha dinlenmeniz gerekiyor. Bir sonraki izin verilen giriş zamanı: {{nextTime}}",
+    "restPeriodMessage": "Giriş yapabilmeniz için {time} daha dinlenmeniz gerekiyor. Bir sonraki izin verilen giriş zamanı: {nextTime}",
     "restPeriodRequired": "Dinlenme Süresi Gerekli"
   }
 }

@@ -189,7 +189,7 @@
         "presetName": "Navn på forhåndsinnstilling",
         "presetNameHint": "Dette navnet vil bli brukt til å identifisere forhåndsinnstillingen ved tildeling til team eller ansatte",
         "presetNamePlaceholder": "f.eks. Tyskland – Bayern",
-        "presetSuccess": "Opprettet forhåndsinnstilling «{name}» med ${holidaysToImport.length} helligdager",
+        "presetSuccess": "Opprettet forhåndsinnstilling «{name}» med {count} helligdager",
         "region": "Region",
         "searchCountry": "Søk etter land...",
         "searchRegion": "Søk etter regioner...",

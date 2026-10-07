@@ -3,18 +3,18 @@
     "coverage": {
       "adequate": "Odpowiednia obsada",
       "byLocation": "Według lokalizacji:",
-      "gapCount": "{{count}} brak personelu",
+      "gapCount": "{count} brak personelu",
       "gaps": "luki",
       "hideOverlay": "Ukryj nakładkę pokrycia",
-      "metSlots": "{{count}} wystarczająca obsada",
-      "overSlots": "{{count}} nadmiar personelu",
+      "metSlots": "{count} wystarczająca obsada",
+      "overSlots": "{count} nadmiar personelu",
       "overstaffed": "Nadmiar personelu",
       "showOverlay": "Pokaż nakładkę celów pokrycia",
       "summary": "Podsumowanie pokrycia:",
       "toggleLabel": "Pokrycie",
-      "underSlots": "{{count}} niedobór personelu",
+      "underSlots": "{count} niedobór personelu",
       "understaffed": "Niedobór personelu",
-      "utilization": "Wykorzystanie: {{percent}}%"
+      "utilization": "Wykorzystanie: {percent}%"
     },
     "page": {
       "employeeDescription": "Zobacz swoje zmiany i wybierz dostępne",
@@ -100,9 +100,9 @@
     },
     "skills": {
       "expiredCertifications": "Wygasłe certyfikaty:",
-      "expiredOn": "(Wygasło {{date}})",
+      "expiredOn": "(Wygasło {date})",
       "missingPreferred": "Brakujące preferowane umiejętności:",
-      "missingPreferredCount": "brak {{count}} preferowanych",
+      "missingPreferredCount": "brak {count} preferowanych",
       "missingRequired": "Brakujące wymagane umiejętności:",
       "preferred": "Preferowane",
       "preferredSkillsMissing": "Brak preferowanych umiejętności",

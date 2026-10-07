@@ -434,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Administrator kontaktiere",
       "createOrg": "Organisation erstelle",
-      "description": "Du bruchsch es Mitarbeiterprofil für ${feature}. Bitte erstel en Organisation oder kontaktier din Administrator.",
+      "description": "Du bruchsch es Mitarbeiterprofil für {feature}. Bitte erstel en Organisation oder kontaktier din Administrator.",
       "emailBody": "Hallo,\n\nich bruche es Mitarbeiterprofil, zum uf d'Plattform-Funktione zuegriffe. Chöntsch du mir bitte debi hälfe?\n\nDanke!",
       "emailSubject": "Mitarbeiterprofil-Irichtig erforderlich",
       "helpText": "Wenn du zu ere Organisation iglade worde bisch, bitt din Administrator, dis Mitarbeiterprofil izrichte.",
@@ -535,12 +535,16 @@
       "absenceRequestRejected": {
         "title": "Abwesenheitsantrag abgelehnt"
       },
+      "absenceRequestSubmitted": {
+        "message": "Dii {categoryName}-Aafrag für {dateRange} isch ygreicht worde und wartet uf Freigab.",
+        "title": "Abwäseheitsaafrag ygreicht"
+      },
       "employeeOffboardingReview": {
-        "approval_handover": "Genehmigungsaufgaben erfordern eine Stellvertretung",
-        "clock_out": "Überprüfung erforderlich: Offboarding-Ausstempeln",
-        "clock_repair": "Timer-Reparatur erforderlich",
-        "employment_terms": "Zukünftige Anstellungsbedingungen müssen überprüft werden",
-        "future_work": "Zukünftige Arbeit muss überprüft werden"
+        "approval_handover": "{employeeName}: Genehmigungsaufgaben erfordern eine Stellvertretung (Austritt wirksam {cutoff}, {timezone}).",
+        "clock_out": "{employeeName}: Überprüfung erforderlich: Offboarding-Ausstempeln (Austritt wirksam {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Timer-Reparatur erforderlich (Austritt wirksam {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Zukünftige Anstellungsbedingungen müssen überprüft werden (Austritt wirksam {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: Zukünftige Arbeit muss überprüft werden (Austritt wirksam {cutoff}, {timezone})."
       },
       "newAbsenceRequest": {
         "title": "Neue Abwesenheitsanfrage"
@@ -556,6 +560,10 @@
       "teamMemberAdded": {
         "message": "Du bisch vo {performedByName} zum Team {teamName} hinzugefügt worde.",
         "title": "Zum Team hinzugefügt"
+      },
+      "teamMemberRemoved": {
+        "message": "Du bisch vo {performedByName} us em Team {teamName} entfernt worde.",
+        "title": "Us em Team entfernt"
       }
     },
     "description": "Updates, Freigabe und System-Mäldige uf eim Blick gseh.",

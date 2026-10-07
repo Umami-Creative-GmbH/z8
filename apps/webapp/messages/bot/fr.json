@@ -85,11 +85,16 @@
       "leave": "Congé",
       "newRequest": "Nouvelle demande d'approbation",
       "outcome": {
+        "recorded": "Enregistrée par {actor} le {time}. Consultez le statut actuel de la demande dans Z8.",
         "recordedTitle": "Décision enregistrée",
         "replayed": "Cet appui sur le bouton a déjà été enregistré ; il s'agit de son résultat initial et aucune nouvelle décision n'a été prise.",
+        "requestApproved": "Approuvée par {actor} le {time}. La demande est approuvée.",
         "requestApprovedTitle": "Demande approuvée",
+        "requestRejected": "Refusée par {actor} le {time}. La demande est refusée.",
         "requestRejectedTitle": "Demande rejetée",
+        "stepApproved": "Approuvée par {actor} le {time}. La demande attend encore d’autres approbations.",
         "stepApprovedTitle": "Approbation enregistrée",
+        "stepRejected": "Refusée par {actor} le {time}. La demande n’est pas encore définitive ; consultez son statut actuel dans Z8.",
         "stepRejectedTitle": "Refus enregistré"
       },
       "outcomeUnknown": "Le résultat de cet appui n'a pas pu être confirmé. Vérifiez la demande dans Z8 avant d'appuyer à nouveau.",

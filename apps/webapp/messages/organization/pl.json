@@ -134,7 +134,7 @@
       "expired": "Wygasło",
       "expires": "Wygasa",
       "inactive": "Nieaktywny",
-      "invitationActionsLabel": "Akcje dla zaproszenia do ${row.original.email}",
+      "invitationActionsLabel": "Akcje dla zaproszenia do {email}",
       "invitationCancelError": "Nie udało się anulować zaproszenia",
       "invitationCancelSuccess": "Zaproszenie anulowane",
       "invitationResendError": "Nie udało się ponownie wysłać zaproszenia",
@@ -142,7 +142,7 @@
       "invitationsWaiting": "{count, plural, other {{count} zaproszeń oczekujących na zaakceptowanie}}",
       "invitedBy": "Zaproszony przez",
       "member": "Członek",
-      "memberActionsLabel": "Akcje dla ${row.original.user.name}",
+      "memberActionsLabel": "Akcje dla {name}",
       "memberCount": "{count, plural, other {{count} członków w tej organizacji}}",
       "noInvitationResults": "Brak zaproszeń pasujących do wyszukiwania.",
       "noInvitations": "Brak oczekujących zaproszeń.",
@@ -275,7 +275,7 @@
       "description": "Ustaw domyślną strefę czasową dla swojej organizacji. Jest ona używana do śledzenia nieobecności, raportów i innych funkcji opartych na dacie. Poszczególni użytkownicy mogą zmienić to ustawienie w swoich profilach.",
       "owner-only": "Tylko właściciele organizacji mogą zmieniać ustawienia strefy czasowej.",
       "title": "Strefa czasowa",
-      "updated": "Strefa czasowa organizacji została zaktualizowana na {{timezone}}",
+      "updated": "Strefa czasowa organizacji została zaktualizowana na {timezone}",
       "update-failed": "Nie udało się zaktualizować strefy czasowej organizacji"
     },
     "title": "Eksplorator organizacji"

@@ -134,7 +134,7 @@
       "expired": "Abgelaufen",
       "expires": "Läuft ab",
       "inactive": "Inaktiv",
-      "invitationActionsLabel": "Aktionen für Einladung an ${row.original.email}",
+      "invitationActionsLabel": "Aktionen für Einladung an {email}",
       "invitationCancelError": "Fehler beim Stornieren der Einladung",
       "invitationCancelSuccess": "Einladung storniert",
       "invitationResendError": "Fehler beim erneuten Senden der Einladung",
@@ -142,7 +142,7 @@
       "invitationsWaiting": "{count, plural, one {# Einladung wartet darauf, angenommen zu werden} other {# Einladungen warten darauf, angenommen zu werden}}",
       "invitedBy": "Eingeladen von",
       "member": "Mitglied",
-      "memberActionsLabel": "Aktionen für ${row.original.user.name}",
+      "memberActionsLabel": "Aktionen für {name}",
       "memberCount": "{count, plural, one {# Mitglied in dieser Organisation} other {# Mitglieder in dieser Organisation}}",
       "noInvitationResults": "Keine Einladungen entsprechen Ihrer Suche.",
       "noInvitations": "Keine ausstehenden Einladungen.",
@@ -275,7 +275,7 @@
       "description": "Legen Sie die Standardzeitzone für Ihre Organisation fest. Diese wird für die Abwesenheitsverfolgung, Berichte und andere datumsbasierte Funktionen verwendet. Einzelne Benutzer können dies in ihren Profileinstellungen überschreiben.",
       "owner-only": "Nur Organisationsinhaber können die Zeitzoneneinstellung ändern.",
       "title": "Zeitzone",
-      "updated": "Organisationszeitzone aktualisiert auf {{timezone}}",
+      "updated": "Organisationszeitzone aktualisiert auf {timezone}",
       "update-failed": "Aktualisieren der Organisationszeitzone fehlgeschlagen"
     },
     "title": "Organisations-Explorer"

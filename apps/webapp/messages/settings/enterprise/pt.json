@@ -518,7 +518,7 @@
           "review": "Revisar e ativar",
           "review.description": "Ativação do Guard",
           "scim": "Provisionamento SCIM",
-          "scim.description": "Emitir token de provisionamento",
+          "scim.description": "Conecte e gerencie sua conexão de provisionamento SCIM",
           "sso": "Configuração de SSO",
           "sso.description": "Registrar OIDC ou SAML",
           "ssoTest": "Usuário de teste",

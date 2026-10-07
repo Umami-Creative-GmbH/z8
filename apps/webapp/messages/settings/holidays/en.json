@@ -189,7 +189,7 @@
         "presetName": "Preset Name",
         "presetNameHint": "This name will be used to identify the preset when assigning to teams or employees",
         "presetNamePlaceholder": "e.g., Germany - Bavaria",
-        "presetSuccess": "Created preset \"{name}\" with ${holidaysToImport.length} holidays",
+        "presetSuccess": "Created preset \"{name}\" with {count} holidays",
         "region": "Region",
         "searchCountry": "Search countries...",
         "searchRegion": "Search regions...",

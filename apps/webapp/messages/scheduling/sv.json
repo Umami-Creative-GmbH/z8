@@ -3,18 +3,18 @@
     "coverage": {
       "adequate": "Tillräcklig bemanning",
       "byLocation": "Efter plats:",
-      "gapCount": "{{count}} personalbrist",
+      "gapCount": "{count} personalbrist",
       "gaps": "luckor",
       "hideOverlay": "Dölj täckningsöverlägg",
-      "metSlots": "{{count}} tillräcklig",
-      "overSlots": "{{count}} överbemannad",
+      "metSlots": "{count} tillräcklig",
+      "overSlots": "{count} överbemannad",
       "overstaffed": "Överbemannad",
       "showOverlay": "Visa överlägg för täckningsmål",
       "summary": "Täckningssammanfattning:",
       "toggleLabel": "Täckning",
-      "underSlots": "{{count}} underbemannad",
+      "underSlots": "{count} underbemannad",
       "understaffed": "Underbemannad",
-      "utilization": "{{percent}}% beläggning"
+      "utilization": "{percent}% beläggning"
     },
     "page": {
       "employeeDescription": "Se dina pass och ta tillgängliga arbetspass",
@@ -100,9 +100,9 @@
     },
     "skills": {
       "expiredCertifications": "Utgångna certifieringar:",
-      "expiredOn": "(Utgick {{date}})",
+      "expiredOn": "(Utgick {date})",
       "missingPreferred": "Saknade önskade kompetenser:",
-      "missingPreferredCount": "{{count}} önskade saknas",
+      "missingPreferredCount": "{count} önskade saknas",
       "missingRequired": "Saknade obligatoriska kompetenser:",
       "preferred": "Önskad",
       "preferredSkillsMissing": "Önskade kompetenser saknas",
