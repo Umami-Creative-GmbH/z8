@@ -22,6 +22,7 @@ import type {
 	TravelExpenseReportSubmittedItem,
 } from "@/lib/approvals/evidence/travel-expense-report-facts";
 import {
+	loadTravelExpenseReportRevisionsByRequest,
 	loadTravelExpenseReportSubmittedRevision,
 	TRAVEL_EXPENSE_REPORT_SOURCE_TYPE,
 	type TravelExpenseReportSubmittedRevisionRecord,
@@ -47,7 +48,33 @@ export type ReportAccess = "owner" | "reviewer" | "finance";
 export type AuthorizedReportResult =
 	| { status: "unauthorized" }
 	| { status: "not_found" }
-	| { status: "found"; report: ReportRow; access: ReportAccess };
+	| {
+			status: "found";
+			report: ReportRow;
+			access: ReportAccess;
+			/**
+			 * A reviewer reads only the submission cycles whose request the inbox
+			 * authorizes them for (spec #598 review): a past reviewer of a returned
+			 * cycle never reads a later cycle routed to someone else. Absent means
+			 * no cycle restriction (owner, finance, adjustment reviewer).
+			 */
+			reviewerCycles?: number[];
+	  };
+
+/**
+ * The cycle a reader may see: the named one, or by default the latest. A
+ * reviewer restricted to some cycles defaults to the latest of those and is
+ * refused any other (null).
+ */
+export function authorizedReportCycle(
+	authorized: { report: Pick<ReportRow, "submissionCount">; reviewerCycles?: number[] },
+	cycle: number | undefined,
+): number | undefined | null {
+	const allowed = authorized.reviewerCycles;
+	if (!allowed) return cycle;
+	if (cycle !== undefined) return allowed.includes(cycle) ? cycle : null;
+	return allowed.length > 0 ? Math.max(...allowed) : null;
+}
 
 export async function loadAuthorizedTravelExpenseReport(
 	reportId: string,
@@ -69,8 +96,9 @@ export async function loadAuthorizedTravelExpenseReport(
 	if (!report) return { status: "not_found" };
 	if (report.employeeId === actor.employee.id) return { status: "found", report, access: "owner" };
 	const reviewer = { userId: actor.user.id, organizationId };
-	if (await reviewsAnyRequestOf(reviewer, [report.id])) {
-		return { status: "found", report, access: "reviewer" };
+	const reviewerCycles = await reviewedCyclesOf(reviewer, report.id);
+	if (reviewerCycles.length > 0) {
+		return { status: "found", report, access: "reviewer", reviewerCycles };
 	}
 	// The reviewer of an adjustment (#615) reads the report it corrects (#617):
 	// the adjustment's own facts are a copy of it, so this reveals no other expense.
@@ -98,11 +126,11 @@ export async function loadAuthorizedTravelExpenseReport(
 	return { status: "not_found" };
 }
 
-/** Whether the Approvals inbox authorizes the actor for a request of one of these reports. */
-async function reviewsAnyRequestOf(
+/** The report requests the Approvals inbox authorizes the actor for. */
+async function authorizedRequestsOf(
 	actor: { userId: string; organizationId: string },
 	reportIds: string[],
-): Promise<boolean> {
+): Promise<string[]> {
 	const requests = await db
 		.select({ id: approvalRequest.id, entityId: approvalRequest.entityId })
 		.from(approvalRequest)
@@ -113,6 +141,7 @@ async function reviewsAnyRequestOf(
 				inArray(approvalRequest.entityId, reportIds),
 			),
 		);
+	const authorized: string[] = [];
 	for (const request of requests) {
 		const review = await loadAuthorizedApprovalDetail({
 			userId: actor.userId,
@@ -125,10 +154,33 @@ async function reviewsAnyRequestOf(
 			review.detail.item.entityId === request.entityId &&
 			review.detail.item.type === TRAVEL_EXPENSE_REPORT_SOURCE_TYPE
 		) {
-			return true;
+			authorized.push(request.id);
 		}
 	}
-	return false;
+	return authorized;
+}
+
+async function reviewsAnyRequestOf(
+	actor: { userId: string; organizationId: string },
+	reportIds: string[],
+): Promise<boolean> {
+	return (await authorizedRequestsOf(actor, reportIds)).length > 0;
+}
+
+/** The submission cycles of a report whose request the actor is authorized to review. */
+async function reviewedCyclesOf(
+	actor: { userId: string; organizationId: string },
+	reportId: string,
+): Promise<number[]> {
+	const requestIds = await authorizedRequestsOf(actor, [reportId]);
+	if (requestIds.length === 0) return [];
+	const revisions = await loadTravelExpenseReportRevisionsByRequest(db, {
+		organizationId: actor.organizationId,
+		approvalRequestIds: requestIds,
+	});
+	return [...new Set([...revisions.values()].map((revision) => revision.submissionCycle))].sort(
+		(left, right) => left - right,
+	);
 }
 
 export interface SubmittedReportItemView

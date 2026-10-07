@@ -927,6 +927,34 @@ describe("return, withdraw and resubmit reports (#603)", () => {
 		);
 	});
 
+	it("lets a reviewer read only the cycles routed to them", async () => {
+		const reportId = await completeTrip();
+		expect((await submit(reportId)).success).toBe(true);
+		signIn("manager");
+		expect((await returnReport(await pendingRequestId(reportId), "Fix it")).success).toBe(true);
+		// The resubmission is routed to another manager.
+		await linkManager(ids.lead);
+		expect((await submit(reportId)).success).toBe(true);
+		const receiptId = (await load(reportId)).items[0]?.receipts[0]?.id ?? "";
+
+		signIn("manager");
+		const own = await actions.getTravelExpenseReportSubmission(reportId);
+		expect(own.success && own.data).toMatchObject({ access: "reviewer", submissionCycle: 1 });
+		expect(await actions.getTravelExpenseReportSubmission(reportId, 2)).toMatchObject({
+			success: false,
+		});
+		expect((await getReceiptResponse(reportId, receiptId, "?cycle=2")).status).toBe(404);
+		expect((await getReceiptResponse(reportId, receiptId)).status).toBe(404);
+		expect((await getReceiptResponse(reportId, receiptId, "?cycle=1")).status).toBe(200);
+
+		signIn("lead");
+		const current = await actions.getTravelExpenseReportSubmission(reportId);
+		expect(current.success && current.data).toMatchObject({ submissionCycle: 2 });
+		expect(await actions.getTravelExpenseReportSubmission(reportId, 1)).toMatchObject({
+			success: false,
+		});
+	});
+
 	it("purges a deleted reviewer's closed cycles without blocking the deletion", async () => {
 		const { deleteEmployeeApprovalLifecycles } = await import("@/lib/approvals/maintenance");
 		const { db } = await import("@/db");

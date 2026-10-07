@@ -35,6 +35,7 @@ import {
 } from "@/lib/travel-expenses/report-store";
 import {
 	loadAuthorizedTravelExpenseReport,
+	authorizedReportCycle,
 	loadSubmittedReportView,
 	type SubmittedReportView,
 } from "@/lib/travel-expenses/report-read";
@@ -455,9 +456,12 @@ export async function getTravelExpenseReportSubmission(
 	try {
 		const authorized = await loadAuthorizedTravelExpenseReport(reportId);
 		if (authorized.status === "unauthorized") return { success: false, error: "Unauthorized" };
+		// A reviewer reads only the cycles they are authorized to review.
+		const readableCycle =
+			authorized.status === "found" ? authorizedReportCycle(authorized, cycle) : null;
 		const view =
-			authorized.status === "found"
-				? await loadSubmittedReportView(authorized.report, authorized.access, cycle)
+			authorized.status === "found" && readableCycle !== null
+				? await loadSubmittedReportView(authorized.report, authorized.access, readableCycle)
 				: null;
 		if (!view) return { success: false, error: "Expense report not found" };
 		return { success: true, data: view };

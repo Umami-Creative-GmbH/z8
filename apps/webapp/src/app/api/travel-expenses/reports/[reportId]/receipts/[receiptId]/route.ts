@@ -11,6 +11,7 @@ import {
 	TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER,
 } from "@/lib/travel-expenses/attachment-validation";
 import {
+	authorizedReportCycle,
 	loadAuthorizedTravelExpenseReport,
 	loadSubmittedReportReceipt,
 } from "@/lib/travel-expenses/report-read";
@@ -69,9 +70,14 @@ export async function GET(
 		// Finance (#612) is authorized for the approved current submission only.
 		const otherCycle = cycle !== undefined && cycle !== report.submissionCount;
 		if (authorized.access === "finance" && otherCycle) return notFound();
+		// A reviewer receives only the receipts of cycles they may review.
+		const readableCycle = authorized.reviewerCycles
+			? authorizedReportCycle(authorized, cycle ?? report.submissionCount)
+			: cycle;
+		if (readableCycle === null) return notFound();
 		if (authorized.access !== "owner" || cycle !== undefined) {
 			// Reviewers and finance only ever receive the frozen evidence.
-			const frozen = await loadSubmittedReportReceipt(report, receiptId, cycle);
+			const frozen = await loadSubmittedReportReceipt(report, receiptId, readableCycle);
 			stored = frozen && {
 				...frozen.object,
 				fileName: frozen.fileName,
