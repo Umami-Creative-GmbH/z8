@@ -338,7 +338,8 @@ test("collectTarget lists traced migration runtime files and packages", async ()
   assert.ok(Array.isArray(result.files));
   assert.ok(Array.isArray(result.packages));
   assert.ok(result.files.includes("scripts/migrate-with-lock.js"));
-  assert.ok(result.files.includes("scripts/drizzle-migrate-command.js"));
+  // Traced (not listed) files use platform separators.
+  assert.ok(result.files.map((file) => file.replaceAll("\\", "/")).includes("scripts/drizzle-migrate-command.js"));
   assert.ok(result.files.includes("drizzle.config.ts"));
   assert.ok(result.packages.includes("drizzle-kit"));
   assert.ok(result.packages.includes("pg"));
