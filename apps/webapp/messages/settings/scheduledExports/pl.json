@@ -5,7 +5,7 @@
         "delete": "Usuń",
         "edit": "Edytuj",
         "runNow": "Uruchom teraz",
-        "viewHistory": "Wyświetl historię ikon"
+        "viewHistory": "Wyświetl historię"
       },
       "cronPreview": {
         "error": "Nie udało się obliczyć kolejnych uruchomień",
@@ -143,7 +143,7 @@
         "statusPending": "Oczekujące",
         "statusProcessing": "Przetwarzanie",
         "tableRegion": "Tabela historii wykonań",
-        "title": "Ikona historii wykonań",
+        "title": "Historia wykonań",
         "viewError": "Wyświetl szczegóły błędu"
       },
       "newSchedule": "Nowy harmonogram",

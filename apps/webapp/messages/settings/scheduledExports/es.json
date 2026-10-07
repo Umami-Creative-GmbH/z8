@@ -5,7 +5,7 @@
         "delete": "Eliminar",
         "edit": "Editar",
         "runNow": "Ejecutar ahora",
-        "viewHistory": "Ver historial de iconos"
+        "viewHistory": "Ver historial"
       },
       "cronPreview": {
         "error": "Error al calcular las próximas ejecuciones",
@@ -143,7 +143,7 @@
         "statusPending": "Pendiente",
         "statusProcessing": "Procesando",
         "tableRegion": "Tabla de historial de ejecución",
-        "title": "Icono de historial de ejecución",
+        "title": "Historial de ejecución",
         "viewError": "Ver detalles del error"
       },
       "newSchedule": "Nueva programación",
