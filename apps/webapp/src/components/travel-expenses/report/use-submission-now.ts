@@ -8,17 +8,28 @@ import { type FutureDates, nextSubmissionChange } from "@/lib/travel-expenses/fu
 /** The longest delay `setTimeout` keeps; a later moment is waited for in steps. */
 const MAX_TIMEOUT_MS = 2_147_483_647;
 
-/** A primitive key, so the subscription stays put while the same dates are on screen. */
+/**
+ * A primitive key, so the subscription stays put while the same dates are on
+ * screen: the ISO dates, then the epoch milliseconds, neither containing `|`.
+ */
 function futureDatesKey(future: FutureDates): string {
-	return JSON.stringify([
-		future.dates.toSorted(),
-		future.instants.map((instant) => instant.epochMilliseconds).toSorted((a, b) => a - b),
-	]);
+	return [
+		future.dates.toSorted().join(","),
+		future.instants
+			.map((instant) => instant.epochMilliseconds)
+			.toSorted((a, b) => a - b)
+			.join(","),
+	].join("|");
 }
 
 function parseFutureDatesKey(key: string): FutureDates {
-	const [dates, instants] = JSON.parse(key) as [string[], number[]];
-	return { dates, instants: instants.map((ms) => Temporal.Instant.fromEpochMilliseconds(ms)) };
+	const [dates = "", instants = ""] = key.split("|");
+	return {
+		dates: dates ? dates.split(",") : [],
+		instants: instants
+			? instants.split(",").map((ms) => Temporal.Instant.fromEpochMilliseconds(Number(ms)))
+			: [],
+	};
 }
 
 /**

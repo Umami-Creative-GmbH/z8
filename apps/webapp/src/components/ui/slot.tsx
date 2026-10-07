@@ -1,25 +1,10 @@
 import * as React from "react";
+import { composeRefs } from "@/components/ui/compose-refs";
 
 type SlotProps = React.HTMLAttributes<HTMLElement> & {
 	children?: React.ReactNode;
 	ref?: React.Ref<HTMLElement>;
 };
-
-function composeRefs<T>(...refs: Array<React.Ref<T> | undefined>) {
-	return (node: T | null) => {
-		for (const ref of refs) {
-			if (!ref) {
-				continue;
-			}
-
-			if (typeof ref === "function") {
-				ref(node);
-			} else {
-				(ref as React.MutableRefObject<T | null>).current = node;
-			}
-		}
-	};
-}
 
 function isEventHandler(propName: string, propValue: unknown) {
 	return /^on[A-Z]/.test(propName) && typeof propValue === "function";
@@ -62,4 +47,4 @@ function Slot({ children, ref: forwardedRef, ...slotProps }: SlotProps) {
 	return React.cloneElement(child, props);
 }
 
-export { composeRefs, Slot };
+export { Slot };

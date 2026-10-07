@@ -57,9 +57,10 @@ import type {
 	PerDiemRates,
 	StatutoryPerDiemDefault,
 } from "@/lib/travel-expenses/statutory-per-diem-defaults";
+import { catalogAdoption } from "./catalog-adoption";
 import { foreignAreaCounts } from "./per-diem-foreign-areas";
 import { ForeignTableSummary } from "./per-diem-foreign-table-summary";
-import { CatalogAdoptedNote, catalogAdoption } from "./statutory-adoption";
+import { CatalogAdoptedNote } from "./statutory-adoption";
 import { WithdrawVersionButton } from "./withdraw-version-button";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -516,10 +517,11 @@ function PerDiemPolicyVersionDialog({
 	const [replaceVersionId, setReplaceVersionId] = useState<string | null>(
 		target?.source === "organization" ? (target.replacesVersionId ?? null) : null,
 	);
-	const mounted: readonly PerDiemVersionField[] =
+	const mounted = new Set<string>(
 		target?.source === "statutory_default"
 			? ["effectiveFrom", "note"]
-			: ["effectiveFrom", "currency", ...PER_DIEM_RATE_FIELDS, "sourceReference", "note"];
+			: ["effectiveFrom", "currency", ...PER_DIEM_RATE_FIELDS, "sourceReference", "note"],
+	);
 
 	const check = (name: PerDiemVersionField, values: PerDiemVersionValues) => {
 		const parsed = parsePerDiemPolicyVersionInput(perDiemActivationInput(target, values, null));
@@ -568,8 +570,8 @@ function PerDiemPolicyVersionDialog({
 					// The server's refusal stays on its field until that field changes.
 					let shown = false;
 					for (const [key, code] of Object.entries(result.data.errors)) {
-						const name = mounted.find((field) => field === key);
-						if (!name) continue;
+						if (!mounted.has(key)) continue;
+						const name = key as PerDiemVersionField;
 						shown = true;
 						const message = errorText(t, code);
 						formApi.setFieldMeta(name, (meta) => ({

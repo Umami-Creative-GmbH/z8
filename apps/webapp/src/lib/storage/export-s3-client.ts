@@ -326,18 +326,22 @@ export async function deletePrivateObjectVersions(input: {
 				...marker,
 			}),
 		);
-		const versions = [...(page.Versions ?? []), ...(page.DeleteMarkers ?? [])];
-		for (const version of versions) {
-			// The prefix also matches longer keys; only this exact object goes.
-			if (version.Key !== input.key || !version.VersionId) continue;
-			await client.send(
-				new DeleteObjectCommand({
-					Bucket: config.bucket,
-					Key: input.key,
-					VersionId: version.VersionId,
-				}),
-			);
-		}
+		// The prefix also matches longer keys; only this exact object goes.
+		const versionIds = [...(page.Versions ?? []), ...(page.DeleteMarkers ?? [])].flatMap(
+			(version) => (version.Key === input.key && version.VersionId ? [version.VersionId] : []),
+		);
+		// Each version is deleted on its own, so the deletes of one page are independent.
+		await Promise.all(
+			versionIds.map((versionId) =>
+				client.send(
+					new DeleteObjectCommand({
+						Bucket: config.bucket,
+						Key: input.key,
+						VersionId: versionId,
+					}),
+				),
+			),
+		);
 		marker =
 			page.IsTruncated && page.NextKeyMarker
 				? {

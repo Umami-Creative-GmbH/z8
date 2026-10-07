@@ -59,7 +59,8 @@ import {
 } from "@/lib/travel-expenses/mileage-policy-input";
 import { isSupportedCurrency } from "@/lib/travel-expenses/receipt-report";
 import type { StatutoryMileageDefault } from "@/lib/travel-expenses/statutory-allowance-defaults";
-import { CatalogAdoptedNote, catalogAdoption } from "./statutory-adoption";
+import { catalogAdoption } from "./catalog-adoption";
+import { CatalogAdoptedNote } from "./statutory-adoption";
 import { WithdrawVersionButton } from "./withdraw-version-button";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -465,6 +466,27 @@ function mileageErrorField(key: keyof MileagePolicyInputErrors): MileageVersionF
 	}
 }
 
+/** Shown while saving replaces the active version that starts the same day. */
+function ReplaceMileageVersionAlert({ effectiveFrom }: { effectiveFrom: string }) {
+	const { t } = useTranslate();
+	const locale = useLocale();
+	return (
+		<Alert>
+			<IconAlertTriangle aria-hidden="true" className="size-4" />
+			<AlertTitle>
+				{t("settings.travelExpenses.mileage.replaceTitle", "Replace the version starting that day")}
+			</AlertTitle>
+			<AlertDescription>
+				{t(
+					"settings.travelExpenses.mileage.replaceDescription",
+					"An active version already starts on {date}. Saving replaces it; the replaced version is kept in the history.",
+					{ date: formatPlainDate(locale, effectiveFrom || "") },
+				)}
+			</AlertDescription>
+		</Alert>
+	);
+}
+
 function MileagePolicyVersionDialog({
 	target,
 	onClose,
@@ -473,16 +495,17 @@ function MileagePolicyVersionDialog({
 	onClose: () => void;
 }) {
 	const { t } = useTranslate();
-	const locale = useLocale();
 	const queryClient = useQueryClient();
 	// Set when another active version starts the same day; saving again replaces it.
 	const [replaceVersionId, setReplaceVersionId] = useState<string | null>(
 		target?.source === "organization" ? (target.replacesVersionId ?? null) : null,
 	);
 	const isDefault = target?.source === "statutory_default";
-	const mounted: readonly MileageVersionField[] = isDefault
-		? ["effectiveFrom", "note"]
-		: ["effectiveFrom", "currency", "car", "other_motor_vehicle", "sourceReference", "note"];
+	const mounted = new Set<MileageVersionField>(
+		isDefault
+			? ["effectiveFrom", "note"]
+			: ["effectiveFrom", "currency", "car", "other_motor_vehicle", "sourceReference", "note"],
+	);
 
 	const check = (name: MileageVersionField, values: MileageVersionValues) => {
 		const parsed = parseMileagePolicyVersionInput(mileageActivationInput(target, values, null));
@@ -533,7 +556,7 @@ function MileagePolicyVersionDialog({
 					let shown = false;
 					for (const [key, code] of Object.entries(result.data.errors)) {
 						const name = mileageErrorField(key as keyof MileagePolicyInputErrors);
-						if (!name || !mounted.includes(name)) continue;
+						if (!name || !mounted.has(name)) continue;
 						shown = true;
 						const message = errorText(t, code);
 						formApi.setFieldMeta(name, (meta) => ({
@@ -727,22 +750,7 @@ function MileagePolicyVersionDialog({
 					</form.Field>
 
 					{replaceVersionId && (
-						<Alert>
-							<IconAlertTriangle aria-hidden="true" className="size-4" />
-							<AlertTitle>
-								{t(
-									"settings.travelExpenses.mileage.replaceTitle",
-									"Replace the version starting that day",
-								)}
-							</AlertTitle>
-							<AlertDescription>
-								{t(
-									"settings.travelExpenses.mileage.replaceDescription",
-									"An active version already starts on {date}. Saving replaces it; the replaced version is kept in the history.",
-									{ date: formatPlainDate(locale, form.state.values.effectiveFrom || "") },
-								)}
-							</AlertDescription>
-						</Alert>
+						<ReplaceMileageVersionAlert effectiveFrom={form.state.values.effectiveFrom} />
 					)}
 
 					<DialogFooter>
