@@ -299,9 +299,11 @@ function extractKeyFallbackObjects(code) {
 
 	for (let match = pattern.exec(code); match !== null; match = pattern.exec(code)) {
 		const objectStart = code.lastIndexOf("{", match.index);
-		const objectEnd = code.indexOf("}", match.index);
-		const objectContent =
-			objectStart >= 0 && objectEnd >= 0 ? code.slice(objectStart, objectEnd + 1) : "";
+		// Fallbacks carry ICU placeholders ("Approved by {actor}"), so the object cannot end at
+		// the next "}". Losing the default made sync create the key without source text, and
+		// the following pull dropped it from every catalog.
+		const objectEnd = objectStart >= 0 ? findObjectEnd(code, objectStart) : undefined;
+		const objectContent = objectEnd === undefined ? "" : code.slice(objectStart, objectEnd);
 		const defaultValue = findStringProperty(
 			objectContent,
 			["fallback", "default", "defaultValue", "label"],
@@ -433,6 +435,28 @@ function extractString(str, startIndex) {
 	}
 
 	return null; // Unterminated string
+}
+
+/**
+ * Find the end (exclusive) of the object opened at `objectStart`, ignoring braces inside
+ * strings. Returns undefined when the object is not closed.
+ */
+function findObjectEnd(code, objectStart) {
+	let pos = objectStart + 1;
+	let braceCount = 1;
+	while (pos < code.length && braceCount > 0) {
+		if (code[pos] === "{") braceCount++;
+		else if (code[pos] === "}") braceCount--;
+		else if (code[pos] === '"' || code[pos] === "'" || code[pos] === "`") {
+			const strResult = extractString(code, pos);
+			if (strResult) {
+				pos = strResult.endIndex;
+			}
+		}
+		pos++;
+	}
+
+	return braceCount === 0 ? pos : undefined;
 }
 
 /**
@@ -781,23 +805,10 @@ function extractAdjacentDefaultValue(code, keyPosition, keyPropertyName) {
 	const objectStart = code.lastIndexOf("{", keyPosition);
 	if (objectStart < 0) return undefined;
 
-	let pos = objectStart + 1;
-	let braceCount = 1;
-	while (pos < code.length && braceCount > 0) {
-		if (code[pos] === "{") braceCount++;
-		else if (code[pos] === "}") braceCount--;
-		else if (code[pos] === '"' || code[pos] === "'" || code[pos] === "`") {
-			const strResult = extractString(code, pos);
-			if (strResult) {
-				pos = strResult.endIndex;
-			}
-		}
-		pos++;
-	}
+	const objectEnd = findObjectEnd(code, objectStart);
+	if (objectEnd === undefined) return undefined;
 
-	if (braceCount !== 0) return undefined;
-
-	const objectContent = code.slice(objectStart, pos);
+	const objectContent = code.slice(objectStart, objectEnd);
 	const fallbackPropertyName = `${keyPropertyName.slice(0, -3)}Default`;
 	const fallbackMatch = objectContent.match(new RegExp(`${fallbackPropertyName}\\s*:\\s*["']`));
 	if (!fallbackMatch) return undefined;
