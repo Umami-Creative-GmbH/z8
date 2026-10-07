@@ -1017,7 +1017,6 @@ describe("report submission through approval authority (#602)", () => {
 						}),
 						value: { kind: "money", amount: "89.90", currency: "EUR" },
 					},
->>>>>>> origin/dev
 				]),
 			}),
 		);
