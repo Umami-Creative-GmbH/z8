@@ -581,18 +581,15 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 							mutate:
 								async (): Promise<RequestedAbsenceApprovalWorkflowResult> => {
 									const result = await Effect.runPromise(
-										Effect.result(
-											create(
-												transactionalDbService,
-												currentEmployee,
-												newAbsence.id,
-												params.approvalWorkflow?.categoryId ?? data.categoryId,
-												params.approvalWorkflow?.approverId ?? null,
-											),
+										create(
+											transactionalDbService,
+											currentEmployee,
+											newAbsence.id,
+											params.approvalWorkflow?.categoryId ?? data.categoryId,
+											params.approvalWorkflow?.approverId ?? null,
 										),
 									);
-									if (result._tag === "Failure") throw result.failure;
-									return result.success as RequestedAbsenceApprovalWorkflowResult;
+									return result as RequestedAbsenceApprovalWorkflowResult;
 								},
 							afterMirror: async (observed) => {
 								if (

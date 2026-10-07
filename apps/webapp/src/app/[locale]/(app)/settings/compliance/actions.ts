@@ -2,7 +2,7 @@
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import { db } from "@/db";
 import type {
 	ComplianceAlert,
@@ -55,9 +55,6 @@ const ComplianceLayer = ComplianceGuardrailServiceLive.pipe(
 	Layer.provide(WorkPolicyServiceLive),
 	Layer.provide(DatabaseServiceLive),
 );
-
-// Import Layer from effect
-import { Layer } from "effect";
 
 // =============================================================================
 // Helper: Get current employee

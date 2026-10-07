@@ -9,6 +9,7 @@ import type { SQL } from "drizzle-orm";
 import type { Effect } from "effect";
 import type { ComponentType } from "react";
 import type { AnyAppError } from "@/lib/effect/errors";
+import type { DatabaseService } from "@/lib/effect/services/database.service";
 
 // ============================================
 // APPROVAL ITEM (Unified Format)
@@ -280,6 +281,9 @@ export interface ApprovalActionOptions {
  * Handler interface for each approval type.
  * Implement this to add support for a new approval type.
  */
+/** Services an approval handler's effects require; runners provide them. */
+export type ApprovalHandlerServices = DatabaseService;
+
 export interface ApprovalTypeHandler<TEntity = unknown> {
 	/** Type identifier (must match ApprovalType union) */
 	readonly type: ApprovalType;
@@ -296,15 +300,13 @@ export interface ApprovalTypeHandler<TEntity = unknown> {
 	/**
 	 * Fetch pending approvals of this type.
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	getApprovals: (
 		params: ApprovalQueryParams,
-	) => Effect.Effect<UnifiedApprovalItem[], AnyAppError, any>;
+	) => Effect.Effect<UnifiedApprovalItem[], AnyAppError, ApprovalHandlerServices>;
 
 	/**
 	 * Get count of pending approvals (for badges).
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	getCount: (
 		approverId: string,
 		organizationId: string,
@@ -312,40 +314,37 @@ export interface ApprovalTypeHandler<TEntity = unknown> {
 			ApprovalQueryParams,
 			"eligibleApprovalScopes" | "includeAllApprovers"
 		>,
-	) => Effect.Effect<number, AnyAppError, any>;
+	) => Effect.Effect<number, AnyAppError, ApprovalHandlerServices>;
 
 	/**
 	 * Get full details for the slide-over panel.
 	 * @param entityId - The ID of the entity
 	 * @param organizationId - Organization ID for authorization (optional for internal calls)
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	getDetail: (
 		entityId: string,
 		organizationId?: string,
 		context?: { approvalId?: string },
-	) => Effect.Effect<ApprovalDetail<TEntity>, AnyAppError, any>;
+	) => Effect.Effect<ApprovalDetail<TEntity>, AnyAppError, ApprovalHandlerServices>;
 
 	/**
 	 * Approve the entity.
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	approve: (
 		entityId: string,
 		approverId: string,
 		options?: ApprovalActionOptions,
-	) => Effect.Effect<void, AnyAppError, any>;
+	) => Effect.Effect<void, AnyAppError, ApprovalHandlerServices>;
 
 	/**
 	 * Reject the entity with a reason.
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	reject: (
 		entityId: string,
 		approverId: string,
 		reason: string,
 		options?: ApprovalActionOptions,
-	) => Effect.Effect<void, AnyAppError, any>;
+	) => Effect.Effect<void, AnyAppError, ApprovalHandlerServices>;
 
 	/**
 	 * Calculate priority from entity metadata.

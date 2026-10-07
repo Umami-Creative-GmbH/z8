@@ -1,5 +1,5 @@
 import { and, eq, isNull } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect";
+import { Effect, Exit } from "effect";
 import {
 	approvalRequest,
 	approvalStageAssignment,
@@ -21,6 +21,7 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
+import { failureOfCause } from "@/lib/effect/cause-failure";
 import { ConflictError } from "@/lib/effect/errors";
 import { runtime } from "@/lib/effect/runtime";
 import {
@@ -1037,17 +1038,12 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 								query: input.dbService.query,
 							}),
 						),
-					) as Effect.Effect<
-						WorkPeriodApprovalResult | undefined,
-						unknown,
-						never
-					>,
+					),
 				);
 				if (Exit.isFailure(exit)) {
 					// The owner's typed failure, else its defect: what
 					// unresolvedWorkPeriodReviewFrom reads.
-					const failure = Cause.findErrorOption(exit.cause);
-					throw Option.isSome(failure) ? failure.value : Cause.squash(exit.cause);
+					throw failureOfCause(exit.cause);
 				}
 				mutationResult = exit.value;
 				return mutationResult;

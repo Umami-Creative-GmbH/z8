@@ -24,37 +24,35 @@ export class AuthService extends Context.Service<
 	}
 >()("AuthService") {}
 
-export const AuthServiceLive = Layer.effect(
+export const AuthServiceLive = Layer.succeed(
 	AuthService,
-	Effect.sync(() =>
-		AuthService.of({
-			getSession: (organizationId) =>
-				Effect.tryPromise({
-					try: async () => {
-						const session = await getRequestSession();
+	AuthService.of({
+		getSession: (organizationId) =>
+			Effect.tryPromise({
+				try: async () => {
+					const session = await getRequestSession();
 
-						if (!session?.user || ("ssoRequired" in session && session.ssoRequired === true)) {
-							throw new Error("No session found");
-						}
+					if (!session?.user || ("ssoRequired" in session && session.ssoRequired === true)) {
+						throw new Error("No session found");
+					}
 
-						if (
-							organizationId &&
-							!(await canAccessOrganizationWithSso(session.session, organizationId))
-						)
-							throw new Error("SSO authentication required");
-						return {
-							...session,
-							session: {
-								...session.session,
-								activeOrganizationId: session.session.activeOrganizationId ?? null,
-							},
-						} as Session;
-					},
-					catch: () =>
-						new AuthenticationError({
-							message: "Not authenticated",
-						}),
-				}),
-		}),
-	),
+					if (
+						organizationId &&
+						!(await canAccessOrganizationWithSso(session.session, organizationId))
+					)
+						throw new Error("SSO authentication required");
+					return {
+						...session,
+						session: {
+							...session.session,
+							activeOrganizationId: session.session.activeOrganizationId ?? null,
+						},
+					} as Session;
+				},
+				catch: () =>
+					new AuthenticationError({
+						message: "Not authenticated",
+					}),
+			}),
+	}),
 );

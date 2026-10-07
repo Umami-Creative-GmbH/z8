@@ -1,8 +1,9 @@
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
-import { Cause, Effect, Exit, Option, Result } from "effect";
+import { Cause, Effect, Exit } from "effect";
 import { approvalRequest, employee } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { failureOfCause } from "@/lib/effect/cause-failure";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -232,21 +233,32 @@ function updatePendingApprovalRequest(
 		);
 }
 
-type ApprovalEntityUpdater<T> = (
+/**
+ * Entity callbacks declare the services they require (`R`); the decision
+ * effect requires them too, so a runner cannot leave one unprovided.
+ */
+type ApprovalEntityUpdater<T, R = never> = (
 	dbService: ApprovalDbService,
 	entityId: string,
 	currentEmployee: CurrentApprover,
 	approval: PendingApprovalRequest,
-) => Effect.Effect<T, AnyAppError, unknown>;
+) => Effect.Effect<T, AnyAppError, R>;
 
-interface ApprovalPostCommitHandlers<T> {
-	updateEntity: ApprovalEntityUpdater<T>;
+type ApprovalEntityPreflight<R = never> = (
+	dbService: ApprovalDbService,
+	entityId: string,
+	currentEmployee: CurrentApprover,
+	options?: ApprovalActionOptions,
+) => Effect.Effect<unknown, AnyAppError, R>;
+
+interface ApprovalPostCommitHandlers<T, R = never> {
+	updateEntity: ApprovalEntityUpdater<T, R>;
 	afterCommit: (
 		result: T,
 		dbService: ApprovalDbService,
 		entityId: string,
 		currentEmployee: CurrentApprover,
-	) => Effect.Effect<void, AnyAppError, unknown>;
+	) => Effect.Effect<void, AnyAppError, R>;
 }
 
 interface ApprovalExecutionResult<T> {
@@ -254,8 +266,8 @@ interface ApprovalExecutionResult<T> {
 	didRunDomainUpdate: boolean;
 }
 
-function runAfterCommitBestEffort<T>(
-	handlers: ApprovalPostCommitHandlers<T>,
+function runAfterCommitBestEffort<T, R>(
+	handlers: ApprovalPostCommitHandlers<T, R>,
 	result: T,
 	dbService: ApprovalDbService,
 	entityType: ApprovalEntityType,
@@ -266,10 +278,7 @@ function runAfterCommitBestEffort<T>(
 		.afterCommit(result, dbService, entityId, currentEmployee)
 		.pipe(
 			Effect.catchCause((cause) => {
-				const error =
-					Option.getOrNull(Cause.findErrorOption(cause)) ??
-					Result.getOrNull(Cause.findDefect(cause)) ??
-					Cause.pretty(cause);
+				const error = Cause.hasInterruptsOnly(cause) ? Cause.pretty(cause) : failureOfCause(cause);
 				return Effect.sync(() =>
 					logger.error(
 						{
@@ -285,22 +294,17 @@ function runAfterCommitBestEffort<T>(
 		);
 }
 
-function executeApprovalWithCurrentEmployee<T>(
+function executeApprovalWithCurrentEmployee<T, R = never>(
 	dbService: ApprovalDbService,
 	currentEmployee: CurrentApprover,
 	entityType: ApprovalEntityType,
 	entityId: string,
 	action: ApprovalAction,
 	rejectionReason?: string,
-	updateEntity?: ApprovalEntityUpdater<T>,
-	preflightEntity?: (
-		dbService: ApprovalDbService,
-		entityId: string,
-		currentEmployee: CurrentApprover,
-		options?: ApprovalActionOptions,
-	) => Effect.Effect<unknown, AnyAppError, unknown>,
+	updateEntity?: ApprovalEntityUpdater<T, R>,
+	preflightEntity?: ApprovalEntityPreflight<R>,
 	options?: ApprovalActionOptions,
-	postCommitHandlers?: ApprovalPostCommitHandlers<T>,
+	postCommitHandlers?: ApprovalPostCommitHandlers<T, R>,
 ) {
 	const statusUpdate = getApprovalStatusUpdate(action, rejectionReason);
 
@@ -424,27 +428,22 @@ function executeApprovalWithCurrentEmployee<T>(
 	});
 }
 
-export function processApprovalWithCurrentEmployee<T>(
+export function processApprovalWithCurrentEmployee<T, R = never>(
 	dbService: ApprovalDbService,
 	currentEmployee: CurrentApprover,
 	entityType: ApprovalEntityType,
 	entityId: string,
 	action: ApprovalAction,
 	rejectionReason?: string,
-	updateEntity?: ApprovalEntityUpdater<T>,
-	preflightEntity?: (
-		dbService: ApprovalDbService,
-		entityId: string,
-		currentEmployee: CurrentApprover,
-		options?: ApprovalActionOptions,
-	) => Effect.Effect<unknown, AnyAppError, unknown>,
+	updateEntity?: ApprovalEntityUpdater<T, R>,
+	preflightEntity?: ApprovalEntityPreflight<R>,
 	options?: ApprovalActionOptions,
-	postCommitHandlers?: ApprovalPostCommitHandlers<T>,
+	postCommitHandlers?: ApprovalPostCommitHandlers<T, R>,
 	transactionBehavior: "open" | "existing" = "open",
 ) {
 	return Effect.gen(function* () {
 		const auditLogger = yield* ApprovalAuditLogger;
-		const callerContext = yield* Effect.context<never>();
+		const callerContext = yield* Effect.context<R>();
 
 		if (!options?.transactional || transactionBehavior === "existing") {
 			const execution = yield* executeApprovalWithCurrentEmployee(
@@ -485,7 +484,8 @@ export function processApprovalWithCurrentEmployee<T>(
 					);
 
 					const exit = await Effect.runPromiseExit(
-						// Transactional approvals currently run only self-contained handlers.
+						// The transaction callback is a Promise boundary: the caller's services
+						// carry over, the audit logger is bound to the transaction.
 						executeApprovalWithCurrentEmployee(
 							transactionalDbService,
 							currentEmployee,
@@ -503,17 +503,11 @@ export function processApprovalWithCurrentEmployee<T>(
 								transactionalAuditLogger,
 							),
 							Effect.provide(callerContext),
-						) as Effect.Effect<
-							ApprovalExecutionResult<T>,
-							AnyAppError,
-							never
-						>,
+						),
 					);
 
 					if (Exit.isFailure(exit)) {
-						const failure = Option.getOrNull(Cause.findErrorOption(exit.cause));
-						const defect = Result.getOrNull(Cause.findDefect(exit.cause));
-						throw failure ?? defect ?? new Error("An error has occurred");
+						throw failureOfCause(exit.cause);
 					}
 
 					result = exit.value;
@@ -539,20 +533,15 @@ export function processApprovalWithCurrentEmployee<T>(
 	});
 }
 
-export async function processApproval<T>(
+export async function processApproval<T, R = never>(
 	entityType: ApprovalEntityType,
 	entityId: string,
 	action: ApprovalAction,
 	rejectionReason?: string,
-	updateEntity?: ApprovalEntityUpdater<T>,
-	preflightEntity?: (
-		dbService: ApprovalDbService,
-		entityId: string,
-		currentEmployee: CurrentApprover,
-		options?: ApprovalActionOptions,
-	) => Effect.Effect<unknown, AnyAppError, unknown>,
+	updateEntity?: ApprovalEntityUpdater<T, R>,
+	preflightEntity?: ApprovalEntityPreflight<R>,
 	options?: ApprovalActionOptions,
-	postCommitHandlers?: ApprovalPostCommitHandlers<T>,
+	postCommitHandlers?: ApprovalPostCommitHandlers<T, R>,
 ): Promise<ServerActionResult<T | undefined>> {
 	const tracer = trace.getTracer("approvals");
 
@@ -618,7 +607,5 @@ export async function processApproval<T>(
 		},
 	);
 
-	return runServerActionSafe(
-		effect as Effect.Effect<T | undefined, AnyAppError, never>,
-	);
+	return runServerActionSafe(effect);
 }

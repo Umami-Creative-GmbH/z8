@@ -1,5 +1,5 @@
 import { and, eq, inArray, or } from "drizzle-orm";
-import { Cause, Effect, Exit, Option, Result } from "effect";
+import { type Effect, Exit } from "effect";
 import { db } from "@/db";
 import {
 	approvalRequest,
@@ -9,13 +9,14 @@ import {
 } from "@/db/schema";
 import type {
 	ApprovalActionOptions,
+	ApprovalHandlerServices,
 	ApprovalTypeHandler,
 } from "@/lib/approvals/domain/types";
-import { ApprovalAuditLoggerLive } from "@/lib/approvals/infrastructure/audit-logger";
 import {
 	classifyTimeApprovalRequest,
 	type TimeApprovalKind,
 } from "@/lib/approvals/time-request-kind";
+import { failureOfCause } from "@/lib/effect/cause-failure";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runtime } from "@/lib/effect/runtime";
 import { createLogger } from "@/lib/logger";
@@ -32,10 +33,9 @@ import type {
 } from "./types";
 
 type InboxDecisionAction = "approve" | "reject";
-// Matches ApprovalTypeHandler approve/reject effects, which may require any app service layer.
+// Runs a handler's approve/reject effect, providing the services it declares.
 type DecisionEffectRunner = (
-	// biome-ignore lint/suspicious/noExplicitAny: handlers may require any application service layer
-	effect: Effect.Effect<void, unknown, any>,
+	effect: Effect.Effect<void, unknown, ApprovalHandlerServices>,
 ) => Promise<Exit.Exit<void, unknown>>;
 type EligibleApprovalScope = {
 	requesterEmployeeId: string;
@@ -50,7 +50,7 @@ type BulkDecisionOutcome =
 	| { status: "failed"; failure: ApprovalInboxDecisionFailure };
 
 const defaultDecisionEffectRunner: DecisionEffectRunner = (effect) =>
-	runtime.runPromiseExit(effect.pipe(Effect.provide(ApprovalAuditLoggerLive)));
+	runtime.runPromiseExit(effect);
 const logger = createLogger("ApprovalInboxDecisionService");
 
 export interface PersistedApprovalRequestForDecision {
@@ -140,7 +140,7 @@ export async function decideApprovalInboxItemFromRequest({
 
 	return Exit.match(exit, {
 		onFailure: (cause) => {
-			throw extractEffectError(cause);
+			throw failureOfCause(cause);
 		},
 		onSuccess: () => ({
 			id: request.id,
@@ -793,14 +793,6 @@ function canDecideRequest({
 				scope.eligibleApproverIds.includes(actorEmployeeId) &&
 				scope.eligibleApproverIds.includes(request.approverId),
 		) ?? false
-	);
-}
-
-function extractEffectError(cause: Cause.Cause<unknown>): unknown {
-	return (
-		Option.getOrNull(Cause.findErrorOption(cause)) ??
-		Result.getOrNull(Cause.findDefect(cause)) ??
-		cause
 	);
 }
 

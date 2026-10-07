@@ -6,9 +6,15 @@
  */
 
 import { Effect } from "effect";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import type { WorkPeriodAutoAdjustmentReason } from "@/db/schema";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
+
+// The tests import the service lazily, after their mocks; the first cold transform of
+// its graph competes with the full suite, so it is warmed once with room to spare.
+beforeAll(async () => {
+	await import("../break-enforcement.service");
+}, 30_000);
 
 /** The closed work's end, the instant the policy is looked up at. */
 const workEnd = instantFromDate(new Date("2024-01-15T17:00:00Z"));

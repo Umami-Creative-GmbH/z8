@@ -1,11 +1,12 @@
 import { and, eq, sql } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect";
+import { Effect, Exit } from "effect";
 import { approvalRequest, workPeriod } from "@/db/schema";
 import {
 	instantFromDate,
 	instantToCanonicalString,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import { typedFailureOfCause } from "@/lib/effect/cause-failure";
 import { ValidationError } from "@/lib/effect/errors";
 import { policyClockOutBreakSnapshotFromPendingChanges } from "@/lib/time-tracking/policy-clock-out-break-snapshot";
 import { policyClockOutSurchargeSnapshotFromPendingChanges } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
@@ -1850,7 +1851,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 					}),
 				);
 				if (Exit.isFailure(resolved)) {
-					const failure = Option.getOrNull(Cause.findErrorOption(resolved.cause));
+					const failure = typedFailureOfCause(resolved.cause);
 					if (
 						failure instanceof ValidationError &&
 						failure._tag === "ValidationError" &&

@@ -1,5 +1,6 @@
-import { Cause, Effect, Exit, Layer, Option } from "effect";
+import { Effect, Exit, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { typedFailureOfCause } from "@/lib/effect/cause-failure";
 import { StripeError } from "@/lib/effect/errors";
 import { SeatDeliveryUncertainError } from "./seat-delivery";
 import { SeatSyncService, SeatSyncServiceLive } from "./seat-sync.service";
@@ -171,8 +172,7 @@ describe("SeatSyncService", () => {
 			const exit = await syncSeats(stripe.layer);
 
 			expect(rejection).toBe(stripeFailure);
-			const failure = Exit.isFailure(exit) ? Cause.findErrorOption(exit.cause) : Option.none();
-			expect(Option.getOrUndefined(failure)).toMatchObject({
+			expect(Exit.isFailure(exit) ? typedFailureOfCause(exit.cause) : undefined).toMatchObject({
 				_tag: "StripeError",
 				operation: "syncSeatsForOrganization",
 			});

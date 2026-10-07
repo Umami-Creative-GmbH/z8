@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { type Effect, Exit } from "effect";
+import { Exit } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { approvalRequest } from "@/db/schema";
@@ -10,7 +10,6 @@ import type {
 	UnifiedApprovalItem,
 } from "@/lib/approvals/domain/types";
 import { runtime } from "@/lib/effect/runtime";
-import type { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	buildAbsenceReviewSections,
 	prepareAbsenceReviewEvidence,
@@ -105,14 +104,6 @@ interface GetApprovalInboxDetailFromRequestInput {
 
 const DEFAULT_LIMIT = 50;
 
-/** A handler effect, typed by the one service it reads: the shared runtime's `DatabaseService`. */
-function onDatabase<A>(
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	effect: Effect.Effect<A, unknown, any>,
-): Effect.Effect<A, unknown, DatabaseService> {
-	return effect;
-}
-
 const riskRank: Record<ApprovalInboxRiskLevel, number> = {
 	high: 0,
 	medium: 1,
@@ -147,7 +138,7 @@ export async function getApprovalInboxListFromSources({
 	const approvalResults = await Promise.all(
 		selectedSources.map(async (source) => ({
 			source,
-			approvalsExit: await runtime.runPromiseExit(onDatabase(source.handler.getApprovals(params))),
+			approvalsExit: await runtime.runPromiseExit(source.handler.getApprovals(params)),
 		})),
 	);
 	for (const { source, approvalsExit } of approvalResults) {
@@ -169,12 +160,10 @@ export async function getApprovalInboxListFromSources({
 		sources.map(async (source) => ({
 			source,
 			countExit: await runtime.runPromiseExit(
-				onDatabase(
-					source.handler.getCount(params.approverId, params.organizationId, {
-						eligibleApprovalScopes: params.eligibleApprovalScopes,
-						includeAllApprovers: params.includeAllApprovers,
-					}),
-				),
+				source.handler.getCount(params.approverId, params.organizationId, {
+					eligibleApprovalScopes: params.eligibleApprovalScopes,
+					includeAllApprovers: params.includeAllApprovers,
+				}),
 			),
 		})),
 	);
@@ -308,11 +297,9 @@ export async function getApprovalInboxDetailFromRequest({
 	}
 
 	const detail = await runtime.runPromise(
-		onDatabase(
-			handler.getDetail(request.entityId, request.organizationId, {
-				approvalId: request.id,
-			}),
-		),
+		handler.getDetail(request.entityId, request.organizationId, {
+			approvalId: request.id,
+		}),
 	);
 	validateDetailMatchesRequest(detail, request);
 

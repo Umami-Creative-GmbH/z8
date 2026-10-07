@@ -22,13 +22,17 @@ The app runs Effect v4 only, installed as `effect`. Don't add another Effect ver
 These differ from v3, so code and examples written for v3 get them wrong.
 
 - **Rejections:** `runPromise` rejects with the original error. v3 wrapped it in a `FiberFailure` with the same `message`, so it never passed `instanceof` checks. In `try { await Effect.runPromise(...) } catch`, every `instanceof`, `name` and `_tag` test in the catch matches the typed error.
-- **Typed failures across a Promise boundary:** to read the typed failure, run with `runPromiseExit` and read the error with `Cause.findErrorOption` or `Cause.findDefect`, the way `lib/effect/result.ts` does. Don't use `Runtime.isFiberFailure` or `FiberFailureCauseId`; they don't exist in v4.
+- **Typed failures across a Promise boundary:** run with `runPromiseExit` and unwrap a failed exit with `failureOfCause(exit.cause)` from `lib/effect/cause-failure.ts`. It returns the typed failure, else the defect, else `Cause.squash`, so a typed failure wins over a finalizer defect. Return or rethrow that value. When a defect must never reach the user, read only the typed failure with `typedFailureOfCause` from the same module. Don't call `Cause.findErrorOption` or `Cause.findDefect` elsewhere, and don't use `Runtime.isFiberFailure` or `FiberFailureCauseId`; they don't exist in v4.
 - **Layer sharing:** `Effect.provide(layer)` reuses an already-built layer across calls by default. Keep per-request and per-transaction state out of layers: read the session inside service methods (as `AuthService.getSession` does), and pass transaction-scoped services with `Effect.provideService`. Use `Effect.provide(layer, { local: true })` when a layer must be rebuilt each time.
 - **Schedules:** use `Schedule.max([a, b])` where v3 used `Schedule.compose(a, b)`. It continues while both continue and waits the longer delay.
 
 ## Services
 
-Define services as `class X extends Context.Service<X, Shape>()("X") {}` and provide them with `Layer.succeed` or `Layer.effect`. `lib/effect/services/database.service.ts` is the canonical example. Add a new service to the `AppLayer` in `lib/effect/runtime.ts`. Server actions run their effect through `runServerActionSafe` in `lib/effect/result.ts`, which turns an `Exit` into `ServerActionResult`.
+Define services as `class X extends Context.Service<X, Shape>()("X") {}`. Provide them with `Layer.succeed(X, X.of({...}))` when building the service does no effectful work, and with `Layer.effect` only when the constructor yields services or runs effects. `lib/effect/services/database.service.ts` is the canonical example. Add a new service to the `AppLayer` in `lib/effect/runtime.ts`.
+
+`runServerActionSafe` in `lib/effect/result.ts` is the only server-action runner. It runs the effect on the shared runtime and turns the `Exit` into the shared `ServerActionResult`: a typed failure comes back with its `message` and its `_tag` as `code`, so failure messages must be safe to show users. Don't add another runner or a local result type.
+
+A service shape or callback type declares the real requirement type (`R`) of the effects it returns, never `any` or `unknown`. A missing service then fails to compile instead of failing at run time. Runners provide those services; they don't cast to `Effect<…, never>`. The approval handler contract is the example: its effects require `ApprovalHandlerServices` (`lib/approvals/domain/types.ts`), and the shared legacy decision owner passes its callbacks' requirements through as a type parameter.
 
 In tests, `vi.mock` factories import `effect`, and stub services with `Context.Service<any>("Name")`.
 

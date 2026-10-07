@@ -248,8 +248,8 @@ export function applyCorrectionWritesInTransaction(tx: TransactionClient) {
   tx.update(workPeriod).set({ clockInId, startTime, durationMinutes });
 }
 export function createTimeRecord() {
-  return Effect.gen(function* (_) {
-    const dbService = yield* _(DatabaseService);
+  return Effect.gen(function* () {
+    const dbService = yield* DatabaseService;
     return dbService.db.insert(timeRecord).values({ organizationId, employeeId, startAt, endAt, durationMinutes, approvalState: "approved" });
   });
 }`;
@@ -460,23 +460,47 @@ function* lookalike() {
 		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([]);
 	});
 
-	it("trusts only imported Effect generator adapter calls for DatabaseService", () => {
+	it("tracks a DatabaseService yielded in Effect.gen through aliases, destructuring, and helpers", () => {
+		const source = `import { timeRecord, workPeriod } from "@/db/schema";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import { Effect } from "effect";
+function approveWith(service) {
+  service.db.update(workPeriod).set({ approvalStatus: "approved" });
+}
+export const aliased = Effect.gen(function* () {
+  const service = yield* DatabaseService;
+  const alias = service;
+  alias.db.update(workPeriod).set({ approvalStatus: "approved" });
+});
+export const destructured = Effect.gen(function* () {
+  const { db: client } = yield* DatabaseService;
+  client.insert(timeRecord).values({ organizationId, employeeId, startAt, endAt, durationMinutes, approvalState: "approved" });
+});
+export const viaHelper = Effect.gen(function* () {
+  approveWith(yield* DatabaseService);
+});`;
+
+		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
+			expect.objectContaining({ line: 5, table: "work_period" }),
+			expect.objectContaining({ line: 10, table: "work_period" }),
+			expect.objectContaining({ line: 14, table: "time_record" }),
+		]);
+	});
+
+	it("does not trust DatabaseService passed through an arbitrary wrapper call", () => {
 		const source = `import { workPeriod } from "@/db/schema";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { Effect } from "effect";
-Effect.gen(function* (_) {
-  const adapter = _;
-  const service = yield* adapter(DatabaseService);
-  service.db.update(workPeriod).set({ approvalStatus: "approved" });
-});
 function* arbitraryWrapper() {
   const service = yield* wrap(DatabaseService);
   service.db.update(workPeriod).set({ approvalStatus: "approved" });
-}`;
+}
+export const wrapped = Effect.gen(function* () {
+  const service = yield* wrap(DatabaseService);
+  service.db.update(workPeriod).set({ approvalStatus: "approved" });
+});`;
 
-		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
-			expect.objectContaining({ line: 7, table: "work_period" }),
-		]);
+		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([]);
 	});
 
 	it.each([
@@ -3810,8 +3834,8 @@ client.execute(operation + " from " + target);`,
 import { DatabaseService } from "@/lib/effect/services/database.service";
 const operation = "del" + "ete";
 const target = "appro" + "val_request";
-Effect.gen(function* (_) {
-	const service = yield* _(DatabaseService);
+Effect.gen(function* () {
+	const service = yield* DatabaseService;
 	service.db.execute(operation + " from " + target);
 });`,
 		],
@@ -3873,8 +3897,8 @@ client.execute(operation + " from " + target);`,
 import { DatabaseService as DbTag } from "../src/lib/effect/services/database.service";
 const operation = "del" + "ete";
 const target = "appro" + "val_request";
-Effect.gen(function* (_) {
-	const service = yield* _(DbTag);
+Effect.gen(function* () {
+	const service = yield* DbTag;
 	service.db.execute(operation + " from " + target);
 });`,
 		],
