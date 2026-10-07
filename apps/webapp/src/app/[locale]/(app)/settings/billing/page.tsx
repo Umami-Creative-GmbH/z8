@@ -1,6 +1,5 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { BillingPageClient } from "@/components/billing/billing-page-client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,6 +16,7 @@ import {
 	SubscriptionService,
 } from "@/lib/effect/services/billing";
 import { createLogger } from "@/lib/logger";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
 const logger = createLogger("billing-settings-page");
 const billingCheckFailedAccess: BillingAccessResult = {
@@ -29,7 +29,7 @@ const billingCheckFailedAccess: BillingAccessResult = {
 async function BillingSettingsContent() {
 	// Check if billing is enabled
 	if (env.BILLING_ENABLED !== "true") {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();

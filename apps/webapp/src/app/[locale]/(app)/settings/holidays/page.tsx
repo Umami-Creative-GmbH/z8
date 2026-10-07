@@ -1,22 +1,22 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { HolidayManagement } from "@/components/settings/holiday/holiday-management";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
 async function HolidaySettingsPageContent() {
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
 	if (!settingsRouteContext) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const { authContext, accessTier } = settingsRouteContext;
 	const organizationId = authContext.session.activeOrganizationId;
 
 	if (accessTier === "member" || !organizationId) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	return (

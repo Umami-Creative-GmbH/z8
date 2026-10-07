@@ -9,6 +9,7 @@ const mockState = vi.hoisted(() => ({
 }));
 
 vi.mock("next/navigation", () => ({ redirect: mockState.redirect }));
+vi.mock("next-intl/server", () => ({ getLocale: async () => "en" }));
 vi.mock("@/db", () => ({ db: {} }));
 vi.mock("@/lib/auth-helpers", () => ({
 	getCurrentSettingsRouteContext: mockState.getCurrentSettingsRouteContext,
@@ -52,6 +53,6 @@ describe("EmployeesPage actor membership", () => {
 	it("denies directory access when no approved membership exists", async () => {
 		mockState.getCurrentApprovedMembership.mockResolvedValue(null);
 
-		await expect(EmployeesPage()).rejects.toThrow("redirect:/settings");
+		await expect(EmployeesPage()).rejects.toThrow("redirect:/en/settings");
 	});
 });

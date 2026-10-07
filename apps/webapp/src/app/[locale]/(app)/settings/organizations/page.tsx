@@ -1,5 +1,4 @@
 import { and, count, eq } from "drizzle-orm";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { OrganizationsPageClient } from "@/components/organization/organizations-page-client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -7,6 +6,7 @@ import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { organizationNotificationSettings } from "@/db/schema";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { loadAutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/settings";
 import { getTranslate } from "@/tolgee/server";
@@ -18,18 +18,18 @@ async function OrganizationsPageContent() {
 	]);
 
 	if (!settingsRouteContext) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	if (settingsRouteContext.accessTier !== "orgAdmin") {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const { authContext } = settingsRouteContext;
 	const organizationId = authContext.session.activeOrganizationId;
 
 	if (!organizationId) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const memberTable = authSchema.member;
