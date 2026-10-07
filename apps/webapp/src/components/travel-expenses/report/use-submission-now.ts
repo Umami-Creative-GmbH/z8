@@ -2,45 +2,45 @@
 
 import { useState, useSyncExternalStore } from "react";
 import { Temporal } from "temporal-polyfill";
-import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
-import { nextSubmissionChange, type SubmissionDeadlines } from "@/lib/travel-expenses/future-dates";
+import { compareInstants, type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import { type FutureDates, nextSubmissionChange } from "@/lib/travel-expenses/future-dates";
 
-/** The longest delay `setTimeout` keeps; a later deadline is waited for in steps. */
+/** The longest delay `setTimeout` keeps; a later moment is waited for in steps. */
 const MAX_TIMEOUT_MS = 2_147_483_647;
 
-/** A primitive key, so the subscription stays put while the same deadlines are on screen. */
-function deadlinesKey(deadlines: SubmissionDeadlines): string {
+/** A primitive key, so the subscription stays put while the same dates are on screen. */
+function futureDatesKey(future: FutureDates): string {
 	return JSON.stringify([
-		deadlines.dates.toSorted(),
-		deadlines.instants.map((instant) => instant.epochMilliseconds).toSorted((a, b) => a - b),
+		future.dates.toSorted(),
+		future.instants.map((instant) => instant.epochMilliseconds).toSorted((a, b) => a - b),
 	]);
 }
 
-function parseDeadlinesKey(key: string): SubmissionDeadlines {
+function parseFutureDatesKey(key: string): FutureDates {
 	const [dates, instants] = JSON.parse(key) as [string[], number[]];
 	return { dates, instants: instants.map((ms) => Temporal.Instant.fromEpochMilliseconds(ms)) };
 }
 
 /**
  * The instant an editor evaluates its requirements at. It is read once and
- * read again only when a deadline passes, so the snapshot stays stable
- * between deadlines and one timer at a time waits for the next one.
+ * read again only when one of the dates has happened, so the snapshot stays
+ * stable in between and one timer at a time waits for the next moment.
  */
 function createSubmissionClock() {
 	let now = systemClock.nowInstant();
 	return {
 		getSnapshot: () => now,
 		subscribe(key: string, onStoreChange: () => void) {
-			const deadlines = parseDeadlinesKey(key);
+			const future = parseFutureDatesKey(key);
 			let timeout: number | undefined;
 			const schedule = () => {
-				const next = nextSubmissionChange(now, deadlines);
+				const next = nextSubmissionChange(now, future);
 				if (!next) return;
 				const delay = next.epochMilliseconds - systemClock.nowInstant().epochMilliseconds;
 				timeout = window.setTimeout(
 					() => {
 						const current = systemClock.nowInstant();
-						if (Temporal.Instant.compare(current, next) >= 0) {
+						if (compareInstants(current, next) >= 0) {
 							now = current;
 							onStoreChange();
 						}
@@ -57,13 +57,14 @@ function createSubmissionClock() {
 
 /**
  * The submission clock of a report editor (#685): the current instant, which
- * moves exactly when the earliest future-date blocker on screen expires, so
- * the Still needed lists and the Submit button unblock without a save or a
- * reload. The server checks again at submission; this clock only decides what
- * the employee is shown.
+ * moves exactly when the earliest future-dated expense, trip end or per diem
+ * return on screen has happened, so the Still needed lists and the Submit
+ * button update without a save or a reload. The server checks again at
+ * submission; this clock only decides what the employee is shown. Like
+ * `useLiveWorkNow`, `subscribe` is memoized on `key` by the React Compiler.
  */
-export function useSubmissionNow(deadlines: SubmissionDeadlines): Instant {
-	const key = deadlinesKey(deadlines);
+export function useSubmissionNow(future: FutureDates): Instant {
+	const key = futureDatesKey(future);
 	const [clock] = useState(createSubmissionClock);
 	const subscribe = (onStoreChange: () => void) => clock.subscribe(key, onStoreChange);
 	return useSyncExternalStore(subscribe, clock.getSnapshot, clock.getSnapshot);

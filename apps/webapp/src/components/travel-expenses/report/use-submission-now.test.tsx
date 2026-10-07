@@ -10,7 +10,7 @@ afterEach(() => {
 });
 
 describe("useSubmissionNow", () => {
-	it("moves once, exactly when the earliest future-date blocker expires", () => {
+	it("moves exactly when the earliest future date has happened", () => {
 		vi.useFakeTimers();
 		// 2026-10-08 starts in Pacific/Kiritimati (UTC+14) at 2026-10-07T10:00Z.
 		vi.setSystemTime(new Date("2026-10-07T09:00:00.000Z"));
@@ -39,7 +39,7 @@ describe("useSubmissionNow", () => {
 		expect(vi.getTimerCount()).toBe(0);
 	});
 
-	it("waits for a blocker months ahead without overflowing the timer", () => {
+	it("waits for a date months ahead without overflowing the timer", () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-10-07T09:00:00.000Z"));
 		const { result } = renderHook(() => useSubmissionNow({ dates: ["2027-03-01"], instants: [] }));

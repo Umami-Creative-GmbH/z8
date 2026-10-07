@@ -41,7 +41,7 @@ export function ReportTotals({ id, totals }: { id: string; totals: ReceiptReport
 	);
 }
 
-export function tripRequirementLabel(
+function tripRequirementLabel(
 	t: ReturnType<typeof useTranslate>["t"],
 	requirement: TripRequirement,
 	context: { locale: string; endDate: string | null },

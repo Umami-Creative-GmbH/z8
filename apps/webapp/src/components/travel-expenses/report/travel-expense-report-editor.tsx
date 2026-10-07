@@ -17,7 +17,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import { queryKeys } from "@/lib/query/keys";
-import type { SubmissionDeadlines } from "@/lib/travel-expenses/future-dates";
+import type { FutureDates } from "@/lib/travel-expenses/future-dates";
 import {
 	type RequirementItem,
 	reportItemMissingRequirements,
@@ -149,13 +149,13 @@ function itemIncomplete(
  * What may still be future-dated on screen (#685): the entered expense dates,
  * the trip end and the per diem return, for the editor's submission clock.
  */
-function screenDeadlines(
+function futureDatesOnScreen(
 	items: readonly ReportItemView[],
 	drafts: LiveDrafts,
 	mileageDrafts: MileageDrafts,
 	perDiemDrafts: PerDiemDrafts,
 	tripEndDate: string | null,
-): SubmissionDeadlines {
+): FutureDates {
 	const dates = tripEndDate ? [tripEndDate] : [];
 	const instants: Instant[] = [];
 	for (const item of items) {
@@ -334,7 +334,7 @@ function StandaloneReportBody({
 	const loadSavedReport = useSavedReportLoader(report.id);
 	const [drafts, setDrafts] = useState<LiveDrafts>({});
 	const [mileageDrafts, setMileageDrafts] = useState<MileageDrafts>({});
-	const now = useSubmissionNow(screenDeadlines(report.items, drafts, mileageDrafts, {}, null));
+	const now = useSubmissionNow(futureDatesOnScreen(report.items, drafts, mileageDrafts, {}, null));
 	const item = report.items[0];
 	if (!item) return null;
 	const isMileage = item.type === "mileage";
@@ -423,7 +423,7 @@ function TripReportBody({
 	const [tripProjectId, setTripProjectId] = useState(report.projectId ?? null);
 	const { items } = report;
 	const now = useSubmissionNow(
-		screenDeadlines(items, drafts, mileageDrafts, perDiemDrafts, details?.endDate ?? null),
+		futureDatesOnScreen(items, drafts, mileageDrafts, perDiemDrafts, details?.endDate ?? null),
 	);
 	const projectIssues = useReportProjectIssues(
 		report.id,

@@ -88,14 +88,14 @@ describe("drafts", () => {
 
 describe("nextSubmissionChange", () => {
 	it("is the earliest date change or return still ahead", () => {
-		const deadlines = {
+		const future = {
 			dates: ["2026-10-07", "2026-10-09", "2026-09-30"],
 			instants: [parseInstant("2026-10-06T12:00:00Z")],
 		};
-		expect(nextSubmissionChange(beforeChange, deadlines)?.toString()).toBe("2026-10-06T10:00:00Z");
+		expect(nextSubmissionChange(beforeChange, future)?.toString()).toBe("2026-10-06T10:00:00Z");
 		// At the change itself the date is already submittable; the return is next.
-		expect(nextSubmissionChange(atChange, deadlines)?.toString()).toBe("2026-10-06T12:00:00Z");
-		expect(nextSubmissionChange(parseInstant("2026-10-06T12:00:00Z"), deadlines)?.toString()).toBe(
+		expect(nextSubmissionChange(atChange, future)?.toString()).toBe("2026-10-06T12:00:00Z");
+		expect(nextSubmissionChange(parseInstant("2026-10-06T12:00:00Z"), future)?.toString()).toBe(
 			"2026-10-08T10:00:00Z",
 		);
 	});
