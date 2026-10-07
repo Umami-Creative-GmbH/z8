@@ -57,17 +57,19 @@ function ownerView(account: SettlementAccount): SettlementAccount {
 
 export async function getTravelExpenseFinanceQueue(
 	filter: FinanceQueueFilter,
-): Promise<ServerActionResult<{ accounts: SettlementAccount[]; canSettle: boolean }>> {
+): Promise<
+	ServerActionResult<{ accounts: SettlementAccount[]; canSettle: boolean; truncated: boolean }>
+> {
 	try {
 		const parsed = filterSchema.safeParse(filter);
 		if (!parsed.success) return { success: false, error: "Invalid filter" };
 		const actor = await loadFinanceActor();
 		if (!actor?.canRead) return { success: false, error: "Unauthorized" };
-		const accounts = await listFinanceQueue(db, {
+		const { accounts, truncated } = await listFinanceQueue(db, {
 			organizationId: actor.organizationId,
 			filter: parsed.data,
 		});
-		return { success: true, data: { accounts, canSettle: actor.canSettle } };
+		return { success: true, data: { accounts, canSettle: actor.canSettle, truncated } };
 	} catch (error) {
 		logger.error({ error }, "Failed to load the travel expense finance queue");
 		return { success: false, error: "Failed to load the finance queue" };

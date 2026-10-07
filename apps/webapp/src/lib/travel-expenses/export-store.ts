@@ -454,11 +454,12 @@ export async function listExportableTravelExpenseRevisions(
 	database: Executor,
 	input: { organizationId: string },
 ): Promise<ExportableTravelExpenseRevision[]> {
-	const accounts = await listFinanceQueue(database, {
+	const { accounts } = await listFinanceQueue(database, {
 		organizationId: input.organizationId,
 		filter: "all",
 		// Approved adjustments (#615) are exported as their own revisions.
 		includeAdjustments: true,
+		includeLegacyClaims: false,
 	});
 	const candidates = accounts.filter(
 		(account) =>
