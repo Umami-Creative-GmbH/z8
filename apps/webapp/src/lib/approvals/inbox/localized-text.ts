@@ -7,9 +7,11 @@ import {
 	formatSignedMoney,
 } from "@/lib/travel-expenses/format";
 import { signedAmount } from "@/lib/travel-expenses/money";
+import { perDiemLocationName } from "@/lib/travel-expenses/per-diem-location-name";
 import type {
 	ApprovalInboxDetailChange,
 	ApprovalInboxLocalizedText,
+	ApprovalInboxTextParam,
 	ApprovalInboxValue,
 } from "./types";
 
@@ -69,11 +71,27 @@ export function isApprovalInboxDetailChange(
 	return typeof value !== "string" && "kind" in value && value.kind === "change";
 }
 
+function resolveParam(
+	param: ApprovalInboxTextParam,
+	translate: LocalizedTextTranslate,
+	locale: string | undefined,
+): string | number {
+	if (Array.isArray(param)) {
+		return param.map((entry) => resolveLocalizedText(entry, translate, locale)).join("; ");
+	}
+	if (typeof param !== "object") return param;
+	if ("perDiemLocation" in param) {
+		return perDiemLocationName(param.perDiemLocation, locale ?? "en", translate);
+	}
+	return resolveLocalizedText(param, translate, locale);
+}
+
 /**
  * Renders a review text: plain strings as they are, localized texts through
- * `translate`, translating nested parameter texts first and joining a list
- * parameter with "; ". Typed values are formatted in `locale`, or kept
- * canonical without one. The inbox UI and tests share it.
+ * `translate`, translating nested parameter texts first, joining a list
+ * parameter with "; " and naming per diem locations for `locale`. Typed
+ * values are formatted in `locale`, or kept canonical without one (per diem
+ * locations are then named in English). The inbox UI and tests share it.
  */
 export function resolveLocalizedText(
 	value: string | ApprovalInboxLocalizedText | ApprovalInboxValue,
@@ -87,11 +105,7 @@ export function resolveLocalizedText(
 	if (!value.params) return translate(value.key, value.fallback);
 	const params: Record<string, string | number> = {};
 	for (const [name, param] of Object.entries(value.params)) {
-		params[name] = Array.isArray(param)
-			? param.map((entry) => resolveLocalizedText(entry, translate, locale)).join("; ")
-			: typeof param === "object"
-				? resolveLocalizedText(param, translate, locale)
-				: param;
+		params[name] = resolveParam(param, translate, locale);
 	}
 	return translate(value.key, value.fallback, params);
 }

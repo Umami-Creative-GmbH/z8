@@ -40,6 +40,7 @@ import {
 } from "@/lib/query/use-approval-inbox";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
+import { getOwnRequestNote } from "./own-request-note";
 import { ReceiptExceptionAcceptance } from "./receipt-exception-acceptance";
 import {
 	allReceiptExceptionsAccepted,
@@ -419,7 +420,9 @@ export function ApprovalDetailPanel({
 				</div>
 
 				<SheetFooter className="border-t bg-muted/95 px-5 py-4 sm:px-6">
-					{isRejecting ? (
+					{panelActions.ownRequest ? (
+						<p className="text-muted-foreground text-sm">{getOwnRequestNote(t)}</p>
+					) : isRejecting ? (
 						<div className="w-full space-y-4">
 							<div>
 								<label

@@ -1,22 +1,22 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ChangePolicyManagement } from "@/components/settings/change-policy/change-policy-management";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
 async function ChangePoliciesSettingsPageContent() {
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
 	if (!settingsRouteContext) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const { authContext, accessTier } = settingsRouteContext;
 	const organizationId = authContext.session.activeOrganizationId;
 
 	if (accessTier === "member" || !organizationId) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	return (

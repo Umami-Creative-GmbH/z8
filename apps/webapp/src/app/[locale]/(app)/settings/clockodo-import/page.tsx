@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
 export default async function ClockodoImportPage() {
-	redirect("/settings/import");
+	return redirectWithLocale("/settings/import");
 }

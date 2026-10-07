@@ -1,8 +1,8 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { CoverageRulesManagement } from "@/components/settings/coverage-rules-management";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import {
 	getSchedulingSettingsAccessContext,
 	getScopedSchedulingLocationsForSettings,
@@ -12,7 +12,7 @@ async function CoverageRulesSettingsContent() {
 	const accessContext = await getSchedulingSettingsAccessContext();
 
 	if (!accessContext?.canAccessCoverageRules) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const locations = await getScopedSchedulingLocationsForSettings({

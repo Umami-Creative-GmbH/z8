@@ -64,6 +64,7 @@ vi.mock("@/navigation", () => ({
 	Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
 		<a href={href}>{children}</a>
 	),
+	useRouter: () => ({ push: vi.fn() }),
 }));
 
 import { TravelExpenseReportEditor } from "./travel-expense-report-editor";
@@ -304,9 +305,8 @@ describe("per diem (#609)", () => {
 		mount();
 		const panel = await screen.findByRole("region", { name: "Calculated per diem" });
 		const rows = within(panel).getAllByRole("row");
-		expect(rows[1]?.textContent).toContain(
-			"Frankreich – Paris sowie die Departments 77, 78, 91 bis 95",
-		);
+		// #681: named in the reader's language, not by the German notice.
+		expect(rows[1]?.textContent).toContain("France – Paris and departments 77, 78, 91–95");
 		// Paris: 39 € arrival; departure 39 € − breakfast 11.60 € (20 % of 58 €).
 		expect(rows[2]?.textContent).toContain("Breakfast: −€11.60");
 		expect(rows[3]?.textContent).toContain("€66.40");

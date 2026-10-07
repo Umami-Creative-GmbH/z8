@@ -2,7 +2,6 @@ import "server-only";
 
 import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
-import { redirect } from "next/navigation";
 import { cache } from "react";
 import { db } from "@/db";
 import { user as authUser, invitation, member, organization } from "@/db/auth-schema";
@@ -23,6 +22,7 @@ import { runtime } from "@/lib/effect/runtime";
 import { ManagerService } from "@/lib/effect/services/manager.service";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import {
 	hasSettingsAccessTier,
 	isSettingsAccessMembershipRole,
@@ -763,13 +763,13 @@ export async function requireOrgAdminSettingsAccess(): Promise<{
 	const organizationId = authContext.session.activeOrganizationId;
 
 	if (!organizationId) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const settingsAccessTier = await getCurrentSettingsAccessTier();
 
 	if (settingsAccessTier !== "orgAdmin") {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	return {

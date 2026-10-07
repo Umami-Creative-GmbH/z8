@@ -6,11 +6,11 @@ import {
 	IconUsers,
 } from "@tabler/icons-react";
 import { DateTime } from "luxon";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getTranslate } from "@/tolgee/server";
 import type { ManagerStatisticsReadView, OrganizationStats } from "./actions";
 import { getManagerStatisticsReadView, getOrganizationStats } from "./actions";
@@ -61,14 +61,14 @@ async function StatisticsContent() {
 	]);
 
 	if (!settingsRouteContext) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const { authContext, accessTier } = settingsRouteContext;
 	const organizationId = authContext.session.activeOrganizationId;
 
 	if (accessTier === "member" || !organizationId) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const canViewOrgWideStatistics = accessTier === "orgAdmin";

@@ -172,10 +172,11 @@ describe("perDiemReviewRows", () => {
 			},
 		} satisfies TravelExpenseReportSubmittedItem;
 		const rows = perDiemReviewRows(international);
+		// #681: locations are named in the reader's language, not by the German notice.
 		expect(text(rows[3]?.value)).toMatch(
-			/^Luxemburg \(IQ: official fallback, unlisted state\) — travel day with overnight stay/,
+			/^Luxembourg \(IQ: official fallback, unlisted state\) — travel day with overnight stay/,
 		);
-		expect(text(rows[4]?.value)).toMatch(/^Deutschland — travel day/);
+		expect(text(rows[4]?.value)).toMatch(/^Germany — travel day/);
 		expect(rows.at(-2)).toEqual({
 			label: expect.objectContaining({ fallback: "Foreign rates" }),
 			value: "BMF letter of 05.12.2025 (BStBl I S. 2078) (LStH 2026, Anhang 25 I)",

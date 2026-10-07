@@ -1,11 +1,18 @@
 "use client";
 
-import { type DayButton, DayPicker, getDefaultClassNames } from "@daypicker/react";
+import {
+	type DayButton,
+	DayPicker,
+	defaultDateLib,
+	getDefaultClassNames,
+} from "@daypicker/react";
 import { IconChevronDown, IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import * as React from "react";
+import { useAppLocale } from "@/components/providers/app-locale-provider";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
+import { dayPickerLocaleFor } from "@/components/ui/calendar-locale";
 import { plainDateFromCalendarDate } from "@/lib/datetime/calendar-date";
 import { weekStartDayToDayPickerValue } from "@/lib/user-preferences/week-start";
 import { cn } from "@/lib/utils";
@@ -18,15 +25,18 @@ function Calendar({
 	buttonVariant = "ghost",
 	formatters,
 	components,
+	locale,
 	...props
 }: React.ComponentProps<typeof DayPicker> & {
 	buttonVariant?: React.ComponentProps<typeof Button>["variant"];
 }) {
 	const defaultClassNames = getDefaultClassNames();
 	const weekStartDay = useWeekStartDay();
+	const appLocale = useAppLocale();
 
 	return (
 		<DayPicker
+			locale={locale ?? dayPickerLocaleFor(appLocale)}
 			showOutsideDays={showOutsideDays}
 			weekStartsOn={props.weekStartsOn ?? weekStartDayToDayPickerValue(weekStartDay)}
 			className={cn(
@@ -37,7 +47,7 @@ function Calendar({
 			)}
 			captionLayout={captionLayout}
 			formatters={{
-				formatMonthDropdown: (date) => date.toLocaleString("default", { month: "short" }),
+				formatMonthDropdown: (date, dateLib = defaultDateLib) => dateLib.format(date, "LLL"),
 				...formatters,
 			}}
 			classNames={{

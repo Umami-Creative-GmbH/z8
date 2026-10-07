@@ -1,5 +1,4 @@
 import { and, eq } from "drizzle-orm";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AvvDownloadButton } from "@/components/settings/avv/avv-download-button";
 import {
@@ -15,11 +14,12 @@ import * as authSchema from "@/db/auth-schema";
 import { env } from "@/env";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { avvHostingDetails } from "@/lib/avv/avv-details";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getTranslate } from "@/tolgee/server";
 
 async function AvvPageContent() {
 	if (env.BILLING_ENABLED !== "true") {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const [{ authContext, organizationId }, t] = await Promise.all([
@@ -42,7 +42,7 @@ async function AvvPageContent() {
 	]);
 
 	if (!organization) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	return (

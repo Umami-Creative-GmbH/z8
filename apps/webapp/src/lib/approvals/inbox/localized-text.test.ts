@@ -4,12 +4,26 @@ import {
 	localizedTextFallback,
 	resolveLocalizedText,
 } from "./localized-text";
-import type { ApprovalInboxValue } from "./types";
+import type { ApprovalInboxLocalizedText, ApprovalInboxValue } from "./types";
 
 const interpolate = (_key: string, fallback: string, params?: Record<string, string | number>) =>
 	fallback.replace(/\{(\w+)\}/g, (match, name: string) =>
 		params && name in params ? String(params[name]) : match,
 	);
+
+const dayLine: ApprovalInboxLocalizedText = {
+	key: "approvals:approvals.evidence.perDiemLocation",
+	fallback: "{label}",
+	params: {
+		label: {
+			perDiemLocation: {
+				country: "IT",
+				place: "mailand",
+				label: "Italien – Mailand",
+			},
+		},
+	},
+};
 
 describe("formatApprovalInboxValue", () => {
 	const cases: Array<[ApprovalInboxValue, string, string]> = [
@@ -64,5 +78,11 @@ describe("resolveLocalizedText", () => {
 				},
 			}),
 		).toBe("reimbursable 89.90 EUR on 2026-09-14");
+	});
+
+	it("names a per diem location in the reader's language (#681)", () => {
+		expect(resolveLocalizedText(dayLine, interpolate, "en")).toBe("Italy – Milan");
+		expect(resolveLocalizedText(dayLine, interpolate, "de")).toBe("Italien – Mailand");
+		expect(localizedTextFallback(dayLine)).toBe("Italy – Milan");
 	});
 });

@@ -1,21 +1,21 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ApprovalEscalationManagement } from "@/components/settings/approval-escalation/approval-escalation-management";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAbility, getAuthContext } from "@/lib/auth-helpers";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
 async function ApprovalEscalationSettingsContent() {
 	const authContext = await getAuthContext();
 	const organizationId = authContext?.session.activeOrganizationId;
 
 	if (!organizationId) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const ability = await getAbility();
 
 	if (!ability || ability.cannot("manage", "Approval")) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	return <ApprovalEscalationManagement organizationId={organizationId} />;

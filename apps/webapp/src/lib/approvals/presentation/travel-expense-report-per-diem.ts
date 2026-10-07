@@ -83,13 +83,16 @@ const FALLBACK: Partial<Record<PerDiemDestinationRule, ApprovalInboxLocalizedTex
 	),
 };
 
-/** The day's location (#611): the applied official entry, and why when it is not the entered place. */
+/**
+ * The day's location (#611): the applied entry, named in the reader's
+ * language (#681), and why when it is not the entered place.
+ */
 function locationText(location: PerDiemDayLocation): ApprovalInboxLocalizedText {
+	const name = {
+		perDiemLocation: { country: location.country, place: location.place, label: location.label },
+	};
 	const why = FALLBACK[location.rule];
-	if (!why)
-		return text("approvals:approvals.evidence.perDiemLocation", "{label}", {
-			label: location.label,
-		});
+	if (!why) return text("approvals:approvals.evidence.perDiemLocation", "{label}", { label: name });
 	const entered: ApprovalInboxTextParam =
 		"special" in location.entered
 			? location.entered.special
@@ -98,7 +101,7 @@ function locationText(location: PerDiemDayLocation): ApprovalInboxLocalizedText 
 		"approvals:approvals.evidence.perDiemLocationFallback",
 		"{label} ({entered}: {why})",
 		{
-			label: location.label,
+			label: name,
 			entered,
 			why,
 		},

@@ -9,6 +9,7 @@ import {
 import { useTranslate } from "@tolgee/react";
 import { getApprovalTypeLabels } from "./approval-type-labels";
 import { summaryField, useApprovalInboxText } from "@/components/approvals/use-approval-inbox-text";
+import { getOwnRequestNote } from "./own-request-note";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/user-avatar";
@@ -86,6 +87,7 @@ export function ApprovalInboxTable({
 						const TypeIcon = TYPE_ICONS[item.type];
 						const isSelected = selectedIds.has(item.id);
 						const isHighRisk = item.triage.riskLevel === "high";
+						const isOwnRequest = item.capabilities.ownRequest === true;
 
 						return (
 							<div
@@ -101,6 +103,7 @@ export function ApprovalInboxTable({
 										checked={isSelected}
 										onCheckedChange={(checked) => onSelectItem(item.id, !!checked)}
 										onClick={(event) => event.stopPropagation()}
+										disabled={isOwnRequest}
 										aria-label={ariaLabel}
 									/>
 								</div>
@@ -158,6 +161,11 @@ export function ApprovalInboxTable({
 										<p className="text-muted-foreground text-xs leading-5">
 											{item.triage.explanation}
 										</p>
+										{isOwnRequest && (
+											<p className="font-medium text-muted-foreground text-xs leading-5">
+												{getOwnRequestNote(t)}
+											</p>
+										)}
 									</div>
 
 									<div className="text-muted-foreground text-sm md:text-right">
