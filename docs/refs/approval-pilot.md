@@ -50,7 +50,8 @@ classified by the [time pilot report](time-pilot.md) (#329). Under
 submitted expense reports, classified against the frozen revision of their
 current submission cycle. A report's in-flight count is per submission cycle
 (like legacy absences), and old-path card counts include report requests.
-Report cards are admitted on Telegram only, like claim cards:
+Report cards are admitted on Telegram only, like claim cards. Every pending
+lifecycle is classified as one of:
 
 | Class | Meaning |
 | --- | --- |
