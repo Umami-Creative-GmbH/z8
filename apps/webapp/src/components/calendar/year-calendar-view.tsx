@@ -184,7 +184,8 @@ const MiniMonth = function MiniMonth({
 					const isToday = isCurrentMonth && dateKey === todayDateKey;
 					const isWeekend = date.dayOfWeek === 6 || date.dayOfWeek === 7;
 
-					const workStatus: DailyWorkHoursStatus | "none" = workHours?.status ?? "none";
+					const workStatus: DailyWorkHoursStatus | "none" =
+						workHours?.requirement?.status ?? "none";
 					const dayLabel =
 						workStatus === "none"
 							? dateLabel

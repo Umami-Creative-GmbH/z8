@@ -59,6 +59,10 @@ _Avoid_: Active session, running timer
 A work period that has ended and now counts in the employee's work record.
 _Avoid_: Finished entries, closed session
 
+**Day total**:
+An employee's work within one local day in their timezone: their completed work plus the part of any live work elapsed so far, split at local midnight. It differs from the compliance check's day, which counts each work period whole on the day it started.
+_Avoid_: Daily sum, actual hours, today's minutes
+
 **Admission**:
 How an organization's work records accept new entries: `legacy` or `append`. An organization whose admission is `append` is **adopted**.
 _Avoid_: Mode (reserved for an approval kind's lifecycle mode)

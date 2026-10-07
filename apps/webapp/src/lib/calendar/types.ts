@@ -30,10 +30,22 @@ export type DailyWorkActualMinutes = Record<string, number>;
 
 export type DailyWorkHoursStatus = "met" | "over" | "under" | "missing";
 
-export interface DailyWorkHoursSummary extends DailyWorkRequirement {
-	actualMinutes: number;
+export interface DailyWorkRequirementProgress extends DailyWorkRequirement {
 	deltaMinutes: number;
 	status: DailyWorkHoursStatus;
+}
+
+/** The day total of one local day, compared with that day's requirement when one exists. */
+export interface DailyWorkHoursSummary {
+	actualMinutes: number;
+	/** Counts the elapsed part of live work, so the total is not final yet. */
+	includesLiveWork: boolean;
+	requirement: DailyWorkRequirementProgress | null;
+}
+
+/** An employee's live work: started and not yet ended. */
+export interface LiveWork {
+	startedAt: Date;
 }
 
 export type DailyWorkHoursSummaries = Map<string, DailyWorkHoursSummary>;

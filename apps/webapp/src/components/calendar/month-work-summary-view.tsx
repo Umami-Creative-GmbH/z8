@@ -133,17 +133,44 @@ function getDayLabel(day: MonthWorkDay, locale: string, t: Translate): string {
 		return eventText ? `${dateLabel}.${eventText}` : dateLabel;
 	}
 
-	return `${t(
-		"calendar.monthSummary.dayLabel",
-		"{date}: {actual} recorded, {required} required, {delta} {status}.",
-		{
-			date: dateLabel,
-			actual: formatHoursWithoutSuffix(summary.actualMinutes),
-			required: formatHoursWithoutSuffix(summary.requiredMinutes),
-			delta: formatSignedMinutesWithoutSuffix(summary.deltaMinutes),
-			status: getWorkStatusLabel(summary.status, t),
-		},
-	)}${eventText}`;
+	const { requirement } = summary;
+	const summaryText = requirement
+		? t(
+				"calendar.monthSummary.dayLabel",
+				"{date}: {actual} recorded, {required} required, {delta} {status}.",
+				{
+					date: dateLabel,
+					actual: formatHoursWithoutSuffix(summary.actualMinutes),
+					required: formatHoursWithoutSuffix(requirement.requiredMinutes),
+					delta: formatSignedMinutesWithoutSuffix(requirement.deltaMinutes),
+					status: getWorkStatusLabel(requirement.status, t),
+				},
+			)
+		: t("calendar.monthSummary.recordedOnlyDayLabel", "{date}: {actual} recorded.", {
+				date: dateLabel,
+				actual: formatHoursWithoutSuffix(summary.actualMinutes),
+			});
+	const liveText = summary.includesLiveWork ? ` ${getLiveWorkLabel(t)}.` : "";
+
+	return `${summaryText}${liveText}${eventText}`;
+}
+
+function getLiveWorkLabel(t: Translate): string {
+	return t("calendar.requirements.includesRunningWork", "Includes running work");
+}
+
+/** Marks a total that still counts running work, like the running work block. */
+function LiveWorkDot({ t }: { t: Translate }) {
+	const label = getLiveWorkLabel(t);
+
+	return (
+		<span
+			title={label}
+			className="inline-flex size-1.5 shrink-0 rounded-full bg-red-500 motion-safe:animate-pulse"
+		>
+			<span className="sr-only">{label}</span>
+		</span>
+	);
 }
 
 function MonthTotalCard({ total, t }: { total: WorkPeriodTotal | null; t: Translate }) {
@@ -173,9 +200,12 @@ function MonthTotalCard({ total, t }: { total: WorkPeriodTotal | null; t: Transl
 						>
 							{formatSignedMinutesWithoutSuffix(total.deltaMinutes)}
 						</p>
-						<p className="mt-1 text-muted-foreground text-sm tabular-nums">
-							{formatHoursWithoutSuffix(total.actualMinutes)} /{" "}
-							{formatHoursWithoutSuffix(total.requiredMinutes)}
+						<p className="mt-1 flex items-center justify-end gap-1.5 text-muted-foreground text-sm tabular-nums">
+							{total.includesLiveWork ? <LiveWorkDot t={t} /> : null}
+							<span>
+								{formatHoursWithoutSuffix(total.actualMinutes)} /{" "}
+								{formatHoursWithoutSuffix(total.requiredMinutes)}
+							</span>
 						</p>
 					</div>
 				) : null}
@@ -216,9 +246,11 @@ function EventBadges({ events }: { events: CalendarEvent[] }) {
 
 function TotalDisplay({
 	total,
+	t,
 	compact = false,
 }: {
 	total: WorkPeriodTotal | null;
+	t: Translate;
 	compact?: boolean;
 }) {
 	if (!total) return <span className="text-muted-foreground">-</span>;
@@ -228,9 +260,17 @@ function TotalDisplay({
 			<p className={cn("font-semibold tabular-nums", getTotalClassName(total.status))}>
 				{formatSignedMinutesWithoutSuffix(total.deltaMinutes)}
 			</p>
-			<p className="text-muted-foreground text-xs tabular-nums">
-				{formatHoursWithoutSuffix(total.actualMinutes)} /{" "}
-				{formatHoursWithoutSuffix(total.requiredMinutes)}
+			<p
+				className={cn(
+					"flex items-center gap-1 text-muted-foreground text-xs tabular-nums",
+					compact && "justify-end",
+				)}
+			>
+				{total.includesLiveWork ? <LiveWorkDot t={t} /> : null}
+				<span>
+					{formatHoursWithoutSuffix(total.actualMinutes)} /{" "}
+					{formatHoursWithoutSuffix(total.requiredMinutes)}
+				</span>
 			</p>
 		</div>
 	);
@@ -248,6 +288,7 @@ function DayCell({
 	onDayClick: (dateKey: string) => void;
 }) {
 	const summary = day.isActiveMonth ? day.workHoursSummary : null;
+	const requirement = summary?.requirement ?? null;
 	const label = getDayLabel(day, locale, t);
 
 	return (
@@ -263,21 +304,28 @@ function DayCell({
 		>
 			<div className="flex items-start justify-between gap-2">
 				<span className="font-medium text-sm tabular-nums">{day.date.day}</span>
-				{summary ? <span className="sr-only">{getWorkStatusLabel(summary.status, t)}</span> : null}
+				{requirement ? (
+					<span className="sr-only">{getWorkStatusLabel(requirement.status, t)}</span>
+				) : null}
 			</div>
-			{day.isActiveMonth && summary ? (
+			{summary ? (
 				<div className="mt-3 space-y-1">
-					<p
-						className={cn(
-							"font-semibold text-sm tabular-nums",
-							getDailyStatusClassName(summary.status),
-						)}
-					>
-						{formatSignedMinutesWithoutSuffix(summary.deltaMinutes)}
-					</p>
-					<p className="text-muted-foreground text-xs tabular-nums">
-						{formatHoursWithoutSuffix(summary.actualMinutes)} /{" "}
-						{formatHoursWithoutSuffix(summary.requiredMinutes)}
+					{requirement ? (
+						<p
+							className={cn(
+								"font-semibold text-sm tabular-nums",
+								getDailyStatusClassName(requirement.status),
+							)}
+						>
+							{formatSignedMinutesWithoutSuffix(requirement.deltaMinutes)}
+						</p>
+					) : null}
+					<p className="flex items-center gap-1 text-muted-foreground text-xs tabular-nums">
+						{summary.includesLiveWork ? <LiveWorkDot t={t} /> : null}
+						<span>
+							{formatHoursWithoutSuffix(summary.actualMinutes)}
+							{requirement ? ` / ${formatHoursWithoutSuffix(requirement.requiredMinutes)}` : null}
+						</span>
 					</p>
 				</div>
 			) : null}
@@ -306,7 +354,7 @@ function WeekRow({
 				<DayCell key={day.dateKey} day={day} locale={locale} t={t} onDayClick={onDayClick} />
 			))}
 			<div className="flex min-h-32 items-start justify-end rounded-md border bg-muted/30 p-3">
-				<TotalDisplay total={week.total} compact />
+				<TotalDisplay total={week.total} t={t} compact />
 			</div>
 		</div>
 	);

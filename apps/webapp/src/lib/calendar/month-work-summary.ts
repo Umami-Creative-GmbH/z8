@@ -22,6 +22,7 @@ export interface WorkPeriodTotal {
 	actualMinutes: number;
 	deltaMinutes: number;
 	status: WorkPeriodTotalStatus;
+	includesLiveWork: boolean;
 }
 
 export interface MonthWorkDay {
@@ -79,7 +80,10 @@ function getGridEnd(date: DateTime, weekStartDay: WeekStartDay): DateTime {
 export function totalWorkSummaries(summaries: DailyWorkHoursSummary[]): WorkPeriodTotal | null {
 	if (summaries.length === 0) return null;
 
-	const requiredMinutes = summaries.reduce((total, summary) => total + summary.requiredMinutes, 0);
+	const requiredMinutes = summaries.reduce(
+		(total, summary) => total + (summary.requirement?.requiredMinutes ?? 0),
+		0,
+	);
 	const actualMinutes = summaries.reduce((total, summary) => total + summary.actualMinutes, 0);
 	const deltaMinutes = actualMinutes - requiredMinutes;
 
@@ -88,6 +92,7 @@ export function totalWorkSummaries(summaries: DailyWorkHoursSummary[]): WorkPeri
 		actualMinutes,
 		deltaMinutes,
 		status: getTotalStatus(deltaMinutes),
+		includesLiveWork: summaries.some((summary) => summary.includesLiveWork),
 	};
 }
 

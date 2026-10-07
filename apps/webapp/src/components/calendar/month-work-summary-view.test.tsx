@@ -2,7 +2,11 @@
 
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
+import type {
+	CalendarEvent,
+	DailyWorkHoursSummaries,
+	DailyWorkHoursSummary,
+} from "@/lib/calendar/types";
 import { MonthWorkSummaryView } from "./month-work-summary-view";
 
 vi.mock("@tolgee/react", () => ({
@@ -23,20 +27,18 @@ vi.mock("@/components/providers/user-preferences-provider", () => ({
 	useWeekStartDay: () => "monday",
 }));
 
-function workSummary(requiredMinutes: number, actualMinutes: number) {
+function workSummary(requiredMinutes: number, actualMinutes: number): DailyWorkHoursSummary {
 	const deltaMinutes = actualMinutes - requiredMinutes;
 	return {
-		requiredMinutes,
 		actualMinutes,
-		deltaMinutes,
-		status:
-			deltaMinutes > 0
-				? ("over" as const)
-				: deltaMinutes === 0
-					? ("met" as const)
-					: ("under" as const),
-		policyId: "policy-1",
-		policyName: "Standard",
+		includesLiveWork: false,
+		requirement: {
+			requiredMinutes,
+			deltaMinutes,
+			status: deltaMinutes > 0 ? "over" : deltaMinutes === 0 ? "met" : "under",
+			policyId: "policy-1",
+			policyName: "Standard",
+		},
 	};
 }
 

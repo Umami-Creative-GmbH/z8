@@ -1,17 +1,26 @@
 import { type InstantRange, localDayRange } from "@/lib/datetime/temporal-boundaries";
-import { compareInstants, instantFromDate } from "@/lib/datetime/temporal-core";
+import {
+	compareInstants,
+	type Instant,
+	instantFromDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import type {
 	CalendarEvent,
 	DailyWorkActualMinutes,
 	DailyWorkHoursStatus,
 	DailyWorkHoursSummaries,
 	DailyWorkRequirements,
+	LiveWork,
 } from "./types";
 
 interface BuildDailyWorkHoursSummariesOptions {
-	events: CalendarEvent[];
 	dailyRequirements: DailyWorkRequirements;
-	dailyActualMinutes?: DailyWorkActualMinutes;
+	/** Completed work per local day. */
+	dailyActualMinutes: DailyWorkActualMinutes;
+	liveWork?: LiveWork[];
+	timezone?: string | null;
+	now?: Instant;
 }
 
 function getStatus(actualMinutes: number, requiredMinutes: number): DailyWorkHoursStatus {
@@ -21,27 +30,79 @@ function getStatus(actualMinutes: number, requiredMinutes: number): DailyWorkHou
 	return "under";
 }
 
+/**
+ * Day totals: completed work plus the elapsed part of live work, split at local
+ * midnight in the employee's timezone.
+ */
 export function buildDailyWorkHoursSummaries({
-	events,
 	dailyRequirements,
 	dailyActualMinutes,
+	liveWork = [],
+	timezone,
+	now = systemClock.nowInstant(),
 }: BuildDailyWorkHoursSummariesOptions): DailyWorkHoursSummaries {
-	const actualByDate = dailyActualMinutes ?? buildDailyActualMinutes(events);
-
+	const liveByDate = buildLiveDailyMinutes(liveWork, timezone, now);
 	const summaries: DailyWorkHoursSummaries = new Map();
+	const dateKeys = new Set([
+		...Object.keys(dailyRequirements),
+		...Object.keys(dailyActualMinutes),
+		...Object.keys(liveByDate),
+	]);
 
-	for (const [dateKey, requirement] of Object.entries(dailyRequirements)) {
-		const actualMinutes = actualByDate[dateKey] ?? 0;
-		const deltaMinutes = actualMinutes - requirement.requiredMinutes;
+	for (const dateKey of dateKeys) {
+		const requirement = dailyRequirements[dateKey];
+		const includesLiveWork = dateKey in liveByDate;
+		const actualMinutes = (dailyActualMinutes[dateKey] ?? 0) + (liveByDate[dateKey] ?? 0);
+		// A day without required hours shows its total only once work exists.
+		if (!requirement && actualMinutes <= 0 && !includesLiveWork) continue;
+
 		summaries.set(dateKey, {
-			...requirement,
 			actualMinutes,
-			deltaMinutes,
-			status: getStatus(actualMinutes, requirement.requiredMinutes),
+			includesLiveWork,
+			requirement: requirement
+				? {
+						...requirement,
+						deltaMinutes: actualMinutes - requirement.requiredMinutes,
+						status: getStatus(actualMinutes, requirement.requiredMinutes),
+					}
+				: null,
 		});
 	}
 
 	return summaries;
+}
+
+/**
+ * Live work counts in whole elapsed minutes, so its total changes on each
+ * elapsed-minute boundary. Every local day it has reached gets an entry, even
+ * one with no whole minute yet, so that day is marked live from clock-in.
+ */
+function buildLiveDailyMinutes(
+	liveWork: LiveWork[],
+	timezone: string | null | undefined,
+	now: Instant,
+): DailyWorkActualMinutes {
+	const liveByDate: DailyWorkActualMinutes = {};
+	const resolvedTimezone = timezone || "UTC";
+
+	for (const work of liveWork) {
+		const start = instantFromDate(work.startedAt);
+		if (compareInstants(start, now) > 0) continue;
+
+		const elapsedMinutes = Math.floor(start.until(now).total({ unit: "minutes" }));
+		if (elapsedMinutes > 0) {
+			addMinutesByLocalDay(
+				liveByDate,
+				start,
+				start.add({ minutes: elapsedMinutes }),
+				resolvedTimezone,
+			);
+		}
+		const today = now.toZonedDateTimeISO(resolvedTimezone).toPlainDate().toString();
+		liveByDate[today] ??= 0;
+	}
+
+	return liveByDate;
 }
 
 export function buildDailyActualMinutes(
@@ -65,27 +126,36 @@ export function buildDailyActualMinutes(
 			range && compareInstants(eventEnd, range.endExclusive) > 0 ? range.endExclusive : eventEnd;
 		if (compareInstants(start, endExclusive) >= 0) continue;
 
-		const totalMinutes = Math.round(start.until(endExclusive).total({ unit: "minutes" }));
-		let allocatedMinutes = 0;
-		let segmentStart = start;
-		let localDate = start.toZonedDateTimeISO(resolvedTimezone).toPlainDate();
-
-		while (compareInstants(segmentStart, endExclusive) < 0) {
-			const dayEnd = localDayRange(localDate.toString(), resolvedTimezone).endExclusive;
-			const segmentEnd = compareInstants(dayEnd, endExclusive) < 0 ? dayEnd : endExclusive;
-			const isFinalSegment = compareInstants(segmentEnd, endExclusive) === 0;
-			const segmentMinutes = isFinalSegment
-				? totalMinutes - allocatedMinutes
-				: Math.floor(segmentStart.until(segmentEnd).total({ unit: "minutes" }));
-			const dateKey = localDate.toString();
-			actualByDate[dateKey] = (actualByDate[dateKey] ?? 0) + segmentMinutes;
-			allocatedMinutes += segmentMinutes;
-			segmentStart = segmentEnd;
-			localDate = localDate.add({ days: 1 });
-		}
+		addMinutesByLocalDay(actualByDate, start, endExclusive, resolvedTimezone);
 	}
 
 	return actualByDate;
+}
+
+function addMinutesByLocalDay(
+	minutesByDate: DailyWorkActualMinutes,
+	start: Instant,
+	endExclusive: Instant,
+	timezone: string,
+) {
+	const totalMinutes = Math.round(start.until(endExclusive).total({ unit: "minutes" }));
+	let allocatedMinutes = 0;
+	let segmentStart = start;
+	let localDate = start.toZonedDateTimeISO(timezone).toPlainDate();
+
+	while (compareInstants(segmentStart, endExclusive) < 0) {
+		const dayEnd = localDayRange(localDate.toString(), timezone).endExclusive;
+		const segmentEnd = compareInstants(dayEnd, endExclusive) < 0 ? dayEnd : endExclusive;
+		const isFinalSegment = compareInstants(segmentEnd, endExclusive) === 0;
+		const segmentMinutes = isFinalSegment
+			? totalMinutes - allocatedMinutes
+			: Math.floor(segmentStart.until(segmentEnd).total({ unit: "minutes" }));
+		const dateKey = localDate.toString();
+		minutesByDate[dateKey] = (minutesByDate[dateKey] ?? 0) + segmentMinutes;
+		allocatedMinutes += segmentMinutes;
+		segmentStart = segmentEnd;
+		localDate = localDate.add({ days: 1 });
+	}
 }
 
 export function formatTimeHours(minutes: number): string {
