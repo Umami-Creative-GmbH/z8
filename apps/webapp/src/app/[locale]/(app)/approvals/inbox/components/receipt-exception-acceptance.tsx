@@ -48,10 +48,8 @@ export function ReceiptExceptionAcceptance({
 	disabled: boolean;
 }) {
 	const { t } = useTranslate();
-	const title =
-		typeof section.title === "string"
-			? section.title
-			: t(section.title.key, section.title.fallback);
+	// A static key (i18n rule 1); the section's title only ever names this heading.
+	const title = t("approvals:approvals.evidence.receiptExceptionsTitle", "Missing receipts");
 	return (
 		<section
 			aria-labelledby="receipt-exception-acceptance-title"

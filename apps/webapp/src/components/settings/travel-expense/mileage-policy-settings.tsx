@@ -377,7 +377,12 @@ function WithdrawVersionButton({
 		try {
 			const result = await withdrawMileagePolicyVersionAction({ versionId });
 			if (!result.success) {
-				toast.error(result.error);
+				toast.error(
+					t(
+						"settings.travelExpenses.mileage.withdrawFailed",
+						"The rate version could not be withdrawn. Reload the versions and try again.",
+					),
+				);
 				return;
 			}
 			toast.success(t("settings.travelExpenses.mileage.withdrawn", "Rate version withdrawn"));
@@ -469,8 +474,7 @@ function MileagePolicyVersionDialog({
 			);
 			if (!result.success) {
 				toast.error(
-					result.error ||
-						t("settings.travelExpenses.mileage.saveFailed", "The mileage rate could not be saved."),
+					t("settings.travelExpenses.mileage.saveFailed", "The mileage rate could not be saved."),
 				);
 				return;
 			}

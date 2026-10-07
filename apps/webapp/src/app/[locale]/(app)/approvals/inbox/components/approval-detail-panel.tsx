@@ -6,6 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { TimeCorrectionComparison } from "@/components/approvals/time-correction-comparison";
 import { TravelExpenseReportReturnButton } from "@/components/approvals/travel-expense-report-return";
+import { ReopenReportPanel } from "@/components/travel-expenses/report/report-reopen";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -374,6 +375,10 @@ export function ApprovalDetailPanel({
 					</div>
 
 					<TravelExpenseClaimLink item={panelItem} />
+					{/* An approved report not yet exported or paid can be reopened from here too (#614). */}
+					{panelItem.type === "travel_expense_report" && panelItem.status === "approved" && (
+						<ReopenReportPanel reportId={panelItem.entityId} />
+					)}
 					{sections.length > 0 && <Separator />}
 
 					{sections.map((section) =>

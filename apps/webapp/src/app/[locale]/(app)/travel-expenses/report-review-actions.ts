@@ -192,13 +192,15 @@ export async function returnTravelExpenseReportAction(input: {
 		revalidatePath("/approvals/inbox");
 		return { success: true, data: { status: "returned" } };
 	} catch (error) {
-		if (
-			error instanceof ConflictError ||
-			error instanceof ValidationError ||
-			error instanceof AuthorizationError ||
-			error instanceof NotFoundError
-		) {
-			return { success: false, error: error.message };
+		// `code` lets the dialog show a translated outcome; `error` stays a diagnostic.
+		if (error instanceof ConflictError) {
+			return { success: false, error: error.message, code: "conflict" };
+		}
+		if (error instanceof ValidationError) {
+			return { success: false, error: error.message, code: "invalid" };
+		}
+		if (error instanceof AuthorizationError || error instanceof NotFoundError) {
+			return { success: false, error: error.message, code: "not_found" };
 		}
 		logger.error({ error }, "Failed to return expense report");
 		return { success: false, error: "Failed to return expense report" };

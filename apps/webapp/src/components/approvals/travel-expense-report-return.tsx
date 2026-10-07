@@ -166,6 +166,32 @@ function ReturnFormLoader({
 	);
 }
 
+/** The translated outcome of a refused return; the server's text is a diagnostic only. */
+function returnFailureMessage(t: Translate, code: string | undefined): string {
+	switch (code) {
+		case "conflict":
+			return t(
+				"approvals:approvals.returnReportConflict",
+				"This report was decided, returned or changed meanwhile. Reload it to see its current state.",
+			);
+		case "invalid":
+			return t(
+				"approvals:approvals.returnReportInvalid",
+				"Check the note and comments: a note is required and each text must fit its limit.",
+			);
+		case "not_found":
+			return t(
+				"approvals:approvals.returnReportNotFound",
+				"This report is no longer yours to review.",
+			);
+		default:
+			return t(
+				"approvals:approvals.returnReportFailed",
+				"The report could not be returned. Please retry.",
+			);
+	}
+}
+
 function noteError(t: Translate, value: string): string | undefined {
 	if (!value.trim()) {
 		return t("approvals:approvals.returnNoteRequired", "Tell the employee what to change.");
@@ -204,7 +230,7 @@ function ReturnForm({
 				itemComments: value.comments,
 			});
 			if (!result.success) {
-				setFailure(result.error);
+				setFailure(returnFailureMessage(t, result.code));
 				return;
 			}
 			toast.success(t("approvals:approvals.reportReturned", "Report returned for changes"));

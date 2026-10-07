@@ -180,7 +180,13 @@ function ReopenForm({
 				reason: value.reason,
 			});
 			if (!result.success) {
-				setFailure(result.error);
+				// Server errors are English diagnostics; the reviewer sees a translated outcome.
+				setFailure(
+					t(
+						"travelExpenses.report.reopen.failed",
+						"The report could not be reopened. It may have changed, or you may no longer have access. Reload it and try again.",
+					),
+				);
 				return;
 			}
 			switch (result.data.status) {

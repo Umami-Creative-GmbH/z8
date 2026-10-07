@@ -14,6 +14,7 @@ import {
 	revokeReferenceRateSource,
 } from "@/app/[locale]/(app)/settings/travel-expenses/reference-rate-actions";
 import { formatPlainDate } from "@/components/travel-expenses/report/format";
+import { formatRecordedInstant } from "@/components/travel-expenses/report/report-status";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,9 +27,12 @@ import { queryKeys } from "@/lib/query/keys";
 
 const queryKey = queryKeys.travelExpenses.referenceRateSettings();
 
-/** An instant shown in the viewer's locale and zone; display only. */
+/**
+ * A recorded instant in UTC with its zone named, like every other recorded
+ * travel-expense instant: never silently in the viewer's zone (dates.md).
+ */
 function formatInstant(locale: string, value: string) {
-	return parseInstant(value).toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" });
+	return formatRecordedInstant(locale, value);
 }
 
 function ProviderStatus({ provider }: { provider: ReferenceRateSettings["provider"] }) {

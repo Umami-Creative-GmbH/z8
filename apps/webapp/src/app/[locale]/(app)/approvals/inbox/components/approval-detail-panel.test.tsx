@@ -94,6 +94,12 @@ vi.mock("@/lib/query", () => ({
 	useEmployeeClockStatuses: () => ({ getStatus: () => null }),
 }));
 
+vi.mock("@/components/travel-expenses/report/report-reopen", () => ({
+	ReopenReportPanel: ({ reportId }: { reportId: string }) => (
+		<div data-testid="reopen-report-panel">{reportId}</div>
+	),
+}));
+
 const approvalItem: ApprovalInboxItem = {
 	id: "approval-1",
 	type: "absence_entry",
@@ -206,6 +212,60 @@ describe("ApprovalDetailPanel", () => {
 		expect(await screen.findByText("Request")).toBeTruthy();
 		expect(screen.getByText("Absence Request")).toBeTruthy();
 		expect(screen.getByText("No conflicts detected.")).toBeTruthy();
+	});
+
+	it("renders localized callout and timeline texts with their parameters", async () => {
+		mockState.sections = [
+			{
+				type: "callout",
+				title: { key: "x.title", fallback: "Submission {cycle}", params: { cycle: 2 } },
+				body: { key: "x.body", fallback: "Changed: {fields}", params: { fields: "items" } },
+				tone: "info",
+			},
+			{
+				type: "timeline",
+				title: { key: "x.timeline", fallback: "Evidence history" },
+				events: [
+					{
+						id: "e-1",
+						label: { key: "x.returned", fallback: "Report returned for changes" },
+						at: "2026-05-01T00:00:00Z",
+						actorName: null,
+					},
+				],
+			},
+		];
+		render(
+			<ApprovalDetailPanel
+				approval={approvalItem}
+				open={true}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+		expect(await screen.findByText("Evidence history")).toBeTruthy();
+		expect(screen.getByText("Report returned for changes")).toBeTruthy();
+	});
+
+	it("offers reopening an approved expense report from the inbox (#614)", async () => {
+		const report: ApprovalInboxItem = {
+			...approvalItem,
+			type: "travel_expense_report",
+			entityId: "report-1",
+			status: "approved",
+		};
+		mockState.detailItem = report;
+		const { rerender } = render(
+			<ApprovalDetailPanel approval={report} open={true} onOpenChange={vi.fn()} onActioned={vi.fn()} />,
+		);
+		expect((await screen.findByTestId("reopen-report-panel")).textContent).toBe("report-1");
+
+		const pending = { ...report, status: "pending" as const };
+		mockState.detailItem = pending;
+		rerender(
+			<ApprovalDetailPanel approval={pending} open={true} onOpenChange={vi.fn()} onActioned={vi.fn()} />,
+		);
+		expect(screen.queryByTestId("reopen-report-panel")).toBeNull();
 	});
 
 	it("translates the timeline actor connector", async () => {

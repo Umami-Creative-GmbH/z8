@@ -115,6 +115,7 @@ describe("returning a travel expense report from the inbox (#603)", () => {
 		reviewActions.returnTravelExpenseReportAction.mockResolvedValue({
 			success: false,
 			error: "Approval request is no longer pending",
+			code: "conflict",
 		});
 		const onReturned = mount();
 		fireEvent.click(screen.getByRole("button", { name: "Return" }));
@@ -125,7 +126,13 @@ describe("returning a travel expense report from the inbox (#603)", () => {
 		});
 		fireEvent.click(within(dialog).getByRole("button", { name: "Return for changes" }));
 
-		expect(await within(dialog).findByText("Approval request is no longer pending")).toBeTruthy();
+		// A translated outcome, never the server's English diagnostic.
+		expect(
+			await within(dialog).findByText(
+				"This report was decided, returned or changed meanwhile. Reload it to see its current state.",
+			),
+		).toBeTruthy();
+		expect(within(dialog).queryByText("Approval request is no longer pending")).toBeNull();
 		expect(onReturned).not.toHaveBeenCalled();
 	});
 });

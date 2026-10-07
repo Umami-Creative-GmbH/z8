@@ -436,7 +436,12 @@ function WithdrawVersionButton({
 		try {
 			const result = await withdrawPerDiemPolicyVersionAction({ versionId });
 			if (!result.success) {
-				toast.error(result.error);
+				toast.error(
+					t(
+						"settings.travelExpenses.perDiem.withdrawFailed",
+						"The rate version could not be withdrawn. Reload the versions and try again.",
+					),
+				);
 				return;
 			}
 			toast.success(t("settings.travelExpenses.perDiem.withdrawn", "Rate version withdrawn"));
@@ -536,11 +541,7 @@ function PerDiemPolicyVersionDialog({
 			);
 			if (!result.success) {
 				toast.error(
-					result.error ||
-						t(
-							"settings.travelExpenses.perDiem.saveFailed",
-							"The per diem rates could not be saved.",
-						),
+					t("settings.travelExpenses.perDiem.saveFailed", "The per diem rates could not be saved."),
 				);
 				return;
 			}
