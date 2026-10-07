@@ -33,7 +33,7 @@ import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
-import { AppLayer, runtime } from "@/lib/effect/runtime";
+import { runtime } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import {
 	ChangePolicyService,
@@ -1394,7 +1394,7 @@ export async function getPresenceStatus(
 			workPeriods: periods,
 			approvedHomeOfficeDates,
 		});
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

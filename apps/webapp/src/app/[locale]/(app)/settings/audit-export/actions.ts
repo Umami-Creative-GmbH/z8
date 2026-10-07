@@ -17,7 +17,6 @@ import { auditPackRequestRepository } from "@/lib/audit-pack/application/request
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { getPresignedUrl } from "@/lib/storage/export-s3-client";
 
@@ -55,7 +54,7 @@ export async function getAuditConfigAction(
 		return config;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -92,7 +91,7 @@ export async function initializeAuditExportAction(organizationId: string): Promi
 		return result;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 export interface UpdateAuditConfigInput {
@@ -140,7 +139,7 @@ export async function updateAuditConfigAction(
 		return config;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -177,7 +176,7 @@ export async function rotateSigningKeyAction(
 		return result;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -218,7 +217,7 @@ export async function getSigningKeyHistoryAction(organizationId: string): Promis
 		return history;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -256,7 +255,7 @@ export async function exportPublicKeyAction(organizationId: string): Promise<
 		return publicKey;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -330,7 +329,7 @@ export async function getAuditPackagesAction(
 		return packages;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 export interface CreateAuditPackInput {
@@ -456,7 +455,7 @@ export async function createAuditPackAction(
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 export async function getAuditPackRequestsAction(
@@ -514,7 +513,7 @@ export async function getAuditPackRequestsAction(
 		}));
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 export async function getAuditPackDownloadUrlAction(
@@ -577,7 +576,7 @@ export async function getAuditPackDownloadUrlAction(
 		return { url };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -620,7 +619,7 @@ export async function verifyAuditPackageAction(
 		return result;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 export interface VerificationHistoryEntry {
@@ -663,5 +662,5 @@ export async function getVerificationHistoryAction(
 		return history;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }

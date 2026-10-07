@@ -40,23 +40,24 @@ vi.mock("@/lib/effect/runtime", async () => {
 	const { PlatformAdminService } = await import("@/lib/effect/services/platform-admin.service");
 	const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
 
-	return {
-		AppLayer: Layer.merge(
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(
+		Layer.merge(
 			Layer.succeed(PlatformAdminService, {
 				logAction: mocks.logAction,
 				requirePlatformAdmin: mocks.requirePlatformAdmin,
 			} as never),
 			DatabaseServiceLive,
 		),
-	};
+	);
 });
 
 vi.mock("@/lib/effect/result", async () => {
-	const { Cause, Effect, Exit, Option, Result } = await import("effect");
+	const { runtime } = await import("@/lib/effect/runtime");
+	const { Cause, Exit, Option, Result } = await import("effect");
 
 	return {
 		runServerActionSafe: async <T, E, R>(effect: Effect.Effect<T, E, R>) => {
-			const exit = await Effect.runPromiseExit(effect as Effect.Effect<T, E, never>);
+			const exit = await runtime.runPromiseExit(effect as Effect.Effect<T, E, never>);
 
 			return Exit.match(exit, {
 				onFailure: (cause) => {

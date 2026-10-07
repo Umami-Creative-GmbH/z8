@@ -19,7 +19,6 @@ import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { getSupportedProviders, isProviderSupported } from "@/lib/calendar-sync/providers";
 import { AuthorizationError, type DatabaseError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
@@ -428,7 +427,7 @@ export async function getCalendarSettings(): Promise<ServerActionResult<Calendar
 			microsoft365Available: isProviderSupported("microsoft365"),
 			relevantConnections,
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -446,7 +445,7 @@ export async function getManagerCalendarReadView(): Promise<
 		return {
 			relevantConnections,
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -505,7 +504,7 @@ export async function updateCalendarSettings(
 					},
 				});
 		});
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -536,7 +535,7 @@ export async function getProviderStatus(): Promise<
 			available: p.enabled,
 			enabled: p.enabled,
 		}));
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

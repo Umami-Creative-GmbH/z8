@@ -16,7 +16,6 @@ import { employee } from "@/db/schema";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
@@ -205,7 +204,7 @@ export async function getDatevConfigAction(
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -302,7 +301,7 @@ export async function saveDatevConfigAction(
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -352,7 +351,7 @@ export async function getLexwareConfigAction(
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -449,7 +448,7 @@ export async function saveLexwareConfigAction(
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -499,7 +498,7 @@ export async function getSageConfigAction(
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -596,7 +595,7 @@ export async function saveSageConfigAction(
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -678,7 +677,7 @@ export async function getSuccessFactorsConfigAction(
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -808,7 +807,7 @@ export async function saveSuccessFactorsConfigAction(
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -850,7 +849,7 @@ export async function testSuccessFactorsConnectionAction(input: {
 		return result;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -902,7 +901,7 @@ export async function saveSuccessFactorsCredentialsAction(
 		return { success: true };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -939,7 +938,7 @@ export async function deleteSuccessFactorsCredentialsAction(
 		return { success: true };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -1028,7 +1027,7 @@ export async function getWorkdayConfigAction(
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 export async function saveWorkdayConfigAction(
@@ -1133,7 +1132,7 @@ export async function saveWorkdayConfigAction(
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 export async function saveWorkdayCredentialsAction(
@@ -1186,7 +1185,7 @@ export async function saveWorkdayCredentialsAction(
 		return { success: true };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 export async function deleteWorkdayCredentialsAction(
@@ -1219,7 +1218,7 @@ export async function deleteWorkdayCredentialsAction(
 		return { success: true };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 export async function testWorkdayConnectionAction(input: {
@@ -1255,7 +1254,7 @@ export async function testWorkdayConnectionAction(input: {
 		);
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -1300,7 +1299,7 @@ export async function getMappingsAction(
 		return mappings;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1499,7 +1498,7 @@ export async function saveMappingAction(
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1548,7 +1547,7 @@ export async function deleteMappingAction(
 		revalidatePath("/settings/payroll-export");
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -1583,7 +1582,7 @@ export async function getWorkCategoriesAction(
 		return categories;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1614,7 +1613,7 @@ export async function getAbsenceCategoriesAction(
 		return categories;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -1655,7 +1654,7 @@ export async function getFilterOptionsAction(
 		return { employees, teams, projects };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -1780,7 +1779,7 @@ export async function startExportAction(input: StartExportInput): Promise<
 		return { jobId, isAsync: true };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1811,7 +1810,7 @@ export async function getExportHistoryAction(
 		return history;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1843,7 +1842,7 @@ export async function getExportDownloadUrlAction(
 		return url;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -1930,7 +1929,7 @@ export async function getPersonioConfigAction(
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -2034,7 +2033,7 @@ export async function savePersonioConfigAction(
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -2071,7 +2070,7 @@ export async function savePersonioCredentialsAction(
 		return { success: true };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -2108,7 +2107,7 @@ export async function deletePersonioCredentialsAction(
 		return { success: true };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -2154,5 +2153,5 @@ export async function testPersonioConnectionAction(
 		return result;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }

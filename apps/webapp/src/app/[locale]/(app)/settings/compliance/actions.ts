@@ -2,7 +2,7 @@
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
-import { Effect, Layer } from "effect";
+import { Effect } from "effect";
 import { db } from "@/db";
 import type {
 	ComplianceAlert,
@@ -17,14 +17,12 @@ import { requireAbility, requireAuth } from "@/lib/auth-helpers";
 import { asAppSubject } from "@/lib/authorization";
 import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import {
 	ComplianceGuardrailService,
 	ComplianceGuardrailServiceLive,
 	type ExceptionWithDetails,
 } from "@/lib/effect/services/compliance-guardrail.service";
-import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
-import { WorkPolicyServiceLive } from "@/lib/effect/services/work-policy.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import {
 	onComplianceExceptionApproved,
@@ -51,10 +49,8 @@ type ComplianceExceptionWithEmployee = typeof complianceException.$inferSelect &
 // Layer composition for compliance service
 // =============================================================================
 
-const ComplianceLayer = ComplianceGuardrailServiceLive.pipe(
-	Layer.provide(WorkPolicyServiceLive),
-	Layer.provide(DatabaseServiceLive),
-);
+// The shared runtime supplies the guardrail service's WorkPolicyService and DatabaseService.
+const ComplianceLayer = ComplianceGuardrailServiceLive;
 
 // =============================================================================
 // Helper: Get current employee
@@ -222,7 +218,6 @@ export async function checkRestPeriod(): Promise<ServerActionResult<RestPeriodCh
 			),
 			Effect.onExit(() => Effect.sync(() => span.end())),
 			Effect.provide(ComplianceLayer),
-			Effect.provide(AppLayer),
 		);
 	});
 
@@ -251,7 +246,7 @@ export async function getProactiveAlerts(
 			currentSessionMinutes,
 			timezone,
 		});
-	}).pipe(Effect.provide(ComplianceLayer), Effect.provide(AppLayer));
+	}).pipe(Effect.provide(ComplianceLayer));
 
 	return runServerActionSafe(effect);
 }
@@ -278,7 +273,7 @@ export async function getComplianceStatus(
 			currentSessionMinutes,
 			timezone,
 		});
-	}).pipe(Effect.provide(ComplianceLayer), Effect.provide(AppLayer));
+	}).pipe(Effect.provide(ComplianceLayer));
 
 	return runServerActionSafe(effect);
 }
@@ -302,7 +297,7 @@ export async function getOvertimeStats(): Promise<ServerActionResult<OvertimeSta
 			employeeId: emp.id,
 			timezone,
 		});
-	}).pipe(Effect.provide(ComplianceLayer), Effect.provide(AppLayer));
+	}).pipe(Effect.provide(ComplianceLayer));
 
 	return runServerActionSafe(effect);
 }
@@ -395,7 +390,6 @@ export async function requestComplianceException(input: {
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
 				Effect.provide(ComplianceLayer),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -420,7 +414,7 @@ export async function hasValidException(
 			employeeId: emp.id,
 			exceptionType,
 		});
-	}).pipe(Effect.provide(ComplianceLayer), Effect.provide(AppLayer));
+	}).pipe(Effect.provide(ComplianceLayer));
 
 	return runServerActionSafe(effect);
 }
@@ -442,7 +436,7 @@ export async function getMyExceptions(
 			employeeId: emp.id,
 			includeExpired,
 		});
-	}).pipe(Effect.provide(ComplianceLayer), Effect.provide(AppLayer));
+	}).pipe(Effect.provide(ComplianceLayer));
 
 	return runServerActionSafe(effect);
 }
@@ -485,7 +479,7 @@ export async function getPendingExceptions(): Promise<ServerActionResult<Excepti
 			organizationId: emp.organizationId,
 			managerId: canManageAll ? undefined : emp.id,
 		});
-	}).pipe(Effect.provide(ComplianceLayer), Effect.provide(AppLayer));
+	}).pipe(Effect.provide(ComplianceLayer));
 
 	return runServerActionSafe(effect);
 }
@@ -559,7 +553,6 @@ export async function approveComplianceException(
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
 				Effect.provide(ComplianceLayer),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -639,7 +632,6 @@ export async function rejectComplianceException(
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
 				Effect.provide(ComplianceLayer),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -682,7 +674,7 @@ export async function expireOldExceptions(): Promise<ServerActionResult<{ expire
 
 		const complianceService = yield* ComplianceGuardrailService;
 		return yield* complianceService.expireOldExceptions(organizationId);
-	}).pipe(Effect.provide(ComplianceLayer), Effect.provide(AppLayer));
+	}).pipe(Effect.provide(ComplianceLayer));
 
 	return runServerActionSafe(effect);
 }

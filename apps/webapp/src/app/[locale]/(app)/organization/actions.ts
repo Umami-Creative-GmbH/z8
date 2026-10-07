@@ -8,7 +8,6 @@ import { employee, employeeManagers, team, teamMembership } from "@/db/schema";
 import { getRequestSession } from "@/lib/auth/request-session";
 import { AuthenticationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { buildScopedOrgChartGraph, capTeamMembershipsPerTeam } from "./org-chart-graph";
 import {
@@ -73,7 +72,7 @@ export async function getOrgChartInitialGraph(): Promise<ServerActionResult<OrgC
 		return yield* loadEmployeeNeighborhood(dbService, organizationId, employeeCount, currentEmployee.id, {
 			partial: true,
 		});
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -122,7 +121,7 @@ export async function searchOrgEmployees(
 
 			return rows satisfies OrgChartSearchResult[];
 		});
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -138,7 +137,7 @@ export async function getEmployeeNeighborhood(
 		return yield* loadEmployeeNeighborhood(dbService, organizationId, employeeCount, employeeId, {
 			partial: employeeCount >= SMALL_ORG_EMPLOYEE_LIMIT,
 		});
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -152,7 +151,7 @@ export async function getTeamNeighborhood(
 		const employeeCount = yield* countActiveEmployees(dbService, organizationId);
 
 		return yield* loadTeamNeighborhood(dbService, organizationId, employeeCount, teamId);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

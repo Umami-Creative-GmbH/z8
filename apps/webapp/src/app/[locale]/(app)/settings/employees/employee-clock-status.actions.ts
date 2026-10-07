@@ -4,8 +4,10 @@ import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { Effect } from "effect";
 import type { EmployeeClockStatus } from "@/components/user-avatar";
 import { employee, timeEntry, workPeriod } from "@/db/schema";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
+import {
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import {
 	getEmployeeSettingsActorContext,
 	getManagedEmployeeIdsForSettingsActor,
@@ -149,7 +151,7 @@ export async function getEmployeeClockStatuses(
 				];
 			}),
 		) satisfies EmployeeClockPresenceMap;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

@@ -23,7 +23,6 @@ import type {
 } from "@/lib/analytics/types";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AnalyticsService } from "@/lib/effect/services/analytics.service";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -98,7 +97,7 @@ export async function getTeamPerformanceData(
 		});
 
 		return data;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -122,7 +121,7 @@ export async function getVacationTrendsData(
 		});
 
 		return data;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -148,7 +147,7 @@ export async function getWorkHoursAnalyticsData(
 		});
 
 		return data;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -172,7 +171,7 @@ export async function getAbsencePatternsData(
 		});
 
 		return data;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -198,7 +197,7 @@ export async function getManagerEffectivenessData(
 		});
 
 		return data;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -232,7 +231,7 @@ export async function getOvertimeBurnDownData(
 		});
 
 		return data;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

@@ -79,10 +79,7 @@ vi.mock("@/lib/effect/runtime", async () => {
 			}),
 		),
 	);
-	return {
-		AppLayer,
-		runtime: { runPromiseExit: Effect.runPromiseExit },
-	};
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(AppLayer);
 });
 
 vi.mock("@/lib/approvals/workflow/runtime", () => ({

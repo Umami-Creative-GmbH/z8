@@ -3,7 +3,8 @@
  * Checked by `pnpm typecheck`; never imported at runtime.
  */
 import { Effect } from "effect";
-import { type DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { runtime } from "@/lib/effect/runtime";
+import type { DatabaseService } from "@/lib/effect/services/database.service";
 import type { ApprovalQueryParams } from "../domain/types";
 import { ApprovalQueryService, ApprovalQueryServiceLive } from "./approval-query.service";
 
@@ -27,4 +28,5 @@ export type ListApprovalsRequiresDatabase = Expect<
 // @ts-expect-error DatabaseService is not provided
 void Effect.runPromise(listApprovals);
 
-void Effect.runPromise(listApprovals.pipe(Effect.provide(DatabaseServiceLive)));
+// The shared runtime supplies DatabaseService.
+void runtime.runPromise(listApprovals);

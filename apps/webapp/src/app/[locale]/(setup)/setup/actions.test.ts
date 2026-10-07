@@ -18,18 +18,21 @@ vi.mock("@/lib/effect/services/setup.service", () => ({
 }));
 vi.mock("@/lib/effect/runtime", async () => {
 	const { SetupService } = await import("@/lib/effect/services/setup.service");
-	return {
-		AppLayer: Layer.succeed(SetupService, {
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(
+		Layer.succeed(SetupService, {
 			createPlatformAdmin: mocks.create,
+		}),
+	);
+});
+vi.mock("@/lib/effect/result", async () => {
+	const { runtime } = await import("@/lib/effect/runtime");
+	return {
+		runServerActionSafe: async (effect: Effect.Effect<unknown>) => ({
+			success: true,
+			data: await runtime.runPromise(effect),
 		}),
 	};
 });
-vi.mock("@/lib/effect/result", () => ({
-	runServerActionSafe: async (effect: Effect.Effect<unknown>) => ({
-		success: true,
-		data: await Effect.runPromise(effect),
-	}),
-}));
 
 import { createPlatformAdminAction } from "./actions";
 

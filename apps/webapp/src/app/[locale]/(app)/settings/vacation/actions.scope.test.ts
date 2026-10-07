@@ -351,20 +351,21 @@ vi.mock("@/lib/effect/runtime", async () => {
 	};
 	mockState.db = db;
 
-	return {
-		AppLayer: Layer.succeed(DatabaseService, {
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(
+		Layer.succeed(DatabaseService, {
 			db,
 			query: (_key: string, fn: () => Promise<unknown>) => Effect.promise(fn),
 		}),
-	};
+	);
 });
 
 vi.mock("@/lib/effect/result", async () => {
-	const { Cause, Effect, Exit, Option, Result } = await import("effect");
+	const { runtime } = await import("@/lib/effect/runtime");
+	const { Cause, Exit, Option, Result } = await import("effect");
 
 	return {
 		runServerActionSafe: async <T>(effect: any) => {
-			const exit = await Effect.runPromiseExit(effect);
+			const exit = await runtime.runPromiseExit(effect);
 			return Exit.match(exit, {
 				onSuccess: (data) => ({ success: true as const, data: data as T }),
 				onFailure: (cause) => {

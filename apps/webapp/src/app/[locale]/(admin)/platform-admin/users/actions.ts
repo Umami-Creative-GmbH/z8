@@ -3,7 +3,6 @@
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import {
 	type PaginatedResult,
 	PlatformAdminService,
@@ -25,7 +24,7 @@ export async function listUsersAction(
 
 		// List users
 		return yield* adminService.listUsers(filters, { page, pageSize });
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -50,7 +49,7 @@ export async function banUserAction(
 		);
 
 		revalidatePath("/platform-admin/users");
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -66,7 +65,7 @@ export async function unbanUserAction(userId: string): Promise<ServerActionResul
 		yield* adminService.unbanUser(userId, admin.userId);
 
 		revalidatePath("/platform-admin/users");
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -82,7 +81,7 @@ export async function listUserSessionsAction(
 
 		// List sessions
 		return yield* adminService.listUserSessions(userId);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -96,7 +95,7 @@ export async function revokeSessionAction(sessionId: string): Promise<ServerActi
 
 		// Revoke session
 		yield* adminService.revokeSession(sessionId, admin.userId);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -112,7 +111,7 @@ export async function revokeAllUserSessionsAction(
 
 		// Revoke all sessions
 		return yield* adminService.revokeAllUserSessions(userId, admin.userId);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

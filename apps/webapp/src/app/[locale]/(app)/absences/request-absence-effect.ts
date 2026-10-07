@@ -70,8 +70,10 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
+import {
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService, makeDatabaseService } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
@@ -1272,7 +1274,6 @@ function requestAbsenceWithResolverEffect(
 
 					return Effect.fail(error);
 				}),
-				Effect.provide(AppLayer),
 			);
 		},
 	);

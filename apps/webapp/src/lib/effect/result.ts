@@ -1,8 +1,8 @@
-import { Cause, type Effect, Exit } from "effect";
+import { Cause, type Effect, Exit, type Layer } from "effect";
 import { env } from "@/env";
 import { failureOfCause } from "./cause-failure";
 import type { AnyAppError } from "./errors";
-import { runtime } from "./runtime";
+import { type AppLayer, runtime } from "./runtime";
 
 export type ServerActionResult<T> =
 	| { success: true; data: T }
@@ -64,11 +64,12 @@ export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): Server
 	});
 }
 
+/** The services the shared runtime provides: every `AppLayer` member. */
+export type AppServices = Layer.Success<typeof AppLayer>;
+
 export async function runServerActionSafe<T>(
-	// biome-ignore lint/suspicious/noExplicitAny: it is what it is
-	effect: Effect.Effect<T, AnyAppError, any>,
+	effect: Effect.Effect<T, AnyAppError, AppServices>,
 ): Promise<ServerActionResult<T>> {
-	// Use the runtime which provides all required layers
 	const exit = await runtime.runPromiseExit(effect);
 	return toServerActionResult(exit);
 }

@@ -22,7 +22,6 @@ import {
 } from "@/lib/cron/tracking";
 import { DatabaseError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { PlatformAdminService } from "@/lib/effect/services/platform-admin.service";
 import { getJobQueue, isQueueHealthy } from "@/lib/queue";
@@ -206,7 +205,7 @@ export async function updateCronSchedule(
 		return reconciliation;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 export async function resetCronSchedule(
@@ -236,7 +235,7 @@ export async function resetCronSchedule(
 		return reconciliation;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQueueStats>> {
@@ -387,7 +386,7 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 export async function getWorkerQueueJobExecutions(
@@ -415,5 +414,5 @@ export async function getWorkerQueueJobExecutions(
 		return executions.map(mapCronExecution);
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }

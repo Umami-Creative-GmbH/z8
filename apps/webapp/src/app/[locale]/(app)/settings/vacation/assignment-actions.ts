@@ -6,7 +6,6 @@ import { user } from "@/db/auth-schema";
 import { employee, team, vacationAllowance, vacationPolicyAssignment } from "@/db/schema";
 import { DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,
@@ -59,7 +58,7 @@ export async function getVacationPolicies(
 			);
 
 		return policies;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -158,7 +157,7 @@ export async function getVacationPolicyAssignments(
 			normalizedAssignments.filter((assignment) => assignment.assignmentType === "employee"),
 			managedEmployeeIds,
 		);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -272,7 +271,7 @@ export async function createVacationPolicyAssignment(data: {
 			);
 
 		return newAssignment;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -326,7 +325,7 @@ export async function getEmployeePolicyAssignment(
 		});
 
 		return assignment;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -424,7 +423,7 @@ export async function setEmployeePolicyAssignment(
 					),
 				);
 		}
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -509,7 +508,7 @@ export async function deleteVacationPolicyAssignment(
 						}),
 				),
 			);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -575,7 +574,7 @@ export async function getCompanyDefaultPolicies(organizationId: string): Promise
 			current: currentPolicy || null,
 			next: nextPolicy || null,
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

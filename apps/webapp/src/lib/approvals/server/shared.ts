@@ -11,10 +11,10 @@ import {
 	NotFoundError,
 } from "@/lib/effect/errors";
 import {
+	type AppServices,
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
@@ -533,7 +533,7 @@ export function processApprovalWithCurrentEmployee<T, R = never>(
 	});
 }
 
-export async function processApproval<T, R = never>(
+export async function processApproval<T, R extends AppServices | ApprovalAuditLogger = never>(
 	entityType: ApprovalEntityType,
 	entityId: string,
 	action: ApprovalAction,
@@ -602,7 +602,6 @@ export async function processApproval<T, R = never>(
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
 				Effect.provide(ApprovalAuditLoggerLive),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
