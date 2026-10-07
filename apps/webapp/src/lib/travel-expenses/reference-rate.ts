@@ -1,6 +1,7 @@
 import { Temporal } from "temporal-polyfill";
 import { type Instant, parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { type ExchangeRate, normalizeRate } from "./currency-conversion";
+import type { ReferenceRateAcknowledgement, ReferenceRateProvider } from "./reference-rate.types";
 
 /**
  * Reference exchange rates an organization explicitly approved as a
@@ -20,18 +21,12 @@ import { type ExchangeRate, normalizeRate } from "./currency-conversion";
  * `reference-rate-store.ts`.
  */
 
-export const REFERENCE_RATE_PROVIDERS = ["ecb"] as const;
-export type ReferenceRateProvider = (typeof REFERENCE_RATE_PROVIDERS)[number];
-
-/**
- * Versioned statements an administrator acknowledges when approving a source
- * (0133). `ecb_information_only_v1`: the ECB publishes its euro reference
- * rates for information only, for a limited set of currencies and only on
- * TARGET working days, and the organization chooses to reimburse with them.
- * Changing the wording shown means adding a new version, never editing one.
- */
-export const REFERENCE_RATE_ACKNOWLEDGEMENTS = ["ecb_information_only_v1"] as const;
-export type ReferenceRateAcknowledgement = (typeof REFERENCE_RATE_ACKNOWLEDGEMENTS)[number];
+export {
+	REFERENCE_RATE_ACKNOWLEDGEMENTS,
+	REFERENCE_RATE_PROVIDERS,
+	type ReferenceRateAcknowledgement,
+	type ReferenceRateProvider,
+} from "./reference-rate.types";
 
 /** The statement each source's approval form currently shows. */
 export const CURRENT_REFERENCE_RATE_ACKNOWLEDGEMENT = {

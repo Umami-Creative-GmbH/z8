@@ -14,8 +14,11 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import type { MileageVehicle, StampedMileagePolicy } from "@/lib/travel-expenses/mileage";
-import type { ExpensePayer, ReceiptExpenseCategory } from "@/lib/travel-expenses/receipt-report";
+import type { MileageVehicle, StampedMileagePolicy } from "@/lib/travel-expenses/mileage.types";
+import type {
+	ExpensePayer,
+	ReceiptExpenseCategory,
+} from "@/lib/travel-expenses/receipt-report.types";
 import type { TripDestination } from "@/lib/travel-expenses/trip-destination";
 import { organization, user } from "../auth-schema";
 import { approvalWorkflow } from "./approval-workflow";

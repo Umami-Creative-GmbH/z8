@@ -14,7 +14,7 @@ import {
 import type {
 	ReferenceRateAcknowledgement,
 	ReferenceRateProvider,
-} from "@/lib/travel-expenses/reference-rate";
+} from "@/lib/travel-expenses/reference-rate.types";
 import { organization, user } from "../auth-schema";
 
 // Reference exchange rates as a conversion basis (#608). ECB reference rates

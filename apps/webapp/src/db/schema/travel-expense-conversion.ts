@@ -15,7 +15,7 @@ import {
 import type {
 	ConversionBasis,
 	ReferenceRateConversion,
-} from "@/lib/travel-expenses/currency-conversion";
+} from "@/lib/travel-expenses/currency-conversion.types";
 import { user } from "../auth-schema";
 import {
 	travelExpenseReport,

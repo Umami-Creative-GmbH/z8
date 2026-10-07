@@ -18,7 +18,7 @@ import type {
 	PerDiemMealDay,
 	PerDiemOvernight,
 	StampedPerDiemPolicy,
-} from "@/lib/travel-expenses/per-diem";
+} from "@/lib/travel-expenses/per-diem.types";
 import { travelExpenseReport, travelExpenseReportItem } from "./travel-expense";
 import { travelExpenseAllowancePolicyVersion } from "./travel-expense-allowance-policy";
 

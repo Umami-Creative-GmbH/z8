@@ -15,7 +15,7 @@ import type {
 	AllowanceOverrideKind,
 	AllowanceOverrideScope,
 	AllowanceSituation,
-} from "@/lib/travel-expenses/allowance-override";
+} from "@/lib/travel-expenses/allowance-override.types";
 import { travelExpenseReport, travelExpenseReportItem } from "./travel-expense";
 
 /**

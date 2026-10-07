@@ -15,8 +15,8 @@ import {
 import type {
 	AllowancePolicyKind,
 	AllowancePolicySourceKind,
-} from "@/lib/travel-expenses/allowance-policy";
-import type { MileageVehicle } from "@/lib/travel-expenses/mileage";
+} from "@/lib/travel-expenses/allowance-policy.types";
+import type { MileageVehicle } from "@/lib/travel-expenses/mileage.types";
 import { organization, user } from "../auth-schema";
 
 /**

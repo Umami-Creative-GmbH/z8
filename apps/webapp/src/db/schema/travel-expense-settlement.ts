@@ -12,7 +12,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import type { SettlementEntryKind } from "@/lib/travel-expenses/settlement";
+import type { SettlementEntryKind } from "@/lib/travel-expenses/settlement.types";
 import { organization } from "../auth-schema";
 import { employee } from "./organization";
 import { travelExpenseClaim, travelExpenseReport } from "./travel-expense";

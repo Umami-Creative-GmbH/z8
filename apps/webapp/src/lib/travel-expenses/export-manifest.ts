@@ -1,6 +1,10 @@
 import { createHash } from "node:crypto";
 import { canonicalJson } from "@/lib/approvals/evidence/absence-facts";
 import type { TravelExpenseReportSubmittedFacts } from "@/lib/approvals/evidence/travel-expense-report-facts";
+import type {
+	TravelExpenseExportManifestRecord,
+	TravelExpenseExportManifestRevisionRecord,
+} from "./export-manifest.types";
 
 /**
  * The manifest of one travel expense export batch (#613): the exact approved
@@ -12,33 +16,21 @@ import type { TravelExpenseReportSubmittedFacts } from "@/lib/approvals/evidence
 
 export const TRAVEL_EXPENSE_EXPORT_MANIFEST_VERSION = 1;
 
-export interface TravelExpenseExportManifestRevision {
-	reportId: string;
-	/** `approval_submitted_revision.id` of the approved cycle. */
-	revisionId: string;
-	submissionCycle: number;
-	/** Fingerprint of the frozen facts (`travel_expense_report:vN:…`). */
-	materialFingerprint: string;
-	/** UTC instant the revision was approved (decision evidence). */
-	approvedAt: string;
-	employeeId: string;
-	/** Display name when the batch was created; descriptive only. */
-	employeeName: string | null;
-	/** The frozen facts exactly as approved, receipts included. */
-	facts: TravelExpenseReportSubmittedFacts;
-	/** Uploaded file names by receipt id (revision labels); descriptive only. */
-	receiptFileNames: Record<string, string>;
-}
+export type TravelExpenseExportManifestRevision =
+	TravelExpenseExportManifestRevisionRecord<TravelExpenseReportSubmittedFacts>;
 
-export interface TravelExpenseExportManifest {
-	kind: "travel_expense_export";
-	version: number;
-	organizationId: string;
-	batchId: string;
-	/** UTC instant the batch was created. */
-	createdAt: string;
-	/** Sorted by report id. */
-	revisions: TravelExpenseExportManifestRevision[];
+export type TravelExpenseExportManifest =
+	TravelExpenseExportManifestRecord<TravelExpenseReportSubmittedFacts>;
+
+/**
+ * A manifest read back from `travel_expense_export_batch.manifest`. The batch
+ * stored exactly what `TravelExpenseExportManifest` built, so the frozen facts
+ * keep their type; the schema only declares the facts-agnostic record.
+ */
+export function storedTravelExpenseExportManifest(
+	record: TravelExpenseExportManifestRecord,
+): TravelExpenseExportManifest {
+	return record as TravelExpenseExportManifest;
 }
 
 export function sortManifestRevisions(

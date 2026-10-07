@@ -12,7 +12,7 @@ import {
 import type {
 	LegacyConversionFlag,
 	LegacyDraftSnapshot,
-} from "@/lib/travel-expenses/legacy-draft-conversion";
+} from "@/lib/travel-expenses/legacy-draft-conversion.types";
 import { organization, user } from "../auth-schema";
 import { travelExpenseReport } from "./travel-expense";
 

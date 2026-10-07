@@ -13,6 +13,7 @@ import {
 	sumUnits,
 } from "./money";
 import { isSupportedCurrency } from "./receipt-report";
+import { SETTLEMENT_ENTRY_KINDS, type SettlementEntryKind } from "./settlement.types";
 
 /**
  * The settlement account of one approved expense source (#612): a travel
@@ -36,8 +37,7 @@ import { isSupportedCurrency } from "./receipt-report";
  * Export batches (#613) are not money: they never change a balance.
  */
 
-export const SETTLEMENT_ENTRY_KINDS = ["reimbursement", "recovery"] as const;
-export type SettlementEntryKind = (typeof SETTLEMENT_ENTRY_KINDS)[number];
+export { SETTLEMENT_ENTRY_KINDS, type SettlementEntryKind } from "./settlement.types";
 
 export interface EntitlementComponent {
 	/**

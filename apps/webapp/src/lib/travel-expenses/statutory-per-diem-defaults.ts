@@ -1,4 +1,5 @@
 import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
+import type { PerDiemRates } from "./per-diem.types";
 
 /**
  * Verified German rules and default amounts for domestic per diem
@@ -95,17 +96,7 @@ export function perDiemRulesOn(date: string): PerDiemRuleSet | null {
 	);
 }
 
-/** Amounts of one area (domestic: "DE") in a per diem policy version, at two decimals. */
-export interface PerDiemRates {
-	/** Calendar day of 24 hours' absence. */
-	fullDay: string;
-	/** Arrival/departure day with overnight stay, or a day of more than 8 hours. */
-	partialDay: string;
-	/** Reductions for a meal the employer (or a third party on its behalf) provided. */
-	breakfastDeduction: string;
-	lunchDeduction: string;
-	dinnerDeduction: string;
-}
+export type { PerDiemRates } from "./per-diem.types";
 
 export interface StatutoryPerDiemDefault {
 	key: string;

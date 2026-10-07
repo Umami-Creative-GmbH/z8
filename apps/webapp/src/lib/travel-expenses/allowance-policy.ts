@@ -1,4 +1,5 @@
 import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
+import type { AllowancePolicySource } from "./allowance-policy.types";
 
 /**
  * Dated organization allowance policies (#606). An organization has at most
@@ -18,22 +19,13 @@ import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core"
  * withdrawal stay shared (`allowance-policy-store.ts`).
  */
 
-export const ALLOWANCE_POLICY_KINDS = ["mileage", "per_diem"] as const;
-export type AllowancePolicyKind = (typeof ALLOWANCE_POLICY_KINDS)[number];
-
-/** Who set a version's rates: the organization, or an adopted verified statutory default. */
-export const ALLOWANCE_POLICY_SOURCE_KINDS = ["organization", "statutory_default"] as const;
-export type AllowancePolicySourceKind = (typeof ALLOWANCE_POLICY_SOURCE_KINDS)[number];
-
-export interface AllowancePolicySource {
-	kind: AllowancePolicySourceKind;
-	/** Where the rates come from: an internal policy document or the official citation. */
-	reference: string | null;
-	/** Which edition of that source, e.g. "LStH 2026". */
-	version: string | null;
-	/** Catalog key of an adopted statutory default (`statutory-allowance-defaults.ts`). */
-	defaultKey: string | null;
-}
+export {
+	ALLOWANCE_POLICY_KINDS,
+	ALLOWANCE_POLICY_SOURCE_KINDS,
+	type AllowancePolicyKind,
+	type AllowancePolicySource,
+	type AllowancePolicySourceKind,
+} from "./allowance-policy.types";
 
 export interface AllowancePolicyVersionRecord {
 	id: string;

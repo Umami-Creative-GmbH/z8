@@ -18,6 +18,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import {
 	sortManifestRevisions,
+	storedTravelExpenseExportManifest,
 	TRAVEL_EXPENSE_EXPORT_MANIFEST_VERSION,
 	type TravelExpenseExportManifest,
 	type TravelExpenseExportManifestRevision,
@@ -182,7 +183,7 @@ function toView(
 		checksumSha256: row.checksumSha256,
 		retryable: isRetryable(row, now),
 		cancellable: row.status !== "completed" && row.status !== "cancelled",
-		reports: batchReports(row.manifest),
+		reports: batchReports(storedTravelExpenseExportManifest(row.manifest)),
 	};
 }
 
@@ -744,7 +745,7 @@ export async function claimTravelExpenseExportAttempt(
 			.where(eq(travelExpenseExportBatch.id, row.id));
 		return {
 			status: "claimed",
-			manifest: row.manifest,
+			manifest: storedTravelExpenseExportManifest(row.manifest),
 			manifestDigest: row.manifestDigest,
 		} as const;
 	});

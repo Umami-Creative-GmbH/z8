@@ -7,6 +7,12 @@ import {
 import { itemReimbursementAmount, type ReimbursementItemInput } from "./item-amount";
 import { currencyMinorUnitDigits, formatUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
 import { missingReceiptRequirements, type ReceiptExceptionContext } from "./receipt-exception";
+import {
+	EXPENSE_PAYERS,
+	type ExpensePayer,
+	RECEIPT_EXPENSE_CATEGORIES,
+	type ReceiptExpenseCategory,
+} from "./receipt-report.types";
 
 /**
  * Receipt expense items of a travel expense report (#600). A draft item may be
@@ -14,17 +20,12 @@ import { missingReceiptRequirements, type ReceiptExceptionContext } from "./rece
  * strings and are summed in minor units, never as floating point numbers.
  */
 
-export const RECEIPT_EXPENSE_CATEGORIES = [
-	"transport",
-	"accommodation",
-	"meals",
-	"parking",
-	"other",
-] as const;
-export type ReceiptExpenseCategory = (typeof RECEIPT_EXPENSE_CATEGORIES)[number];
-
-export const EXPENSE_PAYERS = ["employee", "company"] as const;
-export type ExpensePayer = (typeof EXPENSE_PAYERS)[number];
+export {
+	EXPENSE_PAYERS,
+	type ExpensePayer,
+	RECEIPT_EXPENSE_CATEGORIES,
+	type ReceiptExpenseCategory,
+} from "./receipt-report.types";
 
 export const DEFAULT_REIMBURSEMENT_CURRENCY = "EUR";
 export const MAX_DESCRIPTION_LENGTH = 500;

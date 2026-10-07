@@ -1,11 +1,15 @@
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { AllowanceOverrideView } from "./allowance-override";
-import {
-	type AllowancePolicySource,
-	type AllowancePolicyVersionRecord,
-	effectiveVersionOn,
-} from "./allowance-policy";
+import { type AllowancePolicyVersionRecord, effectiveVersionOn } from "./allowance-policy";
+import { type AppliedMileagePolicy, MILEAGE_VEHICLES, type MileageVehicle } from "./mileage.types";
 import { formatUnits, multiplyToUnits, parseUnits, type RoundingMode } from "./money";
+
+export {
+	type AppliedMileagePolicy,
+	MILEAGE_VEHICLES,
+	type MileageVehicle,
+	type StampedMileagePolicy,
+} from "./mileage.types";
 
 /**
  * Mileage expense items (#606): the employee enters the date, route and
@@ -14,14 +18,6 @@ import { formatUnits, multiplyToUnits, parseUnits, type RoundingMode } from "./m
  * Amounts are exact (`money.ts`), rounded once to cents. A client-calculated
  * total is never accepted, and a missing policy is never replaced by a guess.
  */
-
-/**
- * Vehicle classes with their own flat rate. German tax law distinguishes a car
- * ("Kraftwagen", e.g. PKW) from any other motorized vehicle (e.g. motorcycle);
- * see `statutory-allowance-defaults.ts`.
- */
-export const MILEAGE_VEHICLES = ["car", "other_motor_vehicle"] as const;
-export type MileageVehicle = (typeof MILEAGE_VEHICLES)[number];
 
 /** Commercial rounding of the product, applied once. */
 export const MILEAGE_ROUNDING: RoundingMode = "half_up";
@@ -138,30 +134,6 @@ export function parseMileageItemDraft(input: MileageItemDraftInput): ParseMileag
 export interface MileagePolicyVersion extends AllowancePolicyVersionRecord {
 	/** Rate per kilometre at four decimals; a vehicle without a rate is not covered. */
 	ratesPerKm: Partial<Record<MileageVehicle, string>>;
-}
-
-/**
- * The policy applied to one mileage item: everything needed to reproduce and
- * explain its amount. It is stamped on the item at submission and frozen.
- */
-export interface AppliedMileagePolicy {
-	policyId: string;
-	versionId: string;
-	effectiveFrom: string;
-	vehicle: MileageVehicle;
-	ratePerKm: string;
-	currency: string;
-	source: AllowancePolicySource;
-}
-
-/**
- * The policy stamped on a mileage item when its report is submitted, with the
- * expense date it was resolved for. Frozen facts and the pre-decision compare
- * read this stamp, never the current policy, so a later policy change cannot
- * alter (or hold) a submitted result.
- */
-export interface StampedMileagePolicy extends AppliedMileagePolicy {
-	expenseDate: string;
 }
 
 export type MileagePolicyResolution =

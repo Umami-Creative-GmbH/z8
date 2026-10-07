@@ -12,7 +12,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import type { TravelExpenseExportManifest } from "@/lib/travel-expenses/export-manifest";
+import type { TravelExpenseExportManifestRecord } from "@/lib/travel-expenses/export-manifest.types";
 import { organization } from "../auth-schema";
 import { employee } from "./organization";
 import { travelExpenseReport } from "./travel-expense";
@@ -50,7 +50,7 @@ export const travelExpenseExportBatch = pgTable(
 		idempotencyKey: text("idempotency_key").notNull(),
 		selectionFingerprint: text("selection_fingerprint").notNull(),
 		manifestVersion: integer("manifest_version").notNull(),
-		manifest: jsonb("manifest").$type<TravelExpenseExportManifest>().notNull(),
+		manifest: jsonb("manifest").$type<TravelExpenseExportManifestRecord>().notNull(),
 		manifestDigest: text("manifest_digest").notNull(),
 		revisionCount: integer("revision_count").notNull(),
 		itemCount: integer("item_count").notNull(),

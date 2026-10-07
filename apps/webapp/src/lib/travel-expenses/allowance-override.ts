@@ -1,4 +1,11 @@
-import type { MileageCalculation, MileageItemView, MileageVehicle } from "./mileage";
+import type {
+	AllowanceOverrideKind,
+	AllowanceOverrideScope,
+	AllowanceSituation,
+	MileageOverrideScope,
+	PerDiemOverrideScope,
+} from "./allowance-override.types";
+import type { MileageCalculation, MileageItemView } from "./mileage";
 import { currencyMinorUnitDigits, formatUnits, parseUnits, STORED_AMOUNT_SCALE } from "./money";
 import {
 	type PerDiemCalculation,
@@ -28,8 +35,15 @@ import type { TripDestination } from "./trip-destination";
  * applying once the situation it resolved is gone (`overrideSituationHolds`).
  */
 
-export const ALLOWANCE_OVERRIDE_KINDS = ["mileage", "per_diem"] as const;
-export type AllowanceOverrideKind = (typeof ALLOWANCE_OVERRIDE_KINDS)[number];
+export {
+	ALLOWANCE_OVERRIDE_KINDS,
+	type AllowanceOverrideKind,
+	type AllowanceOverrideScope,
+	type AllowanceSituation,
+	type AllowanceSituationKind,
+	type MileageOverrideScope,
+	type PerDiemOverrideScope,
+} from "./allowance-override.types";
 
 export const MAX_OVERRIDE_REASON_LENGTH = 1000;
 export const MAX_OVERRIDE_EVIDENCE_LENGTH = 2000;
@@ -37,27 +51,6 @@ export const MAX_OVERRIDE_BASIS_LENGTH = 2000;
 /** Largest manual allowance: 1,000,000.00 in the reimbursement currency. */
 const MAX_OVERRIDE_UNITS = BigInt(100_000_000);
 const ZERO = BigInt(0);
-
-/**
- * Why an allowance has (or lacks) an ordinary result:
- * - `calculated`: priced by the policy; no override is needed.
- * - `missing_facts`: the employee has not entered everything; never overridden.
- * - `missing_coverage`: the organization has no (suitable) policy for it.
- * - `official_fallback`: priced with an official fallback rate (#611), shown as such; not overridden.
- * - `unsupported_case`: the verified rules do not cover the itinerary.
- */
-export type AllowanceSituationKind =
-	| "calculated"
-	| "missing_facts"
-	| "missing_coverage"
-	| "official_fallback"
-	| "unsupported_case";
-
-export interface AllowanceSituation {
-	kind: AllowanceSituationKind;
-	/** Machine reasons, e.g. per diem exception reasons or `policy_missing`. */
-	reasons: string[];
-}
 
 export function mileageSituation(calculation: MileageCalculation): AllowanceSituation {
 	switch (calculation.status) {
@@ -134,23 +127,7 @@ export function overrideSituationHolds(
 }
 
 // ---------------------------------------------------------------------------
-// Scope: the facts an override was authorized for
-
-export interface MileageOverrideScope {
-	kind: "mileage";
-	expenseDate: string | null;
-	route: string | null;
-	distanceKm: string | null;
-	vehicle: MileageVehicle | null;
-}
-
-export interface PerDiemOverrideScope {
-	kind: "per_diem";
-	itinerary: PerDiemItinerary;
-	destinations: TripDestination[];
-}
-
-export type AllowanceOverrideScope = MileageOverrideScope | PerDiemOverrideScope;
+// Scope: the facts an override was authorized for (`allowance-override.types.ts`)
 
 export function mileageOverrideScope(
 	facts: Omit<MileageOverrideScope, "kind">,
