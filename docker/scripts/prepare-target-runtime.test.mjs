@@ -353,6 +353,16 @@ test("migration trace reaches no app runtime packages through schema type import
 	}
 });
 
+test("migration trace never loads the validated app env", async () => {
+	const result = await collectTarget("migration");
+
+	assert.ok(
+		!result.files.some((file) => file.replace(/\\/g, "/") === "src/env.ts"),
+		"migration must not trace src/env.ts; the image only receives POSTGRES_* variables",
+	);
+	assert.ok(!result.packages.includes("@t3-oss/env-nextjs"));
+});
+
 test("collectTarget lists traced db-seed runtime files and packages", async () => {
   const result = await collectTarget("db-seed");
 
