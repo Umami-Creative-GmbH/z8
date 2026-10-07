@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, isNull, or } from "drizzle-orm";
-import { Cause, Effect, Exit, Option, Result } from "effect";
+import { Effect, Exit } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { getUserTimezone } from "@/app/[locale]/(app)/time-tracking/actions/auth";
@@ -21,6 +21,7 @@ import {
 	instantToCanonicalString,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import { failureOfCause } from "@/lib/effect/cause-failure";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -85,12 +86,7 @@ function getOrThrowExit<A, E>(exit: Exit.Exit<A, E>): A {
 	if (Exit.isSuccess(exit)) {
 		return exit.value;
 	}
-	const failure = Cause.findErrorOption(exit.cause);
-	if (Option.isSome(failure)) {
-		throw failure.value;
-	}
-	const defect = Cause.findDefect(exit.cause);
-	throw Result.isSuccess(defect) ? defect.success : Cause.squash(exit.cause);
+	throw failureOfCause(exit.cause);
 }
 
 async function markWorkBalanceDirtyAfterDirectCorrectionBestEffort(input: {

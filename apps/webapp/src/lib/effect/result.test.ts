@@ -1,4 +1,4 @@
-import { Exit } from "effect";
+import { Cause, Exit } from "effect";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConflictError, ValidationError } from "./errors";
 import { toServerActionResult } from "./result";
@@ -55,6 +55,21 @@ describe("toServerActionResult", () => {
 			error: "Date is a holiday",
 			code: "ValidationError",
 			holidayName: "New Year",
+		});
+	});
+
+	it("reports the typed failure, not a finalizer defect, when the cause holds both", () => {
+		vi.spyOn(console, "error").mockImplementation(() => {});
+		const error = new ValidationError({ message: "End must be after start", field: "end" });
+
+		const result = toServerActionResult(
+			Exit.failCause(Cause.combine(Cause.die(new Error("finalizer blew up")), Cause.fail(error))),
+		);
+
+		expect(result).toEqual({
+			success: false,
+			error: "End must be after start",
+			code: "ValidationError",
 		});
 	});
 

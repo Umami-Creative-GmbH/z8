@@ -1,5 +1,6 @@
-import { Cause, type Effect, Exit, Option, Result } from "effect";
+import { type Effect, Exit } from "effect";
 import { env } from "@/env";
+import { failureOfCause } from "./cause-failure";
 import type { AnyAppError } from "./errors";
 import { runtime } from "./runtime";
 
@@ -10,12 +11,7 @@ export type ServerActionResult<T> =
 export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): ServerActionResult<T> {
 	return Exit.match(exit, {
 		onFailure: (cause) => {
-			// Extract defect or failure from cause
-			const defectResult = Cause.findDefect(cause);
-			const defect = Result.isSuccess(defectResult) ? (defectResult.success ?? null) : null;
-			const failure = Option.getOrNull(Cause.findErrorOption(cause));
-
-			const error = defect ?? failure ?? cause;
+			const error = failureOfCause(cause);
 			const taggedError =
 				error && typeof error === "object" && "_tag" in error ? (error as AnyAppError) : null;
 			const isBuildPhase = env.NEXT_PHASE === "phase-production-build";

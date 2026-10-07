@@ -1,12 +1,13 @@
 "use server";
 
 import { and, eq, isNull } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect";
+import { Effect, Exit } from "effect";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { timeEntry, workPeriod } from "@/db/schema";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/server/work-period-approvals";
+import { failureOfCause, typedFailureOfCause } from "@/lib/effect/cause-failure";
 import { ConflictError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { getCurrentEmployee, getCurrentSession } from "./auth";
@@ -92,8 +93,8 @@ export async function approveWorkPeriod(input: {
 		);
 		if (Exit.isFailure(exit)) {
 			return approveWorkPeriodFailure(
-				Cause.squash(exit.cause),
-				Option.getOrNull(Cause.findErrorOption(exit.cause)),
+				failureOfCause(exit.cause),
+				typedFailureOfCause(exit.cause),
 				workPeriodId,
 			);
 		}
