@@ -3,6 +3,7 @@
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useState } from "react";
+import type { Instant } from "@/lib/datetime/temporal-core";
 import { withoutOverriddenRequirements } from "@/lib/travel-expenses/allowance-override";
 import {
 	type PerDiemDraftField,
@@ -41,6 +42,7 @@ export function PerDiemItemEditor({
 	onSaved,
 	onDraftChange,
 	removal,
+	now,
 }: {
 	reportId: string;
 	/** The item as last loaded; later loads never reset entered values. */
@@ -51,6 +53,8 @@ export function PerDiemItemEditor({
 	onSaved?: (item: ReportItemView) => void;
 	onDraftChange?: (draft: PerDiemItinerary | null) => void;
 	removal?: { label: string; remove: (expectedVersion: number) => Promise<boolean> };
+	/** The report's submission clock (`useSubmissionNow`): a per diem waits for its return (#685). */
+	now: Instant;
 }) {
 	const { t } = useTranslate();
 	const [removing, setRemoving] = useState(false);
@@ -127,6 +131,7 @@ export function PerDiemItemEditor({
 						saved={saved}
 						trip={trip}
 						currency={reimbursementCurrency}
+						now={now}
 					/>
 				)}
 			</form.Subscribe>
@@ -141,6 +146,7 @@ function PerDiemItemOutcome({
 	saved,
 	trip,
 	currency,
+	now,
 }: {
 	id: string;
 	values: PerDiemFormValues;
@@ -148,6 +154,7 @@ function PerDiemItemOutcome({
 	saved: ReportItemView;
 	trip: PerDiemTrip;
 	currency: string;
+	now: Instant;
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
@@ -159,7 +166,7 @@ function PerDiemItemOutcome({
 	const override = matches ? (saved.perDiem?.override ?? null) : null;
 	const missing = draft
 		? withoutOverriddenRequirements(
-				perDiemMissingRequirements(draft, calculation ?? { status: "incomplete" }, trip),
+				perDiemMissingRequirements(draft, calculation ?? { status: "incomplete" }, trip, now),
 				override,
 			)
 		: null;
@@ -181,7 +188,12 @@ function PerDiemItemOutcome({
 				headingId={`${id}-requirements`}
 				missing={missing}
 				label={(requirement) =>
-					perDiemRequirementLabel(t, requirement, { locale, calculation, currency })
+					perDiemRequirementLabel(t, requirement, {
+						locale,
+						calculation,
+						currency,
+						itinerary: draft,
+					})
 				}
 			/>
 		</div>

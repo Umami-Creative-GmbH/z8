@@ -456,6 +456,32 @@ describe("return, withdraw and resubmit reports (#603)", () => {
 	});
 	afterAll(cleanup);
 
+	it("refuses to resubmit a returned report while an expense is future-dated (#685)", async () => {
+		const reportId = await completeTrip();
+		expect((await submit(reportId)).success).toBe(true);
+		signIn("manager");
+		expect(await returnReport(await pendingRequestId(reportId), "Check the dates")).toEqual({
+			success: true,
+			data: { status: "returned" },
+		});
+		const [train] = (await load(reportId)).items;
+		if (!train) throw new Error("item missing");
+		await saveItem(reportId, train, { expenseDate: "2099-01-15" });
+
+		expect(await submit(reportId)).toEqual({
+			success: true,
+			data: {
+				status: "incomplete",
+				missing: { trip: [], items: [{ id: train.id, missing: ["future_date"] }] },
+			},
+		});
+		expect(await reportState(reportId)).toMatchObject({
+			status: "returned",
+			submission_count: 1,
+			revisions: 1,
+		});
+	});
+
 	it("returns a report with a required note and item comments, then resubmits the correction as a new cycle", async () => {
 		const reportId = await completeTrip();
 		expect((await submit(reportId)).success).toBe(true);

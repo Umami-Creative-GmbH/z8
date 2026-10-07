@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { composeAdjustmentBaseline } from "@/lib/travel-expenses/adjustment";
 import {
 	buildTravelExpenseReportSubmittedFacts,
@@ -6,6 +7,13 @@ import {
 	fingerprintTravelExpenseReportFacts,
 	type TravelExpenseReportFactsInput,
 } from "./travel-expense-report-facts";
+
+/** Freezes as submitting does, at an instant after every date of the fixtures (#685). */
+const freeze = (input: TravelExpenseReportFactsInput) =>
+	buildTravelExpenseReportSubmittedFacts({
+		...input,
+		submittedAt: parseInstant("2026-10-07T12:00:00Z"),
+	});
 
 const report: TravelExpenseReportFactsInput["report"] = {
 	id: "adjustment-1",
@@ -74,7 +82,7 @@ const adjustmentInput: TravelExpenseReportFactsInput = {
 
 describe("adjustment report facts (v8, #615)", () => {
 	it("freezes the corrected report, its reason, baseline and signed delta", () => {
-		const facts = buildTravelExpenseReportSubmittedFacts(adjustmentInput);
+		const facts = freeze(adjustmentInput);
 
 		expect(facts.schemaVersion).toBe(11);
 		expect(facts.totals).toEqual({ currency: "EUR", reimbursable: "450.00", companyPaid: "0.00" });
@@ -88,8 +96,8 @@ describe("adjustment report facts (v8, #615)", () => {
 	});
 
 	it("is material: the reviewed delta and baseline are part of the fingerprint", () => {
-		const facts = buildTravelExpenseReportSubmittedFacts(adjustmentInput);
-		const otherBaseline = buildTravelExpenseReportSubmittedFacts({
+		const facts = freeze(adjustmentInput);
+		const otherBaseline = freeze({
 			...adjustmentInput,
 			adjustmentBaseline: composeAdjustmentBaseline({ ...baseline, approvedAmount: "480.00" }, []),
 		});
@@ -99,17 +107,17 @@ describe("adjustment report facts (v8, #615)", () => {
 	});
 
 	it("refuses to freeze an adjustment without its resolved baseline", () => {
+		expect(() => freeze({ ...adjustmentInput, adjustmentBaseline: undefined })).toThrow(
+			expect.objectContaining({ code: "evidence_incomplete" }),
+		);
 		expect(() =>
-			buildTravelExpenseReportSubmittedFacts({ ...adjustmentInput, adjustmentBaseline: undefined }),
-		).toThrow(expect.objectContaining({ code: "evidence_incomplete" }));
-		expect(() =>
-			buildTravelExpenseReportSubmittedFacts({
+			freeze({
 				...adjustmentInput,
 				adjustmentBaseline: { ...baseline, originalReportId: "another-report" },
 			}),
 		).toThrow(expect.objectContaining({ code: "evidence_incomplete" }));
 		expect(() =>
-			buildTravelExpenseReportSubmittedFacts({
+			freeze({
 				...adjustmentInput,
 				adjustmentBaseline: { ...baseline, currency: "USD" },
 			}),
@@ -117,7 +125,7 @@ describe("adjustment report facts (v8, #615)", () => {
 	});
 
 	it("compares unchanged live rows as current and a changed correction as material", () => {
-		const facts = buildTravelExpenseReportSubmittedFacts(adjustmentInput);
+		const facts = freeze(adjustmentInput);
 		// Live rows carry the link only; the frozen baseline is kept when comparing.
 		const live = { ...adjustmentInput, adjustmentBaseline: undefined };
 		expect(compareLiveTravelExpenseReportWithRevision(facts, live)).toEqual({ kind: "current" });
@@ -135,7 +143,7 @@ describe("adjustment report facts (v8, #615)", () => {
 	});
 
 	it("adds nothing to a report that is not an adjustment", () => {
-		const plain = buildTravelExpenseReportSubmittedFacts({
+		const plain = freeze({
 			report,
 			items: [item],
 			receipts: [receipt],

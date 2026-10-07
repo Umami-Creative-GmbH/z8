@@ -1,5 +1,6 @@
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { ApprovalDatabase } from "../server/types";
 import { ApprovalEvidenceError } from "./errors";
 import {
@@ -12,6 +13,13 @@ import {
 	captureTravelExpenseReportSubmittedRevision,
 	loadTravelExpenseReportSubmittedRevision,
 } from "./travel-expense-report-store";
+
+/** Freezes as submitting does, at an instant after every date of the fixtures (#685). */
+const freeze = (input: TravelExpenseReportFactsInput) =>
+	buildTravelExpenseReportSubmittedFacts({
+		...input,
+		submittedAt: parseInstant("2026-10-07T12:00:00Z"),
+	});
 
 const scope = { organizationId: "org-1", reportId: "report-1" };
 
@@ -106,7 +114,7 @@ describe("travel expense report revisions", () => {
 	it("reads a captured schema version 1 revision back unchanged", async () => {
 		const { database, rows } = fakeRevisionTable();
 		// Later versions only add optional facts this report does not have.
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 1 };
+		const facts = { ...freeze(factsInput), schemaVersion: 1 };
 		await capture(database, facts);
 
 		const loaded = await loadTravelExpenseReportSubmittedRevision(database, scope);
@@ -119,7 +127,7 @@ describe("travel expense report revisions", () => {
 	it("refuses a revision of a version this build does not know", async () => {
 		for (const version of [0, TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION + 1, 1.5]) {
 			const { database, rows } = fakeRevisionTable();
-			await capture(database, buildTravelExpenseReportSubmittedFacts(factsInput));
+			await capture(database, freeze(factsInput));
 			const row = rows[0] as Row;
 			row.schemaVersion = version;
 			row.facts = { ...(row.facts as Row), schemaVersion: version };
@@ -129,7 +137,7 @@ describe("travel expense report revisions", () => {
 
 	it("refuses facts whose version disagrees with their row", async () => {
 		const { database, rows } = fakeRevisionTable();
-		await capture(database, buildTravelExpenseReportSubmittedFacts(factsInput));
+		await capture(database, freeze(factsInput));
 		(rows[0] as Row).schemaVersion = 1;
 		await expectInvariant(loadTravelExpenseReportSubmittedRevision(database, scope));
 	});

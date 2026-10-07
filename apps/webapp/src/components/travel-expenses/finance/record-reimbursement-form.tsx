@@ -23,9 +23,9 @@ import {
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import { systemClock } from "@/lib/datetime/temporal-core";
+import { latestCalendarDate } from "@/lib/travel-expenses/future-dates";
 import {
 	type CurrencySettlement,
-	latestCalendarDate,
 	parseSettlementCommand,
 	SETTLEMENT_NOTE_MAX_LENGTH,
 	SETTLEMENT_REFERENCE_MAX_LENGTH,

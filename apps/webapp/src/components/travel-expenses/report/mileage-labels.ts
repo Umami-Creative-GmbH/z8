@@ -6,6 +6,7 @@ import type {
 	MileageVehicle,
 } from "@/lib/travel-expenses/mileage";
 import { formatPlainDate } from "./format";
+import { futureDateLabel } from "./future-date-labels";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -60,11 +61,19 @@ export function policySourceLabel(t: Translate, source: AllowancePolicySource) {
 export function mileageRequirementLabel(
 	t: Translate,
 	requirement: MileageItemRequirement,
-	context: { locale: string; calculation: MileageCalculation | null; currency: string },
+	context: {
+		locale: string;
+		calculation: MileageCalculation | null;
+		currency: string;
+		/** The entered date of the drive (#685). */
+		expenseDate: string | null;
+	},
 ) {
 	switch (requirement) {
 		case "expense_date":
 			return t("travelExpenses.report.mileage.requirements.date", "Enter the date of the drive.");
+		case "future_date":
+			return futureDateLabel(t, context.locale, context.expenseDate);
 		case "route":
 			return t("travelExpenses.report.mileage.requirements.route", "Describe the route.");
 		case "distance":

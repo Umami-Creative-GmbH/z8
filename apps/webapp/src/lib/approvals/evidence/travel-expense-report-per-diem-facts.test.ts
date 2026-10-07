@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	calculatePerDiem,
 	type PerDiemItinerary,
@@ -15,6 +16,13 @@ import {
 	type TravelExpenseReportFactsInput,
 } from "./travel-expense-report-facts";
 import type { TravelExpenseReportPerDiemRow } from "./travel-expense-report-per-diem";
+
+/** Freezes as submitting does, at an instant after every date of the fixtures (#685). */
+const freeze = (input: TravelExpenseReportFactsInput) =>
+	buildTravelExpenseReportSubmittedFacts({
+		...input,
+		submittedAt: parseInstant("2026-10-07T12:00:00Z"),
+	});
 
 /** #609: frozen per diem facts (schema version 7). */
 
@@ -117,7 +125,7 @@ function input(perDiem: TravelExpenseReportPerDiemRow): TravelExpenseReportFacts
 describe("per diem facts", () => {
 	it("freezes the itinerary, stamped policy and daily breakdown with totals", () => {
 		const trip = itinerary();
-		const facts = buildTravelExpenseReportSubmittedFacts(input(row(trip, stampFor(trip))));
+		const facts = freeze(input(row(trip, stampFor(trip))));
 		// Built at the current version (v11 since the manual rate evidence).
 		expect(facts.schemaVersion).toBe(11);
 		const [item] = facts.items;
@@ -155,7 +163,7 @@ describe("per diem facts", () => {
 				dinner: { provided: false, employeePayment: null },
 			})),
 		});
-		const facts = buildTravelExpenseReportSubmittedFacts({
+		const facts = freeze({
 			...input(row(trip, stampFor(trip))),
 			report: { ...input(row(trip, null)).report, tripEndDate: "2026-09-14" },
 		});
@@ -165,25 +173,21 @@ describe("per diem facts", () => {
 
 	it("refuses to freeze a per diem without a stamp or off the trip dates", () => {
 		const trip = itinerary();
-		expect(() => buildTravelExpenseReportSubmittedFacts(input(row(trip, null)))).toThrow(
-			ApprovalEvidenceError,
-		);
+		expect(() => freeze(input(row(trip, null)))).toThrow(ApprovalEvidenceError);
 		const moved = itinerary({ endDate: "2026-09-15", meals: itinerary().meals.slice(0, 2) });
-		expect(() =>
-			buildTravelExpenseReportSubmittedFacts(input(row(moved, stampFor(moved)))),
-		).toThrow(ApprovalEvidenceError);
+		expect(() => freeze(input(row(moved, stampFor(moved))))).toThrow(ApprovalEvidenceError);
 	});
 
 	it("compares as current from the stamp, whatever today's policy says", () => {
 		const trip = itinerary();
 		const live = input(row(trip, stampFor(trip)));
-		const facts = buildTravelExpenseReportSubmittedFacts(live);
+		const facts = freeze(live);
 		expect(compareLiveTravelExpenseReportWithRevision(facts, live)).toEqual({ kind: "current" });
 	});
 
 	it("holds a changed itinerary or stamp as a material change", () => {
 		const trip = itinerary();
-		const facts = buildTravelExpenseReportSubmittedFacts(input(row(trip, stampFor(trip))));
+		const facts = freeze(input(row(trip, stampFor(trip))));
 		const later = itinerary({ endTime: "23:00" });
 		expect(
 			compareLiveTravelExpenseReportWithRevision(facts, input(row(later, stampFor(trip)))),
@@ -201,8 +205,6 @@ describe("per diem facts", () => {
 	it("refuses a per diem row of another report as a scope breach", () => {
 		const trip = itinerary();
 		const foreign = { ...row(trip, stampFor(trip)), reportId: "report-2" };
-		expect(() => buildTravelExpenseReportSubmittedFacts(input(foreign))).toThrow(
-			expect.objectContaining({ code: "invariant" }),
-		);
+		expect(() => freeze(input(foreign))).toThrow(expect.objectContaining({ code: "invariant" }));
 	});
 });

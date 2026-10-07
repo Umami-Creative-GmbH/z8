@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	type AllowanceOverride,
 	allowanceOverrideView,
@@ -49,6 +50,8 @@ const itinerary: PerDiemItinerary = {
 	})),
 };
 const destinations = [{ place: "Paris", countryCode: "FR" }];
+/** After the itinerary's return (#685). */
+const afterTrip = parseInstant("2026-10-07T12:00:00Z");
 
 function override(overrides: Partial<AllowanceOverride> = {}): AllowanceOverride {
 	return {
@@ -316,6 +319,7 @@ describe("override applicability", () => {
 				{
 					reimbursementCurrency: "EUR",
 					trip: { startDate: "2026-09-14", endDate: "2026-09-16" },
+					now: afterTrip,
 				},
 			),
 		).toEqual([]);
@@ -338,9 +342,36 @@ describe("override applicability", () => {
 				{
 					reimbursementCurrency: "EUR",
 					trip: { startDate: "2026-09-13", endDate: "2026-09-16" },
+					now: afterTrip,
 				},
 			),
 		).toEqual(["per_diem_trip_dates"]);
+	});
+
+	it("never resolves a per diem return that has not passed (#685)", () => {
+		const view = overriddenPerDiemView(
+			perDiemItemView(itinerary, {
+				status: "exceptional",
+				reasons: ["international", "foreign_time_zone"],
+				overlappingDays: [],
+			}),
+			destinations,
+			override(),
+			"EUR",
+		);
+		expect(view.override?.applies).toBe(true);
+		const missing = (now: string) =>
+			reportItemMissingRequirements(
+				{ type: "per_diem", draft: DRAFT, receiptCount: 0, perDiem: view },
+				{
+					reimbursementCurrency: "EUR",
+					trip: { startDate: "2026-09-14", endDate: "2026-09-16" },
+					now: parseInstant(now),
+				},
+			);
+		// 19:00 in Paris on 2026-09-16 is 17:00Z.
+		expect(missing("2026-09-16T16:59:00Z")).toEqual(["per_diem_not_returned"]);
+		expect(missing("2026-09-16T17:01:00Z")).toEqual([]);
 	});
 
 	it("still asks for the daily meals of an exceptional itinerary", () => {
@@ -349,6 +380,7 @@ describe("override applicability", () => {
 				{ ...itinerary, meals: [] },
 				{ status: "exceptional", reasons: ["international"], overlappingDays: [] },
 				{ startDate: "2026-09-14", endDate: "2026-09-16" },
+				afterTrip,
 			),
 		).toEqual(["per_diem_meals", "per_diem_exceptional"]);
 	});
@@ -379,7 +411,7 @@ describe("override applicability", () => {
 					receiptCount: 0,
 					mileage: view,
 				},
-				{ reimbursementCurrency: "EUR" },
+				{ reimbursementCurrency: "EUR", now: afterTrip },
 			),
 		).toEqual(["mileage_policy_missing"]);
 	});
@@ -401,7 +433,11 @@ describe("override applicability", () => {
 		expect(
 			reportItemMissingRequirements(
 				{ type: "per_diem", draft: DRAFT, receiptCount: 0, perDiem: changed },
-				{ reimbursementCurrency: "EUR", trip: { startDate: "2026-09-14", endDate: "2026-09-16" } },
+				{
+					reimbursementCurrency: "EUR",
+					trip: { startDate: "2026-09-14", endDate: "2026-09-16" },
+					now: afterTrip,
+				},
 			),
 		).toEqual(["per_diem_exceptional"]);
 

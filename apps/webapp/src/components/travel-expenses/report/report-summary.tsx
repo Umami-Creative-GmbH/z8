@@ -5,6 +5,7 @@ import { useLocale } from "next-intl";
 import type { ReceiptReportTotals } from "@/lib/travel-expenses/receipt-report";
 import type { TripRequirement } from "@/lib/travel-expenses/trip-report";
 import { formatMoney } from "./format";
+import { tripNotEndedLabel } from "./future-date-labels";
 
 /** Employee-paid (reimbursed) and company-paid totals of a report. */
 export function ReportTotals({ id, totals }: { id: string; totals: ReceiptReportTotals }) {
@@ -40,9 +41,10 @@ export function ReportTotals({ id, totals }: { id: string; totals: ReceiptReport
 	);
 }
 
-function tripRequirementLabel(
+export function tripRequirementLabel(
 	t: ReturnType<typeof useTranslate>["t"],
 	requirement: TripRequirement,
+	context: { locale: string; endDate: string | null },
 ) {
 	switch (requirement) {
 		case "purpose":
@@ -55,6 +57,8 @@ function tripRequirementLabel(
 				"travelExpenses.report.trip.requirements.travelDates",
 				"Enter the first and last travel day.",
 			);
+		case "trip_not_ended":
+			return tripNotEndedLabel(t, context.locale, context.endDate);
 		case "destination":
 			return t(
 				"travelExpenses.report.trip.requirements.destination",
@@ -75,15 +79,19 @@ export interface IncompleteExpense {
 export function TripRequirements({
 	id,
 	trip,
+	endDate,
 	incompleteExpenses,
 }: {
 	id: string;
 	/** Missing shared trip facts; null while the trip details have malformed fields. */
 	trip: TripRequirement[] | null;
+	/** The trip end as entered, named while the trip has not ended (#685). */
+	endDate: string | null;
 	/** Expenses with missing or malformed facts; each links to its editor. */
 	incompleteExpenses: IncompleteExpense[];
 }) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const complete = trip !== null && trip.length === 0 && incompleteExpenses.length === 0;
 	return (
 		<section aria-labelledby={`${id}-requirements`} className="space-y-2 rounded-lg border p-4">
@@ -108,7 +116,7 @@ export function TripRequirements({
 						</li>
 					)}
 					{trip?.map((requirement) => (
-						<li key={requirement}>{tripRequirementLabel(t, requirement)}</li>
+						<li key={requirement}>{tripRequirementLabel(t, requirement, { locale, endDate })}</li>
 					))}
 					{incompleteExpenses.map((expense) => (
 						<li key={expense.id}>

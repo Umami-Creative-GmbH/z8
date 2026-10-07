@@ -3,6 +3,7 @@ import type {
 	TravelExpenseReportItemType,
 	TravelExpenseReportKind,
 } from "@/db/schema/travel-expense";
+import type { Instant } from "@/lib/datetime/temporal-core";
 import type { AllowancePolicySource } from "@/lib/travel-expenses/allowance-policy";
 import { TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER } from "@/lib/travel-expenses/attachment-validation";
 import {
@@ -287,7 +288,17 @@ export interface TravelExpenseReportFactsInput {
 	adjustment?: TravelExpenseReportAdjustmentLink | null;
 	/** Submitting an adjustment: the baseline resolved under the original's lock. */
 	adjustmentBaseline?: AdjustmentBaseline;
+	/**
+	 * The submission instant, required when submitting: nothing future-dated is
+	 * frozen (#685). Comparing never re-checks dates, which only move into the past.
+	 */
+	submittedAt?: Instant;
 }
+
+/** What submitting freezes: the persisted rows and the submission instant. */
+export type TravelExpenseReportSubmissionInput = TravelExpenseReportFactsInput & {
+	submittedAt: Instant;
+};
 
 const MONEY_AMOUNT = /^\d{1,10}\.\d{2}$/;
 const CURRENCY = /^[A-Z]{3}$/;
@@ -391,6 +402,7 @@ function liveTripFacts(
 function tripFacts(
 	report: TravelExpenseReportFactsInput["report"],
 	itemCount: number,
+	now: Instant,
 ): TravelExpenseReportSubmittedFacts["trip"] {
 	if (report.kind === "standalone") {
 		if (itemCount !== 1) incomplete("items");
@@ -408,6 +420,7 @@ function tripFacts(
 		},
 		items: [],
 		reimbursementCurrency: report.reimbursementCurrency,
+		now,
 	}).trip.filter((requirement) => requirement !== "expense_item");
 	if (missing.length > 0 || !tripPurpose || !tripStartDate || !tripEndDate) incomplete("trip");
 	if (itemCount < 1) incomplete("items");
@@ -613,7 +626,7 @@ function perDiemItemFacts(
  * incomplete throws instead of being frozen as a guess.
  */
 export function buildTravelExpenseReportSubmittedFacts(
-	input: TravelExpenseReportFactsInput,
+	input: TravelExpenseReportSubmissionInput,
 ): TravelExpenseReportSubmittedFacts {
 	return snapshotReport(input, "submit", TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION);
 }
@@ -631,6 +644,8 @@ function snapshotReport(
 ): TravelExpenseReportSubmittedFacts {
 	const enforce = mode === "submit";
 	const { report } = input;
+	// Null when comparing: dates are checked only when submitting (#685).
+	const submittedAt = enforce ? (input.submittedAt ?? invariant("submitted_at")) : null;
 	for (const row of input.items) {
 		if (row.organizationId !== report.organizationId || row.reportId !== report.id) {
 			invariant("item_scope");
@@ -682,15 +697,6 @@ function snapshotReport(
 				};
 			}
 			const draft = itemDraft(row);
-			const missing = receiptItemMissingRequirements(draft, {
-				receiptCount: receipts.length,
-				reimbursementCurrency: report.reimbursementCurrency,
-				receiptException: receiptExceptionContext(
-					row.receiptExceptionReason ?? null,
-					input.receiptExceptionsAllowed === true,
-				),
-				conversion: conversionOf(row.id),
-			});
 			const exception = frozenReceiptException(row.receiptExceptionReason, receipts.length);
 			const exceptionFact =
 				schemaVersion >= RECEIPT_EXCEPTION_SCHEMA_VERSION && exception
@@ -707,7 +713,7 @@ function snapshotReport(
 					receiptIds: receipts.map((receipt) => receipt.receiptId),
 				});
 			const project = projectFacts(input, row, mode, schemaVersion, frozen);
-			if (!enforce) {
+			if (!submittedAt) {
 				return {
 					itemId: row.id,
 					position: row.position,
@@ -724,6 +730,16 @@ function snapshotReport(
 					...project,
 				} as TravelExpenseReportSubmittedItem;
 			}
+			const missing = receiptItemMissingRequirements(draft, {
+				receiptCount: receipts.length,
+				reimbursementCurrency: report.reimbursementCurrency,
+				receiptException: receiptExceptionContext(
+					row.receiptExceptionReason ?? null,
+					input.receiptExceptionsAllowed === true,
+				),
+				conversion: conversionOf(row.id),
+				now: submittedAt,
+			});
 			if (
 				missing.length > 0 ||
 				!expenseDate ||
@@ -752,7 +768,7 @@ function snapshotReport(
 				...project,
 			};
 		});
-	const trip = enforce ? tripFacts(report, items.length) : liveTripFacts(report);
+	const trip = submittedAt ? tripFacts(report, items.length, submittedAt) : liveTripFacts(report);
 	const totals = receiptReportTotals(
 		items.map((item) => ({
 			amount: item.original.amount,

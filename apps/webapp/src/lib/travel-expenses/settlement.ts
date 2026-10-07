@@ -1,9 +1,4 @@
-import {
-	comparePlainDates,
-	type Instant,
-	type PlainDate,
-	parsePlainDate,
-} from "@/lib/datetime/temporal-core";
+import { comparePlainDates, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import {
 	currencyMinorUnitDigits,
 	formatUnits,
@@ -172,16 +167,6 @@ export interface SettlementCommandFieldError {
 export const SETTLEMENT_REFERENCE_MAX_LENGTH = 200;
 export const SETTLEMENT_NOTE_MAX_LENGTH = 1000;
 const EARLIEST_DATE = "2000-01-01";
-/** The zone whose calendar date is the latest anywhere on earth (UTC+14). */
-const LATEST_ZONE = "Pacific/Kiritimati";
-
-/**
- * Today's latest calendar date anywhere: a recorded payment may be dated today
- * in any zone, never later, without using the viewer's zone for meaning.
- */
-export function latestCalendarDate(now: Instant): string {
-	return now.toZonedDateTimeISO(LATEST_ZONE).toPlainDate().toString();
-}
 
 function plainDate(value: string): PlainDate | null {
 	try {

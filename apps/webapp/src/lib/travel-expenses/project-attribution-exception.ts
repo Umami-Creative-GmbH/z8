@@ -34,6 +34,11 @@ export type ProjectAttributionExceptionError =
  * `historyCapturedFrom` is the organization's first calendar day of captured
  * assignment history (#605): exceptions end before it, since history proves
  * (or disproves) every later date.
+ *
+ * `today` is today in the organization's timezone, deliberately not the
+ * latest calendar date anywhere that future-dated expenses wait for (#685):
+ * it asks whether assignment history can prove past work, not whether an
+ * expense has happened.
  */
 export function parseProjectAttributionExceptionDraft(
 	input: ProjectAttributionExceptionDraft,
