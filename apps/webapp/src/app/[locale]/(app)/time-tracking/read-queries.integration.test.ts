@@ -49,11 +49,9 @@ vi.mock("./actions/shared", () => ({
 }));
 vi.mock("@/lib/effect/services/change-policy.service", () => ({
 	ChangePolicyService: {},
-	ChangePolicyServiceLive: {},
 }));
-vi.mock("@/lib/effect/services/database.service", () => ({
-	DatabaseServiceLive: {},
-}));
+// No read here runs the edit-capability effect, the module's one runtime run.
+vi.mock("@/lib/effect/runtime", () => ({ runtime: {} }));
 
 describe("scoped rendering reads on disposable PostgreSQL", () => {
 	const admin = integrationAdminPool();
