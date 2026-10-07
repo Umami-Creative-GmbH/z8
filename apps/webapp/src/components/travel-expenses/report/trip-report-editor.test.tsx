@@ -2,7 +2,8 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const reportActions = vi.hoisted(() => ({
 	getMyTravelExpenseReport: vi.fn(),
@@ -152,6 +153,19 @@ function tripSection() {
 
 const originalTimeZone = process.env.TZ;
 
+beforeAll(() => {
+	// The searchable country select measures and scrolls its list.
+	vi.stubGlobal(
+		"ResizeObserver",
+		class {
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		},
+	);
+	HTMLElement.prototype.scrollIntoView = vi.fn();
+});
+
 beforeEach(() => {
 	reportActions.getMyTravelExpenseReport.mockResolvedValue(trip());
 });
@@ -244,7 +258,10 @@ describe("trip report editor", () => {
 		mount();
 		await purpose();
 		const section = tripSection();
-		expect(within(section).getByText("Sep 14, 2026 – Sep 16, 2026")).toBeTruthy();
+		// The date fields show the calendar days; no summary line repeats them (#688).
+		expect(within(section).getByText("Sep 14, 2026")).toBeTruthy();
+		expect(within(section).getByText("Sep 16, 2026")).toBeTruthy();
+		expect(within(section).queryByText("Sep 14, 2026 – Sep 16, 2026")).toBeNull();
 		expect(
 			within(section).getByText("Travel dates are calendar days in Europe/Berlin.", {
 				exact: false,
@@ -309,8 +326,35 @@ describe("trip report editor", () => {
 		expect(reportActions.saveTripDetailsDraftAction).toHaveBeenCalledTimes(1);
 	});
 
-	it("adds destinations and saves them with the trip", async () => {
+	it("finds a destination country by typed text and saves its code (#688)", async () => {
 		reportActions.saveTripDetailsDraftAction.mockResolvedValue({
+			success: true,
+			data: { status: "saved", details: { ...tripDetails, version: 6 } },
+		});
+		const user = userEvent.setup();
+		mount();
+		await purpose();
+		await user.click(within(tripSection()).getByRole("combobox", { name: "Country 1" }));
+		await user.keyboard("fra");
+		expect(screen.queryByRole("option", { name: "Germany" })).toBeNull();
+		await user.click(screen.getByRole("option", { name: "France" }));
+		expect(within(tripSection()).getByRole("combobox", { name: "Country 1" }).textContent).toContain(
+			"France",
+		);
+		await waitFor(
+			() =>
+				expect(reportActions.saveTripDetailsDraftAction).toHaveBeenCalledWith(
+					expect.objectContaining({
+						values: expect.objectContaining({
+							destinations: [{ place: "Hamburg", countryCode: "FR" }],
+						}),
+					}),
+				),
+			{ timeout: 2000 },
+		);
+	});
+
+	it("adds destinations and saves them with the trip", async () => {		reportActions.saveTripDetailsDraftAction.mockResolvedValue({
 			success: true,
 			data: { status: "saved", details: { ...tripDetails, version: 6 } },
 		});

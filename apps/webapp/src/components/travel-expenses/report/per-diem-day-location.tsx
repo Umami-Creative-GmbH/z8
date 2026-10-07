@@ -4,6 +4,7 @@ import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useMemo } from "react";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
 	Select,
 	SelectContent,
@@ -87,28 +88,25 @@ function LocationSelect({
 				{label}
 			</Label>
 			<div className="grid gap-2 sm:grid-cols-2">
-				<Select value={countryValue} onValueChange={(next) => onChange(next ?? "")}>
-					<SelectTrigger className="w-full" aria-labelledby={`${id}-label`}>
-						<SelectValue
-							placeholder={t("travelExpenses.report.perDiem.location.choose", "Choose a location")}
-						/>
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="DE">
-							{noneLabel ?? t("travelExpenses.report.perDiem.location.germany", "Germany")}
-						</SelectItem>
-						{countries.map((entry) => (
-							<SelectItem key={entry.code} value={entry.code}>
-								{entry.name}
-							</SelectItem>
-						))}
-						{specials.map((special) => (
-							<SelectItem key={special} value={`special:${special}`}>
-								{specialLabel(t, special)}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+				<SearchableSelect
+					aria-labelledby={`${id}-label`}
+					pinnedOptions={[
+						{
+							code: "DE",
+							name: noneLabel ?? t("travelExpenses.report.perDiem.location.germany", "Germany"),
+						},
+						...specials.map((special) => ({
+							code: `special:${special}`,
+							name: specialLabel(t, special),
+						})),
+					]}
+					options={countries}
+					value={countryValue ?? ""}
+					onValueChange={onChange}
+					placeholder={t("travelExpenses.report.perDiem.location.choose", "Choose a location")}
+					searchPlaceholder={t("travelExpenses.report.countrySearch", "Search countries")}
+					emptyText={t("travelExpenses.report.countryEmpty", "No country found")}
+				/>
 				{country && places.length > 0 && (
 					<Select
 						value={location && "country" in location ? (location.place ?? ELSEWHERE) : ELSEWHERE}
