@@ -1,18 +1,16 @@
 "use client";
 
-import { IconCalendar, IconLoader2, IconMapPin, IconTrash, IconUsers } from "@tabler/icons-react";
+import { IconLoader2, IconMapPin, IconTrash, IconUsers } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { type ComponentProps, useState } from "react";
-import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import type { ShiftTemplate, ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
 import { SkillWarningAlert, SkillWarningBadge } from "@/components/scheduling/skill-warning-alert";
 import { ActionPanelFooter } from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
 	Select,
 	SelectContent,
@@ -23,7 +21,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import { cn } from "@/lib/utils";
 import type { ShiftDialogEmployee, ShiftDialogLocation } from "./use-shift-dialog-data";
 import type { ShiftDialogFormApi, ShiftDialogFormValues } from "./use-shift-dialog-form";
 
@@ -115,42 +112,18 @@ export function ShiftDialogSections({
 			<form.Field name="date" validators={{ onChange: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }}>
 				{(field) => (
 					<div className="flex flex-col gap-y-2">
-						<Label>{t("scheduling:scheduling.shiftDialog.date", "Date")}</Label>
-						<Popover>
-							<PopoverTrigger asChild>
-								<Button
-									variant="outline"
-									className={cn(
-										"w-full pl-3 text-left font-normal",
-										!field.state.value && "text-muted-foreground",
-									)}
-									disabled={!isManager}
-								>
-									{field.state.value ? (
-										Temporal.PlainDate.from(field.state.value).toLocaleString()
-									) : (
-										<span>{t("scheduling:scheduling.shiftDialog.pickDate", "Pick a date")}</span>
-									)}
-									<IconCalendar className="ml-auto size-4 opacity-50" />
-								</Button>
-							</PopoverTrigger>
-							<PopoverContent className="w-auto p-0" align="start">
-								<Calendar
-									mode="single"
-									selected={new Date(`${field.state.value}T00:00:00Z`)}
-									onSelect={(date) =>
-										date &&
-										field.handleChange(
-											Temporal.Instant.fromEpochMilliseconds(date.getTime())
-												.toZonedDateTimeISO("UTC")
-												.toPlainDate()
-												.toString(),
-										)
-									}
-									autoFocus
-								/>
-							</PopoverContent>
-						</Popover>
+						<Label htmlFor="shift-dialog-date">
+							{t("scheduling:scheduling.shiftDialog.date", "Date")}
+						</Label>
+						<DatePicker
+							id="shift-dialog-date"
+							required
+							value={field.state.value}
+							onChange={field.handleChange}
+							onBlur={field.handleBlur}
+							disabled={!isManager}
+							placeholder={t("scheduling:scheduling.shiftDialog.pickDate", "Pick a date")}
+						/>
 						<FieldErrorText errors={field.state.meta.errors} />
 					</div>
 				)}

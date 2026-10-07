@@ -15,6 +15,7 @@ const setupAuthorization = vi.hoisted(() => ({
 }));
 
 vi.mock("next/navigation", () => ({ redirect }));
+vi.mock("next-intl/server", () => ({ getLocale: async () => "de" }));
 vi.mock("next/headers", () => ({
 	cookies: async () => ({ get: setupAuthorization.get }),
 }));
@@ -65,8 +66,8 @@ describe("SetupPage", () => {
 
 		await expect(
 			page.props.children.type(page.props.children.props),
-		).rejects.toThrow("redirect:/de/");
-		expect(redirect).toHaveBeenCalledWith("/de/");
+		).rejects.toThrow("redirect:/de");
+		expect(redirect).toHaveBeenCalledWith("/de");
 	});
 
 	it("renders the existing setup wizard when configuration is required and authorized", async () => {

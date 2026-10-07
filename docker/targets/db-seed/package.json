@@ -9,7 +9,7 @@
 		"dotenv": "^18.0.5",
 		"drizzle-orm": "^0.45.3",
 		"luxon": "^3.7.2",
-		"next": "16.3.8",
+		"next": "16.4.0",
 		"pg": "^8.23.1",
 		"pino": "^10.4.0",
 		"temporal-polyfill": "1.0.5",

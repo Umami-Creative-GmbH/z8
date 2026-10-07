@@ -155,7 +155,7 @@ function toLegacyDraftClaim(claim: ClaimRow): LegacyDraftClaim {
 }
 
 /** Approval rows of any earlier submission of the claim, under any authority. */
-async function hasApprovalHistory(tx: Transaction, organizationId: string, claimId: string) {
+export async function hasApprovalHistory(tx: Transaction, organizationId: string, claimId: string) {
 	const [request] = await tx
 		.select({ id: approvalRequest.id })
 		.from(approvalRequest)

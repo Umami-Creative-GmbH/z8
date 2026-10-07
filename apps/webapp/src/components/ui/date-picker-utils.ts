@@ -1,13 +1,18 @@
-import { DateTime } from "luxon";
+import { type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 
-export function parseDateOnly(value?: string | null) {
+export function parseDateOnly(value?: string | null): PlainDate | null {
 	if (!value) return null;
 
-	const date = DateTime.fromFormat(value, "yyyy-MM-dd");
-	return date.isValid ? date : null;
+	try {
+		return parsePlainDate(value);
+	} catch {
+		return null;
+	}
 }
 
-export function formatDateOnly(value?: string | null) {
+/** Format a YYYY-MM-DD value for display in the app language, not the browser's. */
+export function formatDateOnly(value: string | null | undefined, locale: string) {
 	const date = parseDateOnly(value);
-	return date?.toLocaleString(DateTime.DATE_MED) ?? "";
+	return date ? formatPlainDate(date, locale, "dateMedium") : "";
 }

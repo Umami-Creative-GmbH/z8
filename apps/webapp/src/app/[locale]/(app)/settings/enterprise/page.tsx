@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
 // Redirect to the first enterprise page (Custom Domains)
-export default function EnterprisePage() {
-	redirect("/settings/enterprise/domains");
+export default async function EnterprisePage() {
+	return redirectWithLocale("/settings/enterprise/domains");
 }

@@ -23,6 +23,8 @@ vi.mock("next/navigation", () => ({
 	redirect: vi.fn(),
 }));
 
+vi.mock("next-intl/server", () => ({ getLocale: async () => "en" }));
+
 vi.mock("@/components/two-factor-verification-form", () => ({
 	TwoFactorVerificationForm: () => <div data-testid="two-factor-form" />,
 }));
@@ -68,7 +70,7 @@ describe("Verify2FAPage", () => {
 
 		await content();
 
-		expect(redirect).toHaveBeenCalledWith("/");
+		expect(redirect).toHaveBeenCalledWith("/en");
 		expect(getSession).toHaveBeenCalledWith({ headers: requestHeaders });
 	});
 });

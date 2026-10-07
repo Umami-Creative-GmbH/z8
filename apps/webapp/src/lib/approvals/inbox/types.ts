@@ -1,4 +1,5 @@
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
+import type { PerDiemDayLocation } from "@/lib/travel-expenses/per-diem";
 import type { WorkCategoryReviewValue } from "../server/time-correction-review-metadata";
 
 export const SUPPORTED_APPROVAL_INBOX_TYPES = [
@@ -61,6 +62,8 @@ export interface ApprovalInboxCapabilities {
 	 * sprint approve stay off and send the reviewer to the details.
 	 */
 	requiresDetailReview?: boolean;
+	/** The viewer requested this; someone else decides it, so every decision is off (#686). */
+	ownRequest?: boolean;
 }
 
 export interface ApprovalInboxItem {
@@ -85,7 +88,13 @@ export type ApprovalInboxTextParam =
 	| string
 	| number
 	| ApprovalInboxLocalizedText
-	| ApprovalInboxLocalizedText[];
+	| ApprovalInboxLocalizedText[]
+	| ApprovalInboxPerDiemLocationParam;
+
+/** A per diem day's applied location (#681), named in the reader's language when rendered. */
+export interface ApprovalInboxPerDiemLocationParam {
+	perDiemLocation: Pick<PerDiemDayLocation, "country" | "place" | "label">;
+}
 
 export interface ApprovalInboxLocalizedText {
 	key: string;

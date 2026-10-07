@@ -1,9 +1,9 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ComplianceExceptionsManager } from "@/components/settings/compliance-exceptions-manager";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAuthContext } from "@/lib/auth-helpers";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
 export const metadata = {
 	title: "Compliance Settings | ArbZG",
@@ -24,7 +24,7 @@ async function ComplianceSettingsContent() {
 
 	// Only managers and admins can access compliance exception management
 	if (authContext.employee.role === "employee") {
-		redirect("/");
+		return redirectWithLocale("/");
 	}
 
 	return (

@@ -16,7 +16,9 @@ vi.mock("@/app/[locale]/(app)/travel-expenses/history-actions", () => historyAct
 const reportActions = vi.hoisted(() => ({
 	createStandaloneReceiptReportAction: vi.fn(),
 	createTripReportAction: vi.fn(),
+	deleteDraftTravelExpenseReportAction: vi.fn(),
 }));
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock("@/app/[locale]/(app)/travel-expenses/report-actions", () => reportActions);
 vi.mock("@/app/[locale]/(app)/travel-expenses/mileage-actions", () => ({
 	createStandaloneMileageReportAction: vi.fn(),
@@ -69,6 +71,7 @@ function reportRow(overrides: Partial<ReportHistoryRow> & { id: string }): Repor
 		totals: { currency: "EUR", reimbursable: "129.90", companyPaid: "0.00", excludedItemCount: 0 },
 		adjustmentOf: null,
 		continuedFromClaimId: null,
+		deletable: false,
 		...overrides,
 	};
 }
@@ -236,6 +239,55 @@ describe("unified history", () => {
 		);
 		const client = mount();
 		expect(await screen.findByRole("button", { name: "Continue as report" })).toBeTruthy();
+		client.clear();
+	});
+
+	it("deletes a never-submitted draft from its row after confirmation (#684)", async () => {
+		historyActions.getMyTravelExpenseHistory
+			.mockResolvedValueOnce(
+				respond([
+					reportRow({ id: "draft", title: "Draft receipt", deletable: true }),
+					reportRow({ id: "withdrawn", title: "Withdrawn receipt" }),
+				]),
+			)
+			.mockResolvedValue(respond([reportRow({ id: "withdrawn", title: "Withdrawn receipt" })]));
+		reportActions.deleteDraftTravelExpenseReportAction.mockResolvedValueOnce({
+			success: true,
+			data: { reportId: "draft" },
+		});
+		const client = mount();
+		await screen.findByText("Draft receipt");
+		expect(screen.queryByRole("button", { name: "Delete draft “Withdrawn receipt”" })).toBeNull();
+
+		fireEvent.click(screen.getByRole("button", { name: "Delete draft “Draft receipt”" }));
+		const dialog = await screen.findByRole("alertdialog");
+		expect(dialog.textContent).toContain("Delete this draft?");
+		expect(reportActions.deleteDraftTravelExpenseReportAction).not.toHaveBeenCalled();
+		fireEvent.click(within(dialog).getByRole("button", { name: "Delete draft" }));
+
+		await vi.waitFor(() => expect(screen.queryByText("Draft receipt")).toBeNull());
+		expect(reportActions.deleteDraftTravelExpenseReportAction).toHaveBeenCalledWith({
+			reportId: "draft",
+		});
+		expect(screen.getByText("Withdrawn receipt")).toBeTruthy();
+		client.clear();
+	});
+
+	it("warns that deleting a continued draft deletes the earlier claim too", async () => {
+		historyActions.getMyTravelExpenseHistory.mockResolvedValue(
+			respond([
+				reportRow({
+					id: "continued",
+					title: "Taxi",
+					deletable: true,
+					continuedFromClaimId: "old-draft",
+				}),
+			]),
+		);
+		const client = mount();
+		fireEvent.click(await screen.findByRole("button", { name: "Delete draft “Taxi”" }));
+		const dialog = await screen.findByRole("alertdialog");
+		expect(dialog.textContent).toContain("together with the earlier claim draft it continues");
 		client.clear();
 	});
 });

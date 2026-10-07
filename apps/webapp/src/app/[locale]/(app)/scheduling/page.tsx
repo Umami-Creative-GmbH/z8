@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ShiftScheduler } from "@/components/scheduling/scheduler/shift-scheduler";
 import { parseSchedulerFocus } from "@/components/scheduling/scheduler/shift-scheduler-utils";
@@ -6,6 +5,7 @@ import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { getAuthContext } from "@/lib/auth-helpers";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getTranslate } from "@/tolgee/server";
 
 type SchedulingSearchParams = {
@@ -32,7 +32,7 @@ async function SchedulingPageContent({
 	]);
 
 	if (!authContext?.employee) {
-		redirect("/onboarding/welcome");
+		return redirectWithLocale("/onboarding/welcome");
 	}
 
 	const emp = authContext.employee;

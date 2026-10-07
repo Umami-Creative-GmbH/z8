@@ -95,6 +95,60 @@ describe("mileage rate settings (#606)", () => {
 		);
 	});
 
+	describe("adopted statutory catalog (#689)", () => {
+		const adopted = (overrides: Partial<typeof version> & { defaultKey?: string }) => {
+			const { defaultKey = GERMAN_MILEAGE_DEFAULT.key, ...rest } = overrides;
+			return {
+				...version,
+				source: {
+					kind: "statutory_default",
+					reference: GERMAN_MILEAGE_DEFAULT.reference,
+					version: GERMAN_MILEAGE_DEFAULT.version,
+					defaultKey,
+				},
+				...rest,
+			};
+		};
+
+		function settings(timeline: unknown[], withdrawn: unknown[] = []) {
+			actions.getMileagePolicySettings.mockResolvedValue({
+				success: true,
+				data: { timeline, withdrawn, defaults: [GERMAN_MILEAGE_DEFAULT] },
+			});
+		}
+
+		it("shows when the catalog was adopted instead of offering it again", async () => {
+			settings([
+				adopted({ id: "v2", effectiveFrom: "2026-07-01", createdAt: "2026-06-20T09:30:00.000Z" }),
+				adopted({ id: "v1", effectiveFrom: "2026-01-01", createdAt: "2026-01-02T08:00:00.000Z" }),
+			]);
+			mount();
+			const catalog = await screen.findByRole("region", { name: "German statutory flat rates" });
+			expect(
+				within(catalog).getByText(/^Adopted on Jun 20, 2026.*UTC, valid from Jul 1, 2026$/),
+			).toBeTruthy();
+			expect(within(catalog).queryByRole("button", { name: "Adopt these rates" })).toBeNull();
+		});
+
+		it("offers the catalog again once its version is withdrawn", async () => {
+			settings(
+				[adopted({ id: "v1", withdrawnAt: "2026-03-01T10:00:00.000Z" })],
+				[adopted({ id: "v0", withdrawnAt: "2026-02-01T10:00:00.000Z" })],
+			);
+			mount();
+			const catalog = await screen.findByRole("region", { name: "German statutory flat rates" });
+			expect(within(catalog).getByRole("button", { name: "Adopt these rates" })).toBeTruthy();
+			expect(within(catalog).queryByText(/^Adopted on/)).toBeNull();
+		});
+
+		it("does not count organization rates or another catalog's key", async () => {
+			settings([version, adopted({ id: "v1", defaultKey: "de-mileage-other-edition" })]);
+			mount();
+			const catalog = await screen.findByRole("region", { name: "German statutory flat rates" });
+			expect(within(catalog).getByRole("button", { name: "Adopt these rates" })).toBeTruthy();
+		});
+	});
+
 	it("replaces a version starting the same day only after an explicit second confirmation", async () => {
 		actions.getMileagePolicySettings.mockResolvedValue({
 			success: true,

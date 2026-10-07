@@ -34,6 +34,8 @@ vi.mock("next/navigation", () => ({
 	redirect: mockState.redirect,
 }));
 
+vi.mock("next-intl/server", () => ({ getLocale: async () => "en" }));
+
 vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...predicates: unknown[]) => predicates),
 	eq: vi.fn((left: unknown, right: unknown) => ({ left, right })),

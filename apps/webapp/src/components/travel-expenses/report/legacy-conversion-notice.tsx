@@ -78,14 +78,9 @@ function legacyConversionFlagText(
 	}
 }
 
-/**
- * On a report continued from a legacy draft (#616): where it came from, what
- * was carried over and why some fields are still empty.
- */
-export function LegacyConversionNotice({ reportId }: { reportId: string }) {
-	const { t } = useTranslate();
-	const locale = useLocale();
-	const { data } = useQuery({
+/** The legacy draft the report continues (#616); null when it continues none. */
+export function useLegacyConversion(reportId: string) {
+	return useQuery({
 		queryKey: queryKeys.travelExpenses.legacyConversion(reportId),
 		queryFn: async () => {
 			const result = await getLegacyTravelExpenseConversion({ reportId });
@@ -94,6 +89,16 @@ export function LegacyConversionNotice({ reportId }: { reportId: string }) {
 		},
 		staleTime: Number.POSITIVE_INFINITY,
 	});
+}
+
+/**
+ * On a report continued from a legacy draft (#616): where it came from, what
+ * was carried over and why some fields are still empty.
+ */
+export function LegacyConversionNotice({ reportId }: { reportId: string }) {
+	const { t } = useTranslate();
+	const locale = useLocale();
+	const { data } = useLegacyConversion(reportId);
 	if (!data) return null;
 	const { legacy } = data;
 	const notes = legacy.notes?.trim();

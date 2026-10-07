@@ -1,5 +1,4 @@
 import { IconTag } from "@tabler/icons-react";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { WorkCategoryManagement } from "@/components/settings/work-category/work-category-management";
@@ -12,6 +11,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getTranslate } from "@/tolgee/server";
 
 async function WorkCategoriesSettingsContent() {
@@ -21,14 +21,14 @@ async function WorkCategoriesSettingsContent() {
 	]);
 
 	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const organizationId =
 		settingsRouteContext.authContext.session.activeOrganizationId;
 
 	if (!organizationId) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const { accessTier } = settingsRouteContext;

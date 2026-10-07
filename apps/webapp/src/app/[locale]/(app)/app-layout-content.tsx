@@ -23,6 +23,7 @@ import { getRenderSession } from "@/lib/auth/render-session";
 import { runtime } from "@/lib/effect/runtime";
 import type { BillingAccessResult } from "@/lib/effect/services/billing/billing-enforcement.service";
 import { createLogger } from "@/lib/logger";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getOrganizationSettings } from "@/lib/organization-settings";
 import { getRenderUserPreferences } from "@/lib/user-preferences/render-snapshot";
 import { DOMAIN_HEADERS } from "@/proxy";
@@ -143,7 +144,7 @@ export async function AuthenticatedAppContent({
 		pathname.startsWith(`/${locale}/billing/suspended/`);
 
 	if (billingAccess.canAccess === false && !isBillingRecoveryPath) {
-		redirect(`/${locale}/billing/suspended`);
+		return redirectWithLocale("/billing/suspended");
 	}
 
 	const trialDaysRemaining =

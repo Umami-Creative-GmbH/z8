@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Badge } from "@/components/ui/badge";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getTranslate } from "@/tolgee/server";
 import { getCurrentEmployee, getManagedEmployees } from "./actions";
 import { TeamMembersList } from "./team-members-list";
@@ -20,7 +20,7 @@ export default async function TeamPage() {
 
 	// Only managers and admins can access this page
 	if (currentEmployee.role !== "manager" && currentEmployee.role !== "admin") {
-		redirect("/");
+		return redirectWithLocale("/");
 	}
 
 	const result = await getManagedEmployees();

@@ -418,6 +418,8 @@ export interface DraftReportSummary {
 	id: string;
 	kind: TravelExpenseReportKind;
 	status: TravelExpenseReportStatus;
+	/** Submission cycles so far; only a never-submitted draft can be deleted (#684). */
+	submissionCount: number;
 	updatedAt: string;
 	/** The (first) expense's facts; a trip's first expense is not its title. */
 	expenseDate: string | null;
@@ -552,6 +554,7 @@ async function listOwnReports(
 			id: report.id,
 			kind: report.kind,
 			status: report.status,
+			submissionCount: report.submissionCount,
 			updatedAt: report.updatedAt.toISOString(),
 			expenseDate: item?.expenseDate ?? null,
 			description: item?.description ?? item?.mileageRoute ?? null,

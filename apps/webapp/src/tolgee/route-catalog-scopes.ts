@@ -44,7 +44,8 @@ const DEPENDENCIES: Record<string, Namespace[]> = {
 	"/analytics": ["reports"],
 	"/calendar": ["timeTracking"],
 	"/team": ["calendar"],
-	"/approvals": ["bot"],
+	// Report review panels and per diem place names render travelExpenses copy.
+	"/approvals": ["bot", "travelExpenses"],
 	"/platform-admin": ["settings/generic"],
 	"/settings/approval-policies": ["settings/people"],
 	"/settings/employees": ["organization"],

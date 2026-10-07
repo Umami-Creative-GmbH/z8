@@ -1,8 +1,8 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { LocationDetail } from "@/components/settings/location-detail";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
 interface LocationDetailPageProps {
 	params: Promise<{ locationId: string }>;
@@ -15,13 +15,13 @@ async function LocationDetailPageContent({ params }: LocationDetailPageProps) {
 	]);
 
 	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
 
 	if (!organizationId) {
-		redirect("/settings");
+		return redirectWithLocale("/settings");
 	}
 
 	return (

@@ -4,6 +4,7 @@ import type {
 	TravelExpenseReportStatus,
 } from "@/db/schema/travel-expense";
 import type { ReceiptReportTotals } from "./receipt-report";
+import { isDeletableDraftReport } from "./report-deletion";
 import type { DraftReportSummary } from "./report-store";
 import type { SettlementSummary } from "./settlement";
 
@@ -77,6 +78,8 @@ export interface ReportHistoryRow extends HistoryRowBase {
 	adjustmentOf: { reportId: string; title: string | null; kind: TravelExpenseReportKind } | null;
 	/** The legacy draft this report continues (#616). */
 	continuedFromClaimId: string | null;
+	/** A draft that was never submitted, which the employee may delete (#684). */
+	deletable: boolean;
 }
 
 export interface LegacyClaimHistoryRow extends HistoryRowBase {
@@ -145,6 +148,7 @@ export function buildExpenseHistory(input: ExpenseHistoryInput): ExpenseHistoryR
 					}
 				: null,
 			continuedFromClaimId: continuedFrom.get(report.id) ?? null,
+			deletable: isDeletableDraftReport(report),
 		};
 	});
 	const claims = input.claims

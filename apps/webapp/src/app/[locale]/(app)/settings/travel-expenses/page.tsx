@@ -9,6 +9,7 @@ import { TravelExpenseApproverSettingsCard } from "@/components/settings/travel-
 import { TravelExpensePolicyManagement } from "@/components/settings/travel-expense/travel-expense-policy-management";
 import { TravelExpenseProjectExceptionsCard } from "@/components/settings/travel-expense/travel-expense-project-exceptions";
 import { TravelExpenseReceiptExceptionSettingsCard } from "@/components/settings/travel-expense/travel-expense-receipt-exception-settings";
+import { TravelExpenseSettingsTabs } from "@/components/settings/travel-expense/travel-expense-settings-tabs";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
@@ -30,16 +31,34 @@ async function TravelExpenseSettingsPageContent() {
 					)}
 				</p>
 			</div>
-			<TravelExpenseApproverSettingsCard />
-			<TravelExpenseReceiptExceptionSettingsCard />
-			<ReimbursementCurrencySettingsCard />
-			<ReferenceRateSettingsCard />
-			<ForeignExpenseConversionsCard />
-			<TravelExpenseProjectExceptionsCard />
-			<MileagePolicySettingsCard />
-			<PerDiemPolicySettingsCard />
-			<AllowanceOverridesSettingsCard />
-			<TravelExpensePolicyManagement />
+			<TravelExpenseSettingsTabs
+				review={
+					<>
+						<TravelExpenseApproverSettingsCard />
+						<TravelExpenseReceiptExceptionSettingsCard />
+					</>
+				}
+				currencies={
+					<>
+						<ReimbursementCurrencySettingsCard />
+						<ReferenceRateSettingsCard />
+					</>
+				}
+				rates={
+					<>
+						<MileagePolicySettingsCard />
+						<PerDiemPolicySettingsCard />
+						<TravelExpensePolicyManagement />
+					</>
+				}
+				exceptions={
+					<>
+						<ForeignExpenseConversionsCard />
+						<TravelExpenseProjectExceptionsCard />
+						<AllowanceOverridesSettingsCard />
+					</>
+				}
+			/>
 		</div>
 	);
 }

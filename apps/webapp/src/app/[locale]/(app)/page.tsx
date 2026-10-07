@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { NoOrganizationError } from "@/components/errors/no-organization-error";
@@ -9,6 +8,7 @@ import {
 	getPendingInvitationId,
 	getUserOrganizations,
 } from "@/lib/auth-helpers";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding";
 import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 
@@ -25,12 +25,12 @@ async function DashboardPageContent() {
 	const hasOrganizations = organizations.length > 0;
 
 	if (!hasOrganizations && pendingInvitationId) {
-		redirect(`/accept-invitation/${pendingInvitationId}`);
+		return redirectWithLocale(`/accept-invitation/${pendingInvitationId}`);
 	}
 
 	// Redirect if onboarding not complete
 	if (onboardingStatus && !onboardingStatus.onboardingComplete) {
-		redirect(getOnboardingStepPath(onboardingStatus.onboardingStep));
+		return redirectWithLocale(getOnboardingStepPath(onboardingStatus.onboardingStep));
 	}
 
 	if (!hasOrganizations) {

@@ -53,8 +53,9 @@ import type {
 	PerDiemRates,
 	StatutoryPerDiemDefault,
 } from "@/lib/travel-expenses/statutory-per-diem-defaults";
-import { foreignAreaCount } from "./per-diem-foreign-areas";
+import { foreignAreaCounts } from "./per-diem-foreign-areas";
 import { ForeignTableSummary } from "./per-diem-foreign-table-summary";
+import { CatalogAdoptedNote, catalogAdoption } from "./statutory-adoption";
 import { WithdrawVersionButton } from "./withdraw-version-button";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -249,6 +250,7 @@ function PerDiemPolicyContent({
 						<TableBody>
 							{data.timeline.map((version) => {
 								const rates = version.rates.DE;
+								const foreign = foreignAreaCounts(version.rates);
 								return (
 									<TableRow key={version.id}>
 										<TableCell>{formatPlainDate(locale, version.effectiveFrom)}</TableCell>
@@ -268,12 +270,12 @@ function PerDiemPolicyContent({
 															{formatMoney(locale, rates[field], version.currency)}
 														</li>
 													))}
-													{foreignAreaCount(version.rates) > 0 && (
+													{foreign.countries + foreign.places > 0 && (
 														<li>
 															{t(
-																"settings.travelExpenses.perDiem.foreignAreas",
-																"Foreign rates: {count} countries and places",
-																{ count: foreignAreaCount(version.rates) },
+																"travelExpenses.settings.perDiem.foreignAreas",
+																"Foreign rates: {countries} countries and {places} cities",
+																foreign,
 															)}
 														</li>
 													)}
@@ -314,67 +316,74 @@ function PerDiemPolicyContent({
 				</div>
 			)}
 
-			{data.defaults.map((entry) => (
-				<section
-					key={entry.key}
-					aria-labelledby={`${entry.key}-title`}
-					className="space-y-2 rounded-lg border p-4"
-				>
-					<h3 id={`${entry.key}-title`} className="text-base font-semibold">
-						{entry.foreignTableKey
-							? t(
-									"settings.travelExpenses.perDiem.germanForeignDefaultTitle",
-									"German statutory per diem with the official foreign rates",
-								)
-							: t(
-									"settings.travelExpenses.perDiem.germanDefaultTitle",
-									"German statutory domestic per diem",
-								)}
-					</h3>
-					<ul className="text-sm tabular-nums">
-						{PER_DIEM_RATE_FIELDS.map((field) => (
-							<li key={field}>
-								{rateLabel(t, field)}: {formatMoney(locale, entry.rates[field], entry.currency)}
-							</li>
-						))}
-					</ul>
-					<ForeignTableSummary entry={entry} />
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.travelExpenses.perDiem.defaultSource",
-							"{reference}. Verified on {verifiedOn} against {version}; can be adopted from {validFrom}.",
-							{
-								reference: entry.reference,
-								version: entry.version,
-								verifiedOn: formatPlainDate(locale, entry.verifiedOn),
-								validFrom: formatPlainDate(locale, entry.validFrom),
-							},
-						)}
-					</p>
-					<ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-						{entry.sources.map((source) => (
-							<li key={source.url}>
-								<a
-									href={source.url}
-									target="_blank"
-									rel="noopener noreferrer"
-									className="inline-flex items-center gap-1 text-primary underline underline-offset-4"
-								>
-									{source.label}
-									<IconExternalLink aria-hidden="true" className="size-3.5" />
-								</a>
-							</li>
-						))}
-					</ul>
-					<Button
-						type="button"
-						variant="outline"
-						onClick={() => onOpen({ source: "statutory_default", entry })}
+			{data.defaults.map((entry) => {
+				const adoption = catalogAdoption(data.timeline, entry.key);
+				return (
+					<section
+						key={entry.key}
+						aria-labelledby={`${entry.key}-title`}
+						className="space-y-2 rounded-lg border p-4"
 					>
-						{t("settings.travelExpenses.perDiem.adopt", "Adopt these amounts")}
-					</Button>
-				</section>
-			))}
+						<h3 id={`${entry.key}-title`} className="text-base font-semibold">
+							{entry.foreignTableKey
+								? t(
+										"settings.travelExpenses.perDiem.germanForeignDefaultTitle",
+										"German statutory per diem with the official foreign rates",
+									)
+								: t(
+										"settings.travelExpenses.perDiem.germanDefaultTitle",
+										"German statutory domestic per diem",
+									)}
+						</h3>
+						<ul className="text-sm tabular-nums">
+							{PER_DIEM_RATE_FIELDS.map((field) => (
+								<li key={field}>
+									{rateLabel(t, field)}: {formatMoney(locale, entry.rates[field], entry.currency)}
+								</li>
+							))}
+						</ul>
+						<ForeignTableSummary entry={entry} />
+						<p className="text-sm text-muted-foreground">
+							{t(
+								"settings.travelExpenses.perDiem.defaultSource",
+								"{reference}. Verified on {verifiedOn} against {version}; can be adopted from {validFrom}.",
+								{
+									reference: entry.reference,
+									version: entry.version,
+									verifiedOn: formatPlainDate(locale, entry.verifiedOn),
+									validFrom: formatPlainDate(locale, entry.validFrom),
+								},
+							)}
+						</p>
+						<ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+							{entry.sources.map((source) => (
+								<li key={source.url}>
+									<a
+										href={source.url}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="inline-flex items-center gap-1 text-primary underline underline-offset-4"
+									>
+										{source.label}
+										<IconExternalLink aria-hidden="true" className="size-3.5" />
+									</a>
+								</li>
+							))}
+						</ul>
+						{adoption ? (
+							<CatalogAdoptedNote version={adoption} />
+						) : (
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => onOpen({ source: "statutory_default", entry })}
+							>
+								{t("settings.travelExpenses.perDiem.adopt", "Adopt these amounts")}
+							</Button>
+						)}
+					</section>
+				);
+			})}
 
 			{data.withdrawn.length > 0 && (
 				<details className="text-sm">
@@ -458,7 +467,6 @@ function PerDiemPolicyVersionDialog({
 	const [replaceVersionId, setReplaceVersionId] = useState<string | null>(
 		target?.source === "organization" ? (target.replacesVersionId ?? null) : null,
 	);
-	const isDefault = target?.source === "statutory_default";
 
 	const form = useForm({
 		defaultValues: {
@@ -572,12 +580,17 @@ function PerDiemPolicyVersionDialog({
 			<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
 				<DialogHeader>
 					<DialogTitle>
-						{isDefault
-							? t(
-									"settings.travelExpenses.perDiem.adoptTitle",
-									"Adopt the German statutory per diem",
-								)
-							: t("settings.travelExpenses.perDiem.addTitle", "Add a per diem rate version")}
+						{target?.source !== "statutory_default"
+							? t("settings.travelExpenses.perDiem.addTitle", "Add a per diem rate version")
+							: target.entry.foreignTableKey
+								? t(
+										"travelExpenses.settings.perDiem.adoptForeignTitle",
+										"Adopt the German statutory per diem with the official foreign rates",
+									)
+								: t(
+										"settings.travelExpenses.perDiem.adoptTitle",
+										"Adopt the German statutory per diem",
+									)}
 					</DialogTitle>
 					<DialogDescription>
 						{t(
