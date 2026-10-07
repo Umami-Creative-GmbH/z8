@@ -17,6 +17,7 @@ const BASIS: Record<PerDiemDayBreakdown["basis"], string> = {
 	absence_8h_or_less: "8 hours or less away",
 	overnight_majority: "most of an over-night absence",
 	overnight_minority: "counted on the other day",
+	claimed_in_other_report: "already paid in another report (one allowance per day)",
 };
 
 const MEAL_LABELS = { breakfast: "breakfast", lunch: "lunch", dinner: "dinner" } as const;

@@ -14,6 +14,7 @@ import {
 	samePerDiemItinerary,
 	tripDays,
 } from "../per-diem";
+import { calculateStampedPerDiem } from "../per-diem-pricing";
 import { GERMAN_DOMESTIC_PER_DIEM_DEFAULT } from "../statutory-per-diem-defaults";
 
 /*
@@ -398,16 +399,99 @@ describe("exceptional itineraries are flagged, never guessed", () => {
 		expect(result).toMatchObject({ status: "exceptional", reasons: ["prolonged_workplace"] });
 	});
 
-	it("flags days another report already claims (R 9.6 Abs. 2: one allowance per day)", () => {
+	it("names days another report pays among the reasons of an otherwise exceptional per diem", () => {
 		const result = calculatePerDiem(
-			itinerary("2026-06-01T08:00", "2026-06-03T18:00"),
-			context({ overlappingDays: ["2026-06-03"] }),
+			itinerary("2026-06-01T08:00", "2026-06-03T18:00", { prolongedWorkplace: true }),
+			context({ overlappingDays: ["2026-06-03", "2026-06-09"] }),
 		);
 		expect(result).toEqual({
 			status: "exceptional",
-			reasons: ["overlapping_days"],
+			reasons: ["prolonged_workplace", "overlapping_days"],
 			overlappingDays: ["2026-06-03"],
 		});
+	});
+});
+
+describe("days another report already pays (one allowance per calendar day)", () => {
+	it("pays no allowance for that day only and calculates the rest of the trip", () => {
+		const result = calculated(
+			calculatePerDiem(
+				itinerary("2026-06-01T08:00", "2026-06-03T18:00", {
+					meals: mealsFor("2026-06-01", "2026-06-03", {
+						"2026-06-03": { breakfast: { provided: true, employeePayment: null } },
+					}),
+				}),
+				context({ overlappingDays: ["2026-06-03"] }),
+			),
+		);
+		expect(result.days.map((day) => [day.date, day.allowance, day.basis, day.amount])).toEqual([
+			["2026-06-01", "partial_day", "travel_day_with_overnight", "14.00"],
+			["2026-06-02", "full_day", "absence_24h", "28.00"],
+			["2026-06-03", "none", "claimed_in_other_report", "0.00"],
+		]);
+		// The claimed day's meals reduce nothing: it carries no allowance here.
+		expect(result.days[2]).toMatchObject({
+			rate: "0.00",
+			deductions: "0.00",
+			versionId: null,
+			mealsCountToward: null,
+		});
+		expect(result.days[2]?.meals.breakfast.deduction).toBe("0.00");
+		expect(result.amount).toBe("42.00");
+	});
+
+	it("leaves a day alone that carries no allowance here anyway", () => {
+		const result = calculated(
+			calculatePerDiem(
+				itinerary("2026-06-03T09:00", "2026-06-03T12:00"),
+				context({ overlappingDays: ["2026-06-03"] }),
+			),
+		);
+		expect(result.days[0]).toMatchObject({ basis: "absence_8h_or_less", amount: "0.00" });
+	});
+
+	it("moves no over-night allowance to the other day when its majority day is paid elsewhere", () => {
+		// Beispiel 32: the first day holds the majority; another report already pays it.
+		const result = calculated(
+			calculatePerDiem(
+				itinerary("2026-05-04T17:00", "2026-05-05T01:30", {
+					overnight: "none",
+					meals: mealsFor("2026-05-04", "2026-05-05", {
+						"2026-05-05": { breakfast: { provided: true, employeePayment: null } },
+					}),
+				}),
+				context({ overlappingDays: ["2026-05-04"] }),
+			),
+		);
+		expect(
+			result.days.map((day) => [day.date, day.basis, day.mealsCountToward, day.amount]),
+		).toEqual([
+			["2026-05-04", "claimed_in_other_report", null, "0.00"],
+			["2026-05-05", "overnight_minority", null, "0.00"],
+		]);
+		expect(result.amount).toBe("0.00");
+	});
+
+	it("stamps the claimed days so the submitted result reproduces after the other report changes", () => {
+		const trip = itinerary("2026-06-01T08:00", "2026-06-03T18:00");
+		const original = calculated(
+			calculatePerDiem(trip, context({ overlappingDays: ["2026-06-01"] })),
+		);
+		const stamp = perDiemStampOf(original);
+		expect(stamp.claimedDays).toEqual(["2026-06-01"]);
+		expect(stamp.days).toEqual({ "2026-06-02": "v-2026", "2026-06-03": "v-2026" });
+		const destinations = [{ place: "Hamburg", countryCode: "DE" }];
+		expect(
+			calculateStampedPerDiem(
+				{ reimbursementCurrency: "EUR", tripDestinations: destinations },
+				trip,
+				stamp,
+			),
+		).toEqual(original);
+		// A stamp without claimed days (older submissions) prices every day as before.
+		expect(perDiemStampOf(calculated(calculatePerDiem(trip, context())))).not.toHaveProperty(
+			"claimedDays",
+		);
 	});
 });
 

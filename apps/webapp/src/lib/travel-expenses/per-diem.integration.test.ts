@@ -539,43 +539,74 @@ describe("domestic per diem from travel timing and daily meals (#609)", () => {
 		expect((await revisionFacts(reportId)).facts.totals).toMatchObject({ reimbursable: "0.00" });
 	});
 
-	it("flags days another report or an approved legacy claim already covers", async () => {
+	it("pays no second allowance for a day another submitted report or a legacy claim pays", async () => {
 		await adoptGermanDefault();
+		const daysOf = async (reportId: string) => {
+			const calculation = (await load(reportId)).items[0]?.perDiem?.calculation;
+			if (calculation?.status !== "calculated") throw new Error(JSON.stringify(calculation));
+			return calculation.days.map((day) => [day.date, day.basis, day.amount]);
+		};
+		// Monday to Wednesday; Wednesday's lunch and dinner use up its 14 € allowance.
 		const first = await trip("2026-06-01", "2026-06-03");
 		await savePerDiem(first.reportId, first.item, {
 			startDate: "2026-06-01",
 			endDate: "2026-06-03",
+			meals: meals("2026-06-01", "2026-06-03", { "2026-06-03": { lunch: true, dinner: true } }),
 		});
-		const second = await trip("2026-06-03", "2026-06-04");
-		const overlapping = await savePerDiem(second.reportId, second.item, {
+		const second = await trip("2026-05-31", "2026-06-01");
+		await savePerDiem(second.reportId, second.item, {
+			startDate: "2026-05-31",
+			endDate: "2026-06-01",
+		});
+		// Drafts are no claim yet: both are calculated in full.
+		expect(await daysOf(second.reportId)).toEqual([
+			["2026-05-31", "travel_day_with_overnight", "14.00"],
+			["2026-06-01", "travel_day_with_overnight", "14.00"],
+		]);
+
+		expect(await submit(first.reportId)).toEqual({ success: true, data: { status: "submitted" } });
+		// Monday is paid by the submitted trip: only that day carries no allowance here.
+		expect(await daysOf(second.reportId)).toEqual([
+			["2026-05-31", "travel_day_with_overnight", "14.00"],
+			["2026-06-01", "claimed_in_other_report", "0.00"],
+		]);
+		// Wednesday has no positive allowance there, so a trip starting on it is paid in full.
+		const third = await trip("2026-06-03", "2026-06-04");
+		await savePerDiem(third.reportId, third.item, {
 			startDate: "2026-06-03",
 			endDate: "2026-06-04",
 		});
-		expect(overlapping.perDiem?.calculation).toEqual({
-			status: "exceptional",
-			reasons: ["overlapping_days"],
-			overlappingDays: ["2026-06-03"],
-		});
-		// The first draft now overlaps the second, so neither is submitted with a duplicate day.
-		expect((await load(first.reportId)).items[0]?.perDiem?.calculation).toMatchObject({
-			status: "exceptional",
-			overlappingDays: ["2026-06-03"],
-		});
-		expect(await submit(second.reportId)).toMatchObject({ data: { status: "incomplete" } });
+		expect(await daysOf(third.reportId)).toEqual([
+			["2026-06-03", "travel_day_with_overnight", "14.00"],
+			["2026-06-04", "travel_day_with_overnight", "14.00"],
+		]);
 
-		// Removing the first per diem clears the overlap.
-		signIn("requester");
-		const firstItem = (await load(first.reportId)).items[0];
-		if (!firstItem) throw new Error("no item");
-		signIn("requester");
-		await reportActions.removeTripReportItemAction({
-			reportId: first.reportId,
-			itemId: firstItem.id,
-			expectedVersion: firstItem.version,
-		});
-		expect((await load(second.reportId)).items[0]?.perDiem?.calculation?.status).toBe("calculated");
+		// The second trip is submittable as calculated and freezes the claimed day.
+		expect(await submit(second.reportId)).toEqual({ success: true, data: { status: "submitted" } });
+		const frozen = await revisionFacts(second.reportId);
+		const frozenItem = (frozen.facts.items as Array<{ perDiem: { days: unknown[] } }>)[0];
+		expect(frozenItem?.perDiem.days).toEqual([
+			expect.objectContaining({ date: "2026-05-31", amount: "14.00" }),
+			expect.objectContaining({
+				date: "2026-06-01",
+				allowance: "none",
+				basis: "claimed_in_other_report",
+				amount: "0.00",
+			}),
+		]);
+		expect(frozen.facts.totals).toMatchObject({ reimbursable: "14.00" });
+		// Rejecting the first trip later does not change what the second one was submitted with.
+		await admin.query(
+			"update travel_expense_report set status = 'rejected', decided_at = now() where id = $1",
+			[first.reportId],
+		);
+		expect((await load(second.reportId)).items[0]?.perDiem?.amount).toBe("14.00");
 
-		// An approved legacy per diem claim with logical dates counts too.
+		// A rejected report pays nothing; an approved legacy per diem claim counts with all its days.
+		expect(await daysOf(third.reportId)).toEqual([
+			["2026-06-03", "travel_day_with_overnight", "14.00"],
+			["2026-06-04", "travel_day_with_overnight", "14.00"],
+		]);
 		await admin.query(
 			`insert into travel_expense_claim (organization_id, employee_id, type, status, trip_start, trip_end,
 			   trip_start_date, trip_end_date, trip_date_time_zone, original_currency, original_amount,
@@ -584,10 +615,10 @@ describe("domestic per diem from travel timing and daily meals (#609)", () => {
 			   '2026-06-04', '2026-06-04', 'Europe/Berlin', 'EUR', 14, 'EUR', 14, 't609-requester', now())`,
 			[ids.requester],
 		);
-		expect((await load(second.reportId)).items[0]?.perDiem?.calculation).toMatchObject({
-			status: "exceptional",
-			overlappingDays: ["2026-06-04"],
-		});
+		expect(await daysOf(third.reportId)).toEqual([
+			["2026-06-03", "travel_day_with_overnight", "14.00"],
+			["2026-06-04", "claimed_in_other_report", "0.00"],
+		]);
 	});
 
 	it("allows one per diem per trip and none on standalone reports", async () => {

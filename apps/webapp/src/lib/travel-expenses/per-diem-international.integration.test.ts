@@ -459,16 +459,20 @@ describe("international per diem from the daily itinerary (#611)", () => {
 			end: "2026-06-09T14:00",
 			answers: [{ night: place("FR") }, { activityAbroad: place("FR") }],
 		});
+		expect(await submit(first.reportId)).toMatchObject({ data: { status: "submitted" } });
 		const second = await trip("2026-06-09", "2026-06-10", ["DK"]);
 		const overlapping = await saved(second.reportId, second.item, {
 			start: "2026-06-09T16:00",
 			end: "2026-06-10T20:00",
 			answers: [{ night: place("DK") }, { activityAbroad: place("DK") }],
 		});
-		expect(overlapping.perDiem?.calculation).toMatchObject({
-			status: "exceptional",
-			reasons: ["overlapping_days"],
-			overlappingDays: ["2026-06-09"],
-		});
+		// Only Tuesday, which the submitted Strasbourg trip pays, carries no allowance here.
+		const calculation = overlapping.perDiem?.calculation;
+		if (calculation?.status !== "calculated") throw new Error("not calculated");
+		expect(calculation.days.map((day) => [day.date, day.basis, day.amount])).toEqual([
+			["2026-06-09", "claimed_in_other_report", "0.00"],
+			["2026-06-10", "travel_day_with_overnight", calculation.days[1]?.rate],
+		]);
+		expect(Number(calculation.amount)).toBeGreaterThan(0);
 	});
 });

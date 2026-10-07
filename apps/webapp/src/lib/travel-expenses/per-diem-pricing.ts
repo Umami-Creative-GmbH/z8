@@ -7,13 +7,15 @@ import {
 	travelExpenseReportPerDiem,
 } from "@/db/schema";
 import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
-import { overriddenPerDiemView } from "./allowance-override";
+import { type AllowanceOverride, overriddenPerDiemView } from "./allowance-override";
 import { loadActiveAllowanceOverrides } from "./allowance-override-read";
+import { parseUnits, STORED_AMOUNT_SCALE } from "./money";
 import {
 	calculatePerDiem,
 	type PerDiemCalculation,
 	type PerDiemItemView,
 	type PerDiemItinerary,
+	type PerDiemPolicyResolver,
 	perDiemItemView,
 	perDiemPolicyResolver,
 	perDiemStampResolver,
@@ -27,8 +29,8 @@ import type { TripDestination } from "./trip-destination";
 /**
  * Calculates per diem items (#609) for reads. An editable report is
  * calculated with the organization's current per diem policy and the current
- * check for days other reports already claim; a submitted per diem keeps the
- * rule edition and policy versions stamped on it at submission.
+ * check for days other reports already pay; a submitted per diem keeps the
+ * rule edition, policy versions and claimed days stamped on it at submission.
  */
 
 type Database = typeof appDb;
@@ -63,11 +65,33 @@ export function itineraryOf(
 }
 
 /**
- * Calendar days of `[startDate, endDate]` that another per diem of the
- * employee already covers: any other report that is not rejected (drafts
- * included, so two drafts cannot both be submitted for one day), and pending
- * or approved legacy per diem claims with logical travel dates. R 9.6 Abs. 2
- * LStR allows one allowance per calendar day.
+ * Reports whose per diem counts as claimed: submitted or decided ones, and
+ * returned ones (already submitted once, being corrected). Drafts do not:
+ * they are no claim yet, and two drafts of one employee would otherwise block
+ * each other. They cannot both pay a day either, because submission takes the
+ * employee's per diem lock (`stampPerDiemPolicies`) and the report submitted
+ * second then sees the first. Adjustments (#615) of other reports count like
+ * any report: an adjustment carries its trip's complete corrected per diem,
+ * which may pay days its original did not.
+ */
+const CLAIMING_REPORT_STATUSES = ["submitted", "approved", "returned"] as const;
+
+const ZERO = BigInt(0);
+
+function isPositiveAmount(amount: string): boolean {
+	return (parseUnits(amount, STORED_AMOUNT_SCALE) ?? ZERO) > ZERO;
+}
+
+/**
+ * Days of `[startDate, endDate]` another per diem of the employee already pays
+ * a positive allowance for (one allowance per calendar day, see
+ * `calculatePerDiem`): days of another claiming report's per diem whose amount
+ * there is above zero, and every logical day of a pending or approved legacy
+ * per diem claim (it has no daily breakdown). A per diem whose daily amounts
+ * are unknown (an applying administrator override above zero, or one not
+ * calculated now) counts with all its days; one overridden with zero with none.
+ * The own report's adjustment family (#615) describes the same days and never
+ * counts.
  */
 export async function loadPerDiemOverlaps(
 	database: Reader,
@@ -79,13 +103,14 @@ export async function loadPerDiemOverlaps(
 		endDate: string;
 	},
 ): Promise<string[]> {
-	// #615: an adjustment and the report it corrects describe the same days.
 	const family = await loadAdjustmentFamilyIds(database, input);
 	const [reports, claims] = await Promise.all([
 		database
 			.select({
-				startDate: travelExpenseReportPerDiem.startDate,
-				endDate: travelExpenseReportPerDiem.endDate,
+				row: travelExpenseReportPerDiem,
+				status: travelExpenseReport.status,
+				reimbursementCurrency: travelExpenseReport.reimbursementCurrency,
+				tripDestinations: travelExpenseReport.tripDestinations,
 			})
 			.from(travelExpenseReportPerDiem)
 			.innerJoin(
@@ -101,7 +126,7 @@ export async function loadPerDiemOverlaps(
 					eq(travelExpenseReport.employeeId, input.employeeId),
 					ne(travelExpenseReport.id, input.reportId),
 					...(family.length > 0 ? [notInArray(travelExpenseReport.id, family)] : []),
-					ne(travelExpenseReport.status, "rejected"),
+					inArray(travelExpenseReport.status, [...CLAIMING_REPORT_STATUSES]),
 					isNotNull(travelExpenseReportPerDiem.startDate),
 					isNotNull(travelExpenseReportPerDiem.endDate),
 					lte(travelExpenseReportPerDiem.startDate, input.endDate),
@@ -125,17 +150,60 @@ export async function loadPerDiemOverlaps(
 				),
 			),
 	]);
+	const range = new Set(tripDays(input.startDate, input.endDate));
 	const claimed = new Set<string>();
-	for (const other of [...reports, ...claims]) {
-		if (!other.startDate || !other.endDate) continue;
-		const from = parsePlainDate(other.startDate);
-		const to = parsePlainDate(other.endDate);
-		for (const day of tripDays(input.startDate, input.endDate)) {
-			const date = parsePlainDate(day);
-			if (comparePlainDates(date, from) >= 0 && comparePlainDates(date, to) <= 0) claimed.add(day);
+	const claim = (dates: readonly string[]) => {
+		for (const date of dates) if (range.has(date)) claimed.add(date);
+	};
+	for (const other of claims) {
+		if (other.startDate && other.endDate) claim(tripDays(other.startDate, other.endDate));
+	}
+	if (reports.length > 0) {
+		const overrides = await loadActiveAllowanceOverrides(database, {
+			organizationId: input.organizationId,
+			itemIds: reports.map(({ row }) => row.itemId),
+		});
+		// Only a per diem edited since its return lacks a stamp; it is priced with today's policy.
+		let resolvePolicy: PerDiemPolicyResolver | null = null;
+		for (const { row, ...report } of reports) {
+			const itinerary = itineraryOf(row);
+			let calculation = calculateStampedPerDiem(report, itinerary, row.policy);
+			if (!calculation && report.status === "returned") {
+				resolvePolicy ??= perDiemPolicyResolver(
+					await loadPerDiemPolicyVersions(database, input.organizationId),
+				);
+				calculation = calculatePerDiem(itinerary, {
+					trip: { destinations: report.tripDestinations },
+					reimbursementCurrency: report.reimbursementCurrency,
+					resolvePolicy,
+				});
+			}
+			claim(allowanceDaysOf(report, itinerary, calculation, overrides.get(row.itemId)));
 		}
 	}
 	return [...claimed].toSorted();
+}
+
+/** The days a per diem pays an allowance for, as `loadPerDiemOverlaps` counts them. */
+function allowanceDaysOf(
+	report: Pick<PerDiemReportScope, "reimbursementCurrency" | "tripDestinations">,
+	itinerary: PerDiemItinerary,
+	calculation: PerDiemCalculation | null,
+	override: AllowanceOverride | undefined,
+): string[] {
+	const view = overriddenPerDiemView(
+		perDiemItemView(itinerary, calculation),
+		report.tripDestinations,
+		override,
+		report.reimbursementCurrency,
+	);
+	const allDays =
+		itinerary.startDate && itinerary.endDate
+			? tripDays(itinerary.startDate, itinerary.endDate)
+			: [];
+	if (view.override?.applies) return isPositiveAmount(view.override.amount) ? allDays : [];
+	if (calculation?.status !== "calculated") return allDays;
+	return calculation.days.filter((day) => isPositiveAmount(day.amount)).map((day) => day.date);
 }
 
 async function overlapsOf(
@@ -167,6 +235,8 @@ export function calculateStampedPerDiem(
 		reimbursementCurrency: report.reimbursementCurrency,
 		resolvePolicy: perDiemStampResolver(stamp),
 		rulesKey: stamp.rulesKey,
+		// Days another report paid at submission stay unpaid here, whatever happened to it since.
+		overlappingDays: stamp.claimedDays ?? [],
 		...(stamp.foreignTableKey ? { foreignTableKey: stamp.foreignTableKey } : {}),
 	});
 }

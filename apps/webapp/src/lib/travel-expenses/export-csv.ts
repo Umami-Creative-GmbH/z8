@@ -553,10 +553,16 @@ function perDiemCells(item: TravelExpenseReportSubmittedItem): string[] {
 				.map((policy) => [policy.source.kind, policy.source.reference].filter(Boolean).join(": "))
 				.join("; "),
 		),
-		// One entry per calendar day: date, allowance, rate - deductions = amount.
+		// One entry per calendar day: date, allowance, rate - deductions = amount; a day another
+		// report already paid is marked as such.
 		per_diem_days: csvText(
 			perDiem.days
-				.map((day) => `${day.date} ${day.allowance} ${day.rate}-${day.deductions}=${day.amount}`)
+				.map(
+					(day) =>
+						`${day.date} ${day.allowance} ${day.rate}-${day.deductions}=${day.amount}${
+							day.basis === "claimed_in_other_report" ? " claimed_in_other_report" : ""
+						}`,
+				)
 				.join("; "),
 		),
 	});

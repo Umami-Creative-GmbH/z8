@@ -4,6 +4,7 @@ import {
 	type PerDiemCalculation,
 	type PerDiemItemView,
 	type PerDiemItinerary,
+	perDiemClaimedDays,
 	perDiemFallbackRules,
 	samePerDiemItinerary,
 } from "./per-diem";
@@ -72,6 +73,11 @@ export function mileageSituation(calculation: MileageCalculation): AllowanceSitu
 export function perDiemSituation(calculation: PerDiemCalculation): AllowanceSituation {
 	switch (calculation.status) {
 		case "calculated": {
+			// Days another report already pays carry no allowance here; the combined day
+			// may be worth more, which only an administrator can decide (`per-diem.ts`).
+			if (perDiemClaimedDays(calculation).length > 0) {
+				return { kind: "unsupported_case", reasons: ["overlapping_days"] };
+			}
 			// #611: days priced by an official destination fallback stay visible as such.
 			const fallbacks = perDiemFallbackRules(calculation);
 			return fallbacks.length > 0
