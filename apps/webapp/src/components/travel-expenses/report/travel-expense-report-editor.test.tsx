@@ -304,6 +304,10 @@ describe("TravelExpenseReportEditor", () => {
 		expect(preview.getAttribute("href")).toBe(
 			`/api/travel-expenses/reports/${reportId}/receipts/${receipt.id}`,
 		);
+		// The tile loads the small preview, not the full photo (#690).
+		expect(preview.querySelector("img")?.getAttribute("src")).toBe(
+			`/api/travel-expenses/reports/${reportId}/receipts/${receipt.id}?variant=thumb`,
+		);
 		expect(screen.getByRole("link", { name: "Download taxi.jpg" }).getAttribute("href")).toBe(
 			`/api/travel-expenses/reports/${reportId}/receipts/${receipt.id}?download=1`,
 		);

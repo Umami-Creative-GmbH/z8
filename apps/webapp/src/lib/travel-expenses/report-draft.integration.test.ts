@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { NextRequest } from "next/server";
+import sharp from "sharp";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -186,10 +187,19 @@ async function upload(report: { id: string; items: { id: string }[] }, bytes = p
 	);
 }
 
-function receiptRequest(reportId: string, receiptId: string) {
+/** A small receipt photo that stays below this suite's 1 KB upload limit. */
+function receiptPhoto() {
+	return sharp({
+		create: { width: 400, height: 300, channels: 3, background: { r: 240, g: 236, b: 228 } },
+	})
+		.png({ compressionLevel: 9 })
+		.toBuffer();
+}
+
+function receiptRequest(reportId: string, receiptId: string, query = "") {
 	return getReceipt(
 		new Request(
-			`http://localhost/api/travel-expenses/reports/${reportId}/receipts/${receiptId}`,
+			`http://localhost/api/travel-expenses/reports/${reportId}/receipts/${receiptId}${query}`,
 		) as unknown as NextRequest,
 		{ params: Promise.resolve({ reportId, receiptId }) },
 	);
@@ -396,6 +406,8 @@ describe("standalone receipt report drafts (#600)", () => {
 		expect(preview.headers.get("content-type")).toBe("application/pdf");
 		expect(preview.headers.get("cache-control")).toBe("private, no-store");
 		expect(Buffer.from(await preview.arrayBuffer())).toEqual(pdfBytes);
+		// A PDF has no image preview; its tile shows an icon.
+		expect((await receiptRequest(report.id, body.receipt.id, "?variant=thumb")).status).toBe(404);
 
 		// Changed stored content is never served as the recorded receipt.
 		harness.objects.set(rows[0].storage_key, Buffer.from("%PDF-1.4 tampered"));
@@ -433,20 +445,54 @@ describe("standalone receipt report drafts (#600)", () => {
 		]);
 	});
 
-	it("removes a receipt and deletes its stored object through durable cleanup", async () => {
+	it("serves a small preview of a receipt photo, and only to who may open the receipt (#690)", async () => {
 		const report = await createReport();
-		const body = await (await upload(report)).json();
+		const photo = await receiptPhoto();
+		const body = await (await upload(report, photo)).json();
+		expect(body.receipt).toMatchObject({ mimeType: "image/png" });
+
+		const preview = await receiptRequest(report.id, body.receipt.id, "?variant=thumb");
+		expect(preview.status).toBe(200);
+		expect(preview.headers.get("content-type")).toBe("image/webp");
+		expect(preview.headers.get("cache-control")).toBe("private, no-store");
+		const previewBytes = Buffer.from(await preview.arrayBuffer());
+		expect(await sharp(previewBytes).metadata()).toMatchObject({
+			format: "webp",
+			width: 192,
+			height: 192,
+		});
+		// The tile reloads the same preview.
+		const again = await receiptRequest(report.id, body.receipt.id, "?variant=thumb");
+		expect(Buffer.from(await again.arrayBuffer())).toEqual(previewBytes);
+
+		// Opening and downloading still serve the original.
+		const original = await receiptRequest(report.id, body.receipt.id);
+		expect(original.headers.get("content-type")).toBe("image/png");
+		expect(Buffer.from(await original.arrayBuffer())).toEqual(photo);
+
+		for (const other of ["colleague", "foreigner"] as const) {
+			signIn(other);
+			expect((await receiptRequest(report.id, body.receipt.id, "?variant=thumb")).status).toBe(404);
+		}
+	});
+
+	it("removes a receipt and deletes its stored object and preview through durable cleanup", async () => {
+		const report = await createReport();
+		const body = await (await upload(report, await receiptPhoto())).json();
 		const { rows } = await admin.query(
 			"select storage_key from travel_expense_report_receipt where id = $1",
 			[body.receipt.id],
 		);
+		expect((await receiptRequest(report.id, body.receipt.id, "?variant=thumb")).status).toBe(200);
 		const removed = await actions.removeReportReceiptAction({
 			reportId: report.id,
 			itemId: report.items[0]!.id,
 			receiptId: body.receipt.id,
 		});
 		expect(removed).toEqual({ success: true, data: { receiptId: body.receipt.id } });
-		expect(harness.deleted).toEqual([rows[0].storage_key]);
+		expect(harness.deleted).toHaveLength(2);
+		expect(harness.deleted.at(-1)).toBe(rows[0].storage_key);
+		expect([...harness.objects.keys()]).toEqual([]);
 		const remaining = await admin.query(
 			"select (select count(*)::int from travel_expense_report_receipt where report_id = $1) as attached, (select count(*)::int from travel_expense_receipt_upload where organization_id = 't600-org') as staged",
 			[report.id],

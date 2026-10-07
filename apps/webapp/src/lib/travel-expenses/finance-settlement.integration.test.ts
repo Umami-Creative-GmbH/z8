@@ -8,6 +8,7 @@
 
 import { randomUUID } from "node:crypto";
 import type { NextRequest } from "next/server";
+import sharp from "sharp";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -109,7 +110,12 @@ const ids = {
 type Person = "requester" | "manager" | "lead" | "finance" | "accountant" | "foreigner";
 
 const admin = integrationAdminPool();
-const pdfBytes = Buffer.from("%PDF-1.4\n% receipt\n%%EOF");
+/** A receipt photo, so finance can also be checked for its preview (#690). */
+const receiptPhoto = await sharp({
+	create: { width: 400, height: 300, channels: 3, background: "#f0ece4" },
+})
+	.png({ compressionLevel: 9 })
+	.toBuffer();
 
 async function cleanup() {
 	await admin.query("delete from organization where id in ('t612-org', 't612-foreign')");
@@ -200,12 +206,12 @@ function signIn(name: Person) {
 async function upload(reportId: string, itemId: string) {
 	signIn("requester");
 	const tusFileKey = createOwnedTusFileKey("t612-requester");
-	harness.tus.set(tusFileKey, pdfBytes);
+	harness.tus.set(tusFileKey, receiptPhoto);
 	return processReceipt(
 		new Request("http://localhost/api/upload/travel-expense/report-receipt", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ tusFileKey, reportId, itemId, fileName: "receipt.pdf" }),
+			body: JSON.stringify({ tusFileKey, reportId, itemId, fileName: "receipt.png" }),
 		}) as unknown as NextRequest,
 	);
 }
@@ -296,10 +302,10 @@ async function approvedTrip() {
 	return trip;
 }
 
-function receipt(reportId: string, receiptId: string) {
+function receipt(reportId: string, receiptId: string, query = "") {
 	return getReceipt(
 		new Request(
-			`http://localhost/api/travel-expenses/reports/${reportId}/receipts/${receiptId}`,
+			`http://localhost/api/travel-expenses/reports/${reportId}/receipts/${receiptId}${query}`,
 		) as unknown as NextRequest,
 		{ params: Promise.resolve({ reportId, receiptId }) },
 	);
@@ -417,13 +423,20 @@ describe("finance queue and recorded reimbursements (#612)", () => {
 			companyPaid: "240.00",
 		});
 		expect((await receipt(approved.reportId, approved.receiptId)).status).toBe(200);
+		const preview = await receipt(approved.reportId, approved.receiptId, "?variant=thumb");
+		expect(preview.status).toBe(200);
+		expect(preview.headers.get("content-type")).toBe("image/webp");
 		expect((await actions.getTravelExpenseReportSubmission(pending.reportId)).success).toBe(false);
 		expect((await receipt(pending.reportId, pending.receiptId)).status).toBe(404);
+		expect((await receipt(pending.reportId, pending.receiptId, "?variant=thumb")).status).toBe(404);
 
 		// A manager without authority over this report cannot open it or its receipts.
 		signIn("lead");
 		expect((await actions.getTravelExpenseReportSubmission(approved.reportId)).success).toBe(false);
 		expect((await receipt(approved.reportId, approved.receiptId)).status).toBe(404);
+		expect((await receipt(approved.reportId, approved.receiptId, "?variant=thumb")).status).toBe(
+			404,
+		);
 
 		// Finance reads approved legacy claims too; the lead does not.
 		signIn("accountant");
