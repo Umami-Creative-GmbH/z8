@@ -774,9 +774,18 @@ describe("org-admin settings route access", () => {
 			readTestText(join(SETTINGS_ROOT, "enterprise/actions.ts"), "utf8"),
 		);
 
+		// Travel expense settings share one guard (spec #598 review), built on the org-admin helper.
+		const expenseAdministratorSource = stripComments(
+			readTestText(
+				join(SETTINGS_ROOT, "../../../../lib/travel-expenses/expense-administrator.ts"),
+				"utf8",
+			),
+		);
+		expect(travelExpensesSource.includes("requireExpenseAdministrator(")).toBe(true);
 		expect(
-			travelExpensesSource.includes("canManageCurrentOrganizationSettings("),
+			expenseAdministratorSource.includes("canManageCurrentOrganizationSettings("),
 		).toBe(true);
+		expect(expenseAdministratorSource.includes('role !== "admin"')).toBe(false);
 		expect(
 			travelExpensesSource.includes('authContext.employee.role !== "admin"'),
 		).toBe(false);
