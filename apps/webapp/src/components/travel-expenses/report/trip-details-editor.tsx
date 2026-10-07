@@ -142,7 +142,8 @@ export function TripDetailsEditor({
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const lastSaved = useRef<TripDetailsDraftInput>(toDraftInput(toFormValues(details)));
+	const [initialSaved] = useState(() => toDraftInput(toFormValues(details)));
+	const lastSaved = useRef<TripDetailsDraftInput>(initialSaved);
 	const [focusDestination, setFocusDestination] = useState<number | null>(null);
 
 	const { saver, state } = useDraftSaver<TripDetailsDraftInput, TripDetailsView>({

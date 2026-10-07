@@ -386,12 +386,15 @@ export function PerDiemItemEditor({
 	async function remove() {
 		if (!removal) return;
 		setRemoving(true);
-		try {
-			await saver.flush();
-			if (await removal.remove(saver.getState().version)) saver.discard();
-		} finally {
-			setRemoving(false);
-		}
+		// Promise#finally rather than try/finally: the React Compiler cannot
+		// compile try statements without a catch clause.
+		await saver
+			.flush()
+			.then(() => removal.remove(saver.getState().version))
+			.then((removed) => {
+				if (removed) saver.discard();
+			})
+			.finally(() => setRemoving(false));
 	}
 
 	const fieldError = (field: PerDiemDraftField) =>

@@ -373,13 +373,16 @@ function BatchItem({
 		failure: string,
 	): Promise<void> => {
 		setBusy(true);
-		try {
-			const result = await action();
-			if (!result.success) toast.error(failure);
-		} finally {
-			setBusy(false);
-			onChanged();
-		}
+		// Promise#finally rather than try/finally: the React Compiler cannot
+		// compile try statements without a catch clause.
+		await action()
+			.then((result) => {
+				if (!result.success) toast.error(failure);
+			})
+			.finally(() => {
+				setBusy(false);
+				onChanged();
+			});
 	};
 
 	return (

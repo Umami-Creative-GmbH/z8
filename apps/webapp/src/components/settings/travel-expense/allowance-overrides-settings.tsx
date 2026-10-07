@@ -348,25 +348,27 @@ function ExceptionRow({
 	async function revoke() {
 		if (!item.override) return;
 		setRevoking(true);
-		try {
-			const result = await revokeAllowanceOverrideAction({
-				reportId: item.reportId,
-				itemId: item.itemId,
-				expectedVersion: item.itemVersion,
-				overrideId: item.override.id,
-			});
-			if (!result.success || result.data.kind !== "revoked") {
-				toast.error(
-					t(
-						"settings.travelExpenses.allowanceOverrides.revokeFailed",
-						"The manual allowance could not be revoked. The list was refreshed.",
-					),
-				);
-			}
-			await queryClient.invalidateQueries({ queryKey });
-		} finally {
-			setRevoking(false);
+		// Promise#finally rather than try/finally: the React Compiler cannot
+		// compile try statements without a catch clause.
+		await revokeAndRefresh(item.override.id).finally(() => setRevoking(false));
+	}
+
+	async function revokeAndRefresh(overrideId: string) {
+		const result = await revokeAllowanceOverrideAction({
+			reportId: item.reportId,
+			itemId: item.itemId,
+			expectedVersion: item.itemVersion,
+			overrideId,
+		});
+		if (!result.success || result.data.kind !== "revoked") {
+			toast.error(
+				t(
+					"settings.travelExpenses.allowanceOverrides.revokeFailed",
+					"The manual allowance could not be revoked. The list was refreshed.",
+				),
+			);
 		}
+		await queryClient.invalidateQueries({ queryKey });
 	}
 
 	return (

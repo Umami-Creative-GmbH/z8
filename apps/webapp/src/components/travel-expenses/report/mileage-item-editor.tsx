@@ -172,7 +172,8 @@ export function MileageItemEditor({
 	const [removing, setRemoving] = useState(false);
 	// The latest server view: its calculation is shown while the entries match it.
 	const [saved, setSaved] = useState(item);
-	const lastSaved = useRef<MileageItemDraftInput>(toDraftInput(toFormValues(mileageDraftOf(item))));
+	const [initialSaved] = useState(() => toDraftInput(toFormValues(mileageDraftOf(item))));
+	const lastSaved = useRef<MileageItemDraftInput>(initialSaved);
 
 	const { saver, state } = useDraftSaver<MileageItemDraftInput, ReportItemView>({
 		version: item.version,
@@ -231,12 +232,15 @@ export function MileageItemEditor({
 	async function remove() {
 		if (!removal) return;
 		setRemoving(true);
-		try {
-			await saver.flush();
-			if (await removal.remove(saver.getState().version)) saver.discard();
-		} finally {
-			setRemoving(false);
-		}
+		// Promise#finally rather than try/finally: the React Compiler cannot
+		// compile try statements without a catch clause.
+		await saver
+			.flush()
+			.then(() => removal.remove(saver.getState().version))
+			.then((removed) => {
+				if (removed) saver.discard();
+			})
+			.finally(() => setRemoving(false));
 	}
 
 	const fieldError = (field: FieldName) =>

@@ -149,6 +149,7 @@ export function WithdrawReportButton({
 
 	async function withdraw() {
 		setPending(true);
+		// No `finally`: the React Compiler cannot compile try statements with one.
 		try {
 			const result = await withdrawTravelExpenseReportAction({ reportId, submissionCycle });
 			if (!result.success) {
@@ -158,24 +159,24 @@ export function WithdrawReportButton({
 						"The report could not be withdrawn. Please retry.",
 					),
 				);
-				return;
-			}
-			if (result.data.status === "not_pending") {
-				toast.error(
-					t(
-						"travelExpenses.report.withdraw.notPending",
-						"This submission was already decided or returned, so it can no longer be withdrawn.",
-					),
-				);
 			} else {
-				toast.success(
-					t("travelExpenses.report.withdraw.done", "Report withdrawn. You can edit it again."),
-				);
+				if (result.data.status === "not_pending") {
+					toast.error(
+						t(
+							"travelExpenses.report.withdraw.notPending",
+							"This submission was already decided or returned, so it can no longer be withdrawn.",
+						),
+					);
+				} else {
+					toast.success(
+						t("travelExpenses.report.withdraw.done", "Report withdrawn. You can edit it again."),
+					);
+				}
+				await Promise.all([
+					queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.report(reportId) }),
+					queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.history() }),
+				]);
 			}
-			await Promise.all([
-				queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.report(reportId) }),
-				queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.history() }),
-			]);
 		} catch {
 			toast.error(
 				t(
@@ -183,9 +184,8 @@ export function WithdrawReportButton({
 					"The report could not be withdrawn. Please retry.",
 				),
 			);
-		} finally {
-			setPending(false);
 		}
+		setPending(false);
 	}
 
 	return (

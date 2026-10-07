@@ -170,21 +170,23 @@ function ApprovedPolicy({ policy }: { policy: NonNullable<ReferenceRateSettings[
 
 	async function revoke() {
 		setRevoking(true);
-		try {
-			const result = await revokeReferenceRateSource();
-			if (!result.success) {
-				toast.error(
-					t(
-						"settings.travelExpenses.referenceRates.revokeFailed",
-						"The reference rates could not be turned off.",
-					),
-				);
-				return;
-			}
-			await queryClient.invalidateQueries({ queryKey });
-		} finally {
-			setRevoking(false);
+		// Promise#finally rather than try/finally: the React Compiler cannot
+		// compile try statements without a catch clause.
+		await revokeAndRefresh().finally(() => setRevoking(false));
+	}
+
+	async function revokeAndRefresh() {
+		const result = await revokeReferenceRateSource();
+		if (!result.success) {
+			toast.error(
+				t(
+					"settings.travelExpenses.referenceRates.revokeFailed",
+					"The reference rates could not be turned off.",
+				),
+			);
+			return;
 		}
+		await queryClient.invalidateQueries({ queryKey });
 	}
 
 	return (

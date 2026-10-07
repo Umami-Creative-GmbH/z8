@@ -215,24 +215,26 @@ export function ItemProjectField({
 		setChoice(next);
 		setProblem(null);
 		setSaving(true);
-		try {
-			const outcome = await saver.runExclusive(async (version) =>
-				toExclusiveOutcome(
-					await saveItemProjectAction({ reportId, itemId, expectedVersion: version, choice: next }),
-				),
-			);
-			if (outcome.status === "saved") {
-				await queryClient.invalidateQueries({
-					queryKey: queryKeys.travelExpenses.report(reportId),
-				});
-				onSaved?.();
-				return;
-			}
-			setChoice(previous);
-			setProblem(refusalMessage(t, outcome.status === "conflict" ? "conflict" : outcome.error));
-		} finally {
-			setSaving(false);
+		// Promise#finally rather than try/finally: the React Compiler cannot
+		// compile try statements without a catch clause.
+		await saveChoice(next, previous).finally(() => setSaving(false));
+	}
+
+	async function saveChoice(next: ItemProjectChoice, previous: ItemProjectChoice) {
+		const outcome = await saver.runExclusive(async (version) =>
+			toExclusiveOutcome(
+				await saveItemProjectAction({ reportId, itemId, expectedVersion: version, choice: next }),
+			),
+		);
+		if (outcome.status === "saved") {
+			await queryClient.invalidateQueries({
+				queryKey: queryKeys.travelExpenses.report(reportId),
+			});
+			onSaved?.();
+			return;
 		}
+		setChoice(previous);
+		setProblem(refusalMessage(t, outcome.status === "conflict" ? "conflict" : outcome.error));
 	}
 
 	const options = query.data?.choices ?? [];
@@ -352,24 +354,26 @@ export function TripProjectField({
 		setProjectId(next);
 		setProblem(null);
 		setSaving(true);
-		try {
-			const outcome = await saver.runExclusive(async (version) =>
-				toExclusiveOutcome(
-					await saveTripProjectAction({ reportId, expectedVersion: version, projectId: next }),
-				),
-			);
-			if (outcome.status === "saved") {
-				await queryClient.invalidateQueries({
-					queryKey: queryKeys.travelExpenses.report(reportId),
-				});
-				onSaved?.(next);
-				return;
-			}
-			setProjectId(previous);
-			setProblem(refusalMessage(t, outcome.status === "conflict" ? "conflict" : outcome.error));
-		} finally {
-			setSaving(false);
+		// Promise#finally rather than try/finally: the React Compiler cannot
+		// compile try statements without a catch clause.
+		await saveProject(next, previous).finally(() => setSaving(false));
+	}
+
+	async function saveProject(next: string | null, previous: string | null) {
+		const outcome = await saver.runExclusive(async (version) =>
+			toExclusiveOutcome(
+				await saveTripProjectAction({ reportId, expectedVersion: version, projectId: next }),
+			),
+		);
+		if (outcome.status === "saved") {
+			await queryClient.invalidateQueries({
+				queryKey: queryKeys.travelExpenses.report(reportId),
+			});
+			onSaved?.(next);
+			return;
 		}
+		setProjectId(previous);
+		setProblem(refusalMessage(t, outcome.status === "conflict" ? "conflict" : outcome.error));
 	}
 
 	return (

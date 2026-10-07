@@ -445,24 +445,26 @@ function ForeignExpenseRow({
 
 	async function clear() {
 		setRemoving(true);
-		try {
-			const result = await clearItemConversionAction({
-				reportId: expense.reportId,
-				itemId: expense.itemId,
-				expectedVersion: expense.itemVersion,
-			});
-			if (!result.success || result.data.kind !== "removed") {
-				toast.error(
-					t(
-						"settings.travelExpenses.rates.removeFailed",
-						"The conversion could not be removed. The list was refreshed.",
-					),
-				);
-			}
-			await queryClient.invalidateQueries({ queryKey });
-		} finally {
-			setRemoving(false);
+		// Promise#finally rather than try/finally: the React Compiler cannot
+		// compile try statements without a catch clause.
+		await clearAndRefresh().finally(() => setRemoving(false));
+	}
+
+	async function clearAndRefresh() {
+		const result = await clearItemConversionAction({
+			reportId: expense.reportId,
+			itemId: expense.itemId,
+			expectedVersion: expense.itemVersion,
+		});
+		if (!result.success || result.data.kind !== "removed") {
+			toast.error(
+				t(
+					"settings.travelExpenses.rates.removeFailed",
+					"The conversion could not be removed. The list was refreshed.",
+				),
+			);
 		}
+		await queryClient.invalidateQueries({ queryKey });
 	}
 
 	return (

@@ -433,22 +433,23 @@ function WithdrawVersionButton({
 	const [busy, setBusy] = useState(false);
 	async function withdraw() {
 		setBusy(true);
-		try {
-			const result = await withdrawPerDiemPolicyVersionAction({ versionId });
-			if (!result.success) {
-				toast.error(
-					t(
-						"settings.travelExpenses.perDiem.withdrawFailed",
-						"The rate version could not be withdrawn. Reload the versions and try again.",
-					),
-				);
-				return;
-			}
-			toast.success(t("settings.travelExpenses.perDiem.withdrawn", "Rate version withdrawn"));
-			await queryClient.invalidateQueries({ queryKey });
-		} finally {
-			setBusy(false);
+		// Promise#finally rather than try/finally: the React Compiler cannot
+		// compile try statements without a catch clause.
+		await withdrawAndRefresh().finally(() => setBusy(false));
+	}
+	async function withdrawAndRefresh() {
+		const result = await withdrawPerDiemPolicyVersionAction({ versionId });
+		if (!result.success) {
+			toast.error(
+				t(
+					"settings.travelExpenses.perDiem.withdrawFailed",
+					"The rate version could not be withdrawn. Reload the versions and try again.",
+				),
+			);
+			return;
 		}
+		toast.success(t("settings.travelExpenses.perDiem.withdrawn", "Rate version withdrawn"));
+		await queryClient.invalidateQueries({ queryKey });
 	}
 	return (
 		<AlertDialog>

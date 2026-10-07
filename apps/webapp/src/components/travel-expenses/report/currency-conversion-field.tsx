@@ -119,27 +119,31 @@ export function CurrencyConversionField({
 
 	async function removeCardCharge() {
 		setRemoving(true);
-		try {
-			await version.flush();
-			const result = await removeCardChargeConversionAction({
-				reportId,
-				itemId,
-				expectedVersion: version.current(),
-			});
-			if (!result.success || result.data.kind !== "removed") {
-				toast.error(
-					t(
-						"travelExpenses.report.conversion.removeFailed",
-						"The card charge could not be removed. Reload the expense and try again.",
-					),
-				);
-				return;
-			}
-			version.adopt(result.data.itemVersion);
-		} finally {
+		// Promise#finally rather than try/finally: the React Compiler cannot
+		// compile try statements without a catch clause.
+		await removeAndAdopt().finally(() => {
 			setRemoving(false);
-			await onChanged();
+			return onChanged();
+		});
+	}
+
+	async function removeAndAdopt() {
+		await version.flush();
+		const result = await removeCardChargeConversionAction({
+			reportId,
+			itemId,
+			expectedVersion: version.current(),
+		});
+		if (!result.success || result.data.kind !== "removed") {
+			toast.error(
+				t(
+					"travelExpenses.report.conversion.removeFailed",
+					"The card charge could not be removed. Reload the expense and try again.",
+				),
+			);
+			return;
 		}
+		version.adopt(result.data.itemVersion);
 	}
 
 	return (
