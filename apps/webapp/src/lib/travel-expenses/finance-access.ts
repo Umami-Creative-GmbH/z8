@@ -12,7 +12,7 @@ export interface FinanceActor {
 	userId: string;
 	canRead: boolean;
 	canSettle: boolean;
-	/** Export batches (#613). */
+	/** Export batches (#613); implies `canRead` (exports contain receipts). */
 	canExport: boolean;
 }
 

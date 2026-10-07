@@ -125,9 +125,11 @@ const ids = {
 	finance: "e6130000-0000-4000-8000-000000000004",
 	accountant: "e6130000-0000-4000-8000-000000000005",
 	foreigner: "e6130000-0000-4000-8000-000000000006",
+	exporter: "e6130000-0000-4000-8000-000000000007",
 	role: "e6131000-0000-4000-8000-000000000001",
+	exportRole: "e6131000-0000-4000-8000-000000000002",
 } as const;
-type Person = "requester" | "manager" | "finance" | "accountant" | "foreigner";
+type Person = "requester" | "manager" | "finance" | "accountant" | "foreigner" | "exporter";
 
 const admin = integrationAdminPool();
 const pdfBytes = Buffer.from("%PDF-1.4\n% receipt\n%%EOF");
@@ -153,6 +155,7 @@ async function seed() {
 		["finance", ids.finance, "t613-org", "admin", "employee"],
 		["accountant", ids.accountant, "t613-org", "member", "employee"],
 		["foreigner", ids.foreigner, "t613-foreign", "owner", "admin"],
+		["exporter", ids.exporter, "t613-org", "member", "employee"],
 	];
 	for (const [name, employeeId, organizationId, memberRole, role] of people) {
 		await admin.query(
@@ -188,6 +191,23 @@ async function seed() {
 		`insert into employee_custom_role (id, employee_id, custom_role_id, assigned_by)
 		 values (gen_random_uuid(), $1, $2, 't613-finance')`,
 		[ids.accountant, ids.role],
+	);
+	// A custom role with the export permission but no finance read: no export either,
+	// since a batch holds the organization's receipts.
+	await admin.query(
+		`insert into custom_role (id, organization_id, name, base_tier, created_by, updated_at)
+		 values ($1, 't613-org', 'Export only', 'employee', 't613-finance', now())`,
+		[ids.exportRole],
+	);
+	await admin.query(
+		`insert into custom_role_permission (id, custom_role_id, action, subject)
+		 values (gen_random_uuid(), $1, 'export', 'TravelExpenseFinance')`,
+		[ids.exportRole],
+	);
+	await admin.query(
+		`insert into employee_custom_role (id, employee_id, custom_role_id, assigned_by)
+		 values (gen_random_uuid(), $1, $2, 't613-finance')`,
+		[ids.exporter, ids.exportRole],
 	);
 }
 
@@ -523,7 +543,7 @@ describe("travel expense export batches (#613)", () => {
 		if (created.status !== "created") throw new Error(created.status);
 		await runWorker();
 
-		for (const person of ["accountant", "manager", "requester"] as const) {
+		for (const person of ["accountant", "exporter", "manager", "requester"] as const) {
 			signIn(person);
 			expect(await exportActions.getTravelExpenseExports()).toEqual({
 				success: false,
