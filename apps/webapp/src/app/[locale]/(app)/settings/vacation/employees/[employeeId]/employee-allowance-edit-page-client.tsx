@@ -349,7 +349,7 @@ export function EmployeeAllowanceEditPageClient({
 					<p className="text-sm text-muted-foreground">
 						{t(
 							"settings.vacation.employees.edit.description",
-							"Configure custom vacation allowance for {{name}}",
+							"Configure custom vacation allowance for {name}",
 							{ name: employee.user.name },
 						)}
 					</p>
@@ -364,14 +364,14 @@ export function EmployeeAllowanceEditPageClient({
 						<CardTitle>
 							{t(
 								"settings.vacation.employees.detail.allowanceForYear",
-								"Vacation Allowance for {{year}}",
+								"Vacation Allowance for {year}",
 								{ year: currentYear },
 							)}
 						</CardTitle>
 						<CardDescription>
 							{t(
 								"settings.vacation.employees.detail.currentBalance",
-								"Current balance: {{total}} days available",
+								"Current balance: {total} days available",
 								{ total },
 							)}
 						</CardDescription>
@@ -422,7 +422,7 @@ export function EmployeeAllowanceEditPageClient({
 													<SelectItem key={policy.id} value={policy.id}>
 														{t(
 															"settings.vacation.employees.detail.policyOptionDays",
-															"{{name}} ({{days}} days)",
+															"{name} ({days} days)",
 															{
 																name: policy.name,
 																days: policy.defaultAnnualDays,
@@ -436,7 +436,7 @@ export function EmployeeAllowanceEditPageClient({
 											{currentAssignment
 												? t(
 														"settings.vacation.employees.detail.currentlyAssigned",
-														"Currently assigned: {{name}}",
+														"Currently assigned: {name}",
 														{ name: currentAssignment.policy?.name },
 													)
 												: t(
@@ -465,7 +465,7 @@ export function EmployeeAllowanceEditPageClient({
 											step="0.5"
 											placeholder={t(
 												"settings.vacation.employees.detail.defaultDaysPlaceholder",
-												"Default: {{days}} days",
+												"Default: {days} days",
 												{
 													days: defaultDays,
 												},
@@ -477,7 +477,7 @@ export function EmployeeAllowanceEditPageClient({
 										<p className="text-sm text-muted-foreground">
 											{t(
 												"settings.vacation.employees.detail.overrideOrganizationDefault",
-												"Override the organization default ({{days}} days) for this employee",
+												"Override the organization default ({days} days) for this employee",
 												{ days: defaultDays },
 											)}
 										</p>

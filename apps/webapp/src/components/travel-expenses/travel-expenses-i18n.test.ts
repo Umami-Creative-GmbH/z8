@@ -84,7 +84,7 @@ describe("travel expenses i18n", () => {
 		expect(translations.de).toMatchObject({
 			travelExpenses: {
 				actions: {
-					newClaim: "Neuer Anspruch",
+					retry: "Wiederholen",
 				},
 				title: "Reisekosten",
 			},

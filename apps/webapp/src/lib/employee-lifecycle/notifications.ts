@@ -112,27 +112,40 @@ export function planReviewNotificationDeliveries(
 	return plan;
 }
 
-// Keys are spelled out so the Tolgee extractor can see every one of them.
-const REVIEW_MESSAGES: Record<DepartureReviewKind, { label: string; key: string }> = {
+// Keys and full ICU fallbacks are spelled out so the Tolgee extractor pushes the whole
+// message; a bare label as the source text made pulls drop the name and cutoff.
+const REVIEW_MESSAGES: Record<
+	DepartureReviewKind,
+	{ label: string; key: string; fallback: string }
+> = {
 	clock_out: {
 		label: "Needs review: offboarding clock-out",
 		key: "common:notifications.content.employeeOffboardingReview.clock_out",
+		fallback:
+			"{employeeName}: Needs review: offboarding clock-out (departure effective {cutoff}, {timezone}).",
 	},
 	clock_repair: {
 		label: "Timer repair required",
 		key: "common:notifications.content.employeeOffboardingReview.clock_repair",
+		fallback: "{employeeName}: Timer repair required (departure effective {cutoff}, {timezone}).",
 	},
 	approval_handover: {
 		label: "Approval duties need a replacement",
 		key: "common:notifications.content.employeeOffboardingReview.approval_handover",
+		fallback:
+			"{employeeName}: Approval duties need a replacement (departure effective {cutoff}, {timezone}).",
 	},
 	future_work: {
 		label: "Future work needs review",
 		key: "common:notifications.content.employeeOffboardingReview.future_work",
+		fallback:
+			"{employeeName}: Future work needs review (departure effective {cutoff}, {timezone}).",
 	},
 	employment_terms: {
 		label: "Future employment terms need review",
 		key: "common:notifications.content.employeeOffboardingReview.employment_terms",
+		fallback:
+			"{employeeName}: Future employment terms need review (departure effective {cutoff}, {timezone}).",
 	},
 };
 
@@ -151,7 +164,11 @@ export function buildReviewNotification(input: {
 	locale: string;
 }): CreateNotificationParams {
 	const cutoff = formatDepartureCutoff(input.cutoff, input.timezone, input.locale);
-	const { label: reviewLabel, key: messageKey } = REVIEW_MESSAGES[input.review.kind];
+	const {
+		label: reviewLabel,
+		key: messageKey,
+		fallback: messageDefault,
+	} = REVIEW_MESSAGES[input.review.kind];
 	const message = `${input.employeeName}: ${reviewLabel} (departure effective ${cutoff}, ${input.timezone}).`;
 	return {
 		userId: input.recipientUserId,
@@ -169,7 +186,7 @@ export function buildReviewNotification(input: {
 				titleKey: "common:notifications.content.employeeOffboardingReview.title",
 				titleDefault: OFFBOARDING_REVIEW_TITLE,
 				messageKey,
-				messageDefault: `{employeeName}: ${reviewLabel} (departure effective {cutoff}, {timezone}).`,
+				messageDefault,
 				params: { employeeName: input.employeeName, cutoff, timezone: input.timezone },
 			},
 		},

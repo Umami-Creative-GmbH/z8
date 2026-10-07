@@ -519,6 +519,28 @@ describe("tolgee extractor", () => {
 			);
 		});
 
+		it("prefers a lookup-table fallback over a label declared before it", () => {
+			const result = extractor(
+				`
+				const REVIEW_MESSAGES = {
+					clock_out: {
+						label: "Needs review: offboarding clock-out",
+						key: "common:notifications.content.employeeOffboardingReview.clock_out",
+						fallback: "{employeeName}: Needs review: offboarding clock-out ({cutoff}).",
+					},
+				};
+			`,
+				"notifications.ts",
+			);
+
+			expect(result.keys).toEqual([
+				expect.objectContaining({
+					defaultValue: "{employeeName}: Needs review: offboarding clock-out ({cutoff}).",
+					keyName: "notifications.content.employeeOffboardingReview.clock_out",
+				}),
+			]);
+		});
+
 		it("keeps lookup-table fallbacks that contain ICU placeholders", () => {
 			const result = extractor(
 				`

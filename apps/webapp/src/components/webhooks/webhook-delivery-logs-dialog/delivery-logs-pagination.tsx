@@ -28,7 +28,7 @@ export function DeliveryLogsPagination({
 	return (
 		<div className="flex items-center justify-between pt-4 border-t">
 			<p className="text-sm text-muted-foreground">
-				{t("webhooks:webhooks.logs.showing", "Showing {{start}}-{{end}} of {{total}}", {
+				{t("webhooks:webhooks.logs.showing", "Showing {start}-{end} of {total}", {
 					start: offset + 1,
 					end: Math.min(offset + deliveriesCount, total),
 					total,

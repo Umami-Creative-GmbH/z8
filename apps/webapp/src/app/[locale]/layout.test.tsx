@@ -173,6 +173,7 @@ vi.mock("@/tolgee/load-translations", () => ({
 
 vi.mock("@/tolgee/shared", () => ({
 	ALL_LANGUAGES: ["en"],
+	DEFAULT_LANGUAGE: "en",
 }));
 
 vi.mock("drizzle-orm", () => ({

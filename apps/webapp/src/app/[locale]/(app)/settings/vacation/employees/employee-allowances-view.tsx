@@ -133,14 +133,14 @@ function EmployeeAllowancesCard({
 						<CardTitle>
 							{t(
 								"settings.vacation.employees.allowancesForYear",
-								"Vacation Allowances for {{year}}",
+								"Vacation Allowances for {year}",
 								{ year: currentYear },
 							)}
 						</CardTitle>
 						<CardDescription>
 							{t(
 								"settings.vacation.employees.defaultAllowanceDescription",
-								"Default allowance: {{days}} days per year",
+								"Default allowance: {days} days per year",
 								{ days: defaultDays },
 							)}
 							{!hasOrganizationPolicy &&
@@ -153,7 +153,7 @@ function EmployeeAllowancesCard({
 					<Badge variant="secondary">
 						{t(
 							"settings.vacation.employees.employeeCount",
-							"{{count}} employees",
+							"{count} employees",
 							{ count: employees.length },
 						)}
 					</Badge>

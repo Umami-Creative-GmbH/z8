@@ -42,7 +42,7 @@ export default function SettingsError({
 							<p className="text-sm font-mono text-muted-foreground">{error.message}</p>
 							{error.digest && (
 								<p className="mt-1 text-xs text-muted-foreground">
-									{t("settings.error.errorId", "Error ID: {{digest}}", { digest: error.digest })}
+									{t("settings.error.errorId", "Error ID: {digest}", { digest: error.digest })}
 								</p>
 							)}
 						</div>

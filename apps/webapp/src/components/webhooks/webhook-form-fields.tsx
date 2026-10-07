@@ -251,7 +251,7 @@ export function WebhookEventFields({
 							<IconInfoCircle className="size-3" aria-hidden="true" />
 							{t(
 								"webhooks:webhooks.form.events-hint",
-								"Selected events: {{count}}",
+								"Selected events: {count}",
 								{ count: selectedEvents.size },
 							)}
 						</TFormDescription>
