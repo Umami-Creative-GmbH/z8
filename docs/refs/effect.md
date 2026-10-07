@@ -30,4 +30,6 @@ These differ from v3, so code and examples written for v3 get them wrong.
 
 Define services as `class X extends Context.Service<X, Shape>()("X") {}` and provide them with `Layer.succeed` or `Layer.effect`. `lib/effect/services/database.service.ts` is the canonical example. Add a new service to the `AppLayer` in `lib/effect/runtime.ts`. Server actions run their effect through `runServerActionSafe` in `lib/effect/result.ts`, which turns an `Exit` into `ServerActionResult`.
 
+A service shape or callback type declares the real requirement type (`R`) of the effects it returns, never `any` or `unknown`. A missing service then fails to compile instead of failing at run time. Runners provide those services; they don't cast to `Effect<…, never>`. The approval handler contract is the example: its effects require `ApprovalHandlerServices` (`lib/approvals/domain/types.ts`), and the shared legacy decision owner passes its callbacks' requirements through as a type parameter.
+
 In tests, `vi.mock` factories import `effect`, and stub services with `Context.Service<any>("Name")`.
