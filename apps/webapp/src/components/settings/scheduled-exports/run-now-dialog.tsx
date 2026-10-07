@@ -106,7 +106,7 @@ export function RunNowDialog({
 				toast.success(t("settings.scheduledExports.runNow.success", "Export started"), {
 					description: t(
 						"settings.scheduledExports.runNow.successDesc",
-						"The export has been queued and will run shortly. IconCheck the execution history for progress.",
+						"The export has been queued and will run shortly. Check the execution history for progress.",
 					),
 				});
 				onOpenChange(false);

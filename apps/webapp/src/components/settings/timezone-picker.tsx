@@ -264,7 +264,7 @@ export function TimezonePicker({ value = "UTC", onChange, disabled }: TimezonePi
 			<PopoverContent className="w-[400px] p-0" align="start">
 				<Command>
 					<CommandInput
-						placeholder={t("settings.timezone.picker.search", "IconSearch timezone…")}
+						placeholder={t("settings.timezone.picker.search", "Search timezone…")}
 					/>
 					<CommandEmpty>{t("settings.timezone.picker.empty", "No timezone found.")}</CommandEmpty>
 					<CommandList id={listboxId}>

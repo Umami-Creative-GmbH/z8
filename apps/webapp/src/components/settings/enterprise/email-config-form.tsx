@@ -727,7 +727,7 @@ function EmailStatusSection({
 						<Label>
 							{t(
 								"settings.enterprise.email.testSection",
-								"IconSend Test Email",
+								"Send Test Email",
 							)}
 						</Label>
 						<div className="flex gap-2">
@@ -749,7 +749,7 @@ function EmailStatusSection({
 								) : (
 									<IconSend className="size-4 mr-2" />
 								)}
-								{t("settings.enterprise.email.sendTest", "IconSend Test")}
+								{t("settings.enterprise.email.sendTest", "Send Test")}
 							</Button>
 						</div>
 					</div>

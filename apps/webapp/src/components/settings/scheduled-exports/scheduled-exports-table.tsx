@@ -662,7 +662,7 @@ function ScheduledExportRow({
 							<IconHistory className="size-4 mr-2" aria-hidden="true" />
 							{t(
 								"settings.scheduledExports.actions.viewHistory",
-								"View IconHistory",
+								"View History",
 							)}
 						</DropdownMenuItem>
 						<DropdownMenuItem onClick={() => onRunNow(schedule)}>
