@@ -270,6 +270,8 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 			"approval_delivery_message",
 			"approval_delivery_intent",
 			"approval_request",
+			// A closed travel expense report cycle of the request goes with it (spec #598 review).
+			"travel_expense_report_cycle_closure",
 		]);
 		for (const statement of deletes.slice(1, 4)) {
 			// Scoped by organization and the lifecycle's legacy requests and
