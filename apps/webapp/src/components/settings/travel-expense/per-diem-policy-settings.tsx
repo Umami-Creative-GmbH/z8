@@ -14,19 +14,8 @@ import {
 	withdrawPerDiemPolicyVersionAction,
 } from "@/app/[locale]/(app)/settings/travel-expenses/per-diem-policy-actions";
 import { formatMoney, formatPlainDate } from "@/components/travel-expenses/report/format";
-import { policySourceLabel } from "@/components/travel-expenses/report/mileage-breakdown";
+import { policySourceLabel } from "@/components/travel-expenses/report/mileage-labels";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-	AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -56,7 +45,6 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { queryKeys } from "@/lib/query/keys";
-import { ForeignTableSummary, foreignAreaCount } from "./per-diem-foreign-table-summary";
 import {
 	PER_DIEM_RATE_FIELDS,
 	type PerDiemPolicyInputErrors,
@@ -65,6 +53,9 @@ import type {
 	PerDiemRates,
 	StatutoryPerDiemDefault,
 } from "@/lib/travel-expenses/statutory-per-diem-defaults";
+import { foreignAreaCount } from "./per-diem-foreign-areas";
+import { ForeignTableSummary } from "./per-diem-foreign-table-summary";
+import { WithdrawVersionButton } from "./withdraw-version-button";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 const queryKey = queryKeys.travelExpenses.perDiemPolicy();
@@ -310,7 +301,7 @@ function PerDiemPolicyContent({
 											>
 												{t("settings.travelExpenses.perDiem.replace", "Replace")}
 											</Button>
-											<WithdrawVersionButton
+											<WithdrawPerDiemVersionButton
 												versionId={version.id}
 												effectiveFrom={version.effectiveFrom}
 											/>
@@ -420,7 +411,8 @@ function PerDiemPolicyContent({
 	);
 }
 
-function WithdrawVersionButton({
+/** Withdraws one per diem rate version, in the per diem card's wording. */
+function WithdrawPerDiemVersionButton({
 	versionId,
 	effectiveFrom,
 }: {
@@ -429,56 +421,26 @@ function WithdrawVersionButton({
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const queryClient = useQueryClient();
-	const [busy, setBusy] = useState(false);
-	async function withdraw() {
-		setBusy(true);
-		// Promise#finally rather than try/finally: the React Compiler cannot
-		// compile try statements without a catch clause.
-		await withdrawAndRefresh().finally(() => setBusy(false));
-	}
-	async function withdrawAndRefresh() {
-		const result = await withdrawPerDiemPolicyVersionAction({ versionId });
-		if (!result.success) {
-			toast.error(
-				t(
+	return (
+		<WithdrawVersionButton
+			withdraw={() => withdrawPerDiemPolicyVersionAction({ versionId })}
+			queryKey={queryKey}
+			copy={{
+				trigger: t("settings.travelExpenses.perDiem.withdraw", "Withdraw"),
+				title: t("settings.travelExpenses.perDiem.withdrawTitle", "Withdraw this rate version?"),
+				description: t(
+					"settings.travelExpenses.perDiem.withdrawDescription",
+					"Travel days from {date} fall back to the previous version, or stay uncalculated if none exists. Submitted reports keep the rates they were calculated with.",
+					{ date: formatPlainDate(locale, effectiveFrom) },
+				),
+				confirm: t("settings.travelExpenses.perDiem.withdrawConfirm", "Withdraw version"),
+				failed: t(
 					"settings.travelExpenses.perDiem.withdrawFailed",
 					"The rate version could not be withdrawn. Reload the versions and try again.",
 				),
-			);
-			return;
-		}
-		toast.success(t("settings.travelExpenses.perDiem.withdrawn", "Rate version withdrawn"));
-		await queryClient.invalidateQueries({ queryKey });
-	}
-	return (
-		<AlertDialog>
-			<AlertDialogTrigger asChild>
-				<Button type="button" variant="ghost" size="sm" disabled={busy}>
-					{t("settings.travelExpenses.perDiem.withdraw", "Withdraw")}
-				</Button>
-			</AlertDialogTrigger>
-			<AlertDialogContent>
-				<AlertDialogHeader>
-					<AlertDialogTitle>
-						{t("settings.travelExpenses.perDiem.withdrawTitle", "Withdraw this rate version?")}
-					</AlertDialogTitle>
-					<AlertDialogDescription>
-						{t(
-							"settings.travelExpenses.perDiem.withdrawDescription",
-							"Travel days from {date} fall back to the previous version, or stay uncalculated if none exists. Submitted reports keep the rates they were calculated with.",
-							{ date: formatPlainDate(locale, effectiveFrom) },
-						)}
-					</AlertDialogDescription>
-				</AlertDialogHeader>
-				<AlertDialogFooter>
-					<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-					<AlertDialogAction onClick={() => void withdraw()}>
-						{t("settings.travelExpenses.perDiem.withdrawConfirm", "Withdraw version")}
-					</AlertDialogAction>
-				</AlertDialogFooter>
-			</AlertDialogContent>
-		</AlertDialog>
+				withdrawn: t("settings.travelExpenses.perDiem.withdrawn", "Rate version withdrawn"),
+			}}
+		/>
 	);
 }
 

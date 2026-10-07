@@ -115,6 +115,8 @@ async function observeHistoricalReceipts(
 		if (!legacyAttachmentNeedsRead(attachment)) continue;
 		try {
 			const bytes = Buffer.from(
+				// One object at a time on purpose: it keeps storage load bounded.
+				// react-doctor-disable-next-line react-doctor/async-await-in-loop
 				await readObject({
 					organizationId: owner.organizationId,
 					key: attachment.storageKey,
@@ -341,10 +343,11 @@ async function attemptConversion(
 		// Each receipt names the legacy attachment's stored object: the cleanup
 		// worker keeps an object while any attachment or receipt row names it.
 		const snapshotAttachments: LegacyDraftSnapshot["attachments"] = [];
+		const receipts: (typeof travelExpenseReportReceipt.$inferInsert)[] = [];
 		for (const { attachment, identity } of identities) {
 			if (!identity.ok) continue;
 			const receiptId = randomUUID();
-			await tx.insert(travelExpenseReportReceipt).values({
+			receipts.push({
 				id: receiptId,
 				organizationId: owner.organizationId,
 				reportId: report.id,
@@ -368,6 +371,7 @@ async function attemptConversion(
 				checksumSha256: identity.checksumSha256,
 			});
 		}
+		if (receipts.length > 0) await tx.insert(travelExpenseReportReceipt).values(receipts);
 
 		const { id: _claimId, ...facts } = legacy;
 		const snapshot: LegacyDraftSnapshot = {

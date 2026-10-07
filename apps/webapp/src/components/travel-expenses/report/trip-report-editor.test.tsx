@@ -309,6 +309,34 @@ describe("trip report editor", () => {
 		);
 	});
 
+	it("removes a destination and keeps the rows after it", async () => {
+		reportActions.saveTripDetailsDraftAction.mockResolvedValue({
+			success: true,
+			data: { status: "saved", details: { ...tripDetails, version: 6 } },
+		});
+		mount();
+		await purpose();
+		fireEvent.click(within(tripSection()).getByRole("button", { name: "Add destination" }));
+		fireEvent.change(within(tripSection()).getByRole("textbox", { name: "Place 2" }), {
+			target: { value: "Vienna" },
+		});
+		fireEvent.click(within(tripSection()).getByRole("button", { name: "Remove destination 1" }));
+		const remaining = within(tripSection()).getByRole("textbox", { name: "Place 1" });
+		expect((remaining as HTMLInputElement).value).toBe("Vienna");
+		expect(within(tripSection()).queryByRole("textbox", { name: "Place 2" })).toBeNull();
+		await waitFor(
+			() =>
+				expect(reportActions.saveTripDetailsDraftAction).toHaveBeenLastCalledWith(
+					expect.objectContaining({
+						values: expect.objectContaining({
+							destinations: [{ place: "Vienna", countryCode: null }],
+						}),
+					}),
+				),
+			{ timeout: 2000 },
+		);
+	});
+
 	it("adds a receipt expense and moves focus to it", async () => {
 		reportActions.addTripReportItemAction.mockResolvedValueOnce({
 			success: true,

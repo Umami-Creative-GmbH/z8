@@ -32,12 +32,12 @@ export async function copyAllowanceOverrides(
 				isNull(travelExpenseAllowanceOverride.revokedAt),
 			),
 		);
+	const copies: (typeof travelExpenseAllowanceOverride.$inferInsert)[] = [];
 	for (const row of rows) {
 		const itemId = input.itemIds.get(row.itemId);
 		if (!itemId) continue;
 		const { id: _id, reportId: _reportId, itemId: _itemId, ...authorization } = row;
-		await tx
-			.insert(travelExpenseAllowanceOverride)
-			.values({ ...authorization, reportId: input.targetReportId, itemId });
+		copies.push({ ...authorization, reportId: input.targetReportId, itemId });
 	}
+	if (copies.length > 0) await tx.insert(travelExpenseAllowanceOverride).values(copies);
 }

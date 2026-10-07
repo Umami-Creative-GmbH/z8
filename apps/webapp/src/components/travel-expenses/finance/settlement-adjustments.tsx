@@ -20,24 +20,28 @@ export function SettlementAdjustmentLines({
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	return account.adjustments
-		.filter((adjustment) => adjustment.currency === currency)
-		.map((adjustment) => (
-			<div key={adjustment.reportId} className="contents">
-				<dt className="pl-3 text-muted-foreground">
-					<Link
-						href={`/travel-expenses/reports/${adjustment.reportId}`}
-						className="underline underline-offset-4"
-					>
-						{t("travelExpenses.settlement.adjustment", "Including approved adjustment")}
-					</Link>
-					<span className="block text-xs break-words">{adjustment.reason}</span>
-				</dt>
-				<dd className="text-right tabular-nums">
-					{signedMoney(locale, adjustment.delta, adjustment.currency)}
-				</dd>
-			</div>
-		));
+	return (
+		<>
+			{account.adjustments
+				.filter((adjustment) => adjustment.currency === currency)
+				.map((adjustment) => (
+					<div key={adjustment.reportId} className="contents">
+						<dt className="pl-3 text-muted-foreground">
+							<Link
+								href={`/travel-expenses/reports/${adjustment.reportId}`}
+								className="underline underline-offset-4"
+							>
+								{t("travelExpenses.settlement.adjustment", "Including approved adjustment")}
+							</Link>
+							<span className="block text-xs break-words">{adjustment.reason}</span>
+						</dt>
+						<dd className="text-right tabular-nums">
+							{signedMoney(locale, adjustment.delta, adjustment.currency)}
+						</dd>
+					</div>
+				))}
+		</>
+	);
 }
 
 /** Tells the employee what an overpayment after an approved adjustment means (#615). */

@@ -12,12 +12,10 @@ import {
 	getAllowanceExceptionItems,
 	revokeAllowanceOverrideAction,
 } from "@/app/[locale]/(app)/settings/travel-expenses/allowance-override-actions";
-import {
-	AllowanceOverrideNotice,
-	allowanceSituationLabel,
-} from "@/components/travel-expenses/report/allowance-override-notice";
+import { allowanceSituationLabel } from "@/components/travel-expenses/report/allowance-override-labels";
+import { AllowanceOverrideNotice } from "@/components/travel-expenses/report/allowance-override-notice";
 import { formatMoney, formatPlainDate } from "@/components/travel-expenses/report/format";
-import { perDiemExceptionLabel } from "@/components/travel-expenses/report/per-diem-breakdown";
+import { perDiemExceptionLabel } from "@/components/travel-expenses/report/per-diem-labels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

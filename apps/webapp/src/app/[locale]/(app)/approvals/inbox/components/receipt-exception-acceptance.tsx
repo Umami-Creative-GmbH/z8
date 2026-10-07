@@ -4,31 +4,7 @@ import { IconFileOff } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import type { ApprovalInboxDetailSection } from "@/lib/approvals/inbox/types";
-
-export type ReceiptExceptionAcceptanceSection = Extract<
-	ApprovalInboxDetailSection,
-	{ type: "receipt_exception_acceptance" }
->;
-
-export function findReceiptExceptionAcceptance(
-	sections: readonly ApprovalInboxDetailSection[],
-): ReceiptExceptionAcceptanceSection | null {
-	return (
-		sections.find(
-			(section): section is ReceiptExceptionAcceptanceSection =>
-				section.type === "receipt_exception_acceptance",
-		) ?? null
-	);
-}
-
-/** Whether every exception of the section is accepted; true when there is none. */
-export function allReceiptExceptionsAccepted(
-	section: ReceiptExceptionAcceptanceSection | null,
-	accepted: readonly string[],
-): boolean {
-	return section?.items.every((item) => accepted.includes(item.itemId)) ?? true;
-}
+import type { ReceiptExceptionAcceptanceSection } from "./receipt-exception-acceptance-section";
 
 /**
  * Expense report missing-receipt exceptions (#604). Approving the report needs
@@ -50,6 +26,7 @@ export function ReceiptExceptionAcceptance({
 	const { t } = useTranslate();
 	// A static key (i18n rule 1); the section's title only ever names this heading.
 	const title = t("approvals:approvals.evidence.receiptExceptionsTitle", "Missing receipts");
+	const acceptedIds = new Set(accepted);
 	return (
 		<section
 			aria-labelledby="receipt-exception-acceptance-title"
@@ -92,7 +69,7 @@ export function ReceiptExceptionAcceptance({
 								<>
 									<Checkbox
 										id={id}
-										checked={accepted.includes(item.itemId)}
+										checked={acceptedIds.has(item.itemId)}
 										onCheckedChange={(checked) =>
 											onChange(
 												checked === true

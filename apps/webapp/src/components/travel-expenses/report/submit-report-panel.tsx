@@ -26,7 +26,7 @@ import type { ReportView } from "@/lib/travel-expenses/report-store";
 import { reviewedItemAmount } from "@/lib/travel-expenses/report-submission";
 import type { ExpenseProjectSummary } from "./expense-project-line";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
-import { pendingReceiptException } from "./receipt-exception-notice";
+import { pendingReceiptException } from "./pending-receipt-exception";
 import { AdjustmentDeltaPreview } from "./report-adjustments";
 import { ReportTotals } from "./report-summary";
 

@@ -7,7 +7,7 @@ import type { CurrencySettlement, SettlementSummary } from "@/lib/travel-expense
 import { formatMoney } from "../report/format";
 
 /** The magnitude of a signed stored amount ("-50.00" → "50.00"). */
-export function absoluteAmount(amount: string): string {
+function absoluteAmount(amount: string): string {
 	return amount.startsWith("-") ? amount.slice(1) : amount;
 }
 

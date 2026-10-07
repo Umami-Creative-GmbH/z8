@@ -10,7 +10,7 @@ import { formatMoney, formatPlainDate } from "./format";
 type Translate = ReturnType<typeof useTranslate>["t"];
 
 /** The visible name of a conversion basis; card charges and authorized rates never look alike. */
-export function conversionBasisLabel(t: Translate, basis: ConversionResult["basis"]): string {
+function conversionBasisLabel(t: Translate, basis: ConversionResult["basis"]): string {
 	switch (basis) {
 		case "card_charge":
 			return t("travelExpenses.report.conversion.basis.cardCharge", "Card charge");

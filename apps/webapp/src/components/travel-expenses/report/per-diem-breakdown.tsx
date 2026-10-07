@@ -3,14 +3,11 @@
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import type { AllowancePolicySource } from "@/lib/travel-expenses/allowance-policy";
-import type {
-	PerDiemDayBreakdown,
-	PerDiemExceptionReason,
-	PerDiemMeal,
-} from "@/lib/travel-expenses/per-diem";
+import type { PerDiemDayBreakdown, PerDiemMeal } from "@/lib/travel-expenses/per-diem";
 import { formatMoney, formatPlainDate } from "./format";
-import { policySourceLabel } from "./mileage-breakdown";
+import { policySourceLabel } from "./mileage-labels";
 import { PerDiemDayLocationLabel } from "./per-diem-day-location";
+import { mealLabel } from "./per-diem-labels";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -27,7 +24,7 @@ export interface PerDiemBreakdownFacts {
 	policies: { versionId: string; effectiveFrom: string; source: AllowancePolicySource }[];
 }
 
-export function perDiemBasisLabel(t: Translate, basis: PerDiemDayBreakdown["basis"]) {
+function perDiemBasisLabel(t: Translate, basis: PerDiemDayBreakdown["basis"]) {
 	switch (basis) {
 		case "absence_24h":
 			return t("travelExpenses.report.perDiem.basis.absence24h", "Full day away (24 hours)");
@@ -54,82 +51,6 @@ export function perDiemBasisLabel(t: Translate, basis: PerDiemDayBreakdown["basi
 			return t(
 				"travelExpenses.report.perDiem.basis.claimedInOtherReport",
 				"Already paid in another of your reports: only one allowance per day",
-			);
-	}
-}
-
-export function mealLabel(t: Translate, meal: PerDiemMeal) {
-	switch (meal) {
-		case "breakfast":
-			return t("travelExpenses.report.perDiem.meals.breakfast", "Breakfast");
-		case "lunch":
-			return t("travelExpenses.report.perDiem.meals.lunch", "Lunch");
-		case "dinner":
-			return t("travelExpenses.report.perDiem.meals.dinner", "Dinner");
-	}
-}
-
-export function perDiemExceptionLabel(t: Translate, reason: PerDiemExceptionReason) {
-	switch (reason) {
-		case "international":
-			return t(
-				"travelExpenses.report.perDiem.exceptions.international",
-				"A destination is outside Germany. International per diem is not calculated yet.",
-			);
-		case "destination_not_listed":
-			return t(
-				"travelExpenses.report.perDiem.exceptions.destinationNotListed",
-				"A daily location is not covered by the official foreign table or its fallback rules.",
-			);
-		case "special_location":
-			return t(
-				"travelExpenses.report.perDiem.exceptions.specialLocation",
-				"A day was marked as a special situation (other, or a whole day in flight or at sea on the first or last travel day).",
-			);
-		case "foreign_without_overnight":
-			return t(
-				"travelExpenses.report.perDiem.exceptions.foreignWithoutOvernight",
-				"An over-night activity abroad without an overnight stay is not calculated automatically.",
-			);
-		case "mixed_time_zones":
-			return t(
-				"travelExpenses.report.perDiem.exceptions.mixedTimeZones",
-				"Departure and return are in different time zones.",
-			);
-		case "foreign_time_zone":
-			return t(
-				"travelExpenses.report.perDiem.exceptions.foreignTimeZone",
-				"The travel times are not in German local time.",
-			);
-		case "nights_at_home":
-			return t(
-				"travelExpenses.report.perDiem.exceptions.nightsAtHome",
-				"You spent some nights at home during the trip.",
-			);
-		case "multi_day_without_overnight":
-			return t(
-				"travelExpenses.report.perDiem.exceptions.multiDayWithoutOvernight",
-				"The trip spans more than two calendar days without an overnight stay.",
-			);
-		case "prolonged_workplace":
-			return t(
-				"travelExpenses.report.perDiem.exceptions.prolongedWorkplace",
-				"Longer activity at the same workplace: per diem is limited to the first three months.",
-			);
-		case "rules_not_verified":
-			return t(
-				"travelExpenses.report.perDiem.exceptions.rulesNotVerified",
-				"No verified German rules cover these travel dates yet.",
-			);
-		case "majority_tie":
-			return t(
-				"travelExpenses.report.perDiem.exceptions.majorityTie",
-				"The over-night absence is split exactly evenly between both days.",
-			);
-		case "overlapping_days":
-			return t(
-				"travelExpenses.report.perDiem.exceptions.overlappingDays",
-				"Another of your reports already pays per diem for some of these days; only one allowance per day is allowed, so leave them out of the manual calculation.",
 			);
 	}
 }
