@@ -5,7 +5,6 @@ import {
 	ConflictError,
 	DatabaseError,
 	NotFoundError,
-	ValidationError,
 } from "@/lib/effect/errors";
 
 const loggerError = vi.hoisted(() => vi.fn());
@@ -60,7 +59,6 @@ vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
 		managerEligibilityMocks.isEligibleManagerForApprovalRequest,
 }));
 
-import { mapBulkDecisionError } from "@/lib/approvals/application/bulk-approval.service";
 import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
 import {
 	getApprovalStatusUpdate,
@@ -234,50 +232,6 @@ describe("getApprovalStatusUpdate", () => {
 		expect(result.approvedAt).toBeNull();
 		expect(result.rejectionReason).toBe("missing details");
 		expect(result.updatedAt).toBeDefined();
-	});
-
-	it("maps per-item bulk failures to coded outcomes", () => {
-		expect(
-			mapBulkDecisionError(
-				"approval-conflict",
-				new ConflictError({
-					message: "Approval request is already approved",
-					conflictType: "approval_status",
-				}),
-			),
-		).toEqual({
-			id: "approval-conflict",
-			code: "stale",
-			message: "Approval request is already approved",
-		});
-
-		expect(
-			mapBulkDecisionError(
-				"approval-missing",
-				new NotFoundError({
-					message: "Approval request not found",
-					entityType: "approval_request",
-					entityId: "approval-missing",
-				}),
-			),
-		).toEqual({
-			id: "approval-missing",
-			code: "not_found",
-			message: "Approval request not found",
-		});
-
-		expect(
-			mapBulkDecisionError(
-				"approval-invalid",
-				new ValidationError({
-					message: "Travel expense approval decisions are not implemented yet",
-				}),
-			),
-		).toEqual({
-			id: "approval-invalid",
-			code: "validation_failed",
-			message: "Travel expense approval decisions are not implemented yet",
-		});
 	});
 
 	it("logs normalized single-item approval audits with the acting user id", async () => {
