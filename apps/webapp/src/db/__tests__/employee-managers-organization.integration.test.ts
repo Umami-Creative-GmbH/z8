@@ -61,35 +61,23 @@ describe("employee_managers organization guard", () => {
 		});
 	});
 
-	it("rejects moving an existing link to a manager in another organization", async () => {
-		const foreignOrganizationId = await fixture.createOrganization();
-		const foreignManager = await fixture.seedEmployee({ organizationId: foreignOrganizationId });
-		const employee = await fixture.seedEmployee();
-		const manager = await fixture.seedEmployee();
-		const link = await insertLink(employee.employeeId, manager.employeeId);
+	it.each(["manager_id", "employee_id"])(
+		"rejects pointing an existing link's %s into another organization",
+		async (column) => {
+			const foreignOrganizationId = await fixture.createOrganization();
+			const foreign = await fixture.seedEmployee({ organizationId: foreignOrganizationId });
+			const employee = await fixture.seedEmployee();
+			const manager = await fixture.seedEmployee();
+			const link = await insertLink(employee.employeeId, manager.employeeId);
 
-		await expect(
-			fixture.pool.query("update employee_managers set manager_id = $2 where id = $1", [
-				link.rows[0]?.id,
-				foreignManager.employeeId,
-			]),
-		).rejects.toMatchObject({ code: "23514" });
-	});
-
-	it("rejects moving an existing link to an employee in another organization", async () => {
-		const foreignOrganizationId = await fixture.createOrganization();
-		const foreignEmployee = await fixture.seedEmployee({ organizationId: foreignOrganizationId });
-		const employee = await fixture.seedEmployee();
-		const manager = await fixture.seedEmployee();
-		const link = await insertLink(employee.employeeId, manager.employeeId);
-
-		await expect(
-			fixture.pool.query("update employee_managers set employee_id = $2 where id = $1", [
-				link.rows[0]?.id,
-				foreignEmployee.employeeId,
-			]),
-		).rejects.toMatchObject({ code: "23514" });
-	});
+			await expect(
+				fixture.pool.query(`update employee_managers set ${column} = $2 where id = $1`, [
+					link.rows[0]?.id,
+					foreign.employeeId,
+				]),
+			).rejects.toMatchObject({ code: "23514" });
+		},
+	);
 
 	it("repairs existing cross-organization links and keeps same-organization ones", async () => {
 		const foreignOrganizationId = await fixture.createOrganization();
@@ -115,6 +103,9 @@ describe("employee_managers organization guard", () => {
 				"alter table employee_managers enable trigger employee_managers_guard_same_organization_trigger",
 			);
 			await client.query("commit");
+		} catch (error) {
+			await client.query("rollback");
+			throw error;
 		} finally {
 			client.release();
 		}

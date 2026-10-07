@@ -19,10 +19,12 @@ DECLARE
 	subject_organization_id text;
 	manager_organization_id text;
 BEGIN
+	-- FOR SHARE conflicts with the row lock of an organization change, so a
+	-- concurrent move of either employee waits for this link (and its guard).
 	SELECT "organization_id" INTO subject_organization_id
-	FROM public."employee" WHERE "id" = NEW.employee_id;
+	FROM public."employee" WHERE "id" = NEW.employee_id FOR SHARE;
 	SELECT "organization_id" INTO manager_organization_id
-	FROM public."employee" WHERE "id" = NEW.manager_id;
+	FROM public."employee" WHERE "id" = NEW.manager_id FOR SHARE;
 
 	-- A missing employee is reported by the foreign keys.
 	IF subject_organization_id <> manager_organization_id THEN
