@@ -291,6 +291,14 @@ work in batches of up to 50 users, each in its own transaction; the guarantee ho
 transaction, which is the unit that commits. The wrapper is composed in `lib/auth.ts` and in the
 three SCIM PostgreSQL suites.
 
+From Better Auth 1.7.7 ([#634](https://github.com/Umami-Creative-GmbH/z8/issues/634)), the
+subject `incrementOne` is a real compare-and-set on PostgreSQL. A domain replay that loses it to
+a concurrent subject writer rejects with "The SCIM projection subject changed concurrently;
+retry the request." The plugin doesn't retry that conflict for `reconcileSCIMProjection`, so
+z8's replayer (`lib/scim/projection-replay-api.ts`) retries it in up to 3 fresh calls. Callers
+that compensate or defer on failure see the conflict only after the retries are spent. The
+guard wrapper is unaffected: a lost compare-and-set returns no row, so no guard is taken.
+
 Nothing is locked out of order, and every violation fails closed:
 
 - A subject locked outside a captured transaction is refused (`UncoordinatedAuthMutationError`).
