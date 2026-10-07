@@ -43,6 +43,7 @@ import {
 } from "../evidence/travel-expense-report-store";
 import { compareTravelExpenseReportWithSubmittedRevision } from "../evidence/travel-expense-report-submission";
 import { ApprovalAuditLogger, createApprovalAuditLogger } from "../infrastructure/audit-logger";
+import { isOwnRequestDecision, ownRequestDecisionError } from "../policies/self-decision";
 import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
 import { processApprovalWithCurrentEmployee } from "./shared";
 import { assertAdjustmentBaselineCurrent } from "./travel-expense-report-adjustment-guard";
@@ -261,13 +262,13 @@ function preflightReportDecision(
 			);
 		}
 		// No management or eligibility path lets a requester decide their own report.
-		if (report.employeeId === actor.id) {
+		if (isOwnRequestDecision({ requesterEmployeeId: report.employeeId, actorEmployeeId: actor.id })) {
 			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "You cannot decide your own expense report",
-					userId: actor.id,
+				ownRequestDecisionError({
+					actorEmployeeId: actor.id,
 					resource: ENTITY_TYPE,
 					action,
+					subject: "expense report",
 				}),
 			);
 		}

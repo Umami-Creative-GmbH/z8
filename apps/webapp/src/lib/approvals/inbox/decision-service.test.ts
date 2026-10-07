@@ -50,7 +50,9 @@ vi.mock("@/db", () => ({
 
 vi.mock("@/lib/approvals/inbox/source-adapters", () => ({
 	isSupportedInboxType: (type: string) =>
-		type === "time_entry" || type === "absence_entry",
+		type === "time_entry" ||
+		type === "absence_entry" ||
+		type === "travel_expense_claim",
 	getSupportedInboxHandler: (type: string) =>
 		type === "time_entry"
 			? {
@@ -74,6 +76,7 @@ import {
 	canAttemptApprovalInboxDecisionTarget,
 	decideApprovalInboxItemFromRequest,
 	loadApprovalInboxDecisionTarget,
+	rejectApprovalInboxItem,
 } from "@/lib/approvals/inbox/decision-service";
 
 describe("approval inbox decision service", () => {
@@ -966,6 +969,137 @@ describe("approval inbox decision service", () => {
 				allowOrganizationWideApprover: true,
 			},
 		);
+	});
+
+	describe("own requests (#697)", () => {
+		const kinds = [
+			{ entityType: "absence_entry", entityId: "absence-1" },
+			{ entityType: "time_entry", entityId: "work-period-1" },
+			{ entityType: "travel_expense_claim", entityId: "claim-1" },
+		] as const;
+
+		it.each(kinds)(
+			"refuses approve and reject of one's own $entityType whatever authority the actor holds",
+			async ({ entityType, entityId }) => {
+				const approve = vi.fn(() => Effect.succeed(undefined));
+				const reject = vi.fn(() => Effect.succeed(undefined));
+				const request = {
+					id: "approval-own",
+					targetType: "compatibility_request" as const,
+					entityType,
+					entityId,
+					organizationId: "org-1",
+					approverId: "manager-1",
+					requesterEmployeeId: "admin-1",
+					status: "pending" as const,
+					workflowKind: null,
+				};
+
+				for (const decision of [
+					{ action: "approve" as const },
+					{ action: "reject" as const, reason: "Not needed" },
+				]) {
+					for (const allowOrganizationWideApprover of [true, false]) {
+						const error = await decideApprovalInboxItemFromRequest({
+							request,
+							actorEmployeeId: "admin-1",
+							...decision,
+							allowOrganizationWideApprover,
+							handler: { type: entityType, approve, reject } as never,
+						}).catch((caught) => caught);
+
+						expect(error).toBeInstanceOf(AuthorizationError);
+						expect(error.message).toBe("You cannot decide your own request");
+					}
+				}
+				expect(approve).not.toHaveBeenCalled();
+				expect(reject).not.toHaveBeenCalled();
+			},
+		);
+
+		it("refuses single inbox decisions on one's own request for manage-approval actors", async () => {
+			const ownRequest = {
+				id: "approval-own",
+				entityType: "time_entry",
+				entityId: "work-period-1",
+				organizationId: "org-1",
+				approverId: "manager-1",
+				requestedBy: "admin-1",
+				status: "pending",
+			};
+			approvalRequestFindFirstMock.mockResolvedValue(ownRequest);
+
+			const approval = await approveApprovalInboxItem({
+				approvalId: "approval-own",
+				actorEmployeeId: "admin-1",
+				organizationId: "org-1",
+				includeAllApprovers: true,
+			}).catch((error) => error);
+			const rejection = await rejectApprovalInboxItem({
+				approvalId: "approval-own",
+				actorEmployeeId: "admin-1",
+				organizationId: "org-1",
+				reason: "Not needed",
+				includeAllApprovers: true,
+			}).catch((error) => error);
+
+			for (const error of [approval, rejection]) {
+				expect(error).toBeInstanceOf(AuthorizationError);
+				expect(error.message).toBe("You cannot decide your own request");
+			}
+			expect(completeHandlerApproveMock).not.toHaveBeenCalled();
+		});
+
+		it("fails only the own requests of a mixed bulk decision as forbidden", async () => {
+			const approve = vi.fn(() => Effect.succeed(undefined));
+			const requests = kinds.flatMap(({ entityType, entityId }) => [
+				{
+					id: `own-${entityType}`,
+					entityType,
+					entityId,
+					organizationId: "org-1",
+					approverId: "manager-1",
+					requesterEmployeeId: "admin-1",
+					status: "pending",
+				},
+				{
+					id: `other-${entityType}`,
+					entityType,
+					entityId: `${entityId}-other`,
+					organizationId: "org-1",
+					approverId: "manager-1",
+					requesterEmployeeId: "employee-1",
+					status: "pending",
+				},
+			]);
+
+			const result = await bulkDecideApprovalInboxItemsFromRequests({
+				requests: requests as never,
+				actorEmployeeId: "admin-1",
+				action: "approve",
+				includeAllApprovers: true,
+				resolveHandler: (type) =>
+					({ type, approve, reject: vi.fn() }) as never,
+			});
+
+			expect(result.succeeded).toEqual(
+				kinds.map(({ entityType }) => ({
+					id: `other-${entityType}`,
+					type: entityType,
+					status: "approved",
+				})),
+			);
+			expect(result.failed).toEqual(
+				kinds.map(({ entityType }) => ({
+					id: `own-${entityType}`,
+					code: "forbidden",
+					message: "You cannot decide your own request",
+				})),
+			);
+			expect(approve.mock.calls.map(([entityId]) => entityId)).toEqual(
+				kinds.map(({ entityId }) => `${entityId}-other`),
+			);
+		});
 	});
 
 	it("passes an injected effect runner through bulk successful decisions", async () => {

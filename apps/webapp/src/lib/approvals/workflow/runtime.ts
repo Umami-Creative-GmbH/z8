@@ -23,6 +23,7 @@ import {
 	preflightCanonicalWorkPeriodDecisionEvidence,
 	recordCanonicalWorkPeriodDecisionEvidence,
 } from "../evidence/work-period-evidence";
+import { isOwnRequestDecision } from "../policies/self-decision";
 import { createLegacyApprovalRowWriter } from "./compatibility-writer";
 import { createLegacyApprovalObservationPlanner } from "./legacy-observation-planner";
 import { createOffboardingReassignmentAuthority } from "./offboarding-authority";
@@ -214,8 +215,20 @@ export function createApprovalWorkflowAuthorization(input: {
 				});
 			}
 			if (request.actor.kind === "system") return "system";
+			const isDecision = command.type === "approve" || command.type === "reject";
+			// No assignment, management or eligibility grant lets a requester decide
+			// their own workflow (#697).
 			if (
-				(command.type === "approve" || command.type === "reject") &&
+				isDecision &&
+				isOwnRequestDecision({
+					requesterEmployeeId: workflow.requesterEmployeeId,
+					actorEmployeeId: request.actor.employeeId,
+				})
+			) {
+				return runtimeFailure("forbidden self-decision");
+			}
+			if (
+				isDecision &&
 				workflow.stages.some(
 					(stage) =>
 						stage.id === command.stageId &&
