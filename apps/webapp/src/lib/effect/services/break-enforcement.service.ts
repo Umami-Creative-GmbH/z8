@@ -517,18 +517,6 @@ export const BreakEnforcementServiceLive = Layer.effect(
 );
 
 // ============================================
-// LAYER DEPENDENCIES
-// ============================================
-
-/**
- * Full layer with all dependencies for running break enforcement
- */
-export const BreakEnforcementServiceFullLive = BreakEnforcementServiceLive.pipe(
-	Layer.provide(WorkPolicyServiceLive),
-	Layer.provide(DatabaseServiceLive),
-);
-
-// ============================================
 // STANDALONE RUNNER FOR WORKER/CRON
 // ============================================
 

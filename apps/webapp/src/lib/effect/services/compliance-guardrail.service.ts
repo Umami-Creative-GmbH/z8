@@ -13,8 +13,8 @@ import {
 	workPolicyViolation,
 } from "@/db/schema";
 import { type DatabaseError, NotFoundError } from "@/lib/effect/errors";
-import { DatabaseService, DatabaseServiceLive } from "./database.service";
-import { WorkPolicyService, WorkPolicyServiceLive } from "./work-policy.service";
+import { DatabaseService } from "./database.service";
+import { WorkPolicyService } from "./work-policy.service";
 
 // ============================================
 // TYPES
@@ -950,16 +950,4 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 				}),
 		});
 	}),
-);
-
-// ============================================
-// LAYER DEPENDENCIES
-// ============================================
-
-/**
- * Full layer with all dependencies for running compliance guardrail checks
- */
-export const ComplianceGuardrailServiceFullLive = ComplianceGuardrailServiceLive.pipe(
-	Layer.provide(WorkPolicyServiceLive),
-	Layer.provide(DatabaseServiceLive),
 );

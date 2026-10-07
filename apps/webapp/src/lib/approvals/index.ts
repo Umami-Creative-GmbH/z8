@@ -19,8 +19,6 @@ export {
 } from "./application/bulk-approval.service";
 // Export registry
 export {
-	ApprovalTypeRegistry,
-	ApprovalTypeRegistryLive,
 	getAllApprovalHandlers,
 	getApprovalHandler,
 	hasApprovalHandler,

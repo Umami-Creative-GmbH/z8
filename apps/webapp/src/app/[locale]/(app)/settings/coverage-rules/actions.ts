@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import type { HeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
 import { dateFromInstant } from "@/lib/datetime/temporal-core";
-import { safeAction } from "@/lib/effect/runtime";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import {
 	type CoverageRuleWithRelations,
 	CoverageService,
@@ -25,12 +25,6 @@ import {
 	type UpdateCoverageRule,
 	updateCoverageRuleSchema,
 } from "@/lib/validations/coverage";
-
-// ============================================
-// TYPES
-// ============================================
-
-export type ServerActionResult<T> = { success: true; data: T } | { success: false; error: string };
 
 // ============================================
 // COVERAGE RULE CRUD
@@ -63,7 +57,7 @@ export async function getCoverageRules(
 		return yield* coverageService.getCoverageRules(accessContext.organizationId, subareaId);
 	});
 
-	const result = await safeAction(effect);
+	const result = await runServerActionSafe(effect);
 	if (!result.success) {
 		return result;
 	}
@@ -90,7 +84,7 @@ export async function getCoverageRule(
 		return yield* coverageService.getCoverageRuleById(ruleId);
 	});
 
-	const result = await safeAction(effect);
+	const result = await runServerActionSafe(effect);
 	if (!result.success || !result.data) {
 		return result;
 	}
@@ -149,7 +143,7 @@ export async function createCoverageRule(
 		});
 	});
 
-	const result = await safeAction(effect);
+	const result = await runServerActionSafe(effect);
 	if (result.success) {
 		revalidatePath("/settings/coverage-rules");
 	}
@@ -202,7 +196,7 @@ export async function updateCoverageRule(
 		});
 	});
 
-	const result = await safeAction(effect);
+	const result = await runServerActionSafe(effect);
 	if (result.success) {
 		revalidatePath("/settings/coverage-rules");
 	}
@@ -242,7 +236,7 @@ export async function deleteCoverageRule(ruleId: string): Promise<ServerActionRe
 		return yield* coverageService.deleteCoverageRule(ruleId);
 	});
 
-	const result = await safeAction(effect);
+	const result = await runServerActionSafe(effect);
 	if (result.success) {
 		revalidatePath("/settings/coverage-rules");
 	}
@@ -291,7 +285,7 @@ export async function getTargetHeatmapData(params: {
 		});
 	});
 
-	return safeAction(effect);
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -320,7 +314,7 @@ export async function validateScheduleForPublish(params: {
 		});
 	});
 
-	return safeAction(effect);
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -341,7 +335,7 @@ export async function getCoverageSettings(): Promise<ServerActionResult<Coverage
 		return yield* coverageService.getCoverageSettings(accessContext.organizationId);
 	});
 
-	return safeAction(effect);
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -363,7 +357,7 @@ export async function updateCoverageSettings(settings: {
 		});
 	});
 
-	const result = await safeAction(effect);
+	const result = await runServerActionSafe(effect);
 	if (result.success) {
 		revalidatePath("/settings/coverage-rules");
 	}

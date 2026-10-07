@@ -28,6 +28,8 @@ These differ from v3, so code and examples written for v3 get them wrong.
 
 ## Services
 
-Define services as `class X extends Context.Service<X, Shape>()("X") {}` and provide them with `Layer.succeed` or `Layer.effect`. `lib/effect/services/database.service.ts` is the canonical example. Add a new service to the `AppLayer` in `lib/effect/runtime.ts`. Server actions run their effect through `runServerActionSafe` in `lib/effect/result.ts`, which turns an `Exit` into `ServerActionResult`.
+Define services as `class X extends Context.Service<X, Shape>()("X") {}`. Provide them with `Layer.succeed(X, X.of({...}))` when building the service does no effectful work, and with `Layer.effect` only when the constructor yields services or runs effects. `lib/effect/services/database.service.ts` is the canonical example. Add a new service to the `AppLayer` in `lib/effect/runtime.ts`.
+
+`runServerActionSafe` in `lib/effect/result.ts` is the only server-action runner. It runs the effect on the shared runtime and turns the `Exit` into the shared `ServerActionResult`: a typed failure comes back with its `message` and its `_tag` as `code`, so failure messages must be safe to show users. Don't add another runner or a local result type.
 
 In tests, `vi.mock` factories import `effect`, and stub services with `Context.Service<any>("Name")`.
