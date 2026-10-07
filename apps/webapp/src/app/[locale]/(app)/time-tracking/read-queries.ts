@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, gte, inArray, isNull, lte } from "drizzle-orm";
+import { and, eq, gt, gte, inArray, isNull, lt, lte, or } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	approvalRequest,
@@ -11,12 +11,17 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { parseOrdinaryWorkPeriodWorkflowPayload } from "@/lib/approvals/domain-adapters/work-period-contract";
-import { dateToDB } from "@/lib/datetime/drizzle-adapter";
+import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import {
-	getMonthRangeInTimezone,
-	getTodayRangeInTimezone,
-	getWeekRangeInTimezone,
-} from "@/lib/time-tracking/timezone-utils";
+	type Clock,
+	dateFromInstant,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
+import {
+	buildDayTotalBasis,
+	dayTotalRange,
+	summarizeDayTotals,
+} from "@/lib/time-tracking/day-totals";
 import type { TimeSummary } from "@/lib/time-tracking/types";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import type { WorkPeriodWithEntries } from "./types";
@@ -161,29 +166,24 @@ export async function readWorkPeriods(
 		);
 }
 
+/**
+ * Day totals for today, this week and this month in the employee's timezone,
+ * live work included, matching the calendar's day totals.
+ */
 export async function readTimeSummary(
 	scope: EmployeeReadScope,
 	timezone: string,
 	weekStartDay: WeekStartDay,
+	clock: Clock = systemClock,
 ): Promise<TimeSummary> {
-	const { start: todayStartDateTime, end: todayEndDateTime } =
-		getTodayRangeInTimezone(timezone);
-	const { start: weekStartDateTime, end: weekEndDateTime } =
-		getWeekRangeInTimezone(new Date(), timezone, weekStartDay);
-	const { start: monthStartDateTime, end: monthEndDateTime } =
-		getMonthRangeInTimezone(new Date(), timezone);
+	const now = clock.nowInstant();
+	const range = dayTotalRange(now, timezone, weekStartDay);
 
-	const todayStart = dateToDB(todayStartDateTime)!;
-	const todayEnd = dateToDB(todayEndDateTime)!;
-	const weekStart = dateToDB(weekStartDateTime)!;
-	const weekEnd = dateToDB(weekEndDateTime)!;
-	const monthStart = dateToDB(monthStartDateTime)!;
-	const monthEnd = dateToDB(monthEndDateTime)!;
-
-	const periodsWithSurcharges = await db
+	// Like the calendar: completed work overlapping the range, and running live work.
+	const periods = await db
 		.select({
 			startTime: workPeriod.startTime,
-			durationMinutes: workPeriod.durationMinutes,
+			endTime: workPeriod.endTime,
 			surchargeMinutes: surchargeCalculation.surchargeMinutes,
 		})
 		.from(workPeriod)
@@ -196,45 +196,44 @@ export async function readTimeSummary(
 				eq(workPeriod.employeeId, scope.employeeId),
 				eq(workPeriod.organizationId, scope.organizationId),
 				isNull(workPeriod.deletedAt),
-				gte(workPeriod.startTime, monthStart),
-				lte(workPeriod.startTime, monthEnd),
+				lt(workPeriod.startTime, range.endExclusive),
+				or(
+					gt(workPeriod.endTime, range.start),
+					and(isNull(workPeriod.endTime), eq(workPeriod.isActive, true)),
+				),
 			),
 		);
 
-	let todayMinutes = 0;
-	let weekMinutes = 0;
-	let monthMinutes = 0;
-	let todaySurchargeMinutes = 0;
-	let weekSurchargeMinutes = 0;
-	let monthSurchargeMinutes = 0;
+	const dayTotals = buildDayTotalBasis({ periods, timezone, weekStartDay });
+	return { ...summarizeDayTotals(dayTotals, now), dayTotals };
+}
 
-	for (const period of periodsWithSurcharges) {
-		const durationMinutes = period.durationMinutes || 0;
-		const surchargeMinutes = period.surchargeMinutes || 0;
-		const { startTime } = period;
+/**
+ * The compliance check's day: completed minutes of the work periods that
+ * started today, each counted whole. Unlike a day total it leaves out live work.
+ */
+export async function readComplianceDayCompletedMinutes(
+	scope: EmployeeReadScope,
+	timezone: string,
+	clock: Clock = systemClock,
+): Promise<number> {
+	const today = clock.nowInstant().toZonedDateTimeISO(timezone).toPlainDate();
+	const day = localDayRange(today.toString(), timezone);
+	const periods = await db
+		.select({ durationMinutes: workPeriod.durationMinutes })
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.employeeId, scope.employeeId),
+				eq(workPeriod.organizationId, scope.organizationId),
+				isNull(workPeriod.deletedAt),
+				gte(workPeriod.startTime, dateFromInstant(day.start)),
+				lt(workPeriod.startTime, dateFromInstant(day.endExclusive)),
+			),
+		);
 
-		monthMinutes += durationMinutes;
-		monthSurchargeMinutes += surchargeMinutes;
-
-		if (startTime >= todayStart && startTime <= todayEnd) {
-			todayMinutes += durationMinutes;
-			todaySurchargeMinutes += surchargeMinutes;
-		}
-
-		if (startTime >= weekStart && startTime <= weekEnd) {
-			weekMinutes += durationMinutes;
-			weekSurchargeMinutes += surchargeMinutes;
-		}
-	}
-
-	return {
-		todayMinutes,
-		weekMinutes,
-		monthMinutes,
-		...(monthSurchargeMinutes > 0 && {
-			todaySurchargeMinutes,
-			weekSurchargeMinutes,
-			monthSurchargeMinutes,
-		}),
-	};
+	return periods.reduce(
+		(minutes, period) => minutes + (period.durationMinutes ?? 0),
+		0,
+	);
 }

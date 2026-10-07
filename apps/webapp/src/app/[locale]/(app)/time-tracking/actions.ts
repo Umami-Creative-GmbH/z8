@@ -77,7 +77,7 @@ import {
 	parsePresenceFixedDays,
 	validatePresenceFixedDaysConfig,
 } from "./actions/presence-status";
-import { getActiveWorkPeriod, getTimeSummary } from "./actions/queries";
+import { getActiveWorkPeriod, getComplianceDayCompletedMinutes } from "./actions/queries";
 import { splitOwnWorkPeriod } from "./actions/work-period-split";
 import {
 	createManualTimeEntryFromCommand,
@@ -478,7 +478,7 @@ export async function getBreakReminderStatus(): Promise<
 		const currentSessionMinutes = Math.floor(durationMs / 60000);
 
 		// Get time summary and breaks using employee's timezone
-		const timeSummary = await getTimeSummary(emp.id, timezone);
+		const completedMinutesToday = await getComplianceDayCompletedMinutes(emp.id, timezone);
 		const breaksTaken = await calculateBreaksTakenToday(emp.id, timezone);
 
 		// Use Effect to get regulation and check break requirements
@@ -502,7 +502,7 @@ export async function getBreakReminderStatus(): Promise<
 			// Calculate break requirements
 			const breakReq = workPolicyService.calculateBreakRequirements({
 				regulation,
-				workedMinutes: timeSummary.todayMinutes + currentSessionMinutes,
+				workedMinutes: completedMinutesToday + currentSessionMinutes,
 				breaksTakenMinutes: breaksTaken,
 			});
 

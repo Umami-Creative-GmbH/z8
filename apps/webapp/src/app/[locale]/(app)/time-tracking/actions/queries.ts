@@ -15,6 +15,7 @@ import type { TimeSummary } from "@/lib/time-tracking/types";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import {
 	readActiveWorkPeriod,
+	readComplianceDayCompletedMinutes,
 	readTimeSummary,
 	readWorkPeriods,
 } from "../read-queries";
@@ -112,6 +113,22 @@ export async function getTimeSummary(
 		},
 		timezone,
 		weekStartDay,
+	);
+}
+
+/** Today's completed minutes on the compliance check's day, for break reminders. */
+export async function getComplianceDayCompletedMinutes(
+	employeeId: string,
+	timezone: string,
+): Promise<number> {
+	const currentEmployee = await getCurrentEmployee();
+	if (!currentEmployee || currentEmployee.id !== employeeId) return 0;
+	return readComplianceDayCompletedMinutes(
+		{
+			employeeId: currentEmployee.id,
+			organizationId: currentEmployee.organizationId,
+		},
+		timezone,
 	);
 }
 export async function getAssignedProjects(): Promise<

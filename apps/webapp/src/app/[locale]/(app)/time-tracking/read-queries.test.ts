@@ -3,6 +3,7 @@ import { PgDialect } from "drizzle-orm/pg-core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	readActiveWorkPeriod,
+	readComplianceDayCompletedMinutes,
 	readTimeSummary,
 	readWorkPeriods,
 } from "./read-queries";
@@ -13,6 +14,7 @@ const fixture = vi.hoisted(() => ({
 	requests: vi.fn(),
 	workflows: vi.fn(),
 	summary: vi.fn(),
+	complianceDay: vi.fn(),
 }));
 vi.mock("@/db", () => ({
 	db: {
@@ -22,7 +24,10 @@ vi.mock("@/db", () => ({
 			approvalWorkflow: { findMany: fixture.workflows },
 		},
 		select: () => ({
-			from: () => ({ leftJoin: () => ({ where: fixture.summary }) }),
+			from: () => ({
+				leftJoin: () => ({ where: fixture.summary }),
+				where: fixture.complianceDay,
+			}),
 		}),
 	},
 }));
@@ -45,19 +50,23 @@ describe("organization scoped render readers", () => {
 		fixture.requests.mockResolvedValue([]);
 		fixture.workflows.mockResolvedValue([]);
 		fixture.summary.mockResolvedValue([]);
+		fixture.complianceDay.mockResolvedValue([]);
 	});
 	afterEach(() => vi.useRealTimers());
 
-	it("scopes active, history and summary work period queries with both IDs", async () => {
+	it("scopes active, history, summary and compliance-day work period queries with both IDs", async () => {
 		await readActiveWorkPeriod(scope);
 		await readWorkPeriods(scope, start, end);
 		await readTimeSummary(scope, "Europe/Berlin", "monday");
+		await readComplianceDayCompletedMinutes(scope, "Europe/Berlin");
 		assertScope(fixture.active.mock.calls[0][0].where);
 		assertScope(fixture.periods.mock.calls[0][0].where);
 		assertScope(fixture.summary.mock.calls[0][0]);
+		assertScope(fixture.complianceDay.mock.calls[0][0]);
 		for (const where of [
 			fixture.periods.mock.calls[0][0].where,
 			fixture.summary.mock.calls[0][0],
+			fixture.complianceDay.mock.calls[0][0],
 		]) {
 			expect(new PgDialect().sqlToQuery(where).sql).toContain(
 				'"deleted_at" is null',
@@ -160,38 +169,65 @@ describe("organization scoped render readers", () => {
 			fixture.summary.mockResolvedValue([
 				{
 					startTime: new Date("2026-03-29T00:30:00Z"),
-					durationMinutes: 120,
+					endTime: new Date("2026-03-29T02:30:00Z"),
 					surchargeMinutes: 30,
 				},
 				{
 					startTime: new Date("2026-03-29T22:30:00Z"),
-					durationMinutes: 60,
+					endTime: new Date("2026-03-29T23:30:00Z"),
 					surchargeMinutes: 15,
 				},
 				{
 					startTime: new Date("2026-03-01T08:00:00Z"),
-					durationMinutes: 20,
+					endTime: new Date("2026-03-01T08:20:00Z"),
+					surchargeMinutes: null,
+				},
+				// Live work for 30 minutes.
+				{
+					startTime: new Date("2026-03-30T09:30:00Z"),
+					endTime: null,
 					surchargeMinutes: null,
 				},
 			]);
-			await expect(
-				readTimeSummary(scope, "Europe/Berlin", weekStart),
-			).resolves.toEqual({
-				todayMinutes: 60,
-				weekMinutes: weekStart === "sunday" ? 180 : 60,
-				monthMinutes: 200,
+			const { dayTotals, ...totals } = await readTimeSummary(
+				scope,
+				"Europe/Berlin",
+				weekStart,
+			);
+			expect(totals).toEqual({
+				todayMinutes: 90,
+				weekMinutes: weekStart === "sunday" ? 210 : 90,
+				monthMinutes: 230,
 				todaySurchargeMinutes: 15,
 				weekSurchargeMinutes: weekStart === "sunday" ? 45 : 15,
 				monthSurchargeMinutes: 45,
 			});
+			expect(dayTotals?.liveWork).toEqual([
+				{ startedAt: new Date("2026-03-30T09:30:00Z") },
+			]);
 		},
 	);
 
 	it("keeps zero-summary defaults without optional surcharges", async () => {
-		await expect(readTimeSummary(scope, "UTC", "sunday")).resolves.toEqual({
+		const { dayTotals: _, ...totals } = await readTimeSummary(
+			scope,
+			"UTC",
+			"sunday",
+		);
+		expect(totals).toEqual({
 			todayMinutes: 0,
 			weekMinutes: 0,
 			monthMinutes: 0,
 		});
+	});
+
+	it("counts the compliance day's completed work whole and leaves out live work", async () => {
+		fixture.complianceDay.mockResolvedValue([
+			{ durationMinutes: 240 },
+			{ durationMinutes: null },
+		]);
+		await expect(
+			readComplianceDayCompletedMinutes(scope, "Europe/Berlin"),
+		).resolves.toBe(240);
 	});
 });
