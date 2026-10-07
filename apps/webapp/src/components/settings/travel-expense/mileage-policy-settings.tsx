@@ -52,6 +52,7 @@ import { queryKeys } from "@/lib/query/keys";
 import { MILEAGE_VEHICLES, type MileageVehicle } from "@/lib/travel-expenses/mileage";
 import type { MileagePolicyInputErrors } from "@/lib/travel-expenses/mileage-policy-input";
 import type { StatutoryMileageDefault } from "@/lib/travel-expenses/statutory-allowance-defaults";
+import { CatalogAdoptedNote, catalogAdoption } from "./statutory-adoption";
 import { WithdrawVersionButton } from "./withdraw-version-button";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -262,59 +263,69 @@ function MileagePolicyContent({
 				</div>
 			)}
 
-			{data.defaults.map((entry) => (
-				<section
-					key={entry.key}
-					aria-labelledby={`${entry.key}-title`}
-					className="space-y-2 rounded-lg border p-4"
-				>
-					<h3 id={`${entry.key}-title`} className="text-base font-semibold">
-						{t("settings.travelExpenses.mileage.germanDefaultTitle", "German statutory flat rates")}
-					</h3>
-					<p className="text-sm">
-						{MILEAGE_VEHICLES.map((vehicle) =>
-							t("settings.travelExpenses.mileage.defaultRate", "{vehicle}: {rate} per km", {
-								vehicle: vehicleLabel(t, vehicle) ?? vehicle,
-								rate: formatRatePerKm(locale, entry.ratesPerKm[vehicle], entry.currency),
-							}),
-						).join(" · ")}
-					</p>
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.travelExpenses.mileage.defaultSource",
-							"{reference}. Verified on {verifiedOn} against {version}; can be adopted from {validFrom}.",
-							{
-								reference: entry.reference,
-								version: entry.version,
-								verifiedOn: formatPlainDate(locale, entry.verifiedOn),
-								validFrom: formatPlainDate(locale, entry.validFrom),
-							},
-						)}
-					</p>
-					<ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-						{entry.sources.map((source) => (
-							<li key={source.url}>
-								<a
-									href={source.url}
-									target="_blank"
-									rel="noopener noreferrer"
-									className="inline-flex items-center gap-1 text-primary underline underline-offset-4"
-								>
-									{source.label}
-									<IconExternalLink aria-hidden="true" className="size-3.5" />
-								</a>
-							</li>
-						))}
-					</ul>
-					<Button
-						type="button"
-						variant="outline"
-						onClick={() => onOpen({ source: "statutory_default", entry })}
+			{data.defaults.map((entry) => {
+				const adoption = catalogAdoption(data.timeline, entry.key);
+				return (
+					<section
+						key={entry.key}
+						aria-labelledby={`${entry.key}-title`}
+						className="space-y-2 rounded-lg border p-4"
 					>
-						{t("settings.travelExpenses.mileage.adopt", "Adopt these rates")}
-					</Button>
-				</section>
-			))}
+						<h3 id={`${entry.key}-title`} className="text-base font-semibold">
+							{t(
+								"settings.travelExpenses.mileage.germanDefaultTitle",
+								"German statutory flat rates",
+							)}
+						</h3>
+						<p className="text-sm">
+							{MILEAGE_VEHICLES.map((vehicle) =>
+								t("settings.travelExpenses.mileage.defaultRate", "{vehicle}: {rate} per km", {
+									vehicle: vehicleLabel(t, vehicle) ?? vehicle,
+									rate: formatRatePerKm(locale, entry.ratesPerKm[vehicle], entry.currency),
+								}),
+							).join(" · ")}
+						</p>
+						<p className="text-sm text-muted-foreground">
+							{t(
+								"settings.travelExpenses.mileage.defaultSource",
+								"{reference}. Verified on {verifiedOn} against {version}; can be adopted from {validFrom}.",
+								{
+									reference: entry.reference,
+									version: entry.version,
+									verifiedOn: formatPlainDate(locale, entry.verifiedOn),
+									validFrom: formatPlainDate(locale, entry.validFrom),
+								},
+							)}
+						</p>
+						<ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+							{entry.sources.map((source) => (
+								<li key={source.url}>
+									<a
+										href={source.url}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="inline-flex items-center gap-1 text-primary underline underline-offset-4"
+									>
+										{source.label}
+										<IconExternalLink aria-hidden="true" className="size-3.5" />
+									</a>
+								</li>
+							))}
+						</ul>
+						{adoption ? (
+							<CatalogAdoptedNote version={adoption} />
+						) : (
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => onOpen({ source: "statutory_default", entry })}
+							>
+								{t("settings.travelExpenses.mileage.adopt", "Adopt these rates")}
+							</Button>
+						)}
+					</section>
+				);
+			})}
 
 			{data.withdrawn.length > 0 && (
 				<details className="text-sm">

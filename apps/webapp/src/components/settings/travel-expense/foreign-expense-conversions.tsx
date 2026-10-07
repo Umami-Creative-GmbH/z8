@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import {
 	authorizeManualConversionRateAction,
 	clearItemConversionAction,
-	getForeignDraftExpenses,
 } from "@/app/[locale]/(app)/settings/travel-expenses/conversion-actions";
 import { ConversionSummary } from "@/components/travel-expenses/report/conversion-summary";
 import { formatMoney, formatPlainDate } from "@/components/travel-expenses/report/format";
@@ -43,7 +42,6 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
-import { queryKeys } from "@/lib/query/keys";
 import type { ForeignDraftItem } from "@/lib/travel-expenses/conversion-store";
 import {
 	appliedConversion,
@@ -53,9 +51,10 @@ import {
 	type ManualRateFieldError,
 	parseManualRateInput,
 } from "@/lib/travel-expenses/currency-conversion";
+import { foreignDraftExpensesQuery } from "./pending-exceptions";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
-const queryKey = queryKeys.travelExpenses.foreignDraftExpenses();
+const queryKey = foreignDraftExpensesQuery.queryKey;
 
 function rateErrorMessage(t: Translate, code: ManualRateFieldError | undefined) {
 	switch (code) {
@@ -552,14 +551,7 @@ function ForeignExpenseRow({
 export function ForeignExpenseConversionsCard() {
 	const { t } = useTranslate();
 	const [editing, setEditing] = useState<ForeignDraftItem | null>(null);
-	const { data, isLoading, isError, isFetching, refetch } = useQuery({
-		queryKey,
-		queryFn: async () => {
-			const result = await getForeignDraftExpenses();
-			if (!result.success) throw new Error(result.error);
-			return result.data;
-		},
-	});
+	const { data, isLoading, isError, isFetching, refetch } = useQuery(foreignDraftExpensesQuery);
 	return (
 		<Card>
 			<CardHeader>
