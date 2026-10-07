@@ -73,6 +73,7 @@ export async function storeSubmittedReferenceConversions(
 			rateQuoteCurrency: conversion.rate.quote,
 			rateDate: conversion.rateDate,
 			reason: null,
+			rateEvidence: null,
 			authorizedByEmployeeId: null,
 			authorizedByName: null,
 			authorizedAt: null,

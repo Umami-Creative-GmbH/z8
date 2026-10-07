@@ -128,6 +128,7 @@ describe("CurrencyConversionField (#607)", () => {
 				rate: { base: "EUR", quote: "USD", value: "1.085" },
 				rateDate: "2026-09-13",
 				reason: "Bank statement rate",
+				evidence: "Card statement 2026-09, line 14",
 				authorizedBy: { employeeId: "admin", name: "Alex Admin" },
 				authorizedAt: "2026-09-20T08:00:00Z",
 			},
@@ -136,6 +137,8 @@ describe("CurrencyConversionField (#607)", () => {
 		expect(screen.getByText("1 EUR = 1.085 USD")).toBeTruthy();
 		expect(screen.getByText("Alex Admin")).toBeTruthy();
 		expect(screen.getByText("Bank statement rate")).toBeTruthy();
+		expect(screen.getByText("Rate evidence")).toBeTruthy();
+		expect(screen.getByText("Card statement 2026-09, line 14")).toBeTruthy();
 		expect(screen.getByText(/counts as €92.17/)).toBeTruthy();
 		// The employee may replace it with their own card charge, never edit the rate.
 		expect(screen.getByRole("button", { name: "Use my card charge instead" })).toBeTruthy();

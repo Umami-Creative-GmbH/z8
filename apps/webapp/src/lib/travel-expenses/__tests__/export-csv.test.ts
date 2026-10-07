@@ -857,6 +857,42 @@ describe("travel expense export files", () => {
 		]);
 	});
 
+	it("exports a v11 manual rate's evidence reference in the trailing column", () => {
+		const revision = foreignRevision();
+		revision.facts.schemaVersion = 11;
+		const manual = revision.facts.items[1]?.conversion;
+		if (manual?.basis !== "manual_rate") throw new Error("no manual rate");
+		manual.evidence = "=Card statement 2026-09, line 14";
+		const rows = records(file("expenses.csv", manifest([revision])));
+		expect(rows[0]).toMatchObject({
+			conversion_basis: "card_charge",
+			conversion_rate_evidence: "",
+		});
+		expect(rows[1]).toMatchObject({
+			facts_schema_version: "11",
+			conversion_basis: "manual_rate",
+			conversion_rate_evidence: "'=Card statement 2026-09, line 14",
+		});
+		// Appended, so every earlier column keeps its position.
+		expect(TRAVEL_EXPENSE_EXPORT_EXPENSE_COLUMNS.at(-1)).toBe("conversion_rate_evidence");
+	});
+
+	it("refuses manual rate evidence that does not match the facts version", () => {
+		const early = foreignRevision();
+		const earlyManual = early.facts.items[1]?.conversion;
+		if (earlyManual?.basis !== "manual_rate") throw new Error("no manual rate");
+		earlyManual.evidence = "Statement line 14";
+		expect(() => buildTravelExpenseExportFiles(manifest([early]))).toThrow(
+			expect.objectContaining({ code: "manifest_invalid" }),
+		);
+
+		const missing = foreignRevision();
+		missing.facts.schemaVersion = 11;
+		expect(() => buildTravelExpenseExportFiles(manifest([missing]))).toThrow(
+			expect.objectContaining({ code: "manifest_invalid" }),
+		);
+	});
+
 	it("refuses a conversion whose frozen result does not follow from its frozen rate", () => {
 		const revision = foreignRevision();
 		const manual = revision.facts.items[1]?.conversion;
@@ -1202,7 +1238,7 @@ describe("travel expense export files", () => {
 
 	it("exports revisions of every frozen facts version and refuses unknown ones", () => {
 		// A new version must be mapped by the export contract before it is exported.
-		expect(TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION).toBe(10);
+		expect(TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION).toBe(11);
 		for (let version = 1; version <= TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION; version++) {
 			const revision = standaloneRevision();
 			revision.facts.schemaVersion = version;
@@ -1210,7 +1246,7 @@ describe("travel expense export files", () => {
 				expect.objectContaining({ facts_schema_version: String(version) }),
 			]);
 		}
-		for (const version of [0, 11]) {
+		for (const version of [0, 12]) {
 			const revision = standaloneRevision();
 			revision.facts.schemaVersion = version;
 			expect(() => buildTravelExpenseExportFiles(manifest([revision]))).toThrow(

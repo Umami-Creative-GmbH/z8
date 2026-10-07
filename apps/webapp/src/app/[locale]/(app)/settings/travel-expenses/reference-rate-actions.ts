@@ -7,6 +7,7 @@ import { canManageCurrentOrganizationSettings, getAuthContext } from "@/lib/auth
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 import {
+	CURRENT_REFERENCE_RATE_ACKNOWLEDGEMENT,
 	REFERENCE_RATE_PROVIDERS,
 	type ReferenceRateProvider,
 } from "@/lib/travel-expenses/reference-rate";
@@ -65,9 +66,11 @@ export async function getReferenceRateSettings(): Promise<
 }
 
 /**
- * Approves a reference source. `acknowledged` records that the administrator
- * accepted that ECB publishes the rates for information only, with limited
- * currencies and working-day publications.
+ * Approves a reference source. `acknowledged` confirms that the administrator
+ * accepted the source's current statement (`CURRENT_REFERENCE_RATE_ACKNOWLEDGEMENT`:
+ * ECB publishes the rates for information only, with limited currencies and
+ * working-day publications); that statement version is stored with the
+ * approval and its time.
  */
 export async function approveReferenceRateSource(input: {
 	provider: ReferenceRateProvider;
@@ -86,6 +89,7 @@ export async function approveReferenceRateSource(input: {
 			organizationId: admin.organizationId,
 			userId: admin.userId,
 			provider: input.provider,
+			acknowledgement: CURRENT_REFERENCE_RATE_ACKNOWLEDGEMENT[input.provider],
 		});
 		if (!policy) return { success: false, error: UNAUTHORIZED };
 		logAudit({
@@ -94,7 +98,7 @@ export async function approveReferenceRateSource(input: {
 			employeeId: admin.employeeId,
 			targetType: "organization",
 			organizationId: admin.organizationId,
-			metadata: { provider: policy.provider },
+			metadata: { provider: policy.provider, acknowledgement: policy.acknowledgement },
 			timestamp: new Date(),
 		}).catch((error) => logger.error({ error }, "Failed to log reference rate approval"));
 		revalidatePath("/settings/travel-expenses");

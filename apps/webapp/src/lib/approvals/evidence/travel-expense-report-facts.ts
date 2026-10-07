@@ -74,7 +74,7 @@ import {
  * version or later, so an older revision stays byte-identical and compares
  * as `current` against unchanged live rows.
  */
-export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 10;
+export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 11;
 
 /** Version 2 (#604) adds the optional `receiptException` of an item. */
 const RECEIPT_EXCEPTION_SCHEMA_VERSION = 2;
@@ -89,6 +89,7 @@ const MILEAGE_FACTS_SCHEMA_VERSION = 5;
 /* Version 8 (#615) adds the root `adjustment` of an adjustment report (`ADJUSTMENT_FACTS_SCHEMA_VERSION`). */
 /* Version 9 (#610) adds an item's `allowanceOverride` (`ALLOWANCE_OVERRIDE_FACTS_SCHEMA_VERSION`). */
 /* Version 10 (#611) adds per diem daily locations (`PER_DIEM_LOCATION_FACTS_SCHEMA_VERSION`). */
+/* Version 11 adds a manual rate's `evidence` (`MANUAL_RATE_EVIDENCE_FACTS_SCHEMA_VERSION`). */
 
 /**
  * The accounting attribution of one expense as it was submitted (#605): the

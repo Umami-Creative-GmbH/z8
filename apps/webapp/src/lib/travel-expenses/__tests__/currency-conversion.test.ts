@@ -5,6 +5,8 @@ import {
 	convertToReimbursement,
 	type ItemConversion,
 	isReimbursementCurrencySupported,
+	MAX_RATE_EVIDENCE_LENGTH,
+	manualRateDateProblem,
 	normalizeRate,
 	parseCardChargeAmount,
 	parseManualRateInput,
@@ -26,6 +28,7 @@ function manualRate(rate: { base: string; quote: string; value: string }): ItemC
 		rate,
 		rateDate: "2026-09-12",
 		reason: "Bank statement rate of the travel card",
+		evidence: "Card statement 2026-09, line 14",
 		authorizedBy: { employeeId: "admin-1", name: "Alex Admin" },
 		authorizedAt: "2026-09-20T08:00:00Z",
 	};
@@ -80,6 +83,7 @@ describe("receipt conversion contract", () => {
 				rate: { base: "USD", quote: "EUR", value: "0.9215" },
 				rateDate: "2026-09-12",
 				reason: "Bank statement rate of the travel card",
+				evidence: "Card statement 2026-09, line 14",
 				authorizedBy: { employeeId: "admin-1", name: "Alex Admin" },
 				authorizedAt: "2026-09-20T08:00:00Z",
 				rounding: { mode: "half_up", minorUnitDigits: 2 },
@@ -215,54 +219,124 @@ describe("parseCardChargeAmount", () => {
 
 describe("parseManualRateInput", () => {
 	const pair = { sourceCurrency: "USD", targetCurrency: "EUR" };
+	const expenseDate = "2026-09-14";
 	const valid = {
 		base: "USD",
 		quote: "EUR",
 		rate: "0.9215",
 		rateDate: "2026-09-12",
 		reason: "  Bank statement rate  ",
+		evidence: "  Card statement 2026-09, line 14  ",
 	};
+	const parse = (input: typeof valid, date: string | null = expenseDate) =>
+		parseManualRateInput(input, pair, date);
 
 	it("normalizes a rate quoted for the receipt's pair in either direction", () => {
-		expect(parseManualRateInput(valid, pair)).toEqual({
+		expect(parse(valid)).toEqual({
 			ok: true,
 			value: {
 				rate: { base: "USD", quote: "EUR", value: "0.9215" },
 				rateDate: "2026-09-12",
 				reason: "Bank statement rate",
+				evidence: "Card statement 2026-09, line 14",
 			},
 		});
-		expect(
-			parseManualRateInput({ ...valid, base: "EUR", quote: "USD", rate: "1.085" }, pair),
-		).toEqual(expect.objectContaining({ ok: true }));
+		expect(parse({ ...valid, base: "EUR", quote: "USD", rate: "1.085" })).toEqual(
+			expect.objectContaining({ ok: true }),
+		);
 	});
 
 	it("refuses another pair, a bad rate, a bad date and a missing reason", () => {
-		expect(parseManualRateInput({ ...valid, base: "GBP" }, pair)).toEqual({
+		expect(parse({ ...valid, base: "GBP" })).toEqual({
 			ok: false,
 			errors: { pair: "invalid_pair" },
 		});
-		expect(parseManualRateInput({ ...valid, base: "EUR", quote: "EUR" }, pair)).toEqual({
+		expect(parse({ ...valid, base: "EUR", quote: "EUR" })).toEqual({
 			ok: false,
 			errors: { pair: "invalid_pair" },
 		});
 		for (const rate of ["0", "-0.9", "0.12345678901", "1e3", "1234567890123"]) {
-			expect(parseManualRateInput({ ...valid, rate }, pair)).toEqual({
+			expect(parse({ ...valid, rate })).toEqual({
 				ok: false,
 				errors: { rate: "invalid_rate" },
 			});
 		}
-		expect(parseManualRateInput({ ...valid, rateDate: "2026-02-30" }, pair)).toEqual({
+		expect(parse({ ...valid, rateDate: "2026-02-30" })).toEqual({
 			ok: false,
 			errors: { rateDate: "invalid_date" },
 		});
-		expect(parseManualRateInput({ ...valid, reason: " " }, pair)).toEqual({
+		expect(parse({ ...valid, reason: " " })).toEqual({
 			ok: false,
 			errors: { reason: "required" },
 		});
-		expect(parseManualRateInput({ ...valid, reason: "x".repeat(501) }, pair)).toEqual({
+		expect(parse({ ...valid, reason: "x".repeat(501) })).toEqual({
 			ok: false,
 			errors: { reason: "too_long" },
 		});
+	});
+
+	it("requires an evidence reference for the rate", () => {
+		expect(parse({ ...valid, evidence: "  " })).toEqual({
+			ok: false,
+			errors: { evidence: "required" },
+		});
+		expect(parse({ ...valid, evidence: "x".repeat(MAX_RATE_EVIDENCE_LENGTH + 1) })).toEqual({
+			ok: false,
+			errors: { evidence: "too_long" },
+		});
+		expect(parse({ ...valid, evidence: "x".repeat(MAX_RATE_EVIDENCE_LENGTH) })).toMatchObject({
+			ok: true,
+		});
+	});
+
+	it("accepts a rate dated on the expense date or up to 31 days before it", () => {
+		for (const rateDate of ["2026-09-14", "2026-09-01", "2026-08-14"]) {
+			expect(parse({ ...valid, rateDate })).toMatchObject({ ok: true, value: { rateDate } });
+		}
+	});
+
+	it("refuses a rate dated after the expense, too long before it, or without an expense date", () => {
+		expect(parse({ ...valid, rateDate: "2026-09-15" })).toEqual({
+			ok: false,
+			errors: { rateDate: "after_expense_date" },
+		});
+		expect(parse({ ...valid, rateDate: "2026-08-13" })).toEqual({
+			ok: false,
+			errors: { rateDate: "too_early" },
+		});
+		expect(parse(valid, null)).toEqual({
+			ok: false,
+			errors: { rateDate: "expense_date_missing" },
+		});
+	});
+});
+
+describe("manualRateDateProblem", () => {
+	it("compares zoneless calendar dates across month and year ends", () => {
+		expect(manualRateDateProblem("2025-12-31", "2026-01-01")).toBeNull();
+		expect(manualRateDateProblem("2026-01-31", "2026-03-03")).toBeNull();
+		expect(manualRateDateProblem("2026-01-30", "2026-03-03")).toBe("too_early");
+		expect(manualRateDateProblem("2026-03-04", "2026-03-03")).toBe("after_expense_date");
+		expect(manualRateDateProblem("not-a-date", "2026-03-03")).toBe("too_early");
+	});
+});
+
+describe("conversionRequirements for an authorized rate", () => {
+	const rate = manualRate({ base: "USD", quote: "EUR", value: "0.9215" });
+
+	it("keeps counting a rate whose date fits the expense date", () => {
+		expect(conversionRequirements({ ...usd, expenseDate: "2026-09-14" }, "EUR", rate)).toEqual([]);
+	});
+
+	it("asks for a new rate once the expense date moved away from the rate date", () => {
+		for (const expenseDate of ["2026-09-11", "2026-10-14"]) {
+			expect(conversionRequirements({ ...usd, expenseDate }, "EUR", rate)).toEqual([
+				"conversion_rate_date",
+			]);
+		}
+	});
+
+	it("leaves a missing expense date to the expense date requirement", () => {
+		expect(conversionRequirements({ ...usd, expenseDate: null }, "EUR", rate)).toEqual([]);
 	});
 });

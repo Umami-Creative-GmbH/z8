@@ -1,4 +1,7 @@
-import { REFERENCE_RATE_FACTS_SCHEMA_VERSION } from "@/lib/approvals/evidence/travel-expense-report-conversion";
+import {
+	MANUAL_RATE_EVIDENCE_FACTS_SCHEMA_VERSION,
+	REFERENCE_RATE_FACTS_SCHEMA_VERSION,
+} from "@/lib/approvals/evidence/travel-expense-report-conversion";
 import {
 	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION,
 	type TravelExpenseReportSubmittedFacts,
@@ -47,7 +50,9 @@ import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money"
  * version did not have (receipt exception v2, conversion v3, project v4,
  * mileage v5, reference-rate conversion v6, per diem v7, adjustment v8) leave their
  * columns empty (`record_type` reads `original`; `export-adjustment.ts`); an
- * allowance override (v9, `export-allowance-override.ts`) prices its item. Items
+ * allowance override (v9, `export-allowance-override.ts`) prices its item; a
+ * manual rate's evidence reference (v11) fills the trailing
+ * `conversion_rate_evidence` column. Items
  * are priced from their frozen pricing inputs and must add up to the frozen
  * totals.
  *
@@ -155,7 +160,8 @@ function frozenItemConversion(
 		return { ...pair, ...reference };
 	}
 	const { rounding: _rounding, reimbursement: _reimbursement, ...manual } = conversion;
-	return { ...pair, ...manual };
+	// The evidence reference (v11+) documents the rate; it never prices the item.
+	return { ...pair, ...manual, evidence: manual.evidence ?? "" };
 }
 
 const PLAIN_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -499,6 +505,18 @@ function conversionCells(
 	});
 }
 
+/** An authorized manual rate's evidence reference (facts v11+). */
+const RATE_EVIDENCE_COLUMNS = ["conversion_rate_evidence"] as const;
+
+/** The frozen evidence reference of a manual rate (v11+); empty otherwise. */
+function rateEvidenceCells(item: TravelExpenseReportSubmittedItem): string[] {
+	const { conversion } = item;
+	if (conversion?.basis !== "manual_rate" || !conversion.evidence) {
+		return cellsOf(RATE_EVIDENCE_COLUMNS, {});
+	}
+	return cellsOf(RATE_EVIDENCE_COLUMNS, { conversion_rate_evidence: csvText(conversion.evidence) });
+}
+
 /** The frozen mileage calculation (#606, v5+); empty for any other expense. */
 function mileageCells(item: TravelExpenseReportSubmittedItem): string[] {
 	const { mileage } = item;
@@ -610,6 +628,8 @@ export const TRAVEL_EXPENSE_EXPORT_EXPENSE_COLUMNS = [
 	...ADJUSTMENT_EXPENSE_COLUMNS,
 	...ALLOWANCE_OVERRIDE_COLUMNS,
 	...PER_DIEM_LOCATION_COLUMNS,
+	// Appended (v11+) so earlier column positions stay stable.
+	...RATE_EVIDENCE_COLUMNS,
 ] as const;
 
 const REPORT_COLUMNS = [
@@ -716,6 +736,20 @@ function assertManifest(manifest: TravelExpenseExportManifest): void {
 				`Reference rate conversion in facts schema version ${facts.schemaVersion}`,
 			);
 		}
+		// A manual rate freezes its evidence reference exactly from version 11 on.
+		if (
+			facts.items.some(
+				(item) =>
+					item.conversion?.basis === "manual_rate" &&
+					facts.schemaVersion >= MANUAL_RATE_EVIDENCE_FACTS_SCHEMA_VERSION !==
+						Boolean(item.conversion.evidence?.trim()),
+			)
+		) {
+			throw new TravelExpenseExportContentError(
+				"manifest_invalid",
+				`Manual rate evidence does not match facts schema version ${facts.schemaVersion}`,
+			);
+		}
 		const adjustmentProblem = adjustmentManifestProblem(facts);
 		if (adjustmentProblem) {
 			throw new TravelExpenseExportContentError("manifest_invalid", adjustmentProblem);
@@ -784,6 +818,7 @@ export function buildTravelExpenseExportFiles(
 					plainDecimal: csvPlainDecimal,
 				}),
 				...perDiemLocationCells(item, { text: csvText, integer: csvInteger }),
+				...rateEvidenceCells(item),
 			]);
 			item.receipts.forEach((receipt, index) => {
 				receiptRows.push([

@@ -29,8 +29,8 @@ import {
 // reimbursement currency, evidenced by one of the item's own attachments
 // (cleared when that file is removed). `manual_rate` is a documented rate an
 // expense administrator authorized: `1 rate_base = rate rate_quote` for the
-// item's currency pair in either direction, with its date and reason; the
-// authorizer is kept by value. The pair is recorded so a conversion never
+// item's currency pair in either direction, with its date, reason and
+// evidence reference (0133); the authorizer is kept by value. The pair is recorded so a conversion never
 // applies after the item's currency changed. `reference_rate` (#608) is stored
 // only by a submission: the approved feed's publication it froze, with the
 // expense date it was chosen for; drafts derive it on every read.
@@ -50,6 +50,9 @@ export const travelExpenseReportItemConversion = pgTable(
 		rateQuoteCurrency: text("rate_quote_currency"),
 		rateDate: date("rate_date"),
 		reason: text("reason"),
+		// 0133: where a `manual_rate` can be verified (document, statement line,
+		// reference); required for that basis only.
+		rateEvidence: text("rate_evidence"),
 		evidenceReceiptId: uuid("evidence_receipt_id"),
 		authorizedByEmployeeId: uuid("authorized_by_employee_id"),
 		authorizedByName: text("authorized_by_name"),
@@ -113,6 +116,12 @@ export const travelExpenseReportItemConversion = pgTable(
 				AND ${table.referenceSource} IS NOT NULL AND ${table.reason} IS NULL
 				AND ${table.evidenceReceiptId} IS NULL AND ${table.authorizedByEmployeeId} IS NULL
 				AND ${table.authorizedByName} IS NULL AND ${table.authorizedAt} IS NULL)`,
+		),
+		check(
+			"travel_expense_report_item_conversion_rate_evidence_check",
+			sql`(${table.basis} = 'manual_rate') = (${table.rateEvidence} IS NOT NULL)
+				AND (${table.rateEvidence} IS NULL
+					OR char_length(btrim(${table.rateEvidence})) BETWEEN 1 AND 2000)`,
 		),
 		check(
 			"travel_expense_report_item_conversion_reference_check",

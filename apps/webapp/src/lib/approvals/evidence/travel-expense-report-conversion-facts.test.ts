@@ -3,12 +3,16 @@ import { describe, expect, it } from "vitest";
 import type { ItemConversion } from "@/lib/travel-expenses/currency-conversion";
 import { canonicalJson } from "./absence-facts";
 import { ApprovalEvidenceError } from "./errors";
-import { CONVERSION_FACTS_SCHEMA_VERSION } from "./travel-expense-report-conversion";
+import {
+	CONVERSION_FACTS_SCHEMA_VERSION,
+	MANUAL_RATE_EVIDENCE_FACTS_SCHEMA_VERSION,
+} from "./travel-expense-report-conversion";
 import {
 	buildTravelExpenseReportSubmittedFacts,
 	compareLiveTravelExpenseReportWithRevision,
 	fingerprintTravelExpenseReportFacts,
 	type TravelExpenseReportFactsInput,
+	type TravelExpenseReportSubmittedFacts,
 } from "./travel-expense-report-facts";
 
 /** #607: frozen conversion facts of foreign-currency expenses. */
@@ -64,9 +68,22 @@ const manualRate: ItemConversion = {
 	rate: { base: "GBP", quote: "EUR", value: "1.1675" },
 	rateDate: "2026-09-13",
 	reason: "Rate on the hotel's folio",
+	evidence: "Hotel folio no. 4711, exchange line",
 	authorizedBy: { employeeId: "admin-1", name: "Alex Admin" },
 	authorizedAt: "2026-09-20T08:00:00Z",
 };
+
+/** The facts as a version below 11 froze them: no manual rate evidence. */
+function withoutRateEvidence(facts: TravelExpenseReportSubmittedFacts) {
+	return {
+		...facts,
+		items: facts.items.map((submitted) => {
+			if (submitted.conversion?.basis !== "manual_rate") return submitted;
+			const { evidence: _evidence, ...conversion } = submitted.conversion;
+			return { ...submitted, conversion };
+		}),
+	};
+}
 
 function input(
 	overrides: Partial<TravelExpenseReportFactsInput> = {},
@@ -138,6 +155,7 @@ describe("frozen conversion facts", () => {
 			rate: { base: "GBP", quote: "EUR", value: "1.1675" },
 			rateDate: "2026-09-13",
 			reason: "Rate on the hotel's folio",
+			evidence: "Hotel folio no. 4711, exchange line",
 			authorizedBy: { employeeId: "admin-1", name: "Alex Admin" },
 			authorizedAt: "2026-09-20T08:00:00Z",
 			rounding: { mode: "half_up", minorUnitDigits: 2 },
@@ -241,12 +259,65 @@ describe("frozen conversion facts", () => {
 		// Golden values computed at schema version 3 (#607), before v4 (#605) added
 		// project facts; this report has no project, so nothing changes.
 		const V3_FACTS_SHA256 = "226061ea7f9a97b16c1f0c9cdcb06266cab6b53abeeb383735e38905ff519de0";
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(input()), schemaVersion: 3 };
+		// Version 11 added the manual rate's evidence, which a v3 build omits.
+		const facts = {
+			...withoutRateEvidence(buildTravelExpenseReportSubmittedFacts(input())),
+			schemaVersion: 3,
+		};
 		expect(createHash("sha256").update(canonicalJson(facts)).digest("hex")).toBe(V3_FACTS_SHA256);
 		expect(fingerprintTravelExpenseReportFacts(facts)).toBe(
 			`travel_expense_report:v3:${V3_FACTS_SHA256}`,
 		);
 		expect(compareLiveTravelExpenseReportWithRevision(facts, input())).toEqual({ kind: "current" });
+	});
+
+	it("freezes a manual rate's evidence from version 11 and omits it below", () => {
+		expect(MANUAL_RATE_EVIDENCE_FACTS_SCHEMA_VERSION).toBe(11);
+		const current = buildTravelExpenseReportSubmittedFacts(input());
+		expect(current.schemaVersion).toBeGreaterThanOrEqual(MANUAL_RATE_EVIDENCE_FACTS_SCHEMA_VERSION);
+		expect(current.items[1]?.conversion).toMatchObject({
+			basis: "manual_rate",
+			evidence: "Hotel folio no. 4711, exchange line",
+		});
+		// A v10 revision froze no evidence and still compares as current.
+		const v10 = { ...withoutRateEvidence(current), schemaVersion: 10 };
+		expect(compareLiveTravelExpenseReportWithRevision(v10, input())).toEqual({ kind: "current" });
+		// Evidence changed after a v11 submission is a material change.
+		const changed = input({
+			conversions: [
+				...(input().conversions?.slice(0, 1) ?? []),
+				{
+					organizationId: "org-1",
+					reportId: "report-1",
+					itemId: "hotel",
+					conversion: { ...manualRate, evidence: "Another document" },
+				},
+			],
+		});
+		expect(compareLiveTravelExpenseReportWithRevision(current, changed)).toMatchObject({
+			kind: "material_change",
+		});
+	});
+
+	it("refuses to freeze a manual rate without its evidence", () => {
+		expectEvidenceError(
+			() =>
+				buildTravelExpenseReportSubmittedFacts(
+					input({
+						conversions: [
+							...(input().conversions?.slice(0, 1) ?? []),
+							{
+								organizationId: "org-1",
+								reportId: "report-1",
+								itemId: "hotel",
+								conversion: { ...manualRate, evidence: " " },
+							},
+						],
+					}),
+				),
+			"evidence_incomplete",
+			"conversion_evidence",
+		);
 	});
 
 	it("compares a schema version 1 revision without conversion facts as current", () => {

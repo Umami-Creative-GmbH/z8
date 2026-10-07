@@ -28,8 +28,8 @@ import { lockOwnDraftReport, type ReportOwner, touchReport } from "./report-stor
  * Currency conversions of report items (#607) and the organization's
  * reimbursement currency. An employee records an evidenced card charge on
  * their own draft; an expense administrator (the caller checks the
- * permission) authorizes a documented rate on any draft of their
- * organization. Every write holds the report row lock, the lock item saves,
+ * permission) authorizes a documented rate on another employee's draft of
+ * their organization, never on their own. Every write holds the report row lock, the lock item saves,
  * receipt finalization and submission take, and advances the item's version,
  * so a submission review always covers the conversion it shows.
  */
@@ -135,6 +135,7 @@ const NO_RATE = {
 	rateQuoteCurrency: null,
 	rateDate: null,
 	reason: null,
+	rateEvidence: null,
 	authorizedByEmployeeId: null,
 	authorizedByName: null,
 	authorizedAt: null,
@@ -330,9 +331,9 @@ async function lockOrganizationDraftReport(
 	tx: Transaction,
 	organizationId: string,
 	reportId: string,
-): Promise<"draft" | "not_found" | "not_draft"> {
+): Promise<{ kind: "draft"; employeeId: string } | { kind: "not_found" } | { kind: "not_draft" }> {
 	const [report] = await tx
-		.select({ status: travelExpenseReport.status })
+		.select({ status: travelExpenseReport.status, employeeId: travelExpenseReport.employeeId })
 		.from(travelExpenseReport)
 		.where(
 			and(
@@ -341,9 +342,11 @@ async function lockOrganizationDraftReport(
 			),
 		)
 		.for("update");
-	if (!report) return "not_found";
+	if (!report) return { kind: "not_found" };
 	// A returned report (#603) is edited like a draft.
-	return isEditableReportStatus(report.status) ? "draft" : "not_draft";
+	return isEditableReportStatus(report.status)
+		? { kind: "draft", employeeId: report.employeeId }
+		: { kind: "not_draft" };
 }
 
 async function touchReportAsAdministrator(
@@ -370,13 +373,17 @@ export type AuthorizeRateResult =
 	| { kind: "invalid"; errors: Extract<ParseManualRateResult, { ok: false }>["errors"] }
 	/** The rate is valid, but the converted amount rounds to zero or is too large. */
 	| { kind: "out_of_range" }
+	/** An administrator never authorizes a rate on their own report. */
+	| { kind: "self_authorization" }
 	| { kind: "not_found" }
 	| { kind: "not_draft" };
 
 /**
  * Records a documented rate for a foreign-currency item of any draft report
- * in the administrator's organization, replacing an earlier conversion. The
- * caller must have checked the expense administrator permission.
+ * of another employee in the administrator's organization, replacing an
+ * earlier conversion. The rate date must fit the item's expense date and the
+ * rate needs its evidence reference. The caller must have checked the expense
+ * administrator permission.
  */
 export async function authorizeManualConversionRate(
 	database: Database,
@@ -386,16 +393,18 @@ export async function authorizeManualConversionRate(
 ): Promise<AuthorizeRateResult> {
 	const at = dateFromInstant(now);
 	return database.transaction(async (tx) => {
-		const status = await lockOrganizationDraftReport(tx, actor.organizationId, input.reportId);
-		if (status !== "draft") return { kind: status };
+		const report = await lockOrganizationDraftReport(tx, actor.organizationId, input.reportId);
+		if (report.kind !== "draft") return report;
+		// Like project exceptions (#605) and allowance overrides (#610).
+		if (report.employeeId === actor.employeeId) return { kind: "self_authorization" };
 		const found = await draftItem(tx, { organizationId: actor.organizationId, ...input });
 		if (found.kind !== "ok") return found;
 		const { item, reimbursementCurrency } = found;
 		const pair = foreignPair(item, reimbursementCurrency);
 		if (!pair || !item.originalAmount) return { kind: "not_foreign" };
-		const parsed = parseManualRateInput(input.rate, pair);
+		const parsed = parseManualRateInput(input.rate, pair, item.expenseDate);
 		if (!parsed.ok) return { kind: "invalid", errors: parsed.errors };
-		const { rate, rateDate, reason } = parsed.value;
+		const { rate, rateDate, reason, evidence } = parsed.value;
 		const preview = convertToReimbursement(
 			{ amount: item.originalAmount, currency: pair.sourceCurrency },
 			reimbursementCurrency,
@@ -405,6 +414,7 @@ export async function authorizeManualConversionRate(
 				rate,
 				rateDate,
 				reason,
+				evidence,
 				authorizedBy: { employeeId: actor.employeeId, name: "" },
 				authorizedAt: "",
 			},
@@ -423,6 +433,7 @@ export async function authorizeManualConversionRate(
 			rateQuoteCurrency: rate.quote,
 			rateDate,
 			reason,
+			rateEvidence: evidence,
 			authorizedByEmployeeId: actor.employeeId,
 			authorizedByName: name,
 			authorizedAt: at,
@@ -445,8 +456,8 @@ export async function clearItemConversion(
 ): Promise<Exclude<RemoveConversionResult, { kind: "not_allowed" }>> {
 	const at = dateFromInstant(now);
 	return database.transaction(async (tx) => {
-		const status = await lockOrganizationDraftReport(tx, actor.organizationId, input.reportId);
-		if (status !== "draft") return { kind: status };
+		const report = await lockOrganizationDraftReport(tx, actor.organizationId, input.reportId);
+		if (report.kind !== "draft") return report;
 		const found = await draftItem(tx, { organizationId: actor.organizationId, ...input });
 		if (found.kind !== "ok") return found;
 		const removed = await deleteConversion(tx, found.item);

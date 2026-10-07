@@ -18,6 +18,7 @@ import {
 	ECB_REFERENCE_RATES,
 	type ReferencePublication,
 	type ReferencePublicationCandidates,
+	type ReferenceRateAcknowledgement,
 	type ReferenceRateCoverage,
 	type ReferenceRateProvider,
 	resolveReferenceRate,
@@ -44,6 +45,10 @@ export interface ReferenceRatePolicyView {
 	approvedByName: string;
 	/** Canonical UTC instant of the approval. */
 	approvedAt: string;
+	/** The versioned statement the approver acknowledged with the approval (0133). */
+	acknowledgement: ReferenceRateAcknowledgement;
+	/** Canonical UTC instant of that acknowledgement. */
+	acknowledgedAt: string;
 }
 
 export async function loadReferenceRatePolicy(
@@ -60,6 +65,8 @@ export async function loadReferenceRatePolicy(
 				provider: row.provider,
 				approvedByName: row.approvedByName,
 				approvedAt: instantToCanonicalString(instantFromDate(row.approvedAt)),
+				acknowledgement: row.acknowledgement,
+				acknowledgedAt: instantToCanonicalString(instantFromDate(row.acknowledgedAt)),
 			}
 		: null;
 }

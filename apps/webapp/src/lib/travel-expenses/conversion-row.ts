@@ -28,6 +28,7 @@ export function conversionFromRow(row: ItemConversionRow): ItemConversion | null
 			!row.rateQuoteCurrency ||
 			!row.rateDate ||
 			!row.reason ||
+			!row.rateEvidence ||
 			!row.authorizedByEmployeeId ||
 			!row.authorizedByName ||
 			!row.authorizedAt
@@ -40,6 +41,7 @@ export function conversionFromRow(row: ItemConversionRow): ItemConversion | null
 			rate: { base: row.rateBaseCurrency, quote: row.rateQuoteCurrency, value },
 			rateDate: row.rateDate,
 			reason: row.reason,
+			evidence: row.rateEvidence,
 			authorizedBy: { employeeId: row.authorizedByEmployeeId, name: row.authorizedByName },
 			authorizedAt: instantToCanonicalString(instantFromDate(row.authorizedAt)),
 		};
