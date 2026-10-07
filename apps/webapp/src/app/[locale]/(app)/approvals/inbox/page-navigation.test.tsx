@@ -16,6 +16,8 @@ import type {
 } from "@/lib/approvals/inbox/types";
 import ApprovalInboxPage from "./page";
 
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+
 vi.mock("@/navigation", () => ({
 	Link: ({ href, children, ...props }: ComponentProps<"a">) =>
 		createElement("a", { href, ...props }, children),
