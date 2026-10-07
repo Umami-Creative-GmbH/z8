@@ -34,7 +34,7 @@ export function usePerDiemItemDraft({
 	onDraftChange?: (draft: PerDiemItinerary | null) => void;
 }) {
 	const { t } = useTranslate();
-	const [lastSaved, setSaved] = useState(item);
+	const [lastSaved, setLastSaved] = useState(item);
 	// The latest server view. A reload (e.g. after the trip's destinations changed)
 	// recalculates the same version, so a loaded item wins a tie with this editor's save.
 	const saved = item.version >= lastSaved.version ? item : lastSaved;
@@ -60,7 +60,7 @@ export function usePerDiemItemDraft({
 			if (!result.success) return { status: "failed", error: result.error };
 			switch (result.data.status) {
 				case "saved":
-					setSaved(result.data.item);
+					setLastSaved(result.data.item);
 					onSaved?.(result.data.item);
 					return { status: "saved", version: result.data.item.version };
 				case "conflict":
@@ -114,7 +114,7 @@ export function usePerDiemItemDraft({
 		const theirs = state.conflict?.item;
 		saver.resolveConflict("use_theirs");
 		if (theirs) {
-			setSaved(theirs);
+			setLastSaved(theirs);
 			form.reset(toFormValues(perDiemDraftOf(theirs)), { keepDefaultValues: true });
 			onDraftChange?.(perDiemDraftOf(theirs));
 		}
