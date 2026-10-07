@@ -161,19 +161,21 @@ export const ApprovalQueryServiceLive = Layer.effect(
 						const items = yield* handler.getApprovals(params).pipe(
 							// One failing type must not empty the whole list. Typed failures
 							// degrade quietly; defects (e.g. a missing service) are logged.
-							Effect.catchCause((cause) => {
-								if (Cause.hasDies(cause)) {
-									logger.error(
-										{
-											approvalType: handler.type,
-											organizationId: params.organizationId,
-											cause: Cause.pretty(cause),
-										},
-										"Approval handler died while loading approvals",
-									);
-								}
-								return Effect.succeed([]);
-							}),
+							Effect.catchCause((cause) =>
+								Effect.sync(() => {
+									if (Cause.hasDies(cause)) {
+										logger.error(
+											{
+												approvalType: handler.type,
+												organizationId: params.organizationId,
+												cause: Cause.pretty(cause),
+											},
+											"Approval handler died while loading approvals",
+										);
+									}
+									return [];
+								}),
+							),
 						);
 						allItems.push(...items);
 					}

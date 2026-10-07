@@ -1,5 +1,5 @@
 import { Effect, Layer } from "effect";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
 	ApprovalPriority,
 	ApprovalType,
@@ -89,6 +89,10 @@ async function runApprovalQuery<T>(
 }
 
 describe("ApprovalQueryService", () => {
+	beforeEach(() => {
+		approvalQueryTestState.logger.error.mockClear();
+	});
+
 	it("returns mixed-type inbox results that include travel expense claims", async () => {
 		approvalQueryTestState.handlers = [
 			{
@@ -227,7 +231,6 @@ describe("ApprovalQueryService", () => {
 	});
 
 	it("logs a dying approval handler with its type instead of hiding it as no approvals", async () => {
-		approvalQueryTestState.logger.error.mockClear();
 		approvalQueryTestState.handlers = [
 			{
 				type: "absence_entry",
@@ -266,7 +269,6 @@ describe("ApprovalQueryService", () => {
 	});
 
 	it("does not log typed approval handler failures as defects", async () => {
-		approvalQueryTestState.logger.error.mockClear();
 		approvalQueryTestState.handlers = [
 			{
 				type: "travel_expense_claim",

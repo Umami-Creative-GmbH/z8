@@ -6,6 +6,7 @@
  */
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import type { ApprovalType } from "@/lib/approvals/domain/types";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -83,7 +84,7 @@ describe("manager daily briefing approvals source", () => {
 
 	async function seedPendingRequest(
 		organizationId: string,
-		entityType: string,
+		entityType: ApprovalType,
 		entityId: string,
 		requesterEmployeeId: string,
 	) {
