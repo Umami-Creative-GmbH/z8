@@ -55,6 +55,8 @@ function CurrencyForm({ currency }: { currency: string }) {
 	});
 
 	return (
+		// Client-side TanStack Form submit (docs/refs/forms.md); the settings page needs JS.
+		// react-doctor-disable-next-line react-doctor/no-prevent-default
 		<form
 			className="space-y-4"
 			noValidate
