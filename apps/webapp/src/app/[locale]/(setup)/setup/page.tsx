@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { SetupWizardForm } from "@/components/setup/setup-wizard-form";
@@ -8,6 +7,7 @@ import { LocalizedLoadingLabel } from "@/components/shells/localized-loading-lab
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { setupBootstrap } from "@/lib/setup/bootstrap.server";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { isPlatformConfigured } from "@/lib/setup/config-cache";
 import { SETUP_COOKIE_NAME } from "@/lib/setup/http";
 import { getTranslate } from "@/tolgee/server";
@@ -65,7 +65,7 @@ async function SetupPageContent({ params }: SetupPageProps) {
 	await connection();
 	const configured = await isPlatformConfigured();
 	if (configured) {
-		redirect(`/${locale}/`);
+		return redirectWithLocale("/");
 	}
 	const setupToken = (await cookies()).get(SETUP_COOKIE_NAME)?.value;
 	const authorized = await setupBootstrap

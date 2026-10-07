@@ -443,17 +443,19 @@ describe("org-admin settings route access", () => {
 		expect(source.includes('redirectWithLocale("/settings/employees")')).toBe(true);
 	});
 
-	it("keeps the route locale on every settings redirect", () => {
-		const unprefixedRedirect = /\bredirect\(\s*["'`]\//;
+	it("keeps the route locale on every localized redirect", () => {
+		// API routes have no locale prefix.
+		const unprefixedRedirect = /\bredirect\(\s*["'`]\/(?!api\/)/;
+		const localeRoot = join(SETTINGS_ROOT, "../..");
 		const files = [
-			...listSourceFiles(SETTINGS_ROOT),
+			...listSourceFiles(localeRoot),
 			join(SETTINGS_ROOT, "../../../../lib/auth-helpers.ts"),
 		];
 		const offenders = files.filter((file) =>
 			unprefixedRedirect.test(stripComments(readTestText(file, "utf8"))),
 		);
 
-		expect(offenders.map((file) => relative(SETTINGS_ROOT, file))).toEqual([]);
+		expect(offenders.map((file) => relative(localeRoot, file))).toEqual([]);
 	});
 
 	it("uses shared scoped access helpers instead of admin-only checks for employee and skill actions", () => {

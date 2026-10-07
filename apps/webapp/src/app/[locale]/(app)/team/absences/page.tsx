@@ -1,7 +1,7 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Skeleton } from "@/components/ui/skeleton";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getTranslate } from "@/tolgee/server";
 import { getAbsenceCategories } from "../../absences/queries";
 import { getCurrentEmployee } from "../actions";
@@ -50,7 +50,7 @@ export async function TeamAbsencesPageContent({ searchParams }: TeamAbsencesPage
 	}
 
 	if (!canUseManagerAbsencePage(currentEmployee.role)) {
-		redirect("/");
+		return redirectWithLocale("/");
 	}
 
 	const search = (params.search ?? "").trim();
