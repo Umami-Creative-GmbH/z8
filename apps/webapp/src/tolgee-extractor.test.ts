@@ -305,6 +305,26 @@ describe("tolgee extractor", () => {
 			expect(result.keys.map((key) => key.defaultValue)).toEqual([undefined, undefined, undefined]);
 		});
 
+		it("treats an interpolated template sibling as a computed value, not a default", () => {
+			const result = extractor(
+				`
+				const event = {
+					title: \`Break - \${formatBreakDuration(gapMinutes)}\`,
+					titleKey: "calendar.calendar.break.titleWithDuration",
+				};
+			`,
+				"schedule-x-adapter.ts",
+			);
+
+			expect(result.keys).toEqual([
+				expect.objectContaining({
+					defaultValue: undefined,
+					keyName: "calendar.calendar.break.titleWithDuration",
+				}),
+			]);
+			expect(result.warnings).toEqual([]);
+		});
+
 		it("ignores properties of nested objects and skips comments and earlier closed objects", () => {
 			const result = extractor(
 				`
