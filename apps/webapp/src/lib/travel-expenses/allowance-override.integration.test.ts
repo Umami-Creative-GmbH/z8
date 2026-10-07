@@ -499,6 +499,53 @@ describe("audited allowance overrides (#610)", () => {
 		expect(await submit(reportId)).toEqual(SUBMITTED);
 	});
 
+	it("stops applying an override once a policy covers what it resolved, visibly", async () => {
+		const { reportId, item } = await standaloneMileage();
+		expect(await authorize(reportId, item.id, { amount: "25.00" })).toMatchObject({
+			data: { kind: "authorized", override: { situation: { kind: "missing_coverage" } } },
+		});
+		expect((await load(reportId)).items[0]?.mileage).toMatchObject({
+			amount: "25.00",
+			override: { applies: true, staleReason: null },
+		});
+		signIn("boss");
+		expect(
+			await mileagePolicyActions.activateMileagePolicyVersionAction({
+				source: "statutory_default",
+				defaultKey: "de-mileage-estg-9-1-4a",
+				effectiveFrom: "2026-01-01",
+			}),
+		).toMatchObject({ success: true, data: { status: "activated" } });
+
+		// The facts are unchanged, but the missing coverage it resolved is gone.
+		const covered = (await load(reportId)).items[0]?.mileage;
+		expect(covered).toMatchObject({
+			calculation: { status: "calculated" },
+			override: { applies: false, staleReason: "situation_resolved", amount: "25.00" },
+		});
+		expect(covered?.amount).toBe(
+			covered?.calculation?.status === "calculated" ? covered.calculation.amount : "",
+		);
+		signIn("boss");
+		expect(await overrideActions.getAllowanceExceptionItems()).toMatchObject({
+			success: true,
+			data: [
+				expect.objectContaining({
+					itemId: item.id,
+					situation: { kind: "calculated", reasons: [] },
+					override: expect.objectContaining({ applies: false, staleReason: "situation_resolved" }),
+				}),
+			],
+		});
+
+		// The calculated allowance is what is submitted and frozen.
+		expect(await submit(reportId)).toEqual(SUBMITTED);
+		const [revision] = await revisions(reportId);
+		const facts = revision?.facts as { items: Array<Record<string, unknown>> };
+		expect(facts.items[0]?.allowanceOverride).toBeUndefined();
+		expect(facts.items[0]).toMatchObject({ original: { amount: covered?.amount } });
+	});
+
 	it("keeps overrides immutable: revocation and replacement are new audit facts", async () => {
 		const { reportId, item } = await standaloneMileage();
 		const first = await authorize(reportId, item.id);

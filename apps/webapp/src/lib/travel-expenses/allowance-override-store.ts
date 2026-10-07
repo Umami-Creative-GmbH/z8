@@ -14,6 +14,7 @@ import {
 	type AllowanceOverrideError,
 	type AllowanceOverrideKind,
 	type AllowanceOverrideScope,
+	type AllowanceOverrideView,
 	type AllowanceSituation,
 	allowanceOverrideView,
 	isOverridableSituation,
@@ -373,8 +374,8 @@ export interface AllowanceExceptionItem {
 	situation: AllowanceSituation;
 	/** The ordinary amount, when the policy can price it. */
 	ordinaryAmount: string | null;
-	/** The active override, with whether it still applies to the facts. */
-	override: (AllowanceOverride & { applies: boolean }) | null;
+	/** The active override, with whether (and why not) it still applies. */
+	override: AllowanceOverrideView | null;
 	/** Administrators never override their own allowances. */
 	ownReport: boolean;
 }
@@ -448,7 +449,7 @@ export async function listAllowanceExceptionItems(
 			situation: ordinary.situation,
 			ordinaryAmount: calculated?.amount ?? null,
 			override: override
-				? allowanceOverrideView(override, scope, report.reimbursementCurrency)
+				? allowanceOverrideView(override, scope, report.reimbursementCurrency, ordinary.situation)
 				: null,
 			ownReport: report.employeeId === actor.employeeId,
 		});

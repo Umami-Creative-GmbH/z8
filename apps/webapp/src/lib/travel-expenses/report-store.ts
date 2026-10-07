@@ -292,8 +292,15 @@ export function toItemView(
 	row: ItemRow,
 	receipts: ReportReceiptView[],
 	mileageCalculation: MileageCalculation | null = null,
-	/** A mileage item's administrator override (#610) and the report currency it must match. */
-	allowance?: { override: AllowanceOverride | undefined; reimbursementCurrency: string },
+	/**
+	 * A mileage item's administrator override (#610) and the report currency it
+	 * must match; `calculationIsOrdinary` as in `overriddenMileageView`.
+	 */
+	allowance?: {
+		override: AllowanceOverride | undefined;
+		reimbursementCurrency: string;
+		calculationIsOrdinary?: boolean;
+	},
 ): ReportItemView {
 	return {
 		mileage: overriddenMileageView(
@@ -301,6 +308,7 @@ export function toItemView(
 			row.expenseDate,
 			allowance?.override,
 			allowance?.reimbursementCurrency ?? "",
+			allowance?.calculationIsOrdinary,
 		),
 		id: row.id,
 		type: row.type,
@@ -387,7 +395,12 @@ export async function loadOwnReport(
 				item,
 				receipts.filter((receipt) => receipt.itemId === item.id).map(toReceiptView),
 				item.type === "mileage" ? price(item, pricing) : null,
-				{ override: overrides.get(item.id), reimbursementCurrency: report.reimbursementCurrency },
+				{
+					override: overrides.get(item.id),
+					reimbursementCurrency: report.reimbursementCurrency,
+					// A frozen item without a stamp is priced with today's policy, not its ordinary result.
+					calculationIsOrdinary: !pricing.useStamp || item.mileagePolicy !== null,
+				},
 			),
 			conversion: conversions.get(item.id) ?? null,
 			referenceRate: referenceRates.get(item.id) ?? null,
@@ -523,6 +536,7 @@ async function listOwnReports(
 							row.expenseDate,
 							mileageOverrides.get(row.id),
 							report.reimbursementCurrency,
+							isEditableReportStatus(report.status) || row.mileagePolicy !== null,
 						)
 					: null,
 		}));

@@ -22,8 +22,10 @@ import type { TripDestination } from "./trip-destination";
  * result. Pure, so the server, the editor and the settings form agree.
  *
  * #611 (international per diem) resolves `international` itineraries with
- * verified rate tables; whatever stays exceptional (or falls back to an
- * official default rate, `official_fallback`) still uses this override.
+ * verified rate tables; whatever stays exceptional still uses this override.
+ * A result priced with an official fallback rate (`official_fallback`) is
+ * calculated and shown as such, never overridden. An override also stops
+ * applying once the situation it resolved is gone (`overrideSituationHolds`).
  */
 
 export const ALLOWANCE_OVERRIDE_KINDS = ["mileage", "per_diem"] as const;
@@ -41,7 +43,7 @@ const ZERO = BigInt(0);
  * - `calculated`: priced by the policy; no override is needed.
  * - `missing_facts`: the employee has not entered everything; never overridden.
  * - `missing_coverage`: the organization has no (suitable) policy for it.
- * - `official_fallback`: priced with an official fallback rate (#611), shown as such.
+ * - `official_fallback`: priced with an official fallback rate (#611), shown as such; not overridden.
  * - `unsupported_case`: the verified rules do not cover the itinerary.
  */
 export type AllowanceSituationKind =
@@ -98,12 +100,36 @@ export function perDiemSituation(calculation: PerDiemCalculation): AllowanceSitu
 	}
 }
 
-/** Whether an administrator may resolve the situation with a manual amount. */
+/**
+ * Whether an administrator may resolve the situation with a manual amount:
+ * missing coverage and cases the verified rules do not support. An official
+ * fallback rate is a calculated result under the official rules, not an
+ * exception, so it is never overridden.
+ */
 export function isOverridableSituation(situation: AllowanceSituation): boolean {
+	return situation.kind === "missing_coverage" || situation.kind === "unsupported_case";
+}
+
+/**
+ * Whether the situation an override resolved still exists. `live` is the
+ * ordinary calculation's situation now; null when it is not known (a frozen
+ * item without a stamp), in which case the recorded one stands. The live
+ * situation must still need an override and be of the same kind; an
+ * unsupported case must have the same reasons, since the manual amount was
+ * worked out for exactly those.
+ */
+export function overrideSituationHolds(
+	recorded: AllowanceSituation,
+	live: AllowanceSituation | null,
+): boolean {
+	if (!live) return true;
+	if (!isOverridableSituation(live) || live.kind !== recorded.kind) return false;
+	if (live.kind !== "unsupported_case") return true;
+	const reasons = new Set(live.reasons);
+	const recordedReasons = new Set(recorded.reasons);
 	return (
-		situation.kind === "missing_coverage" ||
-		situation.kind === "unsupported_case" ||
-		situation.kind === "official_fallback"
+		reasons.size === recordedReasons.size &&
+		[...recordedReasons].every((reason) => reasons.has(reason))
 	);
 }
 
@@ -259,31 +285,54 @@ export interface AllowanceOverride {
 	authorizedAt: string;
 }
 
+/**
+ * Why an override does not apply: the facts (or the report's reimbursement
+ * currency) differ from those it was authorized for, or the situation it
+ * resolved no longer exists (e.g. a policy now covers the facts).
+ */
+export type AllowanceOverrideStaleReason = "facts_changed" | "situation_resolved";
+
 export interface AllowanceOverrideView extends AllowanceOverride {
 	/** Whether it applies to the item's current facts; a stale override is shown, never counted. */
 	applies: boolean;
+	/** Null while it applies. */
+	staleReason: AllowanceOverrideStaleReason | null;
 }
 
+/**
+ * An override against the item's live facts and, when known, the ordinary
+ * calculation's situation now (`overrideSituationHolds`).
+ */
 export function allowanceOverrideView(
 	override: AllowanceOverride,
 	liveScope: AllowanceOverrideScope,
 	reimbursementCurrency: string,
+	liveSituation: AllowanceSituation | null = null,
 ): AllowanceOverrideView {
-	return {
-		...override,
-		applies:
-			override.kind === liveScope.kind &&
-			override.currency === reimbursementCurrency &&
-			sameAllowanceOverrideScope(override.scope, liveScope),
-	};
+	const sameFacts =
+		override.kind === liveScope.kind &&
+		override.currency === reimbursementCurrency &&
+		sameAllowanceOverrideScope(override.scope, liveScope);
+	const staleReason: AllowanceOverrideStaleReason | null = !sameFacts
+		? "facts_changed"
+		: !overrideSituationHolds(override.situation, liveSituation)
+			? "situation_resolved"
+			: null;
+	return { ...override, applies: staleReason === null, staleReason };
 }
 
-/** The mileage view with its override; an applying override sets the counted amount. */
+/**
+ * The mileage view with its override; an applying override sets the counted
+ * amount. `calculationIsOrdinary`: whether the view's calculation is the
+ * ordinary result the override is checked against (always for an editable
+ * report; for a frozen one only when it was priced from its stamp).
+ */
 export function overriddenMileageView(
 	view: MileageItemView | null,
 	expenseDate: string | null,
 	override: AllowanceOverride | null | undefined,
 	reimbursementCurrency: string,
+	calculationIsOrdinary = true,
 ): MileageItemView | null {
 	if (!view || !override) return view;
 	const overrideView = allowanceOverrideView(
@@ -295,6 +344,7 @@ export function overriddenMileageView(
 			vehicle: view.vehicle,
 		}),
 		reimbursementCurrency,
+		calculationIsOrdinary && view.calculation ? mileageSituation(view.calculation) : null,
 	);
 	return {
 		...view,
@@ -305,7 +355,11 @@ export function overriddenMileageView(
 	};
 }
 
-/** The per diem view with its override; an applying override sets the counted amount. */
+/**
+ * The per diem view with its override; an applying override sets the counted
+ * amount. The view's calculation is the ordinary result: live for an editable
+ * report, from the stamp for a frozen one (none without a stamp).
+ */
 export function overriddenPerDiemView(
 	view: PerDiemItemView,
 	destinations: readonly TripDestination[],
@@ -317,6 +371,7 @@ export function overriddenPerDiemView(
 		override,
 		perDiemOverrideScope(view.itinerary, destinations),
 		reimbursementCurrency,
+		view.calculation ? perDiemSituation(view.calculation) : null,
 	);
 	return {
 		...view,

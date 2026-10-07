@@ -4,7 +4,14 @@ import {
 	mileageOverrideScope,
 	perDiemOverrideScope,
 } from "@/lib/travel-expenses/allowance-override";
-import { type PerDiemItinerary, tripDays } from "@/lib/travel-expenses/per-diem";
+import {
+	calculatePerDiem,
+	type PerDiemItinerary,
+	perDiemPolicyResolver,
+	perDiemStampOf,
+	tripDays,
+} from "@/lib/travel-expenses/per-diem";
+import { GERMAN_DOMESTIC_PER_DIEM_DEFAULT } from "@/lib/travel-expenses/statutory-per-diem-defaults";
 import { ApprovalEvidenceError } from "./errors";
 import type { TravelExpenseReportAllowanceOverrideRow } from "./travel-expense-report-allowance-override";
 import {
@@ -216,7 +223,77 @@ describe("allowance override facts", () => {
 		expect(facts.totals.reimbursable).toBe("18.45");
 	});
 
-	it("keeps the ordinary policy result beside the override when the stamp prices it", () => {
+	it("keeps the ordinary per diem result beside an override of days another report pays", () => {
+		const hamburg = [{ place: "Hamburg", countryCode: "DE" }];
+		const trip: PerDiemItinerary = {
+			...itinerary,
+			startTimeZone: "Europe/Berlin",
+			endTimeZone: "Europe/Berlin",
+		};
+		const calculation = calculatePerDiem(trip, {
+			trip: { destinations: hamburg },
+			reimbursementCurrency: "EUR",
+			resolvePolicy: perDiemPolicyResolver([
+				{
+					id: "pd-v1",
+					policyId: "pd",
+					effectiveFrom: "2026-01-01",
+					currency: "EUR",
+					withdrawnAt: null,
+					source: {
+						kind: "statutory_default",
+						reference: GERMAN_DOMESTIC_PER_DIEM_DEFAULT.reference,
+						version: GERMAN_DOMESTIC_PER_DIEM_DEFAULT.version,
+						defaultKey: GERMAN_DOMESTIC_PER_DIEM_DEFAULT.key,
+					},
+					rates: { DE: { ...GERMAN_DOMESTIC_PER_DIEM_DEFAULT.rates } },
+				},
+			]),
+			overlappingDays: ["2026-09-16"],
+		});
+		if (calculation.status !== "calculated") throw new Error("not calculated");
+		const input = (situation: AllowanceOverride["situation"]): TravelExpenseReportFactsInput => {
+			const base = perDiemInput([
+				overrideRow(
+					"pd",
+					perDiemOverride({
+						amount: "50.40",
+						scope: perDiemOverrideScope(trip, hamburg),
+						situation,
+					}),
+				),
+			]);
+			return {
+				...base,
+				report: { ...base.report, tripTimeZone: "Europe/Berlin", tripDestinations: hamburg },
+				perDiems: [
+					{
+						itemId: "pd",
+						organizationId: "org-1",
+						reportId: "report-1",
+						...trip,
+						policy: perDiemStampOf(calculation),
+					},
+				],
+			};
+		};
+		// The claimed day is still claimed: the override for it applies beside the calculation.
+		const facts = buildTravelExpenseReportSubmittedFacts(
+			input({ kind: "unsupported_case", reasons: ["overlapping_days"] }),
+		);
+		expect(facts.items[0]?.perDiem?.amount).toBe(calculation.amount);
+		expect(facts.items[0]?.perDiem?.days.at(-1)?.basis).toBe("claimed_in_other_report");
+		expect(facts.items[0]?.original.amount).toBe("50.40");
+		expect(facts.items[0]?.allowanceOverride?.amount).toBe("50.40");
+		// An override recorded for another situation no longer applies: the calculation counts.
+		const resolved = buildTravelExpenseReportSubmittedFacts(
+			input({ kind: "missing_coverage", reasons: ["policy_missing"] }),
+		);
+		expect(resolved.items[0]?.allowanceOverride).toBeUndefined();
+		expect(resolved.items[0]?.original.amount).toBe(calculation.amount);
+	});
+
+	it("drops a mileage override once the stamped policy prices its facts", () => {
 		const facts = buildTravelExpenseReportSubmittedFacts({
 			...mileageInput([overrideRow("km", mileageOverride)]),
 			items: [
@@ -235,9 +312,10 @@ describe("allowance override facts", () => {
 				} as TravelExpenseReportFactsInput["items"][number],
 			],
 		});
+		// The override resolved missing coverage, which the stamped policy now provides.
 		expect(facts.items[0]?.mileage?.amount).toBe("18.45");
 		expect(facts.items[0]?.original.amount).toBe("18.45");
-		expect(facts.items[0]?.allowanceOverride?.amount).toBe("18.45");
+		expect(facts.items[0]?.allowanceOverride).toBeUndefined();
 	});
 
 	it("refuses an override authorized for other facts: the item stays unpriced", () => {

@@ -7,6 +7,7 @@ import {
 	mileageSituation,
 	overriddenMileageView,
 	overriddenPerDiemView,
+	overrideSituationHolds,
 	parseAllowanceOverrideDraft,
 	perDiemOverrideScope,
 	perDiemSituation,
@@ -75,6 +76,18 @@ const mileageView: MileageItemView = {
 	currency: null,
 };
 
+const mileageOverride = override({
+	kind: "mileage",
+	amount: "20.00",
+	scope: mileageOverrideScope({
+		expenseDate: "2026-09-14",
+		route: "Berlin – Potsdam",
+		distanceKm: "61.50",
+		vehicle: "car",
+	}),
+	situation: { kind: "missing_coverage", reasons: ["policy_missing"] },
+});
+
 describe("allowance situations (#610)", () => {
 	it("distinguishes missing facts, missing coverage and unsupported cases", () => {
 		expect(mileageSituation({ status: "incomplete" })).toEqual({
@@ -101,12 +114,88 @@ describe("allowance situations (#610)", () => {
 		});
 	});
 
-	it("allows an override only for missing coverage, fallbacks and unsupported cases", () => {
+	it("allows an override only for missing coverage and unsupported cases, never official fallbacks", () => {
 		expect(isOverridableSituation({ kind: "missing_coverage", reasons: [] })).toBe(true);
 		expect(isOverridableSituation({ kind: "unsupported_case", reasons: [] })).toBe(true);
-		expect(isOverridableSituation({ kind: "official_fallback", reasons: [] })).toBe(true);
+		expect(isOverridableSituation({ kind: "official_fallback", reasons: ["luxembourg"] })).toBe(
+			false,
+		);
 		expect(isOverridableSituation({ kind: "missing_facts", reasons: [] })).toBe(false);
 		expect(isOverridableSituation({ kind: "calculated", reasons: [] })).toBe(false);
+	});
+
+	it("treats a calculated per diem with days another report pays as an unsupported case", () => {
+		const day = {
+			dayType: "departure" as const,
+			absenceMinutes: 600,
+			allowance: "none" as const,
+			rate: "0.00",
+			versionId: null,
+			meals: {
+				breakfast: { provided: false, employeePayment: null, deduction: "0.00" },
+				lunch: { provided: false, employeePayment: null, deduction: "0.00" },
+				dinner: { provided: false, employeePayment: null, deduction: "0.00" },
+			},
+			mealsCountToward: null,
+			deductions: "0.00",
+			amount: "0.00",
+		};
+		const calculation = {
+			status: "calculated" as const,
+			currency: "EUR",
+			amount: "0.00",
+			absence: { startAt: "2026-09-14T05:00:00Z", endAt: "2026-09-14T15:00:00Z", minutes: 600 },
+			rules: { key: "r", reference: "r", version: "r" },
+			policies: [],
+			days: [{ ...day, date: "2026-09-14", basis: "claimed_in_other_report" as const }],
+		};
+		expect(perDiemSituation(calculation)).toEqual({
+			kind: "unsupported_case",
+			reasons: ["overlapping_days"],
+		});
+		expect(
+			perDiemSituation({
+				...calculation,
+				days: [{ ...day, date: "2026-09-14", basis: "absence_8h_or_less" as const }],
+			}),
+		).toEqual({ kind: "calculated", reasons: [] });
+	});
+});
+
+describe("overrideSituationHolds", () => {
+	const unsupported = { kind: "unsupported_case" as const, reasons: ["a", "b"] };
+
+	it("keeps an override while the same situation still needs one", () => {
+		expect(
+			overrideSituationHolds(unsupported, { kind: "unsupported_case", reasons: ["b", "a"] }),
+		).toBe(true);
+		expect(
+			overrideSituationHolds(
+				{ kind: "missing_coverage", reasons: ["policy_missing"] },
+				{ kind: "missing_coverage", reasons: ["policy_currency"] },
+			),
+		).toBe(true);
+		// Unknown now (a frozen item without a stamp): the recorded situation stands.
+		expect(overrideSituationHolds(unsupported, null)).toBe(true);
+	});
+
+	it("drops an override whose situation is resolved, changed or no longer overridable", () => {
+		expect(overrideSituationHolds(unsupported, { kind: "calculated", reasons: [] })).toBe(false);
+		expect(overrideSituationHolds(unsupported, { kind: "unsupported_case", reasons: ["a"] })).toBe(
+			false,
+		);
+		expect(
+			overrideSituationHolds(unsupported, {
+				kind: "missing_coverage",
+				reasons: ["policy_missing"],
+			}),
+		).toBe(false);
+		expect(
+			overrideSituationHolds(
+				{ kind: "official_fallback", reasons: ["luxembourg"] },
+				{ kind: "official_fallback", reasons: ["luxembourg"] },
+			),
+		).toBe(false);
 	});
 });
 
@@ -205,7 +294,7 @@ describe("override applicability", () => {
 		const view = overriddenPerDiemView(
 			perDiemItemView(itinerary, {
 				status: "exceptional",
-				reasons: ["international"],
+				reasons: ["international", "foreign_time_zone"],
 				overlappingDays: [],
 			}),
 			destinations,
@@ -236,7 +325,7 @@ describe("override applicability", () => {
 		const view = overriddenPerDiemView(
 			perDiemItemView(itinerary, {
 				status: "exceptional",
-				reasons: ["international"],
+				reasons: ["foreign_time_zone", "international"],
 				overlappingDays: [],
 			}),
 			destinations,
@@ -293,6 +382,88 @@ describe("override applicability", () => {
 				{ reimbursementCurrency: "EUR" },
 			),
 		).toEqual(["mileage_policy_missing"]);
+	});
+
+	it("stops counting an override once the situation it resolved is gone, and says so", () => {
+		// The exceptional reasons changed: the manual amount was worked out for others.
+		const changed = overriddenPerDiemView(
+			perDiemItemView(itinerary, {
+				status: "exceptional",
+				reasons: ["foreign_time_zone"],
+				overlappingDays: [],
+			}),
+			destinations,
+			override(),
+			"EUR",
+		);
+		expect(changed.override).toMatchObject({ applies: false, staleReason: "situation_resolved" });
+		expect(changed.amount).toBeNull();
+		expect(
+			reportItemMissingRequirements(
+				{ type: "per_diem", draft: DRAFT, receiptCount: 0, perDiem: changed },
+				{ reimbursementCurrency: "EUR", trip: { startDate: "2026-09-14", endDate: "2026-09-16" } },
+			),
+		).toEqual(["per_diem_exceptional"]);
+
+		// A policy now covers the mileage: the calculated amount counts, not the override.
+		const covered = overriddenMileageView(
+			{
+				...mileageView,
+				calculation: {
+					status: "calculated",
+					distanceKm: "61.50",
+					ratePerKm: "0.30",
+					currency: "EUR",
+					exactAmount: "18.45",
+					amount: "18.45",
+					rounding: "half_up",
+					policy: {
+						policyId: "p",
+						versionId: "v",
+						effectiveFrom: "2026-01-01",
+						vehicle: "car",
+						ratePerKm: "0.30",
+						currency: "EUR",
+						source: { kind: "organization", reference: null, version: null, defaultKey: null },
+					},
+				},
+				amount: "18.45",
+				currency: "EUR",
+			},
+			"2026-09-14",
+			mileageOverride,
+			"EUR",
+		);
+		expect(covered?.override).toMatchObject({ applies: false, staleReason: "situation_resolved" });
+		expect(covered?.amount).toBe("18.45");
+
+		// A frozen item priced with today's policy (no stamp) keeps its recorded situation.
+		const frozen = overriddenMileageView(
+			{ ...mileageView, calculation: covered?.calculation ?? null },
+			"2026-09-14",
+			mileageOverride,
+			"EUR",
+			false,
+		);
+		expect(frozen?.override).toMatchObject({ applies: true, staleReason: null });
+		expect(frozen?.amount).toBe("20.00");
+	});
+
+	it("names changed facts as the reason a stale override no longer applies", () => {
+		const view = overriddenPerDiemView(
+			perDiemItemView(
+				{ ...itinerary, endTime: "20:00" },
+				{
+					status: "exceptional",
+					reasons: ["international", "foreign_time_zone"],
+					overlappingDays: [],
+				},
+			),
+			destinations,
+			override(),
+			"EUR",
+		);
+		expect(view.override).toMatchObject({ applies: false, staleReason: "facts_changed" });
 	});
 
 	it("resolves only coverage and calculation requirements", () => {
