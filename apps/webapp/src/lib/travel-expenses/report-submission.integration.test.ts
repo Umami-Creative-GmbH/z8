@@ -118,7 +118,11 @@ const { TravelExpenseReportHandler } = await import(
 );
 const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
+const { submitTravelExpenseReport } = await import(
+	"@/lib/approvals/server/travel-expense-report-submission"
+);
 const { db } = await import("@/db");
+const { parseInstant } = await import("@/lib/datetime/temporal-core");
 const { listFinanceQueue } = await import("@/lib/travel-expenses/settlement-store");
 const { createTravelExpenseExportBatch } = await import("@/lib/travel-expenses/export-store");
 const { buildTravelExpenseExportFiles } = await import("@/lib/travel-expenses/export-csv");
@@ -588,6 +592,44 @@ describe("report submission through approval authority (#602)", () => {
 		});
 	});
 
+	it("refuses a future-dated expense until its date, at the injected submission instant (#685)", async () => {
+		const reportId = await completeTrip();
+		const [train] = (await load(reportId)).items;
+		if (!train) throw new Error("item missing");
+		await saveItem(reportId, train, { expenseDate: "2026-09-17" });
+		const owner = {
+			organizationId: "t602-org",
+			employeeId: ids.requester,
+			userId: "t602-requester",
+		};
+		const at = async (now: string) =>
+			submitTravelExpenseReport(
+				db,
+				{ owner, reportId, reviewed: await reviewed(reportId) },
+				parseInstant(now),
+			);
+
+		// 2026-09-17 starts in Pacific/Kiritimati (UTC+14) at 2026-09-16T10:00Z.
+		expect(await at("2026-09-16T09:59:59Z")).toEqual({
+			kind: "incomplete",
+			missing: { trip: [], items: [{ id: train.id, missing: ["future_date"] }] },
+		});
+		expect(await reportState(reportId)).toMatchObject({
+			status: "draft",
+			submission_count: 0,
+			requests: [],
+			revisions: 0,
+		});
+
+		expect(await at("2026-09-16T10:00:00Z")).toMatchObject({ kind: "submitted" });
+		expect(await reportState(reportId)).toMatchObject({ status: "submitted", revisions: 1 });
+		const { rows } = await admin.query<{ submitted_at: Date }>(
+			"select submitted_at from travel_expense_report where id = $1",
+			[reportId],
+		);
+		expect(rows[0]?.submitted_at.toISOString()).toBe("2026-09-16T10:00:00.000Z");
+	});
+
 	it("routes through team manager and expense approver, never to the requester, and explains missing setup", async () => {
 		// The requester is a manager who is their own direct manager.
 		await admin.query("update employee set role = 'manager' where id = $1", [ids.requester]);
@@ -962,7 +1004,22 @@ describe("report submission through approval authority (#602)", () => {
 		expect(text).toContain("Customer workshop");
 		expect(text).toContain("1. Train to Hamburg");
 		expect(text).toContain("2. Hotel, two nights");
-		expect(text).toContain("89.90 EUR");
+		// Money is a typed value the viewer formats in their locale (#687).
+		expect(detail.sections).toContainEqual(
+			expect.objectContaining({
+				title: expect.objectContaining({
+					key: "approvals:approvals.evidence.submittedReportTitle",
+				}),
+				rows: expect.arrayContaining([
+					{
+						label: expect.objectContaining({
+							key: "approvals:approvals.evidence.reimbursableTotal",
+						}),
+						value: { kind: "money", amount: "89.90", currency: "EUR" },
+					},
+				]),
+			}),
+		);
 
 		// The reviewer can open the frozen receipts, and only those.
 		const submittedView = await actions.getTravelExpenseReportSubmission(reportId);

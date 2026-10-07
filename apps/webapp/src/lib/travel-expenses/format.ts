@@ -1,4 +1,4 @@
-import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { parseInstant, parsePlainDate, parsePlainTimeMinute } from "@/lib/datetime/temporal-core";
 import { signedAmount } from "@/lib/travel-expenses/money";
 
 /**
@@ -31,6 +31,15 @@ export function formatSignedMoney(locale: string, amount: string, currency: stri
 export function formatPlainDate(locale: string, value: string) {
 	try {
 		return parsePlainDate(value).toLocaleString(locale, { dateStyle: "medium" });
+	} catch {
+		return value;
+	}
+}
+
+/** Formats a local wall-clock time (HH:MM) as entered, without any timezone conversion. */
+export function formatPlainTime(locale: string, value: string) {
+	try {
+		return parsePlainTimeMinute(value).toLocaleString(locale, { timeStyle: "short" });
 	} catch {
 		return value;
 	}

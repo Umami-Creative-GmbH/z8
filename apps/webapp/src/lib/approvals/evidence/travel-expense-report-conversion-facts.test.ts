@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { ItemConversion } from "@/lib/travel-expenses/currency-conversion";
 import { canonicalJson } from "./absence-facts";
 import { ApprovalEvidenceError } from "./errors";
@@ -14,6 +15,13 @@ import {
 	type TravelExpenseReportFactsInput,
 	type TravelExpenseReportSubmittedFacts,
 } from "./travel-expense-report-facts";
+
+/** Freezes as submitting does, at an instant after every date of the fixtures (#685). */
+const freeze = (input: TravelExpenseReportFactsInput) =>
+	buildTravelExpenseReportSubmittedFacts({
+		...input,
+		submittedAt: parseInstant("2026-10-07T12:00:00Z"),
+	});
 
 /** #607: frozen conversion facts of foreign-currency expenses. */
 
@@ -141,7 +149,7 @@ function expectEvidenceError(fn: () => unknown, code: string, field: string) {
 
 describe("frozen conversion facts", () => {
 	it("keeps the original money and freezes the applied conversion with its result", () => {
-		const facts = buildTravelExpenseReportSubmittedFacts(input());
+		const facts = freeze(input());
 		const [taxi, hotel, train] = facts.items;
 		expect(taxi?.original).toEqual({ amount: "100.00", currency: "USD" });
 		expect(taxi?.conversion).toEqual({
@@ -172,10 +180,7 @@ describe("frozen conversion facts", () => {
 
 	it("refuses a foreign expense without a conversion instead of freezing a guess", () => {
 		expectEvidenceError(
-			() =>
-				buildTravelExpenseReportSubmittedFacts(
-					input({ conversions: input().conversions?.slice(1) }),
-				),
+			() => freeze(input({ conversions: input().conversions?.slice(1) })),
 			"evidence_incomplete",
 			"items",
 		);
@@ -184,7 +189,7 @@ describe("frozen conversion facts", () => {
 	it("refuses card charge evidence that is not one of the expense's receipts", () => {
 		expectEvidenceError(
 			() =>
-				buildTravelExpenseReportSubmittedFacts(
+				freeze(
 					input({
 						conversions: [
 							{
@@ -209,10 +214,7 @@ describe("frozen conversion facts", () => {
 			{ organizationId: "org-1", reportId: "report-1", itemId: "elsewhere" },
 		]) {
 			expectEvidenceError(
-				() =>
-					buildTravelExpenseReportSubmittedFacts(
-						input({ conversions: [{ ...scope, conversion: cardCharge }] }),
-					),
+				() => freeze(input({ conversions: [{ ...scope, conversion: cardCharge }] })),
 				"invariant",
 				"conversion_scope",
 			);
@@ -220,7 +222,7 @@ describe("frozen conversion facts", () => {
 	});
 
 	it("holds a decision when the live conversion no longer matches the frozen one", () => {
-		const submitted = buildTravelExpenseReportSubmittedFacts(input());
+		const submitted = freeze(input());
 		expect(compareLiveTravelExpenseReportWithRevision(submitted, input())).toEqual({
 			kind: "current",
 		});
@@ -242,7 +244,7 @@ describe("frozen conversion facts", () => {
 	});
 
 	it("adds conversion facts only from schema version 3, after #604's version 2", () => {
-		const current = buildTravelExpenseReportSubmittedFacts(input());
+		const current = freeze(input());
 		expect(CONVERSION_FACTS_SCHEMA_VERSION).toBe(3);
 		expect(current.schemaVersion).toBeGreaterThanOrEqual(CONVERSION_FACTS_SCHEMA_VERSION);
 		expect(current.items.some((submitted) => submitted.conversion)).toBe(true);
@@ -261,7 +263,7 @@ describe("frozen conversion facts", () => {
 		const V3_FACTS_SHA256 = "226061ea7f9a97b16c1f0c9cdcb06266cab6b53abeeb383735e38905ff519de0";
 		// Version 11 added the manual rate's evidence, which a v3 build omits.
 		const facts = {
-			...withoutRateEvidence(buildTravelExpenseReportSubmittedFacts(input())),
+			...withoutRateEvidence(freeze(input())),
 			schemaVersion: 3,
 		};
 		expect(createHash("sha256").update(canonicalJson(facts)).digest("hex")).toBe(V3_FACTS_SHA256);
@@ -273,7 +275,7 @@ describe("frozen conversion facts", () => {
 
 	it("freezes a manual rate's evidence from version 11 and omits it below", () => {
 		expect(MANUAL_RATE_EVIDENCE_FACTS_SCHEMA_VERSION).toBe(11);
-		const current = buildTravelExpenseReportSubmittedFacts(input());
+		const current = freeze(input());
 		expect(current.schemaVersion).toBeGreaterThanOrEqual(MANUAL_RATE_EVIDENCE_FACTS_SCHEMA_VERSION);
 		expect(current.items[1]?.conversion).toMatchObject({
 			basis: "manual_rate",
@@ -302,7 +304,7 @@ describe("frozen conversion facts", () => {
 	it("refuses to freeze a manual rate without its evidence", () => {
 		expectEvidenceError(
 			() =>
-				buildTravelExpenseReportSubmittedFacts(
+				freeze(
 					input({
 						conversions: [
 							...(input().conversions?.slice(0, 1) ?? []),
@@ -326,7 +328,7 @@ describe("frozen conversion facts", () => {
 			receipts: [receipt("r-train", "train")],
 			conversions: [],
 		});
-		const v1 = { ...buildTravelExpenseReportSubmittedFacts(sameCurrency), schemaVersion: 1 };
+		const v1 = { ...freeze(sameCurrency), schemaVersion: 1 };
 		expect(compareLiveTravelExpenseReportWithRevision(v1, sameCurrency)).toEqual({
 			kind: "current",
 		});

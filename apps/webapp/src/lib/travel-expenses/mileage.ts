@@ -1,6 +1,7 @@
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { type Instant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { AllowanceOverrideView } from "./allowance-override";
 import { type AllowancePolicyVersionRecord, effectiveVersionOn } from "./allowance-policy";
+import { isFutureDated } from "./future-dates";
 import { type AppliedMileagePolicy, MILEAGE_VEHICLES, type MileageVehicle } from "./mileage.types";
 import { formatUnits, multiplyToUnits, parseUnits, type RoundingMode } from "./money";
 
@@ -264,6 +265,8 @@ export function mileageItemView(
 
 export type MileageItemRequirement =
 	| "expense_date"
+	/** The drive is dated later than today anywhere on earth (#685). */
+	| "future_date"
 	| "route"
 	| "distance"
 	| "vehicle"
@@ -272,13 +275,18 @@ export type MileageItemRequirement =
 	/** The covering policy is not in the report's reimbursement currency. */
 	| "mileage_currency";
 
-/** What still keeps a mileage item from being submittable, in form order. */
+/**
+ * What still keeps a mileage item from being submittable, in form order.
+ * `now`: when submission is (or would be) asked for.
+ */
 export function mileageItemMissingRequirements(
 	draft: MileageItemDraft,
 	calculation: MileageCalculation,
+	now: Instant,
 ): MileageItemRequirement[] {
 	const missing: MileageItemRequirement[] = [];
 	if (!draft.expenseDate) missing.push("expense_date");
+	else if (isFutureDated(draft.expenseDate, now)) missing.push("future_date");
 	if (!draft.route) missing.push("route");
 	if (!draft.distanceKm) missing.push("distance");
 	if (!draft.vehicle) missing.push("vehicle");

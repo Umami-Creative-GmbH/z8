@@ -1,6 +1,7 @@
 import { countries } from "country-flag-icons";
-import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { comparePlainDates, type Instant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { parseIanaTimeZone } from "@/lib/timezone/validation";
+import { isFutureDated } from "./future-dates";
 import {
 	type ReportItemRequirement,
 	type RequirementItem,
@@ -139,7 +140,13 @@ export function parseTripDetailsDraft(input: TripDetailsDraftInput): ParseTripDe
 	};
 }
 
-export type TripRequirement = "purpose" | "travel_dates" | "destination" | "expense_item";
+export type TripRequirement =
+	| "purpose"
+	| "travel_dates"
+	/** The trip end is later than today anywhere on earth (#685). */
+	| "trip_not_ended"
+	| "destination"
+	| "expense_item";
 
 export interface TripReportMissingRequirements {
 	/** Missing shared trip facts, in form order. */
@@ -153,11 +160,14 @@ export function tripReportMissingRequirements(input: {
 	details: TripDetailsDraft;
 	items: readonly ({ id: string } & RequirementItem)[];
 	reimbursementCurrency: string;
+	/** When submission is (or would be) asked for: a trip that has not ended waits (#685). */
+	now: Instant;
 }): TripReportMissingRequirements {
-	const { details } = input;
+	const { details, now } = input;
 	const trip: TripRequirement[] = [];
 	if (!details.purpose) trip.push("purpose");
 	if (!details.startDate || !details.endDate) trip.push("travel_dates");
+	else if (isFutureDated(details.endDate, now)) trip.push("trip_not_ended");
 	if (
 		details.destinations.length === 0 ||
 		details.destinations.some((destination) => !destination.place || !destination.countryCode)
@@ -171,6 +181,7 @@ export function tripReportMissingRequirements(input: {
 			missing: reportItemMissingRequirements(item, {
 				reimbursementCurrency: input.reimbursementCurrency,
 				trip: { startDate: details.startDate, endDate: details.endDate },
+				now,
 			}),
 		}))
 		.filter((item) => item.missing.length > 0);

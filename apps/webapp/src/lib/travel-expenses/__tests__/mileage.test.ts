@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	type AppliedMileagePolicy,
 	calculateMileage,
@@ -198,7 +199,8 @@ describe("mileageItemMissingRequirements", () => {
 			vehicle: null,
 			accountingReference: null,
 		};
-		expect(mileageItemMissingRequirements(empty, { status: "incomplete" })).toEqual([
+		const now = parseInstant("2026-10-07T12:00:00Z");
+		expect(mileageItemMissingRequirements(empty, { status: "incomplete" }, now)).toEqual([
 			"expense_date",
 			"route",
 			"distance",
@@ -207,22 +209,24 @@ describe("mileageItemMissingRequirements", () => {
 		const complete = { ...empty, expenseDate: "2026-03-04", route: "A – B", distanceKm: "10.00" };
 		const withCar = { ...complete, vehicle: "car" as const };
 		expect(
-			mileageItemMissingRequirements(withCar, {
-				status: "policy_missing",
-				expenseDate: "2026-03-04",
-				vehicle: "car",
-			}),
+			mileageItemMissingRequirements(
+				withCar,
+				{ status: "policy_missing", expenseDate: "2026-03-04", vehicle: "car" },
+				now,
+			),
 		).toEqual(["mileage_policy_missing"]);
 		expect(
-			mileageItemMissingRequirements(withCar, {
-				status: "currency_mismatch",
-				policyCurrency: "CHF",
-			}),
+			mileageItemMissingRequirements(
+				withCar,
+				{ status: "currency_mismatch", policyCurrency: "CHF" },
+				now,
+			),
 		).toEqual(["mileage_currency"]);
 		expect(
 			mileageItemMissingRequirements(
 				withCar,
 				calculateMileageItem(withCar, { status: "found", policy }, "EUR"),
+				now,
 			),
 		).toEqual([]);
 	});

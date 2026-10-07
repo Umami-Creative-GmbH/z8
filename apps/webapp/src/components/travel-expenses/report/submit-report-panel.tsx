@@ -2,6 +2,7 @@
 
 import { IconAlertTriangle, IconLoader2, IconSend } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -24,9 +25,11 @@ import { receiptReportTotals } from "@/lib/travel-expenses/receipt-report";
 import { referenceRateReviewKey } from "@/lib/travel-expenses/reference-rate-conversion";
 import type { ReportView } from "@/lib/travel-expenses/report-store";
 import { reviewedItemAmount } from "@/lib/travel-expenses/report-submission";
+import type { TripReportMissingRequirements } from "@/lib/travel-expenses/trip-report";
 import { Link } from "@/navigation";
 import type { ExpenseProjectSummary } from "./expense-project-line";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
+import { futureDateLabel, perDiemNotReturnedLabel, tripNotEndedLabel } from "./future-date-labels";
 import { pendingReceiptException } from "./pending-receipt-exception";
 import { AdjustmentDeltaPreview } from "./report-adjustments";
 import { ReportTotals } from "./report-summary";
@@ -39,17 +42,55 @@ export type SubmitBlocker = "incomplete" | "unsaved" | null;
 /** Where an administrator chooses the expense approver (#679). */
 const EXPENSE_APPROVER_SETTING_HREF = "/settings/travel-expenses";
 
-interface OutcomeMessage {
+interface Problem {
 	title: string;
 	body: string;
+	/** What exactly is still needed, when the server names it. */
+	details?: string[];
 	/** A link the submitter can act on themselves. */
 	action?: { href: string; label: string };
+}
+
+/**
+ * The future-dated dates and returns the server refused (#685), named even
+ * when the editor's clock had not caught up with them yet.
+ */
+function futureDateRefusals(
+	t: Translate,
+	locale: string,
+	report: ReportView,
+	missing: TripReportMissingRequirements,
+): string[] {
+	const details = missing.trip.includes("trip_not_ended")
+		? [tripNotEndedLabel(t, locale, report.trip?.endDate ?? null)]
+		: [];
+	for (const { id, missing: itemMissing } of missing.items) {
+		const index = report.items.findIndex((item) => item.id === id);
+		const item = report.items[index];
+		if (!item) continue;
+		const label = itemMissing.includes("per_diem_not_returned")
+			? perDiemNotReturnedLabel(t, locale, item.perDiem?.itinerary ?? null)
+			: itemMissing.includes("future_date")
+				? futureDateLabel(t, locale, item.expenseDate)
+				: null;
+		if (!label) continue;
+		details.push(
+			report.items.length > 1
+				? t("travelExpenses.report.submit.expenseRequirement", "Expense {number}: {requirement}", {
+						number: index + 1,
+						requirement: label,
+					})
+				: label,
+		);
+	}
+	return details;
 }
 
 function outcomeMessage(
 	t: Translate,
 	outcome: Exclude<SubmitTravelExpenseReportOutcome, { status: "submitted" | "self_approved" }>,
-): OutcomeMessage {
+	context: { locale: string; report: ReportView },
+): Problem {
 	switch (outcome.status) {
 		case "changed_since_review":
 			return {
@@ -66,6 +107,7 @@ function outcomeMessage(
 					"travelExpenses.report.submit.incomplete",
 					"Some saved details are still missing. Complete everything listed under “Still needed” and try again.",
 				),
+				details: futureDateRefusals(t, context.locale, context.report, outcome.missing),
 			};
 		case "project_ineligible":
 			return {
@@ -223,11 +265,12 @@ export function SubmitReportPanel({
 	onSubmitted: () => Promise<unknown>;
 }) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const [open, setOpen] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [report, setReport] = useState<ReportView | null>(null);
-	const [problem, setProblem] = useState<OutcomeMessage | null>(null);
+	const [problem, setProblem] = useState<Problem | null>(null);
 	const totals = report ? receiptReportTotals(report.items, report.reimbursementCurrency) : null;
 
 	async function openReview() {
@@ -292,7 +335,7 @@ export function SubmitReportPanel({
 				setOpen(false);
 				await onSubmitted();
 			} else {
-				setProblem(outcomeMessage(t, result.data));
+				setProblem(outcomeMessage(t, result.data, { locale, report }));
 			}
 		} catch {
 			setProblem({
@@ -406,6 +449,13 @@ export function SubmitReportPanel({
 								<AlertTitle>{problem.title}</AlertTitle>
 								<AlertDescription>
 									<p>{problem.body}</p>
+									{problem.details && problem.details.length > 0 && (
+										<ul className="list-disc space-y-1 pl-5">
+											{problem.details.map((detail) => (
+												<li key={detail}>{detail}</li>
+											))}
+										</ul>
+									)}
 									{problem.action && (
 										<Link
 											className="font-medium underline underline-offset-4"

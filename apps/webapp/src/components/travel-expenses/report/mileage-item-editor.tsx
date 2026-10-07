@@ -5,6 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import type { Instant } from "@/lib/datetime/temporal-core";
 import { withoutOverriddenRequirements } from "@/lib/travel-expenses/allowance-override";
 import {
 	type MileageCalculation,
@@ -41,6 +42,7 @@ export function MileageItemEditor({
 	onSaved,
 	onDraftChange,
 	removal,
+	now,
 }: {
 	reportId: string;
 	/** The item as last loaded; later loads never reset entered values. */
@@ -50,6 +52,8 @@ export function MileageItemEditor({
 	/** The entered values as they change; null while any of them is malformed. */
 	onDraftChange?: (draft: MileageItemDraft | null) => void;
 	removal?: { label: string; remove: (expectedVersion: number) => Promise<boolean> };
+	/** The report's submission clock (`useSubmissionNow`): a future-dated drive waits (#685). */
+	now: Instant;
 }) {
 	const { t } = useTranslate();
 	const [removing, setRemoving] = useState(false);
@@ -119,6 +123,7 @@ export function MileageItemEditor({
 						values={values}
 						saved={saved}
 						currency={reimbursementCurrency}
+						now={now}
 					/>
 				)}
 			</form.Subscribe>
@@ -132,12 +137,14 @@ function MileageItemOutcome({
 	values,
 	saved,
 	currency,
+	now,
 }: {
 	id: string;
 	values: MileageFormValues;
 	/** The latest server view: its calculation is shown while the entries match it. */
 	saved: ReportItemView;
 	currency: string;
+	now: Instant;
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
@@ -150,7 +157,7 @@ function MileageItemOutcome({
 		draft && mileageDraftMatches(draft, saved) ? (saved.mileage?.override ?? null) : null;
 	const missing = draft
 		? withoutOverriddenRequirements(
-				mileageItemMissingRequirements(draft, calculation ?? { status: "incomplete" }),
+				mileageItemMissingRequirements(draft, calculation ?? { status: "incomplete" }, now),
 				override,
 			)
 		: null;
@@ -173,7 +180,12 @@ function MileageItemOutcome({
 				headingId={`${id}-requirements`}
 				missing={missing}
 				label={(requirement) =>
-					mileageRequirementLabel(t, requirement, { locale, calculation, currency })
+					mileageRequirementLabel(t, requirement, {
+						locale,
+						calculation,
+						currency,
+						expenseDate: draft?.expenseDate ?? null,
+					})
 				}
 			/>
 		</div>

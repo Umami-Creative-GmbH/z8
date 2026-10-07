@@ -1,9 +1,10 @@
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { type Instant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import {
 	type ConversionRequirement,
 	conversionRequirements,
 	type ItemConversion,
 } from "./currency-conversion";
+import { isFutureDated } from "./future-dates";
 import { itemReimbursementAmount, type ReimbursementItemInput } from "./item-amount";
 import { currencyMinorUnitDigits, formatUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
 import { missingReceiptRequirements, type ReceiptExceptionContext } from "./receipt-exception";
@@ -166,6 +167,8 @@ export function parseReceiptItemDraft(input: ReceiptItemDraftInput): ParseReceip
 
 export type ReceiptItemRequirement =
 	| "expense_date"
+	/** The expense date is later than today anywhere on earth (#685). */
+	| "future_date"
 	| "category"
 	| "description"
 	| "amount"
@@ -186,10 +189,13 @@ export function receiptItemMissingRequirements(
 		reimbursementCurrency: string;
 		receiptException?: ReceiptExceptionContext;
 		conversion?: ItemConversion | null;
+		/** When submission is (or would be) asked for; a future-dated expense waits for its date. */
+		now: Instant;
 	},
 ): ReceiptItemRequirement[] {
 	const missing: ReceiptItemRequirement[] = [];
 	if (!draft.expenseDate) missing.push("expense_date");
+	else if (isFutureDated(draft.expenseDate, context.now)) missing.push("future_date");
 	if (!draft.category) missing.push("category");
 	if (!draft.description) missing.push("description");
 	if (!draft.amount || !draft.currency) missing.push("amount");

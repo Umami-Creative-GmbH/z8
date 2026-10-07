@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import { latestCalendarDate } from "../future-dates";
 import {
 	computeSettlement,
 	type EntitlementComponent,
-	latestCalendarDate,
 	parseSettlementCommand,
 	planSettlementEntry,
 	type SettlementEntryAmount,
