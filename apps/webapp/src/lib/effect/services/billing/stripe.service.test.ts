@@ -194,9 +194,10 @@ describe("StripeService", () => {
 
 	it("pins the installed SDK's default API version", async () => {
 		const { default: ActualStripe } = await vi.importActual<typeof import("stripe")>("stripe");
-		invoicePaymentsList.mockResolvedValue({ data: [] });
 
-		await getInvoiceForPaymentIntent("pi_test_123");
+		await Effect.runPromise(
+			Effect.flatMap(StripeService, () => Effect.void).pipe(Effect.provide(StripeServiceLive)),
+		);
 
 		expect(STRIPE_API_VERSION).toBe(ActualStripe.API_VERSION);
 		expect(StripeMock).toHaveBeenCalledWith("rk_test_123", {

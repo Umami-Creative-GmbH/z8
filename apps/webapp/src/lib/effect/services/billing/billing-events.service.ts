@@ -139,19 +139,17 @@ export const BillingEventsServiceLive = Layer.effect(
 		): Effect.Effect<Stripe.Invoice | null, never> =>
 			stripeService.getInvoiceForPaymentIntent(paymentIntentId).pipe(
 				Effect.match({
-					onFailure: (error) => {
+					onFailure: (error) => ({ invoice: null, error }),
+					onSuccess: (invoice) => ({ invoice, error: undefined }),
+				}),
+				Effect.map(({ invoice, error }) => {
+					if (!invoice) {
 						logger.warn(
 							{ paymentIntentId, error },
 							"No invoice resolved for failed payment intent",
 						);
-						return null;
-					},
-					onSuccess: (invoice) => {
-						if (!invoice) {
-							logger.warn({ paymentIntentId }, "No invoice resolved for failed payment intent");
-						}
-						return invoice;
-					},
+					}
+					return invoice;
 				}),
 			);
 
