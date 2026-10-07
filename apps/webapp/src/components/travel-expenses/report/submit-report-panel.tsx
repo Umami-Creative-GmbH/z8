@@ -28,7 +28,7 @@ import { reviewedItemAmount } from "@/lib/travel-expenses/report-submission";
 import type { TripReportMissingRequirements } from "@/lib/travel-expenses/trip-report";
 import { Link } from "@/navigation";
 import type { ExpenseProjectSummary } from "./expense-project-line";
-import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
+import { type ExpenseSummary, ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
 import { futureDateLabel, perDiemNotReturnedLabel, tripNotEndedLabel } from "./future-date-labels";
 import { itemTitle } from "./item-title";
 import { pendingReceiptException } from "./pending-receipt-exception";
@@ -65,10 +65,11 @@ function futureDateRefusals(
 	const details = missing.trip.includes("trip_not_ended")
 		? [tripNotEndedLabel(t, locale, report.trip?.endDate ?? null)]
 		: [];
+	const indexById = new Map(report.items.map((item, index) => [item.id, index]));
 	for (const { id, missing: itemMissing } of missing.items) {
-		const index = report.items.findIndex((item) => item.id === id);
+		const index = indexById.get(id);
+		if (index === undefined) continue;
 		const item = report.items[index];
-		if (!item) continue;
 		const label = itemMissing.includes("per_diem_not_returned")
 			? perDiemNotReturnedLabel(t, locale, item.perDiem?.itinerary ?? null)
 			: itemMissing.includes("future_date")
@@ -245,6 +246,79 @@ function reviewedProject(
 	return { ...named, inheritedFromTrip: effective.inheritedFromTrip };
 }
 
+/** One saved expense as the submission review lists it. */
+function reviewedSummary(report: ReportView, item: ReportView["items"][number]): ExpenseSummary {
+	return {
+		id: item.id,
+		type: item.type,
+		description: item.description ?? item.mileage?.route ?? null,
+		expenseDate: item.expenseDate,
+		category: item.category,
+		amount: item.amount ?? item.mileage?.amount ?? item.perDiem?.amount ?? null,
+		currency: item.currency ?? item.mileage?.currency ?? item.perDiem?.currency ?? null,
+		paidBy: item.paidBy,
+		conversion: appliedConversion(item, report.reimbursementCurrency, item.conversion),
+		receipts: item.receipts.map((receipt) => ({
+			id: receipt.id,
+			fileName: receipt.fileName,
+		})),
+		mileage: item.mileage?.calculation?.status === "calculated" ? item.mileage.calculation : null,
+		perDiem: item.perDiem?.calculation?.status === "calculated" ? item.perDiem.calculation : null,
+		receiptException: pendingReceiptException(item),
+		project: reviewedProject(report, item),
+		// An applying administrator override (#610) is what the expense counts.
+		allowanceOverride: [item.mileage?.override, item.perDiem?.override].find(
+			(override) => override?.applies,
+		),
+	};
+}
+
+/** What the submit button's hint tells the employee. */
+function submitHint(t: Translate, blocker: SubmitBlocker): string {
+	switch (blocker) {
+		case "incomplete":
+			return t(
+				"travelExpenses.report.submit.blockedIncomplete",
+				"Complete everything listed under “Still needed” before submitting.",
+			);
+		case "unsaved":
+			return t(
+				"travelExpenses.report.submit.blockedUnsaved",
+				"Wait until all changes are saved, or correct the highlighted fields, before submitting.",
+			);
+		default:
+			return t(
+				"travelExpenses.report.submit.ready",
+				"Your entries are saved. Review the report and send it for approval.",
+			);
+	}
+}
+
+/** Why the last submission attempt was refused. */
+function SubmitProblemAlert({ problem }: { problem: Problem }) {
+	return (
+		<Alert variant="destructive" role="alert">
+			<IconAlertTriangle aria-hidden="true" className="size-4" />
+			<AlertTitle>{problem.title}</AlertTitle>
+			<AlertDescription>
+				<p>{problem.body}</p>
+				{problem.details && problem.details.length > 0 && (
+					<ul className="list-disc space-y-1 pl-5">
+						{problem.details.map((detail) => (
+							<li key={detail}>{detail}</li>
+						))}
+					</ul>
+				)}
+				{problem.action && (
+					<Link className="font-medium underline underline-offset-4" href={problem.action.href}>
+						{problem.action.label}
+					</Link>
+				)}
+			</AlertDescription>
+		</Alert>
+	);
+}
+
 /**
  * Submission review step of a draft report (#602): the employee checks the
  * saved expenses, receipts and totals, then sends that exact version for
@@ -350,27 +424,12 @@ export function SubmitReportPanel({
 		setSubmitting(false);
 	}
 
-	const blockedHint =
-		blocker === "incomplete"
-			? t(
-					"travelExpenses.report.submit.blockedIncomplete",
-					"Complete everything listed under “Still needed” before submitting.",
-				)
-			: blocker === "unsaved"
-				? t(
-						"travelExpenses.report.submit.blockedUnsaved",
-						"Wait until all changes are saved, or correct the highlighted fields, before submitting.",
-					)
-				: t(
-						"travelExpenses.report.submit.ready",
-						"Your entries are saved. Review the report and send it for approval.",
-					);
 	const hintId = `${reportId}-submit-hint`;
 
 	return (
 		<section className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
 			<p id={hintId} className="text-sm text-muted-foreground">
-				{blockedHint}
+				{submitHint(t, blocker)}
 			</p>
 			<Button
 				type="button"
@@ -401,71 +460,16 @@ export function SubmitReportPanel({
 					<div className="space-y-4">
 						{report?.trip && <TripSummaryList trip={report.trip} />}
 						<ExpenseSummaryList
-							items={(report?.items ?? []).map((item) => ({
-								id: item.id,
-								type: item.type,
-								description: item.description ?? item.mileage?.route ?? null,
-								expenseDate: item.expenseDate,
-								category: item.category,
-								amount: item.amount ?? item.mileage?.amount ?? item.perDiem?.amount ?? null,
-								currency: item.currency ?? item.mileage?.currency ?? item.perDiem?.currency ?? null,
-								paidBy: item.paidBy,
-								conversion: appliedConversion(
-									item,
-									report?.reimbursementCurrency ?? "",
-									item.conversion,
-								),
-								receipts: item.receipts.map((receipt) => ({
-									id: receipt.id,
-									fileName: receipt.fileName,
-								})),
-								mileage:
-									item.mileage?.calculation?.status === "calculated"
-										? item.mileage.calculation
-										: null,
-								perDiem:
-									item.perDiem?.calculation?.status === "calculated"
-										? item.perDiem.calculation
-										: null,
-								receiptException: pendingReceiptException(item),
-								project: reviewedProject(report, item),
-								// An applying administrator override (#610) is what the expense counts.
-								allowanceOverride: [item.mileage?.override, item.perDiem?.override].find(
-									(override) => override?.applies,
-								),
-							}))}
+							items={report ? report.items.map((item) => reviewedSummary(report, item)) : []}
 						/>
 						{totals && <ReportTotals id={`${reportId}-review`} totals={totals} />}
-					{totals && (
-						<AdjustmentDeltaPreview
-							reportId={reportId}
-							corrected={{ amount: totals.reimbursable, currency: totals.currency }}
-						/>
-					)}
-						{problem && (
-							<Alert variant="destructive" role="alert">
-								<IconAlertTriangle aria-hidden="true" className="size-4" />
-								<AlertTitle>{problem.title}</AlertTitle>
-								<AlertDescription>
-									<p>{problem.body}</p>
-									{problem.details && problem.details.length > 0 && (
-										<ul className="list-disc space-y-1 pl-5">
-											{problem.details.map((detail) => (
-												<li key={detail}>{detail}</li>
-											))}
-										</ul>
-									)}
-									{problem.action && (
-										<Link
-											className="font-medium underline underline-offset-4"
-											href={problem.action.href}
-										>
-											{problem.action.label}
-										</Link>
-									)}
-								</AlertDescription>
-							</Alert>
+						{totals && (
+							<AdjustmentDeltaPreview
+								reportId={reportId}
+								corrected={{ amount: totals.reimbursable, currency: totals.currency }}
+							/>
 						)}
+						{problem && <SubmitProblemAlert problem={problem} />}
 					</div>
 					<DialogFooter>
 						<Button

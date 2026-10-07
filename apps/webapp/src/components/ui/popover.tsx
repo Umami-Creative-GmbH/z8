@@ -4,7 +4,7 @@ import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import * as React from "react";
 
 import { getAsChildNativeButton } from "@/components/ui/base-ui-compat";
-import { composeRefs } from "@/components/ui/slot";
+import { composeRefs } from "@/components/ui/compose-refs";
 import { cn } from "@/lib/utils";
 
 type InteractionType = Parameters<

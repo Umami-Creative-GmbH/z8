@@ -20,6 +20,7 @@ validation, pending state, errors, and the open dialog:
 - `src/components/settings/wellness-settings-form.tsx`: settings form.
 - `src/components/settings/change-policy/change-policy-assignment-dialog.tsx`: TanStack Form submission.
 - `src/components/settings/holiday/holiday-assignment-dialog.tsx`: TanStack Form submission.
+- `src/components/settings/travel-expense/reimbursement-currency-settings.tsx`: TanStack Form submission (PR #738 review, October 7, 2026).
 
 The installed `@tanstack/form-core@1.33.5` `FormApi.handleSubmit` takes submission
 metadata, not a browser event, and does not cancel native submission. The payroll
