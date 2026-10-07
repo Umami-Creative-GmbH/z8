@@ -615,14 +615,14 @@ const FILTER_TEXT = {
 		all: { key: "settings.payrollExport.export.allEmployees", fallback: "All Employees" },
 		selected: {
 			key: "settings.payrollExport.export.employeesSelected",
-			fallback: "{{count}} selected",
+			fallback: "{count} selected",
 		},
 		idPrefix: "emp",
 	},
 	teams: {
 		label: { key: "settings.payrollExport.export.teams", fallback: "Teams" },
 		all: { key: "settings.payrollExport.export.allTeams", fallback: "All Teams" },
-		selected: { key: "settings.payrollExport.export.teamsSelected", fallback: "{{count}} selected" },
+		selected: { key: "settings.payrollExport.export.teamsSelected", fallback: "{count} selected" },
 		idPrefix: "team",
 	},
 	projects: {
@@ -630,7 +630,7 @@ const FILTER_TEXT = {
 		all: { key: "settings.payrollExport.export.allProjects", fallback: "All Projects" },
 		selected: {
 			key: "settings.payrollExport.export.projectsSelected",
-			fallback: "{{count}} selected",
+			fallback: "{count} selected",
 		},
 		idPrefix: "project",
 	},

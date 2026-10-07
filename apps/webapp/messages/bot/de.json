@@ -85,11 +85,16 @@
       "leave": "Abwesenheit",
       "newRequest": "Neue Genehmigungsanfrage",
       "outcome": {
+        "recorded": "Erfasst von {actor} am {time}. Prüfen Sie den aktuellen Status des Antrags in Z8.",
         "recordedTitle": "Entscheidung erfasst",
         "replayed": "Dieser Klick wurde bereits erfasst; dies ist das ursprüngliche Ergebnis und es wurde nichts Neues entschieden.",
+        "requestApproved": "Genehmigt von {actor} am {time}. Der Antrag ist genehmigt.",
         "requestApprovedTitle": "Anfrage genehmigt",
+        "requestRejected": "Abgelehnt von {actor} am {time}. Der Antrag ist abgelehnt.",
         "requestRejectedTitle": "Anfrage abgelehnt",
+        "stepApproved": "Genehmigt von {actor} am {time}. Der Antrag wartet noch auf weitere Genehmigungen.",
         "stepApprovedTitle": "Genehmigung erfasst",
+        "stepRejected": "Abgelehnt von {actor} am {time}. Der Antrag ist noch nicht abgeschlossen; prüfen Sie seinen aktuellen Status in Z8.",
         "stepRejectedTitle": "Ablehnung erfasst"
       },
       "outcomeUnknown": "Das Ergebnis dieser Betätigung konnte nicht bestätigt werden. Überprüfen Sie die Anfrage in Z8, bevor Sie die Schaltfläche erneut drücken.",

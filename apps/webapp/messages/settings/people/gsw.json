@@ -164,6 +164,8 @@
         "deactivateTitle": "Mitarbeiter deaktivieren?",
         "deactivating": "Wird deaktiviert...",
         "deactivatingStatus": "Mitarbeiter wird deaktiviert",
+        "finalOwnerDeactivateGuidance": "Wis zerscht en andere bestätigte Bsitzer zue und aktivier en, bevor du dä Mitarbeiter deaktiviersch.",
+        "finalOwnerRemoveGuidance": "Wis zerscht en andere bestätigte Bsitzer zue und aktivier en, bevor du däm Mitarbeiter de Zuegriff entziehsch.",
         "reactivate": "Reaktivieren",
         "reactivateDescription": "Dies stellt den Zugriff auf diese Organisation unter Verwendung des bestehenden Mitarbeiterdatensatzes wieder her.",
         "reactivateError": "Mitarbeiter konnte nicht reaktiviert werden",
