@@ -532,15 +532,17 @@ describe("signed adjustments and overpayment recovery (#615)", () => {
 		const detail = await (
 			await getApprovalDetail({} as NextRequest, { params: Promise.resolve({ id: requestId }) })
 		).json();
-		expect(JSON.stringify(detail.sections)).toContain("-50.00 EUR");
+		// Amounts are typed values the viewer formats in their locale (#687).
+		const money = (amount: string) => ({ kind: "money", amount, currency: "EUR" });
 		expect(detail.sections).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({
 					type: "key_value",
 					rows: expect.arrayContaining([
 						expect.objectContaining({ value: "The hotel refunded one night" }),
-						expect.objectContaining({ value: "500.00 EUR" }),
-						expect.objectContaining({ value: "450.00 EUR" }),
+						expect.objectContaining({ value: money("500.00") }),
+						expect.objectContaining({ value: money("450.00") }),
+						expect.objectContaining({ value: { ...money("-50.00"), signed: true } }),
 					]),
 				}),
 			]),
