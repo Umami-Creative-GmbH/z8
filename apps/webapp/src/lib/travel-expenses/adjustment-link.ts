@@ -39,6 +39,37 @@ export async function loadAdjustmentLink(
 	return row ?? null;
 }
 
+/** The approved facts an adjustment report was copied from (`travel_expense_report_adjustment`). */
+export interface AdjustmentSource {
+	originalReportId: string;
+	/** The original report or the adjustment whose approved facts were copied. */
+	sourceReportId: string;
+	/** That report's approved frozen revision. */
+	sourceRevisionId: string;
+}
+
+/** The copy source of an adjustment report; null for any other report. */
+export async function loadAdjustmentSource(
+	database: AdjustmentExecutor,
+	scope: { organizationId: string; reportId: string },
+): Promise<AdjustmentSource | null> {
+	const [row] = await database
+		.select({
+			originalReportId: travelExpenseReportAdjustment.originalReportId,
+			sourceReportId: travelExpenseReportAdjustment.sourceReportId,
+			sourceRevisionId: travelExpenseReportAdjustment.sourceRevisionId,
+		})
+		.from(travelExpenseReportAdjustment)
+		.where(
+			and(
+				eq(travelExpenseReportAdjustment.organizationId, scope.organizationId),
+				eq(travelExpenseReportAdjustment.reportId, scope.reportId),
+			),
+		)
+		.limit(1);
+	return row ?? null;
+}
+
 /**
  * The other reports of a report's adjustment family (#615): its original and
  * every adjustment of that original. They describe the same expenses, so

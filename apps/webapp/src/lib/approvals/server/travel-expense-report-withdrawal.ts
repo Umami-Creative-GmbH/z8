@@ -20,6 +20,7 @@ import {
 	TRAVEL_EXPENSE_REPORT_SOURCE_TYPE,
 } from "../evidence/travel-expense-report-store";
 import { recordTravelExpenseReportDeliveryIntent } from "./travel-expense-report-delivery";
+import { searchPendingReportRequest } from "./travel-expense-report-pending-search";
 import { recordTravelExpenseReportCycleClosure } from "./travel-expense-report-return";
 import type { ApprovalDbService } from "./types";
 
@@ -89,25 +90,34 @@ export async function withdrawTravelExpenseReport(
 			// Decisions lock the request before the report; so does a withdrawal,
 			// so the two serialize on the request instead of deadlocking. A chain
 			// stage decided meanwhile replaces the pending request: look again.
-			let pending: Array<{ id: string; metadata: Record<string, unknown> | null }> = [];
-			for (let attempt = 0; attempt < 3; attempt += 1) {
-				pending = await tx
-					.select({ id: approvalRequest.id, metadata: approvalRequest.metadata })
-					.from(approvalRequest)
-					.where(
-						and(
-							eq(approvalRequest.organizationId, owner.organizationId),
-							eq(approvalRequest.entityType, ENTITY_TYPE),
-							eq(approvalRequest.entityId, input.reportId),
-							eq(approvalRequest.status, "pending"),
-						),
-					)
-					.limit(2)
-					.for("update");
-				if (pending.length > 0) break;
-				const [current] = await readReport();
-				if (current?.status !== "submitted") break;
-			}
+			const pendingOfReport = and(
+				eq(approvalRequest.organizationId, owner.organizationId),
+				eq(approvalRequest.entityType, ENTITY_TYPE),
+				eq(approvalRequest.entityId, input.reportId),
+				eq(approvalRequest.status, "pending"),
+			);
+			const search = await searchPendingReportRequest<{
+				id: string;
+				metadata: Record<string, unknown> | null;
+			}>({
+				lockPending: () =>
+					tx
+						.select({ id: approvalRequest.id, metadata: approvalRequest.metadata })
+						.from(approvalRequest)
+						.where(pendingOfReport)
+						.limit(2)
+						.for("update"),
+				isSubmitted: async () => (await readReport())[0]?.status === "submitted",
+				anyPending: async () =>
+					(
+						await tx
+							.select({ id: approvalRequest.id })
+							.from(approvalRequest)
+							.where(pendingOfReport)
+							.limit(1)
+					).length > 0,
+			});
+			const pending = search.kind === "locked" ? search.pending : [];
 			const [report] = await readReport().for("update");
 			if (!report) throw new WithdrawalRefused({ kind: "not_found" });
 			if (report.submissionCount !== input.submissionCycle) {
@@ -149,6 +159,11 @@ export async function withdrawTravelExpenseReport(
 				submissionCycle: input.submissionCycle,
 			});
 			if (!revision) throw new ApprovalEvidenceError("evidence_required");
+			// Decided again and again while we looked (or decided just now): the
+			// submission is not pending for this withdrawal; the employee may retry.
+			if (search.kind === "moving" || search.kind === "settled") {
+				throw new WithdrawalRefused({ kind: "not_pending" });
+			}
 			const request = pending[0];
 			if (
 				pending.length !== 1 ||

@@ -119,6 +119,18 @@ function outcomeMessage(
 				),
 			};
 		case "adjustment_unavailable":
+			if (outcome.reason === "source_superseded") {
+				return {
+					title: t(
+						"travelExpenses.report.submit.adjustmentTitle",
+						"This adjustment cannot be submitted",
+					),
+					body: t(
+						"travelExpenses.report.submit.adjustmentSuperseded",
+						"Another adjustment of the same report was approved after you started this one, and this copy does not include that correction. Start a new adjustment from the original report so both corrections are kept.",
+					),
+				};
+			}
 			return {
 				title: t("travelExpenses.report.submit.adjustmentTitle", "This adjustment cannot be submitted"),
 				body: t(

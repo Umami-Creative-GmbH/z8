@@ -1,6 +1,6 @@
 "use client";
 
-import { IconDownload, IconFileZip, IconLoader2 } from "@tabler/icons-react";
+import { IconDownload, IconFileZip, IconInfoCircle, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
@@ -415,16 +415,23 @@ function BatchItem({
 				{batch.status === "failed" && (
 					<p className="text-sm text-destructive">{errorMessage(t, batch.errorCode)}</p>
 				)}
-				{batch.status === "cancelled" && (
-					<p className="text-sm text-muted-foreground">
-						{batch.cancelReason === "report_reopened"
-							? t(
-									"travelExpenses.finance.exports.cancelledReopened",
-									"Cancelled because a report was reopened for correction.",
-								)
-							: t("travelExpenses.finance.exports.cancelledByFinance", "Cancelled by finance.")}
-					</p>
-				)}
+				{batch.status === "cancelled" &&
+					(batch.cancelReason === "report_reopened" ? (
+						// Reopening (#614) cancels the whole batch, other employees' reports included.
+						<p className="flex items-start gap-1.5 text-sm">
+							<IconInfoCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+							<span>
+								{t(
+									"travelExpenses.finance.exports.cancelledReopenedHint",
+									"Cancelled because a report in it was reopened for correction. Any other reports in it are ready to export again: create a new export for them.",
+								)}
+							</span>
+						</p>
+					) : (
+						<p className="text-sm text-muted-foreground">
+							{t("travelExpenses.finance.exports.cancelledByFinance", "Cancelled by finance.")}
+						</p>
+					))}
 			</div>
 			<div className="flex flex-wrap gap-2">
 				{batch.status === "completed" && (

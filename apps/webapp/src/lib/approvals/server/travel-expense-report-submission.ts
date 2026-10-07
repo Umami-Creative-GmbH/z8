@@ -14,7 +14,10 @@ import {
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
-import { resolveSubmittedAdjustmentBaseline } from "@/lib/travel-expenses/adjustment-store";
+import {
+	resolveSubmittedAdjustmentBaseline,
+	type SubmittedAdjustmentRefusal,
+} from "@/lib/travel-expenses/adjustment-store";
 import { stampMileagePolicies } from "@/lib/travel-expenses/mileage-item-store";
 import { stampPerDiemPolicies } from "@/lib/travel-expenses/per-diem-store";
 import { resolveReportProjectAttribution } from "@/lib/travel-expenses/project-attribution-store";
@@ -87,8 +90,12 @@ export type SubmitTravelExpenseReportResult =
 	| { kind: "threshold_currency_unsupported"; currency: string }
 	/** The organization moved `travel_expense` to canonical authority, which has no report adapter. */
 	| { kind: "authority_unsupported" }
-	/** An adjustment (#615) whose original report is no longer approved, or in another currency. */
-	| { kind: "adjustment_unavailable"; reason: "original_not_approved" | "currency_mismatch" };
+	/**
+	 * An adjustment (#615) whose original report is no longer approved, is in
+	 * another currency, or was corrected by another approved adjustment since
+	 * this one was copied (`source_superseded`).
+	 */
+	| { kind: "adjustment_unavailable"; reason: SubmittedAdjustmentRefusal };
 
 type Refusal = Exclude<SubmitTravelExpenseReportResult, { kind: "submitted" }>;
 

@@ -164,6 +164,33 @@ describe("finance exports (#613)", () => {
 		expect(screen.getAllByRole("button", { name: "Cancel" })).toHaveLength(2);
 	});
 
+	it("explains a batch cancelled by a reopened report and points finance to a new export", async () => {
+		const cancelled = {
+			...batch,
+			status: "cancelled" as const,
+			cancelledAt: "2026-10-02T09:00:00Z",
+			fileName: null,
+		};
+		mocks.getExports.mockResolvedValue({
+			success: true,
+			data: view({
+				exportable: [],
+				batches: [
+					{ ...cancelled, id: "batch-4", cancelReason: "report_reopened" },
+					{ ...cancelled, id: "batch-5", cancelReason: "cancelled_by_finance" },
+				],
+			}),
+		});
+		mount();
+		expect(
+			await screen.findByText(
+				"Cancelled because a report in it was reopened for correction. Any other reports in it are ready to export again: create a new export for them.",
+			),
+		).toBeTruthy();
+		expect(screen.getByText("Cancelled by finance.")).toBeTruthy();
+		expect(screen.queryByRole("link", { name: /Download/ })).toBeNull();
+	});
+
 	it("offers retry when the exports fail to load", async () => {
 		mocks.getExports
 			.mockResolvedValueOnce({ success: false, error: "Failed to load exports" })
