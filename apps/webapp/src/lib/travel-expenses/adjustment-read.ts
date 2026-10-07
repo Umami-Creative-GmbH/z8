@@ -20,8 +20,10 @@ import type { AdjustmentExecutor } from "./adjustment-link";
 
 export {
 	type AdjustmentExecutor,
+	type AdjustmentSource,
 	loadAdjustmentFamilyIds,
 	loadAdjustmentLink,
+	loadAdjustmentSource,
 } from "./adjustment-link";
 
 /** Which of these reports are adjustment reports, mapped to the report each corrects. */
@@ -171,6 +173,27 @@ export type AdjustmentBaselineResult =
 	| { status: "ok"; baseline: AdjustmentBaseline; approved: ApprovedAdjustment[] }
 	| { status: "not_found" }
 	| { status: "not_approved" };
+
+/**
+ * The approved facts in force for an original report: the latest approved
+ * adjustment's frozen revision, else the original's. A new adjustment copies
+ * them; an adjustment copied from anything else would undo a correction
+ * approved since its copy, so it is never submitted or approved (#615).
+ */
+export function effectiveAdjustmentSource(
+	result: Extract<AdjustmentBaselineResult, { status: "ok" }>,
+): { reportId: string; revisionId: string } {
+	// Latest approval first; equal instants fall back to the revision id, so the
+	// copy and the later check always name the same revision.
+	const latest = result.approved.toSorted((left, right) => {
+		const byApproval = right.approvedAt.epochMilliseconds - left.approvedAt.epochMilliseconds;
+		if (byApproval !== 0) return byApproval;
+		return left.revisionId < right.revisionId ? 1 : -1;
+	})[0];
+	return latest
+		? { reportId: latest.reportId, revisionId: latest.revisionId }
+		: { reportId: result.baseline.originalReportId, revisionId: result.baseline.revisionId };
+}
 
 /**
  * The effective approved entitlement of an original report now: its approved

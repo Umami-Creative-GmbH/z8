@@ -10,6 +10,7 @@
 import { randomUUID } from "node:crypto";
 import JSZip from "jszip";
 import type { NextRequest } from "next/server";
+import type { PoolClient } from "pg";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -104,6 +105,7 @@ const finance = await import("@/app/[locale]/(app)/travel-expenses/finance-actio
 const recovery = await import("@/app/[locale]/(app)/travel-expenses/finance-recovery-actions");
 const exportActions = await import("@/app/[locale]/(app)/travel-expenses/finance-export-actions");
 const review = await import("@/app/[locale]/(app)/travel-expenses/report-review-actions");
+const reopenActions = await import("@/app/[locale]/(app)/travel-expenses/report-reopen-actions");
 const { processTravelExpenseExportBatch } = await import("@/lib/travel-expenses/export-processor");
 const { runTravelExpenseReceiptCleanup } = await import("@/lib/travel-expenses/receipt-upload");
 const { POST: processReceipt } = await import(
@@ -337,6 +339,132 @@ async function adjustTo(originalReportId: string, amount: string) {
 	await setAmount(created.reportId, amount);
 	expect(await submit(created.reportId)).toEqual({ status: "submitted" });
 	return created.reportId;
+}
+
+const TRIP_ITEMS = [
+	{ category: "accommodation", description: "Hotel Hamburg", amount: "300.00" },
+	{ category: "transport", description: "Taxi Hamburg", amount: "200.00" },
+] as const;
+
+/** Saves new amounts for the named expenses of a draft trip report. */
+async function setTripAmounts(reportId: string, amounts: Record<string, string>) {
+	for (const [description, amount] of Object.entries(amounts)) {
+		const report = await loadOwn(reportId);
+		const item = report.items.find((candidate) => candidate.description === description);
+		const known = TRIP_ITEMS.find((candidate) => candidate.description === description);
+		if (!item || !known) throw new Error(`no item ${description}`);
+		const saved = await actions.saveReceiptItemDraftAction({
+			reportId,
+			itemId: item.id,
+			expectedVersion: item.version,
+			values: {
+				expenseDate: "2026-09-14",
+				category: known.category,
+				description,
+				amount,
+				currency: "EUR",
+				paidBy: "employee",
+				accountingReference: null,
+			},
+		});
+		if (!saved.success || saved.data.status !== "saved") throw new Error("save failed");
+	}
+}
+
+/** An approved EUR 500 trip (EUR 300 hotel + EUR 200 taxi) that finance reimbursed in full. */
+async function paidTrip() {
+	signIn("requester");
+	const created = await actions.createTripReportAction();
+	if (!created.success) throw new Error(created.error);
+	const { reportId } = created.data;
+	const loaded = await loadOwn(reportId);
+	const details = await actions.saveTripDetailsDraftAction({
+		reportId,
+		expectedVersion: loaded.trip?.version ?? 1,
+		values: {
+			purpose: "Customer workshop",
+			startDate: "2026-09-14",
+			endDate: "2026-09-15",
+			timeZone: "Europe/Berlin",
+			destinations: [{ place: "Hamburg", countryCode: "DE" }],
+		},
+	});
+	if (!details.success) throw new Error(details.error);
+	for (const item of TRIP_ITEMS) {
+		signIn("requester");
+		const added = await actions.addTripReportItemAction({ reportId });
+		if (!added.success) throw new Error(added.error);
+		const saved = await actions.saveReceiptItemDraftAction({
+			reportId,
+			itemId: added.data.item.id,
+			expectedVersion: added.data.item.version,
+			values: {
+				expenseDate: "2026-09-14",
+				category: item.category,
+				description: item.description,
+				amount: item.amount,
+				currency: "EUR",
+				paidBy: "employee",
+				accountingReference: null,
+			},
+		});
+		if (!saved.success) throw new Error(saved.error);
+		await upload(reportId, added.data.item.id);
+	}
+	expect(await submit(reportId)).toEqual({ status: "submitted" });
+	expect((await approve(reportId)).status).toBe(200);
+	await reimburse(reportId, "500.00", "500.00");
+	return reportId;
+}
+
+/** Creates an adjustment of a paid trip, corrects the named expenses and submits it. */
+async function correctTrip(originalReportId: string, amounts: Record<string, string>) {
+	const created = await createAdjustment(originalReportId);
+	if (created.status !== "created") throw new Error(created.status);
+	await setTripAmounts(created.reportId, amounts);
+	expect(await submit(created.reportId)).toEqual({ status: "submitted" });
+	return created.reportId;
+}
+
+/** Exports the report's approved revision through a completed batch. */
+async function exportReport(reportId: string) {
+	signIn("finance");
+	const listed = await exportActions.getTravelExpenseExports();
+	if (!listed.success) throw new Error(listed.error);
+	const row = listed.data.exportable.find((candidate) => candidate.reportId === reportId);
+	if (!row) throw new Error("not exportable");
+	const batch = await exportActions.createTravelExpenseExportAction({
+		idempotencyKey: randomUUID(),
+		selection: [{ reportId, revisionId: row.revisionId }],
+	});
+	expect(batch.success && batch.data.status).toBe("created");
+	for (const job of harness.jobs.splice(0)) {
+		expect(await processTravelExpenseExportBatch(db, job)).toEqual({ status: "completed" });
+	}
+}
+
+function reopen(reportId: string, reason = "Wrong amount") {
+	signIn("manager");
+	return reopenActions.reopenTravelExpenseReportAction({ reportId, submissionCycle: 1, reason });
+}
+
+async function holdReportLock(reportId: string): Promise<PoolClient> {
+	const holder = await admin.connect();
+	await holder.query("begin");
+	await holder.query("select id from travel_expense_report where id = $1 for update", [reportId]);
+	return holder;
+}
+
+async function waitForLockWaiters(count: number) {
+	for (let attempt = 0; attempt < 400; attempt += 1) {
+		const { rows } = await admin.query<{ waiters: number }>(
+			`select count(*)::int as waiters from pg_stat_activity
+			 where datname = current_database() and wait_event_type = 'Lock'`,
+		);
+		if ((rows[0]?.waiters ?? 0) >= count) return;
+		await new Promise((resolve) => setTimeout(resolve, 25));
+	}
+	throw new Error(`Expected ${count} blocked sessions`);
 }
 
 async function settlement(reportId: string) {
@@ -590,10 +718,11 @@ describe("signed adjustments and overpayment recovery (#615)", () => {
 		);
 	});
 
-	it("refuses to approve a competing adjustment against a stale baseline and recalculates it on resubmission", async () => {
-		const original = await paidHotel();
-		const first = await adjustTo(original, "450.00");
-		const second = await adjustTo(original, "480.00");
+	it("never lets a competing adjustment undo an approved correction of another expense", async () => {
+		// EUR 300 hotel + EUR 200 taxi, paid. A corrects the hotel, B the taxi; both copy EUR 500.
+		const original = await paidTrip();
+		const first = await correctTrip(original, { "Hotel Hamburg": "250.00" });
+		const second = await correctTrip(original, { "Taxi Hamburg": "180.00" });
 
 		expect((await approve(first)).status).toBe(200);
 		// Calculated against EUR 500, which is no longer the approved amount.
@@ -601,7 +730,8 @@ describe("signed adjustments and overpayment recovery (#615)", () => {
 		expect(stale.status).toBe(409);
 		expect((await settlement(original)).summary.currencies[0]?.entitlement).toBe("450.00");
 
-		// The reviewer returns it; resubmitting recalculates against EUR 450.
+		// Returned and resubmitted, B would still claim the uncorrected EUR 300 hotel
+		// (EUR 480 = 450 + 30), silently undoing A. It is refused instead.
 		signIn("manager");
 		const returned = await review.returnTravelExpenseReportAction({
 			approvalId: await pendingRequestId(second),
@@ -609,20 +739,54 @@ describe("signed adjustments and overpayment recovery (#615)", () => {
 			itemComments: [],
 		});
 		expect(returned.success).toBe(true);
-		expect(await submit(second)).toEqual({ status: "submitted" });
-		signIn("requester");
-		const view = await adjustments.getTravelExpenseReportAdjustments(second);
-		if (!view.success || view.data.role !== "adjustment") throw new Error("no view");
-		expect(view.data.frozen?.baseline.entitlement).toBe("450.00");
-		expect(view.data.frozen?.delta).toEqual({ amount: "30.00", currency: "EUR" });
-		expect((await approve(second)).status).toBe(200);
+		expect(await submit(second)).toEqual({
+			status: "adjustment_unavailable",
+			reason: "source_superseded",
+		});
+		expect((await loadOwn(second)).status).toBe("returned");
+
+		// A fresh adjustment copies A's corrected facts and keeps both corrections.
+		const fresh = await createAdjustment(original, "Taxi was cheaper");
+		if (fresh.status !== "created") throw new Error(fresh.status);
+		expect(
+			(await loadOwn(fresh.reportId)).items.map((item) => [item.description, item.amount]),
+		).toEqual([
+			["Hotel Hamburg", "250.00"],
+			["Taxi Hamburg", "200.00"],
+		]);
+		await setTripAmounts(fresh.reportId, { "Taxi Hamburg": "180.00" });
+		expect(await submit(fresh.reportId)).toEqual({ status: "submitted" });
+		expect((await approve(fresh.reportId)).status).toBe(200);
 
 		const account = await settlement(original);
 		expect(account.summary.currencies[0]).toMatchObject({
-			entitlement: "480.00",
-			balance: "-20.00",
+			entitlement: "430.00",
+			balance: "-70.00",
 		});
-		expect(account.adjustments.map((entry) => entry.delta)).toEqual(["-50.00", "30.00"]);
+		expect(account.adjustments.map((entry) => entry.delta)).toEqual(["-50.00", "-20.00"]);
+	});
+
+	it("refuses to submit an adjustment copied before another adjustment was approved", async () => {
+		const original = await paidTrip();
+		const first = await createAdjustment(original, "Hotel refund");
+		const second = await createAdjustment(original, "Taxi refund");
+		if (first.status !== "created" || second.status !== "created") throw new Error("not created");
+		await setTripAmounts(first.reportId, { "Hotel Hamburg": "250.00" });
+		expect(await submit(first.reportId)).toEqual({ status: "submitted" });
+		expect((await approve(first.reportId)).status).toBe(200);
+
+		// B's copy still holds the EUR 300 hotel A corrected.
+		await setTripAmounts(second.reportId, { "Taxi Hamburg": "180.00" });
+		expect(await submit(second.reportId)).toEqual({
+			status: "adjustment_unavailable",
+			reason: "source_superseded",
+		});
+		const { rows } = await admin.query(
+			"select status, submission_count from travel_expense_report where id = $1",
+			[second.reportId],
+		);
+		expect(rows[0]).toEqual({ status: "draft", submission_count: 0 });
+		expect((await settlement(original)).summary.currencies[0]?.entitlement).toBe("450.00");
 	});
 
 	it("serializes concurrent approvals of competing adjustments: exactly one applies", async () => {
@@ -738,6 +902,78 @@ describe("signed adjustments and overpayment recovery (#615)", () => {
 				after.data.exportable.some((row) => [original, adjustment].includes(row.reportId)),
 		).toBe(false);
 		expect(await entries(original)).toHaveLength(1);
+	});
+
+	it("never reopens an approved adjustment once its original was paid", async () => {
+		const original = await paidHotel();
+		const adjustment = await adjustTo(original, "450.00");
+		expect((await approve(adjustment)).status).toBe(200);
+
+		// The adjustment itself was neither exported nor paid; its original was.
+		const refused = { status: "adjustment_required", reason: "reimbursed" };
+		signIn("manager");
+		expect(await reopenActions.getTravelExpenseReportReopenState(adjustment)).toEqual({
+			success: true,
+			data: refused,
+		});
+		expect(await reopen(adjustment)).toEqual({ success: true, data: refused });
+
+		// Nothing changed: the adjustment stays approved and its delta stays applied.
+		const { rows } = await admin.query(
+			`select r.status, (select count(*)::int from travel_expense_report_cycle_closure c
+			   where c.report_id = r.id) as closures
+			 from travel_expense_report r where r.id = $1`,
+			[adjustment],
+		);
+		expect(rows[0]).toEqual({ status: "approved", closures: 0 });
+		expect((await settlement(original)).summary.currencies[0]).toMatchObject({
+			entitlement: "450.00",
+			balance: "-50.00",
+		});
+	});
+
+	it("serializes reopening an adjustment with a reimbursement of its original on the original's lock", async () => {
+		for (const reopenFirst of [true, false]) {
+			// Exported, not yet paid: the adjustment exists without any money recorded.
+			const original = await approvedHotel("500.00");
+			await exportReport(original);
+			const adjustment = await adjustTo(original, "450.00");
+			expect((await approve(adjustment)).status).toBe(200);
+
+			const holder = await holdReportLock(original);
+			let reopened: ReturnType<typeof reopen>;
+			let paid: Promise<void>;
+			try {
+				if (reopenFirst) {
+					// The reopen now waits for the original row, not only the adjustment's.
+					reopened = reopen(adjustment, "Race");
+					await waitForLockWaiters(1);
+					paid = reimburse(original, "450.00", "450.00");
+					await waitForLockWaiters(2);
+				} else {
+					paid = reimburse(original, "450.00", "450.00");
+					await waitForLockWaiters(1);
+					reopened = reopen(adjustment, "Race");
+					await waitForLockWaiters(2);
+				}
+			} finally {
+				await holder.query("commit");
+				holder.release();
+			}
+			const [reopenResult] = await Promise.all([reopened, paid]);
+			expect(reopenResult).toEqual({
+				success: true,
+				data: { status: "adjustment_required", reason: reopenFirst ? "exported" : "reimbursed" },
+			});
+			const account = await settlement(original);
+			expect(account.adjustments.map((entry) => entry.reportId)).toEqual([adjustment]);
+			expect(account.summary.currencies[0]).toMatchObject({
+				entitlement: "450.00",
+				reimbursed: "450.00",
+				balance: "0.00",
+			});
+			await seed();
+		}
 	});
 
 	it("keeps adjustment links immutable", async () => {

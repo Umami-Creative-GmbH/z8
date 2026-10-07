@@ -10,6 +10,7 @@ import {
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { onTravelExpenseReportReturned } from "@/lib/notifications/triggers";
+import { loadAdjustmentLink } from "@/lib/travel-expenses/adjustment-link";
 import {
 	cancelUncompletedTravelExpenseExportsForReport,
 	loadTravelExpenseReportExportState,
@@ -55,7 +56,9 @@ import type { ApprovalDbService } from "./types";
  * (and reopening is refused or sees its batch) or finds the report reopened.
  * Unfinished export batches are cancelled under that lock; a completed batch
  * or recorded money refuses reopening: the correction then needs a linked
- * adjustment (#615) instead.
+ * adjustment (#615) instead. An approved adjustment report is judged by its
+ * original report's account as well (money and exports of the original), with
+ * the original row locked before the adjustment's own.
  */
 
 type Database = typeof appDb;
@@ -172,6 +175,24 @@ async function evaluateReopen(
 ): Promise<ReopenEvaluation | null> {
 	const { organizationId, reportId, actor } = input;
 	const source = { type: "report" as const, id: reportId };
+	// #615: an adjustment's delta and its money belong to its original report's
+	// account. The original row (that account's lock) is locked first, in the
+	// order reimbursements and adjustment approvals take, so a reimbursement of
+	// the original either committed (and is seen below) or waits for the reopen.
+	// The link itself never changes.
+	const adjustment = await loadAdjustmentLink(database, { organizationId, reportId });
+	if (adjustment && options.lock) {
+		await database
+			.select({ id: travelExpenseReport.id })
+			.from(travelExpenseReport)
+			.where(
+				and(
+					eq(travelExpenseReport.id, adjustment.originalReportId),
+					eq(travelExpenseReport.organizationId, organizationId),
+				),
+			)
+			.for("update");
+	}
 	const account = await loadSettlementAccount(
 		database,
 		{ organizationId, source },
@@ -227,13 +248,26 @@ async function evaluateReopen(
 					actor,
 				})
 			: false;
-	const [reimbursed, exportState] =
+	// An adjustment is settled and exported through its original too: once the
+	// original was paid or exported, reopening the adjustment would silently
+	// take its approved delta out of that account, so it needs a further
+	// adjustment instead.
+	const settledReportIds = adjustment ? [reportId, adjustment.originalReportId] : [reportId];
+	const [reimbursed, exported] =
 		approvalRecorded && authorized
 			? await Promise.all([
-					hasRecordedSettlement(database, { organizationId, source }),
-					loadTravelExpenseReportExportState(database, { organizationId, reportId }),
+					Promise.all(
+						settledReportIds.map((id) =>
+							hasRecordedSettlement(database, { organizationId, source: { type: "report", id } }),
+						),
+					).then((found) => found.some(Boolean)),
+					Promise.all(
+						settledReportIds.map((id) =>
+							loadTravelExpenseReportExportState(database, { organizationId, reportId: id }),
+						),
+					).then((states) => states.some((state) => state.exported)),
 				])
-			: [false, null];
+			: [false, false];
 	return {
 		report,
 		revision,
@@ -244,7 +278,7 @@ async function evaluateReopen(
 			ownReport,
 			authorized,
 			reimbursed,
-			exported: exportState?.exported ?? false,
+			exported,
 		}),
 	};
 }

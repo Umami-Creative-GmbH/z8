@@ -27,8 +27,10 @@ import {
 } from "./adjustment";
 import {
 	type AdjustmentExecutor,
+	effectiveAdjustmentSource,
 	loadAdjustmentBaseline,
 	loadAdjustmentLink,
+	loadAdjustmentSource,
 } from "./adjustment-read";
 import { copyAllowanceOverrides } from "./allowance-override-copy";
 import { loadTravelExpenseReportExportState } from "./export-store";
@@ -302,11 +304,8 @@ export async function createTravelExpenseAdjustment(
 		if (baseline?.status !== "ok") throw new Error("Unreachable: eligible without baseline");
 
 		// Later corrections start from the then-effective approved facts.
-		const latest = baseline.approved.toSorted(
-			(left, right) => right.approvedAt.epochMilliseconds - left.approvedAt.epochMilliseconds,
-		)[0];
-		const sourceReportId = latest?.reportId ?? original.id;
-		const sourceRevisionId = latest?.revisionId ?? baseline.baseline.revisionId;
+		const { reportId: sourceReportId, revisionId: sourceRevisionId } =
+			effectiveAdjustmentSource(baseline);
 		const at = dateFromInstant(now);
 		const reportId = await copyApprovedReport(tx, { owner, sourceReportId, at });
 		await tx.insert(travelExpenseReportAdjustment).values({
@@ -325,10 +324,20 @@ export async function createTravelExpenseAdjustment(
 	});
 }
 
+export type SubmittedAdjustmentRefusal =
+	| "original_not_approved"
+	| "currency_mismatch"
+	/**
+	 * Another adjustment of the same report was approved after this one was
+	 * copied: its facts still hold what that correction changed, so it would
+	 * undo it. The employee starts a fresh adjustment from the current facts.
+	 */
+	| "source_superseded";
+
 export type SubmittedAdjustmentBaseline =
 	| { status: "none" }
 	| { status: "ok"; baseline: AdjustmentBaseline }
-	| { status: "refused"; reason: "original_not_approved" | "currency_mismatch" };
+	| { status: "refused"; reason: SubmittedAdjustmentRefusal };
 
 /**
  * Submission of an adjustment report (`submitTravelExpenseReport`): the
@@ -339,7 +348,7 @@ export async function resolveSubmittedAdjustmentBaseline(
 	tx: AdjustmentExecutor,
 	input: { organizationId: string; reportId: string; reimbursementCurrency: string },
 ): Promise<SubmittedAdjustmentBaseline> {
-	const link = await loadAdjustmentLink(tx, input);
+	const link = await loadAdjustmentSource(tx, input);
 	if (!link) return { status: "none" };
 	const result = await loadAdjustmentBaseline(
 		tx,
@@ -347,6 +356,9 @@ export async function resolveSubmittedAdjustmentBaseline(
 		{ lock: true },
 	);
 	if (result.status !== "ok") return { status: "refused", reason: "original_not_approved" };
+	if (effectiveAdjustmentSource(result).revisionId !== link.sourceRevisionId) {
+		return { status: "refused", reason: "source_superseded" };
+	}
 	if (result.baseline.currency !== input.reimbursementCurrency) {
 		return { status: "refused", reason: "currency_mismatch" };
 	}
