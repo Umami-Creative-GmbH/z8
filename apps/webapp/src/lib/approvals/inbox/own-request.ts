@@ -14,26 +14,31 @@ function withoutDecisions(capabilities: ApprovalInboxCapabilities): ApprovalInbo
 	};
 }
 
+function isPendingOwnRequest(item: ApprovalInboxItem, viewerEmployeeId: string): boolean {
+	return item.status === "pending" && item.requester.id === viewerEmployeeId;
+}
+
 /**
  * The viewer never decides their own request, even when managing approvals
- * lets them see it (#686): it stays visible, read-only, for someone else.
+ * lets them see it (#686): a pending one stays visible, read-only, for
+ * someone else to decide.
  */
-export function asViewerItem(
+export function markOwnRequest(
 	item: ApprovalInboxItem,
-	viewerEmployeeId: string | undefined,
+	viewerEmployeeId: string,
 ): ApprovalInboxItem {
-	if (!viewerEmployeeId || item.requester.id !== viewerEmployeeId) return item;
+	if (!isPendingOwnRequest(item, viewerEmployeeId)) return item;
 	return { ...item, capabilities: withoutDecisions(item.capabilities) };
 }
 
-export function asViewerDetail(
+export function markOwnRequestDetail(
 	detail: ApprovalInboxDetailResult,
 	viewerEmployeeId: string,
 ): ApprovalInboxDetailResult {
-	if (detail.item.requester.id !== viewerEmployeeId) return detail;
+	if (!isPendingOwnRequest(detail.item, viewerEmployeeId)) return detail;
 	return {
 		...detail,
-		item: asViewerItem(detail.item, viewerEmployeeId),
+		item: { ...detail.item, capabilities: withoutDecisions(detail.item.capabilities) },
 		actions: withoutDecisions(detail.actions),
 	};
 }

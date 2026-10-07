@@ -182,7 +182,12 @@ describe("loadAuthorizedApprovalDetail", () => {
 			requiresRejectReason: true,
 		};
 		state.getApprovalInboxDetail.mockResolvedValue({
-			item: { id: "approval-1", requester: { id: "employee-1" }, capabilities: decisions },
+			item: {
+				id: "approval-1",
+				status: "pending",
+				requester: { id: "employee-1" },
+				capabilities: decisions,
+			},
 			sections: [],
 			actions: decisions,
 		});

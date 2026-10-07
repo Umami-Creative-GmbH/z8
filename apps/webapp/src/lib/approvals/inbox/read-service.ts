@@ -35,7 +35,7 @@ import {
 	type OrdinaryCanonicalApproval,
 	type OrdinaryCanonicalListFilters,
 } from "./ordinary-canonical-read";
-import { asViewerItem } from "./own-request";
+import { markOwnRequest } from "./own-request";
 import { getAgeDays, serializeDate } from "./serialization";
 import {
 	type ApprovalInboxSource,
@@ -211,7 +211,7 @@ export async function getApprovalInboxListFromSources({
 	}
 
 	const sortedItems = items
-		.map((item) => asViewerItem(item, params.approverId))
+		.map((item) => markOwnRequest(item, params.approverId))
 		.sort(compareInboxItems);
 	const cursorFilteredItems = cursor
 		? sortedItems.filter((item) => compareInboxItemToCursor(item, cursor) > 0)

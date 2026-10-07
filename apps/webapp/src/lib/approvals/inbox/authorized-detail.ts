@@ -8,7 +8,7 @@ import {
 import { getAbility } from "@/lib/auth-helpers";
 import { canAccessApprovalInbox } from "@/lib/authorization";
 import { ApprovalInboxBadRequestError } from "./current-actor";
-import { asViewerDetail } from "./own-request";
+import { markOwnRequestDetail } from "./own-request";
 import { getApprovalInboxDetail } from "./read-service";
 import { isSupportedInboxType } from "./source-adapters";
 import type { ApprovalInboxDetailResult } from "./types";
@@ -80,7 +80,7 @@ export async function loadAuthorizedApprovalDetail(input: {
 				includeAllApprovers: canManageApprovals || undefined,
 				eligibleApprovalScopes,
 			});
-			return { status: "found", detail: asViewerDetail(detail, currentEmployee.id) };
+			return { status: "found", detail: markOwnRequestDetail(detail, currentEmployee.id) };
 		}
 		if (input.kind === "canonical") return { status: "not_found" };
 
@@ -104,7 +104,7 @@ export async function loadAuthorizedApprovalDetail(input: {
 			approvalId: input.approvalId,
 			organizationId: currentEmployee.organizationId,
 		});
-		return { status: "found", detail: asViewerDetail(detail, currentEmployee.id) };
+		return { status: "found", detail: markOwnRequestDetail(detail, currentEmployee.id) };
 	} catch (error) {
 		if (error instanceof ApprovalInboxBadRequestError) {
 			return { status: "not_found" };

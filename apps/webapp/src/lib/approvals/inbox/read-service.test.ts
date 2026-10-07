@@ -801,7 +801,15 @@ describe("getApprovalInboxListFromSources", () => {
 						approverId: "approver-2",
 					}),
 				]),
-				source("absence_entry", [item({ id: "other-absence" })]),
+				source("absence_entry", [
+					item({ id: "other-absence" }),
+					item({
+						id: "own-decided-absence",
+						status: "approved",
+						requester: viewerAsRequester,
+						approverId: "approver-2",
+					}),
+				]),
 				source("time_entry", []),
 			],
 			params: {
@@ -822,6 +830,8 @@ describe("getApprovalInboxListFromSources", () => {
 		};
 		expect(byId.get("own-report")?.capabilities).toMatchObject(ownDecisions);
 		expect(byId.get("own-canonical")?.capabilities).toMatchObject(ownDecisions);
+		// A decided request awaits nobody: it is not marked as waiting for another approver.
+		expect(byId.get("own-decided-absence")?.capabilities.ownRequest).toBeUndefined();
 		expect(byId.get("other-absence")?.capabilities).toEqual({
 			canApprove: true,
 			canReject: true,
