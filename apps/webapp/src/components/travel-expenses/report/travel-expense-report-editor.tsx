@@ -286,10 +286,7 @@ function useReportInvalidation(reportId: string) {
 		refreshReport: () =>
 			queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.report(reportId) }),
 		refreshDrafts: () =>
-			Promise.all([
-				queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.draftReports() }),
-				queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.submittedReports() }),
-			]),
+			queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.history() }),
 	};
 }
 

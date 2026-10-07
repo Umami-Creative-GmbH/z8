@@ -8,6 +8,7 @@ import {
 	approvalRequest,
 	employee,
 	travelExpenseReport,
+	travelExpenseReportAdjustment,
 	travelExpenseReportCycleClosure,
 	travelExpenseReportReviewNote,
 } from "@/db/schema";
@@ -67,35 +68,67 @@ export async function loadAuthorizedTravelExpenseReport(
 		.limit(1);
 	if (!report) return { status: "not_found" };
 	if (report.employeeId === actor.employee.id) return { status: "found", report, access: "owner" };
-	const requests = await db
-		.select({ id: approvalRequest.id })
-		.from(approvalRequest)
+	const reviewer = { userId: actor.user.id, organizationId };
+	if (await reviewsAnyRequestOf(reviewer, [report.id])) {
+		return { status: "found", report, access: "reviewer" };
+	}
+	// The reviewer of an adjustment (#615) reads the report it corrects (#617):
+	// the adjustment's own facts are a copy of it, so this reveals no other expense.
+	const adjustments = await db
+		.select({ reportId: travelExpenseReportAdjustment.reportId })
+		.from(travelExpenseReportAdjustment)
 		.where(
 			and(
-				eq(approvalRequest.organizationId, organizationId),
-				eq(approvalRequest.entityType, TRAVEL_EXPENSE_REPORT_SOURCE_TYPE),
-				eq(approvalRequest.entityId, report.id),
+				eq(travelExpenseReportAdjustment.organizationId, organizationId),
+				eq(travelExpenseReportAdjustment.originalReportId, report.id),
 			),
 		);
-	for (const request of requests) {
-		const review = await loadAuthorizedApprovalDetail({
-			userId: actor.user.id,
-			organizationId,
-			approvalId: request.id,
-			kind: "compatibility",
-		});
-		if (
-			review.status === "found" &&
-			review.detail.item.entityId === report.id &&
-			review.detail.item.type === TRAVEL_EXPENSE_REPORT_SOURCE_TYPE
-		) {
-			return { status: "found", report, access: "reviewer" };
-		}
+	if (
+		adjustments.length > 0 &&
+		(await reviewsAnyRequestOf(
+			reviewer,
+			adjustments.map((adjustment) => adjustment.reportId),
+		))
+	) {
+		return { status: "found", report, access: "reviewer" };
 	}
 	if (report.status === "approved" && (await loadFinanceActor())?.canRead) {
 		return { status: "found", report, access: "finance" };
 	}
 	return { status: "not_found" };
+}
+
+/** Whether the Approvals inbox authorizes the actor for a request of one of these reports. */
+async function reviewsAnyRequestOf(
+	actor: { userId: string; organizationId: string },
+	reportIds: string[],
+): Promise<boolean> {
+	const requests = await db
+		.select({ id: approvalRequest.id, entityId: approvalRequest.entityId })
+		.from(approvalRequest)
+		.where(
+			and(
+				eq(approvalRequest.organizationId, actor.organizationId),
+				eq(approvalRequest.entityType, TRAVEL_EXPENSE_REPORT_SOURCE_TYPE),
+				inArray(approvalRequest.entityId, reportIds),
+			),
+		);
+	for (const request of requests) {
+		const review = await loadAuthorizedApprovalDetail({
+			userId: actor.userId,
+			organizationId: actor.organizationId,
+			approvalId: request.id,
+			kind: "compatibility",
+		});
+		if (
+			review.status === "found" &&
+			review.detail.item.entityId === request.entityId &&
+			review.detail.item.type === TRAVEL_EXPENSE_REPORT_SOURCE_TYPE
+		) {
+			return true;
+		}
+	}
+	return false;
 }
 
 export interface SubmittedReportItemView

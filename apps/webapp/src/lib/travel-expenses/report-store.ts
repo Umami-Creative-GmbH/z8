@@ -22,7 +22,7 @@ import {
 	type ReceiptExceptionView,
 	receiptExceptionItemView,
 } from "./receipt-exception-read";
-import { type ReceiptItemDraft, receiptReportTotals } from "./receipt-report";
+import { type ReceiptItemDraft, type ReceiptReportTotals, receiptReportTotals } from "./receipt-report";
 import type { ReferenceRateProvider } from "./reference-rate";
 import type { ReferenceRateItemStatus } from "./reference-rate-conversion";
 import { loadReferenceRatePolicy, resolveReportConversions } from "./reference-rate-read";
@@ -403,6 +403,11 @@ export interface DraftReportSummary {
 	receiptCount: number;
 	/** Null for standalone reports. */
 	trip: DraftTripSummary | null;
+	/** The first expense's type (a standalone report has exactly one). */
+	itemType: TravelExpenseReportItemType | null;
+	itemCount: number;
+	/** Employee-paid and company-paid totals of the countable expenses (#617). */
+	totals: ReceiptReportTotals;
 }
 
 export interface DraftTripSummary {
@@ -515,6 +520,7 @@ async function listOwnReports(
 		}));
 		const first = priced[0];
 		const item = first?.row;
+		const totals = reportListTotals(report, priced, conversions);
 		return {
 			id: report.id,
 			kind: report.kind,
@@ -525,17 +531,34 @@ async function listOwnReports(
 			amount: item?.originalAmount ?? first?.mileage?.amount ?? null,
 			currency: item?.originalCurrency ?? first?.mileage?.currency ?? null,
 			receiptCount: receiptCounts.find((row) => row.reportId === report.id)?.count ?? 0,
-			trip: report.kind === "trip" ? tripDraftSummary(report, priced, conversions) : null,
+			trip: report.kind === "trip" ? tripDraftSummary(report, priced, totals) : null,
+			itemType: item?.type ?? null,
+			itemCount: priced.length,
+			totals,
 		};
 	});
 }
 
-function tripDraftSummary(
+/** Every report of the owner, whatever its status, for the unified history (#617). */
+export function listOwnReportSummaries(
+	database: Database,
+	owner: ReportOwner,
+): Promise<DraftReportSummary[]> {
+	return listOwnReports(database, owner, [
+		"draft",
+		"returned",
+		"submitted",
+		"approved",
+		"rejected",
+	]);
+}
+
+function reportListTotals(
 	report: ReportRow,
 	items: { row: ItemRow; mileage: MileageItemView | null; perDiem?: PerDiemItemView | null }[],
 	conversions: ReadonlyMap<string, ItemConversion>,
-): DraftTripSummary {
-	const totals = receiptReportTotals(
+): ReceiptReportTotals {
+	return receiptReportTotals(
 		items.map(({ row, mileage, perDiem }) => ({
 			perDiem,
 			amount: row.originalAmount,
@@ -547,6 +570,13 @@ function tripDraftSummary(
 		})),
 		report.reimbursementCurrency,
 	);
+}
+
+function tripDraftSummary(
+	report: ReportRow,
+	items: readonly unknown[],
+	totals: ReceiptReportTotals,
+): DraftTripSummary {
 	return {
 		purpose: report.tripPurpose,
 		startDate: report.tripStartDate,

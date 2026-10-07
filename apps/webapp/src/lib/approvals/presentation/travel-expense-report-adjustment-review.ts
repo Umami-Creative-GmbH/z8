@@ -32,7 +32,8 @@ export function adjustmentReviewSections(
 			rows: [
 				{
 					label: text("adjustmentOriginalReport", "Corrects report"),
-					value: adjustment.originalReportId,
+					value: text("adjustmentOpenOriginal", "Open the approved report"),
+					href: `/travel-expenses/reports/${adjustment.originalReportId}`,
 				},
 				{ label: text("adjustmentReason", "Reason"), value: adjustment.reason },
 				{

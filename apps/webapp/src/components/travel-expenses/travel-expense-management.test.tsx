@@ -1,20 +1,30 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type {
+	ExpenseHistoryRow,
+	LegacyClaimHistoryRow,
+	ReportHistoryRow,
+} from "@/lib/travel-expenses/expense-history";
 
-const actions = vi.hoisted(() => ({
-	getMyTravelExpenseClaims: vi.fn(),
+const historyActions = vi.hoisted(() => ({
+	getMyTravelExpenseHistory: vi.fn(),
 }));
-vi.mock("@/app/[locale]/(app)/travel-expenses/actions", () => actions);
+vi.mock("@/app/[locale]/(app)/travel-expenses/history-actions", () => historyActions);
 const reportActions = vi.hoisted(() => ({
-	getMyDraftTravelExpenseReports: vi.fn(async () => ({ success: true, data: [] as unknown[] })),
-	getMySubmittedTravelExpenseReports: vi.fn(async () => ({ success: true, data: [] as unknown[] })),
 	createStandaloneReceiptReportAction: vi.fn(),
 	createTripReportAction: vi.fn(),
 }));
 vi.mock("@/app/[locale]/(app)/travel-expenses/report-actions", () => reportActions);
+vi.mock("@/app/[locale]/(app)/travel-expenses/mileage-actions", () => ({
+	createStandaloneMileageReportAction: vi.fn(),
+}));
+vi.mock("@/app/[locale]/(app)/travel-expenses/legacy-draft-actions", () => ({
+	convertLegacyTravelExpenseDraftAction: vi.fn(),
+	getLegacyTravelExpenseConversion: vi.fn(),
+}));
 const router = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -30,6 +40,10 @@ vi.mock("next-intl", () => ({
 	useLocale: () => "en-US",
 	useTranslations: () => (_key: string) => _key,
 }));
+vi.mock("@/navigation", () => ({
+	Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
+	useRouter: () => router,
+}));
 
 import { TravelExpenseManagement } from "./travel-expense-management";
 
@@ -37,19 +51,52 @@ afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
 });
-const claim = {
-	id: "old-claim",
-	type: "receipt",
-	status: "approved",
-	calculatedAmount: "120.50",
-	calculatedCurrency: "EUR",
-	tripStartDate: "2026-03-29",
-	tripEndDate: "2026-03-31",
-};
+
+function reportRow(overrides: Partial<ReportHistoryRow> & { id: string }): ReportHistoryRow {
+	return {
+		source: "report",
+		href: `/travel-expenses/reports/${overrides.id}`,
+		stage: "needs_action",
+		activityAt: "2026-10-05T10:00:00.000Z",
+		balance: null,
+		dates: { start: "2026-09-14", end: "2026-09-14" },
+		kind: "standalone",
+		status: "draft",
+		itemType: "receipt",
+		title: "Hotel Hamburg",
+		itemCount: 1,
+		receiptCount: 1,
+		totals: { currency: "EUR", reimbursable: "129.90", companyPaid: "0.00", excludedItemCount: 0 },
+		adjustmentOf: null,
+		continuedFromClaimId: null,
+		...overrides,
+	};
+}
+
+function claimRow(overrides: Partial<LegacyClaimHistoryRow> = {}): LegacyClaimHistoryRow {
+	return {
+		source: "legacy_claim",
+		id: "old-claim",
+		href: "/travel-expenses/old-claim",
+		stage: "approved",
+		activityAt: "2026-04-01T10:00:00.000Z",
+		balance: null,
+		dates: { start: "2026-03-29", end: "2026-03-31" },
+		claimType: "receipt",
+		status: "approved",
+		amount: { amount: "120.50", currency: "EUR" },
+		destination: "Berlin",
+		canContinue: false,
+		...overrides,
+	};
+}
+
+function respond(rows: ExpenseHistoryRow[]) {
+	return { success: true, data: rows };
+}
+
 function mount() {
-	const client = new QueryClient({
-		defaultOptions: { queries: { retry: false } },
-	});
+	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	render(
 		<QueryClientProvider client={client}>
 			<TravelExpenseManagement organizationId="org" employeeId="owner" />
@@ -57,32 +104,10 @@ function mount() {
 	);
 	return client;
 }
-describe("standalone receipt reports", () => {
-	it("lists saved drafts so they can be resumed", async () => {
-		actions.getMyTravelExpenseClaims.mockResolvedValue({ success: true, data: [] });
-		reportActions.getMyDraftTravelExpenseReports.mockResolvedValueOnce({
-			success: true,
-			data: [
-				{
-					id: "report-1",
-					kind: "standalone",
-					updatedAt: "2026-10-05T10:00:00.000Z",
-					expenseDate: "2026-09-14",
-					description: "Hotel Hamburg",
-					amount: "129.90",
-					currency: "EUR",
-					receiptCount: 1,
-				},
-			],
-		});
-		const client = mount();
-		const link = await screen.findByRole("link", { name: /Hotel Hamburg/ });
-		expect(link.getAttribute("href")).toBe("/travel-expenses/reports/report-1");
-		client.clear();
-	});
 
+describe("creating reports", () => {
 	it("creates a standalone receipt report and opens its editor", async () => {
-		actions.getMyTravelExpenseClaims.mockResolvedValue({ success: true, data: [] });
+		historyActions.getMyTravelExpenseHistory.mockResolvedValue(respond([]));
 		reportActions.createStandaloneReceiptReportAction.mockResolvedValueOnce({
 			success: true,
 			data: { reportId: "report-2" },
@@ -94,11 +119,9 @@ describe("standalone receipt reports", () => {
 		);
 		client.clear();
 	});
-});
 
-describe("trip reports", () => {
 	it("creates a trip report and opens its editor", async () => {
-		actions.getMyTravelExpenseClaims.mockResolvedValue({ success: true, data: [] });
+		historyActions.getMyTravelExpenseHistory.mockResolvedValue(respond([]));
 		reportActions.createTripReportAction.mockResolvedValueOnce({
 			success: true,
 			data: { reportId: "trip-1" },
@@ -111,92 +134,195 @@ describe("trip reports", () => {
 		client.clear();
 	});
 
-	it("offers only usable expense types, not manual mileage or per-diem claims", async () => {
-		actions.getMyTravelExpenseClaims.mockResolvedValue({ success: true, data: [] });
+	it("guides a first-time user with an empty state instead of an empty table", async () => {
+		historyActions.getMyTravelExpenseHistory.mockResolvedValue(respond([]));
 		const client = mount();
+		expect(await screen.findByText("No travel expenses yet")).toBeTruthy();
 		expect(screen.queryByRole("button", { name: "New Claim" })).toBeNull();
-		expect(screen.queryByText("Mileage")).toBeNull();
-		expect(screen.queryByText("Per Diem")).toBeNull();
+		client.clear();
+	});
+});
+
+describe("unified history", () => {
+	it("lists drafts, decided reports and earlier claims in one list", async () => {
+		historyActions.getMyTravelExpenseHistory.mockResolvedValue(
+			respond([
+				reportRow({
+					id: "trip-2",
+					kind: "trip",
+					itemType: null,
+					title: "Customer workshop",
+					dates: { start: "2026-09-14", end: "2026-09-16" },
+					itemCount: 3,
+					totals: {
+						currency: "EUR",
+						reimbursable: "102.00",
+						companyPaid: "240.00",
+						excludedItemCount: 0,
+					},
+				}),
+				claimRow(),
+			]),
+		);
+		const client = mount();
+		const trip = await screen.findByRole("link", { name: /Customer workshop/ });
+		expect(trip.getAttribute("href")).toBe("/travel-expenses/reports/trip-2");
+		const tripRow = trip.closest("li") as HTMLElement;
+		expect(tripRow.textContent).toContain("Sep 14, 2026 – Sep 16, 2026");
+		expect(tripRow.textContent).toContain("3 expenses");
+		expect(tripRow.textContent).toContain("€102.00");
+		expect(tripRow.textContent).toContain("Company-paid €240.00");
+		const claim = screen.getByRole("link", { name: /Receipt claim/ });
+		expect(claim.getAttribute("href")).toBe("/travel-expenses/old-claim");
+		const legacyRow = claim.closest("li") as HTMLElement;
+		expect(legacyRow.textContent).toContain("Earlier claim");
+		expect(legacyRow.textContent).toContain("€120.50");
+		expect(legacyRow.textContent).toContain("Mar 29, 2026 – Mar 31, 2026");
 		client.clear();
 	});
 
-	it("lists trip drafts with purpose, travel dates, expense count and reimbursable total", async () => {
-		actions.getMyTravelExpenseClaims.mockResolvedValue({ success: true, data: [] });
-		reportActions.getMyDraftTravelExpenseReports.mockResolvedValueOnce({
-			success: true,
-			data: [
-				{
-					id: "trip-2",
+	it("labels an adjustment with a link to the report it corrects", async () => {
+		historyActions.getMyTravelExpenseHistory.mockResolvedValue(
+			respond([
+				reportRow({
+					id: "adjustment",
+					stage: "in_review",
+					status: "submitted",
 					kind: "trip",
-					updatedAt: "2026-10-05T10:00:00.000Z",
-					expenseDate: "2026-09-14",
-					description: "Train to Hamburg",
-					amount: "89.90",
-					currency: "EUR",
-					receiptCount: 1,
-					trip: {
-						purpose: "Customer workshop",
-						startDate: "2026-09-14",
-						endDate: "2026-09-16",
-						itemCount: 3,
-						reimbursable: "102.00",
-						currency: "EUR",
-					},
-				},
-			],
-		});
+					title: "Customer workshop",
+					adjustmentOf: { reportId: "original", title: "Customer workshop", kind: "trip" },
+				}),
+			]),
+		);
 		const client = mount();
-		const link = await screen.findByRole("link", { name: /Customer workshop/ });
-		expect(link.getAttribute("href")).toBe("/travel-expenses/reports/trip-2");
-		expect(link.textContent).toContain("Sep 14, 2026 – Sep 16, 2026");
-		expect(link.textContent).toContain("3 expenses");
-		expect(link.textContent).toContain("€102.00");
-		expect(link.textContent).not.toContain("Train to Hamburg");
+		const original = await screen.findByRole("link", {
+			name: "Adjustment of “Customer workshop”",
+		});
+		expect(original.getAttribute("href")).toBe("/travel-expenses/reports/original");
+		client.clear();
+	});
+
+	it("shows the settlement balance of approved expenses, including an overpayment", async () => {
+		historyActions.getMyTravelExpenseHistory.mockResolvedValue(
+			respond([
+				reportRow({
+					id: "approved",
+					stage: "approved",
+					status: "approved",
+					balance: {
+						state: "overpaid",
+						currencies: [
+							{
+								currency: "EUR",
+								entitlement: "450.00",
+								reimbursed: "500.00",
+								recovered: "0.00",
+								balance: "-50.00",
+								state: "overpaid",
+							},
+						],
+					},
+				}),
+			]),
+		);
+		const client = mount();
+		expect(await screen.findByText("€50.00 overpaid")).toBeTruthy();
+		client.clear();
+	});
+
+	it("offers to continue a legacy draft as a report", async () => {
+		historyActions.getMyTravelExpenseHistory.mockResolvedValue(
+			respond([claimRow({ status: "draft", stage: "needs_action", canContinue: true })]),
+		);
+		const client = mount();
+		expect(await screen.findByRole("button", { name: "Continue as report" })).toBeTruthy();
+		client.clear();
+	});
+});
+
+describe("status filters", () => {
+	const rows = [
+		reportRow({ id: "draft", title: "Draft receipt" }),
+		reportRow({
+			id: "pending",
+			title: "Pending receipt",
+			stage: "in_review",
+			status: "submitted",
+		}),
+		reportRow({
+			id: "rejected",
+			title: "Rejected receipt",
+			stage: "rejected",
+			status: "rejected",
+		}),
+		claimRow(),
+	];
+
+	it("filters by review status with counts", async () => {
+		historyActions.getMyTravelExpenseHistory.mockResolvedValue(respond(rows));
+		const client = mount();
+		await screen.findByText("Draft receipt");
+		const filters = screen.getByRole("radiogroup", { name: "Show expenses" });
+		fireEvent.click(within(filters).getByRole("radio", { name: /In review/ }));
+		expect(screen.getByText("Pending receipt")).toBeTruthy();
+		expect(screen.queryByText("Draft receipt")).toBeNull();
+		expect(screen.queryByText(/Receipt claim/)).toBeNull();
+		expect(within(filters).getByRole("radio", { name: /Approved/ }).textContent).toContain("1");
+		client.clear();
+	});
+
+	it("explains an empty filter and offers to show everything", async () => {
+		historyActions.getMyTravelExpenseHistory.mockResolvedValue(respond([rows[0]]));
+		const client = mount();
+		await screen.findByText("Draft receipt");
+		fireEvent.click(screen.getByRole("radio", { name: /Rejected/ }));
+		expect(screen.getByText("No expenses with this status.")).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Show all expenses" }));
+		expect(screen.getByText("Draft receipt")).toBeTruthy();
 		client.clear();
 	});
 });
 
 describe("travel history recovery", () => {
-	it("preserves loaded claims during a background refresh", async () => {
-		actions.getMyTravelExpenseClaims
-			.mockResolvedValueOnce({ success: true, data: [claim] })
+	it("preserves loaded rows during a background refresh", async () => {
+		historyActions.getMyTravelExpenseHistory
+			.mockResolvedValueOnce(respond([claimRow()]))
 			.mockImplementationOnce(() => new Promise(() => {}));
 		const client = mount();
-		await screen.findByText("120.50 EUR");
+		await screen.findByText("€120.50");
 		await act(async () => {
-			void client.invalidateQueries({ queryKey: ["travel-expenses", "list"] });
+			void client.invalidateQueries({ queryKey: ["travel-expenses", "history"] });
 			await new Promise((resolve) => setTimeout(resolve, 20));
 		});
-		expect(screen.getByText("120.50 EUR")).toBeTruthy();
+		expect(screen.getByText("€120.50")).toBeTruthy();
+		expect(screen.getByText("Refreshing…")).toBeTruthy();
 		client.clear();
 	});
+
 	it("shows retry guidance on initial failure and recovers without an empty-history message", async () => {
-		actions.getMyTravelExpenseClaims
+		historyActions.getMyTravelExpenseHistory
 			.mockResolvedValueOnce({ success: false, error: "Load failed" })
-			.mockResolvedValueOnce({ success: true, data: [claim] });
+			.mockResolvedValueOnce(respond([claimRow()]));
 		const client = mount();
 		expect(await screen.findByRole("alert")).toBeTruthy();
-		expect(screen.queryByText("No travel expense claims yet")).toBeNull();
+		expect(screen.queryByText("No travel expenses yet")).toBeNull();
 		fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-		expect(await screen.findByText("120.50 EUR")).toBeTruthy();
+		expect(await screen.findByText("€120.50")).toBeTruthy();
 		client.clear();
 	});
-	it("preserves loaded rows and shows retry when background refresh fails", async () => {
-		actions.getMyTravelExpenseClaims
-			.mockResolvedValueOnce({ success: true, data: [claim] })
+
+	it("keeps loaded rows and shows retry when a background refresh fails", async () => {
+		historyActions.getMyTravelExpenseHistory
+			.mockResolvedValueOnce(respond([claimRow()]))
 			.mockResolvedValueOnce({ success: false, error: "Load failed" });
 		const client = mount();
-		await screen.findByText("120.50 EUR");
+		await screen.findByText("€120.50");
 		await act(async () => {
-			await client.invalidateQueries({ queryKey: ["travel-expenses", "list"] });
+			await client.invalidateQueries({ queryKey: ["travel-expenses", "history"] });
 		});
 		expect(await screen.findByRole("alert")).toBeTruthy();
-		expect(screen.getByText("120.50 EUR")).toBeTruthy();
-		expect(screen.queryByText("No travel expense claims yet")).toBeNull();
+		expect(screen.getByText("€120.50")).toBeTruthy();
+		expect(screen.queryByText("No travel expenses yet")).toBeNull();
 		client.clear();
 	});
 });
-vi.mock("@/navigation", () => ({
-	Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
-	useRouter: () => router,
-}));

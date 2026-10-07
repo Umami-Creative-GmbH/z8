@@ -111,6 +111,8 @@ export type ApprovalInboxDetailSection =
 				label: string | ApprovalInboxLocalizedText;
 				value: string | ApprovalInboxLocalizedText | ApprovalInboxDetailChange;
 				tone?: "default" | "warning" | "danger";
+				/** An in-app page the value links to (e.g. the report an adjustment corrects). */
+				href?: string;
 			}>;
 	  }
 	| { type: "text"; title: string; body: string }

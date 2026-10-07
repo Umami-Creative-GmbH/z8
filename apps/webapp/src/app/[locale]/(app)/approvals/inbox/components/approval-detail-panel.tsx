@@ -117,7 +117,14 @@ function renderDetailSection(
 										row.tone === "danger" && "text-destructive",
 									)}
 								>
-									{typeof row.value === "string" ? (
+									{row.href && (typeof row.value === "string" || !("kind" in row.value)) ? (
+										<Link
+											href={row.href}
+											className="rounded-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2"
+										>
+											{localizedText(t, row.value)}
+										</Link>
+									) : typeof row.value === "string" ? (
 										row.value
 									) : !("kind" in row.value) ? (
 										localizedText(t, row.value)

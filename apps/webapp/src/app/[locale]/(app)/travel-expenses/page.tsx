@@ -50,7 +50,7 @@ async function TravelExpensesPageContent() {
 								)}
 							</span>
 							<Button asChild size="sm" variant="outline">
-								<Link href="/approvals/inbox?types=travel_expense_claim">
+								<Link href="/approvals/inbox?types=travel_expense_report,travel_expense_claim">
 									{t("travelExpenses.approvals.openInbox", "Open Inbox")}
 									<IconArrowRight aria-hidden="true" className="ml-2 size-4" />
 								</Link>

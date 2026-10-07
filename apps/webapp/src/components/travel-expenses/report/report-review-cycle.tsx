@@ -174,8 +174,7 @@ export function WithdrawReportButton({
 			}
 			await Promise.all([
 				queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.report(reportId) }),
-				queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.draftReports() }),
-				queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.submittedReports() }),
+				queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.history() }),
 			]);
 		} catch {
 			toast.error(
