@@ -45,7 +45,7 @@ test("SCIM uses the upstream Better Auth release without a local patch", async (
 		"@better-auth/scim",
 		"@better-auth/sso",
 	]) {
-		assert.equal(webappPackageJson.dependencies[dependency], "1.7.3");
+		assert.equal(webappPackageJson.dependencies[dependency], "1.7.7");
 	}
 });
 
