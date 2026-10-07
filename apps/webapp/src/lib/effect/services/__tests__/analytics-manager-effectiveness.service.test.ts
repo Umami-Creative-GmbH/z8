@@ -10,6 +10,7 @@ vi.mock("@/lib/time-tracking/calculations", () => ({
 
 import { AnalyticsService } from "../analytics.service";
 import { DatabaseService } from "../database.service";
+import { WorkPolicyService } from "../work-policy.service";
 
 function conditionIncludes(value: unknown, expected: unknown): boolean {
 	const seen = new WeakSet<object>();
@@ -95,7 +96,11 @@ describe("AnalyticsService.getManagerEffectiveness", () => {
 						end: new Date("2026-04-30T23:59:59.999Z"),
 					},
 				});
-			}).pipe(Effect.provide(AnalyticsService.Live), Effect.provide(dbLayer)),
+			}).pipe(
+				Effect.provide(AnalyticsService.Live),
+				Effect.provide(dbLayer),
+				Effect.provide(Layer.succeed(WorkPolicyService, WorkPolicyService.of({} as never))),
+			),
 		);
 
 		expect(travelExpenseClaimFindMany).toHaveBeenCalledTimes(1);

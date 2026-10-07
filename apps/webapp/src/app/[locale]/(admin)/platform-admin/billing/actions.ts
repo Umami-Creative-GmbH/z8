@@ -1,17 +1,10 @@
 "use server";
 
-import { Effect, Layer } from "effect";
+import { Effect } from "effect";
 import { env } from "@/env";
-import {
-	SeatSyncService,
-	SeatSyncServiceLive,
-	StripeServiceLive,
-	SubscriptionServiceLive,
-} from "@/lib/effect/services/billing";
-import {
-	PlatformAdminService,
-	PlatformAdminServiceLive,
-} from "@/lib/effect/services/platform-admin.service";
+import { runtime } from "@/lib/effect/runtime";
+import { BillingServicesLive, SeatSyncService } from "@/lib/effect/services/billing";
+import { PlatformAdminService } from "@/lib/effect/services/platform-admin.service";
 
 type SyncOrganizationSeatsResult =
 	| { success: true; seats: number }
@@ -25,13 +18,7 @@ export async function syncOrganizationSeatsAction(
 	}
 
 	try {
-		const billingLayers = SeatSyncServiceLive.pipe(
-			Layer.provide(StripeServiceLive),
-			Layer.provide(SubscriptionServiceLive),
-		);
-		const layers = Layer.merge(PlatformAdminServiceLive, billingLayers);
-
-		return await Effect.runPromise(
+		return await runtime.runPromise(
 			Effect.gen(function* () {
 				const adminService = yield* PlatformAdminService;
 				yield* adminService.requirePlatformAdmin();
@@ -47,7 +34,7 @@ export async function syncOrganizationSeatsAction(
 				Effect.catch(() =>
 					Effect.succeed({ success: false as const, error: "Failed to sync seats" }),
 				),
-				Effect.provide(layers),
+				Effect.provide(BillingServicesLive),
 			),
 		);
 	} catch {

@@ -122,6 +122,16 @@ vi.mock("@/lib/effect/services/database.service", async () => {
 	return { DatabaseService, DatabaseServiceLive };
 });
 
+// The shared runtime over the stub AppLayer members the actions read.
+vi.mock("@/lib/effect/runtime", async () => {
+	const { Layer } = await import("effect");
+	const { AuthServiceLive } = await import("@/lib/effect/services/auth.service");
+	const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(
+		Layer.mergeAll(AuthServiceLive, DatabaseServiceLive),
+	);
+});
+
 vi.mock("@/db", () => ({
 	db: {
 		query: {
@@ -355,7 +365,11 @@ describe("project settings manager scope", () => {
 
 		const result = await updateProject("project-1", { customerId: "customer-2" });
 
-		expect(result).toMatchObject({ success: false });
+		expect(result).toEqual({
+			success: false,
+			error: "You do not have access to assign this customer",
+			code: "AuthorizationError",
+		});
 	});
 
 	it("keeps owner membership parity with org admins for project reads", async () => {

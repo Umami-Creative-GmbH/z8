@@ -6,7 +6,6 @@ import { employee } from "@/db/schema";
 import { getSettingsAccessTierForUser } from "@/lib/auth-helpers";
 import { type AnyAppError, AuthorizationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import {
 	type CreateCustomRoleInput,
@@ -79,10 +78,7 @@ export async function listCustomRoles(): Promise<ServerActionResult<CustomRoleWi
 		const customRoleService = yield* CustomRoleService;
 
 		return yield* customRoleService.listRoles(organizationId);
-	}).pipe(
-		Effect.catch((error) => Effect.fail(error as AnyAppError)),
-		Effect.provide(AppLayer),
-	);
+	}).pipe(Effect.catch((error) => Effect.fail(error as AnyAppError)));
 
 	return runServerActionSafe(effect);
 }
@@ -95,10 +91,7 @@ export async function getCustomRole(
 		const customRoleService = yield* CustomRoleService;
 
 		return yield* customRoleService.getRole(roleId, organizationId);
-	}).pipe(
-		Effect.catch((error) => Effect.fail(error as AnyAppError)),
-		Effect.provide(AppLayer),
-	);
+	}).pipe(Effect.catch((error) => Effect.fail(error as AnyAppError)));
 
 	return runServerActionSafe(effect);
 }
@@ -113,10 +106,7 @@ export async function createCustomRole(
 		const id = yield* customRoleService.createRole(organizationId, input, session.user.id);
 
 		return { id };
-	}).pipe(
-		Effect.catch((error) => Effect.fail(error as AnyAppError)),
-		Effect.provide(AppLayer),
-	);
+	}).pipe(Effect.catch((error) => Effect.fail(error as AnyAppError)));
 
 	return runServerActionSafe(effect);
 }
@@ -130,10 +120,7 @@ export async function updateCustomRole(
 		const customRoleService = yield* CustomRoleService;
 
 		yield* customRoleService.updateRole(roleId, organizationId, input, session.user.id);
-	}).pipe(
-		Effect.catch((error) => Effect.fail(error as AnyAppError)),
-		Effect.provide(AppLayer),
-	);
+	}).pipe(Effect.catch((error) => Effect.fail(error as AnyAppError)));
 
 	return runServerActionSafe(effect);
 }
@@ -144,10 +131,7 @@ export async function deleteCustomRole(roleId: string): Promise<ServerActionResu
 		const customRoleService = yield* CustomRoleService;
 
 		yield* customRoleService.deleteRole(roleId, organizationId, session.user.id);
-	}).pipe(
-		Effect.catch((error) => Effect.fail(error as AnyAppError)),
-		Effect.provide(AppLayer),
-	);
+	}).pipe(Effect.catch((error) => Effect.fail(error as AnyAppError)));
 
 	return runServerActionSafe(effect);
 }
@@ -161,10 +145,7 @@ export async function setRolePermissions(
 		const customRoleService = yield* CustomRoleService;
 
 		yield* customRoleService.setPermissions(roleId, organizationId, permissions, session.user.id);
-	}).pipe(
-		Effect.catch((error) => Effect.fail(error as AnyAppError)),
-		Effect.provide(AppLayer),
-	);
+	}).pipe(Effect.catch((error) => Effect.fail(error as AnyAppError)));
 
 	return runServerActionSafe(effect);
 }
@@ -178,10 +159,7 @@ export async function assignRoleToEmployee(
 		const customRoleService = yield* CustomRoleService;
 
 		yield* customRoleService.assignRole(employeeId, roleId, organizationId, session.user.id);
-	}).pipe(
-		Effect.catch((error) => Effect.fail(error as AnyAppError)),
-		Effect.provide(AppLayer),
-	);
+	}).pipe(Effect.catch((error) => Effect.fail(error as AnyAppError)));
 
 	return runServerActionSafe(effect);
 }
@@ -195,10 +173,7 @@ export async function unassignRoleFromEmployee(
 		const customRoleService = yield* CustomRoleService;
 
 		yield* customRoleService.unassignRole(employeeId, roleId, organizationId, session.user.id);
-	}).pipe(
-		Effect.catch((error) => Effect.fail(error as AnyAppError)),
-		Effect.provide(AppLayer),
-	);
+	}).pipe(Effect.catch((error) => Effect.fail(error as AnyAppError)));
 
 	return runServerActionSafe(effect);
 }
@@ -211,10 +186,7 @@ export async function getEmployeeCustomRoles(
 		const customRoleService = yield* CustomRoleService;
 
 		return yield* customRoleService.getEmployeeRoles(employeeId, organizationId);
-	}).pipe(
-		Effect.catch((error) => Effect.fail(error as AnyAppError)),
-		Effect.provide(AppLayer),
-	);
+	}).pipe(Effect.catch((error) => Effect.fail(error as AnyAppError)));
 
 	return runServerActionSafe(effect);
 }

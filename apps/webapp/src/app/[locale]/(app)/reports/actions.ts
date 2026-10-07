@@ -15,10 +15,10 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import {
+	type AppServices,
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
@@ -46,7 +46,7 @@ export async function generateReport(
 ): Promise<ServerActionResult<ReportData>> {
 	const tracer = trace.getTracer("reports");
 
-	const effect: Effect.Effect<ReportData, AnyAppError> = tracer.startActiveSpan(
+	const effect: Effect.Effect<ReportData, AnyAppError, AppServices> = tracer.startActiveSpan(
 		"generateReport",
 		{
 			attributes: {
@@ -219,7 +219,6 @@ export async function generateReport(
 
 					return Effect.fail(error);
 				}),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -248,7 +247,7 @@ export async function getAccessibleEmployeesAction(): Promise<
 
 	const tracer = trace.getTracer("reports");
 
-	const effect: Effect.Effect<AccessibleEmployee[], AnyAppError> =
+	const effect: Effect.Effect<AccessibleEmployee[], AnyAppError, AppServices> =
 		tracer.startActiveSpan("getAccessibleEmployees", (span) => {
 			return Effect.gen(function* () {
 				// Step 1: Authenticate and get current employee
@@ -330,7 +329,6 @@ export async function getAccessibleEmployeesAction(): Promise<
 
 					return Effect.fail(error);
 				}),
-				Effect.provide(AppLayer),
 			);
 		});
 

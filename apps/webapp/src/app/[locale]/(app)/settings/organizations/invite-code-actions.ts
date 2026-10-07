@@ -19,12 +19,8 @@ import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
-import {
-	DatabaseService,
-	DatabaseServiceLive,
-} from "@/lib/effect/services/database.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import type {
 	InviteCodeWithRelations as InviteCodeWithRelationsType,
 	ValidateInviteCodeResult,
@@ -106,11 +102,10 @@ const rejectMemberSchema = z.object({
 	notes: z.string().max(500).optional(),
 });
 
-// Extended layer with invite code services
+// Invite code services sit outside AppLayer; the shared runtime supplies their DatabaseService.
 const InviteCodeLayer = Layer.mergeAll(
-	AppLayer,
-	InviteCodeServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
-	PendingMemberServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
+	InviteCodeServiceLive,
+	PendingMemberServiceLive,
 	QRCodeServiceLive,
 );
 

@@ -10,13 +10,13 @@ import {
 	workPeriod,
 	workPolicy,
 } from "@/db/schema";
-import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { runtime } from "@/lib/effect/runtime";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { clipRequirementsToEmployment } from "@/lib/employee-lifecycle/employment-coverage";
 import { loadEmploymentCoverage } from "@/lib/employee-lifecycle/employment-periods";
 import {
 	type EffectiveWorkPolicy,
 	WorkPolicyService,
-	WorkPolicyServiceLive,
 } from "@/lib/effect/services/work-policy.service";
 import {
 	type ApprovedAbsenceRange,
@@ -490,7 +490,7 @@ export async function getDailyWorkRequirementsForEmployee(params: {
 	endDate: Date;
 	timezone?: string | null;
 }): Promise<DailyWorkRequirements> {
-	return Effect.runPromise(
+	return runtime.runPromise(
 		Effect.gen(function* () {
 			const database = yield* DatabaseService;
 			const scopedEmployee = yield* database.query(
@@ -604,6 +604,6 @@ export async function getDailyWorkRequirementsForEmployee(params: {
 
 			// biome-ignore format: source-level regression test asserts this call order.
 			return applyAssignedHolidayAdjustmentsToRequirements(absenceAdjustedRequirements, assignedHolidays);
-		}).pipe(Effect.provide(WorkPolicyServiceLive), Effect.provide(DatabaseServiceLive)),
+		}),
 	);
 }

@@ -130,8 +130,8 @@ vi.mock("@/lib/effect/runtime", async () => {
 	const { AuthService } = await import("@/lib/effect/services/auth.service");
 	const { DatabaseService } = await import("@/lib/effect/services/database.service");
 
-	return {
-		AppLayer: Layer.mergeAll(
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(
+		Layer.mergeAll(
 			Layer.succeed(AuthService, {
 				getSession: () => Effect.succeed(mockState.session),
 			}),
@@ -153,11 +153,12 @@ vi.mock("@/lib/effect/runtime", async () => {
 					}) as unknown as ReturnType<InstanceType<typeof DatabaseService>["Type"]["query"]>,
 			}),
 		),
-	};
+	);
 });
 
 vi.mock("@/lib/effect/result", async () => {
-	const { Cause, Effect, Exit, Option, Result } = await import("effect");
+	const { runtime } = await import("@/lib/effect/runtime");
+	const { Cause, Exit, Option, Result } = await import("effect");
 
 	const toServerActionResult = <_T>(exit: unknown) =>
 		Exit.match(exit as never, {
@@ -193,7 +194,7 @@ vi.mock("@/lib/effect/result", async () => {
 
 	return {
 		runServerActionSafe: async <_T>(effect: unknown) => {
-			const exit = await Effect.runPromiseExit(effect as never);
+			const exit = await runtime.runPromiseExit(effect as never);
 			return toServerActionResult(exit);
 		},
 		toServerActionResult,

@@ -13,7 +13,6 @@ import {
 } from "@/db/schema";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
 import {
@@ -174,7 +173,6 @@ export async function assignLocationEmployee(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -262,7 +260,6 @@ export async function updateLocationEmployee(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -337,7 +334,6 @@ export async function removeLocationEmployee(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -479,7 +475,6 @@ export async function assignSubareaEmployee(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -571,7 +566,6 @@ export async function updateSubareaEmployee(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -650,7 +644,6 @@ export async function removeSubareaEmployee(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);

@@ -28,11 +28,10 @@ interface ApprovalQueryConfig<TEntity, TRequestContext = never> {
 	 * Batch fetch entities by their IDs
 	 * This is the key optimization - fetching all entities in one query
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	fetchEntitiesByIds: (
 		entityIds: string[],
 		requests: ApprovalRequestRow[],
-	) => Effect.Effect<Map<string, TEntity>, AnyAppError, any>;
+	) => Effect.Effect<Map<string, TEntity>, AnyAppError, DatabaseService>;
 	/**
 	 * Transform an entity to UnifiedApprovalItem
 	 */
@@ -44,7 +43,7 @@ interface ApprovalQueryConfig<TEntity, TRequestContext = never> {
 	/** Load request-specific display context in one organization-scoped batch. */
 	fetchRequestContexts?: (
 		requests: ApprovalRequestRow[],
-	) => Effect.Effect<Map<string, TRequestContext>, AnyAppError, any>;
+	) => Effect.Effect<Map<string, TRequestContext>, AnyAppError, DatabaseService>;
 	/**
 	 * Optional filter to apply after fetching entities
 	 */
@@ -138,10 +137,9 @@ export function buildBaseConditions(
 /**
  * Optimized approval fetching using batch entity loading
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function fetchApprovals<TEntity, TRequestContext = never>(
 	config: ApprovalQueryConfig<TEntity, TRequestContext>,
-): Effect.Effect<UnifiedApprovalItem[], AnyAppError, any> {
+): Effect.Effect<UnifiedApprovalItem[], AnyAppError, DatabaseService> {
 	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
 		const {
@@ -220,7 +218,6 @@ export function fetchApprovals<TEntity, TRequestContext = never>(
 /**
  * Get approval count for a specific entity type
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getApprovalCount(
 	entityType: ApprovalType,
 	approverId: string,
@@ -229,7 +226,7 @@ export function getApprovalCount(
 		ApprovalQueryParams,
 		"eligibleApprovalScopes" | "includeAllApprovers"
 	>,
-): Effect.Effect<number, AnyAppError, any> {
+): Effect.Effect<number, AnyAppError, DatabaseService> {
 	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
 		const conditions = buildBaseConditions(entityType, {

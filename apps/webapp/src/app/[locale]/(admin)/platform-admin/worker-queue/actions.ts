@@ -20,9 +20,9 @@ import {
 	getJobExecutionHistory,
 	getRecentExecutions,
 } from "@/lib/cron/tracking";
-import { DatabaseError, ValidationError } from "@/lib/effect/errors";
+import { QueueError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { PlatformAdminService } from "@/lib/effect/services/platform-admin.service";
 import { getJobQueue, isQueueHealthy } from "@/lib/queue";
 import {
@@ -128,7 +128,8 @@ function reconcileCronSchedule(jobName: CronJobName, pattern: string) {
 			if (result.retired) {
 				return {
 					immediateReconciled: true,
-					warning: "This legacy escalation scheduler is retired. Queued and manual jobs still use organization execution gates.",
+					warning:
+						"This legacy escalation scheduler is retired. Queued and manual jobs still use organization execution gates.",
 				};
 			}
 
@@ -144,15 +145,10 @@ function reconcileCronSchedule(jobName: CronJobName, pattern: string) {
 
 function getCurrentCronSchedulePattern(jobName: CronJobName, defaultPattern: string) {
 	return Effect.gen(function* () {
-		const overrides = yield* Effect.tryPromise({
-			try: () => listCronScheduleOverrides(),
-			catch: () =>
-				new DatabaseError({
-					message: "Failed to fetch cron schedule overrides",
-					operation: "query",
-					table: "cron_schedule_override",
-				}),
-		});
+		const dbService = yield* DatabaseService;
+		const overrides = yield* dbService.query("cron.listScheduleOverrides", () =>
+			listCronScheduleOverrides(),
+		);
 
 		return overrides.find((override) => override.jobName === jobName)?.pattern ?? defaultPattern;
 	});
@@ -163,6 +159,7 @@ export async function updateCronSchedule(
 ): Promise<ServerActionResult<CronScheduleMutationResult>> {
 	const effect = Effect.gen(function* () {
 		const adminService = yield* PlatformAdminService;
+		const dbService = yield* DatabaseService;
 		const admin = yield* adminService.requirePlatformAdmin();
 		const jobName = yield* validateCronScheduleJob(input);
 		const preset = input.presetId ? getPresetById(input.presetId) : null;
@@ -181,31 +178,18 @@ export async function updateCronSchedule(
 		const oldPattern = yield* getCurrentCronSchedulePattern(jobName, defaultPattern);
 
 		if (preset.pattern === defaultPattern) {
-			yield* Effect.tryPromise({
-				try: () => deleteCronScheduleOverride(jobName),
-				catch: () =>
-					new DatabaseError({
-						message: "Failed to delete cron schedule override",
-						operation: "delete",
-						table: "cron_schedule_override",
-					}),
-			});
+			yield* dbService.query("cron.deleteScheduleOverride", () =>
+				deleteCronScheduleOverride(jobName),
+			);
 		} else {
-			yield* Effect.tryPromise({
-				try: () =>
-					upsertCronScheduleOverride({
-						jobName,
-						presetId: preset.id,
-						pattern: preset.pattern,
-						updatedBy: admin.userId,
-					}),
-				catch: () =>
-					new DatabaseError({
-						message: "Failed to save cron schedule override",
-						operation: "upsert",
-						table: "cron_schedule_override",
-					}),
-			});
+			yield* dbService.query("cron.upsertScheduleOverride", () =>
+				upsertCronScheduleOverride({
+					jobName,
+					presetId: preset.id,
+					pattern: preset.pattern,
+					updatedBy: admin.userId,
+				}),
+			);
 		}
 
 		const reconciliation = yield* reconcileCronSchedule(jobName, preset.pattern);
@@ -221,7 +205,7 @@ export async function updateCronSchedule(
 		return reconciliation;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 export async function resetCronSchedule(
@@ -229,20 +213,15 @@ export async function resetCronSchedule(
 ): Promise<ServerActionResult<CronScheduleMutationResult>> {
 	const effect = Effect.gen(function* () {
 		const adminService = yield* PlatformAdminService;
+		const dbService = yield* DatabaseService;
 		const admin = yield* adminService.requirePlatformAdmin();
 		const jobName = yield* validateCronScheduleJob(input);
 		const defaultPattern = CRON_JOBS[jobName].schedule;
 		const oldPattern = yield* getCurrentCronSchedulePattern(jobName, defaultPattern);
 
-		yield* Effect.tryPromise({
-			try: () => deleteCronScheduleOverride(jobName),
-			catch: () =>
-				new DatabaseError({
-					message: "Failed to delete cron schedule override",
-					operation: "delete",
-					table: "cron_schedule_override",
-				}),
-		});
+		yield* dbService.query("cron.deleteScheduleOverride", () =>
+			deleteCronScheduleOverride(jobName),
+		);
 
 		const reconciliation = yield* reconcileCronSchedule(jobName, defaultPattern);
 
@@ -256,12 +235,13 @@ export async function resetCronSchedule(
 		return reconciliation;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQueueStats>> {
 	const effect = Effect.gen(function* () {
 		const adminService = yield* PlatformAdminService;
+		const dbService = yield* DatabaseService;
 		yield* adminService.requirePlatformAdmin();
 
 		const isConnected = yield* Effect.promise(() => isQueueHealthy()).pipe(
@@ -282,12 +262,14 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 		if (isConnected) {
 			const queue = getJobQueue();
 
+			// A Redis/BullMQ read, not a database query.
 			const jobCounts = yield* Effect.tryPromise({
 				try: () => queue.getJobCounts(),
-				catch: () =>
-					new DatabaseError({
+				catch: (cause) =>
+					new QueueError({
 						message: "Failed to fetch job counts",
-						operation: "query",
+						operation: "workerQueue.getJobCounts",
+						cause,
 					}),
 			});
 
@@ -302,15 +284,11 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 			const jobSchedulers = yield* Effect.tryPromise({
 				try: () => queue.getJobSchedulers(),
 				catch: (error) => error,
-			}).pipe(
-				Effect.orElseSucceed(() => [] as Awaited<ReturnType<typeof queue.getJobSchedulers>>),
-			);
+			}).pipe(Effect.orElseSucceed(() => [] as Awaited<ReturnType<typeof queue.getJobSchedulers>>));
 			isPaused = yield* Effect.tryPromise({
 				try: () => queue.isPaused(),
 				catch: (error) => error,
-			}).pipe(
-				Effect.orElseSucceed(() => null),
-			);
+			}).pipe(Effect.orElseSucceed(() => null));
 
 			repeatableJobs = jobSchedulers.flatMap((job) =>
 				isVisibleCronJobName(job.name)
@@ -325,44 +303,24 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 			);
 		}
 
-		const scheduleOverrides = yield* Effect.tryPromise({
-			try: () => listCronScheduleOverrides(),
-			catch: () =>
-				new DatabaseError({
-					message: "Failed to fetch cron schedule overrides",
-					operation: "query",
-					table: "cron_schedule_override",
-				}),
-		});
+		const scheduleOverrides = yield* dbService.query("cron.listScheduleOverrides", () =>
+			listCronScheduleOverrides(),
+		);
 
 		const scheduledJobs = buildScheduledJobRows({
 			overrides: scheduleOverrides,
 			jobSchedulers: repeatableJobs,
 		}).filter((job) => isVisibleCronJobName(job.name));
 
-		const executions = yield* Effect.tryPromise({
-			try: () => getRecentExecutions(RECENT_EXECUTION_LIMIT),
-			catch: () =>
-				new DatabaseError({
-					message: "Failed to fetch recent executions",
-					operation: "query",
-					table: "cron_job_execution",
-				}),
-		});
+		const executions = yield* dbService.query("cron.getRecentExecutions", () =>
+			getRecentExecutions(RECENT_EXECUTION_LIMIT),
+		);
 
 		const recentExecutions: RecentExecution[] = executions.flatMap((exec) =>
 			isVisibleCronJobName(exec.jobName) ? [mapCronExecution(exec)] : [],
 		);
 
-		const metrics = yield* Effect.tryPromise({
-			try: () => getAllJobMetrics(30),
-			catch: () =>
-				new DatabaseError({
-					message: "Failed to fetch job metrics",
-					operation: "query",
-					table: "cron_job_execution",
-				}),
-		});
+		const metrics = yield* dbService.query("cron.getAllJobMetrics", () => getAllJobMetrics(30));
 
 		const jobMetrics: JobMetric[] = metrics.flatMap((m) =>
 			isVisibleCronJobName(m.jobName)
@@ -382,15 +340,9 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 		const reliabilityCutoff = new Date();
 		reliabilityCutoff.setDate(reliabilityCutoff.getDate() - RELIABILITY_WINDOW_DAYS);
 
-		const reliabilityExecutions = yield* Effect.tryPromise({
-			try: () => getExecutionsSince(reliabilityCutoff),
-			catch: () =>
-				new DatabaseError({
-					message: "Failed to fetch reliability execution history",
-					operation: "query",
-					table: "cron_job_execution",
-				}),
-		});
+		const reliabilityExecutions = yield* dbService.query("cron.getExecutionsSince", () =>
+			getExecutionsSince(reliabilityCutoff),
+		);
 
 		const reliability = buildReliabilityData({
 			now: new Date(),
@@ -433,7 +385,7 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 export async function getWorkerQueueJobExecutions(
@@ -441,6 +393,7 @@ export async function getWorkerQueueJobExecutions(
 ): Promise<ServerActionResult<RecentExecution[]>> {
 	const effect = Effect.gen(function* () {
 		const adminService = yield* PlatformAdminService;
+		const dbService = yield* DatabaseService;
 		yield* adminService.requirePlatformAdmin();
 
 		if (!isVisibleCronJobName(jobName)) {
@@ -453,18 +406,12 @@ export async function getWorkerQueueJobExecutions(
 			);
 		}
 
-		const executions = yield* Effect.tryPromise({
-			try: () => getJobExecutionHistory(jobName, RECENT_EXECUTION_LIMIT),
-			catch: () =>
-				new DatabaseError({
-					message: "Failed to fetch job execution history",
-					operation: "query",
-					table: "cron_job_execution",
-				}),
-		});
+		const executions = yield* dbService.query("cron.getJobExecutionHistory", () =>
+			getJobExecutionHistory(jobName, RECENT_EXECUTION_LIMIT),
+		);
 
 		return executions.map(mapCronExecution);
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }

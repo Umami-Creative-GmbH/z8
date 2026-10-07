@@ -5,12 +5,11 @@ import { Effect } from "effect";
 import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { runtime } from "@/lib/effect/runtime";
 import {
 	ChangePolicyService,
-	ChangePolicyServiceLive,
 	type EditCapability,
 } from "@/lib/effect/services/change-policy.service";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { readComplianceTotals } from "@/lib/time-tracking/compliance-totals";
 import type { TimeSummary } from "@/lib/time-tracking/types";
@@ -223,7 +222,7 @@ export async function getWorkPeriodEditCapability(
 	}
 
 	try {
-		const result = await Effect.runPromise(
+		const result = await runtime.runPromise(
 			Effect.gen(function* () {
 				const policyService = yield* ChangePolicyService;
 				const policy = yield* policyService.resolvePolicy(currentEmployee.id);
@@ -237,10 +236,7 @@ export async function getWorkPeriodEditCapability(
 					capability,
 					policyName: policy?.policyName || null,
 				};
-			}).pipe(
-				Effect.provide(ChangePolicyServiceLive),
-				Effect.provide(DatabaseServiceLive),
-			),
+			}),
 		);
 
 		return { success: true, data: result };

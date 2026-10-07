@@ -7,7 +7,7 @@
 import { Context, Effect, Layer } from "effect";
 import { auditLog } from "@/db/schema";
 import type { AnyAppError } from "@/lib/effect/errors";
-import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { ApprovalStatus, ApprovalType } from "../domain/types";
 import type { ApprovalDbService } from "../server/types";
 
@@ -194,4 +194,4 @@ export const ApprovalAuditLoggerLive = Layer.effect(
 
 		return createApprovalAuditLogger(dbService);
 	}),
-).pipe(Layer.provide(DatabaseServiceLive));
+);

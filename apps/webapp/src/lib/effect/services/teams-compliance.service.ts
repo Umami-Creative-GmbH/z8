@@ -11,7 +11,7 @@ import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import { complianceException, employeeManagers, workPolicyViolation } from "@/db/schema";
 import type { DatabaseError } from "@/lib/effect/errors";
-import { DatabaseService, DatabaseServiceLive } from "./database.service";
+import { DatabaseService } from "./database.service";
 
 // ============================================
 // TYPES
@@ -368,12 +368,4 @@ export const TeamsComplianceServiceLive = Layer.effect(
 				}),
 		});
 	}),
-);
-
-// ============================================
-// LAYER DEPENDENCIES
-// ============================================
-
-export const TeamsComplianceServiceFullLive = TeamsComplianceServiceLive.pipe(
-	Layer.provide(DatabaseServiceLive),
 );

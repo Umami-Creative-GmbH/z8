@@ -1,5 +1,5 @@
 import { and, eq, gte, inArray, lte } from "drizzle-orm";
-import { Effect, Layer } from "effect";
+import { Effect } from "effect";
 import { DateTime } from "luxon";
 import {
 	buildSummaryCounts,
@@ -552,14 +552,15 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 
 	async getApprovals({ organizationId, approverId, employeeIds, includeAllApprovers }) {
 		await import("@/lib/approvals/init");
-		const [{ ApprovalQueryService, ApprovalQueryServiceLive }, { DatabaseServiceLive }] =
-			await Promise.all([
-				import("@/lib/approvals/application/approval-query.service"),
-				import("@/lib/effect/services/database.service"),
-			]);
+		const [{ ApprovalQueryService, ApprovalQueryServiceLive }, { runtime }] = await Promise.all([
+			import("@/lib/approvals/application/approval-query.service"),
+			import("@/lib/effect/runtime"),
+		]);
 		const scopedEmployeeIds = new Set(employeeIds);
 
-		const result = await Effect.runPromise(
+		// The handlers need DatabaseService, which the shared runtime provides;
+		// ApprovalQueryService is not part of AppLayer, so it is provided on top.
+		const result = await runtime.runPromise(
 			Effect.gen(function* () {
 				const approvalQueryService = yield* ApprovalQueryService;
 				return yield* approvalQueryService.getApprovals({
@@ -570,7 +571,7 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 					includeAllApprovers,
 					limit: 25,
 				});
-			}).pipe(Effect.provide(Layer.mergeAll(ApprovalQueryServiceLive, DatabaseServiceLive))),
+			}).pipe(Effect.provide(ApprovalQueryServiceLive)),
 		);
 
 		return result.items.filter((approval) => scopedEmployeeIds.has(approval.requester.id));

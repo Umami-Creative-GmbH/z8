@@ -83,6 +83,10 @@ const mockState = vi.hoisted(() => ({
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: mockState.revalidatePath }));
+// No test here reads break status, the one runtime run in this module.
+vi.mock("@/lib/effect/runtime", async () =>
+	(await import("@/test/effect-runtime")).runtimeModuleOver(),
+);
 
 vi.mock(
 	"@/lib/time-tracking/policy-clock-out-break-snapshot",

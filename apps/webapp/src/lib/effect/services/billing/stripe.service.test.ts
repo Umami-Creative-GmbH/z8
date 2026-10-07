@@ -5,6 +5,8 @@ import type Stripe from "stripe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { env } from "@/env";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { BillingServicesLive } from "./index";
 import { STRIPE_API_VERSION, StripeService, StripeServiceLive } from "./stripe.service";
 
 const checkoutSessionsCreate = vi.fn(async (params: Record<string, unknown>) => ({
@@ -194,15 +196,47 @@ describe("StripeService", () => {
 
 	it("pins the installed SDK's default API version", async () => {
 		const { default: ActualStripe } = await vi.importActual<typeof import("stripe")>("stripe");
+		// A key no earlier test used, so this run constructs the process's client for it.
+		(env as { STRIPE_SECRET_KEY: string }).STRIPE_SECRET_KEY = "rk_test_pinned";
 
 		await Effect.runPromise(
 			Effect.flatMap(StripeService, () => Effect.void).pipe(Effect.provide(StripeServiceLive)),
 		);
 
 		expect(STRIPE_API_VERSION).toBe(ActualStripe.API_VERSION);
-		expect(StripeMock).toHaveBeenCalledWith("rk_test_123", {
+		expect(StripeMock).toHaveBeenCalledWith("rk_test_pinned", {
 			apiVersion: STRIPE_API_VERSION,
 			typescript: true,
+		});
+	});
+
+	describe("client lifetime", () => {
+		const readClient = () =>
+			Effect.runPromise(
+				Effect.map(StripeService, (service) => service.client).pipe(
+					Effect.provide(BillingServicesLive),
+					Effect.provide(DatabaseServiceLive),
+				),
+			);
+
+		it("reuses one Stripe client across billing runs in a process", async () => {
+			(env as { STRIPE_SECRET_KEY: string }).STRIPE_SECRET_KEY = "rk_test_reused";
+
+			const first = await readClient();
+			const second = await readClient();
+
+			expect(first).not.toBeNull();
+			expect(second).toBe(first);
+			expect(StripeMock).toHaveBeenCalledTimes(1);
+		});
+
+		it("constructs no Stripe client while billing is disabled", async () => {
+			(env as { BILLING_ENABLED: "true" | "false" }).BILLING_ENABLED = "false";
+			(env as { STRIPE_SECRET_KEY: string }).STRIPE_SECRET_KEY = "rk_test_disabled";
+
+			await expect(readClient()).resolves.toBeNull();
+			await expect(readClient()).resolves.toBeNull();
+			expect(StripeMock).not.toHaveBeenCalled();
 		});
 	});
 

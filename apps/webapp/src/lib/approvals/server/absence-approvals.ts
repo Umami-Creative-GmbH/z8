@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect";
+import { Effect, Exit } from "effect";
 import { DateTime } from "luxon";
 import { enqueueVacationOverrideCalendarSyncJobs } from "@/app/[locale]/(app)/absences/request-absence-effect-helpers";
 import { member } from "@/db/auth-schema";
@@ -22,6 +22,7 @@ import {
 	type Instant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import { failureOfCause } from "@/lib/effect/cause-failure";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -33,7 +34,7 @@ import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
+import { runtime as effectRuntime } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
@@ -1710,12 +1711,11 @@ export function createLegacyAbsenceDecisionProcessor(input: {
 					ApprovalAuditLogger,
 					createApprovalAuditLogger(transactionDbService),
 				),
-			) as Effect.Effect<unknown, AnyAppError, never>,
+			),
 		);
 		if (Exit.isSuccess(exit)) return exit.value;
 		// The owner's refusals are its typed failures; a defect passes as itself.
-		const failure = Cause.findErrorOption(exit.cause);
-		throw Option.isSome(failure) ? failure.value : Cause.squash(exit.cause);
+		throw failureOfCause(exit.cause);
 	};
 }
 
@@ -1802,7 +1802,8 @@ function authenticatedAbsenceDecisionEffect(
 						options,
 					}),
 				}),
-			catch: translateAbsenceDecisionError,
+			// Server actions surface the translated failure as an application error.
+			catch: (error) => translateAbsenceDecisionError(error) as AnyAppError,
 		});
 
 		if (
@@ -2186,9 +2187,7 @@ export async function decideBoundLegacyAbsenceInvocation(input: {
 						input.reason ?? "",
 						execution.domainResult as RejectedAbsenceResult,
 					);
-		await Effect.runPromise(
-			postCommit.pipe(Effect.provide(AppLayer)) as Effect.Effect<void, AnyAppError, never>,
-		).catch((error) =>
+		await effectRuntime.runPromise(postCommit).catch((error) =>
 			logger.error(
 				{ error, absenceId, organizationId: input.organizationId },
 				"Absence card decision after-commit work failed",
@@ -2275,10 +2274,8 @@ export async function executeAuthenticatedAbsenceDecision(
 	reason?: string,
 	options?: ApprovalActionOptions,
 ): Promise<void> {
-	return Effect.runPromise(
-		authenticatedAbsenceDecisionEffect(absenceId, action, reason, options).pipe(
-			Effect.provide(AppLayer),
-		) as Effect.Effect<void, AnyAppError, never>,
+	return effectRuntime.runPromise(
+		authenticatedAbsenceDecisionEffect(absenceId, action, reason, options),
 	);
 }
 
@@ -2295,13 +2292,7 @@ export async function processAuthenticatedAbsenceDecision(
 		options,
 	);
 
-	return runServerActionSafe(
-		effect.pipe(Effect.provide(AppLayer)) as Effect.Effect<
-			void,
-			AnyAppError,
-			never
-		>,
-	);
+	return runServerActionSafe(effect);
 }
 
 async function markEmployeeWorkBalanceDirtyIfNeeded(

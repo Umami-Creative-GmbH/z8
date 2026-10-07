@@ -732,7 +732,8 @@ describe("time correction submission actions", () => {
 
 		expect(result).toMatchObject({
 			success: false,
-			error: "Failed to verify edit policy. Please try again.",
+			error: "Database query failed: timeCorrection.getForbiddenEditMessage",
+			code: "DatabaseError",
 		});
 		expect(state.withTransaction).not.toHaveBeenCalled();
 		expect(state.executeSubmission).not.toHaveBeenCalled();

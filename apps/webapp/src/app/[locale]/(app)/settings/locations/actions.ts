@@ -20,7 +20,6 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
 import type { SettingsAccessTier } from "@/lib/settings-access";
@@ -219,7 +218,6 @@ export async function getLocations(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -377,7 +375,6 @@ export async function getLocation(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -484,7 +481,6 @@ export async function createLocation(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -610,7 +606,6 @@ export async function updateLocation(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -693,7 +688,6 @@ export async function deleteLocation(locationId: string): Promise<ServerActionRe
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -807,7 +801,6 @@ export async function createSubarea(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -920,7 +913,6 @@ export async function updateSubarea(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -993,7 +985,6 @@ export async function deleteSubarea(subareaId: string): Promise<ServerActionResu
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -1095,7 +1086,6 @@ export async function getAvailableEmployees(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);

@@ -17,10 +17,8 @@ import {
 } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import type { ServerActionResult } from "@/lib/effect/result";
-import { AuthServiceLive } from "@/lib/effect/services/auth.service";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
 import {
@@ -127,15 +125,10 @@ async function getProjectAssignmentTarget(
 }
 
 /** Validation failures raised inside a guarded transaction keep their type. */
-function projectMutationError(error: unknown, message: string, operation: string, table: string) {
-	return error instanceof ValidationError || error instanceof NotFoundError
-		? error
-		: new DatabaseError({
-				message: error instanceof Error ? error.message : message,
-				operation,
-				table,
-				cause: error instanceof Error ? error : undefined,
-			});
+function keepTypedMutationError(error: DatabaseError) {
+	return error.cause instanceof ValidationError || error.cause instanceof NotFoundError
+		? error.cause
+		: error;
 }
 
 export interface CreateProjectInput {
@@ -330,18 +323,11 @@ export async function getProjects(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
-		.then((data) => ({ success: true as const, data }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to get projects",
-		}));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -416,51 +402,43 @@ export async function createProject(
 					});
 				}
 
-				const created = yield* Effect.tryPromise({
-					try: async () => {
-						return await db.transaction(async (tx) => {
-							const [newProject] = await tx
-								.insert(project)
-								.values({
-									organizationId: input.organizationId,
-									name: input.name,
-									description: input.description || null,
-									status: input.status || "planned",
-									icon: input.icon || null,
-									color: input.color || null,
-									budgetHours: input.budgetHours?.toString() || null,
-									deadline: input.deadline || null,
-									customerId: input.customerId || null,
-									isActive: true,
-									createdBy: session.user.id,
-									updatedAt: new Date(),
-								})
-								.returning();
-
-							await tx.insert(projectNotificationState).values({
-								projectId: newProject.id,
-								budgetThresholdsNotified: [],
-								deadlineThresholdsNotified: [],
+				const created = yield* dbService.query("project.create", async () => {
+					return await db.transaction(async (tx) => {
+						const [newProject] = await tx
+							.insert(project)
+							.values({
+								organizationId: input.organizationId,
+								name: input.name,
+								description: input.description || null,
+								status: input.status || "planned",
+								icon: input.icon || null,
+								color: input.color || null,
+								budgetHours: input.budgetHours?.toString() || null,
+								deadline: input.deadline || null,
+								customerId: input.customerId || null,
+								isActive: true,
+								createdBy: session.user.id,
 								updatedAt: new Date(),
-							});
+							})
+							.returning();
 
-							if (actor.accessTier === "manager" && actor.currentEmployee) {
-								await tx.insert(projectManager).values({
-									projectId: newProject.id,
-									employeeId: actor.currentEmployee.id,
-									assignedBy: session.user.id,
-								});
-							}
-
-							return newProject;
+						await tx.insert(projectNotificationState).values({
+							projectId: newProject.id,
+							budgetThresholdsNotified: [],
+							deadlineThresholdsNotified: [],
+							updatedAt: new Date(),
 						});
-					},
-					catch: (error) =>
-						new DatabaseError({
-							message: error instanceof Error ? error.message : "Failed to create project",
-							operation: "transaction",
-							table: "project",
-						}),
+
+						if (actor.accessTier === "manager" && actor.currentEmployee) {
+							await tx.insert(projectManager).values({
+								projectId: newProject.id,
+								employeeId: actor.currentEmployee.id,
+								assignedBy: session.user.id,
+							});
+						}
+
+						return newProject;
+					});
 				});
 
 				// Log audit (fire-and-forget)
@@ -488,18 +466,11 @@ export async function createProject(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
-		.then((data) => ({ success: true as const, data }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to create project",
-		}));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -597,31 +568,23 @@ export async function updateProject(
 				}
 
 				// Update the project
-				yield* Effect.tryPromise({
-					try: async () => {
-						const scopedProject = and(
-							eq(project.id, projectId),
-							eq(project.organizationId, existingProject.organizationId),
-						);
-						if (input.status === undefined) {
-							await db.update(project).set(updateData).where(scopedProject);
-							return;
-						}
-						// The bookable lifecycle decides manual eligibility (#315).
-						await withOrganizationConfigurationMutation(
-							db,
-							existingProject.organizationId,
-							async (tx) => {
-								await tx.update(project).set(updateData).where(scopedProject);
-							},
-						);
-					},
-					catch: (error) =>
-						new DatabaseError({
-							message: error instanceof Error ? error.message : "Failed to update project",
-							operation: "update",
-							table: "project",
-						}),
+				yield* dbService.query("project.update", async () => {
+					const scopedProject = and(
+						eq(project.id, projectId),
+						eq(project.organizationId, existingProject.organizationId),
+					);
+					if (input.status === undefined) {
+						await db.update(project).set(updateData).where(scopedProject);
+						return;
+					}
+					// The bookable lifecycle decides manual eligibility (#315).
+					await withOrganizationConfigurationMutation(
+						db,
+						existingProject.organizationId,
+						async (tx) => {
+							await tx.update(project).set(updateData).where(scopedProject);
+						},
+					);
 				});
 
 				// Log audit (fire-and-forget)
@@ -648,18 +611,11 @@ export async function updateProject(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
-		.then(() => ({ success: true as const, data: undefined }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to update project",
-		}));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -699,16 +655,11 @@ export async function addProjectManager(
 					action: "create",
 				});
 
-				const targetEmployee = yield* Effect.tryPromise({
-					try: async () =>
+				const targetEmployee = yield* dbService.query(
+					"project.getRelationshipEmployee",
+					async () =>
 						await getProjectRelationshipEmployee(employeeId, existingProject.organizationId),
-					catch: (error) =>
-						new DatabaseError({
-							message: error instanceof Error ? error.message : "Failed to validate employee",
-							operation: "select",
-							table: "employee",
-						}),
-				});
+				);
 				if (!targetEmployee) {
 					return yield* Effect.fail(
 						new ValidationError({
@@ -738,20 +689,12 @@ export async function addProjectManager(
 				}
 
 				// Add the manager
-				yield* Effect.tryPromise({
-					try: async () => {
-						await db.insert(projectManager).values({
-							projectId,
-							employeeId,
-							assignedBy: session.user.id,
-						});
-					},
-					catch: (error) =>
-						new DatabaseError({
-							message: error instanceof Error ? error.message : "Failed to add project manager",
-							operation: "insert",
-							table: "projectManager",
-						}),
+				yield* dbService.query("project.addManager", async () => {
+					await db.insert(projectManager).values({
+						projectId,
+						employeeId,
+						assignedBy: session.user.id,
+					});
 				});
 
 				// Log audit (fire-and-forget)
@@ -778,18 +721,11 @@ export async function addProjectManager(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
-		.then(() => ({ success: true as const, data: undefined }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to add project manager",
-		}));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -825,24 +761,17 @@ export async function removeProjectManager(
 				});
 
 				// Remove the manager
-				const removed = yield* Effect.tryPromise({
-					try: () =>
-						db
-							.delete(projectManager)
-							.where(
-								and(
-									eq(projectManager.projectId, existingProject.id),
-									eq(projectManager.employeeId, employeeId),
-								),
-							)
-							.returning({ id: projectManager.id }),
-					catch: (error) =>
-						new DatabaseError({
-							message: error instanceof Error ? error.message : "Failed to remove project manager",
-							operation: "delete",
-							table: "projectManager",
-						}),
-				});
+				const removed = yield* actor.dbService.query("project.removeManager", () =>
+					db
+						.delete(projectManager)
+						.where(
+							and(
+								eq(projectManager.projectId, existingProject.id),
+								eq(projectManager.employeeId, employeeId),
+							),
+						)
+						.returning({ id: projectManager.id }),
+				);
 				if (removed.length === 0) {
 					return yield* Effect.fail(
 						new NotFoundError({
@@ -876,18 +805,11 @@ export async function removeProjectManager(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
-		.then(() => ({ success: true as const, data: undefined }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to remove project manager",
-		}));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -939,8 +861,8 @@ export async function addProjectAssignment(
 
 				// Add the assignment. Target validation runs under exclusive configuration
 				// protection so it serializes with manual preparation (#315).
-				yield* Effect.tryPromise({
-					try: () =>
+				yield* actor.dbService
+					.query("project.addAssignment", () =>
 						withOrganizationConfigurationMutation(
 							db,
 							existingProject.organizationId,
@@ -978,14 +900,8 @@ export async function addProjectAssignment(
 								});
 							},
 						),
-					catch: (error) =>
-						projectMutationError(
-							error,
-							"Failed to add project assignment",
-							"insert",
-							"projectAssignment",
-						),
-				});
+					)
+					.pipe(Effect.mapError(keepTypedMutationError));
 
 				// Log audit (fire-and-forget)
 				logAudit({
@@ -1010,18 +926,11 @@ export async function addProjectAssignment(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
-		.then(() => ({ success: true as const, data: undefined }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to add project assignment",
-		}));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1077,8 +986,8 @@ export async function removeProjectAssignment(
 				});
 
 				// Remove the assignment
-				yield* Effect.tryPromise({
-					try: () =>
+				yield* dbService
+					.query("project.removeAssignment", () =>
 						withOrganizationConfigurationMutation(
 							db,
 							assignmentProject.organizationId,
@@ -1100,14 +1009,8 @@ export async function removeProjectAssignment(
 								}
 							},
 						),
-					catch: (error) =>
-						projectMutationError(
-							error,
-							"Failed to remove project assignment",
-							"delete",
-							"projectAssignment",
-						),
-				});
+					)
+					.pipe(Effect.mapError(keepTypedMutationError));
 
 				// Log audit (fire-and-forget)
 				logAudit({
@@ -1136,18 +1039,11 @@ export async function removeProjectAssignment(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
-		.then(() => ({ success: true as const, data: undefined }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to remove project assignment",
-		}));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1191,18 +1087,11 @@ export async function getTeamsForSelection(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
-		.then((data) => ({ success: true as const, data }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to get teams",
-		}));
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -1256,16 +1145,9 @@ export async function getEmployeesForSelection(
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
-				Effect.provide(AuthServiceLive),
-				Effect.provide(DatabaseServiceLive),
 			);
 		},
 	);
 
-	return Effect.runPromise(effect)
-		.then((data) => ({ success: true as const, data }))
-		.catch((error) => ({
-			success: false as const,
-			error: error?.message || "Failed to get employees",
-		}));
+	return runServerActionSafe(effect);
 }

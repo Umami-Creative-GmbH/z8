@@ -87,7 +87,7 @@ import { getInstantLocalMinuteFields } from "@/lib/datetime/temporal-format";
 import {
 	AuthorizationError,
 	ConflictError,
-	DatabaseError,
+	type DatabaseError,
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
@@ -95,11 +95,11 @@ import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
+import { runtime } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import {
 	DatabaseService,
-	DatabaseServiceLive,
+	makeDatabaseService,
 } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
 import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
@@ -1115,34 +1115,6 @@ function validateSubmissionId(value: unknown): string {
 	return value.toLowerCase();
 }
 
-/**
- * The approval db service for a correction submitted outside an Effect runtime.
- */
-export function createTransactionalApprovalDbService(
-	client: ApprovalDbService["db"],
-): ApprovalDbService {
-	return {
-		db: client,
-		query: (name, query) =>
-			Effect.tryPromise({
-				try: query,
-				catch: (cause) =>
-					new DatabaseError({
-						message: `Database query failed: ${name}`,
-						operation: name,
-						cause,
-					}),
-			}),
-	};
-}
-
-function transactionDbService(
-	dbService: ApprovalDbService,
-	transactionDb: ApprovalDbService["db"],
-): ApprovalDbService {
-	return { db: transactionDb, query: dbService.query };
-}
-
 function createCorrectionRuntime(database: ApprovalWorkflowDatabase) {
 	return createProductionApprovalWorkflowRuntime({
 		db: database,
@@ -1954,10 +1926,7 @@ function submitCorrectionInTransaction(
 			evidence.push(endpointEvidence(endpoint, id));
 		}
 
-		const dbService = transactionDbService(
-			input.dbService,
-			context.dbService.db as ApprovalDbService["db"],
-		);
+		const dbService = makeDatabaseService(context.dbService.db as ApprovalDbService["db"]);
 		const correction = {
 			action: input.action,
 			...(!legacyReplay
@@ -2272,7 +2241,7 @@ export async function dispatchCommittedTimeCorrectionSubmission(
 			dispatchSubmissionPostCommit({ ...input, dbService, emailService }),
 		);
 	});
-	await Effect.runPromise(effect.pipe(Effect.provide(AppLayer)));
+	await runtime.runPromise(effect);
 }
 
 async function loadSubmissionActor(
@@ -2367,7 +2336,9 @@ async function loadSubmissionTarget(input: {
 	return { period, ownerUserId: owner.userId, onBehalf: true };
 }
 
-function submissionFailure(error: unknown) {
+/** Typed failures raised by the submission keep their type. */
+function submissionFailure(failure: DatabaseError) {
+	const error = failure.cause;
 	if (
 		error instanceof ConflictError ||
 		error instanceof NotFoundError ||
@@ -2376,11 +2347,7 @@ function submissionFailure(error: unknown) {
 		return error;
 	}
 	logger.error({ err: error }, "Time correction submission transaction failed");
-	return new DatabaseError({
-		message: "Failed to submit time correction. Please try again.",
-		operation: "submit_time_correction",
-		cause: error,
-	});
+	return failure;
 }
 
 function submissionEffect(
@@ -2458,22 +2425,21 @@ function submissionEffect(
 			// goes to the owner's approval chain instead.
 			const forbiddenMessage = onBehalf
 				? null
-				: yield* Effect.tryPromise({
-					try: () =>
-						getForbiddenCorrectionEditMessage({
-							employeeId: currentEmployee.id,
-							workPeriodEndTime: period.endTime,
-							timezone,
-						}),
-					catch: (cause) => {
-						logger.error({ error: cause }, "Failed to check edit capability");
-						return new DatabaseError({
-							message: "Failed to verify edit policy. Please try again.",
-							operation: "get_edit_capability",
-							cause,
-						});
-					},
-				});
+				: yield* dbService
+						.query("timeCorrection.getForbiddenEditMessage", () =>
+							getForbiddenCorrectionEditMessage({
+								employeeId: currentEmployee.id,
+								workPeriodEndTime: period.endTime,
+								timezone,
+							}),
+						)
+						.pipe(
+							Effect.tapError((error) =>
+								Effect.sync(() =>
+									logger.error({ error: error.cause }, "Failed to check edit capability"),
+								),
+							),
+						);
 			if (forbiddenMessage) {
 				return yield* Effect.fail(
 					new ValidationError({
@@ -2655,8 +2621,8 @@ function submissionEffect(
 			correctedClockOut = deletionTimestamp;
 		}
 
-		const result = yield* Effect.tryPromise({
-			try: () =>
+		const result = yield* dbService
+			.query("timeCorrection.submit", () =>
 				submitCorrection({
 					dbService,
 					organizationId,
@@ -2688,8 +2654,8 @@ function submissionEffect(
 							timezone,
 						),
 				}),
-			catch: submissionFailure,
-		});
+			)
+			.pipe(Effect.mapError(submissionFailure));
 		yield* Effect.promise(() =>
 			dispatchSubmissionPostCommit({
 				dbService,
@@ -2739,8 +2705,6 @@ export async function requestTimeCorrectionEffect(
 				logger.error({ error }, "Failed to process time correction request"),
 			),
 		),
-		Effect.provide(AppLayer),
-		Effect.provide(DatabaseServiceLive),
 	);
 	const result = await runServerActionSafe(effect);
 	if (
@@ -2778,8 +2742,6 @@ export async function requestTimeEntryDeletion(
 					),
 				),
 			),
-			Effect.provide(AppLayer),
-			Effect.provide(DatabaseServiceLive),
 		),
 	);
 	if (

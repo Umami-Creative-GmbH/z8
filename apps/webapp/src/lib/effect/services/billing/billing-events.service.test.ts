@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { Effect, Layer } from "effect";
 import type Stripe from "stripe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { sendBillingSystemEmail } from "@/lib/billing/billing-system-email";
 import { StripeError } from "@/lib/effect/errors";
 import { BillingEventsService, BillingEventsServiceLive } from "./billing-events.service";
@@ -76,6 +77,7 @@ describe("BillingEventsService", () => {
 	const getInvoiceForPaymentIntent = vi.fn();
 	const updateFromStripe = vi.fn((_: UpdateSubscriptionFromStripeParams) => Effect.void);
 	const appLayer = Layer.mergeAll(
+		DatabaseServiceLive,
 		Layer.succeed(
 			StripeService,
 			StripeService.of({

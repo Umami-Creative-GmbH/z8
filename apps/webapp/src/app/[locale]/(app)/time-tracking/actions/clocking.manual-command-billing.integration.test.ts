@@ -107,6 +107,7 @@ const { SubscriptionService } = await import("@/lib/effect/services/billing/subs
 const { requireBillingForMutation } = await import("@/lib/billing/guard");
 const { StripeService } = await import("@/lib/effect/services/billing/stripe.service");
 const { SeatSyncService } = await import("@/lib/effect/services/billing/seat-sync.service");
+const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
 
 const ids = {
 	organization: "t317-billing-org",
@@ -174,6 +175,7 @@ const billingEventsLayer = BillingEventsServiceLive.pipe(
 			),
 		),
 	),
+	Layer.provide(DatabaseServiceLive),
 );
 
 /** The production webhook entry point for one event. */
@@ -190,7 +192,10 @@ function runSubscriptionService<A, E>(
 	use: (service: typeof SubscriptionService.Service) => Effect.Effect<A, E>,
 ) {
 	return Effect.runPromise(
-		Effect.flatMap(SubscriptionService, use).pipe(Effect.provide(SubscriptionServiceLive)),
+		Effect.flatMap(SubscriptionService, use).pipe(
+			Effect.provide(SubscriptionServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		),
 	);
 }
 

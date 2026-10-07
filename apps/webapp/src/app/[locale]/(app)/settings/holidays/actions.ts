@@ -12,8 +12,11 @@ import {
 } from "@/db/schema";
 import type { PaginatedParams, PaginatedResponse } from "@/lib/data-table/types";
 import { type AnyAppError, ConflictError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
+import {
+	type AppServices,
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction/ranks";
 import {
 	getEmployeeSettingsActorContext,
@@ -101,7 +104,7 @@ export type HolidayCategoryAssignmentRecord = {
 
 type HolidayCategoryItem = typeof holidayCategory.$inferSelect;
 
-function runHolidayServerAction<T>(effect: Effect.Effect<T, AnyAppError, never>) {
+function runHolidayServerAction<T>(effect: Effect.Effect<T, AnyAppError, AppServices>) {
 	return runServerActionSafe(effect);
 }
 
@@ -249,7 +252,7 @@ export async function getHolidays(
 			total: totalResult,
 			hasMore: offset + paginatedHolidays.length < totalResult,
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runHolidayServerAction(effect);
 }
@@ -312,7 +315,7 @@ export async function getHolidayCategories(
 			))) as HolidayCategoryItem[];
 
 		return categories;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runHolidayServerAction(effect);
 }
@@ -356,7 +359,7 @@ export async function deleteHoliday(holidayId: string): Promise<ServerActionResu
 				}),
 			);
 		}
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runHolidayServerAction(effect);
 }
@@ -404,7 +407,7 @@ export async function bulkDeleteHolidays(
 			));
 
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runHolidayServerAction(effect);
 }
@@ -489,7 +492,7 @@ export async function deleteCategory(categoryId: string): Promise<ServerActionRe
 				}),
 			);
 		}
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runHolidayServerAction(effect);
 }
@@ -558,7 +561,7 @@ export async function getHolidayAssignments(
 			manageableTeamIds,
 			managedEmployeeIds,
 		);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runHolidayServerAction(effect);
 }
@@ -614,7 +617,7 @@ export async function getHolidayCategoryAssignments(
 			manageableTeamIds,
 			managedEmployeeIds,
 		);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runHolidayServerAction(effect);
 }
@@ -754,7 +757,7 @@ export async function createHolidayCategoryAssignment(data: {
 			));
 
 		return newAssignment;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runHolidayServerAction(effect);
 }
@@ -803,7 +806,7 @@ export async function deleteHolidayCategoryAssignment(
 				}),
 			);
 		}
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runHolidayServerAction(effect);
 }
@@ -877,7 +880,7 @@ export async function createHolidayAssignment(data: {
 			));
 
 		return newAssignment;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runHolidayServerAction(effect);
 }
@@ -936,7 +939,7 @@ export async function deleteHolidayAssignment(
 						cause: error,
 					}),
 			));
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runHolidayServerAction(effect);
 }

@@ -20,7 +20,7 @@ vi.mock("@/lib/effect/services/billing", async () => {
 
 	return {
 		SeatSyncService,
-		SeatSyncServiceLive: Layer.succeed(
+		BillingServicesLive: Layer.succeed(
 			SeatSyncService,
 			SeatSyncService.of({
 				syncSeatsForOrganization: () =>
@@ -32,10 +32,11 @@ vi.mock("@/lib/effect/services/billing", async () => {
 					),
 			}),
 		),
-		StripeServiceLive: Layer.empty,
-		SubscriptionServiceLive: Layer.empty,
 	};
 });
+vi.mock("@/lib/effect/runtime", async () =>
+	(await import("@/test/effect-runtime")).runtimeModuleOver(),
+);
 
 describe("reconcileBillingSeatsForOrganization", () => {
 	beforeEach(() => {
@@ -102,6 +103,7 @@ describe("reconcileBillingSeatsForOrganization", () => {
 
 		expect(runtimeLoader).toContain("await Promise.all([");
 		expect(runtimeLoader).toContain('import("effect")');
+		expect(runtimeLoader).toContain('import("@/lib/effect/runtime")');
 		expect(runtimeLoader).toContain('import("@/lib/effect/services/billing")');
 	});
 });

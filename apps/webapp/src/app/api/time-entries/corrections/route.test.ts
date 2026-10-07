@@ -101,11 +101,8 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/auth", () => ({
 }));
 
 vi.mock("@/lib/approvals/server/time-correction-submission", () => ({
-	createTransactionalApprovalDbService: (client: unknown) => ({ db: client }),
-	dispatchCommittedTimeCorrectionSubmission:
-		mockState.dispatchCommittedSubmission,
-	getForbiddenCorrectionEditMessage:
-		mockState.getForbiddenCorrectionEditMessage,
+	dispatchCommittedTimeCorrectionSubmission: mockState.dispatchCommittedSubmission,
+	getForbiddenCorrectionEditMessage: mockState.getForbiddenCorrectionEditMessage,
 	resolveCorrectionApprovalManager: mockState.resolveCorrectionApprovalManager,
 	submitCorrection: mockState.submitCorrection,
 }));

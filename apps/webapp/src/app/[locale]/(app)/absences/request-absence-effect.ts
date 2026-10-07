@@ -74,9 +74,8 @@ import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { DatabaseService, makeDatabaseService } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
 import { renderAbsenceRequestPendingApproval } from "@/lib/email/render";
 import {
@@ -133,13 +132,9 @@ type RequestedAbsenceApprovalWorkflowResult =
 	  };
 
 function createTransactionDbService(
-	dbService: typeof DatabaseService.Service,
 	contextDbService: ApprovalWorkflowTransactionContext["dbService"],
 ): ApprovalDbService {
-	return {
-		db: contextDbService.db as ApprovalDbService["db"],
-		query: dbService.query,
-	};
+	return makeDatabaseService(contextDbService.db as ApprovalDbService["db"]);
 }
 
 function createDefaultAbsenceSubmissionApprovalLifecycle(
@@ -154,12 +149,10 @@ function createDefaultAbsenceSubmissionApprovalLifecycle(
 				finalizeAbsenceTerminal: async (input) =>
 					await finalizeAbsenceTerminalInTransaction({
 						...input,
-						dbService: createTransactionDbService(dbService, input.dbService),
+						dbService: createTransactionDbService(input.dbService),
 					}),
 				deleteCancelledAbsence: async () => {
-					throw new Error(
-						"Absence cancellation is not wired into the approval workflow runtime",
-					);
+					throw new Error("Absence cancellation is not wired into the approval workflow runtime");
 				},
 			},
 			timeCorrection: {
@@ -506,52 +499,44 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 						...approvalContext,
 						writeGate: pinnedGate,
 					} as ApprovalWorkflowTransactionContext;
-					const bindSourceWorkflow: StartApprovalWorkflowInput["bindSourceWorkflow"] =
-						async (workflowId) => {
-							const rows = await tx
-								.update(absenceEntry)
-								.set({ approvalWorkflowId: workflowId })
-								.where(
-									and(
-										eq(absenceEntry.id, newAbsence.id),
-										eq(
-											absenceEntry.organizationId,
-											currentEmployee.organizationId,
-										),
-										isNull(absenceEntry.approvalWorkflowId),
-									),
-								)
-								.returning({
-									id: absenceEntry.id,
-									organizationId: absenceEntry.organizationId,
-									approvalWorkflowId: absenceEntry.approvalWorkflowId,
-								});
-							if (
-								rows.length !== 1 ||
-								rows[0]?.id !== newAbsence.id ||
-								rows[0]?.organizationId !== currentEmployee.organizationId ||
-								rows[0]?.approvalWorkflowId !== workflowId
-							) {
-								throw new Error(
-									"Scoped absence workflow binding affected an unexpected row count",
-								);
-							}
-							return {
-								organizationId: currentEmployee.organizationId,
-								sourceType: "absence_entry",
-								sourceId: newAbsence.id,
-								workflowId,
-								affectedRows: 1,
-							};
+					const bindSourceWorkflow: StartApprovalWorkflowInput["bindSourceWorkflow"] = async (
+						workflowId,
+					) => {
+						const rows = await tx
+							.update(absenceEntry)
+							.set({ approvalWorkflowId: workflowId })
+							.where(
+								and(
+									eq(absenceEntry.id, newAbsence.id),
+									eq(absenceEntry.organizationId, currentEmployee.organizationId),
+									isNull(absenceEntry.approvalWorkflowId),
+								),
+							)
+							.returning({
+								id: absenceEntry.id,
+								organizationId: absenceEntry.organizationId,
+								approvalWorkflowId: absenceEntry.approvalWorkflowId,
+							});
+						if (
+							rows.length !== 1 ||
+							rows[0]?.id !== newAbsence.id ||
+							rows[0]?.organizationId !== currentEmployee.organizationId ||
+							rows[0]?.approvalWorkflowId !== workflowId
+						) {
+							throw new Error("Scoped absence workflow binding affected an unexpected row count");
+						}
+						return {
+							organizationId: currentEmployee.organizationId,
+							sourceType: "absence_entry",
+							sourceId: newAbsence.id,
+							workflowId,
+							affectedRows: 1,
 						};
+					};
 
 					if (gate.authority === "legacy") {
-						const transactionalDbService = createTransactionDbService(
-							dbService,
-							approvalContext.dbService,
-						);
-						const create =
-							params.approvalWorkflow.create ?? createApprovalWorkflow;
+						const transactionalDbService = createTransactionDbService(approvalContext.dbService);
+						const create = params.approvalWorkflow.create ?? createApprovalWorkflow;
 						const capturedAt = approvalLifecycle.nowInstant();
 						const coordinator = createLegacyApprovalWriteCoordinator({
 							compatibilityWriter: approvalContext.compatibilityWriter,
@@ -581,18 +566,15 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 							mutate:
 								async (): Promise<RequestedAbsenceApprovalWorkflowResult> => {
 									const result = await Effect.runPromise(
-										Effect.result(
-											create(
-												transactionalDbService,
-												currentEmployee,
-												newAbsence.id,
-												params.approvalWorkflow?.categoryId ?? data.categoryId,
-												params.approvalWorkflow?.approverId ?? null,
-											),
+										create(
+											transactionalDbService,
+											currentEmployee,
+											newAbsence.id,
+											params.approvalWorkflow?.categoryId ?? data.categoryId,
+											params.approvalWorkflow?.approverId ?? null,
 										),
 									);
-									if (result._tag === "Failure") throw result.failure;
-									return result.success as RequestedAbsenceApprovalWorkflowResult;
+									return result as RequestedAbsenceApprovalWorkflowResult;
 								},
 							afterMirror: async (observed) => {
 								if (
@@ -721,27 +703,18 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 							workflowId: startResult.snapshot.id,
 							status: startResult.status,
 						};
-						if (
-							startResult.kind === "created" &&
-							startResult.status === "approved"
-						) {
-							autoCompletion =
-								(await approvalLifecycle.finalizeCanonicalAutoCompletion({
-									dbService: createTransactionDbService(
-										dbService,
-										approvalContext.dbService,
-									),
-									organizationId: currentEmployee.organizationId,
-									absenceId: newAbsence.id,
-									expectedApprovalWorkflowId: startResult.snapshot.id,
-									expectedCanonicalRecordId: canonicalRecord.id,
-									actorEmployeeId: currentEmployee.id,
-									actorUserId: createdBy,
-									transition: { kind: "approve" },
-									finalizedAt:
-										startResult.snapshot.completedAt ??
-										approvalLifecycle.nowInstant(),
-								})) as ApprovedAbsenceResult;
+						if (startResult.kind === "created" && startResult.status === "approved") {
+							autoCompletion = (await approvalLifecycle.finalizeCanonicalAutoCompletion({
+								dbService: createTransactionDbService(approvalContext.dbService),
+								organizationId: currentEmployee.organizationId,
+								absenceId: newAbsence.id,
+								expectedApprovalWorkflowId: startResult.snapshot.id,
+								expectedCanonicalRecordId: canonicalRecord.id,
+								actorEmployeeId: currentEmployee.id,
+								actorUserId: createdBy,
+								transition: { kind: "approve" },
+								finalizedAt: startResult.snapshot.completedAt ?? approvalLifecycle.nowInstant(),
+							})) as ApprovedAbsenceResult;
 						}
 						await (
 							approvalLifecycle.captureCanonicalEvidence ??
@@ -1301,7 +1274,6 @@ function requestAbsenceWithResolverEffect(
 
 					return Effect.fail(error);
 				}),
-				Effect.provide(AppLayer),
 			);
 		},
 	);

@@ -3,11 +3,11 @@ import { headers } from "next/headers";
 import { connection, NextResponse } from "next/server";
 import { env } from "@/env";
 import { auth } from "@/lib/auth";
+import { runtime } from "@/lib/effect/runtime";
 import {
 	BillingEnforcementService,
-	BillingEnforcementServiceLive,
+	BillingServicesLive,
 	SubscriptionService,
-	SubscriptionServiceLive,
 } from "@/lib/effect/services/billing";
 
 /**
@@ -71,12 +71,7 @@ export async function GET() {
 	});
 
 	try {
-		const result = await Effect.runPromise(
-			program.pipe(
-				Effect.provide(SubscriptionServiceLive),
-				Effect.provide(BillingEnforcementServiceLive),
-			),
-		);
+		const result = await runtime.runPromise(program.pipe(Effect.provide(BillingServicesLive)));
 		return NextResponse.json(result);
 	} catch (error) {
 		return NextResponse.json(

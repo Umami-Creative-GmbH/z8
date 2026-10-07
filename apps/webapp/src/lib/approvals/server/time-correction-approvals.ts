@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect";
+import { Effect, Exit } from "effect";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import {
@@ -25,6 +25,7 @@ import {
 	parseInstant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import { failureOfCause } from "@/lib/effect/cause-failure";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -37,7 +38,6 @@ import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
@@ -5475,12 +5475,11 @@ export function createLegacyTimeCorrectionDecisionProcessor(input: {
 					ApprovalAuditLogger,
 					createApprovalAuditLogger(transactionDbService),
 				),
-			) as Effect.Effect<unknown, AnyAppError, never>,
+			),
 		);
 		if (Exit.isSuccess(exit)) return exit.value;
 		// The owner's typed failure, else its defect: what translateCorrectionWorkError reads.
-		const failure = Cause.findErrorOption(exit.cause);
-		throw Option.isSome(failure) ? failure.value : Cause.squash(exit.cause);
+		throw failureOfCause(exit.cause);
 	};
 }
 
@@ -6445,6 +6444,6 @@ function processAuthenticatedTimeCorrectionDecision(
 			approvalRequestId,
 			action,
 			reason,
-		).pipe(Effect.provide(AppLayer)) as Effect.Effect<void, AnyAppError, never>,
+		),
 	);
 }

@@ -5,7 +5,6 @@ import { Effect } from "effect";
 import { changePolicy, changePolicyAssignment, employee, team, teamPermissions } from "@/db/schema";
 import { type AnyAppError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction/ranks";
 import {
 	getEmployeeSettingsActorContext,
@@ -363,7 +362,7 @@ export async function getChangePolicies(
 
 		const visiblePolicyIdSet = new Set(visiblePolicyIds);
 		return policies.filter((policy) => visiblePolicyIdSet.has(policy.id));
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -392,7 +391,7 @@ export async function getChangePolicy(
 		const policy = yield* getPolicyForActiveOrganization(policyId, actor, "getChangePolicy");
 
 		return policy ?? null;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -461,7 +460,7 @@ export async function createChangePolicy(
 		);
 
 		return { id: policy.id };
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -548,7 +547,7 @@ export async function updateChangePolicy(
 					),
 			),
 		);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -580,7 +579,7 @@ export async function deleteChangePolicy(policyId: string): Promise<ServerAction
 					),
 			),
 		);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -650,7 +649,7 @@ export async function getChangePolicyAssignments(
 		);
 
 		return sortAssignmentsByPriority(visibleAssignments as ChangePolicyAssignmentWithDetails[]);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -759,7 +758,7 @@ export async function createChangePolicyAssignment(
 		}
 
 		return { id: created.id };
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -789,7 +788,7 @@ export async function deleteChangePolicyAssignment(
 					),
 			),
 		);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -819,7 +818,7 @@ export async function getTeamsForAssignment(
 		});
 
 		return teams;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -857,7 +856,7 @@ export async function getEmployeesForAssignment(
 		});
 
 		return employees;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

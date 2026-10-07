@@ -11,7 +11,6 @@ import { getRequestSession } from "@/lib/auth/request-session";
 import type { BirthdayInput } from "@/lib/datetime/birthday";
 import { ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
@@ -125,11 +124,11 @@ function buildSessionAuthProfile(session: {
 }
 
 function syncActiveEmployeeProfile(
-	dbService: InstanceType<typeof DatabaseService>["Type"],
+	dbService: typeof DatabaseService.Service,
 	userId: string,
 	activeOrganizationId: string | undefined,
 	data: StructuredProfileDetailsInput,
-): Effect.Effect<void, unknown, unknown> {
+): Effect.Effect<void, unknown, never> {
 	return Effect.gen(function* () {
 		if (!activeOrganizationId) {
 			return;
@@ -169,10 +168,10 @@ function syncActiveEmployeeProfile(
 }
 
 function updateProfilePreferences(
-	dbService: InstanceType<typeof DatabaseService>["Type"],
+	dbService: typeof DatabaseService.Service,
 	userId: string,
 	helpImproveProduct: boolean,
-): Effect.Effect<void, unknown, unknown> {
+): Effect.Effect<void, unknown, never> {
 	return dbService.query("updateProfilePreferences", () =>
 		writeUserSettings(dbService.db, userId, { helpImproveProduct }),
 	);
@@ -254,7 +253,7 @@ export async function updateProfileDetails(data: {
 				}),
 			),
 		);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -318,7 +317,7 @@ export async function updateProfileImage(data: {
 		if (result.data.image !== previousImage) {
 			yield* Effect.promise(() => deleteOwnedAvatarObject(previousImage, session.user.id));
 		}
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -385,7 +384,7 @@ export async function changePassword(data: {
 				});
 			},
 		});
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -453,7 +452,7 @@ export async function updateTimezone(timezone: string): Promise<ServerActionResu
 				}
 			}
 		}
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -496,7 +495,7 @@ export async function updateWeekStartDay(
 		yield* dbService.query("updateWeekStartDay", () =>
 			writeUserSettings(dbService.db, session.user.id, { weekStartDay }),
 		);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -527,7 +526,7 @@ export async function updateTimeFormat(timeFormat: TimeFormat): Promise<ServerAc
 		yield* dbService.query("updateTimeFormat", () =>
 			writeUserSettings(dbService.db, session.user.id, { timeFormat }),
 		);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

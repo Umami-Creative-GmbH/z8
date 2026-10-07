@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { ConflictError } from "@/lib/effect/errors";
 
 const mockState = vi.hoisted(() => ({
@@ -8,6 +9,7 @@ const mockState = vi.hoisted(() => ({
 	findApprovalRequests: vi.fn(),
 	decideStableTarget: vi.fn(),
 	decideStableTargetDefect: undefined as unknown,
+	decideStableTargetQueryFailure: undefined as unknown,
 	selectWhere: vi.fn(),
 	selectLimit: vi.fn(),
 	updateSet: vi.fn(),
@@ -73,17 +75,40 @@ vi.mock("@/lib/time-tracking/validation", () => ({
 }));
 
 // A rejected stub becomes the Effect's typed failure, as the owner's decision fails.
-// A set decideStableTargetDefect makes the decision die with it instead.
+// A set decideStableTargetDefect makes the decision die with it instead, and a set
+// decideStableTargetQueryFailure rejects a query run through the action's db service.
+// Like the owner, that query runs at a Promise boundary and the owner's catch keeps a
+// ConflictError it receives, turning anything else into its generic conflict.
 vi.mock("@/lib/approvals/server/work-period-approvals", async () => {
 	const { Effect } = await import("effect");
+	const { ConflictError } = await import("@/lib/effect/errors");
 	return {
-		decideOrdinaryWorkPeriodWithStableTargetEffect: (...args: unknown[]) =>
-			mockState.decideStableTargetDefect === undefined
+		decideOrdinaryWorkPeriodWithStableTargetEffect: (...args: unknown[]) => {
+			if (mockState.decideStableTargetQueryFailure !== undefined) {
+				const dbService = args[0] as ApprovalDbService;
+				return Effect.tryPromise({
+					try: () =>
+						Effect.runPromise(
+							dbService.query("workPeriodApproval.decide", () =>
+								Promise.reject(mockState.decideStableTargetQueryFailure),
+							),
+						),
+					catch: (error) =>
+						error instanceof ConflictError
+							? error
+							: new ConflictError({
+									message: "Ordinary work-period decision failed",
+									conflictType: "approval_decision",
+								}),
+				});
+			}
+			return mockState.decideStableTargetDefect === undefined
 				? Effect.tryPromise({
 						try: () => mockState.decideStableTarget(...args),
 						catch: (error) => error,
 					})
-				: Effect.die(mockState.decideStableTargetDefect),
+				: Effect.die(mockState.decideStableTargetDefect);
+		},
 	};
 });
 
@@ -129,6 +154,7 @@ describe("approveWorkPeriod", () => {
 		mockState.updateWhere.mockResolvedValue(undefined);
 		mockState.decideStableTarget.mockResolvedValue(undefined);
 		mockState.decideStableTargetDefect = undefined;
+		mockState.decideStableTargetQueryFailure = undefined;
 		mockState.findApprovalRequests.mockResolvedValue([
 			{
 				id: "approval-1",
@@ -237,11 +263,44 @@ describe("approveWorkPeriod", () => {
 		});
 	});
 
+	it("keeps a conflict thrown inside a decision query typed", async () => {
+		mockState.findMember.mockResolvedValue({ role: "admin" });
+		mockState.decideStableTargetQueryFailure = new ConflictError({
+			message: "Resolve the pending break review first",
+			conflictType: "work_period_pending_approval",
+		});
+
+		const result = await approveWorkPeriod({
+			workPeriodId: "period-1",
+			approvalRequestId: "approval-1",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Resolve the pending break review first",
+			code: "ConflictError",
+		});
+	});
+
+	it("keeps a failed decision query generic", async () => {
+		mockState.findMember.mockResolvedValue({ role: "admin" });
+		mockState.decideStableTargetQueryFailure = new Error("connection reset by peer");
+
+		const result = await approveWorkPeriod({
+			workPeriodId: "period-1",
+			approvalRequestId: "approval-1",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Ordinary work-period decision failed",
+			code: "ConflictError",
+		});
+	});
+
 	it("redacts non-domain failures", async () => {
 		mockState.findMember.mockResolvedValue({ role: "admin" });
-		mockState.decideStableTarget.mockRejectedValue(
-			new Error("private target mismatch"),
-		);
+		mockState.decideStableTarget.mockRejectedValue(new Error("private target mismatch"));
 
 		const result = await approveWorkPeriod({
 			workPeriodId: "period-1",

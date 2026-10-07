@@ -15,7 +15,6 @@ import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
@@ -149,7 +148,6 @@ export async function grantTeamPermissions(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -225,7 +223,6 @@ export async function revokeTeamPermissions(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -267,7 +264,7 @@ export async function getEmployeePermissions(
 		);
 
 		return permissions;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -319,7 +316,7 @@ export async function hasTeamPermission(
 		);
 
 		return hasPermission;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -375,7 +372,7 @@ export async function listEmployeePermissions(): Promise<
 		);
 
 		return employeePermissions;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -524,7 +521,7 @@ export async function loadPermissionsPageData(
 				),
 			})),
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

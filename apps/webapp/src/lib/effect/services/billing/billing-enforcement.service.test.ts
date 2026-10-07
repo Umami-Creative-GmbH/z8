@@ -1,5 +1,10 @@
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
+import {
+	DatabaseService,
+	DatabaseServiceLive,
+	makeDatabaseService,
+} from "@/lib/effect/services/database.service";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import {
@@ -99,7 +104,9 @@ describe("BillingEnforcementService", () => {
 				const enforcementService = yield* BillingEnforcementService;
 
 				return yield* enforcementService.checkBillingAccess("org_123", { now });
-			}).pipe(Effect.provide(BillingEnforcementServiceLive)),
+			}).pipe(
+				Effect.provide(BillingEnforcementServiceLive.pipe(Layer.provide(DatabaseServiceLive))),
+			),
 		);
 
 		expect(insertValues).toHaveBeenCalledWith({
@@ -122,6 +129,38 @@ describe("BillingEnforcementService", () => {
 		});
 	});
 
+	it("provisions the trial through the database of the service it runs with", async () => {
+		const serviceDb = {
+			query: { subscription: { findFirst: vi.fn(async () => null) } },
+			insert: vi.fn(() => ({ values: insertValues })),
+			execute: vi.fn(async () => undefined),
+			transaction: vi.fn(async (callback: (transaction: unknown) => unknown) =>
+				callback(serviceDb),
+			),
+		};
+		returning.mockResolvedValueOnce([subscriptionRow]);
+		const { db } = await import("@/db");
+
+		await Effect.runPromise(
+			Effect.gen(function* () {
+				const enforcementService = yield* BillingEnforcementService;
+
+				return yield* enforcementService.checkBillingAccess("org_123", { now });
+			}).pipe(
+				Effect.provide(
+					BillingEnforcementServiceLive.pipe(
+						Layer.provide(Layer.succeed(DatabaseService, makeDatabaseService(serviceDb as never))),
+					),
+				),
+			),
+		);
+
+		expect(serviceDb.query.subscription.findFirst).toHaveBeenCalledTimes(1);
+		expect(serviceDb.transaction).toHaveBeenCalledTimes(1);
+		expect(findFirst).not.toHaveBeenCalled();
+		expect(db.transaction).not.toHaveBeenCalled();
+	});
+
 	it("does not create a trial when billing is disabled", async () => {
 		(env as { BILLING_ENABLED: "true" | "false" }).BILLING_ENABLED = "false";
 		findFirst.mockResolvedValueOnce(null);
@@ -131,7 +170,9 @@ describe("BillingEnforcementService", () => {
 				const enforcementService = yield* BillingEnforcementService;
 
 				return yield* enforcementService.checkBillingAccess("org_123", { now });
-			}).pipe(Effect.provide(BillingEnforcementServiceLive)),
+			}).pipe(
+				Effect.provide(BillingEnforcementServiceLive.pipe(Layer.provide(DatabaseServiceLive))),
+			),
 		);
 
 		expect(result).toEqual({ canAccess: true, state: "disabled" });
@@ -150,7 +191,9 @@ describe("BillingEnforcementService", () => {
 					now,
 					createTrialIfMissing: false,
 				});
-			}).pipe(Effect.provide(BillingEnforcementServiceLive)),
+			}).pipe(
+				Effect.provide(BillingEnforcementServiceLive.pipe(Layer.provide(DatabaseServiceLive))),
+			),
 		);
 
 		expect(result).toEqual({
@@ -173,7 +216,9 @@ describe("BillingEnforcementService", () => {
 				const enforcementService = yield* BillingEnforcementService;
 
 				return yield* enforcementService.requireActiveSubscription("org_123").pipe(Effect.flip);
-			}).pipe(Effect.provide(BillingEnforcementServiceLive)),
+			}).pipe(
+				Effect.provide(BillingEnforcementServiceLive.pipe(Layer.provide(DatabaseServiceLive))),
+			),
 		);
 
 		expect(error).toMatchObject({
@@ -195,7 +240,9 @@ describe("BillingEnforcementService", () => {
 				const enforcementService = yield* BillingEnforcementService;
 
 				return yield* enforcementService.requireActiveSubscription("org_123").pipe(Effect.flip);
-			}).pipe(Effect.provide(BillingEnforcementServiceLive)),
+			}).pipe(
+				Effect.provide(BillingEnforcementServiceLive.pipe(Layer.provide(DatabaseServiceLive))),
+			),
 		);
 
 		expect(error).toMatchObject({

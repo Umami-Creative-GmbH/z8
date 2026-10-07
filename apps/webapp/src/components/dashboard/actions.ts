@@ -23,9 +23,8 @@ import {
 import { getEnhancedVacationBalance } from "@/lib/absences/vacation.service";
 import { shouldExcludeFromCalculations } from "@/lib/calendar/holiday-service";
 import { currentTimestamp, dateFromDB } from "@/lib/datetime/drizzle-adapter";
-import { DatabaseError, NotFoundError } from "@/lib/effect/errors";
+import { NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
@@ -115,37 +114,15 @@ export async function getManagerTodaySummary(): Promise<ManagerTodaySummaryResul
 			return { role, summary: null };
 		}
 
-		const briefing = yield* Effect.tryPromise({
-			try: () =>
-				getManagerDailyBriefing({
-					currentEmployee: {
-						id: currentEmployee.id,
-						role,
-						organizationId: currentEmployee.organizationId,
-					},
-				}),
-			catch: (error) =>
-				new DatabaseError({
-					message: "Failed to load manager today summary",
-					operation: "getManagerTodaySummary",
-					cause: error,
-				}),
-		}).pipe(
-			Effect.catch(() =>
-				Effect.succeed({
-					role,
-					summary: null,
-					error: "Manager Today counts could not be loaded.",
-				}),
-			),
-		);
-
-		if ("error" in briefing) {
-			return briefing;
-		}
-
-		return { role, summary: briefing.summary };
-	}).pipe(Effect.provide(AppLayer));
+		return {
+			role,
+			briefingFor: {
+				id: currentEmployee.id,
+				role,
+				organizationId: currentEmployee.organizationId,
+			},
+		};
+	});
 
 	const result = await runServerActionSafe(effect);
 
@@ -153,7 +130,20 @@ export async function getManagerTodaySummary(): Promise<ManagerTodaySummaryResul
 		throw new Error(String(result.error));
 	}
 
-	return result.data;
+	const target = result.data;
+	if (!target.briefingFor) {
+		return target;
+	}
+
+	// The briefing is Promise code that starts its own runtime runs, so it runs here,
+	// after the effect, instead of nested inside it.
+	const { role, briefingFor } = target;
+	try {
+		const briefing = await getManagerDailyBriefing({ currentEmployee: briefingFor });
+		return { role, summary: briefing.summary };
+	} catch {
+		return { role, summary: null, error: "Manager Today counts could not be loaded." };
+	}
 }
 
 /**
@@ -190,7 +180,7 @@ export async function getManagedEmployees(managerId: string): Promise<ServerActi
 		const managedEmployees = yield* managerService.getManagedEmployees(managerId);
 
 		return managedEmployees;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -273,7 +263,7 @@ export async function getUpcomingAbsences(limit: number = 5): Promise<ServerActi
 		});
 
 		return absences;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -399,7 +389,7 @@ export async function getTeamCalendarData(
 			year,
 			absenceDays: Array.from(absenceDayMap.values()),
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -478,7 +468,7 @@ export async function getRecentlyApprovedRequests(
 		});
 
 		return mapRecentlyApprovedRequestRows(requests);
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -667,7 +657,7 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 				expectedToDate: monthExpectedToDate,
 			},
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -765,7 +755,7 @@ export async function getUpcomingBirthdays(days: number = 30): Promise<ServerAct
 		upcomingBirthdays.sort((a, b) => a.daysUntil - b.daysUntil);
 
 		return upcomingBirthdays;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -892,7 +882,7 @@ export async function getTeamOverviewStats(): Promise<
 			teamsCount: teamsCountResult,
 			avgWorkHours: Math.round(avgWorkHoursResult * 10) / 10, // Round to 1 decimal
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1173,7 +1163,7 @@ export async function getWhosOutToday(): Promise<
 			returningTomorrow,
 			totalOut: outToday.length,
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1292,7 +1282,7 @@ export async function getVacationBalance(): Promise<
 			carryoverExpiryDaysRemaining: balance.carryoverExpiryDaysRemaining,
 			hasCarryover: policy.allowCarryover,
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1370,8 +1360,8 @@ export async function getHydrationWidgetData(): Promise<
 		const goalProgress = Math.min(100, Math.round((todayIntake / dailyGoal) * 100));
 		const activeOrganizationId = session.session.activeOrganizationId;
 
-		const teamStreakLeaders = yield* Effect.tryPromise({
-			try: async () => {
+		const teamStreakLeaders = yield* dbService
+			.query("dashboard.getHydrationTeamStreakLeaders", async () => {
 				if (!activeOrganizationId) {
 					return [];
 				}
@@ -1457,17 +1447,11 @@ export async function getHydrationWidgetData(): Promise<
 					cacheConfig.keyParts,
 					cacheConfig.options,
 				)();
-			},
-			catch: (error) =>
-				new DatabaseError({
-					message: "Failed to load hydration team streak leaders",
-					operation: "getHydrationWidgetData.teamStreakLeaders",
-					cause: error,
-				}),
-		}).pipe(Effect.catch(() => Effect.succeed([])));
+			})
+			.pipe(Effect.catch(() => Effect.succeed([])));
 
-		const organizationStreakLeaders = yield* Effect.tryPromise({
-			try: async () => {
+		const organizationStreakLeaders = yield* dbService
+			.query("dashboard.getHydrationOrganizationStreakLeaders", async () => {
 				if (!activeOrganizationId) {
 					return [];
 				}
@@ -1511,14 +1495,8 @@ export async function getHydrationWidgetData(): Promise<
 					session.user.id,
 					{ limit: 5 },
 				);
-			},
-			catch: (error) =>
-				new DatabaseError({
-					message: "Failed to load hydration organization streak leaders",
-					operation: "getHydrationWidgetData.organizationStreakLeaders",
-					cause: error,
-				}),
-		}).pipe(Effect.catch(() => Effect.succeed([])));
+			})
+			.pipe(Effect.catch(() => Effect.succeed([])));
 
 		return {
 			enabled: true,
@@ -1530,7 +1508,7 @@ export async function getHydrationWidgetData(): Promise<
 			teamStreakLeaders,
 			organizationStreakLeaders,
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1559,7 +1537,7 @@ export async function getUserSettings(): Promise<
 		return {
 			dashboardWidgetOrder: settings?.dashboardWidgetOrder ?? null,
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1596,7 +1574,7 @@ export async function updateWidgetOrder(
 		});
 
 		return { success: true };
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

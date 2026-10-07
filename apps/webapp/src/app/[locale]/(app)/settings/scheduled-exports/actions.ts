@@ -20,7 +20,6 @@ import type {
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import { AuthorizationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import {
 	calculateNextExecution,
@@ -219,7 +218,7 @@ export async function createScheduledExportAction(
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -270,7 +269,7 @@ export async function getScheduledExportsAction(
 		}));
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 export async function getScheduledExportAction(
@@ -306,7 +305,7 @@ export async function getScheduledExportAction(
 		return schedule || null;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -425,7 +424,7 @@ export async function updateScheduledExportAction(
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -467,7 +466,7 @@ export async function deleteScheduledExportAction(
 		revalidatePath("/settings/scheduled-exports");
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -538,7 +537,7 @@ export async function getExecutionHistoryAction(
 		}));
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -573,7 +572,7 @@ export async function previewNextExecutionsAction(
 		return executions.map((dt) => dt.toISO()!);
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -627,7 +626,7 @@ export async function runScheduledExportNowAction(
 		return { executionId: "started" };
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -725,7 +724,7 @@ export async function getFilterOptionsAction(
 		};
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }
 
 // ============================================
@@ -779,5 +778,5 @@ export async function getPayrollConfigsAction(
 		}));
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(effect);
 }

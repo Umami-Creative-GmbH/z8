@@ -155,13 +155,9 @@ vi.mock("@/lib/effect/runtime", async () => {
 			),
 	});
 
-	return {
-		AppLayer: Layer.merge(databaseLayer, permissionsLayer),
-		runtime: {
-			runPromiseExit: (effect: Parameters<typeof Effect.runPromiseExit>[0]) =>
-				Effect.runPromiseExit(effect),
-		},
-	};
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(
+		Layer.merge(databaseLayer, permissionsLayer),
+	);
 });
 
 const actions = await import("./actions");

@@ -1204,6 +1204,8 @@ export function resolvePolicyAndCreateApproval(
 						query: dbService.db.query,
 					}) as ApprovalDbService["db"];
 
+					// The caller's query, not makeDatabaseService(tx): its error shape must hold
+					// inside the transaction (docs/refs/effect.md, Database Access).
 					return await createChainRows({
 						db: transactionalDb,
 						query: dbService.query,

@@ -259,12 +259,7 @@ vi.mock("@/lib/effect/runtime", async () => {
 		Layer.succeed(DatabaseService, dbService),
 	);
 
-	return {
-		AppLayer,
-		runtime: {
-			runPromiseExit: (effect: any) => Effect.runPromiseExit(effect),
-		},
-	};
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(AppLayer);
 });
 
 describe("calendar settings actions", () => {

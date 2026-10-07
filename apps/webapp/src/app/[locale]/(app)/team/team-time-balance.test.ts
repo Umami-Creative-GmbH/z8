@@ -10,6 +10,9 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/db", () => ({ db: mocks.db }));
+vi.mock("@/lib/effect/runtime", () => ({
+	runtime: { runPromise: async (effect: unknown) => effect },
+}));
 vi.mock("@/lib/time-tracking/calculations", () => ({
 	calculateExpectedWorkHoursForEmployee: mocks.calculateExpectedWorkHoursForEmployee,
 }));

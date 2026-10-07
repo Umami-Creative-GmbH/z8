@@ -72,6 +72,8 @@ vi.mock("@/db/schema", () => ({
 	workPeriod: {},
 }));
 
+vi.mock("@/lib/effect/runtime", () => ({ runtime: { runPromise: vi.fn() } }));
+
 vi.mock("@/lib/time-tracking/calculations", () => ({
 	calculateExpectedWorkHoursForEmployee: vi.fn(),
 	calculateWorkHours: vi.fn(),

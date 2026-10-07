@@ -8,7 +8,6 @@ import { employee } from "@/db/schema";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
@@ -100,7 +99,6 @@ export async function createSkill(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -161,7 +159,6 @@ export async function updateSkill(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -214,7 +211,6 @@ export async function deleteSkill(skillId: string): Promise<ServerActionResult<v
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -235,7 +231,7 @@ export async function getOrganizationSkills(options?: {
 		const skills = yield* skillService.getOrganizationSkills(actor.organizationId, options);
 
 		return skills;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -322,7 +318,6 @@ export async function assignSkillToEmployee(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -398,7 +393,6 @@ export async function removeSkillFromEmployee(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -427,7 +421,7 @@ export async function getEmployeeSkills(
 		const skills = yield* skillService.getEmployeeSkills(employeeId);
 
 		return skills;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -496,7 +490,6 @@ export async function setSubareaSkillRequirements(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -564,7 +557,6 @@ export async function setTemplateSkillRequirements(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -595,7 +587,7 @@ export async function validateEmployeeForShift(
 		const result = yield* skillService.validateEmployeeForShift(employeeId, shiftData);
 
 		return result;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -639,7 +631,7 @@ export async function getQualifiedEmployeesForSkills(
 		);
 
 		return qualifiedEmployeeIds;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }

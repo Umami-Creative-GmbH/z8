@@ -13,7 +13,6 @@ import type { TravelExpenseReportCycleClosureKind } from "@/db/schema/travel-exp
 import { dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { failureOfCause as failureOf } from "@/lib/effect/cause-failure";
 import {
-	type AnyAppError,
 	AuthorizationError,
 	ConflictError,
 	NotFoundError,
@@ -515,8 +514,7 @@ export async function executeTravelExpenseReportReturnInTransaction(
 			"existing",
 		).pipe(
 			Effect.provideService(ApprovalAuditLogger, createApprovalReturnAuditLogger(dbService)),
-			// The shared legacy mutation is typed with an open requirement; every service it uses is provided.
-		) as Effect.Effect<unknown, AnyAppError, never>,
+		),
 	);
 	if (Exit.isFailure(exit)) throw failureOf(exit.cause);
 

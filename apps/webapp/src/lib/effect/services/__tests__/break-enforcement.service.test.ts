@@ -6,9 +6,15 @@
  */
 
 import { Effect } from "effect";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import type { WorkPeriodAutoAdjustmentReason } from "@/db/schema";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
+
+// The tests import the service lazily, after their mocks; the first cold transform of
+// its graph competes with the full suite, so it is warmed once with room to spare.
+beforeAll(async () => {
+	await import("../break-enforcement.service");
+}, 30_000);
 
 /** The closed work's end, the instant the policy is looked up at. */
 const workEnd = instantFromDate(new Date("2024-01-15T17:00:00Z"));
@@ -702,6 +708,46 @@ describe("legacy break enforcement failures", () => {
 			message: "Work period not found",
 			entityId: "period-missing",
 		});
+	});
+
+	test("keeps an unexpected adjustment failure's own message out of its DatabaseError", async () => {
+		const { Layer } = await import("effect");
+		const { DatabaseError } = await import("@/lib/effect/errors");
+		const { DatabaseServiceLive } = await import("../database.service");
+		const { WorkPolicyService } = await import("../work-policy.service");
+		const { BreakEnforcementService, BreakEnforcementServiceLive } = await import(
+			"../break-enforcement.service"
+		);
+		const { runAutomaticBreakAdjustment } = await import(
+			"@/lib/time-tracking/automatic-break-adjustment"
+		);
+		const cause = new Error('relation "work_period" violates constraint wp_private_check');
+		vi.mocked(runAutomaticBreakAdjustment).mockRejectedValueOnce(cause);
+
+		const failure = await Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* BreakEnforcementService;
+				return yield* service.enforceBreaksAfterClockOut({
+					employeeId: "emp-123",
+					organizationId: "org-123",
+					workPeriodId: "period-123",
+					sessionDurationMinutes: 420,
+					timezone: "Europe/Berlin",
+					createdBy: "user-123",
+				});
+			}).pipe(
+				Effect.flip,
+				Effect.provide(
+					BreakEnforcementServiceLive.pipe(
+						Layer.provide(Layer.succeed(WorkPolicyService, mockWorkPolicyService as never)),
+						Layer.provide(DatabaseServiceLive),
+					),
+				),
+			),
+		);
+
+		expect(failure).toBeInstanceOf(DatabaseError);
+		expect(failure).toMatchObject({ message: "Automatic break adjustment failed", cause });
 	});
 });
 

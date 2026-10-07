@@ -1,4 +1,4 @@
-import { Effect, Layer } from "effect";
+import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
 	ApprovalPriority,
@@ -84,7 +84,7 @@ async function runApprovalQuery<T>(
 	effect: Effect.Effect<T, AnyAppError, ApprovalQueryService | DatabaseService>,
 ): Promise<T> {
 	return Effect.runPromise(
-		effect.pipe(Effect.provide(Layer.mergeAll(ApprovalQueryServiceLive, DatabaseServiceLive))),
+		effect.pipe(Effect.provide(ApprovalQueryServiceLive), Effect.provide(DatabaseServiceLive)),
 	);
 }
 

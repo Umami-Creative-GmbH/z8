@@ -18,7 +18,6 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { PermissionsService } from "@/lib/effect/services/permissions.service";
@@ -394,7 +393,6 @@ export async function createTeam(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -576,7 +574,6 @@ export async function updateTeam(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -710,7 +707,6 @@ export async function deleteTeam(teamId: string): Promise<ServerActionResult<voi
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -810,7 +806,7 @@ export async function getTeam(
 			canManageMembers: scopedFlags.canManageMembers,
 			canManageSettings: scopedFlags.canManageSettings,
 		};
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -874,7 +870,7 @@ export async function listTeams(
 			teams: (teams as TeamWithMemberRelations[]).map(withMembershipEmployees),
 			permissions: scopedPermissions,
 		}).teams;
-	}).pipe(Effect.provide(AppLayer));
+	});
 
 	return runServerActionSafe(effect);
 }
@@ -1095,7 +1091,6 @@ export async function addTeamMember(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -1276,7 +1271,6 @@ export async function removeTeamMember(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
 			);
 		},
 	);

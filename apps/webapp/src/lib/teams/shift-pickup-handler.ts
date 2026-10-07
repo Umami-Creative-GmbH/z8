@@ -10,9 +10,10 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import { employee, employeeManagers, shift } from "@/db/schema";
+import { runtime } from "@/lib/effect/runtime";
 import {
 	OpenShiftsService,
-	OpenShiftsServiceFullLive,
+	OpenShiftsServiceLive,
 } from "@/lib/effect/services/open-shifts.service";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications/notification-service";
@@ -139,7 +140,7 @@ export async function handleShiftPickupAction(
 			return { success: true, requestId: result.requestId };
 		});
 
-		const result = await Effect.runPromise(program.pipe(Effect.provide(OpenShiftsServiceFullLive)));
+		const result = await runtime.runPromise(program.pipe(Effect.provide(OpenShiftsServiceLive)));
 
 		logger.info(
 			{ shiftId, requesterId, requestId: result.requestId },

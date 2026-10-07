@@ -9,17 +9,16 @@ import { Effect } from "effect";
 import { db } from "@/db";
 import { project } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
+import { runtime } from "@/lib/effect/runtime";
 import {
 	type BreakEnforcementResult,
 	BreakEnforcementService,
 	BreakEnforcementServiceLive,
 } from "@/lib/effect/services/break-enforcement.service";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { SurchargeService, SurchargeServiceLive } from "@/lib/effect/services/surcharge.service";
 import {
 	type ComplianceWarning,
 	WorkPolicyService,
-	WorkPolicyServiceLive,
 } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
 import {
@@ -105,9 +104,9 @@ export async function checkComplianceAfterClockOut(
 			}
 
 			return result.warnings;
-		}).pipe(Effect.provide(WorkPolicyServiceLive), Effect.provide(DatabaseServiceLive));
+		});
 
-		return await Effect.runPromise(complianceEffect);
+		return await runtime.runPromise(complianceEffect);
 	} catch (error) {
 		if (options.throwOnError) throw error;
 		logger.error({ error }, "Failed to check compliance after clock-out");
@@ -130,9 +129,9 @@ export async function reconcileImmediateSurcharges(input: {
 			staleSurchargePeriodIds: [],
 			surchargeSnapshot: input.snapshot,
 		});
-	}).pipe(Effect.provide(SurchargeServiceLive), Effect.provide(DatabaseServiceLive));
+	});
 
-	await Effect.runPromise(surchargeEffect);
+	await runtime.runPromise(surchargeEffect.pipe(Effect.provide(SurchargeServiceLive)));
 }
 
 export async function enforceBreaksAfterClockOut(input: {
@@ -148,13 +147,9 @@ export async function enforceBreaksAfterClockOut(input: {
 	const enforcementEffect = Effect.gen(function* () {
 		const breakService = yield* BreakEnforcementService;
 		return yield* breakService.enforceBreaksAfterClockOut(input);
-	}).pipe(
-		Effect.provide(BreakEnforcementServiceLive),
-		Effect.provide(WorkPolicyServiceLive),
-		Effect.provide(DatabaseServiceLive),
-	);
+	});
 
-	return Effect.runPromise(enforcementEffect);
+	return runtime.runPromise(enforcementEffect.pipe(Effect.provide(BreakEnforcementServiceLive)));
 }
 
 export async function checkProjectBudgetAfterClockOut(

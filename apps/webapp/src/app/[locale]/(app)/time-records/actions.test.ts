@@ -67,6 +67,12 @@ vi.mock("@/db", () => ({
 	},
 }));
 
+// The shared runtime over the real DatabaseServiceLive, which reads the mocked db.
+vi.mock("@/lib/effect/runtime", async () => {
+	const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(DatabaseServiceLive);
+});
+
 const actions = await import("./actions");
 const { listTimeRecords } = actions;
 

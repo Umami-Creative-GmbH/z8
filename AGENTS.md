@@ -42,7 +42,7 @@ These references keep this file concise; open them when deeper implementation de
 
 - [Better Auth Schema](docs/refs/better-auth.md) - Custom fields, plugins, type inference.
 - [Database Schema](docs/refs/database-schema.md) - File structure, relations, adding tables.
-- [Effect](docs/refs/effect.md) - Read before writing `effect` code: v4 services, server-action bridge, v4 behavior that differs from v3.
+- [Effect](docs/refs/effect.md) - Read before writing `effect` code: services, the shared runtime, server actions, database queries, errors, tests.
 - [Forms](docs/refs/forms.md) - TanStack Form patterns and UI components.
 - [i18n](docs/refs/i18n.md) - Tolgee namespaces and translation workflow.
 - [Date/Time](docs/refs/dates.md) - Temporal, timezone, and date-boundary rules.

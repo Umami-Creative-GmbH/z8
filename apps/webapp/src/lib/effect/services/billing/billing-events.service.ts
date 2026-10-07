@@ -2,13 +2,13 @@ import { eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import type Stripe from "stripe";
-import { db } from "@/db";
 import { stripeEvent, subscription } from "@/db/schema";
 import { env } from "@/env";
 import { sendBillingSystemEmail } from "@/lib/billing/billing-system-email";
 import { createLogger } from "@/lib/logger";
-import { DatabaseError, type StripeError } from "@/lib/effect/errors";
+import type { DatabaseError, StripeError } from "@/lib/effect/errors";
 import { withStripeSubscriptionMutation } from "@/lib/effect/services/billing/billing-configuration";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { SeatSyncService } from "./seat-sync.service";
 import { StripeService } from "./stripe.service";
 import { SubscriptionService } from "./subscription.service";
@@ -111,6 +111,7 @@ export const BillingEventsServiceLive = Layer.effect(
 		const stripeService = yield* StripeService;
 		const subscriptionService = yield* SubscriptionService;
 		const seatSyncService = yield* SeatSyncService;
+		const dbService = yield* DatabaseService;
 
 		const resolveCustomerEmail = (
 			customer: string | Stripe.Customer | Stripe.DeletedCustomer | null | undefined,
@@ -298,19 +299,14 @@ export const BillingEventsServiceLive = Layer.effect(
 				if (!subscriptionId) return;
 
 				// Update subscription status to active
-				yield* Effect.tryPromise({
-					try: async () => {
-						await withStripeSubscriptionMutation(subscriptionId, async (transaction, scope) => {
+				yield* dbService.query("billingEvents.markInvoicePaid", async () => {
+					await withStripeSubscriptionMutation(
+						dbService.db,
+						subscriptionId,
+						async (transaction, scope) => {
 							await transaction.update(subscription).set({ status: "active" }).where(scope);
-						});
-					},
-					catch: (error) =>
-						new DatabaseError({
-							message: "Failed to update subscription status",
-							operation: "handleInvoicePaymentSucceeded",
-							table: "subscription",
-							cause: error,
-						}),
+						},
+					);
 				});
 
 				logger.info(
@@ -328,19 +324,14 @@ export const BillingEventsServiceLive = Layer.effect(
 				if (!subscriptionId) return;
 
 				// Mark subscription as past_due
-				yield* Effect.tryPromise({
-					try: async () => {
-						await withStripeSubscriptionMutation(subscriptionId, async (transaction, scope) => {
+				yield* dbService.query("billingEvents.markInvoicePaymentFailed", async () => {
+					await withStripeSubscriptionMutation(
+						dbService.db,
+						subscriptionId,
+						async (transaction, scope) => {
 							await transaction.update(subscription).set({ status: "past_due" }).where(scope);
-						});
-					},
-					catch: (error) =>
-						new DatabaseError({
-							message: "Failed to update subscription status",
-							operation: "handleInvoicePaymentFailed",
-							table: "subscription",
-							cause: error,
-						}),
+						},
+					);
 				});
 
 				logger.warn(
@@ -387,9 +378,11 @@ export const BillingEventsServiceLive = Layer.effect(
 			Effect.gen(function* () {
 				const customerEmail = yield* resolveCustomerEmail(stripeSub.customer);
 
-				yield* Effect.tryPromise({
-					try: async () => {
-						await withStripeSubscriptionMutation(stripeSub.id, async (transaction, scope) => {
+				yield* dbService.query("billingEvents.pauseSubscription", async () => {
+					await withStripeSubscriptionMutation(
+						dbService.db,
+						stripeSub.id,
+						async (transaction, scope) => {
 							await transaction
 								.update(subscription)
 								.set({
@@ -400,15 +393,8 @@ export const BillingEventsServiceLive = Layer.effect(
 									},
 								})
 								.where(scope);
-						});
-					},
-					catch: (error) =>
-						new DatabaseError({
-							message: "Failed to update subscription to paused",
-							operation: "handleCustomerSubscriptionPaused",
-							table: "subscription",
-							cause: error,
-						}),
+						},
+					);
 				});
 
 				logger.info(
@@ -438,9 +424,11 @@ export const BillingEventsServiceLive = Layer.effect(
 				const item = stripeSub.items.data[0];
 				const customerEmail = yield* resolveCustomerEmail(stripeSub.customer);
 
-				yield* Effect.tryPromise({
-					try: async () => {
-						await withStripeSubscriptionMutation(stripeSub.id, async (transaction, scope) => {
+				yield* dbService.query("billingEvents.resumeSubscription", async () => {
+					await withStripeSubscriptionMutation(
+						dbService.db,
+						stripeSub.id,
+						async (transaction, scope) => {
 							await transaction
 								.update(subscription)
 								.set({
@@ -456,15 +444,8 @@ export const BillingEventsServiceLive = Layer.effect(
 									},
 								})
 								.where(scope);
-						});
-					},
-					catch: (error) =>
-						new DatabaseError({
-							message: "Failed to update subscription to resumed",
-							operation: "handleCustomerSubscriptionResumed",
-							table: "subscription",
-							cause: error,
-						}),
+						},
+					);
 				});
 
 				logger.info(
@@ -490,42 +471,33 @@ export const BillingEventsServiceLive = Layer.effect(
 				if (!subscriptionId) return;
 
 				// Store invoice details in subscription metadata for reference
-				yield* Effect.tryPromise({
-					try: async () => {
-						const existing = await db.query.subscription.findFirst({
-							where: eq(subscription.stripeSubscriptionId, subscriptionId),
-						});
+				yield* dbService.query("billingEvents.storeInvoiceDetails", async () => {
+					const existing = await dbService.db.query.subscription.findFirst({
+						where: eq(subscription.stripeSubscriptionId, subscriptionId),
+					});
 
-						if (existing) {
-							const existingMetadata = (existing.metadata ?? {}) as Record<string, unknown>;
-							await db
-								.update(subscription)
-								.set({
-									metadata: {
-										...existingMetadata,
-										lastInvoice: {
-											id: invoice.id,
-											number: invoice.number,
-											amountDue: invoice.amount_due,
-											amountPaid: invoice.amount_paid,
-											currency: invoice.currency,
-											status: invoice.status,
-											hostedInvoiceUrl: invoice.hosted_invoice_url,
-											invoicePdf: invoice.invoice_pdf,
-											finalizedAt: new Date().toISOString(),
-										},
+					if (existing) {
+						const existingMetadata = (existing.metadata ?? {}) as Record<string, unknown>;
+						await dbService.db
+							.update(subscription)
+							.set({
+								metadata: {
+									...existingMetadata,
+									lastInvoice: {
+										id: invoice.id,
+										number: invoice.number,
+										amountDue: invoice.amount_due,
+										amountPaid: invoice.amount_paid,
+										currency: invoice.currency,
+										status: invoice.status,
+										hostedInvoiceUrl: invoice.hosted_invoice_url,
+										invoicePdf: invoice.invoice_pdf,
+										finalizedAt: new Date().toISOString(),
 									},
-								})
-								.where(eq(subscription.stripeSubscriptionId, subscriptionId));
-						}
-					},
-					catch: (error) =>
-						new DatabaseError({
-							message: "Failed to store invoice details",
-							operation: "handleInvoiceFinalized",
-							table: "subscription",
-							cause: error,
-						}),
+								},
+							})
+							.where(eq(subscription.stripeSubscriptionId, subscriptionId));
+					}
 				});
 
 				logger.info(
@@ -595,40 +567,31 @@ export const BillingEventsServiceLive = Layer.effect(
 
 				// If we can identify the subscription, store failure details
 				if (subscriptionId) {
-					yield* Effect.tryPromise({
-						try: async () => {
-							const existing = await db.query.subscription.findFirst({
-								where: eq(subscription.stripeSubscriptionId, subscriptionId),
-							});
+					yield* dbService.query("billingEvents.storePaymentFailure", async () => {
+						const existing = await dbService.db.query.subscription.findFirst({
+							where: eq(subscription.stripeSubscriptionId, subscriptionId),
+						});
 
-							if (existing) {
-								const existingMetadata = (existing.metadata ?? {}) as Record<string, unknown>;
-								await db
-									.update(subscription)
-									.set({
-										metadata: {
-											...existingMetadata,
-											lastPaymentFailure: {
-												paymentIntentId: paymentIntent.id,
-												failureCode,
-												failureMessage,
-												declineCode,
-												failedAt: new Date().toISOString(),
-												amount: paymentIntent.amount,
-												currency: paymentIntent.currency,
-											},
+						if (existing) {
+							const existingMetadata = (existing.metadata ?? {}) as Record<string, unknown>;
+							await dbService.db
+								.update(subscription)
+								.set({
+									metadata: {
+										...existingMetadata,
+										lastPaymentFailure: {
+											paymentIntentId: paymentIntent.id,
+											failureCode,
+											failureMessage,
+											declineCode,
+											failedAt: new Date().toISOString(),
+											amount: paymentIntent.amount,
+											currency: paymentIntent.currency,
 										},
-									})
-									.where(eq(subscription.stripeSubscriptionId, subscriptionId));
-							}
-						},
-						catch: (error) =>
-							new DatabaseError({
-								message: "Failed to store payment failure details",
-								operation: "handlePaymentIntentFailed",
-								table: "subscription",
-								cause: error,
-							}),
+									},
+								})
+								.where(eq(subscription.stripeSubscriptionId, subscriptionId));
+						}
 					});
 				}
 
@@ -648,61 +611,37 @@ export const BillingEventsServiceLive = Layer.effect(
 
 		return BillingEventsService.of({
 			isEventProcessed: (eventId) =>
-				Effect.tryPromise({
-					try: async () => {
-						const existing = await db.query.stripeEvent.findFirst({
-							where: eq(stripeEvent.stripeEventId, eventId),
-						});
-						return existing?.processed ?? false;
-					},
-					catch: (error) =>
-						new DatabaseError({
-							message: "Failed to check event processed status",
-							operation: "isEventProcessed",
-							table: "stripe_event",
-							cause: error,
-						}),
+				dbService.query("billingEvents.isEventProcessed", async () => {
+					const existing = await dbService.db.query.stripeEvent.findFirst({
+						where: eq(stripeEvent.stripeEventId, eventId),
+					});
+					return existing?.processed ?? false;
 				}),
 
 			markEventProcessed: (eventId, error) =>
-				Effect.tryPromise({
-					try: async () => {
-						await db
-							.update(stripeEvent)
-							.set({
-								processed: true,
-								processedAt: new Date(),
-								processingError: error,
-							})
-							.where(eq(stripeEvent.stripeEventId, eventId));
-					},
-					catch: (dbError) =>
-						new DatabaseError({
-							message: "Failed to mark event as processed",
-							operation: "markEventProcessed",
-							table: "stripe_event",
-							cause: dbError,
-						}),
+				dbService.query("billingEvents.markEventProcessed", async () => {
+					await dbService.db
+						.update(stripeEvent)
+						.set({
+							processed: true,
+							processedAt: new Date(),
+							processingError: error,
+						})
+						.where(eq(stripeEvent.stripeEventId, eventId));
 				}),
 
 			processEvent: (event) =>
 				Effect.gen(function* () {
 					// Check idempotency
-					const isProcessed = yield* Effect.tryPromise({
-						try: async () => {
-							const existing = await db.query.stripeEvent.findFirst({
+					const isProcessed = yield* dbService.query(
+						"billingEvents.checkEventIdempotency",
+						async () => {
+							const existing = await dbService.db.query.stripeEvent.findFirst({
 								where: eq(stripeEvent.stripeEventId, event.id),
 							});
 							return existing?.processed ?? false;
 						},
-						catch: (error) =>
-							new DatabaseError({
-								message: "Failed to check event idempotency",
-								operation: "processEvent",
-								table: "stripe_event",
-								cause: error,
-							}),
-					});
+					);
 
 					if (isProcessed) {
 						logger.info({ eventId: event.id }, "Event already processed, skipping");
@@ -717,26 +656,17 @@ export const BillingEventsServiceLive = Layer.effect(
 					}
 
 					// Store event for idempotency
-					yield* Effect.tryPromise({
-						try: async () => {
-							await db
-								.insert(stripeEvent)
-								.values({
-									stripeEventId: event.id,
-									type: event.type,
-									organizationId,
-									data: event.data as unknown as Record<string, unknown>,
-									processed: false,
-								})
-								.onConflictDoNothing();
-						},
-						catch: (error) =>
-							new DatabaseError({
-								message: "Failed to store event",
-								operation: "processEvent",
-								table: "stripe_event",
-								cause: error,
-							}),
+					yield* dbService.query("billingEvents.storeEvent", async () => {
+						await dbService.db
+							.insert(stripeEvent)
+							.values({
+								stripeEventId: event.id,
+								type: event.type,
+								organizationId,
+								data: event.data as unknown as Record<string, unknown>,
+								processed: false,
+							})
+							.onConflictDoNothing();
 					});
 
 					// Process based on event type
@@ -790,37 +720,19 @@ export const BillingEventsServiceLive = Layer.effect(
 						}
 
 						// Mark as processed
-						yield* Effect.tryPromise({
-							try: async () => {
-								await db
-									.update(stripeEvent)
-									.set({ processed: true, processedAt: new Date() })
-									.where(eq(stripeEvent.stripeEventId, event.id));
-							},
-							catch: (error) =>
-								new DatabaseError({
-									message: "Failed to mark event processed",
-									operation: "processEvent",
-									table: "stripe_event",
-									cause: error,
-								}),
+						yield* dbService.query("billingEvents.markProcessEventProcessed", async () => {
+							await dbService.db
+								.update(stripeEvent)
+								.set({ processed: true, processedAt: new Date() })
+								.where(eq(stripeEvent.stripeEventId, event.id));
 						});
 					} catch (error) {
 						// Store error but don't fail
-						yield* Effect.tryPromise({
-							try: async () => {
-								await db
-									.update(stripeEvent)
-									.set({ processingError: String(error) })
-									.where(eq(stripeEvent.stripeEventId, event.id));
-							},
-							catch: () =>
-								new DatabaseError({
-									message: "Failed to store event error",
-									operation: "processEvent",
-									table: "stripe_event",
-									cause: error,
-								}),
+						yield* dbService.query("billingEvents.storeEventError", async () => {
+							await dbService.db
+								.update(stripeEvent)
+								.set({ processingError: String(error) })
+								.where(eq(stripeEvent.stripeEventId, event.id));
 						});
 
 						logger.error(

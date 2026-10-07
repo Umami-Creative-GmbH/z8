@@ -8,13 +8,13 @@ import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { env } from "@/env";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { runtime } from "@/lib/effect/runtime";
 import {
 	type BillingAccessResult,
 	BillingEnforcementService,
-	BillingEnforcementServiceLive,
+	BillingServicesLive,
 	type SubscriptionInfo,
 	SubscriptionService,
-	SubscriptionServiceLive,
 } from "@/lib/effect/services/billing";
 import { createLogger } from "@/lib/logger";
 
@@ -56,12 +56,7 @@ async function BillingSettingsContent() {
 	let accessResult: BillingAccessResult = billingCheckFailedAccess;
 
 	try {
-		const result = await Effect.runPromise(
-			program.pipe(
-				Effect.provide(SubscriptionServiceLive),
-				Effect.provide(BillingEnforcementServiceLive),
-			),
-		);
+		const result = await runtime.runPromise(program.pipe(Effect.provide(BillingServicesLive)));
 		subscription = result.subscription;
 		accessResult = result.accessResult;
 	} catch (error) {

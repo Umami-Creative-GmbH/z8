@@ -34,9 +34,24 @@ vi.mock("@/lib/settings-scheduling-access", () => ({
 	getSchedulingSettingsAccessContext: vi.fn(async () => mockState.accessContext),
 }));
 
-vi.mock("@/lib/effect/runtime", () => ({
-	safeAction: vi.fn(async () => ({ success: true, data: [] })),
+const coverageServiceMock = vi.hoisted(() => ({
+	deleteCoverageRule: vi.fn(),
 }));
+
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+
+vi.mock("@/lib/effect/runtime", async () => {
+	const { Effect } = await import("effect");
+	const { CoverageService } = await import("@/lib/effect/services/coverage.service");
+	return {
+		runtime: {
+			runPromiseExit: (effect: any) =>
+				Effect.runPromiseExit(
+					effect.pipe(Effect.provideService(CoverageService, coverageServiceMock)),
+				),
+		},
+	};
+});
 
 vi.mock("@/lib/effect/services/coverage.service", async () => {
 	const { Context } = await import("effect");
@@ -44,8 +59,11 @@ vi.mock("@/lib/effect/services/coverage.service", async () => {
 	return { CoverageService };
 });
 
+const { Effect } = await import("effect");
+const { NotFoundError } = await import("@/lib/effect/errors");
 const {
 	createCoverageRule,
+	deleteCoverageRule,
 	getCoverageSettings,
 	updateCoverageRule,
 	updateCoverageSettings,
@@ -108,5 +126,27 @@ describe("coverage rule manager scope behavior", () => {
 		});
 
 		expect(result).toEqual({ success: false, error: "Unauthorized" });
+	});
+});
+
+describe("coverage rule typed service failures", () => {
+	it("returns the typed failure's message and code to the caller", async () => {
+		coverageServiceMock.deleteCoverageRule.mockReturnValue(
+			Effect.fail(
+				new NotFoundError({
+					message: "Coverage rule not found",
+					entityType: "coverage_rule",
+					entityId: "rule-1",
+				}),
+			),
+		);
+
+		const result = await deleteCoverageRule("rule-1");
+
+		expect(result).toEqual({
+			success: false,
+			error: "Coverage rule not found",
+			code: "NotFoundError",
+		});
 	});
 });
