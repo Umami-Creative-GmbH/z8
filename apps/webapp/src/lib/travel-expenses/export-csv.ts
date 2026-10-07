@@ -12,6 +12,8 @@ import {
 	adjustmentExpenseCells,
 	adjustmentManifestProblem,
 	adjustmentReportCells,
+	summableItemMoneyCells,
+	summableReportTotalCells,
 } from "./export-adjustment";
 import {
 	ALLOWANCE_OVERRIDE_COLUMNS,
@@ -50,8 +52,10 @@ import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money"
  * totals.
  *
  * Files: `expenses.csv` (one row per expense item), `reports.csv` (one row per
- * revision with its frozen totals), `receipts.csv` (one row per bundled
- * receipt object) and `manifest.json` (the batch manifest itself). CSVs are
+ * revision with its frozen totals; an adjustment's summable total is its
+ * signed delta, `export-adjustment.ts`), `receipts.csv` (one row per bundled
+ * receipt: its path in the ZIP, file name, type, size and checksum; storage
+ * locations stay internal) and `manifest.json` (the batch manifest itself). CSVs are
  * UTF-8 with a byte order mark and CRLF line endings (RFC 4180).
  */
 
@@ -641,8 +645,6 @@ const RECEIPT_COLUMNS = [
 	"mime_type",
 	"size_bytes",
 	"checksum_sha256",
-	"storage_key",
-	"storage_version_id",
 ] as const;
 
 function revisionColumns(
@@ -750,6 +752,7 @@ export function buildTravelExpenseExportFiles(
 		for (const { item, reimbursement, companyPaid } of priced) {
 			const paths = item.receipts.map((receipt) => receiptPath(revision, item, receipt));
 			receiptCount += item.receipts.length;
+			const money = { reimbursement: units(reimbursement), companyPaid: units(companyPaid) };
 			expenseRows.push([
 				...shared,
 				csvText(facts.trip?.destinations.map((d) => `${d.place} (${d.countryCode})`).join("; ")),
@@ -762,8 +765,8 @@ export function buildTravelExpenseExportFiles(
 				csvText(item.paidBy),
 				csvDecimal(item.original.amount),
 				csvText(item.original.currency),
-				units(reimbursement),
-				units(companyPaid),
+				// Empty on an adjustment's rows: never double count (export-adjustment.ts).
+				...summableItemMoneyCells(facts, money),
 				csvText(facts.totals.currency),
 				csvText(itemCalculationBasis(item)),
 				csvText(exceptionBasis(item)),
@@ -774,7 +777,7 @@ export function buildTravelExpenseExportFiles(
 				...perDiemCells(item),
 				csvInteger(item.receipts.length),
 				csvText(paths.join("; ")),
-				...adjustmentExpenseCells(facts, { text: csvText, decimal: csvDecimal }),
+				...adjustmentExpenseCells(facts, { text: csvText, decimal: csvDecimal }, money),
 				...allowanceOverrideCells(item, {
 					text: csvText,
 					decimal: csvDecimal,
@@ -793,16 +796,14 @@ export function buildTravelExpenseExportFiles(
 					csvText(receipt.mimeType),
 					csvInteger(receipt.sizeBytes),
 					csvText(receipt.checksumSha256),
-					csvText(receipt.object.key),
-					csvText(receipt.object.versionId),
 				]);
 			});
 		}
 		reportRows.push([
 			...shared,
 			csvText(facts.totals.currency),
-			csvDecimal(facts.totals.reimbursable),
-			csvDecimal(facts.totals.companyPaid),
+			// An adjustment's signed delta, never its corrected total (export-adjustment.ts).
+			...summableReportTotalCells(facts, { text: csvText, decimal: csvDecimal }),
 			csvInteger(facts.items.length),
 			csvInteger(receiptCount),
 			...adjustmentReportCells(facts, { text: csvText, decimal: csvDecimal }),

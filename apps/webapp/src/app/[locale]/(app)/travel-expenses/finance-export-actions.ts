@@ -56,9 +56,10 @@ const createSchema = z.object({
 		.max(TRAVEL_EXPENSE_EXPORT_MAX_REVISIONS),
 });
 
+/** Export access needs finance read too: a batch holds org-wide approved evidence and receipts. */
 async function exportActor(): Promise<FinanceActor | null> {
 	const actor = await loadFinanceActor();
-	return actor?.canExport ? actor : null;
+	return actor?.canExport && actor.canRead ? actor : null;
 }
 
 function audit(

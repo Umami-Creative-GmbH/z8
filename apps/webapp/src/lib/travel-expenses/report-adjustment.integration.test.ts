@@ -891,8 +891,16 @@ describe("signed adjustments and overpayment recovery (#615)", () => {
 		);
 		const reports = (await zip.file("reports.csv")?.async("string")) ?? "";
 		expect(reports).toContain(`"adjustment","${original}","The hotel refunded one night"`);
-		expect(reports).toMatch(/,500\.00,-50\.00\r\n/);
+		// Baseline, delta, then the corrected report's own totals in their own columns.
+		expect(reports).toMatch(/,500\.00,-50\.00,450\.00,\d+\.\d{2}\r\n/);
 		expect(reports).toContain(`"original","",`);
+		// The summable totals never double count: original 500.00 plus the -50.00 delta.
+		signIn("finance");
+		const exported = await exportActions.getTravelExpenseExports();
+		expect(
+			exported.success &&
+				exported.data.batches.find((entry) => entry.id === batch.data.batchId)?.totals,
+		).toEqual([expect.objectContaining({ currency: "EUR", reimbursable: "450.00" })]);
 
 		// Each revision is exported once; the export recorded no money.
 		signIn("finance");

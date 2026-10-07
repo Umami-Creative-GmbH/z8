@@ -7,11 +7,28 @@ import { adjustmentDelta, composeAdjustmentBaseline } from "./adjustment";
  * exported as its own revision (once, like every revision) and stays
  * separately identifiable from the original: `record_type` is `adjustment`,
  * `adjusts_report_id` names the original report, and `adjustment_delta` is the
- * signed amount that changes the original's entitlement. Its expense rows are
- * the full corrected report for reference; accounting applies the delta.
+ * signed amount that changes the original's entitlement.
+ *
+ * Summable money never double counts an original and its adjustment:
+ * - `reports.csv` `reimbursable_total` is the frozen total of an original and
+ *   the signed delta of an adjustment, so summing it per currency gives the
+ *   net entitlement of the batch. `company_paid_total` is empty for an
+ *   adjustment (company-paid costs are never owed).
+ * - `expenses.csv` `reimbursement_amount` / `company_paid_amount` are empty on
+ *   an adjustment's rows: its items are the full corrected report, shown for
+ *   reference in `corrected_reimbursement_amount` / `corrected_company_paid_amount`
+ *   (a delta is not attributable to single items). Summing the expense rows
+ *   therefore gives the originals only; deltas live on `reports.csv`.
+ * - `corrected_reimbursable_total` / `corrected_company_paid_total` on
+ *   `reports.csv` keep the corrected report's own frozen totals.
  */
 
-export const ADJUSTMENT_EXPENSE_COLUMNS = ["record_type", "adjusts_report_id"] as const;
+export const ADJUSTMENT_EXPENSE_COLUMNS = [
+	"record_type",
+	"adjusts_report_id",
+	"corrected_reimbursement_amount",
+	"corrected_company_paid_amount",
+] as const;
 
 export const ADJUSTMENT_REPORT_COLUMNS = [
 	"record_type",
@@ -20,6 +37,8 @@ export const ADJUSTMENT_REPORT_COLUMNS = [
 	"adjustment_baseline_revision_id",
 	"adjustment_baseline_entitlement",
 	"adjustment_delta",
+	"corrected_reimbursable_total",
+	"corrected_company_paid_total",
 ] as const;
 
 type Cells = {
@@ -27,11 +46,44 @@ type Cells = {
 	decimal: (value: string) => string;
 };
 
-export function adjustmentExpenseCells(facts: TravelExpenseReportSubmittedFacts, cells: Cells) {
+/** Item money cells already formatted as stored decimals. */
+type ItemMoneyCells = { reimbursement: string; companyPaid: string };
+
+/**
+ * The summable `reimbursement_amount` and `company_paid_amount` cells of an
+ * expense row: empty on an adjustment (see the module comment).
+ */
+export function summableItemMoneyCells(
+	facts: TravelExpenseReportSubmittedFacts,
+	money: ItemMoneyCells,
+): [string, string] {
+	return facts.adjustment ? ["", ""] : [money.reimbursement, money.companyPaid];
+}
+
+/**
+ * The summable `reimbursable_total` and `company_paid_total` cells of a
+ * report row: an adjustment's signed delta and no company-paid total.
+ */
+export function summableReportTotalCells(
+	facts: TravelExpenseReportSubmittedFacts,
+	cells: Cells,
+): [string, string] {
+	return facts.adjustment
+		? [cells.decimal(facts.adjustment.delta.amount), ""]
+		: [cells.decimal(facts.totals.reimbursable), cells.decimal(facts.totals.companyPaid)];
+}
+
+export function adjustmentExpenseCells(
+	facts: TravelExpenseReportSubmittedFacts,
+	cells: Cells,
+	money: ItemMoneyCells,
+) {
 	const { adjustment } = facts;
 	return [
 		cells.text(adjustment ? "adjustment" : "original"),
 		cells.text(adjustment?.originalReportId),
+		adjustment ? money.reimbursement : "",
+		adjustment ? money.companyPaid : "",
 	];
 }
 
@@ -40,7 +92,9 @@ export function adjustmentReportCells(facts: TravelExpenseReportSubmittedFacts, 
 	if (!adjustment)
 		return [
 			cells.text("original"),
-			...ADJUSTMENT_REPORT_COLUMNS.slice(1).map(() => cells.text(null)),
+			...ADJUSTMENT_REPORT_COLUMNS.slice(1, 6).map(() => cells.text(null)),
+			"",
+			"",
 		];
 	return [
 		cells.text("adjustment"),
@@ -49,6 +103,8 @@ export function adjustmentReportCells(facts: TravelExpenseReportSubmittedFacts, 
 		cells.text(adjustment.baseline.revisionId),
 		cells.decimal(adjustment.baseline.entitlement),
 		cells.decimal(adjustment.delta.amount),
+		cells.decimal(facts.totals.reimbursable),
+		cells.decimal(facts.totals.companyPaid),
 	];
 }
 

@@ -3,6 +3,7 @@
 import {
 	IconChevronRight,
 	IconHistory,
+	IconInfoCircle,
 	IconPlaneDeparture,
 	IconReceipt,
 } from "@tabler/icons-react";
@@ -137,6 +138,19 @@ export function FinanceQueue() {
 			) : (
 				<Card>
 					<CardContent className="p-0">
+						{data.truncated && (
+							<p
+								role="status"
+								className="flex items-start gap-2 border-b px-4 py-3 text-sm text-muted-foreground"
+							>
+								<IconInfoCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+								{t(
+									"travelExpenses.finance.truncated",
+									"Showing the {count} most recently approved expenses. Older matching expenses are not listed.",
+									{ count: data.accounts.length },
+								)}
+							</p>
+						)}
 						<ul className="divide-y" aria-busy={isFetching}>
 							{data.accounts.map((account) => {
 								const title = accountTitle(t, locale, account);

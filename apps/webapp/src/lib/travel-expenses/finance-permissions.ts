@@ -38,14 +38,18 @@ export function canSettleTravelExpenses(
 	);
 }
 
-/** Export batches (#613). */
+/**
+ * Export batches (#613). A batch carries the organization's approved evidence
+ * and receipt files, so exporting also needs finance read: the export
+ * permission alone never opens org-wide receipts.
+ */
 export function canExportTravelExpenses(
 	ability: AppAbility,
 	organizationId: string,
 	activeOrganizationId: string | null,
 ): boolean {
 	return (
-		inActiveOrganization(organizationId, activeOrganizationId) &&
+		canReadTravelExpenseFinance(ability, organizationId, activeOrganizationId) &&
 		ability.can("export", "TravelExpenseFinance")
 	);
 }

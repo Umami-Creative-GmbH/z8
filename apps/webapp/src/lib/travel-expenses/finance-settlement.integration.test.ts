@@ -591,6 +591,63 @@ describe("finance queue and recorded reimbursements (#612)", () => {
 		expect(await entryCount()).toBe(1);
 	});
 
+	it("finds an old open account behind more settled ones than one page, and says when the list is cut", async () => {
+		// The seeded claim (decided 2026-08-05) stays open; four newer claims are settled.
+		const settledIds: string[] = [];
+		for (let day = 10; day < 14; day++) {
+			const claimId = randomUUID();
+			settledIds.push(claimId);
+			await admin.query(
+				`insert into travel_expense_claim (id, organization_id, employee_id, type, status, trip_start, trip_end,
+				   original_currency, original_amount, calculated_currency, calculated_amount,
+				   submitted_at, decided_at, created_by, updated_at)
+				 values ($1, 't612-org', $2, 'mileage', 'approved', '2026-08-03', '2026-08-03',
+				   'EUR', '10.00', 'EUR', '10.00', '2026-08-04', $3, 't612-requester', now())`,
+				[claimId, ids.requester, `2026-08-${day}`],
+			);
+			await admin.query(
+				`insert into travel_expense_settlement_entry (organization_id, source_type, legacy_claim_id, kind, amount,
+				   currency, occurred_on, reference, balance_before, idempotency_key, command_fingerprint, recorded_by_user_id)
+				 values ('t612-org', 'legacy_claim', $1, 'reimbursement', '10.00', 'EUR', '2026-09-01', 'SEPA',
+				   '10.00', $2, 'fingerprint', 't612-finance')`,
+				[claimId, randomUUID()],
+			);
+		}
+		const { db } = await import("@/db");
+		const { listFinanceQueue } = await import("@/lib/travel-expenses/settlement-store");
+		const scope = { organizationId: "t612-org" } as const;
+		const small = { pageSize: 2, limit: 2 };
+
+		const open = await listFinanceQueue(db, { ...scope, filter: "open" }, small);
+		expect(open.accounts.map((account) => account.source.id)).toEqual([ids.claim]);
+		expect(open.truncated).toBe(false);
+
+		// More settled accounts match than the limit: the newest are listed and the cut is reported.
+		const settled = await listFinanceQueue(db, { ...scope, filter: "settled" }, small);
+		expect(settled.accounts.map((account) => account.source.id)).toEqual(
+			settledIds.toReversed().slice(0, 2),
+		);
+		expect(settled.truncated).toBe(true);
+		// Reaching the scan limit is never silent either.
+		const capped = await listFinanceQueue(
+			db,
+			{ ...scope, filter: "open" },
+			{ pageSize: 2, limit: 10, maxScanned: 2 },
+		);
+		expect(capped).toEqual({ accounts: [], truncated: true });
+
+		const all = await listFinanceQueue(db, { ...scope, filter: "all" }, { pageSize: 2 });
+		expect(all.accounts).toHaveLength(5);
+		expect(all.truncated).toBe(false);
+
+		signIn("finance");
+		const action = await finance.getTravelExpenseFinanceQueue("open");
+		expect(action.success && action.data.truncated).toBe(false);
+		expect(action.success && action.data.accounts.map((account) => account.source.id)).toEqual([
+			ids.claim,
+		]);
+	});
+
 	it("keeps recorded money immutable in the database", async () => {
 		const { reportId } = await approvedTrip();
 		signIn("finance");

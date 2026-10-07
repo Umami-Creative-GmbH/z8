@@ -139,6 +139,29 @@ describe("finance queue (#612)", () => {
 		expect(mocks.getQueue).toHaveBeenLastCalledWith("settled");
 	});
 
+	it("says visibly when older matching expenses are left out of the list", async () => {
+		mocks.getQueue.mockResolvedValue({
+			success: true,
+			data: { accounts: [report], canSettle: true, truncated: true },
+		});
+		mount();
+		expect(
+			(await screen.findByRole("status")).textContent?.includes(
+				"Showing the 1 most recently approved expenses. Older matching expenses are not listed.",
+			),
+		).toBe(true);
+	});
+
+	it("shows no truncation notice for a complete list", async () => {
+		mocks.getQueue.mockResolvedValue({
+			success: true,
+			data: { accounts: [report], canSettle: true, truncated: false },
+		});
+		mount();
+		await screen.findByText("€89.90 outstanding");
+		expect(screen.queryByRole("status")).toBeNull();
+	});
+
 	it("says when nothing is left to settle and offers retry when the queue fails to load", async () => {
 		mocks.getQueue
 			.mockResolvedValueOnce({ success: false, error: "Failed to load the finance queue" })

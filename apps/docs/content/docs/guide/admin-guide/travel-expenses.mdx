@@ -38,10 +38,14 @@ Telegram approval cards can approve or reject simple reports. Reports with missi
 Finance access is separate from approval authority. Organization owners and admins have it by default. In **Settings → Custom Roles**, you can grant the permissions under **Finance** to a custom role:
 
 - **View Travel Expense Finance**: opens **Travel Expenses → Finance** with approved reports, their receipts and balances.
-- **Export Travel Expenses**: creates and downloads export batches.
+- **Export Travel Expenses**: creates and downloads export batches. Export batches contain receipts, so this permission only works together with **View Travel Expense Finance**.
 - **Record Travel Expense Reimbursements**: records reimbursements and recovered overpayments.
 
-**Exports.** Select approved report revisions and create a batch. A batch contains a CSV of reports, expenses and receipts with explicit amount, currency and date columns, and a ZIP of the receipt files. Each revision is exported once. You can download a completed batch again, and its content stays the same. A failed batch can be retried or cancelled.
+**Exports.** Select approved report revisions and create a batch. A batch contains a CSV of reports, expenses and receipts with explicit amount, currency and date columns, and a ZIP of the receipt files. Each revision is exported once. You can download a completed batch again, and its content stays the same. A failed batch can be retried or cancelled. So can a batch that has been waiting or processing for more than 30 minutes.
+
+An approved adjustment is exported as its own row, marked `adjustment` in `record_type`. In `reports.csv`, its `reimbursable_total` is the signed change to the original report. The corrected report's totals are in `corrected_reimbursable_total` and `corrected_company_paid_total`. In `expenses.csv`, the amount columns of an adjustment's expenses are empty. The corrected expenses appear in `corrected_reimbursement_amount` and `corrected_company_paid_amount` for reference. Summing `reimbursable_total` therefore never counts an expense twice. `receipts.csv` names each receipt by its path in the ZIP, its file name and its SHA-256 checksum.
+
+If more approved expenses match a finance queue filter than fit on the page, the queue shows the most recently approved ones and says that older ones are not listed.
 
 **Reimbursements.** Record each payment made outside Z8 with its amount, date and reference. The balance is the approved entitlement plus approved adjustments, minus reimbursements, plus recovered amounts. A negative balance is shown as an overpayment. Record the money returned as a recovery. Retrying a recording never creates a duplicate. Finance users cannot record reimbursements for their own expenses.
 

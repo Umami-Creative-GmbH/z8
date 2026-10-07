@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
 import { isValidPermission } from "@/lib/authorization/permission-registry";
-import { canReadTravelExpenseFinance, canSettleTravelExpenses } from "../finance-permissions";
+import {
+	canExportTravelExpenses,
+	canReadTravelExpenseFinance,
+	canSettleTravelExpenses,
+} from "../finance-permissions";
 
 const ORG = "org-1";
 
@@ -74,6 +78,30 @@ describe("travel expense finance permissions (#612)", () => {
 		expect(isValidPermission("read", "TravelExpenseFinance")).toBe(true);
 		expect(isValidPermission("settle", "TravelExpenseFinance")).toBe(true);
 		expect(isValidPermission("export", "TravelExpenseFinance")).toBe(true);
+	});
+
+	it("requires finance read for exports, since a batch holds org-wide receipts (#613)", () => {
+		const exporter = (actions: Array<"read" | "export">) => {
+			const context = principal({
+				customRoles: [
+					{
+						roleId: "role-export",
+						roleName: "Payroll export",
+						baseTier: "employee",
+						permissions: actions.map((action) => ({ action, subject: "TravelExpenseFinance" })),
+					},
+				],
+			});
+			return canExportTravelExpenses(defineAbilityFor(context), ORG, context.activeOrganizationId);
+		};
+		expect(exporter(["export"])).toBe(false);
+		expect(exporter(["read"])).toBe(false);
+		expect(exporter(["read", "export"])).toBe(true);
+		const owner = principal({
+			orgMembership: { organizationId: ORG, role: "owner", status: "active" },
+		});
+		expect(canExportTravelExpenses(defineAbilityFor(owner), ORG, ORG)).toBe(true);
+		expect(canExportTravelExpenses(defineAbilityFor(owner), "org-2", ORG)).toBe(false);
 	});
 
 	it("is scoped to the active organization", () => {

@@ -55,10 +55,12 @@ export async function processTravelExpenseExportBatch(
 	input: TravelExpenseExportJobInput,
 	now: () => Instant = () => systemClock.nowInstant(),
 ): Promise<TravelExpenseExportRunResult> {
-	const claimed = await claimTravelExpenseExportAttempt(database, input, now());
-	if (claimed.status === "skipped") return { status: "skipped" };
 	let stored: { bucket: string | null; key: string; versionId: string | null } | null = null;
 	try {
+		// Inside the try: a failing claim records the attempt as failed (and
+		// retryable) instead of leaving the batch queued forever.
+		const claimed = await claimTravelExpenseExportAttempt(database, input, now());
+		if (claimed.status === "skipped") return { status: "skipped" };
 		const { manifest } = claimed;
 		if (
 			manifest.batchId !== input.batchId ||

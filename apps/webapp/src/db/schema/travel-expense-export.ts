@@ -62,6 +62,8 @@ export const travelExpenseExportBatch = pgTable(
 		}),
 		requestedByUserId: text("requested_by_user_id").notNull(),
 		requestedAt: timestamp("requested_at", { withTimezone: true }).notNull(),
+		// When the current attempt was queued (creation or retry); null before 0131 (use requestedAt).
+		queuedAt: timestamp("queued_at", { withTimezone: true }),
 		startedAt: timestamp("started_at", { withTimezone: true }),
 		completedAt: timestamp("completed_at", { withTimezone: true }),
 		failedAt: timestamp("failed_at", { withTimezone: true }),
