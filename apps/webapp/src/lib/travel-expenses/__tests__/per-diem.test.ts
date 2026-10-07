@@ -580,6 +580,23 @@ describe("parsePerDiemDraft", () => {
 		expect(parsed).toEqual({ ok: false, errors: { startTime: "nonexistent_local_time" } });
 	});
 
+	it("refuses a local time repeated by the autumn clock change with its own error", () => {
+		// 25 October 2026: Berlin clocks go back from 03:00 to 02:00, so 02:30 happens twice.
+		const parsed = parsePerDiemDraft({
+			...base,
+			startDate: "2026-10-24",
+			startTime: "08:00",
+			endDate: "2026-10-25",
+			endTime: "02:30",
+			meals: [],
+		});
+		expect(parsed).toEqual({ ok: false, errors: { endTime: "ambiguous_local_time" } });
+		// The hour after the change is unambiguous again.
+		expect(
+			parsePerDiemDraft({ ...base, endDate: "2026-10-25", endTime: "03:30", meals: [] }),
+		).toEqual(expect.objectContaining({ ok: true }));
+	});
+
 	it("refuses malformed values and meals outside the travel days", () => {
 		expect(parsePerDiemDraft({ ...base, startTime: "8 Uhr" })).toEqual({
 			ok: false,

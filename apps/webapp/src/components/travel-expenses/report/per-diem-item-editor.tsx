@@ -182,7 +182,12 @@ function fieldErrorMessage(t: Translate, code: string | undefined) {
 		case "nonexistent_local_time":
 			return t(
 				"travelExpenses.report.perDiem.errors.clockChange",
-				"This time does not exist or occurs twice on this day because the clocks change. Enter a time outside the changed hour.",
+				"This time does not exist on this day because the clocks are put forward. Enter a time outside the skipped hour.",
+			);
+		case "ambiguous_local_time":
+			return t(
+				"travelExpenses.report.perDiem.errors.clockChangeRepeated",
+				"This time occurs twice on this day because the clocks are put back. Enter a time outside the repeated hour.",
 			);
 		case "end_before_start":
 			return t(

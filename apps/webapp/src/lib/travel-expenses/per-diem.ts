@@ -151,7 +151,10 @@ export type PerDiemFieldError =
 	| "invalid_date"
 	| "invalid_time"
 	| "invalid_time_zone"
+	/** The clocks are put forward over this local time: it never happens on this day. */
 	| "nonexistent_local_time"
+	/** The clocks are put back over this local time: it happens twice on this day. */
+	| "ambiguous_local_time"
 	| "end_before_start"
 	| "invalid_overnight"
 	| "invalid_meals"
@@ -193,11 +196,32 @@ export function parseMealPayment(value: string): string | null {
 
 function zoned(date: string, time: string, timeZone: string): ZonedDateTime | null {
 	try {
-		return Temporal.PlainDateTime.from(`${date}T${time}`).toZonedDateTime(timeZone, {
-			disambiguation: "reject",
-		});
+		const result = zonedLocalTime(date, time, timeZone);
+		return typeof result === "string" ? null : result;
 	} catch {
 		return null;
+	}
+}
+
+/**
+ * The zoned time of an entered local time, or why it has none: skipped by a
+ * clock change (`nonexistent_local_time`) or repeated by one
+ * (`ambiguous_local_time`). Both are refused rather than guessed.
+ */
+function zonedLocalTime(
+	date: string,
+	time: string,
+	timeZone: string,
+): ZonedDateTime | "nonexistent_local_time" | "ambiguous_local_time" {
+	const local = Temporal.PlainDateTime.from(`${date}T${time}`);
+	try {
+		return local.toZonedDateTime(timeZone, { disambiguation: "reject" });
+	} catch {
+		// A repeated time keeps its wall-clock reading under either offset; a skipped one is shifted.
+		const earlier = local.toZonedDateTime(timeZone, { disambiguation: "earlier" });
+		return Temporal.PlainDateTime.compare(earlier.toPlainDateTime(), local) === 0
+			? "ambiguous_local_time"
+			: "nonexistent_local_time";
 	}
 }
 
@@ -255,16 +279,18 @@ export function parsePerDiemDraft(input: PerDiemDraftInput): ParsePerDiemDraftRe
 		} else errors.overnight = "invalid_overnight";
 	}
 
-	const start =
+	const startResult =
 		itinerary.startDate && itinerary.startTime && itinerary.startTimeZone
-			? zoned(itinerary.startDate, itinerary.startTime, itinerary.startTimeZone)
+			? zonedLocalTime(itinerary.startDate, itinerary.startTime, itinerary.startTimeZone)
 			: undefined;
-	if (start === null) errors.startTime = "nonexistent_local_time";
-	const end =
+	if (typeof startResult === "string") errors.startTime = startResult;
+	const endResult =
 		itinerary.endDate && itinerary.endTime && itinerary.endTimeZone
-			? zoned(itinerary.endDate, itinerary.endTime, itinerary.endTimeZone)
+			? zonedLocalTime(itinerary.endDate, itinerary.endTime, itinerary.endTimeZone)
 			: undefined;
-	if (end === null) errors.endTime = "nonexistent_local_time";
+	if (typeof endResult === "string") errors.endTime = endResult;
+	const start = typeof startResult === "string" ? null : startResult;
+	const end = typeof endResult === "string" ? null : endResult;
 	let rangeValid = true;
 	if (start && end && Temporal.Instant.compare(end.toInstant(), start.toInstant()) <= 0) {
 		errors.endTime = "end_before_start";
