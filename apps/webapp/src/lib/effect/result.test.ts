@@ -73,6 +73,18 @@ describe("toServerActionResult", () => {
 		});
 	});
 
+	it("reports an interrupt-only cause with the generic message, not the internal one", () => {
+		vi.spyOn(console, "error").mockImplementation(() => {});
+
+		const result = toServerActionResult(Exit.failCause(Cause.interrupt()));
+
+		expect(result).toEqual({
+			success: false,
+			error: "An unexpected error occurred",
+			code: "UNKNOWN_ERROR",
+		});
+	});
+
 	it("reports a defect as an unknown error with its message", () => {
 		vi.spyOn(console, "error").mockImplementation(() => {});
 

@@ -1,6 +1,6 @@
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
-import { Effect, Exit } from "effect";
+import { Cause, Effect, Exit } from "effect";
 import { approvalRequest, employee } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { failureOfCause } from "@/lib/effect/cause-failure";
@@ -267,7 +267,7 @@ function runAfterCommitBestEffort<T>(
 		.afterCommit(result, dbService, entityId, currentEmployee)
 		.pipe(
 			Effect.catchCause((cause) => {
-				const error = failureOfCause(cause);
+				const error = Cause.hasInterruptsOnly(cause) ? Cause.pretty(cause) : failureOfCause(cause);
 				return Effect.sync(() =>
 					logger.error(
 						{

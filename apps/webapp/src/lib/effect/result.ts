@@ -1,4 +1,4 @@
-import { type Effect, Exit } from "effect";
+import { Cause, type Effect, Exit } from "effect";
 import { env } from "@/env";
 import { failureOfCause } from "./cause-failure";
 import type { AnyAppError } from "./errors";
@@ -11,7 +11,9 @@ export type ServerActionResult<T> =
 export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): ServerActionResult<T> {
 	return Exit.match(exit, {
 		onFailure: (cause) => {
-			const error = failureOfCause(cause);
+			// Without a typed failure or defect (interrupt-only), keep the cause so the
+			// client gets the generic message instead of Cause.squash's internal one.
+			const error = Cause.hasFails(cause) || Cause.hasDies(cause) ? failureOfCause(cause) : cause;
 			const taggedError =
 				error && typeof error === "object" && "_tag" in error ? (error as AnyAppError) : null;
 			const isBuildPhase = env.NEXT_PHASE === "phase-production-build";
