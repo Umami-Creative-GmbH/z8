@@ -135,7 +135,7 @@ export function ExecutionHistoryDialog({
 					<ActionPanelTitle>
 						{t(
 							"settings.scheduledExports.history.title",
-							"Execution IconHistory",
+							"Execution History",
 						)}
 					</ActionPanelTitle>
 					<ActionPanelDescription>

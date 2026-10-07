@@ -45,7 +45,7 @@ function TravelExpenseDecisionHistory({
 		`${parseInstant(at).toZonedDateTimeISO("UTC").toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" })} UTC`;
 	return (
 		<Card>
-			<CardContent className="space-y-3 pt-6">
+			<CardContent className="space-y-3">
 				<h2 className="text-lg font-semibold">
 					{t("travelExpenses.detail.history", "Decision history")}
 				</h2>
@@ -182,7 +182,7 @@ export function TravelExpenseClaimDetail({
 			{claim && data && (
 				<>
 					<Card>
-						<CardContent className="space-y-4 pt-6">
+						<CardContent className="space-y-4">
 							<h2 className="text-lg font-semibold">
 								{t(
 									`travelExpenses.claimTypes.${claim.type}`,
@@ -259,7 +259,7 @@ export function TravelExpenseClaimDetail({
 						</CardContent>
 					</Card>
 					<Card>
-						<CardContent className="space-y-3 pt-6">
+						<CardContent className="space-y-3">
 							<h2 className="text-lg font-semibold">
 								{t("travelExpenses.detail.receipts", "Receipts")}
 							</h2>

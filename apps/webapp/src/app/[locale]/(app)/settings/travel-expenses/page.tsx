@@ -12,12 +12,24 @@ import { TravelExpenseReceiptExceptionSettingsCard } from "@/components/settings
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { getTranslate } from "@/tolgee/server";
 
 async function TravelExpenseSettingsPageContent() {
-	await requireOrgAdminSettingsAccess();
+	const [, t] = await Promise.all([requireOrgAdminSettingsAccess(), getTranslate()]);
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
+			<div className="flex flex-col gap-2">
+				<h1 className="text-2xl font-semibold tracking-tight">
+					{t("settings.travelExpenses.title", "Travel Expense Policies")}
+				</h1>
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.travelExpenses.pageDescription",
+						"Choose who reviews expense reports, how missing receipts and foreign currencies are handled, which mileage and per diem rates apply, and which exceptions are authorized.",
+					)}
+				</p>
+			</div>
 			<TravelExpenseApproverSettingsCard />
 			<TravelExpenseReceiptExceptionSettingsCard />
 			<ReimbursementCurrencySettingsCard />

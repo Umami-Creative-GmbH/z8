@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApprovalInboxDetailSection, ApprovalInboxItem } from "@/lib/approvals/inbox/types";
 import { ApprovalDetailPanel } from "./approval-detail-panel";
 
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, string>) =>

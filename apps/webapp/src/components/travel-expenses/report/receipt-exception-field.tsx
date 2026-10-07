@@ -3,7 +3,7 @@
 import { IconAlertTriangle } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { saveReceiptExceptionAction } from "@/app/[locale]/(app)/travel-expenses/receipt-exception-actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -70,6 +70,7 @@ export function ReceiptExceptionField({
 }) {
 	const { t } = useTranslate();
 	const lastSavedReason = useRef<string | null>(exception.reason);
+	const [reasonLeft, setReasonLeft] = useState(false);
 	const { saver, state } = useDraftSaver<Values, ReceiptExceptionView>({
 		version: exception.version,
 		onUnsavedAfterClose: () =>
@@ -141,15 +142,19 @@ export function ReceiptExceptionField({
 		) : null;
 	}
 
+	const reasonProblem = state.status === "invalid" ? state.fieldErrors?.reason : undefined;
+	// Ticking the box saves at once; a still empty explanation is not an error until it was left.
+	const awaitingReason = reasonProblem !== undefined && reasonProblem !== "too_long" && !reasonLeft;
 	const reasonError =
-		state.status === "invalid" && state.fieldErrors?.reason
-			? state.fieldErrors.reason === "too_long"
+		reasonProblem && !awaitingReason
+			? reasonProblem === "too_long"
 				? t("travelExpenses.report.errors.tooLong", "This text is too long.")
 				: t(
 						"travelExpenses.report.receiptException.reasonRequired",
 						"Explain why the receipt is missing.",
 					)
 			: undefined;
+	const shownState = awaitingReason ? { ...state, status: "pending" as const } : state;
 	const checkboxId = `${itemId}-receipt-exception`;
 
 	return (
@@ -224,7 +229,10 @@ export function ReceiptExceptionField({
 												maxLength={MAX_RECEIPT_EXCEPTION_REASON_LENGTH}
 												value={field.state.value}
 												onChange={(event) => field.handleChange(event.target.value)}
-												onBlur={field.handleBlur}
+												onBlur={() => {
+													field.handleBlur();
+													setReasonLeft(true);
+												}}
 											/>
 										</TFormControl>
 										<TFormDescription>
@@ -239,7 +247,7 @@ export function ReceiptExceptionField({
 							</form.Field>
 						)}
 						<DraftSaveStatus
-							state={state}
+							state={shownState}
 							onRetry={() => saver.retry()}
 							onKeepMine={() => saver.resolveConflict("keep_mine")}
 							onUseTheirs={() => {

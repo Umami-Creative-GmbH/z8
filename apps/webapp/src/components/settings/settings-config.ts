@@ -304,9 +304,9 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		id: "travel-expenses",
 		titleKey: "settings.travelExpenses.title",
 		titleDefault: "Travel Expense Policies",
-		descriptionKey: "settings.travelExpenses.description",
+		descriptionKey: "settings.travelExpenses.navDescription",
 		descriptionDefault:
-			"Configure reimbursement rates and effective periods for mileage and per diem claims.",
+			"Expense report review, receipts, currencies, mileage and per diem rates, and exceptions.",
 		href: "/settings/travel-expenses",
 		icon: "map-pin",
 		minimumTier: "orgAdmin",

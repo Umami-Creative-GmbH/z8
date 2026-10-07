@@ -2,10 +2,12 @@
 
 import { IconCheck, IconLoader2, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import { TimeCorrectionComparison } from "@/components/approvals/time-correction-comparison";
 import { TravelExpenseReportReturnButton } from "@/components/approvals/travel-expense-report-return";
+import { formatRecordedInstant } from "@/components/travel-expenses/report/format";
 import { ReopenReportPanel } from "@/components/travel-expenses/report/report-reopen";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -95,6 +97,7 @@ function changeValueText(t: Translate, value: ApprovalInboxDetailChangeValue) {
 function renderDetailSection(
 	t: ReturnType<typeof useTranslate>["t"],
 	section: ApprovalInboxDetailSection,
+	locale: string,
 ) {
 	switch (section.type) {
 		case "time_comparison":
@@ -109,14 +112,15 @@ function renderDetailSection(
 						{section.rows.map((row) => (
 							<div
 								key={localizedText(t, row.label)}
-								className="grid grid-cols-[minmax(0,1fr)_minmax(8rem,max-content)] items-start gap-4"
+								// The label keeps up to 45%: a long value wraps instead of squeezing it.
+								className="grid grid-cols-[fit-content(45%)_minmax(0,1fr)] items-start gap-4"
 							>
 								<dt className="text-sm text-muted-foreground">
 									{localizedText(t, row.label)}
 								</dt>
 								<dd
 									className={cn(
-										"min-w-0 text-right text-sm font-semibold text-foreground",
+										"min-w-0 text-right text-sm font-semibold break-words text-foreground",
 										row.tone === "warning" &&
 											"text-amber-600 dark:text-amber-400",
 										row.tone === "danger" && "text-destructive",
@@ -177,9 +181,9 @@ function renderDetailSection(
 										? t(
 												"approvals:approvals.timelineActor",
 												"{at} by {actorName}",
-												{ at: event.at, actorName: event.actorName },
+												{ at: formatRecordedInstant(locale, event.at), actorName: event.actorName },
 											)
-										: event.at}
+										: formatRecordedInstant(locale, event.at)}
 								</p>
 							</div>
 						))}
@@ -236,6 +240,7 @@ export function ApprovalDetailPanel({
 	onActioned,
 }: ApprovalDetailPanelProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const [isRejecting, setIsRejecting] = useState(false);
 	const [rejectionReason, setRejectionReason] = useState("");
 	const [acceptedExceptions, setAcceptedExceptions] = useState<{
@@ -396,7 +401,7 @@ export function ApprovalDetailPanel({
 								disabled={!panelActions.canApprove}
 							/>
 						) : (
-							renderDetailSection(t, section)
+							renderDetailSection(t, section, locale)
 						),
 					)}
 				</div>

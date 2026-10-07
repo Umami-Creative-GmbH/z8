@@ -58,7 +58,8 @@ function TFormItem({ className, ...props }: React.ComponentProps<"div">) {
 
 	return (
 		<TFormItemContext.Provider value={{ id }}>
-			<div data-slot="form-item" className={cn("grid gap-2", className)} {...props} />
+			{/* content-start: a field stretched by a taller neighbour keeps its label and input on top. */}
+			<div data-slot="form-item" className={cn("grid content-start gap-2", className)} {...props} />
 		</TFormItemContext.Provider>
 	);
 }

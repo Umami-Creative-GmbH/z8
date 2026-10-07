@@ -249,7 +249,7 @@ function SubmittedTrip({ trip }: { trip: NonNullable<SubmittedReportView["facts"
 	const { t } = useTranslate();
 	return (
 		<Card>
-			<CardContent className="space-y-2 pt-6">
+			<CardContent className="space-y-2">
 				<h2 className="text-lg font-semibold">
 					{t("travelExpenses.report.trip.title", "Trip details")}
 				</h2>
@@ -305,7 +305,9 @@ function ApprovedReportPanels({
 }) {
 	return (
 		<>
-			{access !== "reviewer" && <SettlementPanel source={{ type: "report", id: reportId }} />}
+			{/* Not limited by access: the panel shows itself to finance and the owner only,
+			    including a reviewer who also has finance permission. */}
+			<SettlementPanel source={{ type: "report", id: reportId }} />
 			{access !== "owner" && <ReopenReportPanel reportId={reportId} />}
 			{access === "owner" && <ReportAdjustmentsPanel reportId={reportId} />}
 		</>

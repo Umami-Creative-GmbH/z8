@@ -404,7 +404,7 @@ function BatchItem({
 				<p className="text-sm text-muted-foreground">
 					{t(
 						"travelExpenses.finance.exports.counts",
-						"{reports} reports · {items} expenses · {receipts} receipts",
+						"{reports, plural, one {# report} other {# reports}} · {items, plural, one {# expense} other {# expenses}} · {receipts, plural, one {# receipt} other {# receipts}}",
 						{
 							reports: batch.revisionCount,
 							items: batch.itemCount,

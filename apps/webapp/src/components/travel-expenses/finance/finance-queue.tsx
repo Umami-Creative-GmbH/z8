@@ -106,7 +106,7 @@ export function FinanceQueue() {
 				aria-label={t("travelExpenses.finance.filter.label", "Show expenses")}
 			>
 				{FILTERS.map((value) => (
-					<ToggleGroupItem key={value} value={value}>
+					<ToggleGroupItem key={value} value={value} className="whitespace-nowrap px-3">
 						{filterLabel[value]}
 					</ToggleGroupItem>
 				))}

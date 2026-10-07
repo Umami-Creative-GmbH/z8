@@ -311,7 +311,7 @@ function StandaloneReportBody({
 
 	return (
 		<Card>
-			<CardContent className="space-y-6 pt-6">
+			<CardContent className="space-y-6">
 				<div className="flex flex-wrap items-center gap-2">
 					<h2 className="text-lg font-semibold">
 						{isMileage
@@ -472,7 +472,7 @@ function TripReportBody({
 			</div>
 
 			<Card>
-				<CardContent className="pt-6">
+				<CardContent>
 					<TripDetailsEditor
 						reportId={report.id}
 						details={trip}
@@ -507,7 +507,7 @@ function TripReportBody({
 					return (
 						<section key={item.id} aria-labelledby={headingId}>
 							<Card>
-								<CardContent className="space-y-4 pt-6">
+								<CardContent className="space-y-4">
 									<h3
 										id={headingId}
 										tabIndex={-1}
