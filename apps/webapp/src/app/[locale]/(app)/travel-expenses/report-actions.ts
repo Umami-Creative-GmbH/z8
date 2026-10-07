@@ -11,7 +11,6 @@ import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { canManageCurrentOrganizationSettings } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
-import { deletePrivateObject } from "@/lib/storage/export-s3-client";
 import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { currentReportOwner as currentOwner } from "@/lib/travel-expenses/current-owner";
 import { OWNER_SELF_APPROVAL_REASON } from "@/lib/travel-expenses/owner-self-approval";
@@ -523,7 +522,7 @@ export async function deleteDraftTravelExpenseReportAction(input: {
 		for (const attachmentId of result.cleanupIds) {
 			// react-doctor-disable-next-line react-doctor/async-await-in-loop
 			await runTravelExpenseReceiptCleanup(db, {
-				deleteObject: deletePrivateObject,
+				deleteObject: deleteTravelExpenseReceiptObject,
 				only: { attachmentId, organizationId: owner.organizationId },
 			}).catch((error) => logger.warn({ error }, "Deferred deleted report receipt cleanup"));
 		}
