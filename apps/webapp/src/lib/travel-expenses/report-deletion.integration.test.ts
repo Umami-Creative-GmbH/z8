@@ -67,6 +67,10 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 		harness.deleted.push(input.key);
 		harness.objects.delete(input.key);
 	},
+	async deletePrivateObjectVersions(input: { key: string }) {
+		harness.deleted.push(input.key);
+		harness.objects.delete(input.key);
+	},
 }));
 
 const actions = await import("@/app/[locale]/(app)/travel-expenses/report-actions");
@@ -91,6 +95,11 @@ const admin = integrationAdminPool();
 const pdfBytes = Buffer.from("%PDF-1.4\n% hotel receipt\n%%EOF");
 const owner = { organizationId: "t684-org", employeeId: ids.requester, userId: "t684-requester" };
 const NOT_DELETABLE = "This expense report can no longer be deleted";
+
+/** Where a receipt's small preview (#690) is stored, next to its original. */
+function previewKey(key: string) {
+	return `${key}.preview-192.webp`;
+}
 
 async function cleanup() {
 	// Organization first: its cascades record receipt cleanup work, removed next.
@@ -189,9 +198,10 @@ describe("deleting a draft travel expense report (#684)", () => {
 	});
 	afterAll(cleanup);
 
-	it("deletes a never-submitted standalone draft and cleans up its receipt", async () => {
+	it("deletes a never-submitted standalone draft and cleans up its receipt and preview", async () => {
 		const report = await createReceiptReport();
 		const key = await uploadReceipt(report);
+		harness.objects.set(previewKey(key), Buffer.from("preview"));
 
 		const deleted = await actions.deleteDraftTravelExpenseReportAction({ reportId: report.id });
 		expect(deleted).toEqual({ success: true, data: { reportId: report.id } });
@@ -199,7 +209,9 @@ describe("deleting a draft travel expense report (#684)", () => {
 		expect(await countRows("travel_expense_report", "id", report.id)).toBe(0);
 		expect(await countRows("travel_expense_report_item", "report_id", report.id)).toBe(0);
 		expect(await countRows("travel_expense_report_receipt", "report_id", report.id)).toBe(0);
-		expect(harness.deleted).toEqual([key]);
+		// The original first, then its preview.
+		expect(harness.deleted).toEqual([key, previewKey(key)]);
+		expect(harness.objects.size).toBe(0);
 		expect(await stagedCleanupWork()).toBe(0);
 		expect(await actions.getMyTravelExpenseReport(report.id)).toEqual({
 			success: false,
@@ -364,7 +376,7 @@ describe("deleting a draft travel expense report (#684)", () => {
 			expect(await countRows("travel_expense_legacy_draft_conversion", "claim_id", claimId)).toBe(
 				0,
 			);
-			expect(harness.deleted).toEqual([key]);
+			expect(harness.deleted).toEqual([key, previewKey(key)]);
 			expect(await stagedCleanupWork()).toBe(0);
 		});
 
@@ -383,7 +395,7 @@ describe("deleting a draft travel expense report (#684)", () => {
 				success: true,
 			});
 			expect(await countRows("travel_expense_claim", "id", claimId)).toBe(0);
-			expect(harness.deleted).toEqual([key]);
+			expect(harness.deleted).toEqual([key, previewKey(key)]);
 			expect(await stagedCleanupWork()).toBe(0);
 		});
 
