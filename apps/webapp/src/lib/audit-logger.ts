@@ -79,6 +79,7 @@ export enum AuditAction {
 	TRAVEL_EXPENSE_EXPORT_CANCELLED = "travel_expense.export_cancelled",
 	TRAVEL_EXPENSE_EXPORT_DOWNLOADED = "travel_expense.export_downloaded",
 	TRAVEL_EXPENSE_ADJUSTMENT_CREATED = "travel_expense.adjustment_created",
+	TRAVEL_EXPENSE_LEGACY_DRAFT_CONVERTED = "travel_expense.legacy_draft_converted",
 	TRAVEL_EXPENSE_RECOVERY_RECORDED = "travel_expense.recovery_recorded",
 	TRAVEL_EXPENSE_ALLOWANCE_OVERRIDE_AUTHORIZED = "travel_expense.allowance_override_authorized",
 	TRAVEL_EXPENSE_ALLOWANCE_OVERRIDE_REVOKED = "travel_expense.allowance_override_revoked",

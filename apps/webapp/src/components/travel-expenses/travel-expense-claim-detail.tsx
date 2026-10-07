@@ -9,6 +9,7 @@ import { parseInstant } from "@/lib/datetime/temporal-core";
 import { queryKeys } from "@/lib/query/keys";
 import type { TravelExpenseClaimDetailData } from "@/lib/travel-expenses/claim-detail-types";
 import { SettlementPanel } from "./finance/settlement-panel";
+import { LegacyDraftConversionPanel } from "./legacy-draft-conversion";
 import { TravelExpenseDateRange } from "./travel-expense-date-range";
 import { TravelExpenseLoadError } from "./travel-expense-load-error";
 
@@ -315,6 +316,9 @@ export function TravelExpenseClaimDetail({
 							</ul>
 						</CardContent>
 					</Card>
+					{claim.status === "draft" && claim.employeeId === employeeId && (
+						<LegacyDraftConversionPanel claimId={claim.id} />
+					)}
 					<TravelExpenseDecisionHistory data={data} />
 					{claim.status === "approved" && (
 						<SettlementPanel source={{ type: "legacy_claim", id: claim.id }} />

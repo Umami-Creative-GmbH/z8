@@ -107,6 +107,8 @@ export const queryKeys = {
 		referenceRateSettings: () => ["travel-expenses", "settings", "reference-rates"] as const,
 		reportAdjustments: (reportId: string) =>
 			["travel-expenses", "reports", reportId, "adjustments"] as const,
+		legacyConversion: (reportId: string) =>
+			["travel-expenses", "reports", reportId, "legacy-conversion"] as const,
 	},
 
 	// Employees

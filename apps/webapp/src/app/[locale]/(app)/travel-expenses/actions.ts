@@ -14,8 +14,12 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
+import { listOwnLegacyConversions } from "@/lib/travel-expenses/legacy-draft-conversion-read";
 
-type TravelExpenseClaimListItem = typeof travelExpenseClaim.$inferSelect;
+type TravelExpenseClaimListItem = typeof travelExpenseClaim.$inferSelect & {
+	/** The report a legacy draft was continued as (#616), if any. */
+	convertedReportId: string | null;
+};
 
 export async function getMyTravelExpenseClaims(): Promise<
 	ServerActionResult<TravelExpenseClaimListItem[]>
@@ -36,8 +40,20 @@ export async function getMyTravelExpenseClaims(): Promise<
 			),
 			orderBy: [desc(travelExpenseClaim.createdAt)],
 		});
+		// Drafts continued as reports (#616) link to their report.
+		const converted = await listOwnLegacyConversions(
+			db,
+			{ organizationId: authContext.employee.organizationId, employeeId: authContext.employee.id },
+			claims.filter((claim) => claim.status === "draft").map((claim) => claim.id),
+		);
 
-		return { success: true, data: claims as TravelExpenseClaimListItem[] };
+		return {
+			success: true,
+			data: claims.map((claim) => ({
+				...claim,
+				convertedReportId: converted.get(claim.id) ?? null,
+			})),
+		};
 	} catch (error) {
 		logger.error({ error }, "Failed to get travel expense claims");
 		return { success: false, error: "Failed to get travel expense claims" };

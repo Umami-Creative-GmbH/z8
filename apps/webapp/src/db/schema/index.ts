@@ -96,6 +96,7 @@ export * from "./travel-expense";
 export * from "./travel-expense-allowance-override";
 export * from "./travel-expense-allowance-policy";
 export * from "./travel-expense-conversion";
+export * from "./travel-expense-legacy-conversion";
 export * from "./travel-expense-per-diem";
 export * from "./travel-expense-project";
 export * from "./travel-expense-reference-rate";

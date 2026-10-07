@@ -50,6 +50,7 @@ import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { MileageItemEditor, mileageDraftMatches, mileageDraftOf } from "./mileage-item-editor";
 import { PerDiemItemEditor, perDiemDraftMatches, perDiemDraftOf } from "./per-diem-item-editor";
 import { ReceiptItemEditor } from "./receipt-item-editor";
+import { LegacyConversionNotice } from "./legacy-conversion-notice";
 import { AdjustmentNotice } from "./report-adjustments";
 import { ReportReviewFeedback } from "./report-review-cycle";
 import { ReportStatusBadge } from "./report-status";
@@ -266,6 +267,7 @@ export function TravelExpenseReportEditor({
 				<ReportReviewFeedback reportId={data.id} submissionCount={data.submissionCount} />
 			)}
 			{data && isEditableReportStatus(data.status) && <AdjustmentNotice reportId={data.id} />}
+			{data && isEditableReportStatus(data.status) && <LegacyConversionNotice reportId={data.id} />}
 			{data && !isEditableReportStatus(data.status) ? (
 				// Submitted reports are frozen; only their submission is shown.
 				<SubmittedTravelExpenseReport reportId={reportId} />
