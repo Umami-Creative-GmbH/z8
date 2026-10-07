@@ -70,6 +70,10 @@ vi.mock("@/lib/notifications/triggers", async (original) => ({
 		});
 	},
 }));
+// An unawaited delivery pass would outlive its test and deadlock the next cleanup.
+vi.mock("@/lib/approvals/delivery/kick", async () =>
+	(await import("@/test/integration-harness")).deliveryKick(),
+);
 vi.mock("@/lib/storage/s3-client", () => ({
 	S3_PUBLIC_BUCKET: "t603-public",
 	s3Client: {
