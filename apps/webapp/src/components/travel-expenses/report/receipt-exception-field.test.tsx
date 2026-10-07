@@ -50,6 +50,10 @@ describe("ReceiptExceptionField (#604)", () => {
 		fireEvent.click(screen.getByRole("checkbox", { name: /request an exception/i }));
 		await act(() => vi.advanceTimersByTimeAsync(1000));
 		expect(actions.saveReceiptExceptionAction).not.toHaveBeenCalled();
+		// Not an error yet: the explanation field was only just offered.
+		expect(screen.queryByText("Explain why the receipt is missing.")).toBeNull();
+		expect(screen.getByText("Unsaved changes")).toBeTruthy();
+		fireEvent.blur(screen.getByRole("textbox", { name: /why is the receipt missing/i }));
 		expect(screen.getByText("Explain why the receipt is missing.")).toBeTruthy();
 		expect(onContextChange).toHaveBeenLastCalledWith({
 			allowed: true,
