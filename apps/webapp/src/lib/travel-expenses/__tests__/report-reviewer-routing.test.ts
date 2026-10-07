@@ -93,6 +93,32 @@ describe("resolveReportReviewer", () => {
 		]);
 	});
 
+	it("lets an organization owner approve their own report only while nobody else can review it (#679)", () => {
+		const alone = resolveReportReviewer({
+			...base,
+			employees: [employee("requester", "admin")],
+			managerLinks: [{ employeeId: "requester", managerId: "requester", isPrimary: true }],
+			expenseApproverEmployeeId: "requester",
+			requesterIsOrganizationOwner: true,
+		});
+		const withApprover = resolveReportReviewer({
+			...base,
+			employees: [employee("requester", "admin"), employee("finance", "admin")],
+			expenseApproverEmployeeId: "finance",
+			requesterIsOrganizationOwner: true,
+		});
+		const inactive = resolveReportReviewer({
+			...base,
+			employees: [employee("requester", "admin", false)],
+			requesterIsOrganizationOwner: true,
+		});
+		expect([alone, withApprover, inactive]).toEqual([
+			{ ok: true, reviewerId: "requester", source: "owner_self_approval" },
+			{ ok: true, reviewerId: "finance", source: "expense_approver" },
+			{ ok: false, reason: "requester_inactive" },
+		]);
+	});
+
 	it("does not route for an inactive requester", () => {
 		expect(
 			resolveReportReviewer({

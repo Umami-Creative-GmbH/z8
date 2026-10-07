@@ -1,6 +1,7 @@
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { Cause, Effect, Exit, Option, Result } from "effect";
 import type { db as appDb } from "@/db";
+import { member } from "@/db/auth-schema";
 import {
 	approvalChainStageInstance,
 	approvalPolicy,
@@ -12,6 +13,7 @@ import {
 	travelExpenseReport,
 	travelExpenseSettings,
 } from "@/db/schema";
+import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { failureOfCause as failureOf } from "@/lib/effect/cause-failure";
 import { ValidationError } from "@/lib/effect/errors";
@@ -20,6 +22,11 @@ import {
 	type SubmittedAdjustmentRefusal,
 } from "@/lib/travel-expenses/adjustment-store";
 import { stampMileagePolicies } from "@/lib/travel-expenses/mileage-item-store";
+import {
+	OWNER_SELF_APPROVAL_REASON,
+	type OwnerSelfApprovalBlocker,
+	ownerSelfApprovalBlockers,
+} from "@/lib/travel-expenses/owner-self-approval";
 import { stampPerDiemPolicies } from "@/lib/travel-expenses/per-diem-store";
 import { resolveReportProjectAttribution } from "@/lib/travel-expenses/project-attribution-store";
 import { receiptExceptionContext } from "@/lib/travel-expenses/receipt-exception";
@@ -44,8 +51,10 @@ import { buildTravelExpenseReportSubmittedFacts } from "../evidence/travel-expen
 import { captureTravelExpenseReportSubmittedRevision } from "../evidence/travel-expense-report-store";
 import {
 	loadTravelExpenseReportFactsInput,
+	recordTravelExpenseReportOwnerSelfApproval,
 	verifyTravelExpenseReportLifecycle,
 } from "../evidence/travel-expense-report-submission";
+import { createApprovalAuditLogger } from "../infrastructure/audit-logger";
 import { resolvePolicyAndCreateApproval } from "../policies/chain-service";
 import {
 	APPROVAL_AMOUNT_THRESHOLD_CURRENCY,
@@ -60,8 +69,10 @@ import type { ApprovalDbService } from "./types";
  * finalization and draft saves take), it checks the saved report against what
  * the employee reviewed, routes it to one eligible reviewer other than the
  * requester, creates the legacy approval rows and freezes the complete
- * revision. Any refusal or failure rolls everything back; nothing is ever
- * approved during submission, whatever the reimbursable total.
+ * revision. Any refusal or failure rolls everything back. Nothing is approved
+ * during submission, whatever the reimbursable total, except an organization
+ * owner's report while nobody else can review it (#679): it is approved on
+ * submit and its evidence says so.
  */
 
 type Database = typeof appDb;
@@ -71,6 +82,14 @@ export type SubmitTravelExpenseReportResult =
 			kind: "submitted";
 			approvalRequestId: string;
 			reviewerEmployeeId: string;
+			submittedRevisionId: string;
+			submissionCycle: number;
+			totals: ReportSubmissionTotals;
+	  }
+	/** An owner's report, approved on submit because nobody else can review it (#679). */
+	| {
+			kind: "self_approved";
+			approvalRequestId: string;
 			submittedRevisionId: string;
 			submissionCycle: number;
 			totals: ReportSubmissionTotals;
@@ -85,6 +104,11 @@ export type SubmitTravelExpenseReportResult =
 	| { kind: "no_reviewer"; reason: "requester_inactive" | "no_eligible_reviewer" }
 	/** A matched approval policy would let the requester approve their own report. */
 	| { kind: "self_approval_route" }
+	/**
+	 * An owner alone in review submitted exceptions that need another
+	 * reviewer's explicit acceptance (#604, #610); they never accept their own.
+	 */
+	| { kind: "self_approval_blocked"; blockers: OwnerSelfApprovalBlocker[] }
 	/** A matched approval policy could not resolve a stage approver; `message` is for logs. */
 	| { kind: "routing_failed"; message: string }
 	/** Amount-threshold policies exist, but the report is not in their currency. */
@@ -98,7 +122,7 @@ export type SubmitTravelExpenseReportResult =
 	 */
 	| { kind: "adjustment_unavailable"; reason: SubmittedAdjustmentRefusal };
 
-type Refusal = Exclude<SubmitTravelExpenseReportResult, { kind: "submitted" }>;
+type Refusal = Exclude<SubmitTravelExpenseReportResult, { kind: "submitted" | "self_approved" }>;
 
 class SubmissionRefused extends Error {
 	constructor(readonly result: Refusal) {
@@ -112,56 +136,70 @@ function refuse(result: Refusal): never {
 
 async function loadRoutingDirectory(
 	tx: ApprovalDbService["db"],
-	input: { organizationId: string; requesterEmployeeId: string },
+	input: { organizationId: string; requesterEmployeeId: string; requesterUserId: string },
 ) {
-	const [employees, managerLinks, memberships, teams, settings] = await Promise.all([
-		tx
-			.select({
-				id: employee.id,
-				organizationId: employee.organizationId,
-				isActive: employee.isActive,
-				role: employee.role,
-				teamId: employee.teamId,
-			})
-			.from(employee)
-			.where(eq(employee.organizationId, input.organizationId)),
-		tx
-			.select({
-				employeeId: employeeManagers.employeeId,
-				managerId: employeeManagers.managerId,
-				isPrimary: employeeManagers.isPrimary,
-			})
-			.from(employeeManagers)
-			.where(eq(employeeManagers.employeeId, input.requesterEmployeeId)),
-		tx
-			.select({ employeeId: teamMembership.employeeId, teamId: teamMembership.teamId })
-			.from(teamMembership)
-			.where(
-				and(
-					eq(teamMembership.organizationId, input.organizationId),
-					eq(teamMembership.employeeId, input.requesterEmployeeId),
+	const [employees, managerLinks, memberships, teams, settings, requesterMembership] =
+		await Promise.all([
+			tx
+				.select({
+					id: employee.id,
+					organizationId: employee.organizationId,
+					isActive: employee.isActive,
+					role: employee.role,
+					teamId: employee.teamId,
+				})
+				.from(employee)
+				.where(eq(employee.organizationId, input.organizationId)),
+			tx
+				.select({
+					employeeId: employeeManagers.employeeId,
+					managerId: employeeManagers.managerId,
+					isPrimary: employeeManagers.isPrimary,
+				})
+				.from(employeeManagers)
+				.where(eq(employeeManagers.employeeId, input.requesterEmployeeId)),
+			tx
+				.select({ employeeId: teamMembership.employeeId, teamId: teamMembership.teamId })
+				.from(teamMembership)
+				.where(
+					and(
+						eq(teamMembership.organizationId, input.organizationId),
+						eq(teamMembership.employeeId, input.requesterEmployeeId),
+					),
 				),
-			),
-		tx
-			.select({
-				id: team.id,
-				organizationId: team.organizationId,
-				primaryManagerId: team.primaryManagerId,
-			})
-			.from(team)
-			.where(eq(team.organizationId, input.organizationId)),
-		tx
-			.select({ expenseApproverEmployeeId: travelExpenseSettings.expenseApproverEmployeeId })
-			.from(travelExpenseSettings)
-			.where(eq(travelExpenseSettings.organizationId, input.organizationId))
-			.limit(1),
-	]);
+			tx
+				.select({
+					id: team.id,
+					organizationId: team.organizationId,
+					primaryManagerId: team.primaryManagerId,
+				})
+				.from(team)
+				.where(eq(team.organizationId, input.organizationId)),
+			tx
+				.select({ expenseApproverEmployeeId: travelExpenseSettings.expenseApproverEmployeeId })
+				.from(travelExpenseSettings)
+				.where(eq(travelExpenseSettings.organizationId, input.organizationId))
+				.limit(1),
+			// The owner's self-approval (#679) reads the membership in this transaction.
+			tx
+				.select({ role: member.role })
+				.from(member)
+				.where(
+					and(
+						eq(member.organizationId, input.organizationId),
+						eq(member.userId, input.requesterUserId),
+						eq(member.status, "approved"),
+					),
+				)
+				.limit(1),
+		]);
 	return {
 		employees,
 		managerLinks,
 		teamMemberships: memberships,
 		teams,
 		expenseApproverEmployeeId: settings[0]?.expenseApproverEmployeeId ?? null,
+		requesterIsOrganizationOwner: hasOrganizationRole(requesterMembership[0]?.role, "owner"),
 	};
 }
 
@@ -359,6 +397,7 @@ export async function submitTravelExpenseReport(
 			const directory = await loadRoutingDirectory(tx, {
 				organizationId: owner.organizationId,
 				requesterEmployeeId: owner.employeeId,
+				requesterUserId: owner.userId,
 			});
 			const reviewer = resolveReportReviewer({
 				organizationId: owner.organizationId,
@@ -368,6 +407,9 @@ export async function submitTravelExpenseReport(
 			if (!reviewer.ok && reviewer.reason === "requester_inactive") {
 				refuse({ kind: "no_reviewer", reason: reviewer.reason });
 			}
+			// The organization owner alone in review (#679); a matching policy's
+			// own stages still route the report.
+			const ownerAlone = reviewer.ok && reviewer.source === "owner_self_approval";
 			// Thresholds are denominated in one known currency: an amount in another
 			// currency is never compared as an unlabeled number where one could route.
 			if (
@@ -408,8 +450,17 @@ export async function submitTravelExpenseReport(
 						teamId: requester?.teamId ?? null,
 						totals: check.totals,
 					}),
-					// Used only when no approval policy matches the report.
+					// Used only when no approval policy matches the report. The owner
+					// alone is their own default reviewer, which completes the request.
 					defaultApproverId: reviewer.ok ? reviewer.reviewerId : null,
+					...(ownerAlone
+						? {
+								metadataForResultKind: (kind) =>
+									kind === "auto_completed"
+										? { ownerSelfApproval: { reason: OWNER_SELF_APPROVAL_REASON } }
+										: undefined,
+							}
+						: {}),
 					transactionBehavior: "existing",
 				}),
 			);
@@ -426,7 +477,12 @@ export async function submitTravelExpenseReport(
 				throw failure;
 			}
 			const routing = routingExit.value;
-			if (routing.kind === "auto_completed") refuse({ kind: "self_approval_route" });
+			// The owner alone: their default request, or a matching policy whose
+			// stages all named them, completed. Anyone else's completed route is refused.
+			const selfApproved = ownerAlone && routing.kind === "auto_completed";
+			if (routing.kind === "auto_completed" && !selfApproved) {
+				refuse({ kind: "self_approval_route" });
+			}
 			if (routing.kind === "chain_created") {
 				// A policy stage resolved to the requester was approved by the system.
 				const selfStages = await tx
@@ -448,7 +504,7 @@ export async function submitTravelExpenseReport(
 				reportId: input.reportId,
 				routing,
 			});
-			if (lifecycle.approverEmployeeId === owner.employeeId) {
+			if (!selfApproved && lifecycle.approverEmployeeId === owner.employeeId) {
 				refuse({ kind: "self_approval_route" });
 			}
 
@@ -464,6 +520,10 @@ export async function submitTravelExpenseReport(
 				projectAttribution: projects.attribution,
 				...(adjustment.status === "ok" ? { adjustmentBaseline: adjustment.baseline } : {}),
 			});
+			if (selfApproved) {
+				const blockers = ownerSelfApprovalBlockers(facts.items);
+				if (blockers.length > 0) refuse({ kind: "self_approval_blocked", blockers });
+			}
 			const [subject, submitter] = await Promise.all([
 				loadEmployeeLabel(tx, owner.organizationId, { employeeId: owner.employeeId }),
 				loadEmployeeLabel(tx, owner.organizationId, { userId: owner.userId }),
@@ -487,6 +547,61 @@ export async function submitTravelExpenseReport(
 					observedWorkflowId: null,
 				},
 			});
+			if (selfApproved) {
+				// Decided with the submission: the report's decision time is its submission time.
+				const [decided] = await tx
+					.update(travelExpenseReport)
+					.set({
+						status: "approved",
+						decidedAt: submittedAt,
+						updatedAt: submittedAt,
+						updatedBy: owner.userId,
+					})
+					.where(
+						and(
+							eq(travelExpenseReport.id, input.reportId),
+							eq(travelExpenseReport.organizationId, owner.organizationId),
+							eq(travelExpenseReport.status, "submitted"),
+						),
+					)
+					.returning({ id: travelExpenseReport.id });
+				if (!decided) refuse({ kind: "not_draft" });
+				await recordTravelExpenseReportOwnerSelfApproval(tx, {
+					organizationId: owner.organizationId,
+					revision,
+					approvalRequestId: routing.approvalRequestId,
+					chainStageId: lifecycle.chainStageId,
+				});
+				// The decision log entry a reviewer's approval writes, naming the basis.
+				await Effect.runPromise(
+					createApprovalAuditLogger(dbService).log({
+						organizationId: owner.organizationId,
+						approvalId: routing.approvalRequestId,
+						approvalType: "travel_expense_report",
+						entityId: input.reportId,
+						action: "approve",
+						performedBy: owner.userId,
+						previousStatus: "pending",
+						newStatus: "approved",
+						metadata: { selfApproval: OWNER_SELF_APPROVAL_REASON },
+					}),
+				);
+				// The cycle's `decided` intent (#623): no request waits, so no card is planned.
+				deliveryIntent = await recordTravelExpenseReportDeliveryIntent(tx, {
+					organizationId: owner.organizationId,
+					reportId: input.reportId,
+					approvalRequestId: routing.approvalRequestId,
+					revision: revision.legacy,
+					event: "decided",
+				});
+				return {
+					kind: "self_approved",
+					approvalRequestId: routing.approvalRequestId,
+					submittedRevisionId: revision.id,
+					submissionCycle,
+					totals: check.totals,
+				} as const;
+			}
 			// The cycle's first lifecycle intent, only while a delivery control exists (#623).
 			deliveryIntent = await recordTravelExpenseReportDeliveryIntent(tx, {
 				organizationId: owner.organizationId,

@@ -23,7 +23,6 @@ import {
 	getDateRangeForPreset,
 } from "@/lib/reports/date-ranges";
 import type { PeriodPreset, ReportDateRange } from "@/lib/reports/types";
-import { cn } from "@/lib/utils";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
 interface DateRangePickerProps {
@@ -120,11 +119,9 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 				<Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
 					<PopoverTrigger asChild>
 						<Button
-							variant="outline"
-							className={cn(
-								"w-full justify-start text-left font-normal sm:w-[280px]",
-								!value && "text-muted-foreground",
-							)}
+							variant="field"
+							className="w-full justify-start text-left sm:w-[280px]"
+							data-placeholder={startDate ? undefined : ""}
 						>
 							<IconCalendar className="mr-2 size-4" />
 							{startDate ? (

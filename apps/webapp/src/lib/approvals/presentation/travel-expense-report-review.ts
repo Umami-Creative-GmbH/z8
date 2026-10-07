@@ -11,6 +11,7 @@ import {
 	instantFromDate,
 	instantToCanonicalString,
 } from "@/lib/datetime/temporal-core";
+import { isOwnerSelfApprovalDecision } from "@/lib/travel-expenses/owner-self-approval";
 import type { TripDestination } from "@/lib/travel-expenses/trip-destination";
 import { type LegacyDecisionEvidenceRecord, listLegacyDecisionEvidence } from "../evidence/store";
 import type { TravelExpenseReportRevisionComparison } from "../evidence/travel-expense-report-facts";
@@ -233,12 +234,21 @@ const CATEGORIES: Record<string, ApprovalInboxLocalizedText> = {
  * names the returned report; it is never labelled as a rejection.
  */
 export function travelExpenseReportDecisionLabel(
-	decision: Pick<LegacyDecisionEvidenceRecord, "requestOutcome" | "assignmentOutcome" | "result">,
+	decision: Pick<
+		LegacyDecisionEvidenceRecord,
+		"operationKind" | "requestOutcome" | "assignmentOutcome" | "result"
+	>,
 ): ApprovalInboxLocalizedText {
 	if (decision.result?.disposition === "returned" || decision.result?.reportStatus === "returned")
 		return text(
 			"approvals:approvals.evidence.reportReturnedForChanges",
 			"Report returned for changes",
+		);
+	// #679: no reviewer decided; the owner's report approved itself on submit.
+	if (isOwnerSelfApprovalDecision(decision))
+		return text(
+			"approvals:approvals.evidence.reportSelfApproved",
+			"Approved automatically: no other reviewer",
 		);
 	if (decision.requestOutcome === "approved")
 		return text("approvals:approvals.evidence.reportApproved", "Report approved");

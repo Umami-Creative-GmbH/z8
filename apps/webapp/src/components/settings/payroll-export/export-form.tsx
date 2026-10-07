@@ -666,7 +666,7 @@ function FilterPopover({
 			</Label>
 			<Popover>
 				<PopoverTrigger asChild>
-					<Button variant="outline" className="w-full justify-start">
+					<Button variant="field" className="w-full justify-start">
 						{selectedIds.length
 							? t(text.selected.key, text.selected.fallback, { count: selectedIds.length })
 							: t(text.all.key, text.all.fallback)}

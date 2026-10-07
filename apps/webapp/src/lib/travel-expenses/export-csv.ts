@@ -636,6 +636,8 @@ export const TRAVEL_EXPENSE_EXPORT_EXPENSE_COLUMNS = [
 	...PER_DIEM_LOCATION_COLUMNS,
 	// Appended (v11+) so earlier column positions stay stable.
 	...RATE_EVIDENCE_COLUMNS,
+	// Appended (#679): an owner's self-approval instead of a reviewer's decision.
+	"approval_basis",
 ] as const;
 
 const REPORT_COLUMNS = [
@@ -659,6 +661,7 @@ const REPORT_COLUMNS = [
 	"item_count",
 	"receipt_count",
 	...ADJUSTMENT_REPORT_COLUMNS,
+	"approval_basis",
 ] as const;
 
 const RECEIPT_COLUMNS = [
@@ -825,6 +828,7 @@ export function buildTravelExpenseExportFiles(
 				}),
 				...perDiemLocationCells(item, { text: csvText, integer: csvInteger }),
 				...rateEvidenceCells(item),
+				csvText(revision.approvalBasis),
 			]);
 			item.receipts.forEach((receipt, index) => {
 				receiptRows.push([
@@ -848,6 +852,7 @@ export function buildTravelExpenseExportFiles(
 			csvInteger(facts.items.length),
 			csvInteger(receiptCount),
 			...adjustmentReportCells(facts, { text: csvText, decimal: csvDecimal }),
+			csvText(revision.approvalBasis),
 		]);
 	}
 	return [
