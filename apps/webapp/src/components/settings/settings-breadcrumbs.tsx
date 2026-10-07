@@ -4,6 +4,7 @@ import { IconChevronRight, IconSettings } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { Fragment } from "react";
 import { Link, usePathname } from "@/navigation";
+import { SETTINGS_ENTRIES } from "./settings-config";
 
 interface Breadcrumb {
 	label: string;
@@ -80,8 +81,11 @@ function buildSettingsBreadcrumbs(pathname: string, t: ReturnType<typeof useTran
 				label = t("common.details", "Details");
 			}
 		} else {
-			// Capitalize first letter for other segments
-			label = segment.charAt(0).toUpperCase() + segment.slice(1);
+			// A settings page is named like its navigation entry; otherwise capitalize the segment.
+			const entry = SETTINGS_ENTRIES.find((candidate) => candidate.href === currentPath);
+			label = entry
+				? t(entry.titleKey, entry.titleDefault)
+				: segment.charAt(0).toUpperCase() + segment.slice(1);
 		}
 
 		breadcrumbs.push({
