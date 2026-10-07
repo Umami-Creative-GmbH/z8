@@ -35,6 +35,16 @@ export function parseUnits(value: string, scale: number): bigint | null {
 }
 
 /**
+ * An entered decimal with a decimal comma ("257,30") as a plain decimal
+ * ("257.30"), like every amount field accepts it. Input that already has a
+ * point is only trimmed, so grouping such as "1.234,50" stays invalid.
+ */
+export function normalizeDecimalInput(value: string): string {
+	const trimmed = value.trim();
+	return trimmed.includes(".") ? trimmed : trimmed.replace(",", ".");
+}
+
+/**
  * How a result between two representable values is rounded, applied exactly
  * once at the end of a calculation (never to intermediate products):
  * - `half_up`: a half rounds away from zero (0.125 → 0.13, -0.125 → -0.13),
