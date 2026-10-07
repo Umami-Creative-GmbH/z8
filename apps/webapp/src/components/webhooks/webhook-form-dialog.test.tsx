@@ -20,7 +20,7 @@ vi.mock("@tolgee/react", () => ({
 		t: (_key: string, fallback: string, values?: { count?: number }) =>
 			values?.count === undefined
 				? fallback
-				: fallback.replace("{{count}}", String(values.count)),
+				: fallback.replace("{count}", String(values.count)),
 	}),
 }));
 

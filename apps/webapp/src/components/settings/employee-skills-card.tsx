@@ -209,12 +209,12 @@ export function EmployeeSkillsCard({
 													className={`text-xs ${expired ? "text-destructive" : "text-muted-foreground"}`}
 												>
 													{expired
-														? t("settings.skills.expiredOn", "Expired on {{date}}", {
+														? t("settings.skills.expiredOn", "Expired on {date}", {
 																date: DateTime.fromJSDate(employeeSkill.expiresAt).toLocaleString(
 																	DateTime.DATE_MED,
 																),
 															})
-														: t("settings.skills.expiresOn", "Expires {{date}}", {
+														: t("settings.skills.expiresOn", "Expires {date}", {
 																date: DateTime.fromJSDate(employeeSkill.expiresAt).toLocaleString(
 																	DateTime.DATE_MED,
 																),
