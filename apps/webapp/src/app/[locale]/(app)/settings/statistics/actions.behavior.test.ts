@@ -131,7 +131,7 @@ vi.mock("@/db", () => {
 
 vi.mock("@/lib/effect/services/auth.service", async () => {
 	const { Context } = await import("effect");
-	const AuthService = Context.GenericTag<any>("AuthService");
+	const AuthService = Context.Service<any>("AuthService");
 	return { AuthService };
 });
 

@@ -14,7 +14,7 @@ vi.mock("@/lib/setup/bootstrap.server", () => ({
 	setupBootstrap: { authorize: mocks.authorize },
 }));
 vi.mock("@/lib/effect/services/setup.service", () => ({
-	SetupService: Context.GenericTag("TestSetup"),
+	SetupService: Context.Service("TestSetup"),
 }));
 vi.mock("@/lib/effect/runtime", async () => {
 	const { SetupService } = await import("@/lib/effect/services/setup.service");

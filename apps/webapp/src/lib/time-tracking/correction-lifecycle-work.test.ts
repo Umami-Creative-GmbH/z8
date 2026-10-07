@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { ConflictError } from "@/lib/effect/errors";
@@ -123,5 +124,18 @@ describe("adopted correction outcomes", () => {
 	it("passes other errors through", () => {
 		const error = new Error("unexpected");
 		expect(translateCorrectionWorkError(error)).toBe(error);
+	});
+
+	it("answers a collision an Effect program rejected with", async () => {
+		const correction = Effect.runPromise(Effect.die(new CompletedWorkCollisionError())).catch(
+			(error: unknown) => {
+				throw translateCorrectionWorkError(error);
+			},
+		);
+
+		await expect(correction).rejects.toMatchObject({
+			_tag: "ConflictError",
+			conflictType: "completed_work_collision",
+		});
 	});
 });

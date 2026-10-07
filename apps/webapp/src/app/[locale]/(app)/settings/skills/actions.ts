@@ -52,30 +52,26 @@ export async function createSkill(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const actor = yield* _(getEmployeeSettingsActorContext());
+			return Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext();
 				const { session } = actor;
-				const skillService = yield* _(SkillService);
+				const skillService = yield* SkillService;
 
-				yield* _(
-					requireOrgAdminEmployeeSettingsAccess(actor, {
-						message: "Only organization admins can create skills",
-						resource: "skill",
-						action: "create",
-					}),
-				);
+				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+					message: "Only organization admins can create skills",
+					resource: "skill",
+					action: "create",
+				});
 
 				if (actor.currentEmployee) {
 					span.setAttribute("employee.id", actor.currentEmployee.id);
 				}
 
-				const newSkill = yield* _(
-					skillService.createSkill({
-						...data,
-						organizationId: actor.organizationId,
-						createdBy: session.user.id,
-					}),
-				);
+				const newSkill = yield* skillService.createSkill({
+					...data,
+					organizationId: actor.organizationId,
+					createdBy: session.user.id,
+				});
 
 				logger.info(
 					{
@@ -92,15 +88,15 @@ export async function createSkill(
 				span.setStatus({ code: SpanStatusCode.OK });
 				return newSkill as SkillWithRelations;
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
 						logger.error({ error }, "Failed to create skill");
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -130,25 +126,21 @@ export async function updateSkill(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const actor = yield* _(getEmployeeSettingsActorContext());
+			return Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext();
 				const { session } = actor;
-				const skillService = yield* _(SkillService);
+				const skillService = yield* SkillService;
 
-				yield* _(
-					requireOrgAdminEmployeeSettingsAccess(actor, {
-						message: "Only organization admins can update skills",
-						resource: "skill",
-						action: "update",
-					}),
-				);
+				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+					message: "Only organization admins can update skills",
+					resource: "skill",
+					action: "update",
+				});
 
-				const updatedSkill = yield* _(
-					skillService.updateSkill(skillId, {
-						...data,
-						updatedBy: session.user.id,
-					}),
-				);
+				const updatedSkill = yield* skillService.updateSkill(skillId, {
+					...data,
+					updatedBy: session.user.id,
+				});
 
 				logger.info({ skillId }, "Skill updated successfully");
 
@@ -157,15 +149,15 @@ export async function updateSkill(
 				span.setStatus({ code: SpanStatusCode.OK });
 				return updatedSkill as SkillWithRelations;
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
 						logger.error({ error, skillId }, "Failed to update skill");
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -192,19 +184,17 @@ export async function deleteSkill(skillId: string): Promise<ServerActionResult<v
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const actor = yield* _(getEmployeeSettingsActorContext());
-				const skillService = yield* _(SkillService);
+			return Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext();
+				const skillService = yield* SkillService;
 
-				yield* _(
-					requireOrgAdminEmployeeSettingsAccess(actor, {
-						message: "Only organization admins can delete skills",
-						resource: "skill",
-						action: "delete",
-					}),
-				);
+				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+					message: "Only organization admins can delete skills",
+					resource: "skill",
+					action: "delete",
+				});
 
-				yield* _(skillService.deleteSkill(skillId));
+				yield* skillService.deleteSkill(skillId);
 
 				logger.info({ skillId }, "Skill deleted successfully");
 
@@ -212,15 +202,15 @@ export async function deleteSkill(skillId: string): Promise<ServerActionResult<v
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
 						logger.error({ error, skillId }, "Failed to delete skill");
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -238,11 +228,11 @@ export async function deleteSkill(skillId: string): Promise<ServerActionResult<v
 export async function getOrganizationSkills(options?: {
 	includeInactive?: boolean;
 }): Promise<ServerActionResult<SkillWithRelations[]>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext());
-		const skillService = yield* _(SkillService);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext();
+		const skillService = yield* SkillService;
 
-		const skills = yield* _(skillService.getOrganizationSkills(actor.organizationId, options));
+		const skills = yield* skillService.getOrganizationSkills(actor.organizationId, options);
 
 		return skills;
 	}).pipe(Effect.provide(AppLayer));
@@ -272,43 +262,37 @@ export async function assignSkillToEmployee(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const actor = yield* _(getEmployeeSettingsActorContext());
+			return Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext();
 				const { session } = actor;
-				const skillService = yield* _(SkillService);
+				const skillService = yield* SkillService;
 
 				if (actor.accessTier !== "orgAdmin" && actor.accessTier !== "manager") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins and managers can assign skills",
-								userId: session.user.id,
-								resource: "employeeSkill",
-								action: "create",
-							}),
-						),
+					yield* Effect.fail(
+						new AuthorizationError({
+							message: "Only admins and managers can assign skills",
+							userId: session.user.id,
+							resource: "employeeSkill",
+							action: "create",
+						}),
 					);
 				}
 
-				const targetEmployee = yield* _(getTargetEmployee(data.employeeId));
+				const targetEmployee = yield* getTargetEmployee(data.employeeId);
 
-				yield* _(
-					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-						message: "You do not have access to this employee's skills",
-						resource: "employeeSkill",
-						action: "create",
-					}),
-				);
+				yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+					message: "You do not have access to this employee's skills",
+					resource: "employeeSkill",
+					action: "create",
+				});
 
-				const assignment = yield* _(
-					skillService.assignSkillToEmployee({
-						...data,
-						assignedBy: session.user.id,
-					}),
-				);
+				const assignment = yield* skillService.assignSkillToEmployee({
+					...data,
+					assignedBy: session.user.id,
+				});
 
 				// Get the skill details for the response
-				const skillDetails = yield* _(skillService.getSkillById(data.skillId));
+				const skillDetails = yield* skillService.getSkillById(data.skillId);
 
 				logger.info(
 					{
@@ -326,15 +310,15 @@ export async function assignSkillToEmployee(
 					skill: skillDetails!,
 				} as EmployeeSkillWithDetails;
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
 						logger.error({ error }, "Failed to assign skill to employee");
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -365,34 +349,30 @@ export async function removeSkillFromEmployee(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const actor = yield* _(getEmployeeSettingsActorContext());
-				const skillService = yield* _(SkillService);
+			return Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext();
+				const skillService = yield* SkillService;
 
 				if (actor.accessTier !== "orgAdmin" && actor.accessTier !== "manager") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins and managers can remove skills",
-								userId: actor.session.user.id,
-								resource: "employeeSkill",
-								action: "delete",
-							}),
-						),
+					yield* Effect.fail(
+						new AuthorizationError({
+							message: "Only admins and managers can remove skills",
+							userId: actor.session.user.id,
+							resource: "employeeSkill",
+							action: "delete",
+						}),
 					);
 				}
 
-				const targetEmployee = yield* _(getTargetEmployee(employeeId));
+				const targetEmployee = yield* getTargetEmployee(employeeId);
 
-				yield* _(
-					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-						message: "You do not have access to this employee's skills",
-						resource: "employeeSkill",
-						action: "delete",
-					}),
-				);
+				yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+					message: "You do not have access to this employee's skills",
+					resource: "employeeSkill",
+					action: "delete",
+				});
 
-				yield* _(skillService.removeSkillFromEmployee(employeeId, skillId));
+				yield* skillService.removeSkillFromEmployee(employeeId, skillId);
 
 				logger.info(
 					{
@@ -406,15 +386,15 @@ export async function removeSkillFromEmployee(
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
 						logger.error({ error, employeeId, skillId }, "Failed to remove skill from employee");
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -432,21 +412,19 @@ export async function removeSkillFromEmployee(
 export async function getEmployeeSkills(
 	employeeId: string,
 ): Promise<ServerActionResult<EmployeeSkillWithDetails[]>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext());
-		const skillService = yield* _(SkillService);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext();
+		const skillService = yield* SkillService;
 
-		const targetEmployee = yield* _(getTargetEmployee(employeeId));
+		const targetEmployee = yield* getTargetEmployee(employeeId);
 
-		yield* _(
-			ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-				message: "You do not have access to this employee's skills",
-				resource: "employeeSkill",
-				action: "read",
-			}),
-		);
+		yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+			message: "You do not have access to this employee's skills",
+			resource: "employeeSkill",
+			action: "read",
+		});
 
-		const skills = yield* _(skillService.getEmployeeSkills(employeeId));
+		const skills = yield* skillService.getEmployeeSkills(employeeId);
 
 		return skills;
 	}).pipe(Effect.provide(AppLayer));
@@ -477,26 +455,22 @@ export async function setSubareaSkillRequirements(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const actor = yield* _(getEmployeeSettingsActorContext());
+			return Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext();
 				const { session } = actor;
-				const skillService = yield* _(SkillService);
+				const skillService = yield* SkillService;
 
-				yield* _(
-					requireOrgAdminEmployeeSettingsAccess(actor, {
-						message: "Only organization admins can set subarea skill requirements",
-						resource: "subareaSkillRequirement",
-						action: "update",
-					}),
-				);
+				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+					message: "Only organization admins can set subarea skill requirements",
+					resource: "subareaSkillRequirement",
+					action: "update",
+				});
 
-				yield* _(
-					skillService.setSubareaSkillRequirements({
-						targetId: subareaId,
-						requirements,
-						createdBy: session.user.id,
-					}),
-				);
+				yield* skillService.setSubareaSkillRequirements({
+					targetId: subareaId,
+					requirements,
+					createdBy: session.user.id,
+				});
 
 				logger.info(
 					{
@@ -510,15 +484,15 @@ export async function setSubareaSkillRequirements(
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
 						logger.error({ error, subareaId }, "Failed to set subarea skill requirements");
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -549,26 +523,22 @@ export async function setTemplateSkillRequirements(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const actor = yield* _(getEmployeeSettingsActorContext());
+			return Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext();
 				const { session } = actor;
-				const skillService = yield* _(SkillService);
+				const skillService = yield* SkillService;
 
-				yield* _(
-					requireOrgAdminEmployeeSettingsAccess(actor, {
-						message: "Only organization admins can set template skill requirements",
-						resource: "templateSkillRequirement",
-						action: "update",
-					}),
-				);
+				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+					message: "Only organization admins can set template skill requirements",
+					resource: "templateSkillRequirement",
+					action: "update",
+				});
 
-				yield* _(
-					skillService.setTemplateSkillRequirements({
-						targetId: templateId,
-						requirements,
-						createdBy: session.user.id,
-					}),
-				);
+				yield* skillService.setTemplateSkillRequirements({
+					targetId: templateId,
+					requirements,
+					createdBy: session.user.id,
+				});
 
 				logger.info(
 					{
@@ -582,15 +552,15 @@ export async function setTemplateSkillRequirements(
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
 						logger.error({ error, templateId }, "Failed to set template skill requirements");
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -617,12 +587,12 @@ export async function validateEmployeeForShift(
 		templateId?: string | null;
 	},
 ): Promise<ServerActionResult<SkillValidationResult>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		yield* _(authService.getSession());
-		const skillService = yield* _(SkillService);
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		yield* authService.getSession();
+		const skillService = yield* SkillService;
 
-		const result = yield* _(skillService.validateEmployeeForShift(employeeId, shiftData));
+		const result = yield* skillService.validateEmployeeForShift(employeeId, shiftData);
 
 		return result;
 	}).pipe(Effect.provide(AppLayer));
@@ -637,33 +607,35 @@ export async function validateEmployeeForShift(
 export async function getQualifiedEmployeesForSkills(
 	skillIds: string[],
 ): Promise<ServerActionResult<string[]>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
-		const skillService = yield* _(SkillService);
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
+		const skillService = yield* SkillService;
 
 		// Get current employee
-		const currentEmployee = yield* _(
-			dbService.query("getCurrentEmployee", async () => {
+		const currentEmployee = yield* dbService
+			.query("getCurrentEmployee", async () => {
 				return await dbService.db.query.employee.findFirst({
 					where: eq(employee.userId, session.user.id),
 				});
-			}),
-			Effect.flatMap((emp) =>
-				emp
-					? Effect.succeed(emp)
-					: Effect.fail(
-							new NotFoundError({
-								message: "Employee profile not found",
-								entityType: "employee",
-							}),
-						),
-			),
-		);
+			})
+			.pipe(
+				Effect.flatMap((emp) =>
+					emp
+						? Effect.succeed(emp)
+						: Effect.fail(
+								new NotFoundError({
+									message: "Employee profile not found",
+									entityType: "employee",
+								}),
+							),
+				),
+			);
 
-		const qualifiedEmployeeIds = yield* _(
-			skillService.getQualifiedEmployeesForSkills(currentEmployee.organizationId, skillIds),
+		const qualifiedEmployeeIds = yield* skillService.getQualifiedEmployeesForSkills(
+			currentEmployee.organizationId,
+			skillIds,
 		);
 
 		return qualifiedEmployeeIds;

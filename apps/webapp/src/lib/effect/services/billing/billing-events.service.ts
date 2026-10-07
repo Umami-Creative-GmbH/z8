@@ -7,8 +7,8 @@ import { stripeEvent, subscription } from "@/db/schema";
 import { env } from "@/env";
 import { sendBillingSystemEmail } from "@/lib/billing/billing-system-email";
 import { createLogger } from "@/lib/logger";
-import { DatabaseError, type StripeError } from "../../errors";
-import { withStripeSubscriptionMutation } from "./billing-configuration";
+import { DatabaseError, type StripeError } from "@/lib/effect/errors";
+import { withStripeSubscriptionMutation } from "@/lib/effect/services/billing/billing-configuration";
 import { SeatSyncService } from "./seat-sync.service";
 import { StripeService } from "./stripe.service";
 import { SubscriptionService } from "./subscription.service";
@@ -58,7 +58,7 @@ const getCustomerEmailFromObject = (
  * BillingEventsService - Processes Stripe webhook events
  * Handles idempotency and state synchronization
  */
-export class BillingEventsService extends Context.Tag("BillingEventsService")<
+export class BillingEventsService extends Context.Service<
 	BillingEventsService,
 	{
 		/**
@@ -82,7 +82,7 @@ export class BillingEventsService extends Context.Tag("BillingEventsService")<
 			error?: string,
 		) => Effect.Effect<void, DatabaseError>;
 	}
->() {}
+>()("BillingEventsService") {}
 
 export const BillingEventsServiceLive = Layer.effect(
 	BillingEventsService,

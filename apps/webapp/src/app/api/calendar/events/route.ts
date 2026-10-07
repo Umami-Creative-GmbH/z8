@@ -13,6 +13,7 @@ import type {
 	CalendarEvent,
 	DailyWorkActualMinutes,
 	DailyWorkRequirements,
+	LiveWork,
 } from "@/lib/calendar/types";
 import { buildDailyActualMinutes } from "@/lib/calendar/work-hours-summary";
 import { getWorkPeriodsForMonth } from "@/lib/calendar/work-period-service";
@@ -71,7 +72,11 @@ async function fetchMonthEvents(
 	showWorkPeriods: boolean,
 	includeWorkPeriodActuals: boolean,
 	calendarTimezone: string | null,
-): Promise<{ events: CalendarEvent[]; dailyActualMinutes: DailyWorkActualMinutes }> {
+): Promise<{
+	events: CalendarEvent[];
+	dailyActualMinutes: DailyWorkActualMinutes;
+	liveWork: LiveWorkResult[];
+}> {
 	// Fetch all event types in parallel - conditional fetches return empty arrays
 	const [holidays, absences, timeEntries, workPeriods] = await Promise.all([
 		fetchHolidayEvents({
@@ -103,7 +108,27 @@ async function fetchMonthEvents(
 					endExclusive: dateFromInstant(monthRange.endExclusive),
 				})
 			: {},
+		// The client adds the elapsed part of live work to the day totals as it runs.
+		liveWork: includeWorkPeriodActuals
+			? workPeriods
+					.filter((event) => event.metadata.isRunning)
+					.map((event) => ({ workPeriodId: event.id, startedAt: event.date }))
+			: [],
 	};
+}
+
+interface LiveWorkResult {
+	workPeriodId: string;
+	startedAt: Date;
+}
+
+/** Each month fetch sees the same live work, so keep one entry per work period. */
+function uniqueLiveWork(results: { liveWork: LiveWorkResult[] }[]): LiveWork[] {
+	const startedAtById = new Map<string, Date>();
+	for (const { workPeriodId, startedAt } of results.flatMap((result) => result.liveWork)) {
+		startedAtById.set(workPeriodId, startedAt);
+	}
+	return [...startedAtById.values()].map((startedAt) => ({ startedAt }));
 }
 
 function getRequestDateRange(
@@ -283,6 +308,7 @@ export async function GET(request: NextRequest) {
 			: getRequestDateRange(yearNum, monthNum, fullYear, calendarTimezone);
 		let dailyRequirements: DailyWorkRequirements = {};
 		let dailyActualMinutes: DailyWorkActualMinutes = {};
+		let liveWork: LiveWork[] = [];
 		let events: CalendarEvent[] = [];
 		let workBalance: EmployeeWorkBalancePayload | null = null;
 		const includeWorkPeriodActuals = Boolean(scopedEmployeeId);
@@ -324,6 +350,7 @@ export async function GET(request: NextRequest) {
 				{},
 				...monthResults.map((result) => result.dailyActualMinutes),
 			);
+			liveWork = uniqueLiveWork(monthResults);
 		} else if (fullYear) {
 			// Fetch all 12 months in parallel
 			const monthPromises = Array.from({ length: 12 }, (_, monthIndex) =>
@@ -352,6 +379,7 @@ export async function GET(request: NextRequest) {
 				{},
 				...monthResults.map((result) => result.dailyActualMinutes),
 			);
+			liveWork = uniqueLiveWork(monthResults);
 		} else {
 			// Fetch single month
 			const monthResult = await fetchMonthEvents(
@@ -369,6 +397,7 @@ export async function GET(request: NextRequest) {
 			);
 			events = monthResult.events;
 			dailyActualMinutes = monthResult.dailyActualMinutes;
+			liveWork = uniqueLiveWork([monthResult]);
 		}
 
 		const [resolvedDailyRequirements, resolvedWorkBalance] = await Promise.all([
@@ -390,6 +419,7 @@ export async function GET(request: NextRequest) {
 			total: events.length,
 			dailyRequirements,
 			dailyActualMinutes,
+			liveWork,
 			workBalance,
 			calendarTimezone,
 		});

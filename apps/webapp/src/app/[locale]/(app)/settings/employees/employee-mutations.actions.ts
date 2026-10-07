@@ -74,121 +74,107 @@ export async function createEmployeeAction(
 			logger.error({ error }, "Failed to create employee");
 		},
 		execute: (span) =>
-			Effect.gen(function* (_) {
-				const actor = yield* _(
-					getEmployeeSettingsActorContext({
-						organizationId: data.organizationId,
-					}),
-				);
+			Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext({
+					organizationId: data.organizationId,
+				});
 				const { session, dbService } = actor;
 
-				yield* _(
-					requireOrgAdminEmployeeSettingsAccess(actor, {
-						message: "Only organization admins can create employee records",
-						resource: "employee",
-						action: "create",
-					}),
-				);
+				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+					message: "Only organization admins can create employee records",
+					resource: "employee",
+					action: "create",
+				});
 
 				if (actor.currentEmployee) {
 					span.setAttribute("currentEmployee.id", actor.currentEmployee.id);
 				}
 
-				const validatedData = yield* _(
-					validateInput(createEmployeeSchema, data),
-				);
+				const validatedData = yield* validateInput(createEmployeeSchema, data);
 
-				yield* _(getTargetUser(validatedData.userId));
+				yield* getTargetUser(validatedData.userId);
 
-				const existing = yield* _(
-					dbService.query("checkExistingEmployee", async () => {
-						return await dbService.db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, validatedData.userId),
-								eq(employee.organizationId, validatedData.organizationId),
-							),
-						});
-					}),
-				);
+				const existing = yield* dbService.query("checkExistingEmployee", async () => {
+					return await dbService.db.query.employee.findFirst({
+						where: and(
+							eq(employee.userId, validatedData.userId),
+							eq(employee.organizationId, validatedData.organizationId),
+						),
+					});
+				});
 
 				if (existing) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message:
-									"Employee already exists for this user in this organization",
-								field: "userId",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message:
+								"Employee already exists for this user in this organization",
+							field: "userId",
+						}),
 					);
 				}
 
 				const hourlyRateValue = parseHourlyRate(validatedData.hourlyRate);
 
-				const [newEmployee] = yield* _(
-					dbService
-						.query("createEmployee", () =>
-							// A new employee row gives the user an employee role and team in
-							// the organization: an absent-row insertion under their protection.
-							withAuthorizationMutation(
-								{
-									organizationId: validatedData.organizationId,
-									userIds: [validatedData.userId],
-								},
-								(tx) =>
-									tx
-										.insert(employee)
-										.values({
-											userId: validatedData.userId,
-											organizationId: validatedData.organizationId,
-											teamId: validatedData.teamId || null,
-											role: validatedData.role,
-											position: validatedData.position || null,
-											gender: validatedData.gender || null,
-											pronouns: validatedData.pronouns || null,
-											birthday: validatedData.birthday || null,
-											startDate: validatedData.startDate || null,
-											endDate: validatedData.endDate || null,
-											isActive: true,
-											contractType: validatedData.contractType || "fixed",
-											currentHourlyRate: hourlyRateValue?.toString() || null,
-										})
-										.returning(),
-								dbService.db,
-							),
-						)
-						.pipe(
-							Effect.mapError((error) =>
-								isEmployeeIdentityConflict(error)
-									? new ValidationError({
-											message:
-												"Employee already exists for this user in this organization",
-											field: "userId",
-										})
-									: error,
-							),
+				const [newEmployee] = yield* dbService
+					.query("createEmployee", () =>
+						// A new employee row gives the user an employee role and team in
+						// the organization: an absent-row insertion under their protection.
+						withAuthorizationMutation(
+							{
+								organizationId: validatedData.organizationId,
+								userIds: [validatedData.userId],
+							},
+							(tx) =>
+								tx
+									.insert(employee)
+									.values({
+										userId: validatedData.userId,
+										organizationId: validatedData.organizationId,
+										teamId: validatedData.teamId || null,
+										role: validatedData.role,
+										position: validatedData.position || null,
+										gender: validatedData.gender || null,
+										pronouns: validatedData.pronouns || null,
+										birthday: validatedData.birthday || null,
+										startDate: validatedData.startDate || null,
+										endDate: validatedData.endDate || null,
+										isActive: true,
+										contractType: validatedData.contractType || "fixed",
+										currentHourlyRate: hourlyRateValue?.toString() || null,
+									})
+									.returning(),
+							dbService.db,
 						),
-				);
+					)
+					.pipe(
+						Effect.mapError((error) =>
+							isEmployeeIdentityConflict(error)
+								? new ValidationError({
+										message:
+											"Employee already exists for this user in this organization",
+										field: "userId",
+									})
+								: error,
+						),
+					);
 
 				if (
 					validatedData.contractType === "hourly" &&
 					validatedData.hourlyRate &&
 					hourlyRateValue
 				) {
-					yield* _(
-						dbService.query("createInitialRateHistory", async () => {
-							await dbService.db.insert(employeeRateHistory).values({
-								employeeId: newEmployee.id,
-								organizationId: validatedData.organizationId,
-								hourlyRate: hourlyRateValue.toString(),
-								currency: "EUR",
-								effectiveFrom: new Date(),
-								effectiveTo: null,
-								reason: "Initial rate",
-								createdBy: session.user.id,
-							});
-						}),
-					);
+					yield* dbService.query("createInitialRateHistory", async () => {
+						await dbService.db.insert(employeeRateHistory).values({
+							employeeId: newEmployee.id,
+							organizationId: validatedData.organizationId,
+							hourlyRate: hourlyRateValue.toString(),
+							currency: "EUR",
+							effectiveFrom: new Date(),
+							effectiveTo: null,
+							reason: "Initial rate",
+							createdBy: session.user.id,
+						});
+					});
 				}
 
 				logger.info(
@@ -221,26 +207,22 @@ export async function updateEmployeeAction(
 			logger.error({ error, employeeId }, "Failed to update employee");
 		},
 		execute: () =>
-			Effect.gen(function* (_) {
-				const actor = yield* _(getEmployeeSettingsActorContext());
+			Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext();
 				const { session, dbService } = actor;
 
 				const inputData: UpdateEmployee =
 					actor.accessTier === "manager"
 						? (filterEmployeeUpdateForScopedManager(data) as UpdateEmployee)
 						: data;
-				const validatedData = yield* _(
-					validateInput(updateEmployeeSchema, inputData),
-				);
-				const targetEmployee = yield* _(getTargetEmployee(employeeId));
+				const validatedData = yield* validateInput(updateEmployeeSchema, inputData);
+				const targetEmployee = yield* getTargetEmployee(employeeId);
 
-				yield* _(
-					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-						message: "You do not have access to this employee",
-						resource: "employee",
-						action: "update",
-					}),
-				);
+				yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+					message: "You do not have access to this employee",
+					resource: "employee",
+					action: "update",
+				});
 
 				const scopedData: UpdateEmployee = validatedData;
 
@@ -268,26 +250,24 @@ export async function updateEmployeeAction(
 				};
 
 				// Role, team and active state feed creation authority and target checks.
-				yield* _(
-					dbService.query("updateEmployee", () =>
-						withAuthorizationMutation(
-							{
-								organizationId: targetEmployee.organizationId,
-								employeeIds: [employeeId],
-							},
-							async (tx) => {
-								await tx
-									.update(employee)
-									.set(employeeUpdateData)
-									.where(
-										and(
-											eq(employee.id, employeeId),
-											eq(employee.organizationId, targetEmployee.organizationId),
-										),
-									);
-							},
-							dbService.db,
-						),
+				yield* dbService.query("updateEmployee", () =>
+					withAuthorizationMutation(
+						{
+							organizationId: targetEmployee.organizationId,
+							employeeIds: [employeeId],
+						},
+						async (tx) => {
+							await tx
+								.update(employee)
+								.set(employeeUpdateData)
+								.where(
+									and(
+										eq(employee.id, employeeId),
+										eq(employee.organizationId, targetEmployee.organizationId),
+									),
+								);
+						},
+						dbService.db,
 					),
 				);
 
@@ -304,17 +284,15 @@ export async function updateEmployeeAction(
 						fallbackName: targetEmployee.user?.name ?? undefined,
 					});
 
-					yield* _(
-						dbService.query("updateEmployeeAuthUserName", async () => {
-							await dbService.db
-								.update(user)
-								.set({
-									...authName,
-									updatedAt: new Date(),
-								})
-								.where(eq(user.id, targetEmployee.userId));
-						}),
-					);
+					yield* dbService.query("updateEmployeeAuthUserName", async () => {
+						await dbService.db
+							.update(user)
+							.set({
+								...authName,
+								updatedAt: new Date(),
+							})
+							.where(eq(user.id, targetEmployee.userId));
+					});
 				}
 
 				const previousStartDate = dateToUtcIsoDate(targetEmployee.startDate);
@@ -326,13 +304,11 @@ export async function updateEmployeeAction(
 					: previousStartDate;
 				if (nextStartDate !== previousStartDate) {
 					if (previousStartDate && !nextStartDate) {
-						yield* _(
-							Effect.promise(() =>
-								requestEmployeeWorkBalanceFullRebuild({
-									employeeId,
-									organizationId: targetEmployee.organizationId,
-								}),
-							),
+						yield* Effect.promise(() =>
+							requestEmployeeWorkBalanceFullRebuild({
+								employeeId,
+								organizationId: targetEmployee.organizationId,
+							}),
 						);
 					} else {
 						const startDates = [previousStartDate, nextStartDate].filter(
@@ -341,14 +317,12 @@ export async function updateEmployeeAction(
 						const dirtyFromDate = startDates.reduce((earliest, value) =>
 							value < earliest ? value : earliest,
 						);
-						yield* _(
-							Effect.promise(() =>
-								markEmployeeWorkBalanceDirty({
-									employeeId,
-									organizationId: targetEmployee.organizationId,
-									dirtyFromDate,
-								}),
-							),
+						yield* Effect.promise(() =>
+							markEmployeeWorkBalanceDirty({
+								employeeId,
+								organizationId: targetEmployee.organizationId,
+								dirtyFromDate,
+							}),
 						);
 					}
 				}
@@ -362,34 +336,30 @@ export async function updateEmployeeAction(
 					newHourlyRate !== null &&
 					newHourlyRate !== currentRate
 				) {
-					yield* _(
-						dbService.query("closeActiveRateHistory", async () => {
-							await dbService.db
-								.update(employeeRateHistory)
-								.set({ effectiveTo: new Date() })
-								.where(
-									and(
-										eq(employeeRateHistory.employeeId, employeeId),
-										isNull(employeeRateHistory.effectiveTo),
-									),
-								);
-						}),
-					);
+					yield* dbService.query("closeActiveRateHistory", async () => {
+						await dbService.db
+							.update(employeeRateHistory)
+							.set({ effectiveTo: new Date() })
+							.where(
+								and(
+									eq(employeeRateHistory.employeeId, employeeId),
+									isNull(employeeRateHistory.effectiveTo),
+								),
+							);
+					});
 
-					yield* _(
-						dbService.query("createRateHistoryEntry", async () => {
-							await dbService.db.insert(employeeRateHistory).values({
-								employeeId,
-								organizationId: targetEmployee.organizationId,
-								hourlyRate: newHourlyRate.toString(),
-								currency: "EUR",
-								effectiveFrom: new Date(),
-								effectiveTo: null,
-								reason: "Rate updated",
-								createdBy: session.user.id,
-							});
-						}),
-					);
+					yield* dbService.query("createRateHistoryEntry", async () => {
+						await dbService.db.insert(employeeRateHistory).values({
+							employeeId,
+							organizationId: targetEmployee.organizationId,
+							hourlyRate: newHourlyRate.toString(),
+							currency: "EUR",
+							effectiveFrom: new Date(),
+							effectiveTo: null,
+							reason: "Rate updated",
+							createdBy: session.user.id,
+						});
+					});
 
 					logger.info(
 						{
@@ -421,30 +391,95 @@ export async function updateEmployeeInvitationDraftAction(
 			);
 		},
 		execute: () =>
-			Effect.gen(function* (_) {
-				const actor = yield* _(getEmployeeSettingsActorContext());
-				yield* _(
-					requireOrgAdminEmployeeSettingsAccess(actor, {
-						message:
-							"Only organization admins can update invited employee drafts",
-						resource: "employee_invitation_draft",
-						action: "update",
-					}),
-				);
+			Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext();
+				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+					message:
+						"Only organization admins can update invited employee drafts",
+					resource: "employee_invitation_draft",
+					action: "update",
+				});
 
 				const draftId =
 					decodeEmployeeInvitationDraftId(draftEmployeeId) ?? draftEmployeeId;
-				const validatedData = yield* _(
-					validateInput(updateEmployeeInvitationDraftSchema, data),
+				const validatedData = yield* validateInput(updateEmployeeInvitationDraftSchema, data);
+				const targetDraft = yield* actor.dbService.query(
+					"getEmployeeInvitationDraftForUpdate",
+					async () => {
+						const rows = await actor.dbService.db
+							.select({
+								id: employeeInvitationDraft.id,
+								normalizedEmail: employeeInvitationDraft.normalizedEmail,
+							})
+							.from(employeeInvitationDraft)
+							.where(
+								and(
+									eq(employeeInvitationDraft.id, draftId),
+									eq(
+										employeeInvitationDraft.organizationId,
+										actor.organizationId,
+									),
+								),
+							)
+							.limit(1);
+
+						return rows[0] ?? null;
+					},
 				);
-				const targetDraft = yield* _(
-					actor.dbService.query(
-						"getEmployeeInvitationDraftForUpdate",
+
+				if (!targetDraft) {
+					return yield* Effect.fail(
+						new ValidationError({
+							message: "This invitation draft can no longer be edited",
+							field: "draftEmployeeId",
+							value: draftEmployeeId,
+						}),
+					);
+				}
+
+				if (validatedData.teamId) {
+					const targetTeamId = validatedData.teamId;
+					const targetTeam = yield* actor.dbService.query(
+						"getEmployeeInvitationDraftTeam",
 						async () => {
-							const rows = await actor.dbService.db
+							return await actor.dbService.db.query.team.findFirst({
+								where: and(
+									eq(team.id, targetTeamId),
+									eq(team.organizationId, actor.organizationId),
+								),
+							});
+						},
+					);
+
+					if (!targetTeam) {
+						return yield* Effect.fail(
+							new ValidationError({
+								message: "Target team not found in this organization",
+								field: "teamId",
+								value: targetTeamId,
+							}),
+						);
+					}
+				}
+
+				const hasHourlyRateUpdate = Object.hasOwn(validatedData, "hourlyRate");
+				const hasTeamIdUpdate = Object.hasOwn(validatedData, "teamId");
+				const hourlyRate = hasHourlyRateUpdate
+					? parseHourlyRate(validatedData.hourlyRate)
+					: null;
+				const { hourlyRate: _hourlyRate, ...draftUpdate } = validatedData;
+				const updatedDrafts = yield* actor.dbService.query("updateEmployeeInvitationDraft", async () => {
+					return await actor.dbService.db.transaction(
+						async (tx) => {
+							await acquireEmployeeIdentityLock(tx, {
+								organizationId: actor.organizationId,
+								normalizedEmail: targetDraft.normalizedEmail,
+							});
+
+							const [lockedDraft] = await tx
 								.select({
 									id: employeeInvitationDraft.id,
-									normalizedEmail: employeeInvitationDraft.normalizedEmail,
+									invitationId: employeeInvitationDraft.invitationId,
 								})
 								.from(employeeInvitationDraft)
 								.where(
@@ -456,178 +491,97 @@ export async function updateEmployeeInvitationDraftAction(
 										),
 									),
 								)
+								.for("update");
+
+							if (!lockedDraft) return [];
+
+							const [lockedInvitation] = await tx
+								.select({ id: invitation.id })
+								.from(invitation)
+								.where(
+									and(
+										eq(invitation.id, lockedDraft.invitationId),
+										eq(invitation.organizationId, actor.organizationId),
+									),
+								)
+								.for("update");
+
+							if (!lockedInvitation) return [];
+
+							const now = dateFromInstant(systemClock.nowInstant());
+							const [eligibleDraft] = await tx
+								.select({ id: employeeInvitationDraft.id })
+								.from(employeeInvitationDraft)
+								.innerJoin(
+									invitation,
+									eq(employeeInvitationDraft.invitationId, invitation.id),
+								)
+								.where(
+									and(
+										buildEligibleInvitationDraftPredicate({
+											organizationId: actor.organizationId,
+											now,
+											draftId,
+										}),
+										eq(
+											employeeInvitationDraft.invitationId,
+											lockedDraft.invitationId,
+										),
+										eq(invitation.id, lockedDraft.invitationId),
+									),
+								)
 								.limit(1);
 
-							return rows[0] ?? null;
-						},
-					),
-				);
+							if (!eligibleDraft) return [];
 
-				if (!targetDraft) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "This invitation draft can no longer be edited",
-								field: "draftEmployeeId",
-								value: draftEmployeeId,
-							}),
-						),
-					);
-				}
-
-				if (validatedData.teamId) {
-					const targetTeamId = validatedData.teamId;
-					const targetTeam = yield* _(
-						actor.dbService.query(
-							"getEmployeeInvitationDraftTeam",
-							async () => {
-								return await actor.dbService.db.query.team.findFirst({
-									where: and(
-										eq(team.id, targetTeamId),
-										eq(team.organizationId, actor.organizationId),
+							const updatedDrafts = await tx
+								.update(employeeInvitationDraft)
+								.set({
+									...draftUpdate,
+									...(hasHourlyRateUpdate
+										? { currentHourlyRate: hourlyRate?.toString() ?? null }
+										: {}),
+									updatedBy: actor.session.user.id,
+									updatedAt: currentTimestamp(),
+								})
+								.where(
+									and(
+										eq(employeeInvitationDraft.id, draftId),
+										eq(
+											employeeInvitationDraft.organizationId,
+											actor.organizationId,
+										),
 									),
-								});
-							},
-						),
-					);
-
-					if (!targetTeam) {
-						return yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Target team not found in this organization",
-									field: "teamId",
-									value: targetTeamId,
-								}),
-							),
-						);
-					}
-				}
-
-				const hasHourlyRateUpdate = Object.hasOwn(validatedData, "hourlyRate");
-				const hasTeamIdUpdate = Object.hasOwn(validatedData, "teamId");
-				const hourlyRate = hasHourlyRateUpdate
-					? parseHourlyRate(validatedData.hourlyRate)
-					: null;
-				const { hourlyRate: _hourlyRate, ...draftUpdate } = validatedData;
-				const updatedDrafts = yield* _(
-					actor.dbService.query("updateEmployeeInvitationDraft", async () => {
-						return await actor.dbService.db.transaction(
-							async (tx) => {
-								await acquireEmployeeIdentityLock(tx, {
-									organizationId: actor.organizationId,
-									normalizedEmail: targetDraft.normalizedEmail,
-								});
-
-								const [lockedDraft] = await tx
-									.select({
-										id: employeeInvitationDraft.id,
-										invitationId: employeeInvitationDraft.invitationId,
-									})
-									.from(employeeInvitationDraft)
-									.where(
-										and(
-											eq(employeeInvitationDraft.id, draftId),
-											eq(
-												employeeInvitationDraft.organizationId,
-												actor.organizationId,
-											),
-										),
-									)
-									.for("update");
-
-								if (!lockedDraft) return [];
-
-								const [lockedInvitation] = await tx
-									.select({ id: invitation.id })
-									.from(invitation)
-									.where(
-										and(
-											eq(invitation.id, lockedDraft.invitationId),
-											eq(invitation.organizationId, actor.organizationId),
-										),
-									)
-									.for("update");
-
-								if (!lockedInvitation) return [];
-
-								const now = dateFromInstant(systemClock.nowInstant());
-								const [eligibleDraft] = await tx
-									.select({ id: employeeInvitationDraft.id })
-									.from(employeeInvitationDraft)
-									.innerJoin(
-										invitation,
-										eq(employeeInvitationDraft.invitationId, invitation.id),
-									)
-									.where(
-										and(
-											buildEligibleInvitationDraftPredicate({
-												organizationId: actor.organizationId,
-												now,
-												draftId,
-											}),
-											eq(
-												employeeInvitationDraft.invitationId,
-												lockedDraft.invitationId,
-											),
-											eq(invitation.id, lockedDraft.invitationId),
-										),
-									)
-									.limit(1);
-
-								if (!eligibleDraft) return [];
-
-								const updatedDrafts = await tx
-									.update(employeeInvitationDraft)
-									.set({
-										...draftUpdate,
-										...(hasHourlyRateUpdate
-											? { currentHourlyRate: hourlyRate?.toString() ?? null }
-											: {}),
-										updatedBy: actor.session.user.id,
-										updatedAt: currentTimestamp(),
-									})
-									.where(
-										and(
-											eq(employeeInvitationDraft.id, draftId),
-											eq(
-												employeeInvitationDraft.organizationId,
-												actor.organizationId,
-											),
-										),
-									)
-									.returning({ id: employeeInvitationDraft.id });
-								if (updatedDrafts.length === 0 || !hasTeamIdUpdate) {
-									return updatedDrafts;
-								}
-
-								await tx
-									.update(invitation)
-									.set({ targetTeamId: validatedData.teamId ?? null })
-									.where(
-										and(
-											eq(invitation.id, lockedInvitation.id),
-											eq(invitation.organizationId, actor.organizationId),
-											eq(invitation.status, "pending"),
-										),
-									);
-
+								)
+								.returning({ id: employeeInvitationDraft.id });
+							if (updatedDrafts.length === 0 || !hasTeamIdUpdate) {
 								return updatedDrafts;
-							},
-							{ isolationLevel: "serializable" },
-						);
-					}),
-				);
+							}
+
+							await tx
+								.update(invitation)
+								.set({ targetTeamId: validatedData.teamId ?? null })
+								.where(
+									and(
+										eq(invitation.id, lockedInvitation.id),
+										eq(invitation.organizationId, actor.organizationId),
+										eq(invitation.status, "pending"),
+									),
+								);
+
+							return updatedDrafts;
+						},
+						{ isolationLevel: "serializable" },
+					);
+				});
 
 				if (updatedDrafts.length === 0) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "This invitation draft can no longer be edited",
-								field: "draftEmployeeId",
-								value: draftEmployeeId,
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message: "This invitation draft can no longer be edited",
+							field: "draftEmployeeId",
+							value: draftEmployeeId,
+						}),
 					);
 				}
 
@@ -649,165 +603,133 @@ export async function deleteEmployeeInvitationDraftAction(
 			);
 		},
 		execute: () =>
-			Effect.gen(function* (_) {
-				const actor = yield* _(getEmployeeSettingsActorContext());
-				yield* _(
-					requireOrgAdminEmployeeSettingsAccess(actor, {
-						message:
-							"Only organization admins can delete invited employee drafts",
-						resource: "employee_invitation_draft",
-						action: "delete",
-					}),
-				);
+			Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext();
+				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+					message:
+						"Only organization admins can delete invited employee drafts",
+					resource: "employee_invitation_draft",
+					action: "delete",
+				});
 
 				const draftId =
 					decodeEmployeeInvitationDraftId(draftEmployeeId) ?? draftEmployeeId;
-				const outcome = yield* _(
-					actor.dbService.query("deleteEmployeeInvitationDraft", async () => {
-						return await actor.dbService.db.transaction(async (tx) => {
-							const [draftIdentity] = await tx
-								.select({
-									normalizedEmail: employeeInvitationDraft.normalizedEmail,
-								})
-								.from(employeeInvitationDraft)
-								.where(
-									and(
-										eq(employeeInvitationDraft.id, draftId),
-										eq(
-											employeeInvitationDraft.organizationId,
-											actor.organizationId,
-										),
+				const outcome = yield* actor.dbService.query("deleteEmployeeInvitationDraft", async () => {
+					return await actor.dbService.db.transaction(async (tx) => {
+						const [draftIdentity] = await tx
+							.select({
+								normalizedEmail: employeeInvitationDraft.normalizedEmail,
+							})
+							.from(employeeInvitationDraft)
+							.where(
+								and(
+									eq(employeeInvitationDraft.id, draftId),
+									eq(
+										employeeInvitationDraft.organizationId,
+										actor.organizationId,
 									),
-								)
-								.limit(1);
+								),
+							)
+							.limit(1);
 
-							if (!draftIdentity) return "notFound" as const;
+						if (!draftIdentity) return "notFound" as const;
 
-							await acquireEmployeeIdentityLock(tx, {
-								organizationId: actor.organizationId,
-								normalizedEmail: draftIdentity.normalizedEmail,
-							});
+						await acquireEmployeeIdentityLock(tx, {
+							organizationId: actor.organizationId,
+							normalizedEmail: draftIdentity.normalizedEmail,
+						});
 
-							const [lockedDraft] = await tx
-								.select({
-									id: employeeInvitationDraft.id,
-									invitationId: employeeInvitationDraft.invitationId,
-									normalizedEmail: employeeInvitationDraft.normalizedEmail,
-									invitationStatus: invitation.status,
-									invitationExpiresAt: invitation.expiresAt,
-								})
-								.from(employeeInvitationDraft)
-								.innerJoin(
-									invitation,
-									eq(employeeInvitationDraft.invitationId, invitation.id),
-								)
+						const [lockedDraft] = await tx
+							.select({
+								id: employeeInvitationDraft.id,
+								invitationId: employeeInvitationDraft.invitationId,
+								normalizedEmail: employeeInvitationDraft.normalizedEmail,
+								invitationStatus: invitation.status,
+								invitationExpiresAt: invitation.expiresAt,
+							})
+							.from(employeeInvitationDraft)
+							.innerJoin(
+								invitation,
+								eq(employeeInvitationDraft.invitationId, invitation.id),
+							)
+							.where(
+								and(
+									eq(employeeInvitationDraft.id, draftId),
+									eq(
+										employeeInvitationDraft.organizationId,
+										actor.organizationId,
+									),
+									eq(invitation.organizationId, actor.organizationId),
+								),
+							)
+							.limit(1)
+							.for("update", { of: employeeInvitationDraft });
+
+						if (
+							!lockedDraft ||
+							lockedDraft.normalizedEmail !== draftIdentity.normalizedEmail
+						) {
+							return "notFound" as const;
+						}
+
+						const [existingEmployee] = await tx
+							.select({ id: employee.id })
+							.from(employee)
+							.innerJoin(user, eq(employee.userId, user.id))
+							.where(
+								and(
+									eq(employee.organizationId, actor.organizationId),
+									sql`lower(btrim(${user.email})) = ${lockedDraft.normalizedEmail}`,
+								),
+							)
+							.limit(1);
+
+						if (existingEmployee) return "employeeExists" as const;
+						if (lockedDraft.invitationStatus === "accepted")
+							return "accepted" as const;
+
+						const actionable = isInvitationActionable({
+							status: lockedDraft.invitationStatus,
+							expiresAt: lockedDraft.invitationExpiresAt,
+						});
+						if (actionable) {
+							const cancellationNow = dateFromInstant(
+								systemClock.nowInstant(),
+							);
+							const canceledInvitations = await tx
+								.update(invitation)
+								.set({ status: "canceled" })
 								.where(
 									and(
-										eq(employeeInvitationDraft.id, draftId),
-										eq(
-											employeeInvitationDraft.organizationId,
-											actor.organizationId,
-										),
+										eq(invitation.id, lockedDraft.invitationId),
 										eq(invitation.organizationId, actor.organizationId),
+										eq(invitation.status, "pending"),
+										gt(invitation.expiresAt, cancellationNow),
 									),
 								)
-								.limit(1)
-								.for("update", { of: employeeInvitationDraft });
+								.returning({ id: invitation.id });
 
-							if (
-								!lockedDraft ||
-								lockedDraft.normalizedEmail !== draftIdentity.normalizedEmail
-							) {
-								return "notFound" as const;
-							}
-
-							const [existingEmployee] = await tx
-								.select({ id: employee.id })
-								.from(employee)
-								.innerJoin(user, eq(employee.userId, user.id))
-								.where(
-									and(
-										eq(employee.organizationId, actor.organizationId),
-										sql`lower(btrim(${user.email})) = ${lockedDraft.normalizedEmail}`,
-									),
-								)
-								.limit(1);
-
-							if (existingEmployee) return "employeeExists" as const;
-							if (lockedDraft.invitationStatus === "accepted")
-								return "accepted" as const;
-
-							const actionable = isInvitationActionable({
-								status: lockedDraft.invitationStatus,
-								expiresAt: lockedDraft.invitationExpiresAt,
-							});
-							if (actionable) {
-								const cancellationNow = dateFromInstant(
-									systemClock.nowInstant(),
-								);
-								const canceledInvitations = await tx
-									.update(invitation)
-									.set({ status: "canceled" })
+							if (canceledInvitations.length === 0) {
+								const [currentDraft] = await tx
+									.select({
+										invitationId: employeeInvitationDraft.invitationId,
+									})
+									.from(employeeInvitationDraft)
 									.where(
 										and(
-											eq(invitation.id, lockedDraft.invitationId),
-											eq(invitation.organizationId, actor.organizationId),
-											eq(invitation.status, "pending"),
-											gt(invitation.expiresAt, cancellationNow),
+											eq(employeeInvitationDraft.id, draftId),
+											eq(
+												employeeInvitationDraft.organizationId,
+												actor.organizationId,
+											),
 										),
 									)
-									.returning({ id: invitation.id });
+									.limit(1);
 
-								if (canceledInvitations.length === 0) {
-									const [currentDraft] = await tx
-										.select({
-											invitationId: employeeInvitationDraft.invitationId,
-										})
-										.from(employeeInvitationDraft)
-										.where(
-											and(
-												eq(employeeInvitationDraft.id, draftId),
-												eq(
-													employeeInvitationDraft.organizationId,
-													actor.organizationId,
-												),
-											),
-										)
-										.limit(1);
-
-									if (currentDraft?.invitationId !== lockedDraft.invitationId) {
-										return "cancellationFailed" as const;
-									}
-
-									const [currentInvitation] = await tx
-										.select({
-											status: invitation.status,
-											expiresAt: invitation.expiresAt,
-										})
-										.from(invitation)
-										.where(
-											and(
-												eq(invitation.id, lockedDraft.invitationId),
-												eq(invitation.organizationId, actor.organizationId),
-											),
-										)
-										.for("update");
-
-									if (
-										!currentInvitation ||
-										currentInvitation.status === "accepted"
-									) {
-										return "cancellationFailed" as const;
-									}
-
-									const becameStale =
-										currentInvitation.status === "canceled" ||
-										currentInvitation.status === "rejected" ||
-										(currentInvitation.status === "pending" &&
-											!isInvitationActionable(currentInvitation));
-									if (!becameStale) return "cancellationFailed" as const;
+								if (currentDraft?.invitationId !== lockedDraft.invitationId) {
+									return "cancellationFailed" as const;
 								}
-							} else {
+
 								const [currentInvitation] = await tx
 									.select({
 										status: invitation.status,
@@ -822,69 +744,91 @@ export async function deleteEmployeeInvitationDraftAction(
 									)
 									.for("update");
 
-								if (!currentInvitation) return "raceLost" as const;
+								if (
+									!currentInvitation ||
+									currentInvitation.status === "accepted"
+								) {
+									return "cancellationFailed" as const;
+								}
 
-								const isStillStale =
+								const becameStale =
 									currentInvitation.status === "canceled" ||
 									currentInvitation.status === "rejected" ||
 									(currentInvitation.status === "pending" &&
 										!isInvitationActionable(currentInvitation));
-								if (!isStillStale) return "raceLost" as const;
+								if (!becameStale) return "cancellationFailed" as const;
 							}
-
-							const deletedDrafts = await tx
-								.delete(employeeInvitationDraft)
+						} else {
+							const [currentInvitation] = await tx
+								.select({
+									status: invitation.status,
+									expiresAt: invitation.expiresAt,
+								})
+								.from(invitation)
 								.where(
 									and(
-										eq(employeeInvitationDraft.id, draftId),
-										eq(
-											employeeInvitationDraft.organizationId,
-											actor.organizationId,
-										),
-										eq(
-											employeeInvitationDraft.invitationId,
-											lockedDraft.invitationId,
-										),
+										eq(invitation.id, lockedDraft.invitationId),
+										eq(invitation.organizationId, actor.organizationId),
 									),
 								)
-								.returning({ id: employeeInvitationDraft.id });
+								.for("update");
 
-							return deletedDrafts.length === 1
-								? ("deleted" as const)
-								: ("raceLost" as const);
-						});
-					}),
-				);
+							if (!currentInvitation) return "raceLost" as const;
+
+							const isStillStale =
+								currentInvitation.status === "canceled" ||
+								currentInvitation.status === "rejected" ||
+								(currentInvitation.status === "pending" &&
+									!isInvitationActionable(currentInvitation));
+							if (!isStillStale) return "raceLost" as const;
+						}
+
+						const deletedDrafts = await tx
+							.delete(employeeInvitationDraft)
+							.where(
+								and(
+									eq(employeeInvitationDraft.id, draftId),
+									eq(
+										employeeInvitationDraft.organizationId,
+										actor.organizationId,
+									),
+									eq(
+										employeeInvitationDraft.invitationId,
+										lockedDraft.invitationId,
+									),
+								),
+							)
+							.returning({ id: employeeInvitationDraft.id });
+
+						return deletedDrafts.length === 1
+							? ("deleted" as const)
+							: ("raceLost" as const);
+					});
+				});
 
 				if (outcome === "cancellationFailed") {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: invitationCancellationFailureMessage,
-								field: "draftEmployeeId",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message: invitationCancellationFailureMessage,
+							field: "draftEmployeeId",
+						}),
 					);
 				}
 				if (outcome === "employeeExists") {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message:
-									"This invitation draft is already associated with an employee",
-								field: "draftEmployeeId",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message:
+								"This invitation draft is already associated with an employee",
+							field: "draftEmployeeId",
+						}),
 					);
 				}
 				if (outcome !== "deleted") {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "This invitation draft can no longer be deleted",
-								field: "draftEmployeeId",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message: "This invitation draft can no longer be deleted",
+							field: "draftEmployeeId",
+						}),
 					);
 				}
 
@@ -905,49 +849,41 @@ export async function requestEmployeeWorkBalanceRecalculationAction(
 			);
 		},
 		execute: (span) =>
-			Effect.gen(function* (_) {
-				const validatedEmployeeId = yield* _(
-					validateInput(employeeIdSchema, employeeId, "employeeId"),
-				);
-				const actor = yield* _(getEmployeeSettingsActorContext());
+			Effect.gen(function* () {
+				const validatedEmployeeId = yield* validateInput(employeeIdSchema, employeeId, "employeeId");
+				const actor = yield* getEmployeeSettingsActorContext();
 				const { dbService } = actor;
 
-				yield* _(
-					requireOrgAdminEmployeeSettingsAccess(actor, {
-						message:
-							"Only organization admins can recalculate employee work balances",
-						resource: "employee_work_balance",
-						action: "recalculate_work_balance",
-					}),
-				);
+				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+					message:
+						"Only organization admins can recalculate employee work balances",
+					resource: "employee_work_balance",
+					action: "recalculate_work_balance",
+				});
 
-				const targetEmployee = yield* _(
-					dbService.query(
-						"getEmployeeForWorkBalanceRecalculation",
-						async () => {
-							return await dbService.db.query.employee.findFirst({
-								where: and(
-									eq(employee.id, validatedEmployeeId),
-									eq(employee.organizationId, actor.organizationId),
-								),
-								columns: {
-									id: true,
-									organizationId: true,
-								},
-							});
-						},
-					),
+				const targetEmployee = yield* dbService.query(
+					"getEmployeeForWorkBalanceRecalculation",
+					async () => {
+						return await dbService.db.query.employee.findFirst({
+							where: and(
+								eq(employee.id, validatedEmployeeId),
+								eq(employee.organizationId, actor.organizationId),
+							),
+							columns: {
+								id: true,
+								organizationId: true,
+							},
+						});
+					},
 				);
 
 				if (!targetEmployee) {
-					return yield* _(
-						Effect.fail(
-							new NotFoundError({
-								message: "Employee not found",
-								entityType: "employee",
-								entityId: validatedEmployeeId,
-							}),
-						),
+					return yield* Effect.fail(
+						new NotFoundError({
+							message: "Employee not found",
+							entityType: "employee",
+							entityId: validatedEmployeeId,
+						}),
 					);
 				}
 
@@ -958,13 +894,11 @@ export async function requestEmployeeWorkBalanceRecalculationAction(
 				);
 				span.setAttribute("requestedBy.userId", actor.session.user.id);
 
-				yield* _(
-					Effect.promise(() =>
-						requestEmployeeWorkBalanceFullRebuild({
-							employeeId: targetEmployee.id,
-							organizationId: targetEmployee.organizationId,
-						}),
-					),
+				yield* Effect.promise(() =>
+					requestEmployeeWorkBalanceFullRebuild({
+						employeeId: targetEmployee.id,
+						organizationId: targetEmployee.organizationId,
+					}),
 				);
 
 				logger.info(
@@ -999,30 +933,26 @@ export async function updateOwnProfileAction(
 			logger.error({ error }, "Failed to update own profile");
 		},
 		execute: (span) =>
-			Effect.gen(function* (_) {
-				const { dbService, currentEmployee } = yield* _(getEmployeeContext());
+			Effect.gen(function* () {
+				const { dbService, currentEmployee } = yield* getEmployeeContext();
 				span.setAttribute("employee.id", currentEmployee.id);
 
-				const validatedData = yield* _(
-					validateInput(personalInformationSchema, data, "profile"),
-				);
+				const validatedData = yield* validateInput(personalInformationSchema, data, "profile");
 				const {
 					firstName: _firstName,
 					lastName: _lastName,
 					...employeeProfileData
 				} = validatedData;
 
-				yield* _(
-					dbService.query("updateOwnProfile", async () => {
-						await dbService.db
-							.update(employee)
-							.set({
-								...employeeProfileData,
-								updatedAt: currentTimestamp(),
-							})
-							.where(eq(employee.id, currentEmployee.id));
-					}),
-				);
+				yield* dbService.query("updateOwnProfile", async () => {
+					await dbService.db
+						.update(employee)
+						.set({
+							...employeeProfileData,
+							updatedAt: currentTimestamp(),
+						})
+						.where(eq(employee.id, currentEmployee.id));
+				});
 
 				logger.info(
 					{ employeeId: currentEmployee.id },
@@ -1046,33 +976,25 @@ export async function assignManagersAction(
 			logger.error({ error, employeeId }, "Failed to assign managers");
 		},
 		execute: () =>
-			Effect.gen(function* (_) {
-				const actor = yield* _(getEmployeeSettingsActorContext());
-				const managerService = yield* _(ManagerService);
-				const targetEmployee = yield* _(getTargetEmployee(employeeId));
+			Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext();
+				const managerService = yield* ManagerService;
+				const targetEmployee = yield* getTargetEmployee(employeeId);
 
-				yield* _(
-					requireOrgAdminEmployeeSettingsAccess(actor, {
-						message: "Only organization admins can assign managers",
-						resource: "manager_assignment",
-						action: "create",
-					}),
-				);
+				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+					message: "Only organization admins can assign managers",
+					resource: "manager_assignment",
+					action: "create",
+				});
 
-				yield* _(
-					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-						message: "You do not have access to this employee",
-						resource: "manager_assignment",
-						action: "create",
-					}),
-				);
+				yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+					message: "You do not have access to this employee",
+					resource: "manager_assignment",
+					action: "create",
+				});
 
-				const validatedData = yield* _(
-					validateInput(assignManagersSchema, data),
-				);
-				const existingManagers = yield* _(
-					managerService.getManagers(employeeId),
-				);
+				const validatedData = yield* validateInput(assignManagersSchema, data);
+				const existingManagers = yield* managerService.getManagers(employeeId);
 
 				for (const existingManager of existingManagers) {
 					if (
@@ -1084,20 +1006,16 @@ export async function assignManagersAction(
 					}
 
 					if (existingManagers.length > 1) {
-						yield* _(
-							managerService.removeManager(employeeId, existingManager.id),
-						);
+						yield* managerService.removeManager(employeeId, existingManager.id);
 					}
 				}
 
 				for (const assignment of validatedData.managers) {
-					yield* _(
-						managerService.assignManager(
-							employeeId,
-							assignment.managerId,
-							assignment.isPrimary,
-							actor.session.user.id,
-						),
+					yield* managerService.assignManager(
+						employeeId,
+						assignment.managerId,
+						assignment.isPrimary,
+						actor.session.user.id,
 					);
 				}
 

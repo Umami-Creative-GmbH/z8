@@ -42,7 +42,7 @@ import {
 	type DatabaseError,
 	type NotFoundError,
 	ValidationError,
-} from "../errors";
+} from "@/lib/effect/errors";
 import { AuthService } from "./auth.service";
 import { DatabaseService } from "./database.service";
 
@@ -63,7 +63,7 @@ export interface OnboardingSummary {
 	notificationsConfigured: boolean;
 }
 
-export class OnboardingService extends Context.Tag("OnboardingService")<
+export class OnboardingService extends Context.Service<
 	OnboardingService,
 	{
 		// Step tracking
@@ -148,7 +148,7 @@ export class OnboardingService extends Context.Tag("OnboardingService")<
 		// Check if user is admin of their organization
 		readonly isUserAdmin: () => Effect.Effect<boolean, AuthenticationError | DatabaseError>;
 	}
->() {}
+>()("OnboardingService") {}
 
 export const OnboardingServiceLive = Layer.effect(
 	OnboardingService,

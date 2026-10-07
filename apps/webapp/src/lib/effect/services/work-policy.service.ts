@@ -13,7 +13,7 @@ import {
 	workPolicyViolation,
 } from "@/db/schema";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
-import { type DatabaseError, NotFoundError } from "../errors";
+import { type DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "./database.service";
 
 // ============================================
@@ -257,7 +257,7 @@ function orderEffectiveAssignments(
 // SERVICE DEFINITION
 // ============================================
 
-export class WorkPolicyService extends Context.Tag("WorkPolicyService")<
+export class WorkPolicyService extends Context.Service<
 	WorkPolicyService,
 	{
 		/**
@@ -350,7 +350,7 @@ export class WorkPolicyService extends Context.Tag("WorkPolicyService")<
 			DatabaseError
 		>;
 	}
->() {}
+>()("WorkPolicyService") {}
 
 // ============================================
 // SERVICE IMPLEMENTATION
@@ -358,8 +358,8 @@ export class WorkPolicyService extends Context.Tag("WorkPolicyService")<
 
 export const WorkPolicyServiceLive = Layer.effect(
 	WorkPolicyService,
-	Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
 		// Type definitions for the with clause results
 		type PolicyWithDetails = typeof workPolicy.$inferSelect & {
@@ -523,18 +523,16 @@ export const WorkPolicyServiceLive = Layer.effect(
 			organizationId: string | undefined,
 			at: Date,
 		) =>
-			Effect.gen(function* (_) {
+			Effect.gen(function* () {
 				// 1. Check employee-level assignment (priority 2 - highest)
-				const employeeAssignment = yield* _(
-					findLevelAssignment(
-						"getEmployeePolicyAssignment",
-						and(
-							eq(workPolicyAssignment.employeeId, emp.id),
-							eq(workPolicyAssignment.assignmentType, "employee"),
-						),
-						organizationId,
-						at,
+				const employeeAssignment = yield* findLevelAssignment(
+					"getEmployeePolicyAssignment",
+					and(
+						eq(workPolicyAssignment.employeeId, emp.id),
+						eq(workPolicyAssignment.assignmentType, "employee"),
 					),
+					organizationId,
+					at,
 				);
 				if (employeeAssignment?.policy?.isActive) {
 					return mapToEffective(
@@ -546,16 +544,14 @@ export const WorkPolicyServiceLive = Layer.effect(
 
 				// 2. Check team-level assignment (priority 1)
 				if (emp.teamId) {
-					const teamAssignment = yield* _(
-						findLevelAssignment(
-							"getTeamPolicyAssignment",
-							and(
-								eq(workPolicyAssignment.teamId, emp.teamId),
-								eq(workPolicyAssignment.assignmentType, "team"),
-							),
-							organizationId,
-							at,
+					const teamAssignment = yield* findLevelAssignment(
+						"getTeamPolicyAssignment",
+						and(
+							eq(workPolicyAssignment.teamId, emp.teamId),
+							eq(workPolicyAssignment.assignmentType, "team"),
 						),
+						organizationId,
+						at,
 					);
 					if (teamAssignment?.policy?.isActive) {
 						return mapToEffective(
@@ -567,19 +563,17 @@ export const WorkPolicyServiceLive = Layer.effect(
 				}
 
 				// 3. Check organization-level assignment (priority 0 - lowest)
-				const orgAssignment = yield* _(
-					findLevelAssignment(
-						"getOrgPolicyAssignment",
-						and(
-							// A scoped lookup already filters by its organization.
-							organizationId
-								? undefined
-								: eq(workPolicyAssignment.organizationId, emp.organizationId),
-							eq(workPolicyAssignment.assignmentType, "organization"),
-						),
-						organizationId,
-						at,
+				const orgAssignment = yield* findLevelAssignment(
+					"getOrgPolicyAssignment",
+					and(
+						// A scoped lookup already filters by its organization.
+						organizationId
+							? undefined
+							: eq(workPolicyAssignment.organizationId, emp.organizationId),
+						eq(workPolicyAssignment.assignmentType, "organization"),
 					),
+					organizationId,
+					at,
 				);
 				if (orgAssignment?.policy?.isActive) {
 					return mapToEffective(
@@ -595,22 +589,22 @@ export const WorkPolicyServiceLive = Layer.effect(
 
 		/** The employee's policy as of `at`; fails when the employee is not found. */
 		const effectivePolicyOf = (employeeId: string, organizationId: string | undefined, at: Date) =>
-			Effect.gen(function* (_) {
-				const emp = yield* _(
-					findEmployeeForPolicy("getEmployeeForPolicy", employeeId, organizationId),
+			Effect.gen(function* () {
+				const emp = yield* findEmployeeForPolicy(
+					"getEmployeeForPolicy",
+					employeeId,
+					organizationId,
 				);
 				if (!emp) {
-					return yield* _(
-						Effect.fail(
-							new NotFoundError({
-								message: "Employee not found",
-								entityType: "employee",
-								entityId: employeeId,
-							}),
-						),
+					return yield* Effect.fail(
+						new NotFoundError({
+							message: "Employee not found",
+							entityType: "employee",
+							entityId: employeeId,
+						}),
 					);
 				}
-				return yield* _(resolveEffectivePolicy(emp, organizationId, at));
+				return yield* resolveEffectivePolicy(emp, organizationId, at);
 			});
 
 		return WorkPolicyService.of({
@@ -621,14 +615,12 @@ export const WorkPolicyServiceLive = Layer.effect(
 				effectivePolicyOf(input.employeeId, input.organizationId, dateFromInstant(input.at)),
 
 			checkCompliance: (input) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// An employee outside the organization fails rather than passing unchecked.
-					const policy = yield* _(
-						effectivePolicyOf(
-							input.employeeId,
-							input.organizationId,
-							dateFromInstant(input.policyAt),
-						),
+					const policy = yield* effectivePolicyOf(
+						input.employeeId,
+						input.organizationId,
+						dateFromInstant(input.policyAt),
 					);
 
 					if (!policy?.regulation) {
@@ -746,129 +738,115 @@ export const WorkPolicyServiceLive = Layer.effect(
 			},
 
 			logViolation: (input) =>
-				Effect.gen(function* (_) {
-					yield* _(
-						dbService.query("logViolation", async () => {
-							await dbService.db.insert(workPolicyViolation).values({
-								employeeId: input.employeeId,
-								organizationId: input.organizationId,
-								policyId: input.policyId,
-								workPeriodId: input.workPeriodId,
-								violationDate: dateFromInstant(input.violationAt),
-								violationType: input.violationType,
-								details: input.details as typeof input.details & Record<string, unknown>,
-							});
-						}),
-					);
+				Effect.gen(function* () {
+					yield* dbService.query("logViolation", async () => {
+						await dbService.db.insert(workPolicyViolation).values({
+							employeeId: input.employeeId,
+							organizationId: input.organizationId,
+							policyId: input.policyId,
+							workPeriodId: input.workPeriodId,
+							violationDate: dateFromInstant(input.violationAt),
+							violationType: input.violationType,
+							details: input.details as typeof input.details & Record<string, unknown>,
+						});
+					});
 				}),
 
 			getViolations: (input) =>
-				Effect.gen(function* (_) {
-					const violations = yield* _(
-						dbService.query("getViolations", async () => {
-							const conditions = [
-								eq(workPolicyViolation.organizationId, input.organizationId),
-								gte(workPolicyViolation.violationDate, input.startDate),
-								lte(workPolicyViolation.violationDate, input.endDate),
-							];
+				Effect.gen(function* () {
+					const violations = yield* dbService.query("getViolations", async () => {
+						const conditions = [
+							eq(workPolicyViolation.organizationId, input.organizationId),
+							gte(workPolicyViolation.violationDate, input.startDate),
+							lte(workPolicyViolation.violationDate, input.endDate),
+						];
 
-							if (input.employeeId) {
-								conditions.push(eq(workPolicyViolation.employeeId, input.employeeId));
-							}
+						if (input.employeeId) {
+							conditions.push(eq(workPolicyViolation.employeeId, input.employeeId));
+						}
 
-							if (input.violationType) {
-								conditions.push(eq(workPolicyViolation.violationType, input.violationType));
-							}
+						if (input.violationType) {
+							conditions.push(eq(workPolicyViolation.violationType, input.violationType));
+						}
 
-							return await dbService.db.query.workPolicyViolation.findMany({
-								where: and(...conditions),
-								with: {
-									employee: {
-										columns: {
-											id: true,
-											firstName: true,
-											lastName: true,
-										},
-									},
-									policy: {
-										columns: {
-											id: true,
-											name: true,
-										},
+						return await dbService.db.query.workPolicyViolation.findMany({
+							where: and(...conditions),
+							with: {
+								employee: {
+									columns: {
+										id: true,
+										firstName: true,
+										lastName: true,
 									},
 								},
-								orderBy: [desc(workPolicyViolation.violationDate)],
-							});
-						}),
-					);
+								policy: {
+									columns: {
+										id: true,
+										name: true,
+									},
+								},
+							},
+							orderBy: [desc(workPolicyViolation.violationDate)],
+						});
+					});
 
 					return violations as ViolationWithDetails[];
 				}),
 
 			getPresets: () =>
-				Effect.gen(function* (_) {
-					const presets = yield* _(
-						dbService.query("getPresets", async () => {
-							return await dbService.db.query.workPolicyPreset.findMany({
-								where: eq(workPolicyPreset.isActive, true),
-								orderBy: [desc(workPolicyPreset.name)],
-							});
-						}),
-					);
+				Effect.gen(function* () {
+					const presets = yield* dbService.query("getPresets", async () => {
+						return await dbService.db.query.workPolicyPreset.findMany({
+							where: eq(workPolicyPreset.isActive, true),
+							orderBy: [desc(workPolicyPreset.name)],
+						});
+					});
 
 					return presets;
 				}),
 
 			acknowledgeViolation: (params) =>
-				Effect.gen(function* (_) {
-					const violation = yield* _(
-						dbService.query("getViolationForAck", async () => {
-							return await dbService.db.query.workPolicyViolation.findFirst({
-								where: eq(workPolicyViolation.id, params.violationId),
-							});
-						}),
-					);
+				Effect.gen(function* () {
+					const violation = yield* dbService.query("getViolationForAck", async () => {
+						return await dbService.db.query.workPolicyViolation.findFirst({
+							where: eq(workPolicyViolation.id, params.violationId),
+						});
+					});
 
 					if (!violation) {
-						yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Violation not found",
-									entityType: "workPolicyViolation",
-									entityId: params.violationId,
-								}),
-							),
+						yield* Effect.fail(
+							new NotFoundError({
+								message: "Violation not found",
+								entityType: "workPolicyViolation",
+								entityId: params.violationId,
+							}),
 						);
 						return;
 					}
 
-					yield* _(
-						dbService.query("acknowledgeViolation", async () => {
-							await dbService.db
-								.update(workPolicyViolation)
-								.set({
-									acknowledgedBy: params.acknowledgedBy,
-									acknowledgedAt: new Date(),
-									acknowledgedNote: params.note,
-								})
-								.where(eq(workPolicyViolation.id, params.violationId));
-						}),
-					);
+					yield* dbService.query("acknowledgeViolation", async () => {
+						await dbService.db
+							.update(workPolicyViolation)
+							.set({
+								acknowledgedBy: params.acknowledgedBy,
+								acknowledgedAt: new Date(),
+								acknowledgedNote: params.note,
+							})
+							.where(eq(workPolicyViolation.id, params.violationId));
+					});
 				}),
 
 			getOrganizationPolicies: (organizationId) =>
-				Effect.gen(function* (_) {
-					const policies = yield* _(
-						dbService.query("getOrgPolicies", async () => {
-							return await dbService.db.query.workPolicy.findMany({
-								where: and(
-									eq(workPolicy.organizationId, organizationId),
-									eq(workPolicy.isActive, true),
-								),
-								orderBy: (p, { asc }) => [asc(p.name)],
-							});
-						}),
-					);
+				Effect.gen(function* () {
+					const policies = yield* dbService.query("getOrgPolicies", async () => {
+						return await dbService.db.query.workPolicy.findMany({
+							where: and(
+								eq(workPolicy.organizationId, organizationId),
+								eq(workPolicy.isActive, true),
+							),
+							orderBy: (p, { asc }) => [asc(p.name)],
+						});
+					});
 
 					return policies.map((p) => ({
 						id: p.id,

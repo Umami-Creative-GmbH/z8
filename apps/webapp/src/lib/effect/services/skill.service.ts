@@ -16,7 +16,7 @@ import {
 	subareaSkillRequirement,
 	type shiftTemplateSkillRequirement as TemplateSkillReqTable,
 } from "@/db/schema";
-import { type DatabaseError, NotFoundError, ValidationError } from "../errors";
+import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "./database.service";
 
 // Type definitions
@@ -124,7 +124,7 @@ export interface OverrideHistoryEntry extends SkillOverride {
 // SERVICE DEFINITION
 // ============================================
 
-export class SkillService extends Context.Tag("SkillService")<
+export class SkillService extends Context.Service<
 	SkillService,
 	{
 		// Skill catalog operations
@@ -211,7 +211,7 @@ export class SkillService extends Context.Tag("SkillService")<
 			},
 		) => Effect.Effect<OverrideHistoryEntry[], DatabaseError>;
 	}
->() {}
+>()("SkillService") {}
 
 // ============================================
 // SERVICE IMPLEMENTATION
@@ -219,69 +219,61 @@ export class SkillService extends Context.Tag("SkillService")<
 
 export const SkillServiceLive = Layer.effect(
 	SkillService,
-	Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
 		return SkillService.of({
 			// ----------------------------------------
 			// Skill catalog operations
 			// ----------------------------------------
 			createSkill: (input) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Validate custom category
 					if (input.category === "custom" && !input.customCategoryName) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Custom category name is required when category is 'custom'",
-									field: "customCategoryName",
-								}),
-							),
+						yield* Effect.fail(
+							new ValidationError({
+								message: "Custom category name is required when category is 'custom'",
+								field: "customCategoryName",
+							}),
 						);
 					}
 
-					const createdSkill = yield* _(
-						dbService.query("createSkill", async () => {
-							const [newSkill] = await dbService.db
-								.insert(skill)
-								.values({
-									organizationId: input.organizationId,
-									name: input.name,
-									description: input.description,
-									category: input.category,
-									customCategoryName: input.customCategoryName,
-									requiresExpiry: input.requiresExpiry,
-									createdBy: input.createdBy,
-									updatedAt: new Date(),
-								})
-								.returning();
-							return newSkill;
-						}),
-					);
+					const createdSkill = yield* dbService.query("createSkill", async () => {
+						const [newSkill] = await dbService.db
+							.insert(skill)
+							.values({
+								organizationId: input.organizationId,
+								name: input.name,
+								description: input.description,
+								category: input.category,
+								customCategoryName: input.customCategoryName,
+								requiresExpiry: input.requiresExpiry,
+								createdBy: input.createdBy,
+								updatedAt: new Date(),
+							})
+							.returning();
+						return newSkill;
+					});
 
 					return createdSkill;
 				}),
 
 			updateSkill: (id, input) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Verify skill exists
-					const existing = yield* _(
-						dbService.query("getSkillById", async () => {
-							return await dbService.db.query.skill.findFirst({
-								where: eq(skill.id, id),
-							});
-						}),
-					);
+					const existing = yield* dbService.query("getSkillById", async () => {
+						return await dbService.db.query.skill.findFirst({
+							where: eq(skill.id, id),
+						});
+					});
 
 					if (!existing) {
-						return yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Skill not found",
-									entityType: "skill",
-									entityId: id,
-								}),
-							),
+						return yield* Effect.fail(
+							new NotFoundError({
+								message: "Skill not found",
+								entityType: "skill",
+								entityId: id,
+							}),
 						);
 					}
 
@@ -294,107 +286,93 @@ export const SkillServiceLive = Layer.effect(
 						!input.customCategoryName &&
 						!existingSkill.customCategoryName
 					) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Custom category name is required when category is 'custom'",
-									field: "customCategoryName",
-								}),
-							),
+						yield* Effect.fail(
+							new ValidationError({
+								message: "Custom category name is required when category is 'custom'",
+								field: "customCategoryName",
+							}),
 						);
 					}
 
-					const updatedSkill = yield* _(
-						dbService.query("updateSkill", async () => {
-							const [updated] = await dbService.db
-								.update(skill)
-								.set({
-									...(input.name !== undefined && { name: input.name }),
-									...(input.description !== undefined && {
-										description: input.description,
-									}),
-									...(input.category !== undefined && {
-										category: input.category,
-									}),
-									...(input.customCategoryName !== undefined && {
-										customCategoryName: input.customCategoryName,
-									}),
-									...(input.requiresExpiry !== undefined && {
-										requiresExpiry: input.requiresExpiry,
-									}),
-									...(input.isActive !== undefined && {
-										isActive: input.isActive,
-									}),
-									updatedBy: input.updatedBy,
-								})
-								.where(eq(skill.id, id))
-								.returning();
-							return updated;
-						}),
-					);
+					const updatedSkill = yield* dbService.query("updateSkill", async () => {
+						const [updated] = await dbService.db
+							.update(skill)
+							.set({
+								...(input.name !== undefined && { name: input.name }),
+								...(input.description !== undefined && {
+									description: input.description,
+								}),
+								...(input.category !== undefined && {
+									category: input.category,
+								}),
+								...(input.customCategoryName !== undefined && {
+									customCategoryName: input.customCategoryName,
+								}),
+								...(input.requiresExpiry !== undefined && {
+									requiresExpiry: input.requiresExpiry,
+								}),
+								...(input.isActive !== undefined && {
+									isActive: input.isActive,
+								}),
+								updatedBy: input.updatedBy,
+							})
+							.where(eq(skill.id, id))
+							.returning();
+						return updated;
+					});
 
 					return updatedSkill;
 				}),
 
 			deleteSkill: (id) =>
-				Effect.gen(function* (_) {
-					const existing = yield* _(
-						dbService.query("getSkillById", async () => {
-							return await dbService.db.query.skill.findFirst({
-								where: eq(skill.id, id),
-							});
-						}),
-					);
+				Effect.gen(function* () {
+					const existing = yield* dbService.query("getSkillById", async () => {
+						return await dbService.db.query.skill.findFirst({
+							where: eq(skill.id, id),
+						});
+					});
 
 					if (!existing) {
-						yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Skill not found",
-									entityType: "skill",
-									entityId: id,
-								}),
-							),
+						yield* Effect.fail(
+							new NotFoundError({
+								message: "Skill not found",
+								entityType: "skill",
+								entityId: id,
+							}),
 						);
 					}
 
 					// Soft delete by setting isActive to false
-					yield* _(
-						dbService.query("softDeleteSkill", async () => {
-							await dbService.db.update(skill).set({ isActive: false }).where(eq(skill.id, id));
-						}),
-					);
+					yield* dbService.query("softDeleteSkill", async () => {
+						await dbService.db.update(skill).set({ isActive: false }).where(eq(skill.id, id));
+					});
 				}),
 
 			getOrganizationSkills: (organizationId, options) =>
-				Effect.gen(function* (_) {
-					const skills = yield* _(
-						dbService.query("getOrganizationSkills", async () => {
-							const conditions = [eq(skill.organizationId, organizationId)];
+				Effect.gen(function* () {
+					const skills = yield* dbService.query("getOrganizationSkills", async () => {
+						const conditions = [eq(skill.organizationId, organizationId)];
 
-							if (!options?.includeInactive) {
-								conditions.push(eq(skill.isActive, true));
-							}
+						if (!options?.includeInactive) {
+							conditions.push(eq(skill.isActive, true));
+						}
 
-							return await dbService.db.query.skill.findMany({
-								where: and(...conditions),
-								orderBy: (skill, { asc }) => [asc(skill.category), asc(skill.name)],
-							});
-						}),
-					);
+						return await dbService.db.query.skill.findMany({
+							where: and(...conditions),
+							orderBy: (skill, { asc }) => [asc(skill.category), asc(skill.name)],
+						});
+					});
 
 					return skills as SkillWithRelations[];
 				}),
 
 			getSkillById: (id) =>
-				Effect.gen(function* (_) {
-					const result = yield* _(
-						dbService.query("getSkillById", async () => {
-							return await dbService.db.query.skill.findFirst({
-								where: eq(skill.id, id),
-							});
-						}),
-					);
+				Effect.gen(function* () {
+					const result = yield* dbService.query("getSkillById", async () => {
+						return await dbService.db.query.skill.findFirst({
+							where: eq(skill.id, id),
+						});
+					});
 
 					return result ?? null;
 				}),
@@ -403,46 +381,38 @@ export const SkillServiceLive = Layer.effect(
 			// Employee skill assignments
 			// ----------------------------------------
 			assignSkillToEmployee: (input) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Verify employee exists
-					const employeeRecord = yield* _(
-						dbService.query("verifyEmployeeExists", async () => {
-							return await dbService.db.query.employee.findFirst({
-								where: eq(employee.id, input.employeeId),
-							});
-						}),
-					);
+					const employeeRecord = yield* dbService.query("verifyEmployeeExists", async () => {
+						return await dbService.db.query.employee.findFirst({
+							where: eq(employee.id, input.employeeId),
+						});
+					});
 
 					if (!employeeRecord) {
-						yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Employee not found",
-									entityType: "employee",
-									entityId: input.employeeId,
-								}),
-							),
+						yield* Effect.fail(
+							new NotFoundError({
+								message: "Employee not found",
+								entityType: "employee",
+								entityId: input.employeeId,
+							}),
 						);
 					}
 
 					// Verify skill exists and is active
-					const skillRecord = yield* _(
-						dbService.query("verifySkillExists", async () => {
-							return await dbService.db.query.skill.findFirst({
-								where: and(eq(skill.id, input.skillId), eq(skill.isActive, true)),
-							});
-						}),
-					);
+					const skillRecord = yield* dbService.query("verifySkillExists", async () => {
+						return await dbService.db.query.skill.findFirst({
+							where: and(eq(skill.id, input.skillId), eq(skill.isActive, true)),
+						});
+					});
 
 					if (!skillRecord) {
-						return yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Skill not found or inactive",
-									entityType: "skill",
-									entityId: input.skillId,
-								}),
-							),
+						return yield* Effect.fail(
+							new NotFoundError({
+								message: "Skill not found or inactive",
+								entityType: "skill",
+								entityId: input.skillId,
+							}),
 						);
 					}
 
@@ -450,152 +420,136 @@ export const SkillServiceLive = Layer.effect(
 
 					// Validate expiry if skill requires it
 					if (activeSkill.requiresExpiry && !input.expiresAt) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "This skill requires an expiry date",
-									field: "expiresAt",
-								}),
-							),
+						yield* Effect.fail(
+							new ValidationError({
+								message: "This skill requires an expiry date",
+								field: "expiresAt",
+							}),
 						);
 					}
 
 					// Upsert (update if exists, insert if not)
-					const assignment = yield* _(
-						dbService.query("assignSkillToEmployee", async () => {
-							const [result] = await dbService.db
-								.insert(employeeSkill)
-								.values({
-									employeeId: input.employeeId,
-									skillId: input.skillId,
+					const assignment = yield* dbService.query("assignSkillToEmployee", async () => {
+						const [result] = await dbService.db
+							.insert(employeeSkill)
+							.values({
+								employeeId: input.employeeId,
+								skillId: input.skillId,
+								expiresAt: input.expiresAt,
+								notes: input.notes,
+								assignedBy: input.assignedBy,
+							})
+							.onConflictDoUpdate({
+								target: [employeeSkill.employeeId, employeeSkill.skillId],
+								set: {
 									expiresAt: input.expiresAt,
 									notes: input.notes,
 									assignedBy: input.assignedBy,
-								})
-								.onConflictDoUpdate({
-									target: [employeeSkill.employeeId, employeeSkill.skillId],
-									set: {
-										expiresAt: input.expiresAt,
-										notes: input.notes,
-										assignedBy: input.assignedBy,
-										assignedAt: new Date(),
-									},
-								})
-								.returning();
-							return result;
-						}),
-					);
+									assignedAt: new Date(),
+								},
+							})
+							.returning();
+						return result;
+					});
 
 					return assignment;
 				}),
 
 			removeSkillFromEmployee: (employeeId, skillId) =>
-				Effect.gen(function* (_) {
-					const existing = yield* _(
-						dbService.query("getEmployeeSkill", async () => {
-							return await dbService.db.query.employeeSkill.findFirst({
-								where: and(
-									eq(employeeSkill.employeeId, employeeId),
-									eq(employeeSkill.skillId, skillId),
-								),
-							});
-						}),
-					);
+				Effect.gen(function* () {
+					const existing = yield* dbService.query("getEmployeeSkill", async () => {
+						return await dbService.db.query.employeeSkill.findFirst({
+							where: and(
+								eq(employeeSkill.employeeId, employeeId),
+								eq(employeeSkill.skillId, skillId),
+							),
+						});
+					});
 
 					if (!existing) {
-						yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Employee skill assignment not found",
-									entityType: "employeeSkill",
-									entityId: `${employeeId}:${skillId}`,
-								}),
-							),
+						yield* Effect.fail(
+							new NotFoundError({
+								message: "Employee skill assignment not found",
+								entityType: "employeeSkill",
+								entityId: `${employeeId}:${skillId}`,
+							}),
 						);
 					}
 
-					yield* _(
-						dbService.query("removeSkillFromEmployee", async () => {
-							await dbService.db
-								.delete(employeeSkill)
-								.where(
-									and(eq(employeeSkill.employeeId, employeeId), eq(employeeSkill.skillId, skillId)),
-								);
-						}),
-					);
+					yield* dbService.query("removeSkillFromEmployee", async () => {
+						await dbService.db
+							.delete(employeeSkill)
+							.where(
+								and(eq(employeeSkill.employeeId, employeeId), eq(employeeSkill.skillId, skillId)),
+							);
+					});
 				}),
 
 			getEmployeeSkills: (employeeId) =>
-				Effect.gen(function* (_) {
-					const skills = yield* _(
-						dbService.query("getEmployeeSkills", async () => {
-							return await dbService.db.query.employeeSkill.findMany({
-								where: eq(employeeSkill.employeeId, employeeId),
-								with: {
-									skill: true,
-								},
-							});
-						}),
-					);
+				Effect.gen(function* () {
+					const skills = yield* dbService.query("getEmployeeSkills", async () => {
+						return await dbService.db.query.employeeSkill.findMany({
+							where: eq(employeeSkill.employeeId, employeeId),
+							with: {
+								skill: true,
+							},
+						});
+					});
 
 					return skills as EmployeeSkillWithDetails[];
 				}),
 
 			getQualifiedEmployeesForSkills: (organizationId, skillIds) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					if (skillIds.length === 0) {
 						// No skills required = all employees qualify
-						const allEmployees = yield* _(
-							dbService.query("getAllEmployees", async () => {
-								return await dbService.db.query.employee.findMany({
-									where: eq(employee.organizationId, organizationId),
-									columns: { id: true },
-								});
-							}),
-						);
+						const allEmployees = yield* dbService.query("getAllEmployees", async () => {
+							return await dbService.db.query.employee.findMany({
+								where: eq(employee.organizationId, organizationId),
+								columns: { id: true },
+							});
+						});
 						return allEmployees.map((e) => e.id);
 					}
 
-					const qualifiedEmployees = yield* _(
-						dbService.query("getQualifiedEmployees", async () => {
-							// Get employees who have ALL required skills and none are expired
-							const now = new Date();
+					const qualifiedEmployees = yield* dbService.query("getQualifiedEmployees", async () => {
+						// Get employees who have ALL required skills and none are expired
+						const now = new Date();
 
-							// Find employees with valid (non-expired) assignments for ALL required skills
-							const employeeSkills = await dbService.db.query.employeeSkill.findMany({
-								where: and(
-									inArray(employeeSkill.skillId, skillIds),
-									or(isNull(employeeSkill.expiresAt), gt(employeeSkill.expiresAt, now)),
-								),
-								with: {
-									employee: {
-										columns: { id: true, organizationId: true },
-									},
+						// Find employees with valid (non-expired) assignments for ALL required skills
+						const employeeSkills = await dbService.db.query.employeeSkill.findMany({
+							where: and(
+								inArray(employeeSkill.skillId, skillIds),
+								or(isNull(employeeSkill.expiresAt), gt(employeeSkill.expiresAt, now)),
+							),
+							with: {
+								employee: {
+									columns: { id: true, organizationId: true },
 								},
-							});
+							},
+						});
 
-							// Group by employee and check they have ALL required skills
-							const employeeSkillCounts = new Map<string, number>();
-							for (const es of employeeSkills) {
-								if (es.employee.organizationId === organizationId) {
-									employeeSkillCounts.set(
-										es.employee.id,
-										(employeeSkillCounts.get(es.employee.id) || 0) + 1,
-									);
-								}
+						// Group by employee and check they have ALL required skills
+						const employeeSkillCounts = new Map<string, number>();
+						for (const es of employeeSkills) {
+							if (es.employee.organizationId === organizationId) {
+								employeeSkillCounts.set(
+									es.employee.id,
+									(employeeSkillCounts.get(es.employee.id) || 0) + 1,
+								);
 							}
+						}
 
-							// Return only employees who have all required skills
-							const qualifiedIds: string[] = [];
-							for (const [empId, count] of employeeSkillCounts) {
-								if (count >= skillIds.length) {
-									qualifiedIds.push(empId);
-								}
+						// Return only employees who have all required skills
+						const qualifiedIds: string[] = [];
+						for (const [empId, count] of employeeSkillCounts) {
+							if (count >= skillIds.length) {
+								qualifiedIds.push(empId);
 							}
+						}
 
-							return qualifiedIds;
-						}),
-					);
+						return qualifiedIds;
+					});
 
 					return qualifiedEmployees;
 				}),
@@ -604,67 +558,59 @@ export const SkillServiceLive = Layer.effect(
 			// Subarea skill requirements
 			// ----------------------------------------
 			setSubareaSkillRequirements: (input) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Verify subarea exists
-					const subareaRecord = yield* _(
-						dbService.query("verifySubareaExists", async () => {
-							return await dbService.db.query.locationSubarea.findFirst({
-								where: eq(locationSubarea.id, input.targetId),
-							});
-						}),
-					);
+					const subareaRecord = yield* dbService.query("verifySubareaExists", async () => {
+						return await dbService.db.query.locationSubarea.findFirst({
+							where: eq(locationSubarea.id, input.targetId),
+						});
+					});
 
 					if (!subareaRecord) {
-						yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Subarea not found",
-									entityType: "locationSubarea",
-									entityId: input.targetId,
-								}),
-							),
+						yield* Effect.fail(
+							new NotFoundError({
+								message: "Subarea not found",
+								entityType: "locationSubarea",
+								entityId: input.targetId,
+							}),
 						);
 					}
 
 					// Delete existing requirements and insert new ones
-					const requirements = yield* _(
-						dbService.query("setSubareaSkillRequirements", async () => {
-							const values = input.requirements.map((req) => ({
-								subareaId: input.targetId,
-								skillId: req.skillId,
-								isRequired: req.isRequired,
-								createdBy: input.createdBy,
-							}));
+					const requirements = yield* dbService.query("setSubareaSkillRequirements", async () => {
+						const values = input.requirements.map((req) => ({
+							subareaId: input.targetId,
+							skillId: req.skillId,
+							isRequired: req.isRequired,
+							createdBy: input.createdBy,
+						}));
 
-							// Delete existing
-							await dbService.db
-								.delete(subareaSkillRequirement)
-								.where(eq(subareaSkillRequirement.subareaId, input.targetId));
+						// Delete existing
+						await dbService.db
+							.delete(subareaSkillRequirement)
+							.where(eq(subareaSkillRequirement.subareaId, input.targetId));
 
-							if (values.length === 0) {
-								return [];
-							}
+						if (values.length === 0) {
+							return [];
+						}
 
-							// Insert new requirements
-							return await dbService.db.insert(subareaSkillRequirement).values(values).returning();
-						}),
-					);
+						// Insert new requirements
+						return await dbService.db.insert(subareaSkillRequirement).values(values).returning();
+					});
 
 					return requirements;
 				}),
 
 			getSubareaSkillRequirements: (subareaId) =>
-				Effect.gen(function* (_) {
-					const requirements = yield* _(
-						dbService.query("getSubareaSkillRequirements", async () => {
-							return await dbService.db.query.subareaSkillRequirement.findMany({
-								where: eq(subareaSkillRequirement.subareaId, subareaId),
-								with: {
-									skill: true,
-								},
-							});
-						}),
-					);
+				Effect.gen(function* () {
+					const requirements = yield* dbService.query("getSubareaSkillRequirements", async () => {
+						return await dbService.db.query.subareaSkillRequirement.findMany({
+							where: eq(subareaSkillRequirement.subareaId, subareaId),
+							with: {
+								skill: true,
+							},
+						});
+					});
 
 					return requirements as Array<SubareaSkillReq & { skill: Skill }>;
 				}),
@@ -673,70 +619,62 @@ export const SkillServiceLive = Layer.effect(
 			// Template skill requirements
 			// ----------------------------------------
 			setTemplateSkillRequirements: (input) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Verify template exists
-					const templateRecord = yield* _(
-						dbService.query("verifyTemplateExists", async () => {
-							return await dbService.db.query.shiftTemplate.findFirst({
-								where: eq(shiftTemplate.id, input.targetId),
-							});
-						}),
-					);
+					const templateRecord = yield* dbService.query("verifyTemplateExists", async () => {
+						return await dbService.db.query.shiftTemplate.findFirst({
+							where: eq(shiftTemplate.id, input.targetId),
+						});
+					});
 
 					if (!templateRecord) {
-						yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Shift template not found",
-									entityType: "shiftTemplate",
-									entityId: input.targetId,
-								}),
-							),
+						yield* Effect.fail(
+							new NotFoundError({
+								message: "Shift template not found",
+								entityType: "shiftTemplate",
+								entityId: input.targetId,
+							}),
 						);
 					}
 
 					// Delete existing requirements and insert new ones
-					const requirements = yield* _(
-						dbService.query("setTemplateSkillRequirements", async () => {
-							const values = input.requirements.map((req) => ({
-								templateId: input.targetId,
-								skillId: req.skillId,
-								isRequired: req.isRequired,
-								createdBy: input.createdBy,
-							}));
+					const requirements = yield* dbService.query("setTemplateSkillRequirements", async () => {
+						const values = input.requirements.map((req) => ({
+							templateId: input.targetId,
+							skillId: req.skillId,
+							isRequired: req.isRequired,
+							createdBy: input.createdBy,
+						}));
 
-							// Delete existing
-							await dbService.db
-								.delete(shiftTemplateSkillRequirement)
-								.where(eq(shiftTemplateSkillRequirement.templateId, input.targetId));
+						// Delete existing
+						await dbService.db
+							.delete(shiftTemplateSkillRequirement)
+							.where(eq(shiftTemplateSkillRequirement.templateId, input.targetId));
 
-							if (values.length === 0) {
-								return [];
-							}
+						if (values.length === 0) {
+							return [];
+						}
 
-							// Insert new requirements
-							return await dbService.db
-								.insert(shiftTemplateSkillRequirement)
-								.values(values)
-								.returning();
-						}),
-					);
+						// Insert new requirements
+						return await dbService.db
+							.insert(shiftTemplateSkillRequirement)
+							.values(values)
+							.returning();
+					});
 
 					return requirements;
 				}),
 
 			getTemplateSkillRequirements: (templateId) =>
-				Effect.gen(function* (_) {
-					const requirements = yield* _(
-						dbService.query("getTemplateSkillRequirements", async () => {
-							return await dbService.db.query.shiftTemplateSkillRequirement.findMany({
-								where: eq(shiftTemplateSkillRequirement.templateId, templateId),
-								with: {
-									skill: true,
-								},
-							});
-						}),
-					);
+				Effect.gen(function* () {
+					const requirements = yield* dbService.query("getTemplateSkillRequirements", async () => {
+						return await dbService.db.query.shiftTemplateSkillRequirement.findMany({
+							where: eq(shiftTemplateSkillRequirement.templateId, templateId),
+							with: {
+								skill: true,
+							},
+						});
+					});
 
 					return requirements as Array<TemplateSkillReq & { skill: Skill }>;
 				}),
@@ -745,52 +683,46 @@ export const SkillServiceLive = Layer.effect(
 			// Validation
 			// ----------------------------------------
 			validateEmployeeForShift: (employeeId, shiftData) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					const now = new Date();
 
 					// Get employee's current valid skills
-					const employeeSkills = yield* _(
-						dbService.query("getEmployeeValidSkills", async () => {
-							return await dbService.db.query.employeeSkill.findMany({
-								where: and(
-									eq(employeeSkill.employeeId, employeeId),
-									or(isNull(employeeSkill.expiresAt), gt(employeeSkill.expiresAt, now)),
-								),
-								with: {
-									skill: true,
-								},
-							});
-						}),
-					);
+					const employeeSkills = yield* dbService.query("getEmployeeValidSkills", async () => {
+						return await dbService.db.query.employeeSkill.findMany({
+							where: and(
+								eq(employeeSkill.employeeId, employeeId),
+								or(isNull(employeeSkill.expiresAt), gt(employeeSkill.expiresAt, now)),
+							),
+							with: {
+								skill: true,
+							},
+						});
+					});
 
 					// Get expired skills (for warning)
-					const expiredSkills = yield* _(
-						dbService.query("getExpiredSkills", async () => {
-							return await dbService.db.query.employeeSkill.findMany({
-								where: and(
-									eq(employeeSkill.employeeId, employeeId),
-									lte(employeeSkill.expiresAt, now),
-								),
-								with: {
-									skill: true,
-								},
-							});
-						}),
-					);
+					const expiredSkills = yield* dbService.query("getExpiredSkills", async () => {
+						return await dbService.db.query.employeeSkill.findMany({
+							where: and(
+								eq(employeeSkill.employeeId, employeeId),
+								lte(employeeSkill.expiresAt, now),
+							),
+							with: {
+								skill: true,
+							},
+						});
+					});
 
 					const validSkillIds = new Set(employeeSkills.map((es) => es.skillId));
 
 					// Get subarea requirements
-					const subareaReqs = yield* _(
-						dbService.query("getSubareaRequirements", async () => {
-							return await dbService.db.query.subareaSkillRequirement.findMany({
-								where: eq(subareaSkillRequirement.subareaId, shiftData.subareaId),
-								with: {
-									skill: true,
-								},
-							});
-						}),
-					);
+					const subareaReqs = yield* dbService.query("getSubareaRequirements", async () => {
+						return await dbService.db.query.subareaSkillRequirement.findMany({
+							where: eq(subareaSkillRequirement.subareaId, shiftData.subareaId),
+							with: {
+								skill: true,
+							},
+						});
+					});
 
 					// Get template requirements if applicable
 					let templateReqs: Array<{
@@ -800,16 +732,14 @@ export const SkillServiceLive = Layer.effect(
 					}> = [];
 					if (shiftData.templateId) {
 						const templateId = shiftData.templateId;
-						templateReqs = yield* _(
-							dbService.query("getTemplateRequirements", async () => {
-								return await dbService.db.query.shiftTemplateSkillRequirement.findMany({
-									where: eq(shiftTemplateSkillRequirement.templateId, templateId),
-									with: {
-										skill: true,
-									},
-								});
-							}),
-						);
+						templateReqs = yield* dbService.query("getTemplateRequirements", async () => {
+							return await dbService.db.query.shiftTemplateSkillRequirement.findMany({
+								where: eq(shiftTemplateSkillRequirement.templateId, templateId),
+								with: {
+									skill: true,
+								},
+							});
+						});
 					}
 
 					// Combine all requirements (deduped by skillId, taking most restrictive isRequired)
@@ -863,46 +793,40 @@ export const SkillServiceLive = Layer.effect(
 				}),
 
 			validateEmployeeForSubarea: (employeeId, subareaId) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					const now = new Date();
 
 					// Get employee's current valid skills
-					const validEmployeeSkills = yield* _(
-						dbService.query("getEmployeeValidSkillsForSubarea", async () => {
-							return await dbService.db.query.employeeSkill.findMany({
-								where: and(
-									eq(employeeSkill.employeeId, employeeId),
-									or(isNull(employeeSkill.expiresAt), gt(employeeSkill.expiresAt, now)),
-								),
-								with: { skill: true },
-							});
-						}),
-					);
+					const validEmployeeSkills = yield* dbService.query("getEmployeeValidSkillsForSubarea", async () => {
+						return await dbService.db.query.employeeSkill.findMany({
+							where: and(
+								eq(employeeSkill.employeeId, employeeId),
+								or(isNull(employeeSkill.expiresAt), gt(employeeSkill.expiresAt, now)),
+							),
+							with: { skill: true },
+						});
+					});
 
 					// Get expired skills
-					const expiredSkillsData = yield* _(
-						dbService.query("getExpiredSkillsForSubarea", async () => {
-							return await dbService.db.query.employeeSkill.findMany({
-								where: and(
-									eq(employeeSkill.employeeId, employeeId),
-									lte(employeeSkill.expiresAt, now),
-								),
-								with: { skill: true },
-							});
-						}),
-					);
+					const expiredSkillsData = yield* dbService.query("getExpiredSkillsForSubarea", async () => {
+						return await dbService.db.query.employeeSkill.findMany({
+							where: and(
+								eq(employeeSkill.employeeId, employeeId),
+								lte(employeeSkill.expiresAt, now),
+							),
+							with: { skill: true },
+						});
+					});
 
 					const validSkillIds = new Set(validEmployeeSkills.map((es) => es.skillId));
 
 					// Get subarea requirements only
-					const subareaReqs = yield* _(
-						dbService.query("getSubareaRequirementsOnly", async () => {
-							return await dbService.db.query.subareaSkillRequirement.findMany({
-								where: eq(subareaSkillRequirement.subareaId, subareaId),
-								with: { skill: true },
-							});
-						}),
-					);
+					const subareaReqs = yield* dbService.query("getSubareaRequirementsOnly", async () => {
+						return await dbService.db.query.subareaSkillRequirement.findMany({
+							where: eq(subareaSkillRequirement.subareaId, subareaId),
+							with: { skill: true },
+						});
+					});
 
 					// Find missing skills
 					const missingSkills: SkillValidationResult["missingSkills"] = [];
@@ -946,91 +870,83 @@ export const SkillServiceLive = Layer.effect(
 			// Override recording
 			// ----------------------------------------
 			recordOverride: (input) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					if (input.missingSkillIds.length === 0) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "At least one missing skill ID is required",
-									field: "missingSkillIds",
-								}),
-							),
+						yield* Effect.fail(
+							new ValidationError({
+								message: "At least one missing skill ID is required",
+								field: "missingSkillIds",
+							}),
 						);
 					}
 
 					if (!input.overrideReason.trim()) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Override reason is required",
-									field: "overrideReason",
-								}),
-							),
+						yield* Effect.fail(
+							new ValidationError({
+								message: "Override reason is required",
+								field: "overrideReason",
+							}),
 						);
 					}
 
-					const override = yield* _(
-						dbService.query("recordOverride", async () => {
-							const [result] = await dbService.db
-								.insert(skillRequirementOverride)
-								.values({
-									organizationId: input.organizationId,
-									shiftId: input.shiftId,
-									employeeId: input.employeeId,
-									missingSkillIds: JSON.stringify(input.missingSkillIds),
-									overrideReason: input.overrideReason,
-									overriddenBy: input.overriddenBy,
-								})
-								.returning();
-							return result;
-						}),
-					);
+					const override = yield* dbService.query("recordOverride", async () => {
+						const [result] = await dbService.db
+							.insert(skillRequirementOverride)
+							.values({
+								organizationId: input.organizationId,
+								shiftId: input.shiftId,
+								employeeId: input.employeeId,
+								missingSkillIds: JSON.stringify(input.missingSkillIds),
+								overrideReason: input.overrideReason,
+								overriddenBy: input.overriddenBy,
+							})
+							.returning();
+						return result;
+					});
 
 					return override;
 				}),
 
 			getOverrideHistory: (organizationId, options) =>
-				Effect.gen(function* (_) {
-					const overrides = yield* _(
-						dbService.query("getOverrideHistory", async () => {
-							const conditions = [eq(skillRequirementOverride.organizationId, organizationId)];
+				Effect.gen(function* () {
+					const overrides = yield* dbService.query("getOverrideHistory", async () => {
+						const conditions = [eq(skillRequirementOverride.organizationId, organizationId)];
 
-							if (options?.employeeId) {
-								conditions.push(eq(skillRequirementOverride.employeeId, options.employeeId));
-							}
-							if (options?.shiftId) {
-								conditions.push(eq(skillRequirementOverride.shiftId, options.shiftId));
-							}
+						if (options?.employeeId) {
+							conditions.push(eq(skillRequirementOverride.employeeId, options.employeeId));
+						}
+						if (options?.shiftId) {
+							conditions.push(eq(skillRequirementOverride.shiftId, options.shiftId));
+						}
 
-							const results = await dbService.db.query.skillRequirementOverride.findMany({
-								where: and(...conditions),
-								with: {
-									shift: {
-										columns: {
-											date: true,
-											startTime: true,
-											endTime: true,
-										},
-									},
-									employee: {
-										columns: {
-											firstName: true,
-											lastName: true,
-										},
+						const results = await dbService.db.query.skillRequirementOverride.findMany({
+							where: and(...conditions),
+							with: {
+								shift: {
+									columns: {
+										date: true,
+										startTime: true,
+										endTime: true,
 									},
 								},
-								orderBy: (table, { desc }) => [desc(table.overriddenAt)],
-								limit: options?.limit ?? 50,
-							});
+								employee: {
+									columns: {
+										firstName: true,
+										lastName: true,
+									},
+								},
+							},
+							orderBy: (table, { desc }) => [desc(table.overriddenAt)],
+							limit: options?.limit ?? 50,
+						});
 
-							return results.map((override) => ({
-								override,
-								missingSkillIds: missingSkillIdsSchema.parse(
-									JSON.parse(override.missingSkillIds),
-								),
-							}));
-						}),
-					);
+						return results.map((override) => ({
+							override,
+							missingSkillIds: missingSkillIdsSchema.parse(
+								JSON.parse(override.missingSkillIds),
+							),
+						}));
+					});
 
 					// Resolve skill names for missing skills
 					const allSkillIds = new Set<string>();
@@ -1040,21 +956,19 @@ export const SkillServiceLive = Layer.effect(
 						}
 					}
 
-					const skillNames = yield* _(
-						dbService.query("getSkillNames", async () => {
-							if (allSkillIds.size === 0) return new Map<string, string>();
+					const skillNames = yield* dbService.query("getSkillNames", async () => {
+						if (allSkillIds.size === 0) return new Map<string, string>();
 
-							const skills = await dbService.db.query.skill.findMany({
-								where: and(
-									eq(skill.organizationId, organizationId),
-									inArray(skill.id, Array.from(allSkillIds)),
-								),
-								columns: { id: true, name: true },
-							});
+						const skills = await dbService.db.query.skill.findMany({
+							where: and(
+								eq(skill.organizationId, organizationId),
+								inArray(skill.id, Array.from(allSkillIds)),
+							),
+							columns: { id: true, name: true },
+						});
 
-							return new Map(skills.map((s) => [s.id, s.name]));
-						}),
-					);
+						return new Map(skills.map((s) => [s.id, s.name]));
+					});
 
 					return overrides.map(({ override, missingSkillIds }) => ({
 						...override,

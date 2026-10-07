@@ -5,25 +5,36 @@ import {
 	groupCalendarEventsByDate,
 	totalWorkSummaries,
 } from "./month-work-summary";
-import type { CalendarEvent, DailyWorkHoursSummaries } from "./types";
+import type { CalendarEvent, DailyWorkHoursSummaries, DailyWorkHoursSummary } from "./types";
 
-function summary(requiredMinutes: number, actualMinutes: number) {
+function summary(
+	requiredMinutes: number,
+	actualMinutes: number,
+	includesLiveWork = false,
+): DailyWorkHoursSummary {
 	const deltaMinutes = actualMinutes - requiredMinutes;
 	return {
-		requiredMinutes,
 		actualMinutes,
-		deltaMinutes,
-		status:
-			actualMinutes === 0
-				? ("missing" as const)
-				: actualMinutes >= requiredMinutes
-					? deltaMinutes > 0
-						? ("over" as const)
-						: ("met" as const)
-					: ("under" as const),
-		policyId: "policy-1",
-		policyName: "Standard",
+		includesLiveWork,
+		requirement: {
+			requiredMinutes,
+			deltaMinutes,
+			status:
+				actualMinutes === 0
+					? "missing"
+					: actualMinutes >= requiredMinutes
+						? deltaMinutes > 0
+							? "over"
+							: "met"
+						: "under",
+			policyId: "policy-1",
+			policyName: "Standard",
+		},
 	};
+}
+
+function recordedOnly(actualMinutes: number, includesLiveWork = false): DailyWorkHoursSummary {
+	return { actualMinutes, includesLiveWork, requirement: null };
 }
 
 function event(date: string, type: CalendarEvent["type"]): CalendarEvent {
@@ -212,6 +223,19 @@ describe("totalWorkSummaries", () => {
 			actualMinutes: 0,
 			deltaMinutes: -480,
 			status: "under",
+			includesLiveWork: false,
+		});
+	});
+
+	it("counts work on days without a requirement and carries live work into the total", () => {
+		expect(
+			totalWorkSummaries([summary(480, 450), recordedOnly(150), summary(480, 200, true)]),
+		).toEqual({
+			requiredMinutes: 960,
+			actualMinutes: 800,
+			deltaMinutes: -160,
+			status: "under",
+			includesLiveWork: true,
 		});
 	});
 });

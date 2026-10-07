@@ -79,17 +79,15 @@ function loadScopedPermissions(
 	employeeId: string,
 	organizationId: string,
 ): Effect.Effect<ScopedPermissions, AnyAppError> {
-	return Effect.gen(function* (_) {
-		const permissionRows = (yield* _(
-			dbService.query("getScopedTeamPermissions", async () => {
-				return await dbService.db.query.teamPermissions.findMany({
-					where: and(
-						eq(teamPermissions.employeeId, employeeId),
-						eq(teamPermissions.organizationId, organizationId),
-					),
-				});
-			}),
-		)) as Array<typeof teamPermissions.$inferSelect>;
+	return Effect.gen(function* () {
+		const permissionRows = (yield* dbService.query("getScopedTeamPermissions", async () => {
+			return await dbService.db.query.teamPermissions.findMany({
+				where: and(
+					eq(teamPermissions.employeeId, employeeId),
+					eq(teamPermissions.organizationId, organizationId),
+				),
+			});
+		})) as Array<typeof teamPermissions.$inferSelect>;
 
 		const permissions: ScopedPermissions = {
 			orgWide: null,
@@ -125,28 +123,24 @@ function validatePrimaryManager(
 		return Effect.succeed(undefined);
 	}
 
-	return Effect.gen(function* (_) {
-		const manager = yield* _(
-			dbService.query("getPrimaryManagerCandidate", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: and(
-						eq(employee.id, primaryManagerId),
-						eq(employee.organizationId, organizationId),
-						eq(employee.isActive, true),
-					),
-				});
-			}),
-		);
+	return Effect.gen(function* () {
+		const manager = yield* dbService.query("getPrimaryManagerCandidate", async () => {
+			return await dbService.db.query.employee.findFirst({
+				where: and(
+					eq(employee.id, primaryManagerId),
+					eq(employee.organizationId, organizationId),
+					eq(employee.isActive, true),
+				),
+			});
+		});
 
 		if (!manager || (manager.role !== "manager" && manager.role !== "admin")) {
-			return yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: "Primary manager must be an active manager or admin in this organization",
-						field: "primaryManagerId",
-						value: primaryManagerId,
-					}),
-				),
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "Primary manager must be an active manager or admin in this organization",
+					field: "primaryManagerId",
+					value: primaryManagerId,
+				}),
 			);
 		}
 	});
@@ -193,43 +187,37 @@ function resolveTeamSettingsActor(
 	organizationId: string,
 	options?: { includeEmployeeUser?: boolean },
 ): Effect.Effect<TeamSettingsActor, AnyAppError, AuthService> {
-	return Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		yield* _(authService.getSession(organizationId));
-		const membershipRecord = yield* _(
-			dbService.query("getOrganizationMembership", async () => {
-				return await dbService.db.query.member.findFirst({
-					where: and(eq(member.userId, sessionUser.id), eq(member.organizationId, organizationId)),
-				});
-			}),
-		);
+	return Effect.gen(function* () {
+		const authService = yield* AuthService;
+		yield* authService.getSession(organizationId);
+		const membershipRecord = yield* dbService.query("getOrganizationMembership", async () => {
+			return await dbService.db.query.member.findFirst({
+				where: and(eq(member.userId, sessionUser.id), eq(member.organizationId, organizationId)),
+			});
+		});
 		const typedMembershipRecord = membershipRecord as OrganizationMembership | null;
 
 		if (!typedMembershipRecord) {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "No organization membership found",
-						userId: sessionUser.id,
-						resource: "team",
-						action: "read",
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "No organization membership found",
+					userId: sessionUser.id,
+					resource: "team",
+					action: "read",
+				}),
 			);
 		}
 
-		const employeeRecord = yield* _(
-			dbService.query("getOrganizationEmployee", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, sessionUser.id),
-						eq(employee.organizationId, organizationId),
-						eq(employee.isActive, true),
-					),
-					with: options?.includeEmployeeUser ? { user: true } : undefined,
-				});
-			}),
-		);
+		const employeeRecord = yield* dbService.query("getOrganizationEmployee", async () => {
+			return await dbService.db.query.employee.findFirst({
+				where: and(
+					eq(employee.userId, sessionUser.id),
+					eq(employee.organizationId, organizationId),
+					eq(employee.isActive, true),
+				),
+				with: options?.includeEmployeeUser ? { user: true } : undefined,
+			});
+		});
 		const typedEmployeeRecord = employeeRecord as TeamSettingsActor["employeeRecord"];
 
 		if (typedMembershipRecord.role === "owner" || typedMembershipRecord.role === "admin") {
@@ -246,13 +234,11 @@ function resolveTeamSettingsActor(
 		}
 
 		if (!typedEmployeeRecord) {
-			return yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-				),
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Employee profile not found",
+					entityType: "employee",
+				}),
 			);
 		}
 
@@ -291,28 +277,24 @@ export async function createTeam(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-				const permissionsService = yield* _(PermissionsService);
+			return Effect.gen(function* () {
+				const authService = yield* AuthService;
+				const session = yield* authService.getSession();
+				const dbService = yield* DatabaseService;
+				const permissionsService = yield* PermissionsService;
 
-				const actor = yield* _(
-					resolveTeamSettingsActor(dbService, session.user, data.organizationId),
-				);
+				const actor = yield* resolveTeamSettingsActor(dbService, session.user, data.organizationId);
 
 				span.setAttribute("currentEmployee.id", actor.actorId);
 
 				if (actor.accessTier !== "orgAdmin") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only organization admins can create teams",
-								userId: actor.actorId,
-								resource: "team",
-								action: "create",
-							}),
-						),
+					yield* Effect.fail(
+						new AuthorizationError({
+							message: "Only organization admins can create teams",
+							userId: actor.actorId,
+							resource: "team",
+							action: "create",
+						}),
 					);
 				}
 
@@ -320,81 +302,69 @@ export async function createTeam(
 				const canCreate =
 					actor.accessTier === "orgAdmin"
 						? true
-						: yield* _(permissionsService.hasTeamPermission(actor.actorId, "canCreateTeams"));
+						: yield* permissionsService.hasTeamPermission(actor.actorId, "canCreateTeams");
 
 				if (!canCreate) {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Insufficient permissions to create teams",
-								userId: actor.actorId,
-								resource: "team",
-								action: "create",
-							}),
-						),
+					yield* Effect.fail(
+						new AuthorizationError({
+							message: "Insufficient permissions to create teams",
+							userId: actor.actorId,
+							resource: "team",
+							action: "create",
+						}),
 					);
 				}
 
 				// Validate data
 				const validationResult = createTeamSchema.safeParse(data);
 				if (!validationResult.success) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: validationResult.error.issues[0]?.message || "Invalid input",
-								field: validationResult.error.issues[0]?.path?.join(".") || "data",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message: validationResult.error.issues[0]?.message || "Invalid input",
+							field: validationResult.error.issues[0]?.path?.join(".") || "data",
+						}),
 					);
 				}
 
 				const validatedData = validationResult.data;
-				yield* _(
-					validatePrimaryManager(
-						dbService,
-						validatedData.organizationId,
-						validatedData.primaryManagerId,
-					),
+				yield* validatePrimaryManager(
+					dbService,
+					validatedData.organizationId,
+					validatedData.primaryManagerId,
 				);
 
 				// Check for duplicate team name in organization
-				const existing = yield* _(
-					dbService.query("checkDuplicateTeam", async () => {
-						return await dbService.db.query.team.findFirst({
-							where: and(
-								eq(team.organizationId, validatedData.organizationId),
-								eq(team.name, validatedData.name),
-							),
-						});
-					}),
-				);
+				const existing = yield* dbService.query("checkDuplicateTeam", async () => {
+					return await dbService.db.query.team.findFirst({
+						where: and(
+							eq(team.organizationId, validatedData.organizationId),
+							eq(team.name, validatedData.name),
+						),
+					});
+				});
 
 				if (existing) {
-					yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "Team with this name already exists in the organization",
-								field: "name",
-								value: validatedData.name,
-							}),
-						),
+					yield* Effect.fail(
+						new ValidationError({
+							message: "Team with this name already exists in the organization",
+							field: "name",
+							value: validatedData.name,
+						}),
 					);
 				}
 
 				// Create team
-				const [newTeam] = yield* _(
-					dbService.query("createTeam", async () => {
-						return await dbService.db
-							.insert(team)
-							.values({
-								organizationId: validatedData.organizationId,
-								name: validatedData.name,
-								description: validatedData.description || null,
-								primaryManagerId: validatedData.primaryManagerId ?? null,
-							})
-							.returning();
-					}),
-				);
+				const [newTeam] = yield* dbService.query("createTeam", async () => {
+					return await dbService.db
+						.insert(team)
+						.values({
+							organizationId: validatedData.organizationId,
+							name: validatedData.name,
+							description: validatedData.description || null,
+							primaryManagerId: validatedData.primaryManagerId ?? null,
+						})
+						.returning();
+				});
 
 				logger.info(
 					{
@@ -412,15 +382,15 @@ export async function createTeam(
 				span.setStatus({ code: SpanStatusCode.OK });
 				return newTeam;
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
 						logger.error({ error }, "Failed to create team");
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -450,109 +420,100 @@ export async function updateTeam(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-				const permissionsService = yield* _(PermissionsService);
+			return Effect.gen(function* () {
+				const authService = yield* AuthService;
+				const session = yield* authService.getSession();
+				const dbService = yield* DatabaseService;
+				const permissionsService = yield* PermissionsService;
 
 				// Get team to verify it exists and belongs to same organization
-				const targetTeam = yield* _(
-					dbService.query("getTeam", async () => {
+				const targetTeam = yield* dbService
+					.query("getTeam", async () => {
 						return await dbService.db.query.team.findFirst({
 							where: eq(team.id, teamId),
 						});
-					}),
-					Effect.flatMap((t) =>
-						t
-							? Effect.succeed(t)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Team not found",
-										entityType: "team",
-										entityId: teamId,
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((t) =>
+							t
+								? Effect.succeed(t)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Team not found",
+											entityType: "team",
+											entityId: teamId,
+										}),
+									),
+						),
+					);
 
-				const actor = yield* _(
-					resolveTeamSettingsActor(dbService, session.user, targetTeam.organizationId),
+				const actor = yield* resolveTeamSettingsActor(
+					dbService,
+					session.user,
+					targetTeam.organizationId,
 				);
 
 				if (actor.accessTier === "member") {
-					yield* _(ensureManagerScopedEmployee(actor.employeeRecord));
+					yield* ensureManagerScopedEmployee(actor.employeeRecord);
 				}
 
 				// Check permission
 				const canManage =
 					actor.accessTier === "orgAdmin"
 						? true
-						: yield* _(
-								permissionsService.hasTeamPermission(
-									actor.actorId,
-									"canManageTeamSettings",
-									teamId,
-								),
+						: yield* permissionsService.hasTeamPermission(
+								actor.actorId,
+								"canManageTeamSettings",
+								teamId,
 							);
 
 				if (!canManage) {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Insufficient permissions to manage team settings",
-								userId: actor.actorId,
-								resource: "team",
-								action: "update",
-							}),
-						),
+					yield* Effect.fail(
+						new AuthorizationError({
+							message: "Insufficient permissions to manage team settings",
+							userId: actor.actorId,
+							resource: "team",
+							action: "update",
+						}),
 					);
 				}
 
 				// Validate data
 				const validationResult = updateTeamSchema.safeParse(data);
 				if (!validationResult.success) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: validationResult.error.issues[0]?.message || "Invalid input",
-								field: validationResult.error.issues[0]?.path?.join(".") || "data",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message: validationResult.error.issues[0]?.message || "Invalid input",
+							field: validationResult.error.issues[0]?.path?.join(".") || "data",
+						}),
 					);
 				}
 
 				const validatedData = validationResult.data;
-				yield* _(
-					validatePrimaryManager(
-						dbService,
-						targetTeam.organizationId,
-						validatedData.primaryManagerId,
-					),
+				yield* validatePrimaryManager(
+					dbService,
+					targetTeam.organizationId,
+					validatedData.primaryManagerId,
 				);
 
 				// Check for duplicate name if name is being changed
 				if (validatedData.name && validatedData.name !== targetTeam.name) {
-					const existing = yield* _(
-						dbService.query("checkDuplicateTeam", async () => {
-							return await dbService.db.query.team.findFirst({
-								where: and(
-									eq(team.organizationId, targetTeam.organizationId),
-									eq(team.name, validatedData.name!),
-								),
-							});
-						}),
-					);
+					const existing = yield* dbService.query("checkDuplicateTeam", async () => {
+						return await dbService.db.query.team.findFirst({
+							where: and(
+								eq(team.organizationId, targetTeam.organizationId),
+								eq(team.name, validatedData.name!),
+							),
+						});
+					});
 
 					if (existing) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Team with this name already exists in the organization",
-									field: "name",
-									value: validatedData.name,
-								}),
-							),
+						yield* Effect.fail(
+							new ValidationError({
+								message: "Team with this name already exists in the organization",
+								field: "name",
+								value: validatedData.name,
+							}),
 						);
 					}
 				}
@@ -569,31 +530,30 @@ export async function updateTeam(
 					updatedAt: currentTimestamp(),
 				};
 
-				yield* _(
-					dbService.query("updateTeam", async () => {
-						await dbService.db.update(team).set(updateValues).where(eq(team.id, teamId));
-					}),
-				);
+				yield* dbService.query("updateTeam", async () => {
+					await dbService.db.update(team).set(updateValues).where(eq(team.id, teamId));
+				});
 
 				// Fetch and return the updated team
-				const updatedTeam = yield* _(
-					dbService.query("getUpdatedTeam", async () => {
+				const updatedTeam = yield* dbService
+					.query("getUpdatedTeam", async () => {
 						return await dbService.db.query.team.findFirst({
 							where: eq(team.id, teamId),
 						});
-					}),
-					Effect.flatMap((t) =>
-						t
-							? Effect.succeed(t)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Updated team not found",
-										entityType: "team",
-										entityId: teamId,
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((t) =>
+							t
+								? Effect.succeed(t)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Updated team not found",
+											entityType: "team",
+											entityId: teamId,
+										}),
+									),
+						),
+					);
 
 				logger.info({ teamId }, "Team updated successfully");
 
@@ -604,15 +564,15 @@ export async function updateTeam(
 
 				return updatedTeam;
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
 						logger.error({ error, teamId }, "Failed to update team");
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -639,100 +599,95 @@ export async function deleteTeam(teamId: string): Promise<ServerActionResult<voi
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-				const permissionsService = yield* _(PermissionsService);
+			return Effect.gen(function* () {
+				const authService = yield* AuthService;
+				const session = yield* authService.getSession();
+				const dbService = yield* DatabaseService;
+				const permissionsService = yield* PermissionsService;
 
 				// Get team to verify it exists and belongs to same organization
-				const targetTeam = yield* _(
-					dbService.query("getTeam", async () => {
+				const targetTeam = yield* dbService
+					.query("getTeam", async () => {
 						return await dbService.db.query.team.findFirst({
 							where: eq(team.id, teamId),
 						});
-					}),
-					Effect.flatMap((t) =>
-						t
-							? Effect.succeed(t)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Team not found",
-										entityType: "team",
-										entityId: teamId,
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((t) =>
+							t
+								? Effect.succeed(t)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Team not found",
+											entityType: "team",
+											entityId: teamId,
+										}),
+									),
+						),
+					);
 
-				const actor = yield* _(
-					resolveTeamSettingsActor(dbService, session.user, targetTeam.organizationId),
+				const actor = yield* resolveTeamSettingsActor(
+					dbService,
+					session.user,
+					targetTeam.organizationId,
 				);
 
 				if (actor.accessTier === "member") {
-					yield* _(ensureManagerScopedEmployee(actor.employeeRecord));
+					yield* ensureManagerScopedEmployee(actor.employeeRecord);
 				}
 
 				// Check permission
 				const canManage =
 					actor.accessTier === "orgAdmin"
 						? true
-						: yield* _(
-								permissionsService.hasTeamPermission(
-									actor.actorId,
-									"canManageTeamSettings",
-									teamId,
-								),
+						: yield* permissionsService.hasTeamPermission(
+								actor.actorId,
+								"canManageTeamSettings",
+								teamId,
 							);
 
 				if (!canManage) {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Insufficient permissions to delete team",
-								userId: actor.actorId,
-								resource: "team",
-								action: "delete",
-							}),
-						),
+					yield* Effect.fail(
+						new AuthorizationError({
+							message: "Insufficient permissions to delete team",
+							userId: actor.actorId,
+							resource: "team",
+							action: "delete",
+						}),
 					);
 				}
 
 				// Deletion cascades into employee teams and team permissions across the
 				// organization, so it takes the organization-wide protection.
-				const deleted = yield* _(
-					dbService.query("deleteTeam", () =>
-						withAuthorizationMutation(
-							{ organizationId: targetTeam.organizationId, organizationWide: true },
-							async (tx) => {
-								const members = await tx.query.teamMembership.findMany({
-									where: and(
-										eq(teamMembership.organizationId, targetTeam.organizationId),
-										eq(teamMembership.teamId, teamId),
-									),
-								});
-								if (members.length > 0) return false;
-								await tx
-									.delete(team)
-									.where(
-										and(eq(team.id, teamId), eq(team.organizationId, targetTeam.organizationId)),
-									);
-								return true;
-							},
-							dbService.db,
-						),
+				const deleted = yield* dbService.query("deleteTeam", () =>
+					withAuthorizationMutation(
+						{ organizationId: targetTeam.organizationId, organizationWide: true },
+						async (tx) => {
+							const members = await tx.query.teamMembership.findMany({
+								where: and(
+									eq(teamMembership.organizationId, targetTeam.organizationId),
+									eq(teamMembership.teamId, teamId),
+								),
+							});
+							if (members.length > 0) return false;
+							await tx
+								.delete(team)
+								.where(
+									and(eq(team.id, teamId), eq(team.organizationId, targetTeam.organizationId)),
+								);
+							return true;
+						},
+						dbService.db,
 					),
 				);
 
 				if (!deleted) {
-					yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "Cannot delete team with active members. Please reassign members first.",
-								field: "teamId",
-								value: teamId,
-							}),
-						),
+					yield* Effect.fail(
+						new ValidationError({
+							message: "Cannot delete team with active members. Please reassign members first.",
+							field: "teamId",
+							value: teamId,
+						}),
 					);
 				}
 
@@ -743,15 +698,15 @@ export async function deleteTeam(teamId: string): Promise<ServerActionResult<voi
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
 						logger.error({ error, teamId }, "Failed to delete team");
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -773,14 +728,14 @@ export async function getTeam(
 		ScopedTeam & { employees?: Array<typeof employee.$inferSelect & { user: unknown }> }
 	>
 > {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
 
 		// Get team with members
-		const targetTeam = yield* _(
-			dbService.query("getTeam", async () => {
+		const targetTeam = yield* dbService
+			.query("getTeam", async () => {
 				return await dbService.db.query.team.findFirst({
 					where: eq(team.id, teamId),
 					with: {
@@ -792,43 +747,42 @@ export async function getTeam(
 						primaryManager: { with: { user: true } },
 					},
 				});
-			}),
-			Effect.flatMap((t) =>
-				t
-					? Effect.succeed(t)
-					: Effect.fail(
-							new NotFoundError({
-								message: "Team not found",
-								entityType: "team",
-								entityId: teamId,
-							}),
-						),
-			),
-		);
+			})
+			.pipe(
+				Effect.flatMap((t) =>
+					t
+						? Effect.succeed(t)
+						: Effect.fail(
+								new NotFoundError({
+									message: "Team not found",
+									entityType: "team",
+									entityId: teamId,
+								}),
+							),
+				),
+			);
 
-		const actor = yield* _(
-			resolveTeamSettingsActor(dbService, session.user, targetTeam.organizationId),
+		const actor = yield* resolveTeamSettingsActor(
+			dbService,
+			session.user,
+			targetTeam.organizationId,
 		);
 
 		if (actor.accessTier === "member") {
 			if (!actor.employeeRecord) {
-				return yield* _(
-					Effect.fail(
-						new NotFoundError({
-							message: "Employee profile not found",
-							entityType: "employee",
-						}),
-					),
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "Employee profile not found",
+						entityType: "employee",
+					}),
 				);
 			}
 
-			yield* _(ensureManagerScopedEmployee(actor.employeeRecord));
+			yield* ensureManagerScopedEmployee(actor.employeeRecord);
 		}
 
 		const scopedPermissions = actor.employeeRecord
-			? yield* _(
-					loadScopedPermissions(dbService, actor.employeeRecord.id, targetTeam.organizationId),
-				)
+			? yield* loadScopedPermissions(dbService, actor.employeeRecord.id, targetTeam.organizationId)
 			: { orgWide: null, byTeamId: new Map() };
 		const scopedFlags = getScopedTeamFlags({
 			accessTier: actor.accessTier,
@@ -841,15 +795,13 @@ export async function getTeam(
 			!scopedFlags.canManageMembers &&
 			!scopedFlags.canManageSettings
 		) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions to access this team",
-						userId: actor.actorId,
-						resource: "team",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions to access this team",
+					userId: actor.actorId,
+					resource: "team",
+					action: "read",
+				}),
 			);
 		}
 
@@ -869,58 +821,52 @@ export async function getTeam(
 export async function listTeams(
 	organizationId?: string,
 ): Promise<ServerActionResult<ScopedTeam[]>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
 
-		const fallbackEmployee = yield* _(
-			dbService.query("getCurrentEmployee", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: and(eq(employee.userId, session.user.id), eq(employee.isActive, true)),
-				});
-			}),
-		);
+		const fallbackEmployee = yield* dbService.query("getCurrentEmployee", async () => {
+			return await dbService.db.query.employee.findFirst({
+				where: and(eq(employee.userId, session.user.id), eq(employee.isActive, true)),
+			});
+		});
 
 		const targetOrgId = organizationId || fallbackEmployee?.organizationId;
 
 		if (!targetOrgId) {
-			return yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Organization context not found",
-						entityType: "organization",
-					}),
-				),
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Organization context not found",
+					entityType: "organization",
+				}),
 			);
 		}
 
-		const actor = yield* _(resolveTeamSettingsActor(dbService, session.user, targetOrgId));
+		const actor = yield* resolveTeamSettingsActor(dbService, session.user, targetOrgId);
 
 		if (actor.accessTier === "member") {
-			yield* _(ensureManagerScopedEmployee(actor.employeeRecord));
+			yield* ensureManagerScopedEmployee(actor.employeeRecord);
 		}
 
 		// Get all teams in organization
-		const teams = yield* _(
-			dbService.query("listTeams", async () => {
-				return await dbService.db.query.team.findMany({
-					where: eq(team.organizationId, targetOrgId),
-					with: {
-						memberships: {
-							with: {
-								employee: { with: { user: true } },
-							},
+		const teams = yield* dbService.query("listTeams", async () => {
+			return await dbService.db.query.team.findMany({
+				where: eq(team.organizationId, targetOrgId),
+				with: {
+					memberships: {
+						with: {
+							employee: { with: { user: true } },
 						},
-						primaryManager: { with: { user: true } },
 					},
-					orderBy: (team, { asc }) => [asc(team.name)],
-				});
-			}),
-		);
+					primaryManager: { with: { user: true } },
+				},
+				orderBy: (team, { asc }) => [asc(team.name)],
+			});
+		});
 
 		const scopedPermissions = actor.employeeRecord
-			? yield* _(loadScopedPermissions(dbService, actor.employeeRecord.id, targetOrgId))
+			? yield* loadScopedPermissions(dbService, actor.employeeRecord.id, targetOrgId)
 			: { orgWide: null, byTeamId: new Map() };
 
 		return buildTeamSettingsSurface({
@@ -956,66 +902,70 @@ export async function addTeamMember(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-				const permissionsService = yield* _(PermissionsService);
+			return Effect.gen(function* () {
+				const authService = yield* AuthService;
+				const session = yield* authService.getSession();
+				const dbService = yield* DatabaseService;
+				const permissionsService = yield* PermissionsService;
 
 				// Get the team first to know its organization
-				const targetTeam = yield* _(
-					dbService.query("getTeam", async () => {
+				const targetTeam = yield* dbService
+					.query("getTeam", async () => {
 						return await dbService.db.query.team.findFirst({
 							where: eq(team.id, teamId),
 						});
-					}),
-					Effect.flatMap((t) =>
-						t
-							? Effect.succeed(t)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Team not found",
-										entityType: "team",
-										entityId: teamId,
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((t) =>
+							t
+								? Effect.succeed(t)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Team not found",
+											entityType: "team",
+											entityId: teamId,
+										}),
+									),
+						),
+					);
 
-				const actor = yield* _(
-					resolveTeamSettingsActor(dbService, session.user, targetTeam.organizationId, {
+				const actor = yield* resolveTeamSettingsActor(
+					dbService,
+					session.user,
+					targetTeam.organizationId,
+					{
 						includeEmployeeUser: true,
-					}),
+					},
 				);
 
 				if (actor.accessTier === "member") {
-					yield* _(ensureManagerScopedEmployee(actor.employeeRecord));
+					yield* ensureManagerScopedEmployee(actor.employeeRecord);
 				}
 
 				// Check permission
 				const canManage =
 					actor.accessTier === "orgAdmin"
 						? true
-						: yield* _(
-								permissionsService.hasTeamPermission(actor.actorId, "canManageTeamMembers", teamId),
+						: yield* permissionsService.hasTeamPermission(
+								actor.actorId,
+								"canManageTeamMembers",
+								teamId,
 							);
 
 				if (!canManage) {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Insufficient permissions to manage team members",
-								userId: actor.actorId,
-								resource: "team_member",
-								action: "create",
-							}),
-						),
+					yield* Effect.fail(
+						new AuthorizationError({
+							message: "Insufficient permissions to manage team members",
+							userId: actor.actorId,
+							resource: "team_member",
+							action: "create",
+						}),
 					);
 				}
 
 				// Verify target employee exists and is in the same organization as the team (with user info)
-				const targetEmployee = yield* _(
-					dbService.query("getTargetEmployee", async () => {
+				const targetEmployee = yield* dbService
+					.query("getTargetEmployee", async () => {
 						return await dbService.db.query.employee.findFirst({
 							where: and(
 								eq(employee.id, employeeId),
@@ -1023,33 +973,37 @@ export async function addTeamMember(
 							),
 							with: { user: true },
 						});
-					}),
-					Effect.flatMap((emp) =>
-						emp
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Employee not found in this organization",
-										entityType: "employee",
-										entityId: employeeId,
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((emp) =>
+							emp
+								? Effect.succeed(emp)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Employee not found in this organization",
+											entityType: "employee",
+											entityId: employeeId,
+										}),
+									),
+						),
+					);
 
 				if (actor.accessTier !== "orgAdmin") {
-					const scopedPermissions = yield* _(
-						loadScopedPermissions(dbService, actor.actorId, targetTeam.organizationId),
+					const scopedPermissions = yield* loadScopedPermissions(
+						dbService,
+						actor.actorId,
+						targetTeam.organizationId,
 					);
-					const targetEmployeeMemberships = yield* _(
-						dbService.query("getTargetEmployeeMemberships", async () => {
+					const targetEmployeeMemberships = yield* dbService.query(
+						"getTargetEmployeeMemberships",
+						async () => {
 							return await dbService.db.query.teamMembership.findMany({
 								where: and(
 									eq(teamMembership.organizationId, targetTeam.organizationId),
 									eq(teamMembership.employeeId, targetEmployee.id),
 								),
 							});
-						}),
+						},
 					);
 					const manageableTeamIds = new Set(
 						Array.from(scopedPermissions.byTeamId.entries()).flatMap(([managedTeamId, flags]) =>
@@ -1069,50 +1023,46 @@ export async function addTeamMember(
 							(currentTeamId) => !manageableTeamIds.has(currentTeamId),
 						)
 					) {
-						yield* _(
-							Effect.fail(
-								new AuthorizationError({
-									message: "Cannot move employees from teams outside your scope",
-									userId: actor.actorId,
-									resource: "team_member",
-									action: "create",
-								}),
-							),
+						yield* Effect.fail(
+							new AuthorizationError({
+								message: "Cannot move employees from teams outside your scope",
+								userId: actor.actorId,
+								resource: "team_member",
+								action: "create",
+							}),
 						);
 					}
 				}
 
 				// The target's team feeds manual target facts; both writes commit under
 				// the employee's configuration/access protection.
-				yield* _(
-					dbService.query("addTeamMembership", () =>
-						withAuthorizationMutation(
-							{ organizationId: targetTeam.organizationId, employeeIds: [targetEmployee.id] },
-							async (tx) => {
-								await tx
-									.insert(teamMembership)
-									.values({
-										organizationId: targetTeam.organizationId,
-										teamId,
-										employeeId: targetEmployee.id,
-										createdBy: session.user.id,
-									})
-									.onConflictDoNothing();
+				yield* dbService.query("addTeamMembership", () =>
+					withAuthorizationMutation(
+						{ organizationId: targetTeam.organizationId, employeeIds: [targetEmployee.id] },
+						async (tx) => {
+							await tx
+								.insert(teamMembership)
+								.values({
+									organizationId: targetTeam.organizationId,
+									teamId,
+									employeeId: targetEmployee.id,
+									createdBy: session.user.id,
+								})
+								.onConflictDoNothing();
 
-								// Keep legacy employee.teamId populated only for employees without a compatibility team.
-								if (targetEmployee.teamId) return;
-								await tx
-									.update(employee)
-									.set({ teamId, updatedAt: currentTimestamp() })
-									.where(
-										and(
-											eq(employee.id, targetEmployee.id),
-											eq(employee.organizationId, targetTeam.organizationId),
-										),
-									);
-							},
-							dbService.db,
-						),
+							// Keep legacy employee.teamId populated only for employees without a compatibility team.
+							if (targetEmployee.teamId) return;
+							await tx
+								.update(employee)
+								.set({ teamId, updatedAt: currentTimestamp() })
+								.where(
+									and(
+										eq(employee.id, targetEmployee.id),
+										eq(employee.organizationId, targetTeam.organizationId),
+									),
+								);
+						},
+						dbService.db,
 					),
 				);
 
@@ -1133,15 +1083,15 @@ export async function addTeamMember(
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
 						logger.error({ error, teamId, employeeId }, "Failed to add team member");
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -1172,126 +1122,126 @@ export async function removeTeamMember(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-				const permissionsService = yield* _(PermissionsService);
+			return Effect.gen(function* () {
+				const authService = yield* AuthService;
+				const session = yield* authService.getSession();
+				const dbService = yield* DatabaseService;
+				const permissionsService = yield* PermissionsService;
 
 				// Get the team first to know its organization
-				const targetTeam = yield* _(
-					dbService.query("getTeam", async () => {
+				const targetTeam = yield* dbService
+					.query("getTeam", async () => {
 						return await dbService.db.query.team.findFirst({
 							where: eq(team.id, teamId),
 						});
-					}),
-					Effect.flatMap((t) =>
-						t
-							? Effect.succeed(t)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Team not found",
-										entityType: "team",
-										entityId: teamId,
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((t) =>
+							t
+								? Effect.succeed(t)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Team not found",
+											entityType: "team",
+											entityId: teamId,
+										}),
+									),
+						),
+					);
 
-				const actor = yield* _(
-					resolveTeamSettingsActor(dbService, session.user, targetTeam.organizationId, {
+				const actor = yield* resolveTeamSettingsActor(
+					dbService,
+					session.user,
+					targetTeam.organizationId,
+					{
 						includeEmployeeUser: true,
-					}),
+					},
 				);
 
 				if (actor.accessTier === "member") {
-					yield* _(ensureManagerScopedEmployee(actor.employeeRecord));
+					yield* ensureManagerScopedEmployee(actor.employeeRecord);
 				}
 
 				// Check permission
 				const canManage =
 					actor.accessTier === "orgAdmin"
 						? true
-						: yield* _(
-								permissionsService.hasTeamPermission(actor.actorId, "canManageTeamMembers", teamId),
+						: yield* permissionsService.hasTeamPermission(
+								actor.actorId,
+								"canManageTeamMembers",
+								teamId,
 							);
 
 				if (!canManage) {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Insufficient permissions to manage team members",
-								userId: actor.actorId,
-								resource: "team_member",
-								action: "delete",
-							}),
-						),
+					yield* Effect.fail(
+						new AuthorizationError({
+							message: "Insufficient permissions to manage team members",
+							userId: actor.actorId,
+							resource: "team_member",
+							action: "delete",
+						}),
 					);
 				}
 
 				// Get target employee info for notification before removal
-				const targetEmployee = yield* _(
-					dbService.query("getTargetEmployee", async () => {
-						return await dbService.db.query.employee.findFirst({
-							where: and(
-								eq(employee.id, employeeId),
-								eq(employee.organizationId, targetTeam.organizationId),
-							),
-							with: { user: true },
-						});
-					}),
-				);
+				const targetEmployee = yield* dbService.query("getTargetEmployee", async () => {
+					return await dbService.db.query.employee.findFirst({
+						where: and(
+							eq(employee.id, employeeId),
+							eq(employee.organizationId, targetTeam.organizationId),
+						),
+						with: { user: true },
+					});
+				});
 
-				yield* _(
-					dbService.query("removeTeamMembership", () =>
-						withAuthorizationMutation(
-							{ organizationId: targetTeam.organizationId, employeeIds: [employeeId] },
-							async (tx) => {
-								await tx
-									.delete(teamMembership)
-									.where(
-										and(
-											eq(teamMembership.organizationId, targetTeam.organizationId),
-											eq(teamMembership.teamId, teamId),
-											eq(teamMembership.employeeId, employeeId),
-										),
-									);
+				yield* dbService.query("removeTeamMembership", () =>
+					withAuthorizationMutation(
+						{ organizationId: targetTeam.organizationId, employeeIds: [employeeId] },
+						async (tx) => {
+							await tx
+								.delete(teamMembership)
+								.where(
+									and(
+										eq(teamMembership.organizationId, targetTeam.organizationId),
+										eq(teamMembership.teamId, teamId),
+										eq(teamMembership.employeeId, employeeId),
+									),
+								);
 
-								// Re-read under protection: the compatibility team may have moved.
-								const current = await tx.query.employee.findFirst({
-									where: and(
+							// Re-read under protection: the compatibility team may have moved.
+							const current = await tx.query.employee.findFirst({
+								where: and(
+									eq(employee.id, employeeId),
+									eq(employee.organizationId, targetTeam.organizationId),
+								),
+								columns: { teamId: true },
+							});
+							if (current?.teamId !== teamId) return;
+
+							const remainingMemberships = await tx.query.teamMembership.findMany({
+								where: and(
+									eq(teamMembership.organizationId, targetTeam.organizationId),
+									eq(teamMembership.employeeId, employeeId),
+								),
+							});
+							const nextTeamId =
+								remainingMemberships
+									.flatMap((membership) =>
+										membership.teamId !== teamId ? [membership.teamId] : [],
+									)
+									.toSorted()[0] ?? null;
+
+							await tx
+								.update(employee)
+								.set({ teamId: nextTeamId, updatedAt: currentTimestamp() })
+								.where(
+									and(
 										eq(employee.id, employeeId),
 										eq(employee.organizationId, targetTeam.organizationId),
 									),
-									columns: { teamId: true },
-								});
-								if (current?.teamId !== teamId) return;
-
-								const remainingMemberships = await tx.query.teamMembership.findMany({
-									where: and(
-										eq(teamMembership.organizationId, targetTeam.organizationId),
-										eq(teamMembership.employeeId, employeeId),
-									),
-								});
-								const nextTeamId =
-									remainingMemberships
-										.flatMap((membership) =>
-											membership.teamId !== teamId ? [membership.teamId] : [],
-										)
-										.toSorted()[0] ?? null;
-
-								await tx
-									.update(employee)
-									.set({ teamId: nextTeamId, updatedAt: currentTimestamp() })
-									.where(
-										and(
-											eq(employee.id, employeeId),
-											eq(employee.organizationId, targetTeam.organizationId),
-										),
-									);
-							},
-							dbService.db,
-						),
+								);
+						},
+						dbService.db,
 					),
 				);
 
@@ -1314,15 +1264,15 @@ export async function removeTeamMember(
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
 						logger.error({ error, teamId, employeeId }, "Failed to remove team member");
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),

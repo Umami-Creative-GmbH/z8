@@ -16,7 +16,7 @@ import {
 } from "@/db/schema";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { isValidPermission } from "@/lib/authorization/permission-registry";
-import { ConflictError, type DatabaseError, NotFoundError, ValidationError } from "../errors";
+import { ConflictError, type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "./database.service";
 
 // ============================================
@@ -66,7 +66,7 @@ type CustomRoleAuditEventType =
 // SERVICE INTERFACE
 // ============================================
 
-export class CustomRoleService extends Context.Tag("CustomRoleService")<
+export class CustomRoleService extends Context.Service<
 	CustomRoleService,
 	{
 		readonly createRole: (
@@ -123,7 +123,7 @@ export class CustomRoleService extends Context.Tag("CustomRoleService")<
 			orgId: string,
 		) => Effect.Effect<CustomRoleWithPermissions[], DatabaseError>;
 	}
->() {}
+>()("CustomRoleService") {}
 
 // ============================================
 // SERVICE IMPLEMENTATION
@@ -131,8 +131,8 @@ export class CustomRoleService extends Context.Tag("CustomRoleService")<
 
 export const CustomRoleServiceLive = Layer.effect(
 	CustomRoleService,
-	Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
 		// Helper to write audit log
 		const writeAuditLog = (
@@ -188,88 +188,76 @@ export const CustomRoleServiceLive = Layer.effect(
 
 		return CustomRoleService.of({
 			createRole: (orgId, input, createdBy) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					if (!input.name?.trim()) {
-						return yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Role name is required",
-									field: "name",
-								}),
-							),
+						return yield* Effect.fail(
+							new ValidationError({
+								message: "Role name is required",
+								field: "name",
+							}),
 						);
 					}
 
 					// Check for duplicate name
-					const existing = yield* _(
-						dbService.query("checkDuplicateRoleName", async () => {
-							return await dbService.db.query.customRole.findFirst({
-								where: and(
-									eq(customRole.organizationId, orgId),
-									eq(customRole.name, input.name.trim()),
-								),
-							});
-						}),
-					);
+					const existing = yield* dbService.query("checkDuplicateRoleName", async () => {
+						return await dbService.db.query.customRole.findFirst({
+							where: and(
+								eq(customRole.organizationId, orgId),
+								eq(customRole.name, input.name.trim()),
+							),
+						});
+					});
 
 					if (existing) {
-						return yield* _(
-							Effect.fail(
-								new ConflictError({
-									message: `A role with the name "${input.name}" already exists`,
-									conflictType: "duplicate_name",
-								}),
-							),
+						return yield* Effect.fail(
+							new ConflictError({
+								message: `A role with the name "${input.name}" already exists`,
+								conflictType: "duplicate_name",
+							}),
 						);
 					}
 
-					const result = yield* _(
-						dbService.query("createCustomRole", async () => {
-							const [row] = await dbService.db
-								.insert(customRole)
-								.values({
-									organizationId: orgId,
-									name: input.name.trim(),
-									description: input.description?.trim() ?? null,
-									color: input.color ?? "#6366f1",
-									baseTier: input.baseTier,
-									createdBy,
-									updatedAt: new Date(),
-								})
-								.returning({ id: customRole.id });
-							if (!row) {
-								throw new Error("Failed to create custom role");
-							}
-							return row;
-						}),
-					);
-
-					yield* _(
-						writeAuditLog(
-							orgId,
-							result.id,
-							"role_created",
-							{
-								name: input.name,
+					const result = yield* dbService.query("createCustomRole", async () => {
+						const [row] = await dbService.db
+							.insert(customRole)
+							.values({
+								organizationId: orgId,
+								name: input.name.trim(),
+								description: input.description?.trim() ?? null,
+								color: input.color ?? "#6366f1",
 								baseTier: input.baseTier,
-							},
-							createdBy,
-						),
+								createdBy,
+								updatedAt: new Date(),
+							})
+							.returning({ id: customRole.id });
+						if (!row) {
+							throw new Error("Failed to create custom role");
+						}
+						return row;
+					});
+
+					yield* writeAuditLog(
+						orgId,
+						result.id,
+						"role_created",
+						{
+							name: input.name,
+							baseTier: input.baseTier,
+						},
+						createdBy,
 					);
 
 					return result.id;
 				}),
 
 			updateRole: (roleId, orgId, input, updatedBy) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Verify role exists and belongs to org
-					const role = yield* _(
-						dbService.query("getCustomRoleForUpdate", async () => {
+					const role = yield* dbService.query("getCustomRoleForUpdate", async () => {
 							return await dbService.db.query.customRole.findFirst({
 								where: and(eq(customRole.id, roleId), eq(customRole.organizationId, orgId)),
 							});
-						}),
-						Effect.flatMap((r) =>
+						}).pipe(Effect.flatMap((r) =>
 							r
 								? Effect.succeed(r)
 								: Effect.fail(
@@ -279,76 +267,65 @@ export const CustomRoleServiceLive = Layer.effect(
 											entityId: roleId,
 										}),
 									),
-						),
-					);
+						));
 
 					// Check name conflict if name is being changed
 					if (input.name && input.name.trim() !== role.name) {
 						const trimmedName = input.name.trim();
-						const existing = yield* _(
-							dbService.query("checkDuplicateRoleNameOnUpdate", async () => {
-								return await dbService.db.query.customRole.findFirst({
-									where: and(
-										eq(customRole.organizationId, orgId),
-										eq(customRole.name, trimmedName),
-									),
-								});
-							}),
-						);
+						const existing = yield* dbService.query("checkDuplicateRoleNameOnUpdate", async () => {
+							return await dbService.db.query.customRole.findFirst({
+								where: and(
+									eq(customRole.organizationId, orgId),
+									eq(customRole.name, trimmedName),
+								),
+							});
+						});
 
 						if (existing) {
-							return yield* _(
-								Effect.fail(
-									new ConflictError({
-										message: `A role with the name "${input.name}" already exists`,
-										conflictType: "duplicate_name",
-									}),
-								),
+							return yield* Effect.fail(
+								new ConflictError({
+									message: `A role with the name "${input.name}" already exists`,
+									conflictType: "duplicate_name",
+								}),
 							);
 						}
 					}
 
-					yield* _(
-						dbService.query("updateCustomRole", async () => {
-							await dbService.db
-								.update(customRole)
-								.set({
-									...(input.name && { name: input.name.trim() }),
-									...(input.description !== undefined && {
-										description: input.description?.trim() ?? null,
-									}),
-									...(input.color && { color: input.color }),
-									...(input.baseTier && { baseTier: input.baseTier }),
-									updatedBy,
-									updatedAt: new Date(),
-								})
-								.where(eq(customRole.id, roleId));
-						}),
-					);
+					yield* dbService.query("updateCustomRole", async () => {
+						await dbService.db
+							.update(customRole)
+							.set({
+								...(input.name && { name: input.name.trim() }),
+								...(input.description !== undefined && {
+									description: input.description?.trim() ?? null,
+								}),
+								...(input.color && { color: input.color }),
+								...(input.baseTier && { baseTier: input.baseTier }),
+								updatedBy,
+								updatedAt: new Date(),
+							})
+							.where(eq(customRole.id, roleId));
+					});
 
-					yield* _(
-						writeAuditLog(
-							orgId,
-							roleId,
-							"role_updated",
-							{
-								changes: input,
-							},
-							updatedBy,
-						),
+					yield* writeAuditLog(
+						orgId,
+						roleId,
+						"role_updated",
+						{
+							changes: input,
+						},
+						updatedBy,
 					);
 				}),
 
 			deleteRole: (roleId, orgId, deletedBy) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Verify role exists
-					yield* _(
-						dbService.query("getCustomRoleForDelete", async () => {
+					yield* dbService.query("getCustomRoleForDelete", async () => {
 							return await dbService.db.query.customRole.findFirst({
 								where: and(eq(customRole.id, roleId), eq(customRole.organizationId, orgId)),
 							});
-						}),
-						Effect.flatMap((r) =>
+						}).pipe(Effect.flatMap((r) =>
 							r
 								? Effect.succeed(r)
 								: Effect.fail(
@@ -358,42 +335,37 @@ export const CustomRoleServiceLive = Layer.effect(
 											entityId: roleId,
 										}),
 									),
-						),
-					);
+						));
 
 					// Soft delete: set isActive = false. Deactivation withdraws the role's
 					// grants from every holder, so it takes organization-wide protection.
-					yield* _(
-						dbService.query("softDeleteCustomRole", () =>
-							withAuthorizationMutation(
-								{ organizationId: orgId, organizationWide: true },
-								async (tx) => {
-									await tx
-										.update(customRole)
-										.set({
-											isActive: false,
-											updatedBy: deletedBy,
-											updatedAt: new Date(),
-										})
-										.where(and(eq(customRole.id, roleId), eq(customRole.organizationId, orgId)));
-								},
-								dbService.db,
-							),
+					yield* dbService.query("softDeleteCustomRole", () =>
+						withAuthorizationMutation(
+							{ organizationId: orgId, organizationWide: true },
+							async (tx) => {
+								await tx
+									.update(customRole)
+									.set({
+										isActive: false,
+										updatedBy: deletedBy,
+										updatedAt: new Date(),
+									})
+									.where(and(eq(customRole.id, roleId), eq(customRole.organizationId, orgId)));
+							},
+							dbService.db,
 						),
 					);
 
-					yield* _(writeAuditLog(orgId, roleId, "role_deleted", {}, deletedBy));
+					yield* writeAuditLog(orgId, roleId, "role_deleted", {}, deletedBy);
 				}),
 
 			getRole: (roleId, orgId) =>
-				Effect.gen(function* (_) {
-					const role = yield* _(
-						dbService.query("getCustomRole", async () => {
+				Effect.gen(function* () {
+					const role = yield* dbService.query("getCustomRole", async () => {
 							return await dbService.db.query.customRole.findFirst({
 								where: and(eq(customRole.id, roleId), eq(customRole.organizationId, orgId)),
 							});
-						}),
-						Effect.flatMap((r) =>
+						}).pipe(Effect.flatMap((r) =>
 							r
 								? Effect.succeed(r)
 								: Effect.fail(
@@ -403,44 +375,35 @@ export const CustomRoleServiceLive = Layer.effect(
 											entityId: roleId,
 										}),
 									),
-						),
-					);
+						));
 
-					return yield* _(
-						dbService.query("getCustomRoleDetails", async () => {
-							return await loadRoleWithDetails(role);
-						}),
-					);
+					return yield* dbService.query("getCustomRoleDetails", async () => {
+						return await loadRoleWithDetails(role);
+					});
 				}),
 
 			listRoles: (orgId) =>
-				Effect.gen(function* (_) {
-					const roles = yield* _(
-						dbService.query("listCustomRoles", async () => {
-							return await dbService.db.query.customRole.findMany({
-								where: and(eq(customRole.organizationId, orgId), eq(customRole.isActive, true)),
-								orderBy: (table, { asc }) => [asc(table.name)],
-							});
-						}),
-					);
+				Effect.gen(function* () {
+					const roles = yield* dbService.query("listCustomRoles", async () => {
+						return await dbService.db.query.customRole.findMany({
+							where: and(eq(customRole.organizationId, orgId), eq(customRole.isActive, true)),
+							orderBy: (table, { asc }) => [asc(table.name)],
+						});
+					});
 
-					return yield* _(
-						dbService.query("listCustomRolesWithDetails", async () => {
-							return await Promise.all(roles.map((role) => loadRoleWithDetails(role)));
-						}),
-					);
+					return yield* dbService.query("listCustomRolesWithDetails", async () => {
+						return await Promise.all(roles.map((role) => loadRoleWithDetails(role)));
+					});
 				}),
 
 			setPermissions: (roleId, orgId, permissions, userId) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Verify role exists
-					yield* _(
-						dbService.query("getCustomRoleForSetPerms", async () => {
+					yield* dbService.query("getCustomRoleForSetPerms", async () => {
 							return await dbService.db.query.customRole.findFirst({
 								where: and(eq(customRole.id, roleId), eq(customRole.organizationId, orgId)),
 							});
-						}),
-						Effect.flatMap((r) =>
+						}).pipe(Effect.flatMap((r) =>
 							r
 								? Effect.succeed(r)
 								: Effect.fail(
@@ -450,72 +413,63 @@ export const CustomRoleServiceLive = Layer.effect(
 											entityId: roleId,
 										}),
 									),
-						),
-					);
+						));
 
 					// Validate all permissions
 					for (const perm of permissions) {
 						if (!isValidPermission(perm.action, perm.subject)) {
-							return yield* _(
-								Effect.fail(
-									new ValidationError({
-										message: `Invalid permission: ${perm.action}:${perm.subject}`,
-										field: "permissions",
-									}),
-								),
+							return yield* Effect.fail(
+								new ValidationError({
+									message: `Invalid permission: ${perm.action}:${perm.subject}`,
+									field: "permissions",
+								}),
 							);
 						}
 					}
 
 					// Replace all permissions (delete + insert) atomically: every holder's
 					// grants change, so this takes organization-wide protection.
-					yield* _(
-						dbService.query("setCustomRolePermissions", () =>
-							withAuthorizationMutation(
-								{ organizationId: orgId, organizationWide: true },
-								async (tx) => {
-									await tx
-										.delete(customRolePermission)
-										.where(eq(customRolePermission.customRoleId, roleId));
+					yield* dbService.query("setCustomRolePermissions", () =>
+						withAuthorizationMutation(
+							{ organizationId: orgId, organizationWide: true },
+							async (tx) => {
+								await tx
+									.delete(customRolePermission)
+									.where(eq(customRolePermission.customRoleId, roleId));
 
-									if (permissions.length > 0) {
-										await tx.insert(customRolePermission).values(
-											permissions.map((p) => ({
-												customRoleId: roleId,
-												action: p.action,
-												subject: p.subject,
-											})),
-										);
-									}
-								},
-								dbService.db,
-							),
+								if (permissions.length > 0) {
+									await tx.insert(customRolePermission).values(
+										permissions.map((p) => ({
+											customRoleId: roleId,
+											action: p.action,
+											subject: p.subject,
+										})),
+									);
+								}
+							},
+							dbService.db,
 						),
 					);
 
-					yield* _(
-						writeAuditLog(
-							orgId,
-							roleId,
-							"permission_added",
-							{
-								permissions: permissions.map((p) => `${p.action}:${p.subject}`),
-							},
-							userId,
-						),
+					yield* writeAuditLog(
+						orgId,
+						roleId,
+						"permission_added",
+						{
+							permissions: permissions.map((p) => `${p.action}:${p.subject}`),
+						},
+						userId,
 					);
 				}),
 
 			assignRole: (employeeId, roleId, orgId, assignedBy) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Verify employee belongs to the same organization
-					yield* _(
-						dbService.query("verifyEmployeeOrgForAssign", async () => {
+					yield* dbService.query("verifyEmployeeOrgForAssign", async () => {
 							return await dbService.db.query.employee.findFirst({
 								where: and(eq(employee.id, employeeId), eq(employee.organizationId, orgId)),
 							});
-						}),
-						Effect.flatMap((r) =>
+						}).pipe(Effect.flatMap((r) =>
 							r
 								? Effect.succeed(r)
 								: Effect.fail(
@@ -525,12 +479,10 @@ export const CustomRoleServiceLive = Layer.effect(
 											entityId: employeeId,
 										}),
 									),
-						),
-					);
+						));
 
 					// Verify role exists and is active
-					yield* _(
-						dbService.query("getCustomRoleForAssign", async () => {
+					yield* dbService.query("getCustomRoleForAssign", async () => {
 							return await dbService.db.query.customRole.findFirst({
 								where: and(
 									eq(customRole.id, roleId),
@@ -538,8 +490,7 @@ export const CustomRoleServiceLive = Layer.effect(
 									eq(customRole.isActive, true),
 								),
 							});
-						}),
-						Effect.flatMap((r) =>
+						}).pipe(Effect.flatMap((r) =>
 							r
 								? Effect.succeed(r)
 								: Effect.fail(
@@ -549,52 +500,45 @@ export const CustomRoleServiceLive = Layer.effect(
 											entityId: roleId,
 										}),
 									),
-						),
-					);
+						));
 
 					// Insert with conflict ignore (idempotent)
-					yield* _(
-						dbService.query("assignCustomRole", () =>
-							withAuthorizationMutation(
-								{ organizationId: orgId, employeeIds: [employeeId] },
-								async (tx) => {
-									await tx
-										.insert(employeeCustomRole)
-										.values({
-											employeeId,
-											customRoleId: roleId,
-											assignedBy,
-										})
-										.onConflictDoNothing();
-								},
-								dbService.db,
-							),
+					yield* dbService.query("assignCustomRole", () =>
+						withAuthorizationMutation(
+							{ organizationId: orgId, employeeIds: [employeeId] },
+							async (tx) => {
+								await tx
+									.insert(employeeCustomRole)
+									.values({
+										employeeId,
+										customRoleId: roleId,
+										assignedBy,
+									})
+									.onConflictDoNothing();
+							},
+							dbService.db,
 						),
 					);
 
-					yield* _(
-						writeAuditLog(
-							orgId,
-							roleId,
-							"employee_assigned",
-							{
-								employeeId,
-							},
-							assignedBy,
-						),
+					yield* writeAuditLog(
+						orgId,
+						roleId,
+						"employee_assigned",
+						{
+							employeeId,
+						},
+						assignedBy,
 					);
 				}),
 
 			unassignRole: (employeeId, roleId, orgId, unassignedBy) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Verify employee belongs to the same organization
-					yield* _(
-						dbService.query("verifyEmployeeOrgForUnassign", async () => {
+					yield* dbService.query("verifyEmployeeOrgForUnassign", async () => {
 							return await dbService.db.query.employee.findFirst({
 								where: and(eq(employee.id, employeeId), eq(employee.organizationId, orgId)),
 							});
-						}),
-						Effect.flatMap((r) =>
+						}).pipe(Effect.flatMap((r) =>
 							r
 								? Effect.succeed(r)
 								: Effect.fail(
@@ -604,17 +548,14 @@ export const CustomRoleServiceLive = Layer.effect(
 											entityId: employeeId,
 										}),
 									),
-						),
-					);
+						));
 
 					// Verify role exists
-					yield* _(
-						dbService.query("getCustomRoleForUnassign", async () => {
+					yield* dbService.query("getCustomRoleForUnassign", async () => {
 							return await dbService.db.query.customRole.findFirst({
 								where: and(eq(customRole.id, roleId), eq(customRole.organizationId, orgId)),
 							});
-						}),
-						Effect.flatMap((r) =>
+						}).pipe(Effect.flatMap((r) =>
 							r
 								? Effect.succeed(r)
 								: Effect.fail(
@@ -624,63 +565,57 @@ export const CustomRoleServiceLive = Layer.effect(
 											entityId: roleId,
 										}),
 									),
-						),
-					);
+						));
 
-					yield* _(
-						dbService.query("unassignCustomRole", () =>
-							withAuthorizationMutation(
-								{ organizationId: orgId, employeeIds: [employeeId] },
-								async (tx) => {
-									await tx
-										.delete(employeeCustomRole)
-										.where(
-											and(
-												eq(employeeCustomRole.employeeId, employeeId),
-												eq(employeeCustomRole.customRoleId, roleId),
-											),
-										);
-								},
-								dbService.db,
-							),
-						),
-					);
-
-					yield* _(
-						writeAuditLog(
-							orgId,
-							roleId,
-							"employee_unassigned",
-							{
-								employeeId,
+					yield* dbService.query("unassignCustomRole", () =>
+						withAuthorizationMutation(
+							{ organizationId: orgId, employeeIds: [employeeId] },
+							async (tx) => {
+								await tx
+									.delete(employeeCustomRole)
+									.where(
+										and(
+											eq(employeeCustomRole.employeeId, employeeId),
+											eq(employeeCustomRole.customRoleId, roleId),
+										),
+									);
 							},
-							unassignedBy,
+							dbService.db,
 						),
+					);
+
+					yield* writeAuditLog(
+						orgId,
+						roleId,
+						"employee_unassigned",
+						{
+							employeeId,
+						},
+						unassignedBy,
 					);
 				}),
 
 			getEmployeeRoles: (employeeId, orgId) =>
-				Effect.gen(function* (_) {
-					const assignments = yield* _(
-						dbService.query("getEmployeeCustomRoleAssignments", async () => {
+				Effect.gen(function* () {
+					const assignments = yield* dbService.query(
+						"getEmployeeCustomRoleAssignments",
+						async () => {
 							return await dbService.db.query.employeeCustomRole.findMany({
 								where: eq(employeeCustomRole.employeeId, employeeId),
 								with: {
 									customRole: true,
 								},
 							});
-						}),
+						},
 					);
 
 					const activeRoles = assignments.flatMap((a) =>
 						a.customRole.isActive && a.customRole.organizationId === orgId ? [a.customRole] : [],
 					);
 
-					return yield* _(
-						dbService.query("getEmployeeCustomRolesWithDetails", async () => {
-							return await Promise.all(activeRoles.map((role) => loadRoleWithDetails(role)));
-						}),
-					);
+					return yield* dbService.query("getEmployeeCustomRolesWithDetails", async () => {
+						return await Promise.all(activeRoles.map((role) => loadRoleWithDetails(role)));
+					});
 				}),
 		});
 	}),

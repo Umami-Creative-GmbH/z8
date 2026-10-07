@@ -218,6 +218,11 @@ export interface DeletedApprovalRecords {
 	 * state for a lifecycle that no longer exists. Their events cascade.
 	 */
 	attention: string[];
+	/**
+	 * Closed travel expense report cycles (#603/#614) of the purged lifecycle,
+	 * with their item comments; present only when there were any.
+	 */
+	travelExpenseReportClosures?: string[];
 }
 
 export async function deleteApproval(
@@ -480,6 +485,19 @@ export async function deleteApprovalInTransaction(
 			`)),
 		);
 	}
+	// A closed report cycle (#603/#614) names its legacy request and revision by
+	// value; it describes the purged lifecycle and goes with it (comments cascade).
+	const travelExpenseReportClosures =
+		legacyIds.length === 0 && legacyRevisionIds.length === 0
+			? []
+			: await deletedIds(sql`
+				delete from travel_expense_report_cycle_closure
+				where organization_id = ${organizationId} and (
+					approval_request_id = any(${sql.param(legacyIds)}::uuid[])
+					or submitted_revision_id = any(${sql.param(legacyRevisionIds)}::uuid[])
+				)
+				returning id
+			`);
 	// Workflow FKs cascade through stages, assignments, events, commands, projections,
 	// outbox/deliveries and migration issues. No decision handlers are invoked.
 	const workflows = workflowIds.length === 0 ? [] : await deletedIds(sql`
@@ -505,6 +523,9 @@ export async function deleteApprovalInTransaction(
 			intents: deliveryIntents.sort(),
 		},
 		attention: attention.sort(),
+		...(travelExpenseReportClosures.length > 0
+			? { travelExpenseReportClosures: travelExpenseReportClosures.sort() }
+			: {}),
 	};
 }
 
@@ -608,6 +629,12 @@ export async function deleteEmployeeApprovalLifecycles(
 				select coalesce(workflow_id, approval_request_id)
 				from approval_escalation_attention where organization_id = ${org}
 					and current_approver_employee_id = any(${employees})
+				union all
+				-- A report cycle the employee returned, withdrew or reopened (#603/#614)
+				-- is addressed by its legacy revision.
+				select submitted_revision_id
+				from travel_expense_report_cycle_closure where organization_id = ${org}
+					and actor_employee_id = any(${employees})
 			) as references_to_employees (id)
 			where id is not null
 			order by id

@@ -37,11 +37,11 @@ vi.mock("@/lib/export/export-service", () => ({}));
 vi.mock("@/lib/storage/export-s3-client", () => ({}));
 vi.mock("@/lib/effect/services/database.service", async () => {
 	const { Context } = await import("effect");
-	return { DatabaseService: Context.GenericTag("DatabaseService") };
+	return { DatabaseService: Context.Service("DatabaseService") };
 });
 vi.mock("@/lib/effect/services/auth.service", async () => {
 	const { Context } = await import("effect");
-	return { AuthService: Context.GenericTag("AuthService") };
+	return { AuthService: Context.Service("AuthService") };
 });
 vi.mock("@/lib/effect/runtime", async () => {
 	const { Effect, Layer } = await import("effect");

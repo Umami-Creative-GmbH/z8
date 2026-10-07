@@ -1,7 +1,7 @@
 "use server";
 
 import { and, eq, isNull } from "drizzle-orm";
-import { Cause, Effect, Option, Runtime } from "effect";
+import { Cause, Effect, Exit, Option } from "effect";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { timeEntry, workPeriod } from "@/db/schema";
@@ -67,7 +67,7 @@ export async function approveWorkPeriod(input: {
 			query: <T>(_name: string, operation: () => Promise<T>) =>
 				Effect.promise(operation),
 		};
-		await Effect.runPromise(
+		const exit = await Effect.runPromiseExit(
 			decideOrdinaryWorkPeriodWithStableTargetEffect(
 				dbService,
 				{
@@ -90,30 +90,38 @@ export async function approveWorkPeriod(input: {
 				},
 			),
 		);
+		if (Exit.isFailure(exit)) {
+			return approveWorkPeriodFailure(
+				Cause.squash(exit.cause),
+				Option.getOrNull(Cause.findErrorOption(exit.cause)),
+				workPeriodId,
+			);
+		}
 
 		return { success: true, data: { workPeriodId: selectedWorkPeriod.id } };
 	} catch (error) {
-		logger.error({ error, workPeriodId }, "Approve work period error");
-		const conflict =
-			error instanceof ConflictError
-				? error
-				: Runtime.isFiberFailure(error)
-					? Option.getOrNull(
-							Cause.failureOption(error[Runtime.FiberFailureCauseId]),
-						)
-					: null;
-		if (conflict instanceof ConflictError) {
-			return {
-				success: false,
-				error: conflict.message,
-				code: conflict._tag,
-			};
-		}
+		return approveWorkPeriodFailure(error, error, workPeriodId);
+	}
+}
+
+// Only a typed ConflictError reaches the caller; a defect is redacted even when it is one.
+function approveWorkPeriodFailure(
+	error: unknown,
+	typedFailure: unknown,
+	workPeriodId: string,
+): ServerActionResult<{ workPeriodId: string }> {
+	logger.error({ error, workPeriodId }, "Approve work period error");
+	if (typedFailure instanceof ConflictError) {
 		return {
 			success: false,
-			error: "Failed to approve work period. Please try again.",
+			error: typedFailure.message,
+			code: typedFailure._tag,
 		};
 	}
+	return {
+		success: false,
+		error: "Failed to approve work period. Please try again.",
+	};
 }
 
 export async function updateWorkPeriodNotes(

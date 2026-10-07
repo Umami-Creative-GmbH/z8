@@ -28,7 +28,7 @@ import type {
 	PolicyClockOutSurchargeSnapshot,
 } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import { isValidIanaTimezone } from "@/lib/time-tracking/timezone-capture";
-import { DatabaseError, NotFoundError } from "../errors";
+import { DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "./database.service";
 
 // ============================================
@@ -667,7 +667,7 @@ export async function reconcileSurchargeWorkPeriodsWithDatabase(
 // SERVICE INTERFACE
 // ============================================
 
-export class SurchargeService extends Context.Tag("SurchargeService")<
+export class SurchargeService extends Context.Service<
 	SurchargeService,
 	{
 		/**
@@ -734,7 +734,7 @@ export class SurchargeService extends Context.Tag("SurchargeService")<
 			organizationId: string,
 		) => Effect.Effect<boolean, DatabaseError>;
 	}
->() {}
+>()("SurchargeService") {}
 
 interface SurchargeCalculationOperations {
 	readonly isSurchargesEnabled: (
@@ -772,12 +772,12 @@ export function calculateSurchargeForWorkPeriod(
 		});
 	}
 
-	return Effect.gen(function* (_) {
-		const isEnabled = yield* _(
-			surchargeService.isSurchargesEnabled(input.organizationId),
+	return Effect.gen(function* () {
+		const isEnabled = yield* surchargeService.isSurchargesEnabled(
+			input.organizationId,
 		);
 		if (!isEnabled) return;
-		yield* _(surchargeService.persistSurchargeCalculation(input.workPeriodId));
+		yield* surchargeService.persistSurchargeCalculation(input.workPeriodId);
 	});
 }
 
@@ -787,8 +787,8 @@ export function calculateSurchargeForWorkPeriod(
 
 export const SurchargeServiceLive = Layer.effect(
 	SurchargeService,
-	Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
 		// Helper to map raw model + rules to EffectiveSurchargeModel
 		const mapToEffective = (
@@ -835,28 +835,27 @@ export const SurchargeServiceLive = Layer.effect(
 						}),
 				}),
 			getEffectiveSurchargeModel: (employeeId) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// 1. Get employee with team info
-					const emp = yield* _(
-						dbService.query("getEmployeeForSurcharge", async () => {
+					const emp = yield* dbService.query(
+						"getEmployeeForSurcharge",
+						async () => {
 							return await dbService.db.query.employee.findFirst({
 								where: eq(employee.id, employeeId),
 								with: {
 									team: true,
 								},
 							});
-						}),
+						},
 					);
 
 					if (!emp) {
-						yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Employee not found",
-									entityType: "employee",
-									entityId: employeeId,
-								}),
-							),
+						yield* Effect.fail(
+							new NotFoundError({
+								message: "Employee not found",
+								entityType: "employee",
+								entityId: employeeId,
+							}),
 						);
 						return null;
 					}
@@ -864,8 +863,9 @@ export const SurchargeServiceLive = Layer.effect(
 					const now = new Date();
 
 					// 2. Check employee-level assignment (priority 2 - highest)
-					const employeeAssignment = yield* _(
-						dbService.query("getEmployeeSurchargeAssignment", async () => {
+					const employeeAssignment = yield* dbService.query(
+						"getEmployeeSurchargeAssignment",
+						async () => {
 							return await dbService.db.query.surchargeModelAssignment.findFirst(
 								{
 									where: and(
@@ -890,7 +890,7 @@ export const SurchargeServiceLive = Layer.effect(
 									},
 								},
 							);
-						}),
+						},
 					);
 
 					if (employeeAssignment?.model?.isActive) {
@@ -904,8 +904,9 @@ export const SurchargeServiceLive = Layer.effect(
 					// 3. Check team-level assignment (priority 1)
 					if (emp.teamId) {
 						const teamId = emp.teamId;
-						const teamAssignment = yield* _(
-							dbService.query("getTeamSurchargeAssignment", async () => {
+						const teamAssignment = yield* dbService.query(
+							"getTeamSurchargeAssignment",
+							async () => {
 								return await dbService.db.query.surchargeModelAssignment.findFirst(
 									{
 										where: and(
@@ -931,7 +932,7 @@ export const SurchargeServiceLive = Layer.effect(
 										},
 									},
 								);
-							}),
+							},
 						);
 
 						if (teamAssignment?.model?.isActive) {
@@ -944,8 +945,9 @@ export const SurchargeServiceLive = Layer.effect(
 					}
 
 					// 4. Check organization-level assignment (priority 0 - lowest)
-					const orgAssignment = yield* _(
-						dbService.query("getOrgSurchargeAssignment", async () => {
+					const orgAssignment = yield* dbService.query(
+						"getOrgSurchargeAssignment",
+						async () => {
 							return await dbService.db.query.surchargeModelAssignment.findFirst(
 								{
 									where: and(
@@ -973,7 +975,7 @@ export const SurchargeServiceLive = Layer.effect(
 									},
 								},
 							);
-						}),
+						},
 					);
 
 					if (orgAssignment?.model?.isActive) {
@@ -989,28 +991,27 @@ export const SurchargeServiceLive = Layer.effect(
 				}),
 
 			calculateSurcharges: (workPeriodId) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Get work period with employee info
-					const period = yield* _(
-						dbService.query("getWorkPeriodForSurcharge", async () => {
+					const period = yield* dbService.query(
+						"getWorkPeriodForSurcharge",
+						async () => {
 							return await dbService.db.query.workPeriod.findFirst({
 								where: eq(workPeriod.id, workPeriodId),
 								with: {
 									employee: true,
 								},
 							});
-						}),
+						},
 					);
 
 					if (!period) {
-						yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Work period not found",
-									entityType: "workPeriod",
-									entityId: workPeriodId,
-								}),
-							),
+						yield* Effect.fail(
+							new NotFoundError({
+								message: "Work period not found",
+								entityType: "workPeriod",
+								entityId: workPeriodId,
+							}),
 						);
 						return null;
 					}
@@ -1026,21 +1027,50 @@ export const SurchargeServiceLive = Layer.effect(
 					}
 
 					// Get effective surcharge model
-					const effectiveModel = yield* _(
-						Effect.tryPromise({
-							try: async () => {
-								// Inline resolution to avoid recursive call issues
-								const emp = period.employee;
-								if (!emp) return null;
+					const effectiveModel = yield* Effect.tryPromise({
+						try: async () => {
+							// Inline resolution to avoid recursive call issues
+							const emp = period.employee;
+							if (!emp) return null;
 
-								const now = new Date();
+							const now = new Date();
 
-								// Employee-level
-								const employeeAssignment =
+							// Employee-level
+							const employeeAssignment =
+								await dbService.db.query.surchargeModelAssignment.findFirst({
+									where: and(
+										eq(surchargeModelAssignment.employeeId, emp.id),
+										eq(surchargeModelAssignment.assignmentType, "employee"),
+										eq(surchargeModelAssignment.isActive, true),
+										or(
+											isNull(surchargeModelAssignment.effectiveFrom),
+											lte(surchargeModelAssignment.effectiveFrom, now),
+										),
+										or(
+											isNull(surchargeModelAssignment.effectiveUntil),
+											gte(surchargeModelAssignment.effectiveUntil, now),
+										),
+									),
+									with: {
+										model: { with: { rules: true } },
+									},
+								});
+
+							if (employeeAssignment?.model?.isActive) {
+								return mapToEffective(
+									employeeAssignment.model,
+									"employee",
+									"Individual",
+								);
+							}
+
+							// Team-level
+							if (emp.teamId) {
+								const teamAssignment =
 									await dbService.db.query.surchargeModelAssignment.findFirst({
 										where: and(
-											eq(surchargeModelAssignment.employeeId, emp.id),
-											eq(surchargeModelAssignment.assignmentType, "employee"),
+											eq(surchargeModelAssignment.teamId, emp.teamId),
+											eq(surchargeModelAssignment.assignmentType, "team"),
 											eq(surchargeModelAssignment.isActive, true),
 											or(
 												isNull(surchargeModelAssignment.effectiveFrom),
@@ -1053,110 +1083,72 @@ export const SurchargeServiceLive = Layer.effect(
 										),
 										with: {
 											model: { with: { rules: true } },
+											team: true,
 										},
 									});
 
-								if (employeeAssignment?.model?.isActive) {
+								if (teamAssignment?.model?.isActive) {
 									return mapToEffective(
-										employeeAssignment.model,
-										"employee",
-										"Individual",
+										teamAssignment.model,
+										"team",
+										teamAssignment.team?.name ?? "Team",
 									);
 								}
+							}
 
-								// Team-level
-								if (emp.teamId) {
-									const teamAssignment =
-										await dbService.db.query.surchargeModelAssignment.findFirst(
-											{
-												where: and(
-													eq(surchargeModelAssignment.teamId, emp.teamId),
-													eq(surchargeModelAssignment.assignmentType, "team"),
-													eq(surchargeModelAssignment.isActive, true),
-													or(
-														isNull(surchargeModelAssignment.effectiveFrom),
-														lte(surchargeModelAssignment.effectiveFrom, now),
-													),
-													or(
-														isNull(surchargeModelAssignment.effectiveUntil),
-														gte(surchargeModelAssignment.effectiveUntil, now),
-													),
-												),
-												with: {
-													model: { with: { rules: true } },
-													team: true,
-												},
-											},
-										);
-
-									if (teamAssignment?.model?.isActive) {
-										return mapToEffective(
-											teamAssignment.model,
-											"team",
-											teamAssignment.team?.name ?? "Team",
-										);
-									}
-								}
-
-								// Org-level
-								const orgAssignment =
-									await dbService.db.query.surchargeModelAssignment.findFirst({
-										where: and(
-											eq(
-												surchargeModelAssignment.organizationId,
-												emp.organizationId,
-											),
-											eq(
-												surchargeModelAssignment.assignmentType,
-												"organization",
-											),
-											eq(surchargeModelAssignment.isActive, true),
-											or(
-												isNull(surchargeModelAssignment.effectiveFrom),
-												lte(surchargeModelAssignment.effectiveFrom, now),
-											),
-											or(
-												isNull(surchargeModelAssignment.effectiveUntil),
-												gte(surchargeModelAssignment.effectiveUntil, now),
-											),
+							// Org-level
+							const orgAssignment =
+								await dbService.db.query.surchargeModelAssignment.findFirst({
+									where: and(
+										eq(
+											surchargeModelAssignment.organizationId,
+											emp.organizationId,
 										),
-										with: {
-											model: { with: { rules: true } },
-										},
-									});
+										eq(surchargeModelAssignment.assignmentType, "organization"),
+										eq(surchargeModelAssignment.isActive, true),
+										or(
+											isNull(surchargeModelAssignment.effectiveFrom),
+											lte(surchargeModelAssignment.effectiveFrom, now),
+										),
+										or(
+											isNull(surchargeModelAssignment.effectiveUntil),
+											gte(surchargeModelAssignment.effectiveUntil, now),
+										),
+									),
+									with: {
+										model: { with: { rules: true } },
+									},
+								});
 
-								if (orgAssignment?.model?.isActive) {
-									return mapToEffective(
-										orgAssignment.model,
-										"organization",
-										"Organization Default",
-									);
-								}
+							if (orgAssignment?.model?.isActive) {
+								return mapToEffective(
+									orgAssignment.model,
+									"organization",
+									"Organization Default",
+								);
+							}
 
-								return null;
-							},
-							catch: (error) =>
-								new DatabaseError({
-									message: "Failed to resolve surcharge model",
-									operation: "calculateSurcharges",
-									cause: error,
-								}),
-						}),
-					);
+							return null;
+						},
+						catch: (error) =>
+							new DatabaseError({
+								message: "Failed to resolve surcharge model",
+								operation: "calculateSurcharges",
+								cause: error,
+							}),
+					});
 
 					if (!effectiveModel || effectiveModel.rules.length === 0) {
 						return null;
 					}
 
 					// Get organization timezone
-					const org = yield* _(
-						dbService.query("getOrgTimezone", async () => {
-							return await dbService.db.query.organization.findFirst({
-								where: eq(organization.id, periodEmployee.organizationId),
-								columns: { timezone: true },
-							});
-						}),
-					);
+					const org = yield* dbService.query("getOrgTimezone", async () => {
+						return await dbService.db.query.organization.findFirst({
+							where: eq(organization.id, periodEmployee.organizationId),
+							columns: { timezone: true },
+						});
+					});
 					const timezone = org?.timezone ?? "UTC";
 
 					// Calculate surcharges
@@ -1171,17 +1163,18 @@ export const SurchargeServiceLive = Layer.effect(
 				}),
 
 			persistSurchargeCalculation: (workPeriodId) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Get work period with employee info
-					const period = yield* _(
-						dbService.query("getWorkPeriodForPersist", async () => {
+					const period = yield* dbService.query(
+						"getWorkPeriodForPersist",
+						async () => {
 							return await dbService.db.query.workPeriod.findFirst({
 								where: eq(workPeriod.id, workPeriodId),
 								with: {
 									employee: true,
 								},
 							});
-						}),
+						},
 					);
 
 					if (!period?.endTime || !period.employee) {
@@ -1189,12 +1182,13 @@ export const SurchargeServiceLive = Layer.effect(
 					}
 
 					// Check if calculation already exists
-					const existing = yield* _(
-						dbService.query("checkExistingSurchargeCalc", async () => {
+					const existing = yield* dbService.query(
+						"checkExistingSurchargeCalc",
+						async () => {
 							return await dbService.db.query.surchargeCalculation.findFirst({
 								where: eq(surchargeCalculation.workPeriodId, workPeriodId),
 							});
-						}),
+						},
 					);
 
 					if (existing) {
@@ -1214,17 +1208,46 @@ export const SurchargeServiceLive = Layer.effect(
 
 					// Get effective model using Effect.tryPromise to wrap async calls
 					const emp = period.employee;
-					const effectiveModel = yield* _(
-						Effect.tryPromise({
-							try: async () => {
-								const now = new Date();
+					const effectiveModel = yield* Effect.tryPromise({
+						try: async () => {
+							const now = new Date();
 
-								// Employee-level
-								const employeeAssignment =
+							// Employee-level
+							const employeeAssignment =
+								await dbService.db.query.surchargeModelAssignment.findFirst({
+									where: and(
+										eq(surchargeModelAssignment.employeeId, emp.id),
+										eq(surchargeModelAssignment.assignmentType, "employee"),
+										eq(surchargeModelAssignment.isActive, true),
+										or(
+											isNull(surchargeModelAssignment.effectiveFrom),
+											lte(surchargeModelAssignment.effectiveFrom, now),
+										),
+										or(
+											isNull(surchargeModelAssignment.effectiveUntil),
+											gte(surchargeModelAssignment.effectiveUntil, now),
+										),
+									),
+									with: {
+										model: { with: { rules: true } },
+									},
+								});
+
+							if (employeeAssignment?.model?.isActive) {
+								return mapToEffective(
+									employeeAssignment.model,
+									"employee",
+									"Individual",
+								);
+							}
+
+							// Team-level
+							if (emp.teamId) {
+								const teamAssignment =
 									await dbService.db.query.surchargeModelAssignment.findFirst({
 										where: and(
-											eq(surchargeModelAssignment.employeeId, emp.id),
-											eq(surchargeModelAssignment.assignmentType, "employee"),
+											eq(surchargeModelAssignment.teamId, emp.teamId),
+											eq(surchargeModelAssignment.assignmentType, "team"),
 											eq(surchargeModelAssignment.isActive, true),
 											or(
 												isNull(surchargeModelAssignment.effectiveFrom),
@@ -1237,109 +1260,74 @@ export const SurchargeServiceLive = Layer.effect(
 										),
 										with: {
 											model: { with: { rules: true } },
+											team: true,
 										},
 									});
 
-								if (employeeAssignment?.model?.isActive) {
+								if (teamAssignment?.model?.isActive) {
 									return mapToEffective(
-										employeeAssignment.model,
-										"employee",
-										"Individual",
+										teamAssignment.model,
+										"team",
+										teamAssignment.team?.name ?? "Team",
 									);
 								}
+							}
 
-								// Team-level
-								if (emp.teamId) {
-									const teamAssignment =
-										await dbService.db.query.surchargeModelAssignment.findFirst(
-											{
-												where: and(
-													eq(surchargeModelAssignment.teamId, emp.teamId),
-													eq(surchargeModelAssignment.assignmentType, "team"),
-													eq(surchargeModelAssignment.isActive, true),
-													or(
-														isNull(surchargeModelAssignment.effectiveFrom),
-														lte(surchargeModelAssignment.effectiveFrom, now),
-													),
-													or(
-														isNull(surchargeModelAssignment.effectiveUntil),
-														gte(surchargeModelAssignment.effectiveUntil, now),
-													),
-												),
-												with: {
-													model: { with: { rules: true } },
-													team: true,
-												},
-											},
-										);
-
-									if (teamAssignment?.model?.isActive) {
-										return mapToEffective(
-											teamAssignment.model,
-											"team",
-											teamAssignment.team?.name ?? "Team",
-										);
-									}
-								}
-
-								// Org-level
-								const orgAssignment =
-									await dbService.db.query.surchargeModelAssignment.findFirst({
-										where: and(
-											eq(
-												surchargeModelAssignment.organizationId,
-												emp.organizationId,
-											),
-											eq(
-												surchargeModelAssignment.assignmentType,
-												"organization",
-											),
-											eq(surchargeModelAssignment.isActive, true),
-											or(
-												isNull(surchargeModelAssignment.effectiveFrom),
-												lte(surchargeModelAssignment.effectiveFrom, now),
-											),
-											or(
-												isNull(surchargeModelAssignment.effectiveUntil),
-												gte(surchargeModelAssignment.effectiveUntil, now),
-											),
+							// Org-level
+							const orgAssignment =
+								await dbService.db.query.surchargeModelAssignment.findFirst({
+									where: and(
+										eq(
+											surchargeModelAssignment.organizationId,
+											emp.organizationId,
 										),
-										with: {
-											model: { with: { rules: true } },
-										},
-									});
+										eq(surchargeModelAssignment.assignmentType, "organization"),
+										eq(surchargeModelAssignment.isActive, true),
+										or(
+											isNull(surchargeModelAssignment.effectiveFrom),
+											lte(surchargeModelAssignment.effectiveFrom, now),
+										),
+										or(
+											isNull(surchargeModelAssignment.effectiveUntil),
+											gte(surchargeModelAssignment.effectiveUntil, now),
+										),
+									),
+									with: {
+										model: { with: { rules: true } },
+									},
+								});
 
-								if (orgAssignment?.model?.isActive) {
-									return mapToEffective(
-										orgAssignment.model,
-										"organization",
-										"Organization Default",
-									);
-								}
+							if (orgAssignment?.model?.isActive) {
+								return mapToEffective(
+									orgAssignment.model,
+									"organization",
+									"Organization Default",
+								);
+							}
 
-								return null;
-							},
-							catch: (error) =>
-								new DatabaseError({
-									message: "Failed to resolve surcharge model",
-									operation: "persistSurchargeCalculation",
-									cause: error,
-								}),
-						}),
-					);
+							return null;
+						},
+						catch: (error) =>
+							new DatabaseError({
+								message: "Failed to resolve surcharge model",
+								operation: "persistSurchargeCalculation",
+								cause: error,
+							}),
+					});
 
 					if (!effectiveModel || effectiveModel.rules.length === 0) {
 						return null;
 					}
 
 					// Get organization timezone
-					const org = yield* _(
-						dbService.query("getOrgTimezoneForPersist", async () => {
+					const org = yield* dbService.query(
+						"getOrgTimezoneForPersist",
+						async () => {
 							return await dbService.db.query.organization.findFirst({
 								where: eq(organization.id, emp.organizationId),
 								columns: { timezone: true },
 							});
-						}),
+						},
 					);
 					const timezone = org?.timezone ?? "UTC";
 
@@ -1365,49 +1353,46 @@ export const SurchargeServiceLive = Layer.effect(
 						calculatedAt: new Date().toISOString(),
 					};
 
-					yield* _(
-						dbService.query("insertSurchargeCalculation", async () => {
-							await dbService.db.insert(surchargeCalculation).values({
-								employeeId: emp.id,
-								organizationId: emp.organizationId,
-								workPeriodId: workPeriodId,
-								surchargeRuleId: primaryRule?.ruleId ?? null,
-								surchargeModelId: effectiveModel.modelId,
-								calculationDate: new Date(),
-								baseMinutes: result.baseMinutes,
-								qualifyingMinutes: result.qualifyingMinutes,
-								surchargeMinutes: result.surchargeMinutes,
-								appliedPercentage: primaryRule?.percentage?.toString() ?? "0",
-								calculationDetails: calculationDetails,
-							});
-						}),
-					);
+					yield* dbService.query("insertSurchargeCalculation", async () => {
+						await dbService.db.insert(surchargeCalculation).values({
+							employeeId: emp.id,
+							organizationId: emp.organizationId,
+							workPeriodId: workPeriodId,
+							surchargeRuleId: primaryRule?.ruleId ?? null,
+							surchargeModelId: effectiveModel.modelId,
+							calculationDate: new Date(),
+							baseMinutes: result.baseMinutes,
+							qualifyingMinutes: result.qualifyingMinutes,
+							surchargeMinutes: result.surchargeMinutes,
+							appliedPercentage: primaryRule?.percentage?.toString() ?? "0",
+							calculationDetails: calculationDetails,
+						});
+					});
 
 					return result;
 				}),
 
 			recalculateSurcharges: (workPeriodId) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Delete existing calculation
-					yield* _(
-						dbService.query("deleteExistingSurchargeCalc", async () => {
-							await dbService.db
-								.delete(surchargeCalculation)
-								.where(eq(surchargeCalculation.workPeriodId, workPeriodId));
-						}),
-					);
+					yield* dbService.query("deleteExistingSurchargeCalc", async () => {
+						await dbService.db
+							.delete(surchargeCalculation)
+							.where(eq(surchargeCalculation.workPeriodId, workPeriodId));
+					});
 
 					// Re-calculate and persist
 					// Use inline calculation to avoid recursive service calls
-					const period = yield* _(
-						dbService.query("getWorkPeriodForRecalc", async () => {
+					const period = yield* dbService.query(
+						"getWorkPeriodForRecalc",
+						async () => {
 							return await dbService.db.query.workPeriod.findFirst({
 								where: eq(workPeriod.id, workPeriodId),
 								with: {
 									employee: true,
 								},
 							});
-						}),
+						},
 					);
 
 					if (!period?.endTime || !period.employee) {
@@ -1417,18 +1402,81 @@ export const SurchargeServiceLive = Layer.effect(
 					const emp = period.employee;
 
 					// Resolve effective model using hierarchical lookup
-					const effectiveModel = yield* _(
-						Effect.tryPromise({
-							try: async () => {
-								const now = new Date();
-								let model: EffectiveSurchargeModel | null = null;
+					const effectiveModel = yield* Effect.tryPromise({
+						try: async () => {
+							const now = new Date();
+							let model: EffectiveSurchargeModel | null = null;
 
-								// Same resolution logic as persistSurchargeCalculation
-								const employeeAssignment =
+							// Same resolution logic as persistSurchargeCalculation
+							const employeeAssignment =
+								await dbService.db.query.surchargeModelAssignment.findFirst({
+									where: and(
+										eq(surchargeModelAssignment.employeeId, emp.id),
+										eq(surchargeModelAssignment.assignmentType, "employee"),
+										eq(surchargeModelAssignment.isActive, true),
+										or(
+											isNull(surchargeModelAssignment.effectiveFrom),
+											lte(surchargeModelAssignment.effectiveFrom, now),
+										),
+										or(
+											isNull(surchargeModelAssignment.effectiveUntil),
+											gte(surchargeModelAssignment.effectiveUntil, now),
+										),
+									),
+									with: { model: { with: { rules: true } } },
+								});
+
+							if (employeeAssignment?.model?.isActive) {
+								model = mapToEffective(
+									employeeAssignment.model,
+									"employee",
+									"Individual",
+								);
+							}
+
+							if (!model && emp.teamId) {
+								const teamAssignment =
 									await dbService.db.query.surchargeModelAssignment.findFirst({
 										where: and(
-											eq(surchargeModelAssignment.employeeId, emp.id),
-											eq(surchargeModelAssignment.assignmentType, "employee"),
+											eq(surchargeModelAssignment.teamId, emp.teamId),
+											eq(surchargeModelAssignment.assignmentType, "team"),
+											eq(surchargeModelAssignment.isActive, true),
+											or(
+												isNull(surchargeModelAssignment.effectiveFrom),
+												lte(surchargeModelAssignment.effectiveFrom, now),
+											),
+											or(
+												isNull(surchargeModelAssignment.effectiveUntil),
+												gte(surchargeModelAssignment.effectiveUntil, now),
+											),
+										),
+										with: {
+											model: { with: { rules: true } },
+											team: true,
+										},
+									});
+
+								if (teamAssignment?.model?.isActive) {
+									model = mapToEffective(
+										teamAssignment.model,
+										"team",
+										teamAssignment.team?.name ?? "Team",
+									);
+								}
+							}
+
+							if (!model) {
+								const orgAssignment =
+									await dbService.db.query.surchargeModelAssignment.findFirst({
+										where: and(
+											eq(
+												surchargeModelAssignment.organizationId,
+												emp.organizationId,
+											),
+											eq(
+												surchargeModelAssignment.assignmentType,
+												"organization",
+											),
 											eq(surchargeModelAssignment.isActive, true),
 											or(
 												isNull(surchargeModelAssignment.effectiveFrom),
@@ -1442,106 +1490,38 @@ export const SurchargeServiceLive = Layer.effect(
 										with: { model: { with: { rules: true } } },
 									});
 
-								if (employeeAssignment?.model?.isActive) {
+								if (orgAssignment?.model?.isActive) {
 									model = mapToEffective(
-										employeeAssignment.model,
-										"employee",
-										"Individual",
+										orgAssignment.model,
+										"organization",
+										"Organization Default",
 									);
 								}
+							}
 
-								if (!model && emp.teamId) {
-									const teamAssignment =
-										await dbService.db.query.surchargeModelAssignment.findFirst(
-											{
-												where: and(
-													eq(surchargeModelAssignment.teamId, emp.teamId),
-													eq(surchargeModelAssignment.assignmentType, "team"),
-													eq(surchargeModelAssignment.isActive, true),
-													or(
-														isNull(surchargeModelAssignment.effectiveFrom),
-														lte(surchargeModelAssignment.effectiveFrom, now),
-													),
-													or(
-														isNull(surchargeModelAssignment.effectiveUntil),
-														gte(surchargeModelAssignment.effectiveUntil, now),
-													),
-												),
-												with: {
-													model: { with: { rules: true } },
-													team: true,
-												},
-											},
-										);
-
-									if (teamAssignment?.model?.isActive) {
-										model = mapToEffective(
-											teamAssignment.model,
-											"team",
-											teamAssignment.team?.name ?? "Team",
-										);
-									}
-								}
-
-								if (!model) {
-									const orgAssignment =
-										await dbService.db.query.surchargeModelAssignment.findFirst(
-											{
-												where: and(
-													eq(
-														surchargeModelAssignment.organizationId,
-														emp.organizationId,
-													),
-													eq(
-														surchargeModelAssignment.assignmentType,
-														"organization",
-													),
-													eq(surchargeModelAssignment.isActive, true),
-													or(
-														isNull(surchargeModelAssignment.effectiveFrom),
-														lte(surchargeModelAssignment.effectiveFrom, now),
-													),
-													or(
-														isNull(surchargeModelAssignment.effectiveUntil),
-														gte(surchargeModelAssignment.effectiveUntil, now),
-													),
-												),
-												with: { model: { with: { rules: true } } },
-											},
-										);
-
-									if (orgAssignment?.model?.isActive) {
-										model = mapToEffective(
-											orgAssignment.model,
-											"organization",
-											"Organization Default",
-										);
-									}
-								}
-
-								return model;
-							},
-							catch: (error) =>
-								new DatabaseError({
-									message: "Failed to resolve surcharge model",
-									operation: "recalculateSurcharges",
-									cause: error,
-								}),
-						}),
-					);
+							return model;
+						},
+						catch: (error) =>
+							new DatabaseError({
+								message: "Failed to resolve surcharge model",
+								operation: "recalculateSurcharges",
+								cause: error,
+							}),
+					});
 
 					if (!effectiveModel || effectiveModel.rules.length === 0) {
 						return null;
 					}
 
 					// Get organization timezone
-					const org = yield* _(
-						dbService.query("getOrgTimezoneForRecalc", async () => {
+					const org = yield* dbService.query(
+						"getOrgTimezoneForRecalc",
+						async () => {
 							return await dbService.db.query.organization.findFirst({
 								where: eq(organization.id, emp.organizationId),
 								columns: { timezone: true },
 							});
-						}),
+						},
 					);
 					const timezone = org?.timezone ?? "UTC";
 
@@ -1562,32 +1542,31 @@ export const SurchargeServiceLive = Layer.effect(
 							calculatedAt: new Date().toISOString(),
 						};
 
-						yield* _(
-							dbService.query("insertRecalculatedSurcharge", async () => {
-								await dbService.db.insert(surchargeCalculation).values({
-									employeeId: emp.id,
-									organizationId: emp.organizationId,
-									workPeriodId: workPeriodId,
-									surchargeRuleId: primaryRule?.ruleId ?? null,
-									surchargeModelId: effectiveModel.modelId,
-									calculationDate: new Date(),
-									baseMinutes: result.baseMinutes,
-									qualifyingMinutes: result.qualifyingMinutes,
-									surchargeMinutes: result.surchargeMinutes,
-									appliedPercentage: primaryRule?.percentage?.toString() ?? "0",
-									calculationDetails: calculationDetails,
-								});
-							}),
-						);
+						yield* dbService.query("insertRecalculatedSurcharge", async () => {
+							await dbService.db.insert(surchargeCalculation).values({
+								employeeId: emp.id,
+								organizationId: emp.organizationId,
+								workPeriodId: workPeriodId,
+								surchargeRuleId: primaryRule?.ruleId ?? null,
+								surchargeModelId: effectiveModel.modelId,
+								calculationDate: new Date(),
+								baseMinutes: result.baseMinutes,
+								qualifyingMinutes: result.qualifyingMinutes,
+								surchargeMinutes: result.surchargeMinutes,
+								appliedPercentage: primaryRule?.percentage?.toString() ?? "0",
+								calculationDetails: calculationDetails,
+							});
+						});
 					}
 
 					return result;
 				}),
 
 			getSurchargeCreditsForPeriod: (employeeId, startDate, endDate) =>
-				Effect.gen(function* (_) {
-					const calculations = yield* _(
-						dbService.query("getSurchargeCreditsForPeriod", async () => {
+				Effect.gen(function* () {
+					const calculations = yield* dbService.query(
+						"getSurchargeCreditsForPeriod",
+						async () => {
 							return await dbService.db.query.surchargeCalculation.findMany({
 								where: and(
 									eq(surchargeCalculation.employeeId, employeeId),
@@ -1595,7 +1574,7 @@ export const SurchargeServiceLive = Layer.effect(
 									lte(surchargeCalculation.calculationDate, endDate),
 								),
 							});
-						}),
+						},
 					);
 
 					let baseMinutes = 0;
@@ -1632,16 +1611,17 @@ export const SurchargeServiceLive = Layer.effect(
 				}),
 
 			isSurchargesEnabled: (organizationId) =>
-				Effect.gen(function* (_) {
-					const org = yield* _(
-						dbService.query("checkSurchargesEnabled", async () => {
+				Effect.gen(function* () {
+					const org = yield* dbService.query(
+						"checkSurchargesEnabled",
+						async () => {
 							return await dbService.db.query.organization.findFirst({
 								where: eq(organization.id, organizationId),
 								columns: {
 									surchargesEnabled: true,
 								},
 							});
-						}),
+						},
 					);
 
 					return org?.surchargesEnabled ?? false;

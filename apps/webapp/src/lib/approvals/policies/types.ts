@@ -24,6 +24,13 @@ export type ApprovalPolicyApproverType =
 	| "team_lead";
 export type ApprovalPolicyOvertimeRisk = "none" | "warning" | "violation";
 
+/**
+ * Currency of `travel_expense_amount` thresholds. A report is routed by an
+ * amount only in this currency; any other amount is refused rather than
+ * compared as an unlabeled number (#602).
+ */
+export const APPROVAL_AMOUNT_THRESHOLD_CURRENCY = "EUR";
+
 export interface ApprovalPolicyEvaluationContext {
 	organizationId: string;
 	approvalType: ApprovalType;
@@ -31,6 +38,7 @@ export interface ApprovalPolicyEvaluationContext {
 	teamId: string | null;
 	locationId: string | null;
 	absenceCategoryId: string | null;
+	/** In {@link APPROVAL_AMOUNT_THRESHOLD_CURRENCY} for travel expense reports. */
 	travelExpenseAmount: number | null;
 	overtimeRisk: ApprovalPolicyOvertimeRisk | null;
 	employeeGroupIds: string[];

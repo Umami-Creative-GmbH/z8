@@ -164,9 +164,9 @@ describe("getApprovalInboxDetailFromRequest", () => {
 			displayName: "Absence Request",
 			supportsBulkApprove: true,
 			getDetail: vi.fn(() =>
-				Effect.gen(function* (_) {
-					const dbService = yield* _(DatabaseService);
-					return yield* _(dbService.query("getDetail", async () => detail));
+				Effect.gen(function* () {
+					const dbService = yield* DatabaseService;
+					return yield* dbService.query("getDetail", async () => detail);
 				}),
 			),
 		} as never;

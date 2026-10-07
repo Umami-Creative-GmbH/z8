@@ -36,19 +36,19 @@ vi.mock("@/app/[locale]/(app)/scheduling/actions/shared", async () => {
 
 vi.mock("@/lib/effect/services/coverage.service", async () => {
 	const { Context, Effect } = await import("effect");
-	const CoverageService = Context.GenericTag<any>("CoverageService");
+	const CoverageService = Context.Service<any>("CoverageService");
 	return { CoverageService, Effect };
 });
 
 vi.mock("@/lib/effect/services/shift.service", async () => {
 	const { Context } = await import("effect");
-	const ShiftService = Context.GenericTag<any>("ShiftService");
+	const ShiftService = Context.Service<any>("ShiftService");
 	return { ShiftService };
 });
 
 vi.mock("@/lib/effect/services/schedule-compliance.service", async () => {
 	const { Context, Effect, Layer } = await import("effect");
-	const ScheduleComplianceService = Context.GenericTag<any>("ScheduleComplianceService");
+	const ScheduleComplianceService = Context.Service<any>("ScheduleComplianceService");
 	return {
 		ScheduleComplianceService,
 		ScheduleComplianceServiceLive: Layer.succeed(

@@ -1,6 +1,6 @@
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect";
+import { Cause, Effect, Exit, Option, Result } from "effect";
 import { approvalRequest, employee } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
@@ -265,10 +265,10 @@ function runAfterCommitBestEffort<T>(
 	return handlers
 		.afterCommit(result, dbService, entityId, currentEmployee)
 		.pipe(
-			Effect.catchAllCause((cause) => {
+			Effect.catchCause((cause) => {
 				const error =
-					Option.getOrNull(Cause.failureOption(cause)) ??
-					[...Cause.defects(cause)][0] ??
+					Option.getOrNull(Cause.findErrorOption(cause)) ??
+					Result.getOrNull(Cause.findDefect(cause)) ??
 					Cause.pretty(cause);
 				return Effect.sync(() =>
 					logger.error(
@@ -304,70 +304,60 @@ function executeApprovalWithCurrentEmployee<T>(
 ) {
 	const statusUpdate = getApprovalStatusUpdate(action, rejectionReason);
 
-	return Effect.gen(function* (_) {
-		const auditLogger = yield* _(ApprovalAuditLogger);
+	return Effect.gen(function* () {
+		const auditLogger = yield* ApprovalAuditLogger;
 
 		if (preflightEntity) {
-			yield* _(preflightEntity(dbService, entityId, currentEmployee, options));
+			yield* preflightEntity(dbService, entityId, currentEmployee, options);
 		}
 
-		const approval = yield* _(
-			loadPendingApprovalRequest(
-				dbService,
-				entityType,
-				entityId,
-				currentEmployee.id,
-				currentEmployee.organizationId,
-				action,
-				options,
-			),
+		const approval = yield* loadPendingApprovalRequest(
+			dbService,
+			entityType,
+			entityId,
+			currentEmployee.id,
+			currentEmployee.organizationId,
+			action,
+			options,
 		);
 		if (
 			options?.allowAnyApprover &&
 			!options.allowOrganizationWideApprover &&
 			approval.approverId !== currentEmployee.id
 		) {
-			const eligible = yield* _(
-				Effect.tryPromise({
-					try: () =>
-						isEligibleManagerForApprovalRequest({
-							db: dbService.db,
-							approvalRequestId: approval.id,
-							managerEmployeeId: currentEmployee.id,
-							organizationId: currentEmployee.organizationId,
-						}),
-					catch: (error) => error as AnyAppError,
-				}),
-			);
+			const eligible = yield* Effect.tryPromise({
+				try: () =>
+					isEligibleManagerForApprovalRequest({
+						db: dbService.db,
+						approvalRequestId: approval.id,
+						managerEmployeeId: currentEmployee.id,
+						organizationId: currentEmployee.organizationId,
+					}),
+				catch: (error) => error as AnyAppError,
+			});
 			if (!eligible) {
-				return yield* _(
-					Effect.fail(
-						new AuthorizationError({
-							message: "You are not authorized to decide this request",
-							userId: currentEmployee.id,
-							resource: entityType,
-							action,
-						}),
-					),
+				return yield* Effect.fail(
+					new AuthorizationError({
+						message: "You are not authorized to decide this request",
+						userId: currentEmployee.id,
+						resource: entityType,
+						action,
+					}),
 				);
 			}
 			// Eligible-manager status never bypasses an escalation replacement
 			// (#255 §4, #439): the owners refuse it first; this keeps the fallback
 			// itself closed for every legacy kind.
-			const transferred = yield* _(
-				Effect.tryPromise({
-					try: () =>
-						wasLegacyRequestTransferred(dbService.db, {
-							organizationId: currentEmployee.organizationId,
-							approvalRequestId: approval.id,
-						}),
-					catch: (error) => error as AnyAppError,
-				}),
-			);
+			const transferred = yield* Effect.tryPromise({
+				try: () =>
+					wasLegacyRequestTransferred(dbService.db, {
+						organizationId: currentEmployee.organizationId,
+						approvalRequestId: approval.id,
+					}),
+				catch: (error) => error as AnyAppError,
+			});
 			if (transferred) {
-				return yield* _(
-					Effect.fail(approvalReassignedConflict(new ApprovalAssignmentReassignedError())),
-				);
+				return yield* Effect.fail(approvalReassignedConflict(new ApprovalAssignmentReassignedError()));
 			}
 		}
 
@@ -381,16 +371,14 @@ function executeApprovalWithCurrentEmployee<T>(
 			"Processing approval action",
 		);
 
-		yield* _(updatePendingApprovalRequest(dbService, approval, statusUpdate));
+		yield* updatePendingApprovalRequest(dbService, approval, statusUpdate);
 
-		const chainResult = yield* _(
-			progressApprovalChainIfLinked(dbService, {
-				approvalRequestId: approval.id,
-				actorEmployeeId: currentEmployee.id,
-				actorUserId: currentEmployee.user.id,
-				action,
-			}),
-		);
+		const chainResult = yield* progressApprovalChainIfLinked(dbService, {
+			approvalRequestId: approval.id,
+			actorEmployeeId: currentEmployee.id,
+			actorUserId: currentEmployee.user.id,
+			action,
+		});
 
 		const shouldRunDomainSideEffect =
 			chainResult.kind === "not_linked" ||
@@ -403,25 +391,21 @@ function executeApprovalWithCurrentEmployee<T>(
 		let domainResult: T | undefined;
 		let didRunDomainUpdate = false;
 		if (selectedUpdateEntity && shouldRunDomainSideEffect) {
-			domainResult = yield* _(
-				selectedUpdateEntity(dbService, entityId, currentEmployee, approval),
-			);
+			domainResult = yield* selectedUpdateEntity(dbService, entityId, currentEmployee, approval);
 			didRunDomainUpdate = true;
 		}
 
-		yield* _(
-			auditLogger.log({
-				organizationId: currentEmployee.organizationId,
-				approvalId: approval.id,
-				approvalType: entityType,
-				entityId,
-				action,
-				performedBy: currentEmployee.user.id,
-				previousStatus: approval.status,
-				newStatus: statusUpdate.status,
-				reason: rejectionReason,
-			}),
-		);
+		yield* auditLogger.log({
+			organizationId: currentEmployee.organizationId,
+			approvalId: approval.id,
+			approvalType: entityType,
+			entityId,
+			action,
+			performedBy: currentEmployee.user.id,
+			previousStatus: approval.status,
+			newStatus: statusUpdate.status,
+			reason: rejectionReason,
+		});
 
 		logger.info(
 			{
@@ -458,105 +442,97 @@ export function processApprovalWithCurrentEmployee<T>(
 	postCommitHandlers?: ApprovalPostCommitHandlers<T>,
 	transactionBehavior: "open" | "existing" = "open",
 ) {
-	return Effect.gen(function* (_) {
-		const auditLogger = yield* _(ApprovalAuditLogger);
-		const callerContext = yield* _(Effect.context<never>());
+	return Effect.gen(function* () {
+		const auditLogger = yield* ApprovalAuditLogger;
+		const callerContext = yield* Effect.context<never>();
 
 		if (!options?.transactional || transactionBehavior === "existing") {
-			const execution = yield* _(
-				executeApprovalWithCurrentEmployee(
-					dbService,
-					currentEmployee,
-					entityType,
-					entityId,
-					action,
-					rejectionReason,
-					updateEntity,
-					preflightEntity,
-					options,
-					postCommitHandlers,
-				).pipe(Effect.provideService(ApprovalAuditLogger, auditLogger)),
-			);
+			const execution = yield* executeApprovalWithCurrentEmployee(
+				dbService,
+				currentEmployee,
+				entityType,
+				entityId,
+				action,
+				rejectionReason,
+				updateEntity,
+				preflightEntity,
+				options,
+				postCommitHandlers,
+			).pipe(Effect.provideService(ApprovalAuditLogger, auditLogger));
 			if (execution.didRunDomainUpdate && postCommitHandlers) {
-				yield* _(
-					runAfterCommitBestEffort(
-						postCommitHandlers,
-						execution.domainResult as T,
-						dbService,
-						entityType,
-						entityId,
-						currentEmployee,
-					),
-				);
-			}
-			return execution.domainResult;
-		}
-
-		const execution = yield* _(
-			Effect.tryPromise({
-				try: async () => {
-					let result: ApprovalExecutionResult<T> | undefined;
-					await dbService.db.transaction(async (tx) => {
-						const transactionalDbService: ApprovalDbService = {
-							db: tx,
-							query: dbService.query,
-						};
-						const transactionalAuditLogger = createApprovalAuditLogger(
-							transactionalDbService,
-						);
-
-						const exit = await Effect.runPromiseExit(
-							// Transactional approvals currently run only self-contained handlers.
-							executeApprovalWithCurrentEmployee(
-								transactionalDbService,
-								currentEmployee,
-								entityType,
-								entityId,
-								action,
-								rejectionReason,
-								updateEntity,
-								preflightEntity,
-								options,
-								postCommitHandlers,
-							).pipe(
-								Effect.provideService(
-									ApprovalAuditLogger,
-									transactionalAuditLogger,
-								),
-								Effect.provide(callerContext),
-							) as Effect.Effect<
-								ApprovalExecutionResult<T>,
-								AnyAppError,
-								never
-							>,
-						);
-
-						if (Exit.isFailure(exit)) {
-							const failure = Option.getOrNull(Cause.failureOption(exit.cause));
-							const defects = [...Cause.defects(exit.cause)];
-							throw failure ?? defects[0] ?? new Error("An error has occurred");
-						}
-
-						result = exit.value;
-					});
-					if (!result) {
-						throw new Error("Approval transaction did not execute");
-					}
-					return result;
-				},
-				catch: (error) => error as AnyAppError,
-			}),
-		);
-		if (execution.didRunDomainUpdate && postCommitHandlers) {
-			yield* _(
-				runAfterCommitBestEffort(
+				yield* runAfterCommitBestEffort(
 					postCommitHandlers,
 					execution.domainResult as T,
 					dbService,
 					entityType,
 					entityId,
 					currentEmployee,
-				),
+				);
+			}
+			return execution.domainResult;
+		}
+
+		const execution = yield* Effect.tryPromise({
+			try: async () => {
+				let result: ApprovalExecutionResult<T> | undefined;
+				await dbService.db.transaction(async (tx) => {
+					const transactionalDbService: ApprovalDbService = {
+						db: tx,
+						query: dbService.query,
+					};
+					const transactionalAuditLogger = createApprovalAuditLogger(
+						transactionalDbService,
+					);
+
+					const exit = await Effect.runPromiseExit(
+						// Transactional approvals currently run only self-contained handlers.
+						executeApprovalWithCurrentEmployee(
+							transactionalDbService,
+							currentEmployee,
+							entityType,
+							entityId,
+							action,
+							rejectionReason,
+							updateEntity,
+							preflightEntity,
+							options,
+							postCommitHandlers,
+						).pipe(
+							Effect.provideService(
+								ApprovalAuditLogger,
+								transactionalAuditLogger,
+							),
+							Effect.provide(callerContext),
+						) as Effect.Effect<
+							ApprovalExecutionResult<T>,
+							AnyAppError,
+							never
+						>,
+					);
+
+					if (Exit.isFailure(exit)) {
+						const failure = Option.getOrNull(Cause.findErrorOption(exit.cause));
+						const defect = Result.getOrNull(Cause.findDefect(exit.cause));
+						throw failure ?? defect ?? new Error("An error has occurred");
+					}
+
+					result = exit.value;
+				});
+				if (!result) {
+					throw new Error("Approval transaction did not execute");
+				}
+				return result;
+			},
+			catch: (error) => error as AnyAppError,
+		});
+		if (execution.didRunDomainUpdate && postCommitHandlers) {
+			yield* runAfterCommitBestEffort(
+				postCommitHandlers,
+				execution.domainResult as T,
+				dbService,
+				entityType,
+				entityId,
+				currentEmployee,
 			);
 		}
 		return execution.domainResult;
@@ -590,42 +566,38 @@ export async function processApproval<T>(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
+			return Effect.gen(function* () {
+				const authService = yield* AuthService;
+				const session = yield* authService.getSession();
+				const dbService = yield* DatabaseService;
 
-				const currentEmployee = yield* _(
-					loadCurrentApprover(
-						dbService,
-						session.user.id,
-						session.session.activeOrganizationId ?? undefined,
-					),
+				const currentEmployee = yield* loadCurrentApprover(
+					dbService,
+					session.user.id,
+					session.session.activeOrganizationId ?? undefined,
 				);
 
 				span.setAttribute("user.id", session.user.id);
 				span.setAttribute("approver.id", currentEmployee.id);
 
-				const result = yield* _(
-					processApprovalWithCurrentEmployee(
-						dbService,
-						currentEmployee,
-						entityType,
-						entityId,
-						action,
-						rejectionReason,
-						updateEntity,
-						preflightEntity,
-						options,
-						postCommitHandlers,
-					),
+				const result = yield* processApprovalWithCurrentEmployee(
+					dbService,
+					currentEmployee,
+					entityType,
+					entityId,
+					action,
+					rejectionReason,
+					updateEntity,
+					preflightEntity,
+					options,
+					postCommitHandlers,
 				);
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				return result;
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
@@ -636,7 +608,7 @@ export async function processApproval<T>(
 							{ error, entityType, entityId, action },
 							"Failed to process approval",
 						);
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),

@@ -21,55 +21,49 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 // =============================================================================
 
 function getRolesActorContext() {
-	return Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
+	return Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
 		const organizationId = session.session.activeOrganizationId;
 
 		if (!organizationId) {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "An active organization is required to manage custom roles",
-						userId: session.user.id,
-						resource: "custom_role",
-						action: "manage",
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "An active organization is required to manage custom roles",
+					userId: session.user.id,
+					resource: "custom_role",
+					action: "manage",
+				}),
 			);
 		}
 
 		const activeOrganizationId: string = organizationId;
 
-		const settingsAccessTier = yield* _(
-			Effect.promise(() => getSettingsAccessTierForUser(session.user.id, activeOrganizationId)),
+		const settingsAccessTier = yield* Effect.promise(() =>
+			getSettingsAccessTierForUser(session.user.id, activeOrganizationId),
 		);
 
 		if (settingsAccessTier !== "orgAdmin") {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Only org admins can manage custom roles",
-						userId: session.user.id,
-						resource: "custom_role",
-						action: "manage",
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "Only org admins can manage custom roles",
+					userId: session.user.id,
+					resource: "custom_role",
+					action: "manage",
+				}),
 			);
 		}
 
-		const actingEmployee = yield* _(
-			dbService.query("getCurrentEmployeeForRoles", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, session.user.id),
-						eq(employee.organizationId, activeOrganizationId),
-						eq(employee.isActive, true),
-					),
-				});
-			}),
-		);
+		const actingEmployee = yield* dbService.query("getCurrentEmployeeForRoles", async () => {
+			return await dbService.db.query.employee.findFirst({
+				where: and(
+					eq(employee.userId, session.user.id),
+					eq(employee.organizationId, activeOrganizationId),
+					eq(employee.isActive, true),
+				),
+			});
+		});
 
 		return { session, organizationId: activeOrganizationId, actingEmployee };
 	});
@@ -80,13 +74,13 @@ function getRolesActorContext() {
 // =============================================================================
 
 export async function listCustomRoles(): Promise<ServerActionResult<CustomRoleWithPermissions[]>> {
-	const effect = Effect.gen(function* (_) {
-		const { organizationId } = yield* _(getRolesActorContext());
-		const customRoleService = yield* _(CustomRoleService);
+	const effect = Effect.gen(function* () {
+		const { organizationId } = yield* getRolesActorContext();
+		const customRoleService = yield* CustomRoleService;
 
-		return yield* _(customRoleService.listRoles(organizationId));
+		return yield* customRoleService.listRoles(organizationId);
 	}).pipe(
-		Effect.catchAll((error) => Effect.fail(error as AnyAppError)),
+		Effect.catch((error) => Effect.fail(error as AnyAppError)),
 		Effect.provide(AppLayer),
 	);
 
@@ -96,13 +90,13 @@ export async function listCustomRoles(): Promise<ServerActionResult<CustomRoleWi
 export async function getCustomRole(
 	roleId: string,
 ): Promise<ServerActionResult<CustomRoleWithPermissions>> {
-	const effect = Effect.gen(function* (_) {
-		const { organizationId } = yield* _(getRolesActorContext());
-		const customRoleService = yield* _(CustomRoleService);
+	const effect = Effect.gen(function* () {
+		const { organizationId } = yield* getRolesActorContext();
+		const customRoleService = yield* CustomRoleService;
 
-		return yield* _(customRoleService.getRole(roleId, organizationId));
+		return yield* customRoleService.getRole(roleId, organizationId);
 	}).pipe(
-		Effect.catchAll((error) => Effect.fail(error as AnyAppError)),
+		Effect.catch((error) => Effect.fail(error as AnyAppError)),
 		Effect.provide(AppLayer),
 	);
 
@@ -112,15 +106,15 @@ export async function getCustomRole(
 export async function createCustomRole(
 	input: CreateCustomRoleInput,
 ): Promise<ServerActionResult<{ id: string }>> {
-	const effect = Effect.gen(function* (_) {
-		const { session, organizationId } = yield* _(getRolesActorContext());
-		const customRoleService = yield* _(CustomRoleService);
+	const effect = Effect.gen(function* () {
+		const { session, organizationId } = yield* getRolesActorContext();
+		const customRoleService = yield* CustomRoleService;
 
-		const id = yield* _(customRoleService.createRole(organizationId, input, session.user.id));
+		const id = yield* customRoleService.createRole(organizationId, input, session.user.id);
 
 		return { id };
 	}).pipe(
-		Effect.catchAll((error) => Effect.fail(error as AnyAppError)),
+		Effect.catch((error) => Effect.fail(error as AnyAppError)),
 		Effect.provide(AppLayer),
 	);
 
@@ -131,13 +125,13 @@ export async function updateCustomRole(
 	roleId: string,
 	input: UpdateCustomRoleInput,
 ): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const { session, organizationId } = yield* _(getRolesActorContext());
-		const customRoleService = yield* _(CustomRoleService);
+	const effect = Effect.gen(function* () {
+		const { session, organizationId } = yield* getRolesActorContext();
+		const customRoleService = yield* CustomRoleService;
 
-		yield* _(customRoleService.updateRole(roleId, organizationId, input, session.user.id));
+		yield* customRoleService.updateRole(roleId, organizationId, input, session.user.id);
 	}).pipe(
-		Effect.catchAll((error) => Effect.fail(error as AnyAppError)),
+		Effect.catch((error) => Effect.fail(error as AnyAppError)),
 		Effect.provide(AppLayer),
 	);
 
@@ -145,13 +139,13 @@ export async function updateCustomRole(
 }
 
 export async function deleteCustomRole(roleId: string): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const { session, organizationId } = yield* _(getRolesActorContext());
-		const customRoleService = yield* _(CustomRoleService);
+	const effect = Effect.gen(function* () {
+		const { session, organizationId } = yield* getRolesActorContext();
+		const customRoleService = yield* CustomRoleService;
 
-		yield* _(customRoleService.deleteRole(roleId, organizationId, session.user.id));
+		yield* customRoleService.deleteRole(roleId, organizationId, session.user.id);
 	}).pipe(
-		Effect.catchAll((error) => Effect.fail(error as AnyAppError)),
+		Effect.catch((error) => Effect.fail(error as AnyAppError)),
 		Effect.provide(AppLayer),
 	);
 
@@ -162,15 +156,13 @@ export async function setRolePermissions(
 	roleId: string,
 	permissions: Array<{ action: string; subject: string }>,
 ): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const { session, organizationId } = yield* _(getRolesActorContext());
-		const customRoleService = yield* _(CustomRoleService);
+	const effect = Effect.gen(function* () {
+		const { session, organizationId } = yield* getRolesActorContext();
+		const customRoleService = yield* CustomRoleService;
 
-		yield* _(
-			customRoleService.setPermissions(roleId, organizationId, permissions, session.user.id),
-		);
+		yield* customRoleService.setPermissions(roleId, organizationId, permissions, session.user.id);
 	}).pipe(
-		Effect.catchAll((error) => Effect.fail(error as AnyAppError)),
+		Effect.catch((error) => Effect.fail(error as AnyAppError)),
 		Effect.provide(AppLayer),
 	);
 
@@ -181,13 +173,13 @@ export async function assignRoleToEmployee(
 	employeeId: string,
 	roleId: string,
 ): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const { session, organizationId } = yield* _(getRolesActorContext());
-		const customRoleService = yield* _(CustomRoleService);
+	const effect = Effect.gen(function* () {
+		const { session, organizationId } = yield* getRolesActorContext();
+		const customRoleService = yield* CustomRoleService;
 
-		yield* _(customRoleService.assignRole(employeeId, roleId, organizationId, session.user.id));
+		yield* customRoleService.assignRole(employeeId, roleId, organizationId, session.user.id);
 	}).pipe(
-		Effect.catchAll((error) => Effect.fail(error as AnyAppError)),
+		Effect.catch((error) => Effect.fail(error as AnyAppError)),
 		Effect.provide(AppLayer),
 	);
 
@@ -198,13 +190,13 @@ export async function unassignRoleFromEmployee(
 	employeeId: string,
 	roleId: string,
 ): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const { session, organizationId } = yield* _(getRolesActorContext());
-		const customRoleService = yield* _(CustomRoleService);
+	const effect = Effect.gen(function* () {
+		const { session, organizationId } = yield* getRolesActorContext();
+		const customRoleService = yield* CustomRoleService;
 
-		yield* _(customRoleService.unassignRole(employeeId, roleId, organizationId, session.user.id));
+		yield* customRoleService.unassignRole(employeeId, roleId, organizationId, session.user.id);
 	}).pipe(
-		Effect.catchAll((error) => Effect.fail(error as AnyAppError)),
+		Effect.catch((error) => Effect.fail(error as AnyAppError)),
 		Effect.provide(AppLayer),
 	);
 
@@ -214,13 +206,13 @@ export async function unassignRoleFromEmployee(
 export async function getEmployeeCustomRoles(
 	employeeId: string,
 ): Promise<ServerActionResult<CustomRoleWithPermissions[]>> {
-	const effect = Effect.gen(function* (_) {
-		const { organizationId } = yield* _(getRolesActorContext());
-		const customRoleService = yield* _(CustomRoleService);
+	const effect = Effect.gen(function* () {
+		const { organizationId } = yield* getRolesActorContext();
+		const customRoleService = yield* CustomRoleService;
 
-		return yield* _(customRoleService.getEmployeeRoles(employeeId, organizationId));
+		return yield* customRoleService.getEmployeeRoles(employeeId, organizationId);
 	}).pipe(
-		Effect.catchAll((error) => Effect.fail(error as AnyAppError)),
+		Effect.catch((error) => Effect.fail(error as AnyAppError)),
 		Effect.provide(AppLayer),
 	);
 

@@ -130,45 +130,41 @@ function syncActiveEmployeeProfile(
 	activeOrganizationId: string | undefined,
 	data: StructuredProfileDetailsInput,
 ): Effect.Effect<void, unknown, unknown> {
-	return Effect.gen(function* (_) {
+	return Effect.gen(function* () {
 		if (!activeOrganizationId) {
 			return;
 		}
 
-		const activeEmployee = (yield* _(
-			dbService.query("findActiveProfileEmployee", async () =>
-				dbService.db.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, userId),
-						eq(employee.organizationId, activeOrganizationId),
-						eq(employee.isActive, true),
-					),
-					columns: { id: true },
-				}),
-			),
+		const activeEmployee = (yield* dbService.query("findActiveProfileEmployee", async () =>
+			dbService.db.query.employee.findFirst({
+				where: and(
+					eq(employee.userId, userId),
+					eq(employee.organizationId, activeOrganizationId),
+					eq(employee.isActive, true),
+				),
+				columns: { id: true },
+			}),
 		)) as { id: string } | null | undefined;
 
 		if (!activeEmployee) {
 			return;
 		}
 
-		yield* _(
-			dbService.query("syncActiveProfileEmployee", async () => {
-				await dbService.db
-					.update(employee)
-					.set({
-						gender: data.gender ?? null,
-						pronouns: data.pronouns ?? null,
-						birthday: data.birthday ?? null,
-					})
-					.where(
-						and(
-							eq(employee.id, activeEmployee.id),
-							eq(employee.organizationId, activeOrganizationId),
-						),
-					);
-			}),
-		);
+		yield* dbService.query("syncActiveProfileEmployee", async () => {
+			await dbService.db
+				.update(employee)
+				.set({
+					gender: data.gender ?? null,
+					pronouns: data.pronouns ?? null,
+					birthday: data.birthday ?? null,
+				})
+				.where(
+					and(
+						eq(employee.id, activeEmployee.id),
+						eq(employee.organizationId, activeOrganizationId),
+					),
+				);
+		});
 	});
 }
 
@@ -194,37 +190,33 @@ export async function updateProfileDetails(data: {
 	image?: string | null;
 	helpImproveProduct?: boolean;
 }): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
 
 		const result = profileDetailsUpdateSchema.safeParse(data);
 		if (!result.success) {
-			return yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: result.error.issues[0]?.message || "Invalid input",
-						field: "profile",
-					}),
-				),
+			return yield* Effect.fail(
+				new ValidationError({
+					message: result.error.issues[0]?.message || "Invalid input",
+					field: "profile",
+				}),
 			);
 		}
 
 		const updateData = buildStructuredAuthProfile(result.data, session.user.name);
 		const rollbackData = buildSessionAuthProfile(session);
 
-		yield* _(
-			Effect.tryPromise({
-				try: async () => updateBetterAuthProfile(updateData),
-				catch: (error) => {
-					return new ValidationError({
-						message: error instanceof Error ? error.message : "Failed to update profile",
-						field: "profile",
-					});
-				},
-			}),
-		);
+		yield* Effect.tryPromise({
+			try: async () => updateBetterAuthProfile(updateData),
+			catch: (error) => {
+				return new ValidationError({
+					message: error instanceof Error ? error.message : "Failed to update profile",
+					field: "profile",
+				});
+			},
+		});
 
 		const profileUpdates = [
 			syncActiveEmployeeProfile(
@@ -241,31 +233,25 @@ export async function updateProfileDetails(data: {
 			);
 		}
 
-		yield* _(
-			Effect.all(profileUpdates).pipe(
-				Effect.catchAll(() =>
-					Effect.gen(function* (_) {
-						yield* _(
-							Effect.tryPromise({
-								try: async () => updateBetterAuthProfile(rollbackData),
-								catch: () =>
-									new ValidationError({
-										message: "Failed to update profile",
-										field: "profile",
-									}),
+		yield* Effect.all(profileUpdates).pipe(
+			Effect.catch(() =>
+				Effect.gen(function* () {
+					yield* Effect.tryPromise({
+						try: async () => updateBetterAuthProfile(rollbackData),
+						catch: () =>
+							new ValidationError({
+								message: "Failed to update profile",
+								field: "profile",
 							}),
-						);
+					});
 
-						return yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Failed to update profile",
-									field: "profile",
-								}),
-							),
-						);
-					}),
-				),
+					return yield* Effect.fail(
+						new ValidationError({
+							message: "Failed to update profile",
+							field: "profile",
+						}),
+					);
+				}),
 			),
 		);
 	}).pipe(Effect.provide(AppLayer));
@@ -295,19 +281,17 @@ export async function updateProfile(
 export async function updateProfileImage(data: {
 	image?: string | null;
 }): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
 		const result = profileImageUpdateSchema.safeParse(data);
 		if (!result.success) {
-			return yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: result.error.issues[0]?.message || "Invalid input",
-						field: "profile",
-					}),
-				),
+			return yield* Effect.fail(
+				new ValidationError({
+					message: result.error.issues[0]?.message || "Invalid input",
+					field: "profile",
+				}),
 			);
 		}
 
@@ -321,20 +305,18 @@ export async function updateProfileImage(data: {
 			},
 		});
 
-		yield* _(
-			Effect.tryPromise({
-				try: async () => updateBetterAuthProfile(updateData),
-				catch: (error) => {
-					return new ValidationError({
-						message: error instanceof Error ? error.message : "Failed to update profile",
-						field: "profile",
-					});
-				},
-			}),
-		);
+		yield* Effect.tryPromise({
+			try: async () => updateBetterAuthProfile(updateData),
+			catch: (error) => {
+				return new ValidationError({
+					message: error instanceof Error ? error.message : "Failed to update profile",
+					field: "profile",
+				});
+			},
+		});
 
 		if (result.data.image !== previousImage) {
-			yield* _(Effect.promise(() => deleteOwnedAvatarObject(previousImage, session.user.id)));
+			yield* Effect.promise(() => deleteOwnedAvatarObject(previousImage, session.user.id));
 		}
 	}).pipe(Effect.provide(AppLayer));
 
@@ -350,63 +332,59 @@ export async function changePassword(data: {
 	confirmPassword: string;
 	revokeOtherSessions?: boolean;
 }): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
+	const effect = Effect.gen(function* () {
 		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const _session = yield* _(authService.getSession());
+		const authService = yield* AuthService;
+		const _session = yield* authService.getSession();
 
 		// Step 2: Validate input
 		const result = passwordChangeSchema.safeParse(data);
 		if (!result.success) {
-			return yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: result.error.issues[0]?.message || "Invalid input",
-						field: "password",
-					}),
-				),
+			return yield* Effect.fail(
+				new ValidationError({
+					message: result.error.issues[0]?.message || "Invalid input",
+					field: "password",
+				}),
 			);
 		}
 
 		// Step 3: Change password with Better Auth
-		yield* _(
-			Effect.tryPromise({
-				try: async () => {
-					await auth.api.changePassword({
-						body: {
-							currentPassword: data.currentPassword,
-							newPassword: data.newPassword,
-							revokeOtherSessions: data.revokeOtherSessions ?? false,
-						},
-						headers: await headers(),
-					});
-				},
-				catch: (error: unknown) => {
-					// Better Auth returns specific error messages
-					if (error instanceof Error) {
-						if (
-							error.message?.includes("Invalid password") ||
-							error.message?.includes("Incorrect password")
-						) {
-							return new ValidationError({
-								message: "Current password is incorrect",
-								field: "currentPassword",
-							});
-						}
-
+		yield* Effect.tryPromise({
+			try: async () => {
+				await auth.api.changePassword({
+					body: {
+						currentPassword: data.currentPassword,
+						newPassword: data.newPassword,
+						revokeOtherSessions: data.revokeOtherSessions ?? false,
+					},
+					headers: await headers(),
+				});
+			},
+			catch: (error: unknown) => {
+				// Better Auth returns specific error messages
+				if (error instanceof Error) {
+					if (
+						error.message?.includes("Invalid password") ||
+						error.message?.includes("Incorrect password")
+					) {
 						return new ValidationError({
-							message: error.message || "Failed to change password",
-							field: "password",
+							message: "Current password is incorrect",
+							field: "currentPassword",
 						});
 					}
 
 					return new ValidationError({
-						message: "Failed to change password",
+						message: error.message || "Failed to change password",
 						field: "password",
 					});
-				},
-			}),
-		);
+				}
+
+				return new ValidationError({
+					message: "Failed to change password",
+					field: "password",
+				});
+			},
+		});
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -416,64 +394,56 @@ export async function changePassword(data: {
  * Update user's timezone preference in userSettings (#312: see `changeUserTimezone`).
  */
 export async function updateTimezone(timezone: string): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
 		// Preserve the existing required-field error before validating the zone identifier.
 		if (!timezone || timezone.length === 0) {
-			yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: "Timezone is required",
-						field: "timezone",
-					}),
-				),
+			yield* Effect.fail(
+				new ValidationError({
+					message: "Timezone is required",
+					field: "timezone",
+				}),
 			);
 		}
 
 		if (!isValidIanaTimeZone(timezone)) {
-			return yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: "Timezone must be a valid timezone",
-						field: "timezone",
-						value: timezone,
-					}),
-				),
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "Timezone must be a valid timezone",
+					field: "timezone",
+					value: timezone,
+				}),
 			);
 		}
 
 		// The zone and the rebuild intents of adopted organizations commit together
 		// under the user's exclusive configuration/access protection.
-		const change = yield* _(
-			Effect.tryPromise({
-				try: () => changeUserTimezone({ userId: session.user.id, timezone }),
-				// Nothing was committed; keep statement text out of the response.
-				catch: (error) => {
-					logger.error(
-						{ error, userId: session.user.id, timezone },
-						"User timezone change rolled back",
-					);
-					return new ValidationError({
-						message: "Failed to update timezone",
-						field: "timezone",
-					});
-				},
-			}),
-		);
+		const change = yield* Effect.tryPromise({
+			try: () => changeUserTimezone({ userId: session.user.id, timezone }),
+			// Nothing was committed; keep statement text out of the response.
+			catch: (error) => {
+				logger.error(
+					{ error, userId: session.user.id, timezone },
+					"User timezone change rolled back",
+				);
+				return new ValidationError({
+					message: "Failed to update timezone",
+					field: "timezone",
+				});
+			},
+		});
 
 		// The save is committed. Rebuilding runs separately per organization; a
 		// failure stays on its intent for the balance worker and does not fail the save.
 		if (change.status === "changed") {
 			for (const organizationId of change.rebuildOrganizationIds) {
-				const rebuild = yield* _(
-					Effect.promise(() =>
-						processWorkBalanceRebuildIntents({ organizationId }).catch((error: unknown) => ({
-							organizationsRebuilt: 0,
-							failures: [{ organizationId, error: failureMessage(error) }],
-						})),
-					),
+				const rebuild = yield* Effect.promise(() =>
+					processWorkBalanceRebuildIntents({ organizationId }).catch((error: unknown) => ({
+						organizationsRebuilt: 0,
+						failures: [{ organizationId, error: failureMessage(error) }],
+					})),
 				);
 				if (rebuild.failures.length > 0) {
 					logger.warn(
@@ -510,25 +480,21 @@ export async function getCurrentTimezone(): Promise<string> {
 export async function updateWeekStartDay(
 	weekStartDay: WeekStartDay,
 ): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
 		if (!isWeekStartDay(weekStartDay)) {
-			return yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: "Week start day must be Sunday or Monday",
-						field: "weekStartDay",
-					}),
-				),
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "Week start day must be Sunday or Monday",
+					field: "weekStartDay",
+				}),
 			);
 		}
 
-		yield* _(
-			dbService.query("updateWeekStartDay", () =>
-				writeUserSettings(dbService.db, session.user.id, { weekStartDay }),
-			),
+		yield* dbService.query("updateWeekStartDay", () =>
+			writeUserSettings(dbService.db, session.user.id, { weekStartDay }),
 		);
 	}).pipe(Effect.provide(AppLayer));
 
@@ -545,25 +511,21 @@ export async function getWeekStartDay(): Promise<WeekStartDay> {
 }
 
 export async function updateTimeFormat(timeFormat: TimeFormat): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
 		if (!isTimeFormat(timeFormat)) {
-			return yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: "Time format must be 12h or 24h",
-						field: "timeFormat",
-					}),
-				),
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "Time format must be 12h or 24h",
+					field: "timeFormat",
+				}),
 			);
 		}
 
-		yield* _(
-			dbService.query("updateTimeFormat", () =>
-				writeUserSettings(dbService.db, session.user.id, { timeFormat }),
-			),
+		yield* dbService.query("updateTimeFormat", () =>
+			writeUserSettings(dbService.db, session.user.id, { timeFormat }),
 		);
 	}).pipe(Effect.provide(AppLayer));
 

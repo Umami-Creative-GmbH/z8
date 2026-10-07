@@ -53,11 +53,7 @@ vi.mock("@/db", () => ({
 import { db } from "@/db";
 
 describe("nonactive organization settings authorization", () => {
-	it.each([
-		getEmployeeContext,
-		getEmployeeSettingsActorContext,
-		getProjectSettingsActorContext,
-	])(
+	it.each([getEmployeeContext, getEmployeeSettingsActorContext])(
 		"blocks the real actor helper before DB reads, but permits an open organization",
 		async (getActor) => {
 			mocks.query.mockClear();
@@ -80,4 +76,25 @@ describe("nonactive organization settings authorization", () => {
 			await expect(run("open")).resolves.toBeDefined();
 		},
 	);
+
+	it("blocks the real project actor helper before DB reads, but permits an open organization", async () => {
+		mocks.query.mockClear();
+		const database = Layer.succeed(DatabaseService, {
+			db,
+			query: (name, execute) => {
+				mocks.query(name);
+				return Effect.promise(execute);
+			},
+		});
+		const run = (organizationId: string) =>
+			Effect.runPromise(
+				getProjectSettingsActorContext({ organizationId }).pipe(
+					Effect.provide(AuthServiceLive),
+					Effect.provide(database),
+				),
+			);
+		await expect(run("locked")).rejects.toThrow("Not authenticated");
+		expect(mocks.query).not.toHaveBeenCalled();
+		await expect(run("open")).resolves.toBeDefined();
+	});
 });

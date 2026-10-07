@@ -124,6 +124,33 @@
 	white-space: nowrap;
 }
 
+/* A total that still counts running work carries the running block's pulsing dot. */
+.schedule-x-container .z8-requirement-header-total__live-dot {
+	width: 0.375rem;
+	height: 0.375rem;
+	margin-right: 0.125rem;
+	border-radius: 999px;
+	background: rgb(239 68 68);
+	animation: z8-requirement-total-live 1.6s ease-in-out infinite;
+}
+
+@keyframes z8-requirement-total-live {
+	0%,
+	100% {
+		opacity: 1;
+	}
+
+	50% {
+		opacity: 0.35;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.schedule-x-container .z8-requirement-header-total__live-dot {
+		animation: none;
+	}
+}
+
 .schedule-x-container .z8-requirement-header-summary {
 	display: inline-flex;
 	align-items: center;
@@ -189,6 +216,19 @@
 
 .dark .schedule-x-container .z8-requirement-header-summary--under {
 	color: rgb(254 202 202);
+}
+
+/*
+ * A day without required hours shows only its total: the empty pill is hidden
+ * visually but keeps the day's accessible label.
+ */
+.schedule-x-container .z8-requirement-header-summary--none {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
 }
 
 .schedule-x-container .z8-requirement-header-summary--missing {

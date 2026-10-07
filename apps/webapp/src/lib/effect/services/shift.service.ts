@@ -20,7 +20,7 @@ import {
 	type DatabaseError,
 	NotFoundError,
 	ValidationError,
-} from "../errors";
+} from "@/lib/effect/errors";
 import { DatabaseService } from "./database.service";
 
 // Type definitions
@@ -133,7 +133,7 @@ export interface ShiftWithRelations extends Shift {
 	} | null;
 }
 
-export class ShiftService extends Context.Tag("ShiftService")<
+export class ShiftService extends Context.Service<
 	ShiftService,
 	{
 		// Template operations
@@ -198,236 +198,204 @@ export class ShiftService extends Context.Tag("ShiftService")<
 			timezone: string,
 		) => Effect.Effect<IncompleteDayInfo[], DatabaseError>;
 	}
->() {}
+>()("ShiftService") {}
 
 export const ShiftServiceLive = Layer.effect(
 	ShiftService,
-	Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
 		return ShiftService.of({
 			// Template operations
 			createTemplate: (input) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Validate time format
 					if (
 						!isValidTimeFormat(input.startTime) ||
 						!isValidTimeFormat(input.endTime)
 					) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Invalid time format. Use HH:mm format.",
-									field: "startTime/endTime",
-								}),
-							),
+						yield* Effect.fail(
+							new ValidationError({
+								message: "Invalid time format. Use HH:mm format.",
+								field: "startTime/endTime",
+							}),
 						);
 					}
 
-					const createdTemplate = yield* _(
-						dbService.query("createShiftTemplate", async () => {
-							const [template] = await dbService.db
-								.insert(shiftTemplate)
-								.values({
-									organizationId: input.organizationId,
-									name: input.name,
-									startTime: input.startTime,
-									endTime: input.endTime,
-									color: input.color,
-									subareaId: input.subareaId,
-									createdBy: input.createdBy,
-									updatedAt: new Date(),
-								})
-								.returning();
-							return template;
-						}),
-					);
+					const createdTemplate = yield* dbService.query("createShiftTemplate", async () => {
+						const [template] = await dbService.db
+							.insert(shiftTemplate)
+							.values({
+								organizationId: input.organizationId,
+								name: input.name,
+								startTime: input.startTime,
+								endTime: input.endTime,
+								color: input.color,
+								subareaId: input.subareaId,
+								createdBy: input.createdBy,
+								updatedAt: new Date(),
+							})
+							.returning();
+						return template;
+					});
 
 					return createdTemplate;
 				}),
 
 			updateTemplate: (id, input) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Verify template exists
-					const existing = yield* _(
-						dbService.query("getTemplateById", async () => {
-							return await dbService.db.query.shiftTemplate.findFirst({
-								where: eq(shiftTemplate.id, id),
-							});
-						}),
-					);
+					const existing = yield* dbService.query("getTemplateById", async () => {
+						return await dbService.db.query.shiftTemplate.findFirst({
+							where: eq(shiftTemplate.id, id),
+						});
+					});
 
 					if (!existing) {
-						yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Shift template not found",
-									entityType: "shiftTemplate",
-									entityId: id,
-								}),
-							),
+						yield* Effect.fail(
+							new NotFoundError({
+								message: "Shift template not found",
+								entityType: "shiftTemplate",
+								entityId: id,
+							}),
 						);
 					}
 
 					// Validate time format if provided
 					if (input.startTime && !isValidTimeFormat(input.startTime)) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Invalid start time format. Use HH:mm format.",
-									field: "startTime",
-								}),
-							),
+						yield* Effect.fail(
+							new ValidationError({
+								message: "Invalid start time format. Use HH:mm format.",
+								field: "startTime",
+							}),
 						);
 					}
 
 					if (input.endTime && !isValidTimeFormat(input.endTime)) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Invalid end time format. Use HH:mm format.",
-									field: "endTime",
-								}),
-							),
+						yield* Effect.fail(
+							new ValidationError({
+								message: "Invalid end time format. Use HH:mm format.",
+								field: "endTime",
+							}),
 						);
 					}
 
-					const updatedTemplate = yield* _(
-						dbService.query("updateShiftTemplate", async () => {
-							const [template] = await dbService.db
-								.update(shiftTemplate)
-								.set({
-									...(input.name && { name: input.name }),
-									...(input.startTime && { startTime: input.startTime }),
-									...(input.endTime && { endTime: input.endTime }),
-									...(input.color !== undefined && { color: input.color }),
-									...(input.isActive !== undefined && {
-										isActive: input.isActive,
-									}),
-									...(input.subareaId !== undefined && {
-										subareaId: input.subareaId,
-									}),
-								})
-								.where(eq(shiftTemplate.id, id))
-								.returning();
-							return template;
-						}),
-					);
+					const updatedTemplate = yield* dbService.query("updateShiftTemplate", async () => {
+						const [template] = await dbService.db
+							.update(shiftTemplate)
+							.set({
+								...(input.name && { name: input.name }),
+								...(input.startTime && { startTime: input.startTime }),
+								...(input.endTime && { endTime: input.endTime }),
+								...(input.color !== undefined && { color: input.color }),
+								...(input.isActive !== undefined && {
+									isActive: input.isActive,
+								}),
+								...(input.subareaId !== undefined && {
+									subareaId: input.subareaId,
+								}),
+							})
+							.where(eq(shiftTemplate.id, id))
+							.returning();
+						return template;
+					});
 
 					return updatedTemplate;
 				}),
 
 			deleteTemplate: (id) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Verify template exists
-					const existing = yield* _(
-						dbService.query("getTemplateById", async () => {
-							return await dbService.db.query.shiftTemplate.findFirst({
-								where: eq(shiftTemplate.id, id),
-							});
-						}),
-					);
+					const existing = yield* dbService.query("getTemplateById", async () => {
+						return await dbService.db.query.shiftTemplate.findFirst({
+							where: eq(shiftTemplate.id, id),
+						});
+					});
 
 					if (!existing) {
-						yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Shift template not found",
-									entityType: "shiftTemplate",
-									entityId: id,
-								}),
-							),
+						yield* Effect.fail(
+							new NotFoundError({
+								message: "Shift template not found",
+								entityType: "shiftTemplate",
+								entityId: id,
+							}),
 						);
 					}
 
 					// Soft delete by setting isActive to false
-					yield* _(
-						dbService.query("softDeleteShiftTemplate", async () => {
-							await dbService.db
-								.update(shiftTemplate)
-								.set({ isActive: false })
-								.where(eq(shiftTemplate.id, id));
-						}),
-					);
+					yield* dbService.query("softDeleteShiftTemplate", async () => {
+						await dbService.db
+							.update(shiftTemplate)
+							.set({ isActive: false })
+							.where(eq(shiftTemplate.id, id));
+					});
 				}),
 
 			getTemplates: (organizationId) =>
-				Effect.gen(function* (_) {
-					const templates = yield* _(
-						dbService.query("getShiftTemplates", async () => {
-							return await dbService.db.query.shiftTemplate.findMany({
-								where: and(
-									eq(shiftTemplate.organizationId, organizationId),
-									eq(shiftTemplate.isActive, true),
-								),
-								orderBy: [desc(shiftTemplate.createdAt)],
-							});
-						}),
-					);
+				Effect.gen(function* () {
+					const templates = yield* dbService.query("getShiftTemplates", async () => {
+						return await dbService.db.query.shiftTemplate.findMany({
+							where: and(
+								eq(shiftTemplate.organizationId, organizationId),
+								eq(shiftTemplate.isActive, true),
+							),
+							orderBy: [desc(shiftTemplate.createdAt)],
+						});
+					});
 
 					return templates;
 				}),
 
 			// Shift operations
 			upsertShift: (input) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Validate time format
 					if (
 						!isValidTimeFormat(input.startTime) ||
 						!isValidTimeFormat(input.endTime)
 					) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Invalid time format. Use HH:mm format.",
-									field: "startTime/endTime",
-								}),
-							),
+						yield* Effect.fail(
+							new ValidationError({
+								message: "Invalid time format. Use HH:mm format.",
+								field: "startTime/endTime",
+							}),
 						);
 					}
 
-					const subareaRecord = yield* _(
-						dbService.query("verifyShiftSubareaScope", async () => {
-							return await dbService.db.query.locationSubarea.findFirst({
-								where: eq(locationSubarea.id, input.subareaId),
-								with: { location: { columns: { organizationId: true } } },
-							});
-						}),
-					);
+					const subareaRecord = yield* dbService.query("verifyShiftSubareaScope", async () => {
+						return await dbService.db.query.locationSubarea.findFirst({
+							where: eq(locationSubarea.id, input.subareaId),
+							with: { location: { columns: { organizationId: true } } },
+						});
+					});
 					if (
 						!subareaRecord ||
 						subareaRecord.location.organizationId !== input.organizationId
 					) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Subarea is outside the active organization",
-									field: "subareaId",
-								}),
-							),
+						yield* Effect.fail(
+							new ValidationError({
+								message: "Subarea is outside the active organization",
+								field: "subareaId",
+							}),
 						);
 					}
 
 					if (input.templateId) {
-						const templateRecord = yield* _(
-							dbService.query("verifyShiftTemplateScope", async () => {
-								return await dbService.db.query.shiftTemplate.findFirst({
-									where: and(
-										eq(shiftTemplate.id, input.templateId as string),
-										eq(shiftTemplate.organizationId, input.organizationId),
-									),
-								});
-							}),
-						);
-						if (!templateRecord) {
-							yield* _(
-								Effect.fail(
-									new NotFoundError({
-										message: "Shift template not found",
-										entityType: "shiftTemplate",
-										entityId: input.templateId,
-									}),
+						const templateRecord = yield* dbService.query("verifyShiftTemplateScope", async () => {
+							return await dbService.db.query.shiftTemplate.findFirst({
+								where: and(
+									eq(shiftTemplate.id, input.templateId as string),
+									eq(shiftTemplate.organizationId, input.organizationId),
 								),
+							});
+						});
+						if (!templateRecord) {
+							yield* Effect.fail(
+								new NotFoundError({
+									message: "Shift template not found",
+									entityType: "shiftTemplate",
+									entityId: input.templateId,
+								}),
 							);
 						}
 					}
@@ -443,71 +411,65 @@ export const ShiftServiceLive = Layer.effect(
 					if (input.employeeId) {
 						const employeeId = input.employeeId;
 						// Verify employee exists
-						const employeeRecord = yield* _(
-							dbService.query("verifyEmployeeExists", async () => {
-								return await dbService.db.query.employee.findFirst({
-									where: and(
-										eq(employee.id, employeeId),
-										eq(employee.organizationId, input.organizationId),
-									),
-								});
-							}),
-						);
+						const employeeRecord = yield* dbService.query("verifyEmployeeExists", async () => {
+							return await dbService.db.query.employee.findFirst({
+								where: and(
+									eq(employee.id, employeeId),
+									eq(employee.organizationId, input.organizationId),
+								),
+							});
+						});
 
 						if (!employeeRecord) {
-							yield* _(
-								Effect.fail(
-									new NotFoundError({
-										message: "Employee not found",
-										entityType: "employee",
-										entityId: input.employeeId,
-									}),
-								),
+							yield* Effect.fail(
+								new NotFoundError({
+									message: "Employee not found",
+									entityType: "employee",
+									entityId: input.employeeId,
+								}),
 							);
 						}
 
 						// Check for overlapping shifts
-						overlappingShifts = yield* _(
-							dbService.query("checkOverlappingShifts", async () => {
-								const dateKey = instantFromDate(input.date)
-									.toZonedDateTimeISO(input.timezone)
-									.toPlainDate()
-									.toString();
-								const dayRange = localDayRange(dateKey, input.timezone);
-								const dayStart = new Date(dayRange.start.epochMilliseconds);
-								const dayEndExclusive = new Date(
-									dayRange.endExclusive.epochMilliseconds,
-								);
+						overlappingShifts = yield* dbService.query("checkOverlappingShifts", async () => {
+							const dateKey = instantFromDate(input.date)
+								.toZonedDateTimeISO(input.timezone)
+								.toPlainDate()
+								.toString();
+							const dayRange = localDayRange(dateKey, input.timezone);
+							const dayStart = new Date(dayRange.start.epochMilliseconds);
+							const dayEndExclusive = new Date(
+								dayRange.endExclusive.epochMilliseconds,
+							);
 
-								const existingShifts = await dbService.db.query.shift.findMany({
-									where: and(
-										eq(shift.employeeId, employeeId),
-										gte(shift.date, dayStart),
-										lt(shift.date, dayEndExclusive),
-										input.id ? sql`${shift.id} != ${input.id}` : undefined,
-									),
-								});
+							const existingShifts = await dbService.db.query.shift.findMany({
+								where: and(
+									eq(shift.employeeId, employeeId),
+									gte(shift.date, dayStart),
+									lt(shift.date, dayEndExclusive),
+									input.id ? sql`${shift.id} != ${input.id}` : undefined,
+								),
+							});
 
-								// Check for time overlaps
-								return existingShifts.flatMap((s) =>
-									timesOverlap(
-										input.startTime,
-										input.endTime,
-										s.startTime,
-										s.endTime,
-									)
-										? [
-												{
-													id: s.id,
-													date: s.date,
-													startTime: s.startTime,
-													endTime: s.endTime,
-												},
-											]
-										: [],
-								);
-							}),
-						);
+							// Check for time overlaps
+							return existingShifts.flatMap((s) =>
+								timesOverlap(
+									input.startTime,
+									input.endTime,
+									s.startTime,
+									s.endTime,
+								)
+									? [
+											{
+												id: s.id,
+												date: s.date,
+												startTime: s.startTime,
+												endTime: s.endTime,
+											},
+										]
+									: [],
+							);
+						});
 					}
 
 					// Check skill requirements if employee is assigned
@@ -517,52 +479,46 @@ export const ShiftServiceLive = Layer.effect(
 						const now = new Date();
 
 						// Get employee's current valid skills
-						const validEmployeeSkills = yield* _(
-							dbService.query("getEmployeeValidSkills", async () => {
-								return await dbService.db.query.employeeSkill.findMany({
-									where: and(
-										eq(employeeSkill.employeeId, empId),
-										or(
-											isNull(employeeSkill.expiresAt),
-											gt(employeeSkill.expiresAt, now),
-										),
+						const validEmployeeSkills = yield* dbService.query("getEmployeeValidSkills", async () => {
+							return await dbService.db.query.employeeSkill.findMany({
+								where: and(
+									eq(employeeSkill.employeeId, empId),
+									or(
+										isNull(employeeSkill.expiresAt),
+										gt(employeeSkill.expiresAt, now),
 									),
-									with: { skill: true },
-								});
-							}),
-						);
+								),
+								with: { skill: true },
+							});
+						});
 
 						// Get expired skills for warning
-						const expiredEmployeeSkills = yield* _(
-							dbService.query("getExpiredSkills", async () => {
-								return await dbService.db.query.employeeSkill.findMany({
-									where: and(
-										eq(employeeSkill.employeeId, empId),
-										lte(employeeSkill.expiresAt, now),
-									),
-									with: { skill: true },
-								});
-							}),
-						);
+						const expiredEmployeeSkills = yield* dbService.query("getExpiredSkills", async () => {
+							return await dbService.db.query.employeeSkill.findMany({
+								where: and(
+									eq(employeeSkill.employeeId, empId),
+									lte(employeeSkill.expiresAt, now),
+								),
+								with: { skill: true },
+							});
+						});
 
 						const validSkillIds = new Set(
 							validEmployeeSkills.map((es) => es.skillId),
 						);
 
 						// Get subarea requirements
-						const subareaReqs = yield* _(
-							dbService.query("getSubareaSkillRequirements", async () => {
-								return await dbService.db.query.subareaSkillRequirement.findMany(
-									{
-										where: eq(
-											subareaSkillRequirement.subareaId,
-											input.subareaId,
-										),
-										with: { skill: true },
-									},
-								);
-							}),
-						);
+						const subareaReqs = yield* dbService.query("getSubareaSkillRequirements", async () => {
+							return await dbService.db.query.subareaSkillRequirement.findMany(
+								{
+									where: eq(
+										subareaSkillRequirement.subareaId,
+										input.subareaId,
+									),
+									with: { skill: true },
+								},
+							);
+						});
 
 						// Get template requirements if applicable
 						let templateReqs: Array<{
@@ -572,19 +528,17 @@ export const ShiftServiceLive = Layer.effect(
 						}> = [];
 						if (input.templateId) {
 							const templateId = input.templateId;
-							templateReqs = yield* _(
-								dbService.query("getTemplateSkillRequirements", async () => {
-									return await dbService.db.query.shiftTemplateSkillRequirement.findMany(
-										{
-											where: eq(
-												shiftTemplateSkillRequirement.templateId,
-												templateId,
-											),
-											with: { skill: true },
-										},
-									);
-								}),
-							);
+							templateReqs = yield* dbService.query("getTemplateSkillRequirements", async () => {
+								return await dbService.db.query.shiftTemplateSkillRequirement.findMany(
+									{
+										where: eq(
+											shiftTemplateSkillRequirement.templateId,
+											templateId,
+										),
+										with: { skill: true },
+									},
+								);
+							});
 						}
 
 						// Combine all requirements (deduped by skillId)
@@ -653,77 +607,69 @@ export const ShiftServiceLive = Layer.effect(
 					if (input.id) {
 						const shiftId = input.id;
 						// Update existing shift
-						const existing = yield* _(
-							dbService.query("getShiftById", async () => {
-								return await dbService.db.query.shift.findFirst({
-									where: and(
-										eq(shift.id, shiftId),
-										eq(shift.organizationId, input.organizationId),
-									),
-								});
-							}),
-						);
+						const existing = yield* dbService.query("getShiftById", async () => {
+							return await dbService.db.query.shift.findFirst({
+								where: and(
+									eq(shift.id, shiftId),
+									eq(shift.organizationId, input.organizationId),
+								),
+							});
+						});
 
 						if (!existing) {
-							yield* _(
-								Effect.fail(
-									new NotFoundError({
-										message: "Shift not found",
-										entityType: "shift",
-										entityId: input.id,
-									}),
-								),
+							yield* Effect.fail(
+								new NotFoundError({
+									message: "Shift not found",
+									entityType: "shift",
+									entityId: input.id,
+								}),
 							);
 						}
 
-						createdShift = yield* _(
-							dbService.query("updateShift", async () => {
-								const [s] = await dbService.db
-									.update(shift)
-									.set({
-										employeeId: input.employeeId,
-										templateId: input.templateId,
-										subareaId: input.subareaId,
-										date: input.date,
-										startTime: input.startTime,
-										endTime: input.endTime,
-										notes: input.notes,
-										color: input.color,
-									})
-									.where(
-										and(
-											eq(shift.id, shiftId),
-											eq(shift.organizationId, input.organizationId),
-										),
-									)
-									.returning();
-								return s;
-							}),
-						);
+						createdShift = yield* dbService.query("updateShift", async () => {
+							const [s] = await dbService.db
+								.update(shift)
+								.set({
+									employeeId: input.employeeId,
+									templateId: input.templateId,
+									subareaId: input.subareaId,
+									date: input.date,
+									startTime: input.startTime,
+									endTime: input.endTime,
+									notes: input.notes,
+									color: input.color,
+								})
+								.where(
+									and(
+										eq(shift.id, shiftId),
+										eq(shift.organizationId, input.organizationId),
+									),
+								)
+								.returning();
+							return s;
+						});
 					} else {
 						// Create new shift
-						createdShift = yield* _(
-							dbService.query("createShift", async () => {
-								const [s] = await dbService.db
-									.insert(shift)
-									.values({
-										organizationId: input.organizationId,
-										employeeId: input.employeeId,
-										templateId: input.templateId,
-										subareaId: input.subareaId,
-										date: input.date,
-										startTime: input.startTime,
-										endTime: input.endTime,
-										notes: input.notes,
-										color: input.color,
-										status: "draft",
-										createdBy: input.createdBy,
-										updatedAt: new Date(),
-									})
-									.returning();
-								return s;
-							}),
-						);
+						createdShift = yield* dbService.query("createShift", async () => {
+							const [s] = await dbService.db
+								.insert(shift)
+								.values({
+									organizationId: input.organizationId,
+									employeeId: input.employeeId,
+									templateId: input.templateId,
+									subareaId: input.subareaId,
+									date: input.date,
+									startTime: input.startTime,
+									endTime: input.endTime,
+									notes: input.notes,
+									color: input.color,
+									status: "draft",
+									createdBy: input.createdBy,
+									updatedAt: new Date(),
+								})
+								.returning();
+							return s;
+						});
 					}
 
 					return {
@@ -737,19 +683,17 @@ export const ShiftServiceLive = Layer.effect(
 				}),
 
 			deleteShift: (id, actorScope) =>
-				Effect.gen(function* (_) {
-					const actingEmployee = yield* _(
-						dbService.query("getActingEmployee", async () => {
-							return await dbService.db.query.employee.findFirst({
-								where: and(
-									eq(employee.id, actorScope.employeeId),
-									eq(employee.userId, actorScope.userId),
-									eq(employee.organizationId, actorScope.organizationId),
-									eq(employee.isActive, true),
-								),
-							});
-						}),
-					);
+				Effect.gen(function* () {
+					const actingEmployee = yield* dbService.query("getActingEmployee", async () => {
+						return await dbService.db.query.employee.findFirst({
+							where: and(
+								eq(employee.id, actorScope.employeeId),
+								eq(employee.userId, actorScope.userId),
+								eq(employee.organizationId, actorScope.organizationId),
+								eq(employee.isActive, true),
+							),
+						});
+					});
 
 					if (
 						!actingEmployee ||
@@ -758,15 +702,13 @@ export const ShiftServiceLive = Layer.effect(
 						actingEmployee.organizationId !== actorScope.organizationId ||
 						!actingEmployee.isActive
 					) {
-						return yield* _(
-							Effect.fail(
-								new AuthorizationError({
-									message: "Employee context is required to delete shifts",
-									userId: actorScope.userId,
-									resource: "shift",
-									action: "delete",
-								}),
-							),
+						return yield* Effect.fail(
+							new AuthorizationError({
+								message: "Employee context is required to delete shifts",
+								userId: actorScope.userId,
+								resource: "shift",
+								action: "delete",
+							}),
 						);
 					}
 
@@ -774,208 +716,190 @@ export const ShiftServiceLive = Layer.effect(
 						actingEmployee.role !== "manager" &&
 						actingEmployee.role !== "admin"
 					) {
-						yield* _(
-							Effect.fail(
-								new AuthorizationError({
-									message: "Only managers and admins can delete shifts",
-									userId: actorScope.userId,
-									resource: "shift",
-									action: "delete",
-								}),
-							),
+						yield* Effect.fail(
+							new AuthorizationError({
+								message: "Only managers and admins can delete shifts",
+								userId: actorScope.userId,
+								resource: "shift",
+								action: "delete",
+							}),
 						);
 					}
 
-					const existing = yield* _(
-						dbService.query("getShiftById", async () => {
-							return await dbService.db.query.shift.findFirst({
-								where: and(
-									eq(shift.id, id),
-									eq(shift.organizationId, actorScope.organizationId),
-								),
-							});
-						}),
-					);
+					const existing = yield* dbService.query("getShiftById", async () => {
+						return await dbService.db.query.shift.findFirst({
+							where: and(
+								eq(shift.id, id),
+								eq(shift.organizationId, actorScope.organizationId),
+							),
+						});
+					});
 
 					if (
 						!existing ||
 						existing.organizationId !== actorScope.organizationId
 					) {
-						return yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Shift not found",
-									entityType: "shift",
-									entityId: id,
-								}),
-							),
+						return yield* Effect.fail(
+							new NotFoundError({
+								message: "Shift not found",
+								entityType: "shift",
+								entityId: id,
+							}),
 						);
 					}
 
 					if (existing.status === "published") {
-						yield* _(
-							Effect.fail(
-								new AuthorizationError({
-									message: "Cannot delete published shifts",
-									userId: actorScope.userId,
-									resource: "shift",
-									action: "delete",
-								}),
-							),
+						yield* Effect.fail(
+							new AuthorizationError({
+								message: "Cannot delete published shifts",
+								userId: actorScope.userId,
+								resource: "shift",
+								action: "delete",
+							}),
 						);
 					}
 
-					const deleted = yield* _(
-						dbService.query("deleteShift", async () => {
-							return await dbService.db
-								.delete(shift)
-								.where(
-									and(
-										eq(shift.id, id),
-										eq(shift.organizationId, actorScope.organizationId),
-										eq(shift.status, "draft"),
-									),
-								)
-								.returning({ id: shift.id });
-						}),
-					);
+					const deleted = yield* dbService.query("deleteShift", async () => {
+						return await dbService.db
+							.delete(shift)
+							.where(
+								and(
+									eq(shift.id, id),
+									eq(shift.organizationId, actorScope.organizationId),
+									eq(shift.status, "draft"),
+								),
+							)
+							.returning({ id: shift.id });
+					});
 
 					if (deleted.length !== 1 || deleted[0]?.id !== id) {
-						return yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Shift not found",
-									entityType: "shift",
-									entityId: id,
-								}),
-							),
+						return yield* Effect.fail(
+							new NotFoundError({
+								message: "Shift not found",
+								entityType: "shift",
+								entityId: id,
+							}),
 						);
 					}
 				}),
 
 			getShifts: (query) =>
-				Effect.gen(function* (_) {
-					const shifts = yield* _(
-						dbService.query("getShifts", async () => {
-							const conditions = [
-								eq(shift.organizationId, query.organizationId),
-							];
+				Effect.gen(function* () {
+					const shifts = yield* dbService.query("getShifts", async () => {
+						const conditions = [
+							eq(shift.organizationId, query.organizationId),
+						];
 
-							if (query.startDate) {
-								conditions.push(gte(shift.date, query.startDate));
-							}
-							if (query.endDateExclusive) {
-								conditions.push(lt(shift.date, query.endDateExclusive));
-							}
-							if (query.employeeId) {
-								conditions.push(eq(shift.employeeId, query.employeeId));
-							}
-							if (query.subareaId) {
-								conditions.push(eq(shift.subareaId, query.subareaId));
-							}
-							if (query.status) {
-								conditions.push(eq(shift.status, query.status));
-							}
-							if (query.includeOpenShifts) {
-								// Include shifts where employeeId is null
-							} else if (query.employeeId) {
-								// Already filtered by employeeId
-							}
+						if (query.startDate) {
+							conditions.push(gte(shift.date, query.startDate));
+						}
+						if (query.endDateExclusive) {
+							conditions.push(lt(shift.date, query.endDateExclusive));
+						}
+						if (query.employeeId) {
+							conditions.push(eq(shift.employeeId, query.employeeId));
+						}
+						if (query.subareaId) {
+							conditions.push(eq(shift.subareaId, query.subareaId));
+						}
+						if (query.status) {
+							conditions.push(eq(shift.status, query.status));
+						}
+						if (query.includeOpenShifts) {
+							// Include shifts where employeeId is null
+						} else if (query.employeeId) {
+							// Already filtered by employeeId
+						}
 
-							return await dbService.db.query.shift.findMany({
-								where: and(...conditions),
-								with: {
-									employee: {
-										columns: {
-											id: true,
-											firstName: true,
-											lastName: true,
-										},
-										// The display name derives from the user, not the deprecated employee columns.
-										with: {
-											user: { columns: { name: true, firstName: true, lastName: true, email: true } },
-										},
+						return await dbService.db.query.shift.findMany({
+							where: and(...conditions),
+							with: {
+								employee: {
+									columns: {
+										id: true,
+										firstName: true,
+										lastName: true,
 									},
-									template: true,
-									subarea: {
-										columns: {
-											id: true,
-											name: true,
-										},
-										with: {
-											location: {
-												columns: {
-													id: true,
-													name: true,
-												},
+									// The display name derives from the user, not the deprecated employee columns.
+									with: {
+										user: { columns: { name: true, firstName: true, lastName: true, email: true } },
+									},
+								},
+								template: true,
+								subarea: {
+									columns: {
+										id: true,
+										name: true,
+									},
+									with: {
+										location: {
+											columns: {
+												id: true,
+												name: true,
 											},
 										},
 									},
 								},
-								orderBy: [desc(shift.date), desc(shift.startTime)],
-							});
-						}),
-					);
+							},
+							orderBy: [desc(shift.date), desc(shift.startTime)],
+						});
+					});
 
 					return shifts as ShiftWithRelations[];
 				}),
 
 			getShiftById: (id) =>
-				Effect.gen(function* (_) {
-					const result = yield* _(
-						dbService.query("getShiftById", async () => {
-							return await dbService.db.query.shift.findFirst({
-								where: eq(shift.id, id),
-								with: {
-									employee: {
-										columns: {
-											id: true,
-											firstName: true,
-											lastName: true,
-										},
-										// The display name derives from the user, not the deprecated employee columns.
-										with: {
-											user: { columns: { name: true, firstName: true, lastName: true, email: true } },
-										},
+				Effect.gen(function* () {
+					const result = yield* dbService.query("getShiftById", async () => {
+						return await dbService.db.query.shift.findFirst({
+							where: eq(shift.id, id),
+							with: {
+								employee: {
+									columns: {
+										id: true,
+										firstName: true,
+										lastName: true,
 									},
-									template: true,
-									subarea: {
-										columns: {
-											id: true,
-											name: true,
-										},
-										with: {
-											location: {
-												columns: {
-													id: true,
-													name: true,
-												},
+									// The display name derives from the user, not the deprecated employee columns.
+									with: {
+										user: { columns: { name: true, firstName: true, lastName: true, email: true } },
+									},
+								},
+								template: true,
+								subarea: {
+									columns: {
+										id: true,
+										name: true,
+									},
+									with: {
+										location: {
+											columns: {
+												id: true,
+												name: true,
 											},
 										},
 									},
 								},
-							});
-						}),
-					);
+							},
+						});
+					});
 
 					return result as ShiftWithRelations | null;
 				}),
 
 			publishShifts: (organizationId, dateRange, publishedBy) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Get all draft shifts in the date range
-					const draftShifts = yield* _(
-						dbService.query("getDraftShifts", async () => {
-							return await dbService.db.query.shift.findMany({
-								where: and(
-									eq(shift.organizationId, organizationId),
-									eq(shift.status, "draft"),
-									gte(shift.date, dateRange.start),
-									lt(shift.date, dateRange.endExclusive),
-								),
-							});
-						}),
-					);
+					const draftShifts = yield* dbService.query("getDraftShifts", async () => {
+						return await dbService.db.query.shift.findMany({
+							where: and(
+								eq(shift.organizationId, organizationId),
+								eq(shift.status, "draft"),
+								gte(shift.date, dateRange.start),
+								lt(shift.date, dateRange.endExclusive),
+							),
+						});
+					});
 
 					if (draftShifts.length === 0) {
 						return { count: 0, affectedEmployeeIds: [] };
@@ -991,24 +915,22 @@ export const ShiftServiceLive = Layer.effect(
 					];
 
 					// Update all draft shifts to published
-					yield* _(
-						dbService.query("publishShifts", async () => {
-							const shiftIds = draftShifts.map((s) => s.id);
-							await dbService.db
-								.update(shift)
-								.set({
-									status: "published",
-									publishedAt: new Date(),
-									publishedBy,
-								})
-								.where(
-									and(
-										eq(shift.organizationId, organizationId),
-										sql`${shift.id} = ANY(${shiftIds})`,
-									),
-								);
-						}),
-					);
+					yield* dbService.query("publishShifts", async () => {
+						const shiftIds = draftShifts.map((s) => s.id);
+						await dbService.db
+							.update(shift)
+							.set({
+								status: "published",
+								publishedAt: new Date(),
+								publishedBy,
+							})
+							.where(
+								and(
+									eq(shift.organizationId, organizationId),
+									sql`${shift.id} = ANY(${shiftIds})`,
+								),
+							);
+					});
 
 					return {
 						count: draftShifts.length,
@@ -1017,35 +939,33 @@ export const ShiftServiceLive = Layer.effect(
 				}),
 
 			getIncompleteDays: (organizationId, dateRange, timezone) =>
-				Effect.gen(function* (_) {
-					const result = yield* _(
-						dbService.query("getIncompleteDays", async () => {
-							// Get open shifts (no employee assigned) grouped by date
-							const openShifts = await dbService.db.query.shift.findMany({
-								where: and(
-									eq(shift.organizationId, organizationId),
-									isNull(shift.employeeId),
-									gte(shift.date, dateRange.start),
-									lt(shift.date, dateRange.endExclusive),
-								),
-							});
+				Effect.gen(function* () {
+					const result = yield* dbService.query("getIncompleteDays", async () => {
+						// Get open shifts (no employee assigned) grouped by date
+						const openShifts = await dbService.db.query.shift.findMany({
+							where: and(
+								eq(shift.organizationId, organizationId),
+								isNull(shift.employeeId),
+								gte(shift.date, dateRange.start),
+								lt(shift.date, dateRange.endExclusive),
+							),
+						});
 
-							// Group by date
-							const dayMap = new Map<string, number>();
-							for (const s of openShifts) {
-								const dateKey = instantFromDate(s.date)
-									.toZonedDateTimeISO(timezone)
-									.toPlainDate()
-									.toString();
-								dayMap.set(dateKey, (dayMap.get(dateKey) || 0) + 1);
-							}
+						// Group by date
+						const dayMap = new Map<string, number>();
+						for (const s of openShifts) {
+							const dateKey = instantFromDate(s.date)
+								.toZonedDateTimeISO(timezone)
+								.toPlainDate()
+								.toString();
+							dayMap.set(dateKey, (dayMap.get(dateKey) || 0) + 1);
+						}
 
-							return Array.from(dayMap.entries()).map(([dateStr, count]) => ({
-								date: new Date(dateStr),
-								openShiftCount: count,
-							}));
-						}),
-					);
+						return Array.from(dayMap.entries()).map(([dateStr, count]) => ({
+							date: new Date(dateStr),
+							openShiftCount: count,
+						}));
+					});
 
 					return result;
 				}),

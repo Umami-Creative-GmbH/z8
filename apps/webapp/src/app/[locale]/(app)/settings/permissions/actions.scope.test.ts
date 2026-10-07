@@ -80,18 +80,18 @@ vi.mock("../employees/employee-action-utils", async () => {
 
 vi.mock("@/lib/effect/services/auth.service", async () => {
 	const { Context } = await import("effect");
-	return { AuthService: Context.GenericTag<unknown>("AuthService") };
+	return { AuthService: Context.Service<unknown>("AuthService") };
 });
 
 vi.mock("@/lib/effect/services/database.service", async () => {
 	const { Context } = await import("effect");
-	return { DatabaseService: Context.GenericTag<unknown>("DatabaseService") };
+	return { DatabaseService: Context.Service<unknown>("DatabaseService") };
 });
 
 vi.mock("@/lib/effect/services/permissions.service", async () => {
 	const { Context } = await import("effect");
 	return {
-		PermissionsService: Context.GenericTag<unknown>("PermissionsService"),
+		PermissionsService: Context.Service<unknown>("PermissionsService"),
 	};
 });
 

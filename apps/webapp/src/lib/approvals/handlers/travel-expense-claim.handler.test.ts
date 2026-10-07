@@ -77,7 +77,7 @@ const testState = vi.hoisted(() => ({
 
 vi.mock("@/lib/effect/services/database.service", async () => {
 	const { Context, Layer } = await import("effect");
-	const DatabaseService = Context.GenericTag<any>("DatabaseService");
+	const DatabaseService = Context.Service<any>("DatabaseService");
 	return {
 		DatabaseService,
 		DatabaseServiceLive: Layer.succeed(DatabaseService, {}),
@@ -86,7 +86,7 @@ vi.mock("@/lib/effect/services/database.service", async () => {
 
 vi.mock("../infrastructure/audit-logger", async () => {
 	const { Context, Layer, Effect } = await import("effect");
-	const ApprovalAuditLogger = Context.GenericTag<any>("ApprovalAuditLogger");
+	const ApprovalAuditLogger = Context.Service<any>("ApprovalAuditLogger");
 	const createApprovalAuditLogger = vi.fn(() =>
 		ApprovalAuditLogger.of({
 			log: testState.auditLog,

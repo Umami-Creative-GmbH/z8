@@ -3,13 +3,13 @@ import { Context, Effect, Layer } from "effect";
 import { db } from "@/db";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
-import { DatabaseError, NotFoundError } from "../../errors";
-import { countBillableSeats } from "./billable-seat-count";
+import { DatabaseError, NotFoundError } from "@/lib/effect/errors";
+import { countBillableSeats } from "@/lib/effect/services/billing/billable-seat-count";
 import {
 	provisionLocalTrial,
 	withOrganizationBillingMutation,
 	withStripeSubscriptionMutation,
-} from "./billing-configuration";
+} from "@/lib/effect/services/billing/billing-configuration";
 
 export interface SubscriptionInfo {
 	id: string;
@@ -56,7 +56,7 @@ export interface UpdateSubscriptionFromStripeParams {
  * SubscriptionService - CRUD operations for subscription records
  * Manages subscription state in the database
  */
-export class SubscriptionService extends Context.Tag("SubscriptionService")<
+export class SubscriptionService extends Context.Service<
 	SubscriptionService,
 	{
 		readonly getByOrganization: (
@@ -98,7 +98,7 @@ export class SubscriptionService extends Context.Tag("SubscriptionService")<
 
 		readonly canMutateData: (organizationId: string) => Effect.Effect<boolean, DatabaseError>;
 	}
->() {}
+>()("SubscriptionService") {}
 
 function mapToSubscriptionInfo(sub: typeof subscription.$inferSelect): SubscriptionInfo {
 	const activeStatuses = ["trialing", "active"];

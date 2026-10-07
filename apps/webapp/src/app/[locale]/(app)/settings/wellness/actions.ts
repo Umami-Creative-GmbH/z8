@@ -20,18 +20,16 @@ import { getPresetInterval, type WaterReminderPreset } from "@/lib/wellness/wate
  * Get water reminder settings for settings page
  */
 export async function getWellnessSettings(): Promise<ServerActionResult<WaterReminderSettings>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
 
-		const settings = yield* _(
-			dbService.query("getWaterReminderSettings", async () => {
-				return dbService.db.query.userSettings.findFirst({
-					where: eq(userSettings.userId, session.user.id),
-				});
-			}),
-		);
+		const settings = yield* dbService.query("getWaterReminderSettings", async () => {
+			return dbService.db.query.userSettings.findFirst({
+				where: eq(userSettings.userId, session.user.id),
+			});
+		});
 
 		return {
 			enabled: settings?.waterReminderEnabled ?? false,
@@ -50,21 +48,19 @@ export async function getWellnessSettings(): Promise<ServerActionResult<WaterRem
 export async function updateWellnessSettings(
 	data: WaterReminderSettingsFormValues,
 ): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
 
 		// Validate input
 		const result = waterReminderSettingsSchema.safeParse(data);
 		if (!result.success) {
-			return yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: result.error.issues[0]?.message || "Invalid settings",
-						field: "settings",
-					}),
-				),
+			return yield* Effect.fail(
+				new ValidationError({
+					message: result.error.issues[0]?.message || "Invalid settings",
+					field: "settings",
+				}),
 			);
 		}
 
@@ -75,15 +71,13 @@ export async function updateWellnessSettings(
 			preset === "custom" ? intervalMinutes : getPresetInterval(preset as WaterReminderPreset);
 
 		// Upsert userSettings with water reminder settings
-		yield* _(
-			dbService.query("updateWaterReminderSettings", () =>
-				writeUserSettings(dbService.db, session.user.id, {
-					waterReminderEnabled: enabled,
-					waterReminderPreset: preset,
-					waterReminderIntervalMinutes: actualInterval,
-					waterReminderDailyGoal: dailyGoal,
-				}),
-			),
+		yield* dbService.query("updateWaterReminderSettings", () =>
+			writeUserSettings(dbService.db, session.user.id, {
+				waterReminderEnabled: enabled,
+				waterReminderPreset: preset,
+				waterReminderIntervalMinutes: actualInterval,
+				waterReminderDailyGoal: dailyGoal,
+			}),
 		);
 	}).pipe(Effect.provide(AppLayer));
 

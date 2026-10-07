@@ -35,6 +35,8 @@ function transactionDatabaseLayer(transaction: Transaction) {
 	);
 }
 
+// TimeEntryServiceLive is also in the v4 AppLayer. Callers build it locally so it
+// always binds to this call's database layer, never to one shared for global db.
 function timeEntryDatabaseLayer(transaction?: Transaction) {
 	return transaction
 		? transactionDatabaseLayer(transaction)
@@ -58,11 +60,11 @@ export const canonicalTimeEntryClient = {
 		},
 		transaction?: Transaction,
 	) => {
-		const effect = Effect.gen(function* (_) {
-			const service = yield* _(TimeEntryService);
-			return yield* _(service.createTimeEntry(input));
+		const effect = Effect.gen(function* () {
+			const service = yield* TimeEntryService;
+			return yield* service.createTimeEntry(input);
 		}).pipe(
-			Effect.provide(TimeEntryServiceLive),
+			Effect.provide(TimeEntryServiceLive, { local: true }),
 			Effect.provide(timeEntryDatabaseLayer(transaction)),
 		);
 
@@ -85,15 +87,13 @@ export const canonicalTimeEntryClient = {
 		},
 		transaction?: Transaction,
 	) => {
-		const effect = Effect.gen(function* (_) {
-			const service = yield* _(TimeEntryService);
-			return yield* _(
-				service.createCorrectionEntry(
-					transaction ? { ...input, transaction } : input,
-				),
+		const effect = Effect.gen(function* () {
+			const service = yield* TimeEntryService;
+			return yield* service.createCorrectionEntry(
+				transaction ? { ...input, transaction } : input,
 			);
 		}).pipe(
-			Effect.provide(TimeEntryServiceLive),
+			Effect.provide(TimeEntryServiceLive, { local: true }),
 			Effect.provide(timeEntryDatabaseLayer(transaction)),
 		);
 

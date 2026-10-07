@@ -177,7 +177,7 @@ describe("coordinated organization creation on PostgreSQL", () => {
 			Layer.provide(DatabaseServiceLive),
 		);
 		return Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* OnboardingService;
 					return yield* service.createOrganization({ name: "T359 created", slug });
@@ -389,9 +389,9 @@ describe("coordinated organization creation on PostgreSQL", () => {
 		it("creates the same row set through the server-side call", async () => {
 			const result = await createThroughOnboarding();
 
-			expect(result._tag).toBe("Right");
+			expect(result._tag).toBe("Success");
 			const created = await expectCreatedTogether();
-			expect(result).toMatchObject({ right: { organizationId: created.organizationId } });
+			expect(result).toMatchObject({ success: { organizationId: created.organizationId } });
 		});
 
 		it("leaves nothing behind when the rollout-row write fails", async () => {
@@ -400,7 +400,7 @@ describe("coordinated organization creation on PostgreSQL", () => {
 
 			const result = await createThroughOnboarding();
 
-			expect(result).toMatchObject({ _tag: "Left", left: { field: "slug" } });
+			expect(result).toMatchObject({ _tag: "Failure", failure: { field: "slug" } });
 			await expectNothingCreated(rolloutRowsBefore);
 		});
 	});

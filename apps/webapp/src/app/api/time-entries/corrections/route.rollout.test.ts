@@ -375,7 +375,7 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/shared", () => ({
 	logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 vi.mock("@/lib/effect/runtime", () => ({
-	runtime: { runPromise: Effect.runPromise },
+	runtime: { runPromiseExit: Effect.runPromiseExit },
 }));
 
 vi.mock("@/lib/approvals/workflow/runtime", () => ({

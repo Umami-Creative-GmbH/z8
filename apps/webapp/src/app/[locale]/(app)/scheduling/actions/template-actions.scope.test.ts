@@ -51,7 +51,7 @@ vi.mock("@/app/[locale]/(app)/scheduling/actions/shared", () => ({
 
 vi.mock("@/lib/effect/services/shift.service", async () => {
 	const { Context } = await import("effect");
-	const ShiftService = Context.GenericTag<any>("ShiftService");
+	const ShiftService = Context.Service<any>("ShiftService");
 	return { ShiftService };
 });
 

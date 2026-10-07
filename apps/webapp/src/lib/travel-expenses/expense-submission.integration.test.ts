@@ -4,10 +4,12 @@
  * Local contract: pnpm --filter webapp test:approval-workflow-repository:integration
  * The runner creates, migrates, verifies, and removes a label-owned PostgreSQL 16 database.
  *
- * The real draft/submit/approve server actions, the real receipt upload route and
- * the real cleanup worker run against that database. Only the session, e-mail/
- * notification delivery and object storage are replaced; storage is an
- * in-memory bucket so late uploads, failed deletes and versions are observable.
+ * No server action submits a legacy claim any more (#621); claims are seeded and
+ * submitted through the historical submission writers. The real approve server
+ * action, the real receipt upload route and the real cleanup worker run against
+ * that database. Only the session, e-mail/notification delivery and object
+ * storage are replaced; storage is an in-memory bucket so late uploads, failed
+ * deletes and versions are observable.
  */
 
 import { createHash } from "node:crypto";
@@ -112,8 +114,10 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 	},
 }));
 
-const { createTravelExpenseDraft, submitTravelExpenseClaim, approveTravelExpenseClaim } =
-	await import("@/app/[locale]/(app)/travel-expenses/actions");
+const { approveTravelExpenseClaim } = await import("@/app/[locale]/(app)/travel-expenses/actions");
+const { insertLegacyTravelExpenseDraft, submitLegacyTravelExpenseClaim } = await import(
+	"./__tests__/legacy-claim"
+);
 const { POST: processUpload } = await import("@/app/api/upload/travel-expense/process/route");
 const { db } = await import("@/db");
 const {
@@ -240,29 +244,18 @@ describe("expense submission evidence (PostgreSQL)", () => {
 		);
 	}
 
-	async function createDraft(
-		input: Partial<{
-			type: "receipt" | "mileage";
-			amount: string;
-			tripStart: string;
-			tripEnd: string;
-		}> = {},
-	): Promise<string> {
-		actAs(ids.requesterUser);
-		const result = await createTravelExpenseDraft({
-			type: input.type ?? "receipt",
-			tripStart: input.tripStart ?? "2026-03-29",
-			tripEnd: input.tripEnd ?? "2026-03-31",
-			destinationCity: "Hamburg",
-			destinationCountry: "DE",
-			originalCurrency: "EUR",
-			originalAmount: input.amount ?? "120.50",
-			calculatedCurrency: "EUR",
-			calculatedAmount: input.amount ?? "120.50",
+	const requester = {
+		organizationId: ids.organization,
+		employeeId: ids.requester,
+		userId: ids.requesterUser,
+	};
+
+	function createDraft(input: { amount?: string } = {}): Promise<string> {
+		return insertLegacyTravelExpenseDraft(db, {
+			...requester,
+			...(input.amount ? { amount: input.amount } : {}),
 			notes: "Private note that is never copied into evidence",
 		});
-		if (!result.success) throw new Error(`Draft failed: ${result.error}`);
-		return result.data.id;
 	}
 
 	async function upload(claimId: string, bytes: Buffer = PDF_BYTES, fileName = "receipt.pdf") {
@@ -275,9 +268,8 @@ describe("expense submission evidence (PostgreSQL)", () => {
 		return { status: response.status, body: await response.json(), tusFileKey };
 	}
 
-	async function submit(claimId: string) {
-		actAs(ids.requesterUser);
-		return submitTravelExpenseClaim({ claimId });
+	function submit(claimId: string) {
+		return submitLegacyTravelExpenseClaim(db, { ...requester, claimId });
 	}
 
 	async function claimState(claimId: string) {
@@ -355,26 +347,7 @@ describe("expense submission evidence (PostgreSQL)", () => {
 		await cleanup();
 	});
 
-	it("records entered logical trip dates on the draft even while capture is inactive", async () => {
-		await seed({ capture: false });
-		const claimId = await createDraft({ tripStart: "2026-03-29", tripEnd: "2026-03-31" });
-		expect((await upload(claimId)).status).toBe(200);
-
-		const result = await submit(claimId);
-
-		expect(result).toEqual({ success: true, data: { status: "submitted" } });
-		const state = await claimState(claimId);
-		expect(state).toMatchObject({
-			status: "submitted",
-			trip_start_date: "2026-03-29",
-			trip_end_date: "2026-03-31",
-			trip_date_time_zone: "Europe/Berlin",
-			requests: 1,
-			revisions: 0,
-		});
-	});
-
-	it("freezes logical dates, money pairs and a content-identified receipt manifest atomically with submission", async () => {
+	it("freezes logical dates, money pairs and a content-identified receipt manifest with the historical submission", async () => {
 		await seed();
 		const claimId = await createDraft();
 		const first = await upload(claimId, PDF_BYTES, "hotel.pdf");
@@ -383,7 +356,7 @@ describe("expense submission evidence (PostgreSQL)", () => {
 		expect(harness.publicObjects.size).toBe(0);
 
 		const result = await submit(claimId);
-		expect(result).toEqual({ success: true, data: { status: "submitted" } });
+		expect(result.status).toBe("submitted");
 
 		const state = await claimState(claimId);
 		const revision = await revisionRow(claimId);
@@ -478,7 +451,7 @@ describe("expense submission evidence (PostgreSQL)", () => {
 		harness.beforePrivatePut = async () => {
 			harness.beforePrivatePut = null;
 			const submitted = await submit(claimId);
-			expect(submitted.success).toBe(true);
+			expect(submitted.status).toBe("submitted");
 		};
 
 		const late = await upload(claimId, OTHER_PDF_BYTES, "late.pdf");
@@ -553,7 +526,7 @@ describe("expense submission evidence (PostgreSQL)", () => {
 		await holder.query("commit");
 		holder.release();
 		expect((await racingUpload).status).toBe(200);
-		expect((await racingSubmit).success).toBe(true);
+		expect((await racingSubmit).status).toBe("submitted");
 		expect((await revisionRow(attachedFirst)).facts.receipts.manifest).toHaveLength(2);
 
 		// Submission first: the late upload is rejected and cleaned up.
@@ -566,139 +539,18 @@ describe("expense submission evidence (PostgreSQL)", () => {
 		await waitForLockWaiters(2);
 		await holder.query("commit");
 		holder.release();
-		expect((await firstSubmit).success).toBe(true);
+		expect((await firstSubmit).status).toBe("submitted");
 		expect((await lateUpload).status).toBe(409);
 		expect((await revisionRow(submittedFirst)).facts.receipts.manifest).toHaveLength(1);
 		expect((await claimState(submittedFirst)).attachments).toBe(1);
 		expect(await stagedUploads()).toEqual([]);
 	});
 
-	it("rolls back the whole submission when evidence capture fails", async () => {
-		await seed();
-		const claimId = await createDraft();
-		expect((await upload(claimId)).status).toBe(200);
-		await admin.query(`
-			create or replace function t295_fail_expense_revision() returns trigger language plpgsql as $$
-			begin
-				if new.workflow_type = 'travel_expense' then
-					raise exception 't295 injected revision failure';
-				end if;
-				return new;
-			end $$;
-			create trigger t295_fail_expense_revision before insert on approval_submitted_revision
-			for each row execute function t295_fail_expense_revision();
-		`);
-		try {
-			const failed = await submit(claimId);
-			expect(failed).toEqual({ success: false, error: "Failed to submit travel expense claim" });
-			expect(await claimState(claimId)).toMatchObject({
-				status: "draft",
-				submitted_at: null,
-				requests: 0,
-				revisions: 0,
-			});
-		} finally {
-			await admin.query(`
-				drop trigger t295_fail_expense_revision on approval_submitted_revision;
-				drop function t295_fail_expense_revision();
-			`);
-		}
-
-		expect((await submit(claimId)).success).toBe(true);
-		expect(await claimState(claimId)).toMatchObject({
-			status: "submitted",
-			requests: 1,
-			revisions: 1,
-		});
-	});
-
-	it("holds historical drafts without entered dates or receipt checksums instead of guessing", async () => {
-		await seed();
-		// A draft created before logical dates were captured: only synthetic bounds exist.
-		const { rows } = await admin.query<{ id: string }>(
-			`insert into travel_expense_claim
-			 (organization_id, employee_id, type, status, trip_start, trip_end,
-			  original_currency, original_amount, calculated_currency, calculated_amount,
-			  created_by, updated_at)
-			 values ($1, $2, 'receipt', 'draft', '2026-03-28T23:00:00Z', '2026-03-31T21:59:59.999Z',
-			  'EUR', '10.00', 'EUR', '10.00', $3, now())
-			 returning id`,
-			[ids.organization, ids.requester, ids.requesterUser],
-		);
-		const legacyDates = only(rows).id;
-		expect((await upload(legacyDates)).status).toBe(200);
-
-		expect(await submit(legacyDates)).toEqual({
-			success: false,
-			error:
-				"This claim was created before its trip dates were recorded as entered. Create a new claim to submit it.",
-		});
-		expect(await claimState(legacyDates)).toMatchObject({
-			status: "draft",
-			requests: 0,
-			revisions: 0,
-		});
-
-		// A receipt uploaded before checksums were computed.
-		const legacyReceipt = await createDraft();
-		await admin.query(
-			`insert into travel_expense_attachment
-			 (claim_id, organization_id, storage_provider, storage_bucket, storage_key, file_name,
-			  mime_type, size_bytes, uploaded_by)
-			 values ($1, $2, 's3-private', 't295-private', 'travel-expenses/legacy/receipt.pdf',
-			  'receipt.pdf', 'application/pdf', 10, $3)`,
-			[legacyReceipt, ids.organization, ids.requester],
-		);
-		expect(await submit(legacyReceipt)).toEqual({
-			success: false,
-			error:
-				"A receipt on this claim was uploaded before receipt content was verified. Create a new claim with the receipts to submit it.",
-		});
-		expect(await claimState(legacyReceipt)).toMatchObject({ status: "draft", requests: 0 });
-	});
-
-	it("requires receipts and refuses foreign-organization attachment rows", async () => {
-		await seed();
-		const missing = await createDraft();
-		expect(await submit(missing)).toEqual({
-			success: false,
-			error: expect.stringMatching(/receipt/i),
-		});
-		expect((await claimState(missing)).status).toBe("draft");
-
-		const claimId = await createDraft();
-		expect((await upload(claimId)).status).toBe(200);
-		const { rows: foreign } = await admin.query<{ id: string }>(
-			`insert into travel_expense_attachment
-			 (claim_id, organization_id, storage_provider, storage_bucket, storage_key, file_name,
-			  mime_type, size_bytes, checksum_sha256, uploaded_by)
-			 values ($1, $2, 's3-private', 't295-private', 'travel-expenses/foreign/receipt.pdf',
-			  'foreign.pdf', 'application/pdf', 10, $3, $4) returning id`,
-			[claimId, ids.otherOrganization, "c".repeat(64), ids.otherEmployee],
-		);
-
-		// A foreign row linked to the claim is a contradiction: never silently dropped.
-		expect(await submit(claimId)).toEqual({
-			success: false,
-			error: "Failed to submit travel expense claim",
-		});
-		expect(await claimState(claimId)).toMatchObject({ status: "draft", requests: 0, revisions: 0 });
-
-		await admin.query("delete from travel_expense_attachment where id = $1", [only(foreign).id]);
-		expect((await submit(claimId)).success).toBe(true);
-		expect((await revisionRow(claimId)).facts.receipts.manifest).toHaveLength(1);
-
-		// A mileage claim needs no receipt; its manifest is honestly empty.
-		const mileage = await createDraft({ type: "mileage", amount: "30.00" });
-		expect((await submit(mileage)).success).toBe(true);
-		expect((await revisionRow(mileage)).facts.receipts).toEqual({ required: false, manifest: [] });
-	});
-
 	it("holds decisions after the frozen receipt set changes and decides the unchanged claim", async () => {
 		await seed();
 		const claimId = await createDraft();
 		expect((await upload(claimId)).status).toBe(200);
-		expect((await submit(claimId)).success).toBe(true);
+		expect((await submit(claimId)).status).toBe("submitted");
 		// A writer outside the upload route adds a receipt to the submitted claim.
 		const { rows } = await admin.query<{ id: string }>(
 			`insert into travel_expense_attachment
@@ -734,7 +586,7 @@ describe("expense submission evidence (PostgreSQL)", () => {
 		const claimId = await createDraft();
 		expect((await upload(claimId)).status).toBe(200);
 
-		expect(await submit(claimId)).toEqual({ success: true, data: { status: "approved" } });
+		expect((await submit(claimId)).status).toBe("approved");
 
 		const state = await claimState(claimId);
 		const revision = await revisionRow(claimId);
@@ -764,10 +616,10 @@ describe("expense submission evidence (PostgreSQL)", () => {
 		await seed();
 		const claimId = await createDraft();
 		expect((await upload(claimId)).status).toBe(200);
-		expect((await submit(claimId)).success).toBe(true);
+		expect((await submit(claimId)).status).toBe("submitted");
 		const other = await createDraft({ amount: "15.00" });
 		expect((await upload(other)).status).toBe(200);
-		expect((await submit(other)).success).toBe(true);
+		expect((await submit(other)).status).toBe("submitted");
 		const revision = await revisionRow(claimId);
 
 		const listed = await listApprovals(db, ids.organization);

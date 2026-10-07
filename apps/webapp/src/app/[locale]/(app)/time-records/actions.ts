@@ -47,7 +47,7 @@ async function runTimeRecordEffect<T, E>(
 		return { success: true, data: exit.value };
 	}
 
-	const failure = Option.getOrNull(Cause.failureOption(exit.cause));
+	const failure = Option.getOrNull(Cause.findErrorOption(exit.cause));
 	if (
 		failure &&
 		typeof failure === "object" &&
@@ -87,17 +87,15 @@ export async function listTimeRecords(
 		}
 
 		return await runTimeRecordEffect(
-			Effect.gen(function* (_) {
-				const service = yield* _(TimeRecordService);
-				return yield* _(
-					service.listByOrganization(currentEmployee.organizationId, {
-						employeeId: isElevated ? filters.employeeId : currentEmployee.id,
-						recordKind: filters.recordKind,
-						startAtFrom: startAtFromResult.data ?? undefined,
-						startAtTo: startAtToResult.data ?? undefined,
-						limit: filters.limit,
-					}),
-				);
+			Effect.gen(function* () {
+				const service = yield* TimeRecordService;
+				return yield* service.listByOrganization(currentEmployee.organizationId, {
+					employeeId: isElevated ? filters.employeeId : currentEmployee.id,
+					recordKind: filters.recordKind,
+					startAtFrom: startAtFromResult.data ?? undefined,
+					startAtTo: startAtToResult.data ?? undefined,
+					limit: filters.limit,
+				});
 			}),
 		);
 	} catch (_error) {

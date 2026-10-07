@@ -8,14 +8,15 @@
  * work-period submission. Only used against the label-owned disposable database.
  */
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
 import type { db } from "@/db";
 import { timeRecord, workPeriod } from "@/db/schema";
 import { executeOrdinaryWorkPeriodSubmissionInTransaction } from "@/lib/approvals/server/work-period-submission";
-import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { POLICY_CLOCK_OUT_APPROVAL_REASON } from "@/lib/approvals/time-request-kind";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
-import { createOrdinaryApprovalRuntime } from "../ordinary-approval-runtime";
+import {
+	approvalDbServiceForTransaction,
+	createOrdinaryApprovalRuntime,
+} from "../ordinary-approval-runtime";
 import { resolvePolicyClockOutBreakSnapshotInTransaction } from "../policy-clock-out-break-snapshot";
 import { resolvePolicyClockOutSurchargeSnapshotInTransaction } from "../policy-clock-out-surcharge-snapshot";
 
@@ -109,12 +110,8 @@ export async function submitHistoricalPolicyClockOut(input: {
 					);
 			}
 		}
-		const approvalDbService: ApprovalDbService = {
-			db: tx as unknown as ApprovalDbService["db"],
-			query: <T>(_name: string, operation: () => Promise<T>) => Effect.promise(operation),
-		};
 		return executeOrdinaryWorkPeriodSubmissionInTransaction({
-			dbService: approvalDbService,
+			dbService: approvalDbServiceForTransaction(dbService),
 			context,
 			organizationId: input.organizationId,
 			workPeriodId: period.id,

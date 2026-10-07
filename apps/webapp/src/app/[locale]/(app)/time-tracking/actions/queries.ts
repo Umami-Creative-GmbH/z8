@@ -203,18 +203,14 @@ export async function getWorkPeriodEditCapability(
 
 	try {
 		const result = await Effect.runPromise(
-			Effect.gen(function* (_) {
-				const policyService = yield* _(ChangePolicyService);
-				const policy = yield* _(
-					policyService.resolvePolicy(currentEmployee.id),
-				);
-				const capability = yield* _(
-					policyService.getEditCapability({
-						employeeId: currentEmployee.id,
-						workPeriodEndTime: selectedWorkPeriod.endTime!,
-						timezone,
-					}),
-				);
+			Effect.gen(function* () {
+				const policyService = yield* ChangePolicyService;
+				const policy = yield* policyService.resolvePolicy(currentEmployee.id);
+				const capability = yield* policyService.getEditCapability({
+					employeeId: currentEmployee.id,
+					workPeriodEndTime: selectedWorkPeriod.endTime!,
+					timezone,
+				});
 
 				return {
 					capability,

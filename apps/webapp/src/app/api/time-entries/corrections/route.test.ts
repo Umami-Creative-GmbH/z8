@@ -42,7 +42,7 @@ const mockState = vi.hoisted(() => {
 		resolveCorrectionApprovalManager: vi.fn(),
 		submitCorrection: vi.fn(),
 		timeEntryFindFirst: vi.fn(),
-		runPromise: vi.fn(),
+		runPromiseExit: vi.fn(),
 		requireActor: vi.fn(),
 		select,
 		transaction: vi.fn(),
@@ -101,6 +101,7 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/auth", () => ({
 }));
 
 vi.mock("@/lib/approvals/server/time-correction-submission", () => ({
+	createTransactionalApprovalDbService: (client: unknown) => ({ db: client }),
 	dispatchCommittedTimeCorrectionSubmission:
 		mockState.dispatchCommittedSubmission,
 	getForbiddenCorrectionEditMessage:
@@ -142,14 +143,14 @@ vi.mock("@/lib/authorization", () => ({
 
 vi.mock("@/lib/effect/runtime", () => ({
 	runtime: {
-		runPromise: mockState.runPromise,
+		runPromiseExit: mockState.runPromiseExit,
 	},
 }));
 
 vi.mock("@/lib/effect/services/time-entry.service", async () => {
 	const { Context } = await vi.importActual<typeof import("effect")>("effect");
 	return {
-		TimeEntryService: Context.GenericTag("TestTimeEntryService"),
+		TimeEntryService: Context.Service("TestTimeEntryService"),
 	};
 });
 
@@ -330,7 +331,7 @@ describe("GET /api/time-entries/corrections", () => {
 		mockState.getSession.mockReset();
 		mockState.headers.mockReset();
 		mockState.limit.mockReset();
-		mockState.runPromise.mockReset();
+		mockState.runPromiseExit.mockReset();
 		mockState.where.mockClear();
 		mockState.headers.mockResolvedValue(new Headers());
 		mockState.getSession.mockResolvedValue({
@@ -468,8 +469,8 @@ describe("POST /api/time-entries/corrections", () => {
 		mockState.transaction.mockImplementation(
 			async (callback: (tx: unknown) => Promise<unknown>) => callback({}),
 		);
-		mockState.runPromise.mockImplementation((effect) =>
-			Effect.runPromise(
+		mockState.runPromiseExit.mockImplementation((effect) =>
+			Effect.runPromiseExit(
 				effect.pipe(
 					Effect.provideService(TimeEntryService, {
 						createCorrectionEntry: mockState.createCorrectionEntry,
@@ -924,7 +925,7 @@ describe("POST /api/time-entries/corrections", () => {
 		expect(
 			mockState.createTimeCorrectionApprovalWorkflow,
 		).not.toHaveBeenCalled();
-		expect(mockState.runPromise).not.toHaveBeenCalled();
+		expect(mockState.runPromiseExit).not.toHaveBeenCalled();
 		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 		expectAndPredicateIncludes(mockState.where.mock.calls[2]?.[0], [
 			{ column: "employee.id", value: "employee-1" },
@@ -985,7 +986,7 @@ describe("POST /api/time-entries/corrections", () => {
 			timezone: "Europe/Berlin",
 		});
 		expect(mockState.submitCorrection).not.toHaveBeenCalled();
-		expect(mockState.runPromise).not.toHaveBeenCalled();
+		expect(mockState.runPromiseExit).not.toHaveBeenCalled();
 	});
 
 	it("fails closed when the self correction change policy cannot be resolved", async () => {
@@ -1272,7 +1273,7 @@ describe("POST /api/time-entries/corrections", () => {
 				utcOffsetMinutes: 120,
 			}),
 		);
-		expect(mockState.runPromise).toHaveBeenCalledOnce();
+		expect(mockState.runPromiseExit).toHaveBeenCalledOnce();
 		expect(mockState.transaction).not.toHaveBeenCalled();
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 		expect(
@@ -1581,7 +1582,7 @@ describe("POST /api/time-entries/corrections", () => {
 				employeeId: "employee-target",
 				organizationId: "org-1",
 			});
-			expect(mockState.runPromise.mock.invocationCallOrder[0]).toBeLessThan(
+			expect(mockState.runPromiseExit.mock.invocationCallOrder[0]).toBeLessThan(
 				mockState.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0] ?? 0,
 			);
 		},
@@ -1628,8 +1629,8 @@ describe("POST /api/time-entries/corrections", () => {
 			targetUserId: "target-user",
 		});
 		mockState.canApproveFor.mockResolvedValueOnce(true);
-		mockState.runPromise.mockImplementationOnce(() =>
-			Effect.runPromise(
+		mockState.runPromiseExit.mockImplementationOnce(() =>
+			Effect.runPromiseExit(
 				Effect.fail(
 					new ConflictError({
 						message: "Time entry was already corrected by another process",
@@ -1661,8 +1662,8 @@ describe("POST /api/time-entries/corrections", () => {
 			targetUserId: "target-user",
 		});
 		mockState.canApproveFor.mockResolvedValueOnce(true);
-		mockState.runPromise.mockImplementationOnce(() =>
-			Effect.runPromise(
+		mockState.runPromiseExit.mockImplementationOnce(() =>
+			Effect.runPromiseExit(
 				Effect.fail(
 					new AuthorizationError({
 						message: "Not authorized to correct this time entry",

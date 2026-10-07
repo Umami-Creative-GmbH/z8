@@ -29,20 +29,18 @@ export async function createShiftTemplate(
 		return { success: false, error: "Unauthorized" };
 	}
 
-	const effect = Effect.gen(function* (_) {
-		const shiftService = yield* _(ShiftService);
+	const effect = Effect.gen(function* () {
+		const shiftService = yield* ShiftService;
 
-		return yield* _(
-			shiftService.createTemplate({
-				organizationId: accessContext.organizationId,
-				name: input.name,
-				startTime: input.startTime,
-				endTime: input.endTime,
-				color: input.color,
-				subareaId: input.subareaId,
-				createdBy: accessContext.authContext.user.id,
-			}),
-		);
+		return yield* shiftService.createTemplate({
+			organizationId: accessContext.organizationId,
+			name: input.name,
+			startTime: input.startTime,
+			endTime: input.endTime,
+			color: input.color,
+			subareaId: input.subareaId,
+			createdBy: accessContext.authContext.user.id,
+		});
 	});
 
 	return runSchedulingAction("createShiftTemplate", effect);
@@ -78,10 +76,10 @@ export async function updateShiftTemplate(
 		return { success: false, error: "Unauthorized" };
 	}
 
-	const effect = Effect.gen(function* (_) {
-		const shiftService = yield* _(ShiftService);
+	const effect = Effect.gen(function* () {
+		const shiftService = yield* ShiftService;
 
-		return yield* _(shiftService.updateTemplate(id, input));
+		return yield* shiftService.updateTemplate(id, input);
 	});
 
 	return runSchedulingAction("updateShiftTemplate", effect);
@@ -112,10 +110,10 @@ export async function deleteShiftTemplate(id: string): Promise<SchedulingActionR
 		return { success: false, error: "Unauthorized" };
 	}
 
-	const effect = Effect.gen(function* (_) {
-		const shiftService = yield* _(ShiftService);
+	const effect = Effect.gen(function* () {
+		const shiftService = yield* ShiftService;
 
-		yield* _(shiftService.deleteTemplate(id));
+		yield* shiftService.deleteTemplate(id);
 	});
 
 	return runSchedulingAction("deleteShiftTemplate", effect);
@@ -127,10 +125,10 @@ export async function getShiftTemplates(): Promise<SchedulingActionResult<ShiftT
 		return { success: false, error: "Unauthorized" };
 	}
 
-	const effect = Effect.gen(function* (_) {
-		const shiftService = yield* _(ShiftService);
+	const effect = Effect.gen(function* () {
+		const shiftService = yield* ShiftService;
 
-		return yield* _(shiftService.getTemplates(accessContext.organizationId));
+		return yield* shiftService.getTemplates(accessContext.organizationId);
 	});
 
 	const result = await runSchedulingAction("getShiftTemplates", effect);

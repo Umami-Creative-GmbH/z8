@@ -6,13 +6,13 @@
 	"dependencies": {
 		"@opentelemetry/api": "^1.9.1",
 		"@t3-oss/env-nextjs": "^0.13.11",
-		"dotenv": "^17.4.2",
+		"dotenv": "^18.0.5",
 		"drizzle-orm": "^0.45.3",
 		"luxon": "^3.7.2",
-		"next": "16.3.4",
+		"next": "16.3.8",
 		"pg": "^8.23.1",
 		"pino": "^10.4.0",
-		"temporal-polyfill": "1.0.4",
+		"temporal-polyfill": "1.0.5",
 		"zod": "^4.6.5"
 	}
 }

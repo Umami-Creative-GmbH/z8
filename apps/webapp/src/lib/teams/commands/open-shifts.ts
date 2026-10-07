@@ -107,16 +107,14 @@ async function openShiftsHandler(ctx: BotCommandContext): Promise<BotCommandResp
 		);
 
 		// Fetch open shifts using Effect-TS service
-		const program = Effect.gen(function* (_) {
-			const openShiftsService = yield* _(OpenShiftsService);
-			return yield* _(
-				openShiftsService.getOpenShifts({
-					organizationId: ctx.organizationId,
-					startDate: dateFromInstant(startInstant),
-					endDate: dateFromInstant(endInstant),
-					limit: 10,
-				}),
-			);
+		const program = Effect.gen(function* () {
+			const openShiftsService = yield* OpenShiftsService;
+			return yield* openShiftsService.getOpenShifts({
+				organizationId: ctx.organizationId,
+				startDate: dateFromInstant(startInstant),
+				endDate: dateFromInstant(endInstant),
+				limit: 10,
+			});
 		});
 
 		const shifts = await Effect.runPromise(program.pipe(Effect.provide(OpenShiftsServiceFullLive)));

@@ -491,10 +491,11 @@ export async function getDailyWorkRequirementsForEmployee(params: {
 	timezone?: string | null;
 }): Promise<DailyWorkRequirements> {
 	return Effect.runPromise(
-		Effect.gen(function* (_) {
-			const database = yield* _(DatabaseService);
-			const scopedEmployee = yield* _(
-				database.query("getEmployeeForCalendarRequirements", async () => {
+		Effect.gen(function* () {
+			const database = yield* DatabaseService;
+			const scopedEmployee = yield* database.query(
+				"getEmployeeForCalendarRequirements",
+				async () => {
 					return database.db.query.employee.findFirst({
 						where: and(
 							eq(employee.id, params.employeeId),
@@ -503,7 +504,7 @@ export async function getDailyWorkRequirementsForEmployee(params: {
 						columns: { id: true, startDate: true, contractType: true },
 						with: { user: { columns: { createdAt: true } } },
 					});
-				}),
+				},
 			);
 			if (!scopedEmployee) return {};
 
@@ -511,15 +512,13 @@ export async function getDailyWorkRequirementsForEmployee(params: {
 			const accountCreatedDate = DateTime.fromJSDate(scopedEmployee.user.createdAt, {
 				zone: "utc",
 			});
-			const firstCompletedWorkPeriodBeforeAccount = yield* _(
-				Effect.promise(() =>
-					getFirstCompletedWorkPeriodBeforeAccount({
-						database,
-						organizationId: params.organizationId,
-						employeeId: params.employeeId,
-						accountCreatedAt: scopedEmployee.user.createdAt,
-					}),
-				),
+			const firstCompletedWorkPeriodBeforeAccount = yield* Effect.promise(() =>
+				getFirstCompletedWorkPeriodBeforeAccount({
+					database,
+					organizationId: params.organizationId,
+					employeeId: params.employeeId,
+					accountCreatedAt: scopedEmployee.user.createdAt,
+				}),
 			);
 			const employeeStartDate = scopedEmployee.startDate
 				? DateTime.fromJSDate(scopedEmployee.startDate, { zone: "utc" })
@@ -534,35 +533,31 @@ export async function getDailyWorkRequirementsForEmployee(params: {
 			const effectiveStartDate = DateTime.max(requestedStartDate, lowerBoundDate).toJSDate();
 			if (effectiveStartDate > params.endDate) return {};
 
-			const service = yield* _(WorkPolicyService);
-			const fallbackPolicy = yield* _(service.getEffectivePolicy(params.employeeId));
-			const historyRequirements = yield* _(
-				Effect.promise(() =>
-					buildEmploymentHistoryDailyRequirements({
-						database,
-						organizationId: params.organizationId,
-						employeeId: params.employeeId,
-						startDate: effectiveStartDate,
-						endDate: params.endDate,
-						timezone: params.timezone,
-						fallbackPolicy,
-					}),
-				),
+			const service = yield* WorkPolicyService;
+			const fallbackPolicy = yield* service.getEffectivePolicy(params.employeeId);
+			const historyRequirements = yield* Effect.promise(() =>
+				buildEmploymentHistoryDailyRequirements({
+					database,
+					organizationId: params.organizationId,
+					employeeId: params.employeeId,
+					startDate: effectiveStartDate,
+					endDate: params.endDate,
+					timezone: params.timezone,
+					fallbackPolicy,
+				}),
 			);
 			const requirements =
 				historyRequirements ??
 				(scopedEmployee.contractType === "hourly"
-					? yield* _(
-							Effect.promise(() =>
-								getPublishedShiftRequirementsForEmployee({
-									database,
-									organizationId: params.organizationId,
-									employeeId: params.employeeId,
-									startDate: effectiveStartDate,
-									endDate: params.endDate,
-									timezone: params.timezone,
-								}),
-							),
+					? yield* Effect.promise(() =>
+							getPublishedShiftRequirementsForEmployee({
+								database,
+								organizationId: params.organizationId,
+								employeeId: params.employeeId,
+								startDate: effectiveStartDate,
+								endDate: params.endDate,
+								timezone: params.timezone,
+							}),
 						)
 					: buildDailyWorkRequirements({
 							policy: fallbackPolicy,
@@ -570,27 +565,23 @@ export async function getDailyWorkRequirementsForEmployee(params: {
 							endDate: params.endDate,
 							timezone: params.timezone,
 						}));
-			const approvedAbsences = yield* _(
-				Effect.promise(() =>
-					getApprovedAbsenceRanges({
-						database,
-						organizationId: params.organizationId,
-						employeeId: params.employeeId,
-						startDate: effectiveStartDate,
-						endDate: params.endDate,
-						timezone: params.timezone,
-					}),
-				),
+			const approvedAbsences = yield* Effect.promise(() =>
+				getApprovedAbsenceRanges({
+					database,
+					organizationId: params.organizationId,
+					employeeId: params.employeeId,
+					startDate: effectiveStartDate,
+					endDate: params.endDate,
+					timezone: params.timezone,
+				}),
 			);
 
 			// Days outside employment (after a departure, or between stints) require nothing.
-			const employmentCoverage = yield* _(
-				database.query("getEmploymentCoverageForRequirements", () =>
-					loadEmploymentCoverage(database.db, {
-						organizationId: params.organizationId,
-						employeeId: params.employeeId,
-					}),
-				),
+			const employmentCoverage = yield* database.query("getEmploymentCoverageForRequirements", () =>
+				loadEmploymentCoverage(database.db, {
+					organizationId: params.organizationId,
+					employeeId: params.employeeId,
+				}),
 			);
 			const employedRequirements = clipRequirementsToEmployment(
 				requirements,
@@ -602,15 +593,13 @@ export async function getDailyWorkRequirementsForEmployee(params: {
 				employedRequirements,
 				approvedAbsences,
 			);
-			const assignedHolidays = yield* _(
-				Effect.promise(() =>
-					getAssignedHolidaysForEmployee({
-						organizationId: params.organizationId,
-						employeeId: params.employeeId,
-						startDate: effectiveStartDate,
-						endDate: params.endDate,
-					}),
-				),
+			const assignedHolidays = yield* Effect.promise(() =>
+				getAssignedHolidaysForEmployee({
+					organizationId: params.organizationId,
+					employeeId: params.employeeId,
+					startDate: effectiveStartDate,
+					endDate: params.endDate,
+				}),
 			);
 
 			// biome-ignore format: source-level regression test asserts this call order.

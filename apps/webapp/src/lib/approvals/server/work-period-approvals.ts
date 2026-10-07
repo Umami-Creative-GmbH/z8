@@ -1,5 +1,5 @@
 import { and, eq, isNull } from "drizzle-orm";
-import { Cause, Effect, Runtime } from "effect";
+import { Cause, Effect, Exit, Option } from "effect";
 import {
 	approvalRequest,
 	approvalStageAssignment,
@@ -152,11 +152,6 @@ export function isOrdinaryWorkPeriodDecisionRefusal(error: unknown): boolean {
  * learn which review blocks the approval; every other failure stays generic.
  */
 function unresolvedWorkPeriodReviewFrom(error: unknown): ConflictError | null {
-	if (Runtime.isFiberFailure(error)) {
-		return unresolvedWorkPeriodReviewFrom(
-			Cause.squash(error[Runtime.FiberFailureCauseId]),
-		);
-	}
 	return isUnresolvedWorkPeriodReview(error) ? error : null;
 }
 const logger = createLogger("WorkPeriodApprovals");
@@ -1017,7 +1012,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 				});
 			},
 			mutate: async () => {
-				mutationResult = await Effect.runPromise(
+				const exit = await Effect.runPromiseExit(
 					decideWorkPeriodWithCurrentApproverInTransaction(
 						{
 							db: database,
@@ -1048,6 +1043,13 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 						never
 					>,
 				);
+				if (Exit.isFailure(exit)) {
+					// The owner's typed failure, else its defect: what
+					// unresolvedWorkPeriodReviewFrom reads.
+					const failure = Cause.findErrorOption(exit.cause);
+					throw Option.isSome(failure) ? failure.value : Cause.squash(exit.cause);
+				}
+				mutationResult = exit.value;
 				return mutationResult;
 			},
 			afterMirror: async (observed) => {
@@ -2199,55 +2201,49 @@ function finalizeCurrentWorkPeriodDecision(
 	reason: string | null,
 	requestMode: "manager" | "requester_auto_completed",
 ) {
-	return Effect.gen(function* (_) {
+	return Effect.gen(function* () {
 		const requestedBy = (approval as ApprovalWithRequester).requestedBy;
-		const source = yield* _(
-			dbService.query("getOrdinaryApprovalWorkflowLink", async () => {
-				return await dbService.db.query.workPeriod.findFirst({
-					where: and(
-						eq(workPeriod.id, entityId),
-						eq(workPeriod.organizationId, approval.organizationId),
-						eq(workPeriod.employeeId, requestedBy),
-					),
-					columns: { approvalWorkflowId: true },
-				});
-			}),
-		);
+		const source = yield* dbService.query("getOrdinaryApprovalWorkflowLink", async () => {
+			return await dbService.db.query.workPeriod.findFirst({
+				where: and(
+					eq(workPeriod.id, entityId),
+					eq(workPeriod.organizationId, approval.organizationId),
+					eq(workPeriod.employeeId, requestedBy),
+				),
+				columns: { approvalWorkflowId: true },
+			});
+		});
 		if (!source) {
-			return yield* _(
-				Effect.fail(conflict("Ordinary work-period finalization conflict")),
-			);
+			return yield* Effect.fail(conflict("Ordinary work-period finalization conflict"));
 		}
 
-		return yield* _(
-			Effect.tryPromise({
-				try: () =>
-					finalizeOrdinaryWorkPeriodTerminalInTransaction({
-						dbService,
-						organizationId: approval.organizationId,
-						workPeriodId: entityId,
-						expectedApprovalWorkflowId: source.approvalWorkflowId,
-						requesterEmployeeId: requestedBy,
-						actorEmployeeId: currentEmployee.id,
-						actorUserId: currentEmployee.userId,
-						kind,
-						evidence: {
-							mode: "legacy",
-							approvalRequestId: approval.id,
-							requestMode,
-							expectedStatus: action === "approve" ? "approved" : "rejected",
-						},
-						transition:
-							action === "approve"
-								? { kind: "approve", reason }
-								: { kind: "reject", reason: reason ?? "" },
-						finalizedAt: systemClock.nowInstant(),
-					}),
-				catch: (error) =>
-					unresolvedWorkPeriodReviewFrom(error) ??
-					conflict("Ordinary work-period finalization conflict"),
-			}),
-		);
+		return yield* Effect.tryPromise({
+			try: () =>
+				finalizeOrdinaryWorkPeriodTerminalInTransaction({
+					dbService,
+					organizationId: approval.organizationId,
+					workPeriodId: entityId,
+					expectedApprovalWorkflowId: source.approvalWorkflowId,
+					requesterEmployeeId: requestedBy,
+					actorEmployeeId: currentEmployee.id,
+					actorUserId: currentEmployee.userId,
+					kind,
+					evidence: {
+						mode: "legacy",
+						approvalRequestId: approval.id,
+						requestMode,
+						expectedStatus: action === "approve" ? "approved" : "rejected",
+					},
+					transition:
+						action === "approve"
+							? { kind: "approve", reason }
+							: { kind: "reject", reason: reason ?? "" },
+					finalizedAt: systemClock.nowInstant(),
+				}),
+			catch: (error) =>
+				unresolvedWorkPeriodReviewFrom(error) ??
+				conflict("Ordinary work-period finalization conflict"),
+		});
 	});
 }
 
@@ -2347,17 +2343,15 @@ export async function reconcileOrdinaryWorkPeriodMaintenanceAfterCommit(
 	} = {
 		reconcileSurcharges: (facts) =>
 			Effect.runPromise(
-				Effect.gen(function* (_) {
-					const service = yield* _(SurchargeService);
-					yield* _(
-						service.reconcileWorkPeriods({
-							organizationId: facts.organizationId,
-							employeeId: facts.employeeId,
-							surchargePeriodIds: facts.surchargePeriodIds,
-							staleSurchargePeriodIds: facts.staleSurchargePeriodIds,
-							surchargeSnapshot: facts.surchargeSnapshot,
-						}),
-					);
+				Effect.gen(function* () {
+					const service = yield* SurchargeService;
+					yield* service.reconcileWorkPeriods({
+						organizationId: facts.organizationId,
+						employeeId: facts.employeeId,
+						surchargePeriodIds: facts.surchargePeriodIds,
+						staleSurchargePeriodIds: facts.staleSurchargePeriodIds,
+						surchargeSnapshot: facts.surchargeSnapshot,
+					});
 				}).pipe(
 					Effect.provide(SurchargeServiceLive),
 					Effect.provide(DatabaseServiceLive),
@@ -2554,51 +2548,45 @@ export function finalizeAutoCompletedWorkPeriodApprovalEffect(
 		kind: OrdinaryTimeApprovalKind;
 	},
 ) {
-	return Effect.gen(function* (_) {
-		const approvals = yield* _(
-			dbService.query("getAutoCompletedWorkPeriodApproval", async () => {
-				return await dbService.db
-					.select()
-					.from(approvalRequest)
-					.where(
-						and(
-							eq(approvalRequest.id, input.approvalRequestId),
-							eq(approvalRequest.organizationId, input.organizationId),
-							eq(approvalRequest.entityType, "time_entry"),
-							eq(approvalRequest.requestedBy, input.requesterEmployeeId),
-							eq(approvalRequest.status, "approved"),
-						),
-					);
-			}),
-		);
+	return Effect.gen(function* () {
+		const approvals = yield* dbService.query("getAutoCompletedWorkPeriodApproval", async () => {
+			return await dbService.db
+				.select()
+				.from(approvalRequest)
+				.where(
+					and(
+						eq(approvalRequest.id, input.approvalRequestId),
+						eq(approvalRequest.organizationId, input.organizationId),
+						eq(approvalRequest.entityType, "time_entry"),
+						eq(approvalRequest.requestedBy, input.requesterEmployeeId),
+						eq(approvalRequest.status, "approved"),
+					),
+				);
+		});
 		const approval = approvals[0];
 		if (!approval) {
-			return yield* _(
-				Effect.fail(conflict("Ordinary work-period finalization conflict")),
-			);
+			return yield* Effect.fail(conflict("Ordinary work-period finalization conflict"));
 		}
 
-		return yield* _(
-			finalizeCurrentWorkPeriodDecision(
-				dbService,
-				approval.entityId,
-				{
-					id: input.requesterEmployeeId,
-					userId: input.requesterUserId,
-					organizationId: input.organizationId,
-					user: {
-						id: input.requesterUserId,
-						name: input.requesterName,
-						email: "",
-						image: null,
-					},
+		return yield* finalizeCurrentWorkPeriodDecision(
+			dbService,
+			approval.entityId,
+			{
+				id: input.requesterEmployeeId,
+				userId: input.requesterUserId,
+				organizationId: input.organizationId,
+				user: {
+					id: input.requesterUserId,
+					name: input.requesterName,
+					email: "",
+					image: null,
 				},
-				approval as PendingApprovalRequest,
-				input.kind,
-				"approve",
-				"requester_is_approver",
-				"requester_auto_completed",
-			),
+			},
+			approval as PendingApprovalRequest,
+			input.kind,
+			"approve",
+			"requester_is_approver",
+			"requester_auto_completed",
 		);
 	});
 }

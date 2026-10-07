@@ -17,14 +17,14 @@ export async function listUsersAction(
 	page: number,
 	pageSize: number,
 ): Promise<ServerActionResult<PaginatedResult<PlatformUser>>> {
-	const effect = Effect.gen(function* (_) {
-		const adminService = yield* _(PlatformAdminService);
+	const effect = Effect.gen(function* () {
+		const adminService = yield* PlatformAdminService;
 
 		// Verify platform admin access
-		yield* _(adminService.requirePlatformAdmin());
+		yield* adminService.requirePlatformAdmin();
 
 		// List users
-		return yield* _(adminService.listUsers(filters, { page, pageSize }));
+		return yield* adminService.listUsers(filters, { page, pageSize });
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -35,15 +35,18 @@ export async function banUserAction(
 	reason: string,
 	expiresAt: string | null,
 ): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const adminService = yield* _(PlatformAdminService);
+	const effect = Effect.gen(function* () {
+		const adminService = yield* PlatformAdminService;
 
 		// Verify platform admin access
-		const admin = yield* _(adminService.requirePlatformAdmin());
+		const admin = yield* adminService.requirePlatformAdmin();
 
 		// Ban user
-		yield* _(
-			adminService.banUser(userId, reason, expiresAt ? new Date(expiresAt) : null, admin.userId),
+		yield* adminService.banUser(
+			userId,
+			reason,
+			expiresAt ? new Date(expiresAt) : null,
+			admin.userId,
 		);
 
 		revalidatePath("/platform-admin/users");
@@ -53,14 +56,14 @@ export async function banUserAction(
 }
 
 export async function unbanUserAction(userId: string): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const adminService = yield* _(PlatformAdminService);
+	const effect = Effect.gen(function* () {
+		const adminService = yield* PlatformAdminService;
 
 		// Verify platform admin access
-		const admin = yield* _(adminService.requirePlatformAdmin());
+		const admin = yield* adminService.requirePlatformAdmin();
 
 		// Unban user
-		yield* _(adminService.unbanUser(userId, admin.userId));
+		yield* adminService.unbanUser(userId, admin.userId);
 
 		revalidatePath("/platform-admin/users");
 	}).pipe(Effect.provide(AppLayer));
@@ -71,28 +74,28 @@ export async function unbanUserAction(userId: string): Promise<ServerActionResul
 export async function listUserSessionsAction(
 	userId: string,
 ): Promise<ServerActionResult<UserSession[]>> {
-	const effect = Effect.gen(function* (_) {
-		const adminService = yield* _(PlatformAdminService);
+	const effect = Effect.gen(function* () {
+		const adminService = yield* PlatformAdminService;
 
 		// Verify platform admin access
-		yield* _(adminService.requirePlatformAdmin());
+		yield* adminService.requirePlatformAdmin();
 
 		// List sessions
-		return yield* _(adminService.listUserSessions(userId));
+		return yield* adminService.listUserSessions(userId);
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
 }
 
 export async function revokeSessionAction(sessionId: string): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const adminService = yield* _(PlatformAdminService);
+	const effect = Effect.gen(function* () {
+		const adminService = yield* PlatformAdminService;
 
 		// Verify platform admin access
-		const admin = yield* _(adminService.requirePlatformAdmin());
+		const admin = yield* adminService.requirePlatformAdmin();
 
 		// Revoke session
-		yield* _(adminService.revokeSession(sessionId, admin.userId));
+		yield* adminService.revokeSession(sessionId, admin.userId);
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -101,14 +104,14 @@ export async function revokeSessionAction(sessionId: string): Promise<ServerActi
 export async function revokeAllUserSessionsAction(
 	userId: string,
 ): Promise<ServerActionResult<number>> {
-	const effect = Effect.gen(function* (_) {
-		const adminService = yield* _(PlatformAdminService);
+	const effect = Effect.gen(function* () {
+		const adminService = yield* PlatformAdminService;
 
 		// Verify platform admin access
-		const admin = yield* _(adminService.requirePlatformAdmin());
+		const admin = yield* adminService.requirePlatformAdmin();
 
 		// Revoke all sessions
-		return yield* _(adminService.revokeAllUserSessions(userId, admin.userId));
+		return yield* adminService.revokeAllUserSessions(userId, admin.userId);
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);

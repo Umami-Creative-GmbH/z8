@@ -70,40 +70,36 @@ export async function checkComplianceAfterClockOut(
 			timezone: input.timezone,
 		});
 
-		const complianceEffect = Effect.gen(function* (_) {
-			const workPolicyService = yield* _(WorkPolicyService);
-			const result = yield* _(
-				workPolicyService.checkCompliance({
-					employeeId,
-					organizationId,
-					policyAt: work.end,
-					currentSessionMinutes: work.durationMinutes,
-					totalDailyMinutes: totals.dailyMinutes,
-					totalWeeklyMinutes: totals.weeklyMinutes,
-					breaksTakenMinutes: totals.breakMinutes,
-				}),
-			);
+		const complianceEffect = Effect.gen(function* () {
+			const workPolicyService = yield* WorkPolicyService;
+			const result = yield* workPolicyService.checkCompliance({
+				employeeId,
+				organizationId,
+				policyAt: work.end,
+				currentSessionMinutes: work.durationMinutes,
+				totalDailyMinutes: totals.dailyMinutes,
+				totalWeeklyMinutes: totals.weeklyMinutes,
+				breaksTakenMinutes: totals.breakMinutes,
+			});
 
 			const { policyId } = result;
 			if (policyId) {
 				for (const warning of result.warnings) {
 					if (warning.severity === "violation") {
-						yield* _(
-							workPolicyService.logViolation({
-								employeeId,
-								organizationId,
-								policyId,
-								workPeriodId,
-								violationAt: work.start,
-								violationType: warning.type,
-								details: {
-									actualMinutes: warning.actualValue,
-									limitMinutes: warning.limitValue,
-									warningShownAt: new Date().toISOString(),
-									userContinued: true,
-								},
-							}),
-						);
+						yield* workPolicyService.logViolation({
+							employeeId,
+							organizationId,
+							policyId,
+							workPeriodId,
+							violationAt: work.start,
+							violationType: warning.type,
+							details: {
+								actualMinutes: warning.actualValue,
+								limitMinutes: warning.limitValue,
+								warningShownAt: new Date().toISOString(),
+								userContinued: true,
+							},
+						});
 					}
 				}
 			}
@@ -125,17 +121,15 @@ export async function reconcileImmediateSurcharges(input: {
 	affectedWorkPeriodIds: string[];
 	snapshot: PolicyClockOutSurchargeSnapshot;
 }): Promise<void> {
-	const surchargeEffect = Effect.gen(function* (_) {
-		const surchargeService = yield* _(SurchargeService);
-		yield* _(
-			surchargeService.reconcileWorkPeriods({
-				organizationId: input.organizationId,
-				employeeId: input.employeeId,
-				surchargePeriodIds: input.affectedWorkPeriodIds,
-				staleSurchargePeriodIds: [],
-				surchargeSnapshot: input.snapshot,
-			}),
-		);
+	const surchargeEffect = Effect.gen(function* () {
+		const surchargeService = yield* SurchargeService;
+		yield* surchargeService.reconcileWorkPeriods({
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			surchargePeriodIds: input.affectedWorkPeriodIds,
+			staleSurchargePeriodIds: [],
+			surchargeSnapshot: input.snapshot,
+		});
 	}).pipe(Effect.provide(SurchargeServiceLive), Effect.provide(DatabaseServiceLive));
 
 	await Effect.runPromise(surchargeEffect);
@@ -151,9 +145,9 @@ export async function enforceBreaksAfterClockOut(input: {
 }): Promise<BreakEnforcementResult> {
 	// Failures propagate: the after-commit follow-ups run this best-effort, and a
 	// departure's durable follow-up task retries it (#485).
-	const enforcementEffect = Effect.gen(function* (_) {
-		const breakService = yield* _(BreakEnforcementService);
-		return yield* _(breakService.enforceBreaksAfterClockOut(input));
+	const enforcementEffect = Effect.gen(function* () {
+		const breakService = yield* BreakEnforcementService;
+		return yield* breakService.enforceBreaksAfterClockOut(input);
 	}).pipe(
 		Effect.provide(BreakEnforcementServiceLive),
 		Effect.provide(WorkPolicyServiceLive),

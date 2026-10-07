@@ -1,7 +1,7 @@
 import { Effect, Layer } from "effect";
 import type Stripe from "stripe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { sendBillingSystemEmail } from "../../../billing/billing-system-email";
+import { sendBillingSystemEmail } from "@/lib/billing/billing-system-email";
 import { BillingEventsService, BillingEventsServiceLive } from "./billing-events.service";
 import { SeatSyncService } from "./seat-sync.service";
 import { StripeService } from "./stripe.service";

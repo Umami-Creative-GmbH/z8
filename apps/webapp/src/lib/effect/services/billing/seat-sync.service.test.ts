@@ -12,7 +12,7 @@ const { countBillableSeats, database } = vi.hoisted(() => ({
 vi.mock("@/db", () => ({ db: database }));
 
 // Seat semantics are covered by billable-seat-count.integration.test.ts.
-vi.mock("./billable-seat-count", () => ({ countBillableSeats }));
+vi.mock("@/lib/effect/services/billing/billable-seat-count", () => ({ countBillableSeats }));
 
 describe("SeatSyncService", () => {
 	const appLayer = Layer.mergeAll(

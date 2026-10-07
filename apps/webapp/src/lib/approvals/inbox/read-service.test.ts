@@ -309,17 +309,17 @@ describe("getApprovalInboxListFromSources", () => {
 				displayName: "Absence Request",
 				supportsBulkApprove: true,
 				getApprovals: vi.fn(() =>
-					Effect.gen(function* (_) {
-						const dbService = yield* _(DatabaseService);
-						return yield* _(
-							dbService.query("getApprovals", async () => [approval]),
-						);
+					Effect.gen(function* () {
+						const dbService = yield* DatabaseService;
+						return yield* dbService.query("getApprovals", async () => [
+							approval,
+						]);
 					}),
 				),
 				getCount: vi.fn(() =>
-					Effect.gen(function* (_) {
-						const dbService = yield* _(DatabaseService);
-						return yield* _(dbService.query("getApprovalCount", async () => 1));
+					Effect.gen(function* () {
+						const dbService = yield* DatabaseService;
+						return yield* dbService.query("getApprovalCount", async () => 1);
 					}),
 				),
 			} as never,

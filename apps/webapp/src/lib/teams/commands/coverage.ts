@@ -71,16 +71,14 @@ async function coverageHandler(ctx: BotCommandContext): Promise<BotCommandRespon
 		);
 
 		// Fetch coverage data using Effect-TS service
-		const program = Effect.gen(function* (_) {
-			const coverageService = yield* _(CoverageService);
-			return yield* _(
-				coverageService.getCoverageForDate({
-					organizationId: ctx.organizationId,
-					date: dateFromInstant(date.toZonedDateTime(timezone).toInstant()),
-					timezone,
-					managerId: ctx.employeeId,
-				}),
-			);
+		const program = Effect.gen(function* () {
+			const coverageService = yield* CoverageService;
+			return yield* coverageService.getCoverageForDate({
+				organizationId: ctx.organizationId,
+				date: dateFromInstant(date.toZonedDateTime(timezone).toInstant()),
+				timezone,
+				managerId: ctx.employeeId,
+			});
 		});
 
 		const summary = await Effect.runPromise(program.pipe(Effect.provide(CoverageServiceFullLive)));

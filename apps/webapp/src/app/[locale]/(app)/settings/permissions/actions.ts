@@ -83,25 +83,21 @@ export async function grantTeamPermissions(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const actor = yield* _(getEmployeeSettingsActorContext());
-				const permissionsService = yield* _(PermissionsService);
+			return Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext();
+				const permissionsService = yield* PermissionsService;
 
-				yield* _(
-					requireOrgAdminEmployeeSettingsAccess(actor, {
-						message: "Only org admins can grant permissions",
-						resource: "team_permissions",
-						action: "grant",
-					}),
-				);
+				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+					message: "Only org admins can grant permissions",
+					resource: "team_permissions",
+					action: "grant",
+				});
 
-				const actorEmployee = yield* _(
-					requireSettingsActorEmployeeRecord(actor, {
-						message: "Employee profile required to grant permissions",
-						resource: "employee",
-						action: "grant",
-					}),
-				);
+				const actorEmployee = yield* requireSettingsActorEmployeeRecord(actor, {
+					message: "Employee profile required to grant permissions",
+					resource: "employee",
+					action: "grant",
+				});
 				const grantedBy = actorEmployee.id;
 
 				span.setAttribute("currentEmployee.id", grantedBy);
@@ -109,29 +105,25 @@ export async function grantTeamPermissions(
 				// Validate data
 				const validationResult = grantPermissionsSchema.safeParse(data);
 				if (!validationResult.success) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message:
-									validationResult.error.issues[0]?.message || "Invalid input",
-								field:
-									validationResult.error.issues[0]?.path?.join(".") || "data",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message:
+								validationResult.error.issues[0]?.message || "Invalid input",
+							field:
+								validationResult.error.issues[0]?.path?.join(".") || "data",
+						}),
 					);
 				}
 
 				const validatedData = validationResult.data;
 
 				// Grant permissions using PermissionsService
-				yield* _(
-					permissionsService.grantPermissions(
-						validatedData.employeeId,
-						actor.organizationId,
-						validatedData.permissions,
-						validatedData.teamId || null,
-						grantedBy,
-					),
+				yield* permissionsService.grantPermissions(
+					validatedData.employeeId,
+					actor.organizationId,
+					validatedData.permissions,
+					validatedData.teamId || null,
+					grantedBy,
 				);
 
 				logger.info(
@@ -145,15 +137,15 @@ export async function grantTeamPermissions(
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
 						logger.error({ error, data }, "Failed to grant permissions");
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -184,34 +176,28 @@ export async function revokeTeamPermissions(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const actor = yield* _(getEmployeeSettingsActorContext());
-				const permissionsService = yield* _(PermissionsService);
+			return Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext();
+				const permissionsService = yield* PermissionsService;
 
-				yield* _(
-					requireOrgAdminEmployeeSettingsAccess(actor, {
-						message: "Only org admins can revoke permissions",
-						resource: "team_permissions",
-						action: "revoke",
-					}),
-				);
+				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+					message: "Only org admins can revoke permissions",
+					resource: "team_permissions",
+					action: "revoke",
+				});
 
-				const actorEmployee = yield* _(
-					requireSettingsActorEmployeeRecord(actor, {
-						message: "Employee profile required to revoke permissions",
-						resource: "employee",
-						action: "revoke",
-					}),
-				);
+				const actorEmployee = yield* requireSettingsActorEmployeeRecord(actor, {
+					message: "Employee profile required to revoke permissions",
+					resource: "employee",
+					action: "revoke",
+				});
 				span.setAttribute("currentEmployee.id", actorEmployee.id);
 
 				// Revoke permissions using PermissionsService
-				yield* _(
-					permissionsService.revokePermissions(
-						employeeId,
-						actor.organizationId,
-						teamId || null,
-					),
+				yield* permissionsService.revokePermissions(
+					employeeId,
+					actor.organizationId,
+					teamId || null,
 				);
 
 				logger.info(
@@ -224,8 +210,8 @@ export async function revokeTeamPermissions(
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
@@ -235,7 +221,7 @@ export async function revokeTeamPermissions(
 							{ error, employeeId, teamId },
 							"Failed to revoke permissions",
 						);
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -255,33 +241,29 @@ export async function revokeTeamPermissions(
 export async function getEmployeePermissions(
 	employeeId: string,
 ): Promise<ServerActionResult<EmployeePermissions[]>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext());
-		const _dbService = yield* _(DatabaseService);
-		const permissionsService = yield* _(PermissionsService);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext();
+		const _dbService = yield* DatabaseService;
+		const permissionsService = yield* PermissionsService;
 
 		const isOrgAdmin = actor.accessTier === "orgAdmin";
 		const isSelf = actor.currentEmployee?.id === employeeId;
 
 		if (!isOrgAdmin && !isSelf) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Cannot view permissions for other employees",
-						userId: actor.session.user.id,
-						resource: "team_permissions",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Cannot view permissions for other employees",
+					userId: actor.session.user.id,
+					resource: "team_permissions",
+					action: "read",
+				}),
 			);
 		}
 
 		// Get permissions using PermissionsService
-		const permissions = yield* _(
-			permissionsService.getEmployeePermissions(
-				employeeId,
-				actor.organizationId,
-			),
+		const permissions = yield* permissionsService.getEmployeePermissions(
+			employeeId,
+			actor.organizationId,
 		);
 
 		return permissions;
@@ -303,38 +285,37 @@ export async function hasTeamPermission(
 		| "canApproveTeamRequests",
 	teamId?: string | null,
 ): Promise<ServerActionResult<boolean>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
-		const permissionsService = yield* _(PermissionsService);
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
+		const permissionsService = yield* PermissionsService;
 
 		// Get current employee (just to verify authentication)
-		const _currentEmployee = yield* _(
-			dbService.query("getCurrentEmployee", async () => {
+		const _currentEmployee = yield* dbService
+			.query("getCurrentEmployee", async () => {
 				return await dbService.db.query.employee.findFirst({
 					where: eq(employee.userId, session.user.id),
 				});
-			}),
-			Effect.flatMap((emp) =>
-				emp
-					? Effect.succeed(emp)
-					: Effect.fail(
-							new NotFoundError({
-								message: "Employee profile not found",
-								entityType: "employee",
-							}),
-						),
-			),
-		);
+			})
+			.pipe(
+				Effect.flatMap((emp) =>
+					emp
+						? Effect.succeed(emp)
+						: Effect.fail(
+								new NotFoundError({
+									message: "Employee profile not found",
+									entityType: "employee",
+								}),
+							),
+				),
+			);
 
 		// Check permission using PermissionsService
-		const hasPermission = yield* _(
-			permissionsService.hasTeamPermission(
-				employeeId,
-				permission,
-				teamId || null,
-			),
+		const hasPermission = yield* permissionsService.hasTeamPermission(
+			employeeId,
+			permission,
+			teamId || null,
 		);
 
 		return hasPermission;
@@ -355,49 +336,41 @@ export async function listEmployeePermissions(): Promise<
 		}>
 	>
 > {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext());
-		const dbService = yield* _(DatabaseService);
-		const permissionsService = yield* _(PermissionsService);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext();
+		const dbService = yield* DatabaseService;
+		const permissionsService = yield* PermissionsService;
 
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Only org admins can list all permissions",
-				resource: "team_permissions",
-				action: "list",
-			}),
-		);
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Only org admins can list all permissions",
+			resource: "team_permissions",
+			action: "list",
+		});
 
 		// Get all employees in organization
-		const employees = yield* _(
-			dbService.query("listEmployees", async () => {
-				return await dbService.db.query.employee.findMany({
-					where: eq(employee.organizationId, actor.organizationId),
-					with: {
-						user: true,
-					},
-					orderBy: (employee, { asc }) => [asc(employee.userId)],
-				});
-			}),
-		);
+		const employees = yield* dbService.query("listEmployees", async () => {
+			return await dbService.db.query.employee.findMany({
+				where: eq(employee.organizationId, actor.organizationId),
+				with: {
+					user: true,
+				},
+				orderBy: (employee, { asc }) => [asc(employee.userId)],
+			});
+		});
 
 		// Get permissions for each employee
-		const employeePermissions = yield* _(
-			Effect.all(
-				employees.map((emp) =>
-					Effect.gen(function* (_) {
-						const permissions = yield* _(
-							permissionsService.getEmployeePermissions(
-								emp.id,
-								actor.organizationId,
-							),
-						);
-						return {
-							employee: emp,
-							permissions,
-						};
-					}),
-				),
+		const employeePermissions = yield* Effect.all(
+			employees.map((emp) =>
+				Effect.gen(function* () {
+					const permissions = yield* permissionsService.getEmployeePermissions(
+						emp.id,
+						actor.organizationId,
+					);
+					return {
+						employee: emp,
+						permissions,
+					};
+				}),
 			),
 		);
 
@@ -410,33 +383,30 @@ export async function listEmployeePermissions(): Promise<
 export async function loadPermissionsPageData(
 	expectedOrganizationId: string,
 ): Promise<ServerActionResult<PermissionsPageData>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext());
-		const dbService = yield* _(DatabaseService);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext();
+		const dbService = yield* DatabaseService;
 
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Only org admins can list all permissions",
-				resource: "team_permissions",
-				action: "list",
-			}),
-		);
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Only org admins can list all permissions",
+			resource: "team_permissions",
+			action: "list",
+		});
 
 		if (actor.organizationId !== expectedOrganizationId) {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Organization not found or access denied",
-						userId: actor.session.user.id,
-						resource: "team_permissions",
-						action: "list",
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "Organization not found or access denied",
+					userId: actor.session.user.id,
+					resource: "team_permissions",
+					action: "list",
+				}),
 			);
 		}
 
-		const snapshot = yield* _(
-			dbService.query("loadPermissionsPageData", async () => {
+		const snapshot = yield* dbService.query(
+			"loadPermissionsPageData",
+			async () => {
 				return await dbService.db.transaction(
 					async (tx) => {
 						const [employeeRows, teamRows, permissionRows] = await Promise.all([
@@ -489,7 +459,7 @@ export async function loadPermissionsPageData(
 					},
 					{ isolationLevel: "repeatable read" },
 				);
-			}),
+			},
 		);
 
 		const teamsById = new Map(

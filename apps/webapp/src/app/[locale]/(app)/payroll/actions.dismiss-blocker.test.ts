@@ -96,9 +96,9 @@ vi.mock("@/lib/effect/result", async () => {
 			if (Exit.isSuccess(exit))
 				return { success: true as const, data: exit.value };
 
-			const appError = Option.getOrUndefined(Cause.failureOption(exit.cause)) as
-				| { _tag?: string; message?: string }
-				| undefined;
+			const appError = Option.getOrUndefined(
+				Cause.findErrorOption(exit.cause),
+			) as { _tag?: string; message?: string } | undefined;
 			return {
 				success: false as const,
 				error: appError?.message ?? "Unknown error",

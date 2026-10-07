@@ -5,6 +5,8 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { TimeCorrectionComparison } from "@/components/approvals/time-correction-comparison";
+import { TravelExpenseReportReturnButton } from "@/components/approvals/travel-expense-report-return";
+import { ReopenReportPanel } from "@/components/travel-expenses/report/report-reopen";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -24,6 +26,7 @@ import type {
 	ApprovalInboxItem,
 	ApprovalInboxLocalizedText,
 } from "@/lib/approvals/inbox/types";
+import { resolveLocalizedText } from "@/lib/approvals/inbox/localized-text";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import {
 	useApprovalDetail,
@@ -31,6 +34,12 @@ import {
 	useRejectApproval,
 } from "@/lib/query/use-approval-inbox";
 import { cn } from "@/lib/utils";
+import { Link } from "@/navigation";
+import {
+	allReceiptExceptionsAccepted,
+	findReceiptExceptionAcceptance,
+	ReceiptExceptionAcceptance,
+} from "./receipt-exception-acceptance";
 
 interface ApprovalDetailPanelProps {
 	approval: ApprovalInboxItem | null;
@@ -49,8 +58,14 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
-function localizedText(t: Translate, value: string | ApprovalInboxLocalizedText) {
-	return typeof value === "string" ? value : t(value.key, value.fallback);
+function localizedText(
+	t: Translate,
+	value: string | ApprovalInboxLocalizedText,
+) {
+	// Nested texts (e.g. a per diem day's basis inside its line) are translated first.
+	return resolveLocalizedText(value, (key, fallback, params) =>
+		params ? t(key, fallback, params) : t(key, fallback),
+	);
 }
 
 function workLocationText(t: Translate, value: string) {
@@ -102,11 +117,19 @@ function renderDetailSection(
 								<dd
 									className={cn(
 										"min-w-0 text-right text-sm font-semibold text-foreground",
-										row.tone === "warning" && "text-amber-600 dark:text-amber-400",
+										row.tone === "warning" &&
+											"text-amber-600 dark:text-amber-400",
 										row.tone === "danger" && "text-destructive",
 									)}
 								>
-									{typeof row.value === "string" ? (
+									{row.href && (typeof row.value === "string" || !("kind" in row.value)) ? (
+										<Link
+											href={row.href}
+											className="rounded-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2"
+										>
+											{localizedText(t, row.value)}
+										</Link>
+									) : typeof row.value === "string" ? (
 										row.value
 									) : !("kind" in row.value) ? (
 										localizedText(t, row.value)
@@ -114,13 +137,13 @@ function renderDetailSection(
 										<span className="grid gap-1">
 											<span>
 												<span className="sr-only">
-													{t("approvals:approvals.original", "Original")}: {" "}
+													{t("approvals:approvals.original", "Original")}:{" "}
 												</span>
 												{changeValueText(t, row.value.original)}
 											</span>
 											<span>
 												<span className="sr-only">
-													{t("approvals:approvals.requested", "Requested")}: {" "}
+													{t("approvals:approvals.requested", "Requested")}:{" "}
 												</span>
 												{changeValueText(t, row.value.requested)}
 											</span>
@@ -143,12 +166,12 @@ function renderDetailSection(
 			);
 		case "timeline":
 			return (
-				<section key={section.title}>
-					<SectionTitle>{section.title}</SectionTitle>
+				<section key={localizedText(t, section.title)}>
+					<SectionTitle>{localizedText(t, section.title)}</SectionTitle>
 					<div className="space-y-3 rounded-xl border bg-card/60 p-4 shadow-sm">
 						{section.events.map((event) => (
 							<div key={event.id} className="border-l-2 border-primary/30 pl-3">
-								<p className="text-sm font-semibold">{event.label}</p>
+								<p className="text-sm font-semibold">{localizedText(t, event.label)}</p>
 								<p className="text-xs text-muted-foreground">
 									{event.actorName
 										? t(
@@ -166,21 +189,44 @@ function renderDetailSection(
 		case "callout":
 			return (
 				<section
-					key={section.title}
+					key={localizedText(t, section.title)}
 					className={cn(
 						"rounded-xl border p-4 shadow-sm",
 						section.tone === "info" &&
 							"border-blue-200 bg-blue-50/60 dark:border-blue-900 dark:bg-blue-950/20",
 						section.tone === "warning" &&
 							"border-amber-200 bg-amber-50/60 dark:border-amber-900 dark:bg-amber-950/20",
-						section.tone === "danger" && "border-destructive/30 bg-destructive/5 text-destructive",
+						section.tone === "danger" &&
+							"border-destructive/30 bg-destructive/5 text-destructive",
 					)}
 				>
-					<h4 className="text-sm font-medium">{section.title}</h4>
-					<p className="mt-1 text-sm leading-6 text-muted-foreground">{section.body}</p>
+					<h4 className="text-sm font-medium">{localizedText(t, section.title)}</h4>
+					<p className="mt-1 text-sm leading-6 text-muted-foreground">
+						{localizedText(t, section.body)}
+					</p>
 				</section>
 			);
 	}
+}
+
+function TravelExpenseClaimLink({ item }: { item: ApprovalInboxItem }) {
+	const { t } = useTranslate();
+	if (item.type !== "travel_expense_claim" && item.type !== "travel_expense_report") return null;
+
+	return (
+		<Link
+			className="inline-block rounded-sm text-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2"
+			href={
+				item.type === "travel_expense_report"
+					? `/travel-expenses/reports/${item.entityId}`
+					: `/travel-expenses/${item.entityId}`
+			}
+		>
+			{item.type === "travel_expense_report"
+				? t("approvals:approvals.viewExpenseReport", "View submitted report and receipts")
+				: t("approvals:approvals.viewExpenseClaim", "View claim and receipts")}
+		</Link>
+	);
 }
 
 export function ApprovalDetailPanel({
@@ -192,33 +238,58 @@ export function ApprovalDetailPanel({
 	const { t } = useTranslate();
 	const [isRejecting, setIsRejecting] = useState(false);
 	const [rejectionReason, setRejectionReason] = useState("");
+	const [acceptedExceptions, setAcceptedExceptions] = useState<{
+		approvalId: string | null;
+		itemIds: string[];
+	}>({ approvalId: null, itemIds: [] });
 
 	const { data: detail } = useApprovalDetail(approval?.id ?? null);
 	const approveMutation = useApproveApproval();
 	const rejectMutation = useRejectApproval();
-	const presence = useEmployeeClockStatuses(approval ? [approval.requester.id] : [], {
-		polling: false,
-	});
+	const presence = useEmployeeClockStatuses(
+		approval ? [approval.requester.id] : [],
+		{
+			polling: false,
+		},
+	);
 	const item = detail?.item ?? approval;
 	const actions = detail?.actions ?? item?.capabilities;
 	const sections = detail?.sections ?? [];
 	const isPending = approveMutation.isPending || rejectMutation.isPending;
+	// Expense report missing-receipt exceptions to accept before approving (#604).
+	const receiptExceptions = findReceiptExceptionAcceptance(sections);
+	const acceptedExceptionIds =
+		acceptedExceptions.approvalId === approval?.id ? acceptedExceptions.itemIds : [];
+	const exceptionsAccepted = allReceiptExceptionsAccepted(receiptExceptions, acceptedExceptionIds);
 
 	const handleApprove = async () => {
-		if (!approval || !actions?.canApprove || isPending) return;
+		if (!approval || !actions?.canApprove || isPending || !exceptionsAccepted) return;
 
-		const result = await approveMutation.mutateAsync(approval.id);
+		const result = await approveMutation.mutateAsync(
+			receiptExceptions
+				? { approvalId: approval.id, acceptedReceiptExceptionItemIds: acceptedExceptionIds }
+				: approval.id,
+		);
 		if (result.success) {
 			toast.success(t("approvals:approvals.approved", "Request approved"));
 			onOpenChange(false);
 			onActioned();
 		} else {
-			toast.error(result.error || t("approvals:approvals.approveFailed", "Failed to approve"));
+			toast.error(
+				result.error ||
+					t("approvals:approvals.approveFailed", "Failed to approve"),
+			);
 		}
 	};
 
 	const handleReject = async () => {
-		if (!approval || !actions?.canReject || !rejectionReason.trim() || isPending) return;
+		if (
+			!approval ||
+			!actions?.canReject ||
+			!rejectionReason.trim() ||
+			isPending
+		)
+			return;
 
 		const result = await rejectMutation.mutateAsync({
 			approvalId: approval.id,
@@ -231,7 +302,10 @@ export function ApprovalDetailPanel({
 			onOpenChange(false);
 			onActioned();
 		} else {
-			toast.error(result.error || t("approvals:approvals.rejectFailed", "Failed to reject"));
+			toast.error(
+				result.error ||
+					t("approvals:approvals.rejectFailed", "Failed to reject"),
+			);
 		}
 	};
 
@@ -252,7 +326,9 @@ export function ApprovalDetailPanel({
 				<SheetHeader className="border-b px-5 py-5 pr-12 sm:px-6">
 					<div className="flex items-start gap-3">
 						<div className="min-w-0 flex-1">
-							<SheetTitle>{t("approvals:approvals.detailTitle", "Approval details")}</SheetTitle>
+							<SheetTitle>
+								{t("approvals:approvals.detailTitle", "Approval details")}
+							</SheetTitle>
 							<SheetDescription className="mt-1 line-clamp-2">
 								{panelItem.summary.detail}
 							</SheetDescription>
@@ -279,7 +355,9 @@ export function ApprovalDetailPanel({
 					className="flex-1 space-y-6 overflow-y-auto px-5 py-5 sm:px-6"
 				>
 					<div>
-						<SectionTitle>{t("approvals:approvals.requester", "Requester")}</SectionTitle>
+						<SectionTitle>
+							{t("approvals:approvals.requester", "Requester")}
+						</SectionTitle>
 						<div className="flex items-center gap-3 rounded-xl border bg-card/60 p-4 shadow-sm">
 							<UserAvatar
 								image={panelItem.requester.image}
@@ -289,7 +367,9 @@ export function ApprovalDetailPanel({
 								clockStatus={presence.getStatus(panelItem.requester.id)}
 							/>
 							<div className="min-w-0">
-								<div className="truncate font-semibold">{panelItem.requester.name}</div>
+								<div className="truncate font-semibold">
+									{panelItem.requester.name}
+								</div>
 								<div className="truncate text-sm text-muted-foreground">
 									{panelItem.requester.email}
 								</div>
@@ -297,17 +377,42 @@ export function ApprovalDetailPanel({
 						</div>
 					</div>
 
+					<TravelExpenseClaimLink item={panelItem} />
+					{/* An approved report not yet exported or paid can be reopened from here too (#614). */}
+					{panelItem.type === "travel_expense_report" && panelItem.status === "approved" && (
+						<ReopenReportPanel reportId={panelItem.entityId} />
+					)}
 					{sections.length > 0 && <Separator />}
 
-					{sections.map((section) => renderDetailSection(t, section))}
+					{sections.map((section) =>
+						section.type === "receipt_exception_acceptance" ? (
+							<ReceiptExceptionAcceptance
+								key="receipt-exception-acceptance"
+								section={section}
+								accepted={acceptedExceptionIds}
+								onChange={(itemIds) =>
+									setAcceptedExceptions({ approvalId: approval.id, itemIds })
+								}
+								disabled={!panelActions.canApprove}
+							/>
+						) : (
+							renderDetailSection(t, section)
+						),
+					)}
 				</div>
 
 				<SheetFooter className="border-t bg-muted/95 px-5 py-4 sm:px-6">
 					{isRejecting ? (
 						<div className="w-full space-y-4">
 							<div>
-								<label className="text-sm font-medium" htmlFor="rejection-reason">
-									{t("approvals:approvals.rejectionReason", "Reason for rejection")}
+								<label
+									className="text-sm font-medium"
+									htmlFor="rejection-reason"
+								>
+									{t(
+										"approvals:approvals.rejectionReason",
+										"Reason for rejection",
+									)}
 								</label>
 								<Textarea
 									id="rejection-reason"
@@ -335,10 +440,15 @@ export function ApprovalDetailPanel({
 								<Button
 									variant="destructive"
 									onClick={handleReject}
-									disabled={!actions?.canReject || !rejectionReason.trim() || isPending}
+									disabled={
+										!actions?.canReject || !rejectionReason.trim() || isPending
+									}
 								>
 									{rejectMutation.isPending && (
-										<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+										<IconLoader2
+											className="mr-2 size-4 animate-spin"
+											aria-hidden="true"
+										/>
 									)}
 									<IconX className="mr-2 size-4" aria-hidden="true" />
 									{t("approvals:approvals.confirmReject", "Confirm Rejection")}
@@ -347,6 +457,17 @@ export function ApprovalDetailPanel({
 						</div>
 					) : (
 						<div className="flex w-full gap-2">
+							{panelItem.type === "travel_expense_report" && (
+								<TravelExpenseReportReturnButton
+									approvalId={approval.id}
+									reportId={panelItem.entityId}
+									disabled={!panelActions.canReject || isPending}
+									onReturned={() => {
+										onOpenChange(false);
+										onActioned();
+									}}
+								/>
+							)}
 							<Button
 								variant="outline"
 								className="flex-1"
@@ -359,10 +480,13 @@ export function ApprovalDetailPanel({
 							<Button
 								className="flex-1"
 								onClick={handleApprove}
-								disabled={!panelActions.canApprove || isPending}
+								disabled={!panelActions.canApprove || isPending || !exceptionsAccepted}
 							>
 								{approveMutation.isPending && (
-									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+									<IconLoader2
+										className="mr-2 size-4 animate-spin"
+										aria-hidden="true"
+									/>
 								)}
 								<IconCheck className="mr-2 size-4" aria-hidden="true" />
 								{t("approvals:approvals.approve", "Approve")}

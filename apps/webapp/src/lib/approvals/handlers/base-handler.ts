@@ -5,7 +5,7 @@
  * and optimize database queries.
  */
 
-import { and, count, desc, eq, inArray, lte, or } from "drizzle-orm";
+import { and, count, desc, eq, inArray, lte, or, type SQL } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { approvalRequest } from "@/db/schema";
@@ -49,6 +49,8 @@ interface ApprovalQueryConfig<TEntity, TRequestContext = never> {
 	 * Optional filter to apply after fetching entities
 	 */
 	filterEntity?: (entity: TEntity, params: ApprovalQueryParams) => boolean;
+	/** Type-specific request conditions added to the base query (e.g. status semantics). */
+	extraConditions?: SQL[];
 }
 
 /**
@@ -140,8 +142,8 @@ export function buildBaseConditions(
 export function fetchApprovals<TEntity, TRequestContext = never>(
 	config: ApprovalQueryConfig<TEntity, TRequestContext>,
 ): Effect.Effect<UnifiedApprovalItem[], AnyAppError, any> {
-	return Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 		const {
 			entityType,
 			params,
@@ -152,11 +154,15 @@ export function fetchApprovals<TEntity, TRequestContext = never>(
 		} = config;
 
 		// Build filter conditions
-		const conditions = buildBaseConditions(entityType, params);
+		const conditions = [
+			...buildBaseConditions(entityType, params),
+			...(config.extraConditions ?? []),
+		];
 
 		// Fetch approval requests
-		const requests = yield* _(
-			dbService.query(`get${entityType}Approvals`, async () => {
+		const requests = yield* dbService.query(
+			`get${entityType}Approvals`,
+			async () => {
 				return await dbService.db.query.approvalRequest.findMany({
 					where: and(...conditions),
 					with: {
@@ -166,7 +172,7 @@ export function fetchApprovals<TEntity, TRequestContext = never>(
 					},
 					orderBy: [desc(approvalRequest.createdAt)],
 				});
-			}),
+			},
 		);
 
 		if (requests.length === 0) {
@@ -176,9 +182,9 @@ export function fetchApprovals<TEntity, TRequestContext = never>(
 		// Batch fetch all entities at once (fixes N+1 query problem)
 		const typedRequests = requests as ApprovalRequestRow[];
 		const entityIds = typedRequests.map((request) => request.entityId);
-		const entitiesMap = yield* _(fetchEntitiesByIds(entityIds, typedRequests));
+		const entitiesMap = yield* fetchEntitiesByIds(entityIds, typedRequests);
 		const requestContexts = fetchRequestContexts
-			? yield* _(fetchRequestContexts(typedRequests))
+			? yield* fetchRequestContexts(typedRequests)
 			: new Map<string, TRequestContext>();
 
 		// Transform and filter
@@ -224,8 +230,8 @@ export function getApprovalCount(
 		"eligibleApprovalScopes" | "includeAllApprovers"
 	>,
 ): Effect.Effect<number, AnyAppError, any> {
-	return Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 		const conditions = buildBaseConditions(entityType, {
 			approverId,
 			organizationId,
@@ -234,14 +240,12 @@ export function getApprovalCount(
 			...visibility,
 		});
 
-		const result = yield* _(
-			dbService.query(`get${entityType}Count`, async () => {
-				return await dbService.db
-					.select({ count: count() })
-					.from(approvalRequest)
-					.where(and(...conditions));
-			}),
-		);
+		const result = yield* dbService.query(`get${entityType}Count`, async () => {
+			return await dbService.db
+				.select({ count: count() })
+				.from(approvalRequest)
+				.where(and(...conditions));
+		});
 
 		return result[0]?.count ?? 0;
 	});

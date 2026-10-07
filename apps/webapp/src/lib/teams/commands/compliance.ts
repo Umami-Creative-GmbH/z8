@@ -58,16 +58,14 @@ async function complianceHandler(ctx: BotCommandContext): Promise<BotCommandResp
 		);
 
 		// Fetch compliance summary using Effect-TS service
-		const program = Effect.gen(function* (_) {
-			const complianceService = yield* _(TeamsComplianceService);
-			return yield* _(
-				complianceService.getComplianceSummary({
-					managerId: ctx.employeeId,
-					organizationId: ctx.organizationId,
-					daysBack,
-					timezone: ctx.config.digestTimezone,
-				}),
-			);
+		const program = Effect.gen(function* () {
+			const complianceService = yield* TeamsComplianceService;
+			return yield* complianceService.getComplianceSummary({
+				managerId: ctx.employeeId,
+				organizationId: ctx.organizationId,
+				daysBack,
+				timezone: ctx.config.digestTimezone,
+			});
 		});
 
 		const summary = await Effect.runPromise(

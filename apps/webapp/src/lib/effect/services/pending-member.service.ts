@@ -23,7 +23,7 @@ import {
 	type DatabaseError,
 	NotFoundError,
 	ValidationError,
-} from "../errors";
+} from "@/lib/effect/errors";
 import { DatabaseService } from "./database.service";
 
 // Type definitions
@@ -77,7 +77,7 @@ export interface ApprovalResult {
 	approval: MemberApproval;
 }
 
-export class PendingMemberService extends Context.Tag("PendingMemberService")<
+export class PendingMemberService extends Context.Service<
 	PendingMemberService,
 	{
 		// List pending members
@@ -133,12 +133,12 @@ export class PendingMemberService extends Context.Tag("PendingMemberService")<
 			organizationId: string,
 		) => Effect.Effect<number, DatabaseError>;
 	}
->() {}
+>()("PendingMemberService") {}
 
 export const PendingMemberServiceLive = Layer.effect(
 	PendingMemberService,
-	Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
 		// Member status is the source of truth for the approval lifecycle.
 		const getPendingMemberDetails = async (
@@ -461,94 +461,88 @@ export const PendingMemberServiceLive = Layer.effect(
 
 		return PendingMemberService.of({
 			listPending: (query) =>
-				Effect.gen(function* (_) {
-					const pendingMembers = yield* _(
-						dbService.query("listPendingMembers", async () => {
-							if (query.status !== undefined && query.status !== "pending")
-								return [];
+				Effect.gen(function* () {
+					const pendingMembers = yield* dbService.query("listPendingMembers", async () => {
+						if (query.status !== undefined && query.status !== "pending")
+							return [];
 
-							const pendingUsages = await dbService.db
-								.select({
-									memberId: inviteCodeUsage.memberId,
-									userId: inviteCodeUsage.userId,
-									usedAt: inviteCodeUsage.usedAt,
-									member: {
-										organizationId: member.organizationId,
-										role: member.role,
-										createdAt: member.createdAt,
-									},
-									user: {
-										id: user.id,
-										name: user.name,
-										email: user.email,
-										image: user.image,
-									},
-									inviteCode: {
-										id: inviteCode.id,
-										code: inviteCode.code,
-										label: inviteCode.label,
-										defaultTeamId: inviteCode.defaultTeamId,
-									},
-								})
-								.from(inviteCodeUsage)
-								.innerJoin(member, eq(member.id, inviteCodeUsage.memberId))
-								.innerJoin(user, eq(user.id, inviteCodeUsage.userId))
-								.innerJoin(
-									inviteCode,
-									eq(inviteCode.id, inviteCodeUsage.inviteCodeId),
-								)
-								.where(
-									and(
-										eq(member.organizationId, query.organizationId),
-										eq(member.status, "pending"),
-										eq(inviteCode.organizationId, query.organizationId),
-									),
-								)
-								.orderBy(desc(inviteCodeUsage.usedAt));
-
-							return pendingUsages.map((usage) => ({
-								id: usage.memberId,
-								userId: usage.userId,
-								organizationId: usage.member.organizationId,
-								role: usage.member.role,
-								createdAt: usage.member.createdAt,
-								user: {
-									id: usage.user.id,
-									name: usage.user.name,
-									email: usage.user.email,
-									image: usage.user.image,
+						const pendingUsages = await dbService.db
+							.select({
+								memberId: inviteCodeUsage.memberId,
+								userId: inviteCodeUsage.userId,
+								usedAt: inviteCodeUsage.usedAt,
+								member: {
+									organizationId: member.organizationId,
+									role: member.role,
+									createdAt: member.createdAt,
 								},
-								inviteCode: usage.inviteCode,
-								usedAt: usage.usedAt,
-							}));
-						}),
-					);
+								user: {
+									id: user.id,
+									name: user.name,
+									email: user.email,
+									image: user.image,
+								},
+								inviteCode: {
+									id: inviteCode.id,
+									code: inviteCode.code,
+									label: inviteCode.label,
+									defaultTeamId: inviteCode.defaultTeamId,
+								},
+							})
+							.from(inviteCodeUsage)
+							.innerJoin(member, eq(member.id, inviteCodeUsage.memberId))
+							.innerJoin(user, eq(user.id, inviteCodeUsage.userId))
+							.innerJoin(
+								inviteCode,
+								eq(inviteCode.id, inviteCodeUsage.inviteCodeId),
+							)
+							.where(
+								and(
+									eq(member.organizationId, query.organizationId),
+									eq(member.status, "pending"),
+									eq(inviteCode.organizationId, query.organizationId),
+								),
+							)
+							.orderBy(desc(inviteCodeUsage.usedAt));
+
+						return pendingUsages.map((usage) => ({
+							id: usage.memberId,
+							userId: usage.userId,
+							organizationId: usage.member.organizationId,
+							role: usage.member.role,
+							createdAt: usage.member.createdAt,
+							user: {
+								id: usage.user.id,
+								name: usage.user.name,
+								email: usage.user.email,
+								image: usage.user.image,
+							},
+							inviteCode: usage.inviteCode,
+							usedAt: usage.usedAt,
+						}));
+					});
 
 					return pendingMembers;
 				}),
 
 			getById: (memberId, organizationId) =>
-				Effect.gen(function* (_) {
-					const result = yield* _(
-						dbService.query("getPendingMemberById", async () => {
-							return await getPendingMemberDetails(memberId, organizationId);
-						}),
-					);
+				Effect.gen(function* () {
+					const result = yield* dbService.query("getPendingMemberById", async () => {
+						return await getPendingMemberDetails(memberId, organizationId);
+					});
 
 					return result;
 				}),
 
 			approve: (input) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Get member details
-					const pendingMember = yield* _(
-						dbService.query("getMemberForApproval", async () => {
+					const pendingMember = yield* dbService.query("getMemberForApproval", async () => {
 							return await getPendingMemberDetails(
 								input.memberId,
 								input.organizationId,
 							);
-						}),
-						Effect.flatMap((memberDetails) =>
+						}).pipe(Effect.flatMap((memberDetails) =>
 							memberDetails
 								? Effect.succeed(memberDetails)
 								: Effect.fail(
@@ -558,35 +552,28 @@ export const PendingMemberServiceLive = Layer.effect(
 											entityId: input.memberId,
 										}),
 									),
-						),
-					);
+						));
 
-					const approval = yield* _(
-						dbService.query("approvePendingMember", () =>
-							approvePendingMemberAtomically(pendingMember, input),
-						),
+					const approval = yield* dbService.query("approvePendingMember", () =>
+						approvePendingMemberAtomically(pendingMember, input),
 					);
 
 					if (!approval) {
-						return yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Member is no longer pending approval",
-									field: "memberId",
-								}),
-							),
+						return yield* Effect.fail(
+							new ValidationError({
+								message: "Member is no longer pending approval",
+								field: "memberId",
+							}),
 						);
 					}
 
-					yield* _(
-						Effect.promise(() =>
-							syncBillingSeatsAfterMemberChange({
-								organizationId: input.organizationId,
-								memberId: input.memberId,
-								userId: pendingMember.userId,
-								change: "added",
-							}),
-						),
+					yield* Effect.promise(() =>
+						syncBillingSeatsAfterMemberChange({
+							organizationId: input.organizationId,
+							memberId: input.memberId,
+							userId: pendingMember.userId,
+							change: "added",
+						}),
 					);
 
 					return {
@@ -597,21 +584,17 @@ export const PendingMemberServiceLive = Layer.effect(
 				}),
 
 			reject: (input) =>
-				Effect.gen(function* (_) {
-					const result = yield* _(
-						dbService.query("rejectPendingMember", () =>
-							rejectPendingMemberAtomically(input),
-						),
+				Effect.gen(function* () {
+					const result = yield* dbService.query("rejectPendingMember", () =>
+						rejectPendingMemberAtomically(input),
 					);
 					if (!result) {
-						return yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Pending member not found",
-									entityType: "member",
-									entityId: input.memberId,
-								}),
-							),
+						return yield* Effect.fail(
+							new NotFoundError({
+								message: "Pending member not found",
+								entityType: "member",
+								entityId: input.memberId,
+							}),
 						);
 					}
 
@@ -623,53 +606,47 @@ export const PendingMemberServiceLive = Layer.effect(
 				}),
 
 			bulkApprove: (memberIds, organizationId, approvedBy, assignedTeamId) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					let approved = 0;
 					let failed = 0;
 
 					for (const memberId of memberIds) {
-						const pendingMemberResult = yield* _(
-							dbService
-								.query(`getBulkMember_${memberId}`, () =>
-									getPendingMemberDetails(memberId, organizationId),
-								)
-								.pipe(Effect.either),
-						);
+						const pendingMemberResult = yield* dbService
+							.query(`getBulkMember_${memberId}`, () =>
+								getPendingMemberDetails(memberId, organizationId),
+							)
+							.pipe(Effect.result);
 						if (
-							pendingMemberResult._tag === "Left" ||
-							!pendingMemberResult.right
+							pendingMemberResult._tag === "Failure" ||
+							!pendingMemberResult.success
 						) {
 							failed++;
 							continue;
 						}
-						const pendingMember = pendingMemberResult.right;
+						const pendingMember = pendingMemberResult.success;
 
-						const approvalResult = yield* _(
-							dbService
-								.query(`bulkApprove_${memberId}`, () =>
-									approvePendingMemberAtomically(pendingMember, {
-										memberId,
-										organizationId,
-										approvedBy,
-										assignedTeamId,
-									}),
-								)
-								.pipe(Effect.either),
-						);
-						if (approvalResult._tag === "Left" || !approvalResult.right) {
+						const approvalResult = yield* dbService
+							.query(`bulkApprove_${memberId}`, () =>
+								approvePendingMemberAtomically(pendingMember, {
+									memberId,
+									organizationId,
+									approvedBy,
+									assignedTeamId,
+								}),
+							)
+							.pipe(Effect.result);
+						if (approvalResult._tag === "Failure" || !approvalResult.success) {
 							failed++;
 							continue;
 						}
 
-						yield* _(
-							Effect.promise(() =>
-								syncBillingSeatsAfterMemberChange({
-									organizationId,
-									memberId,
-									userId: pendingMember.userId,
-									change: "added",
-								}),
-							),
+						yield* Effect.promise(() =>
+							syncBillingSeatsAfterMemberChange({
+								organizationId,
+								memberId,
+								userId: pendingMember.userId,
+								change: "added",
+							}),
 						);
 						approved++;
 					}
@@ -678,24 +655,22 @@ export const PendingMemberServiceLive = Layer.effect(
 				}),
 
 			bulkReject: (memberIds, organizationId, rejectedBy, notes) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					let rejected = 0;
 					let failed = 0;
 
 					for (const memberId of new Set(memberIds)) {
-						const result = yield* _(
-							dbService
-								.query(`bulkReject_${memberId}`, () =>
-									rejectPendingMemberAtomically({
-										memberId,
-										organizationId,
-										rejectedBy,
-										notes,
-									}),
-								)
-								.pipe(Effect.either),
-						);
-						if (result._tag === "Left" || !result.right) {
+						const result = yield* dbService
+							.query(`bulkReject_${memberId}`, () =>
+								rejectPendingMemberAtomically({
+									memberId,
+									organizationId,
+									rejectedBy,
+									notes,
+								}),
+							)
+							.pipe(Effect.result);
+						if (result._tag === "Failure" || !result.success) {
 							failed++;
 							continue;
 						}
@@ -706,43 +681,39 @@ export const PendingMemberServiceLive = Layer.effect(
 				}),
 
 			getApprovalHistory: (memberId) =>
-				Effect.gen(function* (_) {
-					const history = yield* _(
-						dbService.query("getApprovalHistory", async () => {
-							return await dbService.db.query.memberApproval.findMany({
-								where: eq(memberApproval.memberId, memberId),
-								orderBy: [desc(memberApproval.approvedAt)],
-							});
-						}),
-					);
+				Effect.gen(function* () {
+					const history = yield* dbService.query("getApprovalHistory", async () => {
+						return await dbService.db.query.memberApproval.findMany({
+							where: eq(memberApproval.memberId, memberId),
+							orderBy: [desc(memberApproval.approvedAt)],
+						});
+					});
 
 					return history;
 				}),
 
 			countPending: (organizationId) =>
-				Effect.gen(function* (_) {
-					const pendingCount = yield* _(
-						dbService.query("countPendingMembers", async () => {
-							const [result] = await dbService.db
-								.select({ count: count() })
-								.from(inviteCodeUsage)
-								.innerJoin(member, eq(member.id, inviteCodeUsage.memberId))
-								.innerJoin(user, eq(user.id, inviteCodeUsage.userId))
-								.innerJoin(
-									inviteCode,
-									eq(inviteCode.id, inviteCodeUsage.inviteCodeId),
-								)
-								.where(
-									and(
-										eq(member.organizationId, organizationId),
-										eq(member.status, "pending"),
-										eq(inviteCode.organizationId, organizationId),
-									),
-								)
-								.execute();
-							return result?.count ?? 0;
-						}),
-					);
+				Effect.gen(function* () {
+					const pendingCount = yield* dbService.query("countPendingMembers", async () => {
+						const [result] = await dbService.db
+							.select({ count: count() })
+							.from(inviteCodeUsage)
+							.innerJoin(member, eq(member.id, inviteCodeUsage.memberId))
+							.innerJoin(user, eq(user.id, inviteCodeUsage.userId))
+							.innerJoin(
+								inviteCode,
+								eq(inviteCode.id, inviteCodeUsage.inviteCodeId),
+							)
+							.where(
+								and(
+									eq(member.organizationId, organizationId),
+									eq(member.status, "pending"),
+									eq(inviteCode.organizationId, organizationId),
+								),
+							)
+							.execute();
+						return result?.count ?? 0;
+					});
 
 					return pendingCount;
 				}),

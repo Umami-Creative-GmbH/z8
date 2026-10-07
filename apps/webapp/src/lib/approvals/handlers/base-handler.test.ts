@@ -23,7 +23,7 @@ const mockState = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/effect/services/database.service", async () => {
-	const DatabaseService = Context.GenericTag<any>("DatabaseService");
+	const DatabaseService = Context.Service<any>("DatabaseService");
 
 	return {
 		DatabaseService,

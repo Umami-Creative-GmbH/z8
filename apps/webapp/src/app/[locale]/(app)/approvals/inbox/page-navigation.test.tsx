@@ -8,12 +8,18 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
+import { type ComponentProps, createElement } from "react";
 import { afterEach, expect, it, vi } from "vitest";
 import type {
 	ApprovalInboxItem,
 	ApprovalInboxListResult,
 } from "@/lib/approvals/inbox/types";
 import ApprovalInboxPage from "./page";
+
+vi.mock("@/navigation", () => ({
+	Link: ({ href, children, ...props }: ComponentProps<"a">) =>
+		createElement("a", { href, ...props }, children),
+}));
 
 const navigation = vi.hoisted(() => ({ query: "" }));
 vi.mock("next/navigation", () => ({

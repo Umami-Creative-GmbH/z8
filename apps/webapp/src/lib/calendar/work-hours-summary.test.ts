@@ -1,3 +1,4 @@
+import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
 import type { CalendarEvent, DailyWorkRequirements } from "./types";
 import {
@@ -67,78 +68,131 @@ describe("buildDailyActualMinutes", () => {
 });
 
 describe("buildDailyWorkHoursSummaries", () => {
-	it("sums work periods and marks over when actual is above required", () => {
-		const requirements: DailyWorkRequirements = {
-			"2026-05-04": { requiredMinutes: 480, policyId: "policy-1", policyName: "Standard" },
-		};
+	const requirements: DailyWorkRequirements = {
+		"2026-05-04": { requiredMinutes: 480, policyId: "policy-1", policyName: "Standard" },
+	};
 
+	it("marks over when actual is above required", () => {
 		const summaries = buildDailyWorkHoursSummaries({
-			events: [workPeriod("2026-05-04", 240), workPeriod("2026-05-04", 247)],
 			dailyRequirements: requirements,
+			dailyActualMinutes: buildDailyActualMinutes([
+				workPeriod("2026-05-04", 240),
+				workPeriod("2026-05-04", 247),
+			]),
 		});
 
 		expect(summaries.get("2026-05-04")).toMatchObject({
 			actualMinutes: 487,
-			deltaMinutes: 7,
-			status: "over",
+			includesLiveWork: false,
+			requirement: { deltaMinutes: 7, status: "over" },
 		});
 	});
 
 	it("marks under when actual is below required", () => {
 		const summaries = buildDailyWorkHoursSummaries({
-			events: [workPeriod("2026-05-04", 449)],
-			dailyRequirements: {
-				"2026-05-04": { requiredMinutes: 480, policyId: "policy-1", policyName: "Standard" },
-			},
+			dailyRequirements: requirements,
+			dailyActualMinutes: { "2026-05-04": 449 },
 		});
 
 		expect(summaries.get("2026-05-04")).toMatchObject({
 			actualMinutes: 449,
-			deltaMinutes: -31,
-			status: "under",
+			requirement: { deltaMinutes: -31, status: "under" },
 		});
 	});
 
 	it("marks missing when required time exists but no work was recorded", () => {
 		const summaries = buildDailyWorkHoursSummaries({
-			events: [],
-			dailyRequirements: {
-				"2026-05-04": { requiredMinutes: 480, policyId: "policy-1", policyName: "Standard" },
-			},
+			dailyRequirements: requirements,
+			dailyActualMinutes: {},
 		});
 
 		expect(summaries.get("2026-05-04")).toMatchObject({
 			actualMinutes: 0,
-			deltaMinutes: -480,
-			status: "missing",
+			requirement: { deltaMinutes: -480, status: "missing" },
 		});
 	});
 
-	it("uses supplied daily actual minutes when work period events are not present", () => {
+	it("gives a day with work but no requirement a total without a requirement", () => {
 		const summaries = buildDailyWorkHoursSummaries({
-			events: [],
-			dailyRequirements: {
-				"2026-05-04": { requiredMinutes: 480, policyId: "policy-1", policyName: "Standard" },
-			},
-			dailyActualMinutes: {
-				"2026-05-04": 480,
-			},
+			dailyRequirements: {},
+			dailyActualMinutes: { "2026-05-09": 150, "2026-05-10": 0 },
+			liveWork: [{ startedAt: new Date("2026-05-11T10:00:00.000Z") }],
+			timezone: "UTC",
+			now: Temporal.Instant.from("2026-05-11T10:20:00Z"),
+		});
+
+		expect(Object.fromEntries(summaries)).toEqual({
+			"2026-05-09": { actualMinutes: 150, includesLiveWork: false, requirement: null },
+			"2026-05-11": { actualMinutes: 20, includesLiveWork: true, requirement: null },
+		});
+	});
+
+	it("marks met when actual equals required", () => {
+		const summaries = buildDailyWorkHoursSummaries({
+			dailyRequirements: requirements,
+			dailyActualMinutes: { "2026-05-04": 480 },
 		});
 
 		expect(summaries.get("2026-05-04")).toMatchObject({
 			actualMinutes: 480,
-			deltaMinutes: 0,
-			status: "met",
+			requirement: { deltaMinutes: 0, status: "met" },
+		});
+	});
+});
+
+describe("buildDailyWorkHoursSummaries with live work", () => {
+	const standard = { requiredMinutes: 480, policyId: "policy-1", policyName: "Standard" };
+
+	it("adds the elapsed whole minutes of live work to the day total", () => {
+		const summaries = buildDailyWorkHoursSummaries({
+			dailyRequirements: { "2026-05-04": standard },
+			dailyActualMinutes: { "2026-05-04": 240 },
+			liveWork: [{ startedAt: new Date("2026-05-04T12:00:00.000Z") }],
+			timezone: "UTC",
+			now: Temporal.Instant.from("2026-05-04T12:45:59Z"),
+		});
+
+		expect(summaries.get("2026-05-04")).toEqual({
+			actualMinutes: 285,
+			includesLiveWork: true,
+			requirement: { ...standard, deltaMinutes: -195, status: "under" },
 		});
 	});
 
-	it("does not create summaries without a policy requirement", () => {
+	it("marks the day as live as soon as live work starts, before a whole minute has elapsed", () => {
 		const summaries = buildDailyWorkHoursSummaries({
-			events: [workPeriod("2026-05-04", 480)],
-			dailyRequirements: {},
+			dailyRequirements: { "2026-05-04": standard },
+			dailyActualMinutes: { "2026-05-04": 240 },
+			liveWork: [{ startedAt: new Date("2026-05-04T12:00:00.000Z") }],
+			timezone: "UTC",
+			now: Temporal.Instant.from("2026-05-04T12:00:40Z"),
 		});
 
-		expect(summaries.size).toBe(0);
+		expect(summaries.get("2026-05-04")).toMatchObject({
+			actualMinutes: 240,
+			includesLiveWork: true,
+		});
+	});
+
+	it("splits live work across Berlin local days at midnight", () => {
+		// Clocked in 22:00 Berlin on 4 May, now 01:30 Berlin on 5 May.
+		const summaries = buildDailyWorkHoursSummaries({
+			dailyRequirements: { "2026-05-04": standard, "2026-05-05": standard },
+			dailyActualMinutes: { "2026-05-04": 360 },
+			liveWork: [{ startedAt: new Date("2026-05-04T20:00:00.000Z") }],
+			timezone: "Europe/Berlin",
+			now: Temporal.Instant.from("2026-05-04T23:30:00Z"),
+		});
+
+		expect(summaries.get("2026-05-04")).toMatchObject({
+			actualMinutes: 480,
+			includesLiveWork: true,
+			requirement: { deltaMinutes: 0, status: "met" },
+		});
+		expect(summaries.get("2026-05-05")).toMatchObject({
+			actualMinutes: 90,
+			includesLiveWork: true,
+		});
 	});
 });
 

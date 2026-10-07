@@ -1,10 +1,34 @@
 import { PgDialect } from "drizzle-orm/pg-core";
 import { Effect, Layer } from "effect";
 import { describe, expect, it, vi } from "vitest";
+import { AuthorizationError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { requireActiveOrganizationActionActor } from "./organization-action-authorization";
+import {
+	requireActiveOrganizationActionActor,
+	runActiveOrganizationActionActorCheck,
+} from "./organization-action-authorization";
 
 const sso = vi.hoisted(() => ({ allowed: vi.fn(async () => true) }));
+const liveDatabase = vi.hoisted(() => ({
+	memberFindFirst: vi.fn(async (): Promise<unknown> => null),
+	employeeFindFirst: vi.fn(async (): Promise<unknown> => null),
+}));
+vi.mock("@/lib/effect/services/database.service", async (importOriginal) => {
+	const original = await importOriginal<typeof import("@/lib/effect/services/database.service")>();
+	const { Effect, Layer } = await import("effect");
+	return {
+		...original,
+		DatabaseServiceLive: Layer.succeed(original.DatabaseService, {
+			db: {
+				query: {
+					employee: { findFirst: liveDatabase.employeeFindFirst },
+					member: { findFirst: liveDatabase.memberFindFirst },
+				},
+			} as never,
+			query: (_name, execute) => Effect.promise(execute),
+		}),
+	};
+});
 vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({ canAccessOrganizationWithSso: sso.allowed }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
 vi.mock("next/server", async (importOriginal) => ({
@@ -143,5 +167,41 @@ describe("requireActiveOrganizationActionActor", () => {
 		);
 		expect(memberQuery.params).toEqual(["user-1", "org-1", "approved"]);
 		expect(employeeQuery.params).toEqual(["user-1", "org-1"]);
+	});
+});
+
+describe("runActiveOrganizationActionActorCheck", () => {
+	const input = {
+		userId: "user-1",
+		organizationId: "org-1",
+		requiredRole: "admin",
+		message: "Organization action denied",
+		resource: "organization",
+		action: "update",
+	} as const;
+
+	it("rejects with the AuthorizationError itself, keeping the guard's message", async () => {
+		liveDatabase.memberFindFirst.mockResolvedValueOnce(null);
+
+		const check = runActiveOrganizationActionActorCheck(input);
+
+		await expect(check).rejects.toBeInstanceOf(AuthorizationError);
+		await expect(check).rejects.toMatchObject({
+			_tag: "AuthorizationError",
+			message: "Organization action denied",
+		});
+	});
+
+	it("resolves with the actor records for an active approved admin", async () => {
+		liveDatabase.memberFindFirst.mockResolvedValueOnce({
+			role: "admin",
+			status: "approved",
+		});
+		liveDatabase.employeeFindFirst.mockResolvedValueOnce({ isActive: true });
+
+		await expect(runActiveOrganizationActionActorCheck(input)).resolves.toMatchObject({
+			membership: { role: "admin" },
+			employee: { isActive: true },
+		});
 	});
 });

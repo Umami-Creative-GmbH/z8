@@ -79,22 +79,21 @@ export async function getCustomers(
 			attributes: { "organization.id": organizationId },
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const actor = yield* _(
-					getProjectSettingsActorContext({ organizationId, queryName: "getCustomers:actor" }),
-				);
-				const managedCustomerIds = yield* _(getManagedCustomerIdsForSettingsActor(actor));
+			return Effect.gen(function* () {
+				const actor = yield* getProjectSettingsActorContext({
+					organizationId,
+					queryName: "getCustomers:actor",
+				});
+				const managedCustomerIds = yield* getManagedCustomerIdsForSettingsActor(actor);
 				const dbService = actor.dbService;
 
 				// Fetch all active customers
-				const customers = yield* _(
-					dbService.query("getCustomers", async () => {
-						return await db.query.customer.findMany({
-							where: and(eq(customer.organizationId, organizationId), eq(customer.isActive, true)),
-							orderBy: [desc(customer.createdAt)],
-						});
-					}),
-				);
+				const customers = yield* dbService.query("getCustomers", async () => {
+					return await db.query.customer.findMany({
+						where: and(eq(customer.organizationId, organizationId), eq(customer.isActive, true)),
+						orderBy: [desc(customer.createdAt)],
+					});
+				});
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				return managedCustomerIds
@@ -103,12 +102,12 @@ export async function getCustomers(
 						) as CustomerData[])
 					: (customers as CustomerData[]);
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) });
 						logger.error({ error, organizationId }, "Failed to get customers");
-						return yield* _(Effect.fail(error));
+						return yield* Effect.fail(error);
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
@@ -143,13 +142,11 @@ export async function createCustomer(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const actor = yield* _(
-					getProjectSettingsActorContext({
-						organizationId: input.organizationId,
-						queryName: "createCustomer:actor",
-					}),
-				);
+			return Effect.gen(function* () {
+				const actor = yield* getProjectSettingsActorContext({
+					organizationId: input.organizationId,
+					queryName: "createCustomer:actor",
+				});
 				const session = actor.session;
 				const dbService = actor.dbService;
 
@@ -160,43 +157,38 @@ export async function createCustomer(
 					const projectId = input.projectId;
 
 					if (!projectId) {
-						return yield* _(
-							Effect.fail(
-								new AuthorizationError({
-									message: "Managers can only create customers for managed projects",
-									userId: session.user.id,
-									resource: "customer",
-									action: "create",
-								}),
-							),
+						return yield* Effect.fail(
+							new AuthorizationError({
+								message: "Managers can only create customers for managed projects",
+								userId: session.user.id,
+								resource: "customer",
+								action: "create",
+							}),
 						);
 					}
 
-					const scopedProject = yield* _(getProjectTarget(projectId, "createCustomer:getProject"));
+					const scopedProject = yield* getProjectTarget(projectId, "createCustomer:getProject");
 
-					yield* _(
-						ensureSettingsActorCanAccessProjectTarget(actor, scopedProject, {
-							message: "You do not have access to create customers for this project",
-							resource: "customer",
-							action: "create",
-						}),
-					);
+					yield* ensureSettingsActorCanAccessProjectTarget(actor, scopedProject, {
+						message: "You do not have access to create customers for this project",
+						resource: "customer",
+						action: "create",
+					});
 
 					scopedProjectId = scopedProject.id;
 					scopedProjectOrganizationId = scopedProject.organizationId;
 				} else if (input.projectId) {
-					const scopedProject = yield* _(
-						getProjectTarget(input.projectId, "createCustomer:getProjectForOrgAdmin"),
+					const scopedProject = yield* getProjectTarget(
+						input.projectId,
+						"createCustomer:getProjectForOrgAdmin",
 					);
 
 					if (scopedProject.organizationId !== input.organizationId) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Project not found",
-									field: "projectId",
-								}),
-							),
+						yield* Effect.fail(
+							new ValidationError({
+								message: "Project not found",
+								field: "projectId",
+							}),
 						);
 					}
 
@@ -205,68 +197,62 @@ export async function createCustomer(
 				}
 
 				// Check for duplicate name (only among active customers)
-				const existing = yield* _(
-					dbService.query("checkDuplicate", async () => {
-						return await db.query.customer.findFirst({
-							where: and(
-								eq(customer.organizationId, input.organizationId),
-								eq(customer.name, input.name),
-								eq(customer.isActive, true),
-							),
-						});
-					}),
-				);
+				const existing = yield* dbService.query("checkDuplicate", async () => {
+					return await db.query.customer.findFirst({
+						where: and(
+							eq(customer.organizationId, input.organizationId),
+							eq(customer.name, input.name),
+							eq(customer.isActive, true),
+						),
+					});
+				});
 
 				if (existing) {
-					yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "A customer with this name already exists",
-								field: "name",
-							}),
-						),
+					yield* Effect.fail(
+						new ValidationError({
+							message: "A customer with this name already exists",
+							field: "name",
+						}),
 					);
 				}
 
-				const created = yield* _(
-					Effect.tryPromise({
-						try: async () => {
-							return await db.transaction(async (tx) => {
-								const [newCustomer] = await tx
-									.insert(customer)
-									.values({
-										organizationId: input.organizationId,
-										name: input.name,
-										address: input.address || null,
-										vatId: input.vatId || null,
-										email: input.email || null,
-										contactPerson: input.contactPerson || null,
-										phone: input.phone || null,
-										website: input.website || null,
-										isActive: true,
-										createdBy: session.user.id,
-										updatedAt: new Date(),
-									})
-									.returning();
+				const created = yield* Effect.tryPromise({
+					try: async () => {
+						return await db.transaction(async (tx) => {
+							const [newCustomer] = await tx
+								.insert(customer)
+								.values({
+									organizationId: input.organizationId,
+									name: input.name,
+									address: input.address || null,
+									vatId: input.vatId || null,
+									email: input.email || null,
+									contactPerson: input.contactPerson || null,
+									phone: input.phone || null,
+									website: input.website || null,
+									isActive: true,
+									createdBy: session.user.id,
+									updatedAt: new Date(),
+								})
+								.returning();
 
-								if (scopedProjectId && scopedProjectOrganizationId === input.organizationId) {
-									await tx
-										.update(project)
-										.set({ customerId: newCustomer.id, updatedBy: session.user.id })
-										.where(eq(project.id, scopedProjectId));
-								}
+							if (scopedProjectId && scopedProjectOrganizationId === input.organizationId) {
+								await tx
+									.update(project)
+									.set({ customerId: newCustomer.id, updatedBy: session.user.id })
+									.where(eq(project.id, scopedProjectId));
+							}
 
-								return newCustomer;
-							});
-						},
-						catch: (error) =>
-							new DatabaseError({
-								message: error instanceof Error ? error.message : "Failed to create customer",
-								operation: "transaction",
-								table: "customer",
-							}),
-					}),
-				);
+							return newCustomer;
+						});
+					},
+					catch: (error) =>
+						new DatabaseError({
+							message: error instanceof Error ? error.message : "Failed to create customer",
+							operation: "transaction",
+							table: "customer",
+						}),
+				});
 
 				// Log audit (fire-and-forget)
 				logAudit({
@@ -284,12 +270,12 @@ export async function createCustomer(
 				span.setStatus({ code: SpanStatusCode.OK });
 				return { id: created.id };
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) });
 						logger.error({ error, input }, "Failed to create customer");
-						return yield* _(Effect.fail(error));
+						return yield* Effect.fail(error);
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
@@ -322,66 +308,59 @@ export async function updateCustomer(
 			attributes: { "customer.id": customerId },
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const dbService = yield* _(DatabaseService);
+			return Effect.gen(function* () {
+				const dbService = yield* DatabaseService;
 
 				// Get the customer and verify access
-				const existingCustomer = yield* _(
-					dbService.query("getCustomer", async () => {
+				const existingCustomer = yield* dbService
+					.query("getCustomer", async () => {
 						return await db.query.customer.findFirst({
 							where: eq(customer.id, customerId),
 						});
-					}),
-					Effect.flatMap((c) =>
-						c
-							? Effect.succeed(c)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Customer not found",
-										entityType: "customer",
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((c) =>
+							c
+								? Effect.succeed(c)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Customer not found",
+											entityType: "customer",
+										}),
+									),
+						),
+					);
 
-				const actor = yield* _(
-					getProjectSettingsActorContext({
-						organizationId: existingCustomer.organizationId,
-						queryName: "updateCustomer:actor",
-					}),
-				);
+				const actor = yield* getProjectSettingsActorContext({
+					organizationId: existingCustomer.organizationId,
+					queryName: "updateCustomer:actor",
+				});
 				const session = actor.session;
 
-				yield* _(
-					ensureSettingsActorCanAccessCustomerTarget(actor, existingCustomer, {
-						message: "You do not have access to update this customer",
-						resource: "customer",
-						action: "update",
-					}),
-				);
+				yield* ensureSettingsActorCanAccessCustomerTarget(actor, existingCustomer, {
+					message: "You do not have access to update this customer",
+					resource: "customer",
+					action: "update",
+				});
 
 				// Check for duplicate name if updating name (only among active customers)
 				if (input.name && input.name !== existingCustomer.name) {
-					const duplicate = yield* _(
-						dbService.query("checkDuplicate", async () => {
-							return await db.query.customer.findFirst({
-								where: and(
-									eq(customer.organizationId, existingCustomer.organizationId),
-									eq(customer.name, input.name!),
-									eq(customer.isActive, true),
-								),
-							});
-						}),
-					);
+					const duplicate = yield* dbService.query("checkDuplicate", async () => {
+						return await db.query.customer.findFirst({
+							where: and(
+								eq(customer.organizationId, existingCustomer.organizationId),
+								eq(customer.name, input.name!),
+								eq(customer.isActive, true),
+							),
+						});
+					});
 
 					if (duplicate) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "A customer with this name already exists",
-									field: "name",
-								}),
-							),
+						yield* Effect.fail(
+							new ValidationError({
+								message: "A customer with this name already exists",
+								field: "name",
+							}),
 						);
 					}
 				}
@@ -400,19 +379,17 @@ export async function updateCustomer(
 				if (input.website !== undefined) updateData.website = input.website;
 
 				// Update the customer
-				yield* _(
-					Effect.tryPromise({
-						try: async () => {
-							await db.update(customer).set(updateData).where(eq(customer.id, customerId));
-						},
-						catch: (error) =>
-							new DatabaseError({
-								message: error instanceof Error ? error.message : "Failed to update customer",
-								operation: "update",
-								table: "customer",
-							}),
-					}),
-				);
+				yield* Effect.tryPromise({
+					try: async () => {
+						await db.update(customer).set(updateData).where(eq(customer.id, customerId));
+					},
+					catch: (error) =>
+						new DatabaseError({
+							message: error instanceof Error ? error.message : "Failed to update customer",
+							operation: "update",
+							table: "customer",
+						}),
+				});
 
 				// Log audit (fire-and-forget)
 				logAudit({
@@ -429,12 +406,12 @@ export async function updateCustomer(
 				revalidatePath("/settings/customers");
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) });
 						logger.error({ error, customerId, input }, "Failed to update customer");
-						return yield* _(Effect.fail(error));
+						return yield* Effect.fail(error);
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
@@ -464,61 +441,56 @@ export async function deleteCustomer(customerId: string): Promise<ServerActionRe
 			attributes: { "customer.id": customerId },
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const dbService = yield* _(DatabaseService);
+			return Effect.gen(function* () {
+				const dbService = yield* DatabaseService;
 
 				// Get the customer
-				const existingCustomer = yield* _(
-					dbService.query("getCustomer", async () => {
+				const existingCustomer = yield* dbService
+					.query("getCustomer", async () => {
 						return await db.query.customer.findFirst({
 							where: eq(customer.id, customerId),
 						});
-					}),
-					Effect.flatMap((c) =>
-						c
-							? Effect.succeed(c)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Customer not found",
-										entityType: "customer",
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((c) =>
+							c
+								? Effect.succeed(c)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Customer not found",
+											entityType: "customer",
+										}),
+									),
+						),
+					);
 
-				const actor = yield* _(
-					getProjectSettingsActorContext({
-						organizationId: existingCustomer.organizationId,
-						queryName: "deleteCustomer:actor",
-					}),
-				);
+				const actor = yield* getProjectSettingsActorContext({
+					organizationId: existingCustomer.organizationId,
+					queryName: "deleteCustomer:actor",
+				});
 				const session = actor.session;
 
-				yield* _(
-					ensureSettingsActorCanAccessCustomerTarget(actor, existingCustomer, {
-						message: "You do not have access to delete this customer",
-						resource: "customer",
-						action: "delete",
-					}),
-				);
+				yield* ensureSettingsActorCanAccessCustomerTarget(actor, existingCustomer, {
+					message: "You do not have access to delete this customer",
+					resource: "customer",
+					action: "delete",
+				});
 
 				// Soft delete
-				yield* _(
-					Effect.tryPromise({
-						try: async () => {
-							await db
-								.update(customer)
-								.set({ isActive: false, updatedBy: session.user.id })
-								.where(eq(customer.id, customerId));
-						},
-						catch: (error) =>
-							new DatabaseError({
-								message: error instanceof Error ? error.message : "Failed to delete customer",
-								operation: "update",
-								table: "customer",
-							}),
-					}),
-				);
+				yield* Effect.tryPromise({
+					try: async () => {
+						await db
+							.update(customer)
+							.set({ isActive: false, updatedBy: session.user.id })
+							.where(eq(customer.id, customerId));
+					},
+					catch: (error) =>
+						new DatabaseError({
+							message: error instanceof Error ? error.message : "Failed to delete customer",
+							operation: "update",
+							table: "customer",
+						}),
+				});
 
 				// Log audit (fire-and-forget)
 				logAudit({
@@ -535,12 +507,12 @@ export async function deleteCustomer(customerId: string): Promise<ServerActionRe
 				revalidatePath("/settings/customers");
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) });
 						logger.error({ error, customerId }, "Failed to delete customer");
-						return yield* _(Effect.fail(error));
+						return yield* Effect.fail(error);
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),
@@ -573,37 +545,33 @@ export async function getCustomersForSelection(
 			attributes: { "organization.id": organizationId },
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const actor = yield* _(
-					getProjectSettingsActorContext({
-						organizationId,
-						queryName: "getCustomersForSelection:actor",
-					}),
-				);
-				const managedCustomerIds = yield* _(getManagedCustomerIdsForSettingsActor(actor));
+			return Effect.gen(function* () {
+				const actor = yield* getProjectSettingsActorContext({
+					organizationId,
+					queryName: "getCustomersForSelection:actor",
+				});
+				const managedCustomerIds = yield* getManagedCustomerIdsForSettingsActor(actor);
 				const dbService = actor.dbService;
 
-				const customers = yield* _(
-					dbService.query("getCustomersForSelection", async () => {
-						return await db.query.customer.findMany({
-							where: and(eq(customer.organizationId, organizationId), eq(customer.isActive, true)),
-							columns: { id: true, name: true },
-							orderBy: [customer.name],
-						});
-					}),
-				);
+				const customers = yield* dbService.query("getCustomersForSelection", async () => {
+					return await db.query.customer.findMany({
+						where: and(eq(customer.organizationId, organizationId), eq(customer.isActive, true)),
+						columns: { id: true, name: true },
+						orderBy: [customer.name],
+					});
+				});
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				return managedCustomerIds
 					? customers.filter((customerRecord) => managedCustomerIds.has(customerRecord.id))
 					: customers;
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) });
 						logger.error({ error, organizationId }, "Failed to get customers for selection");
-						return yield* _(Effect.fail(error));
+						return yield* Effect.fail(error);
 					}),
 				),
 				Effect.ensuring(Effect.sync(() => span.end())),

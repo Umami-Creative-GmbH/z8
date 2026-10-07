@@ -40,7 +40,7 @@ vi.mock("@/lib/effect/runtime", () => ({
 
 vi.mock("@/lib/effect/services/coverage.service", async () => {
 	const { Context } = await import("effect");
-	const CoverageService = Context.GenericTag<any>("CoverageService");
+	const CoverageService = Context.Service<any>("CoverageService");
 	return { CoverageService };
 });
 

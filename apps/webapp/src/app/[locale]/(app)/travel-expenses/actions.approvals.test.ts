@@ -38,16 +38,13 @@ vi.mock("@/lib/approvals/server/travel-expense-approvals", () => ({
 
 vi.mock("@/lib/effect/services/database.service", async () => {
 	const { Context } = await import("effect");
-	return { DatabaseService: Context.GenericTag<unknown>("DatabaseService") };
+	return { DatabaseService: Context.Service<unknown>("DatabaseService") };
 });
 
 vi.mock("@/lib/effect/runtime", async () => {
 	const { Context, Layer } = await import("effect");
 	return {
-		AppLayer: Layer.succeed(
-			Context.GenericTag<unknown>("DatabaseService"),
-			mockState.databaseService,
-		),
+		AppLayer: Layer.succeed(Context.Service<unknown>("DatabaseService"), mockState.databaseService),
 	};
 });
 
@@ -57,7 +54,7 @@ vi.mock("@/lib/effect/result", async () => {
 		runServerActionSafe: async (effect: Effect.Effect<unknown, unknown, never>) => {
 			const exit = await Effect.runPromiseExit(effect);
 			if (Exit.isSuccess(exit)) return { success: true, data: exit.value };
-			const failure = Option.getOrNull(Cause.failureOption(exit.cause)) as {
+			const failure = Option.getOrNull(Cause.findErrorOption(exit.cause)) as {
 				message: string;
 				_tag: string;
 			};

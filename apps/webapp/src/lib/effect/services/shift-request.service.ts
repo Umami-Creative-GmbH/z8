@@ -15,7 +15,7 @@ import {
 	type DatabaseError,
 	NotFoundError,
 	ValidationError,
-} from "../errors";
+} from "@/lib/effect/errors";
 import { DatabaseService } from "./database.service";
 
 type Shift = typeof ShiftTable.$inferSelect;
@@ -214,7 +214,7 @@ export interface ShiftRequestWithRelations extends ShiftRequest {
 
 type MutationError = ShiftRequestDomainError | DatabaseError;
 
-export class ShiftRequestService extends Context.Tag("ShiftRequestService")<
+export class ShiftRequestService extends Context.Service<
 	ShiftRequestService,
 	{
 		readonly requestSwap: (
@@ -260,7 +260,7 @@ export class ShiftRequestService extends Context.Tag("ShiftRequestService")<
 			requestId: string,
 		) => Effect.Effect<ShiftRequestWithRelations | null, DatabaseError>;
 	}
->() {}
+>()("ShiftRequestService") {}
 
 export const ShiftRequestServiceLive = Layer.effect(
 	ShiftRequestService,

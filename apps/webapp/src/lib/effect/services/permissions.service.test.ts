@@ -1,6 +1,6 @@
 import { Effect, Layer } from "effect";
 import { describe, expect, it, vi } from "vitest";
-import { DatabaseError } from "../errors";
+import { DatabaseError } from "@/lib/effect/errors";
 import { DatabaseService } from "./database.service";
 import {
 	PermissionsService,

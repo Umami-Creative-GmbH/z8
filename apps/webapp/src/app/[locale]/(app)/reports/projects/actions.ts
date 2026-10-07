@@ -49,38 +49,35 @@ export async function getProjectsOverview(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const authContext = yield* _(
-					Effect.tryPromise({
-						try: async () => await requireAuth(),
-						catch: () =>
-							new AuthorizationError({
-								message: "Approved organization membership required",
-							}),
-					}),
-				);
-				const dbService = yield* _(DatabaseService);
+			return Effect.gen(function* () {
+				const authContext = yield* Effect.tryPromise({
+					try: async () => await requireAuth(),
+					catch: () =>
+						new AuthorizationError({
+							message: "Approved organization membership required",
+						}),
+				});
+				const dbService = yield* DatabaseService;
 				const organizationId = authContext.session.activeOrganizationId;
 				const currentEmployee = authContext.employee;
 				if (!organizationId || !currentEmployee) {
-					return yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Active organization required",
-							}),
-						),
+					return yield* Effect.fail(
+						new AuthorizationError({
+							message: "Active organization required",
+						}),
 					);
 				}
 
 				span.setAttribute("user.id", authContext.user.id);
 
-				const managedProjectRows = yield* _(
-					dbService.query("getManagedProjectIdsForProjectReports", async () => {
+				const managedProjectRows = yield* dbService.query(
+					"getManagedProjectIdsForProjectReports",
+					async () => {
 						return await dbService.db.query.projectManager.findMany({
 							where: eq(projectManager.employeeId, currentEmployee.id),
 							columns: { projectId: true },
 						});
-					}),
+					},
 				);
 				const managedProjectIds = new Set(managedProjectRows.map((row) => row.projectId));
 				const canViewPortfolio =
@@ -89,12 +86,10 @@ export async function getProjectsOverview(
 					managedProjectIds.size > 0;
 
 				if (!canViewPortfolio) {
-					return yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "You don't have permission to view project reports",
-							}),
-						),
+					return yield* Effect.fail(
+						new AuthorizationError({
+							message: "You don't have permission to view project reports",
+						}),
 					);
 				}
 
@@ -102,35 +97,34 @@ export async function getProjectsOverview(
 				span.setAttribute("current_employee.role", currentEmployee.role);
 
 				// Get all projects in the organization
-				const projects = yield* _(
-					dbService.query("getProjects", async () => {
-						const whereConditions = [eq(project.organizationId, organizationId)];
-						const isOrgWideReportViewer =
-							currentEmployee.role === "admin" || currentEmployee.role === "manager";
+				const projects = yield* dbService.query("getProjects", async () => {
+					const whereConditions = [eq(project.organizationId, organizationId)];
+					const isOrgWideReportViewer =
+						currentEmployee.role === "admin" || currentEmployee.role === "manager";
 
-						if (statusFilter && statusFilter.length > 0) {
-							whereConditions.push(
-								inArray(
-									project.status,
-									statusFilter as ("planned" | "active" | "paused" | "completed" | "archived")[],
-								),
-							);
-						}
+					if (statusFilter && statusFilter.length > 0) {
+						whereConditions.push(
+							inArray(
+								project.status,
+								statusFilter as ("planned" | "active" | "paused" | "completed" | "archived")[],
+							),
+						);
+					}
 
-						if (!isOrgWideReportViewer) {
-							whereConditions.push(inArray(project.id, [...managedProjectIds]));
-						}
+					if (!isOrgWideReportViewer) {
+						whereConditions.push(inArray(project.id, [...managedProjectIds]));
+					}
 
-						return await dbService.db.query.project.findMany({
-							where: and(...whereConditions),
-							orderBy: (project, { asc }) => [asc(project.name)],
-						});
-					}),
-				);
+					return await dbService.db.query.project.findMany({
+						where: and(...whereConditions),
+						orderBy: (project, { asc }) => [asc(project.name)],
+					});
+				});
 
 				// Get work period stats for each project
-				const projectSummaries: ProjectSummary[] = yield* _(
-					dbService.query("getProjectStats", async () => {
+				const projectSummaries: ProjectSummary[] = yield* dbService.query(
+					"getProjectStats",
+					async () => {
 						const now = new Date();
 
 						return Promise.all(
@@ -210,7 +204,7 @@ export async function getProjectsOverview(
 								};
 							}),
 						);
-					}),
+					},
 				);
 
 				// Calculate totals
@@ -232,9 +226,9 @@ export async function getProjectsOverview(
 				span.setAttribute("projects.total_hours", totals.totalHours);
 				span.setStatus({ code: SpanStatusCode.OK });
 
-				return yield* _(Effect.succeed({ projects: projectSummaries, totals }));
+				return yield* Effect.succeed({ projects: projectSummaries, totals });
 			}).pipe(
-				Effect.catchAll((error) => {
+				Effect.catch((error) => {
 					span.setStatus({
 						code: SpanStatusCode.ERROR,
 						message: error.message || "Failed to get projects overview",
@@ -271,98 +265,89 @@ export async function getProjectDetailedReport(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const authContext = yield* _(
-					Effect.tryPromise({
-						try: async () => await requireAuth(),
-						catch: () =>
-							new AuthorizationError({
-								message: "Approved organization membership required",
-							}),
-					}),
-				);
-				const dbService = yield* _(DatabaseService);
+			return Effect.gen(function* () {
+				const authContext = yield* Effect.tryPromise({
+					try: async () => await requireAuth(),
+					catch: () =>
+						new AuthorizationError({
+							message: "Approved organization membership required",
+						}),
+				});
+				const dbService = yield* DatabaseService;
 				const organizationId = authContext.session.activeOrganizationId;
 				const currentEmployee = authContext.employee;
 				if (!organizationId || !currentEmployee) {
-					return yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Active organization required",
-							}),
-						),
+					return yield* Effect.fail(
+						new AuthorizationError({
+							message: "Active organization required",
+						}),
 					);
 				}
 
 				span.setAttribute("user.id", authContext.user.id);
 
 				// Check permissions (admin, manager, or project manager)
-				const isProjectManager = yield* _(
-					dbService.query("checkProjectManager", async () => {
-						const pm = await dbService.db.query.projectManager.findFirst({
-							where: and(
-								eq(projectManager.projectId, projectId),
-								eq(projectManager.employeeId, currentEmployee.id),
-							),
-						});
-						return !!pm;
-					}),
-				);
+				const isProjectManager = yield* dbService.query("checkProjectManager", async () => {
+					const pm = await dbService.db.query.projectManager.findFirst({
+						where: and(
+							eq(projectManager.projectId, projectId),
+							eq(projectManager.employeeId, currentEmployee.id),
+						),
+					});
+					return !!pm;
+				});
 
 				if (
 					currentEmployee.role !== "admin" &&
 					currentEmployee.role !== "manager" &&
 					!isProjectManager
 				) {
-					return yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "You don't have permission to view this project report",
-							}),
-						),
+					return yield* Effect.fail(
+						new AuthorizationError({
+							message: "You don't have permission to view this project report",
+						}),
 					);
 				}
 
 				// Get project details
-				const projectData = yield* _(
-					dbService.query("getProject", async () => {
+				const projectData = yield* dbService
+					.query("getProject", async () => {
 						const p = await dbService.db.query.project.findFirst({
 							where: and(eq(project.id, projectId), eq(project.organizationId, organizationId)),
 						});
 						if (!p) throw new Error("Project not found");
 						return p;
-					}),
-					Effect.mapError(
-						() =>
-							new NotFoundError({
-								message: "Project not found",
-								entityType: "project",
-							}),
-					),
-				);
+					})
+					.pipe(
+						Effect.mapError(
+							() =>
+								new NotFoundError({
+									message: "Project not found",
+									entityType: "project",
+								}),
+						),
+					);
 
 				// Get work periods for this project
-				const workPeriods = yield* _(
-					dbService.query("getWorkPeriods", async () => {
-						return await dbService.db.query.workPeriod.findMany({
-							where: and(
-								eq(workPeriod.projectId, projectId),
-								eq(workPeriod.organizationId, organizationId),
-								gte(workPeriod.startTime, startDate),
-								lte(workPeriod.startTime, endDate),
-							),
-							with: {
-								employee: {
-									with: {
-										user: true,
-										team: true,
-									},
+				const workPeriods = yield* dbService.query("getWorkPeriods", async () => {
+					return await dbService.db.query.workPeriod.findMany({
+						where: and(
+							eq(workPeriod.projectId, projectId),
+							eq(workPeriod.organizationId, organizationId),
+							gte(workPeriod.startTime, startDate),
+							lte(workPeriod.startTime, endDate),
+						),
+						with: {
+							employee: {
+								with: {
+									user: true,
+									team: true,
 								},
 							},
-							orderBy: (wp, { asc }) => [asc(wp.startTime)],
-						});
-					}),
-				);
+						},
+						orderBy: (wp, { asc }) => [asc(wp.startTime)],
+					});
+				});
 
 				const typedWorkPeriods = workPeriods as unknown as WorkPeriodWithEmployee[];
 
@@ -514,9 +499,9 @@ export async function getProjectDetailedReport(
 				span.setAttribute("report.unique_employees", uniqueEmployeeIds.size);
 				span.setStatus({ code: SpanStatusCode.OK });
 
-				return yield* _(Effect.succeed(report));
+				return yield* Effect.succeed(report);
 			}).pipe(
-				Effect.catchAll((error) => {
+				Effect.catch((error) => {
 					span.setStatus({
 						code: SpanStatusCode.ERROR,
 						message: error.message || "Failed to get project report",

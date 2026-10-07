@@ -210,6 +210,29 @@ describe("ApprovalSprintPanel", () => {
 		expect(approveMutation).not.toHaveBeenCalled();
 	});
 
+	it("sends an expense report with missing-receipt exceptions to its details (#604)", () => {
+		render(
+			<ApprovalSprintPanel
+				open={true}
+				items={[
+					createApproval("approval-1", "Ada Lovelace", "Expense report", {
+						canApprove: false,
+						requiresDetailReview: true,
+					}),
+				]}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("button", { name: "Approve current approval" }),
+		).toHaveProperty("disabled", true);
+		expect(screen.getByText("Open the details to accept its exceptions and approve")).toBeTruthy();
+		fireEvent.keyDown(window, { key: "a" });
+		expect(approveMutation).not.toHaveBeenCalled();
+	});
+
 	it("rejects the current approval with the keyboard shortcut and typed reason", async () => {
 		rejectMutation.mockResolvedValue({ success: true });
 

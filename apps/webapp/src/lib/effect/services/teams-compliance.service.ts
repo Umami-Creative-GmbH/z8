@@ -10,7 +10,7 @@ import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import { complianceException, employeeManagers, workPolicyViolation } from "@/db/schema";
-import type { DatabaseError } from "../errors";
+import type { DatabaseError } from "@/lib/effect/errors";
 import { DatabaseService, DatabaseServiceLive } from "./database.service";
 
 // ============================================
@@ -57,7 +57,7 @@ export interface ComplianceSummary {
 // SERVICE INTERFACE
 // ============================================
 
-export class TeamsComplianceService extends Context.Tag("TeamsComplianceService")<
+export class TeamsComplianceService extends Context.Service<
 	TeamsComplianceService,
 	{
 		/**
@@ -96,7 +96,7 @@ export class TeamsComplianceService extends Context.Tag("TeamsComplianceService"
 			organizationId: string;
 		}) => Effect.Effect<number, DatabaseError>;
 	}
->() {}
+>()("TeamsComplianceService") {}
 
 // ============================================
 // HELPER FUNCTIONS
@@ -146,8 +146,8 @@ function calculateSeverity(
 
 export const TeamsComplianceServiceLive = Layer.effect(
 	TeamsComplianceService,
-	Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
 		/**
 		 * Get managed employee IDs with their names
@@ -180,13 +180,11 @@ export const TeamsComplianceServiceLive = Layer.effect(
 
 		return TeamsComplianceService.of({
 			getComplianceAlertsForManager: (params) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					const { managerId, organizationId, daysBack = 7, timezone } = params;
 
 					// Get managed employees
-					const managedEmployees = yield* _(
-						getManagedEmployeesWithNames(managerId, organizationId),
-					);
+					const managedEmployees = yield* getManagedEmployeesWithNames(managerId, organizationId);
 					if (managedEmployees.size === 0) {
 						return [];
 					}
@@ -196,33 +194,29 @@ export const TeamsComplianceServiceLive = Layer.effect(
 					const startDate = now.minus({ days: daysBack }).startOf("day").toJSDate();
 
 					// Get violations for managed employees
-					const violations = yield* _(
-						dbService.query("getViolations", async () => {
-							return await dbService.db.query.workPolicyViolation.findMany({
-								where: and(
-									eq(workPolicyViolation.organizationId, organizationId),
-									inArray(workPolicyViolation.employeeId, managedEmployeeIds),
-									gte(workPolicyViolation.violationDate, startDate),
-								),
-								orderBy: [desc(workPolicyViolation.violationDate)],
-								limit: 50,
-							});
-						}),
-					);
+					const violations = yield* dbService.query("getViolations", async () => {
+						return await dbService.db.query.workPolicyViolation.findMany({
+							where: and(
+								eq(workPolicyViolation.organizationId, organizationId),
+								inArray(workPolicyViolation.employeeId, managedEmployeeIds),
+								gte(workPolicyViolation.violationDate, startDate),
+							),
+							orderBy: [desc(workPolicyViolation.violationDate)],
+							limit: 50,
+						});
+					});
 
 					// Get used exceptions to check for covered violations
-					const usedExceptions = yield* _(
-						dbService.query("getUsedExceptions", async () => {
-							return await dbService.db.query.complianceException.findMany({
-								where: and(
-									eq(complianceException.organizationId, organizationId),
-									inArray(complianceException.employeeId, managedEmployeeIds),
-									eq(complianceException.wasUsed, true),
-									gte(complianceException.usedAt, startDate),
-								),
-							});
-						}),
-					);
+					const usedExceptions = yield* dbService.query("getUsedExceptions", async () => {
+						return await dbService.db.query.complianceException.findMany({
+							where: and(
+								eq(complianceException.organizationId, organizationId),
+								inArray(complianceException.employeeId, managedEmployeeIds),
+								eq(complianceException.wasUsed, true),
+								gte(complianceException.usedAt, startDate),
+							),
+						});
+					});
 
 					const exceptionsByEmployee = new Map<string, typeof usedExceptions>();
 					for (const ex of usedExceptions) {
@@ -269,13 +263,11 @@ export const TeamsComplianceServiceLive = Layer.effect(
 				}),
 
 			getPendingExceptionsForManager: (params) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					const { managerId, organizationId } = params;
 
 					// Get managed employees
-					const managedEmployees = yield* _(
-						getManagedEmployeesWithNames(managerId, organizationId),
-					);
+					const managedEmployees = yield* getManagedEmployeesWithNames(managerId, organizationId);
 					if (managedEmployees.size === 0) {
 						return [];
 					}
@@ -283,19 +275,17 @@ export const TeamsComplianceServiceLive = Layer.effect(
 					const managedEmployeeIds = [...managedEmployees.keys()];
 
 					// Get pending exceptions
-					const exceptions = yield* _(
-						dbService.query("getPendingExceptions", async () => {
-							return await dbService.db.query.complianceException.findMany({
-								where: and(
-									eq(complianceException.organizationId, organizationId),
-									inArray(complianceException.employeeId, managedEmployeeIds),
-									eq(complianceException.status, "pending"),
-								),
-								orderBy: [desc(complianceException.createdAt)],
-								limit: 20,
-							});
-						}),
-					);
+					const exceptions = yield* dbService.query("getPendingExceptions", async () => {
+						return await dbService.db.query.complianceException.findMany({
+							where: and(
+								eq(complianceException.organizationId, organizationId),
+								inArray(complianceException.employeeId, managedEmployeeIds),
+								eq(complianceException.status, "pending"),
+							),
+							orderBy: [desc(complianceException.createdAt)],
+							limit: 20,
+						});
+					});
 
 					return exceptions.map((ex) => ({
 						id: ex.id,
@@ -311,32 +301,30 @@ export const TeamsComplianceServiceLive = Layer.effect(
 				}),
 
 			getComplianceSummary: (params) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					const { managerId, organizationId, daysBack = 7, timezone } = params;
 
 					// Get alerts and exceptions in parallel
-					const [alerts, pendingExceptions] = yield* _(
-						Effect.all([
-							TeamsComplianceService.pipe(
-								Effect.flatMap((service) =>
-									service.getComplianceAlertsForManager({
-										managerId,
-										organizationId,
-										daysBack,
-										timezone,
-									}),
-								),
+					const [alerts, pendingExceptions] = yield* Effect.all([
+						TeamsComplianceService.pipe(
+							Effect.flatMap((service) =>
+								service.getComplianceAlertsForManager({
+									managerId,
+									organizationId,
+									daysBack,
+									timezone,
+								}),
 							),
-							TeamsComplianceService.pipe(
-								Effect.flatMap((service) =>
-									service.getPendingExceptionsForManager({
-										managerId,
-										organizationId,
-									}),
-								),
+						),
+						TeamsComplianceService.pipe(
+							Effect.flatMap((service) =>
+								service.getPendingExceptionsForManager({
+									managerId,
+									organizationId,
+								}),
 							),
-						]),
-					);
+						),
+					]);
 
 					const criticalAlertsCount = alerts.filter(
 						(a) => a.severity === "critical" || a.severity === "violation",
@@ -351,34 +339,30 @@ export const TeamsComplianceServiceLive = Layer.effect(
 				}),
 
 			getPendingExceptionsCount: (params) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					const { managerId, organizationId } = params;
 
 					// Get managed employees
-					const managedEmployees = yield* _(
-						getManagedEmployeesWithNames(managerId, organizationId),
-					);
+					const managedEmployees = yield* getManagedEmployeesWithNames(managerId, organizationId);
 					if (managedEmployees.size === 0) {
 						return 0;
 					}
 
 					const managedEmployeeIds = [...managedEmployees.keys()];
 
-					const result = yield* _(
-						dbService.query("countPendingExceptions", async () => {
-							const [countResult] = await dbService.db
-								.select({ count: sql<number>`count(*)` })
-								.from(complianceException)
-								.where(
-									and(
-										eq(complianceException.organizationId, organizationId),
-										inArray(complianceException.employeeId, managedEmployeeIds),
-										eq(complianceException.status, "pending"),
-									),
-								);
-							return Number(countResult?.count) || 0;
-						}),
-					);
+					const result = yield* dbService.query("countPendingExceptions", async () => {
+						const [countResult] = await dbService.db
+							.select({ count: sql<number>`count(*)` })
+							.from(complianceException)
+							.where(
+								and(
+									eq(complianceException.organizationId, organizationId),
+									inArray(complianceException.employeeId, managedEmployeeIds),
+									eq(complianceException.status, "pending"),
+								),
+							);
+						return Number(countResult?.count) || 0;
+					});
 
 					return result;
 				}),

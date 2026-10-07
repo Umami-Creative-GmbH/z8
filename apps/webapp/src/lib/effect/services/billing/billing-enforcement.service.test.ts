@@ -40,7 +40,7 @@ vi.mock("@/db", () => {
 const { countBillableSeats } = vi.hoisted(() => ({ countBillableSeats: vi.fn() }));
 
 // Seat semantics are covered by billable-seat-count.integration.test.ts.
-vi.mock("./billable-seat-count", () => ({ countBillableSeats }));
+vi.mock("@/lib/effect/services/billing/billable-seat-count", () => ({ countBillableSeats }));
 
 vi.mock("drizzle-orm", async (importOriginal) => ({
 	...(await importOriginal<typeof import("drizzle-orm")>()),

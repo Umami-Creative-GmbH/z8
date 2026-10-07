@@ -42,18 +42,16 @@ export async function createPlatformAdminAction(
 			code: "AuthorizationError",
 		};
 	}
-	const effect = Effect.gen(function* (_) {
-		const setupService = yield* _(SetupService);
+	const effect = Effect.gen(function* () {
+		const setupService = yield* SetupService;
 
-		return yield* _(
-			setupService.createPlatformAdmin(
-				{
-					name: data.name,
-					email: data.email,
-					password: data.password,
-				},
-				setupToken,
-			),
+		return yield* setupService.createPlatformAdmin(
+			{
+				name: data.name,
+				email: data.email,
+				password: data.password,
+			},
+			setupToken,
 		);
 	}).pipe(Effect.provide(AppLayer));
 

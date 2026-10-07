@@ -65,7 +65,6 @@ describe("travel expenses i18n", () => {
 			join(appDir, "page.tsx"),
 			join(componentsDir, "travel-expense-management.tsx"),
 			join(componentsDir, "travel-expense-list.tsx"),
-			join(componentsDir, "travel-expense-claim-dialog.tsx"),
 			join(componentsDir, "travel-expense-decision-dialog.tsx"),
 		];
 

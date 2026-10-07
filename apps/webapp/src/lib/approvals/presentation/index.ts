@@ -31,6 +31,7 @@ import {
 	prepareTimeReviewSummary,
 } from "./time-card";
 import { prepareBoundTravelExpenseCard } from "./travel-expense-card";
+import { prepareBoundTravelExpenseReportCard } from "./travel-expense-report-card";
 
 const logger = createLogger("ApprovalPresentation");
 
@@ -238,6 +239,19 @@ export async function prepareApprovalPresentation(input: {
 	} else if (input.provider && request.entityType === "travel_expense_claim") {
 		// Legacy-authoritative expense claims bind the exact legacy request (#296).
 		const card = await prepareBoundTravelExpenseCard(db, {
+			organizationId: input.organizationId,
+			approvalRequestId: request.id,
+			recipientEmployeeId: input.recipientEmployeeId,
+			recipientUserId: recipient.userId,
+			provider: input.provider,
+			display,
+			t,
+			...(input.fits ? { fits: input.fits } : {}),
+		});
+		if (card) return card;
+	} else if (input.provider && request.entityType === "travel_expense_report") {
+		// Expense reports bind the exact legacy request of their current cycle (#623).
+		const card = await prepareBoundTravelExpenseReportCard(db, {
 			organizationId: input.organizationId,
 			approvalRequestId: request.id,
 			recipientEmployeeId: input.recipientEmployeeId,

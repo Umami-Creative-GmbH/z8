@@ -27,36 +27,36 @@ export async function getEmployeeRateHistoryAction(
 			logger.error({ error, employeeId }, "Failed to get rate history");
 		},
 		execute: (span) =>
-			Effect.gen(function* (_) {
-				const actor = yield* _(getEmployeeSettingsActorContext());
+			Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext();
 				const { dbService } = actor;
-				const targetEmployee = yield* _(getTargetEmployee(employeeId));
+				const targetEmployee = yield* getTargetEmployee(employeeId);
 
-				yield* _(
-					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+				yield* ensureSettingsActorCanAccessEmployeeTarget(
+					actor,
+					targetEmployee,
+					{
 						message: "You do not have access to this employee's rates",
 						resource: "rate_history",
 						action: "read",
-					}),
+					},
 				);
 
-				const history = yield* _(
-					dbService.query("getRateHistory", async () => {
-						return await dbService.db.query.employeeRateHistory.findMany({
-							where: and(
-								eq(employeeRateHistory.employeeId, employeeId),
-								eq(
-									employeeRateHistory.organizationId,
-									targetEmployee.organizationId,
-								),
+				const history = yield* dbService.query("getRateHistory", async () => {
+					return await dbService.db.query.employeeRateHistory.findMany({
+						where: and(
+							eq(employeeRateHistory.employeeId, employeeId),
+							eq(
+								employeeRateHistory.organizationId,
+								targetEmployee.organizationId,
 							),
-							with: {
-								creator: true,
-							},
-							orderBy: (rh, { desc }) => [desc(rh.effectiveFrom)],
-						});
-					}),
-				);
+						),
+						with: {
+							creator: true,
+						},
+						orderBy: (rh, { desc }) => [desc(rh.effectiveFrom)],
+					});
+				});
 
 				span.setAttribute("history.count", history.length);
 				return history as RateHistoryEntry[];
@@ -78,41 +78,41 @@ export async function getRateAtDateAction(
 			logger.error({ error, employeeId, date }, "Failed to get rate at date");
 		},
 		execute: () =>
-			Effect.gen(function* (_) {
-				const actor = yield* _(getEmployeeSettingsActorContext());
+			Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext();
 				const { dbService } = actor;
-				const targetEmployee = yield* _(getTargetEmployee(employeeId));
+				const targetEmployee = yield* getTargetEmployee(employeeId);
 
-				yield* _(
-					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+				yield* ensureSettingsActorCanAccessEmployeeTarget(
+					actor,
+					targetEmployee,
+					{
 						message: "You do not have access to this employee's rates",
 						resource: "rate_history",
 						action: "read",
-					}),
+					},
 				);
 
-				const rateEntry = yield* _(
-					dbService.query("getRateAtDate", async () => {
-						return await dbService.db.query.employeeRateHistory.findFirst({
-							where: and(
-								eq(employeeRateHistory.employeeId, employeeId),
-								eq(
-									employeeRateHistory.organizationId,
-									targetEmployee.organizationId,
-								),
-								lte(employeeRateHistory.effectiveFrom, date),
-								or(
-									isNull(employeeRateHistory.effectiveTo),
-									gt(employeeRateHistory.effectiveTo, date),
-								),
+				const rateEntry = yield* dbService.query("getRateAtDate", async () => {
+					return await dbService.db.query.employeeRateHistory.findFirst({
+						where: and(
+							eq(employeeRateHistory.employeeId, employeeId),
+							eq(
+								employeeRateHistory.organizationId,
+								targetEmployee.organizationId,
 							),
-							with: {
-								creator: true,
-							},
-							orderBy: (rh, { desc }) => [desc(rh.effectiveFrom)],
-						});
-					}),
-				);
+							lte(employeeRateHistory.effectiveFrom, date),
+							or(
+								isNull(employeeRateHistory.effectiveTo),
+								gt(employeeRateHistory.effectiveTo, date),
+							),
+						),
+						with: {
+							creator: true,
+						},
+						orderBy: (rh, { desc }) => [desc(rh.effectiveFrom)],
+					});
+				});
 
 				return (rateEntry as RateHistoryEntry) || null;
 			}),

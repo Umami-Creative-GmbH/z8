@@ -139,282 +139,256 @@ function setEmployeeLifecycleState(
 			);
 		},
 		execute: () =>
-			Effect.gen(function* (_) {
-				const actor = yield* _(
-					getEmployeeSettingsActorContext({
-						queryName: "setEmployeeLifecycleState:actor",
-					}),
-				);
-				yield* _(
-					requireOrgAdminEmployeeSettingsAccess(actor, {
-						message:
-							"Only organization owners and admins can change employee lifecycle state",
-						resource: "employee",
-						action,
-					}),
-				);
+			Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext({
+					queryName: "setEmployeeLifecycleState:actor",
+				});
+				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+					message:
+						"Only organization owners and admins can change employee lifecycle state",
+					resource: "employee",
+					action,
+				});
 
-				const validatedEmployeeId = yield* _(
-					validateInput(employeeIdSchema, employeeId, "employeeId"),
-				);
-				const transactionResult = yield* _(
-					actor.dbService
-						.query("setEmployeeLifecycleState", async () => {
-							// The target's active state feeds manual creation, so its protection
-							// precedes the organization row lock and every write.
-							return await withAuthorizationMutation(
-								{ organizationId: actor.organizationId, employeeIds: [validatedEmployeeId] },
-								async (tx): Promise<LifecycleTransactionResult> => {
-									// All lifecycle mutations for an organization take this row lock, serializing owner safety checks.
-									const [lockedOrganization] = await tx
-										.select({ id: organization.id })
-										.from(organization)
-										.where(eq(organization.id, actor.organizationId))
-										.for("update");
-									if (!lockedOrganization) return { type: "not_found" };
+				const validatedEmployeeId = yield* validateInput(employeeIdSchema, employeeId, "employeeId");
+				const transactionResult = yield* actor.dbService
+					.query("setEmployeeLifecycleState", async () => {
+						// The target's active state feeds manual creation, so its protection
+						// precedes the organization row lock and every write.
+						return await withAuthorizationMutation(
+							{ organizationId: actor.organizationId, employeeIds: [validatedEmployeeId] },
+							async (tx): Promise<LifecycleTransactionResult> => {
+								// All lifecycle mutations for an organization take this row lock, serializing owner safety checks.
+								const [lockedOrganization] = await tx
+									.select({ id: organization.id })
+									.from(organization)
+									.where(eq(organization.id, actor.organizationId))
+									.for("update");
+								if (!lockedOrganization) return { type: "not_found" };
 
-									const actorMembership = await tx.query.member.findFirst({
-										where: and(
-											eq(member.userId, actor.session.user.id),
-											eq(member.organizationId, actor.organizationId),
-											eq(member.status, "approved"),
-										),
-										columns: { role: true, userId: true },
-									});
-									if (!actorMembership)
-										return { type: "actor_membership_missing" };
-									const actorIsOwner = hasOrganizationRole(
-										actorMembership.role,
-										"owner",
-									);
-									const actorIsAdmin = hasOrganizationRole(
-										actorMembership.role,
-										"admin",
-									);
-									if (!actorIsOwner && !actorIsAdmin) {
-										return { type: "actor_membership_missing" };
-									}
+								const actorMembership = await tx.query.member.findFirst({
+									where: and(
+										eq(member.userId, actor.session.user.id),
+										eq(member.organizationId, actor.organizationId),
+										eq(member.status, "approved"),
+									),
+									columns: { role: true, userId: true },
+								});
+								if (!actorMembership)
+									return { type: "actor_membership_missing" };
+								const actorIsOwner = hasOrganizationRole(
+									actorMembership.role,
+									"owner",
+								);
+								const actorIsAdmin = hasOrganizationRole(
+									actorMembership.role,
+									"admin",
+								);
+								if (!actorIsOwner && !actorIsAdmin) {
+									return { type: "actor_membership_missing" };
+								}
 
-									const targetEmployee = await tx.query.employee.findFirst({
-										where: and(
-											eq(employee.id, validatedEmployeeId),
-											eq(employee.organizationId, actor.organizationId),
-										),
-										columns: { id: true, userId: true, isActive: true },
-									});
-									if (!targetEmployee) return { type: "not_found" };
+								const targetEmployee = await tx.query.employee.findFirst({
+									where: and(
+										eq(employee.id, validatedEmployeeId),
+										eq(employee.organizationId, actor.organizationId),
+									),
+									columns: { id: true, userId: true, isActive: true },
+								});
+								if (!targetEmployee) return { type: "not_found" };
 
-									const targetMembership = await tx.query.member.findFirst({
-										where: and(
-											eq(member.userId, targetEmployee.userId),
-											eq(member.organizationId, actor.organizationId),
-											eq(member.status, "approved"),
-										),
-										columns: { role: true, userId: true },
-									});
-									if (!targetMembership)
-										return { type: "target_membership_missing" };
-									if (targetEmployee.userId === actor.session.user.id)
-										return { type: "self_target" };
-									const targetIsOwner = hasOrganizationRole(
-										targetMembership.role,
-										"owner",
-									);
-									if (!actorIsOwner && actorIsAdmin && targetIsOwner) {
-										return { type: "admin_targeting_owner" };
-									}
+								const targetMembership = await tx.query.member.findFirst({
+									where: and(
+										eq(member.userId, targetEmployee.userId),
+										eq(member.organizationId, actor.organizationId),
+										eq(member.status, "approved"),
+									),
+									columns: { role: true, userId: true },
+								});
+								if (!targetMembership)
+									return { type: "target_membership_missing" };
+								if (targetEmployee.userId === actor.session.user.id)
+									return { type: "self_target" };
+								const targetIsOwner = hasOrganizationRole(
+									targetMembership.role,
+									"owner",
+								);
+								if (!actorIsOwner && actorIsAdmin && targetIsOwner) {
+									return { type: "admin_targeting_owner" };
+								}
 
-									if (targetEmployee.isActive === isActive) {
-										return { type: "success", changed: false, targetEmployee };
-									}
+								if (targetEmployee.isActive === isActive) {
+									return { type: "success", changed: false, targetEmployee };
+								}
 
-									// Ended employment is restored only through an explicit rehire.
-									if (
-										isActive &&
-										(await hasEndedEmploymentWithoutRehire(tx, {
-											organizationId: actor.organizationId,
-											employeeId: validatedEmployeeId,
-										}))
-									) {
-										return { type: "rehire_required" };
-									}
+								// Ended employment is restored only through an explicit rehire.
+								if (
+									isActive &&
+									(await hasEndedEmploymentWithoutRehire(tx, {
+										organizationId: actor.organizationId,
+										employeeId: validatedEmployeeId,
+									}))
+								) {
+									return { type: "rehire_required" };
+								}
 
-									if (!isActive && targetIsOwner) {
-										const approvedOwners = await tx
-											.select({
-												userId: member.userId,
-												role: member.role,
-												employeeIsActive: employee.isActive,
-											})
-											.from(member)
-											.leftJoin(
-												employee,
-												and(
-													eq(employee.userId, member.userId),
-													eq(employee.organizationId, actor.organizationId),
-												),
-											)
-											.where(
-												and(
-													eq(member.organizationId, actor.organizationId),
-													eq(member.status, "approved"),
-												),
-											);
-										const hasAlternativeAccessibleOwner = approvedOwners.some(
-											(owner) =>
-												owner.userId !== targetEmployee.userId &&
-												hasOrganizationRole(owner.role, "owner") &&
-												owner.employeeIsActive !== false,
-										);
-										if (!hasAlternativeAccessibleOwner)
-											return { type: "final_accessible_owner" };
-									}
-
-									const [updatedEmployee] = await tx
-										.update(employee)
-										.set({ isActive })
-										.where(
+								if (!isActive && targetIsOwner) {
+									const approvedOwners = await tx
+										.select({
+											userId: member.userId,
+											role: member.role,
+											employeeIsActive: employee.isActive,
+										})
+										.from(member)
+										.leftJoin(
+											employee,
 											and(
-												eq(employee.id, validatedEmployeeId),
+												eq(employee.userId, member.userId),
 												eq(employee.organizationId, actor.organizationId),
 											),
 										)
-										.returning({ id: employee.id });
-									if (!updatedEmployee) return { type: "not_found" };
+										.where(
+											and(
+												eq(member.organizationId, actor.organizationId),
+												eq(member.status, "approved"),
+											),
+										);
+									const hasAlternativeAccessibleOwner = approvedOwners.some(
+										(owner) =>
+											owner.userId !== targetEmployee.userId &&
+											hasOrganizationRole(owner.role, "owner") &&
+											owner.employeeIsActive !== false,
+									);
+									if (!hasAlternativeAccessibleOwner)
+										return { type: "final_accessible_owner" };
+								}
 
-									return { type: "success", changed: true, targetEmployee };
-								},
-								actor.dbService.db,
-							);
-						})
-						.pipe(
-							Effect.mapError((error) =>
-								isOwnerInvariantViolation(error)
-									? new ValidationError({
-											message:
-												"Assign and activate another approved owner before deactivating this employee",
-											field: "employeeId",
-										})
-									: error,
-							),
+								const [updatedEmployee] = await tx
+									.update(employee)
+									.set({ isActive })
+									.where(
+										and(
+											eq(employee.id, validatedEmployeeId),
+											eq(employee.organizationId, actor.organizationId),
+										),
+									)
+									.returning({ id: employee.id });
+								if (!updatedEmployee) return { type: "not_found" };
+
+								return { type: "success", changed: true, targetEmployee };
+							},
+							actor.dbService.db,
+						);
+					})
+					.pipe(
+						Effect.mapError((error) =>
+							isOwnerInvariantViolation(error)
+								? new ValidationError({
+										message:
+											"Assign and activate another approved owner before deactivating this employee",
+										field: "employeeId",
+									})
+								: error,
 						),
-				);
+					);
 
 				switch (transactionResult.type) {
 					case "not_found":
-						return yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Employee not found",
-									entityType: "employee",
-								}),
-							),
+						return yield* Effect.fail(
+							new NotFoundError({
+								message: "Employee not found",
+								entityType: "employee",
+							}),
 						);
 					case "actor_membership_missing":
-						return yield* _(
-							Effect.fail(
-								new AuthorizationError({
-									message: "You do not have access to employee settings",
-									userId: actor.session.user.id,
-									resource: "employee",
-									action,
-								}),
-							),
+						return yield* Effect.fail(
+							new AuthorizationError({
+								message: "You do not have access to employee settings",
+								userId: actor.session.user.id,
+								resource: "employee",
+								action,
+							}),
 						);
 					case "target_membership_missing":
-						return yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: isActive
-										? "This employee is no longer an approved organization member. Re-invite them before reactivating."
-										: "This employee is not an approved organization member.",
-									field: "employeeId",
-								}),
-							),
+						return yield* Effect.fail(
+							new ValidationError({
+								message: isActive
+									? "This employee is no longer an approved organization member. Re-invite them before reactivating."
+									: "This employee is not an approved organization member.",
+								field: "employeeId",
+							}),
 						);
 					case "self_target":
-						return yield* _(
-							Effect.fail(
-								new AuthorizationError({
-									message: `You cannot ${action} your own employee profile`,
-									userId: actor.session.user.id,
-									resource: "employee",
-									action,
-								}),
-							),
+						return yield* Effect.fail(
+							new AuthorizationError({
+								message: `You cannot ${action} your own employee profile`,
+								userId: actor.session.user.id,
+								resource: "employee",
+								action,
+							}),
 						);
 					case "admin_targeting_owner":
-						return yield* _(
-							Effect.fail(
-								new AuthorizationError({
-									message:
-										"Only an organization owner can change an owner's lifecycle state",
-									userId: actor.session.user.id,
-									resource: "employee",
-									action,
-								}),
-							),
+						return yield* Effect.fail(
+							new AuthorizationError({
+								message:
+									"Only an organization owner can change an owner's lifecycle state",
+								userId: actor.session.user.id,
+								resource: "employee",
+								action,
+							}),
 						);
 					case "final_accessible_owner":
-						return yield* _(
-							Effect.fail(
-								new ValidationError({
-									message:
-										"Assign and activate another approved owner before deactivating this employee",
-									field: "employeeId",
-								}),
-							),
+						return yield* Effect.fail(
+							new ValidationError({
+								message:
+									"Assign and activate another approved owner before deactivating this employee",
+								field: "employeeId",
+							}),
 						);
 					case "rehire_required":
-						return yield* _(
-							Effect.fail(
-								new ValidationError({
-									message:
-										"This employee has left the organization. Rehire them to start a new employment period.",
-									field: "employeeId",
-								}),
-							),
+						return yield* Effect.fail(
+							new ValidationError({
+								message:
+									"This employee has left the organization. Rehire them to start a new employment period.",
+								field: "employeeId",
+							}),
 						);
 				}
 
 				const revocationFailed = !isActive
-					? yield* _(
-							Effect.tryPromise({
-								try: () =>
-									revokeOrganizationActiveSessions(
-										transactionResult.targetEmployee.userId,
-										actor.organizationId,
-									),
-								catch: () => true,
-							}).pipe(
-								Effect.map(() => false),
-								Effect.catchAll(() => Effect.succeed(true)),
-							),
+					? yield* Effect.tryPromise({
+							try: () =>
+								revokeOrganizationActiveSessions(
+									transactionResult.targetEmployee.userId,
+									actor.organizationId,
+								),
+							catch: () => true,
+						}).pipe(
+							Effect.map(() => false),
+							Effect.catch(() => Effect.succeed(true)),
 						)
 					: null;
 
 				if (transactionResult.changed) {
-					yield* _(
-						Effect.promise(() =>
-							logAudit({
-								action: isActive
-									? AuditAction.EMPLOYEE_REACTIVATED
-									: AuditAction.EMPLOYEE_DEACTIVATED,
-								actorId: actor.session.user.id,
-								actorEmail: actor.session.user.email,
-								employeeId: transactionResult.targetEmployee.id,
-								targetId: transactionResult.targetEmployee.id,
-								targetType: "employee",
-								organizationId: actor.organizationId,
-								changes: {
-									isActive: {
-										from: transactionResult.targetEmployee.isActive,
-										to: isActive,
-									},
+					yield* Effect.promise(() =>
+						logAudit({
+							action: isActive
+								? AuditAction.EMPLOYEE_REACTIVATED
+								: AuditAction.EMPLOYEE_DEACTIVATED,
+							actorId: actor.session.user.id,
+							actorEmail: actor.session.user.email,
+							employeeId: transactionResult.targetEmployee.id,
+							targetId: transactionResult.targetEmployee.id,
+							targetType: "employee",
+							organizationId: actor.organizationId,
+							changes: {
+								isActive: {
+									from: transactionResult.targetEmployee.isActive,
+									to: isActive,
 								},
-								timestamp: new Date(),
-							}),
-						),
+							},
+							timestamp: new Date(),
+						}),
 					);
 				}
 
@@ -457,81 +431,67 @@ export async function removeEmployeeAccessAction(
 			logger.error({ error, employeeId }, "Failed to remove employee access");
 		},
 		execute: () =>
-			Effect.gen(function* (_) {
-				const actor = yield* _(
-					getEmployeeSettingsActorContext({
-						queryName: "removeEmployeeAccess:actor",
-					}),
-				);
-				const validatedEmployeeId = yield* _(
-					validateInput(employeeIdSchema, employeeId, "employeeId"),
-				);
+			Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext({
+					queryName: "removeEmployeeAccess:actor",
+				});
+				const validatedEmployeeId = yield* validateInput(employeeIdSchema, employeeId, "employeeId");
 
-				const actorMembership = yield* _(
-					actor.dbService.query(
-						"removeEmployeeAccess:actorMembership",
-						async () => {
-							return await actor.dbService.db.query.member.findFirst({
-								where: and(
-									eq(member.userId, actor.session.user.id),
-									eq(member.organizationId, actor.organizationId),
-									eq(member.status, "approved"),
-								),
-								columns: { role: true },
-							});
-						},
-					),
+				const actorMembership = yield* actor.dbService.query(
+					"removeEmployeeAccess:actorMembership",
+					async () => {
+						return await actor.dbService.db.query.member.findFirst({
+							where: and(
+								eq(member.userId, actor.session.user.id),
+								eq(member.organizationId, actor.organizationId),
+								eq(member.status, "approved"),
+							),
+							columns: { role: true },
+						});
+					},
 				);
 				if (
 					!actorMembership ||
 					!hasOrganizationRole(actorMembership.role, "owner")
 				) {
-					return yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only organization owners can remove employee access",
-								userId: actor.session.user.id,
-								resource: "employee",
-								action: "remove_access",
-							}),
-						),
+					return yield* Effect.fail(
+						new AuthorizationError({
+							message: "Only organization owners can remove employee access",
+							userId: actor.session.user.id,
+							resource: "employee",
+							action: "remove_access",
+						}),
 					);
 				}
 
-				const targetEmployee = yield* _(
-					actor.dbService.query(
-						"removeEmployeeAccess:targetEmployee",
-						async () => {
-							return await actor.dbService.db.query.employee.findFirst({
-								where: and(
-									eq(employee.id, validatedEmployeeId),
-									eq(employee.organizationId, actor.organizationId),
-								),
-								columns: { id: true, userId: true },
-							});
-						},
-					),
+				const targetEmployee = yield* actor.dbService.query(
+					"removeEmployeeAccess:targetEmployee",
+					async () => {
+						return await actor.dbService.db.query.employee.findFirst({
+							where: and(
+								eq(employee.id, validatedEmployeeId),
+								eq(employee.organizationId, actor.organizationId),
+							),
+							columns: { id: true, userId: true },
+						});
+					},
 				);
 				if (!targetEmployee) {
-					return yield* _(
-						Effect.fail(
-							new NotFoundError({
-								message: "Employee not found",
-								entityType: "employee",
-							}),
-						),
+					return yield* Effect.fail(
+						new NotFoundError({
+							message: "Employee not found",
+							entityType: "employee",
+						}),
 					);
 				}
 				if (targetEmployee.userId === actor.session.user.id) {
-					return yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "You cannot remove your own organization access",
-								userId: actor.session.user.id,
-								resource: "employee",
-								action: "remove_access",
-							}),
-						),
+					return yield* Effect.fail(
+						new AuthorizationError({
+							message: "You cannot remove your own organization access",
+							userId: actor.session.user.id,
+							resource: "employee",
+							action: "remove_access",
+						}),
 					);
 				}
 				const retryPostRemovalCleanup = () =>
@@ -549,82 +509,74 @@ export async function removeEmployeeAccessAction(
 							}),
 					});
 
-				const targetMembership = yield* _(
-					actor.dbService.query(
-						"removeEmployeeAccess:targetMembership",
-						async () => {
-							return await actor.dbService.db.query.member.findFirst({
-								where: and(
-									eq(member.userId, targetEmployee.userId),
-									eq(member.organizationId, actor.organizationId),
-									eq(member.status, "approved"),
-								),
-								columns: { id: true },
-							});
-						},
-					),
+				const targetMembership = yield* actor.dbService.query(
+					"removeEmployeeAccess:targetMembership",
+					async () => {
+						return await actor.dbService.db.query.member.findFirst({
+							where: and(
+								eq(member.userId, targetEmployee.userId),
+								eq(member.organizationId, actor.organizationId),
+								eq(member.status, "approved"),
+							),
+							columns: { id: true },
+						});
+					},
 				);
 				if (!targetMembership) {
 					revalidateEmployeesCache(actor.organizationId);
-					yield* _(retryPostRemovalCleanup());
+					yield* retryPostRemovalCleanup();
 					return;
 				}
 
-				const removalOutcome = yield* _(
-					Effect.tryPromise({
-						try: async () => {
-							const requestHeaders = await headers();
-							// Removal, its access guard and employee deactivation commit together (#314).
-							await runAuthMutation(() =>
-								auth.api.removeMember({
-									body: {
-										organizationId: actor.organizationId,
-										memberIdOrEmail: targetMembership.id,
-									},
-									headers: requestHeaders,
-								}),
-							);
-						},
-						catch: (cause) => cause,
-					}).pipe(
-						Effect.map(() => ({ success: true as const })),
-						Effect.catchAll((cause) =>
-							Effect.succeed({ success: false as const, cause }),
-						),
+				const removalOutcome = yield* Effect.tryPromise({
+					try: async () => {
+						const requestHeaders = await headers();
+						// Removal, its access guard and employee deactivation commit together (#314).
+						await runAuthMutation(() =>
+							auth.api.removeMember({
+								body: {
+									organizationId: actor.organizationId,
+									memberIdOrEmail: targetMembership.id,
+								},
+								headers: requestHeaders,
+							}),
+						);
+					},
+					catch: (cause) => cause,
+				}).pipe(
+					Effect.map(() => ({ success: true as const })),
+					Effect.catch((cause) =>
+						Effect.succeed({ success: false as const, cause }),
 					),
 				);
 
 				if (!removalOutcome.success) {
-					const remainingMembership = yield* _(
-						actor.dbService.query(
-							"removeEmployeeAccess:commitCheck",
-							async () => {
-								return await actor.dbService.db.query.member.findFirst({
-									where: and(
-										eq(member.id, targetMembership.id),
-										eq(member.organizationId, actor.organizationId),
-									),
-									columns: { id: true },
-								});
-							},
-						),
+					const remainingMembership = yield* actor.dbService.query(
+						"removeEmployeeAccess:commitCheck",
+						async () => {
+							return await actor.dbService.db.query.member.findFirst({
+								where: and(
+									eq(member.id, targetMembership.id),
+									eq(member.organizationId, actor.organizationId),
+								),
+								columns: { id: true },
+							});
+						},
 					);
 
 					if (remainingMembership) {
-						return yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: isFinalOwnerRemovalError(removalOutcome.cause)
-										? removeFinalOwnerGuidance
-										: "Employee access could not be removed. Please try again.",
-									field: "employeeId",
-								}),
-							),
+						return yield* Effect.fail(
+							new ValidationError({
+								message: isFinalOwnerRemovalError(removalOutcome.cause)
+									? removeFinalOwnerGuidance
+									: "Employee access could not be removed. Please try again.",
+								field: "employeeId",
+							}),
 						);
 					}
 
 					revalidateEmployeesCache(actor.organizationId);
-					yield* _(retryPostRemovalCleanup());
+					yield* retryPostRemovalCleanup();
 					return;
 				}
 

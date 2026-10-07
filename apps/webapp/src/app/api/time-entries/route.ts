@@ -163,18 +163,16 @@ export async function GET(request: NextRequest) {
 			}
 		}
 
-		const effect = Effect.gen(function* (_) {
-			const timeEntryService = yield* _(TimeEntryService);
-			return yield* _(
-				timeEntryService.getTimeEntries({
-					employeeId: targetEmployeeId,
-					organizationId: activeOrgId,
-					from: from ? new Date(from) : undefined,
-					to: to ? new Date(to) : undefined,
-					includeSuperseded,
-					authorizationPredicate: timeEntryAccess ?? undefined,
-				}),
-			);
+		const effect = Effect.gen(function* () {
+			const timeEntryService = yield* TimeEntryService;
+			return yield* timeEntryService.getTimeEntries({
+				employeeId: targetEmployeeId,
+				organizationId: activeOrgId,
+				from: from ? new Date(from) : undefined,
+				to: to ? new Date(to) : undefined,
+				includeSuperseded,
+				authorizationPredicate: timeEntryAccess ?? undefined,
+			});
 		});
 
 		const entries = await runtime.runPromise(effect);

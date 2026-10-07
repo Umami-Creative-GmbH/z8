@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { Cause, Effect, Runtime } from "effect";
+import { Cause, Effect, Exit, Option } from "effect";
 import { DateTime } from "luxon";
 import { enqueueVacationOverrideCalendarSyncJobs } from "@/app/[locale]/(app)/absences/request-absence-effect-helpers";
 import { member } from "@/db/auth-schema";
@@ -1288,11 +1288,9 @@ function buildAbsenceEmailContext(
 	currentEmployee: CurrentApprover,
 	days: number,
 ) {
-	return Effect.gen(function* (_) {
-		const appUrl = yield* _(
-			Effect.promise(() =>
-				getOrganizationBaseUrl(absence.employee.organizationId),
-			),
+	return Effect.gen(function* () {
+		const appUrl = yield* Effect.promise(() =>
+			getOrganizationBaseUrl(absence.employee.organizationId),
 		);
 
 		return {
@@ -1363,38 +1361,32 @@ function persistApprovedAbsenceAt(
 	finalizedAt: Instant,
 	expectedLinks?: ExpectedAbsenceLinks,
 ) {
-	return Effect.gen(function* (_) {
-		const { absence, workBalanceDirtyMark } = yield* _(
-			updateAbsenceStatus(
+	return Effect.gen(function* () {
+		const { absence, workBalanceDirtyMark } = yield* updateAbsenceStatus(
+			dbService,
+			entityId,
+			currentEmployee,
+			"approved",
+			undefined,
+			finalizedAt,
+			expectedLinks,
+		);
+		const vacationOverrideSummary = yield* Effect.promise(() =>
+			applySickVacationOverrideOnApproval(
 				dbService,
-				entityId,
+				absence,
 				currentEmployee,
-				"approved",
-				undefined,
+			),
+		);
+		yield* Effect.promise(() =>
+			syncCanonicalAbsenceApprovalStateAt(dbService, {
+				organizationId: absence.organizationId,
+				canonicalRecordId:
+					expectedLinks?.canonicalRecordId ?? absence.canonicalRecordId,
+				approvalState: "approved",
+				updatedBy: currentEmployee.user.id,
 				finalizedAt,
-				expectedLinks,
-			),
-		);
-		const vacationOverrideSummary = yield* _(
-			Effect.promise(() =>
-				applySickVacationOverrideOnApproval(
-					dbService,
-					absence,
-					currentEmployee,
-				),
-			),
-		);
-		yield* _(
-			Effect.promise(() =>
-				syncCanonicalAbsenceApprovalStateAt(dbService, {
-					organizationId: absence.organizationId,
-					canonicalRecordId:
-						expectedLinks?.canonicalRecordId ?? absence.canonicalRecordId,
-					approvalState: "approved",
-					updatedBy: currentEmployee.user.id,
-					finalizedAt,
-				}),
-			),
+			}),
 		);
 
 		return { absence, vacationOverrideSummary, workBalanceDirtyMark };
@@ -1445,42 +1437,34 @@ function notifyApprovedAbsenceAfterCommit(
 	currentEmployee: CurrentApprover,
 	result: ApprovedAbsenceResult,
 ) {
-	return Effect.gen(function* (_) {
-		const emailService = yield* _(EmailService);
+	return Effect.gen(function* () {
+		const emailService = yield* EmailService;
 		const { absence } = result;
-		const holidays = yield* _(
-			loadHolidays(dbService, absence.employee.organizationId),
-		);
+		const holidays = yield* loadHolidays(dbService, absence.employee.organizationId);
 		const days = calculateBusinessDays(
 			new Date(absence.startDate),
 			new Date(absence.endDate),
 			holidays,
 		);
-		const emailContext = yield* _(
-			buildAbsenceEmailContext(absence, currentEmployee, days),
-		);
-		const html = yield* _(
-			Effect.promise(() => renderAbsenceRequestApproved(emailContext)),
-		);
+		const emailContext = yield* buildAbsenceEmailContext(absence, currentEmployee, days);
+		const html = yield* Effect.promise(() => renderAbsenceRequestApproved(emailContext));
 
-		yield* _(
-			emailService
-				.send({
-					to: absence.employee.user.email,
-					subject: `Absence Request Approved: ${absence.category.name}`,
-					html,
-				})
-				.pipe(
-					Effect.catchTag("EmailError", (error) =>
-						Effect.sync(() =>
-							logger.error(
-								{ error, absenceId: entityId },
-								"Failed to send absence approval email",
-							),
+		yield* emailService
+			.send({
+				to: absence.employee.user.email,
+				subject: `Absence Request Approved: ${absence.category.name}`,
+				html,
+			})
+			.pipe(
+				Effect.catchTag("EmailError", (error) =>
+					Effect.sync(() =>
+						logger.error(
+							{ error, absenceId: entityId },
+							"Failed to send absence approval email",
 						),
 					),
 				),
-		);
+			);
 
 		notifyApprovedAbsence(absence, entityId, currentEmployee);
 	});
@@ -1494,30 +1478,26 @@ function persistRejectedAbsence(
 	finalizedAt?: Instant,
 	expectedLinks?: ExpectedAbsenceLinks,
 ) {
-	return Effect.gen(function* (_) {
+	return Effect.gen(function* () {
 		const decisionAt = finalizedAt ?? systemClock.nowInstant();
-		const { absence, workBalanceDirtyMark } = yield* _(
-			updateAbsenceStatus(
-				dbService,
-				entityId,
-				currentEmployee,
-				"rejected",
-				reason,
-				decisionAt,
-				expectedLinks,
-			),
+		const { absence, workBalanceDirtyMark } = yield* updateAbsenceStatus(
+			dbService,
+			entityId,
+			currentEmployee,
+			"rejected",
+			reason,
+			decisionAt,
+			expectedLinks,
 		);
-		yield* _(
-			Effect.promise(() =>
-				syncCanonicalAbsenceApprovalStateAt(dbService, {
-					organizationId: absence.organizationId,
-					canonicalRecordId:
-						expectedLinks?.canonicalRecordId ?? absence.canonicalRecordId,
-					approvalState: "rejected",
-					updatedBy: currentEmployee.user.id,
-					finalizedAt: decisionAt,
-				}),
-			),
+		yield* Effect.promise(() =>
+			syncCanonicalAbsenceApprovalStateAt(dbService, {
+				organizationId: absence.organizationId,
+				canonicalRecordId:
+					expectedLinks?.canonicalRecordId ?? absence.canonicalRecordId,
+				approvalState: "rejected",
+				updatedBy: currentEmployee.user.id,
+				finalizedAt: decisionAt,
+			}),
 		);
 
 		return { absence, workBalanceDirtyMark };
@@ -1583,47 +1563,39 @@ function notifyRejectedAbsenceAfterCommit(
 	reason: string,
 	result: AbsenceStatusUpdateResult,
 ) {
-	return Effect.gen(function* (_) {
-		const emailService = yield* _(EmailService);
+	return Effect.gen(function* () {
+		const emailService = yield* EmailService;
 		const { absence } = result;
-		const holidays = yield* _(
-			loadHolidays(dbService, absence.employee.organizationId),
-		);
+		const holidays = yield* loadHolidays(dbService, absence.employee.organizationId);
 		const days = calculateBusinessDays(
 			new Date(absence.startDate),
 			new Date(absence.endDate),
 			holidays,
 		);
-		const emailContext = yield* _(
-			buildAbsenceEmailContext(absence, currentEmployee, days),
-		);
-		const html = yield* _(
-			Effect.promise(() =>
-				renderAbsenceRequestRejected({
-					...emailContext,
-					rejectionReason: reason,
-				}),
-			),
+		const emailContext = yield* buildAbsenceEmailContext(absence, currentEmployee, days);
+		const html = yield* Effect.promise(() =>
+			renderAbsenceRequestRejected({
+				...emailContext,
+				rejectionReason: reason,
+			}),
 		);
 
-		yield* _(
-			emailService
-				.send({
-					to: absence.employee.user.email,
-					subject: `Absence Request Rejected: ${absence.category.name}`,
-					html,
-				})
-				.pipe(
-					Effect.catchTag("EmailError", (error) =>
-						Effect.sync(() =>
-							logger.error(
-								{ error, absenceId: entityId },
-								"Failed to send absence rejection email",
-							),
+		yield* emailService
+			.send({
+				to: absence.employee.user.email,
+				subject: `Absence Request Rejected: ${absence.category.name}`,
+				html,
+			})
+			.pipe(
+				Effect.catchTag("EmailError", (error) =>
+					Effect.sync(() =>
+						logger.error(
+							{ error, absenceId: entityId },
+							"Failed to send absence rejection email",
 						),
 					),
 				),
-		);
+			);
 
 		notifyRejectedAbsence(absence, entityId, currentEmployee, reason);
 	});
@@ -1711,8 +1683,8 @@ export function createLegacyAbsenceDecisionProcessor(input: {
 		transactionDbService,
 		transactionEmployee,
 		transactionBehavior,
-	) =>
-		await Effect.runPromise(
+	) => {
+		const exit = await Effect.runPromiseExit(
 			processApprovalWithCurrentEmployee(
 				transactionDbService,
 				transactionEmployee,
@@ -1740,6 +1712,11 @@ export function createLegacyAbsenceDecisionProcessor(input: {
 				),
 			) as Effect.Effect<unknown, AnyAppError, never>,
 		);
+		if (Exit.isSuccess(exit)) return exit.value;
+		// The owner's refusals are its typed failures; a defect passes as itself.
+		const failure = Cause.findErrorOption(exit.cause);
+		throw Option.isSome(failure) ? failure.value : Cause.squash(exit.cause);
+	};
 }
 
 function authenticatedAbsenceDecisionEffect(
@@ -1748,48 +1725,44 @@ function authenticatedAbsenceDecisionEffect(
 	reason?: string,
 	options?: ApprovalActionOptions,
 ) {
-	return Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
+	return Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
 		const organizationId = session.session.activeOrganizationId;
 		if (!organizationId) {
-			return yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Active organization not found",
-						entityType: "organization",
-					}),
-				),
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Active organization not found",
+					entityType: "organization",
+				}),
 			);
 		}
-		const currentEmployee = yield* _(
-			dbService
-				.query("getAbsenceApprovalActor", async () => {
-					return await dbService.db.query.employee.findFirst({
-						where: and(
-							eq(employee.userId, session.user.id),
-							eq(employee.organizationId, organizationId),
-							eq(employee.isActive, true),
-						),
-						with: { user: true },
-					});
-				})
-				.pipe(
-					Effect.flatMap((actor) =>
-						actor &&
-						actor.organizationId === organizationId &&
-						actor.userId === session.user.id
-							? Effect.succeed(actor as CurrentApprover)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Employee profile not found",
-										entityType: "employee",
-									}),
-								),
+		const currentEmployee = yield* dbService
+			.query("getAbsenceApprovalActor", async () => {
+				return await dbService.db.query.employee.findFirst({
+					where: and(
+						eq(employee.userId, session.user.id),
+						eq(employee.organizationId, organizationId),
+						eq(employee.isActive, true),
 					),
+					with: { user: true },
+				});
+			})
+			.pipe(
+				Effect.flatMap((actor) =>
+					actor &&
+					actor.organizationId === organizationId &&
+					actor.userId === session.user.id
+						? Effect.succeed(actor as CurrentApprover)
+						: Effect.fail(
+								new NotFoundError({
+									message: "Employee profile not found",
+									entityType: "employee",
+								}),
+							),
 				),
-		);
+			);
 		// Explicit organization approval management, from the caller's current
 		// abilities; never inferred from eligible-manager status.
 		const canManageOrganizationApproval = async () => {
@@ -1804,35 +1777,33 @@ function authenticatedAbsenceDecisionEffect(
 				canManageOrganizationApproval,
 			}),
 		});
-		const execution = yield* _(
-			Effect.tryPromise({
-				try: () =>
-					executeAbsenceDecisionInTransaction({
-						runtime,
-						organizationId,
-						actorEmployeeId: currentEmployee.id,
-						actorUserId: session.user.id,
+		const execution = yield* Effect.tryPromise({
+			try: () =>
+				executeAbsenceDecisionInTransaction({
+					runtime,
+					organizationId,
+					actorEmployeeId: currentEmployee.id,
+					actorUserId: session.user.id,
+					absenceId,
+					approvalRequestId: options?.approvalRequestId,
+					action,
+					reason,
+					...(options?.reviewedBindingId === undefined
+						? {}
+						: { reviewedBindingId: options.reviewedBindingId }),
+					query: dbService.query,
+					captureLegacyState: captureAbsenceLegacyApprovalState,
+					canManageOrganizationApproval,
+					nowInstant: () => systemClock.nowInstant(),
+					processLegacy: createLegacyAbsenceDecisionProcessor({
 						absenceId,
-						approvalRequestId: options?.approvalRequestId,
 						action,
 						reason,
-						...(options?.reviewedBindingId === undefined
-							? {}
-							: { reviewedBindingId: options.reviewedBindingId }),
-						query: dbService.query,
-						captureLegacyState: captureAbsenceLegacyApprovalState,
-						canManageOrganizationApproval,
-						nowInstant: () => systemClock.nowInstant(),
-						processLegacy: createLegacyAbsenceDecisionProcessor({
-							absenceId,
-							action,
-							reason,
-							options,
-						}),
+						options,
 					}),
-				catch: translateAbsenceDecisionError,
-			}),
-		);
+				}),
+			catch: translateAbsenceDecisionError,
+		});
 
 		if (
 			execution.authority === "legacy" && execution.domainResult
@@ -1852,14 +1823,12 @@ function authenticatedAbsenceDecisionEffect(
 							reason ?? "",
 							execution.domainResult as RejectedAbsenceResult,
 						);
-			yield* _(
-				postCommit.pipe(
-					Effect.catchAllCause((cause) =>
-						Effect.sync(() =>
-							logger.error(
-								{ cause, absenceId, organizationId, action },
-								"Absence approval after-commit work failed",
-							),
+			yield* postCommit.pipe(
+				Effect.catchCause((cause) =>
+					Effect.sync(() =>
+						logger.error(
+							{ cause, absenceId, organizationId, action },
+							"Absence approval after-commit work failed",
 						),
 					),
 				),
@@ -2239,19 +2208,17 @@ export async function decideBoundLegacyAbsenceInvocation(input: {
 function classifyBoundLegacyAbsenceError(
 	error: unknown,
 ): Exclude<BoundAbsenceInvocationResult, { status: "decided" }> {
-	// The legacy owner's own refusals arrive as Effect failures.
-	const failure = Runtime.isFiberFailure(error)
-		? Cause.squash(error[Runtime.FiberFailureCauseId])
-		: error;
+	// The legacy owner's own refusals arrive as its typed failures, which the
+	// legacy decision processor throws as themselves.
 	// No longer the approver, already decided, or deleted by cancellation.
 	if (
-		failure instanceof AuthorizationError ||
-		failure instanceof NotFoundError ||
-		failure instanceof ConflictError
+		error instanceof AuthorizationError ||
+		error instanceof NotFoundError ||
+		error instanceof ConflictError
 	) {
 		return { status: "review_required", reason: "stale" };
 	}
-	const classified = classifyBoundAbsenceError(failure);
+	const classified = classifyBoundAbsenceError(error);
 	if (classified.status === "decided") {
 		throw new ApprovalEvidenceError("invariant", { field: "invocation_decision" });
 	}

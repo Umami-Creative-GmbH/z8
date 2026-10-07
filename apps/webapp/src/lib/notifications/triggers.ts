@@ -739,6 +739,68 @@ export async function onTravelExpenseRejected(
 	}
 }
 
+/**
+ * Notify the employee that a reviewer decided their whole expense report (#602).
+ */
+export async function onTravelExpenseReportDecided(params: {
+	reportId: string;
+	requesterUserId: string;
+	organizationId: string;
+	approverName: string;
+	action: "approve" | "reject";
+	/** Employee-paid total of the decided revision, possibly zero. */
+	reimbursable: string;
+	currency: string;
+	rejectionReason?: string;
+}): Promise<void> {
+	try {
+		const approved = params.action === "approve";
+		const reasonText =
+			!approved && params.rejectionReason ? ` Reason: ${params.rejectionReason}` : "";
+		await createNotification({
+			userId: params.requesterUserId,
+			organizationId: params.organizationId,
+			type: approved ? "approval_request_approved" : "approval_request_rejected",
+			title: approved ? "Expense report approved" : "Expense report rejected",
+			message: `Your expense report (reimbursable ${params.currency} ${params.reimbursable}) was ${
+				approved ? "approved" : "rejected"
+			} by ${params.approverName}.${reasonText}`,
+			entityType: "travel_expense_report",
+			entityId: params.reportId,
+			actionUrl: `/travel-expenses/reports/${params.reportId}`,
+		});
+	} catch (error) {
+		logger.error({ error, params }, "Failed to trigger expense report decision notification");
+	}
+}
+
+/**
+ * Notify the employee that a reviewer returned their expense report for
+ * changes (#603); the report is editable again and can be resubmitted.
+ */
+export async function onTravelExpenseReportReturned(params: {
+	reportId: string;
+	requesterUserId: string;
+	organizationId: string;
+	reviewerName: string;
+	note: string;
+}): Promise<void> {
+	try {
+		await createNotification({
+			userId: params.requesterUserId,
+			organizationId: params.organizationId,
+			type: "approval_request_rejected",
+			title: "Expense report returned for changes",
+			message: `${params.reviewerName} returned your expense report for changes: ${params.note}`,
+			entityType: "travel_expense_report",
+			entityId: params.reportId,
+			actionUrl: `/travel-expenses/reports/${params.reportId}`,
+		});
+	} catch (error) {
+		logger.error({ error, params }, "Failed to trigger expense report return notification");
+	}
+}
+
 // =============================================================================
 // Team Notifications
 // =============================================================================

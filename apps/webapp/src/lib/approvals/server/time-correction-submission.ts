@@ -1115,6 +1115,27 @@ function validateSubmissionId(value: unknown): string {
 	return value.toLowerCase();
 }
 
+/**
+ * The approval db service for a correction submitted outside an Effect runtime.
+ */
+export function createTransactionalApprovalDbService(
+	client: ApprovalDbService["db"],
+): ApprovalDbService {
+	return {
+		db: client,
+		query: (name, query) =>
+			Effect.tryPromise({
+				try: query,
+				catch: (cause) =>
+					new DatabaseError({
+						message: `Database query failed: ${name}`,
+						operation: name,
+						cause,
+					}),
+			}),
+	};
+}
+
 function transactionDbService(
 	dbService: ApprovalDbService,
 	transactionDb: ApprovalDbService["db"],
@@ -2244,13 +2265,11 @@ export async function dispatchCommittedTimeCorrectionSubmission(
 	) {
 		return;
 	}
-	const effect = Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
-		const emailService = yield* _(EmailService);
-		yield* _(
-			Effect.promise(() =>
-				dispatchSubmissionPostCommit({ ...input, dbService, emailService }),
-			),
+	const effect = Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const emailService = yield* EmailService;
+		yield* Effect.promise(() =>
+			dispatchSubmissionPostCommit({ ...input, dbService, emailService }),
 		);
 	});
 	await Effect.runPromise(effect.pipe(Effect.provide(AppLayer)));
@@ -2368,77 +2387,65 @@ function submissionEffect(
 	data: CorrectionRequest | TimeEntryDeletionRequest,
 	action: "edit" | "delete",
 ) {
-	return Effect.gen(function* (_) {
+	return Effect.gen(function* () {
 		let submissionId: string;
 		try {
 			submissionId = validateSubmissionId(data.submissionId);
 		} catch (error) {
-			return yield* _(Effect.fail(error as ValidationError));
+			return yield* Effect.fail(error as ValidationError);
 		}
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
-		const emailService = yield* _(EmailService);
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
+		const emailService = yield* EmailService;
 		const organizationId = session.session.activeOrganizationId;
 		if (!organizationId) {
-			return yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-				),
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Employee profile not found",
+					entityType: "employee",
+				}),
 			);
 		}
-		const currentEmployee = yield* _(
-			Effect.tryPromise({
-				try: () =>
-					loadSubmissionActor(dbService, session.user.id, organizationId),
-				catch: () =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			}),
-		);
-		const billingAccess = yield* _(
-			Effect.promise(() => requireBillingForMutation(organizationId)),
-		);
+		const currentEmployee = yield* Effect.tryPromise({
+			try: () =>
+				loadSubmissionActor(dbService, session.user.id, organizationId),
+			catch: () =>
+				new NotFoundError({
+					message: "Employee profile not found",
+					entityType: "employee",
+				}),
+		});
+		const billingAccess = yield* Effect.promise(() => requireBillingForMutation(organizationId));
 		if (!isBillingMutationAllowed(billingAccess)) {
-			return yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: "billing_required",
-						field: "billing",
-						value: billingAccess.reason ?? "subscription_required",
-					}),
-				),
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "billing_required",
+					field: "billing",
+					value: billingAccess.reason ?? "subscription_required",
+				}),
 			);
 		}
-		const { period, ownerUserId, onBehalf } = yield* _(
-			Effect.tryPromise({
-				try: () =>
-					loadSubmissionTarget({
-						dbService,
-						organizationId,
-						actorUserId: session.user.id,
-						actorEmployeeId: currentEmployee.id,
-						workPeriodId: data.workPeriodId,
-					}),
-				catch: (error) =>
-					error instanceof AuthorizationError
-						? error
-						: new NotFoundError({
-								message: "Work period not found",
-								entityType: "workPeriod",
-								entityId: data.workPeriodId,
-							}),
-			}),
-		);
+		const { period, ownerUserId, onBehalf } = yield* Effect.tryPromise({
+			try: () =>
+				loadSubmissionTarget({
+					dbService,
+					organizationId,
+					actorUserId: session.user.id,
+					actorEmployeeId: currentEmployee.id,
+					workPeriodId: data.workPeriodId,
+				}),
+			catch: (error) =>
+				error instanceof AuthorizationError
+					? error
+					: new NotFoundError({
+							message: "Work period not found",
+							entityType: "workPeriod",
+							entityId: data.workPeriodId,
+						}),
+		});
 		// Wall-clock values are always the owner's, never the on-behalf editor's.
-		const timezone = yield* _(
-			Effect.promise(() => getUserTimezone(ownerUserId)),
-		);
+		const timezone = yield* Effect.promise(() => getUserTimezone(ownerUserId));
 		const fallbackTimezoneSource = onBehalf
 			? ("manager_target_user_setting" as const)
 			: ("user_setting" as const);
@@ -2451,41 +2458,35 @@ function submissionEffect(
 			// goes to the owner's approval chain instead.
 			const forbiddenMessage = onBehalf
 				? null
-				: yield* _(
-					Effect.tryPromise({
-						try: () =>
-							getForbiddenCorrectionEditMessage({
-								employeeId: currentEmployee.id,
-								workPeriodEndTime: period.endTime,
-								timezone,
-							}),
-						catch: (cause) => {
-							logger.error({ error: cause }, "Failed to check edit capability");
-							return new DatabaseError({
-								message: "Failed to verify edit policy. Please try again.",
-								operation: "get_edit_capability",
-								cause,
-							});
-						},
-					}),
-				);
-			if (forbiddenMessage) {
-				return yield* _(
-					Effect.fail(
-						new ValidationError({
-							message: forbiddenMessage,
-							field: "workPeriodId",
+				: yield* Effect.tryPromise({
+					try: () =>
+						getForbiddenCorrectionEditMessage({
+							employeeId: currentEmployee.id,
+							workPeriodEndTime: period.endTime,
+							timezone,
 						}),
-					),
+					catch: (cause) => {
+						logger.error({ error: cause }, "Failed to check edit capability");
+						return new DatabaseError({
+							message: "Failed to verify edit policy. Please try again.",
+							operation: "get_edit_capability",
+							cause,
+						});
+					},
+				});
+			if (forbiddenMessage) {
+				return yield* Effect.fail(
+					new ValidationError({
+						message: forbiddenMessage,
+						field: "workPeriodId",
+					}),
 				);
 			}
 			const edit = data as CorrectionRequest;
 			const times = buildCorrectionTimes({ ...edit, timezone });
 			if ("error" in times) {
-				return yield* _(
-					Effect.fail(
-						new ValidationError({ message: times.error, field: "timestamp" }),
-					),
+				return yield* Effect.fail(
+					new ValidationError({ message: times.error, field: "timestamp" }),
 				);
 			}
 			const clockInChanged = hasSubmittedEndpointMinuteChanged({
@@ -2524,13 +2525,11 @@ function submissionEffect(
 						now,
 					) > 0)
 			) {
-				return yield* _(
-					Effect.fail(
-						new ValidationError({
-							message: "Correction time cannot be in the future",
-							field: "timestamp",
-						}),
-					),
+				return yield* Effect.fail(
+					new ValidationError({
+						message: "Correction time cannot be in the future",
+						field: "timestamp",
+					}),
 				);
 			}
 			if (
@@ -2540,13 +2539,11 @@ function submissionEffect(
 					instantFromTimeCorrectionBoundary(correctedClockIn),
 				) <= 0
 			) {
-				return yield* _(
-					Effect.fail(
-						new ValidationError({
-							message: "Clock out time must be after clock in time",
-							field: "newClockOutTime",
-						}),
-					),
+				return yield* Effect.fail(
+					new ValidationError({
+						message: "Clock out time must be after clock in time",
+						field: "newClockOutTime",
+					}),
 				);
 			}
 			try {
@@ -2557,16 +2554,14 @@ function submissionEffect(
 						: null,
 				);
 			} catch (error) {
-				return yield* _(
-					Effect.fail(
-						new ValidationError({
-							message:
-								error instanceof Error
-									? error.message
-									: "Invalid work period range",
-							field: "timestamp",
-						}),
-					),
+				return yield* Effect.fail(
+					new ValidationError({
+						message:
+							error instanceof Error
+								? error.message
+								: "Invalid work period range",
+						field: "timestamp",
+					}),
 				);
 			}
 			if (clockInChanged) {
@@ -2600,27 +2595,23 @@ function submissionEffect(
 			}
 		} else {
 			if (!period.endTime || !period.clockOutId) {
-				return yield* _(
-					Effect.fail(
-						new ValidationError({
-							message:
-								"Cannot delete an active work period. Please clock out first.",
-							field: "workPeriodId",
-						}),
-					),
+				return yield* Effect.fail(
+					new ValidationError({
+						message:
+							"Cannot delete an active work period. Please clock out first.",
+						field: "workPeriodId",
+					}),
 				);
 			}
 			const clockOutId = period.clockOutId;
-			const originals = yield* _(
-				Effect.promise(() =>
-					dbService.db.query.timeEntry.findMany({
-						where: and(
-							eq(timeEntry.organizationId, organizationId),
-							eq(timeEntry.employeeId, period.employeeId),
-							inArray(timeEntry.id, [period.clockInId, clockOutId]),
-						),
-					}),
-				),
+			const originals = yield* Effect.promise(() =>
+				dbService.db.query.timeEntry.findMany({
+					where: and(
+						eq(timeEntry.organizationId, organizationId),
+						eq(timeEntry.employeeId, period.employeeId),
+						inArray(timeEntry.id, [period.clockInId, clockOutId]),
+					),
+				}),
 			);
 			const deletionTimestamp = period.startTime;
 			const originalsById = new Map<string, (typeof originals)[number]>();
@@ -2664,59 +2655,55 @@ function submissionEffect(
 			correctedClockOut = deletionTimestamp;
 		}
 
-		const result = yield* _(
-			Effect.tryPromise({
-				try: () =>
-					submitCorrection({
-						dbService,
-						organizationId,
-						employeeId: period.employeeId,
-						userId: session.user.id,
-						actorEmployeeId: currentEmployee.id,
-						submissionId,
-						workPeriodId: period.id,
-						expectedClockInId: period.clockInId,
-						expectedClockOutId: period.clockOutId,
-						expectedStartTime: period.startTime,
-						expectedEndTime: period.endTime,
-						action,
-						reason: data.reason,
-						endpoints,
-						workLocationType:
-							action === "edit"
-								? (data as CorrectionRequest).workLocationType
-								: normalizeWorkLocationType(period.workLocationType),
-						workCategoryId:
-							action === "edit"
-								? (data as CorrectionRequest).workCategoryId
-								: period.workCategoryId,
-						validateTimeRange: () =>
-							validateTimeEntryRange(
-								organizationId,
-								correctedClockIn,
-								correctedClockOut ?? correctedClockIn,
-								timezone,
-							),
-					}),
-				catch: submissionFailure,
-			}),
-		);
-		yield* _(
-			Effect.promise(() =>
-				dispatchSubmissionPostCommit({
+		const result = yield* Effect.tryPromise({
+			try: () =>
+				submitCorrection({
 					dbService,
-					emailService,
 					organizationId,
 					employeeId: period.employeeId,
+					userId: session.user.id,
 					actorEmployeeId: currentEmployee.id,
+					submissionId,
 					workPeriodId: period.id,
+					expectedClockInId: period.clockInId,
+					expectedClockOutId: period.clockOutId,
+					expectedStartTime: period.startTime,
+					expectedEndTime: period.endTime,
+					action,
 					reason: data.reason,
-					period,
-					correctedClockIn,
-					correctedClockOut,
-					result,
+					endpoints,
+					workLocationType:
+						action === "edit"
+							? (data as CorrectionRequest).workLocationType
+							: normalizeWorkLocationType(period.workLocationType),
+					workCategoryId:
+						action === "edit"
+							? (data as CorrectionRequest).workCategoryId
+							: period.workCategoryId,
+					validateTimeRange: () =>
+						validateTimeEntryRange(
+							organizationId,
+							correctedClockIn,
+							correctedClockOut ?? correctedClockIn,
+							timezone,
+						),
 				}),
-			),
+			catch: submissionFailure,
+		});
+		yield* Effect.promise(() =>
+			dispatchSubmissionPostCommit({
+				dbService,
+				emailService,
+				organizationId,
+				employeeId: period.employeeId,
+				actorEmployeeId: currentEmployee.id,
+				workPeriodId: period.id,
+				reason: data.reason,
+				period,
+				correctedClockIn,
+				correctedClockOut,
+				result,
+			}),
 		);
 		if (result.kind === "auto_completed") {
 			return {
@@ -2727,16 +2714,14 @@ function submissionEffect(
 		// An on-behalf editor who approves the owner's current stage decides it
 		// now, as they would from the inbox; any other approver decides later.
 		const status = onBehalf
-			? yield* _(
-					Effect.promise(() =>
-						approveOnBehalfCorrectionAsEditor({
-							dbService: dbService as ApprovalDbService,
-							organizationId,
-							workPeriodId: period.id,
-							approvalRequestId: result.approvalRequestId,
-							editorEmployeeId: currentEmployee.id,
-						}),
-					),
+			? yield* Effect.promise(() =>
+					approveOnBehalfCorrectionAsEditor({
+						dbService: dbService as ApprovalDbService,
+						organizationId,
+						workPeriodId: period.id,
+						approvalRequestId: result.approvalRequestId,
+						editorEmployeeId: currentEmployee.id,
+					}),
 				)
 			: ("pending" as const);
 		return { approvalId: result.approvalRequestId, status };

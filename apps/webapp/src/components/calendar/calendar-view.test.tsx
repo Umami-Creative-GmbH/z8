@@ -34,6 +34,7 @@ const {
 		events: [] as CalendarEvent[],
 		dailyRequirements: new Map(),
 		dailyActualMinutes: new Map(),
+		liveWork: [],
 		workBalance: null,
 		calendarTimezone: null as string | null,
 		isLoading: false,

@@ -824,11 +824,9 @@ export async function getBreakReminderStatus(): Promise<
 			calculateBreaksTakenToday(currentEmployee.id, timezone),
 		]);
 
-		const breakStatusEffect = Effect.gen(function* (_) {
-			const workPolicyService = yield* _(WorkPolicyService);
-			const policy = yield* _(
-				workPolicyService.getEffectivePolicy(currentEmployee.id),
-			);
+		const breakStatusEffect = Effect.gen(function* () {
+			const workPolicyService = yield* WorkPolicyService;
+			const policy = yield* workPolicyService.getEffectivePolicy(currentEmployee.id);
 
 			if (!policy?.regulation) {
 				return {

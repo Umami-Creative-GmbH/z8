@@ -33,7 +33,7 @@ import {
 	type DatabaseError,
 	NotFoundError,
 	ValidationError,
-} from "../errors";
+} from "@/lib/effect/errors";
 import { DatabaseService } from "./database.service";
 
 // Type definitions
@@ -108,7 +108,7 @@ export interface UseInviteCodeResult {
 	error?: string;
 }
 
-export class InviteCodeService extends Context.Tag("InviteCodeService")<
+export class InviteCodeService extends Context.Service<
 	InviteCodeService,
 	{
 		// CRUD operations
@@ -193,12 +193,12 @@ export class InviteCodeService extends Context.Tag("InviteCodeService")<
 			userId: string,
 		) => Effect.Effect<string | null, DatabaseError>;
 	}
->() {}
+>()("InviteCodeService") {}
 
 export const InviteCodeServiceLive = Layer.effect(
 	InviteCodeService,
-	Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
 		// Helper to generate a human-readable code
 		const generateReadableCode = (): string => {
@@ -564,120 +564,104 @@ export const InviteCodeServiceLive = Layer.effect(
 
 		return InviteCodeService.of({
 			create: (input) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Generate or validate code
 					const code = input.code?.toUpperCase() || generateReadableCode();
 
 					if (!isValidCodeFormat(code)) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message:
-										"Invalid code format. Must be 4-20 characters, alphanumeric and hyphens only.",
-									field: "code",
-								}),
-							),
+						yield* Effect.fail(
+							new ValidationError({
+								message:
+									"Invalid code format. Must be 4-20 characters, alphanumeric and hyphens only.",
+								field: "code",
+							}),
 						);
 					}
 
 					// Check if code already exists for this organization
-					const existing = yield* _(
-						dbService.query("checkExistingCode", async () => {
-							return await dbService.db.query.inviteCode.findFirst({
-								where: and(
-									eq(inviteCode.organizationId, input.organizationId),
-									eq(inviteCode.code, code),
-								),
-							});
-						}),
-					);
+					const existing = yield* dbService.query("checkExistingCode", async () => {
+						return await dbService.db.query.inviteCode.findFirst({
+							where: and(
+								eq(inviteCode.organizationId, input.organizationId),
+								eq(inviteCode.code, code),
+							),
+						});
+					});
 
 					if (existing) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message:
-										"A code with this name already exists for this organization.",
-									field: "code",
-								}),
-							),
+						yield* Effect.fail(
+							new ValidationError({
+								message:
+									"A code with this name already exists for this organization.",
+								field: "code",
+							}),
 						);
 					}
 
 					// Validate team exists if provided
 					if (input.defaultTeamId) {
 						const defaultTeamId = input.defaultTeamId;
-						const teamRecord = yield* _(
-							dbService.query("validateTeam", async () => {
-								return await dbService.db.query.team.findFirst({
-									where: and(
-										eq(team.id, defaultTeamId),
-										eq(team.organizationId, input.organizationId),
-									),
-								});
-							}),
-						);
+						const teamRecord = yield* dbService.query("validateTeam", async () => {
+							return await dbService.db.query.team.findFirst({
+								where: and(
+									eq(team.id, defaultTeamId),
+									eq(team.organizationId, input.organizationId),
+								),
+							});
+						});
 
 						if (!teamRecord) {
-							yield* _(
-								Effect.fail(
-									new ValidationError({
-										message:
-											"Invalid default team. Team not found in this organization.",
-										field: "defaultTeamId",
-									}),
-								),
+							yield* Effect.fail(
+								new ValidationError({
+									message:
+										"Invalid default team. Team not found in this organization.",
+									field: "defaultTeamId",
+								}),
 							);
 						}
 					}
 
-					const createdCode = yield* _(
-						dbService.query("createInviteCode", async () => {
-							const [result] = await dbService.db
-								.insert(inviteCode)
-								.values({
-									organizationId: input.organizationId,
-									code,
-									label: input.label,
-									description: input.description,
-									maxUses: input.maxUses,
-									expiresAt: input.expiresAt,
-									defaultTeamId: input.defaultTeamId,
-									requiresApproval: input.requiresApproval ?? true,
-									status: "active",
-									createdBy: input.createdBy,
-								})
-								.returning();
-							return result;
-						}),
-					);
+					const createdCode = yield* dbService.query("createInviteCode", async () => {
+						const [result] = await dbService.db
+							.insert(inviteCode)
+							.values({
+								organizationId: input.organizationId,
+								code,
+								label: input.label,
+								description: input.description,
+								maxUses: input.maxUses,
+								expiresAt: input.expiresAt,
+								defaultTeamId: input.defaultTeamId,
+								requiresApproval: input.requiresApproval ?? true,
+								status: "active",
+								createdBy: input.createdBy,
+							})
+							.returning();
+						return result;
+					});
 
 					return createdCode;
 				}),
 
 			update: (id, organizationId, input) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Verify code exists
-					const existing = yield* _(
-						dbService.query("getInviteCodeById", async () => {
-							return await dbService.db.query.inviteCode.findFirst({
-								where: and(
-									eq(inviteCode.id, id),
-									eq(inviteCode.organizationId, organizationId),
-								),
-							});
-						}),
-					);
+					const existing = yield* dbService.query("getInviteCodeById", async () => {
+						return await dbService.db.query.inviteCode.findFirst({
+							where: and(
+								eq(inviteCode.id, id),
+								eq(inviteCode.organizationId, organizationId),
+							),
+						});
+					});
 
 					if (!existing) {
-						return yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Invite code not found",
-									entityType: "inviteCode",
-									entityId: id,
-								}),
-							),
+						return yield* Effect.fail(
+							new NotFoundError({
+								message: "Invite code not found",
+								entityType: "inviteCode",
+								entityId: id,
+							}),
 						);
 					}
 
@@ -689,246 +673,226 @@ export const InviteCodeServiceLive = Layer.effect(
 						input.defaultTeamId !== null
 					) {
 						const defaultTeamId = input.defaultTeamId;
-						const teamRecord = yield* _(
-							dbService.query("validateTeam", async () => {
-								return await dbService.db.query.team.findFirst({
-									where: and(
-										eq(team.id, defaultTeamId),
-										eq(team.organizationId, existingInviteCode.organizationId),
-									),
-								});
-							}),
-						);
+						const teamRecord = yield* dbService.query("validateTeam", async () => {
+							return await dbService.db.query.team.findFirst({
+								where: and(
+									eq(team.id, defaultTeamId),
+									eq(team.organizationId, existingInviteCode.organizationId),
+								),
+							});
+						});
 
 						if (!teamRecord) {
-							yield* _(
-								Effect.fail(
-									new ValidationError({
-										message:
-											"Invalid default team. Team not found in this organization.",
-										field: "defaultTeamId",
-									}),
-								),
+							yield* Effect.fail(
+								new ValidationError({
+									message:
+										"Invalid default team. Team not found in this organization.",
+									field: "defaultTeamId",
+								}),
 							);
 						}
 					}
 
-					const updatedCode = yield* _(
-						dbService.query("updateInviteCode", async () => {
-							const [result] = await dbService.db
-								.update(inviteCode)
-								.set({
-									...(input.label !== undefined && { label: input.label }),
-									...(input.description !== undefined && {
-										description: input.description,
-									}),
-									...(input.maxUses !== undefined && {
-										maxUses: input.maxUses,
-									}),
-									...(input.expiresAt !== undefined && {
-										expiresAt: input.expiresAt,
-									}),
-									...(input.defaultTeamId !== undefined && {
-										defaultTeamId: input.defaultTeamId,
-									}),
-									...(input.requiresApproval !== undefined && {
-										requiresApproval: input.requiresApproval,
-									}),
-									...(input.status !== undefined && { status: input.status }),
-									updatedBy: input.updatedBy,
-								})
-								.where(
-									and(
-										eq(inviteCode.id, id),
-										eq(inviteCode.organizationId, organizationId),
-									),
-								)
-								.returning();
-							return result;
-						}),
-					);
+					const updatedCode = yield* dbService.query("updateInviteCode", async () => {
+						const [result] = await dbService.db
+							.update(inviteCode)
+							.set({
+								...(input.label !== undefined && { label: input.label }),
+								...(input.description !== undefined && {
+									description: input.description,
+								}),
+								...(input.maxUses !== undefined && {
+									maxUses: input.maxUses,
+								}),
+								...(input.expiresAt !== undefined && {
+									expiresAt: input.expiresAt,
+								}),
+								...(input.defaultTeamId !== undefined && {
+									defaultTeamId: input.defaultTeamId,
+								}),
+								...(input.requiresApproval !== undefined && {
+									requiresApproval: input.requiresApproval,
+								}),
+								...(input.status !== undefined && { status: input.status }),
+								updatedBy: input.updatedBy,
+							})
+							.where(
+								and(
+									eq(inviteCode.id, id),
+									eq(inviteCode.organizationId, organizationId),
+								),
+							)
+							.returning();
+						return result;
+					});
 
 					return updatedCode;
 				}),
 
 			delete: (id, organizationId, userId) =>
-				Effect.gen(function* (_) {
-					const existing = yield* _(
-						dbService.query("getInviteCodeById", async () => {
-							return await dbService.db.query.inviteCode.findFirst({
-								where: and(
-									eq(inviteCode.id, id),
-									eq(inviteCode.organizationId, organizationId),
-								),
-							});
-						}),
-					);
+				Effect.gen(function* () {
+					const existing = yield* dbService.query("getInviteCodeById", async () => {
+						return await dbService.db.query.inviteCode.findFirst({
+							where: and(
+								eq(inviteCode.id, id),
+								eq(inviteCode.organizationId, organizationId),
+							),
+						});
+					});
 
 					if (!existing) {
-						return yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Invite code not found",
-									entityType: "inviteCode",
-									entityId: id,
-								}),
-							),
+						return yield* Effect.fail(
+							new NotFoundError({
+								message: "Invite code not found",
+								entityType: "inviteCode",
+								entityId: id,
+							}),
 						);
 					}
 
 					// Soft delete by archiving
-					yield* _(
-						dbService.query("archiveInviteCode", async () => {
-							await dbService.db
-								.update(inviteCode)
-								.set({
-									status: "archived",
-									updatedBy: userId,
-								})
-								.where(
-									and(
-										eq(inviteCode.id, id),
-										eq(inviteCode.organizationId, organizationId),
-									),
-								);
-						}),
-					);
-				}),
-
-			getById: (id, organizationId) =>
-				Effect.gen(function* (_) {
-					const result = yield* _(
-						dbService.query("getInviteCodeById", async () => {
-							return await dbService.db.query.inviteCode.findFirst({
-								where: and(
+					yield* dbService.query("archiveInviteCode", async () => {
+						await dbService.db
+							.update(inviteCode)
+							.set({
+								status: "archived",
+								updatedBy: userId,
+							})
+							.where(
+								and(
 									eq(inviteCode.id, id),
 									eq(inviteCode.organizationId, organizationId),
 								),
-								with: {
-									organization: {
-										columns: {
-											id: true,
-											name: true,
-											slug: true,
-										},
-									},
-									defaultTeam: {
-										columns: {
-											id: true,
-											name: true,
-										},
+							);
+					});
+				}),
+
+			getById: (id, organizationId) =>
+				Effect.gen(function* () {
+					const result = yield* dbService.query("getInviteCodeById", async () => {
+						return await dbService.db.query.inviteCode.findFirst({
+							where: and(
+								eq(inviteCode.id, id),
+								eq(inviteCode.organizationId, organizationId),
+							),
+							with: {
+								organization: {
+									columns: {
+										id: true,
+										name: true,
+										slug: true,
 									},
 								},
-							});
-						}),
-					);
+								defaultTeam: {
+									columns: {
+										id: true,
+										name: true,
+									},
+								},
+							},
+						});
+					});
 
 					return result as InviteCodeWithRelations | null;
 				}),
 
 			getByCode: (organizationId, code) =>
-				Effect.gen(function* (_) {
-					const result = yield* _(
-						dbService.query("getInviteCodeByCode", async () => {
-							return await dbService.db.query.inviteCode.findFirst({
-								where: and(
-									eq(inviteCode.organizationId, organizationId),
-									eq(inviteCode.code, code.toUpperCase()),
-								),
-								with: {
-									organization: {
-										columns: {
-											id: true,
-											name: true,
-											slug: true,
-										},
-									},
-									defaultTeam: {
-										columns: {
-											id: true,
-											name: true,
-										},
+				Effect.gen(function* () {
+					const result = yield* dbService.query("getInviteCodeByCode", async () => {
+						return await dbService.db.query.inviteCode.findFirst({
+							where: and(
+								eq(inviteCode.organizationId, organizationId),
+								eq(inviteCode.code, code.toUpperCase()),
+							),
+							with: {
+								organization: {
+									columns: {
+										id: true,
+										name: true,
+										slug: true,
 									},
 								},
-							});
-						}),
-					);
+								defaultTeam: {
+									columns: {
+										id: true,
+										name: true,
+									},
+								},
+							},
+						});
+					});
 
 					return result as InviteCodeWithRelations | null;
 				}),
 
 			list: (query) =>
-				Effect.gen(function* (_) {
-					const results = yield* _(
-						dbService.query("listInviteCodes", async () => {
-							const baseCondition = eq(
-								inviteCode.organizationId,
-								query.organizationId,
-							);
-							const whereCondition: SQL = query.status
-								? ((and(baseCondition, eq(inviteCode.status, query.status)) ??
-										baseCondition) as SQL)
-								: !query.includeArchived
-									? ((and(
-											baseCondition,
-											inArray(inviteCode.status, [
-												"active",
-												"paused",
-												"expired",
-											]),
-										) ?? baseCondition) as SQL)
-									: baseCondition;
+				Effect.gen(function* () {
+					const results = yield* dbService.query("listInviteCodes", async () => {
+						const baseCondition = eq(
+							inviteCode.organizationId,
+							query.organizationId,
+						);
+						const whereCondition: SQL = query.status
+							? ((and(baseCondition, eq(inviteCode.status, query.status)) ??
+									baseCondition) as SQL)
+							: !query.includeArchived
+								? ((and(
+										baseCondition,
+										inArray(inviteCode.status, [
+											"active",
+											"paused",
+											"expired",
+										]),
+									) ?? baseCondition) as SQL)
+								: baseCondition;
 
-							return await dbService.db.query.inviteCode.findMany({
-								where: whereCondition,
-								with: {
-									organization: {
-										columns: {
-											id: true,
-											name: true,
-											slug: true,
-										},
-									},
-									defaultTeam: {
-										columns: {
-											id: true,
-											name: true,
-										},
+						return await dbService.db.query.inviteCode.findMany({
+							where: whereCondition,
+							with: {
+								organization: {
+									columns: {
+										id: true,
+										name: true,
+										slug: true,
 									},
 								},
-								orderBy: [desc(inviteCode.createdAt)],
-							});
-						}),
-					);
+								defaultTeam: {
+									columns: {
+										id: true,
+										name: true,
+									},
+								},
+							},
+							orderBy: [desc(inviteCode.createdAt)],
+						});
+					});
 
 					return results as InviteCodeWithRelations[];
 				}),
 
 			validateCode: (code) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Find the code across all organizations
-					const result = yield* _(
-						dbService.query("findInviteCode", async () => {
-							return await dbService.db.query.inviteCode.findFirst({
-								where: eq(inviteCode.code, code.toUpperCase()),
-								with: {
-									organization: {
-										columns: {
-											id: true,
-											name: true,
-											slug: true,
-										},
-									},
-									defaultTeam: {
-										columns: {
-											id: true,
-											name: true,
-										},
+					const result = yield* dbService.query("findInviteCode", async () => {
+						return await dbService.db.query.inviteCode.findFirst({
+							where: eq(inviteCode.code, code.toUpperCase()),
+							with: {
+								organization: {
+									columns: {
+										id: true,
+										name: true,
+										slug: true,
 									},
 								},
-							});
-						}),
-					);
+								defaultTeam: {
+									columns: {
+										id: true,
+										name: true,
+									},
+								},
+							},
+						});
+					});
 
 					if (!result) {
 						return { valid: false, error: "Invalid invite code" };
@@ -947,95 +911,77 @@ export const InviteCodeServiceLive = Layer.effect(
 				}),
 
 			useCode: (input) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Validate the code first
-					const validationResult = yield* _(
-						dbService.query("findInviteCode", async () => {
-							const matches = await dbService.db.query.inviteCode.findMany({
-								where: eq(inviteCode.code, input.code.toUpperCase()),
-								with: {
-									organization: {
-										columns: {
-											id: true,
-											name: true,
-											slug: true,
-										},
+					const validationResult = yield* dbService.query("findInviteCode", async () => {
+						const matches = await dbService.db.query.inviteCode.findMany({
+							where: eq(inviteCode.code, input.code.toUpperCase()),
+							with: {
+								organization: {
+									columns: {
+										id: true,
+										name: true,
+										slug: true,
 									},
 								},
-								limit: 2,
-							});
-							return matches.length === 1 ? matches[0] : null;
-						}),
-					);
+							},
+							limit: 2,
+						});
+						return matches.length === 1 ? matches[0] : null;
+					});
 
 					if (!validationResult) {
-						return yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Invalid invite code",
-									entityType: "inviteCode",
-									entityId: input.code,
-								}),
-							),
+						return yield* Effect.fail(
+							new NotFoundError({
+								message: "Invalid invite code",
+								entityType: "inviteCode",
+								entityId: input.code,
+							}),
 						);
 					}
 
 					const inviteCodeRecord = validationResult;
-					const redemption = yield* _(
-						dbService.query("redeemInviteCode", async () => {
-							return await redeemInviteCodeInTransaction(
-								inviteCodeRecord,
-								input,
-							);
-						}),
-					);
+					const redemption = yield* dbService.query("redeemInviteCode", async () => {
+						return await redeemInviteCodeInTransaction(
+							inviteCodeRecord,
+							input,
+						);
+					});
 					if (!redemption) {
-						return yield* _(
-							Effect.die(
-								"Direct invite-code redemption unexpectedly became stale",
-							),
+						return yield* Effect.die(
+							"Direct invite-code redemption unexpectedly became stale",
 						);
 					}
 					if (redemption.rejected === true) {
-						yield* _(resolveRedemptionStatus("rejected"));
-						return yield* _(
-							Effect.die("Rejected redemption unexpectedly resolved"),
-						);
+						yield* resolveRedemptionStatus("rejected");
+						return yield* Effect.die("Rejected redemption unexpectedly resolved");
 					}
 					if (typeof redemption.unusableReason === "string") {
-						return yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: redemption.unusableReason,
-									field: "code",
-								}),
-							),
+						return yield* Effect.fail(
+							new ValidationError({
+								message: redemption.unusableReason,
+								field: "code",
+							}),
 						);
 					}
 					if (typeof redemption.enterpriseDenial === "string") {
-						return yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: redemption.enterpriseDenial,
-									field: "domainRestrictionEnabled",
-								}),
-							),
+						return yield* Effect.fail(
+							new ValidationError({
+								message: redemption.enterpriseDenial,
+								field: "domainRestrictionEnabled",
+							}),
 						);
 					}
-					const redemptionStatus = yield* _(
-						resolveRedemptionStatus(redemption.member.status),
-					);
+					const redemptionStatus = yield* resolveRedemptionStatus(redemption.member.status);
 
 					if (redemption.created && redemptionStatus === "approved") {
-						yield* _(
-							Effect.promise(() =>
-								syncBillingSeatsAfterMemberChange({
-									organizationId: inviteCodeRecord.organizationId,
-									memberId: redemption.member.id,
-									userId: input.userId,
-									change: "added",
-								}),
-							),
+						yield* Effect.promise(() =>
+							syncBillingSeatsAfterMemberChange({
+								organizationId: inviteCodeRecord.organizationId,
+								memberId: redemption.member.id,
+								userId: input.userId,
+								change: "added",
+							}),
 						);
 					}
 
@@ -1051,92 +997,88 @@ export const InviteCodeServiceLive = Layer.effect(
 				}),
 
 			getUsageStats: (inviteCodeId, organizationId) =>
-				Effect.gen(function* (_) {
-					const stats = yield* _(
-						dbService.query("getUsageStats", async () => {
-							return dbService.db.transaction(
-								async (tx) => {
-									const existing = await tx.query.inviteCode.findFirst({
+				Effect.gen(function* () {
+					const stats = yield* dbService.query("getUsageStats", async () => {
+						return dbService.db.transaction(
+							async (tx) => {
+								const existing = await tx.query.inviteCode.findFirst({
+									where: and(
+										eq(inviteCode.id, inviteCodeId),
+										eq(inviteCode.organizationId, organizationId),
+									),
+									columns: { id: true },
+								});
+								if (!existing) return null;
+
+								const [usages, rejectionAudits] = await Promise.all([
+									tx.query.inviteCodeUsage.findMany({
+										where: eq(inviteCodeUsage.inviteCodeId, inviteCodeId),
+									}),
+									tx.query.auditLog.findMany({
 										where: and(
-											eq(inviteCode.id, inviteCodeId),
-											eq(inviteCode.organizationId, organizationId),
+											eq(auditLog.organizationId, organizationId),
+											eq(auditLog.entityType, "membership"),
+											eq(auditLog.entityId, inviteCodeId),
+											eq(auditLog.action, "reject"),
 										),
-										columns: { id: true },
-									});
-									if (!existing) return null;
+									}),
+								]);
 
-									const [usages, rejectionAudits] = await Promise.all([
-										tx.query.inviteCodeUsage.findMany({
-											where: eq(inviteCodeUsage.inviteCodeId, inviteCodeId),
-										}),
-										tx.query.auditLog.findMany({
-											where: and(
-												eq(auditLog.organizationId, organizationId),
-												eq(auditLog.entityType, "membership"),
-												eq(auditLog.entityId, inviteCodeId),
-												eq(auditLog.action, "reject"),
-											),
-										}),
-									]);
-
-									const rejectedUserIds = new Set<string>();
-									for (const audit of rejectionAudits) {
-										const rejectedUserId = getRejectionAuditUserId(
-											audit.metadata,
-											inviteCodeId,
-										);
-										if (rejectedUserId) rejectedUserIds.add(rejectedUserId);
-									}
-
-									const memberIds = usages.map((u) => u.memberId);
-									const approvals = memberIds.length
-										? await tx.query.memberApproval.findMany({
-												where: and(
-													sql`${memberApproval.memberId} = ANY(${memberIds})`,
-													eq(memberApproval.organizationId, organizationId),
-												),
-											})
-										: [];
-
-									const approvalMap = new Map(
-										approvals.map((a) => [a.memberId, a.status]),
+								const rejectedUserIds = new Set<string>();
+								for (const audit of rejectionAudits) {
+									const rejectedUserId = getRejectionAuditUserId(
+										audit.metadata,
+										inviteCodeId,
 									);
+									if (rejectedUserId) rejectedUserIds.add(rejectedUserId);
+								}
 
-									let pending = 0;
-									let approved = 0;
-									const rejected = rejectedUserIds.size;
+								const memberIds = usages.map((u) => u.memberId);
+								const approvals = memberIds.length
+									? await tx.query.memberApproval.findMany({
+											where: and(
+												sql`${memberApproval.memberId} = ANY(${memberIds})`,
+												eq(memberApproval.organizationId, organizationId),
+											),
+										})
+									: [];
 
-									for (const usage of usages) {
-										if (rejectedUserIds.has(usage.userId)) continue;
-										const status = approvalMap.get(usage.memberId);
-										if (status === "approved") {
-											approved++;
-										} else {
-											pending++;
-										}
+								const approvalMap = new Map(
+									approvals.map((a) => [a.memberId, a.status]),
+								);
+
+								let pending = 0;
+								let approved = 0;
+								const rejected = rejectedUserIds.size;
+
+								for (const usage of usages) {
+									if (rejectedUserIds.has(usage.userId)) continue;
+									const status = approvalMap.get(usage.memberId);
+									if (status === "approved") {
+										approved++;
+									} else {
+										pending++;
 									}
+								}
 
-									return {
-										total: pending + approved + rejected,
-										pending,
-										approved,
-										rejected,
-									};
-								},
-								{ isolationLevel: "repeatable read" },
-							);
-						}),
-					);
+								return {
+									total: pending + approved + rejected,
+									pending,
+									approved,
+									rejected,
+								};
+							},
+							{ isolationLevel: "repeatable read" },
+						);
+					});
 
 					if (!stats) {
-						return yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Invite code not found",
-									entityType: "inviteCode",
-									entityId: inviteCodeId,
-								}),
-							),
+						return yield* Effect.fail(
+							new NotFoundError({
+								message: "Invite code not found",
+								entityType: "inviteCode",
+								entityId: inviteCodeId,
+							}),
 						);
 					}
 
@@ -1146,62 +1088,52 @@ export const InviteCodeServiceLive = Layer.effect(
 			generateCode: () => Effect.succeed(generateReadableCode()),
 
 			setPendingInviteCode: (userId, code) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Validate the code first to ensure it's valid before storing
-					const validationResult = yield* _(
-						dbService.query("validateCodeForPending", async () => {
-							return await dbService.db.query.inviteCode.findFirst({
-								where: eq(inviteCode.code, code.toUpperCase()),
-							});
-						}),
-					);
+					const validationResult = yield* dbService.query("validateCodeForPending", async () => {
+						return await dbService.db.query.inviteCode.findFirst({
+							where: eq(inviteCode.code, code.toUpperCase()),
+						});
+					});
 
 					if (!validationResult) {
-						return yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Invalid invite code",
-									field: "code",
-								}),
-							),
+						return yield* Effect.fail(
+							new ValidationError({
+								message: "Invalid invite code",
+								field: "code",
+							}),
 						);
 					}
 
 					const { usable, reason } =
 						validateInviteCodeUsability(validationResult);
 					if (!usable) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: reason || "Code is not usable",
-									field: "code",
-								}),
-							),
+						yield* Effect.fail(
+							new ValidationError({
+								message: reason || "Code is not usable",
+								field: "code",
+							}),
 						);
 					}
 
 					// Store the pending invite code on the user
-					yield* _(
-						dbService.query("setPendingInviteCode", async () => {
-							await dbService.db
-								.update(user)
-								.set({ pendingInviteCode: code.toUpperCase() })
-								.where(eq(user.id, userId));
-						}),
-					);
+					yield* dbService.query("setPendingInviteCode", async () => {
+						await dbService.db
+							.update(user)
+							.set({ pendingInviteCode: code.toUpperCase() })
+							.where(eq(user.id, userId));
+					});
 				}),
 
 			processPendingInviteCode: (userId) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Get the user's pending invite code
-					const userRecord = yield* _(
-						dbService.query("getUserPendingCode", async () => {
-							return await dbService.db.query.user.findFirst({
-								where: eq(user.id, userId),
-								columns: { id: true, pendingInviteCode: true },
-							});
-						}),
-					);
+					const userRecord = yield* dbService.query("getUserPendingCode", async () => {
+						return await dbService.db.query.user.findFirst({
+							where: eq(user.id, userId),
+							columns: { id: true, pendingInviteCode: true },
+						});
+					});
 
 					if (!userRecord?.pendingInviteCode) {
 						return null;
@@ -1218,87 +1150,73 @@ export const InviteCodeServiceLive = Layer.effect(
 							);
 						});
 
-					const preRedemptionResult = yield* _(
-						Effect.gen(function* (_) {
-							const validationResult = yield* _(
-								dbService.query("findInviteCode", async () => {
-									const matches = await dbService.db.query.inviteCode.findMany({
-										where: eq(inviteCode.code, code.toUpperCase()),
-										with: {
-											organization: {
-												columns: {
-													id: true,
-													name: true,
-													slug: true,
-												},
-											},
+					const preRedemptionResult = yield* Effect.gen(function* () {
+						const validationResult = yield* dbService.query("findInviteCode", async () => {
+							const matches = await dbService.db.query.inviteCode.findMany({
+								where: eq(inviteCode.code, code.toUpperCase()),
+								with: {
+									organization: {
+										columns: {
+											id: true,
+											name: true,
+											slug: true,
 										},
-										limit: 2,
-									});
-									return matches.length === 1 ? matches[0] : null;
-								}),
-							);
+									},
+								},
+								limit: 2,
+							});
+							return matches.length === 1 ? matches[0] : null;
+						});
 
-							if (!validationResult) return null;
+						if (!validationResult) return null;
 
-							return validationResult;
-						}).pipe(Effect.either),
-					);
+						return validationResult;
+					}).pipe(Effect.result);
 
-					if (preRedemptionResult._tag === "Left") {
-						const cleared = yield* _(clearPendingCode());
+					if (preRedemptionResult._tag === "Failure") {
+						const cleared = yield* clearPendingCode();
 						if (!cleared) return null;
-						return yield* _(Effect.fail(preRedemptionResult.left));
+						return yield* Effect.fail(preRedemptionResult.failure);
 					}
 
-					if (!preRedemptionResult.right) {
-						yield* _(clearPendingCode());
+					if (!preRedemptionResult.success) {
+						yield* clearPendingCode();
 						return null;
 					}
 
-					const inviteCodeRecord = preRedemptionResult.right;
-					const redemption = yield* _(
-						dbService.query("redeemPendingInviteCode", async () => {
-							return await redeemInviteCodeInTransaction(inviteCodeRecord, {
-								userId,
-								expectedPendingInviteCode: code,
-							});
-						}),
-					);
+					const inviteCodeRecord = preRedemptionResult.success;
+					const redemption = yield* dbService.query("redeemPendingInviteCode", async () => {
+						return await redeemInviteCodeInTransaction(inviteCodeRecord, {
+							userId,
+							expectedPendingInviteCode: code,
+						});
+					});
 					if (!redemption) return null;
 					if (redemption.rejected === true) {
-						yield* _(resolveRedemptionStatus("rejected"));
-						return yield* _(
-							Effect.die("Rejected redemption unexpectedly resolved"),
-						);
+						yield* resolveRedemptionStatus("rejected");
+						return yield* Effect.die("Rejected redemption unexpectedly resolved");
 					}
 					if (typeof redemption.unusableReason === "string") {
 						return null;
 					}
 					if (typeof redemption.enterpriseDenial === "string") {
-						return yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: redemption.enterpriseDenial,
-									field: "domainRestrictionEnabled",
-								}),
-							),
+						return yield* Effect.fail(
+							new ValidationError({
+								message: redemption.enterpriseDenial,
+								field: "domainRestrictionEnabled",
+							}),
 						);
 					}
-					const redemptionStatus = yield* _(
-						resolveRedemptionStatus(redemption.member.status),
-					);
+					const redemptionStatus = yield* resolveRedemptionStatus(redemption.member.status);
 
 					if (redemption.created && redemptionStatus === "approved") {
-						yield* _(
-							Effect.promise(() =>
-								syncBillingSeatsAfterMemberChange({
-									organizationId: inviteCodeRecord.organizationId,
-									memberId: redemption.member.id,
-									userId,
-									change: "added",
-								}),
-							),
+						yield* Effect.promise(() =>
+							syncBillingSeatsAfterMemberChange({
+								organizationId: inviteCodeRecord.organizationId,
+								memberId: redemption.member.id,
+								userId,
+								change: "added",
+							}),
 						);
 					}
 
@@ -1314,27 +1232,23 @@ export const InviteCodeServiceLive = Layer.effect(
 				}),
 
 			clearPendingInviteCode: (userId) =>
-				Effect.gen(function* (_) {
-					yield* _(
-						dbService.query("clearPendingInviteCode", async () => {
-							await dbService.db
-								.update(user)
-								.set({ pendingInviteCode: null })
-								.where(eq(user.id, userId));
-						}),
-					);
+				Effect.gen(function* () {
+					yield* dbService.query("clearPendingInviteCode", async () => {
+						await dbService.db
+							.update(user)
+							.set({ pendingInviteCode: null })
+							.where(eq(user.id, userId));
+					});
 				}),
 
 			getPendingInviteCode: (userId) =>
-				Effect.gen(function* (_) {
-					const userRecord = yield* _(
-						dbService.query("getUserPendingCode", async () => {
-							return await dbService.db.query.user.findFirst({
-								where: eq(user.id, userId),
-								columns: { pendingInviteCode: true },
-							});
-						}),
-					);
+				Effect.gen(function* () {
+					const userRecord = yield* dbService.query("getUserPendingCode", async () => {
+						return await dbService.db.query.user.findFirst({
+							where: eq(user.id, userId),
+							columns: { pendingInviteCode: true },
+						});
+					});
 
 					return userRecord?.pendingInviteCode || null;
 				}),

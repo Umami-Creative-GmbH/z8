@@ -20,7 +20,7 @@ vi.mock("@/lib/approvals/domain/registry", () => ({
 
 vi.mock("@/lib/effect/services/database.service", async () => {
 	const { Context, Layer } = await import("effect");
-	const DatabaseService = Context.GenericTag<any>("DatabaseService");
+	const DatabaseService = Context.Service<any>("DatabaseService");
 
 	return {
 		DatabaseService,
@@ -114,16 +114,14 @@ describe("ApprovalQueryService", () => {
 		];
 
 		const result = await runApprovalQuery(
-			Effect.gen(function* (_) {
-				const service = yield* _(ApprovalQueryService);
-				return yield* _(
-					service.getApprovals({
-						approverId: "manager-1",
-						organizationId: "org-1",
-						status: "pending",
-						limit: 10,
-					}),
-				);
+			Effect.gen(function* () {
+				const service = yield* ApprovalQueryService;
+				return yield* service.getApprovals({
+					approverId: "manager-1",
+					organizationId: "org-1",
+					status: "pending",
+					limit: 10,
+				});
 			}),
 		);
 
@@ -166,16 +164,14 @@ describe("ApprovalQueryService", () => {
 		];
 
 		const result = await runApprovalQuery(
-			Effect.gen(function* (_) {
-				const service = yield* _(ApprovalQueryService);
-				return yield* _(
-					service.getApprovals({
-						approverId: "manager-1",
-						organizationId: "org-1",
-						status: "pending",
-						limit: 10,
-					}),
-				);
+			Effect.gen(function* () {
+				const service = yield* ApprovalQueryService;
+				return yield* service.getApprovals({
+					approverId: "manager-1",
+					organizationId: "org-1",
+					status: "pending",
+					limit: 10,
+				});
 			}),
 		);
 
@@ -207,16 +203,14 @@ describe("ApprovalQueryService", () => {
 		];
 
 		const result = await runApprovalQuery(
-			Effect.gen(function* (_) {
-				const service = yield* _(ApprovalQueryService);
-				return yield* _(
-					service.getApprovals({
-						approverId: "manager-1",
-						organizationId: "org-1",
-						status: "pending",
-						limit: 10,
-					}),
-				);
+			Effect.gen(function* () {
+				const service = yield* ApprovalQueryService;
+				return yield* service.getApprovals({
+					approverId: "manager-1",
+					organizationId: "org-1",
+					status: "pending",
+					limit: 10,
+				});
 			}),
 		);
 
@@ -248,17 +242,15 @@ describe("ApprovalQueryService", () => {
 		];
 
 		const result = await runApprovalQuery(
-			Effect.gen(function* (_) {
-				const service = yield* _(ApprovalQueryService);
-				return yield* _(
-					service.getApprovals({
-						approverId: "manager-1",
-						organizationId: "org-1",
-						status: "pending",
-						types: ["absence_entry", "travel_expense_claim"],
-						limit: 10,
-					}),
-				);
+			Effect.gen(function* () {
+				const service = yield* ApprovalQueryService;
+				return yield* service.getApprovals({
+					approverId: "manager-1",
+					organizationId: "org-1",
+					status: "pending",
+					types: ["absence_entry", "travel_expense_claim"],
+					limit: 10,
+				});
 			}),
 		);
 
@@ -281,9 +273,9 @@ describe("ApprovalQueryService", () => {
 		];
 
 		const counts = await runApprovalQuery(
-			Effect.gen(function* (_) {
-				const service = yield* _(ApprovalQueryService);
-				return yield* _(service.getCounts("manager-1", "org-1"));
+			Effect.gen(function* () {
+				const service = yield* ApprovalQueryService;
+				return yield* service.getCounts("manager-1", "org-1");
 			}),
 		);
 
@@ -292,6 +284,7 @@ describe("ApprovalQueryService", () => {
 			time_entry: 1,
 			shift_request: 0,
 			travel_expense_claim: 0,
+			travel_expense_report: 0,
 		});
 	});
 
@@ -325,18 +318,16 @@ describe("ApprovalQueryService", () => {
 		];
 
 		const result = await runApprovalQuery(
-			Effect.gen(function* (_) {
-				const service = yield* _(ApprovalQueryService);
-				return yield* _(
-					service.getApprovals({
-						approverId: "admin-1",
-						organizationId: "org-1",
-						status: "pending",
-						requesterEmployeeIds: ["employee-1", "employee-2"],
-						includeAllApprovers: true,
-						limit: 1,
-					}),
-				);
+			Effect.gen(function* () {
+				const service = yield* ApprovalQueryService;
+				return yield* service.getApprovals({
+					approverId: "admin-1",
+					organizationId: "org-1",
+					status: "pending",
+					requesterEmployeeIds: ["employee-1", "employee-2"],
+					includeAllApprovers: true,
+					limit: 1,
+				});
 			}),
 		);
 
@@ -377,19 +368,17 @@ describe("ApprovalQueryService", () => {
 		];
 
 		const result = await runApprovalQuery(
-			Effect.gen(function* (_) {
-				const service = yield* _(ApprovalQueryService);
-				return yield* _(
-					service.getApprovals({
-						approverId: "manager-1",
-						organizationId: "org-1",
-						status: "pending",
-						eligibleApprovalScopes: [
-							{ requesterEmployeeId: "eligible-requester", eligibleApproverIds: ["manager-2"] },
-						],
-						limit: 10,
-					}),
-				);
+			Effect.gen(function* () {
+				const service = yield* ApprovalQueryService;
+				return yield* service.getApprovals({
+					approverId: "manager-1",
+					organizationId: "org-1",
+					status: "pending",
+					eligibleApprovalScopes: [
+						{ requesterEmployeeId: "eligible-requester", eligibleApproverIds: ["manager-2"] },
+					],
+					limit: 10,
+				});
 			}),
 		);
 
@@ -421,17 +410,15 @@ describe("ApprovalQueryService", () => {
 		];
 
 		const result = await runApprovalQuery(
-			Effect.gen(function* (_) {
-				const service = yield* _(ApprovalQueryService);
-				return yield* _(
-					service.getApprovals({
-						approverId: "manager-1",
-						organizationId: "org-1",
-						status: "pending",
-						eligibleApprovalScopes: [],
-						limit: 10,
-					}),
-				);
+			Effect.gen(function* () {
+				const service = yield* ApprovalQueryService;
+				return yield* service.getApprovals({
+					approverId: "manager-1",
+					organizationId: "org-1",
+					status: "pending",
+					eligibleApprovalScopes: [],
+					limit: 10,
+				});
 			}),
 		);
 
@@ -478,31 +465,27 @@ describe("ApprovalQueryService", () => {
 		];
 
 		const firstPage = await runApprovalQuery(
-			Effect.gen(function* (_) {
-				const service = yield* _(ApprovalQueryService);
-				return yield* _(
-					service.getApprovals({
-						approverId: "manager-1",
-						organizationId: "org-1",
-						status: "pending",
-						limit: 1,
-					}),
-				);
+			Effect.gen(function* () {
+				const service = yield* ApprovalQueryService;
+				return yield* service.getApprovals({
+					approverId: "manager-1",
+					organizationId: "org-1",
+					status: "pending",
+					limit: 1,
+				});
 			}),
 		);
 
 		const secondPage = await runApprovalQuery(
-			Effect.gen(function* (_) {
-				const service = yield* _(ApprovalQueryService);
-				return yield* _(
-					service.getApprovals({
-						approverId: "manager-1",
-						organizationId: "org-1",
-						status: "pending",
-						cursor: firstPage.nextCursor ?? undefined,
-						limit: 2,
-					}),
-				);
+			Effect.gen(function* () {
+				const service = yield* ApprovalQueryService;
+				return yield* service.getApprovals({
+					approverId: "manager-1",
+					organizationId: "org-1",
+					status: "pending",
+					cursor: firstPage.nextCursor ?? undefined,
+					limit: 2,
+				});
 			}),
 		);
 
@@ -549,31 +532,27 @@ describe("ApprovalQueryService", () => {
 		];
 
 		const firstPage = await runApprovalQuery(
-			Effect.gen(function* (_) {
-				const service = yield* _(ApprovalQueryService);
-				return yield* _(
-					service.getApprovals({
-						approverId: "manager-1",
-						organizationId: "org-1",
-						status: "pending",
-						limit: 1,
-					}),
-				);
+			Effect.gen(function* () {
+				const service = yield* ApprovalQueryService;
+				return yield* service.getApprovals({
+					approverId: "manager-1",
+					organizationId: "org-1",
+					status: "pending",
+					limit: 1,
+				});
 			}),
 		);
 
 		const secondPage = await runApprovalQuery(
-			Effect.gen(function* (_) {
-				const service = yield* _(ApprovalQueryService);
-				return yield* _(
-					service.getApprovals({
-						approverId: "manager-1",
-						organizationId: "org-1",
-						status: "pending",
-						cursor: firstPage.nextCursor ?? undefined,
-						limit: 2,
-					}),
-				);
+			Effect.gen(function* () {
+				const service = yield* ApprovalQueryService;
+				return yield* service.getApprovals({
+					approverId: "manager-1",
+					organizationId: "org-1",
+					status: "pending",
+					cursor: firstPage.nextCursor ?? undefined,
+					limit: 2,
+				});
 			}),
 		);
 
@@ -612,17 +591,15 @@ describe("ApprovalQueryService", () => {
 		];
 
 		const result = await runApprovalQuery(
-			Effect.gen(function* (_) {
-				const service = yield* _(ApprovalQueryService);
-				return yield* _(
-					service.getApprovals({
-						approverId: "manager-1",
-						organizationId: "org-1",
-						status: "pending",
-						cursor: "2026-04-10T09:00:00.000Z",
-						limit: 10,
-					}),
-				);
+			Effect.gen(function* () {
+				const service = yield* ApprovalQueryService;
+				return yield* service.getApprovals({
+					approverId: "manager-1",
+					organizationId: "org-1",
+					status: "pending",
+					cursor: "2026-04-10T09:00:00.000Z",
+					limit: 10,
+				});
 			}),
 		);
 
@@ -660,17 +637,15 @@ describe("ApprovalQueryService", () => {
 		];
 
 		const result = await runApprovalQuery(
-			Effect.gen(function* (_) {
-				const service = yield* _(ApprovalQueryService);
-				return yield* _(
-					service.getApprovals({
-						approverId: "manager-1",
-						organizationId: "org-1",
-						status: "pending",
-						requesterEmployeeIds: ["employee-in"],
-						limit: 1,
-					}),
-				);
+			Effect.gen(function* () {
+				const service = yield* ApprovalQueryService;
+				return yield* service.getApprovals({
+					approverId: "manager-1",
+					organizationId: "org-1",
+					status: "pending",
+					requesterEmployeeIds: ["employee-in"],
+					limit: 1,
+				});
 			}),
 		);
 
@@ -702,17 +677,15 @@ describe("ApprovalQueryService", () => {
 
 		for (let page = 0; page < 5; page += 1) {
 			const result = await runApprovalQuery(
-				Effect.gen(function* (_) {
-					const service = yield* _(ApprovalQueryService);
-					return yield* _(
-						service.getApprovals({
-							approverId: "manager-1",
-							organizationId: "org-1",
-							status: "pending",
-							cursor,
-							limit: 2,
-						}),
-					);
+				Effect.gen(function* () {
+					const service = yield* ApprovalQueryService;
+					return yield* service.getApprovals({
+						approverId: "manager-1",
+						organizationId: "org-1",
+						status: "pending",
+						cursor,
+						limit: 2,
+					});
 				}),
 			);
 

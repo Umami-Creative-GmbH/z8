@@ -32,7 +32,7 @@ vi.mock("../inbox/decision-service", () => ({
 
 vi.mock("@/lib/effect/services/database.service", async () => {
 	const { Context, Layer } = await import("effect");
-	const DatabaseService = Context.GenericTag<any>("DatabaseService");
+	const DatabaseService = Context.Service<any>("DatabaseService");
 	return {
 		DatabaseService,
 		DatabaseServiceLive: Layer.succeed(
@@ -54,7 +54,7 @@ vi.mock("@/lib/effect/services/database.service", async () => {
 
 vi.mock("../infrastructure/audit-logger", async () => {
 	const { Context, Layer } = await import("effect");
-	const ApprovalAuditLogger = Context.GenericTag<any>("ApprovalAuditLogger");
+	const ApprovalAuditLogger = Context.Service<any>("ApprovalAuditLogger");
 	return {
 		ApprovalAuditLogger,
 		ApprovalAuditLoggerLive: Layer.succeed(
@@ -108,10 +108,13 @@ describe("BulkApprovalService", () => {
 
 	it("does not emit duplicate bulk audit records for successful items", async () => {
 		const result = await Effect.runPromise(
-			Effect.gen(function* (_) {
-				const service = yield* _(BulkApprovalService);
-				return yield* _(
-					service.bulkDecide(["approval-1"], "employee-1", "org-1", "approve"),
+			Effect.gen(function* () {
+				const service = yield* BulkApprovalService;
+				return yield* service.bulkDecide(
+					["approval-1"],
+					"employee-1",
+					"org-1",
+					"approve",
 				);
 			}).pipe(Effect.provide(BulkApprovalServiceLive)),
 		);
@@ -150,10 +153,13 @@ describe("BulkApprovalService", () => {
 		]);
 
 		const result = await Effect.runPromise(
-			Effect.gen(function* (_) {
-				const service = yield* _(BulkApprovalService);
-				return yield* _(
-					service.bulkDecide(["approval-1"], "employee-1", "org-1", "approve"),
+			Effect.gen(function* () {
+				const service = yield* BulkApprovalService;
+				return yield* service.bulkDecide(
+					["approval-1"],
+					"employee-1",
+					"org-1",
+					"approve",
 				);
 			}).pipe(Effect.provide(BulkApprovalServiceLive)),
 		);
@@ -181,10 +187,13 @@ describe("BulkApprovalService", () => {
 		]);
 
 		const result = await Effect.runPromise(
-			Effect.gen(function* (_) {
-				const service = yield* _(BulkApprovalService);
-				return yield* _(
-					service.bulkDecide(["approval-1"], "employee-1", "org-1", "approve"),
+			Effect.gen(function* () {
+				const service = yield* BulkApprovalService;
+				return yield* service.bulkDecide(
+					["approval-1"],
+					"employee-1",
+					"org-1",
+					"approve",
 				);
 			}).pipe(Effect.provide(BulkApprovalServiceLive)),
 		);
@@ -218,15 +227,13 @@ describe("BulkApprovalService", () => {
 		]);
 
 		const result = await Effect.runPromise(
-			Effect.gen(function* (_) {
-				const service = yield* _(BulkApprovalService);
-				return yield* _(
-					service.bulkDecide(
-						["missing-before", "assignment-1", "missing-after"],
-						"employee-1",
-						"org-1",
-						"approve",
-					),
+			Effect.gen(function* () {
+				const service = yield* BulkApprovalService;
+				return yield* service.bulkDecide(
+					["missing-before", "assignment-1", "missing-after"],
+					"employee-1",
+					"org-1",
+					"approve",
 				);
 			}).pipe(Effect.provide(BulkApprovalServiceLive)),
 		);

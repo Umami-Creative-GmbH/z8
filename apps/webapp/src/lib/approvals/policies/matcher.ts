@@ -26,6 +26,7 @@ function toRoutingContext(
 			workflowType = "shift_request";
 			break;
 		case "travel_expense_claim":
+		case "travel_expense_report":
 			workflowType = "travel_expense";
 			break;
 		default:

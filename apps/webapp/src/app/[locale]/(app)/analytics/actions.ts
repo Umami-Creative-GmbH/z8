@@ -34,43 +34,42 @@ import { findAnalyticsEmployeeByUserId } from "./current-employee-scope";
  * Returns the employee record which includes organizationId for secure data access
  */
 function checkManagerOrAdminAccess() {
-	return Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
+	return Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
 
 		// Get current employee
-		const currentEmployee = yield* _(
-			dbService.query("getCurrentEmployee", async () => {
+		const currentEmployee = yield* dbService
+			.query("getCurrentEmployee", async () => {
 				return await findAnalyticsEmployeeByUserId(
 					dbService.db,
 					session.user.id,
 					session.session.activeOrganizationId,
 				);
-			}),
-			Effect.flatMap((emp) =>
-				emp
-					? Effect.succeed(emp)
-					: Effect.fail(
-							new NotFoundError({
-								message: "Employee profile not found",
-								entityType: "employee",
-							}),
-						),
-			),
-		);
+			})
+			.pipe(
+				Effect.flatMap((emp) =>
+					emp
+						? Effect.succeed(emp)
+						: Effect.fail(
+								new NotFoundError({
+									message: "Employee profile not found",
+									entityType: "employee",
+								}),
+							),
+				),
+			);
 
 		// Check role
 		if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Analytics access restricted to managers and admins",
-						userId: session.user.id,
-						resource: "analytics",
-						action: "view",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Analytics access restricted to managers and admins",
+					userId: session.user.id,
+					resource: "analytics",
+					action: "view",
+				}),
 			);
 		}
 
@@ -86,19 +85,17 @@ export async function getTeamPerformanceData(
 	dateRange: DateRange,
 	teamId?: string,
 ): Promise<ServerActionResult<TeamPerformanceData>> {
-	const effect = Effect.gen(function* (_) {
-		const currentEmployee = yield* _(checkManagerOrAdminAccess());
+	const effect = Effect.gen(function* () {
+		const currentEmployee = yield* checkManagerOrAdminAccess();
 		const organizationId = currentEmployee.organizationId;
 
-		const analyticsService = yield* _(AnalyticsService);
+		const analyticsService = yield* AnalyticsService;
 
-		const data = yield* _(
-			analyticsService.getTeamPerformance({
-				organizationId,
-				dateRange,
-				teamId,
-			}),
-		);
+		const data = yield* analyticsService.getTeamPerformance({
+			organizationId,
+			dateRange,
+			teamId,
+		});
 
 		return data;
 	}).pipe(Effect.provide(AppLayer));
@@ -113,18 +110,16 @@ export async function getTeamPerformanceData(
 export async function getVacationTrendsData(
 	dateRange: DateRange,
 ): Promise<ServerActionResult<VacationTrendsData>> {
-	const effect = Effect.gen(function* (_) {
-		const currentEmployee = yield* _(checkManagerOrAdminAccess());
+	const effect = Effect.gen(function* () {
+		const currentEmployee = yield* checkManagerOrAdminAccess();
 		const organizationId = currentEmployee.organizationId;
 
-		const analyticsService = yield* _(AnalyticsService);
+		const analyticsService = yield* AnalyticsService;
 
-		const data = yield* _(
-			analyticsService.getVacationTrends({
-				organizationId,
-				dateRange,
-			}),
-		);
+		const data = yield* analyticsService.getVacationTrends({
+			organizationId,
+			dateRange,
+		});
 
 		return data;
 	}).pipe(Effect.provide(AppLayer));
@@ -140,19 +135,17 @@ export async function getWorkHoursAnalyticsData(
 	dateRange: DateRange,
 	employeeId?: string,
 ): Promise<ServerActionResult<WorkHoursAnalyticsData>> {
-	const effect = Effect.gen(function* (_) {
-		const currentEmployee = yield* _(checkManagerOrAdminAccess());
+	const effect = Effect.gen(function* () {
+		const currentEmployee = yield* checkManagerOrAdminAccess();
 		const organizationId = currentEmployee.organizationId;
 
-		const analyticsService = yield* _(AnalyticsService);
+		const analyticsService = yield* AnalyticsService;
 
-		const data = yield* _(
-			analyticsService.getWorkHoursAnalytics({
-				organizationId,
-				dateRange,
-				employeeId,
-			}),
-		);
+		const data = yield* analyticsService.getWorkHoursAnalytics({
+			organizationId,
+			dateRange,
+			employeeId,
+		});
 
 		return data;
 	}).pipe(Effect.provide(AppLayer));
@@ -167,18 +160,16 @@ export async function getWorkHoursAnalyticsData(
 export async function getAbsencePatternsData(
 	dateRange: DateRange,
 ): Promise<ServerActionResult<AbsencePatternsData>> {
-	const effect = Effect.gen(function* (_) {
-		const currentEmployee = yield* _(checkManagerOrAdminAccess());
+	const effect = Effect.gen(function* () {
+		const currentEmployee = yield* checkManagerOrAdminAccess();
 		const organizationId = currentEmployee.organizationId;
 
-		const analyticsService = yield* _(AnalyticsService);
+		const analyticsService = yield* AnalyticsService;
 
-		const data = yield* _(
-			analyticsService.getAbsencePatterns({
-				organizationId,
-				dateRange,
-			}),
-		);
+		const data = yield* analyticsService.getAbsencePatterns({
+			organizationId,
+			dateRange,
+		});
 
 		return data;
 	}).pipe(Effect.provide(AppLayer));
@@ -194,19 +185,17 @@ export async function getManagerEffectivenessData(
 	dateRange: DateRange,
 	managerId?: string,
 ): Promise<ServerActionResult<ManagerEffectivenessData>> {
-	const effect = Effect.gen(function* (_) {
-		const currentEmployee = yield* _(checkManagerOrAdminAccess());
+	const effect = Effect.gen(function* () {
+		const currentEmployee = yield* checkManagerOrAdminAccess();
 		const organizationId = currentEmployee.organizationId;
 
-		const analyticsService = yield* _(AnalyticsService);
+		const analyticsService = yield* AnalyticsService;
 
-		const data = yield* _(
-			analyticsService.getManagerEffectiveness({
-				organizationId,
-				dateRange,
-				managerId,
-			}),
-		);
+		const data = yield* analyticsService.getManagerEffectiveness({
+			organizationId,
+			dateRange,
+			managerId,
+		});
 
 		return data;
 	}).pipe(Effect.provide(AppLayer));
@@ -222,11 +211,11 @@ export async function getOvertimeBurnDownData(
 	dateRange: DateRange,
 	filters?: OvertimeBurnDownParams["filters"],
 ): Promise<ServerActionResult<OvertimeBurnDownData>> {
-	const effect = Effect.gen(function* (_) {
-		const currentEmployee = yield* _(checkManagerOrAdminAccess());
+	const effect = Effect.gen(function* () {
+		const currentEmployee = yield* checkManagerOrAdminAccess();
 		const organizationId = currentEmployee.organizationId;
 
-		const analyticsService = yield* _(AnalyticsService);
+		const analyticsService = yield* AnalyticsService;
 		const scope =
 			currentEmployee.role === "admin"
 				? { role: "admin" as const }
@@ -235,14 +224,12 @@ export async function getOvertimeBurnDownData(
 						managerEmployeeId: currentEmployee.id,
 					};
 
-		const data = yield* _(
-			analyticsService.getOvertimeBurnDown({
-				organizationId,
-				dateRange,
-				filters,
-				scope,
-			}),
-		);
+		const data = yield* analyticsService.getOvertimeBurnDown({
+			organizationId,
+			dateRange,
+			filters,
+			scope,
+		});
 
 		return data;
 	}).pipe(Effect.provide(AppLayer));

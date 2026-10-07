@@ -8,7 +8,7 @@ import { isAccountBanned } from "@/lib/auth/account-ban";
 import { getRequestSession } from "@/lib/auth/request-session";
 import { addOrganizationDeletionNotificationJob } from "@/lib/queue";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
-import { AuthorizationError, ConflictError, DatabaseError, NotFoundError } from "../errors";
+import { AuthorizationError, ConflictError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
 
 // Types
 export interface PlatformUserOrganization {
@@ -89,7 +89,7 @@ export interface AuditLogEntry {
 }
 
 // Service interface
-export class PlatformAdminService extends Context.Tag("PlatformAdminService")<
+export class PlatformAdminService extends Context.Service<
 	PlatformAdminService,
 	{
 		// Authorization
@@ -166,7 +166,7 @@ export class PlatformAdminService extends Context.Tag("PlatformAdminService")<
 
 		readonly getRecentAuditLogs: (limit?: number) => Effect.Effect<AuditLogEntry[], DatabaseError>;
 	}
->() {}
+>()("PlatformAdminService") {}
 
 export async function requirePlatformAdmin(): Promise<{
 	userId: string;

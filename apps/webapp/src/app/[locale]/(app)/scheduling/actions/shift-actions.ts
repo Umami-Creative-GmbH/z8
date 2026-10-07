@@ -101,26 +101,22 @@ function getScheduleComplianceEvaluation(
 		session: { user: { id: string } };
 	},
 ) {
-	return Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
-		const scheduleComplianceService = yield* _(ScheduleComplianceService);
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const scheduleComplianceService = yield* ScheduleComplianceService;
 
-		const timezone = yield* _(
-			dbService.query(
-				"getOrganizationTimezoneForScheduleCompliance",
-				async () => getOrganizationTimezone(context.organizationId),
-			),
+		const timezone = yield* dbService.query(
+			"getOrganizationTimezoneForScheduleCompliance",
+			async () => getOrganizationTimezone(context.organizationId),
 		);
 		const range = toServiceDateRange(dateRange, timezone);
 
-		const evaluation = yield* _(
-			scheduleComplianceService.evaluateScheduleWindow({
-				organizationId: context.organizationId,
-				startDate: range.start,
-				endDate: range.endExclusive,
-				timezone,
-			}),
-		);
+		const evaluation = yield* scheduleComplianceService.evaluateScheduleWindow({
+			organizationId: context.organizationId,
+			startDate: range.start,
+			endDate: range.endExclusive,
+			timezone,
+		});
 
 		return { evaluation };
 	});
@@ -129,20 +125,17 @@ function getScheduleComplianceEvaluation(
 export async function upsertShift(
 	input: UpsertShiftInput,
 ): Promise<SchedulingActionResult<{ shift: Shift; metadata: ShiftMetadata }>> {
-	const effect = Effect.gen(function* (_) {
-		const shiftService = yield* _(ShiftService);
-		const dbService = yield* _(DatabaseService);
-		const { currentEmployee, session } = yield* _(
-			requireManagerEmployee({
-				resource: "shift",
-				action: input.id ? "update" : "create",
-				message: "Only managers and admins can manage shifts",
-			}),
-		);
-		const timezone = yield* _(
-			dbService.query("getOrganizationTimezoneForUpsertShift", async () =>
-				getOrganizationTimezone(currentEmployee.organizationId),
-			),
+	const effect = Effect.gen(function* () {
+		const shiftService = yield* ShiftService;
+		const dbService = yield* DatabaseService;
+		const { currentEmployee, session } = yield* requireManagerEmployee({
+			resource: "shift",
+			action: input.id ? "update" : "create",
+			message: "Only managers and admins can manage shifts",
+		});
+		const timezone = yield* dbService.query(
+			"getOrganizationTimezoneForUpsertShift",
+			async () => getOrganizationTimezone(currentEmployee.organizationId),
 		);
 		const shiftDate = dateFromInstant(
 			resolveScheduleWallTime(
@@ -159,22 +152,20 @@ export async function upsertShift(
 			timezone,
 		);
 
-		return yield* _(
-			shiftService.upsertShift({
-				id: input.id,
-				organizationId: currentEmployee.organizationId,
-				employeeId: input.employeeId,
-				templateId: input.templateId,
-				subareaId: input.subareaId,
-				date: shiftDate,
-				timezone,
-				startTime: input.startTime,
-				endTime: input.endTime,
-				notes: input.notes,
-				color: input.color,
-				createdBy: session.user.id,
-			}),
-		);
+		return yield* shiftService.upsertShift({
+			id: input.id,
+			organizationId: currentEmployee.organizationId,
+			employeeId: input.employeeId,
+			templateId: input.templateId,
+			subareaId: input.subareaId,
+			date: shiftDate,
+			timezone,
+			startTime: input.startTime,
+			endTime: input.endTime,
+			notes: input.notes,
+			color: input.color,
+			createdBy: session.user.id,
+		});
 	});
 
 	return runSchedulingAction("upsertShift", effect);
@@ -183,23 +174,19 @@ export async function upsertShift(
 export async function deleteShift(
 	id: string,
 ): Promise<SchedulingActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const shiftService = yield* _(ShiftService);
-		const { currentEmployee, session } = yield* _(
-			requireManagerEmployee({
-				resource: "shift",
-				action: "delete",
-				message: "Only managers and admins can delete shifts",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const shiftService = yield* ShiftService;
+		const { currentEmployee, session } = yield* requireManagerEmployee({
+			resource: "shift",
+			action: "delete",
+			message: "Only managers and admins can delete shifts",
+		});
 
-		yield* _(
-			shiftService.deleteShift(id, {
-				employeeId: currentEmployee.id,
-				organizationId: currentEmployee.organizationId,
-				userId: session.user.id,
-			}),
-		);
+		yield* shiftService.deleteShift(id, {
+			employeeId: currentEmployee.id,
+			organizationId: currentEmployee.organizationId,
+			userId: session.user.id,
+		});
 	});
 
 	return runSchedulingAction("deleteShift", effect);
@@ -208,20 +195,22 @@ export async function deleteShift(
 export async function getShifts(
 	query: ShiftQuery,
 ): Promise<SchedulingActionResult<ShiftWithRelations[]>> {
-	const effect = Effect.gen(function* (_) {
-		const shiftService = yield* _(ShiftService);
-		const dbService = yield* _(DatabaseService);
-		const { currentEmployee, session } = yield* _(requireCurrentEmployee());
-		const timezone = yield* _(
-			dbService.query("getOrganizationTimezoneForShifts", async () =>
-				getOrganizationTimezone(currentEmployee.organizationId),
-			),
+	const effect = Effect.gen(function* () {
+		const shiftService = yield* ShiftService;
+		const dbService = yield* DatabaseService;
+		const { currentEmployee, session } = yield* requireCurrentEmployee();
+		const timezone = yield* dbService.query(
+			"getOrganizationTimezoneForShifts",
+			async () => getOrganizationTimezone(currentEmployee.organizationId),
 		);
-		const effectiveQuery = yield* _(
-			getEffectiveShiftQuery(query, currentEmployee, session.user.id, timezone),
+		const effectiveQuery = yield* getEffectiveShiftQuery(
+			query,
+			currentEmployee,
+			session.user.id,
+			timezone,
 		);
 
-		return yield* _(shiftService.getShifts(effectiveQuery));
+		return yield* shiftService.getShifts(effectiveQuery);
 	});
 
 	return runSchedulingAction("getShifts", effect);
@@ -231,59 +220,50 @@ export async function publishShifts(
 	dateRange: DateRange,
 	acknowledgment?: PublishAcknowledgmentInput | null,
 ): Promise<SchedulingActionResult<PublishShiftsResult>> {
-	const effect = Effect.gen(function* (_) {
-		const coverageService = yield* _(CoverageService);
-		const scheduleComplianceService = yield* _(ScheduleComplianceService);
-		const shiftService = yield* _(ShiftService);
-		const dbService = yield* _(DatabaseService);
-		const { currentEmployee, session } = yield* _(
-			requireManagerEmployee({
-				resource: "shift",
-				action: "publish",
-				message: "Only managers and admins can publish shifts",
-			}),
-		);
-		const timezone = yield* _(
-			dbService.query("getOrganizationTimezoneForPublish", async () =>
-				getOrganizationTimezone(currentEmployee.organizationId),
-			),
+	const effect = Effect.gen(function* () {
+		const coverageService = yield* CoverageService;
+		const scheduleComplianceService = yield* ScheduleComplianceService;
+		const shiftService = yield* ShiftService;
+		const dbService = yield* DatabaseService;
+		const { currentEmployee, session } = yield* requireManagerEmployee({
+			resource: "shift",
+			action: "publish",
+			message: "Only managers and admins can publish shifts",
+		});
+		const timezone = yield* dbService.query(
+			"getOrganizationTimezoneForPublish",
+			async () => getOrganizationTimezone(currentEmployee.organizationId),
 		);
 		const serviceDateRange = toServiceDateRange(dateRange, timezone);
 
-		const settings = yield* _(
-			coverageService.getCoverageSettings(currentEmployee.organizationId),
+		const settings = yield* coverageService.getCoverageSettings(
+			currentEmployee.organizationId,
 		);
 
 		if (!settings.allowPublishWithGaps) {
-			const validation = yield* _(
-				coverageService.validateScheduleCanPublish({
-					organizationId: currentEmployee.organizationId,
-					startDate: serviceDateRange.start,
-					endDate: serviceDateRange.endExclusive,
-					timezone,
-				}),
-			);
+			const validation = yield* coverageService.validateScheduleCanPublish({
+				organizationId: currentEmployee.organizationId,
+				startDate: serviceDateRange.start,
+				endDate: serviceDateRange.endExclusive,
+				timezone,
+			});
 
 			if (!validation.canPublish) {
-				return yield* _(
-					Effect.fail(
-						new AuthorizationError({
-							message: `Cannot publish: ${validation.gaps.length} coverage gap(s) detected. Review and fill gaps before publishing.`,
-							userId: session.user.id,
-							resource: "shift",
-							action: "publish",
-						}),
-					),
+				return yield* Effect.fail(
+					new AuthorizationError({
+						message: `Cannot publish: ${validation.gaps.length} coverage gap(s) detected. Review and fill gaps before publishing.`,
+						userId: session.user.id,
+						resource: "shift",
+						action: "publish",
+					}),
 				);
 			}
 		}
 
-		const { evaluation } = yield* _(
-			getScheduleComplianceEvaluation(dateRange, {
-				organizationId: currentEmployee.organizationId,
-				session,
-			}),
-		);
+		const { evaluation } = yield* getScheduleComplianceEvaluation(dateRange, {
+			organizationId: currentEmployee.organizationId,
+			session,
+		});
 		const publishDecision = buildPublishDecision({
 			count: 0,
 			compliance: {
@@ -297,26 +277,22 @@ export async function publishShifts(
 			return publishDecision;
 		}
 
-		const result = yield* _(
-			shiftService.publishShifts(
-				currentEmployee.organizationId,
-				serviceDateRange,
-				session.user.id,
-			),
+		const result = yield* shiftService.publishShifts(
+			currentEmployee.organizationId,
+			serviceDateRange,
+			session.user.id,
 		);
 
 		if (evaluation.summary.totalFindings > 0) {
-			yield* _(
-				scheduleComplianceService.recordPublishAcknowledgment({
-					organizationId: currentEmployee.organizationId,
-					actorEmployeeId: currentEmployee.id,
-					publishedRangeStart: serviceDateRange.start,
-					publishedRangeEnd: serviceDateRange.endExclusive,
-					warningCountTotal: evaluation.summary.totalFindings,
-					warningCountsByType: evaluation.summary.byType,
-					evaluationFingerprint: evaluation.fingerprint,
-				}),
-			);
+			yield* scheduleComplianceService.recordPublishAcknowledgment({
+				organizationId: currentEmployee.organizationId,
+				actorEmployeeId: currentEmployee.id,
+				publishedRangeStart: serviceDateRange.start,
+				publishedRangeEnd: serviceDateRange.endExclusive,
+				warningCountTotal: evaluation.summary.totalFindings,
+				warningCountsByType: evaluation.summary.byType,
+				evaluationFingerprint: evaluation.fingerprint,
+			});
 		}
 
 		logger.info(
@@ -340,22 +316,19 @@ export async function publishShifts(
 export async function getIncompleteDays(
 	dateRange: DateRange,
 ): Promise<SchedulingActionResult<IncompleteDayInfo[]>> {
-	const effect = Effect.gen(function* (_) {
-		const shiftService = yield* _(ShiftService);
-		const dbService = yield* _(DatabaseService);
-		const { currentEmployee } = yield* _(requireCurrentEmployee());
+	const effect = Effect.gen(function* () {
+		const shiftService = yield* ShiftService;
+		const dbService = yield* DatabaseService;
+		const { currentEmployee } = yield* requireCurrentEmployee();
 
-		const timezone = yield* _(
-			dbService.query("getOrganizationTimezoneForIncompleteDays", async () =>
-				getOrganizationTimezone(currentEmployee.organizationId),
-			),
+		const timezone = yield* dbService.query(
+			"getOrganizationTimezoneForIncompleteDays",
+			async () => getOrganizationTimezone(currentEmployee.organizationId),
 		);
-		return yield* _(
-			shiftService.getIncompleteDays(
-				currentEmployee.organizationId,
-				toServiceDateRange(dateRange, timezone),
-				timezone,
-			),
+		return yield* shiftService.getIncompleteDays(
+			currentEmployee.organizationId,
+			toServiceDateRange(dateRange, timezone),
+			timezone,
 		);
 	});
 
@@ -370,22 +343,17 @@ export async function getScheduleComplianceSummary(
 		evaluationFingerprint: string;
 	}>
 > {
-	const effect = Effect.gen(function* (_) {
-		const { currentEmployee, session } = yield* _(
-			requireManagerEmployee({
-				resource: "shift",
-				action: "read",
-				message:
-					"Only managers and admins can view schedule compliance warnings",
-				queryName: "getCurrentEmployeeForScheduleComplianceSummary",
-			}),
-		);
-		const { evaluation } = yield* _(
-			getScheduleComplianceEvaluation(dateRange, {
-				organizationId: currentEmployee.organizationId,
-				session,
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const { currentEmployee, session } = yield* requireManagerEmployee({
+			resource: "shift",
+			action: "read",
+			message: "Only managers and admins can view schedule compliance warnings",
+			queryName: "getCurrentEmployeeForScheduleComplianceSummary",
+		});
+		const { evaluation } = yield* getScheduleComplianceEvaluation(dateRange, {
+			organizationId: currentEmployee.organizationId,
+			session,
+		});
 
 		return {
 			summary: evaluation.summary,
@@ -399,26 +367,23 @@ export async function getScheduleComplianceSummary(
 export async function getOpenShifts(
 	dateRange: DateRange,
 ): Promise<SchedulingActionResult<ShiftWithRelations[]>> {
-	const effect = Effect.gen(function* (_) {
-		const shiftService = yield* _(ShiftService);
-		const dbService = yield* _(DatabaseService);
-		const { currentEmployee } = yield* _(requireCurrentEmployee());
-		const timezone = yield* _(
-			dbService.query("getOrganizationTimezoneForOpenShifts", async () =>
-				getOrganizationTimezone(currentEmployee.organizationId),
-			),
+	const effect = Effect.gen(function* () {
+		const shiftService = yield* ShiftService;
+		const dbService = yield* DatabaseService;
+		const { currentEmployee } = yield* requireCurrentEmployee();
+		const timezone = yield* dbService.query(
+			"getOrganizationTimezoneForOpenShifts",
+			async () => getOrganizationTimezone(currentEmployee.organizationId),
 		);
 		const range = toServiceDateRange(dateRange, timezone);
 
-		const shifts = yield* _(
-			shiftService.getShifts({
-				organizationId: currentEmployee.organizationId,
-				startDate: range.start,
-				endDateExclusive: range.endExclusive,
-				status: "published",
-				includeOpenShifts: true,
-			}),
-		);
+		const shifts = yield* shiftService.getShifts({
+			organizationId: currentEmployee.organizationId,
+			startDate: range.start,
+			endDateExclusive: range.endExclusive,
+			status: "published",
+			includeOpenShifts: true,
+		});
 
 		return shifts.filter((shift) => shift.employeeId === null);
 	});

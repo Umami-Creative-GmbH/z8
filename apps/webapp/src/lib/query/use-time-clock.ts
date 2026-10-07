@@ -227,6 +227,10 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.employeeClockStatuses.all,
 				});
+				// A live day total in the calendar must stop or start with this clocking.
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.calendar.allEvents,
+				});
 				if (status?.employeeId) {
 					void queryClient.invalidateQueries({
 						queryKey: queryKeys.workPolicies.presence.status(status.employeeId),
@@ -290,6 +294,10 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.employeeClockStatuses.all,
 				});
+				// A live day total in the calendar must stop or start with this clocking.
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.calendar.allEvents,
+				});
 				if (status?.employeeId) {
 					void queryClient.invalidateQueries({
 						queryKey: queryKeys.workPolicies.presence.status(status.employeeId),
@@ -343,6 +351,10 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				});
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.employeeClockStatuses.all,
+				});
+				// A live day total in the calendar must stop or start with this clocking.
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.calendar.allEvents,
 				});
 			}
 		},

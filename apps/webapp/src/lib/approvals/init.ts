@@ -9,6 +9,7 @@ import { registerApprovalHandler } from "./domain/registry";
 import { AbsenceRequestHandler } from "./handlers/absence-request.handler";
 import { TimeCorrectionHandler } from "./handlers/time-correction.handler";
 import { TravelExpenseClaimHandler } from "./handlers/travel-expense-claim.handler";
+import { TravelExpenseReportHandler } from "./handlers/travel-expense-report.handler";
 
 /**
  * Initialize the approval center by registering all handlers.
@@ -19,6 +20,7 @@ export function initializeApprovalCenter(): void {
 	registerApprovalHandler(AbsenceRequestHandler);
 	registerApprovalHandler(TimeCorrectionHandler);
 	registerApprovalHandler(TravelExpenseClaimHandler);
+	registerApprovalHandler(TravelExpenseReportHandler);
 
 	// Future handlers can be registered here:
 	// registerApprovalHandler(ShiftRequestHandler);

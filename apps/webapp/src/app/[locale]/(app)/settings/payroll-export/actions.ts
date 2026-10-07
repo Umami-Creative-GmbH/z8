@@ -170,27 +170,25 @@ export interface FilterOptions {
 export async function getDatevConfigAction(
 	organizationId: string,
 ): Promise<ServerActionResult<DatevConfigResult | null>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "read",
+				}),
 			);
 		}
 
-		const configResult = yield* _(
-			Effect.promise(() => getPayrollExportConfig(organizationId, "datev_lohn")),
+		const configResult = yield* Effect.promise(() =>
+			getPayrollExportConfig(organizationId, "datev_lohn"),
 		);
 
 		if (!configResult) {
@@ -216,87 +214,81 @@ export async function getDatevConfigAction(
 export async function saveDatevConfigAction(
 	input: SaveDatevConfigInput,
 ): Promise<ServerActionResult<DatevConfigResult>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "create",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "create",
+				}),
 			);
 		}
 
 		// Ensure DATEV format exists
-		yield* _(
-			Effect.promise(async () => {
-				const format = await db.query.payrollExportFormat.findFirst({
-					where: eq(payrollExportFormat.id, "datev_lohn"),
-				});
+		yield* Effect.promise(async () => {
+			const format = await db.query.payrollExportFormat.findFirst({
+				where: eq(payrollExportFormat.id, "datev_lohn"),
+			});
 
-				if (!format) {
-					// Create the format if it doesn't exist
-					await db.insert(payrollExportFormat).values({
-						id: "datev_lohn",
-						name: "DATEV Lohn & Gehalt",
-						version: "2024.1",
-						description: "Export for DATEV payroll software",
-						isEnabled: true,
-						requiresConfiguration: true,
-						supportsAsync: true,
-						syncThreshold: 500,
-						updatedAt: new Date(),
-					});
-				}
-			}),
-		);
+			if (!format) {
+				// Create the format if it doesn't exist
+				await db.insert(payrollExportFormat).values({
+					id: "datev_lohn",
+					name: "DATEV Lohn & Gehalt",
+					version: "2024.1",
+					description: "Export for DATEV payroll software",
+					isEnabled: true,
+					requiresConfiguration: true,
+					supportsAsync: true,
+					syncThreshold: 500,
+					updatedAt: new Date(),
+				});
+			}
+		});
 
 		// Save or update config
-		const config = yield* _(
-			Effect.promise(async () => {
-				const existing = await db.query.payrollExportConfig.findFirst({
-					where: and(
-						eq(payrollExportConfig.organizationId, input.organizationId),
-						eq(payrollExportConfig.formatId, "datev_lohn"),
-					),
-				});
+		const config = yield* Effect.promise(async () => {
+			const existing = await db.query.payrollExportConfig.findFirst({
+				where: and(
+					eq(payrollExportConfig.organizationId, input.organizationId),
+					eq(payrollExportConfig.formatId, "datev_lohn"),
+				),
+			});
 
-				if (existing) {
-					const [updated] = await db
-						.update(payrollExportConfig)
-						.set({
-							config: input.config as unknown as Record<string, unknown>,
-							updatedBy: session.user.id,
-						})
-						.where(eq(payrollExportConfig.id, existing.id))
-						.returning();
+			if (existing) {
+				const [updated] = await db
+					.update(payrollExportConfig)
+					.set({
+						config: input.config as unknown as Record<string, unknown>,
+						updatedBy: session.user.id,
+					})
+					.where(eq(payrollExportConfig.id, existing.id))
+					.returning();
 
-					return updated;
-				} else {
-					const [inserted] = await db
-						.insert(payrollExportConfig)
-						.values({
-							organizationId: input.organizationId,
-							formatId: "datev_lohn",
-							config: input.config as unknown as Record<string, unknown>,
-							isActive: true,
-							createdBy: session.user.id,
-							updatedAt: new Date(),
-						})
-						.returning();
+				return updated;
+			} else {
+				const [inserted] = await db
+					.insert(payrollExportConfig)
+					.values({
+						organizationId: input.organizationId,
+						formatId: "datev_lohn",
+						config: input.config as unknown as Record<string, unknown>,
+						isActive: true,
+						createdBy: session.user.id,
+						updatedAt: new Date(),
+					})
+					.returning();
 
-					return inserted;
-				}
-			}),
-		);
+				return inserted;
+			}
+		});
 
 		revalidatePath("/settings/payroll-export");
 
@@ -325,27 +317,25 @@ const LEXWARE_FORMAT_ID = "lexware_lohn";
 export async function getLexwareConfigAction(
 	organizationId: string,
 ): Promise<ServerActionResult<LexwareConfigResult | null>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "read",
+				}),
 			);
 		}
 
-		const configResult = yield* _(
-			Effect.promise(() => getPayrollExportConfig(organizationId, LEXWARE_FORMAT_ID)),
+		const configResult = yield* Effect.promise(() =>
+			getPayrollExportConfig(organizationId, LEXWARE_FORMAT_ID),
 		);
 
 		if (!configResult) {
@@ -371,87 +361,81 @@ export async function getLexwareConfigAction(
 export async function saveLexwareConfigAction(
 	input: SaveLexwareConfigInput,
 ): Promise<ServerActionResult<LexwareConfigResult>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "create",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "create",
+				}),
 			);
 		}
 
 		// Ensure Lexware format exists
-		yield* _(
-			Effect.promise(async () => {
-				const format = await db.query.payrollExportFormat.findFirst({
-					where: eq(payrollExportFormat.id, LEXWARE_FORMAT_ID),
-				});
+		yield* Effect.promise(async () => {
+			const format = await db.query.payrollExportFormat.findFirst({
+				where: eq(payrollExportFormat.id, LEXWARE_FORMAT_ID),
+			});
 
-				if (!format) {
-					// Create the format if it doesn't exist
-					await db.insert(payrollExportFormat).values({
-						id: LEXWARE_FORMAT_ID,
-						name: "Lexware lohn+gehalt",
-						version: "2024.1",
-						description: "Export for Lexware lohn+gehalt payroll software",
-						isEnabled: true,
-						requiresConfiguration: true,
-						supportsAsync: true,
-						syncThreshold: 500,
-						updatedAt: new Date(),
-					});
-				}
-			}),
-		);
+			if (!format) {
+				// Create the format if it doesn't exist
+				await db.insert(payrollExportFormat).values({
+					id: LEXWARE_FORMAT_ID,
+					name: "Lexware lohn+gehalt",
+					version: "2024.1",
+					description: "Export for Lexware lohn+gehalt payroll software",
+					isEnabled: true,
+					requiresConfiguration: true,
+					supportsAsync: true,
+					syncThreshold: 500,
+					updatedAt: new Date(),
+				});
+			}
+		});
 
 		// Save or update config
-		const config = yield* _(
-			Effect.promise(async () => {
-				const existing = await db.query.payrollExportConfig.findFirst({
-					where: and(
-						eq(payrollExportConfig.organizationId, input.organizationId),
-						eq(payrollExportConfig.formatId, LEXWARE_FORMAT_ID),
-					),
-				});
+		const config = yield* Effect.promise(async () => {
+			const existing = await db.query.payrollExportConfig.findFirst({
+				where: and(
+					eq(payrollExportConfig.organizationId, input.organizationId),
+					eq(payrollExportConfig.formatId, LEXWARE_FORMAT_ID),
+				),
+			});
 
-				if (existing) {
-					const [updated] = await db
-						.update(payrollExportConfig)
-						.set({
-							config: input.config as unknown as Record<string, unknown>,
-							updatedBy: session.user.id,
-						})
-						.where(eq(payrollExportConfig.id, existing.id))
-						.returning();
+			if (existing) {
+				const [updated] = await db
+					.update(payrollExportConfig)
+					.set({
+						config: input.config as unknown as Record<string, unknown>,
+						updatedBy: session.user.id,
+					})
+					.where(eq(payrollExportConfig.id, existing.id))
+					.returning();
 
-					return updated;
-				} else {
-					const [inserted] = await db
-						.insert(payrollExportConfig)
-						.values({
-							organizationId: input.organizationId,
-							formatId: LEXWARE_FORMAT_ID,
-							config: input.config as unknown as Record<string, unknown>,
-							isActive: true,
-							createdBy: session.user.id,
-							updatedAt: new Date(),
-						})
-						.returning();
+				return updated;
+			} else {
+				const [inserted] = await db
+					.insert(payrollExportConfig)
+					.values({
+						organizationId: input.organizationId,
+						formatId: LEXWARE_FORMAT_ID,
+						config: input.config as unknown as Record<string, unknown>,
+						isActive: true,
+						createdBy: session.user.id,
+						updatedAt: new Date(),
+					})
+					.returning();
 
-					return inserted;
-				}
-			}),
-		);
+				return inserted;
+			}
+		});
 
 		revalidatePath("/settings/payroll-export");
 
@@ -480,27 +464,25 @@ const SAGE_FORMAT_ID = "sage_lohn";
 export async function getSageConfigAction(
 	organizationId: string,
 ): Promise<ServerActionResult<SageConfigResult | null>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "read",
+				}),
 			);
 		}
 
-		const configResult = yield* _(
-			Effect.promise(() => getPayrollExportConfig(organizationId, SAGE_FORMAT_ID)),
+		const configResult = yield* Effect.promise(() =>
+			getPayrollExportConfig(organizationId, SAGE_FORMAT_ID),
 		);
 
 		if (!configResult) {
@@ -526,87 +508,81 @@ export async function getSageConfigAction(
 export async function saveSageConfigAction(
 	input: SaveSageConfigInput,
 ): Promise<ServerActionResult<SageConfigResult>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "create",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "create",
+				}),
 			);
 		}
 
 		// Ensure Sage format exists
-		yield* _(
-			Effect.promise(async () => {
-				const format = await db.query.payrollExportFormat.findFirst({
-					where: eq(payrollExportFormat.id, SAGE_FORMAT_ID),
-				});
+		yield* Effect.promise(async () => {
+			const format = await db.query.payrollExportFormat.findFirst({
+				where: eq(payrollExportFormat.id, SAGE_FORMAT_ID),
+			});
 
-				if (!format) {
-					// Create the format if it doesn't exist
-					await db.insert(payrollExportFormat).values({
-						id: SAGE_FORMAT_ID,
-						name: "Sage Lohn",
-						version: "2024.1",
-						description: "Export for Sage Lohn payroll software",
-						isEnabled: true,
-						requiresConfiguration: true,
-						supportsAsync: true,
-						syncThreshold: 500,
-						updatedAt: new Date(),
-					});
-				}
-			}),
-		);
+			if (!format) {
+				// Create the format if it doesn't exist
+				await db.insert(payrollExportFormat).values({
+					id: SAGE_FORMAT_ID,
+					name: "Sage Lohn",
+					version: "2024.1",
+					description: "Export for Sage Lohn payroll software",
+					isEnabled: true,
+					requiresConfiguration: true,
+					supportsAsync: true,
+					syncThreshold: 500,
+					updatedAt: new Date(),
+				});
+			}
+		});
 
 		// Save or update config
-		const config = yield* _(
-			Effect.promise(async () => {
-				const existing = await db.query.payrollExportConfig.findFirst({
-					where: and(
-						eq(payrollExportConfig.organizationId, input.organizationId),
-						eq(payrollExportConfig.formatId, SAGE_FORMAT_ID),
-					),
-				});
+		const config = yield* Effect.promise(async () => {
+			const existing = await db.query.payrollExportConfig.findFirst({
+				where: and(
+					eq(payrollExportConfig.organizationId, input.organizationId),
+					eq(payrollExportConfig.formatId, SAGE_FORMAT_ID),
+				),
+			});
 
-				if (existing) {
-					const [updated] = await db
-						.update(payrollExportConfig)
-						.set({
-							config: input.config as unknown as Record<string, unknown>,
-							updatedBy: session.user.id,
-						})
-						.where(eq(payrollExportConfig.id, existing.id))
-						.returning();
+			if (existing) {
+				const [updated] = await db
+					.update(payrollExportConfig)
+					.set({
+						config: input.config as unknown as Record<string, unknown>,
+						updatedBy: session.user.id,
+					})
+					.where(eq(payrollExportConfig.id, existing.id))
+					.returning();
 
-					return updated;
-				} else {
-					const [inserted] = await db
-						.insert(payrollExportConfig)
-						.values({
-							organizationId: input.organizationId,
-							formatId: SAGE_FORMAT_ID,
-							config: input.config as unknown as Record<string, unknown>,
-							isActive: true,
-							createdBy: session.user.id,
-							updatedAt: new Date(),
-						})
-						.returning();
+				return updated;
+			} else {
+				const [inserted] = await db
+					.insert(payrollExportConfig)
+					.values({
+						organizationId: input.organizationId,
+						formatId: SAGE_FORMAT_ID,
+						config: input.config as unknown as Record<string, unknown>,
+						isActive: true,
+						createdBy: session.user.id,
+						updatedAt: new Date(),
+					})
+					.returning();
 
-					return inserted;
-				}
-			}),
-		);
+				return inserted;
+			}
+		});
 
 		revalidatePath("/settings/payroll-export");
 
@@ -653,47 +629,43 @@ export interface SaveSuccessFactorsConfigInput {
 export async function getSuccessFactorsConfigAction(
 	organizationId: string,
 ): Promise<ServerActionResult<SuccessFactorsConfigResult | null>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "read",
+				}),
 			);
 		}
 
-		const configResult = yield* _(
-			Effect.promise(() => getPayrollExportConfig(organizationId, SF_FORMAT_ID)),
+		const configResult = yield* Effect.promise(() =>
+			getPayrollExportConfig(organizationId, SF_FORMAT_ID),
 		);
 
 		if (!configResult) {
 			return null;
 		}
 
-		const hasCredentials = yield* _(
-			Effect.promise(async () => {
-				const [clientId, clientSecret] = await Promise.all([
-					getOrgSecret(organizationId, SF_VAULT_KEY_CLIENT_ID),
-					getOrgSecret(organizationId, SF_VAULT_KEY_CLIENT_SECRET),
-				]);
-				return (
-					clientId !== null &&
-					clientSecret !== null &&
-					clientId.trim().length > 0 &&
-					clientSecret.trim().length > 0
-				);
-			}),
-		);
+		const hasCredentials = yield* Effect.promise(async () => {
+			const [clientId, clientSecret] = await Promise.all([
+				getOrgSecret(organizationId, SF_VAULT_KEY_CLIENT_ID),
+				getOrgSecret(organizationId, SF_VAULT_KEY_CLIENT_SECRET),
+			]);
+			return (
+				clientId !== null &&
+				clientSecret !== null &&
+				clientId.trim().length > 0 &&
+				clientSecret.trim().length > 0
+			);
+		});
 
 		return {
 			id: configResult.config.id,
@@ -715,121 +687,113 @@ export async function getSuccessFactorsConfigAction(
 export async function saveSuccessFactorsConfigAction(
 	input: SaveSuccessFactorsConfigInput,
 ): Promise<ServerActionResult<SuccessFactorsConfigResult>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "create",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "create",
+				}),
 			);
 		}
 
 		// Ensure SAP SuccessFactors format exists (for both API and CSV modes)
-		yield* _(
-			Effect.promise(async () => {
-				// Create API format if doesn't exist
-				const apiFormat = await db.query.payrollExportFormat.findFirst({
-					where: eq(payrollExportFormat.id, SF_FORMAT_ID),
+		yield* Effect.promise(async () => {
+			// Create API format if doesn't exist
+			const apiFormat = await db.query.payrollExportFormat.findFirst({
+				where: eq(payrollExportFormat.id, SF_FORMAT_ID),
+			});
+
+			if (!apiFormat) {
+				await db.insert(payrollExportFormat).values({
+					id: SF_FORMAT_ID,
+					name: "SAP SuccessFactors (API)",
+					version: "1.0.0",
+					description: "Export to SAP SuccessFactors via OData API",
+					isEnabled: true,
+					requiresConfiguration: true,
+					supportsAsync: true,
+					syncThreshold: 500,
+					updatedAt: new Date(),
 				});
+			}
 
-				if (!apiFormat) {
-					await db.insert(payrollExportFormat).values({
-						id: SF_FORMAT_ID,
-						name: "SAP SuccessFactors (API)",
-						version: "1.0.0",
-						description: "Export to SAP SuccessFactors via OData API",
-						isEnabled: true,
-						requiresConfiguration: true,
-						supportsAsync: true,
-						syncThreshold: 500,
-						updatedAt: new Date(),
-					});
-				}
+			// Create CSV format if doesn't exist
+			const csvFormat = await db.query.payrollExportFormat.findFirst({
+				where: eq(payrollExportFormat.id, SF_CSV_FORMAT_ID),
+			});
 
-				// Create CSV format if doesn't exist
-				const csvFormat = await db.query.payrollExportFormat.findFirst({
-					where: eq(payrollExportFormat.id, SF_CSV_FORMAT_ID),
+			if (!csvFormat) {
+				await db.insert(payrollExportFormat).values({
+					id: SF_CSV_FORMAT_ID,
+					name: "SAP SuccessFactors (CSV)",
+					version: "1.0.0",
+					description: "Export CSV file for SAP SuccessFactors import",
+					isEnabled: true,
+					requiresConfiguration: true,
+					supportsAsync: true,
+					syncThreshold: 500,
+					updatedAt: new Date(),
 				});
-
-				if (!csvFormat) {
-					await db.insert(payrollExportFormat).values({
-						id: SF_CSV_FORMAT_ID,
-						name: "SAP SuccessFactors (CSV)",
-						version: "1.0.0",
-						description: "Export CSV file for SAP SuccessFactors import",
-						isEnabled: true,
-						requiresConfiguration: true,
-						supportsAsync: true,
-						syncThreshold: 500,
-						updatedAt: new Date(),
-					});
-				}
-			}),
-		);
+			}
+		});
 
 		// Save or update config (shared between API and CSV modes)
-		const config = yield* _(
-			Effect.promise(async () => {
-				const existing = await db.query.payrollExportConfig.findFirst({
-					where: and(
-						eq(payrollExportConfig.organizationId, input.organizationId),
-						eq(payrollExportConfig.formatId, SF_FORMAT_ID),
-					),
-				});
+		const config = yield* Effect.promise(async () => {
+			const existing = await db.query.payrollExportConfig.findFirst({
+				where: and(
+					eq(payrollExportConfig.organizationId, input.organizationId),
+					eq(payrollExportConfig.formatId, SF_FORMAT_ID),
+				),
+			});
 
-				if (existing) {
-					const [updated] = await db
-						.update(payrollExportConfig)
-						.set({
-							config: input.config as unknown as Record<string, unknown>,
-							updatedBy: session.user.id,
-						})
-						.where(eq(payrollExportConfig.id, existing.id))
-						.returning();
+			if (existing) {
+				const [updated] = await db
+					.update(payrollExportConfig)
+					.set({
+						config: input.config as unknown as Record<string, unknown>,
+						updatedBy: session.user.id,
+					})
+					.where(eq(payrollExportConfig.id, existing.id))
+					.returning();
 
-					return updated;
-				} else {
-					const [inserted] = await db
-						.insert(payrollExportConfig)
-						.values({
-							organizationId: input.organizationId,
-							formatId: SF_FORMAT_ID,
-							config: input.config as unknown as Record<string, unknown>,
-							isActive: true,
-							createdBy: session.user.id,
-							updatedAt: new Date(),
-						})
-						.returning();
+				return updated;
+			} else {
+				const [inserted] = await db
+					.insert(payrollExportConfig)
+					.values({
+						organizationId: input.organizationId,
+						formatId: SF_FORMAT_ID,
+						config: input.config as unknown as Record<string, unknown>,
+						isActive: true,
+						createdBy: session.user.id,
+						updatedAt: new Date(),
+					})
+					.returning();
 
-					return inserted;
-				}
-			}),
-		);
+				return inserted;
+			}
+		});
 
-		const hasCredentials = yield* _(
-			Effect.promise(async () => {
-				const [clientId, clientSecret] = await Promise.all([
-					getOrgSecret(input.organizationId, SF_VAULT_KEY_CLIENT_ID),
-					getOrgSecret(input.organizationId, SF_VAULT_KEY_CLIENT_SECRET),
-				]);
-				return (
-					clientId !== null &&
-					clientSecret !== null &&
-					clientId.trim().length > 0 &&
-					clientSecret.trim().length > 0
-				);
-			}),
-		);
+		const hasCredentials = yield* Effect.promise(async () => {
+			const [clientId, clientSecret] = await Promise.all([
+				getOrgSecret(input.organizationId, SF_VAULT_KEY_CLIENT_ID),
+				getOrgSecret(input.organizationId, SF_VAULT_KEY_CLIENT_SECRET),
+			]);
+			return (
+				clientId !== null &&
+				clientSecret !== null &&
+				clientId.trim().length > 0 &&
+				clientSecret.trim().length > 0
+			);
+		});
 
 		revalidatePath("/settings/payroll-export");
 
@@ -854,36 +818,32 @@ export async function testSuccessFactorsConnectionAction(input: {
 	organizationId: string;
 	config: SuccessFactorsConfig;
 }): Promise<ServerActionResult<{ success: boolean; error?: string }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "read",
+				}),
 			);
 		}
 
 		// Import the exporter to test connection
-		const { successFactorsExporter } = yield* _(
-			Effect.promise(() => import("@/lib/payroll-export/exporters/successfactors")),
+		const { successFactorsExporter } = yield* Effect.promise(
+			() => import("@/lib/payroll-export/exporters/successfactors"),
 		);
 
-		const result = yield* _(
-			Effect.promise(() =>
-				successFactorsExporter.testConnection(
-					input.organizationId,
-					input.config as unknown as Record<string, unknown>,
-				),
+		const result = yield* Effect.promise(() =>
+			successFactorsExporter.testConnection(
+				input.organizationId,
+				input.config as unknown as Record<string, unknown>,
 			),
 		);
 
@@ -914,32 +874,28 @@ const SF_VAULT_KEY_CLIENT_SECRET = "payroll/successfactors/client_secret";
 export async function saveSuccessFactorsCredentialsAction(
 	input: SaveSuccessFactorsCredentialsInput,
 ): Promise<ServerActionResult<{ success: boolean }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "create",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "create",
+				}),
 			);
 		}
 
 		// Store credentials in Vault
-		yield* _(
-			Effect.promise(async () => {
-				await storeOrgSecret(input.organizationId, SF_VAULT_KEY_CLIENT_ID, input.clientId);
-				await storeOrgSecret(input.organizationId, SF_VAULT_KEY_CLIENT_SECRET, input.clientSecret);
-			}),
-		);
+		yield* Effect.promise(async () => {
+			await storeOrgSecret(input.organizationId, SF_VAULT_KEY_CLIENT_ID, input.clientId);
+			await storeOrgSecret(input.organizationId, SF_VAULT_KEY_CLIENT_SECRET, input.clientSecret);
+		});
 
 		revalidatePath("/settings/payroll-export");
 
@@ -955,32 +911,28 @@ export async function saveSuccessFactorsCredentialsAction(
 export async function deleteSuccessFactorsCredentialsAction(
 	organizationId: string,
 ): Promise<ServerActionResult<{ success: boolean }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "delete",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "delete",
+				}),
 			);
 		}
 
 		// Delete credentials from Vault
-		yield* _(
-			Effect.promise(async () => {
-				await deleteOrgSecret(organizationId, SF_VAULT_KEY_CLIENT_ID);
-				await deleteOrgSecret(organizationId, SF_VAULT_KEY_CLIENT_SECRET);
-			}),
-		);
+		yield* Effect.promise(async () => {
+			await deleteOrgSecret(organizationId, SF_VAULT_KEY_CLIENT_ID);
+			await deleteOrgSecret(organizationId, SF_VAULT_KEY_CLIENT_SECRET);
+		});
 
 		revalidatePath("/settings/payroll-export");
 
@@ -1027,47 +979,43 @@ export interface SaveWorkdayCredentialsInput {
 export async function getWorkdayConfigAction(
 	organizationId: string,
 ): Promise<ServerActionResult<WorkdayConfigResult | null>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "read",
+				}),
 			);
 		}
 
-		const configResult = yield* _(
-			Effect.promise(() => getPayrollExportConfig(organizationId, WORKDAY_FORMAT_ID)),
+		const configResult = yield* Effect.promise(() =>
+			getPayrollExportConfig(organizationId, WORKDAY_FORMAT_ID),
 		);
 
 		if (!configResult) {
 			return null;
 		}
 
-		const hasCredentials = yield* _(
-			Effect.promise(async () => {
-				const [clientId, clientSecret] = await Promise.all([
-					getOrgSecret(organizationId, WORKDAY_VAULT_KEY_CLIENT_ID),
-					getOrgSecret(organizationId, WORKDAY_VAULT_KEY_CLIENT_SECRET),
-				]);
-				return (
-					clientId !== null &&
-					clientSecret !== null &&
-					clientId.trim().length > 0 &&
-					clientSecret.trim().length > 0
-				);
-			}),
-		);
+		const hasCredentials = yield* Effect.promise(async () => {
+			const [clientId, clientSecret] = await Promise.all([
+				getOrgSecret(organizationId, WORKDAY_VAULT_KEY_CLIENT_ID),
+				getOrgSecret(organizationId, WORKDAY_VAULT_KEY_CLIENT_SECRET),
+			]);
+			return (
+				clientId !== null &&
+				clientSecret !== null &&
+				clientId.trim().length > 0 &&
+				clientSecret.trim().length > 0
+			);
+		});
 
 		return {
 			id: configResult.config.id,
@@ -1086,99 +1034,91 @@ export async function getWorkdayConfigAction(
 export async function saveWorkdayConfigAction(
 	input: SaveWorkdayConfigInput,
 ): Promise<ServerActionResult<WorkdayConfigResult>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "create",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "create",
+				}),
 			);
 		}
 
-		yield* _(
-			Effect.promise(async () => {
-				const format = await db.query.payrollExportFormat.findFirst({
-					where: eq(payrollExportFormat.id, WORKDAY_FORMAT_ID),
+		yield* Effect.promise(async () => {
+			const format = await db.query.payrollExportFormat.findFirst({
+				where: eq(payrollExportFormat.id, WORKDAY_FORMAT_ID),
+			});
+
+			if (!format) {
+				await db.insert(payrollExportFormat).values({
+					id: WORKDAY_FORMAT_ID,
+					name: "Workday (API)",
+					version: "1.0.0",
+					description: "Export to Workday via REST API",
+					isEnabled: true,
+					requiresConfiguration: true,
+					supportsAsync: true,
+					syncThreshold: 500,
+					updatedAt: new Date(),
 				});
+			}
+		});
 
-				if (!format) {
-					await db.insert(payrollExportFormat).values({
-						id: WORKDAY_FORMAT_ID,
-						name: "Workday (API)",
-						version: "1.0.0",
-						description: "Export to Workday via REST API",
-						isEnabled: true,
-						requiresConfiguration: true,
-						supportsAsync: true,
-						syncThreshold: 500,
-						updatedAt: new Date(),
-					});
-				}
-			}),
-		);
+		const config = yield* Effect.promise(async () => {
+			const existing = await db.query.payrollExportConfig.findFirst({
+				where: and(
+					eq(payrollExportConfig.organizationId, input.organizationId),
+					eq(payrollExportConfig.formatId, WORKDAY_FORMAT_ID),
+				),
+			});
 
-		const config = yield* _(
-			Effect.promise(async () => {
-				const existing = await db.query.payrollExportConfig.findFirst({
-					where: and(
-						eq(payrollExportConfig.organizationId, input.organizationId),
-						eq(payrollExportConfig.formatId, WORKDAY_FORMAT_ID),
-					),
-				});
-
-				if (existing) {
-					const [updated] = await db
-						.update(payrollExportConfig)
-						.set({
-							config: input.config as unknown as Record<string, unknown>,
-							updatedBy: session.user.id,
-						})
-						.where(eq(payrollExportConfig.id, existing.id))
-						.returning();
-
-					return updated;
-				}
-
-				const [inserted] = await db
-					.insert(payrollExportConfig)
-					.values({
-						organizationId: input.organizationId,
-						formatId: WORKDAY_FORMAT_ID,
+			if (existing) {
+				const [updated] = await db
+					.update(payrollExportConfig)
+					.set({
 						config: input.config as unknown as Record<string, unknown>,
-						isActive: true,
-						createdBy: session.user.id,
-						updatedAt: new Date(),
+						updatedBy: session.user.id,
 					})
+					.where(eq(payrollExportConfig.id, existing.id))
 					.returning();
 
-				return inserted;
-			}),
-		);
+				return updated;
+			}
 
-		const hasCredentials = yield* _(
-			Effect.promise(async () => {
-				const [clientId, clientSecret] = await Promise.all([
-					getOrgSecret(input.organizationId, WORKDAY_VAULT_KEY_CLIENT_ID),
-					getOrgSecret(input.organizationId, WORKDAY_VAULT_KEY_CLIENT_SECRET),
-				]);
-				return (
-					clientId !== null &&
-					clientSecret !== null &&
-					clientId.trim().length > 0 &&
-					clientSecret.trim().length > 0
-				);
-			}),
-		);
+			const [inserted] = await db
+				.insert(payrollExportConfig)
+				.values({
+					organizationId: input.organizationId,
+					formatId: WORKDAY_FORMAT_ID,
+					config: input.config as unknown as Record<string, unknown>,
+					isActive: true,
+					createdBy: session.user.id,
+					updatedAt: new Date(),
+				})
+				.returning();
+
+			return inserted;
+		});
+
+		const hasCredentials = yield* Effect.promise(async () => {
+			const [clientId, clientSecret] = await Promise.all([
+				getOrgSecret(input.organizationId, WORKDAY_VAULT_KEY_CLIENT_ID),
+				getOrgSecret(input.organizationId, WORKDAY_VAULT_KEY_CLIENT_SECRET),
+			]);
+			return (
+				clientId !== null &&
+				clientSecret !== null &&
+				clientId.trim().length > 0 &&
+				clientSecret.trim().length > 0
+			);
+		});
 
 		revalidatePath("/settings/payroll-export");
 
@@ -1199,55 +1139,47 @@ export async function saveWorkdayConfigAction(
 export async function saveWorkdayCredentialsAction(
 	input: SaveWorkdayCredentialsInput,
 ): Promise<ServerActionResult<{ success: boolean }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "create",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "create",
+				}),
 			);
 		}
 
 		const clientId = input.clientId.trim();
 		if (clientId.length === 0) {
-			yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: "Workday client ID cannot be empty",
-						field: "clientId",
-					}),
-				),
+			yield* Effect.fail(
+				new ValidationError({
+					message: "Workday client ID cannot be empty",
+					field: "clientId",
+				}),
 			);
 		}
 
 		const clientSecret = input.clientSecret.trim();
 		if (clientSecret.length === 0) {
-			yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: "Workday client secret cannot be empty",
-						field: "clientSecret",
-					}),
-				),
+			yield* Effect.fail(
+				new ValidationError({
+					message: "Workday client secret cannot be empty",
+					field: "clientSecret",
+				}),
 			);
 		}
 
-		yield* _(
-			Effect.promise(async () => {
-				await storeOrgSecret(input.organizationId, WORKDAY_VAULT_KEY_CLIENT_ID, clientId);
-				await storeOrgSecret(input.organizationId, WORKDAY_VAULT_KEY_CLIENT_SECRET, clientSecret);
-			}),
-		);
+		yield* Effect.promise(async () => {
+			await storeOrgSecret(input.organizationId, WORKDAY_VAULT_KEY_CLIENT_ID, clientId);
+			await storeOrgSecret(input.organizationId, WORKDAY_VAULT_KEY_CLIENT_SECRET, clientSecret);
+		});
 
 		revalidatePath("/settings/payroll-export");
 
@@ -1260,31 +1192,27 @@ export async function saveWorkdayCredentialsAction(
 export async function deleteWorkdayCredentialsAction(
 	organizationId: string,
 ): Promise<ServerActionResult<{ success: boolean }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "delete",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "delete",
+				}),
 			);
 		}
 
-		yield* _(
-			Effect.promise(async () => {
-				await deleteOrgSecret(organizationId, WORKDAY_VAULT_KEY_CLIENT_ID);
-				await deleteOrgSecret(organizationId, WORKDAY_VAULT_KEY_CLIENT_SECRET);
-			}),
-		);
+		yield* Effect.promise(async () => {
+			await deleteOrgSecret(organizationId, WORKDAY_VAULT_KEY_CLIENT_ID);
+			await deleteOrgSecret(organizationId, WORKDAY_VAULT_KEY_CLIENT_SECRET);
+		});
 
 		revalidatePath("/settings/payroll-export");
 
@@ -1298,35 +1226,31 @@ export async function testWorkdayConnectionAction(input: {
 	organizationId: string;
 	config: WorkdayConfig;
 }): Promise<ServerActionResult<{ success: boolean; error?: string }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "read",
+				}),
 			);
 		}
 
-		const { workdayConnector } = yield* _(
-			Effect.promise(() => import("@/lib/payroll-export/exporters/workday/workday-connector")),
+		const { workdayConnector } = yield* Effect.promise(
+			() => import("@/lib/payroll-export/exporters/workday/workday-connector"),
 		);
 
-		return yield* _(
-			Effect.promise(() =>
-				workdayConnector.testConnection(
-					input.organizationId,
-					input.config as unknown as Record<string, unknown>,
-				),
+		return yield* Effect.promise(() =>
+			workdayConnector.testConnection(
+				input.organizationId,
+				input.config as unknown as Record<string, unknown>,
 			),
 		);
 	});
@@ -1344,28 +1268,26 @@ export async function testWorkdayConnectionAction(input: {
 export async function getMappingsAction(
 	organizationId: string,
 ): Promise<ServerActionResult<WageTypeMapping[]>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_wage_type_mapping",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_wage_type_mapping",
+					action: "read",
+				}),
 			);
 		}
 
 		// Get config first
-		const configResult = yield* _(
-			Effect.promise(() => getPayrollExportConfig(organizationId, "datev_lohn")),
+		const configResult = yield* Effect.promise(() =>
+			getPayrollExportConfig(organizationId, "datev_lohn"),
 		);
 
 		if (!configResult) {
@@ -1373,7 +1295,7 @@ export async function getMappingsAction(
 		}
 
 		// Get mappings
-		const mappings = yield* _(Effect.promise(() => getWageTypeMappings(configResult.config.id)));
+		const mappings = yield* Effect.promise(() => getWageTypeMappings(configResult.config.id));
 
 		return mappings;
 	});
@@ -1387,22 +1309,20 @@ export async function getMappingsAction(
 export async function saveMappingAction(
 	input: SaveMappingInput,
 ): Promise<ServerActionResult<WageTypeMapping>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_wage_type_mapping",
-						action: "create",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_wage_type_mapping",
+					action: "create",
+				}),
 			);
 		}
 
@@ -1420,145 +1340,139 @@ export async function saveMappingAction(
 		}
 
 		// Validate organization ownership of configId and category IDs
-		yield* _(
-			Effect.promise(async () => {
-				// Validate configId belongs to organization
-				const config = await db.query.payrollExportConfig.findFirst({
+		yield* Effect.promise(async () => {
+			// Validate configId belongs to organization
+			const config = await db.query.payrollExportConfig.findFirst({
+				where: and(
+					eq(payrollExportConfig.id, input.configId),
+					eq(payrollExportConfig.organizationId, input.organizationId),
+				),
+			});
+			if (!config) {
+				throw new Error("Configuration not found or access denied");
+			}
+
+			if (input.workCategoryId) {
+				const category = await db.query.workCategory.findFirst({
 					where: and(
-						eq(payrollExportConfig.id, input.configId),
-						eq(payrollExportConfig.organizationId, input.organizationId),
+						eq(workCategory.id, input.workCategoryId),
+						eq(workCategory.organizationId, input.organizationId),
 					),
 				});
-				if (!config) {
-					throw new Error("Configuration not found or access denied");
+				if (!category) {
+					throw new Error("Work category not found or access denied");
 				}
+			}
 
-				if (input.workCategoryId) {
-					const category = await db.query.workCategory.findFirst({
-						where: and(
-							eq(workCategory.id, input.workCategoryId),
-							eq(workCategory.organizationId, input.organizationId),
-						),
-					});
-					if (!category) {
-						throw new Error("Work category not found or access denied");
-					}
+			if (input.absenceCategoryId) {
+				const category = await db.query.absenceCategory.findFirst({
+					where: and(
+						eq(absenceCategory.id, input.absenceCategoryId),
+						eq(absenceCategory.organizationId, input.organizationId),
+					),
+				});
+				if (!category) {
+					throw new Error("Absence category not found or access denied");
 				}
-
-				if (input.absenceCategoryId) {
-					const category = await db.query.absenceCategory.findFirst({
-						where: and(
-							eq(absenceCategory.id, input.absenceCategoryId),
-							eq(absenceCategory.organizationId, input.organizationId),
-						),
-					});
-					if (!category) {
-						throw new Error("Absence category not found or access denied");
-					}
-				}
-			}),
-		);
+			}
+		});
 
 		// Save mapping
-		const mapping = yield* _(
-			Effect.promise(async () => {
-				// Check for existing mapping with same source
-				const whereConditions = [eq(payrollWageTypeMapping.configId, input.configId)];
+		const mapping = yield* Effect.promise(async () => {
+			// Check for existing mapping with same source
+			const whereConditions = [eq(payrollWageTypeMapping.configId, input.configId)];
 
-				if (input.workCategoryId) {
-					whereConditions.push(eq(payrollWageTypeMapping.workCategoryId, input.workCategoryId));
-				} else if (input.absenceCategoryId) {
-					whereConditions.push(
-						eq(payrollWageTypeMapping.absenceCategoryId, input.absenceCategoryId),
-					);
-				} else if (input.specialCategory) {
-					whereConditions.push(eq(payrollWageTypeMapping.specialCategory, input.specialCategory));
-				}
+			if (input.workCategoryId) {
+				whereConditions.push(eq(payrollWageTypeMapping.workCategoryId, input.workCategoryId));
+			} else if (input.absenceCategoryId) {
+				whereConditions.push(eq(payrollWageTypeMapping.absenceCategoryId, input.absenceCategoryId));
+			} else if (input.specialCategory) {
+				whereConditions.push(eq(payrollWageTypeMapping.specialCategory, input.specialCategory));
+			}
 
-				const existing = await db.query.payrollWageTypeMapping.findFirst({
-					where: and(...whereConditions),
-				});
+			const existing = await db.query.payrollWageTypeMapping.findFirst({
+				where: and(...whereConditions),
+			});
 
-				if (existing) {
-					// Update existing
-					const [updated] = await db
-						.update(payrollWageTypeMapping)
-						.set({
-							// Legacy fields (for backwards compatibility)
-							wageTypeCode:
-								input.wageTypeCode ||
-								input.datevWageTypeCode ||
-								input.lexwareWageTypeCode ||
-								input.sageWageTypeCode ||
-								input.successFactorsTimeTypeCode ||
-								"",
-							wageTypeName:
-								input.wageTypeName ||
-								input.datevWageTypeName ||
-								input.lexwareWageTypeName ||
-								input.sageWageTypeName ||
-								input.successFactorsTimeTypeName ||
-								null,
-							// Format-specific codes
-							datevWageTypeCode: input.datevWageTypeCode ?? existing.datevWageTypeCode,
-							datevWageTypeName: input.datevWageTypeName ?? existing.datevWageTypeName,
-							lexwareWageTypeCode: input.lexwareWageTypeCode ?? existing.lexwareWageTypeCode,
-							lexwareWageTypeName: input.lexwareWageTypeName ?? existing.lexwareWageTypeName,
-							sageWageTypeCode: input.sageWageTypeCode ?? existing.sageWageTypeCode,
-							sageWageTypeName: input.sageWageTypeName ?? existing.sageWageTypeName,
-							successFactorsTimeTypeCode:
-								input.successFactorsTimeTypeCode ?? existing.successFactorsTimeTypeCode,
-							successFactorsTimeTypeName:
-								input.successFactorsTimeTypeName ?? existing.successFactorsTimeTypeName,
-							isActive: true,
-						})
-						.where(eq(payrollWageTypeMapping.id, existing.id))
-						.returning();
+			if (existing) {
+				// Update existing
+				const [updated] = await db
+					.update(payrollWageTypeMapping)
+					.set({
+						// Legacy fields (for backwards compatibility)
+						wageTypeCode:
+							input.wageTypeCode ||
+							input.datevWageTypeCode ||
+							input.lexwareWageTypeCode ||
+							input.sageWageTypeCode ||
+							input.successFactorsTimeTypeCode ||
+							"",
+						wageTypeName:
+							input.wageTypeName ||
+							input.datevWageTypeName ||
+							input.lexwareWageTypeName ||
+							input.sageWageTypeName ||
+							input.successFactorsTimeTypeName ||
+							null,
+						// Format-specific codes
+						datevWageTypeCode: input.datevWageTypeCode ?? existing.datevWageTypeCode,
+						datevWageTypeName: input.datevWageTypeName ?? existing.datevWageTypeName,
+						lexwareWageTypeCode: input.lexwareWageTypeCode ?? existing.lexwareWageTypeCode,
+						lexwareWageTypeName: input.lexwareWageTypeName ?? existing.lexwareWageTypeName,
+						sageWageTypeCode: input.sageWageTypeCode ?? existing.sageWageTypeCode,
+						sageWageTypeName: input.sageWageTypeName ?? existing.sageWageTypeName,
+						successFactorsTimeTypeCode:
+							input.successFactorsTimeTypeCode ?? existing.successFactorsTimeTypeCode,
+						successFactorsTimeTypeName:
+							input.successFactorsTimeTypeName ?? existing.successFactorsTimeTypeName,
+						isActive: true,
+					})
+					.where(eq(payrollWageTypeMapping.id, existing.id))
+					.returning();
 
-					return updated;
-				} else {
-					// Insert new
-					const [inserted] = await db
-						.insert(payrollWageTypeMapping)
-						.values({
-							configId: input.configId,
-							workCategoryId: input.workCategoryId || null,
-							absenceCategoryId: input.absenceCategoryId || null,
-							specialCategory: input.specialCategory || null,
-							// Legacy fields (for backwards compatibility)
-							wageTypeCode:
-								input.wageTypeCode ||
-								input.datevWageTypeCode ||
-								input.lexwareWageTypeCode ||
-								input.sageWageTypeCode ||
-								input.successFactorsTimeTypeCode ||
-								"",
-							wageTypeName:
-								input.wageTypeName ||
-								input.datevWageTypeName ||
-								input.lexwareWageTypeName ||
-								input.sageWageTypeName ||
-								input.successFactorsTimeTypeName ||
-								null,
-							// Format-specific codes
-							datevWageTypeCode: input.datevWageTypeCode || null,
-							datevWageTypeName: input.datevWageTypeName || null,
-							lexwareWageTypeCode: input.lexwareWageTypeCode || null,
-							lexwareWageTypeName: input.lexwareWageTypeName || null,
-							sageWageTypeCode: input.sageWageTypeCode || null,
-							sageWageTypeName: input.sageWageTypeName || null,
-							successFactorsTimeTypeCode: input.successFactorsTimeTypeCode || null,
-							successFactorsTimeTypeName: input.successFactorsTimeTypeName || null,
-							isActive: true,
-							createdBy: session.user.id,
-							updatedAt: new Date(),
-						})
-						.returning();
+				return updated;
+			} else {
+				// Insert new
+				const [inserted] = await db
+					.insert(payrollWageTypeMapping)
+					.values({
+						configId: input.configId,
+						workCategoryId: input.workCategoryId || null,
+						absenceCategoryId: input.absenceCategoryId || null,
+						specialCategory: input.specialCategory || null,
+						// Legacy fields (for backwards compatibility)
+						wageTypeCode:
+							input.wageTypeCode ||
+							input.datevWageTypeCode ||
+							input.lexwareWageTypeCode ||
+							input.sageWageTypeCode ||
+							input.successFactorsTimeTypeCode ||
+							"",
+						wageTypeName:
+							input.wageTypeName ||
+							input.datevWageTypeName ||
+							input.lexwareWageTypeName ||
+							input.sageWageTypeName ||
+							input.successFactorsTimeTypeName ||
+							null,
+						// Format-specific codes
+						datevWageTypeCode: input.datevWageTypeCode || null,
+						datevWageTypeName: input.datevWageTypeName || null,
+						lexwareWageTypeCode: input.lexwareWageTypeCode || null,
+						lexwareWageTypeName: input.lexwareWageTypeName || null,
+						sageWageTypeCode: input.sageWageTypeCode || null,
+						sageWageTypeName: input.sageWageTypeName || null,
+						successFactorsTimeTypeCode: input.successFactorsTimeTypeCode || null,
+						successFactorsTimeTypeName: input.successFactorsTimeTypeName || null,
+						isActive: true,
+						createdBy: session.user.id,
+						updatedAt: new Date(),
+					})
+					.returning();
 
-					return inserted;
-				}
-			}),
-		);
+				return inserted;
+			}
+		});
 
 		revalidatePath("/settings/payroll-export");
 
@@ -1594,48 +1508,42 @@ export async function saveMappingAction(
 export async function deleteMappingAction(
 	input: DeleteMappingInput,
 ): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_wage_type_mapping",
-						action: "delete",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_wage_type_mapping",
+					action: "delete",
+				}),
 			);
 		}
 
 		// Validate mapping belongs to organization before deleting
-		yield* _(
-			Effect.promise(async () => {
-				const mapping = await db.query.payrollWageTypeMapping.findFirst({
-					where: eq(payrollWageTypeMapping.id, input.mappingId),
-					with: { config: true },
-				});
+		yield* Effect.promise(async () => {
+			const mapping = await db.query.payrollWageTypeMapping.findFirst({
+				where: eq(payrollWageTypeMapping.id, input.mappingId),
+				with: { config: true },
+			});
 
-				if (!mapping) {
-					throw new Error("Mapping not found");
-				}
+			if (!mapping) {
+				throw new Error("Mapping not found");
+			}
 
-				const typedMapping = mapping as unknown as PayrollWageTypeMappingWithConfig;
+			const typedMapping = mapping as unknown as PayrollWageTypeMappingWithConfig;
 
-				if (typedMapping.config.organizationId !== input.organizationId) {
-					throw new Error("Mapping not found or access denied");
-				}
+			if (typedMapping.config.organizationId !== input.organizationId) {
+				throw new Error("Mapping not found or access denied");
+			}
 
-				await db
-					.delete(payrollWageTypeMapping)
-					.where(eq(payrollWageTypeMapping.id, input.mappingId));
-			}),
-		);
+			await db.delete(payrollWageTypeMapping).where(eq(payrollWageTypeMapping.id, input.mappingId));
+		});
 
 		revalidatePath("/settings/payroll-export");
 	});
@@ -1653,26 +1561,24 @@ export async function deleteMappingAction(
 export async function getWorkCategoriesAction(
 	organizationId: string,
 ): Promise<ServerActionResult<Array<{ id: string; name: string; factor: string | null }>>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "work_category",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "work_category",
+					action: "read",
+				}),
 			);
 		}
 
-		const categories = yield* _(Effect.promise(() => getWorkCategories(organizationId)));
+		const categories = yield* Effect.promise(() => getWorkCategories(organizationId));
 
 		return categories;
 	});
@@ -1686,26 +1592,24 @@ export async function getWorkCategoriesAction(
 export async function getAbsenceCategoriesAction(
 	organizationId: string,
 ): Promise<ServerActionResult<Array<{ id: string; name: string; type: string | null }>>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "absence_category",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "absence_category",
+					action: "read",
+				}),
 			);
 		}
 
-		const categories = yield* _(Effect.promise(() => getAbsenceCategories(organizationId)));
+		const categories = yield* Effect.promise(() => getAbsenceCategories(organizationId));
 
 		return categories;
 	});
@@ -1723,33 +1627,29 @@ export async function getAbsenceCategoriesAction(
 export async function getFilterOptionsAction(
 	organizationId: string,
 ): Promise<ServerActionResult<FilterOptions>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "filter_options",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "filter_options",
+					action: "read",
+				}),
 			);
 		}
 
-		const [employees, teams, projects] = yield* _(
-			Effect.promise(() =>
-				Promise.all([
-					getEmployeesForFilter(organizationId),
-					getTeamsForFilter(organizationId),
-					getProjectsForFilter(organizationId),
-				]),
-			),
+		const [employees, teams, projects] = yield* Effect.promise(() =>
+			Promise.all([
+				getEmployeesForFilter(organizationId),
+				getTeamsForFilter(organizationId),
+				getProjectsForFilter(organizationId),
+			]),
 		);
 
 		return { employees, teams, projects };
@@ -1773,14 +1673,14 @@ export async function startExportAction(input: StartExportInput): Promise<
 		fileContent?: string;
 	}>
 > {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
 		// Get current employee
-		const dbService = yield* _(DatabaseService);
-		const currentEmployee = yield* _(
-			dbService.query("getCurrentEmployee", async () => {
+		const dbService = yield* DatabaseService;
+		const currentEmployee = yield* dbService
+			.query("getCurrentEmployee", async () => {
 				const emp = await dbService.db.query.employee.findFirst({
 					where: and(
 						eq(employee.userId, session.user.id),
@@ -1793,28 +1693,27 @@ export async function startExportAction(input: StartExportInput): Promise<
 				}
 
 				return emp;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					() =>
+						new NotFoundError({
+							message: "Employee profile not found",
+							entityType: "employee",
+						}),
+				),
+			);
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export",
-						action: "create",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export",
+					action: "create",
+				}),
 			);
 		}
 
@@ -1841,23 +1740,21 @@ export async function startExportAction(input: StartExportInput): Promise<
 		};
 
 		// Create export job
-		const { jobId, isAsync } = yield* _(
-			Effect.promise(() =>
-				createExportJob({
-					organizationId: input.organizationId,
-					formatId: input.formatId,
-					requestedById: currentEmployee.id,
-					filters,
-					// Checked above: an organization administrator may execute eligible repairs.
-					repairActorUserId: session.user.id,
-				}),
-			),
+		const { jobId, isAsync } = yield* Effect.promise(() =>
+			createExportJob({
+				organizationId: input.organizationId,
+				formatId: input.formatId,
+				requestedById: currentEmployee.id,
+				filters,
+				// Checked above: an organization administrator may execute eligible repairs.
+				repairActorUserId: session.user.id,
+			}),
 		);
 
 		// If sync, process immediately and return result
 		if (!isAsync) {
-			const { result, downloadUrl } = yield* _(
-				Effect.promise(() => processExportJob({ jobId, organizationId: input.organizationId })),
+			const { result, downloadUrl } = yield* Effect.promise(() =>
+				processExportJob({ jobId, organizationId: input.organizationId }),
 			);
 
 			revalidatePath("/settings/payroll-export");
@@ -1874,10 +1771,8 @@ export async function startExportAction(input: StartExportInput): Promise<
 			};
 		}
 
-		yield* _(
-			Effect.promise(() =>
-				enqueuePayrollExportJob({ jobId, organizationId: input.organizationId }),
-			),
+		yield* Effect.promise(() =>
+			enqueuePayrollExportJob({ jobId, organizationId: input.organizationId }),
 		);
 
 		revalidatePath("/settings/payroll-export");
@@ -1894,26 +1789,24 @@ export async function startExportAction(input: StartExportInput): Promise<
 export async function getExportHistoryAction(
 	organizationId: string,
 ): Promise<ServerActionResult<PayrollExportJobSummary[]>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export",
+					action: "read",
+				}),
 			);
 		}
 
-		const history = yield* _(Effect.promise(() => getExportJobHistory(organizationId)));
+		const history = yield* Effect.promise(() => getExportJobHistory(organizationId));
 
 		return history;
 	});
@@ -1928,26 +1821,24 @@ export async function getExportDownloadUrlAction(
 	organizationId: string,
 	jobId: string,
 ): Promise<ServerActionResult<string | null>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export",
-						action: "download",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export",
+					action: "download",
+				}),
 			);
 		}
 
-		const url = yield* _(Effect.promise(() => getExportDownloadUrl(organizationId, jobId)));
+		const url = yield* Effect.promise(() => getExportDownloadUrl(organizationId, jobId));
 
 		return url;
 	});
@@ -1997,27 +1888,25 @@ export interface SavePersonioCredentialsInput {
 export async function getPersonioConfigAction(
 	organizationId: string,
 ): Promise<ServerActionResult<PersonioConfigResult | null>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "read",
+				}),
 			);
 		}
 
-		const configResult = yield* _(
-			Effect.promise(() => getPayrollExportConfig(organizationId, PERSONIO_FORMAT_ID)),
+		const configResult = yield* Effect.promise(() =>
+			getPayrollExportConfig(organizationId, PERSONIO_FORMAT_ID),
 		);
 
 		if (!configResult) {
@@ -2025,12 +1914,10 @@ export async function getPersonioConfigAction(
 		}
 
 		// Check if credentials exist in Vault
-		const hasCredentials = yield* _(
-			Effect.promise(async () => {
-				const clientId = await getOrgSecret(organizationId, VAULT_KEY_CLIENT_ID);
-				return clientId !== null;
-			}),
-		);
+		const hasCredentials = yield* Effect.promise(async () => {
+			const clientId = await getOrgSecret(organizationId, VAULT_KEY_CLIENT_ID);
+			return clientId !== null;
+		});
 
 		return {
 			id: configResult.config.id,
@@ -2052,95 +1939,87 @@ export async function getPersonioConfigAction(
 export async function savePersonioConfigAction(
 	input: SavePersonioConfigInput,
 ): Promise<ServerActionResult<PersonioConfigResult>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "create",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "create",
+				}),
 			);
 		}
 
 		// Ensure Personio format exists
-		yield* _(
-			Effect.promise(async () => {
-				const format = await db.query.payrollExportFormat.findFirst({
-					where: eq(payrollExportFormat.id, PERSONIO_FORMAT_ID),
-				});
+		yield* Effect.promise(async () => {
+			const format = await db.query.payrollExportFormat.findFirst({
+				where: eq(payrollExportFormat.id, PERSONIO_FORMAT_ID),
+			});
 
-				if (!format) {
-					// Create the format if it doesn't exist
-					await db.insert(payrollExportFormat).values({
-						id: PERSONIO_FORMAT_ID,
-						name: "Personio",
-						version: "1.0",
-						description: "Push time entries directly to Personio HR",
-						isEnabled: true,
-						requiresConfiguration: true,
-						supportsAsync: true,
-						syncThreshold: 500,
-						updatedAt: new Date(),
-					});
-				}
-			}),
-		);
+			if (!format) {
+				// Create the format if it doesn't exist
+				await db.insert(payrollExportFormat).values({
+					id: PERSONIO_FORMAT_ID,
+					name: "Personio",
+					version: "1.0",
+					description: "Push time entries directly to Personio HR",
+					isEnabled: true,
+					requiresConfiguration: true,
+					supportsAsync: true,
+					syncThreshold: 500,
+					updatedAt: new Date(),
+				});
+			}
+		});
 
 		// Save or update config
-		const config = yield* _(
-			Effect.promise(async () => {
-				const existing = await db.query.payrollExportConfig.findFirst({
-					where: and(
-						eq(payrollExportConfig.organizationId, input.organizationId),
-						eq(payrollExportConfig.formatId, PERSONIO_FORMAT_ID),
-					),
-				});
+		const config = yield* Effect.promise(async () => {
+			const existing = await db.query.payrollExportConfig.findFirst({
+				where: and(
+					eq(payrollExportConfig.organizationId, input.organizationId),
+					eq(payrollExportConfig.formatId, PERSONIO_FORMAT_ID),
+				),
+			});
 
-				if (existing) {
-					const [updated] = await db
-						.update(payrollExportConfig)
-						.set({
-							config: input.config as unknown as Record<string, unknown>,
-							updatedBy: session.user.id,
-						})
-						.where(eq(payrollExportConfig.id, existing.id))
-						.returning();
+			if (existing) {
+				const [updated] = await db
+					.update(payrollExportConfig)
+					.set({
+						config: input.config as unknown as Record<string, unknown>,
+						updatedBy: session.user.id,
+					})
+					.where(eq(payrollExportConfig.id, existing.id))
+					.returning();
 
-					return updated;
-				} else {
-					const [inserted] = await db
-						.insert(payrollExportConfig)
-						.values({
-							organizationId: input.organizationId,
-							formatId: PERSONIO_FORMAT_ID,
-							config: input.config as unknown as Record<string, unknown>,
-							isActive: true,
-							createdBy: session.user.id,
-							updatedAt: new Date(),
-						})
-						.returning();
+				return updated;
+			} else {
+				const [inserted] = await db
+					.insert(payrollExportConfig)
+					.values({
+						organizationId: input.organizationId,
+						formatId: PERSONIO_FORMAT_ID,
+						config: input.config as unknown as Record<string, unknown>,
+						isActive: true,
+						createdBy: session.user.id,
+						updatedAt: new Date(),
+					})
+					.returning();
 
-					return inserted;
-				}
-			}),
-		);
+				return inserted;
+			}
+		});
 
 		// Check if credentials exist
-		const hasCredentials = yield* _(
-			Effect.promise(async () => {
-				const clientId = await getOrgSecret(input.organizationId, VAULT_KEY_CLIENT_ID);
-				return clientId !== null;
-			}),
-		);
+		const hasCredentials = yield* Effect.promise(async () => {
+			const clientId = await getOrgSecret(input.organizationId, VAULT_KEY_CLIENT_ID);
+			return clientId !== null;
+		});
 
 		revalidatePath("/settings/payroll-export");
 
@@ -2164,32 +2043,28 @@ export async function savePersonioConfigAction(
 export async function savePersonioCredentialsAction(
 	input: SavePersonioCredentialsInput,
 ): Promise<ServerActionResult<{ success: boolean }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "create",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "create",
+				}),
 			);
 		}
 
 		// Store credentials in Vault
-		yield* _(
-			Effect.promise(async () => {
-				await storeOrgSecret(input.organizationId, VAULT_KEY_CLIENT_ID, input.clientId);
-				await storeOrgSecret(input.organizationId, VAULT_KEY_CLIENT_SECRET, input.clientSecret);
-			}),
-		);
+		yield* Effect.promise(async () => {
+			await storeOrgSecret(input.organizationId, VAULT_KEY_CLIENT_ID, input.clientId);
+			await storeOrgSecret(input.organizationId, VAULT_KEY_CLIENT_SECRET, input.clientSecret);
+		});
 
 		revalidatePath("/settings/payroll-export");
 
@@ -2205,32 +2080,28 @@ export async function savePersonioCredentialsAction(
 export async function deletePersonioCredentialsAction(
 	organizationId: string,
 ): Promise<ServerActionResult<{ success: boolean }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "delete",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "delete",
+				}),
 			);
 		}
 
 		// Delete credentials from Vault
-		yield* _(
-			Effect.promise(async () => {
-				await deleteOrgSecret(organizationId, VAULT_KEY_CLIENT_ID);
-				await deleteOrgSecret(organizationId, VAULT_KEY_CLIENT_SECRET);
-			}),
-		);
+		yield* Effect.promise(async () => {
+			await deleteOrgSecret(organizationId, VAULT_KEY_CLIENT_ID);
+			await deleteOrgSecret(organizationId, VAULT_KEY_CLIENT_SECRET);
+		});
 
 		revalidatePath("/settings/payroll-export");
 
@@ -2246,22 +2117,20 @@ export async function deletePersonioCredentialsAction(
 export async function testPersonioConnectionAction(
 	organizationId: string,
 ): Promise<ServerActionResult<{ success: boolean; error?: string }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "payroll_export_config",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "read",
+				}),
 			);
 		}
 
@@ -2272,16 +2141,14 @@ export async function testPersonioConnectionAction(
 		}
 
 		// Get config
-		const configResult = yield* _(
-			Effect.promise(() => getPayrollExportConfig(organizationId, PERSONIO_FORMAT_ID)),
+		const configResult = yield* Effect.promise(() =>
+			getPayrollExportConfig(organizationId, PERSONIO_FORMAT_ID),
 		);
 
 		const config = configResult?.config.config || {};
 
-		const result = yield* _(
-			Effect.promise(() =>
-				exporter.testConnection(organizationId, config as Record<string, unknown>),
-			),
+		const result = yield* Effect.promise(() =>
+			exporter.testConnection(organizationId, config as Record<string, unknown>),
 		);
 
 		return result;

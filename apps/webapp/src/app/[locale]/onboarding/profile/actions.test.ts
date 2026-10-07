@@ -1,4 +1,4 @@
-import { Cause, Effect, Exit, Option } from "effect";
+import { Cause, Effect, Exit, Option, Result } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { OnboardingService } from "@/lib/effect/services/onboarding.service";
 import type { OnboardingProfileFormValues } from "@/lib/validations/onboarding";
@@ -31,7 +31,9 @@ vi.mock("@/lib/effect/result", () => ({
 
 		return Exit.match(exit, {
 			onFailure: (cause) => {
-				const defect = [...Cause.defects(cause)][0] ?? Option.getOrNull(Cause.failureOption(cause));
+				const defect =
+					Result.getOrNull(Cause.findDefect(cause)) ??
+					Option.getOrNull(Cause.findErrorOption(cause));
 				return {
 					success: false,
 					error: defect instanceof Error ? defect.message : "An unexpected error occurred",

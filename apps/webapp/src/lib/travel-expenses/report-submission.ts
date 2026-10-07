@@ -1,0 +1,203 @@
+import type { TravelExpenseReportItemType, TravelExpenseReportKind } from "@/db/schema";
+import type { ItemConversion } from "./currency-conversion";
+import { itemReimbursementAmount, type ReimbursementItemInput } from "./item-amount";
+import { reportItemMissingRequirements } from "./item-requirements";
+import type { MileageItemView } from "./mileage";
+import type { PerDiemItemView } from "./per-diem";
+import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
+import type { ReceiptExceptionContext } from "./receipt-exception";
+import { type ReceiptItemDraft, receiptReportTotals } from "./receipt-report";
+import { referenceRateReviewKey } from "./reference-rate-conversion";
+import {
+	type TripDetailsDraft,
+	type TripReportMissingRequirements,
+	type TripRequirement,
+	tripReportMissingRequirements,
+} from "./trip-report";
+
+/**
+ * Whether a saved report may be submitted for review (#602). Only saved facts
+ * count: the server runs this under the report lock on the rows it is about to
+ * freeze, against the versions the employee reviewed, and calculates the
+ * authoritative totals itself. Client-side totals are never trusted.
+ */
+
+export interface SubmissionReportFacts {
+	kind: TravelExpenseReportKind;
+	reimbursementCurrency: string;
+	detailsVersion: number;
+	/** Null for standalone reports. */
+	details: TripDetailsDraft | null;
+	items: readonly {
+		id: string;
+		version: number;
+		draft: ReceiptItemDraft;
+		/** The receipts attached to the expense right now. */
+		receiptIds: readonly string[];
+		/** Receipts when absent. */
+		type?: TravelExpenseReportItemType;
+		/** A mileage item's facts, calculated by the server under the report lock (#606). */
+		mileage?: MileageItemView | null;
+		/** A per diem item's itinerary and calculation, by the server under the report lock (#609). */
+		perDiem?: PerDiemItemView | null;
+		/** Missing-receipt exception of the expense (#604); absent means none. */
+		receiptException?: ReceiptExceptionContext;
+		/** Version of the expense's exception; 0 when it never had one. */
+		receiptExceptionVersion?: number;
+		/** Its saved currency conversion (#607), if any. */
+		conversion?: ItemConversion | null;
+	}[];
+}
+
+/** The versions and receipts shown in the employee's submission review step. */
+export interface ReviewedReportVersions {
+	/** Null for standalone reports, which have no trip details. */
+	detailsVersion: number | null;
+	items: readonly {
+		id: string;
+		version: number;
+		receiptIds: readonly string[];
+		/** The missing-receipt exception version reviewed (#604); absent means 0. */
+		receiptExceptionVersion?: number;
+		/**
+		 * The item's counted amount as reviewed (`reviewedItemAmount`). A
+		 * calculated amount (mileage) can change without an edit, when the
+		 * policy changes; when present it must still match.
+		 */
+		amount?: string | null;
+		/** The reference-rate publication reviewed (#608, `referenceRateReviewKey`); absent means none. */
+		referenceRate?: string | null;
+	}[];
+}
+
+/** What an item counts in the review step; null when it is not counted. */
+export function reviewedItemAmount(
+	item: ReimbursementItemInput,
+	reimbursementCurrency: string,
+): string | null {
+	const amount = itemReimbursementAmount(item, reimbursementCurrency);
+	return amount.counted ? amount.amount : null;
+}
+
+function totalsInput(item: SubmissionReportFacts["items"][number]): ReimbursementItemInput {
+	return {
+		...item.draft,
+		type: item.type,
+		mileage: item.mileage,
+		perDiem: item.perDiem,
+		conversion: item.conversion,
+	};
+}
+
+function sameIds(left: readonly string[], right: readonly string[]): boolean {
+	if (left.length !== right.length) return false;
+	const seen = new Set(left);
+	return right.every((id) => seen.has(id));
+}
+
+export interface ReportSubmissionTotals {
+	currency: string;
+	/** Employee-paid costs: the reimbursement entitlement, possibly zero. */
+	reimbursable: string;
+	/** Company-paid costs: reviewed, never owed to the employee. */
+	companyPaid: string;
+	/** Everything the reviewer approves; what approval amount thresholds measure. */
+	total: string;
+}
+
+/** Adds two normalized stored-scale amounts exactly. */
+function addAmounts(left: string, right: string): string {
+	const units = (value: string) => {
+		const parsed = parseUnits(value, STORED_AMOUNT_SCALE);
+		if (parsed === null) throw new Error(`Malformed report total: ${value}`);
+		return parsed;
+	};
+	return formatUnits(sumUnits([units(left), units(right)]), STORED_AMOUNT_SCALE);
+}
+
+export type ReportSubmissionCheck =
+	| { ok: true; totals: ReportSubmissionTotals }
+	| { ok: false; reason: "changed_since_review" }
+	| { ok: false; reason: "incomplete"; missing: TripReportMissingRequirements };
+
+function matchesReview(report: SubmissionReportFacts, reviewed: ReviewedReportVersions): boolean {
+	const expectedDetails = report.kind === "trip" ? report.detailsVersion : null;
+	if (reviewed.detailsVersion !== expectedDetails) return false;
+	if (reviewed.items.length !== report.items.length) return false;
+	return report.items.every((item, index) => {
+		const seen = reviewed.items[index];
+		// A receipt attached or removed after the review is not what was reviewed.
+		return (
+			seen?.id === item.id &&
+			seen.version === item.version &&
+			sameIds(seen.receiptIds, item.receiptIds) &&
+			(seen.receiptExceptionVersion ?? 0) === (item.receiptExceptionVersion ?? 0) &&
+			(seen.amount === undefined ||
+				seen.amount === reviewedItemAmount(totalsInput(item), report.reimbursementCurrency)) &&
+			(seen.referenceRate ?? null) === referenceRateReviewKey(item.conversion)
+		);
+	});
+}
+
+function missingRequirements(report: SubmissionReportFacts): TripReportMissingRequirements {
+	if (report.kind === "trip" && report.details) {
+		return tripReportMissingRequirements({
+			details: report.details,
+			items: report.items.map((item) => ({
+				id: item.id,
+				type: item.type,
+				draft: item.draft,
+				receiptCount: item.receiptIds.length,
+				mileage: item.mileage,
+				perDiem: item.perDiem,
+				receiptException: item.receiptException,
+				conversion: item.conversion,
+			})),
+			reimbursementCurrency: report.reimbursementCurrency,
+		});
+	}
+	const trip: TripRequirement[] = report.items.length === 1 ? [] : ["expense_item"];
+	const items = report.items
+		.map((item) => ({
+			id: item.id,
+			missing: reportItemMissingRequirements(
+				{
+					type: item.type,
+					draft: item.draft,
+					receiptCount: item.receiptIds.length,
+					mileage: item.mileage,
+					perDiem: item.perDiem,
+					receiptException: item.receiptException,
+					conversion: item.conversion,
+				},
+				{ reimbursementCurrency: report.reimbursementCurrency },
+			),
+		}))
+		.filter((item) => item.missing.length > 0);
+	return { trip, items };
+}
+
+export function checkReportSubmission(
+	report: SubmissionReportFacts,
+	reviewed: ReviewedReportVersions,
+): ReportSubmissionCheck {
+	if (!matchesReview(report, reviewed)) return { ok: false, reason: "changed_since_review" };
+	const missing = missingRequirements(report);
+	if (missing.trip.length > 0 || missing.items.length > 0) {
+		return { ok: false, reason: "incomplete", missing };
+	}
+	const totals = receiptReportTotals(report.items.map(totalsInput), report.reimbursementCurrency);
+	if (totals.excludedItemCount > 0) {
+		// Unreachable for complete items; never submit an uncounted expense.
+		throw new Error("A complete expense was excluded from the report totals");
+	}
+	return {
+		ok: true,
+		totals: {
+			currency: totals.currency,
+			reimbursable: totals.reimbursable,
+			companyPaid: totals.companyPaid,
+			total: addAmounts(totals.reimbursable, totals.companyPaid),
+		},
+	};
+}

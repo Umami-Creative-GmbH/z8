@@ -247,13 +247,13 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 
 vi.mock("@/lib/effect/services/auth.service", async () => {
 	const { Context } = await import("effect");
-	const AuthService = Context.GenericTag<any>("AuthService");
+	const AuthService = Context.Service<any>("AuthService");
 	return { AuthService };
 });
 
 vi.mock("@/lib/effect/services/database.service", async () => {
 	const { Context } = await import("effect");
-	const DatabaseService = Context.GenericTag<any>("DatabaseService");
+	const DatabaseService = Context.Service<any>("DatabaseService");
 	return { DatabaseService };
 });
 

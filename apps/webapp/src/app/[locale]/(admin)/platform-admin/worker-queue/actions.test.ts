@@ -48,7 +48,7 @@ vi.mock("@/lib/effect/runtime", async () => {
 });
 
 vi.mock("@/lib/effect/result", async () => {
-	const { Cause, Effect, Exit, Option } = await import("effect");
+	const { Cause, Effect, Exit, Option, Result } = await import("effect");
 
 	return {
 		runServerActionSafe: async <T, E, R>(effect: Effect.Effect<T, E, R>) => {
@@ -56,8 +56,8 @@ vi.mock("@/lib/effect/result", async () => {
 
 			return Exit.match(exit, {
 				onFailure: (cause) => {
-					const defect = [...Cause.defects(cause)][0] ?? null;
-					const failure = Option.getOrNull(Cause.failureOption(cause));
+					const defect = Result.getOrNull(Cause.findDefect(cause));
+					const failure = Option.getOrNull(Cause.findErrorOption(cause));
 					const error = defect ?? failure ?? cause;
 
 					if (error && typeof error === "object" && "_tag" in error) {

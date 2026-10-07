@@ -22,6 +22,10 @@ import {
 	buildTravelExpenseReviewSections,
 	prepareTravelExpenseReviewEvidence,
 } from "../presentation/travel-expense-review";
+import {
+	buildTravelExpenseReportReviewSections,
+	prepareTravelExpenseReportReviewEvidence,
+} from "../presentation/travel-expense-report-review";
 import type { TimeCorrectionMetadataChanges } from "../server/time-correction-review-metadata";
 import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
 import { ApprovalInboxBadRequestError } from "./current-actor";
@@ -88,6 +92,11 @@ interface GetApprovalInboxDetailFromRequestInput {
 		organizationId: string;
 		claimId: string;
 	}) => ReturnType<typeof prepareTravelExpenseReviewEvidence>;
+	loadTravelExpenseReportReviewEvidence?: (input: {
+		organizationId: string;
+		reportId: string;
+		approvalRequestId?: string;
+	}) => ReturnType<typeof prepareTravelExpenseReportReviewEvidence>;
 	loadTimeReviewEvidence?: (
 		input: Parameters<typeof prepareTimeReviewEvidence>[0],
 	) => ReturnType<typeof prepareTimeReviewEvidence>;
@@ -291,6 +300,8 @@ export async function getApprovalInboxDetailFromRequest({
 	handler,
 	loadAbsenceReviewEvidence = prepareAbsenceReviewEvidence,
 	loadTravelExpenseReviewEvidence = prepareTravelExpenseReviewEvidence,
+	loadTravelExpenseReportReviewEvidence = (input) =>
+		prepareTravelExpenseReportReviewEvidence(input),
 	loadTimeReviewEvidence = prepareTimeReviewEvidence,
 }: GetApprovalInboxDetailFromRequestInput): Promise<ApprovalInboxDetailResult> {
 	if (!isSupportedInboxType(request.entityType)) {
@@ -315,7 +326,7 @@ export async function getApprovalInboxDetailFromRequest({
 		supportsBulkApprove: handler.supportsBulkApprove,
 		handler,
 	};
-	const item = toInboxItem(source, detail.approval, undefined);
+	const item = toInboxItem(source, detail.approval, undefined, { inDetail: true });
 	let actions = isOrphanedTimeCorrectionDetail(detail)
 		? { ...item.capabilities, canApprove: false, canBulkApprove: false }
 		: item.capabilities;
@@ -350,6 +361,16 @@ export async function getApprovalInboxDetailFromRequest({
 			await loadTravelExpenseReviewEvidence({
 				organizationId: request.organizationId,
 				claimId: request.entityId,
+			}),
+		);
+	} else if (request.entityType === "travel_expense_report") {
+		// The whole report's frozen submission (#602); never the live draft rows.
+		review = buildTravelExpenseReportReviewSections(
+			await loadTravelExpenseReportReviewEvidence({
+				organizationId: request.organizationId,
+				reportId: request.entityId,
+				// An earlier cycle's request shows the facts its reviewer saw.
+				approvalRequestId: request.id,
 			}),
 		);
 	} else if (timeEvidence) {
@@ -464,7 +485,10 @@ function toInboxItem(
 	source: ApprovalInboxSource,
 	approval: UnifiedApprovalItem,
 	now: Date | undefined,
+	options: { inDetail?: boolean } = {},
 ): ApprovalInboxItem {
+	// Outside the detail view, an approval needing its acceptances is not offered (#604).
+	const quickApproveBlocked = approval.requiresDetailReview === true && !options.inDetail;
 	const triage = buildInboxTriage({
 		type: source.type,
 		priority: approval.priority,
@@ -481,6 +505,7 @@ function toInboxItem(
 		type: source.type,
 		entityId: approval.entityId,
 		status: approval.status,
+		...(approval.closedAs ? { closedAs: approval.closedAs } : {}),
 		requester: {
 			id: approval.requester.id,
 			name: approval.requester.name,
@@ -504,14 +529,18 @@ function toInboxItem(
 		triage,
 		capabilities: {
 			canApprove:
-				approval.status === "pending" && approval.isActionable !== false,
+				approval.status === "pending" &&
+				approval.isActionable !== false &&
+				!quickApproveBlocked,
 			canReject:
 				approval.status === "pending" && approval.isActionable !== false,
 			canBulkApprove:
 				approval.status === "pending" &&
 				approval.isActionable !== false &&
-				source.supportsBulkApprove,
+				source.supportsBulkApprove &&
+				approval.requiresDetailReview !== true,
 			requiresRejectReason: true,
+			...(approval.requiresDetailReview ? { requiresDetailReview: true } : {}),
 		},
 	};
 }
@@ -529,7 +558,8 @@ function buildDetailSections(
 			rows: [
 				{ label: "Type", value: detail.approval.typeName },
 				{ label: "Summary", value: detail.approval.display.summary },
-				{ label: "Status", value: detail.approval.status },
+				// A returned or withdrawn report cycle is not a rejection (#603).
+				{ label: "Status", value: detail.approval.closedAs ?? detail.approval.status },
 				...(stage
 					? [{ label: "Stage", value: `${stage.name} (${stage.order})` }]
 					: []),

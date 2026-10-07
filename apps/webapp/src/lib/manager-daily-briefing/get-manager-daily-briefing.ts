@@ -559,18 +559,16 @@ const databaseSources: ManagerDailyBriefingSources = {
 		const scopedEmployeeIds = new Set(employeeIds);
 
 		const result = await Effect.runPromise(
-			Effect.gen(function* (_) {
-				const approvalQueryService = yield* _(ApprovalQueryService);
-				return yield* _(
-					approvalQueryService.getApprovals({
-						approverId,
-						organizationId,
-						status: "pending",
-						requesterEmployeeIds: employeeIds,
-						includeAllApprovers,
-						limit: 25,
-					}),
-				);
+			Effect.gen(function* () {
+				const approvalQueryService = yield* ApprovalQueryService;
+				return yield* approvalQueryService.getApprovals({
+					approverId,
+					organizationId,
+					status: "pending",
+					requesterEmployeeIds: employeeIds,
+					includeAllApprovers,
+					limit: 25,
+				});
 			}).pipe(Effect.provide(ApprovalQueryServiceLive)) as Effect.Effect<
 				import("@/lib/approvals/domain/types").PaginatedApprovalResult,
 				AnyAppError,

@@ -26,7 +26,7 @@ vi.mock("@tolgee/react", () => ({
 									? "Keine Kategorie (100 %)"
 									: key === "approvals:approvals.workCategoryUnavailable"
 										? "Kategorie nicht verfügbar"
-				: fallback,
+										: fallback,
 	}),
 }));
 
@@ -35,7 +35,11 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("@/components/ui/button", () => ({
-	Button: ({ disabled, children, ...props }: React.ComponentProps<"button">) => (
+	Button: ({
+		disabled,
+		children,
+		...props
+	}: React.ComponentProps<"button">) => (
 		<button
 			{...props}
 			type={props.type ?? "button"}
@@ -47,7 +51,14 @@ vi.mock("@/components/ui/button", () => ({
 	),
 }));
 
+vi.mock("@/navigation", () => ({
+	Link: ({ children, ...props }: React.ComponentProps<"a">) => (
+		<a {...props}>{children}</a>
+	),
+}));
+
 const mockState = vi.hoisted(() => ({
+	detailItem: null as ApprovalInboxItem | null,
 	actions: {
 		canApprove: true,
 		canReject: true,
@@ -64,7 +75,7 @@ const mockState = vi.hoisted(() => ({
 vi.mock("@/lib/query/use-approval-inbox", () => ({
 	useApprovalDetail: () => ({
 		data: {
-			item: approvalItem,
+			item: mockState.detailItem ?? approvalItem,
 			sections: mockState.sections,
 			actions: mockState.actions,
 		},
@@ -81,6 +92,12 @@ vi.mock("@/lib/query/use-approval-inbox", () => ({
 
 vi.mock("@/lib/query", () => ({
 	useEmployeeClockStatuses: () => ({ getStatus: () => null }),
+}));
+
+vi.mock("@/components/travel-expenses/report/report-reopen", () => ({
+	ReopenReportPanel: ({ reportId }: { reportId: string }) => (
+		<div data-testid="reopen-report-panel">{reportId}</div>
+	),
 }));
 
 const approvalItem: ApprovalInboxItem = {
@@ -147,6 +164,7 @@ describe("normalizeTravelExpenseDetailEntity", () => {
 
 describe("ApprovalDetailPanel", () => {
 	beforeEach(() => {
+		mockState.detailItem = null;
 		mockState.actions = { ...approvalItem.capabilities };
 		mockState.approveIsPending = false;
 		mockState.rejectIsPending = false;
@@ -160,7 +178,12 @@ describe("ApprovalDetailPanel", () => {
 				title: "Request",
 				rows: [{ label: "Type", value: "Absence Request" }],
 			},
-			{ type: "callout", title: "Risk", body: "No conflicts detected.", tone: "info" },
+			{
+				type: "callout",
+				title: "Risk",
+				body: "No conflicts detected.",
+				tone: "info",
+			},
 			{
 				type: "timeline",
 				title: "Timeline",
@@ -191,6 +214,60 @@ describe("ApprovalDetailPanel", () => {
 		expect(screen.getByText("No conflicts detected.")).toBeTruthy();
 	});
 
+	it("renders localized callout and timeline texts with their parameters", async () => {
+		mockState.sections = [
+			{
+				type: "callout",
+				title: { key: "x.title", fallback: "Submission {cycle}", params: { cycle: 2 } },
+				body: { key: "x.body", fallback: "Changed: {fields}", params: { fields: "items" } },
+				tone: "info",
+			},
+			{
+				type: "timeline",
+				title: { key: "x.timeline", fallback: "Evidence history" },
+				events: [
+					{
+						id: "e-1",
+						label: { key: "x.returned", fallback: "Report returned for changes" },
+						at: "2026-05-01T00:00:00Z",
+						actorName: null,
+					},
+				],
+			},
+		];
+		render(
+			<ApprovalDetailPanel
+				approval={approvalItem}
+				open={true}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+		expect(await screen.findByText("Evidence history")).toBeTruthy();
+		expect(screen.getByText("Report returned for changes")).toBeTruthy();
+	});
+
+	it("offers reopening an approved expense report from the inbox (#614)", async () => {
+		const report: ApprovalInboxItem = {
+			...approvalItem,
+			type: "travel_expense_report",
+			entityId: "report-1",
+			status: "approved",
+		};
+		mockState.detailItem = report;
+		const { rerender } = render(
+			<ApprovalDetailPanel approval={report} open={true} onOpenChange={vi.fn()} onActioned={vi.fn()} />,
+		);
+		expect((await screen.findByTestId("reopen-report-panel")).textContent).toBe("report-1");
+
+		const pending = { ...report, status: "pending" as const };
+		mockState.detailItem = pending;
+		rerender(
+			<ApprovalDetailPanel approval={pending} open={true} onOpenChange={vi.fn()} onActioned={vi.fn()} />,
+		);
+		expect(screen.queryByTestId("reopen-report-panel")).toBeNull();
+	});
+
 	it("translates the timeline actor connector", async () => {
 		render(
 			<ApprovalDetailPanel
@@ -201,7 +278,9 @@ describe("ApprovalDetailPanel", () => {
 			/>,
 		);
 
-		expect(await screen.findByText("May 1, 2026 durch Ada Lovelace")).toBeTruthy();
+		expect(
+			await screen.findByText("May 1, 2026 durch Ada Lovelace"),
+		).toBeTruthy();
 	});
 
 	it("translates semantic correction values and exposes original/requested descriptions", async () => {
@@ -303,7 +382,9 @@ describe("ApprovalDetailPanel", () => {
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: /Reject/ }));
-		const confirmButton = screen.getByRole("button", { name: /Confirm Rejection/ });
+		const confirmButton = screen.getByRole("button", {
+			name: /Confirm Rejection/,
+		});
 		expectButtonDisabled(confirmButton);
 
 		fireEvent.change(screen.getByLabelText("Reason for rejection"), {
@@ -394,7 +475,9 @@ describe("ApprovalDetailPanel", () => {
 			/>,
 		);
 
-		const confirmButton = screen.getByRole("button", { name: /Confirm Rejection/ });
+		const confirmButton = screen.getByRole("button", {
+			name: /Confirm Rejection/,
+		});
 		expectButtonDisabled(confirmButton);
 		fireEvent.click(confirmButton);
 
@@ -427,10 +510,33 @@ describe("ApprovalDetailPanel", () => {
 			/>,
 		);
 
-		const confirmButton = screen.getByRole("button", { name: /Confirm Rejection/ });
+		const confirmButton = screen.getByRole("button", {
+			name: /Confirm Rejection/,
+		});
 		expectButtonDisabled(confirmButton);
 		fireEvent.click(confirmButton);
 
 		expect(mockState.rejectMutateAsync).not.toHaveBeenCalled();
+	});
+	it("opens the exact expense claim and receipts from the reviewer panel", () => {
+		const expense = {
+			...approvalItem,
+			type: "travel_expense_claim" as const,
+			entityId: "expense-1",
+		};
+		mockState.detailItem = expense;
+		render(
+			<ApprovalDetailPanel
+				approval={expense}
+				open
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+		expect(
+			screen
+				.getByRole("link", { name: "View claim and receipts" })
+				.getAttribute("href"),
+		).toBe("/travel-expenses/expense-1");
 	});
 });

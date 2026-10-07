@@ -127,16 +127,14 @@ export async function handleShiftPickupAction(
 		// Request pickup using Effect-TS service
 		// Note: requestShiftPickup atomically checks availability and creates the request
 		// to avoid race conditions (TOCTOU vulnerability)
-		const program = Effect.gen(function* (_) {
-			const openShiftsService = yield* _(OpenShiftsService);
+		const program = Effect.gen(function* () {
+			const openShiftsService = yield* OpenShiftsService;
 
-			const result = yield* _(
-				openShiftsService.requestShiftPickup({
-					shiftId,
-					requesterId,
-					organizationId: tenant.organizationId,
-				}),
-			);
+			const result = yield* openShiftsService.requestShiftPickup({
+				shiftId,
+				requesterId,
+				organizationId: tenant.organizationId,
+			});
 
 			return { success: true, requestId: result.requestId };
 		});

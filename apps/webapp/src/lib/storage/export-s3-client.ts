@@ -55,7 +55,9 @@ function getPrivateStorageConfig(): S3StorageConfig | null {
  * Get S3 storage configuration for an organization
  * Non-secret fields from database, secrets from Vault
  */
-export async function getStorageConfig(organizationId: string): Promise<S3StorageConfig | null> {
+export async function getStorageConfig(
+	organizationId: string,
+): Promise<S3StorageConfig | null> {
 	// Get non-secret config from database
 	const config = await db.query.exportStorageConfig.findFirst({
 		where: eq(exportStorageConfig.organizationId, organizationId),
@@ -89,7 +91,9 @@ export async function getStorageConfig(organizationId: string): Promise<S3Storag
 /**
  * Check if Export S3 storage is configured for an organization
  */
-export async function isExportS3Configured(organizationId?: string): Promise<boolean> {
+export async function isExportS3Configured(
+	organizationId?: string,
+): Promise<boolean> {
 	if (!organizationId) {
 		return false;
 	}
@@ -136,7 +140,9 @@ export async function testS3Connection(
 		const response = await client.send(command);
 
 		// Check if the specified bucket exists
-		const bucketExists = response.Buckets?.some((b) => b.Name === config.bucket);
+		const bucketExists = response.Buckets?.some(
+			(b) => b.Name === config.bucket,
+		);
 
 		if (!bucketExists) {
 			return {
@@ -150,7 +156,8 @@ export async function testS3Connection(
 			message: "Connection successful. Bucket verified.",
 		};
 	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : "Unknown error";
+		const errorMessage =
+			error instanceof Error ? error.message : "Unknown error";
 		logger.error({ error: errorMessage }, "S3 connection test failed");
 
 		// Provide user-friendly error messages
@@ -160,8 +167,14 @@ export async function testS3Connection(
 		if (errorMessage.includes("SignatureDoesNotMatch")) {
 			return { success: false, message: "Invalid Secret Access Key" };
 		}
-		if (errorMessage.includes("ENOTFOUND") || errorMessage.includes("getaddrinfo")) {
-			return { success: false, message: "Cannot reach endpoint. Check your endpoint URL." };
+		if (
+			errorMessage.includes("ENOTFOUND") ||
+			errorMessage.includes("getaddrinfo")
+		) {
+			return {
+				success: false,
+				message: "Cannot reach endpoint. Check your endpoint URL.",
+			};
 		}
 
 		return { success: false, message: `Connection failed: ${errorMessage}` };
@@ -236,7 +249,9 @@ export async function deletePrivateObject(input: {
 		throw new Error("S3 storage is not configured for this organization");
 	}
 	if (input.bucket && input.bucket !== config.bucket) {
-		throw new Error("Private storage bucket changed; object cleanup needs review");
+		throw new Error(
+			"Private storage bucket changed; object cleanup needs review",
+		);
 	}
 
 	const client = createS3Client(config);
@@ -252,7 +267,10 @@ export async function deletePrivateObject(input: {
 /**
  * Delete an export from S3
  */
-export async function deleteExport(organizationId: string, key: string): Promise<void> {
+export async function deleteExport(
+	organizationId: string,
+	key: string,
+): Promise<void> {
 	const config = await getStorageConfig(organizationId);
 	if (!config) {
 		throw new Error("S3 storage is not configured for this organization");
@@ -275,7 +293,10 @@ export async function deleteExport(organizationId: string, key: string): Promise
 /**
  * Check if an export exists in S3
  */
-export async function exportExists(organizationId: string, key: string): Promise<boolean> {
+export async function exportExists(
+	organizationId: string,
+	key: string,
+): Promise<boolean> {
 	const config = await getStorageConfig(organizationId);
 	if (!config) {
 		return false;
@@ -298,7 +319,10 @@ export async function exportExists(organizationId: string, key: string): Promise
 /**
  * Get the size of an export in S3
  */
-export async function getExportSize(organizationId: string, key: string): Promise<number | null> {
+export async function getExportSize(
+	organizationId: string,
+	key: string,
+): Promise<number | null> {
 	const config = await getStorageConfig(organizationId);
 	if (!config) {
 		return null;
@@ -356,4 +380,28 @@ export function generateExportKey(
 	const ts = timestamp || new Date();
 	const dateStr = ts.toISOString().split("T")[0]; // YYYY-MM-DD
 	return `exports/${organizationId}/${dateStr}/${exportId}.zip`;
+}
+
+/** Fetches the recorded private object/version; a moved bucket requires recovery instead of substituting another object. */
+export async function readPrivateObject(input: {
+	organizationId: string;
+	key: string;
+	bucket: string | null;
+	versionId: string | null;
+}): Promise<Uint8Array> {
+	const config = await getStorageConfig(input.organizationId);
+	if (!config)
+		throw new Error("S3 storage is not configured for this organization");
+	if (input.bucket && input.bucket !== config.bucket)
+		throw new Error("Recorded receipt bucket is unavailable");
+	const response = await createS3Client(config).send(
+		new GetObjectCommand({
+			Bucket: input.bucket ?? config.bucket,
+			Key: input.key,
+			...(input.versionId ? { VersionId: input.versionId } : {}),
+		}),
+	);
+	const bytes = await response.Body?.transformToByteArray();
+	if (!bytes) throw new Error("Receipt content is unavailable");
+	return bytes;
 }

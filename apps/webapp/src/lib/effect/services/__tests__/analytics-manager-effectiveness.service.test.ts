@@ -86,17 +86,15 @@ describe("AnalyticsService.getManagerEffectiveness", () => {
 		);
 
 		const result = await Effect.runPromise(
-			Effect.gen(function* (_) {
-				const service = yield* _(AnalyticsService);
-				return yield* _(
-					service.getManagerEffectiveness({
-						organizationId: "org-1",
-						dateRange: {
-							start: new Date("2026-04-01T00:00:00.000Z"),
-							end: new Date("2026-04-30T23:59:59.999Z"),
-						},
-					}),
-				);
+			Effect.gen(function* () {
+				const service = yield* AnalyticsService;
+				return yield* service.getManagerEffectiveness({
+					organizationId: "org-1",
+					dateRange: {
+						start: new Date("2026-04-01T00:00:00.000Z"),
+						end: new Date("2026-04-30T23:59:59.999Z"),
+					},
+				});
 			}).pipe(Effect.provide(AnalyticsService.Live), Effect.provide(dbLayer)),
 		);
 

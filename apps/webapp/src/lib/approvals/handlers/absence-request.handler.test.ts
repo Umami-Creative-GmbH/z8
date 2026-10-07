@@ -403,7 +403,7 @@ describe("absence approval handler tenant scope", () => {
 		);
 		expect(Exit.isFailure(exit)).toBe(true);
 		if (Exit.isFailure(exit)) {
-			expect(Option.getOrNull(Cause.failureOption(exit.cause))).toBe(error);
+			expect(Option.getOrNull(Cause.findErrorOption(exit.cause))).toBe(error);
 		}
 		vi.doUnmock("@/lib/approvals/server/absence-approvals");
 	});

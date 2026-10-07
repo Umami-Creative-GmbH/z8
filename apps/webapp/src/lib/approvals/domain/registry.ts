@@ -19,7 +19,7 @@ import type { ApprovalType, ApprovalTypeHandler } from "./types";
  * Manages registration and lookup of approval type handlers.
  * Implemented as an Effect service for DI and testability.
  */
-export class ApprovalTypeRegistry extends Context.Tag("ApprovalTypeRegistry")<
+export class ApprovalTypeRegistry extends Context.Service<
 	ApprovalTypeRegistry,
 	{
 		/**
@@ -47,7 +47,7 @@ export class ApprovalTypeRegistry extends Context.Tag("ApprovalTypeRegistry")<
 		 */
 		readonly getTypes: () => Effect.Effect<ApprovalType[]>;
 	}
->() {}
+>()("ApprovalTypeRegistry") {}
 
 // In-memory storage for handlers
 const handlers = new Map<ApprovalType, ApprovalTypeHandler>();
@@ -64,17 +64,15 @@ export const ApprovalTypeRegistryLive = Layer.succeed(
 			}),
 
 		get: (type) =>
-			Effect.gen(function* (_) {
+			Effect.gen(function* () {
 				const handler = handlers.get(type);
 				if (!handler) {
-					return yield* _(
-						Effect.fail(
-							new NotFoundError({
-								message: `Approval type '${type}' is not registered`,
-								entityType: "approval_type",
-								entityId: type,
-							}),
-						),
+					return yield* Effect.fail(
+						new NotFoundError({
+							message: `Approval type '${type}' is not registered`,
+							entityType: "approval_type",
+							entityId: type,
+						}),
 					);
 				}
 				return handler;

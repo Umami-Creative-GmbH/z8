@@ -22,7 +22,7 @@ vi.mock("@/app/[locale]/(app)/scheduling/actions/shared", async () => {
 vi.mock("@/lib/effect/services/shift.service", async () => {
 	const { Context } = await import("effect");
 	return {
-		ShiftService: Context.GenericTag<{
+		ShiftService: Context.Service<{
 			deleteShift: typeof mockState.deleteShift;
 		}>("DeleteShiftService"),
 	};

@@ -27,6 +27,7 @@ const TYPE_ICONS: Record<ApprovalInboxType, React.ComponentType<{ className?: st
 	absence_entry: IconCalendarOff,
 	time_entry: IconClockEdit,
 	travel_expense_claim: IconReceipt,
+	travel_expense_report: IconReceipt,
 };
 
 const RISK_BADGE_VARIANTS: Record<

@@ -10,7 +10,7 @@ import {
 	ConflictError,
 	DatabaseError,
 	ValidationError,
-} from "../errors";
+} from "@/lib/effect/errors";
 
 // Types
 export interface CreatePlatformAdminInput {
@@ -63,7 +63,7 @@ function validateName(name: string): string | null {
 }
 
 // Service interface
-export class SetupService extends Context.Tag("SetupService")<
+export class SetupService extends Context.Service<
 	SetupService,
 	{
 		/**
@@ -84,7 +84,7 @@ export class SetupService extends Context.Tag("SetupService")<
 			AuthorizationError | ValidationError | ConflictError | DatabaseError
 		>;
 	}
->() {}
+>()("SetupService") {}
 
 // Service implementation
 export const SetupServiceLive = Layer.effect(

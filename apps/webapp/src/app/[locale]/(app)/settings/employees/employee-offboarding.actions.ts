@@ -128,40 +128,34 @@ function runDepartureCommand<TInput, TResult>(options: {
 			logger.error({ error }, `Failed to ${options.name}`);
 		},
 		execute: () =>
-			Effect.gen(function* (_) {
+			Effect.gen(function* () {
 				if (!EMPLOYEE_OFFBOARDING_RELEASE_READY) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "Employee offboarding is not available yet.",
-								field: "employeeId",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message: "Employee offboarding is not available yet.",
+							field: "employeeId",
+						}),
 					);
 				}
 
-				const actorContext = yield* _(
-					getEmployeeSettingsActorContext({ queryName: `${options.name}:actor` }),
-				);
-				yield* _(
-					requireOrgAdminEmployeeSettingsAccess(actorContext, {
-						message: commandMessages.actor_not_authorized,
-						resource: "employee",
-						action: options.name,
-					}),
-				);
-				const input = yield* _(validateInput(options.schema, options.input));
+				const actorContext = yield* getEmployeeSettingsActorContext({
+					queryName: `${options.name}:actor`,
+				});
+				yield* requireOrgAdminEmployeeSettingsAccess(actorContext, {
+					message: commandMessages.actor_not_authorized,
+					resource: "employee",
+					action: options.name,
+				});
+				const input = yield* validateInput(options.schema, options.input);
 				const actor = {
 					userId: actorContext.session.user.id,
 					organizationId: actorContext.organizationId,
 				};
 
-				const result = yield* _(
-					Effect.tryPromise({
-						try: () => options.run(getDepartureCommands(), actor, input),
-						catch: (error) => toAppError(error, actor, options.name),
-					}),
-				);
+				const result = yield* Effect.tryPromise({
+					try: () => options.run(getDepartureCommands(), actor, input),
+					catch: (error) => toAppError(error, actor, options.name),
+				});
 				revalidateEmployeesCache(actor.organizationId);
 				return result;
 			}),
@@ -273,28 +267,24 @@ function runFollowUpCommand<TInput, TResult>(options: {
 			logger.error({ error }, `Failed to ${options.name}`);
 		},
 		execute: () =>
-			Effect.gen(function* (_) {
-				const actorContext = yield* _(
-					getEmployeeSettingsActorContext({ queryName: `${options.name}:actor` }),
-				);
-				yield* _(
-					requireOrgAdminEmployeeSettingsAccess(actorContext, {
-						message: followUpMessages.actor_not_authorized,
-						resource: "employee",
-						action: options.name,
-					}),
-				);
-				const input = yield* _(validateInput(options.schema, options.input));
+			Effect.gen(function* () {
+				const actorContext = yield* getEmployeeSettingsActorContext({
+					queryName: `${options.name}:actor`,
+				});
+				yield* requireOrgAdminEmployeeSettingsAccess(actorContext, {
+					message: followUpMessages.actor_not_authorized,
+					resource: "employee",
+					action: options.name,
+				});
+				const input = yield* validateInput(options.schema, options.input);
 				const actor = {
 					userId: actorContext.session.user.id,
 					organizationId: actorContext.organizationId,
 				};
-				const result = yield* _(
-					Effect.tryPromise({
-						try: () => options.run(actor, input),
-						catch: (error) => toFollowUpError(error, actor, options.name),
-					}),
-				);
+				const result = yield* Effect.tryPromise({
+					try: () => options.run(actor, input),
+					catch: (error) => toFollowUpError(error, actor, options.name),
+				});
 				revalidateEmployeesCache(actor.organizationId);
 				return result;
 			}),
@@ -314,44 +304,38 @@ export async function getEmployeeOffboardingViewAction(
 			logger.error({ error }, "Failed to load employee offboarding view");
 		},
 		execute: () =>
-			Effect.gen(function* (_) {
-				const actorContext = yield* _(
-					getEmployeeSettingsActorContext({ queryName: "getEmployeeOffboardingView:actor" }),
-				);
-				const { employeeId } = yield* _(validateInput(employeeOffboardingViewSchema, input));
-				const result = yield* _(
-					Effect.tryPromise({
-						try: () =>
-							getOffboardingQueries().view({
-								organizationId: actorContext.organizationId,
-								employeeId,
-								actorUserId: actorContext.session.user.id,
-							}),
-						catch: (cause) =>
-							new DatabaseError({
-								message: "Employee offboarding could not be loaded.",
-								operation: "getEmployeeOffboardingView",
-								cause,
-							}),
-					}),
-				);
+			Effect.gen(function* () {
+				const actorContext = yield* getEmployeeSettingsActorContext({
+					queryName: "getEmployeeOffboardingView:actor",
+				});
+				const { employeeId } = yield* validateInput(employeeOffboardingViewSchema, input);
+				const result = yield* Effect.tryPromise({
+					try: () =>
+						getOffboardingQueries().view({
+							organizationId: actorContext.organizationId,
+							employeeId,
+							actorUserId: actorContext.session.user.id,
+						}),
+					catch: (cause) =>
+						new DatabaseError({
+							message: "Employee offboarding could not be loaded.",
+							operation: "getEmployeeOffboardingView",
+							cause,
+						}),
+				});
 				if (result.kind === "not_found") {
-					return yield* _(
-						Effect.fail(
-							new NotFoundError({ message: "Employee not found.", entityType: "employee" }),
-						),
+					return yield* Effect.fail(
+						new NotFoundError({ message: "Employee not found.", entityType: "employee" }),
 					);
 				}
 				if (result.kind === "forbidden") {
-					return yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "You cannot view this employee's offboarding.",
-								userId: actorContext.session.user.id,
-								resource: "employee",
-								action: "getEmployeeOffboardingView",
-							}),
-						),
+					return yield* Effect.fail(
+						new AuthorizationError({
+							message: "You cannot view this employee's offboarding.",
+							userId: actorContext.session.user.id,
+							resource: "employee",
+							action: "getEmployeeOffboardingView",
+						}),
 					);
 				}
 				if (EMPLOYEE_OFFBOARDING_RELEASE_READY) return result.view;

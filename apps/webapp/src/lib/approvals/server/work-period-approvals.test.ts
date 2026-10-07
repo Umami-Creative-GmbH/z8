@@ -1544,6 +1544,77 @@ describe("stable ordinary work-period decisions", () => {
 		expect(replayed.postCommit).toBeNull();
 		expect(terminalBreakMocks.enforce).toHaveBeenCalledOnce();
 	});
+
+	it("rejects with the terminal break's unresolved-review conflict from the legacy decision", async () => {
+		decisionRouting.kind = "policy_clock_out";
+		const dbService = createDecisionDbService({ kind: "policy_clock_out" });
+		const database = dbService.db as unknown as {
+			query: Record<string, Record<string, ReturnType<typeof vi.fn>>>;
+		};
+		database.query.employee.findMany = vi
+			.fn()
+			.mockResolvedValue([currentApprover]);
+		database.query.workPeriod.findFirst.mockResolvedValue(period);
+		legacyCaptureMocks.load.mockImplementation(async (input) => ({
+			organizationId: "org-1",
+			source: {
+				organizationId: "org-1",
+				workflowType: "policy_clock_out",
+				sourceType: "time_entry",
+				sourceId: "period-1",
+			},
+			approvalRequest: {
+				id: "approval-1",
+				organizationId: "org-1",
+				entityType: "time_entry",
+				entityId: "period-1",
+				requestedBy: "employee-1",
+				approverId: "manager-1",
+				status: input.expectedRequestStatus ?? "pending",
+			},
+			chain: null,
+			chainRows: [],
+			sourceSnapshot: {
+				timeRequest: { kind: "policy_clock_out" },
+				breakPolicySnapshot,
+				surchargeSnapshot,
+			},
+			capturedAt: parseInstant("2026-07-15T09:59:00Z"),
+		}));
+		const { ConflictError } = await import("@/lib/effect/errors");
+		const unresolvedReview = new ConflictError({
+			message: "Resolve the pending time correction first",
+			conflictType: "pending_time_correction_approval",
+		});
+		terminalBreakMocks.enforce.mockRejectedValueOnce(unresolvedReview);
+		const context = {
+			dbService: { db: dbService.db },
+			writeGate: { acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("legacy")) },
+			compatibilityWriter: { withWriteGate: vi.fn().mockReturnThis() },
+			repository: { loadSnapshot: vi.fn() },
+		};
+		const runtime = {
+			repository: {
+				withTransaction: async (run: (value: typeof context) => unknown) => run(context),
+			},
+			transitionEngine: { executeInTransactionWithDisposition: vi.fn() },
+		} as never;
+
+		// The legacy decision runs as an Effect inside the transaction.
+		await expect(
+			executeOrdinaryWorkPeriodDecisionInTransaction({
+				dbService,
+				createRuntime: () => runtime,
+				organizationId: "org-1",
+				approvalRequestId: "approval-1",
+				workPeriodId: "period-1",
+				actor: currentApprover,
+				decision: { kind: "approve" as const, reason: null },
+			}),
+		).rejects.toBe(unresolvedReview);
+
+		expect(terminalBreakMocks.enforce).toHaveBeenCalledOnce();
+	});
 });
 
 describe("ordinary stable-target production composition", () => {
@@ -1718,6 +1789,36 @@ const currentApprover: CurrentApprover = {
 		image: null,
 	},
 };
+
+describe("ordinary work-period decision", () => {
+	it("refuses a decision without an organization as a conflict", async () => {
+		const dbService = {
+			db: {},
+			query: <T>(_name: string, operation: () => Promise<T>) =>
+				Effect.promise(operation),
+		} as unknown as ApprovalDbService;
+
+		// An empty organization is refused before any read.
+		const decision = Effect.runPromise(
+			workPeriodApprovals.decideOrdinaryWorkPeriodWithStableTargetEffect(
+				dbService,
+				{ ...currentApprover, organizationId: "" },
+				{
+					approvalRequestId: "approval-1",
+					workPeriodId: "period-1",
+					decision: { kind: "approve", reason: null },
+				},
+			),
+		);
+
+		const { ConflictError } = await import("@/lib/effect/errors");
+		await expect(decision).rejects.toBeInstanceOf(ConflictError);
+		await expect(decision).rejects.toMatchObject({
+			message: "Ordinary work-period decision failed",
+			conflictType: "approval_decision",
+		});
+	});
+});
 
 const approval = {
 	id: "approval-1",

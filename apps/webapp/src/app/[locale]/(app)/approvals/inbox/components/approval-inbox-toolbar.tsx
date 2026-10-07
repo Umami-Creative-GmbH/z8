@@ -33,6 +33,7 @@ const APPROVAL_TYPES: { value: ApprovalInboxType; label: string }[] = [
 	{ value: "absence_entry", label: "Absence Requests" },
 	{ value: "time_entry", label: "Time Corrections" },
 	{ value: "travel_expense_claim", label: "Travel Expenses" },
+	{ value: "travel_expense_report", label: "Expense Reports" },
 ];
 
 export function ApprovalInboxToolbar({

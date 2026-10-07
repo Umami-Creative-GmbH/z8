@@ -75,7 +75,7 @@ export async function updateAutoClockOutSettings(input: {
 	}).pipe(Effect.provide(DatabaseServiceLive));
 	const exit = await Effect.runPromiseExit(effect);
 	if (Exit.isSuccess(exit)) return { success: true, data: exit.value };
-	const failure = Option.getOrNull(Cause.failureOption(exit.cause));
+	const failure = Option.getOrNull(Cause.findErrorOption(exit.cause));
 	return {
 		success: false,
 		error: failure?.message ?? "Failed to update automatic clock-out settings",

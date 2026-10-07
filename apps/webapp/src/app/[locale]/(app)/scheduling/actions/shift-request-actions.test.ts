@@ -51,7 +51,7 @@ vi.mock("@/app/[locale]/(app)/scheduling/actions/shared", async () => {
 vi.mock("@/lib/effect/services/shift-request.service", async () => {
 	const { Context } = await import("effect");
 	return {
-		ShiftRequestService: Context.GenericTag<Record<string, unknown>>(
+		ShiftRequestService: Context.Service<Record<string, unknown>>(
 			"ShiftRequestService",
 		),
 	};

@@ -1,5 +1,5 @@
 import { and, eq, inArray, or } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect";
+import { Cause, Effect, Exit, Option, Result } from "effect";
 import { db } from "@/db";
 import {
 	approvalRequest,
@@ -84,6 +84,7 @@ export async function decideApprovalInboxItemFromRequest({
 	reason,
 	handler,
 	allowOrganizationWideApprover,
+	acceptedReceiptExceptionItemIds,
 	runEffect = defaultDecisionEffectRunner,
 }: {
 	request: PersistedApprovalRequestForDecision;
@@ -92,6 +93,8 @@ export async function decideApprovalInboxItemFromRequest({
 	reason?: string;
 	handler: ApprovalTypeHandler;
 	allowOrganizationWideApprover?: boolean;
+	/** Expense reports (#604): missing-receipt exceptions the approver accepts. */
+	acceptedReceiptExceptionItemIds?: readonly string[];
 	runEffect?: DecisionEffectRunner;
 }): Promise<ApprovalInboxDecisionSuccess> {
 	const requestType = request.entityType;
@@ -120,7 +123,13 @@ export async function decideApprovalInboxItemFromRequest({
 
 	const effect =
 		action === "approve"
-			? handler.approve(request.entityId, actorEmployeeId, actionOptions)
+			? handler.approve(
+					request.entityId,
+					actorEmployeeId,
+					acceptedReceiptExceptionItemIds
+						? { ...actionOptions, acceptedReceiptExceptionItemIds }
+						: actionOptions,
+				)
 			: handler.reject(
 					request.entityId,
 					actorEmployeeId,
@@ -249,10 +258,13 @@ export async function approveApprovalInboxItem({
 	organizationId,
 	includeAllApprovers,
 	eligibleApprovalScopes,
+	acceptedReceiptExceptionItemIds,
 }: {
 	approvalId: string;
 	actorEmployeeId: string;
 	organizationId: string;
+	/** Expense reports (#604): missing-receipt exceptions the approver accepts. */
+	acceptedReceiptExceptionItemIds?: readonly string[];
 } & DecisionVisibilityInput): Promise<ApprovalInboxDecisionSuccess> {
 	const request = await loadApprovalInboxDecisionTarget({
 		approvalId,
@@ -275,6 +287,7 @@ export async function approveApprovalInboxItem({
 		action: "approve",
 		handler,
 		allowOrganizationWideApprover: includeAllApprovers === true,
+		...(acceptedReceiptExceptionItemIds ? { acceptedReceiptExceptionItemIds } : {}),
 	});
 }
 
@@ -785,8 +798,8 @@ function canDecideRequest({
 
 function extractEffectError(cause: Cause.Cause<unknown>): unknown {
 	return (
-		Option.getOrNull(Cause.failureOption(cause)) ??
-		[...Cause.defects(cause)][0] ??
+		Option.getOrNull(Cause.findErrorOption(cause)) ??
+		Result.getOrNull(Cause.findDefect(cause)) ??
 		cause
 	);
 }

@@ -289,9 +289,9 @@ export async function isManagerOf(targetEmployeeId: string): Promise<boolean> {
 	}
 
 	// Check manager relationship using ManagerService
-	const effect = Effect.gen(function* (_) {
-		const managerService = yield* _(ManagerService);
-		return yield* _(managerService.isManagerOf(context.employee!.id, targetEmployeeId));
+	const effect = Effect.gen(function* () {
+		const managerService = yield* ManagerService;
+		return yield* managerService.isManagerOf(context.employee!.id, targetEmployeeId);
 	});
 
 	try {

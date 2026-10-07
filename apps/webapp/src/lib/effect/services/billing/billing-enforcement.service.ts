@@ -3,11 +3,11 @@ import { Context, Effect, Layer } from "effect";
 import { db } from "@/db";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
-import { BillingError, DatabaseError } from "../../errors";
-import { type BillingAccessResult, evaluateBillingAccess } from "./billing-access";
-import { provisionLocalTrial } from "./billing-configuration";
+import { BillingError, DatabaseError } from "@/lib/effect/errors";
+import { type BillingAccessResult, evaluateBillingAccess } from "@/lib/effect/services/billing/billing-access";
+import { provisionLocalTrial } from "@/lib/effect/services/billing/billing-configuration";
 
-export type { BillingAccessResult } from "./billing-access";
+export type { BillingAccessResult } from "@/lib/effect/services/billing/billing-access";
 
 export interface CheckBillingAccessOptions {
 	now?: Date;
@@ -54,7 +54,7 @@ function checkBillingAccess(
  * BillingEnforcementService - Checks subscription status for access control
  * Used by middleware and API routes to enforce read-only mode
  */
-export class BillingEnforcementService extends Context.Tag("BillingEnforcementService")<
+export class BillingEnforcementService extends Context.Service<
 	BillingEnforcementService,
 	{
 		/**
@@ -77,7 +77,7 @@ export class BillingEnforcementService extends Context.Tag("BillingEnforcementSe
 		 */
 		readonly isBillingEnabled: () => boolean;
 	}
->() {}
+>()("BillingEnforcementService") {}
 
 export const BillingEnforcementServiceLive = Layer.succeed(
 	BillingEnforcementService,

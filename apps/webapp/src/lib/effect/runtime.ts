@@ -11,7 +11,6 @@ import { ManagerServiceLive } from "./services/manager.service";
 import { OnboardingServiceLive } from "./services/onboarding.service";
 import { PermissionsServiceLive } from "./services/permissions.service";
 import { PlatformAdminServiceLive } from "./services/platform-admin.service";
-import { ReportingService } from "./services/reporting.service";
 import { SetupServiceLive } from "./services/setup.service";
 import { ShiftServiceLive } from "./services/shift.service";
 import { ShiftRequestServiceLive } from "./services/shift-request.service";
@@ -19,74 +18,24 @@ import { SkillServiceLive } from "./services/skill.service";
 import { TimeEntryServiceLive } from "./services/time-entry.service";
 import { WorkPolicyServiceLive } from "./services/work-policy.service";
 
-// Base layer with DatabaseService (no dependencies)
-const BaseLayer = DatabaseServiceLive;
-
-// Layer for AuthService (depends on nothing external)
-const AuthLayer = AuthServiceLive;
-
-// Layer for services that depend on DatabaseService and AuthService
-const OnboardingLayer = OnboardingServiceLive.pipe(
-	Layer.provide(AuthServiceLive),
-	Layer.provide(DatabaseServiceLive),
-);
-
-// Layer for PermissionsService (depends on DatabaseService)
-const PermissionsLayer = PermissionsServiceLive.pipe(Layer.provide(DatabaseServiceLive));
-
-// Layer for ManagerService (depends on DatabaseService)
-const ManagerLayer = ManagerServiceLive.pipe(Layer.provide(DatabaseServiceLive));
-
-// Layer for TimeEntryService (depends on DatabaseService)
-const TimeEntryLayer = TimeEntryServiceLive.pipe(Layer.provide(DatabaseServiceLive));
-
-// Layer for ShiftService (depends on DatabaseService)
-const ShiftLayer = ShiftServiceLive.pipe(Layer.provide(DatabaseServiceLive));
-
-// Layer for ShiftRequestService (depends on DatabaseService)
-const ShiftRequestLayer = ShiftRequestServiceLive.pipe(Layer.provide(DatabaseServiceLive));
-
-// Layer for ChangePolicyService (depends on DatabaseService)
-const ChangePolicyLayer = ChangePolicyServiceLive.pipe(Layer.provide(DatabaseServiceLive));
-
-// Layer for WorkPolicyService (depends on DatabaseService)
-const WorkPolicyLayer = WorkPolicyServiceLive.pipe(Layer.provide(DatabaseServiceLive));
-
-// Layer for PlatformAdminService (no external dependencies - uses auth internally)
-const PlatformAdminLayer = PlatformAdminServiceLive;
-
-// Layer for SetupService (no external dependencies)
-const SetupLayer = SetupServiceLive;
-
-// Layer for SkillService (depends on DatabaseService)
-const SkillLayer = SkillServiceLive.pipe(Layer.provide(DatabaseServiceLive));
-
-// Layer for CoverageService (depends on DatabaseService)
-const CoverageLayer = CoverageServiceLive.pipe(Layer.provide(DatabaseServiceLive));
-
-// Layer for CustomRoleService (depends on DatabaseService)
-const CustomRoleLayer = CustomRoleServiceLive.pipe(Layer.provide(DatabaseServiceLive));
-
-// Combine all service layers
 export const AppLayer = Layer.mergeAll(
-	BaseLayer,
-	AuthLayer,
+	DatabaseServiceLive,
+	AuthServiceLive,
 	EmailServiceLive,
 	AnalyticsService.Live.pipe(Layer.provide(DatabaseServiceLive)),
-	ReportingService.Live.pipe(Layer.provide(DatabaseServiceLive)),
-	OnboardingLayer,
-	PermissionsLayer,
-	ManagerLayer,
-	TimeEntryLayer,
-	ShiftLayer,
-	ShiftRequestLayer,
-	ChangePolicyLayer,
-	WorkPolicyLayer,
-	PlatformAdminLayer,
-	SetupLayer,
-	SkillLayer,
-	CoverageLayer,
-	CustomRoleLayer,
+	TimeEntryServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
+	PlatformAdminServiceLive,
+	SetupServiceLive,
+	CustomRoleServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
+	OnboardingServiceLive.pipe(Layer.provide(AuthServiceLive), Layer.provide(DatabaseServiceLive)),
+	ChangePolicyServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
+	WorkPolicyServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
+	PermissionsServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
+	ManagerServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
+	ShiftServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
+	ShiftRequestServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
+	SkillServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
+	CoverageServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
 );
 
 // Runtime for executing effects
@@ -102,7 +51,6 @@ export type ActionState<T> =
  * Safely executes an Effect in a Server Action context.
  * Catches all defects/failures and returns a standardized ActionState.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function safeAction<A, E>(
 	// biome-ignore lint/suspicious/noExplicitAny: it is what it is
 	effect: Effect.Effect<A, E, any>,
@@ -118,10 +66,6 @@ export async function safeAction<A, E>(
 	// Log the full failure cause to the console/observability
 	logger.error({ failure }, "Action Failed");
 
-	// Try to extract a meaningful error message
-	// If it's a known application error (string or object with message), use it
-	// Otherwise fallback to generic error
-	// Note: You can expand this to check for specific Error classes in your domain
 	return {
 		success: false,
 		error: "An unexpected error occurred. Please try again.",
@@ -129,7 +73,6 @@ export async function safeAction<A, E>(
 }
 
 // Helper to run effects in server actions (Classic mode - throws errors)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function runServerAction<A, E>(
 	// biome-ignore lint/suspicious/noExplicitAny: it is what it is
 	effect: Effect.Effect<A, E, any>,

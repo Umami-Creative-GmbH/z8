@@ -110,26 +110,31 @@ export function escalationAttentionCurrentApproverId(
 		: null;
 }
 
-const INBOX_TYPE_BY_APPROVAL_TYPE: Readonly<Record<string, ApprovalInboxType>> =
-	{
-		absence: "absence_entry",
-		absence_entry: "absence_entry",
-		time_correction: "time_entry",
-		manual_time_submission: "time_entry",
-		policy_clock_out: "time_entry",
-		time_entry: "time_entry",
-		travel_expense: "travel_expense_claim",
-		travel_expense_claim: "travel_expense_claim",
-	};
+const INBOX_TYPES_BY_APPROVAL_TYPE: Readonly<
+	Record<string, readonly ApprovalInboxType[]>
+> = {
+	absence: ["absence_entry"],
+	absence_entry: ["absence_entry"],
+	time_correction: ["time_entry"],
+	manual_time_submission: ["time_entry"],
+	policy_clock_out: ["time_entry"],
+	time_entry: ["time_entry"],
+	// Claims and expense reports (#623) share the travel expense kind.
+	travel_expense: ["travel_expense_claim", "travel_expense_report"],
+	travel_expense_claim: ["travel_expense_claim"],
+	travel_expense_report: ["travel_expense_report"],
+};
 
 /** Web inbox link for the approval an incident concerns. */
 export function escalationAttentionApprovalHref(
 	approvalType: string | null,
 ): string {
-	const inboxType = approvalType
-		? INBOX_TYPE_BY_APPROVAL_TYPE[approvalType]
+	const inboxTypes = approvalType
+		? INBOX_TYPES_BY_APPROVAL_TYPE[approvalType]
 		: undefined;
-	return inboxType ? `/approvals/inbox?types=${inboxType}` : "/approvals/inbox";
+	return inboxTypes
+		? `/approvals/inbox?types=${inboxTypes.join(",")}`
+		: "/approvals/inbox";
 }
 
 export interface EscalationAttentionRecheckIncident {

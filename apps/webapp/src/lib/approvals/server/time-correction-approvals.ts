@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
-import { Effect } from "effect";
+import { Cause, Effect, Exit, Option } from "effect";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import {
@@ -5453,8 +5453,8 @@ export function createLegacyTimeCorrectionDecisionProcessor(input: {
 	options?: ApprovalActionOptions;
 }): ExecuteTimeCorrectionDecisionInput["processLegacy"] {
 	const { action, reason } = input;
-	return async (transactionDbService, actor, _transactionBehavior, workPeriodId) =>
-		await Effect.runPromise(
+	return async (transactionDbService, actor, _transactionBehavior, workPeriodId) => {
+		const exit = await Effect.runPromiseExit(
 			processApprovalWithCurrentEmployee(
 				transactionDbService,
 				actor,
@@ -5477,6 +5477,11 @@ export function createLegacyTimeCorrectionDecisionProcessor(input: {
 				),
 			) as Effect.Effect<unknown, AnyAppError, never>,
 		);
+		if (Exit.isSuccess(exit)) return exit.value;
+		// The owner's typed failure, else its defect: what translateCorrectionWorkError reads.
+		const failure = Cause.findErrorOption(exit.cause);
+		throw Option.isSome(failure) ? failure.value : Cause.squash(exit.cause);
+	};
 }
 
 export function decideTimeCorrectionWithStableTargetEffect(
@@ -5805,7 +5810,7 @@ export function createTimeCorrectionApprovalWorkflow(
 				transactionBehavior: input.transactionBehavior,
 			}),
 		),
-		Effect.catchAll((error) => {
+		Effect.catch((error) => {
 			if (
 				error instanceof DatabaseError &&
 				isPendingApprovalUniqueConflict(error)
@@ -6235,7 +6240,7 @@ function persistRejectedTimeCorrection(
 	reason: string,
 	approval: PendingApprovalRequest,
 ) {
-	return Effect.gen(function* (_) {
+	return Effect.gen(function* () {
 		const correctionEntryIds = correctionEntryIdsFromApproval(approval);
 		const requestedBy = (
 			approval as PendingApprovalRequest & {
@@ -6243,26 +6248,18 @@ function persistRejectedTimeCorrection(
 			}
 		).requestedBy;
 		if (typeof requestedBy !== "string" || requestedBy.length === 0) {
-			return yield* _(
-				Effect.fail(
-					timeCorrectionFinalizationConflict("approval_requester_missing"),
-				),
+			return yield* Effect.fail(
+				timeCorrectionFinalizationConflict("approval_requester_missing"),
 			);
 		}
 		let correction: TimeCorrectionWorkflowPayload["timeCorrection"];
 		if (correctionEntryIds) {
 			correction = normalizeApprovalCorrectionMetadata(correctionEntryIds);
 		} else {
-			const period = yield* _(
-				loadWorkPeriod(dbService, entityId, approval.organizationId),
-			);
-			const clockInEntries = yield* _(
-				loadActiveCorrectionEntries(dbService, period, period.clockInId),
-			);
+			const period = yield* loadWorkPeriod(dbService, entityId, approval.organizationId);
+			const clockInEntries = yield* loadActiveCorrectionEntries(dbService, period, period.clockInId);
 			const clockOutEntries = period.clockOutId
-				? yield* _(
-						loadActiveCorrectionEntries(dbService, period, period.clockOutId),
-					)
+				? yield* loadActiveCorrectionEntries(dbService, period, period.clockOutId)
 				: [];
 			const correctionCount = clockInEntries.length + clockOutEntries.length;
 			if (
@@ -6271,11 +6268,9 @@ function persistRejectedTimeCorrection(
 				clockInEntries.length > 1 ||
 				clockOutEntries.length > 1
 			) {
-				return yield* _(
-					Effect.fail(
-						timeCorrectionFinalizationConflict(
-							"legacy_rejection_correction_cardinality_mismatch",
-						),
+				return yield* Effect.fail(
+					timeCorrectionFinalizationConflict(
+						"legacy_rejection_correction_cardinality_mismatch",
 					),
 				);
 			}
@@ -6295,28 +6290,26 @@ function persistRejectedTimeCorrection(
 			approval.metadata,
 			Object.hasOwn(correction, "workLocationType"),
 		);
-		const result = yield* _(
-			Effect.tryPromise({
-				try: () =>
-					finalizeTimeCorrectionTerminalDetailedInTransaction({
-						dbService,
-						organizationId: approval.organizationId,
-						workPeriodId: entityId,
-						expectedApprovalWorkflowId: null,
-						expectedApprovalWorkflowVersion: null,
-						expectedRequesterEmployeeId: requestedBy,
-						actorEmployeeId: currentEmployee.id,
-						actorUserId: currentEmployee.userId,
-						correction,
-						expectedOriginalWorkMetadata,
-						legacyApprovalRequestId: approval.id,
-						transition: { kind: "reject", reason },
-						finalizedAt: systemClock.nowInstant(),
-						allowMetadataLessLegacyFallback: !correctionEntryIds,
-					}),
-				catch: (error) => error as AnyAppError,
-			}),
-		);
+		const result = yield* Effect.tryPromise({
+			try: () =>
+				finalizeTimeCorrectionTerminalDetailedInTransaction({
+					dbService,
+					organizationId: approval.organizationId,
+					workPeriodId: entityId,
+					expectedApprovalWorkflowId: null,
+					expectedApprovalWorkflowVersion: null,
+					expectedRequesterEmployeeId: requestedBy,
+					actorEmployeeId: currentEmployee.id,
+					actorUserId: currentEmployee.userId,
+					correction,
+					expectedOriginalWorkMetadata,
+					legacyApprovalRequestId: approval.id,
+					transition: { kind: "reject", reason },
+					finalizedAt: systemClock.nowInstant(),
+					allowMetadataLessLegacyFallback: !correctionEntryIds,
+				}),
+			catch: (error) => error as AnyAppError,
+		});
 		return {
 			period: result.period,
 			originalNotificationTime: result.originalNotificationTime,
@@ -6393,57 +6386,51 @@ function authenticatedTimeCorrectionDecisionEffect(
 	action: "approve" | "reject",
 	reason?: string,
 ) {
-	return Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
+	return Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
 		const organizationId = session.session.activeOrganizationId;
 		if (!organizationId) {
-			return yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Active organization not found",
-						entityType: "organization",
-					}),
-				),
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Active organization not found",
+					entityType: "organization",
+				}),
 			);
 		}
-		const currentEmployee = yield* _(
-			dbService
-				.query("getTimeCorrectionApprovalActor", async () => {
-					return await dbService.db.query.employee.findFirst({
-						where: and(
-							eq(employee.userId, session.user.id),
-							eq(employee.organizationId, organizationId),
-							eq(employee.isActive, true),
-						),
-						with: { user: true },
-					});
-				})
-				.pipe(
-					Effect.flatMap((actor) =>
-						actor &&
-						actor.organizationId === organizationId &&
-						actor.userId === session.user.id
-							? Effect.succeed(actor as CurrentApprover)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Employee profile not found",
-										entityType: "employee",
-									}),
-								),
+		const currentEmployee = yield* dbService
+			.query("getTimeCorrectionApprovalActor", async () => {
+				return await dbService.db.query.employee.findFirst({
+					where: and(
+						eq(employee.userId, session.user.id),
+						eq(employee.organizationId, organizationId),
+						eq(employee.isActive, true),
 					),
+					with: { user: true },
+				});
+			})
+			.pipe(
+				Effect.flatMap((actor) =>
+					actor &&
+					actor.organizationId === organizationId &&
+					actor.userId === session.user.id
+						? Effect.succeed(actor as CurrentApprover)
+						: Effect.fail(
+								new NotFoundError({
+									message: "Employee profile not found",
+									entityType: "employee",
+								}),
+							),
 				),
-		);
+			);
 
-		yield* _(
-			decideTimeCorrectionWithStableTargetEffect(
-				dbService as ApprovalDbService,
-				currentEmployee,
-				approvalRequestId,
-				action,
-				reason,
-			),
+		yield* decideTimeCorrectionWithStableTargetEffect(
+			dbService as ApprovalDbService,
+			currentEmployee,
+			approvalRequestId,
+			action,
+			reason,
 		);
 	});
 }

@@ -1,7 +1,7 @@
 import { Context, Effect, Layer } from "effect";
 import Stripe from "stripe";
 import { env } from "@/env";
-import { StripeError } from "../../errors";
+import { StripeError } from "@/lib/effect/errors";
 
 export interface StripeConfig {
 	secretKey: string;
@@ -15,7 +15,7 @@ export interface StripeConfig {
  * StripeService - Thin wrapper over Stripe SDK
  * Handles all Stripe API calls with proper error handling
  */
-export class StripeService extends Context.Tag("StripeService")<
+export class StripeService extends Context.Service<
 	StripeService,
 	{
 		readonly client: Stripe | null;
@@ -65,7 +65,7 @@ export class StripeService extends Context.Tag("StripeService")<
 			signature: string,
 		) => Effect.Effect<Stripe.Event, StripeError>;
 	}
->() {}
+>()("StripeService") {}
 
 export const StripeServiceLive = Layer.effect(
 	StripeService,

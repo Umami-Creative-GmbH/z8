@@ -13,6 +13,7 @@ import {
 } from "@/components/providers/user-preferences-provider";
 import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import { useCalendarData } from "@/hooks/use-calendar-data";
+import { useLiveWorkNow } from "@/hooks/use-live-work-now";
 import { useOrganization } from "@/hooks/use-organization";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import {
@@ -277,6 +278,7 @@ function CalendarViewContent({
 		events,
 		dailyRequirements,
 		dailyActualMinutes,
+		liveWork,
 		workBalance,
 		calendarTimezone,
 		isLoading,
@@ -298,11 +300,15 @@ function CalendarViewContent({
 		timeFormat,
 	};
 	const completedEvents = events.filter((event) => !isRunningWorkPeriod(event));
+	const liveWorkNow = useLiveWorkNow(liveWork);
 
+	// Day totals count live work as it runs, advancing on each elapsed minute.
 	const workHoursData = buildDailyWorkHoursSummaries({
-		events: completedEvents,
 		dailyRequirements,
 		dailyActualMinutes,
+		liveWork: liveWorkNow ? liveWork : [],
+		timezone: calendarTimeZone,
+		now: liveWorkNow ?? undefined,
 	});
 	const {
 		clockOutAllowedWorkPeriodIds,

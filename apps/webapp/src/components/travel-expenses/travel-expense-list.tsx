@@ -1,8 +1,6 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
-import { useLocale } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -13,6 +11,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { LegacyClaimActions } from "./legacy-draft-conversion";
+import { TravelExpenseDateRange } from "./travel-expense-date-range";
 
 interface TravelExpenseListItem {
 	id: string;
@@ -20,8 +20,10 @@ interface TravelExpenseListItem {
 	status: string;
 	calculatedAmount: string;
 	calculatedCurrency: string;
-	tripStart: string | Date;
-	tripEnd: string | Date;
+	tripStartDate?: string | null;
+	tripEndDate?: string | null;
+	/** The report a legacy draft was continued as (#616). */
+	convertedReportId?: string | null;
 }
 
 interface TravelExpenseListProps {
@@ -29,38 +31,16 @@ interface TravelExpenseListProps {
 	isLoading?: boolean;
 }
 
-const mediumDateFormatters = new Map<string, Intl.DateTimeFormat>();
-
-function getMediumDateFormatter(locale: string) {
-	const cachedFormatter = mediumDateFormatters.get(locale);
-	if (cachedFormatter) {
-		return cachedFormatter;
-	}
-
-	const formatter = Intl.DateTimeFormat(locale, { dateStyle: "medium" });
-	mediumDateFormatters.set(locale, formatter);
-	return formatter;
-}
-
-function formatDateRange(start: string | Date, end: string | Date, locale: string): string {
-	const startDateTime =
-		typeof start === "string" ? DateTime.fromISO(start) : DateTime.fromJSDate(start);
-	const endDateTime = typeof end === "string" ? DateTime.fromISO(end) : DateTime.fromJSDate(end);
-
-	if (!startDateTime.isValid || !endDateTime.isValid) {
-		return "-";
-	}
-
-	const formatter = getMediumDateFormatter(locale);
-	return `${formatter.format(startDateTime.toJSDate())} - ${formatter.format(endDateTime.toJSDate())}`;
-}
-
 function prettify(value: string): string {
-	return value.replaceAll("_", " ").replace(/\b\w/g, (char) => char.toUpperCase());
+	return value
+		.replaceAll("_", " ")
+		.replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-export function TravelExpenseList({ claims, isLoading = false }: TravelExpenseListProps) {
-	const locale = useLocale();
+export function TravelExpenseList({
+	claims,
+	isLoading = false,
+}: TravelExpenseListProps) {
 	const { t } = useTranslate();
 
 	if (isLoading) {
@@ -80,7 +60,10 @@ export function TravelExpenseList({ claims, isLoading = false }: TravelExpenseLi
 			<Card>
 				<CardContent className="py-12 text-center">
 					<p className="text-lg font-medium">
-						{t("travelExpenses.list.emptyTitle", "No travel expense claims yet")}
+						{t(
+							"travelExpenses.list.emptyTitle",
+							"No travel expense claims yet",
+						)}
 					</p>
 					<p className="mt-2 text-sm text-muted-foreground">
 						{t(
@@ -102,22 +85,45 @@ export function TravelExpenseList({ claims, isLoading = false }: TravelExpenseLi
 							<TableHead>{t("travelExpenses.list.type", "Type")}</TableHead>
 							<TableHead>{t("travelExpenses.list.status", "Status")}</TableHead>
 							<TableHead>{t("travelExpenses.list.amount", "Amount")}</TableHead>
-							<TableHead>{t("travelExpenses.list.dateRange", "Date Range")}</TableHead>
+							<TableHead>
+								{t("travelExpenses.list.dateRange", "Date Range")}
+							</TableHead>
+							<TableHead>
+								<span className="sr-only">
+									{t("travelExpenses.list.actions", "Actions")}
+								</span>
+							</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
 						{claims.map((claim) => (
 							<TableRow key={claim.id}>
 								<TableCell>
-									{t(`travelExpenses.claimTypes.${claim.type}`, prettify(claim.type))}
+									{t(
+										`travelExpenses.claimTypes.${claim.type}`,
+										prettify(claim.type),
+									)}
 								</TableCell>
 								<TableCell>
-									{t(`travelExpenses.status.${claim.status}`, prettify(claim.status))}
+									{claim.convertedReportId
+										? t("travelExpenses.legacyDraft.status", "Continued as report")
+										: t(
+												`travelExpenses.status.${claim.status}`,
+												prettify(claim.status),
+											)}
 								</TableCell>
 								<TableCell>
 									{claim.calculatedAmount} {claim.calculatedCurrency}
 								</TableCell>
-								<TableCell>{formatDateRange(claim.tripStart, claim.tripEnd, locale)}</TableCell>
+								<TableCell>
+									<TravelExpenseDateRange
+										startDate={claim.tripStartDate}
+										endDate={claim.tripEndDate}
+									/>
+								</TableCell>
+								<TableCell>
+									<LegacyClaimActions claim={claim} />
+								</TableCell>
 							</TableRow>
 						))}
 					</TableBody>

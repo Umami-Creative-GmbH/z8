@@ -13,10 +13,10 @@ export async function getEditCapabilityForPeriod(params: {
 	workPeriodEndTime: Date;
 	timezone: string;
 }): Promise<EditCapability> {
-	const effect = Effect.gen(function* (_) {
-		const policyService = yield* _(ChangePolicyService);
+	const effect = Effect.gen(function* () {
+		const policyService = yield* ChangePolicyService;
 
-		return yield* _(policyService.getEditCapability(params));
+		return yield* policyService.getEditCapability(params);
 	}).pipe(Effect.provide(ChangePolicyServiceLive), Effect.provide(DatabaseServiceLive));
 
 	return Effect.runPromise(effect);

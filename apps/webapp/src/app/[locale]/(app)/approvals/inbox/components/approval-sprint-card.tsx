@@ -117,7 +117,14 @@ export function ApprovalSprintCard({
 							{getRiskReasonLabel(t, reason)}
 						</Badge>
 					))}
-					{canApprove ? null : (
+					{canApprove ? null : item.capabilities.requiresDetailReview ? (
+						<Badge variant="outline">
+							{t(
+								"approvals:sprint.capabilities.approveInDetails",
+								"Open the details to accept its exceptions and approve",
+							)}
+						</Badge>
+					) : (
 						<Badge variant="outline">
 							{t("approvals:sprint.capabilities.approveUnavailable", "Approval unavailable")}
 						</Badge>
@@ -224,5 +231,7 @@ function getTypeLabel(t: ReturnType<typeof useTranslate>["t"], type: ApprovalInb
 			return t("approvals:sprint.types.timeEntry", "Time entry");
 		case "travel_expense_claim":
 			return t("approvals:sprint.types.travelExpenseClaim", "Travel expense claim");
+		case "travel_expense_report":
+			return t("approvals:sprint.types.travelExpenseReport", "Expense report");
 	}
 }

@@ -179,8 +179,12 @@ describe("escalationAttentionApprovalHref", () => {
 		expect(escalationAttentionApprovalHref("policy_clock_out")).toBe(
 			"/approvals/inbox?types=time_entry",
 		);
+		// Claims and reports (#623) share the travel expense kind.
 		expect(escalationAttentionApprovalHref("travel_expense")).toBe(
-			"/approvals/inbox?types=travel_expense_claim",
+			"/approvals/inbox?types=travel_expense_claim,travel_expense_report",
+		);
+		expect(escalationAttentionApprovalHref("travel_expense_report")).toBe(
+			"/approvals/inbox?types=travel_expense_report",
 		);
 		expect(escalationAttentionApprovalHref("shift_request")).toBe(
 			"/approvals/inbox",

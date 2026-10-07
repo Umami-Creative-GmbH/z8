@@ -56,17 +56,17 @@ export async function generateReport(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
+			return Effect.gen(function* () {
 				// Step 1: Authenticate and get current employee
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
+				const authService = yield* AuthService;
+				const session = yield* authService.getSession();
+				const dbService = yield* DatabaseService;
 
 				span.setAttribute("user.id", session.user.id);
 
 				// Step 2: Get current employee profile
-				const currentEmployee = yield* _(
-					dbService.query("getEmployeeByUserId", async () => {
+				const currentEmployee = yield* dbService
+					.query("getEmployeeByUserId", async () => {
 						const emp = await dbService.db.query.employee.findFirst({
 							where: and(
 								eq(employee.userId, session.user.id),
@@ -83,55 +83,51 @@ export async function generateReport(
 						}
 
 						return emp;
-					}),
-					Effect.mapError(
-						() =>
-							new NotFoundError({
-								message: "Employee profile not found",
-								entityType: "employee",
-							}),
-					),
-				);
+					})
+					.pipe(
+						Effect.mapError(
+							() =>
+								new NotFoundError({
+									message: "Employee profile not found",
+									entityType: "employee",
+								}),
+						),
+					);
 
 				span.setAttribute("current_employee.id", currentEmployee.id);
 				span.setAttribute("current_employee.role", currentEmployee.role);
 
-				const org = yield* _(
-					dbService.query("getReportOrganization", async () =>
-						dbService.db.query.organization.findFirst({
-							where: eq(organization.id, currentEmployee.organizationId),
-						}),
-					),
-				);
-				if (!org) {
-					return yield* _(
-						Effect.fail(
-							new NotFoundError({
-								message: "Organization not found",
-								entityType: "organization",
-							}),
-						),
-					);
-				}
-				const range = yield* _(
-					Effect.try({
-						try: () =>
-							resolveReportDateRange(startDate, endDate, org.timezone ?? "UTC"),
-						catch: () =>
-							new ValidationError({
-								message: "Enter a valid report date range",
-							}),
+				const org = yield* dbService.query("getReportOrganization", async () =>
+					dbService.db.query.organization.findFirst({
+						where: eq(organization.id, currentEmployee.organizationId),
 					}),
 				);
+				if (!org) {
+					return yield* Effect.fail(
+						new NotFoundError({
+							message: "Organization not found",
+							entityType: "organization",
+						}),
+					);
+				}
+				const range = yield* Effect.try({
+					try: () =>
+						resolveReportDateRange(startDate, endDate, org.timezone ?? "UTC"),
+					catch: () =>
+						new ValidationError({
+							message: "Enter a valid report date range",
+						}),
+				});
 
 				// Step 3: Permission check
-				const hasAccess = yield* _(
-					dbService.query("checkReportPermissions", async () => {
+				const hasAccess = yield* dbService.query(
+					"checkReportPermissions",
+					async () => {
 						return await canGenerateReport(
 							currentEmployee.id,
 							targetEmployeeId,
 						);
-					}),
+					},
 				);
 
 				if (!hasAccess) {
@@ -148,12 +144,10 @@ export async function generateReport(
 						"Report access denied",
 					);
 
-					return yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "You do not have permission to generate this report",
-							}),
-						),
+					return yield* Effect.fail(
+						new AuthorizationError({
+							message: "You do not have permission to generate this report",
+						}),
 					);
 				}
 
@@ -170,27 +164,23 @@ export async function generateReport(
 					"Generating report",
 				);
 
-				const reportData = yield* _(
-					dbService
-						.query("generateEmployeeReport", async () => {
-							return await generateEmployeeReport(
-								targetEmployeeId,
-								currentEmployee.organizationId,
-								dateFromInstant(range.start),
-								dateFromInstant(
-									range.endExclusive.subtract({ milliseconds: 1 }),
-								),
-								{ startDate, endDate, timezone: range.timezone },
-							);
-						})
-						.pipe(
-							Effect.mapError((error) =>
-								error.cause instanceof HourlyEarningsIntegrityError
-									? new ValidationError({ message: error.cause.message })
-									: error,
-							),
+				const reportData = yield* dbService
+					.query("generateEmployeeReport", async () => {
+						return await generateEmployeeReport(
+							targetEmployeeId,
+							currentEmployee.organizationId,
+							dateFromInstant(range.start),
+							dateFromInstant(range.endExclusive.subtract({ milliseconds: 1 })),
+							{ startDate, endDate, timezone: range.timezone },
+						);
+					})
+					.pipe(
+						Effect.mapError((error) =>
+							error.cause instanceof HourlyEarningsIntegrityError
+								? new ValidationError({ message: error.cause.message })
+								: error,
 						),
-				);
+					);
 
 				span.setAttribute("report.work_hours", reportData.workHours.totalHours);
 				span.setAttribute("report.work_days", reportData.workHours.workDays);
@@ -210,9 +200,9 @@ export async function generateReport(
 					"Report generated successfully",
 				);
 
-				return yield* _(Effect.succeed(reportData));
+				return yield* Effect.succeed(reportData);
 			}).pipe(
-				Effect.catchAll((error) => {
+				Effect.catch((error) => {
 					span.setStatus({
 						code: SpanStatusCode.ERROR,
 						message: error.message || "Report generation failed",
@@ -260,17 +250,17 @@ export async function getAccessibleEmployeesAction(): Promise<
 
 	const effect: Effect.Effect<AccessibleEmployee[], AnyAppError> =
 		tracer.startActiveSpan("getAccessibleEmployees", (span) => {
-			return Effect.gen(function* (_) {
+			return Effect.gen(function* () {
 				// Step 1: Authenticate and get current employee
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
+				const authService = yield* AuthService;
+				const session = yield* authService.getSession();
+				const dbService = yield* DatabaseService;
 
 				span.setAttribute("user.id", session.user.id);
 
 				// Step 2: Get current employee profile
-				const currentEmployee = yield* _(
-					dbService.query("getEmployeeByUserId", async () => {
+				const currentEmployee = yield* dbService
+					.query("getEmployeeByUserId", async () => {
 						const emp = await dbService.db.query.employee.findFirst({
 							where: and(
 								eq(employee.userId, session.user.id),
@@ -286,24 +276,26 @@ export async function getAccessibleEmployeesAction(): Promise<
 						}
 
 						return emp;
-					}),
-					Effect.mapError(
-						() =>
-							new NotFoundError({
-								message: "Employee profile not found",
-								entityType: "employee",
-							}),
-					),
-				);
+					})
+					.pipe(
+						Effect.mapError(
+							() =>
+								new NotFoundError({
+									message: "Employee profile not found",
+									entityType: "employee",
+								}),
+						),
+					);
 
 				span.setAttribute("current_employee.id", currentEmployee.id);
 				span.setAttribute("current_employee.role", currentEmployee.role);
 
 				// Step 3: Get accessible employees
-				const accessibleEmployees = yield* _(
-					dbService.query("getAccessibleEmployees", async () => {
+				const accessibleEmployees = yield* dbService.query(
+					"getAccessibleEmployees",
+					async () => {
 						return await getAccessibleEmployees(currentEmployee.id);
-					}),
+					},
 				);
 
 				span.setAttribute(
@@ -320,9 +312,9 @@ export async function getAccessibleEmployeesAction(): Promise<
 					"Retrieved accessible employees",
 				);
 
-				return yield* _(Effect.succeed(accessibleEmployees));
+				return yield* Effect.succeed(accessibleEmployees);
 			}).pipe(
-				Effect.catchAll((error) => {
+				Effect.catch((error) => {
 					span.setStatus({
 						code: SpanStatusCode.ERROR,
 						message: error.message || "Failed to get accessible employees",

@@ -1,6 +1,6 @@
 import { Effect, Layer } from "effect";
 import { describe, expect, it, vi } from "vitest";
-import { DatabaseError } from "../errors";
+import { DatabaseError } from "@/lib/effect/errors";
 import { DatabaseService } from "./database.service";
 import { SkillService, SkillServiceLive } from "./skill.service";
 
@@ -140,11 +140,11 @@ describe("SkillService.getOverrideHistory", () => {
 			overrides: [overrideRow("override-malformed", '["skill-a"')],
 		});
 
-		const result = await Effect.runPromise(Effect.either(context.effect));
+		const result = await Effect.runPromise(Effect.result(context.effect));
 
 		expect(result).toMatchObject({
-			_tag: "Left",
-			left: expect.any(DatabaseError),
+			_tag: "Failure",
+			failure: expect.any(DatabaseError),
 		});
 		expect(context.findSkills).not.toHaveBeenCalled();
 	});
@@ -157,11 +157,11 @@ describe("SkillService.getOverrideHistory", () => {
 			overrides: [overrideRow("override-wrong-shape", value)],
 		});
 
-		const result = await Effect.runPromise(Effect.either(context.effect));
+		const result = await Effect.runPromise(Effect.result(context.effect));
 
 		expect(result).toMatchObject({
-			_tag: "Left",
-			left: expect.any(DatabaseError),
+			_tag: "Failure",
+			failure: expect.any(DatabaseError),
 		});
 		expect(context.findSkills).not.toHaveBeenCalled();
 	});

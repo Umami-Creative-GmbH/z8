@@ -10,6 +10,7 @@ const mockState = vi.hoisted(() => ({
 	payrollWageTypeMappingFindMany: vi.fn(),
 	payrollExportJobFindMany: vi.fn(),
 	travelExpenseClaimFindMany: vi.fn(),
+	travelExpenseReportFindMany: vi.fn(),
 	findOpenDepartureClockRepairs: vi.fn(),
 }));
 
@@ -46,6 +47,7 @@ vi.mock("@/db", () => ({
 			payrollWageTypeMapping: { findMany: mockState.payrollWageTypeMappingFindMany },
 			payrollExportJob: { findMany: mockState.payrollExportJobFindMany },
 			travelExpenseClaim: { findMany: mockState.travelExpenseClaimFindMany },
+			travelExpenseReport: { findMany: mockState.travelExpenseReportFindMany },
 		},
 	},
 	timeRecord: {
@@ -99,11 +101,21 @@ vi.mock("@/db/schema", () => ({
 		validUntil: "employee-employment-history.validUntil",
 	},
 	travelExpenseClaim: {
+		id: "travel-expense-claim.id",
 		organizationId: "travel-expense-claim.organizationId",
 		status: "travel-expense-claim.status",
 		tripStart: "travel-expense-claim.tripStart",
 		tripEnd: "travel-expense-claim.tripEnd",
 	},
+	travelExpenseLegacyDraftConversion: { table: "travel-expense-legacy-draft-conversion" },
+	travelExpenseReport: {
+		id: "travel-expense-report.id",
+		organizationId: "travel-expense-report.organizationId",
+		status: "travel-expense-report.status",
+		tripStartDate: "travel-expense-report.tripStartDate",
+		tripEndDate: "travel-expense-report.tripEndDate",
+	},
+	travelExpenseReportItem: { table: "travel-expense-report-item" },
 }));
 
 import { derivePayrollReadinessStatus, getPayrollReadiness } from "./get-payroll-readiness";
@@ -138,6 +150,7 @@ function mockReadyQueries() {
 		},
 	]);
 	mockState.travelExpenseClaimFindMany.mockResolvedValue([]);
+	mockState.travelExpenseReportFindMany.mockResolvedValue([]);
 	mockState.findOpenDepartureClockRepairs.mockResolvedValue([]);
 }
 
@@ -549,7 +562,7 @@ describe("getPayrollReadiness", () => {
 			status: "warning",
 			severity: "warning",
 			count: 1,
-			actionHref: "/approvals/inbox?types=travel_expense_claim",
+			actionHref: "/approvals/inbox?types=travel_expense_report,travel_expense_claim",
 			affectedEmployees: [
 				{
 					id: "employee-1",
@@ -559,6 +572,59 @@ describe("getPayrollReadiness", () => {
 				},
 			],
 		});
+	});
+
+	it("never counts a legacy draft that was continued as a report (#616)", async () => {
+		await getPayrollReadiness(defaultInput());
+
+		const where = JSON.stringify(mockState.travelExpenseClaimFindMany.mock.calls[0]?.[0]?.where);
+		expect(where).toContain("not exists");
+		expect(where).toContain("travel-expense-legacy-draft-conversion");
+		expect(where).toContain("travel-expense-claim.id");
+	});
+
+	it("warns about submitted travel expense reports in the period and links both types", async () => {
+		mockState.employeeFindMany.mockResolvedValue([
+			{
+				id: "employee-4",
+				employeeNumber: "E-1004",
+				user: { name: "Dorothy Vaughan", email: "dorothy@example.com" },
+			},
+		]);
+		mockState.employeeEmploymentHistoryFindMany.mockResolvedValue([
+			{ id: "history-4", employeeId: "employee-4" },
+		]);
+		mockState.travelExpenseReportFindMany.mockResolvedValue([
+			{ id: "report-1", employeeId: "employee-4" },
+			{ id: "report-2", employeeId: "employee-gone" },
+		]);
+
+		const result = await getPayrollReadiness(defaultInput());
+
+		expect(result.status).toBe("ready");
+		expect(getCheck(result, "travel-expense-warnings")).toMatchObject({
+			status: "warning",
+			severity: "warning",
+			count: 2,
+			actionHref: "/approvals/inbox?types=travel_expense_report,travel_expense_claim",
+			affectedEmployees: [
+				{
+					id: "employee-4",
+					name: "Dorothy Vaughan",
+					email: "dorothy@example.com",
+					employeeNumber: "E-1004",
+				},
+				{ id: "employee-gone", employeeNumber: null },
+			],
+		});
+		const query = mockState.travelExpenseReportFindMany.mock.calls[0]?.[0];
+		const where = JSON.stringify(query?.where);
+		expect(where).toContain("org-1");
+		expect(where).toContain("submitted");
+		expect(where).toContain("travel-expense-report.tripStartDate");
+		expect(where).toContain("2026-04-30");
+		expect(where).toContain("travel-expense-report-item");
+		expect(where).toContain("2026-04-01");
 	});
 
 	it("treats travel claims overlapping the selected period as warning-only", async () => {

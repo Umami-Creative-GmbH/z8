@@ -51,7 +51,7 @@ vi.mock("next/cache", () => ({
 vi.mock("@/lib/effect/services/auth.service", async () => {
 	const { Context } = await import("effect");
 	return {
-		AuthService: Context.GenericTag<{ readonly getSession: () => unknown }>(
+		AuthService: Context.Service<{ readonly getSession: () => unknown }>(
 			"AuthService",
 		),
 	};
@@ -68,7 +68,7 @@ vi.mock("@/lib/effect/runtime", async () => {
 });
 
 vi.mock("@/lib/effect/result", async () => {
-	const { Cause, Effect, Exit, Option } = await import("effect");
+	const { Cause, Effect, Exit, Option, Result } = await import("effect");
 	return {
 		runServerActionSafe: async <T>(
 			effect: Parameters<typeof Effect.runPromiseExit<T>>[0],
@@ -77,8 +77,8 @@ vi.mock("@/lib/effect/result", async () => {
 			return Exit.match(exit as never, {
 				onFailure: (cause) => {
 					const error =
-						[...Cause.defects(cause)][0] ??
-						Option.getOrNull(Cause.failureOption(cause));
+						Result.getOrNull(Cause.findDefect(cause)) ??
+						Option.getOrNull(Cause.findErrorOption(cause));
 					return {
 						success: false as const,
 						error: (error as { message: string }).message,

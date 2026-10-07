@@ -65,15 +65,13 @@ export async function calculateAndPersistSurcharges(
 	},
 ): Promise<void> {
 	try {
-		const surchargeEffect = Effect.gen(function* (_) {
-			const surchargeService = yield* _(SurchargeService);
-			yield* _(
-				calculateSurchargeForWorkPeriod(surchargeService, {
-					workPeriodId,
-					organizationId,
-					immutableEvidence,
-				}),
-			);
+		const surchargeEffect = Effect.gen(function* () {
+			const surchargeService = yield* SurchargeService;
+			yield* calculateSurchargeForWorkPeriod(surchargeService, {
+				workPeriodId,
+				organizationId,
+				immutableEvidence,
+			});
 		}).pipe(
 			Effect.provide(SurchargeServiceLive),
 			Effect.provide(DatabaseServiceLive),

@@ -2,11 +2,11 @@
 
 ## Before exploring
 
-1. Read root `CONTEXT-MAP.md` and follow its pointers to every
-   `CONTEXT.md` relevant to the task.
+1. Read root `GLOSSARY-MAP.md` and follow its pointers to every
+   `GLOSSARY.md` relevant to the task.
 2. Read relevant system-wide decisions in root `docs/adr/`.
 3. Read relevant context-scoped ADRs alongside each selected
-   context's `CONTEXT.md`, under its `docs/adr/` directory.
+   context's `GLOSSARY.md`, under its `docs/adr/` directory.
 
 If these files are absent, proceed silently. `/domain-modeling`,
 also used by `/grill-with-docs` and `/improve-codebase-architecture`,
@@ -14,9 +14,9 @@ creates them lazily as terminology and decisions are resolved.
 
 ## Multi-context layout
 
-- `CONTEXT-MAP.md`: root index of contexts and their document paths.
+- `GLOSSARY-MAP.md`: root index of contexts and their document paths.
 - `docs/adr/`: system-wide decisions.
-- `<context-root>/CONTEXT.md`: a context's domain model and glossary.
+- `<context-root>/GLOSSARY.md`: a context's domain model and glossary.
 - `<context-root>/docs/adr/`: decisions scoped to that context.
 
 Context roots may be apps, packages, or domain subdirectories within

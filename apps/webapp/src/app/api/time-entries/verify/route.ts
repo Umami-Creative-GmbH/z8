@@ -94,10 +94,11 @@ export async function POST(request: NextRequest) {
 			}
 		}
 
-		const effect = Effect.gen(function* (_) {
-			const timeEntryService = yield* _(TimeEntryService);
-			return yield* _(
-				timeEntryService.getAppendAssurance(targetEmployeeId, currentEmployee.organizationId),
+		const effect = Effect.gen(function* () {
+			const timeEntryService = yield* TimeEntryService;
+			return yield* timeEntryService.getAppendAssurance(
+				targetEmployeeId,
+				currentEmployee.organizationId,
 			);
 		});
 
@@ -174,11 +175,9 @@ export async function GET(request: NextRequest) {
 			}
 		}
 
-		const effect = Effect.gen(function* (_) {
-			const timeEntryService = yield* _(TimeEntryService);
-			return yield* _(
-				timeEntryService.getChainHash(targetEmployeeId, currentEmployee.organizationId),
-			);
+		const effect = Effect.gen(function* () {
+			const timeEntryService = yield* TimeEntryService;
+			return yield* timeEntryService.getChainHash(targetEmployeeId, currentEmployee.organizationId);
 		});
 
 		const chainHash = await runtime.runPromise(effect);

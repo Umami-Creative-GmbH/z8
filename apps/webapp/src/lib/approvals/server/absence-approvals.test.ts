@@ -75,6 +75,19 @@ vi.mock("@/lib/approvals/delivery/intents", () => ({
 vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
 	isEligibleManagerForApprovalRequest,
 }));
+// No request session: the authenticated decision refuses before any read.
+vi.mock("@/lib/auth/request-session", () => ({
+	getRequestSession: async () => null,
+}));
+const findCommittedInvocationDecision = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/approvals/evidence/invocation", async (importOriginal) => {
+	const actual =
+		await importOriginal<typeof import("@/lib/approvals/evidence/invocation")>();
+	findCommittedInvocationDecision.mockImplementation(
+		actual.findCommittedInvocationDecision,
+	);
+	return { ...actual, findCommittedInvocationDecision };
+});
 
 import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import { ApprovalAssignmentReassignedError } from "@/lib/approvals/escalation/decision-authority";
@@ -85,7 +98,9 @@ import {
 	buildAbsenceApprovalPolicyContext,
 	createAbsenceApprovalManagementAuthorization,
 	createAbsenceApprovalWorkflow,
+	decideBoundLegacyAbsenceInvocation,
 	executeAbsenceDecisionInTransaction,
+	executeAuthenticatedAbsenceDecision,
 	formatAbsenceDateForEmail,
 	translateAbsenceDecisionError,
 } from "@/lib/approvals/server/absence-approvals";
@@ -96,6 +111,7 @@ import type {
 import { ApprovalTransitionEngineError } from "@/lib/approvals/workflow/transition-engine";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
+	AuthenticationError,
 	AuthorizationError,
 	ConflictError,
 	EmailError,
@@ -848,13 +864,11 @@ describe("absence requester decision notifications", () => {
 						currentEmployee: CurrentApprover,
 					) => Effect.Effect<unknown, unknown, unknown>,
 				) =>
-					Effect.gen(function* (_) {
-						yield* _(
-							Effect.promise(() =>
-								dbService.db.transaction(async () => undefined),
-							),
+					Effect.gen(function* () {
+						yield* Effect.promise(() =>
+							dbService.db.transaction(async () => undefined),
 						);
-						return yield* _(updateEntity(dbService, entityId, currentEmployee));
+						return yield* updateEntity(dbService, entityId, currentEmployee);
 					}),
 			),
 		}));
@@ -1093,10 +1107,8 @@ describe("absence requester decision notifications", () => {
 						) => Effect.Effect<void, unknown, unknown>;
 					},
 				) =>
-					Effect.gen(function* (_) {
-						const result = yield* _(
-							handlers.updateEntity(dbService, entityId, currentEmployee),
-						);
+					Effect.gen(function* () {
+						const result = yield* handlers.updateEntity(dbService, entityId, currentEmployee);
 						expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
 							absenceId: "absence-1",
 							employeeId: "emp-requester",
@@ -1121,13 +1133,11 @@ describe("absence requester decision notifications", () => {
 							organizationId: "org-1",
 							action: "delete",
 						});
-						yield* _(
-							handlers.afterCommit(
-								result,
-								dbService,
-								entityId,
-								currentEmployee,
-							),
+						yield* handlers.afterCommit(
+							result,
+							dbService,
+							entityId,
+							currentEmployee,
 						);
 						return result;
 					}),
@@ -1439,6 +1449,35 @@ describe("absence approval policy resolution", () => {
 				afterCommit: expect.any(Function),
 			}),
 		);
+		vi.doUnmock("@/lib/approvals/server/shared");
+	});
+
+	it("rejects the legacy absence decision with the owner's failure, else its defect", async () => {
+		vi.resetModules();
+		const refusal = new ConflictError({
+			message: "Already decided",
+			conflictType: "approval_decision",
+		});
+		const defect = new Error("legacy absence defect");
+		const processApprovalWithCurrentEmployee = vi
+			.fn()
+			.mockReturnValueOnce(Effect.fail(refusal))
+			.mockReturnValueOnce(Effect.die(defect));
+		vi.doMock("@/lib/approvals/server/shared", () => ({
+			processApprovalWithCurrentEmployee,
+			processApproval: vi.fn(),
+		}));
+		const { createLegacyAbsenceDecisionProcessor } = await import(
+			"@/lib/approvals/server/absence-approvals"
+		);
+		const processLegacy = createLegacyAbsenceDecisionProcessor({
+			absenceId: "absence-1",
+			action: "approve",
+		});
+		const decide = () => processLegacy({} as ApprovalDbService, {} as never, "existing");
+
+		await expect(decide()).rejects.toBe(refusal);
+		await expect(decide()).rejects.toBe(defect);
 		vi.doUnmock("@/lib/approvals/server/shared");
 	});
 
@@ -2985,5 +3024,40 @@ describe("canonical absence fallback-manager authorization", () => {
 				command: replacementCommand,
 			} as never),
 		).resolves.toBe(true);
+	});
+});
+
+describe("bound legacy absence decisions", () => {
+	it.each([
+		["AuthorizationError", () => new AuthorizationError({ message: "Not the approver" })],
+		["ConflictError", () => new ConflictError({ message: "Already decided", conflictType: "approval_decision" })],
+	])(
+		"reads a %s refusal as a stale card",
+		async (_name, refusal) => {
+			findCommittedInvocationDecision.mockRejectedValueOnce(refusal());
+
+			const result = await decideBoundLegacyAbsenceInvocation({
+				organizationId: "org-1",
+				actorEmployeeId: "manager-1",
+				actorUserId: "manager-user-1",
+				bindingId: "binding-1",
+				action: "approve",
+				invocation: {
+					identity: { provider: "telegram", invocationId: "update-1" },
+					providerActorId: "provider-actor-1",
+				} as never,
+				database: {} as never,
+			});
+
+			expect(result).toEqual({ status: "review_required", reason: "stale" });
+		},
+	);
+});
+describe("authenticated absence decisions", () => {
+	it("rejects with the typed authentication failure itself", async () => {
+		const decision = executeAuthenticatedAbsenceDecision("absence-1", "approve");
+
+		await expect(decision).rejects.toBeInstanceOf(AuthenticationError);
+		await expect(decision).rejects.toMatchObject({ message: "Not authenticated" });
 	});
 });

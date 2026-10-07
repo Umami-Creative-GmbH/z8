@@ -232,6 +232,9 @@ describe("useTimeClock presence invalidation", () => {
 			expect(invalidateSpy).toHaveBeenCalledWith({
 				queryKey: queryKeys.workPolicies.presence.status("emp-1"),
 			});
+			expect(invalidateSpy).toHaveBeenCalledWith({
+				queryKey: queryKeys.calendar.allEvents,
+			});
 		});
 	});
 
@@ -263,6 +266,9 @@ describe("useTimeClock presence invalidation", () => {
 			});
 			expect(invalidateSpy).toHaveBeenCalledWith({
 				queryKey: queryKeys.workPolicies.presence.status("emp-1"),
+			});
+			expect(invalidateSpy).toHaveBeenCalledWith({
+				queryKey: queryKeys.calendar.allEvents,
 			});
 		});
 	});
@@ -372,6 +378,9 @@ describe("useTimeClock presence invalidation", () => {
 			});
 			expect(invalidateSpy).toHaveBeenCalledWith({
 				queryKey: queryKeys.timeClock.breakStatus(),
+			});
+			expect(invalidateSpy).toHaveBeenCalledWith({
+				queryKey: queryKeys.calendar.allEvents,
 			});
 		});
 	});

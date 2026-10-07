@@ -85,12 +85,12 @@ vi.mock("@/lib/logger", () => ({
 
 vi.mock("@/lib/effect/services/auth.service", async () => {
 	const { Context } = await import("effect");
-	return { AuthService: Context.GenericTag<any>("AuthService") };
+	return { AuthService: Context.Service<any>("AuthService") };
 });
 
 vi.mock("@/lib/effect/services/database.service", async () => {
 	const { Context } = await import("effect");
-	return { DatabaseService: Context.GenericTag<any>("DatabaseService") };
+	return { DatabaseService: Context.Service<any>("DatabaseService") };
 });
 
 vi.mock("@/lib/effect/runtime", async () => {
@@ -174,15 +174,15 @@ vi.mock("@/lib/effect/runtime", async () => {
 });
 
 vi.mock("@/lib/effect/result", async () => {
-	const { Cause, Effect, Exit, Option } = await import("effect");
+	const { Cause, Effect, Exit, Option, Result } = await import("effect");
 	return {
 		runServerActionSafe: async <T>(effect: any) => {
 			const exit = await Effect.runPromiseExit(effect);
 			return Exit.match(exit, {
 				onSuccess: (data) => ({ success: true as const, data: data as T }),
 				onFailure: (cause) => {
-					const defect = [...Cause.defects(cause)][0] ?? null;
-					const failure = Option.getOrNull(Cause.failureOption(cause));
+					const defect = Result.getOrNull(Cause.findDefect(cause));
+					const failure = Option.getOrNull(Cause.findErrorOption(cause));
 					const error = defect ?? failure ?? cause;
 					return {
 						success: false as const,
