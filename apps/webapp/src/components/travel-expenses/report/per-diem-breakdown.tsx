@@ -57,22 +57,79 @@ function perDiemBasisLabel(t: Translate, basis: PerDiemDayBreakdown["basis"]) {
 
 const MEALS: readonly PerDiemMeal[] = ["breakfast", "lunch", "dinner"];
 
+/** Where the employee was, why the day counts, and how long they were away. */
+function DayEligibility({ day }: { day: PerDiemDayBreakdown }) {
+	const { t } = useTranslate();
+	return (
+		<>
+			{day.location && <PerDiemDayLocationLabel location={day.location} />}
+			{perDiemBasisLabel(t, day.basis)}
+			<span className="block text-muted-foreground tabular-nums">
+				{t("travelExpenses.report.perDiem.absenceDuration", "{hours}:{minutes} h away", {
+					hours: Math.floor(day.absenceMinutes / 60),
+					minutes: String(day.absenceMinutes % 60).padStart(2, "0"),
+				})}
+			</span>
+		</>
+	);
+}
+
+/** The day's provided meals with their deductions, or a dash. */
+function DayMeals({ day, money }: { day: PerDiemDayBreakdown; money: (amount: string) => string }) {
+	const { t } = useTranslate();
+	const locale = useLocale();
+	const provided = MEALS.filter((meal) => day.meals[meal].provided);
+	if (provided.length === 0) return "—";
+	return (
+		<>
+			{provided.map((meal) => {
+				const entry = day.meals[meal];
+				return (
+					<span key={meal} className="block tabular-nums">
+						{entry.employeePayment
+							? t(
+									"travelExpenses.report.perDiem.mealPaid",
+									"{meal}: −{deduction} (you paid {payment})",
+									{
+										meal: mealLabel(t, meal),
+										deduction: money(entry.deduction),
+										payment: money(entry.employeePayment),
+									},
+								)
+							: t("travelExpenses.report.perDiem.meal", "{meal}: −{deduction}", {
+									meal: mealLabel(t, meal),
+									deduction: money(entry.deduction),
+								})}
+					</span>
+				);
+			})}
+			{day.mealsCountToward && day.mealsCountToward !== day.date && (
+				<span className="block text-muted-foreground">
+					{t("travelExpenses.report.perDiem.mealsCountToward", "Deducted on {date}", {
+						date: formatPlainDate(locale, day.mealsCountToward),
+					})}
+				</span>
+			)}
+		</>
+	);
+}
+
 /**
  * The daily per diem breakdown: each calendar day's eligibility, the applied
  * rate, provided meals with their deductions and the day's amount, a zero day
- * included, plus the rule edition and policy versions that produced it.
+ * included, plus the rule edition and policy versions that produced it. Below
+ * `md` each day is a card of its own, so nothing scrolls sideways (#688).
  */
 export function PerDiemBreakdown({ facts }: { facts: PerDiemBreakdownFacts }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const money = (amount: string) => formatMoney(locale, amount, facts.currency);
+	const caption = t("travelExpenses.report.perDiem.breakdownCaption", "Per diem by calendar day");
 	return (
 		<div className="space-y-2 text-sm">
-			<div className="overflow-x-auto">
+			<div className="hidden overflow-x-auto md:block">
 				<table className="w-full min-w-[32rem] text-left">
-					<caption className="sr-only">
-						{t("travelExpenses.report.perDiem.breakdownCaption", "Per diem by calendar day")}
-					</caption>
+					<caption className="sr-only">{caption}</caption>
 					<thead className="text-muted-foreground">
 						<tr>
 							<th scope="col" className="py-1 pr-3 font-medium">
@@ -93,68 +150,21 @@ export function PerDiemBreakdown({ facts }: { facts: PerDiemBreakdownFacts }) {
 						</tr>
 					</thead>
 					<tbody>
-						{facts.days.map((day) => {
-							const provided = MEALS.filter((meal) => day.meals[meal].provided);
-							return (
-								<tr key={day.date} className="border-t align-top">
-									<th scope="row" className="py-1 pr-3 font-normal whitespace-nowrap">
-										{formatPlainDate(locale, day.date)}
-									</th>
-									<td className="py-1 pr-3">
-										{day.location && <PerDiemDayLocationLabel location={day.location} />}
-										{perDiemBasisLabel(t, day.basis)}
-										<span className="block text-muted-foreground tabular-nums">
-											{t(
-												"travelExpenses.report.perDiem.absenceDuration",
-												"{hours}:{minutes} h away",
-												{
-													hours: Math.floor(day.absenceMinutes / 60),
-													minutes: String(day.absenceMinutes % 60).padStart(2, "0"),
-												},
-											)}
-										</span>
-									</td>
-									<td className="py-1 pr-3 text-right tabular-nums">{money(day.rate)}</td>
-									<td className="py-1 pr-3">
-										{provided.length === 0
-											? "—"
-											: provided.map((meal) => {
-													const entry = day.meals[meal];
-													return (
-														<span key={meal} className="block tabular-nums">
-															{entry.employeePayment
-																? t(
-																		"travelExpenses.report.perDiem.mealPaid",
-																		"{meal}: −{deduction} (you paid {payment})",
-																		{
-																			meal: mealLabel(t, meal),
-																			deduction: money(entry.deduction),
-																			payment: money(entry.employeePayment),
-																		},
-																	)
-																: t("travelExpenses.report.perDiem.meal", "{meal}: −{deduction}", {
-																		meal: mealLabel(t, meal),
-																		deduction: money(entry.deduction),
-																	})}
-														</span>
-													);
-												})}
-										{day.mealsCountToward &&
-											day.mealsCountToward !== day.date &&
-											provided.length > 0 && (
-												<span className="block text-muted-foreground">
-													{t(
-														"travelExpenses.report.perDiem.mealsCountToward",
-														"Deducted on {date}",
-														{ date: formatPlainDate(locale, day.mealsCountToward) },
-													)}
-												</span>
-											)}
-									</td>
-									<td className="py-1 text-right font-medium tabular-nums">{money(day.amount)}</td>
-								</tr>
-							);
-						})}
+						{facts.days.map((day) => (
+							<tr key={day.date} className="border-t align-top">
+								<th scope="row" className="py-1 pr-3 font-normal whitespace-nowrap">
+									{formatPlainDate(locale, day.date)}
+								</th>
+								<td className="py-1 pr-3">
+									<DayEligibility day={day} />
+								</td>
+								<td className="py-1 pr-3 text-right tabular-nums">{money(day.rate)}</td>
+								<td className="py-1 pr-3">
+									<DayMeals day={day} money={money} />
+								</td>
+								<td className="py-1 text-right font-medium tabular-nums">{money(day.amount)}</td>
+							</tr>
+						))}
 					</tbody>
 					<tfoot>
 						<tr className="border-t font-semibold">
@@ -165,6 +175,38 @@ export function PerDiemBreakdown({ facts }: { facts: PerDiemBreakdownFacts }) {
 						</tr>
 					</tfoot>
 				</table>
+			</div>
+			<div className="space-y-2 md:hidden">
+				<ul aria-label={caption} className="space-y-2">
+					{facts.days.map((day) => (
+						<li key={day.date} className="space-y-2 rounded-md border p-3">
+							<h4 className="font-medium">{formatPlainDate(locale, day.date)}</h4>
+							<p>
+								<DayEligibility day={day} />
+							</p>
+							<dl className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1">
+								<dt className="text-muted-foreground">
+									{t("travelExpenses.report.perDiem.columns.rate", "Allowance")}
+								</dt>
+								<dd className="text-right tabular-nums">{money(day.rate)}</dd>
+								<dt className="text-muted-foreground">
+									{t("travelExpenses.report.perDiem.columns.meals", "Provided meals")}
+								</dt>
+								<dd className="text-right">
+									<DayMeals day={day} money={money} />
+								</dd>
+								<dt className="text-muted-foreground">
+									{t("travelExpenses.report.perDiem.columns.amount", "Amount")}
+								</dt>
+								<dd className="text-right font-medium tabular-nums">{money(day.amount)}</dd>
+							</dl>
+						</li>
+					))}
+				</ul>
+				<p className="flex justify-between gap-4 border-t pt-2 font-semibold">
+					<span>{t("travelExpenses.report.perDiem.total", "Per diem")}</span>
+					<span className="tabular-nums">{money(facts.amount)}</span>
+				</p>
 			</div>
 			<p className="text-muted-foreground">
 				{t(
