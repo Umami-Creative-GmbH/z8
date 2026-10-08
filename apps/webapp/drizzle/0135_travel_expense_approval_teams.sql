@@ -50,8 +50,8 @@ WHERE "subject"."id" = "report"."employee_id"
 		WHERE "adjustment"."organization_id" = "report"."organization_id"
 			AND "adjustment"."report_id" = "report"."id"
 	);--> statement-breakpoint
--- Legacy claims are never approved through the report flow: this backfill is
--- the only record of their teams, by the same rule.
+-- Legacy claims approved before this migration, by the same rule. Claims
+-- decided later record their teams with the decision.
 UPDATE "travel_expense_claim" AS "claim"
 SET "approval_team_ids" = CASE
 	WHEN cardinality("current_teams"."ids") = 0 AND NOT "subject"."is_active" THEN "last_team"."ids"

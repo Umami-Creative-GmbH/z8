@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import {
 	employee,
 	team,
@@ -13,8 +13,8 @@ import type { SettlementSource } from "./settlement-store";
  * Teams recorded on approved expense reports (#746, ADR 0002). Scoped expense
  * officers handle a report of an employee named in their grant or of one of
  * these teams. They are the employee's teams when the report was approved and
- * never follow a later team move. Legacy claims got theirs once, from the
- * backfill in migration 0135.
+ * never follow a later team move. Legacy claims record theirs the same way;
+ * those approved before migration 0135 got them from its backfill.
  */
 
 /**
@@ -82,6 +82,43 @@ export async function recordReportApprovalTeams(
 			and(
 				eq(travelExpenseReport.id, scope.reportId),
 				eq(travelExpenseReport.organizationId, scope.organizationId),
+			),
+		);
+}
+
+/**
+ * Records the employee's teams on a legacy claim the caller's transaction has
+ * just approved. A claim submitted before migration 0135 and decided after it
+ * gets its teams here; one decided before it got them from the backfill.
+ */
+export async function recordClaimApprovalTeams(
+	database: Executor,
+	scope: { organizationId: string; claimId: string },
+): Promise<void> {
+	const [claim] = await database
+		.select({ employeeId: travelExpenseClaim.employeeId })
+		.from(travelExpenseClaim)
+		.where(
+			and(
+				eq(travelExpenseClaim.id, scope.claimId),
+				eq(travelExpenseClaim.organizationId, scope.organizationId),
+				eq(travelExpenseClaim.status, "approved"),
+			),
+		)
+		.limit(1);
+	if (!claim) throw new Error("Only an approved legacy claim records its teams");
+	const approvalTeamIds = await loadEmployeeTeamIds(database, {
+		organizationId: scope.organizationId,
+		employeeId: claim.employeeId,
+	});
+	await database
+		.update(travelExpenseClaim)
+		// Kept: the decision already stamped `updated_at`; `$onUpdate` would move it.
+		.set({ approvalTeamIds, updatedAt: sql`${travelExpenseClaim.updatedAt}` })
+		.where(
+			and(
+				eq(travelExpenseClaim.id, scope.claimId),
+				eq(travelExpenseClaim.organizationId, scope.organizationId),
 			),
 		);
 }

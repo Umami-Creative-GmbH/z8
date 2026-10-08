@@ -92,7 +92,11 @@ const actions = await import("@/app/[locale]/(app)/travel-expenses/report-action
 const reopenActions = await import("@/app/[locale]/(app)/travel-expenses/report-reopen-actions");
 const adjustments = await import("@/app/[locale]/(app)/travel-expenses/adjustment-actions");
 const finance = await import("@/app/[locale]/(app)/travel-expenses/finance-actions");
+const claimActions = await import("@/app/[locale]/(app)/travel-expenses/actions");
 const { readApprovalTeamIds } = await import("@/lib/travel-expenses/approval-teams");
+const { insertLegacyTravelExpenseDraft, submitLegacyTravelExpenseClaim } = await import(
+	"./__tests__/legacy-claim"
+);
 const { POST: processReceipt } = await import(
 	"@/app/api/upload/travel-expense/report-receipt/route"
 );
@@ -454,6 +458,27 @@ describe("teams recorded on approved expense reports (#746)", () => {
 		expect(await reportTeams(adjustment)).toEqual(sorted(teams.sales, teams.field));
 		// Its own row records nothing: the original's teams are the only record.
 		expect(await storedReportTeams(adjustment)).toBeNull();
+	});
+
+	it("records the teams when a submitted legacy claim is approved", async () => {
+		const requester = {
+			organizationId: "t746-org",
+			employeeId: ids.requester,
+			userId: "t746-requester",
+		};
+		const claimId = await insertLegacyTravelExpenseDraft(db, requester);
+		await submitLegacyTravelExpenseClaim(db, { ...requester, claimId });
+		expect(await claimTeams(claimId)).toEqual([]);
+
+		signIn("manager");
+		expect(await claimActions.approveTravelExpenseClaim({ claimId })).toEqual({
+			success: true,
+			data: { status: "approved" },
+		});
+		expect(await claimTeams(claimId)).toEqual(sorted(teams.sales, teams.field));
+
+		await placeRequester(teams.support, []);
+		expect(await claimTeams(claimId)).toEqual(sorted(teams.sales, teams.field));
 	});
 
 	it("backfills approved reports and legacy claims once, departed employees by their last team", async () => {
