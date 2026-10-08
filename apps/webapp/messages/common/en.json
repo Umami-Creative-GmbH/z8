@@ -502,6 +502,8 @@
     "compliance": "Compliance",
     "dashboard": "Dashboard",
     "feedback": "Feedback",
+    "finance": "Finance",
+    "financeAwaiting": "{count, plural, one {# expense awaiting reimbursement} other {# expenses awaiting reimbursement}}",
     "get-help": "Get Help",
     "my-requests": "My Requests",
     "org-explorer": "Org Explorer",
@@ -569,6 +571,25 @@
       "teamMemberRemoved": {
         "message": "You have been removed from the {teamName} team by {performedByName}.",
         "title": "Removed from team"
+      },
+      "travelExpenseAdjustmentReadyForReimbursement": {
+        "message": "An approved adjustment raised what is owed on {employee}'s expense report {report}. Awaiting reimbursement: {amounts}."
+      },
+      "travelExpensePartiallyReimbursed": {
+        "message": "{amount} {currency} of your travel expense has been reimbursed (payment reference {reference}). {remaining} {remainingCurrency} is still awaiting reimbursement.",
+        "title": "Expense partially reimbursed"
+      },
+      "travelExpenseReadyForReimbursement": {
+        "message": "{employee}'s expense report {report} is approved. Awaiting reimbursement: {amounts}.",
+        "title": "Ready for reimbursement"
+      },
+      "travelExpenseRecoveryRecorded": {
+        "message": "A recovery of {amount} {currency} was recorded for your travel expense (payment reference {reference}).",
+        "title": "Expense recovery recorded"
+      },
+      "travelExpenseReimbursed": {
+        "message": "Your travel expense has been fully reimbursed: {amount} {currency}, payment reference {reference}.",
+        "title": "Expense reimbursed"
       }
     },
     "description": "Review updates, approvals, and system alerts in one timeline.",
@@ -591,6 +612,12 @@
       "unread": "Unread"
     },
     "preferences": {
+      "categories": {
+        "travelExpenses": {
+          "description": "Notifications about reimbursements and recoveries of your travel expenses",
+          "title": "Travel Expenses"
+        }
+      },
       "disabled": "Notification disabled",
       "enabled": "Notification enabled",
       "mandatoryInbox": "Always delivered to your inbox",

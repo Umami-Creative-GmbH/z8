@@ -502,6 +502,8 @@
     "compliance": "Compliance",
     "dashboard": "Dashboard",
     "feedback": "Feedback",
+    "finance": "Finanzen",
+    "financeAwaiting": "{count, plural, one {# Ausgabe wartet auf Erstattung} other {# Ausgaben warten auf Erstattung}}",
     "get-help": "Hilfe",
     "my-requests": "Meine Anfragen",
     "org-explorer": "Organisations-Explorer",
@@ -569,6 +571,25 @@
       "teamMemberRemoved": {
         "message": "Sie wurden von {performedByName} aus dem Team {teamName} entfernt.",
         "title": "Aus dem Team entfernt"
+      },
+      "travelExpenseAdjustmentReadyForReimbursement": {
+        "message": "Eine genehmigte Anpassung hat den geschuldeten Betrag für die Spesenabrechnung {report} von {employee} erhöht. Wartet auf Erstattung: {amounts}."
+      },
+      "travelExpensePartiallyReimbursed": {
+        "message": "{amount} {currency} Ihrer Reisekosten wurden erstattet (Zahlungsreferenz {reference}). {remaining} {remainingCurrency} warten noch auf Erstattung.",
+        "title": "Ausgabe teilweise erstattet"
+      },
+      "travelExpenseReadyForReimbursement": {
+        "message": "Die Spesenabrechnung {report} von {employee} wurde genehmigt. Wartet auf Erstattung: {amounts}.",
+        "title": "Bereit zur Erstattung"
+      },
+      "travelExpenseRecoveryRecorded": {
+        "message": "Für Ihre Reisekosten wurde eine Rückforderung über {amount} {currency} erfasst (Zahlungsreferenz {reference}).",
+        "title": "Ausgabenrückforderung erfasst"
+      },
+      "travelExpenseReimbursed": {
+        "message": "Ihre Reisekosten wurden vollständig erstattet: {amount} {currency}, Zahlungsreferenz {reference}.",
+        "title": "Ausgabe erstattet"
       }
     },
     "description": "Überprüfen Sie Updates, Genehmigungen und Systemmeldungen in einer Zeitleiste.",
@@ -591,6 +612,12 @@
       "unread": "Ungelesen"
     },
     "preferences": {
+      "categories": {
+        "travelExpenses": {
+          "description": "Benachrichtigungen über Erstattungen und Rückforderungen Ihrer Reisekosten",
+          "title": "Reisekosten"
+        }
+      },
       "disabled": "Benachrichtigung deaktiviert",
       "enabled": "Benachrichtigung aktiviert",
       "mandatoryInbox": "Wird immer an Ihren Posteingang zugestellt",

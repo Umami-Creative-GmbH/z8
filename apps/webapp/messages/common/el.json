@@ -502,6 +502,8 @@
     "compliance": "Συμμόρφωση",
     "dashboard": "Πίνακας ελέγχου",
     "feedback": "Σχόλια",
+    "finance": "Οικονομικά",
+    "financeAwaiting": "{count, plural, one {# έξοδο σε αναμονή αποζημίωσης} other {# έξοδα σε αναμονή αποζημίωσης}}",
     "get-help": "Βοήθεια",
     "my-requests": "Τα αιτήματά μου",
     "org-explorer": "Εξερεύνηση Οργανισμού",
@@ -569,6 +571,25 @@
       "teamMemberRemoved": {
         "message": "Αφαιρεθήκατε από την ομάδα {teamName} από τον/την {performedByName}.",
         "title": "Αφαίρεση από την ομάδα"
+      },
+      "travelExpenseAdjustmentReadyForReimbursement": {
+        "message": "Μια εγκεκριμένη προσαρμογή αύξησε το οφειλόμενο ποσό στην αναφορά εξόδων {report} του/της {employee}. Σε αναμονή αποζημίωσης: {amounts}."
+      },
+      "travelExpensePartiallyReimbursed": {
+        "message": "{amount} {currency} από το έξοδο ταξιδιού σας έχουν αποζημιωθεί (αναφορά πληρωμής {reference}). Απομένουν ακόμη {remaining} {remainingCurrency} σε αναμονή αποζημίωσης.",
+        "title": "Το έξοδο αποζημιώθηκε μερικώς"
+      },
+      "travelExpenseReadyForReimbursement": {
+        "message": "Η αναφορά εξόδων {report} του/της {employee} έχει εγκριθεί. Σε αναμονή αποζημίωσης: {amounts}.",
+        "title": "Έτοιμο για αποζημίωση"
+      },
+      "travelExpenseRecoveryRecorded": {
+        "message": "Καταγράφηκε ανάκτηση ποσού {amount} {currency} για το έξοδο ταξιδιού σας (αναφορά πληρωμής {reference}).",
+        "title": "Καταγράφηκε ανάκτηση εξόδου"
+      },
+      "travelExpenseReimbursed": {
+        "message": "Το έξοδο ταξιδιού σας έχει αποζημιωθεί πλήρως: {amount} {currency}, αναφορά πληρωμής {reference}.",
+        "title": "Το έξοδο αποζημιώθηκε"
       }
     },
     "description": "Ελέγξτε ενημερώσεις, εγκρίσεις και ειδοποιήσεις συστήματος σε ένα χρονολόγιο.",
@@ -591,6 +612,12 @@
       "unread": "Μη αναγνωσμένα"
     },
     "preferences": {
+      "categories": {
+        "travelExpenses": {
+          "description": "Ειδοποιήσεις σχετικά με αποζημιώσεις και ανακτήσεις των εξόδων ταξιδιού σας",
+          "title": "Έξοδα ταξιδιού"
+        }
+      },
       "disabled": "Οι ειδοποιήσεις απενεργοποιήθηκαν",
       "enabled": "Οι ειδοποιήσεις ενεργοποιήθηκαν",
       "mandatoryInbox": "Παραδίδεται πάντα στα εισερχόμενά σας",

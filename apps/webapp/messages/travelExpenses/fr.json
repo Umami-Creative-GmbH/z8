@@ -10,7 +10,7 @@
       "create": {
         "action": "Corriger avec un ajustement",
         "confirm": "Créer un ajustement",
-        "description": "Vous obtenez une copie des dépenses approuvées à corriger. Sa soumission envoie l'intégralité du rapport corrigé pour une nouvelle approbation ; seule la différence par rapport au montant approuvé est réglée.",
+        "explanation": "Vous recevez une copie des dépenses approuvées à corriger. Sa soumission renvoie l'ensemble de la note corrigée pour une nouvelle approbation ; seule la différence avec le montant approuvé est remboursée ou reversée.",
         "failed": "Impossible de créer l'ajustement. Veuillez réessayer.",
         "ineligible": "Ce rapport ne peut plus être ajusté. Rechargez la page pour voir son état actuel.",
         "reason": "Motif de la correction",
@@ -120,12 +120,48 @@
     "finance": {
       "approvedOn": "Approuvé le {date}",
       "back": "Retour aux finances des dépenses",
+      "bulk": {
+        "action": "Marquer comme remboursé",
+        "description": "Chaque dépense sélectionnée est intégralement remboursée, dans sa propre devise, avec cette date et cette référence de paiement. Z8 ne transfère pas d'argent.",
+        "failed": "Impossible de marquer les dépenses comme remboursées. Veuillez réessayer.",
+        "nothing": "Aucun élément n'est en attente d'un remboursement intégral. Aucun paiement n'est enregistré.",
+        "outcome": {
+          "alreadyReimbursed": "Ignoré : déjà remboursé",
+          "balanceChanged": "Ignoré : solde modifié",
+          "failed": "Échec",
+          "outOfScope": "Ignoré : hors périmètre",
+          "overpaidOrReview": "Ignoré : trop-perçu ou vérification requise",
+          "ownExpense": "Ignoré : votre propre dépense",
+          "reimbursed": "{amount} remboursé"
+        },
+        "referenceHint": "La même référence est enregistrée pour chaque dépense sélectionnée, par ex. le lot de virements bancaires.",
+        "results": {
+          "done": "Terminé",
+          "summary": "{reimbursed} sur {total} remboursés",
+          "title": "Résultats du remboursement"
+        },
+        "select": "Sélectionner {name}",
+        "selectAll": "Sélectionner toutes les dépenses en attente de remboursement sur cette page",
+        "selected": "{count} sélectionnés",
+        "skipped": "Non inclus ({count})",
+        "submit": "Marquer {count} comme remboursé(s)",
+        "title": "Marquer comme remboursé"
+      },
       "companyPaid": "Payé par l'entreprise {amount}",
+      "coverageGap": {
+        "description": "Aucun gestionnaire de dépenses actif autorisé à enregistrer des remboursements ne les a dans son périmètre. Les propriétaires et administrateurs peuvent toujours les enregistrer ou élargir le périmètre d'un gestionnaire.",
+        "empty": "Un gestionnaire de dépenses couvre chaque dépense approuvée en attente de remboursement.",
+        "queueFilter": "Dépenses approuvées en attente de remboursement qu'aucun gestionnaire de dépenses ne couvre.",
+        "show": "Afficher ces dépenses",
+        "showAll": "Afficher toutes les dépenses approuvées",
+        "title": "{count, plural, one {# dépense approuvée en attente de remboursement n'est couverte par aucun gestionnaire de dépenses} other {# dépenses approuvées en attente de remboursement ne sont couvertes par aucun gestionnaire de dépenses}}"
+      },
       "description": "Dépenses approuvées et montants restant dus aux employés. L'enregistrement d'un remboursement consigne un paiement effectué en dehors de Z8 ; aucun transfert d'argent n'est effectué.",
       "employeePaid": "Payé par l'employé {amount}",
       "empty": {
+        "allReimbursed": "Plus rien à enregistrer : chaque dépense approuvée est remboursée.",
         "any": "Aucune dépense approuvée pour le moment.",
-        "open": "Rien à régler : toutes les dépenses approuvées sont réglées."
+        "filtered": "Aucune dépense approuvée ne correspond à ces filtres."
       },
       "entry": {
         "description": "Consultez les dépenses approuvées, les soldes restants et les remboursements enregistrés.",
@@ -152,6 +188,7 @@
           "failed": "L'export n'a pas pu être créé. Veuillez réessayer.",
           "invalid": "Sélectionnez entre une et le nombre maximum de dépenses.",
           "load": "Impossible de charger les exports. Veuillez réessayer.",
+          "reimburse": "Impossible de charger l'export pour le remboursement. Veuillez réessayer.",
           "retry": "L'export n'a pas pu être relancé.",
           "stale": "Certaines dépenses sélectionnées ne sont plus approuvées comme indiqué. La liste a été actualisée ; vérifiez la sélection et exportez à nouveau."
         },
@@ -170,6 +207,8 @@
         },
         "history": "Historique des exportations",
         "loading": "Chargement des exportations…",
+        "markReimbursed": "Marquer comme remboursé",
+        "markReimbursedDescription": "Chaque note de frais de cet export est remboursée intégralement, dans sa propre devise, avec cette date de paiement et cette référence. Les ajustements sont comptabilisés dans la note de frais qu'ils corrigent. Z8 ne transfère aucun argent.",
         "notPayment": "Ceci n'est pas un paiement : l'exportation ne marque aucun élément comme remboursé.",
         "requested": "Demandé le {date} par {name}",
         "retry": "Réessayer",
@@ -184,18 +223,43 @@
       },
       "filter": {
         "all": "Toutes approuvées",
+        "clear": "Effacer les filtres",
+        "currency": {
+          "all": "Toutes les devises",
+          "label": "Devise",
+          "none": "Aucune devise trouvée.",
+          "search": "Rechercher des devises…"
+        },
+        "employee": {
+          "all": "Tous les employés",
+          "label": "Employé",
+          "none": "Aucun employé trouvé.",
+          "search": "Rechercher des employés…"
+        },
         "label": "Afficher les dépenses",
+        "notExported": "Pas encore exporté",
         "open": "Ouvrir",
-        "settled": "Réglé"
+        "reimbursed": "Remboursé",
+        "team": {
+          "all": "Toutes les équipes",
+          "label": "Équipe lors de l'approbation",
+          "none": "Aucune équipe trouvée.",
+          "search": "Rechercher des équipes…"
+        }
       },
       "legacyClaim": "Ancienne demande de {type}",
       "loading": "Chargement de la file d'attente financière…",
+      "pagination": {
+        "label": "Pages de la file d'attente Finances",
+        "next": "Suivant",
+        "page": "Page {page}",
+        "previous": "Précédent"
+      },
       "queue": {
         "description": "Ouvrez une dépense pour consulter son règlement et enregistrer un remboursement.",
         "title": "Dépenses approuvées"
       },
-      "title": "Finances des dépenses",
-      "truncated": "Affichage des {count} dépenses les plus récemment approuvées. Les dépenses correspondantes plus anciennes ne sont pas répertoriées."
+      "title": "Finances des dépenses"
     },
     "form": {
       "currency": "Devise",
@@ -220,6 +284,7 @@
       "filter": {
         "all": "Tout",
         "approved": "Approuvé",
+        "awaitingReimbursement": "En attente de remboursement",
         "inReview": "En cours d'examen",
         "label": "Afficher les dépenses",
         "needsAction": "À terminer",
@@ -935,6 +1000,7 @@
         "foreignAreas": "Taux à l'étranger : {countries} pays et {places} villes"
       },
       "tabs": {
+        "access": "Accès",
         "currencies": "Devises",
         "exceptions": "Exceptions",
         "exceptionsPending": "{label}, {count} en attente",
@@ -947,11 +1013,12 @@
       "balance": {
         "outstanding": "{amount} restant dû",
         "overpaid": "{amount} trop-perçu",
-        "settled": "Réglé"
+        "reimbursed": "Remboursé"
       },
       "companyPaid": "Les frais de {amount} payés par l'entreprise ne sont pas dus à l'employé.",
       "entitlement": "Montant approuvé payé par l'employé",
       "entry": {
+        "exportBatch": "Issu de l'export demandé le {date}",
         "recordedBy": "Enregistré par {name}, {date}",
         "recovery": "{amount} récupéré",
         "reimbursement": "{amount} payé"
@@ -989,7 +1056,7 @@
       },
       "history": "Paiements enregistrés",
       "loading": "Chargement du solde du remboursement…",
-      "ownerOutstanding": "Le service financier enregistre votre remboursement ici une fois qu'il a été versé.",
+      "ownerAwaitingReimbursement": "Le service Finance enregistre chaque paiement ici. Une fois que tout ce qui vous est dû est payé, cette dépense s'affiche comme Remboursé.",
       "ownerOverpaid": "Un montant supérieur à ce qui est désormais approuvé a été versé. Le service financier enregistre ici lorsque la différence a été restituée ; Z8 n'effectue aucun mouvement de fonds.",
       "recorded": "Remboursement enregistré.",
       "recordedAlready": "Ce paiement a déjà été enregistré.",
@@ -997,17 +1064,17 @@
       "recoveryForm": {
         "amount": "Montant récupéré ({currency})",
         "date": "Date de récupération",
+        "explanation": "L'employé a reçu un montant supérieur à ce qui est désormais approuvé. Enregistrez les sommes qu'il a déjà remboursées pour couvrir le trop-perçu ; le remboursement initial reste tel qu'enregistré et rien n'est compensé sur d'autres rapports. Z8 ne transfère pas d'argent.",
         "label": "Enregistrer une récupération",
-        "notice": "L'employé a reçu un montant supérieur à ce qui est désormais approuvé. Enregistrez les sommes qu'il a déjà restituées pour régler le trop-perçu ; le remboursement initial reste tel qu'enregistré et rien n'est déduit d'autres notes de frais. Z8 n'effectue aucun transfert d'argent.",
         "submit": "Enregistrer la récupération"
       },
       "recoveryRecorded": "Récupération enregistrée.",
       "reimbursed": "Remboursé",
       "state": {
+        "awaitingReimbursement": "En attente de remboursement",
         "mixed": "À vérifier",
-        "outstanding": "Non réglé",
         "overpaid": "Trop-perçu",
-        "settled": "Réglé"
+        "reimbursed": "Remboursé"
       },
       "title": "Remboursement"
     },

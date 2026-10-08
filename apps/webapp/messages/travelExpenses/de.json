@@ -10,7 +10,7 @@
       "create": {
         "action": "Mit einer Anpassung korrigieren",
         "confirm": "Anpassung erstellen",
-        "description": "Sie erhalten eine Kopie der genehmigten Ausgaben zur Korrektur. Durch das Einreichen wird der gesamte korrigierte Bericht zur erneuten Genehmigung vorgelegt; nur die Differenz zum genehmigten Betrag wird beglichen.",
+        "explanation": "Sie erhalten eine Kopie der genehmigten Ausgaben zur Korrektur. Durch das Einreichen wird der gesamte korrigierte Bericht zur erneuten Genehmigung vorgelegt; nur die Differenz zum genehmigten Betrag wird erstattet oder zurückgezahlt.",
         "failed": "Die Anpassung konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
         "ineligible": "Dieser Bericht kann nicht mehr angepasst werden. Laden Sie die Seite neu, um den aktuellen Status anzuzeigen.",
         "reason": "Grund für die Korrektur",
@@ -120,12 +120,48 @@
     "finance": {
       "approvedOn": "Genehmigt am {date}",
       "back": "Zurück zu Spesen & Finanzen",
+      "bulk": {
+        "action": "Als erstattet markieren",
+        "description": "Jede ausgewählte Ausgabe wird in voller Höhe in ihrer jeweiligen Währung mit diesem Zahlungsdatum und dieser Referenz erstattet. Z8 überweist kein Geld.",
+        "failed": "Die Ausgaben konnten nicht als erstattet markiert werden. Bitte versuchen Sie es erneut.",
+        "nothing": "Hier steht nichts zur vollständigen Erstattung aus. Es wird keine Zahlung erfasst.",
+        "outcome": {
+          "alreadyReimbursed": "Übersprungen: bereits erstattet",
+          "balanceChanged": "Übersprungen: Saldo geändert",
+          "failed": "Fehlgeschlagen",
+          "outOfScope": "Übersprungen: außerhalb des Zuständigkeitsbereichs",
+          "overpaidOrReview": "Übersprungen: überzahlt oder Überprüfung erforderlich",
+          "ownExpense": "Übersprungen: eigene Ausgabe",
+          "reimbursed": "{amount} erstattet"
+        },
+        "referenceHint": "Für jede ausgewählte Ausgabe wird dieselbe Referenz erfasst, z. B. der Überweisungslauf.",
+        "results": {
+          "done": "Fertig",
+          "summary": "{reimbursed} von {total} erstattet",
+          "title": "Erstattungsergebnisse"
+        },
+        "select": "{name} auswählen",
+        "selectAll": "Alle Ausgaben auf dieser Seite auswählen, die auf Erstattung warten",
+        "selected": "{count} ausgewählt",
+        "skipped": "Nicht enthalten ({count})",
+        "submit": "{count} als erstattet markieren",
+        "title": "Als erstattet markieren"
+      },
       "companyPaid": "Vom Unternehmen bezahlt {amount}",
+      "coverageGap": {
+        "description": "Kein aktiver Spesenbeauftragter, der Erstattungen erfassen kann, hat diese im Zuständigkeitsbereich. Eigentümer und Administratoren können sie dennoch erfassen oder den Zuständigkeitsbereich eines Beauftragten erweitern.",
+        "empty": "Ein Spesenbeauftragter deckt jede genehmigte Ausgabe ab, die auf Erstattung wartet.",
+        "queueFilter": "Genehmigte Ausgaben, die auf Erstattung warten und von keinem Spesenbeauftragten abgedeckt werden.",
+        "show": "Diese Ausgaben anzeigen",
+        "showAll": "Alle genehmigten Ausgaben anzeigen",
+        "title": "{count, plural, one {# genehmigte Ausgabe wartet auf Erstattung, die von keinem Spesenbeauftragten abgedeckt wird} other {# genehmigte Ausgaben warten auf Erstattung, die von keinem Spesenbeauftragten abgedeckt werden}}"
+      },
       "description": "Genehmigte Ausgaben und noch ausstehende Beträge an Mitarbeiter. Das Erfassen einer Erstattung dokumentiert eine Zahlung außerhalb von Z8; es wird kein Geld überwiesen.",
       "employeePaid": "Vom Mitarbeiter bezahlt {amount}",
       "empty": {
+        "allReimbursed": "Nichts mehr zu erfassen: Jede genehmigte Ausgabe ist erstattet.",
         "any": "Noch keine genehmigten Ausgaben.",
-        "open": "Nichts abzurechnen: Alle genehmigten Ausgaben sind beglichen."
+        "filtered": "Keine genehmigten Ausgaben entsprechen diesen Filtern."
       },
       "entry": {
         "description": "Genehmigte Ausgaben, offene Salden und erfasste Erstattungen prüfen.",
@@ -152,6 +188,7 @@
           "failed": "Der Export konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
           "invalid": "Wählen Sie zwischen einer und der maximalen Anzahl an Ausgaben aus.",
           "load": "Exporte konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+          "reimburse": "Der Export konnte für die Erstattung nicht geladen werden. Bitte versuchen Sie es erneut.",
           "retry": "Der Export konnte nicht wiederholt werden.",
           "stale": "Einige ausgewählte Ausgaben sind nicht mehr wie angezeigt genehmigt. Die Liste wurde aktualisiert; überprüfen Sie die Auswahl und exportieren Sie erneut."
         },
@@ -170,6 +207,8 @@
         },
         "history": "Exportverlauf",
         "loading": "Exporte werden geladen…",
+        "markReimbursed": "Als erstattet markieren",
+        "markReimbursedDescription": "Jede Spesenabrechnung in diesem Export wird vollständig in ihrer eigenen Währung mit diesem Zahlungsdatum und dieser Referenz erstattet. Anpassungen werden der Abrechnung zugerechnet, die sie korrigieren. Z8 überweist kein Geld.",
         "notPayment": "Keine Zahlung: Durch den Export wird nichts als erstattet markiert.",
         "requested": "Angefordert am {date} von {name}",
         "retry": "Erneut versuchen",
@@ -184,18 +223,43 @@
       },
       "filter": {
         "all": "Alle genehmigt",
+        "clear": "Filter zurücksetzen",
+        "currency": {
+          "all": "Alle Währungen",
+          "label": "Währung",
+          "none": "Keine Währung gefunden.",
+          "search": "Währungen suchen…"
+        },
+        "employee": {
+          "all": "Alle Mitarbeiter",
+          "label": "Mitarbeiter",
+          "none": "Kein Mitarbeiter gefunden.",
+          "search": "Mitarbeiter suchen…"
+        },
         "label": "Ausgaben anzeigen",
+        "notExported": "Noch nicht exportiert",
         "open": "Offen",
-        "settled": "Abgerechnet"
+        "reimbursed": "Erstattet",
+        "team": {
+          "all": "Alle Teams",
+          "label": "Team bei Genehmigung",
+          "none": "Kein Team gefunden.",
+          "search": "Teams suchen…"
+        }
       },
       "legacyClaim": "Alter {type}-Antrag",
       "loading": "Finanz-Warteschlange wird geladen…",
+      "pagination": {
+        "label": "Seiten der Finanz-Warteschlange",
+        "next": "Weiter",
+        "page": "Seite {page}",
+        "previous": "Zurück"
+      },
       "queue": {
         "description": "Öffnen Sie eine Ausgabe, um deren Abrechnung einzusehen und eine Erstattung zu erfassen.",
         "title": "Genehmigte Ausgaben"
       },
-      "title": "Ausgaben-Finanzen",
-      "truncated": "Die {count} zuletzt genehmigten Ausgaben werden angezeigt. Ältere übereinstimmende Ausgaben sind nicht aufgeführt."
+      "title": "Ausgaben-Finanzen"
     },
     "form": {
       "currency": "Währung",
@@ -220,6 +284,7 @@
       "filter": {
         "all": "Alle",
         "approved": "Genehmigt",
+        "awaitingReimbursement": "Wartet auf Erstattung",
         "inReview": "In Prüfung",
         "label": "Ausgaben anzeigen",
         "needsAction": "Fertigzustellen",
@@ -935,6 +1000,7 @@
         "foreignAreas": "Auslandssätze: {countries} Länder und {places} Städte"
       },
       "tabs": {
+        "access": "Zugriff",
         "currencies": "Währungen",
         "exceptions": "Ausnahmen",
         "exceptionsPending": "{label}, {count} ausstehend",
@@ -947,11 +1013,12 @@
       "balance": {
         "outstanding": "{amount} ausstehend",
         "overpaid": "{amount} überzahlt",
-        "settled": "Beglichen"
+        "reimbursed": "Erstattet"
       },
       "companyPaid": "Vom Unternehmen bezahlte Kosten in Höhe von {amount} werden dem Mitarbeiter nicht geschuldet.",
       "entitlement": "Genehmigter, vom Mitarbeiter bezahlter Betrag",
       "entry": {
+        "exportBatch": "Aus dem am {date} angeforderten Export",
         "recordedBy": "Erfasst von {name}, {date}",
         "recovery": "{amount} zurückerhalten",
         "reimbursement": "{amount} gezahlt"
@@ -989,7 +1056,7 @@
       },
       "history": "Erfasste Zahlungen",
       "loading": "Erstattungssaldo wird geladen…",
-      "ownerOutstanding": "Die Finanzabteilung erfasst Ihre Erstattung hier, sobald sie ausgezahlt wurde.",
+      "ownerAwaitingReimbursement": "Die Finanzabteilung erfasst jede Zahlung hier. Sobald alle Ihnen zustehenden Beträge beglichen sind, wird diese Ausgabe als „Erstattet“ angezeigt.",
       "ownerOverpaid": "Es wurde mehr ausgezahlt, als jetzt genehmigt ist. Die Finanzabteilung erfasst hier, wenn die Differenz zurückgezahlt wurde; Z8 führt keine Geldbewegungen durch.",
       "recorded": "Erstattung erfasst.",
       "recordedAlready": "Diese Zahlung wurde bereits erfasst.",
@@ -997,17 +1064,17 @@
       "recoveryForm": {
         "amount": "Zurückgezahlter Betrag ({currency})",
         "date": "Rückzahlungsdatum",
+        "explanation": "Der Mitarbeiter hat mehr erhalten, als jetzt genehmigt ist. Erfassen Sie den bereits zurückgezahlten Betrag, um die Überzahlung auszugleichen; die ursprüngliche Erstattung bleibt wie erfasst bestehen und wird nicht mit anderen Abrechnungen verrechnet. Z8 führt keine Geldüberweisungen durch.",
         "label": "Eine Rückzahlung erfassen",
-        "notice": "Dem Mitarbeiter wurde mehr ausgezahlt, als jetzt genehmigt ist. Erfassen Sie Beträge, die zur Begleichung der Überzahlung bereits zurückgezahlt wurden; die ursprüngliche Erstattung bleibt wie erfasst bestehen und es wird nichts mit anderen Abrechnungen verrechnet. Z8 überweist kein Geld.",
         "submit": "Rückzahlung erfassen"
       },
       "recoveryRecorded": "Rückzahlung erfasst.",
       "reimbursed": "Erstattet",
       "state": {
+        "awaitingReimbursement": "Wartet auf Erstattung",
         "mixed": "Prüfung erforderlich",
-        "outstanding": "Ausstehend",
         "overpaid": "Überzahlt",
-        "settled": "Beglichen"
+        "reimbursed": "Erstattet"
       },
       "title": "Erstattung"
     },

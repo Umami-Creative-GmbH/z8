@@ -10,7 +10,7 @@
       "create": {
         "action": "Mit einer Anpassung korrigieren",
         "confirm": "Anpassung erstellen",
-        "description": "Sie erhalten eine Kopie der genehmigten Spesen zur Korrektur. Nach dem Einreichen wird die gesamte korrigierte Abrechnung erneut zur Genehmigung vorgelegt; nur die Differenz zum genehmigten Betrag wird beglichen.",
+        "explanation": "Sie erhalten eine Kopie der genehmigten Spesen zur Korrektur. Nach dem Einreichen wird die gesamte korrigierte Abrechnung für eine erneute Genehmigung gesendet; nur die Differenz zum genehmigten Betrag wird zurückerstattet oder zurückgefordert.",
         "failed": "Die Anpassung konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
         "ineligible": "Diese Abrechnung kann nicht mehr angepasst werden. Laden Sie die Seite neu, um den aktuellen Status anzuzeigen.",
         "reason": "Grund für die Korrektur",
@@ -120,12 +120,48 @@
     "finance": {
       "approvedOn": "Bewilligt am {date}",
       "back": "Zrugg zu de Spesefinanze",
+      "bulk": {
+        "action": "Als zurückerstattet markieren",
+        "description": "Jede ausgewählte Ausgabe wird vollständig in der eigenen Währung mit diesem Zahlungsdatum und dieser Referenz zurückerstattet. Z8 führt keine Geldüberweisungen durch.",
+        "failed": "Die Spesen konnten nicht als zurückerstattet markiert werden. Bitte versuchen Sie es erneut.",
+        "nothing": "Hier wartet nichts auf vollständige Rückerstattung. Es wird keine Zahlung erfasst.",
+        "outcome": {
+          "alreadyReimbursed": "Übersprungen: bereits zurückerstattet",
+          "balanceChanged": "Übersprungen: Saldo hat sich geändert",
+          "failed": "Fehlgeschlagen",
+          "outOfScope": "Übersprungen: ausserhalb des Zuständigkeitsbereichs",
+          "overpaidOrReview": "Übersprungen: Überzahlung oder Überprüfung erforderlich",
+          "ownExpense": "Übersprungen: eigene Ausgabe",
+          "reimbursed": "{amount} zurückerstattet"
+        },
+        "referenceHint": "Für jede ausgewählte Ausgabe wird dieselbe Referenz erfasst, z. B. der Sammelauftrag der Banküberweisung.",
+        "results": {
+          "done": "Fertig",
+          "summary": "{reimbursed} von {total} zurückerstattet",
+          "title": "Rückerstattungsresultate"
+        },
+        "select": "{name} auswählen",
+        "selectAll": "Alle Spesen auf dieser Seite auswählen, die auf Rückerstattung warten",
+        "selected": "{count} ausgewählt",
+        "skipped": "Nicht enthalten ({count})",
+        "submit": "{count} als zurückerstattet markieren",
+        "title": "Als zurückerstattet markieren"
+      },
       "companyPaid": "Vo de Firma zahlt {amount}",
+      "coverageGap": {
+        "description": "Kein aktiver Spesenverantwortlicher, der Rückerstattungen erfassen kann, hat diese im Zuständigkeitsbereich. Eigentümer und Admins können sie weiterhin erfassen oder den Zuständigkeitsbereich eines Verantwortlichen erweitern.",
+        "empty": "Ein Spesenverantwortlicher deckt jede genehmigte Spese ab, die auf Rückerstattung wartet.",
+        "queueFilter": "Genehmigte Spesen, die auf Rückerstattung warten und die kein Spesenverantwortlicher abdeckt.",
+        "show": "Diese Spesen anzeigen",
+        "showAll": "Alle genehmigten Spesen anzeigen",
+        "title": "{count, plural, one {# genehmigte Spese wartet auf Rückerstattung, die kein Spesenverantwortlicher abdeckt} other {# genehmigte Spesen warten auf Rückerstattung, die kein Spesenverantwortlicher abdeckt}}"
+      },
       "description": "Bewilligti Spese und was de Mitarbeitende no gschuldet wird. D Erfassig vonere Rückerstattig dokumentiert e Zahlig, wo usserhalb vo Z8 gmacht worde isch; es wird keis Gäld überträit.",
       "employeePaid": "Vo Mitarbeitende zahlt {amount}",
       "empty": {
+        "allReimbursed": "Nichts mehr zu erfassen: Jede genehmigte Spese ist zurückerstattet.",
         "any": "No kei bewilligti Spese.",
-        "open": "Nüt zum Usgliiche: Jedi bewilligti Spese isch begliche."
+        "filtered": "Keine genehmigten Spesen entsprechen diesen Filtern."
       },
       "entry": {
         "description": "Bewilligti Spese, offeni Beträg und erfassti Rückerstattige überprüefe.",
@@ -152,6 +188,7 @@
           "failed": "De Export hät nöd chönne erstellt werde. Bitte nomal probiere.",
           "invalid": "Wähl zwüschet einere und de maximale Anzahl vo Späse us.",
           "load": "Exporte händ nöd chönne glade werde. Bitte nomal probiere.",
+          "reimburse": "Der Export konnte für die Rückerstattung nicht geladen werden. Bitte versuchen Sie es erneut.",
           "retry": "De Export hät nöd nomal chönne probiert werde.",
           "stale": "Einigi usgwählti Späse sind nümme wie aazeigt genehmigt. D Lischte isch aktualisiert worde; überprüef d Uswahl und exportier nomal."
         },
@@ -170,6 +207,8 @@
         },
         "history": "Export-Verlauf",
         "loading": "Exporte wärded glade…",
+        "markReimbursed": "Als zurückerstattet markieren",
+        "markReimbursedDescription": "Jede Spesenabrechnung in diesem Export wird vollständig in ihrer eigenen Währung mit diesem Zahlungsdatum und dieser Referenz zurückerstattet. Anpassungen werden der Abrechnung angerechnet, die sie korrigieren. Z8 überweist kein Geld.",
         "notPayment": "Kä Zahlig: Bim Exportiere wird nüt als rückvergüetet markiert.",
         "requested": "Aagforderet am {date} vo {name}",
         "retry": "Nomal probiere",
@@ -184,18 +223,43 @@
       },
       "filter": {
         "all": "Alli gnämiget",
+        "clear": "Filter zurücksetzen",
+        "currency": {
+          "all": "Alle Währungen",
+          "label": "Währung",
+          "none": "Keine Währung gefunden.",
+          "search": "Währungen suchen…"
+        },
+        "employee": {
+          "all": "Alle Mitarbeiter",
+          "label": "Mitarbeiter",
+          "none": "Kein Mitarbeiter gefunden.",
+          "search": "Mitarbeitendi sueche…"
+        },
         "label": "Spese aazeige",
+        "notExported": "Nonig exportiert",
         "open": "Offe",
-        "settled": "Abgrechnet"
+        "reimbursed": "Zruggzallt",
+        "team": {
+          "all": "Alli Teams",
+          "label": "Team bi de Gnämigung",
+          "none": "Kä Team gfunde.",
+          "search": "Teams sueche…"
+        }
       },
       "legacyClaim": "Veralteti {type}-Aaforderig",
       "loading": "Finanz-Warteschlange wird glade…",
+      "pagination": {
+        "label": "Siite vo de Finanze-Warteschlang",
+        "next": "Wiiter",
+        "page": "Siite {page}",
+        "previous": "Zrugg"
+      },
       "queue": {
         "description": "Öffne e Spese, zum d Abrechnig z gseh und e Rückerstattig z erfasse.",
         "title": "Bewilligti Spese"
       },
-      "title": "Spesefinanze",
-      "truncated": "Es wärded di {count} zletscht gnämigte Spese aazeigt. Älteri passendi Spese wärded nöd ufgfüehrt."
+      "title": "Spesefinanze"
     },
     "form": {
       "currency": "Währig",
@@ -220,6 +284,7 @@
       "filter": {
         "all": "Alli",
         "approved": "Gnämigt",
+        "awaitingReimbursement": "Wartet uf Rückzallig",
         "inReview": "In Überprüefig",
         "label": "Späse aazeige",
         "needsAction": "No fertigstelle",
@@ -935,6 +1000,7 @@
         "foreignAreas": "Usslandssätz: {countries} Länder und {places} Städt"
       },
       "tabs": {
+        "access": "Zuegriff",
         "currencies": "Währige",
         "exceptions": "Usnahme",
         "exceptionsPending": "{label}, {count} pendänt",
@@ -947,11 +1013,12 @@
       "balance": {
         "outstanding": "{amount} ausstehend",
         "overpaid": "{amount} zu viel bezahlt",
-        "settled": "Beglichen"
+        "reimbursed": "Zruggzallt"
       },
       "companyPaid": "Vom Unternehmen bezahlte Kosten von {amount} werden dem Mitarbeiter nicht geschuldet.",
       "entitlement": "Genehmigter vom Mitarbeiter bezahlter Betrag",
       "entry": {
+        "exportBatch": "Us em Export aagforderet am {date}",
         "recordedBy": "Erfasst von {name}, {date}",
         "recovery": "{amount} zurückerhalten",
         "reimbursement": "{amount} bezahlt"
@@ -989,7 +1056,7 @@
       },
       "history": "Erfassti Zahlige",
       "loading": "Rückerstattigssaldo wird glade…",
-      "ownerOutstanding": "D Buechhaltig erfasst dini Rückerstattig do, sobald si uszahlt worde isch.",
+      "ownerAwaitingReimbursement": "D Finanze erfasset jedi Zahlig da. Sobald dir alles gschuldeti zallt isch, wird die Usgab als 'Zruggzallt' aazeigt.",
       "ownerOverpaid": "Es isch meh uszahlt worde, als jetzt gnähmigt isch. D Buechhaltig erfasst do, wenn d Differenz zruggzahlt worde isch; Z8 bewegt kes Gäld.",
       "recorded": "Rückerstattig erfasst.",
       "recordedAlready": "Die Zahlig isch scho erfasst worde.",
@@ -997,17 +1064,17 @@
       "recoveryForm": {
         "amount": "Zruggzahlte Betrag ({currency})",
         "date": "Rückzahligsdatum",
+        "explanation": "De Mitarbeiter hät meh übercho als jetzt gnämiget isch. Trag s Gäld ii, wo bereits zruggzallt worde isch, zum d Überzahlig decke; die ursprünglichi Rückzahlig bliibt wie erfasst und es wird nüt mit andere Bricht verrechnet. Z8 überwiist kais Gäld.",
         "label": "E Rückzahlig erfasse",
-        "notice": "Em Mitarbeiter isch meh uszahlt worde, als jetzt gnähmigt isch. Erfass Gäld, wo scho zruggzahlt worde isch, zum d Überzahlig uszgliche; die ursprünglechi Rückerstattig bliibt wie erfasst und es wird nüt mit andere Abrechnige verrechnet. Z8 überwiist kes Gäld.",
         "submit": "Rückzahlig erfasse"
       },
       "recoveryRecorded": "Rückzahlig erfasst.",
       "reimbursed": "Zruggzahlt",
       "state": {
+        "awaitingReimbursement": "Wartet uf Rückzallig",
         "mixed": "Überprüfig nötig",
-        "outstanding": "Uusstehend",
         "overpaid": "Zviel zahlt",
-        "settled": "Begliche"
+        "reimbursed": "Zruggzallt"
       },
       "title": "Rückvergüetig"
     },

@@ -10,7 +10,7 @@
       "create": {
         "action": "Correct with an adjustment",
         "confirm": "Create adjustment",
-        "description": "You get a copy of the approved expenses to correct. Submitting it sends the whole corrected report for a fresh approval; only the difference to the approved amount is settled.",
+        "explanation": "You get a copy of the approved expenses to correct. Submitting it sends the whole corrected report for a fresh approval; only the difference to the approved amount is reimbursed or paid back.",
         "failed": "The adjustment could not be created. Please retry.",
         "ineligible": "This report can no longer be adjusted. Reload the page to see its current state.",
         "reason": "Reason for the correction",
@@ -120,12 +120,48 @@
     "finance": {
       "approvedOn": "Approved {date}",
       "back": "Back to expense finance",
+      "bulk": {
+        "action": "Mark as reimbursed",
+        "description": "Each selected expense is reimbursed in full, in its own currency, with this payment date and reference. Z8 does not transfer any money.",
+        "failed": "The expenses could not be marked as reimbursed. Please retry.",
+        "nothing": "Nothing here awaits reimbursement in full. No payment is recorded.",
+        "outcome": {
+          "alreadyReimbursed": "Skipped: already reimbursed",
+          "balanceChanged": "Skipped: balance changed",
+          "failed": "Failed",
+          "outOfScope": "Skipped: out of scope",
+          "overpaidOrReview": "Skipped: overpaid or needs review",
+          "ownExpense": "Skipped: your own expense",
+          "reimbursed": "Reimbursed {amount}"
+        },
+        "referenceHint": "The same reference is recorded for every selected expense, e.g. the bank transfer batch.",
+        "results": {
+          "done": "Done",
+          "summary": "{reimbursed} of {total} reimbursed",
+          "title": "Reimbursement results"
+        },
+        "select": "Select {name}",
+        "selectAll": "Select all expenses awaiting reimbursement on this page",
+        "selected": "{count} selected",
+        "skipped": "Not included ({count})",
+        "submit": "Mark {count} as reimbursed",
+        "title": "Mark as reimbursed"
+      },
       "companyPaid": "Company-paid {amount}",
+      "coverageGap": {
+        "description": "No active expense officer who can record reimbursements has them in scope. Owners and admins can still record them, or widen an officer's scope.",
+        "empty": "An expense officer covers every approved expense awaiting reimbursement.",
+        "queueFilter": "Approved expenses awaiting reimbursement that no expense officer covers.",
+        "show": "Show these expenses",
+        "showAll": "Show all approved expenses",
+        "title": "{count, plural, one {# approved expense awaits reimbursement that no expense officer covers} other {# approved expenses await reimbursement that no expense officer covers}}"
+      },
       "description": "Approved expenses and what is still owed to employees. Recording a reimbursement documents a payment made outside Z8; no money is transferred.",
       "employeePaid": "Employee-paid {amount}",
       "empty": {
+        "allReimbursed": "Nothing left to record: every approved expense is reimbursed.",
         "any": "No approved expenses yet.",
-        "open": "Nothing to settle: every approved expense is settled."
+        "filtered": "No approved expenses match these filters."
       },
       "entry": {
         "description": "Review approved expenses, outstanding balances and recorded reimbursements.",
@@ -152,6 +188,7 @@
           "failed": "The export could not be created. Please retry.",
           "invalid": "Select between one and the maximum number of expenses.",
           "load": "Unable to load exports. Please retry.",
+          "reimburse": "The export could not be loaded for reimbursement. Please retry.",
           "retry": "The export could not be retried.",
           "stale": "Some selected expenses are no longer approved as shown. The list was refreshed; check the selection and export again."
         },
@@ -170,6 +207,8 @@
         },
         "history": "Export history",
         "loading": "Loading exports…",
+        "markReimbursed": "Mark as reimbursed",
+        "markReimbursedDescription": "Each expense report in this export is reimbursed in full, in its own currency, with this payment date and reference. Adjustments count toward the report they correct. Z8 does not transfer any money.",
         "notPayment": "Not a payment: exporting does not mark anything as reimbursed.",
         "requested": "Requested {date} by {name}",
         "retry": "Retry",
@@ -184,18 +223,43 @@
       },
       "filter": {
         "all": "All approved",
+        "clear": "Clear filters",
+        "currency": {
+          "all": "All currencies",
+          "label": "Currency",
+          "none": "No currency found.",
+          "search": "Search currencies…"
+        },
+        "employee": {
+          "all": "All employees",
+          "label": "Employee",
+          "none": "No employee found.",
+          "search": "Search employees…"
+        },
         "label": "Show expenses",
+        "notExported": "Not yet exported",
         "open": "Open",
-        "settled": "Settled"
+        "reimbursed": "Reimbursed",
+        "team": {
+          "all": "All teams",
+          "label": "Team at approval",
+          "none": "No team found.",
+          "search": "Search teams…"
+        }
       },
       "legacyClaim": "Legacy {type} claim",
       "loading": "Loading finance queue…",
+      "pagination": {
+        "label": "Finance queue pages",
+        "next": "Next",
+        "page": "Page {page}",
+        "previous": "Previous"
+      },
       "queue": {
         "description": "Open an expense to see its settlement and record a reimbursement.",
         "title": "Approved expenses"
       },
-      "title": "Expense finance",
-      "truncated": "Showing the {count} most recently approved expenses. Older matching expenses are not listed."
+      "title": "Expense finance"
     },
     "form": {
       "currency": "Currency",
@@ -220,6 +284,7 @@
       "filter": {
         "all": "All",
         "approved": "Approved",
+        "awaitingReimbursement": "Awaiting reimbursement",
         "inReview": "In review",
         "label": "Show expenses",
         "needsAction": "To finish",
@@ -935,6 +1000,7 @@
         "foreignAreas": "Foreign rates: {countries} countries and {places} cities"
       },
       "tabs": {
+        "access": "Access",
         "currencies": "Currencies",
         "exceptions": "Exceptions",
         "exceptionsPending": "{label}, {count} pending",
@@ -947,11 +1013,12 @@
       "balance": {
         "outstanding": "{amount} outstanding",
         "overpaid": "{amount} overpaid",
-        "settled": "Settled"
+        "reimbursed": "Reimbursed"
       },
       "companyPaid": "Company-paid costs of {amount} are not owed to the employee.",
       "entitlement": "Approved employee-paid amount",
       "entry": {
+        "exportBatch": "From the export requested {date}",
         "recordedBy": "Recorded by {name}, {date}",
         "recovery": "Recovered {amount}",
         "reimbursement": "Paid {amount}"
@@ -989,7 +1056,7 @@
       },
       "history": "Recorded payments",
       "loading": "Loading reimbursement balance…",
-      "ownerOutstanding": "Finance records your reimbursement here once it has been paid.",
+      "ownerAwaitingReimbursement": "Finance records each payment here. Once everything owed to you is paid, this expense shows as Reimbursed.",
       "ownerOverpaid": "More was paid than is now approved. Finance records here when the difference has been returned; Z8 does not move any money.",
       "recorded": "Reimbursement recorded.",
       "recordedAlready": "This payment was already recorded.",
@@ -997,17 +1064,17 @@
       "recoveryForm": {
         "amount": "Amount recovered ({currency})",
         "date": "Recovery date",
+        "explanation": "The employee was paid more than is now approved. Record money they already paid back to cover the overpayment; the original reimbursement stays as recorded and nothing is offset against other reports. Z8 does not transfer any money.",
         "label": "Record a recovery",
-        "notice": "The employee was paid more than is now approved. Record money they already returned to settle the overpayment; the original reimbursement stays as recorded and nothing is offset against other reports. Z8 does not transfer any money.",
         "submit": "Record recovery"
       },
       "recoveryRecorded": "Recovery recorded.",
       "reimbursed": "Reimbursed",
       "state": {
+        "awaitingReimbursement": "Awaiting reimbursement",
         "mixed": "Needs review",
-        "outstanding": "Outstanding",
         "overpaid": "Overpaid",
-        "settled": "Settled"
+        "reimbursed": "Reimbursed"
       },
       "title": "Reimbursement"
     },
