@@ -52,6 +52,14 @@ vi.mock("@/lib/notifications/triggers", async (original) => ({
 	...(await original<typeof import("@/lib/notifications/triggers")>()),
 	onTravelExpenseReportDecided: async () => {},
 }));
+// #752: the real notification service, observed; email is captured instead of sent.
+vi.mock("@/lib/notifications/notification-service", async (original) => {
+	const actual = await original<typeof import("@/lib/notifications/notification-service")>();
+	return { ...actual, createNotification: vi.fn(actual.createNotification) };
+});
+vi.mock("@/lib/email/email-service", async (original) =>
+	(await import("@/test/integration-harness")).emailService(original),
+);
 vi.mock("@/lib/storage/s3-client", () => ({
 	S3_PUBLIC_BUCKET: "t612-public",
 	s3Client: {
@@ -98,6 +106,9 @@ const { GET: getReceipt } = await import(
 const { GET: getClaim } = await import("@/app/api/travel-expenses/[claimId]/route");
 const { POST: approveRoute } = await import("@/app/api/approvals/inbox/[id]/approve/route");
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
+const recovery = await import("@/app/[locale]/(app)/travel-expenses/finance-recovery-actions");
+const { createNotification } = await import("@/lib/notifications/notification-service");
+const { sendEmail } = await import("@/lib/email/email-service");
 
 const ids = {
 	requester: "e6120000-0000-4000-8000-000000000001",
@@ -699,5 +710,153 @@ describe("finance queue and recorded reimbursements (#612)", () => {
 		expect(rows).toEqual([
 			{ recorded_by_employee_id: null, recorded_by_user_id: "t612-finance", amount: "89.90" },
 		]);
+	});
+});
+
+async function settlementNotifications() {
+	const { rows } = await admin.query<{
+		user_id: string;
+		type: string;
+		title: string;
+		message: string;
+		entity_id: string;
+		action_url: string;
+		metadata: string;
+	}>(
+		`select user_id, type::text, title, message, entity_id::text, action_url, metadata from notification
+		 where organization_id = 't612-org' and type::text like 'travel_expense_%' order by created_at, id`,
+	);
+	return rows;
+}
+
+function settlementNotificationCalls() {
+	return vi
+		.mocked(createNotification)
+		.mock.calls.filter(([params]) => params.type.startsWith("travel_expense_"));
+}
+
+describe("employee notifications of recorded money (#752)", () => {
+	beforeEach(async () => {
+		await seed();
+		harness.tus.clear();
+		harness.objects.clear();
+		vi.mocked(createNotification).mockClear();
+		vi.mocked(sendEmail).mockClear();
+	});
+	afterAll(cleanup);
+
+	it("notifies the employee once per reimbursement: partially, then fully reimbursed", async () => {
+		const { reportId } = await approvedTrip();
+		const source = { type: "report" as const, id: reportId };
+
+		signIn("finance");
+		await reimburse(source, "50.00", "89.90", { reference: "SEPA-1" });
+		await reimburse(source, "39.90", "39.90", { reference: "SEPA-2" });
+
+		const notifications = await settlementNotifications();
+		expect(
+			notifications.map(({ user_id, type, title, message, entity_id, action_url }) => ({
+				user_id,
+				type,
+				title,
+				message,
+				entity_id,
+				action_url,
+			})),
+		).toEqual([
+			{
+				user_id: "t612-requester",
+				type: "travel_expense_partially_reimbursed",
+				title: "Expense partially reimbursed",
+				message:
+					"50.00 EUR of your travel expense has been reimbursed (payment reference SEPA-1). 39.90 EUR is still awaiting reimbursement.",
+				entity_id: reportId,
+				action_url: `/travel-expenses/reports/${reportId}`,
+			},
+			{
+				user_id: "t612-requester",
+				type: "travel_expense_reimbursed",
+				title: "Expense reimbursed",
+				message:
+					"Your travel expense has been fully reimbursed: 39.90 EUR, payment reference SEPA-2.",
+				entity_id: reportId,
+				action_url: `/travel-expenses/reports/${reportId}`,
+			},
+		]);
+		// Never the recorder's identity, matching the owner view.
+		for (const notification of notifications) {
+			expect(JSON.stringify(notification)).not.toMatch(/t612-finance|finance/i);
+		}
+
+		// Email goes out in the recipient's language with a link to the report.
+		await vi.waitFor(() =>
+			expect(vi.mocked(sendEmail)).toHaveBeenCalledWith(
+				expect.objectContaining({
+					to: "t612-requester@example.test",
+					subject: "Expense reimbursed",
+					html: expect.stringContaining(`/travel-expenses/reports/${reportId}`),
+					organizationId: "t612-org",
+				}),
+			),
+		);
+	});
+
+	it("does not notify again when the same idempotent request is replayed", async () => {
+		const { reportId } = await approvedTrip();
+		const source = { type: "report" as const, id: reportId };
+		const key = randomUUID();
+
+		signIn("finance");
+		await reimburse(source, "89.90", "89.90", { key });
+		const retry = await reimburse(source, "89.90", "89.90", { key });
+		expect(retry.success && retry.data.status === "recorded" && retry.data.replayed).toBe(true);
+		// Refused commands record nothing and notify nobody either.
+		await reimburse(source, "10.00", "0.00", { key });
+		await reimburse(source, "10.00", "0.00");
+
+		expect((await settlementNotifications()).map((row) => row.type)).toEqual([
+			"travel_expense_reimbursed",
+		]);
+		expect(settlementNotificationCalls()).toHaveLength(1);
+		expect(settlementNotificationCalls()[0]?.[0].idempotencyKey).toBe(
+			`travel-expense-settlement:${key}`,
+		);
+	});
+
+	it("notifies the employee of a recorded recovery, linking the legacy claim", async () => {
+		// The claim's EUR 42.00 was overpaid by EUR 8.00.
+		await admin.query(
+			`insert into travel_expense_settlement_entry (organization_id, source_type, legacy_claim_id, kind, amount,
+			   currency, occurred_on, reference, balance_before, idempotency_key, command_fingerprint, recorded_by_user_id)
+			 values ('t612-org', 'legacy_claim', $1, 'reimbursement', '50.00', 'EUR', '2026-09-01', 'SEPA',
+			   '42.00', $2, 'fingerprint', 't612-finance')`,
+			[ids.claim, randomUUID()],
+		);
+
+		signIn("finance");
+		const recorded = await recovery.recordTravelExpenseRecoveryAction({
+			source: { type: "legacy_claim", id: ids.claim },
+			idempotencyKey: randomUUID(),
+			amount: "8.00",
+			occurredOn: "2026-10-01",
+			reference: "Payroll deduction",
+			note: "Deducted by Fiona from finance",
+			expectedBalance: { currency: "EUR", amount: "-8.00" },
+		});
+		expect(recorded.success && recorded.data.status).toBe("recorded");
+
+		const notifications = await settlementNotifications();
+		expect(notifications).toEqual([
+			expect.objectContaining({
+				user_id: "t612-requester",
+				type: "travel_expense_recovery_recorded",
+				title: "Expense recovery recorded",
+				message:
+					"A recovery of 8.00 EUR was recorded for your travel expense (payment reference Payroll deduction).",
+				entity_id: ids.claim,
+				action_url: `/travel-expenses/${ids.claim}`,
+			}),
+		]);
+		expect(notifications[0]?.metadata).not.toContain("Fiona");
 	});
 });

@@ -56,6 +56,10 @@ export const NOTIFICATION_TYPES = [
 	// Employee offboarding follow-up review
 	"employee_offboarding_review",
 	"automatic_clock_out",
+	// Money recorded on the employee's own travel expense (#752)
+	"travel_expense_reimbursed",
+	"travel_expense_partially_reimbursed",
+	"travel_expense_recovery_recorded",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

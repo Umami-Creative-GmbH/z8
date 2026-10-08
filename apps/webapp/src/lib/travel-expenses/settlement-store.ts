@@ -30,6 +30,7 @@ import {
 	type SettlementPlanRefusal,
 	type SettlementSummary,
 } from "./settlement";
+import { notifySettlementRecorded } from "./settlement-notifications";
 
 /**
  * Settlement accounts of approved travel expenses (#612). An account belongs
@@ -776,6 +777,9 @@ export type RecordSettlementResult =
  * retried command return the entry it already recorded instead of a second
  * one; `expectedBalance` refuses a command based on a balance that changed in
  * between (a concurrent reimbursement, an adjustment). Nothing is transferred.
+ *
+ * After commit, a newly recorded entry notifies the employee (#752); a replay
+ * does not, so every path recording money through here notifies exactly once.
  */
 export async function recordSettlementEntry(
 	database: Database,
@@ -790,7 +794,7 @@ export async function recordSettlementEntry(
 ): Promise<RecordSettlementResult> {
 	const { actor, source, command } = input;
 	const fingerprint = settlementCommandFingerprint(source, command);
-	return database.transaction(async (tx) => {
+	const result = await database.transaction(async (tx): Promise<RecordSettlementResult> => {
 		const account = await loadSettlementAccount(
 			tx,
 			{ organizationId: actor.organizationId, source },
@@ -850,6 +854,14 @@ export async function recordSettlementEntry(
 		if (!updated || !entry) throw new Error("Recorded settlement entry not readable");
 		return { status: "recorded", replayed: false, entry, account: updated } as const;
 	});
+	if (result.status === "recorded" && !result.replayed) {
+		await notifySettlementRecorded(database, {
+			account: result.account,
+			entry: result.entry,
+			idempotencyKey: input.idempotencyKey,
+		});
+	}
+	return result;
 }
 
 async function findByIdempotencyKey(tx: Transaction, organizationId: string, key: string) {
