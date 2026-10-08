@@ -63,7 +63,8 @@ export const travelExpenseClaim = pgTable(
 		submittedAt: timestamp("submitted_at"),
 		decidedAt: timestamp("decided_at"),
 		// The employee's teams, recorded once by migration 0135 for approved claims
-		// (#746); null when not recorded. Like a report's, they never change.
+		// (#746); null when not recorded. A claim is never approved again, so they
+		// never change.
 		approvalTeamIds: uuid("approval_team_ids").array(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		createdBy: text("created_by")

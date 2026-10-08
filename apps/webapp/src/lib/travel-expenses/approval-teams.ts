@@ -1,5 +1,4 @@
 import { and, eq } from "drizzle-orm";
-import type { db as appDb } from "@/db";
 import {
 	employee,
 	team,
@@ -7,7 +6,7 @@ import {
 	travelExpenseClaim,
 	travelExpenseReport,
 } from "@/db/schema";
-import { loadAdjustmentLink } from "./adjustment-link";
+import { type AdjustmentExecutor as Executor, loadAdjustmentLink } from "./adjustment-link";
 import type { SettlementSource } from "./settlement-store";
 
 /**
@@ -17,9 +16,6 @@ import type { SettlementSource } from "./settlement-store";
  * never follow a later team move. Legacy claims got theirs once, from the
  * backfill in migration 0135.
  */
-
-type Database = typeof appDb;
-type Executor = Database | Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 /**
  * The employee's teams now, as payroll access resolves them: their `team_id`
@@ -92,8 +88,10 @@ export async function recordReportApprovalTeams(
 
 /**
  * The teams an expense report or legacy claim belongs to within the
- * organization: those recorded at its approval, an adjustment report's being
- * its original report's. Empty when none were recorded.
+ * organization: those recorded at its last approval, an adjustment report's
+ * being its original report's. Empty when none were recorded. The status is
+ * not checked: a reopened report keeps its last approval's teams until it is
+ * approved again, so callers that need an approved report check that first.
  */
 export async function readApprovalTeamIds(
 	database: Executor,

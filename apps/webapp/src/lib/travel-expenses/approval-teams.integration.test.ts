@@ -48,11 +48,12 @@ vi.mock("@/env", async (original) => ({
 		TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES: "1024",
 	},
 }));
-vi.mock("@/lib/notifications/triggers", async (original) => ({
-	...(await original<typeof import("@/lib/notifications/triggers")>()),
-	onTravelExpenseReportDecided: async () => {},
-	onTravelExpenseReportReturned: async () => {},
-}));
+vi.mock("@/lib/notifications/triggers", async (original) =>
+	(await import("@/test/integration-harness")).notificationTriggers(original, [
+		"onTravelExpenseReportDecided",
+		"onTravelExpenseReportReturned",
+	]),
+);
 vi.mock("@/lib/queue", () => ({
 	async addJob() {
 		return { id: randomUUID() };
@@ -270,14 +271,14 @@ async function submittedReceipt(expected = "submitted") {
 	return reportId;
 }
 
-async function approve(reportId: string) {
+async function approve(reportId: string, as: Person = "manager") {
 	const { rows } = await admin.query<{ id: string }>(
 		"select id from approval_request where entity_type = 'travel_expense_report' and entity_id = $1 and status = 'pending'",
 		[reportId],
 	);
 	const requestId = rows[0]?.id;
 	if (!requestId) throw new Error("no pending request");
-	signIn("manager");
+	signIn(as);
 	const response = await approveRoute(
 		new Request(`http://localhost/api/approvals/inbox/${requestId}/approve`, {
 			method: "POST",
@@ -361,6 +362,29 @@ describe("teams recorded on approved expense reports (#746)", () => {
 		expect(await reportTeams(reportId)).toEqual(sorted(teams.sales, teams.field));
 		// Another organization never reads them.
 		expect(await reportTeams(reportId, "t746-foreign")).toEqual([]);
+	});
+
+	it("records nothing at an intermediate chain stage, and the teams at the final one", async () => {
+		const policyId = randomUUID();
+		await admin.query(
+			`insert into approval_policy (id, organization_id, name, is_active, priority, created_by, updated_at)
+			 values ($1, 't746-org', 'T746 two stages', true, 1, 't746-manager', now())`,
+			[policyId],
+		);
+		await admin.query(
+			`insert into approval_policy_stage (id, organization_id, policy_id, step_order, label, approver_type,
+			   approver_employee_id, fallback_behavior, updated_at) values
+			 (gen_random_uuid(), 't746-org', $1, 1, 'Manager', 'direct_manager', null, 'fail', now()),
+			 (gen_random_uuid(), 't746-org', $1, 2, 'Admin', 'specific_employee', $2, 'fail', now())`,
+			[policyId, ids.admin],
+		);
+		const reportId = await approve(await submittedReceipt());
+		expect(await storedReportTeams(reportId)).toBeNull();
+
+		// The teams in force at the final approval are the ones recorded.
+		await placeRequester(teams.support, []);
+		await approve(reportId, "admin");
+		expect(await reportTeams(reportId)).toEqual([teams.support]);
 	});
 
 	it("records none for an employee without teams", async () => {
