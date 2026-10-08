@@ -946,6 +946,13 @@
       "when": 1795881600000,
       "tag": "0134_employee_manager_same_organization",
       "breakpoints": true
+    },
+    {
+      "idx": 135,
+      "version": "7",
+      "when": 1795968000000,
+      "tag": "0135_travel_expense_settlement_notifications",
+      "breakpoints": true
     }
   ]
 }

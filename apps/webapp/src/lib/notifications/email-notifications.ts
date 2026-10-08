@@ -32,6 +32,17 @@ interface EmailNotificationParams {
 	organizationId?: string; // Optional org ID to use org-specific email config
 }
 
+/**
+ * Types sent as a plain email in the recipient's language, linking into the
+ * app only below their prefix; anything else links to the app's start page.
+ */
+const LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES: Partial<Record<NotificationType, string>> = {
+	automatic_clock_out: "/calendar/",
+	travel_expense_reimbursed: "/travel-expenses/",
+	travel_expense_partially_reimbursed: "/travel-expenses/",
+	travel_expense_recovery_recorded: "/travel-expenses/",
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -172,11 +183,12 @@ export async function sendEmailNotification(
 		const i18nMetadata = getI18nMetadata(metadata);
 		const hasI18nTitle = typeof i18nMetadata?.titleKey === "string";
 		const hasI18nMessage = typeof i18nMetadata?.messageKey === "string";
-		if (type === "automatic_clock_out") {
+		const linkPrefix = LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES[type];
+		if (linkPrefix) {
 			const localized = organizationId
 				? await localizeOutboundNotification({ ...params, organizationId })
 				: params;
-			const actionUrl = params.actionUrl?.startsWith("/calendar/")
+			const actionUrl = params.actionUrl?.startsWith(linkPrefix)
 				? new URL(params.actionUrl, appUrl).toString()
 				: appUrl;
 			const result = await sendNotificationEmail({

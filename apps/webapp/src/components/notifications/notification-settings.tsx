@@ -14,6 +14,7 @@ import {
 	IconExclamationCircle,
 	IconLoader2,
 	IconMail,
+	IconReceipt,
 	IconShield,
 	IconUsers,
 } from "@tabler/icons-react";
@@ -86,6 +87,21 @@ const NOTIFICATION_CATEGORIES = [
 			"absence_request_submitted",
 			"absence_request_approved",
 			"absence_request_rejected",
+		] as NotificationType[],
+	},
+	{
+		id: "travelExpenses",
+		titleKey: "common:notifications.preferences.categories.travelExpenses.title",
+		titleFallback: "Travel Expenses",
+		descriptionKey:
+			"common:notifications.preferences.categories.travelExpenses.description",
+		descriptionFallback:
+			"Notifications about reimbursements and recoveries of your travel expenses",
+		icon: IconReceipt,
+		types: [
+			"travel_expense_reimbursed",
+			"travel_expense_partially_reimbursed",
+			"travel_expense_recovery_recorded",
 		] as NotificationType[],
 	},
 	{
@@ -202,6 +218,10 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 	approval_escalation_attention: "Escalation needs attention",
 	// Employee offboarding follow-up (owners, admins and the primary manager)
 	employee_offboarding_review: "Offboarding needs review",
+	// Money recorded on the employee's own travel expense
+	travel_expense_reimbursed: "Expense reimbursed",
+	travel_expense_partially_reimbursed: "Expense partially reimbursed",
+	travel_expense_recovery_recorded: "Recovery recorded",
 };
 
 // Channel icons and labels

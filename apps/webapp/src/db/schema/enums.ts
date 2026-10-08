@@ -252,6 +252,10 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	// Employee offboarding follow-up review (admins/owners, primary manager)
 	"employee_offboarding_review",
 	"automatic_clock_out",
+	// Money recorded on the employee's own travel expense (#752)
+	"travel_expense_reimbursed",
+	"travel_expense_partially_reimbursed",
+	"travel_expense_recovery_recorded",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [
