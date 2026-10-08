@@ -31,7 +31,9 @@ import type { ReimbursingOfficer } from "./officer-scope";
 
 type Database = typeof appDb;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-type Executor = Database | Transaction;
+/** Writes run in the caller's transaction, including a departure's work transaction (#750). */
+type GrantTransaction = Pick<Transaction, "select" | "insert" | "update" | "delete">;
+type Executor = Database | GrantTransaction;
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -396,6 +398,54 @@ export async function revokeExpenseOfficerGrant(
 	const [grant] = await withScopeRows(tx, organizationId, [row]);
 	if (!grant) throw notFound;
 
+	await revokeLockedGrant(tx, { organizationId, actorUserId, grant, metadata: null });
+	return { grantId: grant.id, officerEmployeeId: grant.officerEmployeeId };
+}
+
+/**
+ * Revokes the active grant the officer holds, if any, recording
+ * `auditMetadata` on the audit entry. Offboarding (#750) calls it inside the
+ * departure's transaction. Grants that only name the employee in their scope
+ * stay, so their reports can still be reimbursed.
+ */
+export async function revokeExpenseOfficerGrantHeldBy(
+	tx: GrantTransaction,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		officerEmployeeId: string;
+		auditMetadata: Record<string, unknown>;
+	},
+): Promise<void> {
+	const { organizationId, actorUserId } = input;
+	const [row] = await tx
+		.select(grantColumns)
+		.from(expenseOfficerGrant)
+		.where(
+			and(
+				eq(expenseOfficerGrant.organizationId, organizationId),
+				eq(expenseOfficerGrant.officerEmployeeId, input.officerEmployeeId),
+				eq(expenseOfficerGrant.isActive, true),
+			),
+		)
+		.limit(1)
+		.for("update");
+	const [grant] = row ? await withScopeRows(tx, organizationId, [row]) : [];
+	if (!grant) return;
+
+	await revokeLockedGrant(tx, { organizationId, actorUserId, grant, metadata: input.auditMetadata });
+}
+
+async function revokeLockedGrant(
+	tx: GrantTransaction,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		grant: ExpenseOfficerGrantRecord;
+		metadata: Record<string, unknown> | null;
+	},
+): Promise<void> {
+	const { organizationId, actorUserId, grant } = input;
 	await tx
 		.update(expenseOfficerGrant)
 		.set({ isActive: false, updatedBy: actorUserId })
@@ -413,12 +463,12 @@ export async function revokeExpenseOfficerGrant(
 		action: AuditAction.EXPENSE_OFFICER_GRANT_REVOKED,
 		from: grant,
 		to: null,
+		metadata: input.metadata,
 	});
-	return { grantId: grant.id, officerEmployeeId: grant.officerEmployeeId };
 }
 
 async function insertScopeRows(
-	tx: Transaction,
+	tx: GrantTransaction,
 	input: {
 		organizationId: string;
 		actorUserId: string;
@@ -453,7 +503,7 @@ async function insertScopeRows(
 }
 
 async function writeGrantAudit(
-	tx: Transaction,
+	tx: GrantTransaction,
 	input: {
 		organizationId: string;
 		actorUserId: string;
@@ -462,6 +512,7 @@ async function writeGrantAudit(
 		action: AuditAction;
 		from: ExpenseOfficerGrantValues | null;
 		to: ExpenseOfficerGrantValues | null;
+		metadata?: Record<string, unknown> | null;
 	},
 ): Promise<void> {
 	await tx.insert(auditLog).values({
@@ -472,6 +523,7 @@ async function writeGrantAudit(
 		performedBy: input.actorUserId,
 		employeeId: input.officerEmployeeId,
 		changes: JSON.stringify(expenseOfficerGrantAuditChanges(input.from, input.to)),
+		metadata: input.metadata ? JSON.stringify(input.metadata) : null,
 	});
 }
 

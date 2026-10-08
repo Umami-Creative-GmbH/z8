@@ -29,7 +29,10 @@ import {
  * officer is a new row.
  */
 
-type PayrollAccessTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type PayrollAccessTransaction = Pick<
+	Parameters<Parameters<typeof db.transaction>[0]>[0],
+	"select" | "insert" | "update" | "delete"
+>;
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -216,6 +219,56 @@ export async function revokePayrollAccessGrant(
 		.for("update");
 	if (!grant) throw notFound;
 
+	await revokeLockedGrant(tx, { organizationId, actorUserId, grant, metadata: null });
+	return { grantId: grant.id, payrollEmployeeId: grant.payrollEmployeeId };
+}
+
+/**
+ * Revokes the active grant the employee holds, if any, recording `auditMetadata` on the
+ * audit entry. Offboarding (#750) calls it inside the departure's transaction. Grants
+ * that only name the employee in their scope stay as they are.
+ */
+export async function revokePayrollAccessGrantHeldBy(
+	tx: PayrollAccessTransaction,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		payrollEmployeeId: string;
+		auditMetadata: Record<string, unknown>;
+	},
+): Promise<void> {
+	const { organizationId, actorUserId } = input;
+	const [grant] = await tx
+		.select({
+			id: payrollAccessGrant.id,
+			payrollEmployeeId: payrollAccessGrant.payrollEmployeeId,
+			scope: payrollAccessGrant.scope,
+		})
+		.from(payrollAccessGrant)
+		.where(
+			and(
+				eq(payrollAccessGrant.organizationId, organizationId),
+				eq(payrollAccessGrant.payrollEmployeeId, input.payrollEmployeeId),
+				eq(payrollAccessGrant.isActive, true),
+			),
+		)
+		.limit(1)
+		.for("update");
+	if (!grant) return;
+
+	await revokeLockedGrant(tx, { organizationId, actorUserId, grant, metadata: input.auditMetadata });
+}
+
+async function revokeLockedGrant(
+	tx: PayrollAccessTransaction,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		grant: { id: string; payrollEmployeeId: string; scope: string };
+		metadata: Record<string, unknown> | null;
+	},
+): Promise<void> {
+	const { organizationId, actorUserId, grant } = input;
 	const scope = await readGrantScope(tx, organizationId, grant);
 	await tx
 		.update(payrollAccessGrant)
@@ -234,8 +287,8 @@ export async function revokePayrollAccessGrant(
 		action: AuditAction.PAYROLL_ACCESS_GRANT_REVOKED,
 		from: scope,
 		to: null,
+		metadata: input.metadata,
 	});
-	return { grantId: grant.id, payrollEmployeeId: grant.payrollEmployeeId };
 }
 
 async function readGrantScope(
@@ -316,6 +369,7 @@ async function writeGrantAudit(
 		action: AuditAction;
 		from: PayrollAccessScope | null;
 		to: PayrollAccessScope | null;
+		metadata?: Record<string, unknown> | null;
 	},
 ): Promise<void> {
 	await tx.insert(auditLog).values({
@@ -326,6 +380,7 @@ async function writeGrantAudit(
 		performedBy: input.actorUserId,
 		employeeId: input.payrollEmployeeId,
 		changes: JSON.stringify(payrollAccessGrantAuditChanges(input.from, input.to)),
+		metadata: input.metadata ? JSON.stringify(input.metadata) : null,
 	});
 }
 
