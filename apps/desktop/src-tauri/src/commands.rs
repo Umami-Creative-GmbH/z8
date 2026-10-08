@@ -103,38 +103,7 @@ pub async fn get_clock_status(app_handle: AppHandle) -> Result<ClockStatus, Stri
     }
 
     // Update local state
-    state.set_clocked_in(status.is_clocked_in);
-    // Other devices' confirmed live work wins over a completed local break.
-    if status.is_clocked_in {
-        if let Ok(store) = &state.command_store {
-            let cached_context = store.lock().cached_context(
-                &webapp_url,
-                &crate::command_store::token_fingerprint(&token),
-            );
-            if let Ok(Some(cached)) = cached_context {
-                if let Some(context) =
-                    crate::command_transport::Capabilities::parse(&cached.capabilities)
-                        .and_then(|caps| caps.command_context())
-                {
-                    let guard = store.lock();
-                    if guard
-                        .for_context(&webapp_url, &context)
-                        .map_err(|_| STORAGE_PAUSED)?
-                        .iter()
-                        .all(|command| !command.state.is_active())
-                    {
-                        guard
-                            .end_break(&webapp_url, &context)
-                            .map_err(|_| STORAGE_PAUSED)?;
-                    }
-                }
-            }
-        }
-    }
-    if let Ok(store) = &state.command_store {
-        clock_command::remember_status(store, &webapp_url, &token, &status);
-    }
-
+    state.set_clock_status(&status);
     // Update tray icon
     let _ = tray::update_tray_icon(&app_handle, status.is_clocked_in);
 
@@ -313,7 +282,7 @@ async fn run_clock_command(
     {
         if let ClockCommandOutcome::Committed { write } = &outcome {
             if let Some(status) = &write.status {
-                state.set_clocked_in(status.is_clocked_in);
+                state.set_clock_status(&status);
                 let _ = tray::update_tray_icon(&app_handle, status.is_clocked_in);
             }
         }
@@ -624,4 +593,10 @@ pub async fn archive_clock_command(
                 .to_string()
         })?;
     sync_clock_commands(app_handle.clone(), false).await
+}
+
+#[tauri::command]
+pub fn get_device_timezone() -> Result<String, String> {
+    iana_time_zone::get_timezone()
+        .map_err(|_| "The device timezone could not be read. No clock action was recorded.".into())
 }

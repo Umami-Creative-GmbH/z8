@@ -111,7 +111,8 @@ export interface SavedClockCommand {
 }
 
 export interface ClockJournal {
-  busy?: boolean;
+	busy?: boolean;
+	workChangedElsewhere?: boolean;
 	onBreak: boolean;
 	signInRequired: boolean;
 	legacy: RecoverySummary;

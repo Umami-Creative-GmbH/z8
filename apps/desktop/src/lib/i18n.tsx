@@ -1,12 +1,24 @@
 import { createContext, useContext, useEffect, type ReactNode } from "react";
-export type Language = "en" | "de";
+import type { Language } from "./language";
 const german: Record<string, string> = {
-    "Day summary could not be loaded": "Die Tagessumme konnte nicht geladen werden",
-    "Preferences could not be loaded": "Einstellungen konnten nicht geladen werden",
-    "Malformed records": "Unlesbare Datensätze",
-    "Retry limit reached": "Wiederholungsgrenze erreicht",
-    "Possible partial breaks": "Möglicherweise unvollständige Pausen",
-    "Break closes acknowledged": "Bestätigte Pausenbeginne",
+	"Work changed on another device. Resolve the earlier saved action before clocking again.":
+		"Die Arbeit wurde auf einem anderen Gerät geändert. Klären Sie die zuvor gespeicherte Aktion, bevor Sie erneut stempeln.",
+	"Your device timezone has changed":
+		"Die Zeitzone Ihres Geräts hat sich geändert",
+	"Device timezone": "Gerätezeitzone",
+	"Saved timezone": "Gespeicherte Zeitzone",
+	"This action uses the device timezone. Your day total uses your saved timezone.":
+		"Diese Aktion verwendet die Gerätezeitzone. Ihre Tagessumme verwendet Ihre gespeicherte Zeitzone.",
+	"Update saved timezone in Z8": "Gespeicherte Zeitzone in Z8 aktualisieren",
+	"Continue once": "Einmal fortfahren",
+	"Day summary could not be loaded":
+		"Die Tagessumme konnte nicht geladen werden",
+	"Preferences could not be loaded":
+		"Einstellungen konnten nicht geladen werden",
+	"Malformed records": "Unlesbare Datensätze",
+	"Retry limit reached": "Wiederholungsgrenze erreicht",
+	"Possible partial breaks": "Möglicherweise unvollständige Pausen",
+	"Break closes acknowledged": "Bestätigte Pausenbeginne",
 	"App updates": "App-Updates",
 	"Review update": "Update ansehen",
 	"Installing…": "Wird installiert…",
@@ -179,14 +191,4 @@ export function useI18n() {
 		t: (message: string) =>
 			language === "de" ? (german[message] ?? message) : message,
 	};
-}
-export function resolveLanguage(
-	setting: string | undefined,
-	preference: string | null | undefined,
-): Language {
-	const language =
-		setting === "auto" || !setting
-			? (preference ?? navigator.language)
-			: setting;
-	return language.toLowerCase().startsWith("de") ? "de" : "en";
 }

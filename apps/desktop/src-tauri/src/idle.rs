@@ -57,9 +57,14 @@ pub fn start_idle_monitor(app_handle: AppHandle) {
                 if !state.settings.read().idle_enabled || !state.is_clocked_in() {
                     return;
                 }
-                listener_tracker
-                    .lock()
-                    .activity(Observation::now(), device_zone);
+                let now = Observation::now();
+                let work = state.monitored_work();
+                let mut tracker = listener_tracker.lock();
+                if tracker.monitor_work(now, work.as_deref()) {
+                    state.set_pending_break(None);
+                    let _ = listener_app.emit("idle_cancelled", ());
+                }
+                tracker.activity(now, device_zone);
             }
         };
 
@@ -97,7 +102,16 @@ pub fn start_idle_monitor(app_handle: AppHandle) {
                 }
                 continue;
             }
-            let is_clocked_in = state.is_clocked_in() && configuration.0;
+            let work = if configuration.0 {
+                state.monitored_work()
+            } else {
+                None
+            };
+            if tracker.lock().monitor_work(observation, work.as_deref()) {
+                state.set_pending_break(None);
+                let _ = app_handle.emit("idle_cancelled", ());
+            }
+            let is_clocked_in = work.is_some();
             let Some(idle) = tracker
                 .lock()
                 .tick(Observation::now(), is_clocked_in, device_zone)

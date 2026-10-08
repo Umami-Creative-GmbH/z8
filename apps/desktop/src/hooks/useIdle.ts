@@ -12,10 +12,13 @@ export function useIdle() {
 			setIsIdleDialogOpen(true);
 		});
 
-		const unlistenCancelled = listen("idle_cancelled", () => { setIdleEvent(null); setIsIdleDialogOpen(false); });
-    return () => {
+		const unlistenCancelled = listen("idle_cancelled", () => {
+			setIdleEvent(null);
+			setIsIdleDialogOpen(false);
+		});
+		return () => {
 			unlisten.then((fn) => fn());
-      unlistenCancelled.then((fn) => fn());
+			unlistenCancelled.then((fn) => fn());
 		};
 	}, []);
 

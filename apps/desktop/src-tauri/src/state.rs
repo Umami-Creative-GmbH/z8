@@ -25,6 +25,7 @@ pub struct AppState {
     pub command_store: Result<Mutex<CommandStore>, String>,
     pub clock_command_lock: tokio::sync::Mutex<()>,
     pub is_clocked_in: RwLock<bool>,
+    clock_work_id: RwLock<Option<String>>,
     /// The latest idle span awaiting the employee's answer (#281).
     pending_break: Mutex<Option<IdleBreak>>,
     app_data_dir: PathBuf,
@@ -88,6 +89,7 @@ impl AppState {
             command_store,
             clock_command_lock: tokio::sync::Mutex::new(()),
             is_clocked_in: RwLock::new(false),
+            clock_work_id: RwLock::new(None),
             pending_break: Mutex::new(None),
             app_data_dir,
         })
@@ -130,7 +132,37 @@ impl AppState {
     }
 
     pub fn set_clocked_in(&self, clocked_in: bool) {
-        *self.is_clocked_in.write() = clocked_in;
+        let mut current = self.is_clocked_in.write();
+        if *current != clocked_in {
+            *self.clock_work_id.write() = None;
+            self.set_pending_break(None);
+        }
+        *current = clocked_in;
+    }
+
+    pub fn set_clock_status(&self, status: &crate::clock::ClockStatus) {
+        self.set_clocked_in(status.is_clocked_in);
+        let id = status
+            .active_work_period
+            .as_ref()
+            .map(|period| period.id.clone());
+        let mut current = self.clock_work_id.write();
+        if *current != id {
+            self.set_pending_break(None);
+        }
+        *current = id;
+    }
+
+    pub fn monitored_work(&self) -> Option<String> {
+        if !self.is_clocked_in() {
+            return None;
+        }
+        Some(
+            self.clock_work_id
+                .read()
+                .clone()
+                .unwrap_or_else(|| "local-pending-work".into()),
+        )
     }
 
     pub fn is_clocked_in(&self) -> bool {

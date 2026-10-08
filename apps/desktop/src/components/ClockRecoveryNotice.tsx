@@ -45,26 +45,33 @@ function SavedCommand({
 		}
 	};
 	const when = useMemo(() => {
-    try { return new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "medium", timeZone: command.timezone }).format(new Date(command.occurredAt)); }
-    catch { return command.occurredAt; }
-  }, [language, command.timezone, command.occurredAt]);
-  const label =
-		command.kind === "clock_in"
-			? "Clock in"
-			: command.kind === "clock_out"
-				? "Clock out"
-				: "Break recorded";
+		try {
+			return new Intl.DateTimeFormat(language, {
+				dateStyle: "medium",
+				timeStyle: "medium",
+				timeZone: command.timezone,
+			}).format(new Date(command.occurredAt));
+		} catch {
+			return command.occurredAt;
+		}
+	}, [language, command.timezone, command.occurredAt]);
+	const labels = {
+		clock_in: "Clock in",
+		clock_out: "Clock out",
+		break: "Break recorded",
+	};
+	const states = {
+		pending: "Saved on this device",
+		committed: "Confirmed by server",
+		archived: "Archived evidence stays on this device.",
+		stalled: "Retry checks the original action before sending it again.",
+		rejected:
+			"The server refused this action. Review it in Z8; the evidence stays here.",
+	};
+	const label = labels[command.kind];
 	const state = command.waitingFor
 		? waiting[command.waitingFor]
-		: command.state === "pending"
-			? "Saved on this device"
-			: command.state === "committed"
-				? "Confirmed by server"
-				: command.state === "archived"
-					? "Archived evidence stays on this device."
-					: command.state === "stalled"
-						? "Retry checks the original action before sending it again."
-						: "The server refused this action. Review it in Z8; the evidence stays here.";
+		: states[command.state];
 	return (
 		<li>
 			<strong>{t(label)}</strong> · {when} ({command.timezone})<p>{t(state)}</p>
@@ -118,6 +125,7 @@ export function ClockRecoveryNotice({
 		!actionError &&
 		!savedCommandError &&
 		!needsStatusRefresh &&
+		!journal?.workChangedElsewhere &&
 		!unresolved.length &&
 		!journal?.otherContexts &&
 		!journal?.legacy.total &&
@@ -130,6 +138,13 @@ export function ClockRecoveryNotice({
 			aria-label={t("Clock recovery")}
 			aria-live="polite"
 		>
+			{journal?.workChangedElsewhere && (
+				<p role="alert">
+					{t(
+						"Work changed on another device. Resolve the earlier saved action before clocking again.",
+					)}
+				</p>
+			)}
 			{actionError && (
 				<p>
 					{t("Clock action failed")}: {actionError}
@@ -192,13 +207,17 @@ export function ClockRecoveryNotice({
 							"Ownership is unverified. Original records are retained; no automatic replay or deletion.",
 						)}
 					</p>
-                    <dl className="field-hint">
-                        <dt>{t("Malformed records")}</dt><dd>{journal.legacy.malformed}</dd>
-                        <dt>{t("Retry limit reached")}</dt><dd>{journal.legacy.exhausted}</dd>
-                        <dt>{t("Possible partial breaks")}</dt><dd>{journal.legacy.possiblePartialBreaks}</dd>
-                        <dt>{t("Break closes acknowledged")}</dt><dd>{journal.legacy.breaksWithAcknowledgedClose}</dd>
-                    </dl>
-                </details>
+					<dl className="field-hint">
+						<dt>{t("Malformed records")}</dt>
+						<dd>{journal.legacy.malformed}</dd>
+						<dt>{t("Retry limit reached")}</dt>
+						<dd>{journal.legacy.exhausted}</dd>
+						<dt>{t("Possible partial breaks")}</dt>
+						<dd>{journal.legacy.possiblePartialBreaks}</dd>
+						<dt>{t("Break closes acknowledged")}</dt>
+						<dd>{journal.legacy.breaksWithAcknowledgedClose}</dd>
+					</dl>
+				</details>
 			)}
 			{needsStatusRefresh && (
 				<p>{t("Refresh current status before another action.")}</p>

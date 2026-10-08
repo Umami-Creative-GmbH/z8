@@ -225,6 +225,19 @@ pub async fn refresh_status(session: &ClockSession<'_>) -> anyhow::Result<ClockS
             "Clock context changed. Refresh the selected organization."
         );
     }
+    if let Some(context) = negotiated
+        .capabilities()
+        .and_then(|caps| caps.command_context())
+    {
+        let store = session.store.lock();
+        let commands = store.for_context(session.endpoint, &context)?;
+        if status.is_clocked_in
+            && (commands.iter().all(|command| !command.state.is_active())
+                || confirmed_work_changed(&commands, &status))
+        {
+            store.end_break(session.endpoint, &context)?;
+        }
+    }
     remember_status(session.store, session.endpoint, session.token, &status);
     Ok(status)
 }
@@ -421,6 +434,54 @@ async fn execute_internal(
     }
 }
 
+/// A saved close targets an earlier known period; a different confirmed period
+/// is visible work, never a replacement target for that immutable close.
+fn confirmed_work_changed(
+    commands: &[crate::command_store::StoredCommand],
+    status: &ClockStatus,
+) -> bool {
+    let Some(period) = status
+        .active_work_period
+        .as_ref()
+        .filter(|_| status.is_clocked_in)
+    else {
+        return false;
+    };
+    commands
+        .iter()
+        .filter(|command| command.state.is_active() && command.kind == CommandKind::ClockOut)
+        .any(|command| {
+            serde_json::from_str::<serde_json::Value>(&command.command)
+                .ok()
+                .and_then(|body| body["target"]["workPeriodId"].as_str().map(str::to_owned))
+                .is_some_and(|target| target != period.id)
+        })
+}
+
+fn reconcile_journal(
+    session: &ClockSession<'_>,
+    context: Option<&CommandContext>,
+    journal: &mut ClockJournal,
+) -> anyhow::Result<()> {
+    if let Some(context) = context {
+        if let Some(status) = cached_status(session, context)? {
+            let commands = session
+                .store
+                .lock()
+                .for_context(session.endpoint, context)?;
+            if confirmed_work_changed(&commands, &status) {
+                journal.work_changed_elsewhere = true;
+                journal.on_break = false;
+                journal.projection = Some(Projection {
+                    is_clocked_in: true,
+                    since: status.active_work_period.map(|period| period.start_time),
+                });
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Binds the action to the work it continues and freezes it.
 fn freeze_command(
     session: &ClockSession<'_>,
@@ -443,6 +504,12 @@ fn freeze_command(
         return Err(ClockCommandError::pre_send(
             "An earlier clock action needs review before another one. Check the saved actions.",
         ));
+    }
+    if status
+        .as_ref()
+        .is_some_and(|status| confirmed_work_changed(&active, status))
+    {
+        return Err(ClockCommandError::pre_send("Work changed on another device. Resolve the earlier saved action before clocking again."));
     }
     let last = active.last();
     frame.depends_on = last.map(|saved| saved.operation_id.clone());
@@ -623,6 +690,7 @@ pub fn journal_offline(session: &ClockSession<'_>) -> anyhow::Result<ClockJourna
             last_known: None,
         },
     )?;
+    reconcile_journal(session, context.as_ref(), &mut journal)?;
     journal.busy = true;
     Ok(journal)
 }
@@ -660,6 +728,7 @@ pub async fn sync(session: &ClockSession<'_>, pacing: Pacing) -> anyhow::Result<
             last_known,
         },
     )?;
+    reconcile_journal(session, context.as_ref(), &mut journal)?;
     journal.sign_in_required = matches!(negotiated, Negotiated::Unauthorized);
     Ok(journal)
 }

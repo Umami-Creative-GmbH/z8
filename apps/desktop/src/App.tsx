@@ -4,9 +4,14 @@ import {
 	QueryClientProvider,
 	useQuery,
 } from "@tanstack/react-query";
-import { useForm } from "@tanstack/react-form";
+import { useClosingAttribution } from "./hooks/useClosingAttribution";
+import { useClockFeedback } from "./hooks/useClockFeedback";
+import { useClockTimezone } from "./hooks/useClockTimezone";
+import { ClosingAttributionFields } from "./components/ClosingAttributionFields";
+import { CompanionHeader } from "./components/CompanionHeader";
+import { TimezoneDialog } from "./components/TimezoneDialog";
 import { invoke } from "@tauri-apps/api/core";
-import { IconSettings, IconWifiOff, IconClock } from "@tabler/icons-react";
+
 import { Toaster, toast } from "sonner";
 import { ClockButton } from "./components/ClockButton";
 import { ClockRecoveryNotice } from "./components/ClockRecoveryNotice";
@@ -14,9 +19,9 @@ import { DayTotal } from "./components/DayTotal";
 import { UpdateNotice } from "./components/UpdateCheck";
 import { IdleDialog } from "./components/IdleDialog";
 import { LoginScreen } from "./components/LoginScreen";
-import { OrganizationSelector } from "./components/OrganizationSelector";
+
 import { Settings } from "./components/Settings";
-import { ThemeToggle } from "./components/ThemeToggle";
+
 import { WorkLocationSelector } from "./components/WorkLocationSelector";
 import { useAuth } from "./hooks/useAuth";
 import { useClock } from "./hooks/useClock";
@@ -25,12 +30,9 @@ import { useOrganizations } from "./hooks/useOrganizations";
 import { useSettings } from "./hooks/useSettings";
 import { useTheme } from "./hooks/useTheme";
 import { useWorkLocation } from "./hooks/useWorkLocation";
-import { LocaleProvider, resolveLanguage, useI18n } from "./lib/i18n";
-import type {
-	AttributionIntent,
-	ClockCommandOutcome,
-	DesktopContext,
-} from "./types";
+import { LocaleProvider, useI18n } from "./lib/i18n";
+import { resolveLanguage } from "./lib/language";
+import type { DesktopContext } from "./types";
 const queryClient = new QueryClient({
 	defaultOptions: { queries: { retry: 1, staleTime: 10000 } },
 });
@@ -77,8 +79,8 @@ function AppContent() {
 				preferences={preferences}
 				organizations={organizations}
 				context={context.data}
-                contextError={context.error ? String(context.error) : null}
-                onRefreshContext={() => void context.refetch()}
+				contextError={context.error ? String(context.error) : null}
+				onRefreshContext={() => void context.refetch()}
 				scope={scope}
 			/>
 		</LocaleProvider>
@@ -97,8 +99,8 @@ function Companion({
 	preferences: ReturnType<typeof useSettings>;
 	organizations: ReturnType<typeof useOrganizations>;
 	context: DesktopContext | undefined;
-    contextError: string | null;
-    onRefreshContext: () => void;
+	contextError: string | null;
+	onRefreshContext: () => void;
 	scope: string;
 }) {
 	const { t, language } = useI18n();
@@ -118,53 +120,14 @@ function Companion({
 		location = useWorkLocation(scope);
 	const [processingIdle, setProcessingIdle] = useState(false),
 		[endingDay, setEndingDay] = useState(false);
-	const attribution = useForm({
-		defaultValues: { project: "preserve", workCategory: "preserve" },
-	});
-	const intent = (value: string): AttributionIntent =>
-		value === "preserve"
-			? { kind: "preserve" }
-			: value === "clear"
-				? { kind: "clear" }
-				: { kind: "replace", id: value };
-	const closing = () => ({
-		project: intent(attribution.state.values.project),
-		workCategory: intent(attribution.state.values.workCategory),
-	});
+	const attribution = useClosingAttribution();
+	const timezone = useClockTimezone(context?.timezone);
 	const busy =
 		clock.isClockingIn ||
 		clock.isClockingOut ||
 		endingDay ||
 		organizations.isSwitching;
-	const present = async (
-		action: () => Promise<ClockCommandOutcome>,
-		success: string,
-	) => {
-		try {
-			const result = await action();
-			if (result.outcome === "savedOnDevice")
-				toast.info(t("Saved on this device"));
-			else if (
-				result.outcome === "needsReview" ||
-				result.outcome === "retainedForReview"
-			)
-				toast.warning(t("Saved work needs review"), {
-					description: t(
-						"Check your time entries in Z8 before recording replacement work.",
-					),
-				});
-			else
-				toast.success(
-					t(result.write.contextChanged ? "Previous context updated" : success),
-				);
-			return true;
-		} catch (error) {
-			toast.error(t("Clock action failed"), {
-				description: error instanceof Error ? error.message : String(error),
-			});
-			return false;
-		}
-	};
+	const present = useClockFeedback();
 	const endDay = async () => {
 		if (endingDay) return;
 		setEndingDay(true);
@@ -219,50 +182,21 @@ function Companion({
 				/>
 			) : (
 				<div className="app-container">
-					<header className="app-header">
-						<div className="app-header-left">
-							<div className="app-header-brand">
-								<div className="app-logo">
-									<IconClock size={18} aria-hidden="true" />
-								</div>
-								<div>
-									<div className="app-title">z8 Timer</div>
-									<div className="app-subtitle">{t("Time tracking")}</div>
-								</div>
-							</div>
-							<OrganizationSelector
-								organizations={organizations.organizations}
-								activeOrganizationId={organizations.activeOrganizationId}
-								onSwitch={organizations.switchOrganization}
-								isSwitching={busy || organizations.isOffline}
-							/>
-						</div>
-						<div className="app-header-actions">
-							{clock.isError && (
-								<div className="offline-badge">
-									<IconWifiOff size={14} aria-hidden="true" />
-									<span>{t("Offline")}</span>
-								</div>
-							)}
-							<ThemeToggle {...theme} />
-							<button
-								type="button"
-								className="settings-button"
-								onClick={() => setIsSettingsOpen(true)}
-								disabled={busy}
-								aria-label={t("Open settings")}
-							>
-								<IconSettings size={18} aria-hidden="true" />
-							</button>
-						</div>
-					</header>
+					<CompanionHeader
+						organizations={organizations}
+						theme={theme}
+						busy={busy}
+						offline={clock.isError}
+						onOpenSettings={() => setIsSettingsOpen(true)}
+					/>
 					<main className="app-main">
 						{organizations.error && (
 							<p role="alert">
 								{t("Organization could not be loaded")}: {organizations.error}
 							</p>
 						)}
-						{clock.journal && !clock.journal.busy &&
+						{clock.journal &&
+							!clock.journal.busy &&
 							(!clock.journal.commandsEnabled ||
 								!clock.journal.breaksEnabled) && (
 								<section className="clock-recovery">
@@ -275,11 +209,19 @@ function Companion({
 								</section>
 							)}
 						<UpdateNotice onOpen={() => setIsSettingsOpen(true)} />
-						{contextError && <p role="alert" className="login-error">
-                            {t("Day summary could not be loaded")}: {contextError}
-                            <button type="button" className="clock-recovery-action" onClick={onRefreshContext}>{t("Retry")}</button>
-                        </p>}
-                        <DayTotal context={context} journal={clock.journal} />
+						{contextError && (
+							<p role="alert" className="login-error">
+								{t("Day summary could not be loaded")}: {contextError}
+								<button
+									type="button"
+									className="clock-recovery-action"
+									onClick={onRefreshContext}
+								>
+									{t("Retry")}
+								</button>
+							</p>
+						)}
+						<DayTotal context={context} journal={clock.journal} />
 						{!clock.isClockedIn && (
 							<WorkLocationSelector
 								value={location.workLocationType}
@@ -292,73 +234,39 @@ function Companion({
 							isOnBreak={onBreak}
 							startTime={clock.startTime}
 							onClockIn={async () => {
-								await present(
-									() => clock.clockIn(location.workLocationType),
-									"Clock in",
+								await timezone.run(() =>
+									present(
+										() => clock.clockIn(location.workLocationType),
+										"Clock in",
+									),
 								);
 							}}
 							onClockOut={async () => {
-								await present(() => clock.clockOut(closing()), "Clock out");
+								await timezone.run(() =>
+									present(
+										() => clock.clockOut(attribution.value()),
+										"Clock out",
+									),
+								);
 							}}
 							onStartBreak={async () => {
-								await present(() => clock.startBreak(closing()), "On break");
+								await timezone.run(() =>
+									present(
+										() => clock.startBreak(attribution.value()),
+										"On break",
+									),
+								);
 							}}
 							onEndDay={endDay}
 							isLoading={busy}
 							disabled={!clock.canClock}
 						/>
 						{context && clock.isClockedIn && (
-							<div className="attribution-fields">
-								<p className="field-hint">{t("Applied when work ends")}</p>
-								<attribution.Field name="project">
-									{(field) => (
-										<label className="form-field">
-											{t("Project")}
-											<select
-												value={field.state.value}
-												disabled={busy}
-												onChange={(event) =>
-													field.handleChange(event.target.value)
-												}
-											>
-												<option value="preserve">
-													{t("Keep current assignment")}
-												</option>
-												<option value="clear">{t("No assignment")}</option>
-												{context.projects.map((project) => (
-													<option key={project.id} value={project.id}>
-														{project.name}
-													</option>
-												))}
-											</select>
-										</label>
-									)}
-								</attribution.Field>
-								<attribution.Field name="workCategory">
-									{(field) => (
-										<label className="form-field">
-											{t("Work category")}
-											<select
-												value={field.state.value}
-												disabled={busy}
-												onChange={(event) =>
-													field.handleChange(event.target.value)
-												}
-											>
-												<option value="preserve">
-													{t("Keep current assignment")}
-												</option>
-												<option value="clear">{t("No assignment")}</option>
-												{context.categories.map((category) => (
-													<option key={category.id} value={category.id}>
-														{category.name}
-													</option>
-												))}
-											</select>
-										</label>
-									)}
-								</attribution.Field>
-							</div>
+							<ClosingAttributionFields
+								form={attribution.form}
+								context={context}
+								disabled={busy}
+							/>
 						)}
 						<ClockRecoveryNotice
 							journal={clock.journal}
@@ -423,15 +331,33 @@ function Companion({
 					/>
 				</div>
 			)}
-			{preferences.error && <p role="alert" className="login-error">
-                {t("Preferences could not be loaded")}: {preferences.error}
-                <button type="button" className="clock-recovery-action" onClick={() => void preferences.refetch()}>{t("Retry")}</button>
-            </p>}
-            {settings?.runtimeErrors?.map((message) => (
+			{preferences.error && (
+				<p role="alert" className="login-error">
+					{t("Preferences could not be loaded")}: {preferences.error}
+					<button
+						type="button"
+						className="clock-recovery-action"
+						onClick={() => void preferences.refetch()}
+					>
+						{t("Retry")}
+					</button>
+				</p>
+			)}
+			{settings?.runtimeErrors?.map((message) => (
 				<p key={message} role="alert" className="login-error">
 					{message}
 				</p>
 			))}
+			<TimezoneDialog
+				deviceZone={timezone.deviceZone}
+				savedZone={context?.timezone}
+				onContinue={timezone.continueOnce}
+				onCancel={timezone.cancel}
+				onUpdate={async () => {
+					timezone.cancel();
+					await openZ8("preferences");
+				}}
+			/>
 			<Settings
 				isOpen={isSettingsOpen}
 				onClose={() => setIsSettingsOpen(false)}

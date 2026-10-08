@@ -12,12 +12,18 @@ export function DayTotal({
 }) {
 	const { t, language } = useI18n();
 	const updated = useMemo(() => {
-        if (!context) return "";
-        try {
-            return new Intl.DateTimeFormat(language, { dateStyle: "short", timeStyle: "short", timeZone: context.timezone }).format(new Date(context.fetchedAt));
-        } catch { return context.fetchedAt; }
-    }, [language, context?.timezone, context?.fetchedAt]);
-    const [now, setNow] = useState(() => Temporal.Now.instant().toString());
+		if (!context) return "";
+		try {
+			return new Intl.DateTimeFormat(language, {
+				dateStyle: "short",
+				timeStyle: "short",
+				timeZone: context.timezone,
+			}).format(new Date(context.fetchedAt));
+		} catch {
+			return context.fetchedAt;
+		}
+	}, [language, context?.timezone, context?.fetchedAt]);
+	const [now, setNow] = useState(() => Temporal.Now.instant().toString());
 	useEffect(() => {
 		const timer = setInterval(
 			() => setNow(Temporal.Now.instant().toString()),
@@ -32,18 +38,22 @@ export function DayTotal({
 			(command) => command.state === "pending" || command.state === "stalled",
 		) ?? [];
 	const cached = context.cached || journal?.serverReachable === false;
-    const estimated = cached || pending.length > 0;
+	const estimated = cached || pending.length > 0;
 	// With a fresh server basis, an uncertain command may already be included.
 	// Never double-count it: show the server snapshot until the receipt settles.
 	const at = pending.length && !cached ? context.fetchedAt : now;
-	const minutes = todayTotal(
-		context.dayTotalBasis,
-		cached ? pending : [],
-		at,
-	);
+	const minutes = todayTotal(context.dayTotalBasis, cached ? pending : [], at);
 	return (
 		<section className="day-total" aria-label={t("Today")}>
-			<span>{t(cached ? "Estimated today" : pending.length ? "Server total" : "Today")}</span>
+			<span>
+				{t(
+					cached
+						? "Estimated today"
+						: pending.length
+							? "Server total"
+							: "Today",
+				)}
+			</span>
 			<strong>
 				{minutes === null
 					? "—"

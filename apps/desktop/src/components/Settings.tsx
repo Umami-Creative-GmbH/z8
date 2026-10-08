@@ -102,7 +102,8 @@ function SettingsForm({
 					{(field) => (
 						<label className="form-field">
 							{t("Server")}
-							<input name={field.name}
+							<input
+								name={field.name}
 								type="url"
 								required
 								value={field.state.value}
@@ -117,7 +118,8 @@ function SettingsForm({
 				<form.Field name="alwaysOnTop">
 					{(field) => (
 						<label className="form-toggle">
-							<input name={field.name}
+							<input
+								name={field.name}
 								type="checkbox"
 								checked={field.state.value}
 								onChange={(event) => field.handleChange(event.target.checked)}
@@ -130,7 +132,8 @@ function SettingsForm({
 				<form.Field name="autoStartup">
 					{(field) => (
 						<label className="form-toggle">
-							<input name={field.name}
+							<input
+								name={field.name}
 								type="checkbox"
 								checked={field.state.value}
 								onChange={(event) => field.handleChange(event.target.checked)}
@@ -143,7 +146,8 @@ function SettingsForm({
 				<form.Field name="idleEnabled">
 					{(field) => (
 						<label className="form-toggle">
-							<input name={field.name}
+							<input
+								name={field.name}
 								type="checkbox"
 								checked={field.state.value}
 								onChange={(event) => field.handleChange(event.target.checked)}
@@ -160,7 +164,8 @@ function SettingsForm({
 					{(field) => (
 						<label className="form-field">
 							{t("Minutes before reminder")}
-							<input name={field.name}
+							<input
+								name={field.name}
 								type="number"
 								required
 								min={1}
@@ -179,7 +184,8 @@ function SettingsForm({
 					{(field) => (
 						<label className="form-field">
 							{t("Language")}
-							<select name={field.name}
+							<select
+								name={field.name}
 								value={field.state.value}
 								onChange={(event) => field.handleChange(event.target.value)}
 								disabled={isSaving}

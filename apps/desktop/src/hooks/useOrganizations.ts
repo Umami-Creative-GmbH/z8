@@ -11,7 +11,7 @@ export interface Organization {
 	ssoRequired?: boolean;
 }
 interface OrganizationsResponse {
-  cached?: boolean;
+	cached?: boolean;
 	organizations: Organization[];
 	activeOrganizationId: string | null;
 }
@@ -48,7 +48,7 @@ export function useOrganizations({
 		organizations: query.data?.organizations ?? [],
 		activeOrganizationId: query.data?.activeOrganizationId ?? null,
 		isLoading: query.isLoading,
-    isOffline: query.data?.cached === true,
+		isOffline: query.data?.cached === true,
 		error: query.error ? String(query.error) : null,
 		switchOrganization: async (id: string) => {
 			await mutation.mutateAsync(id);

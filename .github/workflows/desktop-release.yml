@@ -35,7 +35,7 @@ jobs:
       - run: pnpm --filter desktop install --frozen-lockfile
       - run: pnpm --filter desktop test
       - run: pnpm --filter desktop exec node scripts/prepare-release.mjs
-      - run: pnpm --filter desktop tauri build --config .release/tauri.release.json --bundles nsis,msi
+      - run: pnpm --filter desktop tauri build --config .release/tauri.release.json --bundles "nsis,msi"
       - name: Verify publisher signatures
         shell: pwsh
         run: |

@@ -79,6 +79,9 @@ export function useClock({
 		queryKey: ["clock-status", scopeKey],
 		queryFn: async () => {
 			const status = await invoke<ClockStatus>("get_clock_status");
+			void queryClient.invalidateQueries({
+				queryKey: ["clock-journal", scopeKey],
+			});
 			setRefreshScope((previous) => (previous === scopeKey ? null : previous));
 			return status;
 		},
@@ -94,7 +97,7 @@ export function useClock({
 		queryFn: () =>
 			invoke<ClockJournal>("sync_clock_commands", { force: false }),
 		enabled,
-		refetchInterval: (query) => query.state.data?.busy ? 1000 : 30000,
+		refetchInterval: (query) => (query.state.data?.busy ? 1000 : 30000),
 		refetchOnWindowFocus: true,
 		retry: 1,
 	});
@@ -102,7 +105,7 @@ export function useClock({
 	const refreshAfterCommands = useCallback(() => {
 		void queryClient.invalidateQueries({ queryKey: ["clock-status"] });
 		void queryClient.invalidateQueries({ queryKey: ["clock-journal"] });
-        void queryClient.invalidateQueries({ queryKey: ["desktop-context"] });
+		void queryClient.invalidateQueries({ queryKey: ["desktop-context"] });
 	}, [queryClient]);
 
 	const mutation = useMutation({
@@ -140,14 +143,13 @@ export function useClock({
 				void queryClient.invalidateQueries({ queryKey: ["clock-status"] });
 			}
 			void queryClient.invalidateQueries({ queryKey: ["clock-journal"] });
-        void queryClient.invalidateQueries({ queryKey: ["desktop-context"] });
 			void queryClient.invalidateQueries({ queryKey: ["desktop-context"] });
 		},
 		onError: (error: ClockCommandFailure) => {
 			uncertainPersistence.current = error.kind === "persistenceUncertain";
 			setActionFailure(error);
 			void queryClient.invalidateQueries({ queryKey: ["clock-journal"] });
-        void queryClient.invalidateQueries({ queryKey: ["desktop-context"] });
+			void queryClient.invalidateQueries({ queryKey: ["desktop-context"] });
 		},
 	});
 
@@ -210,6 +212,7 @@ export function useClock({
 		journal?.commandsEnabled &&
 		journal?.breaksEnabled &&
 		journal?.legacy.total === 0 &&
+		!journal?.workChangedElsewhere &&
 		!savedNeedReview &&
 		!retained &&
 		actionFailure?.kind !== "persistenceUncertain" &&

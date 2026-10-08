@@ -163,4 +163,20 @@ describe("desktop context and browser handoff", () => {
 		).toBe(403);
 		expect(session.switches).toHaveLength(1);
 	});
+	it("opens the employee profile for timezone updates only after the same account and organization confirmation", async () => {
+		const destination = url.replace("section=time", "section=preferences");
+		const preview = await browser.GET(new Request(destination));
+		expect(preview.status).toBe(200);
+		expect(session.switches).toEqual([]);
+		const response = await browser.POST(
+			new Request(destination, {
+				method: "POST",
+				headers: { origin: "http://localhost:3000" },
+			}),
+		);
+		expect(response.headers.get("Location")).toBe(
+			"http://localhost:3000/de/settings/profile",
+		);
+		expect(session.switches).toEqual(["t780-org"]);
+	});
 });

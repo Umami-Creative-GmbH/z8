@@ -261,3 +261,46 @@ async fn status_for_a_different_employee_cannot_seed_offline_clocking() {
         .is_none());
     requests.join().unwrap();
 }
+
+#[tokio::test]
+async fn another_devices_confirmed_work_overrides_a_pending_close_without_retargeting_it() {
+    let device = Device::new();
+    let endpoint = test_http::free_endpoint();
+    device.negotiated_with(&endpoint, "org-1", true, BREAK_KINDS);
+    device
+        .act(&endpoint, ClockCommand::StartBreak)
+        .await
+        .unwrap();
+    let original = device.saved()[0].clone();
+    let capabilities = support::capabilities_with("org-1", "available", BREAK_KINDS)
+        .replace("\"lookup\":\"available\"", "\"lookup\":\"unavailable\"");
+    let status = support::status(true).replace(support::PERIOD, "new-period-from-another-device");
+    let requests = test_http::serve_on(&endpoint, 3, move |index, _| {
+        Some((
+            200,
+            if index == 1 {
+                status.clone()
+            } else {
+                capabilities.clone()
+            },
+        ))
+    });
+    crate::clock_command::refresh_status(&device.at(&endpoint, TOKEN))
+        .await
+        .unwrap();
+    let journal = crate::clock_command::sync(
+        &device.at(&endpoint, TOKEN),
+        crate::command_sync::Pacing::Now,
+    )
+    .await
+    .unwrap();
+    assert!(!journal.on_break);
+    assert!(journal.work_changed_elsewhere);
+    assert!(journal.projection.unwrap().is_clocked_in);
+    assert_eq!(device.saved()[0].command, original.command);
+    assert_eq!(
+        device.saved()[0].state,
+        crate::command_store::CommandState::Pending
+    );
+    requests.join().unwrap();
+}

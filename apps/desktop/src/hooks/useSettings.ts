@@ -5,42 +5,42 @@ import { useEffect, useState } from "react";
 import type { Settings } from "../types";
 
 export function useSettings() {
-  const queryClient = useQueryClient();
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+	const queryClient = useQueryClient();
+	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  const settingsQuery = useQuery({
-    queryKey: ["settings"],
-    queryFn: () => invoke<Settings>("get_settings"),
-    staleTime: Infinity,
-  });
+	const settingsQuery = useQuery({
+		queryKey: ["settings"],
+		queryFn: () => invoke<Settings>("get_settings"),
+		staleTime: Infinity,
+	});
 
-  // Listen for settings open event from tray menu
-  useEffect(() => {
-    const unlisten = listen("open_settings", () => {
-      setIsSettingsOpen(true);
-    });
+	// Listen for settings open event from tray menu
+	useEffect(() => {
+		const unlisten = listen("open_settings", () => {
+			setIsSettingsOpen(true);
+		});
 
-    return () => {
-      unlisten.then((fn) => fn());
-    };
-  }, []);
+		return () => {
+			unlisten.then((fn) => fn());
+		};
+	}, []);
 
-  const saveMutation = useMutation<void, Error, Omit<Settings, "version">>({
-    mutationFn: (settings: Omit<Settings, "version">) =>
-      invoke<void>("save_settings", settings),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["settings"] });
-    },
-  });
+	const saveMutation = useMutation<void, Error, Omit<Settings, "version">>({
+		mutationFn: (settings: Omit<Settings, "version">) =>
+			invoke<void>("save_settings", settings),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["settings"] });
+		},
+	});
 
-  return {
-    settings: settingsQuery.data,
-    error: settingsQuery.error ? String(settingsQuery.error) : null,
-    refetch: settingsQuery.refetch,
-    isLoading: settingsQuery.isLoading,
-    saveSettings: saveMutation.mutateAsync,
-    isSaving: saveMutation.isPending,
-    isSettingsOpen,
-    setIsSettingsOpen,
-  };
+	return {
+		settings: settingsQuery.data,
+		error: settingsQuery.error ? String(settingsQuery.error) : null,
+		refetch: settingsQuery.refetch,
+		isLoading: settingsQuery.isLoading,
+		saveSettings: saveMutation.mutateAsync,
+		isSaving: saveMutation.isPending,
+		isSettingsOpen,
+		setIsSettingsOpen,
+	};
 }

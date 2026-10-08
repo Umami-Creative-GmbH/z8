@@ -31,34 +31,33 @@ export function ClockButton({
 }: ClockButtonProps) {
 	const { t } = useI18n();
 	const elapsed = useElapsedTimer(startTime);
-	const action = isClockedIn
-		? "Clock out"
-		: isOnBreak
-			? "Resume work"
-			: "Clock in";
+	const mode = isClockedIn ? "working" : isOnBreak ? "break" : "ready";
+	const action = {
+		working: "Clock out",
+		break: "Resume work",
+		ready: "Clock in",
+	}[mode];
+	const title = isClockedIn
+		? formatDuration(elapsed)
+		: t(
+				isOnBreak
+					? "On break"
+					: disabled
+						? "Clock actions paused"
+						: "Ready to work",
+			);
+	const subtitle = isClockedIn
+		? "Time elapsed"
+		: disabled
+			? "Check status and saved actions"
+			: action;
 	return (
 		<div className="clock-container">
 			<div className="clock-display">
 				<div className={isClockedIn ? "clock-timer" : "clock-ready"}>
-					{isClockedIn
-						? formatDuration(elapsed)
-						: t(
-								isOnBreak
-									? "On break"
-									: disabled
-										? "Clock actions paused"
-										: "Ready to work",
-							)}
+					{title}
 				</div>
-				<div className="clock-label">
-					{t(
-						isClockedIn
-							? "Time elapsed"
-							: disabled
-								? "Check status and saved actions"
-								: action,
-					)}
-				</div>
+				<div className="clock-label">{t(subtitle)}</div>
 			</div>
 			<button
 				type="button"

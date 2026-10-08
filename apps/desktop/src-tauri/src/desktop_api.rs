@@ -231,7 +231,7 @@ pub async fn open_webapp(
     let id = organizations["activeOrganizationId"]
         .as_str()
         .ok_or("Select an organization first.")?;
-    if !matches!(section.as_str(), "time" | "reports") {
+    if !matches!(section.as_str(), "time" | "reports" | "preferences") {
         return Err("Unknown Z8 section.".into());
     }
     let user_id = organizations["userId"]

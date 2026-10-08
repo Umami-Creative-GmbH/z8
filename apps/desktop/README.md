@@ -6,7 +6,7 @@ Windows-first employee clocking companion, built with Tauri, Rust and React. Sup
 pnpm --filter desktop dev
 pnpm --filter desktop tauri dev
 pnpm --filter desktop test
-pnpm --filter desktop tauri build --bundles nsis,msi
+pnpm --filter desktop tauri build --bundles "nsis,msi"
 ~~~
 
 Use trusted HTTPS for the Z8 server. Offline capture requires a previous successful negotiation by the same server/account/organization and an eligible server offering durable version-2 commands plus atomic breaks. Clocking is paused when storage, eligibility or recovery is unresolved.

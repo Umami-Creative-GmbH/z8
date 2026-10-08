@@ -10,7 +10,7 @@ From the repository root, use pnpm:
 ~~~powershell
 pnpm --filter desktop test
 pnpm --filter desktop build
-pnpm --filter desktop tauri build --bundles nsis,msi
+pnpm --filter desktop tauri build --bundles "nsis,msi"
 pnpm --filter webapp typecheck
 pnpm --filter webapp test:integration src/app/api/desktop/open/route.integration.test.ts src/app/api/time-entries/commands/route.integration.test.ts
 ~~~

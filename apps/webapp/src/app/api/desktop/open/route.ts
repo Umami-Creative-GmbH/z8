@@ -9,7 +9,11 @@ import {
 	ClockingAccessError,
 	clockingService,
 } from "@/lib/time-tracking/clocking-service";
-const paths = { time: "/time-tracking", reports: "/reports" } as const;
+const paths = {
+	time: "/time-tracking",
+	reports: "/reports",
+	preferences: "/settings/profile",
+} as const;
 function escape(value: string) {
 	return value.replace(
 		/[&<>"']/g,
@@ -28,7 +32,7 @@ async function handoff(request: Request) {
 	if (
 		!organizationId ||
 		!userId ||
-		(section !== "time" && section !== "reports")
+		(section !== "time" && section !== "reports" && section !== "preferences")
 	)
 		return {
 			response: NextResponse.json(
@@ -66,7 +70,13 @@ async function handoff(request: Request) {
 		userId,
 		activeOrganizationId: organizationId,
 	});
-	return { organizationId, section, language, origin };
+	return {
+		organizationId,
+		section,
+		destination: paths[section],
+		language,
+		origin,
+	};
 }
 /** A browser cookie may belong to another account or organization. Show the
  * destination and require a browser gesture before switching its context. */
@@ -127,10 +137,7 @@ export async function POST(request: Request) {
 				{ status: 403 },
 			);
 		const response = NextResponse.redirect(
-			new URL(
-				`/${target.language}${target.section === "time" ? paths.time : paths.reports}`,
-				target.origin,
-			),
+			new URL(`/${target.language}${target.destination}`, target.origin),
 			303,
 		);
 		for (const cookie of switched.headers.getSetCookie())

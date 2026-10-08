@@ -166,6 +166,7 @@ pub fn run() {
             desktop_api::open_webapp,
             desktop_api::get_organizations,
             desktop_api::switch_organization,
+            commands::get_device_timezone,
             commands::get_clock_status,
             commands::clock_in,
             commands::clock_out,

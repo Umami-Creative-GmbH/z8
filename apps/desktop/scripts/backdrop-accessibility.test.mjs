@@ -16,7 +16,10 @@ function elementContaining(file, marker, closingTag = "/>") {
 }
 
 for (const [file, marker] of [
-	["src/components/OrganizationSelector.tsx", 'className="org-dropdown-backdrop"'],
+	[
+		"src/components/OrganizationSelector.tsx",
+		'className="org-dropdown-backdrop"',
+	],
 ]) {
 	test(`${file} backdrop is pointer-only`, () => {
 		const backdrop = elementContaining(file, marker);
