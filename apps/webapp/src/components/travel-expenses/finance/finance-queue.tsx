@@ -47,7 +47,12 @@ import {
 } from "../report/format";
 import { reportName } from "../report-name";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
-import { BulkReimbursementDialog, type BulkReimbursementItem } from "./bulk-reimbursement-dialog";
+import {
+	BulkReimbursementDialog,
+	type BulkReimbursementItem,
+	isReimbursableInFull,
+	settlementSourceKey,
+} from "./bulk-reimbursement-dialog";
 import { BalanceText, SettlementStateBadge } from "./settlement-status";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -96,13 +101,11 @@ function SourceIcon({ account }: { account: SettlementAccount }) {
 }
 
 function accountKey(account: SettlementAccount): string {
-	return `${account.source.type}:${account.source.id}`;
+	return settlementSourceKey(account.source);
 }
 
-/** Bulk reimbursement (#754) pays an account in full: only one awaiting reimbursement. */
-function isSelectable(account: SettlementAccount): boolean {
-	return account.summary.state === "outstanding" && account.currency !== null;
-}
+/** Bulk reimbursement (#754) pays an account in full, so only such accounts are offered. */
+const isSelectable = isReimbursableInFull;
 
 function accountLabel(t: Translate, locale: string, account: SettlementAccount): string {
 	return `${account.employeeName ?? "—"} · ${accountTitle(t, locale, account).name}`;
@@ -264,7 +267,7 @@ function SelectionBar({
 			<Checkbox
 				aria-label={t(
 					"travelExpenses.finance.bulk.selectAll",
-					"Select all open expenses on this page",
+					"Select all expenses awaiting reimbursement on this page",
 				)}
 				checked={all ? true : selected.length > 0 ? "indeterminate" : false}
 				disabled={selectable.length === 0}
@@ -327,7 +330,7 @@ function QueuePagination({
  * reader's scope with their employee-paid entitlement, company-paid costs and
  * balance, filtered and paged (#753). Partial payments and recoveries are
  * recorded on each expense's page; officers who record reimbursements can also
- * select open expenses here and mark them reimbursed in full at once (#754).
+ * select expenses awaiting reimbursement here and mark them reimbursed in full at once (#754).
  * With `coverage: "uncovered"` (#756), owners and admins see only what awaits
  * reimbursement and no expense officer covers.
  */

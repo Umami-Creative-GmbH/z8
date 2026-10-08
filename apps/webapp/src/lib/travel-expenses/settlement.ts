@@ -200,6 +200,29 @@ export function parseSettlementCommand(
 	}
 	if (!currencyValid) errors.push({ field: "currency", code: "invalid" });
 
+	const payment = parseSettlementPayment(input, context);
+	if (!payment.ok) errors.push(...payment.errors);
+
+	if (errors.length > 0 || !kind || units === null || !payment.ok) return { ok: false, errors };
+	return {
+		ok: true,
+		command: {
+			kind,
+			amount: formatUnits(units, STORED_AMOUNT_SCALE),
+			currency,
+			...payment.payment,
+		},
+	};
+}
+
+/** The payment details of an entry; bulk reimbursement (#754) shares them across entries. */
+export type SettlementPayment = Pick<SettlementCommand, "occurredOn" | "reference" | "note">;
+
+export function parseSettlementPayment(
+	input: { occurredOn: string; reference: string; note?: string | null },
+	context: { latestDate: string },
+): { ok: true; payment: SettlementPayment } | { ok: false; errors: SettlementCommandFieldError[] } {
+	const errors: SettlementCommandFieldError[] = [];
 	const occurredOn = plainDate(input.occurredOn.trim());
 	const latest = plainDate(context.latestDate);
 	if (!input.occurredOn.trim()) errors.push({ field: "occurredOn", code: "required" });
@@ -219,43 +242,8 @@ export function parseSettlementCommand(
 		errors.push({ field: "note", code: "too_long" });
 	}
 
-	if (errors.length > 0 || !kind || units === null || !occurredOn) return { ok: false, errors };
-	return {
-		ok: true,
-		command: {
-			kind,
-			amount: formatUnits(units, STORED_AMOUNT_SCALE),
-			currency,
-			occurredOn: occurredOn.toString(),
-			reference,
-			note,
-		},
-	};
-}
-
-/** The payment details many entries share (bulk reimbursement, #754). */
-export type SettlementPayment = Pick<SettlementCommand, "occurredOn" | "reference" | "note">;
-
-const PAYMENT_FIELDS: ReadonlySet<SettlementCommandField> = new Set([
-	"occurredOn",
-	"reference",
-	"note",
-]);
-
-/** Checks payment details alone, with the rules `parseSettlementCommand` applies to them. */
-export function parseSettlementPayment(
-	input: { occurredOn: string; reference: string; note?: string | null },
-	context: { latestDate: string },
-): { ok: true; payment: SettlementPayment } | { ok: false; errors: SettlementCommandFieldError[] } {
-	const parsed = parseSettlementCommand(
-		{ kind: "reimbursement", amount: "1", currency: "EUR", ...input },
-		context,
-	);
-	if (!parsed.ok) {
-		return { ok: false, errors: parsed.errors.filter((error) => PAYMENT_FIELDS.has(error.field)) };
-	}
-	const { occurredOn, reference, note } = parsed.command;
-	return { ok: true, payment: { occurredOn, reference, note } };
+	if (errors.length > 0 || !occurredOn) return { ok: false, errors };
+	return { ok: true, payment: { occurredOn: occurredOn.toString(), reference, note } };
 }
 
 export type SettlementPlanRefusal =

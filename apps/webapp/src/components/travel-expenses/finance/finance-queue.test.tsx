@@ -426,7 +426,9 @@ describe("bulk mark as reimbursed (#754)", () => {
 		expect(action.hasAttribute("disabled")).toBe(true);
 
 		await user.click(
-			screen.getByRole("checkbox", { name: "Select all open expenses on this page" }),
+			screen.getByRole("checkbox", {
+				name: "Select all expenses awaiting reimbursement on this page",
+			}),
 		);
 		expect(screen.getByText("3 selected")).toBeTruthy();
 		await user.click(action);
@@ -492,7 +494,9 @@ describe("bulk mark as reimbursed (#754)", () => {
 		const user = userEvent.setup();
 		mount();
 		await user.click(
-			await screen.findByRole("checkbox", { name: "Select all open expenses on this page" }),
+			await screen.findByRole("checkbox", {
+				name: "Select all expenses awaiting reimbursement on this page",
+			}),
 		);
 		await user.click(screen.getByRole("button", { name: "Mark as reimbursed" }));
 		const dialog = await screen.findByRole("dialog", { name: "Mark as reimbursed" });
@@ -532,6 +536,25 @@ describe("bulk mark as reimbursed (#754)", () => {
 		).toBeTruthy();
 		expect(within(dialog).getByText("A payment cannot be dated in the future.")).toBeTruthy();
 		expect(mocks.markReimbursed).not.toHaveBeenCalled();
+	});
+
+	it("offers only accounts one payment in their own currency reimburses in full", async () => {
+		const eur = report.summary.currencies[0];
+		if (!eur) throw new Error("no line");
+		// An approved adjustment in another currency also awaits reimbursement.
+		const twoCurrencies = {
+			...openReport("report-4", "Alex", "EUR", "89.90"),
+			summary: {
+				state: "outstanding" as const,
+				currencies: [{ ...eur, currency: "CHF", balance: "5.00", entitlement: "5.00" }, eur],
+			},
+		};
+		mocks.getQueue.mockResolvedValue(page([report, twoCurrencies]));
+		mount();
+		expect(
+			await screen.findByRole("checkbox", { name: "Select Robin · Customer workshop" }),
+		).toBeTruthy();
+		expect(screen.queryByRole("checkbox", { name: /Select Alex/ })).toBeNull();
 	});
 
 	it("offers no selection to readers who cannot record reimbursements", async () => {

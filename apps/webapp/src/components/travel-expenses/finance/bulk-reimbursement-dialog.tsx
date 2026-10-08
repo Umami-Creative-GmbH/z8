@@ -5,8 +5,8 @@ import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useRef, useState } from "react";
-import { Temporal } from "temporal-polyfill";
 import { markTravelExpensesReimbursedAction } from "@/app/[locale]/(app)/travel-expenses/finance-actions";
+import { useUserTimezone } from "@/components/providers/user-preferences-provider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -28,19 +28,17 @@ import {
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
-import { systemClock } from "@/lib/datetime/temporal-core";
-import type {
-	BulkReimbursementOutcome,
-	BulkReimbursementRow,
-} from "@/lib/travel-expenses/bulk-reimbursement";
+import { comparePlainDates, parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
+import type { BulkReimbursementRow } from "@/lib/travel-expenses/bulk-reimbursement";
 import { latestCalendarDate } from "@/lib/travel-expenses/future-dates";
 import {
+	type CurrencySettlement,
 	parseSettlementPayment,
 	SETTLEMENT_NOTE_MAX_LENGTH,
 	SETTLEMENT_REFERENCE_MAX_LENGTH,
 	type SettlementCommandFieldError,
 } from "@/lib/travel-expenses/settlement";
-import type { SettlementAccount } from "@/lib/travel-expenses/settlement-store";
+import type { SettlementAccount, SettlementSource } from "@/lib/travel-expenses/settlement-store";
 import { formatMoney } from "../report/format";
 import { settlementFieldMessage } from "./record-reimbursement-form";
 
@@ -59,35 +57,38 @@ interface FormValues {
 }
 type FormField = keyof FormValues;
 
-function sourceKey(account: SettlementAccount): string {
-	return `${account.source.type}:${account.source.id}`;
+export function settlementSourceKey(source: SettlementSource): string {
+	return `${source.type}:${source.id}`;
 }
 
-/** The balance the officer sees: the account currency's outstanding line. */
-function expectedBalance(account: SettlementAccount) {
+/** The account currency's line, when it is all that awaits reimbursement. */
+function payableLine(account: SettlementAccount): CurrencySettlement | null {
 	const line = account.summary.currencies.find((entry) => entry.currency === account.currency);
-	return { currency: line?.currency ?? "", amount: line?.balance ?? "0.00" };
+	if (!line || line.state !== "outstanding") return null;
+	const othersSettled = account.summary.currencies.every(
+		(entry) => entry === line || entry.state === "settled",
+	);
+	return othersSettled ? line : null;
+}
+
+/** Whether one payment in the account currency reimburses the account in full. */
+export function isReimbursableInFull(account: SettlementAccount): boolean {
+	return payableLine(account) !== null;
 }
 
 /**
- * The officer's calendar date as the default payment date. The payment date
- * is plain and only proposed here; it never comes after the latest date
- * anywhere, the latest the server accepts.
+ * Today in the officer's own time zone (their preference), as the proposed
+ * payment date; never after the latest date the server accepts.
  */
-function defaultPaymentDate(): string {
+function defaultPaymentDate(timeZone: string): string {
 	const now = systemClock.nowInstant();
-	const local = Temporal.Now.plainDateISO();
-	const latest = Temporal.PlainDate.from(latestCalendarDate(now));
-	return (Temporal.PlainDate.compare(local, latest) > 0 ? latest : local).toString();
+	const today = now.toZonedDateTimeISO(timeZone).toPlainDate();
+	const latest = parsePlainDate(latestCalendarDate(now));
+	return (comparePlainDates(today, latest) > 0 ? latest : today).toString();
 }
 
-function outcomeText(
-	t: Translate,
-	locale: string,
-	outcome: BulkReimbursementOutcome,
-	row: BulkReimbursementRow,
-): string {
-	switch (outcome) {
+function outcomeText(t: Translate, locale: string, row: BulkReimbursementRow): string {
+	switch (row.outcome) {
 		case "reimbursed":
 			return t("travelExpenses.finance.bulk.outcome.reimbursed", "Reimbursed {amount}", {
 				amount: row.amount && row.currency ? formatMoney(locale, row.amount, row.currency) : "",
@@ -186,6 +187,7 @@ function BulkReimbursementForm({
 	onProcessed: (rows: BulkReimbursementRow[]) => void;
 }) {
 	const { t } = useTranslate();
+	const timeZone = useUserTimezone();
 	const attempt = useRef<{ values: string; key: string } | null>(null);
 	const [problem, setProblem] = useState<string | null>(null);
 	const parse = (value: FormValues) =>
@@ -207,7 +209,7 @@ function BulkReimbursementForm({
 
 	const form = useForm({
 		defaultValues: {
-			occurredOn: defaultPaymentDate(),
+			occurredOn: defaultPaymentDate(timeZone),
 			reference: "",
 			note: "",
 		} satisfies FormValues,
@@ -234,7 +236,11 @@ function BulkReimbursementForm({
 			}
 			const accounts = items.map(({ account }) => ({
 				source: account.source,
-				expectedBalance: expectedBalance(account),
+				// The balance shown: exactly this is reimbursed, or nothing if it changed.
+				expectedBalance: {
+					currency: account.currency ?? "",
+					amount: payableLine(account)?.balance ?? "0.00",
+				},
 			}));
 			const values = JSON.stringify([parsed.payment, accounts]);
 			if (attempt.current?.values !== values) {
@@ -369,7 +375,9 @@ function BulkReimbursementResults({
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const labels = new Map(items.map((item) => [sourceKey(item.account), item.label]));
+	const labels = new Map(
+		items.map((item) => [settlementSourceKey(item.account.source), item.label]),
+	);
 	const reimbursed = rows.filter((row) => row.outcome === "reimbursed").length;
 	return (
 		<>
@@ -386,7 +394,7 @@ function BulkReimbursementResults({
 			</DialogHeader>
 			<ul className="divide-y rounded-md border">
 				{rows.map((row) => {
-					const key = `${row.source.type}:${row.source.id}`;
+					const key = settlementSourceKey(row.source);
 					const done = row.outcome === "reimbursed";
 					return (
 						<li key={key} className="flex items-start gap-3 px-3 py-2 text-sm">
@@ -404,7 +412,7 @@ function BulkReimbursementResults({
 							<div className="min-w-0 flex-1">
 								<p className="truncate font-medium">{labels.get(key) ?? "—"}</p>
 								<p className={done ? "tabular-nums" : "text-muted-foreground"}>
-									{outcomeText(t, locale, row.outcome, row)}
+									{outcomeText(t, locale, row)}
 								</p>
 							</div>
 						</li>

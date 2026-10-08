@@ -90,6 +90,8 @@ function outcomeOf(result: RecordSettlementResult): BulkReimbursementOutcome {
 				case "mixed":
 					return "overpaid_or_review";
 				default:
+					// Another currency still awaits reimbursement: one payment cannot settle it in full.
+					if (result.reason === "not_in_full") return "overpaid_or_review";
 					return result.reason === "stale_balance" ? "balance_changed" : "failed";
 			}
 		default:
@@ -164,12 +166,13 @@ export async function recordBulkReimbursement(
 				},
 				now,
 			);
-			if (result.status === "recorded") {
-				if (!result.replayed) await auditReimbursement(actor, account.source, result, now);
-				rows.push(row(account.source, "reimbursed", result));
-			} else {
+			if (result.status !== "recorded") {
 				rows.push(row(account.source, outcomeOf(result)));
+				continue;
 			}
+			rows.push(row(account.source, "reimbursed", result));
+			// After the row: the money is recorded whatever happens to its audit entry.
+			if (!result.replayed) await auditReimbursement(actor, account.source, result, now);
 		} catch (error) {
 			logger.error(
 				{ error, organizationId: actor.organizationId, source: account.source },
@@ -181,12 +184,16 @@ export async function recordBulkReimbursement(
 	return { status: "processed", rows };
 }
 
+/**
+ * Audited here, not in the action, so every caller (the queue, #755's export
+ * batch) audits each new entry exactly once. Never throws.
+ */
 async function auditReimbursement(
 	actor: SettlementActor,
 	source: SettlementSource,
 	result: Extract<RecordSettlementResult, { status: "recorded" }>,
 	now: Instant,
-) {
+): Promise<void> {
 	await logAudit({
 		action: AuditAction.TRAVEL_EXPENSE_REIMBURSEMENT_RECORDED,
 		actorId: actor.userId,
@@ -203,5 +210,5 @@ async function auditReimbursement(
 			bulk: true,
 		},
 		timestamp: dateFromInstant(now),
-	});
+	}).catch((error) => logger.error({ error }, "Failed to audit a bulk reimbursement"));
 }
