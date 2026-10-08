@@ -8,8 +8,9 @@ import { getAuthContext } from "@/lib/auth-helpers";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
-import { loadFinanceActor } from "@/lib/travel-expenses/finance-access";
+import { financeActorReads, loadFinanceActor } from "@/lib/travel-expenses/finance-access";
 import { latestCalendarDate } from "@/lib/travel-expenses/future-dates";
+import { isSourceInOfficerScope } from "@/lib/travel-expenses/officer-scope-read";
 import {
 	parseSettlementCommand,
 	type SettlementCommandFieldError,
@@ -27,8 +28,8 @@ import {
 
 /**
  * Finance queue and recorded reimbursements (#612). Finance access is its own
- * permission (`TravelExpenseFinance`); the employee sees only their own
- * balances. Recording never moves money.
+ * (owners, admins and expense officers within their scope, #747); the
+ * employee sees only their own balances. Recording never moves money.
  */
 
 const sourceSchema = z.object({
@@ -64,10 +65,11 @@ export async function getTravelExpenseFinanceQueue(
 		const parsed = filterSchema.safeParse(filter);
 		if (!parsed.success) return { success: false, error: "Invalid filter" };
 		const actor = await loadFinanceActor();
-		if (!actor?.canRead) return { success: false, error: "Unauthorized" };
+		if (!actor?.scopes.read) return { success: false, error: "Unauthorized" };
 		const { accounts, truncated } = await listFinanceQueue(db, {
 			organizationId: actor.organizationId,
 			filter: parsed.data,
+			scope: actor.scopes.read,
 		});
 		return { success: true, data: { accounts, canSettle: actor.canSettle, truncated } };
 	} catch (error) {
@@ -100,11 +102,16 @@ export async function getTravelExpenseSettlement(
 			};
 		}
 		const actor = await loadFinanceActor();
-		if (!actor?.canRead || !account.approved) return { success: false, error: "Not found" };
-		return {
-			success: true,
-			data: { account, viewer: "finance", canSettle: actor.canSettle },
-		};
+		const subject = { source: parsed.data, employeeId: account.employeeId };
+		// Out of the officer's scope (#747) reads as not found.
+		if (!account.approved || !(await financeActorReads(actor, subject))) {
+			return { success: false, error: "Not found" };
+		}
+		const canSettle = await isSourceInOfficerScope(db, actor?.scopes.settle ?? null, {
+			organizationId: auth.employee.organizationId,
+			...subject,
+		});
+		return { success: true, data: { account, viewer: "finance", canSettle } };
 	} catch (error) {
 		logger.error({ error }, "Failed to load a travel expense settlement");
 		return { success: false, error: "Failed to load the settlement" };
@@ -166,7 +173,7 @@ export async function recordTravelExpenseReimbursementAction(
 		const parsed = recordSchema.safeParse(input);
 		if (!parsed.success) return { success: false, error: "Invalid reimbursement" };
 		const actor = await loadFinanceActor();
-		if (!actor?.canSettle) return { success: false, error: "Unauthorized" };
+		if (!actor?.scopes.settle) return { success: false, error: "Unauthorized" };
 		const now = systemClock.nowInstant();
 		const command = parseSettlementCommand(
 			{
@@ -184,6 +191,7 @@ export async function recordTravelExpenseReimbursementAction(
 			db,
 			{
 				actor,
+				scope: actor.scopes.settle,
 				source: parsed.data.source,
 				idempotencyKey: parsed.data.idempotencyKey,
 				command: command.command,

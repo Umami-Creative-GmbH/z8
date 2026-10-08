@@ -21,6 +21,12 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { loadAdjustmentOriginals, loadApprovedAdjustments } from "./adjustment-read";
+import type { OfficerScope } from "./officer-scope";
+import {
+	claimInOfficerScope,
+	isSourceInOfficerScope,
+	reportInOfficerScope,
+} from "./officer-scope-read";
 import { OWNER_SELF_APPROVAL_REASON } from "./owner-self-approval";
 import {
 	computeSettlement,
@@ -608,6 +614,8 @@ export async function listFinanceQueue(
 	input: {
 		organizationId: string;
 		filter: FinanceQueueFilter;
+		/** Only the reports and claims in this officer scope (#747); every one without. */
+		scope?: OfficerScope;
 		/** Also list approved adjustment reports (#615), which have no account of their own; exports need them. */
 		includeAdjustments?: boolean;
 		/** List approved legacy claims too (default true); exports have no use for them. */
@@ -639,6 +647,7 @@ export async function listFinanceQueue(
 						and(
 							eq(travelExpenseReport.organizationId, input.organizationId),
 							eq(travelExpenseReport.status, "approved"),
+							input.scope ? reportInOfficerScope(input.scope) : undefined,
 						),
 					)
 					.orderBy(desc(travelExpenseReport.decidedAt), desc(travelExpenseReport.id))
@@ -667,6 +676,7 @@ export async function listFinanceQueue(
 						and(
 							eq(travelExpenseClaim.organizationId, input.organizationId),
 							eq(travelExpenseClaim.status, "approved"),
+							input.scope ? claimInOfficerScope(input.scope) : undefined,
 						),
 					)
 					.orderBy(desc(travelExpenseClaim.decidedAt), desc(travelExpenseClaim.id))
@@ -785,6 +795,8 @@ export async function recordSettlementEntry(
 	database: Database,
 	input: {
 		actor: SettlementActor;
+		/** The officer scope the actor records money in (#747); any other account is not found. */
+		scope: OfficerScope;
 		source: SettlementSource;
 		idempotencyKey: string;
 		command: SettlementCommand;
@@ -801,6 +813,12 @@ export async function recordSettlementEntry(
 			{ lock: true },
 		);
 		if (!account) return { status: "not_found" } as const;
+		const inScope = await isSourceInOfficerScope(tx, input.scope, {
+			organizationId: actor.organizationId,
+			source,
+			employeeId: account.employeeId,
+		});
+		if (!inScope) return { status: "not_found" } as const;
 		const replay = await findByIdempotencyKey(tx, actor.organizationId, input.idempotencyKey);
 		if (replay) return replayResult(replay, fingerprint, account);
 		if (account.adjustmentOf) return { status: "adjustment_report" } as const;

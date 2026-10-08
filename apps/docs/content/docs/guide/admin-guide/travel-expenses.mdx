@@ -35,11 +35,15 @@ Telegram approval cards can approve or reject simple reports. Reports with missi
 
 ## Finance
 
-Finance access is separate from approval authority. Organization owners and admins have it by default. In **Settings → Custom Roles**, you can grant the permissions under **Finance** to a custom role:
+Finance access is separate from approval authority. Organization owners and admins have it for every approved report. To give it to someone else, make them an **expense officer** in **Settings → Travel Expenses → Access**:
 
-- **View Travel Expense Finance**: opens **Travel Expenses → Finance** with approved reports, their receipts and balances.
-- **Export Travel Expenses**: creates and downloads export batches. Export batches contain receipts, so this permission only works together with **View Travel Expense Finance**.
-- **Record Travel Expense Reimbursements**: records reimbursements and recovered overpayments.
+- **Scope**: all employees, or specific teams and employees. A team covers the reports of employees who belonged to it when the report was approved. A report stays with its officer after the employee changes team or leaves. You can also name employees who have left, so that their last reports can still be reimbursed.
+- **Can export**: creates and downloads export batches of the reports in scope.
+- **Can record reimbursements**: records reimbursements and recovered overpayments for the reports in scope.
+
+Every expense officer can open **Travel Expenses → Finance** and read the approved reports in their scope, with their receipts and balances. A grant with neither capability is read-only, for example for an auditor. An officer sees an export batch if they created it, if their scope is all employees, or if every report in it is in their scope. Revoking an officer ends their access immediately. Creating, changing and revoking an officer is recorded in the audit log.
+
+The **Finance** permissions of custom roles in **Settings → Custom Roles** still give access to every approved report. They are being replaced by expense officers.
 
 **Exports.** Select approved report revisions and create a batch. A batch contains a CSV of reports, expenses and receipts with explicit amount, currency and date columns, and a ZIP of the receipt files. Each revision is exported once. You can download a completed batch again, and its content stays the same. A failed batch can be retried or cancelled. So can a batch that has been waiting or processing for more than 30 minutes.
 
@@ -54,7 +58,7 @@ If more approved expenses match a finance queue filter than fit on the page, the
 Claims from the earlier claim form are not migrated. Submitted and decided claims keep their original approval, evidence and history. Pending claims can still be decided in the inbox, and approved claims appear in the finance queue. Employees continue drafts one by one with **Continue as report**, and the original draft stays unchanged.
 
 <Callout type="warn">
-Before you rely on the new workflow, set up an expense approver, the mileage and per diem policies you need, and the finance permissions. Only then tell employees to start using reports.
+Before you rely on the new workflow, set up an expense approver, the mileage and per diem policies you need, and your expense officers. Only then tell employees to start using reports.
 </Callout>
 
 <Callout type="info">

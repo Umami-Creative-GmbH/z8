@@ -18,7 +18,7 @@ import {
 import { loadAuthorizedApprovalDetail } from "@/lib/approvals/inbox/authorized-detail";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
-import { loadFinanceActor } from "./finance-access";
+import { financeActorReads, loadFinanceActor } from "./finance-access";
 
 /** Reads share the inbox's existing review scope; reading never creates a binding or changes authority. */
 export async function loadAuthorizedTravelExpenseClaim(claimId: string) {
@@ -59,9 +59,13 @@ export async function loadAuthorizedTravelExpenseClaim(claimId: string) {
 				break;
 			}
 		}
-		// Finance (#612) reads approved claims; reviewing never grants this.
+		// Finance (#612) reads approved claims in their officer scope (#747);
+		// reviewing never grants this.
 		if (!authorized && claim.status === "approved") {
-			authorized = (await loadFinanceActor())?.canRead === true;
+			authorized = await financeActorReads(await loadFinanceActor(), {
+				source: { type: "legacy_claim", id: claim.id },
+				employeeId: claim.employeeId,
+			});
 		}
 		if (!authorized) return { status: "not_found" } as const;
 	}

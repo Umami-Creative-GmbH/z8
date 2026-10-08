@@ -110,6 +110,11 @@ export enum AuditAction {
 	PAYROLL_ACCESS_GRANT_CHANGED = "payroll_access.grant_changed",
 	PAYROLL_ACCESS_GRANT_REVOKED = "payroll_access.grant_revoked",
 
+	// Expense Officer Grant Operations
+	EXPENSE_OFFICER_GRANT_CREATED = "expense_officer.grant_created",
+	EXPENSE_OFFICER_GRANT_CHANGED = "expense_officer.grant_changed",
+	EXPENSE_OFFICER_GRANT_REVOKED = "expense_officer.grant_revoked",
+
 	// App Access Operations
 	APP_ACCESS_GRANTED = "app_access.granted",
 	APP_ACCESS_REVOKED = "app_access.revoked",

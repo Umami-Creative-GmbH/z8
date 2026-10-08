@@ -10,20 +10,23 @@ import {
 	type CreateTravelExpenseExportBatchResult,
 	cancelTravelExpenseExportBatch,
 	createTravelExpenseExportBatch,
+	isTravelExpenseExportBatchVisible,
 	listExportableTravelExpenseRevisions,
 	listTravelExpenseExportBatches,
 	retryTravelExpenseExportBatch,
 	TRAVEL_EXPENSE_EXPORT_MAX_REVISIONS,
 	type TravelExpenseExportBatchView,
+	type TravelExpenseExportViewer,
 } from "@/lib/travel-expenses/export-store";
 import { type FinanceActor, loadFinanceActor } from "@/lib/travel-expenses/finance-access";
+import type { OfficerScope } from "@/lib/travel-expenses/officer-scope";
 import type { SettlementSummary } from "@/lib/travel-expenses/settlement";
 import type { SettlementTitle } from "@/lib/travel-expenses/settlement-store";
 
 /**
  * Tracked export batches of approved report revisions (#613). Exporting is
- * its own finance permission (`export:TravelExpenseFinance`); an export never
- * records a reimbursement.
+ * its own finance capability, scoped for expense officers (#747); an export
+ * never records a reimbursement.
  */
 
 export interface ExportableRevisionRow {
@@ -56,10 +59,29 @@ const createSchema = z.object({
 		.max(TRAVEL_EXPENSE_EXPORT_MAX_REVISIONS),
 });
 
-/** Export access needs finance read too: a batch holds org-wide approved evidence and receipts. */
-async function exportActor(): Promise<FinanceActor | null> {
+type ExportActor = FinanceActor & { exportScope: OfficerScope };
+
+/**
+ * Export access needs finance read too: a batch holds approved evidence and
+ * receipts. An expense officer exports, and sees batches, in their scope (#747).
+ */
+async function exportActor(): Promise<ExportActor | null> {
 	const actor = await loadFinanceActor();
-	return actor?.canExport && actor.canRead ? actor : null;
+	const exportScope = actor?.scopes.export;
+	return actor?.canExport && actor.canRead && exportScope ? { ...actor, exportScope } : null;
+}
+
+function viewerOf(actor: ExportActor): TravelExpenseExportViewer {
+	return { employeeId: actor.employeeId, scope: actor.exportScope };
+}
+
+/** Whether the actor sees the batch; one they do not see does not exist to them. */
+function seesBatch(actor: ExportActor, batchId: string): Promise<boolean> {
+	return isTravelExpenseExportBatchVisible(db, {
+		organizationId: actor.organizationId,
+		batchId,
+		viewer: viewerOf(actor),
+	});
 }
 
 function audit(
@@ -86,8 +108,14 @@ export async function getTravelExpenseExports(): Promise<
 		const actor = await exportActor();
 		if (!actor) return { success: false, error: "Unauthorized" };
 		const [exportable, batches] = await Promise.all([
-			listExportableTravelExpenseRevisions(db, { organizationId: actor.organizationId }),
-			listTravelExpenseExportBatches(db, { organizationId: actor.organizationId }),
+			listExportableTravelExpenseRevisions(db, {
+				organizationId: actor.organizationId,
+				scope: actor.exportScope,
+			}),
+			listTravelExpenseExportBatches(db, {
+				organizationId: actor.organizationId,
+				viewer: viewerOf(actor),
+			}),
 		]);
 		return {
 			success: true,
@@ -137,6 +165,7 @@ export async function createTravelExpenseExportAction(
 		if (!actor) return { success: false, error: "Unauthorized" };
 		const result = await createTravelExpenseExportBatch(db, {
 			actor,
+			scope: actor.exportScope,
 			idempotencyKey: parsed.data.idempotencyKey,
 			selection: parsed.data.selection,
 		});
@@ -175,6 +204,7 @@ export async function retryTravelExpenseExportAction(
 		if (!batchIdSchema.safeParse(batchId).success) return { success: false, error: "Not found" };
 		const actor = await exportActor();
 		if (!actor) return { success: false, error: "Unauthorized" };
+		if (!(await seesBatch(actor, batchId))) return { success: false, error: "Not found" };
 		const result = await retryTravelExpenseExportBatch(db, {
 			organizationId: actor.organizationId,
 			batchId,
@@ -204,6 +234,7 @@ export async function cancelTravelExpenseExportAction(
 		if (!batchIdSchema.safeParse(batchId).success) return { success: false, error: "Not found" };
 		const actor = await exportActor();
 		if (!actor) return { success: false, error: "Unauthorized" };
+		if (!(await seesBatch(actor, batchId))) return { success: false, error: "Not found" };
 		const result = await cancelTravelExpenseExportBatch(db, {
 			organizationId: actor.organizationId,
 			batchId,

@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { loadFinanceActor } from "@/lib/travel-expenses/finance-access";
 import { getTranslate } from "@/tolgee/server";
 
-/** Travel expense finance queue (#612): only with the TravelExpenseFinance read permission. */
+/** Travel expense finance queue (#612): owners, admins and expense officers (#747). */
 async function TravelExpenseFinancePageContent() {
 	const [t, actor] = await Promise.all([getTranslate(), loadFinanceActor()]);
 	if (!actor?.canRead) notFound();

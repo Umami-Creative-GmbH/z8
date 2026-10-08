@@ -80,6 +80,7 @@ function mount() {
 				currencies={<p>Currency cards</p>}
 				rates={<p>Rate cards</p>}
 				exceptions={<p>Exception cards</p>}
+				access={<p>Access cards</p>}
 			/>
 		</QueryClientProvider>,
 	);
@@ -115,6 +116,13 @@ describe("travel expense settings tabs (#689)", () => {
 		mount();
 		expect(screen.getByRole("tab", { name: "Rates" }).getAttribute("aria-selected")).toBe("true");
 		expect(screen.getByText("Rate cards")).toBeTruthy();
+	});
+
+	it("opens the expense officers on the Access tab (#747)", () => {
+		window.history.replaceState(null, "", "/settings/travel-expenses?tab=access");
+		mount();
+		expect(screen.getByRole("tab", { name: "Access" }).getAttribute("aria-selected")).toBe("true");
+		expect(screen.getByText("Access cards")).toBeTruthy();
 	});
 
 	it("writes the chosen tab to the URL and keeps other search params", async () => {
