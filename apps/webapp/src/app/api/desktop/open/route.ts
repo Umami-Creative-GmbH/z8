@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { NextResponse, connection } from "next/server";
+import { connection, NextResponse } from "next/server";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { auth } from "@/lib/auth";
@@ -9,12 +9,13 @@ import {
 	ClockingAccessError,
 	clockingService,
 } from "@/lib/time-tracking/clocking-service";
+
 const paths = {
 	time: "/time-tracking",
 	reports: "/reports",
 	preferences: "/settings/profile",
 } as const;
-function escape(value: string) {
+function escapeHtml(value: string) {
 	return value.replace(
 		/[&<>"']/g,
 		(char) =>
@@ -89,7 +90,7 @@ export async function GET(request: Request) {
 			where: eq(organization.id, target.organizationId),
 			columns: { name: true },
 		});
-		const name = escape(org?.name ?? target.organizationId);
+		const name = escapeHtml(org?.name ?? target.organizationId);
 		const heading =
 			target.language === "de"
 				? "Z8 in der richtigen Organisation öffnen"

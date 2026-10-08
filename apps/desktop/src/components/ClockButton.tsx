@@ -5,7 +5,7 @@ import {
 	IconCoffee,
 } from "@tabler/icons-react";
 import { useElapsedTimer } from "../hooks/useElapsedTimer";
-import { formatDuration } from "../lib/utils";
+import { clockPresentation } from "../lib/clock-presentation";
 import { useI18n } from "../lib/i18n";
 interface ClockButtonProps {
 	isClockedIn: boolean;
@@ -31,31 +31,18 @@ export function ClockButton({
 }: ClockButtonProps) {
 	const { t } = useI18n();
 	const elapsed = useElapsedTimer(startTime);
-	const mode = isClockedIn ? "working" : isOnBreak ? "break" : "ready";
-	const action = {
-		working: "Clock out",
-		break: "Resume work",
-		ready: "Clock in",
-	}[mode];
-	const title = isClockedIn
-		? formatDuration(elapsed)
-		: t(
-				isOnBreak
-					? "On break"
-					: disabled
-						? "Clock actions paused"
-						: "Ready to work",
-			);
-	const subtitle = isClockedIn
-		? "Time elapsed"
-		: disabled
-			? "Check status and saved actions"
-			: action;
+	const blocked = isLoading || !!disabled;
+	const { mode, action, title, subtitle, secondary } = clockPresentation(
+		isClockedIn,
+		isOnBreak,
+		!!disabled,
+		elapsed,
+	);
 	return (
 		<div className="clock-container">
 			<div className="clock-display">
 				<div className={isClockedIn ? "clock-timer" : "clock-ready"}>
-					{title}
+					{t(title)}
 				</div>
 				<div className="clock-label">{t(subtitle)}</div>
 			</div>
@@ -63,47 +50,42 @@ export function ClockButton({
 				type="button"
 				aria-label={t(action)}
 				onClick={isClockedIn ? onClockOut : onClockIn}
-				disabled={isLoading || disabled}
-				className={`clock-button ${isClockedIn ? "clock-button-stop" : "clock-button-start"} ${isLoading || disabled ? "clock-button-disabled" : ""}`}
+				disabled={blocked}
+				className={`clock-button ${isClockedIn ? "clock-button-stop" : "clock-button-start"} ${blocked ? "clock-button-disabled" : ""}`}
 			>
 				<span className="clock-button-inner">
-					{isLoading ? (
-						<IconLoader2
-							size={48}
-							className="clock-spinner"
-							aria-hidden="true"
-						/>
-					) : isClockedIn ? (
-						<IconSquare size={48} aria-hidden="true" />
-					) : (
-						<IconPlayerPlay size={48} aria-hidden="true" />
-					)}
+					<ClockGlyph loading={isLoading} working={isClockedIn} />
 				</span>
 			</button>
 			<div className="clock-action-label">
 				{t(isLoading ? "Processing…" : action)}
 			</div>
-			{isClockedIn && (
+			{secondary && (
 				<button
 					type="button"
 					className="secondary-action"
-					disabled={isLoading || disabled}
-					onClick={onStartBreak}
+					disabled={blocked}
+					onClick={mode === "working" ? onStartBreak : onEndDay}
 				>
-					<IconCoffee size={18} aria-hidden="true" />
-					{t("Start break")}
-				</button>
-			)}
-			{isOnBreak && !isClockedIn && (
-				<button
-					type="button"
-					className="secondary-action"
-					disabled={isLoading || disabled}
-					onClick={onEndDay}
-				>
-					{t("End day")}
+					{mode === "working" && <IconCoffee size={18} aria-hidden="true" />}
+					{t(secondary)}
 				</button>
 			)}
 		</div>
 	);
+}
+
+function ClockGlyph({
+	loading,
+	working,
+}: {
+	loading: boolean;
+	working: boolean;
+}) {
+	if (loading)
+		return (
+			<IconLoader2 size={48} className="clock-spinner" aria-hidden="true" />
+		);
+	if (working) return <IconSquare size={48} aria-hidden="true" />;
+	return <IconPlayerPlay size={48} aria-hidden="true" />;
 }

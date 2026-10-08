@@ -18,9 +18,10 @@ export function TimezoneDialog({
 	useEffect(() => {
 		if (!deviceZone) return;
 		const previous = document.activeElement;
-		modal.current?.showModal();
+		const dialog = modal.current;
+		dialog?.showModal();
 		return () => {
-			modal.current?.close();
+			dialog?.close();
 			if (previous instanceof HTMLElement) previous.focus();
 		};
 	}, [deviceZone]);

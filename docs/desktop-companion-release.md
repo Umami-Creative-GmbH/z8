@@ -3,6 +3,8 @@
 Implementation: #780, desktop 0.2.0. Scope: [confirmed design](desktop-companion-design.md).
 This is a release candidate. Local verification does not establish production adoption, signed distribution, or customer pilot acceptance.
 
+See the [verification record](desktop-companion-verification.md) for local results and the two independent review reports.
+
 ## Local verification
 
 From the repository root, use pnpm:

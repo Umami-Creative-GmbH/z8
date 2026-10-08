@@ -9,6 +9,8 @@ import { useClockFeedback } from "./hooks/useClockFeedback";
 import { useClockTimezone } from "./hooks/useClockTimezone";
 import { ClosingAttributionFields } from "./components/ClosingAttributionFields";
 import { CompanionHeader } from "./components/CompanionHeader";
+import { CompanionFooter } from "./components/CompanionFooter";
+import { ServerSetupNotice } from "./components/ServerSetupNotice";
 import { TimezoneDialog } from "./components/TimezoneDialog";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -195,19 +197,7 @@ function Companion({
 								{t("Organization could not be loaded")}: {organizations.error}
 							</p>
 						)}
-						{clock.journal &&
-							!clock.journal.busy &&
-							(!clock.journal.commandsEnabled ||
-								!clock.journal.breaksEnabled) && (
-								<section className="clock-recovery">
-									<strong>{t("Server setup required")}</strong>
-									<p>
-										{t(
-											"Ask your administrator to enable reliable offline clocking and atomic breaks for this organization.",
-										)}
-									</p>
-								</section>
-							)}
+						<ServerSetupNotice journal={clock.journal} />
 						<UpdateNotice onOpen={() => setIsSettingsOpen(true)} />
 						{contextError && (
 							<p role="alert" className="login-error">
@@ -298,24 +288,11 @@ function Companion({
 							</button>
 						</div>
 					</main>
-					<footer className="app-footer">
-						<div
-							className={`status-badge ${clock.isClockedIn ? "status-active" : "status-inactive"}`}
-						>
-							<span className="status-dot" />
-							<span>
-								{t(
-									onBreak
-										? "On break"
-										: clock.isClockedIn
-											? "Currently working"
-											: clock.isStatusCurrent || clock.journal?.projection
-												? "Not clocked in"
-												: "Clock status unavailable",
-								)}
-							</span>
-						</div>
-					</footer>
+					<CompanionFooter
+						onBreak={onBreak}
+						isClockedIn={clock.isClockedIn}
+						statusKnown={clock.isStatusCurrent || !!clock.journal?.projection}
+					/>
 					<IdleDialog
 						isOpen={
 							isIdleDialogOpen &&

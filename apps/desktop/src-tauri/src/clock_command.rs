@@ -449,7 +449,10 @@ fn confirmed_work_changed(
     };
     commands
         .iter()
-        .filter(|command| command.state.is_active() && command.kind == CommandKind::ClockOut)
+        .filter(|command| {
+            command.state.is_active()
+                && matches!(command.kind, CommandKind::ClockOut | CommandKind::Break)
+        })
         .any(|command| {
             serde_json::from_str::<serde_json::Value>(&command.command)
                 .ok()

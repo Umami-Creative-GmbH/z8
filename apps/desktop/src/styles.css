@@ -1038,7 +1038,7 @@ button {
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
-/* The primary clock and break controls fit the minimum companion window. */
+/* Compact primary controls; supporting workflows scroll within the window. */
 .app-main {
 	gap: 12px;
 	padding: 16px;
@@ -1134,4 +1134,22 @@ button {
 .day-total > .pending-label {
 	grid-column: 1 / -1;
 	text-align: center;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not(.light) {
+		--color-background: oklch(0.155 0.015 260);
+		--color-foreground: oklch(0.985 0.008 260);
+		--color-card: oklch(0.195 0.015 260);
+		--color-muted: oklch(0.23 0.015 260);
+		--color-muted-foreground: oklch(0.74 0.025 260);
+		--color-border: oklch(1 0 0 / 14%);
+		--color-primary: oklch(0.6 0.16 265);
+		--color-primary-foreground: oklch(0.985 0.008 265);
+		--color-success: oklch(0.72 0.12 185);
+		--color-pending: oklch(0.8 0.13 80);
+	}
+	:root:not(.light) {
+		color-scheme: dark;
+	}
 }

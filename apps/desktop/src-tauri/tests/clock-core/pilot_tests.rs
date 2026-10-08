@@ -304,3 +304,54 @@ async fn another_devices_confirmed_work_overrides_a_pending_close_without_retarg
     );
     requests.join().unwrap();
 }
+
+#[tokio::test]
+async fn confirmed_work_also_overrides_an_unresolved_atomic_idle_break_projection() {
+    let device = Device::new();
+    let endpoint = test_http::free_endpoint();
+    device.negotiated_with(&endpoint, "org-1", true, BREAK_KINDS);
+    device
+        .act(
+            &endpoint,
+            ClockCommand::Break {
+                evidence: support::confirmed_break(
+                    Utc::now() - chrono::Duration::minutes(40),
+                    Some("Europe/Berlin"),
+                    Some("Europe/Berlin"),
+                ),
+                location: WorkLocationType::Office,
+            },
+        )
+        .await
+        .unwrap();
+    let original = device.saved()[0].clone();
+    let capabilities = support::capabilities_with("org-1", "available", BREAK_KINDS)
+        .replace("\"lookup\":\"available\"", "\"lookup\":\"unavailable\"");
+    let mut status: serde_json::Value = serde_json::from_str(&support::status(true)).unwrap();
+    let started_at = (Utc::now() - chrono::Duration::minutes(5)).to_rfc3339();
+    status["activeWorkPeriod"]["id"] = "another-devices-period".into();
+    status["activeWorkPeriod"]["startTime"] = started_at.clone().into();
+    let requests = test_http::serve_on(&endpoint, 3, move |index, _| {
+        Some((
+            200,
+            if index == 1 {
+                status.to_string()
+            } else {
+                capabilities.clone()
+            },
+        ))
+    });
+    crate::clock_command::refresh_status(&device.at(&endpoint, TOKEN))
+        .await
+        .unwrap();
+    let journal = crate::clock_command::sync(
+        &device.at(&endpoint, TOKEN),
+        crate::command_sync::Pacing::Now,
+    )
+    .await
+    .unwrap();
+    assert!(journal.work_changed_elsewhere);
+    assert_eq!(journal.projection.unwrap().since, Some(started_at));
+    assert_eq!(device.saved()[0].command, original.command);
+    requests.join().unwrap();
+}

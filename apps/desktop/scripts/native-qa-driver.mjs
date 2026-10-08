@@ -118,6 +118,47 @@ try {
 		console.log(
 			"Native WebView: settings Escape/focus restoration and German clock controls passed.",
 		);
+		const themeButton = ".app-header-actions button[title]";
+		for (
+			let tries = 0;
+			tries < 3 &&
+			!(await page.evaluate(() =>
+				document.documentElement.classList.contains("dark"),
+			));
+			tries++
+		) {
+			await page.click(themeButton);
+		}
+		await page.waitForFunction(() =>
+			document.documentElement.classList.contains("dark"),
+		);
+		const darkBackground = await page.evaluate(
+			() => getComputedStyle(document.body).backgroundColor,
+		);
+		await page.screenshot({
+			path: resolve(".native-qa/german-working-dark.png"),
+		});
+		await page.click(themeButton);
+		await page.waitForFunction(
+			() =>
+				!document.documentElement.classList.contains("dark") &&
+				!document.documentElement.classList.contains("light"),
+		);
+		await page.emulateMediaFeatures([
+			{ name: "prefers-color-scheme", value: "dark" },
+		]);
+		assert.equal(
+			await page.evaluate(
+				() => getComputedStyle(document.body).backgroundColor,
+			),
+			darkBackground,
+		);
+		await page.emulateMediaFeatures([
+			{ name: "prefers-color-scheme", value: "light" },
+		]);
+		console.log(
+			"Native WebView: explicit dark theme and automatic Windows theme palette passed.",
+		);
 		await browser.disconnect();
 		process.exit(0);
 	}

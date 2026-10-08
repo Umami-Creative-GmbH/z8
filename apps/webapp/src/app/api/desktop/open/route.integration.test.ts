@@ -2,6 +2,7 @@
  * Only browser/session/request infrastructure is replaced. */
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
+
 const session = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: "t780-org",
