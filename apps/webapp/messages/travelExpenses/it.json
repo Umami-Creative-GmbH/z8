@@ -1,7 +1,6 @@
 {
   "travelExpenses": {
     "actions": {
-      "backToClaims": "Torna alle richieste",
       "download": "Scarica",
       "preview": "Anteprima",
       "retry": "Riprova",
@@ -101,6 +100,7 @@
       "decisionRecorded": "Decisione registrata",
       "destination": "Destinazione",
       "history": "Cronologia decisioni",
+      "historyDescription": "Ogni passaggio di questa richiesta, a partire dal meno recente. Gli orari sono indicati in UTC.",
       "intermediateApproval": "Approvazione registrata — in attesa di ulteriore approvazione",
       "legacyReceiptIdentity": "Ricevuta legacy: il checksum del contenuto non è stato registrato.",
       "loading": "Caricamento richiesta…",
@@ -190,6 +190,10 @@
       },
       "legacyClaim": "Richiesta {type} legacy",
       "loading": "Caricamento coda finanziaria…",
+      "queue": {
+        "description": "Apri una spesa per visualizzarne la liquidazione e registrare un rimborso.",
+        "title": "Spese approvate"
+      },
       "title": "Contabilità spese",
       "truncated": "Visualizzazione delle {count} spese approvate più di recente. Le spese corrispondenti meno recenti non sono elencate."
     },
@@ -205,6 +209,7 @@
       "companyPaid": "Pagato dall'azienda {amount}",
       "continuedFrom": "Proseguimento di una richiesta precedente",
       "deleteDraft": "Elimina bozza “{title}”",
+      "description": "Bozze, note spese inviate e richieste precedenti, a partire dalla modifica più recente.",
       "emptyDescription": "Avvia una trasferta per raggruppare diverse spese con gli stessi dettagli di viaggio, oppure aggiungi una singola ricevuta o una spesa chilometrica. Le bozze vengono salvate automaticamente, così potrai completarle in seguito.",
       "emptyFilter": "Nessuna spesa con questo stato.",
       "emptyTitle": "Ancora nessuna spesa di viaggio",
@@ -439,6 +444,7 @@
       "countrySearch": "Cerca paesi",
       "cycles": {
         "approved": "approvato",
+        "description": "Ogni invio rimane esattamente come è stato inviato per la revisione.",
         "entry": "Invio {number} il {date}: {outcome}",
         "pending": "in attesa di revisione",
         "rejected": "rifiutato",
@@ -490,21 +496,31 @@
       },
       "frozenNotice": "La nota spese inviata non può più essere modificata.",
       "history": {
-        "approvalRecorded": "Approvazione registrata da {name}; in attesa di ulteriore approvazione",
-        "approved": "Approvata da {name}",
-        "cycle": "Invio {number}:",
-        "rejected": "Rifiutata da {name}",
-        "reopened": "Riaperto per correzione da {name}",
-        "returned": "Restituito per modifiche da {name}",
-        "selfApproved": "Approvato automaticamente: nessun altro revisore",
-        "submitted": "Inviato da {name}",
-        "title": "Cronologia",
-        "withdrawn": "Ritirato da {name}"
+        "description": "Ogni passaggio di questa nota spese, a partire dal meno recente. Gli orari sono indicati in UTC.",
+        "detail": {
+          "approvalRecorded": "Da {name}; in attesa di ulteriore approvazione.",
+          "by": "Da {name}",
+          "inCycle": "Invio {number} · {detail}",
+          "selfApproved": "Nessun altro ha potuto esaminare questa nota spese."
+        },
+        "inReview": "In revisione",
+        "step": {
+          "approvalRecorded": "Approvazione registrata",
+          "approved": "Approvato",
+          "rejected": "Rifiutato",
+          "reopened": "Riaperto per correzione",
+          "returned": "Restituito per modifiche",
+          "selfApproved": "Approvato automaticamente",
+          "submitted": "Inviato",
+          "withdrawn": "Ritirato"
+        },
+        "title": "Cronologia"
       },
       "items": {
         "add": "Aggiungi spesa con ricevuta",
         "addFailed": "Impossibile aggiungere la spesa. Riprova.",
         "empty": "Aggiungi ciascuna ricevuta di questo viaggio come spesa individuale. I dettagli del viaggio riportati sopra si applicano a tutte le spese.",
+        "emptyTitle": "Ancora nessuna spesa",
         "numbered": "{type} {number}",
         "remove": "Rimuovi",
         "removeConfirm": "Rimuovi spesa",
@@ -861,6 +877,7 @@
       "trip": {
         "dates": "Date del viaggio",
         "datesZone": "(giorni di calendario in {timeZone})",
+        "description": "Tutte le spese di questo viaggio condividono questi dettagli.",
         "destinations": "Destinazioni",
         "errors": {
           "destination": "Scegli un paese dall'elenco.",

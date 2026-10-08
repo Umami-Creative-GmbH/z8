@@ -1,7 +1,6 @@
 {
   "travelExpenses": {
     "actions": {
-      "backToClaims": "Zurück zu den Abrechnungen",
       "download": "Herunterladen",
       "preview": "Vorschau",
       "retry": "Erneut versuchen",
@@ -101,6 +100,7 @@
       "decisionRecorded": "Entscheidung erfasst",
       "destination": "Reiseziel",
       "history": "Entscheidungsverlauf",
+      "historyDescription": "Jede Schritt vo dere Abrechnig, die älteschte zerscht. Ziite wärded in UTC aazeigt.",
       "intermediateApproval": "Genehmigung erfasst – wartet auf weitere Genehmigung",
       "legacyReceiptIdentity": "Altsystem-Beleg: Inhaltsprüfsumme wurde nicht erfasst.",
       "loading": "Abrechnung wird geladen …",
@@ -190,6 +190,10 @@
       },
       "legacyClaim": "Veralteti {type}-Aaforderig",
       "loading": "Finanz-Warteschlange wird glade…",
+      "queue": {
+        "description": "Öffne e Spese, zum d Abrechnig z gseh und e Rückerstattig z erfasse.",
+        "title": "Bewilligti Spese"
+      },
       "title": "Spesefinanze",
       "truncated": "Es wärded di {count} zletscht gnämigte Spese aazeigt. Älteri passendi Spese wärded nöd ufgfüehrt."
     },
@@ -205,6 +209,7 @@
       "companyPaid": "Vo de Firma zahlt: {amount}",
       "continuedFrom": "Witergfüehrt vonere früenere Iigab",
       "deleteDraft": "Entwurf «{title}» lösche",
+      "description": "Entwüürf, igreichdi Bricht und früeneri Abrechnige, di zletscht gänderete zerscht.",
       "emptyDescription": "Starte e Reis, zum mehreri Späse mit de gliiche Reisedetails z'erfasse, oder tue en einzelne Beleg oder e Kilometerabrächnig derzue. Entwürf werdet automatisch gspycheret, sodass du si spöter chasch fertig mache.",
       "emptyFilter": "Käi Späse mit däm Status.",
       "emptyTitle": "No käi Reisespäse vorhande",
@@ -439,6 +444,7 @@
       "countrySearch": "Länder suchen",
       "cycles": {
         "approved": "gnämigt",
+        "description": "Jedi Ireichig bliibt genau so, wie si zur Überprüefig gschickt worde isch.",
         "entry": "Iireichig {number} am {date}: {outcome}",
         "pending": "wartet uf Überprüefig",
         "rejected": "abglehnt",
@@ -490,21 +496,31 @@
       },
       "frozenNotice": "De ygereichti Bricht cha nümme bearbeitet werde.",
       "history": {
-        "approvalRecorded": "Gnämigung dur {name} erfasst; wartet uf wyteri Gnämigung",
-        "approved": "Gnämigt vo {name}",
-        "cycle": "Yreichig {number}:",
-        "rejected": "Abglehnt vo {name}",
-        "reopened": "Für Korrekture widereröffnet dur {name}",
-        "returned": "Für Änderige zrugggschickt dur {name}",
-        "selfApproved": "Automatisch genehmigt: kein anderer Prüfer",
-        "submitted": "Igreicht dur {name}",
-        "title": "Verlauf",
-        "withdrawn": "Zruggzoge dur {name}"
+        "description": "Jede Schritt vo dem Bricht, die älteschte zerscht. Ziite wärded in UTC aazeigt.",
+        "detail": {
+          "approvalRecorded": "Vo {name}; wartet uf wiiteri Bewilligung.",
+          "by": "Vo {name}",
+          "inCycle": "Ireichig {number} · {detail}",
+          "selfApproved": "Niemert suscht hät dä Bricht chönne überprüefe."
+        },
+        "inReview": "In Überprüefig",
+        "step": {
+          "approvalRecorded": "Bewilligung erfasst",
+          "approved": "Bewilligt",
+          "rejected": "Abglehnt",
+          "reopened": "Für Korrekture wider eröffnet",
+          "returned": "Für Änderige zrugggschickt",
+          "selfApproved": "Automatisch bewilligt",
+          "submitted": "Igreicht",
+          "withdrawn": "Zruggzoge"
+        },
+        "title": "Verlauf"
       },
       "items": {
         "add": "Beleg-Uusgab hinzuefüege",
         "addFailed": "D'Uusgab hät nöd chönne hinzuegfüegt werde. Bitte nomal probiere.",
         "empty": "Füeg jede Beleg vo dere Reis als eignigi Uusgab hinzue. D'Reisedetails oben dra gelted für alli.",
+        "emptyTitle": "No kei Spese",
         "numbered": "{type} {number}",
         "remove": "Entferne",
         "removeConfirm": "Uusgab entferne",
@@ -861,6 +877,7 @@
       "trip": {
         "dates": "Reisedate",
         "datesZone": "(Kaländertäg i {timeZone})",
+        "description": "Jedi Spese vo dere Reis teilt die Detail.",
         "destinations": "Reiseziil",
         "errors": {
           "destination": "Wähl es Land us de Lischte uus.",

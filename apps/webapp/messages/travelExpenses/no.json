@@ -1,7 +1,6 @@
 {
   "travelExpenses": {
     "actions": {
-      "backToClaims": "Tilbake til krav",
       "download": "Last ned",
       "preview": "Forhåndsvis",
       "retry": "Prøv på nytt",
@@ -101,6 +100,7 @@
       "decisionRecorded": "Beslutning registrert",
       "destination": "Destinasjon",
       "history": "Beslutningshistorikk",
+      "historyDescription": "Hvert trinn i dette kravet, eldste først. Tidspunkter vises i UTC.",
       "intermediateApproval": "Godkjenning registrert — venter på ytterligere godkjenning",
       "legacyReceiptIdentity": "Eldre kvittering: sjekksum for innhold ble ikke registrert.",
       "loading": "Laster inn krav…",
@@ -190,6 +190,10 @@
       },
       "legacyClaim": "Eldre {type}-krav",
       "loading": "Laster inn økonomikø…",
+      "queue": {
+        "description": "Åpne et utlegg for å se oppgjøret og registrere en refusjon.",
+        "title": "Godkjente utlegg"
+      },
       "title": "Utgiftsøkonomi",
       "truncated": "Viser de {count} sist godkjente utgiftene. Eldre samsvarende utgifter er ikke oppført."
     },
@@ -205,6 +209,7 @@
       "companyPaid": "Betalt av selskapet {amount}",
       "continuedFrom": "Fortsettelse fra et tidligere krav",
       "deleteDraft": "Slett utkast “{title}”",
+      "description": "Utkast, innsendte rapporter og tidligere krav, sist endret først.",
       "emptyDescription": "Start en reise for å samle flere utgifter med felles reisedetaljer, eller legg til en enkelt kvittering eller kjøregodtgjørelse. Utkast lagres automatisk, slik at du kan fullføre dem senere.",
       "emptyFilter": "Ingen utgifter med denne statusen.",
       "emptyTitle": "Ingen reiseutgifter ennå",
@@ -439,6 +444,7 @@
       "countrySearch": "Søk etter land",
       "cycles": {
         "approved": "godkjent",
+        "description": "Hver innsending forblir nøyaktig slik den ble sendt til vurdering.",
         "entry": "Innsending {number} den {date}: {outcome}",
         "pending": "avventer gjennomgang",
         "rejected": "avvist",
@@ -490,21 +496,31 @@
       },
       "frozenNotice": "Den innsendte rapporten kan ikke lenger redigeres.",
       "history": {
-        "approvalRecorded": "Godkjenning registrert av {name}; venter på videre godkjenning",
-        "approved": "Godkjent av {name}",
-        "cycle": "Innsending {number}:",
-        "rejected": "Avvist av {name}",
-        "reopened": "Gjenåpnet for korrigering av {name}",
-        "returned": "Returnert for endringer av {name}",
-        "selfApproved": "Godkjent automatisk: ingen annen kontrollør",
-        "submitted": "Sendt inn av {name}",
-        "title": "Historikk",
-        "withdrawn": "Trukket tilbake av {name}"
+        "description": "Hvert trinn i denne rapporten, eldste først. Tidspunkter vises i UTC.",
+        "detail": {
+          "approvalRecorded": "Av {name}; venter på videre godkjenning.",
+          "by": "Av {name}",
+          "inCycle": "Innsending {number} · {detail}",
+          "selfApproved": "Ingen andre kunne vurdere denne rapporten."
+        },
+        "inReview": "Til vurdering",
+        "step": {
+          "approvalRecorded": "Godkjenning registrert",
+          "approved": "Godkjent",
+          "rejected": "Avvist",
+          "reopened": "Gjenåpnet for korrigering",
+          "returned": "Returnert for endringer",
+          "selfApproved": "Automatisk godkjent",
+          "submitted": "Sendt inn",
+          "withdrawn": "Trukket tilbake"
+        },
+        "title": "Historikk"
       },
       "items": {
         "add": "Legg til kvitteringsutgift",
         "addFailed": "Kunne ikke legge til utgiften. Prøv på nytt.",
         "empty": "Legg til hver kvittering for denne reisen som en egen utgift. Reisedetaljene ovenfor gjelder for alle sammen.",
+        "emptyTitle": "Ingen utlegg ennå",
         "numbered": "{type} {number}",
         "remove": "Fjern",
         "removeConfirm": "Fjern utgift",
@@ -861,6 +877,7 @@
       "trip": {
         "dates": "Reisedatoer",
         "datesZone": "(kalenderdager i {timeZone})",
+        "description": "Alle utlegg for denne reisen deler disse detaljene.",
         "destinations": "Reisemål",
         "errors": {
           "destination": "Velg et land fra listen.",

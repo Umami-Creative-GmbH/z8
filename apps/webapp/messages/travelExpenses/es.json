@@ -1,7 +1,6 @@
 {
   "travelExpenses": {
     "actions": {
-      "backToClaims": "Volver a las solicitudes",
       "download": "Descargar",
       "preview": "Vista previa",
       "retry": "Reintentar",
@@ -101,6 +100,7 @@
       "decisionRecorded": "Decisión registrada",
       "destination": "Destino",
       "history": "Historial de decisiones",
+      "historyDescription": "Cada paso de esta solicitud, los más antiguos primero. Las horas se muestran en UTC.",
       "intermediateApproval": "Aprobación registrada — en espera de aprobación adicional",
       "legacyReceiptIdentity": "Recibo heredado: no se registró la suma de comprobación del contenido.",
       "loading": "Cargando solicitud…",
@@ -190,6 +190,10 @@
       },
       "legacyClaim": "Solicitud de {type} heredada",
       "loading": "Cargando cola de finanzas…",
+      "queue": {
+        "description": "Abra un gasto para ver su liquidación y registrar un reembolso.",
+        "title": "Gastos aprobados"
+      },
       "title": "Finanzas de gastos",
       "truncated": "Mostrando los {count} gastos aprobados más recientemente. Los gastos coincidentes más antiguos no aparecen en la lista."
     },
@@ -205,6 +209,7 @@
       "companyPaid": "Pagado por la empresa {amount}",
       "continuedFrom": "Continuación de una solicitud anterior",
       "deleteDraft": "Eliminar borrador “{title}”",
+      "description": "Borradores, informes enviados y solicitudes anteriores, los modificados más recientemente primero.",
       "emptyDescription": "Inicie un viaje para reunir varios gastos con los mismos datos de viaje, o añada un único recibo o gasto de kilometraje. Los borradores se guardan automáticamente para que pueda terminarlos más tarde.",
       "emptyFilter": "No hay gastos con este estado.",
       "emptyTitle": "Aún no hay gastos de viaje",
@@ -439,6 +444,7 @@
       "countrySearch": "Buscar países",
       "cycles": {
         "approved": "aprobado",
+        "description": "Cada envío permanece exactamente como se envió para revisión.",
         "entry": "Envío {number} el {date}: {outcome}",
         "pending": "pendiente de revisión",
         "rejected": "rechazado",
@@ -490,21 +496,31 @@
       },
       "frozenNotice": "El informe enviado ya no se puede editar.",
       "history": {
-        "approvalRecorded": "Aprobación registrada por {name}; a la espera de aprobación adicional",
-        "approved": "Aprobado por {name}",
-        "cycle": "Envío {number}:",
-        "rejected": "Rechazado por {name}",
-        "reopened": "Reabierto para corrección por {name}",
-        "returned": "Devuelto para cambios por {name}",
-        "selfApproved": "Aprobado automáticamente: no hay otro revisor",
-        "submitted": "Enviado por {name}",
-        "title": "Historial",
-        "withdrawn": "Retirado por {name}"
+        "description": "Cada paso de este informe, los más antiguos primero. Las horas se muestran en UTC.",
+        "detail": {
+          "approvalRecorded": "Por {name}; a la espera de aprobación adicional.",
+          "by": "Por {name}",
+          "inCycle": "Envío {number} · {detail}",
+          "selfApproved": "Nadie más pudo revisar este informe."
+        },
+        "inReview": "En revisión",
+        "step": {
+          "approvalRecorded": "Aprobación registrada",
+          "approved": "Aprobado",
+          "rejected": "Rechazado",
+          "reopened": "Reabierto para corrección",
+          "returned": "Devuelto para cambios",
+          "selfApproved": "Aprobado automáticamente",
+          "submitted": "Enviado",
+          "withdrawn": "Retirado"
+        },
+        "title": "Historial"
       },
       "items": {
         "add": "Añadir gasto con recibo",
         "addFailed": "No se pudo añadir el gasto. Inténtalo de nuevo.",
         "empty": "Añade cada recibo de este viaje como un gasto individual. Los detalles del viaje indicados arriba se aplican a todos ellos.",
+        "emptyTitle": "Aún no hay gastos",
         "numbered": "{type} {number}",
         "remove": "Eliminar",
         "removeConfirm": "Eliminar gasto",
@@ -861,6 +877,7 @@
       "trip": {
         "dates": "Fechas del viaje",
         "datesZone": "(días naturales en {timeZone})",
+        "description": "Todos los gastos de este viaje comparten estos detalles.",
         "destinations": "Destinos",
         "errors": {
           "destination": "Elige un país de la lista.",

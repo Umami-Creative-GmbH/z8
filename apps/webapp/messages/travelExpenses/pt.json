@@ -1,7 +1,6 @@
 {
   "travelExpenses": {
     "actions": {
-      "backToClaims": "Voltar para solicitações",
       "download": "Baixar",
       "preview": "Visualizar",
       "retry": "Tentar novamente",
@@ -101,6 +100,7 @@
       "decisionRecorded": "Decisão registrada",
       "destination": "Destino",
       "history": "Histórico de decisões",
+      "historyDescription": "Cada etapa desta solicitação, as mais antigas primeiro. Os horários são exibidos em UTC.",
       "intermediateApproval": "Aprovação registrada — aguardando aprovação adicional",
       "legacyReceiptIdentity": "Recibo legado: o checksum do conteúdo não foi registrado.",
       "loading": "Carregando solicitação…",
@@ -190,6 +190,10 @@
       },
       "legacyClaim": "Reivindicação herdada de {type}",
       "loading": "Carregando fila financeira…",
+      "queue": {
+        "description": "Abra uma despesa para ver sua liquidação e registrar um reembolso.",
+        "title": "Despesas aprovadas"
+      },
       "title": "Finanças de despesas",
       "truncated": "Exibindo as {count} despesas aprovadas mais recentemente. Despesas correspondentes mais antigas não estão listadas."
     },
@@ -205,6 +209,7 @@
       "companyPaid": "Pago pela empresa {amount}",
       "continuedFrom": "Continuação de uma solicitação anterior",
       "deleteDraft": "Excluir rascunho “{title}”",
+      "description": "Rascunhos, relatórios enviados e solicitações anteriores, com alterações mais recentes primeiro.",
       "emptyDescription": "Inicie uma viagem para reunir várias despesas com detalhes de viagem compartilhados ou adicione um recibo avulso ou despesa de quilometragem. Os rascunhos são salvos automaticamente para que você possa finalizá-los mais tarde.",
       "emptyFilter": "Nenhuma despesa com este status.",
       "emptyTitle": "Nenhuma despesa de viagem ainda",
@@ -439,6 +444,7 @@
       "countrySearch": "Pesquisar países",
       "cycles": {
         "approved": "aprovado",
+        "description": "Cada envio permanece exatamente como foi enviado para revisão.",
         "entry": "Envio {number} em {date}: {outcome}",
         "pending": "aguardando revisão",
         "rejected": "rejeitado",
@@ -490,21 +496,31 @@
       },
       "frozenNotice": "O relatório enviado não pode mais ser editado.",
       "history": {
-        "approvalRecorded": "Aprovação registrada por {name}; aguardando aprovação adicional",
-        "approved": "Aprovado por {name}",
-        "cycle": "Envio {number}:",
-        "rejected": "Rejeitado por {name}",
-        "reopened": "Reaberto para correção por {name}",
-        "returned": "Devolvido para alterações por {name}",
-        "selfApproved": "Aprovado automaticamente: nenhum outro revisor",
-        "submitted": "Enviado por {name}",
-        "title": "Histórico",
-        "withdrawn": "Retirado por {name}"
+        "description": "Cada etapa deste relatório, as mais antigas primeiro. Os horários são exibidos em UTC.",
+        "detail": {
+          "approvalRecorded": "Por {name}; aguardando aprovação adicional.",
+          "by": "Por {name}",
+          "inCycle": "Envio {number} · {detail}",
+          "selfApproved": "Ninguém mais pôde revisar este relatório."
+        },
+        "inReview": "Em revisão",
+        "step": {
+          "approvalRecorded": "Aprovação registrada",
+          "approved": "Aprovado",
+          "rejected": "Rejeitado",
+          "reopened": "Reaberto para correção",
+          "returned": "Devolvido para alterações",
+          "selfApproved": "Aprovado automaticamente",
+          "submitted": "Enviado",
+          "withdrawn": "Retirado"
+        },
+        "title": "Histórico"
       },
       "items": {
         "add": "Adicionar despesa com recibo",
         "addFailed": "Não foi possível adicionar a despesa. Tente novamente.",
         "empty": "Adicione cada recibo desta viagem como uma despesa individual. Os detalhes da viagem acima se aplicam a todas elas.",
+        "emptyTitle": "Nenhuma despesa ainda",
         "numbered": "{type} {number}",
         "remove": "Remover",
         "removeConfirm": "Remover despesa",
@@ -861,6 +877,7 @@
       "trip": {
         "dates": "Datas da viagem",
         "datesZone": "(dias do calendário em {timeZone})",
+        "description": "Todas as despesas desta viagem compartilham estes detalhes.",
         "destinations": "Destinos",
         "errors": {
           "destination": "Escolha um país da lista.",
