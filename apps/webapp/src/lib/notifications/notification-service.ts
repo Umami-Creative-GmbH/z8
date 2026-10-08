@@ -29,7 +29,7 @@ import type {
 	NotificationType,
 	NotificationWithMeta,
 } from "./types";
-import { hasMandatoryInbox } from "./types";
+import { hasMandatoryInbox, isChannelEnabledByDefault } from "./types";
 
 const logger = createLogger("NotificationService");
 
@@ -103,7 +103,7 @@ export async function loadNotificationChannelPreferences(
 	});
 	const enabled = (channel: NotificationChannel) => {
 		const preference = preferences.find((p) => p.channel === channel);
-		return !preference || preference.enabled;
+		return preference ? preference.enabled : isChannelEnabledByDefault(type, channel);
 	};
 	return {
 		in_app: hasMandatoryInbox(type) || enabled("in_app"),
@@ -788,8 +788,7 @@ export async function isChannelEnabled(
 			),
 		});
 
-		// Default to enabled if no preference exists
-		return preference ? preference.enabled : true;
+		return preference ? preference.enabled : isChannelEnabledByDefault(notificationType, channel);
 	} catch (error) {
 		logger.error(
 			{ error, userId, notificationType, channel },

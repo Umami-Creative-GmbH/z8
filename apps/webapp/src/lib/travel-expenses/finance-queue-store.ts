@@ -11,12 +11,14 @@ import {
 } from "@/db/schema";
 import { mergeNewestFirst, type QueueEntry, takeQueuePage } from "./finance-queue-paging";
 import type { FinanceQueueFilters, FinanceQueueStatus } from "./finance-queue-params";
-import type { OfficerScope } from "./officer-scope";
+import type { OfficerScope, ReimbursingOfficer } from "./officer-scope";
 import {
 	claimInOfficerScope,
 	claimRecordedWithTeam,
+	claimUncoveredBy,
 	reportInOfficerScope,
 	reportRecordedWithTeam,
+	reportUncoveredBy,
 } from "./officer-scope-read";
 import {
 	buildSettlementAccounts,
@@ -55,6 +57,11 @@ export interface FinanceQueueQuery extends Partial<Omit<FinanceQueueFilters, "st
 	includeAdjustments?: boolean;
 	/** List approved legacy claims too (default true); exports have no use for them. */
 	includeLegacyClaims?: boolean;
+	/**
+	 * Only accounts awaiting reimbursement that none of these officers can
+	 * reimburse (#756): the coverage gap owners and admins are warned of.
+	 */
+	uncoveredBy?: readonly ReimbursingOfficer[];
 }
 
 export interface FinanceQueuePage {
@@ -64,9 +71,15 @@ export interface FinanceQueuePage {
 	hasMore: boolean;
 }
 
+/** Whether some currency of the account still awaits reimbursement (#756). */
+export function isAwaitingReimbursement(account: SettlementAccount): boolean {
+	return account.summary.currencies.some((line) => line.state === "outstanding");
+}
+
 function matchesStatus(account: SettlementAccount, query: FinanceQueueQuery): boolean {
 	if (!account.approved) return false;
 	if (!query.includeAdjustments && account.adjustmentOf !== null) return false;
+	if (query.uncoveredBy && !isAwaitingReimbursement(account)) return false;
 	// The SQL condition reads the report's currency; the account's is the approved one.
 	if (query.currency && account.currency !== query.currency) return false;
 	switch (query.status) {
@@ -105,6 +118,7 @@ function reportConditions(database: Executor, query: FinanceQueueQuery): SQL | u
 		query.teamId ? reportRecordedWithTeam(query.teamId) : undefined,
 		query.currency ? eq(travelExpenseReport.reimbursementCurrency, query.currency) : undefined,
 		query.notExported ? notInActiveExportBatch(database) : undefined,
+		query.uncoveredBy ? reportUncoveredBy(query.uncoveredBy) : undefined,
 	);
 }
 
@@ -116,6 +130,7 @@ function claimConditions(query: FinanceQueueQuery): SQL | undefined {
 		query.employeeId ? eq(travelExpenseClaim.employeeId, query.employeeId) : undefined,
 		query.teamId ? claimRecordedWithTeam(query.teamId) : undefined,
 		query.currency ? eq(travelExpenseClaim.calculatedCurrency, query.currency) : undefined,
+		query.uncoveredBy ? claimUncoveredBy(query.uncoveredBy) : undefined,
 	);
 }
 
@@ -234,16 +249,22 @@ export async function listAllFinanceQueueAccounts(
 }
 
 /**
- * The accounts in the scope still owing the employee money, in full or in
- * part (glossary: awaiting reimbursement), for the sidebar's Finance item.
+ * The accounts still owing the employee money, in full or in part (glossary:
+ * awaiting reimbursement): in the scope, for the sidebar's Finance item
+ * (#753), or that none of `uncoveredBy` can reimburse, for the coverage gap
+ * (#756).
  */
 export async function countAwaitingReimbursement(
 	database: Executor,
-	input: { organizationId: string; scope: OfficerScope },
+	input: {
+		organizationId: string;
+		scope?: OfficerScope;
+		uncoveredBy?: readonly ReimbursingOfficer[];
+	},
 ): Promise<number> {
 	let count = 0;
 	for await (const account of queueAccounts(database, { ...input, status: "open" })) {
-		if (account.summary.currencies.some((line) => line.state === "outstanding")) count++;
+		if (isAwaitingReimbursement(account)) count++;
 	}
 	return count;
 }

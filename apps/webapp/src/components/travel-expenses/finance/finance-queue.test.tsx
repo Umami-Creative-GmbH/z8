@@ -139,12 +139,12 @@ function view(patch: Partial<FinanceQueueView> = {}): FinanceQueueView {
 	return { ...DEFAULT_FINANCE_QUEUE_VIEW, ...patch };
 }
 
-function mount() {
+function mount(props: { coverage?: "uncovered" } = {}) {
 	render(
 		<QueryClientProvider
 			client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
 		>
-			<FinanceQueue />
+			<FinanceQueue {...props} />
 		</QueryClientProvider>,
 	);
 }
@@ -276,6 +276,37 @@ describe("finance queue (#612, #753)", () => {
 		mocks.getQueue.mockResolvedValue(page([]));
 		mount();
 		expect(await screen.findByText("No approved expenses match these filters.")).toBeTruthy();
+	});
+
+	it("lists only what no expense officer covers, with filters, pages and a way back (#756)", async () => {
+		window.history.replaceState(null, "", "?coverage=uncovered");
+		mocks.getQueue.mockResolvedValue(page([report], { hasMore: true }));
+		mount({ coverage: "uncovered" });
+		await screen.findByText("€89.90 outstanding");
+		expect(mocks.getQueue).toHaveBeenCalledWith(view(), "uncovered");
+		expect(screen.queryByRole("radio")).toBeNull();
+		expect(
+			screen.getByText("Approved expenses awaiting reimbursement that no expense officer covers."),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("link", { name: "Show all approved expenses" }).getAttribute("href"),
+		).toBe("/travel-expenses/finance");
+		// Paging keeps the coverage filter in the URL.
+		fireEvent.click(screen.getByRole("button", { name: "Next" }));
+		await waitFor(() =>
+			expect(mocks.getQueue).toHaveBeenLastCalledWith(view({ page: 2 }), "uncovered"),
+		);
+		expect(window.location.search).toBe("?page=2&coverage=uncovered");
+	});
+
+	it("says when every expense awaiting reimbursement is covered", async () => {
+		mocks.getQueue.mockResolvedValue(page([]));
+		mount({ coverage: "uncovered" });
+		expect(
+			await screen.findByText(
+				"An expense officer covers every approved expense awaiting reimbursement.",
+			),
+		).toBeTruthy();
 	});
 
 	it("says when nothing is left to record and offers retry when the queue fails to load", async () => {

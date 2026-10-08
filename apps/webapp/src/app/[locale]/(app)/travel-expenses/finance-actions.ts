@@ -8,6 +8,8 @@ import { getAuthContext } from "@/lib/auth-helpers";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
+import { requireExpenseAdministrator } from "@/lib/travel-expenses/expense-administrator";
+import { listReimbursingOfficers } from "@/lib/travel-expenses/expense-officer-grant-store";
 import { financeActorReads, loadFinanceActor } from "@/lib/travel-expenses/finance-access";
 import {
 	FINANCE_QUEUE_STATUSES,
@@ -20,6 +22,11 @@ import {
 	listFinanceQueueFilterOptions,
 } from "@/lib/travel-expenses/finance-queue-store";
 import { latestCalendarDate } from "@/lib/travel-expenses/future-dates";
+import {
+	loadOfficerCoverageGap,
+	type OfficerCoverageGap,
+} from "@/lib/travel-expenses/officer-coverage";
+import type { ReimbursingOfficer } from "@/lib/travel-expenses/officer-scope";
 import { isSourceInOfficerScope } from "@/lib/travel-expenses/officer-scope-read";
 import {
 	parseSettlementCommand,
@@ -55,6 +62,9 @@ const queueViewSchema = z.object({
 	notExported: z.boolean(),
 	page: z.number().int().min(1).max(100_000),
 });
+const coverageSchema = z.enum(["uncovered"]);
+
+export type FinanceQueueCoverage = z.infer<typeof coverageSchema>;
 
 export interface SettlementAccountView {
 	account: SettlementAccount;
@@ -82,19 +92,36 @@ export interface FinanceQueueResult {
 	hasMore: boolean;
 }
 
-/** One page of the finance queue in the reader's officer scope (#747), filtered (#753). */
+/**
+ * One page of the finance queue in the reader's officer scope (#747),
+ * filtered (#753). `coverage: "uncovered"` lists only what awaits
+ * reimbursement and no expense officer can reimburse (#756), for owners and
+ * admins of the organization.
+ */
 export async function getTravelExpenseFinanceQueue(
 	view: FinanceQueueView,
+	coverage?: FinanceQueueCoverage,
 ): Promise<ServerActionResult<FinanceQueueResult>> {
 	try {
 		const parsed = queueViewSchema.safeParse(view);
-		if (!parsed.success) return { success: false, error: "Invalid filter" };
+		const parsedCoverage = coverageSchema.optional().safeParse(coverage);
+		if (!parsed.success || !parsedCoverage.success) {
+			return { success: false, error: "Invalid filter" };
+		}
 		const actor = await loadFinanceActor();
 		if (!actor?.scopes.read) return { success: false, error: "Unauthorized" };
+		let uncoveredBy: ReimbursingOfficer[] | undefined;
+		if (parsedCoverage.data === "uncovered") {
+			const administrator = await requireExpenseAdministrator();
+			if ("error" in administrator || administrator.organizationId !== actor.organizationId) {
+				return { success: false, error: "Unauthorized" };
+			}
+			uncoveredBy = await listReimbursingOfficers(db, { organizationId: actor.organizationId });
+		}
 		const { page, ...filters } = parsed.data;
 		const result = await listFinanceQueue(
 			db,
-			{ organizationId: actor.organizationId, scope: actor.scopes.read, ...filters },
+			{ organizationId: actor.organizationId, scope: actor.scopes.read, uncoveredBy, ...filters },
 			{ page },
 		);
 		return { success: true, data: { ...result, canSettle: actor.canSettle } };
@@ -139,6 +166,27 @@ export async function getTravelExpenseFinanceAwaitingCount(): Promise<
 	} catch (error) {
 		logger.error({ error }, "Failed to count travel expenses awaiting reimbursement");
 		return { success: false, error: "Failed to count expenses awaiting reimbursement" };
+	}
+}
+
+/**
+ * The coverage-gap warning (#756) for owners and admins: how many approved
+ * expenses await reimbursement that no expense officer can reimburse. Null
+ * for anyone else, and while the organization has no expense officer grant.
+ */
+export async function getExpenseOfficerCoverageGap(): Promise<
+	ServerActionResult<OfficerCoverageGap | null>
+> {
+	try {
+		const administrator = await requireExpenseAdministrator();
+		if ("error" in administrator) return { success: true, data: null };
+		return {
+			success: true,
+			data: await loadOfficerCoverageGap(db, { organizationId: administrator.organizationId }),
+		};
+	} catch (error) {
+		logger.error({ error }, "Failed to load the expense officer coverage gap");
+		return { success: false, error: "Failed to load the coverage gap" };
 	}
 }
 

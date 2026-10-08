@@ -79,6 +79,12 @@ function ExpenseOfficerEditor({ data }: { data: ExpenseOfficerAdminData }) {
 	const [isEditorOpen, setIsEditorOpen] = useState(false);
 	const [revokingGrant, setRevokingGrant] = useState<ExpenseOfficerGrantData | null>(null);
 	const [isRevoking, setIsRevoking] = useState(false);
+	// A grant change can open or close the coverage gap (#756).
+	const invalidate = () =>
+		Promise.all([
+			queryClient.invalidateQueries({ queryKey }),
+			queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.officerCoverageGap() }),
+		]);
 	const people = [...data.employees, ...data.departedEmployees];
 	const nameOf = (employeeId: string) =>
 		people.find((person) => person.id === employeeId)?.name ?? employeeId;
@@ -102,7 +108,7 @@ function ExpenseOfficerEditor({ data }: { data: ExpenseOfficerAdminData }) {
 				);
 				return;
 			}
-			await queryClient.invalidateQueries({ queryKey });
+			await invalidate();
 			toast.success(t("settings.travelExpenses.officers.saved", "Expense officer saved"));
 			setIsEditorOpen(false);
 			setEditingGrantId(null);
@@ -147,7 +153,7 @@ function ExpenseOfficerEditor({ data }: { data: ExpenseOfficerAdminData }) {
 				);
 				return;
 			}
-			await queryClient.invalidateQueries({ queryKey });
+			await invalidate();
 			toast.success(t("settings.travelExpenses.officers.revoked", "Expense officer revoked"));
 			if (editingGrantId === revokingGrant.id) {
 				setIsEditorOpen(false);

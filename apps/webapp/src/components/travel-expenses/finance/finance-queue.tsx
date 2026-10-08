@@ -14,6 +14,7 @@ import { useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
 import { useId } from "react";
 import {
+	type FinanceQueueCoverage,
 	getTravelExpenseFinanceQueue,
 	getTravelExpenseFinanceQueueFilterOptions,
 } from "@/app/[locale]/(app)/travel-expenses/finance-actions";
@@ -98,13 +99,18 @@ function hasFilters(view: FinanceQueueView): boolean {
 
 /**
  * The view lives in the search params (#753): it survives opening an expense
- * and coming back. Changing it replaces the history entry, without navigating.
+ * and coming back. Changing it replaces the history entry, without navigating,
+ * and keeps the coverage-gap filter (#756) the page was opened with.
  */
-function useFinanceQueueView() {
+function useFinanceQueueView(coverage: FinanceQueueCoverage | undefined) {
 	const searchParams = useSearchParams();
-	const view = parseFinanceQueueView(new URLSearchParams(searchParams.toString()));
+	const parsed = parseFinanceQueueView(new URLSearchParams(searchParams.toString()));
+	// The coverage gap lists only what awaits reimbursement.
+	const view: FinanceQueueView = coverage ? { ...parsed, status: "open" } : parsed;
 	function setView(next: FinanceQueueView) {
-		const search = financeQueueSearch(next);
+		const params = new URLSearchParams(financeQueueSearch(next));
+		if (coverage) params.set("coverage", coverage);
+		const search = params.toString();
 		window.history.replaceState(
 			null,
 			"",
@@ -241,16 +247,20 @@ function QueuePagination({
  * The finance queue (#612): approved reports and approved legacy claims in the
  * reader's scope with their employee-paid entitlement, company-paid costs and
  * balance, filtered and paged (#753). Recording happens on each expense's page.
+ * With `coverage: "uncovered"` (#756), owners and admins see only what awaits
+ * reimbursement and no expense officer covers.
  */
-export function FinanceQueue() {
+export function FinanceQueue({ coverage }: { coverage?: FinanceQueueCoverage } = {}) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const { view, setView } = useFinanceQueueView();
+	const { view, setView } = useFinanceQueueView(coverage);
 	const search = financeQueueSearch(view);
 	const { data, isError, isFetching, isLoading, refetch } = useQuery({
-		queryKey: queryKeys.travelExpenses.financeQueue(search),
+		queryKey: queryKeys.travelExpenses.financeQueue(search, coverage),
 		queryFn: async () => {
-			const result = await getTravelExpenseFinanceQueue(view);
+			const result = coverage
+				? await getTravelExpenseFinanceQueue(view, coverage)
+				: await getTravelExpenseFinanceQueue(view);
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
@@ -278,22 +288,39 @@ export function FinanceQueue() {
 			</CardHeader>
 			<CardContent className="space-y-4">
 				<div className="flex flex-wrap items-center justify-between gap-3">
-					<ToggleGroup
-						type="single"
-						variant="outline"
-						value={view.status}
-						onValueChange={(value: string) => {
-							const status = FINANCE_QUEUE_STATUSES.find((entry) => entry === value);
-							if (status) setView({ ...view, status, page: 1 });
-						}}
-						aria-label={t("travelExpenses.finance.filter.label", "Show expenses")}
-					>
-						{FINANCE_QUEUE_STATUSES.map((value) => (
-							<ToggleGroupItem key={value} value={value} className="whitespace-nowrap px-3">
-								{statusLabel[value]}
-							</ToggleGroupItem>
-						))}
-					</ToggleGroup>
+					{coverage ? (
+						<p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
+							<span className="text-muted-foreground">
+								{t(
+									"travelExpenses.finance.coverageGap.queueFilter",
+									"Approved expenses awaiting reimbursement that no expense officer covers.",
+								)}
+							</span>
+							<Link
+								href="/travel-expenses/finance"
+								className="font-medium underline underline-offset-4"
+							>
+								{t("travelExpenses.finance.coverageGap.showAll", "Show all approved expenses")}
+							</Link>
+						</p>
+					) : (
+						<ToggleGroup
+							type="single"
+							variant="outline"
+							value={view.status}
+							onValueChange={(value: string) => {
+								const status = FINANCE_QUEUE_STATUSES.find((entry) => entry === value);
+								if (status) setView({ ...view, status, page: 1 });
+							}}
+							aria-label={t("travelExpenses.finance.filter.label", "Show expenses")}
+						>
+							{FINANCE_QUEUE_STATUSES.map((value) => (
+								<ToggleGroupItem key={value} value={value} className="whitespace-nowrap px-3">
+									{statusLabel[value]}
+								</ToggleGroupItem>
+							))}
+						</ToggleGroup>
+					)}
 					{filtered && (
 						<Button
 							variant="ghost"
@@ -338,12 +365,17 @@ export function FinanceQueue() {
 											"travelExpenses.finance.empty.filtered",
 											"No approved expenses match these filters.",
 										)
-									: view.status === "open"
+									: coverage
 										? t(
-												"travelExpenses.finance.empty.allReimbursed",
-												"Nothing left to record: every approved expense is reimbursed.",
+												"travelExpenses.finance.coverageGap.empty",
+												"An expense officer covers every approved expense awaiting reimbursement.",
 											)
-										: t("travelExpenses.finance.empty.any", "No approved expenses yet.")}
+										: view.status === "open"
+											? t(
+													"travelExpenses.finance.empty.allReimbursed",
+													"Nothing left to record: every approved expense is reimbursed.",
+												)
+											: t("travelExpenses.finance.empty.any", "No approved expenses yet.")}
 							</EmptyDescription>
 						</EmptyHeader>
 					</Empty>

@@ -11,6 +11,7 @@ import { TravelExpensePolicyManagement } from "@/components/settings/travel-expe
 import { TravelExpenseProjectExceptionsCard } from "@/components/settings/travel-expense/travel-expense-project-exceptions";
 import { TravelExpenseReceiptExceptionSettingsCard } from "@/components/settings/travel-expense/travel-expense-receipt-exception-settings";
 import { TravelExpenseSettingsTabs } from "@/components/settings/travel-expense/travel-expense-settings-tabs";
+import { OfficerCoverageGapNotice } from "@/components/travel-expenses/finance/officer-coverage-gap";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
@@ -59,7 +60,12 @@ async function TravelExpenseSettingsPageContent() {
 						<AllowanceOverridesSettingsCard />
 					</>
 				}
-				access={<ExpenseOfficerSettingsCard />}
+				access={
+					<>
+						<OfficerCoverageGapNotice />
+						<ExpenseOfficerSettingsCard />
+					</>
+				}
 			/>
 		</div>
 	);

@@ -99,10 +99,12 @@ export const queryKeys = {
 		reportSubmission: (reportId: string, cycle?: number) =>
 			["travel-expenses", "reports", reportId, "submission", cycle ?? "latest"] as const,
 		/** One page of the finance queue; `search` = the view's search string (#753). */
-		financeQueue: (search: string) => ["travel-expenses", "finance", "queue", search] as const,
+		financeQueue: (search: string, coverage?: string) =>
+			["travel-expenses", "finance", "queue", search, coverage ?? "all"] as const,
 		financeQueueFilters: () => ["travel-expenses", "finance", "queue-filters"] as const,
 		/** The sidebar Finance item's awaiting-reimbursement count (#753). */
 		financeAwaitingCount: () => ["travel-expenses", "finance", "awaiting-count"] as const,
+		officerCoverageGap: () => ["travel-expenses", "finance", "coverage-gap"] as const,
 		settlement: (sourceType: string, sourceId: string) =>
 			["travel-expenses", "settlement", sourceType, sourceId] as const,
 		receiptExceptionSettings: () => ["travel-expenses", "settings", "receipt-exceptions"] as const,
