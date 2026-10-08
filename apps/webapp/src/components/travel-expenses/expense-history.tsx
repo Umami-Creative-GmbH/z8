@@ -32,7 +32,7 @@ import {
 } from "@/lib/travel-expenses/expense-history";
 import { Link } from "@/navigation";
 import { ITEM_TYPE_ICONS, TRIP_ICON } from "./expense-icons";
-import { BalanceText } from "./finance/settlement-status";
+import { BalanceText, ReimbursedBadge } from "./finance/settlement-status";
 import { ContinueLegacyDraftButton } from "./legacy-draft-conversion";
 import { DeleteDraftReportButton } from "./report/delete-draft-report";
 import { formatMoney, formatPlainDate, formatPlainDateRange } from "./report/format";
@@ -60,6 +60,8 @@ function filterLabel(t: Translate, filter: ExpenseHistoryFilter): string {
 			return t("travelExpenses.history.filter.inReview", "In review");
 		case "approved":
 			return t("travelExpenses.history.filter.approved", "Approved");
+		case "awaiting_reimbursement":
+			return t("travelExpenses.history.filter.awaitingReimbursement", "Awaiting reimbursement");
 		case "rejected":
 			return t("travelExpenses.history.filter.rejected", "Rejected");
 	}
@@ -91,7 +93,8 @@ function RowIcon({ row }: { row: ExpenseHistoryRow }) {
 }
 
 function Balance({ row }: { row: ExpenseHistoryRow }) {
-	if (!row.balance) return null;
+	// A reimbursed expense says so in its badge.
+	if (!row.balance || row.reimbursement === "reimbursed") return null;
 	return (
 		<>
 			{row.balance.currencies.map((line) => (
@@ -289,7 +292,11 @@ function HistoryList({ rows, busy }: { rows: ExpenseHistoryRow[]; busy: boolean 
 						</div>
 					</div>
 					<div className="flex shrink-0 items-start gap-1 pl-11 sm:pl-0">
-						<ReportStatusBadge status={row.status} />
+						{row.reimbursement === "reimbursed" ? (
+							<ReimbursedBadge />
+						) : (
+							<ReportStatusBadge status={row.status} />
+						)}
 						{row.source === "report" && row.deletable && <DeleteRowDraft row={row} />}
 					</div>
 				</li>
@@ -300,8 +307,9 @@ function HistoryList({ rows, busy }: { rows: ExpenseHistoryRow[]; busy: boolean 
 
 /**
  * The employee's travel expenses in one place (#617): drafts, returned,
- * submitted and decided reports and earlier claims, filterable by status, with
- * reimbursable totals and settlement balances. Loaded rows stay visible while
+ * submitted and decided reports and earlier claims, filterable by status and
+ * by whether reimbursement is still awaited (#751), with reimbursable totals
+ * and settlement balances. Loaded rows stay visible while
  * a refresh runs or fails.
  */
 export function ExpenseHistory(scope: { organizationId: string; employeeId: string }) {

@@ -280,8 +280,8 @@ export function RecordReimbursementForm({
 			<p className="text-sm text-muted-foreground">
 				{recovery
 					? t(
-							"travelExpenses.settlement.recoveryForm.notice",
-							"The employee was paid more than is now approved. Record money they already returned to settle the overpayment; the original reimbursement stays as recorded and nothing is offset against other reports. Z8 does not transfer any money.",
+							"travelExpenses.settlement.recoveryForm.explanation",
+							"The employee was paid more than is now approved. Record money they already paid back to cover the overpayment; the original reimbursement stays as recorded and nothing is offset against other reports. Z8 does not transfer any money.",
 						)
 					: t(
 							"travelExpenses.settlement.form.notice",

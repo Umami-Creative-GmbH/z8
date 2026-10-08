@@ -97,7 +97,7 @@ export function FinanceQueue() {
 	});
 	const filterLabel: Record<FinanceQueueFilter, string> = {
 		open: t("travelExpenses.finance.filter.open", "Open"),
-		settled: t("travelExpenses.finance.filter.settled", "Settled"),
+		settled: t("travelExpenses.finance.filter.reimbursed", "Reimbursed"),
 		all: t("travelExpenses.finance.filter.all", "All approved"),
 	};
 
@@ -159,8 +159,8 @@ export function FinanceQueue() {
 						<EmptyDescription>
 							{filter === "open"
 								? t(
-										"travelExpenses.finance.empty.open",
-										"Nothing to settle: every approved expense is settled.",
+										"travelExpenses.finance.empty.allReimbursed",
+										"Nothing left to record: every approved expense is reimbursed.",
 									)
 								: t("travelExpenses.finance.empty.any", "No approved expenses yet.")}
 						</EmptyDescription>
