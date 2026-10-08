@@ -290,4 +290,33 @@ describe("planSettlementEntry", () => {
 			}),
 		).toEqual({ ok: false, reason: "no_overpayment", balance: "300.00" });
 	});
+
+	it("in full (#754): records only an entry that leaves the whole account reimbursed", () => {
+		const expected = { currency: "EUR", amount: "300.00" };
+		expect(
+			planSettlementEntry(outstanding, command("reimbursement", "300.00"), expected, {
+				inFull: true,
+			}),
+		).toEqual({ ok: true, balanceBefore: "300.00", balanceAfter: "0.00" });
+		expect(
+			planSettlementEntry(outstanding, command("reimbursement", "120.00"), expected, {
+				inFull: true,
+			}),
+		).toEqual({ ok: false, reason: "not_in_full", balance: "300.00" });
+		// EUR is outstanding, but CHF was overpaid: the account needs review first.
+		const mixed = computeSettlement({
+			entitlement: [approved("300.00"), approved("10.00", "CHF")],
+			entries: [reimbursed("15.00", "CHF")],
+		});
+		expect(mixed.state).toBe("mixed");
+		expect(
+			planSettlementEntry(mixed, command("reimbursement", "300.00"), expected, { inFull: true }),
+		).toEqual({ ok: false, reason: "not_in_full", balance: "300.00" });
+		// Without the option, the outstanding currency line can still be paid on its own.
+		expect(planSettlementEntry(mixed, command("reimbursement", "300.00"), expected)).toEqual({
+			ok: true,
+			balanceBefore: "300.00",
+			balanceAfter: "0.00",
+		});
+	});
 });

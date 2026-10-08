@@ -99,6 +99,8 @@ export const queryKeys = {
 		reportSubmission: (reportId: string, cycle?: number) =>
 			["travel-expenses", "reports", reportId, "submission", cycle ?? "latest"] as const,
 		/** One page of the finance queue; `search` = the view's search string (#753). */
+		/** Every finance read: queue, filters, counts and the coverage gap. */
+		finance: () => ["travel-expenses", "finance"] as const,
 		financeQueue: (search: string, coverage?: string) =>
 			["travel-expenses", "finance", "queue", search, coverage ?? "all"] as const,
 		financeQueueFilters: () => ["travel-expenses", "finance", "queue-filters"] as const,

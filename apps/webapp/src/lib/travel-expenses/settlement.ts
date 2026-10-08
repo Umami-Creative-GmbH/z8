@@ -233,6 +233,31 @@ export function parseSettlementCommand(
 	};
 }
 
+/** The payment details many entries share (bulk reimbursement, #754). */
+export type SettlementPayment = Pick<SettlementCommand, "occurredOn" | "reference" | "note">;
+
+const PAYMENT_FIELDS: ReadonlySet<SettlementCommandField> = new Set([
+	"occurredOn",
+	"reference",
+	"note",
+]);
+
+/** Checks payment details alone, with the rules `parseSettlementCommand` applies to them. */
+export function parseSettlementPayment(
+	input: { occurredOn: string; reference: string; note?: string | null },
+	context: { latestDate: string },
+): { ok: true; payment: SettlementPayment } | { ok: false; errors: SettlementCommandFieldError[] } {
+	const parsed = parseSettlementCommand(
+		{ kind: "reimbursement", amount: "1", currency: "EUR", ...input },
+		context,
+	);
+	if (!parsed.ok) {
+		return { ok: false, errors: parsed.errors.filter((error) => PAYMENT_FIELDS.has(error.field)) };
+	}
+	const { occurredOn, reference, note } = parsed.command;
+	return { ok: true, payment: { occurredOn, reference, note } };
+}
+
 export type SettlementPlanRefusal =
 	/** The balance finance saw is no longer the balance: reload and decide again. */
 	| "stale_balance"
@@ -241,19 +266,24 @@ export type SettlementPlanRefusal =
 	| "nothing_outstanding"
 	| "exceeds_outstanding"
 	| "no_overpayment"
-	| "exceeds_overpayment";
+	| "exceeds_overpayment"
+	/** `inFull` (#754): the entry would leave some currency of the account open. */
+	| "not_in_full";
 
 /**
  * Checks one command against the current account. `expectedBalance` is the
  * balance the person recording saw: if anything changed since (another
  * reimbursement, an adjustment), the command is refused instead of applied to
  * a balance nobody looked at. A reimbursement never exceeds what is
- * outstanding; a recovery never exceeds the overpayment.
+ * outstanding; a recovery never exceeds the overpayment. With `inFull`
+ * (bulk reimbursement, #754) the entry must leave every currency of the
+ * account settled: a partial payment or a mixed account is refused.
  */
 export function planSettlementEntry(
 	summary: SettlementSummary,
 	command: Pick<SettlementCommand, "kind" | "amount" | "currency">,
 	expectedBalance: { currency: string; amount: string },
+	options: { inFull?: boolean } = {},
 ):
 	| { ok: true; balanceBefore: string; balanceAfter: string }
 	| { ok: false; reason: SettlementPlanRefusal; balance: string } {
@@ -278,6 +308,13 @@ export function planSettlementEntry(
 		if (amount > -balance) return refuse("exceeds_overpayment");
 	}
 	const after = command.kind === "reimbursement" ? balance - amount : balance + amount;
+	if (
+		options.inFull &&
+		(after !== ZERO ||
+			summary.currencies.some((other) => other !== line && other.state !== "settled"))
+	) {
+		return refuse("not_in_full");
+	}
 	return {
 		ok: true,
 		balanceBefore: balanceText,
