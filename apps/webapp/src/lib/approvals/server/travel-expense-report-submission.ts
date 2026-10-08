@@ -30,6 +30,7 @@ import {
 } from "@/lib/travel-expenses/owner-self-approval";
 import { stampPerDiemPolicies } from "@/lib/travel-expenses/per-diem-store";
 import { resolveReportProjectAttribution } from "@/lib/travel-expenses/project-attribution-store";
+import { notifyReadyForReimbursement } from "@/lib/travel-expenses/ready-for-reimbursement";
 import { receiptExceptionContext } from "@/lib/travel-expenses/receipt-exception";
 import { loadReceiptExceptionsAllowed } from "@/lib/travel-expenses/receipt-exception-read";
 import { storeSubmittedReferenceConversions } from "@/lib/travel-expenses/reference-rate-freeze";
@@ -625,6 +626,13 @@ export async function submitTravelExpenseReport(
 			} as const;
 		});
 		if (deliveryIntent) kickApprovalDelivery({ organizationId: owner.organizationId });
+		if (result.kind === "self_approved") {
+			// After commit, like a reviewer's approval (#756).
+			await notifyReadyForReimbursement(database, {
+				organizationId: owner.organizationId,
+				reportId: input.reportId,
+			});
+		}
 		return result;
 	} catch (error) {
 		if (error instanceof SubmissionRefused) return error.result;

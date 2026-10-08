@@ -9,6 +9,7 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
+	isChannelEnabledByDefault,
 	NOTIFICATION_CHANNELS,
 	NOTIFICATION_TYPES,
 	type NotificationChannel,
@@ -62,17 +63,16 @@ export async function getNotificationPreferences(): Promise<
 			slack: isSlackAvailable,
 		};
 
-		// Build preference matrix (all types x all channels, defaulting to true)
+		// Build preference matrix (all types x all channels, at each type's defaults)
 		const matrix: Record<NotificationType, Record<NotificationChannel, boolean>> = {} as Record<
 			NotificationType,
 			Record<NotificationChannel, boolean>
 		>;
 
-		// Initialize all to true (default enabled)
 		for (const type of NOTIFICATION_TYPES) {
 			matrix[type] = {} as Record<NotificationChannel, boolean>;
 			for (const channel of NOTIFICATION_CHANNELS) {
-				matrix[type][channel] = true;
+				matrix[type][channel] = isChannelEnabledByDefault(type, channel);
 			}
 		}
 

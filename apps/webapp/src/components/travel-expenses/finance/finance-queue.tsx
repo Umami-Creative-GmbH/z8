@@ -11,7 +11,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useState } from "react";
-import { getTravelExpenseFinanceQueue } from "@/app/[locale]/(app)/travel-expenses/finance-actions";
+import {
+	type FinanceQueueCoverage,
+	getTravelExpenseFinanceQueue,
+} from "@/app/[locale]/(app)/travel-expenses/finance-actions";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -80,16 +83,21 @@ function SourceIcon({ account }: { account: SettlementAccount }) {
 /**
  * The finance queue (#612): approved reports and approved legacy claims of the
  * organization with their employee-paid entitlement, company-paid costs and
- * balance. Recording happens on each expense's page.
+ * balance. Recording happens on each expense's page. With `coverage:
+ * "uncovered"` (#756), owners and admins see only what awaits reimbursement
+ * and no expense officer covers.
  */
-export function FinanceQueue() {
+export function FinanceQueue({ coverage }: { coverage?: FinanceQueueCoverage } = {}) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const [filter, setFilter] = useState<FinanceQueueFilter>("open");
+	const [selectedFilter, setFilter] = useState<FinanceQueueFilter>("open");
+	const filter = coverage ? "open" : selectedFilter;
 	const { data, isError, isFetching, isLoading, refetch } = useQuery({
-		queryKey: queryKeys.travelExpenses.financeQueue(filter),
+		queryKey: queryKeys.travelExpenses.financeQueue(coverage ? `${filter}:${coverage}` : filter),
 		queryFn: async () => {
-			const result = await getTravelExpenseFinanceQueue(filter);
+			const result = coverage
+				? await getTravelExpenseFinanceQueue(filter, coverage)
+				: await getTravelExpenseFinanceQueue(filter);
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
@@ -115,22 +123,39 @@ export function FinanceQueue() {
 				</CardDescription>
 			</CardHeader>
 			<CardContent className={isError && !data ? "space-y-4 pb-6" : undefined}>
-				<ToggleGroup
-					type="single"
-					variant="outline"
-					value={filter}
-					onValueChange={(value: string) => {
-						if (FILTERS.includes(value as FinanceQueueFilter))
-							setFilter(value as FinanceQueueFilter);
-					}}
-					aria-label={t("travelExpenses.finance.filter.label", "Show expenses")}
-				>
-					{FILTERS.map((value) => (
-						<ToggleGroupItem key={value} value={value} className="whitespace-nowrap px-3">
-							{filterLabel[value]}
-						</ToggleGroupItem>
-					))}
-				</ToggleGroup>
+				{coverage ? (
+					<p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
+						<span className="text-muted-foreground">
+							{t(
+								"travelExpenses.finance.coverageGap.queueFilter",
+								"Approved expenses awaiting reimbursement that no expense officer covers.",
+							)}
+						</span>
+						<Link
+							href="/travel-expenses/finance"
+							className="font-medium underline underline-offset-4"
+						>
+							{t("travelExpenses.finance.coverageGap.showAll", "Show all approved expenses")}
+						</Link>
+					</p>
+				) : (
+					<ToggleGroup
+						type="single"
+						variant="outline"
+						value={filter}
+						onValueChange={(value: string) => {
+							if (FILTERS.includes(value as FinanceQueueFilter))
+								setFilter(value as FinanceQueueFilter);
+						}}
+						aria-label={t("travelExpenses.finance.filter.label", "Show expenses")}
+					>
+						{FILTERS.map((value) => (
+							<ToggleGroupItem key={value} value={value} className="whitespace-nowrap px-3">
+								{filterLabel[value]}
+							</ToggleGroupItem>
+						))}
+					</ToggleGroup>
+				)}
 				{isError && !data && (
 					<TravelExpenseLoadError
 						message={t(
@@ -157,12 +182,17 @@ export function FinanceQueue() {
 							<IconCash aria-hidden="true" />
 						</EmptyMedia>
 						<EmptyDescription>
-							{filter === "open"
+							{coverage
 								? t(
-										"travelExpenses.finance.empty.allReimbursed",
-										"Nothing left to record: every approved expense is reimbursed.",
+										"travelExpenses.finance.coverageGap.empty",
+										"An expense officer covers every approved expense awaiting reimbursement.",
 									)
-								: t("travelExpenses.finance.empty.any", "No approved expenses yet.")}
+								: filter === "open"
+									? t(
+											"travelExpenses.finance.empty.allReimbursed",
+											"Nothing left to record: every approved expense is reimbursed.",
+										)
+									: t("travelExpenses.finance.empty.any", "No approved expenses yet.")}
 						</EmptyDescription>
 					</EmptyHeader>
 				</Empty>

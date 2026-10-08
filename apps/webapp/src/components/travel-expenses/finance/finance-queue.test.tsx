@@ -98,12 +98,12 @@ const claim: SettlementAccount = {
 	},
 };
 
-function mount() {
+function mount(props: { coverage?: "uncovered" } = {}) {
 	render(
 		<QueryClientProvider
 			client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
 		>
-			<FinanceQueue />
+			<FinanceQueue {...props} />
 		</QueryClientProvider>,
 	);
 }
@@ -163,6 +163,36 @@ describe("finance queue (#612)", () => {
 		mount();
 		await screen.findByText("€89.90 outstanding");
 		expect(screen.queryByRole("status")).toBeNull();
+	});
+
+	it("lists only what no expense officer covers, with a way back to every approved expense", async () => {
+		mocks.getQueue.mockResolvedValue({
+			success: true,
+			data: { accounts: [report], canSettle: true, truncated: false },
+		});
+		mount({ coverage: "uncovered" });
+		await screen.findByText("€89.90 outstanding");
+		expect(mocks.getQueue).toHaveBeenCalledWith("open", "uncovered");
+		expect(screen.queryByRole("radio")).toBeNull();
+		expect(
+			screen.getByText("Approved expenses awaiting reimbursement that no expense officer covers."),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("link", { name: "Show all approved expenses" }).getAttribute("href"),
+		).toBe("/travel-expenses/finance");
+	});
+
+	it("says when every expense awaiting reimbursement is covered", async () => {
+		mocks.getQueue.mockResolvedValue({
+			success: true,
+			data: { accounts: [], canSettle: true, truncated: false },
+		});
+		mount({ coverage: "uncovered" });
+		expect(
+			await screen.findByText(
+				"An expense officer covers every approved expense awaiting reimbursement.",
+			),
+		).toBeTruthy();
 	});
 
 	it("says when nothing is left to record and offers retry when the queue fails to load", async () => {

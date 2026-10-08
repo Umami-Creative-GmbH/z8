@@ -16,8 +16,10 @@ import {
 	diffExpenseOfficerGrant,
 	type ExpenseOfficerGrantValues,
 	expenseOfficerGrantAuditChanges,
+	officerScopeOf,
 	type SaveExpenseOfficerGrantInput,
 } from "./expense-officer-grant";
+import type { ReimbursingOfficer } from "./officer-scope";
 
 /**
  * Reads and writes of expense officer grants (#747), like payroll access
@@ -43,13 +45,17 @@ type GrantRow = Pick<
 	"id" | "officerEmployeeId" | "scope" | "canExport" | "canRecordReimbursements"
 >;
 
-const grantColumns = {
-	id: expenseOfficerGrant.id,
-	officerEmployeeId: expenseOfficerGrant.officerEmployeeId,
-	scope: expenseOfficerGrant.scope,
-	canExport: expenseOfficerGrant.canExport,
-	canRecordReimbursements: expenseOfficerGrant.canRecordReimbursements,
-};
+// Read on use: the approval decision path imports this store (#756), and
+// importing it must not touch the schema.
+function grantColumns() {
+	return {
+		id: expenseOfficerGrant.id,
+		officerEmployeeId: expenseOfficerGrant.officerEmployeeId,
+		scope: expenseOfficerGrant.scope,
+		canExport: expenseOfficerGrant.canExport,
+		canRecordReimbursements: expenseOfficerGrant.canRecordReimbursements,
+	};
+}
 
 /** The active grants of the organization with their teams and named employees. */
 export async function listActiveExpenseOfficerGrants(
@@ -57,7 +63,7 @@ export async function listActiveExpenseOfficerGrants(
 	input: { organizationId: string },
 ): Promise<ExpenseOfficerGrantRecord[]> {
 	const grants = await database
-		.select(grantColumns)
+		.select(grantColumns())
 		.from(expenseOfficerGrant)
 		.where(
 			and(
@@ -78,7 +84,7 @@ export async function loadActiveExpenseOfficerGrant(
 	input: { organizationId: string; officerEmployeeId: string },
 ): Promise<ExpenseOfficerGrantRecord | null> {
 	const grants = await database
-		.select(grantColumns)
+		.select(grantColumns())
 		.from(expenseOfficerGrant)
 		.innerJoin(
 			employee,
@@ -98,6 +104,60 @@ export async function loadActiveExpenseOfficerGrant(
 		.limit(1);
 	const [grant] = await withScopeRows(database, input.organizationId, grants);
 	return grant ?? null;
+}
+
+/** Whether the organization has any active expense officer grant (#756). */
+export async function hasActiveExpenseOfficerGrant(
+	database: Executor,
+	input: { organizationId: string },
+): Promise<boolean> {
+	const [row] = await database
+		.select({ id: expenseOfficerGrant.id })
+		.from(expenseOfficerGrant)
+		.where(
+			and(
+				eq(expenseOfficerGrant.organizationId, input.organizationId),
+				eq(expenseOfficerGrant.isActive, true),
+			),
+		)
+		.limit(1);
+	return Boolean(row);
+}
+
+/**
+ * The active officers who can record reimbursements, with their scope (#756).
+ * Like `loadActiveExpenseOfficerGrant`, a departed officer holds no grant.
+ */
+export async function listReimbursingOfficers(
+	database: Executor,
+	input: { organizationId: string },
+): Promise<ReimbursingOfficer[]> {
+	const rows = await database
+		.select({ ...grantColumns(), userId: employee.userId })
+		.from(expenseOfficerGrant)
+		.innerJoin(
+			employee,
+			and(
+				eq(employee.id, expenseOfficerGrant.officerEmployeeId),
+				eq(employee.organizationId, expenseOfficerGrant.organizationId),
+				eq(employee.isActive, true),
+			),
+		)
+		.where(
+			and(
+				eq(expenseOfficerGrant.organizationId, input.organizationId),
+				eq(expenseOfficerGrant.isActive, true),
+				eq(expenseOfficerGrant.canRecordReimbursements, true),
+			),
+		)
+		.orderBy(expenseOfficerGrant.createdAt, expenseOfficerGrant.id);
+	const grants = await withScopeRows(database, input.organizationId, rows);
+	const userIds = new Map(rows.map((row) => [row.id, row.userId]));
+	return grants.map((grant) => ({
+		officerEmployeeId: grant.officerEmployeeId,
+		userId: userIds.get(grant.id) ?? "",
+		scope: officerScopeOf(grant),
+	}));
 }
 
 async function withScopeRows(
@@ -159,7 +219,7 @@ export async function saveExpenseOfficerGrant(
 	}
 
 	const [current] = await tx
-		.select(grantColumns)
+		.select(grantColumns())
 		.from(expenseOfficerGrant)
 		.where(
 			and(
@@ -314,7 +374,7 @@ export async function revokeExpenseOfficerGrant(
 	if (!isUuid(grantId)) throw notFound;
 
 	const [row] = await tx
-		.select(grantColumns)
+		.select(grantColumns())
 		.from(expenseOfficerGrant)
 		.where(
 			and(

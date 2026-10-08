@@ -21,11 +21,13 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { loadAdjustmentOriginals, loadApprovedAdjustments } from "./adjustment-read";
-import type { OfficerScope } from "./officer-scope";
+import type { OfficerScope, ReimbursingOfficer } from "./officer-scope";
 import {
 	claimInOfficerScope,
+	claimUncoveredBy,
 	isSourceInOfficerScope,
 	reportInOfficerScope,
+	reportUncoveredBy,
 } from "./officer-scope-read";
 import { OWNER_SELF_APPROVAL_REASON } from "./owner-self-approval";
 import {
@@ -561,12 +563,22 @@ export interface FinanceQueueOptions {
 	maxScanned?: number;
 }
 
+/** Whether some currency of the account still awaits reimbursement (#756). */
+export function isAwaitingReimbursement(account: SettlementAccount): boolean {
+	return account.summary.currencies.some((line) => line.state === "outstanding");
+}
+
 function matchesQueueFilter(
 	account: SettlementAccount,
-	input: { filter: FinanceQueueFilter; includeAdjustments?: boolean },
+	input: {
+		filter: FinanceQueueFilter;
+		includeAdjustments?: boolean;
+		uncoveredBy?: readonly ReimbursingOfficer[];
+	},
 ): boolean {
 	if (!account.approved) return false;
 	if (!input.includeAdjustments && account.adjustmentOf !== null) return false;
+	if (input.uncoveredBy && !isAwaitingReimbursement(account)) return false;
 	if (input.filter === "all") return true;
 	return input.filter === "settled"
 		? account.summary.state === "settled"
@@ -620,6 +632,11 @@ export async function listFinanceQueue(
 		includeAdjustments?: boolean;
 		/** List approved legacy claims too (default true); exports have no use for them. */
 		includeLegacyClaims?: boolean;
+		/**
+		 * Only accounts awaiting reimbursement that none of these officers can
+		 * reimburse (#756): the coverage gap owners and admins are warned of.
+		 */
+		uncoveredBy?: readonly ReimbursingOfficer[];
 	},
 	options: FinanceQueueOptions = {},
 ): Promise<FinanceQueuePage> {
@@ -648,6 +665,7 @@ export async function listFinanceQueue(
 							eq(travelExpenseReport.organizationId, input.organizationId),
 							eq(travelExpenseReport.status, "approved"),
 							input.scope ? reportInOfficerScope(input.scope) : undefined,
+							input.uncoveredBy ? reportUncoveredBy(input.uncoveredBy) : undefined,
 						),
 					)
 					.orderBy(desc(travelExpenseReport.decidedAt), desc(travelExpenseReport.id))
@@ -677,6 +695,7 @@ export async function listFinanceQueue(
 							eq(travelExpenseClaim.organizationId, input.organizationId),
 							eq(travelExpenseClaim.status, "approved"),
 							input.scope ? claimInOfficerScope(input.scope) : undefined,
+							input.uncoveredBy ? claimUncoveredBy(input.uncoveredBy) : undefined,
 						),
 					)
 					.orderBy(desc(travelExpenseClaim.decidedAt), desc(travelExpenseClaim.id))

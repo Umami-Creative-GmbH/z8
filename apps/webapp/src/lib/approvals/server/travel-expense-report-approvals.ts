@@ -19,6 +19,7 @@ import {
 import { createLogger } from "@/lib/logger";
 import { onTravelExpenseReportDecided } from "@/lib/notifications/triggers";
 import { recordReportApprovalTeams } from "@/lib/travel-expenses/approval-teams";
+import { notifyReadyForReimbursement } from "@/lib/travel-expenses/ready-for-reimbursement";
 import { acquireApprovalWriteGate } from "../authority";
 import { kickApprovalDelivery } from "../delivery/kick";
 import type { ApprovalActionOptions } from "../domain/types";
@@ -727,8 +728,9 @@ async function notifyRequester(
 }
 
 /**
- * After commit: a final decision notifies the requester, and a written
- * lifecycle intent kicks the delivery owner. A replay repeats nothing.
+ * After commit: a final decision notifies the requester, a final approval the
+ * covering expense officers (#756), and a written lifecycle intent kicks the
+ * delivery owner. A replay repeats nothing.
  */
 export async function afterTravelExpenseReportDecision(
 	database: ApprovalDatabase,
@@ -741,6 +743,12 @@ export async function afterTravelExpenseReportDecision(
 		await notifyRequester(database, decision, outcome.totals).catch((error) =>
 			logger.error({ error, reportId: decision.reportId }, "Report decision notification failed"),
 		);
+	}
+	if (outcome.reportStatus === "approved") {
+		await notifyReadyForReimbursement(database, {
+			organizationId: decision.organizationId,
+			reportId: decision.reportId,
+		});
 	}
 	if (outcome.deliveryIntent) {
 		kickApprovalDelivery({ organizationId: decision.organizationId });
