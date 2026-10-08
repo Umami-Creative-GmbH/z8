@@ -17,7 +17,7 @@ import {
 } from "@/app/[locale]/(app)/travel-expenses/adjustment-actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import {
 	Dialog,
 	DialogContent,
@@ -204,89 +204,93 @@ export function ReportAdjustmentsPanel({ reportId }: { reportId: string }) {
 	}
 	const headingId = `adjustments-${reportId}`;
 	return (
-		<Card>
-			<CardContent className="space-y-4">
-				<section aria-labelledby={headingId} className="space-y-3">
-					<h2 id={headingId} className="text-lg font-semibold">
+		<section aria-labelledby={headingId}>
+			<Card>
+				<CardHeader>
+					<h2 id={headingId} className="font-semibold leading-none">
 						{t("travelExpenses.adjustment.panel.title", "Adjustments")}
 					</h2>
-					<p className="text-sm text-muted-foreground">
+					<CardDescription>
 						{t(
 							"travelExpenses.adjustment.panel.description",
 							"This report was already exported or reimbursed, so it stays as approved. A correction is a linked adjustment: it is reviewed afresh and, once approved, changes the approved amount by its signed difference.",
 						)}
-					</p>
-					{baseline && adjustments.some((adjustment) => adjustment.applied) && (
-						<p className="text-sm">
-							{t(
-								"travelExpenses.adjustment.panel.effective",
-								"Approved amount including adjustments: {amount}",
-								{ amount: formatMoney(locale, baseline.entitlement, baseline.currency) },
-							)}
-						</p>
-					)}
-					{adjustments.length > 0 && (
-						<ul className="divide-y rounded-md border text-sm">
-							{adjustments.map((adjustment) => (
-								<li
-									key={adjustment.reportId}
-									className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2"
-								>
-									<ReportStatusBadge status={adjustment.status} />
-									{adjustment.delta && adjustment.currency && (
-										<span className="font-medium tabular-nums">
-											{signedMoney(locale, adjustment.delta, adjustment.currency)}
-										</span>
-									)}
-									{adjustment.applied && (
-										<span className="text-muted-foreground">
-											{t("travelExpenses.adjustment.panel.applied", "Applied")}
-										</span>
-									)}
-									<span className="text-muted-foreground">
-										{formatRecordedInstant(locale, adjustment.createdAt)}
-									</span>
-									<span className="w-full break-words">{adjustment.reason}</span>
-									<Link
-										href={`/travel-expenses/reports/${adjustment.reportId}`}
-										className="inline-flex items-center gap-1 font-medium underline underline-offset-4"
-									>
-										{t("travelExpenses.adjustment.panel.open", "Open adjustment")}
-										<IconArrowRight aria-hidden="true" className="size-4" />
-									</Link>
-								</li>
-							))}
-						</ul>
-					)}
-				</section>
-				{eligibility.ok && (
-					<>
-						<Button type="button" variant="outline" onClick={() => setOpen(true)}>
-							<IconAdjustmentsDollar aria-hidden="true" className="mr-2 size-4" />
-							{t("travelExpenses.adjustment.create.action", "Correct with an adjustment")}
-						</Button>
-						<Dialog open={open} onOpenChange={setOpen}>
-							<DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
-								<DialogHeader>
-									<DialogTitle>
-										{t("travelExpenses.adjustment.create.title", "Create a linked adjustment?")}
-									</DialogTitle>
-									<DialogDescription>
-										{t(
-											"travelExpenses.adjustment.create.description",
-											"You get a copy of the approved expenses to correct. Submitting it sends the whole corrected report for a fresh approval; only the difference to the approved amount is settled.",
-										)}
-									</DialogDescription>
-								</DialogHeader>
-								{open && (
-									<CreateAdjustmentForm reportId={reportId} onCancel={() => setOpen(false)} />
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="space-y-4">
+					<div className="space-y-3">
+						{baseline && adjustments.some((adjustment) => adjustment.applied) && (
+							<p className="text-sm">
+								{t(
+									"travelExpenses.adjustment.panel.effective",
+									"Approved amount including adjustments: {amount}",
+									{ amount: formatMoney(locale, baseline.entitlement, baseline.currency) },
 								)}
-							</DialogContent>
-						</Dialog>
-					</>
-				)}
-			</CardContent>
-		</Card>
+							</p>
+						)}
+						{adjustments.length > 0 && (
+							<ul className="divide-y rounded-md border text-sm">
+								{adjustments.map((adjustment) => (
+									<li
+										key={adjustment.reportId}
+										className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2"
+									>
+										<ReportStatusBadge status={adjustment.status} />
+										{adjustment.delta && adjustment.currency && (
+											<span className="font-medium tabular-nums">
+												{signedMoney(locale, adjustment.delta, adjustment.currency)}
+											</span>
+										)}
+										{adjustment.applied && (
+											<span className="text-muted-foreground">
+												{t("travelExpenses.adjustment.panel.applied", "Applied")}
+											</span>
+										)}
+										<span className="text-muted-foreground">
+											{formatRecordedInstant(locale, adjustment.createdAt)}
+										</span>
+										<span className="w-full break-words">{adjustment.reason}</span>
+										<Link
+											href={`/travel-expenses/reports/${adjustment.reportId}`}
+											className="inline-flex items-center gap-1 font-medium text-primary underline-offset-4 hover:underline"
+										>
+											{t("travelExpenses.adjustment.panel.open", "Open adjustment")}
+											<IconArrowRight aria-hidden="true" className="size-4" />
+										</Link>
+									</li>
+								))}
+							</ul>
+						)}
+					</div>
+					{eligibility.ok && (
+						<>
+							<Button type="button" variant="outline" onClick={() => setOpen(true)}>
+								<IconAdjustmentsDollar aria-hidden="true" className="mr-2 size-4" />
+								{t("travelExpenses.adjustment.create.action", "Correct with an adjustment")}
+							</Button>
+							<Dialog open={open} onOpenChange={setOpen}>
+								<DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+									<DialogHeader>
+										<DialogTitle>
+											{t("travelExpenses.adjustment.create.title", "Create a linked adjustment?")}
+										</DialogTitle>
+										<DialogDescription>
+											{t(
+												"travelExpenses.adjustment.create.description",
+												"You get a copy of the approved expenses to correct. Submitting it sends the whole corrected report for a fresh approval; only the difference to the approved amount is settled.",
+											)}
+										</DialogDescription>
+									</DialogHeader>
+									{open && (
+										<CreateAdjustmentForm reportId={reportId} onCancel={() => setOpen(false)} />
+									)}
+								</DialogContent>
+							</Dialog>
+						</>
+					)}
+				</CardContent>
+			</Card>
+		</section>
 	);
 }
 

@@ -427,7 +427,7 @@ export function SubmitReportPanel({
 	const hintId = `${reportId}-submit-hint`;
 
 	return (
-		<section className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
+		<section className="flex flex-col gap-3 rounded-xl border bg-card p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
 			<p id={hintId} className="text-sm text-muted-foreground">
 				{submitHint(t, blocker)}
 			</p>

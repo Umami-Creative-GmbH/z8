@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { BackLink } from "@/components/travel-expenses/back-link";
 import { FinanceExports } from "@/components/travel-expenses/finance/finance-exports";
 import { FinanceQueue } from "@/components/travel-expenses/finance/finance-queue";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { loadFinanceActor } from "@/lib/travel-expenses/finance-access";
-import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 
 /** Travel expense finance queue (#612): only with the TravelExpenseFinance read permission. */
@@ -14,12 +14,9 @@ async function TravelExpenseFinancePageContent() {
 	if (!actor?.canRead) notFound();
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-4 px-4 py-4 md:py-6 lg:px-6">
-			<Link
-				className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
-				href="/travel-expenses"
-			>
+			<BackLink href="/travel-expenses">
 				{t("travelExpenses.report.backToTravelExpenses", "Back to travel expenses")}
-			</Link>
+			</BackLink>
 			<div className="space-y-1">
 				<h1 className="text-2xl font-semibold tracking-tight">
 					{t("travelExpenses.finance.title", "Expense finance")}

@@ -3,11 +3,18 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { Temporal } from "temporal-polyfill";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Timeline, TimelineItem } from "@/components/ui/timeline";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { queryKeys } from "@/lib/query/keys";
 import type { TravelExpenseClaimDetailData } from "@/lib/travel-expenses/claim-detail-types";
+import { formatRecordedInstant } from "@/lib/travel-expenses/format";
 import { SettlementPanel } from "./finance/settlement-panel";
 import { legacyClaimStatusLabel, legacyClaimTypeLabel } from "./legacy-claim-labels";
 import { LegacyDraftConversionPanel } from "./legacy-draft-conversion";
@@ -42,81 +49,109 @@ function TravelExpenseDecisionHistory({
 			parseInstant(right.createdAt),
 		),
 	);
-	const eventTime = (at: string) =>
-		`${parseInstant(at).toZonedDateTimeISO("UTC").toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" })} UTC`;
+	const eventTime = (at: string) => formatRecordedInstant(locale, at);
+	// The latest step is current, unless the claim still waits for a decision.
+	const pending = claim.status === "submitted";
+	const decisionRecorded = Boolean(claim.decidedAt) && history.length === 0;
+	const lastStep: "created" | "submitted" | "recorded" | "decision" =
+		history.length > 0
+			? "decision"
+			: decisionRecorded
+				? "recorded"
+				: claim.submittedAt
+					? "submitted"
+					: "created";
+	const stateOf = (step: typeof lastStep) =>
+		step === lastStep && !pending ? "current" : "done";
 	return (
 		<Card>
-			<CardContent className="space-y-3">
-				<h2 className="text-lg font-semibold">
+			<CardHeader>
+				<h2 className="font-semibold leading-none">
 					{t("travelExpenses.detail.history", "Decision history")}
 				</h2>
-				<ol className="space-y-3">
-					<li>
-						<p>{t("travelExpenses.detail.created", "Created")}</p>
-						<time
-							className="text-sm text-muted-foreground"
-							dateTime={claim.createdAt}
-						>
-							{eventTime(claim.createdAt)}
-						</time>
-					</li>
+				<CardDescription>
+					{t(
+						"travelExpenses.detail.historyDescription",
+						"Every step of this claim, oldest first. Times are shown in UTC.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<Timeline>
+					<TimelineItem
+						state={stateOf("created")}
+						title={t("travelExpenses.detail.created", "Created")}
+						time={eventTime(claim.createdAt)}
+						dateTime={claim.createdAt}
+					/>
 					{claim.submittedAt && (
-						<li>
-							<p>{t("travelExpenses.detail.submitted", "Submitted")}</p>
-							<time
-								className="text-sm text-muted-foreground"
-								dateTime={claim.submittedAt}
-							>
-								{eventTime(claim.submittedAt)}
-							</time>
-						</li>
+						<TimelineItem
+							state={stateOf("submitted")}
+							title={t("travelExpenses.detail.submitted", "Submitted")}
+							time={eventTime(claim.submittedAt)}
+							dateTime={claim.submittedAt}
+						/>
 					)}
-					{claim.decidedAt && history.length === 0 && (
-						<li>
-							<p>
-								{t(
-									"travelExpenses.detail.decisionRecorded",
-									"Decision recorded",
-								)}
-							</p>
-							<time
-								className="text-sm text-muted-foreground"
-								dateTime={claim.decidedAt}
-							>
-								{eventTime(claim.decidedAt)}
-							</time>
-						</li>
+					{claim.decidedAt && decisionRecorded && (
+						<TimelineItem
+							state={stateOf("recorded")}
+							title={t(
+								"travelExpenses.detail.decisionRecorded",
+								"Decision recorded",
+							)}
+							time={eventTime(claim.decidedAt)}
+							dateTime={claim.decidedAt}
+						/>
 					)}
-					{history.map((decision) => (
-						<li key={decision.id} className="border-l-2 pl-3">
-							<p>
-								{decision.action === "approval_recorded"
+					{history.map((decision, index) => (
+						<TimelineItem
+							key={decision.id}
+							state={
+								index === history.length - 1 ? stateOf("decision") : "done"
+							}
+							title={
+								decision.action === "approval_recorded"
 									? t(
 											"travelExpenses.detail.intermediateApproval",
 											"Approval recorded — awaiting further approval",
 										)
-									: legacyClaimStatusLabel(t, decision.action)}
-								{decision.actorName ? ` · ${decision.actorName}` : ""}
-							</p>
-							<time
-								className="text-sm text-muted-foreground"
-								dateTime={decision.createdAt}
-							>
-								{eventTime(decision.createdAt)}
-							</time>
-							{decision.reason && (
-								<p className="whitespace-pre-wrap break-words text-sm">
-									{decision.reason}
-								</p>
+									: legacyClaimStatusLabel(t, decision.action)
+							}
+							time={eventTime(decision.createdAt)}
+							dateTime={decision.createdAt}
+						>
+							{(decision.actorName || decision.reason || decision.comment) && (
+								<div className="space-y-1">
+									{decision.actorName && (
+										<p>
+											{t("travelExpenses.report.history.detail.by", "By {name}", {
+												name: decision.actorName,
+											})}
+										</p>
+									)}
+									{decision.reason && (
+										<p className="whitespace-pre-wrap text-foreground">
+											{decision.reason}
+										</p>
+									)}
+									{decision.comment && (
+										<p className="whitespace-pre-wrap text-foreground">
+											{decision.comment}
+										</p>
+									)}
+								</div>
 							)}
-							{decision.comment && (
-								<p className="whitespace-pre-wrap break-words text-sm">
-									{decision.comment}
-								</p>
-							)}
-						</li>
+						</TimelineItem>
 					))}
-				</ol>
+					{pending && (
+						<TimelineItem
+							state="current"
+							title={t("travelExpenses.report.history.inReview", "In review")}
+						>
+							{t("travelExpenses.report.awaitingReview", "Waiting for review.")}
+						</TimelineItem>
+					)}
+				</Timeline>
 			</CardContent>
 		</Card>
 	);
@@ -180,11 +215,13 @@ export function TravelExpenseClaimDetail({
 			{claim && data && (
 				<>
 					<Card>
-						<CardContent className="space-y-4">
-							<h2 className="text-lg font-semibold">
+						<CardHeader>
+							<h2 className="font-semibold leading-none">
 								{legacyClaimTypeLabel(t, claim.type)} ·{" "}
 								{legacyClaimStatusLabel(t, claim.status)}
 							</h2>
+						</CardHeader>
+						<CardContent className="space-y-4">
 							<dl className="grid gap-4 sm:grid-cols-2">
 								<div>
 									<dt className="text-sm text-muted-foreground">
@@ -254,10 +291,12 @@ export function TravelExpenseClaimDetail({
 						</CardContent>
 					</Card>
 					<Card>
-						<CardContent className="space-y-3">
-							<h2 className="text-lg font-semibold">
+						<CardHeader>
+							<h2 className="font-semibold leading-none">
 								{t("travelExpenses.detail.receipts", "Receipts")}
 							</h2>
+						</CardHeader>
+						<CardContent className="space-y-3">
 							{data.attachments.length === 0 && (
 								<p className="text-sm text-muted-foreground">
 									{t(
