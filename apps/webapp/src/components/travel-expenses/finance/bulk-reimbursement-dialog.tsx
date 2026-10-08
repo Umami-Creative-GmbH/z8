@@ -29,10 +29,16 @@ import {
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { comparePlainDates, parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
-import type { BulkReimbursementRow } from "@/lib/travel-expenses/bulk-reimbursement";
+import type { ServerActionResult } from "@/lib/effect/result";
+import type {
+	BulkReimbursementAccount,
+	BulkReimbursementOutcome,
+	BulkReimbursementResult,
+	BulkReimbursementRow,
+} from "@/lib/travel-expenses/bulk-reimbursement";
 import { latestCalendarDate } from "@/lib/travel-expenses/future-dates";
 import {
-	type CurrencySettlement,
+	fullReimbursementLine,
 	parseSettlementPayment,
 	SETTLEMENT_NOTE_MAX_LENGTH,
 	SETTLEMENT_REFERENCE_MAX_LENGTH,
@@ -50,6 +56,25 @@ export interface BulkReimbursementItem {
 	label: string;
 }
 
+/** An account that is not reimbursed, and why; listed before and after submitting (#755). */
+export interface BulkReimbursementSkippedItem {
+	source: SettlementSource;
+	label: string;
+	outcome: BulkReimbursementOutcome;
+}
+
+export interface BulkReimbursementRequest {
+	requestKey: string;
+	accounts: BulkReimbursementAccount[];
+	occurredOn: string;
+	reference: string;
+	note: string | null;
+}
+
+export type BulkReimbursementSubmit = (
+	request: BulkReimbursementRequest,
+) => Promise<ServerActionResult<BulkReimbursementResult>>;
+
 interface FormValues {
 	occurredOn: string;
 	reference: string;
@@ -61,19 +86,9 @@ export function settlementSourceKey(source: SettlementSource): string {
 	return `${source.type}:${source.id}`;
 }
 
-/** The account currency's line, when it is all that awaits reimbursement. */
-function payableLine(account: SettlementAccount): CurrencySettlement | null {
-	const line = account.summary.currencies.find((entry) => entry.currency === account.currency);
-	if (!line || line.state !== "outstanding") return null;
-	const othersSettled = account.summary.currencies.every(
-		(entry) => entry === line || entry.state === "settled",
-	);
-	return othersSettled ? line : null;
-}
-
 /** Whether one payment in the account currency reimburses the account in full. */
 export function isReimbursableInFull(account: SettlementAccount): boolean {
-	return payableLine(account) !== null;
+	return fullReimbursementLine(account) !== null;
 }
 
 /**
@@ -87,7 +102,11 @@ function defaultPaymentDate(timeZone: string): string {
 	return (comparePlainDates(today, latest) > 0 ? latest : today).toString();
 }
 
-function outcomeText(t: Translate, locale: string, row: BulkReimbursementRow): string {
+function outcomeText(
+	t: Translate,
+	locale: string,
+	row: Pick<BulkReimbursementRow, "outcome" | "amount" | "currency">,
+): string {
 	switch (row.outcome) {
 		case "reimbursed":
 			return t("travelExpenses.finance.bulk.outcome.reimbursed", "Reimbursed {amount}", {
@@ -120,18 +139,28 @@ function outcomeText(t: Translate, locale: string, row: BulkReimbursementRow): s
  * reported on its own. One request key is kept while the same payment and
  * selection are resubmitted, so a retry after a lost response records nothing
  * twice.
+ *
+ * #755 reuses it for an export batch: `submit` records against the batch,
+ * `description` explains it, and `skipped` lists the batch's accounts that
+ * are not reimbursed, before and after submitting.
  */
 export function BulkReimbursementDialog({
 	items,
+	skipped = [],
 	open,
 	onOpenChange,
 	onFinished,
+	submit = markTravelExpensesReimbursedAction,
+	description,
 }: {
 	items: readonly BulkReimbursementItem[];
+	skipped?: readonly BulkReimbursementSkippedItem[];
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	/** Called once the results were shown and closed: the queue reloads and the selection clears. */
 	onFinished: () => void;
+	submit?: BulkReimbursementSubmit;
+	description?: string;
 }) {
 	const { t } = useTranslate();
 	const [rows, setRows] = useState<BulkReimbursementRow[] | null>(null);
@@ -149,7 +178,12 @@ export function BulkReimbursementDialog({
 		<Dialog open={open} onOpenChange={close}>
 			<DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
 				{rows ? (
-					<BulkReimbursementResults items={items} rows={rows} onDone={() => close(false)} />
+					<BulkReimbursementResults
+						items={items}
+						rows={rows}
+						skipped={skipped}
+						onDone={() => close(false)}
+					/>
 				) : (
 					<>
 						<DialogHeader>
@@ -157,19 +191,25 @@ export function BulkReimbursementDialog({
 								{t("travelExpenses.finance.bulk.title", "Mark as reimbursed")}
 							</DialogTitle>
 							<DialogDescription>
-								{t(
-									"travelExpenses.finance.bulk.description",
-									"Each selected expense is reimbursed in full, in its own currency, with this payment date and reference. Z8 does not transfer any money.",
-								)}
+								{description ??
+									t(
+										"travelExpenses.finance.bulk.description",
+										"Each selected expense is reimbursed in full, in its own currency, with this payment date and reference. Z8 does not transfer any money.",
+									)}
 							</DialogDescription>
 						</DialogHeader>
-						{open && (
-							<BulkReimbursementForm
-								items={items}
-								onCancel={() => close(false)}
-								onProcessed={setRows}
-							/>
-						)}
+						{open &&
+							(items.length > 0 ? (
+								<BulkReimbursementForm
+									items={items}
+									skipped={skipped}
+									submit={submit}
+									onCancel={() => close(false)}
+									onProcessed={setRows}
+								/>
+							) : (
+								<NothingToReimburse skipped={skipped} onClose={() => close(false)} />
+							))}
 					</>
 				)}
 			</DialogContent>
@@ -177,12 +217,90 @@ export function BulkReimbursementDialog({
 	);
 }
 
+/** Every account is skipped (e.g. a batch marked before): nothing to submit. */
+function NothingToReimburse({
+	skipped,
+	onClose,
+}: {
+	skipped: readonly BulkReimbursementSkippedItem[];
+	onClose: () => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="grid gap-4">
+			<p className="text-sm">
+				{t(
+					"travelExpenses.finance.bulk.nothing",
+					"Nothing here awaits reimbursement in full. No payment is recorded.",
+				)}
+			</p>
+			<SkippedList skipped={skipped} />
+			<DialogFooter>
+				<Button type="button" onClick={onClose}>
+					{t("travelExpenses.finance.bulk.close", "Close")}
+				</Button>
+			</DialogFooter>
+		</div>
+	);
+}
+
+function SkippedList({ skipped }: { skipped: readonly BulkReimbursementSkippedItem[] }) {
+	const { t } = useTranslate();
+	const locale = useLocale();
+	if (skipped.length === 0) return null;
+	return (
+		<section aria-labelledby="bulk-reimbursement-skipped" className="grid gap-2">
+			<h3 id="bulk-reimbursement-skipped" className="text-sm font-medium">
+				{t("travelExpenses.finance.bulk.skipped", "Not included ({count})", {
+					count: skipped.length,
+				})}
+			</h3>
+			<ul className="divide-y rounded-md border">
+				{skipped.map((item) => (
+					<ResultRow
+						key={settlementSourceKey(item.source)}
+						label={item.label}
+						done={false}
+						text={outcomeText(t, locale, { outcome: item.outcome, amount: null, currency: null })}
+					/>
+				))}
+			</ul>
+		</section>
+	);
+}
+
+function ResultRow({ label, done, text }: { label: string; done: boolean; text: string }) {
+	return (
+		<li className="flex items-start gap-3 px-3 py-2 text-sm">
+			{done ? (
+				<IconCircleCheck
+					aria-hidden="true"
+					className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400"
+				/>
+			) : (
+				<IconAlertTriangle
+					aria-hidden="true"
+					className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+				/>
+			)}
+			<div className="min-w-0 flex-1">
+				<p className="truncate font-medium">{label}</p>
+				<p className={done ? "tabular-nums" : "text-muted-foreground"}>{text}</p>
+			</div>
+		</li>
+	);
+}
+
 function BulkReimbursementForm({
 	items,
+	skipped,
+	submit,
 	onCancel,
 	onProcessed,
 }: {
 	items: readonly BulkReimbursementItem[];
+	skipped: readonly BulkReimbursementSkippedItem[];
+	submit: BulkReimbursementSubmit;
 	onCancel: () => void;
 	onProcessed: (rows: BulkReimbursementRow[]) => void;
 }) {
@@ -239,14 +357,14 @@ function BulkReimbursementForm({
 				// The balance shown: exactly this is reimbursed, or nothing if it changed.
 				expectedBalance: {
 					currency: account.currency ?? "",
-					amount: payableLine(account)?.balance ?? "0.00",
+					amount: fullReimbursementLine(account)?.balance ?? "0.00",
 				},
 			}));
 			const values = JSON.stringify([parsed.payment, accounts]);
 			if (attempt.current?.values !== values) {
 				attempt.current = { values, key: crypto.randomUUID() };
 			}
-			const result = await markTravelExpensesReimbursedAction({
+			const result = await submit({
 				requestKey: attempt.current.key,
 				accounts,
 				...parsed.payment,
@@ -339,6 +457,7 @@ function BulkReimbursementForm({
 					</TFormItem>
 				)}
 			</form.Field>
+			<SkippedList skipped={skipped} />
 			{problem && (
 				<Alert variant="destructive" role="alert">
 					<IconAlertTriangle aria-hidden="true" className="size-4" />
@@ -366,18 +485,26 @@ function BulkReimbursementForm({
 
 function BulkReimbursementResults({
 	items,
-	rows,
+	rows: recorded,
+	skipped,
 	onDone,
 }: {
 	items: readonly BulkReimbursementItem[];
 	rows: readonly BulkReimbursementRow[];
+	skipped: readonly BulkReimbursementSkippedItem[];
 	onDone: () => void;
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const labels = new Map(
-		items.map((item) => [settlementSourceKey(item.account.source), item.label]),
-	);
+	const labels = new Map([
+		...items.map((item) => [settlementSourceKey(item.account.source), item.label] as const),
+		...skipped.map((item) => [settlementSourceKey(item.source), item.label] as const),
+	]);
+	// What was skipped before submitting is reported with the rest.
+	const rows: Pick<BulkReimbursementRow, "source" | "outcome" | "amount" | "currency">[] = [
+		...recorded,
+		...skipped.map(({ source, outcome }) => ({ source, outcome, amount: null, currency: null })),
+	];
 	const reimbursed = rows.filter((row) => row.outcome === "reimbursed").length;
 	return (
 		<>
@@ -395,27 +522,13 @@ function BulkReimbursementResults({
 			<ul className="divide-y rounded-md border">
 				{rows.map((row) => {
 					const key = settlementSourceKey(row.source);
-					const done = row.outcome === "reimbursed";
 					return (
-						<li key={key} className="flex items-start gap-3 px-3 py-2 text-sm">
-							{done ? (
-								<IconCircleCheck
-									aria-hidden="true"
-									className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400"
-								/>
-							) : (
-								<IconAlertTriangle
-									aria-hidden="true"
-									className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-								/>
-							)}
-							<div className="min-w-0 flex-1">
-								<p className="truncate font-medium">{labels.get(key) ?? "—"}</p>
-								<p className={done ? "tabular-nums" : "text-muted-foreground"}>
-									{outcomeText(t, locale, row)}
-								</p>
-							</div>
-						</li>
+						<ResultRow
+							key={key}
+							label={labels.get(key) ?? "—"}
+							done={row.outcome === "reimbursed"}
+							text={outcomeText(t, locale, row)}
+						/>
 					);
 				})}
 			</ul>

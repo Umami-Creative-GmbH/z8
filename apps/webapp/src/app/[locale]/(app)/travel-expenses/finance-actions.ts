@@ -85,6 +85,7 @@ function ownerView(account: SettlementAccount): SettlementAccount {
 			...entry,
 			recordedByUserId: null,
 			recordedByName: null,
+			exportBatch: null,
 		})),
 	};
 }

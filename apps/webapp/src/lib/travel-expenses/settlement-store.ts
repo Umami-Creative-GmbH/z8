@@ -6,6 +6,7 @@ import {
 	approvalDecisionEvidence,
 	employee,
 	travelExpenseClaim,
+	travelExpenseExportBatch,
 	travelExpenseReport,
 	travelExpenseSettlementEntry,
 } from "@/db/schema";
@@ -73,6 +74,13 @@ export interface SettlementEntryView {
 	/** Finance views only; null in the employee's own view. */
 	recordedByUserId: string | null;
 	recordedByName: string | null;
+	/** The export batch the reimbursement was recorded for (#755). Finance views only. */
+	exportBatch: SettlementEntryExportBatch | null;
+}
+
+export interface SettlementEntryExportBatch {
+	id: string;
+	requestedAt: string;
 }
 
 export interface SettlementBasis {
@@ -243,27 +251,45 @@ async function loadEntries(
 	}
 	for (const scope of scopes) {
 		const rows = await database
-			.select({ entry: travelExpenseSettlementEntry, recordedByName: user.name })
+			.select(entryColumns())
 			.from(travelExpenseSettlementEntry)
 			.leftJoin(user, eq(user.id, travelExpenseSettlementEntry.recordedByUserId))
+			.leftJoin(travelExpenseExportBatch, entryExportBatchJoin())
 			.where(and(eq(travelExpenseSettlementEntry.organizationId, organizationId), scope))
 			.orderBy(asc(travelExpenseSettlementEntry.recordedAt), asc(travelExpenseSettlementEntry.id));
-		for (const { entry, recordedByName } of rows) {
+		for (const { entry, recordedByName, exportBatchRequestedAt } of rows) {
 			const key =
 				entry.sourceType === "report"
 					? sourceKey({ type: "report", id: entry.reportId ?? "" })
 					: sourceKey({ type: "legacy_claim", id: entry.legacyClaimId ?? "" });
 			const list = entries.get(key) ?? [];
-			list.push(toEntryView(entry, recordedByName));
+			list.push(toEntryView(entry, recordedByName, exportBatchRequestedAt));
 			entries.set(key, list);
 		}
 	}
 	return entries;
 }
 
+// Functions, not constants: nothing here reads the schema while the module loads.
+function entryColumns() {
+	return {
+		entry: travelExpenseSettlementEntry,
+		recordedByName: user.name,
+		exportBatchRequestedAt: travelExpenseExportBatch.requestedAt,
+	};
+}
+
+function entryExportBatchJoin() {
+	return and(
+		eq(travelExpenseExportBatch.id, travelExpenseSettlementEntry.exportBatchId),
+		eq(travelExpenseExportBatch.organizationId, travelExpenseSettlementEntry.organizationId),
+	);
+}
+
 function toEntryView(
 	entry: typeof travelExpenseSettlementEntry.$inferSelect,
 	recordedByName: string | null,
+	exportBatchRequestedAt: Date | null,
 ): SettlementEntryView {
 	return {
 		id: entry.id,
@@ -277,6 +303,13 @@ function toEntryView(
 		recordedAt: instantToCanonicalString(instantFromDate(entry.recordedAt)),
 		recordedByUserId: entry.recordedByUserId,
 		recordedByName,
+		exportBatch:
+			entry.exportBatchId && exportBatchRequestedAt
+				? {
+						id: entry.exportBatchId,
+						requestedAt: instantToCanonicalString(instantFromDate(exportBatchRequestedAt)),
+					}
+				: null,
 	};
 }
 
@@ -573,6 +606,7 @@ export async function listOwnSettlementAccounts(
 export function settlementCommandFingerprint(
 	source: SettlementSource,
 	command: SettlementCommand,
+	exportBatchId: string | null = null,
 ): string {
 	const canonical = JSON.stringify([
 		"travel_expense_settlement:v1",
@@ -584,6 +618,8 @@ export function settlementCommandFingerprint(
 		command.occurredOn,
 		command.reference,
 		command.note,
+		// Appended only when set, so every fingerprint recorded before #755 stays valid.
+		...(exportBatchId ? [exportBatchId] : []),
 	]);
 	return `travel_expense_settlement:v1:${createHash("sha256").update(canonical).digest("hex")}`;
 }
@@ -639,11 +675,14 @@ export async function recordSettlementEntry(
 		expectedBalance: { currency: string; amount: string };
 		/** Bulk reimbursement (#754): refused unless the entry leaves the whole account reimbursed. */
 		inFull?: boolean;
+		/** The completed export batch the reimbursement is recorded for (#755); the caller checked it. */
+		exportBatchId?: string;
 	},
 	now: Instant = systemClock.nowInstant(),
 ): Promise<RecordSettlementResult> {
 	const { actor, source, command } = input;
-	const fingerprint = settlementCommandFingerprint(source, command);
+	const exportBatchId = input.exportBatchId ?? null;
+	const fingerprint = settlementCommandFingerprint(source, command, exportBatchId);
 	const result = await database.transaction(async (tx): Promise<RecordSettlementResult> => {
 		const account = await loadSettlementAccount(
 			tx,
@@ -690,6 +729,7 @@ export async function recordSettlementEntry(
 				recordedByEmployeeId: actor.employeeId,
 				recordedByUserId: actor.userId,
 				recordedAt: dateFromInstant(now),
+				exportBatchId,
 			})
 			.onConflictDoNothing({
 				target: [
@@ -724,9 +764,10 @@ export async function recordSettlementEntry(
 
 async function findByIdempotencyKey(tx: Transaction, organizationId: string, key: string) {
 	const [row] = await tx
-		.select({ entry: travelExpenseSettlementEntry, recordedByName: user.name })
+		.select(entryColumns())
 		.from(travelExpenseSettlementEntry)
 		.leftJoin(user, eq(user.id, travelExpenseSettlementEntry.recordedByUserId))
+		.leftJoin(travelExpenseExportBatch, entryExportBatchJoin())
 		.where(
 			and(
 				eq(travelExpenseSettlementEntry.organizationId, organizationId),
@@ -746,7 +787,7 @@ function replayResult(
 	return {
 		status: "recorded",
 		replayed: true,
-		entry: toEntryView(found.entry, found.recordedByName),
+		entry: toEntryView(found.entry, found.recordedByName, found.exportBatchRequestedAt),
 		account,
 	};
 }

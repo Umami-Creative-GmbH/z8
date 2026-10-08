@@ -123,6 +123,8 @@ export async function recordBulkReimbursement(
 		requestKey: string;
 		accounts: readonly BulkReimbursementAccount[];
 		payment: SettlementPayment;
+		/** Set by the export-batch action (#755): every new entry names the completed batch. */
+		exportBatchId?: string;
 	},
 	now: Instant = systemClock.nowInstant(),
 ): Promise<BulkReimbursementResult> {
@@ -163,6 +165,7 @@ export async function recordBulkReimbursement(
 					command: command.command,
 					expectedBalance: account.expectedBalance,
 					inFull: true,
+					exportBatchId: input.exportBatchId,
 				},
 				now,
 			);
@@ -172,7 +175,9 @@ export async function recordBulkReimbursement(
 			}
 			rows.push(row(account.source, "reimbursed", result));
 			// After the row: the money is recorded whatever happens to its audit entry.
-			if (!result.replayed) await auditReimbursement(actor, account.source, result, now);
+			if (!result.replayed) {
+				await auditReimbursement(actor, account.source, result, input.exportBatchId ?? null, now);
+			}
 		} catch (error) {
 			logger.error(
 				{ error, organizationId: actor.organizationId, source: account.source },
@@ -192,6 +197,7 @@ async function auditReimbursement(
 	actor: SettlementActor,
 	source: SettlementSource,
 	result: Extract<RecordSettlementResult, { status: "recorded" }>,
+	exportBatchId: string | null,
 	now: Instant,
 ): Promise<void> {
 	await logAudit({
@@ -208,6 +214,7 @@ async function auditReimbursement(
 			currency: result.entry.currency,
 			occurredOn: result.entry.occurredOn,
 			bulk: true,
+			...(exportBatchId ? { exportBatchId } : {}),
 		},
 		timestamp: dateFromInstant(now),
 	}).catch((error) => logger.error({ error }, "Failed to audit a bulk reimbursement"));

@@ -20,6 +20,7 @@ function entry(
 		recordedAt: "2026-10-02T08:00:00Z",
 		recordedByUserId: "finance-user",
 		recordedByName: "Fiona Finance",
+		exportBatch: null,
 		...overrides,
 	};
 }

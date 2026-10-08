@@ -267,6 +267,14 @@ function SettlementEntryRow({
 					})}
 				</span>
 			)}
+			{viewer === "finance" && entry.exportBatch && (
+				// Marked as reimbursed from an export batch (#755).
+				<span className="w-full text-xs text-muted-foreground">
+					{t("travelExpenses.settlement.entry.exportBatch", "From the export requested {date}", {
+						date: formatRecordedInstant(locale, entry.exportBatch.requestedAt),
+					})}
+				</span>
+			)}
 			{entry.note && <span className="w-full text-muted-foreground">{entry.note}</span>}
 		</li>
 	);
