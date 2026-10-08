@@ -136,6 +136,22 @@ export function computeSettlement(input: {
 	return { currencies, state };
 }
 
+/**
+ * The account currency's line when it is all that awaits reimbursement: one
+ * payment of its balance reimburses the account in full (bulk, #754/#755).
+ */
+export function fullReimbursementLine(account: {
+	currency: string | null;
+	summary: SettlementSummary;
+}): CurrencySettlement | null {
+	const line = account.summary.currencies.find((entry) => entry.currency === account.currency);
+	if (line?.state !== "outstanding") return null;
+	const othersSettled = account.summary.currencies.every(
+		(entry) => entry === line || entry.state === "settled",
+	);
+	return othersSettled ? line : null;
+}
+
 /** A validated, normalized command to record money that moved outside Z8. */
 export interface SettlementCommand {
 	kind: SettlementEntryKind;

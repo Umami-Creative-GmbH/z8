@@ -56,6 +56,7 @@ function reimbursed(amount: string): SettlementEntryView {
 		recordedAt: "2026-10-02T08:00:00Z",
 		recordedByUserId: null,
 		recordedByName: null,
+		exportBatch: null,
 	};
 }
 

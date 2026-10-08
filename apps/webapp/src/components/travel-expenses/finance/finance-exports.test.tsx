@@ -1,16 +1,20 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TravelExpenseExportsView } from "@/app/[locale]/(app)/travel-expenses/finance-export-actions";
 import type { TravelExpenseExportBatchView } from "@/lib/travel-expenses/export-store";
+import type { SettlementAccount } from "@/lib/travel-expenses/settlement-store";
 
 const mocks = vi.hoisted(() => ({
 	getExports: vi.fn(),
 	create: vi.fn(),
 	retry: vi.fn(),
 	cancel: vi.fn(),
+	getReimbursement: vi.fn(),
+	markReimbursed: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -26,6 +30,24 @@ vi.mock("@/app/[locale]/(app)/travel-expenses/finance-export-actions", () => ({
 	createTravelExpenseExportAction: mocks.create,
 	retryTravelExpenseExportAction: mocks.retry,
 	cancelTravelExpenseExportAction: mocks.cancel,
+	getTravelExpenseExportReimbursement: mocks.getReimbursement,
+	markTravelExpenseExportReimbursedAction: mocks.markReimbursed,
+}));
+vi.mock("@/app/[locale]/(app)/travel-expenses/finance-actions", () => ({
+	markTravelExpensesReimbursedAction: vi.fn(),
+}));
+// A plain date input stands in for the calendar popover.
+vi.mock("@/components/ui/date-picker", () => ({
+	DatePicker: ({
+		value,
+		onChange,
+		...props
+	}: {
+		value: string;
+		onChange: (value: string) => void;
+	} & Record<string, unknown>) => (
+		<input {...props} value={value} onChange={(event) => onChange(event.target.value)} />
+	),
 }));
 
 import { FinanceExports } from "./finance-exports";
@@ -55,6 +77,35 @@ const batch: TravelExpenseExportBatchView = {
 	reports: [],
 };
 
+const account: SettlementAccount = {
+	source: { type: "report", id: "report-robin" },
+	organizationId: "org",
+	employeeId: "employee",
+	employeeName: "Robin",
+	approved: true,
+	currency: "EUR",
+	basis: null,
+	entitlement: [{ kind: "approved_submission", id: "revision", currency: "EUR", amount: "89.90" }],
+	entries: [],
+	summary: {
+		state: "outstanding",
+		currencies: [
+			{
+				currency: "EUR",
+				entitlement: "89.90",
+				reimbursed: "0.00",
+				recovered: "0.00",
+				balance: "89.90",
+				state: "outstanding",
+			},
+		],
+	},
+	title: { kind: "trip", purpose: "Customer workshop", startDate: null, endDate: null },
+	adjustments: [],
+	adjustmentOf: null,
+	adjustmentDelta: null,
+};
+
 function view(overrides: Partial<TravelExpenseExportsView> = {}): TravelExpenseExportsView {
 	return {
 		exportable: [
@@ -78,6 +129,7 @@ function view(overrides: Partial<TravelExpenseExportsView> = {}): TravelExpenseE
 		],
 		batches: [],
 		maxRevisions: 100,
+		canSettle: false,
 		...overrides,
 	};
 }
@@ -189,6 +241,140 @@ describe("finance exports (#613)", () => {
 		).toBeTruthy();
 		expect(screen.getByText("Cancelled by finance.")).toBeTruthy();
 		expect(screen.queryByRole("link", { name: /Download/ })).toBeNull();
+	});
+
+	it("marks a completed batch as reimbursed, listing the accounts it skips with every result", async () => {
+		mocks.getExports.mockResolvedValue({
+			success: true,
+			data: view({ exportable: [], batches: [batch], canSettle: true }),
+		});
+		mocks.getReimbursement.mockResolvedValue({
+			success: true,
+			data: {
+				status: "ready",
+				accounts: [
+					{
+						source: { type: "report", id: "report-robin" },
+						employeeName: "Robin",
+						title: account.title,
+						account,
+						skip: null,
+					},
+					{
+						source: { type: "report", id: "report-sam" },
+						employeeName: "Sam",
+						title: { kind: "standalone", description: "Taxi", expenseDate: "2026-09-02" },
+						account: null,
+						skip: "out_of_scope",
+					},
+				],
+			},
+		});
+		mocks.markReimbursed.mockResolvedValue({
+			success: true,
+			data: {
+				status: "processed",
+				rows: [
+					{
+						source: { type: "report", id: "report-robin" },
+						outcome: "reimbursed",
+						replayed: false,
+						amount: "89.90",
+						currency: "EUR",
+					},
+				],
+			},
+		});
+		const user = userEvent.setup();
+		mount();
+		await user.click(await screen.findByRole("button", { name: "Mark as reimbursed" }));
+		expect(mocks.getReimbursement).toHaveBeenCalledWith("batch-1");
+		const dialog = await screen.findByRole("dialog");
+		expect(
+			within(dialog).getByText(/Adjustments count toward the report they correct/),
+		).toBeTruthy();
+		expect(within(dialog).getByText("Not included (1)")).toBeTruthy();
+		expect(within(dialog).getByText("Sam · Taxi")).toBeTruthy();
+		expect(within(dialog).getByText("Skipped: out of scope")).toBeTruthy();
+		await user.type(within(dialog).getByLabelText(/^Payment reference/), "SEPA-7");
+		await user.click(within(dialog).getByRole("button", { name: "Mark 1 as reimbursed" }));
+
+		await within(dialog).findByText("1 of 2 reimbursed");
+		expect(mocks.markReimbursed).toHaveBeenCalledWith(
+			expect.objectContaining({
+				batchId: "batch-1",
+				reference: "SEPA-7",
+				accounts: [
+					{
+						source: { type: "report", id: "report-robin" },
+						expectedBalance: { currency: "EUR", amount: "89.90" },
+					},
+				],
+			}),
+		);
+		expect(within(dialog).getByText("Robin · Customer workshop")).toBeTruthy();
+		expect(within(dialog).getByText(/^Reimbursed /)).toBeTruthy();
+		expect(within(dialog).getByText("Skipped: out of scope")).toBeTruthy();
+	});
+
+	it("records nothing for a batch whose accounts were all reimbursed already", async () => {
+		mocks.getExports.mockResolvedValue({
+			success: true,
+			data: view({ exportable: [], batches: [batch], canSettle: true }),
+		});
+		mocks.getReimbursement.mockResolvedValue({
+			success: true,
+			data: {
+				status: "ready",
+				accounts: [
+					{
+						source: { type: "report", id: "report-robin" },
+						employeeName: "Robin",
+						title: account.title,
+						account,
+						skip: "already_reimbursed",
+					},
+				],
+			},
+		});
+		const user = userEvent.setup();
+		mount();
+		await user.click(await screen.findByRole("button", { name: "Mark as reimbursed" }));
+		const dialog = await screen.findByRole("dialog");
+		expect(
+			within(dialog).getByText(
+				"Nothing here awaits reimbursement in full. No payment is recorded.",
+			),
+		).toBeTruthy();
+		expect(within(dialog).getByText("Skipped: already reimbursed")).toBeTruthy();
+		expect(within(dialog).queryByRole("button", { name: /as reimbursed/ })).toBeNull();
+		// The footer's Close and the dialog's own close button both close it.
+		const [close] = within(dialog).getAllByRole("button", { name: "Close" });
+		if (close) await user.click(close);
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		expect(mocks.markReimbursed).not.toHaveBeenCalled();
+	});
+
+	it("offers Mark as reimbursed only on completed batches, to users who record reimbursements", async () => {
+		mocks.getExports.mockResolvedValue({
+			success: true,
+			data: view({
+				exportable: [],
+				batches: [batch, { ...batch, id: "batch-2", status: "queued", fileName: null }],
+				canSettle: true,
+			}),
+		});
+		mount();
+		expect(await screen.findAllByRole("button", { name: "Mark as reimbursed" })).toHaveLength(1);
+		cleanup();
+
+		mocks.getExports.mockResolvedValue({
+			success: true,
+			data: view({ exportable: [], batches: [batch], canSettle: false }),
+		});
+		mount();
+		await screen.findByRole("link", { name: /Download/ });
+		expect(screen.queryByRole("button", { name: "Mark as reimbursed" })).toBeNull();
 	});
 
 	it("offers retry when the exports fail to load", async () => {

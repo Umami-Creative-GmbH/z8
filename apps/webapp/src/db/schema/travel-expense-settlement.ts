@@ -16,6 +16,7 @@ import type { SettlementEntryKind } from "@/lib/travel-expenses/settlement.types
 import { organization } from "../auth-schema";
 import { employee } from "./organization";
 import { travelExpenseClaim, travelExpenseReport } from "./travel-expense";
+import { travelExpenseExportBatch } from "./travel-expense-export";
 
 export const TRAVEL_EXPENSE_SETTLEMENT_SOURCE_TYPES = ["report", "legacy_claim"] as const;
 export type TravelExpenseSettlementSourceType =
@@ -55,6 +56,8 @@ export const travelExpenseSettlementEntry = pgTable(
 		}),
 		recordedByUserId: text("recorded_by_user_id").notNull(),
 		recordedAt: timestamp("recorded_at", { withTimezone: true }).defaultNow().notNull(),
+		// The completed export batch this reimbursement was recorded for (#755); null otherwise.
+		exportBatchId: uuid("export_batch_id"),
 	},
 	(table) => [
 		foreignKey({
@@ -67,6 +70,14 @@ export const travelExpenseSettlementEntry = pgTable(
 			columns: [table.legacyClaimId, table.organizationId],
 			foreignColumns: [travelExpenseClaim.id, travelExpenseClaim.organizationId],
 		}).onDelete("cascade"),
+		foreignKey({
+			name: "travel_expense_settlement_entry_export_batch_fk",
+			columns: [table.exportBatchId, table.organizationId],
+			foreignColumns: [travelExpenseExportBatch.id, travelExpenseExportBatch.organizationId],
+		}),
+		index("travelExpenseSettlementEntry_org_export_batch_idx")
+			.on(table.organizationId, table.exportBatchId)
+			.where(sql`${table.exportBatchId} IS NOT NULL`),
 		uniqueIndex("travelExpenseSettlementEntry_org_idempotency_idx").on(
 			table.organizationId,
 			table.idempotencyKey,

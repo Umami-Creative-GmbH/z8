@@ -981,6 +981,13 @@
       "when": 1796313600000,
       "tag": "0139_retire_travel_expense_finance_custom_role",
       "breakpoints": true
+    },
+    {
+      "idx": 140,
+      "version": "7",
+      "when": 1796400000000,
+      "tag": "0140_travel_expense_settlement_export_batch",
+      "breakpoints": true
     }
   ]
 }
