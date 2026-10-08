@@ -1,5 +1,5 @@
 /**
- * #748 (ADR 0001): migration 0138 turns every holder of a `TravelExpenseFinance`
+ * #748 (ADR 0001): migration 0139 turns every holder of a `TravelExpenseFinance`
  * custom role into an all-scope expense officer and deletes the stored
  * permission. Runs the migration's statements against a disposable PostgreSQL
  * database; the tables already exist there.
@@ -10,7 +10,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const migration = await readFile(
-	new URL("../../../drizzle/0138_retire_travel_expense_finance_custom_role.sql", import.meta.url),
+	new URL("../../../drizzle/0139_retire_travel_expense_finance_custom_role.sql", import.meta.url),
 	"utf8",
 );
 const statements = migration.split("--> statement-breakpoint");
@@ -204,7 +204,7 @@ const allScope = (canExport: boolean, canRecordReimbursements: boolean) => ({
 	canRecordReimbursements,
 });
 
-describe("migration 0138: TravelExpenseFinance custom roles become expense officer grants (#748)", () => {
+describe("migration 0139: TravelExpenseFinance custom roles become expense officer grants (#748)", () => {
 	beforeEach(seed);
 	afterAll(cleanup);
 
@@ -241,7 +241,7 @@ describe("migration 0138: TravelExpenseFinance custom roles become expense offic
 				action: "expense_officer.grant_created",
 				performedBy: "t748-owner",
 				changes: { from: null, to: allScope(false, false) },
-				metadata: { migration: "0138", customRoleIds: [ids.readRole] },
+				metadata: { migration: "0139", customRoleIds: [ids.readRole] },
 			},
 			{
 				officer: ids.officer,
@@ -249,7 +249,7 @@ describe("migration 0138: TravelExpenseFinance custom roles become expense offic
 				performedBy: "t748-reader",
 				changes: { from: null, to: allScope(true, true) },
 				metadata: {
-					migration: "0138",
+					migration: "0139",
 					customRoleIds: [ids.readRole, ids.exportRole, ids.settleRole],
 				},
 			},
@@ -311,7 +311,7 @@ describe("migration 0138: TravelExpenseFinance custom roles become expense offic
 					},
 					to: allScope(true, true),
 				},
-				metadata: { migration: "0138", customRoleIds: [ids.settleRole] },
+				metadata: { migration: "0139", customRoleIds: [ids.settleRole] },
 			},
 		]);
 	});

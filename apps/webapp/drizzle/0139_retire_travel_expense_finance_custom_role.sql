@@ -38,12 +38,12 @@ BEGIN
 		ORDER BY cr.organization_id, ecr.employee_id
 	LOOP
 		IF NOT holder.in_organization THEN
-			RAISE WARNING '0138: employee % holds a TravelExpenseFinance custom role of organization % but has no employee record there; no expense officer grant was created',
+			RAISE WARNING '0139: employee % holds a TravelExpenseFinance custom role of organization % but has no employee record there; no expense officer grant was created',
 				holder.employee_id, holder.organization_id;
 			CONTINUE;
 		END IF;
 		IF NOT holder.is_active THEN
-			RAISE WARNING '0138: employee % holds a TravelExpenseFinance custom role of organization % but is not active; no expense officer grant was created',
+			RAISE WARNING '0139: employee % holds a TravelExpenseFinance custom role of organization % but is not active; no expense officer grant was created',
 				holder.employee_id, holder.organization_id;
 			CONTINUE;
 		END IF;
@@ -127,7 +127,7 @@ BEGIN
 					'canRecordReimbursements', next_can_record_reimbursements
 				)
 			)::text,
-			json_build_object('migration', '0138', 'customRoleIds', to_json(holder.custom_role_ids))::text
+			json_build_object('migration', '0139', 'customRoleIds', to_json(holder.custom_role_ids))::text
 		);
 	END LOOP;
 END $$;

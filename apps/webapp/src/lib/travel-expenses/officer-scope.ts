@@ -30,6 +30,27 @@ export function isInOfficerScope(
 	);
 }
 
+/** An active expense officer who can record reimbursements (#756). */
+export interface ReimbursingOfficer {
+	officerEmployeeId: string;
+	userId: string;
+	scope: OfficerScope;
+}
+
+/**
+ * The officers who can reimburse a report or claim: those whose scope covers
+ * it, never its own employee, who records no money for their own expenses.
+ */
+export function coveringOfficers<T extends ReimbursingOfficer>(
+	officers: readonly T[],
+	subject: OfficerScopeSubject,
+): T[] {
+	return officers.filter(
+		(officer) =>
+			officer.officerEmployeeId !== subject.employeeId && isInOfficerScope(officer.scope, subject),
+	);
+}
+
 /** The reports covered by either scope. */
 export function mergeOfficerScopes(
 	left: OfficerScope | null,

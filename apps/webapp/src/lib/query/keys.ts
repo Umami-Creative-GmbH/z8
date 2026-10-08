@@ -98,7 +98,9 @@ export const queryKeys = {
 		legacyPolicies: () => ["travel-expenses", "settings", "legacy-policies"] as const,
 		reportSubmission: (reportId: string, cycle?: number) =>
 			["travel-expenses", "reports", reportId, "submission", cycle ?? "latest"] as const,
-		financeQueue: (filter: string) => ["travel-expenses", "finance", "queue", filter] as const,
+		financeQueue: (filter: string, coverage?: string) =>
+			["travel-expenses", "finance", "queue", filter, coverage ?? "all"] as const,
+		officerCoverageGap: () => ["travel-expenses", "finance", "coverage-gap"] as const,
 		settlement: (sourceType: string, sourceId: string) =>
 			["travel-expenses", "settlement", sourceType, sourceId] as const,
 		receiptExceptionSettings: () => ["travel-expenses", "settings", "receipt-exceptions"] as const,

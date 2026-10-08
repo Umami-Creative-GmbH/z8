@@ -1,4 +1,4 @@
-import { inArray, or, type SQL, sql } from "drizzle-orm";
+import { and, inArray, ne, not, or, type SQL, sql } from "drizzle-orm";
 import type { PgColumn } from "drizzle-orm/pg-core";
 import {
 	travelExpenseClaim,
@@ -7,7 +7,7 @@ import {
 } from "@/db/schema";
 import type { AdjustmentExecutor as Executor } from "./adjustment-link";
 import { readApprovalTeamIds } from "./approval-teams";
-import { isInOfficerScope, type OfficerScope } from "./officer-scope";
+import { isInOfficerScope, type OfficerScope, type ReimbursingOfficer } from "./officer-scope";
 import type { SettlementSource } from "./settlement-store";
 
 /**
@@ -83,4 +83,32 @@ export function reportInOfficerScope(
 /** Legacy claims in the scope, as a condition on `travel_expense_claim`; undefined for the all scope. */
 export function claimInOfficerScope(scope: OfficerScope): SQL | undefined {
 	return scopeCondition(scope, travelExpenseClaim.employeeId, travelExpenseClaim.approvalTeamIds);
+}
+
+/**
+ * Sources none of the officers can reimburse (#756), as the SQL form of
+ * `coveringOfficers` being empty: in no officer's scope, or only in the
+ * scope of the officer whose own expense it is. Never NULL.
+ */
+function uncoveredCondition(
+	officers: readonly ReimbursingOfficer[],
+	employeeId: PgColumn,
+	inScope: (scope: OfficerScope) => SQL | undefined,
+): SQL {
+	const covered = officers.map(
+		(officer) => and(inScope(officer.scope), ne(employeeId, officer.officerEmployeeId)) as SQL,
+	);
+	return covered.length > 0 ? not(or(...covered) as SQL) : sql`true`;
+}
+
+/** Reports none of the officers can reimburse, as a condition on `travel_expense_report`. */
+export function reportUncoveredBy(officers: readonly ReimbursingOfficer[]): SQL {
+	return uncoveredCondition(officers, travelExpenseReport.employeeId, (scope) =>
+		reportInOfficerScope(scope),
+	);
+}
+
+/** Legacy claims none of the officers can reimburse, as a condition on `travel_expense_claim`. */
+export function claimUncoveredBy(officers: readonly ReimbursingOfficer[]): SQL {
+	return uncoveredCondition(officers, travelExpenseClaim.employeeId, claimInOfficerScope);
 }

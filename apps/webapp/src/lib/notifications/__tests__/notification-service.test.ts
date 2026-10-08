@@ -257,6 +257,39 @@ describe("Notification Service", () => {
 			true,
 		);
 	});
+	test("an expense officer's ready-for-reimbursement notice is in-app only until they turn on another channel", async () => {
+		mockFindMany.mockImplementation(async () => []);
+		const { loadNotificationChannelPreferences, isChannelEnabled } = await import(
+			"../notification-service"
+		);
+		expect(
+			await loadNotificationChannelPreferences("user-1", "travel_expense_ready_for_reimbursement"),
+		).toEqual({
+			in_app: true,
+			push: false,
+			email: false,
+			teams: false,
+			telegram: false,
+			discord: false,
+			slack: false,
+		});
+		mockFindFirst.mockImplementation(() => Promise.resolve(null));
+		expect(
+			await isChannelEnabled("user-1", "org-1", "travel_expense_ready_for_reimbursement", "email"),
+		).toBe(false);
+
+		mockFindMany.mockImplementation(async () => [
+			createMockPreference({
+				notificationType: "travel_expense_ready_for_reimbursement",
+				channel: "email",
+				enabled: true,
+			}),
+		]);
+		expect(
+			(await loadNotificationChannelPreferences("user-1", "travel_expense_ready_for_reimbursement"))
+				.email,
+		).toBe(true);
+	});
 	test("durable push retries failed subscriptions and identifies an unavailable recipient", async () => {
 		const { deliverNotificationToChannel } = await import("../notification-service");
 		const params = {

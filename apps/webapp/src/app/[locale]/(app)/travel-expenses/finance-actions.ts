@@ -8,8 +8,15 @@ import { getAuthContext } from "@/lib/auth-helpers";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
+import { requireExpenseAdministrator } from "@/lib/travel-expenses/expense-administrator";
+import { listReimbursingOfficers } from "@/lib/travel-expenses/expense-officer-grant-store";
 import { financeActorReads, loadFinanceActor } from "@/lib/travel-expenses/finance-access";
 import { latestCalendarDate } from "@/lib/travel-expenses/future-dates";
+import {
+	loadOfficerCoverageGap,
+	type OfficerCoverageGap,
+} from "@/lib/travel-expenses/officer-coverage";
+import type { ReimbursingOfficer } from "@/lib/travel-expenses/officer-scope";
 import { isSourceInOfficerScope } from "@/lib/travel-expenses/officer-scope-read";
 import {
 	parseSettlementCommand,
@@ -37,6 +44,9 @@ const sourceSchema = z.object({
 	id: z.uuid(),
 });
 const filterSchema = z.enum(["open", "settled", "all"]);
+const coverageSchema = z.enum(["uncovered"]);
+
+export type FinanceQueueCoverage = z.infer<typeof coverageSchema>;
 
 export interface SettlementAccountView {
 	account: SettlementAccount;
@@ -56,25 +66,64 @@ function ownerView(account: SettlementAccount): SettlementAccount {
 	};
 }
 
+/**
+ * The finance queue in the actor's scope. `coverage: "uncovered"` lists only
+ * what awaits reimbursement and no expense officer can reimburse (#756), for
+ * owners and admins of the organization.
+ */
 export async function getTravelExpenseFinanceQueue(
 	filter: FinanceQueueFilter,
+	coverage?: FinanceQueueCoverage,
 ): Promise<
 	ServerActionResult<{ accounts: SettlementAccount[]; canSettle: boolean; truncated: boolean }>
 > {
 	try {
 		const parsed = filterSchema.safeParse(filter);
-		if (!parsed.success) return { success: false, error: "Invalid filter" };
+		const parsedCoverage = coverageSchema.optional().safeParse(coverage);
+		if (!parsed.success || !parsedCoverage.success) {
+			return { success: false, error: "Invalid filter" };
+		}
 		const actor = await loadFinanceActor();
 		if (!actor?.scopes.read) return { success: false, error: "Unauthorized" };
+		let uncoveredBy: ReimbursingOfficer[] | undefined;
+		if (parsedCoverage.data === "uncovered") {
+			const administrator = await requireExpenseAdministrator();
+			if ("error" in administrator || administrator.organizationId !== actor.organizationId) {
+				return { success: false, error: "Unauthorized" };
+			}
+			uncoveredBy = await listReimbursingOfficers(db, { organizationId: actor.organizationId });
+		}
 		const { accounts, truncated } = await listFinanceQueue(db, {
 			organizationId: actor.organizationId,
 			filter: parsed.data,
 			scope: actor.scopes.read,
+			uncoveredBy,
 		});
 		return { success: true, data: { accounts, canSettle: actor.canSettle, truncated } };
 	} catch (error) {
 		logger.error({ error }, "Failed to load the travel expense finance queue");
 		return { success: false, error: "Failed to load the finance queue" };
+	}
+}
+
+/**
+ * The coverage-gap warning (#756) for owners and admins: how many approved
+ * expenses await reimbursement that no expense officer can reimburse. Null
+ * for anyone else, and while the organization has no expense officer grant.
+ */
+export async function getExpenseOfficerCoverageGap(): Promise<
+	ServerActionResult<OfficerCoverageGap | null>
+> {
+	try {
+		const administrator = await requireExpenseAdministrator();
+		if ("error" in administrator) return { success: true, data: null };
+		return {
+			success: true,
+			data: await loadOfficerCoverageGap(db, { organizationId: administrator.organizationId }),
+		};
+	} catch (error) {
+		logger.error({ error }, "Failed to load the expense officer coverage gap");
+		return { success: false, error: "Failed to load the coverage gap" };
 	}
 }
 

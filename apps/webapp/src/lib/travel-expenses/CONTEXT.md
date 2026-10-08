@@ -83,3 +83,7 @@ _Avoid_: paid (that names who paid a receipt), settled
 **Awaiting reimbursement**:
 Said of an approved expense report that still owes the employee money, in full or in part.
 _Avoid_: unpaid, open
+
+**Coverage gap**:
+The expense reports awaiting reimbursement that no expense officer who can record reimbursements has in their officer scope, other than for their own reports. Owners and admins still handle them. An organization without expense officers has no coverage gap.
+_Avoid_: unassigned reports, orphaned reports
