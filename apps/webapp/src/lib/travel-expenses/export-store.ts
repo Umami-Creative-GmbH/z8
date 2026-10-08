@@ -27,14 +27,11 @@ import {
 	travelExpenseExportManifestDigest,
 	travelExpenseExportSelectionFingerprint,
 } from "./export-manifest";
+import { listAllFinanceQueueAccounts } from "./finance-queue-store";
 import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
 import type { OfficerScope } from "./officer-scope";
 import { isSourceInOfficerScope, reportInOfficerScope } from "./officer-scope-read";
-import {
-	listFinanceQueue,
-	loadSettlementAccount,
-	type SettlementAccount,
-} from "./settlement-store";
+import { loadSettlementAccount, type SettlementAccount } from "./settlement-store";
 
 /**
  * Tracked export batches of approved travel expense report revisions (#613).
@@ -555,9 +552,9 @@ export async function listExportableTravelExpenseRevisions(
 	database: Executor,
 	input: { organizationId: string; scope?: OfficerScope },
 ): Promise<ExportableTravelExpenseRevision[]> {
-	const { accounts } = await listFinanceQueue(database, {
+	const accounts = await listAllFinanceQueueAccounts(database, {
 		organizationId: input.organizationId,
-		filter: "all",
+		status: "all",
 		scope: input.scope,
 		// Approved adjustments (#615) are exported as their own revisions.
 		includeAdjustments: true,

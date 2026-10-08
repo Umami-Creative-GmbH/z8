@@ -41,7 +41,7 @@ Finance access is separate from approval authority. Organization owners and admi
 - **Can export**: creates and downloads export batches of the reports in scope.
 - **Can record reimbursements**: records reimbursements and recovered overpayments for the reports in scope.
 
-Every expense officer can open **Travel Expenses → Finance** and read the approved reports in their scope, with their receipts and balances. A grant with neither capability is read-only, for example for an auditor. An officer sees an export batch if they created it, if their scope is all employees, or if every report in it is in their scope. Revoking an officer ends their access immediately. Creating, changing and revoking an officer is recorded in the audit log.
+Every expense officer can open **Finance** in the sidebar and read the approved reports in their scope, with their receipts and balances. A grant with neither capability is read-only, for example for an auditor. An officer sees an export batch if they created it, if their scope is all employees, or if every report in it is in their scope. Revoking an officer ends their access immediately. Creating, changing and revoking an officer is recorded in the audit log.
 
 The **Finance** permissions of custom roles in **Settings → Custom Roles** still give access to every approved report. They are being replaced by expense officers.
 
@@ -49,7 +49,7 @@ The **Finance** permissions of custom roles in **Settings → Custom Roles** sti
 
 An approved adjustment is exported as its own row, marked `adjustment` in `record_type`. In `reports.csv`, its `reimbursable_total` is the signed change to the original report. The corrected report's totals are in `corrected_reimbursable_total` and `corrected_company_paid_total`. In `expenses.csv`, the amount columns of an adjustment's expenses are empty. The corrected expenses appear in `corrected_reimbursement_amount` and `corrected_company_paid_amount` for reference. Summing `reimbursable_total` therefore never counts an expense twice. `receipts.csv` names each receipt by its path in the ZIP, its file name and its SHA-256 checksum.
 
-If more approved expenses match a finance queue filter than fit on the page, the queue shows the most recently approved ones and says that older ones are not listed.
+**The finance queue** lists the approved expenses in your scope, the most recently approved first, 50 to a page. **Open** shows the expenses awaiting reimbursement, overpaid or needing review; **Reimbursed** and **All approved** show the rest. You can also filter by employee, by team, by currency, and to reports not yet exported. The team filter uses the teams recorded when a report was approved. A report counts as exported while it is in an export batch that is not cancelled. Earlier claims are never exported, so this filter leaves them out. The filters are kept in the page address, so a filtered page survives opening an expense and coming back. The sidebar's **Finance** item shows owners, admins and expense officers how many expenses in their scope are awaiting reimbursement.
 
 **Reimbursements.** Record each payment made outside Z8 with its amount, date and reference. The balance is the approved entitlement plus approved adjustments, minus reimbursements, plus recovered amounts. A negative balance is shown as an overpayment. Record the money returned as a recovery. Retrying a recording never creates a duplicate. Finance users cannot record reimbursements for their own expenses.
 

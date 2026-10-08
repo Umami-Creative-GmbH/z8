@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, asc, desc, eq, inArray, max, type SQL, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, max, type SQL, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { user } from "@/db/auth-schema";
 import {
@@ -22,11 +22,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { loadAdjustmentOriginals, loadApprovedAdjustments } from "./adjustment-read";
 import type { OfficerScope } from "./officer-scope";
-import {
-	claimInOfficerScope,
-	isSourceInOfficerScope,
-	reportInOfficerScope,
-} from "./officer-scope-read";
+import { isSourceInOfficerScope } from "./officer-scope-read";
 import { OWNER_SELF_APPROVAL_REASON } from "./owner-self-approval";
 import {
 	computeSettlement,
@@ -305,8 +301,11 @@ function reportTitle(
 	};
 }
 
-/** Builds the accounts of many reports and claims with a fixed number of reads. */
-async function buildAccounts(
+/**
+ * Builds the accounts of many reports and claims with a fixed number of reads:
+ * the reports' accounts in their order, then the claims'.
+ */
+export async function buildSettlementAccounts(
 	database: Executor,
 	organizationId: string,
 	reports: ReadonlyArray<{ row: ReportRow; employeeName: string | null }>,
@@ -443,7 +442,7 @@ async function buildAccounts(
 	return accounts;
 }
 
-const employeeNameColumn = { employeeName: user.name };
+export const employeeNameColumn = { employeeName: user.name };
 
 /**
  * One account, scoped to the organization; null when the source does not
@@ -470,7 +469,7 @@ export async function loadSettlementAccount(
 		const [found] = options.lock ? await query.for("update") : await query;
 		if (!found) return null;
 		const employeeName = await loadEmployeeName(database, organizationId, found.row.employeeId);
-		const [account] = await buildAccounts(
+		const [account] = await buildSettlementAccounts(
 			database,
 			organizationId,
 			[{ row: found.row, employeeName }],
@@ -491,7 +490,7 @@ export async function loadSettlementAccount(
 	const [found] = options.lock ? await query.for("update") : await query;
 	if (!found) return null;
 	const employeeName = await loadEmployeeName(database, organizationId, found.row.employeeId);
-	const [account] = await buildAccounts(
+	const [account] = await buildSettlementAccounts(
 		database,
 		organizationId,
 		[],
@@ -534,169 +533,6 @@ export async function hasRecordedSettlement(
 	return Boolean(row);
 }
 
-/** Approved sources of one kind read (and priced) per page while scanning the queue. */
-export const FINANCE_QUEUE_SOURCE_LIMIT = 500;
-/** Most accounts the queue returns; more matching accounts set `truncated`. */
-export const FINANCE_QUEUE_RESULT_LIMIT = 500;
-/** Most approved sources of one kind scanned per request; scanning further sets `truncated`. */
-export const FINANCE_QUEUE_MAX_SCANNED = 20_000;
-
-export type FinanceQueueFilter = "open" | "settled" | "all";
-
-export interface FinanceQueuePage {
-	accounts: SettlementAccount[];
-	/**
-	 * More accounts match than were returned (or the scan limit was reached):
-	 * the list shows the most recently decided ones and says so. Never silent.
-	 */
-	truncated: boolean;
-}
-
-export interface FinanceQueueOptions {
-	/** Most accounts returned (default FINANCE_QUEUE_RESULT_LIMIT). */
-	limit?: number;
-	/** Sources of one kind read per page (default FINANCE_QUEUE_SOURCE_LIMIT). */
-	pageSize?: number;
-	/** Most sources of one kind scanned (default FINANCE_QUEUE_MAX_SCANNED). */
-	maxScanned?: number;
-}
-
-function matchesQueueFilter(
-	account: SettlementAccount,
-	input: { filter: FinanceQueueFilter; includeAdjustments?: boolean },
-): boolean {
-	if (!account.approved) return false;
-	if (!input.includeAdjustments && account.adjustmentOf !== null) return false;
-	if (input.filter === "all") return true;
-	return input.filter === "settled"
-		? account.summary.state === "settled"
-		: account.summary.state !== "settled";
-}
-
-/**
- * Scans approved sources of one kind, newest decision first, page by page and
- * keeps the accounts matching the filter. Whether an account is open depends
- * on approved adjustments and recorded money (`settlement.ts`), so it is
- * decided by the same model as everywhere else, never by a row cap: an old open
- * account is found however many settled accounts were decided after it.
- */
-async function scanQueueSources(
-	readPage: (offset: number, size: number) => Promise<SettlementAccount[]>,
-	matches: (account: SettlementAccount) => boolean,
-	options: Required<FinanceQueueOptions>,
-): Promise<FinanceQueuePage> {
-	const accounts: SettlementAccount[] = [];
-	let offset = 0;
-	while (offset < options.maxScanned) {
-		const size = Math.min(options.pageSize, options.maxScanned - offset);
-		const page = await readPage(offset, size);
-		for (const account of page) {
-			if (!matches(account)) continue;
-			accounts.push(account);
-			// One more than the limit proves that something was left out.
-			if (accounts.length > options.limit) return { accounts, truncated: true };
-		}
-		if (page.length < size) return { accounts, truncated: false };
-		offset += size;
-	}
-	return { accounts, truncated: true };
-}
-
-/**
- * The finance queue: approved reports and approved legacy claims of one
- * organization with their balances. `open` lists anything not settled
- * (outstanding or overpaid). Only currently approved sources are listed, so a
- * report returned for correction (#603/#614) drops out. At most `limit`
- * accounts, the most recently approved first; `truncated` says when more match.
- */
-export async function listFinanceQueue(
-	database: Executor,
-	input: {
-		organizationId: string;
-		filter: FinanceQueueFilter;
-		/** Only the reports and claims in this officer scope (#747); every one without. */
-		scope?: OfficerScope;
-		/** Also list approved adjustment reports (#615), which have no account of their own; exports need them. */
-		includeAdjustments?: boolean;
-		/** List approved legacy claims too (default true); exports have no use for them. */
-		includeLegacyClaims?: boolean;
-	},
-	options: FinanceQueueOptions = {},
-): Promise<FinanceQueuePage> {
-	const resolved: Required<FinanceQueueOptions> = {
-		limit: options.limit ?? FINANCE_QUEUE_RESULT_LIMIT,
-		pageSize: options.pageSize ?? FINANCE_QUEUE_SOURCE_LIMIT,
-		maxScanned: options.maxScanned ?? FINANCE_QUEUE_MAX_SCANNED,
-	};
-	const matches = (account: SettlementAccount) => matchesQueueFilter(account, input);
-	const [reports, claims] = await Promise.all([
-		scanQueueSources(
-			async (offset, size) => {
-				const rows = await database
-					.select({ row: travelExpenseReport, ...employeeNameColumn })
-					.from(travelExpenseReport)
-					.leftJoin(
-						employee,
-						and(
-							eq(employee.id, travelExpenseReport.employeeId),
-							eq(employee.organizationId, travelExpenseReport.organizationId),
-						),
-					)
-					.leftJoin(user, eq(user.id, employee.userId))
-					.where(
-						and(
-							eq(travelExpenseReport.organizationId, input.organizationId),
-							eq(travelExpenseReport.status, "approved"),
-							input.scope ? reportInOfficerScope(input.scope) : undefined,
-						),
-					)
-					.orderBy(desc(travelExpenseReport.decidedAt), desc(travelExpenseReport.id))
-					.limit(size)
-					.offset(offset);
-				return buildAccounts(database, input.organizationId, rows, []);
-			},
-			matches,
-			resolved,
-		),
-		scanQueueSources(
-			async (offset, size) => {
-				if (input.includeLegacyClaims === false) return [];
-				const rows = await database
-					.select({ row: travelExpenseClaim, ...employeeNameColumn })
-					.from(travelExpenseClaim)
-					.leftJoin(
-						employee,
-						and(
-							eq(employee.id, travelExpenseClaim.employeeId),
-							eq(employee.organizationId, travelExpenseClaim.organizationId),
-						),
-					)
-					.leftJoin(user, eq(user.id, employee.userId))
-					.where(
-						and(
-							eq(travelExpenseClaim.organizationId, input.organizationId),
-							eq(travelExpenseClaim.status, "approved"),
-							input.scope ? claimInOfficerScope(input.scope) : undefined,
-						),
-					)
-					.orderBy(desc(travelExpenseClaim.decidedAt), desc(travelExpenseClaim.id))
-					.limit(size)
-					.offset(offset);
-				return buildAccounts(database, input.organizationId, [], rows);
-			},
-			matches,
-			resolved,
-		),
-	]);
-	const accounts = [...reports.accounts, ...claims.accounts].sort((left, right) =>
-		(right.basis?.approvedAt ?? "").localeCompare(left.basis?.approvedAt ?? ""),
-	);
-	return {
-		accounts: accounts.slice(0, resolved.limit),
-		truncated: reports.truncated || claims.truncated || accounts.length > resolved.limit,
-	};
-}
-
 /** The employee's own approved reports and claims with their balances. */
 export async function listOwnSettlementAccounts(
 	database: Executor,
@@ -724,7 +560,7 @@ export async function listOwnSettlementAccounts(
 				),
 			),
 	]);
-	const accounts = await buildAccounts(
+	const accounts = await buildSettlementAccounts(
 		database,
 		owner.organizationId,
 		reports.map(({ row }) => ({ row, employeeName: null })),

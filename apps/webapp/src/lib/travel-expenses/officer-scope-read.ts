@@ -84,3 +84,17 @@ export function reportInOfficerScope(
 export function claimInOfficerScope(scope: OfficerScope): SQL | undefined {
 	return scopeCondition(scope, travelExpenseClaim.employeeId, travelExpenseClaim.approvalTeamIds);
 }
+
+/** Reports recorded with the team at approval (#753), as a condition on `travel_expense_report`. */
+export function reportRecordedWithTeam(teamId: string): SQL {
+	return (
+		reportInOfficerScope({ kind: "specific", teamIds: [teamId], employeeIds: [] }) ?? sql`false`
+	);
+}
+
+/** Legacy claims recorded with the team at approval (#753), as a condition on `travel_expense_claim`. */
+export function claimRecordedWithTeam(teamId: string): SQL {
+	return (
+		claimInOfficerScope({ kind: "specific", teamIds: [teamId], employeeIds: [] }) ?? sql`false`
+	);
+}

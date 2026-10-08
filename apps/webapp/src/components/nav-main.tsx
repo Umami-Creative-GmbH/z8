@@ -11,7 +11,7 @@ import {
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Link, usePathname } from "@/navigation";
-import { isNavItemActive } from "./nav-active";
+import { activeNavHref } from "./nav-active";
 
 export function NavMain({
 	items,
@@ -21,10 +21,16 @@ export function NavMain({
 		title: string;
 		url: string;
 		icon?: Icon;
+		/** Rendered after the item's button, e.g. a SidebarMenuBadge count. */
+		badge?: ReactNode;
 	}[];
 	label?: ReactNode;
 }) {
 	const pathname = usePathname();
+	const activeUrl = activeNavHref(
+		pathname,
+		items.map((item) => item.url),
+	);
 
 	return (
 		<SidebarGroup>
@@ -32,7 +38,7 @@ export function NavMain({
 			<SidebarGroupContent>
 				<SidebarMenu>
 					{items.map((item) => {
-						const isActive = isNavItemActive(pathname, item.url);
+						const isActive = item.url === activeUrl;
 
 						return (
 							<SidebarMenuItem key={item.title}>
@@ -42,6 +48,7 @@ export function NavMain({
 										<span>{item.title}</span>
 									</Link>
 								</SidebarMenuButton>
+								{item.badge}
 							</SidebarMenuItem>
 						);
 					})}

@@ -113,6 +113,7 @@ const actions = await import("@/app/[locale]/(app)/travel-expenses/report-action
 const reopenActions = await import("@/app/[locale]/(app)/travel-expenses/report-reopen-actions");
 const exportActions = await import("@/app/[locale]/(app)/travel-expenses/finance-export-actions");
 const finance = await import("@/app/[locale]/(app)/travel-expenses/finance-actions");
+const { DEFAULT_FINANCE_QUEUE_VIEW } = await import("@/lib/travel-expenses/finance-queue-params");
 const exportStore = await import("@/lib/travel-expenses/export-store");
 const { processTravelExpenseExportBatch } = await import("@/lib/travel-expenses/export-processor");
 const { POST: processReceipt } = await import(
@@ -379,7 +380,10 @@ async function approvedEvidenceIds(reportId: string) {
 
 async function queueIds() {
 	signIn("admin");
-	const queue = await finance.getTravelExpenseFinanceQueue("all");
+	const queue = await finance.getTravelExpenseFinanceQueue({
+		...DEFAULT_FINANCE_QUEUE_VIEW,
+		status: "all",
+	});
 	if (!queue.success) throw new Error(queue.error);
 	return queue.data.accounts.map((account) => account.source.id);
 }

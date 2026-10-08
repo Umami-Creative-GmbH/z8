@@ -105,6 +105,7 @@ const { db } = await import("@/db");
 const actions = await import("@/app/[locale]/(app)/travel-expenses/report-actions");
 const adjustments = await import("@/app/[locale]/(app)/travel-expenses/adjustment-actions");
 const finance = await import("@/app/[locale]/(app)/travel-expenses/finance-actions");
+const { DEFAULT_FINANCE_QUEUE_VIEW } = await import("@/lib/travel-expenses/finance-queue-params");
 const recovery = await import("@/app/[locale]/(app)/travel-expenses/finance-recovery-actions");
 const exportActions = await import("@/app/[locale]/(app)/travel-expenses/finance-export-actions");
 const review = await import("@/app/[locale]/(app)/travel-expenses/report-review-actions");
@@ -575,7 +576,10 @@ describe("signed adjustments and overpayment recovery (#615)", () => {
 
 		// The overpayment shows in the open finance queue; the adjustment is no account of its own.
 		signIn("finance");
-		const queue = await finance.getTravelExpenseFinanceQueue("open");
+		const queue = await finance.getTravelExpenseFinanceQueue({
+			...DEFAULT_FINANCE_QUEUE_VIEW,
+			status: "open",
+		});
 		expect(queue.success && queue.data.accounts.map((a) => a.source.id)).toEqual([original]);
 		const onAdjustment = await finance.recordTravelExpenseReimbursementAction({
 			source: source(adjustmentId),
