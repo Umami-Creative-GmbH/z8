@@ -15,9 +15,9 @@ import {
 	instantFromDate,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
-import { revokePayrollAccessGrantOnDeparture } from "@/lib/payroll-access/grant-store";
+import { revokePayrollAccessGrantHeldBy } from "@/lib/payroll-access/grant-store";
 import { WorkTransactionProtocolViolation } from "@/lib/time-tracking/work-transaction";
-import { revokeExpenseOfficerGrantOnDeparture } from "@/lib/travel-expenses/expense-officer-grant-store";
+import { revokeExpenseOfficerGrantHeldBy } from "@/lib/travel-expenses/expense-officer-grant-store";
 import { captureApprovalHandoverDuties } from "./approval-handover";
 import { enqueueReviewNotifications } from "./notifications";
 import { evaluateDepartureAuthority } from "./owner-invariant";
@@ -267,21 +267,22 @@ async function revokeHeldAccessGrants(
 	identity: DepartureIdentity,
 	actorUserId: string,
 ) {
-	const departure = {
+	const auditMetadata = {
+		reason: "employee_departure",
 		departureId: identity.departureId,
 		employmentPeriodId: identity.employmentPeriodId,
 	};
-	await revokeExpenseOfficerGrantOnDeparture(tx, {
+	await revokeExpenseOfficerGrantHeldBy(tx, {
 		organizationId: identity.organizationId,
 		actorUserId,
 		officerEmployeeId: identity.employeeId,
-		departure,
+		auditMetadata,
 	});
-	await revokePayrollAccessGrantOnDeparture(tx, {
+	await revokePayrollAccessGrantHeldBy(tx, {
 		organizationId: identity.organizationId,
 		actorUserId,
 		payrollEmployeeId: identity.employeeId,
-		departure,
+		auditMetadata,
 	});
 }
 

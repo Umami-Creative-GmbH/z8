@@ -12,9 +12,7 @@ import { AuditAction } from "@/lib/audit-logger";
 import { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import {
 	buildValidatedPayrollAccessInput,
-	departureRevocationMetadata,
 	diffPayrollAccessScope,
-	type GrantRevocationDeparture,
 	type PayrollAccessScope,
 	payrollAccessGrantAuditChanges,
 	type SavePayrollAccessInput,
@@ -226,19 +224,19 @@ export async function revokePayrollAccessGrant(
 }
 
 /**
- * Offboarding (#750): revokes the active grant the departing employee holds, inside the
- * departure's transaction, with an audit entry naming the departure. Grants that only
- * name the employee in their scope stay as they are. Returns the revoked grant, if any.
+ * Revokes the active grant the employee holds, if any, recording `auditMetadata` on the
+ * audit entry. Offboarding (#750) calls it inside the departure's transaction. Grants
+ * that only name the employee in their scope stay as they are.
  */
-export async function revokePayrollAccessGrantOnDeparture(
+export async function revokePayrollAccessGrantHeldBy(
 	tx: PayrollAccessTransaction,
 	input: {
 		organizationId: string;
 		actorUserId: string;
 		payrollEmployeeId: string;
-		departure: GrantRevocationDeparture;
+		auditMetadata: Record<string, unknown>;
 	},
-): Promise<string | null> {
+): Promise<void> {
 	const { organizationId, actorUserId } = input;
 	const [grant] = await tx
 		.select({
@@ -256,15 +254,9 @@ export async function revokePayrollAccessGrantOnDeparture(
 		)
 		.limit(1)
 		.for("update");
-	if (!grant) return null;
+	if (!grant) return;
 
-	await revokeLockedGrant(tx, {
-		organizationId,
-		actorUserId,
-		grant,
-		metadata: departureRevocationMetadata(input.departure),
-	});
-	return grant.id;
+	await revokeLockedGrant(tx, { organizationId, actorUserId, grant, metadata: input.auditMetadata });
 }
 
 async function revokeLockedGrant(

@@ -5,7 +5,9 @@
  * grants that only name the departed employee in their scope stay as they are.
  */
 import { randomUUID } from "node:crypto";
+import { and, eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { travelExpenseReport } from "@/db/schema";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import { savePayrollAccessGrant } from "@/lib/payroll-access/grant-store";
 import { officerScopeOf } from "@/lib/travel-expenses/expense-officer-grant";
@@ -13,7 +15,7 @@ import {
 	loadActiveExpenseOfficerGrant,
 	saveExpenseOfficerGrant,
 } from "@/lib/travel-expenses/expense-officer-grant-store";
-import { isSourceInOfficerScope } from "@/lib/travel-expenses/officer-scope-read";
+import { reportInOfficerScope } from "@/lib/travel-expenses/officer-scope-read";
 import { createDepartureCommands } from "./commands";
 import {
 	createLifecycleDatabaseFixture,
@@ -237,11 +239,110 @@ describe("departure access grants", () => {
 		).toBeNull();
 	});
 
+	it("revokes the grants when a scheduled departure takes effect at its cutoff", async () => {
+		const officer = await fixture.seedEmployee();
+		const expense = await grantExpenseOfficer(officer);
+		const payroll = await grantPayrollAccess(officer);
+		now = parseInstant("2026-09-14T08:00:00Z");
+		const scheduled = await commands().scheduleDeparture(owner(), {
+			employeeId: officer.employeeId,
+			requestId: randomUUID(),
+			expectedRevision: null,
+			lastWorkingDay: "2026-09-30",
+			replacementEmployeeId: null,
+			acknowledgeUnassignedDuties: true,
+		});
+		const identity = {
+			organizationId: fixture.organizationId,
+			employeeId: officer.employeeId,
+			employmentPeriodId: officer.employmentPeriodId,
+			departureId: scheduled.departureId,
+			revision: scheduled.revision,
+		};
+
+		expect(await commands().executeDeparture(identity)).toEqual({ status: "not_due" });
+		expect(await grantState("expense_officer_grant", expense.grantId)).toMatchObject({
+			is_active: true,
+		});
+
+		now = parseInstant("2026-10-02T00:00:00Z");
+		await expect(commands().executeDeparture(identity)).resolves.toMatchObject({
+			status: "effective",
+		});
+		expect(await grantState("expense_officer_grant", expense.grantId)).toMatchObject({
+			is_active: false,
+		});
+		expect(await grantState("payroll_access_grant", payroll.grantId)).toMatchObject({
+			is_active: false,
+		});
+		expect((await auditEntries(payroll.grantId)).at(-1)?.metadata).toEqual({
+			reason: "employee_departure",
+			departureId: scheduled.departureId,
+			employmentPeriodId: officer.employmentPeriodId,
+		});
+	});
+
+	async function insertReport(employee: SeededEmployee, approvalTeamIds: string[] | null) {
+		const result = await fixture.pool.query<{ id: string }>(
+			`insert into travel_expense_report
+			 (organization_id, employee_id, kind, status, reimbursement_currency, submission_count,
+			  submitted_at, decided_at, approval_team_ids, created_by)
+			 values ($1, $2, 'standalone', 'approved', 'EUR', 1, now(), now(), $3::uuid[], $4)
+			 returning id`,
+			[fixture.organizationId, employee.employeeId, approvalTeamIds, employee.userId],
+		);
+		return result.rows[0]?.id ?? "";
+	}
+
+	async function reportsInScopeOf(officer: SeededEmployee, reportIds: string[]) {
+		const grant = await loadActiveExpenseOfficerGrant(fixture.db, {
+			organizationId: fixture.organizationId,
+			officerEmployeeId: officer.employeeId,
+		});
+		if (!grant) return [];
+		const rows = await fixture.db
+			.select({ id: travelExpenseReport.id })
+			.from(travelExpenseReport)
+			.where(
+				and(
+					eq(travelExpenseReport.organizationId, fixture.organizationId),
+					inArray(travelExpenseReport.id, reportIds),
+					reportInOfficerScope(officerScopeOf(grant)),
+				),
+			);
+		return rows.map((row) => row.id);
+	}
+
 	it("keeps grants that name the departed employee, so their reports stay in scope", async () => {
 		const leaver = await fixture.seedEmployee();
+		const colleague = await fixture.seedEmployee();
 		const officer = await fixture.seedEmployee();
+		const teamOfficer = await fixture.seedEmployee();
+		const teamId = randomUUID();
+		await fixture.pool.query(
+			`insert into team (id, organization_id, name, updated_at) values ($1, $2, $3, now())`,
+			[teamId, fixture.organizationId, `Team ${teamId}`],
+		);
 		const expense = await grantExpenseOfficer(officer, [leaver.employeeId]);
 		const payroll = await grantPayrollAccess(officer, [leaver.employeeId]);
+		await fixture.db.transaction((tx) =>
+			saveExpenseOfficerGrant(tx, {
+				organizationId: fixture.organizationId,
+				actorUserId: fixture.ownerUserId,
+				grant: {
+					officerEmployeeId: teamOfficer.employeeId,
+					scope: "specific",
+					teamIds: [teamId],
+					employeeIds: [],
+					canExport: false,
+					canRecordReimbursements: true,
+				},
+			}),
+		);
+		const leaverNamedReport = await insertReport(leaver, null);
+		const leaverTeamReport = await insertReport(leaver, [teamId]);
+		const colleagueReport = await insertReport(colleague, null);
+		const reportIds = [leaverNamedReport, leaverTeamReport, colleagueReport];
 
 		await offboardNow(leaver.employeeId);
 
@@ -256,18 +357,10 @@ describe("departure access grants", () => {
 			[payroll.grantId, leaver.employeeId],
 		);
 		expect(payrollNamed.rows).toHaveLength(1);
-		const grant = await loadActiveExpenseOfficerGrant(fixture.db, {
-			organizationId: fixture.organizationId,
-			officerEmployeeId: officer.employeeId,
-		});
-		expect(grant?.employeeIds).toEqual([leaver.employeeId]);
-		expect(
-			await isSourceInOfficerScope(fixture.db, grant ? officerScopeOf(grant) : null, {
-				organizationId: fixture.organizationId,
-				source: { type: "report", id: randomUUID() },
-				employeeId: leaver.employeeId,
-			}),
-		).toBe(true);
+		expect((await reportsInScopeOf(officer, reportIds)).toSorted()).toEqual(
+			[leaverNamedReport, leaverTeamReport].toSorted(),
+		);
+		expect(await reportsInScopeOf(teamOfficer, reportIds)).toEqual([leaverTeamReport]);
 		expect(await auditEntries(expense.grantId)).toHaveLength(1);
 		expect(await auditEntries(payroll.grantId)).toHaveLength(1);
 	});

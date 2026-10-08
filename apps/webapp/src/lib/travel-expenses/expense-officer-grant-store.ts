@@ -10,12 +10,7 @@ import {
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import {
-	departureRevocationMetadata,
-	type GrantRevocationDeparture,
-	validateId,
-	validateIdList,
-} from "@/lib/payroll-access/grant-scope";
+import { validateId, validateIdList } from "@/lib/payroll-access/grant-scope";
 import {
 	buildValidatedExpenseOfficerGrant,
 	diffExpenseOfficerGrant,
@@ -35,8 +30,8 @@ import {
 type Database = typeof appDb;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 /** Writes run in the caller's transaction, including a departure's work transaction (#750). */
-type Writer = Pick<Transaction, "select" | "insert" | "update" | "delete">;
-type Executor = Database | Writer;
+type GrantTransaction = Pick<Transaction, "select" | "insert" | "update" | "delete">;
+type Executor = Database | GrantTransaction;
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -333,26 +328,28 @@ export async function revokeExpenseOfficerGrant(
 		.limit(1)
 		.for("update");
 	if (!row) throw notFound;
+	const [grant] = await withScopeRows(tx, organizationId, [row]);
+	if (!grant) throw notFound;
 
-	await revokeLockedGrant(tx, { organizationId, actorUserId, row, metadata: null });
-	return { grantId: row.id, officerEmployeeId: row.officerEmployeeId };
+	await revokeLockedGrant(tx, { organizationId, actorUserId, grant, metadata: null });
+	return { grantId: grant.id, officerEmployeeId: grant.officerEmployeeId };
 }
 
 /**
- * Offboarding (#750): revokes the active grant the departing officer holds,
- * inside the departure's transaction, with an audit entry naming the
- * departure. Grants that only name the employee in their scope stay, so their
- * reports can still be reimbursed. Returns the revoked grant, if any.
+ * Revokes the active grant the officer holds, if any, recording
+ * `auditMetadata` on the audit entry. Offboarding (#750) calls it inside the
+ * departure's transaction. Grants that only name the employee in their scope
+ * stay, so their reports can still be reimbursed.
  */
-export async function revokeExpenseOfficerGrantOnDeparture(
-	tx: Writer,
+export async function revokeExpenseOfficerGrantHeldBy(
+	tx: GrantTransaction,
 	input: {
 		organizationId: string;
 		actorUserId: string;
 		officerEmployeeId: string;
-		departure: GrantRevocationDeparture;
+		auditMetadata: Record<string, unknown>;
 	},
-): Promise<string | null> {
+): Promise<void> {
 	const { organizationId, actorUserId } = input;
 	const [row] = await tx
 		.select(grantColumns)
@@ -366,30 +363,22 @@ export async function revokeExpenseOfficerGrantOnDeparture(
 		)
 		.limit(1)
 		.for("update");
-	if (!row) return null;
+	const [grant] = row ? await withScopeRows(tx, organizationId, [row]) : [];
+	if (!grant) return;
 
-	await revokeLockedGrant(tx, {
-		organizationId,
-		actorUserId,
-		row,
-		metadata: departureRevocationMetadata(input.departure),
-	});
-	return row.id;
+	await revokeLockedGrant(tx, { organizationId, actorUserId, grant, metadata: input.auditMetadata });
 }
 
 async function revokeLockedGrant(
-	tx: Writer,
+	tx: GrantTransaction,
 	input: {
 		organizationId: string;
 		actorUserId: string;
-		row: GrantRow;
+		grant: ExpenseOfficerGrantRecord;
 		metadata: Record<string, unknown> | null;
 	},
 ): Promise<void> {
-	const { organizationId, actorUserId } = input;
-	const [grant] = await withScopeRows(tx, organizationId, [input.row]);
-	if (!grant) return;
-
+	const { organizationId, actorUserId, grant } = input;
 	await tx
 		.update(expenseOfficerGrant)
 		.set({ isActive: false, updatedBy: actorUserId })
@@ -412,7 +401,7 @@ async function revokeLockedGrant(
 }
 
 async function insertScopeRows(
-	tx: Writer,
+	tx: GrantTransaction,
 	input: {
 		organizationId: string;
 		actorUserId: string;
@@ -447,7 +436,7 @@ async function insertScopeRows(
 }
 
 async function writeGrantAudit(
-	tx: Writer,
+	tx: GrantTransaction,
 	input: {
 		organizationId: string;
 		actorUserId: string;
