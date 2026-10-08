@@ -114,6 +114,25 @@ export function payrollAccessGrantAuditChanges(
 	return { from: from && normalizeScope(from), to: to && normalizeScope(to) };
 }
 
+/** The departure that revoked an officer's grant (#750); shared with expense officer grants. */
+export interface GrantRevocationDeparture {
+	departureId: string;
+	employmentPeriodId: string;
+}
+
+/** The audit `metadata` payload of a grant that offboarding revoked. */
+export function departureRevocationMetadata(departure: GrantRevocationDeparture): {
+	reason: "employee_departure";
+	departureId: string;
+	employmentPeriodId: string;
+} {
+	return {
+		reason: "employee_departure",
+		departureId: departure.departureId,
+		employmentPeriodId: departure.employmentPeriodId,
+	};
+}
+
 export function validatePayrollAccessScope(value: unknown): "all" | "specific" {
 	if (value === "all" || value === "specific") {
 		return value;

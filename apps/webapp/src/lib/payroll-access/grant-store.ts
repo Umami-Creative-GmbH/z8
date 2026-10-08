@@ -12,7 +12,9 @@ import { AuditAction } from "@/lib/audit-logger";
 import { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import {
 	buildValidatedPayrollAccessInput,
+	departureRevocationMetadata,
 	diffPayrollAccessScope,
+	type GrantRevocationDeparture,
 	type PayrollAccessScope,
 	payrollAccessGrantAuditChanges,
 	type SavePayrollAccessInput,
@@ -29,7 +31,10 @@ import {
  * officer is a new row.
  */
 
-type PayrollAccessTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type PayrollAccessTransaction = Pick<
+	Parameters<Parameters<typeof db.transaction>[0]>[0],
+	"select" | "insert" | "update" | "delete"
+>;
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -216,6 +221,62 @@ export async function revokePayrollAccessGrant(
 		.for("update");
 	if (!grant) throw notFound;
 
+	await revokeLockedGrant(tx, { organizationId, actorUserId, grant, metadata: null });
+	return { grantId: grant.id, payrollEmployeeId: grant.payrollEmployeeId };
+}
+
+/**
+ * Offboarding (#750): revokes the active grant the departing employee holds, inside the
+ * departure's transaction, with an audit entry naming the departure. Grants that only
+ * name the employee in their scope stay as they are. Returns the revoked grant, if any.
+ */
+export async function revokePayrollAccessGrantOnDeparture(
+	tx: PayrollAccessTransaction,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		payrollEmployeeId: string;
+		departure: GrantRevocationDeparture;
+	},
+): Promise<string | null> {
+	const { organizationId, actorUserId } = input;
+	const [grant] = await tx
+		.select({
+			id: payrollAccessGrant.id,
+			payrollEmployeeId: payrollAccessGrant.payrollEmployeeId,
+			scope: payrollAccessGrant.scope,
+		})
+		.from(payrollAccessGrant)
+		.where(
+			and(
+				eq(payrollAccessGrant.organizationId, organizationId),
+				eq(payrollAccessGrant.payrollEmployeeId, input.payrollEmployeeId),
+				eq(payrollAccessGrant.isActive, true),
+			),
+		)
+		.limit(1)
+		.for("update");
+	if (!grant) return null;
+
+	await revokeLockedGrant(tx, {
+		organizationId,
+		actorUserId,
+		grant,
+		metadata: departureRevocationMetadata(input.departure),
+	});
+	return grant.id;
+}
+
+async function revokeLockedGrant(
+	tx: PayrollAccessTransaction,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		grant: { id: string; payrollEmployeeId: string; scope: string };
+		metadata: Record<string, unknown> | null;
+	},
+): Promise<void> {
+	const { organizationId, actorUserId, grant } = input;
 	const scope = await readGrantScope(tx, organizationId, grant);
 	await tx
 		.update(payrollAccessGrant)
@@ -234,8 +295,8 @@ export async function revokePayrollAccessGrant(
 		action: AuditAction.PAYROLL_ACCESS_GRANT_REVOKED,
 		from: scope,
 		to: null,
+		metadata: input.metadata,
 	});
-	return { grantId: grant.id, payrollEmployeeId: grant.payrollEmployeeId };
 }
 
 async function readGrantScope(
@@ -316,6 +377,7 @@ async function writeGrantAudit(
 		action: AuditAction;
 		from: PayrollAccessScope | null;
 		to: PayrollAccessScope | null;
+		metadata?: Record<string, unknown> | null;
 	},
 ): Promise<void> {
 	await tx.insert(auditLog).values({
@@ -326,6 +388,7 @@ async function writeGrantAudit(
 		performedBy: input.actorUserId,
 		employeeId: input.payrollEmployeeId,
 		changes: JSON.stringify(payrollAccessGrantAuditChanges(input.from, input.to)),
+		metadata: input.metadata ? JSON.stringify(input.metadata) : null,
 	});
 }
 

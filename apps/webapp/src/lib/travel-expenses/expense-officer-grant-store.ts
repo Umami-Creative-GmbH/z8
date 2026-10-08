@@ -10,7 +10,12 @@ import {
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { validateId, validateIdList } from "@/lib/payroll-access/grant-scope";
+import {
+	departureRevocationMetadata,
+	type GrantRevocationDeparture,
+	validateId,
+	validateIdList,
+} from "@/lib/payroll-access/grant-scope";
 import {
 	buildValidatedExpenseOfficerGrant,
 	diffExpenseOfficerGrant,
@@ -29,7 +34,9 @@ import {
 
 type Database = typeof appDb;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-type Executor = Database | Transaction;
+/** Writes run in the caller's transaction, including a departure's work transaction (#750). */
+type Writer = Pick<Transaction, "select" | "insert" | "update" | "delete">;
+type Executor = Database | Writer;
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -326,8 +333,62 @@ export async function revokeExpenseOfficerGrant(
 		.limit(1)
 		.for("update");
 	if (!row) throw notFound;
-	const [grant] = await withScopeRows(tx, organizationId, [row]);
-	if (!grant) throw notFound;
+
+	await revokeLockedGrant(tx, { organizationId, actorUserId, row, metadata: null });
+	return { grantId: row.id, officerEmployeeId: row.officerEmployeeId };
+}
+
+/**
+ * Offboarding (#750): revokes the active grant the departing officer holds,
+ * inside the departure's transaction, with an audit entry naming the
+ * departure. Grants that only name the employee in their scope stay, so their
+ * reports can still be reimbursed. Returns the revoked grant, if any.
+ */
+export async function revokeExpenseOfficerGrantOnDeparture(
+	tx: Writer,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		officerEmployeeId: string;
+		departure: GrantRevocationDeparture;
+	},
+): Promise<string | null> {
+	const { organizationId, actorUserId } = input;
+	const [row] = await tx
+		.select(grantColumns)
+		.from(expenseOfficerGrant)
+		.where(
+			and(
+				eq(expenseOfficerGrant.organizationId, organizationId),
+				eq(expenseOfficerGrant.officerEmployeeId, input.officerEmployeeId),
+				eq(expenseOfficerGrant.isActive, true),
+			),
+		)
+		.limit(1)
+		.for("update");
+	if (!row) return null;
+
+	await revokeLockedGrant(tx, {
+		organizationId,
+		actorUserId,
+		row,
+		metadata: departureRevocationMetadata(input.departure),
+	});
+	return row.id;
+}
+
+async function revokeLockedGrant(
+	tx: Writer,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		row: GrantRow;
+		metadata: Record<string, unknown> | null;
+	},
+): Promise<void> {
+	const { organizationId, actorUserId } = input;
+	const [grant] = await withScopeRows(tx, organizationId, [input.row]);
+	if (!grant) return;
 
 	await tx
 		.update(expenseOfficerGrant)
@@ -346,12 +407,12 @@ export async function revokeExpenseOfficerGrant(
 		action: AuditAction.EXPENSE_OFFICER_GRANT_REVOKED,
 		from: grant,
 		to: null,
+		metadata: input.metadata,
 	});
-	return { grantId: grant.id, officerEmployeeId: grant.officerEmployeeId };
 }
 
 async function insertScopeRows(
-	tx: Transaction,
+	tx: Writer,
 	input: {
 		organizationId: string;
 		actorUserId: string;
@@ -386,7 +447,7 @@ async function insertScopeRows(
 }
 
 async function writeGrantAudit(
-	tx: Transaction,
+	tx: Writer,
 	input: {
 		organizationId: string;
 		actorUserId: string;
@@ -395,6 +456,7 @@ async function writeGrantAudit(
 		action: AuditAction;
 		from: ExpenseOfficerGrantValues | null;
 		to: ExpenseOfficerGrantValues | null;
+		metadata?: Record<string, unknown> | null;
 	},
 ): Promise<void> {
 	await tx.insert(auditLog).values({
@@ -405,6 +467,7 @@ async function writeGrantAudit(
 		performedBy: input.actorUserId,
 		employeeId: input.officerEmployeeId,
 		changes: JSON.stringify(expenseOfficerGrantAuditChanges(input.from, input.to)),
+		metadata: input.metadata ? JSON.stringify(input.metadata) : null,
 	});
 }
 
