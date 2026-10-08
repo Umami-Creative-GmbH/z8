@@ -497,12 +497,32 @@ describe("expense officer access (#747)", () => {
 		expect((await download("owner", mixed.data.batchId)).status).toBe(200);
 	});
 
+	it("never puts a report without recorded teams in a team scope, nor its batch", async () => {
+		const unrecorded = await approvedReceipt("berliner");
+		await admin.query("update travel_expense_report set approval_team_ids = null where id = $1", [
+			unrecorded.reportId,
+		]);
+		expect(await queueIds("exporter")).not.toContain(unrecorded.reportId);
+		signIn("owner");
+		const batch = await exportActions.createTravelExpenseExportAction({
+			idempotencyKey: randomUUID(),
+			selection: [unrecorded],
+		});
+		if (!batch.success || batch.data.status !== "created") throw new Error("export failed");
+		await runJobs();
+		signIn("exporter");
+		const listed = await exportActions.getTravelExpenseExports();
+		if (!listed.success) throw new Error(listed.error);
+		expect(listed.data.batches.map((entry) => entry.id)).not.toContain(batch.data.batchId);
+		expect((await download("exporter", batch.data.batchId)).status).toBe(404);
+	});
+
 	it("shows an all-scope officer every batch", async () => {
 		await grant("exporter", { scope: "all", canExport: true });
 		signIn("exporter");
 		const listed = await exportActions.getTravelExpenseExports();
 		if (!listed.success) throw new Error(listed.error);
-		expect(listed.data.batches).toHaveLength(2);
+		expect(listed.data.batches).toHaveLength(3);
 	});
 
 	it("ends access immediately when the grant is revoked, and audits the revocation", async () => {

@@ -50,7 +50,8 @@ function scopeCondition(
 	const matches: SQL[] = [];
 	if (scope.employeeIds.length > 0) matches.push(inArray(employeeId, [...scope.employeeIds]));
 	if (scope.teamIds.length > 0) {
-		matches.push(sql`${approvalTeamIds} && ${uuidArray(scope.teamIds)}`);
+		// Never NULL for unrecorded teams: a negated NULL would read as in scope.
+		matches.push(sql`coalesce(${approvalTeamIds} && ${uuidArray(scope.teamIds)}, false)`);
 	}
 	return or(...matches) ?? sql`false`;
 }

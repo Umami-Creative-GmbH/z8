@@ -56,7 +56,7 @@ export function toSelectableEmployee(
 	};
 }
 
-export function toggleId(values: string[], id: string, checked: boolean): string[] {
+function toggleId(values: string[], id: string, checked: boolean): string[] {
 	if (checked) return values.includes(id) ? values : [...values, id];
 	return values.filter((value) => value !== id);
 }

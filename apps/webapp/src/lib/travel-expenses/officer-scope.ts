@@ -1,6 +1,6 @@
 /**
  * Officer scope (#747, ADR 0002): which approved expense reports and legacy
- * claims a finance user handles. Owners and admins handle all of them; an
+ * claims someone handles after approval. Owners and admins handle all of them; an
  * expense officer handles those of the employees named in their grant and
  * those recorded at approval with one of the grant's teams. The teams are the
  * report's own record (`approval-teams.ts`), never the employee's current ones.
@@ -45,7 +45,7 @@ export function mergeOfficerScopes(
 	};
 }
 
-/** The scope in which a finance user may do each thing; null where they may not. */
+/** Where an owner, admin or expense officer may do each thing; null where they may not. */
 export interface FinanceScopes {
 	/** The finance queue, approved evidence (frozen revisions, receipts) and balances. */
 	read: OfficerScope | null;
