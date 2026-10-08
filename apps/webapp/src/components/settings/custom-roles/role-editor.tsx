@@ -27,6 +27,7 @@ import {
 	getPermissionCategories,
 	getPermissionKey,
 	getPermissionsByCategory,
+	isValidPermission,
 } from "@/lib/authorization/permission-registry";
 import type { PrincipalContext } from "@/lib/authorization/types";
 import type { CustomRoleWithPermissions } from "@/lib/effect/services/custom-role.service";
@@ -108,7 +109,12 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 	const [color, setColor] = useState(role?.color ?? "#6366f1");
 	const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(() => {
 		if (!role) return new Set();
-		return new Set(role.permissions.map((p) => getPermissionKey(p.action, p.subject)));
+		// A retired permission still stored on the role (e.g. finance, #748) would fail validation on save.
+		return new Set(
+			role.permissions
+				.filter((p) => isValidPermission(p.action, p.subject))
+				.map((p) => getPermissionKey(p.action, p.subject)),
+		);
 	});
 	const [isSaving, setIsSaving] = useState(false);
 

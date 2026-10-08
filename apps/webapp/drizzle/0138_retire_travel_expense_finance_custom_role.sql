@@ -14,8 +14,9 @@ DECLARE
 	holder record;
 	current_grant record;
 	current_values json;
-	next_values json;
-	grant_metadata text;
+	next_can_export boolean;
+	next_can_record_reimbursements boolean;
+	audit_action text;
 	migrated_grant_id uuid;
 BEGIN
 	FOR holder IN
@@ -47,11 +48,6 @@ BEGIN
 			CONTINUE;
 		END IF;
 
-		grant_metadata := json_build_object(
-			'migration', '0138',
-			'customRoleIds', to_json(holder.custom_role_ids)
-		)::text;
-
 		SELECT g.id, g.scope, g.can_export, g.can_record_reimbursements
 		INTO current_grant
 		FROM expense_officer_grant g
@@ -60,82 +56,78 @@ BEGIN
 			AND g.is_active
 		FOR UPDATE;
 
-		IF NOT FOUND THEN
+		IF FOUND THEN
+			next_can_export := current_grant.can_export OR holder.can_export;
+			next_can_record_reimbursements :=
+				current_grant.can_record_reimbursements OR holder.can_record_reimbursements;
+			IF current_grant.scope = 'all'
+				AND next_can_export = current_grant.can_export
+				AND next_can_record_reimbursements = current_grant.can_record_reimbursements
+			THEN
+				CONTINUE;
+			END IF;
+
+			current_values := json_build_object(
+				'scope', current_grant.scope,
+				'teamIds', coalesce(
+					(SELECT json_agg(t.team_id ORDER BY t.team_id::text COLLATE "C")
+					 FROM expense_officer_team t WHERE t.grant_id = current_grant.id),
+					'[]'::json
+				),
+				'employeeIds', coalesce(
+					(SELECT json_agg(oe.employee_id ORDER BY oe.employee_id::text COLLATE "C")
+					 FROM expense_officer_employee oe WHERE oe.grant_id = current_grant.id),
+					'[]'::json
+				),
+				'canExport', current_grant.can_export,
+				'canRecordReimbursements', current_grant.can_record_reimbursements
+			);
+			migrated_grant_id := current_grant.id;
+			audit_action := 'expense_officer.grant_changed';
+
+			UPDATE expense_officer_grant
+			SET scope = 'all',
+				can_export = next_can_export,
+				can_record_reimbursements = next_can_record_reimbursements,
+				updated_by = holder.assigned_by,
+				updated_at = now()
+			WHERE id = migrated_grant_id;
+			DELETE FROM expense_officer_team WHERE grant_id = migrated_grant_id;
+			DELETE FROM expense_officer_employee WHERE grant_id = migrated_grant_id;
+		ELSE
+			next_can_export := holder.can_export;
+			next_can_record_reimbursements := holder.can_record_reimbursements;
+			current_values := NULL;
+			audit_action := 'expense_officer.grant_created';
+
 			INSERT INTO expense_officer_grant (
 				organization_id, officer_employee_id, scope, can_export,
 				can_record_reimbursements, created_by, updated_by
 			)
 			VALUES (
-				holder.organization_id, holder.employee_id, 'all', holder.can_export,
-				holder.can_record_reimbursements, holder.assigned_by, holder.assigned_by
+				holder.organization_id, holder.employee_id, 'all', next_can_export,
+				next_can_record_reimbursements, holder.assigned_by, holder.assigned_by
 			)
 			RETURNING id INTO migrated_grant_id;
-
-			next_values := json_build_object(
-				'scope', 'all',
-				'teamIds', '[]'::json,
-				'employeeIds', '[]'::json,
-				'canExport', holder.can_export,
-				'canRecordReimbursements', holder.can_record_reimbursements
-			);
-			INSERT INTO audit_log (
-				organization_id, entity_type, entity_id, action, performed_by, employee_id, changes, metadata
-			)
-			VALUES (
-				holder.organization_id, 'expense_officer_grant', migrated_grant_id,
-				'expense_officer.grant_created', holder.assigned_by, holder.employee_id,
-				json_build_object('from', NULL, 'to', next_values)::text, grant_metadata
-			);
-			CONTINUE;
 		END IF;
-
-		IF current_grant.scope = 'all'
-			AND current_grant.can_export >= holder.can_export
-			AND current_grant.can_record_reimbursements >= holder.can_record_reimbursements
-		THEN
-			CONTINUE;
-		END IF;
-
-		current_values := json_build_object(
-			'scope', current_grant.scope,
-			'teamIds', coalesce(
-				(SELECT json_agg(t.team_id ORDER BY t.team_id::text COLLATE "C")
-				 FROM expense_officer_team t WHERE t.grant_id = current_grant.id),
-				'[]'::json
-			),
-			'employeeIds', coalesce(
-				(SELECT json_agg(oe.employee_id ORDER BY oe.employee_id::text COLLATE "C")
-				 FROM expense_officer_employee oe WHERE oe.grant_id = current_grant.id),
-				'[]'::json
-			),
-			'canExport', current_grant.can_export,
-			'canRecordReimbursements', current_grant.can_record_reimbursements
-		);
-		next_values := json_build_object(
-			'scope', 'all',
-			'teamIds', '[]'::json,
-			'employeeIds', '[]'::json,
-			'canExport', current_grant.can_export OR holder.can_export,
-			'canRecordReimbursements', current_grant.can_record_reimbursements OR holder.can_record_reimbursements
-		);
-
-		UPDATE expense_officer_grant
-		SET scope = 'all',
-			can_export = current_grant.can_export OR holder.can_export,
-			can_record_reimbursements = current_grant.can_record_reimbursements OR holder.can_record_reimbursements,
-			updated_by = holder.assigned_by,
-			updated_at = now()
-		WHERE id = current_grant.id;
-		DELETE FROM expense_officer_team WHERE grant_id = current_grant.id;
-		DELETE FROM expense_officer_employee WHERE grant_id = current_grant.id;
 
 		INSERT INTO audit_log (
 			organization_id, entity_type, entity_id, action, performed_by, employee_id, changes, metadata
 		)
 		VALUES (
-			holder.organization_id, 'expense_officer_grant', current_grant.id,
-			'expense_officer.grant_changed', holder.assigned_by, holder.employee_id,
-			json_build_object('from', current_values, 'to', next_values)::text, grant_metadata
+			holder.organization_id, 'expense_officer_grant', migrated_grant_id, audit_action,
+			holder.assigned_by, holder.employee_id,
+			json_build_object(
+				'from', current_values,
+				'to', json_build_object(
+					'scope', 'all',
+					'teamIds', '[]'::json,
+					'employeeIds', '[]'::json,
+					'canExport', next_can_export,
+					'canRecordReimbursements', next_can_record_reimbursements
+				)
+			)::text,
+			json_build_object('migration', '0138', 'customRoleIds', to_json(holder.custom_role_ids))::text
 		);
 	END LOOP;
 END $$;

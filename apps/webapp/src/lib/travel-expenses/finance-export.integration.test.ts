@@ -126,7 +126,7 @@ const ids = {
 	accountant: "e6130000-0000-4000-8000-000000000005",
 	foreigner: "e6130000-0000-4000-8000-000000000006",
 	exporter: "e6130000-0000-4000-8000-000000000007",
-	exportRole: "e6131000-0000-4000-8000-000000000002",
+	retiredFinanceRole: "e6131000-0000-4000-8000-000000000002",
 } as const;
 type Person = "requester" | "manager" | "finance" | "accountant" | "foreigner" | "exporter";
 
@@ -185,19 +185,19 @@ async function seed() {
 	await admin.query(
 		`insert into custom_role (id, organization_id, name, base_tier, created_by, updated_at)
 		 values ($1, 't613-org', 'Old finance', 'employee', 't613-finance', now())`,
-		[ids.exportRole],
+		[ids.retiredFinanceRole],
 	);
 	for (const action of ["read", "export"]) {
 		await admin.query(
 			`insert into custom_role_permission (id, custom_role_id, action, subject)
 			 values (gen_random_uuid(), $1, $2, 'TravelExpenseFinance')`,
-			[ids.exportRole, action],
+			[ids.retiredFinanceRole, action],
 		);
 	}
 	await admin.query(
 		`insert into employee_custom_role (id, employee_id, custom_role_id, assigned_by)
 		 values (gen_random_uuid(), $1, $2, 't613-finance')`,
-		[ids.exporter, ids.exportRole],
+		[ids.exporter, ids.retiredFinanceRole],
 	);
 }
 
