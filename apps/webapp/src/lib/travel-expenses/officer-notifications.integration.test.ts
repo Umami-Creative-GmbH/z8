@@ -49,10 +49,11 @@ vi.mock("@/env", async (original) => ({
 		TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES: "1024",
 	},
 }));
-vi.mock("@/lib/notifications/triggers", async (original) => ({
-	...(await original<typeof import("@/lib/notifications/triggers")>()),
-	onTravelExpenseReportDecided: async () => {},
-}));
+vi.mock("@/lib/notifications/triggers", async (original) =>
+	(await import("@/test/integration-harness")).notificationTriggers(original, [
+		"onTravelExpenseReportDecided",
+	]),
+);
 vi.mock("@/lib/email/email-service", async (original) =>
 	(await import("@/test/integration-harness")).emailService(original),
 );

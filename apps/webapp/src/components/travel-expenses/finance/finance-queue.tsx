@@ -93,7 +93,7 @@ export function FinanceQueue({ coverage }: { coverage?: FinanceQueueCoverage } =
 	const [selectedFilter, setFilter] = useState<FinanceQueueFilter>("open");
 	const filter = coverage ? "open" : selectedFilter;
 	const { data, isError, isFetching, isLoading, refetch } = useQuery({
-		queryKey: queryKeys.travelExpenses.financeQueue(coverage ? `${filter}:${coverage}` : filter),
+		queryKey: queryKeys.travelExpenses.financeQueue(filter, coverage),
 		queryFn: async () => {
 			const result = coverage
 				? await getTravelExpenseFinanceQueue(filter, coverage)

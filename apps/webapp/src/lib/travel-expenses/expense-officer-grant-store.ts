@@ -151,13 +151,20 @@ export async function listReimbursingOfficers(
 			),
 		)
 		.orderBy(expenseOfficerGrant.createdAt, expenseOfficerGrant.id);
+	// One grant per row, in row order.
 	const grants = await withScopeRows(database, input.organizationId, rows);
-	const userIds = new Map(rows.map((row) => [row.id, row.userId]));
-	return grants.map((grant) => ({
-		officerEmployeeId: grant.officerEmployeeId,
-		userId: userIds.get(grant.id) ?? "",
-		scope: officerScopeOf(grant),
-	}));
+	return rows.flatMap((row, index) => {
+		const grant = grants[index];
+		return grant
+			? [
+					{
+						officerEmployeeId: row.officerEmployeeId,
+						userId: row.userId,
+						scope: officerScopeOf(grant),
+					},
+				]
+			: [];
+	});
 }
 
 async function withScopeRows(

@@ -44,9 +44,9 @@ const sourceSchema = z.object({
 	id: z.uuid(),
 });
 const filterSchema = z.enum(["open", "settled", "all"]);
-const coverageSchema = z.enum(["uncovered"]).optional();
+const coverageSchema = z.enum(["uncovered"]);
 
-export type FinanceQueueCoverage = "uncovered";
+export type FinanceQueueCoverage = z.infer<typeof coverageSchema>;
 
 export interface SettlementAccountView {
 	account: SettlementAccount;
@@ -79,7 +79,7 @@ export async function getTravelExpenseFinanceQueue(
 > {
 	try {
 		const parsed = filterSchema.safeParse(filter);
-		const parsedCoverage = coverageSchema.safeParse(coverage);
+		const parsedCoverage = coverageSchema.optional().safeParse(coverage);
 		if (!parsed.success || !parsedCoverage.success) {
 			return { success: false, error: "Invalid filter" };
 		}
