@@ -11,14 +11,17 @@ function absoluteAmount(amount: string): string {
 	return amount.startsWith("-") ? amount.slice(1) : amount;
 }
 
-/** Settlement state of an account (#612): outstanding, overpaid, settled or mixed. */
+/**
+ * Settlement state of an account (#612), in the glossary's words (#751):
+ * awaiting reimbursement, overpaid, reimbursed or needing review (mixed).
+ */
 export function SettlementStateBadge({ state }: { state: SettlementSummary["state"] }) {
 	const { t } = useTranslate();
 	switch (state) {
 		case "outstanding":
 			return (
 				<Badge variant="outline">
-					{t("travelExpenses.settlement.state.outstanding", "Outstanding")}
+					{t("travelExpenses.settlement.state.awaitingReimbursement", "Awaiting reimbursement")}
 				</Badge>
 			);
 		case "overpaid":
@@ -34,15 +37,23 @@ export function SettlementStateBadge({ state }: { state: SettlementSummary["stat
 				</Badge>
 			);
 		case "settled":
-			return (
-				<Badge variant="secondary">{t("travelExpenses.settlement.state.settled", "Settled")}</Badge>
-			);
+			return <ReimbursedBadge />;
 	}
+}
+
+/** An approved expense whose employee-paid amount has been paid in full (#751). */
+export function ReimbursedBadge() {
+	const { t } = useTranslate();
+	return (
+		<Badge variant="secondary">
+			{t("travelExpenses.settlement.state.reimbursed", "Reimbursed")}
+		</Badge>
+	);
 }
 
 /**
  * One currency's balance in words: what is still owed to the employee, what
- * was overpaid (never shown as zero), or that it is settled.
+ * was overpaid (never shown as zero), or that it is reimbursed.
  */
 export function BalanceText({ line }: { line: CurrencySettlement }) {
 	const { t } = useTranslate();
@@ -60,6 +71,6 @@ export function BalanceText({ line }: { line: CurrencySettlement }) {
 				<>{t("travelExpenses.settlement.balance.overpaid", "{amount} overpaid", { amount })}</>
 			);
 		case "settled":
-			return <>{t("travelExpenses.settlement.balance.settled", "Settled")}</>;
+			return <>{t("travelExpenses.settlement.balance.reimbursed", "Reimbursed")}</>;
 	}
 }

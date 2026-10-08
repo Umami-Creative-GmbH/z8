@@ -276,8 +276,8 @@ export function ReportAdjustmentsPanel({ reportId }: { reportId: string }) {
 										</DialogTitle>
 										<DialogDescription>
 											{t(
-												"travelExpenses.adjustment.create.description",
-												"You get a copy of the approved expenses to correct. Submitting it sends the whole corrected report for a fresh approval; only the difference to the approved amount is settled.",
+												"travelExpenses.adjustment.create.explanation",
+												"You get a copy of the approved expenses to correct. Submitting it sends the whole corrected report for a fresh approval; only the difference to the approved amount is reimbursed or paid back.",
 											)}
 										</DialogDescription>
 									</DialogHeader>

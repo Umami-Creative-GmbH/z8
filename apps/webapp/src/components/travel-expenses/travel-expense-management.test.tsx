@@ -8,6 +8,7 @@ import type {
 	LegacyClaimHistoryRow,
 	ReportHistoryRow,
 } from "@/lib/travel-expenses/expense-history";
+import type { SettlementSummary } from "@/lib/travel-expenses/settlement";
 
 const historyActions = vi.hoisted(() => ({
 	getMyTravelExpenseHistory: vi.fn(),
@@ -61,6 +62,7 @@ function reportRow(overrides: Partial<ReportHistoryRow> & { id: string }): Repor
 		stage: "needs_action",
 		activityAt: "2026-10-05T10:00:00.000Z",
 		balance: null,
+		reimbursement: null,
 		dates: { start: "2026-09-14", end: "2026-09-14" },
 		kind: "standalone",
 		status: "draft",
@@ -84,6 +86,7 @@ function claimRow(overrides: Partial<LegacyClaimHistoryRow> = {}): LegacyClaimHi
 		stage: "approved",
 		activityAt: "2026-04-01T10:00:00.000Z",
 		balance: null,
+		reimbursement: null,
 		dates: { start: "2026-03-29", end: "2026-03-31" },
 		claimType: "receipt",
 		status: "approved",
@@ -93,6 +96,34 @@ function claimRow(overrides: Partial<LegacyClaimHistoryRow> = {}): LegacyClaimHi
 		...overrides,
 	};
 }
+
+const outstandingBalance: SettlementSummary = {
+	state: "outstanding",
+	currencies: [
+		{
+			currency: "EUR",
+			entitlement: "89.90",
+			reimbursed: "50.00",
+			recovered: "0.00",
+			balance: "39.90",
+			state: "outstanding",
+		},
+	],
+};
+
+const reimbursedBalance: SettlementSummary = {
+	state: "settled",
+	currencies: [
+		{
+			currency: "EUR",
+			entitlement: "89.90",
+			reimbursed: "89.90",
+			recovered: "0.00",
+			balance: "0.00",
+			state: "settled",
+		},
+	],
+};
 
 function respond(rows: ExpenseHistoryRow[]) {
 	return { success: true, data: rows };
@@ -233,6 +264,42 @@ describe("unified history", () => {
 		client.clear();
 	});
 
+	it("shows Reimbursed instead of Approved on a fully reimbursed expense (#751)", async () => {
+		historyActions.getMyTravelExpenseHistory.mockResolvedValue(
+			respond([
+				reportRow({
+					id: "reimbursed",
+					title: "Reimbursed receipt",
+					stage: "approved",
+					status: "approved",
+					balance: reimbursedBalance,
+					reimbursement: "reimbursed",
+				}),
+				reportRow({
+					id: "awaiting",
+					title: "Awaiting receipt",
+					stage: "approved",
+					status: "approved",
+					balance: outstandingBalance,
+					reimbursement: "awaiting",
+				}),
+				claimRow({ balance: reimbursedBalance, reimbursement: "reimbursed" }),
+			]),
+		);
+		const client = mount();
+		const reimbursed = (await screen.findByText("Reimbursed receipt")).closest("li") as HTMLElement;
+		expect(within(reimbursed).getByText("Reimbursed")).toBeTruthy();
+		expect(within(reimbursed).queryByText("Approved")).toBeNull();
+		const legacy = screen.getByText(/Receipt claim/).closest("li") as HTMLElement;
+		expect(within(legacy).getByText("Reimbursed")).toBeTruthy();
+		const awaiting = screen.getByText("Awaiting receipt").closest("li") as HTMLElement;
+		expect(within(awaiting).getByText("Approved")).toBeTruthy();
+		expect(within(awaiting).getByText("€39.90 outstanding")).toBeTruthy();
+		expect(within(awaiting).queryByText("Reimbursed")).toBeNull();
+		expect(screen.queryByText(/settled/i)).toBeNull();
+		client.clear();
+	});
+
 	it("offers to continue a legacy draft as a report", async () => {
 		historyActions.getMyTravelExpenseHistory.mockResolvedValue(
 			respond([claimRow({ status: "draft", stage: "needs_action", canContinue: true })]),
@@ -320,6 +387,52 @@ describe("status filters", () => {
 		expect(screen.queryByText("Draft receipt")).toBeNull();
 		expect(screen.queryByText(/Receipt claim/)).toBeNull();
 		expect(within(filters).getByRole("radio", { name: /Approved/ }).textContent).toContain("1");
+		client.clear();
+	});
+
+	it("filters to expenses awaiting reimbursement (#751)", async () => {
+		historyActions.getMyTravelExpenseHistory.mockResolvedValue(
+			respond([
+				...rows,
+				reportRow({
+					id: "awaiting",
+					title: "Awaiting receipt",
+					stage: "approved",
+					status: "approved",
+					balance: outstandingBalance,
+					reimbursement: "awaiting",
+				}),
+				reportRow({
+					id: "reimbursed",
+					title: "Reimbursed receipt",
+					stage: "approved",
+					status: "approved",
+					balance: reimbursedBalance,
+					reimbursement: "reimbursed",
+				}),
+			]),
+		);
+		const client = mount();
+		await screen.findByText("Draft receipt");
+		const filters = screen.getByRole("radiogroup", { name: "Show expenses" });
+		const labels = within(filters)
+			.getAllByRole("radio")
+			.map((radio) => radio.textContent?.replace(/\d+$/, ""));
+		expect(labels).toEqual([
+			"All",
+			"To finish",
+			"In review",
+			"Approved",
+			"Awaiting reimbursement",
+			"Rejected",
+		]);
+		const awaiting = within(filters).getByRole("radio", { name: /Awaiting reimbursement/ });
+		expect(awaiting.textContent).toContain("1");
+		fireEvent.click(awaiting);
+		expect(screen.getByText("Awaiting receipt")).toBeTruthy();
+		expect(screen.queryByText("Reimbursed receipt")).toBeNull();
+		expect(screen.queryByText("Draft receipt")).toBeNull();
+		expect(screen.queryByText(/Receipt claim/)).toBeNull();
 		client.clear();
 	});
 
