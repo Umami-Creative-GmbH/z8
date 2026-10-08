@@ -1,10 +1,11 @@
 import type { AppAbility } from "@/lib/authorization/ability";
 
 /**
- * Travel expense finance access (#612): its own CASL subject, granted to
- * organization owners/admins or through custom roles. Approval authority (the
- * `Approval` subject, manager links) never implies it. Always checked against
- * the active organization of the session.
+ * Organization-wide travel expense finance access (#612): its own CASL subject,
+ * held by organization owners and admins only. Everyone else gets finance
+ * access through an expense officer grant (#748, ADR 0001), never a custom
+ * role. Approval authority (the `Approval` subject, manager links) never
+ * implies it. Always checked against the active organization of the session.
  */
 
 function inActiveOrganization(

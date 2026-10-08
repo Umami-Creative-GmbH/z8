@@ -98,8 +98,8 @@ describe("resolveFinanceScopes", () => {
 	});
 
 	it("widens each capability separately when organization-wide access and a grant combine", () => {
-		// A read-only custom role (until #748) and a Berlin grant that records reimbursements:
-		// reading is organization-wide, recording stays in Berlin.
+		// Organization-wide reading and a Berlin grant that records reimbursements:
+		// recording stays in Berlin.
 		expect(
 			resolveFinanceScopes({
 				organizationWide: { read: true, settle: false, export: false },

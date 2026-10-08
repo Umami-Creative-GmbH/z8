@@ -126,8 +126,7 @@ const ids = {
 	accountant: "e6130000-0000-4000-8000-000000000005",
 	foreigner: "e6130000-0000-4000-8000-000000000006",
 	exporter: "e6130000-0000-4000-8000-000000000007",
-	role: "e6131000-0000-4000-8000-000000000001",
-	exportRole: "e6131000-0000-4000-8000-000000000002",
+	retiredFinanceRole: "e6131000-0000-4000-8000-000000000002",
 } as const;
 type Person = "requester" | "manager" | "finance" | "accountant" | "foreigner" | "exporter";
 
@@ -176,38 +175,29 @@ async function seed() {
 		 values (gen_random_uuid(), $1, $2, true, 't613-manager', now(), now())`,
 		[ids.requester, ids.manager],
 	);
-	// An accountant with read-only finance access: no export.
+	// An accountant who is a read-only expense officer for all employees: no export.
+	await admin.query(
+		`insert into expense_officer_grant (organization_id, officer_employee_id, scope, created_by)
+		 values ('t613-org', $1, 'all', 't613-finance')`,
+		[ids.accountant],
+	);
+	// A custom role that still stores the retired finance permissions grants nothing (#748).
 	await admin.query(
 		`insert into custom_role (id, organization_id, name, base_tier, created_by, updated_at)
-		 values ($1, 't613-org', 'Accounting', 'employee', 't613-finance', now())`,
-		[ids.role],
+		 values ($1, 't613-org', 'Old finance', 'employee', 't613-finance', now())`,
+		[ids.retiredFinanceRole],
 	);
-	await admin.query(
-		`insert into custom_role_permission (id, custom_role_id, action, subject)
-		 values (gen_random_uuid(), $1, 'read', 'TravelExpenseFinance')`,
-		[ids.role],
-	);
+	for (const action of ["read", "export"]) {
+		await admin.query(
+			`insert into custom_role_permission (id, custom_role_id, action, subject)
+			 values (gen_random_uuid(), $1, $2, 'TravelExpenseFinance')`,
+			[ids.retiredFinanceRole, action],
+		);
+	}
 	await admin.query(
 		`insert into employee_custom_role (id, employee_id, custom_role_id, assigned_by)
 		 values (gen_random_uuid(), $1, $2, 't613-finance')`,
-		[ids.accountant, ids.role],
-	);
-	// A custom role with the export permission but no finance read: no export either,
-	// since a batch holds the organization's receipts.
-	await admin.query(
-		`insert into custom_role (id, organization_id, name, base_tier, created_by, updated_at)
-		 values ($1, 't613-org', 'Export only', 'employee', 't613-finance', now())`,
-		[ids.exportRole],
-	);
-	await admin.query(
-		`insert into custom_role_permission (id, custom_role_id, action, subject)
-		 values (gen_random_uuid(), $1, 'export', 'TravelExpenseFinance')`,
-		[ids.exportRole],
-	);
-	await admin.query(
-		`insert into employee_custom_role (id, employee_id, custom_role_id, assigned_by)
-		 values (gen_random_uuid(), $1, $2, 't613-finance')`,
-		[ids.exporter, ids.exportRole],
+		[ids.exporter, ids.retiredFinanceRole],
 	);
 }
 

@@ -974,6 +974,13 @@
       "when": 1796227200000,
       "tag": "0138_travel_expense_officer_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 139,
+      "version": "7",
+      "when": 1796313600000,
+      "tag": "0139_retire_travel_expense_finance_custom_role",
+      "breakpoints": true
     }
   ]
 }

@@ -117,7 +117,6 @@ const ids = {
 	finance: "e6120000-0000-4000-8000-000000000004",
 	accountant: "e6120000-0000-4000-8000-000000000005",
 	foreigner: "e6120000-0000-4000-8000-000000000006",
-	role: "e6121000-0000-4000-8000-000000000001",
 	claim: "e6122000-0000-4000-8000-000000000001",
 	foreignClaim: "e6122000-0000-4000-8000-000000000002",
 } as const;
@@ -176,21 +175,11 @@ async function seed() {
 		 values (gen_random_uuid(), $1, $2, true, 't612-manager', now(), now())`,
 		[ids.requester, ids.manager],
 	);
-	// An accountant whose custom role grants read-only finance access.
+	// An accountant who is a read-only expense officer for all employees (#748).
 	await admin.query(
-		`insert into custom_role (id, organization_id, name, base_tier, created_by, updated_at)
-		 values ($1, 't612-org', 'Accounting', 'employee', 't612-finance', now())`,
-		[ids.role],
-	);
-	await admin.query(
-		`insert into custom_role_permission (id, custom_role_id, action, subject)
-		 values (gen_random_uuid(), $1, 'read', 'TravelExpenseFinance')`,
-		[ids.role],
-	);
-	await admin.query(
-		`insert into employee_custom_role (id, employee_id, custom_role_id, assigned_by)
-		 values (gen_random_uuid(), $1, $2, 't612-finance')`,
-		[ids.accountant, ids.role],
+		`insert into expense_officer_grant (organization_id, officer_employee_id, scope, created_by)
+		 values ('t612-org', $1, 'all', 't612-finance')`,
+		[ids.accountant],
 	);
 	// Approved legacy claims from before the report model.
 	for (const [claimId, organizationId, employeeId] of [
@@ -412,7 +401,7 @@ describe("finance queue and recorded reimbursements (#612)", () => {
 		expect(rows.some((row) => row.source.id === pending.reportId)).toBe(false);
 		expect(rows.some((row) => row.source.id === ids.foreignClaim)).toBe(false);
 
-		// Read-only finance through a custom role: same queue, no settlement.
+		// A read-only expense officer: same queue, no settlement.
 		signIn("accountant");
 		const readOnly = await finance.getTravelExpenseFinanceQueue("open");
 		expect(readOnly.success && readOnly.data.canSettle).toBe(false);
