@@ -60,6 +60,8 @@ export const NOTIFICATION_TYPES = [
 	"travel_expense_reimbursed",
 	"travel_expense_partially_reimbursed",
 	"travel_expense_recovery_recorded",
+	// Reimbursement work arriving for expense officers (#756)
+	"travel_expense_ready_for_reimbursement",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -67,6 +69,19 @@ export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 /** System closure evidence is always delivered to the employee's inbox. */
 export function hasMandatoryInbox(type: NotificationType): boolean {
 	return type === "automatic_clock_out";
+}
+
+/** Types delivered only to the inbox until the user turns on another channel. */
+const IN_APP_ONLY_BY_DEFAULT: ReadonlySet<NotificationType> = new Set([
+	"travel_expense_ready_for_reimbursement",
+]);
+
+/** Whether a channel is on for a type the user stored no preference for. */
+export function isChannelEnabledByDefault(
+	type: NotificationType,
+	channel: NotificationChannel,
+): boolean {
+	return channel === "in_app" || !IN_APP_ONLY_BY_DEFAULT.has(type);
 }
 
 // Notification channel enum values
