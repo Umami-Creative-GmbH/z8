@@ -27,6 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { queryKeys } from "@/lib/query/keys";
 import {
+	DEFAULT_FINANCE_QUEUE_VIEW,
 	FINANCE_QUEUE_STATUSES,
 	type FinanceQueueStatus,
 	type FinanceQueueView,
@@ -138,6 +139,9 @@ function QueueFilters({
 		name: employee.name ?? "—",
 	}));
 	const teamOptions = (options?.teams ?? []).map((team) => ({ code: team.id, name: team.name }));
+	const allEmployees = t("travelExpenses.finance.filter.employee.all", "All employees");
+	const allTeams = t("travelExpenses.finance.filter.team.all", "All teams");
+	const allCurrencies = t("travelExpenses.finance.filter.currency.all", "All currencies");
 	const currencyOptions = (options?.currencies ?? []).map((currency) => ({
 		code: currency,
 		name: currency,
@@ -150,33 +154,33 @@ function QueueFilters({
 				options={employeeOptions}
 				value={view.employeeId ?? ""}
 				onValueChange={(value) => filter({ employeeId: value || null })}
-				placeholder={t("travelExpenses.finance.filter.employee.all", "All employees")}
+				placeholder={allEmployees}
 				searchPlaceholder={t("travelExpenses.finance.filter.employee.search", "Search employees…")}
 				emptyText={t("travelExpenses.finance.filter.employee.none", "No employee found.")}
 				allowEmpty
-				emptyLabel={t("travelExpenses.finance.filter.employee.all", "All employees")}
+				emptyLabel={allEmployees}
 			/>
 			<SearchableSelect
 				aria-label={t("travelExpenses.finance.filter.team.label", "Team at approval")}
 				options={teamOptions}
 				value={view.teamId ?? ""}
 				onValueChange={(value) => filter({ teamId: value || null })}
-				placeholder={t("travelExpenses.finance.filter.team.all", "All teams")}
+				placeholder={allTeams}
 				searchPlaceholder={t("travelExpenses.finance.filter.team.search", "Search teams…")}
 				emptyText={t("travelExpenses.finance.filter.team.none", "No team found.")}
 				allowEmpty
-				emptyLabel={t("travelExpenses.finance.filter.team.all", "All teams")}
+				emptyLabel={allTeams}
 			/>
 			<SearchableSelect
 				aria-label={t("travelExpenses.finance.filter.currency.label", "Currency")}
 				options={currencyOptions}
 				value={view.currency ?? ""}
 				onValueChange={(value) => filter({ currency: value || null })}
-				placeholder={t("travelExpenses.finance.filter.currency.all", "All currencies")}
+				placeholder={allCurrencies}
 				searchPlaceholder={t("travelExpenses.finance.filter.currency.search", "Search currencies…")}
 				emptyText={t("travelExpenses.finance.filter.currency.none", "No currency found.")}
 				allowEmpty
-				emptyLabel={t("travelExpenses.finance.filter.currency.all", "All currencies")}
+				emptyLabel={allCurrencies}
 			/>
 			<div className="flex min-h-9 items-center gap-2">
 				<Checkbox
@@ -294,16 +298,7 @@ export function FinanceQueue() {
 						<Button
 							variant="ghost"
 							size="sm"
-							onClick={() =>
-								setView({
-									...view,
-									employeeId: null,
-									teamId: null,
-									currency: null,
-									notExported: false,
-									page: 1,
-								})
-							}
+							onClick={() => setView({ ...DEFAULT_FINANCE_QUEUE_VIEW, status: view.status })}
 						>
 							<IconFilterOff aria-hidden="true" className="size-4" />
 							{t("travelExpenses.finance.filter.clear", "Clear filters")}
