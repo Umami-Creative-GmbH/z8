@@ -21,6 +21,7 @@ import {
 	resolveSubmittedAdjustmentBaseline,
 	type SubmittedAdjustmentRefusal,
 } from "@/lib/travel-expenses/adjustment-store";
+import { recordReportApprovalTeams } from "@/lib/travel-expenses/approval-teams";
 import { stampMileagePolicies } from "@/lib/travel-expenses/mileage-item-store";
 import {
 	OWNER_SELF_APPROVAL_REASON,
@@ -566,6 +567,10 @@ export async function submitTravelExpenseReport(
 					)
 					.returning({ id: travelExpenseReport.id });
 				if (!decided) refuse({ kind: "not_draft" });
+				await recordReportApprovalTeams(tx, {
+					organizationId: owner.organizationId,
+					reportId: input.reportId,
+				});
 				await recordTravelExpenseReportOwnerSelfApproval(tx, {
 					organizationId: owner.organizationId,
 					revision,

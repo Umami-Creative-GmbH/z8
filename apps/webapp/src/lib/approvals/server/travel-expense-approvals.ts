@@ -17,6 +17,7 @@ import {
 } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
 import { onTravelExpenseApproved, onTravelExpenseRejected } from "@/lib/notifications/triggers";
+import { recordClaimApprovalTeams } from "@/lib/travel-expenses/approval-teams";
 import { acquireApprovalWriteGate } from "../authority";
 import { recordLegacyDeliveryIntent } from "../delivery/intents";
 import { kickApprovalDelivery } from "../delivery/kick";
@@ -451,6 +452,16 @@ export function persistTravelExpenseDecision(
 						: Effect.succeed(updatedRows),
 				),
 			);
+
+		if (action === "approve") {
+			// The approval records the employee's teams (#746).
+			yield* dbService.query("recordTravelExpenseClaimApprovalTeams", () =>
+				recordClaimApprovalTeams(dbService.db, {
+					organizationId: currentEmployee.organizationId,
+					claimId,
+				}),
+			);
+		}
 
 		yield* dbService.query("insertTravelExpenseDecisionLog", async () => {
 			await dbService.db.insert(travelExpenseDecisionLog).values({

@@ -18,6 +18,7 @@ import {
 } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
 import { onTravelExpenseReportDecided } from "@/lib/notifications/triggers";
+import { recordReportApprovalTeams } from "@/lib/travel-expenses/approval-teams";
 import { acquireApprovalWriteGate } from "../authority";
 import { kickApprovalDelivery } from "../delivery/kick";
 import type { ApprovalActionOptions } from "../domain/types";
@@ -642,6 +643,10 @@ export async function executeTravelExpenseReportDecisionInTransaction(
 			? { bound: { idempotencyKey: invocation.key, reviewedBindingId: binding.id } }
 			: {}),
 	});
+	if (recorded.reportStatus === "approved") {
+		// The final approval records the employee's teams (#746).
+		await recordReportApprovalTeams(database, { organizationId, reportId });
+	}
 	if (invocation && input.bound) {
 		// Same transaction as the legacy mutation and its evidence.
 		await recordBoundReportInvocation(database, {
