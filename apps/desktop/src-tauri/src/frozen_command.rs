@@ -212,3 +212,34 @@ pub fn freeze_break(
         }),
     ))
 }
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "lowercase", deny_unknown_fields)]
+pub enum AttributionIntent {
+    #[default]
+    Preserve,
+    Clear,
+    Replace {
+        id: String,
+    },
+}
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ClosingAttribution {
+    pub project: AttributionIntent,
+    pub work_category: AttributionIntent,
+}
+pub fn freeze_attributed_clock_out(
+    frame: CommandFrame,
+    target: ClockTarget,
+    attribution: &ClosingAttribution,
+) -> FrozenCommand {
+    freeze(
+        frame,
+        CommandKind::ClockOut,
+        serde_json::json!({
+            "target": target_json(target), "project": attribution.project,
+            "workCategory": attribution.work_category,
+        }),
+    )
+}

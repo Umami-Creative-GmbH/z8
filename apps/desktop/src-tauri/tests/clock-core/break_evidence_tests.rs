@@ -131,3 +131,15 @@ fn clocks_agree_within_the_servers_tolerance() {
     backwards.monotonic_ms -= 1;
     assert!(!clocks_agree(&[at(0), backwards]));
 }
+
+#[test]
+fn sleep_or_hibernate_gaps_and_clock_changes_invalidate_monitor_continuity() {
+    use crate::break_evidence::MonitorContinuity;
+    let mut monitor = MonitorContinuity::new(at(0), 30_000);
+    assert!(monitor.observe(at(10_000)));
+    assert!(!monitor.observe(at(120_000))); // Includes clocks that advance in sleep.
+    assert!(monitor.observe(at(130_000)));
+    let mut changed = at(140_000);
+    changed.utc += Duration::minutes(1);
+    assert!(!monitor.observe(changed));
+}

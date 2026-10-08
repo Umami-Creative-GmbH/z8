@@ -206,3 +206,27 @@ impl IdleTracker {
         }
     }
 }
+
+/// A missed monitor interval is uncertainty, including sleep and hibernate
+/// even on platforms whose monotonic clock advances during suspension.
+pub struct MonitorContinuity {
+    previous: Observation,
+    maximum_gap_ms: u64,
+}
+impl MonitorContinuity {
+    pub fn new(now: Observation, maximum_gap_ms: u64) -> Self {
+        Self {
+            previous: now,
+            maximum_gap_ms,
+        }
+    }
+    pub fn observe(&mut self, now: Observation) -> bool {
+        let continuous = now
+            .monotonic_ms
+            .checked_sub(self.previous.monotonic_ms)
+            .is_some_and(|gap| gap <= self.maximum_gap_ms)
+            && clocks_agree(&[self.previous, now]);
+        self.previous = now;
+        continuous
+    }
+}

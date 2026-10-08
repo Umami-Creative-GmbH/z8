@@ -1,5 +1,11 @@
 #![allow(dead_code)]
 
+#[path = "../../src/auth_flow.rs"]
+mod auth_flow;
+
+#[cfg(test)]
+mod auth_flow_tests;
+
 #[path = "../../src/clock.rs"]
 mod clock;
 
@@ -100,3 +106,18 @@ mod tests {
         assert_eq!(requests.len(), 2);
     }
 }
+
+#[cfg(test)]
+mod credential_tests;
+#[path = "../../src/credentials.rs"]
+pub mod credentials;
+
+#[cfg(test)]
+mod manual_break_tests;
+
+#[cfg(test)]
+mod attribution_tests;
+#[cfg(test)]
+mod native_qa;
+#[cfg(test)]
+mod pilot_tests;

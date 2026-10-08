@@ -276,6 +276,9 @@ impl CommandStore {
             transaction.execute_batch(SCHEMA_V1)?;
             transaction.execute_batch("PRAGMA user_version = 1")?;
         }
+        // Companion-only state is additive; older version-1 readers ignore it.
+        transaction.execute_batch("CREATE TABLE IF NOT EXISTS companion_break (scope TEXT PRIMARY KEY, operation_id TEXT NOT NULL)")?;
+        transaction.execute_batch("CREATE TABLE IF NOT EXISTS desktop_snapshot (scope TEXT PRIMARY KEY, body TEXT NOT NULL)")?;
         transaction.commit()?;
         Ok(Self { conn })
     }
@@ -286,6 +289,16 @@ impl CommandStore {
         endpoint: &str,
         command: &FrozenCommand,
         captured_at_ms: i64,
+    ) -> Result<i64> {
+        self.capture_with_break(endpoint, command, captured_at_ms, false)
+    }
+
+    pub fn capture_with_break(
+        &mut self,
+        endpoint: &str,
+        command: &FrozenCommand,
+        captured_at_ms: i64,
+        manual_break: bool,
     ) -> Result<i64> {
         let transaction = self.conn.transaction()?;
         let changed = transaction.execute(
@@ -311,8 +324,123 @@ impl CommandStore {
         )?;
         ensure!(changed == 1, "Clock command was not saved");
         let recovery_id = transaction.last_insert_rowid();
+        let scope = break_scope(endpoint, &command.context);
+        if manual_break {
+            transaction.execute(
+                "INSERT OR REPLACE INTO companion_break(scope, operation_id) VALUES (?, ?)",
+                params![scope, command.operation_id],
+            )?;
+        } else {
+            transaction.execute("DELETE FROM companion_break WHERE scope = ?", [scope])?;
+        }
         transaction.commit()?;
         Ok(recovery_id)
+    }
+
+    pub fn backup_before_update(&self, destination: &Path) -> Result<()> {
+        let health: String = self
+            .conn
+            .query_row("PRAGMA quick_check", [], |row| row.get(0))?;
+        ensure!(
+            health == "ok",
+            "Clock storage failed its integrity check. Review saved work before updating."
+        );
+        self.conn
+            .backup(rusqlite::DatabaseName::Main, destination, None)?;
+        Ok(())
+    }
+
+    pub fn save_snapshot(
+        &self,
+        endpoint: &str,
+        context: &CommandContext,
+        body: &str,
+    ) -> Result<()> {
+        self.conn.execute(
+            "INSERT OR REPLACE INTO desktop_snapshot (scope, body) VALUES (?, ?)",
+            params![break_scope(endpoint, context), body],
+        )?;
+        Ok(())
+    }
+
+    pub fn snapshot(&self, endpoint: &str, context: &CommandContext) -> Result<Option<String>> {
+        Ok(self
+            .conn
+            .query_row(
+                "SELECT body FROM desktop_snapshot WHERE scope = ?",
+                [break_scope(endpoint, context)],
+                |row| row.get(0),
+            )
+            .optional()?)
+    }
+    pub fn save_organizations(&self, endpoint: &str, fingerprint: &str, body: &str) -> Result<()> {
+        let scope = serde_json::to_string(&["organizations", endpoint, fingerprint])?;
+        self.conn.execute(
+            "INSERT OR REPLACE INTO desktop_snapshot (scope, body) VALUES (?, ?)",
+            params![scope, body],
+        )?;
+        Ok(())
+    }
+
+    /// A saved inventory does not confer offline authority. It is usable only
+    /// with this session's previously negotiated matching employee context.
+    pub fn offline_organizations(
+        &self,
+        endpoint: &str,
+        fingerprint: &str,
+    ) -> Result<Option<serde_json::Value>> {
+        let Some(cached) = self.cached_context(endpoint, fingerprint)? else {
+            return Ok(None);
+        };
+        let Some(context) = crate::command_transport::Capabilities::parse(&cached.capabilities)
+            .and_then(|caps| caps.command_context())
+        else {
+            return Ok(None);
+        };
+        let scope = serde_json::to_string(&["organizations", endpoint, fingerprint])?;
+        let body: Option<String> = self
+            .conn
+            .query_row(
+                "SELECT body FROM desktop_snapshot WHERE scope = ?",
+                [scope],
+                |row| row.get(0),
+            )
+            .optional()?;
+        let Some(mut body) =
+            body.and_then(|body| serde_json::from_str::<serde_json::Value>(&body).ok())
+        else {
+            return Ok(None);
+        };
+        if body["userId"].as_str() != Some(&context.user_id)
+            || body["activeOrganizationId"].as_str() != Some(&context.organization_id)
+        {
+            return Ok(None);
+        }
+        let employee_access = body["organizations"]
+            .as_array()
+            .is_some_and(|organizations| {
+                organizations.iter().any(|org| {
+                    org["id"].as_str() == Some(&context.organization_id)
+                        && org["hasEmployeeRecord"].as_bool() == Some(true)
+                        && org["ssoRequired"].as_bool() != Some(true)
+                })
+            });
+        if !employee_access {
+            return Ok(None);
+        }
+        body["cached"] = serde_json::json!(true);
+        Ok(Some(body))
+    }
+    pub fn on_break(&self, endpoint: &str, context: &CommandContext) -> Result<bool> {
+        Ok(self.conn.query_row("SELECT EXISTS(SELECT 1 FROM companion_break b JOIN clock_command c ON c.operation_id = b.operation_id WHERE b.scope = ? AND c.state IN ('pending', 'stalled', 'committed'))", [break_scope(endpoint, context)], |row| row.get(0))?)
+    }
+
+    pub fn end_break(&self, endpoint: &str, context: &CommandContext) -> Result<()> {
+        self.conn.execute(
+            "DELETE FROM companion_break WHERE scope = ?",
+            [break_scope(endpoint, context)],
+        )?;
+        Ok(())
     }
 
     pub fn get(&self, operation_id: &str) -> Result<Option<StoredCommand>> {
@@ -453,6 +581,7 @@ impl CommandStore {
         let removed = transaction.execute(
             "DELETE FROM clock_command
              WHERE state = 'committed' AND resolved_at_ms < ?
+               AND operation_id NOT IN (SELECT operation_id FROM companion_break)
                AND operation_id NOT IN (
                  SELECT depends_on_operation_id FROM clock_command
                  WHERE depends_on_operation_id IS NOT NULL
@@ -557,4 +686,15 @@ impl CommandStore {
             .optional()?
             .is_some())
     }
+}
+
+fn break_scope(endpoint: &str, context: &CommandContext) -> String {
+    serde_json::json!([
+        endpoint,
+        context.user_id,
+        context.organization_id,
+        context.employee_id,
+        context.server
+    ])
+    .to_string()
 }

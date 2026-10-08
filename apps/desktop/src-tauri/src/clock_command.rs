@@ -20,6 +20,11 @@ pub const STORAGE_PAUSED: &str = "Cannot read local clock storage. Clock actions
 pub enum ClockCommand {
     ClockIn(WorkLocationType),
     ClockOut,
+    StartBreak,
+    AttributedClose {
+        attribution: crate::frozen_command::ClosingAttribution,
+        manual_break: bool,
+    },
     /// A confirmed idle break: close at the idle start, resume at the detected
     /// return, where `location` is the resumed work's location (#281).
     Break {
@@ -32,7 +37,9 @@ impl ClockCommand {
     fn kind(&self) -> CommandKind {
         match self {
             Self::ClockIn(_) => CommandKind::ClockIn,
-            Self::ClockOut => CommandKind::ClockOut,
+            Self::ClockOut | Self::StartBreak | Self::AttributedClose { .. } => {
+                CommandKind::ClockOut
+            }
             Self::Break { .. } => CommandKind::Break,
         }
     }
@@ -197,6 +204,31 @@ pub async fn negotiate(session: &ClockSession<'_>) -> anyhow::Result<Negotiated>
     )
 }
 
+/// Bind the first confirmed status to the negotiated session before exposing it
+/// to the webview. A status read racing ahead of negotiation must not leave the
+/// device with a working UI and no native evidence for subsequent offline work.
+pub async fn refresh_status(session: &ClockSession<'_>) -> anyhow::Result<ClockStatus> {
+    let negotiated = negotiate(session).await?;
+    if matches!(negotiated, Negotiated::Unauthorized) {
+        return Err(crate::clock::StatusAccessError(401).into());
+    }
+    let status = session
+        .service
+        .get_status(session.endpoint, session.token)
+        .await?;
+    if let Some(context) = negotiated
+        .capabilities()
+        .and_then(|caps| caps.command_context())
+    {
+        anyhow::ensure!(
+            status.employee_id.as_deref() == Some(context.employee_id.as_str()),
+            "Clock context changed. Refresh the selected organization."
+        );
+    }
+    remember_status(session.store, session.endpoint, session.token, &status);
+    Ok(status)
+}
+
 fn now_ms() -> i64 {
     Utc::now().timestamp_millis()
 }
@@ -268,6 +300,24 @@ pub async fn execute(
     command: ClockCommand,
     evidence: ActionEvidence,
 ) -> Result<ClockCommandOutcome, ClockCommandError> {
+    execute_internal(session, command, evidence, None).await
+}
+
+pub async fn execute_pilot(
+    session: &ClockSession<'_>,
+    command: ClockCommand,
+    evidence: ActionEvidence,
+    organization_id: &str,
+) -> Result<ClockCommandOutcome, ClockCommandError> {
+    execute_internal(session, command, evidence, Some(organization_id)).await
+}
+
+async fn execute_internal(
+    session: &ClockSession<'_>,
+    command: ClockCommand,
+    evidence: ActionEvidence,
+    expected_organization: Option<&str>,
+) -> Result<ClockCommandOutcome, ClockCommandError> {
     if session.queue.lock().count().map_err(|_| {
         ClockCommandError::pre_send("Cannot read local recovery storage. Clock action paused.")
     })? > 0
@@ -292,6 +342,29 @@ pub async fn execute(
             // A break carries the zones it observed; other actions need the zone
             // read at the click. This context accepts frozen commands, so the
             // legacy writer is not a fallback either way.
+            if expected_organization.is_some_and(|expected| expected != context.organization_id) {
+                return Err(ClockCommandError::pre_send(
+                    "Organization changed. Refresh the selected organization before clocking.",
+                ));
+            }
+            if expected_organization.is_some() && !capabilities.supports(CommandKind::Break) {
+                return Err(ClockCommandError::pre_send("This pilot requires atomic breaks and reliable offline clocking. Ask your administrator to finish server setup."));
+            }
+            if expected_organization.is_some()
+                && matches!(command, ClockCommand::ClockIn(_))
+                && status.is_none()
+                && session
+                    .store
+                    .lock()
+                    .for_context(session.endpoint, &context)
+                    .map_err(|_| storage_paused())?
+                    .iter()
+                    .all(|command| !command.state.is_active())
+            {
+                return Err(ClockCommandError::pre_send(
+                    "Clock status is unknown. Connect and refresh status before clocking in.",
+                ));
+            }
             let timezone = match (&command, evidence.timezone) {
                 (ClockCommand::Break { .. }, _) => String::new(),
                 (_, Some(timezone)) => timezone,
@@ -312,9 +385,25 @@ pub async fn execute(
                 depends_on: None,
             };
             let frozen = freeze_command(session, &command, frame, status)?;
-            send_frozen(session, &capabilities, frozen).await
+            send_frozen(
+                session,
+                &capabilities,
+                frozen,
+                matches!(
+                    command,
+                    ClockCommand::StartBreak
+                        | ClockCommand::AttributedClose {
+                            manual_break: true,
+                            ..
+                        }
+                ),
+            )
+            .await
         }
         Route::Legacy => {
+            if expected_organization.is_some() {
+                return Err(ClockCommandError::pre_send("This organization is not ready for reliable offline clocking. Ask your administrator to finish timekeeping adoption."));
+            }
             let unresolved = session
                 .store
                 .lock()
@@ -394,7 +483,10 @@ fn freeze_command(
             }
             Ok(freeze_clock_in(frame, *location))
         }
-        ClockCommand::ClockOut => Ok(freeze_clock_out(frame, target()?)),
+        ClockCommand::AttributedClose { attribution, .. } => Ok(
+            crate::frozen_command::freeze_attributed_clock_out(frame, target()?, attribution),
+        ),
+        ClockCommand::ClockOut | ClockCommand::StartBreak => Ok(freeze_clock_out(frame, target()?)),
         ClockCommand::Break { evidence, location } => {
             let target = target()?;
             // The target must be the work the employee was in when they went
@@ -423,11 +515,12 @@ async fn send_frozen(
     session: &ClockSession<'_>,
     capabilities: &Capabilities,
     frozen: FrozenCommand,
+    manual_break: bool,
 ) -> Result<ClockCommandOutcome, ClockCommandError> {
     session
         .store
         .lock()
-        .capture(session.endpoint, &frozen, now_ms())
+        .capture_with_break(session.endpoint, &frozen, now_ms(), manual_break)
         .map_err(|_| {
             ClockCommandError::pre_send(
                 "This clock action could not be saved on this device, so nothing was sent. Try again.",
@@ -514,18 +607,24 @@ pub fn journal_offline(session: &ClockSession<'_>) -> anyhow::Result<ClockJourna
         .as_ref()
         .and_then(Capabilities::command_context);
     let legacy = session.queue.lock().recovery_summary()?;
-    clock_journal::build(
+    let mut journal = clock_journal::build(
         &session.store.lock(),
         legacy,
         JournalScope {
             endpoint: session.endpoint,
             context: context.as_ref(),
             server_reachable: true,
-            commands_enabled: false,
-            breaks_enabled: false,
+            commands_enabled: capabilities
+                .as_ref()
+                .is_some_and(Capabilities::accepts_frozen_commands),
+            breaks_enabled: capabilities
+                .as_ref()
+                .is_some_and(|caps| caps.supports(CommandKind::Break)),
             last_known: None,
         },
-    )
+    )?;
+    journal.busy = true;
+    Ok(journal)
 }
 
 /// Sends saved commands of the session's current context, then reports what
@@ -547,7 +646,7 @@ pub async fn sync(session: &ClockSession<'_>, pacing: Pacing) -> anyhow::Result<
         _ => None,
     };
     let legacy = session.queue.lock().recovery_summary()?;
-    let journal = clock_journal::build(
+    let mut journal = clock_journal::build(
         &session.store.lock(),
         legacy,
         JournalScope {
@@ -561,6 +660,7 @@ pub async fn sync(session: &ClockSession<'_>, pacing: Pacing) -> anyhow::Result<
             last_known,
         },
     )?;
+    journal.sign_in_required = matches!(negotiated, Negotiated::Unauthorized);
     Ok(journal)
 }
 
@@ -577,7 +677,12 @@ async fn execute_legacy(
                 .clock_in_with_status(webapp_url, token, location)
                 .await,
         ),
-        ClockCommand::ClockOut => (
+        ClockCommand::AttributedClose { .. } => {
+            return Err(ClockCommandError::pre_send(
+                "Attribution requires reliable clock commands on the server.",
+            ))
+        }
+        ClockCommand::ClockOut | ClockCommand::StartBreak => (
             ActionType::ClockOut,
             None,
             service.clock_out_with_status(webapp_url, token).await,

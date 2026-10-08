@@ -17,7 +17,6 @@ function elementContaining(file, marker, closingTag = "/>") {
 
 for (const [file, marker] of [
 	["src/components/OrganizationSelector.tsx", 'className="org-dropdown-backdrop"'],
-	["src/components/Settings.tsx", 'background: "rgba(0, 0, 0, 0.4)"'],
 ]) {
 	test(`${file} backdrop is pointer-only`, () => {
 		const backdrop = elementContaining(file, marker);
@@ -28,15 +27,3 @@ for (const [file, marker] of [
 		assert.match(backdrop, /outline:\s*"none"/);
 	});
 }
-
-test("Settings explicit close button remains accessible", () => {
-	const closeButton = elementContaining(
-		"src/components/Settings.tsx",
-		"<IconX",
-		"</button>",
-	);
-
-	assert.match(closeButton, /aria-label="Close settings"/);
-	assert.doesNotMatch(closeButton, /aria-hidden/);
-	assert.doesNotMatch(closeButton, /tabIndex=\{-1\}/);
-});

@@ -5,7 +5,6 @@
   "windows": ["main"],
   "permissions": [
     "core:default",
-    "shell:allow-open",
     "store:default",
     "notification:default",
     "deep-link:default"

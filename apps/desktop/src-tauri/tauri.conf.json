@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "z8 Timer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "com.z8.timer",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -11,10 +11,6 @@
   },
   "app": {
     "withGlobalTauri": true,
-    "trayIcon": {
-      "iconPath": "icons/tray-gray.png",
-      "iconAsTemplate": false
-    },
     "windows": [
       {
         "title": "z8 Timer",
@@ -26,18 +22,21 @@
         "fullscreen": false,
         "center": true,
         "decorations": true,
-        "alwaysOnTop": true,
+        "alwaysOnTop": false,
         "skipTaskbar": false,
         "visible": true
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-src 'none'"
     }
   },
   "bundle": {
     "active": true,
-    "targets": ["msi", "nsis"],
+    "targets": [
+      "msi",
+      "nsis"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -48,14 +47,31 @@
     "windows": {
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
-      "timestampUrl": ""
+      "timestampUrl": "",
+      "nsis": {
+        "displayLanguageSelector": true,
+        "installerHooks": "installer/evidence.nsh",
+        "languages": [
+          "English",
+          "German"
+        ],
+        "installMode": "currentUser"
+      }
     }
   },
   "plugins": {
     "deep-link": {
       "desktop": {
-        "schemes": ["z8"]
+        "schemes": [
+          "z8"
+        ]
       }
+    },
+    "updater": {
+      "windows": {
+        "installMode": "passive"
+      },
+      "pubkey": ""
     }
   }
 }
