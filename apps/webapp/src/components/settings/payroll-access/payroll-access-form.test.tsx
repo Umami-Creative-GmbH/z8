@@ -123,6 +123,7 @@ describe("PayrollAccessForm", () => {
 		render(
 			<PayrollAccessForm
 				employees={[{ id: "employee-a", name: "Ada Lovelace", email: "ada@example.com" }]}
+				departedEmployees={[]}
 				teams={[]}
 				initialGrants={[
 					{
@@ -217,6 +218,7 @@ describe("PayrollAccessForm", () => {
 		render(
 			<PayrollAccessForm
 				employees={[{ id: "employee-1", name: "Ada Lovelace", email: "ada@example.com" }]}
+				departedEmployees={[]}
 				teams={[{ id: "team-1", name: "Ops" }]}
 				initialGrants={[]}
 			/>,
@@ -233,7 +235,9 @@ describe("PayrollAccessForm", () => {
 	});
 
 	it("disables adding when no employees are available", () => {
-		render(<PayrollAccessForm employees={[]} teams={[]} initialGrants={[]} />);
+		render(
+			<PayrollAccessForm employees={[]} departedEmployees={[]} teams={[]} initialGrants={[]} />,
+		);
 
 		expect(
 			screen.getByRole<HTMLButtonElement>("button", {
@@ -255,6 +259,7 @@ describe("PayrollAccessForm", () => {
 						email: "grace@example.com",
 					},
 				]}
+				departedEmployees={[]}
 				teams={[{ id: "team-ops", name: "Ops" }]}
 				initialGrants={[
 					{
@@ -290,6 +295,7 @@ describe("PayrollAccessForm", () => {
 		render(
 			<PayrollAccessForm
 				employees={[{ id: "employee-a", name: "Ada Lovelace", email: "ada@example.com" }]}
+				departedEmployees={[]}
 				teams={[{ id: "team-ops", name: "Ops" }]}
 				initialGrants={[]}
 			/>,
@@ -318,6 +324,7 @@ describe("PayrollAccessForm", () => {
 						email: "grace@example.com",
 					},
 				]}
+				departedEmployees={[]}
 				teams={[{ id: "team-ops", name: "Ops" }]}
 				initialGrants={[]}
 			/>,
@@ -356,6 +363,7 @@ describe("PayrollAccessForm", () => {
 		render(
 			<PayrollAccessForm
 				employees={[{ id: "employee-a", name: "Ada Lovelace", email: "ada@example.com" }]}
+				departedEmployees={[]}
 				teams={[
 					{ id: "team-ops", name: "Ops" },
 					{ id: "team-support", name: "Support" },
@@ -386,6 +394,7 @@ describe("PayrollAccessForm", () => {
 						email: "grace@example.com",
 					},
 				]}
+				departedEmployees={[]}
 				teams={[{ id: "team-ops", name: "Ops" }]}
 				initialGrants={[
 					{

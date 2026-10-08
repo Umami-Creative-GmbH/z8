@@ -38,7 +38,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 interface PayrollAccessFormProps {
 	employees: PayrollAccessEmployeeOption[];
 	/** Departed employees still on an active grant; only offered on the grant that names them. */
-	departedEmployees?: PayrollAccessEmployeeOption[];
+	departedEmployees: PayrollAccessEmployeeOption[];
 	teams: PayrollAccessTeamOption[];
 	initialGrants: PayrollAccessGrantData[];
 }
@@ -53,7 +53,7 @@ type TranslationParams = Record<string, string | number | boolean | null | undef
 
 export function PayrollAccessForm({
 	employees,
-	departedEmployees = [],
+	departedEmployees,
 	teams,
 	initialGrants,
 }: PayrollAccessFormProps) {
@@ -63,7 +63,9 @@ export function PayrollAccessForm({
 	const [isEditorOpen, setIsEditorOpen] = useState(false);
 	const [revokingGrant, setRevokingGrant] = useState<PayrollAccessGrantData | null>(null);
 	const [isRevoking, setIsRevoking] = useState(false);
-	const employeeOptions = employees.map((employee) => toSelectableEmployee(employee, true));
+	const employeeOptions = employees.map((employee) =>
+		toSelectableEmployee(employee, { isActive: true }),
+	);
 	const employeeNames = new Map(
 		[...employees, ...departedEmployees].map((employee) => [employee.id, employee.name]),
 	);
@@ -106,7 +108,9 @@ export function PayrollAccessForm({
 	);
 	const namedEmployeeOptions = [
 		...employeeOptions,
-		...retainedDepartedEmployees.map((employee) => toSelectableEmployee(employee, false)),
+		...retainedDepartedEmployees.map((employee) =>
+			toSelectableEmployee(employee, { isActive: false }),
+		),
 	];
 	const selectedDepartedNames = retainedDepartedEmployees
 		.filter((employee) => employeeIds.includes(employee.id))
@@ -495,7 +499,7 @@ function PayrollAccessGrantList({
 
 function toSelectableEmployee(
 	employee: PayrollAccessEmployeeOption,
-	isActive: boolean,
+	{ isActive }: { isActive: boolean },
 ): SelectableEmployee {
 	return {
 		id: employee.id,

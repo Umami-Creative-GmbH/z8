@@ -3,7 +3,6 @@
 import { and, asc, eq, inArray, or } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import {
 	employee,
@@ -21,7 +20,7 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { type DatabaseClient, DatabaseService } from "@/lib/effect/services/database.service";
 import type { SavePayrollAccessInput } from "@/lib/payroll-access/grant-scope";
 import { revokePayrollAccessGrant, savePayrollAccessGrant } from "@/lib/payroll-access/grant-store";
 import { assertPayrollOfficerSettingsContext } from "./action-helpers";
@@ -61,7 +60,7 @@ export interface PayrollAccessAdminData {
 export async function getPayrollAccessAdminDataAction(): Promise<
 	ServerActionResult<PayrollAccessAdminData>
 > {
-	return runPayrollAccessAdminAction(async () => {
+	return runPayrollAccessAdminAction(async (db) => {
 		const { organizationId } = await requirePayrollAccessAdminContext("read");
 		const activeGrant = and(
 			eq(payrollAccessGrant.organizationId, organizationId),
@@ -164,7 +163,7 @@ export async function getPayrollAccessAdminDataAction(): Promise<
 export async function savePayrollAccessAction(
 	input: SavePayrollAccessInput,
 ): Promise<ServerActionResult<{ grantId: string }>> {
-	return runPayrollAccessAdminAction(async () => {
+	return runPayrollAccessAdminAction(async (db) => {
 		const { authContext, organizationId } = await requirePayrollAccessAdminContext("write");
 		const { grantId } = await db.transaction((tx) =>
 			savePayrollAccessGrant(tx, {
@@ -184,7 +183,7 @@ export async function savePayrollAccessAction(
 export async function revokePayrollAccessGrantAction(input: {
 	grantId: string;
 }): Promise<ServerActionResult<{ grantId: string }>> {
-	return runPayrollAccessAdminAction(async () => {
+	return runPayrollAccessAdminAction(async (db) => {
 		const { authContext, organizationId } = await requirePayrollAccessAdminContext("write");
 		const { grantId } = await db.transaction((tx) =>
 			revokePayrollAccessGrant(tx, {
@@ -227,11 +226,14 @@ async function requirePayrollAccessAdminContext(
 	}
 }
 
+/** Runs `action` with the client of the runtime's `DatabaseService`. */
 async function runPayrollAccessAdminAction<T>(
-	action: () => Promise<T>,
+	action: (db: DatabaseClient) => Promise<T>,
 ): Promise<ServerActionResult<T>> {
 	return runServerActionSafe(
-		DatabaseService.use((dbService) => dbService.query("payrollAccess.adminAction", action)).pipe(
+		DatabaseService.use((dbService) =>
+			dbService.query("payrollAccess.adminAction", () => action(dbService.db)),
+		).pipe(
 			// Typed failures thrown by the action keep their type.
 			Effect.mapError((error) => (isAppError(error.cause) ? error.cause : error)),
 		),
