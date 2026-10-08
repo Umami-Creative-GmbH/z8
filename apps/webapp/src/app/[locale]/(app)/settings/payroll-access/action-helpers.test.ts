@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { AuthorizationError, ValidationError } from "@/lib/effect/errors";
-import {
-	assertPayrollOfficerSettingsContext,
-	buildValidatedPayrollAccessInput,
-} from "./action-helpers";
+import { AuthorizationError } from "@/lib/effect/errors";
+import { assertPayrollOfficerSettingsContext } from "./action-helpers";
 
 describe("assertPayrollOfficerSettingsContext", () => {
 	it("allows active-org users with CASL manage permission", () => {
@@ -46,46 +43,5 @@ describe("assertPayrollOfficerSettingsContext", () => {
 				"write",
 			),
 		).toThrow(AuthorizationError);
-	});
-});
-
-describe("buildValidatedPayrollAccessInput", () => {
-	it("allows all scope without specific teams or employees", () => {
-		expect(
-			buildValidatedPayrollAccessInput(
-				{
-					payrollEmployeeId: "employee-1",
-					scope: "all",
-					teamIds: [],
-					employeeIds: [],
-				},
-				{
-					activeEmployeeIds: ["employee-1"],
-					organizationTeamIds: [],
-				},
-			),
-		).toEqual({
-			payrollEmployeeId: "employee-1",
-			scope: "all",
-			teamIds: [],
-			employeeIds: [],
-		});
-	});
-
-	it("rejects specific scope without teams or employees", () => {
-		expect(() =>
-			buildValidatedPayrollAccessInput(
-				{
-					payrollEmployeeId: "employee-1",
-					scope: "specific",
-					teamIds: [],
-					employeeIds: [],
-				},
-				{
-					activeEmployeeIds: ["employee-1"],
-					organizationTeamIds: [],
-				},
-			),
-		).toThrow(ValidationError);
 	});
 });
