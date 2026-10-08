@@ -10,7 +10,7 @@
       "create": {
         "action": "Korrigera med en justering",
         "confirm": "Skapa justering",
-        "description": "Du får en kopia av de godkända utgifterna att korrigera. När du skickar in den skickas hela den korrigerade rapporten för ett nytt godkännande; endast differensen mot det godkända beloppet regleras.",
+        "explanation": "Du får en kopia av de godkända utläggen att korrigera. När den skickas in skickas hela den korrigerade rapporten för ett nytt godkännande; endast skillnaden mot det godkända beloppet ersätts eller betalas tillbaka.",
         "failed": "Justeringen kunde inte skapas. Försök igen.",
         "ineligible": "Den här rapporten kan inte längre justeras. Ladda om sidan för att se dess aktuella status.",
         "reason": "Orsak till korrigeringen",
@@ -120,12 +120,48 @@
     "finance": {
       "approvedOn": "Godkänd {date}",
       "back": "Tillbaka till utläggsekonomi",
+      "bulk": {
+        "action": "Markera som ersatt",
+        "description": "Varje valt utlägg ersätts i sin helhet, i sin egen valuta, med detta betalningsdatum och denna referens. Z8 överför inga pengar.",
+        "failed": "Utläggen kunde inte markeras som ersatta. Försök igen.",
+        "nothing": "Inget här väntar på full ersättning. Ingen betalning registreras.",
+        "outcome": {
+          "alreadyReimbursed": "Hoppades över: redan ersatt",
+          "balanceChanged": "Hoppades över: saldot har ändrats",
+          "failed": "Misslyckades",
+          "outOfScope": "Hoppades över: utanför omfattningen",
+          "overpaidOrReview": "Hoppades över: för mycket utbetalt eller behöver granskas",
+          "ownExpense": "Hoppades över: ditt eget utlägg",
+          "reimbursed": "Ersatt {amount}"
+        },
+        "referenceHint": "Samma referens registreras för varje valt utlägg, t.ex. bunt för banköverföring.",
+        "results": {
+          "done": "Klar",
+          "summary": "{reimbursed} av {total} ersatta",
+          "title": "Resultat för ersättning"
+        },
+        "select": "Välj {name}",
+        "selectAll": "Välj alla utlägg som väntar på ersättning på den här sidan",
+        "selected": "{count} valda",
+        "skipped": "Ingår inte ({count})",
+        "submit": "Markera {count} som ersatta",
+        "title": "Markera som ersatt"
+      },
       "companyPaid": "Betalt av företaget {amount}",
+      "coverageGap": {
+        "description": "Ingen aktiv utläggsansvarig som kan registrera ersättningar har dem inom sitt ansvarsområde. Ägare och administratörer kan fortfarande registrera dem, eller utöka en utläggsansvarigs ansvarsområde.",
+        "empty": "En utläggsansvarig täcker varje godkänt utlägg som väntar på ersättning.",
+        "queueFilter": "Godkända utlägg som väntar på ersättning som ingen utläggsansvarig täcker.",
+        "show": "Visa dessa utlägg",
+        "showAll": "Visa alla godkända utlägg",
+        "title": "{count, plural, one {# godkänt utlägg väntar på ersättning som ingen utläggsansvarig täcker} other {# godkända utlägg väntar på ersättning som ingen utläggsansvarig täcker}}"
+      },
       "description": "Godkända utlägg och vad som fortfarande ska betalas till anställda. Registrering av en återbetalning dokumenterar en betalning som gjorts utanför Z8; inga pengar överförs.",
       "employeePaid": "Betalt av anställd {amount}",
       "empty": {
+        "allReimbursed": "Inget kvar att registrera: alla godkända utlägg är ersatta.",
         "any": "Inga godkända utlägg ännu.",
-        "open": "Inget att reglera: alla godkända utlägg är reglerade."
+        "filtered": "Inga godkända utlägg matchar dessa filter."
       },
       "entry": {
         "description": "Granska godkända utlägg, utestående saldon och registrerade återbetalningar.",
@@ -152,6 +188,7 @@
           "failed": "Exporten kunde inte skapas. Försök igen.",
           "invalid": "Välj mellan ett och det maximala antalet utlägg.",
           "load": "Det gick inte att läsa in exporter. Försök igen.",
+          "reimburse": "Exporten kunde inte läsas in för ersättning. Försök igen.",
           "retry": "Exporten kunde inte köras igen.",
           "stale": "Vissa markerade utlägg är inte längre godkända så som visas. Listan har uppdaterats; kontrollera urvalet och exportera igen."
         },
@@ -170,6 +207,8 @@
         },
         "history": "Exporthistorik",
         "loading": "Läser in exporter…",
+        "markReimbursed": "Markera som ersatt",
+        "markReimbursedDescription": "Varje utläggsrapport i denna export ersätts i sin helhet, i sin egen valuta, med detta betalningsdatum och denna referens. Justeringar räknas till rapporten de korrigerar. Z8 överför inga pengar.",
         "notPayment": "Inte en betalning: export markerar ingenting som återbetalt.",
         "requested": "Begärdes {date} av {name}",
         "retry": "Försök igen",
@@ -184,18 +223,43 @@
       },
       "filter": {
         "all": "Alla godkända",
+        "clear": "Rensa filter",
+        "currency": {
+          "all": "Alla valutor",
+          "label": "Valuta",
+          "none": "Ingen valuta hittades.",
+          "search": "Sök valutor…"
+        },
+        "employee": {
+          "all": "Alla anställda",
+          "label": "Anställd",
+          "none": "Ingen anställd hittades.",
+          "search": "Sök anställda…"
+        },
         "label": "Visa utlägg",
+        "notExported": "Ännu inte exporterad",
         "open": "Öppna",
-        "settled": "Reglerade"
+        "reimbursed": "Utbetald",
+        "team": {
+          "all": "Alla team",
+          "label": "Team vid godkännande",
+          "none": "Inget team hittades.",
+          "search": "Sök team…"
+        }
       },
       "legacyClaim": "Äldre {type}-anspråk",
       "loading": "Läser in ekonomikön…",
+      "pagination": {
+        "label": "Sidor i ekonomikön",
+        "next": "Nästa",
+        "page": "Sida {page}",
+        "previous": "Föregående"
+      },
       "queue": {
         "description": "Öppna ett utlägg för att se dess reglering och registrera en ersättning.",
         "title": "Godkända utlägg"
       },
-      "title": "Utläggsekonomi",
-      "truncated": "Visar de {count} senast godkända utläggen. Äldre matchande utlägg visas inte."
+      "title": "Utläggsekonomi"
     },
     "form": {
       "currency": "Valuta",
@@ -220,6 +284,7 @@
       "filter": {
         "all": "Alla",
         "approved": "Godkända",
+        "awaitingReimbursement": "Väntar på utbetalning",
         "inReview": "Under granskning",
         "label": "Visa utlägg",
         "needsAction": "Att slutföra",
@@ -935,6 +1000,7 @@
         "foreignAreas": "Utlandssatser: {countries} länder och {places} städer"
       },
       "tabs": {
+        "access": "Åtkomst",
         "currencies": "Valutor",
         "exceptions": "Undantag",
         "exceptionsPending": "{label}, {count} väntande",
@@ -947,11 +1013,12 @@
       "balance": {
         "outstanding": "{amount} utestående",
         "overpaid": "{amount} överbetalt",
-        "settled": "Reglerad"
+        "reimbursed": "Utbetald"
       },
       "companyPaid": "Företagsbetalda kostnader på {amount} ska inte ersättas till den anställde.",
       "entitlement": "Godkänt belopp betalt av anställd",
       "entry": {
+        "exportBatch": "Från exporten som begärdes {date}",
         "recordedBy": "Registrerad av {name}, {date}",
         "recovery": "Återfått {amount}",
         "reimbursement": "Betalat {amount}"
@@ -989,7 +1056,7 @@
       },
       "history": "Registrerade betalningar",
       "loading": "Läser in ersättningssaldo…",
-      "ownerOutstanding": "Ekonomiavdelningen registrerar din ersättning här när den har betalats.",
+      "ownerAwaitingReimbursement": "Ekonomiavdelningen registrerar varje betalning här. När allt som du ska få har betalats ut visas denna utgift som Utbetald.",
       "ownerOverpaid": "Mer betalades ut än vad som nu är godkänt. Ekonomiavdelningen registrerar här när mellanskillnaden har återbetalats; Z8 överför inga pengar.",
       "recorded": "Ersättning registrerad.",
       "recordedAlready": "Denna betalning har redan registrerats.",
@@ -997,17 +1064,17 @@
       "recoveryForm": {
         "amount": "Återbetalat belopp ({currency})",
         "date": "Återbetalningsdatum",
+        "explanation": "Den anställde fick mer utbetalt än vad som nu är godkänt. Registrera pengar som de redan har betalat tillbaka för att täcka överbetalningen; den ursprungliga utbetalningen kvarstår som registrerad och ingenting kvittas mot andra rapporter. Z8 överför inga pengar.",
         "label": "Registrera en återbetalning",
-        "notice": "Den anställde fick mer utbetalt än vad som nu är godkänt. Registrera pengar som denne redan har återbetalat för att reglera överbetalningen; den ursprungliga ersättningen förblir oförändrad och ingenting kvittas mot andra rapporter. Z8 överför inga pengar.",
         "submit": "Registrera återbetalning"
       },
       "recoveryRecorded": "Återbetalning registrerad.",
       "reimbursed": "Återbetald",
       "state": {
+        "awaitingReimbursement": "Väntar på utbetalning",
         "mixed": "Kräver granskning",
-        "outstanding": "Utestående",
         "overpaid": "Överbetald",
-        "settled": "Reglerad"
+        "reimbursed": "Utbetald"
       },
       "title": "Återbetalning"
     },

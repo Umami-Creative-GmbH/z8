@@ -10,7 +10,7 @@
       "create": {
         "action": "Bir düzeltmeyle düzelt",
         "confirm": "Düzeltme oluştur",
-        "description": "Düzeltmek üzere onaylanmış masrafların bir kopyasını alırsınız. Bunu göndermek, düzeltilen tüm raporu yeniden onaya gönderir; yalnızca onaylanan tutarla arasındaki fark kapatılır.",
+        "explanation": "Onaylanan masrafların düzeltilmek üzere bir kopyasını alırsınız. Bu kopyayı göndermek, düzeltilen raporun tamamını yeni bir onaya gönderir; yalnızca onaylanan tutarla olan fark geri ödenir veya geri alınır.",
         "failed": "Düzeltme oluşturulamadı. Lütfen tekrar deneyin.",
         "ineligible": "Bu rapor artık düzeltilemez. Güncel durumunu görmek için sayfayı yeniden yükleyin.",
         "reason": "Düzeltme nedeni",
@@ -120,12 +120,48 @@
     "finance": {
       "approvedOn": "Onaylandı: {date}",
       "back": "Masraf finansmanına geri dön",
+      "bulk": {
+        "action": "Geri ödendi olarak işaretle",
+        "description": "Seçilen her masraf kendi para biriminde, bu ödeme tarihi ve referansıyla eksiksiz olarak geri ödenir. Z8 herhangi bir para transferi yapmaz.",
+        "failed": "Masraflar geri ödendi olarak işaretlenemedi. Lütfen tekrar deneyin.",
+        "nothing": "Burada eksiksiz geri ödeme bekleyen hiçbir masraf yok. Hiçbir ödeme kaydedilmedi.",
+        "outcome": {
+          "alreadyReimbursed": "Atlandı: zaten geri ödendi",
+          "balanceChanged": "Atlandı: bakiye değişti",
+          "failed": "Başarısız",
+          "outOfScope": "Atlandı: kapsam dışı",
+          "overpaidOrReview": "Atlandı: fazla ödeme yapıldı veya incelenmesi gerekiyor",
+          "ownExpense": "Atlandı: kendi masrafınız",
+          "reimbursed": "{amount} geri ödendi"
+        },
+        "referenceHint": "Seçilen her masraf için aynı referans kaydedilir (ör. banka transferi grubu).",
+        "results": {
+          "done": "Bitti",
+          "summary": "{reimbursed} / {total} geri ödendi",
+          "title": "Geri ödeme sonuçları"
+        },
+        "select": "{name} seçin",
+        "selectAll": "Bu sayfadaki geri ödeme bekleyen tüm masrafları seçin",
+        "selected": "{count} seçildi",
+        "skipped": "Dahil değil ({count})",
+        "submit": "{count} adedini geri ödendi olarak işaretle",
+        "title": "Geri ödendi olarak işaretle"
+      },
       "companyPaid": "Şirket tarafından ödenen: {amount}",
+      "coverageGap": {
+        "description": "Geri ödemeleri kaydedebilen hiçbir aktif masraf yetkilisinin kapsamında bunlar bulunmuyor. Sahipler ve yöneticiler bunları kaydetmeye devam edebilir veya bir yetkilinin kapsamını genişletebilir.",
+        "empty": "Bir masraf yetkilisi, geri ödeme bekleyen onaylanmış her masrafı kapsar.",
+        "queueFilter": "Hiçbir masraf yetkilisinin kapsamadığı, geri ödeme bekleyen onaylanmış masraflar.",
+        "show": "Bu masrafları göster",
+        "showAll": "Onaylanan tüm masrafları göster",
+        "title": "{count, plural, other {Hiçbir masraf yetkilisinin kapsamadığı, geri ödeme bekleyen # onaylanmış masraf var} }"
+      },
       "description": "Onaylanan masraflar ve çalışanlara hâlâ borçlu olunan tutarlar. Geri ödeme kaydetmek, Z8 dışında yapılan bir ödemeyi belgeler; para transferi gerçekleştirilmez.",
       "employeePaid": "Çalışan tarafından ödenen: {amount}",
       "empty": {
+        "allReimbursed": "Kaydedilecek bir şey kalmadı: onaylanan her masrafın geri ödemesi yapıldı.",
         "any": "Henüz onaylanmış masraf yok.",
-        "open": "Mahsuplaşılacak bir şey yok: onaylanan tüm masraflar ödendi."
+        "filtered": "Bu filtrelerle eşleşen onaylanmış masraf yok."
       },
       "entry": {
         "description": "Onaylanan masrafları, kalan bakiyeleri ve kaydedilen geri ödemeleri inceleyin.",
@@ -152,6 +188,7 @@
           "failed": "Dışa aktarma oluşturulamadı. Lütfen tekrar deneyin.",
           "invalid": "Bir ile izin verilen maksimum sayı arasında masraf seçin.",
           "load": "Dışa aktarımlar yüklenemedi. Lütfen tekrar deneyin.",
+          "reimburse": "Dışa aktarma geri ödeme için yüklenemedi. Lütfen tekrar deneyin.",
           "retry": "Dışa aktarma yeniden denenemedi.",
           "stale": "Seçilen bazı masraflar artık gösterildiği gibi onaylanmış durumda değil. Liste yenilendi; seçimi kontrol edip tekrar dışa aktarın."
         },
@@ -170,6 +207,8 @@
         },
         "history": "Dışa aktarma geçmişi",
         "loading": "Dışa aktarmalar yükleniyor…",
+        "markReimbursed": "Geri ödendi olarak işaretle",
+        "markReimbursedDescription": "Bu dışa aktarmadaki her masraf raporunun geri ödemesi; bu ödeme tarihi ve referansıyla, kendi para biriminde tam olarak yapılır. Düzeltmeler, düzelttikleri rapor kapsamında sayılır. Z8 herhangi bir para aktarımı yapmaz.",
         "notPayment": "Ödeme değildir: Dışa aktarma işlemi hiçbir şeyi geri ödendi olarak işaretlemez.",
         "requested": "{date} tarihinde {name} tarafından talep edildi",
         "retry": "Tekrar dene",
@@ -184,18 +223,43 @@
       },
       "filter": {
         "all": "Tümü onaylandı",
+        "clear": "Filtreleri temizle",
+        "currency": {
+          "all": "Tüm para birimleri",
+          "label": "Para birimi",
+          "none": "Para birimi bulunamadı.",
+          "search": "Para birimlerinde ara…"
+        },
+        "employee": {
+          "all": "Tüm çalışanlar",
+          "label": "Çalışan",
+          "none": "Çalışan bulunamadı.",
+          "search": "Çalışan ara…"
+        },
         "label": "Masrafları göster",
+        "notExported": "Henüz dışa aktarılmadı",
         "open": "Açık",
-        "settled": "Kapatıldı"
+        "reimbursed": "Geri ödendi",
+        "team": {
+          "all": "Tüm ekipler",
+          "label": "Onay sırasındaki ekip",
+          "none": "Ekip bulunamadı.",
+          "search": "Ekip ara…"
+        }
       },
       "legacyClaim": "Eski {type} talebi",
       "loading": "Finans kuyruğu yükleniyor…",
+      "pagination": {
+        "label": "Finans kuyruğu sayfaları",
+        "next": "Sonraki",
+        "page": "Sayfa {page}",
+        "previous": "Önceki"
+      },
       "queue": {
         "description": "Mutabakatını görmek ve geri ödeme kaydetmek için bir masrafı açın.",
         "title": "Onaylanan masraflar"
       },
-      "title": "Masraf finansı",
-      "truncated": "En son onaylanan {count} masraf gösteriliyor. Eşleşen daha eski masraflar listelenmez."
+      "title": "Masraf finansı"
     },
     "form": {
       "currency": "Para Birimi",
@@ -220,6 +284,7 @@
       "filter": {
         "all": "Tümü",
         "approved": "Onaylandı",
+        "awaitingReimbursement": "Geri ödeme bekleniyor",
         "inReview": "İnceleniyor",
         "label": "Masrafları göster",
         "needsAction": "Tamamlanacak",
@@ -935,6 +1000,7 @@
         "foreignAreas": "Yurt dışı oranları: {countries} ülke ve {places} şehir"
       },
       "tabs": {
+        "access": "Erişim",
         "currencies": "Para birimleri",
         "exceptions": "İstisnalar",
         "exceptionsPending": "{label}, {count} beklemede",
@@ -947,11 +1013,12 @@
       "balance": {
         "outstanding": "{amount} ödenmemiş",
         "overpaid": "{amount} fazla ödenmiş",
-        "settled": "Kapatıldı"
+        "reimbursed": "Geri ödendi"
       },
       "companyPaid": "Şirket tarafından ödenen {amount} tutarındaki masraflar için çalışana borç bulunmamaktadır.",
       "entitlement": "Çalışan tarafından ödenen onaylı tutar",
       "entry": {
+        "exportBatch": "{date} tarihinde talep edilen dışa aktarmadan",
         "recordedBy": "{name} tarafından kaydedildi, {date}",
         "recovery": "{amount} geri tahsil edildi",
         "reimbursement": "{amount} ödendi"
@@ -989,7 +1056,7 @@
       },
       "history": "Kaydedilen ödemeler",
       "loading": "Geri ödeme bakiyesi yükleniyor…",
-      "ownerOutstanding": "Ödeme yapıldıktan sonra Finans departmanı geri ödemenizi buraya kaydeder.",
+      "ownerAwaitingReimbursement": "Finans birimi her ödemeyi buraya kaydeder. Size borçlu olunan tutarın tamamı ödendiğinde bu masraf Geri Ödendi olarak görünür.",
       "ownerOverpaid": "Şu anda onaylanandan daha fazla ödeme yapıldı. Fark iade edildiğinde Finans buraya kaydeder; Z8 herhangi bir para transferi yapmaz.",
       "recorded": "Geri ödeme kaydedildi.",
       "recordedAlready": "Bu ödeme zaten kaydedilmişti.",
@@ -997,17 +1064,17 @@
       "recoveryForm": {
         "amount": "Geri alınan tutar ({currency})",
         "date": "Geri alma tarihi",
+        "explanation": "Çalışana şu anda onaylanandan daha fazla ödeme yapıldı. Fazla ödemeyi kapatmak için halihazırda geri ödedikleri tutarı kaydedin; asıl geri ödeme kaydedildiği gibi kalır ve diğer raporlara karşı hiçbir şey mahsup edilmez. Z8 herhangi bir para transferi yapmaz.",
         "label": "Geri alma kaydet",
-        "notice": "Çalışana şu anda onaylanandan daha fazla ödeme yapıldı. Fazla ödemeyi kapatmak için çalışanın önceden iade ettiği parayı kaydedin; ilk geri ödeme kaydedildiği şekilde kalır ve diğer raporlarla mahsup edilmez. Z8 herhangi bir para transferi yapmaz.",
         "submit": "Geri almayı kaydet"
       },
       "recoveryRecorded": "Geri alma kaydedildi.",
       "reimbursed": "Geri ödendi",
       "state": {
+        "awaitingReimbursement": "Geri ödeme bekleniyor",
         "mixed": "İnceleme gerekiyor",
-        "outstanding": "Ödenmemiş",
         "overpaid": "Fazla ödendi",
-        "settled": "Kapatıldı"
+        "reimbursed": "Geri ödendi"
       },
       "title": "Geri ödeme"
     },

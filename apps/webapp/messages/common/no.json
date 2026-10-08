@@ -502,6 +502,8 @@
     "compliance": "Samsvar",
     "dashboard": "Dashbord",
     "feedback": "Tilbakemelding",
+    "finance": "Økonomi",
+    "financeAwaiting": "{count, plural, one {# utgift venter på refusjon} other {# utgifter venter på refusjon}}",
     "get-help": "Få hjelp",
     "my-requests": "Mine forespørsler",
     "org-explorer": "Organisasjonsutforsker",
@@ -569,6 +571,25 @@
       "teamMemberRemoved": {
         "message": "Du har blitt fjernet fra teamet {teamName} av {performedByName}.",
         "title": "Fjernet fra team"
+      },
+      "travelExpenseAdjustmentReadyForReimbursement": {
+        "message": "En godkjent justering økte skyldig beløp på {employee}s utgiftsrapport {report}. Venter på refusjon: {amounts}."
+      },
+      "travelExpensePartiallyReimbursed": {
+        "message": "{amount} {currency} av reiseutgiften din har blitt refundert (betalingsreferanse {reference}). {remaining} {remainingCurrency} venter fortsatt på refusjon.",
+        "title": "Utgift delvis refundert"
+      },
+      "travelExpenseReadyForReimbursement": {
+        "message": "{employee}s utgiftsrapport {report} er godkjent. Venter på refusjon: {amounts}.",
+        "title": "Klar til refusjon"
+      },
+      "travelExpenseRecoveryRecorded": {
+        "message": "Et tilbakekrav på {amount} {currency} ble registrert for reiseutgiften din (betalingsreferanse {reference}).",
+        "title": "Tilbakekrav for utgift registrert"
+      },
+      "travelExpenseReimbursed": {
+        "message": "Reiseutgiften din har blitt fullt refundert: {amount} {currency}, betalingsreferanse {reference}.",
+        "title": "Utgift refundert"
       }
     },
     "description": "Gjennomgå oppdateringer, godkjenninger og systemvarsler på én tidslinje.",
@@ -591,6 +612,12 @@
       "unread": "Ulest"
     },
     "preferences": {
+      "categories": {
+        "travelExpenses": {
+          "description": "Varsler om refusjoner og tilbakekrav for reiseutgiftene dine",
+          "title": "Reiseutgifter"
+        }
+      },
       "disabled": "Varsling deaktivert",
       "enabled": "Varsling aktivert",
       "mandatoryInbox": "Leveres alltid til innboksen din",

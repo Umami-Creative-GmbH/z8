@@ -502,6 +502,8 @@
     "compliance": "Cumplimiento",
     "dashboard": "Tablero",
     "feedback": "Comentarios",
+    "finance": "Finanzas",
+    "financeAwaiting": "{count, plural, one {# gasto pendiente de reembolso} other {# gastos pendientes de reembolso}}",
     "get-help": "Obtener Ayuda",
     "my-requests": "Mis solicitudes",
     "org-explorer": "Explorador de la organización",
@@ -569,6 +571,25 @@
       "teamMemberRemoved": {
         "message": "Has sido eliminado del equipo {teamName} por {performedByName}.",
         "title": "Eliminado del equipo"
+      },
+      "travelExpenseAdjustmentReadyForReimbursement": {
+        "message": "Un ajuste aprobado aumentó el monto adeudado en el informe de gastos {report} de {employee}. Pendiente de reembolso: {amounts}."
+      },
+      "travelExpensePartiallyReimbursed": {
+        "message": "Se han reembolsado {amount} {currency} de su gasto de viaje (referencia de pago: {reference}). Aún quedan {remaining} {remainingCurrency} pendientes de reembolso.",
+        "title": "Gasto parcialmente reembolsado"
+      },
+      "travelExpenseReadyForReimbursement": {
+        "message": "El informe de gastos {report} de {employee} está aprobado. Pendiente de reembolso: {amounts}.",
+        "title": "Listo para reembolso"
+      },
+      "travelExpenseRecoveryRecorded": {
+        "message": "Se registró una recuperación de {amount} {currency} para su gasto de viaje (referencia de pago: {reference}).",
+        "title": "Recuperación de gasto registrada"
+      },
+      "travelExpenseReimbursed": {
+        "message": "Su gasto de viaje ha sido reembolsado en su totalidad: {amount} {currency}, referencia de pago: {reference}.",
+        "title": "Gasto reembolsado"
       }
     },
     "description": "Revisa actualizaciones, aprobaciones y alertas del sistema en una sola línea de tiempo.",
@@ -591,6 +612,12 @@
       "unread": "No leídas"
     },
     "preferences": {
+      "categories": {
+        "travelExpenses": {
+          "description": "Notificaciones sobre reembolsos y recuperaciones de sus gastos de viaje",
+          "title": "Gastos de viaje"
+        }
+      },
       "disabled": "Notificación desactivada",
       "enabled": "Notificación activada",
       "mandatoryInbox": "Siempre entregado en tu bandeja de entrada",

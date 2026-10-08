@@ -502,6 +502,8 @@
     "compliance": "Efterlevnad",
     "dashboard": "Översikt",
     "feedback": "Feedback",
+    "finance": "Ekonomi",
+    "financeAwaiting": "{count, plural, other {# utlägg väntar på ersättning} }",
     "get-help": "Få hjälp",
     "my-requests": "Mina förfrågningar",
     "org-explorer": "Organisationsutforskare",
@@ -569,6 +571,25 @@
       "teamMemberRemoved": {
         "message": "Du har tagits bort från teamet {teamName} av {performedByName}.",
         "title": "Borttagen från team"
+      },
+      "travelExpenseAdjustmentReadyForReimbursement": {
+        "message": "En godkänd justering ökade beloppet som ska betalas på {employee}s utläggsrapport {report}. Väntar på ersättning: {amounts}."
+      },
+      "travelExpensePartiallyReimbursed": {
+        "message": "{amount} {currency} av ditt reseutlägg har ersatts (betalningsreferens {reference}). {remaining} {remainingCurrency} väntar fortfarande på ersättning.",
+        "title": "Utlägg delvis ersatt"
+      },
+      "travelExpenseReadyForReimbursement": {
+        "message": "{employee}s utläggsrapport {report} har godkänts. Väntar på ersättning: {amounts}.",
+        "title": "Redo för ersättning"
+      },
+      "travelExpenseRecoveryRecorded": {
+        "message": "En återbetalning på {amount} {currency} registrerades för ditt reseutlägg (betalningsreferens {reference}).",
+        "title": "Återbetalning av utlägg registrerad"
+      },
+      "travelExpenseReimbursed": {
+        "message": "Ditt reseutlägg har ersatts i sin helhet: {amount} {currency}, betalningsreferens {reference}.",
+        "title": "Utlägg ersatt"
       }
     },
     "description": "Granska uppdateringar, godkännanden och systemvarningar i en och samma tidslinje.",
@@ -591,6 +612,12 @@
       "unread": "Olästa"
     },
     "preferences": {
+      "categories": {
+        "travelExpenses": {
+          "description": "Aviseringar om ersättningar och återbetalningar för dina reseutlägg",
+          "title": "Reseutlägg"
+        }
+      },
       "disabled": "Avisering inaktiverad",
       "enabled": "Avisering aktiverad",
       "mandatoryInbox": "Levereras alltid till din inkorg",

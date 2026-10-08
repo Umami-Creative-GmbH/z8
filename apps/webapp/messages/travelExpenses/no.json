@@ -10,7 +10,7 @@
       "create": {
         "action": "Korriger med en justering",
         "confirm": "Opprett justering",
-        "description": "Du får en kopi av de godkjente utgiftene som kan korrigeres. Når du sender den inn, sendes hele den korrigerte rapporten til ny godkjenning; bare differansen mot det godkjente beløpet gjøres opp.",
+        "explanation": "Du får en kopi av de godkjente utgiftene for å korrigere. Ved innsending sendes hele den korrigerte rapporten til ny godkjenning; bare differansen mot det godkjente beløpet refunderes eller betales tilbake.",
         "failed": "Kunne ikke opprette justeringen. Vennligst prøv igjen.",
         "ineligible": "Denne rapporten kan ikke lenger justeres. Last inn siden på nytt for å se gjeldende status.",
         "reason": "Årsak til korrigeringen",
@@ -120,12 +120,48 @@
     "finance": {
       "approvedOn": "Godkjent {date}",
       "back": "Tilbake til utgiftsøkonomi",
+      "bulk": {
+        "action": "Merk som refundert",
+        "description": "Hver valgte utgift refunderes i sin helhet, i sin egen valuta, med denne betalingsdatoen og referansen. Z8 overfører ingen penger.",
+        "failed": "Kunne ikke merke utgiftene som refundert. Prøv på nytt.",
+        "nothing": "Ingenting her venter på full refusjon. Ingen betaling er registrert.",
+        "outcome": {
+          "alreadyReimbursed": "Hoppet over: allerede refundert",
+          "balanceChanged": "Hoppet over: saldo endret",
+          "failed": "Mislyktes",
+          "outOfScope": "Hoppet over: utenfor omfang",
+          "overpaidOrReview": "Hoppet over: for mye utbetalt eller krever gjennomgang",
+          "ownExpense": "Hoppet over: din egen utgift",
+          "reimbursed": "Refundert {amount}"
+        },
+        "referenceHint": "Samme referanse registreres for hver valgte utgift, f.eks. bunten for bankoverføring.",
+        "results": {
+          "done": "Ferdig",
+          "summary": "{reimbursed} av {total} refundert",
+          "title": "Refusjonsresultater"
+        },
+        "select": "Velg {name}",
+        "selectAll": "Velg alle utgifter som venter på refusjon på denne siden",
+        "selected": "{count} valgt",
+        "skipped": "Ikke inkludert ({count})",
+        "submit": "Marker {count} som refundert",
+        "title": "Marker som refundert"
+      },
       "companyPaid": "Betalt av selskapet {amount}",
+      "coverageGap": {
+        "description": "Ingen aktiv utgiftsansvarlig som kan registrere refusjoner har disse innenfor sitt ansvarsområde. Eiere og administratorer kan fortsatt registrere dem, eller utvide en ansvarliges ansvarsområde.",
+        "empty": "En utgiftsansvarlig dekker alle godkjente utgifter som venter på refusjon.",
+        "queueFilter": "Godkjente utgifter som venter på refusjon og som ingen utgiftsansvarlig dekker.",
+        "show": "Vis disse utgiftene",
+        "showAll": "Vis alle godkjente utgifter",
+        "title": "{count, plural, one {# godkjent utgift venter på refusjon som ingen utgiftsansvarlig dekker} other {# godkjente utgifter venter på refusjon som ingen utgiftsansvarlig dekker}}"
+      },
       "description": "Godkjente utgifter og hva som fortsatt skyldes ansatte. Registrering av en refusjon dokumenterer en betaling foretatt utenfor Z8; ingen penger overføres.",
       "employeePaid": "Betalt av ansatt {amount}",
       "empty": {
+        "allReimbursed": "Ingenting igjen å registrere: alle godkjente utgifter er refundert.",
         "any": "Ingen godkjente utgifter ennå.",
-        "open": "Ingenting å gjøre opp: alle godkjente utgifter er gjort opp."
+        "filtered": "Ingen godkjente utgifter samsvarer med disse filtrene."
       },
       "entry": {
         "description": "Gå gjennom godkjente utgifter, utestående saldoer og registrerte refusjoner.",
@@ -152,6 +188,7 @@
           "failed": "Eksporten kunne ikke opprettes. Vennligst prøv igjen.",
           "invalid": "Velg mellom én og det maksimale antallet utgifter.",
           "load": "Kunne ikke laste eksporter. Vennligst prøv igjen.",
+          "reimburse": "Eksporten kunne ikke lastes inn for refusjon. Vennligst prøv igjen.",
           "retry": "Kunne ikke prøve eksporten på nytt.",
           "stale": "Noen valgte utgifter er ikke lenger godkjent som vist. Listen ble oppdatert; kontroller utvalget og eksporter på nytt."
         },
@@ -170,6 +207,8 @@
         },
         "history": "Eksporthistorikk",
         "loading": "Laster inn eksporter…",
+        "markReimbursed": "Marker som refundert",
+        "markReimbursedDescription": "Hver utgiftsrapport i denne eksporten refunderes i sin helhet, i sin egen valuta, med denne betalingsdatoen og referansen. Justeringer tilregnes rapporten de korrigerer. Z8 overfører ingen penger.",
         "notPayment": "Ikke en betaling: eksportering markerer ikke noe som refundert.",
         "requested": "Forespurt {date} av {name}",
         "retry": "Prøv igjen",
@@ -184,18 +223,43 @@
       },
       "filter": {
         "all": "Alle godkjente",
+        "clear": "Tøm filtre",
+        "currency": {
+          "all": "Alle valutaer",
+          "label": "Valuta",
+          "none": "Ingen valuta funnet.",
+          "search": "Søk i valutaer …"
+        },
+        "employee": {
+          "all": "Alle ansatte",
+          "label": "Ansatt",
+          "none": "Ingen ansatt funnet.",
+          "search": "Søk etter ansatte…"
+        },
         "label": "Vis utgifter",
+        "notExported": "Ikke eksportert ennå",
         "open": "Åpen",
-        "settled": "Oppgjort"
+        "reimbursed": "Refundert",
+        "team": {
+          "all": "Alle team",
+          "label": "Team ved godkjenning",
+          "none": "Ingen team funnet.",
+          "search": "Søk etter team…"
+        }
       },
       "legacyClaim": "Eldre {type}-krav",
       "loading": "Laster inn økonomikø…",
+      "pagination": {
+        "label": "Sider i økonomikøen",
+        "next": "Neste",
+        "page": "Side {page}",
+        "previous": "Forrige"
+      },
       "queue": {
         "description": "Åpne et utlegg for å se oppgjøret og registrere en refusjon.",
         "title": "Godkjente utlegg"
       },
-      "title": "Utgiftsøkonomi",
-      "truncated": "Viser de {count} sist godkjente utgiftene. Eldre samsvarende utgifter er ikke oppført."
+      "title": "Utgiftsøkonomi"
     },
     "form": {
       "currency": "Valuta",
@@ -220,6 +284,7 @@
       "filter": {
         "all": "Alle",
         "approved": "Godkjent",
+        "awaitingReimbursement": "Venter på refusjon",
         "inReview": "Til vurdering",
         "label": "Vis utgifter",
         "needsAction": "Til fullføring",
@@ -935,6 +1000,7 @@
         "foreignAreas": "Utenlandssatser: {countries} land og {places} byer"
       },
       "tabs": {
+        "access": "Tilgang",
         "currencies": "Valutaer",
         "exceptions": "Unntak",
         "exceptionsPending": "{label}, {count} venter",
@@ -947,11 +1013,12 @@
       "balance": {
         "outstanding": "{amount} utestående",
         "overpaid": "{amount} for mye betalt",
-        "settled": "Oppgjort"
+        "reimbursed": "Refundert"
       },
       "companyPaid": "Firmabetalte kostnader på {amount} skyldes ikke den ansatte.",
       "entitlement": "Godkjent beløp betalt av ansatt",
       "entry": {
+        "exportBatch": "Fra eksporten forespurt {date}",
         "recordedBy": "Registrert av {name}, {date}",
         "recovery": "Gjenvunnet {amount}",
         "reimbursement": "Betalt {amount}"
@@ -989,7 +1056,7 @@
       },
       "history": "Registrerte betalinger",
       "loading": "Laster inn refusjonssaldo…",
-      "ownerOutstanding": "Økonomi registrerer refusjonen din her når den er utbetalt.",
+      "ownerAwaitingReimbursement": "Økonomi registrerer hver betaling her. Når alt du har til gode er utbetalt, vises denne utgiften som Refundert.",
       "ownerOverpaid": "Det ble utbetalt mer enn det som nå er godkjent. Økonomi registrerer her når differansen er tilbakebetalt; Z8 flytter ikke penger.",
       "recorded": "Refusjon registrert.",
       "recordedAlready": "Denne betalingen er allerede registrert.",
@@ -997,17 +1064,17 @@
       "recoveryForm": {
         "amount": "Tilbakebetalt beløp ({currency})",
         "date": "Tilbakebetalingsdato",
+        "explanation": "Den ansatte ble utbetalt mer enn det som nå er godkjent. Registrer penger de allerede har betalt tilbake for å dekke for mye utbetalt beløp; den opprinnelige refusjonen forblir som registrert, og ingenting motregnes mot andre rapporter. Z8 overfører ingen penger.",
         "label": "Registrer en tilbakebetaling",
-        "notice": "Den ansatte fikk utbetalt mer enn det som nå er godkjent. Registrer penger de allerede har tilbakebetalt for å gjøre opp overbetalingen; den opprinnelige refusjonen forblir som registrert, og ingenting motregnes mot andre rapporter. Z8 overfører ikke penger.",
         "submit": "Registrer tilbakebetaling"
       },
       "recoveryRecorded": "Tilbakebetaling registrert.",
       "reimbursed": "Refundert",
       "state": {
+        "awaitingReimbursement": "Venter på refusjon",
         "mixed": "Må gjennomgås",
-        "outstanding": "Utestående",
         "overpaid": "Overbetalt",
-        "settled": "Oppgjort"
+        "reimbursed": "Refundert"
       },
       "title": "Refusjon"
     },

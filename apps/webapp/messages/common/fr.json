@@ -502,6 +502,8 @@
     "compliance": "Conformité",
     "dashboard": "Tableau de bord",
     "feedback": "Commentaires",
+    "finance": "Finances",
+    "financeAwaiting": "{count, plural, one {# dépense en attente de remboursement} other {# dépenses en attente de remboursement}}",
     "get-help": "Obtenir de l'aide",
     "my-requests": "Mes demandes",
     "org-explorer": "Explorateur d'organisation",
@@ -569,6 +571,25 @@
       "teamMemberRemoved": {
         "message": "Vous avez été retiré de l'équipe {teamName} par {performedByName}.",
         "title": "Retiré de l'équipe"
+      },
+      "travelExpenseAdjustmentReadyForReimbursement": {
+        "message": "Un ajustement approuvé a augmenté le montant dû sur la note de frais {report} de {employee}. En attente de remboursement : {amounts}."
+      },
+      "travelExpensePartiallyReimbursed": {
+        "message": "{amount} {currency} de vos frais de déplacement ont été remboursés (référence de paiement {reference}). {remaining} {remainingCurrency} restent en attente de remboursement.",
+        "title": "Dépense partiellement remboursée"
+      },
+      "travelExpenseReadyForReimbursement": {
+        "message": "La note de frais {report} de {employee} est approuvée. En attente de remboursement : {amounts}.",
+        "title": "Prêt pour le remboursement"
+      },
+      "travelExpenseRecoveryRecorded": {
+        "message": "Un recouvrement de {amount} {currency} a été enregistré pour vos frais de déplacement (référence de paiement {reference}).",
+        "title": "Recouvrement de dépense enregistré"
+      },
+      "travelExpenseReimbursed": {
+        "message": "Vos frais de déplacement ont été intégralement remboursés : {amount} {currency}, référence de paiement {reference}.",
+        "title": "Dépense remboursée"
       }
     },
     "description": "Consultez les mises à jour, les approbations et les alertes système dans une seule chronologie.",
@@ -591,6 +612,12 @@
       "unread": "Non lu"
     },
     "preferences": {
+      "categories": {
+        "travelExpenses": {
+          "description": "Notifications concernant les remboursements et recouvrements de vos frais de déplacement",
+          "title": "Frais de déplacement"
+        }
+      },
       "disabled": "Notification désactivée",
       "enabled": "Notification activée",
       "mandatoryInbox": "Toujours livré dans votre boîte de réception",

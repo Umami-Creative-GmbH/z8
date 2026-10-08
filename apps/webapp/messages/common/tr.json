@@ -502,6 +502,8 @@
     "compliance": "Uyumluluk",
     "dashboard": "Panel",
     "feedback": "Geri bildirim",
+    "finance": "Finans",
+    "financeAwaiting": "{count, plural, other {# masraf geri ödeme bekliyor} }",
     "get-help": "Yardım Al",
     "my-requests": "Taleplerim",
     "org-explorer": "Kuruluş Gezgini",
@@ -569,6 +571,25 @@
       "teamMemberRemoved": {
         "message": "{performedByName} tarafından {teamName} ekibinden çıkarıldınız.",
         "title": "Ekipten çıkarıldı"
+      },
+      "travelExpenseAdjustmentReadyForReimbursement": {
+        "message": "Onaylanan bir düzeltme, {employee} adlı çalışanın {report} masraf raporunda ödenecek tutarı artırdı. Geri ödeme bekliyor: {amounts}."
+      },
+      "travelExpensePartiallyReimbursed": {
+        "message": "Seyahat masrafınızın {amount} {currency} tutarındaki kısmı geri ödendi (ödeme referansı: {reference}). Kalan {remaining} {remainingCurrency} hâlâ geri ödeme bekliyor.",
+        "title": "Masraf kısmen geri ödendi"
+      },
+      "travelExpenseReadyForReimbursement": {
+        "message": "{employee} adlı çalışanın {report} masraf raporu onaylandı. Geri ödeme bekliyor: {amounts}.",
+        "title": "Geri ödemeye hazır"
+      },
+      "travelExpenseRecoveryRecorded": {
+        "message": "Seyahat masrafınız için {amount} {currency} tutarında bir geri tahsilat kaydedildi (ödeme referansı: {reference}).",
+        "title": "Masraf tahsilatı kaydedildi"
+      },
+      "travelExpenseReimbursed": {
+        "message": "Seyahat masrafınızın tamamı geri ödendi: {amount} {currency}, ödeme referansı: {reference}.",
+        "title": "Masraf geri ödendi"
       }
     },
     "description": "Güncellemeleri, onayları ve sistem uyarılarını tek bir zaman çizelgesinde inceleyin.",
@@ -591,6 +612,12 @@
       "unread": "Okunmadı"
     },
     "preferences": {
+      "categories": {
+        "travelExpenses": {
+          "description": "Seyahat masraflarınızın geri ödemeleri ve tahsilatları ile ilgili bildirimler",
+          "title": "Seyahat Masrafları"
+        }
+      },
       "disabled": "Bildirim devre dışı bırakıldı",
       "enabled": "Bildirim etkinleştirildi",
       "mandatoryInbox": "Her zaman gelen kutunuza iletilir",

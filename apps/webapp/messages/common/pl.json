@@ -502,6 +502,8 @@
     "compliance": "Zgodność",
     "dashboard": "Pulpit",
     "feedback": "Opinia",
+    "finance": "Finanse",
+    "financeAwaiting": "{count, plural, one {# wydatek oczekujący na zwrot} few {# wydatki oczekujące na zwrot} other {# wydatków oczekujących na zwrot} }",
     "get-help": "Uzyskaj pomoc",
     "my-requests": "Moje wnioski",
     "org-explorer": "Eksplorator organizacji",
@@ -569,6 +571,25 @@
       "teamMemberRemoved": {
         "message": "Zostałeś usunięty z zespołu {teamName} przez {performedByName}.",
         "title": "Usunięto z zespołu"
+      },
+      "travelExpenseAdjustmentReadyForReimbursement": {
+        "message": "Zatwierdzona korekta zwiększyła kwotę należną w raporcie wydatków {report} pracownika {employee}. Oczekuje na zwrot: {amounts}."
+      },
+      "travelExpensePartiallyReimbursed": {
+        "message": "Zwrócono {amount} {currency} z Twoich wydatków na podróż (numer referencyjny płatności: {reference}). {remaining} {remainingCurrency} nadal oczekuje na zwrot.",
+        "title": "Wydatek częściowo zwrócony"
+      },
+      "travelExpenseReadyForReimbursement": {
+        "message": "Raport wydatków {report} pracownika {employee} został zatwierdzony. Oczekuje na zwrot: {amounts}.",
+        "title": "Gotowe do zwrotu"
+      },
+      "travelExpenseRecoveryRecorded": {
+        "message": "Zarejestrowano odzyskanie kwoty {amount} {currency} dla Twojego wydatku na podróż (numer referencyjny płatności: {reference}).",
+        "title": "Zarejestrowano odzyskanie wydatku"
+      },
+      "travelExpenseReimbursed": {
+        "message": "Twój wydatek na podróż został w pełni zwrócony: {amount} {currency}, numer referencyjny płatności {reference}.",
+        "title": "Wydatek zwrócony"
       }
     },
     "description": "Przeglądaj aktualizacje, zatwierdzenia i alerty systemowe na jednej osi czasu.",
@@ -591,6 +612,12 @@
       "unread": "Nieprzeczytane"
     },
     "preferences": {
+      "categories": {
+        "travelExpenses": {
+          "description": "Powiadomienia o zwrotach i odzyskaniach wydatków na podróż",
+          "title": "Koszty podróży"
+        }
+      },
       "disabled": "Powiadomienia wyłączone",
       "enabled": "Powiadomienia włączone",
       "mandatoryInbox": "Zawsze dostarczane do Twojej skrzynki odbiorczej",

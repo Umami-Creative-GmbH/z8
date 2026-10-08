@@ -10,7 +10,7 @@
       "create": {
         "action": "Popraw za pomocą korekty",
         "confirm": "Utwórz korektę",
-        "description": "Otrzymujesz kopię zatwierdzonych wydatków do poprawienia. Jej przesłanie powoduje wysłanie całego poprawionego raportu do ponownego zatwierdzenia; rozliczana jest tylko różnica w stosunku do zatwierdzonej kwoty.",
+        "explanation": "Otrzymujesz kopię zatwierdzonych wydatków do poprawy. Jej przesłanie powoduje wysłanie całego poprawionego raportu do ponownego zatwierdzenia; zwracana lub spłacana jest tylko różnica w stosunku do zatwierdzonej kwoty.",
         "failed": "Nie udało się utworzyć korekty. Spróbuj ponownie.",
         "ineligible": "Ten raport nie może już być skorygowany. Odśwież stronę, aby zobaczyć jego aktualny stan.",
         "reason": "Powód korekty",
@@ -120,12 +120,48 @@
     "finance": {
       "approvedOn": "Zatwierdzono {date}",
       "back": "Powrót do finansów wydatków",
+      "bulk": {
+        "action": "Oznacz jako zwrócone",
+        "description": "Każdy wybrany wydatek zostaje zwrócony w całości, w jego pierwotnej walucie, z tą datą płatności i numerem referencyjnym. Z8 nie dokonuje transferu pieniędzy.",
+        "failed": "Nie udało się oznaczyć wydatków jako zwróconych. Spróbuj ponownie.",
+        "nothing": "Żadna pozycja nie oczekuje tutaj na pełny zwrot. Płatność nie została zarejestrowana.",
+        "outcome": {
+          "alreadyReimbursed": "Pominięto: już zwrócono",
+          "balanceChanged": "Pominięto: saldo uległo zmianie",
+          "failed": "Niepowodzenie",
+          "outOfScope": "Pominięto: poza zakresem",
+          "overpaidOrReview": "Pominięto: nadpłacono lub wymaga weryfikacji",
+          "ownExpense": "Pominięto: wydatek własny",
+          "reimbursed": "Zwrócono {amount}"
+        },
+        "referenceHint": "Dla każdego wybranego wydatku zapisywany jest ten sam numer referencyjny, np. identyfikator paczki przelewów.",
+        "results": {
+          "done": "Gotowe",
+          "summary": "Zwrócono {reimbursed} z {total}",
+          "title": "Wyniki zwrotu"
+        },
+        "select": "Zaznacz {name}",
+        "selectAll": "Zaznacz wszystkie wydatki oczekujące na zwrot na tej stronie",
+        "selected": "Zaznaczono: {count}",
+        "skipped": "Nieuwzględnione ({count})",
+        "submit": "Oznacz {count} jako zwrócone",
+        "title": "Oznacz jako zwrócone"
+      },
       "companyPaid": "Opłacone przez firmę {amount}",
+      "coverageGap": {
+        "description": "Żaden aktywny koordynator ds. wydatków, który może rejestrować zwroty, nie ma ich w swoim zakresie. Właściciele i administratorzy nadal mogą je rejestrować lub rozszerzyć zakres uprawnień koordynatora.",
+        "empty": "Koordynator ds. wydatków obejmuje każdy zatwierdzony wydatek oczekujący na zwrot.",
+        "queueFilter": "Zatwierdzone wydatki oczekujące na zwrot, których nie obejmuje żaden koordynator ds. wydatków.",
+        "show": "Pokaż te wydatki",
+        "showAll": "Pokaż wszystkie zatwierdzone wydatki",
+        "title": "{count, plural, one {# zatwierdzony wydatek oczekuje na zwrot i nie jest objęty zakresem żadnego koordynatora ds. wydatków} few {# zatwierdzone wydatki oczekują na zwrot i nie są objęte zakresem żadnego koordynatora ds. wydatków} many {# zatwierdzonych wydatków oczekuje na zwrot i nie jest objętych zakresem żadnego koordynatora ds. wydatków} other {# zatwierdzonego wydatku oczekuje na zwrot i nie jest objęte zakresem żadnego koordynatora ds. wydatków}}"
+      },
       "description": "Zatwierdzone wydatki i kwoty nadal należne pracownikom. Zarejestrowanie zwrotu kosztów dokumentuje płatność dokonaną poza Z8; żadne środki nie są przekazywane.",
       "employeePaid": "Opłacone przez pracownika {amount}",
       "empty": {
+        "allReimbursed": "Wszystko zostało zarejestrowane: każdy zatwierdzony wydatek został zwrócony.",
         "any": "Brak zatwierdzonych wydatków.",
-        "open": "Brak pozycji do rozliczenia: wszystkie zatwierdzone wydatki zostały rozliczone."
+        "filtered": "Żadne zatwierdzone wydatki nie spełniają kryteriów tych filtrów."
       },
       "entry": {
         "description": "Przeglądaj zatwierdzone wydatki, nierozliczone salda i zarejestrowane zwroty kosztów.",
@@ -152,6 +188,7 @@
           "failed": "Nie udało się utworzyć eksportu. Spróbuj ponownie.",
           "invalid": "Wybierz od jednego do maksymalnej dozwolonej liczby wydatków.",
           "load": "Nie można załadować eksportów. Spróbuj ponownie.",
+          "reimburse": "Nie udało się załadować eksportu do rozliczenia zwrotu. Spróbuj ponownie.",
           "retry": "Nie udało się ponowić próby eksportu.",
           "stale": "Niektóre wybrane wydatki nie są już zatwierdzone, jak wyświetlano wcześniej. Lista została odświeżona; sprawdź zaznaczenie i wyeksportuj ponownie."
         },
@@ -170,6 +207,8 @@
         },
         "history": "Historia eksportu",
         "loading": "Wczytywanie eksportów…",
+        "markReimbursed": "Oznacz jako zwrócone",
+        "markReimbursedDescription": "Każdy raport wydatków w tym eksporcie jest zwracany w całości, w jego walucie, z tą datą płatności i numerem referencyjnym. Korekty są wliczane do raportu, którego dotyczą. Z8 nie wykonuje przelewów pieniężnych.",
         "notPayment": "To nie jest płatność: wyeksportowanie nie oznacza żadnych pozycji jako zwróconych.",
         "requested": "Zgłoszono {date} przez: {name}",
         "retry": "Ponów próbę",
@@ -184,18 +223,43 @@
       },
       "filter": {
         "all": "Wszystkie zatwierdzone",
+        "clear": "Wyczyść filtry",
+        "currency": {
+          "all": "Wszystkie waluty",
+          "label": "Waluta",
+          "none": "Nie znaleziono waluty.",
+          "search": "Szukaj walut…"
+        },
+        "employee": {
+          "all": "Wszyscy pracownicy",
+          "label": "Pracownik",
+          "none": "Nie znaleziono pracownika.",
+          "search": "Szukaj pracowników…"
+        },
         "label": "Pokaż wydatki",
+        "notExported": "Jeszcze nie wyeksportowano",
         "open": "Otwarte",
-        "settled": "Rozliczone"
+        "reimbursed": "Zwrócono",
+        "team": {
+          "all": "Wszystkie zespoły",
+          "label": "Zespół w momencie zatwierdzenia",
+          "none": "Nie znaleziono zespołu.",
+          "search": "Szukaj zespołów…"
+        }
       },
       "legacyClaim": "Archiwalny wniosek: {type}",
       "loading": "Wczytywanie kolejki finansowej…",
+      "pagination": {
+        "label": "Strony kolejki finansowej",
+        "next": "Następna",
+        "page": "Strona {page}",
+        "previous": "Poprzednia"
+      },
       "queue": {
         "description": "Otwórz wydatek, aby zobaczyć jego rozliczenie i zarejestrować zwrot kosztów.",
         "title": "Zatwierdzone wydatki"
       },
-      "title": "Finanse wydatków",
-      "truncated": "Wyświetlanie {count} ostatnio zatwierdzonych wydatków. Starsze pasujące wydatki nie są widoczne na liście."
+      "title": "Finanse wydatków"
     },
     "form": {
       "currency": "Waluta",
@@ -220,6 +284,7 @@
       "filter": {
         "all": "Wszystkie",
         "approved": "Zatwierdzone",
+        "awaitingReimbursement": "Oczekuje na zwrot",
         "inReview": "W trakcie weryfikacji",
         "label": "Pokaż wydatki",
         "needsAction": "Do dokończenia",
@@ -935,6 +1000,7 @@
         "foreignAreas": "Stawki zagraniczne: {countries} krajów i {places} miast"
       },
       "tabs": {
+        "access": "Dostęp",
         "currencies": "Waluty",
         "exceptions": "Wyjątki",
         "exceptionsPending": "{label}, {count} oczekujących",
@@ -947,11 +1013,12 @@
       "balance": {
         "outstanding": "{amount} do uregulowania",
         "overpaid": "{amount} nadpłaty",
-        "settled": "Rozliczono"
+        "reimbursed": "Zwrócono"
       },
       "companyPaid": "Koszty opłacone przez firmę w wysokości {amount} nie są należne pracownikowi.",
       "entitlement": "Zatwierdzona kwota opłacona przez pracownika",
       "entry": {
+        "exportBatch": "Z eksportu zleconego {date}",
         "recordedBy": "Zarejestrowane przez: {name}, {date}",
         "recovery": "Odzyskano {amount}",
         "reimbursement": "Zapłacono {amount}"
@@ -989,7 +1056,7 @@
       },
       "history": "Zarejestrowane płatności",
       "loading": "Wczytywanie salda zwrotu kosztów…",
-      "ownerOutstanding": "Dział finansowy zarejestruje tutaj Twój zwrot kosztów po jego wypłaceniu.",
+      "ownerAwaitingReimbursement": "Dział finansowy rejestruje tutaj każdą płatność. Gdy wszystkie należne Ci środki zostaną wypłacone, ten wydatek będzie wyświetlany jako Zwrócono.",
       "ownerOverpaid": "Wypłacono więcej, niż obecnie zatwierdzono. Dział finansowy rejestruje tutaj zwrot różnicy; aplikacja Z8 nie dokonuje transferu środków.",
       "recorded": "Zwrot kosztów został zarejestrowany.",
       "recordedAlready": "Ta płatność została już zarejestrowana.",
@@ -997,17 +1064,17 @@
       "recoveryForm": {
         "amount": "Odzyskana kwota ({currency})",
         "date": "Data odzyskania",
+        "explanation": "Pracownikowi wypłacono więcej, niż obecnie zatwierdzono. Zarejestruj kwotę już przez niego zwróconą na poczet nadpłaty; pierwotny zwrot pozostaje bez zmian i nic nie jest potrącane z innych raportów. Z8 nie wykonuje przelewów żadnych środków.",
         "label": "Zarejestruj odzyskanie środków",
-        "notice": "Pracownikowi wypłacono więcej, niż obecnie zatwierdzono. Zarejestruj środki zwrócone przez niego w celu uregulowania nadpłaty; pierwotny zwrot kosztów pozostaje bez zmian i nic nie jest kompensowane z innymi raportami. Aplikacja Z8 nie wykonuje przelewów pieniężnych.",
         "submit": "Zarejestruj odzyskanie środków"
       },
       "recoveryRecorded": "Odzyskanie środków zostało zarejestrowane.",
       "reimbursed": "Zwrócone",
       "state": {
+        "awaitingReimbursement": "Oczekuje na zwrot",
         "mixed": "Wymaga weryfikacji",
-        "outstanding": "Nierozliczone",
         "overpaid": "Nadpłacone",
-        "settled": "Rozliczone"
+        "reimbursed": "Zwrócono"
       },
       "title": "Zwrot kosztów"
     },

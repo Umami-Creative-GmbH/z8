@@ -10,7 +10,7 @@
       "create": {
         "action": "Correggi con una rettifica",
         "confirm": "Crea rettifica",
-        "description": "Riceverai una copia delle spese approvate da correggere. L'invio trasmette l'intera nota spese corretta per una nuova approvazione; verrà liquidata solo la differenza rispetto all'importo approvato.",
+        "explanation": "Riceverai una copia delle spese approvate da correggere. L'invio trasmette l'intera nota spese corretta per una nuova approvazione; solo la differenza rispetto all'importo approvato viene rimborsata o restituita.",
         "failed": "Impossibile creare la rettifica. Riprova.",
         "ineligible": "Questa nota spese non può più essere rettificata. Ricarica la pagina per visualizzarne lo stato attuale.",
         "reason": "Motivo della correzione",
@@ -120,12 +120,48 @@
     "finance": {
       "approvedOn": "Approvato il {date}",
       "back": "Torna a gestione finanziaria spese",
+      "bulk": {
+        "action": "Contrassegna come rimborsato",
+        "description": "Ciascuna spesa selezionata viene rimborsata per intero, nella propria valuta, con questa data di pagamento e questo riferimento. Z8 non trasferisce denaro.",
+        "failed": "Impossibile contrassegnare le spese come rimborsate. Riprova.",
+        "nothing": "Nessun elemento in attesa di rimborso integrale. Nessun pagamento registrato.",
+        "outcome": {
+          "alreadyReimbursed": "Ignorato: già rimborsato",
+          "balanceChanged": "Ignorato: saldo modificato",
+          "failed": "Non riuscito",
+          "outOfScope": "Ignorato: fuori ambito",
+          "overpaidOrReview": "Ignorato: pagato in eccesso o richiede verifica",
+          "ownExpense": "Ignorato: tua spesa",
+          "reimbursed": "Rimborsato {amount}"
+        },
+        "referenceHint": "Lo stesso riferimento viene registrato per ogni spesa selezionata, ad es. la distinta del bonifico bancario.",
+        "results": {
+          "done": "Fine",
+          "summary": "{reimbursed} su {total} rimborsati",
+          "title": "Risultati del rimborso"
+        },
+        "select": "Seleziona {name}",
+        "selectAll": "Seleziona tutte le spese in attesa di rimborso in questa pagina",
+        "selected": "{count} selezionati",
+        "skipped": "Non inclusi ({count})",
+        "submit": "Contrassegna {count} come rimborsati",
+        "title": "Contrassegna come rimborsato"
+      },
       "companyPaid": "Pagato dall'azienda {amount}",
+      "coverageGap": {
+        "description": "Nessun responsabile delle note spese attivo autorizzato a registrare rimborsi include queste spese nel proprio ambito. I proprietari e gli amministratori possono comunque registrarle o ampliare l'ambito di un responsabile.",
+        "empty": "Un responsabile delle note spese copre ogni spesa approvata in attesa di rimborso.",
+        "queueFilter": "Spese approvate in attesa di rimborso non coperte da alcun responsabile delle note spese.",
+        "show": "Mostra queste spese",
+        "showAll": "Mostra tutte le spese approvate",
+        "title": "{count, plural, one {# spesa approvata è in attesa di rimborso e non è coperta da alcun responsabile delle note spese} other {# spese approvate sono in attesa di rimborso e non sono coperte da alcun responsabile delle note spese}}"
+      },
       "description": "Spese approvate e importi ancora dovuti ai dipendenti. La registrazione di un rimborso documenta un pagamento effettuato all'esterno di Z8; non viene trasferito denaro.",
       "employeePaid": "Pagato dal dipendente {amount}",
       "empty": {
+        "allReimbursed": "Nulla da registrare: tutte le spese approvate sono state rimborsate.",
         "any": "Ancora nessuna spesa approvata.",
-        "open": "Nulla da saldare: tutte le spese approvate sono state saldate."
+        "filtered": "Nessuna spesa approvata corrisponde a questi filtri."
       },
       "entry": {
         "description": "Esamina le spese approvate, i saldi in sospeso e i rimborsi registrati.",
@@ -152,6 +188,7 @@
           "failed": "Impossibile creare l'esportazione. Riprova.",
           "invalid": "Seleziona da una spesa fino al numero massimo consentito.",
           "load": "Impossibile caricare le esportazioni. Riprova.",
+          "reimburse": "Impossibile caricare l'esportazione per il rimborso. Riprova.",
           "retry": "Impossibile ripetere l'esportazione.",
           "stale": "Alcune spese selezionate non risultano più approvate come indicato. L'elenco è stato aggiornato; controlla la selezione ed esporta di nuovo."
         },
@@ -170,6 +207,8 @@
         },
         "history": "Cronologia esportazioni",
         "loading": "Caricamento esportazioni…",
+        "markReimbursed": "Contrassegna come rimborsato",
+        "markReimbursedDescription": "Ogni nota spese in questa esportazione viene rimborsata per intero, nella rispettiva valuta, con questa data di pagamento e questo riferimento. Le rettifiche vengono applicate alla nota spese che correggono. Z8 non effettua alcun trasferimento di denaro.",
         "notPayment": "Non è un pagamento: l'esportazione non contrassegna nulla come rimborsato.",
         "requested": "Richiesto il {date} da {name}",
         "retry": "Riprova",
@@ -184,18 +223,43 @@
       },
       "filter": {
         "all": "Tutti approvati",
+        "clear": "Cancella filtri",
+        "currency": {
+          "all": "Tutte le valute",
+          "label": "Valuta",
+          "none": "Nessuna valuta trovata.",
+          "search": "Cerca valute…"
+        },
+        "employee": {
+          "all": "Tutti i dipendenti",
+          "label": "Dipendente",
+          "none": "Nessun dipendente trovato.",
+          "search": "Cerca dipendenti…"
+        },
         "label": "Mostra spese",
+        "notExported": "Non ancora esportato",
         "open": "Aperto",
-        "settled": "Saldato"
+        "reimbursed": "Rimborsato",
+        "team": {
+          "all": "Tutti i team",
+          "label": "Team al momento dell'approvazione",
+          "none": "Nessun team trovato.",
+          "search": "Cerca team…"
+        }
       },
       "legacyClaim": "Richiesta {type} legacy",
       "loading": "Caricamento coda finanziaria…",
+      "pagination": {
+        "label": "Pagine della coda finanziaria",
+        "next": "Successivo",
+        "page": "Pagina {page}",
+        "previous": "Precedente"
+      },
       "queue": {
         "description": "Apri una spesa per visualizzarne la liquidazione e registrare un rimborso.",
         "title": "Spese approvate"
       },
-      "title": "Contabilità spese",
-      "truncated": "Visualizzazione delle {count} spese approvate più di recente. Le spese corrispondenti meno recenti non sono elencate."
+      "title": "Contabilità spese"
     },
     "form": {
       "currency": "Valuta",
@@ -220,6 +284,7 @@
       "filter": {
         "all": "Tutte",
         "approved": "Approvate",
+        "awaitingReimbursement": "In attesa di rimborso",
         "inReview": "In revisione",
         "label": "Mostra spese",
         "needsAction": "Da completare",
@@ -935,6 +1000,7 @@
         "foreignAreas": "Tariffe estere: {countries} paesi e {places} città"
       },
       "tabs": {
+        "access": "Accesso",
         "currencies": "Valute",
         "exceptions": "Eccezioni",
         "exceptionsPending": "{label}, {count} in sospeso",
@@ -947,11 +1013,12 @@
       "balance": {
         "outstanding": "{amount} in sospeso",
         "overpaid": "{amount} pagato in eccesso",
-        "settled": "Saldato"
+        "reimbursed": "Rimborsato"
       },
       "companyPaid": "I costi a carico dell'azienda pari a {amount} non sono dovuti al dipendente.",
       "entitlement": "Importo approvato pagato dal dipendente",
       "entry": {
+        "exportBatch": "Dall'esportazione richiesta il {date}",
         "recordedBy": "Registrato da {name}, {date}",
         "recovery": "Recuperato {amount}",
         "reimbursement": "Pagato {amount}"
@@ -989,7 +1056,7 @@
       },
       "history": "Pagamenti registrati",
       "loading": "Caricamento saldo del rimborso in corso…",
-      "ownerOutstanding": "L'ufficio amministrativo registrerà qui il rimborso una volta effettuato il pagamento.",
+      "ownerAwaitingReimbursement": "L'ufficio finanziario registra qui ogni pagamento. Una volta saldato tutto l'importo dovuto, questa spesa apparirà come Rimborsata.",
       "ownerOverpaid": "L'importo pagato è superiore a quello attualmente approvato. L'ufficio amministrativo registra qui la restituzione della differenza; Z8 non trasferisce denaro.",
       "recorded": "Rimborso registrato.",
       "recordedAlready": "Questo pagamento è già stato registrato.",
@@ -997,17 +1064,17 @@
       "recoveryForm": {
         "amount": "Importo recuperato ({currency})",
         "date": "Data del recupero",
+        "explanation": "Al dipendente è stato corrisposto un importo superiore a quello attualmente approvato. Registra il denaro già restituito per coprire il pagamento in eccesso; il rimborso originale rimane registrato e non viene compensato con altre note spese. Z8 non trasferisce denaro.",
         "label": "Registra un recupero",
-        "notice": "Al dipendente è stato corrisposto un importo superiore a quello attualmente approvato. Registra il denaro già restituito per saldare il pagamento in eccesso; il rimborso originale rimane registrato e non viene compensato con altre note spese. Z8 non trasferisce denaro.",
         "submit": "Registra recupero"
       },
       "recoveryRecorded": "Recupero registrato.",
       "reimbursed": "Rimborsato",
       "state": {
+        "awaitingReimbursement": "In attesa di rimborso",
         "mixed": "Richiede revisione",
-        "outstanding": "In sospeso",
         "overpaid": "Pagato in eccesso",
-        "settled": "Saldato"
+        "reimbursed": "Rimborsato"
       },
       "title": "Rimborso"
     },

@@ -10,7 +10,7 @@
       "create": {
         "action": "Corregir con un ajuste",
         "confirm": "Crear ajuste",
-        "description": "Obtendrá una copia de los gastos aprobados para corregirlos. Al enviarla, se remite todo el informe corregido para una nueva aprobación; solo se liquida la diferencia respecto al importe aprobado.",
+        "explanation": "Recibirá una copia de los gastos aprobados para corregirlos. Al enviarla, se remite todo el informe corregido para una nueva aprobación; solo se reembolsa o se devuelve la diferencia respecto al importe aprobado.",
         "failed": "No se pudo crear el ajuste. Vuelva a intentarlo.",
         "ineligible": "Este informe ya no se puede ajustar. Recargue la página para ver su estado actual.",
         "reason": "Motivo de la corrección",
@@ -120,12 +120,48 @@
     "finance": {
       "approvedOn": "Aprobado el {date}",
       "back": "Volver a finanzas de gastos",
+      "bulk": {
+        "action": "Marcar como reembolsado",
+        "description": "Cada gasto seleccionado se reembolsa en su totalidad, en su propia moneda, con esta fecha de pago y referencia. Z8 no transfiere dinero.",
+        "failed": "No se han podido marcar los gastos como reembolsados. Inténtelo de nuevo.",
+        "nothing": "No hay nada aquí pendiente de reembolso íntegro. No se registra ningún pago.",
+        "outcome": {
+          "alreadyReimbursed": "Omitido: ya reembolsado",
+          "balanceChanged": "Omitido: el saldo ha cambiado",
+          "failed": "Fallido",
+          "outOfScope": "Omitido: fuera de ámbito",
+          "overpaidOrReview": "Omitido: pagado en exceso o requiere revisión",
+          "ownExpense": "Omitido: gasto propio",
+          "reimbursed": "Reembolsado {amount}"
+        },
+        "referenceHint": "Se registra la misma referencia para cada gasto seleccionado, p. ej., el lote de transferencias bancarias.",
+        "results": {
+          "done": "Listo",
+          "summary": "{reimbursed} de {total} reembolsados",
+          "title": "Resultados del reembolso"
+        },
+        "select": "Seleccionar {name}",
+        "selectAll": "Seleccionar todos los gastos pendientes de reembolso en esta página",
+        "selected": "{count} seleccionados",
+        "skipped": "No incluidos ({count})",
+        "submit": "Marcar {count} como reembolsados",
+        "title": "Marcar como reembolsado"
+      },
       "companyPaid": "Pagado por la empresa {amount}",
+      "coverageGap": {
+        "description": "Ningún responsable de gastos activo que pueda registrar reembolsos los tiene dentro de su alcance. Los propietarios y administradores aún pueden registrarlos o ampliar el alcance de un responsable.",
+        "empty": "Un responsable de gastos cubre todos los gastos aprobados pendientes de reembolso.",
+        "queueFilter": "Gastos aprobados pendientes de reembolso que ningún responsable de gastos cubre.",
+        "show": "Mostrar estos gastos",
+        "showAll": "Mostrar todos los gastos aprobados",
+        "title": "{count, plural, one {# gasto aprobado pendiente de reembolso que ningún responsable de gastos cubre} other {# gastos aprobados pendientes de reembolso que ningún responsable de gastos cubre}}"
+      },
       "description": "Gastos aprobados y saldo pendiente con los empleados. Registrar un reembolso documenta un pago realizado fuera de Z8; no se transfiere dinero.",
       "employeePaid": "Pagado por el empleado {amount}",
       "empty": {
+        "allReimbursed": "No queda nada por registrar: todos los gastos aprobados están reembolsados.",
         "any": "Aún no hay gastos aprobados.",
-        "open": "Nada que liquidar: todos los gastos aprobados están liquidados."
+        "filtered": "Ningún gasto aprobado coincide con estos filtros."
       },
       "entry": {
         "description": "Revise los gastos aprobados, los saldos pendientes y los reembolsos registrados.",
@@ -152,6 +188,7 @@
           "failed": "No se pudo crear la exportación. Vuelva a intentarlo.",
           "invalid": "Seleccione entre uno y el número máximo de gastos.",
           "load": "No se pudieron cargar las exportaciones. Vuelva a intentarlo.",
+          "reimburse": "No se pudo cargar la exportación para el reembolso. Vuelva a intentarlo.",
           "retry": "No se pudo reintentar la exportación.",
           "stale": "Algunos gastos seleccionados ya no están aprobados como se mostraba. La lista se ha actualizado; revise la selección y vuelva a exportar."
         },
@@ -170,6 +207,8 @@
         },
         "history": "Historial de exportaciones",
         "loading": "Cargando exportaciones…",
+        "markReimbursed": "Marcar como reembolsado",
+        "markReimbursedDescription": "Cada informe de gastos de esta exportación se reembolsa en su totalidad, en su propia moneda, con esta fecha de pago y referencia. Los ajustes se aplican al informe que corrigen. Z8 no transfiere dinero.",
         "notPayment": "No es un pago: exportar no marca nada como reembolsado.",
         "requested": "Solicitado el {date} por {name}",
         "retry": "Reintentar",
@@ -184,18 +223,43 @@
       },
       "filter": {
         "all": "Todos aprobados",
+        "clear": "Borrar filtros",
+        "currency": {
+          "all": "Todas las monedas",
+          "label": "Moneda",
+          "none": "No se encontró ninguna moneda.",
+          "search": "Buscar monedas…"
+        },
+        "employee": {
+          "all": "Todos los empleados",
+          "label": "Empleado",
+          "none": "No se encontró ningún empleado.",
+          "search": "Buscar empleados…"
+        },
         "label": "Mostrar gastos",
+        "notExported": "Aún no exportado",
         "open": "Abierto",
-        "settled": "Liquidado"
+        "reimbursed": "Reembolsado",
+        "team": {
+          "all": "Todos los equipos",
+          "label": "Equipo en la aprobación",
+          "none": "No se encontró ningún equipo.",
+          "search": "Buscar equipos…"
+        }
       },
       "legacyClaim": "Solicitud de {type} heredada",
       "loading": "Cargando cola de finanzas…",
+      "pagination": {
+        "label": "Páginas de la cola de finanzas",
+        "next": "Siguiente",
+        "page": "Página {page}",
+        "previous": "Anterior"
+      },
       "queue": {
         "description": "Abra un gasto para ver su liquidación y registrar un reembolso.",
         "title": "Gastos aprobados"
       },
-      "title": "Finanzas de gastos",
-      "truncated": "Mostrando los {count} gastos aprobados más recientemente. Los gastos coincidentes más antiguos no aparecen en la lista."
+      "title": "Finanzas de gastos"
     },
     "form": {
       "currency": "Moneda",
@@ -220,6 +284,7 @@
       "filter": {
         "all": "Todos",
         "approved": "Aprobado",
+        "awaitingReimbursement": "Pendiente de reembolso",
         "inReview": "En revisión",
         "label": "Mostrar gastos",
         "needsAction": "Por terminar",
@@ -935,6 +1000,7 @@
         "foreignAreas": "Tarifas extranjeras: {countries} países y {places} ciudades"
       },
       "tabs": {
+        "access": "Acceso",
         "currencies": "Monedas",
         "exceptions": "Excepciones",
         "exceptionsPending": "{label}, {count} pendientes",
@@ -947,11 +1013,12 @@
       "balance": {
         "outstanding": "{amount} pendiente",
         "overpaid": "{amount} pagado en exceso",
-        "settled": "Liquidado"
+        "reimbursed": "Reembolsado"
       },
       "companyPaid": "Los costos de {amount} pagados por la empresa no se adeudan al empleado.",
       "entitlement": "Monto aprobado pagado por el empleado",
       "entry": {
+        "exportBatch": "De la exportación solicitada el {date}",
         "recordedBy": "Registrado por {name}, {date}",
         "recovery": "Recuperado {amount}",
         "reimbursement": "Pagado {amount}"
@@ -989,7 +1056,7 @@
       },
       "history": "Pagos registrados",
       "loading": "Cargando el saldo de reembolso…",
-      "ownerOutstanding": "Finanzas registra tu reembolso aquí una vez que se haya pagado.",
+      "ownerAwaitingReimbursement": "Finanzas registra cada pago aquí. Una vez que se le haya pagado todo lo que se le adeuda, este gasto aparecerá como Reembolsado.",
       "ownerOverpaid": "Se pagó más de lo que está aprobado actualmente. Finanzas registra aquí cuándo se ha devuelto la diferencia; Z8 no transfiere dinero.",
       "recorded": "Reembolso registrado.",
       "recordedAlready": "Este pago ya se ha registrado.",
@@ -997,17 +1064,17 @@
       "recoveryForm": {
         "amount": "Importe recuperado ({currency})",
         "date": "Fecha de recuperación",
+        "explanation": "Se pagó al empleado más de lo que está aprobado actualmente. Registre el dinero que ya devolvió para cubrir el pago en exceso; el reembolso original permanece tal como se registró y nada se compensa con otros informes. Z8 no transfiere dinero.",
         "label": "Registrar una recuperación",
-        "notice": "Se pagó al empleado más de lo que está aprobado actualmente. Registra el dinero que ya haya devuelto para liquidar el pago en exceso; el reembolso original se mantiene como está registrado y no se compensa nada con otros informes. Z8 no transfiere dinero.",
         "submit": "Registrar recuperación"
       },
       "recoveryRecorded": "Recuperación registrada.",
       "reimbursed": "Reembolsado",
       "state": {
+        "awaitingReimbursement": "Pendiente de reembolso",
         "mixed": "Requiere revisión",
-        "outstanding": "Pendiente",
         "overpaid": "Pagado en exceso",
-        "settled": "Liquidado"
+        "reimbursed": "Reembolsado"
       },
       "title": "Reembolso"
     },

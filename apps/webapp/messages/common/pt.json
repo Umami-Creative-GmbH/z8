@@ -502,6 +502,8 @@
     "compliance": "Conformidade",
     "dashboard": "Painel",
     "feedback": "Feedback",
+    "finance": "Financeiro",
+    "financeAwaiting": "{count, plural, one {# despesa aguardando reembolso} other {# despesas aguardando reembolso}}",
     "get-help": "Obter Ajuda",
     "my-requests": "Minhas Solicitações",
     "org-explorer": "Explorador da Organização",
@@ -569,6 +571,25 @@
       "teamMemberRemoved": {
         "message": "Você foi removido da equipe {teamName} por {performedByName}.",
         "title": "Removido da equipe"
+      },
+      "travelExpenseAdjustmentReadyForReimbursement": {
+        "message": "Um ajuste aprovado aumentou o valor devido no relatório de despesas {report} de {employee}. Aguardando reembolso: {amounts}."
+      },
+      "travelExpensePartiallyReimbursed": {
+        "message": "{amount} {currency} da sua despesa de viagem foi reembolsado (referência de pagamento {reference}). {remaining} {remainingCurrency} ainda aguarda reembolso.",
+        "title": "Despesa parcialmente reembolsada"
+      },
+      "travelExpenseReadyForReimbursement": {
+        "message": "O relatório de despesas {report} de {employee} foi aprovado. Aguardando reembolso: {amounts}.",
+        "title": "Pronto para reembolso"
+      },
+      "travelExpenseRecoveryRecorded": {
+        "message": "Uma recuperação de {amount} {currency} foi registrada para sua despesa de viagem (referência de pagamento {reference}).",
+        "title": "Recuperação de despesa registrada"
+      },
+      "travelExpenseReimbursed": {
+        "message": "Sua despesa de viagem foi totalmente reembolsada: {amount} {currency}, referência de pagamento {reference}.",
+        "title": "Despesa reembolsada"
       }
     },
     "description": "Revise atualizações, aprovações e alertas do sistema em uma única linha do tempo.",
@@ -591,6 +612,12 @@
       "unread": "Não lido"
     },
     "preferences": {
+      "categories": {
+        "travelExpenses": {
+          "description": "Notificações sobre reembolsos e recuperações de suas despesas de viagem",
+          "title": "Despesas de viagem"
+        }
+      },
       "disabled": "Notificação desativada",
       "enabled": "Notificação ativada",
       "mandatoryInbox": "Sempre entregue na sua caixa de entrada",

@@ -502,6 +502,8 @@
     "compliance": "Conformità",
     "dashboard": "Dashboard",
     "feedback": "Feedback",
+    "finance": "Finanza",
+    "financeAwaiting": "{count, plural, one {# spesa in attesa di rimborso} other {# spese in attesa di rimborso}}",
     "get-help": "Ottieni Aiuto",
     "my-requests": "Le mie richieste",
     "org-explorer": "Esplora organizzazione",
@@ -569,6 +571,25 @@
       "teamMemberRemoved": {
         "message": "Sei stato rimosso dal team {teamName} da {performedByName}.",
         "title": "Rimosso dal team"
+      },
+      "travelExpenseAdjustmentReadyForReimbursement": {
+        "message": "Una rettifica approvata ha aumentato l'importo dovuto sulla nota spese {report} di {employee}. In attesa di rimborso: {amounts}."
+      },
+      "travelExpensePartiallyReimbursed": {
+        "message": "{amount} {currency} della tua spesa di viaggio sono stati rimborsati (riferimento pagamento {reference}). {remaining} {remainingCurrency} sono ancora in attesa di rimborso.",
+        "title": "Spesa parzialmente rimborsata"
+      },
+      "travelExpenseReadyForReimbursement": {
+        "message": "La nota spese {report} di {employee} è stata approvata. In attesa di rimborso: {amounts}.",
+        "title": "Pronto per il rimborso"
+      },
+      "travelExpenseRecoveryRecorded": {
+        "message": "È stato registrato un recupero di {amount} {currency} per la tua spesa di viaggio (riferimento pagamento {reference}).",
+        "title": "Recupero spesa registrato"
+      },
+      "travelExpenseReimbursed": {
+        "message": "La tua spesa di viaggio è stata interamente rimborsata: {amount} {currency}, riferimento pagamento {reference}.",
+        "title": "Spesa rimborsata"
       }
     },
     "description": "Controlla aggiornamenti, approvazioni e avvisi di sistema in un'unica timeline.",
@@ -591,6 +612,12 @@
       "unread": "Non letto"
     },
     "preferences": {
+      "categories": {
+        "travelExpenses": {
+          "description": "Notifiche su rimborsi e recuperi delle tue spese di viaggio",
+          "title": "Spese di viaggio"
+        }
+      },
       "disabled": "Notifica disabilitata",
       "enabled": "Notifica abilitata",
       "mandatoryInbox": "Sempre recapitato nella tua casella di posta",

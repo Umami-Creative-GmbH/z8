@@ -502,6 +502,8 @@
     "compliance": "Compliance",
     "dashboard": "Dashboard",
     "feedback": "Feedback",
+    "finance": "Finanzen",
+    "financeAwaiting": "{count, plural, one {# Ausgabe wartet auf Rückerstattung} other {# Ausgaben warten auf Rückerstattung}}",
     "get-help": "Hilf becho",
     "my-requests": "Mini Aafroge",
     "org-explorer": "Org-Explorer",
@@ -569,6 +571,25 @@
       "teamMemberRemoved": {
         "message": "Du bisch vo {performedByName} us em Team {teamName} entfernt worde.",
         "title": "Us em Team entfernt"
+      },
+      "travelExpenseAdjustmentReadyForReimbursement": {
+        "message": "Eine genehmigte Anpassung hat den geschuldeten Betrag für den Spesenbericht {report} von {employee} erhöht. Wartet auf Rückerstattung: {amounts}."
+      },
+      "travelExpensePartiallyReimbursed": {
+        "message": "{amount} {currency} Ihrer Reisespesen wurden rückerstattet (Zahlungsreferenz {reference}). {remaining} {remainingCurrency} warten noch auf Rückerstattung.",
+        "title": "Spesen teilweise rückerstattet"
+      },
+      "travelExpenseReadyForReimbursement": {
+        "message": "Der Spesenbericht {report} von {employee} ist genehmigt. Wartet auf Rückerstattung: {amounts}.",
+        "title": "Bereit für Rückerstattung"
+      },
+      "travelExpenseRecoveryRecorded": {
+        "message": "Eine Rückforderung von {amount} {currency} wurde für Ihre Reisespesen erfasst (Zahlungsreferenz {reference}).",
+        "title": "Spesenrückforderung erfasst"
+      },
+      "travelExpenseReimbursed": {
+        "message": "Ihre Reisespesen wurden vollständig rückerstattet: {amount} {currency}, Zahlungsreferenz {reference}.",
+        "title": "Spesen rückerstattet"
       }
     },
     "description": "Updates, Freigabe und System-Mäldige uf eim Blick gseh.",
@@ -591,6 +612,12 @@
       "unread": "Ungiläse"
     },
     "preferences": {
+      "categories": {
+        "travelExpenses": {
+          "description": "Benachrichtigungen über Rückerstattungen und Rückforderungen Ihrer Reisespesen",
+          "title": "Reisespesen"
+        }
+      },
       "disabled": "Benachrichtigung deaktiviert",
       "enabled": "Benachrichtigung aktiviert",
       "mandatoryInbox": "Immer in Ihren Posteingang zugestellt",
