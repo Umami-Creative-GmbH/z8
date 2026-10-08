@@ -57,10 +57,9 @@ vi.mock("@/lib/notifications/notification-service", async (original) => {
 	const actual = await original<typeof import("@/lib/notifications/notification-service")>();
 	return { ...actual, createNotification: vi.fn(actual.createNotification) };
 });
-vi.mock("@/lib/email/email-service", async (original) => ({
-	...(await original<typeof import("@/lib/email/email-service")>()),
-	sendEmail: vi.fn(async () => ({ success: true })),
-}));
+vi.mock("@/lib/email/email-service", async (original) =>
+	(await import("@/test/integration-harness")).emailService(original),
+);
 vi.mock("@/lib/storage/s3-client", () => ({
 	S3_PUBLIC_BUCKET: "t612-public",
 	s3Client: {

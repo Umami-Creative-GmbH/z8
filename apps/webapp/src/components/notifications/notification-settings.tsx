@@ -221,7 +221,7 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 	// Money recorded on the employee's own travel expense
 	travel_expense_reimbursed: "Expense reimbursed",
 	travel_expense_partially_reimbursed: "Expense partially reimbursed",
-	travel_expense_recovery_recorded: "Recovery recorded",
+	travel_expense_recovery_recorded: "Expense recovery recorded",
 };
 
 // Channel icons and labels

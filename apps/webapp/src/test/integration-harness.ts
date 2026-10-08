@@ -81,8 +81,17 @@ export async function calendarSyncQueue(importOriginal: ImportOriginal) {
 	};
 }
 
-export function emailService() {
-	return { sendEmail: async () => ({ success: true }) };
+/**
+ * Every email is accepted without being sent; `sendEmail` is a spy, so a suite
+ * can assert what went out. Pass `importOriginal` to keep the other exports.
+ */
+export async function emailService(importOriginal?: ImportOriginal) {
+	return {
+		...(importOriginal
+			? await importOriginal<typeof import("@/lib/email/email-service")>()
+			: {}),
+		sendEmail: vi.fn(async () => ({ success: true })),
+	};
 }
 
 export async function absenceEmailRender(importOriginal: ImportOriginal) {

@@ -29,7 +29,7 @@ const settlementNotificationCopy = {
 		titleDefault: "Expense partially reimbursed",
 		messageKey: "common:notifications.content.travelExpensePartiallyReimbursed.message",
 		messageDefault:
-			"{amount} {currency} of your travel expense has been reimbursed (payment reference {reference}). {remaining} {currency} is still awaiting reimbursement.",
+			"{amount} {currency} of your travel expense has been reimbursed (payment reference {reference}). {remaining} {remainingCurrency} is still awaiting reimbursement.",
 	},
 	recoveryRecorded: {
 		titleKey: "common:notifications.content.travelExpenseRecoveryRecorded.title",
@@ -45,7 +45,7 @@ type SettlementNotificationCopy =
 
 function classify(
 	entry: SettlementEntryView,
-	line: CurrencySettlement | undefined,
+	outstanding: CurrencySettlement | undefined,
 ): { type: NotificationType; copy: SettlementNotificationCopy } {
 	if (entry.kind === "recovery") {
 		return {
@@ -53,7 +53,7 @@ function classify(
 			copy: settlementNotificationCopy.recoveryRecorded,
 		};
 	}
-	return line?.state === "outstanding"
+	return outstanding
 		? {
 				type: "travel_expense_partially_reimbursed",
 				copy: settlementNotificationCopy.partiallyReimbursed,
@@ -63,8 +63,8 @@ function classify(
 
 /**
  * The notification for one recorded entry. `account` is the account after
- * recording, so its balance in the entry's currency tells a full reimbursement
- * from a partial one.
+ * recording: it is fully reimbursed only when no currency is still outstanding,
+ * preferring the entry's own currency when telling what is left.
  */
 export function buildSettlementNotification(input: {
 	account: SettlementAccount;
@@ -74,15 +74,15 @@ export function buildSettlementNotification(input: {
 	recipientUserId: string;
 }): CreateNotificationParams {
 	const { account, entry } = input;
-	const line = account.summary.currencies.find(
-		(candidate) => candidate.currency === entry.currency,
-	);
-	const { type, copy } = classify(entry, line);
+	const open = account.summary.currencies.filter((line) => line.state === "outstanding");
+	const outstanding = open.find((line) => line.currency === entry.currency) ?? open[0];
+	const { type, copy } = classify(entry, outstanding);
 	const params = {
 		amount: entry.amount,
 		currency: entry.currency,
 		reference: entry.reference,
-		remaining: line?.balance ?? "0.00",
+		remaining: outstanding?.balance ?? "0.00",
+		remainingCurrency: outstanding?.currency ?? entry.currency,
 	};
 	const report = account.source.type === "report";
 	return {
@@ -91,7 +91,7 @@ export function buildSettlementNotification(input: {
 		type,
 		title: copy.titleDefault,
 		message: copy.messageDefault.replace(
-			/\{(amount|currency|reference|remaining)\}/g,
+			/\{(amount|currency|reference|remaining|remainingCurrency)\}/g,
 			(_, key: keyof typeof params) => params[key],
 		),
 		entityType: report ? "travel_expense_report" : "travel_expense_claim",

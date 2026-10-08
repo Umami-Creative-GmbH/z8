@@ -27,7 +27,12 @@ function entry(
 /** The account as `recordSettlementEntry` returns it: the new entry already included. */
 function account(
 	entries: SettlementEntryView[],
-	options: { source?: SettlementSource; entitlement?: string } = {},
+	options: {
+		source?: SettlementSource;
+		entitlement?: string;
+		/** An approved adjustment in another currency (#615). */
+		adjustment?: { currency: string; amount: string };
+	} = {},
 ): SettlementAccount {
 	const entitlement: EntitlementComponent[] = [
 		{
@@ -36,6 +41,9 @@ function account(
 			currency: "EUR",
 			amount: options.entitlement ?? "89.90",
 		},
+		...(options.adjustment
+			? [{ kind: "approved_adjustment" as const, id: "revision-2", ...options.adjustment }]
+			: []),
 	];
 	return {
 		source: options.source ?? { type: "report", id: "report-1" },
@@ -87,7 +95,13 @@ describe("buildSettlementNotification (#752)", () => {
 			messageKey: "common:notifications.content.travelExpenseReimbursed.message",
 			messageDefault:
 				"Your travel expense has been fully reimbursed: {amount} {currency}, payment reference {reference}.",
-			params: { amount: "89.90", currency: "EUR", reference: "SEPA-4711", remaining: "0.00" },
+			params: {
+				amount: "89.90",
+				currency: "EUR",
+				reference: "SEPA-4711",
+				remaining: "0.00",
+				remainingCurrency: "EUR",
+			},
 		});
 	});
 
@@ -102,8 +116,27 @@ describe("buildSettlementNotification (#752)", () => {
 		);
 		expect(notification.metadata?.i18n).toMatchObject({
 			messageKey: "common:notifications.content.travelExpensePartiallyReimbursed.message",
-			params: { amount: "50.00", currency: "EUR", reference: "SEPA-4711", remaining: "39.90" },
+			params: {
+				amount: "50.00",
+				currency: "EUR",
+				reference: "SEPA-4711",
+				remaining: "39.90",
+				remainingCurrency: "EUR",
+			},
 		});
+	});
+
+	it("is only fully reimbursed when no currency of the account is still outstanding", () => {
+		const paid = entry("reimbursement", "89.90");
+		const notification = build(
+			account([paid], { adjustment: { currency: "CHF", amount: "12.50" } }),
+			paid,
+		);
+
+		expect(notification.type).toBe("travel_expense_partially_reimbursed");
+		expect(notification.message).toBe(
+			"89.90 EUR of your travel expense has been reimbursed (payment reference SEPA-4711). 12.50 CHF is still awaiting reimbursement.",
+		);
 	});
 
 	it("reports a recorded recovery, linking a legacy claim to its own page", () => {
