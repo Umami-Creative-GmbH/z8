@@ -30,17 +30,11 @@ export function OfficerCoverageGapNotice() {
 		<Alert role="status">
 			<IconAlertTriangle aria-hidden="true" />
 			<AlertTitle>
-				{data.truncated
-					? t(
-							"travelExpenses.finance.coverageGap.titleTruncated",
-							"More than {count} approved expenses await reimbursement that no expense officer covers",
-							{ count: data.uncovered },
-						)
-					: t(
-							"travelExpenses.finance.coverageGap.title",
-							"{count, plural, one {# approved expense awaits} other {# approved expenses await}} reimbursement that no expense officer covers",
-							{ count: data.uncovered },
-						)}
+				{t(
+					"travelExpenses.finance.coverageGap.title",
+					"{count, plural, one {# approved expense awaits} other {# approved expenses await}} reimbursement that no expense officer covers",
+					{ count: data.uncovered },
+				)}
 			</AlertTitle>
 			<AlertDescription>
 				<p>

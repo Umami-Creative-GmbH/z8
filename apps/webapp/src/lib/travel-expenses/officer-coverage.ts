@@ -3,7 +3,7 @@ import {
 	hasActiveExpenseOfficerGrant,
 	listReimbursingOfficers,
 } from "./expense-officer-grant-store";
-import { listFinanceQueue } from "./settlement-store";
+import { countAwaitingReimbursement } from "./finance-queue-store";
 
 /**
  * The coverage gap (#756): approved reports and legacy claims awaiting
@@ -16,10 +16,8 @@ import { listFinanceQueue } from "./settlement-store";
 type Database = typeof appDb;
 
 export interface OfficerCoverageGap {
-	/** Uncovered accounts awaiting reimbursement, at most the queue's result limit. */
+	/** Uncovered accounts awaiting reimbursement, all of them (#753 removed the queue's cap). */
 	uncovered: number;
-	/** More are uncovered than were counted. */
-	truncated: boolean;
 }
 
 export async function loadOfficerCoverageGap(
@@ -29,10 +27,10 @@ export async function loadOfficerCoverageGap(
 	const { organizationId } = input;
 	if (!(await hasActiveExpenseOfficerGrant(database, { organizationId }))) return null;
 	const officers = await listReimbursingOfficers(database, { organizationId });
-	const page = await listFinanceQueue(database, {
-		organizationId,
-		filter: "open",
-		uncoveredBy: officers,
-	});
-	return { uncovered: page.accounts.length, truncated: page.truncated };
+	return {
+		uncovered: await countAwaitingReimbursement(database, {
+			organizationId,
+			uncoveredBy: officers,
+		}),
+	};
 }

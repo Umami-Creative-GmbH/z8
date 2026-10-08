@@ -127,7 +127,7 @@ const { submitTravelExpenseReport } = await import(
 );
 const { db } = await import("@/db");
 const { parseInstant } = await import("@/lib/datetime/temporal-core");
-const { listFinanceQueue } = await import("@/lib/travel-expenses/settlement-store");
+const { listFinanceQueue } = await import("@/lib/travel-expenses/finance-queue-store");
 const { createTravelExpenseExportBatch } = await import("@/lib/travel-expenses/export-store");
 const { buildTravelExpenseExportFiles } = await import("@/lib/travel-expenses/export-csv");
 const { processApprovalDeliveries } = await import("@/lib/approvals/delivery/owner");
@@ -765,7 +765,7 @@ describe("report submission through approval authority (#602)", () => {
 		expect(harness.notifications).toEqual([]);
 
 		// Finance sees both reports as approved and can export them, labelled.
-		const queue = await listFinanceQueue(db, { organizationId: "t602-org", filter: "all" });
+		const queue = await listFinanceQueue(db, { organizationId: "t602-org", status: "all" });
 		const approved = queue.accounts.filter((account) => account.approved);
 		expect(approved.map((account) => account.source.id).toSorted()).toEqual(
 			[trip, receipt].toSorted(),

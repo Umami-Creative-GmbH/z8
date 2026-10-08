@@ -98,6 +98,7 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 const actions = await import("@/app/[locale]/(app)/travel-expenses/report-actions");
 const adjustments = await import("@/app/[locale]/(app)/travel-expenses/adjustment-actions");
 const finance = await import("@/app/[locale]/(app)/travel-expenses/finance-actions");
+const { DEFAULT_FINANCE_QUEUE_VIEW } = await import("@/lib/travel-expenses/finance-queue-params");
 const officers = await import(
 	"@/app/[locale]/(app)/settings/travel-expenses/expense-officer-actions"
 );
@@ -376,10 +377,13 @@ describe("expense officer notifications and coverage gap (#756)", () => {
 		// The Munich report awaits reimbursement and no officer can record it.
 		expect(await coverageGap("owner")).toEqual({
 			success: true,
-			data: { uncovered: 1, truncated: false },
+			data: { uncovered: 1 },
 		});
 		signIn("owner");
-		const queue = await finance.getTravelExpenseFinanceQueue("open", "uncovered");
+		const queue = await finance.getTravelExpenseFinanceQueue(
+			DEFAULT_FINANCE_QUEUE_VIEW,
+			"uncovered",
+		);
 		expect(queue.success && queue.data.accounts.map((account) => account.source.id)).toEqual([
 			munichReport,
 		]);
@@ -388,7 +392,9 @@ describe("expense officer notifications and coverage gap (#756)", () => {
 	it("shows the warning and the uncovered queue to owners and admins only", async () => {
 		expect(await coverageGap("berlinOfficer")).toEqual({ success: true, data: null });
 		signIn("berlinOfficer");
-		expect(await finance.getTravelExpenseFinanceQueue("open", "uncovered")).toEqual({
+		expect(
+			await finance.getTravelExpenseFinanceQueue(DEFAULT_FINANCE_QUEUE_VIEW, "uncovered"),
+		).toEqual({
 			success: false,
 			error: "Unauthorized",
 		});
@@ -398,7 +404,7 @@ describe("expense officer notifications and coverage gap (#756)", () => {
 		await grant("allOfficer", { scope: "all", canRecordReimbursements: true });
 		expect(await coverageGap("owner")).toEqual({
 			success: true,
-			data: { uncovered: 0, truncated: false },
+			data: { uncovered: 0 },
 		});
 
 		({ reportId: trainReport } = await approvedReceipt("berliner", "Train Berlin"));

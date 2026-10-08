@@ -2,25 +2,40 @@
 
 import {
 	IconCash,
+	IconChevronLeft,
 	IconChevronRight,
+	IconFilterOff,
 	IconHistory,
-	IconInfoCircle,
 	IconReceipt,
 } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
-import { useState } from "react";
+import { useId } from "react";
 import {
 	type FinanceQueueCoverage,
 	getTravelExpenseFinanceQueue,
+	getTravelExpenseFinanceQueueFilterOptions,
 } from "@/app/[locale]/(app)/travel-expenses/finance-actions";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from "@/components/ui/empty";
+import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { queryKeys } from "@/lib/query/keys";
-import type { FinanceQueueFilter, SettlementAccount } from "@/lib/travel-expenses/settlement-store";
+import {
+	DEFAULT_FINANCE_QUEUE_VIEW,
+	FINANCE_QUEUE_STATUSES,
+	type FinanceQueueStatus,
+	type FinanceQueueView,
+	financeQueueSearch,
+	parseFinanceQueueView,
+} from "@/lib/travel-expenses/finance-queue-params";
+import type { SettlementAccount } from "@/lib/travel-expenses/settlement-store";
 import { Link } from "@/navigation";
 import { TRIP_ICON } from "../expense-icons";
 import {
@@ -34,8 +49,6 @@ import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { BalanceText, SettlementStateBadge } from "./settlement-status";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
-
-const FILTERS: FinanceQueueFilter[] = ["open", "settled", "all"];
 
 function accountHref(account: SettlementAccount): string {
 	return account.source.type === "report"
@@ -80,34 +93,185 @@ function SourceIcon({ account }: { account: SettlementAccount }) {
 	);
 }
 
+function hasFilters(view: FinanceQueueView): boolean {
+	return Boolean(view.employeeId || view.teamId || view.currency || view.notExported);
+}
+
 /**
- * The finance queue (#612): approved reports and approved legacy claims of the
- * organization with their employee-paid entitlement, company-paid costs and
- * balance. Recording happens on each expense's page. With `coverage:
- * "uncovered"` (#756), owners and admins see only what awaits reimbursement
- * and no expense officer covers.
+ * The view lives in the search params (#753): it survives opening an expense
+ * and coming back. Changing it replaces the history entry, without navigating,
+ * and keeps the coverage-gap filter (#756) the page was opened with.
+ */
+function useFinanceQueueView(coverage: FinanceQueueCoverage | undefined) {
+	const searchParams = useSearchParams();
+	const parsed = parseFinanceQueueView(new URLSearchParams(searchParams.toString()));
+	// The coverage gap lists only what awaits reimbursement.
+	const view: FinanceQueueView = coverage ? { ...parsed, status: "open" } : parsed;
+	function setView(next: FinanceQueueView) {
+		const params = new URLSearchParams(financeQueueSearch(next));
+		if (coverage) params.set("coverage", coverage);
+		const search = params.toString();
+		window.history.replaceState(
+			null,
+			"",
+			search ? `${window.location.pathname}?${search}` : window.location.pathname,
+		);
+	}
+	return { view, setView };
+}
+
+function QueueFilters({
+	view,
+	onChange,
+}: {
+	view: FinanceQueueView;
+	onChange: (view: FinanceQueueView) => void;
+}) {
+	const { t } = useTranslate();
+	const notExportedId = useId();
+	const { data: options } = useQuery({
+		queryKey: queryKeys.travelExpenses.financeQueueFilters(),
+		queryFn: async () => {
+			const result = await getTravelExpenseFinanceQueueFilterOptions();
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
+		staleTime: 60_000,
+	});
+	// Any change of filter starts again on the first page.
+	const filter = (patch: Partial<FinanceQueueView>) => onChange({ ...view, ...patch, page: 1 });
+	const employeeOptions = (options?.employees ?? []).map((employee) => ({
+		code: employee.id,
+		name: employee.name ?? "—",
+	}));
+	const teamOptions = (options?.teams ?? []).map((team) => ({ code: team.id, name: team.name }));
+	const allEmployees = t("travelExpenses.finance.filter.employee.all", "All employees");
+	const allTeams = t("travelExpenses.finance.filter.team.all", "All teams");
+	const allCurrencies = t("travelExpenses.finance.filter.currency.all", "All currencies");
+	const currencyOptions = (options?.currencies ?? []).map((currency) => ({
+		code: currency,
+		name: currency,
+	}));
+
+	return (
+		<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(3,minmax(0,1fr))_auto] lg:items-center">
+			<SearchableSelect
+				aria-label={t("travelExpenses.finance.filter.employee.label", "Employee")}
+				options={employeeOptions}
+				value={view.employeeId ?? ""}
+				onValueChange={(value) => filter({ employeeId: value || null })}
+				placeholder={allEmployees}
+				searchPlaceholder={t("travelExpenses.finance.filter.employee.search", "Search employees…")}
+				emptyText={t("travelExpenses.finance.filter.employee.none", "No employee found.")}
+				allowEmpty
+				emptyLabel={allEmployees}
+			/>
+			<SearchableSelect
+				aria-label={t("travelExpenses.finance.filter.team.label", "Team at approval")}
+				options={teamOptions}
+				value={view.teamId ?? ""}
+				onValueChange={(value) => filter({ teamId: value || null })}
+				placeholder={allTeams}
+				searchPlaceholder={t("travelExpenses.finance.filter.team.search", "Search teams…")}
+				emptyText={t("travelExpenses.finance.filter.team.none", "No team found.")}
+				allowEmpty
+				emptyLabel={allTeams}
+			/>
+			<SearchableSelect
+				aria-label={t("travelExpenses.finance.filter.currency.label", "Currency")}
+				options={currencyOptions}
+				value={view.currency ?? ""}
+				onValueChange={(value) => filter({ currency: value || null })}
+				placeholder={allCurrencies}
+				searchPlaceholder={t("travelExpenses.finance.filter.currency.search", "Search currencies…")}
+				emptyText={t("travelExpenses.finance.filter.currency.none", "No currency found.")}
+				allowEmpty
+				emptyLabel={allCurrencies}
+			/>
+			<div className="flex min-h-9 items-center gap-2">
+				<Checkbox
+					id={notExportedId}
+					checked={view.notExported}
+					onCheckedChange={(checked) => filter({ notExported: checked === true })}
+				/>
+				<Label htmlFor={notExportedId} className="whitespace-nowrap font-normal">
+					{t("travelExpenses.finance.filter.notExported", "Not yet exported")}
+				</Label>
+			</div>
+		</div>
+	);
+}
+
+function QueuePagination({
+	view,
+	hasMore,
+	onChange,
+}: {
+	view: FinanceQueueView;
+	hasMore: boolean;
+	onChange: (view: FinanceQueueView) => void;
+}) {
+	const { t } = useTranslate();
+	if (view.page === 1 && !hasMore) return null;
+	return (
+		<nav
+			aria-label={t("travelExpenses.finance.pagination.label", "Finance queue pages")}
+			className="flex items-center justify-between gap-3 border-t px-6 py-3"
+		>
+			<Button
+				variant="outline"
+				size="sm"
+				disabled={view.page === 1}
+				onClick={() => onChange({ ...view, page: view.page - 1 })}
+			>
+				<IconChevronLeft aria-hidden="true" className="size-4" />
+				{t("travelExpenses.finance.pagination.previous", "Previous")}
+			</Button>
+			<span className="text-sm text-muted-foreground tabular-nums">
+				{t("travelExpenses.finance.pagination.page", "Page {page}", { page: view.page })}
+			</span>
+			<Button
+				variant="outline"
+				size="sm"
+				disabled={!hasMore}
+				onClick={() => onChange({ ...view, page: view.page + 1 })}
+			>
+				{t("travelExpenses.finance.pagination.next", "Next")}
+				<IconChevronRight aria-hidden="true" className="size-4" />
+			</Button>
+		</nav>
+	);
+}
+
+/**
+ * The finance queue (#612): approved reports and approved legacy claims in the
+ * reader's scope with their employee-paid entitlement, company-paid costs and
+ * balance, filtered and paged (#753). Recording happens on each expense's page.
+ * With `coverage: "uncovered"` (#756), owners and admins see only what awaits
+ * reimbursement and no expense officer covers.
  */
 export function FinanceQueue({ coverage }: { coverage?: FinanceQueueCoverage } = {}) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const [selectedFilter, setFilter] = useState<FinanceQueueFilter>("open");
-	const filter = coverage ? "open" : selectedFilter;
+	const { view, setView } = useFinanceQueueView(coverage);
+	const search = financeQueueSearch(view);
 	const { data, isError, isFetching, isLoading, refetch } = useQuery({
-		queryKey: queryKeys.travelExpenses.financeQueue(filter, coverage),
+		queryKey: queryKeys.travelExpenses.financeQueue(search, coverage),
 		queryFn: async () => {
 			const result = coverage
-				? await getTravelExpenseFinanceQueue(filter, coverage)
-				: await getTravelExpenseFinanceQueue(filter);
+				? await getTravelExpenseFinanceQueue(view, coverage)
+				: await getTravelExpenseFinanceQueue(view);
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
 		placeholderData: (previous) => previous,
 	});
-	const filterLabel: Record<FinanceQueueFilter, string> = {
+	const statusLabel: Record<FinanceQueueStatus, string> = {
 		open: t("travelExpenses.finance.filter.open", "Open"),
-		settled: t("travelExpenses.finance.filter.reimbursed", "Reimbursed"),
+		reimbursed: t("travelExpenses.finance.filter.reimbursed", "Reimbursed"),
 		all: t("travelExpenses.finance.filter.all", "All approved"),
 	};
+	const filtered = hasFilters(view);
 
 	return (
 		<Card className="gap-4 overflow-hidden pb-0">
@@ -122,40 +286,53 @@ export function FinanceQueue({ coverage }: { coverage?: FinanceQueueCoverage } =
 					)}
 				</CardDescription>
 			</CardHeader>
-			<CardContent className={isError && !data ? "space-y-4 pb-6" : undefined}>
-				{coverage ? (
-					<p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
-						<span className="text-muted-foreground">
-							{t(
-								"travelExpenses.finance.coverageGap.queueFilter",
-								"Approved expenses awaiting reimbursement that no expense officer covers.",
-							)}
-						</span>
-						<Link
-							href="/travel-expenses/finance"
-							className="font-medium underline underline-offset-4"
+			<CardContent className="space-y-4">
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					{coverage ? (
+						<p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
+							<span className="text-muted-foreground">
+								{t(
+									"travelExpenses.finance.coverageGap.queueFilter",
+									"Approved expenses awaiting reimbursement that no expense officer covers.",
+								)}
+							</span>
+							<Link
+								href="/travel-expenses/finance"
+								className="font-medium underline underline-offset-4"
+							>
+								{t("travelExpenses.finance.coverageGap.showAll", "Show all approved expenses")}
+							</Link>
+						</p>
+					) : (
+						<ToggleGroup
+							type="single"
+							variant="outline"
+							value={view.status}
+							onValueChange={(value: string) => {
+								const status = FINANCE_QUEUE_STATUSES.find((entry) => entry === value);
+								if (status) setView({ ...view, status, page: 1 });
+							}}
+							aria-label={t("travelExpenses.finance.filter.label", "Show expenses")}
 						>
-							{t("travelExpenses.finance.coverageGap.showAll", "Show all approved expenses")}
-						</Link>
-					</p>
-				) : (
-					<ToggleGroup
-						type="single"
-						variant="outline"
-						value={filter}
-						onValueChange={(value: string) => {
-							if (FILTERS.includes(value as FinanceQueueFilter))
-								setFilter(value as FinanceQueueFilter);
-						}}
-						aria-label={t("travelExpenses.finance.filter.label", "Show expenses")}
-					>
-						{FILTERS.map((value) => (
-							<ToggleGroupItem key={value} value={value} className="whitespace-nowrap px-3">
-								{filterLabel[value]}
-							</ToggleGroupItem>
-						))}
-					</ToggleGroup>
-				)}
+							{FINANCE_QUEUE_STATUSES.map((value) => (
+								<ToggleGroupItem key={value} value={value} className="whitespace-nowrap px-3">
+									{statusLabel[value]}
+								</ToggleGroupItem>
+							))}
+						</ToggleGroup>
+					)}
+					{filtered && (
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => setView({ ...DEFAULT_FINANCE_QUEUE_VIEW, status: view.status })}
+						>
+							<IconFilterOff aria-hidden="true" className="size-4" />
+							{t("travelExpenses.finance.filter.clear", "Clear filters")}
+						</Button>
+					)}
+				</div>
+				<QueueFilters view={view} onChange={setView} />
 				{isError && !data && (
 					<TravelExpenseLoadError
 						message={t(
@@ -176,41 +353,36 @@ export function FinanceQueue({ coverage }: { coverage?: FinanceQueueCoverage } =
 					<Skeleton aria-hidden="true" className="h-48 w-full" />
 				</div>
 			) : data.accounts.length === 0 ? (
-				<Empty className="rounded-none border-t md:p-10">
-					<EmptyHeader>
-						<EmptyMedia variant="icon">
-							<IconCash aria-hidden="true" />
-						</EmptyMedia>
-						<EmptyDescription>
-							{coverage
-								? t(
-										"travelExpenses.finance.coverageGap.empty",
-										"An expense officer covers every approved expense awaiting reimbursement.",
-									)
-								: filter === "open"
+				<>
+					<Empty className="rounded-none border-t md:p-10">
+						<EmptyHeader>
+							<EmptyMedia variant="icon">
+								<IconCash aria-hidden="true" />
+							</EmptyMedia>
+							<EmptyDescription>
+								{filtered || view.page > 1
 									? t(
-											"travelExpenses.finance.empty.allReimbursed",
-											"Nothing left to record: every approved expense is reimbursed.",
+											"travelExpenses.finance.empty.filtered",
+											"No approved expenses match these filters.",
 										)
-									: t("travelExpenses.finance.empty.any", "No approved expenses yet.")}
-						</EmptyDescription>
-					</EmptyHeader>
-				</Empty>
+									: coverage
+										? t(
+												"travelExpenses.finance.coverageGap.empty",
+												"An expense officer covers every approved expense awaiting reimbursement.",
+											)
+										: view.status === "open"
+											? t(
+													"travelExpenses.finance.empty.allReimbursed",
+													"Nothing left to record: every approved expense is reimbursed.",
+												)
+											: t("travelExpenses.finance.empty.any", "No approved expenses yet.")}
+							</EmptyDescription>
+						</EmptyHeader>
+					</Empty>
+					<QueuePagination view={view} hasMore={data.hasMore} onChange={setView} />
+				</>
 			) : (
 				<div className="border-t">
-					{data.truncated && (
-						<p
-							role="status"
-							className="flex items-start gap-2 border-b px-6 py-3 text-sm text-muted-foreground"
-						>
-							<IconInfoCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-							{t(
-								"travelExpenses.finance.truncated",
-								"Showing the {count} most recently approved expenses. Older matching expenses are not listed.",
-								{ count: data.accounts.length },
-							)}
-						</p>
-					)}
 					<ul className="divide-y" aria-busy={isFetching}>
 						{data.accounts.map((account) => {
 							const title = accountTitle(t, locale, account);
@@ -271,6 +443,7 @@ export function FinanceQueue({ coverage }: { coverage?: FinanceQueueCoverage } =
 							);
 						})}
 					</ul>
+					<QueuePagination view={view} hasMore={data.hasMore} onChange={setView} />
 				</div>
 			)}
 		</Card>

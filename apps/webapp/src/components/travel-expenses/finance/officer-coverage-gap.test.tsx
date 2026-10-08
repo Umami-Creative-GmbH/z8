@@ -45,7 +45,7 @@ describe("officer coverage gap warning (#756)", () => {
 	afterEach(cleanup);
 
 	it("counts the uncovered expenses and links to them in the finance queue", async () => {
-		mocks.getGap.mockResolvedValue({ success: true, data: { uncovered: 3, truncated: false } });
+		mocks.getGap.mockResolvedValue({ success: true, data: { uncovered: 3 } });
 		mount();
 		expect(
 			await screen.findByText(
@@ -57,19 +57,9 @@ describe("officer coverage gap warning (#756)", () => {
 		);
 	});
 
-	it("says when more are uncovered than were counted", async () => {
-		mocks.getGap.mockResolvedValue({ success: true, data: { uncovered: 500, truncated: true } });
-		mount();
-		expect(
-			await screen.findByText(
-				"More than 500 approved expenses await reimbursement that no expense officer covers",
-			),
-		).toBeTruthy();
-	});
-
 	it.each([
 		["without expense officers or for non-administrators", null],
-		["when every expense is covered", { uncovered: 0, truncated: false }],
+		["when every expense is covered", { uncovered: 0 }],
 	])("shows nothing %s", async (_case, data) => {
 		mocks.getGap.mockResolvedValue({ success: true, data });
 		mount();

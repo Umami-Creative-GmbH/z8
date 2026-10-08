@@ -96,6 +96,7 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 
 const actions = await import("@/app/[locale]/(app)/travel-expenses/report-actions");
 const finance = await import("@/app/[locale]/(app)/travel-expenses/finance-actions");
+const { DEFAULT_FINANCE_QUEUE_VIEW } = await import("@/lib/travel-expenses/finance-queue-params");
 const exportActions = await import("@/app/[locale]/(app)/travel-expenses/finance-export-actions");
 const officers = await import(
 	"@/app/[locale]/(app)/settings/travel-expenses/expense-officer-actions"
@@ -294,7 +295,10 @@ async function grant(
 
 async function queueIds(person: Person) {
 	signIn(person);
-	const queue = await finance.getTravelExpenseFinanceQueue("all");
+	const queue = await finance.getTravelExpenseFinanceQueue({
+		...DEFAULT_FINANCE_QUEUE_VIEW,
+		status: "all",
+	});
 	return queue.success ? queue.data.accounts.map((account) => account.source.id).toSorted() : null;
 }
 

@@ -97,6 +97,7 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 
 const actions = await import("@/app/[locale]/(app)/travel-expenses/report-actions");
 const finance = await import("@/app/[locale]/(app)/travel-expenses/finance-actions");
+const { DEFAULT_FINANCE_QUEUE_VIEW } = await import("@/lib/travel-expenses/finance-queue-params");
 const { POST: processReceipt } = await import(
 	"@/app/api/upload/travel-expense/report-receipt/route"
 );
@@ -362,7 +363,10 @@ describe("finance queue and recorded reimbursements (#612)", () => {
 		const pending = await submittedTrip();
 
 		signIn("finance");
-		const queue = await finance.getTravelExpenseFinanceQueue("all");
+		const queue = await finance.getTravelExpenseFinanceQueue({
+			...DEFAULT_FINANCE_QUEUE_VIEW,
+			status: "all",
+		});
 		if (!queue.success) throw new Error(queue.error);
 		expect(queue.data.canSettle).toBe(true);
 		const rows = queue.data.accounts.map((account) => ({
@@ -403,7 +407,10 @@ describe("finance queue and recorded reimbursements (#612)", () => {
 
 		// A read-only expense officer: same queue, no settlement.
 		signIn("accountant");
-		const readOnly = await finance.getTravelExpenseFinanceQueue("open");
+		const readOnly = await finance.getTravelExpenseFinanceQueue({
+			...DEFAULT_FINANCE_QUEUE_VIEW,
+			status: "open",
+		});
 		expect(readOnly.success && readOnly.data.canSettle).toBe(false);
 		expect(readOnly.success && readOnly.data.accounts).toHaveLength(2);
 	});
@@ -412,13 +419,21 @@ describe("finance queue and recorded reimbursements (#612)", () => {
 		await approvedTrip();
 		for (const person of ["manager", "lead", "requester"] as const) {
 			signIn(person);
-			expect(await finance.getTravelExpenseFinanceQueue("all")).toEqual({
+			expect(
+				await finance.getTravelExpenseFinanceQueue({
+					...DEFAULT_FINANCE_QUEUE_VIEW,
+					status: "all",
+				}),
+			).toEqual({
 				success: false,
 				error: "Unauthorized",
 			});
 		}
 		signIn("foreigner");
-		const foreign = await finance.getTravelExpenseFinanceQueue("all");
+		const foreign = await finance.getTravelExpenseFinanceQueue({
+			...DEFAULT_FINANCE_QUEUE_VIEW,
+			status: "all",
+		});
 		expect(foreign.success && foreign.data.accounts.map((a) => a.source.id)).toEqual([
 			ids.foreignClaim,
 		]);
@@ -624,7 +639,7 @@ describe("finance queue and recorded reimbursements (#612)", () => {
 		expect(await entryCount()).toBe(1);
 	});
 
-	it("finds an old open account behind more settled ones than one page, and says when the list is cut", async () => {
+	it("finds an old open account behind more settled ones than one page, and pages the rest", async () => {
 		// The seeded claim (decided 2026-08-05) stays open; four newer claims are settled.
 		const settledIds: string[] = [];
 		for (let day = 10; day < 14; day++) {
@@ -647,35 +662,45 @@ describe("finance queue and recorded reimbursements (#612)", () => {
 			);
 		}
 		const { db } = await import("@/db");
-		const { listFinanceQueue } = await import("@/lib/travel-expenses/settlement-store");
+		const { listFinanceQueue } = await import("@/lib/travel-expenses/finance-queue-store");
 		const scope = { organizationId: "t612-org" } as const;
-		const small = { pageSize: 2, limit: 2 };
+		// Read two sources per round trip, so the open claim lies behind more than one read.
+		const small = { pageSize: 2, scanSize: 2 };
 
-		const open = await listFinanceQueue(db, { ...scope, filter: "open" }, small);
+		const open = await listFinanceQueue(db, { ...scope, status: "open" }, small);
 		expect(open.accounts.map((account) => account.source.id)).toEqual([ids.claim]);
-		expect(open.truncated).toBe(false);
+		expect(open.hasMore).toBe(false);
 
-		// More settled accounts match than the limit: the newest are listed and the cut is reported.
-		const settled = await listFinanceQueue(db, { ...scope, filter: "settled" }, small);
-		expect(settled.accounts.map((account) => account.source.id)).toEqual(
+		// More reimbursed accounts match than one page: the newest first, the rest on the next page.
+		const first = await listFinanceQueue(db, { ...scope, status: "reimbursed" }, small);
+		expect(first.accounts.map((account) => account.source.id)).toEqual(
 			settledIds.toReversed().slice(0, 2),
 		);
-		expect(settled.truncated).toBe(true);
-		// Reaching the scan limit is never silent either.
-		const capped = await listFinanceQueue(
+		expect(first.hasMore).toBe(true);
+		const second = await listFinanceQueue(
 			db,
-			{ ...scope, filter: "open" },
-			{ pageSize: 2, limit: 10, maxScanned: 2 },
+			{ ...scope, status: "reimbursed" },
+			{ ...small, page: 2 },
 		);
-		expect(capped).toEqual({ accounts: [], truncated: true });
+		expect(second.accounts.map((account) => account.source.id)).toEqual(
+			settledIds.toReversed().slice(2, 4),
+		);
+		expect(second.hasMore).toBe(false);
 
-		const all = await listFinanceQueue(db, { ...scope, filter: "all" }, { pageSize: 2 });
+		const all = await listFinanceQueue(
+			db,
+			{ ...scope, status: "all" },
+			{ pageSize: 10, scanSize: 2 },
+		);
 		expect(all.accounts).toHaveLength(5);
-		expect(all.truncated).toBe(false);
+		expect(all.hasMore).toBe(false);
 
 		signIn("finance");
-		const action = await finance.getTravelExpenseFinanceQueue("open");
-		expect(action.success && action.data.truncated).toBe(false);
+		const action = await finance.getTravelExpenseFinanceQueue({
+			...DEFAULT_FINANCE_QUEUE_VIEW,
+			status: "open",
+		});
+		expect(action.success && action.data.hasMore).toBe(false);
 		expect(action.success && action.data.accounts.map((account) => account.source.id)).toEqual([
 			ids.claim,
 		]);

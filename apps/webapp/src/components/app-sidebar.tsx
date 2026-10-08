@@ -15,6 +15,7 @@ import {
 	IconMessageCircle,
 	IconReceipt,
 	IconReport,
+	IconReportMoney,
 	IconServerCog,
 	IconSettings,
 	IconShieldCheck,
@@ -30,6 +31,7 @@ import { NavTeam } from "@/components/nav-team";
 import { NavUser } from "@/components/nav-user";
 import { OrganizationSwitcher } from "@/components/organization-switcher";
 import type { FeatureFlagState } from "@/components/settings/settings-config";
+import { FinanceNavBadge } from "@/components/travel-expenses/finance/finance-nav-badge";
 import {
 	Sidebar,
 	SidebarContent,
@@ -52,6 +54,8 @@ export interface NavigationCapabilities {
 	scheduling: boolean;
 	compliance: boolean;
 	payroll: boolean;
+	/** Owners, admins and active expense officers (#753). */
+	finance: boolean;
 	worksCouncil: boolean;
 	platformAdmin: boolean;
 }
@@ -78,6 +82,7 @@ const DEFAULT_NAVIGATION_CAPABILITIES: NavigationCapabilities = {
 	scheduling: false,
 	compliance: false,
 	payroll: false,
+	finance: false,
 	worksCouncil: false,
 	platformAdmin: false,
 };
@@ -156,6 +161,16 @@ export function AppSidebar({
 			url: "/travel-expenses",
 			icon: IconReceipt,
 		},
+		...(navigationCapabilities.finance
+			? [
+					{
+						title: t("nav.finance", "Finance"),
+						url: "/travel-expenses/finance",
+						icon: IconReportMoney,
+						badge: <FinanceNavBadge />,
+					},
+				]
+			: []),
 		{
 			title: t("nav.my-requests", "My Requests"),
 			url: "/my-requests",

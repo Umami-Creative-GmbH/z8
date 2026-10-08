@@ -11,6 +11,16 @@ import { logger } from "@/lib/logger";
 import { requireExpenseAdministrator } from "@/lib/travel-expenses/expense-administrator";
 import { listReimbursingOfficers } from "@/lib/travel-expenses/expense-officer-grant-store";
 import { financeActorReads, loadFinanceActor } from "@/lib/travel-expenses/finance-access";
+import {
+	FINANCE_QUEUE_STATUSES,
+	type FinanceQueueView,
+} from "@/lib/travel-expenses/finance-queue-params";
+import {
+	countAwaitingReimbursement,
+	type FinanceQueueFilterOptions,
+	listFinanceQueue,
+	listFinanceQueueFilterOptions,
+} from "@/lib/travel-expenses/finance-queue-store";
 import { latestCalendarDate } from "@/lib/travel-expenses/future-dates";
 import {
 	loadOfficerCoverageGap,
@@ -24,8 +34,6 @@ import {
 	type SettlementPlanRefusal,
 } from "@/lib/travel-expenses/settlement";
 import {
-	type FinanceQueueFilter,
-	listFinanceQueue,
 	listOwnSettlementAccounts,
 	loadSettlementAccount,
 	recordSettlementEntry,
@@ -43,7 +51,17 @@ const sourceSchema = z.object({
 	type: z.enum(["report", "legacy_claim"]),
 	id: z.uuid(),
 });
-const filterSchema = z.enum(["open", "settled", "all"]);
+const queueViewSchema = z.object({
+	status: z.enum(FINANCE_QUEUE_STATUSES),
+	employeeId: z.uuid().nullable(),
+	teamId: z.uuid().nullable(),
+	currency: z
+		.string()
+		.regex(/^[A-Z]{3}$/)
+		.nullable(),
+	notExported: z.boolean(),
+	page: z.number().int().min(1).max(100_000),
+});
 const coverageSchema = z.enum(["uncovered"]);
 
 export type FinanceQueueCoverage = z.infer<typeof coverageSchema>;
@@ -66,19 +84,26 @@ function ownerView(account: SettlementAccount): SettlementAccount {
 	};
 }
 
+export interface FinanceQueueResult {
+	accounts: SettlementAccount[];
+	canSettle: boolean;
+	/** 1-based. */
+	page: number;
+	hasMore: boolean;
+}
+
 /**
- * The finance queue in the actor's scope. `coverage: "uncovered"` lists only
- * what awaits reimbursement and no expense officer can reimburse (#756), for
- * owners and admins of the organization.
+ * One page of the finance queue in the reader's officer scope (#747),
+ * filtered (#753). `coverage: "uncovered"` lists only what awaits
+ * reimbursement and no expense officer can reimburse (#756), for owners and
+ * admins of the organization.
  */
 export async function getTravelExpenseFinanceQueue(
-	filter: FinanceQueueFilter,
+	view: FinanceQueueView,
 	coverage?: FinanceQueueCoverage,
-): Promise<
-	ServerActionResult<{ accounts: SettlementAccount[]; canSettle: boolean; truncated: boolean }>
-> {
+): Promise<ServerActionResult<FinanceQueueResult>> {
 	try {
-		const parsed = filterSchema.safeParse(filter);
+		const parsed = queueViewSchema.safeParse(view);
 		const parsedCoverage = coverageSchema.optional().safeParse(coverage);
 		if (!parsed.success || !parsedCoverage.success) {
 			return { success: false, error: "Invalid filter" };
@@ -93,16 +118,54 @@ export async function getTravelExpenseFinanceQueue(
 			}
 			uncoveredBy = await listReimbursingOfficers(db, { organizationId: actor.organizationId });
 		}
-		const { accounts, truncated } = await listFinanceQueue(db, {
-			organizationId: actor.organizationId,
-			filter: parsed.data,
-			scope: actor.scopes.read,
-			uncoveredBy,
-		});
-		return { success: true, data: { accounts, canSettle: actor.canSettle, truncated } };
+		const { page, ...filters } = parsed.data;
+		const result = await listFinanceQueue(
+			db,
+			{ organizationId: actor.organizationId, scope: actor.scopes.read, uncoveredBy, ...filters },
+			{ page },
+		);
+		return { success: true, data: { ...result, canSettle: actor.canSettle } };
 	} catch (error) {
 		logger.error({ error }, "Failed to load the travel expense finance queue");
 		return { success: false, error: "Failed to load the finance queue" };
+	}
+}
+
+/** The employees, recorded teams and currencies the queue's filters offer. */
+export async function getTravelExpenseFinanceQueueFilterOptions(): Promise<
+	ServerActionResult<FinanceQueueFilterOptions>
+> {
+	try {
+		const actor = await loadFinanceActor();
+		if (!actor?.scopes.read) return { success: false, error: "Unauthorized" };
+		return {
+			success: true,
+			data: await listFinanceQueueFilterOptions(db, {
+				organizationId: actor.organizationId,
+				scope: actor.scopes.read,
+			}),
+		};
+	} catch (error) {
+		logger.error({ error }, "Failed to load the travel expense finance queue filters");
+		return { success: false, error: "Failed to load the finance queue filters" };
+	}
+}
+
+/** The sidebar Finance item's count: in-scope accounts awaiting reimbursement (#753). */
+export async function getTravelExpenseFinanceAwaitingCount(): Promise<
+	ServerActionResult<{ count: number }>
+> {
+	try {
+		const actor = await loadFinanceActor();
+		if (!actor?.scopes.read) return { success: false, error: "Unauthorized" };
+		const count = await countAwaitingReimbursement(db, {
+			organizationId: actor.organizationId,
+			scope: actor.scopes.read,
+		});
+		return { success: true, data: { count } };
+	} catch (error) {
+		logger.error({ error }, "Failed to count travel expenses awaiting reimbursement");
+		return { success: false, error: "Failed to count expenses awaiting reimbursement" };
 	}
 }
 
