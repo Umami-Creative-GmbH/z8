@@ -120,7 +120,10 @@ function stageOf(status: TravelExpenseReportStatus | LegacyClaimStatus): Expense
 
 function reimbursementOf(balance: SettlementSummary | null): ReimbursementState | null {
 	if (!balance) return null;
-	if (balance.state === "settled") return "reimbursed";
+	if (balance.state === "settled") {
+		// Nothing owed and nothing paid (e.g. all company-paid) is not a reimbursement.
+		return balance.currencies.some((line) => line.reimbursed !== "0.00") ? "reimbursed" : null;
+	}
 	return balance.currencies.some((line) => line.state === "outstanding") ? "awaiting" : null;
 }
 
@@ -205,32 +208,29 @@ export function filterExpenseHistory(
 	rows: readonly ExpenseHistoryRow[],
 	filter: ExpenseHistoryFilter,
 ): ExpenseHistoryRow[] {
+	return rows.filter((row) => matchesFilter(row, filter));
+}
+
+function matchesFilter(row: ExpenseHistoryRow, filter: ExpenseHistoryFilter): boolean {
 	switch (filter) {
 		case "all":
-			return [...rows];
+			return true;
 		case "awaiting_reimbursement":
-			return rows.filter((row) => row.reimbursement === "awaiting");
+			return row.reimbursement === "awaiting";
 		default:
-			return rows.filter((row) => row.stage === filter);
+			return row.stage === filter;
 	}
 }
 
 export function countExpenseHistory(
 	rows: readonly ExpenseHistoryRow[],
 ): Record<ExpenseHistoryFilter, number> {
-	const counts: Record<ExpenseHistoryFilter, number> = {
-		all: rows.length,
-		needs_action: 0,
-		in_review: 0,
-		approved: 0,
-		awaiting_reimbursement: 0,
-		rejected: 0,
-	};
-	for (const row of rows) {
-		counts[row.stage] += 1;
-		if (row.reimbursement === "awaiting") counts.awaiting_reimbursement += 1;
-	}
-	return counts;
+	return Object.fromEntries(
+		EXPENSE_HISTORY_FILTERS.map((filter) => [
+			filter,
+			rows.filter((row) => matchesFilter(row, filter)).length,
+		]),
+	) as Record<ExpenseHistoryFilter, number>;
 }
 
 export function isExpenseHistoryFilter(value: string): value is ExpenseHistoryFilter {

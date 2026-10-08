@@ -278,6 +278,27 @@ describe("reimbursement state (#751)", () => {
 		// One currency still owed, another overpaid: still owed in part.
 		expect(reimbursement("mixed")).toBe("awaiting");
 	});
+	it("does not call an expense with nothing owed or paid reimbursed", () => {
+		const nothingOwed = buildExpenseHistory(
+			input({
+				reports: [
+					report({ id: "no-lines", status: "approved" }),
+					report({ id: "zero-line", status: "approved" }),
+				],
+				balances: new Map([
+					["report:no-lines", { state: "settled", currencies: [] }],
+					[
+						"report:zero-line",
+						{
+							state: "settled",
+							currencies: [{ ...line("settled"), entitlement: "0.00", reimbursed: "0.00" }],
+						},
+					],
+				]),
+			}),
+		);
+		expect(nothingOwed.map((row) => row.reimbursement)).toEqual([null, null]);
+	});
 	it("gives no reimbursement state to overpaid, unbalanced, adjustment or unapproved expenses", () => {
 		expect(reimbursement("overpaid")).toBeNull();
 		expect(reimbursement("no-balance")).toBeNull();
