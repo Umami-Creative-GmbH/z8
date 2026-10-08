@@ -31,7 +31,7 @@ import {
 import { loadAuthorizedApprovalDetail } from "@/lib/approvals/inbox/authorized-detail";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
-import { loadFinanceActor } from "./finance-access";
+import { financeActorReads, loadFinanceActor } from "./finance-access";
 import { isOwnerSelfApprovalDecision, OWNER_SELF_APPROVAL_REASON } from "./owner-self-approval";
 import { sortHistoryByInstant } from "./report-history";
 
@@ -122,7 +122,14 @@ export async function loadAuthorizedTravelExpenseReport(
 	) {
 		return { status: "found", report, access: "reviewer" };
 	}
-	if (report.status === "approved" && (await loadFinanceActor())?.canRead) {
+	// Finance reads approved reports in their officer scope (#747), receipts included.
+	if (
+		report.status === "approved" &&
+		(await financeActorReads(await loadFinanceActor(), {
+			source: { type: "report", id: report.id },
+			employeeId: report.employeeId,
+		}))
+	) {
 		return { status: "found", report, access: "finance" };
 	}
 	return { status: "not_found" };

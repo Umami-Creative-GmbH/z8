@@ -772,6 +772,7 @@ describe("report submission through approval authority (#602)", () => {
 		);
 		const created = await createTravelExpenseExportBatch(db, {
 			actor: { organizationId: "t602-org", employeeId: ids.finance, userId: "t602-finance" },
+			scope: { kind: "all" },
 			idempotencyKey: "t679-export",
 			selection: approved.map((account) => ({
 				reportId: account.source.id,

@@ -39,7 +39,7 @@ export async function recordTravelExpenseRecoveryAction(
 		const parsed = recoverySchema.safeParse(input);
 		if (!parsed.success) return { success: false, error: "Invalid recovery" };
 		const actor = await loadFinanceActor();
-		if (!actor?.canSettle) return { success: false, error: "Unauthorized" };
+		if (!actor?.scopes.settle) return { success: false, error: "Unauthorized" };
 		const now = systemClock.nowInstant();
 		const command = parseSettlementCommand(
 			{
@@ -57,6 +57,7 @@ export async function recordTravelExpenseRecoveryAction(
 			db,
 			{
 				actor,
+				scope: actor.scopes.settle,
 				source: parsed.data.source,
 				idempotencyKey: parsed.data.idempotencyKey,
 				command: command.command,

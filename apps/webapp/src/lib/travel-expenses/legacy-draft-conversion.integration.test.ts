@@ -694,6 +694,7 @@ describe.each(LIFECYCLE_MODES)("legacy claims under lifecycle mode %s (#616)", (
 		expect(account).toMatchObject({ approved: true, currency: "EUR" });
 		const recorded = await recordSettlementEntry(db, {
 			actor: { organizationId: "t616-org", employeeId: ids.manager, userId: "t616-manager" },
+			scope: { kind: "all" },
 			source: { type: "legacy_claim", id: approvedClaim },
 			idempotencyKey: `t616-${mode}`,
 			command: {

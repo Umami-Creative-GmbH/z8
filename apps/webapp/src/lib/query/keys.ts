@@ -89,6 +89,7 @@ export const queryKeys = {
 				: (["travel-expenses", "history"] as const),
 		report: (reportId: string) => ["travel-expenses", "reports", reportId] as const,
 		approverSettings: () => ["travel-expenses", "settings", "approver"] as const,
+		expenseOfficers: () => ["travel-expenses", "settings", "expense-officers"] as const,
 		reimbursementCurrency: () => ["travel-expenses", "settings", "reimbursement-currency"] as const,
 		foreignDraftExpenses: () => ["travel-expenses", "settings", "foreign-draft-expenses"] as const,
 		mileagePolicy: () => ["travel-expenses", "settings", "mileage-policy"] as const,
