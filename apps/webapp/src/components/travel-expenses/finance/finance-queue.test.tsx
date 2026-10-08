@@ -14,6 +14,7 @@ import type { SettlementAccount } from "@/lib/travel-expenses/settlement-store";
 const mocks = vi.hoisted(() => ({
 	getQueue: vi.fn(),
 	getFilters: vi.fn(),
+	markReimbursed: vi.fn(),
 	searchListeners: new Set<() => void>(),
 }));
 
@@ -55,6 +56,20 @@ vi.mock("@/navigation", () => ({
 vi.mock("@/app/[locale]/(app)/travel-expenses/finance-actions", () => ({
 	getTravelExpenseFinanceQueue: mocks.getQueue,
 	getTravelExpenseFinanceQueueFilterOptions: mocks.getFilters,
+	markTravelExpensesReimbursedAction: mocks.markReimbursed,
+}));
+// A plain date input stands in for the calendar popover.
+vi.mock("@/components/ui/date-picker", () => ({
+	DatePicker: ({
+		value,
+		onChange,
+		...props
+	}: {
+		value: string;
+		onChange: (value: string) => void;
+	} & Record<string, unknown>) => (
+		<input {...props} value={value} onChange={(event) => onChange(event.target.value)} />
+	),
 }));
 
 import { FinanceQueue } from "./finance-queue";
@@ -128,10 +143,37 @@ const claim: SettlementAccount = {
 
 const robin = "e7530000-0000-4000-8000-000000000001";
 
-function page(accounts: SettlementAccount[], extra: { page?: number; hasMore?: boolean } = {}) {
+function page(
+	accounts: SettlementAccount[],
+	extra: { page?: number; hasMore?: boolean; canSettle?: boolean } = {},
+) {
 	return {
 		success: true,
-		data: { accounts, canSettle: true, page: extra.page ?? 1, hasMore: extra.hasMore ?? false },
+		data: {
+			accounts,
+			canSettle: extra.canSettle ?? true,
+			page: extra.page ?? 1,
+			hasMore: extra.hasMore ?? false,
+		},
+	};
+}
+
+/** Another open report, owed in its own currency. */
+function openReport(id: string, employeeName: string, currency: string, balance: string) {
+	const line = {
+		currency,
+		entitlement: balance,
+		reimbursed: "0.00",
+		recovered: "0.00",
+		balance,
+		state: "outstanding" as const,
+	};
+	return {
+		...report,
+		source: { type: "report" as const, id },
+		employeeName,
+		currency,
+		summary: { state: "outstanding" as const, currencies: [line] },
 	};
 }
 
@@ -320,5 +362,206 @@ describe("finance queue (#612, #753)", () => {
 				screen.getByText("Nothing left to record: every approved expense is reimbursed."),
 			).toBeTruthy(),
 		);
+	});
+});
+
+describe("bulk mark as reimbursed (#754)", () => {
+	const swiss = openReport("report-2", "Sam", "CHF", "120.50");
+	const kim = openReport("report-3", "Kim", "EUR", "15.00");
+
+	beforeEach(() => {
+		vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-10-08T12:00:00Z") });
+		mocks.getQueue.mockReset();
+		mocks.markReimbursed.mockReset();
+		mocks.getFilters.mockResolvedValue({
+			success: true,
+			data: { employees: [], teams: [], currencies: [] },
+		});
+		window.history.replaceState(null, "", "/travel-expenses/finance");
+	});
+	afterEach(() => {
+		cleanup();
+		vi.useRealTimers();
+	});
+
+	it("selects open expenses, marks them reimbursed with one payment and lists every row's outcome", async () => {
+		mocks.getQueue.mockResolvedValue(page([report, swiss, kim, claim]));
+		mocks.markReimbursed.mockResolvedValue({
+			success: true,
+			data: {
+				status: "processed",
+				rows: [
+					{
+						source: report.source,
+						outcome: "reimbursed",
+						replayed: false,
+						amount: "89.90",
+						currency: "EUR",
+					},
+					{
+						source: swiss.source,
+						outcome: "reimbursed",
+						replayed: false,
+						amount: "120.50",
+						currency: "CHF",
+					},
+					{
+						source: kim.source,
+						outcome: "balance_changed",
+						replayed: false,
+						amount: null,
+						currency: null,
+					},
+				],
+			},
+		});
+		const user = userEvent.setup();
+		mount();
+		await screen.findByText("€89.90 outstanding");
+		// A reimbursed expense cannot be selected.
+		expect(
+			screen.queryByRole("checkbox", { name: /Select Robin · Legacy mileage claim/ }),
+		).toBeNull();
+		const action = screen.getByRole("button", { name: "Mark as reimbursed" });
+		expect(action.hasAttribute("disabled")).toBe(true);
+
+		await user.click(
+			screen.getByRole("checkbox", {
+				name: "Select all expenses awaiting reimbursement on this page",
+			}),
+		);
+		expect(screen.getByText("3 selected")).toBeTruthy();
+		await user.click(action);
+
+		const dialog = await screen.findByRole("dialog", { name: "Mark as reimbursed" });
+		// The payment date defaults to today.
+		expect(within(dialog).getByLabelText<HTMLInputElement>(/^Payment date/).value).toBe(
+			"2026-10-08",
+		);
+		await user.type(within(dialog).getByLabelText(/^Payment reference/), "SEPA-9");
+		await user.click(within(dialog).getByRole("button", { name: "Mark 3 as reimbursed" }));
+
+		const results = await screen.findByRole("dialog", { name: "Reimbursement results" });
+		expect(mocks.markReimbursed).toHaveBeenCalledWith({
+			requestKey: expect.any(String),
+			accounts: [
+				{ source: report.source, expectedBalance: { currency: "EUR", amount: "89.90" } },
+				{ source: swiss.source, expectedBalance: { currency: "CHF", amount: "120.50" } },
+				{ source: kim.source, expectedBalance: { currency: "EUR", amount: "15.00" } },
+			],
+			occurredOn: "2026-10-08",
+			reference: "SEPA-9",
+			note: null,
+		});
+		expect(within(results).getByText("2 of 3 reimbursed")).toBeTruthy();
+		const rows = within(results).getAllByRole("listitem");
+		expect(rows.map((row) => row.textContent)).toEqual([
+			expect.stringMatching(/Robin · Customer workshop.*Reimbursed €89.90/),
+			expect.stringMatching(/Sam · Customer workshop.*Reimbursed CHF\s?120.50/),
+			expect.stringMatching(/Kim · Customer workshop.*Skipped: balance changed/),
+		]);
+
+		await user.click(within(results).getByRole("button", { name: "Done" }));
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		// The queue is read again and nothing stays selected.
+		await waitFor(() => expect(mocks.getQueue.mock.calls.length).toBeGreaterThan(1));
+		expect(
+			screen.getByRole("button", { name: "Mark as reimbursed" }).hasAttribute("disabled"),
+		).toBe(true);
+	});
+
+	it("labels every skip reason", async () => {
+		const rows = (
+			["own_expense", "overpaid_or_review", "already_reimbursed", "out_of_scope", "failed"] as const
+		).map((outcome, index) => ({
+			account: openReport(`report-${index + 10}`, `Person ${index}`, "EUR", "10.00"),
+			outcome,
+		}));
+		mocks.getQueue.mockResolvedValue(page(rows.map((entry) => entry.account)));
+		mocks.markReimbursed.mockResolvedValue({
+			success: true,
+			data: {
+				status: "processed",
+				rows: rows.map(({ account, outcome }) => ({
+					source: account.source,
+					outcome,
+					replayed: false,
+					amount: null,
+					currency: null,
+				})),
+			},
+		});
+		const user = userEvent.setup();
+		mount();
+		await user.click(
+			await screen.findByRole("checkbox", {
+				name: "Select all expenses awaiting reimbursement on this page",
+			}),
+		);
+		await user.click(screen.getByRole("button", { name: "Mark as reimbursed" }));
+		const dialog = await screen.findByRole("dialog", { name: "Mark as reimbursed" });
+		await user.type(within(dialog).getByLabelText(/^Payment reference/), "SEPA-9");
+		await user.click(within(dialog).getByRole("button", { name: "Mark 5 as reimbursed" }));
+		const results = await screen.findByRole("dialog", { name: "Reimbursement results" });
+		expect(within(results).getByText("0 of 5 reimbursed")).toBeTruthy();
+		expect(
+			within(results)
+				.getAllByRole("listitem")
+				.map((row) => row.textContent),
+		).toEqual([
+			expect.stringContaining("Skipped: your own expense"),
+			expect.stringContaining("Skipped: overpaid or needs review"),
+			expect.stringContaining("Skipped: already reimbursed"),
+			expect.stringContaining("Skipped: out of scope"),
+			expect.stringContaining("Failed"),
+		]);
+	});
+
+	it("requires a payment reference and refuses a future payment date", async () => {
+		mocks.getQueue.mockResolvedValue(page([report]));
+		const user = userEvent.setup();
+		mount();
+		await user.click(
+			await screen.findByRole("checkbox", { name: "Select Robin · Customer workshop" }),
+		);
+		await user.click(screen.getByRole("button", { name: "Mark as reimbursed" }));
+		const dialog = await screen.findByRole("dialog", { name: "Mark as reimbursed" });
+		const date = within(dialog).getByLabelText(/^Payment date/);
+		fireEvent.change(date, { target: { value: "2026-12-24" } });
+		await user.click(within(dialog).getByRole("button", { name: "Mark 1 as reimbursed" }));
+		expect(
+			await within(dialog).findByText(
+				"Enter the payment reference, e.g. the bank transfer reference.",
+			),
+		).toBeTruthy();
+		expect(within(dialog).getByText("A payment cannot be dated in the future.")).toBeTruthy();
+		expect(mocks.markReimbursed).not.toHaveBeenCalled();
+	});
+
+	it("offers only accounts one payment in their own currency reimburses in full", async () => {
+		const eur = report.summary.currencies[0];
+		if (!eur) throw new Error("no line");
+		// An approved adjustment in another currency also awaits reimbursement.
+		const twoCurrencies = {
+			...openReport("report-4", "Alex", "EUR", "89.90"),
+			summary: {
+				state: "outstanding" as const,
+				currencies: [{ ...eur, currency: "CHF", balance: "5.00", entitlement: "5.00" }, eur],
+			},
+		};
+		mocks.getQueue.mockResolvedValue(page([report, twoCurrencies]));
+		mount();
+		expect(
+			await screen.findByRole("checkbox", { name: "Select Robin · Customer workshop" }),
+		).toBeTruthy();
+		expect(screen.queryByRole("checkbox", { name: /Select Alex/ })).toBeNull();
+	});
+
+	it("offers no selection to readers who cannot record reimbursements", async () => {
+		mocks.getQueue.mockResolvedValue(page([report], { canSettle: false }));
+		mount();
+		await screen.findByText("€89.90 outstanding");
+		expect(screen.queryByRole("checkbox", { name: /Select/ })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Mark as reimbursed" })).toBeNull();
 	});
 });

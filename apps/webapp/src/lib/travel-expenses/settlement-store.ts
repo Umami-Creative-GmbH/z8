@@ -637,6 +637,8 @@ export async function recordSettlementEntry(
 		idempotencyKey: string;
 		command: SettlementCommand;
 		expectedBalance: { currency: string; amount: string };
+		/** Bulk reimbursement (#754): refused unless the entry leaves the whole account reimbursed. */
+		inFull?: boolean;
 	},
 	now: Instant = systemClock.nowInstant(),
 ): Promise<RecordSettlementResult> {
@@ -660,7 +662,9 @@ export async function recordSettlementEntry(
 		if (account.adjustmentOf) return { status: "adjustment_report" } as const;
 		if (!account.approved) return { status: "not_approved" } as const;
 		if (account.employeeId === actor.employeeId) return { status: "own_expense" } as const;
-		const plan = planSettlementEntry(account.summary, command, input.expectedBalance);
+		const plan = planSettlementEntry(account.summary, command, input.expectedBalance, {
+			inFull: input.inFull,
+		});
 		if (!plan.ok) {
 			return { status: "refused", reason: plan.reason, balance: plan.balance, account } as const;
 		}

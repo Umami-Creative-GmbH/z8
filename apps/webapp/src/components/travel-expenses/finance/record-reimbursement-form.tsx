@@ -51,7 +51,8 @@ interface FormValues {
 	note: string;
 }
 
-function fieldMessage(t: Translate, error: SettlementCommandFieldError): string {
+/** Field error copy shared with bulk reimbursement (#754). */
+export function settlementFieldMessage(t: Translate, error: SettlementCommandFieldError): string {
 	switch (`${error.field}:${error.code}`) {
 		case "amount:required":
 			return t("travelExpenses.settlement.errors.amountRequired", "Enter the amount paid.");
@@ -178,7 +179,7 @@ export function RecordReimbursementForm({
 		onChange: ({ fieldApi }: { fieldApi: { form: { state: { values: FormValues } } } }) => {
 			const parsed = parse(fieldApi.form.state.values);
 			const error = parsed.ok ? undefined : parsed.errors.find((e) => e.field === name);
-			return error ? fieldMessage(t, error) : undefined;
+			return error ? settlementFieldMessage(t, error) : undefined;
 		},
 	});
 
@@ -197,7 +198,7 @@ export function RecordReimbursementForm({
 				for (const error of errors) {
 					if (!isFormField(error.field)) continue;
 					shown = true;
-					const message = fieldMessage(t, error);
+					const message = settlementFieldMessage(t, error);
 					formApi.setFieldMeta(error.field, (meta) => ({
 						...meta,
 						errorMap: { ...meta.errorMap, onSubmit: message },

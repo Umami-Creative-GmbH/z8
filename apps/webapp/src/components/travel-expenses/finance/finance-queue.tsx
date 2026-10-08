@@ -8,11 +8,11 @@ import {
 	IconHistory,
 	IconReceipt,
 } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
-import { useId } from "react";
+import { useId, useState } from "react";
 import {
 	type FinanceQueueCoverage,
 	getTravelExpenseFinanceQueue,
@@ -36,6 +36,7 @@ import {
 	parseFinanceQueueView,
 } from "@/lib/travel-expenses/finance-queue-params";
 import type { SettlementAccount } from "@/lib/travel-expenses/settlement-store";
+import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
 import { TRIP_ICON } from "../expense-icons";
 import {
@@ -46,6 +47,12 @@ import {
 } from "../report/format";
 import { reportName } from "../report-name";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
+import {
+	BulkReimbursementDialog,
+	type BulkReimbursementItem,
+	isReimbursableInFull,
+	settlementSourceKey,
+} from "./bulk-reimbursement-dialog";
 import { BalanceText, SettlementStateBadge } from "./settlement-status";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -91,6 +98,49 @@ function SourceIcon({ account }: { account: SettlementAccount }) {
 			<Icon aria-hidden="true" className="size-4" />
 		</span>
 	);
+}
+
+function accountKey(account: SettlementAccount): string {
+	return settlementSourceKey(account.source);
+}
+
+/** Bulk reimbursement (#754) pays an account in full, so only such accounts are offered. */
+const isSelectable = isReimbursableInFull;
+
+function accountLabel(t: Translate, locale: string, account: SettlementAccount): string {
+	return `${account.employeeName ?? "—"} · ${accountTitle(t, locale, account).name}`;
+}
+
+/**
+ * The accounts selected on the current page and view. Changing the view
+ * (filters, status, page) starts with nothing selected.
+ */
+function useSelection(viewKey: string, accounts: readonly SettlementAccount[]) {
+	const [state, setState] = useState<{ viewKey: string; keys: ReadonlySet<string> }>({
+		viewKey,
+		keys: new Set(),
+	});
+	const keys = state.viewKey === viewKey ? state.keys : new Set<string>();
+	const selectable = accounts.filter(isSelectable);
+	const selected = selectable.filter((account) => keys.has(accountKey(account)));
+	function set(next: Iterable<string>) {
+		setState({ viewKey, keys: new Set(next) });
+	}
+	return {
+		selectable,
+		selected,
+		isSelected: (account: SettlementAccount) => keys.has(accountKey(account)),
+		toggle(account: SettlementAccount, checked: boolean) {
+			const next = new Set(keys);
+			if (checked) next.add(accountKey(account));
+			else next.delete(accountKey(account));
+			set(next);
+		},
+		toggleAll(checked: boolean) {
+			set(checked ? selectable.map(accountKey) : []);
+		},
+		clear: () => set([]),
+	};
 }
 
 function hasFilters(view: FinanceQueueView): boolean {
@@ -202,6 +252,38 @@ function QueueFilters({
 	);
 }
 
+function SelectionBar({
+	selection,
+	onMark,
+}: {
+	selection: ReturnType<typeof useSelection>;
+	onMark: () => void;
+}) {
+	const { t } = useTranslate();
+	const { selectable, selected } = selection;
+	const all = selectable.length > 0 && selected.length === selectable.length;
+	return (
+		<div className="flex flex-wrap items-center gap-3 border-b bg-muted/30 px-6 py-2">
+			<Checkbox
+				aria-label={t(
+					"travelExpenses.finance.bulk.selectAll",
+					"Select all expenses awaiting reimbursement on this page",
+				)}
+				checked={all ? true : selected.length > 0 ? "indeterminate" : false}
+				disabled={selectable.length === 0}
+				onCheckedChange={(checked) => selection.toggleAll(checked === true)}
+			/>
+			<span className="text-sm text-muted-foreground tabular-nums">
+				{t("travelExpenses.finance.bulk.selected", "{count} selected", { count: selected.length })}
+			</span>
+			<Button size="sm" className="ml-auto" disabled={selected.length === 0} onClick={onMark}>
+				<IconCash aria-hidden="true" className="size-4" />
+				{t("travelExpenses.finance.bulk.action", "Mark as reimbursed")}
+			</Button>
+		</div>
+	);
+}
+
 function QueuePagination({
 	view,
 	hasMore,
@@ -246,7 +328,9 @@ function QueuePagination({
 /**
  * The finance queue (#612): approved reports and approved legacy claims in the
  * reader's scope with their employee-paid entitlement, company-paid costs and
- * balance, filtered and paged (#753). Recording happens on each expense's page.
+ * balance, filtered and paged (#753). Partial payments and recoveries are
+ * recorded on each expense's page; officers who record reimbursements can also
+ * select expenses awaiting reimbursement here and mark them reimbursed in full at once (#754).
  * With `coverage: "uncovered"` (#756), owners and admins see only what awaits
  * reimbursement and no expense officer covers.
  */
@@ -266,6 +350,16 @@ export function FinanceQueue({ coverage }: { coverage?: FinanceQueueCoverage } =
 		},
 		placeholderData: (previous) => previous,
 	});
+	const queryClient = useQueryClient();
+	const canSettle = data?.canSettle ?? false;
+	const selection = useSelection(`${search}|${coverage ?? ""}`, data?.accounts ?? []);
+	// What was selected when the dialog opened: a reload meanwhile changes neither the request nor its results.
+	const [bulkItems, setBulkItems] = useState<BulkReimbursementItem[] | null>(null);
+	function openBulk() {
+		setBulkItems(
+			selection.selected.map((account) => ({ account, label: accountLabel(t, locale, account) })),
+		);
+	}
 	const statusLabel: Record<FinanceQueueStatus, string> = {
 		open: t("travelExpenses.finance.filter.open", "Open"),
 		reimbursed: t("travelExpenses.finance.filter.reimbursed", "Reimbursed"),
@@ -383,14 +477,31 @@ export function FinanceQueue({ coverage }: { coverage?: FinanceQueueCoverage } =
 				</>
 			) : (
 				<div className="border-t">
+					{canSettle && <SelectionBar selection={selection} onMark={openBulk} />}
 					<ul className="divide-y" aria-busy={isFetching}>
 						{data.accounts.map((account) => {
 							const title = accountTitle(t, locale, account);
 							return (
-								<li key={`${account.source.type}:${account.source.id}`}>
+								<li key={accountKey(account)} className={cn(canSettle && "flex items-center")}>
+									{canSettle && (
+										<div className="flex w-10 shrink-0 justify-end">
+											{isSelectable(account) && (
+												<Checkbox
+													aria-label={t("travelExpenses.finance.bulk.select", "Select {name}", {
+														name: accountLabel(t, locale, account),
+													})}
+													checked={selection.isSelected(account)}
+													onCheckedChange={(checked) => selection.toggle(account, checked === true)}
+												/>
+											)}
+										</div>
+									)}
 									<Link
 										href={accountHref(account)}
-										className="flex flex-wrap items-center gap-x-3 gap-y-1 px-6 py-4 transition-colors hover:bg-muted/50 focus-visible:outline-2 sm:flex-nowrap"
+										className={cn(
+											"flex flex-wrap items-center gap-x-3 gap-y-1 py-4 transition-colors hover:bg-muted/50 focus-visible:outline-2 sm:flex-nowrap",
+											canSettle ? "min-w-0 flex-1 pr-6 pl-3" : "px-6",
+										)}
 									>
 										<SourceIcon account={account} />
 										<div className="min-w-0 flex-1">
@@ -444,6 +555,21 @@ export function FinanceQueue({ coverage }: { coverage?: FinanceQueueCoverage } =
 						})}
 					</ul>
 					<QueuePagination view={view} hasMore={data.hasMore} onChange={setView} />
+					{canSettle && bulkItems && (
+						<BulkReimbursementDialog
+							items={bulkItems}
+							open
+							onOpenChange={(open) => {
+								if (!open) setBulkItems(null);
+							}}
+							onFinished={() => {
+								selection.clear();
+								void queryClient.invalidateQueries({
+									queryKey: queryKeys.travelExpenses.finance(),
+								});
+							}}
+						/>
+					)}
 				</div>
 			)}
 		</Card>

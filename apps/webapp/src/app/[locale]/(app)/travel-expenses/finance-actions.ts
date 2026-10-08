@@ -8,6 +8,10 @@ import { getAuthContext } from "@/lib/auth-helpers";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
+import {
+	type BulkReimbursementResult,
+	recordBulkReimbursement,
+} from "@/lib/travel-expenses/bulk-reimbursement";
 import { requireExpenseAdministrator } from "@/lib/travel-expenses/expense-administrator";
 import { listReimbursingOfficers } from "@/lib/travel-expenses/expense-officer-grant-store";
 import { financeActorReads, loadFinanceActor } from "@/lib/travel-expenses/finance-access";
@@ -17,6 +21,7 @@ import {
 } from "@/lib/travel-expenses/finance-queue-params";
 import {
 	countAwaitingReimbursement,
+	FINANCE_QUEUE_PAGE_SIZE,
 	type FinanceQueueFilterOptions,
 	listFinanceQueue,
 	listFinanceQueueFilterOptions,
@@ -349,5 +354,56 @@ export async function recordTravelExpenseReimbursementAction(
 	} catch (error) {
 		logger.error({ error }, "Failed to record a travel expense reimbursement");
 		return { success: false, error: "Failed to record the reimbursement" };
+	}
+}
+
+const bulkSchema = z.object({
+	requestKey: z.uuid(),
+	accounts: z
+		.array(
+			z.object({
+				source: sourceSchema,
+				expectedBalance: z.object({ currency: z.string().max(3), amount: z.string().max(40) }),
+			}),
+		)
+		.min(1)
+		.max(FINANCE_QUEUE_PAGE_SIZE),
+	occurredOn: z.string().max(10),
+	reference: z.string().max(400),
+	note: z.string().max(2000).nullable().optional(),
+});
+
+/**
+ * Bulk "Mark as reimbursed" (#754): reimburses each selected account in full,
+ * in its own currency and its own transaction, with a shared payment date,
+ * reference and note. Every account reports its own outcome; repeating the
+ * request with the same `requestKey` records nothing new.
+ */
+export async function markTravelExpensesReimbursedAction(
+	input: z.input<typeof bulkSchema>,
+): Promise<ServerActionResult<BulkReimbursementResult>> {
+	try {
+		const parsed = bulkSchema.safeParse(input);
+		if (!parsed.success) return { success: false, error: "Invalid reimbursement" };
+		const actor = await loadFinanceActor();
+		if (!actor?.scopes.settle) return { success: false, error: "Unauthorized" };
+		const { requestKey, accounts, occurredOn, reference, note } = parsed.data;
+		const result = await recordBulkReimbursement(db, {
+			actor,
+			scope: actor.scopes.settle,
+			requestKey,
+			accounts,
+			payment: { occurredOn, reference, note: note ?? null },
+		});
+		if (
+			result.status === "processed" &&
+			result.rows.some((row) => row.outcome === "reimbursed" && !row.replayed)
+		) {
+			revalidatePath("/travel-expenses");
+		}
+		return { success: true, data: result };
+	} catch (error) {
+		logger.error({ error }, "Failed to mark travel expenses as reimbursed");
+		return { success: false, error: "Failed to mark the expenses as reimbursed" };
 	}
 }
