@@ -237,7 +237,7 @@ function NothingToReimburse({
 			<SkippedList skipped={skipped} />
 			<DialogFooter>
 				<Button type="button" onClick={onClose}>
-					{t("travelExpenses.finance.bulk.close", "Close")}
+					{t("common.close", "Close")}
 				</Button>
 			</DialogFooter>
 		</div>

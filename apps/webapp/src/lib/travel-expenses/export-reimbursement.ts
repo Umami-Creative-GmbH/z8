@@ -83,7 +83,7 @@ async function batchState(
  * The settlement accounts a batch's revisions belong to: an adjustment's
  * account is its original report's. Each account once, by report id.
  */
-export async function loadExportBatchAccountSources(
+async function loadExportBatchAccountSources(
 	database: Executor,
 	input: { organizationId: string; batchId: string },
 ): Promise<SettlementSource[]> {

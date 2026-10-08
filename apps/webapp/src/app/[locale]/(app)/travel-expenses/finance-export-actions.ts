@@ -327,7 +327,7 @@ const markReimbursedSchema = z.object({
  */
 export async function markTravelExpenseExportReimbursedAction(
 	input: z.input<typeof markReimbursedSchema>,
-): Promise<ServerActionResult<BulkReimbursementResult | { status: "not_completed" }>> {
+): Promise<ServerActionResult<BulkReimbursementResult>> {
 	try {
 		const parsed = markReimbursedSchema.safeParse(input);
 		if (!parsed.success) return { success: false, error: "Invalid reimbursement" };
@@ -346,6 +346,9 @@ export async function markTravelExpenseExportReimbursedAction(
 		switch (result.status) {
 			case "not_found":
 				return { success: false, error: "Not found" };
+			case "not_completed":
+				// The dialog only offers completed batches; the request is stale.
+				return { success: false, error: "Export not completed" };
 			case "not_in_batch":
 				return { success: false, error: "Invalid reimbursement" };
 			case "processed":

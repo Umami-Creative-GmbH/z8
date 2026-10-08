@@ -536,7 +536,7 @@ describe("marking an export batch as reimbursed (#755)", () => {
 			await markReimbursed(queued, [
 				{ source: source(hotel), expectedBalance: { currency: "EUR", amount: "500.00" } },
 			]),
-		).toEqual({ success: true, data: { status: "not_completed" } });
+		).toEqual({ success: false, error: "Export not completed" });
 
 		for (const job of harness.jobs.splice(0)) await processTravelExpenseExportBatch(db, job);
 		const completed = await exportReports([outside]);

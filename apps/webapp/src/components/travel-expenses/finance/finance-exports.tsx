@@ -45,7 +45,6 @@ import {
 	BulkReimbursementDialog,
 	type BulkReimbursementItem,
 	type BulkReimbursementSkippedItem,
-	type BulkReimbursementSubmit,
 } from "./bulk-reimbursement-dialog";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -403,18 +402,6 @@ function batchReimbursementOf(
 	return { items, skipped };
 }
 
-/** Records against the batch (#755); a batch that is not completed cannot be marked. */
-function submitForBatch(batchId: string): BulkReimbursementSubmit {
-	return async (request) => {
-		const result = await markTravelExpenseExportReimbursedAction({ batchId, ...request });
-		if (!result.success) return result;
-		if (result.data.status === "not_completed") {
-			return { success: false, error: "Export not completed" };
-		}
-		return { success: true, data: result.data };
-	};
-}
-
 /**
  * "Mark as reimbursed" on a completed batch (#755): loads the batch's accounts
  * as they are now, then the bulk dialog reimburses each in full.
@@ -470,10 +457,12 @@ function MarkBatchReimbursed({
 						onChanged();
 						void queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.finance() });
 					}}
-					submit={submitForBatch(batch.id)}
+					submit={(request) =>
+						markTravelExpenseExportReimbursedAction({ batchId: batch.id, ...request })
+					}
 					description={t(
 						"travelExpenses.finance.exports.markReimbursedDescription",
-						"Each expense in this export is reimbursed in full, in its own currency, with this payment date and reference. Adjustments count toward the report they correct. Z8 does not transfer any money.",
+						"Each expense report in this export is reimbursed in full, in its own currency, with this payment date and reference. Adjustments count toward the report they correct. Z8 does not transfer any money.",
 					)}
 				/>
 			)}
