@@ -107,6 +107,12 @@ const paid = (amount: string): SettlementAccount["entries"][number] => ({
 	recordedAt: "2026-10-01T09:00:00Z",
 	recordedByUserId: "finance-user",
 	recordedByName: "Fin Ance",
+	exportBatch: null,
+});
+
+const paidFromExport = (amount: string): SettlementAccount["entries"][number] => ({
+	...paid(amount),
+	exportBatch: { id: "batch-1", requestedAt: "2026-10-01T12:00:00Z" },
 });
 
 function mount() {
@@ -166,6 +172,12 @@ describe("settlement panel (#612)", () => {
 		});
 		mount();
 		expect(await screen.findByText("€39.90 outstanding")).toBeTruthy();
+		expect(screen.getByText("Awaiting reimbursement")).toBeTruthy();
+		expect(
+			screen.getByText(
+				"Finance records each payment here. Once everything owed to you is paid, this expense shows as Reimbursed.",
+			),
+		).toBeTruthy();
 		expect(screen.getByText("Paid €50.00")).toBeTruthy();
 		expect(screen.getByText("SEPA-4711")).toBeTruthy();
 		expect(
@@ -173,6 +185,46 @@ describe("settlement panel (#612)", () => {
 		).toBeTruthy();
 		expect(screen.queryByRole("button", { name: "Record reimbursement" })).toBeNull();
 		expect(screen.queryByText(/Recorded by/)).toBeNull();
+	});
+
+	it("names the export batch a payment was marked from, for finance only (#755)", async () => {
+		const settled = {
+			state: "settled" as const,
+			currencies: [
+				{
+					currency: "EUR",
+					entitlement: "89.90",
+					reimbursed: "89.90",
+					recovered: "0.00",
+					balance: "0.00",
+					state: "settled" as const,
+				},
+			],
+		};
+		mocks.getSettlement.mockResolvedValue({
+			success: true,
+			data: {
+				viewer: "finance",
+				canSettle: true,
+				account: account({ entries: [paidFromExport("89.90")], summary: settled }),
+			},
+		});
+		mount();
+		expect(await screen.findByText(/^From the export requested /)).toBeTruthy();
+		cleanup();
+
+		// The employee's own view never carries the batch.
+		mocks.getSettlement.mockResolvedValue({
+			success: true,
+			data: {
+				viewer: "owner",
+				canSettle: false,
+				account: account({ entries: [paid("89.90")], summary: settled }),
+			},
+		});
+		mount();
+		expect(await screen.findByText("Paid €89.90")).toBeTruthy();
+		expect(screen.queryByText(/From the export/)).toBeNull();
 	});
 
 	it("shows an overpayment as such instead of clamping it to zero", async () => {
@@ -272,7 +324,8 @@ describe("settlement panel (#612)", () => {
 		await waitFor(() =>
 			expect(mocks.toastSuccess).toHaveBeenCalledWith("This payment was already recorded."),
 		);
-		expect(await screen.findByText("Settled", { selector: "p *, p" })).toBeTruthy();
+		expect(await screen.findByText("Reimbursed", { selector: "p *, p" })).toBeTruthy();
+		expect(screen.queryByText(/settled/i)).toBeNull();
 	});
 
 	it("explains a balance that changed meanwhile and validates the entry before sending it", async () => {

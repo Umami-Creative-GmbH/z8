@@ -1,104 +1,94 @@
-import { IconCoffee, IconBriefcase } from "@tabler/icons-react";
-import { formatIdleDuration, cn } from "../lib/utils";
-import type { BreakReview, IdleEvent } from "../types";
-
+import { useEffect, useRef } from "react";
+import { useI18n } from "../lib/i18n";
+import type { IdleEvent } from "../types";
 interface IdleDialogProps {
-  isOpen: boolean;
-  idleEvent: IdleEvent | null;
-  onBreak: () => void;
-  onResume: () => void;
-  isLoading?: boolean;
+	isOpen: boolean;
+	idleEvent: IdleEvent | null;
+	onBreak: () => void;
+	onResume: () => void;
+	isLoading?: boolean;
+	canRecord?: boolean;
 }
-
-const timeFormatter = new Intl.DateTimeFormat(undefined, { timeStyle: "short" });
-
-const REVIEW_REASON: Record<BreakReview, string> = {
-  clockDiscontinuity: "The device clock changed while you were away.",
-  startZoneUnavailable: "The device time zone could not be read while you were away.",
-  returnZoneUnavailable: "The device time zone could not be read when you returned.",
-};
-
-export function IdleDialog({
-  isOpen,
-  idleEvent,
-  onBreak,
-  onResume,
-  isLoading,
-}: IdleDialogProps) {
-  if (!isOpen || !idleEvent) return null;
-
-  const idleDuration = formatIdleDuration(idleEvent.idleDurationMs);
-  // The proposed break ends when you came back, not when you answer.
-  const from = timeFormatter.format(new Date(idleEvent.idleStartTime));
-  const until = timeFormatter.format(new Date(idleEvent.returnedAt));
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" />
-
-      {/* Dialog */}
-      <div className="relative bg-background rounded-lg shadow-xl p-5 mx-4 max-w-sm w-full border border-border">
-        <div className="text-center">
-          <h2 className="text-lg font-semibold mb-2">You were away</h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            You were idle for <span className="font-medium">{idleDuration}</span>, from {from} until {until}.
-            <br />
-            What were you doing?
-          </p>
-
-          {idleEvent.review && (
-            <p className="text-sm mb-4" role="alert">
-              {REVIEW_REASON[idleEvent.review]} This break cannot be recorded automatically. If it was a
-              break, enter it as a time correction in Z8.
-            </p>
-          )}
-
-          <div className="flex flex-col gap-3">
-            {/* Break button */}
-            {!idleEvent.review && (
-              <button
-                type="button"
-                onClick={onBreak}
-                disabled={isLoading}
-                className={cn(
-                  "flex items-center justify-center gap-2 w-full py-3 px-4",
-                  "bg-amber-500 hover:bg-amber-600 text-white rounded-lg",
-                  "transition-colors font-medium",
-                  "disabled:opacity-50 disabled:cursor-not-allowed"
-                )}
-              >
-                <IconCoffee className="w-5 h-5" />
-                I was on break
-              </button>
-            )}
-
-            {/* Working button */}
-            <button
-              type="button"
-              onClick={onResume}
-              disabled={isLoading}
-              className={cn(
-                "flex items-center justify-center gap-2 w-full py-3 px-4",
-                "bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg",
-                "transition-colors font-medium",
-                "disabled:opacity-50 disabled:cursor-not-allowed"
-              )}
-            >
-              <IconBriefcase className="w-5 h-5" />
-              {idleEvent.review ? "Continue" : "I was still working"}
-            </button>
-          </div>
-
-          {!idleEvent.review && (
-            <p className="text-xs text-muted-foreground mt-4">
-              {isLoading
-                ? "Processing..."
-                : `Selecting 'break' records a break from ${from} to ${until}; work resumes at ${until}.`}
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+export function IdleDialog(props: IdleDialogProps) {
+	return props.isOpen && props.idleEvent ? (
+		<IdleQuestion {...props} idleEvent={props.idleEvent} />
+	) : null;
+}
+function IdleQuestion({
+	idleEvent,
+	onBreak,
+	onResume,
+	isLoading,
+	canRecord = true,
+}: IdleDialogProps & { idleEvent: IdleEvent }) {
+	const { t, language } = useI18n();
+	const dialog = useRef<HTMLDialogElement>(null);
+	useEffect(() => {
+		const modal = dialog.current;
+		const previous = document.activeElement;
+		modal?.showModal();
+		return () => {
+			modal?.close();
+			if (previous instanceof HTMLElement) previous.focus();
+		};
+	}, []);
+	const format = (instant: string, zone: string | null | undefined) =>
+		new Intl.DateTimeFormat(language, {
+			timeStyle: "short",
+			dateStyle: "medium",
+			timeZone: zone ?? "UTC",
+		}).format(new Date(instant)) +
+		" (" +
+		(zone ?? "UTC") +
+		")";
+	return (
+		<dialog
+			ref={dialog}
+			className="companion-dialog"
+			aria-labelledby="idle-heading"
+			onCancel={(event) => {
+				event.preventDefault();
+				if (!isLoading) onResume();
+			}}
+		>
+			<h2 id="idle-heading">{t("Was this a break?")}</h2>
+			<p>
+				{format(idleEvent.idleStartTime, idleEvent.startTimezone)} –{" "}
+				{format(idleEvent.returnedAt, idleEvent.returnTimezone)}
+			</p>
+			<p className="field-hint">
+				{t("Work resumes at the detected return, not when you answer.")}
+			</p>
+			{idleEvent.review && (
+				<p role="alert">
+					{t(
+						"This interval needs a reviewed correction in Z8. Nothing is recorded automatically.",
+					)}
+				</p>
+			)}
+			{!canRecord && !idleEvent.review && (
+				<p role="status">{t("Refresh status before confirming a break.")}</p>
+			)}
+			<div className="dialog-actions">
+				{!idleEvent.review && (
+					<button
+						type="button"
+						className="primary-action"
+						onClick={onBreak}
+						disabled={isLoading || !canRecord}
+					>
+						{t("I was on break")}
+					</button>
+				)}
+				<button
+					type="button"
+					className="secondary-action"
+					onClick={onResume}
+					disabled={isLoading}
+				>
+					{t(idleEvent.review ? "Continue" : "I was still working")}
+				</button>
+			</div>
+		</dialog>
+	);
 }

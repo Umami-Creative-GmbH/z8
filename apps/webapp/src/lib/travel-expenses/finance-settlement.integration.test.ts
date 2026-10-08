@@ -52,6 +52,14 @@ vi.mock("@/lib/notifications/triggers", async (original) => ({
 	...(await original<typeof import("@/lib/notifications/triggers")>()),
 	onTravelExpenseReportDecided: async () => {},
 }));
+// #752: the real notification service, observed; email is captured instead of sent.
+vi.mock("@/lib/notifications/notification-service", async (original) => {
+	const actual = await original<typeof import("@/lib/notifications/notification-service")>();
+	return { ...actual, createNotification: vi.fn(actual.createNotification) };
+});
+vi.mock("@/lib/email/email-service", async (original) =>
+	(await import("@/test/integration-harness")).emailService(original),
+);
 vi.mock("@/lib/storage/s3-client", () => ({
 	S3_PUBLIC_BUCKET: "t612-public",
 	s3Client: {
@@ -89,6 +97,7 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 
 const actions = await import("@/app/[locale]/(app)/travel-expenses/report-actions");
 const finance = await import("@/app/[locale]/(app)/travel-expenses/finance-actions");
+const { DEFAULT_FINANCE_QUEUE_VIEW } = await import("@/lib/travel-expenses/finance-queue-params");
 const { POST: processReceipt } = await import(
 	"@/app/api/upload/travel-expense/report-receipt/route"
 );
@@ -98,6 +107,12 @@ const { GET: getReceipt } = await import(
 const { GET: getClaim } = await import("@/app/api/travel-expenses/[claimId]/route");
 const { POST: approveRoute } = await import("@/app/api/approvals/inbox/[id]/approve/route");
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
+const recovery = await import("@/app/[locale]/(app)/travel-expenses/finance-recovery-actions");
+const { recordBulkReimbursement } = await import("@/lib/travel-expenses/bulk-reimbursement");
+const { db } = await import("@/db");
+const { parseInstant } = await import("@/lib/datetime/temporal-core");
+const { createNotification } = await import("@/lib/notifications/notification-service");
+const { sendEmail } = await import("@/lib/email/email-service");
 
 const ids = {
 	requester: "e6120000-0000-4000-8000-000000000001",
@@ -106,7 +121,6 @@ const ids = {
 	finance: "e6120000-0000-4000-8000-000000000004",
 	accountant: "e6120000-0000-4000-8000-000000000005",
 	foreigner: "e6120000-0000-4000-8000-000000000006",
-	role: "e6121000-0000-4000-8000-000000000001",
 	claim: "e6122000-0000-4000-8000-000000000001",
 	foreignClaim: "e6122000-0000-4000-8000-000000000002",
 } as const;
@@ -165,21 +179,11 @@ async function seed() {
 		 values (gen_random_uuid(), $1, $2, true, 't612-manager', now(), now())`,
 		[ids.requester, ids.manager],
 	);
-	// An accountant whose custom role grants read-only finance access.
+	// An accountant who is a read-only expense officer for all employees (#748).
 	await admin.query(
-		`insert into custom_role (id, organization_id, name, base_tier, created_by, updated_at)
-		 values ($1, 't612-org', 'Accounting', 'employee', 't612-finance', now())`,
-		[ids.role],
-	);
-	await admin.query(
-		`insert into custom_role_permission (id, custom_role_id, action, subject)
-		 values (gen_random_uuid(), $1, 'read', 'TravelExpenseFinance')`,
-		[ids.role],
-	);
-	await admin.query(
-		`insert into employee_custom_role (id, employee_id, custom_role_id, assigned_by)
-		 values (gen_random_uuid(), $1, $2, 't612-finance')`,
-		[ids.accountant, ids.role],
+		`insert into expense_officer_grant (organization_id, officer_employee_id, scope, created_by)
+		 values ('t612-org', $1, 'all', 't612-finance')`,
+		[ids.accountant],
 	);
 	// Approved legacy claims from before the report model.
 	for (const [claimId, organizationId, employeeId] of [
@@ -362,7 +366,10 @@ describe("finance queue and recorded reimbursements (#612)", () => {
 		const pending = await submittedTrip();
 
 		signIn("finance");
-		const queue = await finance.getTravelExpenseFinanceQueue("all");
+		const queue = await finance.getTravelExpenseFinanceQueue({
+			...DEFAULT_FINANCE_QUEUE_VIEW,
+			status: "all",
+		});
 		if (!queue.success) throw new Error(queue.error);
 		expect(queue.data.canSettle).toBe(true);
 		const rows = queue.data.accounts.map((account) => ({
@@ -401,9 +408,12 @@ describe("finance queue and recorded reimbursements (#612)", () => {
 		expect(rows.some((row) => row.source.id === pending.reportId)).toBe(false);
 		expect(rows.some((row) => row.source.id === ids.foreignClaim)).toBe(false);
 
-		// Read-only finance through a custom role: same queue, no settlement.
+		// A read-only expense officer: same queue, no settlement.
 		signIn("accountant");
-		const readOnly = await finance.getTravelExpenseFinanceQueue("open");
+		const readOnly = await finance.getTravelExpenseFinanceQueue({
+			...DEFAULT_FINANCE_QUEUE_VIEW,
+			status: "open",
+		});
 		expect(readOnly.success && readOnly.data.canSettle).toBe(false);
 		expect(readOnly.success && readOnly.data.accounts).toHaveLength(2);
 	});
@@ -412,13 +422,21 @@ describe("finance queue and recorded reimbursements (#612)", () => {
 		await approvedTrip();
 		for (const person of ["manager", "lead", "requester"] as const) {
 			signIn(person);
-			expect(await finance.getTravelExpenseFinanceQueue("all")).toEqual({
+			expect(
+				await finance.getTravelExpenseFinanceQueue({
+					...DEFAULT_FINANCE_QUEUE_VIEW,
+					status: "all",
+				}),
+			).toEqual({
 				success: false,
 				error: "Unauthorized",
 			});
 		}
 		signIn("foreigner");
-		const foreign = await finance.getTravelExpenseFinanceQueue("all");
+		const foreign = await finance.getTravelExpenseFinanceQueue({
+			...DEFAULT_FINANCE_QUEUE_VIEW,
+			status: "all",
+		});
 		expect(foreign.success && foreign.data.accounts.map((a) => a.source.id)).toEqual([
 			ids.foreignClaim,
 		]);
@@ -624,7 +642,7 @@ describe("finance queue and recorded reimbursements (#612)", () => {
 		expect(await entryCount()).toBe(1);
 	});
 
-	it("finds an old open account behind more settled ones than one page, and says when the list is cut", async () => {
+	it("finds an old open account behind more settled ones than one page, and pages the rest", async () => {
 		// The seeded claim (decided 2026-08-05) stays open; four newer claims are settled.
 		const settledIds: string[] = [];
 		for (let day = 10; day < 14; day++) {
@@ -646,36 +664,45 @@ describe("finance queue and recorded reimbursements (#612)", () => {
 				[claimId, randomUUID()],
 			);
 		}
-		const { db } = await import("@/db");
-		const { listFinanceQueue } = await import("@/lib/travel-expenses/settlement-store");
+		const { listFinanceQueue } = await import("@/lib/travel-expenses/finance-queue-store");
 		const scope = { organizationId: "t612-org" } as const;
-		const small = { pageSize: 2, limit: 2 };
+		// Read two sources per round trip, so the open claim lies behind more than one read.
+		const small = { pageSize: 2, scanSize: 2 };
 
-		const open = await listFinanceQueue(db, { ...scope, filter: "open" }, small);
+		const open = await listFinanceQueue(db, { ...scope, status: "open" }, small);
 		expect(open.accounts.map((account) => account.source.id)).toEqual([ids.claim]);
-		expect(open.truncated).toBe(false);
+		expect(open.hasMore).toBe(false);
 
-		// More settled accounts match than the limit: the newest are listed and the cut is reported.
-		const settled = await listFinanceQueue(db, { ...scope, filter: "settled" }, small);
-		expect(settled.accounts.map((account) => account.source.id)).toEqual(
+		// More reimbursed accounts match than one page: the newest first, the rest on the next page.
+		const first = await listFinanceQueue(db, { ...scope, status: "reimbursed" }, small);
+		expect(first.accounts.map((account) => account.source.id)).toEqual(
 			settledIds.toReversed().slice(0, 2),
 		);
-		expect(settled.truncated).toBe(true);
-		// Reaching the scan limit is never silent either.
-		const capped = await listFinanceQueue(
+		expect(first.hasMore).toBe(true);
+		const second = await listFinanceQueue(
 			db,
-			{ ...scope, filter: "open" },
-			{ pageSize: 2, limit: 10, maxScanned: 2 },
+			{ ...scope, status: "reimbursed" },
+			{ ...small, page: 2 },
 		);
-		expect(capped).toEqual({ accounts: [], truncated: true });
+		expect(second.accounts.map((account) => account.source.id)).toEqual(
+			settledIds.toReversed().slice(2, 4),
+		);
+		expect(second.hasMore).toBe(false);
 
-		const all = await listFinanceQueue(db, { ...scope, filter: "all" }, { pageSize: 2 });
+		const all = await listFinanceQueue(
+			db,
+			{ ...scope, status: "all" },
+			{ pageSize: 10, scanSize: 2 },
+		);
 		expect(all.accounts).toHaveLength(5);
-		expect(all.truncated).toBe(false);
+		expect(all.hasMore).toBe(false);
 
 		signIn("finance");
-		const action = await finance.getTravelExpenseFinanceQueue("open");
-		expect(action.success && action.data.truncated).toBe(false);
+		const action = await finance.getTravelExpenseFinanceQueue({
+			...DEFAULT_FINANCE_QUEUE_VIEW,
+			status: "open",
+		});
+		expect(action.success && action.data.hasMore).toBe(false);
 		expect(action.success && action.data.accounts.map((account) => account.source.id)).toEqual([
 			ids.claim,
 		]);
@@ -699,5 +726,457 @@ describe("finance queue and recorded reimbursements (#612)", () => {
 		expect(rows).toEqual([
 			{ recorded_by_employee_id: null, recorded_by_user_id: "t612-finance", amount: "89.90" },
 		]);
+	});
+});
+
+async function settlementNotifications() {
+	const { rows } = await admin.query<{
+		user_id: string;
+		type: string;
+		title: string;
+		message: string;
+		entity_id: string;
+		action_url: string;
+		metadata: string;
+	}>(
+		`select user_id, type::text, title, message, entity_id::text, action_url, metadata from notification
+		 where organization_id = 't612-org' and type::text like 'travel_expense_%' order by created_at, id`,
+	);
+	return rows;
+}
+
+function settlementNotificationCalls() {
+	return vi
+		.mocked(createNotification)
+		.mock.calls.filter(([params]) => params.type.startsWith("travel_expense_"));
+}
+
+describe("employee notifications of recorded money (#752)", () => {
+	beforeEach(async () => {
+		await seed();
+		harness.tus.clear();
+		harness.objects.clear();
+		vi.mocked(createNotification).mockClear();
+		vi.mocked(sendEmail).mockClear();
+	});
+	afterAll(cleanup);
+
+	it("notifies the employee once per reimbursement: partially, then fully reimbursed", async () => {
+		const { reportId } = await approvedTrip();
+		const source = { type: "report" as const, id: reportId };
+
+		signIn("finance");
+		await reimburse(source, "50.00", "89.90", { reference: "SEPA-1" });
+		await reimburse(source, "39.90", "39.90", { reference: "SEPA-2" });
+
+		const notifications = await settlementNotifications();
+		expect(
+			notifications.map(({ user_id, type, title, message, entity_id, action_url }) => ({
+				user_id,
+				type,
+				title,
+				message,
+				entity_id,
+				action_url,
+			})),
+		).toEqual([
+			{
+				user_id: "t612-requester",
+				type: "travel_expense_partially_reimbursed",
+				title: "Expense partially reimbursed",
+				message:
+					"50.00 EUR of your travel expense has been reimbursed (payment reference SEPA-1). 39.90 EUR is still awaiting reimbursement.",
+				entity_id: reportId,
+				action_url: `/travel-expenses/reports/${reportId}`,
+			},
+			{
+				user_id: "t612-requester",
+				type: "travel_expense_reimbursed",
+				title: "Expense reimbursed",
+				message:
+					"Your travel expense has been fully reimbursed: 39.90 EUR, payment reference SEPA-2.",
+				entity_id: reportId,
+				action_url: `/travel-expenses/reports/${reportId}`,
+			},
+		]);
+		// Never the recorder's identity, matching the owner view.
+		for (const notification of notifications) {
+			expect(JSON.stringify(notification)).not.toMatch(/t612-finance|finance/i);
+		}
+
+		// Email goes out in the recipient's language with a link to the report.
+		await vi.waitFor(() =>
+			expect(vi.mocked(sendEmail)).toHaveBeenCalledWith(
+				expect.objectContaining({
+					to: "t612-requester@example.test",
+					subject: "Expense reimbursed",
+					html: expect.stringContaining(`/travel-expenses/reports/${reportId}`),
+					organizationId: "t612-org",
+				}),
+			),
+		);
+	});
+
+	it("does not notify again when the same idempotent request is replayed", async () => {
+		const { reportId } = await approvedTrip();
+		const source = { type: "report" as const, id: reportId };
+		const key = randomUUID();
+
+		signIn("finance");
+		await reimburse(source, "89.90", "89.90", { key });
+		const retry = await reimburse(source, "89.90", "89.90", { key });
+		expect(retry.success && retry.data.status === "recorded" && retry.data.replayed).toBe(true);
+		// Refused commands record nothing and notify nobody either.
+		await reimburse(source, "10.00", "0.00", { key });
+		await reimburse(source, "10.00", "0.00");
+
+		expect((await settlementNotifications()).map((row) => row.type)).toEqual([
+			"travel_expense_reimbursed",
+		]);
+		expect(settlementNotificationCalls()).toHaveLength(1);
+		expect(settlementNotificationCalls()[0]?.[0].idempotencyKey).toBe(
+			`travel-expense-settlement:${key}`,
+		);
+	});
+
+	it("notifies the employee of a recorded recovery, linking the legacy claim", async () => {
+		// The claim's EUR 42.00 was overpaid by EUR 8.00.
+		await admin.query(
+			`insert into travel_expense_settlement_entry (organization_id, source_type, legacy_claim_id, kind, amount,
+			   currency, occurred_on, reference, balance_before, idempotency_key, command_fingerprint, recorded_by_user_id)
+			 values ('t612-org', 'legacy_claim', $1, 'reimbursement', '50.00', 'EUR', '2026-09-01', 'SEPA',
+			   '42.00', $2, 'fingerprint', 't612-finance')`,
+			[ids.claim, randomUUID()],
+		);
+
+		signIn("finance");
+		const recorded = await recovery.recordTravelExpenseRecoveryAction({
+			source: { type: "legacy_claim", id: ids.claim },
+			idempotencyKey: randomUUID(),
+			amount: "8.00",
+			occurredOn: "2026-10-01",
+			reference: "Payroll deduction",
+			note: "Deducted by Fiona from finance",
+			expectedBalance: { currency: "EUR", amount: "-8.00" },
+		});
+		expect(recorded.success && recorded.data.status).toBe("recorded");
+
+		const notifications = await settlementNotifications();
+		expect(notifications).toEqual([
+			expect.objectContaining({
+				user_id: "t612-requester",
+				type: "travel_expense_recovery_recorded",
+				title: "Expense recovery recorded",
+				message:
+					"A recovery of 8.00 EUR was recorded for your travel expense (payment reference Payroll deduction).",
+				entity_id: ids.claim,
+				action_url: `/travel-expenses/${ids.claim}`,
+			}),
+		]);
+		expect(notifications[0]?.metadata).not.toContain("Fiona");
+	});
+});
+
+/** An approved legacy claim of the organization, owed in its own currency. */
+async function approvedClaim(
+	currency: string,
+	amount: string,
+	options: { employeeId?: string; organizationId?: string } = {},
+) {
+	const claimId = randomUUID();
+	await admin.query(
+		`insert into travel_expense_claim (id, organization_id, employee_id, type, status, trip_start, trip_end,
+		   original_currency, original_amount, calculated_currency, calculated_amount,
+		   submitted_at, decided_at, created_by, updated_at)
+		 values ($1, $2, $3, 'receipt', 'approved', '2026-08-03', '2026-08-03',
+		   $4, $5, $4, $5, '2026-08-04', '2026-08-05', 't612-requester', now())`,
+		[
+			claimId,
+			options.organizationId ?? "t612-org",
+			options.employeeId ?? ids.requester,
+			currency,
+			amount,
+		],
+	);
+	return { type: "legacy_claim" as const, id: claimId };
+}
+
+/** Money recorded outside the bulk action, e.g. by someone else meanwhile. */
+async function recordedOutside(claimId: string, currency: string, amount: string) {
+	await admin.query(
+		`insert into travel_expense_settlement_entry (organization_id, source_type, legacy_claim_id, kind, amount,
+		   currency, occurred_on, reference, balance_before, idempotency_key, command_fingerprint, recorded_by_user_id)
+		 values ('t612-org', 'legacy_claim', $1, 'reimbursement', $2, $3, '2026-09-01', 'Earlier',
+		   $2, $4, 'fingerprint', 't612-finance')`,
+		[claimId, amount, currency, randomUUID()],
+	);
+}
+
+const financeActor = {
+	organizationId: "t612-org",
+	employeeId: ids.finance,
+	userId: "t612-finance",
+} as const;
+const payment = { occurredOn: "2026-10-02", reference: "SEPA-BULK-7", note: "October run" };
+
+describe("bulk mark as reimbursed (#754)", () => {
+	beforeEach(async () => {
+		await seed();
+		harness.tus.clear();
+		harness.objects.clear();
+		vi.mocked(createNotification).mockClear();
+	});
+	afterAll(cleanup);
+
+	it("reimburses each account in full in its own currency and reports every skip per row", async () => {
+		const { reportId } = await approvedTrip();
+		const pending = await submittedTrip();
+		const report = { type: "report" as const, id: reportId };
+		const swiss = await approvedClaim("CHF", "120.50");
+		const own = await approvedClaim("EUR", "15.00", { employeeId: ids.finance });
+		const overpaid = await approvedClaim("EUR", "30.00");
+		await recordedOutside(overpaid.id, "EUR", "35.00");
+		// EUR still outstanding, but CHF was paid by mistake: it needs review.
+		const mixed = await approvedClaim("EUR", "20.00");
+		await recordedOutside(mixed.id, "CHF", "5.00");
+		const paid = await approvedClaim("EUR", "42.00");
+		await recordedOutside(paid.id, "EUR", "42.00");
+		const changed = await approvedClaim("EUR", "60.00");
+		await recordedOutside(changed.id, "EUR", "10.00");
+		const foreign = await approvedClaim("EUR", "9.00", {
+			employeeId: ids.foreigner,
+			organizationId: "t612-foreign",
+		});
+		const before = await entryCount();
+
+		const result = await recordBulkReimbursement(db, {
+			actor: financeActor,
+			scope: { kind: "all" },
+			requestKey: randomUUID(),
+			payment,
+			accounts: [
+				{ source: report, expectedBalance: { currency: "EUR", amount: "89.90" } },
+				{ source: swiss, expectedBalance: { currency: "CHF", amount: "120.50" } },
+				{ source: own, expectedBalance: { currency: "EUR", amount: "15.00" } },
+				{ source: overpaid, expectedBalance: { currency: "EUR", amount: "30.00" } },
+				{ source: mixed, expectedBalance: { currency: "EUR", amount: "20.00" } },
+				{ source: paid, expectedBalance: { currency: "EUR", amount: "42.00" } },
+				{ source: changed, expectedBalance: { currency: "EUR", amount: "60.00" } },
+				{ source: foreign, expectedBalance: { currency: "EUR", amount: "9.00" } },
+				{
+					source: { type: "report", id: pending.reportId },
+					expectedBalance: { currency: "EUR", amount: "89.90" },
+				},
+			],
+		});
+
+		if (result.status !== "processed") throw new Error(result.status);
+		expect(
+			result.rows.map((row) => [row.source.id, row.outcome, row.amount, row.currency]),
+		).toEqual([
+			[report.id, "reimbursed", "89.90", "EUR"],
+			[swiss.id, "reimbursed", "120.50", "CHF"],
+			[own.id, "own_expense", null, null],
+			[overpaid.id, "overpaid_or_review", null, null],
+			[mixed.id, "overpaid_or_review", null, null],
+			[paid.id, "already_reimbursed", null, null],
+			[changed.id, "balance_changed", null, null],
+			[foreign.id, "out_of_scope", null, null],
+			[pending.reportId, "failed", null, null],
+		]);
+		expect(await entryCount()).toBe(before + 2);
+		const { rows } = await admin.query(
+			`select coalesce(report_id, legacy_claim_id)::text as source_id, kind, amount, currency,
+			   occurred_on::text, reference, note, balance_before, recorded_by_employee_id
+			 from travel_expense_settlement_entry where reference = 'SEPA-BULK-7' order by currency`,
+		);
+		expect(rows).toEqual([
+			{
+				source_id: swiss.id,
+				kind: "reimbursement",
+				amount: "120.50",
+				currency: "CHF",
+				occurred_on: "2026-10-02",
+				reference: "SEPA-BULK-7",
+				note: "October run",
+				balance_before: "120.50",
+				recorded_by_employee_id: ids.finance,
+			},
+			expect.objectContaining({ source_id: reportId, amount: "89.90", currency: "EUR" }),
+		]);
+		// One employee notification per reimbursed report, through the shared path.
+		expect(
+			(await settlementNotifications()).map((row) => [row.entity_id, row.type]).toSorted(),
+		).toEqual(
+			[
+				[reportId, "travel_expense_reimbursed"],
+				[swiss.id, "travel_expense_reimbursed"],
+			].toSorted(),
+		);
+	});
+
+	it("records nothing twice when the action is repeated, with the same request or a new one", async () => {
+		const swiss = await approvedClaim("CHF", "120.50");
+		const euro = await approvedClaim("EUR", "42.00");
+		const accounts = [
+			{ source: swiss, expectedBalance: { currency: "CHF", amount: "120.50" } },
+			{ source: euro, expectedBalance: { currency: "EUR", amount: "42.00" } },
+			// The same account selected twice is reimbursed once.
+			{ source: euro, expectedBalance: { currency: "EUR", amount: "42.00" } },
+		];
+		const request = { actor: financeActor, scope: { kind: "all" } as const, payment, accounts };
+		const requestKey = randomUUID();
+
+		const first = await recordBulkReimbursement(db, { ...request, requestKey });
+		const retried = await recordBulkReimbursement(db, { ...request, requestKey });
+		const again = await recordBulkReimbursement(db, { ...request, requestKey: randomUUID() });
+
+		const outcomes = (result: typeof first) =>
+			result.status === "processed"
+				? result.rows.map((row) => [row.source.id, row.outcome, row.replayed])
+				: result.status;
+		expect(outcomes(first)).toEqual([
+			[swiss.id, "reimbursed", false],
+			[euro.id, "reimbursed", false],
+		]);
+		expect(outcomes(retried)).toEqual([
+			[swiss.id, "reimbursed", true],
+			[euro.id, "reimbursed", true],
+		]);
+		expect(outcomes(again)).toEqual([
+			[swiss.id, "already_reimbursed", false],
+			[euro.id, "already_reimbursed", false],
+		]);
+		expect(await entryCount()).toBe(2);
+		expect(settlementNotificationCalls()).toHaveLength(2);
+		expect((await settlementNotifications()).map((row) => row.type)).toEqual([
+			"travel_expense_reimbursed",
+			"travel_expense_reimbursed",
+		]);
+	});
+
+	it("skips accounts outside the officer's scope and refuses invalid shared payment details", async () => {
+		const claim = await approvedClaim("EUR", "42.00");
+		const accounts = [{ source: claim, expectedBalance: { currency: "EUR", amount: "42.00" } }];
+		const outOfScope = await recordBulkReimbursement(db, {
+			actor: financeActor,
+			scope: { kind: "specific", teamIds: [], employeeIds: [ids.manager] },
+			requestKey: randomUUID(),
+			payment,
+			accounts,
+		});
+		expect(outOfScope).toEqual({
+			status: "processed",
+			rows: [
+				{
+					source: claim,
+					outcome: "out_of_scope",
+					replayed: false,
+					amount: null,
+					currency: null,
+				},
+			],
+		});
+
+		const invalid = await recordBulkReimbursement(
+			db,
+			{
+				actor: financeActor,
+				scope: { kind: "all" },
+				requestKey: randomUUID(),
+				payment: { occurredOn: "2026-10-09", reference: "  ", note: null },
+				accounts,
+			},
+			parseInstant("2026-10-08T08:00:00Z"),
+		);
+		expect(invalid).toEqual({
+			status: "invalid",
+			errors: [
+				{ field: "occurredOn", code: "future" },
+				{ field: "reference", code: "required" },
+			],
+		});
+		expect(await entryCount()).toBe(0);
+	});
+
+	it("lets only officers who record reimbursements mark expenses reimbursed, within their scope", async () => {
+		const euro = await approvedClaim("EUR", "42.00");
+		const swiss = await approvedClaim("CHF", "120.50");
+		const mark = (requestKey = randomUUID()) =>
+			finance.markTravelExpensesReimbursedAction({
+				requestKey,
+				accounts: [
+					{ source: euro, expectedBalance: { currency: "EUR", amount: "42.00" } },
+					{ source: swiss, expectedBalance: { currency: "CHF", amount: "120.50" } },
+				],
+				...payment,
+			});
+
+		// A read-only officer records nothing.
+		signIn("accountant");
+		expect(await mark()).toEqual({ success: false, error: "Unauthorized" });
+
+		// An officer who records reimbursements for the manager only.
+		await admin.query(
+			`update expense_officer_grant set scope = 'specific', can_record_reimbursements = true
+			 where officer_employee_id = $1`,
+			[ids.accountant],
+		);
+		await admin.query(
+			`insert into expense_officer_employee (organization_id, grant_id, employee_id, created_by)
+			 select 't612-org', id, $2, 't612-finance' from expense_officer_grant where officer_employee_id = $1`,
+			[ids.accountant, ids.manager],
+		);
+		const scoped = await mark();
+		expect(scoped.success && scoped.data.status === "processed" && scoped.data.rows).toEqual([
+			expect.objectContaining({ source: euro, outcome: "out_of_scope" }),
+			expect.objectContaining({ source: swiss, outcome: "out_of_scope" }),
+		]);
+		expect(await entryCount()).toBe(0);
+
+		signIn("finance");
+		expect(await mark().then((result) => result.success && result.data)).toEqual({
+			status: "processed",
+			rows: [
+				{ source: euro, outcome: "reimbursed", replayed: false, amount: "42.00", currency: "EUR" },
+				{
+					source: swiss,
+					outcome: "reimbursed",
+					replayed: false,
+					amount: "120.50",
+					currency: "CHF",
+				},
+			],
+		});
+		const { rows: audits } = await admin.query<{ entity_id: string; metadata: string }>(
+			`select entity_id::text, metadata from audit_log
+			 where organization_id = 't612-org' and action = 'travel_expense.reimbursement_recorded'`,
+		);
+		expect(audits.map((audit) => audit.entity_id).toSorted()).toEqual(
+			[euro.id, swiss.id].toSorted(),
+		);
+		expect(audits.every((audit) => JSON.parse(audit.metadata).bulk === true)).toBe(true);
+
+		// Invalid shared details and malformed requests record nothing.
+		expect(
+			await finance.markTravelExpensesReimbursedAction({
+				requestKey: randomUUID(),
+				accounts: [{ source: euro, expectedBalance: { currency: "EUR", amount: "42.00" } }],
+				occurredOn: "2026-10-02",
+				reference: "",
+				note: null,
+			}),
+		).toEqual({
+			success: true,
+			data: { status: "invalid", errors: [{ field: "reference", code: "required" }] },
+		});
+		expect(
+			await finance.markTravelExpensesReimbursedAction({
+				requestKey: "not-a-uuid",
+				accounts: [],
+				...payment,
+			}),
+		).toEqual({ success: false, error: "Invalid reimbursement" });
+		expect(await entryCount()).toBe(2);
 	});
 });

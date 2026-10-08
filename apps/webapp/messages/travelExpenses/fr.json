@@ -1,7 +1,6 @@
 {
   "travelExpenses": {
     "actions": {
-      "backToClaims": "Retour aux demandes",
       "download": "Télécharger",
       "preview": "Aperçu",
       "retry": "Réessayer",
@@ -101,6 +100,7 @@
       "decisionRecorded": "Décision enregistrée",
       "destination": "Destination",
       "history": "Historique des décisions",
+      "historyDescription": "Toutes les étapes de cette demande, de la plus ancienne à la plus récente. Les heures sont affichées en UTC.",
       "intermediateApproval": "Approbation enregistrée — en attente d'une autre approbation",
       "legacyReceiptIdentity": "Reçu hérité : la somme de contrôle du contenu n'a pas été enregistrée.",
       "loading": "Chargement de la demande…",
@@ -190,6 +190,10 @@
       },
       "legacyClaim": "Ancienne demande de {type}",
       "loading": "Chargement de la file d'attente financière…",
+      "queue": {
+        "description": "Ouvrez une dépense pour consulter son règlement et enregistrer un remboursement.",
+        "title": "Dépenses approuvées"
+      },
       "title": "Finances des dépenses",
       "truncated": "Affichage des {count} dépenses les plus récemment approuvées. Les dépenses correspondantes plus anciennes ne sont pas répertoriées."
     },
@@ -205,6 +209,7 @@
       "companyPaid": "Payé par l'entreprise : {amount}",
       "continuedFrom": "Suite d'une demande antérieure",
       "deleteDraft": "Supprimer le brouillon “{title}”",
+      "description": "Brouillons, rapports soumis et demandes antérieures, du plus récemment modifié au plus ancien.",
       "emptyDescription": "Démarrez un déplacement pour regrouper plusieurs dépenses avec les mêmes détails de voyage, ou ajoutez un reçu unique ou une indemnité kilométrique. Les brouillons sont enregistrés automatiquement afin que vous puissiez les terminer plus tard.",
       "emptyFilter": "Aucune dépense avec ce statut.",
       "emptyTitle": "Aucun frais de déplacement pour l'instant",
@@ -439,6 +444,7 @@
       "countrySearch": "Rechercher des pays",
       "cycles": {
         "approved": "approuvé",
+        "description": "Chaque soumission reste exactement telle qu'elle a été envoyée pour examen.",
         "entry": "Soumission {number} le {date} : {outcome}",
         "pending": "en attente d'examen",
         "rejected": "rejeté",
@@ -490,21 +496,31 @@
       },
       "frozenNotice": "Le rapport soumis ne peut plus être modifié.",
       "history": {
-        "approvalRecorded": "Approbation enregistrée par {name} ; en attente d'une approbation supplémentaire",
-        "approved": "Approuvé par {name}",
-        "cycle": "Soumission {number} :",
-        "rejected": "Rejeté par {name}",
-        "reopened": "Rouvert pour correction par {name}",
-        "returned": "Renvoyé pour modifications par {name}",
-        "selfApproved": "Approuvé automatiquement : aucun autre vérificateur",
-        "submitted": "Soumis par {name}",
-        "title": "Historique",
-        "withdrawn": "Retiré par {name}"
+        "description": "Toutes les étapes de ce rapport, de la plus ancienne à la plus récente. Les heures sont affichées en UTC.",
+        "detail": {
+          "approvalRecorded": "Par {name} ; en attente d'une approbation supplémentaire.",
+          "by": "Par {name}",
+          "inCycle": "Soumission {number} · {detail}",
+          "selfApproved": "Personne d'autre n'a pu examiner ce rapport."
+        },
+        "inReview": "En cours d'examen",
+        "step": {
+          "approvalRecorded": "Approbation enregistrée",
+          "approved": "Approuvé",
+          "rejected": "Rejeté",
+          "reopened": "Rouvert pour correction",
+          "returned": "Renvoyé pour modifications",
+          "selfApproved": "Approuvé automatiquement",
+          "submitted": "Soumis",
+          "withdrawn": "Retiré"
+        },
+        "title": "Historique"
       },
       "items": {
         "add": "Ajouter un justificatif de dépense",
         "addFailed": "Impossible d'ajouter la dépense. Veuillez réessayer.",
         "empty": "Ajoutez chaque reçu de ce voyage en tant que dépense distincte. Les détails du voyage ci-dessus s'appliquent à chacun d'entre eux.",
+        "emptyTitle": "Aucune dépense pour l'instant",
         "numbered": "{type} {number}",
         "remove": "Supprimer",
         "removeConfirm": "Supprimer la dépense",
@@ -861,6 +877,7 @@
       "trip": {
         "dates": "Dates de voyage",
         "datesZone": "(jours calendaires en {timeZone})",
+        "description": "Toutes les dépenses de ce voyage partagent ces détails.",
         "destinations": "Destinations",
         "errors": {
           "destination": "Choisissez un pays dans la liste.",

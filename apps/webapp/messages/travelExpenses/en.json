@@ -1,7 +1,6 @@
 {
   "travelExpenses": {
     "actions": {
-      "backToClaims": "Back to claims",
       "download": "Download",
       "preview": "Preview",
       "retry": "Retry",
@@ -101,6 +100,7 @@
       "decisionRecorded": "Decision recorded",
       "destination": "Destination",
       "history": "Decision history",
+      "historyDescription": "Every step of this claim, oldest first. Times are shown in UTC.",
       "intermediateApproval": "Approval recorded — awaiting further approval",
       "legacyReceiptIdentity": "Legacy receipt: content checksum was not recorded.",
       "loading": "Loading claim…",
@@ -190,6 +190,10 @@
       },
       "legacyClaim": "Legacy {type} claim",
       "loading": "Loading finance queue…",
+      "queue": {
+        "description": "Open an expense to see its settlement and record a reimbursement.",
+        "title": "Approved expenses"
+      },
       "title": "Expense finance",
       "truncated": "Showing the {count} most recently approved expenses. Older matching expenses are not listed."
     },
@@ -205,6 +209,7 @@
       "companyPaid": "Company-paid {amount}",
       "continuedFrom": "Continued from an earlier claim",
       "deleteDraft": "Delete draft “{title}”",
+      "description": "Drafts, submitted reports and earlier claims, most recently changed first.",
       "emptyDescription": "Start a trip to collect several expenses with shared travel details, or add a single receipt or mileage expense. Drafts save automatically, so you can finish them later.",
       "emptyFilter": "No expenses with this status.",
       "emptyTitle": "No travel expenses yet",
@@ -439,6 +444,7 @@
       "countrySearch": "Search countries",
       "cycles": {
         "approved": "approved",
+        "description": "Each submission stays exactly as it was sent for review.",
         "entry": "Submission {number} on {date}: {outcome}",
         "pending": "awaiting review",
         "rejected": "rejected",
@@ -490,21 +496,31 @@
       },
       "frozenNotice": "The submitted report can no longer be edited.",
       "history": {
-        "approvalRecorded": "Approval recorded by {name}; awaiting further approval",
-        "approved": "Approved by {name}",
-        "cycle": "Submission {number}:",
-        "rejected": "Rejected by {name}",
-        "reopened": "Reopened for correction by {name}",
-        "returned": "Returned for changes by {name}",
-        "selfApproved": "Approved automatically: no other reviewer",
-        "submitted": "Submitted by {name}",
-        "title": "History",
-        "withdrawn": "Withdrawn by {name}"
+        "description": "Every step of this report, oldest first. Times are shown in UTC.",
+        "detail": {
+          "approvalRecorded": "By {name}; awaiting further approval.",
+          "by": "By {name}",
+          "inCycle": "Submission {number} · {detail}",
+          "selfApproved": "Nobody else could review this report."
+        },
+        "inReview": "In review",
+        "step": {
+          "approvalRecorded": "Approval recorded",
+          "approved": "Approved",
+          "rejected": "Rejected",
+          "reopened": "Reopened for correction",
+          "returned": "Returned for changes",
+          "selfApproved": "Approved automatically",
+          "submitted": "Submitted",
+          "withdrawn": "Withdrawn"
+        },
+        "title": "History"
       },
       "items": {
         "add": "Add receipt expense",
         "addFailed": "The expense could not be added. Please retry.",
         "empty": "Add each receipt of this trip as its own expense. The trip details above apply to all of them.",
+        "emptyTitle": "No expenses yet",
         "numbered": "{type} {number}",
         "remove": "Remove",
         "removeConfirm": "Remove expense",
@@ -861,6 +877,7 @@
       "trip": {
         "dates": "Travel dates",
         "datesZone": "(calendar days in {timeZone})",
+        "description": "Every expense of this trip shares these details.",
         "destinations": "Destinations",
         "errors": {
           "destination": "Choose a listed country.",

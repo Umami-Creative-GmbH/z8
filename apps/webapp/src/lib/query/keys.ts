@@ -89,6 +89,7 @@ export const queryKeys = {
 				: (["travel-expenses", "history"] as const),
 		report: (reportId: string) => ["travel-expenses", "reports", reportId] as const,
 		approverSettings: () => ["travel-expenses", "settings", "approver"] as const,
+		expenseOfficers: () => ["travel-expenses", "settings", "expense-officers"] as const,
 		reimbursementCurrency: () => ["travel-expenses", "settings", "reimbursement-currency"] as const,
 		foreignDraftExpenses: () => ["travel-expenses", "settings", "foreign-draft-expenses"] as const,
 		mileagePolicy: () => ["travel-expenses", "settings", "mileage-policy"] as const,
@@ -97,7 +98,15 @@ export const queryKeys = {
 		legacyPolicies: () => ["travel-expenses", "settings", "legacy-policies"] as const,
 		reportSubmission: (reportId: string, cycle?: number) =>
 			["travel-expenses", "reports", reportId, "submission", cycle ?? "latest"] as const,
-		financeQueue: (filter: string) => ["travel-expenses", "finance", "queue", filter] as const,
+		/** Every finance read: queue, filters, counts and the coverage gap. */
+		finance: () => ["travel-expenses", "finance"] as const,
+		/** One page of the finance queue; `search` = the view's search string (#753). */
+		financeQueue: (search: string, coverage?: string) =>
+			["travel-expenses", "finance", "queue", search, coverage ?? "all"] as const,
+		financeQueueFilters: () => ["travel-expenses", "finance", "queue-filters"] as const,
+		/** The sidebar Finance item's awaiting-reimbursement count (#753). */
+		financeAwaitingCount: () => ["travel-expenses", "finance", "awaiting-count"] as const,
+		officerCoverageGap: () => ["travel-expenses", "finance", "coverage-gap"] as const,
 		settlement: (sourceType: string, sourceId: string) =>
 			["travel-expenses", "settlement", sourceType, sourceId] as const,
 		receiptExceptionSettings: () => ["travel-expenses", "settings", "receipt-exceptions"] as const,

@@ -62,6 +62,10 @@ export const travelExpenseClaim = pgTable(
 		notes: text("notes"),
 		submittedAt: timestamp("submitted_at"),
 		decidedAt: timestamp("decided_at"),
+		// The employee's teams when the claim was approved (#746), recorded by its
+		// decision or, for claims approved before migration 0135, by its backfill;
+		// null when not recorded. A claim is decided once, so they never change.
+		approvalTeamIds: uuid("approval_team_ids").array(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		createdBy: text("created_by")
 			.notNull()
@@ -181,6 +185,11 @@ export const travelExpenseReport = pgTable(
 		submissionCount: integer("submission_count").default(0).notNull(),
 		submittedAt: timestamp("submitted_at", { withTimezone: true }),
 		decidedAt: timestamp("decided_at", { withTimezone: true }),
+		// The employee's teams when the report was last approved (#746, ADR 0002),
+		// kept by value: a later team move or team deletion never changes them.
+		// Null until the first approval, and always null on an adjustment report,
+		// which belongs to its original report's teams (`approval-teams.ts`).
+		approvalTeamIds: uuid("approval_team_ids").array(),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		createdBy: text("created_by")
 			.notNull()

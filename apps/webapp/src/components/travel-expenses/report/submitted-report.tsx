@@ -6,8 +6,9 @@ import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { getTravelExpenseReportSubmission } from "@/app/[locale]/(app)/travel-expenses/report-actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Timeline, TimelineItem } from "@/components/ui/timeline";
 import { queryKeys } from "@/lib/query/keys";
 import type { SubmittedReportView } from "@/lib/travel-expenses/report-read";
 import { SettlementPanel } from "../finance/settlement-panel";
@@ -22,35 +23,50 @@ import { ReportTotals } from "./report-summary";
 
 const formatInstant = formatRecordedInstant;
 
-type HistoryLabel = SubmittedReportView["history"][number]["label"];
+type Translate = ReturnType<typeof useTranslate>["t"];
+type HistoryEvent = SubmittedReportView["history"][number];
 
-function historyText(
-	t: ReturnType<typeof useTranslate>["t"],
-	label: HistoryLabel,
-	name: string,
-): string {
-	const texts: Record<HistoryLabel, string> = {
-		submitted: t("travelExpenses.report.history.submitted", "Submitted by {name}", { name }),
-		approved: t("travelExpenses.report.history.approved", "Approved by {name}", { name }),
-		self_approved: t(
-			"travelExpenses.report.history.selfApproved",
-			"Approved automatically: no other reviewer",
-		),
-		rejected: t("travelExpenses.report.history.rejected", "Rejected by {name}", { name }),
-		returned: t("travelExpenses.report.history.returned", "Returned for changes by {name}", {
-			name,
-		}),
-		withdrawn: t("travelExpenses.report.history.withdrawn", "Withdrawn by {name}", { name }),
-		reopened: t("travelExpenses.report.history.reopened", "Reopened for correction by {name}", {
-			name,
-		}),
+/** What happened in one history event, as its timeline title. */
+function historyTitle(t: Translate, label: HistoryEvent["label"]): string {
+	const titles: Record<HistoryEvent["label"], string> = {
+		submitted: t("travelExpenses.report.history.step.submitted", "Submitted"),
 		approval_recorded: t(
-			"travelExpenses.report.history.approvalRecorded",
-			"Approval recorded by {name}; awaiting further approval",
-			{ name },
+			"travelExpenses.report.history.step.approvalRecorded",
+			"Approval recorded",
 		),
+		approved: t("travelExpenses.report.history.step.approved", "Approved"),
+		self_approved: t("travelExpenses.report.history.step.selfApproved", "Approved automatically"),
+		rejected: t("travelExpenses.report.history.step.rejected", "Rejected"),
+		returned: t("travelExpenses.report.history.step.returned", "Returned for changes"),
+		withdrawn: t("travelExpenses.report.history.step.withdrawn", "Withdrawn"),
+		reopened: t("travelExpenses.report.history.step.reopened", "Reopened for correction"),
 	};
-	return texts[label];
+	return titles[label];
+}
+
+/** Who acted (and, across several submissions, in which one) under a timeline title. */
+function historyDetail(t: Translate, event: HistoryEvent, showCycle: boolean): string {
+	const actor =
+		event.label === "self_approved"
+			? t(
+					"travelExpenses.report.history.detail.selfApproved",
+					"Nobody else could review this report.",
+				)
+			: event.label === "approval_recorded"
+				? t(
+						"travelExpenses.report.history.detail.approvalRecorded",
+						"By {name}; awaiting further approval.",
+						{ name: event.actorName ?? "—" },
+					)
+				: t("travelExpenses.report.history.detail.by", "By {name}", {
+						name: event.actorName ?? "—",
+					});
+	return showCycle
+		? t("travelExpenses.report.history.detail.inCycle", "Submission {number} · {detail}", {
+				number: event.cycle,
+				detail: actor,
+			})
+		: actor;
 }
 
 /**
@@ -272,10 +288,12 @@ function SubmittedTrip({ trip }: { trip: NonNullable<SubmittedReportView["facts"
 	const { t } = useTranslate();
 	return (
 		<Card>
-			<CardContent className="space-y-2">
-				<h2 className="text-lg font-semibold">
+			<CardHeader>
+				<h2 className="font-semibold leading-none">
 					{t("travelExpenses.report.trip.title", "Trip details")}
 				</h2>
+			</CardHeader>
+			<CardContent>
 				<TripSummaryList trip={trip} />
 			</CardContent>
 		</Card>
@@ -286,34 +304,40 @@ function SubmittedTrip({ trip }: { trip: NonNullable<SubmittedReportView["facts"
 function SubmittedExpenses({ reportId, data }: { reportId: string; data: SubmittedReportView }) {
 	const { t } = useTranslate();
 	return (
-		<section aria-labelledby={`${reportId}-submitted-expenses`} className="space-y-3">
-			<h2 id={`${reportId}-submitted-expenses`} className="text-lg font-semibold">
-				{t("travelExpenses.report.items.title", "Expenses")}
-			</h2>
-			<ExpenseSummaryList
-				items={data.facts.items.map((item) => ({
-					id: item.itemId,
-					type: item.type,
-					// A per diem freezes a fixed description; its title already names it.
-					description: item.type === "per_diem" ? null : item.description,
-					expenseDate: item.expenseDate,
-					category: item.category,
-					amount: item.original.amount,
-					currency: item.original.currency,
-					paidBy: item.paidBy,
-					conversion: item.conversion,
-					project: item.project,
-					receipts: item.receipts.map((receipt) => ({
-						id: receipt.receiptId,
-						fileName: receipt.fileName,
-						href: `/api/travel-expenses/reports/${reportId}/receipts/${receipt.receiptId}?cycle=${data.submissionCycle}`,
-					})),
-					mileage: item.mileage ?? null,
-					perDiem: item.perDiem ?? null,
-					receiptException: item.receiptException ?? null,
-					allowanceOverride: item.allowanceOverride ?? null,
-				}))}
-			/>
+		<section aria-labelledby={`${reportId}-submitted-expenses`}>
+			<Card>
+				<CardHeader>
+					<h2 id={`${reportId}-submitted-expenses`} className="font-semibold leading-none">
+						{t("travelExpenses.report.items.title", "Expenses")}
+					</h2>
+				</CardHeader>
+				<CardContent>
+					<ExpenseSummaryList
+						items={data.facts.items.map((item) => ({
+							id: item.itemId,
+							type: item.type,
+							// A per diem freezes a fixed description; its title already names it.
+							description: item.type === "per_diem" ? null : item.description,
+							expenseDate: item.expenseDate,
+							category: item.category,
+							amount: item.original.amount,
+							currency: item.original.currency,
+							paidBy: item.paidBy,
+							conversion: item.conversion,
+							project: item.project,
+							receipts: item.receipts.map((receipt) => ({
+								id: receipt.receiptId,
+								fileName: receipt.fileName,
+								href: `/api/travel-expenses/reports/${reportId}/receipts/${receipt.receiptId}?cycle=${data.submissionCycle}`,
+							})),
+							mileage: item.mileage ?? null,
+							perDiem: item.perDiem ?? null,
+							receiptException: item.receiptException ?? null,
+							allowanceOverride: item.allowanceOverride ?? null,
+						}))}
+					/>
+				</CardContent>
+			</Card>
 		</section>
 	);
 }
@@ -337,27 +361,56 @@ function ApprovedReportPanels({
 	);
 }
 
-/** The report's history across its submission cycles. */
+/**
+ * The report's history across its submission cycles as a timeline. While the
+ * latest submission waits for review, that review is the current step;
+ * otherwise the latest event is.
+ */
 function SubmissionHistory({ reportId, data }: { reportId: string; data: SubmittedReportView }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
+	const awaitingReview = data.status === "submitted";
+	const lastIndex = data.history.length - 1;
 	return (
-		<section aria-labelledby={`${reportId}-history`} className="space-y-2">
-			<h2 id={`${reportId}-history`} className="text-lg font-semibold">
-				{t("travelExpenses.report.history.title", "History")}
-			</h2>
-			<ol className="space-y-1 text-sm">
-				{data.history.map((event) => (
-					<li key={event.id}>
-						<span className="text-muted-foreground">{formatInstant(locale, event.at)}</span>{" "}
-						{data.latestCycle > 1 &&
-							`${t("travelExpenses.report.history.cycle", "Submission {number}:", {
-								number: event.cycle,
-							})} `}
-						{historyText(t, event.label, event.actorName ?? "—")}
-					</li>
-				))}
-			</ol>
-		</section>
+		<Card>
+			<CardHeader>
+				<h2 id={`${reportId}-history`} className="font-semibold leading-none">
+					{t("travelExpenses.report.history.title", "History")}
+				</h2>
+				<CardDescription>
+					{t(
+						"travelExpenses.report.history.description",
+						"Every step of this report, oldest first. Times are shown in UTC.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<Timeline aria-labelledby={`${reportId}-history`}>
+					{data.history.map((event, index) => (
+						<TimelineItem
+							key={event.id}
+							state={index === lastIndex && !awaitingReview ? "current" : "done"}
+							title={historyTitle(t, event.label)}
+							time={formatInstant(locale, event.at)}
+							dateTime={event.at}
+						>
+							{historyDetail(t, event, data.latestCycle > 1)}
+						</TimelineItem>
+					))}
+					{awaitingReview && (
+						<TimelineItem
+							state="current"
+							title={t("travelExpenses.report.history.inReview", "In review")}
+						>
+							{data.reviewerName
+								? t("travelExpenses.report.awaitingReviewer", "Waiting for review by {name}.", {
+										name: data.reviewerName,
+									})
+								: t("travelExpenses.report.awaitingReview", "Waiting for review.")}
+						</TimelineItem>
+					)}
+				</Timeline>
+			</CardContent>
+		</Card>
 	);
 }

@@ -1,13 +1,6 @@
 "use client";
 
-import {
-	IconCar,
-	IconHistory,
-	IconLoader2,
-	IconPlaneDeparture,
-	IconReceipt,
-	IconSun,
-} from "@tabler/icons-react";
+import { IconHistory, IconLoader2, IconReceipt } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
@@ -15,7 +8,15 @@ import { useState } from "react";
 import { getMyTravelExpenseHistory } from "@/app/[locale]/(app)/travel-expenses/history-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { queryKeys } from "@/lib/query/keys";
@@ -30,7 +31,8 @@ import {
 	type ReportHistoryRow,
 } from "@/lib/travel-expenses/expense-history";
 import { Link } from "@/navigation";
-import { BalanceText } from "./finance/settlement-status";
+import { ITEM_TYPE_ICONS, TRIP_ICON } from "./expense-icons";
+import { BalanceText, ReimbursedBadge } from "./finance/settlement-status";
 import { ContinueLegacyDraftButton } from "./legacy-draft-conversion";
 import { DeleteDraftReportButton } from "./report/delete-draft-report";
 import { formatMoney, formatPlainDate, formatPlainDateRange } from "./report/format";
@@ -58,6 +60,8 @@ function filterLabel(t: Translate, filter: ExpenseHistoryFilter): string {
 			return t("travelExpenses.history.filter.inReview", "In review");
 		case "approved":
 			return t("travelExpenses.history.filter.approved", "Approved");
+		case "awaiting_reimbursement":
+			return t("travelExpenses.history.filter.awaitingReimbursement", "Awaiting reimbursement");
 		case "rejected":
 			return t("travelExpenses.history.filter.rejected", "Rejected");
 	}
@@ -79,17 +83,18 @@ function RowIcon({ row }: { row: ExpenseHistoryRow }) {
 		row.source === "legacy_claim"
 			? IconHistory
 			: row.kind === "trip"
-				? IconPlaneDeparture
-				: row.itemType === "mileage"
-					? IconCar
-					: row.itemType === "per_diem"
-						? IconSun
-						: IconReceipt;
-	return <Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />;
+				? TRIP_ICON
+				: ITEM_TYPE_ICONS[row.itemType ?? "receipt"];
+	return (
+		<span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+			<Icon aria-hidden="true" className="size-4" />
+		</span>
+	);
 }
 
 function Balance({ row }: { row: ExpenseHistoryRow }) {
-	if (!row.balance) return null;
+	// A reimbursed expense says so in its badge.
+	if (!row.balance || row.reimbursement === "reimbursed") return null;
 	return (
 		<>
 			{row.balance.currencies.map((line) => (
@@ -270,40 +275,41 @@ function DeleteRowDraft({ row }: { row: ReportHistoryRow }) {
 
 function HistoryList({ rows, busy }: { rows: ExpenseHistoryRow[]; busy: boolean }) {
 	return (
-		<Card className="overflow-hidden py-0">
-			<CardContent className="p-0">
-				<ul className="divide-y" aria-busy={busy}>
-					{rows.map((row) => (
-						<li
-							key={`${row.source}:${row.id}`}
-							className="relative flex flex-col gap-2 px-4 py-3 hover:bg-muted/50 sm:flex-row sm:items-start sm:gap-3"
-						>
-							<div className="flex min-w-0 flex-1 gap-3">
-								<RowIcon row={row} />
-								<div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:gap-3">
-									{row.source === "report" ? (
-										<ReportRowContent row={row} />
-									) : (
-										<ClaimRowContent row={row} />
-									)}
-								</div>
-							</div>
-							<div className="flex shrink-0 items-start gap-1 pl-7 sm:pl-0">
-								<ReportStatusBadge status={row.status} />
-								{row.source === "report" && row.deletable && <DeleteRowDraft row={row} />}
-							</div>
-						</li>
-					))}
-				</ul>
-			</CardContent>
-		</Card>
+		<ul className="divide-y border-t" aria-busy={busy}>
+			{rows.map((row) => (
+				<li
+					key={`${row.source}:${row.id}`}
+					className="relative flex flex-col gap-2 px-6 py-4 transition-colors hover:bg-muted/50 sm:flex-row sm:items-start sm:gap-3"
+				>
+					<div className="flex min-w-0 flex-1 gap-3">
+						<RowIcon row={row} />
+						<div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:gap-3">
+							{row.source === "report" ? (
+								<ReportRowContent row={row} />
+							) : (
+								<ClaimRowContent row={row} />
+							)}
+						</div>
+					</div>
+					<div className="flex shrink-0 items-start gap-1 pl-11 sm:pl-0">
+						{row.reimbursement === "reimbursed" ? (
+							<ReimbursedBadge />
+						) : (
+							<ReportStatusBadge status={row.status} />
+						)}
+						{row.source === "report" && row.deletable && <DeleteRowDraft row={row} />}
+					</div>
+				</li>
+			))}
+		</ul>
 	);
 }
 
 /**
  * The employee's travel expenses in one place (#617): drafts, returned,
- * submitted and decided reports and earlier claims, filterable by status, with
- * reimbursable totals and settlement balances. Loaded rows stay visible while
+ * submitted and decided reports and earlier claims, filterable by status and
+ * by whether reimbursement is still awaited (#751), with reimbursable totals
+ * and settlement balances. Loaded rows stay visible while
  * a refresh runs or fails.
  */
 export function ExpenseHistory(scope: { organizationId: string; employeeId: string }) {
@@ -347,18 +353,23 @@ export function ExpenseHistory(scope: { organizationId: string; employeeId: stri
 	}
 	if (data.length === 0) {
 		return (
-			<Card>
-				<CardContent className="py-12 text-center">
-					<p className="text-lg font-medium">
-						{t("travelExpenses.history.emptyTitle", "No travel expenses yet")}
-					</p>
-					<p className="mx-auto mt-2 max-w-prose text-sm text-muted-foreground">
-						{t(
-							"travelExpenses.history.emptyDescription",
-							"Start a trip to collect several expenses with shared travel details, or add a single receipt or mileage expense. Drafts save automatically, so you can finish them later.",
-						)}
-					</p>
-				</CardContent>
+			<Card className="py-0">
+				<Empty>
+					<EmptyHeader>
+						<EmptyMedia variant="icon">
+							<IconReceipt aria-hidden="true" />
+						</EmptyMedia>
+						<EmptyTitle>
+							{t("travelExpenses.history.emptyTitle", "No travel expenses yet")}
+						</EmptyTitle>
+						<EmptyDescription>
+							{t(
+								"travelExpenses.history.emptyDescription",
+								"Start a trip to collect several expenses with shared travel details, or add a single receipt or mileage expense. Drafts save automatically, so you can finish them later.",
+							)}
+						</EmptyDescription>
+					</EmptyHeader>
+				</Empty>
 			</Card>
 		);
 	}
@@ -366,36 +377,7 @@ export function ExpenseHistory(scope: { organizationId: string; employeeId: stri
 	const counts = countExpenseHistory(data);
 	const visible = filterExpenseHistory(data, filter);
 	return (
-		<section aria-labelledby="travel-expense-history" className="space-y-3">
-			<div className="flex flex-wrap items-center justify-between gap-2">
-				<h2 id="travel-expense-history" className="text-lg font-semibold">
-					{t("travelExpenses.history.title", "Your expenses")}
-				</h2>
-				{isFetching && (
-					<p role="status" className="flex items-center gap-1 text-sm text-muted-foreground">
-						<IconLoader2 aria-hidden="true" className="size-3.5 animate-spin" />
-						{t("travelExpenses.history.refreshing", "Refreshing…")}
-					</p>
-				)}
-			</div>
-			<div className="max-w-full overflow-x-auto pb-1">
-				<ToggleGroup
-					type="single"
-					variant="outline"
-					value={filter}
-					onValueChange={(value: string) => {
-						if (isExpenseHistoryFilter(value)) setFilter(value);
-					}}
-					aria-label={t("travelExpenses.history.filter.label", "Show expenses")}
-				>
-					{EXPENSE_HISTORY_FILTERS.map((value) => (
-						<ToggleGroupItem key={value} value={value} className="whitespace-nowrap px-3">
-							{filterLabel(t, value)}
-							<span className="ml-1.5 tabular-nums text-muted-foreground">{counts[value]}</span>
-						</ToggleGroupItem>
-					))}
-				</ToggleGroup>
-			</div>
+		<section aria-labelledby="travel-expense-history" className="space-y-4">
 			{isError && (
 				<TravelExpenseLoadError
 					message={t(
@@ -406,18 +388,63 @@ export function ExpenseHistory(scope: { organizationId: string; employeeId: stri
 					isRetrying={isFetching}
 				/>
 			)}
-			{visible.length === 0 ? (
-				<Card>
-					<CardContent className="space-y-3 py-10 text-center text-sm text-muted-foreground">
-						<p>{t("travelExpenses.history.emptyFilter", "No expenses with this status.")}</p>
-						<Button type="button" variant="outline" size="sm" onClick={() => setFilter("all")}>
-							{t("travelExpenses.history.showAll", "Show all expenses")}
-						</Button>
-					</CardContent>
-				</Card>
-			) : (
-				<HistoryList rows={visible} busy={isFetching} />
-			)}
+			<Card className="gap-4 overflow-hidden pb-0">
+				<CardHeader>
+					<h2 id="travel-expense-history" className="font-semibold leading-none">
+						{t("travelExpenses.history.title", "Your expenses")}
+					</h2>
+					<CardDescription>
+						{t(
+							"travelExpenses.history.description",
+							"Drafts, submitted reports and earlier claims, most recently changed first.",
+						)}
+					</CardDescription>
+					{isFetching && (
+						<CardAction>
+							<p role="status" className="flex items-center gap-1 text-sm text-muted-foreground">
+								<IconLoader2 aria-hidden="true" className="size-3.5 animate-spin" />
+								{t("travelExpenses.history.refreshing", "Refreshing…")}
+							</p>
+						</CardAction>
+					)}
+				</CardHeader>
+				<CardContent>
+					<div className="max-w-full overflow-x-auto pb-1">
+						<ToggleGroup
+							type="single"
+							variant="outline"
+							value={filter}
+							onValueChange={(value: string) => {
+								if (isExpenseHistoryFilter(value)) setFilter(value);
+							}}
+							aria-label={t("travelExpenses.history.filter.label", "Show expenses")}
+						>
+							{EXPENSE_HISTORY_FILTERS.map((value) => (
+								<ToggleGroupItem key={value} value={value} className="whitespace-nowrap px-3">
+									{filterLabel(t, value)}
+									<span className="ml-1.5 tabular-nums text-muted-foreground">{counts[value]}</span>
+								</ToggleGroupItem>
+							))}
+						</ToggleGroup>
+					</div>
+				</CardContent>
+				{visible.length === 0 ? (
+					<Empty className="rounded-none border-t md:p-10">
+						<EmptyHeader>
+							<EmptyDescription>
+								{t("travelExpenses.history.emptyFilter", "No expenses with this status.")}
+							</EmptyDescription>
+						</EmptyHeader>
+						<EmptyContent>
+							<Button type="button" variant="outline" size="sm" onClick={() => setFilter("all")}>
+								{t("travelExpenses.history.showAll", "Show all expenses")}
+							</Button>
+						</EmptyContent>
+					</Empty>
+				) : (
+					<HistoryList rows={visible} busy={isFetching} />
+				)}
+			</Card>
 		</section>
 	);
 }

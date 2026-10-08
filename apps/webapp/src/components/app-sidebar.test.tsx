@@ -25,6 +25,7 @@ const {
 	canCreateOrganizationsForDeploymentMock,
 	canViewWorksCouncilPortalMock,
 	hasActivePayrollAccessGrantMock,
+	loadFinanceActorMock,
 } = vi.hoisted(() => ({
 	navMainSpy: vi.fn(),
 	navSecondarySpy: vi.fn(),
@@ -38,6 +39,7 @@ const {
 	canCreateOrganizationsForDeploymentMock: vi.fn(),
 	canViewWorksCouncilPortalMock: vi.fn(),
 	hasActivePayrollAccessGrantMock: vi.fn(),
+	loadFinanceActorMock: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -59,6 +61,14 @@ vi.mock("@/lib/works-council/permissions", () => ({
 
 vi.mock("@/lib/payroll-access/permissions", () => ({
 	hasActivePayrollAccessGrant: hasActivePayrollAccessGrantMock,
+}));
+
+vi.mock("@/lib/travel-expenses/finance-access", () => ({
+	loadFinanceActor: loadFinanceActorMock,
+}));
+
+vi.mock("@/components/travel-expenses/finance/finance-nav-badge", () => ({
+	FinanceNavBadge: () => <span>3</span>,
 }));
 
 vi.mock("@/components/nav-main", () => ({
@@ -147,6 +157,7 @@ describe("app sidebar compliance navigation", () => {
 		canCreateOrganizationsForDeploymentMock.mockReset();
 		canViewWorksCouncilPortalMock.mockReset();
 		hasActivePayrollAccessGrantMock.mockReset();
+		loadFinanceActorMock.mockReset();
 		vi.resetModules();
 	});
 
@@ -500,6 +511,90 @@ describe("app sidebar compliance navigation", () => {
 
 		expect(navTeamSpy).not.toHaveBeenCalled();
 	});
+
+	it("renders the Finance item after Travel Expenses, with its count, only when enabled (#753)", () => {
+		const { rerender } = render(<AppSidebar employeeRole="employee" />);
+		expect(screen.queryByRole("link", { name: "Finance" })).toBeNull();
+
+		rerender(
+			<AppSidebar
+				employeeRole="employee"
+				navigationCapabilities={{
+					scheduling: false,
+					compliance: false,
+					payroll: false,
+					finance: true,
+					worksCouncil: false,
+					platformAdmin: false,
+				}}
+			/>,
+		);
+		expect(screen.getByRole("link", { name: "Finance" }).getAttribute("href")).toBe(
+			"/travel-expenses/finance",
+		);
+		const items = navMainSpy.mock.lastCall?.[0] ?? [];
+		expect(items.map((item: { url: string }) => item.url).slice(4, 6)).toEqual([
+			"/travel-expenses",
+			"/travel-expenses/finance",
+		]);
+		expect(items[5]?.badge).toBeTruthy();
+	});
+
+	it.each([
+		["shows", { canRead: true }, true],
+		["hides", { canRead: false }, false],
+		["hides", null, false],
+	])(
+		"%s Finance navigation from the finance actor's read access (#753)",
+		async (_verb, actor, finance) => {
+			vi.stubEnv("BILLING_ENABLED", "false");
+			canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
+			getUserOrganizationsMock.mockResolvedValue([
+				{
+					id: "org_1",
+					shiftsEnabled: false,
+					projectsEnabled: false,
+					surchargesEnabled: false,
+					demoDataEnabled: true,
+					worksCouncilEnabled: false,
+				},
+			]);
+			getAuthContextMock.mockResolvedValue({
+				user: { role: "user" },
+				session: { activeOrganizationId: "org_1" },
+				employee: { id: "emp_1", organizationId: "org_1", role: "employee" },
+			});
+			getCurrentSettingsAccessTierMock.mockResolvedValueOnce("member");
+			hasActivePayrollAccessGrantMock.mockResolvedValue(false);
+			loadFinanceActorMock.mockResolvedValue(actor);
+
+			vi.doMock("@/lib/auth-helpers", () => ({
+				getUserOrganizations: getUserOrganizationsMock,
+				getAuthContext: getAuthContextMock,
+				getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+				requireAbility: requireAbilityMock,
+			}));
+			vi.doMock("@/lib/organization/creation-policy.server", () => ({
+				canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
+			}));
+			vi.doMock("./app-sidebar", () => ({
+				AppSidebar: (props: Record<string, unknown>) => {
+					appSidebarSpy(props);
+					return <div data-testid="server-sidebar-proxy" />;
+				},
+			}));
+
+			const { ServerAppSidebar } = await import("./server-app-sidebar");
+
+			render(await ServerAppSidebar({}));
+
+			expect(appSidebarSpy).toHaveBeenCalledWith(
+				expect.objectContaining({
+					navigationCapabilities: expect.objectContaining({ finance }),
+				}),
+			);
+		},
+	);
 
 	it("renders help and feedback entries in secondary navigation", () => {
 		render(<AppSidebar />);

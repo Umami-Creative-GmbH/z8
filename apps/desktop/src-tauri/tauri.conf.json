@@ -1,61 +1,69 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
-  "productName": "z8 Timer",
-  "version": "0.1.0",
-  "identifier": "com.z8.timer",
-  "build": {
-    "beforeDevCommand": "pnpm dev",
-    "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build",
-    "frontendDist": "../dist"
-  },
-  "app": {
-    "withGlobalTauri": true,
-    "trayIcon": {
-      "iconPath": "icons/tray-gray.png",
-      "iconAsTemplate": false
-    },
-    "windows": [
-      {
-        "title": "z8 Timer",
-        "width": 400,
-        "height": 540,
-        "minWidth": 350,
-        "minHeight": 480,
-        "resizable": true,
-        "fullscreen": false,
-        "center": true,
-        "decorations": true,
-        "alwaysOnTop": true,
-        "skipTaskbar": false,
-        "visible": true
-      }
-    ],
-    "security": {
-      "csp": null
-    }
-  },
-  "bundle": {
-    "active": true,
-    "targets": ["msi", "nsis"],
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ],
-    "windows": {
-      "certificateThumbprint": null,
-      "digestAlgorithm": "sha256",
-      "timestampUrl": ""
-    }
-  },
-  "plugins": {
-    "deep-link": {
-      "desktop": {
-        "schemes": ["z8"]
-      }
-    }
-  }
+	"$schema": "https://schema.tauri.app/config/2",
+	"productName": "z8 Timer",
+	"version": "0.2.0",
+	"identifier": "com.z8.timer",
+	"build": {
+		"beforeDevCommand": "pnpm dev",
+		"devUrl": "http://localhost:1420",
+		"beforeBuildCommand": "pnpm build",
+		"frontendDist": "../dist"
+	},
+	"app": {
+		"withGlobalTauri": true,
+		"windows": [
+			{
+				"title": "z8 Timer",
+				"width": 400,
+				"height": 540,
+				"minWidth": 350,
+				"minHeight": 480,
+				"resizable": true,
+				"fullscreen": false,
+				"center": true,
+				"decorations": true,
+				"alwaysOnTop": false,
+				"skipTaskbar": false,
+				"visible": true
+			}
+		],
+		"security": {
+			"csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-src 'none'"
+		}
+	},
+	"bundle": {
+		"active": true,
+		"targets": ["msi", "nsis"],
+		"icon": [
+			"icons/32x32.png",
+			"icons/128x128.png",
+			"icons/128x128@2x.png",
+			"icons/icon.icns",
+			"icons/icon.ico"
+		],
+		"windows": {
+			"certificateThumbprint": null,
+			"digestAlgorithm": "sha256",
+			"timestampUrl": "",
+			"nsis": {
+				"displayLanguageSelector": true,
+				"installerHooks": "installer/evidence.nsh",
+				"languages": ["English", "German"],
+				"installMode": "currentUser"
+			}
+		}
+	},
+	"plugins": {
+		"deep-link": {
+			"desktop": {
+				"schemes": ["z8"]
+			}
+		},
+		"updater": {
+			"windows": {
+				"installMode": "passive"
+			},
+			"pubkey": ""
+		}
+	}
 }

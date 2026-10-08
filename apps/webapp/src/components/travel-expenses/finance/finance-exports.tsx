@@ -1,6 +1,12 @@
 "use client";
 
-import { IconDownload, IconFileZip, IconInfoCircle, IconLoader2 } from "@tabler/icons-react";
+import {
+	IconCash,
+	IconDownload,
+	IconFileZip,
+	IconInfoCircle,
+	IconLoader2,
+} from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
@@ -12,7 +18,9 @@ import {
 	cancelTravelExpenseExportAction,
 	createTravelExpenseExportAction,
 	type ExportableRevisionRow,
+	getTravelExpenseExportReimbursement,
 	getTravelExpenseExports,
+	markTravelExpenseExportReimbursedAction,
 	retryTravelExpenseExportAction,
 } from "@/app/[locale]/(app)/travel-expenses/finance-export-actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -22,7 +30,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query/keys";
+import type { ExportBatchReimbursementAccount } from "@/lib/travel-expenses/export-reimbursement";
 import type { TravelExpenseExportBatchView } from "@/lib/travel-expenses/export-store";
+import type { SettlementTitle } from "@/lib/travel-expenses/settlement-store";
 import {
 	formatMoney,
 	formatPlainDate,
@@ -31,6 +41,11 @@ import {
 } from "../report/format";
 import { reportName } from "../report-name";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
+import {
+	BulkReimbursementDialog,
+	type BulkReimbursementItem,
+	type BulkReimbursementSkippedItem,
+} from "./bulk-reimbursement-dialog";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -38,11 +53,16 @@ function rowTitle(t: Translate, locale: string, row: ExportableRevisionRow) {
 	const base = baseRowTitle(t, locale, row);
 	// An adjustment (#615) stays identifiable beside the report it corrects.
 	return row.adjustmentOf
-		? { ...base, name: t("travelExpenses.finance.exports.adjustment", "Adjustment: {name}", { name: base.name }) }
+		? {
+				...base,
+				name: t("travelExpenses.finance.exports.adjustment", "Adjustment: {name}", {
+					name: base.name,
+				}),
+			}
 		: base;
 }
 
-function baseRowTitle(t: Translate, locale: string, row: ExportableRevisionRow) {
+function baseRowTitle(t: Translate, locale: string, row: { title: SettlementTitle }) {
 	const { title } = row;
 	if (title.kind === "trip") {
 		return {
@@ -362,11 +382,101 @@ function ExportSelection({
 	);
 }
 
-function BatchItem({
+interface BatchReimbursement {
+	items: BulkReimbursementItem[];
+	skipped: BulkReimbursementSkippedItem[];
+}
+
+function batchReimbursementOf(
+	t: Translate,
+	locale: string,
+	accounts: readonly ExportBatchReimbursementAccount[],
+): BatchReimbursement {
+	const items: BulkReimbursementItem[] = [];
+	const skipped: BulkReimbursementSkippedItem[] = [];
+	for (const entry of accounts) {
+		const label = `${entry.employeeName ?? "—"} · ${baseRowTitle(t, locale, entry).name}`;
+		if (entry.account && entry.skip === null) items.push({ account: entry.account, label });
+		else skipped.push({ source: entry.source, label, outcome: entry.skip ?? "out_of_scope" });
+	}
+	return { items, skipped };
+}
+
+/**
+ * "Mark as reimbursed" on a completed batch (#755): loads the batch's accounts
+ * as they are now, then the bulk dialog reimburses each in full.
+ */
+function MarkBatchReimbursed({
 	batch,
 	onChanged,
 }: {
 	batch: TravelExpenseExportBatchView;
+	onChanged: () => void;
+}) {
+	const { t } = useTranslate();
+	const locale = useLocale();
+	const queryClient = useQueryClient();
+	const [loading, setLoading] = useState(false);
+	const [reimbursement, setReimbursement] = useState<BatchReimbursement | null>(null);
+
+	const open = async () => {
+		setLoading(true);
+		const result = await getTravelExpenseExportReimbursement(batch.id).catch(() => null);
+		setLoading(false);
+		if (!result?.success || result.data.status !== "ready") {
+			toast.error(
+				t(
+					"travelExpenses.finance.exports.errors.reimburse",
+					"The export could not be loaded for reimbursement. Please retry.",
+				),
+			);
+			return;
+		}
+		setReimbursement(batchReimbursementOf(t, locale, result.data.accounts));
+	};
+
+	return (
+		<>
+			<Button variant="outline" size="sm" disabled={loading} onClick={() => void open()}>
+				{loading ? (
+					<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
+				) : (
+					<IconCash aria-hidden="true" className="size-4" />
+				)}
+				{t("travelExpenses.finance.exports.markReimbursed", "Mark as reimbursed")}
+			</Button>
+			{reimbursement && (
+				<BulkReimbursementDialog
+					items={reimbursement.items}
+					skipped={reimbursement.skipped}
+					open
+					onOpenChange={(next) => {
+						if (!next) setReimbursement(null);
+					}}
+					onFinished={() => {
+						onChanged();
+						void queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.finance() });
+					}}
+					submit={(request) =>
+						markTravelExpenseExportReimbursedAction({ batchId: batch.id, ...request })
+					}
+					description={t(
+						"travelExpenses.finance.exports.markReimbursedDescription",
+						"Each expense report in this export is reimbursed in full, in its own currency, with this payment date and reference. Adjustments count toward the report they correct. Z8 does not transfer any money.",
+					)}
+				/>
+			)}
+		</>
+	);
+}
+
+function BatchItem({
+	batch,
+	canSettle,
+	onChanged,
+}: {
+	batch: TravelExpenseExportBatchView;
+	canSettle: boolean;
 	onChanged: () => void;
 }) {
 	const { t } = useTranslate();
@@ -453,6 +563,9 @@ function BatchItem({
 							{t("travelExpenses.finance.exports.download", "Download")}
 						</a>
 					</Button>
+				)}
+				{batch.status === "completed" && canSettle && (
+					<MarkBatchReimbursed batch={batch} onChanged={onChanged} />
 				)}
 				{batch.retryable && (
 					<Button
@@ -571,7 +684,12 @@ export function FinanceExports() {
 								<CardContent className="p-0">
 									<ul className="divide-y" aria-busy={isFetching}>
 										{data.batches.map((batch) => (
-											<BatchItem key={batch.id} batch={batch} onChanged={refresh} />
+											<BatchItem
+												key={batch.id}
+												batch={batch}
+												canSettle={data.canSettle}
+												onChanged={refresh}
+											/>
 										))}
 									</ul>
 								</CardContent>

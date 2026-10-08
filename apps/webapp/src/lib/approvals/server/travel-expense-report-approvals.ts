@@ -18,6 +18,8 @@ import {
 } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
 import { onTravelExpenseReportDecided } from "@/lib/notifications/triggers";
+import { recordReportApprovalTeams } from "@/lib/travel-expenses/approval-teams";
+import { notifyReadyForReimbursement } from "@/lib/travel-expenses/ready-for-reimbursement";
 import { acquireApprovalWriteGate } from "../authority";
 import { kickApprovalDelivery } from "../delivery/kick";
 import type { ApprovalActionOptions } from "../domain/types";
@@ -642,6 +644,10 @@ export async function executeTravelExpenseReportDecisionInTransaction(
 			? { bound: { idempotencyKey: invocation.key, reviewedBindingId: binding.id } }
 			: {}),
 	});
+	if (recorded.reportStatus === "approved") {
+		// The final approval records the employee's teams (#746).
+		await recordReportApprovalTeams(database, { organizationId, reportId });
+	}
 	if (invocation && input.bound) {
 		// Same transaction as the legacy mutation and its evidence.
 		await recordBoundReportInvocation(database, {
@@ -722,8 +728,9 @@ async function notifyRequester(
 }
 
 /**
- * After commit: a final decision notifies the requester, and a written
- * lifecycle intent kicks the delivery owner. A replay repeats nothing.
+ * After commit: a final decision notifies the requester, a final approval the
+ * covering expense officers (#756), and a written lifecycle intent kicks the
+ * delivery owner. A replay repeats nothing.
  */
 export async function afterTravelExpenseReportDecision(
 	database: ApprovalDatabase,
@@ -736,6 +743,12 @@ export async function afterTravelExpenseReportDecision(
 		await notifyRequester(database, decision, outcome.totals).catch((error) =>
 			logger.error({ error, reportId: decision.reportId }, "Report decision notification failed"),
 		);
+	}
+	if (outcome.reportStatus === "approved") {
+		await notifyReadyForReimbursement(database, {
+			organizationId: decision.organizationId,
+			reportId: decision.reportId,
+		});
 	}
 	if (outcome.deliveryIntent) {
 		kickApprovalDelivery({ organizationId: decision.organizationId });

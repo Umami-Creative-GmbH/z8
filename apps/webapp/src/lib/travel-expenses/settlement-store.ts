@@ -1,11 +1,12 @@
 import { createHash } from "node:crypto";
-import { and, asc, desc, eq, inArray, max, type SQL, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, max, type SQL, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { user } from "@/db/auth-schema";
 import {
 	approvalDecisionEvidence,
 	employee,
 	travelExpenseClaim,
+	travelExpenseExportBatch,
 	travelExpenseReport,
 	travelExpenseSettlementEntry,
 } from "@/db/schema";
@@ -21,6 +22,8 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { loadAdjustmentOriginals, loadApprovedAdjustments } from "./adjustment-read";
+import type { OfficerScope } from "./officer-scope";
+import { isSourceInOfficerScope } from "./officer-scope-read";
 import { OWNER_SELF_APPROVAL_REASON } from "./owner-self-approval";
 import {
 	computeSettlement,
@@ -30,6 +33,7 @@ import {
 	type SettlementPlanRefusal,
 	type SettlementSummary,
 } from "./settlement";
+import { notifySettlementRecorded } from "./settlement-notifications";
 
 /**
  * Settlement accounts of approved travel expenses (#612). An account belongs
@@ -70,6 +74,13 @@ export interface SettlementEntryView {
 	/** Finance views only; null in the employee's own view. */
 	recordedByUserId: string | null;
 	recordedByName: string | null;
+	/** The export batch the reimbursement was recorded for (#755). Finance views only. */
+	exportBatch: SettlementEntryExportBatch | null;
+}
+
+export interface SettlementEntryExportBatch {
+	id: string;
+	requestedAt: string;
 }
 
 export interface SettlementBasis {
@@ -240,27 +251,45 @@ async function loadEntries(
 	}
 	for (const scope of scopes) {
 		const rows = await database
-			.select({ entry: travelExpenseSettlementEntry, recordedByName: user.name })
+			.select(entryColumns())
 			.from(travelExpenseSettlementEntry)
 			.leftJoin(user, eq(user.id, travelExpenseSettlementEntry.recordedByUserId))
+			.leftJoin(travelExpenseExportBatch, entryExportBatchJoin())
 			.where(and(eq(travelExpenseSettlementEntry.organizationId, organizationId), scope))
 			.orderBy(asc(travelExpenseSettlementEntry.recordedAt), asc(travelExpenseSettlementEntry.id));
-		for (const { entry, recordedByName } of rows) {
+		for (const { entry, recordedByName, exportBatchRequestedAt } of rows) {
 			const key =
 				entry.sourceType === "report"
 					? sourceKey({ type: "report", id: entry.reportId ?? "" })
 					: sourceKey({ type: "legacy_claim", id: entry.legacyClaimId ?? "" });
 			const list = entries.get(key) ?? [];
-			list.push(toEntryView(entry, recordedByName));
+			list.push(toEntryView(entry, recordedByName, exportBatchRequestedAt));
 			entries.set(key, list);
 		}
 	}
 	return entries;
 }
 
+// Functions, not constants: nothing here reads the schema while the module loads.
+function entryColumns() {
+	return {
+		entry: travelExpenseSettlementEntry,
+		recordedByName: user.name,
+		exportBatchRequestedAt: travelExpenseExportBatch.requestedAt,
+	};
+}
+
+function entryExportBatchJoin() {
+	return and(
+		eq(travelExpenseExportBatch.id, travelExpenseSettlementEntry.exportBatchId),
+		eq(travelExpenseExportBatch.organizationId, travelExpenseSettlementEntry.organizationId),
+	);
+}
+
 function toEntryView(
 	entry: typeof travelExpenseSettlementEntry.$inferSelect,
 	recordedByName: string | null,
+	exportBatchRequestedAt: Date | null,
 ): SettlementEntryView {
 	return {
 		id: entry.id,
@@ -274,6 +303,13 @@ function toEntryView(
 		recordedAt: instantToCanonicalString(instantFromDate(entry.recordedAt)),
 		recordedByUserId: entry.recordedByUserId,
 		recordedByName,
+		exportBatch:
+			entry.exportBatchId && exportBatchRequestedAt
+				? {
+						id: entry.exportBatchId,
+						requestedAt: instantToCanonicalString(instantFromDate(exportBatchRequestedAt)),
+					}
+				: null,
 	};
 }
 
@@ -298,8 +334,11 @@ function reportTitle(
 	};
 }
 
-/** Builds the accounts of many reports and claims with a fixed number of reads. */
-async function buildAccounts(
+/**
+ * Builds the accounts of many reports and claims with a fixed number of reads:
+ * the reports' accounts in their order, then the claims'.
+ */
+export async function buildSettlementAccounts(
 	database: Executor,
 	organizationId: string,
 	reports: ReadonlyArray<{ row: ReportRow; employeeName: string | null }>,
@@ -436,7 +475,7 @@ async function buildAccounts(
 	return accounts;
 }
 
-const employeeNameColumn = { employeeName: user.name };
+export const employeeNameColumn = { employeeName: user.name };
 
 /**
  * One account, scoped to the organization; null when the source does not
@@ -463,7 +502,7 @@ export async function loadSettlementAccount(
 		const [found] = options.lock ? await query.for("update") : await query;
 		if (!found) return null;
 		const employeeName = await loadEmployeeName(database, organizationId, found.row.employeeId);
-		const [account] = await buildAccounts(
+		const [account] = await buildSettlementAccounts(
 			database,
 			organizationId,
 			[{ row: found.row, employeeName }],
@@ -484,7 +523,7 @@ export async function loadSettlementAccount(
 	const [found] = options.lock ? await query.for("update") : await query;
 	if (!found) return null;
 	const employeeName = await loadEmployeeName(database, organizationId, found.row.employeeId);
-	const [account] = await buildAccounts(
+	const [account] = await buildSettlementAccounts(
 		database,
 		organizationId,
 		[],
@@ -527,165 +566,6 @@ export async function hasRecordedSettlement(
 	return Boolean(row);
 }
 
-/** Approved sources of one kind read (and priced) per page while scanning the queue. */
-export const FINANCE_QUEUE_SOURCE_LIMIT = 500;
-/** Most accounts the queue returns; more matching accounts set `truncated`. */
-export const FINANCE_QUEUE_RESULT_LIMIT = 500;
-/** Most approved sources of one kind scanned per request; scanning further sets `truncated`. */
-export const FINANCE_QUEUE_MAX_SCANNED = 20_000;
-
-export type FinanceQueueFilter = "open" | "settled" | "all";
-
-export interface FinanceQueuePage {
-	accounts: SettlementAccount[];
-	/**
-	 * More accounts match than were returned (or the scan limit was reached):
-	 * the list shows the most recently decided ones and says so. Never silent.
-	 */
-	truncated: boolean;
-}
-
-export interface FinanceQueueOptions {
-	/** Most accounts returned (default FINANCE_QUEUE_RESULT_LIMIT). */
-	limit?: number;
-	/** Sources of one kind read per page (default FINANCE_QUEUE_SOURCE_LIMIT). */
-	pageSize?: number;
-	/** Most sources of one kind scanned (default FINANCE_QUEUE_MAX_SCANNED). */
-	maxScanned?: number;
-}
-
-function matchesQueueFilter(
-	account: SettlementAccount,
-	input: { filter: FinanceQueueFilter; includeAdjustments?: boolean },
-): boolean {
-	if (!account.approved) return false;
-	if (!input.includeAdjustments && account.adjustmentOf !== null) return false;
-	if (input.filter === "all") return true;
-	return input.filter === "settled"
-		? account.summary.state === "settled"
-		: account.summary.state !== "settled";
-}
-
-/**
- * Scans approved sources of one kind, newest decision first, page by page and
- * keeps the accounts matching the filter. Whether an account is open depends
- * on approved adjustments and recorded money (`settlement.ts`), so it is
- * decided by the same model as everywhere else, never by a row cap: an old open
- * account is found however many settled accounts were decided after it.
- */
-async function scanQueueSources(
-	readPage: (offset: number, size: number) => Promise<SettlementAccount[]>,
-	matches: (account: SettlementAccount) => boolean,
-	options: Required<FinanceQueueOptions>,
-): Promise<FinanceQueuePage> {
-	const accounts: SettlementAccount[] = [];
-	let offset = 0;
-	while (offset < options.maxScanned) {
-		const size = Math.min(options.pageSize, options.maxScanned - offset);
-		const page = await readPage(offset, size);
-		for (const account of page) {
-			if (!matches(account)) continue;
-			accounts.push(account);
-			// One more than the limit proves that something was left out.
-			if (accounts.length > options.limit) return { accounts, truncated: true };
-		}
-		if (page.length < size) return { accounts, truncated: false };
-		offset += size;
-	}
-	return { accounts, truncated: true };
-}
-
-/**
- * The finance queue: approved reports and approved legacy claims of one
- * organization with their balances. `open` lists anything not settled
- * (outstanding or overpaid). Only currently approved sources are listed, so a
- * report returned for correction (#603/#614) drops out. At most `limit`
- * accounts, the most recently approved first; `truncated` says when more match.
- */
-export async function listFinanceQueue(
-	database: Executor,
-	input: {
-		organizationId: string;
-		filter: FinanceQueueFilter;
-		/** Also list approved adjustment reports (#615), which have no account of their own; exports need them. */
-		includeAdjustments?: boolean;
-		/** List approved legacy claims too (default true); exports have no use for them. */
-		includeLegacyClaims?: boolean;
-	},
-	options: FinanceQueueOptions = {},
-): Promise<FinanceQueuePage> {
-	const resolved: Required<FinanceQueueOptions> = {
-		limit: options.limit ?? FINANCE_QUEUE_RESULT_LIMIT,
-		pageSize: options.pageSize ?? FINANCE_QUEUE_SOURCE_LIMIT,
-		maxScanned: options.maxScanned ?? FINANCE_QUEUE_MAX_SCANNED,
-	};
-	const matches = (account: SettlementAccount) => matchesQueueFilter(account, input);
-	const [reports, claims] = await Promise.all([
-		scanQueueSources(
-			async (offset, size) => {
-				const rows = await database
-					.select({ row: travelExpenseReport, ...employeeNameColumn })
-					.from(travelExpenseReport)
-					.leftJoin(
-						employee,
-						and(
-							eq(employee.id, travelExpenseReport.employeeId),
-							eq(employee.organizationId, travelExpenseReport.organizationId),
-						),
-					)
-					.leftJoin(user, eq(user.id, employee.userId))
-					.where(
-						and(
-							eq(travelExpenseReport.organizationId, input.organizationId),
-							eq(travelExpenseReport.status, "approved"),
-						),
-					)
-					.orderBy(desc(travelExpenseReport.decidedAt), desc(travelExpenseReport.id))
-					.limit(size)
-					.offset(offset);
-				return buildAccounts(database, input.organizationId, rows, []);
-			},
-			matches,
-			resolved,
-		),
-		scanQueueSources(
-			async (offset, size) => {
-				if (input.includeLegacyClaims === false) return [];
-				const rows = await database
-					.select({ row: travelExpenseClaim, ...employeeNameColumn })
-					.from(travelExpenseClaim)
-					.leftJoin(
-						employee,
-						and(
-							eq(employee.id, travelExpenseClaim.employeeId),
-							eq(employee.organizationId, travelExpenseClaim.organizationId),
-						),
-					)
-					.leftJoin(user, eq(user.id, employee.userId))
-					.where(
-						and(
-							eq(travelExpenseClaim.organizationId, input.organizationId),
-							eq(travelExpenseClaim.status, "approved"),
-						),
-					)
-					.orderBy(desc(travelExpenseClaim.decidedAt), desc(travelExpenseClaim.id))
-					.limit(size)
-					.offset(offset);
-				return buildAccounts(database, input.organizationId, [], rows);
-			},
-			matches,
-			resolved,
-		),
-	]);
-	const accounts = [...reports.accounts, ...claims.accounts].sort((left, right) =>
-		(right.basis?.approvedAt ?? "").localeCompare(left.basis?.approvedAt ?? ""),
-	);
-	return {
-		accounts: accounts.slice(0, resolved.limit),
-		truncated: reports.truncated || claims.truncated || accounts.length > resolved.limit,
-	};
-}
-
 /** The employee's own approved reports and claims with their balances. */
 export async function listOwnSettlementAccounts(
 	database: Executor,
@@ -713,7 +593,7 @@ export async function listOwnSettlementAccounts(
 				),
 			),
 	]);
-	const accounts = await buildAccounts(
+	const accounts = await buildSettlementAccounts(
 		database,
 		owner.organizationId,
 		reports.map(({ row }) => ({ row, employeeName: null })),
@@ -726,6 +606,7 @@ export async function listOwnSettlementAccounts(
 export function settlementCommandFingerprint(
 	source: SettlementSource,
 	command: SettlementCommand,
+	exportBatchId: string | null = null,
 ): string {
 	const canonical = JSON.stringify([
 		"travel_expense_settlement:v1",
@@ -737,6 +618,8 @@ export function settlementCommandFingerprint(
 		command.occurredOn,
 		command.reference,
 		command.note,
+		// Appended only when set, so every fingerprint recorded before #755 stays valid.
+		...(exportBatchId ? [exportBatchId] : []),
 	]);
 	return `travel_expense_settlement:v1:${createHash("sha256").update(canonical).digest("hex")}`;
 }
@@ -776,33 +659,51 @@ export type RecordSettlementResult =
  * retried command return the entry it already recorded instead of a second
  * one; `expectedBalance` refuses a command based on a balance that changed in
  * between (a concurrent reimbursement, an adjustment). Nothing is transferred.
+ *
+ * After commit, a newly recorded entry notifies the employee (#752); a replay
+ * does not, so every path recording money through here notifies exactly once.
  */
 export async function recordSettlementEntry(
 	database: Database,
 	input: {
 		actor: SettlementActor;
+		/** The officer scope the actor records money in (#747); any other account is not found. */
+		scope: OfficerScope;
 		source: SettlementSource;
 		idempotencyKey: string;
 		command: SettlementCommand;
 		expectedBalance: { currency: string; amount: string };
+		/** Bulk reimbursement (#754): refused unless the entry leaves the whole account reimbursed. */
+		inFull?: boolean;
+		/** The completed export batch the reimbursement is recorded for (#755); the caller checked it. */
+		exportBatchId?: string;
 	},
 	now: Instant = systemClock.nowInstant(),
 ): Promise<RecordSettlementResult> {
 	const { actor, source, command } = input;
-	const fingerprint = settlementCommandFingerprint(source, command);
-	return database.transaction(async (tx) => {
+	const exportBatchId = input.exportBatchId ?? null;
+	const fingerprint = settlementCommandFingerprint(source, command, exportBatchId);
+	const result = await database.transaction(async (tx): Promise<RecordSettlementResult> => {
 		const account = await loadSettlementAccount(
 			tx,
 			{ organizationId: actor.organizationId, source },
 			{ lock: true },
 		);
 		if (!account) return { status: "not_found" } as const;
+		const inScope = await isSourceInOfficerScope(tx, input.scope, {
+			organizationId: actor.organizationId,
+			source,
+			employeeId: account.employeeId,
+		});
+		if (!inScope) return { status: "not_found" } as const;
 		const replay = await findByIdempotencyKey(tx, actor.organizationId, input.idempotencyKey);
 		if (replay) return replayResult(replay, fingerprint, account);
 		if (account.adjustmentOf) return { status: "adjustment_report" } as const;
 		if (!account.approved) return { status: "not_approved" } as const;
 		if (account.employeeId === actor.employeeId) return { status: "own_expense" } as const;
-		const plan = planSettlementEntry(account.summary, command, input.expectedBalance);
+		const plan = planSettlementEntry(account.summary, command, input.expectedBalance, {
+			inFull: input.inFull,
+		});
 		if (!plan.ok) {
 			return { status: "refused", reason: plan.reason, balance: plan.balance, account } as const;
 		}
@@ -828,6 +729,7 @@ export async function recordSettlementEntry(
 				recordedByEmployeeId: actor.employeeId,
 				recordedByUserId: actor.userId,
 				recordedAt: dateFromInstant(now),
+				exportBatchId,
 			})
 			.onConflictDoNothing({
 				target: [
@@ -850,13 +752,22 @@ export async function recordSettlementEntry(
 		if (!updated || !entry) throw new Error("Recorded settlement entry not readable");
 		return { status: "recorded", replayed: false, entry, account: updated } as const;
 	});
+	if (result.status === "recorded" && !result.replayed) {
+		await notifySettlementRecorded(database, {
+			account: result.account,
+			entry: result.entry,
+			idempotencyKey: input.idempotencyKey,
+		});
+	}
+	return result;
 }
 
 async function findByIdempotencyKey(tx: Transaction, organizationId: string, key: string) {
 	const [row] = await tx
-		.select({ entry: travelExpenseSettlementEntry, recordedByName: user.name })
+		.select(entryColumns())
 		.from(travelExpenseSettlementEntry)
 		.leftJoin(user, eq(user.id, travelExpenseSettlementEntry.recordedByUserId))
+		.leftJoin(travelExpenseExportBatch, entryExportBatchJoin())
 		.where(
 			and(
 				eq(travelExpenseSettlementEntry.organizationId, organizationId),
@@ -876,7 +787,7 @@ function replayResult(
 	return {
 		status: "recorded",
 		replayed: true,
-		entry: toEntryView(found.entry, found.recordedByName),
+		entry: toEntryView(found.entry, found.recordedByName, found.exportBatchRequestedAt),
 		account,
 	};
 }

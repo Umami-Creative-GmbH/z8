@@ -1,7 +1,6 @@
 {
   "travelExpenses": {
     "actions": {
-      "backToClaims": "Tillbaka till reseräkningar",
       "download": "Ladda ner",
       "preview": "Förhandsgranska",
       "retry": "Försök igen",
@@ -101,6 +100,7 @@
       "decisionRecorded": "Beslut registrerat",
       "destination": "Destination",
       "history": "Beslutshistorik",
+      "historyDescription": "Varje steg i detta ärende, äldsta först. Tider visas i UTC.",
       "intermediateApproval": "Godkännande registrerat — inväntar ytterligare godkännande",
       "legacyReceiptIdentity": "Äldre kvitto: innehållets kontrollsumma registrerades inte.",
       "loading": "Läser in reseräkning…",
@@ -190,6 +190,10 @@
       },
       "legacyClaim": "Äldre {type}-anspråk",
       "loading": "Läser in ekonomikön…",
+      "queue": {
+        "description": "Öppna ett utlägg för att se dess reglering och registrera en ersättning.",
+        "title": "Godkända utlägg"
+      },
       "title": "Utläggsekonomi",
       "truncated": "Visar de {count} senast godkända utläggen. Äldre matchande utlägg visas inte."
     },
@@ -205,6 +209,7 @@
       "companyPaid": "Betalt av företaget {amount}",
       "continuedFrom": "Fortsättning från ett tidigare utlägg",
       "deleteDraft": "Ta bort utkast ”{title}”",
+      "description": "Utkast, inskickade rapporter och tidigare ärenden, senast ändrade först.",
       "emptyDescription": "Starta en resa för att samla flera utlägg med gemensamma reseuppgifter, eller lägg till ett enskilt kvitto eller en milersättning. Utkast sparas automatiskt så att du kan slutföra dem senare.",
       "emptyFilter": "Inga utlägg med denna status.",
       "emptyTitle": "Inga reseutlägg ännu",
@@ -439,6 +444,7 @@
       "countrySearch": "Sök länder",
       "cycles": {
         "approved": "godkänd",
+        "description": "Varje inlämning förblir exakt så som den skickades in för granskning.",
         "entry": "Inlämning {number} den {date}: {outcome}",
         "pending": "väntar på granskning",
         "rejected": "avvisad",
@@ -490,21 +496,31 @@
       },
       "frozenNotice": "Den inskickade rapporten kan inte längre redigeras.",
       "history": {
-        "approvalRecorded": "Godkännande registrerat av {name}; inväntar ytterligare godkännande",
-        "approved": "Godkänd av {name}",
-        "cycle": "Inskickning {number}:",
-        "rejected": "Avvisad av {name}",
-        "reopened": "Återöppnad för korrigering av {name}",
-        "returned": "Returnerad för ändringar av {name}",
-        "selfApproved": "Godkänd automatiskt: ingen annan granskare",
-        "submitted": "Inskickad av {name}",
-        "title": "Historik",
-        "withdrawn": "Tillbakadragen av {name}"
+        "description": "Varje steg i denna rapport, äldsta först. Tider visas i UTC.",
+        "detail": {
+          "approvalRecorded": "Av {name}; väntar på ytterligare godkännande.",
+          "by": "Av {name}",
+          "inCycle": "Inlämning {number} · {detail}",
+          "selfApproved": "Ingen annan kunde granska denna rapport."
+        },
+        "inReview": "Under granskning",
+        "step": {
+          "approvalRecorded": "Godkännande registrerat",
+          "approved": "Godkänd",
+          "rejected": "Avvisad",
+          "reopened": "Återöppnad för korrigering",
+          "returned": "Returnerad för ändringar",
+          "selfApproved": "Godkänd automatiskt",
+          "submitted": "Inskickad",
+          "withdrawn": "Tillbakadragen"
+        },
+        "title": "Historik"
       },
       "items": {
         "add": "Lägg till kvittoutlägg",
         "addFailed": "Utlägget kunde inte läggas till. Försök igen.",
         "empty": "Lägg till varje kvitto för denna resa som ett eget utlägg. Reseuppgifterna ovan gäller för dem alla.",
+        "emptyTitle": "Inga utlägg än",
         "numbered": "{type} {number}",
         "remove": "Ta bort",
         "removeConfirm": "Ta bort utlägg",
@@ -861,6 +877,7 @@
       "trip": {
         "dates": "Resedatum",
         "datesZone": "(kalenderdagar i {timeZone})",
+        "description": "Alla utlägg för denna resa delar dessa uppgifter.",
         "destinations": "Resmål",
         "errors": {
           "destination": "Välj ett land i listan.",

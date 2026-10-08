@@ -43,13 +43,21 @@ function download() {
 	);
 }
 
-function actor(access: { canRead: boolean; canExport: boolean }) {
+const ALL = { kind: "all" } as const;
+const BERLIN = { kind: "specific", teamIds: ["team-berlin"], employeeIds: [] } as const;
+
+function actor(access: { canRead: boolean; canExport: boolean }, scope: object = ALL) {
 	return {
 		organizationId: "org-1",
 		employeeId: "employee-1",
 		userId: "user-1",
 		canSettle: false,
 		...access,
+		scopes: {
+			read: access.canRead ? scope : null,
+			settle: null,
+			export: access.canExport ? scope : null,
+		},
 	};
 }
 
@@ -86,7 +94,21 @@ describe("travel expense export download route (#613)", () => {
 		const response = await download();
 		expect(response.status).toBe(200);
 		expect(Buffer.from(await response.arrayBuffer()).equals(zip)).toBe(true);
-		expect(mocks.loadFile).toHaveBeenCalledWith({}, { organizationId: "org-1", batchId });
+		expect(mocks.loadFile).toHaveBeenCalledWith(
+			{},
+			{ organizationId: "org-1", batchId, viewer: { employeeId: "employee-1", scope: ALL } },
+		);
+	});
+
+	it("loads only a batch an expense officer sees, with their export scope (#747)", async () => {
+		mocks.loadFinanceActor.mockResolvedValue(actor({ canRead: true, canExport: true }, BERLIN));
+		mocks.loadFile.mockResolvedValue(null);
+		expect((await download()).status).toBe(404);
+		expect(mocks.loadFile).toHaveBeenCalledWith(
+			{},
+			{ organizationId: "org-1", batchId, viewer: { employeeId: "employee-1", scope: BERLIN } },
+		);
+		expect(mocks.readObject).not.toHaveBeenCalled();
 	});
 
 	it("answers 401 without a signed-in employee", async () => {

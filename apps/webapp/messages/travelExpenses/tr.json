@@ -1,7 +1,6 @@
 {
   "travelExpenses": {
     "actions": {
-      "backToClaims": "Taleplere dön",
       "download": "İndir",
       "preview": "Önizleme",
       "retry": "Yeniden dene",
@@ -101,6 +100,7 @@
       "decisionRecorded": "Karar kaydedildi",
       "destination": "Varış noktası",
       "history": "Karar geçmişi",
+      "historyDescription": "Bu talebin her adımı, en eskiden başlayarak. Saatler UTC olarak gösterilmektedir.",
       "intermediateApproval": "Onay kaydedildi — ek onay bekleniyor",
       "legacyReceiptIdentity": "Eski fiş: içerik sağlama toplamı kaydedilmedi.",
       "loading": "Talep yükleniyor…",
@@ -190,6 +190,10 @@
       },
       "legacyClaim": "Eski {type} talebi",
       "loading": "Finans kuyruğu yükleniyor…",
+      "queue": {
+        "description": "Mutabakatını görmek ve geri ödeme kaydetmek için bir masrafı açın.",
+        "title": "Onaylanan masraflar"
+      },
       "title": "Masraf finansı",
       "truncated": "En son onaylanan {count} masraf gösteriliyor. Eşleşen daha eski masraflar listelenmez."
     },
@@ -205,6 +209,7 @@
       "companyPaid": "Şirket tarafından ödenen {amount}",
       "continuedFrom": "Önceki bir talepten devam ettirildi",
       "deleteDraft": "“{title}” taslağını sil",
+      "description": "Taslaklar, gönderilen raporlar ve önceki talepler; en son değiştirilen en başta.",
       "emptyDescription": "Ortak seyahat ayrıntılarına sahip birden fazla masrafı toplamak için bir seyahat başlatın veya tek bir makbuz ya da kilometre masrafı ekleyin. Taslaklar otomatik olarak kaydedilir, böylece onları daha sonra tamamlayabilirsiniz.",
       "emptyFilter": "Bu durumda hiçbir masraf yok.",
       "emptyTitle": "Henüz seyahat masrafı yok",
@@ -439,6 +444,7 @@
       "countrySearch": "Ülke ara",
       "cycles": {
         "approved": "onaylandı",
+        "description": "Her gönderim, incelemeye gönderildiği haliyle aynen kalır.",
         "entry": "{date} tarihindeki {number}. gönderim: {outcome}",
         "pending": "inceleme bekleniyor",
         "rejected": "reddedildi",
@@ -490,21 +496,31 @@
       },
       "frozenNotice": "Gönderilen rapor artık düzenlenemez.",
       "history": {
-        "approvalRecorded": "Onay {name} tarafından kaydedildi; sonraki onay bekleniyor",
-        "approved": "{name} tarafından onaylandı",
-        "cycle": "Gönderim {number}:",
-        "rejected": "{name} tarafından reddedildi",
-        "reopened": "{name} tarafından düzeltme için yeniden açıldı",
-        "returned": "{name} tarafından değişiklik yapılması için geri gönderildi",
-        "selfApproved": "Otomatik olarak onaylandı: başka inceleyen yok",
-        "submitted": "{name} tarafından gönderildi",
-        "title": "Geçmiş",
-        "withdrawn": "{name} tarafından geri çekildi"
+        "description": "Bu raporun her adımı, en eskiden başlayarak. Saatler UTC olarak gösterilmektedir.",
+        "detail": {
+          "approvalRecorded": "{name} tarafından; ek onay bekleniyor.",
+          "by": "{name} tarafından",
+          "inCycle": "Gönderim {number} · {detail}",
+          "selfApproved": "Bu raporu inceleyebilecek başka kimse yoktu."
+        },
+        "inReview": "İncelemede",
+        "step": {
+          "approvalRecorded": "Onay kaydedildi",
+          "approved": "Onaylandı",
+          "rejected": "Reddedildi",
+          "reopened": "Düzeltme için yeniden açıldı",
+          "returned": "Değişiklikler için geri gönderildi",
+          "selfApproved": "Otomatik olarak onaylandı",
+          "submitted": "Gönderildi",
+          "withdrawn": "Geri çekildi"
+        },
+        "title": "Geçmiş"
       },
       "items": {
         "add": "Fiş masrafı ekle",
         "addFailed": "Masraf eklenemedi. Lütfen tekrar deneyin.",
         "empty": "Bu seyahatin her fişini ayrı bir masraf olarak ekleyin. Yukarıdaki seyahat ayrıntıları tümü için geçerlidir.",
+        "emptyTitle": "Henüz masraf yok",
         "numbered": "{type} {number}",
         "remove": "Kaldır",
         "removeConfirm": "Masrafı kaldır",
@@ -861,6 +877,7 @@
       "trip": {
         "dates": "Seyahat tarihleri",
         "datesZone": "({timeZone} saat dilimindeki takvim günleri)",
+        "description": "Bu seyahate ait tüm masraflar bu ayrıntıları paylaşır.",
         "destinations": "Varış noktaları",
         "errors": {
           "destination": "Listelenen bir ülkeyi seçin.",

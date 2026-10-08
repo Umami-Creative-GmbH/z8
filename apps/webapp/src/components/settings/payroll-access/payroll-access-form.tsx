@@ -1,6 +1,6 @@
 "use client";
 
-import { IconEdit, IconLoader2, IconPlus } from "@tabler/icons-react";
+import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
@@ -12,18 +12,24 @@ import type {
 	PayrollAccessTeamOption,
 	SavePayrollAccessInput,
 } from "@/app/[locale]/(app)/settings/payroll-access/actions";
-import { savePayrollAccessAction } from "@/app/[locale]/(app)/settings/payroll-access/actions";
 import {
-	EmployeeMultiSelect,
-	EmployeeSingleSelect,
-	type SelectableEmployee,
-} from "@/components/employee-select";
+	revokePayrollAccessGrantAction,
+	savePayrollAccessAction,
+} from "@/app/[locale]/(app)/settings/payroll-access/actions";
+import { EmployeeSingleSelect } from "@/components/employee-select";
+import {
+	GrantList,
+	GrantScopeFields,
+	RevokeGrantDialog,
+	toSelectableEmployee,
+} from "@/components/settings/access-grants/grant-editor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 interface PayrollAccessFormProps {
 	employees: PayrollAccessEmployeeOption[];
+	/** Departed employees still on an active grant; only offered on the grant that names them. */
+	departedEmployees: PayrollAccessEmployeeOption[];
 	teams: PayrollAccessTeamOption[];
 	initialGrants: PayrollAccessGrantData[];
 }
@@ -36,12 +42,24 @@ const DEFAULT_FORM_VALUES: SavePayrollAccessInput = {
 };
 type TranslationParams = Record<string, string | number | boolean | null | undefined>;
 
-export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAccessFormProps) {
+export function PayrollAccessForm({
+	employees,
+	departedEmployees,
+	teams,
+	initialGrants,
+}: PayrollAccessFormProps) {
 	const { t } = useTranslate();
 	const [isPending, setIsPending] = useState(false);
 	const [editingGrantId, setEditingGrantId] = useState<string | null>(null);
 	const [isEditorOpen, setIsEditorOpen] = useState(false);
-	const employeeOptions = employees.map(toSelectableEmployee);
+	const [revokingGrant, setRevokingGrant] = useState<PayrollAccessGrantData | null>(null);
+	const [isRevoking, setIsRevoking] = useState(false);
+	const employeeOptions = employees.map((employee) =>
+		toSelectableEmployee(employee, { isActive: true }),
+	);
+	const employeeNames = new Map(
+		[...employees, ...departedEmployees].map((employee) => [employee.id, employee.name]),
+	);
 
 	const form = useForm({
 		defaultValues: DEFAULT_FORM_VALUES,
@@ -70,45 +88,107 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 	const payrollEmployeeId = useStore(form.store, (state) => state.values.payrollEmployeeId);
 	const teamIds = useStore(form.store, (state) => state.values.teamIds);
 	const employeeIds = useStore(form.store, (state) => state.values.employeeIds);
+	const editingGrant = initialGrants.find((grant) => grant.id === editingGrantId);
 	const activePayrollEmployeeIds = initialGrants.map((grant) => grant.payrollEmployeeId);
-	const excludedPayrollEmployeeIds = activePayrollEmployeeIds.filter((employeeId) => {
-		const editingGrant = initialGrants.find((grant) => grant.id === editingGrantId);
-		return employeeId !== editingGrant?.payrollEmployeeId;
-	});
+	const excludedPayrollEmployeeIds = activePayrollEmployeeIds.filter(
+		(employeeId) => employeeId !== editingGrant?.payrollEmployeeId,
+	);
+	// A departed employee can stay on the grant that names them, but is never newly offered.
+	const retainedDepartedEmployees = departedEmployees.filter((employee) =>
+		editingGrant?.employeeIds.includes(employee.id),
+	);
+	const namedEmployeeOptions = [
+		...employeeOptions,
+		...retainedDepartedEmployees.map((employee) =>
+			toSelectableEmployee(employee, { isActive: false }),
+		),
+	];
+	const selectedDepartedNames = retainedDepartedEmployees
+		.filter((employee) => employeeIds.includes(employee.id))
+		.map((employee) => employee.name);
 	const canSubmit =
 		payrollEmployeeId.length > 0 &&
 		(scope === "all" || teamIds.length > 0 || employeeIds.length > 0) &&
 		!isPending;
 
-	const openAddEditor = () => {
-		setEditingGrantId(null);
-		form.setFieldValue("payrollEmployeeId", DEFAULT_FORM_VALUES.payrollEmployeeId);
-		form.setFieldValue("scope", DEFAULT_FORM_VALUES.scope);
-		form.setFieldValue("teamIds", DEFAULT_FORM_VALUES.teamIds);
-		form.setFieldValue("employeeIds", DEFAULT_FORM_VALUES.employeeIds);
+	const openEditor = (grant: PayrollAccessGrantData | null) => {
+		const values = grant ?? DEFAULT_FORM_VALUES;
+		setEditingGrantId(grant?.id ?? null);
+		form.setFieldValue("payrollEmployeeId", values.payrollEmployeeId);
+		form.setFieldValue("scope", values.scope);
+		form.setFieldValue("teamIds", values.teamIds);
+		form.setFieldValue("employeeIds", values.employeeIds);
 		setIsEditorOpen(true);
 	};
 
-	const openEditEditor = (grant: PayrollAccessGrantData) => {
-		setEditingGrantId(grant.id);
-		form.setFieldValue("payrollEmployeeId", grant.payrollEmployeeId);
-		form.setFieldValue("scope", grant.scope);
-		form.setFieldValue("teamIds", grant.teamIds);
-		form.setFieldValue("employeeIds", grant.employeeIds);
-		setIsEditorOpen(true);
+	const revokeGrant = async () => {
+		if (!revokingGrant) return;
+		setIsRevoking(true);
+		try {
+			const result = await revokePayrollAccessGrantAction({ grantId: revokingGrant.id });
+			if (result.success) {
+				toast.success(t("settings.payrollAccess.revoked", "Payroll officer access revoked"));
+				if (editingGrantId === revokingGrant.id) {
+					setIsEditorOpen(false);
+					setEditingGrantId(null);
+				}
+				setRevokingGrant(null);
+			} else {
+				toast.error(
+					result.error ||
+						t("settings.payrollAccess.revokeFailed", "Failed to revoke payroll officer access"),
+				);
+			}
+		} finally {
+			setIsRevoking(false);
+		}
 	};
 
 	return (
 		<div className="space-y-6">
-			<PayrollAccessGrantList
-				employees={employees}
-				grants={initialGrants}
-				onAdd={openAddEditor}
-				onEdit={openEditEditor}
-				t={t}
+			<GrantList
+				rows={initialGrants.map((grant) => ({
+					id: grant.id,
+					title: employeeNames.get(grant.payrollEmployeeId) ?? grant.payrollEmployeeId,
+					details: <p>{getScopeSummary({ grant, t })}</p>,
+				}))}
+				canAdd={employees.some((employee) => !activePayrollEmployeeIds.includes(employee.id))}
+				onAdd={() => openEditor(null)}
+				onEdit={(id) => openEditor(initialGrants.find((grant) => grant.id === id) ?? null)}
+				onRevoke={(id) => setRevokingGrant(initialGrants.find((grant) => grant.id === id) ?? null)}
+				copy={{
+					add: t("settings.payrollAccess.add", "Add payroll officer"),
+					empty: t("settings.payrollAccess.noGrants", "No payroll officers have been added yet."),
+					edit: t("settings.payrollAccess.edit", "Edit"),
+					revoke: t("settings.payrollAccess.revoke", "Revoke"),
+				}}
+			/>
+
+			<RevokeGrantDialog
+				open={revokingGrant !== null}
+				pending={isRevoking}
+				onConfirm={() => void revokeGrant()}
+				onClose={() => setRevokingGrant(null)}
+				copy={{
+					title: t("settings.payrollAccess.revokeTitle", "Revoke payroll officer access?"),
+					description: t(
+						"settings.payrollAccess.revokeDescription",
+						"{name} loses access to the payroll workspace immediately. Adding them again later creates a new grant.",
+						{
+							name: revokingGrant
+								? (employeeNames.get(revokingGrant.payrollEmployeeId) ??
+									revokingGrant.payrollEmployeeId)
+								: "",
+						},
+					),
+					cancel: t("common.cancel", "Cancel"),
+					confirm: t("settings.payrollAccess.revokeConfirm", "Revoke access"),
+				}}
 			/>
 
 			{isEditorOpen ? (
+				// Client-side TanStack Form submit (docs/refs/forms.md); the settings page needs JS.
+				// react-doctor-disable-next-line react-doctor/no-prevent-default
 				<form
 					className="space-y-6"
 					onSubmit={(event) => {
@@ -148,140 +228,52 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 								)}
 							</form.Field>
 
-							<form.Field name="scope">
-								{(field) => (
-									<fieldset className="space-y-3">
-										<legend className="text-sm font-medium">
-											{t("settings.payrollAccess.scope", "Access scope")}
-										</legend>
-										<ToggleGroup
-											type="single"
-											variant="outline"
-											value={field.state.value}
-											onValueChange={(value) => {
-												if (value === "all") {
-													field.handleChange("all");
-													form.setFieldValue("teamIds", []);
-													form.setFieldValue("employeeIds", []);
-												} else if (value === "specific") {
-													field.handleChange("specific");
-												}
-											}}
-											disabled={isPending}
-											className="w-full"
-										>
-											<ToggleGroupItem
-												value="all"
-												aria-label={t("settings.payrollAccess.allScope", "All teams and employees")}
-											>
-												{t("settings.payrollAccess.allScope", "All teams and employees")}
-											</ToggleGroupItem>
-											<ToggleGroupItem
-												value="specific"
-												aria-label={t(
-													"settings.payrollAccess.specificScope",
-													"Specific teams or employees",
-												)}
-											>
-												{t("settings.payrollAccess.specificScope", "Specific teams or employees")}
-											</ToggleGroupItem>
-										</ToggleGroup>
-										<p className="text-muted-foreground text-sm">
-											{field.state.value === "all"
-												? t(
-														"settings.payrollAccess.allScopeDescription",
-														"Includes current and future employees in this organization.",
-													)
-												: t(
-														"settings.payrollAccess.specificScopeDescription",
-														"Limit payroll access to selected teams and individual employees.",
-													)}
-										</p>
-									</fieldset>
-								)}
-							</form.Field>
-
-							{scope === "specific" ? (
-								<div className="grid gap-6 lg:grid-cols-2">
-									<form.Field name="teamIds">
-										{(field) => (
-											<fieldset className="space-y-3">
-												<legend className="text-sm font-medium">
-													{t("settings.payrollAccess.teams", "Teams")}
-												</legend>
-												{teams.length === 0 ? (
-													<p className="text-muted-foreground text-sm">
-														{t("settings.payrollAccess.noTeams", "No teams available")}
-													</p>
-												) : (
-													<div
-														className="grid gap-2 sm:grid-cols-2"
-														data-testid="payroll-access-team-grid"
-													>
-														{teams.map((team) => {
-															const isSelected = field.state.value.includes(team.id);
-
-															return (
-																<button
-																	key={team.id}
-																	type="button"
-																	role="switch"
-																	aria-checked={isSelected}
-																	aria-label={team.name}
-																	data-testid={`payroll-access-team-${team.id}`}
-																	onClick={() => {
-																		field.handleChange(
-																			toggleId(field.state.value, team.id, !isSelected),
-																		);
-																	}}
-																	disabled={isPending}
-																	className={`flex items-center justify-between gap-4 rounded-md border p-3 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-																		isSelected
-																			? "border-primary/60 bg-primary/5"
-																			: "hover:bg-accent/50"
-																	}`}
-																>
-																	<span>{team.name}</span>
-																	<span
-																		aria-hidden="true"
-																		className={`inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent shadow-xs transition-colors ${
-																			isSelected ? "bg-primary" : "bg-input dark:bg-input/80"
-																		}`}
-																	>
-																		<span
-																			className={`block size-4 rounded-full bg-background ring-0 transition-transform dark:bg-foreground ${
-																				isSelected
-																					? "translate-x-[calc(100%-2px)] dark:bg-primary-foreground"
-																					: "translate-x-0"
-																			}`}
-																		/>
-																	</span>
-																</button>
-															);
-														})}
-													</div>
-												)}
-											</fieldset>
-										)}
-									</form.Field>
-
-									<form.Field name="employeeIds">
-										{(field) => (
-											<EmployeeMultiSelect
-												label={t("settings.payrollAccess.employees", "Employees")}
-												placeholder={t(
-													"settings.payrollAccess.selectEmployees",
-													"Select employees",
-												)}
-												value={field.state.value}
-												onChange={field.handleChange}
-												employees={employeeOptions}
-												disabled={isPending}
-											/>
-										)}
-									</form.Field>
-								</div>
-							) : null}
+							<GrantScopeFields
+								scope={scope}
+								onScopeChange={(value) => {
+									form.setFieldValue("scope", value);
+									if (value === "all") {
+										form.setFieldValue("teamIds", []);
+										form.setFieldValue("employeeIds", []);
+									}
+								}}
+								teamIds={teamIds}
+								onTeamIdsChange={(value) => form.setFieldValue("teamIds", value)}
+								employeeIds={employeeIds}
+								onEmployeeIdsChange={(value) => form.setFieldValue("employeeIds", value)}
+								teams={teams}
+								employeeOptions={namedEmployeeOptions}
+								disabled={isPending}
+								testIdPrefix="payroll-access-team"
+								copy={{
+									scope: t("settings.payrollAccess.scope", "Access scope"),
+									allScope: t("settings.payrollAccess.allScope", "All teams and employees"),
+									specificScope: t(
+										"settings.payrollAccess.specificScope",
+										"Specific teams or employees",
+									),
+									allScopeDescription: t(
+										"settings.payrollAccess.allScopeDescription",
+										"Includes current and future employees in this organization.",
+									),
+									specificScopeDescription: t(
+										"settings.payrollAccess.specificScopeDescription",
+										"Limit payroll access to selected teams and individual employees.",
+									),
+									teams: t("settings.payrollAccess.teams", "Teams"),
+									noTeams: t("settings.payrollAccess.noTeams", "No teams available"),
+									employees: t("settings.payrollAccess.employees", "Employees"),
+									selectEmployees: t("settings.payrollAccess.selectEmployees", "Select employees"),
+									departedNotice:
+										selectedDepartedNames.length > 0
+											? t(
+													"settings.payrollAccess.departedEmployeesKept",
+													"{names} left the organization. They stay on this grant until you remove them.",
+													{ names: selectedDepartedNames.join(", ") },
+												)
+											: null,
+								}}
+							/>
 
 							<div className="flex flex-wrap gap-2">
 								<Button type="submit" disabled={!canSubmit}>
@@ -305,81 +297,6 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 			) : null}
 		</div>
 	);
-}
-
-function PayrollAccessGrantList({
-	employees,
-	grants,
-	onAdd,
-	onEdit,
-	t,
-}: {
-	employees: PayrollAccessEmployeeOption[];
-	grants: PayrollAccessGrantData[];
-	onAdd: () => void;
-	onEdit: (grant: PayrollAccessGrantData) => void;
-	t: (key: string, fallback: string, params?: TranslationParams) => string;
-}) {
-	const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
-
-	return (
-		<Card>
-			<CardHeader className="flex justify-end">
-				<Button type="button" onClick={onAdd} disabled={employees.length === grants.length}>
-					<IconPlus className="size-4" aria-hidden="true" />
-					{t("settings.payrollAccess.add", "Add payroll officer")}
-				</Button>
-			</CardHeader>
-			<CardContent>
-				{grants.length === 0 ? (
-					<p className="rounded-lg border border-dashed p-6 text-center text-muted-foreground text-sm">
-						{t("settings.payrollAccess.noGrants", "No payroll officers have been added yet.")}
-					</p>
-				) : (
-					<div className="divide-y rounded-lg border">
-						{grants.map((grant) => (
-							<div
-								key={grant.id}
-								className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
-							>
-								<div className="space-y-1">
-									<p className="font-medium text-sm">
-										{employeeById.get(grant.payrollEmployeeId)?.name ?? grant.payrollEmployeeId}
-									</p>
-									<p className="text-muted-foreground text-sm">{getScopeSummary({ grant, t })}</p>
-								</div>
-								<Button type="button" variant="outline" size="sm" onClick={() => onEdit(grant)}>
-									<IconEdit className="size-4" aria-hidden="true" />
-									{t("settings.payrollAccess.edit", "Edit")}
-								</Button>
-							</div>
-						))}
-					</div>
-				)}
-			</CardContent>
-		</Card>
-	);
-}
-
-function toSelectableEmployee(employee: PayrollAccessEmployeeOption): SelectableEmployee {
-	return {
-		id: employee.id,
-		userId: employee.id,
-		firstName: null,
-		lastName: null,
-		pronouns: null,
-		position: null,
-		role: "employee",
-		isActive: true,
-		teamId: null,
-		user: {
-			id: employee.id,
-			name: employee.name,
-			email: employee.email,
-			image: null,
-		},
-		team: null,
-	};
 }
 
 function getScopeSummary(input: {
@@ -410,11 +327,4 @@ function getScopeSummary(input: {
 		});
 	}
 	return input.t("settings.payrollAccess.noScope", "No payroll scope assigned");
-}
-
-function toggleId(values: string[], id: string, checked: boolean): string[] {
-	if (checked) {
-		return values.includes(id) ? values : [...values, id];
-	}
-	return values.filter((value) => value !== id);
 }

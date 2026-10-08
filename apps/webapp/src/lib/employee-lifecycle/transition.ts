@@ -15,7 +15,9 @@ import {
 	instantFromDate,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import { revokePayrollAccessGrantHeldBy } from "@/lib/payroll-access/grant-store";
 import { WorkTransactionProtocolViolation } from "@/lib/time-tracking/work-transaction";
+import { revokeExpenseOfficerGrantHeldBy } from "@/lib/travel-expenses/expense-officer-grant-store";
 import { captureApprovalHandoverDuties } from "./approval-handover";
 import { enqueueReviewNotifications } from "./notifications";
 import { evaluateDepartureAuthority } from "./owner-invariant";
@@ -133,6 +135,7 @@ export async function executeDepartureInTransaction(
 		WHERE organization_id = ${identity.organizationId} AND id = ${identity.employeeId}
 			AND is_active = true
 	`);
+	await revokeHeldAccessGrants(tx, identity, departure.createdBy);
 
 	const clockResult = await closeRunningPeriod(scope, identity, clockOut, {
 		cutoff,
@@ -251,6 +254,36 @@ async function closeEmploymentWindows(
 	if (reviews.length > 0) {
 		await tx.insert(employeeDepartureReview).values(reviews).onConflictDoNothing();
 	}
+}
+
+/**
+ * Revokes the expense officer and payroll access grants the employee holds
+ * (#750), audited under the departure's initiator and naming the departure. A
+ * rehire never restores them. Grants of other officers that name the employee
+ * stay, so the departed employee's reports can still be reimbursed.
+ */
+async function revokeHeldAccessGrants(
+	tx: LifecycleClient,
+	identity: DepartureIdentity,
+	actorUserId: string,
+) {
+	const auditMetadata = {
+		reason: "employee_departure",
+		departureId: identity.departureId,
+		employmentPeriodId: identity.employmentPeriodId,
+	};
+	await revokeExpenseOfficerGrantHeldBy(tx, {
+		organizationId: identity.organizationId,
+		actorUserId,
+		officerEmployeeId: identity.employeeId,
+		auditMetadata,
+	});
+	await revokePayrollAccessGrantHeldBy(tx, {
+		organizationId: identity.organizationId,
+		actorUserId,
+		payrollEmployeeId: identity.employeeId,
+		auditMetadata,
+	});
 }
 
 /**

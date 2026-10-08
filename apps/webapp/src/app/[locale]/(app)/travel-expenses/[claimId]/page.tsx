@@ -1,10 +1,10 @@
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { BackLink } from "@/components/travel-expenses/back-link";
 import { TravelExpenseClaimDetail } from "@/components/travel-expenses/travel-expense-claim-detail";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAuthContext } from "@/lib/auth-helpers";
-import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 
 async function ClaimContent({
@@ -24,13 +24,10 @@ async function ClaimContent({
 			/>
 		);
 	return (
-		<div className="mx-auto w-full max-w-4xl space-y-4 px-4 py-6 lg:px-6">
-			<Link
-				className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
-				href="/travel-expenses"
-			>
-				{t("travelExpenses.actions.backToClaims", "Back to claims")}
-			</Link>
+		<div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-4 md:py-6 lg:px-6">
+			<BackLink href="/travel-expenses">
+				{t("travelExpenses.report.backToTravelExpenses", "Back to travel expenses")}
+			</BackLink>
 			<h1 className="text-2xl font-semibold tracking-tight">
 				{t("travelExpenses.detail.title", "Travel expense claim")}
 			</h1>
@@ -54,7 +51,7 @@ export default function TravelExpenseClaimPage(props: {
 						labelDefault: "Loading travel expenses",
 					}}
 					role="status"
-					className="p-6"
+					className="mx-auto w-full max-w-3xl px-4 py-4 md:py-6 lg:px-6"
 				>
 					<Skeleton aria-hidden="true" className="h-48 w-full" />
 				</LoadingRegion>

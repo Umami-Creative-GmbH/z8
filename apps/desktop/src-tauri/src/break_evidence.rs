@@ -136,6 +136,7 @@ struct IdleSpan {
 /// Turns input activity and periodic checks into idle breaks.
 #[derive(Debug)]
 pub struct IdleTracker {
+    monitored_work: Option<String>,
     threshold_ms: u64,
     last_activity: Observation,
     span: Option<IdleSpan>,
@@ -145,9 +146,23 @@ impl IdleTracker {
     pub fn new(now: Observation, threshold_ms: u64) -> Self {
         Self {
             threshold_ms,
+            monitored_work: None,
             last_activity: now,
             span: None,
         }
+    }
+
+    /// Reset observed inactivity whenever monitoring enters different work.
+    /// Used by both listener and checker, so a clock-in click cannot seed a
+    /// break from the preceding clocked-out hours.
+    pub fn monitor_work(&mut self, now: Observation, work: Option<&str>) -> bool {
+        if self.monitored_work.as_deref() == work {
+            return false;
+        }
+        self.monitored_work = work.map(str::to_owned);
+        self.last_activity = now;
+        self.span = None;
+        true
     }
 
     /// Records input. The first input after idleness was detected is the return.
@@ -204,5 +219,29 @@ impl IdleTracker {
             }
             Some(_) => None,
         }
+    }
+}
+
+/// A missed monitor interval is uncertainty, including sleep and hibernate
+/// even on platforms whose monotonic clock advances during suspension.
+pub struct MonitorContinuity {
+    previous: Observation,
+    maximum_gap_ms: u64,
+}
+impl MonitorContinuity {
+    pub fn new(now: Observation, maximum_gap_ms: u64) -> Self {
+        Self {
+            previous: now,
+            maximum_gap_ms,
+        }
+    }
+    pub fn observe(&mut self, now: Observation) -> bool {
+        let continuous = now
+            .monotonic_ms
+            .checked_sub(self.previous.monotonic_ms)
+            .is_some_and(|gap| gap <= self.maximum_gap_ms)
+            && clocks_agree(&[self.previous, now]);
+        self.previous = now;
+        continuous
     }
 }

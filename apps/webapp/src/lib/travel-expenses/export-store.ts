@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, not, notExists, or, type SQL } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import type { db as appDb } from "@/db";
 import { user } from "@/db/auth-schema";
 import {
@@ -7,6 +8,7 @@ import {
 	type TravelExpenseExportBatchTotal,
 	travelExpenseExportBatch,
 	travelExpenseExportBatchRevision,
+	travelExpenseReport,
 } from "@/db/schema";
 import { loadTravelExpenseReportSubmittedRevision } from "@/lib/approvals/evidence/travel-expense-report-store";
 import {
@@ -25,12 +27,11 @@ import {
 	travelExpenseExportManifestDigest,
 	travelExpenseExportSelectionFingerprint,
 } from "./export-manifest";
+import { listAllFinanceQueueAccounts } from "./finance-queue-store";
 import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
-import {
-	listFinanceQueue,
-	loadSettlementAccount,
-	type SettlementAccount,
-} from "./settlement-store";
+import type { OfficerScope } from "./officer-scope";
+import { isSourceInOfficerScope, reportInOfficerScope } from "./officer-scope-read";
+import { loadSettlementAccount, type SettlementAccount } from "./settlement-store";
 
 /**
  * Tracked export batches of approved travel expense report revisions (#613).
@@ -286,6 +287,8 @@ export async function createTravelExpenseExportBatch(
 	database: Database,
 	input: {
 		actor: TravelExpenseExportActor;
+		/** The officer scope the actor exports in (#747); other reports are stale to them. */
+		scope: OfficerScope;
 		idempotencyKey: string;
 		selection: readonly TravelExpenseExportSelection[];
 	},
@@ -325,8 +328,17 @@ export async function createTravelExpenseExportBatch(
 				{ lock: true },
 			);
 			const basis = account?.approved ? account.basis : null;
+			// A report out of the actor's scope reads as not found, like any stale one.
+			const inScope =
+				account !== null &&
+				(await isSourceInOfficerScope(tx, input.scope, {
+					organizationId: actor.organizationId,
+					source: account.source,
+					employeeId: account.employeeId,
+				}));
 			if (
 				!account ||
+				!inScope ||
 				!basis?.revisionId ||
 				!basis.approvedAt ||
 				basis.submissionCycle === null ||
@@ -442,17 +454,84 @@ export async function createTravelExpenseExportBatch(
 	});
 }
 
-/** The organization's batches, newest first. */
+/** Who looks at batches (#747): the employee and the scope they export in. */
+export interface TravelExpenseExportViewer {
+	employeeId: string;
+	scope: OfficerScope;
+}
+
+const batchReport = alias(travelExpenseReport, "batch_report");
+
+/**
+ * Batches the viewer sees, as a condition on `travel_expense_export_batch`:
+ * every batch with the all scope, otherwise the batches they requested and
+ * those whose every report is in their scope. Undefined for the all scope.
+ */
+function batchVisibleTo(database: Executor, viewer: TravelExpenseExportViewer): SQL | undefined {
+	const inScope = reportInOfficerScope(viewer.scope, batchReport);
+	if (!inScope) return undefined;
+	return or(
+		eq(travelExpenseExportBatch.requestedByEmployeeId, viewer.employeeId),
+		notExists(
+			database
+				.select({ reportId: travelExpenseExportBatchRevision.reportId })
+				.from(travelExpenseExportBatchRevision)
+				.innerJoin(
+					batchReport,
+					and(
+						eq(batchReport.id, travelExpenseExportBatchRevision.reportId),
+						eq(batchReport.organizationId, travelExpenseExportBatchRevision.organizationId),
+					),
+				)
+				.where(
+					and(
+						eq(travelExpenseExportBatchRevision.batchId, travelExpenseExportBatch.id),
+						eq(
+							travelExpenseExportBatchRevision.organizationId,
+							travelExpenseExportBatch.organizationId,
+						),
+						not(inScope),
+					),
+				),
+		),
+	);
+}
+
+/** Whether the viewer sees the batch of the organization (#747); false when there is none. */
+export async function isTravelExpenseExportBatchVisible(
+	database: Executor,
+	input: { organizationId: string; batchId: string; viewer: TravelExpenseExportViewer },
+): Promise<boolean> {
+	const [row] = await database
+		.select({ id: travelExpenseExportBatch.id })
+		.from(travelExpenseExportBatch)
+		.where(
+			and(
+				eq(travelExpenseExportBatch.id, input.batchId),
+				eq(travelExpenseExportBatch.organizationId, input.organizationId),
+				batchVisibleTo(database, input.viewer),
+			),
+		)
+		.limit(1);
+	return Boolean(row);
+}
+
+/** The organization's batches, newest first; with a viewer, only those they see. */
 export async function listTravelExpenseExportBatches(
 	database: Executor,
-	input: { organizationId: string; limit?: number },
+	input: { organizationId: string; viewer?: TravelExpenseExportViewer; limit?: number },
 	now: Instant = systemClock.nowInstant(),
 ): Promise<TravelExpenseExportBatchView[]> {
 	const rows = await database
 		.select({ row: travelExpenseExportBatch, requestedByName: user.name })
 		.from(travelExpenseExportBatch)
 		.leftJoin(user, eq(user.id, travelExpenseExportBatch.requestedByUserId))
-		.where(eq(travelExpenseExportBatch.organizationId, input.organizationId))
+		.where(
+			and(
+				eq(travelExpenseExportBatch.organizationId, input.organizationId),
+				input.viewer ? batchVisibleTo(database, input.viewer) : undefined,
+			),
+		)
 		.orderBy(desc(travelExpenseExportBatch.requestedAt), desc(travelExpenseExportBatch.id))
 		.limit(input.limit ?? 25);
 	return rows.map(({ row, requestedByName }) => toView(row, requestedByName, now));
@@ -471,11 +550,12 @@ export interface ExportableTravelExpenseRevision {
  */
 export async function listExportableTravelExpenseRevisions(
 	database: Executor,
-	input: { organizationId: string },
+	input: { organizationId: string; scope?: OfficerScope },
 ): Promise<ExportableTravelExpenseRevision[]> {
-	const { accounts } = await listFinanceQueue(database, {
+	const accounts = await listAllFinanceQueueAccounts(database, {
 		organizationId: input.organizationId,
-		filter: "all",
+		status: "all",
+		scope: input.scope,
 		// Approved adjustments (#615) are exported as their own revisions.
 		includeAdjustments: true,
 		includeLegacyClaims: false,
@@ -830,10 +910,10 @@ export async function failTravelExpenseExportAttempt(
 	});
 }
 
-/** The stored file of a completed batch, for a permission-checked download. */
+/** The stored file of a completed batch the viewer sees, for a permission-checked download. */
 export async function loadCompletedTravelExpenseExportFile(
 	database: Executor,
-	input: { organizationId: string; batchId: string },
+	input: { organizationId: string; batchId: string; viewer: TravelExpenseExportViewer },
 ): Promise<{
 	fileName: string;
 	bucket: string | null;
@@ -851,6 +931,7 @@ export async function loadCompletedTravelExpenseExportFile(
 				eq(travelExpenseExportBatch.id, input.batchId),
 				eq(travelExpenseExportBatch.organizationId, input.organizationId),
 				eq(travelExpenseExportBatch.status, "completed"),
+				batchVisibleTo(database, input.viewer),
 			),
 		)
 		.limit(1);

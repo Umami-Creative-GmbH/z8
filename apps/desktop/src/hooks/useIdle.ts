@@ -3,29 +3,33 @@ import { useEffect, useState } from "react";
 import type { IdleEvent } from "../types";
 
 export function useIdle() {
-  const [idleEvent, setIdleEvent] = useState<IdleEvent | null>(null);
-  const [isIdleDialogOpen, setIsIdleDialogOpen] = useState(false);
+	const [idleEvent, setIdleEvent] = useState<IdleEvent | null>(null);
+	const [isIdleDialogOpen, setIsIdleDialogOpen] = useState(false);
 
-  useEffect(() => {
-    const unlisten = listen<IdleEvent>("idle_detected", (event) => {
-      console.log("Idle detected:", event.payload);
-      setIdleEvent(event.payload);
-      setIsIdleDialogOpen(true);
-    });
+	useEffect(() => {
+		const unlisten = listen<IdleEvent>("idle_detected", (event) => {
+			setIdleEvent(event.payload);
+			setIsIdleDialogOpen(true);
+		});
 
-    return () => {
-      unlisten.then((fn) => fn());
-    };
-  }, []);
+		const unlistenCancelled = listen("idle_cancelled", () => {
+			setIdleEvent(null);
+			setIsIdleDialogOpen(false);
+		});
+		return () => {
+			unlisten.then((fn) => fn());
+			unlistenCancelled.then((fn) => fn());
+		};
+	}, []);
 
-  const dismissIdle = () => {
-    setIsIdleDialogOpen(false);
-    setIdleEvent(null);
-  };
+	const dismissIdle = () => {
+		setIsIdleDialogOpen(false);
+		setIdleEvent(null);
+	};
 
-  return {
-    idleEvent,
-    isIdleDialogOpen,
-    dismissIdle,
-  };
+	return {
+		idleEvent,
+		isIdleDialogOpen,
+		dismissIdle,
+	};
 }

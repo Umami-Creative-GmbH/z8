@@ -1,6 +1,6 @@
 "use client";
 
-import { IconArrowBackUp, IconLoader2 } from "@tabler/icons-react";
+import { IconArrowBackUp, IconChevronRight, IconLoader2 } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
@@ -21,6 +21,7 @@ import {
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardHeader } from "@/components/ui/card";
 import type { TravelExpenseReportItemType } from "@/db/schema/travel-expense";
 import { queryKeys } from "@/lib/query/keys";
 import type { SubmittedCycleOutcome, SubmittedReportView } from "@/lib/travel-expenses/report-read";
@@ -130,39 +131,53 @@ export function SubmissionCycleLinks({
 	const locale = useLocale();
 	if (cycles.length === 0) return null;
 	return (
-		<section aria-labelledby={`${reportId}-cycles`} className="space-y-2">
-			<h2 id={`${reportId}-cycles`} className="text-lg font-semibold">
-				{t("travelExpenses.report.cycles.title", "Submissions")}
-			</h2>
-			<ol className="space-y-1 text-sm">
-				{cycles.map((cycle) => {
-					const label = t(
-						"travelExpenses.report.cycles.entry",
-						"Submission {number} on {date}: {outcome}",
-						{
-							number: cycle.cycle,
-							date: formatRecordedInstant(locale, cycle.submittedAt),
-							outcome: outcomeText(t, cycle.outcome),
-						},
-					);
-					return (
-						<li key={cycle.cycle}>
-							{cycle.cycle === current ? (
-								<span aria-current="page" className="font-medium">
-									{label}
-								</span>
-							) : (
-								<Link
-									className="text-primary underline underline-offset-4 hover:text-primary/80"
-									href={`/travel-expenses/reports/${reportId}?cycle=${cycle.cycle}`}
-								>
-									{label}
-								</Link>
-							)}
-						</li>
-					);
-				})}
-			</ol>
+		<section aria-labelledby={`${reportId}-cycles`}>
+			<Card className="gap-4 pb-0">
+				<CardHeader>
+					<h2 id={`${reportId}-cycles`} className="font-semibold leading-none">
+						{t("travelExpenses.report.cycles.title", "Submissions")}
+					</h2>
+					<CardDescription>
+						{t(
+							"travelExpenses.report.cycles.description",
+							"Each submission stays exactly as it was sent for review.",
+						)}
+					</CardDescription>
+				</CardHeader>
+				<ol className="divide-y border-t text-sm">
+					{cycles.map((cycle) => {
+						const label = t(
+							"travelExpenses.report.cycles.entry",
+							"Submission {number} on {date}: {outcome}",
+							{
+								number: cycle.cycle,
+								date: formatRecordedInstant(locale, cycle.submittedAt),
+								outcome: outcomeText(t, cycle.outcome),
+							},
+						);
+						return (
+							<li key={cycle.cycle}>
+								{cycle.cycle === current ? (
+									<span aria-current="page" className="flex bg-muted/50 px-6 py-3 font-medium">
+										{label}
+									</span>
+								) : (
+									<Link
+										className="flex items-center justify-between gap-3 px-6 py-3 transition-colors hover:bg-muted/50 focus-visible:outline-2"
+										href={`/travel-expenses/reports/${reportId}?cycle=${cycle.cycle}`}
+									>
+										{label}
+										<IconChevronRight
+											aria-hidden="true"
+											className="size-4 shrink-0 text-muted-foreground"
+										/>
+									</Link>
+								)}
+							</li>
+						);
+					})}
+				</ol>
+			</Card>
 		</section>
 	);
 }

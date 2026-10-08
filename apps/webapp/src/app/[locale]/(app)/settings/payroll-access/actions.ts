@@ -1,9 +1,8 @@
 "use server";
 
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, or } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import {
 	employee,
@@ -17,19 +16,16 @@ import {
 	AuthenticationError,
 	AuthorizationError,
 	DatabaseError,
+	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { DatabaseService } from "@/lib/effect/services/database.service";
-import {
-	assertPayrollOfficerSettingsContext,
-	buildValidatedPayrollAccessInput,
-	type SavePayrollAccessInput,
-	validateId,
-	validateIdList,
-} from "./action-helpers";
+import { type DatabaseClient, DatabaseService } from "@/lib/effect/services/database.service";
+import type { SavePayrollAccessInput } from "@/lib/payroll-access/grant-scope";
+import { revokePayrollAccessGrant, savePayrollAccessGrant } from "@/lib/payroll-access/grant-store";
+import { assertPayrollOfficerSettingsContext } from "./action-helpers";
 
-export type { SavePayrollAccessInput } from "./action-helpers";
+export type { SavePayrollAccessInput } from "@/lib/payroll-access/grant-scope";
 
 export interface PayrollAccessEmployeeOption {
 	id: string;
@@ -52,6 +48,11 @@ export interface PayrollAccessGrantData {
 
 export interface PayrollAccessAdminData {
 	employees: PayrollAccessEmployeeOption[];
+	/**
+	 * Departed employees still on an active grant, as officer or named employee. A named
+	 * one stays on the grant until an admin removes them.
+	 */
+	departedEmployees: PayrollAccessEmployeeOption[];
 	teams: PayrollAccessTeamOption[];
 	grants: PayrollAccessGrantData[];
 }
@@ -59,8 +60,12 @@ export interface PayrollAccessAdminData {
 export async function getPayrollAccessAdminDataAction(): Promise<
 	ServerActionResult<PayrollAccessAdminData>
 > {
-	return runPayrollAccessAdminAction(async () => {
+	return runPayrollAccessAdminAction(async (db) => {
 		const { organizationId } = await requirePayrollAccessAdminContext("read");
+		const activeGrant = and(
+			eq(payrollAccessGrant.organizationId, organizationId),
+			eq(payrollAccessGrant.isActive, true),
+		);
 
 		const [employeeRows, teamRows, grantRows, grantTeamRows, grantEmployeeRows] = await Promise.all(
 			[
@@ -68,12 +73,38 @@ export async function getPayrollAccessAdminDataAction(): Promise<
 					.select({
 						id: employee.id,
 						employeeNumber: employee.employeeNumber,
+						isActive: employee.isActive,
 						userName: user.name,
 						userEmail: user.email,
 					})
 					.from(employee)
 					.innerJoin(user, eq(employee.userId, user.id))
-					.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)))
+					.where(
+						and(
+							eq(employee.organizationId, organizationId),
+							or(
+								eq(employee.isActive, true),
+								inArray(
+									employee.id,
+									db
+										.select({ id: payrollAccessEmployee.employeeId })
+										.from(payrollAccessEmployee)
+										.innerJoin(
+											payrollAccessGrant,
+											eq(payrollAccessEmployee.grantId, payrollAccessGrant.id),
+										)
+										.where(activeGrant),
+								),
+								inArray(
+									employee.id,
+									db
+										.select({ id: payrollAccessGrant.payrollEmployeeId })
+										.from(payrollAccessGrant)
+										.where(activeGrant),
+								),
+							),
+						),
+					)
 					.orderBy(asc(user.name), asc(employee.employeeNumber), asc(employee.id)),
 				db
 					.select({ id: team.id, name: team.name })
@@ -87,33 +118,32 @@ export async function getPayrollAccessAdminDataAction(): Promise<
 						scope: payrollAccessGrant.scope,
 					})
 					.from(payrollAccessGrant)
-					.where(
-						and(
-							eq(payrollAccessGrant.organizationId, organizationId),
-							eq(payrollAccessGrant.isActive, true),
-						),
-					)
+					.where(activeGrant)
 					.orderBy(asc(payrollAccessGrant.payrollEmployeeId)),
 				db
 					.select({ grantId: payrollAccessTeam.grantId, teamId: payrollAccessTeam.teamId })
 					.from(payrollAccessTeam)
-					.where(eq(payrollAccessTeam.organizationId, organizationId)),
+					.innerJoin(payrollAccessGrant, eq(payrollAccessTeam.grantId, payrollAccessGrant.id))
+					.where(and(eq(payrollAccessTeam.organizationId, organizationId), activeGrant)),
 				db
 					.select({
 						grantId: payrollAccessEmployee.grantId,
 						employeeId: payrollAccessEmployee.employeeId,
 					})
 					.from(payrollAccessEmployee)
-					.where(eq(payrollAccessEmployee.organizationId, organizationId)),
+					.innerJoin(payrollAccessGrant, eq(payrollAccessEmployee.grantId, payrollAccessGrant.id))
+					.where(and(eq(payrollAccessEmployee.organizationId, organizationId), activeGrant)),
 			],
 		);
+		const toOption = (row: (typeof employeeRows)[number]): PayrollAccessEmployeeOption => ({
+			id: row.id,
+			name: row.userName?.trim() || row.employeeNumber || row.id,
+			email: row.userEmail,
+		});
 
 		return {
-			employees: employeeRows.map((row) => ({
-				id: row.id,
-				name: row.userName?.trim() || row.employeeNumber || row.id,
-				email: row.userEmail,
-			})),
+			employees: employeeRows.filter((row) => row.isActive).map(toOption),
+			departedEmployees: employeeRows.filter((row) => !row.isActive).map(toOption),
 			teams: teamRows,
 			grants: grantRows.map((grant) => ({
 				id: grant.id,
@@ -133,128 +163,35 @@ export async function getPayrollAccessAdminDataAction(): Promise<
 export async function savePayrollAccessAction(
 	input: SavePayrollAccessInput,
 ): Promise<ServerActionResult<{ grantId: string }>> {
-	return runPayrollAccessAdminAction(async () => {
+	return runPayrollAccessAdminAction(async (db) => {
 		const { authContext, organizationId } = await requirePayrollAccessAdminContext("write");
-		const validated = await validateSavePayrollAccessInput(input, organizationId);
+		const { grantId } = await db.transaction((tx) =>
+			savePayrollAccessGrant(tx, {
+				organizationId,
+				actorUserId: authContext.user.id,
+				grant: input,
+			}),
+		);
 
-		const grantId = await db.transaction(async (tx) => {
-			const [existingActiveGrant] = await tx
-				.select({ id: payrollAccessGrant.id })
-				.from(payrollAccessGrant)
-				.where(
-					and(
-						eq(payrollAccessGrant.organizationId, organizationId),
-						eq(payrollAccessGrant.payrollEmployeeId, validated.payrollEmployeeId),
-						eq(payrollAccessGrant.isActive, true),
-					),
-				)
-				.limit(1);
+		revalidatePath("/settings/payroll-access");
+		revalidatePath("/payroll");
 
-			let grantId = existingActiveGrant?.id;
+		return { grantId };
+	});
+}
 
-			if (!grantId) {
-				const [existingInactiveGrant] = await tx
-					.select({ id: payrollAccessGrant.id })
-					.from(payrollAccessGrant)
-					.where(
-						and(
-							eq(payrollAccessGrant.organizationId, organizationId),
-							eq(payrollAccessGrant.payrollEmployeeId, validated.payrollEmployeeId),
-							eq(payrollAccessGrant.isActive, false),
-						),
-					)
-					.orderBy(desc(payrollAccessGrant.updatedAt))
-					.limit(1);
-
-				if (existingInactiveGrant) {
-					await tx
-						.update(payrollAccessGrant)
-						.set({
-							isActive: true,
-							scope: validated.scope,
-							updatedBy: authContext.user.id,
-						})
-						.where(
-							and(
-								eq(payrollAccessGrant.id, existingInactiveGrant.id),
-								eq(payrollAccessGrant.organizationId, organizationId),
-							),
-						);
-					grantId = existingInactiveGrant.id;
-				} else {
-					const [insertedGrant] = await tx
-						.insert(payrollAccessGrant)
-						.values({
-							organizationId,
-							payrollEmployeeId: validated.payrollEmployeeId,
-							scope: validated.scope,
-							createdBy: authContext.user.id,
-							updatedBy: authContext.user.id,
-						})
-						.returning({ id: payrollAccessGrant.id });
-
-					if (!insertedGrant) {
-						throw new DatabaseError({
-							message: "Failed to create payroll access grant",
-							operation: "insert",
-							table: "payroll_access_grant",
-						});
-					}
-					grantId = insertedGrant.id;
-				}
-			} else {
-				await tx
-					.update(payrollAccessGrant)
-					.set({ scope: validated.scope, updatedBy: authContext.user.id })
-					.where(
-						and(
-							eq(payrollAccessGrant.id, grantId),
-							eq(payrollAccessGrant.organizationId, organizationId),
-						),
-					);
-			}
-
-			await tx
-				.delete(payrollAccessTeam)
-				.where(
-					and(
-						eq(payrollAccessTeam.organizationId, organizationId),
-						eq(payrollAccessTeam.grantId, grantId),
-					),
-				);
-			await tx
-				.delete(payrollAccessEmployee)
-				.where(
-					and(
-						eq(payrollAccessEmployee.organizationId, organizationId),
-						eq(payrollAccessEmployee.grantId, grantId),
-					),
-				);
-
-			if (validated.teamIds.length > 0) {
-				await tx.insert(payrollAccessTeam).values(
-					validated.teamIds.map((teamId) => ({
-						organizationId,
-						grantId,
-						teamId,
-						createdBy: authContext.user.id,
-					})),
-				);
-			}
-
-			if (validated.employeeIds.length > 0) {
-				await tx.insert(payrollAccessEmployee).values(
-					validated.employeeIds.map((employeeId) => ({
-						organizationId,
-						grantId,
-						employeeId,
-						createdBy: authContext.user.id,
-					})),
-				);
-			}
-
-			return grantId;
-		});
+export async function revokePayrollAccessGrantAction(input: {
+	grantId: string;
+}): Promise<ServerActionResult<{ grantId: string }>> {
+	return runPayrollAccessAdminAction(async (db) => {
+		const { authContext, organizationId } = await requirePayrollAccessAdminContext("write");
+		const { grantId } = await db.transaction((tx) =>
+			revokePayrollAccessGrant(tx, {
+				organizationId,
+				actorUserId: authContext.user.id,
+				grantId: input?.grantId,
+			}),
+		);
 
 		revalidatePath("/settings/payroll-access");
 		revalidatePath("/payroll");
@@ -289,52 +226,14 @@ async function requirePayrollAccessAdminContext(
 	}
 }
 
-async function validateSavePayrollAccessInput(
-	input: SavePayrollAccessInput,
-	organizationId: string,
-): Promise<SavePayrollAccessInput> {
-	if (!input || typeof input !== "object") {
-		throw new ValidationError({ message: "Payroll access input is required" });
-	}
-
-	const payrollEmployeeId = validateId(input.payrollEmployeeId, "payrollEmployeeId");
-	const teamIds = validateIdList(input.teamIds, "teamIds");
-	const employeeIds = validateIdList(input.employeeIds, "employeeIds");
-	const employeeIdsToValidate = [payrollEmployeeId, ...employeeIds];
-
-	const activeEmployeeRows = await db
-		.select({ id: employee.id })
-		.from(employee)
-		.where(
-			and(
-				eq(employee.organizationId, organizationId),
-				eq(employee.isActive, true),
-				inArray(employee.id, employeeIdsToValidate),
-			),
-		);
-
-	let teamRows: { id: string }[] = [];
-	if (teamIds.length > 0) {
-		teamRows = await db
-			.select({ id: team.id })
-			.from(team)
-			.where(and(eq(team.organizationId, organizationId), inArray(team.id, teamIds)));
-	}
-
-	return buildValidatedPayrollAccessInput(
-		{ payrollEmployeeId, scope: input.scope, teamIds, employeeIds },
-		{
-			activeEmployeeIds: activeEmployeeRows.map((row) => row.id),
-			organizationTeamIds: teamRows.map((row) => row.id),
-		},
-	);
-}
-
+/** Runs `action` with the client of the runtime's `DatabaseService`. */
 async function runPayrollAccessAdminAction<T>(
-	action: () => Promise<T>,
+	action: (db: DatabaseClient) => Promise<T>,
 ): Promise<ServerActionResult<T>> {
 	return runServerActionSafe(
-		DatabaseService.use((dbService) => dbService.query("payrollAccess.adminAction", action)).pipe(
+		DatabaseService.use((dbService) =>
+			dbService.query("payrollAccess.adminAction", () => action(dbService.db)),
+		).pipe(
 			// Typed failures thrown by the action keep their type.
 			Effect.mapError((error) => (isAppError(error.cause) ? error.cause : error)),
 		),
@@ -343,11 +242,17 @@ async function runPayrollAccessAdminAction<T>(
 
 function isAppError(
 	error: unknown,
-): error is AuthenticationError | AuthorizationError | DatabaseError | ValidationError {
+): error is
+	| AuthenticationError
+	| AuthorizationError
+	| DatabaseError
+	| NotFoundError
+	| ValidationError {
 	return (
 		error instanceof AuthenticationError ||
 		error instanceof AuthorizationError ||
 		error instanceof DatabaseError ||
+		error instanceof NotFoundError ||
 		error instanceof ValidationError
 	);
 }

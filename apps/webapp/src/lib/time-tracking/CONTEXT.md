@@ -89,6 +89,14 @@ _Avoid_: v1 command, old command
 In clocking, ending the current live work and resuming new live work after the break interval.
 _Avoid_: Pause
 
+**Manual break**:
+A break the employee starts explicitly and ends by explicitly resuming work. The employee may instead end their working day without resuming.
+_Avoid_: Pause, idle break
+
+**Idle-confirmed break**:
+A past break interval suggested by device inactivity and explicitly confirmed by the employee. Device inactivity alone does not establish that the employee was on break.
+_Avoid_: Automatic break, manual break
+
 **On-behalf clock-out**:
 A clock-out whose subject is another employee's named live work, performed by an organization owner, an admin or the employee's direct manager; never by the employee themselves.
 _Avoid_: Manager clock-out, forced clock-out

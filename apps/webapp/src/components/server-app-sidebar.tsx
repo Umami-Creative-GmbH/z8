@@ -7,6 +7,7 @@ import {
 } from "@/lib/auth-helpers";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { hasActivePayrollAccessGrant } from "@/lib/payroll-access/permissions";
+import { loadFinanceActor } from "@/lib/travel-expenses/finance-access";
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
 import { AppSidebar } from "./app-sidebar";
 
@@ -56,15 +57,22 @@ export async function ServerAppSidebar({
 		);
 	}
 	let showPayrollNav = false;
+	let showFinanceNav = false;
 	if (
 		activeEmployee &&
 		activeOrganizationId &&
 		activeEmployee.organizationId === activeOrganizationId
 	) {
-		showPayrollNav = await hasActivePayrollAccessGrant({
-			organizationId: activeOrganizationId,
-			payrollEmployeeId: activeEmployee.id,
-		});
+		const [payrollGrant, financeActor] = await Promise.all([
+			hasActivePayrollAccessGrant({
+				organizationId: activeOrganizationId,
+				payrollEmployeeId: activeEmployee.id,
+			}),
+			loadFinanceActor(),
+		]);
+		showPayrollNav = payrollGrant;
+		// Read access: owners, admins and any active expense officer grant (#753).
+		showFinanceNav = financeActor?.canRead ?? false;
 	}
 
 	return (
@@ -77,6 +85,7 @@ export async function ServerAppSidebar({
 				scheduling: featureFlags.shiftsEnabled,
 				compliance: settingsAccessTier === "orgAdmin",
 				payroll: Boolean(showPayrollNav),
+				finance: showFinanceNav,
 				worksCouncil: canShowWorksCouncilNav,
 				platformAdmin: authContext?.user.role === "admin",
 			}}

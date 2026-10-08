@@ -11,7 +11,8 @@ A **departure** ends one **employment period** at its **cutoff**: the start of t
 day after the last working day in the organization's timezone, frozen on the
 departure when it is scheduled (or the command instant for *Offboard now*). At
 the cutoff access ends, the running timer is closed at the cutoff, the paid seat
-is released, and the employee's pending approval duties are handed over. The
+is released, the employee's expense officer and payroll access grants are
+revoked, and the employee's pending approval duties are handed over. The
 departure is *effective* even while follow-up work (billing, session sign-out,
 timer post-processing, approval handover, notifications) is still pending or has
 failed; follow-up never decides whether someone has left. A **rehire** starts a
@@ -124,13 +125,25 @@ send again.
   reactivate an employee whose employment an effective departure ended; the
   database guard keeps them inactive. Access returns only through a rehire.
 
+## Access grants
+
+When the departure takes effect, the expense officer grant and the payroll
+access grant the employee *holds* are revoked in the departure's transaction
+(#750). Each revocation is audited as `expense_officer.grant_revoked` or
+`payroll_access.grant_revoked` under the departure's initiator, with metadata
+`{ reason: "employee_departure", departureId, employmentPeriodId }`. Grants of
+other officers that *name* the departed employee in their scope are untouched,
+so that employee's last reports can still be reimbursed.
+
 ## Rehire
 
 *Rehire employee* is offered after an effective departure. It requires approved
 membership; otherwise re-invite first. Confirm role, team, primary manager, work
 policy and all contract terms. The new period starts at the server's instant;
 the gap between periods is shown in the employment history, which is grouped by
-stint (legacy periods without a recorded start show *Date not recorded*).
+stint (legacy periods without a recorded start show *Date not recorded*). A
+rehire never restores expense officer or payroll access grants; an admin must
+grant them again.
 
 ## Billing reconciliation
 

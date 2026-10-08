@@ -1,15 +1,15 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { BackLink } from "@/components/travel-expenses/back-link";
 import { SubmittedTravelExpenseReport } from "@/components/travel-expenses/report/submitted-report";
 import { TravelExpenseReportEditor } from "@/components/travel-expenses/report/travel-expense-report-editor";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
 import { getAuthContext } from "@/lib/auth-helpers";
-import { loadFinanceActor } from "@/lib/travel-expenses/finance-access";
+import { financeActorReads, loadFinanceActor } from "@/lib/travel-expenses/finance-access";
 import { loadAuthorizedTravelExpenseReport } from "@/lib/travel-expenses/report-read";
-import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 
 type ReportPageProps = {
@@ -42,49 +42,44 @@ async function ReportContent({ params, searchParams }: ReportPageProps) {
 		// goes back to expense finance too.
 		const financeReader =
 			authorized.access === "finance" ||
-			(authorized.report.status === "approved" && Boolean((await loadFinanceActor())?.canRead));
+			(authorized.report.status === "approved" &&
+				(await financeActorReads(await loadFinanceActor(), {
+					source: { type: "report", id: authorized.report.id },
+					employeeId: authorized.report.employeeId,
+				})));
 		return (
-			<div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-6 lg:px-6">
+			<div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-4 md:py-6 lg:px-6">
 				{financeReader ? (
-					<Link
-						className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
-						href="/travel-expenses/finance"
-					>
+					<BackLink href="/travel-expenses/finance">
 						{t("travelExpenses.finance.back", "Back to expense finance")}
-					</Link>
+					</BackLink>
 				) : (
-					<Link
-						className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
-						href="/approvals/inbox"
-					>
+					<BackLink href="/approvals/inbox">
 						{t("travelExpenses.report.backToApprovals", "Back to approvals")}
-					</Link>
+					</BackLink>
 				)}
 				<SubmittedTravelExpenseReport reportId={reportId} cycle={cycle} />
 			</div>
 		);
 	}
 	return (
-		<div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-6 lg:px-6">
-			<Link
-				className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
-				href="/travel-expenses"
-			>
-				{t("travelExpenses.report.backToTravelExpenses", "Back to travel expenses")}
-			</Link>
+		<div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-4 md:py-6 lg:px-6">
 			{cycle === undefined ? (
-				<TravelExpenseReportEditor
-					reportId={reportId}
-					maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}
-				/>
+				<>
+					<BackLink href="/travel-expenses">
+						{t("travelExpenses.report.backToTravelExpenses", "Back to travel expenses")}
+					</BackLink>
+					<TravelExpenseReportEditor
+						reportId={reportId}
+						maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}
+					/>
+				</>
 			) : (
 				<>
-					<Link
-						className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
-						href={`/travel-expenses/reports/${reportId}`}
-					>
+					{/* An earlier submission is reached from the current report, so it leads back there. */}
+					<BackLink href={`/travel-expenses/reports/${reportId}`}>
 						{t("travelExpenses.report.backToCurrent", "Back to the current report")}
-					</Link>
+					</BackLink>
 					<SubmittedTravelExpenseReport reportId={reportId} cycle={cycle} />
 				</>
 			)}
@@ -102,7 +97,7 @@ export default function TravelExpenseReportPage(props: ReportPageProps) {
 						labelDefault: "Loading travel expenses",
 					}}
 					role="status"
-					className="mx-auto w-full max-w-3xl px-4 py-6 lg:px-6"
+					className="mx-auto w-full max-w-3xl px-4 py-4 md:py-6 lg:px-6"
 				>
 					<Skeleton aria-hidden="true" className="h-96 w-full" />
 				</LoadingRegion>

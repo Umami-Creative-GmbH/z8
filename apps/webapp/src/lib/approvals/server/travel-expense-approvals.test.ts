@@ -7,12 +7,17 @@ const {
 	onTravelExpenseRejected,
 	loadSubmittedRevision,
 	compareSubmittedRevision,
+	recordClaimApprovalTeams,
 } = vi.hoisted(() => ({
 	onTravelExpenseApproved: vi.fn(),
 	onTravelExpenseRejected: vi.fn(),
 	loadSubmittedRevision: vi.fn(async () => null as unknown),
 	compareSubmittedRevision: vi.fn(),
+	recordClaimApprovalTeams: vi.fn(async () => {}),
 }));
+
+// Recording the approval teams (#746) is covered by the PostgreSQL suite.
+vi.mock("@/lib/travel-expenses/approval-teams", () => ({ recordClaimApprovalTeams }));
 
 vi.mock("@/lib/approvals/evidence/store", () => ({
 	loadLegacyTravelExpenseSubmittedRevision: loadSubmittedRevision,
@@ -340,16 +345,53 @@ describe("persistTravelExpenseDecision", () => {
 			},
 		};
 
+		recordClaimApprovalTeams.mockClear();
 		await Effect.runPromise(
 			persistTravelExpenseDecision(dbService, "claim-1", currentEmployee, "approve", "looks good"),
 		);
 
+		// An approval records the employee's teams in the same transaction (#746).
+		expect(recordClaimApprovalTeams).toHaveBeenCalledWith(dbService.db, {
+			organizationId: "org-1",
+			claimId: "claim-1",
+		});
 		expect(eq).toHaveBeenCalledWith("status", "submitted");
 		expect(and).toHaveBeenCalledWith(
 			expect.objectContaining({ eq: ["id", "claim-1"] }),
 			expect.objectContaining({ eq: ["organizationId", "org-1"] }),
 			expect.objectContaining({ eq: ["status", "submitted"] }),
 		);
+	});
+
+	it("records no approval teams for a rejection", async () => {
+		const where = vi.fn().mockReturnValue({
+			returning: vi.fn().mockResolvedValue([{ id: "claim-1" }]),
+		});
+		const dbService = {
+			db: {
+				update: vi.fn().mockReturnValue({ set: vi.fn().mockReturnValue({ where }) }),
+				insert: vi.fn().mockReturnValue({ values: vi.fn().mockResolvedValue(undefined) }),
+			},
+			query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
+		} as unknown as ApprovalDbService;
+		recordClaimApprovalTeams.mockClear();
+
+		await Effect.runPromise(
+			persistTravelExpenseDecision(
+				dbService,
+				"claim-1",
+				{
+					id: "employee-1",
+					userId: "user-1",
+					organizationId: "org-1",
+					user: { id: "user-1", name: "Morgan Reviewer", email: "m@example.com", image: null },
+				},
+				"reject",
+				"Not a business trip",
+			),
+		);
+
+		expect(recordClaimApprovalTeams).not.toHaveBeenCalled();
 	});
 
 	it("notifies the requester after an approved travel expense operation succeeds", async () => {

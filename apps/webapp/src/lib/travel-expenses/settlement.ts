@@ -136,6 +136,22 @@ export function computeSettlement(input: {
 	return { currencies, state };
 }
 
+/**
+ * The account currency's line when it is all that awaits reimbursement: one
+ * payment of its balance reimburses the account in full (bulk, #754/#755).
+ */
+export function fullReimbursementLine(account: {
+	currency: string | null;
+	summary: SettlementSummary;
+}): CurrencySettlement | null {
+	const line = account.summary.currencies.find((entry) => entry.currency === account.currency);
+	if (line?.state !== "outstanding") return null;
+	const othersSettled = account.summary.currencies.every(
+		(entry) => entry === line || entry.state === "settled",
+	);
+	return othersSettled ? line : null;
+}
+
 /** A validated, normalized command to record money that moved outside Z8. */
 export interface SettlementCommand {
 	kind: SettlementEntryKind;
@@ -200,6 +216,29 @@ export function parseSettlementCommand(
 	}
 	if (!currencyValid) errors.push({ field: "currency", code: "invalid" });
 
+	const payment = parseSettlementPayment(input, context);
+	if (!payment.ok) errors.push(...payment.errors);
+
+	if (errors.length > 0 || !kind || units === null || !payment.ok) return { ok: false, errors };
+	return {
+		ok: true,
+		command: {
+			kind,
+			amount: formatUnits(units, STORED_AMOUNT_SCALE),
+			currency,
+			...payment.payment,
+		},
+	};
+}
+
+/** The payment details of an entry; bulk reimbursement (#754) shares them across entries. */
+export type SettlementPayment = Pick<SettlementCommand, "occurredOn" | "reference" | "note">;
+
+export function parseSettlementPayment(
+	input: { occurredOn: string; reference: string; note?: string | null },
+	context: { latestDate: string },
+): { ok: true; payment: SettlementPayment } | { ok: false; errors: SettlementCommandFieldError[] } {
+	const errors: SettlementCommandFieldError[] = [];
 	const occurredOn = plainDate(input.occurredOn.trim());
 	const latest = plainDate(context.latestDate);
 	if (!input.occurredOn.trim()) errors.push({ field: "occurredOn", code: "required" });
@@ -219,18 +258,8 @@ export function parseSettlementCommand(
 		errors.push({ field: "note", code: "too_long" });
 	}
 
-	if (errors.length > 0 || !kind || units === null || !occurredOn) return { ok: false, errors };
-	return {
-		ok: true,
-		command: {
-			kind,
-			amount: formatUnits(units, STORED_AMOUNT_SCALE),
-			currency,
-			occurredOn: occurredOn.toString(),
-			reference,
-			note,
-		},
-	};
+	if (errors.length > 0 || !occurredOn) return { ok: false, errors };
+	return { ok: true, payment: { occurredOn: occurredOn.toString(), reference, note } };
 }
 
 export type SettlementPlanRefusal =
@@ -241,19 +270,24 @@ export type SettlementPlanRefusal =
 	| "nothing_outstanding"
 	| "exceeds_outstanding"
 	| "no_overpayment"
-	| "exceeds_overpayment";
+	| "exceeds_overpayment"
+	/** `inFull` (#754): the entry would leave some currency of the account open. */
+	| "not_in_full";
 
 /**
  * Checks one command against the current account. `expectedBalance` is the
  * balance the person recording saw: if anything changed since (another
  * reimbursement, an adjustment), the command is refused instead of applied to
  * a balance nobody looked at. A reimbursement never exceeds what is
- * outstanding; a recovery never exceeds the overpayment.
+ * outstanding; a recovery never exceeds the overpayment. With `inFull`
+ * (bulk reimbursement, #754) the entry must leave every currency of the
+ * account settled: a partial payment or a mixed account is refused.
  */
 export function planSettlementEntry(
 	summary: SettlementSummary,
 	command: Pick<SettlementCommand, "kind" | "amount" | "currency">,
 	expectedBalance: { currency: string; amount: string },
+	options: { inFull?: boolean } = {},
 ):
 	| { ok: true; balanceBefore: string; balanceAfter: string }
 	| { ok: false; reason: SettlementPlanRefusal; balance: string } {
@@ -278,6 +312,13 @@ export function planSettlementEntry(
 		if (amount > -balance) return refuse("exceeds_overpayment");
 	}
 	const after = command.kind === "reimbursement" ? balance - amount : balance + amount;
+	if (
+		options.inFull &&
+		(after !== ZERO ||
+			summary.currencies.some((other) => other !== line && other.state !== "settled"))
+	) {
+		return refuse("not_in_full");
+	}
 	return {
 		ok: true,
 		balanceBefore: balanceText,

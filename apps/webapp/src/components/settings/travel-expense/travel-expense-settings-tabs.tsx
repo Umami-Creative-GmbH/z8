@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePendingExceptionCount } from "./pending-exceptions";
 
-const TABS = ["review", "currencies", "rates", "exceptions"] as const;
+const TABS = ["review", "currencies", "rates", "exceptions", "access"] as const;
 type TravelExpenseSettingsTab = (typeof TABS)[number];
 
 /** The tab named by `?tab=`; a missing or unknown value opens Review. */
@@ -62,6 +62,7 @@ export function TravelExpenseSettingsTabs(panels: Record<TravelExpenseSettingsTa
 		currencies: t("travelExpenses.settings.tabs.currencies", "Currencies"),
 		rates: t("travelExpenses.settings.tabs.rates", "Rates"),
 		exceptions: t("travelExpenses.settings.tabs.exceptions", "Exceptions"),
+		access: t("travelExpenses.settings.tabs.access", "Access"),
 	};
 
 	return (

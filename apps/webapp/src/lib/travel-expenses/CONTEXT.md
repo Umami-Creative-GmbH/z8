@@ -53,3 +53,37 @@ _Avoid_: blockers, missing fields, validation errors
 **Submission**:
 Handing an expense report to approval, possible only when nothing is still needed. A draft may hold anything, including future dates while a trip is planned.
 _Avoid_: send, file
+
+### After approval
+
+**Expense officer**:
+A person granted access to approved expense reports within their officer scope, allowed to export them, record reimbursements, or both. Granted separately from payroll access, so one person may hold either, both or neither.
+_Avoid_: finance user, accountant, payroll officer (that is payroll access)
+
+**Officer scope**:
+Which expense reports an expense officer handles: all of them, or those of named employees and of the teams the employee belonged to when the report was approved. A report keeps its scope when the employee changes team or leaves.
+_Avoid_: finance scope, visibility
+
+**Export**:
+A file of approved expense reports and their receipts handed to bookkeeping. An export moves no money and does not make a report reimbursed.
+_Avoid_: booking, transfer
+
+**Reimbursement**:
+Money the organization paid out to an employee for an approved expense report, recorded with its amount, date and reference.
+_Avoid_: payment, payout
+
+**Recovery**:
+Money an employee paid back because more was reimbursed than they were owed.
+_Avoid_: refund, chargeback
+
+**Reimbursed**:
+Said of an approved expense report whose reimbursements, less recoveries, cover everything owed to the employee. A later adjustment can make it owed again.
+_Avoid_: paid (that names who paid a receipt), settled
+
+**Awaiting reimbursement**:
+Said of an approved expense report that still owes the employee money, in full or in part.
+_Avoid_: unpaid, open
+
+**Coverage gap**:
+The expense reports awaiting reimbursement that no expense officer who can record reimbursements has in their officer scope, other than for their own reports. Owners and admins still handle them. An organization without expense officers has no coverage gap.
+_Avoid_: unassigned reports, orphaned reports

@@ -1,7 +1,6 @@
 {
   "travelExpenses": {
     "actions": {
-      "backToClaims": "Wróć do wniosków",
       "download": "Pobierz",
       "preview": "Podgląd",
       "retry": "Ponów próbę",
@@ -101,6 +100,7 @@
       "decisionRecorded": "Zarejestrowano decyzję",
       "destination": "Miejsce docelowe",
       "history": "Historia decyzji",
+      "historyDescription": "Wszystkie etapy tego wniosku, od najstarszych. Godziny podano w strefie UTC.",
       "intermediateApproval": "Zarejestrowano zatwierdzenie — oczekiwanie na dalsze zatwierdzenie",
       "legacyReceiptIdentity": "Archiwalny rachunek: suma kontrolna zawartości nie została zarejestrowana.",
       "loading": "Wczytywanie wniosku…",
@@ -190,6 +190,10 @@
       },
       "legacyClaim": "Archiwalny wniosek: {type}",
       "loading": "Wczytywanie kolejki finansowej…",
+      "queue": {
+        "description": "Otwórz wydatek, aby zobaczyć jego rozliczenie i zarejestrować zwrot kosztów.",
+        "title": "Zatwierdzone wydatki"
+      },
       "title": "Finanse wydatków",
       "truncated": "Wyświetlanie {count} ostatnio zatwierdzonych wydatków. Starsze pasujące wydatki nie są widoczne na liście."
     },
@@ -205,6 +209,7 @@
       "companyPaid": "Opłacone przez firmę {amount}",
       "continuedFrom": "Kontynuacja wcześniejszego wniosku",
       "deleteDraft": "Usuń wersję roboczą „{title}”",
+      "description": "Wersje robocze, przesłane raporty i wcześniejsze wnioski, od ostatnio zmienionych.",
       "emptyDescription": "Rozpocznij podróż, aby zebrać kilka wydatków ze wspólnymi szczegółami podróży, lub dodaj pojedynczy rachunek bądź wydatek za kilometrówkę. Wersje robocze zapisują się automatycznie, więc możesz dokończyć je później.",
       "emptyFilter": "Brak wydatków o tym statusie.",
       "emptyTitle": "Brak wydatków na podróż",
@@ -439,6 +444,7 @@
       "countrySearch": "Szukaj krajów",
       "cycles": {
         "approved": "zatwierdzone",
+        "description": "Każde zgłoszenie pozostaje dokładnie w takiej formie, w jakiej zostało przesłane do weryfikacji.",
         "entry": "Zgłoszenie {number} w dniu {date}: {outcome}",
         "pending": "oczekujące na weryfikację",
         "rejected": "odrzucone",
@@ -490,21 +496,31 @@
       },
       "frozenNotice": "Przesłany raport nie może być już edytowany.",
       "history": {
-        "approvalRecorded": "Zatwierdzenie zarejestrowane przez {name}; oczekiwanie na dalsze zatwierdzenie",
-        "approved": "Zatwierdzone przez {name}",
-        "cycle": "Zgłoszenie {number}:",
-        "rejected": "Odrzucone przez {name}",
-        "reopened": "Ponownie otwarte do poprawy przez: {name}",
-        "returned": "Zwrócone do wprowadzenia zmian przez: {name}",
-        "selfApproved": "Zatwierdzono automatycznie: brak innego weryfikatora",
-        "submitted": "Przesłane przez: {name}",
-        "title": "Historia",
-        "withdrawn": "Wycofane przez: {name}"
+        "description": "Wszystkie etapy tego raportu, od najstarszych. Godziny podano w strefie UTC.",
+        "detail": {
+          "approvalRecorded": "Przez: {name}; oczekuje na dalsze zatwierdzenie.",
+          "by": "Przez: {name}",
+          "inCycle": "Zgłoszenie {number} · {detail}",
+          "selfApproved": "Nikt inny nie mógł zweryfikować tego raportu."
+        },
+        "inReview": "W trakcie weryfikacji",
+        "step": {
+          "approvalRecorded": "Zarejestrowano zatwierdzenie",
+          "approved": "Zatwierdzono",
+          "rejected": "Odrzucono",
+          "reopened": "Wznowiono do poprawy",
+          "returned": "Zwrócono do wprowadzenia zmian",
+          "selfApproved": "Zatwierdzono automatycznie",
+          "submitted": "Przesłano",
+          "withdrawn": "Wycofano"
+        },
+        "title": "Historia"
       },
       "items": {
         "add": "Dodaj wydatek na podstawie rachunku",
         "addFailed": "Nie udało się dodać wydatku. Spróbuj ponownie.",
         "empty": "Dodaj każdy rachunek z tej podróży jako osobny wydatek. Powyższe szczegóły podróży mają zastosowanie do wszystkich z nich.",
+        "emptyTitle": "Brak wydatków",
         "numbered": "{type} {number}",
         "remove": "Usuń",
         "removeConfirm": "Usuń wydatek",
@@ -861,6 +877,7 @@
       "trip": {
         "dates": "Daty podróży",
         "datesZone": "(dni kalendarzowe w {timeZone})",
+        "description": "Wszystkie wydatki z tej podróży mają te same szczegóły.",
         "destinations": "Miejsca docelowe",
         "errors": {
           "destination": "Wybierz kraj z listy.",

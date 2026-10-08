@@ -20,7 +20,7 @@ function notFound() {
 
 /**
  * Streams the stored ZIP of a completed travel expense export batch (#613) to
- * a user with the export and finance read permissions in the batch's organization, after
+ * a user who exports and sees it in the batch's organization (#747), after
  * verifying the recorded size and SHA-256. Downloading again returns the same
  * file and records nothing but an audit entry: it is never a reimbursement.
  */
@@ -36,11 +36,14 @@ export async function GET(
 		if (!actor) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: privateHeaders });
 		}
-		// Export and finance read: the ZIP holds the organization's receipts.
-		if (!actor.canExport || !actor.canRead) return notFound();
+		// Export and finance read: the ZIP holds receipts. An expense officer
+		// downloads only the batches they see (#747).
+		const exportScope = actor.scopes.export;
+		if (!actor.canExport || !actor.canRead || !exportScope) return notFound();
 		const file = await loadCompletedTravelExpenseExportFile(db, {
 			organizationId: actor.organizationId,
 			batchId,
+			viewer: { employeeId: actor.employeeId, scope: exportScope },
 		});
 		if (!file) return notFound();
 		const bytes = await readPrivateObject({

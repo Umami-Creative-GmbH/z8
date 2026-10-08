@@ -5,7 +5,8 @@ import userEvent from "@testing-library/user-event";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { PayrollAccessForm } from "./payroll-access-form";
 
-const { savePayrollAccessActionMock } = vi.hoisted(() => ({
+const { revokePayrollAccessGrantActionMock, savePayrollAccessActionMock } = vi.hoisted(() => ({
+	revokePayrollAccessGrantActionMock: vi.fn(),
 	savePayrollAccessActionMock: vi.fn(),
 }));
 
@@ -21,6 +22,7 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 vi.mock("@/app/[locale]/(app)/settings/payroll-access/actions", () => ({
+	revokePayrollAccessGrantAction: revokePayrollAccessGrantActionMock,
 	savePayrollAccessAction: savePayrollAccessActionMock,
 }));
 vi.mock("@/components/employee-select", () => ({
@@ -109,12 +111,114 @@ describe("PayrollAccessForm", () => {
 			success: true,
 			data: { grantId: "grant-id" },
 		});
+		revokePayrollAccessGrantActionMock.mockResolvedValue({
+			success: true,
+			data: { grantId: "grant-a" },
+		});
+	});
+
+	it("revokes a payroll officer after confirmation", async () => {
+		const user = userEvent.setup();
+
+		render(
+			<PayrollAccessForm
+				employees={[{ id: "employee-a", name: "Ada Lovelace", email: "ada@example.com" }]}
+				departedEmployees={[]}
+				teams={[]}
+				initialGrants={[
+					{
+						id: "grant-a",
+						payrollEmployeeId: "employee-a",
+						scope: "all",
+						teamIds: [],
+						employeeIds: [],
+					},
+				]}
+			/>,
+		);
+
+		await user.click(screen.getByRole("button", { name: "Revoke" }));
+		const dialog = await screen.findByRole("alertdialog");
+		expect(dialog.textContent).toContain("Ada Lovelace");
+		expect(revokePayrollAccessGrantActionMock).not.toHaveBeenCalled();
+
+		await user.click(screen.getByRole("button", { name: "Revoke access" }));
+
+		await waitFor(() =>
+			expect(revokePayrollAccessGrantActionMock).toHaveBeenCalledWith({ grantId: "grant-a" }),
+		);
+	});
+
+	it("keeps a departed named employee visible and on the grant when it is re-saved", async () => {
+		const user = userEvent.setup();
+
+		render(
+			<PayrollAccessForm
+				employees={[{ id: "employee-a", name: "Ada Lovelace", email: "ada@example.com" }]}
+				departedEmployees={[
+					{ id: "employee-gone", name: "Former Colleague", email: "former@example.com" },
+				]}
+				teams={[]}
+				initialGrants={[
+					{
+						id: "grant-a",
+						payrollEmployeeId: "employee-a",
+						scope: "specific",
+						teamIds: [],
+						employeeIds: ["employee-gone"],
+					},
+				]}
+			/>,
+		);
+
+		await user.click(screen.getByRole("button", { name: "Edit" }));
+
+		expect(
+			screen.getByRole<HTMLInputElement>("checkbox", { name: "Former Colleague" }).checked,
+		).toBe(true);
+		expect(
+			screen.getByText(
+				"Former Colleague left the organization. They stay on this grant until you remove them.",
+			),
+		).toBeTruthy();
+
+		await user.click(screen.getByRole("button", { name: "Save payroll officer" }));
+
+		await waitFor(() =>
+			expect(savePayrollAccessActionMock).toHaveBeenCalledWith({
+				payrollEmployeeId: "employee-a",
+				scope: "specific",
+				teamIds: [],
+				employeeIds: ["employee-gone"],
+			}),
+		);
+	});
+
+	it("does not offer departed employees who are not on the grant", async () => {
+		const user = userEvent.setup();
+
+		render(
+			<PayrollAccessForm
+				employees={[{ id: "employee-a", name: "Ada Lovelace", email: "ada@example.com" }]}
+				departedEmployees={[
+					{ id: "employee-gone", name: "Former Colleague", email: "former@example.com" },
+				]}
+				teams={[]}
+				initialGrants={[]}
+			/>,
+		);
+
+		await user.click(screen.getByRole("button", { name: "Add payroll officer" }));
+
+		expect(screen.queryByRole("checkbox", { name: "Former Colleague" })).toBeNull();
+		expect(screen.getByLabelText("Payroll officer").textContent).not.toContain("Former Colleague");
 	});
 
 	it("renders the payroll officer list empty state", () => {
 		render(
 			<PayrollAccessForm
 				employees={[{ id: "employee-1", name: "Ada Lovelace", email: "ada@example.com" }]}
+				departedEmployees={[]}
 				teams={[{ id: "team-1", name: "Ops" }]}
 				initialGrants={[]}
 			/>,
@@ -131,7 +235,9 @@ describe("PayrollAccessForm", () => {
 	});
 
 	it("disables adding when no employees are available", () => {
-		render(<PayrollAccessForm employees={[]} teams={[]} initialGrants={[]} />);
+		render(
+			<PayrollAccessForm employees={[]} departedEmployees={[]} teams={[]} initialGrants={[]} />,
+		);
 
 		expect(
 			screen.getByRole<HTMLButtonElement>("button", {
@@ -153,6 +259,7 @@ describe("PayrollAccessForm", () => {
 						email: "grace@example.com",
 					},
 				]}
+				departedEmployees={[]}
 				teams={[{ id: "team-ops", name: "Ops" }]}
 				initialGrants={[
 					{
@@ -188,6 +295,7 @@ describe("PayrollAccessForm", () => {
 		render(
 			<PayrollAccessForm
 				employees={[{ id: "employee-a", name: "Ada Lovelace", email: "ada@example.com" }]}
+				departedEmployees={[]}
 				teams={[{ id: "team-ops", name: "Ops" }]}
 				initialGrants={[]}
 			/>,
@@ -216,6 +324,7 @@ describe("PayrollAccessForm", () => {
 						email: "grace@example.com",
 					},
 				]}
+				departedEmployees={[]}
 				teams={[{ id: "team-ops", name: "Ops" }]}
 				initialGrants={[]}
 			/>,
@@ -254,6 +363,7 @@ describe("PayrollAccessForm", () => {
 		render(
 			<PayrollAccessForm
 				employees={[{ id: "employee-a", name: "Ada Lovelace", email: "ada@example.com" }]}
+				departedEmployees={[]}
 				teams={[
 					{ id: "team-ops", name: "Ops" },
 					{ id: "team-support", name: "Support" },
@@ -284,6 +394,7 @@ describe("PayrollAccessForm", () => {
 						email: "grace@example.com",
 					},
 				]}
+				departedEmployees={[]}
 				teams={[{ id: "team-ops", name: "Ops" }]}
 				initialGrants={[
 					{

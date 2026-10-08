@@ -1,7 +1,6 @@
 {
   "travelExpenses": {
     "actions": {
-      "backToClaims": "Zurück zu den Anträgen",
       "download": "Herunterladen",
       "preview": "Vorschau",
       "retry": "Wiederholen",
@@ -101,6 +100,7 @@
       "decisionRecorded": "Entscheidung erfasst",
       "destination": "Reiseziel",
       "history": "Entscheidungsverlauf",
+      "historyDescription": "Jeder Schritt dieser Abrechnung, älteste zuerst. Zeiten werden in UTC angezeigt.",
       "intermediateApproval": "Genehmigung erfasst — weitere Genehmigung ausstehend",
       "legacyReceiptIdentity": "Altsystem-Beleg: Inhaltsprüfsumme wurde nicht erfasst.",
       "loading": "Antrag wird geladen…",
@@ -190,6 +190,10 @@
       },
       "legacyClaim": "Alter {type}-Antrag",
       "loading": "Finanz-Warteschlange wird geladen…",
+      "queue": {
+        "description": "Öffnen Sie eine Ausgabe, um deren Abrechnung einzusehen und eine Erstattung zu erfassen.",
+        "title": "Genehmigte Ausgaben"
+      },
       "title": "Ausgaben-Finanzen",
       "truncated": "Die {count} zuletzt genehmigten Ausgaben werden angezeigt. Ältere übereinstimmende Ausgaben sind nicht aufgeführt."
     },
@@ -205,6 +209,7 @@
       "companyPaid": "Vom Unternehmen bezahlt: {amount}",
       "continuedFrom": "Fortsetzung einer früheren Abrechnung",
       "deleteDraft": "Entwurf „{title}“ löschen",
+      "description": "Entwürfe, eingereichte Berichte und frühere Abrechnungen, zuletzt geänderte zuerst.",
       "emptyDescription": "Starten Sie eine Reise, um mehrere Ausgaben mit gemeinsamen Reisedetails zu erfassen, oder fügen Sie einen einzelnen Beleg oder Kilometerkosten hinzu. Entwürfe werden automatisch gespeichert, sodass Sie sie später fertigstellen können.",
       "emptyFilter": "Keine Ausgaben mit diesem Status.",
       "emptyTitle": "Noch keine Reisekosten",
@@ -439,6 +444,7 @@
       "countrySearch": "Länder suchen",
       "cycles": {
         "approved": "genehmigt",
+        "description": "Jede Einreichung bleibt genau so erhalten, wie sie zur Überprüfung gesendet wurde.",
         "entry": "Einreichung {number} am {date}: {outcome}",
         "pending": "wartet auf Prüfung",
         "rejected": "abgelehnt",
@@ -490,21 +496,31 @@
       },
       "frozenNotice": "Der eingereichte Bericht kann nicht mehr bearbeitet werden.",
       "history": {
-        "approvalRecorded": "Genehmigung durch {name} erfasst; weitere Genehmigung ausstehend",
-        "approved": "Genehmigt von {name}",
-        "cycle": "Einreichung {number}:",
-        "rejected": "Abgelehnt von {name}",
-        "reopened": "Zur Korrektur wiedereröffnet von {name}",
-        "returned": "Zur Überarbeitung zurückgegeben von {name}",
-        "selfApproved": "Automatisch genehmigt: kein anderer Prüfer",
-        "submitted": "Eingereicht von {name}",
-        "title": "Verlauf",
-        "withdrawn": "Zurückgezogen von {name}"
+        "description": "Jeder Schritt dieses Berichts, älteste zuerst. Zeiten werden in UTC angezeigt.",
+        "detail": {
+          "approvalRecorded": "Von {name}; wartet auf weitere Genehmigung.",
+          "by": "Von {name}",
+          "inCycle": "Einreichung {number} · {detail}",
+          "selfApproved": "Niemand sonst konnte diesen Bericht überprüfen."
+        },
+        "inReview": "In Prüfung",
+        "step": {
+          "approvalRecorded": "Genehmigung erfasst",
+          "approved": "Genehmigt",
+          "rejected": "Abgelehnt",
+          "reopened": "Zur Korrektur wiedereröffnet",
+          "returned": "Für Änderungen zurückgegeben",
+          "selfApproved": "Automatisch genehmigt",
+          "submitted": "Eingereicht",
+          "withdrawn": "Zurückgezogen"
+        },
+        "title": "Verlauf"
       },
       "items": {
         "add": "Belegausgabe hinzufügen",
         "addFailed": "Die Ausgabe konnte nicht hinzugefügt werden. Bitte versuchen Sie es erneut.",
         "empty": "Fügen Sie jeden Beleg dieser Reise als separate Ausgabe hinzu. Die oben angegebenen Reisedetails gelten für alle.",
+        "emptyTitle": "Noch keine Ausgaben",
         "numbered": "{type} {number}",
         "remove": "Entfernen",
         "removeConfirm": "Ausgabe entfernen",
@@ -861,6 +877,7 @@
       "trip": {
         "dates": "Reisedaten",
         "datesZone": "(Kalendertage in {timeZone})",
+        "description": "Alle Ausgaben dieser Reise teilen diese Details.",
         "destinations": "Reiseziele",
         "errors": {
           "destination": "Wählen Sie ein aufgeführtes Land aus.",
