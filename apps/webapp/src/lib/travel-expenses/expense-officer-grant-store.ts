@@ -419,7 +419,7 @@ export async function revokeExpenseOfficerGrantHeldBy(
 ): Promise<void> {
 	const { organizationId, actorUserId } = input;
 	const [row] = await tx
-		.select(grantColumns)
+		.select(grantColumns())
 		.from(expenseOfficerGrant)
 		.where(
 			and(
