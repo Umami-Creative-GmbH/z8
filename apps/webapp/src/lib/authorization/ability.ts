@@ -237,6 +237,8 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 		// ----------------------------------------
 		for (const customRole of principal.customRoles) {
 			for (const perm of customRole.permissions) {
+				// Expense officer grants give finance access (#748, ADR 0001), never custom roles.
+				if (perm.subject === "TravelExpenseFinance") continue;
 				can(perm.action, perm.subject);
 			}
 		}

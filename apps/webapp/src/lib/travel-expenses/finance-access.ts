@@ -29,9 +29,8 @@ export interface FinanceActor {
  * The signed-in employee's travel expense finance access in their active
  * organization, or null without an employee there (#612, #747). Owners and
  * admins handle every approved report; an expense officer handles the reports
- * in their grant's scope, with its capabilities. Until #748 retires it, the
- * `TravelExpenseFinance` custom-role permission still gives organization-wide
- * access. Reviewing expenses never grants finance access.
+ * in their grant's scope, with its capabilities. Custom roles never grant
+ * finance access (#748). Reviewing expenses never grants it either.
  */
 export async function loadFinanceActor(): Promise<FinanceActor | null> {
 	const [actor, ability] = await Promise.all([getAuthContext(), getAbility()]);

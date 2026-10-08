@@ -61,42 +61,28 @@ describe("travel expense finance permissions (#612)", () => {
 		expect(access(principal({}))).toEqual({ read: false, settle: false });
 	});
 
-	it("lets a custom role grant read-only finance access or settlement separately", () => {
-		const role = (action: "read" | "settle") =>
-			principal({
-				customRoles: [
-					{
-						roleId: `role-${action}`,
-						roleName: "Accounting",
-						baseTier: "employee",
-						permissions: [{ action, subject: "TravelExpenseFinance" }],
-					},
-				],
-			});
-		expect(access(role("read"))).toEqual({ read: true, settle: false });
-		expect(access(role("settle"))).toEqual({ read: false, settle: true });
-		expect(isValidPermission("read", "TravelExpenseFinance")).toBe(true);
-		expect(isValidPermission("settle", "TravelExpenseFinance")).toBe(true);
-		expect(isValidPermission("export", "TravelExpenseFinance")).toBe(true);
+	it("never grants finance access through custom roles, which expense officers replace (#748)", () => {
+		const context = principal({
+			customRoles: [
+				{
+					roleId: "role-finance",
+					roleName: "Accounting",
+					baseTier: "employee",
+					permissions: (["read", "export", "settle"] as const).map((action) => ({
+						action,
+						subject: "TravelExpenseFinance",
+					})),
+				},
+			],
+		});
+		expect(access(context)).toEqual({ read: false, settle: false });
+		expect(canExportTravelExpenses(defineAbilityFor(context), ORG, ORG)).toBe(false);
+		for (const action of ["read", "export", "settle"]) {
+			expect(isValidPermission(action, "TravelExpenseFinance")).toBe(false);
+		}
 	});
 
-	it("requires finance read for exports, since a batch holds org-wide receipts (#613)", () => {
-		const exporter = (actions: Array<"read" | "export">) => {
-			const context = principal({
-				customRoles: [
-					{
-						roleId: "role-export",
-						roleName: "Payroll export",
-						baseTier: "employee",
-						permissions: actions.map((action) => ({ action, subject: "TravelExpenseFinance" })),
-					},
-				],
-			});
-			return canExportTravelExpenses(defineAbilityFor(context), ORG, context.activeOrganizationId);
-		};
-		expect(exporter(["export"])).toBe(false);
-		expect(exporter(["read"])).toBe(false);
-		expect(exporter(["read", "export"])).toBe(true);
+	it("lets owners and admins export in their active organization only (#613)", () => {
 		const owner = principal({
 			orgMembership: { organizationId: ORG, role: "owner", status: "active" },
 		});

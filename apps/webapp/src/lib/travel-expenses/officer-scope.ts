@@ -62,8 +62,8 @@ export interface ExpenseOfficerGrantAccess {
 }
 
 /**
- * Combines organization-wide finance access (owners and admins, and until #748
- * custom roles) with the user's active expense officer grant, one capability
+ * Combines organization-wide finance access (owners and admins) with the
+ * user's active expense officer grant, one capability
  * at a time: a grant never widens what organization-wide access allows, and
  * organization-wide reading never widens a grant's capabilities. A grant always
  * includes reading; exporting always needs reading, since a batch holds receipts.

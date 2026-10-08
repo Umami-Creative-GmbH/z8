@@ -43,7 +43,7 @@ Finance access is separate from approval authority. Organization owners and admi
 
 Every expense officer can open **Travel Expenses → Finance** and read the approved reports in their scope, with their receipts and balances. A grant with neither capability is read-only, for example for an auditor. An officer sees an export batch if they created it, if their scope is all employees, or if every report in it is in their scope. Revoking an officer ends their access immediately. Creating, changing and revoking an officer is recorded in the audit log.
 
-The **Finance** permissions of custom roles in **Settings → Custom Roles** still give access to every approved report. They are being replaced by expense officers.
+Custom roles in **Settings → Custom Roles** no longer give finance access. When this change was released, everyone who had a custom role with a **Finance** permission became an expense officer for all employees, with **Can export** and **Can record reimbursements** where their role allowed exporting or recording reimbursements. If they were already an expense officer, their grant was extended to all employees and given those capabilities. Review these grants in **Settings → Travel Expenses → Access** and narrow their scope where needed.
 
 **Exports.** Select approved report revisions and create a batch. A batch contains a CSV of reports, expenses and receipts with explicit amount, currency and date columns, and a ZIP of the receipt files. Each revision is exported once. You can download a completed batch again, and its content stays the same. A failed batch can be retried or cancelled. So can a batch that has been waiting or processing for more than 30 minutes.
 
