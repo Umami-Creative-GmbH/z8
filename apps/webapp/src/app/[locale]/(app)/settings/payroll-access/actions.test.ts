@@ -1,9 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { AuthorizationError, ValidationError } from "@/lib/effect/errors";
-import {
-	assertPayrollOfficerSettingsContext,
-	buildValidatedPayrollAccessInput,
-} from "./action-helpers";
+import { buildValidatedPayrollAccessInput } from "@/lib/payroll-access/grant-scope";
+import { assertPayrollOfficerSettingsContext } from "./action-helpers";
 
 vi.mock("next/cache", () => ({
 	revalidatePath: vi.fn(),

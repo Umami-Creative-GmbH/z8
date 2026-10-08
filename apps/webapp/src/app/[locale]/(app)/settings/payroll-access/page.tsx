@@ -63,6 +63,7 @@ async function PayrollAccessSettingsPageContent() {
 			</div>
 			<PayrollAccessForm
 				employees={result.data.employees}
+				departedEmployees={result.data.departedEmployees}
 				teams={result.data.teams}
 				initialGrants={result.data.grants}
 			/>
