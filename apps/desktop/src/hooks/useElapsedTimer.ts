@@ -1,34 +1,27 @@
 import { useEffect, useState } from "react";
-
-/**
- * Hook for tracking elapsed time with per-second updates.
- * Isolated to prevent unnecessary re-renders in parent components.
- */
+import { Temporal } from "temporal-polyfill";
+function elapsed(start: string | null) {
+	if (!start) return 0;
+	try {
+		return Math.max(
+			0,
+			Math.floor(
+				Temporal.Instant.from(start)
+					.until(Temporal.Now.instant())
+					.total({ unit: "seconds" }),
+			),
+		);
+	} catch {
+		return 0;
+	}
+}
 export function useElapsedTimer(startTime: string | null): number {
-  const [elapsedSeconds, setElapsedSeconds] = useState(() => {
-    if (!startTime) return 0;
-    return Math.floor((Date.now() - new Date(startTime).getTime()) / 1000);
-  });
-
-  useEffect(() => {
-    if (!startTime) {
-      setElapsedSeconds(0);
-      return;
-    }
-
-    const calculateElapsed = () => {
-      const start = new Date(startTime);
-      return Math.floor((Date.now() - start.getTime()) / 1000);
-    };
-
-    setElapsedSeconds(calculateElapsed());
-
-    const interval = setInterval(() => {
-      setElapsedSeconds(calculateElapsed());
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [startTime]);
-
-  return elapsedSeconds;
+	const [seconds, setSeconds] = useState(() => elapsed(startTime));
+	useEffect(() => {
+		const tick = () => setSeconds(elapsed(startTime));
+		tick();
+		const timer = setInterval(tick, 1000);
+		return () => clearInterval(timer);
+	}, [startTime]);
+	return seconds;
 }

@@ -124,6 +124,7 @@ impl ClockService {
         Self {
             client: reqwest::Client::builder()
                 .timeout(std::time::Duration::from_secs(30))
+                .redirect(reqwest::redirect::Policy::none())
                 .build()
                 .unwrap_or_else(|_| reqwest::Client::new()),
         }
@@ -204,10 +205,7 @@ impl ClockService {
             .await?;
 
         if !response.status().is_success() {
-            return Err(anyhow::anyhow!(
-                "Failed to fetch clock status: {}",
-                response.status()
-            ));
+            return Err(StatusAccessError(response.status().as_u16()).into());
         }
 
         let status: ClockStatus = response.json().await?;
@@ -366,3 +364,26 @@ mod tests {
         );
     }
 }
+
+#[derive(Debug)]
+pub struct StatusAccessError(pub u16);
+impl std::fmt::Display for StatusAccessError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.0 {
+            401 => write!(
+                f,
+                "Your sign-in expired. Sign in again; saved actions remain on this device."
+            ),
+            403 => write!(
+                f,
+                "Organization access was refused. Check your membership and employee access in Z8."
+            ),
+            _ => write!(
+                f,
+                "Clock status is unavailable (server response {}).",
+                self.0
+            ),
+        }
+    }
+}
+impl std::error::Error for StatusAccessError {}

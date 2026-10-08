@@ -131,3 +131,37 @@ fn clocks_agree_within_the_servers_tolerance() {
     backwards.monotonic_ms -= 1;
     assert!(!clocks_agree(&[at(0), backwards]));
 }
+
+#[test]
+fn sleep_or_hibernate_gaps_and_clock_changes_invalidate_monitor_continuity() {
+    use crate::break_evidence::MonitorContinuity;
+    let mut monitor = MonitorContinuity::new(at(0), 30_000);
+    assert!(monitor.observe(at(10_000)));
+    assert!(!monitor.observe(at(120_000))); // Includes clocks that advance in sleep.
+    assert!(monitor.observe(at(130_000)));
+    let mut changed = at(140_000);
+    changed.utc += Duration::minutes(1);
+    assert!(!monitor.observe(changed));
+}
+
+#[test]
+fn starting_work_after_a_long_clocked_out_interval_resets_inactivity_evidence() {
+    let mut tracker = IdleTracker::new(at(0), THRESHOLD_MS);
+    tracker.monitor_work(at(900_000), Some("period-a"));
+    assert_eq!(tracker.tick(at(910_000), true, zone("UTC")), None);
+    tracker.activity(at(920_000), zone("UTC"));
+    assert_eq!(tracker.tick(at(930_000), true, zone("UTC")), None);
+    tracker.tick(at(1_220_000), true, zone("UTC"));
+    tracker.activity(at(1_230_000), zone("UTC"));
+    assert_eq!(
+        tracker
+            .tick(at(1_240_000), true, zone("UTC"))
+            .unwrap()
+            .last_activity,
+        at(920_000)
+    );
+    tracker.tick(at(1_600_000), true, zone("UTC"));
+    assert!(tracker.monitor_work(at(1_610_000), Some("period-b")));
+    tracker.activity(at(1_620_000), zone("UTC"));
+    assert_eq!(tracker.tick(at(1_630_000), true, zone("UTC")), None);
+}

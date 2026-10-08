@@ -6,6 +6,43 @@ use tauri::{
     App, AppHandle, Emitter, Manager,
 };
 
+struct TrayLabels {
+    show: MenuItem<tauri::Wry>,
+    settings: MenuItem<tauri::Wry>,
+    quit: MenuItem<tauri::Wry>,
+    locale: parking_lot::RwLock<String>,
+}
+
+/// Apply the saved explicit preference, or the employee locale learned from Z8.
+pub fn update_language(app: &AppHandle) -> Result<()> {
+    let Some(labels) = app.try_state::<TrayLabels>() else {
+        return Ok(());
+    };
+    let state = app.state::<std::sync::Arc<crate::state::AppState>>();
+    let preference = state.settings.read().language.clone();
+    let german =
+        preference == "de" || (preference == "auto" && labels.locale.read().starts_with("de"));
+    labels.show.set_text(if german {
+        "Fenster anzeigen"
+    } else {
+        "Show Window"
+    })?;
+    labels
+        .settings
+        .set_text(if german { "Einstellungen" } else { "Settings" })?;
+    labels
+        .quit
+        .set_text(if german { "Beenden" } else { "Quit" })?;
+    Ok(())
+}
+
+pub fn set_employee_locale(app: &AppHandle, locale: &str) -> Result<()> {
+    if let Some(labels) = app.try_state::<TrayLabels>() {
+        *labels.locale.write() = locale.to_owned();
+    }
+    update_language(app)
+}
+
 /// Sets up the system tray icon and menu
 pub fn setup_tray(app: &App) -> Result<()> {
     let show = MenuItem::with_id(app, "show", "Show Window", true, None::<&str>)?;
@@ -41,6 +78,10 @@ pub fn setup_tray(app: &App) -> Result<()> {
                 }
             }
             "settings" => {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
                 // Emit settings event to frontend
                 let _ = app.emit("open_settings", ());
             }
@@ -53,6 +94,13 @@ pub fn setup_tray(app: &App) -> Result<()> {
 
     // Store tray in state for later updates
     app.manage(tray);
+    app.manage(TrayLabels {
+        show,
+        settings,
+        quit,
+        locale: parking_lot::RwLock::new(String::new()),
+    });
+    update_language(app.handle())?;
 
     log::info!("System tray initialized");
     Ok(())

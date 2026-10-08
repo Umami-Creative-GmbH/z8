@@ -17,7 +17,8 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
 	];
 
 	// Use the origin if it's in the allowlist, otherwise use the app URL
-	const allowOrigin = origin && allowedOrigins.includes(origin) ? origin : appUrl;
+	const allowOrigin =
+		origin && allowedOrigins.includes(origin) ? origin : appUrl;
 
 	return {
 		"Access-Control-Allow-Origin": allowOrigin,
@@ -50,7 +51,10 @@ export async function GET(request: Request) {
 		const session = await auth.api.getSession({ headers: resolvedHeaders });
 
 		if (!session?.user) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
+			return NextResponse.json(
+				{ error: "Unauthorized" },
+				{ status: 401, headers: corsHeaders },
+			);
 		}
 
 		// Get all organizations the user is a member of
@@ -67,6 +71,7 @@ export async function GET(request: Request) {
 				{
 					organizations: [],
 					activeOrganizationId: null,
+					userId: session.user.id,
 				},
 				{ headers: corsHeaders },
 			);
@@ -116,6 +121,7 @@ export async function GET(request: Request) {
 			{
 				organizations: organizationsWithDetails,
 				activeOrganizationId: session.session.activeOrganizationId,
+				userId: session.user.id,
 			},
 			{ headers: corsHeaders },
 		);

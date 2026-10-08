@@ -73,7 +73,11 @@ pub struct Projection {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ClockJournal {
+    pub busy: bool,
+    pub work_changed_elsewhere: bool,
     /// Identity-less records from the legacy transport.
+    pub on_break: bool,
+    pub sign_in_required: bool,
     pub legacy: RecoverySummary,
     pub server_reachable: bool,
     /// A new action can be frozen for the session's context now.
@@ -138,6 +142,13 @@ pub fn build(
     resolved.sort_by_key(|command| std::cmp::Reverse(command.resolved_at_ms));
     shown.extend(resolved.into_iter().take(RECENT_RESOLVED));
     Ok(ClockJournal {
+        busy: false,
+        work_changed_elsewhere: false,
+        sign_in_required: false,
+        on_break: context
+            .map(|context| store.on_break(endpoint, context))
+            .transpose()?
+            .unwrap_or(false),
         legacy,
         server_reachable,
         commands_enabled,
