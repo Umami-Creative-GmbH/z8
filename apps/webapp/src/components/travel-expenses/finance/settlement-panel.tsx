@@ -7,7 +7,7 @@ import {
 	getTravelExpenseSettlement,
 	type SettlementAccountView,
 } from "@/app/[locale]/(app)/travel-expenses/finance-actions";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query/keys";
 import type { SettlementAccount, SettlementSource } from "@/lib/travel-expenses/settlement-store";
@@ -80,6 +80,7 @@ function SettlementAccountCard({
 	queryKey: QueryKey;
 	data: SettlementAccountView;
 }) {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const { account, viewer, canSettle } = data;
 	if (!account.approved && account.entries.length === 0) return null;
@@ -94,19 +95,29 @@ function SettlementAccountCard({
 	const headingId = `settlement-${source.type}-${source.id}`;
 
 	return (
-		<Card>
-			<CardContent className="space-y-4">
-				<SettlementBalance account={account} viewer={viewer} headingId={headingId} />
+		<section aria-labelledby={headingId}>
+			<Card>
+				<CardHeader>
+					<h2 id={headingId} className="font-semibold leading-none">
+						{t("travelExpenses.settlement.title", "Reimbursement")}
+					</h2>
+					<CardAction>
+						<SettlementStateBadge state={account.summary.state} />
+					</CardAction>
+				</CardHeader>
+				<CardContent className="space-y-4">
+					<SettlementBalance account={account} viewer={viewer} />
 
-				{account.entries.length > 0 && (
-					<SettlementHistory entries={account.entries} viewer={viewer} headingId={headingId} />
-				)}
+					{account.entries.length > 0 && (
+						<SettlementHistory entries={account.entries} viewer={viewer} headingId={headingId} />
+					)}
 
-				{viewer === "finance" && canSettle && account.approved && (
-					<RecordReimbursementForms source={source} account={account} onSettled={settled} />
-				)}
-			</CardContent>
-		</Card>
+					{viewer === "finance" && canSettle && account.approved && (
+						<RecordReimbursementForms source={source} account={account} onSettled={settled} />
+					)}
+				</CardContent>
+			</Card>
+		</section>
 	);
 }
 
@@ -114,21 +125,13 @@ function SettlementAccountCard({
 function SettlementBalance({
 	account,
 	viewer,
-	headingId,
 }: {
 	account: SettlementAccount;
 	viewer: SettlementViewer;
-	headingId: string;
 }) {
 	const { t } = useTranslate();
 	return (
-		<section aria-labelledby={headingId} className="space-y-3">
-			<div className="flex flex-wrap items-center justify-between gap-2">
-				<h2 id={headingId} className="text-lg font-semibold">
-					{t("travelExpenses.settlement.title", "Reimbursement")}
-				</h2>
-				<SettlementStateBadge state={account.summary.state} />
-			</div>
+		<div className="space-y-3">
 			{account.summary.currencies.map((line) => (
 				<SettlementCurrencyLine key={line.currency} account={account} line={line} />
 			))}
@@ -142,7 +145,7 @@ function SettlementBalance({
 					)}
 				</p>
 			)}
-		</section>
+		</div>
 	);
 }
 

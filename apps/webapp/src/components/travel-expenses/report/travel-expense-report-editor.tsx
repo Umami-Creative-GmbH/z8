@@ -1,19 +1,20 @@
 "use client";
 
-import {
-	IconAlertTriangle,
-	IconCar,
-	IconLoader2,
-	IconPlus,
-	IconToolsKitchen2,
-} from "@tabler/icons-react";
+import { IconAlertTriangle, IconLoader2, IconPlus, IconReceipt } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { type ReactNode, type RefObject, useState } from "react";
 import { getMyTravelExpenseReport } from "@/app/[locale]/(app)/travel-expenses/report-actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import { queryKeys } from "@/lib/query/keys";
@@ -43,6 +44,7 @@ import {
 	tripReportMissingRequirements,
 } from "@/lib/travel-expenses/trip-report";
 import { useRouter } from "@/navigation";
+import { ItemTypeIcon } from "../expense-icons";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { DeleteDraftReportButton } from "./delete-draft-report";
 import { itemTitle } from "./item-title";
@@ -404,7 +406,7 @@ function StandaloneReportBody({
 			/>
 			{notices}
 			<Card>
-				<CardContent className="space-y-6">
+				<CardContent>
 					{isMileage ? (
 						<MileageItemEditor
 							key={item.id}
@@ -437,18 +439,18 @@ function StandaloneReportBody({
 							now={now}
 						/>
 					)}
-					<ReportTotals
-						id={report.id}
-						totals={liveTotals(report.items, drafts, report.reimbursementCurrency, mileageDrafts)}
-					/>
-					<SubmitReportPanel
-						reportId={report.id}
-						blocker={blocker}
-						loadSavedReport={() => loadSavedReport(drafts, null, mileageDrafts)}
-						onSubmitted={() => Promise.all([refreshReport(), refreshDrafts()])}
-					/>
 				</CardContent>
 			</Card>
+			<ReportTotals
+				id={report.id}
+				totals={liveTotals(report.items, drafts, report.reimbursementCurrency, mileageDrafts)}
+			/>
+			<SubmitReportPanel
+				reportId={report.id}
+				blocker={blocker}
+				loadSavedReport={() => loadSavedReport(drafts, null, mileageDrafts)}
+				onSubmitted={() => Promise.all([refreshReport(), refreshDrafts()])}
+			/>
 		</div>
 	);
 }
@@ -576,35 +578,41 @@ function TripReportBody({
 			/>
 			{notices}
 
-			<Card>
-				<CardContent>
-					<TripDetailsEditor
-						reportId={report.id}
-						details={trip}
-						onDetailsChange={setDetails}
-						onSaved={() =>
-							// A per diem is calculated from the saved trip's destinations (#609).
-							void Promise.all([
-								refreshDrafts(),
-								...(items.some((item) => item.type === "per_diem") ? [refreshReport()] : []),
-							])
-						}
-						project={{ initialProjectId: report.projectId ?? null, onSaved: setTripProjectId }}
-					/>
-				</CardContent>
-			</Card>
+			<TripDetailsEditor
+				reportId={report.id}
+				details={trip}
+				onDetailsChange={setDetails}
+				onSaved={() =>
+					// A per diem is calculated from the saved trip's destinations (#609).
+					void Promise.all([
+						refreshDrafts(),
+						...(items.some((item) => item.type === "per_diem") ? [refreshReport()] : []),
+					])
+				}
+				project={{ initialProjectId: report.projectId ?? null, onSaved: setTripProjectId }}
+			/>
 
-			<section aria-labelledby={`${report.id}-expenses`} className="space-y-3">
-				<h2 id={`${report.id}-expenses`} className="text-lg font-semibold">
+			<section aria-labelledby={`${report.id}-expenses`} className="space-y-3 pt-2">
+				<h2 id={`${report.id}-expenses`} className="text-lg font-semibold tracking-tight">
 					{t("travelExpenses.report.items.title", "Expenses")}
 				</h2>
 				{items.length === 0 && (
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"travelExpenses.report.items.empty",
-							"Add each receipt of this trip as its own expense. The trip details above apply to all of them.",
-						)}
-					</p>
+					<Empty className="border bg-card md:p-8">
+						<EmptyHeader>
+							<EmptyMedia variant="icon">
+								<IconReceipt aria-hidden="true" />
+							</EmptyMedia>
+							<EmptyTitle>
+								{t("travelExpenses.report.items.emptyTitle", "No expenses yet")}
+							</EmptyTitle>
+							<EmptyDescription>
+								{t(
+									"travelExpenses.report.items.empty",
+									"Add each receipt of this trip as its own expense. The trip details above apply to all of them.",
+								)}
+							</EmptyDescription>
+						</EmptyHeader>
+					</Empty>
 				)}
 				{items.map((item, index) => {
 					const title = itemTitle(t, item.type, index + 1);
@@ -615,14 +623,17 @@ function TripReportBody({
 					return (
 						<section key={item.id} aria-labelledby={headingId}>
 							<Card>
-								<CardContent className="space-y-4">
+								<CardHeader className="flex items-center gap-2">
+									<ItemTypeIcon type={item.type} />
 									<h3
 										id={headingId}
 										tabIndex={-1}
-										className="scroll-mt-20 text-base font-semibold outline-none focus-visible:underline"
+										className="scroll-mt-20 font-semibold leading-none outline-none focus-visible:underline"
 									>
 										{title}
 									</h3>
+								</CardHeader>
+								<CardContent className="space-y-4">
 									{removeErrors[item.id] && (
 										<Alert variant="destructive">
 											<IconAlertTriangle aria-hidden="true" className="size-4" />
@@ -783,12 +794,12 @@ function AddExpenseButtons({
 				{t("travelExpenses.report.items.add", "Add receipt expense")}
 			</Button>
 			<Button type="button" variant="outline" onClick={() => onAdd("mileage")} disabled={adding}>
-				<IconCar aria-hidden="true" className="mr-2 size-4" />
+				<ItemTypeIcon type="mileage" className="mr-2 text-current" />
 				{t("travelExpenses.report.mileage.add", "Add mileage")}
 			</Button>
 			{canAddPerDiem && (
 				<Button type="button" variant="outline" onClick={() => onAdd("per_diem")} disabled={adding}>
-					<IconToolsKitchen2 aria-hidden="true" className="mr-2 size-4" />
+					<ItemTypeIcon type="per_diem" className="mr-2 text-current" />
 					{t("travelExpenses.report.perDiem.add", "Add per diem")}
 				</Button>
 			)}

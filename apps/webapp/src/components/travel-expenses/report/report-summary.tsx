@@ -14,7 +14,10 @@ export function ReportTotals({ id, totals }: { id: string; totals: ReceiptReport
 	const { t } = useTranslate();
 	const locale = useLocale();
 	return (
-		<section aria-labelledby={`${id}-totals`} className="space-y-2 rounded-lg border p-4">
+		<section
+			aria-labelledby={`${id}-totals`}
+			className="space-y-3 rounded-xl border bg-card p-6 shadow-sm"
+		>
 			<h3 id={`${id}-totals`} className="text-base font-semibold">
 				{t("travelExpenses.report.totals.title", "Totals")}
 			</h3>
@@ -97,7 +100,10 @@ export function TripRequirements({
 	const locale = useLocale();
 	const complete = trip !== null && trip.length === 0 && incompleteExpenses.length === 0;
 	return (
-		<section aria-labelledby={`${id}-requirements`} className="space-y-2 rounded-lg border p-4">
+		<section
+			aria-labelledby={`${id}-requirements`}
+			className="space-y-3 rounded-xl border bg-card p-6 shadow-sm"
+		>
 			<h3 id={`${id}-requirements`} className="text-base font-semibold">
 				{t("travelExpenses.report.trip.requirements.title", "Still needed for this trip")}
 			</h3>

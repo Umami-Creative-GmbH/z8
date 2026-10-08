@@ -13,7 +13,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const catalog = vi.hoisted(() => ({ messages: {} as Record<string, string> }));
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (key: string, fallback: string) => catalog.messages[key] ?? fallback,
+		t: (key: string, fallback: string, params?: Record<string, unknown>) =>
+			(catalog.messages[key] ?? fallback).replace(
+				/\{(\w+)\}/g,
+				(match, name: string) =>
+					params && name in params ? String(params[name]) : match,
+			),
 	}),
 }));
 vi.mock("next-intl", () => ({ useLocale: () => "de-DE" }));
@@ -182,7 +187,9 @@ describe("stored travel claim detail", () => {
 		expect(
 			await screen.findByRole("heading", { name: "Beleg · Genehmigt" }),
 		).toBeTruthy();
-		expect(screen.getByText("Genehmigt · Morgan Manager")).toBeTruthy();
+		// The decision's timeline step: its catalog label, then who decided.
+		expect(screen.getByText("Genehmigt")).toBeTruthy();
+		expect(screen.getByText("By Morgan Manager")).toBeTruthy();
 		client.clear();
 	});
 	it("offers retry after a failed detail load and restores the claim", async () => {

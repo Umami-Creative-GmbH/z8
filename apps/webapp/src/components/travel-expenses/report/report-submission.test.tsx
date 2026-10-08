@@ -364,7 +364,11 @@ describe("report submission", () => {
 		mount();
 
 		expect(await screen.findByText("Awaiting review")).toBeTruthy();
-		expect(screen.getByText("Morgan Manager", { exact: false })).toBeTruthy();
+		// The pending review is the history's current step and names the reviewer.
+		const currentStep = screen
+			.getAllByRole("listitem")
+			.find((item) => item.getAttribute("aria-current") === "step");
+		expect(currentStep?.textContent).toContain("Waiting for review by Morgan Manager.");
 		expect(screen.queryByRole("textbox", { name: "Purpose of the trip" })).toBeNull();
 		const link = screen.getByRole("link", { name: /ticket\.pdf/ });
 		// Each submission's receipts are the exact frozen files of that cycle (#603).

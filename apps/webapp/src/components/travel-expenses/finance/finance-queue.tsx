@@ -1,10 +1,10 @@
 "use client";
 
 import {
+	IconCash,
 	IconChevronRight,
 	IconHistory,
 	IconInfoCircle,
-	IconPlaneDeparture,
 	IconReceipt,
 } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
@@ -12,12 +12,14 @@ import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useState } from "react";
 import { getTravelExpenseFinanceQueue } from "@/app/[locale]/(app)/travel-expenses/finance-actions";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { queryKeys } from "@/lib/query/keys";
 import type { FinanceQueueFilter, SettlementAccount } from "@/lib/travel-expenses/settlement-store";
 import { Link } from "@/navigation";
+import { TRIP_ICON } from "../expense-icons";
 import {
 	formatMoney,
 	formatPlainDate,
@@ -64,11 +66,15 @@ function accountTitle(t: Translate, locale: string, account: SettlementAccount) 
 function SourceIcon({ account }: { account: SettlementAccount }) {
 	const Icon =
 		account.title.kind === "trip"
-			? IconPlaneDeparture
+			? TRIP_ICON
 			: account.title.kind === "legacy_claim"
 				? IconHistory
 				: IconReceipt;
-	return <Icon aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />;
+	return (
+		<span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+			<Icon aria-hidden="true" className="size-4" />
+		</span>
+	);
 }
 
 /**
@@ -96,132 +102,147 @@ export function FinanceQueue() {
 	};
 
 	return (
-		<div className="space-y-4">
-			<ToggleGroup
-				type="single"
-				variant="outline"
-				value={filter}
-				onValueChange={(value: string) => {
-					if (FILTERS.includes(value as FinanceQueueFilter)) setFilter(value as FinanceQueueFilter);
-				}}
-				aria-label={t("travelExpenses.finance.filter.label", "Show expenses")}
-			>
-				{FILTERS.map((value) => (
-					<ToggleGroupItem key={value} value={value} className="whitespace-nowrap px-3">
-						{filterLabel[value]}
-					</ToggleGroupItem>
-				))}
-			</ToggleGroup>
-
-			{isError && !data ? (
-				<TravelExpenseLoadError
-					message={t(
-						"travelExpenses.finance.errors.load",
-						"Unable to load the finance queue. Please retry.",
+		<Card className="gap-4 overflow-hidden pb-0">
+			<CardHeader>
+				<h2 className="font-semibold leading-none">
+					{t("travelExpenses.finance.queue.title", "Approved expenses")}
+				</h2>
+				<CardDescription>
+					{t(
+						"travelExpenses.finance.queue.description",
+						"Open an expense to see its settlement and record a reimbursement.",
 					)}
-					retry={() => {
-						void refetch();
+				</CardDescription>
+			</CardHeader>
+			<CardContent className={isError && !data ? "space-y-4 pb-6" : undefined}>
+				<ToggleGroup
+					type="single"
+					variant="outline"
+					value={filter}
+					onValueChange={(value: string) => {
+						if (FILTERS.includes(value as FinanceQueueFilter))
+							setFilter(value as FinanceQueueFilter);
 					}}
-					isRetrying={isFetching}
-				/>
-			) : isLoading || !data ? (
-				<div>
+					aria-label={t("travelExpenses.finance.filter.label", "Show expenses")}
+				>
+					{FILTERS.map((value) => (
+						<ToggleGroupItem key={value} value={value} className="whitespace-nowrap px-3">
+							{filterLabel[value]}
+						</ToggleGroupItem>
+					))}
+				</ToggleGroup>
+				{isError && !data && (
+					<TravelExpenseLoadError
+						message={t(
+							"travelExpenses.finance.errors.load",
+							"Unable to load the finance queue. Please retry.",
+						)}
+						retry={() => {
+							void refetch();
+						}}
+						isRetrying={isFetching}
+					/>
+				)}
+			</CardContent>
+
+			{isError && !data ? null : isLoading || !data ? (
+				<div className="border-t px-6 py-4">
 					<p className="sr-only">{t("travelExpenses.finance.loading", "Loading finance queue…")}</p>
-					<Skeleton aria-hidden="true" className="h-64 w-full" />
+					<Skeleton aria-hidden="true" className="h-48 w-full" />
 				</div>
 			) : data.accounts.length === 0 ? (
-				<Card>
-					<CardContent className="py-10 text-center text-sm text-muted-foreground">
-						{filter === "open"
-							? t(
-									"travelExpenses.finance.empty.open",
-									"Nothing to settle: every approved expense is settled.",
-								)
-							: t("travelExpenses.finance.empty.any", "No approved expenses yet.")}
-					</CardContent>
-				</Card>
+				<Empty className="rounded-none border-t md:p-10">
+					<EmptyHeader>
+						<EmptyMedia variant="icon">
+							<IconCash aria-hidden="true" />
+						</EmptyMedia>
+						<EmptyDescription>
+							{filter === "open"
+								? t(
+										"travelExpenses.finance.empty.open",
+										"Nothing to settle: every approved expense is settled.",
+									)
+								: t("travelExpenses.finance.empty.any", "No approved expenses yet.")}
+						</EmptyDescription>
+					</EmptyHeader>
+				</Empty>
 			) : (
-				<Card>
-					<CardContent className="p-0">
-						{data.truncated && (
-							<p
-								role="status"
-								className="flex items-start gap-2 border-b px-4 py-3 text-sm text-muted-foreground"
-							>
-								<IconInfoCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-								{t(
-									"travelExpenses.finance.truncated",
-									"Showing the {count} most recently approved expenses. Older matching expenses are not listed.",
-									{ count: data.accounts.length },
-								)}
-							</p>
-						)}
-						<ul className="divide-y" aria-busy={isFetching}>
-							{data.accounts.map((account) => {
-								const title = accountTitle(t, locale, account);
-								return (
-									<li key={`${account.source.type}:${account.source.id}`}>
-										<Link
-											href={accountHref(account)}
-											className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-muted/50 focus-visible:outline-2 sm:flex-nowrap"
-										>
-											<SourceIcon account={account} />
-											<div className="min-w-0 flex-1">
-												<p className="truncate font-medium">
-													{account.employeeName ?? "—"} · {title.name}
-												</p>
-												<p className="flex flex-wrap gap-x-3 text-sm text-muted-foreground">
-													{title.dates && <span>{title.dates}</span>}
-													{account.basis?.approvedAt && (
+				<div className="border-t">
+					{data.truncated && (
+						<p
+							role="status"
+							className="flex items-start gap-2 border-b px-6 py-3 text-sm text-muted-foreground"
+						>
+							<IconInfoCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+							{t(
+								"travelExpenses.finance.truncated",
+								"Showing the {count} most recently approved expenses. Older matching expenses are not listed.",
+								{ count: data.accounts.length },
+							)}
+						</p>
+					)}
+					<ul className="divide-y" aria-busy={isFetching}>
+						{data.accounts.map((account) => {
+							const title = accountTitle(t, locale, account);
+							return (
+								<li key={`${account.source.type}:${account.source.id}`}>
+									<Link
+										href={accountHref(account)}
+										className="flex flex-wrap items-center gap-x-3 gap-y-1 px-6 py-4 transition-colors hover:bg-muted/50 focus-visible:outline-2 sm:flex-nowrap"
+									>
+										<SourceIcon account={account} />
+										<div className="min-w-0 flex-1">
+											<p className="truncate font-medium">
+												{account.employeeName ?? "—"} · {title.name}
+											</p>
+											<p className="flex flex-wrap gap-x-3 text-sm text-muted-foreground">
+												{title.dates && <span>{title.dates}</span>}
+												{account.basis?.approvedAt && (
+													<span>
+														{t("travelExpenses.finance.approvedOn", "Approved {date}", {
+															date: formatRecordedInstant(locale, account.basis.approvedAt),
+														})}
+													</span>
+												)}
+												{account.currency &&
+													account.basis?.companyPaid &&
+													account.basis.companyPaid !== "0.00" && (
 														<span>
-															{t("travelExpenses.finance.approvedOn", "Approved {date}", {
-																date: formatRecordedInstant(locale, account.basis.approvedAt),
+															{t("travelExpenses.finance.companyPaid", "Company-paid {amount}", {
+																amount: formatMoney(
+																	locale,
+																	account.basis.companyPaid,
+																	account.currency,
+																),
 															})}
 														</span>
 													)}
-													{account.currency &&
-														account.basis?.companyPaid &&
-														account.basis.companyPaid !== "0.00" && (
-															<span>
-																{t("travelExpenses.finance.companyPaid", "Company-paid {amount}", {
-																	amount: formatMoney(
-																		locale,
-																		account.basis.companyPaid,
-																		account.currency,
-																	),
-																})}
-															</span>
-														)}
+											</p>
+										</div>
+										<div className="text-right text-sm">
+											{account.summary.currencies.map((line) => (
+												<p key={line.currency} className="tabular-nums">
+													<span className="text-muted-foreground">
+														{t("travelExpenses.finance.employeePaid", "Employee-paid {amount}", {
+															amount: formatMoney(locale, line.entitlement, line.currency),
+														})}
+													</span>
+													<br />
+													<span className="font-medium">
+														<BalanceText line={line} />
+													</span>
 												</p>
-											</div>
-											<div className="text-right text-sm">
-												{account.summary.currencies.map((line) => (
-													<p key={line.currency} className="tabular-nums">
-														<span className="text-muted-foreground">
-															{t("travelExpenses.finance.employeePaid", "Employee-paid {amount}", {
-																amount: formatMoney(locale, line.entitlement, line.currency),
-															})}
-														</span>
-														<br />
-														<span className="font-medium">
-															<BalanceText line={line} />
-														</span>
-													</p>
-												))}
-											</div>
-											<SettlementStateBadge state={account.summary.state} />
-											<IconChevronRight
-												aria-hidden="true"
-												className="size-4 text-muted-foreground"
-											/>
-										</Link>
-									</li>
-								);
-							})}
-						</ul>
-					</CardContent>
-				</Card>
+											))}
+										</div>
+										<SettlementStateBadge state={account.summary.state} />
+										<IconChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />
+									</Link>
+								</li>
+							);
+						})}
+					</ul>
+				</div>
 			)}
-		</div>
+		</Card>
 	);
 }

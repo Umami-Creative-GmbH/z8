@@ -2,6 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { TimezonePicker } from "@/components/settings/timezone-picker";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import {
@@ -48,143 +49,159 @@ export function TripDetailsEditor({
 		state.status === "invalid" ? fieldErrorMessage(t, state.fieldErrors?.[field]) : undefined;
 
 	return (
-		<section aria-labelledby={`${reportId}-trip`} className="space-y-4">
-			<h2 id={`${reportId}-trip`} className="text-lg font-semibold">
-				{t("travelExpenses.report.trip.title", "Trip details")}
-			</h2>
-
-			<DraftSaveStatus
-				state={state}
-				onRetry={() => saver.retry()}
-				onKeepMine={() => saver.resolveConflict("keep_mine")}
-				onUseTheirs={resolveWithTheirs}
-			/>
-
-			<form
-				noValidate
-				onSubmit={(event) => {
-					event.preventDefault();
-					void saver.flush();
-				}}
-				className="grid gap-4"
-			>
-				<form.Field name="purpose">
-					{(field) => (
-						<TFormItem>
-							<TFormLabel hasError={!!fieldError("purpose")}>
-								{t("travelExpenses.report.trip.fields.purpose", "Purpose of the trip")}
-							</TFormLabel>
-							<TFormControl hasError={!!fieldError("purpose")}>
-								<Input
-									name="purpose"
-									autoComplete="off"
-									maxLength={MAX_TRIP_PURPOSE_LENGTH}
-									placeholder={t(
-										"travelExpenses.report.trip.fields.purposePlaceholder",
-										"e.g. Customer workshop in Hamburg",
-									)}
-									value={field.state.value}
-									onChange={(event) => field.handleChange(event.target.value)}
-									onBlur={field.handleBlur}
-								/>
-							</TFormControl>
-							<TFormMessage>{fieldError("purpose")}</TFormMessage>
-						</TFormItem>
-					)}
-				</form.Field>
-
-				<div className="grid gap-4 sm:grid-cols-2">
-					<form.Field name="startDate">
-						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={!!fieldError("startDate")}>
-									{t("travelExpenses.report.trip.fields.startDate", "First travel day")}
-								</TFormLabel>
-								<TFormControl hasError={!!fieldError("startDate")}>
-									<DatePicker
-										name="startDate"
-										value={field.state.value}
-										onChange={field.handleChange}
-										onBlur={field.handleBlur}
-									/>
-								</TFormControl>
-								<TFormMessage>{fieldError("startDate")}</TFormMessage>
-							</TFormItem>
+		<section aria-labelledby={`${reportId}-trip`}>
+			<Card>
+				<CardHeader>
+					<h2 id={`${reportId}-trip`} className="font-semibold leading-none">
+						{t("travelExpenses.report.trip.title", "Trip details")}
+					</h2>
+					<CardDescription>
+						{t(
+							"travelExpenses.report.trip.description",
+							"Every expense of this trip shares these details.",
 						)}
-					</form.Field>
-					<form.Subscribe selector={(formState) => formState.values.startDate}>
-						{(startDate) => (
-							<form.Field name="endDate">
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="space-y-4">
+					<DraftSaveStatus
+						state={state}
+						onRetry={() => saver.retry()}
+						onKeepMine={() => saver.resolveConflict("keep_mine")}
+						onUseTheirs={resolveWithTheirs}
+					/>
+
+					<form
+						noValidate
+						onSubmit={(event) => {
+							event.preventDefault();
+							void saver.flush();
+						}}
+						className="grid gap-4"
+					>
+						<form.Field name="purpose">
+							{(field) => (
+								<TFormItem>
+									<TFormLabel hasError={!!fieldError("purpose")}>
+										{t("travelExpenses.report.trip.fields.purpose", "Purpose of the trip")}
+									</TFormLabel>
+									<TFormControl hasError={!!fieldError("purpose")}>
+										<Input
+											name="purpose"
+											autoComplete="off"
+											maxLength={MAX_TRIP_PURPOSE_LENGTH}
+											placeholder={t(
+												"travelExpenses.report.trip.fields.purposePlaceholder",
+												"e.g. Customer workshop in Hamburg",
+											)}
+											value={field.state.value}
+											onChange={(event) => field.handleChange(event.target.value)}
+											onBlur={field.handleBlur}
+										/>
+									</TFormControl>
+									<TFormMessage>{fieldError("purpose")}</TFormMessage>
+								</TFormItem>
+							)}
+						</form.Field>
+
+						<div className="grid gap-4 sm:grid-cols-2">
+							<form.Field name="startDate">
 								{(field) => (
 									<TFormItem>
-										<TFormLabel hasError={!!fieldError("endDate")}>
-											{t("travelExpenses.report.trip.fields.endDate", "Last travel day")}
+										<TFormLabel hasError={!!fieldError("startDate")}>
+											{t("travelExpenses.report.trip.fields.startDate", "First travel day")}
 										</TFormLabel>
-										<TFormControl hasError={!!fieldError("endDate")}>
+										<TFormControl hasError={!!fieldError("startDate")}>
 											<DatePicker
-												name="endDate"
-												min={startDate || undefined}
+												name="startDate"
 												value={field.state.value}
 												onChange={field.handleChange}
 												onBlur={field.handleBlur}
 											/>
 										</TFormControl>
-										<TFormMessage>{fieldError("endDate")}</TFormMessage>
+										<TFormMessage>{fieldError("startDate")}</TFormMessage>
 									</TFormItem>
 								)}
 							</form.Field>
-						)}
-					</form.Subscribe>
-				</div>
-
-				<form.Field name="timeZone">
-					{(field) => (
-						<TFormItem>
-							<TFormLabel hasError={!!fieldError("timeZone")}>
-								{t("travelExpenses.report.trip.fields.timeZone", "Time zone of the travel dates")}
-							</TFormLabel>
-							<TFormControl hasError={!!fieldError("timeZone")}>
-								<TimezonePicker value={field.state.value} onChange={field.handleChange} />
-							</TFormControl>
-							<TFormDescription>
-								{t(
-									"travelExpenses.report.trip.fields.timeZoneDescription",
-									"Travel dates are calendar days in {timeZone}. Reviewers see the same dates, wherever they are.",
-									{ timeZone: field.state.value },
+							<form.Subscribe selector={(formState) => formState.values.startDate}>
+								{(startDate) => (
+									<form.Field name="endDate">
+										{(field) => (
+											<TFormItem>
+												<TFormLabel hasError={!!fieldError("endDate")}>
+													{t("travelExpenses.report.trip.fields.endDate", "Last travel day")}
+												</TFormLabel>
+												<TFormControl hasError={!!fieldError("endDate")}>
+													<DatePicker
+														name="endDate"
+														min={startDate || undefined}
+														value={field.state.value}
+														onChange={field.handleChange}
+														onBlur={field.handleBlur}
+													/>
+												</TFormControl>
+												<TFormMessage>{fieldError("endDate")}</TFormMessage>
+											</TFormItem>
+										)}
+									</form.Field>
 								)}
-							</TFormDescription>
-							<TFormMessage>{fieldError("timeZone")}</TFormMessage>
-						</TFormItem>
-					)}
-				</form.Field>
+							</form.Subscribe>
+						</div>
 
-				{project && (
-					<form.Subscribe
-						selector={(formState) => `${formState.values.startDate}|${formState.values.endDate}`}
-					>
-						{(dates) => {
-							const [startDate, endDate] = dates.split("|").map((date) => (date ? date : null));
-							return (
-								<TripProjectField
-									reportId={reportId}
-									startDate={startDate ?? null}
-									endDate={endDate ?? null}
-									initialProjectId={project.initialProjectId}
-									saver={saver}
-									onSaved={project.onSaved}
-								/>
-							);
-						}}
-					</form.Subscribe>
-				)}
+						<form.Field name="timeZone">
+							{(field) => (
+								<TFormItem>
+									<TFormLabel hasError={!!fieldError("timeZone")}>
+										{t(
+											"travelExpenses.report.trip.fields.timeZone",
+											"Time zone of the travel dates",
+										)}
+									</TFormLabel>
+									<TFormControl hasError={!!fieldError("timeZone")}>
+										<TimezonePicker value={field.state.value} onChange={field.handleChange} />
+									</TFormControl>
+									<TFormDescription>
+										{t(
+											"travelExpenses.report.trip.fields.timeZoneDescription",
+											"Travel dates are calendar days in {timeZone}. Reviewers see the same dates, wherever they are.",
+											{ timeZone: field.state.value },
+										)}
+									</TFormDescription>
+									<TFormMessage>{fieldError("timeZone")}</TFormMessage>
+								</TFormItem>
+							)}
+						</form.Field>
 
-				<TripDestinationsField
-					form={form}
-					reportId={reportId}
-					error={fieldError("destinations")}
-					onDestinationRemoved={changed}
-				/>
-			</form>
+						{project && (
+							<form.Subscribe
+								selector={(formState) =>
+									`${formState.values.startDate}|${formState.values.endDate}`
+								}
+							>
+								{(dates) => {
+									const [startDate, endDate] = dates.split("|").map((date) => (date ? date : null));
+									return (
+										<TripProjectField
+											reportId={reportId}
+											startDate={startDate ?? null}
+											endDate={endDate ?? null}
+											initialProjectId={project.initialProjectId}
+											saver={saver}
+											onSaved={project.onSaved}
+										/>
+									);
+								}}
+							</form.Subscribe>
+						)}
+
+						<TripDestinationsField
+							form={form}
+							reportId={reportId}
+							error={fieldError("destinations")}
+							onDestinationRemoved={changed}
+						/>
+					</form>
+				</CardContent>
+			</Card>
 		</section>
 	);
 }

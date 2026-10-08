@@ -10,7 +10,7 @@ import {
 } from "@/app/[locale]/(app)/travel-expenses/legacy-draft-actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { queryKeys } from "@/lib/query/keys";
 import type { LegacyReceiptRefusal } from "@/lib/travel-expenses/legacy-draft-conversion-store";
 import { Link, useRouter } from "@/navigation";
@@ -175,10 +175,12 @@ export function LegacyDraftConversionPanel({ claimId }: { claimId: string }) {
 	if (isLoading) return null;
 	return (
 		<Card>
-			<CardContent className="space-y-3">
-				<h2 className="text-lg font-semibold">
+			<CardHeader>
+				<h2 className="font-semibold leading-none">
 					{t("travelExpenses.legacyDraft.title", "Continue this draft")}
 				</h2>
+			</CardHeader>
+			<CardContent className="space-y-3">
 				{isError ? (
 					<Alert variant="destructive">
 						<IconAlertTriangle aria-hidden="true" className="size-4" />
