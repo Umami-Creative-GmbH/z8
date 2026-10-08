@@ -166,6 +166,12 @@ describe("settlement panel (#612)", () => {
 		});
 		mount();
 		expect(await screen.findByText("€39.90 outstanding")).toBeTruthy();
+		expect(screen.getByText("Awaiting reimbursement")).toBeTruthy();
+		expect(
+			screen.getByText(
+				"Finance records each payment here. Once everything owed to you is paid, this expense shows as Reimbursed.",
+			),
+		).toBeTruthy();
 		expect(screen.getByText("Paid €50.00")).toBeTruthy();
 		expect(screen.getByText("SEPA-4711")).toBeTruthy();
 		expect(
@@ -272,7 +278,8 @@ describe("settlement panel (#612)", () => {
 		await waitFor(() =>
 			expect(mocks.toastSuccess).toHaveBeenCalledWith("This payment was already recorded."),
 		);
-		expect(await screen.findByText("Settled", { selector: "p *, p" })).toBeTruthy();
+		expect(await screen.findByText("Reimbursed", { selector: "p *, p" })).toBeTruthy();
+		expect(screen.queryByText(/settled/i)).toBeNull();
 	});
 
 	it("explains a balance that changed meanwhile and validates the entry before sending it", async () => {

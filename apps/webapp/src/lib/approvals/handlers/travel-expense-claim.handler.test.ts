@@ -28,6 +28,10 @@ vi.mock("@/lib/approvals/authority", async (importOriginal) => {
 vi.mock("@/lib/approvals/delivery/intents", () => ({
 	recordLegacyDeliveryIntent: async () => false,
 }));
+// Recording the approval teams (#746) is covered by the PostgreSQL suite.
+vi.mock("@/lib/travel-expenses/approval-teams", () => ({
+	recordClaimApprovalTeams: async () => {},
+}));
 // Escalation transfers and their revocation of former holders (#326) run
 // against PostgreSQL in escalation/expense-transfer.integration.test.ts.
 vi.mock("@/lib/approvals/escalation/legacy-transfer-store", () => ({

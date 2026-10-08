@@ -140,8 +140,8 @@ function SettlementBalance({
 			{viewer === "owner" && account.summary.state === "outstanding" && (
 				<p className="text-sm text-muted-foreground">
 					{t(
-						"travelExpenses.settlement.ownerOutstanding",
-						"Finance records your reimbursement here once it has been paid.",
+						"travelExpenses.settlement.ownerAwaitingReimbursement",
+						"Finance records each payment here. Once everything owed to you is paid, this expense shows as Reimbursed.",
 					)}
 				</p>
 			)}

@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SettlementAccount } from "@/lib/travel-expenses/settlement-store";
@@ -126,17 +126,20 @@ describe("finance queue (#612)", () => {
 		expect(mocks.getQueue).toHaveBeenCalledWith("open");
 	});
 
-	it("switches to settled expenses, including legacy claims, and links claims to their detail", async () => {
+	it("switches to reimbursed expenses, including legacy claims, and links claims to their detail", async () => {
 		mocks.getQueue.mockImplementation(async (filter: string) => ({
 			success: true,
 			data: { accounts: filter === "settled" ? [claim] : [report], canSettle: true },
 		}));
 		mount();
 		await screen.findByText("€89.90 outstanding");
-		fireEvent.click(screen.getByRole("radio", { name: "Settled" }));
+		expect(screen.getByText("Awaiting reimbursement")).toBeTruthy();
+		fireEvent.click(screen.getByRole("radio", { name: "Reimbursed" }));
 		const link = await screen.findByRole("link", { name: /Legacy mileage claim/ });
 		expect(link.getAttribute("href")).toBe("/travel-expenses/claim-1");
 		expect(mocks.getQueue).toHaveBeenLastCalledWith("settled");
+		expect(within(link).getAllByText("Reimbursed")).toHaveLength(2);
+		expect(screen.queryByText(/settled/i)).toBeNull();
 	});
 
 	it("says visibly when older matching expenses are left out of the list", async () => {
@@ -162,7 +165,7 @@ describe("finance queue (#612)", () => {
 		expect(screen.queryByRole("status")).toBeNull();
 	});
 
-	it("says when nothing is left to settle and offers retry when the queue fails to load", async () => {
+	it("says when nothing is left to record and offers retry when the queue fails to load", async () => {
 		mocks.getQueue
 			.mockResolvedValueOnce({ success: false, error: "Failed to load the finance queue" })
 			.mockResolvedValueOnce({ success: true, data: { accounts: [], canSettle: true } });
@@ -170,7 +173,7 @@ describe("finance queue (#612)", () => {
 		fireEvent.click(await screen.findByRole("button", { name: "Retry" }));
 		await waitFor(() =>
 			expect(
-				screen.getByText("Nothing to settle: every approved expense is settled."),
+				screen.getByText("Nothing left to record: every approved expense is reimbursed."),
 			).toBeTruthy(),
 		);
 	});

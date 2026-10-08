@@ -105,6 +105,11 @@ export enum AuditAction {
 	TWO_FACTOR_ENABLED = "auth.two_factor_enabled",
 	TWO_FACTOR_DISABLED = "auth.two_factor_disabled",
 
+	// Payroll Access Grant Operations
+	PAYROLL_ACCESS_GRANT_CREATED = "payroll_access.grant_created",
+	PAYROLL_ACCESS_GRANT_CHANGED = "payroll_access.grant_changed",
+	PAYROLL_ACCESS_GRANT_REVOKED = "payroll_access.grant_revoked",
+
 	// App Access Operations
 	APP_ACCESS_GRANTED = "app_access.granted",
 	APP_ACCESS_REVOKED = "app_access.revoked",

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	buildExpenseHistory,
 	countExpenseHistory,
+	EXPENSE_HISTORY_FILTERS,
 	type ExpenseHistoryInput,
 	filterExpenseHistory,
 } from "../expense-history";
@@ -212,7 +213,117 @@ describe("status filters", () => {
 			needs_action: 3,
 			in_review: 2,
 			approved: 2,
+			awaiting_reimbursement: 0,
 			rejected: 1,
 		});
+	});
+});
+
+describe("reimbursement state (#751)", () => {
+	function line(state: "settled" | "outstanding" | "overpaid", currency = "EUR") {
+		const balance = state === "outstanding" ? "10.00" : state === "overpaid" ? "-10.00" : "0.00";
+		return {
+			currency,
+			entitlement: "100.00",
+			reimbursed: "90.00",
+			recovered: "0.00",
+			balance,
+			state,
+		};
+	}
+	const reimbursed = { state: "settled" as const, currencies: [line("settled")] };
+	const outstanding = { state: "outstanding" as const, currencies: [line("outstanding")] };
+	const overpaid = { state: "overpaid" as const, currencies: [line("overpaid")] };
+	const mixed = {
+		state: "mixed" as const,
+		currencies: [line("outstanding", "CHF"), line("overpaid", "EUR")],
+	};
+	const rows = buildExpenseHistory(
+		input({
+			reports: [
+				report({ id: "reimbursed", status: "approved" }),
+				report({ id: "outstanding", status: "approved" }),
+				report({ id: "overpaid", status: "approved" }),
+				report({ id: "mixed", status: "approved" }),
+				report({ id: "no-balance", status: "approved" }),
+				report({ id: "adjustment", status: "approved" }),
+				report({ id: "submitted", status: "submitted" }),
+			],
+			claims: [
+				{ ...claim, id: "legacy-outstanding" },
+				{ ...claim, id: "legacy-reimbursed" },
+			],
+			adjustmentOriginals: new Map([["adjustment", "outstanding"]]),
+			balances: new Map([
+				["report:reimbursed", reimbursed],
+				["report:outstanding", outstanding],
+				["report:overpaid", overpaid],
+				["report:mixed", mixed],
+				["report:adjustment", outstanding],
+				["report:submitted", outstanding],
+				["legacy_claim:legacy-outstanding", outstanding],
+				["legacy_claim:legacy-reimbursed", reimbursed],
+			]),
+		}),
+	);
+	const reimbursement = (id: string) => rows.find((row) => row.id === id)?.reimbursement;
+
+	it("marks an approved expense whose balance is fully covered as reimbursed", () => {
+		expect(reimbursement("reimbursed")).toBe("reimbursed");
+		expect(reimbursement("legacy-reimbursed")).toBe("reimbursed");
+	});
+	it("marks an approved expense that still owes the employee money as awaiting reimbursement", () => {
+		expect(reimbursement("outstanding")).toBe("awaiting");
+		expect(reimbursement("legacy-outstanding")).toBe("awaiting");
+		// One currency still owed, another overpaid: still owed in part.
+		expect(reimbursement("mixed")).toBe("awaiting");
+	});
+	it("does not call an expense with nothing owed or paid reimbursed", () => {
+		const nothingOwed = buildExpenseHistory(
+			input({
+				reports: [
+					report({ id: "no-lines", status: "approved" }),
+					report({ id: "zero-line", status: "approved" }),
+				],
+				balances: new Map([
+					["report:no-lines", { state: "settled", currencies: [] }],
+					[
+						"report:zero-line",
+						{
+							state: "settled",
+							currencies: [{ ...line("settled"), entitlement: "0.00", reimbursed: "0.00" }],
+						},
+					],
+				]),
+			}),
+		);
+		expect(nothingOwed.map((row) => row.reimbursement)).toEqual([null, null]);
+	});
+	it("gives no reimbursement state to overpaid, unbalanced, adjustment or unapproved expenses", () => {
+		expect(reimbursement("overpaid")).toBeNull();
+		expect(reimbursement("no-balance")).toBeNull();
+		expect(reimbursement("adjustment")).toBeNull();
+		expect(reimbursement("submitted")).toBeNull();
+	});
+	it("filters and counts the expenses awaiting reimbursement", () => {
+		expect(
+			filterExpenseHistory(rows, "awaiting_reimbursement")
+				.map((row) => row.id)
+				.sort(),
+		).toEqual(["legacy-outstanding", "mixed", "outstanding"]);
+		expect(countExpenseHistory(rows)).toMatchObject({
+			approved: 8,
+			awaiting_reimbursement: 3,
+		});
+	});
+	it("offers the awaiting reimbursement filter right after Approved", () => {
+		expect(EXPENSE_HISTORY_FILTERS).toEqual([
+			"all",
+			"needs_action",
+			"in_review",
+			"approved",
+			"awaiting_reimbursement",
+			"rejected",
+		]);
 	});
 });
