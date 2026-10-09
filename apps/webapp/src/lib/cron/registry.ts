@@ -20,6 +20,7 @@ import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-dep
 import type { SCIMMaintenanceResult } from "@/lib/jobs/scim-maintenance";
 import type { TravelExpenseReceiptCleanupJobResult } from "@/lib/jobs/travel-expense-receipt-cleanup";
 import type { TravelExpenseReferenceRatesJobResult } from "@/lib/jobs/travel-expense-reference-rates";
+import type { CleanupJobData } from "@/lib/queue";
 import type { WorkBalanceRebuildResult } from "@/lib/work-balance/rebuild-intents";
 
 // ============================================
@@ -113,6 +114,12 @@ export interface ExecutionCleanupResult {
 	success: true;
 	deletedCount: number;
 	daysToKeep: number;
+}
+
+/** Result from a retention cleanup job (notifications, audit logs) */
+export interface RetentionCleanupResult {
+	task: CleanupJobData["task"];
+	deletedCount: number;
 }
 
 /** Result from break enforcement job */
@@ -333,6 +340,34 @@ export const CRON_JOBS = {
 				"@/lib/jobs/execution-cleanup"
 			);
 			return runExecutionCleanup();
+		},
+		defaultJobOptions: { attempts: 2, priority: 9 },
+	},
+
+	"cron:notification-cleanup": {
+		schedule: "30 2 * * *", // Daily at 2:30 AM
+		description: "Delete notifications older than 90 days",
+		processor: async (): Promise<RetentionCleanupResult> => {
+			const { runCleanup } = await import("@/lib/cleanup");
+			const { deletedCount } = await runCleanup({
+				type: "cleanup",
+				task: "old_notifications",
+			});
+			return { task: "old_notifications", deletedCount };
+		},
+		defaultJobOptions: { attempts: 2, priority: 9 },
+	},
+
+	"cron:audit-log-cleanup": {
+		schedule: "30 2 * * *", // Daily at 2:30 AM
+		description: "Delete audit log records past the audit-log retention period",
+		processor: async (): Promise<RetentionCleanupResult> => {
+			const { runCleanup } = await import("@/lib/cleanup");
+			const { deletedCount } = await runCleanup({
+				type: "cleanup",
+				task: "old_audit_logs",
+			});
+			return { task: "old_audit_logs", deletedCount };
 		},
 		defaultJobOptions: { attempts: 2, priority: 9 },
 	},

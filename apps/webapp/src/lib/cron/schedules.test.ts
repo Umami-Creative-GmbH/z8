@@ -56,6 +56,23 @@ describe("cron schedule presets", () => {
 		expect(schedules["cron:vacation"].isOverridden).toBe(false);
 	});
 
+	it.each(["cron:notification-cleanup", "cron:audit-log-cleanup"] as const)(
+		"lets operators move the daily %s to another preset, behind the high-risk confirmation",
+		(jobName) => {
+			const schedules = resolveEffectiveCronSchedules({
+				overrides: [{ jobName, presetId: "daily-1am", pattern: "0 1 * * *" }],
+			});
+
+			expect(isHighRiskCronJob(jobName)).toBe(true);
+			expect(schedules[jobName]).toMatchObject({
+				defaultPattern: "30 2 * * *",
+				effectivePattern: "0 1 * * *",
+				isOverridden: true,
+				canEdit: true,
+			});
+		},
+	);
+
 	it("ignores unknown override job names", () => {
 		const schedules = resolveEffectiveCronSchedules({
 			overrides: [
