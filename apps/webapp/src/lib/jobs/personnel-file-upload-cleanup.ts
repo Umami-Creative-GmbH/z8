@@ -23,9 +23,12 @@ export interface PersonnelFileUploadCleanupJobResult extends PersonnelFileCleanu
  * stops deletion work that is already due.
  */
 export async function runPersonnelFileUploadCleanupJob(): Promise<PersonnelFileUploadCleanupJobResult> {
+	// Clean queued objects before removing expired batches, then count the resulting outstanding ledger.
+	// react-doctor-disable-next-line react-doctor/async-parallel
 	const result = await runPersonnelFileCleanup(db, {
 		deleteObject: deletePersonnelDocumentObject,
 	});
+	// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
 	const abandonedPayslipBatches = await deleteAbandonedPayslipBatches(db);
 	const outstanding = await countOutstandingPersonnelFileCleanup(db);
 	return { success: true, ...result, outstanding, abandonedPayslipBatches };

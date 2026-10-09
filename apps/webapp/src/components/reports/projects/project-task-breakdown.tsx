@@ -3,6 +3,7 @@
 import { IconListCheck } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -152,8 +153,14 @@ function EstimateProgress({
 /** Hours with one decimal at most and whole percentages, in the viewer's locale. */
 function useReportNumberFormat() {
 	const locale = useLocale();
-	const hours = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
-	const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
+	const hours = useMemo(
+		() => new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }),
+		[locale],
+	);
+	const percent = useMemo(
+		() => new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 }),
+		[locale],
+	);
 	return {
 		hours: (value: number) => hours.format(value),
 		percent: (value: number) => percent.format(value / 100),

@@ -82,6 +82,30 @@ export function useProjectReportExportLabels(): ProjectReportExportLabels {
 	};
 }
 
+async function buildReportExportFile(format: ExportFormat, document: ReportDocument) {
+	return format === "pdf"
+		? {
+				data: await (
+					await import("@/lib/reports/exporters/report-document-pdf")
+				).exportReportDocumentToPDF(document),
+				filename: reportFileName(document, "pdf"),
+				mimeType: "application/pdf",
+			}
+		: format === "excel"
+			? {
+					data: await (
+						await import("@/lib/reports/exporters/report-document-excel")
+					).exportReportDocumentToExcel(document),
+					filename: reportFileName(document, "xlsx"),
+					mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+				}
+			: {
+					data: exportReportDocumentToCSV(document),
+					filename: reportFileName(document, "csv"),
+					mimeType: "text/csv;charset=utf-8;",
+				};
+}
+
 interface ReportDocumentExportButtonsProps {
 	/** Builds the document to export from the viewer's labels. */
 	buildDocument: (context: ProjectReportExportContext) => ReportDocument;
@@ -106,55 +130,39 @@ export function ReportDocumentExportButtons({
 	const handleExport = async (format: ExportFormat) => {
 		setLoading(format);
 		const generatedAt = formatInstant(systemClock.nowInstant(), displayContext, "dateTimeMedium");
-		try {
-			const document = buildDocument({ labels, generatedAt });
-			const file =
-				format === "pdf"
-					? {
-							data: await (
-								await import("@/lib/reports/exporters/report-document-pdf")
-							).exportReportDocumentToPDF(document),
-							filename: reportFileName(document, "pdf"),
-							mimeType: "application/pdf",
-						}
-					: format === "excel"
-						? {
-								data: await (
-									await import("@/lib/reports/exporters/report-document-excel")
-								).exportReportDocumentToExcel(document),
-								filename: reportFileName(document, "xlsx"),
-								mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-							}
-						: {
-								data: exportReportDocumentToCSV(document),
-								filename: reportFileName(document, "csv"),
-								mimeType: "text/csv;charset=utf-8;",
-							};
-			const blob = new Blob([file.data as BlobPart], { type: file.mimeType });
-			const url = URL.createObjectURL(blob);
-			const anchor = window.document.createElement("a");
-			anchor.href = url;
-			anchor.download = file.filename;
-			window.document.body.appendChild(anchor);
-			anchor.click();
-			window.document.body.removeChild(anchor);
-			URL.revokeObjectURL(url);
-			toast.success(t("reports.export.success", "Export successful"), {
-				description: t("reports.export.downloaded", "Downloaded {filename}", {
-					filename: file.filename,
-				}),
-			});
-		} catch (error) {
-			console.error("Export failed:", error);
-			toast.error(t("reports.export.failed", "Export failed"), {
-				description:
-					error instanceof Error
-						? error.message
-						: t("reports.export.errorDescription", "An error occurred while exporting the report"),
-			});
-		} finally {
+		await (async () => {
+			try {
+				const document = buildDocument({ labels, generatedAt });
+				const file = await buildReportExportFile(format, document);
+				const blob = new Blob([file.data as BlobPart], { type: file.mimeType });
+				const url = URL.createObjectURL(blob);
+				const anchor = window.document.createElement("a");
+				anchor.href = url;
+				anchor.download = file.filename;
+				window.document.body.appendChild(anchor);
+				anchor.click();
+				window.document.body.removeChild(anchor);
+				URL.revokeObjectURL(url);
+				toast.success(t("reports.export.success", "Export successful"), {
+					description: t("reports.export.downloaded", "Downloaded {filename}", {
+						filename: file.filename,
+					}),
+				});
+			} catch (error) {
+				console.error("Export failed:", error);
+				toast.error(t("reports.export.failed", "Export failed"), {
+					description:
+						error instanceof Error
+							? error.message
+							: t(
+									"reports.export.errorDescription",
+									"An error occurred while exporting the report",
+								),
+				});
+			}
+		})().finally(() => {
 			setLoading(null);
-		}
+		});
 	};
 
 	return (

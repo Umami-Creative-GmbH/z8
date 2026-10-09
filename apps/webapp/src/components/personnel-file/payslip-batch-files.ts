@@ -64,6 +64,8 @@ export async function collectPayslipFiles(
 	if (pdfEntries.length > room) return { ok: false, error: "too_many" };
 	const files: File[] = [];
 	try {
+		// Decompress one PDF at a time to bound peak ZIP expansion memory (the batch may contain 500 MB).
+		// react-doctor-disable-next-line react-doctor/async-await-in-loop
 		for (const entry of pdfEntries) {
 			const bytes = await entry.async("arraybuffer");
 			const name = entry.name.split("/").pop() || entry.name;

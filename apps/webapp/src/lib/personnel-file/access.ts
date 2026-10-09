@@ -58,9 +58,10 @@ export const ORGANIZATION_ADMIN_GRANT: ManageGrant = Object.freeze({
 
 export function isEmployeeInScope(scope: EmployeeScope, employee: EmployeeRef): boolean {
 	if (scope.kind === "all") return true;
+	const teamIds = new Set(scope.teamIds);
 	return (
 		scope.employeeIds.includes(employee.id) ||
-		employee.teamIds.some((teamId) => scope.teamIds.includes(teamId))
+		employee.teamIds.some((teamId) => teamIds.has(teamId))
 	);
 }
 

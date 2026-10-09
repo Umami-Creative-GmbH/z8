@@ -5,11 +5,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { applyImportDecisionAction } from "@/app/[locale]/(app)/settings/import/review-actions";
 import type { StagedCustomer } from "@/lib/import-review/staged-customer";
 import { render } from "@/test/render-with-translations";
+import { currentCustomerDecision, customerDecisionOptions } from "./customer-import-decisions";
 import {
 	type CustomerImportReviewRow,
 	CustomerImportReviewTable,
-	currentCustomerDecision,
-	customerDecisionOptions,
 } from "./customer-import-review-table";
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));

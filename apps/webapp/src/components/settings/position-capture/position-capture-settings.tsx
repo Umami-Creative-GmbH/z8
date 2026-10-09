@@ -81,7 +81,7 @@ function CaptureSettingsForm({ data }: PositionCaptureSettingsProps) {
 		},
 		onSubmit: async ({ value }) => {
 			setSaving(true);
-			try {
+			await (async () => {
 				const result = await savePositionCaptureSettingsAction({
 					enabled: value.enabled,
 					purposeStatement: value.purposeStatement,
@@ -106,9 +106,9 @@ function CaptureSettingsForm({ data }: PositionCaptureSettingsProps) {
 					toast.success(t("settings.positionCapture.saved", "Position capture settings saved"));
 				}
 				router.refresh();
-			} finally {
+			})().finally(() => {
 				setSaving(false);
-			}
+			});
 		},
 	});
 	const values = useStore(form.store, (state) => state.values);
@@ -288,7 +288,7 @@ function CaptureAssignments({ data }: PositionCaptureSettingsProps) {
 		},
 		onSubmit: async ({ value, formApi }) => {
 			setPending(true);
-			try {
+			await (async () => {
 				const target =
 					value.targetType === "organization"
 						? ({ type: "organization" } as const)
@@ -309,9 +309,9 @@ function CaptureAssignments({ data }: PositionCaptureSettingsProps) {
 							t("settings.positionCapture.assignmentFailed", "The assignment was not saved"),
 					);
 				}
-			} finally {
+			})().finally(() => {
 				setPending(false);
-			}
+			});
 		},
 	});
 	const targetType = useStore(form.store, (state) => state.values.targetType);
@@ -325,7 +325,7 @@ function CaptureAssignments({ data }: PositionCaptureSettingsProps) {
 
 	const remove = async (assignment: PositionCaptureAssignmentData) => {
 		setPending(true);
-		try {
+		await (async () => {
 			const result = await removePositionCaptureAssignmentAction({ assignmentId: assignment.id });
 			if (result.success) {
 				toast.success(t("settings.positionCapture.assignmentRemoved", "Assignment removed"));
@@ -336,9 +336,9 @@ function CaptureAssignments({ data }: PositionCaptureSettingsProps) {
 						t("settings.positionCapture.assignmentRemoveFailed", "The assignment was not removed"),
 				);
 			}
-		} finally {
+		})().finally(() => {
 			setPending(false);
-		}
+		});
 	};
 
 	const targetLabel = (assignment: PositionCaptureAssignmentData) =>

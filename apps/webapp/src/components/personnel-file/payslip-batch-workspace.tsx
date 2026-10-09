@@ -74,7 +74,7 @@ export function PayslipBatchWorkspace({ batchId }: { batchId: string }) {
 
 	async function confirm() {
 		setConfirming(true);
-		try {
+		await (async () => {
 			const confirmed = await confirmPayslipBatchAction({ batchId });
 			if (!confirmed.success) {
 				toast.error(confirmed.error);
@@ -96,11 +96,11 @@ export function PayslipBatchWorkspace({ batchId }: { batchId: string }) {
 					),
 				);
 			}
-		} finally {
+		})().finally(() => {
 			setConfirming(false);
 			setConfirmOpen(false);
 			refresh();
-		}
+		});
 	}
 
 	if (query.isPending) {
@@ -135,45 +135,16 @@ export function PayslipBatchWorkspace({ batchId }: { batchId: string }) {
 			{result ? <ConfirmationResult result={result} /> : null}
 			<FileList preview={preview} onChanged={refresh} />
 			{pendingFiles.length > 0 ? (
-				<div className="flex flex-wrap items-center justify-end gap-3">
-					{unresolved.length > 0 ? (
-						<p className="text-sm text-muted-foreground">
-							{t(
-								"settings.personnelFiles.batch.unresolvedHint",
-								"Assign or drop {count} files before saving.",
-								{ count: unresolved.length },
-							)}
-						</p>
-					) : null}
-					{open ? (
-						<Button
-							type="button"
-							disabled={toSave.length === 0 || unresolved.length > 0 || confirming}
-							onClick={() => setConfirmOpen(true)}
-						>
-							<IconCircleCheck aria-hidden="true" className="size-4" />
-							{t("settings.personnelFiles.batch.save", "Save {count} payslips", {
-								count: toSave.length,
-							})}
-						</Button>
-					) : retryable.length > 0 ? (
-						<Button
-							type="button"
-							variant="outline"
-							disabled={unresolved.length > 0 || confirming}
-							onClick={() => void confirm()}
-						>
-							{confirming ? (
-								<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
-							) : (
-								<IconRefresh aria-hidden="true" className="size-4" />
-							)}
-							{t("settings.personnelFiles.batch.retry", "Retry {count} failed files", {
-								count: retryable.length,
-							})}
-						</Button>
-					) : null}
-				</div>
+				<BatchSaveActions
+					unresolved={unresolved}
+					t={t}
+					open={open}
+					toSave={toSave}
+					confirming={confirming}
+					setConfirmOpen={setConfirmOpen}
+					retryable={retryable}
+					confirm={confirm}
+				/>
 			) : null}
 
 			<AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -292,7 +263,7 @@ function AddFilesCard({
 		if (inputRef.current) inputRef.current.value = "";
 		if (selected.length === 0) return;
 		setUnpacking(true);
-		try {
+		await (async () => {
 			const collected = await collectPayslipFiles(selected, {
 				alreadyStaged: preview.files.filter((file) => file.state !== "expired").length,
 			});
@@ -310,9 +281,9 @@ function AddFilesCard({
 				);
 			}
 			upload.addFiles(collected.files);
-		} finally {
+		})().finally(() => {
 			setUnpacking(false);
-		}
+		});
 	}
 
 	const done = progress.staged + progress.failed.length;
@@ -378,9 +349,8 @@ function AddFilesCard({
 				) : null}
 				{progress.failed.length > 0 ? (
 					<ul className="space-y-1 text-sm text-destructive" role="alert">
-						{progress.failed.map((failure, index) => (
-							// biome-ignore lint/suspicious/noArrayIndexKey: file names may repeat
-							<li key={`${failure.fileName}-${index}`}>
+						{progress.failed.map((failure) => (
+							<li key={failure.id}>
 								{t("settings.personnelFiles.batch.uploadFailed", "{fileName}: {error}", {
 									fileName: failure.fileName,
 									error: failure.error,
@@ -449,7 +419,7 @@ function FileList({ preview, onChanged }: { preview: PayslipBatchPreview; onChan
 	);
 }
 
-function FileRow({
+function usePayslipFileRow({
 	file,
 	preview,
 	onChanged,
@@ -483,7 +453,7 @@ function FileRow({
 
 	async function update(change: { assignedEmployeeId?: string | null; included?: boolean }) {
 		setSaving(true);
-		try {
+		await (async () => {
 			const result = await updatePayslipBatchFileAction({
 				batchId: preview.batch.id,
 				fileId: file.id,
@@ -491,9 +461,9 @@ function FileRow({
 			});
 			if (!result.success) toast.error(result.error);
 			onChanged();
-		} finally {
+		})().finally(() => {
 			setSaving(false);
-		}
+		});
 	}
 
 	const matchBadge =
@@ -506,6 +476,43 @@ function FileRow({
 					: t("settings.personnelFiles.batch.unmatched", "Unmatched");
 	const needsEmployee = file.included && file.employeeId === null;
 
+	return {
+		file,
+		editable,
+		saving,
+		update,
+		t,
+		needsEmployee,
+		matchBadge,
+		preview,
+		failureLabels,
+		options,
+		pinned,
+		optionOf,
+	};
+}
+
+function FileRow({
+	file,
+	preview,
+	onChanged,
+}: {
+	file: PayslipBatchFileView;
+	preview: PayslipBatchPreview;
+	onChanged: () => void;
+}) {
+	const {
+		editable,
+		saving,
+		update,
+		t,
+		needsEmployee,
+		matchBadge,
+		failureLabels,
+		options,
+		pinned,
+		optionOf,
+	} = usePayslipFileRow({ file, preview, onChanged });
 	return (
 		<li className="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center">
 			<div className="flex min-w-0 flex-1 items-start gap-3">
@@ -517,42 +524,14 @@ function FileRow({
 						fileName: file.fileName,
 					})}
 				/>
-				<div className="min-w-0 space-y-1">
-					<p className="truncate font-medium" title={file.fileName}>
-						{file.fileName}
-					</p>
-					<div className="flex flex-wrap items-center gap-1.5">
-						<Badge variant={needsEmployee ? "destructive" : "outline"}>{matchBadge}</Badge>
-						{file.state === "created" ? (
-							<Badge variant="secondary">
-								{t("settings.personnelFiles.batch.stateCreated", "Saved")}
-							</Badge>
-						) : null}
-						{file.state === "expired" ? (
-							<Badge variant="secondary">
-								{t("settings.personnelFiles.batch.stateExpired", "Expired")}
-							</Badge>
-						) : null}
-						{file.alreadyHasPayslip && file.state !== "created" ? (
-							<Badge
-								variant="outline"
-								className="border-amber-500/50 text-amber-700 dark:text-amber-400"
-							>
-								<IconAlertTriangle aria-hidden="true" />
-								{t(
-									"settings.personnelFiles.batch.duplicate",
-									"Already has a payslip for {payPeriod}",
-									{ payPeriod: payPeriodCode(preview.batch.payPeriod) },
-								)}
-							</Badge>
-						) : null}
-					</div>
-					{file.failure && file.state !== "created" ? (
-						<p className="text-sm text-destructive">{failureLabels[file.failure]}</p>
-					) : file.state === "expired" ? (
-						<p className="text-sm text-destructive">{failureLabels.expired}</p>
-					) : null}
-				</div>
+				<PayslipFileStatus
+					file={file}
+					needsEmployee={needsEmployee}
+					matchBadge={matchBadge}
+					t={t}
+					preview={preview}
+					failureLabels={failureLabels}
+				/>
 			</div>
 			<div className="w-full md:w-72">
 				{editable ? (
@@ -580,5 +559,116 @@ function FileRow({
 				)}
 			</div>
 		</li>
+	);
+}
+
+function PayslipFileStatus({
+	file,
+	needsEmployee,
+	matchBadge,
+	t,
+	preview,
+	failureLabels,
+}: Pick<
+	ReturnType<typeof usePayslipFileRow>,
+	"file" | "needsEmployee" | "matchBadge" | "t" | "preview" | "failureLabels"
+>) {
+	return (
+		<div className="min-w-0 space-y-1">
+			<p className="truncate font-medium" title={file.fileName}>
+				{file.fileName}
+			</p>
+			<div className="flex flex-wrap items-center gap-1.5">
+				<Badge variant={needsEmployee ? "destructive" : "outline"}>{matchBadge}</Badge>
+				{file.state === "created" ? (
+					<Badge variant="secondary">
+						{t("settings.personnelFiles.batch.stateCreated", "Saved")}
+					</Badge>
+				) : null}
+				{file.state === "expired" ? (
+					<Badge variant="secondary">
+						{t("settings.personnelFiles.batch.stateExpired", "Expired")}
+					</Badge>
+				) : null}
+				{file.alreadyHasPayslip && file.state !== "created" ? (
+					<Badge
+						variant="outline"
+						className="border-amber-500/50 text-amber-700 dark:text-amber-400"
+					>
+						<IconAlertTriangle aria-hidden="true" />
+						{t("settings.personnelFiles.batch.duplicate", "Already has a payslip for {payPeriod}", {
+							payPeriod: payPeriodCode(preview.batch.payPeriod),
+						})}
+					</Badge>
+				) : null}
+			</div>
+			{file.failure && file.state !== "created" ? (
+				<p className="text-sm text-destructive">{failureLabels[file.failure]}</p>
+			) : file.state === "expired" ? (
+				<p className="text-sm text-destructive">{failureLabels.expired}</p>
+			) : null}
+		</div>
+	);
+}
+
+function BatchSaveActions({
+	unresolved,
+	t,
+	open,
+	toSave,
+	confirming,
+	setConfirmOpen,
+	retryable,
+	confirm,
+}: {
+	unresolved: PayslipBatchFileView[];
+	t: ReturnType<typeof useTranslate>["t"];
+	open: boolean;
+	toSave: PayslipBatchFileView[];
+	confirming: boolean;
+	setConfirmOpen: (open: boolean) => void;
+	retryable: PayslipBatchFileView[];
+	confirm: () => Promise<void>;
+}) {
+	return (
+		<div className="flex flex-wrap items-center justify-end gap-3">
+			{unresolved.length > 0 ? (
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.personnelFiles.batch.unresolvedHint",
+						"Assign or drop {count} files before saving.",
+						{ count: unresolved.length },
+					)}
+				</p>
+			) : null}
+			{open ? (
+				<Button
+					type="button"
+					disabled={toSave.length === 0 || unresolved.length > 0 || confirming}
+					onClick={() => setConfirmOpen(true)}
+				>
+					<IconCircleCheck aria-hidden="true" className="size-4" />
+					{t("settings.personnelFiles.batch.save", "Save {count} payslips", {
+						count: toSave.length,
+					})}
+				</Button>
+			) : retryable.length > 0 ? (
+				<Button
+					type="button"
+					variant="outline"
+					disabled={unresolved.length > 0 || confirming}
+					onClick={() => void confirm()}
+				>
+					{confirming ? (
+						<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
+					) : (
+						<IconRefresh aria-hidden="true" className="size-4" />
+					)}
+					{t("settings.personnelFiles.batch.retry", "Retry {count} failed files", {
+						count: retryable.length,
+					})}
+				</Button>
+			) : null}
+		</div>
 	);
 }

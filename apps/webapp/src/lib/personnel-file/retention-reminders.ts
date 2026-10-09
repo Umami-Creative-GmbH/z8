@@ -112,6 +112,8 @@ async function remindOrganization(
 	};
 	const recipientsByDocument = new Map<string, string[]>();
 	const documentsByRecipient = new Map<string, number>();
+	// Recipient lookups populate a shared cache consumed by subsequent documents.
+	// react-doctor-disable-next-line react-doctor/async-await-in-loop
 	for (const document of fresh) {
 		const recipients = await recipientsOf(document);
 		recipientsByDocument.set(document.id, recipients);
@@ -121,6 +123,8 @@ async function remindOrganization(
 	}
 
 	const told = new Set<string>();
+	// Claim before delivery and record the recipients already told; notification pressure stays bounded.
+	// react-doctor-disable-next-line react-doctor/async-await-in-loop
 	for (const [userId, documentCount] of documentsByRecipient) {
 		const [claimed] = await database
 			.insert(personnelFileDueReminder)
@@ -180,6 +184,8 @@ export async function runPersonnelFileRetentionReminders(
 			),
 		);
 	const result: RetentionRemindersResult = { organizations: 0, newlyDue: 0, notified: 0 };
+	// One tenant at a time keeps failures and shared notification capacity isolated.
+	// react-doctor-disable-next-line react-doctor/async-await-in-loop
 	for (const { id } of organizations) {
 		try {
 			const outcome = await remindOrganization(database, id, now);

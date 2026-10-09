@@ -71,16 +71,15 @@ function SiteHeaderLoading() {
 	);
 }
 
-export async function AuthenticatedAppContent({
-	children,
-	params,
-}: AuthenticatedAppContentProps) {
+export async function AuthenticatedAppContent({ children, params }: AuthenticatedAppContentProps) {
 	// Auth database instrumentation uses random trace IDs and must run per request.
 	await connection();
-	const [{ locale }, headersList] = await Promise.all([params, headers()]);
-
-	// Centralized auth check - protects all routes in the (app) group
-	const session = await getRenderSession();
+	// Centralized auth check protects all routes in the (app) group.
+	const [{ locale }, headersList, session] = await Promise.all([
+		params,
+		headers(),
+		getRenderSession(),
+	]);
 
 	if (!session?.user) {
 		// Session cookie exists but is invalid - redirect to session-expired handler
@@ -97,13 +96,7 @@ export async function AuthenticatedAppContent({
 		getRenderUserPreferences(session.user.id),
 		getOrganizationSettings(activeOrganizationId, session.user.id),
 	]);
-	const {
-		locale: dbLocale,
-		weekStartDay,
-		timeFormat,
-		timezone,
-		helpImproveProduct,
-	} = preferences;
+	const { locale: dbLocale, weekStartDay, timeFormat, timezone, helpImproveProduct } = preferences;
 	if (dbLocale && dbLocale !== locale) {
 		// User has a saved locale preference that differs from current URL - redirect
 		const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
@@ -111,33 +104,9 @@ export async function AuthenticatedAppContent({
 		redirect(newPath);
 	}
 
-	const billingEnabled = env.BILLING_ENABLED === "true";
-	const billingAccess =
-		activeOrganizationId && billingEnabled
-			? await checkBillingAccess(activeOrganizationId).catch((error) => {
-					logger.error(
-						{ error, organizationId: activeOrganizationId },
-						"Billing access check failed",
-					);
-
-					return billingCheckFailedAccess;
-				})
-			: billingDisabledAccess;
-	const [membershipRecord, subscriptionRow] =
-		activeOrganizationId && billingEnabled
-			? await Promise.all([
-					db.query.member.findFirst({
-						where: and(
-							eq(member.userId, session.user.id),
-							eq(member.organizationId, activeOrganizationId),
-						),
-					}),
-					db.query.subscription.findFirst({
-						where: eq(subscription.organizationId, activeOrganizationId),
-					}),
-				])
-			: [null, null];
 	const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
+	const { billingAccess, trialDaysRemaining, canManageBilling, showTrialBanner } =
+		await loadAppBillingStatus(activeOrganizationId, session.user.id);
 	const isBillingRecoveryPath =
 		pathname === `/${locale}/settings/billing` ||
 		pathname.startsWith(`/${locale}/settings/billing/`) ||
@@ -147,22 +116,6 @@ export async function AuthenticatedAppContent({
 	if (billingAccess.canAccess === false && !isBillingRecoveryPath) {
 		return redirectWithLocale("/billing/suspended");
 	}
-
-	const trialDaysRemaining =
-		typeof billingAccess.daysRemaining === "number" &&
-		billingAccess.daysRemaining > 0
-			? billingAccess.daysRemaining
-			: null;
-	const membershipRole = membershipRecord?.role;
-	const canManageBilling =
-		membershipRole === "owner" || membershipRole === "admin";
-	const hasPreparedTrialSubscription =
-		subscriptionRow?.status === "trialing" &&
-		Boolean(subscriptionRow?.stripeSubscriptionId);
-	const showTrialBanner =
-		billingAccess.state === "trialing" &&
-		trialDaysRemaining !== null &&
-		!hasPreparedTrialSubscription;
 
 	return (
 		<PostHogProvider
@@ -194,7 +147,7 @@ export async function AuthenticatedAppContent({
 								</Suspense>
 								{/* In flow so recovery status never covers header clock controls. */}
 								<OfflineBanner />
-								{showTrialBanner ? (
+								{showTrialBanner && trialDaysRemaining !== null ? (
 									<TrialBanner
 										daysRemaining={trialDaysRemaining}
 										billingHref="/settings/billing"
@@ -204,9 +157,7 @@ export async function AuthenticatedAppContent({
 								<OrganizationDeletionBanner />
 								{/* Asked on the next clock action when position capture needs consent (#826). */}
 								<PositionConsentDialogHost />
-								<div className="flex flex-1 flex-col min-h-0 overflow-y-auto">
-									{children}
-								</div>
+								<div className="flex flex-1 flex-col min-h-0 overflow-y-auto">{children}</div>
 							</SidebarInset>
 						</SidebarProvider>
 					</OrganizationSettingsProvider>
@@ -214,4 +165,48 @@ export async function AuthenticatedAppContent({
 			</PushPermissionProvider>
 		</PostHogProvider>
 	);
+}
+
+async function loadAppBillingStatus(
+	activeOrganizationId: string | null | undefined,
+	userId: string,
+) {
+	const billingEnabled = env.BILLING_ENABLED === "true";
+	const billingAccess =
+		activeOrganizationId && billingEnabled
+			? await checkBillingAccess(activeOrganizationId).catch((error) => {
+					logger.error(
+						{ error, organizationId: activeOrganizationId },
+						"Billing access check failed",
+					);
+
+					return billingCheckFailedAccess;
+				})
+			: billingDisabledAccess;
+	const [membershipRecord, subscriptionRow] =
+		activeOrganizationId && billingEnabled
+			? await Promise.all([
+					db.query.member.findFirst({
+						where: and(eq(member.userId, userId), eq(member.organizationId, activeOrganizationId)),
+					}),
+					db.query.subscription.findFirst({
+						where: eq(subscription.organizationId, activeOrganizationId),
+					}),
+				])
+			: [null, null];
+
+	const trialDaysRemaining =
+		typeof billingAccess.daysRemaining === "number" && billingAccess.daysRemaining > 0
+			? billingAccess.daysRemaining
+			: null;
+	const membershipRole = membershipRecord?.role;
+	const canManageBilling = membershipRole === "owner" || membershipRole === "admin";
+	const hasPreparedTrialSubscription =
+		subscriptionRow?.status === "trialing" && Boolean(subscriptionRow?.stripeSubscriptionId);
+	const showTrialBanner =
+		billingAccess.state === "trialing" &&
+		trialDaysRemaining !== null &&
+		!hasPreparedTrialSubscription;
+
+	return { billingAccess, trialDaysRemaining, canManageBilling, showTrialBanner };
 }

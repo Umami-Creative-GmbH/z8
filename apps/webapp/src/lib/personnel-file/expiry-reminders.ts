@@ -174,6 +174,8 @@ async function remindOrganization(
 
 	let reminders = 0;
 	let notifications = 0;
+	// Claim and deliver one reminder before the next; do not fan out notification writes for a batch.
+	// react-doctor-disable-next-line react-doctor/async-await-in-loop
 	for (const reminder of due) {
 		const { document, kind } = reminder;
 		if (alreadySent.has(`${document.id}:${kind}:${document.expiryDate}`)) continue;

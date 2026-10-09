@@ -254,16 +254,7 @@ function AddRatePanel({
 
 	const needsEmployee = level === "employee" || level === "employee_project";
 	const needsProject = level === "project" || level === "employee_project";
-	const target: BillableRateTarget | null =
-		level === "employee_project" && employeeId && projectId
-			? { level, employeeId, projectId }
-			: level === "project" && projectId
-				? { level, projectId }
-				: level === "customer" && customerId
-					? { level, customerId }
-					: level === "employee" && employeeId
-						? { level, employeeId }
-						: null;
+	const target = selectedRateTarget(level, employeeId, projectId, customerId);
 
 	return (
 		<ActionPanel
@@ -394,4 +385,21 @@ function TargetSelect({
 			</Select>
 		</div>
 	);
+}
+
+function selectedRateTarget(
+	level: RateLevel,
+	employeeId: string,
+	projectId: string,
+	customerId: string,
+): BillableRateTarget | null {
+	return level === "employee_project" && employeeId && projectId
+		? { level, employeeId, projectId }
+		: level === "project" && projectId
+			? { level, projectId }
+			: level === "customer" && customerId
+				? { level, customerId }
+				: level === "employee" && employeeId
+					? { level, employeeId }
+					: null;
 }

@@ -13,7 +13,7 @@ import { useForm } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
 	createProjectTask,
@@ -117,10 +117,7 @@ function TaskForm({
 				form.handleSubmit();
 			}}
 		>
-			<form.Field
-				name="name"
-				validators={{ onSubmit: rules.name }}
-			>
+			<form.Field name="name" validators={{ onSubmit: rules.name }}>
 				{(field) => (
 					<TFormItem>
 						<TFormLabel hasError={fieldHasError(field)} required>
@@ -155,11 +152,7 @@ function TaskForm({
 					</TFormItem>
 				)}
 			</form.Field>
-			<form.Field
-				name="estimateHours"
-				validators={{ onSubmit: rules.estimate }}
-
-			>
+			<form.Field name="estimateHours" validators={{ onSubmit: rules.estimate }}>
 				{(field) => (
 					<TFormItem>
 						<TFormLabel hasError={fieldHasError(field)}>
@@ -207,6 +200,10 @@ function TaskForm({
 function TaskRow({ task, onChanged }: { task: ProjectTask; onChanged: () => void }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
+	const hours = useMemo(
+		() => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }),
+		[locale],
+	);
 	const [mode, setMode] = useState<"view" | "edit" | "confirmDelete">("view");
 	const [isBusy, setIsBusy] = useState(false);
 	const isDone = task.state === "done";
@@ -252,9 +249,7 @@ function TaskRow({ task, onChanged }: { task: ProjectTask; onChanged: () => void
 		);
 	}
 
-	const estimate = task.estimateHours
-		? new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(Number(task.estimateHours))
-		: null;
+	const estimate = task.estimateHours ? hours.format(Number(task.estimateHours)) : null;
 
 	return (
 		<li className="flex flex-col gap-2 px-3 py-2 text-sm sm:flex-row sm:items-start sm:justify-between">

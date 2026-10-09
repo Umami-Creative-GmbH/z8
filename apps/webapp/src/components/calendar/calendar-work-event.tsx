@@ -24,9 +24,7 @@ interface CalendarWorkEventProps {
 	};
 }
 
-export function CalendarTimeGridEvent({
-	calendarEvent,
-}: CalendarWorkEventProps) {
+export function CalendarTimeGridEvent({ calendarEvent }: CalendarWorkEventProps) {
 	return <CalendarWorkEvent calendarEvent={calendarEvent} timeGrid />;
 }
 
@@ -42,29 +40,11 @@ function CalendarWorkEvent({
 	const timeFormat = useTimeFormat();
 	const billableTimeEnabled = useBillableTimeEnabled();
 	const html = timeGrid
-		? (calendarEvent._calendarTimeGridContent ??
-			calendarEvent._customContent?.timeGrid)
+		? (calendarEvent._calendarTimeGridContent ?? calendarEvent._customContent?.timeGrid)
 		: undefined;
-	const colors =
-		calendarColors[calendarEvent.calendarId as keyof typeof calendarColors];
+	const colors = calendarColors[calendarEvent.calendarId as keyof typeof calendarColors];
 	const colorName = colors?.colorName;
-	const time = (endpoint: CalendarWorkEventProps["calendarEvent"]["start"]) =>
-		endpoint?.hour !== undefined && endpoint.minute !== undefined
-			? formatTimeStringForPreference(
-					`${String(endpoint.hour).padStart(2, "0")}:${String(endpoint.minute).padStart(2, "0")}`,
-					timeFormat,
-				)
-			: null;
-	const isWorkPeriod = calendarEvent._eventData?.type === "work_period";
-	const recordedTimes = calendarEvent._workPeriodTimes;
-	const start = isWorkPeriod
-		? recordedTimes &&
-			formatTimeStringForPreference(recordedTimes.start, timeFormat)
-		: time(calendarEvent.start);
-	const end = isWorkPeriod
-		? recordedTimes?.end &&
-			formatTimeStringForPreference(recordedTimes.end, timeFormat)
-		: time(calendarEvent.end);
+	const { start, end } = calendarWorkEventTimes(calendarEvent, timeFormat);
 	return (
 		<div
 			className="flex h-full w-full min-w-0 items-start gap-1 rounded-sm px-1.5 py-1"
@@ -79,10 +59,7 @@ function CalendarWorkEvent({
 			}
 		>
 			{calendarEvent._eventData?.type === "work_period" ? (
-				<WorkLocationIndicator
-					value={calendarEvent._eventData.metadata.workLocationType}
-					t={t}
-				/>
+				<WorkLocationIndicator value={calendarEvent._eventData.metadata.workLocationType} t={t} />
 			) : null}
 			{billableTimeEnabled &&
 			calendarEvent._eventData?.type === "work_period" &&
@@ -111,8 +88,24 @@ function CalendarWorkEvent({
 	);
 }
 
-export const calendarEventComponents = {
-	timeGridEvent: CalendarTimeGridEvent,
-	monthGridEvent: CalendarCompactEvent,
-	monthAgendaEvent: CalendarCompactEvent,
-};
+function calendarWorkEventTimes(
+	calendarEvent: CalendarWorkEventProps["calendarEvent"],
+	timeFormat: Parameters<typeof formatTimeStringForPreference>[1],
+) {
+	const time = (endpoint: CalendarWorkEventProps["calendarEvent"]["start"]) =>
+		endpoint?.hour !== undefined && endpoint.minute !== undefined
+			? formatTimeStringForPreference(
+					`${String(endpoint.hour).padStart(2, "0")}:${String(endpoint.minute).padStart(2, "0")}`,
+					timeFormat,
+				)
+			: null;
+	const isWorkPeriod = calendarEvent._eventData?.type === "work_period";
+	const recordedTimes = calendarEvent._workPeriodTimes;
+	const start = isWorkPeriod
+		? recordedTimes && formatTimeStringForPreference(recordedTimes.start, timeFormat)
+		: time(calendarEvent.start);
+	const end = isWorkPeriod
+		? recordedTimes?.end && formatTimeStringForPreference(recordedTimes.end, timeFormat)
+		: time(calendarEvent.end);
+	return { start, end };
+}

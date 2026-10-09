@@ -6,6 +6,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { PERSONNEL_DOCUMENT_MAX_BYTES } from "@/lib/personnel-file/document.types";
 import { PAYSLIP_BATCH_MAX_FILES } from "@/lib/personnel-file/payslip-batch.types";
 import { getTusFileKeyFromUploadUrl } from "@/lib/upload/tus-url";
+import { stageUpload } from "./payslip-batch-upload-client";
 
 /**
  * Uploads payslip batch files (#868) through TUS, a few at a time, and stages
@@ -16,26 +17,10 @@ import { getTusFileKeyFromUploadUrl } from "@/lib/upload/tus-url";
 export interface PayslipBatchUploadProgress {
 	total: number;
 	staged: number;
-	failed: Array<{ fileName: string; error: string }>;
+	failed: Array<{ id: string; fileName: string; error: string }>;
 }
 
 const idle: PayslipBatchUploadProgress = { total: 0, staged: 0, failed: [] };
-
-async function stageUpload(input: {
-	batchId: string;
-	tusFileKey: string;
-	fileName: string;
-}): Promise<void> {
-	const response = await fetch("/api/upload/personnel-file/payslip-batch", {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(input),
-	});
-	if (!response.ok) {
-		const body = (await response.json().catch(() => null)) as { error?: string } | null;
-		throw new Error(body?.error || "Upload failed");
-	}
-}
 
 export function usePayslipBatchUpload(options: {
 	batchId: string;
@@ -66,11 +51,13 @@ export function usePayslipBatchUpload(options: {
 		});
 		uppyRef.current = uppy;
 
-		const fail = (fileName: string, error: string) =>
+		const fail = (fileName: string, error: string) => {
+			const failure = { id: crypto.randomUUID(), fileName, error };
 			setProgress((current) => ({
 				...current,
-				failed: [...current.failed, { fileName, error }],
+				failed: [...current.failed, failure],
 			}));
+		};
 
 		const handleSuccess = async (
 			file: { id: string; name?: string } | undefined,
@@ -126,11 +113,13 @@ export function usePayslipBatchUpload(options: {
 					meta: { purpose: "payslip-batch" },
 				});
 			} catch (error) {
+				const id = crypto.randomUUID();
 				setProgress((current) => ({
 					...current,
 					failed: [
 						...current.failed,
 						{
+							id,
 							fileName: file.name,
 							error: error instanceof Error ? error.message : "Upload failed",
 						},

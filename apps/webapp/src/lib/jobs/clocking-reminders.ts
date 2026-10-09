@@ -83,6 +83,8 @@ export async function runClockingRemindersWith(
 			{ after: afterOrganization, limit: ORGANIZATION_PAGE },
 			deps.database,
 		);
+		// Bound job pressure to one tenant at a time; shared result accounting and the delivery transport are serialized.
+		// react-doctor-disable-next-line react-doctor/async-await-in-loop
 		for (const organization of organizations) {
 			result.organizations++;
 			try {
@@ -184,6 +186,8 @@ async function remindOrganization(
 						}),
 					);
 				}
+				// Preserve reminder delivery order for this employee and bound concurrent transport calls to one.
+				// react-doctor-disable-next-line react-doctor/async-await-in-loop
 				for (const reminder of await withoutExemptDays(organization, person, due, deps)) {
 					const outcome = await sendClockingReminder(
 						{

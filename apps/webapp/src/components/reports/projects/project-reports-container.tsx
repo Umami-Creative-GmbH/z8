@@ -48,42 +48,47 @@ export function ProjectReportsContainer() {
 		setError(null);
 		dateRangeRef.current = range;
 
-		await runWithCleanup(async () => {
-		try {
-			const result = await getProjectsOverview(
-				new Date(range.startDate),
-				new Date(range.endDate),
-				statusFilter,
-			);
+		await runWithCleanup(
+			async () => {
+				try {
+					const result = await getProjectsOverview(
+						new Date(range.startDate),
+						new Date(range.endDate),
+						statusFilter,
+					);
 
-			if (!result.success) {
-				setError(
-					result.error ||
-						t("reports.projects.toast.failedPortfolio", "Failed to generate portfolio report"),
-				);
-				toast.error(t("reports.projects.toast.failedGenerate", "Failed to generate report"), {
-					description: result.error,
-				});
-				return;
-			}
-			// The customer view exists for viewers who see Billable Time figures.
-			const customers = result.data.billableTime
-				? await getCustomerBillableReport(range.startDate, range.endDate, statusFilter)
-				: null;
-			setPortfolioData(result.data);
-			setCustomerReport(customers?.success ? customers.data : null);
-			setDetailedReport(null);
-			setActiveTab("portfolio");
-			toast.success(t("reports.projects.toast.portfolioGenerated", "Portfolio report generated"));
-		} catch (err) {
-			const errorMessage =
-				err instanceof Error
-					? err.message
-					: t("reports.projects.toast.unexpectedError", "An unexpected error occurred");
-			setError(errorMessage);
-			toast.error(t("reports.projects.toast.failedGenerate", "Failed to generate report"));
-		}
-		}, () => setIsLoading(false));
+					if (!result.success) {
+						setError(
+							result.error ||
+								t("reports.projects.toast.failedPortfolio", "Failed to generate portfolio report"),
+						);
+						toast.error(t("reports.projects.toast.failedGenerate", "Failed to generate report"), {
+							description: result.error,
+						});
+						return;
+					}
+					// The customer view exists for viewers who see Billable Time figures.
+					const customers = result.data.billableTime
+						? await getCustomerBillableReport(range.startDate, range.endDate, statusFilter)
+						: null;
+					setPortfolioData(result.data);
+					setCustomerReport(customers?.success ? customers.data : null);
+					setDetailedReport(null);
+					setActiveTab("portfolio");
+					toast.success(
+						t("reports.projects.toast.portfolioGenerated", "Portfolio report generated"),
+					);
+				} catch (err) {
+					const errorMessage =
+						err instanceof Error
+							? err.message
+							: t("reports.projects.toast.unexpectedError", "An unexpected error occurred");
+					setError(errorMessage);
+					toast.error(t("reports.projects.toast.failedGenerate", "Failed to generate report"));
+				}
+			},
+			() => setIsLoading(false),
+		);
 	};
 
 	const handleSelectProject = async (projectId: string) => {
@@ -95,45 +100,48 @@ export function ProjectReportsContainer() {
 		setIsLoading(true);
 		setError(null);
 
-		await runWithCleanup(async () => {
-		try {
-			const result = await getProjectDetailedReport(
-				projectId,
-				new Date(dateRange.startDate),
-				new Date(dateRange.endDate),
-			);
+		await runWithCleanup(
+			async () => {
+				try {
+					const result = await getProjectDetailedReport(
+						projectId,
+						new Date(dateRange.startDate),
+						new Date(dateRange.endDate),
+					);
 
-			if (!result.success) {
-				setError(
-					result.error ||
-						t("reports.projects.toast.failedProject", "Failed to generate project report"),
-				);
-				toast.error(
-					t("reports.projects.toast.failedProjectReport", "Failed to generate project report"),
-					{
-						description: result.error,
-					},
-				);
-				return;
-			}
-			setDetailedReport(result.data);
-			setActiveTab("project");
-			toast.success(
-				t("reports.projects.toast.projectGenerated", "Report generated for {name}", {
-					name: result.data.project.name,
-				}),
-			);
-		} catch (err) {
-			const errorMessage =
-				err instanceof Error
-					? err.message
-					: t("reports.projects.toast.unexpectedError", "An unexpected error occurred");
-			setError(errorMessage);
-			toast.error(
-				t("reports.projects.toast.failedProjectReport", "Failed to generate project report"),
-			);
-		}
-		}, () => setIsLoading(false));
+					if (!result.success) {
+						setError(
+							result.error ||
+								t("reports.projects.toast.failedProject", "Failed to generate project report"),
+						);
+						toast.error(
+							t("reports.projects.toast.failedProjectReport", "Failed to generate project report"),
+							{
+								description: result.error,
+							},
+						);
+						return;
+					}
+					setDetailedReport(result.data);
+					setActiveTab("project");
+					toast.success(
+						t("reports.projects.toast.projectGenerated", "Report generated for {name}", {
+							name: result.data.project.name,
+						}),
+					);
+				} catch (err) {
+					const errorMessage =
+						err instanceof Error
+							? err.message
+							: t("reports.projects.toast.unexpectedError", "An unexpected error occurred");
+					setError(errorMessage);
+					toast.error(
+						t("reports.projects.toast.failedProjectReport", "Failed to generate project report"),
+					);
+				}
+			},
+			() => setIsLoading(false),
+		);
 	};
 
 	return (
@@ -221,72 +229,11 @@ export function ProjectReportsContainer() {
 
 					{customerReport && (
 						<TabsContent value="customers" className="space-y-6">
-							<CustomerBillableView
-								report={customerReport}
-								onProjectSelect={handleSelectProject}
-							/>
+							<CustomerBillableView report={customerReport} onProjectSelect={handleSelectProject} />
 						</TabsContent>
 					)}
 
-					<TabsContent value="project" className="space-y-6">
-						{detailedReport && (
-							<>
-								<div className="flex justify-end">
-									<ReportDocumentExportButtons
-										buildDocument={(context) =>
-											buildProjectReportDocument(detailedReport, context)
-										}
-									/>
-								</div>
-
-								{/* Project Summary Cards */}
-								<ProjectSummaryCards
-									data={{
-										totalProjects: 1,
-										activeProjects: detailedReport.project.status === "active" ? 1 : 0,
-										totalHours: detailedReport.summary.totalHours,
-										projectsOverBudget:
-											detailedReport.summary.percentBudgetUsed &&
-											detailedReport.summary.percentBudgetUsed > 100
-												? 1
-												: 0,
-										projectsOverdue: 0,
-									}}
-									isSingleProject
-									project={detailedReport.project}
-									summary={detailedReport.summary}
-								/>
-
-								{/* Budget Progress */}
-								{detailedReport.summary.budgetHours && (
-									<ProjectBudgetProgress
-										budgetHours={detailedReport.summary.budgetHours}
-										usedHours={detailedReport.summary.totalHours}
-									/>
-								)}
-
-								{detailedReport.summary.billable && detailedReport.billableTime && (
-									<BillableFiguresCard
-										figures={detailedReport.summary.billable}
-										context={detailedReport.billableTime}
-									/>
-								)}
-
-								{/* Hours Chart */}
-								<ProjectHoursChart data={detailedReport.timeSeries} />
-
-								{/* Team Breakdown */}
-								<ProjectTeamBreakdown
-									teamBreakdown={detailedReport.teamBreakdown}
-									employeeBreakdown={detailedReport.employeeBreakdown}
-								/>
-
-								{/* Task Breakdown */}
-								<ProjectTaskBreakdown taskBreakdown={detailedReport.taskBreakdown} />
-								<BillableEmployeeTable employees={detailedReport.employeeBreakdown} />
-							</>
-						)}
-					</TabsContent>
+					<DetailedProjectReport detailedReport={detailedReport} />
 				</Tabs>
 			)}
 
@@ -312,5 +259,71 @@ export function ProjectReportsContainer() {
 				</Card>
 			)}
 		</div>
+	);
+}
+
+function DetailedProjectReport({
+	detailedReport,
+}: {
+	detailedReport: ProjectDetailedReport | null;
+}) {
+	return (
+		<TabsContent value="project" className="space-y-6">
+			{detailedReport && (
+				<>
+					<div className="flex justify-end">
+						<ReportDocumentExportButtons
+							buildDocument={(context) => buildProjectReportDocument(detailedReport, context)}
+						/>
+					</div>
+
+					{/* Project Summary Cards */}
+					<ProjectSummaryCards
+						data={{
+							totalProjects: 1,
+							activeProjects: detailedReport.project.status === "active" ? 1 : 0,
+							totalHours: detailedReport.summary.totalHours,
+							projectsOverBudget:
+								detailedReport.summary.percentBudgetUsed &&
+								detailedReport.summary.percentBudgetUsed > 100
+									? 1
+									: 0,
+							projectsOverdue: 0,
+						}}
+						isSingleProject
+						project={detailedReport.project}
+						summary={detailedReport.summary}
+					/>
+
+					{/* Budget Progress */}
+					{detailedReport.summary.budgetHours && (
+						<ProjectBudgetProgress
+							budgetHours={detailedReport.summary.budgetHours}
+							usedHours={detailedReport.summary.totalHours}
+						/>
+					)}
+
+					{detailedReport.summary.billable && detailedReport.billableTime && (
+						<BillableFiguresCard
+							figures={detailedReport.summary.billable}
+							context={detailedReport.billableTime}
+						/>
+					)}
+
+					{/* Hours Chart */}
+					<ProjectHoursChart data={detailedReport.timeSeries} />
+
+					{/* Team Breakdown */}
+					<ProjectTeamBreakdown
+						teamBreakdown={detailedReport.teamBreakdown}
+						employeeBreakdown={detailedReport.employeeBreakdown}
+					/>
+
+					{/* Task Breakdown */}
+					<ProjectTaskBreakdown taskBreakdown={detailedReport.taskBreakdown} />
+					<BillableEmployeeTable employees={detailedReport.employeeBreakdown} />
+				</>
+			)}
+		</TabsContent>
 	);
 }

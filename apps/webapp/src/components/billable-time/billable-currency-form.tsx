@@ -3,6 +3,7 @@
 import { useForm } from "@tanstack/react-form";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
+import { useMemo } from "react";
 import {
 	Select,
 	SelectContent,
@@ -25,12 +26,13 @@ import {
 /** "CHF – Swiss Franc" in the viewer's language; the code alone if the runtime lacks names. */
 export function useBillableCurrencyLabel() {
 	const language = useTolgee(["language"]).getLanguage() ?? "en";
-	let names: Intl.DisplayNames | null = null;
-	try {
-		names = new Intl.DisplayNames([language], { type: "currency" });
-	} catch {
-		names = null;
-	}
+	const names = useMemo(() => {
+		try {
+			return new Intl.DisplayNames([language], { type: "currency" });
+		} catch {
+			return null;
+		}
+	}, [language]);
 	return (currency: BillableCurrency) => {
 		const name = names?.of(currency);
 		return name && name !== currency ? `${currency} – ${name}` : currency;
@@ -72,6 +74,8 @@ export function BillableCurrencyForm({
 		<form
 			noValidate
 			onSubmit={(event) => {
+				// TanStack Form owns validation and the async submission; native submission would navigate away.
+				// react-doctor-disable-next-line react-doctor/no-prevent-default
 				event.preventDefault();
 				void form.handleSubmit();
 			}}

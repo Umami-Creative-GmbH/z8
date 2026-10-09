@@ -96,7 +96,7 @@ async function finalizeUpload(input: {
 }
 
 /** Uploads a new employee document, or edits a document's metadata (never its file). */
-export function DocumentDialog(props: DocumentDialogProps) {
+function useDocumentDialog(props: DocumentDialogProps) {
 	const { open, onOpenChange, employeeId, categories, today, onSaved } = props;
 	const { t } = useTranslate();
 	const labels = usePersonnelFileLabels();
@@ -218,6 +218,42 @@ export function DocumentDialog(props: DocumentDialogProps) {
 	const required = (label: string) =>
 		t("settings.personnelFiles.form.required", "{label} is required", { label });
 
+	return {
+		open,
+		onOpenChange,
+		close,
+		form,
+		props,
+		t,
+		asEmployee,
+		busy,
+		fileError,
+		handleFileChange,
+		changeCategory,
+		categories,
+		labels,
+		required,
+		upload,
+	};
+}
+
+export function DocumentDialog(props: DocumentDialogProps) {
+	const {
+		open,
+		onOpenChange,
+		close,
+		form,
+		t,
+		asEmployee,
+		busy,
+		fileError,
+		handleFileChange,
+		changeCategory,
+		categories,
+		labels,
+		required,
+		upload,
+	} = useDocumentDialog(props);
 	return (
 		<ActionPanel open={open} onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
 			<ActionPanelContent>
@@ -254,275 +290,20 @@ export function DocumentDialog(props: DocumentDialogProps) {
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 
-					<ActionPanelBody className="space-y-5">
-						{props.mode === "upload" ? (
-							<div className="grid gap-2">
-								<Label htmlFor="personnel-document-file">
-									{t("settings.personnelFiles.form.file", "File")}
-									<span className="ml-1 text-destructive">*</span>
-								</Label>
-								<Input
-									id="personnel-document-file"
-									type="file"
-									accept={PERSONNEL_DOCUMENT_MIME_TYPES.join(",")}
-									disabled={busy}
-									aria-invalid={fileError ? true : undefined}
-									onChange={(event) => handleFileChange(event.target.files?.[0] ?? null)}
-								/>
-								{fileError ? (
-									<p role="alert" className="text-sm text-destructive">
-										{fileError}
-									</p>
-								) : null}
-							</div>
-						) : null}
-
-						<form.Field name="category">
-							{(field) => (
-								<TFormItem>
-									<TFormLabel required>
-										{t("settings.personnelFiles.form.category", "Category")}
-									</TFormLabel>
-									<Select
-										value={field.state.value}
-										onValueChange={(value) => changeCategory(value as DocumentCategory)}
-										disabled={busy}
-									>
-										<TFormControl>
-											<SelectTrigger className="w-full" onBlur={field.handleBlur}>
-												<SelectValue />
-											</SelectTrigger>
-										</TFormControl>
-										<SelectContent>
-											{categories.map((category) => (
-												<SelectItem key={category} value={category}>
-													{labels.categories[category]}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</TFormItem>
-							)}
-						</form.Field>
-
-						<form.Field
-							name="title"
-							validators={{
-								onSubmit: ({ value }) =>
-									value.trim()
-										? undefined
-										: required(t("settings.personnelFiles.form.title", "Title")),
-							}}
-						>
-							{(field) => (
-								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)} required>
-										{t("settings.personnelFiles.form.title", "Title")}
-									</TFormLabel>
-									<TFormControl hasError={fieldHasError(field)}>
-										<Input
-											value={field.state.value}
-											maxLength={200}
-											disabled={busy}
-											onChange={(event) => field.handleChange(event.target.value)}
-											onBlur={field.handleBlur}
-										/>
-									</TFormControl>
-									<TFormMessage field={field} />
-								</TFormItem>
-							)}
-						</form.Field>
-
-						<form.Field
-							name="documentDate"
-							validators={{
-								onSubmit: ({ value }) =>
-									value
-										? undefined
-										: required(t("settings.personnelFiles.form.documentDate", "Document date")),
-							}}
-						>
-							{(field) => (
-								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)} required>
-										{t("settings.personnelFiles.form.documentDate", "Document date")}
-									</TFormLabel>
-									<TFormControl hasError={fieldHasError(field)}>
-										<DatePicker
-											value={field.state.value}
-											onChange={(value) => field.handleChange(value)}
-											required
-											disabled={busy}
-										/>
-									</TFormControl>
-									<TFormDescription>
-										{t(
-											"settings.personnelFiles.form.documentDateHint",
-											"The day the document belongs to, such as the day a contract was signed.",
-										)}
-									</TFormDescription>
-									<TFormMessage field={field} />
-								</TFormItem>
-							)}
-						</form.Field>
-
-						<form.Subscribe selector={(state) => state.values.category}>
-							{(category) =>
-								category === "payslip" ? (
-									<div className="grid grid-cols-2 gap-3">
-										<form.Field
-											name="payPeriodMonth"
-											validators={{
-												onSubmit: ({ value }) =>
-													value
-														? undefined
-														: required(t("settings.personnelFiles.form.payPeriod", "Pay period")),
-											}}
-										>
-											{(field) => (
-												<TFormItem>
-													<TFormLabel hasError={fieldHasError(field)} required>
-														{t("settings.personnelFiles.form.payPeriodMonth", "Pay period month")}
-													</TFormLabel>
-													<Select
-														value={field.state.value}
-														onValueChange={(value) => field.handleChange(value)}
-														disabled={busy}
-													>
-														<TFormControl hasError={fieldHasError(field)}>
-															<SelectTrigger className="w-full" onBlur={field.handleBlur}>
-																<SelectValue />
-															</SelectTrigger>
-														</TFormControl>
-														<SelectContent>
-															{MONTHS.map((month) => (
-																<SelectItem key={month} value={month}>
-																	{month.padStart(2, "0")}
-																</SelectItem>
-															))}
-														</SelectContent>
-													</Select>
-													<TFormMessage field={field} />
-												</TFormItem>
-											)}
-										</form.Field>
-										<form.Field
-											name="payPeriodYear"
-											validators={{
-												onSubmit: ({ value }) =>
-													/^\d{4}$/.test(value)
-														? undefined
-														: required(t("settings.personnelFiles.form.payPeriod", "Pay period")),
-											}}
-										>
-											{(field) => (
-												<TFormItem>
-													<TFormLabel hasError={fieldHasError(field)} required>
-														{t("settings.personnelFiles.form.payPeriodYear", "Pay period year")}
-													</TFormLabel>
-													<TFormControl hasError={fieldHasError(field)}>
-														<Input
-															inputMode="numeric"
-															value={field.state.value}
-															maxLength={4}
-															disabled={busy}
-															onChange={(event) => field.handleChange(event.target.value)}
-															onBlur={field.handleBlur}
-														/>
-													</TFormControl>
-													<TFormMessage field={field} />
-												</TFormItem>
-											)}
-										</form.Field>
-									</div>
-								) : null
-							}
-						</form.Subscribe>
-
-						<form.Subscribe selector={(state) => state.values.category}>
-							{(category) =>
-								EXPIRY_DATE_CATEGORIES.includes(category) ? (
-									<form.Field name="expiryDate">
-										{(field) => (
-											<TFormItem>
-												<TFormLabel>
-													{t("settings.personnelFiles.form.expiryDate", "Expiry date")}
-												</TFormLabel>
-												<TFormControl>
-													<DatePicker
-														value={field.state.value}
-														onChange={(value) => field.handleChange(value)}
-														disabled={busy}
-													/>
-												</TFormControl>
-												<TFormDescription>
-													{t(
-														"settings.personnelFiles.form.expiryDateHint",
-														"Optional. The last day the document is valid.",
-													)}
-												</TFormDescription>
-											</TFormItem>
-										)}
-									</form.Field>
-								) : null
-							}
-						</form.Subscribe>
-
-						{asEmployee ? (
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"settings.personnelFiles.myDocuments.upload.sharedNote",
-									"The document is shared: you see it under My Documents. After uploading, you cannot edit or delete it.",
-								)}
-							</p>
-						) : (
-							<form.Field name="visibility">
-								{(field) => (
-									<TFormItem>
-										<TFormLabel required>
-											{t("settings.personnelFiles.form.visibility", "Visibility")}
-										</TFormLabel>
-										<Select
-											value={field.state.value}
-											onValueChange={(value) => {
-												field.handleChange(value as DocumentVisibility);
-												form.setFieldValue("visibilityChosen", true);
-											}}
-											disabled={busy}
-										>
-											<TFormControl>
-												<SelectTrigger className="w-full" onBlur={field.handleBlur}>
-													<SelectValue />
-												</SelectTrigger>
-											</TFormControl>
-											<SelectContent>
-												<SelectItem value="shared">{labels.visibilities.shared}</SelectItem>
-												<SelectItem value="hr_only">{labels.visibilities.hr_only}</SelectItem>
-											</SelectContent>
-										</Select>
-										<TFormDescription>
-											{field.state.value === "shared"
-												? t(
-														"settings.personnelFiles.form.sharedHint",
-														"The employee sees this document under My Documents and is notified.",
-													)
-												: t(
-														"settings.personnelFiles.form.hrOnlyHint",
-														"Only owners and admins see this document.",
-													)}
-										</TFormDescription>
-									</TFormItem>
-								)}
-							</form.Field>
-						)}
-
-						{busy ? (
-							<Progress
-								value={upload.progress}
-								aria-label={t("settings.personnelFiles.upload.progress", "Upload progress")}
-							/>
-						) : null}
-					</ActionPanelBody>
+					<DocumentMetadataFields
+						props={props}
+						t={t}
+						busy={busy}
+						fileError={fileError}
+						handleFileChange={handleFileChange}
+						form={form}
+						changeCategory={changeCategory}
+						categories={categories}
+						labels={labels}
+						required={required}
+						asEmployee={asEmployee}
+						upload={upload}
+					/>
 
 					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={close} disabled={busy}>
@@ -544,5 +325,304 @@ export function DocumentDialog(props: DocumentDialogProps) {
 				</form>
 			</ActionPanelContent>
 		</ActionPanel>
+	);
+}
+
+function DocumentMetadataFields({
+	props,
+	t,
+	busy,
+	fileError,
+	handleFileChange,
+	form,
+	changeCategory,
+	categories,
+	labels,
+	required,
+	asEmployee,
+	upload,
+}: Pick<
+	ReturnType<typeof useDocumentDialog>,
+	| "props"
+	| "t"
+	| "busy"
+	| "fileError"
+	| "handleFileChange"
+	| "form"
+	| "changeCategory"
+	| "categories"
+	| "labels"
+	| "required"
+	| "asEmployee"
+	| "upload"
+>) {
+	return (
+		<ActionPanelBody className="space-y-5">
+			{props.mode === "upload" ? (
+				<div className="grid gap-2">
+					<Label htmlFor="personnel-document-file">
+						{t("settings.personnelFiles.form.file", "File")}
+						<span className="ml-1 text-destructive">*</span>
+					</Label>
+					<Input
+						id="personnel-document-file"
+						type="file"
+						accept={PERSONNEL_DOCUMENT_MIME_TYPES.join(",")}
+						disabled={busy}
+						aria-invalid={fileError ? true : undefined}
+						onChange={(event) => handleFileChange(event.target.files?.[0] ?? null)}
+					/>
+					{fileError ? (
+						<p role="alert" className="text-sm text-destructive">
+							{fileError}
+						</p>
+					) : null}
+				</div>
+			) : null}
+
+			<form.Field name="category">
+				{(field) => (
+					<TFormItem>
+						<TFormLabel required>
+							{t("settings.personnelFiles.form.category", "Category")}
+						</TFormLabel>
+						<Select
+							value={field.state.value}
+							onValueChange={(value) => changeCategory(value as DocumentCategory)}
+							disabled={busy}
+						>
+							<TFormControl>
+								<SelectTrigger className="w-full" onBlur={field.handleBlur}>
+									<SelectValue />
+								</SelectTrigger>
+							</TFormControl>
+							<SelectContent>
+								{categories.map((category) => (
+									<SelectItem key={category} value={category}>
+										{labels.categories[category]}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</TFormItem>
+				)}
+			</form.Field>
+
+			<form.Field
+				name="title"
+				validators={{
+					onSubmit: ({ value }) =>
+						value.trim() ? undefined : required(t("settings.personnelFiles.form.title", "Title")),
+				}}
+			>
+				{(field) => (
+					<TFormItem>
+						<TFormLabel hasError={fieldHasError(field)} required>
+							{t("settings.personnelFiles.form.title", "Title")}
+						</TFormLabel>
+						<TFormControl hasError={fieldHasError(field)}>
+							<Input
+								value={field.state.value}
+								maxLength={200}
+								disabled={busy}
+								onChange={(event) => field.handleChange(event.target.value)}
+								onBlur={field.handleBlur}
+							/>
+						</TFormControl>
+						<TFormMessage field={field} />
+					</TFormItem>
+				)}
+			</form.Field>
+
+			<form.Field
+				name="documentDate"
+				validators={{
+					onSubmit: ({ value }) =>
+						value
+							? undefined
+							: required(t("settings.personnelFiles.form.documentDate", "Document date")),
+				}}
+			>
+				{(field) => (
+					<TFormItem>
+						<TFormLabel hasError={fieldHasError(field)} required>
+							{t("settings.personnelFiles.form.documentDate", "Document date")}
+						</TFormLabel>
+						<TFormControl hasError={fieldHasError(field)}>
+							<DatePicker
+								value={field.state.value}
+								onChange={(value) => field.handleChange(value)}
+								required
+								disabled={busy}
+							/>
+						</TFormControl>
+						<TFormDescription>
+							{t(
+								"settings.personnelFiles.form.documentDateHint",
+								"The day the document belongs to, such as the day a contract was signed.",
+							)}
+						</TFormDescription>
+						<TFormMessage field={field} />
+					</TFormItem>
+				)}
+			</form.Field>
+
+			<form.Subscribe selector={(state) => state.values.category}>
+				{(category) =>
+					category === "payslip" ? (
+						<div className="grid grid-cols-2 gap-3">
+							<form.Field
+								name="payPeriodMonth"
+								validators={{
+									onSubmit: ({ value }) =>
+										value
+											? undefined
+											: required(t("settings.personnelFiles.form.payPeriod", "Pay period")),
+								}}
+							>
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)} required>
+											{t("settings.personnelFiles.form.payPeriodMonth", "Pay period month")}
+										</TFormLabel>
+										<Select
+											value={field.state.value}
+											onValueChange={(value) => field.handleChange(value)}
+											disabled={busy}
+										>
+											<TFormControl hasError={fieldHasError(field)}>
+												<SelectTrigger className="w-full" onBlur={field.handleBlur}>
+													<SelectValue />
+												</SelectTrigger>
+											</TFormControl>
+											<SelectContent>
+												{MONTHS.map((month) => (
+													<SelectItem key={month} value={month}>
+														{month.padStart(2, "0")}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+							<form.Field
+								name="payPeriodYear"
+								validators={{
+									onSubmit: ({ value }) =>
+										/^\d{4}$/.test(value)
+											? undefined
+											: required(t("settings.personnelFiles.form.payPeriod", "Pay period")),
+								}}
+							>
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)} required>
+											{t("settings.personnelFiles.form.payPeriodYear", "Pay period year")}
+										</TFormLabel>
+										<TFormControl hasError={fieldHasError(field)}>
+											<Input
+												inputMode="numeric"
+												value={field.state.value}
+												maxLength={4}
+												disabled={busy}
+												onChange={(event) => field.handleChange(event.target.value)}
+												onBlur={field.handleBlur}
+											/>
+										</TFormControl>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+						</div>
+					) : null
+				}
+			</form.Subscribe>
+
+			<form.Subscribe selector={(state) => state.values.category}>
+				{(category) =>
+					EXPIRY_DATE_CATEGORIES.includes(category) ? (
+						<form.Field name="expiryDate">
+							{(field) => (
+								<TFormItem>
+									<TFormLabel>
+										{t("settings.personnelFiles.form.expiryDate", "Expiry date")}
+									</TFormLabel>
+									<TFormControl>
+										<DatePicker
+											value={field.state.value}
+											onChange={(value) => field.handleChange(value)}
+											disabled={busy}
+										/>
+									</TFormControl>
+									<TFormDescription>
+										{t(
+											"settings.personnelFiles.form.expiryDateHint",
+											"Optional. The last day the document is valid.",
+										)}
+									</TFormDescription>
+								</TFormItem>
+							)}
+						</form.Field>
+					) : null
+				}
+			</form.Subscribe>
+
+			{asEmployee ? (
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.personnelFiles.myDocuments.upload.sharedNote",
+						"The document is shared: you see it under My Documents. After uploading, you cannot edit or delete it.",
+					)}
+				</p>
+			) : (
+				<form.Field name="visibility">
+					{(field) => (
+						<TFormItem>
+							<TFormLabel required>
+								{t("settings.personnelFiles.form.visibility", "Visibility")}
+							</TFormLabel>
+							<Select
+								value={field.state.value}
+								onValueChange={(value) => {
+									field.handleChange(value as DocumentVisibility);
+									form.setFieldValue("visibilityChosen", true);
+								}}
+								disabled={busy}
+							>
+								<TFormControl>
+									<SelectTrigger className="w-full" onBlur={field.handleBlur}>
+										<SelectValue />
+									</SelectTrigger>
+								</TFormControl>
+								<SelectContent>
+									<SelectItem value="shared">{labels.visibilities.shared}</SelectItem>
+									<SelectItem value="hr_only">{labels.visibilities.hr_only}</SelectItem>
+								</SelectContent>
+							</Select>
+							<TFormDescription>
+								{field.state.value === "shared"
+									? t(
+											"settings.personnelFiles.form.sharedHint",
+											"The employee sees this document under My Documents and is notified.",
+										)
+									: t(
+											"settings.personnelFiles.form.hrOnlyHint",
+											"Only owners and admins see this document.",
+										)}
+							</TFormDescription>
+						</TFormItem>
+					)}
+				</form.Field>
+			)}
+
+			{busy ? (
+				<Progress
+					value={upload.progress}
+					aria-label={t("settings.personnelFiles.upload.progress", "Upload progress")}
+				/>
+			) : null}
+		</ActionPanelBody>
 	);
 }

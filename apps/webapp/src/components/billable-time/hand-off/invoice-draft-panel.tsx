@@ -140,7 +140,7 @@ export function InvoiceDraftPanel({
 	);
 }
 
-function DraftDetail({
+function useInvoiceDraftDetail({
 	draft,
 	actions,
 	onChanged,
@@ -179,40 +179,52 @@ function DraftDetail({
 		});
 	}
 
+	return {
+		draft,
+		labels,
+		t,
+		toolStatus,
+		gone,
+		isPending,
+		run,
+		actions,
+		money,
+		marked,
+		releasable,
+		setReleasing,
+		releasing,
+		reason,
+		setReason,
+	};
+}
+
+function DraftDetail({
+	draft,
+	actions,
+	onChanged,
+}: {
+	draft: InvoiceDraftDetailView;
+	actions: InvoiceDraftPanelActions;
+	onChanged: () => void;
+}) {
+	const {
+		labels,
+		t,
+		toolStatus,
+		gone,
+		isPending,
+		run,
+		money,
+		marked,
+		releasable,
+		setReleasing,
+		releasing,
+		reason,
+		setReason,
+	} = useInvoiceDraftDetail({ draft, actions, onChanged });
 	return (
 		<div className="space-y-6">
-			<div className="flex flex-wrap items-center gap-2">
-				<Badge variant={draft.status === "created" ? "default" : "secondary"}>
-					{labels.status(draft.status)}
-				</Badge>
-				{draft.externalUrl && (
-					<a
-						href={draft.externalUrl}
-						target="_blank"
-						rel="noreferrer"
-						className="inline-flex items-center gap-1 text-sm underline"
-					>
-						{t("settings.billableTime.handOff.detail.openInTool", "Open in the accounting tool")}
-						<IconExternalLink aria-hidden="true" className="size-4" />
-					</a>
-				)}
-				{draft.status === "created" && draft.statusCheckSupported && (
-					<span className="text-muted-foreground text-sm">
-						{toolStatus.isFetching
-							? t(
-									"settings.billableTime.handOff.detail.checking",
-									"Checking the draft in the tool…",
-								)
-							: toolStatus.data?.kind === "status"
-								? t("settings.billableTime.handOff.detail.toolStatus", "In the tool: {status}", {
-										status: toolStatus.data.toolStatus,
-									})
-								: toolStatus.data?.kind === "unavailable"
-									? toolStatus.data.message
-									: null}
-					</span>
-				)}
-			</div>
+			<InvoiceDraftStatus draft={draft} labels={labels} t={t} toolStatus={toolStatus} />
 
 			{gone && (
 				<div
@@ -470,5 +482,44 @@ export function MarkedWork({
 				))}
 			</ul>
 		</section>
+	);
+}
+
+function InvoiceDraftStatus({
+	draft,
+	labels,
+	t,
+	toolStatus,
+}: Pick<ReturnType<typeof useInvoiceDraftDetail>, "draft" | "labels" | "t" | "toolStatus">) {
+	return (
+		<div className="flex flex-wrap items-center gap-2">
+			<Badge variant={draft.status === "created" ? "default" : "secondary"}>
+				{labels.status(draft.status)}
+			</Badge>
+			{draft.externalUrl && (
+				<a
+					href={draft.externalUrl}
+					target="_blank"
+					rel="noreferrer"
+					className="inline-flex items-center gap-1 text-sm underline"
+				>
+					{t("settings.billableTime.handOff.detail.openInTool", "Open in the accounting tool")}
+					<IconExternalLink aria-hidden="true" className="size-4" />
+				</a>
+			)}
+			{draft.status === "created" && draft.statusCheckSupported && (
+				<span className="text-muted-foreground text-sm">
+					{toolStatus.isFetching
+						? t("settings.billableTime.handOff.detail.checking", "Checking the draft in the tool…")
+						: toolStatus.data?.kind === "status"
+							? t("settings.billableTime.handOff.detail.toolStatus", "In the tool: {status}", {
+									status: toolStatus.data.toolStatus,
+								})
+							: toolStatus.data?.kind === "unavailable"
+								? toolStatus.data.message
+								: null}
+				</span>
+			)}
+		</div>
 	);
 }

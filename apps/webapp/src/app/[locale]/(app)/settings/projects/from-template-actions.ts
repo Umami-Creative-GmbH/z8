@@ -235,7 +235,9 @@ export async function createProjectFromTemplate(
 export async function saveProjectAsTemplate(
 	projectId: string,
 	input: { name?: string } = {},
-): Promise<ServerActionResult<{ id: string; name: string; skipped: SkippedManagerOrAssignment[] }>> {
+): Promise<
+	ServerActionResult<{ id: string; name: string; skipped: SkippedManagerOrAssignment[] }>
+> {
 	return runServerActionSafe(
 		tracedProjectAction(
 			"saveProjectAsTemplate",
@@ -264,12 +266,14 @@ export async function saveProjectAsTemplate(
 								values,
 								{ skipDeparted: true },
 							);
+							const managerIds = new Set(values.managerEmployeeIds);
+							const employeeIds = new Set(values.employeeIds);
 							const leftMeanwhile = written.departed.flatMap(
 								({ employeeId, name }): SkippedManagerOrAssignment[] => [
-									...(values.managerEmployeeIds.includes(employeeId)
+									...(managerIds.has(employeeId)
 										? [{ role: "manager" as const, name, reason: "departed" as const }]
 										: []),
-									...(values.employeeIds.includes(employeeId)
+									...(employeeIds.has(employeeId)
 										? [{ role: "employee" as const, name, reason: "departed" as const }]
 										: []),
 								],
