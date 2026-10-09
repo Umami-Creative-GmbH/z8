@@ -36,6 +36,7 @@ const { recordingFollowUps } = await import("./follow-ups");
 const { coordinatedTransactions } = await import("./transactions");
 const { savePositionCaptureSettings, withdrawPositionConsent, agreeToPositionNotice } =
 	await import("../position-capture/store");
+const { readPositionStampsForEntries } = await import("../position-capture/stamps");
 type ClockCommand = import("./types").ClockCommand;
 type ClockPosition = import("./types").ClockPosition;
 
@@ -421,6 +422,35 @@ describe("position stamps on clock commands on PostgreSQL", () => {
 		);
 		expect(withdrawn).toMatchObject({ deletedStampCount: 2 });
 		expect(await stamps()).toEqual([]);
+	});
+
+	it("reads stamps by clock event, only inside the organization", async () => {
+		const clocking = newClocking();
+		const clockIn = await clocking.run(webClockIn());
+		if (clockIn.outcome !== "executed") throw new Error("expected a clock-in");
+
+		const read = await readPositionStampsForEntries(db, {
+			organizationId: ids.organization,
+			timeEntryIds: [clockIn.result.id],
+		});
+		const foreign = await readPositionStampsForEntries(db, {
+			organizationId: "t826-other-org",
+			timeEntryIds: [clockIn.result.id],
+		});
+
+		expect(read).toEqual([
+			expect.objectContaining({
+				timeEntryId: clockIn.result.id,
+				employeeId: ids.employee,
+				consentId: ids.consent,
+				latitude: 52.520008,
+				accuracyMeters: 18.5,
+			}),
+		]);
+		expect(read.map((stamp) => [stamp.capturedAt.toString(), stamp.purgeAt.toString()])).toEqual([
+			["2026-09-20T08:00:00Z", "2026-10-20T08:00:00Z"],
+		]);
+		expect(foreign).toEqual([]);
 	});
 
 	it("refuses to edit or move a stamp, and lets only its purge date move earlier", async () => {
