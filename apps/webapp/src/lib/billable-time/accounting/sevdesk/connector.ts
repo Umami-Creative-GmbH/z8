@@ -309,6 +309,87 @@ function isLiveContact(row: Record<string, unknown>): boolean {
 	return status === null || LIVE_CONTACT_STATUSES.has(status);
 }
 
+/** Contact addresses and emails by sevdesk contact id, for the customer import. */
+interface ImportDetails {
+	addresses: Map<string, string>;
+	emails: Map<string, string>;
+}
+
+/** openapi.yaml "Pagination": `limit` "must be between 1 and 1000". */
+const DETAIL_PAGE_SIZE = 1_000;
+/** 100,000 rows; beyond that the import goes on without the rest of the details. */
+const MAX_DETAIL_PAGES = 100;
+
+async function readAll(
+	client: SevdeskClient,
+	path: string,
+	query: Record<string, string> = {},
+): Promise<Record<string, unknown>[]> {
+	const all: Record<string, unknown>[] = [];
+	for (let page = 0; page < MAX_DETAIL_PAGES; page += 1) {
+		const response = await client({
+			method: "GET",
+			path,
+			query: { ...query, limit: DETAIL_PAGE_SIZE, offset: page * DETAIL_PAGE_SIZE },
+		});
+		const rows = rowsOf(response.body);
+		all.push(...rows);
+		if (rows.length < DETAIL_PAGE_SIZE) return all;
+	}
+	logger.warn({ path }, "sevdesk listing stopped after the page limit; some contacts lack details");
+	return all;
+}
+
+function numericId(row: Record<string, unknown>): number {
+	const raw = text(row.id);
+	const id = raw === null ? Number.NaN : Number(raw);
+	return Number.isFinite(id) ? id : Number.MAX_SAFE_INTEGER;
+}
+
+function byNumericId(left: Record<string, unknown>, right: Record<string, unknown>): number {
+	return numericId(left) - numericId(right);
+}
+
+/** "Street", "zip city": `Model_ContactAddressResponse`. The country is only a `StaticCountry` id. */
+function addressText(row: Record<string, unknown>): string | null {
+	const cityLine = [text(row.zip), text(row.city)].filter(Boolean).join(" ");
+	const lines = [text(row.street), cityLine === "" ? null : cityLine].filter(
+		(line): line is string => line !== null,
+	);
+	return lines.length === 0 ? null : lines.join("\n");
+}
+
+/**
+ * Every contact address (`GET /ContactAddress`, "Retrieve all contact
+ * addresses") and every email communication way (`GET /CommunicationWay` with
+ * `type=EMAIL`) of the account, read in pages of 1,000. Per contact: the first
+ * address by id (as `takeDefaultAddress` on a draft), and the main email, else
+ * the first one by id.
+ */
+async function readImportDetails(client: SevdeskClient): Promise<ImportDetails> {
+	const [addressRows, emailRows] = await Promise.all([
+		readAll(client, "/ContactAddress"),
+		readAll(client, "/CommunicationWay", { type: "EMAIL" }),
+	]);
+	const addresses = new Map<string, string>();
+	for (const row of [...addressRows].sort(byNumericId)) {
+		const contactId = refId(row.contact);
+		const address = addressText(row);
+		if (contactId && address && !addresses.has(contactId)) addresses.set(contactId, address);
+	}
+	const emails = new Map<string, string>();
+	const isMain = (row: Record<string, unknown>) => text(row.main) === "1" || row.main === true;
+	const ordered = [...emailRows]
+		.filter((row) => text(row.type) === "EMAIL")
+		.sort((left, right) => Number(isMain(right)) - Number(isMain(left)) || byNumericId(left, right));
+	for (const row of ordered) {
+		const contactId = refId(row.contact);
+		const email = text(row.value);
+		if (contactId && email && !emails.has(contactId)) emails.set(contactId, email);
+	}
+	return { addresses, emails };
+}
+
 /** The listing cursor is the next offset Z8 handed out; anything else is refused. */
 function listOffset(cursor: string): number {
 	const offset = /^\d{1,9}$/.test(cursor) ? Number(cursor) : Number.NaN;
@@ -328,6 +409,16 @@ function openSevdeskProvider(
 	clock: Clock,
 ): SevdeskProvider {
 	const customerQuery = { "category[id]": CUSTOMER_CATEGORY_ID, depth: 1 };
+	// The customer import pages through contacts on one opened provider: read the
+	// addresses and emails once for all pages instead of once per contact.
+	let details: Promise<ImportDetails> | null = null;
+	const importDetails = () => {
+		details ??= readImportDetails(client).catch((error: unknown) => {
+			details = null;
+			throw error;
+		});
+		return details;
+	};
 	return {
 		kind: "sevdesk",
 		capabilities: SEVDESK_CAPABILITIES,
@@ -361,8 +452,16 @@ function openSevdeskProvider(
 				query: { ...customerQuery, limit: LIST_PAGE_SIZE, offset },
 			});
 			const rows = rowsOf(response.body);
+			const details = await importDetails();
 			return {
-				contacts: rows.filter(isLiveContact).flatMap((row) => contactOf(row) ?? []),
+				contacts: rows
+					.filter(isLiveContact)
+					.flatMap((row) => contactOf(row) ?? [])
+					.map((contact) => ({
+						...contact,
+						address: details.addresses.get(contact.id) ?? null,
+						email: details.emails.get(contact.id) ?? null,
+					})),
 				nextCursor: rows.length === LIST_PAGE_SIZE ? String(offset + LIST_PAGE_SIZE) : null,
 			};
 		},

@@ -6,6 +6,8 @@ import { getAccountingProviderRegistry } from "../registry";
 import { createSevdeskConnector } from "./connector";
 import {
 	authenticationRequired,
+	communicationWayRow,
+	contactAddressRow,
 	contactRow,
 	contacts,
 	type FixtureRoute,
@@ -272,6 +274,7 @@ describe("sevdesk connector: contacts", () => {
 				contactRow({ id: String(from + index), name: `Customer ${from + index}` }),
 			);
 		const { provider, http } = providerWith([
+			...importLookupRoutes(),
 			{
 				method: "GET",
 				path: "/Contact",
@@ -281,12 +284,7 @@ describe("sevdesk connector: contacts", () => {
 				],
 			},
 		]);
-		const lister = provider as typeof provider & {
-			listCustomerContacts(page: { cursor: string | null }): Promise<{
-				contacts: unknown[];
-				nextCursor: string | null;
-			}>;
-		};
+		const lister = listerOf(provider);
 
 		const first = await lister.listCustomerContacts({ cursor: null });
 		expect(first.contacts).toHaveLength(100);
@@ -299,6 +297,120 @@ describe("sevdesk connector: contacts", () => {
 			{ "category[id]": "3", depth: "1", limit: "100", offset: "0" },
 			{ "category[id]": "3", depth: "1", limit: "100", offset: "100" },
 		]);
+	});
+
+	it("fills each listed contact's email and address from sevdesk's communication ways and contact addresses", async () => {
+		const { provider, http } = providerWith([
+			...importLookupRoutes({
+				addresses: [
+					contactAddressRow({ id: 72, contactId: "1001", street: "Second 2", zip: "20095", city: "Hamburg" }),
+					contactAddressRow({ id: 71, contactId: "1001", street: "Hauptstr. 1", zip: "10115", city: "Berlin" }),
+					contactAddressRow({ id: 73, contactId: "1003", city: "München" }),
+				],
+				emails: [
+					communicationWayRow({ id: "81", contactId: "1001", value: "info@acme.example" }),
+					communicationWayRow({ id: "82", contactId: "1001", value: "billing@acme.example", main: true }),
+					communicationWayRow({ id: "83", contactId: "1003", value: "erika@example.org" }),
+				],
+			}),
+			{
+				method: "GET",
+				path: "/Contact",
+				responses: [
+					{ status: 200, body: { objects: [contacts.acme, contacts.acmeSchweiz, contacts.person] } },
+				],
+			},
+		]);
+
+		const page = await listerOf(provider).listCustomerContacts({ cursor: null });
+
+		expect(page.contacts).toEqual([
+			{
+				id: "1001",
+				customerNumber: "10001",
+				name: "Acme GmbH",
+				// The first address by id; sevdesk's draft takes the contact's first address too.
+				address: "Hauptstr. 1\n10115 Berlin",
+				vatId: "DE123456789",
+				// The main email wins over an earlier one.
+				email: "billing@acme.example",
+			},
+			{
+				id: "1002",
+				customerNumber: "10002",
+				name: "Acme Schweiz AG",
+				address: null,
+				vatId: null,
+				email: null,
+			},
+			{
+				id: "1003",
+				customerNumber: "10003",
+				name: "Erika Mustermann",
+				address: "München",
+				vatId: null,
+				email: "erika@example.org",
+			},
+		]);
+		expect(
+			http.to("GET", "/CommunicationWay").map((request) => Object.fromEntries(request.query)),
+		).toEqual([{ type: "EMAIL", limit: "1000", offset: "0" }]);
+		expect(
+			http.to("GET", "/ContactAddress").map((request) => Object.fromEntries(request.query)),
+		).toEqual([{ limit: "1000", offset: "0" }]);
+	});
+
+	it("reads emails and addresses once per import, page by page, not once per contact page", async () => {
+		const emails = Array.from({ length: 1000 }, (_, index) =>
+			communicationWayRow({ id: String(5000 + index), contactId: "9", value: `x${index}@example.org` }),
+		);
+		const { provider, http } = providerWith([
+			{
+				method: "GET",
+				path: "/ContactAddress",
+				responses: [{ status: 200, body: { objects: [] } }],
+			},
+			{
+				method: "GET",
+				path: "/CommunicationWay",
+				responses: [
+					{ status: 200, body: { objects: emails } },
+					{
+						status: 200,
+						body: {
+							objects: [
+								communicationWayRow({ id: "1", contactId: "1001", value: "a@acme.example" }),
+							],
+						},
+					},
+				],
+			},
+			{
+				method: "GET",
+				path: "/Contact",
+				responses: [
+					{
+						status: 200,
+						body: {
+							objects: Array.from({ length: 100 }, (_, index) =>
+								contactRow({ id: String(index + 1), name: `C ${index}` }),
+							),
+						},
+					},
+					{ status: 200, body: { objects: [contacts.acme] } },
+				],
+			},
+		]);
+		const lister = listerOf(provider);
+
+		const first = await lister.listCustomerContacts({ cursor: null });
+		const second = await lister.listCustomerContacts({ cursor: first.nextCursor });
+
+		expect(second.contacts[0]?.email).toBe("a@acme.example");
+		expect(http.to("GET", "/CommunicationWay").map((request) => request.query.get("offset"))).toEqual(
+			["0", "1000"],
+		);
+		expect(http.to("GET", "/ContactAddress")).toHaveLength(1);
 	});
 
 	it("leaves out contacts outside sevdesk's documented live statuses (lead, pending, active)", async () => {
