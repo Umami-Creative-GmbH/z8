@@ -2,7 +2,7 @@
  * Data fetchers for export functionality
  * This file contains server-only code that accesses the database
  */
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import {
 	absenceCategory,
 	absenceEntry,
@@ -197,9 +197,10 @@ export async function fetchTimeEntries(organizationId: string) {
 export async function fetchWorkPeriods(organizationId: string) {
 	logger.info({ organizationId }, "Fetching work periods for export");
 
-	// Fetch work periods directly by organizationId
+	// Fetch work periods directly by organizationId; work deleted by an approved
+	// correction is no longer work (#794). Running periods stay, flagged by isActive.
 	const filteredPeriods = await db.query.workPeriod.findMany({
-		where: eq(workPeriod.organizationId, organizationId),
+		where: and(eq(workPeriod.organizationId, organizationId), isNull(workPeriod.deletedAt)),
 		with: {
 			employee: {
 				columns: {
@@ -858,14 +859,16 @@ export async function* streamWorkPeriods(
 	let offset = 0;
 	let hasMore = true;
 
-	// Build where clause - use organizationId directly, optionally filter by employeeIds
+	// Build where clause - use organizationId directly, optionally filter by employeeIds.
+	// Work deleted by an approved correction is no longer work (#794).
 	const whereClause =
 		employeeIds.length > 0
 			? and(
 					eq(workPeriod.organizationId, organizationId),
+					isNull(workPeriod.deletedAt),
 					inArray(workPeriod.employeeId, employeeIds),
 				)
-			: eq(workPeriod.organizationId, organizationId);
+			: and(eq(workPeriod.organizationId, organizationId), isNull(workPeriod.deletedAt));
 
 	while (hasMore) {
 		const batch = await db.query.workPeriod.findMany({
