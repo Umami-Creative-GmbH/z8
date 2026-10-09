@@ -9,6 +9,7 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import {
+	compareInstants,
 	dateFromInstant,
 	type Instant,
 	instantFromDate,
@@ -110,6 +111,12 @@ export async function listClockingReminderEmployees(
 /** How far back shifts and work are read: covers overnight shifts and every timezone offset. */
 const LOOKBACK_DAYS = 3;
 const LOOKAHEAD_DAYS = 2;
+/**
+ * How far before live work's start a shift it matches can be dated: the shift ends after the work
+ * starts and at most two days after its date begins in the employee's zone, which is at most 26 h
+ * after the date begins in the organization's zone.
+ */
+const LIVE_WORK_SHIFT_LOOKBACK_DAYS = 4;
 
 export interface ShiftReminderFacts {
 	shifts: ReminderShift[];
@@ -120,6 +127,10 @@ export interface ShiftReminderFacts {
  * The published, assigned shifts around `now` and the recent and live work of a page of
  * employees, read without a work transaction. `shift.date` stores the organization-local midnight
  * of the shift's calendar date, so it is read back as a calendar date in the organization's zone.
+ *
+ * Live work is read however old it is, so the shifts reach back as far as any live work's start:
+ * live work that matched a shift keeps owing only that shift's forgotten clock-out, never a second
+ * one from the work policy once the shift date leaves the lookback.
  */
 export async function loadShiftReminderFacts(
 	input: {
@@ -134,45 +145,53 @@ export async function loadShiftReminderFacts(
 		input.employeeIds.map((id) => [id, { shifts: [], work: [] }]),
 	);
 	if (input.employeeIds.length === 0) return facts;
-	const from = dateFromInstant(input.now.subtract({ hours: LOOKBACK_DAYS * 24 }));
+	const recentFrom = input.now.subtract({ hours: LOOKBACK_DAYS * 24 });
+	const from = dateFromInstant(recentFrom);
 	const until = dateFromInstant(input.now.add({ hours: LOOKAHEAD_DAYS * 24 }));
-	const [shifts, work] = await Promise.all([
-		database
-			.select({
-				id: shift.id,
-				employeeId: shift.employeeId,
-				date: shift.date,
-				startTime: shift.startTime,
-				endTime: shift.endTime,
-			})
-			.from(shift)
-			.where(
-				and(
-					eq(shift.organizationId, input.organizationId),
-					eq(shift.status, "published"),
-					inArray(shift.employeeId, [...input.employeeIds]),
-					gte(shift.date, from),
-					lt(shift.date, until),
-				),
+	const work = await database
+		.select({
+			employeeId: workPeriod.employeeId,
+			startTime: workPeriod.startTime,
+			endTime: workPeriod.endTime,
+			durationMinutes: workPeriod.durationMinutes,
+			live: sql<boolean>`(${workPeriod.isActive} = true AND ${workPeriod.endTime} IS NULL AND ${workPeriod.clockOutId} IS NULL)`,
+		})
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.organizationId, input.organizationId),
+				inArray(workPeriod.employeeId, [...input.employeeIds]),
+				isNull(workPeriod.deletedAt),
+				or(gte(workPeriod.startTime, from), isNull(workPeriod.endTime)),
 			),
-		database
-			.select({
-				employeeId: workPeriod.employeeId,
-				startTime: workPeriod.startTime,
-				endTime: workPeriod.endTime,
-				durationMinutes: workPeriod.durationMinutes,
-				live: sql<boolean>`(${workPeriod.isActive} = true AND ${workPeriod.endTime} IS NULL AND ${workPeriod.clockOutId} IS NULL)`,
-			})
-			.from(workPeriod)
-			.where(
-				and(
-					eq(workPeriod.organizationId, input.organizationId),
-					inArray(workPeriod.employeeId, [...input.employeeIds]),
-					isNull(workPeriod.deletedAt),
-					or(gte(workPeriod.startTime, from), isNull(workPeriod.endTime)),
-				),
+		);
+	const shiftsFrom = work
+		.filter((row) => row.endTime === null && row.live)
+		.map((row) =>
+			instantFromDate(row.startTime).subtract({ hours: LIVE_WORK_SHIFT_LOOKBACK_DAYS * 24 }),
+		)
+		.reduce(
+			(earliest, bound) => (compareInstants(bound, earliest) < 0 ? bound : earliest),
+			recentFrom,
+		);
+	const shifts = await database
+		.select({
+			id: shift.id,
+			employeeId: shift.employeeId,
+			date: shift.date,
+			startTime: shift.startTime,
+			endTime: shift.endTime,
+		})
+		.from(shift)
+		.where(
+			and(
+				eq(shift.organizationId, input.organizationId),
+				eq(shift.status, "published"),
+				inArray(shift.employeeId, [...input.employeeIds]),
+				gte(shift.date, dateFromInstant(shiftsFrom)),
+				lt(shift.date, until),
 			),
-	]);
+		);
 	for (const row of shifts) {
 		if (!row.employeeId) continue;
 		facts.get(row.employeeId)?.shifts.push({

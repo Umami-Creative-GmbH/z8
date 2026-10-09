@@ -346,6 +346,41 @@ describe("clocking reminders from work policies on PostgreSQL", () => {
 		});
 	});
 
+	it("sends only the shift's forgotten clock-out for live work after the shift leaves the lookback", async () => {
+		const org = await organization();
+		const person = await employee(org);
+		const shiftId = await shift(org, person, "08:00", "16:00");
+		// Monday 07:55 Berlin matches the shift; the work is never clocked out.
+		await clockIn(org, person, "2026-04-27T05:55:00Z");
+
+		// Shift end plus grace: 16:30 Berlin.
+		await run("2026-04-27T14:30:00Z");
+		// Friday and Saturday 00:30 Berlin: the shift date is more than 72 h old.
+		await run("2026-04-30T22:30:00Z");
+		await run("2026-05-01T22:30:00Z");
+		const sent = await notifications(person);
+		expect(sent.map((row) => [row.type, row.entity_id])).toEqual([
+			["forgotten_clock_out_reminder", shiftId],
+		]);
+	});
+
+	it("sends one policy forgotten clock-out for live work without a shift that outlasts the lookback", async () => {
+		const org = await organization();
+		const person = await employee(org);
+		// A Monday shift the employee skipped; the job does not run while it lasts.
+		await shift(org, person, "08:00", "12:00");
+		// Wednesday 08:00 Berlin, never clocked out.
+		await clockIn(org, person, "2026-04-29T06:00:00Z");
+
+		await run("2026-04-29T14:30:00Z");
+		// Saturday 10:00 Berlin: the live work and the Monday shift are older than 72 h.
+		await run("2026-05-02T08:00:00Z");
+		const sent = await notifications(person);
+		expect(sent.map((row) => [row.type, row.entity_id, row.metadata.day])).toEqual([
+			["forgotten_clock_out_reminder", null, "2026-04-29"],
+		]);
+	});
+
 	it("sends no forgotten clock-out reminder on a day without required hours", async () => {
 		const org = await organization();
 		const person = await employee(org);
