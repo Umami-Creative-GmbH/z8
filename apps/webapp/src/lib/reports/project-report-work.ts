@@ -3,12 +3,13 @@ import "server-only";
 import { and, eq, gte, inArray, isNotNull, isNull, lt } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import type { db } from "@/db";
-import { customer, invoicedWork, project, timeEntry, workPeriod } from "@/db/schema";
+import { invoicedWork, project, timeEntry, workPeriod } from "@/db/schema";
 import { workDayOf } from "@/lib/billable-time/applicable-rate";
 import { listBillableRatesForWork } from "@/lib/billable-time/billable-rates";
 import { listCostRatesForWork } from "@/lib/billable-time/cost-rates";
 import { parsePlainDay } from "@/lib/billable-time/input";
 import { rateFromStored } from "@/lib/billable-time/money";
+import { activeProjectCustomerIdSql } from "@/lib/billable-time/project-customer";
 import type { ReportedWork, ReportRates } from "@/lib/billable-time/report-figures";
 import { dateFromInstant, instantFromDate, type PlainDate } from "@/lib/datetime/temporal-core";
 import { unresolvedWorkPeriodReviewSql } from "@/lib/time-tracking/unresolved-work-period-review";
@@ -83,7 +84,7 @@ export async function loadReportedProjectWork(
 			employeeId: workPeriod.employeeId,
 			projectId: workPeriod.projectId,
 			// A deleted (inactive) customer counts as no customer.
-			customerId: customer.id,
+			customerId: activeProjectCustomerIdSql(),
 			startTime: workPeriod.startTime,
 			endTime: workPeriod.endTime,
 			durationMinutes: workPeriod.durationMinutes,
@@ -104,14 +105,6 @@ export async function loadReportedProjectWork(
 		.innerJoin(
 			project,
 			and(eq(project.id, workPeriod.projectId), eq(project.organizationId, organizationId)),
-		)
-		.leftJoin(
-			customer,
-			and(
-				eq(customer.id, project.customerId),
-				eq(customer.organizationId, organizationId),
-				eq(customer.isActive, true),
-			),
 		)
 		.leftJoin(
 			invoicedWork,

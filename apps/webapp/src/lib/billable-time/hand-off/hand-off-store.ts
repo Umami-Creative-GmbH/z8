@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createHash, randomUUID } from "node:crypto";
-import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, not, sql } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import type { db } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -55,6 +55,7 @@ import { taxTreatmentView } from "../accounting/views";
 import { isBillableCurrency } from "../currency";
 import { isUniqueViolation, isUuid, parsePlainDay } from "../input";
 import { formatRate, rateFromStored } from "../money";
+import { projectHasActiveCustomerSql } from "../project-customer";
 import { getBillableTimeSettings, lockBillableTimeSettings } from "../settings";
 import {
 	compareCandidates,
@@ -244,15 +245,7 @@ async function loadHandOffContext(
 	const customerless = await reader
 		.select({ id: project.id, name: project.name })
 		.from(project)
-		.leftJoin(
-			customer,
-			and(
-				eq(customer.id, project.customerId),
-				eq(customer.organizationId, organizationId),
-				eq(customer.isActive, true),
-			),
-		)
-		.where(and(eq(project.organizationId, organizationId), isNull(customer.id)));
+		.where(and(eq(project.organizationId, organizationId), not(projectHasActiveCustomerSql())));
 	const customerlessWork = (
 		await loadReportedProjectWork(reader, organizationId, {
 			projectIds: customerless.map((row) => row.id),
