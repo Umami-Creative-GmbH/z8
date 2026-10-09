@@ -17,5 +17,5 @@ German payroll needs tax-free reimbursements and taxable pay on different wage t
 - A payroll run takes only euro amounts and approved expense reports, not legacy claims, and is offered only by the file payroll formats.
 - A report is left out when any item has no statutory baseline: an admin override, an itinerary the rules do not cover, or a day outside the verified tables.
 - A report is left out once it has a bank-transfer reimbursement or a recovery, or when an adjustment would lower the amount on any wage type, because reimbursements carry no wage-type breakdown.
-- The verified per diem tables end with each calendar year. The payroll channel depends on verifying the next year's tables before its first payroll run.
+- The domestic statutory rates hold until § 9 Abs. 4a EStG changes. The foreign amounts come from the BMF's yearly table, so a report with foreign days stays out of payroll runs until that year's table is verified.
 - Net-pay deductions are out of scope. Recoveries are always settled outside payroll.
