@@ -51,7 +51,8 @@ export { deleteTusUpload };
 export const deletePersonnelDocumentObject = deleteTravelExpenseReceiptObject;
 
 /** Copies a staged object to its document key on payslip batch confirmation (#868). */
-export const copyPersonnelFileObject: CopyPersonnelFileObject = copyPrivateObject;
+export const copyPersonnelFileObject: CopyPersonnelFileObject = (input) =>
+	copyPrivateObject(input);
 
 export const loadPersonnelDocumentPreview = loadReceiptPreview;
 export const PERSONNEL_DOCUMENT_PREVIEW_MIME_TYPE = RECEIPT_PREVIEW_MIME_TYPE;

@@ -418,6 +418,45 @@ describe("payslip batches matched by personnel number (#868)", () => {
 			});
 		});
 
+		it("never matches or assigns the officer's own payslip, even with their team in scope", async () => {
+			await admin.query("update employee set team_id = $2, employee_number = '0099' where id = $1", [
+				ids.officer,
+				ids.berlin,
+			]);
+			try {
+				signIn("officer");
+				const batchId = await startBatch();
+				const fileId = await stageOk(batchId, "0099_payslip.pdf");
+				expect(await fileOf(batchId, fileId)).toMatchObject({
+					matchKind: "unmatched",
+					employeeId: null,
+				});
+				expect((await preview(batchId)).employees.map((employee) => employee.id)).not.toContain(
+					ids.officer,
+				);
+				const assigned = await actions.updatePayslipBatchFileAction({
+					batchId,
+					fileId,
+					assignedEmployeeId: ids.officer,
+				});
+				expect(assigned.success).toBe(false);
+
+				// Someone else (the owner) matches it to the officer.
+				signIn("owner");
+				const ownerBatch = await startBatch();
+				const ownerFile = await stageOk(ownerBatch, "0099_payslip.pdf");
+				expect(await fileOf(ownerBatch, ownerFile)).toMatchObject({
+					matchKind: "matched",
+					employeeId: ids.officer,
+				});
+			} finally {
+				await admin.query(
+					"update employee set team_id = null, employee_number = null where id = $1",
+					[ids.officer],
+				);
+			}
+		});
+
 		it("lets the officer assign a file of an employee without a personnel number, or drop it", async () => {
 			signIn("officer");
 			const batchId = await startBatch();

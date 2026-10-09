@@ -56,6 +56,8 @@ _Avoid_: HR, HR manager, HR role
 
 Granted separately from payroll access and from expense officer grants: payroll access never shows payslips.
 
+No one is a personnel file officer for their own personnel file: an officer, owner or admin sees their own file only as the employee, and another officer or admin keeps it.
+
 **Former employee**:
 An employee whose employment a departure ended. Their personnel file stays with the organization, but they no longer see it.
 _Avoid_: ex-employee, leaver

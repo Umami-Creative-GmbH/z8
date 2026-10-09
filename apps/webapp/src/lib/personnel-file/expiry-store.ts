@@ -5,7 +5,7 @@ import { employee, employeeDocument, personnelFileReminderSetting } from "@/db/s
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import type { PersonnelFileAccess } from "./access";
-import { visibleDocumentsCondition } from "./access-store";
+import { managedDocumentsCondition } from "./access-store";
 import { type DocumentCategory, EXPIRY_DATE_CATEGORIES } from "./document.types";
 import {
 	DEFAULT_EXPIRY_REMINDER_LEAD_DAYS,
@@ -101,8 +101,8 @@ export async function listExpiringDocuments(
 		organizationId: access.organizationId,
 		now: input.now,
 	});
-	// Only documents the actor manages; their own shared documents are in My documents.
-	const managed = visibleDocumentsCondition({ ...access, selfEmployeeId: null });
+	// Only documents the actor manages; their own documents are in My documents.
+	const managed = managedDocumentsCondition(access);
 	const rows = await database
 		.select({
 			documentId: employeeDocument.id,

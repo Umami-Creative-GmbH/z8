@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, or, type SQL, type SQLWrapper, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, ne, or, type SQL, type SQLWrapper, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { member, organization, user } from "@/db/auth-schema";
 import { employee, employeeDocument, teamMembership } from "@/db/schema";
@@ -147,6 +147,21 @@ function employeeInScope(
 	return conditions.length > 0 ? (or(...conditions) as SQL) : sql`false`;
 }
 
+/**
+ * The employees a grant lets the actor manage: its scope without the actor's
+ * own employee record, which they only see as the employee (decision A).
+ */
+function managedEmployeeCondition(
+	access: PersonnelFileAccess,
+	scope: EmployeeScope,
+	employeeIdColumn: SQLWrapper = employeeDocument.employeeId,
+): SQL {
+	const inScope = employeeInScope(access.organizationId, scope, employeeIdColumn);
+	return access.selfEmployeeId
+		? (and(inScope, ne(employeeIdColumn, access.selfEmployeeId)) as SQL)
+		: inScope;
+}
+
 /** An employee whose personnel file the actor manages, departed employees included. */
 export interface ManagedEmployee {
 	id: string;
@@ -159,7 +174,8 @@ export interface ManagedEmployee {
  * The employees whose personnel file the actor manages in at least one
  * category (the officer area, #866): everyone for owners and admins, the
  * named employees and current members of the named teams for an officer.
- * Departed employees stay listed: their files are still managed.
+ * Departed employees stay listed: their files are still managed. The actor's
+ * own employee record never is (decision A).
  */
 export async function listManagedEmployees(
 	database: Reader,
@@ -170,7 +186,7 @@ export async function listManagedEmployees(
 	const { category } = filter;
 	const scopes = access.grants
 		.filter((grant) => (category ? grant.categories.has(category) : grant.categories.size > 0))
-		.map((grant) => employeeInScope(access.organizationId, grant.scope, employee.id));
+		.map((grant) => managedEmployeeCondition(access, grant.scope, employee.id));
 	if (scopes.length === 0) return [];
 	const rows = await database
 		.select({
@@ -197,22 +213,39 @@ export async function listManagedEmployees(
 	}));
 }
 
-/**
- * The employee documents the actor may see, as a condition on
- * `employee_document`: documents of the categories each grant covers for the
- * employees in its scope, plus the actor's own shared documents. Always
- * scoped to the actor's organization.
- */
-export function visibleDocumentsCondition(access: PersonnelFileAccess): SQL {
-	const visible: SQL[] = access.grants
+function grantConditions(access: PersonnelFileAccess): SQL[] {
+	return access.grants
 		.filter((grant) => grant.categories.size > 0)
 		.map(
 			(grant) =>
 				and(
-					employeeInScope(access.organizationId, grant.scope),
+					managedEmployeeCondition(access, grant.scope),
 					inArray(employeeDocument.category, [...grant.categories]),
 				) as SQL,
 		);
+}
+
+/**
+ * The employee documents the actor manages through a grant, as a condition on
+ * `employee_document` (manage lists: expiring, due for deletion): documents
+ * of the categories each grant covers for the employees in its scope, never
+ * the actor's own. Always scoped to the actor's organization.
+ */
+export function managedDocumentsCondition(access: PersonnelFileAccess): SQL {
+	const managed = grantConditions(access);
+	return and(
+		eq(employeeDocument.organizationId, access.organizationId),
+		managed.length > 0 ? (or(...managed) as SQL) : sql`false`,
+	) as SQL;
+}
+
+/**
+ * The employee documents the actor may see, as a condition on
+ * `employee_document`: the documents they manage, plus their own shared
+ * documents. Always scoped to the actor's organization.
+ */
+export function visibleDocumentsCondition(access: PersonnelFileAccess): SQL {
+	const visible = grantConditions(access);
 	if (access.selfEmployeeId) {
 		visible.push(
 			and(

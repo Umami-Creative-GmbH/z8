@@ -7,6 +7,7 @@
  */
 
 import type { NextRequest } from "next/server";
+import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -91,6 +92,7 @@ const officerActions = await import(
 );
 const { resolvePersonnelFileAccess, listManagedEmployees } = await import("./access-store");
 const { listPersonnelFileNotificationRecipients } = await import("./notification-recipients");
+const { listExpiringDocuments } = await import("./expiry-store");
 const { seedPersonnelFileOfficerGrant, deactivateSeededPersonnelFileOfficerGrant } = await import(
 	"./testing/officer-grant.test.fixture"
 );
@@ -362,6 +364,110 @@ describe("personnel file officer grants (#866)", () => {
 				organizationId: ORG,
 			});
 			expect(payroll?.grants).toEqual([]);
+		});
+	});
+
+	describe("own personnel file (decision A)", () => {
+		async function accessOf(person: Person) {
+			const access = await resolvePersonnelFileAccess(db, {
+				userId: userOf(person),
+				organizationId: ORG,
+			});
+			if (!access) throw new Error("no access");
+			return access;
+		}
+
+		it("gives an officer whose own team is in scope only the employee view of their own file", async () => {
+			await admin.query("update employee set team_id = $2 where id = $1", [
+				ids.officer,
+				ids.berlin,
+			]);
+			signIn("owner");
+			const ownHrOnly = await uploadDocument({
+				employeeId: ids.officer,
+				metadata: { ...payslip(4), visibility: "hr_only" },
+			});
+			const ownShared = await uploadDocument({
+				employeeId: ids.officer,
+				metadata: { ...payslip(5), visibility: "shared" },
+			});
+			try {
+				signIn("officer");
+				expect((await download(ownHrOnly)).status).toBe(404);
+				expect((await download(ownShared)).status).toBe(200);
+				expect(await actions.getPersonnelFileAction({ employeeId: ids.officer })).toMatchObject({
+					success: false,
+				});
+				expect((await upload({ employeeId: ids.officer, metadata: payslip(6) })).status).toBe(404);
+				expect(
+					await actions.deleteEmployeeDocumentAction({ documentId: ownShared, reason: "mine" }),
+				).toMatchObject({ success: false });
+				const mine = await actions.getMyDocumentsAction();
+				expect(mine.success && mine.data.map((document) => document.id)).toEqual([ownShared]);
+
+				const managed = await listManagedEmployees(db, await accessOf("officer"));
+				expect(managed.map((employee) => employee.id).toSorted()).toEqual(
+					[ids.anna, ids.leaver].toSorted(),
+				);
+				// Their HR-only payslip goes to someone else: the owners and admins.
+				expect(
+					await listPersonnelFileNotificationRecipients(db, {
+						organizationId: ORG,
+						employeeId: ids.officer,
+						category: "payslip",
+					}),
+				).toEqual([userOf("admin"), userOf("owner")].toSorted());
+			} finally {
+				await admin.query("delete from employee_document where id = any($1::uuid[])", [
+					[ownHrOnly, ownShared],
+				]);
+				await admin.query("update employee set team_id = null where id = $1", [ids.officer]);
+			}
+		});
+
+		it("gives an admin who is an employee only the employee view of their own file", async () => {
+			signIn("owner");
+			const ownHrOnly = await uploadDocument({
+				employeeId: ids.admin,
+				metadata: {
+					category: "certificate",
+					title: "First aid",
+					documentDate: "2025-01-01",
+					expiryDate: "2026-01-01",
+					visibility: "hr_only",
+				},
+			});
+			const ownShared = await uploadDocument({
+				employeeId: ids.admin,
+				metadata: { ...contract, visibility: "shared" },
+			});
+			try {
+				signIn("admin");
+				expect((await download(ownHrOnly)).status).toBe(404);
+				expect((await download(ownShared)).status).toBe(200);
+				expect(await actions.getPersonnelFileAction({ employeeId: ids.admin })).toMatchObject({
+					success: false,
+				});
+				expect((await actions.getPersonnelFileAction({ employeeId: ids.anna })).success).toBe(
+					true,
+				);
+				const access = await accessOf("admin");
+				const managed = (await listManagedEmployees(db, access)).map((employee) => employee.id);
+				expect(managed).not.toContain(ids.admin);
+				expect(managed).toContain(ids.anna);
+				const expiring = await listExpiringDocuments(db, access, {
+					now: Temporal.Instant.fromEpochMilliseconds(Date.now()),
+				});
+				expect(expiring.map((document) => document.documentId)).not.toContain(ownHrOnly);
+
+				// The owner still manages the admin's file.
+				signIn("owner");
+				expect((await download(ownHrOnly)).status).toBe(200);
+			} finally {
+				await admin.query("delete from employee_document where id = any($1::uuid[])", [
+					[ownHrOnly, ownShared],
+				]);
+			}
 		});
 	});
 

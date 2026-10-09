@@ -19,7 +19,7 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import type { PersonnelFileAccess } from "./access";
-import { visibleDocumentsCondition } from "./access-store";
+import { managedDocumentsCondition } from "./access-store";
 import { writeDocumentAudit } from "./audit";
 import { DOCUMENT_CATEGORIES, type DocumentCategory, type PayPeriod } from "./document.types";
 import { loadOrganizationDay } from "./organization-day";
@@ -285,11 +285,6 @@ export async function findDueDocuments(
 		});
 	}
 	return { today: today.toString(), documents };
-}
-
-/** Documents the actor manages through a grant; their own shared documents do not count. */
-function managedDocumentsCondition(access: PersonnelFileAccess): SQL {
-	return visibleDocumentsCondition({ ...access, selfEmployeeId: null });
 }
 
 /** The due-for-deletion list of the actor's scope and categories. */

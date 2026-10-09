@@ -90,6 +90,36 @@ describe("personnel file access", () => {
 		expect(canUploadOwnDocument(access(), "anna", "certificate")).toBe(false);
 	});
 
+	it("treats an owner, admin or officer as an employee for their own file", () => {
+		const adminAnna = access({ selfEmployeeId: "anna", grants: [ORGANIZATION_ADMIN_GRANT] });
+		const officerAnna = access({
+			selfEmployeeId: "anna",
+			grants: [
+				{
+					source: "officer_grant",
+					scope: { kind: "specific", employeeIds: [], teamIds: ["berlin"] },
+					categories: new Set(["payslip", "certificate"]),
+				},
+			],
+		});
+		for (const actor of [adminAnna, officerAnna]) {
+			expect(managedCategoriesFor(actor, anna).size).toBe(0);
+			expect(canManageDocument(actor, anna, "payslip")).toBe(false);
+			expect(
+				canViewDocument(actor, { employee: anna, category: "payslip", visibility: "hr_only" }),
+			).toBe(false);
+			expect(
+				canViewDocument(actor, { employee: anna, category: "payslip", visibility: "shared" }),
+			).toBe(true);
+			expect(canUploadOwnDocument(actor, "anna", "certificate")).toBe(true);
+		}
+		// Everyone else in scope stays managed.
+		expect(canManageDocument(adminAnna, ben, "contract")).toBe(true);
+		expect(canManageDocument(officerAnna, { id: "carla", teamIds: ["berlin"] }, "payslip")).toBe(
+			true,
+		);
+	});
+
 	it("tells an employee's own documents apart, so their views go unaudited", () => {
 		expect(isOwnDocument(employeeAnna, "anna")).toBe(true);
 		expect(isOwnDocument(employeeAnna, "ben")).toBe(false);

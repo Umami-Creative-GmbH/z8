@@ -18,6 +18,9 @@ import {
  *   Whoever holds a grant sees shared and HR-only documents in it.
  * - The **employee** sees their own shared documents and manages none. They
  *   may upload certificates and other documents into their own file (#867).
+ * - **Own file**: no grant covers the actor's own employee record. Owners,
+ *   admins and officers see and upload into their own file only as the
+ *   employee; another officer or admin manages it (user decision A, #767).
  *
  * Managers, payroll access and expense officer grants confer nothing.
  */
@@ -61,12 +64,17 @@ export function isEmployeeInScope(scope: EmployeeScope, employee: EmployeeRef): 
 	);
 }
 
-/** The categories of the employee's documents the actor may see and manage. */
+/**
+ * The categories of the employee's documents the actor may see and manage.
+ * None for the actor's own file: there, owners, admins and officers are just
+ * the employee (their HR-only documents are another officer's or admin's).
+ */
 export function managedCategoriesFor(
 	access: PersonnelFileAccess,
 	employee: EmployeeRef,
 ): ReadonlySet<DocumentCategory> {
 	const categories = new Set<DocumentCategory>();
+	if (isOwnDocument(access, employee.id)) return categories;
 	for (const grant of access.grants) {
 		if (!isEmployeeInScope(grant.scope, employee)) continue;
 		for (const category of grant.categories) categories.add(category);
