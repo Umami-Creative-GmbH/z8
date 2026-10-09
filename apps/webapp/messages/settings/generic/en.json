@@ -23,6 +23,10 @@
       },
       "title": "Data Processing Agreement (DPA)"
     },
+    "billableTime": {
+      "description": "Billable currency and what your organization charges customers for work",
+      "title": "Billable Time"
+    },
     "billing": {
       "description": "Manage your subscription, payment methods, and invoices",
       "title": "Billing & Subscription"

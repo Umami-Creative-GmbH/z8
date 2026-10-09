@@ -150,6 +150,8 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 	...keys("settings/generic", [
 		"settings.avv.description",
 		"settings.avv.title",
+		"settings.billableTime.description",
+		"settings.billableTime.title",
 		"settings.billing.description",
 		"settings.billing.title",
 		"settings.customDomains.description",

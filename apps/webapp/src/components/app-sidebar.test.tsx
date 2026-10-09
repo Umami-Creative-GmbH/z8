@@ -821,6 +821,7 @@ describe("app sidebar compliance navigation", () => {
 					surchargesEnabled: false,
 					demoDataEnabled: true,
 					worksCouncilEnabled: false,
+					billableTimeEnabled: false,
 				},
 			}),
 		);
@@ -851,6 +852,7 @@ describe("app sidebar compliance navigation", () => {
 					surchargesEnabled: false,
 					demoDataEnabled: true,
 					worksCouncilEnabled: false,
+					billableTimeEnabled: false,
 				},
 			}),
 		);

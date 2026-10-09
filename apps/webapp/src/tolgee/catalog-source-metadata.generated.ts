@@ -199,6 +199,7 @@ const sourceShape0: CatalogSourceMetadata = {
 		"settings/generic": {
 			settings: {
 				avv: 1,
+				billableTime: 1,
 				billing: 1,
 				compliance: 1,
 				customDomains: 1,

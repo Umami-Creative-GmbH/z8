@@ -3,7 +3,8 @@ export type OrganizationFeature =
 	| "projectsEnabled"
 	| "surchargesEnabled"
 	| "demoDataEnabled"
-	| "worksCouncilEnabled";
+	| "worksCouncilEnabled"
+	| "billableTimeEnabled";
 
 export type OrganizationFeatureState = Record<OrganizationFeature, boolean>;
 

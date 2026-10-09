@@ -38,6 +38,7 @@ describe("getOrganizationSettings", () => {
 			surchargesEnabled: null,
 			demoDataEnabled: null,
 			worksCouncilEnabled: true,
+			billableTimeEnabled: true,
 			timezone: null,
 			deletedAt: null,
 		});
@@ -60,8 +61,23 @@ describe("getOrganizationSettings", () => {
 			surchargesEnabled: false,
 			demoDataEnabled: true,
 			worksCouncilEnabled: true,
+			billableTimeEnabled: true,
 			timezone: "UTC",
 			deletedAt: null,
+		});
+	});
+
+	it("never reports Billable Time on while projects are off", async () => {
+		mocks.findMember.mockResolvedValue({ id: "member-1" });
+		mocks.findOrganization.mockResolvedValue({
+			id: "org-1",
+			projectsEnabled: false,
+			billableTimeEnabled: true,
+		});
+
+		expect(await getOrganizationSettings("org-1", "user-1")).toMatchObject({
+			projectsEnabled: false,
+			billableTimeEnabled: false,
 		});
 	});
 });
