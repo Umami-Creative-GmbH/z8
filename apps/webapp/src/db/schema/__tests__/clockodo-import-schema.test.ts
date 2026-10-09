@@ -32,9 +32,9 @@ describe("Clockodo project mapping schema (#907)", () => {
 		).toContainEqual(["organization_id", "clockodo_project_id"]);
 	});
 
-	it("declares the organization-scoped project reference in migration 0147", () => {
+	it("declares the organization-scoped project reference in migration 0164", () => {
 		const migration = readFileSync(
-			new URL("../../../../drizzle/0147_clockodo_project_mapping.sql", import.meta.url),
+			new URL("../../../../drizzle/0164_clockodo_project_mapping.sql", import.meta.url),
 			"utf8",
 		);
 		expect(migration).toContain(

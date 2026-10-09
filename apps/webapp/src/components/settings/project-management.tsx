@@ -8,6 +8,7 @@ import {
 	IconListCheck,
 	IconPlus,
 	IconRefresh,
+	IconTemplate,
 	IconUsers,
 } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -36,6 +37,8 @@ import { queryKeys } from "@/lib/query";
 import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
 import { ProjectDialog } from "./project-dialog";
 import { ProjectMembersPanel } from "./project-members-panel";
+import { ProjectTasksPanel } from "./project-tasks-panel";
+import { SaveProjectAsTemplatePanel } from "./save-project-as-template-panel";
 
 interface ProjectManagementProps {
 	organizationId: string;
@@ -94,6 +97,8 @@ export function ProjectManagement({
 	const [bulkProject, setBulkProject] = useState<ProjectWithDetails | null>(null);
 	// Billable rates are for owners and admins only (#898); the actions check again.
 	const canSetBillableRates = useBillableTimeEnabled() && canManageProjectManagers;
+	const [tasksProjectId, setTasksProjectId] = useState<string | null>(null);
+	const [templateSourceId, setTemplateSourceId] = useState<string | null>(null);
 
 	const {
 		data: projectsResult,
@@ -112,6 +117,8 @@ export function ProjectManagement({
 	const projects = projectsResult || [];
 	// Read from the list so the panel reflects refetched assignments.
 	const membersProject = projects.find((project) => project.id === membersProjectId) ?? null;
+	const tasksProject = projects.find((project) => project.id === tasksProjectId) ?? null;
+	const templateSource = projects.find((project) => project.id === templateSourceId) ?? null;
 
 	const handleCreate = () => {
 		setEditingProject(null);
@@ -212,6 +219,7 @@ export function ProjectManagement({
 									<TableHead>{t("settings.projects.column.budget", "Budget")}</TableHead>
 									<TableHead>{t("settings.projects.column.deadline", "Deadline")}</TableHead>
 									<TableHead>{t("settings.projects.column.team", "Team")}</TableHead>
+									<TableHead>{t("settings.projects.column.tasks", "Tasks")}</TableHead>
 									<TableHead className="w-[100px]"></TableHead>
 								</TableRow>
 							</TableHeader>
@@ -308,6 +316,22 @@ export function ProjectManagement({
 												</Button>
 											</TableCell>
 											<TableCell>
+												<Button
+													variant="ghost"
+													size="sm"
+													className="gap-1 text-muted-foreground"
+													onClick={() => setTasksProjectId(project.id)}
+												>
+													<IconListCheck className="size-4" aria-hidden="true" />
+													{t("settings.projects.tasks.open", "Tasks")}
+													<span className="sr-only">
+														{t("settings.projects.tasks.manage", "Manage tasks of {name}", {
+															name: project.name,
+														})}
+													</span>
+												</Button>
+											</TableCell>
+											<TableCell>
 												<div className="flex items-center gap-1">
 													<Button variant="ghost" size="sm" onClick={() => handleEdit(project)}>
 														<IconEdit className="size-4" />
@@ -338,6 +362,25 @@ export function ProjectManagement({
 															title={t("settings.billableTime.bulk.open", "Mark work billable")}
 														>
 															<IconListCheck aria-hidden="true" className="size-4" />
+														</Button>
+													)}
+													{/* Saving as a template is for org owners and admins (#880). */}
+													{canManageProjectManagers && (
+														<Button
+															variant="ghost"
+															size="sm"
+															aria-label={t(
+																"settings.projects.saveAsTemplate.action",
+																"Save {name} as template",
+																{ name: project.name },
+															)}
+															title={t(
+																"settings.projects.saveAsTemplate.title",
+																"Save as template",
+															)}
+															onClick={() => setTemplateSourceId(project.id)}
+														>
+															<IconTemplate className="size-4" aria-hidden="true" />
 														</Button>
 													)}
 												</div>
@@ -396,6 +439,22 @@ export function ProjectManagement({
 					project={bulkProject}
 				/>
 			)}
+			<SaveProjectAsTemplatePanel
+				organizationId={organizationId}
+				project={templateSource}
+				open={templateSource !== null}
+				onOpenChange={(open) => {
+					if (!open) setTemplateSourceId(null);
+				}}
+			/>
+
+			<ProjectTasksPanel
+				project={tasksProject}
+				open={tasksProject !== null}
+				onOpenChange={(open) => {
+					if (!open) setTasksProjectId(null);
+				}}
+			/>
 		</div>
 	);
 }

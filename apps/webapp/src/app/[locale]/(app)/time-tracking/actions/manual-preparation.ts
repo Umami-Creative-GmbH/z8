@@ -27,6 +27,10 @@ import {
 	resolveManualInterpretationZone,
 } from "@/lib/time-tracking/manual-command";
 import {
+	type ProjectTaskIneligibility,
+	projectTaskIneligibility,
+} from "@/lib/time-tracking/project-eligibility";
+import {
 	type BillableWorkRefusal,
 	BillableWorkRefusedError,
 	resolveWorkBillabilityInTransaction,
@@ -57,6 +61,8 @@ export type ManualPreparationRejection =
 	| { reason: "target_not_authorized" }
 	| { reason: "holiday_blocked"; date: string; holidayName: string }
 	| { reason: "project_ineligible"; message: string }
+	/** The command's task cannot be booked (#873). */
+	| { reason: ProjectTaskIneligibility }
 	| { reason: "category_ineligible"; message: string }
 	/** Billable work was requested without a project or customer (#900). */
 	| { reason: "billable_not_allowed"; detail: BillableWorkRefusal }
@@ -76,6 +82,8 @@ export type PreparedManualWork = {
 	projectId: string | null;
 	/** The project's billable default, or the command's explicit choice (#900). */
 	isBillable: boolean;
+	/** A bookable task of `projectId`, or null. */
+	taskId: string | null;
 	workCategoryId: string | null;
 	workLocationType: ManualTimeEntryCommand["workLocationType"];
 	daysBack: number;
@@ -283,6 +291,14 @@ export async function prepareManualWork(
 			};
 		}
 	}
+	if (command.taskId) {
+		const ineligibility = await projectTaskIneligibility(
+			{ employeeId: target.id, teamId: target.teamId, organizationId: target.organizationId },
+			{ projectId: command.projectId, taskId: command.taskId },
+			tx,
+		);
+		if (ineligibility) return { ok: false, rejection: { reason: ineligibility } };
+	}
 	if (command.workCategoryId) {
 		const category = await validateWorkCategoryAssignment(
 			target.id,
@@ -348,6 +364,7 @@ export async function prepareManualWork(
 			reason: command.reason.trim(),
 			projectId: command.projectId,
 			isBillable,
+			taskId: command.taskId ?? null,
 			workCategoryId: command.workCategoryId,
 			workLocationType: command.workLocationType,
 			daysBack,

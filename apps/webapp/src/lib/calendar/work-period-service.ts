@@ -8,6 +8,7 @@ import {
 	automaticClockOutExecution,
 	employee,
 	project,
+	projectTask,
 	surchargeCalculation,
 	timeEntry,
 	workPeriod,
@@ -122,6 +123,11 @@ export async function getWorkPeriodsForMonth(
 				project: project,
 				// Billable Time (#900): a deleted customer leaves the project without customer.
 				projectHasCustomer: projectHasActiveCustomerSql(),
+				task: {
+					id: projectTask.id,
+					name: projectTask.name,
+					state: projectTask.state,
+				},
 				automaticExecution: {
 					organizationId: automaticClockOutExecution.organizationId,
 					employeeId: automaticClockOutExecution.employeeId,
@@ -151,6 +157,13 @@ export async function getWorkPeriodsForMonth(
 				eq(surchargeCalculation.workPeriodId, workPeriod.id),
 			)
 			.leftJoin(project, eq(workPeriod.projectId, project.id))
+			.leftJoin(
+				projectTask,
+				and(
+					eq(projectTask.id, workPeriod.taskId),
+					eq(projectTask.organizationId, workPeriod.organizationId),
+				),
+			)
 			.where(and(...conditions));
 
 		// Return individual work periods as timed events (not aggregated)
@@ -167,10 +180,15 @@ export async function getWorkPeriodsForMonth(
 				surcharge,
 				project: proj,
 				projectHasCustomer,
+				task,
 				automaticExecution,
 			}) => {
 				const notes = clockOutEntry?.notes?.trim();
-				const projectPrefix = proj?.name ? `[${proj.name}] ` : "";
+				// A task is shown next to its project (#874); it never outlives the project.
+				const bookedTask = proj && task?.id ? task : null;
+				const projectPrefix = proj?.name
+					? `[${bookedTask ? `${proj.name} · ${bookedTask.name}` : proj.name}] `
+					: "";
 
 				// Use project color if available, otherwise default green
 				const eventColor = proj?.color || "#10b981"; // Green (emerald)
@@ -219,6 +237,11 @@ export async function getWorkPeriodsForMonth(
 							}),
 							// Billable Time (#900): whether the work is billable.
 							isBillable: period.isBillable,
+							...(bookedTask && {
+								taskId: bookedTask.id,
+								taskName: bookedTask.name,
+								taskState: bookedTask.state,
+							}),
 							// Approval status for change policy enforcement
 							approvalStatus: period.approvalStatus ?? "approved",
 							...(clockInEntry && {
@@ -331,6 +354,11 @@ export async function getWorkPeriodsForMonth(
 						}),
 						// Billable Time (#900): whether the work is billable.
 						isBillable: period.isBillable,
+						...(bookedTask && {
+							taskId: bookedTask.id,
+							taskName: bookedTask.name,
+							taskState: bookedTask.state,
+						}),
 						// Surcharge fields (only included if surcharge calculation exists)
 						...(surcharge && {
 							surchargeMinutes,

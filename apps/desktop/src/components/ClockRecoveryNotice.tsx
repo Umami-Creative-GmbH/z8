@@ -1,7 +1,12 @@
 import { useMemo, useState } from "react";
 import { isUnresolved } from "../lib/saved-commands";
 import { useI18n } from "../lib/i18n";
-import type { ClockJournal, SavedClockCommand, WaitingFor } from "../types";
+import type {
+	ClockJournal,
+	CommandFailure,
+	SavedClockCommand,
+	WaitingFor,
+} from "../types";
 interface ClockRecoveryNoticeProps {
 	journal: ClockJournal | undefined;
 	journalError: boolean;
@@ -22,6 +27,45 @@ const waiting: Record<WaitingFor, string> = {
 	appUpdate: "App update required",
 	server: "Waiting for server",
 };
+/** The server's stable task refusal reasons (`ProjectTaskIneligibility`, #873). */
+type TaskRefusalReason =
+	| "task_done"
+	| "task_other_project"
+	| "task_not_found"
+	| "project_not_bookable";
+const taskReasons: Record<TaskRefusalReason, string> = {
+	task_done: "The chosen task was marked done.",
+	task_other_project: "The chosen task belongs to another project.",
+	task_not_found: "The chosen task no longer exists.",
+	project_not_bookable: "The chosen project is not open for booking.",
+};
+function isTaskRefusalReason(value: unknown): value is TaskRefusalReason {
+	return (
+		typeof value === "string" &&
+		Object.prototype.hasOwnProperty.call(taskReasons, value)
+	);
+}
+/** Why the server refused a closing attribution (v2 422 `field`/`reason`). */
+function attributionRefusal(failure: CommandFailure | null): string | null {
+	if (failure?.code !== "attribution_not_allowed") return null;
+	const response =
+		failure.response && typeof failure.response === "object"
+			? (failure.response as { field?: unknown; reason?: unknown })
+			: {};
+	switch (response.field) {
+		case "taskId":
+			return isTaskRefusalReason(response.reason)
+				? taskReasons[response.reason]
+				: "The chosen task is not available.";
+		case "projectId":
+			// Any refused project: not assigned, inactive or closed alike.
+			return "Time cannot be booked to the chosen project.";
+		case "workCategoryId":
+			return "The chosen work category is not available.";
+		default:
+			return null;
+	}
+}
 function SavedCommand({
 	command,
 	onRetry,
@@ -69,6 +113,7 @@ function SavedCommand({
 			"The server refused this action. Review it in Z8; the evidence stays here.",
 	};
 	const label = labels[command.kind];
+	const refusal = attributionRefusal(command.failure);
 	const state = command.waitingFor
 		? waiting[command.waitingFor]
 		: states[command.state];
@@ -76,6 +121,7 @@ function SavedCommand({
 		<li>
 			<strong>{t(label)}</strong> · {when} ({command.timezone})<p>{t(state)}</p>
 			{command.failure && <p className="field-hint">{command.failure.code}</p>}
+			{refusal && <p>{t(refusal)}</p>}
 			<div className="clock-recovery-actions">
 				{command.state === "stalled" && (
 					<button

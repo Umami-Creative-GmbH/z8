@@ -52,6 +52,7 @@ import {
 } from "./close-active-work";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
 import { planCompletedWorkSplit } from "./split-work-period";
+import { recordedTaskId } from "./task-attribution";
 import { admitTimeEntryAppend, TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 import type { TimeEntryTimezoneCapture } from "./timezone-capture";
 import { projectAllocationAgrees } from "./work-billability";
@@ -95,6 +96,8 @@ export type SplitSegment = {
 	endUtcOffsetMinutes: number | null;
 	attribution: {
 		projectId: string | null;
+		/** Present only when the work is booked to a task (#873). */
+		taskId?: string;
 		/** Absent on receipts committed before billability (#900), which were non-billable. */
 		isBillable?: boolean;
 		workCategoryId: string | null;
@@ -630,6 +633,7 @@ export async function splitCompletedWork(
 			recordId: generatedRecordId,
 			allocationKind: allocation.allocationKind,
 			projectId: allocation.projectId,
+			taskId: allocation.taskId,
 			costCenterId: allocation.costCenterId,
 			weightPercent: allocation.weightPercent,
 			// Both halves keep the source's billability (#900).
@@ -645,6 +649,7 @@ export async function splitCompletedWork(
 			clockOutId: period.clockOutId,
 			projectId: period.projectId,
 			isBillable: period.isBillable,
+			taskId: period.taskId,
 			workCategoryId: period.workCategoryId,
 			workLocationType: period.workLocationType,
 			startTime: splitAtDate,
@@ -680,12 +685,14 @@ export async function splitCompletedWork(
 
 	const attribution = {
 		projectId: period.projectId,
+		...recordedTaskId(period.taskId),
 		isBillable: period.isBillable,
 		workCategoryId: period.workCategoryId,
 		workLocationType: period.workLocationType,
 		allocations: allocations.map((allocation) => ({
 			allocationKind: allocation.allocationKind,
 			projectId: allocation.projectId,
+			...recordedTaskId(allocation.taskId),
 			costCenterId: allocation.costCenterId,
 			weightPercent: allocation.weightPercent,
 			isBillable: allocation.isBillable,

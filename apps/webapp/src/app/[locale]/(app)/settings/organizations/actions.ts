@@ -54,6 +54,7 @@ import { ALL_LANGUAGES } from "@/tolgee/shared";
 import {
 	isOrganizationFeature,
 	type OrganizationFeature,
+	organizationFeatureRequiredRole,
 	organizationFeatureUpdate,
 	requiresDedicatedSwitch,
 } from "./organization-features";
@@ -1116,7 +1117,7 @@ export async function toggleOrganizationFeature(
 		(span) => {
 			return Effect.gen(function* () {
 				if (!isOrganizationFeature(feature)) {
-					yield* Effect.fail(
+					return yield* Effect.fail(
 						new ValidationError({
 							message: "Invalid organization feature",
 							field: "feature",
@@ -1134,14 +1135,18 @@ export async function toggleOrganizationFeature(
 						}),
 					);
 				}
+				const requiredRole = organizationFeatureRequiredRole(organizationFeature);
 
 				const authService = yield* AuthService;
 				const session = yield* authService.getSession();
 				yield* requireActiveOrganizationActionActor({
 					userId: session.user.id,
 					organizationId,
-					requiredRole: "owner",
-					message: "Only owners can change organization features",
+					requiredRole,
+					message:
+						requiredRole === "admin"
+							? "Only owners and admins can change this organization feature"
+							: "Only owners can change organization features",
 					resource: "organization",
 					action: "update",
 				});

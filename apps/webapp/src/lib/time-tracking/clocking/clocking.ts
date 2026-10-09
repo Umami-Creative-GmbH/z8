@@ -27,8 +27,9 @@ import {
 	liveClockOutWriter,
 } from "../close-active-work";
 import { type CloseResumeWorkResult, isCloseResumeStanding } from "../close-resume-work";
-import { isProjectEligible } from "../project-eligibility";
+import { isProjectEligible, projectTaskIneligibility } from "../project-eligibility";
 import { findStandingStart, type StartLiveWorkResult } from "../start-live-work";
+import { attributionAfter } from "../task-attribution";
 import { TimeEntryAppendReviewRequiredError } from "../time-entry-append";
 import {
 	resolveFallbackTimezoneCapture,
@@ -67,6 +68,7 @@ import {
 import type { ClockFollowUps, ClockOutAdvice, ClosedLiveWork } from "./follow-ups";
 import { FrozenCommandNotAcceptedError } from "./frozen";
 import { LegacyCommandNotAcceptedError } from "./legacy-command";
+import { stampExecutedClockEvent } from "./position-stamp";
 import type { ClockTransactions } from "./transactions";
 import type {
 	BreakCommand,
@@ -234,6 +236,9 @@ function closureRefusal(command: ClockOutCommand, error: unknown): ClockOutRefus
 	}
 	if (error instanceof WorkIntervalError) return { code: "invalid_interval" };
 	if (error instanceof CompletedWorkAttributionError) {
+		if (error.field === "taskId") {
+			return { code: "task_not_allowed", reason: error.taskReason ?? "task_not_found" };
+		}
 		return {
 			code: error.field === "projectId" ? "project_not_allowed" : "work_category_not_allowed",
 		};
@@ -448,6 +453,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 				isActive: workPeriod.isActive,
 				deletedAt: workPeriod.deletedAt,
 				workLocationType: workPeriod.workLocationType,
+				projectId: workPeriod.projectId,
 			})
 			.from(workPeriod)
 			.where(
@@ -477,27 +483,31 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			workPeriodId: period.id,
 			start: instantFromDate(period.startTime),
 			workLocationType: (period.workLocationType as WorkLocationType | null) ?? null,
+			projectId: period.projectId,
 		};
 	}
 
 	async function attributionRefusal(
 		plan: ClockOutPlan,
+		target: ClockOutTarget,
 		eventInstant: Instant,
 	): Promise<ClockOutRefusal | null> {
 		const { employee: subject, command } = plan;
-		const { project, workCategory } = command.body;
-		if (
-			project.kind === "replace" &&
-			!(await isProjectEligible(
-				{
-					employeeId: subject.id,
-					teamId: subject.teamId,
-					organizationId: subject.organizationId,
-				},
-				project.id,
-			))
-		) {
+		const { project, workCategory, task } = command.body;
+		const eligibilityTarget = {
+			employeeId: subject.id,
+			teamId: subject.teamId,
+			organizationId: subject.organizationId,
+		};
+		if (project.kind === "replace" && !(await isProjectEligible(eligibilityTarget, project.id))) {
 			return { code: "project_not_allowed" };
+		}
+		if (task?.kind === "replace") {
+			const reason = await projectTaskIneligibility(eligibilityTarget, {
+				projectId: attributionAfter(project, target.projectId),
+				taskId: task.id,
+			});
+			if (reason) return { code: "task_not_allowed", reason };
 		}
 		if (
 			workCategory.kind === "replace" &&
@@ -528,7 +538,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		// A blocking holiday never refuses a clock-out: it would leave live work running.
 		const target = await resolveTarget(plan);
 		if ("refusal" in target) return refused({ code: target.refusal });
-		const attribution = await attributionRefusal(plan, eventInstant);
+		const attribution = await attributionRefusal(plan, target, eventInstant);
 		if (attribution) return refused(attribution);
 
 		let closure: ClockOutClosure;
@@ -539,16 +549,22 @@ export function createClocking(ports: ClockingPorts): Clocking {
 					workPeriodId: target.workPeriodId,
 					endTime: eventInstant,
 					projectId: attributionValue(command.body.project),
+					...(command.body.task ? { taskId: attributionValue(command.body.task) } : {}),
 					workCategoryId: attributionValue(command.body.workCategory),
 				},
-				(coordination) =>
-					closeClockOut(coordination, {
-						plan,
-						replayable: isReplayable(command.identity),
-						target,
-						eventInstant,
-						capture: eventCapture(command, eventInstant),
-					}),
+				async (coordination) =>
+					stampExecutedClockEvent(
+						coordination.db,
+						command,
+						await closeClockOut(coordination, {
+							plan,
+							replayable: isReplayable(command.identity),
+							target,
+							eventInstant,
+							capture: eventCapture(command, eventInstant),
+						}),
+						{ eventInstant, entryIdOf: (closed) => closed.entry.id },
+					),
 			);
 		} catch (error) {
 			return refused(closureRefusal(command, error));
@@ -633,13 +649,18 @@ export function createClocking(ports: ClockingPorts): Clocking {
 
 		let start: ClockInStart;
 		try {
-			start = await transactions.start(transactionScope(plan), (scope) =>
-				startClockIn(scope, {
-					plan,
-					replayable,
-					eventInstant,
-					capture: eventCapture(command, eventInstant),
-				}),
+			start = await transactions.start(transactionScope(plan), async (scope) =>
+				stampExecutedClockEvent(
+					scope.db,
+					command,
+					await startClockIn(scope, {
+						plan,
+						replayable,
+						eventInstant,
+						capture: eventCapture(command, eventInstant),
+					}),
+					{ eventInstant, entryIdOf: (started) => started.entry.id },
+				),
 			);
 		} catch (error) {
 			return refused(startRefusal(error));
@@ -686,20 +707,27 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		try {
 			closure = await transactions.run(
 				{ ...transactionScope(plan), workPeriodId: target.workPeriodId, endTime: breakStart },
-				(coordination) =>
-					takeBreak(coordination, {
-						plan,
-						replayable: isReplayable(command.identity),
-						target,
-						// Each endpoint is captured in the zone at its own instant.
-						endpoints: {
-							close: {
-								instant: breakStart,
-								capture: eventCapture(command, breakStart, start?.zone ?? command.zone.device),
+				async (coordination) =>
+					stampExecutedClockEvent(
+						coordination.db,
+						command,
+						await takeBreak(coordination, {
+							plan,
+							replayable: isReplayable(command.identity),
+							target,
+							// Each endpoint is captured in the zone at its own instant.
+							endpoints: {
+								close: {
+									instant: breakStart,
+									capture: eventCapture(command, breakStart, start?.zone ?? command.zone.device),
+								},
+								resume: { instant: eventInstant, capture: eventCapture(command, eventInstant) },
 							},
-							resume: { instant: eventInstant, capture: eventCapture(command, eventInstant) },
-						},
-					}),
+						}),
+						// The device fixed its position when the break ended: only the resumed
+						// clock-in carries it, never the earlier break start (#826 D1).
+						{ eventInstant, entryIdOf: (taken) => taken.resumeEntryId },
+					),
 			);
 		} catch (error) {
 			return refused(breakRefusal(command, error));

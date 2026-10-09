@@ -11,7 +11,6 @@ import {
 	project,
 	projectAssignment,
 	projectManager,
-	projectNotificationState,
 	team,
 	workPeriod,
 } from "@/db/schema";
@@ -25,11 +24,17 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import type { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
+import {
+	insertProject,
+	insertProjectAssignments,
+	insertProjectManagers,
+} from "@/lib/projects/project-creation";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
 import {
 	ensureSettingsActorCanAccessCustomerTarget,
 	ensureSettingsActorCanAccessProjectTarget,
 	ensureSettingsActorCanManageProjectManagers,
+	ensureSettingsActorCanUseProjectCustomer,
 	filterItemsToManagedProjects,
 	getManagedProjectIdsForSettingsActor,
 	getProjectSettingsActorContext,
@@ -445,30 +450,7 @@ export async function createProject(
 
 				// Validate customerId if provided
 				if (input.customerId) {
-					const customerExists = yield* dbService.query("verifyCustomer", async () => {
-						return await db.query.customer.findFirst({
-							where: and(
-								eq(customer.id, input.customerId!),
-								eq(customer.organizationId, input.organizationId),
-								eq(customer.isActive, true),
-							),
-						});
-					});
-
-					if (!customerExists) {
-						return yield* Effect.fail(
-							new ValidationError({
-								message: "Customer not found",
-								field: "customerId",
-							}),
-						);
-					}
-
-					yield* ensureSettingsActorCanAccessCustomerTarget(actor, customerExists, {
-						message: "You do not have access to assign this customer",
-						resource: "project",
-						action: "create",
-					});
+					yield* ensureSettingsActorCanUseProjectCustomer(actor, input.customerId, "create");
 				}
 
 				yield* requireBillableTimeForDefaultChange(dbService, input.organizationId, {
@@ -483,36 +465,24 @@ export async function createProject(
 
 				const created = yield* dbService.query("project.create", async () => {
 					return await db.transaction(async (tx) => {
-						const [newProject] = await tx
-							.insert(project)
-							.values({
-								organizationId: input.organizationId,
-								name: input.name,
-								description: input.description || null,
-								status: input.status || "planned",
-								icon: input.icon || null,
-								color: input.color || null,
-								budgetHours: input.budgetHours?.toString() || null,
-								deadline: input.deadline || null,
-								customerId: input.customerId || null,
-								billableDefault,
-								isActive: true,
-								createdBy: session.user.id,
-								updatedAt: new Date(),
-							})
-							.returning();
-
-						await tx.insert(projectNotificationState).values({
-							projectId: newProject.id,
-							budgetThresholdsNotified: [],
-							deadlineThresholdsNotified: [],
-							updatedAt: new Date(),
+						const newProject = await insertProject(tx, {
+							organizationId: input.organizationId,
+							name: input.name,
+							description: input.description || null,
+							status: input.status || "planned",
+							icon: input.icon || null,
+							color: input.color || null,
+							budgetHours: input.budgetHours?.toString() || null,
+							deadline: input.deadline || null,
+							customerId: input.customerId || null,
+							billableDefault,
+							createdBy: session.user.id,
 						});
 
 						if (actor.accessTier === "manager" && actor.currentEmployee) {
-							await tx.insert(projectManager).values({
+							await insertProjectManagers(tx, {
 								projectId: newProject.id,
-								employeeId: actor.currentEmployee.id,
+								employeeIds: [actor.currentEmployee.id],
 								assignedBy: session.user.id,
 							});
 						}
@@ -797,13 +767,13 @@ export async function addProjectManager(
 				}
 
 				// Add the manager
-				yield* dbService.query("project.addManager", async () => {
-					await db.insert(projectManager).values({
+				yield* dbService.query("project.addManager", () =>
+					insertProjectManagers(db, {
 						projectId,
-						employeeId,
+						employeeIds: [employeeId],
 						assignedBy: session.user.id,
-					});
-				});
+					}),
+				);
 
 				// Log audit (fire-and-forget)
 				logAudit({
@@ -998,12 +968,11 @@ export async function addProjectAssignment(
 									});
 								}
 
-								await tx.insert(projectAssignment).values({
+								await insertProjectAssignments(tx, {
 									projectId,
 									organizationId: existingProject.organizationId,
-									assignmentType: type,
-									teamId: type === "team" ? targetId : null,
-									employeeId: type === "employee" ? targetId : null,
+									teamIds: type === "team" ? [targetId] : [],
+									employeeIds: type === "employee" ? [targetId] : [],
 									createdBy: session.user.id,
 								});
 							},

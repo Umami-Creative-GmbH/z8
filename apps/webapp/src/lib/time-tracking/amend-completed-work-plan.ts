@@ -19,6 +19,7 @@
  */
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { AttributionIntent } from "./close-active-work";
+import { attributionAfter, taskIdFollowingProject } from "./task-attribution";
 import { validateTimeCorrectionRange } from "./time-correction-temporal";
 import { deriveWorkDurationMinutes } from "./work-duration";
 import { getRecordedWorkLocationType, isWorkLocationType } from "./work-location";
@@ -42,6 +43,11 @@ export interface AmendmentIntent {
 	clockIn: EndpointIntent;
 	clockOut: EndpointIntent;
 	project: AttributionIntent;
+	/**
+	 * The task of the project (#873). Omitted, the task follows the project: kept
+	 * while it stays, cleared when the project changes or is cleared.
+	 */
+	task?: AttributionIntent;
 	workCategory: AttributionIntent;
 	workLocation: AttributionIntent;
 	/** Absent preserves (intents recorded before #900). */
@@ -53,6 +59,8 @@ export interface AmendmentSource {
 	endAt: Instant;
 	durationMinutes: number | null;
 	projectId: string | null;
+	/** Absent for sources read before tasks existed; treated as no task. */
+	taskId?: string | null;
 	workCategoryId: string | null;
 	workLocationType: string | null;
 	isBillable: boolean;
@@ -63,6 +71,7 @@ export interface AmendmentPlan {
 		clockIn: boolean;
 		clockOut: boolean;
 		project: boolean;
+		task: boolean;
 		workCategory: boolean;
 		workLocation: boolean;
 		/** The explicitly requested billability differs from the source's. */
@@ -73,6 +82,7 @@ export interface AmendmentPlan {
 		endAt: Instant;
 		durationMinutes: number | null;
 		projectId: string | null;
+		taskId: string | null;
 		workCategoryId: string | null;
 		workLocationType: string | null;
 	};
@@ -106,27 +116,33 @@ function resolveAttribution(
 	current: string | null,
 	same: (left: string | null, right: string | null) => boolean = (left, right) => left === right,
 ) {
-	const value = intent.kind === "preserve" ? current : intent.kind === "clear" ? null : intent.id;
+	const value = attributionAfter(intent, current);
 	return same(value, current) ? { changed: false, value: current } : { changed: true, value };
 }
 
 export type AttributionSource = Pick<
 	AmendmentSource,
-	"projectId" | "workCategoryId" | "workLocationType" | "isBillable"
+	"projectId" | "taskId" | "workCategoryId" | "workLocationType" | "isBillable"
 >;
-/** The resulting project, category and location; billability is resolved under locks. */
-export type AttributionResult = Omit<AttributionSource, "isBillable">;
+/** The resulting project, task, category and location; billability is resolved under locks. */
+export type AttributionResult = Required<Omit<AttributionSource, "isBillable">>;
 type AttributionChanges = Pick<
 	AmendmentPlan["changes"],
-	"project" | "workCategory" | "workLocation" | "billable"
+	"project" | "task" | "workCategory" | "workLocation" | "billable"
 >;
 type AttributionIntents = Pick<
 	AmendmentIntent,
-	"project" | "workCategory" | "workLocation" | "billable"
+	"project" | "task" | "workCategory" | "workLocation" | "billable"
 >;
 
 function changesSomething(changes: AttributionChanges): boolean {
-	return changes.project || changes.workCategory || changes.workLocation || changes.billable;
+	return (
+		changes.project ||
+		changes.task ||
+		changes.workCategory ||
+		changes.workLocation ||
+		changes.billable
+	);
 }
 
 function resolveAttributions(source: AttributionSource, intent: AttributionIntents) {
@@ -134,6 +150,12 @@ function resolveAttributions(source: AttributionSource, intent: AttributionInten
 		throw new AmendmentRangeError("Invalid work location type");
 	}
 	const project = resolveAttribution(intent.project, source.projectId);
+	const currentTaskId = source.taskId ?? null;
+	const taskId = taskIdFollowingProject({
+		task: intent.task,
+		projectId: project.value,
+		current: { projectId: source.projectId, taskId: currentTaskId },
+	});
 	const workCategory = resolveAttribution(intent.workCategory, source.workCategoryId);
 	// Retired aliases retain their meaning; selecting a missing location records a change.
 	const workLocation = resolveAttribution(
@@ -145,12 +167,14 @@ function resolveAttributions(source: AttributionSource, intent: AttributionInten
 	return {
 		changes: {
 			project: project.changed,
+			task: taskId !== currentTaskId,
 			workCategory: workCategory.changed,
 			workLocation: workLocation.changed,
 			billable: intent.billable?.kind === "set" && intent.billable.billable !== source.isBillable,
 		} satisfies AttributionChanges,
 		result: {
 			projectId: project.value,
+			taskId,
 			workCategoryId: workCategory.value,
 			workLocationType: workLocation.value,
 		} satisfies AttributionResult,

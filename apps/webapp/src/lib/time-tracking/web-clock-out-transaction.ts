@@ -47,6 +47,8 @@ export interface WebClockOutTransactionInput {
 	workPeriodId?: string;
 	endTime?: Instant;
 	projectId?: string | null;
+	/** A replacement task (#873), locked with the work's current task. */
+	taskId?: string | null;
 	workCategoryId?: string | null;
 }
 

@@ -56,6 +56,7 @@ export interface UserOrganization {
 	demoDataEnabled: boolean;
 	worksCouncilEnabled: boolean;
 	billableTimeEnabled: boolean;
+	personnelFilesEnabled: boolean;
 }
 
 /**
@@ -271,6 +272,7 @@ export async function getUserOrganizations(): Promise<UserOrganization[]> {
 		demoDataEnabled: org.demoDataEnabled ?? true,
 		worksCouncilEnabled: org.worksCouncilEnabled ?? false,
 		billableTimeEnabled: (org.billableTimeEnabled ?? false) && (org.projectsEnabled ?? false),
+		personnelFilesEnabled: org.personnelFilesEnabled ?? false,
 	}));
 }
 

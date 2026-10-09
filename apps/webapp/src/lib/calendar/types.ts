@@ -116,6 +116,10 @@ export interface WorkPeriodEvent extends CalendarEvent {
 		projectHasCustomer?: boolean;
 		/** Billable Time (#900): whether the work is billable. */
 		isBillable?: boolean;
+		// Task fields (#874) - only present when the work is booked to a task of its project
+		taskId?: string;
+		taskName?: string;
+		taskState?: "open" | "done";
 		// Surcharge fields - optional, only present if surcharges are enabled
 		surchargeMinutes?: number;
 		totalCreditedMinutes?: number;

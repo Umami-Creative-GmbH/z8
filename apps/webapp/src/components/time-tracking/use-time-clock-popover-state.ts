@@ -2,6 +2,7 @@
 
 import { useEffect, useReducer } from "react";
 import { useAssignedProjects } from "@/lib/query/use-assigned-projects";
+import { chooseProject } from "@/lib/time-tracking/task-attribution";
 import {
 	normalizeWorkLocationType,
 	type WorkLocationType,
@@ -19,6 +20,12 @@ interface TimeClockPopoverState {
 	selectedProjectId: string | undefined;
 	/** The explicit billable choice (#900); undefined applies the project's default. */
 	billable: boolean | undefined;
+	/**
+	 * The task chosen for the selected project (#874): undefined while untouched, so
+	 * the clock-out names none and the running work's task follows the project;
+	 * null for an explicit "no task". Reset whenever the project changes.
+	 */
+	selectedTaskId: string | null | undefined;
 	selectedWorkCategoryId: string | undefined;
 	workLocationType: WorkLocationType;
 }
@@ -27,6 +34,7 @@ type TimeClockPopoverAction =
 	| { type: "setNotesText"; value: string }
 	| { type: "setSelectedProjectId"; value: string | undefined }
 	| { type: "setBillable"; value: boolean }
+	| { type: "setSelectedTaskId"; value: string | null }
 	| { type: "setSelectedWorkCategoryId"; value: string | undefined }
 	| { type: "setWorkLocationType"; value: WorkLocationType }
 	| { type: "openNotesInput"; entryId: string }
@@ -47,6 +55,7 @@ function createInitialState(): TimeClockPopoverState {
 		notesText: "",
 		selectedProjectId: undefined,
 		billable: undefined,
+		selectedTaskId: undefined,
 		selectedWorkCategoryId: undefined,
 		workLocationType: getInitialWorkLocationType(),
 	};
@@ -59,9 +68,19 @@ function timeClockPopoverReducer(
 	switch (action.type) {
 		case "setNotesText":
 			return { ...state, notesText: action.value };
-		case "setSelectedProjectId":
-			// A newly chosen project prefills its own billable default.
-			return { ...state, selectedProjectId: action.value, billable: undefined };
+		case "setSelectedProjectId": {
+			// A task never outlives its project (#874); a newly chosen project
+			// prefills its own billable default (#900).
+			const { projectId, taskId } = chooseProject(
+				{ projectId: state.selectedProjectId, taskId: state.selectedTaskId },
+				action.value,
+			);
+			return projectId === state.selectedProjectId
+				? state
+				: { ...state, selectedProjectId: projectId, selectedTaskId: taskId, billable: undefined };
+		}
+		case "setSelectedTaskId":
+			return { ...state, selectedTaskId: action.value };
 		case "setBillable":
 			return { ...state, billable: action.value };
 		case "setSelectedWorkCategoryId":
@@ -87,6 +106,7 @@ function timeClockPopoverReducer(
 				...state,
 				selectedProjectId: undefined,
 				billable: undefined,
+				selectedTaskId: undefined,
 				selectedWorkCategoryId: undefined,
 			};
 	}

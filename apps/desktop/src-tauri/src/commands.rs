@@ -275,7 +275,7 @@ async fn run_clock_command(
     let session = clock_session(&state, &service, &webapp_url, &token)
         .map_err(ClockCommandError::pre_send)?;
     let mut outcome =
-        clock_command::execute_pilot(&session, command, evidence, &expectation.organization_id)
+        clock_command::execute_companion(&session, command, evidence, &expectation.organization_id)
             .await?;
     // Do not publish an old context's current-state result into a new session.
     if state.get_session_token().as_deref() == Some(&token) && state.get_webapp_url() == webapp_url

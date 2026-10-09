@@ -103,7 +103,13 @@ const server = createServer(async (request, response) => {
 				liveWork: liveWork ? [{ startedAt: liveWork.startTime }] : [],
 			},
 			projects: [
-				{ id: "d7800000-0000-4000-8000-000000000002", name: "Client project" },
+				{
+					id: "d7800000-0000-4000-8000-000000000002",
+					name: "Client project",
+					// Open tasks, as the #875 context lists them (#882 picker QA).
+					tasks: [{ id: "d7800000-0000-4000-8000-000000000004", name: "Design" }],
+				},
+				{ id: "d7800000-0000-4000-8000-000000000005", name: "Internal", tasks: [] },
 			],
 			categories: [],
 			liveWork,

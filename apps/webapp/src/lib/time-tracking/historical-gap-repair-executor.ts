@@ -378,8 +378,7 @@ async function applyUnit(tx: WorkTransactionClient, context: UnitContext) {
 					.returning({ id: timeRecord.id });
 				expectOne(inserted, unit);
 				await insertDetail(tx, organizationId, fill.recordId, fill.detail, unit);
-				if (fill.projectId)
-					await insertProject(tx, organizationId, fill.recordId, fill.projectId, unit);
+				if (fill.projectId) await insertProject(tx, context, fill.recordId, fill.projectId);
 				periodSet.canonicalRecordId = fill.recordId;
 				periodGuards.push(isNull(workPeriod.canonicalRecordId));
 				break;
@@ -390,8 +389,7 @@ async function applyUnit(tx: WorkTransactionClient, context: UnitContext) {
 				break;
 			case "canonical_detail":
 				await insertDetail(tx, organizationId, fill.recordId, fill.detail, unit);
-				if (fill.projectId)
-					await insertProject(tx, organizationId, fill.recordId, fill.projectId, unit);
+				if (fill.projectId) await insertProject(tx, context, fill.recordId, fill.projectId);
 				break;
 			case "canonical_completion": {
 				if (!expectedRecord) throw new StaleHistoricalRepairPlanError(unit.workPeriodId);
@@ -452,7 +450,7 @@ async function applyUnit(tx: WorkTransactionClient, context: UnitContext) {
 				break;
 			case "canonical_metadata":
 				if (fill.field === "project") {
-					await insertProject(tx, organizationId, fill.recordId, fill.value, unit);
+					await insertProject(tx, context, fill.recordId, fill.value);
 					break;
 				}
 				expectOne(
@@ -594,23 +592,19 @@ async function insertDetail(
 }
 
 /**
- * Adds the project allocation only while the record has none (checked under its row lock).
- * It carries the locked period's billability for that project (#900), so the repaired
- * record agrees with the period on project and billability.
+ * Adds the project allocation only while the record has none (checked under its
+ * row lock). The allocation takes the period's task (#873) and billability (#900)
+ * while the period is on that project, so the period and its allocation agree on
+ * project, task and billability; the planned period is locked and its revision
+ * guard proves it unchanged.
  */
 async function insertProject(
 	tx: WorkTransactionClient,
-	organizationId: string,
+	context: UnitContext,
 	recordId: string,
 	projectId: string,
-	unit: GapRepairUnit,
 ) {
-	const [period] = await tx
-		.select({ projectId: workPeriod.projectId, isBillable: workPeriod.isBillable })
-		.from(workPeriod)
-		.where(and(eq(workPeriod.id, unit.workPeriodId), eq(workPeriod.organizationId, organizationId)))
-		.limit(1);
-	const isBillable = period?.projectId === projectId && period.isBillable;
+	const { organizationId, unit } = context;
 	const existing = await tx
 		.select({ id: timeRecordAllocation.id })
 		.from(timeRecordAllocation)
@@ -623,11 +617,22 @@ async function insertProject(
 		)
 		.limit(1);
 	if (existing.length > 0) throw new StaleHistoricalRepairPlanError(recordId);
+	const [period] = await tx
+		.select({
+			projectId: workPeriod.projectId,
+			taskId: workPeriod.taskId,
+			isBillable: workPeriod.isBillable,
+		})
+		.from(workPeriod)
+		.where(and(eq(workPeriod.id, unit.workPeriodId), eq(workPeriod.organizationId, organizationId)))
+		.limit(1);
+	const isBillable = period?.projectId === projectId && period.isBillable;
 	await tx.insert(timeRecordAllocation).values({
 		organizationId,
 		recordId,
 		allocationKind: "project",
 		projectId,
+		taskId: period?.projectId === projectId ? period.taskId : null,
 		weightPercent: 100,
 		isBillable,
 	});

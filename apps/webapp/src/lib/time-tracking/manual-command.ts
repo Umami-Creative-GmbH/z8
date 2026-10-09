@@ -55,6 +55,8 @@ export type ManualTimeEntryCommand = {
 	 * older frozen commands omit it and keep their representation intact.
 	 */
 	billable?: boolean;
+	/** A task of `projectId` (#873); omitted, never null, when the entry names none. */
+	taskId?: string;
 };
 
 export type ManualCommandRejection = { reason: "invalid_command"; field: string };
@@ -153,16 +155,18 @@ export function parseManualTimeEntryCommand(
 	| { ok: true; command: ManualTimeEntryCommand }
 	| { ok: false; rejection: ManualCommandRejection } {
 	try {
-		const hasOwn = (key: string) =>
+		const hasOptional = (key: string) =>
 			Boolean(value && typeof value === "object" && Object.hasOwn(value, key));
-		const hasWorkLocation = hasOwn("workLocationType");
-		const hasBillable = hasOwn("billable");
+		const hasWorkLocation = hasOptional("workLocationType");
+		const hasBillable = hasOptional("billable");
+		const hasTask = hasOptional("taskId");
 		const record = exactRecord(
 			value,
 			[
 				...COMMAND_KEYS,
 				...(hasWorkLocation ? ["workLocationType"] : []),
 				...(hasBillable ? ["billable"] : []),
+				...(hasTask ? ["taskId"] : []),
 			],
 			"command",
 		);
@@ -203,6 +207,14 @@ export function parseManualTimeEntryCommand(
 		if (typeof record.reason !== "string" || record.reason.trim().length === 0) {
 			throw new InvalidCommandField("reason");
 		}
+		const projectId = nullableId(record.projectId, "projectId");
+		// A task belongs to the entry's project; it is never sent as null.
+		if (
+			hasTask &&
+			(projectId === null || typeof record.taskId !== "string" || record.taskId.length === 0)
+		) {
+			throw new InvalidCommandField("taskId");
+		}
 		return {
 			ok: true,
 			command: {
@@ -215,12 +227,13 @@ export function parseManualTimeEntryCommand(
 				zone: { basis: zone.basis, timezone: zone.timezone as string },
 				browserTimezone: browserTimezone as string | null,
 				reason: record.reason,
-				projectId: nullableId(record.projectId, "projectId"),
+				projectId,
 				workCategoryId: nullableId(record.workCategoryId, "workCategoryId"),
 				...(hasWorkLocation
 					? { workLocationType: record.workLocationType as WorkLocationType }
 					: {}),
 				...(hasBillable ? { billable: record.billable as boolean } : {}),
+				...(hasTask ? { taskId: record.taskId as string } : {}),
 			},
 		};
 	} catch (error) {

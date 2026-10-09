@@ -3,6 +3,7 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
+import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -13,6 +14,11 @@ import {
 	type ProjectWithDetails,
 	updateProject,
 } from "@/app/[locale]/(app)/settings/projects/actions";
+import {
+	createProjectFromTemplate,
+	getProjectTemplateChoices,
+	getProjectTemplatePreview,
+} from "@/app/[locale]/(app)/settings/projects/from-template-actions";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -37,6 +43,11 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { queryKeys } from "@/lib/query";
 import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
+import { ProjectColorPicker } from "./project-color-picker";
+import {
+	ProjectTemplatePreview,
+	useNotCopiedMessage,
+} from "./project-template-preview";
 
 interface ProjectDialogProps {
 	organizationId: string;
@@ -54,21 +65,12 @@ const STATUS_OPTIONS: { value: ProjectStatus; label: string }[] = [
 	{ value: "archived", label: "Archived" },
 ];
 
-const COLOR_OPTIONS = [
-	"#ef4444", // red
-	"#f97316", // orange
-	"#eab308", // yellow
-	"#22c55e", // green
-	"#14b8a6", // teal
-	"#3b82f6", // blue
-	"#8b5cf6", // violet
-	"#ec4899", // pink
-	"#6b7280", // gray
-];
-
 const NO_CUSTOMER_VALUE = "__none__";
+const BLANK_PROJECT_VALUE = "__blank__";
 
 interface FormValues {
+	/** The template to start from; empty for a blank project. */
+	templateId: string;
 	name: string;
 	description: string;
 	status: ProjectStatus;
@@ -103,8 +105,20 @@ function useProjectDialogController({
 	});
 
 	const customers = customersData || [];
+	const skippedMembersMessage = useNotCopiedMessage();
+
+	// Anyone who may create projects may start one from a template (#880).
+	const { data: templateChoices = [] } = useQuery({
+		queryKey: queryKeys.projects.templateChoices(organizationId),
+		queryFn: async () => {
+			const result = await getProjectTemplateChoices();
+			return result.success ? result.data : [];
+		},
+		enabled: open && !isEditing,
+	});
 
 	const defaultValues: FormValues = {
+		templateId: "",
 		name: project?.name || "",
 		description: project?.description || "",
 		status: project?.status || "planned",
@@ -164,6 +178,31 @@ function useProjectDialogController({
 				return;
 			}
 
+			if (value.templateId) {
+				const result = await createProjectFromTemplate({
+					templateId: value.templateId,
+					name: value.name,
+					description: value.description.trim() || null,
+					status: value.status,
+					customerId: customerId ?? null,
+				}).catch(() => null);
+
+				if (result?.success) {
+					toast.success(t("settings.projects.created", "Project created"));
+					if (result.data.skipped.length > 0) {
+						toast.warning(skippedMembersMessage(result.data.skipped));
+					}
+					onSuccess();
+				} else {
+					toast.error(
+						result?.error ||
+							t("settings.projects.createFailed", "Failed to create project"),
+					);
+				}
+				setIsSubmitting(false);
+				return;
+			}
+
 			const result = await createProject({
 				organizationId,
 				name: value.name,
@@ -198,6 +237,16 @@ function useProjectDialogController({
 		},
 	});
 
+	const templateId = useStore(form.store, (state) => state.values.templateId);
+	const { data: templatePreview = null } = useQuery({
+		queryKey: queryKeys.projects.templatePreview(templateId),
+		queryFn: async () => {
+			const result = await getProjectTemplatePreview(templateId);
+			return result.success ? result.data : null;
+		},
+		enabled: open && !isEditing && templateId !== "",
+	});
+
 	return {
 		billableTimeEnabled,
 		customers,
@@ -206,6 +255,9 @@ function useProjectDialogController({
 		isSubmitting,
 		onOpenChange,
 		t,
+		templateChoices,
+		templateId,
+		templatePreview,
 	};
 }
 
@@ -253,9 +305,24 @@ function ProjectDialogHeader({
 	);
 }
 
-function ProjectDialogForm({ controller }: { controller: ProjectDialogController }) {
-	const { billableTimeEnabled, customers, form, isEditing, isSubmitting, onOpenChange, t } =
-		controller;
+function ProjectDialogForm({
+	controller,
+}: {
+	controller: ProjectDialogController;
+}) {
+	const {
+		billableTimeEnabled,
+		customers,
+		form,
+		isEditing,
+		isSubmitting,
+		onOpenChange,
+		t,
+		templateChoices,
+		templateId,
+		templatePreview,
+	} = controller;
+	const fromTemplate = !isEditing && templateId !== "";
 
 	return (
 		<form
@@ -266,6 +333,44 @@ function ProjectDialogForm({ controller }: { controller: ProjectDialogController
 			className="flex min-h-0 flex-1 flex-col"
 		>
 			<ActionPanelBody className="grid gap-4">
+				{/* Start from a template (#880) */}
+				{!isEditing && templateChoices.length > 0 && (
+					<form.Field name="templateId">
+						{(field) => (
+							<div className="grid gap-2">
+								<Label htmlFor="templateId">
+									{t("settings.projects.fromTemplate.startFrom", "Start from")}
+								</Label>
+								<Select
+									value={field.state.value || BLANK_PROJECT_VALUE}
+									onValueChange={(value) =>
+										field.handleChange(
+											value === BLANK_PROJECT_VALUE ? "" : value,
+										)
+									}
+								>
+									<SelectTrigger id="templateId">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value={BLANK_PROJECT_VALUE}>
+											{t(
+												"settings.projects.fromTemplate.blank",
+												"Blank project",
+											)}
+										</SelectItem>
+										{templateChoices.map((template) => (
+											<SelectItem key={template.id} value={template.id}>
+												{template.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+						)}
+					</form.Field>
+				)}
+
 				{/* Name */}
 				<form.Field name="name">
 					{(field) => (
@@ -323,7 +428,7 @@ function ProjectDialogForm({ controller }: { controller: ProjectDialogController
 										field.handleChange(value === NO_CUSTOMER_VALUE ? "" : value)
 									}
 								>
-									<SelectTrigger>
+									<SelectTrigger id="customerId">
 										<SelectValue
 											placeholder={t(
 												"settings.projects.field.customerPlaceholder",
@@ -396,7 +501,7 @@ function ProjectDialogForm({ controller }: { controller: ProjectDialogController
 									field.handleChange(value as ProjectStatus)
 								}
 							>
-								<SelectTrigger>
+								<SelectTrigger id="status">
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
@@ -411,98 +516,71 @@ function ProjectDialogForm({ controller }: { controller: ProjectDialogController
 					)}
 				</form.Field>
 
-				{/* Color */}
-				<form.Field name="color">
-					{(field) => (
-						<div className="grid gap-2">
-							<Label>{t("settings.projects.field.color", "Color")}</Label>
-							<div className="flex flex-wrap gap-2">
-								{COLOR_OPTIONS.map((color) => (
-									<button
-										key={color}
-										type="button"
-										aria-label={t(
-											"settings.projects.field.colorOption",
-											"Select color {color}",
-											{
-												color,
-											},
+				{fromTemplate && templatePreview && (
+					<ProjectTemplatePreview template={templatePreview} />
+				)}
+
+				{/* Colour, budget and deadline come from the template when there is one. */}
+				{!fromTemplate && (
+					<>
+						{/* Color */}
+						<form.Field name="color">
+							{(field) => (
+								<div className="grid gap-2">
+									<Label>{t("settings.projects.field.color", "Color")}</Label>
+									<ProjectColorPicker value={field.state.value} onChange={field.handleChange} />
+								</div>
+							)}
+						</form.Field>
+
+						{/* Budget Hours */}
+						<form.Field name="budgetHours">
+							{(field) => (
+								<div className="grid gap-2">
+									<Label htmlFor="budgetHours">
+										{t("settings.projects.field.budget", "Budget (hours)")}
+									</Label>
+									<Input
+										id="budgetHours"
+										type="number"
+										step="0.5"
+										min="0"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										placeholder={t(
+											"settings.projects.field.budgetPlaceholder",
+											"e.g., 100",
 										)}
-										onClick={() => field.handleChange(color)}
-										className={`size-8 rounded-full border-2 transition-transform hover:scale-110 ${
-											field.state.value === color
-												? "border-foreground ring-2 ring-foreground ring-offset-2"
-												: "border-transparent"
-										}`}
-										style={{ backgroundColor: color }}
 									/>
-								))}
-								<button
-									type="button"
-									aria-label={t(
-										"settings.projects.field.clearColor",
-										"Clear color",
-									)}
-									onClick={() => field.handleChange("")}
-									className={`flex size-8 items-center justify-center rounded-full border-2 text-xs ${
-										!field.state.value
-											? "border-foreground ring-2 ring-foreground ring-offset-2"
-											: "border-muted"
-									}`}
-								>
-									-
-								</button>
-							</div>
-						</div>
-					)}
-				</form.Field>
+									<p className="text-xs text-muted-foreground">
+										{t(
+											"settings.projects.field.budgetHelp",
+											"Leave empty for unlimited budget",
+										)}
+									</p>
+								</div>
+							)}
+						</form.Field>
 
-				{/* Budget Hours */}
-				<form.Field name="budgetHours">
-					{(field) => (
-						<div className="grid gap-2">
-							<Label htmlFor="budgetHours">
-								{t("settings.projects.field.budget", "Budget (hours)")}
-							</Label>
-							<Input
-								id="budgetHours"
-								type="number"
-								step="0.5"
-								min="0"
-								value={field.state.value}
-								onChange={(e) => field.handleChange(e.target.value)}
-								onBlur={field.handleBlur}
-								placeholder={t(
-									"settings.projects.field.budgetPlaceholder",
-									"e.g., 100",
-								)}
-							/>
-							<p className="text-xs text-muted-foreground">
-								{t(
-									"settings.projects.field.budgetHelp",
-									"Leave empty for unlimited budget",
-								)}
-							</p>
-						</div>
-					)}
-				</form.Field>
-
-				{/* Deadline */}
-				<form.Field name="deadline">
-					{(field) => (
-						<div className="grid gap-2">
-							<Label htmlFor="deadline">
-								{t("settings.projects.field.deadline", "Deadline")}
-							</Label>
-							<DatePicker
-								id="deadline"
-								value={field.state.value}
-								onChange={field.handleChange}
-								onBlur={field.handleBlur}
-							/>
-						</div>
-					)}
-				</form.Field>
+						{/* Deadline */}
+						<form.Field name="deadline">
+							{(field) => (
+								<div className="grid gap-2">
+									<Label htmlFor="deadline">
+										{t("settings.projects.field.deadline", "Deadline")}
+									</Label>
+									<DatePicker
+										id="deadline"
+										value={field.state.value}
+										onChange={field.handleChange}
+										onBlur={field.handleBlur}
+									/>
+								</div>
+							)}
+						</form.Field>
+					</>
+				)}
 			</ActionPanelBody>
 
 			<ActionPanelFooter>

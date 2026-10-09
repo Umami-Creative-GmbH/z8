@@ -65,7 +65,7 @@ export const billableTimeSettings = pgTable(
  * starts (`lib/billable-time/applicable-rate.ts`).
  *
  * Periods of one series never overlap: the EXCLUDE constraints
- * `billable_rate_<level>_no_overlap` live in migration 0143 (Drizzle cannot
+ * `billable_rate_<level>_no_overlap` live in migration 0160 (Drizzle cannot
  * declare them). Keep the level list in sync with `RATE_LEVELS` in
  * `src/lib/billable-time/applicable-rate.ts`.
  */
@@ -137,7 +137,7 @@ export const billableRate = pgTable(
  * Periods are half-open calendar-date ranges `[effective_from, effective_to)`
  * of the employee-local days of work starts (`lib/billable-time/cost-rate.ts`);
  * `effective_to` null is open. One employee's periods never overlap: the
- * EXCLUDE constraint `cost_rate_employee_no_overlap` lives in migration 0144
+ * EXCLUDE constraint `cost_rate_employee_no_overlap` lives in migration 0161
  * (Drizzle cannot declare it).
  */
 export const costRate = pgTable(
@@ -390,7 +390,7 @@ export const invoiceDraft = pgTable(
 		/** Some call may have reached the tool (timeout): never treat the attempt as failed. */
 		outcomeUnknown: boolean("outcome_unknown").notNull().default(false),
 		/**
-		 * The in-flight claim (migration 0150): only its holder calls the tool for
+		 * The in-flight claim (migration 0167): only its holder calls the tool for
 		 * this draft until `call_claimed_until`; then another attempt may take over.
 		 */
 		callClaimToken: uuid("call_claim_token"),
@@ -526,7 +526,7 @@ export interface InvoicedWorkShare {
  * invoiced (never handed off twice), not in the timesheet, no shares.
  *
  * Changed after invoicing: the `invoiced_work_mark_changed` trigger on
- * `work_period` (migration 0149) sets `changed_after_invoicing_at` and adds to
+ * `work_period` (migration 0166) sets `changed_after_invoicing_at` and adds to
  * `changed_fields` whenever ANY writer changes an invoiced period's times,
  * project, billability or deletes it. Writers are never blocked (ADR 0002). An
  * admin clears the mark (`mark_cleared_at`/`mark_cleared_by`, audited).

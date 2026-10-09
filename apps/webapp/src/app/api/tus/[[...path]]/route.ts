@@ -6,12 +6,16 @@ import { connection, NextResponse } from "next/server";
 import { env } from "@/env";
 import { auth } from "@/lib/auth";
 import { S3_PUBLIC_BUCKET, S3_PUBLIC_REGION } from "@/lib/storage/s3-client";
-import { ALLOWED_TRAVEL_EXPENSE_MIME_TYPES } from "@/lib/travel-expenses/attachment-validation";
 import { createOwnedTusFileKey, isTusFileKeyOwnedByUser } from "@/lib/upload/tus-ownership";
+import {
+	isUploadPurpose,
+	UPLOAD_PURPOSE_METADATA_KEY,
+	uploadPolicyFor,
+} from "@/lib/upload/upload-purpose";
 
 const tusUploadOwnerContext = new AsyncLocalStorage<string>();
+/** The receipt and default limit; other purposes declare their own (#865). */
 const MAX_TUS_UPLOAD_SIZE = Number(env.TUS_MAX_UPLOAD_SIZE_BYTES);
-const ALLOWED_MIME_TYPES = new Set<string>(ALLOWED_TRAVEL_EXPENSE_MIME_TYPES);
 const MIME_METADATA_KEYS = new Set([
 	"content-type",
 	"contentType",
@@ -60,6 +64,13 @@ function getTusFileKeyFromRequest(request: Request): string | null {
 	return decodeURIComponent(pathname.slice(prefix.length));
 }
 
+function parseUploadMetadata(uploadMetadata: string): Array<[string, string]> {
+	return uploadMetadata.split(",").flatMap((metadataItem): Array<[string, string]> => {
+		const [key, value] = metadataItem.trim().split(/\s+/, 2);
+		return key && value ? [[key, Buffer.from(value, "base64").toString("utf8")]] : [];
+	});
+}
+
 function validateTusUploadRequest(request: Request): Response | null {
 	if (request.headers.has("upload-defer-length")) {
 		return NextResponse.json({ error: "Invalid upload length" }, { status: 400 });
@@ -76,25 +87,35 @@ function validateTusUploadRequest(request: Request): Response | null {
 		return NextResponse.json({ error: "Invalid upload length" }, { status: 400 });
 	}
 
-	if (parsedLength > MAX_TUS_UPLOAD_SIZE) {
+	const uploadMetadata = request.headers.get("upload-metadata");
+	const metadata = uploadMetadata ? parseUploadMetadata(uploadMetadata) : [];
+	const declaredPurpose =
+		metadata.find(([key]) => key === UPLOAD_PURPOSE_METADATA_KEY)?.[1] ?? "receipt";
+	if (!isUploadPurpose(declaredPurpose)) {
+		return NextResponse.json({ error: "Invalid upload purpose" }, { status: 400 });
+	}
+	const policy = uploadPolicyFor(declaredPurpose, { defaultMaxBytes: MAX_TUS_UPLOAD_SIZE });
+
+	if (parsedLength > policy.maxBytes) {
 		return NextResponse.json({ error: "File too large" }, { status: 413 });
 	}
 
-	const uploadMetadata = request.headers.get("upload-metadata");
 	if (!uploadMetadata) {
 		return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
 	}
 
 	let hasValidMimeType = false;
-	for (const metadataItem of uploadMetadata.split(",")) {
-		const [key, value] = metadataItem.trim().split(/\s+/, 2);
-		if (!MIME_METADATA_KEYS.has(key) || !value) {
+	for (const [key, value] of metadata) {
+		if (!MIME_METADATA_KEYS.has(key)) {
 			continue;
 		}
 
-		const contentType = Buffer.from(value, "base64").toString("utf8").toLowerCase();
-		if (!ALLOWED_MIME_TYPES.has(contentType)) {
-			return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
+		const contentType = value.toLowerCase();
+		if (!policy.mimeTypes.has(contentType)) {
+			return NextResponse.json(
+				{ error: policy.refusalFor(contentType) ?? "Invalid file type" },
+				{ status: 400 },
+			);
 		}
 
 		hasValidMimeType = true;

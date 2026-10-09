@@ -20,6 +20,7 @@ describe("settings visibility tiers", () => {
 			"security",
 			"notifications",
 			"wellness",
+			"position-stamps",
 		]);
 	});
 
@@ -141,6 +142,24 @@ describe("settings visibility tiers", () => {
 		});
 		expect(managerEntries.some((entry) => entry.id === "payroll-access")).toBe(false);
 		expect(memberEntries.some((entry) => entry.id === "payroll-access")).toBe(false);
+	});
+
+	it("shows position capture to org admins and every member's own position stamps", () => {
+		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
+		const managerEntries = getVisibleSettings("manager", true);
+		const memberEntries = getVisibleSettings("member", true);
+
+		expect(orgAdminEntries.find((entry) => entry.id === "position-capture")).toMatchObject({
+			href: "/settings/position-capture",
+			minimumTier: "orgAdmin",
+			group: "administration",
+		});
+		expect(managerEntries.some((entry) => entry.id === "position-capture")).toBe(false);
+		expect(memberEntries.find((entry) => entry.id === "position-stamps")).toMatchObject({
+			href: "/settings/position-stamps",
+			minimumTier: "member",
+			group: "account",
+		});
 	});
 
 	it("groups notification preferences and channel configuration together", () => {

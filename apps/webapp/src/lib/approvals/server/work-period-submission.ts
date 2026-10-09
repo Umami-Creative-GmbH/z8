@@ -112,6 +112,8 @@ export async function insertOrdinaryWorkPeriodSourceInTransaction(input: {
 	projectId: string | null;
 	/** Billable work (#900); never true without a project. */
 	isBillable?: boolean;
+	/** A task of `projectId` (#873). */
+	taskId?: string | null;
 	workCategoryId: string | null;
 	workLocationType?: (typeof workPeriod.$inferInsert)["workLocationType"];
 	canonicalRecordId: string;
@@ -131,6 +133,7 @@ export async function insertOrdinaryWorkPeriodSourceInTransaction(input: {
 			durationMinutes: input.durationMinutes,
 			projectId: input.projectId,
 			isBillable: input.isBillable ?? false,
+			taskId: input.taskId ?? null,
 			workCategoryId: input.workCategoryId,
 			...(input.workLocationType !== undefined
 				? { workLocationType: input.workLocationType }

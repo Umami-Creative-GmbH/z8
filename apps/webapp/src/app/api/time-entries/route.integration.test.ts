@@ -23,7 +23,9 @@ const harness = vi.hoisted(() => ({
 	headers: {} as Record<string, string>,
 }));
 
-vi.mock("next/headers", () => ({ headers: async () => new Headers(harness.headers) }));
+vi.mock("next/headers", () => ({
+	headers: async () => new Headers(harness.headers),
+}));
 
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
@@ -50,6 +52,10 @@ vi.mock("@/lib/auth", () => ({
 vi.mock("@/lib/billing/guard", async (importOriginal) =>
 	(await import("@/test/integration-harness")).billingGuard(importOriginal),
 );
+
+vi.mock("@/lib/domain/request-origin", () => ({
+	resolvePublicRequestOrigin: async () => "https://app.t327.test",
+}));
 
 const legacyRoute = await import("./route");
 
@@ -164,7 +170,10 @@ describe("legacy direct clock writer in adopted organizations on PostgreSQL", ()
 				body: JSON.stringify(body),
 			}) as never,
 		);
-		return { status: response.status, body: (await response.json()) as Record<string, any> };
+		return {
+			status: response.status,
+			body: (await response.json()) as Record<string, any>,
+		};
 	}
 
 	/** An identity-less legacy clock action at server time. */
@@ -181,7 +190,10 @@ describe("legacy direct clock writer in adopted organizations on PostgreSQL", ()
 	});
 
 	/** A legacy desktop clock action: a server-unchecked instant, no identity. */
-	const desktopClock = (type: "clock_in" | "clock_out", timestamp: string) => ({ type, timestamp });
+	const desktopClock = (type: "clock_in" | "clock_out", timestamp: string) => ({
+		type,
+		timestamp,
+	});
 
 	async function workPeriods() {
 		const { rows } = await admin.query<{
@@ -275,13 +287,54 @@ describe("legacy direct clock writer in adopted organizations on PostgreSQL", ()
 		await cleanup();
 	});
 
+	it("allows fresh desktop clocking before adoption and refuses a changed captured context", async () => {
+		await setAdmission(null);
+		const desktopContext = {
+			userId: ids.requesterUser,
+			organizationId: ids.organization,
+			employeeId: ids.requester,
+			server,
+		};
+		for (const mismatch of [
+			{ organizationId: "other-org" },
+			{ userId: ids.peerUser },
+			{ employeeId: ids.peer },
+			{ server: "https://other.test" },
+		]) {
+			await expect(
+				post({
+					type: "clock_in",
+					desktopContext: { ...desktopContext, ...mismatch },
+				}),
+			).resolves.toMatchObject({ status: 409 });
+		}
+		expect(await workPeriods()).toEqual([]);
+		await expect(
+			post({
+				type: "clock_in",
+				desktopContext,
+				browserTimezone: "Europe/Berlin",
+			}),
+		).resolves.toMatchObject({ status: 201 });
+		await expect(post({ type: "clock_out", desktopContext })).resolves.toMatchObject({
+			status: 201,
+		});
+		expect(await workPeriods()).toHaveLength(1);
+	});
+
 	it("keeps the legacy writer for organizations without an active control", async () => {
 		await setAdmission("inactive");
-		await expect(post(legacyClock("clock_in"))).resolves.toMatchObject({ status: 201 });
-		await expect(post(legacyClock("clock_out"))).resolves.toMatchObject({ status: 201 });
+		await expect(post(legacyClock("clock_in"))).resolves.toMatchObject({
+			status: 201,
+		});
+		await expect(post(legacyClock("clock_out"))).resolves.toMatchObject({
+			status: 201,
+		});
 
 		await setAdmission(null);
-		await expect(post(legacyClock("clock_in"))).resolves.toMatchObject({ status: 201 });
+		await expect(post(legacyClock("clock_in"))).resolves.toMatchObject({
+			status: 201,
+		});
 	});
 
 	it("closes legacy work with its canonical record and follows the closure up", async () => {
@@ -291,7 +344,10 @@ describe("legacy direct clock writer in adopted organizations on PostgreSQL", ()
 		});
 		const clockOut = await post(desktopClock("clock_out", "2026-07-22T10:00:00Z"));
 
-		expect(clockOut).toMatchObject({ status: 201, body: { entry: { type: "clock_out" } } });
+		expect(clockOut).toMatchObject({
+			status: 201,
+			body: { entry: { type: "clock_out" } },
+		});
 		// Only the entry answers; closure advice stays with the web.
 		expect(Object.keys(clockOut.body)).toEqual(["entry"]);
 		expect(clockOut.body.entry).not.toHaveProperty("complianceWarnings");
@@ -351,7 +407,9 @@ describe("legacy direct clock writer in adopted organizations on PostgreSQL", ()
 		// Work opened before adoption; adoption does not strand it for the legacy writer's
 		// replacement, only for the legacy writer itself.
 		await setAdmission(null);
-		await expect(post(legacyClock("clock_in"))).resolves.toMatchObject({ status: 201 });
+		await expect(post(legacyClock("clock_in"))).resolves.toMatchObject({
+			status: 201,
+		});
 		await setAdmission("active");
 		const before = await snapshot();
 
@@ -460,16 +518,117 @@ describe("legacy direct clock writer in adopted organizations on PostgreSQL", ()
 				[ids.peerUser, otherOrganization],
 			);
 			const operator = await openHolder();
-			await operator.query("select pg_advisory_xact_lock(hashtextextended($1, 0))", [
-				adoptionKey,
-			]);
+			await operator.query("select pg_advisory_xact_lock(hashtextextended($1, 0))", [adoptionKey]);
 
 			harness.userId = ids.peerUser;
 			harness.organizationId = otherOrganization;
-			await expect(post(legacyClock("clock_in"))).resolves.toMatchObject({ status: 201 });
+			await expect(post(legacyClock("clock_in"))).resolves.toMatchObject({
+				status: 201,
+			});
 			await operator.commit();
 		} finally {
 			await admin.query("delete from organization where id = $1", [otherOrganization]);
 		}
+	});
+
+	describe("project tasks on legacy clock-outs (#875)", () => {
+		const project = {
+			a: "f3270000-0000-4000-8000-0000000000a1",
+			b: "f3270000-0000-4000-8000-0000000000b1",
+		} as const;
+		const tasks = {
+			open: "f3270000-0000-4000-8000-0000000000a2",
+			done: "f3270000-0000-4000-8000-0000000000a3",
+			otherProject: "f3270000-0000-4000-8000-0000000000b2",
+		} as const;
+
+		beforeEach(async () => {
+			await setAdmission(null);
+			await admin.query(
+				`insert into project (id, organization_id, name, status, is_active, created_by, updated_at)
+				 values ($1, $3, 'Project A', 'active', true, $4, now()),
+				        ($2, $3, 'Project B', 'active', true, $4, now())`,
+				[project.a, project.b, ids.organization, ids.requesterUser],
+			);
+			await admin.query(
+				`insert into project_assignment (id, project_id, organization_id, assignment_type, employee_id, created_by)
+				 select gen_random_uuid(), p, $2, 'employee', $3, $4 from unnest($1::uuid[]) as p`,
+				[[project.a, project.b], ids.organization, ids.requester, ids.requesterUser],
+			);
+			await admin.query(
+				`insert into project_task
+				 (id, organization_id, project_id, name, state, done_at, done_by, created_by, updated_at) values
+				 ($1, $4, $5, 'Design', 'open', null, null, $7, now()),
+				 ($2, $4, $5, 'Shipped', 'done', now(), $7, $7, now()),
+				 ($3, $4, $6, 'Elsewhere', 'open', null, null, $7, now())`,
+				[
+					tasks.open,
+					tasks.done,
+					tasks.otherProject,
+					ids.organization,
+					project.a,
+					project.b,
+					ids.requesterUser,
+				],
+			);
+			await post(desktopClock("clock_in", "2026-07-22T08:00:00Z"));
+		});
+
+		async function bookedTask() {
+			const { rows } = await admin.query<{ project: string | null; task: string | null }>(
+				"select project_id as project, task_id as task from work_period where employee_id = $1",
+				[ids.requester],
+			);
+			return only(rows);
+		}
+
+		it("books the named task of the named project", async () => {
+			const clockOut = await post({
+				...desktopClock("clock_out", "2026-07-22T10:00:00Z"),
+				projectId: project.a,
+				taskId: tasks.open,
+			});
+
+			expect(clockOut).toMatchObject({ status: 201, body: { entry: { type: "clock_out" } } });
+			expect(await bookedTask()).toEqual({ project: project.a, task: tasks.open });
+		});
+
+		it("books no task when none is named", async () => {
+			await post({ ...desktopClock("clock_out", "2026-07-22T10:00:00Z"), projectId: project.a });
+
+			expect(await bookedTask()).toEqual({ project: project.a, task: null });
+		});
+
+		it.each([
+			["a done task", tasks.done, "task_done"],
+			["another project's task", tasks.otherProject, "task_other_project"],
+			["an unknown task", "f3270000-0000-4000-8000-0000000000ff", "task_not_found"],
+			["a malformed task id", "not-a-task", "task_not_found"],
+			["a task id that is a number", 42, "task_not_found"],
+			["a task id that is a boolean", true, "task_not_found"],
+		])("refuses %s with the stable reason and writes nothing", async (_label, taskId, reason) => {
+			const before = await snapshot();
+
+			const clockOut = await post({
+				...desktopClock("clock_out", "2026-07-22T10:00:00Z"),
+				projectId: project.a,
+				taskId,
+			});
+
+			expect(clockOut).toEqual({
+				status: 400,
+				body: {
+					error: {
+						task_done: "This task is done, so no time can be booked to it",
+						task_other_project: "This task belongs to another project",
+						task_not_found: "Task not found",
+					}[reason],
+					code: "attribution_not_allowed",
+					field: "taskId",
+					reason,
+				},
+			});
+			expect(await snapshot()).toEqual(before);
+		});
 	});
 });

@@ -375,7 +375,7 @@ describe("changing billability after recording on PostgreSQL", () => {
 
 				actAs();
 				await expect(
-					updateWorkPeriodProject(period.id, ids.billableProject, { billable: false }),
+					updateWorkPeriodProject(period.id, ids.billableProject, undefined, { billable: false }),
 				).resolves.toMatchObject({ success: true });
 				expectAgreement(await attributionOf(period.id), {
 					projectId: ids.billableProject,
@@ -383,7 +383,7 @@ describe("changing billability after recording on PostgreSQL", () => {
 				});
 
 				await expect(
-					updateWorkPeriodProject(period.id, ids.customerProject, { billable: true }),
+					updateWorkPeriodProject(period.id, ids.customerProject, undefined, { billable: true }),
 				).resolves.toMatchObject({ success: true });
 				expectAgreement(await attributionOf(period.id), {
 					projectId: ids.customerProject,
@@ -419,7 +419,7 @@ describe("changing billability after recording on PostgreSQL", () => {
 
 				actAs();
 				await expect(
-					updateWorkPeriodProject(period.id, ids.customerProject, { billable: true }),
+					updateWorkPeriodProject(period.id, ids.customerProject, undefined, { billable: true }),
 				).resolves.toMatchObject({ success: true });
 				expectAgreement(await attributionOf(period.id), {
 					projectId: ids.customerProject,
@@ -484,7 +484,7 @@ describe("changing billability after recording on PostgreSQL", () => {
 				});
 				actAs();
 				await expect(
-					updateWorkPeriodProject(period.id, ids.billableProject, { billable: false }),
+					updateWorkPeriodProject(period.id, ids.billableProject, undefined, { billable: false }),
 				).resolves.toMatchObject({ success: false, error: "Billable Time is switched off" });
 				expect(await snapshot()).toEqual(before);
 

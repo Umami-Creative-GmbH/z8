@@ -7,11 +7,12 @@ import { DateTime } from "luxon";
 import { sendEmail } from "@/lib/email/email-service";
 import { createLogger } from "@/lib/logger";
 import { getPresignedUrl } from "@/lib/storage/export-s3-client";
-import type {
-	CalculatedDateRange,
-	DeliveryConfig,
-	DeliveryResult,
-	ExecutionResult,
+import {
+	type CalculatedDateRange,
+	type DeliveryConfig,
+	type DeliveryResult,
+	deliversByEmail,
+	type ExecutionResult,
 } from "../domain/types";
 
 const logger = createLogger("ScheduledExportDeliveryService");
@@ -88,7 +89,7 @@ export class DeliveryService {
 			result.s3Url = s3Url;
 
 			// Send emails if configured
-			if (deliveryConfig.method === "email_only" || deliveryConfig.method === "s3_and_email") {
+			if (deliversByEmail(deliveryConfig.method)) {
 				const emailResult = await this.sendNotificationEmails({
 					organizationId,
 					scheduleName,

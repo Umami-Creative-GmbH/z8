@@ -67,9 +67,29 @@ function closeTarget(
 export function toClockingCommand(
 	command: FrozenClockCommand,
 	actor: FrozenCommandActor,
-	input: { now: Instant; fallbackZone: string },
+	input: {
+		now: Instant;
+		fallbackZone: string;
+		/**
+		 * Whether the request may carry a position (#826, decision D5): only a
+		 * cookie-authenticated browser request. A bearer client's stamped command
+		 * still runs, without its position; its bytes stay the receipt command.
+		 */
+		acceptsPosition: boolean;
+	},
 ): ClockCommand {
 	const window = CLOCK_COMMAND_ADMISSION_WINDOWS[command.admission];
+	const position =
+		input.acceptsPosition && "position" in command
+			? {
+					position: {
+						latitude: command.position.latitude,
+						longitude: command.position.longitude,
+						accuracyMeters: command.position.accuracyMeters,
+						fixedAt: parseInstant(command.position.fixedAt),
+					},
+				}
+			: {};
 	const common = {
 		organizationId: actor.organizationId,
 		principal: { kind: "user", userId: actor.userId },
@@ -86,6 +106,7 @@ export function toClockingCommand(
 				: {}),
 		},
 		payload: command,
+		...position,
 	} satisfies Omit<ClockCommand, "body">;
 	switch (command.kind) {
 		case "clock_in":
@@ -101,6 +122,8 @@ export function toClockingCommand(
 					target: closeTarget(command.target),
 					project: command.project,
 					workCategory: command.workCategory,
+					// Named only when the command names one (#875); absent, it follows the project.
+					...(command.task ? { task: command.task } : {}),
 					...(command.billable === undefined ? {} : { billable: command.billable }),
 				},
 			};
@@ -183,6 +206,7 @@ const FAILURE_REPLIES: Record<
 	// Frozen closures always name their target.
 	not_clocked_in: { status: 409, code: "target_not_active" },
 	project_not_allowed: { status: 422, code: "attribution_not_allowed" },
+	task_not_allowed: { status: 422, code: "attribution_not_allowed" },
 	work_category_not_allowed: { status: 422, code: "attribution_not_allowed" },
 	billable_not_allowed: { status: 422, code: "attribution_not_allowed" },
 	invalid_interval: { status: 422, code: "invalid_interval" },
@@ -204,6 +228,8 @@ function refusalDetails(refusal: ClockRefusal): Record<string, unknown> {
 			return refusal.holidayName ? { holidayName: refusal.holidayName } : {};
 		case "project_not_allowed":
 			return { field: "projectId" };
+		case "task_not_allowed":
+			return { field: "taskId", reason: refusal.reason };
 		case "work_category_not_allowed":
 			return { field: "workCategoryId" };
 		case "billable_not_allowed":

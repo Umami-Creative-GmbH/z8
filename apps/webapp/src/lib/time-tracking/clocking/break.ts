@@ -83,7 +83,13 @@ export type BreakEndpoints = {
 /** A committed break, before follow-ups. */
 export type BreakClosure =
 	| { disposition: "replayed"; result: BreakResult }
-	| { disposition: "executed"; result: BreakResult; closed: Omit<ClosedLiveWork, "timezone"> };
+	| {
+			disposition: "executed";
+			result: BreakResult;
+			closed: Omit<ClosedLiveWork, "timezone">;
+			/** The resumed clock-in entry: the break's end, where its position stamp belongs. */
+			resumeEntryId: string;
+	  };
 
 export function planBreak(command: BreakCommand, employee: Employee): BreakPlan {
 	const { body, identity, at, zone, channel } = command;
@@ -244,6 +250,7 @@ export async function takeBreak(
 	return {
 		disposition: "executed",
 		result: receiptResult(executed.result),
+		resumeEntryId: executed.result.resume.clockInEntryId,
 		closed: {
 			organizationId: employee.organizationId,
 			employeeId: employee.id,
@@ -291,6 +298,7 @@ async function takeLegacyBreak(
 			startTime: workPeriod.startTime,
 			projectId: workPeriod.projectId,
 			isBillable: workPeriod.isBillable,
+			taskId: workPeriod.taskId,
 			workCategoryId: workPeriod.workCategoryId,
 			workLocationType: workPeriod.workLocationType,
 		})
@@ -335,6 +343,7 @@ async function takeLegacyBreak(
 			projectId: period.projectId,
 			// The closed period keeps its billability; both representations agree (#900).
 			isBillable: period.isBillable,
+			taskId: period.taskId,
 			origin: "clock",
 		},
 		tx,
@@ -411,6 +420,7 @@ async function takeLegacyBreak(
 	return {
 		disposition: "executed",
 		result: { workPeriodId: resumedPeriod.id, start: endpoints.resume.instant },
+		resumeEntryId: clockInEntry.id,
 		closed: {
 			organizationId,
 			employeeId,

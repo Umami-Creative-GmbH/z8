@@ -26,6 +26,7 @@ import {
 	withManualWorkTransaction,
 } from "@/lib/time-tracking/manual-work-transaction";
 import { createOrdinaryApprovalRuntime } from "@/lib/time-tracking/ordinary-approval-runtime";
+import { PROJECT_TASK_INELIGIBILITY_MESSAGES } from "@/lib/time-tracking/project-eligibility";
 import {
 	type ManualWorkRejection,
 	type ManualWorkResult,
@@ -140,6 +141,7 @@ export async function submitManualTimeEntryCommand(input: {
 						reason: prepared.reason,
 						projectId: prepared.projectId,
 						isBillable: prepared.isBillable,
+						taskId: prepared.taskId,
 						workCategoryId: prepared.workCategoryId,
 						workLocationType: prepared.workLocationType,
 						daysBack: prepared.daysBack,
@@ -259,6 +261,7 @@ const REJECTION_MESSAGES: Record<ManualCommandRejection["reason"], string> = {
 	target_not_authorized: MANUAL_ENTRY_TARGET_AUTH_ERROR,
 	holiday_blocked: "errors.holiday.blocksTimeEntry",
 	project_ineligible: "Cannot assign to this project",
+	...PROJECT_TASK_INELIGIBILITY_MESSAGES,
 	category_ineligible: "Cannot assign to this work category",
 	billable_not_allowed: "Only work on a project that has a customer can be billable",
 	policy_ambiguous: "Could not verify time approval policy. Please try again.",

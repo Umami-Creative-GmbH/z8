@@ -151,7 +151,7 @@ An optional time of day on a work policy's schedule day by which employees on th
 _Avoid_: Core time start, start time
 
 **Expected end**:
-The instant by which an employee's live work is expected to have ended: the end of their published shift, otherwise the moment their day total reaches the day's required hours. A day with neither a shift nor required hours has no expected end.
+The instant by which an employee's live work is expected to have ended: the end of their published shift, otherwise the moment the work counted for the local day the live work started reaches that day's required hours. That count is the compliance check's: every work period that started that day, whole, plus the live work elapsed so far, so live work past midnight still belongs to the day it started. A day with neither a shift nor required hours has no expected end.
 _Avoid_: Planned end, shift end (when no shift applies)
 
 **Missed clock-in reminder**:

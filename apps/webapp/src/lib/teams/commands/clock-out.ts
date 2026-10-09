@@ -63,6 +63,8 @@ const replies: ClockCommandReplies<ClockOutFailure> = {
 		target_not_active: failed,
 		// Bots never choose billability; the closure keeps the work's own.
 		billable_not_allowed: failed,
+		// Bots never name a task.
+		task_not_allowed: failed,
 		invalid_command: failed,
 		failed,
 	},

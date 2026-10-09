@@ -27,6 +27,7 @@ export default async function SettingsPage() {
 					demoDataEnabled: true,
 					worksCouncilEnabled: true,
 					billableTimeEnabled: true,
+					personnelFilesEnabled: true,
 				},
 				where: eq(authSchema.organization.id, activeOrganizationId),
 			})
@@ -39,6 +40,7 @@ export default async function SettingsPage() {
 				demoDataEnabled: currentOrganization.demoDataEnabled ?? true,
 				worksCouncilEnabled: currentOrganization.worksCouncilEnabled ?? false,
 				billableTimeEnabled: currentOrganization.billableTimeEnabled ?? false,
+				personnelFilesEnabled: currentOrganization.personnelFilesEnabled ?? false,
 			}
 		: undefined;
 

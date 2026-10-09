@@ -9,6 +9,8 @@ pub enum ActionType {
     ClockIn,
     ClockOut,
     ClockOutWithBreak,
+    /// A fresh online request whose response was lost; review only.
+    OnlineClock,
 }
 
 /// Preserve SQLite storage classes and bytes, including invalid UTF-8 TEXT.
@@ -48,6 +50,7 @@ pub enum ReviewReason {
     MalformedRecord,
     RetriesExhausted,
     LegacyContextMissing,
+    OnlineOutcomeUnconfirmed,
     BreakMayBePartiallyCommitted,
     /// The retained break's close was acknowledged by the server, so it committed;
     /// its resume is still unknown. Nothing ever proves that a close did not commit.
@@ -69,11 +72,16 @@ pub struct QueuedAction {
 
 impl QueuedAction {
     fn classify(&mut self) {
-        self.reasons.push(ReviewReason::LegacyContextMissing);
         let action = self
             .action_type
             .text()
             .and_then(|value| serde_json::from_str::<ActionType>(value).ok());
+        self.reasons
+            .push(if matches!(action, Some(ActionType::OnlineClock)) {
+                ReviewReason::OnlineOutcomeUnconfirmed
+            } else {
+                ReviewReason::LegacyContextMissing
+            });
         let valid_payload = match action {
             Some(ActionType::ClockIn) => self
                 .payload
@@ -106,6 +114,23 @@ impl QueuedAction {
                             })
                 })
             }
+            Some(ActionType::OnlineClock) => self
+                .payload
+                .text()
+                .and_then(|body| serde_json::from_str::<serde_json::Value>(body).ok())
+                .is_some_and(|body| {
+                    matches!(body["type"].as_str(), Some("clock_in" | "clock_out"))
+                        && body["timestamp"]
+                            .as_str()
+                            .is_some_and(|instant| DateTime::parse_from_rfc3339(instant).is_ok())
+                        && body["browserTimezone"]
+                            .as_str()
+                            .is_some_and(|zone| !zone.is_empty())
+                        && serde_json::from_value::<crate::frozen_command::CommandContext>(
+                            body["desktopContext"].clone(),
+                        )
+                        .is_ok()
+                }),
             None => false,
         };
         let valid_timestamp = matches!(self.timestamp, StoredValue::Integer(value) if DateTime::from_timestamp(value, 0).is_some());

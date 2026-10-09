@@ -6,6 +6,8 @@
 export type AllocationEvidence<Kind extends string = string> = {
 	allocationKind: Kind;
 	projectId: string | null;
+	/** Present only on an allocation booked to a task (#873). */
+	taskId?: string;
 	costCenterId: string | null;
 	weightPercent: number;
 	/** Absent on receipts committed before billability (#900), which were non-billable. */

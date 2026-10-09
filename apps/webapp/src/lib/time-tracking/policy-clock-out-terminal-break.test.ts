@@ -543,12 +543,14 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 		const allocationInserts = inserts.filter((query) =>
 			query.sql.includes("time_record_allocation"),
 		);
-		expect(allocationInserts.map((query) => query.params.slice(1, 8))).toEqual([
+		// organization, record, kind, project, task (#873), cost center, weight, billable (#900).
+		expect(allocationInserts.map((query) => query.params.slice(1, 9))).toEqual([
 			[
 				organizationId,
 				secondCanonicalId,
 				"project",
 				snapshot.projectId,
+				null,
 				null,
 				75,
 				// The generated half keeps the source's billability (#900).
@@ -558,6 +560,7 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 				organizationId,
 				secondCanonicalId,
 				"cost_center",
+				null,
 				null,
 				"80000000-0000-4000-8000-000000000001",
 				25,
@@ -588,11 +591,13 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 		);
 		expect(secondPeriod?.sql).toContain("approval_workflow_id");
 		expect(secondPeriod?.sql).toContain("pending_changes");
-		expect(secondPeriod?.params[11]).toBeNull();
-		expect(secondPeriod?.params[14]).toBeNull();
+		// The project's task (#873) follows the project: none here.
+		expect(secondPeriod?.params[6]).toBeNull();
+		expect(secondPeriod?.params[12]).toBeNull();
 		expect(secondPeriod?.params[15]).toBeNull();
-		expect(secondPeriod?.params[16]).toBe(secondCanonicalId);
-		expect(secondPeriod?.params[17]).toBeNull();
+		expect(secondPeriod?.params[16]).toBeNull();
+		expect(secondPeriod?.params[17]).toBe(secondCanonicalId);
+		expect(secondPeriod?.params[18]).toBeNull();
 		expect(secondPeriod?.params.at(-1)).toBe(true);
 		const originalPeriodUpdate = updates.find((query) =>
 			query.sql.includes("work_period"),

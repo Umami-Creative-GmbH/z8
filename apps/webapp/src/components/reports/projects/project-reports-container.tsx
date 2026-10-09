@@ -30,6 +30,7 @@ import { ProjectHealthAlerts } from "./project-health-alerts";
 import { ProjectHoursChart } from "./project-hours-chart";
 import { ProjectPortfolioTable } from "./project-portfolio-table";
 import { ProjectSummaryCards } from "./project-summary-cards";
+import { ProjectTaskBreakdown } from "./project-task-breakdown";
 import { ProjectTeamBreakdown } from "./project-team-breakdown";
 
 export function ProjectReportsContainer() {
@@ -280,6 +281,8 @@ export function ProjectReportsContainer() {
 									employeeBreakdown={detailedReport.employeeBreakdown}
 								/>
 
+								{/* Task Breakdown */}
+								<ProjectTaskBreakdown taskBreakdown={detailedReport.taskBreakdown} />
 								<BillableEmployeeTable employees={detailedReport.employeeBreakdown} />
 							</>
 						)}

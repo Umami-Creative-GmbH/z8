@@ -43,6 +43,7 @@ describe("planCompletedWorkAmendment", () => {
 			clockIn: false,
 			clockOut: true,
 			project: false,
+			task: false,
 			workCategory: false,
 			workLocation: false,
 			billable: false,
@@ -158,8 +159,19 @@ describe("planCompletedWorkAmendment", () => {
 				workLocation: { kind: "preserve" },
 			}),
 		).toEqual({
-			changes: { project: true, workCategory: false, workLocation: false, billable: false },
-			result: { projectId: "project-b", workCategoryId: null, workLocationType: "office" },
+			changes: {
+				project: true,
+				task: false,
+				workCategory: false,
+				workLocation: false,
+				billable: false,
+			},
+			result: {
+				projectId: "project-b",
+				taskId: null,
+				workCategoryId: null,
+				workLocationType: "office",
+			},
 		});
 		expect(() =>
 			planAttributionChange(attribution, {
@@ -177,6 +189,7 @@ describe("planCompletedWorkAmendment", () => {
 				clockIn: false,
 				clockOut: false,
 				project: false,
+				task: false,
 				workCategory: false,
 				workLocation: false,
 				billable: true,
@@ -208,7 +221,85 @@ describe("planCompletedWorkAmendment", () => {
 						billable: { kind: "set", billable: false },
 					},
 				).changes,
-			).toEqual({ project: false, workCategory: false, workLocation: false, billable: true });
+			).toEqual({
+				project: false,
+				task: false,
+				workCategory: false,
+				workLocation: false,
+				billable: true,
+			});
+		});
+	});
+
+	describe("the task (#873)", () => {
+		const booked = { ...source, taskId: "task-a" };
+
+		it("keeps the task while the project stays", () => {
+			const result = planCompletedWorkAmendment(booked, {
+				...preserveAll,
+				clockOut: { kind: "set", at: end.add({ minutes: 5 }), precision: "exact" },
+			});
+			expect(result).toMatchObject({ changes: { task: false }, result: { taskId: "task-a" } });
+		});
+
+		it("clears the task when the project changes or is cleared without a task", () => {
+			for (const project of [
+				{ kind: "replace", id: "project-b" },
+				{ kind: "clear" },
+			] as const) {
+				expect(planCompletedWorkAmendment(booked, { ...preserveAll, project })).toMatchObject({
+					changes: { project: true, task: true },
+					result: { taskId: null },
+				});
+			}
+		});
+
+		it("changes only the task", () => {
+			expect(
+				planCompletedWorkAmendment(booked, {
+					...preserveAll,
+					task: { kind: "replace", id: "task-b" },
+				}),
+			).toMatchObject({ changes: { project: false, task: true }, result: { taskId: "task-b" } });
+		});
+
+		it("books a task of the new project with the project change", () => {
+			expect(
+				planCompletedWorkAmendment(booked, {
+					...preserveAll,
+					project: { kind: "replace", id: "project-b" },
+					task: { kind: "replace", id: "task-c" },
+				}),
+			).toMatchObject({ changes: { project: true, task: true }, result: { taskId: "task-c" } });
+		});
+
+		it("treats the current task as unchanged", () => {
+			expect(() =>
+				planCompletedWorkAmendment(booked, {
+					...preserveAll,
+					task: { kind: "replace", id: "task-a" },
+				}),
+			).toThrow(AmendmentNoChangeError);
+		});
+
+		it("plans a task-only change of active work", () => {
+			expect(
+				planAttributionChange(
+					{
+					projectId: "project-a",
+					taskId: null,
+					workCategoryId: null,
+					workLocationType: null,
+					isBillable: false,
+				},
+					{
+						project: { kind: "preserve" },
+						task: { kind: "replace", id: "task-b" },
+						workCategory: { kind: "preserve" },
+						workLocation: { kind: "preserve" },
+					},
+				),
+			).toMatchObject({ changes: { task: true }, result: { taskId: "task-b" } });
 		});
 	});
 

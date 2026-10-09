@@ -331,7 +331,8 @@ describe("project settings manager scope", () => {
 		});
 
 		expect(result).toEqual({ success: true, data: { id: "created-project-1" } });
-		const managerAssignmentInserts = mockState.insertCalls.filter(
+		// One insert may carry several rows.
+		const managerAssignmentInserts = mockState.insertCalls.flat().filter(
 			(value) =>
 				value &&
 				typeof value === "object" &&

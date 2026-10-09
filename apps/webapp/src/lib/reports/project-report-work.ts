@@ -63,6 +63,9 @@ function instantWindow(range: ReportDayRange) {
 	return { start: dateFromInstant(start), end: dateFromInstant(end) };
 }
 
+/** Reported work with the project task it is booked to (#876), for the report's task breakdown. */
+export type ReportedProjectWork = ReportedWork & { taskId: string | null };
+
 /**
  * The work a project report counts (#794, #902): completed, non-deleted work of
  * the given projects in the organization whose employee-local start day (at the
@@ -75,7 +78,7 @@ export async function loadReportedProjectWork(
 	reader: Reader,
 	organizationId: string,
 	scope: { projectIds: readonly string[]; range: ReportDayRange },
-): Promise<ReportedWork[]> {
+): Promise<ReportedProjectWork[]> {
 	if (scope.projectIds.length === 0) return [];
 	const window = instantWindow(scope.range);
 	const rows = await reader
@@ -83,6 +86,7 @@ export async function loadReportedProjectWork(
 			id: workPeriod.id,
 			employeeId: workPeriod.employeeId,
 			projectId: workPeriod.projectId,
+			taskId: workPeriod.taskId,
 			// A deleted (inactive) customer counts as no customer.
 			customerId: activeProjectCustomerIdSql(),
 			startTime: workPeriod.startTime,
@@ -127,11 +131,12 @@ export async function loadReportedProjectWork(
 		)
 		.orderBy(workPeriod.startTime, workPeriod.id);
 
-	const work: ReportedWork[] = [];
+	const work: ReportedProjectWork[] = [];
 	for (const row of rows) {
 		if (row.projectId === null || row.endTime === null || row.durationMinutes === null) continue;
-		const item: ReportedWork = {
+		const item: ReportedProjectWork = {
 			id: row.id,
+			taskId: row.taskId,
 			employeeId: row.employeeId,
 			projectId: row.projectId,
 			customerId: row.customerId,

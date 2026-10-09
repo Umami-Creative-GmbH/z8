@@ -100,10 +100,32 @@ function clockOutCommand(overrides: Record<string, unknown> = {}) {
 	};
 }
 
-async function submit(body: unknown) {
+const position = {
+	latitude: 52.520008,
+	longitude: 13.404954,
+	accuracyMeters: 18.5,
+	fixedAt: "2026-09-20T10:07:30.250Z",
+};
+
+function stampedClockInCommand() {
+	return {
+		version: 3,
+		operationId,
+		kind: "clock_in",
+		admission: "delayed",
+		occurredAt: "2026-09-20T10:08:00.000Z",
+		timezone: "Europe/Berlin",
+		context,
+		workLocationType: "home",
+		position,
+	};
+}
+
+async function submit(body: unknown, headers: Record<string, string> = {}) {
 	const response = await POST(
 		new Request("https://app.test/api/time-entries/commands", {
 			method: "POST",
+			headers,
 			body: JSON.stringify(body),
 		}),
 	);
@@ -191,8 +213,47 @@ describe("POST /api/time-entries/commands", () => {
 		expect(response).toEqual({ status: 200, body: { outcome: "replayed", operationId, receipt } });
 	});
 
+	it("passes a named task to the Clocking module with the frozen bytes (#875)", async () => {
+		state.run.mockResolvedValue({ outcome: "executed", result: {} });
+		const task = { kind: "replace", id: "b1000000-0000-4000-8000-000000000001" };
+		const command = clockOutCommand({
+			project: { kind: "replace", id: "c1000000-0000-4000-8000-000000000001" },
+			task,
+		});
+
+		await submit(command);
+
+		const [run] = state.run.mock.calls[0];
+		expect(run.payload).toEqual(command);
+		expect(run.body).toEqual({
+			kind: "clock_out",
+			target: { kind: "period", workPeriodId: "a1000000-0000-4000-8000-000000000001" },
+			project: { kind: "replace", id: "c1000000-0000-4000-8000-000000000001" },
+			workCategory: { kind: "preserve" },
+			task,
+		});
+	});
+
+	it("names no task when the command names none", async () => {
+		state.run.mockResolvedValue({ outcome: "executed", result: {} });
+
+		await submit(clockOutCommand());
+
+		expect(Object.keys(state.run.mock.calls[0][0].body)).toEqual([
+			"kind",
+			"target",
+			"project",
+			"workCategory",
+		]);
+	});
+
 	it.each([
 		[{ code: "frozen_not_accepted" }, 409, { code: "not_adopted" }],
+		[
+			{ code: "task_not_allowed", reason: "task_done" },
+			422,
+			{ code: "attribution_not_allowed", field: "taskId", reason: "task_done" },
+		],
 		[
 			{ code: "billing_required", reason: "past_due" },
 			402,
@@ -240,6 +301,47 @@ describe("POST /api/time-entries/commands", () => {
 			status: 500,
 			body: { outcome: "unknown", operationId },
 		});
+	});
+
+	it("runs a stamped version 3 browser command with its position and its frozen bytes", async () => {
+		state.run.mockResolvedValue({ outcome: "executed", result: {} });
+		const command = stampedClockInCommand();
+
+		await submit(command);
+
+		expect(state.run).toHaveBeenCalledWith(
+			expect.objectContaining({
+				channel: "api",
+				payload: command,
+				position: {
+					latitude: 52.520008,
+					longitude: 13.404954,
+					accuracyMeters: 18.5,
+					fixedAt: parseInstant("2026-09-20T10:07:30.250Z"),
+				},
+				body: { kind: "clock_in", workLocationType: "home" },
+			}),
+		);
+	});
+
+	it("accepts a version 3 command from a bearer-authenticated client without its position", async () => {
+		state.run.mockResolvedValue({ outcome: "executed", result: {} });
+		const command = stampedClockInCommand();
+
+		const response = await submit(command, { authorization: "Bearer desktop-token" });
+
+		expect(response.status).toBe(201);
+		const [run] = state.run.mock.calls[0] ?? [];
+		expect(run).toMatchObject({ payload: command });
+		expect(run).not.toHaveProperty("position");
+	});
+
+	it("never carries a position for a version 2 command", async () => {
+		state.run.mockResolvedValue({ outcome: "replayed", result: {} });
+
+		await submit(clockOutCommand());
+
+		expect(state.run.mock.calls[0]?.[0]).not.toHaveProperty("position");
 	});
 
 	it("refuses a mismatched context and a clock discontinuity without running", async () => {

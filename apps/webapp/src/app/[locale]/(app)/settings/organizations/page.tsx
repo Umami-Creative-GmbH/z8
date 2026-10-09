@@ -10,6 +10,7 @@ import { getBillableTimeSettings } from "@/lib/billable-time/settings";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { loadAutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/settings";
+import { loadClockingReminderSettings } from "@/lib/time-tracking/clocking-reminders/settings";
 import { getTranslate } from "@/tolgee/server";
 
 async function OrganizationsPageContent() {
@@ -41,6 +42,7 @@ async function OrganizationsPageContent() {
 		organizationNotificationSettingsRecord,
 		autoClockOutSettings,
 		billableTimeSettings,
+		clockingReminderSettings,
 	] = await Promise.all([
 		db.query.organization.findFirst({
 			where: eq(authSchema.organization.id, organizationId),
@@ -68,6 +70,7 @@ async function OrganizationsPageContent() {
 		}),
 		loadAutoClockOutSettings(db, organizationId),
 		getBillableTimeSettings(organizationId, db),
+		loadClockingReminderSettings(db, organizationId),
 	]);
 
 	const [currentMemberRecord] = currentMember;
@@ -96,6 +99,7 @@ async function OrganizationsPageContent() {
 	return (
 		<OrganizationsPageClient
 			autoClockOutSettings={autoClockOutSettings}
+			clockingReminderSettings={clockingReminderSettings}
 			organization={organization}
 			memberCount={memberCountRows[0]?.value ?? 0}
 			currentMemberRole={

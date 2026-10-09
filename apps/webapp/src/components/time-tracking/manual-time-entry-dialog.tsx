@@ -34,6 +34,8 @@ import {
 import { billableChoice } from "@/components/time-tracking/billable-choice";
 import { BillableWorkSwitch } from "@/components/time-tracking/billable-work-switch";
 import { ProjectSelectorView } from "@/components/time-tracking/project-selector";
+import { TaskSelectorView } from "@/components/time-tracking/task-selector";
+import { projectTaskRefusalMessage } from "@/lib/projects/project-task-model";
 import { TimezoneMismatchDialog } from "@/components/time-tracking/timezone-mismatch-dialog";
 import {
 	type ManualAttemptOutcome,
@@ -116,6 +118,8 @@ interface FormValues {
 	projectId: string | undefined;
 	/** The explicit billable choice (#900); undefined applies the project's default. */
 	billable: boolean | undefined;
+	/** A task of `projectId` (#874); cleared whenever the project changes. */
+	taskId: string | undefined;
 	workCategoryId: string | undefined;
 	workLocationType: WorkLocationType;
 	/** Version-2 commands: the chosen occurrence of a repeated wall-clock time. */
@@ -323,6 +327,8 @@ function buildManualCommand(input: {
 		browserTimezone: input.browserTimezone,
 		reason: value.reason,
 		projectId: value.projectId ?? null,
+		// Optional key: absent unless a task of the project is named (#873).
+		...(value.projectId && value.taskId ? { taskId: value.taskId } : {}),
 		workCategoryId: value.workCategoryId ?? null,
 		workLocationType: value.workLocationType,
 		...(value.billable === undefined ? {} : { billable: value.billable }),
@@ -352,6 +358,8 @@ function outcomeMessage(result: ManualTimeEntryResult): Message | null {
 		return MESSAGES.refresh;
 	}
 	if (result.code === MANUAL_ENTRY_COLLISION) return MESSAGES.collision;
+	const taskRefusal = projectTaskRefusalMessage(result.code);
+	if (taskRefusal) return taskRefusal;
 	const reason = result.rejection?.reason;
 	if (reason === "reconfirmation_required") return MESSAGES.reconfirm;
 	if (reason === "occupancy_conflict") return MESSAGES.overlap;
@@ -398,6 +406,7 @@ function getDefaultValues(
 		reason: "",
 		projectId: undefined,
 		billable: undefined,
+		taskId: undefined,
 		workCategoryId: undefined,
 		workLocationType: "office",
 		clockInOccurrence: undefined,
@@ -1188,6 +1197,8 @@ function ManualEntryFormContent({
 							<ProjectSelectorView
 								value={field.state.value}
 								onValueChange={(projectId) => {
+									// A task never outlives its project (#874).
+									if (projectId !== field.state.value) form.setFieldValue("taskId", undefined);
 									field.handleChange(projectId);
 									// A newly chosen project prefills its own billable default.
 									form.setFieldValue("billable", undefined);
@@ -1199,6 +1210,22 @@ function ManualEntryFormContent({
 							/>
 						)}
 					</form.Field>
+					{context && !contextError ? (
+						<form.Subscribe<string | undefined> selector={(state) => state.values.projectId}>
+							{(projectId: string | undefined) => (
+								<form.Field name="taskId">
+									{(field) => (
+										<TaskSelectorView
+											projectId={projectId}
+											projects={context.projects}
+											value={field.state.value}
+											onValueChange={field.handleChange}
+										/>
+									)}
+								</form.Field>
+							)}
+						</form.Subscribe>
+					) : null}
 					<form.Subscribe
 						selector={(state) => [state.values.projectId, state.values.billable] as const}
 					>
@@ -1305,6 +1332,7 @@ function useTargetDraftRevalidation({
 		const { projectId, workCategoryId } = form.state.values;
 		form.setFieldValue("projectId", undefined);
 		form.setFieldValue("billable", undefined);
+		form.setFieldValue("taskId", undefined);
 		form.setFieldValue("workCategoryId", undefined);
 		setPendingMismatch(null);
 		setMessage(
@@ -1320,20 +1348,31 @@ function useTargetDraftRevalidation({
 	useEffect(() => {
 		if (!context) return;
 
-		const { projectId, workCategoryId } = form.state.values;
-		const projectIneligible =
-			projectId !== undefined &&
-			!context.projects.some((project) => project.id === projectId);
+		const { projectId, taskId, workCategoryId } = form.state.values;
+		const project = context.projects.find((candidate) => candidate.id === projectId);
+		const projectIneligible = projectId !== undefined && !project;
 		const categoryIneligible =
 			workCategoryId !== undefined &&
 			!context.categories.some((category) => category.id === workCategoryId);
+		// Only open tasks of the chosen project are offered; one done since is dropped (#874).
+		const taskIneligible =
+			taskId !== undefined && !project?.tasks.some((task) => task.id === taskId);
 
 		if (projectIneligible) {
 			form.setFieldValue("projectId", undefined);
 			form.setFieldValue("billable", undefined);
 		}
 		if (categoryIneligible) form.setFieldValue("workCategoryId", undefined);
-		if (projectIneligible || categoryIneligible) {
+		if (taskIneligible) form.setFieldValue("taskId", undefined);
+		if (taskIneligible && !projectIneligible && !categoryIneligible) {
+			// react-doctor-disable-next-line react-hooks-js/set-state-in-effect
+			setMessage(
+				t(
+					"timeTracking.manualEntry.context.taskCleared",
+					"A selected task is no longer available and was cleared.",
+				),
+			);
+		} else if (projectIneligible || categoryIneligible) {
 			// The TanStack form store is external; this reports what was just cleared in it
 			// after fresh context arrived, which render cannot derive afterwards.
 			// react-doctor-disable-next-line react-hooks-js/set-state-in-effect
@@ -1532,6 +1571,7 @@ function ConnectedManualRecoveryPanel({
 		form.setFieldValue("reason", command.reason);
 		form.setFieldValue("projectId", command.projectId ?? undefined);
 		form.setFieldValue("billable", command.billable);
+		form.setFieldValue("taskId", command.taskId ?? undefined);
 		form.setFieldValue("workCategoryId", command.workCategoryId ?? undefined);
 		form.setFieldValue(
 			"workLocationType",
@@ -1769,6 +1809,7 @@ export function ManualTimeEntryDialog({
 				timezone,
 				browserTimezone,
 				projectId: value.projectId,
+				...(value.projectId && value.taskId ? { taskId: value.taskId } : {}),
 				...(value.billable === undefined ? {} : { billable: value.billable }),
 				workCategoryId: value.workCategoryId,
 				workLocationType: value.workLocationType,

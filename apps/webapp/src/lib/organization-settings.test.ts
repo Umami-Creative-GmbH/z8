@@ -39,6 +39,7 @@ describe("getOrganizationSettings", () => {
 			demoDataEnabled: null,
 			worksCouncilEnabled: true,
 			billableTimeEnabled: true,
+			personnelFilesEnabled: null,
 			timezone: null,
 			deletedAt: null,
 		});
@@ -62,6 +63,7 @@ describe("getOrganizationSettings", () => {
 			demoDataEnabled: true,
 			worksCouncilEnabled: true,
 			billableTimeEnabled: true,
+			personnelFilesEnabled: false,
 			timezone: "UTC",
 			deletedAt: null,
 		});

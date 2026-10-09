@@ -101,6 +101,12 @@ function resourceQueries(
 				or id in (select project_id from time_record_allocation where organization_id = ${org} and record_id in (${canonical})))`,
 		},
 		{
+			table: "project_task",
+			scope: sql`organization_id = ${org} and (id = ${input.taskId ?? null}::uuid
+				or id in (select task_id from work_period where organization_id = ${org} and id in (${sourceScope}))
+				or id in (select task_id from time_record_allocation where organization_id = ${org} and record_id in (${canonical})))`,
+		},
+		{
 			table: "work_category",
 			scope: sql`organization_id = ${org} and (id = ${input.workCategoryId ?? null}::uuid
 				or id in (select work_category_id from work_period where organization_id = ${org} and id in (${sourceScope}))

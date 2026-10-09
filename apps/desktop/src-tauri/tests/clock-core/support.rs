@@ -29,6 +29,7 @@ pub fn capabilities_with(organization_id: &str, submit: &str, kinds: &[&str]) ->
         "commandVersions": [2],
         "kinds": kinds,
         "submit": submit,
+        "onlineSubmit": if submit == "unavailable" { "available" } else { "unavailable" },
         "lookup": "available",
         "admission": {
             "immediate": { "pastSeconds": 300, "futureSeconds": 300 },

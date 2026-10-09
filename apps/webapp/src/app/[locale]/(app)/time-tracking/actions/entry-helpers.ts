@@ -8,6 +8,7 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { project, workPeriod } from "@/db/schema";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
+import { listOpenTasksByProject } from "@/lib/projects/project-tasks";
 import {
 	BOOKABLE_PROJECT_STATUSES,
 	isProjectEligible,
@@ -56,7 +57,10 @@ export async function validateProjectAssignment(
 	};
 }
 
-/** Eligible projects (`listEligibleProjects`) with their booked hours in the organization. */
+/**
+ * Eligible projects (`listEligibleProjects`) with their booked hours in the
+ * organization and their open tasks (#874).
+ */
 export async function getAssignedProjectsWithHours(
 	employeeId: string,
 	organizationId: string,
@@ -67,6 +71,7 @@ export async function getAssignedProjectsWithHours(
 
 	const projectIds = Array.from(projectsById.keys());
 	const hoursByProjectId = new Map<string, number>();
+	const tasksByProjectId = await listOpenTasksByProject({ organizationId, projectIds });
 
 	if (projectIds.length > 0) {
 		const totalHoursByProject = await db
@@ -92,5 +97,5 @@ export async function getAssignedProjectsWithHours(
 		}
 	}
 
-	return { projectsById, hoursByProjectId };
+	return { projectsById, hoursByProjectId, tasksByProjectId };
 }

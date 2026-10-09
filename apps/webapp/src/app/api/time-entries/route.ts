@@ -16,6 +16,7 @@ import {
 	UnsupportedAuthorizationConditionError,
 } from "@/lib/authorization";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { resolvePublicRequestOrigin } from "@/lib/domain/request-origin";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import { preserveLateClockEvidence } from "@/lib/employee-lifecycle/late-clock-evidence";
@@ -28,6 +29,8 @@ import {
 	clocking,
 } from "@/lib/time-tracking/clocking";
 import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
+import { PROJECT_TASK_INELIGIBILITY_MESSAGES } from "@/lib/time-tracking/project-eligibility";
+import { isProjectTaskId } from "@/lib/time-tracking/task-attribution";
 import {
 	getUtcOffsetMinutesForZone,
 	isValidIanaTimezone,
@@ -223,6 +226,18 @@ function attributionOf(value: unknown): AttributionIntent {
 	return typeof value === "string" && value ? { kind: "replace", id: value } : { kind: "clear" };
 }
 
+/**
+ * The project task of a clock-out (#875): omitted, the task follows the project;
+ * `null` or an empty ID clears it. Anything else that cannot name a task (a
+ * malformed ID, a number, a boolean) is refused as an unknown task before
+ * anything runs.
+ */
+function taskAttributionOf(value: unknown): { ok: true; task?: AttributionIntent } | { ok: false } {
+	if (value === undefined) return { ok: true };
+	if (value === null || value === "") return { ok: true, task: { kind: "clear" } };
+	return isProjectTaskId(value) ? { ok: true, task: { kind: "replace", id: value } } : { ok: false };
+}
+
 type LegacyClockFailure = ClockInRefusal["code"] | ClockOutRefusal["code"];
 
 /**
@@ -233,26 +248,43 @@ const FAILURE_REPLIES: Record<
 	Exclude<LegacyClockFailure, "billing_required" | "legacy_not_accepted">,
 	{ status: number; error: string }
 > = {
-	access_denied: { status: 403, error: "Active employee record required for the organization" },
+	access_denied: {
+		status: 403,
+		error: "Active employee record required for the organization",
+	},
 	invalid_command: { status: 400, error: "Invalid clock action id" },
 	invalid_work_location: { status: 400, error: "Invalid work location type" },
 	// Legacy commands carry no freshness; the route checks the capture window itself.
-	admission_window: { status: 400, error: "Clock instant is outside the allowed capture window" },
+	admission_window: {
+		status: 400,
+		error: "Clock instant is outside the allowed capture window",
+	},
 	collision: { status: 409, error: "Clock action id collision" },
 	append_review_required: {
 		status: 409,
 		error: "Clock action was not saved because time history needs review",
 	},
 	frozen_not_accepted: { status: 400, error: "Invalid clock action" },
-	already_clocked_in: { status: 409, error: "Active work period already exists" },
-	holiday_blocked: { status: 409, error: "Clock-in is not allowed on a holiday" },
+	already_clocked_in: {
+		status: 409,
+		error: "Active work period already exists",
+	},
+	holiday_blocked: {
+		status: 409,
+		error: "Clock-in is not allowed on a holiday",
+	},
 	occupancy_conflict: { status: 409, error: "Clock-in overlaps recorded work" },
 	// Legacy closures always close the active work.
 	not_clocked_in: { status: 409, error: "No active work period found" },
 	target_unknown: { status: 409, error: "No active work period found" },
 	target_not_active: { status: 409, error: "No active work period found" },
 	project_not_allowed: { status: 400, error: "Cannot assign to this project" },
-	work_category_not_allowed: { status: 400, error: "Cannot assign to this work category" },
+	// Also names the stable reason; see `refusedResponse`.
+	task_not_allowed: { status: 400, error: "Cannot book time to this task" },
+	work_category_not_allowed: {
+		status: 400,
+		error: "Cannot assign to this work category",
+	},
 	// The legacy route never chooses billability, so this only guards the table.
 	billable_not_allowed: { status: 400, error: "Billable work needs a project with a customer" },
 	invalid_interval: { status: 409, error: "Clock-out precedes clock-in" },
@@ -276,6 +308,17 @@ function refusedResponse(failure: ClockInRefusal | ClockOutRefusal) {
 					code: "append_adopted",
 				},
 				{ status: 409 },
+			);
+		case "task_not_allowed":
+			// The stable task reason, worded as the other clock adapters word it (#875).
+			return NextResponse.json(
+				{
+					error: PROJECT_TASK_INELIGIBILITY_MESSAGES[failure.reason],
+					code: "attribution_not_allowed",
+					field: "taskId",
+					reason: failure.reason,
+				},
+				{ status: FAILURE_REPLIES.task_not_allowed.status },
 			);
 		case "failed":
 		case "unconfirmed":
@@ -315,11 +358,11 @@ export async function POST(request: NextRequest) {
 
 	return fenceLegacyClockConsumerResponse(
 		classifyLegacyClockConsumer(resolvedHeaders, body),
-		await runLegacyClockCommand(resolvedHeaders, body),
+		await runLegacyClockCommand(resolvedHeaders, body, request),
 	);
 }
 
-async function runLegacyClockCommand(resolvedHeaders: Headers, body: any) {
+async function runLegacyClockCommand(resolvedHeaders: Headers, body: any, request: NextRequest) {
 	try {
 		// With Bearer plugin, getSession handles both cookie and Bearer token auth
 		const session = await auth.api.getSession({ headers: resolvedHeaders });
@@ -336,6 +379,7 @@ async function runLegacyClockCommand(resolvedHeaders: Headers, body: any) {
 			type,
 			timestamp,
 			projectId,
+			taskId,
 			workCategoryId,
 			workLocationType,
 			browserTimezone,
@@ -380,6 +424,27 @@ async function runLegacyClockCommand(resolvedHeaders: Headers, body: any) {
 				await preserveRefusedReplay(session.user.id, activeOrgId, body);
 			}
 			throw error;
+		}
+
+		// Captured desktop context is an assertion, never authorization. Bind the
+		// fresh request to the same account and tenant that offered capabilities.
+		if (body.desktopContext !== undefined) {
+			const context = body.desktopContext;
+			if (
+				!context ||
+				typeof context !== "object" ||
+				context.userId !== session.user.id ||
+				context.organizationId !== actor.organizationId ||
+				context.employeeId !== actor.employee.id ||
+				context.server !== (await resolvePublicRequestOrigin(request))
+			) {
+				return NextResponse.json(
+					{
+						error: "Clock context changed. Refresh the selected organization.",
+					},
+					{ status: 409 },
+				);
+			}
 		}
 
 		const isReplay = replay === true;
@@ -456,11 +521,18 @@ async function runLegacyClockCommand(resolvedHeaders: Headers, body: any) {
 				fallback: (await getSavedUserTimezone(session.user.id)) ?? "UTC",
 			},
 		};
+		const task = taskAttributionOf(taskId);
+		if (type === "clock_out" && !task.ok) {
+			return refusedResponse({ code: "task_not_allowed", reason: "task_not_found" });
+		}
 		const outcome =
 			type === "clock_in"
 				? await clocking.run({
 						...command,
-						body: { kind: "clock_in", workLocationType: workLocationType ?? "office" },
+						body: {
+							kind: "clock_in",
+							workLocationType: workLocationType ?? "office",
+						},
 					})
 				: await clocking.run({
 						...command,
@@ -468,6 +540,7 @@ async function runLegacyClockCommand(resolvedHeaders: Headers, body: any) {
 							kind: "clock_out",
 							project: attributionOf(projectId),
 							workCategory: attributionOf(workCategoryId),
+							...(task.ok && task.task ? { task: task.task } : {}),
 						},
 					});
 		if (outcome.outcome === "refused") return refusedResponse(outcome.failure);

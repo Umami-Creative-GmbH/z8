@@ -21,6 +21,8 @@ const VALID_CATEGORIES = [
 	"employees",
 	"teams",
 	"time_entries",
+	// Work periods carry the project and task columns (#876).
+	"work_periods",
 	"absences",
 	"projects",
 	"holidays",
@@ -39,7 +41,7 @@ export class DataExportExecutor implements IReportExecutor {
 	 * Execute a data export
 	 */
 	async execute(params: ExecuteParams): Promise<ExecutionResult> {
-		const { organizationId, reportConfig, createdBy } = params;
+		const { organizationId, reportConfig, createdBy, emailRecipients = [] } = params;
 		const config = reportConfig as DataExportReportConfig;
 
 		logger.info(
@@ -82,8 +84,9 @@ export class DataExportExecutor implements IReportExecutor {
 
 			logger.info({ exportId: exportRecord.id }, "Data export record created");
 
-			// Process the export synchronously
-			await processExport(exportRecord.id);
+			// Process the export synchronously; whoever the file is mailed to decides
+			// whether it may carry position stamps, as the schedule owner does.
+			await processExport(exportRecord.id, { recipientEmails: emailRecipients });
 
 			// Fetch the completed record to get S3 details
 			const completedRecord = await getExportById(exportRecord.id);

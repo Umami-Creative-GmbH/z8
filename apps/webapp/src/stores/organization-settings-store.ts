@@ -13,6 +13,7 @@ export interface OrganizationSettings {
 	worksCouncilEnabled: boolean;
 	/** Billable Time module (#897); never true while projects are off. */
 	billableTimeEnabled: boolean;
+	personnelFilesEnabled: boolean;
 	timezone: string;
 	deletedAt: string | null;
 	isHydrated: boolean;
@@ -36,6 +37,7 @@ const initialState: OrganizationSettings = {
 	demoDataEnabled: true,
 	worksCouncilEnabled: false,
 	billableTimeEnabled: false,
+	personnelFilesEnabled: false,
 	timezone: "UTC",
 	deletedAt: null,
 	isHydrated: false,
@@ -107,5 +109,7 @@ export const useWorksCouncilEnabled = () =>
 	useOrganizationSettings((state) => state.worksCouncilEnabled);
 export const useBillableTimeEnabled = () =>
 	useOrganizationSettings((state) => state.billableTimeEnabled);
+export const usePersonnelFilesEnabled = () =>
+	useOrganizationSettings((state) => state.personnelFilesEnabled);
 export const useOrganizationTimezone = () => useOrganizationSettings((state) => state.timezone);
 export const useOrganizationDeletedAt = () => useOrganizationSettings((state) => state.deletedAt);

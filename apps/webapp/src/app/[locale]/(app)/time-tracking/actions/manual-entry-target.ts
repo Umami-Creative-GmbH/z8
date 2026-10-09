@@ -133,7 +133,7 @@ export async function resolveManualEntryTargetZone(
 export async function listManualEntryProjectChoices(
 	targetEmployee: Pick<Employee, "id" | "organizationId" | "teamId">,
 ): Promise<AssignedProject[]> {
-	const { projectsById, hoursByProjectId } = await getAssignedProjectsWithHours(
+	const { projectsById, hoursByProjectId, tasksByProjectId } = await getAssignedProjectsWithHours(
 		targetEmployee.id,
 		targetEmployee.organizationId,
 		targetEmployee.teamId,
@@ -150,6 +150,7 @@ export async function listManualEntryProjectChoices(
 			totalHoursBooked: hoursByProjectId.get(project.id) ?? 0,
 			hasCustomer: project.customerId !== null,
 			billableDefault: project.customerId !== null && project.billableDefault,
+			tasks: tasksByProjectId.get(project.id) ?? [],
 		}))
 		.sort((left, right) => left.name.localeCompare(right.name));
 }

@@ -70,6 +70,7 @@ import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
 } from "./policy-clock-out-surcharge-snapshot";
+import { recordedTaskId } from "./task-attribution";
 import { admitTimeEntryAppend } from "./time-entry-append";
 import { capturedZone, resolveFallbackTimezoneCapture } from "./timezone-capture";
 import { projectAllocationAgrees } from "./work-billability";
@@ -164,6 +165,8 @@ export type AutomaticBreakSegment = {
 	endUtcOffsetMinutes: number | null;
 	attribution: {
 		projectId: string | null;
+		/** Present only when the work is booked to a task (#873). */
+		taskId?: string;
 		/** Absent on receipts committed before billability (#900), which were non-billable. */
 		isBillable?: boolean;
 		workCategoryId: string | null;
@@ -678,6 +681,7 @@ export async function adjustAutomaticBreakInTransaction(
 			recordId: generatedRecordId,
 			allocationKind: allocation.allocationKind,
 			projectId: allocation.projectId,
+			taskId: allocation.taskId,
 			costCenterId: allocation.costCenterId,
 			weightPercent: allocation.weightPercent,
 			isBillable: allocation.isBillable,
@@ -692,6 +696,7 @@ export async function adjustAutomaticBreakInTransaction(
 			clockOutId: period.clockOutId,
 			projectId: period.projectId,
 			isBillable: period.isBillable,
+			taskId: period.taskId,
 			workCategoryId: period.workCategoryId,
 			workLocationType: period.workLocationType,
 			startTime: breakEndDate,
@@ -725,12 +730,14 @@ export async function adjustAutomaticBreakInTransaction(
 
 	const attribution = {
 		projectId: period.projectId,
+		...recordedTaskId(period.taskId),
 		isBillable: period.isBillable,
 		workCategoryId: period.workCategoryId,
 		workLocationType: period.workLocationType,
 		allocations: allocations.map((allocation) => ({
 			allocationKind: allocation.allocationKind,
 			projectId: allocation.projectId,
+			...recordedTaskId(allocation.taskId),
 			costCenterId: allocation.costCenterId,
 			weightPercent: allocation.weightPercent,
 			isBillable: allocation.isBillable,
@@ -1117,6 +1124,7 @@ export async function applyLegacyAutomaticBreakInTransaction(
 				recordId: generatedRecordId,
 				allocationKind: allocation.allocationKind,
 				projectId: allocation.projectId,
+				taskId: allocation.taskId,
 				costCenterId: allocation.costCenterId,
 				weightPercent: allocation.weightPercent,
 				isBillable: allocation.isBillable,
@@ -1135,6 +1143,7 @@ export async function applyLegacyAutomaticBreakInTransaction(
 			durationMinutes: plan.secondDurationMinutes,
 			projectId: period.projectId,
 			isBillable: period.isBillable,
+			taskId: period.taskId,
 			workCategoryId: period.workCategoryId,
 			workLocationType: period.workLocationType,
 			canonicalRecordId: generatedRecordId,

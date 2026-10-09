@@ -2,10 +2,19 @@ name: Desktop Windows
 on:
   pull_request:
     branches: [dev, main]
-    paths: ['apps/desktop/**', 'apps/webapp/src/app/api/desktop/**', 'pnpm-lock.yaml', '.github/workflows/desktop-windows.yml']
+    paths:
+      - 'apps/desktop/**'
+      - 'apps/webapp/src/app/api/desktop/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/desktop-windows.yml'
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: desktop-windows-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   windows:
     runs-on: windows-latest
@@ -19,6 +28,20 @@ jobs:
           cache: pnpm
       - run: pnpm --filter desktop install --frozen-lockfile
       - run: rustup toolchain install stable --profile minimal
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          # The clock-core tests have their own manifest and debug target tree.
+          workspaces: |
+            apps/desktop/src-tauri -> target
+            apps/desktop/src-tauri/tests/clock-core -> target
+      - name: Cache Tauri installer tools
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/AppData/Local/tauri
+          key: desktop-windows-tauri-tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            desktop-windows-tauri-tools-${{ runner.os }}-${{ runner.arch }}-
       - run: pnpm --filter desktop test
       - run: pnpm --filter desktop tauri build --bundles nsis
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a

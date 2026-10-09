@@ -1,7 +1,6 @@
 import "server-only";
 
 import { and, eq, gte, lte, sql } from "drizzle-orm";
-import { Effect } from "effect";
 import { DateTime, IANAZone } from "luxon";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
@@ -29,8 +28,6 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { runtime } from "@/lib/effect/runtime";
-import { WorkPolicyService } from "@/lib/effect/services/work-policy.service";
 import type { WorkCategoryReader } from "@/lib/query/work-category.queries";
 import { canonicalWorkRecordClient } from "@/lib/time-tracking/canonical-work-record";
 import { attributionIntent, type ClockChannel } from "@/lib/time-tracking/close-active-work";
@@ -74,9 +71,11 @@ import {
 	type ClockOutFailure,
 	type ClockOutRefusal,
 	type ClockOutResult,
+	type ClockPosition,
 	clocking,
 	type OperationIdentity,
 } from "@/lib/time-tracking/clocking";
+import { readClockPosition } from "@/lib/time-tracking/position-capture/clock-position";
 import { workCategoryIneligibility } from "@/lib/time-tracking/work-category-eligibility";
 import { acquireAdoptionGate, readAppendAdmission } from "@/lib/time-tracking/work-transaction";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
@@ -96,17 +95,19 @@ import {
 	getRequestMetadata,
 	getUserTimezone,
 } from "./auth";
-import { calculateBreaksTakenToday } from "./compliance";
+import {
+	PROJECT_TASK_INELIGIBILITY_MESSAGES,
+	type ProjectTaskIneligibility,
+	projectTaskIneligibility,
+} from "@/lib/time-tracking/project-eligibility";
+import { namedTaskIntent, recordedTaskId } from "@/lib/time-tracking/task-attribution";
 import { validateProjectAssignment } from "./entry-helpers";
 import {
 	resolveManualEntryTarget,
 	resolveManualEntryTargetZone,
 } from "./manual-entry-target";
 import { getEditCapabilityForPeriod } from "./policy-helpers";
-import { getActiveWorkPeriod, getComplianceDailyMinutes } from "./queries";
 import {
-	BREAK_WARNING_THRESHOLD_MINUTES,
-	EMPTY_BREAK_REMINDER_STATUS,
 	logger,
 	ONE_MINUTE_MS,
 } from "./shared";
@@ -143,6 +144,8 @@ type ManualSubmissionRequestEvidence = {
 	workCategoryId: string | null;
 	workLocationType?: WorkLocationType;
 	billable?: boolean;
+	/** Omitted when the entry names no task, so earlier evidence keeps matching (#873). */
+	taskId?: string;
 };
 
 type ManualSubmissionResultEvidence = {
@@ -167,6 +170,7 @@ function manualRequestEvidence(
 		...(data.workLocationType !== undefined ? { workLocationType: data.workLocationType } : {}),
 		// Present only when chosen (#900), so earlier submissions keep their evidence.
 		...(typeof data.billable === "boolean" ? { billable: data.billable } : {}),
+		...recordedTaskId(data.taskId),
 	};
 }
 
@@ -223,6 +227,7 @@ function parseManualSubmissionMetadata(input: {
 		"workCategoryId",
 		...(input.request.workLocationType !== undefined ? ["workLocationType"] : []),
 		...(input.request.billable !== undefined ? ["billable"] : []),
+		...(input.request.taskId !== undefined ? ["taskId"] : []),
 	]);
 	for (const [key, expected] of Object.entries(input.request)) {
 		if (request[key] !== expected) throw new Error("Submission collision");
@@ -306,6 +311,7 @@ async function findManualSubmissionEvidence(input: {
 	const marker = privateSubmissionMarker(period.pendingChanges);
 	if (
 		period.projectId !== input.request.projectId ||
+		(period.taskId ?? null) !== (input.request.taskId ?? null) ||
 		period.workCategoryId !== input.request.workCategoryId ||
 		(period.workLocationType ?? null) !== (input.request.workLocationType ?? null) ||
 		period.clockIn?.notes !== `Manual entry: ${input.request.reason}` ||
@@ -428,6 +434,15 @@ export type ClockActionContext = BrowserTimezoneContext & {
 	deviceInfo?: ClockChannel;
 };
 
+/**
+ * The web's own clock request: it may carry the position taken at the clock
+ * event (#826). Mobile and bots reach `clockInAs`/`clockOutAs` without one.
+ */
+export type WebClockPositionContext = {
+	/** Unvalidated wire value; a malformed position is dropped, never refused. */
+	position?: unknown;
+};
+
 export type ClockInCommandResult =
 	| { success: true; data: ClockInResult }
 	| { success: false; failure: ClockInFailure; refusal: ClockInRefusal };
@@ -474,7 +489,7 @@ export async function validateWorkCategoryAssignment(
  */
 export async function clockIn(
 	workLocationType?: WorkLocationType,
-	actionContext: ClockActionContext = {},
+	webContext: ClockActionContext & WebClockPositionContext = {},
 ): Promise<ServerActionResult<ClockInResult>> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
@@ -486,10 +501,12 @@ export async function clockIn(
 		return { success: false, error: await clockInFailureMessage("employee_not_found") };
 	}
 
+	const { position, ...actionContext } = webContext;
 	const result = await clockInAs(
 		webClockActor(session.user.id, currentEmployee),
 		workLocationType,
 		actionContext,
+		readClockPosition(position),
 	);
 	if (result.success) return { success: true, data: result.data };
 	const { refusal } = result;
@@ -560,8 +577,11 @@ export async function clockInAs(
 	actor: ClockActor,
 	workLocationType: WorkLocationType = "office",
 	actionContext: ClockActionContext = {},
+	/** The web's position; the module keeps it only for the web channel (#826). */
+	position?: ClockPosition,
 ): Promise<ClockInCommandResult> {
 	const outcome = await clocking.run({
+		...(position ? { position } : {}),
 		organizationId: actor.employee.organizationId,
 		principal: { kind: "user", userId: actor.userId },
 		subject: { employeeId: actor.employee.id },
@@ -602,7 +622,7 @@ export async function revalidateAfterClockOut(context: Record<string, unknown>) 
 export async function clockOut(
 	projectId: string | null | undefined,
 	workCategoryId: string | null | undefined,
-	actionContext: ClockOutActionContext,
+	webContext: ClockOutActionContext & WebClockPositionContext,
 ): Promise<ServerActionResult<ClockOutResult>> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
@@ -613,17 +633,24 @@ export async function clockOut(
 	if (!currentEmployee) {
 		return { success: false, error: await clockOutFailureMessage("employee_not_found") };
 	}
+	const { position, ...actionContext } = webContext;
 	const result = await clockOutAs(
 		webClockActor(session.user.id, currentEmployee),
 		projectId,
 		workCategoryId,
 		actionContext,
+		readClockPosition(position),
 	);
 	if (result.success) return { success: true, data: result.data };
 	if (result.refusal.code === "billing_required") {
 		return { success: false, error: "billing_required", code: result.refusal.reason };
 	}
-	return { success: false, error: await clockOutFailureMessage(result.refusal.code) };
+	const error = await clockOutFailureMessage(result.refusal.code);
+	// The stable task reason, as manual entry and the project change name it (#873).
+	if (result.refusal.code === "task_not_allowed") {
+		return { success: false, error, code: result.refusal.reason };
+	}
+	return { success: false, error };
 }
 
 export type ClockOutCommandResult =
@@ -663,8 +690,11 @@ export async function clockOutAs(
 	projectId: string | null | undefined,
 	workCategoryId: string | null | undefined,
 	actionContext: ClockOutActionContext,
+	/** The web's position; the module keeps it only for the web channel (#826). */
+	position?: ClockPosition,
 ): Promise<ClockOutCommandResult> {
 	const outcome = await clocking.run({
+		...(position ? { position } : {}),
 		organizationId: actor.employee.organizationId,
 		principal: { kind: "user", userId: actor.userId },
 		subject: { employeeId: actor.employee.id },
@@ -686,6 +716,7 @@ export async function clockOutAs(
 			workCategory: attributionIntent(workCategoryId),
 			// Only a real boolean chooses billability; anything else applies the default.
 			...(typeof actionContext.billable === "boolean" ? { billable: actionContext.billable } : {}),
+			...namedTaskIntent(actionContext.taskId),
 		},
 	});
 	if (outcome.outcome === "refused") {
@@ -709,7 +740,7 @@ export type AddBreakActionContext = {
 	 */
 	submissionId?: string;
 	browserTimezone?: string | null;
-};
+} & WebClockPositionContext;
 
 /** Operator detail for refusals; the employee sees only the worded code. */
 function logBreakRefusal(refusal: BreakRefusal) {
@@ -752,7 +783,10 @@ export async function addBreakToActiveSession(
 		return { success: false, error: await breakFailureMessage({ code: "employee_not_found" }) };
 	}
 
+	// The break's one fix is taken at its end: it stamps only the resumed work (#826 D1).
+	const position = readClockPosition(actionContext.position);
 	const outcome = await clocking.run({
+		...(position ? { position } : {}),
 		organizationId: currentEmployee.organizationId,
 		principal: { kind: "user", userId: session.user.id },
 		subject: { employeeId: currentEmployee.id },
@@ -787,99 +821,6 @@ export async function addBreakToActiveSession(
 		success: true,
 		data: { id: outcome.result.workPeriodId, startTime: dateFromInstant(outcome.result.start) },
 	};
-}
-
-export async function getBreakReminderStatus(): Promise<
-	ServerActionResult<{
-		needsBreakSoon: boolean;
-		uninterruptedMinutes: number;
-		maxUninterrupted: number | null;
-		minutesUntilBreakRequired: number | null;
-		breakRequirement: {
-			isRequired: boolean;
-			totalNeeded: number;
-			taken: number;
-			remaining: number;
-		} | null;
-	}>
-> {
-	const session = await getCurrentSession();
-	if (!session?.user) {
-		return { success: false, error: "Not authenticated" };
-	}
-
-	const currentEmployee = await getCurrentEmployee();
-	if (!currentEmployee) {
-		return { success: false, error: "Employee profile not found" };
-	}
-
-	const [timezone, activeWorkPeriod] = await Promise.all([
-		getUserTimezone(session.user.id),
-		getActiveWorkPeriod(currentEmployee.id),
-	]);
-	if (!activeWorkPeriod) {
-		return { success: true, data: EMPTY_BREAK_REMINDER_STATUS };
-	}
-
-	try {
-		const currentSessionMinutes = calculateDurationMinutes(
-			activeWorkPeriod.startTime,
-			new Date(),
-		);
-		const [completedMinutesToday, breaksTaken] = await Promise.all([
-			getComplianceDailyMinutes(currentEmployee.id, timezone),
-			calculateBreaksTakenToday(currentEmployee.id, timezone),
-		]);
-
-		const breakStatusEffect = Effect.gen(function* () {
-			const workPolicyService = yield* WorkPolicyService;
-			const policy = yield* workPolicyService.getEffectivePolicy(currentEmployee.id);
-
-			if (!policy?.regulation) {
-				return {
-					...EMPTY_BREAK_REMINDER_STATUS,
-					uninterruptedMinutes: currentSessionMinutes,
-				};
-			}
-
-			const breakRequirement = workPolicyService.calculateBreakRequirements({
-				regulation: policy.regulation,
-				workedMinutes: completedMinutesToday + currentSessionMinutes,
-				breaksTakenMinutes: breaksTaken,
-			});
-
-			const maxUninterrupted = policy.regulation.maxUninterruptedMinutes;
-			const minutesUntilBreakRequired = maxUninterrupted
-				? maxUninterrupted - currentSessionMinutes
-				: null;
-			const isBreakThresholdReached =
-				minutesUntilBreakRequired !== null &&
-				minutesUntilBreakRequired <= BREAK_WARNING_THRESHOLD_MINUTES;
-			const needsBreakSoon =
-				isBreakThresholdReached ||
-				(breakRequirement.isRequired && breakRequirement.remaining > 0);
-
-			return {
-				needsBreakSoon,
-				uninterruptedMinutes: currentSessionMinutes,
-				maxUninterrupted,
-				minutesUntilBreakRequired,
-				breakRequirement: breakRequirement.isRequired
-					? {
-							isRequired: true,
-							totalNeeded: breakRequirement.totalBreakNeeded,
-							taken: breakRequirement.breakTaken,
-							remaining: breakRequirement.remaining,
-						}
-					: null,
-			};
-		});
-
-		return { success: true, data: await runtime.runPromise(breakStatusEffect) };
-	} catch (error) {
-		logger.error({ error }, "Failed to get break reminder status");
-		return { success: false, error: "Failed to check break status" };
-	}
 }
 
 function adjustManualEntryForOverlaps(
@@ -1095,6 +1036,23 @@ export async function createManualTimeEntry(
 			};
 		}
 	}
+	const taskTarget = {
+		employeeId: targetEmployee.id,
+		teamId: targetEmployee.teamId,
+		organizationId: targetEmployee.organizationId,
+	};
+	const taskBooking = data.taskId
+		? { projectId: data.projectId || null, taskId: data.taskId }
+		: null;
+	const taskRefusal = (reason: ProjectTaskIneligibility) => ({
+		success: false as const,
+		error: PROJECT_TASK_INELIGIBILITY_MESSAGES[reason],
+		code: reason,
+	});
+	if (taskBooking) {
+		const taskIneligibility = await projectTaskIneligibility(taskTarget, taskBooking);
+		if (taskIneligibility) return taskRefusal(taskIneligibility);
+	}
 	if (data.workCategoryId) {
 		const categoryValidation = await validateWorkCategoryAssignment(
 			targetEmployee.id,
@@ -1245,6 +1203,14 @@ export async function createManualTimeEntry(
 				if (!(error instanceof BillableWorkRefusedError)) throw error;
 				return { disposition: "billable_refused" as const, message: error.message };
 			}
+			// The task is re-checked under its row lock, so it cannot be marked done or
+			// deleted between the check and this booking's commit (#873).
+			if (taskBooking) {
+				const reason = await projectTaskIneligibility(taskTarget, taskBooking, tx, {
+					lock: "share",
+				});
+				if (reason) return { disposition: "task_refused" as const, reason };
+			}
 			const clockInEntry = await createTimeEntry(
 				{
 					employeeId: targetEmployee.id,
@@ -1296,6 +1262,7 @@ export async function createManualTimeEntry(
 						workLocationType: data.workLocationType ?? null,
 						projectId: data.projectId || null,
 						isBillable,
+						taskId: data.taskId || null,
 						computationMetadata: manualSubmissionMetadata({
 							submissionId,
 							request: requestEvidence,
@@ -1318,6 +1285,7 @@ export async function createManualTimeEntry(
 				durationMinutes,
 				projectId: data.projectId || null,
 				isBillable,
+				taskId: data.taskId || null,
 				workCategoryId: data.workCategoryId || null,
 				workLocationType: data.workLocationType ?? null,
 				canonicalRecordId: canonicalRecord.id,
@@ -1377,6 +1345,7 @@ export async function createManualTimeEntry(
 				code: MANUAL_ENTRY_REFRESH_REQUIRED,
 			};
 		}
+		if (committed.disposition === "task_refused") return taskRefusal(committed.reason);
 		const {
 			period: createdWorkPeriod,
 			approvalSubmission,

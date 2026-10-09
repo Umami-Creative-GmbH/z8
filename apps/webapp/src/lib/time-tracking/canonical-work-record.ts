@@ -26,6 +26,8 @@ export const canonicalWorkRecordClient = {
 			projectId?: string | null;
 			/** Carried on the project allocation (#900); ignored without a project. */
 			isBillable?: boolean;
+			/** A task of `projectId` (#873); only recorded with the project. */
+			taskId?: string | null;
 			computationMetadata?: string | null;
 			origin: "clock" | "manual";
 		},
@@ -65,6 +67,7 @@ export const canonicalWorkRecordClient = {
 					recordId: record.id,
 					allocationKind: "project",
 					projectId: input.projectId,
+					taskId: input.taskId ?? null,
 					weightPercent: 100,
 					isBillable: input.isBillable ?? false,
 				});

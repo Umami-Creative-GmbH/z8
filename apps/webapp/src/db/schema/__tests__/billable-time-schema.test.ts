@@ -73,9 +73,9 @@ describe("billable rate schema (#898)", () => {
 		for (const level of RATE_LEVELS) expect(sql).toContain(`'${level}'`);
 	});
 
-	it("declares one half-open no-overlap constraint per rate level in migration 0143", () => {
+	it("declares one half-open no-overlap constraint per rate level in migration 0160", () => {
 		const migration = readFileSync(
-			new URL("../../../../drizzle/0143_billable_rates.sql", import.meta.url),
+			new URL("../../../../drizzle/0160_billable_rates.sql", import.meta.url),
 			"utf8",
 		);
 		for (const level of RATE_LEVELS) {
@@ -107,9 +107,9 @@ describe("cost rate schema (#899)", () => {
 		);
 	});
 
-	it("declares a half-open no-overlap constraint per employee in migration 0144", () => {
+	it("declares a half-open no-overlap constraint per employee in migration 0161", () => {
 		const migration = readFileSync(
-			new URL("../../../../drizzle/0144_cost_rates.sql", import.meta.url),
+			new URL("../../../../drizzle/0161_cost_rates.sql", import.meta.url),
 			"utf8",
 		);
 		expect(migration).toMatch(
@@ -166,7 +166,7 @@ describe("accounting connection schema (#903)", () => {
 		);
 		expect(index?.config.unique).toBe(true);
 		const migration = readFileSync(
-			new URL("../../../../drizzle/0146_accounting_connection.sql", import.meta.url),
+			new URL("../../../../drizzle/0163_accounting_connection.sql", import.meta.url),
 			"utf8",
 		);
 		expect(migration).toContain(
@@ -178,7 +178,7 @@ describe("accounting connection schema (#903)", () => {
 describe("hand-off schema (#903)", () => {
 	const migration = () =>
 		readFileSync(
-			new URL("../../../../drizzle/0149_billable_hand_off.sql", import.meta.url),
+			new URL("../../../../drizzle/0166_billable_hand_off.sql", import.meta.url),
 			"utf8",
 		);
 

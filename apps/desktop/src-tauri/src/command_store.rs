@@ -277,7 +277,7 @@ impl CommandStore {
             transaction.execute_batch("PRAGMA user_version = 1")?;
         }
         // Companion-only state is additive; older version-1 readers ignore it.
-        transaction.execute_batch("CREATE TABLE IF NOT EXISTS companion_break (scope TEXT PRIMARY KEY, operation_id TEXT NOT NULL)")?;
+        transaction.execute_batch("CREATE TABLE IF NOT EXISTS companion_break (scope TEXT PRIMARY KEY, operation_id TEXT NOT NULL); CREATE TABLE IF NOT EXISTS companion_online_break (scope TEXT PRIMARY KEY, entry_id TEXT NOT NULL)")?;
         transaction.execute_batch("CREATE TABLE IF NOT EXISTS desktop_snapshot (scope TEXT PRIMARY KEY, body TEXT NOT NULL)")?;
         transaction.commit()?;
         Ok(Self { conn })
@@ -432,12 +432,29 @@ impl CommandStore {
         Ok(Some(body))
     }
     pub fn on_break(&self, endpoint: &str, context: &CommandContext) -> Result<bool> {
-        Ok(self.conn.query_row("SELECT EXISTS(SELECT 1 FROM companion_break b JOIN clock_command c ON c.operation_id = b.operation_id WHERE b.scope = ? AND c.state IN ('pending', 'stalled', 'committed'))", [break_scope(endpoint, context)], |row| row.get(0))?)
+        Ok(self.conn.query_row("SELECT EXISTS(SELECT 1 FROM companion_break b JOIN clock_command c ON c.operation_id = b.operation_id WHERE b.scope = ?1 AND c.state IN ('pending', 'stalled', 'committed') UNION ALL SELECT 1 FROM companion_online_break WHERE scope = ?1)", [break_scope(endpoint, context)], |row| row.get(0))?)
+    }
+
+    pub fn begin_online_break(
+        &self,
+        endpoint: &str,
+        context: &CommandContext,
+        entry_id: &str,
+    ) -> Result<()> {
+        self.conn.execute(
+            "INSERT OR REPLACE INTO companion_online_break(scope, entry_id) VALUES (?, ?)",
+            params![break_scope(endpoint, context), entry_id],
+        )?;
+        Ok(())
     }
 
     pub fn end_break(&self, endpoint: &str, context: &CommandContext) -> Result<()> {
         self.conn.execute(
             "DELETE FROM companion_break WHERE scope = ?",
+            [break_scope(endpoint, context)],
+        )?;
+        self.conn.execute(
+            "DELETE FROM companion_online_break WHERE scope = ?",
             [break_scope(endpoint, context)],
         )?;
         Ok(())

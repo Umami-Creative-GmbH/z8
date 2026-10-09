@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	QueryClient,
 	QueryClientProvider,
@@ -41,6 +41,13 @@ const queryClient = new QueryClient({
 function AppContent() {
 	const auth = useAuth(),
 		preferences = useSettings();
+	const wasAuthenticated = useRef(auth.isAuthenticated);
+	const { setIsSettingsOpen } = preferences;
+	useEffect(() => {
+		if (wasAuthenticated.current && !auth.isAuthenticated)
+			setIsSettingsOpen(false);
+		wasAuthenticated.current = auth.isAuthenticated;
+	}, [auth.isAuthenticated, setIsSettingsOpen]);
 	const organizations = useOrganizations({
 		isAuthenticated: auth.isAuthenticated,
 		sessionVersion: auth.sessionVersion,
@@ -122,7 +129,7 @@ function Companion({
 		location = useWorkLocation(scope);
 	const [processingIdle, setProcessingIdle] = useState(false),
 		[endingDay, setEndingDay] = useState(false);
-	const attribution = useClosingAttribution();
+	const attribution = useClosingAttribution(context);
 	const timezone = useClockTimezone(context?.timezone);
 	const busy =
 		clock.isClockingIn ||
@@ -190,6 +197,7 @@ function Companion({
 						busy={busy}
 						offline={clock.isError}
 						onOpenSettings={() => setIsSettingsOpen(true)}
+						onOpenDashboard={() => void openZ8("dashboard")}
 					/>
 					<main className="app-main">
 						{organizations.error && (
@@ -197,7 +205,6 @@ function Companion({
 								{t("Organization could not be loaded")}: {organizations.error}
 							</p>
 						)}
-						<ServerSetupNotice journal={clock.journal} />
 						<UpdateNotice onOpen={() => setIsSettingsOpen(true)} />
 						{contextError && (
 							<p role="alert" className="login-error">
@@ -234,7 +241,7 @@ function Companion({
 							onClockOut={async () => {
 								await timezone.run(() =>
 									present(
-										() => clock.clockOut(attribution.value()),
+										() => clock.clockOut(attribution.value(context)),
 										"Clock out",
 									),
 								);
@@ -242,7 +249,7 @@ function Companion({
 							onStartBreak={async () => {
 								await timezone.run(() =>
 									present(
-										() => clock.startBreak(attribution.value()),
+										() => clock.startBreak(attribution.value(context)),
 										"On break",
 									),
 								);
@@ -258,6 +265,7 @@ function Companion({
 								disabled={busy}
 							/>
 						)}
+						<ServerSetupNotice journal={clock.journal} />
 						<ClockRecoveryNotice
 							journal={clock.journal}
 							journalError={clock.journalError}
@@ -269,24 +277,6 @@ function Companion({
 							onArchive={clock.archiveSavedCommand}
 							isUpdating={clock.isUpdatingSavedCommand}
 						/>
-						<div className="webapp-links">
-							<button
-								type="button"
-								className="clock-recovery-action"
-								onClick={() => openZ8("time")}
-								disabled={busy}
-							>
-								{t("Time entries and corrections")}
-							</button>
-							<button
-								type="button"
-								className="clock-recovery-action"
-								onClick={() => openZ8("reports")}
-								disabled={busy}
-							>
-								{t("Reports")}
-							</button>
-						</div>
 					</main>
 					<CompanionFooter
 						onBreak={onBreak}

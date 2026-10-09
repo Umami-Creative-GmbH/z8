@@ -155,6 +155,17 @@ export const queryKeys = {
 			] as const,
 	},
 
+	// Personnel file (#865)
+	personnelFile: {
+		all: ["personnel-file"] as const,
+		employee: (employeeId: string, category: string | null) =>
+			["personnel-file", "employee", employeeId, category] as const,
+		employeeAll: (employeeId: string) => ["personnel-file", "employee", employeeId] as const,
+		myDocuments: () => ["personnel-file", "my-documents"] as const,
+		officerGrants: () => ["personnel-file", "settings", "officer-grants"] as const,
+		payslipBatch: (batchId: string) => ["personnel-file", "payslip-batch", batchId] as const,
+	},
+
 	// Employee clock statuses
 	employeeClockStatuses: {
 		all: ["employee-clock-statuses"] as const,
@@ -196,6 +207,13 @@ export const queryKeys = {
 	timeClock: {
 		status: () => ["time-clock", "status"] as const,
 		breakStatus: () => ["time-clock", "break-status"] as const,
+		/** The signed-in employee's own position capture and consent (#826). */
+		positionCapture: () => ["time-clock", "position-capture"] as const,
+	},
+
+	// Position stamps on a work period's detail (#831); never the positions themselves
+	positionStamps: {
+		viewerAccess: () => ["position-stamps", "viewer-access"] as const,
 	},
 
 	// Manual time entry form context (target zone and eligible choices)
@@ -330,6 +348,16 @@ export const queryKeys = {
 		assignable: (orgId: string) => ["projects", "assignable", orgId] as const,
 		teamSelection: (orgId: string) => ["projects", "teamSelection", orgId] as const,
 		employeeSelection: (orgId: string) => ["projects", "employeeSelection", orgId] as const,
+		tasks: (projectId: string) => ["projects", "tasks", projectId] as const,
+		/** Task choices for clocking out another employee's running work (#874). */
+		onBehalfClockOutTasks: (workPeriodId: string) =>
+			["projects", "onBehalfClockOutTasks", workPeriodId] as const,
+		templates: (orgId: string) => ["projects", "templates", orgId] as const,
+		templateDetail: (templateId: string) => ["projects", "templateDetail", templateId] as const,
+		// Under `templates`/`templateDetail`, so template changes refresh them too.
+		templateChoices: (orgId: string) => ["projects", "templates", orgId, "choices"] as const,
+		templatePreview: (templateId: string) =>
+			["projects", "templateDetail", templateId, "preview"] as const,
 	},
 
 	// Billable Time (#768; not the Z8 subscription)

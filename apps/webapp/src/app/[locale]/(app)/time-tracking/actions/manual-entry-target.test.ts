@@ -130,6 +130,11 @@ describe("getManualEntryTargetContextForEmployee", () => {
 				],
 			]),
 			hoursByProjectId: new Map([["project-b", 2.5]]),
+			// Open tasks per project (#874); a project without open tasks has an empty list.
+			tasksByProjectId: new Map([
+				["project-a", []],
+				["project-b", [{ id: "task-1", name: "Design" }]],
+			]),
 		});
 		mocks.getAvailableCategoriesForEmployee.mockResolvedValue([
 			{
@@ -176,6 +181,7 @@ describe("getManualEntryTargetContextForEmployee", () => {
 						totalHoursBooked: 0,
 						hasCustomer: false,
 						billableDefault: false,
+						tasks: [],
 					},
 					{
 						id: "project-b",
@@ -187,6 +193,7 @@ describe("getManualEntryTargetContextForEmployee", () => {
 						totalHoursBooked: 2.5,
 						hasCustomer: true,
 						billableDefault: true,
+						tasks: [{ id: "task-1", name: "Design" }],
 					},
 				],
 				categories: [

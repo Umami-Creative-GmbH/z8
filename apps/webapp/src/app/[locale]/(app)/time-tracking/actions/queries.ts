@@ -10,8 +10,6 @@ import {
 	ChangePolicyService,
 	type EditCapability,
 } from "@/lib/effect/services/change-policy.service";
-import { systemClock } from "@/lib/datetime/temporal-core";
-import { readComplianceTotals } from "@/lib/time-tracking/compliance-totals";
 import type { TimeSummary } from "@/lib/time-tracking/types";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import {
@@ -116,24 +114,6 @@ export async function getTimeSummary(
 	);
 }
 
-/**
- * Today's minutes on the compliance check's day, for break reminders: each
- * work period counted whole on the day it started, live work left out.
- */
-export async function getComplianceDailyMinutes(
-	employeeId: string,
-	timezone: string,
-): Promise<number> {
-	const currentEmployee = await getCurrentEmployee();
-	if (!currentEmployee || currentEmployee.id !== employeeId) return 0;
-	const totals = await readComplianceTotals({
-		organizationId: currentEmployee.organizationId,
-		employeeId: currentEmployee.id,
-		workStart: systemClock.nowInstant(),
-		timezone,
-	});
-	return totals.dailyMinutes;
-}
 export async function getAssignedProjects(): Promise<
 	ServerActionResult<AssignedProject[]>
 > {
@@ -143,7 +123,7 @@ export async function getAssignedProjects(): Promise<
 	}
 
 	try {
-		const { projectsById, hoursByProjectId } =
+		const { projectsById, hoursByProjectId, tasksByProjectId } =
 			await getAssignedProjectsWithHours(
 				currentEmployee.id,
 				currentEmployee.organizationId,
@@ -161,6 +141,7 @@ export async function getAssignedProjects(): Promise<
 				totalHoursBooked: hoursByProjectId.get(project.id) ?? 0,
 				hasCustomer: project.customerId !== null,
 				billableDefault: project.customerId !== null && project.billableDefault,
+				tasks: tasksByProjectId.get(project.id) ?? [],
 			}))
 			.sort((left, right) => left.name.localeCompare(right.name));
 

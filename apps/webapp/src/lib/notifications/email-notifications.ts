@@ -36,12 +36,23 @@ interface EmailNotificationParams {
  * Types sent as a plain email in the recipient's language, linking into the
  * app only below their prefix; anything else links to the app's start page.
  */
-const LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES: Partial<Record<NotificationType, string>> = {
+const LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES: Partial<
+	Record<NotificationType, string | readonly string[]>
+> = {
 	automatic_clock_out: "/calendar/",
 	travel_expense_reimbursed: "/travel-expenses/",
 	travel_expense_partially_reimbursed: "/travel-expenses/",
 	travel_expense_recovery_recorded: "/travel-expenses/",
 	travel_expense_ready_for_reimbursement: "/travel-expenses/",
+	missed_clock_in_reminder: "/time-tracking",
+	forgotten_clock_out_reminder: "/time-tracking",
+	break_due_reminder: "/time-tracking",
+	personnel_file_document_shared: "/my-documents",
+	personnel_file_employee_upload: "/personnel-files/",
+	// Officers get the employee's personnel file, the employee My documents (#869).
+	personnel_file_expiry_upcoming: ["/personnel-files/", "/my-documents"],
+	personnel_file_expired_today: ["/personnel-files/", "/my-documents"],
+	personnel_file_due_for_deletion: "/personnel-files/",
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -189,9 +200,13 @@ export async function sendEmailNotification(
 			const localized = organizationId
 				? await localizeOutboundNotification({ ...params, organizationId })
 				: params;
-			const actionUrl = params.actionUrl?.startsWith(linkPrefix)
-				? new URL(params.actionUrl, appUrl).toString()
-				: appUrl;
+			const linkPrefixes: readonly string[] =
+				typeof linkPrefix === "string" ? [linkPrefix] : linkPrefix;
+			const target = params.actionUrl;
+			const actionUrl =
+				target && linkPrefixes.some((prefix) => target.startsWith(prefix))
+					? new URL(target, appUrl).toString()
+					: appUrl;
 			const result = await sendNotificationEmail({
 				to: email,
 				subject: localized.title,

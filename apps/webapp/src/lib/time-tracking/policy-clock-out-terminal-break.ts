@@ -40,6 +40,7 @@ import { calculateHash } from "./blockchain";
 import { calculateBreakDeficit } from "./break-policy-calculation";
 import type { PolicyClockOutBreakSnapshot } from "./policy-clock-out-break-snapshot";
 import type { PolicyClockOutSurchargeSnapshot } from "./policy-clock-out-surcharge-snapshot";
+import { recordedTaskId } from "./task-attribution";
 import {
 	admitTimeEntryAppend,
 	type TimeEntryAppend,
@@ -73,6 +74,8 @@ export interface PolicyClockOutTerminalPeriodSnapshot {
 	endTime: Date;
 	durationMinutes: number;
 	projectId: string | null;
+	/** The project's task (#873); absent reads as none. */
+	taskId?: string | null;
 	workCategoryId: string | null;
 	workLocationType: WorkLocationType;
 }
@@ -132,6 +135,8 @@ export type PolicyClockOutBreakSegment = {
 	endUtcOffsetMinutes: number;
 	attribution: {
 		projectId: string | null;
+		/** Present only when the work is booked to a task (#873). */
+		taskId?: string;
 		/** Absent on receipts committed before billability (#900), which were non-billable. */
 		isBillable?: boolean;
 		workCategoryId: string | null;
@@ -270,13 +275,9 @@ function exactWrite(rowsValue: unknown[], expectedId: string): void {
 	}
 }
 
-function validateAllocation(value: unknown): {
-	allocationKind: "project" | "cost_center";
-	projectId: string | null;
-	costCenterId: string | null;
-	weightPercent: number;
-	isBillable: boolean;
-} {
+type ValidatedAllocation = AllocationEvidence<"project" | "cost_center"> & { isBillable: boolean };
+
+function validateAllocation(value: unknown): ValidatedAllocation {
 	const allocation = object(value);
 	if (
 		(allocation.allocationKind !== "project" &&
@@ -285,6 +286,8 @@ function validateAllocation(value: unknown): {
 			typeof allocation.projectId !== "string") ||
 		(allocation.costCenterId !== null &&
 			typeof allocation.costCenterId !== "string") ||
+		(allocation.taskId != null &&
+			(typeof allocation.taskId !== "string" || allocation.allocationKind !== "project")) ||
 		!Number.isSafeInteger(allocation.weightPercent) ||
 		(allocation.weightPercent as number) <= 0 ||
 		(allocation.allocationKind === "project" &&
@@ -298,7 +301,9 @@ function validateAllocation(value: unknown): {
 	) {
 		return fail();
 	}
-	return allocation as ReturnType<typeof validateAllocation>;
+	// The task is evidence only when there is one, keeping earlier receipts' shape.
+	const { taskId, ...rest } = allocation;
+	return (typeof taskId === "string" ? { ...rest, taskId } : rest) as ValidatedAllocation;
 }
 
 function validateLockedSource(
@@ -330,6 +335,7 @@ function validateLockedSource(
 		source.projectId !== period.projectId ||
 		typeof source.isBillable !== "boolean" ||
 		(source.isBillable && source.projectId === null) ||
+		(source.taskId ?? null) !== (period.taskId ?? null) ||
 		source.workCategoryId !== period.workCategoryId ||
 		source.workLocationType !== period.workLocationType ||
 		source.clockInType !== "clock_in" ||
@@ -421,6 +427,7 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 			period.duration_minutes as "durationMinutes",
 			period.project_id as "projectId",
 			period.is_billable as "isBillable",
+			period.task_id as "taskId",
 			period.work_category_id as "workCategoryId",
 			period.work_location_type as "workLocationType",
 			clock_in.type as "clockInType",
@@ -446,6 +453,7 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 				select json_agg(json_build_object(
 					'allocationKind', allocation.allocation_kind,
 					'projectId', allocation.project_id,
+					'taskId', allocation.task_id,
 					'costCenterId', allocation.cost_center_id,
 					'weightPercent', allocation.weight_percent,
 					'isBillable', allocation.is_billable
@@ -898,10 +906,10 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 		const insertedAllocation = await db.execute(sql`
 			insert into time_record_allocation (
 				id, organization_id, record_id, allocation_kind,
-				project_id, cost_center_id, weight_percent, is_billable, created_at
+				project_id, task_id, cost_center_id, weight_percent, is_billable, created_at
 			) values (
 				${allocationId}::uuid, ${input.organizationId}, ${secondRecordId}::uuid,
-				${allocation.allocationKind}, ${allocation.projectId}::uuid,
+				${allocation.allocationKind}, ${allocation.projectId}::uuid, ${allocation.taskId ?? null}::uuid,
 				${allocation.costCenterId}::uuid, ${allocation.weightPercent},
 				${allocation.isBillable}, ${adjustedAt}
 			)
@@ -913,7 +921,7 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 	const insertedPeriod = await db.execute(sql`
 		insert into work_period (
 			id, organization_id, employee_id, clock_in_id, clock_out_id,
-			project_id, work_category_id, work_location_type,
+			project_id, task_id, work_category_id, work_location_type,
 			start_time, end_time, duration_minutes, is_active,
 			approval_status, pending_changes, was_auto_adjusted,
 			auto_adjustment_reason, auto_adjusted_at,
@@ -923,7 +931,7 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 		) values (
 			${secondPeriodId}::uuid, ${input.organizationId}, ${input.employeeId}::uuid,
 			${syntheticClockInId}::uuid, ${source.clockOutId}::uuid,
-			${source.projectId}::uuid, ${source.workCategoryId}::uuid,
+			${source.projectId}::uuid, ${source.taskId ?? null}::uuid, ${source.workCategoryId}::uuid,
 			${source.workLocationType}, ${breakEndDate}, ${source.endTime},
 			${secondDurationMinutes}, false, 'approved', ${null}, true,
 			${adjustmentReason}, ${adjustedAt}, ${null}, ${null},
@@ -939,6 +947,7 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 		const allocations = source.allocations.map(validateAllocation);
 		const attribution = {
 			projectId: source.projectId,
+			...recordedTaskId(source.taskId),
 			isBillable: source.isBillable,
 			workCategoryId: source.workCategoryId,
 			workLocationType: source.workLocationType,

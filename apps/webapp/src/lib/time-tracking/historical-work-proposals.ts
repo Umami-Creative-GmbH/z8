@@ -887,6 +887,8 @@ async function applyFieldRepair(
 				break;
 			case "project_id":
 				periodSet.projectId = change.after as string;
+				// A task never outlives its project (#873).
+				periodSet.taskId = null;
 				periodGuards.push(equalsBefore(workPeriod.projectId, change.before));
 				// The period takes the canonical allocation's billability for that
 				// project, so both representations agree afterwards (#900).

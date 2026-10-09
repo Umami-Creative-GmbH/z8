@@ -1,7 +1,7 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { and, eq, inArray, isNotNull, type SQL, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, lte, type SQL, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import { customer, employee, project, workPeriod } from "@/db/schema";
@@ -20,6 +20,7 @@ import {
 } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
+import { listProjectTasks } from "@/lib/projects/project-tasks";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import {
 	buildCustomerBillableReport,
@@ -40,6 +41,7 @@ import {
 	reportDayRangeFromDays,
 	reportedWorkDay,
 } from "@/lib/reports/project-report-work";
+import { buildProjectTaskBreakdown } from "@/lib/reports/project-task-breakdown";
 import type {
 	CustomerBillableReport,
 	ProjectDetailedReport,
@@ -411,6 +413,41 @@ export async function getProjectDetailedReport(
 					]),
 				);
 
+				// The project's tasks, and every minute ever booked to each task, for the
+				// "By task" section's estimate progress.
+				const { tasks, bookedMinutesToDate } = yield* dbService.query(
+					"getProjectTasksForReport",
+					async () => {
+						const scope = { organizationId, projectId };
+						const [tasks, bookedRows] = await Promise.all([
+							listProjectTasks(scope, {}, dbService.db),
+							dbService.db
+								.select({
+									taskId: workPeriod.taskId,
+									minutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`.mapWith(
+										Number,
+									),
+								})
+								.from(workPeriod)
+								.where(
+									and(
+										eq(workPeriod.projectId, projectId),
+										eq(workPeriod.organizationId, organizationId),
+										isNotNull(workPeriod.taskId),
+										// Hours booked count completed work only (#794).
+										completedWorkPeriodCondition(),
+									),
+								)
+								.groupBy(workPeriod.taskId),
+						]);
+						const bookedMinutesToDate = new Map<string, number>();
+						for (const row of bookedRows) {
+							if (row.taskId) bookedMinutesToDate.set(row.taskId, row.minutes);
+						}
+						return { tasks, bookedMinutesToDate };
+					},
+				);
+
 				// Calculate summary
 				const totalMinutes = work.reduce((sum, item) => sum + item.durationMinutes, 0);
 				const totalHours = totalMinutes / 60;
@@ -508,6 +545,11 @@ export async function getProjectDetailedReport(
 					teamBreakdown,
 					employeeBreakdown,
 					...(pricing ? { billableTime: pricing.context } : {}),
+					taskBreakdown: buildProjectTaskBreakdown({
+						periods: work,
+						tasks,
+						bookedMinutesToDate,
+					}),
 				};
 
 				span.setAttribute("report.total_hours", totalHours);

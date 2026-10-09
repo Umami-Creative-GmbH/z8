@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
+import type { PositionCaptureReview } from "@/lib/works-council/position-capture-review";
 
 const mockState = vi.hoisted(() => ({
 	resolvedHeaders: new Headers(),
@@ -9,6 +10,7 @@ const mockState = vi.hoisted(() => ({
 	getAbility: vi.fn(),
 	loadWorksCouncilSettings: vi.fn(),
 	buildWorksCouncilPortalModel: vi.fn(),
+	loadWorksCouncilPositionCaptureReview: vi.fn(),
 	findOrganization: vi.fn(),
 	insert: vi.fn(),
 	insertValues: vi.fn(async () => undefined),
@@ -36,6 +38,10 @@ vi.mock("@/lib/works-council/settings", () => ({
 
 vi.mock("@/lib/works-council/review-data", () => ({
 	buildWorksCouncilPortalModel: mockState.buildWorksCouncilPortalModel,
+}));
+
+vi.mock("@/lib/works-council/position-capture-review-data", () => ({
+	loadWorksCouncilPositionCaptureReview: mockState.loadWorksCouncilPositionCaptureReview,
 }));
 
 vi.mock("@/db", () => ({
@@ -70,6 +76,33 @@ const enabledSettings = {
 	minimumAggregationThreshold: 5,
 	visibleTeamIds: ["team-1"],
 	visibleLocationIds: ["location-1"],
+};
+
+const emptyPositionCaptureReview: PositionCaptureReview = {
+	enabled: false,
+	retentionDays: 90,
+	currentNotice: null,
+	noticeHistory: [],
+	organizationAssignment: null,
+	teamAssignments: [],
+	employeeAssignments: { state: "counted", switchedOn: 0, switchedOff: 0 },
+	consentCounts: { state: "insufficient_data", switchedOnEmployees: 0 },
+	accessLog: [],
+};
+
+const readyModel = {
+	state: "ready",
+	dashboard: {
+		overtimeMinutes: 0,
+		breakRestRiskCount: 0,
+		schedulePublicationCount: 0,
+		scheduleChangeCount: 0,
+		complianceFindingCount: 0,
+		absenceCoveragePressureCount: 0,
+		policyChangeCount: 0,
+	},
+	changeLog: [],
+	scheduleReview: [],
 };
 
 function createPrincipal(role: "owner" | "admin" | "member"): PrincipalContext {
@@ -111,6 +144,40 @@ describe("POST /works-council/export", () => {
 		mockState.findOrganization.mockResolvedValue({ worksCouncilEnabled: true });
 		mockState.insert.mockReturnValue({ values: mockState.insertValues });
 		mockState.insertValues.mockResolvedValue(undefined);
+		mockState.loadWorksCouncilPositionCaptureReview.mockResolvedValue(emptyPositionCaptureReview);
+	});
+
+	it("appends the position capture section, loaded for the active organization", async () => {
+		setupAuthenticatedRequest();
+		mockState.loadWorksCouncilSettings.mockResolvedValue(enabledSettings);
+		mockState.buildWorksCouncilPortalModel.mockResolvedValue(readyModel);
+		mockState.loadWorksCouncilPositionCaptureReview.mockResolvedValue({
+			...emptyPositionCaptureReview,
+			enabled: true,
+			accessLog: [
+				{
+					id: "log-1",
+					kind: "work_period_detail",
+					accessedAt: "2026-05-03T09:00:00Z",
+					viewer: { kind: "pseudonym", ref: "A" },
+					employees: { state: "listed", identities: [{ kind: "pseudonym", ref: "B" }] },
+					workPeriodCount: 1,
+				},
+			],
+		});
+
+		const response = await POST(createRequest());
+
+		expect(response.status).toBe(200);
+		expect(mockState.loadWorksCouncilPositionCaptureReview).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			settings: enabledSettings,
+		});
+		const body = await response.text();
+		expect(body).toContain('"Position capture enabled","yes"');
+		expect(body).toContain(
+			'"2026-05-03T09:00:00Z","work_period_detail","Viewer A","Employee B","1"',
+		);
 	});
 
 	it("returns 403 before loading settings when the organization Works Council feature is disabled", async () => {

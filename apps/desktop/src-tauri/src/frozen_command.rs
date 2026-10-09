@@ -228,18 +228,36 @@ pub enum AttributionIntent {
 pub struct ClosingAttribution {
     pub project: AttributionIntent,
     pub work_category: AttributionIntent,
+    /// Absent unless the user picked a task (#882). An absent task follows the
+    /// project on the server; `null` is never valid, so it is refused here.
+    #[serde(
+        default,
+        deserialize_with = "present_task",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub task: Option<AttributionIntent>,
 }
+
+fn present_task<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<AttributionIntent>, D::Error> {
+    AttributionIntent::deserialize(deserializer).map(Some)
+}
+
+/// Freezes the closing attribution. The `task` key is omitted when no task was
+/// chosen, so such a command keeps exactly its pre-task bytes and older servers
+/// (which refuse unknown keys) still accept it.
 pub fn freeze_attributed_clock_out(
     frame: CommandFrame,
     target: ClockTarget,
     attribution: &ClosingAttribution,
 ) -> FrozenCommand {
-    freeze(
-        frame,
-        CommandKind::ClockOut,
-        serde_json::json!({
-            "target": target_json(target), "project": attribution.project,
-            "workCategory": attribution.work_category,
-        }),
-    )
+    let mut fields = serde_json::json!({
+        "target": target_json(target), "project": attribution.project,
+        "workCategory": attribution.work_category,
+    });
+    if let Some(task) = &attribution.task {
+        fields["task"] = serde_json::json!(task);
+    }
+    freeze(frame, CommandKind::ClockOut, fields)
 }

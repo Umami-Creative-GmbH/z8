@@ -121,3 +121,6 @@ mod attribution_tests;
 mod native_qa;
 #[cfg(test)]
 mod pilot_tests;
+
+#[cfg(test)]
+mod online_tests;

@@ -73,15 +73,17 @@ export function assertBillableAllowed(project: ProjectBillability | null): void 
 }
 
 /**
- * Whether the canonical record's allocations mirror the legacy period's project
- * and billability: exactly one whole project allocation carrying the period's
- * billability, or no project allocation for work without a project.
+ * Whether the canonical record's allocations mirror the legacy period's project,
+ * task (#873) and billability: exactly one whole project allocation carrying the
+ * period's task and billability, or no project allocation for work without a project.
+ * An absent task reads as no task.
  */
 export function projectAllocationAgrees(
-	period: { projectId: string | null; isBillable: boolean },
+	period: { projectId: string | null; taskId?: string | null; isBillable: boolean },
 	allocations: readonly {
 		allocationKind: string;
 		projectId: string | null;
+		taskId?: string | null;
 		weightPercent: number;
 		isBillable: boolean;
 	}[],
@@ -94,6 +96,7 @@ export function projectAllocationAgrees(
 	return (
 		projectAllocations.length === 1 &&
 		allocation?.projectId === period.projectId &&
+		(allocation.taskId ?? null) === (period.taskId ?? null) &&
 		allocation.weightPercent === 100 &&
 		allocation.isBillable === period.isBillable
 	);

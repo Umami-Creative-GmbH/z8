@@ -338,6 +338,30 @@ describe("canonical backfill period normalization", () => {
 		]);
 	});
 
+	it("keeps the task of a legacy period on its project allocation", () => {
+		const payload = buildCanonicalBackfillPayload({
+			organizationId: "org-1",
+			actorId: "actor-1",
+			legacy: {
+				workPeriods: [{ ...closedWork, taskId: "task-1" }],
+				absenceEntries: [],
+				approvalRequests: [],
+				absenceCategories: [],
+			},
+		});
+
+		expect(payload.timeRecordAllocation).toEqual([
+			{
+				organizationId: "org-1",
+				recordId: "work-1",
+				allocationKind: "project",
+				projectId: "project-1",
+				taskId: "task-1",
+				weightPercent: 100,
+			},
+		]);
+	});
+
 	it("builds updates that populate absence_entry.organization_id linkage during cutover", () => {
 		const payload = buildCanonicalBackfillPayload({
 			organizationId: "org-1",

@@ -23,12 +23,14 @@ vi.mock("@/lib/auth/app-auth-code", () => ({
 	createAppAuthCode: mockState.createAppAuthCode,
 }));
 
+vi.mock("@/env", () => ({ env: { APP_URL: "https://app.example.com" } }));
 const { GET } = await import("./route");
 
 function createRequest(url: string): NextRequest {
 	return {
 		url,
 		nextUrl: new URL(url),
+		headers: new Headers(),
 	} as unknown as NextRequest;
 }
 
@@ -62,17 +64,23 @@ describe("GET /api/auth/desktop-login", () => {
 			userId: "user-1",
 			codeChallenge: "CODE-CHALLENGE",
 		});
-		expect(response.headers.get("location")).toBe("z8://auth/callback?code=DESKTOP-CODE");
+		expect(response.headers.get("location")).toBe(
+			"z8://auth/callback?code=DESKTOP-CODE",
+		);
 	});
 
 	it("requires a code challenge before minting a desktop auth code", async () => {
 		const response = await GET(
-			createRequest("https://app.example.com/api/auth/desktop-login?redirect=z8://auth/callback"),
+			createRequest(
+				"https://app.example.com/api/auth/desktop-login?redirect=z8://auth/callback",
+			),
 		);
 
 		expect(response.status).toBe(400);
 		expect(mockState.createAppAuthCode).not.toHaveBeenCalled();
-		expect(await response.json()).toEqual({ error: "Missing challenge parameter" });
+		expect(await response.json()).toEqual({
+			error: "Missing challenge parameter",
+		});
 	});
 
 	it("allows authenticated users with a legacy disabled desktop flag", async () => {
@@ -100,7 +108,9 @@ describe("GET /api/auth/desktop-login", () => {
 			userId: "user-2",
 			codeChallenge: "CODE-CHALLENGE",
 		});
-		expect(response.headers.get("location")).toBe("z8://auth/callback?code=DESKTOP-CODE");
+		expect(response.headers.get("location")).toBe(
+			"z8://auth/callback?code=DESKTOP-CODE",
+		);
 	});
 
 	it("rejects non-z8 redirect schemes", async () => {
@@ -118,7 +128,9 @@ describe("GET /api/auth/desktop-login", () => {
 
 	it("rejects desktop deep links outside the expected auth callback", async () => {
 		const response = await GET(
-			createRequest("https://app.example.com/api/auth/desktop-login?redirect=z8://evil/callback"),
+			createRequest(
+				"https://app.example.com/api/auth/desktop-login?redirect=z8://evil/callback",
+			),
 		);
 
 		expect(response.status).toBe(400);

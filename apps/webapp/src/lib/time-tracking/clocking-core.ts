@@ -111,6 +111,8 @@ type ClockOutInput = ClockingInput & {
 	projectId?: string | null;
 	/** The closure's resolved billability (#900); absent leaves the period's value. */
 	isBillable?: boolean;
+	/** A task of the project (#873), mirrored from the canonical allocation. */
+	taskId?: string | null;
 	workCategoryId?: string | null;
 	canonicalRecordId?: string | null;
 	approvalStatus?: "approved" | "pending";
@@ -137,6 +139,7 @@ type CompletedPeriod = {
 	endTime: Date;
 	durationMinutes: number;
 	projectId: string | null;
+	taskId?: string | null;
 	workCategoryId: string | null;
 };
 
@@ -530,6 +533,7 @@ export function createClockingService(deps: ClockingDependencies) {
 					if (
 						!period ||
 						period.projectId !== (input.projectId ?? null) ||
+						(period.taskId ?? null) !== (input.taskId ?? null) ||
 						period.workCategoryId !== (input.workCategoryId ?? null)
 					) {
 						throw new ClockingConflictError("Clock-out action id collision");
@@ -597,6 +601,7 @@ export function createClockingService(deps: ClockingDependencies) {
 						isActive: false,
 						projectId: input.projectId ?? null,
 						...(input.isBillable === undefined ? {} : { isBillable: input.isBillable }),
+						taskId: input.taskId ?? null,
 						workCategoryId: input.workCategoryId ?? null,
 						canonicalRecordId: input.canonicalRecordId ?? null,
 						approvalStatus: input.approvalStatus ?? "approved",
@@ -700,6 +705,7 @@ export function createDatabaseClockingStore(tx: ClockingStoreClient): ClockingSt
 					endTime: workPeriod.endTime,
 					durationMinutes: workPeriod.durationMinutes,
 					projectId: workPeriod.projectId,
+					taskId: workPeriod.taskId,
 					workCategoryId: workPeriod.workCategoryId,
 				})
 				.from(workPeriod)

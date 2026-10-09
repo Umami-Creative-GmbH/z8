@@ -12,6 +12,7 @@ import {
 	IconClock,
 	IconDeviceMobile,
 	IconExclamationCircle,
+	IconFileText,
 	IconLoader2,
 	IconMail,
 	IconReceipt,
@@ -40,6 +41,7 @@ import {
 	type NotificationChannel,
 	type NotificationType,
 } from "@/lib/notifications/types";
+import type { ClockingReminderType } from "@/lib/time-tracking/clocking-reminders/occasion";
 import { PushPermissionModal } from "./push-permission-modal";
 
 // Group notification types by category for better UX
@@ -106,6 +108,21 @@ const NOTIFICATION_CATEGORIES = [
 		] as NotificationType[],
 	},
 	{
+		id: "personnelFile",
+		titleKey: "common:notifications.preferences.categories.personnelFile.title",
+		titleFallback: "Personnel File",
+		descriptionKey: "common:notifications.preferences.categories.personnelFile.description",
+		descriptionFallback: "Notifications about documents shared with you in your personnel file",
+		icon: IconFileText,
+		types: [
+			"personnel_file_document_shared",
+			"personnel_file_employee_upload",
+			"personnel_file_expiry_upcoming",
+			"personnel_file_expired_today",
+			"personnel_file_due_for_deletion",
+		] as NotificationType[],
+	},
+	{
 		id: "team",
 		titleKey: "common:notifications.preferences.categories.team.title",
 		titleFallback: "Team",
@@ -144,6 +161,9 @@ const NOTIFICATION_CATEGORIES = [
 		types: [
 			"birthday_reminder",
 			"vacation_balance_alert",
+			"missed_clock_in_reminder",
+			"forgotten_clock_out_reminder",
+			"break_due_reminder",
 		] as NotificationType[],
 	},
 	{
@@ -167,8 +187,9 @@ const NOTIFICATION_CATEGORIES = [
 	},
 ];
 
-// Human-readable labels for notification types
-const TYPE_LABELS: Record<NotificationType, string> = {
+// Human-readable labels for notification types. Clocking reminder labels are static `t()` calls in
+// `getTypeLabel`, so the Tolgee extractor registers them with their defaults.
+const TYPE_LABELS: Record<Exclude<NotificationType, ClockingReminderType>, string> = {
 	automatic_clock_out: "Automatic clock-out",
 	approval_request_submitted: "Request submitted",
 	approval_request_approved: "Request approved",
@@ -225,6 +246,15 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 	travel_expense_recovery_recorded: "Expense recovery recorded",
 	// Reimbursement work arriving for expense officers
 	travel_expense_ready_for_reimbursement: "Ready for reimbursement (expense officers)",
+	// An employee document became visible to the employee
+	personnel_file_document_shared: "Document shared with you",
+	// An employee uploaded a document (officers, or owners and admins)
+	personnel_file_employee_upload: "Employee uploaded a document",
+	// Expiry reminders for certificates and other documents
+	personnel_file_expiry_upcoming: "Document expires soon",
+	personnel_file_expired_today: "Document expires today",
+	// Employee documents newly due for deletion (personnel file officers)
+	personnel_file_due_for_deletion: "Documents due for deletion (personnel file officers)",
 };
 
 // Channel icons and labels
@@ -337,8 +367,24 @@ function useNotificationSettingsViewModel() {
 			`common:notifications.preferences.channels.${channel}.description`,
 			CHANNEL_CONFIG[channel].description,
 		);
-	const getTypeLabel = (type: NotificationType) =>
-		t(`common:notifications.preferences.types.${type}`, TYPE_LABELS[type]);
+	const getTypeLabel = (type: NotificationType) => {
+		switch (type) {
+			case "missed_clock_in_reminder":
+				return t(
+					"common:notifications.preferences.types.missed_clock_in_reminder",
+					"Missed clock-in",
+				);
+			case "forgotten_clock_out_reminder":
+				return t(
+					"common:notifications.preferences.types.forgotten_clock_out_reminder",
+					"Forgotten clock-out",
+				);
+			case "break_due_reminder":
+				return t("common:notifications.preferences.types.break_due_reminder", "Break due");
+			default:
+				return t(`common:notifications.preferences.types.${type}`, TYPE_LABELS[type]);
+		}
+	};
 
 	const [pendingToggle, setPendingToggle] = useState<string | null>(null);
 	const [showPermissionModal, setShowPermissionModal] = useState(false);

@@ -2,6 +2,7 @@ import type { employee, timeEntry } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import type { AttributionIntent, ClockChannel, CloseActiveWorkResult } from "../close-active-work";
+import type { ProjectTaskIneligibility } from "../project-eligibility";
 import type { TimeEntryRequestMetadata } from "../time-entry-writer";
 import type { WorkLocationType } from "../work-location";
 
@@ -100,6 +101,11 @@ export type ClockOutBody = {
 	project: AttributionIntent;
 	workCategory: AttributionIntent;
 	/**
+	 * The task of the project (#873). Absent, the task follows the project: kept
+	 * while the project stays, cleared when it changes.
+	 */
+	task?: AttributionIntent;
+	/**
 	 * Explicit billability (#900); absent applies the project's billable default
 	 * when the project changes and preserves the period's billability otherwise.
 	 */
@@ -127,6 +133,20 @@ export type BreakBody = {
 
 export type ClockBody = ClockInBody | ClockOutBody | BreakBody;
 
+/**
+ * The device position taken at the clock event (#826, Time Tracking ADR 0004).
+ * Only the employee's own web/PWA commands may carry one; the module keeps it
+ * as a position stamp only when the capture check passes inside the work
+ * transaction, and otherwise silently drops it.
+ */
+export type ClockPosition = {
+	latitude: number;
+	longitude: number;
+	accuracyMeters: number;
+	/** When the device determined the position; a cached fix may predate the event. */
+	fixedAt: Instant;
+};
+
 type ClockCommandOf<Body extends ClockBody> = {
 	organizationId: string;
 	principal: ClockPrincipal;
@@ -143,6 +163,8 @@ type ClockCommandOf<Body extends ClockBody> = {
 	 * organization answers only its committed replays (#327).
 	 */
 	legacy?: true;
+	/** The position taken at the event; see `ClockPosition`. Never part of a web receipt. */
+	position?: ClockPosition;
 	body: Body;
 };
 
@@ -185,6 +207,8 @@ export type ClockOutFailure =
 	| "project_not_allowed"
 	/** Billable work was requested without a project or on a project without a customer (#900). */
 	| "billable_not_allowed"
+	/** The task cannot be booked; the refusal names why (#873). */
+	| "task_not_allowed"
 	| "work_category_not_allowed"
 	| "invalid_interval";
 
@@ -223,10 +247,12 @@ type DetailedClockFailure =
 	| SharedClockRefusal["code"]
 	| "already_clocked_in"
 	| "holiday_blocked"
-	| "under_review";
+	| "under_review"
+	| "task_not_allowed";
 
 export type ClockOutRefusal =
 	| SharedClockRefusal
+	| { code: "task_not_allowed"; reason: ProjectTaskIneligibility }
 	| { code: Exclude<ClockOutFailure, DetailedClockFailure> };
 
 export type ClockInRefusal =

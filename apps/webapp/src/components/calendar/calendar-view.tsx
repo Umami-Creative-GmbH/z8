@@ -22,8 +22,11 @@ import {
 } from "@/lib/calendar/date-keys";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { buildDailyWorkHoursSummaries } from "@/lib/calendar/work-hours-summary";
+import { projectTaskRefusalMessage } from "@/lib/projects/project-task-model";
+import { namedTaskId } from "@/lib/time-tracking/task-attribution";
 import { useRouter } from "@/navigation";
 import { CalendarEventDialogs } from "./calendar-event-dialogs";
+import type { OnBehalfClockOutTaskChoice } from "./clock-out-on-behalf-dialog";
 import { CalendarMainContent } from "./calendar-main-content";
 import type { ViewMode } from "./schedule-x-calendar";
 import type { WorkPeriodActions } from "./work-period-context-menu";
@@ -95,16 +98,21 @@ function useClockOutOnBehalf({
 		setPendingClockOutEvent(event);
 	};
 
-	/** illable is the manager's explicit choice (#900); undefined keeps the work's. */
-	const handleConfirmClockOut = async (billable?: boolean) => {
+	const handleConfirmClockOut = async (choice?: OnBehalfClockOutTaskChoice) => {
 		if (!pendingClockOutEvent || isClockOutPending) return;
 
 		setIsClockOutPending(true);
 		const workPeriodId = pendingClockOutEvent.id;
-		// A different billable choice is a different closure request with its own identity.
-		const intentKey = `:${billable ?? "keep"}`;
-		const operationId = operationIdsRef.current.get(intentKey) ?? globalThis.crypto.randomUUID();
-		operationIdsRef.current.set(intentKey, operationId);
+		// Omitted, the running work's task stays with its project (#874).
+		const taskId = choice?.taskId;
+		// The explicit billable choice (#900); omitted keeps the work's billability.
+		const billable = choice?.billable;
+		// Task and billability are part of the intended closure: another choice is another closure.
+		const closureKey = `${workPeriodId}:${taskId === undefined ? "keep" : (taskId ?? "clear")}:${billable ?? "keep"}`;
+		const operationId =
+			operationIdsRef.current.get(closureKey) ??
+			globalThis.crypto.randomUUID();
+		operationIdsRef.current.set(closureKey, operationId);
 
 		await (async () => {
 			try {
@@ -114,6 +122,7 @@ function useClockOutOnBehalf({
 					body: JSON.stringify({
 						workPeriodId,
 						operationId,
+						...namedTaskId(taskId),
 						...(billable === undefined ? {} : { billable }),
 					}),
 				});
@@ -125,8 +134,13 @@ function useClockOutOnBehalf({
 					);
 
 					try {
-						const body = (await response.json()) as { error?: unknown };
-						if (typeof body.error === "string" && body.error.length > 0) {
+						const body = (await response.json()) as { error?: unknown; reason?: unknown };
+						const taskRefusal = projectTaskRefusalMessage(
+							typeof body.reason === "string" ? body.reason : null,
+						);
+						if (taskRefusal) {
+							message = t(taskRefusal[0], taskRefusal[1]);
+						} else if (typeof body.error === "string" && body.error.length > 0) {
 							message = body.error;
 						}
 					} catch {
@@ -137,7 +151,7 @@ function useClockOutOnBehalf({
 					return;
 				}
 
-				operationIdsRef.current.delete(intentKey);
+				operationIdsRef.current.delete(closureKey);
 				toast.success(
 					t(
 						"calendar.clockOutOnBehalf.success",
@@ -478,7 +492,7 @@ function CalendarViewContent({
 				onClockOutOpenChange={(open) => {
 					if (!open && !isClockOutPending) setPendingClockOutEvent(null);
 				}}
-				onConfirmClockOut={(billable) => void handleConfirmClockOut(billable)}
+				onConfirmClockOut={(choice) => void handleConfirmClockOut(choice)}
 				selectedEvent={selectedEvent}
 				showSplitDialog={showSplitDialog}
 				showDeleteDialog={showDeleteDialog}

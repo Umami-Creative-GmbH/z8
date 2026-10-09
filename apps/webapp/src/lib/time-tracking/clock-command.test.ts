@@ -61,8 +61,22 @@ describe("parseClockCommand", () => {
 		).toMatchObject({ ok: true });
 	});
 
+	it("accepts an optional task intent on a clock-out verbatim (#875)", () => {
+		for (const task of [
+			{ kind: "replace", id: "e0000000-0000-4000-8000-000000000001" },
+			{ kind: "clear" },
+			{ kind: "preserve" },
+		]) {
+			const withTask = { ...clockOut, task };
+			expect(parseClockCommand(withTask)).toEqual({ ok: true, command: withTask });
+		}
+		// A command without a task stays exactly as frozen: no `task` key appears.
+		const parsed = parseClockCommand(clockOut);
+		expect(parsed.ok && Object.keys(parsed.command).sort()).toEqual(Object.keys(clockOut).sort());
+	});
+
 	it("reports other versions as unsupported rather than invalid", () => {
-		expect(parseClockCommand({ ...clockIn, version: 3 })).toEqual({
+		expect(parseClockCommand({ ...clockIn, version: 4 })).toEqual({
 			ok: false,
 			code: "unsupported_version",
 		});
@@ -98,10 +112,69 @@ describe("parseClockCommand", () => {
 		["an omitted attribution intent", { ...clockOut, project: undefined }],
 		["a replacement without id", { ...clockOut, project: { kind: "replace" } }],
 		["clock-out fields on a clock-in", { ...clockIn, target: clockOut.target }],
+		["a task on a clock-in", { ...clockIn, task: { kind: "clear" } }],
+		["a task replacement without id", { ...clockOut, task: { kind: "replace" } }],
+		["a task as a bare id", { ...clockOut, task: "e0000000-0000-4000-8000-000000000001" }],
+		["a null task", { ...clockOut, task: null }],
 	])("rejects %s", (_label, body) => {
 		expect(parseClockCommand(body)).toEqual({ ok: false, code: "invalid_command" });
 	});
 });
+
+describe("position-stamped version 3 commands (#826)", () => {
+	const position = {
+		latitude: 52.520008,
+		longitude: 13.404954,
+		accuracyMeters: 18.5,
+		fixedAt: "2026-09-25T07:59:30.250Z",
+	};
+	const stampedIn = { ...clockIn, version: 3, position };
+	const stampedOut = { ...clockOut, version: 3, position };
+
+	it("accepts a clock-in or clock-out carrying the device position verbatim", () => {
+		expect(parseClockCommand(stampedIn)).toEqual({ ok: true, command: stampedIn });
+		expect(parseClockCommand(stampedOut)).toEqual({ ok: true, command: stampedOut });
+	});
+
+	it("still accepts version 2 commands, which never carry a position", () => {
+		expect(parseClockCommand(clockIn)).toEqual({ ok: true, command: clockIn });
+		expect(parseClockCommand({ ...clockIn, position })).toEqual({
+			ok: false,
+			code: "invalid_command",
+		});
+	});
+
+	it.each([
+		["a version 3 command without a position", { ...stampedIn, position: undefined }],
+		["a latitude beyond the pole", { ...stampedIn, position: { ...position, latitude: 90.1 } }],
+		[
+			"a longitude beyond the antimeridian",
+			{ ...stampedIn, position: { ...position, longitude: -180.5 } },
+		],
+		["a negative accuracy", { ...stampedIn, position: { ...position, accuracyMeters: -1 } }],
+		["a textual latitude", { ...stampedIn, position: { ...position, latitude: "52.5" } }],
+		[
+			"a fix time with an offset",
+			{ ...stampedIn, position: { ...position, fixedAt: "2026-09-25T09:59:30+02:00" } },
+		],
+		["an altitude", { ...stampedIn, position: { ...position, altitude: 34 } }],
+		["a desktop break", { ...breakFixture(), version: 3, position }],
+	])("rejects %s", (_label, body) => {
+		expect(parseClockCommand(body)).toEqual({ ok: false, code: "invalid_command" });
+	});
+});
+
+function breakFixture() {
+	return JSON.parse(
+		readFileSync(
+			new URL(
+				"../../../../desktop/src-tauri/tests/clock-core/fixtures/desktop-v2-break.json",
+				import.meta.url,
+			),
+			"utf8",
+		),
+	) as Record<string, unknown>;
+}
 
 describe("break commands (#281)", () => {
 	// Idle from the last input at 10:00:05.123 until the detected return at
@@ -279,12 +352,14 @@ describe("desktop frozen commands (#280)", () => {
 			"utf8",
 		).trimEnd();
 
-	it.each(["desktop-v2-clock-in.json", "desktop-v2-clock-out.json", "desktop-v2-break.json"])(
-		"accepts the exact bytes the desktop sends: %s",
-		(name) => {
-			const sent = JSON.parse(fixture(name));
-			const parsed = parseClockCommand(sent);
-			expect(parsed).toEqual({ ok: true, command: sent });
-		},
-	);
+	it.each([
+		"desktop-v2-clock-in.json",
+		"desktop-v2-clock-out.json",
+		"desktop-v2-clock-out-task.json",
+		"desktop-v2-break.json",
+	])("accepts the exact bytes the desktop sends: %s", (name) => {
+		const sent = JSON.parse(fixture(name));
+		const parsed = parseClockCommand(sent);
+		expect(parsed).toEqual({ ok: true, command: sent });
+	});
 });

@@ -1,5 +1,6 @@
 import type { approvalStatusEnum } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
+import type { ProjectTaskChoice } from "@/lib/projects/project-task-model";
 import type { OperationIdentity } from "@/lib/time-tracking/clocking/types";
 import type { ClockChannel } from "@/lib/time-tracking/close-active-work";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
@@ -49,6 +50,12 @@ export interface ClockOutActionContext extends BrowserTimezoneContext {
 	instant?: Instant;
 	deviceInfo?: ClockChannel;
 	/**
+	 * The task of the clock-out's project (#873). Undefined keeps the work's task
+	 * while its project stays (and clears it when the project changes); null
+	 * clears it; an ID books the work to that task.
+	 */
+	taskId?: string | null;
+	/**
 	 * Explicit billability of the closed work (#900). Absent applies the chosen
 	 * project's billable default, or keeps the active work's billability.
 	 */
@@ -67,6 +74,8 @@ export interface AssignedProject {
 	hasCustomer: boolean;
 	/** The billable default new work on it takes; false without a customer. */
 	billableDefault: boolean;
+	/** The project's open tasks, by name (#874); empty when it has none. */
+	tasks: ProjectTaskChoice[];
 }
 
 /** Error code returned when the actor may not create entries for the target. */
@@ -111,6 +120,8 @@ export interface ManualTimeEntryInput {
 	timezone?: string;
 	browserTimezone?: string | null;
 	projectId?: string;
+	/** A task of `projectId` (#873). */
+	taskId?: string;
 	workCategoryId?: string;
 	workLocationType?: WorkLocationType;
 	/** Explicit billability (#900); absent takes the project's billable default. */

@@ -16,13 +16,14 @@ import type { ScheduledExport, ScheduledExportExecution } from "@/db/schema/sche
 import { createLogger } from "@/lib/logger";
 import { calculateDateRange } from "../domain/date-range-calculator";
 import { calculateNextExecution } from "../domain/schedule-evaluator";
-import type {
-	DateRangeConfig,
-	DeliveryConfig,
-	FilterConfig,
-	ReportConfig,
-	ScheduleConfig,
-	ScheduledExportsProcessorResult,
+import {
+	type DateRangeConfig,
+	type DeliveryConfig,
+	deliversByEmail,
+	type FilterConfig,
+	type ReportConfig,
+	type ScheduleConfig,
+	type ScheduledExportsProcessorResult,
 } from "../domain/types";
 import { DeliveryService } from "../infrastructure/delivery-service";
 import { executorRegistry } from "./executors/registry";
@@ -161,6 +162,7 @@ export class ScheduledExportOrchestrator {
 				filters: filterConfig,
 				payrollConfigId: schedule.payrollConfigId || undefined,
 				createdBy: schedule.createdBy,
+				emailRecipients: deliversByEmail(schedule.deliveryMethod) ? schedule.emailRecipients : [],
 			});
 
 			if (!exportResult.success) {

@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { DateTime } from "luxon";
+import { getLocale } from "next-intl/server";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { LoadingRegion } from "@/components/ui/loading-region";
@@ -11,6 +12,7 @@ import { requireAbility, requireUser } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { auditWorksCouncilPortalViewed } from "@/lib/works-council/access-audit";
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
+import { loadWorksCouncilPositionCaptureReview } from "@/lib/works-council/position-capture-review-data";
 import { buildWorksCouncilPortalModel } from "@/lib/works-council/review-data";
 import { loadWorksCouncilSettings } from "@/lib/works-council/settings";
 import { getTranslate } from "@/tolgee/server";
@@ -80,14 +82,23 @@ async function WorksCouncilPageContent({
 		settings,
 		...range,
 	});
-	const model = await buildWorksCouncilPortalModel({
-		organizationId,
-		actorUserId: authContext.user.id,
-		settings,
-		...range,
-	});
+	const [model, positionCaptureReview, locale] = await Promise.all([
+		buildWorksCouncilPortalModel({
+			organizationId,
+			actorUserId: authContext.user.id,
+			settings,
+			...range,
+		}),
+		loadWorksCouncilPositionCaptureReview({ organizationId, settings }),
+		getLocale(),
+	]);
 
-	return <WorksCouncilDashboard model={model} />;
+	return (
+		<WorksCouncilDashboard
+			model={model}
+			positionCapture={{ review: positionCaptureReview, locale }}
+		/>
+	);
 }
 
 function WorksCouncilPageLoading() {
