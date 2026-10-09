@@ -64,6 +64,9 @@ export const NOTIFICATION_TYPES = [
 	"travel_expense_ready_for_reimbursement",
 	// An employee document became visible to its employee (#865)
 	"personnel_file_document_shared",
+	// Expiry reminders for certificates and other documents (#869)
+	"personnel_file_expiry_upcoming",
+	"personnel_file_expired_today",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

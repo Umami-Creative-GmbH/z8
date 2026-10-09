@@ -24,6 +24,7 @@ import type {
 	PayslipFileFailure,
 	PayslipMatchKind,
 } from "@/lib/personnel-file/payslip-batch.types";
+import type { ExpiryReminderKind } from "@/lib/personnel-file/expiry";
 import { organization, user } from "../auth-schema";
 import { employee, team } from "./organization";
 import { currentTimestamp } from "./timestamp";
@@ -268,6 +269,69 @@ export const personnelFileOfficerEmployee = pgTable(
 			name: "personnel_file_officer_employee_employee_fk",
 			columns: [table.employeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+	],
+);
+
+/**
+ * Expiry reminder settings of an organization (#869). No row means the
+ * defaults: a 30-day lead time. Only owners and admins change it.
+ */
+export const personnelFileReminderSetting = pgTable(
+	"personnel_file_reminder_setting",
+	{
+		organizationId: text("organization_id")
+			.primaryKey()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		expiryLeadDays: integer("expiry_lead_days").default(30).notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+		updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+	},
+	(table) => [
+		check(
+			"personnel_file_reminder_setting_lead_days_check",
+			sql`${table.expiryLeadDays} BETWEEN 1 AND 365`,
+		),
+	],
+);
+
+/**
+ * Sent marker of the expiry reminder job (#869): one row per document, kind
+ * and expiry date, claimed before notifying, so each reminder is sent at most
+ * once and job retries never resend. Keying on the expiry date re-arms both
+ * reminders when the date moves; the job also drops markers of a date the
+ * document no longer has.
+ */
+export const personnelFileExpiryReminder = pgTable(
+	"personnel_file_expiry_reminder",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		documentId: uuid("document_id").notNull(),
+		kind: text("kind").$type<ExpiryReminderKind>().notNull(),
+		expiryDate: date("expiry_date", { mode: "string" }).notNull(),
+		sentAt: timestamp("sent_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => [
+		uniqueIndex("personnelFileExpiryReminder_document_kind_expiry_idx").on(
+			table.documentId,
+			table.kind,
+			table.expiryDate,
+		),
+		index("personnelFileExpiryReminder_organizationId_idx").on(table.organizationId),
+		check(
+			"personnel_file_expiry_reminder_kind_check",
+			sql`${table.kind} IN ('upcoming', 'expired_today')`,
+		),
+		foreignKey({
+			name: "personnel_file_expiry_reminder_document_fk",
+			columns: [table.documentId, table.organizationId],
+			foreignColumns: [employeeDocument.id, employeeDocument.organizationId],
 		}).onDelete("cascade"),
 	],
 );
