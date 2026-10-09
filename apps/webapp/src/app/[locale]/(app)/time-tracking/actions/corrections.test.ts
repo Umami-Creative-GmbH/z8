@@ -392,7 +392,7 @@ describe("time correction request safety", () => {
 	it("keeps one project mutation: the modular export delegates to the calendar action", () => {
 		const body = functionBody(modularMutationsSource, "updateWorkPeriodProject");
 
-		expect(body).toContain("updateWorkPeriodProjectAction(workPeriodId, projectId)");
+		expect(body).toContain("updateWorkPeriodProjectAction(workPeriodId, projectId, taskId)");
 		expect(body).not.toContain(".update(workPeriod)");
 	});
 
