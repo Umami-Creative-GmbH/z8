@@ -3,6 +3,10 @@ import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { createAppAuthCode } from "@/lib/auth/app-auth-code";
 import {
+	createAppSignInRedirect,
+	createDesktopCallbackResponse,
+} from "@/lib/auth/app-browser-sign-in";
+import {
 	getAllowedAppRedirect,
 	getValidatedAppRedirectUrl,
 } from "@/lib/auth/app-redirect";
@@ -65,12 +69,9 @@ export async function GET(request: NextRequest) {
 		// Redirect back to desktop app with a one-time code.
 		safeCallbackUrl.searchParams.set("code", authCode.code);
 
-		return NextResponse.redirect(safeCallbackUrl.toString());
+		return createDesktopCallbackResponse(request, safeCallbackUrl);
 	}
 
 	// User not logged in, continue through sign-in and then resume this auth route.
-	const loginUrl = new URL("/sign-in", request.nextUrl.origin);
-	loginUrl.searchParams.set("callbackUrl", request.nextUrl.toString());
-
-	return NextResponse.redirect(loginUrl.toString());
+	return createAppSignInRedirect(request);
 }

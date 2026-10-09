@@ -43,17 +43,26 @@ afterAll(cleanup);
 
 describe("installed desktop sign-in on the checked-in migration chain", () => {
 	it.each([
-		["app-login", appLogin.GET],
-		["desktop-login", desktopLogin.GET],
+		["app-login", "application/json", appLogin.GET],
+		["app-login", "text/html", appLogin.GET],
+		["desktop-login", "application/json", desktopLogin.GET],
+		["desktop-login", "text/html", desktopLogin.GET],
 	])(
-		"issues a PKCE-bound, single-use code through %s",
-		async (path, handler) => {
+		"issues a PKCE-bound, single-use code through %s with Accept %s",
+		async (path, accept, handler) => {
 			const request = new NextRequest(
 				`https://app.example.test/api/auth/${path}?app=desktop&redirect=z8://auth/callback&challenge=${challenge}`,
 			);
+			request.headers.set("accept", accept);
 			const response = await handler(request);
-			expect(response.status).toBe(307);
-			const callback = new URL(response.headers.get("location") ?? "");
+			expect(response.status).toBe(accept === "text/html" ? 200 : 307);
+			const href =
+				accept === "text/html"
+					? /id="open-z8" href="([^"]+)"/
+							.exec(await response.text())?.[1]
+							?.replaceAll("&amp;", "&")
+					: response.headers.get("location");
+			const callback = new URL(href ?? "");
 			expect(callback.protocol).toBe("z8:");
 			const code = callback.searchParams.get("code") ?? "";
 			expect(code).toMatch(/^[A-F0-9]{32}$/);
