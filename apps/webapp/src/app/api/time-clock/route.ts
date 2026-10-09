@@ -24,6 +24,8 @@ const timeClockSchema = z.discriminatedUnion("action", [
 		submissionId: z.uuid(),
 		// Omitted keeps the active period's attribution; null clears it explicitly.
 		projectId: z.string().min(1).nullable().optional(),
+		// A task of the project (#874). Omitted, the task follows the project.
+		taskId: z.string().min(1).nullable().optional(),
 		workCategoryId: z.string().min(1).nullable().optional(),
 		browserTimezone: z.string().nullish(),
 	}),
@@ -65,6 +67,7 @@ export async function POST(request: Request) {
 				: await clockOut(body.projectId, body.workCategoryId, {
 						browserTimezone: body.browserTimezone,
 						submissionId: body.submissionId,
+						...(body.taskId !== undefined ? { taskId: body.taskId } : {}),
 					});
 
 		return NextResponse.json(result, { status: result.success ? 200 : 422 });

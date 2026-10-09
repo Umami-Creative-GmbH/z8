@@ -17,6 +17,8 @@ interface TimeClockPopoverState {
 	lastClockOutEntryId: string | null;
 	notesText: string;
 	selectedProjectId: string | undefined;
+	/** A task of the selected project (#874); cleared whenever the project changes. */
+	selectedTaskId: string | undefined;
 	selectedWorkCategoryId: string | undefined;
 	workLocationType: WorkLocationType;
 }
@@ -24,6 +26,7 @@ interface TimeClockPopoverState {
 type TimeClockPopoverAction =
 	| { type: "setNotesText"; value: string }
 	| { type: "setSelectedProjectId"; value: string | undefined }
+	| { type: "setSelectedTaskId"; value: string | undefined }
 	| { type: "setSelectedWorkCategoryId"; value: string | undefined }
 	| { type: "setWorkLocationType"; value: WorkLocationType }
 	| { type: "openNotesInput"; entryId: string }
@@ -43,6 +46,7 @@ function createInitialState(): TimeClockPopoverState {
 		lastClockOutEntryId: null,
 		notesText: "",
 		selectedProjectId: undefined,
+		selectedTaskId: undefined,
 		selectedWorkCategoryId: undefined,
 		workLocationType: getInitialWorkLocationType(),
 	};
@@ -56,7 +60,11 @@ function timeClockPopoverReducer(
 		case "setNotesText":
 			return { ...state, notesText: action.value };
 		case "setSelectedProjectId":
-			return { ...state, selectedProjectId: action.value };
+			return action.value === state.selectedProjectId
+				? state
+				: { ...state, selectedProjectId: action.value, selectedTaskId: undefined };
+		case "setSelectedTaskId":
+			return { ...state, selectedTaskId: action.value };
 		case "setSelectedWorkCategoryId":
 			return { ...state, selectedWorkCategoryId: action.value };
 		case "setWorkLocationType":
@@ -79,6 +87,7 @@ function timeClockPopoverReducer(
 			return {
 				...state,
 				selectedProjectId: undefined,
+				selectedTaskId: undefined,
 				selectedWorkCategoryId: undefined,
 			};
 	}

@@ -245,11 +245,15 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		networkMode: "always",
 		mutationFn: async (params?: {
 			projectId?: string;
+			/** A task of the project (#874); only an online clock-out carries one. */
+			taskId?: string;
 			workCategoryId?: string;
 			browserTimezone?: string | null;
 			submissionId?: string;
 		}) => {
-			const frozen = prepareFrozenCommand("clock_out", params);
+			// Frozen commands carry no task yet, so a clock-out naming one stays on the
+			// route below; a command that was never frozen is not a downgrade.
+			const frozen = params?.taskId ? null : prepareFrozenCommand("clock_out", params);
 			if (frozen) return submitClockCommand(frozen);
 
 			// When offline, queue the event for later sync
@@ -280,6 +284,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			// Online - use the route handler; server action IDs change per deployment
 			return postClockOut({
 				projectId: params?.projectId,
+				...(params?.taskId ? { taskId: params.taskId } : {}),
 				workCategoryId: params?.workCategoryId,
 				browserTimezone: resolveBrowserTimezone(params),
 				submissionId: params?.submissionId as string,
@@ -403,6 +408,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			}),
 		clockOut: (params?: {
 			projectId?: string;
+			taskId?: string;
 			workCategoryId?: string;
 			browserTimezone?: string | null;
 		}) =>

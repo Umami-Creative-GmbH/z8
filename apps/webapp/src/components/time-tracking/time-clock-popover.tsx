@@ -37,6 +37,7 @@ import { showSavedClockToast } from "./saved-clock-toast";
 import { WorkLocationSelector } from "./clock-in-out-widget-parts";
 import { ProjectSelectorView } from "./project-selector";
 import { QuickBreakPopover } from "./quick-break-popover";
+import { TaskSelectorView } from "./task-selector";
 import type { WorkCategory } from "./use-available-work-categories";
 import { useQuickBreakHandler } from "./use-quick-break-handler";
 import { useTimeClockPopoverState } from "./use-time-clock-popover-state";
@@ -124,12 +125,14 @@ interface ClockControlsViewProps {
 	isMutating: boolean;
 	onClockAction: () => void;
 	onProjectChange: (value: string | undefined) => void;
+	onTaskChange: (value: string | undefined) => void;
 	onWorkCategoryChange: (value: string | undefined) => void;
 	onWorkLocationChange: (value: WorkLocationType) => void;
 	projects: AssignedProject[];
 	projectsIsError: boolean;
 	projectsIsLoading: boolean;
 	selectedProjectId: string | undefined;
+	selectedTaskId: string | undefined;
 	selectedWorkCategoryId: string | undefined;
 	t: Translate;
 	timeFormatter: Intl.DateTimeFormat;
@@ -151,12 +154,14 @@ function ClockControlsView({
 	isMutating,
 	onClockAction,
 	onProjectChange,
+	onTaskChange,
 	onWorkCategoryChange,
 	onWorkLocationChange,
 	projects,
 	projectsIsError,
 	projectsIsLoading,
 	selectedProjectId,
+	selectedTaskId,
 	selectedWorkCategoryId,
 	t,
 	timeFormatter,
@@ -193,6 +198,16 @@ function ClockControlsView({
 					projects={projects}
 					isLoading={projectsIsLoading}
 					isError={projectsIsError}
+				/>
+			)}
+			{/* A task travels only with a server clock-out; local capture keeps the project. */}
+			{isClockedIn && !isLocalCapture && !projectsIsLoading && !projectsIsError && (
+				<TaskSelectorView
+					projectId={selectedProjectId}
+					projects={projects}
+					value={selectedTaskId}
+					onValueChange={onTaskChange}
+					disabled={isMutating}
 				/>
 			)}
 			{(isClockedIn || isLocalCapture) && employeeId && (
@@ -335,6 +350,10 @@ export function TimeClockPopover({
 		const result = await clockOut({
 			projectId: uiState.selectedProjectId,
 			workCategoryId: uiState.selectedWorkCategoryId,
+			// Only a server clock-out carries a task (#874); local capture shows no task picker.
+			...(uiState.selectedTaskId && captureMode === "server"
+				? { taskId: uiState.selectedTaskId }
+				: {}),
 		});
 
 		if (result.success) {
@@ -487,6 +506,9 @@ export function TimeClockPopover({
 								onProjectChange={(value) =>
 									dispatch({ type: "setSelectedProjectId", value })
 								}
+								onTaskChange={(value) =>
+									dispatch({ type: "setSelectedTaskId", value })
+								}
 								onWorkCategoryChange={(value) =>
 									dispatch({ type: "setSelectedWorkCategoryId", value })
 								}
@@ -497,6 +519,7 @@ export function TimeClockPopover({
 								projectsIsError={assignedProjects.isError}
 								projectsIsLoading={assignedProjects.isLoading}
 								selectedProjectId={uiState.selectedProjectId}
+								selectedTaskId={uiState.selectedTaskId}
 								selectedWorkCategoryId={uiState.selectedWorkCategoryId}
 								t={t}
 								timeFormatter={timeFormatter}
