@@ -192,6 +192,8 @@
       "surcharge": "Surcharge",
       "surchargeBreakdown": "Surcharge Breakdown",
       "system": "System",
+      "task": "Task",
+      "taskDone": "{name} (done)",
       "time": "Time",
       "type": "Type",
       "workLocation": "Work location"
