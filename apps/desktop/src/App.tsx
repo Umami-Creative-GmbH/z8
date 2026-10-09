@@ -234,7 +234,7 @@ function Companion({
 							onClockOut={async () => {
 								await timezone.run(() =>
 									present(
-										() => clock.clockOut(attribution.value()),
+										() => clock.clockOut(attribution.value(context)),
 										"Clock out",
 									),
 								);
@@ -242,7 +242,7 @@ function Companion({
 							onStartBreak={async () => {
 								await timezone.run(() =>
 									present(
-										() => clock.startBreak(attribution.value()),
+										() => clock.startBreak(attribution.value(context)),
 										"On break",
 									),
 								);
