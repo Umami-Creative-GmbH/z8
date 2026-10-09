@@ -9,11 +9,13 @@ import {
 } from "@/app/[locale]/(app)/time-tracking/actions";
 import { useOfflineClock } from "@/hooks/use-offline-clock";
 import { useSession } from "@/lib/auth-client";
-import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
+import { type Instant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	frozenClockCommandsAvailable,
 	prepareBrowserClockCommand,
 } from "@/lib/time-tracking/browser-clock-command";
+import type { ClockCommandPosition } from "@/lib/time-tracking/clock-command";
+import { useClockPosition } from "@/lib/time-tracking/position-capture/use-clock-position";
 import { postClockIn, postClockOut } from "@/lib/time-tracking/time-clock-client";
 import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
@@ -80,6 +82,13 @@ export function useElapsedTimer(startTime: Date | null): number {
 	return Math.max(0, currentEpochSecond - startEpochSecond);
 }
 
+type FrozenCommandParams = {
+	workLocationType?: WorkLocationType;
+	browserTimezone?: string | null;
+	projectId?: string;
+	workCategoryId?: string;
+};
+
 interface UseTimeClockOptions {
 	/**
 	 * Initial data from server-side rendering
@@ -132,19 +141,31 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			: null;
 	const canFreeze =
 		pageSession !== null && frozenClockCommandsAvailable(commandCapabilities, pageSession);
+	const clockPosition = useClockPosition(Boolean(session?.user?.id && activeOrganizationId));
 
 	/**
-	 * The frozen v2 command for this action (#279), or null to keep the legacy
-	 * path. Identity, instant and zone are fixed here, before anything is sent.
+	 * The employee's own clock event as it happens (#826): asks for position
+	 * consent first when the current notice is unanswered, then fixes the event
+	 * instant, then takes the position within five seconds when capture is on and
+	 * consented. A clock action that can carry no position (the legacy offline
+	 * queue) takes none.
+	 */
+	async function captureClockEvent(canCarryPosition: boolean) {
+		const capture = canCarryPosition && (await clockPosition.decide(isOnline));
+		const now = systemClock.nowInstant();
+		const position = capture ? await clockPosition.take() : null;
+		return { now, position };
+	}
+
+	/**
+	 * The frozen command for this action (#279), or null to keep the legacy path:
+	 * version 2, or version 3 with the position taken at the event (#826).
+	 * Identity, instant and zone are fixed here, before anything is sent.
 	 */
 	function prepareFrozenCommand(
 		kind: "clock_in" | "clock_out",
-		params?: {
-			workLocationType?: WorkLocationType;
-			browserTimezone?: string | null;
-			projectId?: string;
-			workCategoryId?: string;
-		},
+		params: FrozenCommandParams | undefined,
+		event: { now: Instant; position: ClockCommandPosition | null },
 	) {
 		if (!canFreeze || !pageSession) return null;
 		const prepared = prepareBrowserClockCommand({
@@ -152,7 +173,8 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			operationId: crypto.randomUUID(),
 			capabilities: commandCapabilities,
 			session: pageSession,
-			now: systemClock.nowInstant(),
+			now: event.now,
+			position: event.position,
 			timezone: resolveBrowserTimezone(params),
 			workLocationType: params?.workLocationType,
 			knownWorkPeriodId: statusQuery.data?.activeWorkPeriod?.id ?? null,
@@ -182,7 +204,8 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			browserTimezone?: string | null;
 			submissionId?: string;
 		}) => {
-			const frozen = prepareFrozenCommand("clock_in", params);
+			const event = await captureClockEvent(canFreeze || !isOffline);
+			const frozen = prepareFrozenCommand("clock_in", params, event);
 			if (frozen) return submitClockCommand(frozen);
 
 			// When offline, queue the event for later sync
@@ -216,6 +239,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				browserTimezone: resolveBrowserTimezone(params),
 				// Named here if the connection returned after the request was prepared.
 				submissionId: params?.submissionId ?? crypto.randomUUID(),
+				...(event.position ? { position: event.position } : {}),
 			});
 		},
 		onSuccess: (result) => {
@@ -249,7 +273,8 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			browserTimezone?: string | null;
 			submissionId?: string;
 		}) => {
-			const frozen = prepareFrozenCommand("clock_out", params);
+			const event = await captureClockEvent(canFreeze || !isOffline);
+			const frozen = prepareFrozenCommand("clock_out", params, event);
 			if (frozen) return submitClockCommand(frozen);
 
 			// When offline, queue the event for later sync
@@ -283,6 +308,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				workCategoryId: params?.workCategoryId,
 				browserTimezone: resolveBrowserTimezone(params),
 				submissionId: params?.submissionId as string,
+				...(event.position ? { position: event.position } : {}),
 			});
 		},
 		onSuccess: (result) => {
@@ -336,9 +362,12 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				};
 			}
 
+			// The one fix is taken at the break's end and stamps the resumed work (#826).
+			const { position } = await captureClockEvent(true);
 			return addBreakToActiveSession(breakMinutes, {
 				submissionId,
 				browserTimezone: getBrowserTimezone(),
+				...(position ? { position } : {}),
 			});
 		},
 		onSuccess: (result) => {

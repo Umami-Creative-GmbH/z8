@@ -8,6 +8,7 @@ import { TrialBanner } from "@/components/billing/trial-banner";
 import { PushPermissionProvider } from "@/components/notifications/push-permission-provider";
 import { OfflineBanner } from "@/components/offline";
 import { OrganizationDeletionBanner } from "@/components/organization/organization-deletion-banner";
+import { PositionConsentDialogHost } from "@/components/position-capture/position-consent-dialog";
 import { PostHogProvider } from "@/components/posthog-provider";
 import { OrganizationSettingsProvider } from "@/components/providers/organization-settings-provider";
 import { UserPreferencesProvider } from "@/components/providers/user-preferences-provider";
@@ -201,6 +202,8 @@ export async function AuthenticatedAppContent({
 									/>
 								) : null}
 								<OrganizationDeletionBanner />
+								{/* Asked on the next clock action when position capture needs consent (#826). */}
+								<PositionConsentDialogHost />
 								<div className="flex flex-1 flex-col min-h-0 overflow-y-auto">
 									{children}
 								</div>

@@ -55,6 +55,8 @@ const SHELL_SOURCES = [
 	"components/time-tracking/saved-clock-toast.ts",
 	"components/time-tracking/append-review-toast.ts",
 	"components/time-tracking/timezone-mismatch-dialog.tsx",
+	"components/position-capture/position-consent-dialog.tsx",
+	"components/position-capture/position-notice-text.tsx",
 	"components/dashboard/dashboard-header-customize.tsx",
 	"components/dashboard/dashboard-customize-menu.tsx",
 	"components/dashboard/widget-registry.ts",
