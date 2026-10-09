@@ -567,7 +567,8 @@ const MAX_LOOKUP_PAGES = 20;
 /**
  * The id of an invoice of this contact dated from `from` on that carries the
  * marker, or null. Uses `GET /Invoice` with `contact[id]`, `contact[objectName]`
- * and `startDate` (openapi.yaml), paging with limit/offset.
+ * and `startDate` (openapi.yaml), paging with limit/offset. Throws `rejected`
+ * when the page limit is reached without ruling out a marked draft.
  */
 async function findDraftByMarker(
 	client: SevdeskClient,
@@ -594,7 +595,11 @@ async function findDraftByMarker(
 		{ contactId: input.contactId },
 		"sevdesk draft lookup stopped after the page limit without finding the marker",
 	);
-	return null;
+	// Creating now could duplicate a draft an earlier attempt made: refuse, as Lexware does.
+	throw new AccountingProviderError(
+		"rejected",
+		`Too many sevdesk invoices for this contact to rule out a duplicate; look for a draft whose reference (customerInternalNote) is "${input.marker}"`,
+	);
 }
 
 /** A safety net for the net-price assumption: logs (ids only) when sevdesk's net total differs. */

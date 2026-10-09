@@ -828,6 +828,29 @@ describe("sevdesk connector: idempotency without a provider key", () => {
 	});
 });
 
+describe("sevdesk connector: duplicate check that cannot finish", () => {
+	it("refuses to create when the lookup hits its page limit without ruling out a duplicate", async () => {
+		const fullPage = Array.from({ length: 100 }, (_, index) =>
+			invoiceRow({ id: String(10_000 + index), status: "200" }),
+		);
+		const { provider, http } = providerWith(
+			creationRoutes({ lookup: [{ status: 200, body: { objects: fullPage } }] }),
+		);
+
+		const error = await provider
+			.createInvoiceDraft(draftWith(), { idempotencyKey: "handoff-1" })
+			.catch((caught: unknown) => caught);
+
+		expect(error).toMatchObject({
+			name: "AccountingProviderError",
+			failure: "rejected",
+			message: expect.stringMatching(/Z8-[0-9a-f]{24}/),
+		});
+		expect(http.to("GET", "/Invoice")).toHaveLength(20);
+		expect(http.to("POST", "/Invoice/Factory/saveInvoice")).toHaveLength(0);
+	});
+});
+
 describe("sevdesk connector: rate limits", () => {
 	it("backs off on 429 and retries; the call was not performed", async () => {
 		const { provider, http, sleeps } = providerWith(
