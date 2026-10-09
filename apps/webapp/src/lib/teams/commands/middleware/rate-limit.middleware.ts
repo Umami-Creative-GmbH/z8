@@ -7,7 +7,11 @@
 
 import { Ratelimit } from "@upstash/ratelimit";
 import { createLogger } from "@/lib/logger";
-import { ensureRateLimitRedisReady, isRateLimitDisabled } from "@/lib/rate-limit";
+import {
+	ensureRateLimitRedisReady,
+	isRateLimitDisabled,
+} from "@/lib/rate-limit";
+import { createRatelimitRedisAdapter } from "@/lib/rate-limit-redis";
 import { redis } from "@/lib/redis";
 import type { BotCommandContext, BotCommandResponse } from "../../types";
 
@@ -51,67 +55,7 @@ export const COMMAND_RATE_LIMITS: Record<string, CommandRateLimitConfig> = {
 // REDIS ADAPTER
 // ============================================
 
-/**
- * Minimal Redis interface for @upstash/ratelimit
- */
-type RatelimitRedis = {
-	evalsha: <TArgs extends unknown[], TData = unknown>(
-		sha: string,
-		keys: string[],
-		args: TArgs,
-	) => Promise<TData>;
-	eval: <TArgs extends unknown[], TData = unknown>(
-		script: string,
-		keys: string[],
-		args: TArgs,
-	) => Promise<TData>;
-	get: <TData = string>(key: string) => Promise<TData | null>;
-	set: (key: string, value: string, opts?: { ex?: number }) => Promise<string | null>;
-};
-
-class NoscriptError extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = "NOSCRIPT";
-	}
-
-	toString(): string {
-		return `NOSCRIPT: ${this.message}`;
-	}
-}
-
-const redisAdapter: RatelimitRedis = {
-	evalsha: async <TArgs extends unknown[], TData = unknown>(
-		sha: string,
-		keys: string[],
-		args: TArgs,
-	): Promise<TData> => {
-		try {
-			return (await redis.evalsha(sha, keys.length, ...keys, ...args.map(String))) as TData;
-		} catch (error) {
-			if (error instanceof Error && error.message.includes("NOSCRIPT")) {
-				throw new NoscriptError(error.message);
-			}
-			throw error;
-		}
-	},
-	eval: async <TArgs extends unknown[], TData = unknown>(
-		script: string,
-		keys: string[],
-		args: TArgs,
-	): Promise<TData> => {
-		return redis.eval(script, keys.length, ...keys, ...args.map(String)) as Promise<TData>;
-	},
-	get: async <TData = string>(key: string): Promise<TData | null> => {
-		return redis.get(key) as Promise<TData | null>;
-	},
-	set: async (key: string, value: string, opts?: { ex?: number }): Promise<string | null> => {
-		if (opts?.ex) {
-			return redis.set(key, value, "EX", opts.ex);
-		}
-		return redis.set(key, value);
-	},
-};
+const redisAdapter = createRatelimitRedisAdapter(redis);
 
 // ============================================
 // LIMITER CACHE
@@ -123,12 +67,16 @@ function getLimiter(commandName: string): Ratelimit {
 	const cached = limiterCache.get(commandName);
 	if (cached) return cached;
 
-	const config = COMMAND_RATE_LIMITS[commandName] || COMMAND_RATE_LIMITS.default;
+	const config =
+		COMMAND_RATE_LIMITS[commandName] || COMMAND_RATE_LIMITS.default;
 
 	const limiter = new Ratelimit({
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		redis: redisAdapter as any,
-		limiter: Ratelimit.slidingWindow(config.maxRequests, `${config.windowSeconds} s`),
+		limiter: Ratelimit.slidingWindow(
+			config.maxRequests,
+			`${config.windowSeconds} s`,
+		),
 		prefix: `ratelimit:teams:${commandName}`,
 		analytics: false,
 	});
@@ -157,7 +105,8 @@ export async function checkCommandRateLimit(
 	try {
 		// Skip rate limiting if disabled
 		if (isRateLimitDisabled()) {
-			const config = COMMAND_RATE_LIMITS[commandName] || COMMAND_RATE_LIMITS.default;
+			const config =
+				COMMAND_RATE_LIMITS[commandName] || COMMAND_RATE_LIMITS.default;
 			return {
 				allowed: true,
 				remaining: config.maxRequests,
@@ -167,7 +116,10 @@ export async function checkCommandRateLimit(
 
 		// Check Redis connection
 		if (!(await ensureRateLimitRedisReady())) {
-			logger.warn({ commandName }, "Rate limiting unavailable - Redis not connected");
+			logger.warn(
+				{ commandName },
+				"Rate limiting unavailable - Redis not connected",
+			);
 			return {
 				allowed: true,
 				remaining: 100,
@@ -183,7 +135,12 @@ export async function checkCommandRateLimit(
 		if (!result.success) {
 			const retryAfter = Math.ceil((result.reset - Date.now()) / 1000);
 			logger.info(
-				{ commandName, userId: ctx.userId, tenantId: ctx.config.organizationId, retryAfter },
+				{
+					commandName,
+					userId: ctx.userId,
+					tenantId: ctx.config.organizationId,
+					retryAfter,
+				},
 				"Teams command rate limit exceeded",
 			);
 			return {
