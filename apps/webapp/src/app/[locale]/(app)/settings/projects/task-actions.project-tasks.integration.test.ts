@@ -9,8 +9,11 @@
  * boundaries are replaced.
  */
 
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
+
+const bookedTaskError = "Time is booked to this task, so it cannot be deleted";
 
 const { sessions } = await vi.hoisted(async () => {
 	const { AsyncLocalStorage } = await import("node:async_hooks");
@@ -300,6 +303,26 @@ describe("project tasks on PostgreSQL", () => {
 			expect(await taskRows()).toEqual([]);
 		});
 
+		it("cannot delete a task with live work booked to it", async () => {
+			const id = await createTask(ids.ownerUser, "Design");
+			await bookLiveWork(id);
+
+			const deleted = await actAs(ids.ownerUser, () => tasks.deleteProjectTask(id));
+
+			expect(deleted).toMatchObject({ success: false, error: bookedTaskError });
+			expect((await taskRows()).map((row) => row.id)).toEqual([id]);
+		});
+
+		it("cannot delete a task with completed work booked to it", async () => {
+			const id = await createTask(ids.ownerUser, "Design");
+			await bookCompletedWork(id);
+
+			const deleted = await actAs(ids.ownerUser, () => tasks.deleteProjectTask(id));
+
+			expect(deleted).toMatchObject({ success: false, error: bookedTaskError });
+			expect((await taskRows()).map((row) => row.id)).toEqual([id]);
+		});
+
 		it("manages tasks of a project they are not a manager of", async () => {
 			const id = await createTask(ids.ownerUser, "Design", {}, ids.unmanagedProject);
 			const renamed = await actAs(ids.ownerUser, () =>
@@ -536,6 +559,46 @@ describe("project tasks on PostgreSQL", () => {
 			expect(await taskRows()).toEqual([]);
 		});
 	});
+
+	/** Live work of the employee on the project, booked to the task. */
+	async function bookLiveWork(taskId: string) {
+		const clockIn = randomUUID();
+		const start = new Date("2026-03-02T08:00:00Z");
+		await admin.query(
+			`insert into time_entry (id, employee_id, organization_id, type, timestamp, utc_offset_minutes,
+			  timezone, timezone_source, hash, previous_hash, created_by)
+			 values ($1, $2, $3, 'clock_in', $4, 0, 'UTC', 'backfill', $6, null, $5)`,
+			[clockIn, ids.employee, ids.organization, start, ids.employeeUser, `hash-${clockIn}`],
+		);
+		await admin.query(
+			`insert into work_period (id, organization_id, employee_id, clock_in_id, project_id, task_id,
+			  start_time, is_active, updated_at)
+			 values ($1, $2, $3, $4, $5, $6, $7, true, $7)`,
+			[randomUUID(), ids.organization, ids.employee, clockIn, ids.project, taskId, start],
+		);
+	}
+
+	/** A completed canonical work record of the employee, allocated to the task. */
+	async function bookCompletedWork(taskId: string) {
+		const record = randomUUID();
+		await admin.query(
+			`insert into time_record (id, organization_id, employee_id, record_kind, start_at, end_at,
+			  duration_minutes, approval_state, origin, created_by, updated_at)
+			 values ($1, $2, $3, 'work', '2026-03-02T08:00:00Z', '2026-03-02T09:00:00Z', 60, 'approved',
+			  'manual', $4, now())`,
+			[record, ids.organization, ids.employee, ids.employeeUser],
+		);
+		await admin.query(
+			`insert into time_record_work (record_id, organization_id, record_kind) values ($1, $2, 'work')`,
+			[record, ids.organization],
+		);
+		await admin.query(
+			`insert into time_record_allocation (organization_id, record_id, allocation_kind, project_id,
+			  task_id, weight_percent)
+			 values ($1, $2, 'project', $3, $4, 100)`,
+			[ids.organization, record, ids.project, taskId],
+		);
+	}
 
 	async function createTask(
 		userId: string,

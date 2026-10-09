@@ -2,7 +2,7 @@ import "server-only";
 
 import { and, eq, inArray, or, type SQL } from "drizzle-orm";
 import { db } from "@/db";
-import { project, projectAssignment } from "@/db/schema";
+import { project, projectAssignment, projectTask } from "@/db/schema";
 
 /** Project statuses that accept booked time. */
 export const BOOKABLE_PROJECT_STATUSES = ["planned", "active", "paused"] as const;
@@ -75,4 +75,55 @@ export async function isProjectEligible(
 	reader: Pick<typeof db, "select"> = db,
 ): Promise<boolean> {
 	return (await listEligibleProjects(target, reader, { projectId })).length > 0;
+}
+
+/**
+ * Why a task cannot be booked (#873), one stable reason per case:
+ * - `task_not_found`: no such task in the target's organization;
+ * - `task_other_project`: the task belongs to another project than the booking's;
+ * - `task_done`: the task is done;
+ * - `project_not_bookable`: the booking's project is not eligible for the target.
+ */
+export type ProjectTaskIneligibility =
+	| "task_not_found"
+	| "task_other_project"
+	| "task_done"
+	| "project_not_bookable";
+
+/** The established English wording of each task refusal, for adapters without their own. */
+export const PROJECT_TASK_INELIGIBILITY_MESSAGES: Record<ProjectTaskIneligibility, string> = {
+	task_not_found: "Task not found",
+	task_other_project: "This task belongs to another project",
+	task_done: "This task is done, so no time can be booked to it",
+	project_not_bookable: "Cannot assign to this project",
+};
+
+/**
+ * The task booking rule, the sibling of project eligibility: an open task of the
+ * booking's project, in the target's organization, while that project is
+ * eligible for the target. Returns null when the task may be booked. A task is
+ * always optional, so writers call this only when a booking sets one; a
+ * protected operation passes its transaction, which already serializes with the
+ * task's own state changes.
+ */
+export async function projectTaskIneligibility(
+	target: ProjectEligibilityTarget,
+	booking: { projectId: string | null; taskId: string },
+	reader: Pick<typeof db, "select"> = db,
+): Promise<ProjectTaskIneligibility | null> {
+	const [task] = await reader
+		.select({ projectId: projectTask.projectId, state: projectTask.state })
+		.from(projectTask)
+		.where(
+			and(
+				eq(projectTask.id, booking.taskId),
+				eq(projectTask.organizationId, target.organizationId),
+			),
+		)
+		.limit(1);
+	if (!task) return "task_not_found";
+	if (task.projectId !== booking.projectId) return "task_other_project";
+	if (task.state !== "open") return "task_done";
+	if (!(await isProjectEligible(target, task.projectId, reader))) return "project_not_bookable";
+	return null;
 }

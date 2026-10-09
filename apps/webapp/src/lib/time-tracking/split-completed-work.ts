@@ -82,6 +82,8 @@ export type SplitCompletedWorkCommand = {
 type AllocationEvidence = {
 	allocationKind: string;
 	projectId: string | null;
+	/** Present only on an allocation booked to a task (#873). */
+	taskId?: string;
 	costCenterId: string | null;
 	weightPercent: number;
 };
@@ -99,6 +101,8 @@ export type SplitSegment = {
 	endUtcOffsetMinutes: number | null;
 	attribution: {
 		projectId: string | null;
+		/** Present only when the work is booked to a task (#873). */
+		taskId?: string;
 		workCategoryId: string | null;
 		workLocationType: string | null;
 		allocations: AllocationEvidence[];
@@ -431,6 +435,7 @@ export async function splitCompletedWork(
 	const allocationAgrees = period.projectId
 		? projectAllocations.length === 1 &&
 			projectAllocations[0]?.projectId === period.projectId &&
+			(projectAllocations[0]?.taskId ?? null) === (period.taskId ?? null) &&
 			projectAllocations[0]?.weightPercent === 100
 		: projectAllocations.length === 0;
 	const sourceStart = instantFromDate(period.startTime);
@@ -638,6 +643,7 @@ export async function splitCompletedWork(
 			recordId: generatedRecordId,
 			allocationKind: allocation.allocationKind,
 			projectId: allocation.projectId,
+			taskId: allocation.taskId,
 			costCenterId: allocation.costCenterId,
 			weightPercent: allocation.weightPercent,
 		});
@@ -650,6 +656,7 @@ export async function splitCompletedWork(
 			clockInId: splitClockIn.id,
 			clockOutId: period.clockOutId,
 			projectId: period.projectId,
+			taskId: period.taskId,
 			workCategoryId: period.workCategoryId,
 			workLocationType: period.workLocationType,
 			startTime: splitAtDate,
@@ -679,11 +686,13 @@ export async function splitCompletedWork(
 
 	const attribution = {
 		projectId: period.projectId,
+		...(period.taskId ? { taskId: period.taskId } : {}),
 		workCategoryId: period.workCategoryId,
 		workLocationType: period.workLocationType,
 		allocations: allocations.map((allocation) => ({
 			allocationKind: allocation.allocationKind,
 			projectId: allocation.projectId,
+			...(allocation.taskId ? { taskId: allocation.taskId } : {}),
 			costCenterId: allocation.costCenterId,
 			weightPercent: allocation.weightPercent,
 		})),

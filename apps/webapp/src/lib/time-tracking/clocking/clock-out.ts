@@ -29,6 +29,7 @@ import {
 	liveClockOutWriter,
 	MANAGER_ON_BEHALF_WRITER,
 	replayCloseActiveWork,
+	resolveTaskAttribution,
 } from "../close-active-work";
 import { approvalDbServiceForTransaction } from "../ordinary-approval-runtime";
 import {
@@ -104,6 +105,8 @@ function planOnBehalfClockOut(command: ClockOutCommand, employee: Employee): Clo
 		workPeriodId: body.target.workPeriodId,
 		project: body.project,
 		workCategory: body.workCategory,
+		// Absent unless named, so earlier receipts keep replaying (#873).
+		...(body.task ? { task: body.task } : {}),
 	};
 	return { command, employee, receiptCommand, writer: MANAGER_ON_BEHALF_WRITER };
 }
@@ -169,6 +172,8 @@ export function planClockOut(command: ClockOutCommand, employee: Employee): Cloc
 		operationId: identity.id,
 		project: body.project,
 		workCategory: body.workCategory,
+		// Absent unless named, so earlier receipts keep replaying (#873).
+		...(body.task ? { task: body.task } : {}),
 		requestedInstant: at.kind === "occurred" ? instantToCanonicalString(at.instant) : null,
 		browserTimezone: zone.device,
 		deviceInfo: channel,
@@ -236,6 +241,7 @@ async function findLegacyEvidence(coordination: WorkTransactionContext, plan: Cl
 		employeeId: employee.id,
 		projectId: attributionValue(command.body.project),
 		workCategoryId: attributionValue(command.body.workCategory),
+		...(command.body.task ? { taskId: attributionValue(command.body.task) } : {}),
 	});
 	if (evidence && evidence.period.clockOut?.createdBy !== command.principal.userId) {
 		throw new CompletedWorkCollisionError();
@@ -316,6 +322,8 @@ export type ClockOutTarget = {
 	workPeriodId: string;
 	start: Instant;
 	workLocationType: WorkLocationType | null;
+	/** The work's project when the target was resolved; a task check reads it. */
+	projectId: string | null;
 };
 
 /**
@@ -391,7 +399,11 @@ async function legacyAttribution(
 ) {
 	const { command, employee } = plan;
 	const [period] = await coordination.db
-		.select({ projectId: workPeriod.projectId, workCategoryId: workPeriod.workCategoryId })
+		.select({
+			projectId: workPeriod.projectId,
+			taskId: workPeriod.taskId,
+			workCategoryId: workPeriod.workCategoryId,
+		})
 		.from(workPeriod)
 		.where(
 			and(
@@ -405,8 +417,16 @@ async function legacyAttribution(
 		const value = attributionValue(intent);
 		return value === undefined ? (current ?? null) : value;
 	};
+	const projectId = kept(command.body.project, period?.projectId);
 	return {
-		projectId: kept(command.body.project, period?.projectId),
+		projectId,
+		// Re-read under the coordinator's task lock, as the append writer does (#873).
+		taskId: await resolveTaskAttribution(coordination.db, {
+			organizationId: employee.organizationId,
+			task: command.body.task,
+			projectId,
+			current: { projectId: period?.projectId ?? null, taskId: period?.taskId ?? null },
+		}),
 		workCategoryId: kept(command.body.workCategory, period?.workCategoryId),
 	};
 }
@@ -440,7 +460,7 @@ async function closeLegacyClockOut(
 	const { plan, target, eventInstant } = input;
 	const { command, employee, writer } = plan;
 	// Read under the coordinator's period lock, as the append writer resolves it.
-	const { projectId, workCategoryId } = await legacyAttribution(
+	const { projectId, taskId, workCategoryId } = await legacyAttribution(
 		coordination,
 		plan,
 		target.workPeriodId,
@@ -458,6 +478,7 @@ async function closeLegacyClockOut(
 		action: { instant: eventInstant, ...input.capture },
 		source: { ipAddress: writer.ipAddress ?? null, deviceInfo: writer.deviceInfo },
 		projectId,
+		taskId,
 		workCategoryId,
 		approvalStatus: "approved",
 		beforePeriodClose: async ({ activePeriod, durationMinutes }) => {
@@ -480,6 +501,7 @@ async function closeLegacyClockOut(
 					workCategoryId,
 					workLocationType: target.workLocationType,
 					projectId,
+					taskId,
 					origin: "clock",
 				},
 				coordination.db,

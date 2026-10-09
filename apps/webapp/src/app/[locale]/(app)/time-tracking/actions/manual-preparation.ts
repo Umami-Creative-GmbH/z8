@@ -26,6 +26,10 @@ import {
 	manualOccupiedLocalDates,
 	resolveManualInterpretationZone,
 } from "@/lib/time-tracking/manual-command";
+import {
+	type ProjectTaskIneligibility,
+	projectTaskIneligibility,
+} from "@/lib/time-tracking/project-eligibility";
 import type { SealedWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 import { validateWorkCategoryAssignment } from "./clocking";
 import { validateProjectAssignment } from "./entry-helpers";
@@ -52,6 +56,8 @@ export type ManualPreparationRejection =
 	| { reason: "target_not_authorized" }
 	| { reason: "holiday_blocked"; date: string; holidayName: string }
 	| { reason: "project_ineligible"; message: string }
+	/** The command's task cannot be booked (#873). */
+	| { reason: ProjectTaskIneligibility }
 	| { reason: "category_ineligible"; message: string }
 	| { reason: "policy_ambiguous"; level: ManualPolicyLevel };
 
@@ -67,6 +73,8 @@ export type PreparedManualWork = {
 	interval: ManualInterval;
 	reason: string;
 	projectId: string | null;
+	/** A bookable task of `projectId`, or null. */
+	taskId: string | null;
 	workCategoryId: string | null;
 	workLocationType: ManualTimeEntryCommand["workLocationType"];
 	daysBack: number;
@@ -274,6 +282,14 @@ export async function prepareManualWork(
 			};
 		}
 	}
+	if (command.taskId) {
+		const ineligibility = await projectTaskIneligibility(
+			{ employeeId: target.id, teamId: target.teamId, organizationId: target.organizationId },
+			{ projectId: command.projectId, taskId: command.taskId },
+			tx,
+		);
+		if (ineligibility) return { ok: false, rejection: { reason: ineligibility } };
+	}
 	if (command.workCategoryId) {
 		const category = await validateWorkCategoryAssignment(
 			target.id,
@@ -325,6 +341,7 @@ export async function prepareManualWork(
 			interval,
 			reason: command.reason.trim(),
 			projectId: command.projectId,
+			taskId: command.taskId ?? null,
 			workCategoryId: command.workCategoryId,
 			workLocationType: command.workLocationType,
 			daysBack,

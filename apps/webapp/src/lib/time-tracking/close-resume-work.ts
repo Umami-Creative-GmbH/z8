@@ -212,6 +212,8 @@ export async function closeAndResumeWork(
 		},
 		carriedAttribution: {
 			projectId: attribution.projectId,
+			// The resumed work keeps the task with its project (#873).
+			...(attribution.taskId ? { taskId: attribution.taskId } : {}),
 			workCategoryId: attribution.workCategoryId,
 		},
 		writer: input.writer,

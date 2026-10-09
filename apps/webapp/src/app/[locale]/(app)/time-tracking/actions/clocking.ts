@@ -93,6 +93,10 @@ import {
 	getUserTimezone,
 } from "./auth";
 import { calculateBreaksTakenToday } from "./compliance";
+import {
+	PROJECT_TASK_INELIGIBILITY_MESSAGES,
+	projectTaskIneligibility,
+} from "@/lib/time-tracking/project-eligibility";
 import { validateProjectAssignment } from "./entry-helpers";
 import {
 	resolveManualEntryTarget,
@@ -138,6 +142,8 @@ type ManualSubmissionRequestEvidence = {
 	projectId: string | null;
 	workCategoryId: string | null;
 	workLocationType?: WorkLocationType;
+	/** Omitted when the entry names no task, so earlier evidence keeps matching (#873). */
+	taskId?: string;
 };
 
 type ManualSubmissionResultEvidence = {
@@ -160,6 +166,7 @@ function manualRequestEvidence(
 		projectId: data.projectId ?? null,
 		workCategoryId: data.workCategoryId ?? null,
 		...(data.workLocationType !== undefined ? { workLocationType: data.workLocationType } : {}),
+		...(data.taskId ? { taskId: data.taskId } : {}),
 	};
 }
 
@@ -215,6 +222,7 @@ function parseManualSubmissionMetadata(input: {
 		"projectId",
 		"workCategoryId",
 		...(input.request.workLocationType !== undefined ? ["workLocationType"] : []),
+		...(input.request.taskId !== undefined ? ["taskId"] : []),
 	]);
 	for (const [key, expected] of Object.entries(input.request)) {
 		if (request[key] !== expected) throw new Error("Submission collision");
@@ -298,6 +306,7 @@ async function findManualSubmissionEvidence(input: {
 	const marker = privateSubmissionMarker(period.pendingChanges);
 	if (
 		period.projectId !== input.request.projectId ||
+		(period.taskId ?? null) !== (input.request.taskId ?? null) ||
 		period.workCategoryId !== input.request.workCategoryId ||
 		(period.workLocationType ?? null) !== (input.request.workLocationType ?? null) ||
 		period.clockIn?.notes !== `Manual entry: ${input.request.reason}` ||
@@ -676,6 +685,9 @@ export async function clockOutAs(
 			kind: "clock_out",
 			project: attributionIntent(projectId),
 			workCategory: attributionIntent(workCategoryId),
+			...(actionContext.taskId !== undefined
+				? { task: attributionIntent(actionContext.taskId) }
+				: {}),
 		},
 	});
 	if (outcome.outcome === "refused") {
@@ -1085,6 +1097,23 @@ export async function createManualTimeEntry(
 			};
 		}
 	}
+	if (data.taskId) {
+		const taskIneligibility = await projectTaskIneligibility(
+			{
+				employeeId: targetEmployee.id,
+				teamId: targetEmployee.teamId,
+				organizationId: targetEmployee.organizationId,
+			},
+			{ projectId: data.projectId || null, taskId: data.taskId },
+		);
+		if (taskIneligibility) {
+			return {
+				success: false,
+				error: PROJECT_TASK_INELIGIBILITY_MESSAGES[taskIneligibility],
+				code: taskIneligibility,
+			};
+		}
+	}
 	if (data.workCategoryId) {
 		const categoryValidation = await validateWorkCategoryAssignment(
 			targetEmployee.id,
@@ -1272,6 +1301,7 @@ export async function createManualTimeEntry(
 						workCategoryId: data.workCategoryId || null,
 						workLocationType: data.workLocationType ?? null,
 						projectId: data.projectId || null,
+						taskId: data.taskId || null,
 						computationMetadata: manualSubmissionMetadata({
 							submissionId,
 							request: requestEvidence,
@@ -1293,6 +1323,7 @@ export async function createManualTimeEntry(
 				endTime: adjustedClockOut,
 				durationMinutes,
 				projectId: data.projectId || null,
+				taskId: data.taskId || null,
 				workCategoryId: data.workCategoryId || null,
 				workLocationType: data.workLocationType ?? null,
 				canonicalRecordId: canonicalRecord.id,

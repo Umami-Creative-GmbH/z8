@@ -290,6 +290,7 @@ async function takeLegacyBreak(
 			approvalStatus: workPeriod.approvalStatus,
 			startTime: workPeriod.startTime,
 			projectId: workPeriod.projectId,
+			taskId: workPeriod.taskId,
 			workCategoryId: workPeriod.workCategoryId,
 			workLocationType: workPeriod.workLocationType,
 		})
@@ -332,6 +333,7 @@ async function takeLegacyBreak(
 			workCategoryId: period.workCategoryId,
 			workLocationType,
 			projectId: period.projectId,
+			taskId: period.taskId,
 			origin: "clock",
 		},
 		tx,

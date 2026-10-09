@@ -1070,6 +1070,10 @@ export const workPeriodRelations = relations(workPeriod, ({ one }) => ({
 		fields: [workPeriod.projectId],
 		references: [project.id],
 	}),
+	task: one(projectTask, {
+		fields: [workPeriod.taskId],
+		references: [projectTask.id],
+	}),
 	surchargeCalculation: one(surchargeCalculation),
 	workCategory: one(workCategory, {
 		fields: [workPeriod.workCategoryId],
@@ -1205,6 +1209,10 @@ export const timeRecordAllocationRelations = relations(timeRecordAllocation, ({ 
 	project: one(project, {
 		fields: [timeRecordAllocation.projectId],
 		references: [project.id],
+	}),
+	task: one(projectTask, {
+		fields: [timeRecordAllocation.taskId],
+		references: [projectTask.id],
 	}),
 	costCenter: one(costCenter, {
 		fields: [timeRecordAllocation.costCenterId],
