@@ -9,6 +9,14 @@ vi.mock("@/lib/jobs/auto-clock-out", () => {
 	autoClockOut.imported();
 	return { runAutoClockOutMaintenance: autoClockOut.run };
 });
+const positionStampPurge = vi.hoisted(() => ({
+	imported: vi.fn(),
+	run: vi.fn(async () => ({ success: true as const, deletedCount: 3 })),
+}));
+vi.mock("@/lib/jobs/position-stamp-purge", () => {
+	positionStampPurge.imported();
+	return { runPositionStampPurge: positionStampPurge.run };
+});
 const {
 	calculateTelemetryMetrics,
 	getOrCreateTelemetryIdentity,
@@ -233,6 +241,23 @@ describe("CRON_JOBS telemetry", () => {
 		expect(getOrCreateTelemetryIdentity).not.toHaveBeenCalled();
 		expect(calculateTelemetryMetrics).not.toHaveBeenCalled();
 		expect(sendTelemetryReport).not.toHaveBeenCalled();
+	});
+});
+
+describe("position stamp purge cron", () => {
+	it("loads the purge lazily and runs it daily at 1 AM", async () => {
+		expect(positionStampPurge.imported).not.toHaveBeenCalled();
+		expect(CRON_JOBS["cron:position-stamp-purge"]).toMatchObject({
+			schedule: "0 1 * * *",
+			defaultJobOptions: { attempts: 2, priority: 9 },
+		});
+
+		expect(
+			await CRON_JOBS["cron:position-stamp-purge"].processor({
+				triggeredAt: "2026-10-09T01:00:00Z",
+			}),
+		).toEqual({ success: true, deletedCount: 3 });
+		expect(positionStampPurge.run).toHaveBeenCalledOnce();
 	});
 });
 
