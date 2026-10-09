@@ -138,6 +138,16 @@ describe("NotificationSettings", () => {
 		expect(screen.getAllByLabelText("Slack notifications for Request submitted")).toHaveLength(2);
 	});
 
+	it("lets an employee switch individual channels of clocking reminders", () => {
+		render(<NotificationSettings />);
+
+		for (const label of ["Missed clock-in", "Forgotten clock-out", "Break due"]) {
+			expect(screen.getByLabelText(`In-App notifications for ${label}`)).toBeTruthy();
+			expect(screen.getByLabelText(`Push notifications for ${label}`)).toBeTruthy();
+			expect(screen.getByLabelText(`Email notifications for ${label}`)).toBeTruthy();
+		}
+	});
+
 	it("keeps push switch enabled when browser push is supported but not subscribed", () => {
 		usePushNotificationsMock.mockReturnValue({
 			isSupported: true,

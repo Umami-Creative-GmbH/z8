@@ -207,6 +207,13 @@ export const queryKeys = {
 	timeClock: {
 		status: () => ["time-clock", "status"] as const,
 		breakStatus: () => ["time-clock", "break-status"] as const,
+		/** The signed-in employee's own position capture and consent (#826). */
+		positionCapture: () => ["time-clock", "position-capture"] as const,
+	},
+
+	// Position stamps on a work period's detail (#831); never the positions themselves
+	positionStamps: {
+		viewerAccess: () => ["position-stamps", "viewer-access"] as const,
 	},
 
 	// Manual time entry form context (target zone and eligible choices)

@@ -13,7 +13,7 @@ import {
  * (CONTEXT.md): a fixed document category, a title, a document date that is a
  * plain calendar day, a pay period exactly for payslips, and an expiry date
  * only for certificates and other documents. The database enforces the same
- * rules with CHECK constraints (migration 0142).
+ * rules with CHECK constraints (migration 0149).
  */
 
 export const DOCUMENT_TITLE_MAX_LENGTH = 200;

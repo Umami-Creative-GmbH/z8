@@ -62,6 +62,11 @@ export const NOTIFICATION_TYPES = [
 	"travel_expense_recovery_recorded",
 	// Reimbursement work arriving for expense officers (#756)
 	"travel_expense_ready_for_reimbursement",
+	// Clocking reminders to the employee about their own clocking (#827)
+	"missed_clock_in_reminder",
+	"forgotten_clock_out_reminder",
+	// Break-due reminder before live work breaks the policy's break rules (#833)
+	"break_due_reminder",
 	// An employee document became visible to its employee (#865)
 	"personnel_file_document_shared",
 	// An employee uploaded a document into their own personnel file (#867)
@@ -85,12 +90,21 @@ const IN_APP_ONLY_BY_DEFAULT: ReadonlySet<NotificationType> = new Set([
 	"travel_expense_ready_for_reimbursement",
 ]);
 
+/** Clocking reminders: in-app and push until the user turns on another channel. */
+const IN_APP_AND_PUSH_BY_DEFAULT: ReadonlySet<NotificationType> = new Set([
+	"missed_clock_in_reminder",
+	"forgotten_clock_out_reminder",
+	"break_due_reminder",
+]);
+
 /** Whether a channel is on for a type the user stored no preference for. */
 export function isChannelEnabledByDefault(
 	type: NotificationType,
 	channel: NotificationChannel,
 ): boolean {
-	return channel === "in_app" || !IN_APP_ONLY_BY_DEFAULT.has(type);
+	if (channel === "in_app") return true;
+	if (IN_APP_AND_PUSH_BY_DEFAULT.has(type)) return channel === "push";
+	return !IN_APP_ONLY_BY_DEFAULT.has(type);
 }
 
 // Notification channel enum values

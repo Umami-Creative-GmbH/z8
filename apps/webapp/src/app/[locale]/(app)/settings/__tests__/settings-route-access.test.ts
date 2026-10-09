@@ -130,6 +130,7 @@ describe("org-admin settings route access", () => {
 			"/settings/export-operations",
 			"/settings/scheduled-exports",
 			"/settings/implementation-checklist",
+			"/settings/position-capture",
 			"/settings/personnel-files",
 		]);
 	});

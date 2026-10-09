@@ -35,7 +35,7 @@ import { currentTimestamp } from "./timestamp";
  * metadata may change, the file never does (replacing means delete + upload).
  * Deleting a row (directly, through the employee or the organization) hands
  * its object to the cleanup ledger below through an AFTER DELETE trigger
- * (migration 0142), so storage is purged durably.
+ * (migration 0149), so storage is purged durably.
  */
 export const employeeDocument = pgTable(
 	"employee_document",

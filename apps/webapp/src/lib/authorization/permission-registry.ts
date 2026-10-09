@@ -149,6 +149,16 @@ const PERMISSION_DEFINITIONS: Record<string, PermissionDefinitionInput> = {
 		label: "Manage Holidays",
 		description: "Configure organization holidays",
 	},
+	// Granted only explicitly through a custom role; no role (manager, owner, admin) implies it.
+	// Owners and admins see positions by their membership role; see position-capture/viewer.ts.
+	"read:PositionStamp": {
+		action: "read",
+		subject: "PositionStamp",
+		category: "time_tracking",
+		label: "View Position Stamps",
+		description:
+			"See the positions recorded with other employees' clock events on a work period's detail. Every view is logged for the employee.",
+	},
 	"manage:Surcharge": {
 		action: "manage",
 		subject: "Surcharge",

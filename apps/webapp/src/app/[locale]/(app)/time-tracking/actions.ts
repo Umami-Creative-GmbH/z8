@@ -22,7 +22,12 @@ import {
 	isBillingMutationAllowed,
 	requireBillingForMutation,
 } from "@/lib/billing/guard";
-import { dateToDB } from "@/lib/datetime/drizzle-adapter";
+import {
+	compareInstants,
+	type Instant,
+	instantFromDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -44,10 +49,13 @@ import type { ComplianceWarning } from "@/lib/effect/services/work-policy.servic
 import { WorkPolicyService } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
-import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
+import { breakDueStatus } from "@/lib/time-tracking/break-due";
+import { readComplianceTotals } from "@/lib/time-tracking/compliance-totals";
+import { readEffectiveWorkPolicyAt } from "@/lib/time-tracking/effective-work-policy";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { changeWorkPeriodProject } from "@/lib/time-tracking/work-period-attribution";
+import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import {
 	type AddBreakActionContext,
@@ -70,7 +78,7 @@ import {
 	parsePresenceFixedDays,
 	validatePresenceFixedDaysConfig,
 } from "./actions/presence-status";
-import { getActiveWorkPeriod, getComplianceDailyMinutes } from "./actions/queries";
+import { getActiveWorkPeriod } from "./actions/queries";
 import { splitOwnWorkPeriod } from "./actions/work-period-split";
 import {
 	createManualTimeEntryFromCommand,
@@ -101,6 +109,9 @@ export async function addBreakToActiveSession(
 }
 
 const logger = createLogger("TimeTrackingActionsEffect");
+
+/** The page warns this many minutes before a break is due. */
+const BREAK_WARNING_LEAD_MINUTES = 15;
 
 type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
 	project: Pick<
@@ -344,49 +355,6 @@ async function validateProjectAssignment(
 	return { isValid: true };
 }
 
-/**
- * Calculate total break minutes taken today (gaps between completed work periods)
- * Uses employee's timezone for "today" calculation
- */
-async function calculateBreaksTakenToday(
-	employeeId: string,
-	timezone: string = "UTC",
-): Promise<number> {
-	const { start: todayStartDT, end: todayEndDT } =
-		getTodayRangeInTimezone(timezone);
-	const todayStart = dateToDB(todayStartDT)!;
-	const todayEnd = dateToDB(todayEndDT)!;
-
-	// Get all completed work periods for today, sorted by start time
-	const periods = await db.query.workPeriod.findMany({
-		where: and(
-			eq(workPeriod.employeeId, employeeId),
-			gte(workPeriod.startTime, todayStart),
-			lte(workPeriod.startTime, todayEnd),
-		),
-		orderBy: [workPeriod.startTime],
-	});
-
-	// Calculate gaps between consecutive work periods
-	let totalBreakMinutes = 0;
-
-	for (let i = 0; i < periods.length - 1; i++) {
-		const currentEnd = periods[i].endTime;
-		const nextStart = periods[i + 1].startTime;
-
-		if (currentEnd && nextStart) {
-			const gapMs = nextStart.getTime() - currentEnd.getTime();
-			const gapMinutes = Math.floor(gapMs / 60000);
-			// Only count gaps > 1 minute as breaks
-			if (gapMinutes > 1) {
-				totalBreakMinutes += gapMinutes;
-			}
-		}
-	}
-
-	return totalBreakMinutes;
-}
-
 export async function requestTimeCorrection(
 	data: CorrectionRequest,
 ): Promise<
@@ -415,8 +383,9 @@ export async function requestTimeCorrection(
 }
 
 /**
- * Get break reminder status for the currently active session
- * Returns information about break requirements and whether a break is needed soon
+ * Break reminder status for the current live work. It reads the same shared
+ * break-due computation as the break-due reminder, so the page and the
+ * reminder never disagree.
  */
 export async function getBreakReminderStatus(): Promise<
 	ServerActionResult<{
@@ -442,14 +411,6 @@ export async function getBreakReminderStatus(): Promise<
 		return { success: false, error: "Employee profile not found" };
 	}
 
-	// Get user's timezone for calculations from userSettings
-	const settingsData = await db.query.userSettings.findFirst({
-		where: eq(userSettings.userId, session.user.id),
-		columns: { timezone: true },
-	});
-	const timezone = settingsData?.timezone || "UTC";
-
-	// Get active work period
 	const activePeriod = await getActiveWorkPeriod(emp.id);
 	if (!activePeriod) {
 		return {
@@ -465,80 +426,47 @@ export async function getBreakReminderStatus(): Promise<
 	}
 
 	try {
-		// Calculate current session duration
-		const now = new Date();
-		const durationMs = now.getTime() - activePeriod.startTime.getTime();
-		const currentSessionMinutes = Math.floor(durationMs / 60000);
-
-		// Get the compliance check's day and breaks using employee's timezone
-		const completedMinutesToday = await getComplianceDailyMinutes(emp.id, timezone);
-		const breaksTaken = await calculateBreaksTakenToday(emp.id, timezone);
-
-		// Use Effect to get regulation and check break requirements
-		const breakStatusEffect = Effect.gen(function* () {
-			const workPolicyService = yield* WorkPolicyService;
-
-			const policy = yield* workPolicyService.getEffectivePolicy(emp.id);
-
-			if (!policy?.regulation) {
-				return {
-					needsBreakSoon: false,
-					uninterruptedMinutes: currentSessionMinutes,
-					maxUninterrupted: null,
-					minutesUntilBreakRequired: null,
-					breakRequirement: null,
-				};
-			}
-
-			const { regulation } = policy;
-
-			// Calculate break requirements
-			const breakReq = workPolicyService.calculateBreakRequirements({
-				regulation,
-				workedMinutes: completedMinutesToday + currentSessionMinutes,
-				breaksTakenMinutes: breaksTaken,
-			});
-
-			// Calculate time until break is required
-			const maxUninterrupted = regulation.maxUninterruptedMinutes;
-			let minutesUntilBreakRequired: number | null = null;
-			let needsBreakSoon = false;
-
-			if (maxUninterrupted) {
-				const remaining = maxUninterrupted - currentSessionMinutes;
-				minutesUntilBreakRequired = remaining;
-
-				// Warn when 15 minutes or less remaining
-				if (remaining <= 15 && remaining > 0) {
-					needsBreakSoon = true;
-				} else if (remaining <= 0) {
-					needsBreakSoon = true;
-				}
-			}
-
-			// Also check if break requirement is approaching
-			if (breakReq.isRequired && breakReq.remaining > 0) {
-				needsBreakSoon = true;
-			}
-
-			return {
-				needsBreakSoon,
-				uninterruptedMinutes: currentSessionMinutes,
-				maxUninterrupted: maxUninterrupted,
-				minutesUntilBreakRequired,
-				breakRequirement: breakReq.isRequired
-					? {
-							isRequired: true,
-							totalNeeded: breakReq.totalBreakNeeded,
-							taken: breakReq.breakTaken,
-							remaining: breakReq.remaining,
-						}
-					: null,
-			};
+		const now = systemClock.nowInstant();
+		const liveStart = instantFromDate(activePeriod.startTime);
+		const timezone = await getEffectiveTimezone(session.user.id, emp.organizationId);
+		const [totals, policy] = await Promise.all([
+			readComplianceTotals({
+				organizationId: emp.organizationId,
+				employeeId: emp.id,
+				workStart: liveStart,
+				timezone,
+			}),
+			readEffectiveWorkPolicyAt({
+				employeeId: emp.id,
+				organizationId: emp.organizationId,
+				at: now,
+			}),
+		]);
+		const regulation = policy?.regulation ?? null;
+		const status = breakDueStatus({
+			regulation,
+			completedMinutes: totals.dailyMinutes,
+			breakMinutes: totals.breakMinutes,
+			liveStart,
+			now,
 		});
+		const warnFrom = (due: Instant) =>
+			due.subtract({ minutes: BREAK_WARNING_LEAD_MINUTES });
 
-		const breakStatus = await runtime.runPromise(breakStatusEffect);
-		return { success: true, data: breakStatus };
+		return {
+			success: true,
+			data: {
+				needsBreakSoon: status.breaches.some(
+					(breach) => compareInstants(now, warnFrom(breach.at)) >= 0,
+				),
+				uninterruptedMinutes: status.uninterruptedMinutes,
+				maxUninterrupted: regulation?.maxUninterruptedMinutes ?? null,
+				minutesUntilBreakRequired: status.minutesUntilUninterruptedLimit,
+				breakRequirement: status.requirement
+					? { isRequired: true, ...status.requirement }
+					: null,
+			},
+		};
 	} catch (error) {
 		logger.error({ error }, "Failed to get break reminder status");
 		return { success: false, error: "Failed to check break status" };

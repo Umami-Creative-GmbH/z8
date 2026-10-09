@@ -11,7 +11,7 @@ import type { PersonnelFileCleanupReason } from "./document.types";
  * employee document. Every object that was never recorded (failed or
  * abandoned uploads) or whose document was deleted (directly or by an
  * employee or organization cascade, through the AFTER DELETE trigger of
- * migration 0142) stays here until the cleanup worker deleted it. Failures
+ * migration 0149) stays here until the cleanup worker deleted it. Failures
  * back off and retry forever.
  */
 

@@ -166,6 +166,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "account",
 	},
 	{
+		id: "position-stamps",
+		titleKey: "settings.positionStamps.title",
+		titleDefault: "Position stamps",
+		descriptionKey: "settings.positionStamps.description",
+		descriptionDefault:
+			"Whether your position is recorded with your clock events, and your consent",
+		href: "/settings/position-stamps",
+		icon: "map-pin",
+		minimumTier: "member",
+		group: "account",
+	},
+	{
 		id: "organizations",
 		titleKey: "settings.organizations.title",
 		titleDefault: "Organization",
@@ -309,6 +321,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault:
 			"Expense report review, receipts, currencies, mileage and per diem rates, and exceptions.",
 		href: "/settings/travel-expenses",
+		icon: "map-pin",
+		minimumTier: "orgAdmin",
+		group: "administration",
+	},
+	{
+		id: "position-capture",
+		titleKey: "settings.positionCapture.title",
+		titleDefault: "Position capture",
+		descriptionKey: "settings.positionCapture.description",
+		descriptionDefault: "Record positions with employees' own clock events, with their consent",
+		href: "/settings/position-capture",
 		icon: "map-pin",
 		minimumTier: "orgAdmin",
 		group: "administration",

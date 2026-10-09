@@ -1,5 +1,4 @@
 import { and, eq, gte, isNull, lt } from "drizzle-orm";
-import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
 import {
 	type InstantRange,
@@ -37,17 +36,20 @@ function startsWithin(period: ComplianceTotalsPeriod, range: InstantRange): bool
 	);
 }
 
-/** Totals a set of periods for one local day and the week containing it. */
-export function complianceTotalsOf(
+const recordedMinutes = (list: readonly ComplianceTotalsPeriod[]) =>
+	list.reduce((total, period) => total + (period.durationMinutes ?? 0), 0);
+
+/**
+ * Totals a set of periods for one local day: the recorded minutes of every period that started
+ * that day (live work counts nothing yet) and the breaks between them.
+ */
+export function complianceDayTotalsOf(
 	periods: readonly ComplianceTotalsPeriod[],
-	ranges: { day: InstantRange; week: InstantRange },
-): ComplianceTotals {
-	const inWeek = periods.filter((period) => startsWithin(period, ranges.week));
-	const inDay = inWeek
-		.filter((period) => startsWithin(period, ranges.day))
+	day: InstantRange,
+): Omit<ComplianceTotals, "weeklyMinutes"> {
+	const inDay = periods
+		.filter((period) => startsWithin(period, day))
 		.sort((left, right) => compareInstants(left.start, right.start));
-	const minutes = (list: readonly ComplianceTotalsPeriod[]) =>
-		list.reduce((total, period) => total + (period.durationMinutes ?? 0), 0);
 
 	let breakMinutes = 0;
 	for (let index = 0; index < inDay.length - 1; index += 1) {
@@ -59,7 +61,19 @@ export function complianceTotalsOf(
 		if (gapMinutes > 1) breakMinutes += gapMinutes;
 	}
 
-	return { dailyMinutes: minutes(inDay), weeklyMinutes: minutes(inWeek), breakMinutes };
+	return { dailyMinutes: recordedMinutes(inDay), breakMinutes };
+}
+
+/** Totals a set of periods for one local day and the week containing it. */
+export function complianceTotalsOf(
+	periods: readonly ComplianceTotalsPeriod[],
+	ranges: { day: InstantRange; week: InstantRange },
+): ComplianceTotals {
+	const inWeek = periods.filter((period) => startsWithin(period, ranges.week));
+	return {
+		...complianceDayTotalsOf(inWeek, ranges.day),
+		weeklyMinutes: recordedMinutes(inWeek),
+	};
 }
 
 /**
@@ -82,6 +96,8 @@ export async function readComplianceTotals(input: {
 	const day = localDayRange(localDate, input.timezone);
 	const week = localWeekRange(localDate, input.timezone, input.weekStartDay ?? "sunday");
 
+	// Imported here so the pure totals above stay usable without a database.
+	const { db } = await import("@/db");
 	const rows = await db
 		.select({
 			startTime: workPeriod.startTime,

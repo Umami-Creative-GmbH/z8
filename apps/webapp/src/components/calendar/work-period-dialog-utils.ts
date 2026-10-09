@@ -9,6 +9,7 @@ import {
 
 export interface WorkPeriodDialogMetadata {
 	durationMinutes: number;
+	employeeId?: string;
 	employeeName: string;
 	notes?: string;
 	projectId?: string;

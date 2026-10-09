@@ -64,6 +64,21 @@ The worker stores the command in a single readwrite transaction on
 3. Serializes the command once, with a fixed key order, and stores those bytes.
    Every attempt sends exactly these bytes.
 
+### Position stamps (#826)
+
+When the employee's position capture is on and their consent to the current notice
+is active, the page takes one device position per clock action
+(`getCurrentPosition` with `maximumAge: 120000`). The event instant is fixed before the
+capture status is read and the position is requested; both together add at most five
+seconds, which also covers an open permission prompt. If capture is on and the current
+notice is unanswered, the event is submitted without a position first, and the consent
+dialog (Agree / Not now) opens afterwards without holding the event up. Consent given
+there applies to later events only. A position goes into the capture request only when the server advertises
+version 3, and the worker then freezes a version 3 command with `position` as the
+last key. Denied, unavailable or timed-out positions mean a version 2 command and no
+recorded reason. A queued command keeps the position taken at the event; the server
+decides on arrival whether to keep it. The legacy offline queue never carries one.
+
 Every readwrite transaction requests `durability: "strict"`, so a record reported as
 saved survives an OS crash too. If the transaction fails, the page reports a failure
 and nothing is sent. The

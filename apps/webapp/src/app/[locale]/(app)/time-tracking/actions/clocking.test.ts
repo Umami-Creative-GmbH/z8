@@ -397,7 +397,6 @@ vi.mock("@/lib/time-tracking/clock-out-effects", () => ({
 
 vi.mock("./compliance", () => ({
 	calculateAndPersistSurcharges: mockState.calculateAndPersistSurcharges,
-	calculateBreaksTakenToday: vi.fn(),
 }));
 
 vi.mock("./entry-helpers", () => ({
@@ -414,18 +413,9 @@ vi.mock("./policy-helpers", () => ({
 
 vi.mock("./queries", () => ({
 	getActiveWorkPeriod: mockState.getActiveWorkPeriod,
-	getComplianceDailyMinutes: vi.fn(),
 }));
 
 vi.mock("./shared", () => ({
-	BREAK_WARNING_THRESHOLD_MINUTES: 30,
-	EMPTY_BREAK_REMINDER_STATUS: {
-		needsBreakSoon: false,
-		uninterruptedMinutes: 0,
-		maxUninterrupted: null,
-		minutesUntilBreakRequired: null,
-		breakRequirement: null,
-	},
 	logger: mockState.logger,
 	ONE_MINUTE_MS: 60_000,
 }));

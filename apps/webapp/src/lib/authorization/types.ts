@@ -66,6 +66,7 @@ export type OrganizationSubject =
 	| "ScheduledExport" // Scheduled exports
 	| "WorksCouncil" // Works council review portal
 	| "TravelExpenseFinance" // Travel expense finance queue, exports and settlement
+	| "PositionStamp" // Position stamps (#831): granted explicitly, never by a role; see position-capture/viewer.ts
 	| "DemoData"; // Demo data management
 
 /**
@@ -221,6 +222,7 @@ export type SubjectTypeMap = {
 	ScheduledExport: OrgScopedSubject;
 	WorksCouncil: OrgScopedSubject;
 	TravelExpenseFinance: OrgScopedSubject;
+	PositionStamp: OrgScopedSubject;
 	DemoData: OrgScopedSubject;
 
 	// Workforce subjects

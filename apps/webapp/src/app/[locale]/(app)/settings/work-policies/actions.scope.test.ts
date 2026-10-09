@@ -977,6 +977,66 @@ describe("work policy settings scope actions", () => {
 		});
 	});
 
+	describe("latest clock-in on detailed schedule days", () => {
+		const existing = {
+			id: "policy-1",
+			organizationId: "org-1",
+			name: "Standard",
+			description: null,
+			scheduleEnabled: true,
+			regulationEnabled: false,
+			presenceEnabled: false,
+			schedule: null,
+			regulation: null,
+			presence: null,
+		};
+		const day = (
+			dayOfWeek: "monday" | "tuesday" | "saturday",
+			isWorkDay: boolean,
+			latestClockIn: string | null,
+		) => ({ dayOfWeek, hoursPerDay: isWorkDay ? "8" : "0", isWorkDay, latestClockIn });
+		const saveDays = (days: ReturnType<typeof day>[]) =>
+			updateWorkPolicy("policy-1", {
+				schedule: {
+					scheduleCycle: "weekly",
+					scheduleType: "detailed",
+					workingDaysPreset: "custom",
+					days,
+				},
+			});
+		const storedDays = () =>
+			mockState.insertValues.find(Array.isArray) as Array<{
+				dayOfWeek: string;
+				latestClockIn: string | null;
+			}>;
+
+		beforeEach(() => {
+			mockState.isOrgAdmin = true;
+			mockState.workPolicyQueue = [existing, { ...existing, schedule: null }];
+			mockState.insertQueue = [[{ id: "schedule-1" }]];
+		});
+
+		it("stores a latest clock-in on work days and clears it on others", async () => {
+			const result = await saveDays([
+				day("monday", true, "09:00"),
+				day("tuesday", true, null),
+				day("saturday", false, "09:00"),
+			]);
+
+			expect(result).toMatchObject({ success: true });
+			expect(
+				Object.fromEntries(storedDays().map((row) => [row.dayOfWeek, row.latestClockIn])),
+			).toEqual({ monday: "09:00", tuesday: null, saturday: null });
+		});
+
+		it("rejects a latest clock-in that is not a HH:mm time", async () => {
+			const result = await saveDays([day("monday", true, "9am")]);
+
+			expect(result).toMatchObject({ success: false, code: "ValidationError" });
+			expect(mockState.insertValues).toHaveLength(0);
+		});
+	});
+
 	it("marks organization work balances dirty after deleting a work policy", async () => {
 		mockState.isOrgAdmin = true;
 		mockState.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1" }];

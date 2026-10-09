@@ -59,6 +59,24 @@ describe("web clock-in adapter", () => {
 		});
 	});
 
+	it("carries the web's position into the command, and drops a malformed one (#826)", async () => {
+		const position = {
+			latitude: 52.52,
+			longitude: 13.4,
+			accuracyMeters: 20,
+			fixedAt: "2026-07-22T07:59:58.000Z",
+		};
+
+		await clockIn("office", { submissionId, position });
+		await clockIn("office", { submissionId, position: { ...position, fixedAt: "soon" } });
+
+		expect(state.run.mock.calls[0]?.[0]).toMatchObject({
+			channel: "web",
+			position: { ...position, fixedAt: parseInstant("2026-07-22T07:59:58Z") },
+		});
+		expect(state.run.mock.calls[1]?.[0]).not.toHaveProperty("position");
+	});
+
 	it("defaults to the office and names an unkeyed request with a server identity", async () => {
 		await clockIn();
 
