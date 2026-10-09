@@ -128,6 +128,8 @@ export enum AuditAction {
 	PERSONNEL_FILE_GRANT_REVOKED = "personnel_file.grant_revoked",
 	// Payslip batches (#868)
 	PERSONNEL_FILE_PAYSLIP_BATCH_CONFIRMED = "personnel_file.payslip_batch_confirmed",
+	// Personnel file ZIP download (#871)
+	PERSONNEL_FILE_ZIP_DOWNLOADED = "personnel_file.zip_downloaded",
 
 	// App Access Operations
 	APP_ACCESS_GRANTED = "app_access.granted",

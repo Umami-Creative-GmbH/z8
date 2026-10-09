@@ -21,6 +21,9 @@ export type DocumentVisibility = (typeof DOCUMENT_VISIBILITIES)[number];
 /** Only these categories may carry an expiry date. */
 export const EXPIRY_DATE_CATEGORIES: readonly DocumentCategory[] = ["certificate", "other"];
 
+/** The categories an employee may upload into their own file; always shared (#867). */
+export const EMPLOYEE_UPLOAD_CATEGORIES: readonly DocumentCategory[] = ["certificate", "other"];
+
 /** Visibility a new document of a category gets unless the uploader picks another. */
 export const DEFAULT_VISIBILITY: Readonly<Record<DocumentCategory, DocumentVisibility>> = {
 	contract: "shared",

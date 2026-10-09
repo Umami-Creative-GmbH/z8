@@ -115,6 +115,7 @@ const NOTIFICATION_CATEGORIES = [
 		icon: IconFileText,
 		types: [
 			"personnel_file_document_shared",
+			"personnel_file_employee_upload",
 			"personnel_file_expiry_upcoming",
 			"personnel_file_expired_today",
 		] as NotificationType[],
@@ -241,6 +242,8 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 	travel_expense_ready_for_reimbursement: "Ready for reimbursement (expense officers)",
 	// An employee document became visible to the employee
 	personnel_file_document_shared: "Document shared with you",
+	// An employee uploaded a document (officers, or owners and admins)
+	personnel_file_employee_upload: "Employee uploaded a document",
 	// Expiry reminders for certificates and other documents
 	personnel_file_expiry_upcoming: "Document expires soon",
 	personnel_file_expired_today: "Document expires today",

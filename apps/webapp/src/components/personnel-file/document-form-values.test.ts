@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	applyCategoryChange,
 	defaultUploadValues,
+	ownUploadValues,
 	toDocumentMetadata,
 	valuesFromDocument,
 } from "./document-form-values";
@@ -62,6 +63,21 @@ describe("personnel document form values", () => {
 			payPeriod: { year: 2026, month: 10 },
 			visibility: "shared",
 			expiryDate: null,
+		});
+	});
+
+	it("starts an employee's own upload as a shared certificate that stays shared as other", () => {
+		const start = ownUploadValues({ today: "2026-10-09" });
+		expect(start).toMatchObject({
+			category: "certificate",
+			documentDate: "2026-10-09",
+			visibility: "shared",
+		});
+		const other = applyCategoryChange({ ...start, expiryDate: "2027-12-31" }, "other");
+		expect(toDocumentMetadata(other)).toMatchObject({
+			category: "other",
+			visibility: "shared",
+			expiryDate: "2027-12-31",
 		});
 	});
 

@@ -45,6 +45,7 @@ const LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES: Partial<
 	travel_expense_recovery_recorded: "/travel-expenses/",
 	travel_expense_ready_for_reimbursement: "/travel-expenses/",
 	personnel_file_document_shared: "/my-documents",
+	personnel_file_employee_upload: "/personnel-files/",
 	// Officers get the employee's personnel file, the employee My documents (#869).
 	personnel_file_expiry_upcoming: ["/personnel-files/", "/my-documents"],
 	personnel_file_expired_today: ["/personnel-files/", "/my-documents"],

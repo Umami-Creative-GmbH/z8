@@ -6,7 +6,11 @@ import { systemClock } from "@/lib/datetime/temporal-core";
 import { managedCategoriesFor, type PersonnelFileAccess } from "./access";
 import { loadEmployeeRef } from "./access-store";
 import { loadCurrentPersonnelFileAccess } from "./current-access";
-import { DOCUMENT_CATEGORIES, type DocumentCategory } from "./document.types";
+import {
+	DOCUMENT_CATEGORIES,
+	type DocumentCategory,
+	EMPLOYEE_UPLOAD_CATEGORIES,
+} from "./document.types";
 import { todayInOrganization } from "./document-rules";
 
 /** What the personnel file panel of one employee may offer the current actor. */
@@ -47,6 +51,25 @@ export async function personnelFilePanelCapabilityFor(
 	return {
 		employeeId: employee.id,
 		categories: DOCUMENT_CATEGORIES.filter((category) => managed.has(category)),
+		today: todayInOrganization(systemClock.nowInstant(), org?.timezone),
+	};
+}
+
+/**
+ * What the employee may upload into their own file from My documents (#867).
+ * Null without a current employee profile or while personnel files are off.
+ */
+export async function loadOwnUploadCapability(): Promise<PersonnelFilePanelCapability | null> {
+	const current = await loadCurrentPersonnelFileAccess();
+	if (current.status !== "resolved" || !current.access.selfEmployeeId) return null;
+	const [org] = await db
+		.select({ timezone: organization.timezone })
+		.from(organization)
+		.where(eq(organization.id, current.access.organizationId))
+		.limit(1);
+	return {
+		employeeId: current.access.selfEmployeeId,
+		categories: [...EMPLOYEE_UPLOAD_CATEGORIES],
 		today: todayInOrganization(systemClock.nowInstant(), org?.timezone),
 	};
 }
