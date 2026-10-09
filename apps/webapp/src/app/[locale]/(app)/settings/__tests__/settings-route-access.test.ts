@@ -878,6 +878,7 @@ describe("org-admin settings route access", () => {
 			"billable-time/page.tsx",
 			"billable-time/rates/page.tsx",
 			"billable-time/cost-rates/page.tsx",
+			"billable-time/accounting/page.tsx",
 		]) {
 			const source = stripComments(readTestText(join(SETTINGS_ROOT, page), "utf8"));
 

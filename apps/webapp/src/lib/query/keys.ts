@@ -345,6 +345,14 @@ export const queryKeys = {
 		/** One employee's cost rates (#899). */
 		costRateHistory: (employeeId: string) =>
 			["billableTime", "costRateHistory", employeeId] as const,
+		/** The accounting connection and every customer's accounting side (#903). */
+		accountingSettings: () => ["billableTime", "accounting", "settings"] as const,
+		/** One customer's contact link and tax treatment (#903). */
+		customerAccounting: (customerId: string) =>
+			["billableTime", "accounting", "customer", customerId] as const,
+		/** A contact picker search in the connected accounting tool (#903). */
+		contactSearch: (query: string) =>
+			["billableTime", "accounting", "contactSearch", query] as const,
 	},
 
 	// Surcharges
