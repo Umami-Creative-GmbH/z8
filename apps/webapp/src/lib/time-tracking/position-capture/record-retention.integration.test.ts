@@ -295,7 +295,12 @@ describe("position record retention on PostgreSQL", () => {
 		const supersededRecently = await decline(a, e1, v2, daysAgo(395));
 		const current = await decline(a, e2, v3, daysAgo(50));
 		const b = ids.organizationB;
-		const currentForYears = await decline(b, e5, await publishNotice(b, 1, daysAgo(700)), daysAgo(650));
+		const currentForYears = await decline(
+			b,
+			e5,
+			await publishNotice(b, 1, daysAgo(700)),
+			daysAgo(650),
+		);
 		await decline(a, e3, v1, daysAgo(890));
 
 		const result = await deletePositionRecordsPastAuditLifetime(db, {

@@ -285,7 +285,9 @@ export type PositionStampAccessKind = (typeof POSITION_STAMP_ACCESS_KINDS)[numbe
  * the stamp purge never touches the log.
  *
  * Entries are append-only: a trigger refuses every update except the
- * `ON DELETE SET NULL` of a deleted viewer's user id.
+ * `ON DELETE SET NULL` of a deleted viewer's user id, and every delete except
+ * parent-deletion cascades and the retention cleanup of entries older than the
+ * audit-log lifetime (spec #766, `deletePositionRecordsPastAuditLifetime`).
  */
 export const positionStampAccessLog = pgTable(
 	"position_stamp_access_log",
