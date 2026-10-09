@@ -1,6 +1,7 @@
-import { and, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, lt, lte } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
+import { shiftCalendarDate, shiftDateBounds } from "@/lib/scheduling/shift-date";
 import {
 	buildSummaryCounts,
 	detectAbsencesToday,
@@ -42,6 +43,11 @@ type DateSourceScope = SourceScope & {
 	date: string;
 };
 
+type ShiftSourceScope = DateSourceScope & {
+	/** The organization's timezone, which `shift.date` is keyed in. */
+	timezone: string;
+};
+
 type TimeRecordSourceScope = SourceScope & {
 	from: Date;
 	to: Date;
@@ -53,7 +59,7 @@ export type ManagerDailyBriefingSources = {
 		currentEmployeeId: string;
 		role: string;
 	}): Promise<ScopedEmployee[]>;
-	getPublishedShifts(input: DateSourceScope): Promise<BriefingShift[]>;
+	getPublishedShifts(input: ShiftSourceScope): Promise<BriefingShift[]>;
 	getOpenTimeRecords(input: TimeRecordSourceScope): Promise<BriefingTimeRecord[]>;
 	getApprovedAbsences(input: DateSourceScope): Promise<BriefingAbsence[]>;
 	getCoverageRules(input: {
@@ -160,7 +166,7 @@ export async function getManagerDailyBriefingFromSources({
 		to: businessNow.endOf("day").plus({ days: 1 }).toJSDate(),
 	};
 
-	const shiftsPromise = sources.getPublishedShifts({ ...sourceScope, date });
+	const shiftsPromise = sources.getPublishedShifts({ ...sourceScope, date, timezone });
 	const [shiftsResult] = await Promise.allSettled([shiftsPromise]);
 	const shifts = settledValue(shiftsResult, []);
 	const managerCoverageSubareaIds =
@@ -378,7 +384,7 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 		}));
 	},
 
-	async getPublishedShifts({ organizationId, employeeIds, date }) {
+	async getPublishedShifts({ organizationId, employeeIds, date, timezone }) {
 		if (employeeIds.length === 0) {
 			return [];
 		}
@@ -386,6 +392,7 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 		const [dbModule, schema] = await Promise.all([import("@/db"), import("@/db/schema")]);
 		const { db, employee, shift, team, user } = dbModule;
 		const { locationSubarea } = schema;
+		const bounds = shiftDateBounds(date, timezone);
 
 		const rows = await db
 			.select({
@@ -411,7 +418,8 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 				and(
 					eq(shift.organizationId, organizationId),
 					eq(shift.status, "published"),
-					eq(shift.date, DateTime.fromISO(date, { zone: "UTC" }).toJSDate()),
+					gte(shift.date, bounds.from),
+					lt(shift.date, bounds.until),
 					inArray(shift.employeeId, employeeIds),
 				),
 			);
@@ -424,7 +432,7 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 							employeeId: row.employeeId,
 							employeeName: employeeDisplayName(row),
 							teamName: row.teamName,
-							date: DateTime.fromJSDate(row.date, { zone: "UTC" }).toISODate() ?? date,
+							date: shiftCalendarDate(row.date, timezone).toString(),
 							startTime: row.startTime,
 							endTime: row.endTime,
 							status: row.status,
