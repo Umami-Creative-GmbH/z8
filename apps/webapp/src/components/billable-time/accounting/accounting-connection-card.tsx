@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -52,6 +53,7 @@ import {
 } from "@/lib/billable-time/accounting/views";
 import { formatRateDate } from "@/lib/billable-time/format";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { ContactPersonPicker } from "./contact-person-picker";
 import {
 	DEFAULT_TAX_TREATMENT,
 	TaxTreatmentFields,
@@ -366,6 +368,9 @@ function ConnectForm({
 			providerKind: firstKind as AccountingProviderKind | "",
 			apiKey: "",
 			taxTreatment: (replacing?.defaultTaxTreatment ?? DEFAULT_TAX_TREATMENT) as TaxTreatmentView,
+			// sevdesk only: the drafts' contact person and the net price confirmation.
+			contactPersonId: "",
+			netPrices: false,
 		},
 		onSubmit: async ({ value }) => {
 			const result: ServerActionResult<AccountingConnectionView> | null =
@@ -373,6 +378,13 @@ function ConnectForm({
 					providerKind: value.providerKind,
 					apiKey: value.apiKey,
 					defaultTaxTreatment: value.taxTreatment,
+					settings:
+						value.providerKind === "sevdesk"
+							? {
+									contactPersonId: value.contactPersonId || undefined,
+									netPrices: value.netPrices,
+								}
+							: undefined,
 				}).catch(() => null);
 			if (!result?.success) {
 				toast.error(result?.error ?? t("common.unexpectedError", "An unexpected error occurred"));
@@ -506,6 +518,72 @@ function ConnectForm({
 					</TFormItem>
 				)}
 			</form.Field>
+			<form.Subscribe
+				selector={(state) => ({ kind: state.values.providerKind, apiKey: state.values.apiKey })}
+			>
+				{({ kind, apiKey }) =>
+					kind === "sevdesk" && (
+						<>
+							<form.Field name="contactPersonId">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)}>
+											{t("settings.billableTime.accounting.contactPerson.label", "Contact person")}
+										</TFormLabel>
+										<ContactPersonPicker
+											id={`${id}-contact-person`}
+											providerKind={kind}
+											apiKey={apiKey}
+											value={field.state.value}
+											onChange={field.handleChange}
+											hasError={fieldHasError(field)}
+										/>
+										<TFormDescription>
+											{t(
+												"settings.billableTime.accounting.contactPerson.help",
+												"sevdesk names a user of your account as contact person on every invoice. Load the users with the API key above and choose one.",
+											)}
+										</TFormDescription>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+							<form.Field
+								name="netPrices"
+								validators={{
+									onSubmit: ({ value }) =>
+										value
+											? undefined
+											: t(
+													"settings.billableTime.accounting.netPrices.required",
+													"Z8 hands off net prices. Confirm that sevdesk enters prices as net prices",
+												),
+								}}
+							>
+								{(field) => (
+									<TFormItem>
+										<div className="flex items-start gap-2">
+											<Checkbox
+												id={`${id}-net-prices`}
+												checked={field.state.value}
+												onCheckedChange={(checked) => field.handleChange(checked === true)}
+												aria-invalid={fieldHasError(field) || undefined}
+											/>
+											<label htmlFor={`${id}-net-prices`} className="text-sm leading-tight">
+												{t(
+													"settings.billableTime.accounting.netPrices.label",
+													"This sevdesk account enters invoice prices as net prices",
+												)}
+											</label>
+										</div>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+						</>
+					)
+				}
+			</form.Subscribe>
 			<form.Field name="taxTreatment" validators={{ onSubmit: ({ value }) => taxError(value) }}>
 				{(field) => (
 					<div className="space-y-2">

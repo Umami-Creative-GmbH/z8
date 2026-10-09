@@ -1,5 +1,6 @@
 import { createLexwareOfficeConnector } from "./lexware/connector";
 import type { AccountingConnector, AccountingProviderKind } from "./provider";
+import { createSevdeskConnector } from "./sevdesk/connector";
 
 /**
  * Accounting connectors by provider kind (#903). The connection store, contact
@@ -28,12 +29,14 @@ export function createAccountingProviderRegistry(
 }
 
 /**
- * The production connectors. #904 adds the Lexware Office connector and #905
- * the sevdesk connector here; until then no kind can be connected. Tests
+ * The production connectors: Lexware Office (#904) and sevdesk (#905). Tests
  * replace `getAccountingProviderRegistry` with `fakeAccountingProviderRegistry`
  * (`vi.mock("@/lib/billable-time/accounting/registry", ...)`).
  */
-const PRODUCTION_CONNECTORS: readonly AccountingConnector[] = [createLexwareOfficeConnector()];
+const PRODUCTION_CONNECTORS: readonly AccountingConnector[] = [
+	createLexwareOfficeConnector(),
+	createSevdeskConnector(),
+];
 
 let productionRegistry: AccountingProviderRegistry | null = null;
 

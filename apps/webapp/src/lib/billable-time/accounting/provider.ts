@@ -245,4 +245,17 @@ export interface AccountingConnector {
 
 	/** Opens a provider for a stored connection. Must not call the tool yet. */
 	open(input: { apiKey: string; settings: AccountingConnectionSettings }): AccountingProvider;
+
+	/**
+	 * Optional: the tool account's users an admin picks from before connecting,
+	 * for tools whose drafts name one (sevdesk's required `contactPerson`). The
+	 * choice goes to `validateConnection` as `settings.contactPersonId`.
+	 */
+	listContactPersons?(input: { apiKey: string }): Promise<AccountingContactPerson[]>;
+}
+
+/** A user of the accounting tool account, e.g. the contact person on sevdesk drafts. */
+export interface AccountingContactPerson {
+	id: string;
+	name: string;
 }

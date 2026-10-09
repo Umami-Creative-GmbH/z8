@@ -12,6 +12,7 @@ import {
 	removeAccountingConnection,
 	updateAccountingConnectionDefaults,
 } from "@/lib/billable-time/accounting/connection-store";
+import { listAccountingContactPersons as listToolContactPersons } from "@/lib/billable-time/accounting/contact-persons";
 import {
 	type ContactLink,
 	type CustomerAccounting,
@@ -25,6 +26,7 @@ import {
 import {
 	ACCOUNTING_PROVIDER_KINDS,
 	type AccountingContact,
+	type AccountingContactPerson,
 } from "@/lib/billable-time/accounting/provider";
 import {
 	type AccountingConnectionView,
@@ -239,6 +241,27 @@ export async function connectAccountingTool(input: {
 		const view = yield* readConnectionView(organizationId, dependencies);
 		if (!view) return yield* Effect.fail(notConnected());
 		return view;
+	});
+	return runServerActionSafe(effect);
+}
+
+/**
+ * The users of the tool account behind an API key that is about to be
+ * connected, for the contact person choice (sevdesk). The key is not stored.
+ */
+export async function listAccountingContactPersons(input: {
+	providerKind: string;
+	apiKey: string;
+}): Promise<ServerActionResult<AccountingContactPerson[]>> {
+	const effect = Effect.gen(function* () {
+		const { organizationId } = yield* actor("listAccountingContactPersons");
+		yield* requireModuleOn(organizationId);
+		const dbService = yield* DatabaseService;
+		const outcome = yield* dbService.query("billableTime.accounting.contactPersons", () =>
+			listToolContactPersons(defaultAccountingDependencies(), input),
+		);
+		if (outcome.ok) return outcome.persons;
+		return yield* Effect.fail(connectRefusalError(outcome));
 	});
 	return runServerActionSafe(effect);
 }
