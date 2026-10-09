@@ -68,11 +68,12 @@ The worker stores the command in a single readwrite transaction on
 
 When the employee's position capture is on and their consent to the current notice
 is active, the page takes one device position per clock action
-(`getCurrentPosition` with `maximumAge: 120000` and a five-second bound of its own,
-which also covers an open permission prompt). The event instant is fixed before the
-position is requested. If capture is on and the current notice is unanswered, the
-consent dialog (Agree / Not now) appears first; the clock action goes ahead either
-way. A position goes into the capture request only when the server advertises
+(`getCurrentPosition` with `maximumAge: 120000`). The event instant is fixed before the
+capture status is read and the position is requested; both together add at most five
+seconds, which also covers an open permission prompt. If capture is on and the current
+notice is unanswered, the event is submitted without a position first, and the consent
+dialog (Agree / Not now) opens afterwards without holding the event up. Consent given
+there applies to later events only. A position goes into the capture request only when the server advertises
 version 3, and the worker then freezes a version 3 command with `position` as the
 last key. Denied, unavailable or timed-out positions mean a version 2 command and no
 recorded reason. A queued command keeps the position taken at the event; the server

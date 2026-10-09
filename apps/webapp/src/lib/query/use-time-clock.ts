@@ -7,6 +7,7 @@ import {
 	getTimeClockStatus,
 	updateTimeEntryNotes,
 } from "@/app/[locale]/(app)/time-tracking/actions";
+import type { PositionConsentQuestion } from "@/components/position-capture/position-consent-prompt";
 import { useOfflineClock } from "@/hooks/use-offline-clock";
 import { useSession } from "@/lib/auth-client";
 import { type Instant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
@@ -144,17 +145,27 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 	const clockPosition = useClockPosition(Boolean(session?.user?.id && activeOrganizationId));
 
 	/**
-	 * The employee's own clock event as it happens (#826): asks for position
-	 * consent first when the current notice is unanswered, then fixes the event
-	 * instant, then takes the position within five seconds when capture is on and
-	 * consented. A clock action that can carry no position (the legacy offline
-	 * queue) takes none.
+	 * The employee's own clock event as it happens (#826): fixes the event
+	 * instant, then takes the position when capture is on and consented, adding
+	 * at most five seconds. A clock action that can carry no position (the legacy
+	 * offline queue) takes none. An unanswered notice yields a consent question,
+	 * which `afterClockEvent` asks once the event has been submitted.
 	 */
 	async function captureClockEvent(canCarryPosition: boolean) {
-		const capture = canCarryPosition && (await clockPosition.decide(isOnline));
 		const now = systemClock.nowInstant();
-		const position = capture ? await clockPosition.take() : null;
-		return { now, position };
+		const { position, consentQuestion } = canCarryPosition
+			? await clockPosition.capture(isOnline)
+			: { position: null, consentQuestion: null };
+		return { now, position, consentQuestion };
+	}
+
+	/** Asks the consent question after an accepted event without holding up its result. */
+	function afterClockEvent<T extends { success: boolean }>(
+		result: T,
+		event: { consentQuestion: PositionConsentQuestion | null },
+	): T {
+		if (result.success) clockPosition.askAfterEvent(event.consentQuestion);
+		return result;
 	}
 
 	/**
@@ -206,7 +217,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		}) => {
 			const event = await captureClockEvent(canFreeze || !isOffline);
 			const frozen = prepareFrozenCommand("clock_in", params, event);
-			if (frozen) return submitClockCommand(frozen);
+			if (frozen) return afterClockEvent(await submitClockCommand(frozen), event);
 
 			// When offline, queue the event for later sync
 			if (isOffline) {
@@ -234,13 +245,14 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			}
 
 			// Online - use the route handler; server action IDs change per deployment
-			return postClockIn({
+			const result = await postClockIn({
 				workLocationType: params?.workLocationType,
 				browserTimezone: resolveBrowserTimezone(params),
 				// Named here if the connection returned after the request was prepared.
 				submissionId: params?.submissionId ?? crypto.randomUUID(),
 				...(event.position ? { position: event.position } : {}),
 			});
+			return afterClockEvent(result, event);
 		},
 		onSuccess: (result) => {
 			if (result.success && !("queued" in result)) {
@@ -275,7 +287,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		}) => {
 			const event = await captureClockEvent(canFreeze || !isOffline);
 			const frozen = prepareFrozenCommand("clock_out", params, event);
-			if (frozen) return submitClockCommand(frozen);
+			if (frozen) return afterClockEvent(await submitClockCommand(frozen), event);
 
 			// When offline, queue the event for later sync
 			if (isOffline) {
@@ -303,13 +315,14 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			}
 
 			// Online - use the route handler; server action IDs change per deployment
-			return postClockOut({
+			const result = await postClockOut({
 				projectId: params?.projectId,
 				workCategoryId: params?.workCategoryId,
 				browserTimezone: resolveBrowserTimezone(params),
 				submissionId: params?.submissionId as string,
 				...(event.position ? { position: event.position } : {}),
 			});
+			return afterClockEvent(result, event);
 		},
 		onSuccess: (result) => {
 			if (result.success && !("queued" in result)) {
@@ -363,12 +376,13 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			}
 
 			// The one fix is taken at the break's end and stamps the resumed work (#826).
-			const { position } = await captureClockEvent(true);
-			return addBreakToActiveSession(breakMinutes, {
+			const event = await captureClockEvent(true);
+			const result = await addBreakToActiveSession(breakMinutes, {
 				submissionId,
 				browserTimezone: getBrowserTimezone(),
-				...(position ? { position } : {}),
+				...(event.position ? { position: event.position } : {}),
 			});
+			return afterClockEvent(result, event);
 		},
 		onSuccess: (result) => {
 			if (result.success) {

@@ -29,11 +29,12 @@ function noQuestion() {
 }
 
 /**
- * The consent dialog on the next clock action of an employee whose position
+ * The consent dialog after the next clock action of an employee whose position
  * capture is switched on and who has not answered the current notice (#826).
- * Agree records consent; "Not now" is not asked again until a new notice
- * version. Either way, the clock action goes ahead. Mounted once in the app
- * layout; the keys live in `common` because clock controls appear on every page.
+ * It opens once the clock event has been submitted, which never waits for it.
+ * Agree records consent for later clock events; "Not now" is not asked again
+ * until a new notice version. Mounted once in the app layout; the keys live in
+ * `common` because clock controls appear on every page.
  */
 export function PositionConsentDialogHost() {
 	const { t } = useTranslate();
@@ -55,7 +56,7 @@ export function PositionConsentDialogHost() {
 				decision === "agreed"
 					? await agreeToPositionNoticeAction(input)
 					: await declinePositionNoticeAction(input);
-			// A failed save asks again next time; the clock action never waits on it.
+			// A failed save asks again next time; the clock event was recorded already.
 			answerPositionConsent(result.success ? decision : "dismissed");
 		} catch {
 			answerPositionConsent("dismissed");
@@ -79,7 +80,7 @@ export function PositionConsentDialogHost() {
 					<DialogDescription>
 						{t(
 							"common.positionConsent.description",
-							"Your organization asks to record your device's position when you clock in, clock out or take a break. Your clock event is recorded either way.",
+							"Your organization asks to record your device's position when you clock in, clock out or take a break. Your clock event has been recorded either way. If you agree, positions are recorded from your next clock event.",
 						)}
 					</DialogDescription>
 				</DialogHeader>

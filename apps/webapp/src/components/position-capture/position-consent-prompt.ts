@@ -1,9 +1,9 @@
 /**
- * The consent question on a clock action (#826): a clock action asks, the one
- * mounted dialog host shows the current position notice, and the answer
- * resolves the clock action's wait. With no host mounted the question is
- * answered "dismissed" at once, so a clock action never waits for a dialog that
- * cannot appear.
+ * The consent question after a clock action (#826): once the clock event has
+ * been submitted, the clock action asks without waiting, and the one mounted
+ * dialog host shows the current position notice. The event never waits for
+ * the answer, which applies to later events only. With no host mounted the
+ * question is answered "dismissed" at once.
  */
 export type PositionConsentAnswer = "agreed" | "declined" | "dismissed";
 
@@ -67,7 +67,7 @@ export function registerPositionConsentHost() {
 	hosts += 1;
 	return () => {
 		hosts -= 1;
-		// A host that leaves never strands a clock action.
+		// A host that leaves never strands an open question.
 		if (hosts === 0) answerPositionConsent("dismissed");
 	};
 }

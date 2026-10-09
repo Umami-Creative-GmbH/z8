@@ -148,26 +148,96 @@ describe("useTimeClock position stamps (#826)", () => {
 		);
 	});
 
-	it("asks for consent on the next clock action and stamps it once the employee agrees", async () => {
+	it("submits the clock event first and asks for consent after it, for later events only", async () => {
 		mocks.getOwnPositionCapture.mockResolvedValue(
 			capture({ consent: { kind: "undecided" }, asksForConsent: true }),
 		);
-		const clock = offlineClock();
+		const order: string[] = [];
+		const clock = offlineClock({
+			submitClockCommand: vi.fn(async () => {
+				order.push("submitted");
+				return { success: true, queued: true, delivery: "pending" };
+			}),
+		});
 		mocks.useOfflineClock.mockReturnValue(clock);
 		const host = answerNextQuestion("agreed");
+		const unsubscribeOrder = subscribePositionConsentQuestion(() => {
+			if (currentPositionConsentQuestion()) order.push("asked");
+		});
 		const { result } = render();
 		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
 
 		await result.current.clockIn({ browserTimezone: "Europe/Berlin" });
+		await waitFor(() => expect(host.asked).toHaveLength(1));
 		host.unsubscribe();
+		unsubscribeOrder();
 
+		expect(order).toEqual(["submitted", "asked"]);
 		expect(host.asked).toEqual([
 			{
 				notice: expect.objectContaining({ id: notice.id, version: 2 }),
 				retentionDays: 30,
 			},
 		]);
-		expect(clock.submitClockCommand).toHaveBeenCalledWith(expect.objectContaining({ position }));
+		// Consent given in the dialog never reaches back to the event it followed.
+		expect(mocks.takeClockPosition).not.toHaveBeenCalled();
+		expect(clock.submitClockCommand).toHaveBeenCalledWith(
+			expect.not.objectContaining({ position: expect.anything() }),
+		);
+	});
+
+	it("never waits for the consent dialog: clock-in and a break finish while it stays open", async () => {
+		mocks.getOwnPositionCapture.mockResolvedValue(
+			capture({ consent: { kind: "undecided" }, asksForConsent: true }),
+		);
+		mocks.useOfflineClock.mockReturnValue(offlineClock({ commandCapabilities: null }));
+		mocks.postClockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
+		mocks.addBreakToActiveSession.mockResolvedValue({ success: true, data: { id: "period-2" } });
+		const { result } = render();
+		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
+
+		// Nobody answers the dialog.
+		await expect(result.current.clockIn({ browserTimezone: "Europe/Berlin" })).resolves.toEqual({
+			success: true,
+			data: { id: "entry-1" },
+		});
+		await expect(result.current.addBreak({ breakMinutes: 15 })).resolves.toMatchObject({
+			success: true,
+		});
+
+		await waitFor(() => expect(currentPositionConsentQuestion()).not.toBeNull());
+		answerPositionConsent("dismissed");
+		expect(mocks.postClockIn).toHaveBeenCalledWith(
+			expect.not.objectContaining({ position: expect.anything() }),
+		);
+	});
+
+	it("adds at most five seconds for the capture status and the position together", async () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		try {
+			// The status arrives late and the device never answers.
+			mocks.getOwnPositionCapture.mockImplementation(
+				() => new Promise((resolve) => setTimeout(() => resolve(capture({})), 1_400)),
+			);
+			mocks.takeClockPosition.mockImplementation(() => new Promise(() => {}));
+			const clock = offlineClock();
+			mocks.useOfflineClock.mockReturnValue(clock);
+			const { result } = render();
+			await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
+
+			const clocked = result.current.clockIn({ browserTimezone: "Europe/Berlin" });
+			await vi.advanceTimersByTimeAsync(4_800);
+			expect(mocks.takeClockPosition).toHaveBeenCalled();
+			expect(clock.submitClockCommand).not.toHaveBeenCalled();
+
+			await vi.advanceTimersByTimeAsync(300);
+			await clocked;
+			expect(clock.submitClockCommand).toHaveBeenCalledWith(
+				expect.not.objectContaining({ position: expect.anything() }),
+			);
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it.each(["declined", "dismissed"] as const)(
