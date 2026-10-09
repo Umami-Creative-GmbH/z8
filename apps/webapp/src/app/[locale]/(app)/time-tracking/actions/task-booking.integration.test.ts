@@ -105,6 +105,7 @@ vi.mock("./shared", async (importOriginal) => {
 
 const { createManualTimeEntry } = await import("../actions");
 const { clockIn, clockOut } = await import("./clocking");
+const { updateWorkPeriodProject } = await import("./mutations");
 const { systemClock } = await import("@/lib/datetime/temporal-core");
 
 const ids = {
@@ -400,6 +401,139 @@ describe("booking time to a project task on PostgreSQL", () => {
 				ids.organization,
 			]);
 			expect(rows).toEqual([]);
+		});
+	});
+
+	/** Completed work of the employee, booked through manual entry. */
+	async function bookedWork(admission: Admission, taskId: string | undefined = ids.task) {
+		const result = await submitManual(admission, { projectId: ids.project, taskId });
+		if (!result.success) throw new Error(result.error);
+		return result.data.workPeriodId;
+	}
+
+	function changeProject(workPeriodId: string, projectId: string | null, taskId?: string | null) {
+		actAs(ids.employeeUser);
+		return updateWorkPeriodProject(workPeriodId, projectId, taskId);
+	}
+
+	async function amendReceipts() {
+		const { rows } = await admin.query<{ kind: string; command: unknown }>(
+			`select kind, command from completed_work_operation
+			 where organization_id = $1 and kind = 'amend_completed_work' order by created_at`,
+			[ids.organization],
+		);
+		return rows;
+	}
+
+	describe.each(["legacy", "adopted"] as const)("the project change in a %s organization", (admission) => {
+		beforeEach(async () => {
+			await setAdmission(admission);
+		});
+
+		it("clears the task when the project changes without a task", async () => {
+			const workPeriodId = await bookedWork(admission);
+
+			await expect(changeProject(workPeriodId, ids.secondProject)).resolves.toMatchObject({
+				success: true,
+			});
+
+			const booked = await booking(workPeriodId);
+			expect(booked).toMatchObject({ period_project: ids.secondProject, period_task: null });
+			if (admission === "adopted") {
+				expect(booked).toMatchObject({
+					allocation_project: ids.secondProject,
+					allocation_task: null,
+				});
+				expect(await amendReceipts()).toHaveLength(1);
+			}
+		});
+
+		it("changes only the task", async () => {
+			const workPeriodId = await bookedWork(admission);
+
+			await expect(
+				changeProject(workPeriodId, ids.project, ids.secondTask),
+			).resolves.toMatchObject({ success: true });
+
+			const booked = await booking(workPeriodId);
+			expect(booked).toMatchObject({ period_project: ids.project, period_task: ids.secondTask });
+			if (admission === "adopted") {
+				expect(booked).toMatchObject({
+					allocation_project: ids.project,
+					allocation_task: ids.secondTask,
+				});
+				expect(await amendReceipts()).toEqual([
+					expect.objectContaining({
+						command: expect.objectContaining({
+							request: {
+								workPeriodId,
+								projectId: ids.project,
+								taskId: ids.secondTask,
+							},
+						}),
+					}),
+				]);
+			}
+		});
+
+		it("books a task of the new project with the project change", async () => {
+			const workPeriodId = await bookedWork(admission);
+
+			await expect(
+				changeProject(workPeriodId, ids.secondProject, ids.secondProjectTask),
+			).resolves.toMatchObject({ success: true });
+
+			expect(await booking(workPeriodId)).toMatchObject({
+				period_project: ids.secondProject,
+				period_task: ids.secondProjectTask,
+			});
+		});
+
+		it.each([
+			["a done task", ids.doneTask, "task_done"],
+			["another project's task", ids.secondProjectTask, "task_other_project"],
+			["another organization's task", ids.otherOrganizationTask, "task_not_found"],
+		])("refuses %s with a stable reason", async (_case, taskId, code) => {
+			const workPeriodId = await bookedWork(admission);
+
+			await expect(changeProject(workPeriodId, ids.project, taskId)).resolves.toMatchObject({
+				success: false,
+				code,
+			});
+			expect(await booking(workPeriodId)).toMatchObject({ period_task: ids.task });
+		});
+
+		it("refuses a task of a project that can no longer be booked", async () => {
+			const workPeriodId = await bookedWork(admission);
+			await admin.query("update project set status = 'completed' where id = $1", [ids.project]);
+
+			await expect(
+				changeProject(workPeriodId, ids.project, ids.secondTask),
+			).resolves.toMatchObject({ success: false, code: "project_not_bookable" });
+		});
+	});
+
+	describe("the canonical divergence check in an adopted organization", () => {
+		beforeEach(async () => {
+			await setAdmission("adopted");
+		});
+
+		it("holds work whose period and allocation disagree on the task for review", async () => {
+			const workPeriodId = await bookedWork("adopted");
+			await admin.query("update work_period set task_id = $2 where id = $1", [
+				workPeriodId,
+				ids.secondTask,
+			]);
+
+			await expect(changeProject(workPeriodId, ids.secondProject)).resolves.toMatchObject({
+				success: false,
+				code: "completed_work_review_required",
+			});
+			expect(await booking(workPeriodId)).toMatchObject({
+				period_project: ids.project,
+				period_task: ids.secondTask,
+				allocation_task: ids.task,
+			});
 		});
 	});
 

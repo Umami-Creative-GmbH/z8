@@ -263,8 +263,9 @@ export async function updateTimeEntryNotes(
 export async function updateWorkPeriodProject(
 	workPeriodId: string,
 	projectId: string | null,
+	taskId?: string | null,
 ): Promise<
 	ServerActionResult<{ workPeriodId: string; projectId: string | null }>
 > {
-	return updateWorkPeriodProjectAction(workPeriodId, projectId);
+	return updateWorkPeriodProjectAction(workPeriodId, projectId, taskId);
 }

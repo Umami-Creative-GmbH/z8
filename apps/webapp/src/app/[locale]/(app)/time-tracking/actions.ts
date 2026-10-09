@@ -47,6 +47,10 @@ import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-wo
 import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
+import {
+	PROJECT_TASK_INELIGIBILITY_MESSAGES,
+	projectTaskIneligibility,
+} from "@/lib/time-tracking/project-eligibility";
 import { changeWorkPeriodProject } from "@/lib/time-tracking/work-period-attribution";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import {
@@ -861,11 +865,17 @@ export async function getAssignedProjects(): Promise<
 
 /**
  * Update the project assignment for a work period
- * Allows changing or removing the project after the fact
+ * Allows changing or removing the project after the fact.
+ *
+ * `taskId` (#873): undefined keeps the period's task while its project stays
+ * and clears it when the project changes; null clears it; an ID books the work
+ * to that task of `projectId`. Passing the current project with a task changes
+ * only the task. A refused task answers with its stable reason as `code`.
  */
 export async function updateWorkPeriodProject(
 	workPeriodId: string,
 	projectId: string | null,
+	taskId?: string | null,
 ): Promise<
 	ServerActionResult<{ workPeriodId: string; projectId: string | null }>
 > {
@@ -906,6 +916,22 @@ export async function updateWorkPeriodProject(
 			};
 		}
 
+		// A named task is checked first: it covers its project's bookability, so a
+		// task-only change of a project that can no longer be booked names that reason.
+		if (taskId) {
+			const taskIneligibility = await projectTaskIneligibility(
+				{ employeeId: emp.id, teamId: emp.teamId, organizationId: emp.organizationId },
+				{ projectId, taskId },
+			);
+			if (taskIneligibility) {
+				return {
+					success: false,
+					error: PROJECT_TASK_INELIGIBILITY_MESSAGES[taskIneligibility],
+					code: taskIneligibility,
+				};
+			}
+		}
+
 		// Validate project if provided
 		if (projectId) {
 			const projectValidation = await validateProjectAssignment(
@@ -937,6 +963,7 @@ export async function updateWorkPeriodProject(
 			actorUserId: session.user.id,
 			period,
 			projectId,
+			...(taskId !== undefined ? { taskId } : {}),
 		});
 
 		return {
@@ -947,6 +974,10 @@ export async function updateWorkPeriodProject(
 		const failure = describeAmendmentFailure(error);
 		if (failure) {
 			return { success: false, error: failure.message, code: failure.code };
+		}
+		// The task re-check under the work locks names its stable reason (#873).
+		if (error instanceof ValidationError && error.field === "taskId") {
+			return { success: false, error: error.message, code: String(error.value) };
 		}
 		if (
 			error instanceof ValidationError ||
