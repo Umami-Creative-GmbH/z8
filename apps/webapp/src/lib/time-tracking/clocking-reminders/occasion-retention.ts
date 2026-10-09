@@ -1,9 +1,13 @@
 import "server-only";
 
-import { and, eq, inArray, isNull, lt, notExists, sql } from "drizzle-orm";
+import { and, eq, inArray, lt, notExists, sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { clockingReminderOccasion, workPeriod } from "@/db/schema";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
+import { isLiveWorkPeriod } from "./live-work";
+
+/** How long a sent occasion is kept past its expected time once its employee has no live work. */
+export const CLOCKING_REMINDER_OCCASION_RETENTION_DAYS = 7;
 
 /** Occasions deleted per statement, so one run never holds a long, wide delete. */
 export const CLOCKING_REMINDER_OCCASION_RETENTION_BATCH_SIZE = 1_000;
@@ -15,10 +19,10 @@ type RetentionClient = Pick<typeof rootDatabase, "select" | "selectDistinct" | "
  * Returns the number of rows deleted.
  *
  * An occasion row is what dedupes a reminder across channels, so it may go only once its reminder
- * can no longer be due:its expected time is more than `retentionDays` before now, and its employee has
- * no live work in the organization. A forgotten clock-out stays due for as long as the work is
- * live, however old, so every row of an employee with live work is kept until that work ends.
- * Live work is defined as in the reminders job: active, not deleted, no end and no clock-out.
+ * can no longer be due: its expected time is more than `retentionDays` before now, and its
+ * employee has no live work in the organization. A forgotten clock-out stays due for as long as
+ * the work is live, however old, so every row of an employee with live work is kept until that
+ * work ends. Live work is the reminders job's own definition (`isLiveWorkPeriod`).
  */
 export async function deleteExpiredClockingReminderOccasions(
 	db: RetentionClient,
@@ -43,10 +47,7 @@ export async function deleteExpiredClockingReminderOccasions(
 						and(
 							eq(workPeriod.organizationId, organizationId),
 							eq(workPeriod.employeeId, clockingReminderOccasion.employeeId),
-							eq(workPeriod.isActive, true),
-							isNull(workPeriod.deletedAt),
-							isNull(workPeriod.endTime),
-							isNull(workPeriod.clockOutId),
+							isLiveWorkPeriod(),
 						),
 					),
 			),

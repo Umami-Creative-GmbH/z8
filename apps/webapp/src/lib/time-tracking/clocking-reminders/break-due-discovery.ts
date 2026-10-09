@@ -10,6 +10,7 @@ import {
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import { complianceDayTotalsOf } from "@/lib/time-tracking/compliance-totals";
+import { isLiveWorkPeriod } from "./live-work";
 
 type Database = Pick<typeof db, "select">;
 
@@ -45,10 +46,7 @@ export async function loadBreakDueFacts(
 					workPeriod.employeeId,
 					input.employees.map((person) => person.employeeId),
 				),
-				isNull(workPeriod.deletedAt),
-				eq(workPeriod.isActive, true),
-				isNull(workPeriod.endTime),
-				isNull(workPeriod.clockOutId),
+				isLiveWorkPeriod(),
 			),
 		)
 		.orderBy(desc(workPeriod.startTime));

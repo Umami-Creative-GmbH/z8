@@ -12,11 +12,9 @@ import { runPositionRecordRetention } from "@/lib/jobs/position-record-retention
 import { createLogger } from "@/lib/logger";
 import { deleteOldNotifications } from "@/lib/notifications/notification-service";
 import type { CleanupJobData } from "@/lib/queue";
+import { CLOCKING_REMINDER_OCCASION_RETENTION_DAYS } from "@/lib/time-tracking/clocking-reminders/occasion-retention";
 
 const logger = createLogger("Cleanup");
-
-/** How long a sent clocking reminder occasion is kept once its employee has no live work. */
-const CLOCKING_REMINDER_OCCASION_RETENTION_DAYS = 7;
 
 /**
  * Run cleanup job from worker queue
@@ -38,11 +36,14 @@ export async function runCleanup(data: CleanupJobData): Promise<{
 			deletedCount = await deleteOldNotifications(90);
 			logger.info({ count: deletedCount }, "Cleaned up old notifications");
 			// Sent-reminder claims are kept only while a reminder could still be due again (#919).
-			const occasions = await runClockingReminderOccasionRetention(
+			const deletedOccasionCount = await runClockingReminderOccasionRetention(
 				CLOCKING_REMINDER_OCCASION_RETENTION_DAYS,
 			);
-			logger.info({ count: occasions }, "Cleaned up clocking reminder occasions past retention");
-			deletedCount += occasions;
+			logger.info(
+				{ count: deletedOccasionCount },
+				"Cleaned up clocking reminder occasions past retention",
+			);
+			deletedCount += deletedOccasionCount;
 			break;
 		}
 
