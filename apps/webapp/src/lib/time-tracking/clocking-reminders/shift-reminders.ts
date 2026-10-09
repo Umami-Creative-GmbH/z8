@@ -16,6 +16,8 @@ export interface ReminderWork {
 	start: Instant;
 	/** `null` while the work is live. */
 	end: Instant | null;
+	/** The recorded minutes of completed work, which the compliance check counts. */
+	durationMinutes: number | null;
 }
 
 export interface ShiftReminderInput {

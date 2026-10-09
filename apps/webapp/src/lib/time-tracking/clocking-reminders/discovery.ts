@@ -160,6 +160,7 @@ export async function loadShiftReminderFacts(
 				employeeId: workPeriod.employeeId,
 				startTime: workPeriod.startTime,
 				endTime: workPeriod.endTime,
+				durationMinutes: workPeriod.durationMinutes,
 				live: sql<boolean>`(${workPeriod.isActive} = true AND ${workPeriod.endTime} IS NULL AND ${workPeriod.clockOutId} IS NULL)`,
 			})
 			.from(workPeriod)
@@ -187,6 +188,7 @@ export async function loadShiftReminderFacts(
 		facts.get(row.employeeId)?.work.push({
 			start: instantFromDate(row.startTime),
 			end: row.endTime ? instantFromDate(row.endTime) : null,
+			durationMinutes: row.durationMinutes,
 		});
 	}
 	return facts;

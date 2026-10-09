@@ -1,3 +1,4 @@
+import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import {
 	compareInstants,
 	type Instant,
@@ -6,6 +7,7 @@ import {
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import { shiftInterval, workMatchesShift } from "@/lib/scheduling/shift-occasion";
+import { complianceDayTotalsOf } from "@/lib/time-tracking/compliance-totals";
 import { clockingReminderOccasionKey, type DueClockingReminder } from "./occasion";
 import type { ReminderWork, ShiftReminderInput } from "./shift-reminders";
 
@@ -39,9 +41,9 @@ export async function evaluatePolicyReminders(
 }
 
 /**
- * Live work is judged against the local day it started on, like the compliance check: completed
- * work that started that day plus the elapsed live work. The expected end is the moment that
- * total reaches the day's required minutes.
+ * Live work is judged against the local day it started on, as the compliance check counts it:
+ * the recorded minutes of completed work that started that day plus the elapsed live work. The
+ * expected end is the moment that total reaches the day's required minutes.
  */
 async function forgottenClockOut(
 	input: PolicyReminderInput,
@@ -54,21 +56,17 @@ async function forgottenClockOut(
 	const day = plainDateAt(live.start, input.timezone);
 	// Live work that matches a published shift owes the shift's forgotten clock-out instead.
 	if (matchesAnyShift(input, live)) return null;
-	const completedMs = input.work.reduce(
-		(total, work) =>
-			work.end !== null && plainDateAt(work.start, input.timezone).equals(day)
-				? total + (work.end.epochMilliseconds - work.start.epochMilliseconds)
-				: total,
-		0,
+	const { dailyMinutes: completedMinutes } = complianceDayTotalsOf(
+		input.work.filter((work) => work.end !== null),
+		localDayRange(day.toString(), input.timezone),
 	);
-	const workedMs = completedMs + (now.epochMilliseconds - live.start.epochMilliseconds);
-	const graceMs = settings.forgottenClockOut.graceMinutes * MINUTE_MS;
+	const workedMinutes = completedMinutes + live.start.until(now).total({ unit: "minutes" });
+	const { graceMinutes } = settings.forgottenClockOut;
 	// Nothing can be due before the grace alone has been worked; skip reading the requirements.
-	if (workedMs < graceMs) return null;
+	if (workedMinutes < graceMinutes) return null;
 	const requiredMinutes = await policy.requiredMinutes(day);
 	if (requiredMinutes <= 0) return null;
-	const requiredMs = requiredMinutes * MINUTE_MS;
-	if (workedMs < requiredMs + graceMs) return null;
+	if (workedMinutes < requiredMinutes + graceMinutes) return null;
 	const type = "forgotten_clock_out_reminder";
 	return {
 		type,
@@ -78,12 +76,10 @@ async function forgottenClockOut(
 			day,
 		}),
 		day,
-		expectedAt: live.start.add({ milliseconds: Math.max(0, requiredMs - completedMs) }),
+		expectedAt: live.start.add({ minutes: Math.max(0, requiredMinutes - completedMinutes) }),
 		shift: null,
 	};
 }
-
-const MINUTE_MS = 60_000;
 
 function matchesAnyShift(input: PolicyReminderInput, work: ReminderWork): boolean {
 	return input.shifts.some((shift) => workMatchesShift(shiftInterval(shift, input.timezone), work));

@@ -1,9 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { DEFAULT_CLOCKING_REMINDER_SETTINGS } from "./settings-policy";
-import { evaluateShiftReminders, type ShiftReminderInput } from "./shift-reminders";
+import {
+	evaluateShiftReminders,
+	type ReminderWork,
+	type ShiftReminderInput,
+} from "./shift-reminders";
 
 const at = parseInstant;
+
+/** Work as discovery reads it; completed work records its whole minutes. */
+function period(start: string, end: string | null): ReminderWork {
+	return {
+		start: at(start),
+		end: end ? at(end) : null,
+		durationMinutes: end ? at(start).until(at(end)).total({ unit: "minutes" }) : null,
+	};
+}
 const enabled = {
 	...DEFAULT_CLOCKING_REMINDER_SETTINGS,
 	missedClockIn: { enabled: true, graceMinutes: 15 },
@@ -54,9 +67,9 @@ describe("missed clock-in reminders for published shifts", () => {
 	});
 
 	it("is not due when work started inside the shift window", () => {
-		expect(
-			evaluateShiftReminders(input({ work: [{ start: at("2026-04-28T05:30:00Z"), end: null }] })),
-		).toEqual([]);
+		expect(evaluateShiftReminders(input({ work: [period("2026-04-28T05:30:00Z", null)] }))).toEqual(
+			[],
+		);
 	});
 
 	it("is not due while earlier work still covers the shift start", () => {
@@ -64,7 +77,7 @@ describe("missed clock-in reminders for published shifts", () => {
 			evaluateShiftReminders(
 				input({
 					now: at("2026-04-28T07:00:00Z"),
-					work: [{ start: at("2026-04-28T03:00:00Z"), end: at("2026-04-28T06:30:00Z") }],
+					work: [period("2026-04-28T03:00:00Z", "2026-04-28T06:30:00Z")],
 				}),
 			),
 		).toEqual([]);
@@ -73,7 +86,7 @@ describe("missed clock-in reminders for published shifts", () => {
 	it("is due when the only work ended before the shift start", () => {
 		expect(
 			evaluateShiftReminders(
-				input({ work: [{ start: at("2026-04-28T04:30:00Z"), end: at("2026-04-28T05:00:00Z") }] }),
+				input({ work: [period("2026-04-28T04:30:00Z", "2026-04-28T05:00:00Z")] }),
 			),
 		).toHaveLength(1);
 	});
@@ -114,7 +127,7 @@ describe("missed clock-in reminders for published shifts", () => {
 });
 
 describe("forgotten clock-out reminders for published shifts", () => {
-	const live = { start: at("2026-04-28T05:55:00Z"), end: null };
+	const live = period("2026-04-28T05:55:00Z", null);
 
 	it("is due once matching live work runs past the shift end plus grace", () => {
 		expect(
@@ -142,7 +155,7 @@ describe("forgotten clock-out reminders for published shifts", () => {
 			evaluateShiftReminders(
 				input({
 					now: at("2026-04-28T15:00:00Z"),
-					work: [{ start: live.start, end: at("2026-04-28T14:05:00Z") }],
+					work: [period("2026-04-28T05:55:00Z", "2026-04-28T14:05:00Z")],
 				}),
 			),
 		).toEqual([]);
@@ -153,7 +166,7 @@ describe("forgotten clock-out reminders for published shifts", () => {
 			evaluateShiftReminders(
 				input({
 					now: at("2026-04-28T15:00:00Z"),
-					work: [{ start: at("2026-04-28T14:10:00Z"), end: null }],
+					work: [period("2026-04-28T14:10:00Z", null)],
 				}),
 			),
 		).toEqual([]);

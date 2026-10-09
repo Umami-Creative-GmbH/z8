@@ -6,8 +6,19 @@ import {
 	type PolicyReminderInput,
 } from "./policy-reminders";
 import { DEFAULT_CLOCKING_REMINDER_SETTINGS } from "./settings-policy";
+import type { ReminderWork } from "./shift-reminders";
 
 const at = parseInstant;
+
+/** Work as discovery reads it; completed work records its whole minutes. */
+function period(start: string, end: string | null, durationMinutes?: number): ReminderWork {
+	return {
+		start: at(start),
+		end: end ? at(end) : null,
+		durationMinutes:
+			durationMinutes ?? (end ? at(start).until(at(end)).total({ unit: "minutes" }) : null),
+	};
+}
 const enabled = {
 	...DEFAULT_CLOCKING_REMINDER_SETTINGS,
 	missedClockIn: { enabled: true, graceMinutes: 15 },
@@ -83,7 +94,7 @@ describe("missed clock-in reminders from the work policy's latest clock-in", () 
 	it("is not due once work started that local day, even work that already ended", async () => {
 		expect(
 			await evaluatePolicyReminders(
-				input({ work: [{ start: at("2026-04-27T04:00:00Z"), end: at("2026-04-27T05:00:00Z") }] }),
+				input({ work: [period("2026-04-27T04:00:00Z", "2026-04-27T05:00:00Z")] }),
 				policy(),
 			),
 		).toEqual([]);
@@ -92,7 +103,7 @@ describe("missed clock-in reminders from the work policy's latest clock-in", () 
 	it("is not due while work from the previous day still covers the latest clock-in", async () => {
 		expect(
 			await evaluatePolicyReminders(
-				input({ work: [{ start: at("2026-04-26T20:00:00Z"), end: null }] }),
+				input({ work: [period("2026-04-26T20:00:00Z", null)] }),
 				// Sunday requires nothing, so the live work owes no forgotten clock-out either.
 				policy({ requiredMinutes: { "2026-04-26": 0 } }),
 			),
@@ -102,7 +113,7 @@ describe("missed clock-in reminders from the work policy's latest clock-in", () 
 	it("is due when the only work is from the previous day and has ended", async () => {
 		expect(
 			await evaluatePolicyReminders(
-				input({ work: [{ start: at("2026-04-26T20:00:00Z"), end: at("2026-04-26T23:00:00Z") }] }),
+				input({ work: [period("2026-04-26T20:00:00Z", "2026-04-26T23:00:00Z")] }),
 				policy(),
 			),
 		).toHaveLength(1);
@@ -138,8 +149,8 @@ describe("missed clock-in reminders from the work policy's latest clock-in", () 
 
 describe("forgotten clock-out reminders once the day's required hours are reached", () => {
 	// Clocked in at 08:00, a break from 12:00 to 12:30, clocked in again: 8 h are reached at 16:30.
-	const morning = { start: at("2026-04-27T06:00:00Z"), end: at("2026-04-27T10:00:00Z") };
-	const afternoon = { start: at("2026-04-27T10:30:00Z"), end: null };
+	const morning = period("2026-04-27T06:00:00Z", "2026-04-27T10:00:00Z");
+	const afternoon = period("2026-04-27T10:30:00Z", null);
 	const noLatestClockIn = { latestClockIn: null };
 	const evening = (now: string, overrides: Partial<PolicyReminderInput> = {}) =>
 		input({ now: at(now), work: [morning, afternoon], ...overrides });
@@ -161,11 +172,25 @@ describe("forgotten clock-out reminders once the day's required hours are reache
 		]);
 	});
 
+	it("counts completed work by its recorded minutes, like the compliance check", async () => {
+		// 08:00 to 12:00 recorded as 3 h 50 min: 8 h are reached at 16:40, not 16:30.
+		const recorded = period("2026-04-27T06:00:00Z", "2026-04-27T10:00:00Z", 230);
+		const reminders = (now: string) =>
+			evaluatePolicyReminders(
+				evening(now, { work: [recorded, afternoon] }),
+				policy(noLatestClockIn),
+			);
+		expect(await reminders("2026-04-27T15:09:59Z")).toEqual([]);
+		expect(await reminders("2026-04-27T15:10:00Z")).toMatchObject([
+			{ type: "forgotten_clock_out_reminder", expectedAt: at("2026-04-27T14:40:00Z") },
+		]);
+	});
+
 	it("is not due once the work has ended", async () => {
 		expect(
 			await evaluatePolicyReminders(
 				evening("2026-04-27T16:00:00Z", {
-					work: [morning, { start: afternoon.start, end: at("2026-04-27T15:30:00Z") }],
+					work: [morning, period("2026-04-27T10:30:00Z", "2026-04-27T15:30:00Z")],
 				}),
 				policy(noLatestClockIn),
 			),
@@ -179,7 +204,7 @@ describe("forgotten clock-out reminders once the day's required hours are reache
 			await evaluatePolicyReminders(
 				input({
 					now: at("2026-04-28T04:30:00Z"),
-					work: [{ start: at("2026-04-27T20:00:00Z"), end: null }],
+					work: [period("2026-04-27T20:00:00Z", null)],
 				}),
 				overnight,
 			),
@@ -193,8 +218,8 @@ describe("forgotten clock-out reminders once the day's required hours are reache
 				input({
 					now: at("2026-04-27T15:00:00Z"),
 					work: [
-						{ start: at("2026-04-26T06:00:00Z"), end: at("2026-04-26T14:00:00Z") },
-						{ start: at("2026-04-27T10:30:00Z"), end: null },
+						period("2026-04-26T06:00:00Z", "2026-04-26T14:00:00Z"),
+						period("2026-04-27T10:30:00Z", null),
 					],
 				}),
 				policy(noLatestClockIn),
