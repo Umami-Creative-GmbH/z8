@@ -4,10 +4,33 @@ import { randomUUID } from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
 import { timeRecordAllocation, workPeriod } from "@/db/schema";
 import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
-import { AMEND_COMPLETED_WORK_COMMAND_VERSION, amendCompletedWork } from "./amend-completed-work";
+import { ConflictError, NotFoundError } from "@/lib/effect/errors";
+import {
+	AMEND_COMPLETED_WORK_COMMAND_VERSION,
+	type AmendCompletedWorkIntent,
+	type AmendmentAuthority,
+	amendCompletedWork,
+	lockAuthority,
+} from "./amend-completed-work";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
 import { resolveWorkBillabilityInTransaction } from "./work-billability";
 import type { SealedWorkTransactionScope } from "./work-transaction";
+
+type PeriodSource = Pick<
+	typeof workPeriod.$inferSelect,
+	"id" | "clockInId" | "clockOutId" | "startTime" | "endTime"
+>;
+
+type AttributionChange = {
+	organizationId: string;
+	employeeId: string;
+	actorUserId: string;
+	period: PeriodSource;
+	/** Absent keeps the project; null clears it. */
+	projectId?: string | null;
+	/** Explicit billability (#900); absent applies the attribution rule. */
+	billable?: boolean;
+};
 
 /**
  * Standalone project change of the owner's own work period (#286). Adopted
@@ -16,19 +39,37 @@ import type { SealedWorkTransactionScope } from "./work-transaction";
  * re-checked under the locks and a receipt records the change. Legacy
  * organizations keep the period-only update inside the coordinated transaction.
  *
+ * The new project's billable default applies unless the same edit sets
+ * `billable` (#900); setting it with an unchanged project is a billability-only
+ * change.
+ *
  * The request carries no identity, so the server generates one: it names the
  * committed operation but cannot prove that a later identical request is a retry.
  */
-export async function changeWorkPeriodProject(input: {
-	organizationId: string;
-	employeeId: string;
-	actorUserId: string;
-	period: Pick<
-		typeof workPeriod.$inferSelect,
-		"id" | "clockInId" | "clockOutId" | "startTime" | "endTime"
-	>;
-	projectId: string | null;
-}): Promise<void> {
+export async function changeWorkPeriodProject(
+	input: Omit<AttributionChange, "projectId"> & { projectId: string | null },
+): Promise<void> {
+	await changeWorkPeriodAttribution(input, "owner");
+}
+
+/**
+ * Billability-only change of a work period (#900), by its employee, an admin, one
+ * of the employee's managers, or a project manager of the work's project. It runs
+ * the same attribution path as a project change (the `work_period_attribution_edit`
+ * writer, no change policy) under the `owner_manager_or_project_manager`
+ * authority, which permits nothing but billability. `employeeId` is the work's
+ * owner; the actor may be anyone, the operation verifies authority under its locks.
+ */
+export async function changeWorkPeriodBillability(
+	input: Omit<AttributionChange, "projectId" | "billable"> & { billable: boolean },
+): Promise<void> {
+	await changeWorkPeriodAttribution(input, "owner_manager_or_project_manager");
+}
+
+async function changeWorkPeriodAttribution(
+	input: AttributionChange,
+	authority: Extract<AmendmentAuthority, "owner" | "owner_manager_or_project_manager">,
+): Promise<void> {
 	await withCompletedWorkTransaction(
 		{
 			organizationId: input.organizationId,
@@ -37,29 +78,51 @@ export async function changeWorkPeriodProject(input: {
 		},
 		async (scope) => {
 			if (scope.admission === "legacy") {
-				await changeLegacyWorkPeriodProject(scope.db, input);
+				// Legacy writes verify the same authority under the same locks first.
+				const authorized = await lockAuthority(scope.db, {
+					...input,
+					authority,
+					workPeriodId: input.period.id,
+				});
+				await changeLegacyWorkPeriodProject(scope.db, {
+					...input,
+					authorizedProjectId: authorized.authorizedProjectId,
+				});
 				return;
 			}
+			const intent: AmendCompletedWorkIntent = {
+				workPeriodId: input.period.id,
+				clockIn: { kind: "preserve" },
+				clockOut: { kind: "preserve" },
+				project:
+					input.projectId === undefined
+						? { kind: "preserve" }
+						: input.projectId
+							? { kind: "replace", id: input.projectId }
+							: { kind: "clear" },
+				workCategory: { kind: "preserve" },
+				workLocation: { kind: "preserve" },
+				...(input.billable === undefined
+					? {}
+					: { billable: { kind: "set" as const, billable: input.billable } }),
+				notes: null,
+			};
 			await amendCompletedWork(scope, {
 				organizationId: input.organizationId,
 				employeeId: input.employeeId,
 				actorUserId: input.actorUserId,
-				authority: "owner",
+				authority,
 				writer: "work_period_attribution_edit",
 				command: {
 					version: AMEND_COMPLETED_WORK_COMMAND_VERSION,
 					operationId: randomUUID(),
-					request: { workPeriodId: input.period.id, projectId: input.projectId },
+					request: {
+						workPeriodId: input.period.id,
+						...(input.projectId === undefined ? {} : { projectId: input.projectId }),
+						...(input.billable === undefined ? {} : { billable: String(input.billable) }),
+					},
 				},
-				intent: {
-					workPeriodId: input.period.id,
-					clockIn: { kind: "preserve" },
-					clockOut: { kind: "preserve" },
-					project: input.projectId ? { kind: "replace", id: input.projectId } : { kind: "clear" },
-					workCategory: { kind: "preserve" },
-					workLocation: { kind: "preserve" },
-					notes: null,
-				},
+				intent,
 				expectedSource: {
 					clockInId: input.period.clockInId,
 					clockOutId: input.period.clockOutId,
@@ -74,14 +137,21 @@ export async function changeWorkPeriodProject(input: {
 }
 
 /**
- * The legacy project change (#900): the period and its canonical record's project
- * allocation change together, so both representations keep agreeing on project
- * and billability. A changed project applies its billable default; the same
- * project keeps the period's billability.
+ * The legacy attribution change (#900): the period and its canonical record's
+ * project allocation change together, so both representations keep agreeing on
+ * project and billability. A changed project applies its billable default unless
+ * the edit sets billability; the same project keeps the period's billability.
  */
 async function changeLegacyWorkPeriodProject(
 	tx: SealedWorkTransactionScope["db"],
-	input: { organizationId: string; period: { id: string }; projectId: string | null },
+	input: {
+		organizationId: string;
+		employeeId: string;
+		period: { id: string };
+		projectId?: string | null;
+		billable?: boolean;
+		authorizedProjectId: string | null;
+	},
 ): Promise<void> {
 	const [period] = await tx
 		.select({
@@ -94,20 +164,35 @@ async function changeLegacyWorkPeriodProject(
 			and(
 				eq(workPeriod.id, input.period.id),
 				eq(workPeriod.organizationId, input.organizationId),
+				eq(workPeriod.employeeId, input.employeeId),
 				isNull(workPeriod.deletedAt),
 			),
 		)
 		.for("update");
-	if (!period) return;
-	const projectChanged = period.projectId !== input.projectId;
+	if (!period) {
+		throw new NotFoundError({
+			message: "Work period not found",
+			entityType: "workPeriod",
+			entityId: input.period.id,
+		});
+	}
+	// A project manager's authority holds only while the work is on their project.
+	if (input.authorizedProjectId !== null && period.projectId !== input.authorizedProjectId) {
+		throw new ConflictError({
+			message: "Work period changed while editing",
+			conflictType: "time_correction_work_period_stale",
+		});
+	}
+	const projectId = input.projectId === undefined ? period.projectId : input.projectId;
 	const isBillable = await resolveWorkBillabilityInTransaction(tx, input.organizationId, {
-		projectId: input.projectId,
-		projectChosen: projectChanged,
+		projectId,
+		projectChosen: projectId !== period.projectId,
 		current: period.isBillable,
+		requested: input.billable,
 	});
 	await tx
 		.update(workPeriod)
-		.set({ projectId: input.projectId, isBillable, updatedAt: new Date() })
+		.set({ projectId, isBillable, updatedAt: new Date() })
 		.where(
 			and(
 				eq(workPeriod.id, input.period.id),
@@ -125,12 +210,12 @@ async function changeLegacyWorkPeriodProject(
 				eq(timeRecordAllocation.allocationKind, "project"),
 			),
 		);
-	if (input.projectId) {
+	if (projectId) {
 		await tx.insert(timeRecordAllocation).values({
 			organizationId: input.organizationId,
 			recordId: period.canonicalRecordId,
 			allocationKind: "project",
-			projectId: input.projectId,
+			projectId,
 			weightPercent: 100,
 			isBillable,
 		});

@@ -47,7 +47,10 @@ import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-wo
 import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
-import { changeWorkPeriodProject } from "@/lib/time-tracking/work-period-attribution";
+import {
+	changeWorkPeriodBillability,
+	changeWorkPeriodProject,
+} from "@/lib/time-tracking/work-period-attribution";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import {
 	type AddBreakActionContext,
@@ -105,7 +108,14 @@ const logger = createLogger("TimeTrackingActionsEffect");
 type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
 	project: Pick<
 		typeof project.$inferSelect,
-		"id" | "name" | "color" | "status" | "budgetHours" | "deadline"
+		| "id"
+		| "name"
+		| "color"
+		| "status"
+		| "budgetHours"
+		| "deadline"
+		| "customerId"
+		| "billableDefault"
 	> | null;
 };
 
@@ -728,6 +738,10 @@ export interface AssignedProject {
 	budgetHours: number | null;
 	deadline: string | null; // ISO string for serialization
 	totalHoursBooked: number;
+	/** Billable Time (#900): only a project with a customer can make work billable. */
+	hasCustomer: boolean;
+	/** The billable default new work on it takes; false without a customer. */
+	billableDefault: boolean;
 }
 
 /**
@@ -781,6 +795,8 @@ export async function getAssignedProjects(): Promise<
 				status: string;
 				budgetHours: string | null;
 				deadline: Date | null;
+				customerId: string | null;
+				billableDefault: boolean;
 			}
 		>();
 
@@ -803,6 +819,8 @@ export async function getAssignedProjects(): Promise<
 					status: proj.status,
 					budgetHours: proj.budgetHours,
 					deadline: proj.deadline,
+					customerId: proj.customerId,
+					billableDefault: proj.billableDefault,
 				});
 			}
 		}
@@ -844,6 +862,8 @@ export async function getAssignedProjects(): Promise<
 				budgetHours: proj.budgetHours ? Number(proj.budgetHours) : null,
 				deadline: proj.deadline?.toISOString() ?? null,
 				totalHoursBooked: hoursMap.get(proj.id) ?? 0,
+				hasCustomer: proj.customerId !== null,
+				billableDefault: proj.customerId !== null && proj.billableDefault,
 			});
 		}
 
@@ -861,17 +881,23 @@ export async function getAssignedProjects(): Promise<
 
 /**
  * Update the project assignment for a work period
- * Allows changing or removing the project after the fact
+ * Allows changing or removing the project after the fact. The new project's
+ * billable default applies unless `options.billable` sets billability in the
+ * same edit (#900); with the same project it is a billability-only change.
  */
 export async function updateWorkPeriodProject(
 	workPeriodId: string,
 	projectId: string | null,
+	options: { billable?: boolean } = {},
 ): Promise<
 	ServerActionResult<{ workPeriodId: string; projectId: string | null }>
 > {
 	const session = await getRequestSession();
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
+	}
+	if (options.billable !== undefined && typeof options.billable !== "boolean") {
+		return { success: false, error: "Invalid billability" };
 	}
 
 	const emp = await getCurrentEmployee();
@@ -937,6 +963,7 @@ export async function updateWorkPeriodProject(
 			actorUserId: session.user.id,
 			period,
 			projectId,
+			...(options.billable === undefined ? {} : { billable: options.billable }),
 		});
 
 		return {
@@ -958,6 +985,83 @@ export async function updateWorkPeriodProject(
 		}
 		logger.error({ error }, "Failed to update work period project");
 		return { success: false, error: "Failed to update project assignment" };
+	}
+}
+
+const workPeriodIdSchema = z.uuid();
+
+/**
+ * Marks a work period billable or non-billable after recording (#900). The
+ * employee, organization owners and admins, the employee's managers and the
+ * project managers of the work's project may change it; the attribution
+ * operation verifies that authority under its locks. Billable work needs a
+ * project with a customer.
+ */
+export async function updateWorkPeriodBillability(
+	workPeriodId: string,
+	billable: boolean,
+): Promise<ServerActionResult<{ workPeriodId: string; isBillable: boolean }>> {
+	const session = await getRequestSession();
+	if (!session?.user) {
+		return { success: false, error: "Not authenticated" };
+	}
+	const organizationId = session.session.activeOrganizationId;
+	if (!organizationId) {
+		return { success: false, error: "No active organization" };
+	}
+	if (!workPeriodIdSchema.safeParse(workPeriodId).success || typeof billable !== "boolean") {
+		return { success: false, error: "Work period not found" };
+	}
+
+	try {
+		const [period] = await db
+			.select()
+			.from(workPeriod)
+			.where(
+				and(
+					eq(workPeriod.id, workPeriodId),
+					eq(workPeriod.organizationId, organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			)
+			.limit(1);
+		if (!period) {
+			return { success: false, error: "Work period not found" };
+		}
+
+		const billingAccess = await requireBillingForMutation(organizationId);
+		if (!isBillingMutationAllowed(billingAccess)) {
+			return {
+				success: false,
+				error: "billing_required",
+				code: billingAccess.reason ?? "subscription_required",
+			};
+		}
+
+		await changeWorkPeriodBillability({
+			organizationId,
+			employeeId: period.employeeId,
+			actorUserId: session.user.id,
+			period,
+			billable,
+		});
+
+		return { success: true, data: { workPeriodId, isBillable: billable } };
+	} catch (error) {
+		const failure = describeAmendmentFailure(error);
+		if (failure) {
+			return { success: false, error: failure.message, code: failure.code };
+		}
+		if (
+			error instanceof ValidationError ||
+			error instanceof ConflictError ||
+			error instanceof AuthorizationError ||
+			error instanceof NotFoundError
+		) {
+			return { success: false, error: error.message };
+		}
+		logger.error({ error }, "Failed to update work period billability");
+		return { success: false, error: "Failed to update billability" };
 	}
 }
 

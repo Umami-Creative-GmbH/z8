@@ -157,6 +157,7 @@ describe("legacy time-tracking action billing guards", () => {
 		["updateWorkPeriodNotes", ".update(timeEntry)"],
 		["updateTimeEntryNotes", ".update(timeEntry)"],
 		["updateWorkPeriodProject", "changeWorkPeriodProject({"],
+		["updateWorkPeriodBillability", "changeWorkPeriodBillability({"],
 	])("guards %s before writing time data", (name, writeMarker) => {
 		expectBillingGuardBeforeWrite(name, writeMarker);
 	});
@@ -200,6 +201,7 @@ describe("legacy time-tracking action billing guards", () => {
 
 	it.each([
 		"updateWorkPeriodProject",
+		"updateWorkPeriodBillability",
 		"updateWorkPeriodNotes",
 	])("does not mark work balances dirty after %s metadata changes", (name) => {
 		expect(functionBody(name)).not.toContain("markEmployeeWorkBalanceDirty");

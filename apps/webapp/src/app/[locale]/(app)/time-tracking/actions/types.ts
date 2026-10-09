@@ -63,6 +63,10 @@ export interface AssignedProject {
 	budgetHours: number | null;
 	deadline: string | null;
 	totalHoursBooked: number;
+	/** Billable Time (#900): only a project with a customer can make work billable. */
+	hasCustomer: boolean;
+	/** The billable default new work on it takes; false without a customer. */
+	billableDefault: boolean;
 }
 
 /** Error code returned when the actor may not create entries for the target. */
