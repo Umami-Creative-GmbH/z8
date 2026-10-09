@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+	boolean,
 	check,
 	date,
 	foreignKey,
@@ -19,7 +20,7 @@ import type {
 	PersonnelFileUploadStatus,
 } from "@/lib/personnel-file/document.types";
 import { organization, user } from "../auth-schema";
-import { employee } from "./organization";
+import { employee, team } from "./organization";
 import { currentTimestamp } from "./timestamp";
 
 /**
@@ -143,5 +144,121 @@ export const personnelFileUpload = pgTable(
 			OR (${table.status} = 'cleanup_required'
 				AND ${table.reason} IN ('finalization_failed', 'abandoned', 'removed'))`,
 		),
+	],
+);
+
+/**
+ * Personnel file officer grants (#866, ADR 0001): the only way for someone
+ * who is not an owner or admin to see and manage other employees' documents.
+ * Scoped like payroll access and expense officer grants (all employees, or
+ * named employees plus the current members of named teams) and to a
+ * non-empty set of document categories. At most one active grant per officer;
+ * a revoked grant stays inactive, a later grant for the same officer is a new
+ * row. A departure revokes the grant the departed officer holds (#750 path).
+ */
+export const personnelFileOfficerGrant = pgTable(
+	"personnel_file_officer_grant",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		officerEmployeeId: uuid("officer_employee_id").notNull(),
+		scope: text("scope").$type<"all" | "specific">().default("specific").notNull(),
+		categories: text("categories").array().$type<DocumentCategory[]>().notNull(),
+		isActive: boolean("is_active").default(true).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+		updatedBy: text("updated_by").references(() => user.id),
+	},
+	(table) => [
+		index("personnelFileOfficerGrant_organizationId_idx").on(table.organizationId),
+		index("personnelFileOfficerGrant_officerEmployeeId_idx").on(table.officerEmployeeId),
+		unique("personnelFileOfficerGrant_id_organizationId_idx").on(table.id, table.organizationId),
+		uniqueIndex("personnelFileOfficerGrant_active_officer_idx")
+			.on(table.organizationId, table.officerEmployeeId)
+			.where(sql`is_active = true`),
+		check("personnel_file_officer_grant_scope_check", sql`${table.scope} IN ('all', 'specific')`),
+		check(
+			"personnel_file_officer_grant_categories_check",
+			sql`cardinality(${table.categories}) > 0
+			AND ${table.categories} <@ ARRAY['contract', 'payslip', 'certificate', 'sick_note', 'other']::text[]`,
+		),
+		foreignKey({
+			name: "personnel_file_officer_grant_officer_fk",
+			columns: [table.officerEmployeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+	],
+);
+
+export const personnelFileOfficerTeam = pgTable(
+	"personnel_file_officer_team",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		grantId: uuid("grant_id").notNull(),
+		teamId: uuid("team_id").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id),
+	},
+	(table) => [
+		index("personnelFileOfficerTeam_organizationId_idx").on(table.organizationId),
+		index("personnelFileOfficerTeam_teamId_idx").on(table.teamId),
+		uniqueIndex("personnelFileOfficerTeam_grant_team_idx").on(table.grantId, table.teamId),
+		foreignKey({
+			name: "personnel_file_officer_team_grant_fk",
+			columns: [table.grantId, table.organizationId],
+			foreignColumns: [personnelFileOfficerGrant.id, personnelFileOfficerGrant.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "personnel_file_officer_team_team_fk",
+			columns: [table.teamId, table.organizationId],
+			foreignColumns: [team.id, team.organizationId],
+		}).onDelete("cascade"),
+	],
+);
+
+export const personnelFileOfficerEmployee = pgTable(
+	"personnel_file_officer_employee",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		grantId: uuid("grant_id").notNull(),
+		employeeId: uuid("employee_id").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id),
+	},
+	(table) => [
+		index("personnelFileOfficerEmployee_organizationId_idx").on(table.organizationId),
+		index("personnelFileOfficerEmployee_employeeId_idx").on(table.employeeId),
+		uniqueIndex("personnelFileOfficerEmployee_grant_employee_idx").on(
+			table.grantId,
+			table.employeeId,
+		),
+		foreignKey({
+			name: "personnel_file_officer_employee_grant_fk",
+			columns: [table.grantId, table.organizationId],
+			foreignColumns: [personnelFileOfficerGrant.id, personnelFileOfficerGrant.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "personnel_file_officer_employee_employee_fk",
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
 	],
 );

@@ -122,6 +122,10 @@ export enum AuditAction {
 	PERSONNEL_FILE_DOCUMENT_DELETED = "personnel_file.document_deleted",
 	PERSONNEL_FILE_DOCUMENT_VIEWED = "personnel_file.document_viewed",
 	PERSONNEL_FILE_DOCUMENT_DOWNLOADED = "personnel_file.document_downloaded",
+	// Personnel file officer grants (#866)
+	PERSONNEL_FILE_GRANT_CREATED = "personnel_file.grant_created",
+	PERSONNEL_FILE_GRANT_CHANGED = "personnel_file.grant_changed",
+	PERSONNEL_FILE_GRANT_REVOKED = "personnel_file.grant_revoked",
 
 	// App Access Operations
 	APP_ACCESS_GRANTED = "app_access.granted",
