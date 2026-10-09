@@ -16,6 +16,7 @@ import {
 	type ClockingReminderOrganization,
 	listClockingReminderEmployees,
 	listClockingReminderOrganizations,
+	loadRecordedOccasionKeys,
 	loadShiftReminderFacts,
 } from "@/lib/time-tracking/clocking-reminders/discovery";
 import {
@@ -27,8 +28,14 @@ import {
 	isExemptOnAbsenceOrHoliday,
 } from "@/lib/time-tracking/clocking-reminders/occasion";
 import { createPolicyDayFacts } from "@/lib/time-tracking/clocking-reminders/policy-day-facts";
-import { evaluatePolicyReminders } from "@/lib/time-tracking/clocking-reminders/policy-reminders";
-import { evaluateShiftReminders } from "@/lib/time-tracking/clocking-reminders/shift-reminders";
+import {
+	evaluatePolicyReminders,
+	policyDayOccasionKeys,
+} from "@/lib/time-tracking/clocking-reminders/policy-reminders";
+import {
+	evaluateShiftReminders,
+	type ReminderInput,
+} from "@/lib/time-tracking/clocking-reminders/shift-reminders";
 
 const logger = createLogger("ClockingReminders");
 const ORGANIZATION_PAGE = 100;
@@ -122,18 +129,31 @@ async function remindOrganization(
 					deps.database,
 				)
 			: new Map<string, BreakDueFacts>();
+		const evaluations = new Map<string, ReminderInput>();
 		for (const person of employees) {
-			result.employees++;
 			const personFacts = facts.get(person.employeeId);
 			if (!personFacts) continue;
+			evaluations.set(person.employeeId, {
+				now,
+				employeeId: person.employeeId,
+				timezone: person.timezone,
+				settings: organization.settings,
+				...personFacts,
+			});
+		}
+		// Policy-day occasions already sent are not judged again, which skips their policy lookups.
+		const recordedOccasionKeys = await loadRecordedOccasionKeys(
+			{
+				organizationId: organization.organizationId,
+				occasionKeys: [...evaluations.values()].flatMap(policyDayOccasionKeys),
+			},
+			deps.database,
+		);
+		for (const person of employees) {
+			result.employees++;
+			const evaluation = evaluations.get(person.employeeId);
+			if (!evaluation) continue;
 			try {
-				const evaluation = {
-					now,
-					employeeId: person.employeeId,
-					timezone: person.timezone,
-					settings: organization.settings,
-					...personFacts,
-				};
 				const due = [
 					...evaluateShiftReminders(evaluation),
 					...(await evaluatePolicyReminders(
@@ -144,6 +164,7 @@ async function remindOrganization(
 							timezone: person.timezone,
 							now,
 						}),
+						recordedOccasionKeys,
 					)),
 				];
 				const live = breakFacts.get(person.employeeId);

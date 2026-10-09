@@ -2,6 +2,7 @@ import { and, asc, eq, gt, gte, inArray, isNull, lt, or, sql } from "drizzle-orm
 import type { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import {
+	clockingReminderOccasion,
 	employee,
 	organizationClockingReminderSettings,
 	shift,
@@ -192,4 +193,25 @@ export async function loadShiftReminderFacts(
 		});
 	}
 	return facts;
+}
+
+/**
+ * Which of the given occasion keys the organization already recorded as sent, in one query. A
+ * claim released after a failed delivery has no row, so its occasion is judged again.
+ */
+export async function loadRecordedOccasionKeys(
+	input: { organizationId: string; occasionKeys: readonly string[] },
+	database: Database,
+): Promise<Set<string>> {
+	if (input.occasionKeys.length === 0) return new Set();
+	const rows = await database
+		.select({ occasionKey: clockingReminderOccasion.occasionKey })
+		.from(clockingReminderOccasion)
+		.where(
+			and(
+				eq(clockingReminderOccasion.organizationId, input.organizationId),
+				inArray(clockingReminderOccasion.occasionKey, [...input.occasionKeys]),
+			),
+		);
+	return new Set(rows.map((row) => row.occasionKey));
 }
