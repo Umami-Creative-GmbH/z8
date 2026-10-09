@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { ProjectManagement } from "@/components/settings/project-management";
+import { ProjectSettingsTabs } from "@/components/settings/project-settings-tabs";
 import { ProjectTaskManagement } from "@/components/settings/project-task-management";
+import { ProjectTemplateManagement } from "@/components/settings/project-template-management";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
@@ -44,10 +46,15 @@ async function ProjectSettingsPageContent() {
 		return <ProjectTaskManagement projects={projects} />;
 	}
 
+	if (settingsRouteContext.accessTier !== "orgAdmin") {
+		return <ProjectManagement organizationId={organizationId} canManageProjectManagers={false} />;
+	}
+
+	// Only org owners and admins manage project templates (#878).
 	return (
-		<ProjectManagement
-			organizationId={organizationId}
-			canManageProjectManagers={settingsRouteContext.accessTier === "orgAdmin"}
+		<ProjectSettingsTabs
+			projects={<ProjectManagement organizationId={organizationId} canManageProjectManagers />}
+			templates={<ProjectTemplateManagement organizationId={organizationId} />}
 		/>
 	);
 }
