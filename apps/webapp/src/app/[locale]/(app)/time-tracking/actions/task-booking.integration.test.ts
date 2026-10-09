@@ -403,50 +403,57 @@ describe("booking time to a project task on PostgreSQL", () => {
 		await cleanup();
 	});
 
-	describe.each(["legacy", "adopted"] as const)("manual entry in a %s organization", (admission) => {
-		beforeEach(async () => {
-			await setAdmission(admission);
-		});
-
-		it("books the work to the task on both the allocation and the work period", async () => {
-			const result = await submitManual(admission, { projectId: ids.project, taskId: ids.task });
-
-			expect(result).toMatchObject({ success: true });
-			if (!result.success) throw new Error(result.error);
-			expect(await booking(result.data.workPeriodId)).toEqual({
-				period_project: ids.project,
-				period_task: ids.task,
-				allocation_project: ids.project,
-				allocation_task: ids.task,
+	describe.each(["legacy", "adopted"] as const)(
+		"manual entry in a %s organization",
+		(admission) => {
+			beforeEach(async () => {
+				await setAdmission(admission);
 			});
-		});
 
-		it("books no task when the entry names none", async () => {
-			const result = await submitManual(admission, { projectId: ids.project });
+			it("books the work to the task on both the allocation and the work period", async () => {
+				const result = await submitManual(admission, { projectId: ids.project, taskId: ids.task });
 
-			if (!result.success) throw new Error(result.error);
-			expect(await booking(result.data.workPeriodId)).toEqual({
-				period_project: ids.project,
-				period_task: null,
-				allocation_project: ids.project,
-				allocation_task: null,
+				expect(result).toMatchObject({ success: true });
+				if (!result.success) throw new Error(result.error);
+				expect(await booking(result.data.workPeriodId)).toEqual({
+					period_project: ids.project,
+					period_task: ids.task,
+					allocation_project: ids.project,
+					allocation_task: ids.task,
+				});
 			});
-		});
 
-		it.each([
-			["a done task", ids.doneTask, ids.project, "task_done"],
-			["another project's task", ids.secondProjectTask, ids.project, "task_other_project"],
-			["another organization's task", ids.otherOrganizationTask, ids.project, "task_not_found"],
-		])("refuses %s with a stable reason and writes nothing", async (_case, taskId, projectId, code) => {
-			const result = await submitManual(admission, { projectId, taskId });
+			it("books no task when the entry names none", async () => {
+				const result = await submitManual(admission, { projectId: ids.project });
 
-			expect(result).toMatchObject({ success: false, code });
-			const { rows } = await admin.query("select id from work_period where organization_id = $1", [
-				ids.organization,
-			]);
-			expect(rows).toEqual([]);
-		});
-	});
+				if (!result.success) throw new Error(result.error);
+				expect(await booking(result.data.workPeriodId)).toEqual({
+					period_project: ids.project,
+					period_task: null,
+					allocation_project: ids.project,
+					allocation_task: null,
+				});
+			});
+
+			it.each([
+				["a done task", ids.doneTask, ids.project, "task_done"],
+				["another project's task", ids.secondProjectTask, ids.project, "task_other_project"],
+				["another organization's task", ids.otherOrganizationTask, ids.project, "task_not_found"],
+			])(
+				"refuses %s with a stable reason and writes nothing",
+				async (_case, taskId, projectId, code) => {
+					const result = await submitManual(admission, { projectId, taskId });
+
+					expect(result).toMatchObject({ success: false, code });
+					const { rows } = await admin.query(
+						"select id from work_period where organization_id = $1",
+						[ids.organization],
+					);
+					expect(rows).toEqual([]);
+				},
+			);
+		},
+	);
 
 	/** Completed work of the employee, booked through manual entry. */
 	async function bookedWork(admission: Admission, taskId: string | undefined = ids.task) {
@@ -469,93 +476,96 @@ describe("booking time to a project task on PostgreSQL", () => {
 		return rows;
 	}
 
-	describe.each(["legacy", "adopted"] as const)("the project change in a %s organization", (admission) => {
-		beforeEach(async () => {
-			await setAdmission(admission);
-		});
-
-		it("clears the task when the project changes without a task", async () => {
-			const workPeriodId = await bookedWork(admission);
-
-			await expect(changeProject(workPeriodId, ids.secondProject)).resolves.toMatchObject({
-				success: true,
+	describe.each(["legacy", "adopted"] as const)(
+		"the project change in a %s organization",
+		(admission) => {
+			beforeEach(async () => {
+				await setAdmission(admission);
 			});
 
-			const booked = await booking(workPeriodId);
-			expect(booked).toMatchObject({ period_project: ids.secondProject, period_task: null });
-			if (admission === "adopted") {
-				expect(booked).toMatchObject({
-					allocation_project: ids.secondProject,
-					allocation_task: null,
+			it("clears the task when the project changes without a task", async () => {
+				const workPeriodId = await bookedWork(admission);
+
+				await expect(changeProject(workPeriodId, ids.secondProject)).resolves.toMatchObject({
+					success: true,
 				});
-				expect(await amendReceipts()).toHaveLength(1);
-			}
-		});
 
-		it("changes only the task", async () => {
-			const workPeriodId = await bookedWork(admission);
+				const booked = await booking(workPeriodId);
+				expect(booked).toMatchObject({ period_project: ids.secondProject, period_task: null });
+				if (admission === "adopted") {
+					expect(booked).toMatchObject({
+						allocation_project: ids.secondProject,
+						allocation_task: null,
+					});
+					expect(await amendReceipts()).toHaveLength(1);
+				}
+			});
 
-			await expect(
-				changeProject(workPeriodId, ids.project, ids.secondTask),
-			).resolves.toMatchObject({ success: true });
+			it("changes only the task", async () => {
+				const workPeriodId = await bookedWork(admission);
 
-			const booked = await booking(workPeriodId);
-			expect(booked).toMatchObject({ period_project: ids.project, period_task: ids.secondTask });
-			if (admission === "adopted") {
-				expect(booked).toMatchObject({
-					allocation_project: ids.project,
-					allocation_task: ids.secondTask,
-				});
-				expect(await amendReceipts()).toEqual([
-					expect.objectContaining({
-						command: expect.objectContaining({
-							request: {
-								workPeriodId,
-								projectId: ids.project,
-								taskId: ids.secondTask,
-							},
+				await expect(
+					changeProject(workPeriodId, ids.project, ids.secondTask),
+				).resolves.toMatchObject({ success: true });
+
+				const booked = await booking(workPeriodId);
+				expect(booked).toMatchObject({ period_project: ids.project, period_task: ids.secondTask });
+				if (admission === "adopted") {
+					expect(booked).toMatchObject({
+						allocation_project: ids.project,
+						allocation_task: ids.secondTask,
+					});
+					expect(await amendReceipts()).toEqual([
+						expect.objectContaining({
+							command: expect.objectContaining({
+								request: {
+									workPeriodId,
+									projectId: ids.project,
+									taskId: ids.secondTask,
+								},
+							}),
 						}),
-					}),
-				]);
-			}
-		});
-
-		it("books a task of the new project with the project change", async () => {
-			const workPeriodId = await bookedWork(admission);
-
-			await expect(
-				changeProject(workPeriodId, ids.secondProject, ids.secondProjectTask),
-			).resolves.toMatchObject({ success: true });
-
-			expect(await booking(workPeriodId)).toMatchObject({
-				period_project: ids.secondProject,
-				period_task: ids.secondProjectTask,
+					]);
+				}
 			});
-		});
 
-		it.each([
-			["a done task", ids.doneTask, "task_done"],
-			["another project's task", ids.secondProjectTask, "task_other_project"],
-			["another organization's task", ids.otherOrganizationTask, "task_not_found"],
-		])("refuses %s with a stable reason", async (_case, taskId, code) => {
-			const workPeriodId = await bookedWork(admission);
+			it("books a task of the new project with the project change", async () => {
+				const workPeriodId = await bookedWork(admission);
 
-			await expect(changeProject(workPeriodId, ids.project, taskId)).resolves.toMatchObject({
-				success: false,
-				code,
+				await expect(
+					changeProject(workPeriodId, ids.secondProject, ids.secondProjectTask),
+				).resolves.toMatchObject({ success: true });
+
+				expect(await booking(workPeriodId)).toMatchObject({
+					period_project: ids.secondProject,
+					period_task: ids.secondProjectTask,
+				});
 			});
-			expect(await booking(workPeriodId)).toMatchObject({ period_task: ids.task });
-		});
 
-		it("refuses a task of a project that can no longer be booked", async () => {
-			const workPeriodId = await bookedWork(admission);
-			await admin.query("update project set status = 'completed' where id = $1", [ids.project]);
+			it.each([
+				["a done task", ids.doneTask, "task_done"],
+				["another project's task", ids.secondProjectTask, "task_other_project"],
+				["another organization's task", ids.otherOrganizationTask, "task_not_found"],
+			])("refuses %s with a stable reason", async (_case, taskId, code) => {
+				const workPeriodId = await bookedWork(admission);
 
-			await expect(
-				changeProject(workPeriodId, ids.project, ids.secondTask),
-			).resolves.toMatchObject({ success: false, code: "project_not_bookable" });
-		});
-	});
+				await expect(changeProject(workPeriodId, ids.project, taskId)).resolves.toMatchObject({
+					success: false,
+					code,
+				});
+				expect(await booking(workPeriodId)).toMatchObject({ period_task: ids.task });
+			});
+
+			it("refuses a task of a project that can no longer be booked", async () => {
+				const workPeriodId = await bookedWork(admission);
+				await admin.query("update project set status = 'completed' where id = $1", [ids.project]);
+
+				await expect(
+					changeProject(workPeriodId, ids.project, ids.secondTask),
+				).resolves.toMatchObject({ success: false, code: "project_not_bookable" });
+			});
+		},
+	);
 
 	describe("the canonical divergence check in an adopted organization", () => {
 		beforeEach(async () => {
@@ -583,7 +593,10 @@ describe("booking time to a project task on PostgreSQL", () => {
 
 	/** The task of every period of the employee and of its allocation, in work order. */
 	async function bookings() {
-		const { rows } = await admin.query<{ period_task: string | null; allocation_task: string | null }>(
+		const { rows } = await admin.query<{
+			period_task: string | null;
+			allocation_task: string | null;
+		}>(
 			`select p.task_id as period_task, a.task_id as allocation_task
 			 from work_period p
 			 left join time_record_allocation a
@@ -602,7 +615,15 @@ describe("booking time to a project task on PostgreSQL", () => {
 
 			actAs(ids.employeeUser);
 			await expect(
-				splitWorkPeriod(workPeriodId, "2026-09-01", "10:00", undefined, undefined, undefined, randomUUID()),
+				splitWorkPeriod(
+					workPeriodId,
+					"2026-09-01",
+					"10:00",
+					undefined,
+					undefined,
+					undefined,
+					randomUUID(),
+				),
 			).resolves.toMatchObject({ success: true });
 
 			expect(await bookings()).toEqual([
@@ -635,9 +656,9 @@ describe("booking time to a project task on PostgreSQL", () => {
 			await setAdmission("adopted");
 			const workPeriodId = await clockInEmployee();
 			// The task of running work changes like a project (an attribution amend).
-			await expect(
-				changeProject(workPeriodId, ids.project, ids.task),
-			).resolves.toMatchObject({ success: true });
+			await expect(changeProject(workPeriodId, ids.project, ids.task)).resolves.toMatchObject({
+				success: true,
+			});
 
 			actAs(ids.employeeUser);
 			await expect(
