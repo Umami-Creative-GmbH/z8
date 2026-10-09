@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Later slices of #767 add their tabs here (reminders #869, retention #870).
-const TABS = ["access"] as const;
+const TABS = ["access", "reminders"] as const;
 type PersonnelFileSettingsTab = (typeof TABS)[number];
 
 /** The tab named by `?tab=`; a missing or unknown value opens Access. */
@@ -32,6 +32,7 @@ export function PersonnelFileSettingsTabs(panels: Record<PersonnelFileSettingsTa
 
 	const labels: Record<PersonnelFileSettingsTab, string> = {
 		access: t("settings.personnelFiles.tabs.access", "Access"),
+		reminders: t("settings.personnelFiles.tabs.reminders", "Reminders"),
 	};
 
 	return (

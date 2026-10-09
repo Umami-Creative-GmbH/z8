@@ -17,6 +17,7 @@ import type { LegacyEscalationSuppression } from "@/lib/approvals/escalation/leg
 import type { ApprovalEscalationJobResult } from "@/lib/approvals/escalation/scheduled-job";
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
+import type { PersonnelFileExpiryRemindersJobResult } from "@/lib/jobs/personnel-file-expiry-reminders";
 import type { PersonnelFileUploadCleanupJobResult } from "@/lib/jobs/personnel-file-upload-cleanup";
 import type { SCIMMaintenanceResult } from "@/lib/jobs/scim-maintenance";
 import type { TravelExpenseReceiptCleanupJobResult } from "@/lib/jobs/travel-expense-receipt-cleanup";
@@ -362,6 +363,19 @@ export const CRON_JOBS = {
 			return runPersonnelFileUploadCleanupJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 9 },
+	},
+
+	"cron:personnel-file-expiry-reminders": {
+		schedule: "0 * * * *", // Hourly, so each organization's day starts soon after its midnight
+		description:
+			"Remind officers and employees of personnel file documents expiring within the lead time or today",
+		processor: async (): Promise<PersonnelFileExpiryRemindersJobResult> => {
+			const { runPersonnelFileExpiryRemindersJob } = await import(
+				"@/lib/jobs/personnel-file-expiry-reminders"
+			);
+			return runPersonnelFileExpiryRemindersJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 7 },
 	},
 
 	"cron:travel-expense-reference-rates": {
