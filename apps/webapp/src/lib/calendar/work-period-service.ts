@@ -8,6 +8,7 @@ import {
 	automaticClockOutExecution,
 	employee,
 	project,
+	projectTask,
 	surchargeCalculation,
 	timeEntry,
 	workPeriod,
@@ -119,6 +120,11 @@ export async function getWorkPeriodsForMonth(
 				clockOutEditorName: clockOutEditor.name,
 				surcharge: surchargeCalculation,
 				project: project,
+				task: {
+					id: projectTask.id,
+					name: projectTask.name,
+					state: projectTask.state,
+				},
 				automaticExecution: {
 					organizationId: automaticClockOutExecution.organizationId,
 					employeeId: automaticClockOutExecution.employeeId,
@@ -148,6 +154,13 @@ export async function getWorkPeriodsForMonth(
 				eq(surchargeCalculation.workPeriodId, workPeriod.id),
 			)
 			.leftJoin(project, eq(workPeriod.projectId, project.id))
+			.leftJoin(
+				projectTask,
+				and(
+					eq(projectTask.id, workPeriod.taskId),
+					eq(projectTask.organizationId, workPeriod.organizationId),
+				),
+			)
 			.where(and(...conditions));
 
 		// Return individual work periods as timed events (not aggregated)
@@ -163,10 +176,15 @@ export async function getWorkPeriodsForMonth(
 				clockOutEditorName,
 				surcharge,
 				project: proj,
+				task,
 				automaticExecution,
 			}) => {
 				const notes = clockOutEntry?.notes?.trim();
-				const projectPrefix = proj?.name ? `[${proj.name}] ` : "";
+				// A task is shown next to its project (#874); it never outlives the project.
+				const bookedTask = proj && task?.id ? task : null;
+				const projectPrefix = proj?.name
+					? `[${bookedTask ? `${proj.name} · ${bookedTask.name}` : proj.name}] `
+					: "";
 
 				// Use project color if available, otherwise default green
 				const eventColor = proj?.color || "#10b981"; // Green (emerald)
@@ -211,6 +229,11 @@ export async function getWorkPeriodsForMonth(
 								projectId: proj.id,
 								projectName: proj.name,
 								projectColor: proj.color || undefined,
+							}),
+							...(bookedTask && {
+								taskId: bookedTask.id,
+								taskName: bookedTask.name,
+								taskState: bookedTask.state,
 							}),
 							// Approval status for change policy enforcement
 							approvalStatus: period.approvalStatus ?? "approved",
@@ -320,6 +343,11 @@ export async function getWorkPeriodsForMonth(
 							projectId: proj.id,
 							projectName: proj.name,
 							projectColor: proj.color || undefined,
+						}),
+						...(bookedTask && {
+							taskId: bookedTask.id,
+							taskName: bookedTask.name,
+							taskState: bookedTask.state,
 						}),
 						// Surcharge fields (only included if surcharge calculation exists)
 						...(surcharge && {

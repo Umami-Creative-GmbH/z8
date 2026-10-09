@@ -23,6 +23,20 @@ export interface ProjectTask {
 	updatedAt: Date;
 }
 
+/** An open task a booking surface offers (#874): what a picker needs, nothing more. */
+export interface ProjectTaskChoice {
+	id: string;
+	name: string;
+}
+
+/** The task a booking already carries; it may be done by now (#874). */
+export interface BookedProjectTask {
+	id: string;
+	name: string;
+	state: ProjectTaskState;
+	projectId: string;
+}
+
 export const PROJECT_TASK_NAME_MAX_LENGTH = 200;
 export const PROJECT_TASK_DESCRIPTION_MAX_LENGTH = 2000;
 /** numeric(8, 2), like the project's budget hours. */

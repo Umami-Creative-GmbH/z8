@@ -14,6 +14,10 @@ export interface WorkPeriodDialogMetadata {
 	projectId?: string;
 	projectName?: string;
 	projectColor?: string;
+	/** The booking's task (#874), present only with its project. */
+	taskId?: string;
+	taskName?: string;
+	taskState?: "open" | "done";
 	surchargeMinutes?: number;
 	totalCreditedMinutes?: number;
 	surchargeBreakdown?: Array<{

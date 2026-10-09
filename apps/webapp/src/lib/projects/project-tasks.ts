@@ -1,9 +1,9 @@
 import "server-only";
 
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { projectTask, timeRecordAllocation, workPeriod } from "@/db/schema";
-import type { ProjectTask, ProjectTaskState } from "./project-task-model";
+import type { ProjectTask, ProjectTaskChoice, ProjectTaskState } from "./project-task-model";
 
 /**
  * Project task reads (#872). Every read is scoped by organization and
@@ -11,7 +11,7 @@ import type { ProjectTask, ProjectTaskState } from "./project-task-model";
  * reuse these instead of querying `project_task` directly.
  */
 
-export type { ProjectTask, ProjectTaskState } from "./project-task-model";
+export type { ProjectTask, ProjectTaskChoice, ProjectTaskState } from "./project-task-model";
 
 export type ProjectTaskReader = Pick<typeof db, "select">;
 
@@ -49,6 +49,36 @@ export async function listProjectTasks(
 			),
 		)
 		.orderBy(asc(projectTask.state), asc(sql`lower(${projectTask.name})`), asc(projectTask.id));
+}
+
+/**
+ * The open tasks of several projects of one organization, by project and then
+ * by name, as booking pickers offer them (#874). Every requested project has an
+ * entry, empty when it has no open task.
+ */
+export async function listOpenTaskChoicesByProject(
+	scope: { organizationId: string; projectIds: readonly string[] },
+	reader: ProjectTaskReader = db,
+): Promise<Map<string, ProjectTaskChoice[]>> {
+	const choices = new Map<string, ProjectTaskChoice[]>(
+		scope.projectIds.map((projectId) => [projectId, []]),
+	);
+	if (scope.projectIds.length === 0) return choices;
+	const rows = await reader
+		.select({ id: projectTask.id, name: projectTask.name, projectId: projectTask.projectId })
+		.from(projectTask)
+		.where(
+			and(
+				eq(projectTask.organizationId, scope.organizationId),
+				inArray(projectTask.projectId, [...scope.projectIds]),
+				eq(projectTask.state, "open"),
+			),
+		)
+		.orderBy(asc(sql`lower(${projectTask.name})`), asc(projectTask.id));
+	for (const row of rows) {
+		choices.get(row.projectId)?.push({ id: row.id, name: row.name });
+	}
+	return choices;
 }
 
 /** One task of the organization, or null when it does not exist there. */

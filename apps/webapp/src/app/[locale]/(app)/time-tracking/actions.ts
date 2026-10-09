@@ -43,6 +43,8 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import { WorkPolicyService } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
+import type { ProjectTaskChoice } from "@/lib/projects/project-task-model";
+import { listOpenTaskChoicesByProject } from "@/lib/projects/project-tasks";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
 import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
@@ -732,6 +734,8 @@ export interface AssignedProject {
 	budgetHours: number | null;
 	deadline: string | null; // ISO string for serialization
 	totalHoursBooked: number;
+	/** The project's open tasks, by name (#874); empty when it has none. */
+	tasks: ProjectTaskChoice[];
 }
 
 /**
@@ -837,6 +841,11 @@ export async function getAssignedProjects(): Promise<
 			}
 		}
 
+		const tasksByProjectId = await listOpenTaskChoicesByProject({
+			organizationId: emp.organizationId,
+			projectIds,
+		});
+
 		// Build final result with budget/deadline data
 		const projectsMap = new Map<string, AssignedProject>();
 		for (const proj of bookableProjects.values()) {
@@ -848,6 +857,7 @@ export async function getAssignedProjects(): Promise<
 				budgetHours: proj.budgetHours ? Number(proj.budgetHours) : null,
 				deadline: proj.deadline?.toISOString() ?? null,
 				totalHoursBooked: hoursMap.get(proj.id) ?? 0,
+				tasks: tasksByProjectId.get(proj.id) ?? [],
 			});
 		}
 
