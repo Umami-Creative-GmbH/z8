@@ -1,6 +1,6 @@
 "use client";
 
-import { IconLoader2, IconPlus, IconX } from "@tabler/icons-react";
+import { IconCoin, IconLoader2, IconPlus, IconX } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
@@ -15,6 +15,7 @@ import {
 	removeProjectAssignment,
 	removeProjectManager,
 } from "@/app/[locale]/(app)/settings/projects/actions";
+import { BillableRateActionPanel } from "@/components/billable-time/billable-rate-series";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -33,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { queryKeys } from "@/lib/query";
+import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
 
 interface ProjectMembersPanelProps {
 	organizationId: string;
@@ -49,6 +51,8 @@ interface MemberRow {
 	name: string;
 	/** Omitted when the viewer may not remove this row. */
 	onRemove?: () => Promise<ServerActionResult<void>>;
+	/** A further action shown before the remove button. */
+	action?: ReactNode;
 }
 
 interface SelectionOption {
@@ -110,25 +114,28 @@ function MemberSection({
 					{rows.map((row) => (
 						<li key={row.key} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
 							<span>{row.name}</span>
-							{row.onRemove && (
-								<Button
-									type="button"
-									variant="ghost"
-									size="icon"
-									className="size-8"
-									disabled={removingKey !== null}
-									aria-label={t("settings.projects.members.remove", "Remove {name}", {
-										name: row.name,
-									})}
-									onClick={() => remove(row)}
-								>
-									{removingKey === row.key ? (
-										<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
-									) : (
-										<IconX className="size-4" aria-hidden="true" />
-									)}
-								</Button>
-							)}
+							<span className="flex items-center gap-1">
+								{row.action}
+								{row.onRemove && (
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon"
+										className="size-8"
+										disabled={removingKey !== null}
+										aria-label={t("settings.projects.members.remove", "Remove {name}", {
+											name: row.name,
+										})}
+										onClick={() => remove(row)}
+									>
+										{removingKey === row.key ? (
+											<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
+										) : (
+											<IconX className="size-4" aria-hidden="true" />
+										)}
+									</Button>
+								)}
+							</span>
 						</li>
 					))}
 				</ul>
@@ -245,113 +252,165 @@ export function ProjectMembersPanel({
 	);
 	const managers = project?.managers ?? [];
 	const managerEmployeeIds = new Set(managers.map((manager) => manager.employeeId));
+	// Billable rates are for owners and admins only (#898); the actions check again.
+	const canSetBillableRates = useBillableTimeEnabled() && canManageProjectManagers;
+	const [rateEmployee, setRateEmployee] = useState<{ id: string; name: string } | null>(null);
 
 	return (
-		<ActionPanel open={open} onOpenChange={onOpenChange}>
-			<ActionPanelContent>
-				<ActionPanelHeader>
-					<ActionPanelTitle>
-						{t("settings.projects.members.title", "Project members")}
-					</ActionPanelTitle>
-					<ActionPanelDescription>{project?.name}</ActionPanelDescription>
-				</ActionPanelHeader>
-				<ActionPanelBody className="space-y-6">
-					<MemberSection
-						title={t("settings.projects.members.teams", "Teams")}
-						emptyText={t("settings.projects.members.noTeams", "No teams assigned")}
-						onChanged={onChanged}
-						rows={teamAssignments.map((assignment) => ({
-							key: assignment.id,
-							name: assignment.teamName ?? "",
-							onRemove: () => removeProjectAssignment(assignment.id),
-						}))}
-					>
-						{project && (
-							<AddMemberForm
-								pickerLabel={t("settings.projects.members.teamPicker", "Team to assign")}
-								placeholder={t("settings.projects.members.selectTeam", "Select a team")}
-								submitLabel={t("settings.projects.members.assignTeam", "Assign team")}
-								options={teams.filter((team) => !assignedTeamIds.has(team.id))}
-								onAdd={(teamId) => addProjectAssignment(project.id, "team", teamId)}
-								successMessage={t("settings.projects.members.teamAssigned", "Team assigned")}
-								failureMessage={t(
-									"settings.projects.members.teamAssignFailed",
-									"Failed to assign team",
-								)}
-								onChanged={onChanged}
-							/>
-						)}
-					</MemberSection>
-					<MemberSection
-						title={t("settings.projects.members.employees", "Employees")}
-						emptyText={t("settings.projects.members.noEmployees", "No employees assigned")}
-						onChanged={onChanged}
-						rows={employeeAssignments.map((assignment) => ({
-							key: assignment.id,
-							name: assignment.employeeName ?? "",
-							onRemove: () => removeProjectAssignment(assignment.id),
-						}))}
-					>
-						{project && (
-							<AddMemberForm
-								pickerLabel={t("settings.projects.members.employeePicker", "Employee to assign")}
-								placeholder={t("settings.projects.members.selectEmployee", "Select an employee")}
-								submitLabel={t("settings.projects.members.assignEmployee", "Assign employee")}
-								options={employees.filter((employee) => !assignedEmployeeIds.has(employee.id))}
-								onAdd={(employeeId) => addProjectAssignment(project.id, "employee", employeeId)}
-								successMessage={t(
-									"settings.projects.members.employeeAssigned",
-									"Employee assigned",
-								)}
-								failureMessage={t(
-									"settings.projects.members.employeeAssignFailed",
-									"Failed to assign employee",
-								)}
-								onChanged={onChanged}
-							/>
-						)}
-					</MemberSection>
-					<MemberSection
-						title={t("settings.projects.members.managers", "Project managers")}
-						emptyText={t("settings.projects.members.noManagers", "No project managers")}
-						onChanged={onChanged}
-						rows={managers.map((manager) => ({
-							key: manager.id,
-							name: manager.employeeName,
-							onRemove:
-								project && canManageProjectManagers
-									? () => removeProjectManager(project.id, manager.employeeId)
-									: undefined,
-						}))}
-					>
-						{project && canManageProjectManagers ? (
-							<AddMemberForm
-								pickerLabel={t("settings.projects.members.managerPicker", "Project manager to add")}
-								placeholder={t("settings.projects.members.selectEmployee", "Select an employee")}
-								submitLabel={t("settings.projects.members.addManager", "Add project manager")}
-								options={employees.filter((employee) => !managerEmployeeIds.has(employee.id))}
-								onAdd={(employeeId) => addProjectManager(project.id, employeeId)}
-								successMessage={t(
-									"settings.projects.members.managerAdded",
-									"Project manager added",
-								)}
-								failureMessage={t(
-									"settings.projects.members.managerAddFailed",
-									"Failed to add project manager",
-								)}
-								onChanged={onChanged}
-							/>
-						) : (
-							<p className="text-xs text-muted-foreground">
-								{t(
-									"settings.projects.members.managersReadOnly",
-									"Only organization admins can change project managers.",
-								)}
-							</p>
-						)}
-					</MemberSection>
-				</ActionPanelBody>
-			</ActionPanelContent>
-		</ActionPanel>
+		<>
+			{canSetBillableRates && (
+				<BillableRateActionPanel
+					open={rateEmployee !== null && project !== null}
+					onOpenChange={(next) => {
+						if (!next) setRateEmployee(null);
+					}}
+					target={
+						rateEmployee && project
+							? { level: "employee_project", employeeId: rateEmployee.id, projectId: project.id }
+							: null
+					}
+					title={t(
+						"settings.billableTime.rates.employeeProjectRateTitle",
+						"Billable rate for {name} on {project}",
+						{ name: rateEmployee?.name ?? "", project: project?.name ?? "" },
+					)}
+					description={t(
+						"settings.billableTime.rates.level.employeeProjectDescription",
+						"Wins over every other rate for this employee's work on this project.",
+					)}
+				/>
+			)}
+			<ActionPanel open={open} onOpenChange={onOpenChange}>
+				<ActionPanelContent>
+					<ActionPanelHeader>
+						<ActionPanelTitle>
+							{t("settings.projects.members.title", "Project members")}
+						</ActionPanelTitle>
+						<ActionPanelDescription>{project?.name}</ActionPanelDescription>
+					</ActionPanelHeader>
+					<ActionPanelBody className="space-y-6">
+						<MemberSection
+							title={t("settings.projects.members.teams", "Teams")}
+							emptyText={t("settings.projects.members.noTeams", "No teams assigned")}
+							onChanged={onChanged}
+							rows={teamAssignments.map((assignment) => ({
+								key: assignment.id,
+								name: assignment.teamName ?? "",
+								onRemove: () => removeProjectAssignment(assignment.id),
+							}))}
+						>
+							{project && (
+								<AddMemberForm
+									pickerLabel={t("settings.projects.members.teamPicker", "Team to assign")}
+									placeholder={t("settings.projects.members.selectTeam", "Select a team")}
+									submitLabel={t("settings.projects.members.assignTeam", "Assign team")}
+									options={teams.filter((team) => !assignedTeamIds.has(team.id))}
+									onAdd={(teamId) => addProjectAssignment(project.id, "team", teamId)}
+									successMessage={t("settings.projects.members.teamAssigned", "Team assigned")}
+									failureMessage={t(
+										"settings.projects.members.teamAssignFailed",
+										"Failed to assign team",
+									)}
+									onChanged={onChanged}
+								/>
+							)}
+						</MemberSection>
+						<MemberSection
+							title={t("settings.projects.members.employees", "Employees")}
+							emptyText={t("settings.projects.members.noEmployees", "No employees assigned")}
+							onChanged={onChanged}
+							rows={employeeAssignments.map((assignment) => ({
+								key: assignment.id,
+								name: assignment.employeeName ?? "",
+								onRemove: () => removeProjectAssignment(assignment.id),
+								action:
+									canSetBillableRates && assignment.employeeId ? (
+										<Button
+											type="button"
+											variant="ghost"
+											size="icon"
+											className="size-8"
+											aria-label={t(
+												"settings.billableTime.rates.employeeProjectRateFor",
+												"Billable rate for {name} on this project",
+												{ name: assignment.employeeName ?? "" },
+											)}
+											onClick={() =>
+												setRateEmployee({
+													id: assignment.employeeId as string,
+													name: assignment.employeeName ?? "",
+												})
+											}
+										>
+											<IconCoin className="size-4" aria-hidden="true" />
+										</Button>
+									) : undefined,
+							}))}
+						>
+							{project && (
+								<AddMemberForm
+									pickerLabel={t("settings.projects.members.employeePicker", "Employee to assign")}
+									placeholder={t("settings.projects.members.selectEmployee", "Select an employee")}
+									submitLabel={t("settings.projects.members.assignEmployee", "Assign employee")}
+									options={employees.filter((employee) => !assignedEmployeeIds.has(employee.id))}
+									onAdd={(employeeId) => addProjectAssignment(project.id, "employee", employeeId)}
+									successMessage={t(
+										"settings.projects.members.employeeAssigned",
+										"Employee assigned",
+									)}
+									failureMessage={t(
+										"settings.projects.members.employeeAssignFailed",
+										"Failed to assign employee",
+									)}
+									onChanged={onChanged}
+								/>
+							)}
+						</MemberSection>
+						<MemberSection
+							title={t("settings.projects.members.managers", "Project managers")}
+							emptyText={t("settings.projects.members.noManagers", "No project managers")}
+							onChanged={onChanged}
+							rows={managers.map((manager) => ({
+								key: manager.id,
+								name: manager.employeeName,
+								onRemove:
+									project && canManageProjectManagers
+										? () => removeProjectManager(project.id, manager.employeeId)
+										: undefined,
+							}))}
+						>
+							{project && canManageProjectManagers ? (
+								<AddMemberForm
+									pickerLabel={t(
+										"settings.projects.members.managerPicker",
+										"Project manager to add",
+									)}
+									placeholder={t("settings.projects.members.selectEmployee", "Select an employee")}
+									submitLabel={t("settings.projects.members.addManager", "Add project manager")}
+									options={employees.filter((employee) => !managerEmployeeIds.has(employee.id))}
+									onAdd={(employeeId) => addProjectManager(project.id, employeeId)}
+									successMessage={t(
+										"settings.projects.members.managerAdded",
+										"Project manager added",
+									)}
+									failureMessage={t(
+										"settings.projects.members.managerAddFailed",
+										"Failed to add project manager",
+									)}
+									onChanged={onChanged}
+								/>
+							) : (
+								<p className="text-xs text-muted-foreground">
+									{t(
+										"settings.projects.members.managersReadOnly",
+										"Only organization admins can change project managers.",
+									)}
+								</p>
+							)}
+						</MemberSection>
+					</ActionPanelBody>
+				</ActionPanelContent>
+			</ActionPanel>
+		</>
 	);
 }

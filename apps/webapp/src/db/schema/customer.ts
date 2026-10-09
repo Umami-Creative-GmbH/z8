@@ -1,4 +1,13 @@
-import { boolean, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+	boolean,
+	index,
+	pgTable,
+	text,
+	timestamp,
+	unique,
+	uniqueIndex,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { currentTimestamp } from "./timestamp";
 
 // Import auth tables for FK references
@@ -45,5 +54,7 @@ export const customer = pgTable(
 		index("customer_organizationId_idx").on(table.organizationId),
 		index("customer_isActive_idx").on(table.isActive),
 		uniqueIndex("customer_org_name_idx").on(table.organizationId, table.name),
+		// Target of organization-scoped foreign keys, e.g. customer-level billable rates (#898).
+		unique("customer_id_organizationId_idx").on(table.id, table.organizationId),
 	],
 );

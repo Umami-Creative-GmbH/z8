@@ -1,3 +1,5 @@
+import { eq } from "drizzle-orm";
+import { billableRate } from "@/db/schema/billable-time";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
 
 /** The client a probe reads through: the transaction that changes the currency. */
@@ -23,4 +25,16 @@ export interface BillableCurrencyLockProbe {
  * `lockBillableTimeSettings` in their transaction first, so a concurrent currency
  * change either sees their row or waits for it.
  */
-export const BILLABLE_CURRENCY_LOCK_PROBES: readonly BillableCurrencyLockProbe[] = [];
+export const BILLABLE_CURRENCY_LOCK_PROBES: readonly BillableCurrencyLockProbe[] = [
+	{
+		name: "billable rates",
+		async hasPricedRows(tx, organizationId) {
+			const [row] = await tx
+				.select({ id: billableRate.id })
+				.from(billableRate)
+				.where(eq(billableRate.organizationId, organizationId))
+				.limit(1);
+			return row !== undefined;
+		},
+	},
+];
