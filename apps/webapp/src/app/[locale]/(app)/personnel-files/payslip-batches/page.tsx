@@ -1,5 +1,4 @@
 import { IconArrowLeft, IconChevronRight } from "@tabler/icons-react";
-import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Temporal } from "temporal-polyfill";
@@ -9,11 +8,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
-import { organization } from "@/db/auth-schema";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
-import { todayInOrganization } from "@/lib/personnel-file/document-rules";
+import { loadOrganizationDay } from "@/lib/personnel-file/organization-day";
 import {
 	canRunPayslipBatches,
 	listOwnPayslipBatches,
@@ -33,17 +31,13 @@ async function PayslipBatchesContent({ params }: { params: Promise<{ locale: str
 		params,
 	]);
 	if (current.status !== "resolved" || !canRunPayslipBatches(current.access)) notFound();
-	const [[org], batches] = await Promise.all([
-		db
-			.select({ timezone: organization.timezone })
-			.from(organization)
-			.where(eq(organization.id, current.access.organizationId))
-			.limit(1),
+	const [{ today }, batches] = await Promise.all([
+		loadOrganizationDay(db, {
+			organizationId: current.access.organizationId,
+			now: systemClock.nowInstant(),
+		}),
 		listOwnPayslipBatches(db, current.access),
 	]);
-	const [year, month] = todayInOrganization(systemClock.nowInstant(), org?.timezone)
-		.split("-")
-		.map(Number);
 
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
@@ -59,7 +53,7 @@ async function PayslipBatchesContent({ params }: { params: Promise<{ locale: str
 					{t("settings.personnelFiles.batch.pageTitle", "Payslip batches")}
 				</h1>
 			</header>
-			<PayslipBatchStart defaultPayPeriod={{ year: year ?? 2000, month: month ?? 1 }} />
+			<PayslipBatchStart defaultPayPeriod={{ year: today.year, month: today.month }} />
 			{batches.length > 0 ? (
 				<section className="space-y-3">
 					<h2 className="text-lg font-semibold">

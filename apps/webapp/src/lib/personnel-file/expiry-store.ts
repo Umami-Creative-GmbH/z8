@@ -1,19 +1,19 @@
 import { and, asc, eq, inArray, isNotNull, lte } from "drizzle-orm";
 import type { db as appDb } from "@/db";
-import { organization, user } from "@/db/auth-schema";
+import { user } from "@/db/auth-schema";
 import { employee, employeeDocument, personnelFileReminderSetting } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import type { PersonnelFileAccess } from "./access";
 import { visibleDocumentsCondition } from "./access-store";
 import { type DocumentCategory, EXPIRY_DATE_CATEGORIES } from "./document.types";
-import { todayInOrganization } from "./document-rules";
 import {
 	DEFAULT_EXPIRY_REMINDER_LEAD_DAYS,
 	describeExpiry,
 	type ExpiryDescription,
 	expiryWindowEnd,
 } from "./expiry";
+import { loadOrganizationDay } from "./organization-day";
 
 /**
  * Expiry reminder settings and the expiring documents list (#869).
@@ -63,15 +63,11 @@ export async function loadExpiryReminderWindow(
 	database: Reader,
 	input: { organizationId: string; now: Instant },
 ): Promise<{ today: string; leadDays: number; windowEnd: string }> {
-	const [[org], leadDays] = await Promise.all([
-		database
-			.select({ timezone: organization.timezone })
-			.from(organization)
-			.where(eq(organization.id, input.organizationId))
-			.limit(1),
+	const [day, leadDays] = await Promise.all([
+		loadOrganizationDay(database, input),
 		loadExpiryReminderLeadDays(database, input.organizationId),
 	]);
-	const today = todayInOrganization(input.now, org?.timezone);
+	const today = day.today.toString();
 	return { today, leadDays, windowEnd: expiryWindowEnd({ today, leadDays }) };
 }
 

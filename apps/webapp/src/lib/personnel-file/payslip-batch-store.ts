@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, count, desc, eq, inArray, isNull, lt, notExists, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
-import { organization } from "@/db/auth-schema";
 import { employeeDocument, payslipBatch, payslipBatchFile, personnelFileUpload } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
@@ -9,7 +8,7 @@ import { managesCategory, type PersonnelFileAccess } from "./access";
 import { listManagedEmployees, type ManagedEmployee } from "./access-store";
 import { writeDocumentAudit, writePayslipBatchAudit } from "./audit";
 import { type DocumentVisibility, isDocumentVisibility, type PayPeriod } from "./document.types";
-import { DOCUMENT_TITLE_MAX_LENGTH, todayInOrganization } from "./document-rules";
+import { DOCUMENT_TITLE_MAX_LENGTH } from "./document-rules";
 import { PERSONNEL_DOCUMENT_STORAGE_PROVIDER, personnelDocumentStorageKey } from "./document-store";
 import {
 	PAYSLIP_BATCH_MAX_FILES,
@@ -17,6 +16,7 @@ import {
 	type PayslipFileFailure,
 	type PayslipMatchKind,
 } from "./payslip-batch.types";
+import { loadOrganizationDay } from "./organization-day";
 import { matchPayslipFile } from "./payslip-matching";
 import {
 	type CopyPersonnelFileObject,
@@ -858,12 +858,9 @@ export async function confirmPayslipBatch(
 	}
 
 	const at = dateFromInstant(now);
-	const [org] = await database
-		.select({ timezone: organization.timezone })
-		.from(organization)
-		.where(eq(organization.id, access.organizationId))
-		.limit(1);
-	const today = todayInOrganization(now, org?.timezone);
+	const today = (
+		await loadOrganizationDay(database, { organizationId: access.organizationId, now })
+	).today.toString();
 	const inScope = new Set((await listPayslipCandidates(database, access)).map((e) => e.id));
 	const earlier = new Set(
 		files

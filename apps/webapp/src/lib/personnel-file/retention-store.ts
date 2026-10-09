@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, asc, eq, exists, inArray, notExists, type SQL } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import type { db as appDb } from "@/db";
-import { organization, user } from "@/db/auth-schema";
+import { user } from "@/db/auth-schema";
 import {
 	auditLog,
 	employee,
@@ -18,11 +18,11 @@ import {
 	instantFromDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import type { PersonnelFileAccess } from "./access";
 import { visibleDocumentsCondition } from "./access-store";
 import { writeDocumentAudit } from "./audit";
 import { DOCUMENT_CATEGORIES, type DocumentCategory, type PayPeriod } from "./document.types";
+import { loadOrganizationDay } from "./organization-day";
 import {
 	type EmploymentPeriodForRetention,
 	isValidRetentionYears,
@@ -148,18 +148,6 @@ export async function saveRetentionPeriods(
 	});
 }
 
-export async function loadOrganizationTimezone(
-	database: Reader,
-	organizationId: string,
-): Promise<string> {
-	const [row] = await database
-		.select({ timezone: organization.timezone })
-		.from(organization)
-		.where(eq(organization.id, organizationId))
-		.limit(1);
-	return resolveOrganizationTimezone(row?.timezone).timezone;
-}
-
 /** An employee document that is due for deletion. */
 export interface DueDocument {
 	id: string;
@@ -192,11 +180,10 @@ export async function findDueDocuments(
 	input: { organizationId: string; condition?: SQL; now?: Instant },
 ): Promise<DueDocumentsResult> {
 	const now = input.now ?? systemClock.nowInstant();
-	const [timezone, periods] = await Promise.all([
-		loadOrganizationTimezone(database, input.organizationId),
+	const [{ timezone, today }, periods] = await Promise.all([
+		loadOrganizationDay(database, { organizationId: input.organizationId, now }),
 		loadRetentionPeriods(database, input.organizationId),
 	]);
-	const today = now.toZonedDateTimeISO(timezone).toPlainDate();
 	const categories = DOCUMENT_CATEGORIES.filter((category) => periods[category] !== undefined);
 	if (categories.length === 0) return { today: today.toString(), documents: [] };
 

@@ -1,6 +1,5 @@
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
-import { todayInOrganization } from "./document-rules";
 import {
 	DEFAULT_EXPIRY_REMINDER_LEAD_DAYS,
 	describeExpiry,
@@ -8,8 +7,11 @@ import {
 	expiryWindowEnd,
 	validateExpiryReminderLeadDays,
 } from "./expiry";
+import { todayInOrganization } from "./organization-day";
 
 const instant = (value: string) => Temporal.Instant.from(value);
+const dayIn = (now: Temporal.Instant, timezone: string) =>
+	todayInOrganization(now, timezone).toString();
 
 describe("dueExpiryReminder", () => {
 	const certificate = { expiryDate: "2026-11-30", leadDays: 30 };
@@ -44,21 +46,21 @@ describe("dueExpiryReminder", () => {
 		// 23:30 UTC on 30 October is already 31 October in Berlin (UTC+1 after DST ends).
 		const now = instant("2026-10-30T23:30:00Z");
 		expect(
-			dueExpiryReminder({ ...certificate, today: todayInOrganization(now, "Europe/Berlin") }),
+			dueExpiryReminder({ ...certificate, today: dayIn(now, "Europe/Berlin") }),
 		).toBe("upcoming");
 		expect(
-			dueExpiryReminder({ ...certificate, today: todayInOrganization(now, "UTC") }),
+			dueExpiryReminder({ ...certificate, today: dayIn(now, "UTC") }),
 		).toBeNull();
 		// 05:00 UTC on 30 November is still 29 November in Los Angeles.
 		const morning = instant("2026-11-30T05:00:00Z");
 		expect(
 			dueExpiryReminder({
 				...certificate,
-				today: todayInOrganization(morning, "America/Los_Angeles"),
+				today: dayIn(morning, "America/Los_Angeles"),
 			}),
 		).toBe("upcoming");
 		expect(
-			dueExpiryReminder({ ...certificate, today: todayInOrganization(morning, "Europe/Berlin") }),
+			dueExpiryReminder({ ...certificate, today: dayIn(morning, "Europe/Berlin") }),
 		).toBe("expired_today");
 	});
 });

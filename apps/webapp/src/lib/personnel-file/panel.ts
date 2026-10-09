@@ -1,7 +1,5 @@
 import "server-only";
-import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { organization } from "@/db/auth-schema";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { managedCategoriesFor, type PersonnelFileAccess } from "./access";
 import { loadEmployeeRef } from "./access-store";
@@ -11,7 +9,7 @@ import {
 	type DocumentCategory,
 	EMPLOYEE_UPLOAD_CATEGORIES,
 } from "./document.types";
-import { todayInOrganization } from "./document-rules";
+import { loadOrganizationDay } from "./organization-day";
 
 /** What the personnel file panel of one employee may offer the current actor. */
 export interface PersonnelFilePanelCapability {
@@ -43,15 +41,14 @@ export async function personnelFilePanelCapabilityFor(
 	if (!employee) return null;
 	const managed = managedCategoriesFor(access, employee);
 	if (managed.size === 0) return null;
-	const [org] = await db
-		.select({ timezone: organization.timezone })
-		.from(organization)
-		.where(eq(organization.id, access.organizationId))
-		.limit(1);
+	const { today } = await loadOrganizationDay(db, {
+		organizationId: access.organizationId,
+		now: systemClock.nowInstant(),
+	});
 	return {
 		employeeId: employee.id,
 		categories: DOCUMENT_CATEGORIES.filter((category) => managed.has(category)),
-		today: todayInOrganization(systemClock.nowInstant(), org?.timezone),
+		today: today.toString(),
 	};
 }
 
@@ -62,14 +59,13 @@ export async function personnelFilePanelCapabilityFor(
 export async function loadOwnUploadCapability(): Promise<PersonnelFilePanelCapability | null> {
 	const current = await loadCurrentPersonnelFileAccess();
 	if (current.status !== "resolved" || !current.access.selfEmployeeId) return null;
-	const [org] = await db
-		.select({ timezone: organization.timezone })
-		.from(organization)
-		.where(eq(organization.id, current.access.organizationId))
-		.limit(1);
+	const { today } = await loadOrganizationDay(db, {
+		organizationId: current.access.organizationId,
+		now: systemClock.nowInstant(),
+	});
 	return {
 		employeeId: current.access.selfEmployeeId,
 		categories: [...EMPLOYEE_UPLOAD_CATEGORIES],
-		today: todayInOrganization(systemClock.nowInstant(), org?.timezone),
+		today: today.toString(),
 	};
 }

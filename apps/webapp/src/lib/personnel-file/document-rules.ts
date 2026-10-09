@@ -1,6 +1,4 @@
-import type { Instant } from "@/lib/datetime/temporal-core";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
-import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import {
 	type DocumentCategory,
 	type DocumentVisibility,
@@ -131,10 +129,4 @@ export function validateDocumentMetadata(input: {
 			expiryDate,
 		},
 	};
-}
-
-/** Today's calendar day in the organization's timezone, the default document date. */
-export function todayInOrganization(now: Instant, timezone: unknown): string {
-	const zone = resolveOrganizationTimezone(timezone).timezone;
-	return now.toZonedDateTimeISO(zone).toPlainDate().toString();
 }
