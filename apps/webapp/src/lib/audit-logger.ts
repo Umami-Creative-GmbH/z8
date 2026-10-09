@@ -162,6 +162,7 @@ export enum AuditAction {
 	CONTACT_LINK_REMOVED = "billable_time.contact_link_removed",
 	CUSTOMER_TAX_TREATMENT_SET = "billable_time.customer_tax_treatment_set",
 	CUSTOMER_TAX_TREATMENT_CLEARED = "billable_time.customer_tax_treatment_cleared",
+	INVOICE_DRAFT_STARTED = "billable_time.invoice_draft_started",
 	INVOICE_DRAFT_CREATED = "billable_time.invoice_draft_created",
 	INVOICE_DRAFT_FAILED = "billable_time.invoice_draft_failed",
 	INVOICE_DRAFT_RELEASED = "billable_time.invoice_draft_released",

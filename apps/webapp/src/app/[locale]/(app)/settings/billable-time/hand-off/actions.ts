@@ -2,6 +2,7 @@
 
 import { Effect } from "effect";
 import { defaultAccountingDependencies } from "@/lib/billable-time/accounting/connection-store";
+import type { InvoiceDraftCapabilityProblem } from "@/lib/billable-time/accounting/invoice-draft";
 import {
 	checkInvoiceDraftStatus,
 	clearChangedAfterInvoicing,
@@ -96,11 +97,22 @@ function blockerMessage(blocker: HandOffBlockerView): string {
 		case "nothing_to_hand_off":
 			return "There is no un-invoiced billable work to hand off in this period";
 		case "too_many_lines":
-			return `The draft would have ${blocker.lines} lines; the accounting tool takes at most ${blocker.maxDraftLines}. Leave out the timesheet lines or choose a shorter period`;
+			return `The draft would have ${blocker.lines} work lines; the accounting tool takes at most ${blocker.maxDraftLines}. Choose fewer projects or a shorter period`;
 		case "currency_not_supported":
 			return `The accounting tool cannot take drafts in ${blocker.currency}`;
 		case "tax_treatment_not_supported":
 			return "The accounting tool cannot take this customer's tax treatment";
+	}
+}
+
+function fitProblemText(problem: InvoiceDraftCapabilityProblem): string {
+	switch (problem.problem) {
+		case "too_many_lines":
+			return `${problem.lines} lines; it takes at most ${problem.maxDraftLines}`;
+		case "currency_not_supported":
+			return `drafts in ${problem.currency}`;
+		case "tax_treatment_not_supported":
+			return "this tax treatment";
 	}
 }
 
@@ -155,6 +167,22 @@ function outcomeError(outcome: Exclude<HandOffOutcome, { ok: true }>) {
 			return new ConflictError({
 				message: "Reload the preview and try again",
 				conflictType: "hand_off_key_reused",
+			});
+		case "preview_required":
+			return new ValidationError({
+				message: "Preview the hand-off before confirming it",
+				field: "fingerprint",
+			});
+		case "draft_does_not_fit":
+			return new ValidationError({
+				message: `The accounting tool no longer takes this draft (${fitProblemText(outcome.problem)}). Release it and hand off again`,
+				field: "handOff",
+			});
+		case "in_progress":
+			return new ConflictError({
+				message:
+					"This hand-off is being sent to the accounting tool right now. Check it again in a moment",
+				conflictType: "hand_off_in_progress",
 			});
 		case "connection_changed":
 			return new ConflictError({

@@ -64,6 +64,8 @@ export interface HandOffPreview {
 	withoutCustomer: { count: number; hours: string; projects: string[] };
 	nonBillable: { count: number; hours: string };
 	timesheetLineCount: number;
+	/** Periods the timesheet lines leave out to fit the tool (the download has all). */
+	timesheetOmitted: number;
 	blockers: HandOffBlockerView[];
 	/** Identifies exactly this preview; confirm refuses when the work changed since. */
 	fingerprint: string;

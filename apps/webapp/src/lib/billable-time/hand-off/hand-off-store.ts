@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import type { db } from "@/db";
@@ -41,6 +41,7 @@ import {
 	checkInvoiceDraftFits,
 	formatQuantityHours,
 	type InvoiceDraft,
+	type InvoiceDraftCapabilityProblem,
 	type InvoiceDraftLine,
 } from "../accounting/invoice-draft";
 import {
@@ -401,6 +402,7 @@ function previewOf(context: HandOffContext, request: HandOffRequest): HandOffPre
 		withoutCustomer: context.withoutCustomer,
 		nonBillable: { count: plan.nonBillable.count, hours: hoursOfMinutes(plan.nonBillable.minutes) },
 		timesheetLineCount: plan.timesheetLines.length,
+		timesheetOmitted: plan.timesheetOmitted,
 		blockers: context.blockers,
 		fingerprint: context.fingerprint,
 	};
@@ -464,8 +466,14 @@ export type HandOffRefusal =
 	| { reason: "preview_outdated" }
 	/** The key belongs to a hand-off of another customer or period. */
 	| { reason: "key_reused" }
+	/** The confirm did not carry the preview's fingerprint: preview first. */
+	| { reason: "preview_required" }
 	/** The draft's accounting account is no longer the active connection. */
 	| { reason: "connection_changed" }
+	/** The recorded draft no longer fits what the tool declares it takes. */
+	| { reason: "draft_does_not_fit"; problem: InvoiceDraftCapabilityProblem }
+	/** Another attempt is calling the tool for this draft right now. */
+	| { reason: "in_progress"; draftId: string }
 	| { reason: "not_connected" | "provider_unavailable" | "credentials_missing" }
 	/** The tool did not answer; the draft may exist. Retry: the same key finds it. */
 	| { reason: "outcome_unknown"; draftId: string; message: string }
@@ -526,7 +534,7 @@ async function recordAttempt(
 		actorUserId: string;
 		request: HandOffRequest;
 		idempotencyKey: string;
-		expectedFingerprint: string | null;
+		expectedFingerprint: string;
 	},
 ): Promise<{ ok: true; draft: DraftRow; created: boolean } | ({ ok: false } & HandOffRefusal)> {
 	return database.transaction(async (tx) => {
@@ -563,7 +571,7 @@ async function recordAttempt(
 		if ("refused" in context) return { ok: false, reason: context.refused } as const;
 		const [blocker] = context.blockers;
 		if (blocker) return { ok: false, reason: "blocked", blocker } as const;
-		if (input.expectedFingerprint !== null && input.expectedFingerprint !== context.fingerprint) {
+		if (input.expectedFingerprint !== context.fingerprint) {
 			return { ok: false, reason: "preview_outdated" } as const;
 		}
 		const { connection, contact, taxTreatment, plan } = context;
@@ -670,6 +678,20 @@ async function recordAttempt(
 				),
 			})),
 		);
+		// The hand-off started: its work is reserved from now on. No key, no secrets.
+		await tx.insert(auditLog).values({
+			organizationId: input.organizationId,
+			entityType: "invoice_draft",
+			entityId: draft.id,
+			action: AuditAction.INVOICE_DRAFT_STARTED,
+			performedBy: input.actorUserId,
+			changes: JSON.stringify({
+				...auditDraftChanges(draft),
+				projectIds: draft.projectIds,
+				includeTimesheet: draft.includeTimesheet,
+				workCount: plan.included.length,
+			}),
+		});
 		return { ok: true, draft, created: true };
 	});
 }
@@ -787,6 +809,92 @@ async function returnWork(
 		.returning({ id: invoicedWork.id });
 }
 
+/** The filter of one draft row, always within its organization. */
+function draftRow(draft: Pick<DraftRow, "id" | "organizationId">) {
+	return and(eq(invoiceDraft.id, draft.id), eq(invoiceDraft.organizationId, draft.organizationId));
+}
+
+/**
+ * How long one call may hold a draft. Longer than any provider call with its
+ * retries; after it, another attempt may take over (a crashed call never
+ * blocks a draft for good).
+ */
+const CALL_LEASE = sql`interval '10 minutes'`;
+
+/** The right to call the tool for one pending draft, held by one attempt. */
+interface CallClaim {
+	token: string;
+	/** Before this call: whether an earlier call may already have created the draft. */
+	previouslyUnknown: boolean;
+}
+
+/**
+ * Claims the draft for one call under a row lock. Only one call per draft
+ * reaches the tool at a time: a concurrent retry or same-key confirm is told the
+ * hand-off is in progress. The claim marks the outcome unknown BEFORE the call,
+ * so a call that reached the tool but whose answer was never recorded (crash,
+ * failed write) keeps the draft from being failed and its work returned.
+ */
+async function claimCall(
+	database: typeof db,
+	draft: DraftRow,
+): Promise<{ ok: true; claim: CallClaim } | { ok: false; outcome: HandOffOutcome }> {
+	return database.transaction(async (tx) => {
+		const [current] = await tx
+			.select({
+				draft: invoiceDraft,
+				claimed: sql<boolean>`coalesce(${invoiceDraft.callClaimedUntil} > now(), false)`,
+			})
+			.from(invoiceDraft)
+			.where(draftRow(draft))
+			.for("update");
+		if (!current) return { ok: false, outcome: { ok: false, reason: "not_found" } } as const;
+		const row = current.draft;
+		if (row.status === "created") {
+			return { ok: false, outcome: { ok: true, draftId: row.id, replayed: true } } as const;
+		}
+		if (row.status !== "pending") {
+			return {
+				ok: false,
+				outcome: { ok: false, reason: "not_pending", draftId: row.id, status: row.status },
+			} as const;
+		}
+		if (current.claimed) {
+			return { ok: false, outcome: { ok: false, reason: "in_progress", draftId: row.id } } as const;
+		}
+		const token = randomUUID();
+		await tx
+			.update(invoiceDraft)
+			.set({
+				callClaimToken: token,
+				callClaimedUntil: sql`now() + ${CALL_LEASE}`,
+				attemptCount: sql`${invoiceDraft.attemptCount} + 1`,
+				lastAttemptAt: sql`now()`,
+				outcomeUnknown: true,
+			})
+			.where(draftRow(row));
+		return {
+			ok: true,
+			// A claim that ran out means an earlier call may still have reached the tool.
+			claim: { token, previouslyUnknown: row.outcomeUnknown || row.callClaimToken !== null },
+		} as const;
+	});
+}
+
+const NO_CLAIM = { callClaimToken: null, callClaimedUntil: null } as const;
+
+/** Gives up a claim (best effort) after its outcome could not be recorded. */
+async function dropClaim(database: typeof db, draft: DraftRow, claim: CallClaim) {
+	try {
+		await database
+			.update(invoiceDraft)
+			.set(NO_CLAIM)
+			.where(and(draftRow(draft), eq(invoiceDraft.callClaimToken, claim.token)));
+	} catch {
+		// The lease runs out on its own.
+	}
+}
+
 /**
  * Calls the tool for a pending draft with its key and finishes the attempt.
  * Never holds a transaction across the call.
@@ -800,17 +908,12 @@ async function callTool(
 	const opened = await openDraftProvider(database, dependencies, draft);
 	if (!opened.ok) return { ok: false, reason: opened.reason };
 	const request = await storedInvoiceDraft(database, draft);
-	const fits = checkInvoiceDraftFits(request, opened.provider.capabilities);
-	if (fits.length > 0) {
-		return { ok: false, reason: "connection_changed" };
-	}
+	const [problem] = checkInvoiceDraftFits(request, opened.provider.capabilities);
+	if (problem) return { ok: false, reason: "draft_does_not_fit", problem };
 
-	await database
-		.update(invoiceDraft)
-		.set({ attemptCount: sql`${invoiceDraft.attemptCount} + 1`, lastAttemptAt: sql`now()` })
-		.where(
-			and(eq(invoiceDraft.id, draft.id), eq(invoiceDraft.organizationId, draft.organizationId)),
-		);
+	const claimed = await claimCall(database, draft);
+	if (!claimed.ok) return claimed.outcome;
+	const { claim } = claimed;
 
 	let created: Awaited<ReturnType<AccountingProvider["createInvoiceDraft"]>>;
 	try {
@@ -819,25 +922,43 @@ async function callTool(
 			firstAttemptAt: instantFromDate(draft.firstAttemptAt),
 		});
 	} catch (error) {
-		return failedCall(database, draft, actorUserId, error);
+		try {
+			return await failedCall(database, draft, claim, actorUserId, error);
+		} catch (recordError) {
+			await dropClaim(database, draft, claim);
+			throw recordError;
+		}
 	}
 
+	try {
+		return await createdCall(database, draft, created, actorUserId);
+	} catch (error) {
+		await dropClaim(database, draft, claim);
+		throw error;
+	}
+}
+
+/** Records the draft the tool created. Ends any claim: no further call is needed. */
+async function createdCall(
+	database: typeof db,
+	draft: DraftRow,
+	created: Awaited<ReturnType<AccountingProvider["createInvoiceDraft"]>>,
+	actorUserId: string,
+): Promise<HandOffOutcome> {
 	return database.transaction(async (tx) => {
-		const [current] = await tx
-			.select()
-			.from(invoiceDraft)
-			.where(
-				and(eq(invoiceDraft.id, draft.id), eq(invoiceDraft.organizationId, draft.organizationId)),
-			)
-			.for("update");
+		const [current] = await tx.select().from(invoiceDraft).where(draftRow(draft)).for("update");
 		if (!current) return { ok: false, reason: "not_found" } as const;
+		if (current.status === "created") {
+			// Another attempt recorded it meanwhile (the tool returned the same draft).
+			return { ok: true, draftId: current.id, replayed: true } as const;
+		}
 		if (current.status !== "pending") {
 			// Released (or failed) while the tool was answering: keep that state,
 			// but remember which draft the tool created.
 			await tx
 				.update(invoiceDraft)
-				.set({ externalId: created.externalId, externalUrl: created.externalUrl })
-				.where(eq(invoiceDraft.id, current.id));
+				.set({ externalId: created.externalId, externalUrl: created.externalUrl, ...NO_CLAIM })
+				.where(draftRow(current));
 			return {
 				ok: false,
 				reason: "not_pending",
@@ -854,8 +975,9 @@ async function callTool(
 				confirmedAt: sql`now()`,
 				lastFailure: null,
 				lastFailureMessage: null,
+				...NO_CLAIM,
 			})
-			.where(eq(invoiceDraft.id, current.id))
+			.where(draftRow(current))
 			.returning();
 		const [{ count }] = await tx
 			.select({ count: sql<number>`count(*)::int` })
@@ -889,6 +1011,7 @@ async function callTool(
 async function failedCall(
 	database: typeof db,
 	draft: DraftRow,
+	claim: CallClaim,
 	actorUserId: string,
 	error: unknown,
 ): Promise<HandOffOutcome> {
@@ -904,17 +1027,15 @@ async function failedCall(
 	}
 
 	return database.transaction(async (tx) => {
-		const [current] = await tx
-			.select()
-			.from(invoiceDraft)
-			.where(
-				and(eq(invoiceDraft.id, draft.id), eq(invoiceDraft.organizationId, draft.organizationId)),
-			)
-			.for("update");
+		const [current] = await tx.select().from(invoiceDraft).where(draftRow(draft)).for("update");
 		if (!current) return { ok: false, reason: "not_found" } as const;
-		const outcomeUnknown = current.outcomeUnknown || failure === "outcome_unknown";
-		// A definite refusal ends the attempt only while no earlier call can have
-		// created the draft; otherwise it stays pending for a retry or a release.
+		const stillMine = current.callClaimToken === claim.token;
+		// Unknown when this call may have reached the tool, when an earlier call
+		// may have, or when another attempt took the draft over meanwhile.
+		const outcomeUnknown = failure === "outcome_unknown" || claim.previouslyUnknown || !stillMine;
+		const release = stillMine ? NO_CLAIM : {};
+		// A definite refusal ends the attempt only while no call can have created
+		// the draft; otherwise it stays pending for a retry or a release.
 		const definite = failure === "rejected" || failure === "unauthorized";
 		if (definite && !outcomeUnknown && current.status === "pending") {
 			const [failed] = await tx
@@ -925,8 +1046,10 @@ async function failedCall(
 					endedBy: actorUserId,
 					lastFailure: failure,
 					lastFailureMessage: message,
+					outcomeUnknown: false,
+					...release,
 				})
-				.where(eq(invoiceDraft.id, current.id))
+				.where(draftRow(current))
 				.returning();
 			const returned = await returnWork(tx, current);
 			await tx.insert(auditLog).values({
@@ -947,8 +1070,8 @@ async function failedCall(
 		}
 		await tx
 			.update(invoiceDraft)
-			.set({ outcomeUnknown, lastFailure: failure, lastFailureMessage: message })
-			.where(eq(invoiceDraft.id, current.id));
+			.set({ outcomeUnknown, lastFailure: failure, lastFailureMessage: message, ...release })
+			.where(draftRow(current));
 		if (failure === "unauthorized") {
 			return { ok: false, reason: "credentials_refused", draftId: current.id } as const;
 		}
@@ -981,6 +1104,9 @@ export async function confirmHandOff(
 	if (typeof input.idempotencyKey !== "string" || !UUID_PATTERN.test(input.idempotencyKey)) {
 		return { ok: false, reason: "invalid_key" };
 	}
+	if (typeof input.expectedFingerprint !== "string" || input.expectedFingerprint === "") {
+		return { ok: false, reason: "preview_required" };
+	}
 	let recorded: Awaited<ReturnType<typeof recordAttempt>>;
 	try {
 		recorded = await recordAttempt(database, dependencies, {
@@ -988,8 +1114,7 @@ export async function confirmHandOff(
 			actorUserId: input.actorUserId,
 			request: input.request,
 			idempotencyKey: input.idempotencyKey.toLowerCase(),
-			expectedFingerprint:
-				typeof input.expectedFingerprint === "string" ? input.expectedFingerprint : null,
+			expectedFingerprint: input.expectedFingerprint,
 		});
 	} catch (error) {
 		// Another hand-off took some of this work at the same moment.
@@ -1097,7 +1222,7 @@ export async function releaseInvoiceDraft(
 				endedBy: input.actorUserId,
 				releaseReason: reason,
 			})
-			.where(eq(invoiceDraft.id, draft.id));
+			.where(draftRow(draft));
 		const returned = await returnWork(tx, draft);
 		await tx.insert(auditLog).values({
 			organizationId: input.organizationId,

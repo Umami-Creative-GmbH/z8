@@ -56,6 +56,11 @@ export interface FakeAccountingTool {
 	/** Every API key a provider was opened with, in order. */
 	openedWithKeys(): string[];
 	simulateTimeout(): void;
+	/**
+	 * Holds the next `createInvoiceDraft` call open until `release()`: `reached`
+	 * resolves once the call is in flight (nothing is created before release).
+	 */
+	holdNextCreate(): { reached: Promise<void>; release(): void };
 	failNext(method: ProviderMethod, failure: AccountingProviderFailure): void;
 	setDraftStatus(externalId: string, status: InvoiceDraftToolStatus): void;
 	/** Deletes a draft in the tool: its status reads `gone` from now on. */
@@ -97,6 +102,7 @@ export function createFakeAccountingTool(
 	const pendingFailures = new Map<ProviderMethod, AccountingProviderFailure>();
 	const openedWith: string[] = [];
 	let timeoutNextCreate = false;
+	let heldCreate: { arrive(): void; released: Promise<void> } | null = null;
 	let createCount = 0;
 	let nextDraftNumber = 1;
 
@@ -143,6 +149,12 @@ export function createFakeAccountingTool(
 			},
 			async createInvoiceDraft(draft, { idempotencyKey }): Promise<CreatedInvoiceDraft> {
 				createCount += 1;
+				if (heldCreate) {
+					const held = heldCreate;
+					heldCreate = null;
+					held.arrive();
+					await held.released;
+				}
 				takeFailure("createInvoiceDraft");
 				if (!keyAccepted(apiKey)) throw unauthorized();
 				if (idempotencyKey.trim() === "") {
@@ -237,6 +249,18 @@ export function createFakeAccountingTool(
 		openedWithKeys: () => [...openedWith],
 		simulateTimeout: () => {
 			timeoutNextCreate = true;
+		},
+		holdNextCreate: () => {
+			let arrive = () => {};
+			let release = () => {};
+			const reached = new Promise<void>((resolve) => {
+				arrive = resolve;
+			});
+			const released = new Promise<void>((resolve) => {
+				release = resolve;
+			});
+			heldCreate = { arrive, released };
+			return { reached, release };
 		},
 		failNext: (method, failure) => {
 			pendingFailures.set(method, failure);

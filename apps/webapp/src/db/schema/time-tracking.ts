@@ -10,6 +10,7 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
@@ -194,6 +195,8 @@ export const workPeriod = pgTable(
 		index("workPeriod_organizationId_idx").on(table.organizationId),
 		index("workPeriod_startTime_idx").on(table.startTime),
 		index("workPeriod_projectId_idx").on(table.projectId),
+		// Target of org-scoped foreign keys (invoiced work, migration 0150).
+		unique("workPeriod_id_organizationId_idx").on(table.id, table.organizationId),
 		check(
 			"workPeriod_billable_requires_project_chk",
 			sql`NOT ${table.isBillable} OR ${table.projectId} IS NOT NULL`,

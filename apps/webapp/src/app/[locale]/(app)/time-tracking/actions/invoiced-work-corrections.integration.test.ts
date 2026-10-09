@@ -261,12 +261,16 @@ describe("correcting invoiced work on PostgreSQL", () => {
 	}
 
 	async function handOff() {
+		const shown = await previewHandOff(db, dependencies(), {
+			organizationId: ids.organization,
+			request,
+		});
 		const outcome = await confirmHandOff(db, dependencies(), {
 			organizationId: ids.organization,
 			actorUserId: ids.ownerUser,
 			request,
 			idempotencyKey: randomUUID(),
-			expectedFingerprint: null,
+			expectedFingerprint: shown.ok ? shown.preview.fingerprint : "",
 		});
 		expect(outcome).toMatchObject({ ok: true });
 		return outcome.ok ? outcome.draftId : "";

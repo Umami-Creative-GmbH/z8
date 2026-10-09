@@ -389,6 +389,12 @@ export const invoiceDraft = pgTable(
 		attemptCount: integer("attempt_count").notNull().default(0),
 		/** Some call may have reached the tool (timeout): never treat the attempt as failed. */
 		outcomeUnknown: boolean("outcome_unknown").notNull().default(false),
+		/**
+		 * The in-flight claim (migration 0150): only its holder calls the tool for
+		 * this draft until `call_claimed_until`; then another attempt may take over.
+		 */
+		callClaimToken: uuid("call_claim_token"),
+		callClaimedUntil: timestamp("call_claimed_until", { withTimezone: true }),
 		lastFailure: text("last_failure"),
 		lastFailureMessage: text("last_failure_message"),
 		toolStatus: text("tool_status"),
@@ -422,6 +428,10 @@ export const invoiceDraft = pgTable(
 		check(
 			"invoice_draft_ended_check",
 			sql`(${table.status} IN ('failed', 'released')) = (${table.endedAt} IS NOT NULL)`,
+		),
+		check(
+			"invoice_draft_call_claim_check",
+			sql`(${table.callClaimToken} IS NULL) = (${table.callClaimedUntil} IS NULL)`,
 		),
 		unique("invoice_draft_id_organization_idx").on(table.id, table.organizationId),
 		uniqueIndex("invoice_draft_idempotency_key_idx").on(table.organizationId, table.idempotencyKey),
@@ -475,7 +485,19 @@ export const invoiceDraftLine = pgTable(
 			columns: [table.invoiceDraftId, table.organizationId],
 			foreignColumns: [invoiceDraft.id, invoiceDraft.organizationId],
 		}).onDelete("cascade"),
+		foreignKey({
+			name: "invoice_draft_line_project_fk",
+			columns: [table.projectId, table.organizationId],
+			foreignColumns: [project.id, project.organizationId],
+		}).onDelete("cascade"),
 		uniqueIndex("invoice_draft_line_position_idx").on(table.invoiceDraftId, table.position),
+		index("invoice_draft_line_organization_draft_idx").on(
+			table.organizationId,
+			table.invoiceDraftId,
+		),
+		index("invoice_draft_line_organization_project_idx")
+			.on(table.organizationId, table.projectId)
+			.where(sql`${table.projectId} IS NOT NULL`),
 	],
 );
 
@@ -512,9 +534,7 @@ export const invoicedWork = pgTable(
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
 		invoiceDraftId: uuid("invoice_draft_id").notNull(),
-		workPeriodId: uuid("work_period_id")
-			.notNull()
-			.references(() => workPeriod.id, { onDelete: "cascade" }),
+		workPeriodId: uuid("work_period_id").notNull(),
 		employeeId: uuid("employee_id").notNull(),
 		projectId: uuid("project_id").notNull(),
 		startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
@@ -535,6 +555,11 @@ export const invoicedWork = pgTable(
 			name: "invoiced_work_draft_fk",
 			columns: [table.invoiceDraftId, table.organizationId],
 			foreignColumns: [invoiceDraft.id, invoiceDraft.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "invoiced_work_work_period_fk",
+			columns: [table.workPeriodId, table.organizationId],
+			foreignColumns: [workPeriod.id, workPeriod.organizationId],
 		}).onDelete("cascade"),
 		foreignKey({
 			name: "invoiced_work_employee_fk",
