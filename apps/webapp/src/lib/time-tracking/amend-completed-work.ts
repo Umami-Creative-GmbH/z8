@@ -837,10 +837,12 @@ export async function amendCompletedWork(
 		resulting,
 		currentWorkCategoryId: period.workCategoryId,
 	});
-	const isBillable = await amendedBillability(tx, organizationId, period, {
+	// An explicit `set` wins; a changed project applies its default; else kept (#900).
+	const isBillable = await resolveWorkBillabilityInTransaction(tx, organizationId, {
 		projectId: resulting.projectId,
-		projectChanged: plan.changes.project,
-		requested: requested.billable,
+		projectChosen: plan.changes.project,
+		current: period.isBillable,
+		requested: requested.billable?.kind === "set" ? requested.billable.billable : undefined,
 	});
 	// The resolved billability decides the change: a new project's default may change it too.
 	const changes = { ...plan.changes, billable: isBillable !== period.isBillable };
@@ -1161,25 +1163,6 @@ async function assertAttributionEligible(
 }
 
 /**
- * The amended work's billability (#900): an explicit `set` wins (billable work
- * needs a project with a customer); otherwise moving work to another project
- * applies that project's billable default and keeping the project keeps it.
- */
-async function amendedBillability(
-	tx: TransactionClient,
-	organizationId: string,
-	period: Pick<typeof workPeriod.$inferSelect, "isBillable">,
-	resulting: { projectId: string | null; projectChanged: boolean; requested?: BillableIntent },
-): Promise<boolean> {
-	return resolveWorkBillabilityInTransaction(tx, organizationId, {
-		projectId: resulting.projectId,
-		projectChosen: resulting.projectChanged,
-		current: period.isBillable,
-		requested: resulting.requested?.kind === "set" ? resulting.requested.billable : undefined,
-	});
-}
-
-/**
  * Attribution of active work. There is no canonical record or end yet; the
  * closing operation carries the period's attribution into them (#274 preserves
  * omitted attribution). The period revision advances so a closure routed on the
@@ -1212,10 +1195,11 @@ async function amendActiveAttribution(
 		resulting: planned.result,
 		currentWorkCategoryId: period.workCategoryId,
 	});
-	const isBillable = await amendedBillability(tx, organizationId, period, {
+	const isBillable = await resolveWorkBillabilityInTransaction(tx, organizationId, {
 		projectId: planned.result.projectId,
-		projectChanged: planned.changes.project,
-		requested: requested.billable,
+		projectChosen: planned.changes.project,
+		current: period.isBillable,
+		requested: requested.billable?.kind === "set" ? requested.billable.billable : undefined,
 	});
 	const changes = { ...planned.changes, billable: isBillable !== period.isBillable };
 	const resultRevision = period.graphRevision + 1;
