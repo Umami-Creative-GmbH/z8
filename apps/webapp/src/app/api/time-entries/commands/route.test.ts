@@ -191,8 +191,47 @@ describe("POST /api/time-entries/commands", () => {
 		expect(response).toEqual({ status: 200, body: { outcome: "replayed", operationId, receipt } });
 	});
 
+	it("passes a named task to the Clocking module with the frozen bytes (#875)", async () => {
+		state.run.mockResolvedValue({ outcome: "executed", result: {} });
+		const task = { kind: "replace", id: "b1000000-0000-4000-8000-000000000001" };
+		const command = clockOutCommand({
+			project: { kind: "replace", id: "c1000000-0000-4000-8000-000000000001" },
+			task,
+		});
+
+		await submit(command);
+
+		const [run] = state.run.mock.calls[0];
+		expect(run.payload).toEqual(command);
+		expect(run.body).toEqual({
+			kind: "clock_out",
+			target: { kind: "period", workPeriodId: "a1000000-0000-4000-8000-000000000001" },
+			project: { kind: "replace", id: "c1000000-0000-4000-8000-000000000001" },
+			workCategory: { kind: "preserve" },
+			task,
+		});
+	});
+
+	it("names no task when the command names none", async () => {
+		state.run.mockResolvedValue({ outcome: "executed", result: {} });
+
+		await submit(clockOutCommand());
+
+		expect(Object.keys(state.run.mock.calls[0][0].body)).toEqual([
+			"kind",
+			"target",
+			"project",
+			"workCategory",
+		]);
+	});
+
 	it.each([
 		[{ code: "frozen_not_accepted" }, 409, { code: "not_adopted" }],
+		[
+			{ code: "task_not_allowed", reason: "task_done" },
+			422,
+			{ code: "attribution_not_allowed", field: "taskId", reason: "task_done" },
+		],
 		[
 			{ code: "billing_required", reason: "past_due" },
 			402,
