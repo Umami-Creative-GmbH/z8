@@ -20,6 +20,9 @@ const fullFigures: BillableFigures = {
 	billableHours: 7,
 	nonBillableMinutes: 60,
 	nonBillableHours: 1,
+	withoutCustomerMinutes: 0,
+	withoutCustomerHours: 0,
+	withoutCustomerWorkCount: 0,
 	unpricedWorkCount: 0,
 	unpricedHours: 0,
 	pendingReviewCount: 2,
@@ -37,6 +40,9 @@ const revenueFigures: BillableFigures = {
 	billableHours: 7,
 	nonBillableMinutes: 60,
 	nonBillableHours: 1,
+	withoutCustomerMinutes: 0,
+	withoutCustomerHours: 0,
+	withoutCustomerWorkCount: 0,
 	unpricedWorkCount: 0,
 	unpricedHours: 0,
 	pendingReviewCount: 2,
@@ -191,7 +197,7 @@ describe("project report export", () => {
 
 	it("exports the customer view with its totals row", () => {
 		const view: CustomerBillableReport = {
-			period: { startDate: "2026-03-01T00:00:00.000Z", endDate: "2026-04-30T00:00:00.000Z" },
+			period: { startDate: "2026-03-01", endDate: "2026-04-30" },
 			access: "revenue",
 			billableTime: { currency: "EUR", ratesResolvedAt: "2026-05-02T08:00:00Z" },
 			customers: [
@@ -212,6 +218,7 @@ describe("project report export", () => {
 					],
 				},
 			],
+			withoutCustomer: null,
 			totals: { totalHours: 8, totalMinutes: 480, workPeriodCount: 4, billable: revenueFigures },
 		};
 		const document = buildCustomerReportDocument(view, context);
@@ -220,5 +227,49 @@ describe("project report export", () => {
 		expect(document.tables[0]?.totals?.[0]).toBe("Total");
 		expect(document.tables[1]?.rows[0]?.slice(0, 2)).toEqual(["Acme", "Website"]);
 		expect(exportReportDocumentToCSV(document)).not.toMatch(/cost|margin/i);
+		expect(document.facts.find((fact) => fact.label === "Period")?.value).toBe(
+			"2026-03-01 – 2026-04-30",
+		);
+	});
+
+	it("exports projects without a customer as their own group, with their hours without customer", () => {
+		const internal: BillableFigures = {
+			...revenueFigures,
+			billableMinutes: 0,
+			billableHours: 0,
+			nonBillableMinutes: 0,
+			nonBillableHours: 0,
+			withoutCustomerMinutes: 90,
+			withoutCustomerHours: 1.5,
+			withoutCustomerWorkCount: 1,
+			revenue: "0.00",
+		};
+		const row = {
+			totalHours: 1.5,
+			totalMinutes: 90,
+			workPeriodCount: 1,
+			billable: internal,
+		};
+		const view: CustomerBillableReport = {
+			period: { startDate: "2026-03-01", endDate: "2026-04-30" },
+			access: "revenue",
+			billableTime: { currency: "EUR", ratesResolvedAt: "2026-05-02T08:00:00Z" },
+			customers: [],
+			withoutCustomer: {
+				...row,
+				projects: [{ ...row, project: { ...projectReport(undefined).project, name: "Internal" } }],
+			},
+			totals: row,
+		};
+		const document = buildCustomerReportDocument(view, context);
+
+		const [customers, projects] = document.tables;
+		const column = customers?.columns.findIndex(
+			(entry) => entry.header === "Billable hours without customer",
+		);
+		expect(column).toBeGreaterThan(0);
+		expect(customers?.rows).toEqual([["Without customer", ...(customers?.rows[0]?.slice(1) ?? [])]]);
+		expect(customers?.rows[0]?.[column ?? 0]).toBe(1.5);
+		expect(projects?.rows[0]?.slice(0, 2)).toEqual(["Without customer", "Internal"]);
 	});
 });

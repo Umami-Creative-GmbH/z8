@@ -588,6 +588,15 @@ export function HandOffPreviewView({
 					)}
 				</p>
 			)}
+			{preview.timesheetOmitted > 0 && (
+				<p className="text-muted-foreground text-sm">
+					{t(
+						"settings.billableTime.handOff.preview.timesheetOmitted",
+						"The accounting tool takes only so many lines: {count, plural, one {# work period is} other {# work periods are}} left out of the text lines. The timesheet download has all of them.",
+						{ count: preview.timesheetOmitted },
+					)}
+				</p>
+			)}
 
 			<div className="space-y-2">
 				<WorkList

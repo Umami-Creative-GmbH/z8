@@ -28,6 +28,9 @@ const base = {
 	billableHours: 2.5,
 	nonBillableMinutes: 60,
 	nonBillableHours: 1,
+	withoutCustomerMinutes: 0,
+	withoutCustomerHours: 0,
+	withoutCustomerWorkCount: 0,
 	unpricedWorkCount: 0,
 	unpricedHours: 0,
 	pendingReviewCount: 0,
@@ -108,6 +111,23 @@ describe("BillableFiguresCard", () => {
 
 		expect(screen.getByText("2 invoiced work periods were changed after invoicing")).toBeTruthy();
 		expect(screen.queryByRole("link")).toBeNull();
+	});
+
+	it("flags billable work on projects without a customer, which cannot be handed off", () => {
+		const figures: BillableFigures = {
+			access: "revenue",
+			...base,
+			withoutCustomerMinutes: 90,
+			withoutCustomerHours: 1.5,
+			withoutCustomerWorkCount: 2,
+		};
+		render(<BillableFiguresCard figures={figures} context={context} />);
+
+		expect(
+			screen.getByText(
+				"1.5 h of billable work without customer (2 work periods): no revenue, cannot be handed off",
+			),
+		).toBeTruthy();
 	});
 });
 

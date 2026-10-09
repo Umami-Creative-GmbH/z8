@@ -31,6 +31,25 @@ export function reportDayRangeFromDates(startDate: Date, endDate: Date): ReportD
 	return { fromDay: dayOf(startDate), toDay: dayOf(endDate) };
 }
 
+/**
+ * The calendar days of a report request sent as ISO dates ("2026-03-31"), both
+ * inclusive. Null for anything else, or when the range ends before it starts.
+ */
+export function reportDayRangeFromDays(fromDay: unknown, toDay: unknown): ReportDayRange | null {
+	const parse = (value: unknown) => {
+		if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+		try {
+			return Temporal.PlainDate.from(value, { overflow: "reject" });
+		} catch {
+			return null;
+		}
+	};
+	const from = parse(fromDay);
+	const to = parse(toDay);
+	if (!from || !to || Temporal.PlainDate.compare(from, to) > 0) return null;
+	return { fromDay: from, toDay: to };
+}
+
 export function isWithinDayRange(day: PlainDate, range: ReportDayRange): boolean {
 	return (
 		Temporal.PlainDate.compare(range.fromDay, day) <= 0 &&

@@ -213,6 +213,22 @@ export function BillableFiguresCard({ figures, context, description }: BillableF
 							linkToHandOff={figures.access === "full"}
 						/>
 					)}
+					{figures.withoutCustomerWorkCount > 0 && (
+						<Badge
+							variant="outline"
+							className="gap-1 border-amber-500 text-amber-700 dark:text-amber-400"
+						>
+							<IconAlertTriangle className="size-3" aria-hidden="true" />
+							{t(
+								"reports.projects.billable.withoutCustomer",
+								"{hours} of billable work without customer ({count, plural, one {# work period} other {# work periods}}): no revenue, cannot be handed off",
+								{
+									count: figures.withoutCustomerWorkCount,
+									hours: format.hours(figures.withoutCustomerHours),
+								},
+							)}
+						</Badge>
+					)}
 					{figures.unpricedWorkCount > 0 && (
 						<Badge
 							variant="outline"

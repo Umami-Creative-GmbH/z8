@@ -48,6 +48,7 @@ const preview: HandOffPreview = {
 	withoutCustomer: { count: 1, hours: "1.25", projects: ["Intern"] },
 	nonBillable: { count: 0, hours: "0.00" },
 	timesheetLineCount: 1,
+	timesheetOmitted: 0,
 	blockers: [],
 	fingerprint: "f",
 };
@@ -81,5 +82,19 @@ describe("HandOffPreviewView", () => {
 		);
 
 		expect(screen.getByText("1 timesheet text line is added to the draft.")).toBeTruthy();
+		expect(screen.queryByText(/left out of the text lines/)).toBeNull();
+	});
+
+	it("says how many work periods a shortened timesheet leaves out", () => {
+		render(
+			<HandOffPreviewView
+				preview={{ ...preview, timesheetOmitted: 2 }}
+				confirming={false}
+				retryable={false}
+				onConfirm={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByText(/2 work periods are left out of the text lines/)).toBeTruthy();
 	});
 });

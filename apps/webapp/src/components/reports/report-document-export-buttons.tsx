@@ -41,6 +41,11 @@ export function useProjectReportExportLabels(): ProjectReportExportLabels {
 		workPeriods: t("reports.projects.export.workPeriods", "Work periods"),
 		billableHours: t("reports.projects.export.billableHours", "Billable hours"),
 		nonBillableHours: t("reports.projects.export.nonBillableHours", "Non-billable hours"),
+		withoutCustomerHours: t(
+			"reports.projects.export.withoutCustomerHours",
+			"Billable hours without customer",
+		),
+		withoutCustomer: t("reports.projects.export.withoutCustomer", "Without customer"),
 		revenue: t("reports.projects.export.revenue", "Revenue"),
 		unpricedWork: t("reports.projects.export.unpricedWork", "Unpriced work"),
 		unpricedHours: t("reports.projects.export.unpricedHours", "Unpriced hours"),
