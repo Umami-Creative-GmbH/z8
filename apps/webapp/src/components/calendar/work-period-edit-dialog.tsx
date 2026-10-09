@@ -233,7 +233,10 @@ export function WorkPeriodEditDialog({
 				taskId: state.selectedTaskId,
 				current: { projectId: metadata.projectId, taskId: metadata.taskId },
 			}),
-			projectEditBillable.request === undefined ? {} : { billable: projectEditBillable.request },
+			// The explicit billable choice only when there is one (#900).
+			...(projectEditBillable.request === undefined
+				? ([] as const)
+				: ([{ billable: projectEditBillable.request }] as const)),
 		).catch(() => null);
 
 		if (!result) {

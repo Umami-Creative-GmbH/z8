@@ -869,6 +869,7 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 				"organization_id",
 				"project_id",
 				"record_id",
+				"task_id",
 				"weight_percent",
 			],
 			functionName: "changeLegacyWorkPeriodProject",

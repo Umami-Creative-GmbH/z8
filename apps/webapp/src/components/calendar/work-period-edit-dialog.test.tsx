@@ -12,6 +12,7 @@ const { updateWorkPeriodProject, toastError, toastSuccess } = vi.hoisted(() => (
 }));
 
 vi.mock("@/app/[locale]/(app)/time-tracking/actions", () => ({
+	updateWorkPeriodBillability: vi.fn(),
 	updateWorkPeriodNotes: vi.fn(),
 	updateWorkPeriodProject,
 }));
@@ -25,7 +26,11 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 
-vi.mock("@/stores/organization-settings-store", () => ({ useProjectsEnabled: () => true }));
+vi.mock("@/stores/organization-settings-store", () => ({
+	useProjectsEnabled: () => true,
+	// The billable toggle (#900) stays hidden while Billable Time is off.
+	useBillableTimeEnabled: () => false,
+}));
 
 vi.mock("./work-period-time-edit-section", () => ({ WorkPeriodTimeSection: () => null }));
 
