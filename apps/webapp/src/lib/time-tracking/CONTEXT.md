@@ -107,3 +107,32 @@ The clock-out follow-up that judges closed work against the employee's working-t
 **Departure clock-out**:
 The clock-out of a departing employee's live work, performed as part of offboarding. Its principal is the departure, which runs only enlisted in its own departure's work transaction and is exempt from billing; its follow-ups (except compliance advice) are staged as durable work.
 _Avoid_: Offboarding clock-out
+
+### Reminders
+
+**Clocking reminder**:
+A notification to an employee that their own clocking has fallen behind what their shift or work policy expects. It never changes work records.
+_Avoid_: Nudge, alert, timer reminder
+
+**Expected start**:
+The instant by which an employee is expected to have clocked in on a local day in their timezone: the start of their published shift, otherwise their work policy's latest clock-in for that weekday. A day with neither has no expected start.
+_Avoid_: Planned start, scheduled start
+
+**Latest clock-in**:
+An optional time of day on a work policy's schedule day by which employees on that policy are expected to have clocked in. A policy without one, such as flextime, expects no particular start.
+_Avoid_: Core time start, start time
+
+**Expected end**:
+The instant by which an employee's live work is expected to have ended: the end of their published shift, otherwise the moment their day total reaches the day's required hours. A day with neither a shift nor required hours has no expected end.
+_Avoid_: Planned end, shift end (when no shift applies)
+
+**Missed clock-in reminder**:
+A clocking reminder that the employee has not clocked in by their expected start plus the grace period, on a day without approved absence or public holiday.
+
+**Forgotten clock-out reminder**:
+A clocking reminder that the employee is still clocked in past their expected end plus the grace period.
+_Avoid_: Still-clocked-in reminder, overtime alert
+
+**Break-due reminder**:
+A clocking reminder, shortly before it happens, that the employee's live work is about to break their work policy's break rules for lack of a break.
+_Avoid_: Break overrun reminder, end-break reminder
