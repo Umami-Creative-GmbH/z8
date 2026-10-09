@@ -13,7 +13,6 @@ import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { sendEmail } from "@/lib/email/email-service";
 import { renderOrganizationEmailTemplate } from "@/lib/email/template-renderer";
-import { CATEGORY_LABELS, type ExportCategory } from "@/lib/export/data-fetchers";
 import {
 	cleanupExpiredExports,
 	type ExportRecord,
@@ -22,6 +21,7 @@ import {
 	processExport,
 	regeneratePresignedUrl,
 } from "@/lib/export/export-service";
+import { CATEGORY_LABELS, type ExportCategory } from "@/lib/export/types";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("ExportProcessorJob");
