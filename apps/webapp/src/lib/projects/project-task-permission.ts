@@ -4,8 +4,8 @@ import { and, asc, eq, exists, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee, project, projectManager } from "@/db/schema";
-import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import { isSettingsAccessMembershipRole, resolveSettingsAccessTier } from "@/lib/settings-access";
 
 /**
  * Who may manage a project's tasks (#872, decision 2 of #770):
@@ -43,16 +43,20 @@ export async function loadProjectTaskManager(
 	return {
 		userId: input.userId,
 		organizationId: input.organizationId,
+		// The one definition of an org admin, shared with the settings access tiers.
 		isOrgAdmin:
-			hasOrganizationRole(membership.role, "owner") ||
-			hasOrganizationRole(membership.role, "admin"),
+			resolveSettingsAccessTier({
+				activeOrganizationId: input.organizationId,
+				membershipRole: isSettingsAccessMembershipRole(membership.role) ? membership.role : null,
+				employeeRole: null,
+			}) === "orgAdmin",
 	};
 }
 
 /** True when the caller's employee with organization access manages the project. */
-function managedByCaller(manager: ProjectTaskManager): SQL {
+function managedByCaller(manager: ProjectTaskManager, reader: Reader): SQL {
 	return exists(
-		db
+		reader
 			.select({ id: projectManager.id })
 			.from(projectManager)
 			.innerJoin(employee, eq(employee.id, projectManager.employeeId))
@@ -67,11 +71,11 @@ function managedByCaller(manager: ProjectTaskManager): SQL {
 	);
 }
 
-function manageableProjects(manager: ProjectTaskManager, projectId?: string) {
+function manageableProjects(manager: ProjectTaskManager, reader: Reader, projectId?: string) {
 	return and(
 		eq(project.organizationId, manager.organizationId),
 		projectId ? eq(project.id, projectId) : undefined,
-		manager.isOrgAdmin ? undefined : managedByCaller(manager),
+		manager.isOrgAdmin ? undefined : managedByCaller(manager, reader),
 	);
 }
 
@@ -84,7 +88,7 @@ export async function canManageProjectTasks(
 	const [row] = await reader
 		.select({ id: project.id })
 		.from(project)
-		.where(manageableProjects(manager, projectId))
+		.where(manageableProjects(manager, reader, projectId))
 		.limit(1);
 	return row !== undefined;
 }
@@ -102,6 +106,6 @@ export async function listProjectsWithManageableTasks(
 	return reader
 		.select({ id: project.id, name: project.name, color: project.color, status: project.status })
 		.from(project)
-		.where(manageableProjects(manager))
+		.where(manageableProjects(manager, reader))
 		.orderBy(asc(project.name));
 }
