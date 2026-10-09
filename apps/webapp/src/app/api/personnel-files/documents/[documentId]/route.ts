@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
@@ -9,6 +8,7 @@ import { isOwnDocument } from "@/lib/personnel-file/access";
 import { writeDocumentAudit } from "@/lib/personnel-file/audit";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
 import { isPersonnelDocumentMime } from "@/lib/personnel-file/document.types";
+import { readVerifiedDocumentObject } from "@/lib/personnel-file/document-object";
 import {
 	loadVisibleDocument,
 	PERSONNEL_DOCUMENT_STORAGE_PROVIDER,
@@ -17,7 +17,6 @@ import {
 	loadPersonnelDocumentPreview,
 	PERSONNEL_DOCUMENT_PREVIEW_MIME_TYPE,
 } from "@/lib/personnel-file/storage";
-import { readPrivateObject } from "@/lib/storage/export-s3-client";
 
 const logger = createLogger("PersonnelFileDocument");
 const privateHeaders = {
@@ -67,21 +66,7 @@ export async function GET(
 			throw new Error("Unsupported recorded document storage provider");
 		}
 
-		const readOriginal = async () => {
-			const bytes = await readPrivateObject({
-				organizationId: document.organizationId,
-				key: document.storageKey,
-				bucket: document.storageBucket,
-				versionId: document.storageVersionId,
-			});
-			if (
-				bytes.byteLength !== document.sizeBytes ||
-				createHash("sha256").update(bytes).digest("hex") !== document.checksumSha256
-			) {
-				throw new Error("Stored document content does not match its recorded identity");
-			}
-			return bytes;
-		};
+		const readOriginal = () => readVerifiedDocumentObject(document);
 		const mimeType = isPersonnelDocumentMime(document.mimeType)
 			? document.mimeType
 			: "application/octet-stream";

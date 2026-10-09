@@ -1,15 +1,14 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { auditLog, employeeDocument } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { createLogger } from "@/lib/logger";
-import { readPrivateObject } from "@/lib/storage/export-s3-client";
 import { createStoredZipStream } from "@/lib/storage/stored-zip-stream";
 import { managedCategoriesFor, type PersonnelFileAccess } from "./access";
 import { listManagedEmployees, loadEmployeeRef, type ManagedEmployee } from "./access-store";
 import { DOCUMENT_CATEGORIES, type DocumentCategory } from "./document.types";
-import { PERSONNEL_DOCUMENT_STORAGE_PROVIDER } from "./document-store";
+import { readVerifiedDocumentObject } from "./document-object";
 import { personnelFileZipEntryNames } from "./zip-entries";
 
 /**
@@ -124,26 +123,6 @@ export async function writePersonnelFileZipAudit(
 	return id;
 }
 
-/** Reads a stored document and refuses it unless its size and sha256 still match. */
-async function readVerifiedDocument(document: DocumentRow): Promise<Uint8Array> {
-	if (document.storageProvider !== PERSONNEL_DOCUMENT_STORAGE_PROVIDER) {
-		throw new Error("Unsupported recorded document storage provider");
-	}
-	const bytes = await readPrivateObject({
-		organizationId: document.organizationId,
-		key: document.storageKey,
-		bucket: document.storageBucket,
-		versionId: document.storageVersionId,
-	});
-	if (
-		bytes.byteLength !== document.sizeBytes ||
-		createHash("sha256").update(bytes).digest("hex") !== document.checksumSha256
-	) {
-		throw new Error("Stored document content does not match its recorded identity");
-	}
-	return bytes;
-}
-
 export interface PersonnelFileZipAbort {
 	failedDocument: { id: string; entryName: string };
 	/** The documents handed to the archive before the failure, in order. */
@@ -203,7 +182,7 @@ export function streamPersonnelFileZip(
 			date: document.documentDate,
 			read: async () => {
 				try {
-					const bytes = await readVerifiedDocument(document);
+					const bytes = await readVerifiedDocumentObject(document);
 					delivered.push(document.id);
 					return bytes;
 				} catch (error) {
