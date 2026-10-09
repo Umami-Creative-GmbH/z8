@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildDocumentSharedNotification, buildEmployeeUploadNotification } from "./notifications";
+import {
+	buildDocumentSharedNotification,
+	buildEmployeeUploadNotification,
+	buildPayslipBatchSharedNotification,
+} from "./notifications";
 
 describe("buildEmployeeUploadNotification", () => {
 	const input = {
@@ -93,5 +97,30 @@ describe("buildDocumentSharedNotification", () => {
 			"personnel-file-shared:11111111-1111-4111-8111-111111111111:user-anna",
 		);
 		expect(later.idempotencyKey).not.toBe(first.idempotencyKey);
+	});
+});
+
+describe("buildPayslipBatchSharedNotification", () => {
+	it("tells the employee once per batch about their payslip for the pay period", () => {
+		const params = buildPayslipBatchSharedNotification({
+			organizationId: "org-1",
+			recipientUserId: "user-anna",
+			batchId: "44444444-4444-4444-8444-444444444444",
+			payPeriod: { year: 2026, month: 9 },
+			documentCount: 2,
+		});
+		expect(params).toMatchObject({
+			userId: "user-anna",
+			type: "personnel_file_document_shared",
+			message: "Your payslip for 2026-09 was shared with you.",
+			entityType: "payslip_batch",
+			entityId: "44444444-4444-4444-8444-444444444444",
+			actionUrl: "/my-documents",
+			idempotencyKey: "personnel-file-payslip-batch:44444444-4444-4444-8444-444444444444:user-anna",
+		});
+		expect(params.metadata).toMatchObject({
+			documentCount: 2,
+			i18n: { params: { payPeriod: "2026-09" } },
+		});
 	});
 });

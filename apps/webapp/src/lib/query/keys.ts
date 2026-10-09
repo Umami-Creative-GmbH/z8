@@ -163,6 +163,7 @@ export const queryKeys = {
 		employeeAll: (employeeId: string) => ["personnel-file", "employee", employeeId] as const,
 		myDocuments: () => ["personnel-file", "my-documents"] as const,
 		officerGrants: () => ["personnel-file", "settings", "officer-grants"] as const,
+		payslipBatch: (batchId: string) => ["personnel-file", "payslip-batch", batchId] as const,
 	},
 
 	// Employee clock statuses

@@ -1,4 +1,4 @@
-import { and, asc, eq, lte, or, sql } from "drizzle-orm";
+import { and, asc, eq, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { employeeDocument, personnelFileUpload } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
@@ -19,6 +19,8 @@ type Database = typeof appDb;
 
 /** Uploads still pending after this long are treated as abandoned. */
 export const ABANDONED_PERSONNEL_FILE_UPLOAD_AFTER_MS = 60 * 60 * 1000;
+/** Staged payslip batch files wait for the officer's review and confirmation (#868). */
+export const ABANDONED_PAYSLIP_BATCH_FILE_AFTER_MS = 24 * 60 * 60 * 1000;
 const CLEANUP_LEASE_MS = 10 * 60 * 1000;
 const MAX_CLEANUP_RETRY_DELAY_MS = 12 * 60 * 60 * 1000;
 const CLEANUP_RETRY_DELAYS_MS = [
@@ -69,7 +71,10 @@ export async function stagePersonnelFileUpload(
  */
 export async function markPersonnelFileUploadFailed(
 	database: Database,
-	input: StagedPersonnelFileUpload & {
+	input: Omit<StagedPersonnelFileUpload, "employeeId"> & {
+		/** Null for a staged payslip batch file (#868). */
+		employeeId: string | null;
+		batchId?: string | null;
 		stored: StoredPersonnelFileObject | null;
 		reason: PersonnelFileCleanupReason;
 	},
@@ -84,6 +89,7 @@ export async function markPersonnelFileUploadFailed(
 			id: input.documentId,
 			organizationId: input.organizationId,
 			employeeId: input.employeeId,
+			batchId: input.batchId ?? null,
 			uploadedBy: input.uploadedBy,
 			storageKey: input.storageKey,
 			storageBucket: input.stored?.bucket ?? null,
@@ -136,6 +142,9 @@ async function claimCleanupWork(
 	const abandonedBefore = dateFromInstant(
 		input.now.subtract({ milliseconds: ABANDONED_PERSONNEL_FILE_UPLOAD_AFTER_MS }),
 	);
+	const batchFileAbandonedBefore = dateFromInstant(
+		input.now.subtract({ milliseconds: ABANDONED_PAYSLIP_BATCH_FILE_AFTER_MS }),
+	);
 	const leaseUntil = dateFromInstant(input.now.add({ milliseconds: CLEANUP_LEASE_MS }));
 	return database.transaction(async (tx) => {
 		const due = or(
@@ -145,7 +154,13 @@ async function claimCleanupWork(
 			),
 			and(
 				eq(personnelFileUpload.status, "pending"),
+				isNull(personnelFileUpload.batchId),
 				lte(personnelFileUpload.createdAt, abandonedBefore),
+			),
+			and(
+				eq(personnelFileUpload.status, "pending"),
+				isNotNull(personnelFileUpload.batchId),
+				lte(personnelFileUpload.createdAt, batchFileAbandonedBefore),
 			),
 		);
 		const rows = await tx

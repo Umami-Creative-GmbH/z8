@@ -1,4 +1,4 @@
-import { IconChevronRight, IconSettings, IconTrashX } from "@tabler/icons-react";
+import { IconChevronRight, IconFileStack, IconSettings, IconTrashX } from "@tabler/icons-react";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ExpiringDocumentsCard } from "@/components/personnel-file/expiring-documents";
@@ -16,6 +16,7 @@ import {
 	listExpiringDocuments,
 	loadExpiryReminderLeadDays,
 } from "@/lib/personnel-file/expiry-store";
+import { canRunPayslipBatches } from "@/lib/personnel-file/payslip-batch-store";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 
@@ -53,6 +54,14 @@ async function PersonnelFilesContent() {
 					</p>
 				</div>
 				<div className="flex flex-wrap gap-2">
+					{canRunPayslipBatches(current.access) ? (
+						<Button asChild>
+							<Link href="/personnel-files/payslip-batches">
+								<IconFileStack aria-hidden="true" className="size-4" />
+								{t("settings.personnelFiles.area.payslipBatch", "Payslip batch")}
+							</Link>
+						</Button>
+					) : null}
 					<Button asChild variant="outline">
 						<Link href="/personnel-files/due-for-deletion">
 							<IconTrashX aria-hidden="true" className="size-4" />

@@ -20,6 +20,11 @@ import type {
 	PersonnelFileUploadStatus,
 } from "@/lib/personnel-file/document.types";
 import type { ExpiryReminderKind } from "@/lib/personnel-file/expiry";
+import type {
+	PayslipBatchStatus,
+	PayslipFileFailure,
+	PayslipMatchKind,
+} from "@/lib/personnel-file/payslip-batch.types";
 import { organization, user } from "../auth-schema";
 import { employee, team } from "./organization";
 import { currentTimestamp } from "./timestamp";
@@ -116,7 +121,10 @@ export const personnelFileUpload = pgTable(
 	{
 		id: uuid("id").primaryKey(),
 		organizationId: text("organization_id").notNull(),
-		employeeId: uuid("employee_id").notNull(),
+		// Null for a staged payslip batch file: its employee is decided on confirmation (#868).
+		employeeId: uuid("employee_id"),
+		/** The payslip batch a staged file belongs to (#868); kept by value like the rest. */
+		batchId: uuid("batch_id"),
 		uploadedBy: text("uploaded_by"),
 		storageKey: text("storage_key").notNull(),
 		storageBucket: text("storage_bucket"),
@@ -135,6 +143,7 @@ export const personnelFileUpload = pgTable(
 			table.storageKey,
 		),
 		index("personnelFileUpload_status_nextAttemptAt_idx").on(table.status, table.nextAttemptAt),
+		index("personnelFileUpload_batchId_idx").on(table.batchId),
 		check(
 			"personnel_file_upload_status_check",
 			sql`${table.status} IN ('pending', 'cleanup_required')`,
@@ -419,5 +428,105 @@ export const personnelFileDueReminder = pgTable(
 			table.userId,
 			table.localDate,
 		),
+	],
+);
+
+/**
+ * Payslip batches (#868, CONTEXT.md "Payslip batch"): many payslips for one
+ * pay period, staged and matched to employees by personnel number, saved as
+ * employee documents only when the officer who started the batch confirms.
+ */
+export const payslipBatch = pgTable(
+	"payslip_batch",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		payPeriodYear: integer("pay_period_year").notNull(),
+		payPeriodMonth: integer("pay_period_month").notNull(),
+		visibility: text("visibility").$type<DocumentVisibility>().notNull(),
+		status: text("status").$type<PayslipBatchStatus>().default("open").notNull(),
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+		confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+	},
+	(table) => [
+		unique("payslipBatch_id_organizationId_idx").on(table.id, table.organizationId),
+		index("payslipBatch_org_createdBy_status_idx").on(
+			table.organizationId,
+			table.createdBy,
+			table.status,
+		),
+		check("payslip_batch_status_check", sql`${table.status} IN ('open', 'confirmed')`),
+		check("payslip_batch_visibility_check", sql`${table.visibility} IN ('shared', 'hr_only')`),
+		check(
+			"payslip_batch_pay_period_check",
+			sql`${table.payPeriodYear} BETWEEN 1900 AND 2999 AND ${table.payPeriodMonth} BETWEEN 1 AND 12`,
+		),
+	],
+);
+
+/**
+ * One staged file of a payslip batch. Its id becomes the employee document's
+ * id on confirmation, which makes confirmation idempotent per file. The
+ * stored object is held by a pending `personnel_file_upload` row with the same
+ * id until then, so unconfirmed files are cleaned up like any abandoned upload.
+ */
+export const payslipBatchFile = pgTable(
+	"payslip_batch_file",
+	{
+		id: uuid("id").primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		batchId: uuid("batch_id").notNull(),
+		/** The name as uploaded: matched against personnel numbers and used as the title. */
+		originalFileName: text("original_file_name").notNull(),
+		fileName: text("file_name").notNull(),
+		storageKey: text("storage_key").notNull(),
+		storageBucket: text("storage_bucket"),
+		storageVersionId: text("storage_version_id"),
+		mimeType: text("mime_type").notNull(),
+		sizeBytes: integer("size_bytes").notNull(),
+		checksumSha256: text("checksum_sha256").notNull(),
+		matchKind: text("match_kind").$type<PayslipMatchKind>().notNull(),
+		/** The one matched employee, or every employee of an ambiguous match. */
+		matchedEmployeeIds: uuid("matched_employee_ids").array().default(sql`'{}'::uuid[]`).notNull(),
+		/** Chosen by hand; wins over the match. */
+		assignedEmployeeId: uuid("assigned_employee_id"),
+		included: boolean("included").default(true).notNull(),
+		/** Set when the file became an employee document (always equal to `id`). */
+		documentId: uuid("document_id"),
+		failure: text("failure").$type<PayslipFileFailure>(),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		index("payslipBatchFile_batchId_idx").on(table.batchId),
+		uniqueIndex("payslipBatchFile_org_storageKey_idx").on(table.organizationId, table.storageKey),
+		foreignKey({
+			name: "payslip_batch_file_batch_fk",
+			columns: [table.batchId, table.organizationId],
+			foreignColumns: [payslipBatch.id, payslipBatch.organizationId],
+		}).onDelete("cascade"),
+		check(
+			"payslip_batch_file_match_kind_check",
+			sql`${table.matchKind} IN ('matched', 'unmatched', 'ambiguous')`,
+		),
+		check(
+			"payslip_batch_file_failure_check",
+			sql`${table.failure} IS NULL OR ${table.failure} IN ('expired', 'out_of_scope', 'error')`,
+		),
+		check("payslip_batch_file_size_check", sql`${table.sizeBytes} > 0`),
 	],
 );
