@@ -115,6 +115,8 @@ const NOTIFICATION_CATEGORIES = [
 		icon: IconFileText,
 		types: [
 			"personnel_file_document_shared",
+			"personnel_file_expiry_upcoming",
+			"personnel_file_expired_today",
 			"personnel_file_due_for_deletion",
 		] as NotificationType[],
 	},
@@ -240,6 +242,9 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 	travel_expense_ready_for_reimbursement: "Ready for reimbursement (expense officers)",
 	// An employee document became visible to the employee
 	personnel_file_document_shared: "Document shared with you",
+	// Expiry reminders for certificates and other documents
+	personnel_file_expiry_upcoming: "Document expires soon",
+	personnel_file_expired_today: "Document expires today",
 	// Employee documents newly due for deletion (personnel file officers)
 	personnel_file_due_for_deletion: "Documents due for deletion (personnel file officers)",
 };
