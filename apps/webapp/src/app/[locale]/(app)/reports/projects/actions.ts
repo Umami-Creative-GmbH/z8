@@ -1,12 +1,13 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, type SQL, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
-import { employee, project, projectManager, workPeriod } from "@/db/schema";
+import { customer, employee, project, workPeriod } from "@/db/schema";
 import { requireAuth } from "@/lib/auth-helpers";
-import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
+import type { ReportedWork } from "@/lib/billable-time/report-figures";
+import { type AnyAppError, AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import {
 	type AppServices,
 	runServerActionSafe,
@@ -15,9 +16,28 @@ import {
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
+import {
+	buildCustomerBillableReport,
+	loadProjectReportViewer,
+	prepareBillableReportPricing,
+	sumVisibleBillableFigures,
+} from "@/lib/reports/project-billable-report";
 import { buildProjectHealthFields, buildProjectHealthTotals } from "@/lib/reports/project-health";
+import {
+	canViewProjectReport,
+	canViewProjectReports,
+	type ProjectReportViewer,
+	viewsAllProjectReports,
+} from "@/lib/reports/project-report-access";
+import {
+	loadReportedProjectWork,
+	reportDayRangeFromDates,
+	reportedWorkDay,
+} from "@/lib/reports/project-report-work";
 import type {
+	CustomerBillableReport,
 	ProjectDetailedReport,
+	ProjectInfo,
 	ProjectPortfolioData,
 	ProjectSummary,
 	ProjectTeamBreakdown,
@@ -27,14 +47,103 @@ import type {
 
 const logger = createLogger("ProjectReportsActions");
 
-type WorkPeriodWithEmployee = typeof workPeriod.$inferSelect & {
-	employee: Pick<typeof employee.$inferSelect, "teamId"> & {
-		user: { name: string } | null;
-		team: { name: string } | null;
-	};
-};
-
 type ProjectReportEffect<T> = Effect.Effect<T, AnyAppError, AppServices>;
+
+type ProjectStatus = "planned" | "active" | "paused" | "completed" | "archived";
+
+/**
+ * The signed-in reader of a project report in the active organization, with
+ * what they may see (`lib/reports/project-report-access.ts`).
+ */
+function projectReportReader() {
+	return Effect.gen(function* () {
+		const authContext = yield* Effect.tryPromise({
+			try: async () => await requireAuth(),
+			catch: () =>
+				new AuthorizationError({
+					message: "Approved organization membership required",
+				}),
+		});
+		const dbService = yield* DatabaseService;
+		const organizationId = authContext.session.activeOrganizationId;
+		const currentEmployee = authContext.employee;
+		if (!organizationId || !currentEmployee) {
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "Active organization required",
+				}),
+			);
+		}
+		const viewer = yield* dbService.query("getProjectReportViewer", () =>
+			loadProjectReportViewer(dbService.db, {
+				organizationId,
+				userId: authContext.user.id,
+				employee: currentEmployee,
+			}),
+		);
+		return { authContext, dbService, organizationId, currentEmployee, viewer };
+	});
+}
+
+/** Projects of the organization with their current customer (from the same organization). */
+function loadReportProjects(
+	dbService: typeof DatabaseService.Service,
+	organizationId: string,
+	conditions: SQL[],
+) {
+	return dbService.query("getProjects", async () => {
+		const rows = await dbService.db
+			.select({
+				project,
+				customer: { id: customer.id, name: customer.name },
+			})
+			.from(project)
+			.leftJoin(
+				customer,
+				and(eq(customer.id, project.customerId), eq(customer.organizationId, organizationId)),
+			)
+			.where(and(eq(project.organizationId, organizationId), ...conditions))
+			.orderBy(project.name);
+		return rows.map((row) => ({ ...row.project, customer: row.customer }));
+	});
+}
+
+type ReportProject = typeof project.$inferSelect & { customer: { id: string; name: string } | null };
+
+function projectInfo(p: ReportProject): ProjectInfo {
+	return {
+		id: p.id,
+		name: p.name,
+		description: p.description,
+		status: p.status,
+		color: p.color,
+		budgetHours: p.budgetHours ? Number(p.budgetHours) : null,
+		deadline: p.deadline,
+		customer: p.customer,
+	};
+}
+
+function groupBy<T>(items: readonly T[], key: (item: T) => string): Map<string, T[]> {
+	const groups = new Map<string, T[]>();
+	for (const item of items) {
+		const group = groups.get(key(item));
+		if (group) group.push(item);
+		else groups.set(key(item), [item]);
+	}
+	return groups;
+}
+
+function statusConditions(statusFilter: string[] | undefined) {
+	return statusFilter && statusFilter.length > 0
+		? [inArray(project.status, statusFilter as ProjectStatus[])]
+		: [];
+}
+
+function visibleProjectConditions(viewer: ProjectReportViewer) {
+	return viewsAllProjectReports(viewer)
+		? []
+		: [inArray(project.id, [...viewer.managedProjectIds])];
+}
 
 /**
  * Get portfolio overview of all projects in the organization
@@ -56,42 +165,12 @@ export async function getProjectsOverview(
 		},
 		(span) => {
 			return Effect.gen(function* () {
-				const authContext = yield* Effect.tryPromise({
-					try: async () => await requireAuth(),
-					catch: () =>
-						new AuthorizationError({
-							message: "Approved organization membership required",
-						}),
-				});
-				const dbService = yield* DatabaseService;
-				const organizationId = authContext.session.activeOrganizationId;
-				const currentEmployee = authContext.employee;
-				if (!organizationId || !currentEmployee) {
-					return yield* Effect.fail(
-						new AuthorizationError({
-							message: "Active organization required",
-						}),
-					);
-				}
+				const { authContext, dbService, organizationId, currentEmployee, viewer } =
+					yield* projectReportReader();
 
 				span.setAttribute("user.id", authContext.user.id);
 
-				const managedProjectRows = yield* dbService.query(
-					"getManagedProjectIdsForProjectReports",
-					async () => {
-						return await dbService.db.query.projectManager.findMany({
-							where: eq(projectManager.employeeId, currentEmployee.id),
-							columns: { projectId: true },
-						});
-					},
-				);
-				const managedProjectIds = new Set(managedProjectRows.map((row) => row.projectId));
-				const canViewPortfolio =
-					currentEmployee.role === "admin" ||
-					currentEmployee.role === "manager" ||
-					managedProjectIds.size > 0;
-
-				if (!canViewPortfolio) {
+				if (!canViewProjectReports(viewer)) {
 					return yield* Effect.fail(
 						new AuthorizationError({
 							message: "You don't have permission to view project reports",
@@ -102,121 +181,101 @@ export async function getProjectsOverview(
 				span.setAttribute("current_employee.id", currentEmployee.id);
 				span.setAttribute("current_employee.role", currentEmployee.role);
 
-				// Get all projects in the organization
-				const projects = yield* dbService.query("getProjects", async () => {
-					const whereConditions = [eq(project.organizationId, organizationId)];
-					const isOrgWideReportViewer =
-						currentEmployee.role === "admin" || currentEmployee.role === "manager";
+				// Projects the viewer reads: every project, or only the ones they manage.
+				const projects = yield* loadReportProjects(dbService, organizationId, [
+					...statusConditions(statusFilter),
+					...visibleProjectConditions(viewer),
+				]);
+				const projectIds = projects.map((p) => p.id);
 
-					if (statusFilter && statusFilter.length > 0) {
-						whereConditions.push(
-							inArray(
-								project.status,
-								statusFilter as ("planned" | "active" | "paused" | "completed" | "archived")[],
+				// Completed work by the employee-local day of its start (#794, #902).
+				const range = reportDayRangeFromDates(startDate, endDate);
+				const work = yield* dbService.query("getReportedProjectWork", () =>
+					loadReportedProjectWork(dbService.db, organizationId, { projectIds, range }),
+				);
+				const workByProject = groupBy(work, (item) => item.projectId);
+				const pricing = yield* dbService.query("getBillableReportPricing", () =>
+					prepareBillableReportPricing(dbService.db, organizationId, {
+						viewer,
+						projectIds,
+						work,
+					}),
+				);
+
+				// Budget usage counts all completed work of the project, whenever it was.
+				const cumulativeMinutes = yield* dbService.query("getProjectCumulativeStats", async () => {
+					if (projectIds.length === 0) return new Map<string, number>();
+					const rows = await dbService.db
+						.select({
+							projectId: workPeriod.projectId,
+							totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`.mapWith(
+								Number,
 							),
-						);
-					}
-
-					if (!isOrgWideReportViewer) {
-						whereConditions.push(inArray(project.id, [...managedProjectIds]));
-					}
-
-					return await dbService.db.query.project.findMany({
-						where: and(...whereConditions),
-						orderBy: (project, { asc }) => [asc(project.name)],
-					});
+						})
+						.from(workPeriod)
+						.where(
+							and(
+								inArray(workPeriod.projectId, projectIds),
+								eq(workPeriod.organizationId, organizationId),
+								completedWorkPeriodCondition(),
+								isNotNull(workPeriod.projectId),
+							),
+						)
+						.groupBy(workPeriod.projectId);
+					return new Map(rows.map((row) => [row.projectId ?? "", row.totalMinutes]));
 				});
 
-				// Get work period stats for each project
-				const projectSummaries: ProjectSummary[] = yield* dbService.query(
-					"getProjectStats",
-					async () => {
-						const now = new Date();
+				const now = new Date();
+				const projectSummaries: ProjectSummary[] = projects.map((p): ProjectSummary => {
+					const projectWork = workByProject.get(p.id) ?? [];
+					const totalMinutes = projectWork.reduce((sum, item) => sum + item.durationMinutes, 0);
+					const totalHours = totalMinutes / 60;
+					const cumulativeHours = (cumulativeMinutes.get(p.id) ?? 0) / 60;
+					const budgetHours = p.budgetHours ? Number(p.budgetHours) : null;
+					const percentBudgetUsed = budgetHours
+						? (cumulativeHours / budgetHours) * 100
+						: null;
 
-						return Promise.all(
-							projects.map(async (p): Promise<ProjectSummary> => {
-								// Get total hours and unique employees for this project in the date range
-								const [stats, cumulativeStats] = await Promise.all([
-									dbService.db
-										.select({
-											totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
-											uniqueEmployees:
-												sql<number>`COUNT(DISTINCT ${workPeriod.employeeId})`.mapWith(Number),
-											workPeriodCount: sql<number>`COUNT(*)`.mapWith(Number),
-										})
-										.from(workPeriod)
-										.where(
-											and(
-												eq(workPeriod.projectId, p.id),
-												eq(workPeriod.organizationId, organizationId),
-												completedWorkPeriodCondition(),
-												gte(workPeriod.startTime, startDate),
-												lte(workPeriod.startTime, endDate),
-											),
-										),
-									dbService.db
-										.select({
-											totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
-										})
-										.from(workPeriod)
-										.where(
-											and(
-												eq(workPeriod.projectId, p.id),
-												eq(workPeriod.organizationId, organizationId),
-												completedWorkPeriodCondition(),
-											),
-										),
-								]);
+					// Calculate days until deadline
+					let daysUntilDeadline: number | null = null;
+					if (p.deadline) {
+						const diffMs = p.deadline.getTime() - now.getTime();
+						daysUntilDeadline = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+					}
 
-								const totalMinutes = Number(stats[0]?.totalMinutes ?? 0);
-								const totalHours = totalMinutes / 60;
-								const cumulativeHours = Number(cumulativeStats[0]?.totalMinutes ?? 0) / 60;
-								const budgetHours = p.budgetHours ? Number(p.budgetHours) : null;
-								const percentBudgetUsed = budgetHours
-									? (cumulativeHours / budgetHours) * 100
-									: null;
+					const healthFields = buildProjectHealthFields({
+						projectName: p.name,
+						budgetHours,
+						rangeHours: totalHours,
+						cumulativeHours,
+						deadline: p.deadline,
+						now,
+						rangeStart: startDate,
+						rangeEnd: endDate,
+					});
 
-								// Calculate days until deadline
-								let daysUntilDeadline: number | null = null;
-								if (p.deadline) {
-									const diffMs = p.deadline.getTime() - now.getTime();
-									daysUntilDeadline = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-								}
-
-								const healthFields = buildProjectHealthFields({
-									projectName: p.name,
-									budgetHours,
-									rangeHours: totalHours,
-									cumulativeHours,
-									deadline: p.deadline,
-									now,
-									rangeStart: startDate,
-									rangeEnd: endDate,
-								});
-
-								return {
-									id: p.id,
-									name: p.name,
-									description: p.description,
-									status: p.status,
-									color: p.color,
-									budgetHours,
-									deadline: p.deadline,
-									...healthFields,
-									totalHours,
-									totalMinutes,
-									percentBudgetUsed,
-									daysUntilDeadline,
-									uniqueEmployees: stats[0]?.uniqueEmployees ?? 0,
-									workPeriodCount: stats[0]?.workPeriodCount ?? 0,
-								};
-							}),
-						);
-					},
-				);
+					const billable = pricing?.figures(p.id, projectWork);
+					return {
+						...projectInfo(p),
+						...healthFields,
+						totalHours,
+						totalMinutes,
+						percentBudgetUsed,
+						daysUntilDeadline,
+						uniqueEmployees: new Set(projectWork.map((item) => item.employeeId)).size,
+						workPeriodCount: projectWork.length,
+						...(billable ? { billable } : {}),
+					};
+				});
 
 				// Calculate totals
 				const budgetHealth = buildProjectHealthTotals(projectSummaries);
+				const billableTotals = pricing
+					? sumVisibleBillableFigures(
+							projectSummaries.map((summary) => summary.billable),
+							pricing.context.currency,
+						)
+					: undefined;
 				const totals = {
 					totalProjects: projectSummaries.length,
 					activeProjects: projectSummaries.filter((p) => p.status === "active").length,
@@ -228,13 +287,18 @@ export async function getProjectsOverview(
 						(p) => p.daysUntilDeadline !== null && p.daysUntilDeadline < 0,
 					).length,
 					budgetHealth,
+					...(billableTotals ? { billable: billableTotals } : {}),
 				};
 
 				span.setAttribute("projects.count", totals.totalProjects);
 				span.setAttribute("projects.total_hours", totals.totalHours);
 				span.setStatus({ code: SpanStatusCode.OK });
 
-				return yield* Effect.succeed({ projects: projectSummaries, totals });
+				return yield* Effect.succeed({
+					projects: projectSummaries,
+					totals,
+					...(pricing ? { billableTime: pricing.context } : {}),
+				});
 			}).pipe(
 				Effect.catch((error) => {
 					span.setStatus({
@@ -273,42 +337,12 @@ export async function getProjectDetailedReport(
 		},
 		(span) => {
 			return Effect.gen(function* () {
-				const authContext = yield* Effect.tryPromise({
-					try: async () => await requireAuth(),
-					catch: () =>
-						new AuthorizationError({
-							message: "Approved organization membership required",
-						}),
-				});
-				const dbService = yield* DatabaseService;
-				const organizationId = authContext.session.activeOrganizationId;
-				const currentEmployee = authContext.employee;
-				if (!organizationId || !currentEmployee) {
-					return yield* Effect.fail(
-						new AuthorizationError({
-							message: "Active organization required",
-						}),
-					);
-				}
+				const { authContext, dbService, organizationId, viewer } = yield* projectReportReader();
 
 				span.setAttribute("user.id", authContext.user.id);
 
-				// Check permissions (admin, manager, or project manager)
-				const isProjectManager = yield* dbService.query("checkProjectManager", async () => {
-					const pm = await dbService.db.query.projectManager.findFirst({
-						where: and(
-							eq(projectManager.projectId, projectId),
-							eq(projectManager.employeeId, currentEmployee.id),
-						),
-					});
-					return !!pm;
-				});
-
-				if (
-					currentEmployee.role !== "admin" &&
-					currentEmployee.role !== "manager" &&
-					!isProjectManager
-				) {
+				// Check permissions (admin, manager, owner/admin of the organization, or project manager)
+				if (!canViewProjectReport(viewer, projectId)) {
 					return yield* Effect.fail(
 						new AuthorizationError({
 							message: "You don't have permission to view this project report",
@@ -317,60 +351,62 @@ export async function getProjectDetailedReport(
 				}
 
 				// Get project details
-				const projectData = yield* dbService
-					.query("getProject", async () => {
-						const p = await dbService.db.query.project.findFirst({
-							where: and(eq(project.id, projectId), eq(project.organizationId, organizationId)),
-						});
-						if (!p) throw new Error("Project not found");
-						return p;
-					})
-					.pipe(
-						Effect.mapError(
-							() =>
-								new NotFoundError({
-									message: "Project not found",
-									entityType: "project",
-								}),
-						),
+				const [projectData] = yield* loadReportProjects(dbService, organizationId, [
+					eq(project.id, projectId),
+				]);
+				if (!projectData) {
+					return yield* Effect.fail(
+						new NotFoundError({
+							message: "Project not found",
+							entityType: "project",
+						}),
 					);
+				}
 
-				// Get work periods for this project
-				const workPeriods = yield* dbService.query("getWorkPeriods", async () => {
-					return await dbService.db.query.workPeriod.findMany({
+				// Completed work by the employee-local day of its start (#794, #902).
+				const range = reportDayRangeFromDates(startDate, endDate);
+				const work = yield* dbService.query("getWorkPeriods", () =>
+					loadReportedProjectWork(dbService.db, organizationId, {
+						projectIds: [projectId],
+						range,
+					}),
+				);
+				const pricing = yield* dbService.query("getBillableReportPricing", () =>
+					prepareBillableReportPricing(dbService.db, organizationId, {
+						viewer,
+						projectIds: [projectId],
+						work,
+					}),
+				);
+				const employeeIds = [...new Set(work.map((item) => item.employeeId))];
+				const employees = yield* dbService.query("getReportEmployees", async () => {
+					if (employeeIds.length === 0) return [];
+					return await dbService.db.query.employee.findMany({
 						where: and(
-							eq(workPeriod.projectId, projectId),
-							eq(workPeriod.organizationId, organizationId),
-							completedWorkPeriodCondition(),
-							gte(workPeriod.startTime, startDate),
-							lte(workPeriod.startTime, endDate),
+							inArray(employee.id, employeeIds),
+							eq(employee.organizationId, organizationId),
 						),
-						with: {
-							employee: {
-								with: {
-									user: true,
-									team: true,
-								},
-							},
-						},
-						orderBy: (wp, { asc }) => [asc(wp.startTime)],
+						with: { user: true, team: true },
 					});
 				});
-
-				const typedWorkPeriods = workPeriods as unknown as WorkPeriodWithEmployee[];
+				const employeeInfo = new Map(
+					employees.map((row) => [
+						row.id,
+						{
+							name: row.user?.name ?? "Unknown",
+							teamId: row.teamId,
+							teamName: row.team?.name ?? null,
+						},
+					]),
+				);
 
 				// Calculate summary
-				const totalMinutes = typedWorkPeriods.reduce(
-					(sum, wp) => sum + (wp.durationMinutes ?? 0),
-					0,
-				);
+				const totalMinutes = work.reduce((sum, item) => sum + item.durationMinutes, 0);
 				const totalHours = totalMinutes / 60;
-				const budgetHours = projectData.budgetHours ? Number(projectData.budgetHours) : null;
+				const info = projectInfo(projectData);
+				const budgetHours = info.budgetHours;
 				const percentBudgetUsed = budgetHours ? (totalHours / budgetHours) * 100 : null;
 				const remainingBudgetHours = budgetHours ? budgetHours - totalHours : null;
-
-				// Unique employees
-				const uniqueEmployeeIds = new Set(typedWorkPeriods.map((wp) => wp.employeeId));
 
 				// Days in period for average calculation
 				const daysDiff = Math.ceil(
@@ -378,12 +414,11 @@ export async function getProjectDetailedReport(
 				);
 				const averageHoursPerDay = daysDiff > 0 ? totalHours / daysDiff : 0;
 
-				// Build time series (by day)
+				// Time series by the employee-local day each work period started on.
 				const timeSeriesMap = new Map<string, number>();
-				for (const wp of typedWorkPeriods) {
-					const dateKey = wp.startTime.toISOString().split("T")[0];
-					const existing = timeSeriesMap.get(dateKey) ?? 0;
-					timeSeriesMap.set(dateKey, existing + (wp.durationMinutes ?? 0) / 60);
+				for (const item of work) {
+					const dateKey = reportedWorkDay(item).toString();
+					timeSeriesMap.set(dateKey, (timeSeriesMap.get(dateKey) ?? 0) + item.durationMinutes / 60);
 				}
 
 				// Sort and build cumulative
@@ -395,94 +430,50 @@ export async function getProjectDetailedReport(
 					return { date, hours, cumulativeHours: cumulative };
 				});
 
-				// Build employee breakdown
-				const employeeStatsMap = new Map<
-					string,
-					{ name: string; minutes: number; count: number }
-				>();
-				for (const wp of typedWorkPeriods) {
-					const key = wp.employeeId;
-					const existing = employeeStatsMap.get(key) ?? {
-						name: wp.employee.user?.name ?? "Unknown",
-						minutes: 0,
-						count: 0,
-					};
-					existing.minutes += wp.durationMinutes ?? 0;
-					existing.count += 1;
-					employeeStatsMap.set(key, existing);
-				}
-
-				const employeeBreakdown: ProjectTeamMember[] = Array.from(employeeStatsMap.entries()).map(
-					([employeeId, stats]) => ({
+				// Employee breakdown, with each employee's Billable Time figures.
+				const workByEmployee = groupBy(work, (item) => item.employeeId);
+				const memberOf = (employeeId: string, employeeWork: ReportedWork[]): ProjectTeamMember => {
+					const minutes = employeeWork.reduce((sum, item) => sum + item.durationMinutes, 0);
+					const billable = pricing?.figures(projectId, employeeWork);
+					return {
 						employeeId,
-						employeeName: stats.name,
-						totalHours: stats.minutes / 60,
-						totalMinutes: stats.minutes,
-						workPeriodCount: stats.count,
-						percentOfTotal: totalMinutes > 0 ? (stats.minutes / totalMinutes) * 100 : 0,
-					}),
+						employeeName: employeeInfo.get(employeeId)?.name ?? "Unknown",
+						totalHours: minutes / 60,
+						totalMinutes: minutes,
+						workPeriodCount: employeeWork.length,
+						percentOfTotal: totalMinutes > 0 ? (minutes / totalMinutes) * 100 : 0,
+						...(billable ? { billable } : {}),
+					};
+				};
+				const employeeBreakdown: ProjectTeamMember[] = Array.from(workByEmployee.entries()).map(
+					([employeeId, employeeWork]) => memberOf(employeeId, employeeWork),
 				);
 
-				// Build team breakdown
-				const teamStatsMap = new Map<
-					string,
-					{
-						name: string;
-						minutes: number;
-						members: Map<string, { name: string; minutes: number; count: number }>;
-					}
-				>();
-				for (const wp of typedWorkPeriods) {
-					const teamId = wp.employee.teamId ?? "unassigned";
-					const teamName = wp.employee.team?.name ?? "Unassigned";
-					const existing = teamStatsMap.get(teamId) ?? {
-						name: teamName,
-						minutes: 0,
-						members: new Map(),
-					};
-					existing.minutes += wp.durationMinutes ?? 0;
-
-					const memberKey = wp.employeeId;
-					const memberExisting = existing.members.get(memberKey) ?? {
-						name: wp.employee.user?.name ?? "Unknown",
-						minutes: 0,
-						count: 0,
-					};
-					memberExisting.minutes += wp.durationMinutes ?? 0;
-					memberExisting.count += 1;
-					existing.members.set(memberKey, memberExisting);
-
-					teamStatsMap.set(teamId, existing);
-				}
-
-				const teamBreakdown: ProjectTeamBreakdown[] = Array.from(teamStatsMap.entries()).map(
-					([teamId, stats]) => ({
-						teamId,
-						teamName: stats.name,
-						totalHours: stats.minutes / 60,
-						totalMinutes: stats.minutes,
-						percentOfTotal: totalMinutes > 0 ? (stats.minutes / totalMinutes) * 100 : 0,
-						members: Array.from(stats.members.entries()).map(([empId, empStats]) => ({
-							employeeId: empId,
-							employeeName: empStats.name,
-							totalHours: empStats.minutes / 60,
-							totalMinutes: empStats.minutes,
-							workPeriodCount: empStats.count,
-							percentOfTotal: totalMinutes > 0 ? (empStats.minutes / totalMinutes) * 100 : 0,
-						})),
-					}),
-				);
-
-				const report: ProjectDetailedReport = {
-					project: {
-						id: projectData.id,
-						name: projectData.name,
-						description: projectData.description,
-						status: projectData.status,
-						color: projectData.color,
-						budgetHours,
-						deadline: projectData.deadline,
+				// Team breakdown
+				const workByTeam = groupBy(work, (item) => employeeInfo.get(item.employeeId)?.teamId ?? "unassigned");
+				const teamBreakdown: ProjectTeamBreakdown[] = Array.from(workByTeam.entries()).map(
+					([teamId, teamWork]) => {
+						const minutes = teamWork.reduce((sum, item) => sum + item.durationMinutes, 0);
+						const teamName =
+							(teamId === "unassigned"
+								? null
+								: employeeInfo.get(teamWork[0]?.employeeId ?? "")?.teamName) ?? "Unassigned";
+						return {
+							teamId,
+							teamName,
+							totalHours: minutes / 60,
+							totalMinutes: minutes,
+							percentOfTotal: totalMinutes > 0 ? (minutes / totalMinutes) * 100 : 0,
+							members: Array.from(groupBy(teamWork, (item) => item.employeeId).entries()).map(
+								([employeeId, employeeWork]) => memberOf(employeeId, employeeWork),
+							),
+						};
 					},
+				);
+
+				const billable = pricing?.figures(projectId, work);
+				const report: ProjectDetailedReport = {
+					project: info,
 					period: {
 						startDate: startDate.toISOString(),
 						endDate: endDate.toISOString(),
@@ -494,17 +485,19 @@ export async function getProjectDetailedReport(
 						budgetHours,
 						percentBudgetUsed,
 						remainingBudgetHours,
-						uniqueEmployees: uniqueEmployeeIds.size,
-						workPeriodCount: typedWorkPeriods.length,
+						uniqueEmployees: workByEmployee.size,
+						workPeriodCount: work.length,
 						averageHoursPerDay,
+						...(billable ? { billable } : {}),
 					},
 					timeSeries,
 					teamBreakdown,
 					employeeBreakdown,
+					...(pricing ? { billableTime: pricing.context } : {}),
 				};
 
 				span.setAttribute("report.total_hours", totalHours);
-				span.setAttribute("report.unique_employees", uniqueEmployeeIds.size);
+				span.setAttribute("report.unique_employees", workByEmployee.size);
 				span.setStatus({ code: SpanStatusCode.OK });
 
 				return yield* Effect.succeed(report);
@@ -516,6 +509,99 @@ export async function getProjectDetailedReport(
 					});
 					span.recordException(error);
 					logger.error({ error: error.message, projectId }, "Failed to get project report");
+					return Effect.fail(error);
+				}),
+			);
+		},
+	);
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * The customer view (#902): Billable Time figures per customer, with its
+ * projects to drill into. Owners and admins see every customer's projects with
+ * cost and margin; project managers see their own projects' hours and revenue.
+ * Nobody else sees it, and nobody sees it while Billable Time is off.
+ */
+export async function getCustomerBillableReport(
+	startDate: Date,
+	endDate: Date,
+	statusFilter?: string[],
+): Promise<ServerActionResult<CustomerBillableReport>> {
+	const tracer = trace.getTracer("project-reports");
+
+	const effect: ProjectReportEffect<CustomerBillableReport> = tracer.startActiveSpan(
+		"getCustomerBillableReport",
+		{
+			attributes: {
+				"report.start_date": startDate.toISOString(),
+				"report.end_date": endDate.toISOString(),
+			},
+		},
+		(span) => {
+			return Effect.gen(function* () {
+				const { authContext, dbService, organizationId, viewer } = yield* projectReportReader();
+				span.setAttribute("user.id", authContext.user.id);
+
+				if (!viewer.isOrganizationAdmin && viewer.managedProjectIds.size === 0) {
+					return yield* Effect.fail(
+						new AuthorizationError({
+							message: "You don't have permission to view the customer report",
+						}),
+					);
+				}
+
+				const projects = (yield* loadReportProjects(dbService, organizationId, [
+					...statusConditions(statusFilter),
+					...(viewer.isOrganizationAdmin
+						? []
+						: [inArray(project.id, [...viewer.managedProjectIds])]),
+				])).filter((p): p is ReportProject & { customer: { id: string; name: string } } =>
+					p.customer !== null,
+				);
+				const projectIds = projects.map((p) => p.id);
+				const range = reportDayRangeFromDates(startDate, endDate);
+				const work = yield* dbService.query("getReportedProjectWork", () =>
+					loadReportedProjectWork(dbService.db, organizationId, { projectIds, range }),
+				);
+				const pricing = yield* dbService.query("getBillableReportPricing", () =>
+					prepareBillableReportPricing(dbService.db, organizationId, {
+						viewer,
+						projectIds,
+						work,
+					}),
+				);
+				if (!pricing) {
+					return yield* Effect.fail(
+						new ValidationError({
+							message: "Billable Time is not enabled for this organization",
+						}),
+					);
+				}
+
+				const workByProject = groupBy(work, (item) => item.projectId);
+				const report = buildCustomerBillableReport({
+					period: { startDate: startDate.toISOString(), endDate: endDate.toISOString() },
+					pricing,
+					access: viewer.isOrganizationAdmin ? "full" : "revenue",
+					projects: projects.map((p) => ({
+						project: { ...projectInfo(p), customer: p.customer },
+						work: workByProject.get(p.id) ?? [],
+					})),
+				});
+
+				span.setAttribute("report.customers", report.customers.length);
+				span.setStatus({ code: SpanStatusCode.OK });
+				return report;
+			}).pipe(
+				Effect.catch((error) => {
+					span.setStatus({
+						code: SpanStatusCode.ERROR,
+						message: error.message || "Failed to get customer report",
+					});
+					span.recordException(error);
+					logger.error({ error: error.message }, "Failed to get customer report");
 					return Effect.fail(error);
 				}),
 			);
@@ -605,10 +691,12 @@ export async function getCurrentEmployeeProjectReportAccess(): Promise<{
 		return { employee: emp, canViewProjectReports: true };
 	}
 
-	const assignedProjectManager = await db.query.projectManager.findFirst({
-		where: eq(projectManager.employeeId, emp.id),
-		columns: { projectId: true },
+	const authContext = await requireAuth();
+	const viewer = await loadProjectReportViewer(db, {
+		organizationId: emp.organizationId,
+		userId: authContext.user.id,
+		employee: emp,
 	});
 
-	return { employee: emp, canViewProjectReports: Boolean(assignedProjectManager) };
+	return { employee: emp, canViewProjectReports: canViewProjectReports(viewer) };
 }
