@@ -16,6 +16,8 @@ import {
 	holidayPreset,
 	holidayPresetAssignment,
 	holidayPresetHoliday,
+	project,
+	projectTask,
 	shift,
 	shiftRequest,
 	shiftTemplate,
@@ -197,19 +199,32 @@ export async function fetchTimeEntries(organizationId: string) {
 export async function fetchWorkPeriods(organizationId: string) {
 	logger.info({ organizationId }, "Fetching work periods for export");
 
-	// Fetch work periods directly by organizationId
-	const filteredPeriods = await db.query.workPeriod.findMany({
-		where: eq(workPeriod.organizationId, organizationId),
-		with: {
-			employee: {
-				columns: {
-					id: true,
-					employeeNumber: true,
+	// Fetch work periods directly by organizationId, with the organization's
+	// project and task names for the project and task columns.
+	const [filteredPeriods, projectNames, taskNames] = await Promise.all([
+		db.query.workPeriod.findMany({
+			where: eq(workPeriod.organizationId, organizationId),
+			with: {
+				employee: {
+					columns: {
+						id: true,
+						employeeNumber: true,
+					},
+					with: { user: { columns: { firstName: true, lastName: true, name: true, email: true } } },
 				},
-				with: { user: { columns: { firstName: true, lastName: true, name: true, email: true } } },
 			},
-		},
-	});
+		}),
+		db
+			.select({ id: project.id, name: project.name })
+			.from(project)
+			.where(eq(project.organizationId, organizationId))
+			.then((rows) => new Map(rows.map((row) => [row.id, row.name]))),
+		db
+			.select({ id: projectTask.id, name: projectTask.name })
+			.from(projectTask)
+			.where(eq(projectTask.organizationId, organizationId))
+			.then((rows) => new Map(rows.map((row) => [row.id, row.name]))),
+	]);
 
 	logger.info({ count: filteredPeriods.length }, "Fetched work periods");
 
@@ -225,6 +240,10 @@ export async function fetchWorkPeriods(organizationId: string) {
 		clockInId: period.clockInId,
 		clockOutId: period.clockOutId,
 		createdAt: period.createdAt,
+		projectId: period.projectId,
+		projectName: period.projectId ? (projectNames.get(period.projectId) ?? null) : null,
+		taskId: period.taskId,
+		taskName: period.taskId ? (taskNames.get(period.taskId) ?? null) : null,
 	}));
 }
 
