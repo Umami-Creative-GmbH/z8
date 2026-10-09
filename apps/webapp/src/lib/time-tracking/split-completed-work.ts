@@ -38,6 +38,7 @@ import {
 	instantToCanonicalString,
 } from "@/lib/datetime/temporal-core";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
+import { carryInvoicedWorkToSplit } from "@/lib/billable-time/hand-off/invoiced-work";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { CompletedWorkReviewRequiredError, lockAuthority } from "./amend-completed-work";
 import { calculateHash } from "./blockchain";
@@ -665,6 +666,12 @@ export async function splitCompletedWork(
 		})
 		.returning({ id: workPeriod.id, graphRevision: workPeriod.graphRevision });
 	if (!generated) throw new Error("Generated work period insert failed");
+	// Invoiced work stays invoiced in both halves; the source is marked by trigger (#903).
+	await carryInvoicedWorkToSplit(tx, {
+		organizationId,
+		sourceWorkPeriodId: period.id,
+		newWorkPeriodId: generated.id,
+	});
 
 	// Independent rounding can change the total: the refresh commits with the work,
 	// from the earliest UTC or captured-offset local date of the affected endpoints.
