@@ -73,8 +73,28 @@ Money the organization paid out to an employee for an approved expense report, r
 _Avoid_: payment, payout
 
 **Recovery**:
-Money an employee paid back because more was reimbursed than they were owed.
+Money an employee paid back because more was reimbursed than they were owed. Always settled outside payroll, never deducted from a payslip.
 _Avoid_: refund, chargeback
+
+**Reimbursement channel**:
+How an organization pays its reimbursements: by **bank transfer** or with the **payroll run**. One choice for the whole organization; a report the payroll run cannot carry is paid by bank transfer instead.
+_Avoid_: payment method, payout method
+
+**Payroll run**:
+The organization's payroll export for one period, which with the payroll channel also carries the euro amounts awaiting reimbursement for the employees it covers, on the wage types the organization mapped. Like an export, a payroll run moves no money; its reimbursements are recorded only when an expense officer **confirms** it was paid, each officer for the reports in their officer scope. A confirmed payroll run is final; an unconfirmed one can be replaced or discarded.
+_Avoid_: payroll export (the file alone), payslip, salary run
+
+**Included in a payroll run**:
+Said of a report awaiting reimbursement that an unconfirmed payroll run carries. A report is included in at most one payroll run at a time and cannot be reimbursed any other way until it is removed or the run is confirmed. The employee does not see it until it is reimbursed.
+_Avoid_: pending payment, in payroll, scheduled
+
+**Statutory share**:
+The part of a per diem or mileage amount up to the verified statutory rate for its day and destination, which payroll can carry tax-free.
+_Avoid_: tax-free amount, allowance
+
+**Taxable excess**:
+The part of a per diem or mileage amount above its statutory share.
+_Avoid_: surplus, overpayment (that is what a recovery corrects)
 
 **Reimbursed**:
 Said of an approved expense report whose reimbursements, less recoveries, cover everything owed to the employee. A later adjustment can make it owed again.
