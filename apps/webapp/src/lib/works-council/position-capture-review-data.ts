@@ -32,8 +32,8 @@ export const WORKS_COUNCIL_POSITION_ACCESS_LOG_LIMIT = 200;
 /**
  * Loads the works-council portal's position capture section (#834) for one
  * organization. Every query is filtered by `organizationId`. It never reads
- * `position_stamp`: the section shows configuration, consent and access
- * records only.
+ * stamps (the stamp-reader guard in `position-capture` keeps it that way): the
+ * section shows configuration, consent and access records only.
  */
 export async function loadPositionCaptureReviewSource(
 	db: PositionCaptureClient,
