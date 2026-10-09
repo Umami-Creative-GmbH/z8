@@ -26,7 +26,7 @@ A named protection a work transaction holds until commit, either shared (many re
 _Avoid_: lock (when the rank matters)
 
 **Organization configuration**:
-The organization's settings that decide whether new work is accepted and how it is routed when it is recorded: timezone, holidays, change policies, project and work-category eligibility, organization-wide authorization and billing entitlement. Work policies and surcharge models are not organization configuration: they are evidence captured with the work they apply to.
+The organization's settings that decide whether new work is accepted and how it is routed when it is recorded: timezone, holidays, change policies, project and work-category eligibility, organization-wide authorization, billing entitlement and closed months. Work policies and surcharge models are not organization configuration: they are evidence captured with the work they apply to.
 _Avoid_: org settings, policy configuration
 
 **Adoption gate**:
@@ -62,6 +62,14 @@ _Avoid_: Finished entries, closed session
 **Day total**:
 An employee's work within one local day in their timezone: their completed work plus the part of any live work elapsed so far, split at local midnight. It differs from the compliance check's day, which counts each work period whole on the day it started.
 _Avoid_: Daily sum, actual hours, today's minutes
+
+**Closed month**:
+A calendar month closed for an organization or for a team. For each employee covered, it is that month in the employee's timezone, fixed when the month is closed: a later timezone or team change does not move or lift it. A team close covers the employees whose primary team it was at that moment; an organization close also covers employees added later. Nobody may change work, attribution or absences that touch a closed month, even in part, whoever or whatever is writing; notes are not frozen, and erasing an employee or organization entirely is not a change. Closing is independent of any payroll export, and is refused while requests about the month are undecided or work that started in it is still live.
+_Avoid_: Locked period, payroll period, frozen month, closed balance period
+
+**Reopening**:
+Lifting a month's close for some or all of the employees it covers, with a stated reason, by someone permitted to reopen. It is the only way to change work inside a closed month, and the month stays open for them until it is closed again.
+_Avoid_: Unlock
 
 **Admission**:
 How an organization's work records accept new entries: `legacy` or `append`. An organization whose admission is `append` is **adopted**.
