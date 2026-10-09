@@ -197,6 +197,15 @@ describe("billable work across the work writers on PostgreSQL", () => {
 		);
 	}
 
+	/**
+	 * Deletes the projects' customer the way the customer settings do: a soft
+	 * delete. The billable default stays on the project row (as on databases from
+	 * before deletion switched it off) to prove writers ignore it.
+	 */
+	async function deleteCustomer() {
+		await admin.query("update customer set is_active = false where id = $1", [ids.customer]);
+	}
+
 	/** Every work row, to prove a refused write left nothing behind. */
 	async function snapshot() {
 		const { rows } = await admin.query(
@@ -683,6 +692,88 @@ describe("billable work across the work writers on PostgreSQL", () => {
 					commit_hold: { reason: "attribution_not_allowed", detail: "no_customer" },
 				});
 				expect(await attributions()).toEqual([]);
+			});
+
+			it("imports a provider's billable request on a project without a customer as non-billable", async () => {
+				await expect(
+					importRow({
+						projectId: ids.internalProject,
+						billable: true,
+						nonBillableWhenRefused: true,
+					}),
+				).resolves.toMatchObject({ row_status: "committed", commit_hold: null });
+				expectAgreement(
+					only(await attributions()),
+					{ projectId: ids.internalProject, billable: false },
+					{ canonical: admission === "append" },
+				);
+			});
+
+			it("holds an explicit billable import, but downgrades a provider's request, once the customer is deleted", async () => {
+				await deleteCustomer();
+				await expect(
+					importRow({ projectId: ids.billableProject, billable: true }),
+				).resolves.toMatchObject({
+					row_status: "blocked",
+					commit_hold: { reason: "attribution_not_allowed", detail: "no_customer" },
+				});
+				await expect(
+					importRow({
+						projectId: ids.billableProject,
+						billable: true,
+						nonBillableWhenRefused: true,
+					}),
+				).resolves.toMatchObject({ row_status: "committed" });
+				expectAgreement(
+					only(await attributions()),
+					{ projectId: ids.billableProject, billable: false },
+					{ canonical: admission === "append" },
+				);
+			});
+		});
+
+		describe("a project whose customer was deleted", () => {
+			it("records new work without the project's billable default", async () => {
+				await deleteCustomer();
+				const period = await recordWork(ids.billableProject);
+				expectAgreement(period, { projectId: ids.billableProject, billable: false });
+
+				await expect(
+					recordManual(admission, { projectId: ids.billableProject }),
+				).resolves.toMatchObject({ success: true });
+				const manual = (await attributions()).find((row) => row.id !== period.id);
+				if (!manual) throw new Error("Manual entry missing");
+				expectAgreement(manual, { projectId: ids.billableProject, billable: false });
+			});
+
+			it("refuses billable work on it and writes nothing", async () => {
+				await deleteCustomer();
+				const periodId = await startWork();
+				const before = await snapshot();
+
+				await expect(endWork(ids.billableProject, { billable: true })).resolves.toMatchObject({
+					success: false,
+				});
+				await expect(
+					recordManual(admission, { projectId: ids.billableProject, billable: true }),
+				).resolves.toMatchObject({ success: false });
+
+				expect(await snapshot()).toEqual(before);
+				expect((await attributionOf(periodId)).is_active).toBe(true);
+			});
+
+			it("moves work onto it as non-billable", async () => {
+				const period = await recordWork(ids.customerProject);
+				await deleteCustomer();
+
+				actAs();
+				await expect(
+					updateWorkPeriodProject(period.id, ids.billableProject),
+				).resolves.toMatchObject({ success: true });
+				expectAgreement(await attributionOf(period.id), {
+					projectId: ids.billableProject,
+					billable: false,
+				});
 			});
 		});
 	});

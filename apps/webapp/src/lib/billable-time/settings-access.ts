@@ -1,5 +1,6 @@
 import "server-only";
 
+import { db } from "@/db";
 import { type AuthContext, requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { type BillableTimeSettings, getBillableTimeSettings } from "./settings";
@@ -21,7 +22,7 @@ export interface BillableTimeSettingsAccess {
  */
 export async function requireBillableTimeSettingsAccess(): Promise<BillableTimeSettingsAccess> {
 	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();
-	const settings = await getBillableTimeSettings(organizationId);
+	const settings = await getBillableTimeSettings(organizationId, db);
 
 	if (!settings.enabled || settings.currency === null) {
 		return redirectWithLocale("/settings");

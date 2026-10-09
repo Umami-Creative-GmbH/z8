@@ -13,6 +13,7 @@
 import { and, eq } from "drizzle-orm";
 import type { db } from "@/db";
 import { project } from "@/db/schema";
+import { activeProjectCustomerIdSql } from "@/lib/billable-time/project-customer";
 
 /** A request's explicit billability; absent (undefined) applies the rule. */
 export type BillableRequest = boolean | undefined;
@@ -20,6 +21,7 @@ export type BillableRequest = boolean | undefined;
 /** The billable facts of a project at write time. */
 export type ProjectBillability = {
 	projectId: string;
+	/** The project's active customer; null without one or once it was deleted. */
 	customerId: string | null;
 	billableDefault: boolean;
 };
@@ -99,7 +101,10 @@ export function projectAllocationAgrees(
 
 type ProjectReader = Pick<typeof db, "select">;
 
-/** The project's billable facts in its organization, or null without a project. */
+/**
+ * The project's billable facts in its organization, or null without a project.
+ * A deleted (inactive) customer counts as none (lib/billable-time/project-customer.ts).
+ */
 export async function readProjectBillability(
 	reader: ProjectReader,
 	organizationId: string,
@@ -107,7 +112,7 @@ export async function readProjectBillability(
 ): Promise<ProjectBillability | null> {
 	if (projectId === null) return null;
 	const [row] = await reader
-		.select({ customerId: project.customerId, billableDefault: project.billableDefault })
+		.select({ customerId: activeProjectCustomerIdSql(), billableDefault: project.billableDefault })
 		.from(project)
 		.where(and(eq(project.id, projectId), eq(project.organizationId, organizationId)))
 		.limit(1);

@@ -18,6 +18,8 @@ import {
 	workPolicyPresence,
 } from "@/db/schema";
 import { getRequestSession } from "@/lib/auth/request-session";
+import { projectHasActiveCustomerSql } from "@/lib/billable-time/project-customer";
+import { getBillableTimeSettings } from "@/lib/billable-time/settings";
 import {
 	isBillingMutationAllowed,
 	requireBillingForMutation,
@@ -43,6 +45,7 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import { WorkPolicyService } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
+import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
 import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
@@ -828,27 +831,44 @@ export async function getAssignedProjects(): Promise<
 		// Batch query: get total hours booked per project in one query
 		const projectIds = Array.from(bookableProjects.keys());
 		const hoursMap = new Map<string, number>();
+		// Billable Time (#768): a deleted customer leaves the project without customer.
+		const withActiveCustomer = new Set<string>();
 
 		if (projectIds.length > 0) {
-			const hoursResult = await db
-				.select({
-					projectId: workPeriod.projectId,
-					totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
-				})
-				.from(workPeriod)
-				.where(
-					and(
-						inArray(workPeriod.projectId, projectIds),
-						eq(workPeriod.organizationId, emp.organizationId),
+			const [hoursResult, customerResult] = await Promise.all([
+				db
+					.select({
+						projectId: workPeriod.projectId,
+						totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
+					})
+					.from(workPeriod)
+					.where(
+						and(
+							inArray(workPeriod.projectId, projectIds),
+							eq(workPeriod.organizationId, emp.organizationId),
+							// Booked hours count completed work only, as the reports do (#794).
+							completedWorkPeriodCondition(),
+						),
+					)
+					.groupBy(workPeriod.projectId),
+				db
+					.select({ id: project.id })
+					.from(project)
+					.where(
+						and(
+							inArray(project.id, projectIds),
+							eq(project.organizationId, emp.organizationId),
+							projectHasActiveCustomerSql(),
+						),
 					),
-				)
-				.groupBy(workPeriod.projectId);
+			]);
 
 			for (const row of hoursResult) {
 				if (row.projectId) {
 					hoursMap.set(row.projectId, row.totalMinutes / 60);
 				}
 			}
+			for (const row of customerResult) withActiveCustomer.add(row.id);
 		}
 
 		// Build final result with budget/deadline data
@@ -862,8 +882,8 @@ export async function getAssignedProjects(): Promise<
 				budgetHours: proj.budgetHours ? Number(proj.budgetHours) : null,
 				deadline: proj.deadline?.toISOString() ?? null,
 				totalHoursBooked: hoursMap.get(proj.id) ?? 0,
-				hasCustomer: proj.customerId !== null,
-				billableDefault: proj.customerId !== null && proj.billableDefault,
+				hasCustomer: withActiveCustomer.has(proj.id),
+				billableDefault: withActiveCustomer.has(proj.id) && proj.billableDefault,
 			});
 		}
 
@@ -947,6 +967,13 @@ export async function updateWorkPeriodProject(
 				};
 			}
 		}
+		// Explicit billability belongs to Billable Time; defaults keep applying while it is off.
+		if (
+			options.billable !== undefined &&
+			!(await getBillableTimeSettings(emp.organizationId, db)).enabled
+		) {
+			return { success: false, error: BILLABLE_TIME_OFF };
+		}
 
 		const billingAccess = await requireBillingForMutation(emp.organizationId);
 		if (!isBillingMutationAllowed(billingAccess)) {
@@ -990,6 +1017,8 @@ export async function updateWorkPeriodProject(
 
 const workPeriodIdSchema = z.uuid();
 
+const BILLABLE_TIME_OFF = "Billable Time is switched off";
+
 /**
  * Marks a work period billable or non-billable after recording (#900). The
  * employee, organization owners and admins, the employee's managers and the
@@ -1027,6 +1056,10 @@ export async function updateWorkPeriodBillability(
 			.limit(1);
 		if (!period) {
 			return { success: false, error: "Work period not found" };
+		}
+		// Explicit billability belongs to Billable Time; defaults keep applying while it is off.
+		if (!(await getBillableTimeSettings(organizationId, db)).enabled) {
+			return { success: false, error: BILLABLE_TIME_OFF };
 		}
 
 		const billingAccess = await requireBillingForMutation(organizationId);

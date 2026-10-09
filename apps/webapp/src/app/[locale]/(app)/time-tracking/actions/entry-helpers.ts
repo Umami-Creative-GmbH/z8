@@ -7,6 +7,7 @@ import "server-only";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { project, workPeriod } from "@/db/schema";
+import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import {
 	BOOKABLE_PROJECT_STATUSES,
 	isProjectEligible,
@@ -78,6 +79,8 @@ export async function getAssignedProjectsWithHours(
 				and(
 					inArray(workPeriod.projectId, projectIds),
 					eq(workPeriod.organizationId, organizationId),
+					// Completed work only, as the reports count it (#794).
+					completedWorkPeriodCondition(),
 				),
 			)
 			.groupBy(workPeriod.projectId);

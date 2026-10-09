@@ -15,8 +15,12 @@ export interface MappedClockodoProject {
 }
 
 export interface ClockodoEntryBillability {
-	/** What the committer records (#900); null commits the work without a project. */
-	attribution: { projectId: string; billable: boolean } | null;
+	/**
+	 * What the committer records (#900); null commits the work without a project.
+	 * A billable value is staged as a request: if the project lost its customer by
+	 * commit time, the work imports as non-billable instead of being held.
+	 */
+	attribution: { projectId: string; billable: boolean; nonBillableWhenRefused?: true } | null;
 	/** The review screen's explanation. */
 	billability: StagedWorkBillability;
 }
@@ -51,7 +55,9 @@ export function clockodoEntryBillability(input: {
 		};
 	}
 	return {
-		attribution: { projectId: project.projectId, billable: requested },
+		attribution: requested
+			? { projectId: project.projectId, billable: true, nonBillableWhenRefused: true }
+			: { projectId: project.projectId, billable: false },
 		billability: {
 			providerValue,
 			billable: requested,

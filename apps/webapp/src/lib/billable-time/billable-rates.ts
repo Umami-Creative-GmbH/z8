@@ -6,6 +6,7 @@ import type { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { billableRate, customer, employee, project } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
 import {
@@ -361,9 +362,10 @@ export async function listBillableRateTargetOptions(
 		reader
 			.select({
 				id: employee.id,
-				firstName: employee.firstName,
-				lastName: employee.lastName,
-				userName: user.name,
+				firstName: user.firstName,
+				lastName: user.lastName,
+				name: user.name,
+				email: user.email,
 			})
 			.from(employee)
 			.leftJoin(user, eq(user.id, employee.userId))
@@ -387,7 +389,7 @@ export async function listBillableRateTargetOptions(
 		employees: employees
 			.map((row) => ({
 				id: row.id,
-				name: [row.firstName, row.lastName].filter(Boolean).join(" ") || row.userName || row.id,
+				name: buildAuthUserDisplayName(row) || row.id,
 			}))
 			.sort((left, right) => left.name.localeCompare(right.name)),
 		projects,
@@ -416,9 +418,12 @@ export async function listBillableRateSeries(
 	const rows = await reader
 		.select({
 			rate: billableRate,
-			employeeFirstName: employee.firstName,
-			employeeLastName: employee.lastName,
-			userName: user.name,
+			employeeUser: {
+				firstName: user.firstName,
+				lastName: user.lastName,
+				name: user.name,
+				email: user.email,
+			},
 			projectName: project.name,
 			customerName: customer.name,
 		})
@@ -464,13 +469,13 @@ export async function listBillableRateSeries(
 			existing.periods.push(view);
 			continue;
 		}
-		const employeeName = [row.employeeFirstName, row.employeeLastName].filter(Boolean).join(" ");
+		const employeeName = row.employeeUser ? buildAuthUserDisplayName(row.employeeUser) : "";
 		series.set(key, {
 			level: period.level,
 			employeeId: period.employeeId,
 			projectId: period.projectId,
 			customerId: period.customerId,
-			employeeName: period.employeeId ? employeeName || row.userName || null : null,
+			employeeName: period.employeeId ? employeeName || null : null,
 			projectName: row.projectName,
 			customerName: row.customerName,
 			periods: [view],

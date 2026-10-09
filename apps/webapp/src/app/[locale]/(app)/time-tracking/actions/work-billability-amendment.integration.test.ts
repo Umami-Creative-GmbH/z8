@@ -263,9 +263,13 @@ describe("changing billability after recording on PostgreSQL", () => {
 		await cleanup();
 		const timestamp = new Date("2026-07-01T00:00:00Z");
 		await admin.query(
-			`insert into organization (id, name, slug, timezone, projects_enabled, created_at)
-			 values ($1, 'T900b billability', $1, 'UTC', true, $2)`,
+			`insert into organization (id, name, slug, timezone, projects_enabled, billable_time_enabled, created_at)
+			 values ($1, 'T900b billability', $1, 'UTC', true, true, $2)`,
 			[ids.organization, timestamp],
+		);
+		await admin.query(
+			`insert into billable_time_settings (organization_id, billable_currency) values ($1, 'EUR')`,
+			[ids.organization],
 		);
 		await admin.query(
 			`insert into approval_workflow_rollout
@@ -450,6 +454,49 @@ describe("changing billability after recording on PostgreSQL", () => {
 				});
 				expect(await snapshot()).toEqual(before);
 			});
+
+			it("refuses to change the billability of work held back for review and writes nothing", async () => {
+				const period = await recordWork(ids.customerProject);
+				await admin.query("update work_period set approval_status = 'pending' where id = $1", [
+					period.id,
+				]);
+				const before = await snapshot();
+
+				actAs(ids.ownerUser);
+				await expect(updateWorkPeriodBillability(period.id, true)).resolves.toEqual({
+					success: false,
+					error: "This work period is awaiting approval and cannot be edited",
+				});
+				expect(await snapshot()).toEqual(before);
+			});
+
+			it("refuses an explicit billability change while Billable Time is off, and keeps applying defaults", async () => {
+				const period = await recordWork(ids.customerProject);
+				await admin.query("update organization set billable_time_enabled = false where id = $1", [
+					ids.organization,
+				]);
+				const before = await snapshot();
+
+				actAs(ids.ownerUser);
+				await expect(updateWorkPeriodBillability(period.id, true)).resolves.toMatchObject({
+					success: false,
+					error: "Billable Time is switched off",
+				});
+				actAs();
+				await expect(
+					updateWorkPeriodProject(period.id, ids.billableProject, { billable: false }),
+				).resolves.toMatchObject({ success: false, error: "Billable Time is switched off" });
+				expect(await snapshot()).toEqual(before);
+
+				// A project change without a billability choice still applies the default.
+				await expect(
+					updateWorkPeriodProject(period.id, ids.billableProject),
+				).resolves.toMatchObject({ success: true });
+				expectAgreement(await attributionOf(period.id), {
+					projectId: ids.billableProject,
+					billable: true,
+				});
+			});
 		});
 
 		describe("who else may change it", () => {
@@ -499,6 +546,28 @@ describe("changing billability after recording on PostgreSQL", () => {
 				});
 				expect(await snapshot()).toEqual(before);
 			});
+		});
+	});
+
+	describe("legacy organizations", () => {
+		beforeEach(async () => {
+			await setAdmission("inactive");
+		});
+
+		it("refuses a billability change of live work and writes nothing", async () => {
+			const periodId = await startWork();
+			actAs();
+			await expect(updateWorkPeriodProject(periodId, ids.customerProject)).resolves.toMatchObject({
+				success: true,
+			});
+			const before = await snapshot();
+
+			actAs(ids.managerUser);
+			await expect(updateWorkPeriodBillability(periodId, true)).resolves.toEqual({
+				success: false,
+				error: "Cannot edit an active work period. Please clock out first.",
+			});
+			expect(await snapshot()).toEqual(before);
 		});
 	});
 

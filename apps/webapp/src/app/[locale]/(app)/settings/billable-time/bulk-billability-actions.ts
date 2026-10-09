@@ -13,6 +13,7 @@ import {
 	type BulkBillabilityApplyOutcome,
 	planBulkBillability,
 } from "@/lib/billable-time/bulk-billability-work";
+import { activeProjectCustomerIdSql } from "@/lib/billable-time/project-customer";
 import { getBillableTimeSettings } from "@/lib/billable-time/settings";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
@@ -30,7 +31,7 @@ const ADMIN_ONLY = "Only owners and admins can mark a project's work billable or
 
 /**
  * The checked request of the active organization's admin or owner: Billable
- * Time on, the project the organization's, and a customer for billable work.
+ * Time on, and the project the organization's with an active customer.
  */
 function authorizedRequest(input: unknown, action: string) {
 	return Effect.gen(function* () {
@@ -60,7 +61,7 @@ function authorizedRequest(input: unknown, action: string) {
 		}
 		const [target] = yield* dbService.query("billableTime.bulk.project", () =>
 			dbService.db
-				.select({ customerId: project.customerId })
+				.select({ customerId: activeProjectCustomerIdSql() })
 				.from(project)
 				.where(
 					and(eq(project.id, request.projectId), eq(project.organizationId, actor.organizationId)),
@@ -76,11 +77,13 @@ function authorizedRequest(input: unknown, action: string) {
 				}),
 			);
 		}
-		if (request.billable && target.customerId === null) {
+		// Bulk billability is for a customer's project (#901), in either direction. A
+		// deleted customer leaves the project without customer (#768).
+		if (target.customerId === null) {
 			return yield* Effect.fail(
 				new ValidationError({
-					message: "Work on a project without a customer cannot be billable",
-					field: "billable",
+					message: "Only a customer's project can have its work marked billable or non-billable",
+					field: "projectId",
 				}),
 			);
 		}
@@ -141,7 +144,7 @@ export async function applyBulkBillability(input: {
 			);
 		}
 		return yield* dbService.query("billableTime.bulk.apply", () =>
-			applyBulkBillabilityChange({
+			applyBulkBillabilityChange(dbService.db, {
 				organizationId: actor.organizationId,
 				actorUserId: actor.userId,
 				request,

@@ -1109,20 +1109,6 @@ export async function createManualTimeEntry(
 			};
 		}
 	}
-	// New work takes the project's billable default unless the request chose (#900).
-	let isBillable: boolean;
-	try {
-		isBillable = await resolveWorkBillabilityInTransaction(db, targetEmployee.organizationId, {
-			projectId: data.projectId || null,
-			projectChosen: true,
-			current: false,
-			requested: requestEvidence.billable,
-		});
-	} catch (error) {
-		if (!(error instanceof BillableWorkRefusedError)) throw error;
-		return { success: false, error: error.message };
-	}
-
 	let requiresApproval = false;
 	if (isOwnEntry) {
 		let editCapability: Awaited<ReturnType<typeof getEditCapabilityForPeriod>> | null;
@@ -1245,6 +1231,20 @@ export async function createManualTimeEntry(
 			}
 			// Absence is established under the submission identity lock.
 			if (admission === "append") return { disposition: "refresh_required" as const };
+			// New work takes the project's billable default unless the request chose
+			// (#900), decided in the write transaction with the project as it is now.
+			let isBillable: boolean;
+			try {
+				isBillable = await resolveWorkBillabilityInTransaction(tx, targetEmployee.organizationId, {
+					projectId: data.projectId || null,
+					projectChosen: true,
+					current: false,
+					requested: requestEvidence.billable,
+				});
+			} catch (error) {
+				if (!(error instanceof BillableWorkRefusedError)) throw error;
+				return { disposition: "billable_refused" as const, message: error.message };
+			}
 			const clockInEntry = await createTimeEntry(
 				{
 					employeeId: targetEmployee.id,
@@ -1367,6 +1367,9 @@ export async function createManualTimeEntry(
 				resultEvidence,
 			};
 		});
+		if (committed.disposition === "billable_refused") {
+			return { success: false, error: committed.message };
+		}
 		if (committed.disposition === "refresh_required") {
 			return {
 				success: false,

@@ -99,6 +99,17 @@ const { applyImportRowDecision, saveImportJobSecret } = await import("./reposito
 const { encryptImportCredential } = await import("./credential-secret");
 const { processImportReviewJob } = await import("./worker");
 const { env } = await import("@/env");
+const { db } = await import("@/db");
+const { listImportReviewRows } = await import("./repository");
+const { listImportRowBillability } = await import("./import-row-billability");
+
+function only<T>(rows: readonly T[]): T {
+	const [row] = rows;
+	if (rows.length !== 1 || row === undefined) {
+		throw new Error(`Expected exactly one row, received ${rows.length}`);
+	}
+	return row;
+}
 
 const ids = {
 	organization: "t907-clockodo-org",
@@ -427,6 +438,71 @@ describe("Clockodo billable values in reviewed imports on PostgreSQL (#907)", ()
 			expectWork(work.get("clockodo:entry:4"), { projectId: ids.internalProject, billable: false });
 			expectWork(work.get("clockodo:entry:5"), { projectId: null, billable: false });
 			expectWork(work.get("clockodo:entry:6"), { projectId: null, billable: false });
+		});
+
+		it.each([
+			["is removed from the project", "update project set customer_id = null where id = $1"],
+			["is deleted", "update customer set is_active = false where id = $1"],
+		])(
+			"imports billable entries as non-billable when the mapped project's customer %s after the scan, and the review screen says why",
+			async (label, change) => {
+				harness.entries = harness.entries.slice(0, 3);
+				const batchId = await scanAndAccept();
+				await admin.query(change, [label === "is deleted" ? ids.customer : ids.customerProject]);
+
+				await commit(batchId);
+				const work = await committedWork(batchId);
+				expectWork(work.get("clockodo:entry:1"), {
+					projectId: ids.customerProject,
+					billable: false,
+				});
+				expectWork(work.get("clockodo:entry:2"), {
+					projectId: ids.customerProject,
+					billable: false,
+				});
+				expectWork(work.get("clockodo:entry:3"), {
+					projectId: ids.customerProject,
+					billable: false,
+				});
+
+				const rows = await listImportReviewRows({
+					batchId,
+					organizationId: ids.organization,
+					limit: 10,
+					offset: 0,
+				});
+				const shown = await listImportRowBillability(db, ids.organization, rows);
+				const byEntry = new Map(rows.map((row, index) => [row.providerSourceId, shown[index]]));
+				expect(byEntry.get("clockodo:entry:1")).toEqual({
+					providerValue: 1,
+					billable: false,
+					note: "no_customer",
+				});
+				expect(byEntry.get("clockodo:entry:2")).toEqual({
+					providerValue: 2,
+					billable: false,
+					note: "no_customer",
+				});
+				expect(byEntry.get("clockodo:entry:3")).toEqual({
+					providerValue: 0,
+					billable: false,
+					note: null,
+				});
+			},
+		);
+
+		it("stages entries on a mapped project whose customer was deleted as without customer", async () => {
+			await admin.query("update customer set is_active = false where id = $1", [ids.customer]);
+			harness.entries = harness.entries.slice(0, 1);
+			const batchId = await scanAndAccept();
+			const { rows } = await admin.query<{ normalized_payload: Record<string, unknown> }>(
+				"select normalized_payload from import_staged_row where batch_id = $1",
+				[batchId],
+			);
+			expect(only(rows).normalized_payload).toMatchObject({
+				attribution: { projectId: ids.customerProject, billable: false },
+				billability: { providerValue: 1, billable: false, note: "no_customer" },
+			});
 		});
 
 		it("commits a work row staged before #907 as non-billable work without a project", async () => {

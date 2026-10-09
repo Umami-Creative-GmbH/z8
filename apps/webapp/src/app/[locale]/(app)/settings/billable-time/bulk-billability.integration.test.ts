@@ -683,11 +683,72 @@ describe("bulk billability change on PostgreSQL", () => {
 			).resolves.toMatchObject({ success: false });
 		});
 
-		it("refuses billable work on a project without a customer", async () => {
+		it.each([true, false])(
+			"refuses a project without a customer (billable: %s)",
+			async (billable) => {
+				actAs(ids.adminUser);
+				await expect(
+					previewBulkBillability({ ...range, projectId: ids.internalProject, billable }),
+				).resolves.toMatchObject({ success: false });
+			},
+		);
+
+		it.each([true, false])(
+			"refuses a project whose customer was deleted (billable: %s) and writes nothing",
+			async (billable) => {
+				await seedMixedRange();
+				actAs(ids.adminUser);
+				const preview = expectSuccess(await previewBulkBillability({ ...range, billable }));
+				await admin.query("update customer set is_active = false where id = $1", [ids.customer]);
+				const before = await workState();
+
+				await expect(previewBulkBillability({ ...range, billable })).resolves.toMatchObject({
+					success: false,
+				});
+				await expect(
+					applyBulkBillability({ ...range, billable, fingerprint: preview.fingerprint }),
+				).resolves.toMatchObject({ success: false });
+				expect(await workState()).toEqual(before);
+			},
+		);
+
+		it("changes work flipped back after an apply again when that apply is retried, and reports it truthfully", async () => {
+			const work = await seedMixedRange();
 			actAs(ids.adminUser);
-			await expect(
-				previewBulkBillability({ ...range, projectId: ids.internalProject, billable: true }),
-			).resolves.toMatchObject({ success: false });
+			const preview = expectSuccess(await previewBulkBillability({ ...range, billable: true }));
+			const applied = expectSuccess(
+				await applyBulkBillability({ ...range, billable: true, fingerprint: preview.fingerprint }),
+			);
+			const receipts = await bulkReceipts();
+
+			// Someone marks one of the changed work periods non-billable again.
+			await expect(updateWorkPeriodBillability(work.changes, false)).resolves.toMatchObject({
+				success: true,
+			});
+
+			// The retry plans the same work and outcomes; it changes that period again
+			// in a new operation instead of replaying the earlier receipt.
+			const retried = expectSuccess(
+				await applyBulkBillability({ ...range, billable: true, fingerprint: preview.fingerprint }),
+			);
+			expect(retried).toEqual(applied);
+			await expectBillable(work.changes, true);
+			await expectBillable(work.secondEmployee, true);
+			expect(await bulkReceipts()).toHaveLength(receipts.length + 1);
+
+			// Retrying once more replays and changes nothing.
+			const before = await workState();
+			expect(
+				expectSuccess(
+					await applyBulkBillability({
+						...range,
+						billable: true,
+						fingerprint: preview.fingerprint,
+					}),
+				),
+			).toEqual(applied);
+			expect(await workState()).toEqual(before);
+			expect(await bulkReceipts()).toHaveLength(receipts.length + 1);
 		});
 
 		it("refuses while Billable Time is switched off", async () => {

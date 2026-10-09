@@ -3,6 +3,7 @@ import "server-only";
 import { and, eq, inArray, or, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { project, projectAssignment } from "@/db/schema";
+import { activeProjectCustomerIdSql } from "@/lib/billable-time/project-customer";
 
 /** Project statuses that accept booked time. */
 export const BOOKABLE_PROJECT_STATUSES = ["planned", "active", "paused"] as const;
@@ -55,7 +56,8 @@ export async function listEligibleProjects(
 			status: project.status,
 			budgetHours: project.budgetHours,
 			deadline: project.deadline,
-			customerId: project.customerId,
+			// A deleted customer leaves the project without customer (#768).
+			customerId: activeProjectCustomerIdSql(),
 			billableDefault: project.billableDefault,
 		})
 		.from(project)

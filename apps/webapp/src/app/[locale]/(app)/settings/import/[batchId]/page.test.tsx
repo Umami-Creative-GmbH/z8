@@ -62,6 +62,18 @@ vi.mock("@/lib/billable-time/settings", () => ({
 	getBillableTimeSettings: mockState.getBillableTimeSettings,
 }));
 
+// The live customer check runs on PostgreSQL (clockodo-billability.integration.test.ts).
+vi.mock("@/lib/import-review/import-row-billability", async () => {
+	const { importRowBillability } = await import("@/lib/import-review/staged-work-billability");
+	return {
+		listImportRowBillability: async (
+			_reader: unknown,
+			_organizationId: string,
+			rows: Parameters<typeof importRowBillability>[0][],
+		) => rows.map(importRowBillability),
+	};
+});
+
 vi.mock("@/lib/import-review/repository", () => ({
 	getImportReviewSummary: mockState.getImportReviewSummary,
 	listImportReviewRows: mockState.listImportReviewRows,
@@ -145,7 +157,7 @@ describe("ImportReviewRoute", () => {
 			showBillability: false,
 			customerImport: undefined,
 		});
-		expect(mockState.getBillableTimeSettings).toHaveBeenCalledWith("org-1");
+		expect(mockState.getBillableTimeSettings).toHaveBeenCalledWith("org-1", expect.anything());
 		expect(mockState.listCustomerAccounting).not.toHaveBeenCalled();
 	});
 

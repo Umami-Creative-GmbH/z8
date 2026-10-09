@@ -73,7 +73,12 @@ vi.mock("@/lib/logger", () => ({
 
 const { switchBillableTime, updateBillableCurrency } = await import("./actions");
 const { toggleOrganizationFeature } = await import("../organizations/actions");
-const { getBillableTimeSettings } = await import("@/lib/billable-time/settings");
+const { getBillableTimeSettings: readBillableTimeSettings } = await import(
+	"@/lib/billable-time/settings"
+);
+const { db } = await import("@/db");
+const getBillableTimeSettings = (organizationId: string) =>
+	readBillableTimeSettings(organizationId, db);
 
 const ids = {
 	organization: "t897-org",
