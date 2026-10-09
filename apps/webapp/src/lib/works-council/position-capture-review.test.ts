@@ -120,7 +120,7 @@ describe("buildPositionCaptureReview consent counts", () => {
 		});
 	});
 
-	it("withholds the counts below the minimum aggregation threshold and counts nobody while switched off", () => {
+	it("withholds the counts below the minimum aggregation threshold unless identities are named, and counts nobody while switched off", () => {
 		const employees = [
 			{ employeeId: "e-1", teamId: null, consents: [], declines: [] },
 			{ employeeId: "e-2", teamId: null, consents: [], declines: [] },
@@ -135,12 +135,27 @@ describe("buildPositionCaptureReview consent counts", () => {
 			},
 		];
 
+		for (const identityVisibility of ["aggregated", "pseudonymized"] as const) {
+			expect(
+				buildPositionCaptureReview(source({ assignments: organizationOn, employees }), {
+					identityVisibility,
+					minimumAggregationThreshold: 3,
+				}).consentCounts,
+			).toEqual({ state: "insufficient_data", switchedOnEmployees: 2 });
+		}
+		// Named identities already show who is who, so a small group hides nothing.
 		expect(
 			buildPositionCaptureReview(source({ assignments: organizationOn, employees }), {
 				identityVisibility: "named",
 				minimumAggregationThreshold: 3,
 			}).consentCounts,
-		).toEqual({ state: "insufficient_data", switchedOnEmployees: 2 });
+		).toEqual({
+			state: "available",
+			switchedOnEmployees: 2,
+			active: 0,
+			withdrawn: 0,
+			undecided: 2,
+		});
 		expect(
 			buildPositionCaptureReview(
 				source({

@@ -375,7 +375,12 @@ function countConsents(
 		else if (decision.kind === "withdrawn") counts.withdrawn += 1;
 		else counts.undecided += 1;
 	}
-	if (switchedOnEmployees < visibility.minimumAggregationThreshold) {
+	// Named identities already show who is who; a small group hides only behind
+	// pseudonyms or aggregates.
+	if (
+		visibility.identityVisibility !== "named" &&
+		switchedOnEmployees < visibility.minimumAggregationThreshold
+	) {
 		return { state: "insufficient_data", switchedOnEmployees };
 	}
 	return { state: "available", switchedOnEmployees, ...counts };
