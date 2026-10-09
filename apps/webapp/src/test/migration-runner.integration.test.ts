@@ -1,40 +1,45 @@
 import { execFile } from "node:child_process";
-import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { createHash, randomBytes } from "node:crypto";
+import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import { readMigrationFiles } from "drizzle-orm/migrator";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { Pool } from "pg";
 import { expect, it } from "vitest";
-import {
-	integrationAdminPool,
-	parseIntegrationDatabaseUrl,
-} from "@/test/integration-database";
+import { withUtcPostgresSession } from "@/db/postgres-utc";
+import { integrationAdminPool, parseIntegrationDatabaseUrl } from "@/test/integration-database";
 
 const execute = promisify(execFile);
 const appDirectory = fileURLToPath(new URL("../../", import.meta.url));
+const migrationsFolder = fileURLToPath(new URL("../../drizzle", import.meta.url));
+const recoveryTag = "0141_app_auth_code_pkce_recovery";
 
+type Journal = { entries: { tag: string; when: number }[] };
+
+const ledgerQuery =
+	"select hash,created_at::text from drizzle.__drizzle_migrations order by created_at";
+
+/**
+ * Simulates a production database deployed through 0140 in its own sibling
+ * database, so the shared integration database is never mutated and every
+ * migration after 0141 is applied for real instead of being un-recorded.
+ */
 it("the production migration runner recovers a deployed database and safely retries", {
-	timeout: 60000,
+	timeout: 120000,
 }, async () => {
-	const pool = integrationAdminPool();
+	const admin = integrationAdminPool();
 	const config = parseIntegrationDatabaseUrl(
 		process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ?? "",
 	);
-	const journal = JSON.parse(
-		await readFile(
-			new URL("../../drizzle/meta/_journal.json", import.meta.url),
-			"utf8",
-		),
-	) as { entries: { tag: string; when: number }[] };
-	const recovery = journal.entries.find(
-		(e) => e.tag === "0141_app_auth_code_pkce_recovery",
-	);
-	expect(recovery).toBeDefined();
-	const timestamp = recovery?.when ?? 0;
-	const before = (
-		await pool.query(
-			"select hash,created_at::text from drizzle.__drizzle_migrations order by created_at",
-		)
-	).rows;
+	const journalPath = join(migrationsFolder, "meta", "_journal.json");
+	const journal = JSON.parse(await readFile(journalPath, "utf8")) as Journal;
+	const recoveryIndex = journal.entries.findIndex((e) => e.tag === recoveryTag);
+	expect(recoveryIndex).toBeGreaterThan(0);
+	const timestamp = journal.entries[recoveryIndex]?.when ?? 0;
 	const recoveredGaps = journal.entries
 		.filter((entry) =>
 			[
@@ -46,16 +51,26 @@ it("the production migration runner recovers a deployed database and safely retr
 		.map((entry) => String(entry.when));
 	// Read-only production evidence on 2026-10-09: former clock-index/payroll tags.
 	const legacyTimestamps = ["1785269198390", "1785269198391"];
-	const legacyHash = createHash("sha256")
-		.update("legacy-ledger-test-fixture")
-		.digest("hex");
+	const legacyHash = createHash("sha256").update("legacy-ledger-test-fixture").digest("hex");
+	// The runner must record exactly 0141 and every later migration, whatever follows it.
+	const pendingMigrations = readMigrationFiles({ migrationsFolder })
+		.filter((migration) => migration.folderMillis >= timestamp)
+		.map((migration) => ({
+			hash: migration.hash,
+			created_at: String(migration.folderMillis),
+		}));
+	expect(pendingMigrations[0]?.created_at).toBe(String(timestamp));
+
+	const databaseName = `approval_workflow_repository_test_runner_${randomBytes(6).toString("hex")}`;
 	const url = new URL(config.databaseUrl);
+	url.pathname = `/${databaseName}`;
+	const databaseUrl = url.toString();
 	const env: NodeJS.ProcessEnv = {
 		...process.env,
-		DATABASE_URL: config.databaseUrl,
+		DATABASE_URL: databaseUrl,
 		POSTGRES_HOST: url.hostname,
 		POSTGRES_PORT: url.port,
-		POSTGRES_DB: config.databaseName,
+		POSTGRES_DB: databaseName,
 		POSTGRES_USER: decodeURIComponent(url.username),
 		POSTGRES_PASSWORD: decodeURIComponent(url.password),
 		POSTGRES_SSL_MODE: "disable",
@@ -69,95 +84,84 @@ it("the production migration runner recovers a deployed database and safely retr
 			env,
 			timeout: 25000,
 		});
-	// Simulate a deployment through 0140. Only this gate-verified disposable DB is mutated.
-	const client = await pool.connect();
+
+	const temporaryDirectory = await mkdtemp(join(tmpdir(), "z8-migration-runner-"));
+	let pool: Pool | undefined;
+	let databaseCreated = false;
 	try {
-		await client.query("begin");
-		await client.query(
-			"alter table public.app_auth_code drop column code_challenge",
+		// A deployment through 0140: the real chain with its journal cut before 0141.
+		const deployedFolder = join(temporaryDirectory, "drizzle");
+		await cp(migrationsFolder, deployedFolder, { recursive: true });
+		await writeFile(
+			join(deployedFolder, "meta", "_journal.json"),
+			`${JSON.stringify({ ...journal, entries: journal.entries.slice(0, recoveryIndex) }, null, 2)}\n`,
 		);
-		await client.query(
-			"delete from drizzle.__drizzle_migrations where created_at >= $1 or created_at::text = any($2::text[])",
-			[timestamp, recoveredGaps],
-		);
-		for (const when of legacyTimestamps) {
+		await admin.query(`create database "${databaseName}"`);
+		databaseCreated = true;
+		pool = new Pool(withUtcPostgresSession({ connectionString: databaseUrl }));
+		await migrate(drizzle({ client: pool }), { migrationsFolder: deployedFolder });
+
+		// Production ledger drift: missing gap rows and rows for retired tags.
+		const client = await pool.connect();
+		try {
+			await client.query("begin");
 			await client.query(
-				"insert into drizzle.__drizzle_migrations (hash,created_at) values ($1,$2)",
-				[legacyHash, when],
+				"delete from drizzle.__drizzle_migrations where created_at::text = any($1::text[])",
+				[recoveredGaps],
 			);
+			for (const when of legacyTimestamps) {
+				await client.query(
+					"insert into drizzle.__drizzle_migrations (hash,created_at) values ($1,$2)",
+					[legacyHash, when],
+				);
+			}
+			await client.query(
+				`insert into public."user" (id,name,email,created_at,updated_at) values ('t780-runner-user','Runner fixture','t780-runner@example.test',now(),now())`,
+			);
+			await client.query(
+				"insert into public.app_auth_code(user_id,app,code,session_token,expires_at) values ('t780-runner-user','desktop','runner-fixture-code','runner-fixture-session',now()+interval '5 minutes')",
+			);
+			await client.query("commit");
+		} catch (error) {
+			await client.query("rollback");
+			throw error;
+		} finally {
+			client.release();
 		}
-		await client.query(
-			`insert into public."user" (id,name,email,created_at,updated_at) values ('t780-runner-user','Runner fixture','t780-runner@example.test',now(),now())`,
+		const deployedLedger = (await pool.query(ledgerQuery)).rows;
+		const expectedLedger = [...deployedLedger, ...pendingMigrations].sort(
+			(a, b) => Number(a.created_at) - Number(b.created_at),
 		);
-		await client.query(
-			"insert into public.app_auth_code(user_id,app,code,session_token,expires_at) values ('t780-runner-user','desktop','runner-fixture-code','runner-fixture-session',now()+interval '5 minutes')",
-		);
-		await client.query("commit");
-	} catch (error) {
-		await client.query("rollback");
-		throw error;
-	} finally {
-		client.release();
-	}
-	const deployedLedger = (
-		await pool.query(
-			"select hash,created_at::text from drizzle.__drizzle_migrations order by created_at",
-		)
-	).rows;
-	const expectedLedger = [
-		...deployedLedger,
-		...before.filter((row) => Number(row.created_at) >= timestamp),
-	].sort((a, b) => Number(a.created_at) - Number(b.created_at));
-	const legacy = (
-		await pool.query(
-			"select * from public.app_auth_code where code='runner-fixture-code'",
-		)
-	).rows[0];
-	try {
+		const legacy = (
+			await pool.query("select * from public.app_auth_code where code='runner-fixture-code'")
+		).rows[0];
+		// The SQL chain through 0140 never created the PKCE column.
+		expect(legacy).toBeDefined();
+		expect(legacy).not.toHaveProperty("code_challenge");
+
 		await run();
 		const restored = (
-			await pool.query(
-				"select * from public.app_auth_code where code='runner-fixture-code'",
-			)
+			await pool.query("select * from public.app_auth_code where code='runner-fixture-code'")
 		).rows[0];
 		expect(restored).toEqual({ ...legacy, code_challenge: null });
-		const applied = (
-			await pool.query(
-				"select hash,created_at::text from drizzle.__drizzle_migrations order by created_at",
-			)
-		).rows;
+		const applied = (await pool.query(ledgerQuery)).rows;
 		expect(applied).toEqual(expectedLedger);
-		expect(
-			applied.filter((r) => r.created_at === String(timestamp)),
-		).toHaveLength(1);
+		expect(applied.filter((r) => r.created_at === String(timestamp))).toHaveLength(1);
+
 		await run();
+		expect((await pool.query(ledgerQuery)).rows).toEqual(applied);
 		expect(
-			(
-				await pool.query(
-					"select hash,created_at::text from drizzle.__drizzle_migrations order by created_at",
-				)
-			).rows,
-		).toEqual(applied);
-		expect(
-			(
-				await pool.query(
-					"select * from public.app_auth_code where code='runner-fixture-code'",
-				)
-			).rows[0],
+			(await pool.query("select * from public.app_auth_code where code='runner-fixture-code'"))
+				.rows[0],
 		).toEqual(restored);
 	} finally {
-		await pool.query(
-			"delete from drizzle.__drizzle_migrations where created_at::text = any($1::text[])",
-			[legacyTimestamps],
-		);
-		for (const row of before.filter((row) =>
-			recoveredGaps.includes(row.created_at),
-		)) {
-			await pool.query(
-				"insert into drizzle.__drizzle_migrations (hash,created_at) select $1,$2 where not exists (select 1 from drizzle.__drizzle_migrations where created_at=$2)",
-				[row.hash, row.created_at],
-			);
+		try {
+			await pool?.end();
+			if (databaseCreated) {
+				await admin.query(`drop database if exists "${databaseName}" with (force)`);
+			}
+		} finally {
+			await rm(temporaryDirectory, { recursive: true, force: true });
 		}
-		await pool.query(`delete from public."user" where id='t780-runner-user'`);
 	}
 });
