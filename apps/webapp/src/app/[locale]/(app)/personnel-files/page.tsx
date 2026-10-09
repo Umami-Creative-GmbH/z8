@@ -1,4 +1,4 @@
-import { IconChevronRight, IconSettings } from "@tabler/icons-react";
+import { IconChevronRight, IconSettings, IconTrashX } from "@tabler/icons-react";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ExpiringDocumentsCard } from "@/components/personnel-file/expiring-documents";
@@ -52,14 +52,22 @@ async function PersonnelFilesContent() {
 						)}
 					</p>
 				</div>
-				{isOrganizationAdmin ? (
+				<div className="flex flex-wrap gap-2">
 					<Button asChild variant="outline">
-						<Link href="/settings/personnel-files">
-							<IconSettings aria-hidden="true" className="size-4" />
-							{t("settings.personnelFiles.area.manageOfficers", "Personnel file officers")}
+						<Link href="/personnel-files/due-for-deletion">
+							<IconTrashX aria-hidden="true" className="size-4" />
+							{t("settings.personnelFiles.area.dueForDeletion", "Due for deletion")}
 						</Link>
 					</Button>
-				) : null}
+					{isOrganizationAdmin ? (
+						<Button asChild variant="outline">
+							<Link href="/settings/personnel-files">
+								<IconSettings aria-hidden="true" className="size-4" />
+								{t("settings.personnelFiles.area.manageOfficers", "Personnel file officers")}
+							</Link>
+						</Button>
+					) : null}
+				</div>
 			</header>
 			<ExpiringDocumentsCard documents={expiring} leadDays={leadDays} />
 			{employees.length === 0 ? (

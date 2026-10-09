@@ -18,6 +18,7 @@ import type { ApprovalEscalationJobResult } from "@/lib/approvals/escalation/sch
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
 import type { PersonnelFileExpiryRemindersJobResult } from "@/lib/jobs/personnel-file-expiry-reminders";
+import type { PersonnelFileRetentionRemindersJobResult } from "@/lib/jobs/personnel-file-retention-reminders";
 import type { PersonnelFileUploadCleanupJobResult } from "@/lib/jobs/personnel-file-upload-cleanup";
 import type { SCIMMaintenanceResult } from "@/lib/jobs/scim-maintenance";
 import type { TravelExpenseReceiptCleanupJobResult } from "@/lib/jobs/travel-expense-receipt-cleanup";
@@ -376,6 +377,19 @@ export const CRON_JOBS = {
 			return runPersonnelFileExpiryRemindersJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 7 },
+	},
+
+	"cron:personnel-file-retention-reminders": {
+		schedule: "0 * * * *", // Hourly; at most one reminder per recipient and organization day
+		description:
+			"Tell personnel file officers about employee documents newly due for deletion (never deletes)",
+		processor: async (): Promise<PersonnelFileRetentionRemindersJobResult> => {
+			const { runPersonnelFileRetentionRemindersJob } = await import(
+				"@/lib/jobs/personnel-file-retention-reminders"
+			);
+			return runPersonnelFileRetentionRemindersJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 9 },
 	},
 
 	"cron:travel-expense-reference-rates": {

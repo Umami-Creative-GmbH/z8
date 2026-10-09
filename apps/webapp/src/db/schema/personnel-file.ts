@@ -326,3 +326,98 @@ export const personnelFileExpiryReminder = pgTable(
 		}).onDelete("cascade"),
 	],
 );
+
+/**
+ * Retention periods (#870): how many whole years the organization keeps the
+ * employee documents of one category after their retention start. A category
+ * without a row has no period, so its documents never become due for deletion.
+ */
+export const personnelFileRetentionPeriod = pgTable(
+	"personnel_file_retention_period",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		category: text("category").$type<DocumentCategory>().notNull(),
+		retentionYears: integer("retention_years").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+		updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+	},
+	(table) => [
+		uniqueIndex("personnelFileRetentionPeriod_org_category_idx").on(
+			table.organizationId,
+			table.category,
+		),
+		check(
+			"personnel_file_retention_period_category_check",
+			sql`${table.category} IN ('contract', 'payslip', 'certificate', 'sick_note', 'other')`,
+		),
+		check(
+			"personnel_file_retention_period_years_check",
+			sql`${table.retentionYears} BETWEEN 1 AND 100`,
+		),
+	],
+);
+
+/**
+ * Documents the daily retention job already reported as due for deletion
+ * (#870), per retention start: a rehire and a later departure give a new
+ * retention start and report the document again. Gone with the document.
+ */
+export const personnelFileDueNotice = pgTable(
+	"personnel_file_due_notice",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		documentId: uuid("document_id").notNull(),
+		retentionStart: date("retention_start", { mode: "string" }).notNull(),
+		/** The organization's calendar day the document was reported on. */
+		noticedOn: date("noticed_on", { mode: "string" }).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => [
+		uniqueIndex("personnelFileDueNotice_document_start_idx").on(
+			table.documentId,
+			table.retentionStart,
+		),
+		index("personnelFileDueNotice_organizationId_idx").on(table.organizationId),
+		foreignKey({
+			name: "personnel_file_due_notice_document_fk",
+			columns: [table.documentId, table.organizationId],
+			foreignColumns: [employeeDocument.id, employeeDocument.organizationId],
+		}).onDelete("cascade"),
+	],
+);
+
+/**
+ * One due-for-deletion reminder per recipient and organization day (#870):
+ * the job claims a row before it notifies, so nobody is told twice a day.
+ */
+export const personnelFileDueReminder = pgTable(
+	"personnel_file_due_reminder",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		localDate: date("local_date", { mode: "string" }).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => [
+		uniqueIndex("personnelFileDueReminder_org_user_date_idx").on(
+			table.organizationId,
+			table.userId,
+			table.localDate,
+		),
+	],
+);

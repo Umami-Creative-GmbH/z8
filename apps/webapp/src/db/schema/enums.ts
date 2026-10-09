@@ -265,6 +265,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	// Expiry reminders for certificates and other documents (#869)
 	"personnel_file_expiry_upcoming",
 	"personnel_file_expired_today",
+	// Documents newly due for deletion, for covering officers (#870)
+	"personnel_file_due_for_deletion",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [

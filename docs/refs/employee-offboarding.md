@@ -147,6 +147,16 @@ stint (legacy periods without a recorded start show *Date not recorded*). A
 rehire never restores expense officer, payroll access or personnel file officer
 grants; an admin must grant them again.
 
+## Personnel file retention
+
+A departure starts the retention of the employee's documents (#870): a
+document's retention start is the end of the later of the year of the last day
+of employment (in the organization's timezone) and the year of its document
+date. Once the category's retention period has passed, the document is listed
+as *due for deletion* and is purged only when a personnel file officer confirms.
+The open period a rehire creates stops the clock: none of the employee's
+documents is due while they are employed again.
+
 ## Billing reconciliation
 
 A billable seat is an approved member who is not departed (effective, or past

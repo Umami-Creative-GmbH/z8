@@ -118,6 +118,7 @@ const NOTIFICATION_CATEGORIES = [
 			"personnel_file_employee_upload",
 			"personnel_file_expiry_upcoming",
 			"personnel_file_expired_today",
+			"personnel_file_due_for_deletion",
 		] as NotificationType[],
 	},
 	{
@@ -247,6 +248,8 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 	// Expiry reminders for certificates and other documents
 	personnel_file_expiry_upcoming: "Document expires soon",
 	personnel_file_expired_today: "Document expires today",
+	// Employee documents newly due for deletion (personnel file officers)
+	personnel_file_due_for_deletion: "Documents due for deletion (personnel file officers)",
 };
 
 // Channel icons and labels

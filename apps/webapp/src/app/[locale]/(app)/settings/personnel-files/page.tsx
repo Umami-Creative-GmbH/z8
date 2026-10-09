@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { ExpiryReminderSettingsCard } from "@/components/personnel-file/expiry-reminder-settings";
 import { PersonnelFileOfficerSettingsCard } from "@/components/personnel-file/officer-grant-settings";
 import { PersonnelFileSettingsTabs } from "@/components/personnel-file/personnel-file-settings-tabs";
+import { PersonnelFileRetentionSettingsCard } from "@/components/personnel-file/retention-settings";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
@@ -40,6 +41,7 @@ async function PersonnelFileSettingsPageContent() {
 			<PersonnelFileSettingsTabs
 				access={<PersonnelFileOfficerSettingsCard />}
 				reminders={<ExpiryReminderSettingsCard leadDays={leadDays} />}
+				retention={<PersonnelFileRetentionSettingsCard />}
 			/>
 		</div>
 	);

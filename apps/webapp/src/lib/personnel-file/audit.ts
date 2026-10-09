@@ -23,7 +23,8 @@ export type PersonnelFileAuditAction =
 	| AuditAction.PERSONNEL_FILE_VISIBILITY_CHANGED
 	| AuditAction.PERSONNEL_FILE_DOCUMENT_DELETED
 	| AuditAction.PERSONNEL_FILE_DOCUMENT_VIEWED
-	| AuditAction.PERSONNEL_FILE_DOCUMENT_DOWNLOADED;
+	| AuditAction.PERSONNEL_FILE_DOCUMENT_DOWNLOADED
+	| AuditAction.PERSONNEL_FILE_DOCUMENT_PURGED;
 
 export interface AuditedDocument {
 	id: string;
@@ -59,6 +60,8 @@ export async function writeDocumentAudit(
 		action: PersonnelFileAuditAction;
 		actorUserId: string;
 		document: AuditedDocument;
+		/** Replaces the default document snapshot (a purge keeps no title). */
+		snapshot?: Record<string, unknown>;
 		changes?: Record<string, unknown> | null;
 		metadata?: Record<string, unknown> | null;
 		ipAddress?: string | null;
@@ -76,7 +79,7 @@ export async function writeDocumentAudit(
 		employeeId: input.document.employeeId,
 		changes: input.changes ? JSON.stringify(input.changes) : null,
 		metadata: JSON.stringify({
-			document: documentAuditSnapshot(input.document),
+			document: input.snapshot ?? documentAuditSnapshot(input.document),
 			...input.metadata,
 		}),
 		ipAddress: input.ipAddress ?? null,
