@@ -9,6 +9,14 @@ vi.mock("@/lib/jobs/auto-clock-out", () => {
 	autoClockOut.imported();
 	return { runAutoClockOutMaintenance: autoClockOut.run };
 });
+const cleanup = vi.hoisted(() => ({
+	imported: vi.fn(),
+	run: vi.fn(async () => ({ deletedCount: 4 })),
+}));
+vi.mock("@/lib/cleanup", () => {
+	cleanup.imported();
+	return { runCleanup: cleanup.run };
+});
 const positionStampPurge = vi.hoisted(() => ({
 	imported: vi.fn(),
 	run: vi.fn(async () => ({ success: true as const, deletedCount: 3 })),
@@ -104,6 +112,24 @@ describe("CRON_JOBS execution cleanup", () => {
 				"Delete cron execution records past the configured retention period",
 			defaultJobOptions: { attempts: 2, priority: 9 },
 		});
+	});
+});
+
+describe("CRON_JOBS retention cleanup", () => {
+	it.each([
+		["cron:notification-cleanup", "old_notifications"],
+		["cron:audit-log-cleanup", "old_audit_logs"],
+	] as const)("loads %s lazily and runs the %s cleanup daily at 2:30 AM", async (jobName, task) => {
+		expect(cleanup.imported).not.toHaveBeenCalled();
+		expect(CRON_JOBS[jobName]).toMatchObject({
+			schedule: "30 2 * * *",
+			defaultJobOptions: { attempts: 2, priority: 9 },
+		});
+
+		const result = await CRON_JOBS[jobName].processor({ triggeredAt: "2026-10-09T02:30:00.000Z" });
+
+		expect(result).toEqual({ task, deletedCount: 4 });
+		expect(cleanup.run).toHaveBeenCalledExactlyOnceWith({ type: "cleanup", task });
 	});
 });
 
