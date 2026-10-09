@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { ExpiryReminderSettingsCard } from "@/components/personnel-file/expiry-reminder-settings";
 import { PersonnelFileOfficerSettingsCard } from "@/components/personnel-file/officer-grant-settings";
 import { PersonnelFileSettingsTabs } from "@/components/personnel-file/personnel-file-settings-tabs";
 import { LoadingRegion } from "@/components/ui/loading-region";
@@ -7,11 +8,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { isPersonnelFilesEnabled } from "@/lib/personnel-file/access-store";
+import { loadExpiryReminderLeadDays } from "@/lib/personnel-file/expiry-store";
 import { getTranslate } from "@/tolgee/server";
 
 /**
  * Settings → Personnel files (#866): for owners and admins while personnel
- * files are on. The Access tab manages personnel file officer grants.
+ * files are on. The Access tab manages personnel file officer grants; the
+ * Reminders tab the expiry reminder lead time (#869).
  */
 async function PersonnelFileSettingsPageContent() {
 	const [{ organizationId }, t] = await Promise.all([
@@ -19,6 +22,7 @@ async function PersonnelFileSettingsPageContent() {
 		getTranslate(),
 	]);
 	if (!(await isPersonnelFilesEnabled(db, organizationId))) notFound();
+	const leadDays = await loadExpiryReminderLeadDays(db, organizationId);
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
@@ -33,7 +37,10 @@ async function PersonnelFileSettingsPageContent() {
 					)}
 				</p>
 			</div>
-			<PersonnelFileSettingsTabs access={<PersonnelFileOfficerSettingsCard />} />
+			<PersonnelFileSettingsTabs
+				access={<PersonnelFileOfficerSettingsCard />}
+				reminders={<ExpiryReminderSettingsCard leadDays={leadDays} />}
+			/>
 		</div>
 	);
 }
