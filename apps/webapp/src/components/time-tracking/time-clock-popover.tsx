@@ -200,8 +200,11 @@ function ClockControlsView({
 					isError={projectsIsError}
 				/>
 			)}
-			{/* A task travels only with a server clock-out; local capture keeps the project. */}
-			{isClockedIn && !isLocalCapture && !projectsIsLoading && !projectsIsError && (
+			{/* Server and frozen clock-outs carry a task; the legacy review queue keeps the project only. */}
+			{(isClockedIn || isLocalCapture) &&
+				captureMode !== "local-review" &&
+				!projectsIsLoading &&
+				!projectsIsError && (
 				<TaskSelectorView
 					projectId={selectedProjectId}
 					projects={projects}
@@ -350,8 +353,8 @@ export function TimeClockPopover({
 		const result = await clockOut({
 			projectId: uiState.selectedProjectId,
 			workCategoryId: uiState.selectedWorkCategoryId,
-			// Only a server clock-out carries a task (#874); local capture shows no task picker.
-			...(uiState.selectedTaskId && captureMode === "server"
+			// The legacy review queue carries no task (#874), so it shows no task picker.
+			...(uiState.selectedTaskId && captureMode !== "local-review"
 				? { taskId: uiState.selectedTaskId }
 				: {}),
 		});

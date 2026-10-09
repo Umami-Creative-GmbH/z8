@@ -18,7 +18,7 @@ const useElapsedTimerMock = vi.fn();
 
 let localStorageData: Record<string, string> = {};
 let isClockedInMock = false;
-let captureMode: "local-review" | "server" = "server";
+let captureMode: "local-queue" | "local-review" | "server" = "server";
 let activeWorkPeriodMock: { startTime: string } | null = null;
 
 function getPopoverClockButton(name: "Clock In" | "Clock Out"): HTMLElement {
@@ -335,7 +335,22 @@ describe("TimeClockPopover", () => {
 			expect(clockOutMock.mock.calls[0]?.[0]).toEqual({ projectId: "project-2" });
 		});
 
-		it("offers no task while the clock-out is only saved on this device", async () => {
+		it("books the chosen task with a clock-out queued as a frozen command", async () => {
+			captureMode = "local-queue";
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+
+			await chooseTask("Design");
+			fireEvent.click(screen.getByRole("button", { name: "Save clock-out" }));
+
+			await waitFor(() =>
+				expect(clockOutMock).toHaveBeenCalledWith(
+					expect.objectContaining({ projectId: "project-1", taskId: "task-1" }),
+				),
+			);
+		});
+
+		it("offers no task while the clock-out is only saved for review", async () => {
 			captureMode = "local-review";
 			render(<TimeClockPopover />);
 			fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));

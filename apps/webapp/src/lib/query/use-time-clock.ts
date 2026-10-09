@@ -143,6 +143,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			workLocationType?: WorkLocationType;
 			browserTimezone?: string | null;
 			projectId?: string;
+			taskId?: string;
 			workCategoryId?: string;
 		},
 	) {
@@ -157,6 +158,8 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			workLocationType: params?.workLocationType,
 			knownWorkPeriodId: statusQuery.data?.activeWorkPeriod?.id ?? null,
 			projectId: params?.projectId,
+			// Frozen only when named, so a clock-out without a task keeps its bytes (#875).
+			...(params?.taskId ? { taskId: params.taskId } : {}),
 			workCategoryId: params?.workCategoryId,
 		});
 		return prepared.ok ? prepared.request : null;
@@ -245,15 +248,16 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		networkMode: "always",
 		mutationFn: async (params?: {
 			projectId?: string;
-			/** A task of the project (#874); only an online clock-out carries one. */
+			/**
+			 * A task of the project (#874). Frozen commands and the route carry it; the
+			 * legacy offline queue does not, so the page offers no task in that mode.
+			 */
 			taskId?: string;
 			workCategoryId?: string;
 			browserTimezone?: string | null;
 			submissionId?: string;
 		}) => {
-			// Frozen commands carry no task yet, so a clock-out naming one stays on the
-			// route below; a command that was never frozen is not a downgrade.
-			const frozen = params?.taskId ? null : prepareFrozenCommand("clock_out", params);
+			const frozen = prepareFrozenCommand("clock_out", params);
 			if (frozen) return submitClockCommand(frozen);
 
 			// When offline, queue the event for later sync

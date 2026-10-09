@@ -114,8 +114,41 @@ describe("useTimeClock frozen commands (#279)", () => {
 		expect(mocks.postClockOut).not.toHaveBeenCalled();
 	});
 
-	it("sends a clock-out naming a task through the route, since frozen commands carry none (#874)", async () => {
+	it("freezes a chosen task with the clock-out (#874)", async () => {
 		const clock = offlineClock();
+		mocks.useOfflineClock.mockReturnValue(clock);
+		const { result } = render();
+		await waitFor(() => expect(result.current.activeWorkPeriod?.id).toBe(PERIOD_ID));
+
+		await result.current.clockOut({
+			projectId: PROJECT_ID,
+			taskId: TASK_ID,
+			browserTimezone: "Europe/Berlin",
+		});
+
+		expect(clock.submitClockCommand).toHaveBeenCalledWith(
+			expect.objectContaining({
+				kind: "clock_out",
+				project: { kind: "replace", id: PROJECT_ID },
+				task: { kind: "replace", id: TASK_ID },
+			}),
+		);
+		expect(mocks.postClockOut).not.toHaveBeenCalled();
+	});
+
+	it("freezes no task key when none is chosen (#874)", async () => {
+		const clock = offlineClock();
+		mocks.useOfflineClock.mockReturnValue(clock);
+		const { result } = render();
+		await waitFor(() => expect(result.current.activeWorkPeriod?.id).toBe(PERIOD_ID));
+
+		await result.current.clockOut({ projectId: PROJECT_ID, browserTimezone: "Europe/Berlin" });
+
+		expect(clock.submitClockCommand.mock.calls[0]?.[0]).not.toHaveProperty("task");
+	});
+
+	it("posts a chosen task when the page cannot freeze commands (#874)", async () => {
+		const clock = offlineClock({ commandCapabilities: null });
 		mocks.useOfflineClock.mockReturnValue(clock);
 		mocks.postClockOut.mockResolvedValue({ success: true, data: { id: "entry-1" } });
 		const { result } = render();
