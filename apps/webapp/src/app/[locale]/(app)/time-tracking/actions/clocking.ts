@@ -45,6 +45,10 @@ import {
 	resolveTimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
+import {
+	BillableWorkRefusedError,
+	resolveWorkBillabilityInTransaction,
+} from "@/lib/time-tracking/work-billability";
 import { isWorkLocationType, type WorkLocationType } from "@/lib/time-tracking/work-location";
 import { APPEND_REVIEW_REQUIRED_CODE } from "@/lib/time-tracking/time-clock-client";
 import {
@@ -138,6 +142,7 @@ type ManualSubmissionRequestEvidence = {
 	projectId: string | null;
 	workCategoryId: string | null;
 	workLocationType?: WorkLocationType;
+	billable?: boolean;
 };
 
 type ManualSubmissionResultEvidence = {
@@ -160,6 +165,8 @@ function manualRequestEvidence(
 		projectId: data.projectId ?? null,
 		workCategoryId: data.workCategoryId ?? null,
 		...(data.workLocationType !== undefined ? { workLocationType: data.workLocationType } : {}),
+		// Present only when chosen (#900), so earlier submissions keep their evidence.
+		...(typeof data.billable === "boolean" ? { billable: data.billable } : {}),
 	};
 }
 
@@ -215,6 +222,7 @@ function parseManualSubmissionMetadata(input: {
 		"projectId",
 		"workCategoryId",
 		...(input.request.workLocationType !== undefined ? ["workLocationType"] : []),
+		...(input.request.billable !== undefined ? ["billable"] : []),
 	]);
 	for (const [key, expected] of Object.entries(input.request)) {
 		if (request[key] !== expected) throw new Error("Submission collision");
@@ -676,6 +684,8 @@ export async function clockOutAs(
 			kind: "clock_out",
 			project: attributionIntent(projectId),
 			workCategory: attributionIntent(workCategoryId),
+			// Only a real boolean chooses billability; anything else applies the default.
+			...(typeof actionContext.billable === "boolean" ? { billable: actionContext.billable } : {}),
 		},
 	});
 	if (outcome.outcome === "refused") {
@@ -1099,6 +1109,19 @@ export async function createManualTimeEntry(
 			};
 		}
 	}
+	// New work takes the project's billable default unless the request chose (#900).
+	let isBillable: boolean;
+	try {
+		isBillable = await resolveWorkBillabilityInTransaction(db, targetEmployee.organizationId, {
+			projectId: data.projectId || null,
+			projectChosen: true,
+			current: false,
+			requested: requestEvidence.billable,
+		});
+	} catch (error) {
+		if (!(error instanceof BillableWorkRefusedError)) throw error;
+		return { success: false, error: error.message };
+	}
 
 	let requiresApproval = false;
 	if (isOwnEntry) {
@@ -1272,6 +1295,7 @@ export async function createManualTimeEntry(
 						workCategoryId: data.workCategoryId || null,
 						workLocationType: data.workLocationType ?? null,
 						projectId: data.projectId || null,
+						isBillable,
 						computationMetadata: manualSubmissionMetadata({
 							submissionId,
 							request: requestEvidence,
@@ -1293,6 +1317,7 @@ export async function createManualTimeEntry(
 				endTime: adjustedClockOut,
 				durationMinutes,
 				projectId: data.projectId || null,
+				isBillable,
 				workCategoryId: data.workCategoryId || null,
 				workLocationType: data.workLocationType ?? null,
 				canonicalRecordId: canonicalRecord.id,

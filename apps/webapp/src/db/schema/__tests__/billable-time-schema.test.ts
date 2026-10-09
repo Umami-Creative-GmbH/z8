@@ -162,7 +162,7 @@ describe("accounting connection schema (#903)", () => {
 		);
 		expect(index?.config.unique).toBe(true);
 		const migration = readFileSync(
-			new URL("../../../../drizzle/0145_accounting_connection.sql", import.meta.url),
+			new URL("../../../../drizzle/0146_accounting_connection.sql", import.meta.url),
 			"utf8",
 		);
 		expect(migration).toContain(

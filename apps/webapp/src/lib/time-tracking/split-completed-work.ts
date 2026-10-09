@@ -52,6 +52,7 @@ import { withCompletedWorkTransaction } from "./completed-work-transaction";
 import { planCompletedWorkSplit } from "./split-work-period";
 import { admitTimeEntryAppend, TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 import type { TimeEntryTimezoneCapture } from "./timezone-capture";
+import { projectAllocationAgrees } from "./work-billability";
 import { WorkIntervalError } from "./work-duration";
 import { assertWorkOccupancyFree } from "./work-occupancy";
 import { assertNoUnresolvedWorkPeriodReview } from "./work-period-review";
@@ -84,6 +85,8 @@ type AllocationEvidence = {
 	projectId: string | null;
 	costCenterId: string | null;
 	weightPercent: number;
+	/** Absent on receipts committed before billability (#900), which were non-billable. */
+	isBillable?: boolean;
 };
 
 /** One segment by value: committed evidence, not a pointer to current rows. */
@@ -99,6 +102,8 @@ export type SplitSegment = {
 	endUtcOffsetMinutes: number | null;
 	attribution: {
 		projectId: string | null;
+		/** Absent on receipts committed before billability (#900), which were non-billable. */
+		isBillable?: boolean;
 		workCategoryId: string | null;
 		workLocationType: string | null;
 		allocations: AllocationEvidence[];
@@ -425,14 +430,8 @@ export async function splitCompletedWork(
 			conflictType: "work_period_pending_approval",
 		});
 	}
-	const projectAllocations = allocations.filter(
-		({ allocationKind }) => allocationKind === "project",
-	);
-	const allocationAgrees = period.projectId
-		? projectAllocations.length === 1 &&
-			projectAllocations[0]?.projectId === period.projectId &&
-			projectAllocations[0]?.weightPercent === 100
-		: projectAllocations.length === 0;
+	// Project and billability must agree in both representations (#900).
+	const allocationAgrees = projectAllocationAgrees(period, allocations);
 	const sourceStart = instantFromDate(period.startTime);
 	const sourceEnd = instantFromDate(period.endTime);
 	if (
@@ -640,6 +639,8 @@ export async function splitCompletedWork(
 			projectId: allocation.projectId,
 			costCenterId: allocation.costCenterId,
 			weightPercent: allocation.weightPercent,
+			// Both halves keep the source's billability (#900).
+			isBillable: allocation.isBillable,
 		});
 	}
 	const [generated] = await tx
@@ -650,6 +651,7 @@ export async function splitCompletedWork(
 			clockInId: splitClockIn.id,
 			clockOutId: period.clockOutId,
 			projectId: period.projectId,
+			isBillable: period.isBillable,
 			workCategoryId: period.workCategoryId,
 			workLocationType: period.workLocationType,
 			startTime: splitAtDate,
@@ -679,6 +681,7 @@ export async function splitCompletedWork(
 
 	const attribution = {
 		projectId: period.projectId,
+		isBillable: period.isBillable,
 		workCategoryId: period.workCategoryId,
 		workLocationType: period.workLocationType,
 		allocations: allocations.map((allocation) => ({
@@ -686,6 +689,7 @@ export async function splitCompletedWork(
 			projectId: allocation.projectId,
 			costCenterId: allocation.costCenterId,
 			weightPercent: allocation.weightPercent,
+			isBillable: allocation.isBillable,
 		})),
 	};
 	const segment = (values: {

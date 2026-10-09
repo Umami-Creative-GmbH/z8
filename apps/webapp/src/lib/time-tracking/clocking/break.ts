@@ -290,6 +290,7 @@ async function takeLegacyBreak(
 			approvalStatus: workPeriod.approvalStatus,
 			startTime: workPeriod.startTime,
 			projectId: workPeriod.projectId,
+			isBillable: workPeriod.isBillable,
 			workCategoryId: workPeriod.workCategoryId,
 			workLocationType: workPeriod.workLocationType,
 		})
@@ -332,6 +333,8 @@ async function takeLegacyBreak(
 			workCategoryId: period.workCategoryId,
 			workLocationType,
 			projectId: period.projectId,
+			// The closed period keeps its billability; both representations agree (#900).
+			isBillable: period.isBillable,
 			origin: "clock",
 		},
 		tx,

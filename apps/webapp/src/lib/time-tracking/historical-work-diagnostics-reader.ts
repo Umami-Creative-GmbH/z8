@@ -76,6 +76,7 @@ const periodColumns = {
 	approvalWorkflowId: workPeriod.approvalWorkflowId,
 	deletedAt: workPeriod.deletedAt,
 	projectId: workPeriod.projectId,
+	isBillable: workPeriod.isBillable,
 	workCategoryId: workPeriod.workCategoryId,
 	workLocationType: workPeriod.workLocationType,
 	canonicalRecordId: workPeriod.canonicalRecordId,
@@ -212,6 +213,7 @@ export async function readHistoricalWorkEvidence(
 			.select({
 				recordId: timeRecordAllocation.recordId,
 				projectId: timeRecordAllocation.projectId,
+				isBillable: timeRecordAllocation.isBillable,
 			})
 			.from(timeRecordAllocation)
 			.where(
@@ -294,10 +296,16 @@ export async function readHistoricalWorkEvidence(
 
 	const detailByRecord = new Map(details.map((detail) => [detail.recordId, detail]));
 	const projectsByRecord = new Map<string, string[]>();
+	const billableProjectsByRecord = new Map<string, string[]>();
 	for (const allocation of allocations) {
 		if (allocation.projectId === null) continue;
 		projectsByRecord.set(allocation.recordId, [
 			...(projectsByRecord.get(allocation.recordId) ?? []),
+			allocation.projectId,
+		]);
+		if (!allocation.isBillable) continue;
+		billableProjectsByRecord.set(allocation.recordId, [
+			...(billableProjectsByRecord.get(allocation.recordId) ?? []),
 			allocation.projectId,
 		]);
 	}
@@ -320,6 +328,7 @@ export async function readHistoricalWorkEvidence(
 				approvalWorkflowId: row.approvalWorkflowId,
 				deletedAt: row.deletedAt ? instantFromDate(row.deletedAt) : null,
 				projectId: row.projectId,
+				isBillable: row.isBillable,
 				workCategoryId: row.workCategoryId,
 				workLocationType: row.workLocationType,
 				canonicalRecordId: row.canonicalRecordId,
@@ -346,6 +355,7 @@ export async function readHistoricalWorkEvidence(
 						}
 					: null,
 				projectIds: projectsByRecord.get(row.id) ?? [],
+				billableProjectIds: billableProjectsByRecord.get(row.id) ?? [],
 			};
 		}),
 		entries: entries.map((row) => ({

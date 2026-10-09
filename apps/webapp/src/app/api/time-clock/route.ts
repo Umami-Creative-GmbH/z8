@@ -25,6 +25,8 @@ const timeClockSchema = z.discriminatedUnion("action", [
 		// Omitted keeps the active period's attribution; null clears it explicitly.
 		projectId: z.string().min(1).nullable().optional(),
 		workCategoryId: z.string().min(1).nullable().optional(),
+		// Omitted applies the project's billable default (#900).
+		billable: z.boolean().optional(),
 		browserTimezone: z.string().nullish(),
 	}),
 ]);
@@ -65,6 +67,7 @@ export async function POST(request: Request) {
 				: await clockOut(body.projectId, body.workCategoryId, {
 						browserTimezone: body.browserTimezone,
 						submissionId: body.submissionId,
+						...(body.billable === undefined ? {} : { billable: body.billable }),
 					});
 
 		return NextResponse.json(result, { status: result.success ? 200 : 422 });

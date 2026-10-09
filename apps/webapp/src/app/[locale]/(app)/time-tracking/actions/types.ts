@@ -48,6 +48,11 @@ export interface ClockOutActionContext extends BrowserTimezoneContext {
 	identityOrigin?: OperationIdentity["origin"];
 	instant?: Instant;
 	deviceInfo?: ClockChannel;
+	/**
+	 * Explicit billability of the closed work (#900). Absent applies the chosen
+	 * project's billable default, or keeps the active work's billability.
+	 */
+	billable?: boolean;
 }
 
 export interface AssignedProject {
@@ -104,6 +109,8 @@ export interface ManualTimeEntryInput {
 	projectId?: string;
 	workCategoryId?: string;
 	workLocationType?: WorkLocationType;
+	/** Explicit billability (#900); absent takes the project's billable default. */
+	billable?: boolean;
 }
 
 /** What a manual submission committed, for either command representation. */

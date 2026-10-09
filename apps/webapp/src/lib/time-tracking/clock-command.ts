@@ -101,6 +101,11 @@ const clockCommandSchema = z.discriminatedUnion("kind", [
 		target: closeTarget,
 		project: attribution,
 		workCategory: attribution,
+		/**
+		 * Explicit billability (#900). Optional: commands frozen before it omit the
+		 * key and take the project's billable default.
+		 */
+		billable: z.boolean().optional(),
 	}),
 	/**
 	 * A confirmed desktop idle break (#281, resolution #263 §8): one atomic

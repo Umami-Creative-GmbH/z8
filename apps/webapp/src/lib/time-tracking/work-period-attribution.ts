@@ -2,10 +2,12 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
-import { workPeriod } from "@/db/schema";
+import { timeRecordAllocation, workPeriod } from "@/db/schema";
 import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import { AMEND_COMPLETED_WORK_COMMAND_VERSION, amendCompletedWork } from "./amend-completed-work";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
+import { resolveWorkBillabilityInTransaction } from "./work-billability";
+import type { SealedWorkTransactionScope } from "./work-transaction";
 
 /**
  * Standalone project change of the owner's own work period (#286). Adopted
@@ -35,16 +37,7 @@ export async function changeWorkPeriodProject(input: {
 		},
 		async (scope) => {
 			if (scope.admission === "legacy") {
-				await scope.db
-					.update(workPeriod)
-					.set({ projectId: input.projectId, updatedAt: new Date() })
-					.where(
-						and(
-							eq(workPeriod.id, input.period.id),
-							eq(workPeriod.organizationId, input.organizationId),
-							isNull(workPeriod.deletedAt),
-						),
-					);
+				await changeLegacyWorkPeriodProject(scope.db, input);
 				return;
 			}
 			await amendCompletedWork(scope, {
@@ -78,4 +71,68 @@ export async function changeWorkPeriodProject(input: {
 			});
 		},
 	);
+}
+
+/**
+ * The legacy project change (#900): the period and its canonical record's project
+ * allocation change together, so both representations keep agreeing on project
+ * and billability. A changed project applies its billable default; the same
+ * project keeps the period's billability.
+ */
+async function changeLegacyWorkPeriodProject(
+	tx: SealedWorkTransactionScope["db"],
+	input: { organizationId: string; period: { id: string }; projectId: string | null },
+): Promise<void> {
+	const [period] = await tx
+		.select({
+			projectId: workPeriod.projectId,
+			isBillable: workPeriod.isBillable,
+			canonicalRecordId: workPeriod.canonicalRecordId,
+		})
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.id, input.period.id),
+				eq(workPeriod.organizationId, input.organizationId),
+				isNull(workPeriod.deletedAt),
+			),
+		)
+		.for("update");
+	if (!period) return;
+	const projectChanged = period.projectId !== input.projectId;
+	const isBillable = await resolveWorkBillabilityInTransaction(tx, input.organizationId, {
+		projectId: input.projectId,
+		projectChosen: projectChanged,
+		current: period.isBillable,
+	});
+	await tx
+		.update(workPeriod)
+		.set({ projectId: input.projectId, isBillable, updatedAt: new Date() })
+		.where(
+			and(
+				eq(workPeriod.id, input.period.id),
+				eq(workPeriod.organizationId, input.organizationId),
+				isNull(workPeriod.deletedAt),
+			),
+		);
+	if (!period.canonicalRecordId) return;
+	await tx
+		.delete(timeRecordAllocation)
+		.where(
+			and(
+				eq(timeRecordAllocation.recordId, period.canonicalRecordId),
+				eq(timeRecordAllocation.organizationId, input.organizationId),
+				eq(timeRecordAllocation.allocationKind, "project"),
+			),
+		);
+	if (input.projectId) {
+		await tx.insert(timeRecordAllocation).values({
+			organizationId: input.organizationId,
+			recordId: period.canonicalRecordId,
+			allocationKind: "project",
+			projectId: input.projectId,
+			weightPercent: 100,
+			isBillable,
+		});
+	}
 }
