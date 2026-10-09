@@ -109,6 +109,11 @@ export type ReportConfig = PayrollExportReportConfig | DataExportReportConfig | 
  */
 export type DeliveryMethod = "s3_only" | "email_only" | "s3_and_email";
 
+/** Whether the export's download link is mailed to the schedule's email recipients. */
+export function deliversByEmail(method: DeliveryMethod): boolean {
+	return method === "email_only" || method === "s3_and_email";
+}
+
 /**
  * Delivery configuration
  */

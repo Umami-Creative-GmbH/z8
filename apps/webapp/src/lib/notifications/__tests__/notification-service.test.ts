@@ -290,6 +290,31 @@ describe("Notification Service", () => {
 				.email,
 		).toBe(true);
 	});
+	test.each([
+		"missed_clock_in_reminder",
+		"forgotten_clock_out_reminder",
+		"break_due_reminder",
+	] as const)("a %s arrives in-app and by push until the employee turns on another channel", async (type) => {
+		mockFindMany.mockImplementation(async () => []);
+		const { loadNotificationChannelPreferences } = await import("../notification-service");
+		expect(await loadNotificationChannelPreferences("user-1", type)).toEqual({
+			in_app: true,
+			push: true,
+			email: false,
+			teams: false,
+			telegram: false,
+			discord: false,
+			slack: false,
+		});
+		mockFindMany.mockImplementation(async () => [
+			createMockPreference({ notificationType: type, channel: "push", enabled: false }),
+			createMockPreference({ notificationType: type, channel: "in_app", enabled: false }),
+		]);
+		expect(await loadNotificationChannelPreferences("user-1", type)).toMatchObject({
+			in_app: false,
+			push: false,
+		});
+	});
 	test("durable push retries failed subscriptions and identifies an unavailable recipient", async () => {
 		const { deliverNotificationToChannel } = await import("../notification-service");
 		const params = {

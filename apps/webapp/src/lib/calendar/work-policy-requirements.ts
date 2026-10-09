@@ -86,6 +86,7 @@ type PolicyWithDetails = typeof workPolicy.$inferSelect & {
 			dayOfWeek: EffectiveWorkPolicyScheduleDayName;
 			hoursPerDay: string;
 			isWorkDay: boolean;
+			latestClockIn: string | null;
 		}>;
 	} | null;
 };
@@ -218,6 +219,7 @@ function mapPolicyToEffective(policy: PolicyWithDetails): EffectiveWorkPolicy {
 							dayOfWeek: day.dayOfWeek,
 							hoursPerDay: day.hoursPerDay,
 							isWorkDay: day.isWorkDay,
+							latestClockIn: day.latestClockIn ?? null,
 						})),
 					}
 				: null,

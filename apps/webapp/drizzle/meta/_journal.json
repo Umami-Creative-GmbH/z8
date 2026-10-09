@@ -995,6 +995,55 @@
       "when": 1796486400000,
       "tag": "0141_app_auth_code_pkce_recovery",
       "breakpoints": true
+    },
+    {
+      "idx": 142,
+      "version": "7",
+      "when": 1796572800000,
+      "tag": "0142_clocking_reminders",
+      "breakpoints": true
+    },
+    {
+      "idx": 143,
+      "version": "7",
+      "when": 1796659200000,
+      "tag": "0143_work_policy_latest_clock_in",
+      "breakpoints": true
+    },
+    {
+      "idx": 144,
+      "version": "7",
+      "when": 1796745600000,
+      "tag": "0144_break_due_reminder",
+      "breakpoints": true
+    },
+    {
+      "idx": 145,
+      "version": "7",
+      "when": 1796832000000,
+      "tag": "0145_position_capture_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 146,
+      "version": "7",
+      "when": 1796918400000,
+      "tag": "0146_position_stamps",
+      "breakpoints": true
+    },
+    {
+      "idx": 147,
+      "version": "7",
+      "when": 1797004800000,
+      "tag": "0147_position_stamp_access_log",
+      "breakpoints": true
+    },
+    {
+      "idx": 148,
+      "version": "7",
+      "when": 1797091200000,
+      "tag": "0148_position_access_log_retention",
+      "breakpoints": true
     }
   ]
 }

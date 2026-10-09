@@ -224,6 +224,7 @@ The worker container handles both one-off jobs and scheduled cron tasks using Bu
 | `cron:vacation` | Daily midnight | Vacation automation (carryover, expiry, accrual) |
 | `cron:export` | Every 5 minutes | Process pending data exports |
 | `cron:organization-cleanup` | Daily 1 AM | Delete soft-deleted organizations |
+| `cron:position-stamp-purge` | Daily 1 AM | Delete position stamps past their purge date (clock events stay) |
 | `cron:break-enforcement` | Every minute | Check break compliance |
 | `cron:project-deadlines` | Hourly | Project deadline notifications |
 | `cron:telemetry` | Daily at 00:00 UTC | Telemetry collection |

@@ -8,7 +8,7 @@ import { resolvePublicRequestOrigin } from "@/lib/domain/request-origin";
 import { createLogger } from "@/lib/logger";
 import {
 	CLOCK_COMMAND_ADMISSION_WINDOWS,
-	CLOCK_COMMAND_VERSION,
+	CLOCK_COMMAND_VERSIONS,
 	checkBreakClockContinuity,
 	parseClockCommand,
 	verifyClockCommandContext,
@@ -31,7 +31,8 @@ import {
  *
  * - `GET` advertises the supported command capabilities and the server-derived
  *   context a client captures into each command.
- * - `POST` submits one frozen version 2 command through the Clocking module.
+ * - `POST` submits one frozen command through the Clocking module: version 2, or
+ *   a version 3 browser command with the position taken at the event (#826).
  * - `GET /api/time-entries/commands/{operationId}` is lookup-only recovery.
  */
 const logger = createLogger("ClockCommands");
@@ -63,7 +64,8 @@ export async function GET(request: Request) {
 		});
 		return NextResponse.json(
 			{
-				commandVersions: [CLOCK_COMMAND_VERSION],
+				// Version 2, and version 3 for stamped browser commands (#826).
+				commandVersions: CLOCK_COMMAND_VERSIONS,
 				kinds: ["clock_in", "clock_out", "break"],
 				// Fresh submission stays gated with the organization's completed-work
 				// adoption. Lookup and committed replay work in every mode.
@@ -153,6 +155,9 @@ export async function POST(request: Request) {
 			toClockingCommand(command, actor, {
 				now: systemClock.nowInstant(),
 				fallbackZone: await getUserTimezone(actor.userId).catch(() => command.timezone),
+				// Version 3 positions come only from the browser's session cookie; the
+				// desktop and other bearer clients never stamp (#826 D5).
+				acceptsPosition: !request.headers.has("authorization"),
 			}),
 		);
 		if (outcome.outcome === "refused") {

@@ -24,6 +24,8 @@ export * from "./billing-seat-delivery";
 // Calendar sync
 export * from "./calendar-sync";
 export * from "./change-policy";
+// Clocking reminders (#760)
+export * from "./clocking-reminder";
 // Clockodo import (user mapping)
 export * from "./clockodo-import";
 export * from "./completed-work";
@@ -105,6 +107,7 @@ export * from "./travel-expense-settlement";
 export * from "./travel-expense-export";
 export * from "./travel-expense-adjustment";
 export * from "./expense-officer";
+export * from "./position-capture";
 // TypeScript types
 export * from "./types";
 export * from "./user-settings";

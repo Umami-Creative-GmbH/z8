@@ -85,7 +85,7 @@ describe.skipIf(!executablePath)("browser frozen clock commands", () => {
 				});
 			} else if (pathname === "/api/time-entries/commands" && request.method === "GET") {
 				json(response, 200, {
-					commandVersions: [2],
+					commandVersions: [2, 3],
 					kinds: ["clock_in", "clock_out"],
 					submit,
 					lookup: "available",
@@ -376,6 +376,31 @@ describe.skipIf(!executablePath)("browser frozen clock commands", () => {
 				},
 			},
 		});
+	});
+
+	it("freezes a position taken at the event into a version 3 command and refuses a malformed one (#826)", async () => {
+		await loadLibraries();
+		const position = {
+			latitude: 52.520008,
+			longitude: 13.404954,
+			accuracyMeters: 18.5,
+			fixedAt: "2026-09-25T07:59:58.000Z",
+		};
+		const result = await page.evaluate(`(async () => {
+			const stamped = await ClockCommandStore.capture(${JSON.stringify(request(OP_IN, "clock_in", { position }))});
+			let malformed;
+			try {
+				await ClockCommandStore.capture(${JSON.stringify(request(OP_OTHER, "clock_in", { position: { ...position, latitude: 120 } }))});
+			} catch (error) { malformed = error.code; }
+			return { command: stamped.record.command, body: stamped.record.body, malformed };
+		})()`);
+		expect(result).toMatchObject({
+			command: { version: 3, operationId: OP_IN, position },
+			malformed: "invalid_request",
+		});
+		expect(JSON.parse((result as { body: string }).body)).toEqual(
+			(result as { command: unknown }).command,
+		);
 	});
 
 	it("orders a clock-in behind an unconfirmed clock-out and keeps archived uncertain work blocking", async () => {

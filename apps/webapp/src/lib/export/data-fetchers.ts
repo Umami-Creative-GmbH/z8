@@ -35,10 +35,24 @@ import {
 } from "@/db";
 import { env } from "@/env";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import { attachExportPositionStamps } from "@/lib/time-tracking/position-capture/export-positions";
 
 // Import types for internal use
 import type { ExportCategory } from "./types";
+
+/**
+ * Who the export is for. The time entries carry position stamps only when this
+ * requester may view everyone's stamps, decided while the export is processed.
+ */
+export type ExportRequester = {
+	exportId: string;
+	/** `data_export.requested_by_id`: the requester's employee profile (a schedule's owner for scheduled exports). */
+	requestedByEmployeeId: string;
+	/** The addresses a scheduled export's download link is mailed to; each must be a permitted viewer too. */
+	recipientEmails?: readonly string[];
+};
 
 // Re-export types for backward compatibility with server-side code
 export { CATEGORY_LABELS, EXPORT_CATEGORIES, type ExportCategory } from "./types";
@@ -155,7 +169,7 @@ export async function fetchTeams(organizationId: string) {
  * Fetch all time entries for an organization
  * Format: CSV (large volume, tabular)
  */
-export async function fetchTimeEntries(organizationId: string) {
+export async function fetchTimeEntries(organizationId: string, requester: ExportRequester) {
 	logger.info({ organizationId }, "Fetching time entries for export");
 
 	// Fetch time entries directly by organizationId
@@ -174,7 +188,7 @@ export async function fetchTimeEntries(organizationId: string) {
 
 	logger.info({ count: filteredEntries.length }, "Fetched time entries");
 
-	return filteredEntries.map((entry) => ({
+	const rows = filteredEntries.map((entry) => ({
 		id: entry.id,
 		employeeId: entry.employeeId,
 		employeeName: entry.employee?.user ? buildAuthUserDisplayName(entry.employee.user) : "",
@@ -182,12 +196,23 @@ export async function fetchTimeEntries(organizationId: string) {
 		type: entry.type,
 		timestamp: entry.timestamp,
 		notes: entry.notes,
-		location: entry.location,
 		deviceInfo: entry.deviceInfo,
 		replacesEntryId: entry.replacesEntryId,
 		isSuperseded: entry.isSuperseded,
 		createdAt: entry.createdAt,
 	}));
+
+	// Position stamps replace the legacy, always-empty location column (#835).
+	const positions = await attachExportPositionStamps(db, {
+		organizationId,
+		exportId: requester.exportId,
+		requestedByEmployeeId: requester.requestedByEmployeeId,
+		recipientEmails: requester.recipientEmails,
+		now: systemClock.nowInstant(),
+		rows,
+	});
+	logger.info({ positionsIncluded: positions.included }, "Resolved time entry positions");
+	return positions.rows;
 }
 
 /**
@@ -544,6 +569,7 @@ export async function fetchSchedules(organizationId: string) {
 			hoursPerDay: sd.hoursPerDay,
 			isWorkDay: sd.isWorkDay,
 			cycleWeek: sd.cycleWeek,
+			latestClockIn: sd.latestClockIn,
 		})),
 		regulations: regulations.map((r) => ({
 			policyId: r.policyId,
@@ -724,6 +750,7 @@ export async function fetchAuditLogs(organizationId: string) {
 export async function fetchExportData(
 	organizationId: string,
 	categories: ExportCategory[],
+	requester: ExportRequester,
 ): Promise<Record<string, unknown>> {
 	logger.info({ organizationId, categories }, "Fetching export data");
 
@@ -731,7 +758,7 @@ export async function fetchExportData(
 	const categoryFetchers: Record<ExportCategory, () => Promise<unknown>> = {
 		employees: () => fetchEmployees(organizationId),
 		teams: () => fetchTeams(organizationId),
-		time_entries: () => fetchTimeEntries(organizationId),
+		time_entries: () => fetchTimeEntries(organizationId, requester),
 		work_periods: () => fetchWorkPeriods(organizationId),
 		absences: () => fetchAbsences(organizationId),
 		holidays: () => fetchHolidays(organizationId),
@@ -780,7 +807,6 @@ export async function* streamTimeEntries(
 		employeeNumber: string | null;
 		type: string;
 		timestamp: Date;
-		location: string | null;
 		notes: string | null;
 	}>
 > {
@@ -825,7 +851,6 @@ export async function* streamTimeEntries(
 			employeeNumber: e.employee?.employeeNumber || null,
 			type: e.type,
 			timestamp: e.timestamp,
-			location: e.location,
 			notes: e.notes,
 		}));
 

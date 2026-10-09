@@ -17,6 +17,22 @@ vi.mock("@/lib/cleanup", () => {
 	cleanup.imported();
 	return { runCleanup: cleanup.run };
 });
+const positionStampPurge = vi.hoisted(() => ({
+	imported: vi.fn(),
+	run: vi.fn(async () => ({ success: true as const, deletedCount: 3 })),
+}));
+vi.mock("@/lib/jobs/position-stamp-purge", () => {
+	positionStampPurge.imported();
+	return { runPositionStampPurge: positionStampPurge.run };
+});
+const clockingReminders = vi.hoisted(() => ({
+	imported: vi.fn(),
+	run: vi.fn(async () => ({ sent: 2 })),
+}));
+vi.mock("@/lib/jobs/clocking-reminders", () => {
+	clockingReminders.imported();
+	return { runClockingReminders: clockingReminders.run };
+});
 const {
 	calculateTelemetryMetrics,
 	getOrCreateTelemetryIdentity,
@@ -262,6 +278,23 @@ describe("CRON_JOBS telemetry", () => {
 	});
 });
 
+describe("position stamp purge cron", () => {
+	it("loads the purge lazily and runs it daily at 1 AM", async () => {
+		expect(positionStampPurge.imported).not.toHaveBeenCalled();
+		expect(CRON_JOBS["cron:position-stamp-purge"]).toMatchObject({
+			schedule: "0 1 * * *",
+			defaultJobOptions: { attempts: 2, priority: 9 },
+		});
+
+		expect(
+			await CRON_JOBS["cron:position-stamp-purge"].processor({
+				triggeredAt: "2026-10-09T01:00:00Z",
+			}),
+		).toEqual({ success: true, deletedCount: 3 });
+		expect(positionStampPurge.run).toHaveBeenCalledOnce();
+	});
+});
+
 describe("automatic clock-out cron", () => {
 	it("loads maintenance lazily and observes overdue work every five minutes", async () => {
 		expect(autoClockOut.imported).not.toHaveBeenCalled();
@@ -270,5 +303,16 @@ describe("automatic clock-out cron", () => {
 			await CRON_JOBS["cron:auto-clock-out"].processor({ triggeredAt: "2026-10-25T06:00:00Z" }),
 		).toEqual({ closed: 1 });
 		expect(autoClockOut.run).toHaveBeenCalledOnce();
+	});
+});
+
+describe("clocking reminders cron", () => {
+	it("loads the reminder job lazily and checks every five minutes", async () => {
+		expect(clockingReminders.imported).not.toHaveBeenCalled();
+		expect(CRON_JOBS["cron:clocking-reminders"].schedule).toBe("*/5 * * * *");
+		expect(
+			await CRON_JOBS["cron:clocking-reminders"].processor({ triggeredAt: "2026-10-25T06:00:00Z" }),
+		).toEqual({ sent: 2 });
+		expect(clockingReminders.run).toHaveBeenCalledOnce();
 	});
 });
