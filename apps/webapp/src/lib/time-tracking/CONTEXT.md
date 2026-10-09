@@ -104,6 +104,18 @@ _Avoid_: Manager clock-out, forced clock-out
 **Compliance check**:
 The clock-out follow-up that judges closed work against the employee's working-time rules and records its violations. It applies the work policy assigned as of the instant the work ended, the instant the policy clock-out break snapshot also reads. It counts the totals of the local day and week in which the work started, and dates each violation at the work's start, so a violation falls on the day and in the week whose total broke the rule. When the check runs never matters, and recorded violations are never re-evaluated.
 
+**Position stamp**:
+The device-reported position (coordinates, accuracy and fix time) recorded as evidence with one of an employee's own clock commands, captured on their device when the event happened. It is never added, edited or moved afterwards, and a clock command without one is accepted unchanged.
+_Avoid_: Location stamp, GPS stamp, geotag (a **work location** is the office/home/remote choice; a **location** is a site)
+
+**Position consent**:
+An employee's own recorded agreement that their clock commands may carry position stamps. Position stamps are captured only while it is active and the organization has switched capture on for that employee; the employee may withdraw it at any time.
+_Avoid_: GPS opt-in, tracking consent
+
+**Position notice**:
+The versioned text an employee agrees to when giving position consent: what is captured, when, for how long, who may see it and why. A consent is valid only for the notice version it was given against.
+_Avoid_: Privacy notice, consent text
+
 **Departure clock-out**:
 The clock-out of a departing employee's live work, performed as part of offboarding. Its principal is the departure, which runs only enlisted in its own departure's work transaction and is exempt from billing; its follow-ups (except compliance advice) are staged as durable work.
 _Avoid_: Offboarding clock-out
