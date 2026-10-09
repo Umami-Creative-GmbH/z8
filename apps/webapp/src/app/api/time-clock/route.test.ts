@@ -97,6 +97,30 @@ describe("POST /api/time-clock", () => {
 		expect(mockState.clockOut.mock.calls[0]?.[2]).toMatchObject({ position });
 	});
 
+	it("drops the position of a request with an authorization header and still clocks (#826 D5)", async () => {
+		mockState.clockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
+		mockState.clockOut.mockResolvedValue({ success: true, data: { id: "entry-2" } });
+		const position = {
+			latitude: 52.52,
+			longitude: 13.4,
+			accuracyMeters: 20,
+			fixedAt: "2026-09-25T07:59:30.250Z",
+		};
+		const bearer = { authorization: "Bearer desktop-token" };
+
+		const clockedIn = await POST(
+			timeClockRequest({ action: "clock_in", submissionId, position }, bearer),
+		);
+		const clockedOut = await POST(
+			timeClockRequest({ action: "clock_out", submissionId, position }, bearer),
+		);
+
+		expect(clockedIn.status).toBe(200);
+		expect(clockedOut.status).toBe(200);
+		expect(mockState.clockIn.mock.calls[0]?.[1]?.position).toBeUndefined();
+		expect(mockState.clockOut.mock.calls[0]?.[2]?.position).toBeUndefined();
+	});
+
 	it("never refuses a clock event over a malformed position", async () => {
 		mockState.clockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
 

@@ -63,18 +63,21 @@ export async function POST(request: Request) {
 	}
 
 	const body = parsedBody.data;
+	// Positions come only from the browser's session cookie; a bearer client's
+	// clock event goes ahead unstamped, as on the frozen command route (#826 D5).
+	const position = request.headers.has("authorization") ? undefined : body.position;
 	try {
 		const result =
 			body.action === "clock_in"
 				? await clockIn(body.workLocationType, {
 						browserTimezone: body.browserTimezone,
 						submissionId: body.submissionId,
-						position: body.position,
+						position,
 					})
 				: await clockOut(body.projectId, body.workCategoryId, {
 						browserTimezone: body.browserTimezone,
 						submissionId: body.submissionId,
-						position: body.position,
+						position,
 					});
 
 		return NextResponse.json(result, { status: result.success ? 200 : 422 });
