@@ -31,6 +31,8 @@ import {
 	type ManualRecoveryRecord,
 	type ManualRecoveryScope,
 } from "@/components/time-tracking/manual-command-recovery";
+import { billableChoice } from "@/components/time-tracking/billable-choice";
+import { BillableWorkSwitch } from "@/components/time-tracking/billable-work-switch";
 import { ProjectSelectorView } from "@/components/time-tracking/project-selector";
 import { TimezoneMismatchDialog } from "@/components/time-tracking/timezone-mismatch-dialog";
 import {
@@ -112,6 +114,8 @@ interface FormValues {
 	clockOutTime: string;
 	reason: string;
 	projectId: string | undefined;
+	/** The explicit billable choice (#900); undefined applies the project's default. */
+	billable: boolean | undefined;
 	workCategoryId: string | undefined;
 	workLocationType: WorkLocationType;
 	/** Version-2 commands: the chosen occurrence of a repeated wall-clock time. */
@@ -321,6 +325,7 @@ function buildManualCommand(input: {
 		projectId: value.projectId ?? null,
 		workCategoryId: value.workCategoryId ?? null,
 		workLocationType: value.workLocationType,
+		...(value.billable === undefined ? {} : { billable: value.billable }),
 	};
 	const interval = interpretManualInterval({
 		command,
@@ -392,6 +397,7 @@ function getDefaultValues(
 			`${String(now.hour).padStart(2, "0")}:${String(now.minute).padStart(2, "0")}`,
 		reason: "",
 		projectId: undefined,
+		billable: undefined,
 		workCategoryId: undefined,
 		workLocationType: "office",
 		clockInOccurrence: undefined,
@@ -1181,7 +1187,11 @@ function ManualEntryFormContent({
 						{(field) => (
 							<ProjectSelectorView
 								value={field.state.value}
-								onValueChange={field.handleChange}
+								onValueChange={(projectId) => {
+									field.handleChange(projectId);
+									// A newly chosen project prefills its own billable default.
+									form.setFieldValue("billable", undefined);
+								}}
 								projects={context?.projects ?? []}
 								isLoading={selectorsLoading}
 								isError={Boolean(contextError)}
@@ -1189,6 +1199,19 @@ function ManualEntryFormContent({
 							/>
 						)}
 					</form.Field>
+					<form.Subscribe
+						selector={(state) => [state.values.projectId, state.values.billable] as const}
+					>
+						{([projectId, billable]) => (
+							<BillableWorkSwitch
+								choice={billableChoice({
+									project: context?.projects.find((project) => project.id === projectId),
+									explicit: billable,
+								})}
+								onChange={(value) => form.setFieldValue("billable", value)}
+							/>
+						)}
+					</form.Subscribe>
 					<form.Field name="workCategoryId">
 						{(field) => (
 							<WorkCategorySelectorView
@@ -1281,6 +1304,7 @@ function useTargetDraftRevalidation({
 
 		const { projectId, workCategoryId } = form.state.values;
 		form.setFieldValue("projectId", undefined);
+		form.setFieldValue("billable", undefined);
 		form.setFieldValue("workCategoryId", undefined);
 		setPendingMismatch(null);
 		setMessage(
@@ -1304,7 +1328,10 @@ function useTargetDraftRevalidation({
 			workCategoryId !== undefined &&
 			!context.categories.some((category) => category.id === workCategoryId);
 
-		if (projectIneligible) form.setFieldValue("projectId", undefined);
+		if (projectIneligible) {
+			form.setFieldValue("projectId", undefined);
+			form.setFieldValue("billable", undefined);
+		}
 		if (categoryIneligible) form.setFieldValue("workCategoryId", undefined);
 		if (projectIneligible || categoryIneligible) {
 			// The TanStack form store is external; this reports what was just cleared in it
@@ -1504,6 +1531,7 @@ function ConnectedManualRecoveryPanel({
 		form.setFieldValue("clockOutTime", command.clockOut.time);
 		form.setFieldValue("reason", command.reason);
 		form.setFieldValue("projectId", command.projectId ?? undefined);
+		form.setFieldValue("billable", command.billable);
 		form.setFieldValue("workCategoryId", command.workCategoryId ?? undefined);
 		form.setFieldValue(
 			"workLocationType",
@@ -1741,6 +1769,7 @@ export function ManualTimeEntryDialog({
 				timezone,
 				browserTimezone,
 				projectId: value.projectId,
+				...(value.billable === undefined ? {} : { billable: value.billable }),
 				workCategoryId: value.workCategoryId,
 				workLocationType: value.workLocationType,
 			});

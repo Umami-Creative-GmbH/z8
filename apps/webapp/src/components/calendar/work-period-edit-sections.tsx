@@ -10,6 +10,7 @@ import {
 	IconXboxX,
 } from "@tabler/icons-react";
 import type { TFnType } from "@tolgee/react";
+import type { ReactNode } from "react";
 import { ProjectSelector } from "@/components/time-tracking/project-selector";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -194,6 +195,7 @@ export function ProjectEditSection({
 	onCancel,
 	onSave,
 	onProjectChange,
+	billableEditor,
 	t,
 }: {
 	projectsEnabled: boolean;
@@ -205,6 +207,8 @@ export function ProjectEditSection({
 	onCancel: () => void;
 	onSave: () => void;
 	onProjectChange: (projectId: string | undefined) => void;
+	/** The billable toggle shown with the project choice (#900). */
+	billableEditor?: ReactNode;
 	t: TFnType;
 }) {
 	if (!projectsEnabled) {
@@ -238,6 +242,7 @@ export function ProjectEditSection({
 						disabled={isSaving}
 						showLabel={false}
 					/>
+					{billableEditor}
 					<div className="flex gap-2">
 						<Button
 							size="sm"

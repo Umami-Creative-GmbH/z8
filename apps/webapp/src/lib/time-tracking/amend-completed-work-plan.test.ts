@@ -195,7 +195,12 @@ describe("planCompletedWorkAmendment", () => {
 		it("plans a billability-only change of active work", () => {
 			expect(
 				planAttributionChange(
-					{ projectId: "project-a", workCategoryId: null, workLocationType: null, isBillable: true },
+					{
+						projectId: "project-a",
+						workCategoryId: null,
+						workLocationType: null,
+						isBillable: true,
+					},
 					{
 						project: { kind: "preserve" },
 						workCategory: { kind: "preserve" },

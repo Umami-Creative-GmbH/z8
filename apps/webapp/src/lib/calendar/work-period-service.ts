@@ -211,7 +211,10 @@ export async function getWorkPeriodsForMonth(
 								projectId: proj.id,
 								projectName: proj.name,
 								projectColor: proj.color || undefined,
+								projectHasCustomer: proj.customerId !== null,
 							}),
+							// Billable Time (#900): whether the work is billable.
+							isBillable: period.isBillable,
 							// Approval status for change policy enforcement
 							approvalStatus: period.approvalStatus ?? "approved",
 							...(clockInEntry && {
@@ -320,7 +323,10 @@ export async function getWorkPeriodsForMonth(
 							projectId: proj.id,
 							projectName: proj.name,
 							projectColor: proj.color || undefined,
+							projectHasCustomer: proj.customerId !== null,
 						}),
+						// Billable Time (#900): whether the work is billable.
+						isBillable: period.isBillable,
 						// Surcharge fields (only included if surcharge calculation exists)
 						...(surcharge && {
 							surchargeMinutes,

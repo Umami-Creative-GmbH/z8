@@ -33,6 +33,8 @@ import {
 	type TimeFormat,
 } from "@/lib/user-preferences/time-format";
 import { showAppendReviewRequiredToast } from "./append-review-toast";
+import { billableChoice } from "./billable-choice";
+import { BillableWorkSwitch } from "./billable-work-switch";
 import { showSavedClockToast } from "./saved-clock-toast";
 import { WorkLocationSelector } from "./clock-in-out-widget-parts";
 import { ProjectSelectorView } from "./project-selector";
@@ -124,6 +126,8 @@ interface ClockControlsViewProps {
 	isMutating: boolean;
 	onClockAction: () => void;
 	onProjectChange: (value: string | undefined) => void;
+	billable: boolean | undefined;
+	onBillableChange: (value: boolean) => void;
 	onWorkCategoryChange: (value: string | undefined) => void;
 	onWorkLocationChange: (value: WorkLocationType) => void;
 	projects: AssignedProject[];
@@ -151,6 +155,8 @@ function ClockControlsView({
 	isMutating,
 	onClockAction,
 	onProjectChange,
+	billable,
+	onBillableChange,
 	onWorkCategoryChange,
 	onWorkLocationChange,
 	projects,
@@ -193,6 +199,16 @@ function ClockControlsView({
 					projects={projects}
 					isLoading={projectsIsLoading}
 					isError={projectsIsError}
+				/>
+			)}
+			{(isClockedIn || isLocalCapture) && (
+				<BillableWorkSwitch
+					choice={billableChoice({
+						project: projects.find((project) => project.id === selectedProjectId),
+						explicit: billable,
+					})}
+					onChange={onBillableChange}
+					disabled={isMutating}
 				/>
 			)}
 			{(isClockedIn || isLocalCapture) && employeeId && (
@@ -335,6 +351,7 @@ export function TimeClockPopover({
 		const result = await clockOut({
 			projectId: uiState.selectedProjectId,
 			workCategoryId: uiState.selectedWorkCategoryId,
+			...(uiState.billable === undefined ? {} : { billable: uiState.billable }),
 		});
 
 		if (result.success) {
@@ -487,6 +504,8 @@ export function TimeClockPopover({
 								onProjectChange={(value) =>
 									dispatch({ type: "setSelectedProjectId", value })
 								}
+								billable={uiState.billable}
+								onBillableChange={(value) => dispatch({ type: "setBillable", value })}
 								onWorkCategoryChange={(value) =>
 									dispatch({ type: "setSelectedWorkCategoryId", value })
 								}

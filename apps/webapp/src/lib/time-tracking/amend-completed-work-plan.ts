@@ -147,8 +147,7 @@ function resolveAttributions(source: AttributionSource, intent: AttributionInten
 			project: project.changed,
 			workCategory: workCategory.changed,
 			workLocation: workLocation.changed,
-			billable:
-				intent.billable?.kind === "set" && intent.billable.billable !== source.isBillable,
+			billable: intent.billable?.kind === "set" && intent.billable.billable !== source.isBillable,
 		} satisfies AttributionChanges,
 		result: {
 			projectId: project.value,

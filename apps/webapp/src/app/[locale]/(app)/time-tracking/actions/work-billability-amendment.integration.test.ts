@@ -390,9 +390,9 @@ describe("changing billability after recording on PostgreSQL", () => {
 			it("re-applies the new project's default when the edit leaves the flag alone", async () => {
 				const period = await recordWork(ids.billableProject);
 				actAs();
-				await expect(
-					updateWorkPeriodBillability(period.id, false),
-				).resolves.toMatchObject({ success: true });
+				await expect(updateWorkPeriodBillability(period.id, false)).resolves.toMatchObject({
+					success: true,
+				});
 
 				await expect(
 					updateWorkPeriodProject(period.id, ids.customerProject),
@@ -422,9 +422,9 @@ describe("changing billability after recording on PostgreSQL", () => {
 					billable: true,
 				});
 
-				await expect(
-					updateWorkPeriodBillability(period.id, false),
-				).resolves.toMatchObject({ success: true });
+				await expect(updateWorkPeriodBillability(period.id, false)).resolves.toMatchObject({
+					success: true,
+				});
 				expectAgreement(await attributionOf(period.id), {
 					projectId: ids.customerProject,
 					billable: false,
@@ -493,9 +493,10 @@ describe("changing billability after recording on PostgreSQL", () => {
 				const before = await snapshot();
 
 				actAs(ids.managerUser);
-				await expect(
-					updateWorkPeriodProject(period.id, ids.billableProject),
-				).resolves.toEqual({ success: false, error: "Work period not found" });
+				await expect(updateWorkPeriodProject(period.id, ids.billableProject)).resolves.toEqual({
+					success: false,
+					error: "Work period not found",
+				});
 				expect(await snapshot()).toEqual(before);
 			});
 		});
@@ -554,9 +555,9 @@ describe("changing billability after recording on PostgreSQL", () => {
 		it("changes the billability of live work, and the closure keeps it", async () => {
 			const periodId = await startWork();
 			actAs();
-			await expect(updateWorkPeriodProject(periodId, ids.customerProject)).resolves.toMatchObject(
-				{ success: true },
-			);
+			await expect(updateWorkPeriodProject(periodId, ids.customerProject)).resolves.toMatchObject({
+				success: true,
+			});
 
 			actAs(ids.managerUser);
 			await expect(updateWorkPeriodBillability(periodId, true)).resolves.toMatchObject({

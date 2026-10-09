@@ -17,6 +17,8 @@ interface TimeClockPopoverState {
 	lastClockOutEntryId: string | null;
 	notesText: string;
 	selectedProjectId: string | undefined;
+	/** The explicit billable choice (#900); undefined applies the project's default. */
+	billable: boolean | undefined;
 	selectedWorkCategoryId: string | undefined;
 	workLocationType: WorkLocationType;
 }
@@ -24,6 +26,7 @@ interface TimeClockPopoverState {
 type TimeClockPopoverAction =
 	| { type: "setNotesText"; value: string }
 	| { type: "setSelectedProjectId"; value: string | undefined }
+	| { type: "setBillable"; value: boolean }
 	| { type: "setSelectedWorkCategoryId"; value: string | undefined }
 	| { type: "setWorkLocationType"; value: WorkLocationType }
 	| { type: "openNotesInput"; entryId: string }
@@ -43,6 +46,7 @@ function createInitialState(): TimeClockPopoverState {
 		lastClockOutEntryId: null,
 		notesText: "",
 		selectedProjectId: undefined,
+		billable: undefined,
 		selectedWorkCategoryId: undefined,
 		workLocationType: getInitialWorkLocationType(),
 	};
@@ -56,7 +60,10 @@ function timeClockPopoverReducer(
 		case "setNotesText":
 			return { ...state, notesText: action.value };
 		case "setSelectedProjectId":
-			return { ...state, selectedProjectId: action.value };
+			// A newly chosen project prefills its own billable default.
+			return { ...state, selectedProjectId: action.value, billable: undefined };
+		case "setBillable":
+			return { ...state, billable: action.value };
 		case "setSelectedWorkCategoryId":
 			return { ...state, selectedWorkCategoryId: action.value };
 		case "setWorkLocationType":
@@ -79,6 +86,7 @@ function timeClockPopoverReducer(
 			return {
 				...state,
 				selectedProjectId: undefined,
+				billable: undefined,
 				selectedWorkCategoryId: undefined,
 			};
 	}

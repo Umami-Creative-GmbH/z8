@@ -199,13 +199,12 @@ describe("legacy time-tracking action billing guards", () => {
 		expect(body).toContain("dirtyFromDate:");
 	});
 
-	it.each([
-		"updateWorkPeriodProject",
-		"updateWorkPeriodBillability",
-		"updateWorkPeriodNotes",
-	])("does not mark work balances dirty after %s metadata changes", (name) => {
-		expect(functionBody(name)).not.toContain("markEmployeeWorkBalanceDirty");
-	});
+	it.each(["updateWorkPeriodProject", "updateWorkPeriodBillability", "updateWorkPeriodNotes"])(
+		"does not mark work balances dirty after %s metadata changes",
+		(name) => {
+			expect(functionBody(name)).not.toContain("markEmployeeWorkBalanceDirty");
+		},
+	);
 
 	it("blocks the legacy delete work period action instead of hard deleting", () => {
 		const body = functionBody("deleteWorkPeriod");
