@@ -1016,6 +1016,13 @@
       "when": 1796745600000,
       "tag": "0144_position_stamp_access_log",
       "breakpoints": true
+    },
+    {
+      "idx": 145,
+      "version": "7",
+      "when": 1796832000000,
+      "tag": "0145_position_access_log_retention",
+      "breakpoints": true
     }
   ]
 }
