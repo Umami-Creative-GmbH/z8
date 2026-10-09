@@ -96,6 +96,7 @@ describe("clocking reminders from work policies on PostgreSQL", () => {
 				organizationId,
 				missedClockIn: { enabled: true, graceMinutes: 15 },
 				forgottenClockOut: { enabled: true, graceMinutes: 30 },
+				breakDue: { enabled: false, leadMinutes: 15 },
 				// The owner seeded below is an admin; only plain employees are reminded here.
 				roles: ["employee"],
 			},

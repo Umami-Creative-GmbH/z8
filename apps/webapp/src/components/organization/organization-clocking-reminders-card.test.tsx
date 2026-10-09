@@ -45,12 +45,17 @@ describe("OrganizationClockingRemindersCard", () => {
 	});
 	afterEach(cleanup);
 
-	it("shows both reminders off with their default grace and every role selected", () => {
+	it("shows every reminder off with its default minutes and every role selected", () => {
 		show();
-		for (const name of ["Missed clock-in reminder", "Forgotten clock-out reminder"])
+		for (const name of [
+			"Missed clock-in reminder",
+			"Forgotten clock-out reminder",
+			"Break-due reminder",
+		])
 			expect(screen.getByRole("switch", { name }).getAttribute("aria-checked")).toBe("false");
 		expect(screen.getByLabelText("Minutes after the expected start")).toHaveProperty("value", "15");
 		expect(screen.getByLabelText("Minutes after the expected end")).toHaveProperty("value", "30");
+		expect(screen.getByLabelText("Minutes before the break is due")).toHaveProperty("value", "15");
 		for (const name of ["Admins", "Managers", "Employees"])
 			expect(screen.getByRole("checkbox", { name }).getAttribute("aria-checked")).toBe("true");
 	});
@@ -61,6 +66,10 @@ describe("OrganizationClockingRemindersCard", () => {
 		fireEvent.change(screen.getByLabelText("Minutes after the expected start"), {
 			target: { value: "10" },
 		});
+		fireEvent.click(screen.getByRole("switch", { name: "Break-due reminder" }));
+		fireEvent.change(screen.getByLabelText("Minutes before the break is due"), {
+			target: { value: "20" },
+		});
 		fireEvent.click(screen.getByRole("checkbox", { name: "Admins" }));
 		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 		await waitFor(() =>
@@ -68,6 +77,7 @@ describe("OrganizationClockingRemindersCard", () => {
 				organizationId: "org-1",
 				missedClockIn: { enabled: true, graceMinutes: 10 },
 				forgottenClockOut: { enabled: false, graceMinutes: 30 },
+				breakDue: { enabled: true, leadMinutes: 20 },
 				roles: ["manager", "employee"],
 			}),
 		);
@@ -84,6 +94,16 @@ describe("OrganizationClockingRemindersCard", () => {
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 		await waitFor(() => expect(screen.getByRole("alert").textContent).toMatch(/minutes/i));
+		expect(mocks.save).not.toHaveBeenCalled();
+	});
+
+	it.each(["0", "1441", "2.5", ""])("rejects %j lead minutes without saving", async (value) => {
+		show();
+		fireEvent.change(screen.getByLabelText("Minutes before the break is due"), {
+			target: { value },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+		await waitFor(() => expect(screen.getByRole("alert").textContent).toMatch(/1 to 1440/));
 		expect(mocks.save).not.toHaveBeenCalled();
 	});
 

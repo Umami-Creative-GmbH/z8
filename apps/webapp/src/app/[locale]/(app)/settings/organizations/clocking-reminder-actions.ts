@@ -16,16 +16,22 @@ import {
 	type ClockingReminderRole,
 	type ClockingReminderSettings,
 	MAX_CLOCKING_REMINDER_MINUTES,
+	MIN_BREAK_DUE_LEAD_MINUTES,
 } from "@/lib/time-tracking/clocking-reminders/settings-policy";
 
 const grace = z.object({
 	enabled: z.boolean(),
 	graceMinutes: z.number().int().min(0).max(MAX_CLOCKING_REMINDER_MINUTES),
 });
+const lead = z.object({
+	enabled: z.boolean(),
+	leadMinutes: z.number().int().min(MIN_BREAK_DUE_LEAD_MINUTES).max(MAX_CLOCKING_REMINDER_MINUTES),
+});
 const settingsSchema = z.object({
 	organizationId: z.string().min(1),
 	missedClockIn: grace,
 	forgottenClockOut: grace,
+	breakDue: lead,
 	roles: z
 		.array(z.enum(CLOCKING_REMINDER_ROLES))
 		.min(1)
@@ -36,6 +42,7 @@ export interface UpdateClockingReminderSettingsInput {
 	organizationId: string;
 	missedClockIn: { enabled: boolean; graceMinutes: number };
 	forgottenClockOut: { enabled: boolean; graceMinutes: number };
+	breakDue: { enabled: boolean; leadMinutes: number };
 	roles: ClockingReminderRole[];
 }
 

@@ -261,6 +261,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	// Clocking reminders to the employee about their own clocking (#827)
 	"missed_clock_in_reminder",
 	"forgotten_clock_out_reminder",
+	// Break-due reminder before live work breaks the policy's break rules (#833)
+	"break_due_reminder",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [

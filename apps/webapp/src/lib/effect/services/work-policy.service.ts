@@ -14,6 +14,7 @@ import {
 } from "@/db/schema";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import { type DatabaseError, NotFoundError } from "@/lib/effect/errors";
+import { applicableBreakRule } from "@/lib/time-tracking/break-due";
 import { DatabaseService } from "./database.service";
 
 // ============================================
@@ -209,15 +210,7 @@ function calculateBreakRequirementsInternal(params: {
 }): BreakRequirementResult {
 	const { regulation, workedMinutes, breaksTakenMinutes } = params;
 
-	const applicableRule = regulation.breakRules.reduce<
-		(typeof regulation.breakRules)[number] | undefined
-	>((best, rule) => {
-		if (workedMinutes <= rule.workingMinutesThreshold) {
-			return best;
-		}
-
-		return !best || rule.workingMinutesThreshold > best.workingMinutesThreshold ? rule : best;
-	}, undefined);
+	const applicableRule = applicableBreakRule(regulation.breakRules, workedMinutes);
 
 	if (!applicableRule) {
 		return {

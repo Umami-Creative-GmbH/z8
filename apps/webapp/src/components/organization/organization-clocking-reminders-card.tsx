@@ -17,6 +17,7 @@ import {
 	type ClockingReminderRole,
 	type ClockingReminderSettings,
 	MAX_CLOCKING_REMINDER_MINUTES,
+	MIN_BREAK_DUE_LEAD_MINUTES,
 } from "@/lib/time-tracking/clocking-reminders/settings-policy";
 import { useRouter } from "@/navigation";
 
@@ -26,12 +27,14 @@ interface OrganizationClockingRemindersCardProps {
 	currentMemberRole: "owner" | "admin" | "member";
 }
 
-/** Whole minutes from 0 to the maximum, or `null`. */
-function graceFromField(value: string): number | null {
+/** Whole minutes from `min` to the maximum, or `null`. */
+function minutesFromField(value: string, min = 0): number | null {
 	if (!/^\d+$/.test(value.trim())) return null;
 	const minutes = Number(value);
-	return minutes <= MAX_CLOCKING_REMINDER_MINUTES ? minutes : null;
+	return minutes >= min && minutes <= MAX_CLOCKING_REMINDER_MINUTES ? minutes : null;
 }
+
+const leadFromField = (value: string) => minutesFromField(value, MIN_BREAK_DUE_LEAD_MINUTES);
 
 export function OrganizationClockingRemindersCard({
 	organizationId,
@@ -49,6 +52,10 @@ export function OrganizationClockingRemindersCard({
 		"organization.clockingReminders.invalidMinutes",
 		"Enter whole minutes from 0 to 1440.",
 	);
+	const invalidLead = t(
+		"organization.clockingReminders.invalidLeadMinutes",
+		"Enter whole minutes from 1 to 1440 before the break is due.",
+	);
 	const noRoles = t(
 		"organization.clockingReminders.noRoles",
 		"Choose at least one role that receives reminders.",
@@ -65,15 +72,18 @@ export function OrganizationClockingRemindersCard({
 			missedClockInGrace: String(settings.missedClockIn.graceMinutes),
 			forgottenClockOutEnabled: settings.forgottenClockOut.enabled,
 			forgottenClockOutGrace: String(settings.forgottenClockOut.graceMinutes),
+			breakDueEnabled: settings.breakDue.enabled,
+			breakDueLead: String(settings.breakDue.leadMinutes),
 			roles: [...settings.roles] as ClockingReminderRole[],
 		},
 		validators: {
 			onSubmit: ({ value }) => {
 				if (
-					graceFromField(value.missedClockInGrace) === null ||
-					graceFromField(value.forgottenClockOutGrace) === null
+					minutesFromField(value.missedClockInGrace) === null ||
+					minutesFromField(value.forgottenClockOutGrace) === null
 				)
 					return invalidGrace;
+				if (leadFromField(value.breakDueLead) === null) return invalidLead;
 				if (value.roles.length === 0) return noRoles;
 			},
 		},
@@ -86,11 +96,15 @@ export function OrganizationClockingRemindersCard({
 					organizationId,
 					missedClockIn: {
 						enabled: value.missedClockInEnabled,
-						graceMinutes: graceFromField(value.missedClockInGrace) ?? 0,
+						graceMinutes: minutesFromField(value.missedClockInGrace) ?? 0,
 					},
 					forgottenClockOut: {
 						enabled: value.forgottenClockOutEnabled,
-						graceMinutes: graceFromField(value.forgottenClockOutGrace) ?? 0,
+						graceMinutes: minutesFromField(value.forgottenClockOutGrace) ?? 0,
+					},
+					breakDue: {
+						enabled: value.breakDueEnabled,
+						leadMinutes: leadFromField(value.breakDueLead) ?? MIN_BREAK_DUE_LEAD_MINUTES,
 					},
 					roles: CLOCKING_REMINDER_ROLES.filter((role) => value.roles.includes(role)),
 				});
@@ -121,23 +135,35 @@ export function OrganizationClockingRemindersCard({
 	const reminders = [
 		{
 			enabledField: "missedClockInEnabled",
-			graceField: "missedClockInGrace",
+			minutesField: "missedClockInGrace",
+			minMinutes: 0,
 			label: t("organization.clockingReminders.missedClockIn.enabled", "Missed clock-in reminder"),
-			graceLabel: t(
+			minutesLabel: t(
 				"organization.clockingReminders.missedClockIn.grace",
 				"Minutes after the expected start",
 			),
 		},
 		{
 			enabledField: "forgottenClockOutEnabled",
-			graceField: "forgottenClockOutGrace",
+			minutesField: "forgottenClockOutGrace",
+			minMinutes: 0,
 			label: t(
 				"organization.clockingReminders.forgottenClockOut.enabled",
 				"Forgotten clock-out reminder",
 			),
-			graceLabel: t(
+			minutesLabel: t(
 				"organization.clockingReminders.forgottenClockOut.grace",
 				"Minutes after the expected end",
+			),
+		},
+		{
+			enabledField: "breakDueEnabled",
+			minutesField: "breakDueLead",
+			minMinutes: MIN_BREAK_DUE_LEAD_MINUTES,
+			label: t("organization.clockingReminders.breakDue.enabled", "Break-due reminder"),
+			minutesLabel: t(
+				"organization.clockingReminders.breakDue.lead",
+				"Minutes before the break is due",
 			),
 		},
 	] as const;
@@ -149,7 +175,7 @@ export function OrganizationClockingRemindersCard({
 				<CardDescription>
 					{t(
 						"organization.clockingReminders.description",
-						"Remind employees when they have not clocked in by the start of their published shift, or are still clocked in after it ends.",
+						"Remind employees when they have not clocked in by the start of their published shift, are still clocked in after it ends, or are about to work longer than their work policy allows without a break.",
 					)}
 				</CardDescription>
 			</CardHeader>
@@ -180,17 +206,17 @@ export function OrganizationClockingRemindersCard({
 												</TFormItem>
 											)}
 										</form.Field>
-										<form.Field name={reminder.graceField}>
+										<form.Field name={reminder.minutesField}>
 											{(field) => (
 												<TFormItem className="max-w-xs">
-													<TFormLabel>{reminder.graceLabel}</TFormLabel>
+													<TFormLabel>{reminder.minutesLabel}</TFormLabel>
 													<TFormControl
 														hasError={errors.length > 0}
 														aria-describedby={errors.length > 0 ? `${helpId} ${errorId}` : helpId}
 													>
 														<Input
 															type="number"
-															min={0}
+															min={reminder.minMinutes}
 															max={MAX_CLOCKING_REMINDER_MINUTES}
 															step={1}
 															value={field.state.value}
@@ -235,7 +261,7 @@ export function OrganizationClockingRemindersCard({
 								<p id={helpId} className="text-sm text-muted-foreground">
 									{t(
 										"organization.clockingReminders.help",
-										"Checks run every five minutes. Times follow each employee's timezone. Each reminder is sent once per shift, in-app and by push unless the employee changes their notification preferences. No missed clock-in reminder is sent on an approved absence or a public holiday.",
+										"Checks run every five minutes. Times follow each employee's timezone. Each reminder is sent once per shift, or once per break rule while clocked in, in-app and by push unless the employee changes their notification preferences. No missed clock-in reminder is sent on an approved absence or a public holiday.",
 									)}
 								</p>
 								{!canEdit && (

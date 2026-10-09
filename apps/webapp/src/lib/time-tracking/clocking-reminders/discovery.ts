@@ -42,6 +42,7 @@ export async function listClockingReminderOrganizations(
 				or(
 					eq(organizationClockingReminderSettings.missedClockInEnabled, true),
 					eq(organizationClockingReminderSettings.forgottenClockOutEnabled, true),
+					eq(organizationClockingReminderSettings.breakDueEnabled, true),
 				),
 				input.after
 					? gt(organizationClockingReminderSettings.organizationId, input.after)
