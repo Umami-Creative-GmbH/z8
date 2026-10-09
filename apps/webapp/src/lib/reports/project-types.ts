@@ -183,6 +183,13 @@ export interface CustomerBillableReport {
 	access: BillableFiguresAccess;
 	billableTime: BillableTimeReportContext;
 	customers: CustomerBillableSummary[];
+	/**
+	 * Projects without an (active) customer whose work is in the range: their
+	 * billable work shows as *without customer*, never under a customer. Null
+	 * when there are none.
+	 */
+	withoutCustomer: Omit<CustomerBillableSummary, "customer"> | null;
+	/** The sum of the customers and the without-customer group. */
 	totals: {
 		totalHours: number;
 		totalMinutes: number;

@@ -3,7 +3,7 @@ import "server-only";
 import { and, eq, gte, inArray, isNotNull, isNull, lt } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import type { db } from "@/db";
-import { invoicedWork, project, timeEntry, workPeriod } from "@/db/schema";
+import { customer, invoicedWork, project, timeEntry, workPeriod } from "@/db/schema";
 import { workDayOf } from "@/lib/billable-time/applicable-rate";
 import { listBillableRatesForWork } from "@/lib/billable-time/billable-rates";
 import { listCostRatesForWork } from "@/lib/billable-time/cost-rates";
@@ -54,7 +54,7 @@ function instantWindow(range: ReportDayRange) {
  * The work a project report counts (#794, #902): completed, non-deleted work of
  * the given projects in the organization whose employee-local start day (at the
  * offset captured on its start entry) falls in the range. Live work never
- * counts. Each row carries the project's current customer, whether a
+ * counts. Each row carries the project's current active customer, whether a
  * correction or submission for it is pending, and whether it is invoiced work
  * (in an unreleased invoice draft, #903) with its frozen rates.
  */
@@ -70,7 +70,8 @@ export async function loadReportedProjectWork(
 			id: workPeriod.id,
 			employeeId: workPeriod.employeeId,
 			projectId: workPeriod.projectId,
-			customerId: project.customerId,
+			// A deleted (inactive) customer counts as no customer.
+			customerId: customer.id,
 			startTime: workPeriod.startTime,
 			endTime: workPeriod.endTime,
 			durationMinutes: workPeriod.durationMinutes,
@@ -91,6 +92,14 @@ export async function loadReportedProjectWork(
 		.innerJoin(
 			project,
 			and(eq(project.id, workPeriod.projectId), eq(project.organizationId, organizationId)),
+		)
+		.leftJoin(
+			customer,
+			and(
+				eq(customer.id, project.customerId),
+				eq(customer.organizationId, organizationId),
+				eq(customer.isActive, true),
+			),
 		)
 		.leftJoin(
 			invoicedWork,
@@ -134,6 +143,7 @@ export async function loadReportedProjectWork(
 							shares: row.invoicedShares.map((share) => ({
 								durationMs: share.durationMs,
 								rate: rateFromStored(share.rate),
+								...(share.amount === undefined ? {} : { amount: rateFromStored(share.amount) }),
 							})),
 							changedAfterInvoicing: row.changedAfterInvoicingAt !== null,
 						},

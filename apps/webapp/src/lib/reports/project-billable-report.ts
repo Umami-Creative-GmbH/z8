@@ -134,15 +134,40 @@ export function sumVisibleBillableFigures(
 }
 
 export interface CustomerViewProject {
-	project: ProjectInfo & { customer: ProjectCustomerInfo };
+	/** `customer` is null for a project without an (active) customer. */
+	project: ProjectInfo & { customer: ProjectCustomerInfo | null };
 	work: readonly ReportedWork[];
+}
+
+type ProjectGroup = Omit<CustomerBillableSummary, "customer">;
+
+function projectGroup(
+	rows: readonly CustomerProjectSummary[],
+	options: { access: BillableFiguresAccess; currency: string },
+): ProjectGroup {
+	const projects = [...rows].sort((left, right) =>
+		left.project.name.localeCompare(right.project.name),
+	);
+	const totalMinutes = projects.reduce((sum, row) => sum + row.totalMinutes, 0);
+	return {
+		totalHours: totalMinutes / 60,
+		totalMinutes,
+		workPeriodCount: projects.reduce((sum, row) => sum + row.workPeriodCount, 0),
+		billable: sumBillableFigures(
+			projects.map((row) => row.billable),
+			options,
+		),
+		projects,
+	};
 }
 
 /**
  * The customer view (#902) of the projects the viewer sees figures for:
- * projects with counted work, grouped by their current customer. Each
- * customer's figures are the sum of its projects' figures, and the totals the
- * sum of the customers', so totals always equal the sum of what is listed.
+ * projects with counted work, grouped by their current customer, and projects
+ * without an (active) customer in a group of their own (their billable work is
+ * *without customer*). Each group's figures are the sum of its projects'
+ * figures, and the totals the sum of the groups', so totals always equal the
+ * sum of what is listed.
  */
 export function buildCustomerBillableReport(input: {
 	period: CustomerBillableReport["period"];
@@ -150,8 +175,12 @@ export function buildCustomerBillableReport(input: {
 	access: BillableFiguresAccess;
 	projects: readonly CustomerViewProject[];
 }): CustomerBillableReport {
-	const { currency } = input.pricing.context;
-	const byCustomer = new Map<string, CustomerBillableSummary>();
+	const options = { access: input.access, currency: input.pricing.context.currency };
+	const byCustomer = new Map<
+		string,
+		{ customer: ProjectCustomerInfo; rows: CustomerProjectSummary[] }
+	>();
+	const withoutCustomer: CustomerProjectSummary[] = [];
 	for (const entry of input.projects) {
 		if (entry.work.length === 0) continue;
 		const figures = input.pricing.figures(entry.project.id, entry.work);
@@ -165,54 +194,40 @@ export function buildCustomerBillableReport(input: {
 			billable: figures,
 		};
 		const customer = entry.project.customer;
-		const existing = byCustomer.get(customer.id);
-		if (existing) {
-			existing.projects.push(row);
-		} else {
-			byCustomer.set(customer.id, {
-				customer,
-				totalHours: 0,
-				totalMinutes: 0,
-				workPeriodCount: 0,
-				billable: row.billable,
-				projects: [row],
-			});
+		if (customer === null) {
+			withoutCustomer.push(row);
+			continue;
 		}
+		const existing = byCustomer.get(customer.id);
+		if (existing) existing.rows.push(row);
+		else byCustomer.set(customer.id, { customer, rows: [row] });
 	}
 
 	const customers = [...byCustomer.values()]
-		.map((summary): CustomerBillableSummary => {
-			const projects = [...summary.projects].sort((left, right) =>
-				left.project.name.localeCompare(right.project.name),
-			);
-			const totalMinutes = projects.reduce((sum, row) => sum + row.totalMinutes, 0);
-			return {
-				customer: summary.customer,
-				totalHours: totalMinutes / 60,
-				totalMinutes,
-				workPeriodCount: projects.reduce((sum, row) => sum + row.workPeriodCount, 0),
-				billable: sumBillableFigures(
-					projects.map((row) => row.billable),
-					{ access: input.access, currency },
-				),
-				projects,
-			};
-		})
+		.map(
+			({ customer, rows }): CustomerBillableSummary => ({
+				customer,
+				...projectGroup(rows, options),
+			}),
+		)
 		.sort((left, right) => left.customer.name.localeCompare(right.customer.name));
+	const without = withoutCustomer.length > 0 ? projectGroup(withoutCustomer, options) : null;
+	const groups: ProjectGroup[] = [...customers, ...(without ? [without] : [])];
 
-	const totalMinutes = customers.reduce((sum, row) => sum + row.totalMinutes, 0);
+	const totalMinutes = groups.reduce((sum, row) => sum + row.totalMinutes, 0);
 	return {
 		period: input.period,
 		access: input.access,
 		billableTime: input.pricing.context,
 		customers,
+		withoutCustomer: without,
 		totals: {
 			totalHours: totalMinutes / 60,
 			totalMinutes,
-			workPeriodCount: customers.reduce((sum, row) => sum + row.workPeriodCount, 0),
+			workPeriodCount: groups.reduce((sum, row) => sum + row.workPeriodCount, 0),
 			billable: sumBillableFigures(
-				customers.map((row) => row.billable),
-				{ access: input.access, currency },
+				groups.map((row) => row.billable),
+				options,
 			),
 		},
 	};

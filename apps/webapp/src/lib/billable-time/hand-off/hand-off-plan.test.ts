@@ -119,6 +119,26 @@ describe("planHandOff", () => {
 		expect(result.included.map((item) => item.work.durationMinutes)).toEqual([90, 50, 61]);
 	});
 
+	it("allocates each line's frozen amount across its work by duration, to the cent", () => {
+		const result = plan({
+			work: [
+				work({ start: "2026-09-02T08:00:00Z", minutes: 90 }),
+				work({ start: "2026-09-03T08:00:00Z", minutes: 50 }),
+			],
+			rates: [rate(PROJECT_A, 10_000, "2026-01-01")],
+		});
+
+		// 233.00 split 90:50 = 149.785… : 83.214… → the larger remainder gets the cent.
+		expect(result.included.map((item) => item.shares.map((share) => share.amount))).toEqual([
+			[BigInt(14_979)],
+			[BigInt(8_321)],
+		]);
+		const allocated = result.included
+			.flatMap((item) => item.shares)
+			.reduce((sum, share) => sum + share.amount, BigInt(0));
+		expect(allocated).toBe(result.netTotal);
+	});
+
 	it("splits a period that spans a rate change across the two rates' lines", () => {
 		const result = plan({
 			// 22:00–02:00 UTC across the rate change on 2026-09-10, 240 minutes recorded.
@@ -134,8 +154,8 @@ describe("planHandOff", () => {
 			[BigInt(12_000), 200],
 		]);
 		expect(result.included[0]?.shares).toEqual([
-			{ line: 0, durationMs: 7_200_000, rate: BigInt(10_000) },
-			{ line: 1, durationMs: 7_200_000, rate: BigInt(12_000) },
+			{ line: 0, durationMs: 7_200_000, rate: BigInt(10_000), amount: BigInt(20_000) },
+			{ line: 1, durationMs: 7_200_000, rate: BigInt(12_000), amount: BigInt(24_000) },
 		]);
 	});
 

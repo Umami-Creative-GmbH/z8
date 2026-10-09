@@ -90,7 +90,10 @@ function projectReportReader() {
 	});
 }
 
-/** Projects of the organization with their current customer (from the same organization). */
+/**
+ * Projects of the organization with their current customer (from the same
+ * organization). A deleted (inactive) customer counts as no customer.
+ */
 function loadReportProjects(
 	dbService: typeof DatabaseService.Service,
 	organizationId: string,
@@ -105,7 +108,11 @@ function loadReportProjects(
 			.from(project)
 			.leftJoin(
 				customer,
-				and(eq(customer.id, project.customerId), eq(customer.organizationId, organizationId)),
+				and(
+					eq(customer.id, project.customerId),
+					eq(customer.organizationId, organizationId),
+					eq(customer.isActive, true),
+				),
 			)
 			.where(and(eq(project.organizationId, organizationId), ...conditions))
 			.orderBy(project.name);
@@ -558,15 +565,13 @@ export async function getCustomerBillableReport(
 					);
 				}
 
-				const projects = (yield* loadReportProjects(dbService, organizationId, [
+				// Projects without an (active) customer form the "without customer" group.
+				const projects = yield* loadReportProjects(dbService, organizationId, [
 					...statusConditions(statusFilter),
 					...(viewer.isOrganizationAdmin
 						? []
 						: [inArray(project.id, [...viewer.managedProjectIds])]),
-				])).filter(
-					(p): p is ReportProject & { customer: { id: string; name: string } } =>
-						p.customer !== null,
-				);
+				]);
 				const projectIds = projects.map((p) => p.id);
 				const range = reportDayRangeFromDates(startDate, endDate);
 				const work = yield* dbService.query("getReportedProjectWork", () =>

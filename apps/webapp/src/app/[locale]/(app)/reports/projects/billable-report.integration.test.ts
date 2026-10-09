@@ -347,7 +347,7 @@ describe("billable project reports on PostgreSQL", () => {
 			end: "2026-03-15T10:00:00Z",
 			minutes: 120,
 		});
-		// Internal has no customer: marked billable, counted as non-billable.
+		// Internal has no customer: marked billable, shown as billable without customer.
 		await work({
 			employeeId: ids.worker,
 			projectId: ids.internal,
@@ -410,12 +410,15 @@ describe("billable project reports on PostgreSQL", () => {
 		});
 		expect(byId.get(ids.internal)?.billable).toMatchObject({
 			billableHours: 0,
-			nonBillableHours: 1,
+			nonBillableHours: 0,
+			withoutCustomerHours: 1,
+			withoutCustomerWorkCount: 1,
 			revenue: "0.00",
 		});
 		expect(overview.totals.billable).toMatchObject({
 			billableHours: 9,
-			nonBillableHours: 2,
+			nonBillableHours: 1,
+			withoutCustomerHours: 1,
 			revenue: "740.00",
 			cost: null,
 			margin: null,
@@ -514,7 +517,41 @@ describe("billable project reports on PostgreSQL", () => {
 		expect(acme?.totalMinutes).toBe(
 			(acme?.projects ?? []).reduce((sum, row) => sum + row.totalMinutes, 0),
 		);
-		expect(view.totals.billable).toEqual(acme?.billable);
+		// Billable work on Internal (no customer) is listed apart, never under a customer.
+		expect(view.withoutCustomer?.projects.map((row) => row.project.id)).toEqual([ids.internal]);
+		expect(view.withoutCustomer?.billable).toMatchObject({
+			billableHours: 0,
+			withoutCustomerHours: 1,
+			revenue: "0.00",
+		});
+		expect(view.totals.billable).toMatchObject({
+			billableHours: 9,
+			withoutCustomerHours: 1,
+			revenue: "740.00",
+		});
+		expect(view.totals.totalMinutes).toBe((acme?.totalMinutes ?? 0) + 60);
+	});
+
+	it("treats a deleted customer's projects as without customer", async () => {
+		await admin.query("update customer set is_active = false where id = $1", [ids.customer]);
+		actAs(ids.ownerUser);
+
+		const overview = await unwrap(getProjectsOverview(rangeStart, rangeEnd));
+		const website = overview.projects.find((summary) => summary.id === ids.website);
+		expect(website?.customer).toBeNull();
+		expect(website?.billable).toMatchObject({
+			billableHours: 0,
+			withoutCustomerHours: 7,
+			revenue: "0.00",
+		});
+
+		const view = await unwrap(getCustomerBillableReport(rangeStart, rangeEnd));
+		expect(view.customers).toEqual([]);
+		expect(view.withoutCustomer?.projects.map((row) => row.project.id)).toEqual([
+			ids.internal,
+			ids.support,
+			ids.website,
+		]);
 	});
 
 	it("shows no Billable Time figures while the module is off", async () => {

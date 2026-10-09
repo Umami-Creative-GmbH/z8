@@ -508,6 +508,11 @@ export interface InvoicedWorkShare {
 	durationMs: number;
 	/** The frozen hourly rate, two decimals. */
 	rate: string;
+	/**
+	 * This share's part of the line's frozen amount, two decimals (the line
+	 * amount allocated by duration). Absent on rows recorded before it existed.
+	 */
+	amount?: string;
 }
 
 /**

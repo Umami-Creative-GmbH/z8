@@ -224,7 +224,13 @@ async function loadHandOffContext(
 	const [customerRow] = await reader
 		.select({ id: customer.id, name: customer.name })
 		.from(customer)
-		.where(and(eq(customer.id, request.customerId), eq(customer.organizationId, organizationId)))
+		.where(
+			and(
+				eq(customer.id, request.customerId),
+				eq(customer.organizationId, organizationId),
+				eq(customer.isActive, true),
+			),
+		)
 		.limit(1);
 	if (!customerRow) return { refused: "invalid_customer" };
 
@@ -242,10 +248,20 @@ async function loadHandOffContext(
 		projectIds: [...selected],
 		range,
 	});
+	// Projects without an active customer (none, or a deleted one): their
+	// billable work is "without customer" and never in any hand-off.
 	const customerless = await reader
 		.select({ id: project.id, name: project.name })
 		.from(project)
-		.where(and(eq(project.organizationId, organizationId), isNull(project.customerId)));
+		.leftJoin(
+			customer,
+			and(
+				eq(customer.id, project.customerId),
+				eq(customer.organizationId, organizationId),
+				eq(customer.isActive, true),
+			),
+		)
+		.where(and(eq(project.organizationId, organizationId), isNull(customer.id)));
 	const customerlessWork = (
 		await loadReportedProjectWork(reader, organizationId, {
 			projectIds: customerless.map((row) => row.id),
@@ -674,6 +690,7 @@ async function recordAttempt(
 						line: share.line,
 						durationMs: share.durationMs,
 						rate: formatRate(share.rate),
+						amount: formatRate(share.amount),
 					}),
 				),
 			})),

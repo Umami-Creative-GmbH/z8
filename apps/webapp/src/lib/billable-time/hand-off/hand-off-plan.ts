@@ -44,6 +44,12 @@ export interface HandOffShare {
 	line: number;
 	durationMs: number;
 	rate: RateUnits;
+	/**
+	 * The share's part of the line's amount, in cents: the line amount allocated
+	 * across its shares by duration (largest remainder), so any set of invoiced
+	 * work sums to its lines and a whole draft to its net total.
+	 */
+	amount: bigint;
 }
 
 export interface IncludedWork {
@@ -216,9 +222,18 @@ export function planHandOff(input: {
 			durationMs: group.durationMs,
 			unitPrice: group.rate,
 		});
-		for (const share of group.shares) {
-			share.item.shares.push({ line: index, durationMs: share.durationMs, rate: group.rate });
-		}
+		const amounts = allocateByDuration(
+			priced.amount,
+			group.shares.map((share) => share.durationMs),
+		);
+		group.shares.forEach((share, position) => {
+			share.item.shares.push({
+				line: index,
+				durationMs: share.durationMs,
+				rate: group.rate,
+				amount: amounts[position] ?? BigInt(0),
+			});
+		});
 		return {
 			...priced,
 			text: input.texts.lineText({
@@ -262,6 +277,30 @@ export function planHandOff(input: {
 		timesheetOmitted: timesheet.omitted,
 		blockers,
 	};
+}
+
+/**
+ * Splits `total` cents across weights (durations) in proportion, to the cent:
+ * each part gets its floor, then the cents left over go to the largest
+ * remainders (earlier parts first on ties). The parts always sum to `total`.
+ */
+export function allocateByDuration(total: bigint, weights: readonly number[]): bigint[] {
+	const sum = weights.reduce((acc, weight) => acc + BigInt(weight), BigInt(0));
+	if (sum === BigInt(0)) return weights.map(() => BigInt(0));
+	const parts = weights.map((weight, index) => {
+		const exact = total * BigInt(weight);
+		return { index, floor: exact / sum, remainder: exact % sum };
+	});
+	let left = total - parts.reduce((acc, part) => acc + part.floor, BigInt(0));
+	const byRemainder = [...parts].sort((a, b) =>
+		a.remainder === b.remainder ? a.index - b.index : a.remainder > b.remainder ? -1 : 1,
+	);
+	for (const part of byRemainder) {
+		if (left <= BigInt(0)) break;
+		part.floor += BigInt(1);
+		left -= BigInt(1);
+	}
+	return parts.map((part) => part.floor);
 }
 
 /**

@@ -856,6 +856,22 @@ describe("hand-off on PostgreSQL", () => {
 		});
 	});
 
+	it("reports invoiced revenue equal to the draft's frozen line amounts", async () => {
+		// 61 minutes at 85.50: the draft line states 1.02 h = 87.21 (exact time would be 86.93).
+		const { draftId } = await unwrap(confirm({ projectIds: [ids.app] }));
+		const detail = await unwrap(getInvoiceDraftAction({ draftId }));
+		expect(detail.netTotal).toBe("87.21");
+
+		actAs(ids.ownerUser);
+		const report = await unwrap(
+			getProjectDetailedReport(ids.app, new Date("2026-09-01"), new Date("2026-09-30")),
+		);
+		expect(report.summary.billable).toMatchObject({
+			revenue: "87.21",
+			invoicing: { invoicedRevenue: "87.21", uninvoicedRevenue: "0.00" },
+		});
+	});
+
 	it("lets only owners and admins hand off, within their own organization", async () => {
 		const { draftId } = await unwrap(confirm());
 
@@ -892,6 +908,26 @@ describe("hand-off on PostgreSQL", () => {
 			previewHandOffAction({ ...september, projectIds: [ids.foreignProject] }),
 		).resolves.toMatchObject({ success: false, error: "Choose projects of this customer" });
 		expect(await drafts()).toEqual([expect.objectContaining({ status: "created" })]);
+	});
+
+	it("treats a deleted customer's billable work as without customer, never handed off", async () => {
+		await admin.query("update customer set is_active = false where id = $1", [ids.acme]);
+
+		await expect(previewHandOffAction(september)).resolves.toMatchObject({
+			success: false,
+			error: "Choose a customer",
+		});
+		await expect(
+			confirmHandOffAction({ ...september, idempotencyKey: randomUUID(), fingerprint: "x" }),
+		).resolves.toMatchObject({ success: false, error: "Choose a customer" });
+		const other = await preview({ customerId: ids.beta });
+		// Website 1.50 h + held 1.00 h, App 1.02 h (61 min), Internal 0.50 h: no active customer.
+		expect(other.withoutCustomer).toEqual({
+			count: 4,
+			hours: "4.02",
+			projects: ["App", "Internal", "Website"],
+		});
+		expect(tool.createCalls()).toBe(0);
 	});
 
 	it("refuses a customer without a contact link", async () => {
