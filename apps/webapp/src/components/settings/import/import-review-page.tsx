@@ -26,6 +26,8 @@ interface ImportReviewPageProps {
 	batchId: string;
 	summary: ImportReviewSummary;
 	rows: ImportReviewRow[];
+	/** Billable Time is on: show each work row's billable value (#907). */
+	showBillability?: boolean;
 }
 
 const summaryItems = [
@@ -56,6 +58,7 @@ export function ImportReviewPage({
 	batchId,
 	summary,
 	rows,
+	showBillability = false,
 }: ImportReviewPageProps) {
 	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
@@ -117,7 +120,7 @@ export function ImportReviewPage({
 			</div>
 
 			<ImportIssueGroups rows={rows} />
-			<ImportReviewTable rows={rows} />
+			<ImportReviewTable rows={rows} showBillability={showBillability} />
 		</div>
 	);
 }

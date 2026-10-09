@@ -2,7 +2,18 @@ import { readFileSync } from "node:fs";
 import { SQL } from "drizzle-orm";
 import { getTableConfig, PgDialect } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
-import { billableRate, costRate, customer, employee, project } from "@/db/schema";
+import {
+	accountingConnection,
+	accountingContactLink,
+	billableRate,
+	costRate,
+	customer,
+	customerTaxTreatment,
+	employee,
+	project,
+} from "@/db/schema";
+import { ACCOUNTING_PROVIDER_KINDS } from "@/lib/billable-time/accounting/provider";
+import { TAX_TREATMENT_KINDS } from "@/lib/billable-time/accounting/tax-treatment";
 import { RATE_LEVELS } from "@/lib/billable-time/applicable-rate";
 
 function compositeForeignKeys(table: Parameters<typeof getTableConfig>[0]) {
@@ -99,6 +110,63 @@ describe("cost rate schema (#899)", () => {
 		);
 		expect(migration).toMatch(
 			/"cost_rate_employee_no_overlap" EXCLUDE USING gist \("organization_id" WITH =, "employee_id" WITH =, daterange\("effective_from", "effective_to", '\[\)'\) WITH &&\)/,
+		);
+	});
+});
+
+function checkSql(table: Parameters<typeof getTableConfig>[0], name: string): string {
+	const found = getTableConfig(table).checks.find((check) => check.name === name);
+	expect(found, name).toBeDefined();
+	return new PgDialect().sqlToQuery(found?.value ?? new SQL([])).sql;
+}
+
+describe("accounting connection schema (#903)", () => {
+	it("scopes contact links and tax overrides to the customer's organization", () => {
+		for (const table of [accountingContactLink, customerTaxTreatment]) {
+			expect(compositeForeignKeys(table)).toContainEqual({
+				columns: ["customer_id", "organization_id"],
+				target: "customer",
+				foreignColumns: ["id", "organization_id"],
+			});
+		}
+	});
+
+	it("has no column that could hold an API key", () => {
+		for (const table of [accountingConnection, accountingContactLink, customerTaxTreatment]) {
+			for (const column of getTableConfig(table).columns) {
+				expect(column.name).not.toMatch(/key|secret|token|password|credential/);
+			}
+		}
+	});
+
+	it("checks the same provider kinds and tax treatments as the code", () => {
+		for (const [table, name] of [
+			[accountingConnection, "accounting_connection_provider_kind_check"],
+			[accountingContactLink, "accounting_contact_link_provider_kind_check"],
+		] as const) {
+			const sql = checkSql(table, name);
+			for (const kind of ACCOUNTING_PROVIDER_KINDS) expect(sql).toContain(`'${kind}'`);
+		}
+		for (const [table, name] of [
+			[accountingConnection, "accounting_connection_tax_treatment_check"],
+			[customerTaxTreatment, "customer_tax_treatment_kind_check"],
+		] as const) {
+			const sql = checkSql(table, name);
+			for (const kind of TAX_TREATMENT_KINDS) expect(sql).toContain(`'${kind}'`);
+		}
+	});
+
+	it("allows at most one active connection per organization", () => {
+		const index = getTableConfig(accountingConnection).indexes.find(
+			(candidate) => candidate.config.name === "accounting_connection_one_active_idx",
+		);
+		expect(index?.config.unique).toBe(true);
+		const migration = readFileSync(
+			new URL("../../../../drizzle/0146_accounting_connection.sql", import.meta.url),
+			"utf8",
+		);
+		expect(migration).toContain(
+			`CREATE UNIQUE INDEX IF NOT EXISTS "accounting_connection_one_active_idx" ON "accounting_connection" USING btree ("organization_id") WHERE "accounting_connection"."status" = 'active'`,
 		);
 	});
 });

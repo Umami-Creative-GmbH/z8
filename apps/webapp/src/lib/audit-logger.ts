@@ -154,6 +154,14 @@ export enum AuditAction {
 	BILLABLE_RATE_ENDED = "billable_time.rate_ended",
 	COST_RATE_SET = "billable_time.cost_rate_set",
 	COST_RATE_ENDED = "billable_time.cost_rate_ended",
+	ACCOUNTING_CONNECTION_CREATED = "billable_time.accounting_connection_created",
+	ACCOUNTING_CONNECTION_REPLACED = "billable_time.accounting_connection_replaced",
+	ACCOUNTING_CONNECTION_UPDATED = "billable_time.accounting_connection_updated",
+	ACCOUNTING_CONNECTION_REMOVED = "billable_time.accounting_connection_removed",
+	CONTACT_LINK_SET = "billable_time.contact_link_set",
+	CONTACT_LINK_REMOVED = "billable_time.contact_link_removed",
+	CUSTOMER_TAX_TREATMENT_SET = "billable_time.customer_tax_treatment_set",
+	CUSTOMER_TAX_TREATMENT_CLEARED = "billable_time.customer_tax_treatment_cleared",
 
 	// Location Operations
 	LOCATION_CREATED = "location.created",
@@ -223,6 +231,9 @@ export interface AuditLogEntry {
 		| "project_assignment"
 		| "billable_rate"
 		| "cost_rate"
+		| "accounting_connection"
+		| "accounting_contact_link"
+		| "customer_tax_treatment"
 		| "work_period"
 		| "location"
 		| "subarea"

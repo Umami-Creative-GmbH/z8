@@ -15,6 +15,8 @@ import type {
 	ClockodoTeam,
 	ClockodoUser,
 } from "@/lib/clockodo/types";
+import { clockodoEntryBillability, type MappedClockodoProject } from "./clockodo-billability";
+import { loadClockodoProjectTargets } from "./clockodo-project-mapping";
 import { decryptImportCredential } from "./credential-secret";
 import { classifyTimeWindow, detectMissingMapping } from "./detection";
 import { getImportJobSecret, insertImportIssues, insertStagedRows } from "./repository";
@@ -362,6 +364,7 @@ function stageService(service: ClockodoService): {
 function stageEntry(
 	entry: ClockodoEntry,
 	mappings: Map<number, ClockodoMapping>,
+	projectTargets: Map<number, MappedClockodoProject>,
 ): { row: NormalizedImportRow; issues: ImportIssueDraft[] } {
 	const providerId = providerSourceId("entry", entry.id, `${entry.users_id}:${entry.time_since}`);
 	const employeeId = mappedEmployeeId(mappings.get(entry.users_id));
@@ -379,6 +382,15 @@ function stageEntry(
 				})
 			: null,
 	].filter((issue): issue is ImportIssueDraft => issue !== null);
+	// The project and billability the committer records (#907); rows staged
+	// before #907 have neither key and commit without a project.
+	const providerProjectId = entry.projects_id ?? null;
+	const { attribution, billability } = clockodoEntryBillability({
+		billable: entry.billable,
+		clockodoProjectId: providerProjectId,
+		mappedProject:
+			providerProjectId === null ? null : (projectTargets.get(providerProjectId) ?? null),
+	});
 
 	return {
 		row: row({
@@ -394,6 +406,9 @@ function stageEntry(
 				providerServiceId: entry.services_id ?? null,
 				durationSeconds: entry.duration ?? null,
 				suspiciousFlags,
+				providerProjectId,
+				...(attribution ? { attribution } : {}),
+				billability,
 			},
 			matchTarget: {
 				providerEmployeeId: entry.users_id,
@@ -620,7 +635,15 @@ export async function scanClockodoImportPartition(
 			organizationId: job.organizationId,
 			providerUserIds: entries.map((entry) => entry.users_id),
 		});
-		staged = entries.map((entry) => stageEntry(entry, mappings));
+		const projectTargets = await loadClockodoProjectTargets({
+			organizationId: job.organizationId,
+			clockodoProjectIds: [
+				...new Set(
+					entries.flatMap((entry) => (entry.projects_id == null ? [] : [entry.projects_id])),
+				),
+			],
+		});
+		staged = entries.map((entry) => stageEntry(entry, mappings, projectTargets));
 	} else if (job.entityType === "absence") {
 		const getAbsences = assertClientMethod<(year: number) => Promise<ClockodoAbsence[]>>(
 			client,
