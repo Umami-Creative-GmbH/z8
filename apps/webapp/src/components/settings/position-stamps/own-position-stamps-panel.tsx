@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import {
 	agreeToPositionNoticeAction,
 	type OwnPositionCaptureData,
+	type OwnPositionConsentData,
 	type OwnPositionStampAccessEntry,
 	withdrawPositionConsentAction,
 } from "@/app/[locale]/(app)/settings/position-stamps/actions";
@@ -28,6 +29,42 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+type Translate = ReturnType<typeof useTranslate>["t"];
+
+/** What the employee decided about the position notice, in one sentence. */
+function consentStatusText(
+	t: Translate,
+	consent: OwnPositionConsentData,
+	context: { currentVersion: number | null; date: (iso: string) => string },
+): string {
+	switch (consent.kind) {
+		case "active":
+			return t(
+				"settings.positionStamps.consentActive",
+				"You agreed to version {version} on {date}.",
+				{ version: consent.noticeVersion, date: context.date(consent.grantedAt) },
+			);
+		case "lapsed":
+			return t(
+				"settings.positionStamps.consentLapsed",
+				"You agreed to version {previous}. The notice has changed, so no positions are recorded until you agree to version {current}.",
+				{ previous: consent.noticeVersion, current: context.currentVersion ?? "" },
+			);
+		case "declined":
+			return t(
+				"settings.positionStamps.consentDeclined",
+				"You chose “Not now” for version {version} on {date}.",
+				{ version: consent.noticeVersion, date: context.date(consent.declinedAt) },
+			);
+		case "withdrawn":
+			return t("settings.positionStamps.consentWithdrawn", "You withdrew your consent on {date}.", {
+				date: context.date(consent.withdrawnAt),
+			});
+		case "undecided":
+			return t("settings.positionStamps.consentUndecided", "You have not decided yet.");
+	}
+}
 
 interface OwnPositionStampsPanelProps {
 	data: OwnPositionCaptureData;
@@ -117,31 +154,7 @@ export function OwnPositionStampsPanel({ data, accessLog = null }: OwnPositionSt
 						</p>
 					</div>
 					<p className="text-sm text-muted-foreground">
-						{consent.kind === "active"
-							? t(
-									"settings.positionStamps.consentActive",
-									"You agreed to version {version} on {date}.",
-									{ version: consent.noticeVersion, date: date(consent.grantedAt) },
-								)
-							: consent.kind === "lapsed"
-								? t(
-										"settings.positionStamps.consentLapsed",
-										"You agreed to version {previous}. The notice has changed, so no positions are recorded until you agree to version {current}.",
-										{ previous: consent.noticeVersion, current: notice?.version ?? "" },
-									)
-								: consent.kind === "declined"
-									? t(
-											"settings.positionStamps.consentDeclined",
-											"You chose “Not now” for version {version} on {date}.",
-											{ version: consent.noticeVersion, date: date(consent.declinedAt) },
-										)
-									: consent.kind === "withdrawn"
-										? t(
-												"settings.positionStamps.consentWithdrawn",
-												"You withdrew your consent on {date}.",
-												{ date: date(consent.withdrawnAt) },
-											)
-										: t("settings.positionStamps.consentUndecided", "You have not decided yet.")}
+						{consentStatusText(t, consent, { currentVersion: notice?.version ?? null, date })}
 					</p>
 					<div className="flex flex-wrap gap-2">
 						{notice && consent.kind !== "active" ? (
