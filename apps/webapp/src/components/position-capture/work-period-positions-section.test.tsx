@@ -134,6 +134,22 @@ describe("WorkPeriodPositionsSection", () => {
 		expect(screen.queryByRole("button", { name: "Show positions" })).toBeNull();
 	});
 
+	it("translates a refusal by its code and never shows the server's text", async () => {
+		accessMock.mockResolvedValue(access({ mayViewOthers: true }));
+		showMock.mockResolvedValue({
+			success: false,
+			error: "diagnostic text from the server",
+			code: "positions_forbidden",
+		});
+		renderSection();
+
+		await userEvent.click(await screen.findByRole("button", { name: "Show positions" }));
+		expect(
+			await screen.findByText("You are not allowed to see the positions of this work period."),
+		).toBeTruthy();
+		expect(screen.queryByText("diagnostic text from the server")).toBeNull();
+	});
+
 	it("says when no position was recorded", async () => {
 		accessMock.mockResolvedValue(access({ mayViewOthers: true }));
 		showMock.mockResolvedValue({ success: true, data: { workPeriodId: PERIOD, stamps: [] } });

@@ -97,6 +97,30 @@ describe("PositionCaptureSettings", () => {
 		expect(refreshMock).toHaveBeenCalled();
 	});
 
+	it("translates a refused save by its code and never shows the server's text", async () => {
+		saveMock.mockResolvedValue({
+			success: false,
+			error: "diagnostic text from the server",
+			code: "retention_out_of_range",
+		});
+		render(
+			<PositionCaptureSettings
+				data={adminData({
+					settings: { enabled: true, purposeStatement: "Customer proof", retentionDays: 90 },
+				})}
+			/>,
+		);
+
+		await userEvent.click(screen.getByRole("button", { name: "Save settings" }));
+
+		await waitFor(() =>
+			expect(toastMock.error).toHaveBeenCalledWith(
+				"Retention must be a whole number of days between 7 and 365.",
+			),
+		);
+		expect(refreshMock).not.toHaveBeenCalled();
+	});
+
 	it("warns that editing the purpose publishes a new version and lapses consents", async () => {
 		render(
 			<PositionCaptureSettings

@@ -14,8 +14,8 @@ import {
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
-import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { WorkTransactionClient } from "../work-transaction";
+import { PositionCaptureRefusal } from "./errors";
 import {
 	POSITION_NOTICE_TEMPLATE_REVISION,
 	POSITION_RETENTION_DEFAULT_DAYS,
@@ -60,14 +60,12 @@ export const DEFAULT_POSITION_CAPTURE_SETTINGS: PositionCaptureSettings = {
 	retentionDays: POSITION_RETENTION_DEFAULT_DAYS,
 };
 
+/** Diagnostic texts; the client shows its own translation of each refusal code. */
 const SETTINGS_REFUSAL_MESSAGES = {
 	purpose_required: "A purpose statement is required before position capture can be switched on.",
 	purpose_too_long: "The purpose statement is too long.",
 	retention_out_of_range: "Retention must be a whole number of days between 7 and 365.",
 } as const;
-
-export const NOTICE_CHANGED_MESSAGE =
-	"The position notice has changed. Review the current notice before deciding.";
 
 export async function readPositionCaptureSettings(
 	db: PositionCaptureClient,
@@ -144,10 +142,7 @@ export async function savePositionCaptureSettings(
 ): Promise<{ settings: PositionCaptureSettings; publishedNotice: PositionNoticeVersion | null }> {
 	const validated = validatePositionCaptureSettings(input.settings);
 	if (!validated.ok) {
-		throw new ValidationError({
-			message: SETTINGS_REFUSAL_MESSAGES[validated.reason],
-			field: validated.reason === "retention_out_of_range" ? "retentionDays" : "purposeStatement",
-		});
+		throw new PositionCaptureRefusal(validated.reason, SETTINGS_REFUSAL_MESSAGES[validated.reason]);
 	}
 	const next = validated.settings;
 	const row = await lockSettingsRow(tx, input.organizationId);
@@ -304,11 +299,10 @@ export async function removePositionCaptureAssignment(
 		)
 		.returning();
 	if (!removed) {
-		throw new NotFoundError({
-			message: "Position capture assignment not found",
-			entityType: "position_capture_assignment",
-			entityId: input.assignmentId,
-		});
+		throw new PositionCaptureRefusal(
+			"assignment_not_found",
+			"Position capture assignment not found",
+		);
 	}
 	await tx.insert(auditLog).values({
 		organizationId: input.organizationId,
@@ -439,7 +433,10 @@ async function assertCurrentNotice(
 		.for("share");
 	const current = await readCurrentPositionNotice(tx, organizationId);
 	if (!current || current.id !== noticeId) {
-		throw new ValidationError({ message: NOTICE_CHANGED_MESSAGE, field: "noticeId" });
+		throw new PositionCaptureRefusal(
+			"notice_changed",
+			"The position notice has changed. Review the current notice before deciding.",
+		);
 	}
 }
 
@@ -464,11 +461,9 @@ async function assertTargetInOrganization(
 					)
 					.limit(1);
 	if (rows.length === 0) {
-		throw new NotFoundError({
-			message: target.type === "team" ? "Team not found" : "Employee not found",
-			entityType: target.type,
-			entityId: target.type === "team" ? target.teamId : target.employeeId,
-		});
+		throw target.type === "team"
+			? new PositionCaptureRefusal("team_not_found", "Team not found")
+			: new PositionCaptureRefusal("employee_not_found", "Employee not found");
 	}
 }
 

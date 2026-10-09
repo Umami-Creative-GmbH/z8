@@ -6,10 +6,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { OwnPositionCaptureData } from "@/app/[locale]/(app)/settings/position-stamps/actions";
 import { OwnPositionStampsPanel } from "./own-position-stamps-panel";
 
-const { agreeMock, withdrawMock, refreshMock } = vi.hoisted(() => ({
+const { agreeMock, withdrawMock, refreshMock, toastMock } = vi.hoisted(() => ({
 	agreeMock: vi.fn(),
 	withdrawMock: vi.fn(),
 	refreshMock: vi.fn(),
+	toastMock: { success: vi.fn(), error: vi.fn() },
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -33,7 +34,7 @@ vi.mock("@/app/[locale]/(app)/settings/position-stamps/actions", () => ({
 }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: refreshMock }) }));
 vi.mock("next-intl", () => ({ useLocale: () => "en" }));
-vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock("sonner", () => ({ toast: toastMock }));
 
 const notice = {
 	id: "d8250000-0000-4000-8000-0000000000f1",
@@ -61,6 +62,7 @@ describe("OwnPositionStampsPanel", () => {
 		agreeMock.mockReset().mockResolvedValue({ success: true, data: { grantedAt: "x" } });
 		withdrawMock.mockReset().mockResolvedValue({ success: true, data: { withdrawn: 1 } });
 		refreshMock.mockReset();
+		toastMock.error.mockReset();
 	});
 
 	it("shows that capture is on, the current notice and lets the employee agree to that version", async () => {
@@ -76,6 +78,24 @@ describe("OwnPositionStampsPanel", () => {
 
 		expect(agreeMock).toHaveBeenCalledWith({ noticeId: notice.id });
 		await waitFor(() => expect(refreshMock).toHaveBeenCalled());
+	});
+
+	it("translates a refused agreement by its code and never shows the server's text", async () => {
+		agreeMock.mockResolvedValue({
+			success: false,
+			error: "diagnostic text from the server",
+			code: "notice_changed",
+		});
+		render(<OwnPositionStampsPanel data={data({})} />);
+
+		await userEvent.click(screen.getByRole("button", { name: "Agree" }));
+
+		await waitFor(() =>
+			expect(toastMock.error).toHaveBeenCalledWith(
+				"The position notice has changed. Review the current notice before deciding.",
+			),
+		);
+		expect(refreshMock).not.toHaveBeenCalled();
 	});
 
 	it("asks for confirmation, saying positions are deleted, before withdrawing", async () => {

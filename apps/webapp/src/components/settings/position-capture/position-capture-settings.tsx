@@ -16,6 +16,7 @@ import {
 	savePositionCaptureSettingsAction,
 	setPositionCaptureAssignmentAction,
 } from "@/app/[locale]/(app)/settings/position-capture/actions";
+import { positionCaptureErrorMessage } from "@/components/position-capture/error-message";
 import { formatRecordedPositionInstant } from "@/components/position-capture/format";
 import { PositionNoticeText } from "@/components/position-capture/position-notice-text";
 import { Badge } from "@/components/ui/badge";
@@ -76,7 +77,7 @@ function CaptureSettingsForm({ data }: PositionCaptureSettingsProps) {
 				});
 				if (!result.success) {
 					toast.error(
-						result.error ||
+						positionCaptureErrorMessage(t, result.code) ??
 							t("settings.positionCapture.saveFailed", "Position capture settings were not saved"),
 					);
 					return;
@@ -301,7 +302,7 @@ function CaptureAssignments({ data }: PositionCaptureSettingsProps) {
 					router.refresh();
 				} else {
 					toast.error(
-						result.error ||
+						positionCaptureErrorMessage(t, result.code) ??
 							t("settings.positionCapture.assignmentFailed", "The assignment was not saved"),
 					);
 				}
@@ -328,7 +329,7 @@ function CaptureAssignments({ data }: PositionCaptureSettingsProps) {
 				router.refresh();
 			} else {
 				toast.error(
-					result.error ||
+					positionCaptureErrorMessage(t, result.code) ??
 						t("settings.positionCapture.assignmentRemoveFailed", "The assignment was not removed"),
 				);
 			}

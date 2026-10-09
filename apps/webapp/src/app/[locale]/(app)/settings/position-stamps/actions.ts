@@ -4,10 +4,12 @@ import { revalidatePath } from "next/cache";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { instantToCanonicalString, systemClock } from "@/lib/datetime/temporal-core";
 import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
-import { AuthenticationError, ValidationError } from "@/lib/effect/errors";
-import type { ServerActionResult } from "@/lib/effect/result";
 import { listPositionStampAccessLog } from "@/lib/time-tracking/position-capture/access-log";
 import { runPositionCaptureAction } from "@/lib/time-tracking/position-capture/action-runner";
+import {
+	type PositionCaptureActionResult,
+	PositionCaptureRefusal,
+} from "@/lib/time-tracking/position-capture/errors";
 import type { PositionConsentDecision } from "@/lib/time-tracking/position-capture/policy";
 import { resolvePositionCapture } from "@/lib/time-tracking/position-capture/resolver";
 import {
@@ -44,7 +46,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 const PAGE_PATH = "/settings/position-stamps";
 
 export async function getOwnPositionCaptureAction(): Promise<
-	ServerActionResult<OwnPositionCaptureData>
+	PositionCaptureActionResult<OwnPositionCaptureData>
 > {
 	return runPositionCaptureAction("positionCapture.own", async (db) => {
 		const subject = await requireOwnEmployee();
@@ -78,7 +80,7 @@ export type OwnPositionStampAccessEntry = {
 
 /** Who was shown the signed-in employee's position stamps, newest first. */
 export async function getOwnPositionStampAccessLogAction(): Promise<
-	ServerActionResult<OwnPositionStampAccessEntry[]>
+	PositionCaptureActionResult<OwnPositionStampAccessEntry[]>
 > {
 	return runPositionCaptureAction("positionCapture.ownAccessLog", async (db) => {
 		const subject = await requireOwnEmployee();
@@ -108,7 +110,7 @@ export async function getOwnPositionStampAccessLogAction(): Promise<
 /** Gives the signed-in employee's position consent to the notice version they were shown. */
 export async function agreeToPositionNoticeAction(input: {
 	noticeId: string;
-}): Promise<ServerActionResult<{ grantedAt: string }>> {
+}): Promise<PositionCaptureActionResult<{ grantedAt: string }>> {
 	return runPositionCaptureAction("positionCapture.agree", async (db) => {
 		const subject = await requireOwnEmployee();
 		const noticeId = parseNoticeId(input?.noticeId);
@@ -123,7 +125,7 @@ export async function agreeToPositionNoticeAction(input: {
 /** "Not now" for the notice version they were shown; asked again only for a new version. */
 export async function declinePositionNoticeAction(input: {
 	noticeId: string;
-}): Promise<ServerActionResult<{ declined: true }>> {
+}): Promise<PositionCaptureActionResult<{ declined: true }>> {
 	return runPositionCaptureAction("positionCapture.decline", async (db) => {
 		const subject = await requireOwnEmployee();
 		const noticeId = parseNoticeId(input?.noticeId);
@@ -137,7 +139,7 @@ export async function declinePositionNoticeAction(input: {
 
 /** Withdraws the signed-in employee's position consent. */
 export async function withdrawPositionConsentAction(): Promise<
-	ServerActionResult<{ withdrawn: number }>
+	PositionCaptureActionResult<{ withdrawn: number }>
 > {
 	return runPositionCaptureAction("positionCapture.withdraw", async (db) => {
 		const subject = await requireOwnEmployee();
@@ -155,16 +157,17 @@ async function requireOwnEmployee(): Promise<{ organizationId: string; employeeI
 	const organizationId = authContext?.session.activeOrganizationId ?? null;
 	const ownEmployee = authContext?.employee;
 	if (!ownEmployee || !organizationId || ownEmployee.organizationId !== organizationId) {
-		throw new AuthenticationError({
-			message: "An employee profile in this organization is required.",
-		});
+		throw new PositionCaptureRefusal(
+			"employee_profile_required",
+			"An employee profile in this organization is required.",
+		);
 	}
 	return { organizationId, employeeId: ownEmployee.id };
 }
 
 function parseNoticeId(value: unknown): string {
 	if (typeof value !== "string" || !UUID_PATTERN.test(value)) {
-		throw new ValidationError({ message: "Invalid position notice.", field: "noticeId" });
+		throw new PositionCaptureRefusal("invalid_notice", "Invalid position notice.");
 	}
 	return value;
 }

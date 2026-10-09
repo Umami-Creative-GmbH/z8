@@ -213,14 +213,14 @@ describe("position capture settings and consent on PostgreSQL", () => {
 		const purpose = { enabled: true, purposeStatement: "Customer proof", retentionDays: 90 };
 		for (const userId of [ids.managerUser, ids.fieldUser]) {
 			const save = await saveSettings(purpose, userId);
-			expect(save).toMatchObject({ success: false, code: "AuthorizationError" });
+			expect(save).toMatchObject({ success: false, code: "admin_only" });
 			actAs(userId);
 			expect(
 				await admin.setPositionCaptureAssignmentAction({
 					target: { type: "organization" },
 					captureEnabled: true,
 				}),
-			).toMatchObject({ success: false, code: "AuthorizationError" });
+			).toMatchObject({ success: false, code: "admin_only" });
 			expect(await admin.getPositionCaptureAdminDataAction()).toMatchObject({ success: false });
 		}
 
@@ -279,13 +279,13 @@ describe("position capture settings and consent on PostgreSQL", () => {
 				target: { type: "team", teamId: ids.foreignTeam },
 				captureEnabled: true,
 			}),
-		).toMatchObject({ success: false, code: "NotFoundError" });
+		).toMatchObject({ success: false, code: "team_not_found" });
 		expect(
 			await admin.setPositionCaptureAssignmentAction({
 				target: { type: "employee", employeeId: ids.foreign },
 				captureEnabled: true,
 			}),
-		).toMatchObject({ success: false, code: "NotFoundError" });
+		).toMatchObject({ success: false, code: "employee_not_found" });
 
 		await saveSettings({ enabled: true, purposeStatement: "Customer proof", retentionDays: 90 });
 		await admin.setPositionCaptureAssignmentAction({
@@ -303,7 +303,7 @@ describe("position capture settings and consent on PostgreSQL", () => {
 		actAs(ids.foreignUser, ids.otherOrganization);
 		expect(await admin.removePositionCaptureAssignmentAction({ assignmentId })).toMatchObject({
 			success: false,
-			code: "NotFoundError",
+			code: "assignment_not_found",
 		});
 		expect((await resolve(ids.field)).captureOn).toBe(true);
 	});
@@ -434,7 +434,7 @@ describe("position capture settings and consent on PostgreSQL", () => {
 
 		expect(
 			await own.agreeToPositionNoticeAction({ noticeId: first.notice?.id ?? "" }),
-		).toMatchObject({ success: false, code: "ValidationError" });
+		).toMatchObject({ success: false, code: "notice_changed" });
 		expect(await consentRows(ids.field)).toEqual([]);
 	});
 

@@ -346,12 +346,12 @@ describe("position stamp viewing and access log on PostgreSQL", () => {
 
 	it("refuses a manager without the permission, a platform admin and a foreign owner, and logs nothing", async () => {
 		for (const userId of [ids.managerUser, ids.platformUser, ids.lapsedHolderUser]) {
-			expect(await show(userId)).toMatchObject({ success: false, code: "AuthorizationError" });
+			expect(await show(userId)).toMatchObject({ success: false, code: "positions_forbidden" });
 		}
 		actAs(ids.foreignUser, ids.otherOrganization);
 		expect(await detail.showWorkPeriodPositionsAction({ workPeriodId: ids.period })).toMatchObject({
 			success: false,
-			code: "NotFoundError",
+			code: "work_period_not_found",
 		});
 		expect(await accessLogCount()).toBe(0);
 	});

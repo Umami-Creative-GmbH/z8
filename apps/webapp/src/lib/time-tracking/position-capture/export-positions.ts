@@ -123,14 +123,21 @@ export async function attachExportPositionStamps<Row extends ExportTimeEntryRow>
  */
 async function permittedViewers(
 	tx: Pick<WorkTransactionClient, "select">,
-	input: { organizationId: string; requestedByEmployeeId: string; recipientEmails: readonly string[] },
+	input: {
+		organizationId: string;
+		requestedByEmployeeId: string;
+		recipientEmails: readonly string[];
+	},
 ): Promise<string[] | null> {
 	const { organizationId } = input;
 	const [requester] = await tx
 		.select({ userId: employee.userId })
 		.from(employee)
 		.where(
-			and(eq(employee.id, input.requestedByEmployeeId), eq(employee.organizationId, organizationId)),
+			and(
+				eq(employee.id, input.requestedByEmployeeId),
+				eq(employee.organizationId, organizationId),
+			),
 		)
 		.limit(1);
 	if (!requester) return null;

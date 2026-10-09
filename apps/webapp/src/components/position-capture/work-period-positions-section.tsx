@@ -13,6 +13,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { formatUtcOffset, offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import { queryKeys } from "@/lib/query/keys";
+import type { PositionCaptureErrorCode } from "@/lib/time-tracking/position-capture/errors";
+import { positionCaptureErrorMessage } from "./error-message";
 
 interface WorkPeriodPositionsSectionProps {
 	workPeriodId: string;
@@ -23,7 +25,7 @@ interface WorkPeriodPositionsSectionProps {
 type Shown =
 	| { state: "hidden" }
 	| { state: "loading" }
-	| { state: "failed"; message: string | null }
+	| { state: "failed"; code: PositionCaptureErrorCode | undefined }
 	| { state: "shown"; stamps: WorkPeriodPositionStampData[] };
 
 async function readViewerAccess() {
@@ -59,7 +61,7 @@ export function WorkPeriodPositionsSection({
 		setShown(
 			result?.success
 				? { state: "shown", stamps: result.data.stamps }
-				: { state: "failed", message: result && !result.success ? result.error : null },
+				: { state: "failed", code: result && !result.success ? result.code : undefined },
 		);
 	};
 
@@ -104,7 +106,8 @@ export function WorkPeriodPositionsSection({
 			) : null}
 			{shown.state === "failed" ? (
 				<p className="text-sm text-destructive">
-					{shown.message || t("calendar.details.positions.failed", "Positions could not be loaded")}
+					{positionCaptureErrorMessage(t, shown.code) ??
+						t("calendar.details.positions.failed", "Positions could not be loaded")}
 				</p>
 			) : null}
 			{shown.state === "shown" ? <PositionStampList stamps={shown.stamps} /> : null}

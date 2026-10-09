@@ -4,14 +4,11 @@ import { eq } from "drizzle-orm";
 import { positionNotice } from "@/db/schema";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { instantToCanonicalString, systemClock } from "@/lib/datetime/temporal-core";
-import {
-	AuthenticationError,
-	AuthorizationError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
-import type { ServerActionResult } from "@/lib/effect/result";
 import { runPositionCaptureAction } from "@/lib/time-tracking/position-capture/action-runner";
+import {
+	type PositionCaptureActionResult,
+	PositionCaptureRefusal,
+} from "@/lib/time-tracking/position-capture/errors";
 import {
 	loadPositionStampViewer,
 	mayViewEveryonesPositionStamps,
@@ -49,7 +46,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
  * checks again on every "Show positions".
  */
 export async function getPositionStampViewerAccessAction(): Promise<
-	ServerActionResult<PositionStampViewerAccessData>
+	PositionCaptureActionResult<PositionStampViewerAccessData>
 > {
 	return runPositionCaptureAction("positionStamps.viewerAccess", async (db) => {
 		const { organizationId, userId } = await requireOrganizationUser();
@@ -75,12 +72,12 @@ export async function getPositionStampViewerAccessAction(): Promise<
  */
 export async function showWorkPeriodPositionsAction(input: {
 	workPeriodId: string;
-}): Promise<ServerActionResult<WorkPeriodPositionsData>> {
+}): Promise<PositionCaptureActionResult<WorkPeriodPositionsData>> {
 	return runPositionCaptureAction("positionStamps.showWorkPeriod", async (db) => {
 		const { organizationId, userId } = await requireOrganizationUser();
 		const workPeriodId = input?.workPeriodId;
 		if (typeof workPeriodId !== "string" || !UUID_PATTERN.test(workPeriodId)) {
-			throw new ValidationError({ message: "Invalid work period.", field: "workPeriodId" });
+			throw new PositionCaptureRefusal("invalid_work_period", "Invalid work period.");
 		}
 		const result = await showWorkPeriodPositions(db, {
 			organizationId,
@@ -89,12 +86,13 @@ export async function showWorkPeriodPositionsAction(input: {
 			now: systemClock.nowInstant(),
 		});
 		if (result.kind === "not_found") {
-			throw new NotFoundError({ message: "Work period not found.", entityType: "work_period" });
+			throw new PositionCaptureRefusal("work_period_not_found", "Work period not found.");
 		}
 		if (result.kind === "forbidden") {
-			throw new AuthorizationError({
-				message: "You are not allowed to see positions for this work period.",
-			});
+			throw new PositionCaptureRefusal(
+				"positions_forbidden",
+				"You are not allowed to see positions for this work period.",
+			);
 		}
 		return {
 			workPeriodId,
@@ -111,7 +109,7 @@ async function requireOrganizationUser(): Promise<{ organizationId: string; user
 	const authContext = await getAuthContext();
 	const organizationId = authContext?.session.activeOrganizationId ?? null;
 	if (!authContext || !organizationId) {
-		throw new AuthenticationError({ message: "Sign in to an organization first." });
+		throw new PositionCaptureRefusal("sign_in_required", "Sign in to an organization first.");
 	}
 	return { organizationId, userId: authContext.user.id };
 }

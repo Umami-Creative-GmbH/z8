@@ -6,9 +6,11 @@ import { user } from "@/db/auth-schema";
 import { employee, positionCaptureAssignment, team } from "@/db/schema";
 import { canManageCurrentOrganizationSettings, getAuthContext } from "@/lib/auth-helpers";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
-import { AuthorizationError, ValidationError } from "@/lib/effect/errors";
-import type { ServerActionResult } from "@/lib/effect/result";
 import { runPositionCaptureAction } from "@/lib/time-tracking/position-capture/action-runner";
+import {
+	type PositionCaptureActionResult,
+	PositionCaptureRefusal,
+} from "@/lib/time-tracking/position-capture/errors";
 import type { PositionCaptureSettings } from "@/lib/time-tracking/position-capture/policy";
 import {
 	listPositionNotices,
@@ -62,7 +64,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 const SETTINGS_PATH = "/settings/position-capture";
 
 export async function getPositionCaptureAdminDataAction(): Promise<
-	ServerActionResult<PositionCaptureAdminData>
+	PositionCaptureActionResult<PositionCaptureAdminData>
 > {
 	return runPositionCaptureAction("positionCapture.adminData", async (db) => {
 		const { organizationId } = await requirePositionCaptureAdmin();
@@ -114,7 +116,7 @@ export async function getPositionCaptureAdminDataAction(): Promise<
 
 export async function savePositionCaptureSettingsAction(
 	input: SavePositionCaptureSettingsInput,
-): Promise<ServerActionResult<{ publishedNoticeVersion: number | null }>> {
+): Promise<PositionCaptureActionResult<{ publishedNoticeVersion: number | null }>> {
 	return runPositionCaptureAction("positionCapture.saveSettings", async (db) => {
 		const { organizationId, userId } = await requirePositionCaptureAdmin();
 		const { publishedNotice } = await db.transaction((tx) =>
@@ -137,7 +139,7 @@ export async function savePositionCaptureSettingsAction(
 
 export async function setPositionCaptureAssignmentAction(
 	input: SetPositionCaptureAssignmentInput,
-): Promise<ServerActionResult<{ assignmentId: string }>> {
+): Promise<PositionCaptureActionResult<{ assignmentId: string }>> {
 	return runPositionCaptureAction("positionCapture.setAssignment", async (db) => {
 		const { organizationId, userId } = await requirePositionCaptureAdmin();
 		const target = parseTarget(input?.target);
@@ -156,7 +158,7 @@ export async function setPositionCaptureAssignmentAction(
 
 export async function removePositionCaptureAssignmentAction(input: {
 	assignmentId: string;
-}): Promise<ServerActionResult<{ assignmentId: string }>> {
+}): Promise<PositionCaptureActionResult<{ assignmentId: string }>> {
 	return runPositionCaptureAction("positionCapture.removeAssignment", async (db) => {
 		const { organizationId, userId } = await requirePositionCaptureAdmin();
 		const assignmentId = parseUuid(input?.assignmentId, "assignmentId");
@@ -173,11 +175,10 @@ async function requirePositionCaptureAdmin(): Promise<{ organizationId: string; 
 	const authContext = await getAuthContext();
 	const organizationId = authContext?.session.activeOrganizationId ?? null;
 	if (!authContext || !organizationId || !(await canManageCurrentOrganizationSettings())) {
-		throw new AuthorizationError({
-			message: "Only organization owners and admins can manage position capture.",
-			resource: "PositionCaptureSettings",
-			action: "manage",
-		});
+		throw new PositionCaptureRefusal(
+			"admin_only",
+			"Only organization owners and admins can manage position capture.",
+		);
 	}
 	return { organizationId, userId: authContext.user.id };
 }
@@ -189,12 +190,12 @@ function parseTarget(value: unknown): PositionCaptureAssignmentTarget {
 	if (target?.type === "employee") {
 		return { type: "employee", employeeId: parseUuid(target.employeeId, "employeeId") };
 	}
-	throw new ValidationError({ message: "Choose who the assignment applies to.", field: "target" });
+	throw new PositionCaptureRefusal("invalid_target", "Choose who the assignment applies to.");
 }
 
 function parseUuid(value: unknown, field: string): string {
 	if (typeof value !== "string" || !UUID_PATTERN.test(value)) {
-		throw new ValidationError({ message: "Invalid selection.", field });
+		throw new PositionCaptureRefusal("invalid_selection", `Invalid selection: ${field}.`);
 	}
 	return value;
 }

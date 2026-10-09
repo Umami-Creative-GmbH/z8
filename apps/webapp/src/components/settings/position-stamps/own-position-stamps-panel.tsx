@@ -12,6 +12,7 @@ import {
 	type OwnPositionStampAccessEntry,
 	withdrawPositionConsentAction,
 } from "@/app/[locale]/(app)/settings/position-stamps/actions";
+import { positionCaptureErrorMessage } from "@/components/position-capture/error-message";
 import { formatRecordedPositionInstant } from "@/components/position-capture/format";
 import { PositionNoticeText } from "@/components/position-capture/position-notice-text";
 import {
@@ -57,7 +58,7 @@ export function OwnPositionStampsPanel({ data, accessLog = null }: OwnPositionSt
 				router.refresh();
 			} else {
 				toast.error(
-					result.error ||
+					positionCaptureErrorMessage(t, result.code) ??
 						t("settings.positionStamps.agreeFailed", "Your consent could not be saved"),
 				);
 			}
@@ -81,7 +82,7 @@ export function OwnPositionStampsPanel({ data, accessLog = null }: OwnPositionSt
 				router.refresh();
 			} else {
 				toast.error(
-					result.error ||
+					positionCaptureErrorMessage(t, result.code) ??
 						t("settings.positionStamps.withdrawFailed", "Your consent could not be withdrawn"),
 				);
 			}
