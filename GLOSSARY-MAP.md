@@ -3,7 +3,7 @@
 ## Contexts
 
 - [Approvals](./apps/webapp/src/lib/approvals/CONTEXT.md): decides approval requests and delivers their cards while each approval kind moves from legacy requests to canonical workflows
-- [Organization](./apps/webapp/src/lib/organization/CONTEXT.md): holds an organization's master data about its employees, projects and customers, including the custom fields it defines for them
+- [Organization](./apps/webapp/src/lib/organization/CONTEXT.md): holds an organization's master data about its employees and customers, and the custom fields it defines on employees, projects and customers
 - [Time Tracking](./apps/webapp/src/lib/time-tracking/CONTEXT.md): starts, ends and records employees' working time, and coordinates every writer of it
 - [Travel Expenses](./apps/webapp/src/lib/travel-expenses/CONTEXT.md): collects employees' expense reports for trips and single expenses, and reimburses them
 - [Projects](./apps/webapp/src/lib/projects/CONTEXT.md): keeps the organization's projects, the tasks inside them and the project templates new projects start from
@@ -18,6 +18,7 @@
 - **Travel Expenses → Approvals**: a submitted expense report is an approval kind; Approvals decides it and Travel Expenses reimburses what was approved
 - **Time Tracking → Projects**: work is booked to a project, and optionally to one of its tasks; project eligibility is part of Time Tracking's organization configuration
 - **Travel Expenses → Projects**: an expense's project attribution names the project it is charged to
+- **Organization → Projects**: an organization defines project custom fields in Organization; a project holds custom field values for them, and Projects owns the project itself
 - **Employee lifecycle → Time Tracking**: a departure closes live work inside a Time Tracking **work transaction**
 - **Employee lifecycle → Personnel File**: a departure revokes the personnel file officer grant the employee holds and starts the **retention** clock of their documents; a rehire stops it
 - **Public API → Time Tracking**: the Public API reads work records and never writes them in v1

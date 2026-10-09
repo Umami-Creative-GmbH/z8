@@ -1,6 +1,6 @@
 # Organization
 
-An organization's master data about its employees, projects and customers, including the data it defines for itself.
+An organization's master data about its employees and customers, and the custom fields it defines for itself on employees, projects and customers. Projects themselves belong to the Projects context.
 
 ## Language
 
