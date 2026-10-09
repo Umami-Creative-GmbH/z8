@@ -44,8 +44,8 @@ export function useHandOffLabels() {
 				);
 			case "too_many_lines":
 				return t(
-					"settings.billableTime.handOff.blocker.tooManyLines",
-					"The draft would have {lines} lines; the accounting tool takes at most {max}. Leave out the timesheet lines or choose a shorter period.",
+					"settings.billableTime.handOff.blocker.tooManyWorkLines",
+					"The draft would have {lines} work lines; the accounting tool takes at most {max}. Choose fewer projects or a shorter period.",
 					{ lines: value.lines, max: value.maxDraftLines },
 				);
 			case "currency_not_supported":

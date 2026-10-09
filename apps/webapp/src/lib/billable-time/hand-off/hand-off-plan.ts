@@ -69,6 +69,8 @@ export interface HandOffPlan {
 	durationMs: number;
 	/** The timesheet as text lines, when asked for; otherwise empty. */
 	timesheetLines: InvoiceDraftTextLine[];
+	/** Periods the timesheet lines leave out to fit the tool's line limit. */
+	timesheetOmitted: number;
 	blockers: HandOffBlocker[];
 }
 
@@ -94,6 +96,8 @@ export interface HandOffTextFormat {
 		projectName: string;
 		hundredths: number;
 	}): string;
+	/** The last timesheet line when it had to be shortened to fit the tool. */
+	timesheetOmitted(count: number): string;
 }
 
 const pad = (value: number, length = 2) => String(value).padStart(length, "0");
@@ -124,6 +128,10 @@ export function handOffTextFormat(locale: HandOffLocale): HandOffTextFormat {
 			`${projectName}, ${formatPeriod(period)}: ${formatHours(hundredths)}`,
 		timesheetLine: ({ day, employeeName, projectName, hundredths }) =>
 			`${formatDay(day)} · ${employeeName} · ${projectName} · ${formatHours(hundredths)}`,
+		timesheetOmitted: (count) =>
+			german
+				? `… und ${count} weitere: siehe vollständigen Stundennachweis`
+				: `… and ${count} more: see the full timesheet`,
 	};
 }
 
@@ -222,30 +230,23 @@ export function planHandOff(input: {
 	});
 	for (const entry of included) entry.shares.sort((left, right) => left.line - right.line);
 
-	const timesheetLines: InvoiceDraftTextLine[] =
-		input.includeTimesheet && included.length > 0
-			? [
-					{ kind: "text", text: input.texts.timesheetHeading },
-					...included.map(
-						({ work }): InvoiceDraftTextLine => ({
-							kind: "text",
-							text: input.texts.timesheetLine({
-								day: workDayOf(work.startedAt, work.startOffsetMinutes),
-								employeeName: work.employeeName,
-								projectName: work.projectName,
-								hundredths: minutesAsHundredths(work.durationMinutes),
-							}),
-						}),
-					),
-				]
-			: [];
+	const timesheet = input.includeTimesheet
+		? timesheetWithinLimit(
+				included,
+				input.texts,
+				input.maxDraftLines === null ? null : input.maxDraftLines - lines.length,
+			)
+		: { lines: [], omitted: 0 };
 
 	const blockers: HandOffBlocker[] = [];
 	if (unpriced.length > 0) blockers.push({ kind: "unpriced_work", count: unpriced.length });
 	if (lines.length === 0) blockers.push({ kind: "nothing_to_hand_off" });
-	const lineCount = lines.length + timesheetLines.length;
-	if (input.maxDraftLines !== null && lineCount > input.maxDraftLines) {
-		blockers.push({ kind: "too_many_lines", lines: lineCount, maxDraftLines: input.maxDraftLines });
+	if (input.maxDraftLines !== null && lines.length > input.maxDraftLines) {
+		blockers.push({
+			kind: "too_many_lines",
+			lines: lines.length,
+			maxDraftLines: input.maxDraftLines,
+		});
 	}
 
 	return {
@@ -257,8 +258,47 @@ export function planHandOff(input: {
 		nonBillable,
 		netTotal: lines.reduce((sum, line) => sum + line.amount, BigInt(0)),
 		durationMs: lines.reduce((sum, line) => sum + line.durationMs, 0),
-		timesheetLines,
+		timesheetLines: timesheet.lines,
+		timesheetOmitted: timesheet.omitted,
 		blockers,
+	};
+}
+
+/**
+ * The timesheet as text lines (a heading and one line per period) within the
+ * room the tool's line limit leaves after the work lines. When it does not fit,
+ * it keeps as many periods as fit and ends with a note naming how many more the
+ * full timesheet has; with no room for a period it is left out. The timesheet
+ * download always has every period.
+ */
+function timesheetWithinLimit(
+	included: readonly IncludedWork[],
+	texts: HandOffTextFormat,
+	room: number | null,
+): { lines: InvoiceDraftTextLine[]; omitted: number } {
+	if (included.length === 0) return { lines: [], omitted: 0 };
+	const entries = included.map(
+		({ work }): InvoiceDraftTextLine => ({
+			kind: "text",
+			text: texts.timesheetLine({
+				day: workDayOf(work.startedAt, work.startOffsetMinutes),
+				employeeName: work.employeeName,
+				projectName: work.projectName,
+				hundredths: minutesAsHundredths(work.durationMinutes),
+			}),
+		}),
+	);
+	const heading: InvoiceDraftTextLine = { kind: "text", text: texts.timesheetHeading };
+	if (room === null || entries.length + 1 <= room) {
+		return { lines: [heading, ...entries], omitted: 0 };
+	}
+	// Heading, at least one period and the note.
+	if (room < 3) return { lines: [], omitted: entries.length };
+	const kept = entries.slice(0, room - 2);
+	const omitted = entries.length - kept.length;
+	return {
+		lines: [heading, ...kept, { kind: "text", text: texts.timesheetOmitted(omitted) }],
+		omitted,
 	};
 }
 
