@@ -1,9 +1,5 @@
 import { compareInstants, type Instant, plainDateAt } from "@/lib/datetime/temporal-core";
-import {
-	type BreakDueRegulation,
-	type BreakDueRule,
-	breakDueStatus,
-} from "@/lib/time-tracking/break-due";
+import { type BreakDueRegulation, breakDueStatus } from "@/lib/time-tracking/break-due";
 import { clockingReminderOccasionKey, type DueClockingReminder } from "./occasion";
 import type { ClockingReminderSettings } from "./settings-policy";
 
@@ -19,12 +15,6 @@ export interface BreakDueReminderInput {
 	completedMinutes: number;
 	/** Breaks taken on that day so far. */
 	breakMinutes: number;
-}
-
-function ruleKey(rule: BreakDueRule): string {
-	return rule.kind === "max_uninterrupted"
-		? "max_uninterrupted"
-		: `break_rule:${rule.workingMinutesThreshold}`;
 }
 
 /**
@@ -52,7 +42,7 @@ export function evaluateBreakDueReminders(input: BreakDueReminderInput): DueCloc
 			occasionKey: clockingReminderOccasionKey("break_due_reminder", {
 				kind: "live_work",
 				workPeriodId: input.liveWork.id,
-				rule: ruleKey(next.rule),
+				rule: next.rule,
 			}),
 			day: plainDateAt(input.liveWork.start, input.timezone),
 			expectedAt: next.at,
