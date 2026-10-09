@@ -105,6 +105,26 @@ describe("RateHistoryCard", () => {
 		expect(onEndRate).toHaveBeenCalledWith({ effectiveFrom: today.toString() });
 	});
 
+	it("offers a suggested starting value without filling it in", async () => {
+		const user = userEvent.setup();
+		const { onSetRate } = renderCard({
+			periods: [],
+			suggestion: { rate: "25.00", label: (rate) => `Use the wage of ${rate}` },
+		});
+
+		await user.click(screen.getByRole("button", { name: "Set rate" }));
+		const rate = screen.getByPlaceholderText("0.00") as HTMLInputElement;
+		expect(rate.value).toBe("");
+
+		await user.click(screen.getByRole("button", { name: "Use the wage of €25.00" }));
+		expect(rate.value).toBe("25.00");
+		await user.clear(rate);
+		await user.type(rate, "48");
+		await user.click(screen.getByRole("button", { name: "Save rate" }));
+
+		expect(onSetRate).toHaveBeenCalledWith({ effectiveFrom: today.toString(), rate: "48" });
+	});
+
 	it("offers no change form to viewers who cannot edit", () => {
 		renderCard({ canEdit: false, periods: [] });
 

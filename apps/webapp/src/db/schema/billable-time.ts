@@ -120,3 +120,47 @@ export const billableRate = pgTable(
 		index("billable_rate_customer_idx").on(table.organizationId, table.customerId),
 	],
 );
+
+/**
+ * Cost rates (#899): an employee's fully loaded internal cost per hour, in the
+ * organization's billable currency, for margin. Any contract type may have
+ * one. Separate from the wage (`employee_rate_history`, employment terms):
+ * neither ever changes the other.
+ *
+ * Periods are half-open calendar-date ranges `[effective_from, effective_to)`
+ * of the employee-local days of work starts (`lib/billable-time/cost-rate.ts`);
+ * `effective_to` null is open. One employee's periods never overlap: the
+ * EXCLUDE constraint `cost_rate_employee_no_overlap` lives in migration 0144
+ * (Drizzle cannot declare it).
+ */
+export const costRate = pgTable(
+	"cost_rate",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").notNull(),
+		/** Per hour, in the organization's billable currency. */
+		hourlyRate: numeric("hourly_rate", { precision: 12, scale: 2 }).notNull(),
+		effectiveFrom: date("effective_from", { mode: "string" }).notNull(),
+		effectiveTo: date("effective_to", { mode: "string" }),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+	},
+	(table) => [
+		check("cost_rate_positive_check", sql`${table.hourlyRate} > 0`),
+		check(
+			"cost_rate_period_check",
+			sql`${table.effectiveTo} IS NULL OR ${table.effectiveTo} > ${table.effectiveFrom}`,
+		),
+		foreignKey({
+			name: "cost_rate_employee_fk",
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+		index("cost_rate_employee_idx").on(table.organizationId, table.employeeId),
+	],
+);

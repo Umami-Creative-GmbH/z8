@@ -874,11 +874,15 @@ describe("org-admin settings route access", () => {
 	});
 
 	it("gates the Billable Time settings pages on org admins and the module flag", () => {
-		const source = stripComments(
-			readTestText(join(SETTINGS_ROOT, "billable-time/page.tsx"), "utf8"),
-		);
+		for (const page of [
+			"billable-time/page.tsx",
+			"billable-time/rates/page.tsx",
+			"billable-time/cost-rates/page.tsx",
+		]) {
+			const source = stripComments(readTestText(join(SETTINGS_ROOT, page), "utf8"));
 
-		expect(source.includes("requireBillableTimeSettingsAccess(")).toBe(true);
+			expect(source.includes("requireBillableTimeSettingsAccess("), page).toBe(true);
+		}
 	});
 
 	it("narrows manager employee editing away from org-admin-only form controls", () => {

@@ -152,6 +152,8 @@ export enum AuditAction {
 	// Billable Time Operations (#768; not the Z8 subscription)
 	BILLABLE_RATE_SET = "billable_time.rate_set",
 	BILLABLE_RATE_ENDED = "billable_time.rate_ended",
+	COST_RATE_SET = "billable_time.cost_rate_set",
+	COST_RATE_ENDED = "billable_time.cost_rate_ended",
 
 	// Location Operations
 	LOCATION_CREATED = "location.created",
@@ -220,6 +222,7 @@ export interface AuditLogEntry {
 		| "project"
 		| "project_assignment"
 		| "billable_rate"
+		| "cost_rate"
 		| "work_period"
 		| "location"
 		| "subarea"
