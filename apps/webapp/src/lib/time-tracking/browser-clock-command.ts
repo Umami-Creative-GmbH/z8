@@ -53,6 +53,8 @@ export type ClockCommandCaptureRequest = {
 			knownWorkPeriodId: string | null;
 			project: Attribution;
 			workCategory: Attribution;
+			/** The project task (#875); present only when the page names one. */
+			task?: Attribution;
 	  }
 );
 
@@ -105,6 +107,8 @@ export function prepareBrowserClockCommand(input: {
 	knownWorkPeriodId?: string | null;
 	projectId?: string | null;
 	workCategoryId?: string | null;
+	/** Omitted, the task follows the project; `null` clears it (#875). */
+	taskId?: string | null;
 	/** The position taken at this event, if the employee's capture is on and consented (#826). */
 	position?: ClockCommandPosition | null;
 }): PreparedBrowserClockCommand {
@@ -150,7 +154,10 @@ export function prepareBrowserClockCommand(input: {
 	}
 	const project = attribution(input.projectId);
 	const workCategory = attribution(input.workCategoryId);
-	if (!project || !workCategory) return { ok: false, reason: "attribution_unsupported" };
+	const task = input.taskId === undefined ? undefined : attribution(input.taskId);
+	if (!project || !workCategory || task === null) {
+		return { ok: false, reason: "attribution_unsupported" };
+	}
 	return {
 		ok: true,
 		request: {
@@ -159,6 +166,7 @@ export function prepareBrowserClockCommand(input: {
 			knownWorkPeriodId: input.knownWorkPeriodId ?? null,
 			project,
 			workCategory,
+			...(task ? { task } : {}),
 		},
 	};
 }

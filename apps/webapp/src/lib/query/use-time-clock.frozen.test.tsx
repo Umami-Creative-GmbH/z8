@@ -36,6 +36,7 @@ import { useTimeClock } from "./use-time-clock";
 
 const PERIOD_ID = "a3bb189e-8bf9-4888-9912-ace4e6543002";
 const PROJECT_ID = "7c9e6679-7425-40de-944b-e07fc1f90ae7";
+const TASK_ID = "0d7f3a52-6a1b-4c1e-9f3a-2b8c4d5e6f70";
 const context = {
 	userId: "user-1",
 	organizationId: "org-1",
@@ -115,6 +116,58 @@ describe("useTimeClock frozen commands (#279)", () => {
 			}),
 		);
 		expect(mocks.postClockOut).not.toHaveBeenCalled();
+	});
+
+	it("freezes a chosen task with the clock-out (#874)", async () => {
+		const clock = offlineClock();
+		mocks.useOfflineClock.mockReturnValue(clock);
+		const { result } = render();
+		await waitFor(() => expect(result.current.activeWorkPeriod?.id).toBe(PERIOD_ID));
+
+		await result.current.clockOut({
+			projectId: PROJECT_ID,
+			taskId: TASK_ID,
+			browserTimezone: "Europe/Berlin",
+		});
+
+		expect(clock.submitClockCommand).toHaveBeenCalledWith(
+			expect.objectContaining({
+				kind: "clock_out",
+				project: { kind: "replace", id: PROJECT_ID },
+				task: { kind: "replace", id: TASK_ID },
+			}),
+		);
+		expect(mocks.postClockOut).not.toHaveBeenCalled();
+	});
+
+	it("freezes no task key when none is chosen (#874)", async () => {
+		const clock = offlineClock();
+		mocks.useOfflineClock.mockReturnValue(clock);
+		const { result } = render();
+		await waitFor(() => expect(result.current.activeWorkPeriod?.id).toBe(PERIOD_ID));
+
+		await result.current.clockOut({ projectId: PROJECT_ID, browserTimezone: "Europe/Berlin" });
+
+		expect(clock.submitClockCommand.mock.calls[0]?.[0]).not.toHaveProperty("task");
+	});
+
+	it("posts a chosen task when the page cannot freeze commands (#874)", async () => {
+		const clock = offlineClock({ commandCapabilities: null });
+		mocks.useOfflineClock.mockReturnValue(clock);
+		mocks.postClockOut.mockResolvedValue({ success: true, data: { id: "entry-1" } });
+		const { result } = render();
+		await waitFor(() => expect(result.current.activeWorkPeriod?.id).toBe(PERIOD_ID));
+
+		await result.current.clockOut({
+			projectId: PROJECT_ID,
+			taskId: TASK_ID,
+			browserTimezone: "Europe/Berlin",
+		});
+
+		expect(clock.submitClockCommand).not.toHaveBeenCalled();
+		expect(mocks.postClockOut).toHaveBeenCalledWith(
+			expect.objectContaining({ projectId: PROJECT_ID, taskId: TASK_ID }),
+		);
 	});
 
 	it("offers queued offline capture only while freezing is available", async () => {

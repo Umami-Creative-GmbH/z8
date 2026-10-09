@@ -29,6 +29,8 @@ import {
 	clocking,
 } from "@/lib/time-tracking/clocking";
 import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
+import { PROJECT_TASK_INELIGIBILITY_MESSAGES } from "@/lib/time-tracking/project-eligibility";
+import { isProjectTaskId } from "@/lib/time-tracking/task-attribution";
 import {
 	getUtcOffsetMinutesForZone,
 	isValidIanaTimezone,
@@ -224,6 +226,18 @@ function attributionOf(value: unknown): AttributionIntent {
 	return typeof value === "string" && value ? { kind: "replace", id: value } : { kind: "clear" };
 }
 
+/**
+ * The project task of a clock-out (#875): omitted, the task follows the project;
+ * `null` or an empty ID clears it. Anything else that cannot name a task (a
+ * malformed ID, a number, a boolean) is refused as an unknown task before
+ * anything runs.
+ */
+function taskAttributionOf(value: unknown): { ok: true; task?: AttributionIntent } | { ok: false } {
+	if (value === undefined) return { ok: true };
+	if (value === null || value === "") return { ok: true, task: { kind: "clear" } };
+	return isProjectTaskId(value) ? { ok: true, task: { kind: "replace", id: value } } : { ok: false };
+}
+
 type LegacyClockFailure = ClockInRefusal["code"] | ClockOutRefusal["code"];
 
 /**
@@ -265,6 +279,8 @@ const FAILURE_REPLIES: Record<
 	target_unknown: { status: 409, error: "No active work period found" },
 	target_not_active: { status: 409, error: "No active work period found" },
 	project_not_allowed: { status: 400, error: "Cannot assign to this project" },
+	// Also names the stable reason; see `refusedResponse`.
+	task_not_allowed: { status: 400, error: "Cannot book time to this task" },
 	work_category_not_allowed: {
 		status: 400,
 		error: "Cannot assign to this work category",
@@ -290,6 +306,17 @@ function refusedResponse(failure: ClockInRefusal | ClockOutRefusal) {
 					code: "append_adopted",
 				},
 				{ status: 409 },
+			);
+		case "task_not_allowed":
+			// The stable task reason, worded as the other clock adapters word it (#875).
+			return NextResponse.json(
+				{
+					error: PROJECT_TASK_INELIGIBILITY_MESSAGES[failure.reason],
+					code: "attribution_not_allowed",
+					field: "taskId",
+					reason: failure.reason,
+				},
+				{ status: FAILURE_REPLIES.task_not_allowed.status },
 			);
 		case "failed":
 		case "unconfirmed":
@@ -350,6 +377,7 @@ async function runLegacyClockCommand(resolvedHeaders: Headers, body: any, reques
 			type,
 			timestamp,
 			projectId,
+			taskId,
 			workCategoryId,
 			workLocationType,
 			browserTimezone,
@@ -491,6 +519,10 @@ async function runLegacyClockCommand(resolvedHeaders: Headers, body: any, reques
 				fallback: (await getSavedUserTimezone(session.user.id)) ?? "UTC",
 			},
 		};
+		const task = taskAttributionOf(taskId);
+		if (type === "clock_out" && !task.ok) {
+			return refusedResponse({ code: "task_not_allowed", reason: "task_not_found" });
+		}
 		const outcome =
 			type === "clock_in"
 				? await clocking.run({
@@ -506,6 +538,7 @@ async function runLegacyClockCommand(resolvedHeaders: Headers, body: any, reques
 							kind: "clock_out",
 							project: attributionOf(projectId),
 							workCategory: attributionOf(workCategoryId),
+							...(task.ok && task.task ? { task: task.task } : {}),
 						},
 					});
 		if (outcome.outcome === "refused") return refusedResponse(outcome.failure);

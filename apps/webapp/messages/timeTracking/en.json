@@ -105,6 +105,11 @@
       "projectNotAllowed": "Cannot assign to this project",
       "restPeriodBlocked": "Rest period not complete",
       "restPeriodBlockedDesc": "You must complete the required rest period before clocking in. Request an exception if needed.",
+      "taskDone": "This task is done, so no time can be booked to it",
+      "taskNotAllowed": "Cannot book time to this task",
+      "taskNotFound": "This task no longer exists",
+      "taskOtherProject": "This task belongs to another project",
+      "taskProjectNotBookable": "Time can no longer be booked to this task's project",
       "workCategoryNotAllowed": "Cannot assign to this work category"
     },
     "manualEntry": {
@@ -120,6 +125,7 @@
         "retry": "Try again",
         "targetChanged": "The employee changed, so the project and category were cleared.",
         "targetTimezone": "Times are in {employee}'s timezone: {timezone}",
+        "taskCleared": "A selected task is no longer available and was cleared.",
         "thisEmployee": "this employee",
         "utcFallback": "Neither {employee} nor the organization has a timezone set, so UTC is used."
       },
@@ -248,6 +254,13 @@
       "rowActions": "Time entry actions",
       "title": "Time Entries",
       "viewCalendar": "View Calendar"
+    },
+    "taskPicker": {
+      "doneTask": "{name} (done)",
+      "empty": "No task found",
+      "label": "Task",
+      "none": "No task",
+      "search": "Search tasks…"
     },
     "timeline": {
       "dayPicker": "Timeline day picker",

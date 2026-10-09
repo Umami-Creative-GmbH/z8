@@ -123,7 +123,7 @@ export async function getAssignedProjects(): Promise<
 	}
 
 	try {
-		const { projectsById, hoursByProjectId } =
+		const { projectsById, hoursByProjectId, tasksByProjectId } =
 			await getAssignedProjectsWithHours(
 				currentEmployee.id,
 				currentEmployee.organizationId,
@@ -139,6 +139,7 @@ export async function getAssignedProjects(): Promise<
 				budgetHours: project.budgetHours ? Number(project.budgetHours) : null,
 				deadline: project.deadline?.toISOString() ?? null,
 				totalHoursBooked: hoursByProjectId.get(project.id) ?? 0,
+				tasks: tasksByProjectId.get(project.id) ?? [],
 			}))
 			.sort((left, right) => left.name.localeCompare(right.name));
 

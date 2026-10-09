@@ -14,6 +14,7 @@ import {
 	timeRecordWork,
 	workPeriod,
 } from "@/db";
+import { recordedTaskId } from "@/lib/time-tracking/task-attribution";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 
 type LegacyApprovalStatus = "pending" | "approved" | "rejected";
@@ -33,6 +34,8 @@ export type LegacyWorkPeriod = {
 	durationMinutes: number | null;
 	approvalStatus: LegacyApprovalStatus;
 	projectId: string | null;
+	/** The task of the project (#873); absent from callers that predate tasks. */
+	taskId?: string | null;
 	workCategoryId: string | null;
 	workLocationType: WorkLocationType | null;
 	createdAt: Date;
@@ -127,6 +130,8 @@ export type CanonicalBackfillPayload = {
 		recordId: string;
 		allocationKind: "project";
 		projectId: string;
+		/** Present only when the period has a task, so the allocation and period agree. */
+		taskId?: string;
 		weightPercent: number;
 	}>;
 	timeRecordApprovalDecision: Array<{
@@ -210,6 +215,7 @@ export function buildCanonicalBackfillPayload(
 				recordId: workPeriod.id,
 				allocationKind: "project",
 				projectId: workPeriod.projectId,
+				...recordedTaskId(workPeriod.taskId),
 				weightPercent: 100,
 			});
 		}

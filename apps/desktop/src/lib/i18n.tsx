@@ -63,6 +63,23 @@ const german: Record<string, string> = {
 	"Work category": "Arbeitskategorie",
 	"Keep current assignment": "Aktuelle Zuordnung beibehalten",
 	"No assignment": "Keine Zuordnung",
+	Task: "Aufgabe",
+	"Keep current task": "Aktuelle Aufgabe beibehalten",
+	"No task": "Keine Aufgabe",
+	"The chosen task was marked done.":
+		"Die gewählte Aufgabe wurde als erledigt markiert.",
+	"The chosen task belongs to another project.":
+		"Die gewählte Aufgabe gehört zu einem anderen Projekt.",
+	"The chosen task no longer exists.":
+		"Die gewählte Aufgabe existiert nicht mehr.",
+	"The chosen task is not available.":
+		"Die gewählte Aufgabe ist nicht verfügbar.",
+	"The chosen project is not open for booking.":
+		"Das gewählte Projekt ist nicht für Buchungen geöffnet.",
+	"Time cannot be booked to the chosen project.":
+		"Auf das gewählte Projekt kann keine Zeit gebucht werden.",
+	"The chosen work category is not available.":
+		"Die gewählte Arbeitskategorie ist nicht verfügbar.",
 	"Applied when work ends": "Wird beim Arbeitsende zugeordnet",
 	Settings: "Einstellungen",
 	"Open dashboard": "Dashboard öffnen",

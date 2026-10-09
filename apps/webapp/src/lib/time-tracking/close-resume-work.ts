@@ -33,6 +33,7 @@ import {
 	findStandingClosure,
 } from "./close-active-work";
 import { findStandingStart, type StartLiveWorkResult, startLiveWorkGraph } from "./start-live-work";
+import { recordedTaskId } from "./task-attribution";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type { WorkTransactionContext } from "./web-clock-out-transaction";
 import { normalizeWorkLocationType, type WorkLocationType } from "./work-location";
@@ -212,6 +213,8 @@ export async function closeAndResumeWork(
 		},
 		carriedAttribution: {
 			projectId: attribution.projectId,
+			// The resumed work keeps the task with its project (#873).
+			...recordedTaskId(attribution.taskId),
 			workCategoryId: attribution.workCategoryId,
 		},
 		writer: input.writer,

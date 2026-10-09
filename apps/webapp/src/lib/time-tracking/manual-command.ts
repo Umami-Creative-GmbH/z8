@@ -50,6 +50,8 @@ export type ManualTimeEntryCommand = {
 	workCategoryId: string | null;
 	/** Omitted by older frozen commands; keep their submitted representation intact. */
 	workLocationType?: WorkLocationType;
+	/** A task of `projectId` (#873); omitted, never null, when the entry names none. */
+	taskId?: string;
 };
 
 export type ManualCommandRejection = { reason: "invalid_command"; field: string };
@@ -148,14 +150,17 @@ export function parseManualTimeEntryCommand(
 	| { ok: true; command: ManualTimeEntryCommand }
 	| { ok: false; rejection: ManualCommandRejection } {
 	try {
-		const hasWorkLocation = Boolean(
-			value &&
-				typeof value === "object" &&
-				Object.hasOwn(value, "workLocationType"),
-		);
+		const hasOptional = (key: string) =>
+			Boolean(value && typeof value === "object" && Object.hasOwn(value, key));
+		const hasWorkLocation = hasOptional("workLocationType");
+		const hasTask = hasOptional("taskId");
 		const record = exactRecord(
 			value,
-			hasWorkLocation ? [...COMMAND_KEYS, "workLocationType"] : COMMAND_KEYS,
+			[
+				...COMMAND_KEYS,
+				...(hasWorkLocation ? ["workLocationType"] : []),
+				...(hasTask ? ["taskId"] : []),
+			],
 			"command",
 		);
 		if (
@@ -192,6 +197,14 @@ export function parseManualTimeEntryCommand(
 		if (typeof record.reason !== "string" || record.reason.trim().length === 0) {
 			throw new InvalidCommandField("reason");
 		}
+		const projectId = nullableId(record.projectId, "projectId");
+		// A task belongs to the entry's project; it is never sent as null.
+		if (
+			hasTask &&
+			(projectId === null || typeof record.taskId !== "string" || record.taskId.length === 0)
+		) {
+			throw new InvalidCommandField("taskId");
+		}
 		return {
 			ok: true,
 			command: {
@@ -204,11 +217,12 @@ export function parseManualTimeEntryCommand(
 				zone: { basis: zone.basis, timezone: zone.timezone as string },
 				browserTimezone: browserTimezone as string | null,
 				reason: record.reason,
-				projectId: nullableId(record.projectId, "projectId"),
+				projectId,
 				workCategoryId: nullableId(record.workCategoryId, "workCategoryId"),
 				...(hasWorkLocation
 					? { workLocationType: record.workLocationType as WorkLocationType }
 					: {}),
+				...(hasTask ? { taskId: record.taskId as string } : {}),
 			},
 		};
 	} catch (error) {

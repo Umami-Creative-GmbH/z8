@@ -61,6 +61,8 @@ const replies: ClockCommandReplies<ClockOutFailure> = {
 		legacy_not_accepted: failed,
 		target_unknown: failed,
 		target_not_active: failed,
+		// Bots never name a task.
+		task_not_allowed: failed,
 		invalid_command: failed,
 		failed,
 	},

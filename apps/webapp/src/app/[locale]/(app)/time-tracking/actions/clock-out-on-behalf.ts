@@ -25,6 +25,8 @@ import {
 	workPeriodOwner,
 } from "@/lib/time-tracking/clocking";
 import type { OnBehalfClockOutRequest } from "@/lib/time-tracking/on-behalf-clock-out-request";
+import type { ProjectTaskIneligibility } from "@/lib/time-tracking/project-eligibility";
+import { namedTaskIntent } from "@/lib/time-tracking/task-attribution";
 import { revalidateAfterClockOut } from "./clocking";
 import { resolveManualEntryTargetZone } from "./manual-entry-target";
 
@@ -41,12 +43,18 @@ type RejectionCode =
 	| "append_review_required";
 
 /** Wire codes that carry detail beyond the code; mapped case by case. */
-type DetailedFailure = "billing_required" | "project_not_allowed" | "work_category_not_allowed";
+type DetailedFailure =
+	| "billing_required"
+	| "project_not_allowed"
+	| "task_not_allowed"
+	| "work_category_not_allowed";
 
 export type OnBehalfClockOutRejection =
 	| { code: Exclude<RejectionCode, "billing_required" | "attribution_not_allowed"> }
 	| { code: "billing_required"; reason: string }
-	| { code: "attribution_not_allowed"; field: "projectId" | "workCategoryId" };
+	| { code: "attribution_not_allowed"; field: "projectId" | "workCategoryId" }
+	/** The task cannot be booked, with the stable reason why (#873). */
+	| { code: "attribution_not_allowed"; field: "taskId"; reason: ProjectTaskIneligibility };
 
 /** The clock-out entry as committed, without the follow-ups' advice. */
 export type OnBehalfClockOutEntry = Omit<
@@ -102,6 +110,8 @@ function rejection(refusal: ClockOutRefusal): OnBehalfClockOutRejection | null {
 			return { code: "billing_required", reason: refusal.reason };
 		case "project_not_allowed":
 			return { code: "attribution_not_allowed", field: "projectId" };
+		case "task_not_allowed":
+			return { code: "attribution_not_allowed", field: "taskId", reason: refusal.reason };
 		case "work_category_not_allowed":
 			return { code: "attribution_not_allowed", field: "workCategoryId" };
 	}
@@ -132,6 +142,7 @@ export function toOnBehalfCommand(input: {
 			target: { kind: "period", workPeriodId: request.workPeriodId },
 			project: attributionIntent(request.projectId),
 			workCategory: attributionIntent(request.workCategoryId),
+			...namedTaskIntent(request.taskId),
 		},
 	};
 }

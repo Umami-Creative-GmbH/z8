@@ -49,6 +49,27 @@ describe("parseManualTimeEntryCommand", () => {
 		},
 	);
 
+	it("preserves a task of the command's project, alongside a work location", () => {
+		const submitted = {
+			...command,
+			projectId: "c0000000-0000-4000-8000-000000000001",
+			taskId: "d0000000-0000-4000-8000-000000000001",
+			workLocationType: "home",
+		};
+		expect(parseManualTimeEntryCommand(submitted)).toEqual({ ok: true, command: submitted });
+	});
+
+	it.each([
+		["without a project", { taskId: "d0000000-0000-4000-8000-000000000001" }],
+		["that is blank", { projectId: "c0000000-0000-4000-8000-000000000001", taskId: "" }],
+		["that is null", { projectId: "c0000000-0000-4000-8000-000000000001", taskId: null }],
+	])("rejects a task %s", (_case, fields) => {
+		expect(parseManualTimeEntryCommand({ ...command, ...fields })).toEqual({
+			ok: false,
+			rejection: { reason: "invalid_command", field: "taskId" },
+		});
+	});
+
 	it("accepts a complete version-2 command unchanged", () => {
 		expect(parseManualTimeEntryCommand(structuredClone(command))).toEqual({
 			ok: true,

@@ -172,6 +172,13 @@ export type AttributionIntent =
 export interface ClosingAttribution {
 	project: AttributionIntent;
 	workCategory: AttributionIntent;
+	/** Omitted unless a task was picked; an absent task follows the project. */
+	task?: AttributionIntent;
+}
+/** An open task of a project, as the desktop context lists it (#875). */
+export interface ProjectTask {
+	id: string;
+	name: string;
 }
 export interface DesktopContext {
 	userId: string;
@@ -184,7 +191,8 @@ export interface DesktopContext {
 	dayTotalBasis: import("../lib/day-total").DayBasis;
 	/** Older servers omit this flag; available projects remain the fallback. */
 	projectsEnabled?: boolean;
-	projects: { id: string; name: string }[];
+	/** `tasks` is missing from older servers and offline snapshots they wrote. */
+	projects: { id: string; name: string; tasks?: ProjectTask[] }[];
 	categories: { id: string; name: string }[];
 	liveWork: {
 		id: string;

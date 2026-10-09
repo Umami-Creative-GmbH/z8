@@ -59,6 +59,39 @@ describe("POST /api/time-clock", () => {
 		expect(mockState.clockIn).not.toHaveBeenCalled();
 	});
 
+	it.each([
+		["books a named task", "task-1"],
+		["clears the task", null],
+	])("passes a clock-out's task to the clocking service: %s", async (_case, taskId) => {
+		mockState.clockOut.mockResolvedValue({ success: true, data: { id: "entry-2" } });
+
+		const response = await POST(
+			timeClockRequest({ action: "clock_out", submissionId, projectId: "project-1", taskId }),
+		);
+
+		expect(response.status).toBe(200);
+		expect(mockState.clockOut).toHaveBeenCalledWith("project-1", undefined, {
+			browserTimezone: undefined,
+			submissionId,
+			taskId,
+		});
+	});
+
+	it("keeps a clock-out without a task as it was, so the task follows the project", async () => {
+		mockState.clockOut.mockResolvedValue({ success: true, data: { id: "entry-2" } });
+
+		await POST(timeClockRequest({ action: "clock_out", submissionId, projectId: "project-1" }));
+
+		expect(mockState.clockOut.mock.calls[0]?.[2]).not.toHaveProperty("taskId");
+	});
+
+	it("rejects an empty task id", async () => {
+		const response = await POST(timeClockRequest({ action: "clock_out", submissionId, taskId: "" }));
+
+		expect(response.status).toBe(400);
+		expect(mockState.clockOut).not.toHaveBeenCalled();
+	});
+
 	it("clocks in with the selected work location and the submission id", async () => {
 		mockState.clockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
 

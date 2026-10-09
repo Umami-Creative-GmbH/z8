@@ -1,6 +1,9 @@
 import { attributionAvailability } from "../lib/attribution-availability";
 import { useI18n } from "../lib/i18n";
-import type { useClosingAttribution } from "../hooks/useClosingAttribution";
+import {
+	offeredTasks,
+	type useClosingAttribution,
+} from "../hooks/useClosingAttribution";
 import type { DesktopContext } from "../types";
 export function ClosingAttributionFields({
 	form,
@@ -28,7 +31,15 @@ export function ClosingAttributionFields({
 			{fields
 				.filter(({ name }) => available[name])
 				.map(({ name, label, options }) => (
-					<form.Field key={name} name={name}>
+					<form.Field
+						key={name}
+						name={name}
+						listeners={
+							name === "project"
+								? { onChange: () => form.setFieldValue("task", "") }
+								: undefined
+						}
+					>
 						{(field) => (
 							<label className="form-field">
 								{t(label)}
@@ -52,6 +63,39 @@ export function ClosingAttributionFields({
 						)}
 					</form.Field>
 				))}
+			<form.Subscribe selector={(state) => state.values.project}>
+				{(project) => {
+					const { tasks, keepsProject } = offeredTasks(context, project);
+					if (!tasks.length) return null;
+					return (
+						<form.Field name="task">
+							{(field) => (
+								<label className="form-field">
+									{t("Task")}
+									<select
+										name={field.name}
+										value={field.state.value}
+										disabled={disabled}
+										onChange={(event) => field.handleChange(event.target.value)}
+									>
+										<option value="">
+											{t(keepsProject ? "Keep current task" : "No task")}
+										</option>
+										{keepsProject && (
+											<option value="clear">{t("No task")}</option>
+										)}
+										{tasks.map((task) => (
+											<option key={task.id} value={task.id}>
+												{task.name}
+											</option>
+										))}
+									</select>
+								</label>
+							)}
+						</form.Field>
+					);
+				}}
+			</form.Subscribe>
 		</div>
 	);
 }

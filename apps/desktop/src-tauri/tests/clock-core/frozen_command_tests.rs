@@ -1,8 +1,9 @@
 use crate::break_evidence::{BreakEvidence, BreakReview, IdleBreak, Observation, ZonedObservation};
 use crate::clock::WorkLocationType;
 use crate::frozen_command::{
-    freeze_break, freeze_clock_in, freeze_clock_out, new_operation_id, utc_instant, Admission,
-    ClockTarget, CommandContext, CommandFrame, CommandKind,
+    freeze_attributed_clock_out, freeze_break, freeze_clock_in, freeze_clock_out, new_operation_id,
+    utc_instant, Admission, AttributionIntent, ClockTarget, ClosingAttribution, CommandContext,
+    CommandFrame, CommandKind,
 };
 use chrono::{DateTime, TimeZone, Utc};
 
@@ -102,6 +103,36 @@ fn clock_out_binds_a_queued_clock_in_and_preserves_attribution() {
     assert_eq!(
         frozen.body,
         include_str!("fixtures/desktop-v2-clock-out.json").trim_end()
+    );
+}
+
+/// Pinned for the webapp's contract tests (#875/#882): the exact bytes of a
+/// clock-out that books a project task.
+#[test]
+fn clock_out_with_a_task_freezes_the_exact_v2_wire_command() {
+    let frozen = freeze_attributed_clock_out(
+        frame(
+            CLOCK_OUT_OPERATION,
+            instant() + chrono::Duration::hours(8),
+            "Europe/Berlin",
+            Admission::Delayed,
+            Some(CLOCK_IN_OPERATION),
+        ),
+        ClockTarget::ClockInOperation(CLOCK_IN_OPERATION.into()),
+        &ClosingAttribution {
+            project: AttributionIntent::Replace {
+                id: "0e6f1d2c-3b4a-4596-8877-665544332211".into(),
+            },
+            work_category: AttributionIntent::Preserve,
+            task: Some(AttributionIntent::Replace {
+                id: "1f2e3d4c-5b6a-4798-8a9b-0c1d2e3f4a5b".into(),
+            }),
+        },
+    );
+    assert_eq!(frozen.kind, CommandKind::ClockOut);
+    assert_eq!(
+        frozen.body,
+        include_str!("fixtures/desktop-v2-clock-out-task.json").trim_end()
     );
 }
 

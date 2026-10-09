@@ -2,6 +2,7 @@ import type { employee, timeEntry } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import type { AttributionIntent, ClockChannel, CloseActiveWorkResult } from "../close-active-work";
+import type { ProjectTaskIneligibility } from "../project-eligibility";
 import type { TimeEntryRequestMetadata } from "../time-entry-writer";
 import type { WorkLocationType } from "../work-location";
 
@@ -99,6 +100,11 @@ export type ClockOutBody = {
 	target?: ClockTarget;
 	project: AttributionIntent;
 	workCategory: AttributionIntent;
+	/**
+	 * The task of the project (#873). Absent, the task follows the project: kept
+	 * while the project stays, cleared when it changes.
+	 */
+	task?: AttributionIntent;
 };
 
 export type ClockInBody = {
@@ -194,6 +200,8 @@ export type ClockOutFailure =
 	| ClockTargetFailure
 	| "not_clocked_in"
 	| "project_not_allowed"
+	/** The task cannot be booked; the refusal names why (#873). */
+	| "task_not_allowed"
 	| "work_category_not_allowed"
 	| "invalid_interval";
 
@@ -232,10 +240,12 @@ type DetailedClockFailure =
 	| SharedClockRefusal["code"]
 	| "already_clocked_in"
 	| "holiday_blocked"
-	| "under_review";
+	| "under_review"
+	| "task_not_allowed";
 
 export type ClockOutRefusal =
 	| SharedClockRefusal
+	| { code: "task_not_allowed"; reason: ProjectTaskIneligibility }
 	| { code: Exclude<ClockOutFailure, DetailedClockFailure> };
 
 export type ClockInRefusal =

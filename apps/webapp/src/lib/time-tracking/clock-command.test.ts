@@ -50,6 +50,20 @@ describe("parseClockCommand", () => {
 		).toMatchObject({ ok: true });
 	});
 
+	it("accepts an optional task intent on a clock-out verbatim (#875)", () => {
+		for (const task of [
+			{ kind: "replace", id: "e0000000-0000-4000-8000-000000000001" },
+			{ kind: "clear" },
+			{ kind: "preserve" },
+		]) {
+			const withTask = { ...clockOut, task };
+			expect(parseClockCommand(withTask)).toEqual({ ok: true, command: withTask });
+		}
+		// A command without a task stays exactly as frozen: no `task` key appears.
+		const parsed = parseClockCommand(clockOut);
+		expect(parsed.ok && Object.keys(parsed.command).sort()).toEqual(Object.keys(clockOut).sort());
+	});
+
 	it("reports other versions as unsupported rather than invalid", () => {
 		expect(parseClockCommand({ ...clockIn, version: 4 })).toEqual({
 			ok: false,
@@ -87,6 +101,10 @@ describe("parseClockCommand", () => {
 		["an omitted attribution intent", { ...clockOut, project: undefined }],
 		["a replacement without id", { ...clockOut, project: { kind: "replace" } }],
 		["clock-out fields on a clock-in", { ...clockIn, target: clockOut.target }],
+		["a task on a clock-in", { ...clockIn, task: { kind: "clear" } }],
+		["a task replacement without id", { ...clockOut, task: { kind: "replace" } }],
+		["a task as a bare id", { ...clockOut, task: "e0000000-0000-4000-8000-000000000001" }],
+		["a null task", { ...clockOut, task: null }],
 	])("rejects %s", (_label, body) => {
 		expect(parseClockCommand(body)).toEqual({ ok: false, code: "invalid_command" });
 	});
@@ -323,12 +341,14 @@ describe("desktop frozen commands (#280)", () => {
 			"utf8",
 		).trimEnd();
 
-	it.each(["desktop-v2-clock-in.json", "desktop-v2-clock-out.json", "desktop-v2-break.json"])(
-		"accepts the exact bytes the desktop sends: %s",
-		(name) => {
-			const sent = JSON.parse(fixture(name));
-			const parsed = parseClockCommand(sent);
-			expect(parsed).toEqual({ ok: true, command: sent });
-		},
-	);
+	it.each([
+		"desktop-v2-clock-in.json",
+		"desktop-v2-clock-out.json",
+		"desktop-v2-clock-out-task.json",
+		"desktop-v2-break.json",
+	])("accepts the exact bytes the desktop sends: %s", (name) => {
+		const sent = JSON.parse(fixture(name));
+		const parsed = parseClockCommand(sent);
+		expect(parsed).toEqual({ ok: true, command: sent });
+	});
 });

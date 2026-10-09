@@ -27,8 +27,9 @@ import {
 	liveClockOutWriter,
 } from "../close-active-work";
 import { type CloseResumeWorkResult, isCloseResumeStanding } from "../close-resume-work";
-import { isProjectEligible } from "../project-eligibility";
+import { isProjectEligible, projectTaskIneligibility } from "../project-eligibility";
 import { findStandingStart, type StartLiveWorkResult } from "../start-live-work";
+import { attributionAfter } from "../task-attribution";
 import { TimeEntryAppendReviewRequiredError } from "../time-entry-append";
 import {
 	resolveFallbackTimezoneCapture,
@@ -234,6 +235,9 @@ function closureRefusal(command: ClockOutCommand, error: unknown): ClockOutRefus
 	}
 	if (error instanceof WorkIntervalError) return { code: "invalid_interval" };
 	if (error instanceof CompletedWorkAttributionError) {
+		if (error.field === "taskId") {
+			return { code: "task_not_allowed", reason: error.taskReason ?? "task_not_found" };
+		}
 		return {
 			code: error.field === "projectId" ? "project_not_allowed" : "work_category_not_allowed",
 		};
@@ -447,6 +451,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 				isActive: workPeriod.isActive,
 				deletedAt: workPeriod.deletedAt,
 				workLocationType: workPeriod.workLocationType,
+				projectId: workPeriod.projectId,
 			})
 			.from(workPeriod)
 			.where(
@@ -476,27 +481,31 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			workPeriodId: period.id,
 			start: instantFromDate(period.startTime),
 			workLocationType: (period.workLocationType as WorkLocationType | null) ?? null,
+			projectId: period.projectId,
 		};
 	}
 
 	async function attributionRefusal(
 		plan: ClockOutPlan,
+		target: ClockOutTarget,
 		eventInstant: Instant,
 	): Promise<ClockOutRefusal | null> {
 		const { employee: subject, command } = plan;
-		const { project, workCategory } = command.body;
-		if (
-			project.kind === "replace" &&
-			!(await isProjectEligible(
-				{
-					employeeId: subject.id,
-					teamId: subject.teamId,
-					organizationId: subject.organizationId,
-				},
-				project.id,
-			))
-		) {
+		const { project, workCategory, task } = command.body;
+		const eligibilityTarget = {
+			employeeId: subject.id,
+			teamId: subject.teamId,
+			organizationId: subject.organizationId,
+		};
+		if (project.kind === "replace" && !(await isProjectEligible(eligibilityTarget, project.id))) {
 			return { code: "project_not_allowed" };
+		}
+		if (task?.kind === "replace") {
+			const reason = await projectTaskIneligibility(eligibilityTarget, {
+				projectId: attributionAfter(project, target.projectId),
+				taskId: task.id,
+			});
+			if (reason) return { code: "task_not_allowed", reason };
 		}
 		if (
 			workCategory.kind === "replace" &&
@@ -527,7 +536,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		// A blocking holiday never refuses a clock-out: it would leave live work running.
 		const target = await resolveTarget(plan);
 		if ("refusal" in target) return refused({ code: target.refusal });
-		const attribution = await attributionRefusal(plan, eventInstant);
+		const attribution = await attributionRefusal(plan, target, eventInstant);
 		if (attribution) return refused(attribution);
 
 		let closure: ClockOutClosure;
@@ -538,6 +547,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 					workPeriodId: target.workPeriodId,
 					endTime: eventInstant,
 					projectId: attributionValue(command.body.project),
+					...(command.body.task ? { taskId: attributionValue(command.body.task) } : {}),
 					workCategoryId: attributionValue(command.body.workCategory),
 				},
 				async (coordination) =>

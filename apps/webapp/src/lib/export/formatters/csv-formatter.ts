@@ -134,6 +134,12 @@ export const CSV_COLUMNS = {
 		"clockInId",
 		"clockOutId",
 		"createdAt",
+		// Appended last so readers of the older column order keep working (#876).
+		// Key names must avoid "date", "time" and "at", which toCSV treats as dates.
+		"projectId",
+		"projectName",
+		"taskId",
+		"taskName",
 	],
 	absences: [
 		"id",

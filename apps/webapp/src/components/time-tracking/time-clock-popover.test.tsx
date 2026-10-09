@@ -18,8 +18,11 @@ const useElapsedTimerMock = vi.fn();
 
 let localStorageData: Record<string, string> = {};
 let isClockedInMock = false;
-let captureMode: "local-review" | "server" = "server";
-let activeWorkPeriodMock: { startTime: string } | null = null;
+let captureMode: "local-queue" | "local-review" | "server" = "server";
+let activeWorkPeriodMock: {
+	startTime: string;
+	currentTask?: { id: string; name: string; state: "open" | "done"; projectId: string } | null;
+} | null = null;
 
 function getPopoverClockButton(name: "Clock In" | "Clock Out"): HTMLElement {
 	const button = screen.getAllByRole("button", { name }).at(-1);
@@ -49,7 +52,10 @@ vi.mock("@/lib/query", () => ({
 
 vi.mock("@/lib/query/use-assigned-projects", () => ({
 	useAssignedProjects: () => ({
-		projects: [{ id: "project-1", name: "Project One" }],
+		projects: [
+			{ id: "project-1", name: "Project One", tasks: [{ id: "task-1", name: "Design" }] },
+			{ id: "project-2", name: "Project Two", tasks: [] },
+		],
 		isLoading: false,
 		isError: false,
 	}),
@@ -89,7 +95,15 @@ vi.mock("sonner", () => ({
 
 vi.mock("@/components/time-tracking/project-selector", () => ({
 	ProjectSelector: () => null,
-	ProjectSelectorView: () => null,
+	ProjectSelectorView: ({
+		onValueChange,
+	}: {
+		onValueChange: (projectId: string | undefined) => void;
+	}) => (
+		<button type="button" onClick={() => onValueChange("project-2")}>
+			Choose Project Two
+		</button>
+	),
 }));
 
 vi.mock("@/components/time-tracking/work-category-selector", () => ({
@@ -107,6 +121,15 @@ vi.mock("@/components/time-tracking/use-available-work-categories", () => ({
 
 describe("TimeClockPopover", () => {
 	beforeEach(() => {
+		vi.stubGlobal(
+			"ResizeObserver",
+			class {
+				observe() {}
+				unobserve() {}
+				disconnect() {}
+			},
+		);
+		HTMLElement.prototype.scrollIntoView = vi.fn();
 		vi.clearAllMocks();
 		localStorageData = {};
 		vi.stubGlobal("localStorage", {
@@ -270,5 +293,123 @@ describe("TimeClockPopover", () => {
 				workCategoryId: "category-1",
 			}),
 		);
+	});
+
+	describe("task at clock-out", () => {
+		beforeEach(() => {
+			localStorageData = { "z8-last-project-id": "project-1" };
+			isClockedInMock = true;
+			activeWorkPeriodMock = { startTime: "2026-05-18T08:00:00.000Z" };
+			clockOutMock.mockResolvedValue({ success: true, queued: true });
+		});
+
+		async function chooseTask(name: string) {
+			fireEvent.click(await screen.findByRole("combobox", { name: "Task" }));
+			fireEvent.click(await screen.findByRole("option", { name }));
+		}
+
+		it("books the chosen task of the chosen project", async () => {
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+
+			await chooseTask("Design");
+			fireEvent.click(getPopoverClockButton("Clock Out"));
+
+			await waitFor(() =>
+				expect(clockOutMock).toHaveBeenCalledWith(
+					expect.objectContaining({ projectId: "project-1", taskId: "task-1" }),
+				),
+			);
+		});
+
+		it("clears the chosen task when the project changes", async () => {
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+
+			await chooseTask("Design");
+			fireEvent.click(screen.getByRole("button", { name: "Choose Project Two" }));
+			expect(screen.queryByRole("combobox", { name: "Task" })).toBeNull();
+			fireEvent.click(getPopoverClockButton("Clock Out"));
+
+			await waitFor(() => expect(clockOutMock).toHaveBeenCalledOnce());
+			expect(clockOutMock.mock.calls[0]?.[0]).toEqual({ projectId: "project-2" });
+		});
+
+		it("books the chosen task with a clock-out queued as a frozen command", async () => {
+			captureMode = "local-queue";
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+
+			await chooseTask("Design");
+			fireEvent.click(screen.getByRole("button", { name: "Save clock-out" }));
+
+			await waitFor(() =>
+				expect(clockOutMock).toHaveBeenCalledWith(
+					expect.objectContaining({ projectId: "project-1", taskId: "task-1" }),
+				),
+			);
+		});
+
+		it("shows the running work's task and keeps it by naming none", async () => {
+			activeWorkPeriodMock = {
+				startTime: "2026-05-18T08:00:00.000Z",
+				currentTask: { id: "task-0", name: "Kickoff", state: "done", projectId: "project-1" },
+			};
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+
+			const task = await screen.findByRole("combobox", { name: "Task" });
+			expect(task.textContent).toContain("Kickoff");
+			fireEvent.click(getPopoverClockButton("Clock Out"));
+
+			await waitFor(() => expect(clockOutMock).toHaveBeenCalledOnce());
+			expect(clockOutMock.mock.calls[0]?.[0]).toEqual({ projectId: "project-1" });
+		});
+
+		it("clears the running work's task when no task is chosen", async () => {
+			activeWorkPeriodMock = {
+				startTime: "2026-05-18T08:00:00.000Z",
+				currentTask: { id: "task-1", name: "Design", state: "open", projectId: "project-1" },
+			};
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+
+			await chooseTask("No task");
+			fireEvent.click(getPopoverClockButton("Clock Out"));
+
+			await waitFor(() =>
+				expect(clockOutMock).toHaveBeenCalledWith(
+					expect.objectContaining({ projectId: "project-1", taskId: null }),
+				),
+			);
+		});
+
+		it("words a refused task's stable reason", async () => {
+			clockOutMock.mockResolvedValue({
+				success: false,
+				error: "Cannot book time to this task",
+				code: "task_done",
+			});
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+
+			await chooseTask("Design");
+			fireEvent.click(getPopoverClockButton("Clock Out"));
+
+			await waitFor(() =>
+				expect(toastMocks.error).toHaveBeenCalledWith(
+					"This task is done, so no time can be booked to it",
+					{ description: undefined },
+				),
+			);
+		});
+
+		it("offers no task while the clock-out is only saved for review", async () => {
+			captureMode = "local-review";
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+
+			expect(screen.queryByRole("combobox", { name: "Task" })).toBeNull();
+		});
 	});
 });

@@ -54,6 +54,7 @@ import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
 } from "./policy-clock-out-surcharge-snapshot";
+import { recordedTaskId } from "./task-attribution";
 import type { AppendReviewReason } from "./time-entry-append";
 import { loadWorkOccupants } from "./work-occupancy";
 import type { SealedWorkTransactionScope } from "./work-transaction";
@@ -79,6 +80,8 @@ export type ManualWorkFacts = {
 	durationMinutes: number;
 	reason: string;
 	projectId: string | null;
+	/** A task of `projectId` (#873), checked by preparation; absent or null for none. */
+	taskId?: string | null;
 	workCategoryId: string | null;
 	workLocationType?: ManualTimeEntryCommand["workLocationType"];
 	daysBack: number;
@@ -129,6 +132,8 @@ export type ManualWorkResult = {
 	};
 	attribution: {
 		projectId: string | null;
+		/** Present only when the work was booked to a task (#873). */
+		taskId?: string;
 		workCategoryId: string | null;
 		workLocationType?: ManualTimeEntryCommand["workLocationType"];
 	};
@@ -358,6 +363,7 @@ export async function recordManualWork(
 			recordId: record.id,
 			allocationKind: "project",
 			projectId: facts.projectId,
+			taskId: facts.taskId ?? null,
 			weightPercent: 100,
 		});
 	}
@@ -375,6 +381,7 @@ export async function recordManualWork(
 			endTime: endAt,
 			durationMinutes: facts.durationMinutes,
 			projectId: facts.projectId,
+			taskId: facts.taskId ?? null,
 			workCategoryId: facts.workCategoryId,
 			workLocationType: facts.workLocationType ?? null,
 			canonicalRecordId: record.id,
@@ -486,6 +493,7 @@ export async function recordManualWork(
 		},
 		attribution: {
 			projectId: facts.projectId,
+			...recordedTaskId(facts.taskId),
 			workCategoryId: facts.workCategoryId,
 			...(facts.workLocationType !== undefined
 				? { workLocationType: facts.workLocationType }

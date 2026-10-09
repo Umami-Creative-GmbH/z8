@@ -2,6 +2,7 @@
 
 import { useEffect, useReducer } from "react";
 import { useAssignedProjects } from "@/lib/query/use-assigned-projects";
+import { chooseProject } from "@/lib/time-tracking/task-attribution";
 import {
 	normalizeWorkLocationType,
 	type WorkLocationType,
@@ -17,6 +18,12 @@ interface TimeClockPopoverState {
 	lastClockOutEntryId: string | null;
 	notesText: string;
 	selectedProjectId: string | undefined;
+	/**
+	 * The task chosen for the selected project (#874): undefined while untouched, so
+	 * the clock-out names none and the running work's task follows the project;
+	 * null for an explicit "no task". Reset whenever the project changes.
+	 */
+	selectedTaskId: string | null | undefined;
 	selectedWorkCategoryId: string | undefined;
 	workLocationType: WorkLocationType;
 }
@@ -24,6 +31,7 @@ interface TimeClockPopoverState {
 type TimeClockPopoverAction =
 	| { type: "setNotesText"; value: string }
 	| { type: "setSelectedProjectId"; value: string | undefined }
+	| { type: "setSelectedTaskId"; value: string | null }
 	| { type: "setSelectedWorkCategoryId"; value: string | undefined }
 	| { type: "setWorkLocationType"; value: WorkLocationType }
 	| { type: "openNotesInput"; entryId: string }
@@ -43,6 +51,7 @@ function createInitialState(): TimeClockPopoverState {
 		lastClockOutEntryId: null,
 		notesText: "",
 		selectedProjectId: undefined,
+		selectedTaskId: undefined,
 		selectedWorkCategoryId: undefined,
 		workLocationType: getInitialWorkLocationType(),
 	};
@@ -55,8 +64,17 @@ function timeClockPopoverReducer(
 	switch (action.type) {
 		case "setNotesText":
 			return { ...state, notesText: action.value };
-		case "setSelectedProjectId":
-			return { ...state, selectedProjectId: action.value };
+		case "setSelectedProjectId": {
+			const { projectId, taskId } = chooseProject(
+				{ projectId: state.selectedProjectId, taskId: state.selectedTaskId },
+				action.value,
+			);
+			return projectId === state.selectedProjectId
+				? state
+				: { ...state, selectedProjectId: projectId, selectedTaskId: taskId };
+		}
+		case "setSelectedTaskId":
+			return { ...state, selectedTaskId: action.value };
 		case "setSelectedWorkCategoryId":
 			return { ...state, selectedWorkCategoryId: action.value };
 		case "setWorkLocationType":
@@ -79,6 +97,7 @@ function timeClockPopoverReducer(
 			return {
 				...state,
 				selectedProjectId: undefined,
+				selectedTaskId: undefined,
 				selectedWorkCategoryId: undefined,
 			};
 	}

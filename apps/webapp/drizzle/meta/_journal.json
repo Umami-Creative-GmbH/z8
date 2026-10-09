@@ -1093,6 +1093,27 @@
       "when": 1797696000000,
       "tag": "0155_personnel_file_retention",
       "breakpoints": true
+    },
+    {
+      "idx": 156,
+      "version": "7",
+      "when": 1797782400000,
+      "tag": "0156_project_task",
+      "breakpoints": true
+    },
+    {
+      "idx": 157,
+      "version": "7",
+      "when": 1797868800000,
+      "tag": "0157_project_template",
+      "breakpoints": true
+    },
+    {
+      "idx": 158,
+      "version": "7",
+      "when": 1797955200000,
+      "tag": "0158_project_task_booking",
+      "breakpoints": true
     }
   ]
 }

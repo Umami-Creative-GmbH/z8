@@ -68,6 +68,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"timeTracking.selectCategory",
 		"timeTracking.selectProject",
 		"timeTracking.startedAt",
+		"timeTracking.taskPicker",
 		"timeTracking.unknownCategory",
 		"timeTracking.unknownProject",
 		"timeTracking.workCategory",

@@ -14,6 +14,7 @@ import {
 import { auth } from "@/lib/auth";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
+import { withOpenTasks } from "@/lib/projects/project-tasks";
 import { getAvailableCategoriesForEmployee } from "@/lib/query/work-category.queries";
 import {
 	ClockingAccessError,
@@ -128,6 +129,8 @@ export async function GET() {
 					})
 				: Promise.resolve([]),
 		]);
+		// Each listed project's open tasks (#875); older clients ignore the field.
+		const projectsWithTasks = await withOpenTasks(organizationId, projects);
 		return NextResponse.json(
 			{
 				userId: session.user.id,
@@ -138,7 +141,7 @@ export async function GET() {
 				fetchedAt: systemClock.nowInstant().toString(),
 				dayTotalBasis: summary.dayTotalBasis,
 				projectsEnabled: organizationSettings?.projectsEnabled ?? false,
-				projects,
+				projects: projectsWithTasks,
 				categories: categories.map(({ id, name }) => ({ id, name })),
 				liveWork: liveWork ?? null,
 			},

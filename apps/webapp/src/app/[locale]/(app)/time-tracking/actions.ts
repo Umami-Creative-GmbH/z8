@@ -48,12 +48,19 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import { WorkPolicyService } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
+import type { BookedProjectTask, ProjectTaskChoice } from "@/lib/projects/project-task-model";
+import { listOpenTasksByProject } from "@/lib/projects/project-tasks";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
 import { breakDueStatus } from "@/lib/time-tracking/break-due";
 import { readComplianceTotals } from "@/lib/time-tracking/compliance-totals";
 import { readEffectiveWorkPolicyAt } from "@/lib/time-tracking/effective-work-policy";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
+import {
+	PROJECT_TASK_INELIGIBILITY_MESSAGES,
+	projectTaskIneligibility,
+} from "@/lib/time-tracking/project-eligibility";
+import { namedTaskId } from "@/lib/time-tracking/task-attribution";
 import { changeWorkPeriodProject } from "@/lib/time-tracking/work-period-attribution";
 import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
@@ -185,7 +192,8 @@ export async function getTimeClockStatus(): Promise<{
 	hasEmployee: boolean;
 	employeeId: string | null;
 	isClockedIn: boolean;
-	activeWorkPeriod: { id: string; startTime: Date } | null;
+	/** `currentTask`: the running work's task (#874), which the clock-out keeps unless changed. */
+	activeWorkPeriod: { id: string; startTime: Date; currentTask: BookedProjectTask | null } | null;
 }> {
 	const session = await getRequestSession();
 	if (!session?.user) {
@@ -230,6 +238,8 @@ export async function getTimeClockStatus(): Promise<{
 			eq(workPeriod.organizationId, emp.organizationId),
 			isNull(workPeriod.endTime),
 		),
+		// The task key keeps the task in the period's project and organization.
+		with: { task: { columns: { id: true, name: true, state: true, projectId: true } } },
 	});
 
 	return {
@@ -237,7 +247,7 @@ export async function getTimeClockStatus(): Promise<{
 		employeeId: emp.id,
 		isClockedIn: !!period,
 		activeWorkPeriod: period
-			? { id: period.id, startTime: period.startTime }
+			? { id: period.id, startTime: period.startTime, currentTask: period.task ?? null }
 			: null,
 	};
 }
@@ -656,6 +666,8 @@ export interface AssignedProject {
 	budgetHours: number | null;
 	deadline: string | null; // ISO string for serialization
 	totalHoursBooked: number;
+	/** The project's open tasks, by name (#874); empty when it has none. */
+	tasks: ProjectTaskChoice[];
 }
 
 /**
@@ -761,6 +773,11 @@ export async function getAssignedProjects(): Promise<
 			}
 		}
 
+		const tasksByProjectId = await listOpenTasksByProject({
+			organizationId: emp.organizationId,
+			projectIds,
+		});
+
 		// Build final result with budget/deadline data
 		const projectsMap = new Map<string, AssignedProject>();
 		for (const proj of bookableProjects.values()) {
@@ -772,6 +789,7 @@ export async function getAssignedProjects(): Promise<
 				budgetHours: proj.budgetHours ? Number(proj.budgetHours) : null,
 				deadline: proj.deadline?.toISOString() ?? null,
 				totalHoursBooked: hoursMap.get(proj.id) ?? 0,
+				tasks: tasksByProjectId.get(proj.id) ?? [],
 			});
 		}
 
@@ -789,11 +807,17 @@ export async function getAssignedProjects(): Promise<
 
 /**
  * Update the project assignment for a work period
- * Allows changing or removing the project after the fact
+ * Allows changing or removing the project after the fact.
+ *
+ * `taskId` (#873): undefined keeps the period's task while its project stays
+ * and clears it when the project changes; null clears it; an ID books the work
+ * to that task of `projectId`. Passing the current project with a task changes
+ * only the task. A refused task answers with its stable reason as `code`.
  */
 export async function updateWorkPeriodProject(
 	workPeriodId: string,
 	projectId: string | null,
+	taskId?: string | null,
 ): Promise<
 	ServerActionResult<{ workPeriodId: string; projectId: string | null }>
 > {
@@ -834,6 +858,22 @@ export async function updateWorkPeriodProject(
 			};
 		}
 
+		// A named task is checked first: it covers its project's bookability, so a
+		// task-only change of a project that can no longer be booked names that reason.
+		if (taskId) {
+			const taskIneligibility = await projectTaskIneligibility(
+				{ employeeId: emp.id, teamId: emp.teamId, organizationId: emp.organizationId },
+				{ projectId, taskId },
+			);
+			if (taskIneligibility) {
+				return {
+					success: false,
+					error: PROJECT_TASK_INELIGIBILITY_MESSAGES[taskIneligibility],
+					code: taskIneligibility,
+				};
+			}
+		}
+
 		// Validate project if provided
 		if (projectId) {
 			const projectValidation = await validateProjectAssignment(
@@ -862,9 +902,11 @@ export async function updateWorkPeriodProject(
 		await changeWorkPeriodProject({
 			organizationId: emp.organizationId,
 			employeeId: emp.id,
+			teamId: emp.teamId,
 			actorUserId: session.user.id,
 			period,
 			projectId,
+			...namedTaskId(taskId),
 		});
 
 		return {
@@ -875,6 +917,10 @@ export async function updateWorkPeriodProject(
 		const failure = describeAmendmentFailure(error);
 		if (failure) {
 			return { success: false, error: failure.message, code: failure.code };
+		}
+		// The task re-check under the work locks names its stable reason (#873).
+		if (error instanceof ValidationError && error.field === "taskId") {
+			return { success: false, error: error.message, code: String(error.value) };
 		}
 		if (
 			error instanceof ValidationError ||

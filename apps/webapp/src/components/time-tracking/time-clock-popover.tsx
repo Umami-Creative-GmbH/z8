@@ -25,7 +25,12 @@ import {
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { useElapsedTimer, useTimeClock } from "@/lib/query";
+import {
+	type BookedProjectTask,
+	projectTaskRefusalMessage,
+} from "@/lib/projects/project-task-model";
 import type { AssignedProject } from "@/lib/query/use-assigned-projects";
+import { namedTaskId, taskIdToSend } from "@/lib/time-tracking/task-attribution";
 import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import {
@@ -37,6 +42,7 @@ import { showSavedClockToast } from "./saved-clock-toast";
 import { WorkLocationSelector } from "./clock-in-out-widget-parts";
 import { ProjectSelectorView } from "./project-selector";
 import { QuickBreakPopover } from "./quick-break-popover";
+import { TaskSelectorView } from "./task-selector";
 import type { WorkCategory } from "./use-available-work-categories";
 import { useQuickBreakHandler } from "./use-quick-break-handler";
 import { useTimeClockPopoverState } from "./use-time-clock-popover-state";
@@ -124,12 +130,16 @@ interface ClockControlsViewProps {
 	isMutating: boolean;
 	onClockAction: () => void;
 	onProjectChange: (value: string | undefined) => void;
+	onTaskChange: (value: string | undefined) => void;
 	onWorkCategoryChange: (value: string | undefined) => void;
 	onWorkLocationChange: (value: WorkLocationType) => void;
 	projects: AssignedProject[];
 	projectsIsError: boolean;
 	projectsIsLoading: boolean;
 	selectedProjectId: string | undefined;
+	selectedTaskId: string | undefined;
+	/** The running work's task (#874), shown while its project is chosen. */
+	currentTask: BookedProjectTask | null;
 	selectedWorkCategoryId: string | undefined;
 	t: Translate;
 	timeFormatter: Intl.DateTimeFormat;
@@ -151,12 +161,15 @@ function ClockControlsView({
 	isMutating,
 	onClockAction,
 	onProjectChange,
+	onTaskChange,
 	onWorkCategoryChange,
 	onWorkLocationChange,
 	projects,
 	projectsIsError,
 	projectsIsLoading,
 	selectedProjectId,
+	selectedTaskId,
+	currentTask,
 	selectedWorkCategoryId,
 	t,
 	timeFormatter,
@@ -193,6 +206,20 @@ function ClockControlsView({
 					projects={projects}
 					isLoading={projectsIsLoading}
 					isError={projectsIsError}
+				/>
+			)}
+			{/* Server and frozen clock-outs carry a task; the legacy review queue keeps the project only. */}
+			{(isClockedIn || isLocalCapture) &&
+				captureMode !== "local-review" &&
+				!projectsIsLoading &&
+				!projectsIsError && (
+				<TaskSelectorView
+					projectId={selectedProjectId}
+					projects={projects}
+					value={selectedTaskId}
+					onValueChange={onTaskChange}
+					currentTask={currentTask}
+					disabled={isMutating}
 				/>
 			)}
 			{(isClockedIn || isLocalCapture) && employeeId && (
@@ -286,6 +313,15 @@ export function TimeClockPopover({
 		useTimeClockPopoverState({ employeeId, isClockedIn });
 	const handleAddBreak = useQuickBreakHandler(addBreak, t);
 
+	// The running work's task shows while its project is chosen and no other choice
+	// was made; the clock-out then keeps it (#874).
+	const currentTask = isClockedIn ? (activeWorkPeriod?.currentTask ?? null) : null;
+	const followsCurrentTask =
+		uiState.selectedTaskId === undefined &&
+		currentTask !== null &&
+		currentTask.projectId === uiState.selectedProjectId;
+	const shownTaskId = followsCurrentTask ? currentTask?.id : (uiState.selectedTaskId ?? undefined);
+
 	// Separate timer hook to isolate per-second re-renders to this component only
 	const elapsedSeconds = useElapsedTimer(activeWorkPeriod?.startTime ?? null);
 
@@ -332,9 +368,21 @@ export function TimeClockPopover({
 	};
 
 	const handleClockOut = async () => {
+		// Untouched or left on the running work's task, the clock-out names no task and
+		// the server keeps it while the project stays; any other choice is explicit.
+		const taskId =
+			uiState.selectedTaskId === undefined
+				? undefined
+				: taskIdToSend({
+						projectId: uiState.selectedProjectId,
+						taskId: uiState.selectedTaskId,
+						current: { projectId: currentTask?.projectId, taskId: currentTask?.id },
+					});
 		const result = await clockOut({
 			projectId: uiState.selectedProjectId,
 			workCategoryId: uiState.selectedWorkCategoryId,
+			// The legacy review queue carries no task (#874), so it shows no task picker.
+			...(captureMode !== "local-review" ? namedTaskId(taskId) : {}),
 		});
 
 		if (result.success) {
@@ -359,6 +407,11 @@ export function TimeClockPopover({
 		} else {
 			const holidayName =
 				"holidayName" in result ? result.holidayName : undefined;
+			// A refused task names its stable reason (#873), worded here.
+			const taskRefusal = projectTaskRefusalMessage(
+				"code" in result && typeof result.code === "string" ? result.code : null,
+			);
+			const taskMessage = taskRefusal ? t(taskRefusal[0], taskRefusal[1]) : null;
 			const errorMessage = holidayName
 				? t(
 						"timeTracking.errors.holidayBlocked",
@@ -367,7 +420,8 @@ export function TimeClockPopover({
 							holidayName,
 						},
 					)
-				: result.error ||
+				: taskMessage ||
+					result.error ||
 					t("timeTracking.errors.clockOutFailed", "Failed to clock out");
 
 			toast.error(errorMessage, {
@@ -487,6 +541,9 @@ export function TimeClockPopover({
 								onProjectChange={(value) =>
 									dispatch({ type: "setSelectedProjectId", value })
 								}
+								onTaskChange={(value) =>
+									dispatch({ type: "setSelectedTaskId", value: value ?? null })
+								}
 								onWorkCategoryChange={(value) =>
 									dispatch({ type: "setSelectedWorkCategoryId", value })
 								}
@@ -497,6 +554,8 @@ export function TimeClockPopover({
 								projectsIsError={assignedProjects.isError}
 								projectsIsLoading={assignedProjects.isLoading}
 								selectedProjectId={uiState.selectedProjectId}
+								selectedTaskId={shownTaskId}
+								currentTask={currentTask}
 								selectedWorkCategoryId={uiState.selectedWorkCategoryId}
 								t={t}
 								timeFormatter={timeFormatter}

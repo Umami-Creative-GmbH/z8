@@ -27,6 +27,8 @@ type TimeClockRequest =
 			action: "clock_out";
 			submissionId: string;
 			projectId?: string | null;
+			/** A task of the project (#874); omitted, the task follows the project. */
+			taskId?: string | null;
 			workCategoryId?: string | null;
 			browserTimezone?: string | null;
 			position?: ClockCommandPosition;
@@ -72,6 +74,7 @@ export function postClockIn(input: {
 export function postClockOut(input: {
 	submissionId: string;
 	projectId?: string | null;
+	taskId?: string | null;
 	workCategoryId?: string | null;
 	browserTimezone?: string | null;
 	position?: ClockCommandPosition;

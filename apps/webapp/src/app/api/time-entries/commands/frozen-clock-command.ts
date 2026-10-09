@@ -122,6 +122,8 @@ export function toClockingCommand(
 					target: closeTarget(command.target),
 					project: command.project,
 					workCategory: command.workCategory,
+					// Named only when the command names one (#875); absent, it follows the project.
+					...(command.task ? { task: command.task } : {}),
 				},
 			};
 		case "break":
@@ -203,6 +205,7 @@ const FAILURE_REPLIES: Record<
 	// Frozen closures always name their target.
 	not_clocked_in: { status: 409, code: "target_not_active" },
 	project_not_allowed: { status: 422, code: "attribution_not_allowed" },
+	task_not_allowed: { status: 422, code: "attribution_not_allowed" },
 	work_category_not_allowed: { status: 422, code: "attribution_not_allowed" },
 	invalid_interval: { status: 422, code: "invalid_interval" },
 	already_clocked_in: { status: 409, code: "already_clocked_in" },
@@ -223,6 +226,8 @@ function refusalDetails(refusal: ClockRefusal): Record<string, unknown> {
 			return refusal.holidayName ? { holidayName: refusal.holidayName } : {};
 		case "project_not_allowed":
 			return { field: "projectId" };
+		case "task_not_allowed":
+			return { field: "taskId", reason: refusal.reason };
 		case "work_category_not_allowed":
 			return { field: "workCategoryId" };
 		default:

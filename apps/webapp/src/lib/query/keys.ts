@@ -348,6 +348,16 @@ export const queryKeys = {
 		assignable: (orgId: string) => ["projects", "assignable", orgId] as const,
 		teamSelection: (orgId: string) => ["projects", "teamSelection", orgId] as const,
 		employeeSelection: (orgId: string) => ["projects", "employeeSelection", orgId] as const,
+		tasks: (projectId: string) => ["projects", "tasks", projectId] as const,
+		/** Task choices for clocking out another employee's running work (#874). */
+		onBehalfClockOutTasks: (workPeriodId: string) =>
+			["projects", "onBehalfClockOutTasks", workPeriodId] as const,
+		templates: (orgId: string) => ["projects", "templates", orgId] as const,
+		templateDetail: (templateId: string) => ["projects", "templateDetail", templateId] as const,
+		// Under `templates`/`templateDetail`, so template changes refresh them too.
+		templateChoices: (orgId: string) => ["projects", "templates", orgId, "choices"] as const,
+		templatePreview: (templateId: string) =>
+			["projects", "templateDetail", templateId, "preview"] as const,
 	},
 
 	// Surcharges

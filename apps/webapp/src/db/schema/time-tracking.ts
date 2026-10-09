@@ -23,7 +23,7 @@ import {
 	workLocationTypeEnum,
 } from "./enums";
 import { employee } from "./organization";
-import { project } from "./project";
+import { project, projectTask } from "./project";
 import { timeRecord } from "./time-record";
 import { currentTimestamp } from "./timestamp";
 import type {
@@ -132,6 +132,10 @@ export const workPeriod = pgTable(
 			onDelete: "set null",
 		}),
 
+		// The project's task (#873), mirrored from the canonical project allocation.
+		// Never set without the project.
+		taskId: uuid("task_id"),
+
 		// Work category assignment (optional)
 		// When set, the factor from the category is used to calculate effective working time
 		// e.g., 2h of "Passive Travel" (factor 0.5) = 1h effective working time
@@ -190,6 +194,21 @@ export const workPeriod = pgTable(
 		index("workPeriod_organizationId_idx").on(table.organizationId),
 		index("workPeriod_startTime_idx").on(table.startTime),
 		index("workPeriod_projectId_idx").on(table.projectId),
+		index("workPeriod_taskId_idx").on(table.taskId),
+		// The task belongs to the period's project and organization. The migration
+		// (0144) sets only task_id to null on delete, and its trigger clears the task
+		// whenever the project is cleared, so hard-deleting a project keeps the
+		// period without project and task. Deleting a booked task alone is refused
+		// by the application under the task's row lock.
+		foreignKey({
+			name: "workPeriod_task_fk",
+			columns: [table.taskId, table.projectId, table.organizationId],
+			foreignColumns: [projectTask.id, projectTask.projectId, projectTask.organizationId],
+		}).onDelete("set null"),
+		check(
+			"workPeriod_task_project_chk",
+			sql`${table.taskId} IS NULL OR ${table.projectId} IS NOT NULL`,
+		),
 		index("workPeriod_workCategoryId_idx").on(table.workCategoryId),
 		index("workPeriod_approvalStatus_idx").on(table.approvalStatus),
 		index("workPeriod_org_canonicalRecordId_idx").on(

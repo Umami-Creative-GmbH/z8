@@ -2,8 +2,13 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
-import { type customer, employee, project, projectManager } from "@/db/schema";
-import { AuthorizationError, type DatabaseError, NotFoundError } from "@/lib/effect/errors";
+import { customer, employee, project, projectManager } from "@/db/schema";
+import {
+	AuthorizationError,
+	type DatabaseError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
@@ -292,6 +297,41 @@ export function ensureSettingsActorCanAccessCustomerTarget(
 		}
 
 		return yield* Effect.fail(actorAuthorizationError(actor, options));
+	});
+}
+
+/**
+ * The active customer of the actor's organization that a project may be
+ * created for, or a refusal: unknown customers fail validation, customers
+ * outside the actor's scope fail authorization.
+ */
+export function ensureSettingsActorCanUseProjectCustomer(
+	actor: ProjectSettingsActor,
+	customerId: string,
+	action: string,
+) {
+	return Effect.gen(function* () {
+		const customerExists = yield* actor.dbService.query("verifyCustomer", async () => {
+			return await db.query.customer.findFirst({
+				where: and(
+					eq(customer.id, customerId),
+					eq(customer.organizationId, actor.organizationId),
+					eq(customer.isActive, true),
+				),
+			});
+		});
+
+		if (!customerExists) {
+			return yield* Effect.fail(
+				new ValidationError({ message: "Customer not found", field: "customerId" }),
+			);
+		}
+
+		yield* ensureSettingsActorCanAccessCustomerTarget(actor, customerExists, {
+			message: "You do not have access to assign this customer",
+			resource: "project",
+			action,
+		});
 	});
 }
 

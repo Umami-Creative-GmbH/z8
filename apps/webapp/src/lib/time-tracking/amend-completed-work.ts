@@ -34,7 +34,13 @@ import {
 	authorizeTimeCorrectionCategoryChange,
 	lockTrustedTimeCorrectionEmployeeTeamId,
 } from "@/lib/approvals/server/time-correction-category-authorization";
-import { BOOKABLE_PROJECT_STATUSES } from "./project-eligibility";
+import {
+	BOOKABLE_PROJECT_STATUSES,
+	PROJECT_TASK_INELIGIBILITY_MESSAGES,
+	type ProjectTaskIneligibility,
+	taskBookingIneligibility,
+} from "./project-eligibility";
+import { recordedTaskId } from "./task-attribution";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import {
 	compareInstants,
@@ -126,6 +132,11 @@ export type AmendCompletedWorkIntent = {
 	clockIn: EndpointCommand;
 	clockOut: EndpointCommand;
 	project: AttributionIntent;
+	/**
+	 * The task of the project (#873). Omitted, never stored, when the writer names
+	 * none: the task then follows the project (kept while it stays, else cleared).
+	 */
+	task?: AttributionIntent;
 	workCategory: AttributionIntent;
 	workLocation: AttributionIntent;
 	/** Note recorded on each correction entry. */
@@ -143,6 +154,8 @@ export type AmendedSegment = {
 	endUtcOffsetMinutes: number | null;
 	attribution: {
 		projectId: string | null;
+		/** Present only when the segment has a task (#873). */
+		taskId?: string;
 		workCategoryId: string | null;
 		workLocationType: string | null;
 	};
@@ -165,6 +178,8 @@ export type AmendCompletedWorkResult = {
 		clockIn: boolean;
 		clockOut: boolean;
 		project: boolean;
+		/** Present only when the task changed (#873). */
+		task?: true;
 		workCategory: boolean;
 		workLocation: boolean;
 	};
@@ -539,6 +554,63 @@ async function assertProjectEligible(
 	}
 }
 
+function taskRefusal(reason: ProjectTaskIneligibility) {
+	return new ValidationError({
+		message: PROJECT_TASK_INELIGIBILITY_MESSAGES[reason],
+		field: "taskId",
+		value: reason,
+	});
+}
+
+/**
+ * A newly booked task (#873), re-checked under locks: an open task of the
+ * resulting project, which must itself stay bookable for the owner (the project
+ * row is locked like a project change). The stable reason is the refusal's `value`.
+ */
+async function assertTaskBookable(
+	tx: TransactionClient,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		teamId: string | null;
+		projectId: string | null;
+		taskId: string;
+	},
+) {
+	const reason = await taskBookingIneligibility(tx, input, { lock: "share" });
+	if (reason) throw taskRefusal(reason);
+	try {
+		// The task is in the resulting project, so that project is not null here.
+		await assertProjectEligible(tx, { ...input, projectId: input.projectId as string });
+	} catch (error) {
+		if (error instanceof ValidationError) throw taskRefusal("project_not_bookable");
+		throw error;
+	}
+}
+
+/** A segment's attribution; the task is recorded only when there is one. */
+function segmentAttribution(values: {
+	projectId: string | null;
+	taskId?: string | null;
+	workCategoryId: string | null;
+	workLocationType: string | null;
+}): AmendedSegment["attribution"] {
+	return {
+		projectId: values.projectId,
+		...recordedTaskId(values.taskId),
+		workCategoryId: values.workCategoryId,
+		workLocationType: values.workLocationType,
+	};
+}
+
+/** The receipt's changes: `task` only when it changed, keeping earlier receipts' shape. */
+function receiptChanges(
+	changes: Omit<AmendCompletedWorkResult["changes"], "task"> & { task: boolean },
+): AmendCompletedWorkResult["changes"] {
+	const { task, ...rest } = changes;
+	return task ? { ...rest, task: true } : rest;
+}
+
 /**
  * Fresh amendment. The caller has already ruled out committed replay under the
  * same transaction, so an existing receipt with this identity is a collision.
@@ -562,7 +634,9 @@ export async function amendCompletedWork(
 
 	const target = await lockAuthority(tx, input);
 	const changesAttribution =
-		requested.project.kind === "replace" || requested.workCategory.kind === "replace";
+		requested.project.kind === "replace" ||
+		requested.task?.kind === "replace" ||
+		requested.workCategory.kind === "replace";
 	const teamId = changesAttribution
 		? await lockTrustedTimeCorrectionEmployeeTeamId({
 				tx,
@@ -678,6 +752,7 @@ export async function amendCompletedWork(
 	const allocationAgrees = period.projectId
 		? projectAllocations.length === 1 &&
 			projectAllocations[0]?.projectId === period.projectId &&
+			(projectAllocations[0]?.taskId ?? null) === (period.taskId ?? null) &&
 			projectAllocations[0]?.weightPercent === 100
 		: projectAllocations.length === 0;
 	if (
@@ -694,6 +769,7 @@ export async function amendCompletedWork(
 		clockIn: endpointIntent(requested.clockIn),
 		clockOut: endpointIntent(requested.clockOut),
 		project: requested.project,
+		task: requested.task,
 		workCategory: requested.workCategory,
 		workLocation: requested.workLocation,
 	};
@@ -705,6 +781,7 @@ export async function amendCompletedWork(
 				endAt: instantFromDate(period.endTime),
 				durationMinutes: period.durationMinutes,
 				projectId: period.projectId,
+				taskId: period.taskId,
 				workCategoryId: period.workCategoryId,
 				workLocationType: period.workLocationType,
 			},
@@ -843,6 +920,7 @@ export async function amendCompletedWork(
 			endTime: endAt,
 			durationMinutes: resulting.durationMinutes,
 			projectId: resulting.projectId,
+			taskId: resulting.taskId,
 			workCategoryId: resulting.workCategoryId,
 			workLocationType: resulting.workLocationType as WorkLocationType | null,
 			graphRevision: resultRevision,
@@ -901,8 +979,8 @@ export async function amendCompletedWork(
 			throw new CompletedWorkIntegrityError("Canonical work metadata update failed");
 		}
 	}
-	// Only project allocations follow the project; other allocation kinds stay.
-	if (changes.project) {
+	// Only project allocations follow the project and its task; other allocation kinds stay.
+	if (changes.project || changes.task) {
 		if (projectAllocations.length > 0) {
 			await tx.delete(timeRecordAllocation).where(
 				and(
@@ -920,6 +998,7 @@ export async function amendCompletedWork(
 				recordId: record.id,
 				allocationKind: "project",
 				projectId: resulting.projectId,
+				taskId: resulting.taskId,
 				weightPercent: 100,
 			});
 		}
@@ -948,6 +1027,7 @@ export async function amendCompletedWork(
 			endAt: Instant;
 			durationMinutes: number | null;
 			projectId: string | null;
+			taskId: string | null;
 			workCategoryId: string | null;
 			workLocationType: string | null;
 		},
@@ -959,11 +1039,7 @@ export async function amendCompletedWork(
 		durationMinutes: values.durationMinutes,
 		startUtcOffsetMinutes: clockIn.utcOffsetMinutes ?? null,
 		endUtcOffsetMinutes: clockOut.utcOffsetMinutes ?? null,
-		attribution: {
-			projectId: values.projectId,
-			workCategoryId: values.workCategoryId,
-			workLocationType: values.workLocationType,
-		},
+		attribution: segmentAttribution(values),
 	});
 	const result: AmendCompletedWorkResult = {
 		version: AMEND_COMPLETED_WORK_RESULT_VERSION,
@@ -979,11 +1055,12 @@ export async function amendCompletedWork(
 			endAt: instantFromDate(period.endTime),
 			durationMinutes: period.durationMinutes,
 			projectId: period.projectId,
+			taskId: period.taskId,
 			workCategoryId: period.workCategoryId,
 			workLocationType: period.workLocationType,
 		}),
 		segment: segmentOf(resultClockIn, resultClockOut, resulting),
-		changes,
+		changes: receiptChanges(changes),
 		corrections,
 		revisions: { workPeriod: { source: period.graphRevision, result: resultRevision } },
 		append: { admission: "append", used: endpointsChanged },
@@ -1002,8 +1079,8 @@ async function assertAttributionEligible(
 		organizationId: string;
 		employeeId: string;
 		teamId: string | null;
-		changes: { project: boolean; workCategory: boolean };
-		resulting: { projectId: string | null; workCategoryId: string | null };
+		changes: { project: boolean; task: boolean; workCategory: boolean };
+		resulting: { projectId: string | null; taskId: string | null; workCategoryId: string | null };
 		currentWorkCategoryId: string | null;
 	},
 ) {
@@ -1013,6 +1090,15 @@ async function assertAttributionEligible(
 			employeeId: input.employeeId,
 			teamId: input.teamId,
 			projectId: input.resulting.projectId,
+		});
+	}
+	if (input.changes.task && input.resulting.taskId) {
+		await assertTaskBookable(tx, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			teamId: input.teamId,
+			projectId: input.resulting.projectId,
+			taskId: input.resulting.taskId,
 		});
 	}
 	if (input.changes.workCategory) {
@@ -1042,6 +1128,7 @@ async function amendActiveAttribution(
 	const { organizationId, employeeId, command, intent: requested } = input;
 	const source = {
 		projectId: period.projectId,
+		taskId: period.taskId,
 		workCategoryId: period.workCategoryId,
 		workLocationType: period.workLocationType,
 	};
@@ -1064,6 +1151,7 @@ async function amendActiveAttribution(
 		.update(workPeriod)
 		.set({
 			projectId: planned.result.projectId,
+			taskId: planned.result.taskId,
 			workCategoryId: planned.result.workCategoryId,
 			workLocationType: planned.result.workLocationType as WorkLocationType | null,
 			graphRevision: resultRevision,
@@ -1107,9 +1195,9 @@ async function amendActiveAttribution(
 		intent: requested,
 		workPeriodId: period.id,
 		canonicalRecordId: null,
-		source: activeSegment(source),
-		segment: activeSegment(planned.result),
-		changes: { clockIn: false, clockOut: false, ...planned.changes },
+		source: activeSegment(segmentAttribution(source)),
+		segment: activeSegment(segmentAttribution(planned.result)),
+		changes: receiptChanges({ clockIn: false, clockOut: false, ...planned.changes }),
 		corrections: [],
 		revisions: { workPeriod: { source: period.graphRevision, result: resultRevision } },
 		append: { admission: "append", used: false },

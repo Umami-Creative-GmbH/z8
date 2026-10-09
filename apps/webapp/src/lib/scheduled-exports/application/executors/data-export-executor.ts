@@ -21,6 +21,8 @@ const VALID_CATEGORIES = [
 	"employees",
 	"teams",
 	"time_entries",
+	// Work periods carry the project and task columns (#876).
+	"work_periods",
 	"absences",
 	"projects",
 	"holidays",

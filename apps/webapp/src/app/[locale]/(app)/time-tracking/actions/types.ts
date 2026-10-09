@@ -1,5 +1,6 @@
 import type { approvalStatusEnum } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
+import type { ProjectTaskChoice } from "@/lib/projects/project-task-model";
 import type { OperationIdentity } from "@/lib/time-tracking/clocking/types";
 import type { ClockChannel } from "@/lib/time-tracking/close-active-work";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
@@ -48,6 +49,12 @@ export interface ClockOutActionContext extends BrowserTimezoneContext {
 	identityOrigin?: OperationIdentity["origin"];
 	instant?: Instant;
 	deviceInfo?: ClockChannel;
+	/**
+	 * The task of the clock-out's project (#873). Undefined keeps the work's task
+	 * while its project stays (and clears it when the project changes); null
+	 * clears it; an ID books the work to that task.
+	 */
+	taskId?: string | null;
 }
 
 export interface AssignedProject {
@@ -58,6 +65,8 @@ export interface AssignedProject {
 	budgetHours: number | null;
 	deadline: string | null;
 	totalHoursBooked: number;
+	/** The project's open tasks, by name (#874); empty when it has none. */
+	tasks: ProjectTaskChoice[];
 }
 
 /** Error code returned when the actor may not create entries for the target. */
@@ -102,6 +111,8 @@ export interface ManualTimeEntryInput {
 	timezone?: string;
 	browserTimezone?: string | null;
 	projectId?: string;
+	/** A task of `projectId` (#873). */
+	taskId?: string;
 	workCategoryId?: string;
 	workLocationType?: WorkLocationType;
 }

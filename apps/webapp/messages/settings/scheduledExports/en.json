@@ -18,7 +18,8 @@
         "absences": "Absences",
         "employees": "Employees",
         "projects": "Projects",
-        "timeEntries": "Time Entries"
+        "timeEntries": "Time Entries",
+        "workPeriods": "Work Periods (with project and task)"
       },
       "dateRange": {
         "customOffset": "Custom Offset",

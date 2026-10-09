@@ -119,6 +119,12 @@ const clockOutFields = {
 	target: closeTarget,
 	project: attribution,
 	workCategory: attribution,
+	/**
+	 * The project task (#875). Optional and omitted when not named, so commands
+	 * frozen before tasks existed keep their exact bytes. Absent, the task
+	 * follows the project.
+	 */
+	task: attribution.optional(),
 };
 
 /**
