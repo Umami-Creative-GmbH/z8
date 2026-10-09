@@ -7,6 +7,7 @@ import {
 	dateFromInstant,
 	type Instant,
 	instantFromDate,
+	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import { complianceTotalsOf } from "@/lib/time-tracking/compliance-totals";
 
@@ -58,10 +59,9 @@ export async function loadBreakDueFacts(
 		// Rows come latest first: an employee's most recent live work wins.
 		if (!timezone || days.has(row.employeeId)) continue;
 		const start = instantFromDate(row.start);
-		const localDate = start.toZonedDateTimeISO(timezone).toPlainDate().toString();
 		days.set(row.employeeId, {
 			liveWork: { id: row.id, start },
-			day: localDayRange(localDate, timezone),
+			day: localDayRange(plainDateAt(start, timezone).toString(), timezone),
 		});
 	}
 	if (days.size === 0) return facts;

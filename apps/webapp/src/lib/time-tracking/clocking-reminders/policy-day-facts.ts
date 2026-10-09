@@ -1,5 +1,11 @@
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
-import { dateFromInstant, type Instant, parsePlainDate } from "@/lib/datetime/temporal-core";
+import {
+	dateFromInstant,
+	type Instant,
+	type PlainDate,
+	type PlainTime,
+	parsePlainTimeMinute,
+} from "@/lib/datetime/temporal-core";
 import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.service";
 import type { PolicyDayFacts } from "./policy-reminders";
 
@@ -13,13 +19,19 @@ const WEEKDAYS = [
 	"sunday",
 ] as const;
 
-/** The latest clock-in of a detailed schedule's work day; simple schedules carry none. */
-export function latestClockInOn(policy: EffectiveWorkPolicy | null, day: string): string | null {
+/**
+ * The latest clock-in of a detailed schedule's work day; simple schedules carry none. It is stored
+ * as `HH:mm` text.
+ */
+export function latestClockInOn(
+	policy: EffectiveWorkPolicy | null,
+	day: PlainDate,
+): PlainTime | null {
 	const schedule = policy?.schedule;
 	if (schedule?.scheduleType !== "detailed") return null;
-	const weekday = WEEKDAYS[parsePlainDate(day).dayOfWeek - 1];
+	const weekday = WEEKDAYS[day.dayOfWeek - 1];
 	const scheduled = schedule.days.find((entry) => entry.dayOfWeek === weekday && entry.isWorkDay);
-	return scheduled?.latestClockIn ?? null;
+	return scheduled?.latestClockIn ? parsePlainTimeMinute(scheduled.latestClockIn) : null;
 }
 
 /**
@@ -56,7 +68,7 @@ export function createPolicyDayFacts(input: {
 			const { getDailyWorkRequirementsForEmployee } = await import(
 				"@/lib/calendar/work-policy-requirements"
 			);
-			const dayStart = dateFromInstant(localDayRange(day, input.timezone).start);
+			const dayStart = dateFromInstant(localDayRange(day.toString(), input.timezone).start);
 			const requirements = await getDailyWorkRequirementsForEmployee({
 				organizationId: input.organizationId,
 				employeeId: input.employeeId,
@@ -64,7 +76,7 @@ export function createPolicyDayFacts(input: {
 				endDate: dayStart,
 				timezone: input.timezone,
 			});
-			return requirements[day]?.requiredMinutes ?? 0;
+			return requirements[day.toString()]?.requiredMinutes ?? 0;
 		},
 	};
 }

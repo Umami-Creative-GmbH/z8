@@ -1,4 +1,4 @@
-import { compareInstants, type Instant } from "@/lib/datetime/temporal-core";
+import { compareInstants, type Instant, type PlainDate } from "@/lib/datetime/temporal-core";
 import { shiftInterval, workMatchesShift } from "@/lib/scheduling/shift-occasion";
 import { clockingReminderOccasionKey, type DueClockingReminder } from "./occasion";
 import type { ClockingReminderSettings } from "./settings-policy";
@@ -6,8 +6,8 @@ import type { ClockingReminderSettings } from "./settings-policy";
 /** A published shift assigned to the employee. */
 export interface ReminderShift {
 	id: string;
-	/** `shift.date`: the organization-local midnight of the shift's calendar date. */
-	date: Instant;
+	/** The shift's calendar date, read from `shift.date` in the organization's timezone. */
+	date: PlainDate;
 	startTime: string;
 	endTime: string;
 }
@@ -23,8 +23,6 @@ export interface ShiftReminderInput {
 	employeeId: string;
 	/** The employee's effective timezone (their own, otherwise the organization's). */
 	timezone: string;
-	/** The zone `shift.date` is keyed in. */
-	organizationTimezone: string;
 	settings: ClockingReminderSettings;
 	shifts: readonly ReminderShift[];
 	/** The employee's recent and live work. */
@@ -40,11 +38,7 @@ const notBefore = (left: Instant, right: Instant) => compareInstants(left, right
 export function evaluateShiftReminders(input: ShiftReminderInput): DueClockingReminder[] {
 	const { now, settings } = input;
 	return input.shifts.flatMap((shift): DueClockingReminder[] => {
-		const day = shift.date.toZonedDateTimeISO(input.organizationTimezone).toPlainDate().toString();
-		const interval = shiftInterval(
-			{ date: day, startTime: shift.startTime, endTime: shift.endTime },
-			input.timezone,
-		);
+		const interval = shiftInterval(shift, input.timezone);
 		const reminder = (type: DueClockingReminder["type"], expectedAt: Instant) => ({
 			type,
 			occasionKey: clockingReminderOccasionKey(type, {
@@ -52,7 +46,7 @@ export function evaluateShiftReminders(input: ShiftReminderInput): DueClockingRe
 				shiftId: shift.id,
 				employeeId: input.employeeId,
 			}),
-			day,
+			day: shift.date,
 			expectedAt,
 			shift: { id: shift.id, ...interval },
 		});

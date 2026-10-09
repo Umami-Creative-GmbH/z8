@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseInstant } from "@/lib/datetime/temporal-core";
+import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { shiftInterval, workMatchesShift } from "./shift-occasion";
 
 const at = parseInstant;
@@ -7,7 +7,7 @@ const at = parseInstant;
 describe("shiftInterval", () => {
 	it("reads the shift's wall-clock times in the given timezone", () => {
 		const interval = shiftInterval(
-			{ date: "2026-04-28", startTime: "08:00", endTime: "16:00" },
+			{ date: parsePlainDate("2026-04-28"), startTime: "08:00", endTime: "16:00" },
 			"Europe/Berlin",
 		);
 		expect(interval.start.toString()).toBe("2026-04-28T06:00:00Z");
@@ -16,7 +16,7 @@ describe("shiftInterval", () => {
 
 	it("ends an overnight shift on the next day", () => {
 		const interval = shiftInterval(
-			{ date: "2026-04-28", startTime: "22:00", endTime: "06:00" },
+			{ date: parsePlainDate("2026-04-28"), startTime: "22:00", endTime: "06:00" },
 			"America/New_York",
 		);
 		expect(interval.start.toString()).toBe("2026-04-29T02:00:00Z");
@@ -25,7 +25,7 @@ describe("shiftInterval", () => {
 
 	it("moves a start inside a spring-forward gap to the first valid instant", () => {
 		const interval = shiftInterval(
-			{ date: "2026-03-29", startTime: "02:30", endTime: "10:00" },
+			{ date: parsePlainDate("2026-03-29"), startTime: "02:30", endTime: "10:00" },
 			"Europe/Berlin",
 		);
 		expect(interval.start.toString()).toBe("2026-03-29T01:30:00Z");

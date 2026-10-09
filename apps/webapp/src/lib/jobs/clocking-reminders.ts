@@ -110,6 +110,7 @@ async function remindOrganization(
 		const facts = await loadShiftReminderFacts(
 			{
 				organizationId: organization.organizationId,
+				organizationTimezone: organization.timezone,
 				employeeIds: employees.map((person) => person.employeeId),
 				now,
 			},
@@ -130,7 +131,6 @@ async function remindOrganization(
 					now,
 					employeeId: person.employeeId,
 					timezone: person.timezone,
-					organizationTimezone: organization.timezone,
 					settings: organization.settings,
 					...personFacts,
 				};
@@ -201,7 +201,9 @@ async function withoutExemptDays(
 ): Promise<DueClockingReminder[]> {
 	const days = [
 		...new Set(
-			due.filter((reminder) => isExemptOnAbsenceOrHoliday(reminder.type)).map((r) => r.day),
+			due
+				.filter((reminder) => isExemptOnAbsenceOrHoliday(reminder.type))
+				.map((reminder) => reminder.day.toString()),
 		),
 	];
 	if (days.length === 0) return due;
@@ -217,7 +219,7 @@ async function withoutExemptDays(
 	return due.filter(
 		(reminder) =>
 			!isExemptOnAbsenceOrHoliday(reminder.type) ||
-			(!absent.has(reminder.day) && !holidays.has(reminder.day)),
+			(!absent.has(reminder.day.toString()) && !holidays.has(reminder.day.toString())),
 	);
 }
 

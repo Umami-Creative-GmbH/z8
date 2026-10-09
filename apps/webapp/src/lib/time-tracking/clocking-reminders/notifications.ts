@@ -93,7 +93,7 @@ export function buildClockingReminderNotification(input: {
 		idempotencyKey: `clocking-reminder:${reminder.occasionKey}`,
 		metadata: {
 			occasionKey: reminder.occasionKey,
-			day: reminder.day,
+			day: reminder.day.toString(),
 			expectedAt: reminder.expectedAt.toString(),
 			i18n: { ...copy, params },
 		},

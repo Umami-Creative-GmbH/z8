@@ -1,4 +1,4 @@
-import { compareInstants, type Instant } from "@/lib/datetime/temporal-core";
+import { compareInstants, type Instant, plainDateAt } from "@/lib/datetime/temporal-core";
 import {
 	type BreakDueRegulation,
 	type BreakDueRule,
@@ -54,7 +54,7 @@ export function evaluateBreakDueReminders(input: BreakDueReminderInput): DueCloc
 				workPeriodId: input.liveWork.id,
 				rule: ruleKey(next.rule),
 			}),
-			day: input.liveWork.start.toZonedDateTimeISO(input.timezone).toPlainDate().toString(),
+			day: plainDateAt(input.liveWork.start, input.timezone),
 			expectedAt: next.at,
 			shift: null,
 		},

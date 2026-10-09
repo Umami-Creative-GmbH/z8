@@ -1,5 +1,5 @@
 import { resolveScheduledWallClock } from "@/lib/datetime/temporal-boundaries";
-import { compareInstants, type Instant } from "@/lib/datetime/temporal-core";
+import { compareInstants, type Instant, type PlainDate } from "@/lib/datetime/temporal-core";
 
 /** Work started up to this long before a shift start still belongs to that shift. */
 export const SHIFT_WORK_ASSOCIATION_LEAD_MINUTES = 120;
@@ -10,8 +10,8 @@ export interface ShiftInterval {
 }
 
 export interface ShiftWallTimes {
-	/** Calendar date of the shift, `YYYY-MM-DD`. */
-	date: string;
+	/** Calendar date of the shift. */
+	date: PlainDate;
 	/** Wall-clock `HH:mm`. */
 	startTime: string;
 	/** Wall-clock `HH:mm`; at or before the start means the next day. */
@@ -20,8 +20,9 @@ export interface ShiftWallTimes {
 
 /** Reads a shift's wall-clock times as instants in `timezone`. DST gaps move forward. */
 export function shiftInterval(shift: ShiftWallTimes, timezone: string): ShiftInterval {
-	const start = resolveScheduledWallClock({ date: shift.date, time: shift.startTime, timezone });
-	const sameDayEnd = resolveScheduledWallClock({ date: shift.date, time: shift.endTime, timezone });
+	const date = shift.date.toString();
+	const start = resolveScheduledWallClock({ date, time: shift.startTime, timezone });
+	const sameDayEnd = resolveScheduledWallClock({ date, time: shift.endTime, timezone });
 	const end =
 		compareInstants(sameDayEnd.toInstant(), start.toInstant()) <= 0
 			? resolveScheduledWallClock({

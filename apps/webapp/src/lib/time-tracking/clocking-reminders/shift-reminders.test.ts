@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseInstant } from "@/lib/datetime/temporal-core";
+import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { DEFAULT_CLOCKING_REMINDER_SETTINGS } from "./settings-policy";
 import { evaluateShiftReminders, type ShiftReminderInput } from "./shift-reminders";
 
@@ -10,11 +10,10 @@ const enabled = {
 	forgottenClockOut: { enabled: true, graceMinutes: 30 },
 };
 
-// 08:00-16:00 on 2026-04-28 in Europe/Berlin (06:00Z-14:00Z). The shift date is stored as the
-// organization's local midnight.
+// 08:00-16:00 on 2026-04-28 in Europe/Berlin (06:00Z-14:00Z).
 const berlinShift = {
 	id: "shift-1",
-	date: at("2026-04-27T22:00:00Z"),
+	date: parsePlainDate("2026-04-28"),
 	startTime: "08:00",
 	endTime: "16:00",
 };
@@ -24,7 +23,6 @@ function input(overrides: Partial<ShiftReminderInput>): ShiftReminderInput {
 		now: at("2026-04-28T06:15:00Z"),
 		employeeId: "employee-1",
 		timezone: "Europe/Berlin",
-		organizationTimezone: "Europe/Berlin",
 		settings: enabled,
 		shifts: [berlinShift],
 		work: [],
@@ -41,7 +39,7 @@ describe("missed clock-in reminders for published shifts", () => {
 			{
 				type: "missed_clock_in_reminder",
 				occasionKey: "missed_clock_in_reminder:shift:shift-1:employee-1",
-				day: "2026-04-28",
+				day: parsePlainDate("2026-04-28"),
 				expectedAt: at("2026-04-28T06:00:00Z"),
 				shift: {
 					id: "shift-1",
@@ -100,15 +98,15 @@ describe("missed clock-in reminders for published shifts", () => {
 		).toHaveLength(1);
 	});
 
-	it("reads shift times in the employee's own timezone on the organization's shift date", () => {
-		// The organization is in Berlin; the employee works from New York (08:00 EDT = 12:00Z).
+	it("reads shift times in the employee's own timezone on the shift's date", () => {
+		// The employee works from New York (08:00 EDT = 12:00Z).
 		const reminders = (now: string) =>
 			evaluateShiftReminders(input({ timezone: "America/New_York", now: at(now) }));
 		expect(reminders("2026-04-28T06:15:00Z")).toEqual([]);
 		expect(reminders("2026-04-28T12:15:00Z")).toMatchObject([
 			{
 				type: "missed_clock_in_reminder",
-				day: "2026-04-28",
+				day: parsePlainDate("2026-04-28"),
 				expectedAt: at("2026-04-28T12:00:00Z"),
 			},
 		]);
@@ -128,7 +126,7 @@ describe("forgotten clock-out reminders for published shifts", () => {
 			{
 				type: "forgotten_clock_out_reminder",
 				occasionKey: "forgotten_clock_out_reminder:shift:shift-1:employee-1",
-				day: "2026-04-28",
+				day: parsePlainDate("2026-04-28"),
 				expectedAt: at("2026-04-28T14:00:00Z"),
 				shift: {
 					id: "shift-1",

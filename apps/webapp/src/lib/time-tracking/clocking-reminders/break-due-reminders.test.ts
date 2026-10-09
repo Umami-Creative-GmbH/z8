@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseInstant } from "@/lib/datetime/temporal-core";
+import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { type BreakDueReminderInput, evaluateBreakDueReminders } from "./break-due-reminders";
 import { DEFAULT_CLOCKING_REMINDER_SETTINGS } from "./settings-policy";
 
@@ -30,7 +30,7 @@ describe("break-due reminders for live work", () => {
 			{
 				type: "break_due_reminder",
 				occasionKey: "break_due_reminder:live_work:work-1:max_uninterrupted",
-				day: "2026-04-28",
+				day: parsePlainDate("2026-04-28"),
 				expectedAt: at("2026-04-28T12:00:00Z"),
 				shift: null,
 			},
@@ -91,6 +91,8 @@ describe("break-due reminders for live work", () => {
 				now: at("2026-04-29T03:20:00Z"),
 			}),
 		);
-		expect(due).toMatchObject([{ day: "2026-04-28", expectedAt: at("2026-04-29T03:30:00Z") }]);
+		expect(due).toMatchObject([
+			{ day: parsePlainDate("2026-04-28"), expectedAt: at("2026-04-29T03:30:00Z") },
+		]);
 	});
 });

@@ -1,4 +1,4 @@
-import type { Instant } from "@/lib/datetime/temporal-core";
+import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
 
 export type ClockingReminderType =
 	| "missed_clock_in_reminder"
@@ -12,7 +12,7 @@ export type ClockingReminderType =
 export type ClockingReminderOccasionSource =
 	| { kind: "shift"; shiftId: string; employeeId: string }
 	/** An employee-local day without a shift, judged by the effective work policy (#830). */
-	| { kind: "policy_day"; employeeId: string; day: string }
+	| { kind: "policy_day"; employeeId: string; day: PlainDate }
 	| {
 			/** One break rule of one live work; resumed work after a break is a new live work. */
 			kind: "live_work";
@@ -30,7 +30,7 @@ export function clockingReminderOccasionKey(
 		case "shift":
 			return `${type}:shift:${source.shiftId}:${source.employeeId}`;
 		case "policy_day":
-			return `${type}:policy_day:${source.employeeId}:${source.day}`;
+			return `${type}:policy_day:${source.employeeId}:${source.day.toString()}`;
 		case "live_work":
 			return `${type}:live_work:${source.workPeriodId}:${source.rule}`;
 	}
@@ -40,8 +40,8 @@ export function clockingReminderOccasionKey(
 export interface DueClockingReminder {
 	type: ClockingReminderType;
 	occasionKey: string;
-	/** The employee-local calendar day the occasion belongs to, `YYYY-MM-DD`. */
-	day: string;
+	/** The employee-local calendar day the occasion belongs to. */
+	day: PlainDate;
 	/**
 	 * The expected start (missed clock-in), the expected end (forgotten clock-out), or when the
 	 * break is due (break due).

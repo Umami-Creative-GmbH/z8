@@ -1,15 +1,20 @@
-import { resolveScheduledWallClock } from "@/lib/datetime/temporal-boundaries";
-import { compareInstants, type Instant } from "@/lib/datetime/temporal-core";
+import {
+	compareInstants,
+	type Instant,
+	type PlainDate,
+	type PlainTime,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
 import { shiftInterval, workMatchesShift } from "@/lib/scheduling/shift-occasion";
 import { clockingReminderOccasionKey, type DueClockingReminder } from "./occasion";
 import type { ReminderWork, ShiftReminderInput } from "./shift-reminders";
 
 /** What the evaluator needs to know about the employee's work policy on a local day. */
 export interface PolicyDayFacts {
-	/** The effective policy's latest clock-in (`HH:mm`) for the day's weekday, if any. */
-	latestClockIn(day: string): Promise<string | null>;
+	/** The effective policy's latest clock-in for the day's weekday, if any. */
+	latestClockIn(day: PlainDate): Promise<PlainTime | null>;
 	/** The day's required minutes, after absences, holidays and employment; 0 when none. */
-	requiredMinutes(day: string): Promise<number>;
+	requiredMinutes(day: PlainDate): Promise<number>;
 }
 
 export type PolicyReminderInput = ShiftReminderInput;
@@ -45,11 +50,11 @@ async function forgottenClockOut(
 	if (!settings.forgottenClockOut.enabled) return null;
 	const live = input.work.find((work) => work.end === null);
 	if (!live) return null;
-	const day = localDay(live.start, input.timezone);
+	const day = plainDateAt(live.start, input.timezone);
 	if (hasShiftOn(input, day) || matchesAnyShift(input, live)) return null;
 	const completedMs = input.work.reduce(
 		(total, work) =>
-			work.end !== null && localDay(work.start, input.timezone) === day
+			work.end !== null && plainDateAt(work.start, input.timezone).equals(day)
 				? total + (work.end.epochMilliseconds - work.start.epochMilliseconds)
 				: total,
 		0,
@@ -79,19 +84,7 @@ async function forgottenClockOut(
 const MINUTE_MS = 60_000;
 
 function matchesAnyShift(input: PolicyReminderInput, work: ReminderWork): boolean {
-	return input.shifts.some((shift) =>
-		workMatchesShift(
-			shiftInterval(
-				{
-					date: localDay(shift.date, input.organizationTimezone),
-					startTime: shift.startTime,
-					endTime: shift.endTime,
-				},
-				input.timezone,
-			),
-			work,
-		),
-	);
+	return input.shifts.some((shift) => workMatchesShift(shiftInterval(shift, input.timezone), work));
 }
 
 async function missedClockIn(
@@ -100,16 +93,15 @@ async function missedClockIn(
 ): Promise<DueClockingReminder | null> {
 	const { now, settings } = input;
 	if (!settings.missedClockIn.enabled) return null;
-	const day = localDay(now, input.timezone);
+	const day = plainDateAt(now, input.timezone);
 	if (hasShiftOn(input, day)) return null;
-	if (input.work.some((work) => localDay(work.start, input.timezone) === day)) return null;
+	if (input.work.some((work) => plainDateAt(work.start, input.timezone).equals(day))) return null;
 	const latestClockIn = await policy.latestClockIn(day);
 	if (!latestClockIn) return null;
-	const expectedAt = resolveScheduledWallClock({
-		date: day,
-		time: latestClockIn,
-		timezone: input.timezone,
-	}).toInstant();
+	// A latest clock-in inside a DST gap moves forward, like a shift start.
+	const expectedAt = day
+		.toZonedDateTime({ timeZone: input.timezone, plainTime: latestClockIn })
+		.toInstant();
 	if (!notBefore(now, expectedAt.add({ minutes: settings.missedClockIn.graceMinutes }))) {
 		return null;
 	}
@@ -130,13 +122,9 @@ async function missedClockIn(
 	};
 }
 
-function localDay(instant: Instant, timezone: string): string {
-	return instant.toZonedDateTimeISO(timezone).toPlainDate().toString();
-}
-
 /** A published shift dated on `day` hands the whole day to the shift rules. */
-function hasShiftOn(input: PolicyReminderInput, day: string): boolean {
-	return input.shifts.some((shift) => localDay(shift.date, input.organizationTimezone) === day);
+function hasShiftOn(input: PolicyReminderInput, day: PlainDate): boolean {
+	return input.shifts.some((shift) => shift.date.equals(day));
 }
 
 function coversInstant(work: ReminderWork, instant: Instant): boolean {

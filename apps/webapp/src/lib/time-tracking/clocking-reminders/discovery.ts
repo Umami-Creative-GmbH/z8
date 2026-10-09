@@ -8,7 +8,12 @@ import {
 	userSettings,
 	workPeriod,
 } from "@/db/schema";
-import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import {
+	dateFromInstant,
+	type Instant,
+	instantFromDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { clockingReminderSettingsFromRow } from "./settings";
@@ -113,10 +118,16 @@ export interface ShiftReminderFacts {
 
 /**
  * The published, assigned shifts around `now` and the recent and live work of a page of
- * employees, read without a work transaction.
+ * employees, read without a work transaction. `shift.date` stores the organization-local midnight
+ * of the shift's calendar date, so it is read back as a calendar date in the organization's zone.
  */
 export async function loadShiftReminderFacts(
-	input: { organizationId: string; employeeIds: readonly string[]; now: Instant },
+	input: {
+		organizationId: string;
+		organizationTimezone: string;
+		employeeIds: readonly string[];
+		now: Instant;
+	},
 	database: Database,
 ): Promise<Map<string, ShiftReminderFacts>> {
 	const facts = new Map<string, ShiftReminderFacts>(
@@ -165,7 +176,7 @@ export async function loadShiftReminderFacts(
 		if (!row.employeeId) continue;
 		facts.get(row.employeeId)?.shifts.push({
 			id: row.id,
-			date: instantFromDate(row.date),
+			date: plainDateAt(instantFromDate(row.date), input.organizationTimezone),
 			startTime: row.startTime,
 			endTime: row.endTime,
 		});

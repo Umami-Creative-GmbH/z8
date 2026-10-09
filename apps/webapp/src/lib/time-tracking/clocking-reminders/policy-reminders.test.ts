@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseInstant } from "@/lib/datetime/temporal-core";
+import { parseInstant, parsePlainDate, parsePlainTimeMinute } from "@/lib/datetime/temporal-core";
 import {
 	evaluatePolicyReminders,
 	type PolicyDayFacts,
@@ -16,13 +16,13 @@ const enabled = {
 
 // Monday 2026-04-27 in Europe/Berlin (UTC+2): a 09:00 latest clock-in is 07:00Z.
 const MONDAY = "2026-04-27";
+const monday = parsePlainDate(MONDAY);
 
 function input(overrides: Partial<PolicyReminderInput> = {}): PolicyReminderInput {
 	return {
 		now: at("2026-04-27T07:15:00Z"),
 		employeeId: "employee-1",
 		timezone: "Europe/Berlin",
-		organizationTimezone: "Europe/Berlin",
 		settings: enabled,
 		shifts: [],
 		work: [],
@@ -38,12 +38,13 @@ function policy(
 	return {
 		asked,
 		latestClockIn: async (day) => {
-			asked.push(`latestClockIn:${day}`);
-			return options.latestClockIn === undefined ? "09:00" : options.latestClockIn;
+			asked.push(`latestClockIn:${day.toString()}`);
+			const latest = options.latestClockIn === undefined ? "09:00" : options.latestClockIn;
+			return latest === null ? null : parsePlainTimeMinute(latest);
 		},
 		requiredMinutes: async (day) => {
-			asked.push(`requiredMinutes:${day}`);
-			return options.requiredMinutes?.[day] ?? 480;
+			asked.push(`requiredMinutes:${day.toString()}`);
+			return options.requiredMinutes?.[day.toString()] ?? 480;
 		},
 	};
 }
@@ -57,7 +58,7 @@ describe("missed clock-in reminders from the work policy's latest clock-in", () 
 			{
 				type: "missed_clock_in_reminder",
 				occasionKey: "missed_clock_in_reminder:policy_day:employee-1:2026-04-27",
-				day: MONDAY,
+				day: monday,
 				expectedAt: at("2026-04-27T07:00:00Z"),
 				shift: null,
 			},
@@ -110,7 +111,7 @@ describe("missed clock-in reminders from the work policy's latest clock-in", () 
 	it("leaves a day with a published shift to the shift rules", async () => {
 		const shift = {
 			id: "shift-1",
-			date: at("2026-04-26T22:00:00Z"),
+			date: parsePlainDate(MONDAY),
 			startTime: "13:00",
 			endTime: "17:00",
 		};
@@ -130,7 +131,7 @@ describe("missed clock-in reminders from the work policy's latest clock-in", () 
 		expect(await reminders("2026-04-27T07:15:00Z")).toEqual([]);
 		// 09:15 EDT.
 		expect(await reminders("2026-04-27T13:15:00Z")).toMatchObject([
-			{ day: MONDAY, expectedAt: at("2026-04-27T13:00:00Z") },
+			{ day: monday, expectedAt: at("2026-04-27T13:00:00Z") },
 		]);
 	});
 });
@@ -153,7 +154,7 @@ describe("forgotten clock-out reminders once the day's required hours are reache
 			{
 				type: "forgotten_clock_out_reminder",
 				occasionKey: "forgotten_clock_out_reminder:policy_day:employee-1:2026-04-27",
-				day: MONDAY,
+				day: monday,
 				expectedAt: at("2026-04-27T14:30:00Z"),
 				shift: null,
 			},
@@ -182,7 +183,7 @@ describe("forgotten clock-out reminders once the day's required hours are reache
 				}),
 				overnight,
 			),
-		).toMatchObject([{ type: "forgotten_clock_out_reminder", day: MONDAY }]);
+		).toMatchObject([{ type: "forgotten_clock_out_reminder", day: monday }]);
 		expect(overnight.asked).toContain("requiredMinutes:2026-04-27");
 	});
 
@@ -213,7 +214,7 @@ describe("forgotten clock-out reminders once the day's required hours are reache
 	it("leaves a day with a published shift to the shift rules", async () => {
 		const shift = {
 			id: "shift-1",
-			date: at("2026-04-26T22:00:00Z"),
+			date: parsePlainDate(MONDAY),
 			startTime: "08:00",
 			endTime: "12:00",
 		};
