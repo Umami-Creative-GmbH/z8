@@ -1,6 +1,6 @@
 "use client";
 
-import { IconChevronRight } from "@tabler/icons-react";
+import { IconAlertTriangle, IconChevronRight } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import type { ProjectSummary } from "@/lib/reports/project-types";
 import { cn } from "@/lib/utils";
+import { MarginValue, useBillableFigureFormat } from "./billable-figures";
 
 interface ProjectPortfolioTableProps {
 	projects: ProjectSummary[];
@@ -36,6 +37,7 @@ function getBudgetProgressColor(percent: number | null) {
 
 export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPortfolioTableProps) {
 	const { t } = useTranslate();
+	const format = useBillableFigureFormat();
 	const [search, setSearch] = useState("");
 
 	const formatDeadlineStatus = (daysUntilDeadline: number | null) => {
@@ -98,6 +100,68 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 		);
 	})();
 
+	// Billable Time columns, only for viewers who get the figures (#902).
+	const showBillable = projects.some((project) => project.billable);
+	const showMargin = projects.some((project) => project.billable?.access === "full");
+	const billableColumns: ColumnDef<DataTableFeatures, ProjectSummary>[] = showBillable
+		? [
+				{
+					id: "billableHours",
+					header: () => (
+						<div className="text-right">
+							{t("reports.projects.billable.billableHours", "Billable hours")}
+						</div>
+					),
+					cell: ({ row }) => (
+						<div className="text-right tabular-nums">
+							{row.original.billable ? format.hours(row.original.billable.billableHours) : "—"}
+						</div>
+					),
+				},
+				{
+					id: "revenue",
+					header: () => (
+						<div className="text-right">{t("reports.projects.billable.revenue", "Revenue")}</div>
+					),
+					cell: ({ row }) => {
+						const figures = row.original.billable;
+						if (!figures) return <div className="text-right">—</div>;
+						return (
+							<div className="text-right tabular-nums">
+								{format.money(figures.revenue, figures.currency)}
+								{figures.unpricedWorkCount > 0 && (
+									<IconAlertTriangle
+										className="ml-1 inline size-3 text-amber-600"
+										aria-label={t("reports.projects.billable.hasUnpriced", "Has unpriced work")}
+									/>
+								)}
+							</div>
+						);
+					},
+				},
+				...(showMargin
+					? [
+							{
+								id: "margin",
+								header: () => (
+									<div className="text-right">
+										{t("reports.projects.billable.margin", "Margin")}
+									</div>
+								),
+								cell: ({ row }) => {
+									const figures = row.original.billable;
+									return (
+										<div className="text-right tabular-nums">
+											{figures?.access === "full" ? <MarginValue figures={figures} /> : "—"}
+										</div>
+									);
+								},
+							} satisfies ColumnDef<DataTableFeatures, ProjectSummary>,
+						]
+					: []),
+			]
+		: [];
+
 	// Column definitions
 	const columns: ColumnDef<DataTableFeatures, ProjectSummary>[] = [
 		{
@@ -138,6 +202,7 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 				<div className="text-right tabular-nums">{row.original.totalHours.toFixed(1)}h</div>
 			),
 		},
+		...billableColumns,
 		{
 			accessorKey: "budgetHours",
 			header: t("reports.projects.table.budget", "Budget"),

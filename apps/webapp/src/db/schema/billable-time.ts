@@ -4,10 +4,13 @@ import {
 	date,
 	foreignKey,
 	index,
+	jsonb,
 	numeric,
 	pgTable,
 	text,
 	timestamp,
+	unique,
+	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "../auth-schema";
@@ -162,5 +165,164 @@ export const costRate = pgTable(
 			foreignColumns: [employee.id, employee.organizationId],
 		}).onDelete("cascade"),
 		index("cost_rate_employee_idx").on(table.organizationId, table.employeeId),
+	],
+);
+
+/**
+ * Tax treatment columns (#903): a Z8 kind plus its rate in percent. Domestic
+ * treatments have a rate in (0, 100]; reverse charge, third-country service and
+ * VAT-free are 0. Keep the kinds in sync with `TAX_TREATMENT_KINDS` in
+ * `src/lib/billable-time/accounting/tax-treatment.ts`.
+ */
+const TAX_TREATMENT_KIND_SQL = sql.raw(
+	"'domestic_standard', 'domestic_reduced', 'eu_reverse_charge', 'third_country_service', 'vat_free'",
+);
+
+/**
+ * Accounting connections (#903): an organization's link to its accounting tool
+ * (Lexware Office, sevdesk). At most one per organization is `active` (partial
+ * unique index); replacing one marks it `replaced`, removing one `removed`, so
+ * invoice drafts created through it keep their connection.
+ *
+ * The API key is NEVER stored here: it lives in the organization secret store
+ * under `accounting/<connection id>/api_key` (`lib/billable-time/accounting/
+ * connection-store.ts`). `settings` holds the connector's non-secret settings.
+ * `account_ref` identifies the tool account the key belongs to; contact links
+ * are valid for that account only.
+ *
+ * Keep the provider kinds in sync with `ACCOUNTING_PROVIDER_KINDS` in
+ * `src/lib/billable-time/accounting/provider.ts`.
+ */
+export const accountingConnection = pgTable(
+	"accounting_connection",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		providerKind: text("provider_kind").notNull(),
+		status: text("status").notNull().default("active"),
+		accountRef: text("account_ref").notNull(),
+		accountLabel: text("account_label"),
+		settings: jsonb("settings").$type<Record<string, unknown>>().notNull().default({}),
+		defaultTaxTreatment: text("default_tax_treatment").notNull(),
+		defaultTaxRate: numeric("default_tax_rate", { precision: 5, scale: 2 }).notNull(),
+		connectedAt: timestamp("connected_at", { withTimezone: true }).defaultNow().notNull(),
+		connectedBy: text("connected_by").references(() => user.id, { onDelete: "set null" }),
+		endedAt: timestamp("ended_at", { withTimezone: true }),
+		endedBy: text("ended_by").references(() => user.id, { onDelete: "set null" }),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+	},
+	(table) => [
+		check(
+			"accounting_connection_provider_kind_check",
+			sql`${table.providerKind} IN ('lexware_office', 'sevdesk')`,
+		),
+		check(
+			"accounting_connection_status_check",
+			sql`${table.status} IN ('active', 'replaced', 'removed')`,
+		),
+		check(
+			"accounting_connection_ended_check",
+			sql`(${table.status} = 'active') = (${table.endedAt} IS NULL)`,
+		),
+		check(
+			"accounting_connection_tax_treatment_check",
+			sql`${table.defaultTaxTreatment} IN (${TAX_TREATMENT_KIND_SQL})`,
+		),
+		check(
+			"accounting_connection_tax_rate_check",
+			sql`(${table.defaultTaxTreatment} IN ('domestic_standard', 'domestic_reduced') AND ${table.defaultTaxRate} > 0 AND ${table.defaultTaxRate} <= 100)
+			OR (${table.defaultTaxTreatment} NOT IN ('domestic_standard', 'domestic_reduced') AND ${table.defaultTaxRate} = 0)`,
+		),
+		unique("accounting_connection_id_organization_idx").on(table.id, table.organizationId),
+		uniqueIndex("accounting_connection_one_active_idx")
+			.on(table.organizationId)
+			.where(sql`${table.status} = 'active'`),
+	],
+);
+
+/**
+ * Contact links (#903): a Z8 customer linked to an existing contact in the
+ * accounting tool. Z8 never creates contacts there (ADR 0002). A link belongs
+ * to one tool account (`provider_kind` + `account_ref`); it applies while the
+ * active connection is to that account, so replacing an API key of the same
+ * account keeps the links. One link per customer and account.
+ * `contact_name`/`contact_number` are the contact's display values when linked.
+ */
+export const accountingContactLink = pgTable(
+	"accounting_contact_link",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		customerId: uuid("customer_id").notNull(),
+		providerKind: text("provider_kind").notNull(),
+		accountRef: text("account_ref").notNull(),
+		contactId: text("contact_id").notNull(),
+		contactName: text("contact_name").notNull(),
+		contactNumber: text("contact_number"),
+		linkedAt: timestamp("linked_at", { withTimezone: true }).defaultNow().notNull(),
+		linkedBy: text("linked_by").references(() => user.id, { onDelete: "set null" }),
+	},
+	(table) => [
+		check(
+			"accounting_contact_link_provider_kind_check",
+			sql`${table.providerKind} IN ('lexware_office', 'sevdesk')`,
+		),
+		foreignKey({
+			name: "accounting_contact_link_customer_fk",
+			columns: [table.customerId, table.organizationId],
+			foreignColumns: [customer.id, customer.organizationId],
+		}).onDelete("cascade"),
+		uniqueIndex("accounting_contact_link_customer_account_idx").on(
+			table.organizationId,
+			table.customerId,
+			table.providerKind,
+			table.accountRef,
+		),
+		index("accounting_contact_link_contact_idx").on(
+			table.organizationId,
+			table.providerKind,
+			table.accountRef,
+			table.contactId,
+		),
+	],
+);
+
+/**
+ * A customer's tax treatment override (#903). Without a row, the customer's
+ * hand-offs use the accounting connection's default tax treatment.
+ */
+export const customerTaxTreatment = pgTable(
+	"customer_tax_treatment",
+	{
+		customerId: uuid("customer_id").primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		taxTreatment: text("tax_treatment").notNull(),
+		taxRate: numeric("tax_rate", { precision: 5, scale: 2 }).notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+	},
+	(table) => [
+		check(
+			"customer_tax_treatment_kind_check",
+			sql`${table.taxTreatment} IN (${TAX_TREATMENT_KIND_SQL})`,
+		),
+		check(
+			"customer_tax_treatment_rate_check",
+			sql`(${table.taxTreatment} IN ('domestic_standard', 'domestic_reduced') AND ${table.taxRate} > 0 AND ${table.taxRate} <= 100)
+			OR (${table.taxTreatment} NOT IN ('domestic_standard', 'domestic_reduced') AND ${table.taxRate} = 0)`,
+		),
+		foreignKey({
+			name: "customer_tax_treatment_customer_fk",
+			columns: [table.customerId, table.organizationId],
+			foreignColumns: [customer.id, customer.organizationId],
+		}).onDelete("cascade"),
+		index("customer_tax_treatment_organization_idx").on(table.organizationId),
 	],
 );

@@ -7,10 +7,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { importBatch } from "@/db/schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { getBillableTimeSettings } from "@/lib/billable-time/settings";
 import {
 	getImportReviewSummary,
 	listImportReviewRows,
 } from "@/lib/import-review/repository";
+import { importRowBillability } from "@/lib/import-review/staged-work-billability";
 
 interface ImportReviewRouteProps {
 	params: Promise<{ batchId: string }>;
@@ -39,7 +41,7 @@ async function ImportReviewRouteContent({ params }: ImportReviewRouteProps) {
 
 	if (!batch) notFound();
 
-	const [summary, rows] = await Promise.all([
+	const [summary, rows, billableTime] = await Promise.all([
 		getImportReviewSummary({ batchId: batch.id, organizationId }),
 		listImportReviewRows({
 			batchId: batch.id,
@@ -47,7 +49,9 @@ async function ImportReviewRouteContent({ params }: ImportReviewRouteProps) {
 			limit: 100,
 			offset: 0,
 		}),
+		getBillableTimeSettings(organizationId),
 	]);
+	const showBillability = billableTime.enabled;
 
 	return (
 		<div className="p-6">
@@ -56,7 +60,11 @@ async function ImportReviewRouteContent({ params }: ImportReviewRouteProps) {
 					organizationId={organizationId}
 					batchId={batch.id}
 					summary={summary}
-					rows={rows}
+					rows={rows.map((row) => ({
+						...row,
+						billability: showBillability ? importRowBillability(row) : null,
+					}))}
+					showBillability={showBillability}
 				/>
 			</div>
 		</div>
