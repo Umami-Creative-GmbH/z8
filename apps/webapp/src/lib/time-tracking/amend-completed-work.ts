@@ -71,6 +71,10 @@ import {
 import { canonicalJson } from "./canonical-json";
 import { admitTimeEntryAppend, TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
+import {
+	projectAllocationAgrees,
+	resolveWorkBillabilityInTransaction,
+} from "./work-billability";
 import { WorkIntervalError } from "./work-duration";
 import type { WorkLocationType } from "./work-location";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
@@ -143,6 +147,8 @@ export type AmendedSegment = {
 	endUtcOffsetMinutes: number | null;
 	attribution: {
 		projectId: string | null;
+		/** Absent on receipts committed before billability (#900), which were non-billable. */
+		isBillable?: boolean;
 		workCategoryId: string | null;
 		workLocationType: string | null;
 	};
@@ -675,11 +681,8 @@ export async function amendCompletedWork(
 		.orderBy(asc(timeRecordAllocation.id))
 		.for("update");
 	if (!record || !detail) throw new CompletedWorkReviewRequiredError("canonical_record_missing");
-	const allocationAgrees = period.projectId
-		? projectAllocations.length === 1 &&
-			projectAllocations[0]?.projectId === period.projectId &&
-			projectAllocations[0]?.weightPercent === 100
-		: projectAllocations.length === 0;
+	// Project and billability must agree in both representations (#900).
+	const allocationAgrees = projectAllocationAgrees(period, projectAllocations);
 	if (
 		!sameInstant(record.startAt, instantFromDate(period.startTime)) ||
 		!sameInstant(record.endAt, instantFromDate(period.endTime)) ||
@@ -733,6 +736,10 @@ export async function amendCompletedWork(
 		changes,
 		resulting,
 		currentWorkCategoryId: period.workCategoryId,
+	});
+	const isBillable = await amendedBillability(tx, organizationId, period, {
+		projectId: resulting.projectId,
+		projectChanged: changes.project,
 	});
 	const endpointsChanged = changes.clockIn || changes.clockOut;
 	if (endpointsChanged) {
@@ -843,6 +850,7 @@ export async function amendCompletedWork(
 			endTime: endAt,
 			durationMinutes: resulting.durationMinutes,
 			projectId: resulting.projectId,
+			isBillable,
 			workCategoryId: resulting.workCategoryId,
 			workLocationType: resulting.workLocationType as WorkLocationType | null,
 			graphRevision: resultRevision,
@@ -921,6 +929,7 @@ export async function amendCompletedWork(
 				allocationKind: "project",
 				projectId: resulting.projectId,
 				weightPercent: 100,
+				isBillable,
 			});
 		}
 	}
@@ -948,6 +957,7 @@ export async function amendCompletedWork(
 			endAt: Instant;
 			durationMinutes: number | null;
 			projectId: string | null;
+			isBillable: boolean;
 			workCategoryId: string | null;
 			workLocationType: string | null;
 		},
@@ -961,6 +971,7 @@ export async function amendCompletedWork(
 		endUtcOffsetMinutes: clockOut.utcOffsetMinutes ?? null,
 		attribution: {
 			projectId: values.projectId,
+			isBillable: values.isBillable,
 			workCategoryId: values.workCategoryId,
 			workLocationType: values.workLocationType,
 		},
@@ -979,10 +990,11 @@ export async function amendCompletedWork(
 			endAt: instantFromDate(period.endTime),
 			durationMinutes: period.durationMinutes,
 			projectId: period.projectId,
+			isBillable: period.isBillable,
 			workCategoryId: period.workCategoryId,
 			workLocationType: period.workLocationType,
 		}),
-		segment: segmentOf(resultClockIn, resultClockOut, resulting),
+		segment: segmentOf(resultClockIn, resultClockOut, { ...resulting, isBillable }),
 		changes,
 		corrections,
 		revisions: { workPeriod: { source: period.graphRevision, result: resultRevision } },
@@ -1028,6 +1040,24 @@ async function assertAttributionEligible(
 }
 
 /**
+ * The amended work's billability (#900): moving work to another project applies
+ * that project's billable default; keeping the project keeps the billability.
+ * Pass B adds the amendment's explicit billable intent here as `requested`.
+ */
+async function amendedBillability(
+	tx: TransactionClient,
+	organizationId: string,
+	period: Pick<typeof workPeriod.$inferSelect, "isBillable">,
+	resulting: { projectId: string | null; projectChanged: boolean },
+): Promise<boolean> {
+	return resolveWorkBillabilityInTransaction(tx, organizationId, {
+		projectId: resulting.projectId,
+		projectChosen: resulting.projectChanged,
+		current: period.isBillable,
+	});
+}
+
+/**
  * Attribution of active work. There is no canonical record or end yet; the
  * closing operation carries the period's attribution into them (#274 preserves
  * omitted attribution). The period revision advances so a closure routed on the
@@ -1059,11 +1089,16 @@ async function amendActiveAttribution(
 		resulting: planned.result,
 		currentWorkCategoryId: period.workCategoryId,
 	});
+	const isBillable = await amendedBillability(tx, organizationId, period, {
+		projectId: planned.result.projectId,
+		projectChanged: planned.changes.project,
+	});
 	const resultRevision = period.graphRevision + 1;
 	const updated = await tx
 		.update(workPeriod)
 		.set({
 			projectId: planned.result.projectId,
+			isBillable,
 			workCategoryId: planned.result.workCategoryId,
 			workLocationType: planned.result.workLocationType as WorkLocationType | null,
 			graphRevision: resultRevision,
@@ -1107,8 +1142,8 @@ async function amendActiveAttribution(
 		intent: requested,
 		workPeriodId: period.id,
 		canonicalRecordId: null,
-		source: activeSegment(source),
-		segment: activeSegment(planned.result),
+		source: activeSegment({ ...source, isBillable: period.isBillable }),
+		segment: activeSegment({ ...planned.result, isBillable }),
 		changes: { clockIn: false, clockOut: false, ...planned.changes },
 		corrections: [],
 		revisions: { workPeriod: { source: period.graphRevision, result: resultRevision } },

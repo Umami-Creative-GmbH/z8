@@ -49,6 +49,7 @@ export async function reconcileLegacyToCanonical(
 				isActive: true,
 				endTime: true,
 				projectId: true,
+				isBillable: true,
 				durationMinutes: true,
 				approvalStatus: true,
 			},
@@ -114,7 +115,7 @@ export async function reconcileLegacyToCanonical(
 				eq(timeRecordAllocation.organizationId, organizationId),
 				eq(timeRecordAllocation.allocationKind, "project"),
 			),
-			columns: { recordId: true, projectId: true },
+			columns: { recordId: true, projectId: true, isBillable: true },
 		}),
 	]);
 
@@ -137,14 +138,18 @@ export async function reconcileLegacyToCanonical(
 	const legacyWorkByCanonicalId = new Map(
 		legacyWork.map((row) => [resolveExpectedCanonicalId(row), row]),
 	);
+	// A project allocation matches only with the period's billability (#900).
 	const expectedProjectAllocations = new Set(
 		legacyWork
 			.filter((row) => row.projectId)
-			.map((row) => `${resolveExpectedCanonicalId(row)}:${row.projectId}`),
+			.map(
+				(row) =>
+					`${resolveExpectedCanonicalId(row)}:${row.projectId}:${row.isBillable ?? false}`,
+			),
 	);
 	const canonicalProjectAllocationKeys = new Set(
 		canonicalProjectAllocations.map(
-			(row) => `${row.recordId}:${row.projectId}`,
+			(row) => `${row.recordId}:${row.projectId}:${row.isBillable ?? false}`,
 		),
 	);
 	const targetEmployeeIds = new Set(targetEmployees.map((row) => row.id));

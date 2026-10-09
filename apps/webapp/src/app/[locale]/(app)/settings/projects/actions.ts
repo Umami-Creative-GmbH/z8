@@ -20,6 +20,7 @@ import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
+import { decideProjectBillableDefault } from "@/lib/billable-time/project-billable-default";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
 import {
 	ensureSettingsActorCanAccessCustomerTarget,
@@ -49,6 +50,8 @@ export interface ProjectWithDetails {
 	deadline: Date | null;
 	customerId: string | null;
 	customerName: string | null;
+	/** Whether new work on the project starts as billable work (#900). */
+	billableDefault: boolean;
 	isActive: boolean;
 	createdAt: Date;
 	createdBy: string;
@@ -124,6 +127,35 @@ async function getProjectAssignmentTarget(
 	return getProjectRelationshipEmployee(targetId, organizationId, reader);
 }
 
+/**
+ * The billable default a create or update stores (#900): refused without a customer,
+ * switched off when the project loses its customer. Anything but a boolean is invalid.
+ */
+function projectBillableDefault(input: {
+	requested: unknown;
+	current: boolean;
+	customerId: string | null;
+}): Effect.Effect<boolean, ValidationError> {
+	if (input.requested !== undefined && typeof input.requested !== "boolean") {
+		return Effect.fail(
+			new ValidationError({ message: "Invalid billable default", field: "billableDefault" }),
+		);
+	}
+	const decision = decideProjectBillableDefault({
+		requested: input.requested,
+		current: input.current,
+		customerId: input.customerId,
+	});
+	return decision.ok
+		? Effect.succeed(decision.billableDefault)
+		: Effect.fail(
+				new ValidationError({
+					message: "Only a project with a customer can be billable by default",
+					field: "billableDefault",
+				}),
+			);
+}
+
 /** Validation failures raised inside a guarded transaction keep their type. */
 function keepTypedMutationError(error: DatabaseError) {
 	return error.cause instanceof ValidationError || error.cause instanceof NotFoundError
@@ -141,6 +173,8 @@ export interface CreateProjectInput {
 	budgetHours?: number;
 	deadline?: Date;
 	customerId?: string;
+	/** Billable default (#900); only a project with a customer can have it on. */
+	billableDefault?: boolean;
 }
 
 export interface UpdateProjectInput {
@@ -152,6 +186,8 @@ export interface UpdateProjectInput {
 	budgetHours?: number | null;
 	deadline?: Date | null;
 	customerId?: string | null;
+	/** Billable default (#900); never changes existing work. */
+	billableDefault?: boolean;
 }
 
 /**
@@ -301,6 +337,7 @@ export async function getProjects(
 					deadline: p.deadline,
 					customerId: p.customerId,
 					customerName: p.customer?.name ?? null,
+					billableDefault: p.billableDefault,
 					isActive: p.isActive,
 					createdAt: p.createdAt,
 					createdBy: p.createdBy,
@@ -402,6 +439,12 @@ export async function createProject(
 					});
 				}
 
+				const billableDefault = yield* projectBillableDefault({
+					requested: input.billableDefault,
+					current: false,
+					customerId: input.customerId || null,
+				});
+
 				const created = yield* dbService.query("project.create", async () => {
 					return await db.transaction(async (tx) => {
 						const [newProject] = await tx
@@ -416,6 +459,7 @@ export async function createProject(
 								budgetHours: input.budgetHours?.toString() || null,
 								deadline: input.deadline || null,
 								customerId: input.customerId || null,
+								billableDefault,
 								isActive: true,
 								createdBy: session.user.id,
 								updatedAt: new Date(),
@@ -538,6 +582,16 @@ export async function updateProject(
 					updateData.budgetHours = input.budgetHours?.toString() || null;
 				if (input.deadline !== undefined) updateData.deadline = input.deadline;
 				if (input.customerId !== undefined) updateData.customerId = input.customerId;
+				// Settable by whoever may edit the project; no configuration guard (ADR 0001).
+				const billableDefault = yield* projectBillableDefault({
+					requested: input.billableDefault,
+					current: existingProject.billableDefault,
+					customerId:
+						input.customerId !== undefined ? input.customerId : existingProject.customerId,
+				});
+				if (billableDefault !== existingProject.billableDefault) {
+					updateData.billableDefault = billableDefault;
+				}
 
 				// Validate customerId if changing to a new customer
 				if (input.customerId) {

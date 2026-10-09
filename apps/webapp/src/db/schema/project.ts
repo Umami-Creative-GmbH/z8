@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
 	decimal,
 	index,
 	integer,
@@ -44,6 +45,11 @@ export const project = pgTable(
 		// Customer assignment (optional)
 		customerId: uuid("customer_id").references(() => customer.id, { onDelete: "set null" }),
 
+		// Billable Time (#900): whether new work on this project starts as billable
+		// work. Only a project with a customer can have it on; changing it never
+		// changes existing work.
+		billableDefault: boolean("billable_default").default(false).notNull(),
+
 		// Budget tracking (optional)
 		budgetHours: decimal("budget_hours", { precision: 8, scale: 2 }), // null = unlimited
 
@@ -72,6 +78,10 @@ export const project = pgTable(
 		uniqueIndex("project_org_name_idx").on(table.organizationId, table.name),
 		// Target of organization-scoped references (#605 expense attribution).
 		unique("project_id_organizationId_idx").on(table.id, table.organizationId),
+		check(
+			"project_billable_default_customer_chk",
+			sql`NOT ${table.billableDefault} OR ${table.customerId} IS NOT NULL`,
+		),
 	],
 );
 

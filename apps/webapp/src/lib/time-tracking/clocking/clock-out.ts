@@ -41,6 +41,7 @@ import {
 } from "../policy-clock-out-surcharge-snapshot";
 import type { TimeEntryTimezoneCapture } from "../timezone-capture";
 import type { WorkTransactionContext } from "../web-clock-out-transaction";
+import { resolveWorkBillabilityInTransaction } from "../work-billability";
 import type { WorkLocationType } from "../work-location";
 import type { ClosedLiveWork } from "./follow-ups";
 import {
@@ -93,6 +94,14 @@ export type OnBehalfClockOutCommand = CloseActiveWorkOperationCommand & {
 	workPeriodId: string;
 };
 
+/**
+ * A chosen billability joins the receipt command (#900); an absent one leaves the
+ * command exactly as it was before billability, so earlier retries still replay.
+ */
+function billableOf(body: ClockOutCommand["body"]): { billable?: boolean } {
+	return body.billable === undefined ? {} : { billable: body.billable };
+}
+
 function planOnBehalfClockOut(command: ClockOutCommand, employee: Employee): ClockOutPlan {
 	const { body, identity } = command;
 	// Authorization admits on-behalf closures of a named period only.
@@ -104,6 +113,7 @@ function planOnBehalfClockOut(command: ClockOutCommand, employee: Employee): Clo
 		workPeriodId: body.target.workPeriodId,
 		project: body.project,
 		workCategory: body.workCategory,
+		...billableOf(body),
 	};
 	return { command, employee, receiptCommand, writer: MANAGER_ON_BEHALF_WRITER };
 }
@@ -133,6 +143,7 @@ function planDepartureClockOut(
 		workPeriodId: body.target.workPeriodId,
 		project: body.project,
 		workCategory: body.workCategory,
+		...billableOf(body),
 	};
 	return { command, employee, receiptCommand, writer: DEPARTURE_CLOCK_OUT_WRITER };
 }
@@ -151,6 +162,7 @@ export function planClockOut(command: ClockOutCommand, employee: Employee): Cloc
 			timezone: command.zone.fallback,
 			project: command.body.project,
 			workCategory: command.body.workCategory,
+			...billableOf(command.body),
 		};
 		return {
 			command,
@@ -169,6 +181,7 @@ export function planClockOut(command: ClockOutCommand, employee: Employee): Cloc
 		operationId: identity.id,
 		project: body.project,
 		workCategory: body.workCategory,
+		...billableOf(body),
 		requestedInstant: at.kind === "occurred" ? instantToCanonicalString(at.instant) : null,
 		browserTimezone: zone.device,
 		deviceInfo: channel,
@@ -391,7 +404,11 @@ async function legacyAttribution(
 ) {
 	const { command, employee } = plan;
 	const [period] = await coordination.db
-		.select({ projectId: workPeriod.projectId, workCategoryId: workPeriod.workCategoryId })
+		.select({
+			projectId: workPeriod.projectId,
+			isBillable: workPeriod.isBillable,
+			workCategoryId: workPeriod.workCategoryId,
+		})
 		.from(workPeriod)
 		.where(
 			and(
@@ -405,8 +422,21 @@ async function legacyAttribution(
 		const value = attributionValue(intent);
 		return value === undefined ? (current ?? null) : value;
 	};
+	const projectId = kept(command.body.project, period?.projectId);
+	// The append writer's rule (#900): a changed project takes its billable default.
+	const isBillable = await resolveWorkBillabilityInTransaction(
+		coordination.db,
+		employee.organizationId,
+		{
+			projectId,
+			projectChosen: projectId !== (period?.projectId ?? null),
+			current: period?.isBillable ?? false,
+			requested: command.body.billable,
+		},
+	);
 	return {
-		projectId: kept(command.body.project, period?.projectId),
+		projectId,
+		isBillable,
 		workCategoryId: kept(command.body.workCategory, period?.workCategoryId),
 	};
 }
@@ -440,7 +470,7 @@ async function closeLegacyClockOut(
 	const { plan, target, eventInstant } = input;
 	const { command, employee, writer } = plan;
 	// Read under the coordinator's period lock, as the append writer resolves it.
-	const { projectId, workCategoryId } = await legacyAttribution(
+	const { projectId, isBillable, workCategoryId } = await legacyAttribution(
 		coordination,
 		plan,
 		target.workPeriodId,
@@ -458,6 +488,7 @@ async function closeLegacyClockOut(
 		action: { instant: eventInstant, ...input.capture },
 		source: { ipAddress: writer.ipAddress ?? null, deviceInfo: writer.deviceInfo },
 		projectId,
+		isBillable,
 		workCategoryId,
 		approvalStatus: "approved",
 		beforePeriodClose: async ({ activePeriod, durationMinutes }) => {
@@ -480,6 +511,7 @@ async function closeLegacyClockOut(
 					workCategoryId,
 					workLocationType: target.workLocationType,
 					projectId,
+					isBillable,
 					origin: "clock",
 				},
 				coordination.db,

@@ -44,6 +44,10 @@ const CLOCK_OUT_FAILURE_MESSAGES: Record<
 		"timeTracking.errors.workCategoryNotAllowed",
 		"Cannot assign to this work category",
 	],
+	billable_not_allowed: [
+		"timeTracking.errors.billableNotAllowed",
+		"Only work on a project that has a customer can be billable",
+	],
 	invalid_interval: [
 		"timeTracking.errors.clockOutBeforeClockIn",
 		"Clock-out must be after clock-in",

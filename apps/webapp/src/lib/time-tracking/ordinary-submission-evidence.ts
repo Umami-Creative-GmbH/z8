@@ -289,7 +289,9 @@ export function validateCommonEvidence(input: {
 				allocation.allocationKind !== "project" ||
 				allocation.projectId !== expectedProjectId ||
 				allocation.costCenterId !== null ||
-				allocation.weightPercent !== 100)
+				allocation.weightPercent !== 100 ||
+				// Both representations agree on billability (#900).
+				(allocation.isBillable ?? false) !== (period.isBillable ?? false))
 	) {
 		throw new Error("Submission collision");
 	}

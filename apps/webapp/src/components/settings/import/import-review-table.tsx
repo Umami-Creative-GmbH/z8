@@ -79,6 +79,11 @@ const holdReasonLabels: Record<ImportedWorkHoldReason, { key: string; fallback: 
 		key: "settings.import.review.hold.appendReviewRequired",
 		fallback: "The employee's time history needs review before new entries can be added.",
 	},
+	attribution_not_allowed: {
+		key: "settings.import.review.hold.attributionNotAllowed",
+		fallback:
+			"The project is not available, or billable work needs a project that has a customer.",
+	},
 };
 
 const heldForReview = { key: "settings.import.review.hold.label", fallback: "Held for review" };

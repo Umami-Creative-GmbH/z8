@@ -70,6 +70,7 @@ import {
 } from "./policy-clock-out-surcharge-snapshot";
 import { admitTimeEntryAppend } from "./time-entry-append";
 import { capturedZone, resolveFallbackTimezoneCapture } from "./timezone-capture";
+import { projectAllocationAgrees } from "./work-billability";
 import { assertWorkOccupancyFree, WorkOccupancyConflictError } from "./work-occupancy";
 import {
 	assertNoUnresolvedWorkPeriodReview,
@@ -153,6 +154,8 @@ type AllocationEvidence = {
 	projectId: string | null;
 	costCenterId: string | null;
 	weightPercent: number;
+	/** Absent on receipts committed before billability (#900), which were non-billable. */
+	isBillable?: boolean;
 };
 
 /** One segment by value: committed evidence, not a pointer to current rows. */
@@ -168,6 +171,8 @@ export type AutomaticBreakSegment = {
 	endUtcOffsetMinutes: number | null;
 	attribution: {
 		projectId: string | null;
+		/** Absent on receipts committed before billability (#900), which were non-billable. */
+		isBillable?: boolean;
 		workCategoryId: string | null;
 		workLocationType: string | null;
 		allocations: AllocationEvidence[];
@@ -439,14 +444,8 @@ export async function adjustAutomaticBreakInTransaction(
 	if (record.approvalState === "pending") return defer("work_period_pending_approval");
 	const sourceStart = instantFromDate(period.startTime);
 	const sourceEnd = instantFromDate(period.endTime);
-	const projectAllocations = allocations.filter(
-		({ allocationKind }) => allocationKind === "project",
-	);
-	const allocationAgrees = period.projectId
-		? projectAllocations.length === 1 &&
-			projectAllocations[0]?.projectId === period.projectId &&
-			projectAllocations[0]?.weightPercent === 100
-		: projectAllocations.length === 0;
+	// Project and billability must agree in both representations (#900).
+	const allocationAgrees = projectAllocationAgrees(period, allocations);
 	// Divergence between the period and its canonical record is evidence for review,
 	// never repaired by an automatic process.
 	if (
@@ -688,6 +687,7 @@ export async function adjustAutomaticBreakInTransaction(
 			projectId: allocation.projectId,
 			costCenterId: allocation.costCenterId,
 			weightPercent: allocation.weightPercent,
+			isBillable: allocation.isBillable,
 		});
 	}
 	const [generated] = await tx
@@ -698,6 +698,7 @@ export async function adjustAutomaticBreakInTransaction(
 			clockInId: breakClockIn.id,
 			clockOutId: period.clockOutId,
 			projectId: period.projectId,
+			isBillable: period.isBillable,
 			workCategoryId: period.workCategoryId,
 			workLocationType: period.workLocationType,
 			startTime: breakEndDate,
@@ -725,6 +726,7 @@ export async function adjustAutomaticBreakInTransaction(
 
 	const attribution = {
 		projectId: period.projectId,
+		isBillable: period.isBillable,
 		workCategoryId: period.workCategoryId,
 		workLocationType: period.workLocationType,
 		allocations: allocations.map((allocation) => ({
@@ -732,6 +734,7 @@ export async function adjustAutomaticBreakInTransaction(
 			projectId: allocation.projectId,
 			costCenterId: allocation.costCenterId,
 			weightPercent: allocation.weightPercent,
+			isBillable: allocation.isBillable,
 		})),
 	};
 	const segment = (values: {
@@ -1117,6 +1120,7 @@ export async function applyLegacyAutomaticBreakInTransaction(
 				projectId: allocation.projectId,
 				costCenterId: allocation.costCenterId,
 				weightPercent: allocation.weightPercent,
+				isBillable: allocation.isBillable,
 			});
 		}
 	}
@@ -1131,6 +1135,7 @@ export async function applyLegacyAutomaticBreakInTransaction(
 			endTime: plan.expected.endTime,
 			durationMinutes: plan.secondDurationMinutes,
 			projectId: period.projectId,
+			isBillable: period.isBillable,
 			workCategoryId: period.workCategoryId,
 			workLocationType: period.workLocationType,
 			canonicalRecordId: generatedRecordId,

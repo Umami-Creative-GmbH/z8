@@ -253,6 +253,8 @@ const FAILURE_REPLIES: Record<
 	target_not_active: { status: 409, error: "No active work period found" },
 	project_not_allowed: { status: 400, error: "Cannot assign to this project" },
 	work_category_not_allowed: { status: 400, error: "Cannot assign to this work category" },
+	// The legacy route never chooses billability, so this only guards the table.
+	billable_not_allowed: { status: 400, error: "Billable work needs a project with a customer" },
 	invalid_interval: { status: 409, error: "Clock-out precedes clock-in" },
 	failed: { status: 500, error: "Internal server error" },
 	unconfirmed: { status: 500, error: "Internal server error" },

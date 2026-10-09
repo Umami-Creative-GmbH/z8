@@ -378,7 +378,7 @@ async function applyUnit(tx: WorkTransactionClient, context: UnitContext) {
 					.returning({ id: timeRecord.id });
 				expectOne(inserted, unit);
 				await insertDetail(tx, organizationId, fill.recordId, fill.detail, unit);
-				if (fill.projectId) await insertProject(tx, organizationId, fill.recordId, fill.projectId);
+				if (fill.projectId) await insertProject(tx, organizationId, fill.recordId, fill.projectId, unit);
 				periodSet.canonicalRecordId = fill.recordId;
 				periodGuards.push(isNull(workPeriod.canonicalRecordId));
 				break;
@@ -389,7 +389,7 @@ async function applyUnit(tx: WorkTransactionClient, context: UnitContext) {
 				break;
 			case "canonical_detail":
 				await insertDetail(tx, organizationId, fill.recordId, fill.detail, unit);
-				if (fill.projectId) await insertProject(tx, organizationId, fill.recordId, fill.projectId);
+				if (fill.projectId) await insertProject(tx, organizationId, fill.recordId, fill.projectId, unit);
 				break;
 			case "canonical_completion": {
 				if (!expectedRecord) throw new StaleHistoricalRepairPlanError(unit.workPeriodId);
@@ -450,7 +450,7 @@ async function applyUnit(tx: WorkTransactionClient, context: UnitContext) {
 				break;
 			case "canonical_metadata":
 				if (fill.field === "project") {
-					await insertProject(tx, organizationId, fill.recordId, fill.value);
+					await insertProject(tx, organizationId, fill.recordId, fill.value, unit);
 					break;
 				}
 				expectOne(
@@ -591,13 +591,24 @@ async function insertDetail(
 	);
 }
 
-/** Adds the project allocation only while the record has none (checked under its row lock). */
+/**
+ * Adds the project allocation only while the record has none (checked under its row lock).
+ * It carries the locked period's billability for that project (#900), so the repaired
+ * record agrees with the period on project and billability.
+ */
 async function insertProject(
 	tx: WorkTransactionClient,
 	organizationId: string,
 	recordId: string,
 	projectId: string,
+	unit: GapRepairUnit,
 ) {
+	const [period] = await tx
+		.select({ projectId: workPeriod.projectId, isBillable: workPeriod.isBillable })
+		.from(workPeriod)
+		.where(and(eq(workPeriod.id, unit.workPeriodId), eq(workPeriod.organizationId, organizationId)))
+		.limit(1);
+	const isBillable = period?.projectId === projectId && period.isBillable;
 	const existing = await tx
 		.select({ id: timeRecordAllocation.id })
 		.from(timeRecordAllocation)
@@ -616,6 +627,7 @@ async function insertProject(
 		allocationKind: "project",
 		projectId,
 		weightPercent: 100,
+		isBillable,
 	});
 }
 

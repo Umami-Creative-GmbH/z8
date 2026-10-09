@@ -212,6 +212,7 @@ export async function closeAndResumeWork(
 		},
 		carriedAttribution: {
 			projectId: attribution.projectId,
+			isBillable: attribution.isBillable ?? false,
 			workCategoryId: attribution.workCategoryId,
 		},
 		writer: input.writer,

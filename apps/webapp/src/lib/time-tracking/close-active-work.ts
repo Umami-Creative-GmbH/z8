@@ -56,6 +56,7 @@ import {
 } from "./policy-clock-out-surcharge-snapshot";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type { WorkTransactionContext } from "./web-clock-out-transaction";
+import { resolveWorkBillabilityInTransaction } from "./work-billability";
 import { deriveWorkDurationMinutes } from "./work-duration";
 import type { SealedWorkTransactionScope, WorkTransactionAdmission } from "./work-transaction";
 
@@ -114,6 +115,12 @@ export type CloseActiveWorkOperationCommand = {
 	operationId: string;
 	project: AttributionIntent;
 	workCategory: AttributionIntent;
+	/**
+	 * Explicit billability (#900). Absent from commands that do not choose it, so
+	 * commands frozen before billability still replay byte for byte: absent takes
+	 * the project's billable default when the project changes, else preserves.
+	 */
+	billable?: boolean;
 };
 
 /** The writer that submitted the command; replay only matches the same writer. */
@@ -240,6 +247,8 @@ export type CloseActiveWorkResult = {
 	};
 	attribution: {
 		projectId: string | null;
+		/** Absent on receipts committed before billability (#900), which were non-billable. */
+		isBillable?: boolean;
 		workCategoryId: string | null;
 		workLocationType: string | null;
 	};
@@ -492,6 +501,14 @@ export async function closeActiveWorkGraph(
 		command.project,
 		period.projectId,
 	);
+	// Choosing another project takes its billable default; keeping it keeps the
+	// live period's billability, unless the command chose it (#900).
+	const isBillable = await resolveWorkBillabilityInTransaction(tx, organizationId, {
+		projectId,
+		projectChosen: projectId !== period.projectId,
+		current: period.isBillable,
+		requested: command.billable,
+	});
 	const workCategoryId = await resolveAttribution(
 		tx,
 		organizationId,
@@ -540,6 +557,7 @@ export async function closeActiveWorkGraph(
 			allocationKind: "project",
 			projectId,
 			weightPercent: 100,
+			isBillable,
 		});
 	}
 
@@ -566,6 +584,7 @@ export async function closeActiveWorkGraph(
 			durationMinutes,
 			isActive: false,
 			projectId,
+			isBillable,
 			workCategoryId,
 			canonicalRecordId: record.id,
 			approvalStatus: "approved",
@@ -637,6 +656,7 @@ export async function closeActiveWorkGraph(
 		},
 		attribution: {
 			projectId,
+			isBillable,
 			workCategoryId,
 			workLocationType: period.workLocationType ?? null,
 		},
