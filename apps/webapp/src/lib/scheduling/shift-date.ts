@@ -5,6 +5,7 @@ import {
 	type PlainDate,
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
+import { resolveScheduleWallTime } from "./schedule-local-input";
 
 /**
  * `shift.date` stores the organization-local midnight of the shift's calendar date as a UTC
@@ -13,6 +14,16 @@ import {
  */
 export function shiftCalendarDate(storedDate: Date, organizationTimezone: string): PlainDate {
 	return plainDateAt(instantFromDate(storedDate), organizationTimezone);
+}
+
+/**
+ * The `shift.date` value to store for the organization-local calendar day `date` (`YYYY-MM-DD`).
+ * Throws where that day's local midnight doesn't exist.
+ */
+export function shiftStoredDate(date: string, organizationTimezone: string): Date {
+	return dateFromInstant(
+		resolveScheduleWallTime({ date, time: "00:00" }, organizationTimezone).toInstant(),
+	);
 }
 
 /** The `shift.date` bounds of the organization-local calendar day `date` (`YYYY-MM-DD`). */

@@ -72,7 +72,7 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
-import { resolveScheduleWallTime } from "@/lib/scheduling/schedule-local-input";
+import { shiftStoredDate } from "@/lib/scheduling/shift-date";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import {
 	instantFromTimeCorrectionBoundary,
@@ -2374,15 +2374,18 @@ export async function generateDemoShiftTemplates(
 	return { templatesCreated };
 }
 
-/**
- * The organization-local calendar days of a demo range, both ends inclusive, each with its
- * `shift.date` value: the org-local midnight, resolved the same way `upsertShift` resolves it.
- */
+interface DemoShiftDay {
+	/** The `shift.date` value: the day's organization-local midnight. */
+	storedDate: Date;
+	isWeekday: boolean;
+}
+
+/** The organization-local calendar days of a demo range, both ends inclusive. */
 function demoShiftDays(
 	range: DemoDataOptions["dateRange"],
 	timezone: string,
-): Array<{ date: Date; isWeekday: boolean }> {
-	const days: Array<{ date: Date; isWeekday: boolean }> = [];
+): DemoShiftDay[] {
+	const days: DemoShiftDay[] = [];
 	const lastDay = plainDateAt(instantFromDate(range.end), timezone);
 	for (
 		let day = plainDateAt(instantFromDate(range.start), timezone);
@@ -2390,12 +2393,7 @@ function demoShiftDays(
 		day = day.add({ days: 1 })
 	) {
 		days.push({
-			date: dateFromInstant(
-				resolveScheduleWallTime(
-					{ date: day.toString(), time: "00:00" },
-					timezone,
-				).toInstant(),
-			),
+			storedDate: shiftStoredDate(day.toString(), timezone),
 			isWeekday: day.dayOfWeek <= 5,
 		});
 	}
@@ -2476,8 +2474,8 @@ export async function generateDemoShifts(options: DemoDataOptions): Promise<{
 				startTime: template.startTime,
 				endTime: template.endTime,
 				color: template.color,
-				startDate: shiftDays[0].date,
-				endDate: shiftDays[shiftDays.length - 1].date,
+				startDate: shiftDays[0].storedDate,
+				endDate: shiftDays[shiftDays.length - 1].storedDate,
 				weeklyDays: JSON.stringify([1, 2, 3, 4, 5]), // Monday-Friday
 				isActive: true,
 				createdBy: options.createdBy,
@@ -2512,7 +2510,7 @@ export async function generateDemoShifts(options: DemoDataOptions): Promise<{
 						templateId: template.id,
 						subareaId: subarea.id,
 						recurrenceId: newRecurrence.id,
-						date: shiftDay.date,
+						date: shiftDay.storedDate,
 						startTime: template.startTime,
 						endTime: template.endTime,
 						status: isPublished ? "published" : "draft",
