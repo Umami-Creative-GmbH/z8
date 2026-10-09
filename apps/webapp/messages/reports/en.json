@@ -196,6 +196,19 @@
         "team": "Team",
         "viewProject": "View project details"
       },
+      "task": {
+        "description": "Hours booked to each task in this period. Estimate progress counts every hour booked to the task.",
+        "done": "Done",
+        "estimate": "Estimate progress",
+        "estimateProgress": "{booked}h of {estimate}h ({percent}%)",
+        "hours": "Hours",
+        "noTask": "No task",
+        "noTime": "No time was booked to this project in this period",
+        "share": "Share",
+        "task": "Task",
+        "title": "By task",
+        "unknown": "Unknown task"
+      },
       "team": {
         "byEmployee": "By Employee",
         "byTeam": "By Team",

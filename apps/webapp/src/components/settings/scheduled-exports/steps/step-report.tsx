@@ -60,6 +60,13 @@ export function StepReport({ form, payrollConfigs }: StepReportProps) {
 			id: "time_entries",
 			label: t("settings.scheduledExports.dataCategories.timeEntries", "Time Entries"),
 		},
+		{
+			id: "work_periods",
+			label: t(
+				"settings.scheduledExports.dataCategories.workPeriods",
+				"Work Periods (with project and task)",
+			),
+		},
 		{ id: "absences", label: t("settings.scheduledExports.dataCategories.absences", "Absences") },
 		{ id: "projects", label: t("settings.scheduledExports.dataCategories.projects", "Projects") },
 	];
