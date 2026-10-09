@@ -191,7 +191,9 @@ async function employeeNames(
 		.select({ id: employee.id, name: user.name })
 		.from(employee)
 		.innerJoin(user, eq(user.id, employee.userId))
-		.where(and(eq(employee.organizationId, organizationId), inArray(employee.id, [...employeeIds])));
+		.where(
+			and(eq(employee.organizationId, organizationId), inArray(employee.id, [...employeeIds])),
+		);
 	return new Map(rows.map((row) => [row.id, row.name]));
 }
 
@@ -293,9 +295,7 @@ async function loadHandOffContext(
 	if (connection && !contact) blockers.push({ kind: "no_contact_link" });
 	blockers.push(...plan.blockers);
 	if (capabilities && settings.currency !== null) {
-		if (
-			!(capabilities.supportedCurrencies as readonly string[]).includes(settings.currency)
-		) {
+		if (!(capabilities.supportedCurrencies as readonly string[]).includes(settings.currency)) {
 			blockers.push({ kind: "currency_not_supported", currency: settings.currency });
 		}
 		if (taxTreatment && !capabilities.supportedTaxTreatments.includes(taxTreatment.kind)) {
@@ -405,7 +405,6 @@ function previewOf(context: HandOffContext, request: HandOffRequest): HandOffPre
 		fingerprint: context.fingerprint,
 	};
 }
-
 
 /** The preview of a hand-off: nothing is written and the tool is not called. */
 export async function previewHandOff(
@@ -732,7 +731,11 @@ async function openDraftProvider(
 	| { ok: true; provider: AccountingProvider }
 	| {
 			ok: false;
-			reason: "connection_changed" | "not_connected" | "provider_unavailable" | "credentials_missing";
+			reason:
+				| "connection_changed"
+				| "not_connected"
+				| "provider_unavailable"
+				| "credentials_missing";
 	  }
 > {
 	const [draftConnection] = await reader
@@ -805,7 +808,9 @@ async function callTool(
 	await database
 		.update(invoiceDraft)
 		.set({ attemptCount: sql`${invoiceDraft.attemptCount} + 1`, lastAttemptAt: sql`now()` })
-		.where(and(eq(invoiceDraft.id, draft.id), eq(invoiceDraft.organizationId, draft.organizationId)));
+		.where(
+			and(eq(invoiceDraft.id, draft.id), eq(invoiceDraft.organizationId, draft.organizationId)),
+		);
 
 	let created: Awaited<ReturnType<AccountingProvider["createInvoiceDraft"]>>;
 	try {
@@ -821,7 +826,9 @@ async function callTool(
 		const [current] = await tx
 			.select()
 			.from(invoiceDraft)
-			.where(and(eq(invoiceDraft.id, draft.id), eq(invoiceDraft.organizationId, draft.organizationId)))
+			.where(
+				and(eq(invoiceDraft.id, draft.id), eq(invoiceDraft.organizationId, draft.organizationId)),
+			)
 			.for("update");
 		if (!current) return { ok: false, reason: "not_found" } as const;
 		if (current.status !== "pending") {
@@ -900,7 +907,9 @@ async function failedCall(
 		const [current] = await tx
 			.select()
 			.from(invoiceDraft)
-			.where(and(eq(invoiceDraft.id, draft.id), eq(invoiceDraft.organizationId, draft.organizationId)))
+			.where(
+				and(eq(invoiceDraft.id, draft.id), eq(invoiceDraft.organizationId, draft.organizationId)),
+			)
 			.for("update");
 		if (!current) return { ok: false, reason: "not_found" } as const;
 		const outcomeUnknown = current.outcomeUnknown || failure === "outcome_unknown";
@@ -1070,7 +1079,10 @@ export async function releaseInvoiceDraft(
 			.select()
 			.from(invoiceDraft)
 			.where(
-				and(eq(invoiceDraft.id, input.draftId), eq(invoiceDraft.organizationId, input.organizationId)),
+				and(
+					eq(invoiceDraft.id, input.draftId),
+					eq(invoiceDraft.organizationId, input.organizationId),
+				),
 			)
 			.for("update");
 		if (!draft) return { ok: false, reason: "not_found" } as const;
@@ -1157,7 +1169,9 @@ export async function checkInvoiceDraftStatus(
 				toolStatus: status.kind === "gone" ? "gone" : status.status,
 				toolStatusCheckedAt: sql`now()`,
 			})
-			.where(and(eq(invoiceDraft.id, draft.id), eq(invoiceDraft.organizationId, draft.organizationId)));
+			.where(
+				and(eq(invoiceDraft.id, draft.id), eq(invoiceDraft.organizationId, draft.organizationId)),
+			);
 	}
 	return { ok: true, status };
 }
@@ -1231,7 +1245,12 @@ export async function clearChangedAfterInvoicing(
 
 function summaryOf(
 	row: DraftRow,
-	extra: { customerName: string; createdByName: string | null; workCount: number; changedCount: number },
+	extra: {
+		customerName: string;
+		createdByName: string | null;
+		workCount: number;
+		changedCount: number;
+	},
 ): InvoiceDraftSummaryView {
 	if (!isAccountingProviderKind(row.providerKind)) {
 		throw new RangeError(`Not a stored provider kind: ${row.providerKind}`);
@@ -1385,11 +1404,17 @@ export async function getInvoiceDraftDetail(
 		.from(invoiceDraft)
 		.innerJoin(
 			customer,
-			and(eq(customer.id, invoiceDraft.customerId), eq(customer.organizationId, input.organizationId)),
+			and(
+				eq(customer.id, invoiceDraft.customerId),
+				eq(customer.organizationId, input.organizationId),
+			),
 		)
 		.leftJoin(user, eq(user.id, invoiceDraft.createdBy))
 		.where(
-			and(eq(invoiceDraft.id, input.draftId), eq(invoiceDraft.organizationId, input.organizationId)),
+			and(
+				eq(invoiceDraft.id, input.draftId),
+				eq(invoiceDraft.organizationId, input.organizationId),
+			),
 		)
 		.limit(1);
 	if (!row) return null;
@@ -1451,10 +1476,7 @@ export async function listChangedAfterInvoicing(
 	const rows = await invoicedWorkViews(
 		reader,
 		organizationId,
-		and(
-			isNull(invoicedWork.releasedAt),
-			sql`${invoicedWork.changedAfterInvoicingAt} is not null`,
-		),
+		and(isNull(invoicedWork.releasedAt), sql`${invoicedWork.changedAfterInvoicingAt} is not null`),
 	);
 	return rows.map(({ timesheet: _timesheet, ...view }) => view);
 }

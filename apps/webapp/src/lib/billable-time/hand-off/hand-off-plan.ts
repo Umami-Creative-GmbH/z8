@@ -17,7 +17,6 @@
 import { Temporal } from "temporal-polyfill";
 import { formatUnits } from "@/lib/money/exact-decimal";
 import {
-	formatQuantityHours,
 	type InvoiceDraftTextLine,
 	type InvoiceDraftWorkLine,
 	workLine,
@@ -280,5 +279,7 @@ export function handOffDigestInput(
 
 /** Sorts candidates as the plan reads them: by start, then id. */
 export function compareCandidates(left: HandOffCandidate, right: HandOffCandidate): number {
-	return Temporal.Instant.compare(left.startedAt, right.startedAt) || left.id.localeCompare(right.id);
+	return (
+		Temporal.Instant.compare(left.startedAt, right.startedAt) || left.id.localeCompare(right.id)
+	);
 }

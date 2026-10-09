@@ -115,7 +115,9 @@ describe("project report export", () => {
 		expect(header).toContain("Changed after invoicing");
 		expect(csv).toContain("500.00");
 		expect(csv).toContain("240.00");
-		expect(exportReportDocumentToCSV(buildProjectReportDocument(projectReport(revenueFigures), context))).not.toContain("Invoiced");
+		expect(
+			exportReportDocumentToCSV(buildProjectReportDocument(projectReport(revenueFigures), context)),
+		).not.toContain("Invoiced");
 	});
 
 	it("exports a project manager's report without any cost or margin column", () => {

@@ -1,7 +1,7 @@
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
-import type { BillableRatePeriod } from "@/lib/billable-time/applicable-rate";
 import { invoiceDraftNetTotal } from "@/lib/billable-time/accounting/invoice-draft";
+import type { BillableRatePeriod } from "@/lib/billable-time/applicable-rate";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { type HandOffCandidate, handOffTextFormat, planHandOff } from "./hand-off-plan";
 
@@ -77,7 +77,12 @@ describe("planHandOff", () => {
 			work: [
 				work({ start: "2026-09-02T08:00:00Z", minutes: 90 }),
 				work({ start: "2026-09-03T08:00:00Z", minutes: 50, employeeId: BEN }),
-				work({ start: "2026-09-04T08:00:00Z", minutes: 61, projectId: PROJECT_B, projectName: "App" }),
+				work({
+					start: "2026-09-04T08:00:00Z",
+					minutes: 61,
+					projectId: PROJECT_B,
+					projectName: "App",
+				}),
 			],
 			rates: [rate(PROJECT_A, 10_000, "2026-01-01"), rate(PROJECT_B, 8_550, "2026-01-01")],
 		});
@@ -161,7 +166,10 @@ describe("planHandOff", () => {
 			projectName: "App",
 		});
 
-		const result = plan({ work: [priced, unpriced], rates: [rate(PROJECT_A, 10_000, "2026-01-01")] });
+		const result = plan({
+			work: [priced, unpriced],
+			rates: [rate(PROJECT_A, 10_000, "2026-01-01")],
+		});
 
 		expect(result.unpriced.map((item) => [item.work.id, item.unpricedMs])).toEqual([
 			[unpriced.id, 3_600_000],
@@ -182,7 +190,12 @@ describe("planHandOff", () => {
 	it("adds the timesheet as text lines, one per period, within the tool's line limit", () => {
 		const items = [
 			work({ start: "2026-09-02T08:00:00Z", minutes: 90 }),
-			work({ start: "2026-09-03T08:00:00Z", minutes: 50, employeeId: BEN, employeeName: "Ben Ott" }),
+			work({
+				start: "2026-09-03T08:00:00Z",
+				minutes: 50,
+				employeeId: BEN,
+				employeeName: "Ben Ott",
+			}),
 		];
 		const rates = [rate(PROJECT_A, 10_000, "2026-01-01")];
 

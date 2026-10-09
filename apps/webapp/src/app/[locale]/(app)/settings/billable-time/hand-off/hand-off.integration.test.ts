@@ -501,7 +501,10 @@ describe("hand-off on PostgreSQL", () => {
 		]);
 
 		const again = await preview();
-		expect(again.alreadyInvoiced.map((item) => item.workPeriodId)).toEqual([work.website, work.app]);
+		expect(again.alreadyInvoiced.map((item) => item.workPeriodId)).toEqual([
+			work.website,
+			work.app,
+		]);
 		expect(again.blockers).toEqual([{ kind: "nothing_to_hand_off" }]);
 	});
 
@@ -536,21 +539,30 @@ describe("hand-off on PostgreSQL", () => {
 		const key = randomUUID();
 		tool.simulateTimeout();
 
-		const first = await confirm({ idempotencyKey: key });
-		expect(first).toMatchObject({ success: false, code: "ConflictError" });
-		expect(first.success ? "" : first.error).toContain("did not answer");
+		const first = await unwrap(confirm({ idempotencyKey: key }));
 		expect(tool.drafts()).toHaveLength(1);
 		const [pending] = await drafts();
+		expect(first).toEqual({
+			draftId: pending?.id,
+			status: "pending",
+			replayed: false,
+			pendingReason: "outcome_unknown",
+		});
 		expect(pending).toMatchObject({ status: "pending", outcome_unknown: true, attempt_count: 1 });
 		// The work is reserved: another hand-off cannot take it meanwhile.
 		expect((await preview()).alreadyInvoiced).toHaveLength(2);
 
 		const retried = await unwrap(retryHandOffAction({ draftId: pending?.id ?? "" }));
-		expect(retried).toEqual({ draftId: pending?.id, replayed: false });
+		expect(retried).toEqual({
+			draftId: pending?.id,
+			status: "created",
+			replayed: false,
+			pendingReason: null,
+		});
 		const replayed = await unwrap(
 			confirmHandOffAction({ ...september, idempotencyKey: key, fingerprint: "stale" }),
 		);
-		expect(replayed).toEqual({ draftId: pending?.id, replayed: true });
+		expect(replayed).toMatchObject({ draftId: pending?.id, status: "created", replayed: true });
 
 		expect(tool.drafts()).toHaveLength(1);
 		expect(await drafts()).toEqual([
@@ -577,7 +589,11 @@ describe("hand-off on PostgreSQL", () => {
 		await admin.query("update work_period set duration_minutes = 80 where id = $1", [work.website]);
 
 		await expect(
-			confirmHandOffAction({ ...september, idempotencyKey: randomUUID(), fingerprint: shown.fingerprint }),
+			confirmHandOffAction({
+				...september,
+				idempotencyKey: randomUUID(),
+				fingerprint: shown.fingerprint,
+			}),
 		).resolves.toMatchObject({ success: false, code: "ConflictError" });
 		expect(tool.createCalls()).toBe(0);
 	});
@@ -650,9 +666,10 @@ describe("hand-off on PostgreSQL", () => {
 		]);
 		expect((await invoiced()).every((row) => row.changed_after_invoicing_at === null)).toBe(true);
 
-		await admin.query("update work_period set end_time = end_time + interval '15 minutes', duration_minutes = 105 where id = $1", [
-			work.website,
-		]);
+		await admin.query(
+			"update work_period set end_time = end_time + interval '15 minutes', duration_minutes = 105 where id = $1",
+			[work.website],
+		);
 		await admin.query("update work_period set is_billable = false where id = $1", [work.app]);
 		const marked = await invoiced();
 		expect(marked.map((row) => row.changed_fields)).toEqual([["times"], ["billability"]]);
@@ -678,7 +695,9 @@ describe("hand-off on PostgreSQL", () => {
 			 and action = 'billable_time.invoiced_work_mark_cleared'`,
 			[ids.organization],
 		);
-		expect(rows).toEqual([{ entity_id: work.website, changes: expect.stringContaining('"times"') }]);
+		expect(rows).toEqual([
+			{ entity_id: work.website, changes: expect.stringContaining('"times"') },
+		]);
 	});
 
 	it("reports invoiced and un-invoiced hours and revenue at the frozen rates", async () => {

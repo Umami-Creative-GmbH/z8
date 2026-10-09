@@ -409,10 +409,7 @@ export const invoiceDraft = pgTable(
 			"invoice_draft_provider_kind_check",
 			sql`${table.providerKind} IN ('lexware_office', 'sevdesk')`,
 		),
-		check(
-			"invoice_draft_currency_check",
-			sql`${table.currency} IN ('EUR', 'CHF', 'USD', 'GBP')`,
-		),
+		check("invoice_draft_currency_check", sql`${table.currency} IN ('EUR', 'CHF', 'USD', 'GBP')`),
 		check(
 			"invoice_draft_tax_treatment_check",
 			sql`${table.taxTreatment} IN (${TAX_TREATMENT_KIND_SQL})`,
@@ -427,10 +424,7 @@ export const invoiceDraft = pgTable(
 			sql`(${table.status} IN ('failed', 'released')) = (${table.endedAt} IS NOT NULL)`,
 		),
 		unique("invoice_draft_id_organization_idx").on(table.id, table.organizationId),
-		uniqueIndex("invoice_draft_idempotency_key_idx").on(
-			table.organizationId,
-			table.idempotencyKey,
-		),
+		uniqueIndex("invoice_draft_idempotency_key_idx").on(table.organizationId, table.idempotencyKey),
 		foreignKey({
 			name: "invoice_draft_connection_fk",
 			columns: [table.connectionId, table.organizationId],

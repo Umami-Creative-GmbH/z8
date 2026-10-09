@@ -106,7 +106,34 @@ function blockerMessage(blocker: HandOffBlockerView): string {
 
 export interface HandOffConfirmation {
 	draftId: string;
+	/**
+	 * `pending`: the tool did not confirm the draft yet (timeout, or it could not
+	 * take it right now). Retrying is safe and never creates a second draft.
+	 */
+	status: "created" | "pending";
 	replayed: boolean;
+	/** Why the hand-off is still pending. */
+	pendingReason: "outcome_unknown" | "not_performed" | null;
+}
+
+function confirmationOf(outcome: HandOffOutcome) {
+	if (outcome.ok) {
+		return {
+			draftId: outcome.draftId,
+			status: "created",
+			replayed: outcome.replayed,
+			pendingReason: null,
+		} satisfies HandOffConfirmation;
+	}
+	if (outcome.reason === "outcome_unknown" || outcome.reason === "not_performed") {
+		return {
+			draftId: outcome.draftId,
+			status: "pending",
+			replayed: false,
+			pendingReason: outcome.reason,
+		} satisfies HandOffConfirmation;
+	}
+	return null;
 }
 
 function outcomeError(outcome: Exclude<HandOffOutcome, { ok: true }>) {
@@ -255,8 +282,9 @@ export async function confirmHandOffAction(
 				expectedFingerprint: input.fingerprint,
 			}),
 		);
-		if (!outcome.ok) return yield* Effect.fail(outcomeError(outcome));
-		return { draftId: outcome.draftId, replayed: outcome.replayed };
+		const confirmation = confirmationOf(outcome);
+		if (confirmation) return confirmation;
+		return yield* Effect.fail(outcomeError(outcome as Exclude<HandOffOutcome, { ok: true }>));
 	});
 	return runServerActionSafe(effect);
 }
@@ -275,8 +303,9 @@ export async function retryHandOffAction(input: {
 				draftId: String(input.draftId),
 			}),
 		);
-		if (!outcome.ok) return yield* Effect.fail(outcomeError(outcome));
-		return { draftId: outcome.draftId, replayed: outcome.replayed };
+		const confirmation = confirmationOf(outcome);
+		if (confirmation) return confirmation;
+		return yield* Effect.fail(outcomeError(outcome as Exclude<HandOffOutcome, { ok: true }>));
 	});
 	return runServerActionSafe(effect);
 }

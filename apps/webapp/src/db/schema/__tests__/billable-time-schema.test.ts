@@ -177,7 +177,10 @@ describe("accounting connection schema (#903)", () => {
 
 describe("hand-off schema (#903)", () => {
 	const migration = () =>
-		readFileSync(new URL("../../../../drizzle/0149_billable_hand_off.sql", import.meta.url), "utf8");
+		readFileSync(
+			new URL("../../../../drizzle/0149_billable_hand_off.sql", import.meta.url),
+			"utf8",
+		);
 
 	it("scopes drafts, lines and invoiced work to one organization", () => {
 		expect(compositeForeignKeys(invoiceDraft)).toEqual(

@@ -267,17 +267,17 @@ describe("billable report figures", () => {
 			uninvoicedRevenue: "180.00",
 			changedAfterInvoicingCount: 1,
 		});
-		expect(sumBillableFigures([result, result], { access: "revenue", currency: "EUR" })).toMatchObject(
-			{
-				revenue: "760.00",
-				invoicing: {
-					invoicedMinutes: 240,
-					invoicedRevenue: "400.00",
-					uninvoicedRevenue: "360.00",
-					changedAfterInvoicingCount: 2,
-				},
+		expect(
+			sumBillableFigures([result, result], { access: "revenue", currency: "EUR" }),
+		).toMatchObject({
+			revenue: "760.00",
+			invoicing: {
+				invoicedMinutes: 240,
+				invoicedRevenue: "400.00",
+				uninvoicedRevenue: "360.00",
+				changedAfterInvoicingCount: 2,
 			},
-		);
+		});
 	});
 
 	it("never counts invoiced work that is no longer chargeable as invoiced revenue", () => {
@@ -300,4 +300,5 @@ describe("billable report figures", () => {
 			invoicedRevenue: "0.00",
 			changedAfterInvoicingCount: 1,
 		});
-	});});
+	});
+});

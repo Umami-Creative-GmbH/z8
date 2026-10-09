@@ -356,7 +356,15 @@ describe("correcting invoiced work on PostgreSQL", () => {
 
 			actAs();
 			await expect(
-				splitWorkPeriod(periodId, "2026-07-22", "10:00", undefined, undefined, undefined, randomUUID()),
+				splitWorkPeriod(
+					periodId,
+					"2026-07-22",
+					"10:00",
+					undefined,
+					undefined,
+					undefined,
+					randomUUID(),
+				),
 			).resolves.toMatchObject({ success: true });
 
 			const rows = await invoiced();

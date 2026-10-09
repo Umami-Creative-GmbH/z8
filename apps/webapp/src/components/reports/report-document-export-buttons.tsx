@@ -154,24 +154,30 @@ export function ReportDocumentExportButtons({
 
 	return (
 		<div className="flex flex-wrap gap-2">
-			{formats.includes("pdf") && (<Button onClick={() => handleExport("pdf")} disabled={loading !== null} variant="outline">
-				<IconFileText className="mr-2 size-4" />
-				{loading === "pdf"
-					? t("reports.export.generating", "Generating...")
-					: t("reports.export.pdf", "Export PDF")}
-			</Button>)}
-			{formats.includes("excel") && (<Button onClick={() => handleExport("excel")} disabled={loading !== null} variant="outline">
-				<IconFileSpreadsheet className="mr-2 size-4" />
-				{loading === "excel"
-					? t("reports.export.generating", "Generating...")
-					: t("reports.export.excel", "Export Excel")}
-			</Button>)}
-			{formats.includes("csv") && (<Button onClick={() => handleExport("csv")} disabled={loading !== null} variant="outline">
-				<IconDownload className="mr-2 size-4" />
-				{loading === "csv"
-					? t("reports.export.generating", "Generating...")
-					: t("reports.export.csv", "Export CSV")}
-			</Button>)}
+			{formats.includes("pdf") && (
+				<Button onClick={() => handleExport("pdf")} disabled={loading !== null} variant="outline">
+					<IconFileText className="mr-2 size-4" />
+					{loading === "pdf"
+						? t("reports.export.generating", "Generating...")
+						: t("reports.export.pdf", "Export PDF")}
+				</Button>
+			)}
+			{formats.includes("excel") && (
+				<Button onClick={() => handleExport("excel")} disabled={loading !== null} variant="outline">
+					<IconFileSpreadsheet className="mr-2 size-4" />
+					{loading === "excel"
+						? t("reports.export.generating", "Generating...")
+						: t("reports.export.excel", "Export Excel")}
+				</Button>
+			)}
+			{formats.includes("csv") && (
+				<Button onClick={() => handleExport("csv")} disabled={loading !== null} variant="outline">
+					<IconDownload className="mr-2 size-4" />
+					{loading === "csv"
+						? t("reports.export.generating", "Generating...")
+						: t("reports.export.csv", "Export CSV")}
+				</Button>
+			)}
 		</div>
 	);
 }

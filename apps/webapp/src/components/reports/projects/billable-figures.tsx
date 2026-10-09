@@ -138,7 +138,44 @@ export function BillableFiguresCard({ figures, context, description }: BillableF
 						</>
 					)}
 				</div>
+				{figures.invoicing && (
+					<div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+						<Figure
+							label={t("reports.projects.billable.invoicedHours", "Invoiced hours")}
+							value={format.hours(figures.invoicing.invoicedHours)}
+						/>
+						<Figure
+							label={t("reports.projects.billable.invoicedRevenue", "Invoiced revenue")}
+							value={format.money(figures.invoicing.invoicedRevenue, figures.currency)}
+							hint={t(
+								"reports.projects.billable.invoicedRevenueHint",
+								"At the rates of its invoice drafts",
+							)}
+						/>
+						<Figure
+							label={t("reports.projects.billable.uninvoicedHours", "Un-invoiced hours")}
+							value={format.hours(figures.invoicing.uninvoicedHours)}
+						/>
+						<Figure
+							label={t("reports.projects.billable.uninvoicedRevenue", "Un-invoiced revenue")}
+							value={format.money(figures.invoicing.uninvoicedRevenue, figures.currency)}
+						/>
+					</div>
+				)}
 				<div className="flex flex-wrap gap-2">
+					{(figures.invoicing?.changedAfterInvoicingCount ?? 0) > 0 && (
+						<Badge
+							variant="outline"
+							className="gap-1 border-amber-500 text-amber-700 dark:text-amber-400"
+						>
+							<IconAlertTriangle className="size-3" aria-hidden="true" />
+							{t(
+								"reports.projects.billable.changedAfterInvoicing",
+								"{count, plural, one {# invoiced work period was} other {# invoiced work periods were}} changed after invoicing",
+								{ count: figures.invoicing?.changedAfterInvoicingCount ?? 0 },
+							)}
+						</Badge>
+					)}
 					{figures.unpricedWorkCount > 0 && (
 						<Badge
 							variant="outline"

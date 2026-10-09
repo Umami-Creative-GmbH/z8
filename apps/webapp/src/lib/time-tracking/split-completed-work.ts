@@ -30,6 +30,7 @@ import {
 	timeRecordWork,
 	workPeriod,
 } from "@/db/schema";
+import { carryInvoicedWorkToSplit } from "@/lib/billable-time/hand-off/invoiced-work";
 import {
 	compareInstants,
 	dateFromInstant,
@@ -38,7 +39,6 @@ import {
 	instantToCanonicalString,
 } from "@/lib/datetime/temporal-core";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { carryInvoicedWorkToSplit } from "@/lib/billable-time/hand-off/invoiced-work";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { CompletedWorkReviewRequiredError, lockAuthority } from "./amend-completed-work";
 import { calculateHash } from "./blockchain";
