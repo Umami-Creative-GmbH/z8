@@ -13,6 +13,7 @@ import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const { deletePositionRecordsPastAuditLifetime } = await import("./record-retention");
+const { purgeExpiredPositionStamps } = await import("./purge");
 
 const LIFETIME_DAYS = 365;
 
@@ -87,6 +88,40 @@ describe("position record retention on PostgreSQL", () => {
 		return id;
 	}
 
+	async function publishNotice(organizationId: string, version: number, createdAt: string) {
+		const id = randomUUID();
+		await pool.query(
+			`insert into position_notice (id, organization_id, version, purpose_statement, retention_days, template_revision, created_at)
+			 values ($1, $2, $3, 'Proof of on-site work', 30, 1, $4)`,
+			[id, organizationId, version, createdAt],
+		);
+		return id;
+	}
+
+	async function consent(
+		organizationId: string,
+		employeeId: string,
+		noticeId: string,
+		grantedAt: string,
+		withdrawnAt: string | null = null,
+	) {
+		const id = randomUUID();
+		await pool.query(
+			`insert into position_consent (id, organization_id, employee_id, notice_id, granted_at, withdrawn_at)
+			 values ($1, $2, $3, $4, $5, $6)`,
+			[id, organizationId, employeeId, noticeId, grantedAt, withdrawnAt],
+		);
+		return id;
+	}
+
+	async function remainingConsents() {
+		const { rows } = await pool.query<{ id: string }>(
+			"select id from position_consent where organization_id in ($1, $2) order by id",
+			[ids.organizationA, ids.organizationB],
+		);
+		return rows.map((row) => row.id);
+	}
+
 	async function accessLogIds() {
 		const { rows } = await pool.query<{ id: string }>(
 			"select id from position_stamp_access_log where organization_id in ($1, $2) order by id",
@@ -132,6 +167,107 @@ describe("position record retention on PostgreSQL", () => {
 		expect(await accessLogIds()).toEqual(kept);
 		expect(await subjectLogIds()).toEqual(kept);
 		expect([old, justPast, otherOrganization].some((id) => kept.includes(id))).toBe(false);
+	});
+
+	it("deletes consents out of force (withdrawn or lapsed) for longer than the lifetime, and never one in force", async () => {
+		const [e1, e2, e3, e4, e5] = ids.employees;
+		const a = ids.organizationA;
+		// Organization A: version 2 lapsed version 1 400 days ago, version 3 (current) lapsed version 2 100 days ago.
+		const v1 = await publishNotice(a, 1, daysAgo(900));
+		const v2 = await publishNotice(a, 2, daysAgo(400));
+		const v3 = await publishNotice(a, 3, daysAgo(100));
+		const lapsedLongAgo = await consent(a, e1, v1, daysAgo(800));
+		const lapsedRecently = await consent(a, e1, v2, daysAgo(390));
+		const withdrawnLongAgo = await consent(a, e2, v1, daysAgo(850), daysAgo(820));
+		const active = await consent(a, e2, v3, daysAgo(90));
+		const withdrawnBeforeLapse = await consent(a, e3, v2, daysAgo(395), daysAgo(380));
+		const withdrawnRecently = await consent(a, e4, v2, daysAgo(395), daysAgo(300));
+		// Organization B's only notice is still current after 700 days.
+		const b = ids.organizationB;
+		const current = await publishNotice(b, 1, daysAgo(700));
+		const withdrawnThenRegranted = await consent(b, e5, current, daysAgo(690), daysAgo(600));
+		const regranted = await consent(b, e5, current, daysAgo(550));
+
+		const result = await deletePositionRecordsPastAuditLifetime(db, {
+			now,
+			lifetimeDays: LIFETIME_DAYS,
+		});
+
+		expect(result.consents).toBe(4);
+		const remaining = await remainingConsents();
+		expect(remaining).toEqual([lapsedRecently, active, withdrawnRecently, regranted].sort());
+		for (const deleted of [
+			lapsedLongAgo,
+			withdrawnLongAgo,
+			withdrawnBeforeLapse,
+			withdrawnThenRegranted,
+		]) {
+			expect(remaining).not.toContain(deleted);
+		}
+		// Notice versions stay: they are the works council's history.
+		const { rows: notices } = await pool.query(
+			"select id from position_notice where organization_id in ($1, $2)",
+			[a, b],
+		);
+		expect(notices).toHaveLength(4);
+	});
+
+	it("keeps an employee's latest answer to the current notice, even a withdrawal older than the lifetime", async () => {
+		const [e1, e2] = ids.employees;
+		const a = ids.organizationA;
+		const current = await publishNotice(a, 1, daysAgo(900));
+		const standingWithdrawal = await consent(a, e1, current, daysAgo(800), daysAgo(700));
+		const earlierWithdrawal = await consent(a, e2, current, daysAgo(850), daysAgo(800));
+		const laterWithdrawal = await consent(a, e2, current, daysAgo(600), daysAgo(500));
+
+		const result = await deletePositionRecordsPastAuditLifetime(db, {
+			now,
+			lifetimeDays: LIFETIME_DAYS,
+		});
+
+		expect(result.consents).toBe(1);
+		expect(await remainingConsents()).toEqual([standingWithdrawal, laterWithdrawal].sort());
+		expect(await remainingConsents()).not.toContain(earlierWithdrawal);
+	});
+
+	it("keeps a consent while a stamp captured under it remains, so it never deletes a position", async () => {
+		const [e1] = ids.employees;
+		const a = ids.organizationA;
+		const v1 = await publishNotice(a, 1, daysAgo(900));
+		await publishNotice(a, 2, daysAgo(400));
+		const lapsed = await consent(a, e1, v1, daysAgo(800));
+		const { rows } = await pool.query<{ id: string }>(
+			`insert into time_entry (employee_id, organization_id, type, timestamp, utc_offset_minutes,
+				timezone_source, hash, created_by)
+			 values ($1, $2, 'clock_in', $3, 0, 'test', md5(random()::text), $4) returning id`,
+			[e1, a, daysAgo(500), ids.users[0]],
+		);
+		// Past its purge date, but the daily purge has not run yet.
+		await pool.query(
+			`insert into position_stamp (organization_id, employee_id, time_entry_id, consent_id, latitude,
+				longitude, accuracy_meters, fixed_at, captured_at, purge_at)
+			 values ($1, $2, $3, $4, 52.52, 13.405, 15, $5, $5, $6)`,
+			[a, e1, rows[0]?.id, lapsed, daysAgo(500), daysAgo(470)],
+		);
+
+		const first = await deletePositionRecordsPastAuditLifetime(db, {
+			now,
+			lifetimeDays: LIFETIME_DAYS,
+		});
+		expect(first.consents).toBe(0);
+		const { rows: stamps } = await pool.query(
+			"select id from position_stamp where organization_id = $1",
+			[a],
+		);
+		expect(stamps).toHaveLength(1);
+
+		await purgeExpiredPositionStamps(db, { now });
+		const second = await deletePositionRecordsPastAuditLifetime(db, {
+			now,
+			lifetimeDays: LIFETIME_DAYS,
+		});
+		expect(second.consents).toBe(1);
+		expect(await remainingConsents()).toEqual([]);
 	});
 
 	it("refuses every other delete of access-log entries, but lets organization and employee deletion cascade", async () => {
