@@ -2,7 +2,8 @@
  * #835: the org data export carries position stamps only for a user who may
  * view everyone's stamps, decided when the export is processed, and writes one
  * access-log entry naming the export and the employees whose stamps it holds.
- * Scheduled data exports decide with the schedule owner. Only the export
+ * Scheduled data exports decide with the schedule owner and every address the
+ * file's link is mailed to, and log each of those viewers. Only the export
  * storage is mocked; the archive is read back from the uploaded bytes.
  */
 
@@ -306,33 +307,76 @@ describe("position stamps in the org data export on PostgreSQL", () => {
 		expect(await accessLog()).toEqual([]);
 	});
 
-	it("decides a scheduled data export with the schedule owner's permission", async () => {
-		const executor = new DataExportExecutor();
-		const run = (createdBy: string) =>
-			executor.execute({
+	describe("scheduled data exports", () => {
+		const emailOf = (userId: string) => `${userId}@example.test`;
+		const run = (createdBy: string, emailRecipients: string[] = []) =>
+			new DataExportExecutor().execute({
 				organizationId: ids.organization,
 				reportConfig: { categories: ["time_entries"] } as never,
 				dateRange: {} as never,
 				createdBy,
+				emailRecipients,
 			});
 
-		const permitted = await run(ids.holderUser);
-		expect(permitted).toMatchObject({ success: true });
-		await timeEntriesCsv(permitted.underlyingJobId ?? "");
-		expect(lastHeader).toBe(POSITION_HEADER);
+		it("decides with the schedule owner's permission when the file is mailed to nobody", async () => {
+			const permitted = await run(ids.holderUser);
+			expect(permitted).toMatchObject({ success: true });
+			await timeEntriesCsv(permitted.underlyingJobId ?? "");
+			expect(lastHeader).toBe(POSITION_HEADER);
 
-		const refused = await run(ids.managerUser);
-		expect(refused).toMatchObject({ success: true });
-		await timeEntriesCsv(refused.underlyingJobId ?? "");
-		expect(lastHeader).toBe(PLAIN_HEADER);
+			const refused = await run(ids.managerUser);
+			expect(refused).toMatchObject({ success: true });
+			await timeEntriesCsv(refused.underlyingJobId ?? "");
+			expect(lastHeader).toBe(PLAIN_HEADER);
 
-		expect(await accessLog()).toMatchObject([
-			{
-				kind: "data_export",
-				exportId: permitted.underlyingJobId,
-				viewer: { userId: ids.holderUser },
-				subjectEmployeeIds: [ids.field],
-			},
-		]);
+			expect(await accessLog()).toMatchObject([
+				{
+					kind: "data_export",
+					exportId: permitted.underlyingJobId,
+					viewer: { userId: ids.holderUser },
+					subjectEmployeeIds: [ids.field],
+				},
+			]);
+		});
+
+		it("includes the stamps when every recipient may view them and logs each viewer", async () => {
+			const result = await run(ids.holderUser, [
+				emailOf(ids.ownerUser).toUpperCase(),
+				emailOf(ids.holderUser),
+			]);
+			expect(result).toMatchObject({ success: true });
+			await timeEntriesCsv(result.underlyingJobId ?? "");
+			expect(lastHeader).toBe(POSITION_HEADER);
+
+			const entries = await accessLog();
+			expect(entries.map((entry) => entry.viewer?.userId).sort()).toEqual(
+				[ids.holderUser, ids.ownerUser].sort(),
+			);
+			for (const entry of entries) {
+				expect(entry).toMatchObject({
+					kind: "data_export",
+					exportId: result.underlyingJobId,
+					subjectEmployeeIds: [ids.field],
+				});
+			}
+		});
+
+		it("omits the stamps when one recipient is a member who may not view them", async () => {
+			const result = await run(ids.holderUser, [emailOf(ids.ownerUser), emailOf(ids.managerUser)]);
+			expect(result).toMatchObject({ success: true });
+			await timeEntriesCsv(result.underlyingJobId ?? "");
+			expect(lastHeader).toBe(PLAIN_HEADER);
+			expect(await accessLog()).toEqual([]);
+		});
+
+		it("omits the stamps when one recipient is outside the organization", async () => {
+			for (const recipient of ["payroll@external.test", emailOf(ids.foreignUser)]) {
+				const result = await run(ids.ownerUser, [recipient]);
+				expect(result).toMatchObject({ success: true });
+				await timeEntriesCsv(result.underlyingJobId ?? "");
+				expect(lastHeader).toBe(PLAIN_HEADER);
+			}
+			expect(await accessLog()).toEqual([]);
+		});
 	});
 });

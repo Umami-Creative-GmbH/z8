@@ -50,6 +50,8 @@ export type ExportRequester = {
 	exportId: string;
 	/** `data_export.requested_by_id`: the requester's employee profile (a schedule's owner for scheduled exports). */
 	requestedByEmployeeId: string;
+	/** The addresses a scheduled export's download link is mailed to; each must be a permitted viewer too. */
+	recipientEmails?: readonly string[];
 };
 
 // Re-export types for backward compatibility with server-side code
@@ -205,6 +207,7 @@ export async function fetchTimeEntries(organizationId: string, requester: Export
 		organizationId,
 		exportId: requester.exportId,
 		requestedByEmployeeId: requester.requestedByEmployeeId,
+		recipientEmails: requester.recipientEmails,
 		now: systemClock.nowInstant(),
 		rows,
 	});

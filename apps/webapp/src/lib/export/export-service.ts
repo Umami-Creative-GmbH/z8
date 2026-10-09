@@ -103,9 +103,14 @@ export async function getExportById(exportId: string): Promise<ExportRecord | nu
 
 /**
  * Process a pending export
- * This is called by the cron job
+ * This is called by the cron job, and by scheduled data exports with the
+ * addresses their download link is mailed to (position stamps are included
+ * only if every recipient may view them).
  */
-export async function processExport(exportId: string): Promise<void> {
+export async function processExport(
+	exportId: string,
+	options: { recipientEmails?: readonly string[] } = {},
+): Promise<void> {
 	logger.info({ exportId }, "Processing export");
 
 	// Get export record
@@ -127,7 +132,11 @@ export async function processExport(exportId: string): Promise<void> {
 		const data = await fetchExportData(
 			exportRecord.organizationId,
 			exportRecord.categories as ExportCategory[],
-			{ exportId, requestedByEmployeeId: exportRecord.requestedById },
+			{
+				exportId,
+				requestedByEmployeeId: exportRecord.requestedById,
+				recipientEmails: options.recipientEmails,
+			},
 		);
 
 		// Build ZIP archive

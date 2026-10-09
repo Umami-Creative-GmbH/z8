@@ -22,6 +22,12 @@ export interface ExecuteParams {
 	payrollConfigId?: string;
 	/** User ID who created the scheduled export (for audit trail) */
 	createdBy?: string;
+	/**
+	 * The addresses the delivered file's download link is mailed to. A data
+	 * export includes position stamps only if each one belongs to a user of the
+	 * organization who may view them, as well as the schedule owner.
+	 */
+	emailRecipients?: readonly string[];
 }
 
 /**
