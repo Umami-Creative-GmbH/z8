@@ -3,6 +3,7 @@
 ## Contexts
 
 - [Approvals](./apps/webapp/src/lib/approvals/CONTEXT.md): decides approval requests and delivers their cards while each approval kind moves from legacy requests to canonical workflows
+- [Organization](./apps/webapp/src/lib/organization/CONTEXT.md): holds an organization's master data about its employees, projects and customers, including the custom fields it defines for them
 - [Time Tracking](./apps/webapp/src/lib/time-tracking/CONTEXT.md): starts, ends and records employees' working time, and coordinates every writer of it
 - [Travel Expenses](./apps/webapp/src/lib/travel-expenses/CONTEXT.md): collects employees' expense reports for trips and single expenses, and reimburses them
 - [Projects](./apps/webapp/src/lib/projects/CONTEXT.md): keeps the organization's projects, the tasks inside them and the project templates new projects start from
