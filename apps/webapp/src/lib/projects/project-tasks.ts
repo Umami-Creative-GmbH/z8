@@ -3,6 +3,7 @@ import "server-only";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { projectTask, timeRecordAllocation, workPeriod } from "@/db/schema";
+import { isConstraintViolation } from "./constraint-violation";
 import type { ProjectTask, ProjectTaskState } from "./project-task-model";
 
 /**
@@ -82,6 +83,22 @@ export async function listOpenTasksByProject(
 	return byProject;
 }
 
+/**
+ * The given projects of one organization, each with its open tasks by name, as
+ * booking clients list them (#875); a project without open tasks gets none.
+ */
+export async function withOpenTasks<P extends { id: string }>(
+	organizationId: string,
+	projects: readonly P[],
+	reader: ProjectTaskReader = db,
+): Promise<Array<P & { tasks: OfferedProjectTask[] }>> {
+	const tasks = await listOpenTasksByProject(
+		{ organizationId, projectIds: projects.map((item) => item.id) },
+		reader,
+	);
+	return projects.map((item) => ({ ...item, tasks: tasks.get(item.id) ?? [] }));
+}
+
 /** One task of the organization, or null when it does not exist there. */
 export async function findProjectTask(
 	scope: { organizationId: string; taskId: string },
@@ -127,13 +144,10 @@ export async function isProjectTaskBooked(
 
 /** Whether a write failed because the project already has a task of that name. */
 export function isProjectTaskNameConflict(error: unknown): boolean {
-	let candidate: unknown = error;
-	for (let depth = 0; depth < 5 && candidate && typeof candidate === "object"; depth += 1) {
-		const current = candidate as { code?: unknown; constraint?: unknown; cause?: unknown };
-		if (current.code === "23505" && current.constraint === "projectTask_project_name_unique_idx") {
-			return true;
-		}
-		candidate = current.cause;
-	}
-	return false;
+	return isConstraintViolation(error, "23505", "projectTask_project_name_unique_idx");
+}
+
+/** Whether a task delete failed because a booking still references the task. */
+export function isProjectTaskBookingReference(error: unknown): boolean {
+	return isConstraintViolation(error, "23503", ["timeRecordAllocation_task_fk", "workPeriod_task_fk"]);
 }

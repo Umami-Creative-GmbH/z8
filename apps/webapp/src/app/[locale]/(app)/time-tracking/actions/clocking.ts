@@ -95,8 +95,10 @@ import {
 import { calculateBreaksTakenToday } from "./compliance";
 import {
 	PROJECT_TASK_INELIGIBILITY_MESSAGES,
+	type ProjectTaskIneligibility,
 	projectTaskIneligibility,
 } from "@/lib/time-tracking/project-eligibility";
+import { namedTaskIntent, recordedTaskId } from "@/lib/time-tracking/task-attribution";
 import { validateProjectAssignment } from "./entry-helpers";
 import {
 	resolveManualEntryTarget,
@@ -166,7 +168,7 @@ function manualRequestEvidence(
 		projectId: data.projectId ?? null,
 		workCategoryId: data.workCategoryId ?? null,
 		...(data.workLocationType !== undefined ? { workLocationType: data.workLocationType } : {}),
-		...(data.taskId ? { taskId: data.taskId } : {}),
+		...recordedTaskId(data.taskId),
 	};
 }
 
@@ -624,7 +626,12 @@ export async function clockOut(
 	if (result.refusal.code === "billing_required") {
 		return { success: false, error: "billing_required", code: result.refusal.reason };
 	}
-	return { success: false, error: await clockOutFailureMessage(result.refusal.code) };
+	const error = await clockOutFailureMessage(result.refusal.code);
+	// The stable task reason, as manual entry and the project change name it (#873).
+	if (result.refusal.code === "task_not_allowed") {
+		return { success: false, error, code: result.refusal.reason };
+	}
+	return { success: false, error };
 }
 
 export type ClockOutCommandResult =
@@ -685,9 +692,7 @@ export async function clockOutAs(
 			kind: "clock_out",
 			project: attributionIntent(projectId),
 			workCategory: attributionIntent(workCategoryId),
-			...(actionContext.taskId !== undefined
-				? { task: attributionIntent(actionContext.taskId) }
-				: {}),
+			...namedTaskIntent(actionContext.taskId),
 		},
 	});
 	if (outcome.outcome === "refused") {
@@ -1097,22 +1102,22 @@ export async function createManualTimeEntry(
 			};
 		}
 	}
-	if (data.taskId) {
-		const taskIneligibility = await projectTaskIneligibility(
-			{
-				employeeId: targetEmployee.id,
-				teamId: targetEmployee.teamId,
-				organizationId: targetEmployee.organizationId,
-			},
-			{ projectId: data.projectId || null, taskId: data.taskId },
-		);
-		if (taskIneligibility) {
-			return {
-				success: false,
-				error: PROJECT_TASK_INELIGIBILITY_MESSAGES[taskIneligibility],
-				code: taskIneligibility,
-			};
-		}
+	const taskTarget = {
+		employeeId: targetEmployee.id,
+		teamId: targetEmployee.teamId,
+		organizationId: targetEmployee.organizationId,
+	};
+	const taskBooking = data.taskId
+		? { projectId: data.projectId || null, taskId: data.taskId }
+		: null;
+	const taskRefusal = (reason: ProjectTaskIneligibility) => ({
+		success: false as const,
+		error: PROJECT_TASK_INELIGIBILITY_MESSAGES[reason],
+		code: reason,
+	});
+	if (taskBooking) {
+		const taskIneligibility = await projectTaskIneligibility(taskTarget, taskBooking);
+		if (taskIneligibility) return taskRefusal(taskIneligibility);
 	}
 	if (data.workCategoryId) {
 		const categoryValidation = await validateWorkCategoryAssignment(
@@ -1251,6 +1256,14 @@ export async function createManualTimeEntry(
 			}
 			// Absence is established under the submission identity lock.
 			if (admission === "append") return { disposition: "refresh_required" as const };
+			// The task is re-checked under its row lock, so it cannot be marked done or
+			// deleted between the check and this booking's commit (#873).
+			if (taskBooking) {
+				const reason = await projectTaskIneligibility(taskTarget, taskBooking, tx, {
+					lock: "share",
+				});
+				if (reason) return { disposition: "task_refused" as const, reason };
+			}
 			const clockInEntry = await createTimeEntry(
 				{
 					employeeId: targetEmployee.id,
@@ -1380,6 +1393,7 @@ export async function createManualTimeEntry(
 				code: MANUAL_ENTRY_REFRESH_REQUIRED,
 			};
 		}
+		if (committed.disposition === "task_refused") return taskRefusal(committed.reason);
 		const {
 			period: createdWorkPeriod,
 			approvalSubmission,

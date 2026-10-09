@@ -15,6 +15,8 @@ import {
 	prepareBrowserClockCommand,
 } from "@/lib/time-tracking/browser-clock-command";
 import { postClockIn, postClockOut } from "@/lib/time-tracking/time-clock-client";
+import type { BookedProjectTask } from "@/lib/projects/project-task-model";
+import { namedTaskId } from "@/lib/time-tracking/task-attribution";
 import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { queryKeys } from "./keys";
@@ -23,7 +25,12 @@ export interface TimeClockState {
 	hasEmployee: boolean;
 	employeeId: string | null;
 	isClockedIn: boolean;
-	activeWorkPeriod: { id: string; startTime: Date } | null;
+	/** `currentTask`: the running work's task (#874), absent from older status sources. */
+	activeWorkPeriod: {
+		id: string;
+		startTime: Date;
+		currentTask?: BookedProjectTask | null;
+	} | null;
 }
 
 function subscribeToSecondTick(onStoreChange: () => void) {
@@ -143,7 +150,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			workLocationType?: WorkLocationType;
 			browserTimezone?: string | null;
 			projectId?: string;
-			taskId?: string;
+			taskId?: string | null;
 			workCategoryId?: string;
 		},
 	) {
@@ -159,7 +166,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			knownWorkPeriodId: statusQuery.data?.activeWorkPeriod?.id ?? null,
 			projectId: params?.projectId,
 			// Frozen only when named, so a clock-out without a task keeps its bytes (#875).
-			...(params?.taskId ? { taskId: params.taskId } : {}),
+			...namedTaskId(params?.taskId),
 			workCategoryId: params?.workCategoryId,
 		});
 		return prepared.ok ? prepared.request : null;
@@ -251,8 +258,9 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			/**
 			 * A task of the project (#874). Frozen commands and the route carry it; the
 			 * legacy offline queue does not, so the page offers no task in that mode.
+			 * Omitted, the task follows the project; null clears it.
 			 */
-			taskId?: string;
+			taskId?: string | null;
 			workCategoryId?: string;
 			browserTimezone?: string | null;
 			submissionId?: string;
@@ -288,7 +296,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			// Online - use the route handler; server action IDs change per deployment
 			return postClockOut({
 				projectId: params?.projectId,
-				...(params?.taskId ? { taskId: params.taskId } : {}),
+				...namedTaskId(params?.taskId),
 				workCategoryId: params?.workCategoryId,
 				browserTimezone: resolveBrowserTimezone(params),
 				submissionId: params?.submissionId as string,
@@ -412,7 +420,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			}),
 		clockOut: (params?: {
 			projectId?: string;
-			taskId?: string;
+			taskId?: string | null;
 			workCategoryId?: string;
 			browserTimezone?: string | null;
 		}) =>

@@ -27,12 +27,24 @@ const waiting: Record<WaitingFor, string> = {
 	appUpdate: "App update required",
 	server: "Waiting for server",
 };
-const taskReasons: Record<string, string> = {
+/** The server's stable task refusal reasons (`ProjectTaskIneligibility`, #873). */
+type TaskRefusalReason =
+	| "task_done"
+	| "task_other_project"
+	| "task_not_found"
+	| "project_not_bookable";
+const taskReasons: Record<TaskRefusalReason, string> = {
 	task_done: "The chosen task was marked done.",
 	task_other_project: "The chosen task belongs to another project.",
 	task_not_found: "The chosen task no longer exists.",
 	project_not_bookable: "The chosen project is not open for booking.",
 };
+function isTaskRefusalReason(value: unknown): value is TaskRefusalReason {
+	return (
+		typeof value === "string" &&
+		Object.prototype.hasOwnProperty.call(taskReasons, value)
+	);
+}
 /** Why the server refused a closing attribution (v2 422 `field`/`reason`). */
 function attributionRefusal(failure: CommandFailure | null): string | null {
 	if (failure?.code !== "attribution_not_allowed") return null;
@@ -42,13 +54,12 @@ function attributionRefusal(failure: CommandFailure | null): string | null {
 			: {};
 	switch (response.field) {
 		case "taskId":
-			return (
-				(typeof response.reason === "string" &&
-					taskReasons[response.reason]) ||
-				"The chosen task is not available."
-			);
+			return isTaskRefusalReason(response.reason)
+				? taskReasons[response.reason]
+				: "The chosen task is not available.";
 		case "projectId":
-			return "The chosen project is not open for booking.";
+			// Any refused project: not assigned, inactive or closed alike.
+			return "Time cannot be booked to the chosen project.";
 		case "workCategoryId":
 			return "The chosen work category is not available.";
 		default:

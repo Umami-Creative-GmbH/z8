@@ -42,7 +42,6 @@ export function TaskSelectorView({
 	const triggerId = useId();
 	const label = t("timeTracking.taskPicker.label", "Task");
 	const noTask = t("timeTracking.taskPicker.none", "No task");
-	const doneSuffix = t("timeTracking.taskPicker.doneSuffix", "(done)");
 
 	if (!projectId) return null;
 
@@ -59,7 +58,10 @@ export function TaskSelectorView({
 	if (keepsCurrentTask) {
 		options.unshift({
 			code: currentTask.id,
-			name: currentTask.state === "done" ? `${currentTask.name} ${doneSuffix}` : currentTask.name,
+			name:
+				currentTask.state === "done"
+					? t("timeTracking.taskPicker.doneTask", "{name} (done)", { name: currentTask.name })
+					: currentTask.name,
 		});
 	}
 

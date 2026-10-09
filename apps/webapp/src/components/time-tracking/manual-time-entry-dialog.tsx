@@ -33,7 +33,7 @@ import {
 } from "@/components/time-tracking/manual-command-recovery";
 import { ProjectSelectorView } from "@/components/time-tracking/project-selector";
 import { TaskSelectorView } from "@/components/time-tracking/task-selector";
-import { isProjectTaskRefusal } from "@/lib/projects/project-task-model";
+import { projectTaskRefusalMessage } from "@/lib/projects/project-task-model";
 import { TimezoneMismatchDialog } from "@/components/time-tracking/timezone-mismatch-dialog";
 import {
 	type ManualAttemptOutcome,
@@ -214,7 +214,6 @@ const MESSAGES = {
 		"timeTracking.manualEntry.recovery.unsupportedToast",
 		"This entry's status can't be checked right now. Retrying sends exactly the same entry.",
 	],
-	taskNotAllowed: ["timeTracking.errors.taskNotAllowed", "Cannot book time to this task"],
 } as const satisfies Record<string, Message>;
 
 const APPROVAL_STATUS_MESSAGES = {
@@ -354,7 +353,8 @@ function outcomeMessage(result: ManualTimeEntryResult): Message | null {
 		return MESSAGES.refresh;
 	}
 	if (result.code === MANUAL_ENTRY_COLLISION) return MESSAGES.collision;
-	if (isProjectTaskRefusal(result.code)) return MESSAGES.taskNotAllowed;
+	const taskRefusal = projectTaskRefusalMessage(result.code);
+	if (taskRefusal) return taskRefusal;
 	const reason = result.rejection?.reason;
 	if (reason === "reconfirmation_required") return MESSAGES.reconfirm;
 	if (reason === "occupancy_conflict") return MESSAGES.overlap;

@@ -8,6 +8,7 @@ import { logger } from "@/app/[locale]/(app)/time-tracking/actions/shared";
 import { auth } from "@/lib/auth";
 import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
 import { parseOnBehalfClockOutRequest } from "@/lib/time-tracking/on-behalf-clock-out-request";
+import { PROJECT_TASK_INELIGIBILITY_MESSAGES } from "@/lib/time-tracking/project-eligibility";
 
 /**
  * Manager on-behalf clock-out (#276). Closes the named running work period of
@@ -46,7 +47,7 @@ function rejected(rejection: OnBehalfClockOutRejection, operationId: string | nu
 		// A refused task names its stable reason (#873, #874).
 		return NextResponse.json(
 			{
-				error: "Cannot book time to this task",
+				error: PROJECT_TASK_INELIGIBILITY_MESSAGES[rejection.reason],
 				code: rejection.code,
 				field: rejection.field,
 				reason: rejection.reason,

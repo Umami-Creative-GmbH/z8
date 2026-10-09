@@ -68,6 +68,7 @@ import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
 } from "./policy-clock-out-surcharge-snapshot";
+import { recordedTaskId } from "./task-attribution";
 import { admitTimeEntryAppend } from "./time-entry-append";
 import { capturedZone, resolveFallbackTimezoneCapture } from "./timezone-capture";
 import { assertWorkOccupancyFree, WorkOccupancyConflictError } from "./work-occupancy";
@@ -732,13 +733,13 @@ export async function adjustAutomaticBreakInTransaction(
 
 	const attribution = {
 		projectId: period.projectId,
-		...(period.taskId ? { taskId: period.taskId } : {}),
+		...recordedTaskId(period.taskId),
 		workCategoryId: period.workCategoryId,
 		workLocationType: period.workLocationType,
 		allocations: allocations.map((allocation) => ({
 			allocationKind: allocation.allocationKind,
 			projectId: allocation.projectId,
-			...(allocation.taskId ? { taskId: allocation.taskId } : {}),
+			...recordedTaskId(allocation.taskId),
 			costCenterId: allocation.costCenterId,
 			weightPercent: allocation.weightPercent,
 		})),

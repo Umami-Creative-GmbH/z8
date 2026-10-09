@@ -361,6 +361,31 @@ describe("project templates on PostgreSQL", () => {
 			expect(first).not.toBe(second);
 		});
 
+		it("and their task names stay unique ignoring case and surrounding spaces in the database too", async () => {
+			const templateId = await createTemplate(ids.ownerUser, {
+				name: "Relaunch",
+				tasks: [{ name: "Design" }],
+			});
+
+			await expect(
+				admin.query(
+					`insert into project_template (organization_id, name, created_by, updated_at)
+					 values ($1, ' RELAUNCH ', $2, now())`,
+					[ids.organization, ids.ownerUser],
+				),
+			).rejects.toMatchObject({ code: "23505", constraint: "projectTemplate_org_name_unique_idx" });
+			await expect(
+				admin.query(
+					`insert into project_template_task (organization_id, template_id, name)
+					 values ($1, $2, ' design ')`,
+					[ids.organization, templateId],
+				),
+			).rejects.toMatchObject({
+				code: "23505",
+				constraint: "projectTemplateTask_template_name_unique_idx",
+			});
+		});
+
 		it("may repeat another organization's template name", async () => {
 			await createTemplate(ids.ownerUser, { name: "Foreign template" });
 
@@ -381,18 +406,10 @@ describe("project templates on PostgreSQL", () => {
 						name: "Twice",
 						tasks: [{ name: "Design" }, { name: " design " }],
 					}),
-					templates.createProjectTemplate({ name: "Bad colour", color: "blue" }),
 				]),
 			);
 
-			expect(results.map((result) => result.success)).toEqual([
-				false,
-				false,
-				false,
-				false,
-				false,
-				false,
-			]);
+			expect(results.map((result) => result.success)).toEqual([false, false, false, false, false]);
 			expect(await templateNames()).toEqual([]);
 		});
 	});

@@ -23,7 +23,25 @@ const harness = vi.hoisted(() => ({
 	now: null as Instant | null,
 	/** Routes edits of the employee's own work to approval, as a change policy would. */
 	editsNeedApproval: false,
+	/** Runs once right after the next task check returns, e.g. to change the task meanwhile. */
+	afterNextTaskCheck: null as null | (() => Promise<void>),
 }));
+
+vi.mock("@/lib/time-tracking/project-eligibility", async (importOriginal) => {
+	const original = await importOriginal<typeof import("@/lib/time-tracking/project-eligibility")>();
+	return {
+		...original,
+		projectTaskIneligibility: async (
+			...args: Parameters<typeof original.projectTaskIneligibility>
+		) => {
+			const reason = await original.projectTaskIneligibility(...args);
+			const hook = harness.afterNextTaskCheck;
+			harness.afterNextTaskCheck = null;
+			if (hook) await hook();
+			return reason;
+		},
+	};
+});
 
 vi.mock("./policy-helpers", async (importOriginal) => {
 	const original = await importOriginal<typeof import("./policy-helpers")>();
@@ -396,8 +414,22 @@ describe("booking time to a project task on PostgreSQL", () => {
 	beforeEach(async () => {
 		harness.now = null;
 		harness.editsNeedApproval = false;
+		harness.afterNextTaskCheck = null;
 		await seed();
 	});
+
+	/** Marks the task done right after the action's own task check, before its write. */
+	function markDoneAfterTheCheck(taskId: string) {
+		harness.afterNextTaskCheck = async () => {
+			await admin.query(
+				`update project_task set state = 'done', done_at = now(), done_by = $2
+				 where id = $1`,
+				[taskId, ids.ownerUser],
+			);
+		};
+	}
+
+	const malformedTaskId = "not-a-task-id";
 
 	afterAll(async () => {
 		await cleanup();
@@ -439,12 +471,30 @@ describe("booking time to a project task on PostgreSQL", () => {
 				["a done task", ids.doneTask, ids.project, "task_done"],
 				["another project's task", ids.secondProjectTask, ids.project, "task_other_project"],
 				["another organization's task", ids.otherOrganizationTask, ids.project, "task_not_found"],
+				["a malformed task id", malformedTaskId, ids.project, "task_not_found"],
 			])(
 				"refuses %s with a stable reason and writes nothing",
 				async (_case, taskId, projectId, code) => {
 					const result = await submitManual(admission, { projectId, taskId });
 
 					expect(result).toMatchObject({ success: false, code });
+					const { rows } = await admin.query(
+						"select id from work_period where organization_id = $1",
+						[ids.organization],
+					);
+					expect(rows).toEqual([]);
+				},
+			);
+
+			// An adopted organization checks only inside its write, under the configuration guard.
+			it.runIf(admission === "legacy")(
+				"refuses a task marked done after the action's check, re-checking it in the write",
+				async () => {
+					markDoneAfterTheCheck(ids.task);
+
+					const result = await submitManual(admission, { projectId: ids.project, taskId: ids.task });
+
+					expect(result).toMatchObject({ success: false, code: "task_done" });
 					const { rows } = await admin.query(
 						"select id from work_period where organization_id = $1",
 						[ids.organization],
@@ -546,6 +596,7 @@ describe("booking time to a project task on PostgreSQL", () => {
 				["a done task", ids.doneTask, "task_done"],
 				["another project's task", ids.secondProjectTask, "task_other_project"],
 				["another organization's task", ids.otherOrganizationTask, "task_not_found"],
+				["a malformed task id", malformedTaskId, "task_not_found"],
 			])("refuses %s with a stable reason", async (_case, taskId, code) => {
 				const workPeriodId = await bookedWork(admission);
 
@@ -563,6 +614,16 @@ describe("booking time to a project task on PostgreSQL", () => {
 				await expect(
 					changeProject(workPeriodId, ids.project, ids.secondTask),
 				).resolves.toMatchObject({ success: false, code: "project_not_bookable" });
+			});
+
+			it("refuses a task marked done after the action's check, re-checking it in the write", async () => {
+				const workPeriodId = await bookedWork(admission);
+				markDoneAfterTheCheck(ids.secondTask);
+
+				await expect(
+					changeProject(workPeriodId, ids.project, ids.secondTask),
+				).resolves.toMatchObject({ success: false, code: "task_done" });
+				expect(await booking(workPeriodId)).toMatchObject({ period_task: ids.task });
 			});
 		},
 	);
@@ -815,15 +876,16 @@ describe("booking time to a project task on PostgreSQL", () => {
 		});
 
 		it.each([
-			["a done task", ids.doneTask],
-			["another project's task", ids.secondProjectTask],
-			["another organization's task", ids.otherOrganizationTask],
-		])("refuses %s and leaves the work running", async (_case, taskId) => {
+			["a done task", ids.doneTask, "task_done"],
+			["another project's task", ids.secondProjectTask, "task_other_project"],
+			["another organization's task", ids.otherOrganizationTask, "task_not_found"],
+			["a malformed task id", malformedTaskId, "task_not_found"],
+		])("refuses %s with a stable reason and leaves the work running", async (_case, taskId, code) => {
 			const workPeriodId = await clockInEmployee();
 
 			const result = await clockOutEmployee(ids.project, taskId);
 
-			expect(result).toEqual({ success: false, error: "Cannot book time to this task" });
+			expect(result).toEqual({ success: false, error: "Cannot book time to this task", code });
 			const { rows } = await admin.query(
 				"select end_time, task_id from work_period where organization_id = $1 and id = $2",
 				[ids.organization, workPeriodId],

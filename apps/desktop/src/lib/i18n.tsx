@@ -75,7 +75,9 @@ const german: Record<string, string> = {
 	"The chosen task is not available.":
 		"Die gewählte Aufgabe ist nicht verfügbar.",
 	"The chosen project is not open for booking.":
-		"Auf das gewählte Projekt kann nicht gebucht werden.",
+		"Das gewählte Projekt ist nicht für Buchungen geöffnet.",
+	"Time cannot be booked to the chosen project.":
+		"Auf das gewählte Projekt kann keine Zeit gebucht werden.",
 	"The chosen work category is not available.":
 		"Die gewählte Arbeitskategorie ist nicht verfügbar.",
 	"Applied when work ends": "Wird beim Arbeitsende zugeordnet",

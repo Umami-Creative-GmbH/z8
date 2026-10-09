@@ -54,6 +54,7 @@ import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
 } from "./policy-clock-out-surcharge-snapshot";
+import { recordedTaskId } from "./task-attribution";
 import type { AppendReviewReason } from "./time-entry-append";
 import { loadWorkOccupants } from "./work-occupancy";
 import type { SealedWorkTransactionScope } from "./work-transaction";
@@ -492,7 +493,7 @@ export async function recordManualWork(
 		},
 		attribution: {
 			projectId: facts.projectId,
-			...(facts.taskId ? { taskId: facts.taskId } : {}),
+			...recordedTaskId(facts.taskId),
 			workCategoryId: facts.workCategoryId,
 			...(facts.workLocationType !== undefined
 				? { workLocationType: facts.workLocationType }

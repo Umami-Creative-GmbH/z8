@@ -50,6 +50,7 @@ import {
 } from "./close-active-work";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
 import { planCompletedWorkSplit } from "./split-work-period";
+import { recordedTaskId } from "./task-attribution";
 import { admitTimeEntryAppend, TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 import type { TimeEntryTimezoneCapture } from "./timezone-capture";
 import { WorkIntervalError } from "./work-duration";
@@ -686,13 +687,13 @@ export async function splitCompletedWork(
 
 	const attribution = {
 		projectId: period.projectId,
-		...(period.taskId ? { taskId: period.taskId } : {}),
+		...recordedTaskId(period.taskId),
 		workCategoryId: period.workCategoryId,
 		workLocationType: period.workLocationType,
 		allocations: allocations.map((allocation) => ({
 			allocationKind: allocation.allocationKind,
 			projectId: allocation.projectId,
-			...(allocation.taskId ? { taskId: allocation.taskId } : {}),
+			...recordedTaskId(allocation.taskId),
 			costCenterId: allocation.costCenterId,
 			weightPercent: allocation.weightPercent,
 		})),

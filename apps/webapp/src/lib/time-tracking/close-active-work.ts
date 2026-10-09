@@ -20,7 +20,6 @@ import {
 	type CompletedWorkWriter,
 	completedWorkOperation,
 	project,
-	projectTask,
 	timeEntry,
 	timeRecord,
 	timeRecordAllocation,
@@ -58,8 +57,9 @@ import {
 import {
 	PROJECT_TASK_INELIGIBILITY_MESSAGES,
 	type ProjectTaskIneligibility,
+	taskBookingIneligibility,
 } from "./project-eligibility";
-import { taskIdAfter, taskIntentFollowingProject } from "./task-attribution";
+import { recordedTaskId, taskIdFollowingProject } from "./task-attribution";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type { WorkTransactionContext } from "./web-clock-out-transaction";
 import { deriveWorkDurationMinutes } from "./work-duration";
@@ -319,23 +319,16 @@ export async function resolveTaskAttribution(
 		current: { projectId: string | null; taskId: string | null };
 	},
 ): Promise<string | null> {
-	const intent = taskIntentFollowingProject({
-		task: input.task,
+	const taskId = taskIdFollowingProject(input);
+	if (input.task?.kind !== "replace" || taskId === null) return taskId;
+	// The work transaction already holds the task rows it names.
+	const reason = await taskBookingIneligibility(tx, {
+		organizationId: input.organizationId,
 		projectId: input.projectId,
-		currentProjectId: input.current.projectId,
+		taskId,
 	});
-	if (intent.kind !== "replace") return taskIdAfter(intent, input.current.taskId);
-	const [row] = await tx
-		.select({ projectId: projectTask.projectId, state: projectTask.state })
-		.from(projectTask)
-		.where(and(eq(projectTask.id, intent.id), eq(projectTask.organizationId, input.organizationId)))
-		.limit(1);
-	if (!row) throw new CompletedWorkAttributionError("taskId", "task_not_found");
-	if (row.projectId !== input.projectId) {
-		throw new CompletedWorkAttributionError("taskId", "task_other_project");
-	}
-	if (row.state !== "open") throw new CompletedWorkAttributionError("taskId", "task_done");
-	return intent.id;
+	if (reason) throw new CompletedWorkAttributionError("taskId", reason);
+	return taskId;
 }
 
 /**
@@ -702,7 +695,7 @@ export async function closeActiveWorkGraph(
 		},
 		attribution: {
 			projectId,
-			...(taskId ? { taskId } : {}),
+			...recordedTaskId(taskId),
 			workCategoryId,
 			workLocationType: period.workLocationType ?? null,
 		},

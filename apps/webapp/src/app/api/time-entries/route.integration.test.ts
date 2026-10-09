@@ -546,6 +546,8 @@ describe("legacy direct clock writer in adopted organizations on PostgreSQL", ()
 			["another project's task", tasks.otherProject, "task_other_project"],
 			["an unknown task", "f3270000-0000-4000-8000-0000000000ff", "task_not_found"],
 			["a malformed task id", "not-a-task", "task_not_found"],
+			["a task id that is a number", 42, "task_not_found"],
+			["a task id that is a boolean", true, "task_not_found"],
 		])("refuses %s with the stable reason and writes nothing", async (_label, taskId, reason) => {
 			const before = await snapshot();
 
@@ -558,7 +560,11 @@ describe("legacy direct clock writer in adopted organizations on PostgreSQL", ()
 			expect(clockOut).toEqual({
 				status: 400,
 				body: {
-					error: "Cannot book time to this task",
+					error: {
+						task_done: "This task is done, so no time can be booked to it",
+						task_other_project: "This task belongs to another project",
+						task_not_found: "Task not found",
+					}[reason],
 					code: "attribution_not_allowed",
 					field: "taskId",
 					reason,

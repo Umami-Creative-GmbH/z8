@@ -11,7 +11,6 @@ import {
 	projectTask,
 	team,
 } from "@/db/schema";
-import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
@@ -23,8 +22,12 @@ import {
 } from "./project-creation";
 import { listProjectTasks } from "./project-tasks";
 import { projectDeadlineFromTemplateOffset } from "./project-template-deadline";
-import type { ProjectTemplateInput, SkippedProjectMember } from "./project-template-model";
-import { getProjectTemplate } from "./project-templates";
+import type {
+	ProjectTemplateInput,
+	ManagerOrAssignmentAvailability,
+	SkippedManagerOrAssignment,
+} from "./project-template-model";
+import { getProjectTemplate, liveUserColumns, liveUserName } from "./project-templates";
 
 /**
  * Turning a template into a project and a project into a template (#880).
@@ -35,7 +38,7 @@ import { getProjectTemplate } from "./project-templates";
 
 type Writer = Pick<typeof db, "select" | "insert" | "update" | "delete">;
 
-export type { SkippedProjectMember };
+export type { SkippedManagerOrAssignment };
 
 export interface ProjectFromTemplateInput {
 	name: string;
@@ -62,6 +65,8 @@ export async function createProjectFromTemplateRows(
 		templateId: string;
 		now: Instant;
 		alsoManagedBy?: string | null;
+		/** Whether the creator may assign project managers (org owners and admins). */
+		assignsManagers: boolean;
 	},
 	input: ProjectFromTemplateInput,
 ) {
@@ -108,24 +113,28 @@ export async function createProjectFromTemplateRows(
 		);
 	}
 
-	const skipped: SkippedProjectMember[] = [];
-	const skip =
-		(role: SkippedProjectMember["role"]) => (member: { name: string; availability: string }) => {
+	const skipped: SkippedManagerOrAssignment[] = [];
+	/** True when the manager or assignment is copied; otherwise reports why not. */
+	const copyOrReport =
+		(role: SkippedManagerOrAssignment["role"]) =>
+		(member: { name: string; availability: ManagerOrAssignmentAvailability }) => {
 			if (member.availability === "available") return true;
-			skipped.push({
-				role,
-				name: member.name,
-				reason: member.availability as "departed" | "removed",
-			});
+			skipped.push({ role, name: member.name, reason: member.availability });
 			return false;
 		};
 
+	// Only org admins assign project managers (#367): another creator gets none
+	// of the template's managers, only themselves (decision 9 of #770).
 	const managerIds = template.managers
-		.filter(skip("manager"))
+		.filter((manager) => manager.employeeId === null || manager.employeeId !== scope.alsoManagedBy)
+		.filter(copyOrReport("manager"))
+		.filter((manager) => {
+			if (scope.assignsManagers) return true;
+			skipped.push({ role: "manager", name: manager.name, reason: "adminOnly" });
+			return false;
+		})
 		.flatMap((manager) => (manager.employeeId ? [manager.employeeId] : []));
-	if (scope.alsoManagedBy && !managerIds.includes(scope.alsoManagedBy)) {
-		managerIds.push(scope.alsoManagedBy);
-	}
+	if (scope.alsoManagedBy) managerIds.push(scope.alsoManagedBy);
 	await insertProjectManagers(tx, {
 		projectId: created.id,
 		employeeIds: managerIds,
@@ -135,7 +144,7 @@ export async function createProjectFromTemplateRows(
 	const teamIds: string[] = [];
 	const employeeIds: string[] = [];
 	for (const assignment of template.assignments) {
-		if (!skip(assignment.type)(assignment)) continue;
+		if (!copyOrReport(assignment.type)(assignment)) continue;
 		if (assignment.type === "team" && assignment.teamId) teamIds.push(assignment.teamId);
 		if (assignment.type === "employee" && assignment.employeeId) {
 			employeeIds.push(assignment.employeeId);
@@ -152,30 +161,11 @@ export async function createProjectFromTemplateRows(
 	return { id: created.id, template: { id: template.id, name: template.name }, skipped };
 }
 
-const memberColumns = {
+const employeeColumns = {
 	employeeId: employee.id,
 	hasAccess: employeeHasOrganizationAccess(),
-	userFirstName: user.firstName,
-	userLastName: user.lastName,
-	userName: user.name,
-	userEmail: user.email,
+	...liveUserColumns,
 };
-
-function memberName(row: {
-	userFirstName: string | null;
-	userLastName: string | null;
-	userName: string | null;
-	userEmail: string | null;
-}) {
-	return (
-		buildAuthUserDisplayName({
-			firstName: row.userFirstName,
-			lastName: row.userLastName,
-			name: row.userName,
-			email: row.userEmail,
-		}) || "Unknown"
-	);
-}
 
 /**
  * What a template saved from a project holds: the project's icon, colour,
@@ -190,7 +180,7 @@ export async function projectAsTemplateInput(
 ): Promise<{
 	project: { id: string; name: string };
 	input: Omit<ProjectTemplateInput, "name">;
-	skipped: SkippedProjectMember[];
+	skipped: SkippedManagerOrAssignment[];
 } | null> {
 	const { organizationId, projectId } = scope;
 	const [source] = await tx
@@ -208,7 +198,7 @@ export async function projectAsTemplateInput(
 
 	const tasks = await listProjectTasks({ organizationId, projectId }, { state: "open" }, tx);
 	const managers = await tx
-		.select(memberColumns)
+		.select(employeeColumns)
 		.from(projectManager)
 		.innerJoin(
 			employee,
@@ -233,7 +223,7 @@ export async function projectAsTemplateInput(
 		)
 		.orderBy(asc(sql`lower(${team.name})`));
 	const employees = await tx
-		.select(memberColumns)
+		.select(employeeColumns)
 		.from(projectAssignment)
 		.innerJoin(
 			employee,
@@ -252,10 +242,10 @@ export async function projectAsTemplateInput(
 		)
 		.orderBy(asc(projectAssignment.createdAt), asc(projectAssignment.id));
 
-	const skipped: SkippedProjectMember[] = [];
-	const keep = (role: SkippedProjectMember["role"]) => (row: (typeof managers)[number]) => {
+	const skipped: SkippedManagerOrAssignment[] = [];
+	const keep = (role: SkippedManagerOrAssignment["role"]) => (row: (typeof managers)[number]) => {
 		if (row.hasAccess) return true;
-		skipped.push({ role, name: memberName(row), reason: "departed" });
+		skipped.push({ role, name: liveUserName(row), reason: "departed" });
 		return false;
 	};
 	const managerEmployeeIds = managers.filter(keep("manager")).map((row) => row.employeeId);
@@ -266,12 +256,13 @@ export async function projectAsTemplateInput(
 		input: {
 			icon: source.icon,
 			color: source.color,
-			budgetHours: source.budgetHours === null ? null : Number(source.budgetHours),
+			// Stored numeric(8, 2) text passes the template's hours rule as is.
+			budgetHours: source.budgetHours,
 			deadlineOffsetDays: null,
 			tasks: tasks.map((task) => ({
 				name: task.name,
 				description: task.description,
-				estimateHours: task.estimateHours === null ? null : Number(task.estimateHours),
+				estimateHours: task.estimateHours,
 			})),
 			managerEmployeeIds,
 			assignments: [

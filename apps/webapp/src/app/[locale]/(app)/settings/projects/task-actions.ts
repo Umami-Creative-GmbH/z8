@@ -1,6 +1,5 @@
 "use server";
 
-import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
@@ -35,11 +34,13 @@ import {
 import {
 	findProjectTask,
 	isProjectTaskBooked,
+	isProjectTaskBookingReference,
 	isProjectTaskNameConflict,
 	listProjectTasks,
 	type ProjectTask,
 } from "@/lib/projects/project-tasks";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
+import { tracedProjectAction } from "./traced-project-action";
 
 /**
  * Project task management (#872). Every action runs in the caller's active
@@ -85,37 +86,25 @@ function validated<T>(
 	return result.ok ? Effect.succeed(result.value) : Effect.fail(inputProblem(result.problem));
 }
 
+function taskBooked() {
+	return new ConflictError({
+		message: "Time is booked to this task, so it cannot be deleted",
+		conflictType: "project_task_booked",
+	});
+}
+
 /** Typed failures raised inside a database callback keep their type. */
 function keepTypedTaskError(error: DatabaseError) {
 	if (isProjectTaskNameConflict(error.cause)) {
 		return new ValidationError({ message: DUPLICATE_NAME_MESSAGE, field: "name" });
 	}
+	// A booking's foreign key refusing the delete is a booked task too.
+	if (isProjectTaskBookingReference(error.cause)) return taskBooked();
 	return error.cause instanceof ValidationError ||
 		error.cause instanceof NotFoundError ||
 		error.cause instanceof ConflictError
 		? error.cause
 		: error;
-}
-
-function traced<A, E, R>(
-	name: string,
-	attributes: Record<string, string>,
-	effect: Effect.Effect<A, E, R>,
-) {
-	return trace.getTracer("projects").startActiveSpan(name, { attributes }, (span) =>
-		effect.pipe(
-			Effect.tap(() => Effect.sync(() => span.setStatus({ code: SpanStatusCode.OK }))),
-			Effect.catch((error) =>
-				Effect.gen(function* () {
-					span.recordException(error as Error);
-					span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) });
-					logger.error({ error, ...attributes }, `Failed to run ${name}`);
-					return yield* Effect.fail(error);
-				}),
-			),
-			Effect.ensuring(Effect.sync(() => span.end())),
-		),
-	);
 }
 
 /** The caller in their active organization, as a potential task manager. */
@@ -228,7 +217,7 @@ export async function getProjectTasks(
 	options: { state?: ProjectTaskState } = {},
 ): Promise<ServerActionResult<ProjectTask[]>> {
 	return runServerActionSafe(
-		traced(
+		tracedProjectAction(
 			"getProjectTasks",
 			{ "project.id": projectId },
 			Effect.gen(function* () {
@@ -248,7 +237,7 @@ export async function createProjectTask(
 	input: CreateProjectTaskInput,
 ): Promise<ServerActionResult<{ id: string }>> {
 	return runServerActionSafe(
-		traced(
+		tracedProjectAction(
 			"createProjectTask",
 			{ "project.id": input.projectId },
 			Effect.gen(function* () {
@@ -293,7 +282,7 @@ export async function updateProjectTask(
 	input: UpdateProjectTaskInput,
 ): Promise<ServerActionResult<void>> {
 	return runServerActionSafe(
-		traced(
+		tracedProjectAction(
 			"updateProjectTask",
 			{ "task.id": taskId },
 			Effect.gen(function* () {
@@ -341,8 +330,9 @@ function setProjectTaskState(taskId: string, state: ProjectTaskState) {
 		const { actor, task } = yield* getTaskManagerForTask(taskId, action);
 		const now = new Date();
 		// Done tasks take no new bookings (#873), so the change serializes with
-		// booking preparation like other bookability changes (#315).
-		yield* actor.dbService.query(`projectTask.${action}`, () =>
+		// booking preparation like other bookability changes (#315). A task already
+		// in the state is left alone, keeping who finished it first and when.
+		const changed = yield* actor.dbService.query(`projectTask.${action}`, () =>
 			withOrganizationConfigurationMutation(db, actor.organizationId, (tx) =>
 				tx
 					.update(projectTask)
@@ -352,10 +342,16 @@ function setProjectTaskState(taskId: string, state: ProjectTaskState) {
 							: { state, doneAt: null, doneBy: null },
 					)
 					.where(
-						and(eq(projectTask.id, task.id), eq(projectTask.organizationId, actor.organizationId)),
-					),
+						and(
+							eq(projectTask.id, task.id),
+							eq(projectTask.organizationId, actor.organizationId),
+							eq(projectTask.state, state === "done" ? "open" : "done"),
+						),
+					)
+					.returning({ id: projectTask.id }),
 			),
 		);
+		if (changed.length === 0) return;
 		auditTask(
 			actor,
 			state === "done" ? AuditAction.PROJECT_TASK_DONE : AuditAction.PROJECT_TASK_REOPENED,
@@ -369,21 +365,29 @@ function setProjectTaskState(taskId: string, state: ProjectTaskState) {
 /** Marks a task done: it keeps its bookings and takes no new ones. */
 export async function markProjectTaskDone(taskId: string): Promise<ServerActionResult<void>> {
 	return runServerActionSafe(
-		traced("markProjectTaskDone", { "task.id": taskId }, setProjectTaskState(taskId, "done")),
+		tracedProjectAction(
+			"markProjectTaskDone",
+			{ "task.id": taskId },
+			setProjectTaskState(taskId, "done"),
+		),
 	);
 }
 
 /** Reopens a done task so it takes bookings again. */
 export async function reopenProjectTask(taskId: string): Promise<ServerActionResult<void>> {
 	return runServerActionSafe(
-		traced("reopenProjectTask", { "task.id": taskId }, setProjectTaskState(taskId, "open")),
+		tracedProjectAction(
+			"reopenProjectTask",
+			{ "task.id": taskId },
+			setProjectTaskState(taskId, "open"),
+		),
 	);
 }
 
 /** Deletes a task; refused while anything is booked to it. */
 export async function deleteProjectTask(taskId: string): Promise<ServerActionResult<void>> {
 	return runServerActionSafe(
-		traced(
+		tracedProjectAction(
 			"deleteProjectTask",
 			{ "task.id": taskId },
 			Effect.gen(function* () {
@@ -391,12 +395,19 @@ export async function deleteProjectTask(taskId: string): Promise<ServerActionRes
 				yield* actor.dbService
 					.query("projectTask.delete", () =>
 						withOrganizationConfigurationMutation(db, actor.organizationId, async (tx) => {
-							if (await isProjectTaskBooked(task, tx)) {
-								throw new ConflictError({
-									message: "Time is booked to this task, so it cannot be deleted",
-									conflictType: "project_task_booked",
-								});
-							}
+							// The row lock waits for any booking that holds the task, so the
+							// check below sees it once that booking commits.
+							await tx
+								.select({ id: projectTask.id })
+								.from(projectTask)
+								.where(
+									and(
+										eq(projectTask.id, task.id),
+										eq(projectTask.organizationId, actor.organizationId),
+									),
+								)
+								.for("update");
+							if (await isProjectTaskBooked(task, tx)) throw taskBooked();
 							await tx
 								.delete(projectTask)
 								.where(
@@ -425,7 +436,7 @@ export async function getProjectsWithManageableTasks(): Promise<
 	ServerActionResult<TaskManagedProject[]>
 > {
 	return runServerActionSafe(
-		traced(
+		tracedProjectAction(
 			"getProjectsWithManageableTasks",
 			{},
 			Effect.gen(function* () {

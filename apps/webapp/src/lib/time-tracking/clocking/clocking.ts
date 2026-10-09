@@ -29,6 +29,7 @@ import {
 import { type CloseResumeWorkResult, isCloseResumeStanding } from "../close-resume-work";
 import { isProjectEligible, projectTaskIneligibility } from "../project-eligibility";
 import { findStandingStart, type StartLiveWorkResult } from "../start-live-work";
+import { attributionAfter } from "../task-attribution";
 import { TimeEntryAppendReviewRequiredError } from "../time-entry-append";
 import {
 	resolveFallbackTimezoneCapture,
@@ -500,8 +501,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		}
 		if (task?.kind === "replace") {
 			const reason = await projectTaskIneligibility(eligibilityTarget, {
-				projectId:
-					project.kind === "replace" ? project.id : project.kind === "clear" ? null : target.projectId,
+				projectId: attributionAfter(project, target.projectId),
 				taskId: task.id,
 			});
 			if (reason) return { code: "task_not_allowed", reason };

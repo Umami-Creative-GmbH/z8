@@ -41,16 +41,41 @@ export interface BookedProjectTask {
  * The stable reasons booking refuses a named task with (#873's
  * `ProjectTaskIneligibility`), for surfaces that word them.
  */
-const PROJECT_TASK_REFUSAL_REASONS: ReadonlySet<string> = new Set([
-	"task_not_found",
-	"task_other_project",
-	"task_done",
-	"project_not_bookable",
-]);
+export type ProjectTaskRefusalReason =
+	| "task_not_found"
+	| "task_other_project"
+	| "task_done"
+	| "project_not_bookable";
+
+/** The Tolgee key and English default each surface shows for a task refusal. */
+const PROJECT_TASK_REFUSAL_MESSAGES = {
+	task_not_found: ["timeTracking.errors.taskNotFound", "This task no longer exists"],
+	task_other_project: [
+		"timeTracking.errors.taskOtherProject",
+		"This task belongs to another project",
+	],
+	task_done: ["timeTracking.errors.taskDone", "This task is done, so no time can be booked to it"],
+	project_not_bookable: [
+		"timeTracking.errors.taskProjectNotBookable",
+		"Time can no longer be booked to this task's project",
+	],
+} as const satisfies Record<ProjectTaskRefusalReason, readonly [string, string]>;
 
 /** Whether a booking refusal code is one of the task refusals. */
-export function isProjectTaskRefusal(code: string | null | undefined): boolean {
-	return code != null && PROJECT_TASK_REFUSAL_REASONS.has(code);
+export function isProjectTaskRefusal(
+	code: string | null | undefined,
+): code is ProjectTaskRefusalReason {
+	return code != null && Object.hasOwn(PROJECT_TASK_REFUSAL_MESSAGES, code);
+}
+
+/**
+ * How to word a task refusal: its Tolgee key and English default, or null when
+ * the code is no task refusal. Every booking surface words them through this.
+ */
+export function projectTaskRefusalMessage(
+	code: string | null | undefined,
+): readonly [key: string, fallback: string] | null {
+	return isProjectTaskRefusal(code) ? PROJECT_TASK_REFUSAL_MESSAGES[code] : null;
 }
 
 export const PROJECT_TASK_NAME_MAX_LENGTH = 200;
@@ -86,17 +111,29 @@ export function normalizeProjectTaskDescription(
 }
 
 /**
+ * Hours as numeric(8, 2) text, the one rounding rule for task estimates and
+ * template budgets: positive hours rounded to two decimals, at most `max`, or
+ * null for none. Numeric text as stored (e.g. a project's budget) passes as is.
+ */
+export function positiveHoursText(
+	hours: number | string | null | undefined,
+	max: number = PROJECT_TASK_ESTIMATE_MAX_HOURS,
+): { ok: true; value: string | null } | { ok: false } {
+	if (hours === null || hours === undefined) return { ok: true, value: null };
+	const value = typeof hours === "string" ? Number(hours) : hours;
+	if (!Number.isFinite(value)) return { ok: false };
+	const rounded = Math.round(value * 100) / 100;
+	if (rounded <= 0 || rounded > max) return { ok: false };
+	return { ok: true, value: rounded.toFixed(2) };
+}
+
+/**
  * The stored task estimate as numeric(8, 2) text: positive hours rounded to
  * two decimals, or null for no estimate.
  */
 export function normalizeProjectTaskEstimate(
-	hours: number | null | undefined,
+	hours: number | string | null | undefined,
 ): RuleResult<string | null> {
-	if (hours === null || hours === undefined) return { ok: true, value: null };
-	if (!Number.isFinite(hours)) return { ok: false, problem: "estimateInvalid" };
-	const rounded = Math.round(hours * 100) / 100;
-	if (rounded <= 0 || rounded > PROJECT_TASK_ESTIMATE_MAX_HOURS) {
-		return { ok: false, problem: "estimateInvalid" };
-	}
-	return { ok: true, value: rounded.toFixed(2) };
+	const estimate = positiveHoursText(hours);
+	return estimate.ok ? estimate : { ok: false, problem: "estimateInvalid" };
 }

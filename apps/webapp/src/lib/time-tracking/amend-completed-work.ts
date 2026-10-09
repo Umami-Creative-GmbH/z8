@@ -24,7 +24,6 @@ import {
 	employeeManagers,
 	project,
 	projectAssignment,
-	projectTask,
 	timeEntry,
 	timeRecord,
 	timeRecordAllocation,
@@ -39,7 +38,9 @@ import {
 	BOOKABLE_PROJECT_STATUSES,
 	PROJECT_TASK_INELIGIBILITY_MESSAGES,
 	type ProjectTaskIneligibility,
+	taskBookingIneligibility,
 } from "./project-eligibility";
+import { recordedTaskId } from "./task-attribution";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import {
 	compareInstants,
@@ -563,8 +564,8 @@ function taskRefusal(reason: ProjectTaskIneligibility) {
 
 /**
  * A newly booked task (#873), re-checked under locks: an open task of the
- * resulting project, which must itself stay bookable for the owner. The stable
- * reason is the refusal's `value`.
+ * resulting project, which must itself stay bookable for the owner (the project
+ * row is locked like a project change). The stable reason is the refusal's `value`.
  */
 async function assertTaskBookable(
 	tx: TransactionClient,
@@ -574,23 +575,13 @@ async function assertTaskBookable(
 		teamId: string | null;
 		projectId: string | null;
 		taskId: string;
-		/** A changed project was already checked. */
-		projectChanged: boolean;
 	},
 ) {
-	const [task] = await tx
-		.select({ projectId: projectTask.projectId, state: projectTask.state })
-		.from(projectTask)
-		.where(
-			and(eq(projectTask.id, input.taskId), eq(projectTask.organizationId, input.organizationId)),
-		)
-		.for("share");
-	if (!task) throw taskRefusal("task_not_found");
-	if (task.projectId !== input.projectId) throw taskRefusal("task_other_project");
-	if (task.state !== "open") throw taskRefusal("task_done");
-	if (input.projectChanged) return;
+	const reason = await taskBookingIneligibility(tx, input, { lock: "share" });
+	if (reason) throw taskRefusal(reason);
 	try {
-		await assertProjectEligible(tx, { ...input, projectId: task.projectId });
+		// The task is in the resulting project, so that project is not null here.
+		await assertProjectEligible(tx, { ...input, projectId: input.projectId as string });
 	} catch (error) {
 		if (error instanceof ValidationError) throw taskRefusal("project_not_bookable");
 		throw error;
@@ -606,7 +597,7 @@ function segmentAttribution(values: {
 }): AmendedSegment["attribution"] {
 	return {
 		projectId: values.projectId,
-		...(values.taskId ? { taskId: values.taskId } : {}),
+		...recordedTaskId(values.taskId),
 		workCategoryId: values.workCategoryId,
 		workLocationType: values.workLocationType,
 	};
@@ -1108,7 +1099,6 @@ async function assertAttributionEligible(
 			teamId: input.teamId,
 			projectId: input.resulting.projectId,
 			taskId: input.resulting.taskId,
-			projectChanged: input.changes.project,
 		});
 	}
 	if (input.changes.workCategory) {

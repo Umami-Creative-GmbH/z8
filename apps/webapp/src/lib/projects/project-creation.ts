@@ -2,6 +2,7 @@ import "server-only";
 
 import type { db } from "@/db";
 import { project, projectAssignment, projectManager, projectNotificationState } from "@/db/schema";
+import { isConstraintViolation } from "./constraint-violation";
 
 /**
  * The project writes shared by every way a project gets its rows: the project
@@ -94,11 +95,5 @@ export async function insertProjectAssignments(
 
 /** Whether a write failed because the organization already has a project of that name. */
 export function isProjectNameConflict(error: unknown): boolean {
-	let candidate: unknown = error;
-	for (let depth = 0; depth < 5 && candidate && typeof candidate === "object"; depth += 1) {
-		const current = candidate as { code?: unknown; constraint?: unknown; cause?: unknown };
-		if (current.code === "23505" && current.constraint === "project_org_name_idx") return true;
-		candidate = current.cause;
-	}
-	return false;
+	return isConstraintViolation(error, "23505", "project_org_name_idx");
 }

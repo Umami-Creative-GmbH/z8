@@ -21,7 +21,7 @@ import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { PROJECT_TEMPLATE_NAME_MAX_LENGTH } from "@/lib/projects/project-template-model";
 import { queryKeys } from "@/lib/query";
-import { useSkippedMembersMessage } from "./project-template-preview";
+import { useNotCopiedMessage } from "./project-template-preview";
 
 interface SaveProjectAsTemplatePanelProps {
 	organizationId: string;
@@ -52,7 +52,7 @@ export function SaveProjectAsTemplatePanel({
 					<ActionPanelDescription>
 						{t(
 							"settings.projects.saveAsTemplate.description",
-							"The template gets this project's icon, colour, budget, open tasks, managers and assignments. It has no deadline offset.",
+							"The template gets this project's icon, color, budget, open tasks, managers and assignments. It has no deadline offset.",
 						)}
 					</ActionPanelDescription>
 				</ActionPanelHeader>
@@ -80,7 +80,7 @@ function SaveProjectAsTemplateForm({
 }) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const skippedMembersMessage = useSkippedMembersMessage();
+	const skippedMembersMessage = useNotCopiedMessage();
 
 	const form = useForm({
 		defaultValues: { name: project.name },
@@ -157,7 +157,7 @@ function SaveProjectAsTemplateForm({
 				<form.Subscribe selector={(state) => state.isSubmitting}>
 					{(isSubmitting) => (
 						<Button type="submit" disabled={isSubmitting}>
-							{isSubmitting && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+							{isSubmitting && <IconLoader2 className="size-4 animate-spin" aria-hidden="true" />}
 							{t("settings.projects.saveAsTemplate.submit", "Save as template")}
 						</Button>
 					)}

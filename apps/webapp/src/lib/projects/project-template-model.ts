@@ -12,6 +12,7 @@ import {
 	normalizeProjectTaskEstimate,
 	normalizeProjectTaskName,
 	PROJECT_TASK_ESTIMATE_MAX_HOURS,
+	positiveHoursText,
 } from "./project-task-model";
 
 export type ProjectTemplateAssignmentType = "team" | "employee";
@@ -21,7 +22,7 @@ export type ProjectTemplateAssignmentType = "team" | "employee";
  * project: `departed` employees have lost organization access, `removed`
  * teams and employees no longer exist (only their last known name is left).
  */
-export type ProjectTemplateMemberAvailability = "available" | "departed" | "removed";
+export type ManagerOrAssignmentAvailability = "available" | "departed" | "removed";
 
 export interface ProjectTemplateTask {
 	id: string;
@@ -36,7 +37,7 @@ export interface ProjectTemplateManager {
 	/** Null once the employee was deleted. */
 	employeeId: string | null;
 	name: string;
-	availability: ProjectTemplateMemberAvailability;
+	availability: ManagerOrAssignmentAvailability;
 }
 
 export interface ProjectTemplateAssignment {
@@ -47,18 +48,19 @@ export interface ProjectTemplateAssignment {
 	/** Null for a team assignment, or once the employee was deleted. */
 	employeeId: string | null;
 	name: string;
-	availability: ProjectTemplateMemberAvailability;
+	availability: ManagerOrAssignmentAvailability;
 }
 
 /**
  * A manager or assignment left out when a template became a project or a
  * project became a template (#880), and why: `departed` employees left the
- * organization, `removed` teams and employees no longer exist.
+ * organization, `removed` teams and employees no longer exist, and `adminOnly`
+ * managers were not copied because only org admins assign project managers.
  */
-export interface SkippedProjectMember {
+export interface SkippedManagerOrAssignment {
 	role: "manager" | "team" | "employee";
 	name: string;
-	reason: Exclude<ProjectTemplateMemberAvailability, "available">;
+	reason: Exclude<ManagerOrAssignmentAvailability, "available"> | "adminOnly";
 }
 
 /** A full template, as `getProjectTemplate` returns it. */
@@ -83,6 +85,13 @@ export interface ProjectTemplate {
 	assignments: ProjectTemplateAssignment[];
 }
 
+/**
+ * A template as someone creating a project from it sees it: `managersCopied`
+ * is false unless they are an org owner or admin, who alone assign project
+ * managers (#367).
+ */
+export type ProjectTemplatePreviewData = ProjectTemplate & { managersCopied: boolean };
+
 /** A template in the template list. */
 export interface ProjectTemplateSummary {
 	id: string;
@@ -101,20 +110,20 @@ export interface ProjectTemplateSummary {
 export interface ProjectTemplateTaskInput {
 	name: string;
 	description?: string | null;
-	/** Hours; null or omitted = no estimate. */
-	estimateHours?: number | null;
+	/** Hours, or numeric(8, 2) text as stored; null or omitted = no estimate. */
+	estimateHours?: number | string | null;
 }
 
 /** Everything a template holds, as the template form submits it. */
 export interface ProjectTemplateInput {
 	name: string;
 	description?: string | null;
-	/** A Tabler icon component name, e.g. `IconRocket`. */
+	/** A Tabler icon component name, e.g. `IconRocket`; free text like a project's. */
 	icon?: string | null;
-	/** `#rrggbb`. */
+	/** Usually `#rrggbb`; free text like a project's. */
 	color?: string | null;
-	/** Hours; null or omitted = unlimited. */
-	budgetHours?: number | null;
+	/** Hours, or numeric(8, 2) text as stored; null or omitted = unlimited. */
+	budgetHours?: number | string | null;
 	/** Whole days after the project's creation; null or omitted = no deadline. */
 	deadlineOffsetDays?: number | null;
 	tasks?: ProjectTemplateTaskInput[];
@@ -146,8 +155,6 @@ export type ProjectTemplateInputProblem =
 	| "nameRequired"
 	| "nameTooLong"
 	| "descriptionTooLong"
-	| "iconInvalid"
-	| "colorInvalid"
 	| "budgetInvalid"
 	| "deadlineOffsetInvalid"
 	| "tooManyTasks"
@@ -160,9 +167,6 @@ export type ProjectTemplateInputProblem =
 export type ProjectTemplateInputResult =
 	| { ok: true; value: NormalizedProjectTemplateInput }
 	| { ok: false; problem: ProjectTemplateInputProblem; taskIndex?: number };
-
-const ICON_PATTERN = /^Icon[A-Z][A-Za-z0-9]{0,63}$/;
-const COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
 function blankToNull(value: string | null | undefined) {
 	const trimmed = value?.trim() ?? "";
@@ -199,24 +203,13 @@ export function normalizeProjectTemplateInput(
 		return { ok: false, problem: "descriptionTooLong" };
 	}
 
+	// Free text like a project's own icon and colour, so every project can become a template.
 	const icon = blankToNull(input.icon);
-	if (icon && !ICON_PATTERN.test(icon)) return { ok: false, problem: "iconInvalid" };
-
 	const color = blankToNull(input.color);
-	if (color && !COLOR_PATTERN.test(color)) return { ok: false, problem: "colorInvalid" };
 
-	let budgetHours: string | null = null;
-	if (input.budgetHours !== null && input.budgetHours !== undefined) {
-		const rounded = Math.round(input.budgetHours * 100) / 100;
-		if (
-			!Number.isFinite(input.budgetHours) ||
-			rounded <= 0 ||
-			rounded > PROJECT_TEMPLATE_BUDGET_MAX_HOURS
-		) {
-			return { ok: false, problem: "budgetInvalid" };
-		}
-		budgetHours = rounded.toFixed(2);
-	}
+	const budget = positiveHoursText(input.budgetHours, PROJECT_TEMPLATE_BUDGET_MAX_HOURS);
+	if (!budget.ok) return { ok: false, problem: "budgetInvalid" };
+	const budgetHours = budget.value;
 
 	const offset = input.deadlineOffsetDays;
 	if (

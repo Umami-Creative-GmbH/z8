@@ -38,7 +38,7 @@ export function ProjectTaskManagement({ projects }: ProjectTaskManagementProps) 
 				<CardHeader>
 					<CardTitle>{t("settings.projects.tasks.managedTitle", "Your projects")}</CardTitle>
 					<CardDescription>
-						{t("settings.projects.list.description", "{count} projects total", {
+						{t("settings.projects.tasks.projectCount", "{count, plural, one {# project} other {# projects}}", {
 							count: projects.length,
 						})}
 					</CardDescription>

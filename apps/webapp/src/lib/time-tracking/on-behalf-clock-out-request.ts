@@ -1,4 +1,5 @@
 import { CLOCK_COMMAND_OPERATION_ID } from "./clock-command";
+import { namedTaskId } from "./task-attribution";
 
 /**
  * The manager on-behalf clock-out request body (#276). Omitted attribution
@@ -43,7 +44,7 @@ export function parseOnBehalfClockOutRequest(value: unknown): OnBehalfClockOutRe
 		workPeriodId,
 		...(operationId === undefined ? {} : { operationId }),
 		...(projectId === undefined ? {} : { projectId }),
-		...(taskId === undefined ? {} : { taskId }),
+		...namedTaskId(taskId),
 		...(workCategoryId === undefined ? {} : { workCategoryId }),
 	};
 }

@@ -41,10 +41,10 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { queryKeys } from "@/lib/query";
-import { PROJECT_COLOR_OPTIONS } from "./project-appearance";
+import { ProjectColorPicker } from "./project-color-picker";
 import {
 	ProjectTemplatePreview,
-	useSkippedMembersMessage,
+	useNotCopiedMessage,
 } from "./project-template-preview";
 
 interface ProjectDialogProps {
@@ -100,7 +100,7 @@ function useProjectDialogController({
 	});
 
 	const customers = customersData || [];
-	const skippedMembersMessage = useSkippedMembersMessage();
+	const skippedMembersMessage = useNotCopiedMessage();
 
 	// Anyone who may create projects may start one from a template (#880).
 	const { data: templateChoices = [] } = useQuery({
@@ -478,43 +478,7 @@ function ProjectDialogForm({
 							{(field) => (
 								<div className="grid gap-2">
 									<Label>{t("settings.projects.field.color", "Color")}</Label>
-									<div className="flex flex-wrap gap-2">
-										{PROJECT_COLOR_OPTIONS.map((color) => (
-											<button
-												key={color}
-												type="button"
-												aria-label={t(
-													"settings.projects.field.colorOption",
-													"Select color {color}",
-													{
-														color,
-													},
-												)}
-												onClick={() => field.handleChange(color)}
-												className={`size-8 rounded-full border-2 transition-transform hover:scale-110 ${
-													field.state.value === color
-														? "border-foreground ring-2 ring-foreground ring-offset-2"
-														: "border-transparent"
-												}`}
-												style={{ backgroundColor: color }}
-											/>
-										))}
-										<button
-											type="button"
-											aria-label={t(
-												"settings.projects.field.clearColor",
-												"Clear color",
-											)}
-											onClick={() => field.handleChange("")}
-											className={`flex size-8 items-center justify-center rounded-full border-2 text-xs ${
-												!field.state.value
-													? "border-foreground ring-2 ring-foreground ring-offset-2"
-													: "border-muted"
-											}`}
-										>
-											-
-										</button>
-									</div>
+									<ProjectColorPicker value={field.state.value} onChange={field.handleChange} />
 								</div>
 							)}
 						</form.Field>

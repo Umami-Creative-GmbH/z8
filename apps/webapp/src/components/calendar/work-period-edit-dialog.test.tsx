@@ -126,6 +126,7 @@ function renderDialog(event: CalendarEvent = bookedEvent()) {
 	render(
 		<WorkPeriodEditDialog
 			event={event}
+			canChangeProject
 			open
 			onOpenChange={() => {}}
 			displayContext={{ timezone: "UTC", locale: "en-US" } as never}
@@ -154,6 +155,7 @@ describe("WorkPeriodEditDialog project and task (#874)", () => {
 		render(
 			<WorkPeriodEditDialog
 				event={bookedEvent({ taskState: "open", taskName: "Design", taskId: "task-design" })}
+				canChangeProject
 				open
 				onOpenChange={() => {}}
 				displayContext={{ timezone: "UTC", locale: "en-US" } as never}
@@ -162,6 +164,23 @@ describe("WorkPeriodEditDialog project and task (#874)", () => {
 
 		expect(screen.getByText("Website")).toBeTruthy();
 		expect(screen.getByText("Design")).toBeTruthy();
+	});
+
+	it("offers no project or task change on another employee's work, only the owner may change it", () => {
+		render(
+			<WorkPeriodEditDialog
+				event={bookedEvent()}
+				canChangeProject={false}
+				open
+				onOpenChange={() => {}}
+				displayContext={{ timezone: "UTC", locale: "en-US" } as never}
+			/>,
+		);
+
+		expect(screen.getByText("Website")).toBeTruthy();
+		// Only the notes keep their Edit button.
+		expect(screen.getAllByRole("button", { name: "Edit" })).toHaveLength(1);
+		expect(screen.queryByLabelText("Project")).toBeNull();
 	});
 
 	it("pre-selects the booking's task, even a done one", () => {
@@ -240,7 +259,7 @@ describe("WorkPeriodEditDialog project and task (#874)", () => {
 		);
 	});
 
-	it("words a refused task in the app's language", async () => {
+	it("words a refused task's stable reason in the app's language", async () => {
 		updateWorkPeriodProject.mockResolvedValue({
 			success: false,
 			error: "This task is done and takes no new bookings",
@@ -251,6 +270,8 @@ describe("WorkPeriodEditDialog project and task (#874)", () => {
 		fireEvent.change(screen.getByLabelText("Task"), { target: { value: "task-design" } });
 		save();
 
-		await waitFor(() => expect(toastError).toHaveBeenCalledWith("Cannot book time to this task"));
+		await waitFor(() =>
+			expect(toastError).toHaveBeenCalledWith("This task is done, so no time can be booked to it"),
+		);
 	});
 });

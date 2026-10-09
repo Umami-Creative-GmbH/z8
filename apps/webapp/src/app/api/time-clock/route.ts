@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { clockIn, clockOut } from "@/app/[locale]/(app)/time-tracking/actions/clocking";
+import { namedTaskId } from "@/lib/time-tracking/task-attribution";
 import { WORK_LOCATION_TYPES } from "@/lib/time-tracking/work-location";
 
 /**
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
 				: await clockOut(body.projectId, body.workCategoryId, {
 						browserTimezone: body.browserTimezone,
 						submissionId: body.submissionId,
-						...(body.taskId !== undefined ? { taskId: body.taskId } : {}),
+						...namedTaskId(body.taskId),
 					});
 
 		return NextResponse.json(result, { status: result.success ? 200 : 422 });

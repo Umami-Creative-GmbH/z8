@@ -26,6 +26,7 @@ import {
 } from "@/lib/time-tracking/clocking";
 import type { OnBehalfClockOutRequest } from "@/lib/time-tracking/on-behalf-clock-out-request";
 import type { ProjectTaskIneligibility } from "@/lib/time-tracking/project-eligibility";
+import { namedTaskIntent } from "@/lib/time-tracking/task-attribution";
 import { revalidateAfterClockOut } from "./clocking";
 import { resolveManualEntryTargetZone } from "./manual-entry-target";
 
@@ -141,7 +142,7 @@ export function toOnBehalfCommand(input: {
 			target: { kind: "period", workPeriodId: request.workPeriodId },
 			project: attributionIntent(request.projectId),
 			workCategory: attributionIntent(request.workCategoryId),
-			...(request.taskId !== undefined ? { task: attributionIntent(request.taskId) } : {}),
+			...namedTaskIntent(request.taskId),
 		},
 	};
 }

@@ -114,6 +114,10 @@ export function CalendarEventDialogs({
 			{selectedWorkPeriod ? (
 				<WorkPeriodDialogs
 					event={selectedWorkPeriod}
+					isOwnWork={
+						currentEmployeeId !== undefined &&
+						selectedWorkPeriod.metadata.employeeId === currentEmployeeId
+					}
 					showSplitDialog={showSplitDialog}
 					showDeleteDialog={showDeleteDialog}
 					initialTimeEditing={initialTimeEditing}
@@ -148,10 +152,15 @@ type WorkPeriodDialogsProps = Pick<
 	| "onDeleteComplete"
 	| "onNotesUpdated"
 	| "onTimesUpdated"
-> & { event: CalendarEvent };
+> & {
+	event: CalendarEvent;
+	/** The work is the signed-in employee's own; only then may its project change. */
+	isOwnWork: boolean;
+};
 
 function WorkPeriodDialogs({
 	event,
+	isOwnWork,
 	showSplitDialog,
 	showDeleteDialog,
 	initialTimeEditing,
@@ -193,6 +202,7 @@ function WorkPeriodDialogs({
 	return (
 		<WorkPeriodEditDialog
 			event={event}
+			canChangeProject={isOwnWork}
 			open
 			onOpenChange={(open) => !open && onCloseDetails()}
 			onNotesUpdated={onNotesUpdated}

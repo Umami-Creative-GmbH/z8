@@ -21,6 +21,25 @@ const { sessions } = await vi.hoisted(async () => {
 
 const audit = vi.hoisted(() => ({ logAudit: vi.fn(async () => undefined) }));
 
+/** Runs once right after the next project read for "save as template", before its write. */
+const hooks = vi.hoisted(() => ({ afterProjectRead: null as null | (() => Promise<void>) }));
+
+vi.mock("@/lib/projects/project-from-template", async (importOriginal) => {
+	const original = await importOriginal<typeof import("@/lib/projects/project-from-template")>();
+	return {
+		...original,
+		projectAsTemplateInput: async (
+			...args: Parameters<typeof original.projectAsTemplateInput>
+		) => {
+			const source = await original.projectAsTemplateInput(...args);
+			const hook = hooks.afterProjectRead;
+			hooks.afterProjectRead = null;
+			if (hook) await hook();
+			return source;
+		},
+	};
+});
+
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
@@ -199,6 +218,7 @@ describe("project templates in use on PostgreSQL", () => {
 	beforeEach(async () => {
 		await seed();
 		audit.logAudit.mockClear();
+		hooks.afterProjectRead = null;
 	});
 
 	afterAll(async () => {
@@ -386,10 +406,10 @@ describe("project templates in use on PostgreSQL", () => {
 			});
 		});
 
-		it("adds a manager-tier creator next to the template's managers", async () => {
+		it("copies no template manager for a manager-tier creator, who manages the project alone", async () => {
 			const templateId = await createTemplate({
 				...relaunchTemplate,
-				managerEmployeeIds: [ids.employee],
+				managerEmployeeIds: [ids.employee, ids.projectManager],
 			});
 
 			const created = await actAs(ids.projectManagerUser, () =>
@@ -397,10 +417,15 @@ describe("project templates in use on PostgreSQL", () => {
 			);
 
 			if (!created.success) throw new Error(created.error);
-			expect((await readProject(created.data.id))?.managerEmployeeIds).toEqual([
-				ids.projectManager,
-				ids.employee,
+			// Only org admins assign project managers (#367); the assignments are still copied.
+			expect(created.data.skipped).toEqual([
+				{ role: "manager", name: "T880 Employee User", reason: "adminOnly" },
 			]);
+			expect(await readProject(created.data.id)).toMatchObject({
+				managerEmployeeIds: [ids.projectManager],
+				teamIds: [ids.team],
+				employeeIds: [ids.employee],
+			});
 		});
 
 		it("is refused to a plain employee, who cannot create projects", async () => {
@@ -538,6 +563,43 @@ describe("project templates in use on PostgreSQL", () => {
 			expect(template?.tasks).toHaveLength(2);
 			expect(template?.managers).toHaveLength(1);
 			expect(template?.assignments).toHaveLength(2);
+		});
+
+		it("skips and reports a member who leaves while the template is saved, still saving it", async () => {
+			const projectId = await seedProject();
+			hooks.afterProjectRead = async () => {
+				await admin.query("update employee set is_active = false where id = $1", [ids.employee]);
+			};
+
+			const saved = await actAs(ids.adminUser, () =>
+				fromTemplate.saveProjectAsTemplate(projectId, { name: "Relaunch blueprint" }),
+			);
+
+			expect(saved).toMatchObject({
+				success: true,
+				data: {
+					skipped: expect.arrayContaining([
+						{ role: "employee", name: "T880 Employee User", reason: "departed" },
+					]),
+				},
+			});
+			if (!saved.success) return;
+			expect(saved.data.skipped).toHaveLength(3);
+			expect((await readTemplate(saved.data.id))?.assignments).toMatchObject([
+				{ type: "team", teamId: ids.team },
+			]);
+		});
+
+		it("saves a project whose icon and colour predate the icon and colour pickers", async () => {
+			const projectId = await seedProject();
+			await admin.query("update project set icon = 'rocket', color = 'blue' where id = $1", [
+				projectId,
+			]);
+
+			const saved = await actAs(ids.adminUser, () => fromTemplate.saveProjectAsTemplate(projectId));
+
+			if (!saved.success) throw new Error(saved.error);
+			expect(await readTemplate(saved.data.id)).toMatchObject({ icon: "rocket", color: "blue" });
 		});
 
 		it("names the template after the project unless told otherwise, and refuses a taken name", async () => {

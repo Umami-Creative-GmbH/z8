@@ -1,44 +1,74 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import type {
-	ProjectTemplate,
-	ProjectTemplateMemberAvailability,
-	SkippedProjectMember,
+	ProjectTemplatePreviewData,
+	SkippedManagerOrAssignment,
 } from "@/lib/projects/project-template-model";
 
-/** The reason a member is not copied, as a short lower-case phrase. */
+/** The reason a manager or assignment is not copied, as a short lower-case phrase. */
 function useSkipReason() {
 	const { t } = useTranslate();
-	return (reason: Exclude<ProjectTemplateMemberAvailability, "available">) =>
-		reason === "departed"
-			? t("settings.projects.fromTemplate.reasonDeparted", "left the organization")
-			: t("settings.projects.fromTemplate.reasonRemoved", "no longer exists");
+	return (reason: SkippedManagerOrAssignment["reason"]) => {
+		switch (reason) {
+			case "departed":
+				return t("settings.projects.fromTemplate.reasonDeparted", "left the organization");
+			case "removed":
+				return t("settings.projects.fromTemplate.reasonRemoved", "no longer exists");
+			case "adminOnly":
+				return t(
+					"settings.projects.fromTemplate.reasonAdminOnly",
+					"only organization admins assign project managers",
+				);
+		}
+	};
 }
 
 /** One sentence naming the managers and assignments that were not copied, and why. */
-export function useSkippedMembersMessage() {
+export function useNotCopiedMessage() {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const reasonOf = useSkipReason();
-	return (skipped: readonly SkippedProjectMember[]) =>
+	return (skipped: readonly Pick<SkippedManagerOrAssignment, "name" | "reason">[]) =>
 		t("settings.projects.fromTemplate.skipped", "Not copied: {members}", {
-			members: skipped.map((member) => `${member.name} (${reasonOf(member.reason)})`).join(", "),
+			members: new Intl.ListFormat(locale, { type: "conjunction" }).format(
+				skipped.map((member) =>
+					t("settings.projects.fromTemplate.skippedMemberReason", "{name} ({reason})", {
+						name: member.name,
+						reason: reasonOf(member.reason),
+					}),
+				),
+			),
 		});
 }
 
 /**
  * What creating a project from this template copies, and which of its
- * managers and assignments will be skipped because they are gone.
+ * managers and assignments will be skipped: because they are gone, or because
+ * only org admins assign project managers.
  */
-export function ProjectTemplatePreview({ template }: { template: ProjectTemplate }) {
+export function ProjectTemplatePreview({ template }: { template: ProjectTemplatePreviewData }) {
 	const { t } = useTranslate();
 	const reasonOf = useSkipReason();
-	const members = [...template.managers, ...template.assignments];
-	const copied = members.filter((member) => member.availability === "available").length;
+	const members = [
+		...template.managers.map((manager) => ({
+			id: manager.id,
+			name: manager.name,
+			reason:
+				manager.availability === "available" && !template.managersCopied
+					? ("adminOnly" as const)
+					: manager.availability,
+		})),
+		...template.assignments.map((assignment) => ({
+			id: assignment.id,
+			name: assignment.name,
+			reason: assignment.availability,
+		})),
+	];
+	const copied = members.filter((member) => member.reason === "available").length;
 	const skipped = members.flatMap((member) =>
-		member.availability === "available"
-			? []
-			: [{ id: member.id, name: member.name, reason: member.availability }],
+		member.reason === "available" ? [] : [{ ...member, reason: member.reason }],
 	);
 
 	return (

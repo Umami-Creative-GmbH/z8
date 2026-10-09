@@ -40,13 +40,18 @@ import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import type { ServerActionResult } from "@/lib/effect/result";
 import {
-	normalizeProjectTaskEstimate,
-	normalizeProjectTaskName,
 	PROJECT_TASK_DESCRIPTION_MAX_LENGTH,
-	PROJECT_TASK_NAME_MAX_LENGTH,
 	type ProjectTask,
 } from "@/lib/projects/project-task-model";
 import { queryKeys } from "@/lib/query";
+import { InlineDeleteConfirm } from "./inline-delete-confirm";
+import {
+	hoursFormText,
+	hoursFromFormText,
+	PROJECT_TASK_ESTIMATE_INPUT,
+	PROJECT_TASK_NAME_INPUT,
+	useProjectTaskFieldRules,
+} from "./project-task-fields";
 
 interface ProjectTasksPanelProps {
 	project: { id: string; name: string } | null;
@@ -69,11 +74,10 @@ interface TaskFormSubmission {
 const EMPTY_TASK: TaskFormValues = { name: "", description: "", estimateHours: "" };
 
 function toSubmission(values: TaskFormValues): TaskFormSubmission {
-	const estimate = values.estimateHours.trim();
 	return {
 		name: values.name.trim(),
 		description: values.description.trim() || null,
-		estimateHours: estimate ? Number(estimate) : null,
+		estimateHours: hoursFromFormText(values.estimateHours),
 	};
 }
 
@@ -92,6 +96,7 @@ function TaskForm({
 	onCancel?: () => void;
 }) {
 	const { t } = useTranslate();
+	const rules = useProjectTaskFieldRules();
 	const form = useForm({
 		defaultValues: initialValues,
 		onSubmit: async ({ value, formApi }) => {
@@ -114,12 +119,7 @@ function TaskForm({
 		>
 			<form.Field
 				name="name"
-				validators={{
-					onSubmit: ({ value }) =>
-						normalizeProjectTaskName(value).ok
-							? undefined
-							: t("settings.projects.tasks.field.nameRequired", "Enter a task name"),
-				}}
+				validators={{ onSubmit: rules.name }}
 			>
 				{(field) => (
 					<TFormItem>
@@ -129,7 +129,7 @@ function TaskForm({
 						<TFormControl hasError={fieldHasError(field)}>
 							<Input
 								value={field.state.value}
-								maxLength={PROJECT_TASK_NAME_MAX_LENGTH}
+								{...PROJECT_TASK_NAME_INPUT}
 								onChange={(event) => field.handleChange(event.target.value)}
 								onBlur={field.handleBlur}
 								placeholder={t("settings.projects.tasks.field.namePlaceholder", "e.g., Design")}
@@ -157,17 +157,8 @@ function TaskForm({
 			</form.Field>
 			<form.Field
 				name="estimateHours"
-				validators={{
-					onSubmit: ({ value }) => {
-						const estimate = value.trim();
-						return !estimate || normalizeProjectTaskEstimate(Number(estimate)).ok
-							? undefined
-							: t(
-									"settings.projects.tasks.field.estimateInvalid",
-									"Enter a positive number of hours",
-								);
-					},
-				}}
+				validators={{ onSubmit: rules.estimate }}
+
 			>
 				{(field) => (
 					<TFormItem>
@@ -176,10 +167,7 @@ function TaskForm({
 						</TFormLabel>
 						<TFormControl hasError={fieldHasError(field)}>
 							<Input
-								type="number"
-								inputMode="decimal"
-								min="0.01"
-								step="0.25"
+								{...PROJECT_TASK_ESTIMATE_INPUT}
 								value={field.state.value}
 								onChange={(event) => field.handleChange(event.target.value)}
 								onBlur={field.handleBlur}
@@ -247,7 +235,7 @@ function TaskRow({ task, onChanged }: { task: ProjectTask; onChanged: () => void
 					initialValues={{
 						name: task.name,
 						description: task.description ?? "",
-						estimateHours: task.estimateHours ? String(Number(task.estimateHours)) : "",
+						estimateHours: hoursFormText(task.estimateHours),
 					}}
 					submitLabel={t("settings.projects.tasks.save", "Save")}
 					onCancel={() => setMode("view")}
@@ -289,42 +277,26 @@ function TaskRow({ task, onChanged }: { task: ProjectTask; onChanged: () => void
 				)}
 			</div>
 			{mode === "confirmDelete" ? (
-				<div className="flex shrink-0 items-center gap-1">
-					<span className="text-xs text-muted-foreground">
-						{t("settings.projects.tasks.deleteQuestion", "Delete this task?")}
-					</span>
-					<Button
-						type="button"
-						variant="ghost"
-						size="sm"
-						disabled={isBusy}
-						onClick={() => setMode("view")}
-					>
-						{t("common.cancel", "Cancel")}
-					</Button>
-					<Button
-						type="button"
-						variant="destructive"
-						size="sm"
-						disabled={isBusy}
-						aria-label={t("settings.projects.tasks.confirmDelete", "Confirm deleting {name}", {
-							name: task.name,
-						})}
-						onClick={() =>
-							run(() => deleteProjectTask(task.id), {
-								success: t("settings.projects.tasks.deleted", "{name} deleted", {
-									name: task.name,
-								}),
-								failure: t("settings.projects.tasks.deleteFailed", "Failed to delete {name}", {
-									name: task.name,
-								}),
-							})
-						}
-					>
-						{isBusy && <IconLoader2 className="size-4 animate-spin" aria-hidden="true" />}
-						{t("settings.projects.tasks.delete", "Delete")}
-					</Button>
-				</div>
+				<InlineDeleteConfirm
+					className="shrink-0"
+					question={t("settings.projects.tasks.deleteQuestion", "Delete this task?")}
+					confirmLabel={t("settings.projects.tasks.confirmDelete", "Confirm deleting {name}", {
+						name: task.name,
+					})}
+					deleteText={t("settings.projects.tasks.delete", "Delete")}
+					isDeleting={isBusy}
+					onCancel={() => setMode("view")}
+					onConfirm={() =>
+						run(() => deleteProjectTask(task.id), {
+							success: t("settings.projects.tasks.deleted", "{name} deleted", {
+								name: task.name,
+							}),
+							failure: t("settings.projects.tasks.deleteFailed", "Failed to delete {name}", {
+								name: task.name,
+							}),
+						})
+					}
+				/>
 			) : (
 				<div className="flex shrink-0 items-center gap-1">
 					<Button

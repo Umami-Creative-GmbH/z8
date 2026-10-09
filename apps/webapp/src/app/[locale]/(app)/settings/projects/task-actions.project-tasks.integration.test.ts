@@ -10,6 +10,7 @@
  */
 
 import { randomUUID } from "node:crypto";
+import type { PoolClient } from "pg";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -294,6 +295,20 @@ describe("project tasks on PostgreSQL", () => {
 			expect(await taskRows()).toMatchObject([{ state: "open", done_by: null, done_at: null }]);
 		});
 
+		it("keeps who finished a task first when it is marked done again", async () => {
+			const id = await createTask(ids.ownerUser, "Design");
+			await actAs(ids.ownerUser, () => tasks.markProjectTaskDone(id));
+			const [first] = await taskRows();
+			audit.logAudit.mockClear();
+
+			const again = await actAs(ids.projectManagerUser, () => tasks.markProjectTaskDone(id));
+
+			expect(again).toEqual({ success: true, data: undefined });
+			expect(await taskRows()).toEqual([first]);
+			expect(first).toMatchObject({ state: "done", done_by: ids.ownerUser });
+			expect(audit.logAudit).not.toHaveBeenCalled();
+		});
+
 		it("deletes an unbooked task", async () => {
 			const id = await createTask(ids.ownerUser, "Design");
 
@@ -320,6 +335,24 @@ describe("project tasks on PostgreSQL", () => {
 			const deleted = await actAs(ids.ownerUser, () => tasks.deleteProjectTask(id));
 
 			expect(deleted).toMatchObject({ success: false, error: bookedTaskError });
+			expect((await taskRows()).map((row) => row.id)).toEqual([id]);
+		});
+
+		it("refuses the delete as booked when a booking commits while the delete waits", async () => {
+			const id = await createTask(ids.ownerUser, "Design");
+			const booking = await admin.connect();
+			try {
+				await booking.query("begin");
+				await bookLiveWork(id, booking);
+
+				const deleting = actAs(ids.ownerUser, () => tasks.deleteProjectTask(id));
+				await waitForRowLockWaiter();
+				await booking.query("commit");
+
+				expect(await deleting).toMatchObject({ success: false, error: bookedTaskError });
+			} finally {
+				booking.release();
+			}
 			expect((await taskRows()).map((row) => row.id)).toEqual([id]);
 		});
 
@@ -354,6 +387,18 @@ describe("project tasks on PostgreSQL", () => {
 				error: expect.stringMatching(/already exists/i),
 			});
 			expect((await taskRows()).map((row) => row.id).sort()).toEqual([first, second].sort());
+		});
+
+		it("keeps names unique ignoring case and surrounding spaces in the database too", async () => {
+			await createTask(ids.ownerUser, "Design");
+
+			await expect(
+				admin.query(
+					`insert into project_task (organization_id, project_id, name, created_by, updated_at)
+					 values ($1, $2, ' DESIGN ', $3, now())`,
+					[ids.organization, ids.project, ids.ownerUser],
+				),
+			).rejects.toMatchObject({ code: "23505", constraint: "projectTask_project_name_unique_idx" });
 		});
 
 		it("allows the same name in two projects", async () => {
@@ -558,19 +603,45 @@ describe("project tasks on PostgreSQL", () => {
 
 			expect(await taskRows()).toEqual([]);
 		});
+
+		it("hard-deleting a project keeps work booked to its tasks, without project and task", async () => {
+			const id = await createTask(ids.ownerUser, "Design");
+			await bookLiveWork(id);
+
+			await admin.query("delete from project where id = $1", [ids.project]);
+
+			expect(await taskRows()).toEqual([]);
+			const { rows } = await admin.query(
+				"select project_id, task_id from work_period where organization_id = $1",
+				[ids.organization],
+			);
+			expect(rows).toEqual([{ project_id: null, task_id: null }]);
+		});
 	});
 
+	/** Waits until some statement waits for a row lock another transaction holds. */
+	async function waitForRowLockWaiter() {
+		for (let attempt = 0; attempt < 100; attempt += 1) {
+			const { rows } = await admin.query<{ waiting: number }>(
+				"select count(*)::int as waiting from pg_locks where not granted",
+			);
+			if ((rows[0]?.waiting ?? 0) > 0) return;
+			await new Promise((resolve) => setTimeout(resolve, 50));
+		}
+		throw new Error("The delete never waited for the booking");
+	}
+
 	/** Live work of the employee on the project, booked to the task. */
-	async function bookLiveWork(taskId: string) {
+	async function bookLiveWork(taskId: string, client: Pick<PoolClient, "query"> = admin) {
 		const clockIn = randomUUID();
 		const start = new Date("2026-03-02T08:00:00Z");
-		await admin.query(
+		await client.query(
 			`insert into time_entry (id, employee_id, organization_id, type, timestamp, utc_offset_minutes,
 			  timezone, timezone_source, hash, previous_hash, created_by)
 			 values ($1, $2, $3, 'clock_in', $4, 0, 'UTC', 'backfill', $6, null, $5)`,
 			[clockIn, ids.employee, ids.organization, start, ids.employeeUser, `hash-${clockIn}`],
 		);
-		await admin.query(
+		await client.query(
 			`insert into work_period (id, organization_id, employee_id, clock_in_id, project_id, task_id,
 			  start_time, is_active, updated_at)
 			 values ($1, $2, $3, $4, $5, $6, $7, true, $7)`,

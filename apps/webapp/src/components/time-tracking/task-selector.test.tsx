@@ -7,7 +7,10 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { type BookingTask, TaskSelectorView } from "./task-selector";
 
 vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+	useTranslate: () => ({
+		t: (_key: string, fallback: string, params?: Record<string, unknown>) =>
+			fallback.replace(/\{(\w+)\}/g, (_, name: string) => String(params?.[name] ?? "")),
+	}),
 }));
 
 beforeAll(() => {

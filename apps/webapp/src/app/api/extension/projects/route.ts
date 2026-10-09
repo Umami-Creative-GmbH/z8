@@ -4,7 +4,7 @@ import { connection, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee, project, projectAssignment } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { listOpenTasksByProject } from "@/lib/projects/project-tasks";
+import { withOpenTasks } from "@/lib/projects/project-tasks";
 
 /**
  * GET /api/extension/projects
@@ -83,13 +83,7 @@ export async function GET() {
 		});
 
 		// Each listed project's open tasks (#875); older clients ignore the field.
-		const tasks = await listOpenTasksByProject({
-			organizationId: activeOrgId,
-			projectIds: projects.map((item) => item.id),
-		});
-		return NextResponse.json({
-			projects: projects.map((item) => ({ ...item, tasks: tasks.get(item.id) ?? [] })),
-		});
+		return NextResponse.json({ projects: await withOpenTasks(activeOrgId, projects) });
 	} catch (error) {
 		console.error("Failed to fetch projects for extension:", error);
 		return NextResponse.json({ error: "Internal server error" }, { status: 500 });

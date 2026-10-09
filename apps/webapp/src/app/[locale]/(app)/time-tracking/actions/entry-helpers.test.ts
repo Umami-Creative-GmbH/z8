@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
 	listEligibleProjects: vi.fn(),
 	isProjectEligible: vi.fn(),
 	hoursRows: vi.fn(async () => [] as { projectId: string; totalMinutes: number }[]),
+	listOpenTasksByProject: vi.fn(),
 }));
 
 vi.mock("@/db", () => ({
@@ -22,6 +23,10 @@ vi.mock("@/lib/time-tracking/project-eligibility", () => ({
 	listEligibleProjects: mocks.listEligibleProjects,
 	isProjectEligible: mocks.isProjectEligible,
 	BOOKABLE_PROJECT_STATUSES: ["planned", "active", "paused"],
+}));
+// The open-task read is SQL too; task-picker-choices.integration.test.ts covers it on PostgreSQL.
+vi.mock("@/lib/projects/project-tasks", () => ({
+	listOpenTasksByProject: mocks.listOpenTasksByProject,
 }));
 
 const { getAssignedProjectsWithHours, validateProjectAssignment } = await import("./entry-helpers");
@@ -81,11 +86,13 @@ describe("project booking eligibility", () => {
 		});
 	});
 
-	it("offers the shared rule's projects with their booked hours", async () => {
+	it("offers the shared rule's projects with their booked hours and open tasks", async () => {
 		mocks.listEligibleProjects.mockResolvedValue([activeProject]);
 		mocks.hoursRows.mockResolvedValue([{ projectId: "project-active", totalMinutes: 90 }]);
+		const tasks = new Map([["project-active", [{ id: "task-1", name: "Design" }]]]);
+		mocks.listOpenTasksByProject.mockResolvedValue(tasks);
 
-		const { projectsById, hoursByProjectId } = await getAssignedProjectsWithHours(
+		const { projectsById, hoursByProjectId, tasksByProjectId } = await getAssignedProjectsWithHours(
 			"employee-1",
 			"org-1",
 			"team-1",
@@ -98,5 +105,11 @@ describe("project booking eligibility", () => {
 		});
 		expect(Array.from(projectsById.keys())).toEqual(["project-active"]);
 		expect(hoursByProjectId.get("project-active")).toBe(1.5);
+		// Open tasks of exactly the offered projects, in the target's organization (#874).
+		expect(mocks.listOpenTasksByProject).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			projectIds: ["project-active"],
+		});
+		expect(tasksByProjectId).toBe(tasks);
 	});
 });
