@@ -17,6 +17,23 @@ import { DOCUMENT_CATEGORIES, type DocumentCategory, isDocumentCategory } from "
  * their personnel file stays manageable.
  */
 
+/**
+ * The officer grant's scope kind: all employees, or named employees and
+ * teams. Same shape (and check) as payroll access scopes, refused in
+ * personnel file terms.
+ */
+function validatePersonnelFileOfficerScope(value: unknown): "all" | "specific" {
+	try {
+		return validatePayrollAccessScope(value);
+	} catch {
+		throw new ValidationError({
+			message: "Choose which employees the personnel file officer covers",
+			field: "scope",
+			value,
+		});
+	}
+}
+
 export interface PersonnelFileOfficerGrantValues {
 	scope: "all" | "specific";
 	teamIds: string[];
@@ -80,7 +97,7 @@ export function buildValidatedPersonnelFileOfficerGrant(
 		throw new ValidationError({ message: "Personnel file officer input is required" });
 	}
 	const officerEmployeeId = validateId(input.officerEmployeeId, "officerEmployeeId");
-	const scope = validatePayrollAccessScope(input.scope);
+	const scope = validatePersonnelFileOfficerScope(input.scope);
 	const teamIds = validateIdList(input.teamIds, "teamIds");
 	const employeeIds = validateIdList(input.employeeIds, "employeeIds");
 	const categories = validateCategories(input.categories);

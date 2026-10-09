@@ -105,6 +105,17 @@ describe("personnel file officer grant rules", () => {
 		).toBe("scope");
 	});
 
+	it("refuses an unknown scope as a personnel file officer scope", () => {
+		const error = refusal(() =>
+			buildValidatedPersonnelFileOfficerGrant(
+				{ ...base, scope: "everyone" as never },
+				ownership,
+			),
+		);
+		expect(error.field).toBe("scope");
+		expect(error.message).toBe("Choose which employees the personnel file officer covers");
+	});
+
 	it("drops named teams and employees from an all-employees grant", () => {
 		expect(
 			buildValidatedPersonnelFileOfficerGrant(
