@@ -94,6 +94,11 @@ export function canViewDocument(
 	);
 }
 
+/** Whether the actor manages documents of the category for at least one employee. */
+export function managesCategory(access: PersonnelFileAccess, category: DocumentCategory): boolean {
+	return access.grants.some((grant) => grant.categories.has(category));
+}
+
 /** Whether the actor manages any employee documents at all. */
 export function managesAnyDocuments(access: PersonnelFileAccess): boolean {
 	return access.grants.some((grant) => grant.categories.size > 0);

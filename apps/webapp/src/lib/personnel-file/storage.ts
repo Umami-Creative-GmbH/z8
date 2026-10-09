@@ -11,6 +11,7 @@ import {
 	isPersonnelDocumentMime,
 	PERSONNEL_DOCUMENT_MAX_BYTES,
 } from "./document.types";
+import { isPayslipBatchMime, PAYSLIP_BATCH_REFUSAL_MESSAGE } from "./payslip-batch.types";
 
 /**
  * Personnel file objects reuse the private receipt storage pipeline: the
@@ -29,6 +30,16 @@ export function readUploadedPersonnelDocument(input: {
 		maxBytes: PERSONNEL_DOCUMENT_MAX_BYTES,
 		isAllowedMime: isPersonnelDocumentMime,
 		refusalFor: (mime) => (isHeicMime(mime) ? HEIC_REFUSAL_MESSAGE : null),
+	});
+}
+
+/** A staged payslip batch file (#868): a PDF of up to 20 MB, checked by its real bytes. */
+export function readUploadedPayslip(input: { tusFileKey: string; fileName: string | undefined }) {
+	return readUploadedReceipt({
+		...input,
+		maxBytes: PERSONNEL_DOCUMENT_MAX_BYTES,
+		isAllowedMime: isPayslipBatchMime,
+		refusalFor: () => PAYSLIP_BATCH_REFUSAL_MESSAGE,
 	});
 }
 

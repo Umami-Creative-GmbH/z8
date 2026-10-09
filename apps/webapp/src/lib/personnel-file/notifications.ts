@@ -1,11 +1,12 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { employee } from "@/db/schema";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications/notification-service";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
-import type { DocumentCategory } from "./document.types";
+import type { DocumentCategory, PayPeriod } from "./document.types";
+import { payPeriodCode } from "./payslip-batch.types";
 
 /**
  * Tells the employee when one of their employee documents becomes shared
@@ -84,6 +85,91 @@ export async function notifyDocumentShared(
 		logger.error(
 			{ error, documentId: input.document.id, organizationId: input.organizationId },
 			"Failed to notify the employee of a shared document",
+		);
+	}
+}
+
+const payslipBatchSharedCopy = {
+	titleKey: "common:notifications.content.personnelFilePayslipsShared.title",
+	titleDefault: "New payslip in your personnel file",
+	messageKey: "common:notifications.content.personnelFilePayslipsShared.message",
+	messageDefault: "Your payslip for {payPeriod} was shared with you.",
+} as const;
+
+/**
+ * The one notification an employee gets for a shared payslip batch (#868),
+ * however many of its files are theirs.
+ */
+export function buildPayslipBatchSharedNotification(input: {
+	organizationId: string;
+	recipientUserId: string;
+	batchId: string;
+	payPeriod: PayPeriod;
+	documentCount: number;
+}): CreateNotificationParams {
+	const params = { payPeriod: payPeriodCode(input.payPeriod) };
+	return {
+		userId: input.recipientUserId,
+		organizationId: input.organizationId,
+		type: "personnel_file_document_shared",
+		title: payslipBatchSharedCopy.titleDefault,
+		message: payslipBatchSharedCopy.messageDefault.replace("{payPeriod}", params.payPeriod),
+		entityType: "payslip_batch",
+		entityId: input.batchId,
+		actionUrl: MY_DOCUMENTS_PATH,
+		idempotencyKey: `personnel-file-payslip-batch:${input.batchId}:${input.recipientUserId}`,
+		metadata: {
+			category: "payslip",
+			documentCount: input.documentCount,
+			i18n: { ...payslipBatchSharedCopy, params },
+		},
+	};
+}
+
+/**
+ * Notifies each employee who received payslips of a shared batch, once per
+ * batch, after confirmation committed. Never throws. Former employees are not
+ * notified.
+ */
+export async function notifyPayslipBatchShared(
+	database: Database,
+	input: {
+		organizationId: string;
+		batchId: string;
+		payPeriod: PayPeriod;
+		employees: ReadonlyArray<{ employeeId: string; documentCount: number }>;
+	},
+): Promise<void> {
+	if (input.employees.length === 0) return;
+	try {
+		const counts = new Map(input.employees.map((entry) => [entry.employeeId, entry.documentCount]));
+		const recipients = await database
+			.select({ employeeId: employee.id, userId: employee.userId })
+			.from(employee)
+			.where(
+				and(
+					inArray(employee.id, [...counts.keys()]),
+					eq(employee.organizationId, input.organizationId),
+					employeeHasOrganizationAccess(),
+				),
+			);
+		await Promise.all(
+			recipients.map((recipient) =>
+				createNotification(
+					buildPayslipBatchSharedNotification({
+						organizationId: input.organizationId,
+						recipientUserId: recipient.userId,
+						batchId: input.batchId,
+						payPeriod: input.payPeriod,
+						documentCount: counts.get(recipient.employeeId) ?? 1,
+					}),
+				),
+			),
+		);
+	} catch (error) {
+		logger.error(
+			{ error, batchId: input.batchId, organizationId: input.organizationId },
+			"Failed to notify employees of a shared payslip batch",
 		);
 	}
 }

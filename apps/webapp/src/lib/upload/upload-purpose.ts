@@ -4,6 +4,10 @@ import {
 	PERSONNEL_DOCUMENT_MAX_BYTES,
 	PERSONNEL_DOCUMENT_MIME_TYPES,
 } from "@/lib/personnel-file/document.types";
+import {
+	PAYSLIP_BATCH_MIME_TYPES,
+	PAYSLIP_BATCH_REFUSAL_MESSAGE,
+} from "@/lib/personnel-file/payslip-batch.types";
 import { ALLOWED_TRAVEL_EXPENSE_MIME_TYPES } from "@/lib/travel-expenses/attachment-validation";
 
 /**
@@ -13,7 +17,7 @@ import { ALLOWED_TRAVEL_EXPENSE_MIME_TYPES } from "@/lib/travel-expenses/attachm
  * the configured default limit. The finalize route of each purpose re-checks
  * the real bytes, so this is only the early refusal.
  */
-export const UPLOAD_PURPOSES = ["receipt", "personnel-document"] as const;
+export const UPLOAD_PURPOSES = ["receipt", "personnel-document", "payslip-batch"] as const;
 export type UploadPurpose = (typeof UPLOAD_PURPOSES)[number];
 
 export const UPLOAD_PURPOSE_METADATA_KEY = "purpose";
@@ -45,6 +49,13 @@ export function uploadPolicyFor(
 				mimeTypes: new Set<string>(PERSONNEL_DOCUMENT_MIME_TYPES),
 				maxBytes: PERSONNEL_DOCUMENT_MAX_BYTES,
 				refusalFor: (mimeType) => (isHeicMime(mimeType) ? HEIC_REFUSAL_MESSAGE : null),
+			};
+		case "payslip-batch":
+			// Payslip batch files (#868): PDFs only, each up to the document limit.
+			return {
+				mimeTypes: new Set<string>(PAYSLIP_BATCH_MIME_TYPES),
+				maxBytes: PERSONNEL_DOCUMENT_MAX_BYTES,
+				refusalFor: () => PAYSLIP_BATCH_REFUSAL_MESSAGE,
 			};
 	}
 }

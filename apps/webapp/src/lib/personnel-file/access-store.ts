@@ -12,6 +12,7 @@ import {
 	ORGANIZATION_ADMIN_GRANT,
 	type PersonnelFileAccess,
 } from "./access";
+import type { DocumentCategory } from "./document.types";
 import { manageGrantOf } from "./officer-grant";
 import { loadActivePersonnelFileOfficerGrant } from "./officer-grant-store";
 
@@ -163,10 +164,12 @@ export interface ManagedEmployee {
 export async function listManagedEmployees(
 	database: Reader,
 	access: PersonnelFileAccess,
-	filter: { employeeId?: string } = {},
+	/** `category`: only employees whose documents of that category the actor manages (#868). */
+	filter: { employeeId?: string; category?: DocumentCategory } = {},
 ): Promise<ManagedEmployee[]> {
+	const { category } = filter;
 	const scopes = access.grants
-		.filter((grant) => grant.categories.size > 0)
+		.filter((grant) => (category ? grant.categories.has(category) : grant.categories.size > 0))
 		.map((grant) => employeeInScope(access.organizationId, grant.scope, employee.id));
 	if (scopes.length === 0) return [];
 	const rows = await database

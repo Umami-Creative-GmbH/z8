@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { db as appDb } from "@/db";
 import { auditLog } from "@/db/schema";
-import type { AuditAction } from "@/lib/audit-logger";
+import { AuditAction } from "@/lib/audit-logger";
 
 /**
  * Audit records of the personnel file (#865). Writes are recorded in the
@@ -81,6 +81,33 @@ export async function writeDocumentAudit(
 		}),
 		ipAddress: input.ipAddress ?? null,
 		userAgent: input.userAgent ?? null,
+	});
+	return id;
+}
+
+export const PAYSLIP_BATCH_AUDIT_ENTITY_TYPE = "payslip_batch";
+
+/** The one summary record of a payslip batch confirmation (#868), next to each document's upload record. */
+export async function writePayslipBatchAudit(
+	database: Writer,
+	input: {
+		organizationId: string;
+		batchId: string;
+		actorUserId: string;
+		metadata: Record<string, unknown>;
+	},
+): Promise<string> {
+	const id = randomUUID();
+	await database.insert(auditLog).values({
+		id,
+		organizationId: input.organizationId,
+		entityType: PAYSLIP_BATCH_AUDIT_ENTITY_TYPE,
+		entityId: input.batchId,
+		action: AuditAction.PERSONNEL_FILE_PAYSLIP_BATCH_CONFIRMED,
+		performedBy: input.actorUserId,
+		employeeId: null,
+		changes: null,
+		metadata: JSON.stringify(input.metadata),
 	});
 	return id;
 }

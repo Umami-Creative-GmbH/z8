@@ -1,4 +1,4 @@
-import { IconChevronRight, IconSettings } from "@tabler/icons-react";
+import { IconChevronRight, IconFileStack, IconSettings } from "@tabler/icons-react";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { db } from "@/db";
 import { managesAnyDocuments } from "@/lib/personnel-file/access";
 import { listManagedEmployees } from "@/lib/personnel-file/access-store";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
+import { canRunPayslipBatches } from "@/lib/personnel-file/payslip-batch-store";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 
@@ -41,14 +42,24 @@ async function PersonnelFilesContent() {
 						)}
 					</p>
 				</div>
-				{isOrganizationAdmin ? (
-					<Button asChild variant="outline">
-						<Link href="/settings/personnel-files">
-							<IconSettings aria-hidden="true" className="size-4" />
-							{t("settings.personnelFiles.area.manageOfficers", "Personnel file officers")}
-						</Link>
-					</Button>
-				) : null}
+				<div className="flex flex-wrap gap-2">
+					{canRunPayslipBatches(current.access) ? (
+						<Button asChild>
+							<Link href="/personnel-files/payslip-batches">
+								<IconFileStack aria-hidden="true" className="size-4" />
+								{t("settings.personnelFiles.area.payslipBatch", "Payslip batch")}
+							</Link>
+						</Button>
+					) : null}
+					{isOrganizationAdmin ? (
+						<Button asChild variant="outline">
+							<Link href="/settings/personnel-files">
+								<IconSettings aria-hidden="true" className="size-4" />
+								{t("settings.personnelFiles.area.manageOfficers", "Personnel file officers")}
+							</Link>
+						</Button>
+					) : null}
+				</div>
 			</header>
 			{employees.length === 0 ? (
 				<p className="text-sm text-muted-foreground">
