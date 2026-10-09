@@ -245,6 +245,7 @@ async fn online_close_sends_explicit_attribution_intent() {
                 work_category: crate::frozen_command::AttributionIntent::Replace {
                     id: "category-1".into(),
                 },
+                task: None,
             },
             manual_break: false,
         },
