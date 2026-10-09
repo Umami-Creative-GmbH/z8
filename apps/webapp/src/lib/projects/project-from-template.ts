@@ -23,7 +23,7 @@ import {
 } from "./project-creation";
 import { listProjectTasks } from "./project-tasks";
 import { projectDeadlineFromTemplateOffset } from "./project-template-deadline";
-import type { ProjectTemplateInput } from "./project-template-model";
+import type { ProjectTemplateInput, SkippedProjectMember } from "./project-template-model";
 import { getProjectTemplate } from "./project-templates";
 
 /**
@@ -35,13 +35,7 @@ import { getProjectTemplate } from "./project-templates";
 
 type Writer = Pick<typeof db, "select" | "insert" | "update" | "delete">;
 
-/** A template or project member that could not be copied, and why. */
-export interface SkippedProjectMember {
-	role: "manager" | "team" | "employee";
-	name: string;
-	/** `departed`: the employee left the organization; `removed`: the team or employee no longer exists. */
-	reason: "departed" | "removed";
-}
+export type { SkippedProjectMember };
 
 export interface ProjectFromTemplateInput {
 	name: string;

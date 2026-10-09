@@ -333,6 +333,10 @@ export const queryKeys = {
 		tasks: (projectId: string) => ["projects", "tasks", projectId] as const,
 		templates: (orgId: string) => ["projects", "templates", orgId] as const,
 		templateDetail: (templateId: string) => ["projects", "templateDetail", templateId] as const,
+		// Under `templates`/`templateDetail`, so template changes refresh them too.
+		templateChoices: (orgId: string) => ["projects", "templates", orgId, "choices"] as const,
+		templatePreview: (templateId: string) =>
+			["projects", "templateDetail", templateId, "preview"] as const,
 	},
 
 	// Surcharges

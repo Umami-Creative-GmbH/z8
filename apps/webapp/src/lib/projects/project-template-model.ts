@@ -50,6 +50,17 @@ export interface ProjectTemplateAssignment {
 	availability: ProjectTemplateMemberAvailability;
 }
 
+/**
+ * A manager or assignment left out when a template became a project or a
+ * project became a template (#880), and why: `departed` employees left the
+ * organization, `removed` teams and employees no longer exist.
+ */
+export interface SkippedProjectMember {
+	role: "manager" | "team" | "employee";
+	name: string;
+	reason: Exclude<ProjectTemplateMemberAvailability, "available">;
+}
+
 /** A full template, as `getProjectTemplate` returns it. */
 export interface ProjectTemplate {
 	id: string;
