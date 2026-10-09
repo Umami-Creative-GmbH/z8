@@ -2,7 +2,7 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 import { and, eq, gte, inArray, isNotNull, isNull, lt, type SQL, sql } from "drizzle-orm";
-import { db } from "@/db";
+import type { db } from "@/db";
 import { completedWorkOperation, timeEntry, workPeriod } from "@/db/schema";
 import { comparePlainDates, dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
@@ -256,6 +256,13 @@ export type BulkBillabilityApplyOutcome =
 	| { status: "applied"; summary: BulkBillabilitySummary; failed: BulkBillabilityTally }
 	| { status: "stale"; preview: { summary: BulkBillabilitySummary; fingerprint: string } };
 
+export interface BulkBillabilityApplyInput {
+	organizationId: string;
+	actorUserId: string;
+	request: BulkBillabilityRequest;
+	fingerprint: string;
+}
+
 /** A skip reason found under the period's lock after the change: the change rolls back. */
 class BulkBillabilitySkipped extends Error {
 	constructor(readonly reason: BulkBillabilitySkipReason) {
@@ -310,14 +317,12 @@ async function assertStillChangeable(
  * that the project belongs to the organization; the amendment verifies the
  * authority again under its locks.
  */
-export async function applyBulkBillability(input: {
-	organizationId: string;
-	actorUserId: string;
-	request: BulkBillabilityRequest;
-	fingerprint: string;
-}): Promise<BulkBillabilityApplyOutcome> {
+export async function applyBulkBillability(
+	reader: Reader,
+	input: BulkBillabilityApplyInput,
+): Promise<BulkBillabilityApplyOutcome> {
 	const { organizationId, actorUserId, request, fingerprint } = input;
-	const plan = await planBulkBillability(db, organizationId, request, {
+	const plan = await planBulkBillability(reader, organizationId, request, {
 		appliedBy: { actorUserId, fingerprint },
 	});
 	if (plan.fingerprint !== fingerprint) {
@@ -331,7 +336,7 @@ export async function applyBulkBillability(input: {
 			outcomes.push(item);
 			continue;
 		}
-		const outcome = await applyOne(input, item);
+		const outcome = await applyOne(reader, input, item);
 		if (outcome === "failed") {
 			failed.count += 1;
 			failed.minutes += item.durationMinutes;
@@ -354,7 +359,8 @@ export async function applyBulkBillability(input: {
 }
 
 async function applyOne(
-	input: Parameters<typeof applyBulkBillability>[0],
+	reader: Reader,
+	input: BulkBillabilityApplyInput,
 	item: BulkBillabilityPlanItem,
 ): Promise<BulkBillabilityOutcome | "failed"> {
 	const { organizationId, actorUserId, request, fingerprint } = input;
@@ -387,7 +393,7 @@ async function applyOne(
 	} catch (error) {
 		if (error instanceof BulkBillabilitySkipped) return error.reason;
 		// The work changed since it was planned: count it as what it is now.
-		const [current] = await loadBulkBillabilityWork(db, organizationId, request, {
+		const [current] = await loadBulkBillabilityWork(reader, organizationId, request, {
 			periodIds: [item.id],
 		}).catch(() => []);
 		const outcome = current ? bulkBillabilityOutcome(current, request.billable) : null;

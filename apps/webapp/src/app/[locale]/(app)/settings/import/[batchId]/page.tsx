@@ -53,7 +53,7 @@ async function ImportReviewRouteContent({ params }: ImportReviewRouteProps) {
 			limit: isCustomerImport ? 500 : 100,
 			offset: 0,
 		}),
-		getBillableTimeSettings(organizationId),
+		getBillableTimeSettings(organizationId, db),
 		isCustomerImport ? listCustomerAccounting(db, organizationId) : Promise.resolve([]),
 	]);
 	const showBillability = billableTime.enabled;

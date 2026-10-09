@@ -3,12 +3,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
 	requireOrgAdminSettingsAccess: vi.fn(),
 	getBillableTimeSettings: vi.fn(),
+	db: { marker: "db" },
 	redirectWithLocale: vi.fn(async (href: string) => {
 		throw new Error(`redirect:${href}`);
 	}),
 }));
 
 vi.mock("server-only", () => ({}));
+vi.mock("@/db", () => ({ db: mocks.db }));
 vi.mock("@/lib/auth-helpers", () => ({
 	requireOrgAdminSettingsAccess: mocks.requireOrgAdminSettingsAccess,
 }));
@@ -35,7 +37,7 @@ describe("Billable Time settings area access", () => {
 			organizationId: "org-active",
 			settings: { enabled: true, currency: "CHF" },
 		});
-		expect(mocks.getBillableTimeSettings).toHaveBeenCalledWith("org-active");
+		expect(mocks.getBillableTimeSettings).toHaveBeenCalledWith("org-active", mocks.db);
 	});
 
 	it("sends everyone back to the settings overview while the module is off", async () => {

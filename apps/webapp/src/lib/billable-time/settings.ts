@@ -1,7 +1,6 @@
 import "server-only";
 
 import { eq } from "drizzle-orm";
-import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { billableTimeSettings } from "@/db/schema/billable-time";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
@@ -37,7 +36,7 @@ export class BillableTimeDisabledError extends Error {
  */
 export async function getBillableTimeSettings(
 	organizationId: string,
-	reader: BillableTimeSettingsReader = db,
+	reader: BillableTimeSettingsReader,
 ): Promise<BillableTimeSettings> {
 	const [row] = await reader
 		.select({
@@ -59,7 +58,7 @@ export async function getBillableTimeSettings(
  */
 export async function requireBillableTimeEnabled(
 	organizationId: string,
-	reader: BillableTimeSettingsReader = db,
+	reader: BillableTimeSettingsReader,
 ): Promise<{ currency: BillableCurrency }> {
 	const settings = await getBillableTimeSettings(organizationId, reader);
 	if (!settings.enabled || settings.currency === null) {

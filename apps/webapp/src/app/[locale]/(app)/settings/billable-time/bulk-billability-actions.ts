@@ -141,7 +141,7 @@ export async function applyBulkBillability(input: {
 			);
 		}
 		return yield* dbService.query("billableTime.bulk.apply", () =>
-			applyBulkBillabilityChange({
+			applyBulkBillabilityChange(dbService.db, {
 				organizationId: actor.organizationId,
 				actorUserId: actor.userId,
 				request,

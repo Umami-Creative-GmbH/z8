@@ -67,7 +67,7 @@ async function OrganizationsPageContent() {
 			columns: { defaultLanguage: true },
 		}),
 		loadAutoClockOutSettings(db, organizationId),
-		getBillableTimeSettings(organizationId),
+		getBillableTimeSettings(organizationId, db),
 	]);
 
 	const [currentMemberRecord] = currentMember;

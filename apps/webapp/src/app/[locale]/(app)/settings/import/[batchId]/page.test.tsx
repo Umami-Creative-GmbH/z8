@@ -140,7 +140,7 @@ describe("ImportReviewRoute", () => {
 			showBillability: false,
 			customerImport: undefined,
 		});
-		expect(mockState.getBillableTimeSettings).toHaveBeenCalledWith("org-1");
+		expect(mockState.getBillableTimeSettings).toHaveBeenCalledWith("org-1", expect.anything());
 		expect(mockState.listCustomerAccounting).not.toHaveBeenCalled();
 	});
 
