@@ -951,6 +951,10 @@
         "teams": "Teams",
         "title": "Project members"
       },
+      "tabs": {
+        "projects": "Projects",
+        "templates": "Templates"
+      },
       "tasks": {
         "add": "Add task",
         "added": "Task added",
@@ -991,6 +995,113 @@
         "title": "Tasks",
         "updated": "Task updated",
         "updateFailed": "Failed to update task"
+      },
+      "templates": {
+        "budgetHours": "{hours} h",
+        "column": {
+          "actions": "Actions",
+          "budget": "Budget",
+          "deadline": "Deadline",
+          "name": "Name",
+          "people": "People",
+          "tasks": "Tasks"
+        },
+        "confirmDelete": "Confirm deleting {name}",
+        "create": "Create template",
+        "created": "Template created",
+        "createFailed": "Failed to create template",
+        "createLabel": "Create project template",
+        "createTitle": "Create template",
+        "deadlineOffset": "{count, plural, one {# day after creation} other {# days after creation}}",
+        "deadlineSameDay": "On the day of creation",
+        "delete": "Delete",
+        "deleteAction": "Delete {name}",
+        "deleted": "{name} deleted",
+        "deleteFailed": "Failed to delete {name}",
+        "deleteQuestion": "Delete this template?",
+        "description": "Blueprints for new projects: tasks, budget, deadline, managers and members.",
+        "dialogDescription": "New projects created from this template copy its contents once.",
+        "editAction": "Edit {name}",
+        "editLabel": "Edit {name}",
+        "editTitle": "Edit template",
+        "employees": {
+          "empty": "No employees assigned",
+          "picker": "Employee to assign",
+          "title": "Employees"
+        },
+        "empty": {
+          "description": "Save the tasks, budget and people you set up for every similar project once, and start new projects from it.",
+          "title": "No templates yet"
+        },
+        "field": {
+          "budget": "Budget (hours)",
+          "budgetDeadlineHelp": "Leave empty for an unlimited budget or no deadline.",
+          "budgetInvalid": "Enter a positive number of hours",
+          "color": "Colour",
+          "deadlineOffset": "Deadline (days after creation)",
+          "deadlineOffsetInvalid": "Enter whole days from 0 to {max}",
+          "description": "Description",
+          "icon": "Icon",
+          "name": "Name",
+          "namePlaceholder": "e.g., Website relaunch",
+          "nameRequired": "Enter a template name",
+          "noIcon": "No icon"
+        },
+        "icons": {
+          "briefcase": "Briefcase",
+          "bulb": "Light bulb",
+          "chartBar": "Bar chart",
+          "cloud": "Cloud",
+          "code": "Code",
+          "database": "Database",
+          "devices": "Devices",
+          "palette": "Palette",
+          "rocket": "Rocket",
+          "settings": "Settings",
+          "shoppingCart": "Shopping cart",
+          "users": "People"
+        },
+        "listCount": "{count, plural, one {# template} other {# templates}}",
+        "listTitle": "All templates",
+        "managers": {
+          "empty": "No project managers",
+          "picker": "Project manager to add",
+          "title": "Project managers"
+        },
+        "member": {
+          "departed": "Left the organization",
+          "remove": "Remove {name}",
+          "removed": "No longer exists",
+          "removedHelp": "Teams and employees that no longer exist are dropped when you save.",
+          "unknown": "Unknown"
+        },
+        "peopleCount": "{count, plural, one {# person or team} other {# people and teams}}",
+        "save": "Save changes",
+        "selectEmployee": "Select an employee",
+        "selectTeam": "Select a team",
+        "taskCount": "{count, plural, one {# task} other {# tasks}}",
+        "tasks": {
+          "add": "Add task",
+          "description": "Task {position} description",
+          "descriptionPlaceholder": "Description (optional)",
+          "empty": "No tasks. Projects created from this template start with these tasks.",
+          "estimate": "Task {position} estimate (hours)",
+          "estimateInvalid": "Enter a positive number of hours",
+          "estimatePlaceholder": "Hours",
+          "name": "Task {position} name",
+          "namePlaceholder": "Task name",
+          "nameRequired": "Enter a task name",
+          "remove": "Remove task {position}",
+          "title": "Tasks"
+        },
+        "teams": {
+          "empty": "No teams assigned",
+          "picker": "Team to assign",
+          "title": "Teams"
+        },
+        "title": "Project templates",
+        "updated": "Template updated",
+        "updateFailed": "Failed to update template"
       },
       "title": "Projects",
       "updated": "Project updated",

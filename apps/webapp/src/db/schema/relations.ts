@@ -98,6 +98,10 @@ import {
 	projectManager,
 	projectNotificationState,
 	projectTask,
+	projectTemplate,
+	projectTemplateAssignment,
+	projectTemplateManager,
+	projectTemplateTask,
 } from "./project";
 // SCIM provisioning
 import {
@@ -1694,6 +1698,40 @@ export const projectTaskRelations = relations(projectTask, ({ one }) => ({
 		references: [project.id],
 	}),
 }));
+
+export const projectTemplateRelations = relations(projectTemplate, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [projectTemplate.organizationId],
+		references: [organization.id],
+	}),
+	tasks: many(projectTemplateTask),
+	managers: many(projectTemplateManager),
+	assignments: many(projectTemplateAssignment),
+}));
+
+export const projectTemplateTaskRelations = relations(projectTemplateTask, ({ one }) => ({
+	template: one(projectTemplate, {
+		fields: [projectTemplateTask.templateId],
+		references: [projectTemplate.id],
+	}),
+}));
+
+export const projectTemplateManagerRelations = relations(projectTemplateManager, ({ one }) => ({
+	template: one(projectTemplate, {
+		fields: [projectTemplateManager.templateId],
+		references: [projectTemplate.id],
+	}),
+}));
+
+export const projectTemplateAssignmentRelations = relations(
+	projectTemplateAssignment,
+	({ one }) => ({
+		template: one(projectTemplate, {
+			fields: [projectTemplateAssignment.templateId],
+			references: [projectTemplate.id],
+		}),
+	}),
+);
 
 export const projectNotificationStateRelations = relations(projectNotificationState, ({ one }) => ({
 	project: one(project, {

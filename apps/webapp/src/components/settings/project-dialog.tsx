@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { queryKeys } from "@/lib/query";
+import { PROJECT_COLOR_OPTIONS } from "./project-appearance";
 
 interface ProjectDialogProps {
 	organizationId: string;
@@ -50,18 +51,6 @@ const STATUS_OPTIONS: { value: ProjectStatus; label: string }[] = [
 	{ value: "paused", label: "Paused" },
 	{ value: "completed", label: "Completed" },
 	{ value: "archived", label: "Archived" },
-];
-
-const COLOR_OPTIONS = [
-	"#ef4444", // red
-	"#f97316", // orange
-	"#eab308", // yellow
-	"#22c55e", // green
-	"#14b8a6", // teal
-	"#3b82f6", // blue
-	"#8b5cf6", // violet
-	"#ec4899", // pink
-	"#6b7280", // gray
 ];
 
 const NO_CUSTOMER_VALUE = "__none__";
@@ -372,7 +361,7 @@ function ProjectDialogForm({
 						<div className="grid gap-2">
 							<Label>{t("settings.projects.field.color", "Color")}</Label>
 							<div className="flex flex-wrap gap-2">
-								{COLOR_OPTIONS.map((color) => (
+								{PROJECT_COLOR_OPTIONS.map((color) => (
 									<button
 										key={color}
 										type="button"

@@ -208,7 +208,7 @@ export async function updateEmployeeAction(
 		},
 		execute: () =>
 			Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "updateEmployeeAction:actor" });
 				const { session, dbService } = actor;
 
 				const inputData: UpdateEmployee =
@@ -392,7 +392,7 @@ export async function updateEmployeeInvitationDraftAction(
 		},
 		execute: () =>
 			Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "updateEmployeeInvitationDraftAction:actor" });
 				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
 					message:
 						"Only organization admins can update invited employee drafts",
@@ -604,7 +604,7 @@ export async function deleteEmployeeInvitationDraftAction(
 		},
 		execute: () =>
 			Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "deleteEmployeeInvitationDraftAction:actor" });
 				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
 					message:
 						"Only organization admins can delete invited employee drafts",
@@ -851,7 +851,7 @@ export async function requestEmployeeWorkBalanceRecalculationAction(
 		execute: (span) =>
 			Effect.gen(function* () {
 				const validatedEmployeeId = yield* validateInput(employeeIdSchema, employeeId, "employeeId");
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "requestEmployeeWorkBalanceRecalculationAction:actor" });
 				const { dbService } = actor;
 
 				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
@@ -977,7 +977,7 @@ export async function assignManagersAction(
 		},
 		execute: () =>
 			Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "assignManagersAction:actor" });
 				const managerService = yield* ManagerService;
 				const targetEmployee = yield* getTargetEmployee(employeeId);
 

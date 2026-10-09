@@ -83,7 +83,7 @@ export async function grantTeamPermissions(
 		},
 		(span) => {
 			return Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "grantTeamPermissions:actor" });
 				const permissionsService = yield* PermissionsService;
 
 				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
@@ -175,7 +175,7 @@ export async function revokeTeamPermissions(
 		},
 		(span) => {
 			return Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "revokeTeamPermissions:actor" });
 				const permissionsService = yield* PermissionsService;
 
 				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
@@ -239,7 +239,7 @@ export async function getEmployeePermissions(
 	employeeId: string,
 ): Promise<ServerActionResult<EmployeePermissions[]>> {
 	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext();
+		const actor = yield* getEmployeeSettingsActorContext({ queryName: "getEmployeePermissions:actor" });
 		const _dbService = yield* DatabaseService;
 		const permissionsService = yield* PermissionsService;
 
@@ -334,7 +334,7 @@ export async function listEmployeePermissions(): Promise<
 	>
 > {
 	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext();
+		const actor = yield* getEmployeeSettingsActorContext({ queryName: "listEmployeePermissions:actor" });
 		const dbService = yield* DatabaseService;
 		const permissionsService = yield* PermissionsService;
 
@@ -381,7 +381,7 @@ export async function loadPermissionsPageData(
 	expectedOrganizationId: string,
 ): Promise<ServerActionResult<PermissionsPageData>> {
 	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext();
+		const actor = yield* getEmployeeSettingsActorContext({ queryName: "loadPermissionsPageData:actor" });
 		const dbService = yield* DatabaseService;
 
 		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
