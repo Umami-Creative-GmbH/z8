@@ -448,9 +448,7 @@ describe("personnel file officer grants (#866)", () => {
 				expect(await actions.getPersonnelFileAction({ employeeId: ids.admin })).toMatchObject({
 					success: false,
 				});
-				expect((await actions.getPersonnelFileAction({ employeeId: ids.anna })).success).toBe(
-					true,
-				);
+				expect((await actions.getPersonnelFileAction({ employeeId: ids.anna })).success).toBe(true);
 				const access = await accessOf("admin");
 				const managed = (await listManagedEmployees(db, access)).map((employee) => employee.id);
 				expect(managed).not.toContain(ids.admin);

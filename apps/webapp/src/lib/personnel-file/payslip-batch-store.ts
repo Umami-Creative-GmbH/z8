@@ -585,10 +585,7 @@ async function failFile(
 		.update(payslipBatchFile)
 		.set({ failure, updatedAt: input.at })
 		.where(
-			and(
-				fileCondition(access, input.batchId, input.fileId),
-				isNull(payslipBatchFile.documentId),
-			),
+			and(fileCondition(access, input.batchId, input.fileId), isNull(payslipBatchFile.documentId)),
 		);
 	return { kind: "failed", failure };
 }

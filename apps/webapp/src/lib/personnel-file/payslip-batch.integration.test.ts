@@ -419,10 +419,10 @@ describe("payslip batches matched by personnel number (#868)", () => {
 		});
 
 		it("never matches or assigns the officer's own payslip, even with their team in scope", async () => {
-			await admin.query("update employee set team_id = $2, employee_number = '0099' where id = $1", [
-				ids.officer,
-				ids.berlin,
-			]);
+			await admin.query(
+				"update employee set team_id = $2, employee_number = '0099' where id = $1",
+				[ids.officer, ids.berlin],
+			);
 			try {
 				signIn("officer");
 				const batchId = await startBatch();

@@ -85,9 +85,7 @@ const settingsActions = await import(
 );
 const { resolvePersonnelFileAccess } = await import("./access-store");
 const { listDueDocuments, listDueDocumentsWithDay, purgeDueDocuments, loadRetentionPeriods } =
-	await import(
-	"./retention-store"
-);
+	await import("./retention-store");
 const { runPersonnelFileRetentionReminders } = await import("./retention-reminders");
 const { seedPersonnelFileOfficerGrant } = await import("./testing/officer-grant.test.fixture");
 

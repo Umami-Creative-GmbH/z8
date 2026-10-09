@@ -45,12 +45,10 @@ describe("dueExpiryReminder", () => {
 	it("takes the organization's calendar day, not the UTC day", () => {
 		// 23:30 UTC on 30 October is already 31 October in Berlin (UTC+1 after DST ends).
 		const now = instant("2026-10-30T23:30:00Z");
-		expect(
-			dueExpiryReminder({ ...certificate, today: dayIn(now, "Europe/Berlin") }),
-		).toBe("upcoming");
-		expect(
-			dueExpiryReminder({ ...certificate, today: dayIn(now, "UTC") }),
-		).toBeNull();
+		expect(dueExpiryReminder({ ...certificate, today: dayIn(now, "Europe/Berlin") })).toBe(
+			"upcoming",
+		);
+		expect(dueExpiryReminder({ ...certificate, today: dayIn(now, "UTC") })).toBeNull();
 		// 05:00 UTC on 30 November is still 29 November in Los Angeles.
 		const morning = instant("2026-11-30T05:00:00Z");
 		expect(
@@ -59,9 +57,9 @@ describe("dueExpiryReminder", () => {
 				today: dayIn(morning, "America/Los_Angeles"),
 			}),
 		).toBe("upcoming");
-		expect(
-			dueExpiryReminder({ ...certificate, today: dayIn(morning, "Europe/Berlin") }),
-		).toBe("expired_today");
+		expect(dueExpiryReminder({ ...certificate, today: dayIn(morning, "Europe/Berlin") })).toBe(
+			"expired_today",
+		);
 	});
 });
 
