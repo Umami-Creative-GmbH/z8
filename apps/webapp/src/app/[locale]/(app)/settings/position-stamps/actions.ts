@@ -3,8 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { instantToCanonicalString, systemClock } from "@/lib/datetime/temporal-core";
+import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import { AuthenticationError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { listPositionStampAccessLog } from "@/lib/time-tracking/position-capture/access-log";
 import { runPositionCaptureAction } from "@/lib/time-tracking/position-capture/action-runner";
 import type { PositionConsentDecision } from "@/lib/time-tracking/position-capture/policy";
 import { resolvePositionCapture } from "@/lib/time-tracking/position-capture/resolver";
@@ -60,6 +62,46 @@ export async function getOwnPositionCaptureAction(): Promise<
 			canWithdraw: resolution.canWithdraw,
 			asksForConsent: resolution.asksForConsent,
 		};
+	});
+}
+
+/** One entry of the employee's own position stamp access log, serializable. */
+export type OwnPositionStampAccessEntry = {
+	id: string;
+	kind: "work_period_detail" | "data_export";
+	/** Null when the viewer's account no longer exists. */
+	viewerName: string | null;
+	accessedAt: string;
+	/** Each work period's clock-in date at its own recorded offset; null if it no longer exists. */
+	workPeriods: Array<{ id: string; date: string | null }>;
+};
+
+/** Who was shown the signed-in employee's position stamps, newest first. */
+export async function getOwnPositionStampAccessLogAction(): Promise<
+	ServerActionResult<OwnPositionStampAccessEntry[]>
+> {
+	return runPositionCaptureAction("positionCapture.ownAccessLog", async (db) => {
+		const subject = await requireOwnEmployee();
+		const entries = await listPositionStampAccessLog(db, {
+			organizationId: subject.organizationId,
+			subjectEmployeeId: subject.employeeId,
+		});
+		return entries.map((entry) => ({
+			id: entry.id,
+			kind: entry.kind,
+			viewerName: entry.viewer?.name ?? null,
+			accessedAt: instantToCanonicalString(entry.accessedAt),
+			workPeriods: entry.workPeriods.map((period) => ({
+				id: period.id,
+				date:
+					period.startedAt && period.utcOffsetMinutes !== null
+						? period.startedAt
+								.toZonedDateTimeISO(offsetMinutesToTimeZoneId(period.utcOffsetMinutes))
+								.toPlainDate()
+								.toString()
+						: null,
+			})),
+		}));
 	});
 }
 
