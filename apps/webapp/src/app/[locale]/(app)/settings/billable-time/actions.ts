@@ -7,6 +7,8 @@ import {
 	changeBillableCurrency,
 	setBillableTimeEnabled,
 } from "@/lib/billable-time/module-switch";
+import type { AccountingProviderKind } from "@/lib/billable-time/accounting/provider";
+import { accountingProviderName } from "@/lib/billable-time/accounting/views";
 import type { BillableTimeSettings } from "@/lib/billable-time/settings";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -16,7 +18,11 @@ import { activeOrganizationActor } from "./action-actor";
 
 const logger = createLogger("BillableTimeSettingsActions");
 
-function refusalError(reason: BillableTimeRefusal, organizationId: string) {
+function refusalError(
+	reason: BillableTimeRefusal,
+	organizationId: string,
+	accountingProvider?: AccountingProviderKind,
+) {
 	switch (reason) {
 		case "organization_not_found":
 			return new NotFoundError({
@@ -44,6 +50,15 @@ function refusalError(reason: BillableTimeRefusal, organizationId: string) {
 				message: "The billable currency can't change once billable rates or cost rates exist",
 				conflictType: "billable_currency_locked",
 			});
+		case "currency_not_supported_by_accounting": {
+			const tool = accountingProvider
+				? accountingProviderName(accountingProvider)
+				: "The connected accounting tool";
+			return new ConflictError({
+				message: `${tool} can't take invoice drafts in this currency. Remove or replace the accounting connection before changing the billable currency`,
+				conflictType: "billable_currency_accounting",
+			});
+		}
 		case "billable_time_off":
 			return new ValidationError({
 				message: "Billable Time is switched off",
@@ -55,7 +70,7 @@ function refusalError(reason: BillableTimeRefusal, organizationId: string) {
 const settingsOf = (outcome: BillableTimeOutcome, organizationId: string) =>
 	outcome.ok
 		? Effect.succeed(outcome.settings)
-		: Effect.fail(refusalError(outcome.reason, organizationId));
+		: Effect.fail(refusalError(outcome.reason, organizationId, outcome.accountingProvider));
 
 /**
  * Switches the Billable Time module of the active organization. Like every
