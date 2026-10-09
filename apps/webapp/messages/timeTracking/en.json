@@ -121,6 +121,7 @@
         "retry": "Try again",
         "targetChanged": "The employee changed, so the project and category were cleared.",
         "targetTimezone": "Times are in {employee}'s timezone: {timezone}",
+        "taskCleared": "A selected task is no longer available and was cleared.",
         "thisEmployee": "this employee",
         "utcFallback": "Neither {employee} nor the organization has a timezone set, so UTC is used."
       },
@@ -249,6 +250,13 @@
       "rowActions": "Time entry actions",
       "title": "Time Entries",
       "viewCalendar": "View Calendar"
+    },
+    "taskPicker": {
+      "doneSuffix": "(done)",
+      "empty": "No task found",
+      "label": "Task",
+      "none": "No task",
+      "search": "Search tasks…"
     },
     "timeline": {
       "dayPicker": "Timeline day picker",

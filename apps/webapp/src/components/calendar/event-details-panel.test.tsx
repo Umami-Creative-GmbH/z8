@@ -6,8 +6,10 @@ import type { WorkPeriodEvent } from "@/lib/calendar/types";
 import { createTestTolgee, render } from "@/test/render-with-translations";
 import deCatalog from "../../../messages/calendar/de.json";
 
+const settings = vi.hoisted(() => ({ projectsEnabled: false }));
+
 vi.mock("@/stores/organization-settings-store", () => ({
-	useProjectsEnabled: () => false,
+	useProjectsEnabled: () => settings.projectsEnabled,
 }));
 
 import { EventDetailsPanel } from "./event-details-panel";
@@ -32,7 +34,10 @@ const event: WorkPeriodEvent = {
 		},
 	},
 };
-afterEach(cleanup);
+afterEach(() => {
+	cleanup();
+	settings.projectsEnabled = false;
+});
 describe("automatic clock-out details", () => {
 	it("renders the German automatic-source catalog", () => {
 		const translations = Object.fromEntries(
@@ -74,5 +79,57 @@ describe("automatic clock-out details", () => {
 		);
 		expect(screen.queryByText("Automatically clocked out")).toBeNull();
 		expect(screen.getByText("Grace Manager")).toBeTruthy();
+	});
+});
+
+describe("project and task details (#874)", () => {
+	const booked: WorkPeriodEvent = {
+		...event,
+		metadata: {
+			...event.metadata,
+			automaticClockOut: undefined,
+			projectId: "project-1",
+			projectName: "Website",
+			taskId: "task-1",
+			taskName: "Design",
+			taskState: "open",
+		},
+	};
+
+	it("shows the booking's task next to its project", () => {
+		settings.projectsEnabled = true;
+		render(<EventDetailsPanel event={booked} onClose={() => {}} />);
+
+		expect(screen.getByText("Website")).toBeTruthy();
+		expect(screen.getByText("Task")).toBeTruthy();
+		expect(screen.getByText("Design")).toBeTruthy();
+	});
+
+	it("marks a task that is done by now", () => {
+		settings.projectsEnabled = true;
+		render(
+			<EventDetailsPanel
+				event={{ ...booked, metadata: { ...booked.metadata, taskState: "done" } }}
+				onClose={() => {}}
+			/>,
+		);
+
+		expect(screen.getByText("Design (done)")).toBeTruthy();
+	});
+
+	it("shows no task row for work without a task", () => {
+		settings.projectsEnabled = true;
+		render(
+			<EventDetailsPanel
+				event={{
+					...booked,
+					metadata: { ...booked.metadata, taskId: undefined, taskName: undefined },
+				}}
+				onClose={() => {}}
+			/>,
+		);
+
+		expect(screen.getByText("Website")).toBeTruthy();
+		expect(screen.queryByText("Task")).toBeNull();
 	});
 });

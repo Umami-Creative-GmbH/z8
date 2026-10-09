@@ -23,6 +23,36 @@ export interface ProjectTask {
 	updatedAt: Date;
 }
 
+/** An open task a booking surface offers (#874): what a picker needs, nothing more. */
+export interface ProjectTaskChoice {
+	id: string;
+	name: string;
+}
+
+/** The task a booking already carries; it may be done by now (#874). */
+export interface BookedProjectTask {
+	id: string;
+	name: string;
+	state: ProjectTaskState;
+	projectId: string;
+}
+
+/**
+ * The stable reasons booking refuses a named task with (#873's
+ * `ProjectTaskIneligibility`), for surfaces that word them.
+ */
+const PROJECT_TASK_REFUSAL_REASONS: ReadonlySet<string> = new Set([
+	"task_not_found",
+	"task_other_project",
+	"task_done",
+	"project_not_bookable",
+]);
+
+/** Whether a booking refusal code is one of the task refusals. */
+export function isProjectTaskRefusal(code: string | null | undefined): boolean {
+	return code != null && PROJECT_TASK_REFUSAL_REASONS.has(code);
+}
+
 export const PROJECT_TASK_NAME_MAX_LENGTH = 200;
 export const PROJECT_TASK_DESCRIPTION_MAX_LENGTH = 2000;
 /** numeric(8, 2), like the project's budget hours. */

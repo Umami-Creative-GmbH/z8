@@ -215,6 +215,16 @@ function WorkPeriodDetails({
 					</div>
 				</div>
 			)}
+			{projectsEnabled && metadata.projectName && metadata.taskName && (
+				<DetailValue
+					label={t("calendar.details.task", "Task")}
+					value={
+						metadata.taskState === "done"
+							? t("calendar.details.taskDone", "{name} (done)", { name: metadata.taskName })
+							: metadata.taskName
+					}
+				/>
+			)}
 			<div>
 				<span className="text-sm text-muted-foreground">
 					{t("calendar.details.duration", "Duration")}

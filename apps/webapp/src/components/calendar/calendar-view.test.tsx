@@ -329,7 +329,7 @@ vi.mock("./calendar-event-dialogs", () => ({
 		isClockOutPending: boolean;
 		manualEntryDefaults: { date: string; clockInTime: string; clockOutTime: string } | null;
 		manualEntryOpen: boolean;
-		onConfirmClockOut: () => void;
+		onConfirmClockOut: (choice?: { taskId?: string | null }) => void;
 		pendingClockOut: boolean;
 		selectedEmployeeId: string | null;
 		selectedEvent: CalendarEvent | null;
@@ -358,8 +358,15 @@ vi.mock("./calendar-event-dialogs", () => ({
 						This creates an auditable clock-out entry at the current server time. If anything needs
 						adjustment afterward, use corrections.
 					</p>
-					<button type="button" disabled={isClockOutPending} onClick={onConfirmClockOut}>
+					<button type="button" disabled={isClockOutPending} onClick={() => onConfirmClockOut()}>
 						Clock Out
+					</button>
+					<button
+						type="button"
+						disabled={isClockOutPending}
+						onClick={() => onConfirmClockOut({ taskId: "task-1" })}
+					>
+						Clock Out to task
 					</button>
 				</>
 			)}
@@ -1004,6 +1011,42 @@ describe("CalendarView", () => {
 		expect(toastSuccess).toHaveBeenCalledWith("Employee clocked out successfully");
 	});
 
+	it("sends the task chosen for the on-behalf clock-out under its own closure identity (#874)", async () => {
+		vi.spyOn(globalThis.crypto, "randomUUID")
+			.mockReturnValueOnce("5b0d1c52-4c6f-4a53-9d2e-6f1f3b2a7c10")
+			.mockReturnValueOnce("6c1e2d63-5d7a-4b64-8e3f-7a2a4c3b8d21");
+		vi.mocked(fetch)
+			.mockResolvedValueOnce(
+				new Response(JSON.stringify({ error: "Internal server error", outcome: "unknown" }), {
+					status: 500,
+					headers: { "Content-Type": "application/json" },
+				}),
+			)
+			.mockResolvedValueOnce(new Response(null, { status: 201 }));
+
+		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Request running stop" }));
+		fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
+		await waitFor(() => expect(toastError).toHaveBeenCalledTimes(1));
+		await waitFor(() =>
+			expect(
+				(screen.getByRole("button", { name: "Clock Out to task" }) as HTMLButtonElement).disabled,
+			).toBe(false),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Clock Out to task" }));
+
+		await waitFor(() => expect(refetch).toHaveBeenCalledTimes(1));
+		const bodies = vi.mocked(fetch).mock.calls.map((call) => JSON.parse(call[1]?.body as string));
+		expect(bodies).toEqual([
+			{ workPeriodId: "work-running", operationId: "5b0d1c52-4c6f-4a53-9d2e-6f1f3b2a7c10" },
+			{
+				workPeriodId: "work-running",
+				operationId: "6c1e2d63-5d7a-4b64-8e3f-7a2a4c3b8d21",
+				taskId: "task-1",
+			},
+		]);
+	});
 	it("shows the server error toast and does not refetch when employee clock-out fails", async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(
 			new Response(JSON.stringify({ error: "Not allowed to clock out this employee" }), {

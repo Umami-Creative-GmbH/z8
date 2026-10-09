@@ -24,6 +24,7 @@ import type { CalendarEvent } from "@/lib/calendar/types";
 import { buildDailyWorkHoursSummaries } from "@/lib/calendar/work-hours-summary";
 import { useRouter } from "@/navigation";
 import { CalendarEventDialogs } from "./calendar-event-dialogs";
+import type { OnBehalfClockOutTaskChoice } from "./clock-out-on-behalf-dialog";
 import { CalendarMainContent } from "./calendar-main-content";
 import type { ViewMode } from "./schedule-x-calendar";
 import type { WorkPeriodActions } from "./work-period-context-menu";
@@ -95,22 +96,30 @@ function useClockOutOnBehalf({
 		setPendingClockOutEvent(event);
 	};
 
-	const handleConfirmClockOut = async () => {
+	const handleConfirmClockOut = async (choice?: OnBehalfClockOutTaskChoice) => {
 		if (!pendingClockOutEvent || isClockOutPending) return;
 
 		setIsClockOutPending(true);
 		const workPeriodId = pendingClockOutEvent.id;
+		// Omitted, the running work's task stays with its project (#874).
+		const taskId = choice?.taskId;
+		// The task is part of the intended closure: another choice is another closure.
+		const closureKey = `${workPeriodId}:${taskId === undefined ? "keep" : (taskId ?? "clear")}`;
 		const operationId =
-			operationIdsRef.current.get(workPeriodId) ??
+			operationIdsRef.current.get(closureKey) ??
 			globalThis.crypto.randomUUID();
-		operationIdsRef.current.set(workPeriodId, operationId);
+		operationIdsRef.current.set(closureKey, operationId);
 
 		await (async () => {
 			try {
 				const response = await fetch("/api/time-entries/clock-out-on-behalf", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ workPeriodId, operationId }),
+					body: JSON.stringify({
+						workPeriodId,
+						operationId,
+						...(taskId !== undefined ? { taskId } : {}),
+					}),
 				});
 
 				if (!response.ok) {
@@ -120,8 +129,10 @@ function useClockOutOnBehalf({
 					);
 
 					try {
-						const body = (await response.json()) as { error?: unknown };
-						if (typeof body.error === "string" && body.error.length > 0) {
+						const body = (await response.json()) as { error?: unknown; field?: unknown };
+						if (body.field === "taskId") {
+							message = t("timeTracking.errors.taskNotAllowed", "Cannot book time to this task");
+						} else if (typeof body.error === "string" && body.error.length > 0) {
 							message = body.error;
 						}
 					} catch {
@@ -132,7 +143,7 @@ function useClockOutOnBehalf({
 					return;
 				}
 
-				operationIdsRef.current.delete(workPeriodId);
+				operationIdsRef.current.delete(closureKey);
 				toast.success(
 					t(
 						"calendar.clockOutOnBehalf.success",
@@ -468,11 +479,12 @@ function CalendarViewContent({
 				onManualEntryOpenChange={setManualEntryOpen}
 				onManualEntrySuccess={refetch}
 				pendingClockOut={pendingClockOutEvent !== null}
+				pendingClockOutWorkPeriodId={pendingClockOutEvent?.id ?? null}
 				isClockOutPending={isClockOutPending}
 				onClockOutOpenChange={(open) => {
 					if (!open && !isClockOutPending) setPendingClockOutEvent(null);
 				}}
-				onConfirmClockOut={() => void handleConfirmClockOut()}
+				onConfirmClockOut={(choice) => void handleConfirmClockOut(choice)}
 				selectedEvent={selectedEvent}
 				showSplitDialog={showSplitDialog}
 				showDeleteDialog={showDeleteDialog}

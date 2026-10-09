@@ -1,5 +1,6 @@
 import type { approvalStatusEnum } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
+import type { ProjectTaskChoice } from "@/lib/projects/project-task-model";
 import type { OperationIdentity } from "@/lib/time-tracking/clocking/types";
 import type { ClockChannel } from "@/lib/time-tracking/close-active-work";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
@@ -64,6 +65,8 @@ export interface AssignedProject {
 	budgetHours: number | null;
 	deadline: string | null;
 	totalHoursBooked: number;
+	/** The project's open tasks, by name (#874); empty when it has none. */
+	tasks: ProjectTaskChoice[];
 }
 
 /** Error code returned when the actor may not create entries for the target. */

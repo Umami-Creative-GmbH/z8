@@ -10,7 +10,9 @@ import {
 	IconXboxX,
 } from "@tabler/icons-react";
 import type { TFnType } from "@tolgee/react";
-import { ProjectSelector } from "@/components/time-tracking/project-selector";
+import { ProjectSelectorView } from "@/components/time-tracking/project-selector";
+import { TaskSelectorView } from "@/components/time-tracking/task-selector";
+import { useAssignedProjects } from "@/lib/query/use-assigned-projects";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -189,22 +191,26 @@ export function ProjectEditSection({
 	metadata,
 	isEditing,
 	selectedProjectId,
+	selectedTaskId,
 	isSaving,
 	onStartEdit,
 	onCancel,
 	onSave,
 	onProjectChange,
+	onTaskChange,
 	t,
 }: {
 	projectsEnabled: boolean;
 	metadata: WorkPeriodDialogMetadata;
 	isEditing: boolean;
 	selectedProjectId: string | undefined;
+	selectedTaskId: string | undefined;
 	isSaving: boolean;
 	onStartEdit: () => void;
 	onCancel: () => void;
 	onSave: () => void;
 	onProjectChange: (projectId: string | undefined) => void;
+	onTaskChange: (taskId: string | undefined) => void;
 	t: TFnType;
 }) {
 	if (!projectsEnabled) {
@@ -232,11 +238,13 @@ export function ProjectEditSection({
 
 			{isEditing ? (
 				<div className="space-y-2">
-					<ProjectSelector
-						value={selectedProjectId}
-						onValueChange={onProjectChange}
+					<ProjectAndTaskPicker
+						metadata={metadata}
+						selectedProjectId={selectedProjectId}
+						selectedTaskId={selectedTaskId}
+						onProjectChange={onProjectChange}
+						onTaskChange={onTaskChange}
 						disabled={isSaving}
-						showLabel={false}
 					/>
 					<div className="flex gap-2">
 						<Button
@@ -274,7 +282,23 @@ export function ProjectEditSection({
 						<IconBriefcase className="size-4 text-muted-foreground" />
 					)}
 					{metadata.projectName ? (
-						<p className="font-medium">{metadata.projectName}</p>
+						<p className="font-medium">
+							{metadata.projectName}
+							{metadata.taskName ? (
+								<>
+									<span className="text-muted-foreground" aria-hidden="true">
+										{" · "}
+									</span>
+									<span>
+										{metadata.taskState === "done"
+											? t("calendar.details.taskDone", "{name} (done)", {
+													name: metadata.taskName,
+												})
+											: metadata.taskName}
+									</span>
+								</>
+							) : null}
+						</p>
 					) : (
 						<p className="text-sm italic text-muted-foreground">
 							{t("calendar.edit.noProject", "No project assigned")}
@@ -283,6 +307,60 @@ export function ProjectEditSection({
 				</div>
 			)}
 		</div>
+	);
+}
+
+/**
+ * The project picker of the signed-in employee's bookable projects, followed by
+ * the optional task picker of the chosen project (#874). The booking's current
+ * task stays visible while selected, even when it is done by now.
+ */
+function ProjectAndTaskPicker({
+	metadata,
+	selectedProjectId,
+	selectedTaskId,
+	onProjectChange,
+	onTaskChange,
+	disabled,
+}: {
+	metadata: WorkPeriodDialogMetadata;
+	selectedProjectId: string | undefined;
+	selectedTaskId: string | undefined;
+	onProjectChange: (projectId: string | undefined) => void;
+	onTaskChange: (taskId: string | undefined) => void;
+	disabled: boolean;
+}) {
+	const query = useAssignedProjects();
+	const currentTask =
+		metadata.projectId && metadata.taskId && metadata.taskName
+			? {
+					id: metadata.taskId,
+					name: metadata.taskName,
+					state: metadata.taskState ?? "open",
+					projectId: metadata.projectId,
+				}
+			: null;
+
+	return (
+		<>
+			<ProjectSelectorView
+				{...query}
+				value={selectedProjectId}
+				onValueChange={onProjectChange}
+				disabled={disabled}
+				showLabel={false}
+			/>
+			{!query.isLoading && !query.isError ? (
+				<TaskSelectorView
+					projectId={selectedProjectId}
+					projects={query.projects}
+					value={selectedTaskId}
+					onValueChange={onTaskChange}
+					currentTask={currentTask}
+					disabled={disabled}
+				/>
+			) : null}
+		</>
 	);
 }
 

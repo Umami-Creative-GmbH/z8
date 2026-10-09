@@ -13,7 +13,7 @@ import { parseOnBehalfClockOutRequest } from "@/lib/time-tracking/on-behalf-cloc
  * Manager on-behalf clock-out (#276). Closes the named running work period of
  * another employee at the current server time.
  *
- * Body: `{ workPeriodId, operationId?, projectId?, workCategoryId? }`. The client
+ * Body: `{ workPeriodId, operationId?, projectId?, taskId?, workCategoryId? }`. The client
  * mints `operationId` once per intended closure and resends it on every retry, so
  * a lost response is recovered as the original committed outcome (200). Omitted
  * attribution preserves the period's; `null` clears it; an ID replaces it.
@@ -40,6 +40,19 @@ function rejected(rejection: OnBehalfClockOutRejection, operationId: string | nu
 		return NextResponse.json(
 			{ error: "billing_required", reason: rejection.reason },
 			{ status: 402 },
+		);
+	}
+	if (rejection.code === "attribution_not_allowed" && rejection.field === "taskId") {
+		// A refused task names its stable reason (#873, #874).
+		return NextResponse.json(
+			{
+				error: "Cannot book time to this task",
+				code: rejection.code,
+				field: rejection.field,
+				reason: rejection.reason,
+				operationId,
+			},
+			{ status: 422 },
 		);
 	}
 	if (rejection.code === "attribution_not_allowed") {

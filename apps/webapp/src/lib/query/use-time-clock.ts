@@ -143,6 +143,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			workLocationType?: WorkLocationType;
 			browserTimezone?: string | null;
 			projectId?: string;
+			taskId?: string;
 			workCategoryId?: string;
 		},
 	) {
@@ -157,6 +158,8 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			workLocationType: params?.workLocationType,
 			knownWorkPeriodId: statusQuery.data?.activeWorkPeriod?.id ?? null,
 			projectId: params?.projectId,
+			// Frozen only when named, so a clock-out without a task keeps its bytes (#875).
+			...(params?.taskId ? { taskId: params.taskId } : {}),
 			workCategoryId: params?.workCategoryId,
 		});
 		return prepared.ok ? prepared.request : null;
@@ -245,6 +248,11 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		networkMode: "always",
 		mutationFn: async (params?: {
 			projectId?: string;
+			/**
+			 * A task of the project (#874). Frozen commands and the route carry it; the
+			 * legacy offline queue does not, so the page offers no task in that mode.
+			 */
+			taskId?: string;
 			workCategoryId?: string;
 			browserTimezone?: string | null;
 			submissionId?: string;
@@ -280,6 +288,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			// Online - use the route handler; server action IDs change per deployment
 			return postClockOut({
 				projectId: params?.projectId,
+				...(params?.taskId ? { taskId: params.taskId } : {}),
 				workCategoryId: params?.workCategoryId,
 				browserTimezone: resolveBrowserTimezone(params),
 				submissionId: params?.submissionId as string,
@@ -403,6 +412,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			}),
 		clockOut: (params?: {
 			projectId?: string;
+			taskId?: string;
 			workCategoryId?: string;
 			browserTimezone?: string | null;
 		}) =>

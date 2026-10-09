@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import type { DisplayContext } from "@/lib/datetime/temporal-format";
+import { isProjectTaskRefusal } from "@/lib/projects/project-task-model";
 import { useProjectsEnabled } from "@/stores/organization-settings-store";
 import { formatWorkPeriodEditedBy, getWorkPeriodDialogMetadata } from "./work-period-dialog-utils";
 import {
@@ -51,6 +52,8 @@ interface WorkPeriodEditState {
 	isSavingNotes: boolean;
 	isEditingProject: boolean;
 	selectedProjectId: string | undefined;
+	/** A task of the selected project (#874); cleared when the project changes. */
+	selectedTaskId: string | undefined;
 	isSavingProject: boolean;
 }
 
@@ -60,9 +63,10 @@ type WorkPeriodEditAction =
 	| { type: "setNotes"; notes: string }
 	| { type: "setSavingNotes"; value: boolean }
 	| { type: "finishNotesEdit" }
-	| { type: "startProjectEdit"; projectId: string | undefined }
-	| { type: "cancelProjectEdit"; projectId: string | undefined }
+	| { type: "startProjectEdit"; projectId: string | undefined; taskId: string | undefined }
+	| { type: "cancelProjectEdit"; projectId: string | undefined; taskId: string | undefined }
 	| { type: "setProjectId"; projectId: string | undefined }
+	| { type: "setTaskId"; taskId: string | undefined }
 	| { type: "setSavingProject"; value: boolean }
 	| { type: "finishProjectEdit" };
 
@@ -75,6 +79,7 @@ function createInitialState(
 		isSavingNotes: false,
 		isEditingProject: false,
 		selectedProjectId: metadata.projectId,
+		selectedTaskId: metadata.taskId,
 		isSavingProject: false,
 	};
 }
@@ -95,11 +100,26 @@ function workPeriodEditReducer(
 		case "finishNotesEdit":
 			return { ...state, isEditingNotes: false };
 		case "startProjectEdit":
-			return { ...state, isEditingProject: true, selectedProjectId: action.projectId };
+			return {
+				...state,
+				isEditingProject: true,
+				selectedProjectId: action.projectId,
+				selectedTaskId: action.taskId,
+			};
 		case "cancelProjectEdit":
-			return { ...state, isEditingProject: false, selectedProjectId: action.projectId };
+			return {
+				...state,
+				isEditingProject: false,
+				selectedProjectId: action.projectId,
+				selectedTaskId: action.taskId,
+			};
 		case "setProjectId":
-			return { ...state, selectedProjectId: action.projectId };
+			// A task never outlives its project (#874).
+			return action.projectId === state.selectedProjectId
+				? state
+				: { ...state, selectedProjectId: action.projectId, selectedTaskId: undefined };
+		case "setTaskId":
+			return { ...state, selectedTaskId: action.taskId };
 		case "setSavingProject":
 			return { ...state, isSavingProject: action.value };
 		case "finishProjectEdit":
@@ -144,14 +164,23 @@ export function WorkPeriodEditDialog({
 
 	const handleSaveProject = async () => {
 		dispatch({ type: "setSavingProject", value: true });
-		const result = await updateWorkPeriodProject(event.id, state.selectedProjectId ?? null).catch(
-			() => null,
-		);
+		// An unchanged task is left to the server (it may be done by now); any other choice is explicit.
+		const taskUnchanged =
+			state.selectedProjectId === metadata.projectId && state.selectedTaskId === metadata.taskId;
+		const result = await updateWorkPeriodProject(
+			event.id,
+			state.selectedProjectId ?? null,
+			taskUnchanged ? undefined : (state.selectedTaskId ?? null),
+		).catch(() => null);
 
 		if (!result) {
 			toast.error(t("calendar.edit.projectSaveFailed", "Failed to update project"));
 		} else if (!result.success) {
-			toast.error(result.error || t("calendar.edit.projectSaveFailed", "Failed to update project"));
+			toast.error(
+				"code" in result && isProjectTaskRefusal(result.code)
+					? t("timeTracking.errors.taskNotAllowed", "Cannot book time to this task")
+					: result.error || t("calendar.edit.projectSaveFailed", "Failed to update project"),
+			);
 		} else {
 			toast.success(t("calendar.edit.projectSaved", "Project updated"));
 			onNotesUpdated?.();
@@ -193,13 +222,25 @@ export function WorkPeriodEditDialog({
 						metadata={metadata}
 						isEditing={state.isEditingProject}
 						selectedProjectId={state.selectedProjectId}
+						selectedTaskId={state.selectedTaskId}
 						isSaving={state.isSavingProject}
 						onStartEdit={() =>
-							dispatch({ type: "startProjectEdit", projectId: metadata.projectId })
+							dispatch({
+								type: "startProjectEdit",
+								projectId: metadata.projectId,
+								taskId: metadata.taskId,
+							})
 						}
-						onCancel={() => dispatch({ type: "cancelProjectEdit", projectId: metadata.projectId })}
+						onCancel={() =>
+							dispatch({
+								type: "cancelProjectEdit",
+								projectId: metadata.projectId,
+								taskId: metadata.taskId,
+							})
+						}
 						onSave={handleSaveProject}
 						onProjectChange={(projectId) => dispatch({ type: "setProjectId", projectId })}
+						onTaskChange={(taskId) => dispatch({ type: "setTaskId", taskId })}
 						t={t}
 					/>
 					<NotesEditSection
