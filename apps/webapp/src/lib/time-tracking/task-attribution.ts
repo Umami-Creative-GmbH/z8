@@ -77,6 +77,34 @@ export function namedTaskId(taskId: string | null | undefined): { taskId?: strin
 }
 
 /**
+ * A booking form's project choice (#874): the chosen task stays only while the
+ * project stays, so a task never outlives its project in the form either.
+ */
+export function chooseProject<T extends string | null | undefined>(
+	selection: { projectId: string | undefined; taskId: T },
+	projectId: string | undefined,
+): { projectId: string | undefined; taskId: T | undefined } {
+	return projectId === selection.projectId ? selection : { projectId, taskId: undefined };
+}
+
+/**
+ * The task a booking form sends for its choice (#874): a choice that leaves the
+ * booking's current project and task as they are is left out, so the server
+ * keeps that task even once it is done; any other choice is explicit, and no
+ * task is null (clear).
+ */
+export function taskIdToSend(input: {
+	projectId: string | null | undefined;
+	taskId: string | null | undefined;
+	current: { projectId: string | null | undefined; taskId: string | null | undefined };
+}): string | null | undefined {
+	const unchanged =
+		(input.projectId ?? null) === (input.current.projectId ?? null) &&
+		(input.taskId ?? null) === (input.current.taskId ?? null);
+	return unchanged ? undefined : (input.taskId ?? null);
+}
+
+/**
  * A recorded task as an optional key, present only when there is one, so stored
  * commands, receipts and evidence without a task keep their earlier shape.
  */

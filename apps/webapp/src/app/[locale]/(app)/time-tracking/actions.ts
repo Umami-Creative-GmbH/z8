@@ -43,7 +43,7 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import { WorkPolicyService } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
-import type { ProjectTaskChoice } from "@/lib/projects/project-task-model";
+import type { BookedProjectTask, ProjectTaskChoice } from "@/lib/projects/project-task-model";
 import { listOpenTasksByProject } from "@/lib/projects/project-tasks";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
 import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
@@ -181,7 +181,8 @@ export async function getTimeClockStatus(): Promise<{
 	hasEmployee: boolean;
 	employeeId: string | null;
 	isClockedIn: boolean;
-	activeWorkPeriod: { id: string; startTime: Date } | null;
+	/** `currentTask`: the running work's task (#874), which the clock-out keeps unless changed. */
+	activeWorkPeriod: { id: string; startTime: Date; currentTask: BookedProjectTask | null } | null;
 }> {
 	const session = await getRequestSession();
 	if (!session?.user) {
@@ -226,6 +227,8 @@ export async function getTimeClockStatus(): Promise<{
 			eq(workPeriod.organizationId, emp.organizationId),
 			isNull(workPeriod.endTime),
 		),
+		// The task key keeps the task in the period's project and organization.
+		with: { task: { columns: { id: true, name: true, state: true, projectId: true } } },
 	});
 
 	return {
@@ -233,7 +236,7 @@ export async function getTimeClockStatus(): Promise<{
 		employeeId: emp.id,
 		isClockedIn: !!period,
 		activeWorkPeriod: period
-			? { id: period.id, startTime: period.startTime }
+			? { id: period.id, startTime: period.startTime, currentTask: period.task ?? null }
 			: null,
 	};
 }

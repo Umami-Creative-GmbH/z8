@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { queryKeys } from "@/lib/query/keys";
+import { namedTaskId, taskIdToSend } from "@/lib/time-tracking/task-attribution";
 
 /**
  * The task the clock-out on behalf sends (#874): omitted, the running work's
@@ -98,7 +99,9 @@ function ClockOutOnBehalfForm({
 
 	const confirm = () =>
 		// An unchanged task is left to the server, which keeps it with the project.
-		onConfirm(taskId === initialTaskId ? {} : { taskId: taskId ?? null });
+		onConfirm(
+			namedTaskId(taskIdToSend({ projectId, taskId, current: { projectId, taskId: initialTaskId } })),
+		);
 
 	return (
 		<>

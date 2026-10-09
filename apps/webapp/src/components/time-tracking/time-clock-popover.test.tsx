@@ -19,7 +19,10 @@ const useElapsedTimerMock = vi.fn();
 let localStorageData: Record<string, string> = {};
 let isClockedInMock = false;
 let captureMode: "local-queue" | "local-review" | "server" = "server";
-let activeWorkPeriodMock: { startTime: string } | null = null;
+let activeWorkPeriodMock: {
+	startTime: string;
+	currentTask?: { id: string; name: string; state: "open" | "done"; projectId: string } | null;
+} | null = null;
 
 function getPopoverClockButton(name: "Clock In" | "Clock Out"): HTMLElement {
 	const button = screen.getAllByRole("button", { name }).at(-1);
@@ -343,6 +346,60 @@ describe("TimeClockPopover", () => {
 			await waitFor(() =>
 				expect(clockOutMock).toHaveBeenCalledWith(
 					expect.objectContaining({ projectId: "project-1", taskId: "task-1" }),
+				),
+			);
+		});
+
+		it("shows the running work's task and keeps it by naming none", async () => {
+			activeWorkPeriodMock = {
+				startTime: "2026-05-18T08:00:00.000Z",
+				currentTask: { id: "task-0", name: "Kickoff", state: "done", projectId: "project-1" },
+			};
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+
+			const task = await screen.findByRole("combobox", { name: "Task" });
+			expect(task.textContent).toContain("Kickoff");
+			fireEvent.click(getPopoverClockButton("Clock Out"));
+
+			await waitFor(() => expect(clockOutMock).toHaveBeenCalledOnce());
+			expect(clockOutMock.mock.calls[0]?.[0]).toEqual({ projectId: "project-1" });
+		});
+
+		it("clears the running work's task when no task is chosen", async () => {
+			activeWorkPeriodMock = {
+				startTime: "2026-05-18T08:00:00.000Z",
+				currentTask: { id: "task-1", name: "Design", state: "open", projectId: "project-1" },
+			};
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+
+			await chooseTask("No task");
+			fireEvent.click(getPopoverClockButton("Clock Out"));
+
+			await waitFor(() =>
+				expect(clockOutMock).toHaveBeenCalledWith(
+					expect.objectContaining({ projectId: "project-1", taskId: null }),
+				),
+			);
+		});
+
+		it("words a refused task's stable reason", async () => {
+			clockOutMock.mockResolvedValue({
+				success: false,
+				error: "Cannot book time to this task",
+				code: "task_done",
+			});
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+
+			await chooseTask("Design");
+			fireEvent.click(getPopoverClockButton("Clock Out"));
+
+			await waitFor(() =>
+				expect(toastMocks.error).toHaveBeenCalledWith(
+					"This task is done, so no time can be booked to it",
+					{ description: undefined },
 				),
 			);
 		});

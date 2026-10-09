@@ -22,6 +22,8 @@ import {
 } from "@/lib/calendar/date-keys";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { buildDailyWorkHoursSummaries } from "@/lib/calendar/work-hours-summary";
+import { projectTaskRefusalMessage } from "@/lib/projects/project-task-model";
+import { namedTaskId } from "@/lib/time-tracking/task-attribution";
 import { useRouter } from "@/navigation";
 import { CalendarEventDialogs } from "./calendar-event-dialogs";
 import type { OnBehalfClockOutTaskChoice } from "./clock-out-on-behalf-dialog";
@@ -118,7 +120,7 @@ function useClockOutOnBehalf({
 					body: JSON.stringify({
 						workPeriodId,
 						operationId,
-						...(taskId !== undefined ? { taskId } : {}),
+						...namedTaskId(taskId),
 					}),
 				});
 
@@ -129,9 +131,12 @@ function useClockOutOnBehalf({
 					);
 
 					try {
-						const body = (await response.json()) as { error?: unknown; field?: unknown };
-						if (body.field === "taskId") {
-							message = t("timeTracking.errors.taskNotAllowed", "Cannot book time to this task");
+						const body = (await response.json()) as { error?: unknown; reason?: unknown };
+						const taskRefusal = projectTaskRefusalMessage(
+							typeof body.reason === "string" ? body.reason : null,
+						);
+						if (taskRefusal) {
+							message = t(taskRefusal[0], taskRefusal[1]);
 						} else if (typeof body.error === "string" && body.error.length > 0) {
 							message = body.error;
 						}

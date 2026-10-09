@@ -105,7 +105,11 @@
       "projectNotAllowed": "Cannot assign to this project",
       "restPeriodBlocked": "Rest period not complete",
       "restPeriodBlockedDesc": "You must complete the required rest period before clocking in. Request an exception if needed.",
+      "taskDone": "This task is done, so no time can be booked to it",
       "taskNotAllowed": "Cannot book time to this task",
+      "taskNotFound": "This task no longer exists",
+      "taskOtherProject": "This task belongs to another project",
+      "taskProjectNotBookable": "Time can no longer be booked to this task's project",
       "workCategoryNotAllowed": "Cannot assign to this work category"
     },
     "manualEntry": {

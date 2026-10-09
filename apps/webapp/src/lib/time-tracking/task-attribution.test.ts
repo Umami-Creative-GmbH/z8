@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { taskIdAfter, taskIntentFollowingProject } from "./task-attribution";
+import {
+	chooseProject,
+	isProjectTaskId,
+	namedTaskIntent,
+	recordedTaskId,
+	taskIdAfter,
+	taskIdToSend,
+	taskIntentFollowingProject,
+} from "./task-attribution";
 
 const project = "project-a";
 const otherProject = "project-b";
@@ -44,5 +52,53 @@ describe("taskIntentFollowingProject", () => {
 				"task-1",
 			),
 		).toBeNull();
+	});
+});
+
+describe("isProjectTaskId", () => {
+	it("accepts only a UUID, so a malformed ID is an unknown task", () => {
+		expect(isProjectTaskId("e8730000-0000-4000-8000-000000000030")).toBe(true);
+		expect(isProjectTaskId("E8730000-0000-4000-8000-000000000030")).toBe(true);
+		for (const value of ["not-a-task", "", 42, true, null, undefined, {}]) {
+			expect(isProjectTaskId(value)).toBe(false);
+		}
+	});
+});
+
+describe("optional task keys", () => {
+	it("names a task intent only when the write names a task", () => {
+		expect(namedTaskIntent(undefined)).toEqual({});
+		expect(namedTaskIntent(null)).toEqual({ task: { kind: "clear" } });
+		expect(namedTaskIntent("task-1")).toEqual({ task: { kind: "replace", id: "task-1" } });
+	});
+
+	it("records a task only when there is one", () => {
+		expect(recordedTaskId(null)).toEqual({});
+		expect(recordedTaskId(undefined)).toEqual({});
+		expect(recordedTaskId("task-1")).toEqual({ taskId: "task-1" });
+	});
+});
+
+describe("a booking form's task choice", () => {
+	it("keeps the chosen task while the project stays and drops it when the project changes", () => {
+		const selection = { projectId: project, taskId: "task-1" };
+
+		expect(chooseProject(selection, project)).toEqual(selection);
+		expect(chooseProject(selection, otherProject)).toEqual({
+			projectId: otherProject,
+			taskId: undefined,
+		});
+	});
+
+	it("leaves an unchanged task out and sends any other choice explicitly", () => {
+		const current = { projectId: project, taskId: "task-1" };
+
+		expect(taskIdToSend({ projectId: project, taskId: "task-1", current })).toBeUndefined();
+		expect(taskIdToSend({ projectId: project, taskId: "task-2", current })).toBe("task-2");
+		expect(taskIdToSend({ projectId: project, taskId: undefined, current })).toBeNull();
+		expect(taskIdToSend({ projectId: otherProject, taskId: undefined, current })).toBeNull();
+		expect(
+			taskIdToSend({ projectId: project, taskId: null, current: { projectId: project, taskId: null } }),
+		).toBeUndefined();
 	});
 });

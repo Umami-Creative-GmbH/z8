@@ -20,7 +20,8 @@ import {
 import { Button } from "@/components/ui/button";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import type { DisplayContext } from "@/lib/datetime/temporal-format";
-import { isProjectTaskRefusal } from "@/lib/projects/project-task-model";
+import { projectTaskRefusalMessage } from "@/lib/projects/project-task-model";
+import { chooseProject, taskIdToSend } from "@/lib/time-tracking/task-attribution";
 import { useProjectsEnabled } from "@/stores/organization-settings-store";
 import { formatWorkPeriodEditedBy, getWorkPeriodDialogMetadata } from "./work-period-dialog-utils";
 import {
@@ -35,6 +36,11 @@ import { WorkPeriodTimeSection } from "./work-period-time-edit-section";
 
 interface WorkPeriodEditDialogProps {
 	event: CalendarEvent;
+	/**
+	 * Whether the signed-in employee may change the project and task: only on their
+	 * own work, whose bookable projects and tasks are the ones the picker offers.
+	 */
+	canChangeProject: boolean;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onNotesUpdated?: () => void;
@@ -113,11 +119,14 @@ function workPeriodEditReducer(
 				selectedProjectId: action.projectId,
 				selectedTaskId: action.taskId,
 			};
-		case "setProjectId":
+		case "setProjectId": {
 			// A task never outlives its project (#874).
-			return action.projectId === state.selectedProjectId
-				? state
-				: { ...state, selectedProjectId: action.projectId, selectedTaskId: undefined };
+			const { projectId, taskId } = chooseProject(
+				{ projectId: state.selectedProjectId, taskId: state.selectedTaskId },
+				action.projectId,
+			);
+			return { ...state, selectedProjectId: projectId, selectedTaskId: taskId };
+		}
 		case "setTaskId":
 			return { ...state, selectedTaskId: action.taskId };
 		case "setSavingProject":
@@ -129,6 +138,7 @@ function workPeriodEditReducer(
 
 export function WorkPeriodEditDialog({
 	event,
+	canChangeProject,
 	open,
 	onOpenChange,
 	onNotesUpdated,
@@ -165,20 +175,23 @@ export function WorkPeriodEditDialog({
 	const handleSaveProject = async () => {
 		dispatch({ type: "setSavingProject", value: true });
 		// An unchanged task is left to the server (it may be done by now); any other choice is explicit.
-		const taskUnchanged =
-			state.selectedProjectId === metadata.projectId && state.selectedTaskId === metadata.taskId;
 		const result = await updateWorkPeriodProject(
 			event.id,
 			state.selectedProjectId ?? null,
-			taskUnchanged ? undefined : (state.selectedTaskId ?? null),
+			taskIdToSend({
+				projectId: state.selectedProjectId,
+				taskId: state.selectedTaskId,
+				current: { projectId: metadata.projectId, taskId: metadata.taskId },
+			}),
 		).catch(() => null);
 
 		if (!result) {
 			toast.error(t("calendar.edit.projectSaveFailed", "Failed to update project"));
 		} else if (!result.success) {
+			const taskRefusal = projectTaskRefusalMessage("code" in result ? result.code : null);
 			toast.error(
-				"code" in result && isProjectTaskRefusal(result.code)
-					? t("timeTracking.errors.taskNotAllowed", "Cannot book time to this task")
+				taskRefusal
+					? t(taskRefusal[0], taskRefusal[1])
 					: result.error || t("calendar.edit.projectSaveFailed", "Failed to update project"),
 			);
 		} else {
@@ -219,6 +232,7 @@ export function WorkPeriodEditDialog({
 					<WorkPeriodDurationSection metadata={metadata} t={t} />
 					<ProjectEditSection
 						projectsEnabled={projectsEnabled}
+						canEdit={canChangeProject}
 						metadata={metadata}
 						isEditing={state.isEditingProject}
 						selectedProjectId={state.selectedProjectId}

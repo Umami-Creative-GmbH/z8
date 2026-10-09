@@ -188,6 +188,7 @@ export function WorkPeriodDurationSection({
 
 export function ProjectEditSection({
 	projectsEnabled,
+	canEdit,
 	metadata,
 	isEditing,
 	selectedProjectId,
@@ -201,6 +202,8 @@ export function ProjectEditSection({
 	t,
 }: {
 	projectsEnabled: boolean;
+	/** Only the owner changes a booking's project and task. */
+	canEdit: boolean;
 	metadata: WorkPeriodDialogMetadata;
 	isEditing: boolean;
 	selectedProjectId: string | undefined;
@@ -223,7 +226,7 @@ export function ProjectEditSection({
 				<span className="text-sm text-muted-foreground">
 					{t("calendar.details.project", "Project")}
 				</span>
-				{!isEditing ? (
+				{canEdit && !isEditing ? (
 					<Button
 						variant="ghost"
 						size="sm"
@@ -236,7 +239,7 @@ export function ProjectEditSection({
 				) : null}
 			</div>
 
-			{isEditing ? (
+			{canEdit && isEditing ? (
 				<div className="space-y-2">
 					<ProjectAndTaskPicker
 						metadata={metadata}
@@ -311,7 +314,8 @@ export function ProjectEditSection({
 }
 
 /**
- * The project picker of the signed-in employee's bookable projects, followed by
+ * The project picker of the signed-in employee's bookable projects (only shown on
+ * their own work, so these are the booking owner's), followed by
  * the optional task picker of the chosen project (#874). The booking's current
  * task stays visible while selected, even when it is done by now.
  */
