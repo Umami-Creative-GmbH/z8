@@ -3,11 +3,15 @@ import { OwnPositionStampsPanel } from "@/components/settings/position-stamps/ow
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireUser } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
-import { getOwnPositionCaptureAction } from "./actions";
+import { getOwnPositionCaptureAction, getOwnPositionStampAccessLogAction } from "./actions";
 
 async function PositionStampsPageContent() {
 	await requireUser();
-	const [t, result] = await Promise.all([getTranslate(), getOwnPositionCaptureAction()]);
+	const [t, result, accessLog] = await Promise.all([
+		getTranslate(),
+		getOwnPositionCaptureAction(),
+		getOwnPositionStampAccessLogAction(),
+	]);
 
 	return (
 		<div className="p-4 sm:p-6">
@@ -24,7 +28,10 @@ async function PositionStampsPageContent() {
 					</p>
 				</div>
 				{result.success ? (
-					<OwnPositionStampsPanel data={result.data} />
+					<OwnPositionStampsPanel
+						data={result.data}
+						accessLog={accessLog.success ? accessLog.data : null}
+					/>
 				) : (
 					<p className="text-sm text-muted-foreground">
 						{t(

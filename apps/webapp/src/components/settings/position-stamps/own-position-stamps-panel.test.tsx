@@ -121,6 +121,41 @@ describe("OwnPositionStampsPanel", () => {
 		expect(screen.getByRole("button", { name: "Withdraw consent" })).toBeTruthy();
 	});
 
+	it("lists who was shown the employee's positions", () => {
+		render(
+			<OwnPositionStampsPanel
+				data={data({})}
+				accessLog={[
+					{
+						id: "log-2",
+						kind: "work_period_detail",
+						viewerName: "Grace Admin",
+						accessedAt: "2026-10-03T09:15:00Z",
+						workPeriods: [{ id: "period-1", date: "2026-09-20" }],
+					},
+					{
+						id: "log-1",
+						kind: "data_export",
+						viewerName: null,
+						accessedAt: "2026-10-01T07:00:00Z",
+						workPeriods: [],
+					},
+				]}
+			/>,
+		);
+
+		expect(screen.getByText("Grace Admin")).toBeTruthy();
+		expect(screen.getByText("Work period on 2026-09-20")).toBeTruthy();
+		expect(screen.getByText("A deleted user")).toBeTruthy();
+		expect(screen.getByText("Data export")).toBeTruthy();
+	});
+
+	it("says when nobody else has been shown the employee's positions", () => {
+		render(<OwnPositionStampsPanel data={data({})} accessLog={[]} />);
+
+		expect(screen.getByText("Nobody else has been shown your positions.")).toBeTruthy();
+	});
+
 	it("tells employees capture is off for them and shows no notice when none exists", () => {
 		render(
 			<OwnPositionStampsPanel
