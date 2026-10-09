@@ -28,7 +28,7 @@ export async function getEmployeeRateHistoryAction(
 		},
 		execute: (span) =>
 			Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "getEmployeeRateHistoryAction:actor" });
 				const { dbService } = actor;
 				const targetEmployee = yield* getTargetEmployee(employeeId);
 
@@ -79,7 +79,7 @@ export async function getRateAtDateAction(
 		},
 		execute: () =>
 			Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "getRateAtDateAction:actor" });
 				const { dbService } = actor;
 				const targetEmployee = yield* getTargetEmployee(employeeId);
 

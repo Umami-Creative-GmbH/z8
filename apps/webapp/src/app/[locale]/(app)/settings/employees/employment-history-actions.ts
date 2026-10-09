@@ -252,7 +252,7 @@ export async function listEmployeeEmploymentHistoryAction(
 		},
 		execute: (span) =>
 			Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "listEmployeeEmploymentHistoryAction:actor" });
 				const { dbService } = actor;
 				const targetEmployee = yield* getTargetEmployee(employeeId);
 
@@ -317,7 +317,7 @@ export async function createEmployeeEmploymentHistoryAction(
 		},
 		execute: () =>
 			Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "createEmployeeEmploymentHistoryAction:actor" });
 				const { dbService, session } = actor;
 
 				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
@@ -489,7 +489,7 @@ export async function confirmEmployeeEmploymentHistoryAction(
 		},
 		execute: () =>
 			Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "confirmEmployeeEmploymentHistoryAction:actor" });
 				const { dbService, session } = actor;
 
 				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
@@ -656,7 +656,7 @@ export async function cancelEmployeeEmploymentHistoryAction(
 		},
 		execute: () =>
 			Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "cancelEmployeeEmploymentHistoryAction:actor" });
 				const { dbService, session } = actor;
 
 				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
