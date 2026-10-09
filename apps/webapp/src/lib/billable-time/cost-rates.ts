@@ -6,7 +6,13 @@ import type { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { costRate, employee, employeeRateHistory } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
-import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import {
+	dateFromInstant,
+	type Instant,
+	type PlainDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
 import {
 	type CostRate,
@@ -276,8 +282,9 @@ export async function getSuggestedWage(
 	organizationId: string,
 	employeeId: string,
 	currency: BillableCurrency,
-	now: Date = new Date(),
+	at: Instant = systemClock.nowInstant(),
 ): Promise<SuggestedWage | null> {
+	const now = dateFromInstant(at);
 	const [row] = await reader
 		.select({ hourlyRate: employeeRateHistory.hourlyRate, currency: employeeRateHistory.currency })
 		.from(employeeRateHistory)
@@ -326,9 +333,10 @@ export async function listEmployeeCostRates(
 		reader
 			.select({
 				id: employee.id,
-				firstName: employee.firstName,
-				lastName: employee.lastName,
-				userName: user.name,
+				firstName: user.firstName,
+				lastName: user.lastName,
+				name: user.name,
+				email: user.email,
 				contractType: employee.contractType,
 				isActive: employee.isActive,
 			})
@@ -350,7 +358,7 @@ export async function listEmployeeCostRates(
 	return employees
 		.map((row) => ({
 			employeeId: row.id,
-			name: [row.firstName, row.lastName].filter(Boolean).join(" ") || row.userName || row.id,
+			name: buildAuthUserDisplayName(row) || row.id,
 			contractType: row.contractType,
 			isActive: row.isActive,
 			periods: periodsByEmployee.get(row.id) ?? [],
