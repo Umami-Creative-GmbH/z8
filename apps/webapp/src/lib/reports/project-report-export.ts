@@ -458,9 +458,7 @@ export function buildCustomerReportDocument(
 			figureTable(
 				{
 					title: labels.customersTable,
-					leading: [
-						{ key: "customer", header: labels.customer, value: (row) => row.name },
-					],
+					leading: [{ key: "customer", header: labels.customer, value: (row) => row.name }],
 					rows: customerGroups,
 					totals: { label: labels.total, row: view.totals },
 				},

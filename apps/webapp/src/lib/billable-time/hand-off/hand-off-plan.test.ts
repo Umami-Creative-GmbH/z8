@@ -258,7 +258,12 @@ describe("planHandOff", () => {
 		// Only work lines beyond the limit block.
 		const twoProjects = [
 			...items,
-			work({ start: "2026-09-05T08:00:00Z", minutes: 30, projectId: PROJECT_B, projectName: "App" }),
+			work({
+				start: "2026-09-05T08:00:00Z",
+				minutes: 30,
+				projectId: PROJECT_B,
+				projectName: "App",
+			}),
 		];
 		const blocked = plan({
 			work: twoProjects,

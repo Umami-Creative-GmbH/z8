@@ -188,9 +188,9 @@ describe("billable report figures", () => {
 			withoutCustomerWorkCount: 1,
 			revenue: "100.00",
 		});
-		expect(sumBillableFigures([result, result], { access: "revenue", currency: "EUR" })).toMatchObject(
-			{ withoutCustomerMinutes: 240, withoutCustomerWorkCount: 2 },
-		);
+		expect(
+			sumBillableFigures([result, result], { access: "revenue", currency: "EUR" }),
+		).toMatchObject({ withoutCustomerMinutes: 240, withoutCustomerWorkCount: 2 });
 	});
 
 	it("counts work with a pending correction or submission", () => {

@@ -401,10 +401,7 @@ export function sumBillableFigures(
 			billableMinutes: parts.reduce((sum, part) => sum + part.billableMinutes, 0),
 			nonBillableMinutes: parts.reduce((sum, part) => sum + part.nonBillableMinutes, 0),
 			withoutCustomerMinutes: parts.reduce((sum, part) => sum + part.withoutCustomerMinutes, 0),
-			withoutCustomerWorkCount: parts.reduce(
-				(sum, part) => sum + part.withoutCustomerWorkCount,
-				0,
-			),
+			withoutCustomerWorkCount: parts.reduce((sum, part) => sum + part.withoutCustomerWorkCount, 0),
 			unpricedWorkCount: parts.reduce((sum, part) => sum + part.unpricedWorkCount, 0),
 			unpricedHours: parts.reduce((sum, part) => sum + part.unpricedHours, 0),
 			pendingReviewCount: parts.reduce((sum, part) => sum + part.pendingReviewCount, 0),

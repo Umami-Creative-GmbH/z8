@@ -268,7 +268,9 @@ describe("project report export", () => {
 			(entry) => entry.header === "Billable hours without customer",
 		);
 		expect(column).toBeGreaterThan(0);
-		expect(customers?.rows).toEqual([["Without customer", ...(customers?.rows[0]?.slice(1) ?? [])]]);
+		expect(customers?.rows).toEqual([
+			["Without customer", ...(customers?.rows[0]?.slice(1) ?? [])],
+		]);
 		expect(customers?.rows[0]?.[column ?? 0]).toBe(1.5);
 		expect(projects?.rows[0]?.slice(0, 2)).toEqual(["Without customer", "Internal"]);
 	});
