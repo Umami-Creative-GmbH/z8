@@ -127,6 +127,7 @@ export async function processExport(exportId: string): Promise<void> {
 		const data = await fetchExportData(
 			exportRecord.organizationId,
 			exportRecord.categories as ExportCategory[],
+			{ exportId, requestedByEmployeeId: exportRecord.requestedById },
 		);
 
 		// Build ZIP archive

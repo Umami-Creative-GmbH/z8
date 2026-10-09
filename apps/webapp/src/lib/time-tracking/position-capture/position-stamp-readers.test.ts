@@ -13,8 +13,12 @@ import { describe, expect, it } from "vitest";
 const ALLOWED_READERS = new Set([
 	"db/schema/position-capture.ts",
 	"lib/time-tracking/clocking/position-stamp.ts",
+	// The org data export (#835): only for viewers of everyone's stamps, logged per export.
+	"lib/time-tracking/position-capture/export-positions.ts",
 	// The purge (#829) deletes stamps and moves purge dates; it never returns positions.
 	"lib/time-tracking/position-capture/purge.ts",
+	// Record retention only checks that no stamp still refers to a consent before deleting it.
+	"lib/time-tracking/position-capture/record-retention.ts",
 	"lib/time-tracking/position-capture/stamps.ts",
 	"lib/time-tracking/position-capture/store.ts",
 	"lib/time-tracking/position-capture/work-period-positions.ts",

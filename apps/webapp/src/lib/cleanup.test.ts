@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { deleteOldAuditLogs } from "@/lib/audit/cleanup";
 import { cleanupExpiredExports } from "@/lib/export/export-service";
+import { runPositionRecordRetention } from "@/lib/jobs/position-record-retention";
 import { deleteOldNotifications } from "@/lib/notifications/notification-service";
 import { runCleanup } from "./cleanup";
 
@@ -22,6 +23,10 @@ vi.mock("@/lib/notifications/notification-service", () => ({
 	deleteOldNotifications: vi.fn(),
 }));
 
+vi.mock("@/lib/jobs/position-record-retention", () => ({
+	runPositionRecordRetention: vi.fn(),
+}));
+
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({
 		info: infoMock,
@@ -33,6 +38,7 @@ vi.mock("@/lib/logger", () => ({
 const cleanupExpiredExportsMock = vi.mocked(cleanupExpiredExports);
 const deleteOldAuditLogsMock = vi.mocked(deleteOldAuditLogs);
 const deleteOldNotificationsMock = vi.mocked(deleteOldNotifications);
+const runPositionRecordRetentionMock = vi.mocked(runPositionRecordRetention);
 
 describe("runCleanup", () => {
 	beforeEach(() => {
@@ -42,6 +48,7 @@ describe("runCleanup", () => {
 		cleanupExpiredExportsMock.mockReset();
 		deleteOldAuditLogsMock.mockReset();
 		deleteOldNotificationsMock.mockReset();
+		runPositionRecordRetentionMock.mockReset();
 	});
 
 	it("routes expired export cleanup to cleanupExpiredExports", async () => {
@@ -65,11 +72,34 @@ describe("runCleanup", () => {
 
 	it("routes old audit log cleanup with 365 day retention", async () => {
 		deleteOldAuditLogsMock.mockResolvedValue(11);
+		runPositionRecordRetentionMock.mockResolvedValue({
+			accessLogEntries: 0,
+			consents: 0,
+			declines: 0,
+		});
 
 		const result = await runCleanup({ type: "cleanup", task: "old_audit_logs" });
 
 		expect(deleteOldAuditLogsMock).toHaveBeenCalledWith(365);
 		expect(result).toEqual({ deletedCount: 11 });
 		expect(infoMock).toHaveBeenCalledWith({ count: 11 }, "Cleaned up old audit logs");
+	});
+
+	it("deletes position consent and access-log records past the same audit-log lifetime", async () => {
+		deleteOldAuditLogsMock.mockResolvedValue(11);
+		runPositionRecordRetentionMock.mockResolvedValue({
+			accessLogEntries: 4,
+			consents: 2,
+			declines: 1,
+		});
+
+		const result = await runCleanup({ type: "cleanup", task: "old_audit_logs" });
+
+		expect(runPositionRecordRetentionMock).toHaveBeenCalledWith(365);
+		expect(result).toEqual({ deletedCount: 18 });
+		expect(infoMock).toHaveBeenCalledWith(
+			{ accessLogEntries: 4, consents: 2, declines: 1 },
+			"Cleaned up position records past the audit-log lifetime",
+		);
 	});
 });
