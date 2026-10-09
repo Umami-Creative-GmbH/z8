@@ -19,56 +19,19 @@ import {
 import { formatRate, parseRate, type RateUnits, rateFromStored } from "./money";
 import { writeRatePeriodChange } from "./rate-period-writer";
 import type { RatePeriod, RatePeriodStore } from "./rate-periods";
+import {
+	type BillableRatePeriodView,
+	type BillableRateTarget,
+	billableRateTargetIds,
+} from "./rate-target";
 import { lockBillableTimeSettings } from "./settings";
 
-/** One rate series: a rate level and its target. */
-export type BillableRateTarget =
-	| { level: "employee_project"; employeeId: string; projectId: string }
-	| { level: "project"; projectId: string }
-	| { level: "customer"; customerId: string }
-	| { level: "employee"; employeeId: string };
+export type { BillableRatePeriodView, BillableRateTarget } from "./rate-target";
+export { parseBillableRateTarget } from "./rate-target";
 
 export type BillableRateReader = Pick<Transaction, "select">;
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/** Reads an untrusted target (from a server action) into a typed one, or null. */
-export function parseBillableRateTarget(input: unknown): BillableRateTarget | null {
-	if (typeof input !== "object" || input === null) return null;
-	const value = input as Record<string, unknown>;
-	const id = (key: string) =>
-		typeof value[key] === "string" && UUID_PATTERN.test(value[key] as string)
-			? (value[key] as string)
-			: null;
-	if (!isRateLevel(value.level)) return null;
-	switch (value.level) {
-		case "employee_project": {
-			const employeeId = id("employeeId");
-			const projectId = id("projectId");
-			return employeeId && projectId ? { level: value.level, employeeId, projectId } : null;
-		}
-		case "project": {
-			const projectId = id("projectId");
-			return projectId ? { level: value.level, projectId } : null;
-		}
-		case "customer": {
-			const customerId = id("customerId");
-			return customerId ? { level: value.level, customerId } : null;
-		}
-		case "employee": {
-			const employeeId = id("employeeId");
-			return employeeId ? { level: value.level, employeeId } : null;
-		}
-	}
-}
-
-function targetColumns(target: BillableRateTarget) {
-	return {
-		employeeId: "employeeId" in target ? target.employeeId : null,
-		projectId: "projectId" in target ? target.projectId : null,
-		customerId: "customerId" in target ? target.customerId : null,
-	};
-}
+const targetColumns = billableRateTargetIds;
 
 function seriesCondition(organizationId: string, target: BillableRateTarget): SQL {
 	const columns = targetColumns(target);
@@ -78,8 +41,7 @@ function seriesCondition(organizationId: string, target: BillableRateTarget): SQ
 			| typeof billableRate.projectId
 			| typeof billableRate.customerId,
 		value: string | null,
-	) =>
-		value === null ? isNull(column) : eq(column, value);
+	) => (value === null ? isNull(column) : eq(column, value));
 	return and(
 		eq(billableRate.organizationId, organizationId),
 		eq(billableRate.level, target.level),
@@ -216,16 +178,6 @@ export type BillableRateRefusal =
 export type BillableRateOutcome =
 	| { ok: true; changed: boolean; periods: BillableRatePeriodView[] }
 	| { ok: false; reason: BillableRateRefusal };
-
-/** A rate period as the settings UI shows it (wire-safe). */
-export interface BillableRatePeriodView {
-	id: string;
-	effectiveFrom: string;
-	/** Exclusive; null while open. */
-	effectiveTo: string | null;
-	/** Two-decimal string in the billable currency. */
-	hourlyRate: string;
-}
 
 function parseDate(value: string): PlainDate | null {
 	if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
@@ -394,7 +346,56 @@ export async function getApplicableRate(
 	return resolveApplicableRate({ ...work, customerId }, rates);
 }
 
-/** A rate series with its current or next rate, for the settings overview. */
+export interface BillableRateTargetOptions {
+	employees: { id: string; name: string }[];
+	projects: { id: string; name: string; customerName: string | null }[];
+	customers: { id: string; name: string }[];
+}
+
+/** The employees, projects and customers of an organization a rate can be set for. */
+export async function listBillableRateTargetOptions(
+	reader: BillableRateReader,
+	organizationId: string,
+): Promise<BillableRateTargetOptions> {
+	const [employees, projects, customers] = await Promise.all([
+		reader
+			.select({
+				id: employee.id,
+				firstName: employee.firstName,
+				lastName: employee.lastName,
+				userName: user.name,
+			})
+			.from(employee)
+			.leftJoin(user, eq(user.id, employee.userId))
+			.where(eq(employee.organizationId, organizationId)),
+		reader
+			.select({ id: project.id, name: project.name, customerName: customer.name })
+			.from(project)
+			.leftJoin(
+				customer,
+				and(eq(customer.id, project.customerId), eq(customer.organizationId, organizationId)),
+			)
+			.where(eq(project.organizationId, organizationId))
+			.orderBy(asc(project.name)),
+		reader
+			.select({ id: customer.id, name: customer.name })
+			.from(customer)
+			.where(eq(customer.organizationId, organizationId))
+			.orderBy(asc(customer.name)),
+	]);
+	return {
+		employees: employees
+			.map((row) => ({
+				id: row.id,
+				name: [row.firstName, row.lastName].filter(Boolean).join(" ") || row.userName || row.id,
+			}))
+			.sort((left, right) => left.name.localeCompare(right.name)),
+		projects,
+		customers,
+	};
+}
+
+/** A rate series and its periods, for the settings overview. */
 export interface BillableRateSeriesSummary {
 	level: RateLevel;
 	employeeId: string | null;
@@ -403,17 +404,14 @@ export interface BillableRateSeriesSummary {
 	employeeName: string | null;
 	projectName: string | null;
 	customerName: string | null;
-	/** The rate in effect today, or null. */
-	current: BillableRatePeriodView | null;
-	/** The latest period of the series. */
-	latest: BillableRatePeriodView;
+	/** Newest first. */
+	periods: BillableRatePeriodView[];
 }
 
-/** Every rate series of an organization, with the rate in effect on `today`. */
+/** Every rate series of an organization with its periods. */
 export async function listBillableRateSeries(
 	reader: BillableRateReader,
 	organizationId: string,
-	today: PlainDate,
 ): Promise<BillableRateSeriesSummary[]> {
 	const rows = await reader
 		.select({
@@ -448,7 +446,7 @@ export async function listBillableRateSeries(
 			),
 		)
 		.where(eq(billableRate.organizationId, organizationId))
-		.orderBy(asc(billableRate.effectiveFrom));
+		.orderBy(desc(billableRate.effectiveFrom));
 
 	const series = new Map<string, BillableRateSeriesSummary>();
 	for (const row of rows) {
@@ -461,14 +459,9 @@ export async function listBillableRateSeries(
 			hourlyRate: formatRate(rateFromStored(period.hourlyRate)),
 		};
 		const key = [period.level, period.employeeId, period.projectId, period.customerId].join(":");
-		const inEffect =
-			Temporal.PlainDate.compare(plainDate(period.effectiveFrom), today) <= 0 &&
-			(period.effectiveTo === null ||
-				Temporal.PlainDate.compare(today, plainDate(period.effectiveTo)) < 0);
 		const existing = series.get(key);
 		if (existing) {
-			existing.latest = view;
-			if (inEffect) existing.current = view;
+			existing.periods.push(view);
 			continue;
 		}
 		const employeeName = [row.employeeFirstName, row.employeeLastName].filter(Boolean).join(" ");
@@ -480,8 +473,7 @@ export async function listBillableRateSeries(
 			employeeName: period.employeeId ? employeeName || row.userName || null : null,
 			projectName: row.projectName,
 			customerName: row.customerName,
-			current: inEffect ? view : null,
-			latest: view,
+			periods: [view],
 		});
 	}
 	return [...series.values()];
