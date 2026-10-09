@@ -64,21 +64,24 @@ export interface UpdateProjectTaskInput {
 const DUPLICATE_NAME_MESSAGE = "A task with this name already exists in this project";
 const TASK_ACCESS_DENIED = "You do not have access to manage tasks of this project";
 
-const INPUT_PROBLEM_MESSAGES: Record<ProjectTaskInputProblem, { message: string; field: string }> = {
-	nameRequired: { message: "Task name is required", field: "name" },
-	nameTooLong: { message: "Task name is too long", field: "name" },
-	descriptionTooLong: { message: "Task description is too long", field: "description" },
-	estimateInvalid: {
-		message: "Task estimate must be a positive number of hours",
-		field: "estimateHours",
-	},
-};
+const INPUT_PROBLEM_MESSAGES: Record<ProjectTaskInputProblem, { message: string; field: string }> =
+	{
+		nameRequired: { message: "Task name is required", field: "name" },
+		nameTooLong: { message: "Task name is too long", field: "name" },
+		descriptionTooLong: { message: "Task description is too long", field: "description" },
+		estimateInvalid: {
+			message: "Task estimate must be a positive number of hours",
+			field: "estimateHours",
+		},
+	};
 
 function inputProblem(problem: ProjectTaskInputProblem) {
 	return new ValidationError(INPUT_PROBLEM_MESSAGES[problem]);
 }
 
-function validated<T>(result: { ok: true; value: T } | { ok: false; problem: ProjectTaskInputProblem }) {
+function validated<T>(
+	result: { ok: true; value: T } | { ok: false; problem: ProjectTaskInputProblem },
+) {
 	return result.ok ? Effect.succeed(result.value) : Effect.fail(inputProblem(result.problem));
 }
 
@@ -189,7 +192,11 @@ function getTaskManagerForTask(taskId: string, action: string) {
 		);
 		if (!task) {
 			return yield* Effect.fail(
-				new NotFoundError({ message: "Task not found", entityType: "project_task", entityId: taskId }),
+				new NotFoundError({
+					message: "Task not found",
+					entityType: "project_task",
+					entityId: taskId,
+				}),
 			);
 		}
 		yield* ensureCanManageTasksOf(actor, task.projectId, action);
@@ -345,10 +352,7 @@ function setProjectTaskState(taskId: string, state: ProjectTaskState) {
 							: { state, doneAt: null, doneBy: null },
 					)
 					.where(
-						and(
-							eq(projectTask.id, task.id),
-							eq(projectTask.organizationId, actor.organizationId),
-						),
+						and(eq(projectTask.id, task.id), eq(projectTask.organizationId, actor.organizationId)),
 					),
 			),
 		);

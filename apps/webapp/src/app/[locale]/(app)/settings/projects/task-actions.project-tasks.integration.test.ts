@@ -322,7 +322,10 @@ describe("project tasks on PostgreSQL", () => {
 				tasks.updateProjectTask(second, { name: "DESIGN" }),
 			);
 
-			expect(duplicate).toMatchObject({ success: false, error: expect.stringMatching(/already exists/i) });
+			expect(duplicate).toMatchObject({
+				success: false,
+				error: expect.stringMatching(/already exists/i),
+			});
 			expect(renamedOntoFirst).toMatchObject({
 				success: false,
 				error: expect.stringMatching(/already exists/i),
@@ -493,9 +496,9 @@ describe("project tasks on PostgreSQL", () => {
 			expect(
 				await listProjectTasks({ organizationId: ids.organization, projectId: ids.otherProject }),
 			).toEqual([]);
-			expect(await findProjectTask({ organizationId: ids.organization, taskId: ids.otherTask })).toBe(
-				null,
-			);
+			expect(
+				await findProjectTask({ organizationId: ids.organization, taskId: ids.otherTask }),
+			).toBe(null);
 		});
 	});
 

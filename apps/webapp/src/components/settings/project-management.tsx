@@ -4,6 +4,7 @@ import {
 	IconBriefcase,
 	IconCalendar,
 	IconEdit,
+	IconListCheck,
 	IconPlus,
 	IconRefresh,
 	IconUsers,
@@ -31,6 +32,7 @@ import {
 import { queryKeys } from "@/lib/query";
 import { ProjectDialog } from "./project-dialog";
 import { ProjectMembersPanel } from "./project-members-panel";
+import { ProjectTasksPanel } from "./project-tasks-panel";
 
 interface ProjectManagementProps {
 	organizationId: string;
@@ -85,6 +87,7 @@ export function ProjectManagement({
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editingProject, setEditingProject] = useState<ProjectWithDetails | null>(null);
 	const [membersProjectId, setMembersProjectId] = useState<string | null>(null);
+	const [tasksProjectId, setTasksProjectId] = useState<string | null>(null);
 
 	const {
 		data: projectsResult,
@@ -103,6 +106,7 @@ export function ProjectManagement({
 	const projects = projectsResult || [];
 	// Read from the list so the panel reflects refetched assignments.
 	const membersProject = projects.find((project) => project.id === membersProjectId) ?? null;
+	const tasksProject = projects.find((project) => project.id === tasksProjectId) ?? null;
 
 	const handleCreate = () => {
 		setEditingProject(null);
@@ -203,6 +207,7 @@ export function ProjectManagement({
 									<TableHead>{t("settings.projects.column.budget", "Budget")}</TableHead>
 									<TableHead>{t("settings.projects.column.deadline", "Deadline")}</TableHead>
 									<TableHead>{t("settings.projects.column.team", "Team")}</TableHead>
+									<TableHead>{t("settings.projects.column.tasks", "Tasks")}</TableHead>
 									<TableHead className="w-[100px]"></TableHead>
 								</TableRow>
 							</TableHeader>
@@ -299,6 +304,22 @@ export function ProjectManagement({
 												</Button>
 											</TableCell>
 											<TableCell>
+												<Button
+													variant="ghost"
+													size="sm"
+													className="gap-1 text-muted-foreground"
+													onClick={() => setTasksProjectId(project.id)}
+												>
+													<IconListCheck className="size-4" aria-hidden="true" />
+													{t("settings.projects.tasks.open", "Tasks")}
+													<span className="sr-only">
+														{t("settings.projects.tasks.manage", "Manage tasks of {name}", {
+															name: project.name,
+														})}
+													</span>
+												</Button>
+											</TableCell>
+											<TableCell>
 												<Button variant="ghost" size="sm" onClick={() => handleEdit(project)}>
 													<IconEdit className="size-4" />
 												</Button>
@@ -329,6 +350,14 @@ export function ProjectManagement({
 				}}
 				canManageProjectManagers={canManageProjectManagers}
 				onChanged={handleMembersChanged}
+			/>
+
+			<ProjectTasksPanel
+				project={tasksProject}
+				open={tasksProject !== null}
+				onOpenChange={(open) => {
+					if (!open) setTasksProjectId(null);
+				}}
 			/>
 		</div>
 	);

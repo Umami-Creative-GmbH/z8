@@ -44,7 +44,8 @@ export async function loadProjectTaskManager(
 		userId: input.userId,
 		organizationId: input.organizationId,
 		isOrgAdmin:
-			hasOrganizationRole(membership.role, "owner") || hasOrganizationRole(membership.role, "admin"),
+			hasOrganizationRole(membership.role, "owner") ||
+			hasOrganizationRole(membership.role, "admin"),
 	};
 }
 
