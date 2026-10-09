@@ -10,6 +10,7 @@ const mockState = vi.hoisted(() => ({
 	findBatch: vi.fn(),
 	getBillableTimeSettings: vi.fn(),
 	getImportReviewSummary: vi.fn(),
+	listCustomerAccounting: vi.fn(),
 	listImportReviewRows: vi.fn(),
 	notFound: vi.fn(() => {
 		throw new Error("NEXT_NOT_FOUND");
@@ -51,6 +52,10 @@ vi.mock("@/db/schema", () => ({
 
 vi.mock("@/lib/auth-helpers", () => ({
 	requireOrgAdminSettingsAccess: mockState.requireOrgAdminSettingsAccess,
+}));
+
+vi.mock("@/lib/billable-time/accounting/customer-accounting", () => ({
+	listCustomerAccounting: mockState.listCustomerAccounting,
 }));
 
 vi.mock("@/lib/billable-time/settings", () => ({
@@ -133,8 +138,61 @@ describe("ImportReviewRoute", () => {
 			summary: { total: 1 },
 			rows: [{ id: "row-1", billability: null }],
 			showBillability: false,
+			customerImport: undefined,
 		});
 		expect(mockState.getBillableTimeSettings).toHaveBeenCalledWith("org-1");
+		expect(mockState.listCustomerAccounting).not.toHaveBeenCalled();
+	});
+
+	it("shows a customer import's contacts with the customers they can link to (#906)", async () => {
+		mockState.findBatch.mockResolvedValue({
+			id: "batch-1",
+			organizationId: "org-1",
+			provider: "accounting",
+			status: "needs_review",
+		});
+		mockState.listImportReviewRows.mockResolvedValue([
+			{
+				id: "row-1",
+				entityType: "customer",
+				rowStatus: "accepted",
+				issueSeverity: "info",
+				commitChoice: { kind: "link", targetId: "cust-1" },
+				commitHold: null,
+				normalizedPayload: { contactId: "c-1", name: "Acme GmbH" },
+				matchTarget: {
+					suggestion: { customerId: "cust-1", customerName: "Acme", reason: "name" },
+				},
+			},
+		]);
+		mockState.listCustomerAccounting.mockResolvedValue([
+			{ customerId: "cust-1", name: "Acme", isActive: true, contactLink: null },
+			{ customerId: "cust-2", name: "Linked", isActive: true, contactLink: { contactId: "x" } },
+			{ customerId: "cust-3", name: "Inactive", isActive: false, contactLink: null },
+		]);
+
+		const reviewPage = await renderRequestContent("batch-1");
+
+		expect(mockState.listImportReviewRows).toHaveBeenCalledWith(
+			expect.objectContaining({ limit: 500 }),
+		);
+		expect(mockState.listCustomerAccounting).toHaveBeenCalledWith(expect.anything(), "org-1");
+		expect(reviewPage.props.children.props.children.props.customerImport).toMatchObject({
+			editable: true,
+			linkTargets: [{ customerId: "cust-1", name: "Acme" }],
+			rows: [
+				{
+					id: "row-1",
+					rowStatus: "accepted",
+					commitChoice: { kind: "link", targetId: "cust-1" },
+					customer: {
+						contactId: "c-1",
+						name: "Acme GmbH",
+						suggestion: { customerId: "cust-1", reason: "name" },
+					},
+				},
+			],
+		});
 	});
 
 	it("shows staged work rows' billability while Billable Time is on (#907)", async () => {

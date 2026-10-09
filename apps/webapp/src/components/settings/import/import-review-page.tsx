@@ -4,6 +4,11 @@ import { useTranslate } from "@tolgee/react";
 import { useTransition } from "react";
 import { toast } from "sonner";
 import { startImportCommitAction } from "@/app/[locale]/(app)/settings/import/review-actions";
+import {
+	type CustomerImportReviewRow,
+	CustomerImportReviewTable,
+	type CustomerLinkTarget,
+} from "@/components/settings/import/customer-import-review-table";
 import { ImportIssueGroups } from "@/components/settings/import/import-issue-groups";
 import {
 	type ImportReviewRow,
@@ -28,6 +33,12 @@ interface ImportReviewPageProps {
 	rows: ImportReviewRow[];
 	/** Billable Time is on: show each work row's billable value (#907). */
 	showBillability?: boolean;
+	/** A customer import from the accounting connection (#906): per-contact decisions. */
+	customerImport?: {
+		rows: CustomerImportReviewRow[];
+		linkTargets: CustomerLinkTarget[];
+		editable: boolean;
+	};
 }
 
 const summaryItems = [
@@ -59,6 +70,7 @@ export function ImportReviewPage({
 	summary,
 	rows,
 	showBillability = false,
+	customerImport,
 }: ImportReviewPageProps) {
 	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
@@ -119,8 +131,20 @@ export function ImportReviewPage({
 				))}
 			</div>
 
-			<ImportIssueGroups rows={rows} />
-			<ImportReviewTable rows={rows} showBillability={showBillability} />
+			{customerImport ? (
+				<CustomerImportReviewTable
+					organizationId={organizationId}
+					batchId={batchId}
+					rows={customerImport.rows}
+					linkTargets={customerImport.linkTargets}
+					editable={customerImport.editable}
+				/>
+			) : (
+				<>
+					<ImportIssueGroups rows={rows} />
+					<ImportReviewTable rows={rows} showBillability={showBillability} />
+				</>
+			)}
 		</div>
 	);
 }

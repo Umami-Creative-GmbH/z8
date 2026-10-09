@@ -20,8 +20,11 @@ vi.mock("@tolgee/react", () => ({
 }));
 
 vi.mock("@/app/[locale]/(app)/settings/import/review-actions", () => ({
+	applyImportDecisionAction: vi.fn(),
 	startImportCommitAction: vi.fn(),
 }));
+
+vi.mock("@/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
 
 const baseSummary = {
 	totalRows: 4,

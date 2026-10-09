@@ -155,6 +155,7 @@ const acmeView = {
 	name: "Acme Consulting & Partner GmbH",
 	address: "Gebäude 10\nMusterstraße 42\n79112 Freiburg",
 	vatId: "DE123456789",
+	email: "info@acme.example",
 };
 const personView = {
 	id: PERSON_CONTACT_ID,
@@ -162,6 +163,7 @@ const personView = {
 	name: "Erika Acmeier",
 	address: "Ringstraße 7\n1010 Wien\nAT",
 	vatId: null,
+	email: null,
 };
 
 describe("Lexware Office connector: contacts", () => {

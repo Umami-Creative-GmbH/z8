@@ -41,6 +41,7 @@ import { getBillableTimeSettings } from "@/lib/billable-time/settings";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { startAccountingCustomerImport } from "@/lib/import-review/accounting-customer-adapter";
 import { activeOrganizationActor } from "../action-actor";
 
 /**
@@ -490,6 +491,37 @@ export async function unlinkCustomerContact(input: {
 			);
 		}
 		return yield* readCustomerDetail(organizationId, customerId);
+	});
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Starts a customer import (#906) from the connected accounting tool: its
+ * customer contacts are staged in a review batch; the admin decides per
+ * contact on the import review page. Returns the batch to open.
+ */
+export async function startCustomerImport(): Promise<ServerActionResult<{ batchId: string }>> {
+	const effect = Effect.gen(function* () {
+		const { organizationId, userId } = yield* actor("startCustomerImport");
+		yield* requireModuleOn(organizationId);
+		const dbService = yield* DatabaseService;
+		const outcome = yield* dbService.query("billableTime.accounting.startCustomerImport", () =>
+			startAccountingCustomerImport(defaultAccountingDependencies(), {
+				organizationId,
+				actorUserId: userId,
+			}),
+		);
+		if (outcome.ok) return { batchId: outcome.batchId };
+		const { reason } = outcome;
+		if (reason === "import_not_supported") {
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "This accounting tool cannot import customers yet",
+					field: "accountingConnection",
+				}),
+			);
+		}
+		return yield* Effect.fail(providerRefusalError({ reason }));
 	});
 	return runServerActionSafe(effect);
 }
