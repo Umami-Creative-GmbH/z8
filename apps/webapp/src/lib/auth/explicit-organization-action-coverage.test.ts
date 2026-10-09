@@ -154,6 +154,13 @@ const actionCases = [
 		"requireAdmin(",
 	],
 	[
+		"Clockodo project mappings",
+		"[locale]/(app)/settings/clockodo-import/actions.ts",
+		"saveProjectMappings",
+		".insert(clockodoProjectMapping)",
+		"requireAdmin(",
+	],
+	[
 		"Clockin credentials",
 		"[locale]/(app)/settings/import/clockin-actions.ts",
 		"validateClockinCredentials",

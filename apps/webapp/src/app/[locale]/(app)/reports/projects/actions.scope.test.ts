@@ -12,21 +12,18 @@ describe("project report portfolio scope", () => {
 	it("allows assigned project managers and scopes them to managed projects", () => {
 		const source = stripComments(readFileSync(`${REPORTS_PROJECTS_ROOT}/actions.ts`, "utf8"));
 
-		expect(source).toContain("getManagedProjectIdsForProjectReports");
-		expect(source).toContain(
-			'currentEmployee.role === "admin" || currentEmployee.role === "manager"',
-		);
-		expect(source).toContain("managedProjectIds.size > 0");
-		expect(source).toContain("inArray(project.id, [...managedProjectIds])");
+		// Who may read which project: lib/reports/project-report-access.ts (tested there).
+		expect(source).toContain("loadProjectReportViewer");
+		expect(source).toContain("if (!canViewProjectReports(viewer))");
+		expect(source).toContain("if (!canViewProjectReport(viewer, projectId))");
+		expect(source).toContain("inArray(project.id, [...viewer.managedProjectIds])");
 	});
 
 	it("uses selected-range hours for report totals and cumulative hours for budget health", () => {
 		const source = stripComments(readFileSync(`${REPORTS_PROJECTS_ROOT}/actions.ts`, "utf8"));
 
-		expect(source).toContain("const [stats, cumulativeStats] = await Promise.all");
-		expect(source).toContain(
-			"const cumulativeHours = Number(cumulativeStats[0]?.totalMinutes ?? 0) / 60",
-		);
+		expect(source).toContain("loadReportedProjectWork(dbService.db, organizationId");
+		expect(source).toContain("const cumulativeHours = (cumulativeMinutes.get(p.id) ?? 0) / 60");
 		expect(source).toContain("const percentBudgetUsed = budgetHours");
 		expect(source).toContain("? (cumulativeHours / budgetHours) * 100");
 		expect(source).toContain("rangeHours: totalHours");

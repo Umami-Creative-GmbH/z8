@@ -2,7 +2,35 @@
  * Project Report types and interfaces
  */
 
+import type { BillableFigures, BillableFiguresAccess } from "@/lib/billable-time/report-figures";
 import type { PeriodPreset, ReportDateRange } from "./types";
+
+export type { BillableFigures, BillableFiguresAccess };
+
+/**
+ * Billable Time context of a report (#902), present while the module is on and
+ * the viewer sees any Billable Time figures.
+ *
+ * Figure groups: Billable Time figures hang off report rows under their own
+ * optional key (`billable`), next to the hours every report row has. Later
+ * groups (invoiced and un-invoiced figures, #903) add their own optional key to
+ * the same rows and their columns to the export figure groups
+ * (`lib/reports/project-report-export.ts`), without forking these types.
+ */
+export interface BillableTimeReportContext {
+	/** The billable currency every amount is in. */
+	currency: string;
+	/**
+	 * When the rates were read (ISO instant). Revenue and cost use the rates in
+	 * effect then; the same report can change after a rate edit (ADR 0001).
+	 */
+	ratesResolvedAt: string;
+}
+
+export interface ProjectCustomerInfo {
+	id: string;
+	name: string;
+}
 
 export type ProjectHealthSeverity = "none" | "warning" | "critical";
 
@@ -40,6 +68,8 @@ export interface ProjectInfo {
 	color: string | null;
 	budgetHours: number | null;
 	deadline: Date | null;
+	/** The project's current customer, if it has one. */
+	customer?: ProjectCustomerInfo | null;
 }
 export interface ProjectSummary extends ProjectInfo, ProjectHealthFields {
 	totalHours: number;
@@ -48,6 +78,8 @@ export interface ProjectSummary extends ProjectInfo, ProjectHealthFields {
 	daysUntilDeadline: number | null;
 	uniqueEmployees: number;
 	workPeriodCount: number;
+	/** Billable Time figures for the range, when the viewer may see them. */
+	billable?: BillableFigures;
 }
 
 export interface ProjectTimeSeriesPoint {
@@ -63,6 +95,8 @@ export interface ProjectTeamMember {
 	totalMinutes: number;
 	workPeriodCount: number;
 	percentOfTotal: number;
+	/** This employee's Billable Time figures on the project, when the viewer may see them. */
+	billable?: BillableFigures;
 }
 
 export interface ProjectTeamBreakdown {
@@ -90,10 +124,13 @@ export interface ProjectDetailedReport {
 		uniqueEmployees: number;
 		workPeriodCount: number;
 		averageHoursPerDay: number;
+		billable?: BillableFigures;
 	};
+	/** Days are the employee-local day each work period started on. */
 	timeSeries: ProjectTimeSeriesPoint[];
 	teamBreakdown: ProjectTeamBreakdown[];
 	employeeBreakdown: ProjectTeamMember[];
+	billableTime?: BillableTimeReportContext;
 }
 
 export interface ProjectPortfolioData {
@@ -105,6 +142,52 @@ export interface ProjectPortfolioData {
 		projectsOverBudget: number;
 		projectsOverdue: number;
 		budgetHealth: ProjectBudgetHealthTotals;
+		/**
+		 * The sum of the projects' Billable Time figures; only present when every
+		 * listed project has them, so a total never mixes in hidden projects.
+		 */
+		billable?: BillableFigures;
+	};
+	billableTime?: BillableTimeReportContext;
+}
+
+/** One project in the customer view (#902). */
+export interface CustomerProjectSummary {
+	project: ProjectInfo;
+	totalHours: number;
+	totalMinutes: number;
+	workPeriodCount: number;
+	billable: BillableFigures;
+}
+
+/** One customer in the customer view: the sum of its projects. */
+export interface CustomerBillableSummary {
+	customer: ProjectCustomerInfo;
+	totalHours: number;
+	totalMinutes: number;
+	workPeriodCount: number;
+	billable: BillableFigures;
+	projects: CustomerProjectSummary[];
+}
+
+/**
+ * The customer view (#902): Billable Time figures rolled up per customer, with
+ * its projects to drill into. A customer's totals are the sum of the projects
+ * listed under it, and the report totals the sum of its customers.
+ */
+export interface CustomerBillableReport {
+	period: {
+		startDate: string;
+		endDate: string;
+	};
+	access: BillableFiguresAccess;
+	billableTime: BillableTimeReportContext;
+	customers: CustomerBillableSummary[];
+	totals: {
+		totalHours: number;
+		totalMinutes: number;
+		workPeriodCount: number;
+		billable: BillableFigures;
 	};
 }
 
