@@ -72,6 +72,7 @@ vi.mock("@/lib/logger", async (importOriginal) => {
 });
 
 const tasks = await import("./task-actions");
+const { findProjectTask, listProjectTasks } = await import("@/lib/projects/project-tasks");
 
 const ids = {
 	organization: "t872-task-org",
@@ -231,5 +232,249 @@ describe("project tasks on PostgreSQL", () => {
 				],
 			});
 		});
+
+		it("renames a task and edits its description and estimate", async () => {
+			const id = await createTask(ids.ownerUser, "Design", { estimateHours: 4 });
+
+			const updated = await actAs(ids.ownerUser, () =>
+				tasks.updateProjectTask(id, {
+					name: "Visual design",
+					description: "Mockups",
+					estimateHours: 6.255,
+				}),
+			);
+			expect(updated).toEqual({ success: true, data: undefined });
+			expect(await taskRows()).toMatchObject([
+				{ id, name: "Visual design", description: "Mockups", estimate_hours: "6.26" },
+			]);
+
+			const cleared = await actAs(ids.ownerUser, () =>
+				tasks.updateProjectTask(id, { description: "  ", estimateHours: null }),
+			);
+			expect(cleared.success).toBe(true);
+			expect(await taskRows()).toMatchObject([
+				{ id, name: "Visual design", description: null, estimate_hours: null },
+			]);
+		});
+
+		it("marks a task done, recording who and when, and reopens it", async () => {
+			const id = await createTask(ids.ownerUser, "Design");
+
+			const done = await actAs(ids.ownerUser, () => tasks.markProjectTaskDone(id));
+			expect(done).toEqual({ success: true, data: undefined });
+			const [doneRow] = await taskRows();
+			expect(doneRow).toMatchObject({ state: "done", done_by: ids.ownerUser });
+			expect(doneRow?.done_at).toBeInstanceOf(Date);
+
+			const reopened = await actAs(ids.ownerUser, () => tasks.reopenProjectTask(id));
+			expect(reopened).toEqual({ success: true, data: undefined });
+			expect(await taskRows()).toMatchObject([{ state: "open", done_by: null, done_at: null }]);
+		});
+
+		it("deletes an unbooked task", async () => {
+			const id = await createTask(ids.ownerUser, "Design");
+
+			const deleted = await actAs(ids.ownerUser, () => tasks.deleteProjectTask(id));
+
+			expect(deleted).toEqual({ success: true, data: undefined });
+			expect(await taskRows()).toEqual([]);
+		});
+
+		it("manages tasks of a project they are not a manager of", async () => {
+			const id = await createTask(ids.ownerUser, "Design", {}, ids.unmanagedProject);
+			const renamed = await actAs(ids.ownerUser, () =>
+				tasks.updateProjectTask(id, { name: "Build" }),
+			);
+			expect(renamed.success).toBe(true);
+			expect((await taskRows(ids.unmanagedProject)).map((row) => row.name)).toEqual(["Build"]);
+		});
 	});
+
+	describe("task input", () => {
+		it("refuses a duplicate name within one project, ignoring case and surrounding spaces", async () => {
+			const first = await createTask(ids.ownerUser, "Design");
+
+			const duplicate = await actAs(ids.ownerUser, () =>
+				tasks.createProjectTask({ projectId: ids.project, name: " design " }),
+			);
+			const second = await createTask(ids.ownerUser, "Build");
+			const renamedOntoFirst = await actAs(ids.ownerUser, () =>
+				tasks.updateProjectTask(second, { name: "DESIGN" }),
+			);
+
+			expect(duplicate).toMatchObject({ success: false, error: expect.stringMatching(/already exists/i) });
+			expect(renamedOntoFirst).toMatchObject({
+				success: false,
+				error: expect.stringMatching(/already exists/i),
+			});
+			expect((await taskRows()).map((row) => row.id).sort()).toEqual([first, second].sort());
+		});
+
+		it("allows the same name in two projects", async () => {
+			await createTask(ids.ownerUser, "Design");
+			await createTask(ids.ownerUser, "Design", {}, ids.unmanagedProject);
+
+			expect((await taskRows()).map((row) => row.name)).toEqual(["Design"]);
+			expect((await taskRows(ids.unmanagedProject)).map((row) => row.name)).toEqual(["Design"]);
+		});
+
+		it("refuses a blank name and a non-positive estimate", async () => {
+			const results = await actAs(ids.ownerUser, () =>
+				Promise.all([
+					tasks.createProjectTask({ projectId: ids.project, name: "   " }),
+					tasks.createProjectTask({ projectId: ids.project, name: "Zero", estimateHours: 0 }),
+					tasks.createProjectTask({ projectId: ids.project, name: "Neg", estimateHours: -2 }),
+				]),
+			);
+
+			expect(results.map((result) => result.success)).toEqual([false, false, false]);
+			expect(await taskRows()).toEqual([]);
+		});
+	});
+
+	describe("a manager-tier project manager", () => {
+		it("manages every part of the tasks of a project they manage", async () => {
+			const id = await createTask(ids.projectManagerUser, "Design");
+			const results = [
+				await actAs(ids.projectManagerUser, () =>
+					tasks.updateProjectTask(id, { name: "Build", estimateHours: 3 }),
+				),
+				await actAs(ids.projectManagerUser, () => tasks.markProjectTaskDone(id)),
+				await actAs(ids.projectManagerUser, () => tasks.reopenProjectTask(id)),
+				await actAs(ids.projectManagerUser, () => tasks.getProjectTasks(ids.project)),
+			];
+			expect(results.map((result) => result.success)).toEqual([true, true, true, true]);
+			expect(await taskRows()).toMatchObject([{ id, name: "Build", state: "open" }]);
+
+			const deleted = await actAs(ids.projectManagerUser, () => tasks.deleteProjectTask(id));
+			expect(deleted.success).toBe(true);
+			expect(await taskRows()).toEqual([]);
+		});
+
+		it("is refused every task action on a project they do not manage", async () => {
+			const id = await createTask(ids.ownerUser, "Design", {}, ids.unmanagedProject);
+
+			const results = await actAs(ids.projectManagerUser, () =>
+				Promise.all([
+					tasks.createProjectTask({ projectId: ids.unmanagedProject, name: "Build" }),
+					tasks.updateProjectTask(id, { name: "Renamed" }),
+					tasks.markProjectTaskDone(id),
+					tasks.reopenProjectTask(id),
+					tasks.deleteProjectTask(id),
+					tasks.getProjectTasks(ids.unmanagedProject),
+				]),
+			);
+
+			expect(results.map((result) => result.success)).toEqual([
+				false,
+				false,
+				false,
+				false,
+				false,
+				false,
+			]);
+			expect(await taskRows(ids.unmanagedProject)).toMatchObject([
+				{ id, name: "Design", state: "open" },
+			]);
+		});
+	});
+
+	describe("a plain employee", () => {
+		it("is refused every task action, even as a listed project manager", async () => {
+			const id = await createTask(ids.ownerUser, "Design");
+
+			const results = await actAs(ids.employeeUser, () =>
+				Promise.all([
+					tasks.createProjectTask({ projectId: ids.project, name: "Build" }),
+					tasks.updateProjectTask(id, { name: "Renamed" }),
+					tasks.markProjectTaskDone(id),
+					tasks.reopenProjectTask(id),
+					tasks.deleteProjectTask(id),
+				]),
+			);
+
+			expect(results.map((result) => result.success)).toEqual([false, false, false, false, false]);
+			expect(await taskRows()).toMatchObject([{ id, name: "Design", state: "open" }]);
+			expect(audit.logAudit).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe("organization isolation", () => {
+		it("an org admin cannot read or change another organization's task", async () => {
+			const results = await actAs(ids.ownerUser, () =>
+				Promise.all([
+					tasks.getProjectTasks(ids.otherProject),
+					tasks.createProjectTask({ projectId: ids.otherProject, name: "Intrusion" }),
+					tasks.updateProjectTask(ids.otherTask, { name: "Renamed" }),
+					tasks.markProjectTaskDone(ids.otherTask),
+					tasks.deleteProjectTask(ids.otherTask),
+				]),
+			);
+
+			expect(results.map((result) => result.success)).toEqual([false, false, false, false, false]);
+			expect(await taskRows(ids.otherProject)).toMatchObject([
+				{ id: ids.otherTask, name: "Foreign task", state: "open" },
+			]);
+			expect(audit.logAudit).not.toHaveBeenCalled();
+		});
+
+		it("the task read never returns another organization's tasks", async () => {
+			await createTask(ids.ownerUser, "Design");
+
+			expect(
+				await listProjectTasks({ organizationId: ids.organization, projectId: ids.otherProject }),
+			).toEqual([]);
+			expect(await findProjectTask({ organizationId: ids.organization, taskId: ids.otherTask })).toBe(
+				null,
+			);
+		});
+	});
+
+	describe("the task read", () => {
+		it("lists open tasks first, by name, and filters by state", async () => {
+			const zeta = await createTask(ids.ownerUser, "zeta");
+			const alpha = await createTask(ids.ownerUser, "Alpha");
+			const done = await createTask(ids.ownerUser, "Beta");
+			await actAs(ids.ownerUser, () => tasks.markProjectTaskDone(done));
+			const scope = { organizationId: ids.organization, projectId: ids.project };
+
+			expect((await listProjectTasks(scope)).map((task) => task.id)).toEqual([alpha, zeta, done]);
+			expect((await listProjectTasks(scope, { state: "open" })).map((task) => task.id)).toEqual([
+				alpha,
+				zeta,
+			]);
+			expect((await listProjectTasks(scope, { state: "done" })).map((task) => task.id)).toEqual([
+				done,
+			]);
+		});
+	});
+
+	describe("project lifecycle", () => {
+		it("archiving a project keeps its tasks", async () => {
+			const id = await createTask(ids.ownerUser, "Design");
+			await admin.query("update project set status = 'archived' where id = $1", [ids.project]);
+
+			expect((await taskRows()).map((row) => row.id)).toEqual([id]);
+		});
+
+		it("deleting a project removes its tasks", async () => {
+			await createTask(ids.ownerUser, "Design");
+			await admin.query("delete from project where id = $1", [ids.project]);
+
+			expect(await taskRows()).toEqual([]);
+		});
+	});
+
+	async function createTask(
+		userId: string,
+		name: string,
+		extra: { description?: string; estimateHours?: number } = {},
+		projectId: string = ids.project,
+	) {
+		const result = await actAs(userId, () =>
+			tasks.createProjectTask({ projectId, name, ...extra }),
+		);
+		if (!result.success) throw new Error(`Task creation failed: ${result.error}`);
+		return result.data.id;
+	}
 });
