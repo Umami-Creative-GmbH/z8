@@ -142,7 +142,7 @@ async function remindOrganization(
 			});
 		}
 		// Policy-day occasions already sent are not judged again, which skips their policy lookups.
-		const recorded = await loadRecordedOccasionKeys(
+		const recordedOccasionKeys = await loadRecordedOccasionKeys(
 			{
 				organizationId: organization.organizationId,
 				occasionKeys: [...evaluations.values()].flatMap(policyDayOccasionKeys),
@@ -164,7 +164,7 @@ async function remindOrganization(
 							timezone: person.timezone,
 							now,
 						}),
-						recorded,
+						recordedOccasionKeys,
 					)),
 				];
 				const live = breakFacts.get(person.employeeId);

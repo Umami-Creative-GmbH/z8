@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseInstant, parsePlainDate, parsePlainTimeMinute } from "@/lib/datetime/temporal-core";
-import { clockingReminderOccasionKey } from "./occasion";
+import { type ClockingReminderType, clockingReminderOccasionKey } from "./occasion";
 import {
 	evaluatePolicyReminders,
 	type PolicyDayFacts,
@@ -280,10 +280,7 @@ describe("forgotten clock-out reminders once the day's required hours are reache
 });
 
 describe("policy-day occasions already recorded as sent", () => {
-	const occasion = (
-		type: "missed_clock_in_reminder" | "forgotten_clock_out_reminder",
-		day: string,
-	) =>
+	const occasion = (type: ClockingReminderType, day: string) =>
 		clockingReminderOccasionKey(type, {
 			kind: "policy_day",
 			employeeId: "employee-1",

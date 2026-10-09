@@ -2,7 +2,11 @@ import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { type PlainDate, type PlainTime, plainDateAt } from "@/lib/datetime/temporal-core";
 import { shiftInterval, workMatchesShift } from "@/lib/scheduling/shift-occasion";
 import { complianceDayTotalsOf } from "@/lib/time-tracking/compliance-totals";
-import { clockingReminderOccasionKey, type DueClockingReminder } from "./occasion";
+import {
+	type ClockingReminderType,
+	clockingReminderOccasionKey,
+	type DueClockingReminder,
+} from "./occasion";
 import { coversInstant, notBefore, type ReminderInput, type ReminderWork } from "./shift-reminders";
 
 /** What the evaluator needs to know about the employee's work policy on a local day. */
@@ -13,7 +17,7 @@ export interface PolicyDayFacts {
 	requiredMinutes(day: PlainDate): Promise<number>;
 }
 
-type PolicyDayReminderType = "missed_clock_in_reminder" | "forgotten_clock_out_reminder";
+type PolicyDayReminderType = Exclude<ClockingReminderType, "break_due_reminder">;
 
 /**
  * The reminders due now that the employee's work policy judges: a missed clock-in on an
