@@ -20,6 +20,7 @@ vi.mock("@/lib/auth/app-auth-code", () => ({ createAppAuthCode: vi.fn() }));
 vi.mock("@/env", () => ({
 	env: {
 		NODE_ENV: "production",
+		APP_URL: "https://app.example.test",
 		RATE_LIMIT_DISABLED: "false",
 		RATE_LIMIT_AUTH: "2/60",
 	},

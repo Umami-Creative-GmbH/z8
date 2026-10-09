@@ -32,6 +32,7 @@ vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({ error: mockState.logError }),
 }));
 
+vi.mock("@/env", () => ({ env: { APP_URL: "https://app.example.com" } }));
 const { GET } = await import("./route");
 
 function createRequest(url: string): NextRequest {
