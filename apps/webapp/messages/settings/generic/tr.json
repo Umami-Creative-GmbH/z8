@@ -23,6 +23,10 @@
       },
       "title": "Veri İşleme Sözleşmesi (DPA)"
     },
+    "billableTime": {
+      "description": "Faturalama para birimi ve kuruluşunuzun müşterilere iş için yansıttığı ücret",
+      "title": "Faturalandırılabilir süre"
+    },
     "billing": {
       "description": "Aboneliğinizi, ödeme yöntemlerinizi ve faturalarınızı yönetin",
       "title": "Faturalandırma ve Abonelik"

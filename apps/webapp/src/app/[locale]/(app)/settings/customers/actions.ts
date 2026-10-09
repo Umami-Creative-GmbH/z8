@@ -433,12 +433,30 @@ export async function deleteCustomer(customerId: string): Promise<ServerActionRe
 					action: "delete",
 				});
 
-				// Soft delete
+				// Soft delete. Its projects are now without customer (Billable Time, #768),
+				// so their billable default switches off with it; existing work is unchanged.
 				yield* dbService.query("customer.delete", async () => {
-					await db
-						.update(customer)
-						.set({ isActive: false, updatedBy: session.user.id })
-						.where(eq(customer.id, customerId));
+					await dbService.db.transaction(async (tx) => {
+						await tx
+							.update(customer)
+							.set({ isActive: false, updatedBy: session.user.id })
+							.where(
+								and(
+									eq(customer.id, customerId),
+									eq(customer.organizationId, existingCustomer.organizationId),
+								),
+							);
+						await tx
+							.update(project)
+							.set({ billableDefault: false, updatedBy: session.user.id })
+							.where(
+								and(
+									eq(project.customerId, customerId),
+									eq(project.organizationId, existingCustomer.organizationId),
+									eq(project.billableDefault, true),
+								),
+							);
+					});
 				});
 
 				// Log audit (fire-and-forget)

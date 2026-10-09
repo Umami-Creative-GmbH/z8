@@ -1,7 +1,17 @@
-import { index, integer, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+	foreignKey,
+	index,
+	integer,
+	pgTable,
+	text,
+	timestamp,
+	uniqueIndex,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { currentTimestamp } from "./timestamp";
 import { organization, user } from "../auth-schema";
 import { employee } from "./organization";
+import { project } from "./project";
 
 // ============================================
 // CLOCKODO IMPORT USER MAPPING
@@ -53,5 +63,47 @@ export const clockodoUserMapping = pgTable(
 		),
 		index("clockodoUserMapping_organizationId_idx").on(table.organizationId),
 		index("clockodoUserMapping_employeeId_idx").on(table.employeeId),
+	],
+);
+
+// ============================================
+// CLOCKODO IMPORT PROJECT MAPPING (#907)
+// ============================================
+
+/**
+ * Maps a Clockodo project to an EXISTING Z8 project of the same organization.
+ * Created in the project-mapping wizard step; the import never creates projects.
+ * A Clockodo project without a row is unmapped: its entries import without a
+ * project, so they are never billable. The project reference is
+ * organization-scoped; deleting the project removes the mapping.
+ */
+export const clockodoProjectMapping = pgTable(
+	"clockodo_project_mapping",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		clockodoProjectId: integer("clockodo_project_id").notNull(),
+		clockodoProjectName: text("clockodo_project_name").notNull(),
+		projectId: uuid("project_id").notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+		createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+	},
+	(table) => [
+		uniqueIndex("clockodoProjectMapping_org_clockodoProject_unique_idx").on(
+			table.organizationId,
+			table.clockodoProjectId,
+		),
+		index("clockodoProjectMapping_project_idx").on(table.organizationId, table.projectId),
+		foreignKey({
+			name: "clockodo_project_mapping_project_fk",
+			columns: [table.projectId, table.organizationId],
+			foreignColumns: [project.id, project.organizationId],
+		}).onDelete("cascade"),
 	],
 );

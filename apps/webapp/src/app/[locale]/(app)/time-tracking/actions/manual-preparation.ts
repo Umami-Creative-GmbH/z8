@@ -30,6 +30,11 @@ import {
 	type ProjectTaskIneligibility,
 	projectTaskIneligibility,
 } from "@/lib/time-tracking/project-eligibility";
+import {
+	type BillableWorkRefusal,
+	BillableWorkRefusedError,
+	resolveWorkBillabilityInTransaction,
+} from "@/lib/time-tracking/work-billability";
 import type { SealedWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 import { validateWorkCategoryAssignment } from "./clocking";
 import { validateProjectAssignment } from "./entry-helpers";
@@ -59,6 +64,8 @@ export type ManualPreparationRejection =
 	/** The command's task cannot be booked (#873). */
 	| { reason: ProjectTaskIneligibility }
 	| { reason: "category_ineligible"; message: string }
+	/** Billable work was requested without a project or customer (#900). */
+	| { reason: "billable_not_allowed"; detail: BillableWorkRefusal }
 	| { reason: "policy_ambiguous"; level: ManualPolicyLevel };
 
 /** Normalized authoritative facts; the submitted command stays separate. */
@@ -73,6 +80,8 @@ export type PreparedManualWork = {
 	interval: ManualInterval;
 	reason: string;
 	projectId: string | null;
+	/** The project's billable default, or the command's explicit choice (#900). */
+	isBillable: boolean;
 	/** A bookable task of `projectId`, or null. */
 	taskId: string | null;
 	workCategoryId: string | null;
@@ -309,6 +318,19 @@ export async function prepareManualWork(
 		}
 	}
 
+	let isBillable: boolean;
+	try {
+		isBillable = await resolveWorkBillabilityInTransaction(tx, target.organizationId, {
+			projectId: command.projectId,
+			projectChosen: true,
+			current: false,
+			requested: command.billable,
+		});
+	} catch (error) {
+		if (!(error instanceof BillableWorkRefusedError)) throw error;
+		return { ok: false, rejection: { reason: "billable_not_allowed", detail: error.reason } };
+	}
+
 	const daysBack = manualCalendarDaysBack(interval.end, now, zone.timezone);
 	let policy: ManualPolicyEvidence | null = null;
 	let exemption: "on_behalf" | "owner_admin_self" | null = null;
@@ -341,6 +363,7 @@ export async function prepareManualWork(
 			interval,
 			reason: command.reason.trim(),
 			projectId: command.projectId,
+			isBillable,
 			taskId: command.taskId ?? null,
 			workCategoryId: command.workCategoryId,
 			workLocationType: command.workLocationType,

@@ -23,6 +23,12 @@ let activeWorkPeriodMock: {
 	startTime: string;
 	currentTask?: { id: string; name: string; state: "open" | "done"; projectId: string } | null;
 } | null = null;
+let billableTimeEnabledMock = false;
+const defaultProjects = () => [
+	{ id: "project-1", name: "Project One", tasks: [{ id: "task-1", name: "Design" }] },
+	{ id: "project-2", name: "Project Two", tasks: [] },
+];
+let projectsMock: Array<Record<string, unknown>> = defaultProjects();
 
 function getPopoverClockButton(name: "Clock In" | "Clock Out"): HTMLElement {
 	const button = screen.getAllByRole("button", { name }).at(-1);
@@ -52,10 +58,7 @@ vi.mock("@/lib/query", () => ({
 
 vi.mock("@/lib/query/use-assigned-projects", () => ({
 	useAssignedProjects: () => ({
-		projects: [
-			{ id: "project-1", name: "Project One", tasks: [{ id: "task-1", name: "Design" }] },
-			{ id: "project-2", name: "Project Two", tasks: [] },
-		],
+		projects: projectsMock,
 		isLoading: false,
 		isError: false,
 	}),
@@ -75,6 +78,10 @@ vi.mock("@tolgee/react", () => ({
 			);
 		},
 	}),
+}));
+
+vi.mock("@/stores/organization-settings-store", () => ({
+	useBillableTimeEnabled: () => billableTimeEnabledMock,
 }));
 
 vi.mock("next-intl", () => ({
@@ -142,6 +149,8 @@ describe("TimeClockPopover", () => {
 		isClockedInMock = false;
 		captureMode = "server";
 		activeWorkPeriodMock = null;
+		billableTimeEnabledMock = false;
+		projectsMock = defaultProjects();
 		clockInMock.mockResolvedValue({ success: true });
 		addBreakMock.mockResolvedValue({ success: true });
 	});
@@ -293,6 +302,58 @@ describe("TimeClockPopover", () => {
 				workCategoryId: "category-1",
 			}),
 		);
+	});
+	describe("billable toggle (#900)", () => {
+		function clockOutWithStoredProject(project: Record<string, unknown>) {
+			localStorageData = { "z8-last-project-id": "project-1" };
+			projectsMock = [{ id: "project-1", name: "Project One", tasks: [], ...project }];
+			isClockedInMock = true;
+			activeWorkPeriodMock = { startTime: "2026-05-18T08:00:00.000Z" };
+			clockOutMock.mockResolvedValue({ success: true, queued: true });
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+		}
+
+		it("prefills the project's billable default and sends an override", async () => {
+			billableTimeEnabledMock = true;
+			clockOutWithStoredProject({ hasCustomer: true, billableDefault: true });
+
+			const toggle = await screen.findByRole("switch", { name: "Billable" });
+			expect(toggle.getAttribute("aria-checked")).toBe("true");
+			fireEvent.click(toggle);
+			fireEvent.click(getPopoverClockButton("Clock Out"));
+
+			await waitFor(() =>
+				expect(clockOutMock).toHaveBeenCalledWith({ projectId: "project-1", billable: false }),
+			);
+		});
+
+		it("leaves the default to the server while the toggle is untouched", async () => {
+			billableTimeEnabledMock = true;
+			clockOutWithStoredProject({ hasCustomer: true, billableDefault: true });
+
+			await screen.findByRole("switch", { name: "Billable" });
+			fireEvent.click(getPopoverClockButton("Clock Out"));
+
+			await waitFor(() => expect(clockOutMock).toHaveBeenCalledWith({ projectId: "project-1" }));
+		});
+
+		it("disables the toggle for a project without a customer", async () => {
+			billableTimeEnabledMock = true;
+			clockOutWithStoredProject({ hasCustomer: false, billableDefault: false });
+
+			const toggle = await screen.findByRole("switch", { name: "Billable" });
+			expect(toggle.getAttribute("aria-disabled") ?? String(toggle.hasAttribute("disabled"))).toBe(
+				"true",
+			);
+		});
+
+		it("hides the toggle while Billable Time is off", async () => {
+			clockOutWithStoredProject({ hasCustomer: true, billableDefault: true });
+
+			await waitFor(() => expect(getPopoverClockButton("Clock Out")).toBeTruthy());
+			expect(screen.queryByRole("switch", { name: "Billable" })).toBeNull();
+		});
 	});
 
 	describe("task at clock-out", () => {

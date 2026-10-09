@@ -28,6 +28,8 @@ export interface NewProjectValues {
 	/** UTC midnight of the deadline's calendar date; null = none. */
 	deadline: Date | null;
 	customerId: string | null;
+	/** Billable Time (#900): whether new work starts billable; needs a customer. Absent is off. */
+	billableDefault?: boolean;
 	createdBy: string;
 }
 

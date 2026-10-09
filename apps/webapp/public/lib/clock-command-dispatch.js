@@ -88,6 +88,8 @@ function buildUnstampedCommand(request, target) {
 	command.workCategory = attribution(request.workCategory);
 	// Only a named task is frozen (#875): a command without one keeps its exact bytes.
 	if (request.task) command.task = attribution(request.task);
+	// Explicit billability (#900); omitted keeps the bytes of earlier commands.
+	if (typeof request.billable === "boolean") command.billable = request.billable;
 	return command;
 }
 

@@ -28,8 +28,8 @@ interface CalendarEventDialogsProps {
 	onManualEntryOpenChange: (open: boolean) => void;
 	onManualEntrySuccess: () => void;
 	pendingClockOut: boolean;
-	/** The running work period the on-behalf clock-out closes. */
-	pendingClockOutWorkPeriodId: string | null;
+	/** The running work the on-behalf clock-out closes. */
+	pendingClockOutEvent?: CalendarEvent | null;
 	isClockOutPending: boolean;
 	onClockOutOpenChange: (open: boolean) => void;
 	onConfirmClockOut: (choice: OnBehalfClockOutTaskChoice) => void;
@@ -60,7 +60,7 @@ export function CalendarEventDialogs({
 	onManualEntryOpenChange,
 	onManualEntrySuccess,
 	pendingClockOut,
-	pendingClockOutWorkPeriodId,
+	pendingClockOutEvent,
 	isClockOutPending,
 	onClockOutOpenChange,
 	onConfirmClockOut,
@@ -103,7 +103,8 @@ export function CalendarEventDialogs({
 			/>
 			<ClockOutOnBehalfDialog
 				open={pendingClockOut}
-				workPeriodId={pendingClockOutWorkPeriodId}
+				workPeriodId={pendingClockOutEvent?.id ?? null}
+				work={pendingClockOutEvent ?? null}
 				isPending={isClockOutPending}
 				onOpenChange={onClockOutOpenChange}
 				onConfirm={onConfirmClockOut}

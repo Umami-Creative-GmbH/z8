@@ -109,6 +109,8 @@ type ClockInInput = ClockingInput & {
 type ClockOutInput = ClockingInput & {
 	workPeriodId?: string;
 	projectId?: string | null;
+	/** The closure's resolved billability (#900); absent leaves the period's value. */
+	isBillable?: boolean;
 	/** A task of the project (#873), mirrored from the canonical allocation. */
 	taskId?: string | null;
 	workCategoryId?: string | null;
@@ -598,6 +600,7 @@ export function createClockingService(deps: ClockingDependencies) {
 						durationMinutes,
 						isActive: false,
 						projectId: input.projectId ?? null,
+						...(input.isBillable === undefined ? {} : { isBillable: input.isBillable }),
 						taskId: input.taskId ?? null,
 						workCategoryId: input.workCategoryId ?? null,
 						canonicalRecordId: input.canonicalRecordId ?? null,

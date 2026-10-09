@@ -1,11 +1,13 @@
 "use client";
 
-import { IconLoader2 } from "@tabler/icons-react";
+import { IconCoin, IconLoader2, IconReceipt2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { use, useEffect } from "react";
 import { toast } from "sonner";
+import { BillableRateSeries } from "@/components/billable-time/billable-rate-series";
+import { CostRateSeries } from "@/components/billable-time/cost-rate-series";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { EmployeeLifecycleActions } from "@/components/organization/employee-lifecycle-actions";
 import { PersonnelFilePanel } from "@/components/personnel-file/personnel-file-panel";
@@ -24,6 +26,7 @@ import { queryKeys } from "@/lib/query";
 import { type EmployeeDetail, useEmployee } from "@/lib/query/use-employee";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 import { useRouter } from "@/navigation";
+import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
 import { EmployeeDraftActions } from "./employee-draft-actions";
 import {
 	EmployeeDetailHeader,
@@ -307,6 +310,7 @@ function EmployeeRecordSections({
 	const { t } = useTranslate();
 	const isOrgAdmin = accessTier === "orgAdmin";
 	const isOrgAdminOrManager = isOrgAdmin || accessTier === "manager";
+	const billableTimeEnabled = useBillableTimeEnabled();
 	const { availableManagers, workPolicies } = data;
 
 	const handleWorkBalanceRecalculation = async () => {
@@ -394,6 +398,38 @@ function EmployeeRecordSections({
 					isAdmin={isOrgAdminOrManager}
 					onAddRate={data.updateRate}
 					isAddingRate={data.isUpdatingRate}
+				/>
+			)}
+
+			{isOrgAdmin && billableTimeEnabled && (
+				<BillableRateSeries
+					target={{ level: "employee", employeeId }}
+					title={
+						<>
+							<IconCoin aria-hidden="true" className="size-5" />
+							{t("settings.billableTime.rates.employeeRateTitle", "Billable rate")}
+						</>
+					}
+					description={t(
+						"settings.billableTime.rates.employeeRateDescription",
+						"What your organization charges customers per hour of this employee's work when no project, customer or employee-on-project rate applies.",
+					)}
+				/>
+			)}
+
+			{isOrgAdmin && billableTimeEnabled && (
+				<CostRateSeries
+					employeeId={employeeId}
+					title={
+						<>
+							<IconReceipt2 aria-hidden="true" className="size-5" />
+							{t("settings.billableTime.costRates.employeeTitle", "Cost rate")}
+						</>
+					}
+					description={t(
+						"settings.billableTime.costRates.employeeDescription",
+						"This employee's fully loaded internal cost per hour, used for margin. Separate from the wage.",
+					)}
 				/>
 			)}
 		</>

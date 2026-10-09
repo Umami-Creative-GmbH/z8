@@ -13,6 +13,7 @@ import {
 	timeEntry,
 	workPeriod,
 } from "@/db/schema";
+import { projectHasActiveCustomerSql } from "@/lib/billable-time/project-customer";
 import { dateFromDB } from "@/lib/datetime/drizzle-adapter";
 import { localMonthRange } from "@/lib/datetime/temporal-boundaries";
 import {
@@ -120,6 +121,8 @@ export async function getWorkPeriodsForMonth(
 				clockOutEditorName: clockOutEditor.name,
 				surcharge: surchargeCalculation,
 				project: project,
+				// Billable Time (#900): a deleted customer leaves the project without customer.
+				projectHasCustomer: projectHasActiveCustomerSql(),
 				task: {
 					id: projectTask.id,
 					name: projectTask.name,
@@ -176,6 +179,7 @@ export async function getWorkPeriodsForMonth(
 				clockOutEditorName,
 				surcharge,
 				project: proj,
+				projectHasCustomer,
 				task,
 				automaticExecution,
 			}) => {
@@ -229,7 +233,10 @@ export async function getWorkPeriodsForMonth(
 								projectId: proj.id,
 								projectName: proj.name,
 								projectColor: proj.color || undefined,
+								projectHasCustomer: projectHasCustomer === true,
 							}),
+							// Billable Time (#900): whether the work is billable.
+							isBillable: period.isBillable,
 							...(bookedTask && {
 								taskId: bookedTask.id,
 								taskName: bookedTask.name,
@@ -343,7 +350,10 @@ export async function getWorkPeriodsForMonth(
 							projectId: proj.id,
 							projectName: proj.name,
 							projectColor: proj.color || undefined,
+							projectHasCustomer: projectHasCustomer === true,
 						}),
+						// Billable Time (#900): whether the work is billable.
+						isBillable: period.isBillable,
 						...(bookedTask && {
 							taskId: bookedTask.id,
 							taskName: bookedTask.name,

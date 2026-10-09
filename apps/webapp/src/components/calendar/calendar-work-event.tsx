@@ -1,10 +1,12 @@
 "use client";
 
+import { IconCoin } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { WorkLocationIndicator } from "@/components/time-tracking/work-location-indicator";
 import { calendarColors } from "@/lib/calendar/schedule-x-adapter";
 import { formatTimeStringForPreference } from "@/lib/user-preferences/time-format";
+import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
 
 interface CalendarWorkEventProps {
 	calendarEvent: {
@@ -17,7 +19,7 @@ interface CalendarWorkEventProps {
 		end?: { hour?: number; minute?: number };
 		_eventData?: {
 			type: string;
-			metadata: { workLocationType?: string | null };
+			metadata: { workLocationType?: string | null; isBillable?: boolean };
 		};
 	};
 }
@@ -38,6 +40,7 @@ function CalendarWorkEvent({
 }: CalendarWorkEventProps & { timeGrid?: boolean }) {
 	const { t } = useTranslate();
 	const timeFormat = useTimeFormat();
+	const billableTimeEnabled = useBillableTimeEnabled();
 	const html = timeGrid
 		? (calendarEvent._calendarTimeGridContent ??
 			calendarEvent._customContent?.timeGrid)
@@ -79,6 +82,15 @@ function CalendarWorkEvent({
 				<WorkLocationIndicator
 					value={calendarEvent._eventData.metadata.workLocationType}
 					t={t}
+				/>
+			) : null}
+			{billableTimeEnabled &&
+			calendarEvent._eventData?.type === "work_period" &&
+			calendarEvent._eventData.metadata.isBillable ? (
+				<IconCoin
+					className="mt-0.5 size-3 shrink-0"
+					role="img"
+					aria-label={t("calendar.workPeriod.billable", "Billable")}
 				/>
 			) : null}
 			<div className="min-w-0 flex-1">

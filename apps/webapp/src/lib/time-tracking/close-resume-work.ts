@@ -213,6 +213,7 @@ export async function closeAndResumeWork(
 		},
 		carriedAttribution: {
 			projectId: attribution.projectId,
+			isBillable: attribution.isBillable ?? false,
 			// The resumed work keeps the task with its project (#873).
 			...recordedTaskId(attribution.taskId),
 			workCategoryId: attribution.workCategoryId,

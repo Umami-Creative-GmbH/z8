@@ -129,18 +129,21 @@ function lockedSource(overrides: Record<string, unknown> = {}) {
 		canonicalWorkCategoryId: snapshot.workCategoryId,
 		canonicalWorkLocationType: snapshot.workLocationType,
 		computationMetadata: "original-computation",
+		isBillable: true,
 		allocations: [
 			{
 				allocationKind: "project",
 				projectId: snapshot.projectId,
 				costCenterId: null,
 				weightPercent: 75,
+				isBillable: true,
 			},
 			{
 				allocationKind: "cost_center",
 				projectId: null,
 				costCenterId: "80000000-0000-4000-8000-000000000001",
 				weightPercent: 25,
+				isBillable: false,
 			},
 		],
 		...overrides,
@@ -540,8 +543,8 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 		const allocationInserts = inserts.filter((query) =>
 			query.sql.includes("time_record_allocation"),
 		);
-		// organization, record, kind, project, task (#873), cost center, weight.
-		expect(allocationInserts.map((query) => query.params.slice(1, 8))).toEqual([
+		// organization, record, kind, project, task (#873), cost center, weight, billable (#900).
+		expect(allocationInserts.map((query) => query.params.slice(1, 9))).toEqual([
 			[
 				organizationId,
 				secondCanonicalId,
@@ -550,6 +553,8 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 				null,
 				null,
 				75,
+				// The generated half keeps the source's billability (#900).
+				true,
 			],
 			[
 				organizationId,
@@ -559,6 +564,7 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 				null,
 				"80000000-0000-4000-8000-000000000001",
 				25,
+				false,
 			],
 		]);
 
@@ -592,6 +598,7 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 		expect(secondPeriod?.params[16]).toBeNull();
 		expect(secondPeriod?.params[17]).toBe(secondCanonicalId);
 		expect(secondPeriod?.params[18]).toBeNull();
+		expect(secondPeriod?.params.at(-1)).toBe(true);
 		const originalPeriodUpdate = updates.find((query) =>
 			query.sql.includes("work_period"),
 		);

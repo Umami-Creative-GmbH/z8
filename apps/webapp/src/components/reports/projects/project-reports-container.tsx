@@ -5,15 +5,24 @@ import { useTranslate } from "@tolgee/react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
+	getCustomerBillableReport,
 	getProjectDetailedReport,
 	getProjectsOverview,
 } from "@/app/[locale]/(app)/reports/projects/actions";
+import { ReportDocumentExportButtons } from "@/components/reports/report-document-export-buttons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { ProjectDetailedReport, ProjectPortfolioData } from "@/lib/reports/project-types";
+import { buildProjectReportDocument } from "@/lib/reports/project-report-export";
+import type {
+	CustomerBillableReport,
+	ProjectDetailedReport,
+	ProjectPortfolioData,
+} from "@/lib/reports/project-types";
 import type { ReportDateRange } from "@/lib/reports/types";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
+import { BillableEmployeeTable, BillableFiguresCard } from "./billable-figures";
+import { CustomerBillableView } from "./customer-billable-view";
 import { ProjectBudgetProgress } from "./project-budget-progress";
 import { ProjectBudgetUtilizationSummary } from "./project-budget-utilization-summary";
 import { ProjectFilters } from "./project-filters";
@@ -28,10 +37,11 @@ export function ProjectReportsContainer() {
 	const { t } = useTranslate();
 	const [portfolioData, setPortfolioData] = useState<ProjectPortfolioData | null>(null);
 	const [detailedReport, setDetailedReport] = useState<ProjectDetailedReport | null>(null);
+	const [customerReport, setCustomerReport] = useState<CustomerBillableReport | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const dateRangeRef = useRef<ReportDateRange | null>(null);
-	const [activeTab, setActiveTab] = useState<"portfolio" | "project">("portfolio");
+	const [activeTab, setActiveTab] = useState<"portfolio" | "customers" | "project">("portfolio");
 
 	const handleGeneratePortfolio = async (range: ReportDateRange, statusFilter?: string[]) => {
 		setIsLoading(true);
@@ -56,7 +66,12 @@ export function ProjectReportsContainer() {
 				});
 				return;
 			}
+			// The customer view exists for viewers who see Billable Time figures.
+			const customers = result.data.billableTime
+				? await getCustomerBillableReport(range.startDate, range.endDate, statusFilter)
+				: null;
 			setPortfolioData(result.data);
+			setCustomerReport(customers?.success ? customers.data : null);
 			setDetailedReport(null);
 			setActiveTab("portfolio");
 			toast.success(t("reports.projects.toast.portfolioGenerated", "Portfolio report generated"));
@@ -159,11 +174,19 @@ export function ProjectReportsContainer() {
 
 			{/* Results */}
 			{!isLoading && portfolioData && (
-				<Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "portfolio" | "project")}>
+				<Tabs
+					value={activeTab}
+					onValueChange={(v) => setActiveTab(v as "portfolio" | "customers" | "project")}
+				>
 					<TabsList>
 						<TabsTrigger value="portfolio">
 							{t("reports.projects.container.portfolioOverview", "Portfolio Overview")}
 						</TabsTrigger>
+						{customerReport && (
+							<TabsTrigger value="customers">
+								{t("reports.projects.container.customers", "Customers")}
+							</TabsTrigger>
+						)}
 						<TabsTrigger value="project" disabled={!detailedReport}>
 							{detailedReport
 								? detailedReport.project.name
@@ -174,6 +197,13 @@ export function ProjectReportsContainer() {
 					<TabsContent value="portfolio" className="space-y-6">
 						{/* Summary Cards */}
 						<ProjectSummaryCards data={portfolioData.totals} />
+
+						{portfolioData.totals.billable && portfolioData.billableTime && (
+							<BillableFiguresCard
+								figures={portfolioData.totals.billable}
+								context={portfolioData.billableTime}
+							/>
+						)}
 
 						<ProjectHealthAlerts
 							projects={portfolioData.projects}
@@ -189,9 +219,26 @@ export function ProjectReportsContainer() {
 						/>
 					</TabsContent>
 
+					{customerReport && (
+						<TabsContent value="customers" className="space-y-6">
+							<CustomerBillableView
+								report={customerReport}
+								onProjectSelect={handleSelectProject}
+							/>
+						</TabsContent>
+					)}
+
 					<TabsContent value="project" className="space-y-6">
 						{detailedReport && (
 							<>
+								<div className="flex justify-end">
+									<ReportDocumentExportButtons
+										buildDocument={(context) =>
+											buildProjectReportDocument(detailedReport, context)
+										}
+									/>
+								</div>
+
 								{/* Project Summary Cards */}
 								<ProjectSummaryCards
 									data={{
@@ -218,6 +265,13 @@ export function ProjectReportsContainer() {
 									/>
 								)}
 
+								{detailedReport.summary.billable && detailedReport.billableTime && (
+									<BillableFiguresCard
+										figures={detailedReport.summary.billable}
+										context={detailedReport.billableTime}
+									/>
+								)}
+
 								{/* Hours Chart */}
 								<ProjectHoursChart data={detailedReport.timeSeries} />
 
@@ -229,6 +283,7 @@ export function ProjectReportsContainer() {
 
 								{/* Task Breakdown */}
 								<ProjectTaskBreakdown taskBreakdown={detailedReport.taskBreakdown} />
+								<BillableEmployeeTable employees={detailedReport.employeeBreakdown} />
 							</>
 						)}
 					</TabsContent>

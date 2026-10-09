@@ -42,6 +42,10 @@ import {
 	resolveTimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
+import {
+	BillableWorkRefusedError,
+	resolveWorkBillabilityInTransaction,
+} from "@/lib/time-tracking/work-billability";
 import { isWorkLocationType, type WorkLocationType } from "@/lib/time-tracking/work-location";
 import { APPEND_REVIEW_REQUIRED_CODE } from "@/lib/time-tracking/time-clock-client";
 import {
@@ -139,6 +143,7 @@ type ManualSubmissionRequestEvidence = {
 	projectId: string | null;
 	workCategoryId: string | null;
 	workLocationType?: WorkLocationType;
+	billable?: boolean;
 	/** Omitted when the entry names no task, so earlier evidence keeps matching (#873). */
 	taskId?: string;
 };
@@ -163,6 +168,8 @@ function manualRequestEvidence(
 		projectId: data.projectId ?? null,
 		workCategoryId: data.workCategoryId ?? null,
 		...(data.workLocationType !== undefined ? { workLocationType: data.workLocationType } : {}),
+		// Present only when chosen (#900), so earlier submissions keep their evidence.
+		...(typeof data.billable === "boolean" ? { billable: data.billable } : {}),
 		...recordedTaskId(data.taskId),
 	};
 }
@@ -219,6 +226,7 @@ function parseManualSubmissionMetadata(input: {
 		"projectId",
 		"workCategoryId",
 		...(input.request.workLocationType !== undefined ? ["workLocationType"] : []),
+		...(input.request.billable !== undefined ? ["billable"] : []),
 		...(input.request.taskId !== undefined ? ["taskId"] : []),
 	]);
 	for (const [key, expected] of Object.entries(input.request)) {
@@ -706,6 +714,8 @@ export async function clockOutAs(
 			kind: "clock_out",
 			project: attributionIntent(projectId),
 			workCategory: attributionIntent(workCategoryId),
+			// Only a real boolean chooses billability; anything else applies the default.
+			...(typeof actionContext.billable === "boolean" ? { billable: actionContext.billable } : {}),
 			...namedTaskIntent(actionContext.taskId),
 		},
 	});
@@ -1057,7 +1067,6 @@ export async function createManualTimeEntry(
 			};
 		}
 	}
-
 	let requiresApproval = false;
 	if (isOwnEntry) {
 		let editCapability: Awaited<ReturnType<typeof getEditCapabilityForPeriod>> | null;
@@ -1180,6 +1189,20 @@ export async function createManualTimeEntry(
 			}
 			// Absence is established under the submission identity lock.
 			if (admission === "append") return { disposition: "refresh_required" as const };
+			// New work takes the project's billable default unless the request chose
+			// (#900), decided in the write transaction with the project as it is now.
+			let isBillable: boolean;
+			try {
+				isBillable = await resolveWorkBillabilityInTransaction(tx, targetEmployee.organizationId, {
+					projectId: data.projectId || null,
+					projectChosen: true,
+					current: false,
+					requested: requestEvidence.billable,
+				});
+			} catch (error) {
+				if (!(error instanceof BillableWorkRefusedError)) throw error;
+				return { disposition: "billable_refused" as const, message: error.message };
+			}
 			// The task is re-checked under its row lock, so it cannot be marked done or
 			// deleted between the check and this booking's commit (#873).
 			if (taskBooking) {
@@ -1238,6 +1261,7 @@ export async function createManualTimeEntry(
 						workCategoryId: data.workCategoryId || null,
 						workLocationType: data.workLocationType ?? null,
 						projectId: data.projectId || null,
+						isBillable,
 						taskId: data.taskId || null,
 						computationMetadata: manualSubmissionMetadata({
 							submissionId,
@@ -1260,6 +1284,7 @@ export async function createManualTimeEntry(
 				endTime: adjustedClockOut,
 				durationMinutes,
 				projectId: data.projectId || null,
+				isBillable,
 				taskId: data.taskId || null,
 				workCategoryId: data.workCategoryId || null,
 				workLocationType: data.workLocationType ?? null,
@@ -1310,6 +1335,9 @@ export async function createManualTimeEntry(
 				resultEvidence,
 			};
 		});
+		if (committed.disposition === "billable_refused") {
+			return { success: false, error: committed.message };
+		}
 		if (committed.disposition === "refresh_required") {
 			return {
 				success: false,

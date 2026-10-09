@@ -536,6 +536,35 @@ describe("historical gap repair on PostgreSQL", () => {
 		expect((await readPlan()).plan.employees).toEqual([]);
 	});
 
+	it("carries the period's billability into the repaired project allocation (#900)", async () => {
+		const created = await missingRecord("2026-07-02");
+		// A metadata-only gap: the record exists but lost its project allocation.
+		const metadata = await legacyManual({
+			date: "2026-07-03",
+			clockInTime: "08:00",
+			clockOutTime: "10:00",
+		});
+		await admin.query(
+			"update work_period set project_id = $2, is_billable = true where id = any($1::uuid[])",
+			[[created, metadata], ids.project],
+		);
+		await authorizeRepair();
+
+		const applied = await apply(await readPlan());
+
+		expect(applied.status).toBe(200);
+		const { rows } = await admin.query(
+			`select wp.id, wp.is_billable, a.project_id, a.is_billable as allocation_billable
+			 from work_period wp join time_record_allocation a on a.record_id = wp.canonical_record_id
+			 where wp.id = any($1::uuid[]) order by wp.start_time`,
+			[[created, metadata]],
+		);
+		expect(rows).toEqual([
+			{ id: created, is_billable: true, project_id: ids.project, allocation_billable: true },
+			{ id: metadata, is_billable: true, project_id: ids.project, allocation_billable: true },
+		]);
+	});
+
 	it("restores a project allocation with the period's task, so period and allocation agree", async () => {
 		const task = "d3200000-0000-4000-8000-0000000000a3";
 		await admin.query(

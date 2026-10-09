@@ -18,6 +18,8 @@ interface TimeClockPopoverState {
 	lastClockOutEntryId: string | null;
 	notesText: string;
 	selectedProjectId: string | undefined;
+	/** The explicit billable choice (#900); undefined applies the project's default. */
+	billable: boolean | undefined;
 	/**
 	 * The task chosen for the selected project (#874): undefined while untouched, so
 	 * the clock-out names none and the running work's task follows the project;
@@ -31,6 +33,7 @@ interface TimeClockPopoverState {
 type TimeClockPopoverAction =
 	| { type: "setNotesText"; value: string }
 	| { type: "setSelectedProjectId"; value: string | undefined }
+	| { type: "setBillable"; value: boolean }
 	| { type: "setSelectedTaskId"; value: string | null }
 	| { type: "setSelectedWorkCategoryId"; value: string | undefined }
 	| { type: "setWorkLocationType"; value: WorkLocationType }
@@ -51,6 +54,7 @@ function createInitialState(): TimeClockPopoverState {
 		lastClockOutEntryId: null,
 		notesText: "",
 		selectedProjectId: undefined,
+		billable: undefined,
 		selectedTaskId: undefined,
 		selectedWorkCategoryId: undefined,
 		workLocationType: getInitialWorkLocationType(),
@@ -65,16 +69,20 @@ function timeClockPopoverReducer(
 		case "setNotesText":
 			return { ...state, notesText: action.value };
 		case "setSelectedProjectId": {
+			// A task never outlives its project (#874); a newly chosen project
+			// prefills its own billable default (#900).
 			const { projectId, taskId } = chooseProject(
 				{ projectId: state.selectedProjectId, taskId: state.selectedTaskId },
 				action.value,
 			);
 			return projectId === state.selectedProjectId
 				? state
-				: { ...state, selectedProjectId: projectId, selectedTaskId: taskId };
+				: { ...state, selectedProjectId: projectId, selectedTaskId: taskId, billable: undefined };
 		}
 		case "setSelectedTaskId":
 			return { ...state, selectedTaskId: action.value };
+		case "setBillable":
+			return { ...state, billable: action.value };
 		case "setSelectedWorkCategoryId":
 			return { ...state, selectedWorkCategoryId: action.value };
 		case "setWorkLocationType":
@@ -97,6 +105,7 @@ function timeClockPopoverReducer(
 			return {
 				...state,
 				selectedProjectId: undefined,
+				billable: undefined,
 				selectedTaskId: undefined,
 				selectedWorkCategoryId: undefined,
 			};

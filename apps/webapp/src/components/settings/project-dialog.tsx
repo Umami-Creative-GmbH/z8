@@ -39,8 +39,10 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { queryKeys } from "@/lib/query";
+import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
 import { ProjectColorPicker } from "./project-color-picker";
 import {
 	ProjectTemplatePreview,
@@ -76,6 +78,8 @@ interface FormValues {
 	budgetHours: string;
 	deadline: string;
 	customerId: string;
+	/** Billable Time (#900): whether new work on the project starts as billable. */
+	billableDefault: boolean;
 }
 
 function useProjectDialogController({
@@ -88,6 +92,7 @@ function useProjectDialogController({
 	const { t } = useTranslate();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const isEditing = !!project;
+	const billableTimeEnabled = useBillableTimeEnabled();
 
 	const { data: customersData } = useQuery({
 		queryKey: queryKeys.customers.selection(organizationId),
@@ -123,6 +128,7 @@ function useProjectDialogController({
 			? new Date(project.deadline).toISOString().split("T")[0]
 			: "",
 		customerId: project?.customerId || "",
+		billableDefault: project?.billableDefault ?? false,
 	};
 
 	const form = useForm({
@@ -134,6 +140,10 @@ function useProjectDialogController({
 				: undefined;
 			const deadline = value.deadline ? new Date(value.deadline) : undefined;
 			const customerId = value.customerId || undefined;
+			// Only a project with a customer has a billable default; the module hides it otherwise.
+			const billableDefault = billableTimeEnabled
+				? { billableDefault: customerId ? value.billableDefault : false }
+				: {};
 
 			if (isEditing && project) {
 				const result = await updateProject(project.id, {
@@ -144,6 +154,7 @@ function useProjectDialogController({
 					budgetHours: budgetHours ?? null,
 					deadline: deadline ?? null,
 					customerId: customerId ?? null,
+					...billableDefault,
 				}).catch(() => null);
 
 				if (!result) {
@@ -174,6 +185,7 @@ function useProjectDialogController({
 					description: value.description.trim() || null,
 					status: value.status,
 					customerId: customerId ?? null,
+					...billableDefault,
 				}).catch(() => null);
 
 				if (result?.success) {
@@ -201,6 +213,7 @@ function useProjectDialogController({
 				budgetHours,
 				deadline,
 				customerId,
+				...billableDefault,
 			}).catch(() => null);
 
 			if (!result) {
@@ -236,6 +249,7 @@ function useProjectDialogController({
 	});
 
 	return {
+		billableTimeEnabled,
 		customers,
 		form,
 		isEditing,
@@ -298,6 +312,7 @@ function ProjectDialogForm({
 	controller: ProjectDialogController;
 }) {
 	const {
+		billableTimeEnabled,
 		customers,
 		form,
 		isEditing,
@@ -437,6 +452,42 @@ function ProjectDialogForm({
 						)}
 					</form.Field>
 				)}
+
+				{/* Billable default (#900): only for a project with a customer */}
+				{billableTimeEnabled ? (
+					<form.Subscribe selector={(state) => state.values.customerId}>
+						{(customerId) => (
+							<form.Field name="billableDefault">
+								{(field) => (
+									<div className="flex items-center justify-between gap-3 rounded-lg border p-3">
+										<div className="space-y-0.5">
+											<Label htmlFor="billableDefault">
+												{t("settings.projects.field.billableDefault", "Billable by default")}
+											</Label>
+											<p className="text-sm text-muted-foreground">
+												{customerId
+													? t(
+															"settings.projects.field.billableDefaultHelp",
+															"New work on this project starts as billable. Existing work keeps its billability.",
+														)
+													: t(
+															"settings.projects.field.billableDefaultNeedsCustomer",
+															"Choose a customer to make new work billable by default.",
+														)}
+											</p>
+										</div>
+										<Switch
+											id="billableDefault"
+											checked={Boolean(customerId) && field.state.value}
+											onCheckedChange={(checked) => field.handleChange(checked)}
+											disabled={!customerId}
+										/>
+									</div>
+								)}
+							</form.Field>
+						)}
+					</form.Subscribe>
+				) : null}
 
 				{/* Status */}
 				<form.Field name="status">

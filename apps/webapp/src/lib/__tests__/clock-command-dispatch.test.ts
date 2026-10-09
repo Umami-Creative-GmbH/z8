@@ -149,6 +149,28 @@ describe("browser clock command dispatch", () => {
 		);
 	});
 
+	it("freezes an explicit billable choice and omits it otherwise (#900)", () => {
+		const request = {
+			operationId: "op-out",
+			kind: "clock_out",
+			admission: "delayed",
+			occurredAt: "2026-09-25T09:00:00.000Z",
+			timezone: "Europe/Berlin",
+			context,
+			knownWorkPeriodId: "period-1",
+			project: { kind: "preserve" },
+			workCategory: { kind: "preserve" },
+		};
+		const target = { workPeriodId: "period-1" };
+		expect(dispatch.buildCommand({ ...request, billable: false }, target)).toMatchObject({
+			billable: false,
+		});
+		expect(dispatch.buildCommand(request, target)).not.toHaveProperty("billable");
+		expect(dispatch.buildCommand({ ...request, billable: "yes" }, target)).not.toHaveProperty(
+			"billable",
+		);
+	});
+
 	it("appends a named task after the other attributions, and only then (#875)", () => {
 		const request = {
 			operationId: "op-out",

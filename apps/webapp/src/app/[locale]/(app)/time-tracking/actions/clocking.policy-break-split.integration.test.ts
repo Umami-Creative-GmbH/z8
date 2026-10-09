@@ -510,6 +510,7 @@ describe("policy clock-out terminal break splits on PostgreSQL", () => {
 				endUtcOffsetMinutes: 0,
 				attribution: {
 					projectId: null,
+					isBillable: false,
 					workCategoryId: null,
 					workLocationType: "office",
 					allocations: [],

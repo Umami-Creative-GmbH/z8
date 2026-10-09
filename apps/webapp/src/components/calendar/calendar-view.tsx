@@ -105,8 +105,10 @@ function useClockOutOnBehalf({
 		const workPeriodId = pendingClockOutEvent.id;
 		// Omitted, the running work's task stays with its project (#874).
 		const taskId = choice?.taskId;
-		// The task is part of the intended closure: another choice is another closure.
-		const closureKey = `${workPeriodId}:${taskId === undefined ? "keep" : (taskId ?? "clear")}`;
+		// The explicit billable choice (#900); omitted keeps the work's billability.
+		const billable = choice?.billable;
+		// Task and billability are part of the intended closure: another choice is another closure.
+		const closureKey = `${workPeriodId}:${taskId === undefined ? "keep" : (taskId ?? "clear")}:${billable ?? "keep"}`;
 		const operationId =
 			operationIdsRef.current.get(closureKey) ??
 			globalThis.crypto.randomUUID();
@@ -121,6 +123,7 @@ function useClockOutOnBehalf({
 						workPeriodId,
 						operationId,
 						...namedTaskId(taskId),
+						...(billable === undefined ? {} : { billable }),
 					}),
 				});
 
@@ -484,7 +487,7 @@ function CalendarViewContent({
 				onManualEntryOpenChange={setManualEntryOpen}
 				onManualEntrySuccess={refetch}
 				pendingClockOut={pendingClockOutEvent !== null}
-				pendingClockOutWorkPeriodId={pendingClockOutEvent?.id ?? null}
+				pendingClockOutEvent={pendingClockOutEvent}
 				isClockOutPending={isClockOutPending}
 				onClockOutOpenChange={(open) => {
 					if (!open && !isClockOutPending) setPendingClockOutEvent(null);

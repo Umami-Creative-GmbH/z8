@@ -23,6 +23,10 @@
       },
       "title": "Umowa powierzenia przetwarzania danych (DPA)"
     },
+    "billableTime": {
+      "description": "Waluta rozliczeniowa i to, ile Twoja organizacja nalicza klientom za pracę",
+      "title": "Czas rozliczalny"
+    },
     "billing": {
       "description": "Zarządzaj subskrypcją, metodami płatności i fakturami",
       "title": "Rozliczenia i subskrypcja"

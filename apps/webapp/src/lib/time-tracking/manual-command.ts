@@ -50,6 +50,11 @@ export type ManualTimeEntryCommand = {
 	workCategoryId: string | null;
 	/** Omitted by older frozen commands; keep their submitted representation intact. */
 	workLocationType?: WorkLocationType;
+	/**
+	 * Explicit billability (#900). Omitted takes the project's billable default;
+	 * older frozen commands omit it and keep their representation intact.
+	 */
+	billable?: boolean;
 	/** A task of `projectId` (#873); omitted, never null, when the entry names none. */
 	taskId?: string;
 };
@@ -153,12 +158,14 @@ export function parseManualTimeEntryCommand(
 		const hasOptional = (key: string) =>
 			Boolean(value && typeof value === "object" && Object.hasOwn(value, key));
 		const hasWorkLocation = hasOptional("workLocationType");
+		const hasBillable = hasOptional("billable");
 		const hasTask = hasOptional("taskId");
 		const record = exactRecord(
 			value,
 			[
 				...COMMAND_KEYS,
 				...(hasWorkLocation ? ["workLocationType"] : []),
+				...(hasBillable ? ["billable"] : []),
 				...(hasTask ? ["taskId"] : []),
 			],
 			"command",
@@ -168,6 +175,9 @@ export function parseManualTimeEntryCommand(
 			!isWorkLocationType(record.workLocationType as string)
 		) {
 			throw new InvalidCommandField("workLocationType");
+		}
+		if (hasBillable && typeof record.billable !== "boolean") {
+			throw new InvalidCommandField("billable");
 		}
 		if (record.version !== MANUAL_TIME_ENTRY_COMMAND_VERSION) {
 			throw new InvalidCommandField("version");
@@ -222,6 +232,7 @@ export function parseManualTimeEntryCommand(
 				...(hasWorkLocation
 					? { workLocationType: record.workLocationType as WorkLocationType }
 					: {}),
+				...(hasBillable ? { billable: record.billable as boolean } : {}),
 				...(hasTask ? { taskId: record.taskId as string } : {}),
 			},
 		};

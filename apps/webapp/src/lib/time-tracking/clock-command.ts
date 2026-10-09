@@ -125,6 +125,11 @@ const clockOutFields = {
 	 * follows the project.
 	 */
 	task: attribution.optional(),
+	/**
+	 * Explicit billability (#900). Optional: commands frozen before it omit the
+	 * key and take the project's billable default.
+	 */
+	billable: z.boolean().optional(),
 };
 
 /**

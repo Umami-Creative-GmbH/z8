@@ -8,7 +8,9 @@ import { render } from "@/test/render-with-translations";
 const mockState = vi.hoisted(() => ({
 	callOrder: [] as string[],
 	findBatch: vi.fn(),
+	getBillableTimeSettings: vi.fn(),
 	getImportReviewSummary: vi.fn(),
+	listCustomerAccounting: vi.fn(),
 	listImportReviewRows: vi.fn(),
 	notFound: vi.fn(() => {
 		throw new Error("NEXT_NOT_FOUND");
@@ -52,6 +54,26 @@ vi.mock("@/lib/auth-helpers", () => ({
 	requireOrgAdminSettingsAccess: mockState.requireOrgAdminSettingsAccess,
 }));
 
+vi.mock("@/lib/billable-time/accounting/customer-accounting", () => ({
+	listCustomerAccounting: mockState.listCustomerAccounting,
+}));
+
+vi.mock("@/lib/billable-time/settings", () => ({
+	getBillableTimeSettings: mockState.getBillableTimeSettings,
+}));
+
+// The live customer check runs on PostgreSQL (clockodo-billability.integration.test.ts).
+vi.mock("@/lib/import-review/import-row-billability", async () => {
+	const { importRowBillability } = await import("@/lib/import-review/staged-work-billability");
+	return {
+		listImportRowBillability: async (
+			_reader: unknown,
+			_organizationId: string,
+			rows: Parameters<typeof importRowBillability>[0][],
+		) => rows.map(importRowBillability),
+	};
+});
+
 vi.mock("@/lib/import-review/repository", () => ({
 	getImportReviewSummary: mockState.getImportReviewSummary,
 	listImportReviewRows: mockState.listImportReviewRows,
@@ -59,17 +81,22 @@ vi.mock("@/lib/import-review/repository", () => ({
 
 const { default: ImportReviewRoute } = await import("./page");
 
-async function renderRequestContent(batchId: string) {
-	const route = ImportReviewRoute({ params: Promise.resolve({ batchId }) });
+async function renderRequestContent(batchId: string, searchParams: Record<string, string> = {}) {
+	const route = ImportReviewRoute({
+		params: Promise.resolve({ batchId }),
+		searchParams: Promise.resolve(searchParams),
+	});
 	if (!isValidElement(route) || !isValidElement(route.props.children)) {
 		throw new Error("Expected a focused import review boundary");
 	}
 
+	type ContentProps = {
+		params: Promise<{ batchId: string }>;
+		searchParams: Promise<Record<string, string>>;
+	};
 	const content = route.props.children as React.ReactElement<
-		{ params: Promise<{ batchId: string }> },
-		(props: {
-			params: Promise<{ batchId: string }>;
-		}) => Promise<React.ReactNode>
+		ContentProps,
+		(props: ContentProps) => Promise<React.ReactNode>
 	>;
 	return content.type(content.props);
 }
@@ -88,6 +115,7 @@ describe("ImportReviewRoute", () => {
 		});
 		mockState.getImportReviewSummary.mockResolvedValue({ total: 1 });
 		mockState.listImportReviewRows.mockResolvedValue([{ id: "row-1" }]);
+		mockState.getBillableTimeSettings.mockResolvedValue({ enabled: false, currency: null });
 	});
 
 	it("renders the import review shell while params remain unresolved", () => {
@@ -125,8 +153,120 @@ describe("ImportReviewRoute", () => {
 			batchId: "batch-1",
 			organizationId: "org-1",
 			summary: { total: 1 },
-			rows: [{ id: "row-1" }],
+			rows: [{ id: "row-1", billability: null }],
+			showBillability: false,
+			customerImport: undefined,
 		});
+		expect(mockState.getBillableTimeSettings).toHaveBeenCalledWith("org-1", expect.anything());
+		expect(mockState.listCustomerAccounting).not.toHaveBeenCalled();
+	});
+
+	it("shows a customer import's contacts with the customers they can link to (#906)", async () => {
+		mockState.findBatch.mockResolvedValue({
+			id: "batch-1",
+			organizationId: "org-1",
+			provider: "accounting",
+			status: "needs_review",
+		});
+		mockState.listImportReviewRows.mockResolvedValue([
+			{
+				id: "row-1",
+				entityType: "customer",
+				rowStatus: "accepted",
+				issueSeverity: "info",
+				commitChoice: { kind: "link", targetId: "cust-1" },
+				commitHold: null,
+				normalizedPayload: { contactId: "c-1", name: "Acme GmbH" },
+				matchTarget: {
+					suggestion: { customerId: "cust-1", customerName: "Acme", reason: "name" },
+				},
+			},
+		]);
+		mockState.listCustomerAccounting.mockResolvedValue([
+			{ customerId: "cust-1", name: "Acme", isActive: true, contactLink: null },
+			{ customerId: "cust-2", name: "Linked", isActive: true, contactLink: { contactId: "x" } },
+			{ customerId: "cust-3", name: "Inactive", isActive: false, contactLink: null },
+		]);
+
+		const reviewPage = await renderRequestContent("batch-1");
+
+		expect(mockState.listImportReviewRows).toHaveBeenCalledWith(
+			expect.objectContaining({ limit: 100, offset: 0 }),
+		);
+		expect(mockState.listCustomerAccounting).toHaveBeenCalledWith(expect.anything(), "org-1");
+		expect(reviewPage.props.children.props.children.props.customerImport).toMatchObject({
+			editable: true,
+			linkTargets: [{ customerId: "cust-1", name: "Acme" }],
+			rows: [
+				{
+					id: "row-1",
+					rowStatus: "accepted",
+					commitChoice: { kind: "link", targetId: "cust-1" },
+					customer: {
+						contactId: "c-1",
+						name: "Acme GmbH",
+						suggestion: { customerId: "cust-1", reason: "name" },
+					},
+				},
+			],
+		});
+	});
+
+	it.each([
+		["2", 2, 100],
+		["3", 3, 200],
+		// Past the end: the last page.
+		["9", 3, 200],
+		["0", 1, 0],
+		["abc", 1, 0],
+	])("pages a customer import: ?page=%s shows page %i", async (page, shown, offset) => {
+		mockState.findBatch.mockResolvedValue({
+			id: "batch-1",
+			organizationId: "org-1",
+			provider: "accounting",
+			status: "needs_review",
+		});
+		mockState.getImportReviewSummary.mockResolvedValue({ totalRows: 250 });
+		mockState.listImportReviewRows.mockResolvedValue([]);
+		mockState.listCustomerAccounting.mockResolvedValue([]);
+
+		const reviewPage = await renderRequestContent("batch-1", { page });
+
+		expect(mockState.listImportReviewRows).toHaveBeenCalledWith({
+			batchId: "batch-1",
+			organizationId: "org-1",
+			limit: 100,
+			offset,
+		});
+		expect(reviewPage.props.children.props.children.props.customerImport.paging).toEqual({
+			page: shown,
+			pageCount: 3,
+		});
+	});
+
+	it("shows staged work rows' billability while Billable Time is on (#907)", async () => {
+		mockState.getBillableTimeSettings.mockResolvedValue({ enabled: true, currency: "EUR" });
+		mockState.listImportReviewRows.mockResolvedValue([
+			{
+				id: "row-1",
+				entityType: "work_period",
+				normalizedPayload: {
+					billability: { providerValue: 1, billable: false, note: "no_customer" },
+				},
+			},
+			{ id: "row-2", entityType: "work_period", normalizedPayload: {} },
+			{ id: "row-3", entityType: "team", normalizedPayload: {} },
+		]);
+
+		const reviewPage = await renderRequestContent("batch-1");
+
+		const props = reviewPage.props.children.props.children.props;
+		expect(props.showBillability).toBe(true);
+		expect(props.rows.map((row: { billability: unknown }) => row.billability)).toEqual([
+			{ providerValue: 1, billable: false, note: "no_customer" },
+			{ providerValue: null, billable: false, note: "no_billable_value" },
+			null,
+		]);
 	});
 
 	it("hides another organization's batch", async () => {

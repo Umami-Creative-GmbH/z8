@@ -440,6 +440,56 @@ describe("project templates in use on PostgreSQL", () => {
 			expect(await projectNames()).toEqual([]);
 			expect(audit.logAudit).not.toHaveBeenCalled();
 		});
+
+		it("makes the project billable by default only with a customer and while Billable Time is on (#900)", async () => {
+			const templateId = await createTemplate({ name: "Billable relaunch" });
+			const create = (name: string, extra: { customerId?: string; billableDefault?: unknown }) =>
+				actAs(ids.ownerUser, () =>
+					fromTemplate.createProjectFromTemplate({
+						templateId,
+						name,
+						...extra,
+					} as Parameters<typeof fromTemplate.createProjectFromTemplate>[0]),
+				);
+
+			// Billable Time is off: changing the default is refused, the project is not created.
+			await expect(
+				create("While off", { customerId: ids.customer, billableDefault: true }),
+			).resolves.toMatchObject({ success: false });
+
+			await admin.query(
+				"update organization set projects_enabled = true, billable_time_enabled = true where id = $1",
+				[ids.organization],
+			);
+			await admin.query(
+				`insert into billable_time_settings (organization_id, billable_currency) values ($1, 'EUR')`,
+				[ids.organization],
+			);
+
+			await expect(create("Without customer", { billableDefault: true })).resolves.toMatchObject({
+				success: false,
+			});
+			await expect(
+				create("Not a boolean", { customerId: ids.customer, billableDefault: "yes" }),
+			).resolves.toMatchObject({ success: false });
+			expect(await projectNames()).toEqual([]);
+
+			const billable = await create("Billable", {
+				customerId: ids.customer,
+				billableDefault: true,
+			});
+			const plain = await create("Plain", { customerId: ids.customer });
+			if (!billable.success) throw new Error(billable.error);
+			if (!plain.success) throw new Error(plain.error);
+			const { rows } = await admin.query<{ id: string; billable_default: boolean }>(
+				"select id, billable_default from project where id = any($1::uuid[])",
+				[[billable.data.id, plain.data.id]],
+			);
+			expect(Object.fromEntries(rows.map((row) => [row.id, row.billable_default]))).toEqual({
+				[billable.data.id]: true,
+				[plain.data.id]: false,
+			});
+		});
 	});
 
 	describe("reading templates to create a project from", () => {

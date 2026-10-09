@@ -3,6 +3,7 @@ import "server-only";
 import { and, eq, inArray, or, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { project, projectAssignment, projectTask } from "@/db/schema";
+import { activeProjectCustomerIdSql } from "@/lib/billable-time/project-customer";
 import { isProjectTaskId } from "./task-attribution";
 
 /** Project statuses that accept booked time. */
@@ -26,7 +27,15 @@ export type ProjectEligibilityTarget = {
 
 export type EligibleProject = Pick<
 	typeof project.$inferSelect,
-	"id" | "name" | "color" | "status" | "budgetHours" | "deadline"
+	| "id"
+	| "name"
+	| "color"
+	| "status"
+	| "budgetHours"
+	| "deadline"
+	// Billable Time (#900): a recording form prefills billability from these.
+	| "customerId"
+	| "billableDefault"
 >;
 
 export async function listEligibleProjects(
@@ -48,6 +57,9 @@ export async function listEligibleProjects(
 			status: project.status,
 			budgetHours: project.budgetHours,
 			deadline: project.deadline,
+			// A deleted customer leaves the project without customer (#768).
+			customerId: activeProjectCustomerIdSql(),
+			billableDefault: project.billableDefault,
 		})
 		.from(project)
 		.innerJoin(

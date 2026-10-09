@@ -34,6 +34,8 @@ export type LegacyWorkPeriod = {
 	durationMinutes: number | null;
 	approvalStatus: LegacyApprovalStatus;
 	projectId: string | null;
+	/** Billable work (#900); absent reads as non-billable. */
+	isBillable?: boolean;
 	/** The task of the project (#873); absent from callers that predate tasks. */
 	taskId?: string | null;
 	workCategoryId: string | null;
@@ -133,6 +135,8 @@ export type CanonicalBackfillPayload = {
 		/** Present only when the period has a task, so the allocation and period agree. */
 		taskId?: string;
 		weightPercent: number;
+		/** Present when the period is billable (#900); the column defaults to false. */
+		isBillable?: boolean;
 	}>;
 	timeRecordApprovalDecision: Array<{
 		organizationId: string;
@@ -217,6 +221,7 @@ export function buildCanonicalBackfillPayload(
 				projectId: workPeriod.projectId,
 				...recordedTaskId(workPeriod.taskId),
 				weightPercent: 100,
+				...(workPeriod.isBillable ? { isBillable: true } : {}),
 			});
 		}
 

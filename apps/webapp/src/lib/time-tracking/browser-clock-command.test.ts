@@ -89,6 +89,24 @@ describe("prepareBrowserClockCommand", () => {
 		});
 	});
 
+	it("carries an explicit billable choice and omits it otherwise (#900)", () => {
+		const input = {
+			kind: "clock_out" as const,
+			operationId,
+			capabilities,
+			session,
+			now,
+			timezone: "Europe/Berlin",
+			projectId,
+		};
+		expect(prepareBrowserClockCommand({ ...input, billable: true })).toMatchObject({
+			ok: true,
+			request: { project: { kind: "replace", id: projectId }, billable: true },
+		});
+		const prepared = prepareBrowserClockCommand(input);
+		expect(prepared.ok && prepared.request).not.toHaveProperty("billable");
+	});
+
 	it("names a task only when the page names one (#875)", () => {
 		const taskId = "3f2504e0-4f89-41d3-9a0c-0305e82c3301";
 		const clockOut = (task: { taskId?: string | null }) =>

@@ -47,12 +47,13 @@ type DetailedFailure =
 	| "billing_required"
 	| "project_not_allowed"
 	| "task_not_allowed"
-	| "work_category_not_allowed";
+	| "work_category_not_allowed"
+	| "billable_not_allowed";
 
 export type OnBehalfClockOutRejection =
 	| { code: Exclude<RejectionCode, "billing_required" | "attribution_not_allowed"> }
 	| { code: "billing_required"; reason: string }
-	| { code: "attribution_not_allowed"; field: "projectId" | "workCategoryId" }
+	| { code: "attribution_not_allowed"; field: "projectId" | "workCategoryId" | "billable" }
 	/** The task cannot be booked, with the stable reason why (#873). */
 	| { code: "attribution_not_allowed"; field: "taskId"; reason: ProjectTaskIneligibility };
 
@@ -114,6 +115,8 @@ function rejection(refusal: ClockOutRefusal): OnBehalfClockOutRejection | null {
 			return { code: "attribution_not_allowed", field: "taskId", reason: refusal.reason };
 		case "work_category_not_allowed":
 			return { code: "attribution_not_allowed", field: "workCategoryId" };
+		case "billable_not_allowed":
+			return { code: "attribution_not_allowed", field: "billable" };
 	}
 	const code = FAILURE_CODES[refusal.code];
 	return code === "unknown" ? null : { code };
@@ -143,6 +146,7 @@ export function toOnBehalfCommand(input: {
 			project: attributionIntent(request.projectId),
 			workCategory: attributionIntent(request.workCategoryId),
 			...namedTaskIntent(request.taskId),
+			...(request.billable === undefined ? {} : { billable: request.billable }),
 		},
 	};
 }

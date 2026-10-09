@@ -68,6 +68,18 @@ export class QueueError extends Data.TaggedError("QueueError")<{
 	cause?: unknown;
 }> {}
 
+/**
+ * A failed call to an outside service that has no error of its own here, such
+ * as an accounting tool or the organization secret store. `message` is shown
+ * to users: keep it generic and never copy the cause's message into it.
+ */
+export class ExternalServiceError extends Data.TaggedError("ExternalServiceError")<{
+	message: string;
+	service: string;
+	operation: string;
+	cause?: unknown;
+}> {}
+
 export type AnyAppError =
 	| ValidationError
 	| AuthenticationError
@@ -78,4 +90,5 @@ export type AnyAppError =
 	| ConflictError
 	| StripeError
 	| BillingError
-	| QueueError;
+	| QueueError
+	| ExternalServiceError;

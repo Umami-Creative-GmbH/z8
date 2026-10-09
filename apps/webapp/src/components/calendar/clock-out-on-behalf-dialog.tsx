@@ -8,6 +8,8 @@ import {
 	getClockOutOnBehalfTaskChoices,
 	type OnBehalfClockOutTaskChoices,
 } from "@/app/[locale]/(app)/time-tracking/actions/on-behalf-task-choices";
+import { type BillableChoice, billableChoice } from "@/components/time-tracking/billable-choice";
+import { BillableWorkSwitch } from "@/components/time-tracking/billable-work-switch";
 import { TaskSelectorView } from "@/components/time-tracking/task-selector";
 import {
 	AlertDialog,
@@ -19,19 +21,23 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import type { CalendarEvent } from "@/lib/calendar/types";
 import { queryKeys } from "@/lib/query/keys";
 import { namedTaskId, taskIdToSend } from "@/lib/time-tracking/task-attribution";
 
 /**
- * The task the clock-out on behalf sends (#874): omitted, the running work's
- * task follows its project (it is kept); null clears it; an ID books that task.
+ * What the clock-out on behalf sends. The task (#874): omitted, the running
+ * work's task follows its project (it is kept); null clears it; an ID books that
+ * task. `billable` (#900) is the explicit choice; omitted keeps the work's.
  */
-export type OnBehalfClockOutTaskChoice = { taskId?: string | null };
+export type OnBehalfClockOutTaskChoice = { taskId?: string | null; billable?: boolean };
 
 interface ClockOutOnBehalfDialogProps {
 	open: boolean;
 	/** The running work period to close. */
 	workPeriodId: string | null;
+	/** The running work; its project and billability decide the billable toggle (#900). */
+	work?: CalendarEvent | null;
 	isPending: boolean;
 	onOpenChange: (open: boolean) => void;
 	onConfirm: (choice: OnBehalfClockOutTaskChoice) => void;
@@ -40,11 +46,22 @@ interface ClockOutOnBehalfDialogProps {
 export function ClockOutOnBehalfDialog({
 	open,
 	workPeriodId,
+	work,
 	isPending,
 	onOpenChange,
 	onConfirm,
 }: ClockOutOnBehalfDialogProps) {
 	const { t } = useTranslate();
+	const [billable, setBillable] = useState<{ workId: string; value: boolean } | null>(null);
+	const metadata = work?.metadata;
+	// The closure keeps the work's project, so the toggle starts from its billability.
+	const choice = billableChoice({
+		project: metadata?.projectId
+			? { hasCustomer: metadata.projectHasCustomer ?? false, billableDefault: false }
+			: null,
+		explicit: billable && billable.workId === work?.id ? billable.value : undefined,
+		kept: metadata?.isBillable ?? false,
+	});
 	const choicesQuery = useQuery({
 		queryKey: queryKeys.projects.onBehalfClockOutTasks(workPeriodId ?? ""),
 		queryFn: async () => {
@@ -58,7 +75,13 @@ export function ClockOutOnBehalfDialog({
 	const choices = choicesQuery.data ?? null;
 
 	return (
-		<AlertDialog open={open} onOpenChange={onOpenChange}>
+		<AlertDialog
+			open={open}
+			onOpenChange={(next) => {
+				if (!next) setBillable(null);
+				onOpenChange(next);
+			}}
+		>
 			<AlertDialogContent>
 				<AlertDialogHeader>
 					<AlertDialogTitle>
@@ -75,6 +98,11 @@ export function ClockOutOnBehalfDialog({
 				<ClockOutOnBehalfForm
 					key={`${workPeriodId ?? ""}:${choices ? "choices" : "none"}`}
 					choices={choices}
+					billable={
+						work
+							? { choice, onChange: (value: boolean) => setBillable({ workId: work.id, value }) }
+							: null
+					}
 					isPending={isPending}
 					onConfirm={onConfirm}
 				/>
@@ -85,10 +113,13 @@ export function ClockOutOnBehalfDialog({
 
 function ClockOutOnBehalfForm({
 	choices,
+	billable,
 	isPending,
 	onConfirm,
 }: {
 	choices: OnBehalfClockOutTaskChoices | null;
+	/** The billable toggle (#900), shown for running work it applies to. */
+	billable: { choice: BillableChoice; onChange: (value: boolean) => void } | null;
 	isPending: boolean;
 	onConfirm: (choice: OnBehalfClockOutTaskChoice) => void;
 }) {
@@ -99,9 +130,12 @@ function ClockOutOnBehalfForm({
 
 	const confirm = () =>
 		// An unchanged task is left to the server, which keeps it with the project.
-		onConfirm(
-			namedTaskId(taskIdToSend({ projectId, taskId, current: { projectId, taskId: initialTaskId } })),
-		);
+		onConfirm({
+			...namedTaskId(
+				taskIdToSend({ projectId, taskId, current: { projectId, taskId: initialTaskId } }),
+			),
+			...(billable?.choice.request === undefined ? {} : { billable: billable.choice.request }),
+		});
 
 	return (
 		<>
@@ -112,6 +146,13 @@ function ClockOutOnBehalfForm({
 					value={taskId}
 					onValueChange={setTaskId}
 					currentTask={choices.currentTask}
+					disabled={isPending}
+				/>
+			) : null}
+			{billable ? (
+				<BillableWorkSwitch
+					choice={billable.choice}
+					onChange={billable.onChange}
 					disabled={isPending}
 				/>
 			) : null}

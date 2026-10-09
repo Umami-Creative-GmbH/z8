@@ -32,6 +32,7 @@ interface OrganizationSettingsResponse {
 	surchargesEnabled: boolean;
 	demoDataEnabled: boolean;
 	worksCouncilEnabled: boolean;
+	billableTimeEnabled: boolean;
 	personnelFilesEnabled: boolean;
 	timezone: string;
 	deletedAt: string | null;

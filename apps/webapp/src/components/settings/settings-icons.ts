@@ -27,6 +27,7 @@ import {
 	IconMail,
 	IconMapPin,
 	IconPercentage,
+	IconReceipt,
 	IconServer,
 	IconShield,
 	IconShieldCheck,
@@ -84,4 +85,5 @@ export const SETTINGS_ICON_MAP: Record<
 	"brand-teams": IconBrandTeams,
 	"brand-telegram": IconBrandTelegram,
 	"database-import": IconDatabaseImport,
+	receipt: IconReceipt,
 };

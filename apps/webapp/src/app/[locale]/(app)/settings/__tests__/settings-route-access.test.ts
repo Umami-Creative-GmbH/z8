@@ -130,6 +130,7 @@ describe("org-admin settings route access", () => {
 			"/settings/export-operations",
 			"/settings/scheduled-exports",
 			"/settings/implementation-checklist",
+			"/settings/billable-time",
 			"/settings/position-capture",
 			"/settings/personnel-files",
 		]);
@@ -861,6 +862,32 @@ describe("org-admin settings route access", () => {
 		);
 
 		expect(demoDataField).toContain("input: false");
+	});
+
+	it("keeps the Billable Time switch out of direct Better Auth organization input", () => {
+		const source = stripComments(
+			readTestText(join(SETTINGS_ROOT, "../../../../lib/auth.ts"), "utf8"),
+		);
+		const billableTimeField = source.slice(
+			source.indexOf("billableTimeEnabled:"),
+			source.indexOf("timezone:", source.indexOf("billableTimeEnabled:")),
+		);
+
+		expect(billableTimeField).toContain("input: false");
+	});
+
+	it("gates the Billable Time settings pages on org admins and the module flag", () => {
+		for (const page of [
+			"billable-time/page.tsx",
+			"billable-time/rates/page.tsx",
+			"billable-time/cost-rates/page.tsx",
+			"billable-time/accounting/page.tsx",
+			"billable-time/hand-off/page.tsx",
+		]) {
+			const source = stripComments(readTestText(join(SETTINGS_ROOT, page), "utf8"));
+
+			expect(source.includes("requireBillableTimeSettingsAccess("), page).toBe(true);
+		}
 	});
 
 	it("narrows manager employee editing away from org-admin-only form controls", () => {

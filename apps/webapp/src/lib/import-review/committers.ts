@@ -19,12 +19,15 @@ import { systemClock } from "@/lib/datetime/temporal-core";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import type { ImportedWorkHold } from "@/lib/time-tracking/imported-work-interval";
 import {
+	type ImportedWorkAttribution,
 	type ImportedWorkCommand,
 	recordImportedWork,
 	replayImportedWork,
+	resolveImportedAttribution,
 } from "@/lib/time-tracking/record-imported-work";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
+import { type CustomerImportHold, commitCustomerRow } from "./customer-committer";
 import { reviewedImportRowMapping, withReviewedImportTransaction } from "./import-work-transaction";
 import { importedWorkProviderEvidence } from "./imported-work-evidence";
 import type { ImportCommitJobData, ImportProvider } from "./types";
@@ -58,6 +61,27 @@ interface WorkPeriodPayload {
 	employeeId: string;
 	startsAt: string;
 	endsAt?: string | null;
+	/**
+	 * The reviewed row's Z8 project and optional billability (#900). Adapters set
+	 * it once they map provider projects (#907); rows staged without it commit
+	 * without a project, so they are never billable.
+	 */
+	attribution?: unknown;
+}
+
+/** The staged row's attribution, when it is well formed; anything else is none. */
+function stagedWorkAttribution(
+	payload: Partial<WorkPeriodPayload>,
+): ImportedWorkAttribution | undefined {
+	const value = payload.attribution;
+	if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+	const { projectId, billable, nonBillableWhenRefused } = value as Record<string, unknown>;
+	if (typeof projectId !== "string" || projectId.length === 0) return undefined;
+	if (typeof billable !== "boolean") return { projectId };
+	// A provider's billable value downgrades to non-billable instead of holding (#907).
+	return nonBillableWhenRefused === true
+		? { projectId, billable, nonBillableWhenRefused: true }
+		: { projectId, billable };
 }
 
 interface AbsencePayload {
@@ -134,14 +158,15 @@ async function markBlocked(
 }
 
 /**
- * A row the work operation held for review keeps its evidence durably: it is
- * blocked immediately, on any attempt, because retrying cannot change the outcome.
+ * A row the work operation (or the customer import, #906) held for review keeps
+ * its evidence durably: it is blocked immediately, on any attempt, because
+ * retrying cannot change the outcome.
  */
 async function markHeld(
 	database: CommitDb,
 	rowId: string,
 	job: ImportCommitJobData,
-	hold: ImportedWorkHold,
+	hold: ImportedWorkHold | CustomerImportHold,
 ): Promise<CommitRowOutcome> {
 	const message = `Held for review: ${hold.reason}`;
 	await database
@@ -341,6 +366,7 @@ async function commitWorkPeriod(
 	database: CommitDb,
 	row: typeof importStagedRow.$inferSelect,
 	job: ImportCommitJobData,
+	attribution: { projectId: string; isBillable: boolean } | null,
 ) {
 	const payload = row.normalizedPayload as unknown as WorkPeriodPayload;
 	await assertEmployeeInOrganization(database, payload.employeeId, job.organizationId);
@@ -417,6 +443,8 @@ async function commitWorkPeriod(
 			endTime: endAt?.toJSDate() ?? null,
 			durationMinutes: endAt ? Math.round(endAt.diff(startAt, "minutes").minutes) : null,
 			isActive: !endAt,
+			projectId: attribution?.projectId ?? null,
+			isBillable: attribution?.isBillable ?? false,
 		})
 		.returning({ id: workPeriod.id });
 
@@ -602,6 +630,9 @@ async function getBatchProvider(job: ImportCommitJobData): Promise<ImportProvide
 		columns: { provider: true },
 	});
 	if (!batch) throw new Error(`Import batch ${job.batchId} not found`);
+	if (batch.provider === "accounting") {
+		throw new Error(`Import batch ${job.batchId} has no work from a time-tracking tool`);
+	}
 	return batch.provider;
 }
 
@@ -611,7 +642,9 @@ function importedWorkCommand(
 	provider: ImportProvider,
 ): ImportedWorkCommand {
 	const payload = row.normalizedPayload as Partial<WorkPeriodPayload>;
+	const attribution = stagedWorkAttribution(payload);
 	return {
+		...(attribution ? { attribution } : {}),
 		version: 1,
 		operationId: row.id,
 		source: {
@@ -675,7 +708,16 @@ function commitReviewedWorkRow(
 						})
 					: null);
 			if (!outcome) {
-				await commitWorkPeriod(database, claimed, job);
+				// The legacy writer records the same attribution, or holds the row (#900).
+				const attribution = await resolveImportedAttribution(
+					scope.db,
+					job.organizationId,
+					command.attribution,
+				);
+				if (attribution.kind === "held") {
+					return markHeld(database, claimed.id, job, attribution.hold);
+				}
+				await commitWorkPeriod(database, claimed, job, attribution.recorded);
 				return { status: "committed" };
 			}
 			if (outcome.kind === "held") return markHeld(database, claimed.id, job, outcome.hold);
@@ -757,6 +799,20 @@ export async function commitAcceptedRowsForEntity(
 							case "surcharge":
 								await commitSurcharge(tx as CommitDb, claimedRow, job);
 								return { status: "committed" };
+							case "customer": {
+								const outcome = await commitCustomerRow(tx, claimedRow, job);
+								if (outcome.kind === "held") {
+									return markHeld(tx as CommitDb, claimedRow.id, job, outcome.hold);
+								}
+								await markCommitted(
+									tx as CommitDb,
+									claimedRow.id,
+									job,
+									"customer",
+									outcome.customerId,
+								);
+								return { status: "committed" };
+							}
 							case "target_hours":
 							case "work_policy":
 							case "holiday_quota":

@@ -414,7 +414,12 @@ describe("web clock-out through the completed-work operation on PostgreSQL", () 
 				endTimezone: "UTC",
 				endTimezoneSource: "browser",
 			},
-			attribution: { projectId: null, workCategoryId: null, workLocationType: "office" },
+			attribution: {
+				projectId: null,
+				isBillable: false,
+				workCategoryId: null,
+				workLocationType: "office",
+			},
 			revisions: { workPeriod: { source: 0, result: 1 } },
 			append: {
 				admission: "append",

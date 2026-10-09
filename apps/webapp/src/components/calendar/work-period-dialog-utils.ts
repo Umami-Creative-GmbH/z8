@@ -15,6 +15,8 @@ export interface WorkPeriodDialogMetadata {
 	projectId?: string;
 	projectName?: string;
 	projectColor?: string;
+	projectHasCustomer?: boolean;
+	isBillable?: boolean;
 	/** The booking's task (#874), present only with its project. */
 	taskId?: string;
 	taskName?: string;

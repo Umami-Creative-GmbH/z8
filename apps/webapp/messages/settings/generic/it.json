@@ -23,6 +23,10 @@
       },
       "title": "Contratto di elaborazione dati (DPA)"
     },
+    "billableTime": {
+      "description": "Valuta di fatturazione e quanto la tua organizzazione addebita ai clienti per il lavoro",
+      "title": "Tempo fatturabile"
+    },
     "billing": {
       "description": "Gestisci il tuo abbonamento, i metodi di pagamento e le fatture",
       "title": "Fatturazione e abbonamento"

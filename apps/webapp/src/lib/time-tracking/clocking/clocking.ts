@@ -36,6 +36,7 @@ import {
 	resolveTimeEntryTimezoneCapture,
 } from "../timezone-capture";
 import { validateTimeEntry } from "../validation";
+import { BillableWorkRefusedError } from "../work-billability";
 import { workCategoryIneligibility } from "../work-category-eligibility";
 import { WorkIntervalError } from "../work-duration";
 import { isWorkLocationType, type WorkLocationType } from "../work-location";
@@ -242,6 +243,7 @@ function closureRefusal(command: ClockOutCommand, error: unknown): ClockOutRefus
 			code: error.field === "projectId" ? "project_not_allowed" : "work_category_not_allowed",
 		};
 	}
+	if (error instanceof BillableWorkRefusedError) return { code: "billable_not_allowed" };
 	return { code: "unconfirmed", cause: error };
 }
 

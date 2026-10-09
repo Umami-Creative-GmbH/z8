@@ -45,6 +45,8 @@ export interface ProjectFromTemplateInput {
 	description: string | null;
 	status: NewProjectStatus;
 	customerId: string | null;
+	/** Billable Time (#900): whether new work starts billable; the caller checks it needs a customer. */
+	billableDefault?: boolean;
 }
 
 /**
@@ -95,6 +97,7 @@ export async function createProjectFromTemplateRows(
 			offsetDays: template.deadlineOffsetDays,
 		}),
 		customerId: input.customerId,
+		billableDefault: input.billableDefault,
 		createdBy: userId,
 	});
 

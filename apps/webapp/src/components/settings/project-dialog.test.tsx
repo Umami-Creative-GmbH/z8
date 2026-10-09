@@ -9,6 +9,7 @@ import type {
 	ProjectTemplatePreviewData,
 	ProjectTemplateSummary,
 } from "@/lib/projects/project-template-model";
+import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { ProjectDialog } from "./project-dialog";
 
 const projectActions = vi.hoisted(() => ({ createProject: vi.fn(), updateProject: vi.fn() }));
@@ -239,6 +240,30 @@ describe("ProjectDialog, starting from a template", () => {
 		expect(toast.success).toHaveBeenCalledWith("Project created");
 		expect(toast.warning).not.toHaveBeenCalled();
 		expect(onSuccess).toHaveBeenCalled();
+	});
+
+	it("passes the billable default on when the project from the template has a customer (#900)", async () => {
+		const user = userEvent.setup();
+		useOrganizationSettings.setState({ billableTimeEnabled: true });
+		try {
+			renderDialog();
+
+			const startFrom = await screen.findByRole("combobox", { name: "Start from" });
+			await within(startFrom).findByRole("option", { name: "Website relaunch" });
+			await user.selectOptions(startFrom, "template-1");
+			await user.type(screen.getByLabelText(/^Name/), "Acme relaunch");
+			const customer = await screen.findByRole("combobox", { name: "Customer" });
+			await within(customer).findByRole("option", { name: "Acme" });
+			await user.selectOptions(customer, "customer-1");
+			await user.click(screen.getByRole("switch", { name: "Billable by default" }));
+			await user.click(screen.getByRole("button", { name: "Create Project" }));
+
+			expect(fromTemplateActions.createProjectFromTemplate).toHaveBeenCalledWith(
+				expect.objectContaining({ customerId: "customer-1", billableDefault: true }),
+			);
+		} finally {
+			useOrganizationSettings.setState({ billableTimeEnabled: false });
+		}
 	});
 
 	it("tells the creator which managers and assignments were skipped, and why", async () => {

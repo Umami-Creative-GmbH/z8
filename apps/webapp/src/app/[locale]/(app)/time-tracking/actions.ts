@@ -18,6 +18,8 @@ import {
 	workPolicyPresence,
 } from "@/db/schema";
 import { getRequestSession } from "@/lib/auth/request-session";
+import { projectHasActiveCustomerSql } from "@/lib/billable-time/project-customer";
+import { getBillableTimeSettings } from "@/lib/billable-time/settings";
 import {
 	isBillingMutationAllowed,
 	requireBillingForMutation,
@@ -50,6 +52,7 @@ import { WorkPolicyService } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
 import type { BookedProjectTask, ProjectTaskChoice } from "@/lib/projects/project-task-model";
 import { listOpenTasksByProject } from "@/lib/projects/project-tasks";
+import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
 import { breakDueStatus } from "@/lib/time-tracking/break-due";
 import { readComplianceTotals } from "@/lib/time-tracking/compliance-totals";
@@ -61,7 +64,10 @@ import {
 	projectTaskIneligibility,
 } from "@/lib/time-tracking/project-eligibility";
 import { namedTaskId } from "@/lib/time-tracking/task-attribution";
-import { changeWorkPeriodProject } from "@/lib/time-tracking/work-period-attribution";
+import {
+	changeWorkPeriodBillability,
+	changeWorkPeriodProject,
+} from "@/lib/time-tracking/work-period-attribution";
 import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import {
@@ -123,7 +129,14 @@ const BREAK_WARNING_LEAD_MINUTES = 15;
 type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
 	project: Pick<
 		typeof project.$inferSelect,
-		"id" | "name" | "color" | "status" | "budgetHours" | "deadline"
+		| "id"
+		| "name"
+		| "color"
+		| "status"
+		| "budgetHours"
+		| "deadline"
+		| "customerId"
+		| "billableDefault"
 	> | null;
 };
 
@@ -666,6 +679,10 @@ export interface AssignedProject {
 	budgetHours: number | null;
 	deadline: string | null; // ISO string for serialization
 	totalHoursBooked: number;
+	/** Billable Time (#900): only a project with a customer can make work billable. */
+	hasCustomer: boolean;
+	/** The billable default new work on it takes; false without a customer. */
+	billableDefault: boolean;
 	/** The project's open tasks, by name (#874); empty when it has none. */
 	tasks: ProjectTaskChoice[];
 }
@@ -721,6 +738,8 @@ export async function getAssignedProjects(): Promise<
 				status: string;
 				budgetHours: string | null;
 				deadline: Date | null;
+				customerId: string | null;
+				billableDefault: boolean;
 			}
 		>();
 
@@ -743,6 +762,8 @@ export async function getAssignedProjects(): Promise<
 					status: proj.status,
 					budgetHours: proj.budgetHours,
 					deadline: proj.deadline,
+					customerId: proj.customerId,
+					billableDefault: proj.billableDefault,
 				});
 			}
 		}
@@ -750,27 +771,44 @@ export async function getAssignedProjects(): Promise<
 		// Batch query: get total hours booked per project in one query
 		const projectIds = Array.from(bookableProjects.keys());
 		const hoursMap = new Map<string, number>();
+		// Billable Time (#768): a deleted customer leaves the project without customer.
+		const withActiveCustomer = new Set<string>();
 
 		if (projectIds.length > 0) {
-			const hoursResult = await db
-				.select({
-					projectId: workPeriod.projectId,
-					totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
-				})
-				.from(workPeriod)
-				.where(
-					and(
-						inArray(workPeriod.projectId, projectIds),
-						eq(workPeriod.organizationId, emp.organizationId),
+			const [hoursResult, customerResult] = await Promise.all([
+				db
+					.select({
+						projectId: workPeriod.projectId,
+						totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
+					})
+					.from(workPeriod)
+					.where(
+						and(
+							inArray(workPeriod.projectId, projectIds),
+							eq(workPeriod.organizationId, emp.organizationId),
+							// Booked hours count completed work only, as the reports do (#794).
+							completedWorkPeriodCondition(),
+						),
+					)
+					.groupBy(workPeriod.projectId),
+				db
+					.select({ id: project.id })
+					.from(project)
+					.where(
+						and(
+							inArray(project.id, projectIds),
+							eq(project.organizationId, emp.organizationId),
+							projectHasActiveCustomerSql(),
+						),
 					),
-				)
-				.groupBy(workPeriod.projectId);
+			]);
 
 			for (const row of hoursResult) {
 				if (row.projectId) {
 					hoursMap.set(row.projectId, row.totalMinutes / 60);
 				}
 			}
+			for (const row of customerResult) withActiveCustomer.add(row.id);
 		}
 
 		const tasksByProjectId = await listOpenTasksByProject({
@@ -789,6 +827,8 @@ export async function getAssignedProjects(): Promise<
 				budgetHours: proj.budgetHours ? Number(proj.budgetHours) : null,
 				deadline: proj.deadline?.toISOString() ?? null,
 				totalHoursBooked: hoursMap.get(proj.id) ?? 0,
+				hasCustomer: withActiveCustomer.has(proj.id),
+				billableDefault: withActiveCustomer.has(proj.id) && proj.billableDefault,
 				tasks: tasksByProjectId.get(proj.id) ?? [],
 			});
 		}
@@ -807,7 +847,9 @@ export async function getAssignedProjects(): Promise<
 
 /**
  * Update the project assignment for a work period
- * Allows changing or removing the project after the fact.
+ * Allows changing or removing the project after the fact. The new project's
+ * billable default applies unless `options.billable` sets billability in the
+ * same edit (#900); with the same project it is a billability-only change.
  *
  * `taskId` (#873): undefined keeps the period's task while its project stays
  * and clears it when the project changes; null clears it; an ID books the work
@@ -818,12 +860,16 @@ export async function updateWorkPeriodProject(
 	workPeriodId: string,
 	projectId: string | null,
 	taskId?: string | null,
+	options: { billable?: boolean } = {},
 ): Promise<
 	ServerActionResult<{ workPeriodId: string; projectId: string | null }>
 > {
 	const session = await getRequestSession();
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
+	}
+	if (options.billable !== undefined && typeof options.billable !== "boolean") {
+		return { success: false, error: "Invalid billability" };
 	}
 
 	const emp = await getCurrentEmployee();
@@ -889,6 +935,13 @@ export async function updateWorkPeriodProject(
 				};
 			}
 		}
+		// Explicit billability belongs to Billable Time; defaults keep applying while it is off.
+		if (
+			options.billable !== undefined &&
+			!(await getBillableTimeSettings(emp.organizationId, db)).enabled
+		) {
+			return { success: false, error: BILLABLE_TIME_OFF };
+		}
 
 		const billingAccess = await requireBillingForMutation(emp.organizationId);
 		if (!isBillingMutationAllowed(billingAccess)) {
@@ -907,6 +960,7 @@ export async function updateWorkPeriodProject(
 			period,
 			projectId,
 			...namedTaskId(taskId),
+			...(options.billable === undefined ? {} : { billable: options.billable }),
 		});
 
 		return {
@@ -932,6 +986,89 @@ export async function updateWorkPeriodProject(
 		}
 		logger.error({ error }, "Failed to update work period project");
 		return { success: false, error: "Failed to update project assignment" };
+	}
+}
+
+const workPeriodIdSchema = z.uuid();
+
+const BILLABLE_TIME_OFF = "Billable Time is switched off";
+
+/**
+ * Marks a work period billable or non-billable after recording (#900). The
+ * employee, organization owners and admins, the employee's managers and the
+ * project managers of the work's project may change it; the attribution
+ * operation verifies that authority under its locks. Billable work needs a
+ * project with a customer.
+ */
+export async function updateWorkPeriodBillability(
+	workPeriodId: string,
+	billable: boolean,
+): Promise<ServerActionResult<{ workPeriodId: string; isBillable: boolean }>> {
+	const session = await getRequestSession();
+	if (!session?.user) {
+		return { success: false, error: "Not authenticated" };
+	}
+	const organizationId = session.session.activeOrganizationId;
+	if (!organizationId) {
+		return { success: false, error: "No active organization" };
+	}
+	if (!workPeriodIdSchema.safeParse(workPeriodId).success || typeof billable !== "boolean") {
+		return { success: false, error: "Work period not found" };
+	}
+
+	try {
+		const [period] = await db
+			.select()
+			.from(workPeriod)
+			.where(
+				and(
+					eq(workPeriod.id, workPeriodId),
+					eq(workPeriod.organizationId, organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			)
+			.limit(1);
+		if (!period) {
+			return { success: false, error: "Work period not found" };
+		}
+		// Explicit billability belongs to Billable Time; defaults keep applying while it is off.
+		if (!(await getBillableTimeSettings(organizationId, db)).enabled) {
+			return { success: false, error: BILLABLE_TIME_OFF };
+		}
+
+		const billingAccess = await requireBillingForMutation(organizationId);
+		if (!isBillingMutationAllowed(billingAccess)) {
+			return {
+				success: false,
+				error: "billing_required",
+				code: billingAccess.reason ?? "subscription_required",
+			};
+		}
+
+		await changeWorkPeriodBillability({
+			organizationId,
+			employeeId: period.employeeId,
+			actorUserId: session.user.id,
+			period,
+			billable,
+		});
+
+		return { success: true, data: { workPeriodId, isBillable: billable } };
+	} catch (error) {
+		const failure = describeAmendmentFailure(error);
+		if (failure) {
+			return { success: false, error: failure.message, code: failure.code };
+		}
+		if (
+			error instanceof ValidationError ||
+			error instanceof ConflictError ||
+			error instanceof AuthorizationError ||
+			error instanceof NotFoundError
+		) {
+			return { success: false, error: error.message };
+		}
+		logger.error({ error }, "Failed to update work period billability");
+		return { success: false, error: "Failed to update billability" };
 	}
 }
 

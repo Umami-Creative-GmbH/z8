@@ -40,6 +40,7 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { timeEntryAppendControl } from "@/db/schema/time-entry-append";
+import { carryInvoicedWorkToSplit } from "@/lib/billable-time/hand-off/invoiced-work";
 import {
 	compareInstants,
 	dateFromInstant,
@@ -49,6 +50,7 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import type { AllocationEvidence } from "./allocation-evidence";
 import {
 	deriveAutomaticBreakIntentId,
 	deriveAutomaticBreakOperationId,
@@ -71,6 +73,7 @@ import {
 import { recordedTaskId } from "./task-attribution";
 import { admitTimeEntryAppend } from "./time-entry-append";
 import { capturedZone, resolveFallbackTimezoneCapture } from "./timezone-capture";
+import { projectAllocationAgrees } from "./work-billability";
 import { assertWorkOccupancyFree, WorkOccupancyConflictError } from "./work-occupancy";
 import {
 	assertNoUnresolvedWorkPeriodReview,
@@ -149,15 +152,6 @@ export type AutomaticBreakAdjustmentCommand = {
 	intent: { id: string; closureEntryId: string | null } | null;
 };
 
-type AllocationEvidence = {
-	allocationKind: string;
-	projectId: string | null;
-	/** Present only on an allocation booked to a task (#873). */
-	taskId?: string;
-	costCenterId: string | null;
-	weightPercent: number;
-};
-
 /** One segment by value: committed evidence, not a pointer to current rows. */
 export type AutomaticBreakSegment = {
 	workPeriodId: string;
@@ -173,6 +167,8 @@ export type AutomaticBreakSegment = {
 		projectId: string | null;
 		/** Present only when the work is booked to a task (#873). */
 		taskId?: string;
+		/** Absent on receipts committed before billability (#900), which were non-billable. */
+		isBillable?: boolean;
 		workCategoryId: string | null;
 		workLocationType: string | null;
 		allocations: AllocationEvidence[];
@@ -444,15 +440,8 @@ export async function adjustAutomaticBreakInTransaction(
 	if (record.approvalState === "pending") return defer("work_period_pending_approval");
 	const sourceStart = instantFromDate(period.startTime);
 	const sourceEnd = instantFromDate(period.endTime);
-	const projectAllocations = allocations.filter(
-		({ allocationKind }) => allocationKind === "project",
-	);
-	const allocationAgrees = period.projectId
-		? projectAllocations.length === 1 &&
-			projectAllocations[0]?.projectId === period.projectId &&
-			(projectAllocations[0]?.taskId ?? null) === (period.taskId ?? null) &&
-			projectAllocations[0]?.weightPercent === 100
-		: projectAllocations.length === 0;
+	// Project and billability must agree in both representations (#900).
+	const allocationAgrees = projectAllocationAgrees(period, allocations);
 	// Divergence between the period and its canonical record is evidence for review,
 	// never repaired by an automatic process.
 	if (
@@ -695,6 +684,7 @@ export async function adjustAutomaticBreakInTransaction(
 			taskId: allocation.taskId,
 			costCenterId: allocation.costCenterId,
 			weightPercent: allocation.weightPercent,
+			isBillable: allocation.isBillable,
 		});
 	}
 	const [generated] = await tx
@@ -705,6 +695,7 @@ export async function adjustAutomaticBreakInTransaction(
 			clockInId: breakClockIn.id,
 			clockOutId: period.clockOutId,
 			projectId: period.projectId,
+			isBillable: period.isBillable,
 			taskId: period.taskId,
 			workCategoryId: period.workCategoryId,
 			workLocationType: period.workLocationType,
@@ -722,6 +713,12 @@ export async function adjustAutomaticBreakInTransaction(
 		})
 		.returning({ id: workPeriod.id, graphRevision: workPeriod.graphRevision });
 	if (!generated) throw new Error("Generated work period insert failed");
+	// Invoiced work stays invoiced in both halves; the source is marked by trigger (#903).
+	await carryInvoicedWorkToSplit(tx, {
+		organizationId,
+		sourceWorkPeriodId: period.id,
+		newWorkPeriodId: generated.id,
+	});
 
 	// Independent rounding can change the total: the refresh commits with the work.
 	const dirtyFromDate = earliestStartDate(sourceStart, sourceClockIn.utcOffsetMinutes);
@@ -734,6 +731,7 @@ export async function adjustAutomaticBreakInTransaction(
 	const attribution = {
 		projectId: period.projectId,
 		...recordedTaskId(period.taskId),
+		isBillable: period.isBillable,
 		workCategoryId: period.workCategoryId,
 		workLocationType: period.workLocationType,
 		allocations: allocations.map((allocation) => ({
@@ -742,6 +740,7 @@ export async function adjustAutomaticBreakInTransaction(
 			...recordedTaskId(allocation.taskId),
 			costCenterId: allocation.costCenterId,
 			weightPercent: allocation.weightPercent,
+			isBillable: allocation.isBillable,
 		})),
 	};
 	const segment = (values: {
@@ -1128,6 +1127,7 @@ export async function applyLegacyAutomaticBreakInTransaction(
 				taskId: allocation.taskId,
 				costCenterId: allocation.costCenterId,
 				weightPercent: allocation.weightPercent,
+				isBillable: allocation.isBillable,
 			});
 		}
 	}
@@ -1142,6 +1142,7 @@ export async function applyLegacyAutomaticBreakInTransaction(
 			endTime: plan.expected.endTime,
 			durationMinutes: plan.secondDurationMinutes,
 			projectId: period.projectId,
+			isBillable: period.isBillable,
 			taskId: period.taskId,
 			workCategoryId: period.workCategoryId,
 			workLocationType: period.workLocationType,
@@ -1155,6 +1156,11 @@ export async function applyLegacyAutomaticBreakInTransaction(
 		})
 		.returning({ id: workPeriod.id });
 	if (!inserted) throw new Error("Break enforcement did not create a second work period");
+	await carryInvoicedWorkToSplit(tx, {
+		organizationId,
+		sourceWorkPeriodId: period.id,
+		newWorkPeriodId: inserted.id,
+	});
 	return {
 		kind: "adjusted",
 		operationId: null,

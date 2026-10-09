@@ -3,6 +3,7 @@
 import {
 	IconBriefcase,
 	IconCalendar,
+	IconCoin,
 	IconEdit,
 	IconListCheck,
 	IconPlus,
@@ -17,6 +18,8 @@ import {
 	getProjects,
 	type ProjectWithDetails,
 } from "@/app/[locale]/(app)/settings/projects/actions";
+import { BillableRateActionPanel } from "@/components/billable-time/billable-rate-series";
+import { BulkBillabilityActionPanel } from "@/components/billable-time/bulk-billability-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +34,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { queryKeys } from "@/lib/query";
+import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
 import { ProjectDialog } from "./project-dialog";
 import { ProjectMembersPanel } from "./project-members-panel";
 import { ProjectTasksPanel } from "./project-tasks-panel";
@@ -89,6 +93,10 @@ export function ProjectManagement({
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editingProject, setEditingProject] = useState<ProjectWithDetails | null>(null);
 	const [membersProjectId, setMembersProjectId] = useState<string | null>(null);
+	const [ratesProject, setRatesProject] = useState<ProjectWithDetails | null>(null);
+	const [bulkProject, setBulkProject] = useState<ProjectWithDetails | null>(null);
+	// Billable rates are for owners and admins only (#898); the actions check again.
+	const canSetBillableRates = useBillableTimeEnabled() && canManageProjectManagers;
 	const [tasksProjectId, setTasksProjectId] = useState<string | null>(null);
 	const [templateSourceId, setTemplateSourceId] = useState<string | null>(null);
 
@@ -324,10 +332,38 @@ export function ProjectManagement({
 												</Button>
 											</TableCell>
 											<TableCell>
-												<div className="flex items-center">
+												<div className="flex items-center gap-1">
 													<Button variant="ghost" size="sm" onClick={() => handleEdit(project)}>
 														<IconEdit className="size-4" />
 													</Button>
+													{canSetBillableRates && (
+														<Button
+															variant="ghost"
+															size="sm"
+															onClick={() => setRatesProject(project)}
+															aria-label={t(
+																"settings.billableTime.rates.projectRate",
+																"Billable rate",
+															)}
+															title={t("settings.billableTime.rates.projectRate", "Billable rate")}
+														>
+															<IconCoin aria-hidden="true" className="size-4" />
+														</Button>
+													)}
+													{canSetBillableRates && project.customerId && (
+														<Button
+															variant="ghost"
+															size="sm"
+															onClick={() => setBulkProject(project)}
+															aria-label={t(
+																"settings.billableTime.bulk.open",
+																"Mark work billable",
+															)}
+															title={t("settings.billableTime.bulk.open", "Mark work billable")}
+														>
+															<IconListCheck aria-hidden="true" className="size-4" />
+														</Button>
+													)}
 													{/* Saving as a template is for org owners and admins (#880). */}
 													{canManageProjectManagers && (
 														<Button
@@ -377,6 +413,32 @@ export function ProjectManagement({
 				onChanged={handleMembersChanged}
 			/>
 
+			{canSetBillableRates && (
+				<BillableRateActionPanel
+					open={ratesProject !== null}
+					onOpenChange={(open) => {
+						if (!open) setRatesProject(null);
+					}}
+					target={ratesProject ? { level: "project", projectId: ratesProject.id } : null}
+					title={t("settings.billableTime.rates.projectRateTitle", "Billable rate for {name}", {
+						name: ratesProject?.name ?? "",
+					})}
+					description={t(
+						"settings.billableTime.rates.level.projectDescription",
+						"Applies to all work on the project without an employee-on-project rate.",
+					)}
+				/>
+			)}
+
+			{canSetBillableRates && (
+				<BulkBillabilityActionPanel
+					open={bulkProject !== null}
+					onOpenChange={(open) => {
+						if (!open) setBulkProject(null);
+					}}
+					project={bulkProject}
+				/>
+			)}
 			<SaveProjectAsTemplatePanel
 				organizationId={organizationId}
 				project={templateSource}

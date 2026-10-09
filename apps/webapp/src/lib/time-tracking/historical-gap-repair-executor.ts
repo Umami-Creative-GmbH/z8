@@ -593,9 +593,10 @@ async function insertDetail(
 
 /**
  * Adds the project allocation only while the record has none (checked under its
- * row lock). The allocation takes the period's task while the period is on that
- * project (#873), so the period and its allocation agree on project and task;
- * the planned period is locked and its revision guard proves it unchanged.
+ * row lock). The allocation takes the period's task (#873) and billability (#900)
+ * while the period is on that project, so the period and its allocation agree on
+ * project, task and billability; the planned period is locked and its revision
+ * guard proves it unchanged.
  */
 async function insertProject(
 	tx: WorkTransactionClient,
@@ -617,10 +618,15 @@ async function insertProject(
 		.limit(1);
 	if (existing.length > 0) throw new StaleHistoricalRepairPlanError(recordId);
 	const [period] = await tx
-		.select({ projectId: workPeriod.projectId, taskId: workPeriod.taskId })
+		.select({
+			projectId: workPeriod.projectId,
+			taskId: workPeriod.taskId,
+			isBillable: workPeriod.isBillable,
+		})
 		.from(workPeriod)
 		.where(and(eq(workPeriod.id, unit.workPeriodId), eq(workPeriod.organizationId, organizationId)))
 		.limit(1);
+	const isBillable = period?.projectId === projectId && period.isBillable;
 	await tx.insert(timeRecordAllocation).values({
 		organizationId,
 		recordId,
@@ -628,6 +634,7 @@ async function insertProject(
 		projectId,
 		taskId: period?.projectId === projectId ? period.taskId : null,
 		weightPercent: 100,
+		isBillable,
 	});
 }
 

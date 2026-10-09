@@ -20,6 +20,7 @@ const source: AmendmentSource = {
 	projectId: "project-a",
 	workCategoryId: "category-a",
 	workLocationType: "home",
+	isBillable: false,
 };
 const preserveAll: AmendmentIntent = {
 	clockIn: { kind: "preserve" },
@@ -45,6 +46,7 @@ describe("planCompletedWorkAmendment", () => {
 			task: false,
 			workCategory: false,
 			workLocation: false,
+			billable: false,
 		});
 		expect(result.result.durationMinutes).toBe(481);
 		expect(result.result.endAt.equals(end.add({ seconds: 40 }))).toBe(true);
@@ -148,6 +150,7 @@ describe("planCompletedWorkAmendment", () => {
 			projectId: "project-a",
 			workCategoryId: null,
 			workLocationType: "office",
+			isBillable: false,
 		};
 		expect(
 			planAttributionChange(attribution, {
@@ -156,7 +159,13 @@ describe("planCompletedWorkAmendment", () => {
 				workLocation: { kind: "preserve" },
 			}),
 		).toEqual({
-			changes: { project: true, task: false, workCategory: false, workLocation: false },
+			changes: {
+				project: true,
+				task: false,
+				workCategory: false,
+				workLocation: false,
+				billable: false,
+			},
 			result: {
 				projectId: "project-b",
 				taskId: null,
@@ -171,6 +180,55 @@ describe("planCompletedWorkAmendment", () => {
 				workLocation: { kind: "preserve" },
 			}),
 		).toThrow(AmendmentNoChangeError);
+	});
+
+	describe("billability (#900)", () => {
+		it("counts a billability-only change as a change", () => {
+			const result = plan({ billable: { kind: "set", billable: true } });
+			expect(result.changes).toEqual({
+				clockIn: false,
+				clockOut: false,
+				project: false,
+				task: false,
+				workCategory: false,
+				workLocation: false,
+				billable: true,
+			});
+			expect(result.result.projectId).toBe("project-a");
+			expect(result.result.durationMinutes).toBe(479);
+		});
+
+		it("treats billability set to its current value, or preserved, as unchanged", () => {
+			expect(() => plan({ billable: { kind: "set", billable: false } })).toThrow(
+				AmendmentNoChangeError,
+			);
+			expect(() => plan({ billable: { kind: "preserve" } })).toThrow(AmendmentNoChangeError);
+		});
+
+		it("plans a billability-only change of active work", () => {
+			expect(
+				planAttributionChange(
+					{
+						projectId: "project-a",
+						workCategoryId: null,
+						workLocationType: null,
+						isBillable: true,
+					},
+					{
+						project: { kind: "preserve" },
+						workCategory: { kind: "preserve" },
+						workLocation: { kind: "preserve" },
+						billable: { kind: "set", billable: false },
+					},
+				).changes,
+			).toEqual({
+				project: false,
+				task: false,
+				workCategory: false,
+				workLocation: false,
+				billable: true,
+			});
+		});
 	});
 
 	describe("the task (#873)", () => {
@@ -227,7 +285,13 @@ describe("planCompletedWorkAmendment", () => {
 		it("plans a task-only change of active work", () => {
 			expect(
 				planAttributionChange(
-					{ projectId: "project-a", taskId: null, workCategoryId: null, workLocationType: null },
+					{
+						projectId: "project-a",
+						taskId: null,
+						workCategoryId: null,
+						workLocationType: null,
+						isBillable: false,
+					},
 					{
 						project: { kind: "preserve" },
 						task: { kind: "replace", id: "task-b" },

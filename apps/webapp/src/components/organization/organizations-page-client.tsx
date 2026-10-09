@@ -2,6 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import type * as authSchema from "@/db/auth-schema";
+import type { BillableCurrency } from "@/lib/billable-time/currency";
 import type { AutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/types";
 import type { ClockingReminderSettings } from "@/lib/time-tracking/clocking-reminders/settings-policy";
 import { OrganizationTab } from "./organization-tab";
@@ -14,6 +15,7 @@ interface OrganizationsPageClientProps {
 	currentMemberRole: "owner" | "admin" | "member";
 	defaultNotificationLanguage: string;
 	canCreateOrganizations: boolean;
+	billableCurrency: BillableCurrency | null;
 }
 
 export function OrganizationsPageClient({
@@ -24,6 +26,7 @@ export function OrganizationsPageClient({
 	currentMemberRole,
 	defaultNotificationLanguage,
 	canCreateOrganizations,
+	billableCurrency,
 }: OrganizationsPageClientProps) {
 	const { t } = useTranslate();
 	const organizationTitle = t("settings.organizations.title", "Organization");
@@ -48,6 +51,7 @@ export function OrganizationsPageClient({
 					currentMemberRole={currentMemberRole}
 					defaultNotificationLanguage={defaultNotificationLanguage}
 					canCreateOrganizations={canCreateOrganizations}
+					billableCurrency={billableCurrency}
 				/>
 			</div>
 		</div>

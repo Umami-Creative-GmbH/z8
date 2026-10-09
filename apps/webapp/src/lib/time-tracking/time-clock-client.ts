@@ -30,6 +30,8 @@ type TimeClockRequest =
 			/** A task of the project (#874); omitted, the task follows the project. */
 			taskId?: string | null;
 			workCategoryId?: string | null;
+			/** Explicit billability (#900); omitted applies the project's billable default. */
+			billable?: boolean;
 			browserTimezone?: string | null;
 			position?: ClockCommandPosition;
 	  };
@@ -76,6 +78,7 @@ export function postClockOut(input: {
 	projectId?: string | null;
 	taskId?: string | null;
 	workCategoryId?: string | null;
+	billable?: boolean;
 	browserTimezone?: string | null;
 	position?: ClockCommandPosition;
 }): Promise<WebClockOutResult> {

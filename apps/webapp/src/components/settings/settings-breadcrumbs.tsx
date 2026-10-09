@@ -68,6 +68,14 @@ function buildSettingsBreadcrumbs(pathname: string, t: ReturnType<typeof useTran
 			label = t("settings.approvalEscalation.title", "Approval Escalation");
 		} else if (segment === "history") {
 			label = t("settings.vacation.history.title", "History");
+		} else if (segment === "rates" && segments[i - 1] === "billable-time") {
+			label = t("settings.billableTime.nav.rates", "Billable rates");
+		} else if (segment === "cost-rates" && segments[i - 1] === "billable-time") {
+			label = t("settings.billableTime.nav.costRates", "Cost rates");
+		} else if (segment === "accounting" && segments[i - 1] === "billable-time") {
+			label = t("settings.billableTime.nav.accounting", "Accounting");
+		} else if (segment === "hand-off" && segments[i - 1] === "billable-time") {
+			label = t("settings.billableTime.nav.handOff", "Hand-off");
 		} else if (segment === "new") {
 			label = t("common.new", "New");
 		} else if (/^[a-f0-9-]{36}$/i.test(segment)) {

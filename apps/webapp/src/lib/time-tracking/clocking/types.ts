@@ -105,6 +105,11 @@ export type ClockOutBody = {
 	 * while the project stays, cleared when it changes.
 	 */
 	task?: AttributionIntent;
+	/**
+	 * Explicit billability (#900); absent applies the project's billable default
+	 * when the project changes and preserves the period's billability otherwise.
+	 */
+	billable?: boolean;
 };
 
 export type ClockInBody = {
@@ -200,6 +205,8 @@ export type ClockOutFailure =
 	| ClockTargetFailure
 	| "not_clocked_in"
 	| "project_not_allowed"
+	/** Billable work was requested without a project or on a project without a customer (#900). */
+	| "billable_not_allowed"
 	/** The task cannot be booked; the refusal names why (#873). */
 	| "task_not_allowed"
 	| "work_category_not_allowed"

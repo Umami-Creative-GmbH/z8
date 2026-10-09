@@ -52,6 +52,7 @@ import {
 	type ClockodoImportController,
 	type ClockodoWizardStep,
 } from "./clockodo-import-controller";
+import { ClockodoProjectMappingStep } from "./clockodo-project-mapping-step";
 
 export function ClockodoImportStepRenderer({
 	controller,
@@ -69,6 +70,9 @@ export function ClockodoImportStepRenderer({
 			)}
 			{controller.step === "user-mapping" && (
 				<ClockodoMappingStep controller={controller} />
+			)}
+			{controller.step === "project-mapping" && (
+				<ClockodoProjectMappingStep controller={controller} />
 			)}
 			{controller.step === "selection" && (
 				<ClockodoSelectionStep controller={controller} />
@@ -99,6 +103,13 @@ function ClockodoStepIndicator({
 		{
 			key: "user-mapping",
 			label: t("settings.clockodoImport.step.userMapping", "User Mapping"),
+		},
+		{
+			key: "project-mapping",
+			label: t(
+				"settings.clockodoImport.step.projectMapping",
+				"Project Mapping",
+			),
 		},
 		{
 			key: "selection",
@@ -538,9 +549,13 @@ function ClockodoMappingStep({
 					</Button>
 					<Button
 						onClick={() => controller.saveMappingsMutation.mutate()}
-						disabled={controller.saveMappingsMutation.isPending}
+						disabled={
+							controller.saveMappingsMutation.isPending ||
+							controller.fetchProjectsMutation.isPending
+						}
 					>
-						{controller.saveMappingsMutation.isPending ? (
+						{controller.saveMappingsMutation.isPending ||
+						controller.fetchProjectsMutation.isPending ? (
 							<IconLoader2
 								className="mr-2 size-4 animate-spin"
 								aria-hidden="true"
@@ -824,7 +839,13 @@ function ClockodoSelectionStep({
 				<div className="flex justify-between pt-4">
 					<Button
 						variant="outline"
-						onClick={() => controller.setStep("user-mapping")}
+						onClick={() =>
+							controller.setStep(
+								controller.projectMappings.length > 0
+									? "project-mapping"
+									: "user-mapping",
+							)
+						}
 					>
 						<IconArrowLeft className="mr-2 size-4" aria-hidden="true" />
 						{t("common.back", "Back")}

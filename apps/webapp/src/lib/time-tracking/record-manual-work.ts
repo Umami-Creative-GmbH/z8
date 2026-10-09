@@ -80,6 +80,8 @@ export type ManualWorkFacts = {
 	durationMinutes: number;
 	reason: string;
 	projectId: string | null;
+	/** Resolved under the transaction by preparation (#900); never true without a project. */
+	isBillable: boolean;
 	/** A task of `projectId` (#873), checked by preparation; absent or null for none. */
 	taskId?: string | null;
 	workCategoryId: string | null;
@@ -132,6 +134,8 @@ export type ManualWorkResult = {
 	};
 	attribution: {
 		projectId: string | null;
+		/** Absent on receipts committed before billability (#900), which were non-billable. */
+		isBillable?: boolean;
 		/** Present only when the work was booked to a task (#873). */
 		taskId?: string;
 		workCategoryId: string | null;
@@ -365,6 +369,7 @@ export async function recordManualWork(
 			projectId: facts.projectId,
 			taskId: facts.taskId ?? null,
 			weightPercent: 100,
+			isBillable: facts.isBillable,
 		});
 	}
 
@@ -381,6 +386,7 @@ export async function recordManualWork(
 			endTime: endAt,
 			durationMinutes: facts.durationMinutes,
 			projectId: facts.projectId,
+			isBillable: facts.projectId !== null && facts.isBillable,
 			taskId: facts.taskId ?? null,
 			workCategoryId: facts.workCategoryId,
 			workLocationType: facts.workLocationType ?? null,
@@ -493,6 +499,7 @@ export async function recordManualWork(
 		},
 		attribution: {
 			projectId: facts.projectId,
+			isBillable: facts.projectId !== null && facts.isBillable,
 			...recordedTaskId(facts.taskId),
 			workCategoryId: facts.workCategoryId,
 			...(facts.workLocationType !== undefined

@@ -55,6 +55,11 @@ export interface ClockOutActionContext extends BrowserTimezoneContext {
 	 * clears it; an ID books the work to that task.
 	 */
 	taskId?: string | null;
+	/**
+	 * Explicit billability of the closed work (#900). Absent applies the chosen
+	 * project's billable default, or keeps the active work's billability.
+	 */
+	billable?: boolean;
 }
 
 export interface AssignedProject {
@@ -65,6 +70,10 @@ export interface AssignedProject {
 	budgetHours: number | null;
 	deadline: string | null;
 	totalHoursBooked: number;
+	/** Billable Time (#900): only a project with a customer can make work billable. */
+	hasCustomer: boolean;
+	/** The billable default new work on it takes; false without a customer. */
+	billableDefault: boolean;
 	/** The project's open tasks, by name (#874); empty when it has none. */
 	tasks: ProjectTaskChoice[];
 }
@@ -115,6 +124,8 @@ export interface ManualTimeEntryInput {
 	taskId?: string;
 	workCategoryId?: string;
 	workLocationType?: WorkLocationType;
+	/** Explicit billability (#900); absent takes the project's billable default. */
+	billable?: boolean;
 }
 
 /** What a manual submission committed, for either command representation. */

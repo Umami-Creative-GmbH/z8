@@ -360,6 +360,36 @@ export const queryKeys = {
 			["projects", "templateDetail", templateId, "preview"] as const,
 	},
 
+	// Billable Time (#768; not the Z8 subscription)
+	billableTime: {
+		all: ["billableTime"] as const,
+		/** One billable rate series: a rate level and its target ids. */
+		rateHistory: (
+			level: string,
+			employeeId: string | null,
+			projectId: string | null,
+			customerId: string | null,
+		) => ["billableTime", "rateHistory", level, employeeId, projectId, customerId] as const,
+		/** One employee's cost rates (#899). */
+		costRateHistory: (employeeId: string) =>
+			["billableTime", "costRateHistory", employeeId] as const,
+		/** The accounting connection and every customer's accounting side (#903). */
+		accountingSettings: () => ["billableTime", "accounting", "settings"] as const,
+		/** One customer's contact link and tax treatment (#903). */
+		customerAccounting: (customerId: string) =>
+			["billableTime", "accounting", "customer", customerId] as const,
+		/** A contact picker search in the connected accounting tool (#903). */
+		contactSearch: (query: string) =>
+			["billableTime", "accounting", "contactSearch", query] as const,
+		/** The hand-off area: customers, hand-offs and marked work (#903). */
+		handOffOverview: () => ["billableTime", "handOff", "overview"] as const,
+		/** One hand-off (invoice draft) with its lines, work and timesheet (#903). */
+		invoiceDraft: (draftId: string) => ["billableTime", "handOff", "draft", draftId] as const,
+		/** The accounting tool's status of one invoice draft (#903). */
+		invoiceDraftStatus: (draftId: string) =>
+			["billableTime", "handOff", "draftStatus", draftId] as const,
+	},
+
 	// Surcharges
 	surcharges: {
 		all: ["surcharges"] as const,

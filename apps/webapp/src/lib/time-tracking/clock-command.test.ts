@@ -38,6 +38,17 @@ const clockOut = {
 };
 
 describe("parseClockCommand", () => {
+	it("accepts an explicit billable choice on a clock-out and keeps it out otherwise (#900)", () => {
+		const billable = { ...clockOut, billable: false };
+		expect(parseClockCommand(billable)).toEqual({ ok: true, command: billable });
+		const parsed = parseClockCommand(clockOut);
+		expect(parsed.ok && Object.hasOwn(parsed.command, "billable")).toBe(false);
+		expect(parseClockCommand({ ...clockOut, billable: "yes" })).toEqual({
+			ok: false,
+			code: "invalid_command",
+		});
+	});
+
 	it("accepts frozen version 2 clock-in and clock-out commands verbatim", () => {
 		expect(parseClockCommand(clockIn)).toEqual({ ok: true, command: clockIn });
 		expect(parseClockCommand(clockOut)).toEqual({ ok: true, command: clockOut });

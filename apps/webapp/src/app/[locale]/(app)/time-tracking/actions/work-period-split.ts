@@ -16,6 +16,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import * as z from "zod";
 import { db } from "@/db";
 import { timeEntry, workPeriod } from "@/db/schema";
+import { carryInvoicedWorkToSplit } from "@/lib/billable-time/hand-off/invoiced-work";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
@@ -399,9 +400,18 @@ async function splitLegacyWorkPeriod(
 			endTime: locked.endTime,
 			durationMinutes: input.durations.secondDurationMinutes,
 			isActive: false,
+			// Both halves keep the source's project and billability (#900).
+			projectId: locked.projectId,
+			isBillable: locked.isBillable,
 		})
 		.returning();
 	if (!secondWorkPeriod) throw new Error("Second work period insert failed");
+	// Invoiced work stays invoiced in both halves; the source is marked by trigger (#903).
+	await carryInvoicedWorkToSplit(tx, {
+		organizationId,
+		sourceWorkPeriodId: locked.id,
+		newWorkPeriodId: secondWorkPeriod.id,
+	});
 	if (input.afterNotes && locked.clockOutId) {
 		await tx
 			.update(timeEntry)

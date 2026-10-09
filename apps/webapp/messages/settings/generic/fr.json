@@ -23,6 +23,10 @@
       },
       "title": "Contrat de sous-traitance (DPA)"
     },
+    "billableTime": {
+      "description": "Devise de facturation et ce que votre organisation facture à ses clients pour le travail",
+      "title": "Temps facturable"
+    },
     "billing": {
       "description": "Gérez votre abonnement, vos méthodes de paiement et vos factures",
       "title": "Facturation et abonnement"

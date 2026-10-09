@@ -28,6 +28,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
 import { calculateExpectedWorkHoursForEmployee } from "@/lib/time-tracking/calculations";
+import { completedWorkPeriodCondition } from "./completed-work";
 import { formatDateRangeLabel } from "./date-ranges";
 import { calculateHourlyEarningsFromIntervals } from "./hourly-earnings";
 import {
@@ -89,7 +90,7 @@ async function loadCompletedWorkPeriods(
 			and(
 				eq(workPeriod.employeeId, employeeId),
 				eq(workPeriod.organizationId, organizationId),
-				eq(workPeriod.isActive, false),
+				completedWorkPeriodCondition(),
 				isNotNull(workPeriod.durationMinutes),
 				lt(workPeriod.startTime, dateFromInstant(reportRange.endExclusive)),
 				gt(workPeriod.endTime, dateFromInstant(reportRange.start)),
@@ -544,7 +545,7 @@ export async function aggregateHomeOfficeDays(
 					and(
 						eq(workPeriod.employeeId, employeeId),
 						eq(workPeriod.organizationId, organizationId),
-						eq(workPeriod.isActive, false),
+						completedWorkPeriodCondition(),
 						isNotNull(workPeriod.durationMinutes),
 						lt(workPeriod.startTime, dayEndExclusive),
 						gt(workPeriod.endTime, dayStart),

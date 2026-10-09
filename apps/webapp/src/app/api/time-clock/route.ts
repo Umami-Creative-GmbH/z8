@@ -35,6 +35,8 @@ const timeClockSchema = z.discriminatedUnion("action", [
 		// A task of the project (#874). Omitted, the task follows the project.
 		taskId: z.string().min(1).nullable().optional(),
 		workCategoryId: z.string().min(1).nullable().optional(),
+		// Omitted applies the project's billable default (#900).
+		billable: z.boolean().optional(),
 		browserTimezone: z.string().nullish(),
 		position,
 	}),
@@ -82,6 +84,7 @@ export async function POST(request: Request) {
 						submissionId: body.submissionId,
 						...namedTaskId(body.taskId),
 						position,
+						...(body.billable === undefined ? {} : { billable: body.billable }),
 					});
 
 		return NextResponse.json(result, { status: result.success ? 200 : 422 });

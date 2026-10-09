@@ -96,6 +96,7 @@ type FrozenCommandParams = {
 	projectId?: string;
 	taskId?: string | null;
 	workCategoryId?: string;
+	billable?: boolean;
 };
 
 interface UseTimeClockOptions {
@@ -201,6 +202,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			// Frozen only when named, so a clock-out without a task keeps its bytes (#875).
 			...namedTaskId(params?.taskId),
 			workCategoryId: params?.workCategoryId,
+			billable: params?.billable,
 		});
 		return prepared.ok ? prepared.request : null;
 	}
@@ -298,6 +300,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			 */
 			taskId?: string | null;
 			workCategoryId?: string;
+			billable?: boolean;
 			browserTimezone?: string | null;
 			submissionId?: string;
 		}) => {
@@ -335,6 +338,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				projectId: params?.projectId,
 				...namedTaskId(params?.taskId),
 				workCategoryId: params?.workCategoryId,
+				...(params?.billable === undefined ? {} : { billable: params.billable }),
 				browserTimezone: resolveBrowserTimezone(params),
 				submissionId: params?.submissionId as string,
 				...(event.position ? { position: event.position } : {}),
@@ -465,6 +469,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			projectId?: string;
 			taskId?: string | null;
 			workCategoryId?: string;
+			billable?: boolean;
 			browserTimezone?: string | null;
 		}) =>
 			clockOutMutation.mutateAsync({

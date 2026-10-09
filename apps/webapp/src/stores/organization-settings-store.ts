@@ -11,6 +11,8 @@ export interface OrganizationSettings {
 	surchargesEnabled: boolean;
 	demoDataEnabled: boolean;
 	worksCouncilEnabled: boolean;
+	/** Billable Time module (#897); never true while projects are off. */
+	billableTimeEnabled: boolean;
 	personnelFilesEnabled: boolean;
 	timezone: string;
 	deletedAt: string | null;
@@ -34,6 +36,7 @@ const initialState: OrganizationSettings = {
 	surchargesEnabled: false,
 	demoDataEnabled: true,
 	worksCouncilEnabled: false,
+	billableTimeEnabled: false,
 	personnelFilesEnabled: false,
 	timezone: "UTC",
 	deletedAt: null,
@@ -104,6 +107,8 @@ export const useSurchargesEnabled = () =>
 export const useDemoDataEnabled = () => useOrganizationSettings((state) => state.demoDataEnabled);
 export const useWorksCouncilEnabled = () =>
 	useOrganizationSettings((state) => state.worksCouncilEnabled);
+export const useBillableTimeEnabled = () =>
+	useOrganizationSettings((state) => state.billableTimeEnabled);
 export const usePersonnelFilesEnabled = () =>
 	useOrganizationSettings((state) => state.personnelFilesEnabled);
 export const useOrganizationTimezone = () => useOrganizationSettings((state) => state.timezone);

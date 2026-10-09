@@ -179,6 +179,9 @@ export const timeRecordAllocation = pgTable(
 			onDelete: "set null",
 		}),
 		weightPercent: integer("weight_percent").default(100).notNull(),
+		// Billable work (#900): carried on the project allocation, so billability
+		// without a project is impossible; mirrors `work_period.is_billable`.
+		isBillable: boolean("is_billable").default(false).notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
 	(table) => [
@@ -211,6 +214,10 @@ export const timeRecordAllocation = pgTable(
 			) OR (
 				${table.allocationKind} = 'cost_center' AND ${table.costCenterId} IS NOT NULL AND ${table.projectId} IS NULL
 			)`,
+		),
+		check(
+			"timeRecordAllocation_billable_project_chk",
+			sql`NOT ${table.isBillable} OR ${table.allocationKind} = 'project'`,
 		),
 		check(
 			"timeRecordAllocation_task_project_chk",

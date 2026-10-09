@@ -53,6 +53,8 @@ export type ClockCommandCaptureRequest = {
 			knownWorkPeriodId: string | null;
 			project: Attribution;
 			workCategory: Attribution;
+			/** Explicit billability (#900); omitted applies the project's billable default. */
+			billable?: boolean;
 			/** The project task (#875); present only when the page names one. */
 			task?: Attribution;
 	  }
@@ -107,6 +109,7 @@ export function prepareBrowserClockCommand(input: {
 	knownWorkPeriodId?: string | null;
 	projectId?: string | null;
 	workCategoryId?: string | null;
+	billable?: boolean;
 	/** Omitted, the task follows the project; `null` clears it (#875). */
 	taskId?: string | null;
 	/** The position taken at this event, if the employee's capture is on and consented (#826). */
@@ -166,6 +169,7 @@ export function prepareBrowserClockCommand(input: {
 			knownWorkPeriodId: input.knownWorkPeriodId ?? null,
 			project,
 			workCategory,
+			...(input.billable === undefined ? {} : { billable: input.billable }),
 			...(task ? { task } : {}),
 		},
 	};

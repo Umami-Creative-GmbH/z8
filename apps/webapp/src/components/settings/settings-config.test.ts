@@ -9,7 +9,7 @@ import {
 	getVisibleSettings,
 	SETTINGS_ENTRIES,
 } from "@/components/settings/settings-config";
-import { resolveSettingsAccessTier } from "@/lib/settings-access";
+import { canResolvedTierAccessRoute, resolveSettingsAccessTier } from "@/lib/settings-access";
 
 describe("settings visibility tiers", () => {
 	it("shows only member entries for the member tier", () => {
@@ -375,5 +375,50 @@ describe("settings visibility tiers", () => {
 		});
 
 		expect(entries.some((entry) => entry.id === "demo-data")).toBe(true);
+	});
+
+	describe("Billable Time settings area", () => {
+		const billableTimeOn = {
+			projectsEnabled: true,
+			billableTimeEnabled: true,
+		};
+		const isVisible = (
+			accessTier: "member" | "manager" | "orgAdmin",
+			featureFlags: Parameters<typeof getResolvedSettingsVisibility>[0]["featureFlags"],
+		) =>
+			getResolvedSettingsVisibility({ accessTier, featureFlags }).visibleSettings.some(
+				(entry) => entry.id === "billable-time",
+			);
+
+		it("shows the area to org admins while the module is on", () => {
+			expect(isVisible("orgAdmin", billableTimeOn)).toBe(true);
+			expect(
+				getVisibleSettings("orgAdmin").find((entry) => entry.id === "billable-time"),
+			).toMatchObject({ href: "/settings/billable-time" });
+		});
+
+		it("hides the area from managers and members even while the module is on", () => {
+			expect(isVisible("manager", billableTimeOn)).toBe(false);
+			expect(isVisible("member", billableTimeOn)).toBe(false);
+		});
+
+		it("hides the area from everyone while the module is off", () => {
+			expect(isVisible("orgAdmin", { projectsEnabled: true, billableTimeEnabled: false })).toBe(
+				false,
+			);
+			expect(isVisible("orgAdmin", { projectsEnabled: true })).toBe(false);
+		});
+
+		it("hides the area while projects are off, even if the module flag is still set", () => {
+			expect(isVisible("orgAdmin", { projectsEnabled: false, billableTimeEnabled: true })).toBe(
+				false,
+			);
+		});
+
+		it("guards the area's routes as org admin only", () => {
+			expect(canResolvedTierAccessRoute("orgAdmin", "/settings/billable-time")).toBe(true);
+			expect(canResolvedTierAccessRoute("manager", "/settings/billable-time")).toBe(false);
+			expect(canResolvedTierAccessRoute("member", "/settings/billable-time")).toBe(false);
+		});
 	});
 });

@@ -14,6 +14,7 @@ export type FeatureFlag =
 	| "surchargesEnabled"
 	| "demoDataEnabled"
 	| "worksCouncilEnabled"
+	| "billableTimeEnabled"
 	| "personnelFilesEnabled";
 
 export type FeatureFlagState = Partial<Record<FeatureFlag, boolean>>;
@@ -63,7 +64,8 @@ export type SettingsIconName =
 	| "brand-slack"
 	| "brand-teams"
 	| "brand-telegram"
-	| "database-import";
+	| "database-import"
+	| "receipt";
 
 export interface SettingsEntry {
 	id: string;
@@ -463,6 +465,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "administration",
 		requiredFeature: "projectsEnabled",
 	},
+	{
+		id: "billable-time",
+		titleKey: "settings.billableTime.title",
+		titleDefault: "Billable Time",
+		descriptionKey: "settings.billableTime.description",
+		descriptionDefault: "Billable currency and what your organization charges customers for work",
+		href: "/settings/billable-time",
+		icon: "receipt",
+		minimumTier: "orgAdmin",
+		group: "administration",
+		requiredFeature: "billableTimeEnabled",
+	},
 	// Enterprise settings
 	{
 		id: "enterprise-identity-setup",
@@ -726,6 +740,10 @@ export function filterSettingsByFeatureFlags(
 		if (!entry.requiredFeature) return true;
 		if (entry.requiredFeature === "demoDataEnabled") {
 			return featureFlags.demoDataEnabled ?? true;
+		}
+		if (entry.requiredFeature === "billableTimeEnabled") {
+			// Billable Time needs projects; never show it on a stale flag without them.
+			return (featureFlags.billableTimeEnabled ?? false) && (featureFlags.projectsEnabled ?? false);
 		}
 
 		return featureFlags[entry.requiredFeature] ?? false;

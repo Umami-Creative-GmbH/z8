@@ -23,6 +23,10 @@
       },
       "title": "Auftragsverarbeitungsvertrag (AVV)"
     },
+    "billableTime": {
+      "description": "Abrechnungswährung und was Ihre Organisation Kunden für Arbeit berechnet",
+      "title": "Abrechenbare Zeit"
+    },
     "billing": {
       "description": "Verwalten Sie Ihr Abonnement, Zahlungsmethoden und Rechnungen",
       "title": "Abrechnung & Abonnement"

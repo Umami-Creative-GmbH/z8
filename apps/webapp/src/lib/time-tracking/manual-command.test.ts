@@ -49,6 +49,23 @@ describe("parseManualTimeEntryCommand", () => {
 		},
 	);
 
+	it.each([true, false])("preserves an explicit billable choice %s", (billable) => {
+		const submitted = { ...command, projectId: crypto.randomUUID(), billable };
+		expect(parseManualTimeEntryCommand(submitted)).toEqual({ ok: true, command: submitted });
+	});
+
+	it("keeps a command without a billable choice free of the key", () => {
+		const parsed = parseManualTimeEntryCommand(structuredClone(command));
+		expect(parsed.ok && Object.hasOwn(parsed.command, "billable")).toBe(false);
+	});
+
+	it.each(["true", 1, null, undefined])("rejects a non-boolean billable choice %s", (billable) => {
+		expect(parseManualTimeEntryCommand({ ...command, billable })).toEqual({
+			ok: false,
+			rejection: { reason: "invalid_command", field: "billable" },
+		});
+	});
+
 	it("preserves a task of the command's project, alongside a work location", () => {
 		const submitted = {
 			...command,

@@ -1114,6 +1114,69 @@
       "when": 1797955200000,
       "tag": "0158_project_task_booking",
       "breakpoints": true
+    },
+    {
+      "idx": 159,
+      "version": "7",
+      "when": 1798041600000,
+      "tag": "0159_billable_time_module",
+      "breakpoints": true
+    },
+    {
+      "idx": 160,
+      "version": "7",
+      "when": 1798128000000,
+      "tag": "0160_billable_rates",
+      "breakpoints": true
+    },
+    {
+      "idx": 161,
+      "version": "7",
+      "when": 1798214400000,
+      "tag": "0161_cost_rates",
+      "breakpoints": true
+    },
+    {
+      "idx": 162,
+      "version": "7",
+      "when": 1798300800000,
+      "tag": "0162_billable_work",
+      "breakpoints": true
+    },
+    {
+      "idx": 163,
+      "version": "7",
+      "when": 1798387200000,
+      "tag": "0163_accounting_connection",
+      "breakpoints": true
+    },
+    {
+      "idx": 164,
+      "version": "7",
+      "when": 1798473600000,
+      "tag": "0164_clockodo_project_mapping",
+      "breakpoints": true
+    },
+    {
+      "idx": 165,
+      "version": "7",
+      "when": 1798560000000,
+      "tag": "0165_import_row_commit_choice",
+      "breakpoints": true
+    },
+    {
+      "idx": 166,
+      "version": "7",
+      "when": 1798646400000,
+      "tag": "0166_billable_hand_off",
+      "breakpoints": true
+    },
+    {
+      "idx": 167,
+      "version": "7",
+      "when": 1798732800000,
+      "tag": "0167_billable_hand_off_hardening",
+      "breakpoints": true
     }
   ]
 }

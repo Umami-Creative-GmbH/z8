@@ -28,6 +28,10 @@ import {
 } from "@/lib/projects/project-templates";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
 import {
+	projectBillableDefault,
+	requireBillableTimeForDefaultChange,
+} from "./project-billable-default-input";
+import {
 	ensureSettingsActorCanUseProjectCustomer,
 	getProjectSettingsActorContext,
 } from "./project-scope";
@@ -56,6 +60,8 @@ export interface CreateProjectFromTemplateInput {
 	description?: string | null;
 	status?: NewProjectStatus;
 	customerId?: string | null;
+	/** Billable default (#900); only a project with a customer can have it on. */
+	billableDefault?: boolean;
 }
 
 function keepTypedCreationError(error: DatabaseError) {
@@ -155,6 +161,17 @@ export async function createProjectFromTemplate(
 					yield* ensureSettingsActorCanUseProjectCustomer(actor, customerId, "create");
 				}
 
+				// The same billable default rules as a hand-made project (#900).
+				yield* requireBillableTimeForDefaultChange(actor.dbService, actor.organizationId, {
+					requested: input.billableDefault,
+					current: false,
+				});
+				const billableDefault = yield* projectBillableDefault({
+					requested: input.billableDefault,
+					current: false,
+					customerId,
+				});
+
 				const status = input.status ?? "planned";
 				// Assignments change what is bookable, so the copy serializes with
 				// booking preparation like any assignment change (#315).
@@ -177,6 +194,7 @@ export async function createProjectFromTemplate(
 									description: input.description?.trim() || null,
 									status,
 									customerId,
+									billableDefault,
 								},
 							),
 						),

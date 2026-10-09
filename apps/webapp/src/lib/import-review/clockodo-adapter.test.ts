@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
 	getTeams: vi.fn(),
 	getUsers: vi.fn(),
 	clockodoUserMappingFindMany: vi.fn(),
+	loadClockodoProjectTargets: vi.fn(),
 	insertImportIssues: vi.fn(),
 	insertStagedRows: vi.fn(),
 	missingClientMethods: new Set<string>(),
@@ -62,6 +63,10 @@ vi.mock("@/db", () => ({
 			},
 		},
 	},
+}));
+
+vi.mock("./clockodo-project-mapping", () => ({
+	loadClockodoProjectTargets: mocks.loadClockodoProjectTargets,
 }));
 
 vi.mock("./repository", () => ({
@@ -113,6 +118,7 @@ beforeEach(() => {
 	mocks.getTeams.mockResolvedValue([]);
 	mocks.getUsers.mockResolvedValue([]);
 	mocks.clockodoUserMappingFindMany.mockResolvedValue([]);
+	mocks.loadClockodoProjectTargets.mockResolvedValue(new Map());
 	mocks.missingClientMethods.clear();
 });
 
@@ -374,6 +380,89 @@ describe("scanClockodoImportPartition", () => {
 		expect(mocks.insertImportIssues.mock.calls[0][0].issues).toEqual([
 			expect.objectContaining({ issueType: "unmatched_employee", severity: "blocking" }),
 		]);
+	});
+
+	it("stages each entry's mapped project and Clockodo billable value (#907)", async () => {
+		mocks.clockodoUserMappingFindMany.mockResolvedValue([
+			{ clockodoUserId: 1, employeeId: "employee_1", mappingType: "manual" },
+		]);
+		mocks.loadClockodoProjectTargets.mockResolvedValue(
+			new Map([
+				[31, { projectId: "project_customer", customerId: "customer_1" }],
+				[32, { projectId: "project_internal", customerId: null }],
+			]),
+		);
+		const entry = {
+			users_id: 1,
+			services_id: 3,
+			time_since: "2026-01-05T08:00:00Z",
+			time_until: "2026-01-05T16:00:00Z",
+			duration: 28800,
+		};
+		mocks.getEntries.mockResolvedValue([
+			{ ...entry, id: 11, projects_id: 31, billable: 1 },
+			{ ...entry, id: 12, projects_id: 31, billable: 2 },
+			{ ...entry, id: 13, projects_id: 32, billable: 1 },
+			{ ...entry, id: 14, projects_id: 33, billable: 1 },
+			{ ...entry, id: 15, projects_id: null, billable: 0 },
+		]);
+
+		const result = await scanClockodoImportPartition(scanJob({ entityType: "work_period" }));
+
+		expect(result).toEqual({ stagedRows: 5, issues: 0 });
+		expect(mocks.loadClockodoProjectTargets).toHaveBeenCalledWith({
+			organizationId: "org_1",
+			clockodoProjectIds: [31, 32, 33],
+		});
+		const payloads = mocks.insertStagedRows.mock.calls[0][0].rows.map(
+			(row: { normalizedPayload: Record<string, unknown> }) => ({
+				attribution: row.normalizedPayload.attribution,
+				billability: row.normalizedPayload.billability,
+				providerProjectId: row.normalizedPayload.providerProjectId,
+			}),
+		);
+		expect(payloads).toEqual([
+			{
+				attribution: {
+					projectId: "project_customer",
+					billable: true,
+					nonBillableWhenRefused: true,
+				},
+				billability: { providerValue: 1, billable: true, note: null },
+				providerProjectId: 31,
+			},
+			{
+				attribution: {
+					projectId: "project_customer",
+					billable: true,
+					nonBillableWhenRefused: true,
+				},
+				billability: { providerValue: 2, billable: true, note: "already_billed" },
+				providerProjectId: 31,
+			},
+			{
+				attribution: { projectId: "project_internal", billable: false },
+				billability: { providerValue: 1, billable: false, note: "no_customer" },
+				providerProjectId: 32,
+			},
+			{
+				attribution: undefined,
+				billability: { providerValue: 1, billable: false, note: "unmapped_project" },
+				providerProjectId: 33,
+			},
+			{
+				attribution: undefined,
+				billability: { providerValue: 0, billable: false, note: null },
+				providerProjectId: null,
+			},
+		]);
+		// The source payload (and its hash identity) stays the raw Clockodo entry.
+		expect(mocks.insertStagedRows.mock.calls[0][0].rows[0].sourcePayload).toEqual({
+			...entry,
+			id: 11,
+			projects_id: 31,
+			billable: 1,
+		});
 	});
 
 	it("stages valid multi-day absences without shift-window warnings", async () => {

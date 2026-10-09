@@ -35,6 +35,7 @@ import {
 	instantToCanonicalString,
 } from "@/lib/datetime/temporal-core";
 import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
+import type { AllocationEvidence } from "./allocation-evidence";
 import { calculateHash } from "./blockchain";
 import { calculateBreakDeficit } from "./break-policy-calculation";
 import type { PolicyClockOutBreakSnapshot } from "./policy-clock-out-break-snapshot";
@@ -121,15 +122,6 @@ export const POLICY_CLOCK_OUT_BREAK_WRITER_VERSION = 1;
 
 const OPERATION_NAMESPACE = "z8:policy-clock-out-break:v1";
 
-type AllocationEvidence = {
-	allocationKind: "project" | "cost_center";
-	projectId: string | null;
-	/** Present only on an allocation booked to a task (#873). */
-	taskId?: string;
-	costCenterId: string | null;
-	weightPercent: number;
-};
-
 /** One segment by value: committed evidence, not a pointer to current rows. */
 export type PolicyClockOutBreakSegment = {
 	workPeriodId: string;
@@ -145,9 +137,11 @@ export type PolicyClockOutBreakSegment = {
 		projectId: string | null;
 		/** Present only when the work is booked to a task (#873). */
 		taskId?: string;
+		/** Absent on receipts committed before billability (#900), which were non-billable. */
+		isBillable?: boolean;
 		workCategoryId: string | null;
 		workLocationType: WorkLocationType;
-		allocations: AllocationEvidence[];
+		allocations: AllocationEvidence<"project" | "cost_center">[];
 	};
 };
 
@@ -218,6 +212,7 @@ export function derivePolicyClockOutBreakOperationId(input: {
 }
 
 interface LockedSource extends PolicyClockOutTerminalPeriodSnapshot {
+	isBillable: boolean;
 	approvalStatus: string;
 	pendingChanges: unknown;
 	isActive: boolean;
@@ -280,7 +275,9 @@ function exactWrite(rowsValue: unknown[], expectedId: string): void {
 	}
 }
 
-function validateAllocation(value: unknown): AllocationEvidence {
+type ValidatedAllocation = AllocationEvidence<"project" | "cost_center"> & { isBillable: boolean };
+
+function validateAllocation(value: unknown): ValidatedAllocation {
 	const allocation = object(value);
 	if (
 		(allocation.allocationKind !== "project" &&
@@ -298,13 +295,15 @@ function validateAllocation(value: unknown): AllocationEvidence {
 				allocation.costCenterId !== null)) ||
 		(allocation.allocationKind === "cost_center" &&
 			(typeof allocation.costCenterId !== "string" ||
-				allocation.projectId !== null))
+				allocation.projectId !== null ||
+				allocation.isBillable !== false)) ||
+		typeof allocation.isBillable !== "boolean"
 	) {
 		return fail();
 	}
 	// The task is evidence only when there is one, keeping earlier receipts' shape.
 	const { taskId, ...rest } = allocation;
-	return (typeof taskId === "string" ? { ...rest, taskId } : rest) as AllocationEvidence;
+	return (typeof taskId === "string" ? { ...rest, taskId } : rest) as ValidatedAllocation;
 }
 
 function validateLockedSource(
@@ -334,6 +333,8 @@ function validateLockedSource(
 		!sameDate(source.endTime, period.endTime) ||
 		source.durationMinutes !== period.durationMinutes ||
 		source.projectId !== period.projectId ||
+		typeof source.isBillable !== "boolean" ||
+		(source.isBillable && source.projectId === null) ||
 		(source.taskId ?? null) !== (period.taskId ?? null) ||
 		source.workCategoryId !== period.workCategoryId ||
 		source.workLocationType !== period.workLocationType ||
@@ -425,6 +426,7 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 			period.end_time as "endTime",
 			period.duration_minutes as "durationMinutes",
 			period.project_id as "projectId",
+			period.is_billable as "isBillable",
 			period.task_id as "taskId",
 			period.work_category_id as "workCategoryId",
 			period.work_location_type as "workLocationType",
@@ -453,7 +455,8 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 					'projectId', allocation.project_id,
 					'taskId', allocation.task_id,
 					'costCenterId', allocation.cost_center_id,
-					'weightPercent', allocation.weight_percent
+					'weightPercent', allocation.weight_percent,
+					'isBillable', allocation.is_billable
 				) order by allocation.id)
 				from time_record_allocation allocation
 				where allocation.organization_id = period.organization_id
@@ -903,11 +906,12 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 		const insertedAllocation = await db.execute(sql`
 			insert into time_record_allocation (
 				id, organization_id, record_id, allocation_kind,
-				project_id, task_id, cost_center_id, weight_percent, created_at
+				project_id, task_id, cost_center_id, weight_percent, is_billable, created_at
 			) values (
 				${allocationId}::uuid, ${input.organizationId}, ${secondRecordId}::uuid,
 				${allocation.allocationKind}, ${allocation.projectId}::uuid, ${allocation.taskId ?? null}::uuid,
-				${allocation.costCenterId}::uuid, ${allocation.weightPercent}, ${adjustedAt}
+				${allocation.costCenterId}::uuid, ${allocation.weightPercent},
+				${allocation.isBillable}, ${adjustedAt}
 			)
 			returning id
 		`);
@@ -922,7 +926,8 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 			approval_status, pending_changes, was_auto_adjusted,
 			auto_adjustment_reason, auto_adjusted_at,
 			original_end_time, original_duration_minutes,
-			canonical_record_id, approval_workflow_id, graph_revision, created_at, updated_at
+			canonical_record_id, approval_workflow_id, graph_revision, created_at, updated_at,
+			is_billable
 		) values (
 			${secondPeriodId}::uuid, ${input.organizationId}, ${input.employeeId}::uuid,
 			${syntheticClockInId}::uuid, ${source.clockOutId}::uuid,
@@ -930,7 +935,8 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 			${source.workLocationType}, ${breakEndDate}, ${source.endTime},
 			${secondDurationMinutes}, false, 'approved', ${null}, true,
 			${adjustmentReason}, ${adjustedAt}, ${null}, ${null},
-			${secondRecordId}::uuid, ${null}, ${adopted ? 1 : 0}, ${adjustedAt}, ${adjustedAt}
+			${secondRecordId}::uuid, ${null}, ${adopted ? 1 : 0}, ${adjustedAt}, ${adjustedAt},
+			${source.isBillable}
 		)
 		returning id
 	`);
@@ -942,6 +948,7 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 		const attribution = {
 			projectId: source.projectId,
 			...recordedTaskId(source.taskId),
+			isBillable: source.isBillable,
 			workCategoryId: source.workCategoryId,
 			workLocationType: source.workLocationType,
 			allocations,
