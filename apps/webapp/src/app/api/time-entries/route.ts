@@ -252,6 +252,8 @@ const FAILURE_REPLIES: Record<
 	target_unknown: { status: 409, error: "No active work period found" },
 	target_not_active: { status: 409, error: "No active work period found" },
 	project_not_allowed: { status: 400, error: "Cannot assign to this project" },
+	// Legacy commands never name a task.
+	task_not_allowed: { status: 400, error: "Cannot book time to this task" },
 	work_category_not_allowed: { status: 400, error: "Cannot assign to this work category" },
 	invalid_interval: { status: 409, error: "Clock-out precedes clock-in" },
 	failed: { status: 500, error: "Internal server error" },

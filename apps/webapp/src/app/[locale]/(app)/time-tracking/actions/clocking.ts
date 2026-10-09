@@ -685,6 +685,9 @@ export async function clockOutAs(
 			kind: "clock_out",
 			project: attributionIntent(projectId),
 			workCategory: attributionIntent(workCategoryId),
+			...(actionContext.taskId !== undefined
+				? { task: attributionIntent(actionContext.taskId) }
+				: {}),
 		},
 	});
 	if (outcome.outcome === "refused") {

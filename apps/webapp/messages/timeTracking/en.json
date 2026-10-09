@@ -105,6 +105,7 @@
       "projectNotAllowed": "Cannot assign to this project",
       "restPeriodBlocked": "Rest period not complete",
       "restPeriodBlockedDesc": "You must complete the required rest period before clocking in. Request an exception if needed.",
+      "taskNotAllowed": "Cannot book time to this task",
       "workCategoryNotAllowed": "Cannot assign to this work category"
     },
     "manualEntry": {

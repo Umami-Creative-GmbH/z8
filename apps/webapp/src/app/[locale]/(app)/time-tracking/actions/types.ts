@@ -48,6 +48,12 @@ export interface ClockOutActionContext extends BrowserTimezoneContext {
 	identityOrigin?: OperationIdentity["origin"];
 	instant?: Instant;
 	deviceInfo?: ClockChannel;
+	/**
+	 * The task of the clock-out's project (#873). Undefined keeps the work's task
+	 * while its project stays (and clears it when the project changes); null
+	 * clears it; an ID books the work to that task.
+	 */
+	taskId?: string | null;
 }
 
 export interface AssignedProject {

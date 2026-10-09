@@ -20,6 +20,7 @@ import {
 	type CompletedWorkWriter,
 	completedWorkOperation,
 	project,
+	projectTask,
 	timeEntry,
 	timeRecord,
 	timeRecordAllocation,
@@ -54,6 +55,11 @@ import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
 } from "./policy-clock-out-surcharge-snapshot";
+import {
+	PROJECT_TASK_INELIGIBILITY_MESSAGES,
+	type ProjectTaskIneligibility,
+} from "./project-eligibility";
+import { taskIdAfter, taskIntentFollowingProject } from "./task-attribution";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type { WorkTransactionContext } from "./web-clock-out-transaction";
 import { deriveWorkDurationMinutes } from "./work-duration";
@@ -114,6 +120,11 @@ export type CloseActiveWorkOperationCommand = {
 	operationId: string;
 	project: AttributionIntent;
 	workCategory: AttributionIntent;
+	/**
+	 * The task of the project (#873). Omitted, never stored, when the writer names
+	 * none: the task then follows the project (kept while it stays, else cleared).
+	 */
+	task?: AttributionIntent;
 };
 
 /** The writer that submitted the command; replay only matches the same writer. */
@@ -240,6 +251,8 @@ export type CloseActiveWorkResult = {
 	};
 	attribution: {
 		projectId: string | null;
+		/** Present only when the closure left a task (#873). */
+		taskId?: string;
 		workCategoryId: string | null;
 		workLocationType: string | null;
 	};
@@ -275,10 +288,54 @@ export class CompletedWorkIntegrityError extends Error {
 }
 
 export class CompletedWorkAttributionError extends Error {
-	constructor(readonly field: "projectId" | "workCategoryId") {
-		super(field === "projectId" ? "Project not found" : "Work category not found");
+	constructor(
+		readonly field: "projectId" | "workCategoryId" | "taskId",
+		/** Why a task cannot be booked; only for `taskId`. */
+		readonly taskReason?: ProjectTaskIneligibility,
+	) {
+		super(
+			field === "projectId"
+				? "Project not found"
+				: field === "workCategoryId"
+					? "Work category not found"
+					: PROJECT_TASK_INELIGIBILITY_MESSAGES[taskReason ?? "task_not_found"],
+		);
 		this.name = "CompletedWorkAttributionError";
 	}
+}
+
+/**
+ * The task a write leaves on work whose project it resolved (#873), re-read in
+ * the transaction: a replacement must be an open task of that project in this
+ * organization. Employee eligibility of the project stays with the caller's
+ * validators. A preserving intent keeps the current task without a check.
+ */
+export async function resolveTaskAttribution(
+	tx: Pick<WorkTransactionContext["db"], "select">,
+	input: {
+		organizationId: string;
+		task: AttributionIntent | undefined;
+		projectId: string | null;
+		current: { projectId: string | null; taskId: string | null };
+	},
+): Promise<string | null> {
+	const intent = taskIntentFollowingProject({
+		task: input.task,
+		projectId: input.projectId,
+		currentProjectId: input.current.projectId,
+	});
+	if (intent.kind !== "replace") return taskIdAfter(intent, input.current.taskId);
+	const [row] = await tx
+		.select({ projectId: projectTask.projectId, state: projectTask.state })
+		.from(projectTask)
+		.where(and(eq(projectTask.id, intent.id), eq(projectTask.organizationId, input.organizationId)))
+		.limit(1);
+	if (!row) throw new CompletedWorkAttributionError("taskId", "task_not_found");
+	if (row.projectId !== input.projectId) {
+		throw new CompletedWorkAttributionError("taskId", "task_other_project");
+	}
+	if (row.state !== "open") throw new CompletedWorkAttributionError("taskId", "task_done");
+	return intent.id;
 }
 
 /**
@@ -492,6 +549,12 @@ export async function closeActiveWorkGraph(
 		command.project,
 		period.projectId,
 	);
+	const taskId = await resolveTaskAttribution(tx, {
+		organizationId,
+		task: command.task,
+		projectId,
+		current: { projectId: period.projectId, taskId: period.taskId },
+	});
 	const workCategoryId = await resolveAttribution(
 		tx,
 		organizationId,
@@ -539,6 +602,7 @@ export async function closeActiveWorkGraph(
 			recordId: record.id,
 			allocationKind: "project",
 			projectId,
+			taskId,
 			weightPercent: 100,
 		});
 	}
@@ -566,6 +630,7 @@ export async function closeActiveWorkGraph(
 			durationMinutes,
 			isActive: false,
 			projectId,
+			taskId,
 			workCategoryId,
 			canonicalRecordId: record.id,
 			approvalStatus: "approved",
@@ -637,6 +702,7 @@ export async function closeActiveWorkGraph(
 		},
 		attribution: {
 			projectId,
+			...(taskId ? { taskId } : {}),
 			workCategoryId,
 			workLocationType: period.workLocationType ?? null,
 		},

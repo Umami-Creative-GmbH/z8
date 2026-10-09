@@ -104,6 +104,8 @@ vi.mock("./shared", async (importOriginal) => {
 });
 
 const { createManualTimeEntry } = await import("../actions");
+const { clockIn, clockOut } = await import("./clocking");
+const { systemClock } = await import("@/lib/datetime/temporal-core");
 
 const ids = {
 	organization: "t873-task-org",
@@ -398,6 +400,80 @@ describe("booking time to a project task on PostgreSQL", () => {
 				ids.organization,
 			]);
 			expect(rows).toEqual([]);
+		});
+	});
+
+	/** Clocks the employee in two hours ago and returns the live period. */
+	async function clockInEmployee() {
+		actAs(ids.employeeUser);
+		const instant = systemClock.nowInstant().subtract({ hours: 2 });
+		await expect(clockIn("office", { instant, browserTimezone: "UTC" })).resolves.toMatchObject({
+			success: true,
+		});
+		const { rows } = await admin.query<{ id: string }>(
+			"select id from work_period where organization_id = $1 and end_time is null",
+			[ids.organization],
+		);
+		return only(rows).id;
+	}
+
+	function clockOutEmployee(projectId: string | null | undefined, taskId?: string | null) {
+		actAs(ids.employeeUser);
+		return clockOut(projectId, undefined, {
+			submissionId: randomUUID(),
+			instant: systemClock.nowInstant().subtract({ hours: 1 }),
+			browserTimezone: "UTC",
+			...(taskId !== undefined ? { taskId } : {}),
+		});
+	}
+
+	describe.each(["legacy", "adopted"] as const)("clock-out in a %s organization", (admission) => {
+		beforeEach(async () => {
+			await setAdmission(admission);
+		});
+
+		it("books the closed work to the task on both the allocation and the work period", async () => {
+			const workPeriodId = await clockInEmployee();
+
+			await expect(clockOutEmployee(ids.project, ids.task)).resolves.toMatchObject({
+				success: true,
+			});
+
+			expect(await booking(workPeriodId)).toEqual({
+				period_project: ids.project,
+				period_task: ids.task,
+				allocation_project: ids.project,
+				allocation_task: ids.task,
+			});
+		});
+
+		it("closes without a task when the clock-out names none", async () => {
+			const workPeriodId = await clockInEmployee();
+
+			await expect(clockOutEmployee(ids.project)).resolves.toMatchObject({ success: true });
+
+			expect(await booking(workPeriodId)).toMatchObject({
+				period_project: ids.project,
+				period_task: null,
+				allocation_task: null,
+			});
+		});
+
+		it.each([
+			["a done task", ids.doneTask],
+			["another project's task", ids.secondProjectTask],
+			["another organization's task", ids.otherOrganizationTask],
+		])("refuses %s and leaves the work running", async (_case, taskId) => {
+			const workPeriodId = await clockInEmployee();
+
+			const result = await clockOutEmployee(ids.project, taskId);
+
+			expect(result).toEqual({ success: false, error: "Cannot book time to this task" });
+			const { rows } = await admin.query(
+				"select end_time, task_id from work_period where organization_id = $1 and id = $2",
+				[ids.organization, workPeriodId],
+			);
+			expect(rows).toEqual([{ end_time: null, task_id: null }]);
 		});
 	});
 });
