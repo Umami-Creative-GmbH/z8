@@ -1016,6 +1016,13 @@
       "when": 1796745600000,
       "tag": "0144_cost_rates",
       "breakpoints": true
+    },
+    {
+      "idx": 145,
+      "version": "7",
+      "when": 1796832000000,
+      "tag": "0145_accounting_connection",
+      "breakpoints": true
     }
   ]
 }
