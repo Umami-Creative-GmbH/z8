@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { DEFAULT_CLOCKING_REMINDER_SETTINGS } from "./settings-policy";
-import {
-	evaluateShiftReminders,
-	type ReminderWork,
-	type ShiftReminderInput,
-} from "./shift-reminders";
+import { evaluateShiftReminders, type ReminderWork, type ReminderInput } from "./shift-reminders";
 
 const at = parseInstant;
 
@@ -31,7 +27,7 @@ const berlinShift = {
 	endTime: "16:00",
 };
 
-function input(overrides: Partial<ShiftReminderInput>): ShiftReminderInput {
+function input(overrides: Partial<ReminderInput>): ReminderInput {
 	return {
 		now: at("2026-04-28T06:15:00Z"),
 		employeeId: "employee-1",

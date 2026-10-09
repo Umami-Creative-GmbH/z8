@@ -1,15 +1,9 @@
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
-import {
-	compareInstants,
-	type Instant,
-	type PlainDate,
-	type PlainTime,
-	plainDateAt,
-} from "@/lib/datetime/temporal-core";
+import { type PlainDate, type PlainTime, plainDateAt } from "@/lib/datetime/temporal-core";
 import { shiftInterval, workMatchesShift } from "@/lib/scheduling/shift-occasion";
 import { complianceDayTotalsOf } from "@/lib/time-tracking/compliance-totals";
 import { clockingReminderOccasionKey, type DueClockingReminder } from "./occasion";
-import type { ReminderWork, ShiftReminderInput } from "./shift-reminders";
+import { coversInstant, notBefore, type ReminderInput, type ReminderWork } from "./shift-reminders";
 
 /** What the evaluator needs to know about the employee's work policy on a local day. */
 export interface PolicyDayFacts {
@@ -19,17 +13,13 @@ export interface PolicyDayFacts {
 	requiredMinutes(day: PlainDate): Promise<number>;
 }
 
-export type PolicyReminderInput = ShiftReminderInput;
-
-const notBefore = (left: Instant, right: Instant) => compareInstants(left, right) >= 0;
-
 /**
  * The reminders due now that the employee's work policy judges: a missed clock-in on an
  * employee-local day without a published shift, and a forgotten clock-out for live work that
  * matches no published shift. Policy facts are read only when needed.
  */
 export async function evaluatePolicyReminders(
-	input: PolicyReminderInput,
+	input: ReminderInput,
 	policy: PolicyDayFacts,
 ): Promise<DueClockingReminder[]> {
 	const due: DueClockingReminder[] = [];
@@ -46,7 +36,7 @@ export async function evaluatePolicyReminders(
  * expected end is the moment that total reaches the day's required minutes.
  */
 async function forgottenClockOut(
-	input: PolicyReminderInput,
+	input: ReminderInput,
 	policy: PolicyDayFacts,
 ): Promise<DueClockingReminder | null> {
 	const { now, settings } = input;
@@ -81,12 +71,12 @@ async function forgottenClockOut(
 	};
 }
 
-function matchesAnyShift(input: PolicyReminderInput, work: ReminderWork): boolean {
+function matchesAnyShift(input: ReminderInput, work: ReminderWork): boolean {
 	return input.shifts.some((shift) => workMatchesShift(shiftInterval(shift, input.timezone), work));
 }
 
 async function missedClockIn(
-	input: PolicyReminderInput,
+	input: ReminderInput,
 	policy: PolicyDayFacts,
 ): Promise<DueClockingReminder | null> {
 	const { now, settings } = input;
@@ -121,13 +111,6 @@ async function missedClockIn(
 }
 
 /** A published shift dated on `day` hands the day's missed clock-in to the shift rules. */
-function hasShiftOn(input: PolicyReminderInput, day: PlainDate): boolean {
+function hasShiftOn(input: ReminderInput, day: PlainDate): boolean {
 	return input.shifts.some((shift) => shift.date.equals(day));
-}
-
-function coversInstant(work: ReminderWork, instant: Instant): boolean {
-	return (
-		compareInstants(work.start, instant) <= 0 &&
-		(work.end === null || compareInstants(work.end, instant) > 0)
-	);
 }

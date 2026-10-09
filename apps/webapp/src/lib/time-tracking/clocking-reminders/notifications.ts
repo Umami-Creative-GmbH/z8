@@ -33,23 +33,24 @@ const reminderCopy = {
 	},
 } as const satisfies Record<ClockingReminderType, Record<string, string>>;
 
-/** Days without a shift are judged by the work policy (#830): the message names the policy times. */
-const policyReminderCopy = {
+/**
+ * Reminders judged by the work policy rather than a shift (#830) keep their type's title; the
+ * message names the policy times instead.
+ */
+const policyMessageCopy = {
 	missed_clock_in_reminder: {
-		titleKey: "common:notifications.content.missedClockInReminder.title",
-		titleDefault: "You have not clocked in yet",
 		messageKey: "common:notifications.content.policyMissedClockInReminder.message",
 		messageDefault:
 			"Your latest clock-in today was {startTime} ({timezone}). Clock in if you are working.",
 	},
 	forgotten_clock_out_reminder: {
-		titleKey: "common:notifications.content.forgottenClockOutReminder.title",
-		titleDefault: "You are still clocked in",
 		messageKey: "common:notifications.content.policyForgottenClockOutReminder.message",
 		messageDefault:
 			"You reached the required hours for {day} at {endTime} ({timezone}). Clock out if you have finished working.",
 	},
-} as const satisfies Partial<Record<ClockingReminderType, Record<string, string>>>;
+} as const satisfies Partial<
+	Record<ClockingReminderType, Pick<ReminderCopy, "messageKey" | "messageDefault">>
+>;
 
 function formatTime(instant: Instant, locale: string, timezone: string): string {
 	return instant.toLocaleString(locale, { timeStyle: "short", timeZone: timezone });
@@ -72,8 +73,8 @@ export function buildClockingReminderNotification(input: {
 	if (reminder.shift) {
 		params.startTime = formatTime(reminder.shift.start, locale, timezone);
 		params.endTime = formatTime(reminder.shift.end, locale, timezone);
-	} else if (reminder.type in policyReminderCopy) {
-		copy = policyReminderCopy[reminder.type as keyof typeof policyReminderCopy];
+	} else if (reminder.type !== "break_due_reminder") {
+		copy = { ...copy, ...policyMessageCopy[reminder.type] };
 		const expected = formatTime(reminder.expectedAt, locale, timezone);
 		params[reminder.type === "missed_clock_in_reminder" ? "startTime" : "endTime"] = expected;
 		// Live work past midnight is judged against the day it started, which need not be today.

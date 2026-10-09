@@ -229,18 +229,8 @@ async function loadBreakRegulation(input: {
 	employeeId: string;
 	at: Instant;
 }): Promise<BreakDueRegulation | null> {
-	const [{ Effect }, { runtime }, { WorkPolicyService }] = await Promise.all([
-		import("effect"),
-		import("@/lib/effect/runtime"),
-		import("@/lib/effect/services/work-policy.service"),
-	]);
-	const policy = await runtime.runPromise(
-		Effect.gen(function* () {
-			const service = yield* WorkPolicyService;
-			return yield* service.getEffectivePolicyAt(input);
-		}),
-	);
-	return policy?.regulation ?? null;
+	const { readEffectiveWorkPolicyAt } = await import("@/lib/time-tracking/effective-work-policy");
+	return (await readEffectiveWorkPolicyAt(input))?.regulation ?? null;
 }
 
 /** Production wiring; tests pass their own database and clock. */

@@ -51,6 +51,7 @@ import { createLogger } from "@/lib/logger";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
 import { breakDueStatus } from "@/lib/time-tracking/break-due";
 import { readComplianceTotals } from "@/lib/time-tracking/compliance-totals";
+import { readEffectiveWorkPolicyAt } from "@/lib/time-tracking/effective-work-policy";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { changeWorkPeriodProject } from "@/lib/time-tracking/work-period-attribution";
@@ -435,16 +436,11 @@ export async function getBreakReminderStatus(): Promise<
 				workStart: liveStart,
 				timezone,
 			}),
-			runtime.runPromise(
-				Effect.gen(function* () {
-					const workPolicyService = yield* WorkPolicyService;
-					return yield* workPolicyService.getEffectivePolicyAt({
-						employeeId: emp.id,
-						organizationId: emp.organizationId,
-						at: now,
-					});
-				}),
-			),
+			readEffectiveWorkPolicyAt({
+				employeeId: emp.id,
+				organizationId: emp.organizationId,
+				at: now,
+			}),
 		]);
 		const regulation = policy?.regulation ?? null;
 		const status = breakDueStatus({

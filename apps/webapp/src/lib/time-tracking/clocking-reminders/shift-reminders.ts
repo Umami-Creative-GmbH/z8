@@ -20,7 +20,8 @@ export interface ReminderWork {
 	durationMinutes: number | null;
 }
 
-export interface ShiftReminderInput {
+/** What the shift and policy evaluators read about one employee now. */
+export interface ReminderInput {
 	now: Instant;
 	employeeId: string;
 	/** The employee's effective timezone (their own, otherwise the organization's). */
@@ -31,13 +32,14 @@ export interface ShiftReminderInput {
 	work: readonly ReminderWork[];
 }
 
-const notBefore = (left: Instant, right: Instant) => compareInstants(left, right) >= 0;
+/** Whether `left` is at or after `right`. */
+export const notBefore = (left: Instant, right: Instant) => compareInstants(left, right) >= 0;
 
 /**
  * The missed clock-in and forgotten clock-out reminders due now for an employee's published
  * shifts. Absence and holiday exemptions are applied by the caller.
  */
-export function evaluateShiftReminders(input: ShiftReminderInput): DueClockingReminder[] {
+export function evaluateShiftReminders(input: ReminderInput): DueClockingReminder[] {
 	const { now, settings } = input;
 	return input.shifts.flatMap((shift): DueClockingReminder[] => {
 		const interval = shiftInterval(shift, input.timezone);
@@ -77,7 +79,7 @@ export function evaluateShiftReminders(input: ShiftReminderInput): DueClockingRe
 }
 
 /** Work that had started by `instant` and had not ended at it: the employee was clocked in. */
-function coversInstant(work: ReminderWork, instant: Instant): boolean {
+export function coversInstant(work: ReminderWork, instant: Instant): boolean {
 	return (
 		compareInstants(work.start, instant) <= 0 &&
 		(work.end === null || compareInstants(work.end, instant) > 0)

@@ -47,21 +47,14 @@ export function createPolicyDayFacts(input: {
 }): PolicyDayFacts {
 	return {
 		async latestClockIn(day) {
-			const [{ Effect }, { runtime }, { WorkPolicyService }] = await Promise.all([
-				import("effect"),
-				import("@/lib/effect/runtime"),
-				import("@/lib/effect/services/work-policy.service"),
-			]);
-			const policy = await runtime.runPromise(
-				Effect.gen(function* () {
-					const service = yield* WorkPolicyService;
-					return yield* service.getEffectivePolicyAt({
-						employeeId: input.employeeId,
-						organizationId: input.organizationId,
-						at: input.now,
-					});
-				}),
+			const { readEffectiveWorkPolicyAt } = await import(
+				"@/lib/time-tracking/effective-work-policy"
 			);
+			const policy = await readEffectiveWorkPolicyAt({
+				employeeId: input.employeeId,
+				organizationId: input.organizationId,
+				at: input.now,
+			});
 			return latestClockInOn(policy, day);
 		},
 		async requiredMinutes(day) {

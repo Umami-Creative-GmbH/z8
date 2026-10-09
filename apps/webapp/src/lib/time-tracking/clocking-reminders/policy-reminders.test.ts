@@ -3,7 +3,7 @@ import { parseInstant, parsePlainDate, parsePlainTimeMinute } from "@/lib/dateti
 import {
 	evaluatePolicyReminders,
 	type PolicyDayFacts,
-	type PolicyReminderInput,
+	type ReminderInput,
 } from "./policy-reminders";
 import { DEFAULT_CLOCKING_REMINDER_SETTINGS } from "./settings-policy";
 import type { ReminderWork } from "./shift-reminders";
@@ -29,7 +29,7 @@ const enabled = {
 const MONDAY = "2026-04-27";
 const monday = parsePlainDate(MONDAY);
 
-function input(overrides: Partial<PolicyReminderInput> = {}): PolicyReminderInput {
+function input(overrides: Partial<ReminderInput> = {}): ReminderInput {
 	return {
 		now: at("2026-04-27T07:15:00Z"),
 		employeeId: "employee-1",
@@ -152,7 +152,7 @@ describe("forgotten clock-out reminders once the day's required hours are reache
 	const morning = period("2026-04-27T06:00:00Z", "2026-04-27T10:00:00Z");
 	const afternoon = period("2026-04-27T10:30:00Z", null);
 	const noLatestClockIn = { latestClockIn: null };
-	const evening = (now: string, overrides: Partial<PolicyReminderInput> = {}) =>
+	const evening = (now: string, overrides: Partial<ReminderInput> = {}) =>
 		input({ now: at(now), work: [morning, afternoon], ...overrides });
 
 	it("is due once the worked time reaches the required hours plus grace", async () => {
