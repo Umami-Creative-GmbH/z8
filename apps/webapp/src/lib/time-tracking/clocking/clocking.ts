@@ -66,7 +66,7 @@ import {
 import type { ClockFollowUps, ClockOutAdvice, ClosedLiveWork } from "./follow-ups";
 import { FrozenCommandNotAcceptedError } from "./frozen";
 import { LegacyCommandNotAcceptedError } from "./legacy-command";
-import { recordPositionStamp } from "./position-stamp";
+import { stampExecutedClockEvent } from "./position-stamp";
 import type { ClockTransactions } from "./transactions";
 import type {
 	BreakCommand,
@@ -540,25 +540,19 @@ export function createClocking(ports: ClockingPorts): Clocking {
 					projectId: attributionValue(command.body.project),
 					workCategoryId: attributionValue(command.body.workCategory),
 				},
-				async (coordination) => {
-					const closed = await closeClockOut(coordination, {
-						plan,
-						replayable: isReplayable(command.identity),
-						target,
-						eventInstant,
-						capture: eventCapture(command, eventInstant),
-					});
-					if (closed.disposition === "executed") {
-						await recordPositionStamp(coordination.db, {
-							command,
-							organizationId: plan.employee.organizationId,
-							employeeId: plan.employee.id,
-							timeEntryId: closed.entry.id,
+				async (coordination) =>
+					stampExecutedClockEvent(
+						coordination.db,
+						command,
+						await closeClockOut(coordination, {
+							plan,
+							replayable: isReplayable(command.identity),
+							target,
 							eventInstant,
-						});
-					}
-					return closed;
-				},
+							capture: eventCapture(command, eventInstant),
+						}),
+						{ eventInstant, entryIdOf: (closed) => closed.entry.id },
+					),
 			);
 		} catch (error) {
 			return refused(closureRefusal(command, error));
@@ -643,24 +637,19 @@ export function createClocking(ports: ClockingPorts): Clocking {
 
 		let start: ClockInStart;
 		try {
-			start = await transactions.start(transactionScope(plan), async (scope) => {
-				const started = await startClockIn(scope, {
-					plan,
-					replayable,
-					eventInstant,
-					capture: eventCapture(command, eventInstant),
-				});
-				if (started.disposition === "executed") {
-					await recordPositionStamp(scope.db, {
-						command,
-						organizationId: subject.organizationId,
-						employeeId: subject.id,
-						timeEntryId: started.entry.id,
+			start = await transactions.start(transactionScope(plan), async (scope) =>
+				stampExecutedClockEvent(
+					scope.db,
+					command,
+					await startClockIn(scope, {
+						plan,
+						replayable,
 						eventInstant,
-					});
-				}
-				return started;
-			});
+						capture: eventCapture(command, eventInstant),
+					}),
+					{ eventInstant, entryIdOf: (started) => started.entry.id },
+				),
+			);
 		} catch (error) {
 			return refused(startRefusal(error));
 		}
@@ -706,33 +695,27 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		try {
 			closure = await transactions.run(
 				{ ...transactionScope(plan), workPeriodId: target.workPeriodId, endTime: breakStart },
-				async (coordination) => {
-					const taken = await takeBreak(coordination, {
-						plan,
-						replayable: isReplayable(command.identity),
-						target,
-						// Each endpoint is captured in the zone at its own instant.
-						endpoints: {
-							close: {
-								instant: breakStart,
-								capture: eventCapture(command, breakStart, start?.zone ?? command.zone.device),
+				async (coordination) =>
+					stampExecutedClockEvent(
+						coordination.db,
+						command,
+						await takeBreak(coordination, {
+							plan,
+							replayable: isReplayable(command.identity),
+							target,
+							// Each endpoint is captured in the zone at its own instant.
+							endpoints: {
+								close: {
+									instant: breakStart,
+									capture: eventCapture(command, breakStart, start?.zone ?? command.zone.device),
+								},
+								resume: { instant: eventInstant, capture: eventCapture(command, eventInstant) },
 							},
-							resume: { instant: eventInstant, capture: eventCapture(command, eventInstant) },
-						},
-					});
-					// The device fixed its position when the break ended: only the resumed
-					// clock-in carries it, never the earlier break start (#826 D1).
-					if (taken.disposition === "executed") {
-						await recordPositionStamp(coordination.db, {
-							command,
-							organizationId: subject.organizationId,
-							employeeId: subject.id,
-							timeEntryId: taken.resumeEntryId,
-							eventInstant,
-						});
-					}
-					return taken;
-				},
+						}),
+						// The device fixed its position when the break ended: only the resumed
+						// clock-in carries it, never the earlier break start (#826 D1).
+						{ eventInstant, entryIdOf: (taken) => taken.resumeEntryId },
+					),
 			);
 		} catch (error) {
 			return refused(breakRefusal(command, error));
