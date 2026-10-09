@@ -7,7 +7,8 @@ import type { PositionCaptureClient } from "../position-capture/store";
 import { stampablePosition } from "./position-stamp-eligibility";
 import type { ClockCommand } from "./types";
 
-type Executed<Result> = Extract<Result, { disposition: "executed" }>;
+/** A result's executed variant, also when one variant spans several dispositions. */
+type Executed<Result> = Result & { disposition: "executed" };
 
 /**
  * Keeps the position a clock command carried as a position stamp on the clock
