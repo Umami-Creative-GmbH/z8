@@ -26,7 +26,7 @@ import {
 	workLocationTypeEnum,
 } from "./enums";
 import { employee } from "./organization";
-import { project } from "./project";
+import { project, projectTask } from "./project";
 import { workCategory } from "./work-category";
 
 export const timeRecord = pgTable(
@@ -173,6 +173,8 @@ export const timeRecordAllocation = pgTable(
 		recordId: uuid("record_id").notNull(),
 		allocationKind: timeRecordAllocationKindEnum("allocation_kind").notNull(),
 		projectId: uuid("project_id").references(() => project.id, { onDelete: "set null" }),
+		/** The task of the project this time is booked to (#873); only on a project allocation. */
+		taskId: uuid("task_id"),
 		costCenterId: uuid("cost_center_id").references(() => costCenter.id, {
 			onDelete: "set null",
 		}),
@@ -184,6 +186,14 @@ export const timeRecordAllocation = pgTable(
 		index("timeRecordAllocation_recordId_idx").on(table.recordId),
 		index("timeRecordAllocation_projectId_idx").on(table.projectId),
 		index("timeRecordAllocation_costCenterId_idx").on(table.costCenterId),
+		index("timeRecordAllocation_taskId_idx").on(table.taskId),
+		// The task belongs to the allocation's project and organization; a booked task
+		// cannot be deleted.
+		foreignKey({
+			name: "timeRecordAllocation_task_fk",
+			columns: [table.taskId, table.projectId, table.organizationId],
+			foreignColumns: [projectTask.id, projectTask.projectId, projectTask.organizationId],
+		}),
 		foreignKey({
 			name: "timeRecordAllocation_recordId_work_fk",
 			columns: [table.recordId],
@@ -201,6 +211,10 @@ export const timeRecordAllocation = pgTable(
 			) OR (
 				${table.allocationKind} = 'cost_center' AND ${table.costCenterId} IS NOT NULL AND ${table.projectId} IS NULL
 			)`,
+		),
+		check(
+			"timeRecordAllocation_task_project_chk",
+			sql`${table.taskId} IS NULL OR (${table.allocationKind} = 'project' AND ${table.projectId} IS NOT NULL)`,
 		),
 	],
 );

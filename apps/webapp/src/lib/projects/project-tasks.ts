@@ -2,7 +2,7 @@ import "server-only";
 
 import { and, asc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { projectTask } from "@/db/schema";
+import { projectTask, timeRecordAllocation, workPeriod } from "@/db/schema";
 import type { ProjectTask, ProjectTaskState } from "./project-task-model";
 
 /**
@@ -67,16 +67,31 @@ export async function findProjectTask(
 }
 
 /**
- * Whether anything is booked to the task; a booked task cannot be deleted.
- *
- * Nothing can reference a task yet. The booking slice (#873) extends this
- * with the project allocations and work periods that carry the task.
+ * Whether anything is booked to the task: live or completed work, deleted work
+ * included. A booked task cannot be deleted; the task foreign keys of the
+ * project allocation and the work period enforce the same rule.
  */
 export async function isProjectTaskBooked(
-	_task: Pick<ProjectTask, "id" | "organizationId">,
-	_reader: ProjectTaskReader = db,
+	task: Pick<ProjectTask, "id" | "organizationId">,
+	reader: ProjectTaskReader = db,
 ): Promise<boolean> {
-	return false;
+	const [allocation] = await reader
+		.select({ id: timeRecordAllocation.id })
+		.from(timeRecordAllocation)
+		.where(
+			and(
+				eq(timeRecordAllocation.organizationId, task.organizationId),
+				eq(timeRecordAllocation.taskId, task.id),
+			),
+		)
+		.limit(1);
+	if (allocation) return true;
+	const [period] = await reader
+		.select({ id: workPeriod.id })
+		.from(workPeriod)
+		.where(and(eq(workPeriod.organizationId, task.organizationId), eq(workPeriod.taskId, task.id)))
+		.limit(1);
+	return period !== undefined;
 }
 
 /** Whether a write failed because the project already has a task of that name. */
