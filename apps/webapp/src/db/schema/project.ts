@@ -287,7 +287,7 @@ export const projectTemplateTask = pgTable(
 );
 
 // The project managers a project created from the template starts with.
-// Deleting the employee keeps the row with a null reference (migration 0144
+// Deleting the employee keeps the row with a null reference (migration 0143
 // uses SET NULL ("employee_id") only, keeping the organization), so creating
 // a project can report the skipped manager by its last known name.
 export const projectTemplateManager = pgTable(
