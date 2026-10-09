@@ -1,5 +1,4 @@
-import { and, asc, eq, gte, lte } from "drizzle-orm";
-import { DateTime } from "luxon";
+import { and, asc, eq, gte, lt, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import {
@@ -12,6 +11,10 @@ import {
 	type WorksCouncilAbsenceVisibility,
 	type WorksCouncilIdentityVisibility,
 } from "@/db/schema";
+import { dateFromInstant, instantFromDate, plainDateAt } from "@/lib/datetime/temporal-core";
+import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
+import { shiftInterval } from "@/lib/scheduling/shift-occasion";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { applyIdentityVisibility, type SuppressedValue, suppressSmallGroups } from "./privacy";
 
 export interface WorksCouncilSettingsSnapshot {
@@ -101,26 +104,22 @@ export type WorksCouncilPortalModel =
 			}>;
 	  };
 
-function shiftDateTime(date: Date, time: string) {
-	const dateKey = DateTime.fromJSDate(date, { zone: "utc" }).toISODate();
-	if (!dateKey) throw new Error("Failed to resolve shift date");
-
-	return DateTime.fromISO(`${dateKey}T${time}`, { zone: "utc" });
-}
-
-function buildShiftDateRange(date: Date, startTime: string, endTime: string) {
-	const startsAt = shiftDateTime(date, startTime);
-	const parsedEndsAt = shiftDateTime(date, endTime);
-	const endsAt = parsedEndsAt <= startsAt ? parsedEndsAt.plus({ days: 1 }) : parsedEndsAt;
-
-	return { startsAt: startsAt.toJSDate(), endsAt: endsAt.toJSDate() };
-}
-
+/**
+ * The published shifts of the portal's calendar days. The portal's range spans whole UTC days
+ * (`from` 00:00Z through `to` 23:59:59.999Z); a shift belongs to it by its organization-local
+ * date, and its wall times are read in the organization's zone.
+ */
 async function queryScheduleReview({
 	organizationId,
 	dateRangeStart,
 	dateRangeEnd,
 }: WorksCouncilQueryContractRequest): Promise<WorksCouncilScheduleReviewRow[]> {
+	const timezone = await loadOrganizationTimezone(db, organizationId);
+	const bounds = shiftDateRangeBounds(
+		plainDateAt(instantFromDate(dateRangeStart), "UTC"),
+		plainDateAt(instantFromDate(dateRangeEnd), "UTC").add({ days: 1 }),
+		timezone,
+	);
 	const rows = await db
 		.select({
 			id: shift.id,
@@ -151,19 +150,26 @@ async function queryScheduleReview({
 				eq(shift.organizationId, organizationId),
 				eq(location.organizationId, organizationId),
 				eq(shift.status, "published"),
-				gte(shift.date, dateRangeStart),
-				lte(shift.date, dateRangeEnd),
+				gte(shift.date, bounds.start),
+				lt(shift.date, bounds.endExclusive),
 			),
 		)
 		.orderBy(asc(shift.date), asc(shift.startTime), asc(shift.id));
 
 	return rows.map((row) => {
-		const { startsAt, endsAt } = buildShiftDateRange(row.date, row.startTime, row.endTime);
+		const interval = shiftInterval(
+			{
+				date: shiftCalendarDate(row.date, timezone),
+				startTime: row.startTime,
+				endTime: row.endTime,
+			},
+			timezone,
+		);
 
 		return {
 			id: row.id,
-			startsAt,
-			endsAt,
+			startsAt: dateFromInstant(interval.start),
+			endsAt: dateFromInstant(interval.end),
 			employeeId: row.employeeId,
 			employeeName: row.employeeName,
 			teamId: row.teamId,

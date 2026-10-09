@@ -224,7 +224,7 @@ describe("buildShiftDailyWorkRequirements", () => {
 	it("returns no requirements when an hourly worker has no assigned published shifts", () => {
 		const requirements = buildShiftDailyWorkRequirements({
 			shifts: [],
-			timezone: "Europe/Berlin",
+			organizationTimezone: "Europe/Berlin",
 		});
 
 		expect(requirements).toEqual({});
@@ -234,17 +234,18 @@ describe("buildShiftDailyWorkRequirements", () => {
 		const requirements = buildShiftDailyWorkRequirements({
 			shifts: [
 				{
-					date: new Date("2026-06-01T00:00:00.000Z"),
+					// Berlin midnight of 2026-06-01, as `upsertShift` stores it.
+					date: new Date("2026-05-31T22:00:00.000Z"),
 					startTime: "09:00",
 					endTime: "13:30",
 				},
 				{
-					date: new Date("2026-06-03T00:00:00.000Z"),
+					date: new Date("2026-06-02T22:00:00.000Z"),
 					startTime: "22:00",
 					endTime: "02:00",
 				},
 			],
-			timezone: "Europe/Berlin",
+			organizationTimezone: "Europe/Berlin",
 		});
 
 		expect(requirements).toEqual({
@@ -259,6 +260,32 @@ describe("buildShiftDailyWorkRequirements", () => {
 				policyName: "Assigned shift",
 			},
 		});
+	});
+
+	it.each([
+		{ timezone: "Europe/Berlin", stored: "2026-10-08T22:00:00.000Z" },
+		{ timezone: "America/New_York", stored: "2026-10-09T04:00:00.000Z" },
+		{ timezone: "UTC", stored: "2026-10-09T00:00:00.000Z" },
+	])("keys a $timezone organization's shift by its calendar date", ({ timezone, stored }) => {
+		const requirements = buildShiftDailyWorkRequirements({
+			shifts: [{ date: new Date(stored), startTime: "08:00", endTime: "16:00" }],
+			organizationTimezone: timezone,
+		});
+
+		expect(Object.keys(requirements)).toEqual(["2026-10-09"]);
+		expect(requirements["2026-10-09"]?.requiredMinutes).toBe(480);
+	});
+
+	it("measures a shift across the organization's DST change by its wall times", () => {
+		const requirements = buildShiftDailyWorkRequirements({
+			// Berlin 2026-10-24 22:00 to 06:00, across the night clocks go back an hour.
+			shifts: [
+				{ date: new Date("2026-10-23T22:00:00.000Z"), startTime: "22:00", endTime: "06:00" },
+			],
+			organizationTimezone: "Europe/Berlin",
+		});
+
+		expect(requirements["2026-10-24"]?.requiredMinutes).toBe(540);
 	});
 });
 

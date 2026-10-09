@@ -10,6 +10,7 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import { employee, employeeManagers, shift } from "@/db/schema";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { runtime } from "@/lib/effect/runtime";
 import {
 	OpenShiftsService,
@@ -17,6 +18,8 @@ import {
 } from "@/lib/effect/services/open-shifts.service";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications/notification-service";
+import { shiftCalendarDate } from "@/lib/scheduling/shift-date";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import type { ResolvedTenant } from "./types";
 
 const logger = createLogger("TeamsShiftPickup");
@@ -48,7 +51,7 @@ export async function notifyPrimaryManagerAboutShiftPickup({
 			return;
 		}
 
-		const [requester, manager, requestedShift] = await Promise.all([
+		const [requester, manager, requestedShift, organizationTimezone] = await Promise.all([
 			db.query.employee.findFirst({
 				where: and(eq(employee.id, requesterId), eq(employee.organizationId, organizationId)),
 				columns: { firstName: true, lastName: true },
@@ -64,6 +67,7 @@ export async function notifyPrimaryManagerAboutShiftPickup({
 				where: and(eq(shift.id, shiftId), eq(shift.organizationId, organizationId)),
 				columns: { date: true, startTime: true, endTime: true },
 			}),
+			loadOrganizationTimezone(db, organizationId),
 		]);
 
 		if (!requester || !manager?.userId || !requestedShift) {
@@ -76,11 +80,11 @@ export async function notifyPrimaryManagerAboutShiftPickup({
 
 		const requesterName =
 			[requester.firstName, requester.lastName].filter(Boolean).join(" ") || "An employee";
-		const shiftDate = requestedShift.date.toLocaleDateString("en-US", {
-			weekday: "short",
-			month: "short",
-			day: "numeric",
-		});
+		const shiftDate = formatPlainDate(
+			shiftCalendarDate(requestedShift.date, organizationTimezone),
+			"en-US",
+			"weekdayMonthDay",
+		);
 
 		await createNotification({
 			userId: manager.userId,

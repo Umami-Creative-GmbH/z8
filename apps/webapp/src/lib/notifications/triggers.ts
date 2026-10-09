@@ -6,6 +6,8 @@
  */
 
 import { DateTime } from "luxon";
+import type { PlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "./notification-service";
 import type { CreateNotificationParams } from "./types";
@@ -1058,6 +1060,14 @@ export async function onVacationBalanceAlert(
 // Shift Scheduling Notifications
 // =============================================================================
 
+/**
+ * A shift's date as people read it, e.g. "Fri, Oct 9". Shift params carry the organization-local
+ * calendar date (`shiftCalendarDate`), so the server's zone never shifts the day.
+ */
+function formatShiftDate(date: PlainDate): string {
+	return formatPlainDate(date, "en-US", "weekdayMonthDay");
+}
+
 interface SchedulePublishedParams {
 	employeeUserId: string;
 	employeeName: string;
@@ -1070,7 +1080,7 @@ interface ShiftAssignedParams {
 	shiftId: string;
 	employeeUserId: string;
 	organizationId: string;
-	shiftDate: Date;
+	shiftDate: PlainDate;
 	startTime: string;
 	endTime: string;
 	assignedByName: string;
@@ -1081,7 +1091,7 @@ interface ShiftSwapRequestParams {
 	shiftId: string;
 	organizationId: string;
 	requesterName: string;
-	shiftDate: Date;
+	shiftDate: PlainDate;
 	startTime: string;
 	endTime: string;
 }
@@ -1101,7 +1111,7 @@ interface ShiftSwapApprovalParams {
 	organizationId: string;
 	requesterUserId: string;
 	approverName: string;
-	shiftDate: Date;
+	shiftDate: PlainDate;
 }
 
 interface ShiftSwapRejectionParams extends ShiftSwapApprovalParams {
@@ -1111,7 +1121,7 @@ interface ShiftSwapRejectionParams extends ShiftSwapApprovalParams {
 interface ShiftPickupParams {
 	shiftId: string;
 	organizationId: string;
-	shiftDate: Date;
+	shiftDate: PlainDate;
 	startTime: string;
 	endTime: string;
 }
@@ -1124,7 +1134,7 @@ interface ShiftPickupApprovedParams {
 	shiftId: string;
 	organizationId: string;
 	employeeUserId: string;
-	shiftDate: Date;
+	shiftDate: PlainDate;
 	approverName: string;
 }
 
@@ -1161,13 +1171,7 @@ export async function onShiftAssigned(
 	params: ShiftAssignedParams,
 ): Promise<void> {
 	try {
-		const formatDate = (date: Date) =>
-			date.toLocaleDateString("en-US", {
-				weekday: "short",
-				month: "short",
-				day: "numeric",
-			});
-		const shiftDate = formatDate(params.shiftDate);
+		const shiftDate = formatShiftDate(params.shiftDate);
 		const copy = notificationCopy.shiftAssigned;
 
 		await createNotification({
@@ -1211,13 +1215,6 @@ export async function onShiftSwapRequestedToManager(
 	params: ShiftSwapRequestToManagerParams,
 ): Promise<void> {
 	try {
-		const formatDate = (date: Date) =>
-			date.toLocaleDateString("en-US", {
-				weekday: "short",
-				month: "short",
-				day: "numeric",
-			});
-
 		const targetText = params.targetEmployeeName
 			? ` to swap with ${params.targetEmployeeName}`
 			: "";
@@ -1227,7 +1224,7 @@ export async function onShiftSwapRequestedToManager(
 			organizationId: params.organizationId,
 			type: "shift_swap_requested",
 			title: "Shift swap request",
-			message: `${params.requesterName} requested${targetText} for the shift on ${formatDate(params.shiftDate)} (${params.startTime} - ${params.endTime}).`,
+			message: `${params.requesterName} requested${targetText} for the shift on ${formatShiftDate(params.shiftDate)} (${params.startTime} - ${params.endTime}).`,
 			entityType: "shift_request",
 			entityId: params.requestId,
 			actionUrl: "/approvals/inbox",
@@ -1247,19 +1244,12 @@ export async function onShiftSwapRequestedToTarget(
 	params: ShiftSwapRequestToTargetParams,
 ): Promise<void> {
 	try {
-		const formatDate = (date: Date) =>
-			date.toLocaleDateString("en-US", {
-				weekday: "short",
-				month: "short",
-				day: "numeric",
-			});
-
 		await createNotification({
 			userId: params.targetEmployeeUserId,
 			organizationId: params.organizationId,
 			type: "shift_swap_requested",
 			title: "Shift swap request",
-			message: `${params.requesterName} wants to swap shifts with you for ${formatDate(params.shiftDate)} (${params.startTime} - ${params.endTime}).`,
+			message: `${params.requesterName} wants to swap shifts with you for ${formatShiftDate(params.shiftDate)} (${params.startTime} - ${params.endTime}).`,
 			entityType: "shift_request",
 			entityId: params.requestId,
 			actionUrl: "/scheduling",
@@ -1279,19 +1269,12 @@ export async function onShiftSwapApproved(
 	params: ShiftSwapApprovalParams,
 ): Promise<void> {
 	try {
-		const formatDate = (date: Date) =>
-			date.toLocaleDateString("en-US", {
-				weekday: "short",
-				month: "short",
-				day: "numeric",
-			});
-
 		await createNotification({
 			userId: params.requesterUserId,
 			organizationId: params.organizationId,
 			type: "shift_swap_approved",
 			title: "Shift swap approved",
-			message: `Your shift swap request for ${formatDate(params.shiftDate)} was approved by ${params.approverName}.`,
+			message: `Your shift swap request for ${formatShiftDate(params.shiftDate)} was approved by ${params.approverName}.`,
 			entityType: "shift_request",
 			entityId: params.requestId,
 			actionUrl: "/scheduling",
@@ -1311,13 +1294,6 @@ export async function onShiftSwapRejected(
 	params: ShiftSwapRejectionParams,
 ): Promise<void> {
 	try {
-		const formatDate = (date: Date) =>
-			date.toLocaleDateString("en-US", {
-				weekday: "short",
-				month: "short",
-				day: "numeric",
-			});
-
 		const reasonText = params.rejectionReason
 			? ` Reason: ${params.rejectionReason}`
 			: "";
@@ -1327,7 +1303,7 @@ export async function onShiftSwapRejected(
 			organizationId: params.organizationId,
 			type: "shift_swap_rejected",
 			title: "Shift swap rejected",
-			message: `Your shift swap request for ${formatDate(params.shiftDate)} was rejected by ${params.approverName}.${reasonText}`,
+			message: `Your shift swap request for ${formatShiftDate(params.shiftDate)} was rejected by ${params.approverName}.${reasonText}`,
 			entityType: "shift_request",
 			entityId: params.requestId,
 			actionUrl: "/scheduling",
@@ -1347,13 +1323,6 @@ export async function onOpenShiftAvailable(
 	params: OpenShiftAvailableParams,
 ): Promise<void> {
 	try {
-		const formatDate = (date: Date) =>
-			date.toLocaleDateString("en-US", {
-				weekday: "short",
-				month: "short",
-				day: "numeric",
-			});
-
 		// Create notifications for all eligible team members
 		await Promise.all(
 			params.teamMemberUserIds.map((userId) =>
@@ -1362,7 +1331,7 @@ export async function onOpenShiftAvailable(
 					organizationId: params.organizationId,
 					type: "shift_pickup_available",
 					title: "Open shift available",
-					message: `An open shift is available on ${formatDate(params.shiftDate)} from ${params.startTime} to ${params.endTime}.`,
+					message: `An open shift is available on ${formatShiftDate(params.shiftDate)} from ${params.startTime} to ${params.endTime}.`,
 					entityType: "shift",
 					entityId: params.shiftId,
 					actionUrl: "/scheduling",
@@ -1384,19 +1353,12 @@ export async function onShiftPickupApproved(
 	params: ShiftPickupApprovedParams,
 ): Promise<void> {
 	try {
-		const formatDate = (date: Date) =>
-			date.toLocaleDateString("en-US", {
-				weekday: "short",
-				month: "short",
-				day: "numeric",
-			});
-
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "shift_pickup_approved",
 			title: "Shift pickup approved",
-			message: `Your request to pick up the shift on ${formatDate(params.shiftDate)} was approved by ${params.approverName}.`,
+			message: `Your request to pick up the shift on ${formatShiftDate(params.shiftDate)} was approved by ${params.approverName}.`,
 			entityType: "shift",
 			entityId: params.shiftId,
 			actionUrl: "/scheduling",

@@ -5,9 +5,8 @@
  * scheduled shifts vs actual clocked-in employees.
  */
 
-import { and, eq, gte, inArray, lt, lte, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lt, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { DateTime } from "luxon";
 import { Temporal } from "temporal-polyfill";
 import {
 	coverageRule,
@@ -31,9 +30,20 @@ import {
 } from "@/lib/coverage/domain/entities/coverage-rule";
 import type { HeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
 import { snapshotToHeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
-import { dateFromInstant, instantFromDate, type PlainDate } from "@/lib/datetime/temporal-core";
-import { parseIanaTimeZone } from "@/lib/timezone/validation";
+import {
+	dateFromInstant,
+	instantFromDate,
+	type PlainDate,
+	parsePlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
 import type { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
+import {
+	shiftCalendarDate,
+	shiftDateBounds,
+	shiftDateRangeBounds,
+} from "@/lib/scheduling/shift-date";
+import { parseIanaTimeZone } from "@/lib/timezone/validation";
 import { DatabaseService } from "./database.service";
 
 // ============================================
@@ -159,13 +169,14 @@ export class CoverageService extends Context.Service<
 		}) => Effect.Effect<CoverageSummary, DatabaseError>;
 
 		/**
-		 * Get coverage gaps for a date range
-		 * Returns areas where actual staffing is below scheduled
+		 * Get coverage gaps for every organization-local calendar day from `startDate`'s through
+		 * `endDate`'s. Returns areas where actual staffing is below scheduled
 		 */
 		readonly getCoverageGaps: (params: {
 			organizationId: string;
 			startDate: Date;
 			endDate: Date;
+			/** The organization's timezone, which `shift.date` is keyed in. */
 			timezone: string;
 			threshold?: number; // minimum shortage to report (default: 1)
 			managerId?: string;
@@ -374,8 +385,10 @@ export const CoverageServiceLive = Layer.effect(
 			getCoverageForDate: (params) =>
 				Effect.gen(function* () {
 					const { organizationId, date, timezone, managerId } = params;
-					const dt = DateTime.fromJSDate(date).setZone(timezone);
-					const dateStr = dt.toISODate();
+					const dayBounds = shiftDateBounds(
+						plainDateAt(instantFromDate(date), timezone).toString(),
+						timezone,
+					);
 
 					// Get managed employee IDs if manager filter provided
 					let managedEmployeeIds: string[] | undefined;
@@ -401,7 +414,8 @@ export const CoverageServiceLive = Layer.effect(
 						const conditions = [
 							eq(shift.organizationId, organizationId),
 							eq(shift.status, "published"),
-							sql`DATE(${shift.date}) = ${dateStr}`,
+							gte(shift.date, dayBounds.start),
+							lt(shift.date, dayBounds.endExclusive),
 						];
 
 						if (managedEmployeeIds && managedEmployeeIds.length > 0) {
@@ -423,13 +437,10 @@ export const CoverageServiceLive = Layer.effect(
 
 					// Get clocked-in employees for the date
 					const clockedInPeriods = yield* dbService.query("getClockedInPeriods", async () => {
-						const dayStart = dt.startOf("day").toJSDate();
-						const dayEnd = dt.endOf("day").toJSDate();
-
 						const conditions = [
 							eq(workPeriod.organizationId, organizationId),
-							gte(workPeriod.startTime, dayStart),
-							lte(workPeriod.startTime, dayEnd),
+							gte(workPeriod.startTime, dayBounds.start),
+							lt(workPeriod.startTime, dayBounds.endExclusive),
 						];
 
 						if (managedEmployeeIds) {
@@ -490,7 +501,7 @@ export const CoverageServiceLive = Layer.effect(
 							// Count clocked-in employees for this slot
 							// For simplicity, check if their clock-in time falls within this slot
 							const clockedInSlot = clockedInPeriods.filter((wp) => {
-								const clockInTime = DateTime.fromJSDate(wp.startTime).setZone(timezone);
+								const clockInTime = instantFromDate(wp.startTime).toZonedDateTimeISO(timezone);
 								const clockInMins = clockInTime.hour * 60 + clockInTime.minute;
 								// Consider clocked in if they started before slot end
 								return clockInMins < slotEndMins;
@@ -576,13 +587,19 @@ export const CoverageServiceLive = Layer.effect(
 					const subareas = yield* getSubareas(organizationId);
 					const subareaMap = new Map(subareas.map((s) => [s.id, s]));
 
+					const rangeBounds = shiftDateRangeBounds(
+						plainDateAt(instantFromDate(startDate), timezone),
+						plainDateAt(instantFromDate(endDate), timezone).add({ days: 1 }),
+						timezone,
+					);
+
 					// Get scheduled shifts in range
 					const scheduledShifts = yield* dbService.query("getScheduledShiftsRange", async () => {
 						const conditions = [
 							eq(shift.organizationId, organizationId),
 							eq(shift.status, "published"),
-							gte(shift.date, startDate),
-							lte(shift.date, endDate),
+							gte(shift.date, rangeBounds.start),
+							lt(shift.date, rangeBounds.endExclusive),
 							sql`${shift.employeeId} IS NOT NULL`,
 						];
 
@@ -599,8 +616,8 @@ export const CoverageServiceLive = Layer.effect(
 					const clockedInPeriods = yield* dbService.query("getClockedInPeriodsRange", async () => {
 						const conditions = [
 							eq(workPeriod.organizationId, organizationId),
-							gte(workPeriod.startTime, startDate),
-							lte(workPeriod.startTime, endDate),
+							gte(workPeriod.startTime, rangeBounds.start),
+							lt(workPeriod.startTime, rangeBounds.endExclusive),
 						];
 
 						if (managedEmployeeIds) {
@@ -618,7 +635,7 @@ export const CoverageServiceLive = Layer.effect(
 					// Group shifts by date and subarea
 					const shiftsByDateSubarea = new Map<string, typeof scheduledShifts>();
 					for (const s of scheduledShifts) {
-						const dateKey = DateTime.fromJSDate(s.date).toISODate();
+						const dateKey = shiftCalendarDate(s.date, timezone).toString();
 						const key = `${dateKey}:${s.subareaId}`;
 						const existing = shiftsByDateSubarea.get(key) || [];
 						existing.push(s);
@@ -628,10 +645,7 @@ export const CoverageServiceLive = Layer.effect(
 					// Group work periods by date
 					const workPeriodsByDate = new Map<string, typeof clockedInPeriods>();
 					for (const wp of clockedInPeriods) {
-						const dateKey = DateTime.fromJSDate(wp.startTime).setZone(timezone).toISODate();
-						if (!dateKey) {
-							continue;
-						}
+						const dateKey = plainDateAt(instantFromDate(wp.startTime), timezone).toString();
 						const existing = workPeriodsByDate.get(dateKey) || [];
 						existing.push(wp);
 						workPeriodsByDate.set(dateKey, existing);
@@ -662,7 +676,7 @@ export const CoverageServiceLive = Layer.effect(
 								locationName: subarea.locationName,
 								timeSlot: `${shifts[0].startTime}-${shifts[shifts.length - 1].endTime}`,
 								shortage,
-								date: DateTime.fromISO(dateStr).toJSDate(),
+								date: coverageDateToDate(parsePlainDate(dateStr), timezone),
 							});
 						}
 					}

@@ -5,11 +5,17 @@
  * and shift pickup requests.
  */
 
-import { and, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lt, lte, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { DateTime } from "luxon";
 import { employee, location, locationSubarea, shift, shiftRequest } from "@/db/schema";
+import {
+	type Instant,
+	type PlainDate,
+	plainDateAt,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
+import { shiftDateBounds } from "@/lib/scheduling/shift-date";
 import { DatabaseService } from "./database.service";
 
 // ============================================
@@ -63,11 +69,13 @@ export class OpenShiftsService extends Context.Service<
 		}) => Effect.Effect<OpenShiftWithDetails[], DatabaseError>;
 
 		/**
-		 * Get count of open shifts for today and tomorrow
+		 * Get count of open shifts for the organization's today and tomorrow
 		 */
 		readonly getOpenShiftsCounts: (params: {
 			organizationId: string;
+			/** The organization's timezone, which `shift.date` is keyed in. */
 			timezone: string;
+			now?: Instant;
 		}) => Effect.Effect<{ today: number; tomorrow: number }, DatabaseError>;
 
 		/**
@@ -201,26 +209,28 @@ export const OpenShiftsServiceLive = Layer.effect(
 
 			getOpenShiftsCounts: (params) =>
 				dbService.query("getOpenShiftsCounts", async () => {
-					const { organizationId, timezone } = params;
-					const now = DateTime.now().setZone(timezone);
-					const todayStr = now.toISODate();
-					const tomorrowStr = now.plus({ days: 1 }).toISODate();
+					const { organizationId, timezone, now = systemClock.nowInstant() } = params;
+					const today = plainDateAt(now, timezone);
 
-					const baseConditions = [
-						eq(shift.organizationId, organizationId),
-						eq(shift.status, "published"),
-						isNull(shift.employeeId),
-					];
+					const countOpenShifts = (date: PlainDate) => {
+						const bounds = shiftDateBounds(date.toString(), timezone);
+						return dbService.db
+							.select({ count: sql<number>`count(*)` })
+							.from(shift)
+							.where(
+								and(
+									eq(shift.organizationId, organizationId),
+									eq(shift.status, "published"),
+									isNull(shift.employeeId),
+									gte(shift.date, bounds.start),
+									lt(shift.date, bounds.endExclusive),
+								),
+							);
+					};
 
 					const [todayResult, tomorrowResult] = await Promise.all([
-						dbService.db
-							.select({ count: sql<number>`count(*)` })
-							.from(shift)
-							.where(and(...baseConditions, sql`DATE(${shift.date}) = ${todayStr}`)),
-						dbService.db
-							.select({ count: sql<number>`count(*)` })
-							.from(shift)
-							.where(and(...baseConditions, sql`DATE(${shift.date}) = ${tomorrowStr}`)),
+						countOpenShifts(today),
+						countOpenShifts(today.add({ days: 1 })),
 					]);
 
 					return {

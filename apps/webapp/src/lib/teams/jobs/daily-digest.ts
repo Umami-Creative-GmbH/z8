@@ -5,7 +5,7 @@
  * Runs every 15 minutes to check for digests due to be sent.
  */
 
-import { and, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -25,7 +25,10 @@ import {
 import { env } from "@/env";
 import { fmtTime, fmtWeekdayShortDate, getBotTranslate } from "@/lib/bot-platform/i18n";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
+import { type Instant, plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import { shiftDateBounds } from "@/lib/scheduling/shift-date";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import { sendAdaptiveCard } from "../bot-adapter";
 import { buildDailyDigestCard } from "../cards/daily-digest-card";
@@ -353,10 +356,15 @@ export async function buildDigestDataForManager(
 	organizationId: string,
 	timezone: string,
 	locale: string = DEFAULT_LANGUAGE,
+	nowInstant: Instant = systemClock.nowInstant(),
 ): Promise<DailyDigestData> {
-	const now = DateTime.now().setZone(timezone);
+	const now = DateTime.fromMillis(nowInstant.epochMilliseconds, { zone: timezone });
 	const todayStr = now.toISODate();
-	const tomorrowStr = now.plus({ days: 1 }).toISODate();
+	const today = plainDateAt(nowInstant, timezone);
+	// `shift.date` is keyed in the organization's zone: read the shifts of today's calendar date.
+	const organizationTimezone = await loadOrganizationTimezone(db, organizationId);
+	const todayShifts = shiftDateBounds(today.toString(), organizationTimezone);
+	const tomorrowShifts = shiftDateBounds(today.add({ days: 1 }).toString(), organizationTimezone);
 
 	// =========================================
 	// Phase 1: All independent queries in parallel
@@ -395,7 +403,8 @@ export async function buildDigestDataForManager(
 						eq(shift.organizationId, organizationId),
 						eq(shift.status, "published"),
 						isNull(shift.employeeId),
-						sql`DATE(${shift.date}) = ${todayStr}`,
+						gte(shift.date, todayShifts.start),
+						lt(shift.date, todayShifts.endExclusive),
 					),
 				),
 			db
@@ -406,7 +415,8 @@ export async function buildDigestDataForManager(
 						eq(shift.organizationId, organizationId),
 						eq(shift.status, "published"),
 						isNull(shift.employeeId),
-						sql`DATE(${shift.date}) = ${tomorrowStr}`,
+						gte(shift.date, tomorrowShifts.start),
+						lt(shift.date, tomorrowShifts.endExclusive),
 					),
 				),
 		]),
@@ -415,7 +425,8 @@ export async function buildDigestDataForManager(
 			where: and(
 				eq(shift.organizationId, organizationId),
 				eq(shift.status, "published"),
-				sql`DATE(${shift.date}) = ${todayStr}`,
+				gte(shift.date, todayShifts.start),
+				lt(shift.date, todayShifts.endExclusive),
 				sql`${shift.employeeId} IS NOT NULL`,
 			),
 			columns: {
