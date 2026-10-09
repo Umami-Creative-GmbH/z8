@@ -74,6 +74,26 @@ export interface ProjectTeamBreakdown {
 	members: ProjectTeamMember[];
 }
 
+/**
+ * One row of the project report's "By task" section. The rows of a report
+ * add up to its summary total: time booked without a task is the "No task" row.
+ */
+export interface ProjectTaskBreakdownRow {
+	/** null = the "No task" row. */
+	taskId: string | null;
+	taskName: string | null;
+	state: "open" | "done" | null;
+	totalHours: number;
+	totalMinutes: number;
+	workPeriodCount: number;
+	percentOfTotal: number;
+	/**
+	 * Progress against the task estimate, only for a task that has one. It
+	 * compares every hour ever booked to the task, not only the report period.
+	 */
+	estimate: { estimateHours: number; bookedHours: number; percentUsed: number } | null;
+}
+
 export interface ProjectDetailedReport {
 	project: ProjectInfo;
 	period: {
@@ -94,6 +114,7 @@ export interface ProjectDetailedReport {
 	timeSeries: ProjectTimeSeriesPoint[];
 	teamBreakdown: ProjectTeamBreakdown[];
 	employeeBreakdown: ProjectTeamMember[];
+	taskBreakdown: ProjectTaskBreakdownRow[];
 }
 
 export interface ProjectPortfolioData {
