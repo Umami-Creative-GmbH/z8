@@ -259,9 +259,9 @@ export async function runClockingReminders(
 			notify: async (params, locale) => {
 				// Push and bots carry the stored text, so render it in the recipient's locale.
 				const localized = await localizeOutboundNotification({ ...params, locale });
-				// Throws only from the preference load or the in-app insert, before any channel has
-				// delivered: external channels are fire-and-forget, so their failures are logged and
-				// dropped. That keeps the transport contract against delivering twice.
+				// createNotification throws only from the preference load or the in-app insert, before
+				// any channel has delivered: external channels are fire-and-forget, so their failures
+				// are logged and dropped. That keeps the transport contract against delivering twice.
 				await service.createNotification(
 					{ ...params, title: localized.title, message: localized.message },
 					{ throwOnError: true },
