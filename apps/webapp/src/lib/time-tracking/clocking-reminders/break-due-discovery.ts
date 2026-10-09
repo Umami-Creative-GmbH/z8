@@ -9,7 +9,7 @@ import {
 	instantFromDate,
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
-import { complianceTotalsOf } from "@/lib/time-tracking/compliance-totals";
+import { complianceDayTotalsOf } from "@/lib/time-tracking/compliance-totals";
 
 type Database = Pick<typeof db, "select">;
 
@@ -91,7 +91,7 @@ export async function loadBreakDueFacts(
 			),
 		);
 	for (const [employeeId, { liveWork, day }] of days) {
-		const totals = complianceTotalsOf(
+		const totals = complianceDayTotalsOf(
 			periods
 				.filter((period) => period.employeeId === employeeId)
 				.map((period) => ({
@@ -99,7 +99,7 @@ export async function loadBreakDueFacts(
 					end: period.endTime ? instantFromDate(period.endTime) : null,
 					durationMinutes: period.durationMinutes,
 				})),
-			{ day, week: day },
+			day,
 		);
 		facts.set(employeeId, {
 			liveWork,
