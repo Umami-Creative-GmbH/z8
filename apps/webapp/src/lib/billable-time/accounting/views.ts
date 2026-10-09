@@ -47,6 +47,16 @@ export interface CustomerAccountingView {
 	taxOverride: TaxTreatmentView | null;
 }
 
+/** The tool's product name (a proper noun, not translated). */
+export function accountingProviderName(kind: AccountingProviderKind): string {
+	switch (kind) {
+		case "lexware_office":
+			return "Lexware Office";
+		case "sevdesk":
+			return "sevdesk";
+	}
+}
+
 export interface AccountingProviderOption {
 	kind: AccountingProviderKind;
 	/** Whether a connector for the tool exists in this deployment. */

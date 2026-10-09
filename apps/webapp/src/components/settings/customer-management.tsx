@@ -4,6 +4,7 @@ import {
 	IconAddressBook,
 	IconCoin,
 	IconEdit,
+	IconPlugConnected,
 	IconPlus,
 	IconRefresh,
 	IconTrash,
@@ -18,6 +19,7 @@ import {
 	getCustomers,
 } from "@/app/[locale]/(app)/settings/customers/actions";
 import { getProjects } from "@/app/[locale]/(app)/settings/projects/actions";
+import { CustomerAccountingPanel } from "@/components/billable-time/accounting/customer-accounting-panel";
 import { BillableRateActionPanel } from "@/components/billable-time/billable-rate-series";
 import {
 	AlertDialog,
@@ -58,6 +60,7 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 	const [deletingCustomer, setDeletingCustomer] = useState<CustomerData | null>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [ratesCustomer, setRatesCustomer] = useState<CustomerData | null>(null);
+	const [accountingCustomer, setAccountingCustomer] = useState<CustomerData | null>(null);
 	// Billable rates are for owners and admins only (#898); the actions check again.
 	const canSetBillableRates = useBillableTimeEnabled() && accessTier === "orgAdmin";
 
@@ -279,6 +282,23 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 														<IconCoin aria-hidden="true" className="size-4" />
 													</Button>
 												)}
+												{canSetBillableRates && (
+													<Button
+														variant="ghost"
+														size="sm"
+														onClick={() => setAccountingCustomer(cust)}
+														aria-label={t(
+															"settings.billableTime.accounting.customer.entry",
+															"Accounting",
+														)}
+														title={t(
+															"settings.billableTime.accounting.customer.entry",
+															"Accounting",
+														)}
+													>
+														<IconPlugConnected aria-hidden="true" className="size-4" />
+													</Button>
+												)}
 												<Button variant="ghost" size="sm" onClick={() => setDeletingCustomer(cust)}>
 													<IconTrash className="size-4 text-destructive" />
 												</Button>
@@ -306,6 +326,17 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 						"settings.billableTime.rates.level.customerDescription",
 						"Applies to work on the customer's projects without a project rate.",
 					)}
+				/>
+			)}
+
+			{canSetBillableRates && (
+				<CustomerAccountingPanel
+					open={accountingCustomer !== null}
+					onOpenChange={(open) => {
+						if (!open) setAccountingCustomer(null);
+					}}
+					customerId={accountingCustomer?.id ?? null}
+					customerName={accountingCustomer?.name ?? ""}
 				/>
 			)}
 
