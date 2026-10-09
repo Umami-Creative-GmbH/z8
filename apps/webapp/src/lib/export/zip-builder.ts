@@ -1,7 +1,7 @@
 import JSZip from "jszip";
 import { createLogger } from "@/lib/logger";
 import type { ExportCategory } from "./data-fetchers";
-import { CSV_COLUMNS, isCSVCategory, toCSV } from "./formatters/csv-formatter";
+import { CSV_COLUMNS, isCSVCategory, timeEntryCsvColumns, toCSV } from "./formatters/csv-formatter";
 import { countRecords, isJSONCategory, toJSON } from "./formatters/json-formatter";
 
 const logger = createLogger("ZipBuilder");
@@ -105,10 +105,14 @@ function buildCSVFiles(category: ExportCategory, data: unknown): ExportFile[] {
 		}
 	} else if (Array.isArray(data)) {
 		// Simple array data
-		const columns = CSV_COLUMNS[category as keyof typeof CSV_COLUMNS];
+		const rows = data as Record<string, unknown>[];
+		const columns =
+			category === "time_entries"
+				? timeEntryCsvColumns(rows)
+				: CSV_COLUMNS[category as keyof typeof CSV_COLUMNS];
 		files.push({
 			name: `${category}.csv`,
-			content: toCSV(data as Record<string, unknown>[], columns),
+			content: toCSV(rows, columns),
 			type: "csv",
 		});
 	}
