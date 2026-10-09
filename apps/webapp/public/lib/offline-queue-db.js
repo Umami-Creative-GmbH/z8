@@ -256,6 +256,24 @@ function sameCommandContext(left, right) {
 	return COMMAND_CONTEXT_FIELDS.every((field) => left[field] === right[field]);
 }
 
+function finiteBetween(value, min, max) {
+	return typeof value === "number" && Number.isFinite(value) && value >= min && value <= max;
+}
+
+/** The position taken at the event (#826): absent, or exactly its four fields. */
+function validPosition(position) {
+	if (position === undefined) return true;
+	return (
+		position !== null &&
+		typeof position === "object" &&
+		Object.keys(position).length === 4 &&
+		finiteBetween(position.latitude, -90, 90) &&
+		finiteBetween(position.longitude, -180, 180) &&
+		finiteBetween(position.accuracyMeters, 0, Number.MAX_VALUE) &&
+		typeof position.fixedAt === "string"
+	);
+}
+
 function validCaptureRequest(request) {
 	const context = request?.context;
 	return (
@@ -266,7 +284,8 @@ function validCaptureRequest(request) {
 		typeof request.occurredAt === "string" &&
 		typeof request.timezone === "string" &&
 		context &&
-		COMMAND_CONTEXT_FIELDS.every((field) => typeof context[field] === "string" && context[field])
+		COMMAND_CONTEXT_FIELDS.every((field) => typeof context[field] === "string" && context[field]) &&
+		validPosition(request.position)
 	);
 }
 
