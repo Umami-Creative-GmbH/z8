@@ -332,6 +332,18 @@ export const queryKeys = {
 		employeeSelection: (orgId: string) => ["projects", "employeeSelection", orgId] as const,
 	},
 
+	// Billable Time (#768; not the Z8 subscription)
+	billableTime: {
+		all: ["billableTime"] as const,
+		/** One billable rate series: a rate level and its target ids. */
+		rateHistory: (
+			level: string,
+			employeeId: string | null,
+			projectId: string | null,
+			customerId: string | null,
+		) => ["billableTime", "rateHistory", level, employeeId, projectId, customerId] as const,
+	},
+
 	// Surcharges
 	surcharges: {
 		all: ["surcharges"] as const,

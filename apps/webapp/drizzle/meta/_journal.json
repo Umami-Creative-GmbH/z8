@@ -1007,7 +1007,14 @@
       "idx": 143,
       "version": "7",
       "when": 1796659200000,
-      "tag": "0143_billable_work",
+      "tag": "0143_billable_rates",
+      "breakpoints": true
+    },
+    {
+      "idx": 145,
+      "version": "7",
+      "when": 1796832000000,
+      "tag": "0145_billable_work",
       "breakpoints": true
     }
   ]

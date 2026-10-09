@@ -1,6 +1,13 @@
 "use client";
 
-import { IconAddressBook, IconEdit, IconPlus, IconRefresh, IconTrash } from "@tabler/icons-react";
+import {
+	IconAddressBook,
+	IconCoin,
+	IconEdit,
+	IconPlus,
+	IconRefresh,
+	IconTrash,
+} from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -11,6 +18,7 @@ import {
 	getCustomers,
 } from "@/app/[locale]/(app)/settings/customers/actions";
 import { getProjects } from "@/app/[locale]/(app)/settings/projects/actions";
+import { BillableRateActionPanel } from "@/components/billable-time/billable-rate-series";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -34,6 +42,7 @@ import {
 } from "@/components/ui/table";
 import { queryKeys } from "@/lib/query";
 import type { SettingsAccessTier } from "@/lib/settings-access";
+import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
 import { CustomerDialog } from "./customer-dialog";
 
 interface CustomerManagementProps {
@@ -48,6 +57,9 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 	const [editingCustomer, setEditingCustomer] = useState<CustomerData | null>(null);
 	const [deletingCustomer, setDeletingCustomer] = useState<CustomerData | null>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
+	const [ratesCustomer, setRatesCustomer] = useState<CustomerData | null>(null);
+	// Billable rates are for owners and admins only (#898); the actions check again.
+	const canSetBillableRates = useBillableTimeEnabled() && accessTier === "orgAdmin";
 
 	const {
 		data: customersResult,
@@ -253,6 +265,20 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 												<Button variant="ghost" size="sm" onClick={() => handleEdit(cust)}>
 													<IconEdit className="size-4" />
 												</Button>
+												{canSetBillableRates && (
+													<Button
+														variant="ghost"
+														size="sm"
+														onClick={() => setRatesCustomer(cust)}
+														aria-label={t(
+															"settings.billableTime.rates.customerRate",
+															"Billable rate",
+														)}
+														title={t("settings.billableTime.rates.customerRate", "Billable rate")}
+													>
+														<IconCoin aria-hidden="true" className="size-4" />
+													</Button>
+												)}
 												<Button variant="ghost" size="sm" onClick={() => setDeletingCustomer(cust)}>
 													<IconTrash className="size-4 text-destructive" />
 												</Button>
@@ -264,6 +290,23 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 						</Table>
 					</CardContent>
 				</Card>
+			)}
+
+			{canSetBillableRates && (
+				<BillableRateActionPanel
+					open={ratesCustomer !== null}
+					onOpenChange={(open) => {
+						if (!open) setRatesCustomer(null);
+					}}
+					target={ratesCustomer ? { level: "customer", customerId: ratesCustomer.id } : null}
+					title={t("settings.billableTime.rates.customerRateTitle", "Billable rate for {name}", {
+						name: ratesCustomer?.name ?? "",
+					})}
+					description={t(
+						"settings.billableTime.rates.level.customerDescription",
+						"Applies to work on the customer's projects without a project rate.",
+					)}
+				/>
 			)}
 
 			<CustomerDialog

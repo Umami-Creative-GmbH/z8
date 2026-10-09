@@ -149,6 +149,10 @@ export enum AuditAction {
 	WORK_PERIOD_PROJECT_ASSIGNED = "work_period.project_assigned",
 	WORK_PERIOD_PROJECT_UNASSIGNED = "work_period.project_unassigned",
 
+	// Billable Time Operations (#768; not the Z8 subscription)
+	BILLABLE_RATE_SET = "billable_time.rate_set",
+	BILLABLE_RATE_ENDED = "billable_time.rate_ended",
+
 	// Location Operations
 	LOCATION_CREATED = "location.created",
 	LOCATION_UPDATED = "location.updated",
@@ -215,6 +219,7 @@ export interface AuditLogEntry {
 		| "customer"
 		| "project"
 		| "project_assignment"
+		| "billable_rate"
 		| "work_period"
 		| "location"
 		| "subarea"
