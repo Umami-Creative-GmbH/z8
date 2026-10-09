@@ -76,13 +76,17 @@ export function buildClockingReminderNotification(input: {
 	} else if (reminder.type !== "break_due_reminder") {
 		copy = { ...copy, ...policyMessageCopy[reminder.type] };
 		const expected = formatTime(reminder.expectedAt, locale, timezone);
-		params[reminder.type === "missed_clock_in_reminder" ? "startTime" : "endTime"] = expected;
-		// Live work past midnight is judged against the day it started, which need not be today.
-		params.day = reminder.day.toLocaleString(locale, {
-			weekday: "long",
-			month: "long",
-			day: "numeric",
-		});
+		if (reminder.type === "missed_clock_in_reminder") {
+			params.startTime = expected;
+		} else {
+			params.endTime = expected;
+			// Live work past midnight is judged against the day it started, which need not be today.
+			params.day = reminder.day.toLocaleString(locale, {
+				weekday: "long",
+				month: "long",
+				day: "numeric",
+			});
+		}
 	}
 	if (reminder.type === "break_due_reminder") {
 		params.breakTime = formatTime(reminder.expectedAt, locale, timezone);
