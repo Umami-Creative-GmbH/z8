@@ -3387,7 +3387,18 @@ export const discordUserMappingRelations = relations(discordUserMapping, ({ one 
 }));
 
 // Clockodo import
-import { clockodoUserMapping } from "./clockodo-import";
+import { clockodoProjectMapping, clockodoUserMapping } from "./clockodo-import";
+
+export const clockodoProjectMappingRelations = relations(clockodoProjectMapping, ({ one }) => ({
+	organization: one(organization, {
+		fields: [clockodoProjectMapping.organizationId],
+		references: [organization.id],
+	}),
+	project: one(project, {
+		fields: [clockodoProjectMapping.projectId],
+		references: [project.id],
+	}),
+}));
 
 export const clockodoUserMappingRelations = relations(clockodoUserMapping, ({ one }) => ({
 	user: one(user, {

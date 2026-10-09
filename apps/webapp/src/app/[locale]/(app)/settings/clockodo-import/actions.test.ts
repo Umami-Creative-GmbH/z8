@@ -8,9 +8,12 @@ vi.mock("@/db/auth-schema", () => ({}));
 
 vi.mock("@/db/schema", () => ({
 	absenceEntry: {},
+	clockodoProjectMapping: {},
 	clockodoUserMapping: {},
+	customer: {},
 	employee: {},
 	holiday: {},
+	project: {},
 	surchargeModel: {},
 	team: {},
 	workCategory: {},

@@ -32,6 +32,23 @@ export interface ClockodoService {
 	note: string | null;
 }
 
+/** Clockodo customer object from /api/v2/customers */
+export interface ClockodoCustomer {
+	id: number;
+	name: string;
+	number: string | null;
+	active: boolean;
+}
+
+/** Clockodo project object from /api/v2/projects */
+export interface ClockodoProject {
+	id: number;
+	customers_id: number;
+	name: string;
+	number: string | null;
+	active: boolean;
+}
+
 /** Clockodo time entry (type=1) from /api/v2/entries */
 export interface ClockodoEntry {
 	id: number;
@@ -187,6 +204,26 @@ export interface UserMappingEntry {
 	userId: string | null;
 	/** Display name of the matched employee (for UI) */
 	employeeName: string | null;
+}
+
+/**
+ * A Clockodo project's mapping to an existing Z8 project (#907). `projectId`
+ * null leaves the project unmapped: its entries import without a project, so
+ * they are never billable. The import never creates projects.
+ */
+export interface ProjectMappingEntry {
+	clockodoProjectId: number;
+	clockodoProjectName: string;
+	clockodoCustomerName: string | null;
+	projectId: string | null;
+	/** How the mapping was proposed: saved earlier, matched by name, or chosen now. */
+	source: "saved" | "name" | "manual" | null;
+}
+
+/** A Clockodo project mapping saved by an earlier import. */
+export interface SavedProjectMapping {
+	clockodoProjectId: number;
+	projectId: string;
 }
 
 /** A saved user mapping as the (disabled) direct import action receives it. */
