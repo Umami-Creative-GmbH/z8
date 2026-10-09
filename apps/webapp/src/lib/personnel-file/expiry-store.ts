@@ -2,7 +2,7 @@ import { and, asc, eq, inArray, isNotNull, lte } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, employeeDocument, personnelFileReminderSetting } from "@/db/schema";
-import type { Instant } from "@/lib/datetime/temporal-core";
+import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import type { PersonnelFileAccess } from "./access";
 import { visibleDocumentsCondition } from "./access-store";
@@ -40,20 +40,23 @@ export async function loadExpiryReminderLeadDays(
 export async function saveExpiryReminderLeadDays(
 	database: Database | Pick<Transaction, "insert">,
 	input: { organizationId: string; leadDays: number; actorUserId?: string | null },
+	now: Instant = systemClock.nowInstant(),
 ): Promise<void> {
+	const at = dateFromInstant(now);
 	await database
 		.insert(personnelFileReminderSetting)
 		.values({
 			organizationId: input.organizationId,
 			expiryLeadDays: input.leadDays,
 			updatedBy: input.actorUserId ?? null,
+			updatedAt: at,
 		})
 		.onConflictDoUpdate({
 			target: personnelFileReminderSetting.organizationId,
 			set: {
 				expiryLeadDays: input.leadDays,
 				updatedBy: input.actorUserId ?? null,
-				updatedAt: new Date(),
+				updatedAt: at,
 			},
 		});
 }

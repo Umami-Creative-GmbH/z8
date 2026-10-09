@@ -324,6 +324,24 @@ describe("personnel file expiry reminders", () => {
 		await saveExpiryReminderLeadDays(db, { organizationId: ORG, leadDays: 30 });
 	});
 
+	it("stamps a lead time change with the injected instant", async () => {
+		await saveExpiryReminderLeadDays(
+			db,
+			{ organizationId: ORG, leadDays: 14 },
+			at("2027-01-04T09:00:00Z"),
+		);
+		await saveExpiryReminderLeadDays(
+			db,
+			{ organizationId: ORG, leadDays: 30 },
+			at("2027-01-05T10:30:00Z"),
+		);
+		const { rows } = await admin.query<{ updated_at: Date }>(
+			"select updated_at from personnel_file_reminder_setting where organization_id = $1",
+			[ORG],
+		);
+		expect(rows[0]?.updated_at.toISOString()).toBe("2027-01-05T10:30:00.000Z");
+	});
+
 	it("defaults the lead time to 30 days", async () => {
 		expect(await loadExpiryReminderLeadDays(db, OFF_ORG)).toBe(30);
 	});
