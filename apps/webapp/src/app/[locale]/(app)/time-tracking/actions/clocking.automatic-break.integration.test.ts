@@ -615,6 +615,7 @@ describe("automatic break adjustment on PostgreSQL", () => {
 		});
 		const attribution = {
 			projectId: null,
+			isBillable: false,
 			workCategoryId: null,
 			workLocationType: "office",
 			allocations: [],
@@ -1147,4 +1148,60 @@ describe("automatic break adjustment on PostgreSQL", () => {
 		await expect(recover(workDay)).resolves.toMatchObject({ adjustedCount: 1, errors: [] });
 		expect((await periods()).map((period) => period.duration_minutes)).toEqual([360, 29]);
 	});
+
+	it.each([
+		["an adopted", "active"],
+		["a legacy", "inactive"],
+	] as const)(
+		"keeps %s closure's project and billability on both segments in both representations (#900)",
+		async (_label, mode) => {
+			await setAdmission(mode);
+			const customerId = randomUUID();
+			const projectId = randomUUID();
+			await admin.query(
+				`insert into customer (id, organization_id, name, created_by, updated_at)
+				 values ($1, $2, 'Acme', $3, now())`,
+				[customerId, ids.organization, ids.managerUser],
+			);
+			await admin.query(
+				`insert into project (id, organization_id, name, status, is_active, customer_id, billable_default, created_by, updated_at)
+				 values ($1, $2, 'Billable', 'active', true, $3, true, $4, now())`,
+				[projectId, ids.organization, customerId, ids.managerUser],
+			);
+			await admin.query(
+				`insert into project_assignment (id, project_id, organization_id, assignment_type, employee_id, created_by)
+				 values (gen_random_uuid(), $1, $2, 'employee', $3, $4)`,
+				[projectId, ids.organization, ids.requester, ids.managerUser],
+			);
+			actAs(ids.requesterUser);
+			await expect(
+				clockIn("office", { instant: clockInAt, browserTimezone: "UTC" }),
+			).resolves.toMatchObject({ success: true });
+			await expect(
+				clockOut(projectId, undefined, {
+					submissionId: randomUUID(),
+					instant: clockOutAt,
+					browserTimezone: "UTC",
+				}),
+			).resolves.toMatchObject({ success: true, data: { breakAdjustment: { breakMinutes: 30 } } });
+
+			const { rows } = await admin.query<{
+				project_id: string | null;
+				is_billable: boolean;
+				allocations: { projectId: string; isBillable: boolean }[] | null;
+			}>(
+				`select wp.project_id, wp.is_billable,
+				        (select json_agg(json_build_object('projectId', a.project_id, 'isBillable', a.is_billable))
+				           from time_record_allocation a where a.record_id = wp.canonical_record_id) as allocations
+				 from work_period wp where wp.organization_id = $1 order by wp.start_time`,
+				[ids.organization],
+			);
+			const segment = {
+				project_id: projectId,
+				is_billable: true,
+				allocations: [{ projectId, isBillable: true }],
+			};
+			expect(rows).toEqual([segment, segment]);
+		},
+	);
 });
