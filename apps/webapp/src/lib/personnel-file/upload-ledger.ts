@@ -124,6 +124,15 @@ export type DeletePersonnelFileObject = (input: {
 	versionId: string | null;
 }) => Promise<void>;
 
+/** Copies a stored object to a new key server side (payslip batch confirmation, #868). */
+export type CopyPersonnelFileObject = (input: {
+	organizationId: string;
+	sourceKey: string;
+	sourceBucket: string | null;
+	sourceVersionId: string | null;
+	targetKey: string;
+}) => Promise<StoredPersonnelFileObject>;
+
 export interface PersonnelFileCleanupResult {
 	claimed: number;
 	deleted: number;

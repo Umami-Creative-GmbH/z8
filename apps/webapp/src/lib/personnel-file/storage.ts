@@ -1,4 +1,5 @@
 import "server-only";
+import { copyPrivateObject } from "@/lib/storage/export-s3-client";
 import {
 	deleteTravelExpenseReceiptObject,
 	loadReceiptPreview,
@@ -12,6 +13,7 @@ import {
 	PERSONNEL_DOCUMENT_MAX_BYTES,
 } from "./document.types";
 import { isPayslipBatchMime, PAYSLIP_BATCH_REFUSAL_MESSAGE } from "./payslip-batch.types";
+import type { CopyPersonnelFileObject } from "./upload-ledger";
 
 /**
  * Personnel file objects reuse the private receipt storage pipeline: the
@@ -47,6 +49,9 @@ export { deleteTusUpload };
 
 /** Deletes a stored document object and every version of its preview. */
 export const deletePersonnelDocumentObject = deleteTravelExpenseReceiptObject;
+
+/** Copies a staged object to its document key on payslip batch confirmation (#868). */
+export const copyPersonnelFileObject: CopyPersonnelFileObject = copyPrivateObject;
 
 export const loadPersonnelDocumentPreview = loadReceiptPreview;
 export const PERSONNEL_DOCUMENT_PREVIEW_MIME_TYPE = RECEIPT_PREVIEW_MIME_TYPE;

@@ -16,6 +16,7 @@ import {
 	type PayslipBatchView,
 	updatePayslipBatchFile,
 } from "@/lib/personnel-file/payslip-batch-store";
+import { copyPersonnelFileObject } from "@/lib/personnel-file/storage";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 
 /**
@@ -131,6 +132,7 @@ export async function confirmPayslipBatchAction(input: {
 		}
 		const result: ConfirmPayslipBatchResult = await confirmPayslipBatch(db, current.access, {
 			batchId: input.batchId,
+			copyObject: copyPersonnelFileObject,
 		});
 		switch (result.kind) {
 			case "not_found":

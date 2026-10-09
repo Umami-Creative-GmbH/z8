@@ -15,6 +15,7 @@ const harness = vi.hoisted(() => ({
 	organizationId: "t868-org",
 	tus: new Map<string, Buffer>(),
 	objects: new Map<string, Buffer>(),
+	failCopy: false,
 	notifications: [] as Array<{
 		userId: string;
 		type: string;
@@ -83,6 +84,13 @@ vi.mock("@/lib/storage/s3-client", () => ({
 vi.mock("@/lib/storage/export-s3-client", () => ({
 	async uploadPrivateObject(_organizationId: string, key: string, data: Uint8Array) {
 		harness.objects.set(key, Buffer.from(data));
+		return { bucket: "t868-private", versionId: null };
+	},
+	async copyPrivateObject(input: { sourceKey: string; targetKey: string }) {
+		if (harness.failCopy) throw new Error("copy failed");
+		const bytes = harness.objects.get(input.sourceKey);
+		if (!bytes) throw Object.assign(new Error("NoSuchKey"), { name: "NoSuchKey" });
+		harness.objects.set(input.targetKey, Buffer.from(bytes));
 		return { bucket: "t868-private", versionId: null };
 	},
 	async readPrivateObject(input: { key: string }) {
@@ -284,6 +292,7 @@ describe("payslip batches matched by personnel number (#868)", () => {
 	});
 	beforeEach(async () => {
 		harness.notifications.length = 0;
+		harness.failCopy = false;
 		await resetDocuments();
 		await admin.query("update employee set team_id = $2 where id = $1", [ids.ben, ids.berlin]);
 	});
@@ -465,6 +474,62 @@ describe("payslip batches matched by personnel number (#868)", () => {
 			expect((await stage(batchId, "00421.pdf")).status).toBe(409);
 		});
 
+		it("stores a confirmed payslip under the employee's key and cleans up the staged object", async () => {
+			signIn("officer");
+			const batchId = await startBatch();
+			const fileId = await stageOk(batchId, "0042.pdf");
+			const [stagedKey] = [...harness.objects.keys()];
+			expect(stagedKey).toContain(`/payslip-batches/${batchId}/`);
+			await actions.confirmPayslipBatchAction({ batchId });
+
+			const { rows } = await admin.query<{ storage_key: string }>(
+				"select storage_key from employee_document where organization_id = $1 and id = $2",
+				[ORG, fileId],
+			);
+			const documentKey = rows[0]?.storage_key ?? "";
+			expect(documentKey.startsWith(`personnel-files/${ORG}/${ids.anna}/${fileId}-`)).toBe(true);
+
+			const cleaned = await runPersonnelFileCleanup(db, {
+				deleteObject: deletePersonnelDocumentObject,
+			});
+			expect(cleaned.deleted).toBe(1);
+			expect([...harness.objects.keys()]).toEqual([documentKey]);
+			expect(harness.objects.get(documentKey)).toEqual(pdf("0042.pdf"));
+
+			// Deleting the document later still hands its own object to cleanup.
+			await admin.query("delete from employee_document where id = $1", [fileId]);
+			await runPersonnelFileCleanup(db, { deleteObject: deletePersonnelDocumentObject });
+			expect(harness.objects.size).toBe(0);
+		});
+
+		it("keeps the staged file when storing the payslip fails, and confirms it on retry", async () => {
+			signIn("officer");
+			const batchId = await startBatch();
+			const fileId = await stageOk(batchId, "0042.pdf");
+			harness.failCopy = true;
+			const first = await actions.confirmPayslipBatchAction({ batchId });
+			expect(first).toMatchObject({
+				success: true,
+				data: { created: [], failed: [{ fileId, failure: "error" }] },
+			});
+			expect(await documentCount()).toBe(0);
+			// The failed copy is cleaned up; the staged object stays.
+			await runPersonnelFileCleanup(db, { deleteObject: deletePersonnelDocumentObject });
+			expect(await fileOf(batchId, fileId)).toMatchObject({ state: "failed" });
+
+			harness.failCopy = false;
+			const retry = await actions.confirmPayslipBatchAction({ batchId });
+			expect(retry).toMatchObject({
+				success: true,
+				data: { created: [{ fileId }], failed: [] },
+			});
+			expect(await payslipsOf(ids.anna)).toHaveLength(1);
+			await runPersonnelFileCleanup(db, { deleteObject: deletePersonnelDocumentObject });
+			expect([...harness.objects.keys()]).toEqual([
+				expect.stringMatching(new RegExp(`^personnel-files/${ORG}/${ids.anna}/`)),
+			]);
+		});
+
 		it("flags an employee who already has a payslip for the pay period and keeps both", async () => {
 			signIn("officer");
 			const first = await startBatch();
@@ -644,7 +709,8 @@ describe("payslip batches matched by personnel number (#868)", () => {
 			const result = await runPersonnelFileCleanup(db, {
 				deleteObject: deletePersonnelDocumentObject,
 			});
-			expect(result.deleted).toBe(1);
+			// The dropped file and the confirmed file's staged object; the document's copy stays.
+			expect(result.deleted).toBe(2);
 			expect(harness.objects.size).toBe(1);
 			expect(await documentCount()).toBe(1);
 		});

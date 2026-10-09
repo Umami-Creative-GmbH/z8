@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { and, count, desc, eq, inArray, isNull, lt, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { organization } from "@/db/auth-schema";
@@ -9,7 +10,7 @@ import { listManagedEmployees, type ManagedEmployee } from "./access-store";
 import { writeDocumentAudit, writePayslipBatchAudit } from "./audit";
 import { type DocumentVisibility, isDocumentVisibility, type PayPeriod } from "./document.types";
 import { DOCUMENT_TITLE_MAX_LENGTH, todayInOrganization } from "./document-rules";
-import { PERSONNEL_DOCUMENT_STORAGE_PROVIDER } from "./document-store";
+import { PERSONNEL_DOCUMENT_STORAGE_PROVIDER, personnelDocumentStorageKey } from "./document-store";
 import {
 	PAYSLIP_BATCH_MAX_FILES,
 	type PayslipBatchStatus,
@@ -17,7 +18,11 @@ import {
 	type PayslipMatchKind,
 } from "./payslip-batch.types";
 import { matchPayslipFile } from "./payslip-matching";
-import type { StoredPersonnelFileObject } from "./upload-ledger";
+import {
+	type CopyPersonnelFileObject,
+	markPersonnelFileUploadFailed,
+	type StoredPersonnelFileObject,
+} from "./upload-ledger";
 
 /**
  * Payslip batches (#868, CONTEXT.md "Payslip batch"). An officer who manages
@@ -27,9 +32,10 @@ import type { StoredPersonnelFileObject } from "./upload-ledger";
  * confirmation: each staged object is held by a pending upload ledger row, so
  * files that are never confirmed are cleaned up like abandoned uploads.
  *
- * Confirmation works file by file, each in its own transaction: a staged
- * file's id becomes its document's id, so a retry after a partial failure
- * skips what was created and creates no duplicates. Only the officer who
+ * Confirmation works file by file: a staged file's id becomes its document's
+ * id, so a retry after a partial failure skips what was created and creates
+ * no duplicates. The document's object lives under the employee's key like a
+ * single upload's; the staged batch object is cleaned up. Only the officer who
  * started a batch sees and changes it.
  */
 
@@ -229,7 +235,10 @@ export async function listOwnPayslipBatches(
 	return rows.map((row) => ({ ...toBatchView(row.batch), fileCount: row.fileCount }));
 }
 
-/** Write-once object key of a staged payslip; the document keeps it on confirmation. */
+/**
+ * Write-once object key of a staged payslip. Confirmation copies the object
+ * to the employee's document key and hands this one to cleanup.
+ */
 export function payslipBatchStorageKey(input: {
 	organizationId: string;
 	batchId: string;
@@ -529,42 +538,63 @@ type FileConfirmation =
 	| { kind: "skipped" }
 	| { kind: "failed"; failure: PayslipFileFailure };
 
-async function confirmFile(
+function fileCondition(access: PersonnelFileAccess, batchId: string, fileId: string) {
+	return and(
+		eq(payslipBatchFile.id, fileId),
+		eq(payslipBatchFile.batchId, batchId),
+		eq(payslipBatchFile.organizationId, access.organizationId),
+	);
+}
+
+async function failFile(
+	tx: Pick<Transaction, "update">,
+	access: PersonnelFileAccess,
+	input: { batchId: string; fileId: string; at: Date },
+	failure: PayslipFileFailure,
+): Promise<FileConfirmation> {
+	await tx
+		.update(payslipBatchFile)
+		.set({ failure, updatedAt: input.at })
+		.where(
+			and(
+				fileCondition(access, input.batchId, input.fileId),
+				isNull(payslipBatchFile.documentId),
+			),
+		);
+	return { kind: "failed", failure };
+}
+
+type PreparedCopy =
+	| { kind: "copy"; file: FileRow; employeeId: string; targetKey: string; targetLedgerId: string }
+	| FileConfirmation;
+
+/**
+ * Step 1 of a file's confirmation: checks the file and stages the ledger row
+ * of its document object (the employee's key, like a single upload) before
+ * the object is copied, so a crash never leaks the copy. A pending row left by
+ * an interrupted earlier attempt is reused.
+ */
+async function prepareFileCopy(
 	database: Database,
 	access: PersonnelFileAccess,
-	input: {
-		batch: PayslipBatchView;
-		fileId: string;
-		inScope: ReadonlySet<string>;
-		today: string;
-		at: Date;
-	},
-): Promise<FileConfirmation> {
-	return database.transaction(async (tx): Promise<FileConfirmation> => {
+	input: { batch: PayslipBatchView; fileId: string; inScope: ReadonlySet<string>; at: Date },
+): Promise<PreparedCopy> {
+	return database.transaction(async (tx): Promise<PreparedCopy> => {
 		const [file] = await tx
 			.select()
 			.from(payslipBatchFile)
-			.where(
-				and(
-					eq(payslipBatchFile.id, input.fileId),
-					eq(payslipBatchFile.batchId, input.batch.id),
-					eq(payslipBatchFile.organizationId, access.organizationId),
-				),
-			)
+			.where(fileCondition(access, input.batch.id, input.fileId))
 			.for("update");
 		if (!file?.included) return { kind: "skipped" };
 		if (file.documentId) return { kind: "already" };
-		const fail = async (failure: PayslipFileFailure): Promise<FileConfirmation> => {
-			await tx
-				.update(payslipBatchFile)
-				.set({ failure, updatedAt: input.at })
-				.where(eq(payslipBatchFile.id, file.id));
-			return { kind: "failed", failure };
-		};
+		const failure = { batchId: input.batch.id, fileId: file.id, at: input.at };
 		const employeeId = effectiveEmployeeId(file);
-		if (!employeeId || !input.inScope.has(employeeId)) return fail("out_of_scope");
-		const released = await tx
-			.delete(personnelFileUpload)
+		if (!employeeId || !input.inScope.has(employeeId)) {
+			return failFile(tx, access, failure, "out_of_scope");
+		}
+		const [staged] = await tx
+			.select({ id: personnelFileUpload.id })
+			.from(personnelFileUpload)
 			.where(
 				and(
 					eq(personnelFileUpload.id, file.id),
@@ -573,8 +603,108 @@ async function confirmFile(
 					eq(personnelFileUpload.status, "pending"),
 				),
 			)
+			.for("update");
+		if (!staged) return failFile(tx, access, failure, "expired");
+
+		const targetKey = personnelDocumentStorageKey({
+			organizationId: access.organizationId,
+			employeeId,
+			documentId: file.id,
+			fileName: file.fileName,
+		});
+		await tx
+			.insert(personnelFileUpload)
+			.values({
+				id: randomUUID(),
+				organizationId: access.organizationId,
+				employeeId,
+				uploadedBy: access.userId,
+				storageKey: targetKey,
+				status: "pending",
+				createdAt: input.at,
+				updatedAt: input.at,
+			})
+			.onConflictDoNothing();
+		const [target] = await tx
+			.select({ id: personnelFileUpload.id, status: personnelFileUpload.status })
+			.from(personnelFileUpload)
+			.where(
+				and(
+					eq(personnelFileUpload.organizationId, access.organizationId),
+					eq(personnelFileUpload.storageKey, targetKey),
+				),
+			);
+		// The cleanup worker still holds an earlier failed copy: retry later.
+		if (target?.status !== "pending") return failFile(tx, access, failure, "error");
+		return { kind: "copy", file, employeeId, targetKey, targetLedgerId: target.id };
+	});
+}
+
+/**
+ * Step 3 of a file's confirmation, after the object was copied: records the
+ * payslip on the copy, releases the copy's ledger row and hands the staged
+ * batch object to cleanup, in one transaction with the upload audit. The
+ * staged row gets a fresh id, so the document's id stays free for the ledger
+ * row its deletion enqueues later.
+ */
+async function recordConfirmedFile(
+	database: Database,
+	access: PersonnelFileAccess,
+	input: {
+		batch: PayslipBatchView;
+		prepared: Extract<PreparedCopy, { kind: "copy" }>;
+		stored: StoredPersonnelFileObject;
+		today: string;
+		at: Date;
+	},
+): Promise<FileConfirmation> {
+	const { prepared } = input;
+	return database.transaction(async (tx): Promise<FileConfirmation> => {
+		const [file] = await tx
+			.select()
+			.from(payslipBatchFile)
+			.where(fileCondition(access, input.batch.id, prepared.file.id))
+			.for("update");
+		if (!file) return { kind: "skipped" };
+		if (file.documentId) return { kind: "already" };
+		const released = await tx
+			.delete(personnelFileUpload)
+			.where(
+				and(
+					eq(personnelFileUpload.id, prepared.targetLedgerId),
+					eq(personnelFileUpload.organizationId, access.organizationId),
+					eq(personnelFileUpload.storageKey, prepared.targetKey),
+					eq(personnelFileUpload.status, "pending"),
+				),
+			)
 			.returning({ id: personnelFileUpload.id });
-		if (released.length !== 1) return fail("expired");
+		// Cleanup claimed the copy meanwhile: retry later.
+		if (released.length !== 1) {
+			return failFile(
+				tx,
+				access,
+				{ batchId: input.batch.id, fileId: file.id, at: input.at },
+				"error",
+			);
+		}
+		await tx
+			.update(personnelFileUpload)
+			.set({
+				id: randomUUID(),
+				status: "cleanup_required",
+				reason: "removed",
+				nextAttemptAt: input.at,
+				updatedAt: input.at,
+			})
+			.where(
+				and(
+					eq(personnelFileUpload.id, file.id),
+					eq(personnelFileUpload.organizationId, access.organizationId),
+					eq(personnelFileUpload.storageKey, file.storageKey),
+					eq(personnelFileUpload.status, "pending"),
+				),
+			);
+		const employeeId = prepared.employeeId;
 		const title =
 			file.originalFileName.trim().slice(0, DOCUMENT_TITLE_MAX_LENGTH).trim() || file.fileName;
 		const [document] = await tx
@@ -591,9 +721,9 @@ async function confirmFile(
 				visibility: input.batch.visibility,
 				expiryDate: null,
 				storageProvider: PERSONNEL_DOCUMENT_STORAGE_PROVIDER,
-				storageBucket: file.storageBucket,
-				storageKey: file.storageKey,
-				storageVersionId: file.storageVersionId,
+				storageBucket: input.stored.bucket,
+				storageKey: prepared.targetKey,
+				storageVersionId: input.stored.versionId,
 				fileName: file.fileName,
 				mimeType: file.mimeType,
 				sizeBytes: file.sizeBytes,
@@ -608,7 +738,7 @@ async function confirmFile(
 		await tx
 			.update(payslipBatchFile)
 			.set({ documentId: document.id, failure: null, updatedAt: input.at })
-			.where(eq(payslipBatchFile.id, file.id));
+			.where(fileCondition(access, input.batch.id, file.id));
 		await writeDocumentAudit(tx, {
 			action: AuditAction.PERSONNEL_FILE_DOCUMENT_UPLOADED,
 			actorUserId: access.userId,
@@ -625,16 +755,67 @@ async function confirmFile(
 }
 
 /**
+ * Confirms one file: stage the document object's ledger row, copy the staged
+ * object to the employee's document key, then record the payslip. A failed
+ * copy is handed to cleanup at once and the staged object stays for a retry.
+ */
+async function confirmFile(
+	database: Database,
+	access: PersonnelFileAccess,
+	input: {
+		batch: PayslipBatchView;
+		fileId: string;
+		inScope: ReadonlySet<string>;
+		today: string;
+		at: Date;
+		copyObject: CopyPersonnelFileObject;
+	},
+): Promise<FileConfirmation> {
+	const prepared = await prepareFileCopy(database, access, input);
+	if (prepared.kind !== "copy") return prepared;
+	let stored: StoredPersonnelFileObject;
+	try {
+		stored = await input.copyObject({
+			organizationId: access.organizationId,
+			sourceKey: prepared.file.storageKey,
+			sourceBucket: prepared.file.storageBucket,
+			sourceVersionId: prepared.file.storageVersionId,
+			targetKey: prepared.targetKey,
+		});
+	} catch (error) {
+		await markPersonnelFileUploadFailed(database, {
+			documentId: prepared.targetLedgerId,
+			organizationId: access.organizationId,
+			employeeId: prepared.employeeId,
+			uploadedBy: access.userId,
+			storageKey: prepared.targetKey,
+			stored: null,
+			reason: "finalization_failed",
+		});
+		throw error;
+	}
+	return recordConfirmedFile(database, access, {
+		batch: input.batch,
+		prepared,
+		stored,
+		today: input.today,
+		at: input.at,
+	});
+}
+
+/**
  * Confirms the batch: every included file that is not a document yet becomes
  * a payslip of the employee it is assigned or uniquely matched to, with the
  * batch's pay period and visibility, its file name as the title and today (in
- * the organization's timezone) as the document date. Refused while an
- * included file has no employee. Safe to call again to retry failed files.
+ * the organization's timezone) as the document date. Each payslip's object is
+ * copied to the employee's key (like a single upload) and the staged batch
+ * object goes to cleanup. Refused while an included file has no employee.
+ * Safe to call again to retry failed files.
  */
 export async function confirmPayslipBatch(
 	database: Database,
 	access: PersonnelFileAccess,
-	input: { batchId: string },
+	input: { batchId: string; copyObject: CopyPersonnelFileObject },
 	now: Instant = systemClock.nowInstant(),
 ): Promise<ConfirmPayslipBatchResult> {
 	const batch = await loadOwnPayslipBatch(database, access, input.batchId);
@@ -677,7 +858,14 @@ export async function confirmPayslipBatch(
 		};
 		let result: FileConfirmation;
 		try {
-			result = await confirmFile(database, access, { batch, fileId: file.id, inScope, today, at });
+			result = await confirmFile(database, access, {
+				batch,
+				fileId: file.id,
+				inScope,
+				today,
+				at,
+				copyObject: input.copyObject,
+			});
 		} catch {
 			await database
 				.update(payslipBatchFile)
