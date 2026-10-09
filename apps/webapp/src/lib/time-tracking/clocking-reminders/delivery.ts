@@ -17,14 +17,20 @@ export interface ClockingReminderRecipient {
 
 export interface ClockingReminderTransport {
 	locale(input: { userId: string; organizationId: string }): Promise<string>;
-	/** Delivers on every channel the employee's preferences allow; throws if nothing was stored. */
+	/**
+	 * Delivers on every channel the employee's preferences allow. Throws only while no channel has
+	 * delivered anything; once any channel has delivered, a failure on another channel must be
+	 * swallowed, never thrown, or the released claim would deliver the reminder a second time.
+	 */
 	notify(params: CreateNotificationParams, locale: string): Promise<void>;
 }
 
 /**
  * Sends one reminder occasion at most once across all channels. The occasion is claimed before
- * any delivery; a claim whose delivery failed before anything was stored is released so a later
- * run can retry it.
+ * any delivery. If `locale` or `notify` throws, nothing was delivered, so the claim is released
+ * and a later run retries the occasion. A channel failure that `notify` swallows keeps the claim:
+ * that channel's reminder is lost, which is accepted, because a missed nudge costs less than a
+ * repeated one.
  */
 export async function sendClockingReminder(
 	input: { reminder: DueClockingReminder; recipient: ClockingReminderRecipient; now: Instant },

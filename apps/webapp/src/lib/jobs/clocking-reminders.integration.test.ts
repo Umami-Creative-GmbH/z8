@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { parseInstant } from "@/lib/datetime/temporal-core";
+import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -10,6 +10,14 @@ import {
 	createClockingService,
 	createDatabaseClockingStore,
 } from "@/lib/time-tracking/clocking-core";
+import {
+	type ClockingReminderTransport,
+	sendClockingReminder,
+} from "@/lib/time-tracking/clocking-reminders/delivery";
+import {
+	clockingReminderOccasionKey,
+	type DueClockingReminder,
+} from "@/lib/time-tracking/clocking-reminders/occasion";
 import { saveClockingReminderSettings } from "@/lib/time-tracking/clocking-reminders/settings";
 import type { ClockingReminderRole } from "@/lib/time-tracking/clocking-reminders/settings-policy";
 import { runClockingReminders } from "./clocking-reminders";
@@ -414,5 +422,123 @@ describe("clocking reminders for published shifts on PostgreSQL", () => {
 		await run("2026-04-28T06:35:00Z");
 		expect(await reminders(person)).toEqual([]);
 		expect(pushesTo(person)).toBe(1);
+	});
+
+	async function occasions(person: SeededEmployee) {
+		const { rows } = await fixture.pool.query<{ occasion_key: string }>(
+			"select occasion_key from clocking_reminder_occasion where employee_id = $1",
+			[person.employeeId],
+		);
+		return rows.map((row) => row.occasion_key);
+	}
+
+	it("keeps the occasion sent when another channel fails after the push went out", async () => {
+		const org = await organization();
+		const person = await employee(org);
+		const shiftId = await shift(org, person);
+		for (const [channel, enabled] of [
+			["in_app", false],
+			["email", true],
+			["teams", true],
+		] as const)
+			await fixture.pool.query(
+				`insert into notification_preference (user_id, organization_id, notification_type, channel, enabled, updated_at)
+				 values ($1, $2, 'missed_clock_in_reminder', $3, $4, now())`,
+				[person.userId, org.organizationId, channel, enabled],
+			);
+		channels.email.mockRejectedValueOnce(new Error("smtp offline"));
+		channels.teams.mockRejectedValueOnce(new Error("teams offline"));
+
+		// The counters cover every organization in the shared database, so only `failed` is read.
+		expect(await run("2026-04-28T06:30:00Z")).toMatchObject({ failed: 0 });
+		expect(await run("2026-04-28T06:35:00Z")).toMatchObject({ failed: 0 });
+		expect(await occasions(person)).toEqual([
+			`missed_clock_in_reminder:shift:${shiftId}:${person.employeeId}`,
+		]);
+		expect(pushesTo(person)).toBe(1);
+		expect(channels.email).toHaveBeenCalledTimes(1);
+		expect(channels.teams).toHaveBeenCalledTimes(1);
+	});
+
+	describe("one reminder occasion", () => {
+		function dueReminder(person: SeededEmployee): DueClockingReminder {
+			const shiftId = randomUUID();
+			return {
+				type: "missed_clock_in_reminder",
+				occasionKey: clockingReminderOccasionKey("missed_clock_in_reminder", {
+					kind: "shift",
+					shiftId,
+					employeeId: person.employeeId,
+				}),
+				day: parsePlainDate(DAY),
+				expectedAt: at("2026-04-28T06:00:00Z"),
+				shift: { id: shiftId, start: at("2026-04-28T06:00:00Z"), end: at("2026-04-28T14:00:00Z") },
+			};
+		}
+
+		/** Records each delivery that went through; a rejected call delivers nothing. */
+		function fakeTransport() {
+			const delivered: string[] = [];
+			return {
+				delivered,
+				locale: vi.fn<ClockingReminderTransport["locale"]>(async () => "en"),
+				notify: vi.fn<ClockingReminderTransport["notify"]>(async (params) => {
+					delivered.push(params.type);
+				}),
+			};
+		}
+
+		async function send(
+			org: Org,
+			person: SeededEmployee,
+			reminder: DueClockingReminder,
+			transport: ClockingReminderTransport,
+		) {
+			return sendClockingReminder(
+				{
+					reminder,
+					recipient: {
+						organizationId: org.organizationId,
+						employeeId: person.employeeId,
+						userId: person.userId,
+						timezone: "Europe/Berlin",
+					},
+					now: at("2026-04-28T06:15:00Z"),
+				},
+				{ database: fixture.db, transport },
+			);
+		}
+
+		it.each(["locale", "notify"] as const)(
+			"releases the claim when %s throws, so the next run sends it exactly once",
+			async (step) => {
+				const org = await organization();
+				const person = await employee(org);
+				const reminder = dueReminder(person);
+				const transport = fakeTransport();
+				transport[step].mockRejectedValueOnce(new Error("nothing delivered"));
+
+				await expect(send(org, person, reminder, transport)).rejects.toThrow("nothing delivered");
+				expect(await occasions(person)).toEqual([]);
+
+				await expect(send(org, person, reminder, transport)).resolves.toBe("sent");
+				await expect(send(org, person, reminder, transport)).resolves.toBe("already_sent");
+				expect(await occasions(person)).toEqual([reminder.occasionKey]);
+				expect(transport.delivered).toEqual(["missed_clock_in_reminder"]);
+			},
+		);
+
+		it("keeps the claim after a successful delivery, so a rerun notifies no channel again", async () => {
+			const org = await organization();
+			const person = await employee(org);
+			const reminder = dueReminder(person);
+			const transport = fakeTransport();
+
+			await expect(send(org, person, reminder, transport)).resolves.toBe("sent");
+			await expect(send(org, person, reminder, transport)).resolves.toBe("already_sent");
+			expect(transport.notify).toHaveBeenCalledTimes(1);
+			expect(transport.delivered).toEqual(["missed_clock_in_reminder"]);
+			expect(await occasions(person)).toEqual([reminder.occasionKey]);
+		});
 	});
 });
