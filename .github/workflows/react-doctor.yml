@@ -41,7 +41,12 @@ jobs:
         uses: millionco/react-doctor@v2
         with:
           directory: apps/webapp
+          # Keep the release gate on the web app even if workspace discovery changes.
+          project: webapp
           blocking: error
+          # The job check already reports the result; avoid a duplicate status
+          # that requires an additional statuses: write permission.
+          commit-status: false
           # Findings are listed in the sticky summary comment. Inline comments
           # re-post every warning after each push to dev and bury the release PR.
           review-comments: false
