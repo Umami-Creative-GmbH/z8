@@ -126,6 +126,8 @@ export enum AuditAction {
 	PERSONNEL_FILE_GRANT_CREATED = "personnel_file.grant_created",
 	PERSONNEL_FILE_GRANT_CHANGED = "personnel_file.grant_changed",
 	PERSONNEL_FILE_GRANT_REVOKED = "personnel_file.grant_revoked",
+	// Personnel file ZIP download (#871)
+	PERSONNEL_FILE_ZIP_DOWNLOADED = "personnel_file.zip_downloaded",
 
 	// App Access Operations
 	APP_ACCESS_GRANTED = "app_access.granted",
