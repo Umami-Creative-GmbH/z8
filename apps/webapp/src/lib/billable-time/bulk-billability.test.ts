@@ -34,6 +34,13 @@ describe("bulkBillabilityOutcome", () => {
 		expect(bulkBillabilityOutcome(work({ skipReasons: ["held_back"] }), true)).toBe("held_back");
 	});
 
+	it("never changes invoiced work, reporting it before held-back work", () => {
+		expect(bulkBillabilityOutcome(work({ skipReasons: ["invoiced"] }), true)).toBe("invoiced");
+		expect(bulkBillabilityOutcome(work({ skipReasons: ["invoiced", "held_back"] }), true)).toBe(
+			"invoiced",
+		);
+	});
+
 	it("reports work that needs nothing as already in the target state, even when held back", () => {
 		expect(
 			bulkBillabilityOutcome(work({ isBillable: true, skipReasons: ["held_back"] }), true),
@@ -48,12 +55,13 @@ describe("summarizeBulkBillability", () => {
 			{ durationMinutes: 30, outcome: "change" },
 			{ durationMinutes: 45, outcome: "already_in_target" },
 			{ durationMinutes: 120, outcome: "held_back" },
+			{ durationMinutes: 15, outcome: "invoiced" },
 		]);
 		expect(summary).toEqual({
 			billable: true,
 			change: { count: 2, minutes: 120 },
 			alreadyInTarget: { count: 1, minutes: 45 },
-			skipped: { held_back: { count: 1, minutes: 120 } },
+			skipped: { invoiced: { count: 1, minutes: 15 }, held_back: { count: 1, minutes: 120 } },
 		});
 	});
 
@@ -62,7 +70,7 @@ describe("summarizeBulkBillability", () => {
 			billable: false,
 			change: { count: 0, minutes: 0 },
 			alreadyInTarget: { count: 0, minutes: 0 },
-			skipped: { held_back: { count: 0, minutes: 0 } },
+			skipped: { invoiced: { count: 0, minutes: 0 }, held_back: { count: 0, minutes: 0 } },
 		});
 	});
 });

@@ -11,11 +11,12 @@ import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
  * the order they are reported. Each reason has a set-based SQL predicate in
  * `bulk-billability-work.ts` (`BULK_BILLABILITY_SKIP_CONDITIONS`).
  *
+ * - `invoiced`: the work is in an unreleased invoice draft (#903). A bulk change
+ *   never changes invoiced work; a single correction may (it is then marked as
+ *   changed after invoicing).
  * - `held_back`: a correction or submission for the work is still pending.
- *
- * Invoiced work (#903) joins this list as `invoiced` once hand-offs exist.
  */
-export const BULK_BILLABILITY_SKIP_REASONS = ["held_back"] as const;
+export const BULK_BILLABILITY_SKIP_REASONS = ["invoiced", "held_back"] as const;
 
 export type BulkBillabilitySkipReason = (typeof BULK_BILLABILITY_SKIP_REASONS)[number];
 

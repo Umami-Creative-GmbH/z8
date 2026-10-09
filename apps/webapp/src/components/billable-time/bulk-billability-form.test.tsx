@@ -38,7 +38,7 @@ function summary(overrides: Partial<BulkBillabilitySummary> = {}): BulkBillabili
 		billable: true,
 		change: { count: 2, minutes: 330 },
 		alreadyInTarget: { count: 1, minutes: 120 },
-		skipped: { held_back: { count: 1, minutes: 60 } },
+		skipped: { invoiced: { count: 0, minutes: 0 }, held_back: { count: 1, minutes: 60 } },
 		...overrides,
 	};
 }
