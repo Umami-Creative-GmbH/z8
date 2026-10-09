@@ -602,6 +602,7 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 		await admin.query("update organization set timezone = 'Pacific/Kiritimati' where id = $1", [
 			ids.organization,
 		]);
+		harness.registry = createAccountingProviderRegistry([createFakeAccountingTool().connector]);
 		await connect();
 		const today = Temporal.Now.zonedDateTimeISO("Pacific/Kiritimati").toPlainDate().toString();
 
@@ -615,6 +616,7 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 	});
 
 	it("reports a queue failure as such and marks the batch failed", async () => {
+		harness.registry = createAccountingProviderRegistry([createFakeAccountingTool().connector]);
 		await connect();
 		harness.failScanQueue = true;
 
