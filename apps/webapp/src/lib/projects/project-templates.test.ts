@@ -17,6 +17,7 @@ function sequentialOnlyReader(firstRows: unknown[]) {
 		for (const step of ["from", "where", "limit", "orderBy", "leftJoin", "innerJoin", "groupBy"]) {
 			chain[step] = () => chain;
 		}
+		// biome-ignore lint/suspicious/noThenProperty: a Drizzle query is awaited as a thenable.
 		chain.then = (resolve: (value: unknown) => void) => {
 			running += 1;
 			state.maxConcurrent = Math.max(state.maxConcurrent, running);

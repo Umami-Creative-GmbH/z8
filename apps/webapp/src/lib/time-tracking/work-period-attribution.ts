@@ -7,7 +7,10 @@ import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
 import { AMEND_COMPLETED_WORK_COMMAND_VERSION, amendCompletedWork } from "./amend-completed-work";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
-import { PROJECT_TASK_INELIGIBILITY_MESSAGES, projectTaskIneligibility } from "./project-eligibility";
+import {
+	PROJECT_TASK_INELIGIBILITY_MESSAGES,
+	projectTaskIneligibility,
+} from "./project-eligibility";
 import { namedTaskId, namedTaskIntent, taskIdFollowingProject } from "./task-attribution";
 
 /**

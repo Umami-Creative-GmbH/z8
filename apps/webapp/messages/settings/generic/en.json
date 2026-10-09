@@ -1115,11 +1115,9 @@
           "descriptionPlaceholder": "Description (optional)",
           "empty": "No tasks. Projects created from this template start with these tasks.",
           "estimate": "Task {position} estimate (hours)",
-          "estimateInvalid": "Enter a positive number of hours",
           "estimatePlaceholder": "Hours",
           "name": "Task {position} name",
           "namePlaceholder": "Task name",
-          "nameRequired": "Enter a task name",
           "remove": "Remove task {position}",
           "title": "Tasks"
         },
