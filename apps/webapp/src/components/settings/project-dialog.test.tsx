@@ -6,7 +6,7 @@ import userEvent from "@testing-library/user-event";
 import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
-	ProjectTemplate,
+	ProjectTemplatePreviewData,
 	ProjectTemplateSummary,
 } from "@/lib/projects/project-template-model";
 import { ProjectDialog } from "./project-dialog";
@@ -96,7 +96,7 @@ const relaunchSummary: ProjectTemplateSummary = {
 	updatedAt: new Date("2026-01-01T00:00:00Z"),
 };
 
-const relaunchPreview: ProjectTemplate = {
+const relaunchPreview: ProjectTemplatePreviewData = {
 	id: "template-1",
 	organizationId: "org-1",
 	name: "Website relaunch",
@@ -130,6 +130,7 @@ const relaunchPreview: ProjectTemplate = {
 			availability: "removed",
 		},
 	],
+	managersCopied: true,
 };
 
 function renderDialog() {
@@ -190,6 +191,29 @@ describe("ProjectDialog, starting from a template", () => {
 		expect(screen.queryByLabelText("Deadline")).toBeNull();
 	});
 
+	it("tells a creator who is not an org admin that the template's managers are not copied", async () => {
+		const user = userEvent.setup();
+		fromTemplateActions.getProjectTemplatePreview.mockResolvedValue({
+			success: true,
+			data: {
+				...relaunchPreview,
+				managers: [{ id: "tm-2", employeeId: "emp-2", name: "Max Manager", availability: "available" }],
+				managersCopied: false,
+			},
+		});
+		renderDialog();
+
+		const startFrom = await screen.findByRole("combobox", { name: "Start from" });
+		await within(startFrom).findByRole("option", { name: "Website relaunch" });
+		await user.selectOptions(startFrom, "template-1");
+
+		const preview = await screen.findByRole("region", { name: "From Website relaunch" });
+		expect(
+			within(preview).getByText("Max Manager: only organization admins assign project managers"),
+		).toBeTruthy();
+		expect(within(preview).getByText("1 manager or assignment")).toBeTruthy();
+	});
+
 	it("creates the project from the template with its name, customer and status", async () => {
 		const user = userEvent.setup();
 		const { onSuccess } = renderDialog();
@@ -238,7 +262,7 @@ describe("ProjectDialog, starting from a template", () => {
 		await user.click(screen.getByRole("button", { name: "Create Project" }));
 
 		expect(toast.warning).toHaveBeenCalledWith(
-			"Not copied: Lee Left (left the organization), Old team (no longer exists)",
+			"Not copied: Lee Left (left the organization) and Old team (no longer exists)",
 		);
 	});
 

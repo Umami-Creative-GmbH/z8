@@ -16,9 +16,10 @@ import {
 	projectAsTemplateInput,
 	type SkippedProjectMember,
 } from "@/lib/projects/project-from-template";
-import type {
-	ProjectTemplate,
-	ProjectTemplateSummary,
+import {
+	normalizeProjectTemplateInput,
+	type ProjectTemplatePreviewData,
+	type ProjectTemplateSummary,
 } from "@/lib/projects/project-template-model";
 import {
 	getProjectTemplate,
@@ -31,9 +32,10 @@ import {
 	getProjectSettingsActorContext,
 } from "./project-scope";
 import {
+	auditTemplate,
 	getTemplateAdmin,
 	keepTypedTemplateError,
-	normalizedTemplateInput,
+	templateInputProblem,
 	templateNotFound,
 } from "./project-template-access";
 import { tracedProjectAction } from "./traced-project-action";
@@ -87,11 +89,13 @@ export async function getProjectTemplateChoices(): Promise<
 
 /**
  * One template with what creating a project from it would copy, including
- * which managers and assignments are no longer available.
+ * which managers and assignments are no longer available. `managersCopied` is
+ * false for a creator who is not an org owner or admin: only they assign
+ * project managers (#367), so the template's managers are left out.
  */
 export async function getProjectTemplatePreview(
 	templateId: string,
-): Promise<ServerActionResult<ProjectTemplate>> {
+): Promise<ServerActionResult<ProjectTemplatePreviewData>> {
 	return runServerActionSafe(
 		tracedProjectAction(
 			"getProjectTemplatePreview",
@@ -104,7 +108,7 @@ export async function getProjectTemplatePreview(
 					getProjectTemplate({ organizationId: actor.organizationId, templateId }),
 				);
 				if (!template) return yield* Effect.fail(templateNotFound(templateId));
-				return template;
+				return { ...template, managersCopied: actor.accessTier === "orgAdmin" };
 			}),
 		),
 	);
@@ -166,6 +170,7 @@ export async function createProjectFromTemplate(
 									now: systemClock.nowInstant(),
 									alsoManagedBy:
 										actor.accessTier === "manager" ? (actor.currentEmployee?.id ?? null) : null,
+									assignsManagers: actor.accessTier === "orgAdmin",
 								},
 								{
 									name,
@@ -219,10 +224,48 @@ export async function saveProjectAsTemplate(
 			{ "project.id": projectId },
 			Effect.gen(function* () {
 				const admin = yield* getTemplateAdmin("saveFromProject");
-				const source = yield* admin.actor.dbService.query("projectTemplate.readProject", () =>
-					projectAsTemplateInput(db, { organizationId: admin.organizationId, projectId }),
-				);
-				if (!source) {
+				// One transaction reads the project and writes the template, so someone
+				// leaving in between is skipped and reported, never refusing the save.
+				const saved = yield* admin.actor.dbService
+					.query("projectTemplate.saveFromProject", () =>
+						db.transaction(async (tx) => {
+							const source = await projectAsTemplateInput(tx, {
+								organizationId: admin.organizationId,
+								projectId,
+							});
+							if (!source) return null;
+							const normalized = normalizeProjectTemplateInput({
+								...source.input,
+								name: input.name ?? source.project.name,
+							});
+							if (!normalized.ok) throw templateInputProblem(normalized.problem);
+							const values = normalized.value;
+							const written = await writeProjectTemplate(
+								tx,
+								{ organizationId: admin.organizationId, userId: admin.userId },
+								values,
+								{ skipDeparted: true },
+							);
+							const leftMeanwhile = written.departed.flatMap(
+								({ employeeId, name }): SkippedProjectMember[] => [
+									...(values.managerEmployeeIds.includes(employeeId)
+										? [{ role: "manager" as const, name, reason: "departed" as const }]
+										: []),
+									...(values.employeeIds.includes(employeeId)
+										? [{ role: "employee" as const, name, reason: "departed" as const }]
+										: []),
+								],
+							);
+							return {
+								id: written.id,
+								values,
+								projectId: source.project.id,
+								skipped: [...source.skipped, ...leftMeanwhile],
+							};
+						}),
+					)
+					.pipe(Effect.mapError(keepTypedTemplateError));
+				if (!saved) {
 					return yield* Effect.fail(
 						new NotFoundError({
 							message: "Project not found",
@@ -231,39 +274,17 @@ export async function saveProjectAsTemplate(
 						}),
 					);
 				}
-				const values = yield* normalizedTemplateInput({
-					...source.input,
-					name: input.name ?? source.project.name,
-				});
-				const created = yield* admin.actor.dbService
-					.query("projectTemplate.saveFromProject", () =>
-						db.transaction((tx) =>
-							writeProjectTemplate(
-								tx,
-								{ organizationId: admin.organizationId, userId: admin.userId },
-								values,
-							),
-						),
-					)
-					.pipe(Effect.mapError(keepTypedTemplateError));
 
-				logAudit({
-					action: AuditAction.PROJECT_TEMPLATE_CREATED,
-					actorId: admin.userId,
-					targetId: created.id,
-					targetType: "project_template",
-					organizationId: admin.organizationId,
-					changes: { name: values.name, taskNames: values.tasks.map((task) => task.name) },
-					metadata: {
-						templateName: values.name,
-						fromProjectId: source.project.id,
-						skippedMembers: source.skipped,
-					},
-					timestamp: new Date(),
-				}).catch((err) => logger.error({ err }, "Failed to log audit"));
+				auditTemplate(
+					admin,
+					AuditAction.PROJECT_TEMPLATE_CREATED,
+					{ id: saved.id, name: saved.values.name },
+					{ name: saved.values.name, taskNames: saved.values.tasks.map((task) => task.name) },
+					{ fromProjectId: saved.projectId, skippedMembers: saved.skipped },
+				);
 
 				revalidatePath("/settings/projects");
-				return { id: created.id, name: values.name, skipped: source.skipped };
+				return { id: saved.id, name: saved.values.name, skipped: saved.skipped };
 			}),
 		),
 	);

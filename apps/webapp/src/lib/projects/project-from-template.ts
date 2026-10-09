@@ -23,7 +23,11 @@ import {
 } from "./project-creation";
 import { listProjectTasks } from "./project-tasks";
 import { projectDeadlineFromTemplateOffset } from "./project-template-deadline";
-import type { ProjectTemplateInput, SkippedProjectMember } from "./project-template-model";
+import type {
+	ProjectTemplateInput,
+	ProjectTemplateMemberAvailability,
+	SkippedProjectMember,
+} from "./project-template-model";
 import { getProjectTemplate } from "./project-templates";
 
 /**
@@ -62,6 +66,8 @@ export async function createProjectFromTemplateRows(
 		templateId: string;
 		now: Instant;
 		alsoManagedBy?: string | null;
+		/** Whether the creator may assign project managers (org owners and admins). */
+		assignsManagers: boolean;
 	},
 	input: ProjectFromTemplateInput,
 ) {
@@ -109,23 +115,27 @@ export async function createProjectFromTemplateRows(
 	}
 
 	const skipped: SkippedProjectMember[] = [];
-	const skip =
-		(role: SkippedProjectMember["role"]) => (member: { name: string; availability: string }) => {
+	/** True when the manager or assignment is copied; otherwise reports why not. */
+	const copyOrReport =
+		(role: SkippedProjectMember["role"]) =>
+		(member: { name: string; availability: ProjectTemplateMemberAvailability }) => {
 			if (member.availability === "available") return true;
-			skipped.push({
-				role,
-				name: member.name,
-				reason: member.availability as "departed" | "removed",
-			});
+			skipped.push({ role, name: member.name, reason: member.availability });
 			return false;
 		};
 
+	// Only org admins assign project managers (#367): another creator gets none
+	// of the template's managers, only themselves (decision 9 of #770).
 	const managerIds = template.managers
-		.filter(skip("manager"))
+		.filter((manager) => manager.employeeId === null || manager.employeeId !== scope.alsoManagedBy)
+		.filter(copyOrReport("manager"))
+		.filter((manager) => {
+			if (scope.assignsManagers) return true;
+			skipped.push({ role: "manager", name: manager.name, reason: "adminOnly" });
+			return false;
+		})
 		.flatMap((manager) => (manager.employeeId ? [manager.employeeId] : []));
-	if (scope.alsoManagedBy && !managerIds.includes(scope.alsoManagedBy)) {
-		managerIds.push(scope.alsoManagedBy);
-	}
+	if (scope.alsoManagedBy) managerIds.push(scope.alsoManagedBy);
 	await insertProjectManagers(tx, {
 		projectId: created.id,
 		employeeIds: managerIds,
@@ -135,7 +145,7 @@ export async function createProjectFromTemplateRows(
 	const teamIds: string[] = [];
 	const employeeIds: string[] = [];
 	for (const assignment of template.assignments) {
-		if (!skip(assignment.type)(assignment)) continue;
+		if (!copyOrReport(assignment.type)(assignment)) continue;
 		if (assignment.type === "team" && assignment.teamId) teamIds.push(assignment.teamId);
 		if (assignment.type === "employee" && assignment.employeeId) {
 			employeeIds.push(assignment.employeeId);

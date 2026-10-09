@@ -3,9 +3,8 @@
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { AuditAction, logAudit } from "@/lib/audit-logger";
+import { AuditAction } from "@/lib/audit-logger";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { logger } from "@/lib/logger";
 import type {
 	NormalizedProjectTemplateInput,
 	ProjectTemplate,
@@ -19,6 +18,7 @@ import {
 	writeProjectTemplate,
 } from "@/lib/projects/project-templates";
 import {
+	auditTemplate,
 	getTemplateAdmin,
 	keepTypedTemplateError,
 	normalizedTemplateInput,
@@ -44,24 +44,6 @@ function readTemplate(admin: TemplateAdmin, templateId: string, queryName: strin
 				template ? Effect.succeed(template) : Effect.fail(templateNotFound(templateId)),
 			),
 		);
-}
-
-function auditTemplate(
-	admin: TemplateAdmin,
-	action: AuditAction,
-	template: { id: string; name: string },
-	changes?: Record<string, unknown>,
-) {
-	logAudit({
-		action,
-		actorId: admin.userId,
-		targetId: template.id,
-		targetType: "project_template",
-		organizationId: admin.organizationId,
-		changes,
-		metadata: { templateName: template.name },
-		timestamp: new Date(),
-	}).catch((err) => logger.error({ err }, "Failed to log audit"));
 }
 
 function auditedContents(values: NormalizedProjectTemplateInput) {

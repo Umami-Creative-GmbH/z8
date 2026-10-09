@@ -61,30 +61,26 @@ export async function listProjectTemplates(
 			.where(eq(table.organizationId, scope.organizationId))
 			.groupBy(table.templateId);
 
-	const [rows, taskCounts, managerCounts, assignmentCounts] = await Promise.all([
-		reader
-			.select({
-				id: projectTemplate.id,
-				name: projectTemplate.name,
-				description: projectTemplate.description,
-				icon: projectTemplate.icon,
-				color: projectTemplate.color,
-				budgetHours: projectTemplate.budgetHours,
-				deadlineOffsetDays: projectTemplate.deadlineOffsetDays,
-				updatedAt: projectTemplate.updatedAt,
-			})
-			.from(projectTemplate)
-			.where(eq(projectTemplate.organizationId, scope.organizationId))
-			.orderBy(asc(sql`lower(${projectTemplate.name})`), asc(projectTemplate.id)),
-		childCount(projectTemplateTask),
-		childCount(projectTemplateManager),
-		childCount(projectTemplateAssignment),
-	]);
+	// One query at a time: the reader may be a transaction client.
+	const rows = await reader
+		.select({
+			id: projectTemplate.id,
+			name: projectTemplate.name,
+			description: projectTemplate.description,
+			icon: projectTemplate.icon,
+			color: projectTemplate.color,
+			budgetHours: projectTemplate.budgetHours,
+			deadlineOffsetDays: projectTemplate.deadlineOffsetDays,
+			updatedAt: projectTemplate.updatedAt,
+		})
+		.from(projectTemplate)
+		.where(eq(projectTemplate.organizationId, scope.organizationId))
+		.orderBy(asc(sql`lower(${projectTemplate.name})`), asc(projectTemplate.id));
 	const byTemplate = (counts: { templateId: string; count: number }[]) =>
 		new Map(counts.map((row) => [row.templateId, Number(row.count)]));
-	const tasks = byTemplate(taskCounts);
-	const managers = byTemplate(managerCounts);
-	const assignments = byTemplate(assignmentCounts);
+	const tasks = byTemplate(await childCount(projectTemplateTask));
+	const managers = byTemplate(await childCount(projectTemplateManager));
+	const assignments = byTemplate(await childCount(projectTemplateAssignment));
 	return rows.map((row) => ({
 		...row,
 		taskCount: tasks.get(row.id) ?? 0,
@@ -164,83 +160,82 @@ export async function getProjectTemplate(
 		.limit(1);
 	if (!template) return null;
 
-	const [tasks, managerRows, assignmentRows] = await Promise.all([
-		reader
-			.select({
-				id: projectTemplateTask.id,
-				name: projectTemplateTask.name,
-				description: projectTemplateTask.description,
-				estimateHours: projectTemplateTask.estimateHours,
-			})
-			.from(projectTemplateTask)
-			.where(
-				and(
-					eq(projectTemplateTask.templateId, template.id),
-					eq(projectTemplateTask.organizationId, scope.organizationId),
-				),
-			)
-			.orderBy(asc(sql`lower(${projectTemplateTask.name})`), asc(projectTemplateTask.id)),
-		reader
-			.select({
-				id: projectTemplateManager.id,
-				employeeId: projectTemplateManager.employeeId,
-				displayName: projectTemplateManager.displayName,
-				hasAccess: sql<
-					boolean | null
-				>`CASE WHEN ${employee.id} IS NULL THEN NULL ELSE ${employeeHasOrganizationAccess()} END`,
-				...liveUserColumns,
-			})
-			.from(projectTemplateManager)
-			.leftJoin(
-				employee,
-				and(
-					eq(employee.id, projectTemplateManager.employeeId),
-					eq(employee.organizationId, projectTemplateManager.organizationId),
-				),
-			)
-			.leftJoin(user, eq(user.id, employee.userId))
-			.where(
-				and(
-					eq(projectTemplateManager.templateId, template.id),
-					eq(projectTemplateManager.organizationId, scope.organizationId),
-				),
+	// One query at a time: creating a project from a template reads it in a transaction.
+	const tasks = await reader
+		.select({
+			id: projectTemplateTask.id,
+			name: projectTemplateTask.name,
+			description: projectTemplateTask.description,
+			estimateHours: projectTemplateTask.estimateHours,
+		})
+		.from(projectTemplateTask)
+		.where(
+			and(
+				eq(projectTemplateTask.templateId, template.id),
+				eq(projectTemplateTask.organizationId, scope.organizationId),
 			),
-		reader
-			.select({
-				id: projectTemplateAssignment.id,
-				type: projectTemplateAssignment.assignmentType,
-				teamId: projectTemplateAssignment.teamId,
-				employeeId: projectTemplateAssignment.employeeId,
-				displayName: projectTemplateAssignment.displayName,
-				teamName: team.name,
-				hasAccess: sql<
-					boolean | null
-				>`CASE WHEN ${employee.id} IS NULL THEN NULL ELSE ${employeeHasOrganizationAccess()} END`,
-				...liveUserColumns,
-			})
-			.from(projectTemplateAssignment)
-			.leftJoin(
-				team,
-				and(
-					eq(team.id, projectTemplateAssignment.teamId),
-					eq(team.organizationId, projectTemplateAssignment.organizationId),
-				),
-			)
-			.leftJoin(
-				employee,
-				and(
-					eq(employee.id, projectTemplateAssignment.employeeId),
-					eq(employee.organizationId, projectTemplateAssignment.organizationId),
-				),
-			)
-			.leftJoin(user, eq(user.id, employee.userId))
-			.where(
-				and(
-					eq(projectTemplateAssignment.templateId, template.id),
-					eq(projectTemplateAssignment.organizationId, scope.organizationId),
-				),
+		)
+		.orderBy(asc(sql`lower(${projectTemplateTask.name})`), asc(projectTemplateTask.id));
+	const managerRows = await reader
+		.select({
+			id: projectTemplateManager.id,
+			employeeId: projectTemplateManager.employeeId,
+			displayName: projectTemplateManager.displayName,
+			hasAccess: sql<
+				boolean | null
+			>`CASE WHEN ${employee.id} IS NULL THEN NULL ELSE ${employeeHasOrganizationAccess()} END`,
+			...liveUserColumns,
+		})
+		.from(projectTemplateManager)
+		.leftJoin(
+			employee,
+			and(
+				eq(employee.id, projectTemplateManager.employeeId),
+				eq(employee.organizationId, projectTemplateManager.organizationId),
 			),
-	]);
+		)
+		.leftJoin(user, eq(user.id, employee.userId))
+		.where(
+			and(
+				eq(projectTemplateManager.templateId, template.id),
+				eq(projectTemplateManager.organizationId, scope.organizationId),
+			),
+		);
+	const assignmentRows = await reader
+		.select({
+			id: projectTemplateAssignment.id,
+			type: projectTemplateAssignment.assignmentType,
+			teamId: projectTemplateAssignment.teamId,
+			employeeId: projectTemplateAssignment.employeeId,
+			displayName: projectTemplateAssignment.displayName,
+			teamName: team.name,
+			hasAccess: sql<
+				boolean | null
+			>`CASE WHEN ${employee.id} IS NULL THEN NULL ELSE ${employeeHasOrganizationAccess()} END`,
+			...liveUserColumns,
+		})
+		.from(projectTemplateAssignment)
+		.leftJoin(
+			team,
+			and(
+				eq(team.id, projectTemplateAssignment.teamId),
+				eq(team.organizationId, projectTemplateAssignment.organizationId),
+			),
+		)
+		.leftJoin(
+			employee,
+			and(
+				eq(employee.id, projectTemplateAssignment.employeeId),
+				eq(employee.organizationId, projectTemplateAssignment.organizationId),
+			),
+		)
+		.leftJoin(user, eq(user.id, employee.userId))
+		.where(
+			and(
+				eq(projectTemplateAssignment.templateId, template.id),
+				eq(projectTemplateAssignment.organizationId, scope.organizationId),
+			),
+		);
 
 	const managers: ProjectTemplateManager[] = managerRows
 		.map((row) => ({
@@ -287,13 +282,21 @@ export class ProjectTemplateMemberError extends Error {
 	}
 }
 
+/**
+ * The current display name of each employee. An employee without organization
+ * access refuses the write unless already on the template, or unless the
+ * caller skips departed employees, who are then left out of the names.
+ */
 async function resolveEmployees(
 	tx: Writer,
 	organizationId: string,
 	employeeIds: string[],
 	keepDepartedIds: ReadonlySet<string>,
+	skipDeparted: boolean,
 ) {
-	if (employeeIds.length === 0) return new Map<string, string>();
+	const names = new Map<string, string>();
+	const departed = new Map<string, string>();
+	if (employeeIds.length === 0) return { names, departed };
 	const rows = await tx
 		.select({
 			id: employee.id,
@@ -304,16 +307,17 @@ async function resolveEmployees(
 		.leftJoin(user, eq(user.id, employee.userId))
 		.where(and(eq(employee.organizationId, organizationId), inArray(employee.id, employeeIds)));
 	const found = new Map(rows.map((row) => [row.id, row]));
-	const names = new Map<string, string>();
 	for (const id of employeeIds) {
 		const row = found.get(id);
 		if (!row) throw new ProjectTemplateMemberError("employeeNotFound", id);
 		if (!row.hasAccess && !keepDepartedIds.has(id)) {
-			throw new ProjectTemplateMemberError("employeeDeparted", id);
+			if (!skipDeparted) throw new ProjectTemplateMemberError("employeeDeparted", id);
+			departed.set(id, memberName("Unknown", row));
+			continue;
 		}
 		names.set(id, memberName("Unknown", row));
 	}
-	return names;
+	return { names, departed };
 }
 
 async function resolveTeams(tx: Writer, organizationId: string, teamIds: string[]) {
@@ -331,26 +335,25 @@ async function resolveTeams(tx: Writer, organizationId: string, teamIds: string[
 
 /** The employees a template already references, who may stay even after departing. */
 async function currentTemplateEmployeeIds(tx: Writer, organizationId: string, templateId: string) {
-	const [managers, assignments] = await Promise.all([
-		tx
-			.select({ employeeId: projectTemplateManager.employeeId })
-			.from(projectTemplateManager)
-			.where(
-				and(
-					eq(projectTemplateManager.templateId, templateId),
-					eq(projectTemplateManager.organizationId, organizationId),
-				),
+	// One query at a time on the transaction client.
+	const managers = await tx
+		.select({ employeeId: projectTemplateManager.employeeId })
+		.from(projectTemplateManager)
+		.where(
+			and(
+				eq(projectTemplateManager.templateId, templateId),
+				eq(projectTemplateManager.organizationId, organizationId),
 			),
-		tx
-			.select({ employeeId: projectTemplateAssignment.employeeId })
-			.from(projectTemplateAssignment)
-			.where(
-				and(
-					eq(projectTemplateAssignment.templateId, templateId),
-					eq(projectTemplateAssignment.organizationId, organizationId),
-				),
+		);
+	const assignments = await tx
+		.select({ employeeId: projectTemplateAssignment.employeeId })
+		.from(projectTemplateAssignment)
+		.where(
+			and(
+				eq(projectTemplateAssignment.templateId, templateId),
+				eq(projectTemplateAssignment.organizationId, organizationId),
 			),
-	]);
+		);
 	return new Set(
 		[...managers, ...assignments].flatMap((row) => (row.employeeId ? [row.employeeId] : [])),
 	);
@@ -364,22 +367,32 @@ async function currentTemplateEmployeeIds(tx: Writer, organizationId: string, te
  * teams and employees are dropped. Throws `ProjectTemplateMemberError` for
  * unusable members, and the database error for a duplicate template name (see
  * `isProjectTemplateNameConflict`). Authorization is the caller's job.
+ *
+ * With `skipDeparted`, an employee who has left is left out instead of refusing
+ * the write, and returned in `departed` (saving a project as a template, #880).
  */
 export async function writeProjectTemplate(
 	tx: Writer,
 	scope: { organizationId: string; userId: string; templateId?: string },
-	input: NormalizedProjectTemplateInput,
-): Promise<{ id: string }> {
+	normalized: NormalizedProjectTemplateInput,
+	options: { skipDeparted?: boolean } = {},
+): Promise<{ id: string; departed: { employeeId: string; name: string }[] }> {
 	const { organizationId, userId } = scope;
 	const keepDepartedIds = scope.templateId
 		? await currentTemplateEmployeeIds(tx, organizationId, scope.templateId)
 		: new Set<string>();
-	const employeeNames = await resolveEmployees(
+	const { names: employeeNames, departed } = await resolveEmployees(
 		tx,
 		organizationId,
-		[...new Set([...input.managerEmployeeIds, ...input.employeeIds])],
+		[...new Set([...normalized.managerEmployeeIds, ...normalized.employeeIds])],
 		keepDepartedIds,
+		options.skipDeparted ?? false,
 	);
+	const input = {
+		...normalized,
+		managerEmployeeIds: normalized.managerEmployeeIds.filter((id) => !departed.has(id)),
+		employeeIds: normalized.employeeIds.filter((id) => !departed.has(id)),
+	};
 	const teamNames = await resolveTeams(tx, organizationId, input.teamIds);
 
 	const values = {
@@ -445,7 +458,10 @@ export async function writeProjectTemplate(
 	if (assignments.length > 0) {
 		await tx.insert(projectTemplateAssignment).values(assignments);
 	}
-	return { id: templateId };
+	return {
+		id: templateId,
+		departed: [...departed].map(([employeeId, name]) => ({ employeeId, name })),
+	};
 }
 
 /** Deletes a template of the organization with everything it holds; false when there was none. */

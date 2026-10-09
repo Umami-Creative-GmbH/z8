@@ -53,12 +53,13 @@ export interface ProjectTemplateAssignment {
 /**
  * A manager or assignment left out when a template became a project or a
  * project became a template (#880), and why: `departed` employees left the
- * organization, `removed` teams and employees no longer exist.
+ * organization, `removed` teams and employees no longer exist, and `adminOnly`
+ * managers were not copied because only org admins assign project managers.
  */
 export interface SkippedProjectMember {
 	role: "manager" | "team" | "employee";
 	name: string;
-	reason: Exclude<ProjectTemplateMemberAvailability, "available">;
+	reason: Exclude<ProjectTemplateMemberAvailability, "available"> | "adminOnly";
 }
 
 /** A full template, as `getProjectTemplate` returns it. */
@@ -82,6 +83,13 @@ export interface ProjectTemplate {
 	/** Teams first, then employees, each by name. */
 	assignments: ProjectTemplateAssignment[];
 }
+
+/**
+ * A template as someone creating a project from it sees it: `managersCopied`
+ * is false unless they are an org owner or admin, who alone assign project
+ * managers (#367).
+ */
+export type ProjectTemplatePreviewData = ProjectTemplate & { managersCopied: boolean };
 
 /** A template in the template list. */
 export interface ProjectTemplateSummary {
@@ -109,9 +117,9 @@ export interface ProjectTemplateTaskInput {
 export interface ProjectTemplateInput {
 	name: string;
 	description?: string | null;
-	/** A Tabler icon component name, e.g. `IconRocket`. */
+	/** A Tabler icon component name, e.g. `IconRocket`; free text like a project's. */
 	icon?: string | null;
-	/** `#rrggbb`. */
+	/** Usually `#rrggbb`; free text like a project's. */
 	color?: string | null;
 	/** Hours; null or omitted = unlimited. */
 	budgetHours?: number | null;
@@ -146,8 +154,6 @@ export type ProjectTemplateInputProblem =
 	| "nameRequired"
 	| "nameTooLong"
 	| "descriptionTooLong"
-	| "iconInvalid"
-	| "colorInvalid"
 	| "budgetInvalid"
 	| "deadlineOffsetInvalid"
 	| "tooManyTasks"
@@ -160,9 +166,6 @@ export type ProjectTemplateInputProblem =
 export type ProjectTemplateInputResult =
 	| { ok: true; value: NormalizedProjectTemplateInput }
 	| { ok: false; problem: ProjectTemplateInputProblem; taskIndex?: number };
-
-const ICON_PATTERN = /^Icon[A-Z][A-Za-z0-9]{0,63}$/;
-const COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
 function blankToNull(value: string | null | undefined) {
 	const trimmed = value?.trim() ?? "";
@@ -199,11 +202,9 @@ export function normalizeProjectTemplateInput(
 		return { ok: false, problem: "descriptionTooLong" };
 	}
 
+	// Free text like a project's own icon and colour, so every project can become a template.
 	const icon = blankToNull(input.icon);
-	if (icon && !ICON_PATTERN.test(icon)) return { ok: false, problem: "iconInvalid" };
-
 	const color = blankToNull(input.color);
-	if (color && !COLOR_PATTERN.test(color)) return { ok: false, problem: "colorInvalid" };
 
 	let budgetHours: string | null = null;
 	if (input.budgetHours !== null && input.budgetHours !== undefined) {

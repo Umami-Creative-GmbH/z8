@@ -926,10 +926,12 @@
         "deadlineSameDay": "Deadline on the creation day",
         "memberCount": "{count, plural, one {# manager or assignment} other {# managers and assignments}}",
         "previewLabel": "From {name}",
+        "reasonAdminOnly": "only organization admins assign project managers",
         "reasonDeparted": "left the organization",
         "reasonRemoved": "no longer exists",
         "skipped": "Not copied: {members}",
         "skippedMember": "{name}: {reason}",
+        "skippedMemberReason": "{name} ({reason})",
         "startFrom": "Start from",
         "taskCount": "{count, plural, one {# task} other {# tasks}}",
         "willSkip": "Will not be copied"

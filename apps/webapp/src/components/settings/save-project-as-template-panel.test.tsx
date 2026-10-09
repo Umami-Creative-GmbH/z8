@@ -11,6 +11,7 @@ const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), warning: vi.
 
 vi.mock("@/app/[locale]/(app)/settings/projects/from-template-actions", () => fromTemplateActions);
 vi.mock("sonner", () => ({ toast }));
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({

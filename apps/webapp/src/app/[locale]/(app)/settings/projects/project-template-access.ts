@@ -1,10 +1,12 @@
 import { Effect } from "effect";
+import { type AuditAction, logAudit } from "@/lib/audit-logger";
 import {
 	AuthorizationError,
 	type DatabaseError,
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import { logger } from "@/lib/logger";
 import {
 	normalizeProjectTemplateInput,
 	type ProjectTemplateInput,
@@ -31,8 +33,6 @@ const INPUT_PROBLEM_MESSAGES: Record<
 	nameRequired: { message: "Template name is required", field: "name" },
 	nameTooLong: { message: "Template name is too long", field: "name" },
 	descriptionTooLong: { message: "Template description is too long", field: "description" },
-	iconInvalid: { message: "Template icon is not valid", field: "icon" },
-	colorInvalid: { message: "Template colour must be a hex colour", field: "color" },
 	budgetInvalid: {
 		message: "Template budget must be a positive number of hours",
 		field: "budgetHours",
@@ -72,7 +72,33 @@ export function keepTypedTemplateError(error: DatabaseError) {
 	if (error.cause instanceof ProjectTemplateMemberError) {
 		return new ValidationError(MEMBER_PROBLEM_MESSAGES[error.cause.problem]);
 	}
+	if (error.cause instanceof ValidationError) return error.cause;
 	return error;
+}
+
+/** The refusal for template input that breaks the input rules. */
+export function templateInputProblem(problem: ProjectTemplateInputProblem) {
+	return new ValidationError(INPUT_PROBLEM_MESSAGES[problem]);
+}
+
+/** Records a template change in the audit log; a failed write is logged, never thrown. */
+export function auditTemplate(
+	admin: TemplateAdmin,
+	action: AuditAction,
+	template: { id: string; name: string },
+	changes?: Record<string, unknown>,
+	metadata: Record<string, unknown> = {},
+) {
+	logAudit({
+		action,
+		actorId: admin.userId,
+		targetId: template.id,
+		targetType: "project_template",
+		organizationId: admin.organizationId,
+		changes,
+		metadata: { templateName: template.name, ...metadata },
+		timestamp: new Date(),
+	}).catch((err) => logger.error({ err }, "Failed to log audit"));
 }
 
 /** The caller as an org owner or admin of their active organization, or a refusal. */
@@ -107,7 +133,5 @@ export function templateNotFound(templateId: string) {
 
 export function normalizedTemplateInput(input: ProjectTemplateInput) {
 	const result = normalizeProjectTemplateInput(input);
-	return result.ok
-		? Effect.succeed(result.value)
-		: Effect.fail(new ValidationError(INPUT_PROBLEM_MESSAGES[result.problem]));
+	return result.ok ? Effect.succeed(result.value) : Effect.fail(templateInputProblem(result.problem));
 }

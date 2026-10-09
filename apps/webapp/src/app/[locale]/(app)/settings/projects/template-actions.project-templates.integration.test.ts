@@ -406,18 +406,10 @@ describe("project templates on PostgreSQL", () => {
 						name: "Twice",
 						tasks: [{ name: "Design" }, { name: " design " }],
 					}),
-					templates.createProjectTemplate({ name: "Bad colour", color: "blue" }),
 				]),
 			);
 
-			expect(results.map((result) => result.success)).toEqual([
-				false,
-				false,
-				false,
-				false,
-				false,
-				false,
-			]);
+			expect(results.map((result) => result.success)).toEqual([false, false, false, false, false]);
 			expect(await templateNames()).toEqual([]);
 		});
 	});

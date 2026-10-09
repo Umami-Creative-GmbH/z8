@@ -64,14 +64,18 @@ describe("normalizeProjectTemplateInput", () => {
 
 	it.each([
 		[{ name: " " }, "nameRequired"],
-		[{ name: "x", icon: "rocket" }, "iconInvalid"],
-		[{ name: "x", color: "#12345" }, "colorInvalid"],
 		[{ name: "x", budgetHours: -1 }, "budgetInvalid"],
 		[{ name: "x", budgetHours: Number.NaN }, "budgetInvalid"],
 		[{ name: "x", deadlineOffsetDays: 3651 }, "deadlineOffsetInvalid"],
 		[{ name: "x", deadlineOffsetDays: 2.5 }, "deadlineOffsetInvalid"],
 	])("refuses %o with %s", (input, problem) => {
 		expect(normalizeProjectTemplateInput(input)).toEqual({ ok: false, problem });
+	});
+
+	it("accepts any icon and colour a project may hold, so every project can become a template", () => {
+		expect(
+			normalizeProjectTemplateInput({ name: "x", icon: " rocket ", color: "blue" }),
+		).toMatchObject({ ok: true, value: { icon: "rocket", color: "blue" } });
 	});
 
 	it("accepts a deadline on the day of creation", () => {
