@@ -86,5 +86,5 @@ The itemized list of the work behind one hand-off, which Z8 provides for the org
 _Avoid_: Attachment, work report
 
 **Contact link**:
-The association of a Z8 customer with an existing contact in the accounting tool. A customer needs one before its first hand-off; Z8 never creates contacts in the accounting tool.
+The association of a Z8 customer with an existing contact in the accounting tool. A customer needs one before its first hand-off; Z8 never creates contacts in the accounting tool. A contact link belongs to one account in one tool: replacing the accounting connection with a new key for the same account keeps it, connecting another tool or account sets it aside.
 _Avoid_: Customer mapping, customer sync
