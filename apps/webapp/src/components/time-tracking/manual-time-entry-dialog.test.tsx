@@ -128,6 +128,36 @@ vi.mock("@/components/time-tracking/project-selector", () => ({
 		),
 }));
 
+vi.mock("@/components/time-tracking/task-selector", () => ({
+	TaskSelectorView: ({
+		onValueChange,
+		projectId,
+		projects,
+		value,
+	}: {
+		onValueChange: (value: string | undefined) => void;
+		projectId: string | undefined;
+		projects: { id: string; tasks: { id: string; name: string }[] }[];
+		value?: string;
+	}) => {
+		const tasks = projects.find((project) => project.id === projectId)?.tasks ?? [];
+		return tasks.length === 0 ? null : (
+			<select
+				aria-label="Task"
+				onChange={(event) => onValueChange(event.target.value || undefined)}
+				value={value ?? ""}
+			>
+				<option value="">No task</option>
+				{tasks.map((task) => (
+					<option key={task.id} value={task.id}>
+						{task.name}
+					</option>
+				))}
+			</select>
+		);
+	},
+}));
+
 vi.mock("@/components/time-tracking/work-category-selector", () => ({
 	WorkCategorySelectorView: ({
 		categories,
@@ -201,6 +231,17 @@ function buildTargetContext(
 				budgetHours: null,
 				deadline: null,
 				totalHoursBooked: 0,
+				tasks: [{ id: "task-1", name: "Design" }],
+			},
+			{
+				id: "project-2",
+				name: "Project 2",
+				color: null,
+				status: "active",
+				budgetHours: null,
+				deadline: null,
+				totalHoursBooked: 0,
+				tasks: [],
 			},
 		],
 		categories: [
@@ -1574,5 +1615,122 @@ describe("ManualTimeEntryDialog version-2 commands (#308)", () => {
 				"Manual entry settings changed. Review the entry and submit it again.",
 			),
 		);
+	});
+});
+
+describe("ManualTimeEntryDialog task picker (#874)", () => {
+	beforeEach(() => {
+		createManualTimeEntry.mockReset();
+		createManualTimeEntry.mockResolvedValue({ success: true, data: {} });
+		getBrowserTimezone.mockReset();
+		getBrowserTimezone.mockReturnValue("UTC");
+		targetContextState.getManualEntryTargetContext.mockReset();
+		targetContextState.getManualEntryTargetContext.mockImplementation(async () =>
+			targetContextState.current
+				? { success: true, data: targetContextState.current }
+				: { success: false, error: "Failed to load entry options" },
+		);
+	});
+
+	function chooseProjectAndTask() {
+		fireEvent.change(screen.getByLabelText("Project"), { target: { value: "project-1" } });
+		fireEvent.change(screen.getByLabelText("Task"), { target: { value: "task-1" } });
+	}
+
+	function submit() {
+		fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Forgot to clock in" } });
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+	}
+
+	it.each([1, 2] as const)(
+		"books the chosen task with its project for command version %s",
+		async (manualCommandVersion) => {
+			renderDialog(
+				{
+					open: true,
+					hideTrigger: true,
+					defaultDate: "2026-05-12",
+					defaultClockInTime: "09:00",
+					defaultClockOutTime: "12:00",
+				},
+				{ manualCommandVersion },
+			);
+
+			chooseProjectAndTask();
+			submit();
+
+			await waitFor(() => expect(createManualTimeEntry).toHaveBeenCalledOnce());
+			expect(createManualTimeEntry.mock.calls[0]?.[0]).toMatchObject({
+				projectId: "project-1",
+				taskId: "task-1",
+			});
+		},
+	);
+
+	it.each([1, 2] as const)(
+		"sends no task when none is chosen for command version %s",
+		async (manualCommandVersion) => {
+			renderDialog(
+				{
+					open: true,
+					hideTrigger: true,
+					defaultDate: "2026-05-12",
+					defaultClockInTime: "09:00",
+					defaultClockOutTime: "12:00",
+				},
+				{ manualCommandVersion },
+			);
+
+			fireEvent.change(screen.getByLabelText("Project"), { target: { value: "project-1" } });
+			submit();
+
+			await waitFor(() => expect(createManualTimeEntry).toHaveBeenCalledOnce());
+			expect(createManualTimeEntry.mock.calls[0]?.[0]).not.toHaveProperty("taskId");
+		},
+	);
+
+	it("clears the chosen task when the project changes", async () => {
+		renderDialog({
+			open: true,
+			hideTrigger: true,
+			defaultDate: "2026-05-12",
+			defaultClockInTime: "09:00",
+			defaultClockOutTime: "12:00",
+		});
+
+		chooseProjectAndTask();
+		fireEvent.change(screen.getByLabelText("Project"), { target: { value: "project-2" } });
+		expect(screen.queryByLabelText("Task")).toBeNull();
+		fireEvent.change(screen.getByLabelText("Project"), { target: { value: "project-1" } });
+		expect((screen.getByLabelText("Task") as HTMLSelectElement).value).toBe("");
+		submit();
+
+		await waitFor(() => expect(createManualTimeEntry).toHaveBeenCalledOnce());
+		expect(createManualTimeEntry.mock.calls[0]?.[0]).not.toHaveProperty("taskId");
+	});
+
+	it("drops a task that is no longer open when the context refreshes", async () => {
+		const { queryClient } = renderDialog({
+			open: true,
+			hideTrigger: true,
+			targetEmployeeId: "employee-2",
+		});
+		chooseProjectAndTask();
+
+		// The task was marked done on the server; the refreshed context no longer offers it.
+		const refreshed = buildTargetContext("employee-2");
+		targetContextState.current = {
+			...refreshed,
+			projects: refreshed.projects.map((project) => ({ ...project, tasks: [] })),
+		};
+		await act(async () => {
+			await queryClient.invalidateQueries({ queryKey: queryKeys.manualEntry.all });
+		});
+
+		expect(
+			await screen.findByText("A selected task is no longer available and was cleared."),
+		).toBeTruthy();
+		expect((screen.getByLabelText("Project") as HTMLSelectElement).value).toBe("project-1");
+		expect(screen.queryByLabelText("Task")).toBeNull();
 	});
 });

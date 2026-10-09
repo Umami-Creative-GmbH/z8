@@ -32,6 +32,7 @@ import {
 	type ManualRecoveryScope,
 } from "@/components/time-tracking/manual-command-recovery";
 import { ProjectSelectorView } from "@/components/time-tracking/project-selector";
+import { TaskSelectorView } from "@/components/time-tracking/task-selector";
 import { TimezoneMismatchDialog } from "@/components/time-tracking/timezone-mismatch-dialog";
 import {
 	type ManualAttemptOutcome,
@@ -112,6 +113,8 @@ interface FormValues {
 	clockOutTime: string;
 	reason: string;
 	projectId: string | undefined;
+	/** A task of `projectId` (#874); cleared whenever the project changes. */
+	taskId: string | undefined;
 	workCategoryId: string | undefined;
 	workLocationType: WorkLocationType;
 	/** Version-2 commands: the chosen occurrence of a repeated wall-clock time. */
@@ -210,7 +213,16 @@ const MESSAGES = {
 		"timeTracking.manualEntry.recovery.unsupportedToast",
 		"This entry's status can't be checked right now. Retrying sends exactly the same entry.",
 	],
+	taskNotAllowed: ["timeTracking.errors.taskNotAllowed", "Cannot book time to this task"],
 } as const satisfies Record<string, Message>;
+
+/** The stable reasons a named task is refused with (#873). */
+const TASK_REFUSAL_CODES: ReadonlySet<string> = new Set([
+	"task_not_found",
+	"task_other_project",
+	"task_done",
+	"project_not_bookable",
+]);
 
 const APPROVAL_STATUS_MESSAGES = {
 	pending: ["timeTracking.manualEntry.recovery.status.pending", "pending"],
@@ -319,6 +331,8 @@ function buildManualCommand(input: {
 		browserTimezone: input.browserTimezone,
 		reason: value.reason,
 		projectId: value.projectId ?? null,
+		// Optional key: absent unless a task of the project is named (#873).
+		...(value.projectId && value.taskId ? { taskId: value.taskId } : {}),
 		workCategoryId: value.workCategoryId ?? null,
 		workLocationType: value.workLocationType,
 	};
@@ -347,6 +361,7 @@ function outcomeMessage(result: ManualTimeEntryResult): Message | null {
 		return MESSAGES.refresh;
 	}
 	if (result.code === MANUAL_ENTRY_COLLISION) return MESSAGES.collision;
+	if (result.code && TASK_REFUSAL_CODES.has(result.code)) return MESSAGES.taskNotAllowed;
 	const reason = result.rejection?.reason;
 	if (reason === "reconfirmation_required") return MESSAGES.reconfirm;
 	if (reason === "occupancy_conflict") return MESSAGES.overlap;
@@ -392,6 +407,7 @@ function getDefaultValues(
 			`${String(now.hour).padStart(2, "0")}:${String(now.minute).padStart(2, "0")}`,
 		reason: "",
 		projectId: undefined,
+		taskId: undefined,
 		workCategoryId: undefined,
 		workLocationType: "office",
 		clockInOccurrence: undefined,
@@ -1181,7 +1197,11 @@ function ManualEntryFormContent({
 						{(field) => (
 							<ProjectSelectorView
 								value={field.state.value}
-								onValueChange={field.handleChange}
+								onValueChange={(projectId) => {
+									// A task never outlives its project (#874).
+									if (projectId !== field.state.value) form.setFieldValue("taskId", undefined);
+									field.handleChange(projectId);
+								}}
 								projects={context?.projects ?? []}
 								isLoading={selectorsLoading}
 								isError={Boolean(contextError)}
@@ -1189,6 +1209,22 @@ function ManualEntryFormContent({
 							/>
 						)}
 					</form.Field>
+					{context && !contextError ? (
+						<form.Subscribe<string | undefined> selector={(state) => state.values.projectId}>
+							{(projectId: string | undefined) => (
+								<form.Field name="taskId">
+									{(field) => (
+										<TaskSelectorView
+											projectId={projectId}
+											projects={context.projects}
+											value={field.state.value}
+											onValueChange={field.handleChange}
+										/>
+									)}
+								</form.Field>
+							)}
+						</form.Subscribe>
+					) : null}
 					<form.Field name="workCategoryId">
 						{(field) => (
 							<WorkCategorySelectorView
@@ -1281,6 +1317,7 @@ function useTargetDraftRevalidation({
 
 		const { projectId, workCategoryId } = form.state.values;
 		form.setFieldValue("projectId", undefined);
+		form.setFieldValue("taskId", undefined);
 		form.setFieldValue("workCategoryId", undefined);
 		setPendingMismatch(null);
 		setMessage(
@@ -1296,17 +1333,28 @@ function useTargetDraftRevalidation({
 	useEffect(() => {
 		if (!context) return;
 
-		const { projectId, workCategoryId } = form.state.values;
-		const projectIneligible =
-			projectId !== undefined &&
-			!context.projects.some((project) => project.id === projectId);
+		const { projectId, taskId, workCategoryId } = form.state.values;
+		const project = context.projects.find((candidate) => candidate.id === projectId);
+		const projectIneligible = projectId !== undefined && !project;
 		const categoryIneligible =
 			workCategoryId !== undefined &&
 			!context.categories.some((category) => category.id === workCategoryId);
+		// Only open tasks of the chosen project are offered; one done since is dropped (#874).
+		const taskIneligible =
+			taskId !== undefined && !project?.tasks.some((task) => task.id === taskId);
 
 		if (projectIneligible) form.setFieldValue("projectId", undefined);
 		if (categoryIneligible) form.setFieldValue("workCategoryId", undefined);
-		if (projectIneligible || categoryIneligible) {
+		if (taskIneligible) form.setFieldValue("taskId", undefined);
+		if (taskIneligible && !projectIneligible && !categoryIneligible) {
+			// react-doctor-disable-next-line react-hooks-js/set-state-in-effect
+			setMessage(
+				t(
+					"timeTracking.manualEntry.context.taskCleared",
+					"A selected task is no longer available and was cleared.",
+				),
+			);
+		} else if (projectIneligible || categoryIneligible) {
 			// The TanStack form store is external; this reports what was just cleared in it
 			// after fresh context arrived, which render cannot derive afterwards.
 			// react-doctor-disable-next-line react-hooks-js/set-state-in-effect
@@ -1504,6 +1552,7 @@ function ConnectedManualRecoveryPanel({
 		form.setFieldValue("clockOutTime", command.clockOut.time);
 		form.setFieldValue("reason", command.reason);
 		form.setFieldValue("projectId", command.projectId ?? undefined);
+		form.setFieldValue("taskId", command.taskId ?? undefined);
 		form.setFieldValue("workCategoryId", command.workCategoryId ?? undefined);
 		form.setFieldValue(
 			"workLocationType",
@@ -1741,6 +1790,7 @@ export function ManualTimeEntryDialog({
 				timezone,
 				browserTimezone,
 				projectId: value.projectId,
+				...(value.projectId && value.taskId ? { taskId: value.taskId } : {}),
 				workCategoryId: value.workCategoryId,
 				workLocationType: value.workLocationType,
 			});
