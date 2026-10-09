@@ -64,6 +64,8 @@ export const NOTIFICATION_TYPES = [
 	"travel_expense_ready_for_reimbursement",
 	// An employee document became visible to its employee (#865)
 	"personnel_file_document_shared",
+	// An employee uploaded a document into their own personnel file (#867)
+	"personnel_file_employee_upload",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

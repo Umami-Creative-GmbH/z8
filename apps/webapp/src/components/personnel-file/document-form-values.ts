@@ -69,6 +69,15 @@ export function defaultUploadValues(input: {
 	);
 }
 
+/** An employee's own upload (#867): a certificate by default, always shared. */
+export function ownUploadValues(input: { today: string }): DocumentFormValues {
+	return {
+		...defaultUploadValues({ today: input.today, category: "certificate" }),
+		visibility: "shared",
+		visibilityChosen: true,
+	};
+}
+
 export function valuesFromDocument(document: DocumentMetadataPayload): DocumentFormValues {
 	return {
 		category: document.category,

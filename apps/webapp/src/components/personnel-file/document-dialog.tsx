@@ -52,6 +52,7 @@ import {
 	type DocumentFormValues,
 	type DocumentMetadataPayload,
 	defaultUploadValues,
+	ownUploadValues,
 	toDocumentMetadata,
 	valuesFromDocument,
 } from "./document-form-values";
@@ -67,12 +68,20 @@ type DocumentDialogProps = {
 	categories: readonly DocumentCategory[];
 	today: string;
 	onSaved: () => void;
-} & ({ mode: "upload" } | { mode: "edit"; document: EmployeeDocumentView });
+} & (
+	| {
+			mode: "upload";
+			/** "employee": the employee uploads into their own file, always shared (#867). */
+			uploadAs?: "employee";
+	  }
+	| { mode: "edit"; document: EmployeeDocumentView }
+);
 
 async function finalizeUpload(input: {
 	tusFileKey: string;
 	fileName: string | undefined;
 	employeeId: string;
+	source?: "own";
 	metadata: DocumentMetadataPayload;
 }): Promise<void> {
 	const response = await fetch("/api/upload/personnel-file", {
@@ -94,10 +103,13 @@ export function DocumentDialog(props: DocumentDialogProps) {
 	const [file, setFile] = useState<File | null>(null);
 	const [fileError, setFileError] = useState<string | null>(null);
 	const pendingMetadata = useRef<DocumentMetadataPayload | null>(null);
+	const asEmployee = props.mode === "upload" && props.uploadAs === "employee";
 	const initialValues: DocumentFormValues =
 		props.mode === "edit"
 			? valuesFromDocument(props.document)
-			: defaultUploadValues({ today, category: categories[0] ?? "other" });
+			: asEmployee
+				? ownUploadValues({ today })
+				: defaultUploadValues({ today, category: categories[0] ?? "other" });
 
 	const upload = useTravelExpenseFileUpload({
 		maxFileSize: PERSONNEL_DOCUMENT_MAX_BYTES,
@@ -106,7 +118,13 @@ export function DocumentDialog(props: DocumentDialogProps) {
 		process: async ({ tusFileKey, fileName }) => {
 			const metadata = pendingMetadata.current;
 			if (!metadata) throw new Error("Upload failed");
-			await finalizeUpload({ tusFileKey, fileName, employeeId, metadata });
+			await finalizeUpload({
+				tusFileKey,
+				fileName,
+				employeeId,
+				...(asEmployee ? { source: "own" as const } : {}),
+				metadata,
+			});
 		},
 		onSuccess: () => {
 			toast.success(t("settings.personnelFiles.upload.success", "Document uploaded"));
@@ -219,15 +237,20 @@ export function DocumentDialog(props: DocumentDialogProps) {
 								: t("settings.personnelFiles.edit.title", "Edit document")}
 						</ActionPanelTitle>
 						<ActionPanelDescription>
-							{props.mode === "upload"
+							{asEmployee
 								? t(
-										"settings.personnelFiles.upload.description",
-										"Add a PDF, JPEG, PNG or WebP file of up to 20 MB to this personnel file.",
+										"settings.personnelFiles.myDocuments.upload.description",
+										"Add a certificate or another document to your personnel file: a PDF, JPEG, PNG or WebP file of up to 20 MB.",
 									)
-								: t(
-										"settings.personnelFiles.edit.description",
-										"Change the document's details. To replace the file, delete the document and upload it again.",
-									)}
+								: props.mode === "upload"
+									? t(
+											"settings.personnelFiles.upload.description",
+											"Add a PDF, JPEG, PNG or WebP file of up to 20 MB to this personnel file.",
+										)
+									: t(
+											"settings.personnelFiles.edit.description",
+											"Change the document's details. To replace the file, delete the document and upload it again.",
+										)}
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 
@@ -445,44 +468,53 @@ export function DocumentDialog(props: DocumentDialogProps) {
 							}
 						</form.Subscribe>
 
-						<form.Field name="visibility">
-							{(field) => (
-								<TFormItem>
-									<TFormLabel required>
-										{t("settings.personnelFiles.form.visibility", "Visibility")}
-									</TFormLabel>
-									<Select
-										value={field.state.value}
-										onValueChange={(value) => {
-											field.handleChange(value as DocumentVisibility);
-											form.setFieldValue("visibilityChosen", true);
-										}}
-										disabled={busy}
-									>
-										<TFormControl>
-											<SelectTrigger className="w-full" onBlur={field.handleBlur}>
-												<SelectValue />
-											</SelectTrigger>
-										</TFormControl>
-										<SelectContent>
-											<SelectItem value="shared">{labels.visibilities.shared}</SelectItem>
-											<SelectItem value="hr_only">{labels.visibilities.hr_only}</SelectItem>
-										</SelectContent>
-									</Select>
-									<TFormDescription>
-										{field.state.value === "shared"
-											? t(
-													"settings.personnelFiles.form.sharedHint",
-													"The employee sees this document under My Documents and is notified.",
-												)
-											: t(
-													"settings.personnelFiles.form.hrOnlyHint",
-													"Only owners and admins see this document.",
-												)}
-									</TFormDescription>
-								</TFormItem>
-							)}
-						</form.Field>
+						{asEmployee ? (
+							<p className="text-sm text-muted-foreground">
+								{t(
+									"settings.personnelFiles.myDocuments.upload.sharedNote",
+									"The document is shared: you see it under My Documents. After uploading, you cannot edit or delete it.",
+								)}
+							</p>
+						) : (
+							<form.Field name="visibility">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel required>
+											{t("settings.personnelFiles.form.visibility", "Visibility")}
+										</TFormLabel>
+										<Select
+											value={field.state.value}
+											onValueChange={(value) => {
+												field.handleChange(value as DocumentVisibility);
+												form.setFieldValue("visibilityChosen", true);
+											}}
+											disabled={busy}
+										>
+											<TFormControl>
+												<SelectTrigger className="w-full" onBlur={field.handleBlur}>
+													<SelectValue />
+												</SelectTrigger>
+											</TFormControl>
+											<SelectContent>
+												<SelectItem value="shared">{labels.visibilities.shared}</SelectItem>
+												<SelectItem value="hr_only">{labels.visibilities.hr_only}</SelectItem>
+											</SelectContent>
+										</Select>
+										<TFormDescription>
+											{field.state.value === "shared"
+												? t(
+														"settings.personnelFiles.form.sharedHint",
+														"The employee sees this document under My Documents and is notified.",
+													)
+												: t(
+														"settings.personnelFiles.form.hrOnlyHint",
+														"Only owners and admins see this document.",
+													)}
+										</TFormDescription>
+									</TFormItem>
+								)}
+							</form.Field>
+						)}
 
 						{busy ? (
 							<Progress

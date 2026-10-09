@@ -1,11 +1,13 @@
 import { and, eq } from "drizzle-orm";
 import type { db as appDb } from "@/db";
+import { user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications/notification-service";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
 import type { DocumentCategory } from "./document.types";
+import { listPersonnelFileNotificationRecipients } from "./notification-recipients";
 
 /**
  * Tells the employee when one of their employee documents becomes shared
@@ -50,7 +52,111 @@ export function buildDocumentSharedNotification(input: {
 	};
 }
 
+const employeeUploadCopy = {
+	titleKey: "common:notifications.content.personnelFileEmployeeUpload.title",
+	titleDefault: "New document in a personnel file",
+} as const;
+
+const employeeUploadMessages = {
+	certificate: {
+		messageKey: "common:notifications.content.personnelFileEmployeeUpload.certificate",
+		messageDefault: "{name} uploaded a certificate",
+	},
+	other: {
+		messageKey: "common:notifications.content.personnelFileEmployeeUpload.other",
+		messageDefault: "{name} uploaded a document",
+	},
+} as const;
+
+export function personnelFilePath(employeeId: string): string {
+	return `/personnel-files/${employeeId}`;
+}
+
+/** Tells an officer (or owner/admin) that an employee uploaded a document (#867). */
+export function buildEmployeeUploadNotification(input: {
+	organizationId: string;
+	recipientUserId: string;
+	employeeName: string;
+	document: { id: string; employeeId: string; title: string; category: DocumentCategory };
+}): CreateNotificationParams {
+	const copy = {
+		...employeeUploadCopy,
+		...(input.document.category === "certificate"
+			? employeeUploadMessages.certificate
+			: employeeUploadMessages.other),
+	};
+	const params = { name: input.employeeName, title: input.document.title };
+	return {
+		userId: input.recipientUserId,
+		organizationId: input.organizationId,
+		type: "personnel_file_employee_upload",
+		title: copy.titleDefault,
+		message: copy.messageDefault.replace("{name}", params.name),
+		entityType: "employee_document",
+		entityId: input.document.id,
+		actionUrl: personnelFilePath(input.document.employeeId),
+		idempotencyKey: `personnel-file-employee-upload:${input.document.id}:${input.recipientUserId}`,
+		metadata: {
+			category: input.document.category,
+			employeeId: input.document.employeeId,
+			i18n: { ...copy, params },
+		},
+	};
+}
+
 type Database = typeof appDb;
+
+/**
+ * Tells the officers covering the employee and the document's category that
+ * the employee uploaded it, or the owners and admins when no officer covers
+ * them (#867). Call after the upload committed. Never throws.
+ */
+export async function notifyEmployeeUpload(
+	database: Database,
+	input: {
+		organizationId: string;
+		document: { id: string; employeeId: string; title: string; category: DocumentCategory };
+	},
+): Promise<void> {
+	try {
+		const [recipients, [subject]] = await Promise.all([
+			listPersonnelFileNotificationRecipients(database, {
+				organizationId: input.organizationId,
+				employeeId: input.document.employeeId,
+				category: input.document.category,
+			}),
+			database
+				.select({ name: user.name, employeeNumber: employee.employeeNumber })
+				.from(employee)
+				.innerJoin(user, eq(user.id, employee.userId))
+				.where(
+					and(
+						eq(employee.id, input.document.employeeId),
+						eq(employee.organizationId, input.organizationId),
+					),
+				)
+				.limit(1),
+		]);
+		const employeeName = subject?.name?.trim() || subject?.employeeNumber || "An employee";
+		await Promise.all(
+			recipients.map((recipientUserId) =>
+				createNotification(
+					buildEmployeeUploadNotification({
+						organizationId: input.organizationId,
+						recipientUserId,
+						employeeName,
+						document: input.document,
+					}),
+				),
+			),
+		);
+	} catch (error) {
+		logger.error(
+			{ error, documentId: input.document.id, organizationId: input.organizationId },
+			"Failed to notify officers of an employee upload",
+		);
+	}
+}
 
 /**
  * Notifies the employee after the sharing change committed. Never throws: the

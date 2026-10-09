@@ -3,7 +3,12 @@ import { connection, type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
 import { createLogger } from "@/lib/logger";
-import { canManageDocument, managedCategoriesFor } from "@/lib/personnel-file/access";
+import {
+	canManageDocument,
+	canUploadOwnDocument,
+	isOwnDocument,
+	managedCategoriesFor,
+} from "@/lib/personnel-file/access";
 import { loadEmployeeRef } from "@/lib/personnel-file/access-store";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
 import { DEFAULT_VISIBILITY, isDocumentCategory } from "@/lib/personnel-file/document.types";
@@ -12,7 +17,7 @@ import {
 	finalizePersonnelDocumentUpload,
 	personnelDocumentStorageKey,
 } from "@/lib/personnel-file/document-store";
-import { notifyDocumentShared } from "@/lib/personnel-file/notifications";
+import { notifyDocumentShared, notifyEmployeeUpload } from "@/lib/personnel-file/notifications";
 import {
 	deletePersonnelDocumentObject,
 	deleteTusUpload,
@@ -32,6 +37,8 @@ const logger = createLogger("PersonnelFileUpload");
 const requestSchema = z.object({
 	tusFileKey: z.string().min(1),
 	employeeId: z.uuid(),
+	/** "own": the employee uploads into their own file (#867). */
+	source: z.literal("own").optional(),
 	fileName: z.string().max(255).optional(),
 	metadata: z.object({
 		category: z.unknown(),
@@ -52,6 +59,10 @@ function notFound() {
  * (#865). Only actors the personnel file access resolver lets manage the
  * document's category for that employee may upload; everyone else, and
  * everyone while personnel files are off, gets a not-found.
+ *
+ * With `source: "own"` the employee uploads into their own file (#867): only
+ * certificates and other documents, always shared, and the covering officers
+ * (or owners and admins) are notified instead of the employee.
  */
 export async function POST(request: NextRequest) {
 	await connection();
@@ -69,21 +80,28 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Invalid upload request" }, { status: 400 });
 		}
 		const { tusFileKey, employeeId, fileName, metadata } = parsed.data;
+		const own = parsed.data.source === "own";
 
 		const employee = await loadEmployeeRef(db, {
 			organizationId: access.organizationId,
 			employeeId,
 		});
 		// Nothing tells someone without access whether the employee exists.
-		if (!employee || managedCategoriesFor(access, employee).size === 0) return notFound();
+		if (!employee) return notFound();
+		if (
+			own ? !isOwnDocument(access, employee.id) : managedCategoriesFor(access, employee).size === 0
+		)
+			return notFound();
 
 		const validated = validateDocumentMetadata({
 			...metadata,
 			payPeriod: metadata.payPeriod ?? null,
 			expiryDate: metadata.expiryDate ?? null,
-			visibility:
-				metadata.visibility ??
-				(isDocumentCategory(metadata.category) ? DEFAULT_VISIBILITY[metadata.category] : null),
+			// Employee uploads are always shared; the employee chooses no visibility.
+			visibility: own
+				? "shared"
+				: (metadata.visibility ??
+					(isDocumentCategory(metadata.category) ? DEFAULT_VISIBILITY[metadata.category] : null)),
 		});
 		if (!validated.ok) {
 			return NextResponse.json(
@@ -91,7 +109,16 @@ export async function POST(request: NextRequest) {
 				{ status: 400 },
 			);
 		}
-		if (!canManageDocument(access, employee, validated.value.category)) return notFound();
+		if (own) {
+			if (!canUploadOwnDocument(access, employee.id, validated.value.category)) {
+				return NextResponse.json(
+					{ error: "You can upload only certificates and other documents.", field: "category" },
+					{ status: 403 },
+				);
+			}
+		} else if (!canManageDocument(access, employee, validated.value.category)) {
+			return notFound();
+		}
 
 		const safeTusFileKey = sanitizeTusFileKey(tusFileKey, access.userId);
 		if (!safeTusFileKey) {
@@ -143,6 +170,7 @@ export async function POST(request: NextRequest) {
 				mimeType: upload.mimeType,
 				sizeBytes: upload.buffer.length,
 				checksumSha256: upload.checksumSha256,
+				...(own ? { source: "employee" as const } : {}),
 			});
 		} catch (error) {
 			await markPersonnelFileUploadFailed(db, {
@@ -169,7 +197,12 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		if (finalized.shareEventId) {
+		if (own) {
+			await notifyEmployeeUpload(db, {
+				organizationId: access.organizationId,
+				document: finalized.document,
+			});
+		} else if (finalized.shareEventId) {
 			await notifyDocumentShared(db, {
 				organizationId: access.organizationId,
 				shareEventId: finalized.shareEventId,

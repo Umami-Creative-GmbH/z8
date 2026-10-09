@@ -113,7 +113,10 @@ const NOTIFICATION_CATEGORIES = [
 		descriptionKey: "common:notifications.preferences.categories.personnelFile.description",
 		descriptionFallback: "Notifications about documents shared with you in your personnel file",
 		icon: IconFileText,
-		types: ["personnel_file_document_shared"] as NotificationType[],
+		types: [
+			"personnel_file_document_shared",
+			"personnel_file_employee_upload",
+		] as NotificationType[],
 	},
 	{
 		id: "team",
@@ -237,6 +240,8 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 	travel_expense_ready_for_reimbursement: "Ready for reimbursement (expense officers)",
 	// An employee document became visible to the employee
 	personnel_file_document_shared: "Document shared with you",
+	// An employee uploaded a document (officers, or owners and admins)
+	personnel_file_employee_upload: "Employee uploaded a document",
 };
 
 // Channel icons and labels

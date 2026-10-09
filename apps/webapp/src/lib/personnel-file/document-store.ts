@@ -98,6 +98,8 @@ export async function finalizePersonnelDocumentUpload(
 		mimeType: string;
 		sizeBytes: number;
 		checksumSha256: string;
+		/** "employee" when the employee uploaded into their own file (#867). */
+		source?: "employee";
 	},
 	now: Instant = systemClock.nowInstant(),
 ): Promise<FinalizePersonnelDocumentResult> {
@@ -141,7 +143,12 @@ export async function finalizePersonnelDocumentUpload(
 			action: AuditAction.PERSONNEL_FILE_DOCUMENT_UPLOADED,
 			actorUserId: input.uploadedBy,
 			document: row,
-			metadata: { fileName: row.fileName, mimeType: row.mimeType, sizeBytes: row.sizeBytes },
+			metadata: {
+				fileName: row.fileName,
+				mimeType: row.mimeType,
+				sizeBytes: row.sizeBytes,
+				...(input.source ? { source: input.source } : {}),
+			},
 		});
 		return {
 			kind: "recorded",

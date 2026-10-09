@@ -260,6 +260,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"travel_expense_ready_for_reimbursement",
 	// An employee document became visible to its employee (#865)
 	"personnel_file_document_shared",
+	// An employee uploaded a document into their own personnel file (#867)
+	"personnel_file_employee_upload",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [
