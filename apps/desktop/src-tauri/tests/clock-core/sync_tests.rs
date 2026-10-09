@@ -256,6 +256,84 @@ async fn offline_clock_out_binds_the_period_last_seen_for_this_employee() {
     );
 }
 
+const PROJECT: &str = "11111111-1111-4111-8111-111111111111";
+const TASK: &str = "22222222-2222-4222-8222-222222222222";
+
+fn close_with_task() -> ClockCommand {
+    use crate::frozen_command::{AttributionIntent, ClosingAttribution};
+    ClockCommand::AttributedClose {
+        attribution: ClosingAttribution {
+            project: AttributionIntent::Replace { id: PROJECT.into() },
+            work_category: AttributionIntent::Preserve,
+            task: Some(AttributionIntent::Replace { id: TASK.into() }),
+        },
+        manual_break: false,
+    }
+}
+
+#[tokio::test]
+async fn an_offline_clock_out_keeps_its_task_when_it_is_sent_after_restart() {
+    let device = Device::new();
+    let url = free_endpoint();
+    device.negotiated(&url, "org-1", true);
+    let outcome = device.act(&url, close_with_task()).await.unwrap();
+    assert!(matches!(outcome, ClockCommandOutcome::SavedOnDevice { .. }));
+
+    let device = device.restart();
+    let server = serve_on(&url, 2, |index, request| match index {
+        0 => Some((200, not_committed(request))),
+        _ => Some((201, receipt("executed", request))),
+    });
+    device.sync(&url, "org-1", "available").await;
+    let requests = server.join().unwrap();
+    let sent = json(request_body(&requests[1]));
+    assert_eq!(sent["kind"], "clock_out");
+    assert_eq!(
+        sent["project"],
+        serde_json::json!({ "kind": "replace", "id": PROJECT })
+    );
+    assert_eq!(
+        sent["task"],
+        serde_json::json!({ "kind": "replace", "id": TASK })
+    );
+    assert_eq!(device.saved()[0].state, CommandState::Committed);
+}
+
+/// The #875 refusal for a task that was marked done before a queued clock-out
+/// arrived: kept for review with the server's field and reason as evidence.
+#[tokio::test]
+async fn a_queued_clock_out_refused_for_its_task_keeps_the_reason_for_review() {
+    let device = Device::new();
+    let url = free_endpoint();
+    device.negotiated(&url, "org-1", true);
+    device.act(&url, close_with_task()).await.unwrap();
+
+    let server = serve_on(&url, 2, |index, request| match index {
+        0 => Some((200, not_committed(request))),
+        _ => Some((
+            422,
+            serde_json::json!({
+                "outcome": "rejected",
+                "operationId": operation(request),
+                "code": "attribution_not_allowed",
+                "field": "taskId",
+                "reason": "task_done",
+            })
+            .to_string(),
+        )),
+    });
+    device.sync(&url, "org-1", "available").await;
+    server.join().unwrap();
+    let saved = &device.saved()[0];
+    assert_eq!(saved.state, CommandState::Rejected);
+    let failure = saved.failure.as_ref().unwrap();
+    assert_eq!(failure.class, FailureClass::Rejected);
+    assert_eq!(failure.code, "attribution_not_allowed");
+    let response = failure.response.as_ref().unwrap();
+    assert_eq!(response["field"], "taskId");
+    assert_eq!(response["reason"], "task_done");
+}
+
 #[tokio::test]
 async fn a_context_switch_pauses_queued_work_instead_of_retargeting_it() {
     let device = Device::new();
