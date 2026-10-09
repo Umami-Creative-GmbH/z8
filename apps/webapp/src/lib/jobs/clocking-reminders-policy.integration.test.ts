@@ -41,6 +41,45 @@ vi.mock("@/lib/notifications/email-notifications", () => ({
 	sendEmailNotification: channels.email,
 }));
 
+/** Records each policy lookup and occasion lookup the job makes, then runs the real one. */
+const lookups = vi.hoisted(() => ({
+	policy: [] as string[],
+	occasions: [] as { organizationId: string; occasionKeys: readonly string[] }[],
+}));
+vi.mock("@/lib/time-tracking/clocking-reminders/policy-day-facts", async (original) => {
+	const actual =
+		await original<typeof import("@/lib/time-tracking/clocking-reminders/policy-day-facts")>();
+	return {
+		...actual,
+		createPolicyDayFacts: (input: Parameters<typeof actual.createPolicyDayFacts>[0]) => {
+			const facts = actual.createPolicyDayFacts(input);
+			return {
+				latestClockIn: (day: Parameters<typeof facts.latestClockIn>[0]) => {
+					lookups.policy.push(`${input.employeeId}:latestClockIn:${day.toString()}`);
+					return facts.latestClockIn(day);
+				},
+				requiredMinutes: (day: Parameters<typeof facts.requiredMinutes>[0]) => {
+					lookups.policy.push(`${input.employeeId}:requiredMinutes:${day.toString()}`);
+					return facts.requiredMinutes(day);
+				},
+			};
+		},
+	};
+});
+vi.mock("@/lib/time-tracking/clocking-reminders/discovery", async (original) => {
+	const actual =
+		await original<typeof import("@/lib/time-tracking/clocking-reminders/discovery")>();
+	return {
+		...actual,
+		loadRecordedOccasionKeys: (
+			...args: Parameters<typeof actual.loadRecordedOccasionKeys>
+		): ReturnType<typeof actual.loadRecordedOccasionKeys> => {
+			lookups.occasions.push(args[0]);
+			return actual.loadRecordedOccasionKeys(...args);
+		},
+	};
+});
+
 const at = parseInstant;
 // Monday 2026-04-27 in Europe/Berlin (UTC+2): a 09:00 latest clock-in is 07:00Z.
 const MONDAY = "2026-04-27";
@@ -240,6 +279,33 @@ describe("clocking reminders from work policies on PostgreSQL", () => {
 				params: { startTime: "09:00", timezone: "Europe/Berlin" },
 			},
 		});
+	});
+
+	it("skips the policy lookups of a reminder already sent, with one occasion lookup per page", async () => {
+		const org = await organization();
+		const reminded = await employee(org);
+		await run("2026-04-27T07:15:00Z");
+		expect(await reminders(reminded)).toEqual(["missed_clock_in_reminder"]);
+
+		const later = await employee(org);
+		lookups.policy.length = 0;
+		lookups.occasions.length = 0;
+		await run("2026-04-27T07:20:00Z");
+
+		const ofEmployee = (person: SeededEmployee) =>
+			lookups.policy.filter((lookup) => lookup.startsWith(`${person.employeeId}:`));
+		expect(ofEmployee(reminded)).toEqual([]);
+		expect(ofEmployee(later)).toEqual([
+			`${later.employeeId}:latestClockIn:${MONDAY}`,
+			`${later.employeeId}:requiredMinutes:${MONDAY}`,
+		]);
+		expect(await reminders(reminded)).toEqual(["missed_clock_in_reminder"]);
+		expect(await reminders(later)).toEqual(["missed_clock_in_reminder"]);
+		const ofOrganization = lookups.occasions.filter(
+			(lookup) => lookup.organizationId === org.organizationId,
+		);
+		expect(ofOrganization).toHaveLength(1);
+		expect(ofOrganization[0].occasionKeys).toHaveLength(2);
 	});
 
 	it("sends no missed clock-in reminder on a holiday, an approved absence or a non-work day", async () => {

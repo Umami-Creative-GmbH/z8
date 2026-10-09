@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { parseInstant, parsePlainDate, parsePlainTimeMinute } from "@/lib/datetime/temporal-core";
+import { clockingReminderOccasionKey } from "./occasion";
 import {
 	evaluatePolicyReminders,
 	type PolicyDayFacts,
+	policyDayOccasionKeys,
 	type ReminderInput,
 } from "./policy-reminders";
 import { DEFAULT_CLOCKING_REMINDER_SETTINGS } from "./settings-policy";
@@ -274,5 +276,82 @@ describe("forgotten clock-out reminders once the day's required hours are reache
 				policy(noLatestClockIn),
 			),
 		).toEqual([]);
+	});
+});
+
+describe("policy-day occasions already recorded as sent", () => {
+	const occasion = (
+		type: "missed_clock_in_reminder" | "forgotten_clock_out_reminder",
+		day: string,
+	) =>
+		clockingReminderOccasionKey(type, {
+			kind: "policy_day",
+			employeeId: "employee-1",
+			day: parsePlainDate(day),
+		});
+	const recorded = (...keys: string[]) => new Set(keys);
+	const overnight = [period("2026-04-27T20:00:00Z", null)];
+
+	it("skips the policy lookups of a missed clock-in already sent today", async () => {
+		const facts = policy();
+		expect(
+			await evaluatePolicyReminders(
+				input({ now: at("2026-04-27T15:00:00Z") }),
+				facts,
+				recorded(occasion("missed_clock_in_reminder", MONDAY)),
+			),
+		).toEqual([]);
+		expect(facts.asked).toEqual([]);
+	});
+
+	it("still judges today's missed clock-in when only an earlier day's is recorded", async () => {
+		expect(
+			await evaluatePolicyReminders(
+				input(),
+				policy(),
+				recorded(occasion("missed_clock_in_reminder", "2026-04-24")),
+			),
+		).toMatchObject([{ type: "missed_clock_in_reminder", day: monday }]);
+	});
+
+	it("skips the required-minutes lookup of a forgotten clock-out already sent", async () => {
+		const facts = policy();
+		expect(
+			await evaluatePolicyReminders(
+				input({ now: at("2026-04-28T07:15:00Z"), work: overnight }),
+				facts,
+				recorded(occasion("forgotten_clock_out_reminder", MONDAY)),
+			),
+		).toEqual([]);
+		// Tuesday's missed clock-in is still judged; the overnight work covers it.
+		expect(facts.asked).toEqual(["latestClockIn:2026-04-28"]);
+	});
+
+	it("still sends a forgotten clock-out when only the missed clock-in is recorded", async () => {
+		const facts = policy();
+		expect(
+			await evaluatePolicyReminders(
+				input({ now: at("2026-04-28T07:15:00Z"), work: overnight }),
+				facts,
+				recorded(occasion("missed_clock_in_reminder", "2026-04-28")),
+			),
+		).toMatchObject([{ type: "forgotten_clock_out_reminder", day: monday }]);
+		expect(facts.asked).toEqual(["requiredMinutes:2026-04-27"]);
+	});
+
+	it("lists the keys of the occasions the evaluator may judge now", () => {
+		expect(policyDayOccasionKeys(input())).toEqual([occasion("missed_clock_in_reminder", MONDAY)]);
+		expect(
+			policyDayOccasionKeys(input({ now: at("2026-04-28T07:15:00Z"), work: overnight })),
+		).toEqual([
+			occasion("missed_clock_in_reminder", "2026-04-28"),
+			occasion("forgotten_clock_out_reminder", MONDAY),
+		]);
+		const settings = {
+			...enabled,
+			missedClockIn: { enabled: false, graceMinutes: 15 },
+			forgottenClockOut: { enabled: false, graceMinutes: 30 },
+		};
+		expect(policyDayOccasionKeys(input({ settings, work: overnight }))).toEqual([]);
 	});
 });
