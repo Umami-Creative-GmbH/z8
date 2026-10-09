@@ -1,7 +1,6 @@
 "use server";
 
 import { Effect } from "effect";
-import { requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
 import {
 	type BillableTimeOutcome,
 	type BillableTimeRefusal,
@@ -9,49 +8,13 @@ import {
 	setBillableTimeEnabled,
 } from "@/lib/billable-time/module-switch";
 import type { BillableTimeSettings } from "@/lib/billable-time/settings";
-import {
-	AuthorizationError,
-	ConflictError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
+import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
+import { activeOrganizationActor } from "./action-actor";
 
 const logger = createLogger("BillableTimeSettingsActions");
-
-/** Every Billable Time write acts on the session's active organization only. */
-const activeOrganizationActor = (input: {
-	requiredRole: "owner" | "admin";
-	message: string;
-	action: string;
-}) =>
-	Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-		const organizationId = session.session.activeOrganizationId;
-		if (!organizationId) {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "Select an organization first",
-					userId: session.user.id,
-					resource: "billableTime",
-					action: input.action,
-				}),
-			);
-		}
-		yield* requireActiveOrganizationActionActor({
-			userId: session.user.id,
-			organizationId,
-			requiredRole: input.requiredRole,
-			message: input.message,
-			resource: "billableTime",
-			action: input.action,
-		});
-		return { organizationId, userId: session.user.id };
-	});
 
 function refusalError(reason: BillableTimeRefusal, organizationId: string) {
 	switch (reason) {
