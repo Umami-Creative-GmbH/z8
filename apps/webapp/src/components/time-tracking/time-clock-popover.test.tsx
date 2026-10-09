@@ -127,9 +127,6 @@ describe("TimeClockPopover", () => {
 			},
 		);
 		HTMLElement.prototype.scrollIntoView = vi.fn();
-	});
-
-	beforeEach(() => {
 		vi.clearAllMocks();
 		localStorageData = {};
 		vi.stubGlobal("localStorage", {
