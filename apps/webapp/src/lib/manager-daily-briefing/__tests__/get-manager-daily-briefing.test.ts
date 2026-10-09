@@ -19,6 +19,7 @@ describe("getManagerDailyBriefingFromSources", () => {
 			organizationId: "org-1",
 			employeeIds: ["emp-1"],
 			date: "2026-04-28",
+			timezone: "Europe/Berlin",
 		});
 		expect(sources.getOpenTimeRecords).toHaveBeenCalledWith({
 			organizationId: "org-1",
@@ -105,6 +106,7 @@ describe("getManagerDailyBriefingFromSources", () => {
 			organizationId: "org-1",
 			employeeIds: ["emp-1"],
 			date: "2026-04-28",
+			timezone: "Europe/Berlin",
 		});
 		expect(sources.getOpenTimeRecords).toHaveBeenCalledWith({
 			organizationId: "org-1",

@@ -42,6 +42,45 @@ vi.mock("@/lib/notifications/email-notifications", () => ({
 	sendEmailNotification: channels.email,
 }));
 
+/** Records each policy lookup and occasion lookup the job makes, then runs the real one. */
+const lookups = vi.hoisted(() => ({
+	policy: [] as string[],
+	occasions: [] as { organizationId: string; occasionKeys: readonly string[] }[],
+}));
+vi.mock("@/lib/time-tracking/clocking-reminders/policy-day-facts", async (original) => {
+	const actual =
+		await original<typeof import("@/lib/time-tracking/clocking-reminders/policy-day-facts")>();
+	return {
+		...actual,
+		createPolicyDayFacts: (input: Parameters<typeof actual.createPolicyDayFacts>[0]) => {
+			const facts = actual.createPolicyDayFacts(input);
+			return {
+				latestClockIn: (day: Parameters<typeof facts.latestClockIn>[0]) => {
+					lookups.policy.push(`${input.employeeId}:latestClockIn:${day.toString()}`);
+					return facts.latestClockIn(day);
+				},
+				requiredMinutes: (day: Parameters<typeof facts.requiredMinutes>[0]) => {
+					lookups.policy.push(`${input.employeeId}:requiredMinutes:${day.toString()}`);
+					return facts.requiredMinutes(day);
+				},
+			};
+		},
+	};
+});
+vi.mock("@/lib/time-tracking/clocking-reminders/discovery", async (original) => {
+	const actual =
+		await original<typeof import("@/lib/time-tracking/clocking-reminders/discovery")>();
+	return {
+		...actual,
+		loadRecordedOccasionKeys: (
+			...args: Parameters<typeof actual.loadRecordedOccasionKeys>
+		): ReturnType<typeof actual.loadRecordedOccasionKeys> => {
+			lookups.occasions.push(args[0]);
+			return actual.loadRecordedOccasionKeys(...args);
+		},
+	};
+});
+
 const at = parseInstant;
 // Monday 2026-04-27 in Europe/Berlin (UTC+2): a 09:00 latest clock-in is 07:00Z.
 const MONDAY = "2026-04-27";
@@ -243,6 +282,33 @@ describe("clocking reminders from work policies on PostgreSQL", () => {
 		});
 	});
 
+	it("skips the policy lookups of a reminder already sent, with one occasion lookup per page", async () => {
+		const org = await organization();
+		const reminded = await employee(org);
+		await run("2026-04-27T07:15:00Z");
+		expect(await reminders(reminded)).toEqual(["missed_clock_in_reminder"]);
+
+		const later = await employee(org);
+		lookups.policy.length = 0;
+		lookups.occasions.length = 0;
+		await run("2026-04-27T07:20:00Z");
+
+		const ofEmployee = (person: SeededEmployee) =>
+			lookups.policy.filter((lookup) => lookup.startsWith(`${person.employeeId}:`));
+		expect(ofEmployee(reminded)).toEqual([]);
+		expect(ofEmployee(later)).toEqual([
+			`${later.employeeId}:latestClockIn:${MONDAY}`,
+			`${later.employeeId}:requiredMinutes:${MONDAY}`,
+		]);
+		expect(await reminders(reminded)).toEqual(["missed_clock_in_reminder"]);
+		expect(await reminders(later)).toEqual(["missed_clock_in_reminder"]);
+		const ofOrganization = lookups.occasions.filter(
+			(lookup) => lookup.organizationId === org.organizationId,
+		);
+		expect(ofOrganization).toHaveLength(1);
+		expect(ofOrganization[0].occasionKeys).toHaveLength(2);
+	});
+
 	it("sends no missed clock-in reminder on a holiday, an approved absence or a non-work day", async () => {
 		const org = await organization();
 		const absent = await employee(org);
@@ -371,6 +437,42 @@ describe("clocking reminders from work policies on PostgreSQL", () => {
 		});
 		await run(later);
 		expect(pushes()).toBe(1);
+	});
+
+	it("sends only the shift's forgotten clock-out for live work after the shift leaves the lookback", async () => {
+		const org = await organization();
+		const person = await employee(org);
+		const shiftId = await shift(org, person, "08:00", "16:00");
+		// Monday 07:55 Berlin matches the shift; the work is never clocked out.
+		await clockIn(org, person, "2026-04-27T05:55:00Z");
+
+		// Shift end plus grace: 16:30 Berlin.
+		await run("2026-04-27T14:30:00Z");
+		// Friday and Saturday 00:30 Berlin: the shift date is more than 72 h old.
+		await run("2026-04-30T22:30:00Z");
+		await run("2026-05-01T22:30:00Z");
+		const sent = await notifications(person);
+		expect(sent.map((row) => [row.type, row.entity_id])).toEqual([
+			["forgotten_clock_out_reminder", shiftId],
+		]);
+	});
+
+	it("sends one policy forgotten clock-out for unmatched live work past the lookback, and no missed clock-in for an old shift", async () => {
+		const org = await organization();
+		const person = await employee(org);
+		// A Monday shift the employee skipped while the job did not run. The live work reloads it on
+		// Saturday, after it left the lookback, and it must not send a missed clock-in then.
+		await shift(org, person, "08:00", "12:00");
+		// Wednesday 08:00 Berlin, never clocked out.
+		await clockIn(org, person, "2026-04-29T06:00:00Z");
+
+		await run("2026-04-29T14:30:00Z");
+		// Saturday 10:00 Berlin: the live work and the Monday shift are older than 72 h.
+		await run("2026-05-02T08:00:00Z");
+		const sent = await notifications(person);
+		expect(sent.map((row) => [row.type, row.entity_id, row.metadata.day])).toEqual([
+			["forgotten_clock_out_reminder", null, "2026-04-29"],
+		]);
 	});
 
 	it("sends no forgotten clock-out reminder on a day without required hours", async () => {

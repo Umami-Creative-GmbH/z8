@@ -2,6 +2,7 @@ import { and, asc, eq, gt, gte, inArray, isNull, lt, or, sql } from "drizzle-orm
 import type { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import {
+	clockingReminderOccasion,
 	employee,
 	organizationClockingReminderSettings,
 	shift,
@@ -9,6 +10,7 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import {
+	compareInstants,
 	dateFromInstant,
 	type Instant,
 	instantFromDate,
@@ -107,9 +109,18 @@ export async function listClockingReminderEmployees(
 	}));
 }
 
-/** How far back shifts and work are read: covers overnight shifts and every timezone offset. */
+/**
+ * How far back completed work and shifts are read (older live work extends the shifts below):
+ * covers overnight shifts and every timezone offset.
+ */
 const LOOKBACK_DAYS = 3;
 const LOOKAHEAD_DAYS = 2;
+/**
+ * How far before live work's start a shift it can match may be dated. The shift ends after the
+ * work starts, at most 48 h after its date begins in the employee's zone, and that is at most 26 h
+ * after the date begins in the organization's zone: 74 h, rounded up to whole days.
+ */
+const LIVE_WORK_SHIFT_LOOKBACK_DAYS = 4;
 
 export interface ShiftReminderFacts {
 	shifts: ReminderShift[];
@@ -120,6 +131,10 @@ export interface ShiftReminderFacts {
  * The published, assigned shifts around `now` and the recent and live work of a page of
  * employees, read without a work transaction. `shift.date` stores the organization-local midnight
  * of the shift's calendar date, so it is read back as a calendar date in the organization's zone.
+ *
+ * Live work is read however old it is, so each employee's shifts reach back as far as their live
+ * work's start: live work that matched a shift keeps owing only that shift's forgotten clock-out,
+ * never a second one from the work policy once the shift date leaves the lookback.
  */
 export async function loadShiftReminderFacts(
 	input: {
@@ -134,45 +149,59 @@ export async function loadShiftReminderFacts(
 		input.employeeIds.map((id) => [id, { shifts: [], work: [] }]),
 	);
 	if (input.employeeIds.length === 0) return facts;
-	const from = dateFromInstant(input.now.subtract({ hours: LOOKBACK_DAYS * 24 }));
+	const recentFrom = input.now.subtract({ hours: LOOKBACK_DAYS * 24 });
+	const from = dateFromInstant(recentFrom);
 	const until = dateFromInstant(input.now.add({ hours: LOOKAHEAD_DAYS * 24 }));
-	const [shifts, work] = await Promise.all([
-		database
-			.select({
-				id: shift.id,
-				employeeId: shift.employeeId,
-				date: shift.date,
-				startTime: shift.startTime,
-				endTime: shift.endTime,
-			})
-			.from(shift)
-			.where(
-				and(
-					eq(shift.organizationId, input.organizationId),
-					eq(shift.status, "published"),
-					inArray(shift.employeeId, [...input.employeeIds]),
+	// Work first: shifts that live work can match bound how far back each employee's shifts go.
+	const work = await database
+		.select({
+			employeeId: workPeriod.employeeId,
+			startTime: workPeriod.startTime,
+			endTime: workPeriod.endTime,
+			durationMinutes: workPeriod.durationMinutes,
+			live: sql<boolean>`(${workPeriod.isActive} = true AND ${workPeriod.endTime} IS NULL AND ${workPeriod.clockOutId} IS NULL)`,
+		})
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.organizationId, input.organizationId),
+				inArray(workPeriod.employeeId, [...input.employeeIds]),
+				isNull(workPeriod.deletedAt),
+				or(gte(workPeriod.startTime, from), isNull(workPeriod.endTime)),
+			),
+		);
+	const liveWorkShiftsFrom = new Map<string, Instant>();
+	for (const row of work) {
+		if (!row.live) continue;
+		const bound = instantFromDate(row.startTime).subtract({
+			hours: LIVE_WORK_SHIFT_LOOKBACK_DAYS * 24,
+		});
+		const earliest = liveWorkShiftsFrom.get(row.employeeId) ?? recentFrom;
+		if (compareInstants(bound, earliest) < 0) liveWorkShiftsFrom.set(row.employeeId, bound);
+	}
+	const shifts = await database
+		.select({
+			id: shift.id,
+			employeeId: shift.employeeId,
+			date: shift.date,
+			startTime: shift.startTime,
+			endTime: shift.endTime,
+		})
+		.from(shift)
+		.where(
+			and(
+				eq(shift.organizationId, input.organizationId),
+				eq(shift.status, "published"),
+				inArray(shift.employeeId, [...input.employeeIds]),
+				or(
 					gte(shift.date, from),
-					lt(shift.date, until),
+					...[...liveWorkShiftsFrom].map(([employeeId, bound]) =>
+						and(eq(shift.employeeId, employeeId), gte(shift.date, dateFromInstant(bound))),
+					),
 				),
+				lt(shift.date, until),
 			),
-		database
-			.select({
-				employeeId: workPeriod.employeeId,
-				startTime: workPeriod.startTime,
-				endTime: workPeriod.endTime,
-				durationMinutes: workPeriod.durationMinutes,
-				live: sql<boolean>`(${workPeriod.isActive} = true AND ${workPeriod.endTime} IS NULL AND ${workPeriod.clockOutId} IS NULL)`,
-			})
-			.from(workPeriod)
-			.where(
-				and(
-					eq(workPeriod.organizationId, input.organizationId),
-					inArray(workPeriod.employeeId, [...input.employeeIds]),
-					isNull(workPeriod.deletedAt),
-					or(gte(workPeriod.startTime, from), isNull(workPeriod.endTime)),
-				),
-			),
-	]);
+		);
 	for (const row of shifts) {
 		if (!row.employeeId) continue;
 		facts.get(row.employeeId)?.shifts.push({
@@ -192,4 +221,25 @@ export async function loadShiftReminderFacts(
 		});
 	}
 	return facts;
+}
+
+/**
+ * Which of the given occasion keys the organization already recorded as sent, in one query. A
+ * claim released after a failed delivery has no row, so its occasion is judged again.
+ */
+export async function loadRecordedOccasionKeys(
+	input: { organizationId: string; occasionKeys: readonly string[] },
+	database: Database,
+): Promise<Set<string>> {
+	if (input.occasionKeys.length === 0) return new Set();
+	const rows = await database
+		.select({ occasionKey: clockingReminderOccasion.occasionKey })
+		.from(clockingReminderOccasion)
+		.where(
+			and(
+				eq(clockingReminderOccasion.organizationId, input.organizationId),
+				inArray(clockingReminderOccasion.occasionKey, [...input.occasionKeys]),
+			),
+		);
+	return new Set(rows.map((row) => row.occasionKey));
 }
