@@ -75,6 +75,12 @@ export function contactRow(input: {
 	familyname?: string | null;
 	customerNumber?: string | null;
 	vatNumber?: string | null;
+	/**
+	 * `status`: "Defines the status of the contact. 100 <-> Lead - 500 <->
+	 * Pending - 1000 <-> Active." openapi.yaml documents no archived status;
+	 * any other value stands for one in the tests.
+	 */
+	status?: string;
 }) {
 	return {
 		id: input.id,
@@ -82,7 +88,7 @@ export function contactRow(input: {
 		create: "2025-03-02T10:00:00+01:00",
 		update: "2025-03-02T10:00:00+01:00",
 		name: input.name ?? null,
-		status: "1000",
+		status: input.status ?? "1000",
 		customerNumber: input.customerNumber ?? null,
 		parent: null,
 		surename: input.surename ?? null,

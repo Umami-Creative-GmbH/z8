@@ -1,6 +1,7 @@
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
 import { buildInvoiceDraft, type InvoiceDraft, workLine } from "../invoice-draft";
+import type { AccountingProvider } from "../provider";
 import { getAccountingProviderRegistry } from "../registry";
 import { createSevdeskConnector } from "./connector";
 import {
@@ -164,6 +165,31 @@ function providerWith(routes: FixtureRoute[]) {
 	return { ...setup, provider: setup.connector.open({ apiKey: TOKEN, settings: storedSettings }) };
 }
 
+/** The sevdesk provider always lists customer contacts (the port keeps it optional). */
+function listerOf(provider: AccountingProvider) {
+	const list = provider.listCustomerContacts;
+	if (!list) throw new Error("sevdesk lists customer contacts");
+	return { listCustomerContacts: list.bind(provider) };
+}
+
+/** The address and email look-ups of the customer import, answering with no rows. */
+function importLookupRoutes(
+	options: { addresses?: unknown[]; emails?: unknown[] } = {},
+): FixtureRoute[] {
+	return [
+		{
+			method: "GET",
+			path: "/ContactAddress",
+			responses: [{ status: 200, body: { objects: options.addresses ?? [] } }],
+		},
+		{
+			method: "GET",
+			path: "/CommunicationWay",
+			responses: [{ status: 200, body: { objects: options.emails ?? [] } }],
+		},
+	];
+}
+
 describe("sevdesk connector: contacts", () => {
 	it("searches customer contacts by name and shows number, name and VAT id", async () => {
 		const { provider, http } = providerWith([
@@ -274,6 +300,65 @@ describe("sevdesk connector: contacts", () => {
 			{ "category[id]": "3", depth: "1", limit: "100", offset: "100" },
 		]);
 	});
+
+	it("leaves out contacts outside sevdesk's documented live statuses (lead, pending, active)", async () => {
+		const { provider } = providerWith([
+			...importLookupRoutes(),
+			{
+				method: "GET",
+				path: "/Contact",
+				responses: [
+					{
+						status: 200,
+						body: {
+							objects: [
+								contactRow({ id: "1", name: "Lead AG", status: "100" }),
+								contactRow({ id: "2", name: "Pending AG", status: "500" }),
+								contactRow({ id: "3", name: "Active AG", status: "1000" }),
+								contactRow({ id: "4", name: "Archived AG", status: "50" }),
+							],
+						},
+					},
+				],
+			},
+		]);
+
+		const page = await listerOf(provider).listCustomerContacts({ cursor: null });
+
+		expect(page.contacts.map((contact) => contact.name)).toEqual([
+			"Lead AG",
+			"Pending AG",
+			"Active AG",
+		]);
+	});
+
+	it("pages by the raw page size even when it leaves contacts out", async () => {
+		const rows = Array.from({ length: 100 }, (_, index) =>
+			contactRow({ id: String(index + 1), name: `C ${index}`, status: index === 0 ? "50" : "1000" }),
+		);
+		const { provider } = providerWith([
+			...importLookupRoutes(),
+			{ method: "GET", path: "/Contact", responses: [{ status: 200, body: { objects: rows } }] },
+		]);
+
+		const page = await listerOf(provider).listCustomerContacts({ cursor: null });
+
+		expect(page.contacts).toHaveLength(99);
+		expect(page.nextCursor).toBe("100");
+	});
+
+	it.each(["", "abc", "-100", "1.5", "1e3", "99999999999999999999"])(
+		"rejects the malformed cursor %j without calling sevdesk",
+		async (cursor) => {
+			const { provider, http } = providerWith(importLookupRoutes());
+
+			await expect(listerOf(provider).listCustomerContacts({ cursor })).rejects.toMatchObject({
+				name: "AccountingProviderError",
+				failure: "rejected",
+			});
+			expect(http.to("GET", "/Contact")).toHaveLength(0);
+		},
+	);
 });
 
 function draftWith(

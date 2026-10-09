@@ -296,6 +296,28 @@ function contactsOf(body: unknown): AccountingContact[] {
 	return rowsOf(body).flatMap((row) => contactOf(row) ?? []);
 }
 
+/**
+ * openapi.yaml `Model_ContactResponse.status`: "100 <-> Lead - 500 <-> Pending -
+ * 1000 <-> Active". sevdesk documents no archived flag or status, so the import
+ * keeps exactly these (and rows without a status) and leaves out any other
+ * status as archived or deactivated. To confirm on a trial account.
+ */
+const LIVE_CONTACT_STATUSES = new Set(["100", "500", "1000"]);
+
+function isLiveContact(row: Record<string, unknown>): boolean {
+	const status = text(row.status);
+	return status === null || LIVE_CONTACT_STATUSES.has(status);
+}
+
+/** The listing cursor is the next offset Z8 handed out; anything else is refused. */
+function listOffset(cursor: string): number {
+	const offset = /^\d{1,9}$/.test(cursor) ? Number(cursor) : Number.NaN;
+	if (!Number.isSafeInteger(offset) || offset % LIST_PAGE_SIZE !== 0) {
+		throw new AccountingProviderError("rejected", "Not a sevdesk contact page");
+	}
+	return offset;
+}
+
 /** A sevdesk provider always has the port's paged customer listing (#906's import). */
 export type SevdeskProvider = AccountingProvider &
 	Required<Pick<AccountingProvider, "listCustomerContacts">>;
@@ -332,7 +354,7 @@ function openSevdeskProvider(
 		},
 
 		async listCustomerContacts({ cursor }) {
-			const offset = cursor && /^\d+$/.test(cursor) ? Number(cursor) : 0;
+			const offset = cursor === null ? 0 : listOffset(cursor);
 			const response = await client({
 				method: "GET",
 				path: "/Contact",
@@ -340,7 +362,7 @@ function openSevdeskProvider(
 			});
 			const rows = rowsOf(response.body);
 			return {
-				contacts: contactsOf(response.body),
+				contacts: rows.filter(isLiveContact).flatMap((row) => contactOf(row) ?? []),
 				nextCursor: rows.length === LIST_PAGE_SIZE ? String(offset + LIST_PAGE_SIZE) : null,
 			};
 		},
