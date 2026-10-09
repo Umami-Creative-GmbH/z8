@@ -2,7 +2,13 @@ import type { Instant } from "@/lib/datetime/temporal-core";
 import { divideToUnits, formatUnits, parseUnits } from "@/lib/money/exact-decimal";
 import { type BillableRatePeriod, priceWorkPeriod } from "./applicable-rate";
 import { type CostRatePeriod, costWorkPeriod } from "./cost-rate";
-import { type AccruedAmount, formatRate, RATE_SCALE, roundAccruedAmount, ZERO_ACCRUED } from "./money";
+import {
+	type AccruedAmount,
+	formatRate,
+	RATE_SCALE,
+	roundAccruedAmount,
+	ZERO_ACCRUED,
+} from "./money";
 
 /**
  * Billable hours, revenue and margin figures for reports (#902). Pure and
@@ -187,7 +193,10 @@ interface RoundedFigures {
 	costUnknownWorkCount: number;
 }
 
-function figuresFromRounded(rounded: RoundedFigures, options: BillableFiguresOptions): BillableFigures {
+function figuresFromRounded(
+	rounded: RoundedFigures,
+	options: BillableFiguresOptions,
+): BillableFigures {
 	const base: BillableFiguresBase = {
 		currency: options.currency,
 		billableMinutes: rounded.billableMinutes,

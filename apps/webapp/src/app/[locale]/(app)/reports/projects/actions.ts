@@ -7,7 +7,12 @@ import { db } from "@/db";
 import { customer, employee, project, workPeriod } from "@/db/schema";
 import { requireAuth } from "@/lib/auth-helpers";
 import type { ReportedWork } from "@/lib/billable-time/report-figures";
-import { type AnyAppError, AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
+import {
+	type AnyAppError,
+	AuthorizationError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
 import {
 	type AppServices,
 	runServerActionSafe,
@@ -108,7 +113,9 @@ function loadReportProjects(
 	});
 }
 
-type ReportProject = typeof project.$inferSelect & { customer: { id: string; name: string } | null };
+type ReportProject = typeof project.$inferSelect & {
+	customer: { id: string; name: string } | null;
+};
 
 function projectInfo(p: ReportProject): ProjectInfo {
 	return {
@@ -140,9 +147,7 @@ function statusConditions(statusFilter: string[] | undefined) {
 }
 
 function visibleProjectConditions(viewer: ProjectReportViewer) {
-	return viewsAllProjectReports(viewer)
-		? []
-		: [inArray(project.id, [...viewer.managedProjectIds])];
+	return viewsAllProjectReports(viewer) ? [] : [inArray(project.id, [...viewer.managedProjectIds])];
 }
 
 /**
@@ -232,9 +237,7 @@ export async function getProjectsOverview(
 					const totalHours = totalMinutes / 60;
 					const cumulativeHours = (cumulativeMinutes.get(p.id) ?? 0) / 60;
 					const budgetHours = p.budgetHours ? Number(p.budgetHours) : null;
-					const percentBudgetUsed = budgetHours
-						? (cumulativeHours / budgetHours) * 100
-						: null;
+					const percentBudgetUsed = budgetHours ? (cumulativeHours / budgetHours) * 100 : null;
 
 					// Calculate days until deadline
 					let daysUntilDeadline: number | null = null;
@@ -450,7 +453,10 @@ export async function getProjectDetailedReport(
 				);
 
 				// Team breakdown
-				const workByTeam = groupBy(work, (item) => employeeInfo.get(item.employeeId)?.teamId ?? "unassigned");
+				const workByTeam = groupBy(
+					work,
+					(item) => employeeInfo.get(item.employeeId)?.teamId ?? "unassigned",
+				);
 				const teamBreakdown: ProjectTeamBreakdown[] = Array.from(workByTeam.entries()).map(
 					([teamId, teamWork]) => {
 						const minutes = teamWork.reduce((sum, item) => sum + item.durationMinutes, 0);
@@ -557,8 +563,9 @@ export async function getCustomerBillableReport(
 					...(viewer.isOrganizationAdmin
 						? []
 						: [inArray(project.id, [...viewer.managedProjectIds])]),
-				])).filter((p): p is ReportProject & { customer: { id: string; name: string } } =>
-					p.customer !== null,
+				])).filter(
+					(p): p is ReportProject & { customer: { id: string; name: string } } =>
+						p.customer !== null,
 				);
 				const projectIds = projects.map((p) => p.id);
 				const range = reportDayRangeFromDates(startDate, endDate);

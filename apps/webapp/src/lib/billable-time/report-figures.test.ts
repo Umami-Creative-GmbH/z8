@@ -78,7 +78,10 @@ describe("billable report figures", () => {
 	it("splits a period that spans a rate change by elapsed time across the rates", () => {
 		// 22:00 to 02:00 across midnight: 2h at 100.00, 2h at 120.00.
 		const result = figures([work("2026-03-31T22:00:00Z", "2026-04-01T02:00:00Z")], {
-			billable: [projectRate(10_000, "2026-01-01", "2026-04-01"), projectRate(12_000, "2026-04-01")],
+			billable: [
+				projectRate(10_000, "2026-01-01", "2026-04-01"),
+				projectRate(12_000, "2026-04-01"),
+			],
 		});
 
 		expect(result.revenue).toBe("440.00");
@@ -130,7 +133,10 @@ describe("billable report figures", () => {
 				work("2026-03-05T08:00:00Z", "2026-03-05T09:00:00Z", { isBillable: false }),
 			],
 			{
-				billable: [projectRate(10_000, "2026-01-01", "2026-04-01"), projectRate(12_000, "2026-04-01")],
+				billable: [
+					projectRate(10_000, "2026-01-01", "2026-04-01"),
+					projectRate(12_000, "2026-04-01"),
+				],
 				cost: [costRate(5_000, "2026-01-01", "2026-04-01"), costRate(6_000, "2026-04-01")],
 			},
 		);
@@ -146,16 +152,18 @@ describe("billable report figures", () => {
 	});
 
 	it("never carries cost or margin for revenue-only access", () => {
-		const result = figures([work("2026-03-02T08:00:00Z", "2026-03-02T10:00:00Z")], {
-			billable: [projectRate(10_000, "2026-01-01")],
-			cost: [costRate(4_000, "2026-01-01")],
-		}, "revenue");
+		const result = figures(
+			[work("2026-03-02T08:00:00Z", "2026-03-02T10:00:00Z")],
+			{
+				billable: [projectRate(10_000, "2026-01-01")],
+				cost: [costRate(4_000, "2026-01-01")],
+			},
+			"revenue",
+		);
 
 		expect(result.access).toBe("revenue");
 		expect(result.revenue).toBe("200.00");
-		expect(Object.keys(result)).not.toEqual(
-			expect.arrayContaining(["cost"]),
-		);
+		expect(Object.keys(result)).not.toEqual(expect.arrayContaining(["cost"]));
 		expect(JSON.stringify(result)).not.toMatch(/cost|margin/i);
 	});
 

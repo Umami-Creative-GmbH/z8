@@ -16,7 +16,12 @@
  */
 
 import type { BillableFigures } from "@/lib/billable-time/report-figures";
-import type { ReportCell, ReportColumn, ReportDocument, ReportTable } from "./exporters/report-document";
+import type {
+	ReportCell,
+	ReportColumn,
+	ReportDocument,
+	ReportTable,
+} from "./exporters/report-document";
 import type {
 	BillableTimeReportContext,
 	CustomerBillableReport,
@@ -159,7 +164,12 @@ export const billableFigureGroup: ReportFigureGroup = {
 				kind: "hours",
 				value: figure((f) => hours(f.nonBillableMinutes)),
 			},
-			{ key: "revenue", header: money(labels.revenue), kind: "money", value: figure((f) => f.revenue) },
+			{
+				key: "revenue",
+				header: money(labels.revenue),
+				kind: "money",
+				value: figure((f) => f.revenue),
+			},
 			{
 				key: "unpricedWork",
 				header: labels.unpricedWork,
@@ -184,7 +194,12 @@ export const billableFigureGroup: ReportFigureGroup = {
 				figure((f) => (f.access === "full" ? read(f) : ""));
 			columns.push(
 				{ key: "cost", header: money(labels.cost), kind: "money", value: full((f) => f.cost) },
-				{ key: "margin", header: money(labels.margin), kind: "money", value: full((f) => f.margin) },
+				{
+					key: "margin",
+					header: money(labels.margin),
+					kind: "money",
+					value: full((f) => f.margin),
+				},
 				{
 					key: "marginPercent",
 					header: labels.marginPercent,
@@ -216,7 +231,10 @@ function figureTable<Row extends ReportFigureRow>(
 	groups: readonly ReportFigureGroup[],
 	context: ProjectReportExportContext & { currency: string | null },
 ): ReportTable {
-	const figureRows: ReportFigureRow[] = [...input.rows, ...(input.totals ? [input.totals.row] : [])];
+	const figureRows: ReportFigureRow[] = [
+		...input.rows,
+		...(input.totals ? [input.totals.row] : []),
+	];
 	const figureColumns = groups.flatMap((group) => group.columns(figureRows, context));
 	const columns: ReportColumn[] = [
 		...input.leading.map(({ key, header }) => ({ key, header, kind: "text" as const })),
@@ -255,7 +273,10 @@ function billableFacts(
 		: [];
 }
 
-function billableNotes(rows: readonly ReportFigureRow[], labels: ProjectReportExportLabels): string[] {
+function billableNotes(
+	rows: readonly ReportFigureRow[],
+	labels: ProjectReportExportLabels,
+): string[] {
 	if (!rows.some((row) => row.billable)) return [];
 	const notes = [labels.roundingNote, labels.ratesNote];
 	if (rows.some((row) => row.billable?.access === "full")) notes.push(labels.costUnknownNote);
@@ -351,7 +372,9 @@ export function buildCustomerReportDocument(
 			figureTable(
 				{
 					title: labels.customersTable,
-					leading: [{ key: "customer", header: labels.customer, value: (row) => row.customer.name }],
+					leading: [
+						{ key: "customer", header: labels.customer, value: (row) => row.customer.name },
+					],
 					rows: view.customers,
 					totals: { label: labels.total, row: view.totals },
 				},

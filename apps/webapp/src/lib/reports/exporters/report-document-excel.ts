@@ -22,7 +22,11 @@ const TOTAL_FILL: ExcelJS.Fill = {
 };
 
 function sheetName(title: string, used: Set<string>): string {
-	const base = title.replace(/[[\]:*?/\\]/g, " ").slice(0, 31).trim() || "Sheet";
+	const base =
+		title
+			.replace(/[[\]:*?/\\]/g, " ")
+			.slice(0, 31)
+			.trim() || "Sheet";
 	let name = base;
 	for (let index = 2; used.has(name.toLowerCase()); index += 1) {
 		const suffix = ` ${index}`;

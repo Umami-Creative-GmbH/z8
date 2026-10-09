@@ -58,7 +58,11 @@ export function formatReportCell(
 }
 
 /** A download file name: the stem as a slug, a timestamp and the extension. */
-export function reportFileName(document: ReportDocument, extension: string, now = Date.now()): string {
+export function reportFileName(
+	document: ReportDocument,
+	extension: string,
+	now = Date.now(),
+): string {
 	const stem =
 		document.fileStem
 			.normalize("NFKD")

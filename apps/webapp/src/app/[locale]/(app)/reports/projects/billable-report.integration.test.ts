@@ -99,7 +99,9 @@ function actAs(userId: string) {
 	harness.organizationId = ids.organization;
 }
 
-async function unwrap<T>(result: Promise<{ success: true; data: T } | { success: false; error: string }>) {
+async function unwrap<T>(
+	result: Promise<{ success: true; data: T } | { success: false; error: string }>,
+) {
 	const settled = await result;
 	if (!settled.success) throw new Error(settled.error);
 	return settled.data;
@@ -111,7 +113,9 @@ describe("billable project reports on PostgreSQL", () => {
 
 	async function cleanup() {
 		for (const organizationId of [ids.organization, ids.otherOrganization]) {
-			await admin.query("delete from approval_request where organization_id = $1", [organizationId]);
+			await admin.query("delete from approval_request where organization_id = $1", [
+				organizationId,
+			]);
 			await admin.query("delete from work_period where organization_id = $1", [organizationId]);
 			await admin.query("delete from time_entry where organization_id = $1", [organizationId]);
 		}
@@ -240,7 +244,14 @@ describe("billable project reports on PostgreSQL", () => {
 		await admin.query(
 			`insert into customer (id, organization_id, name, created_by, updated_at) values
 			 ($1, $2, 'Acme', $3, now()), ($4, $5, 'Foreign customer', $6, now())`,
-			[ids.customer, ids.organization, ids.ownerUser, ids.otherCustomer, ids.otherOrganization, ids.otherUser],
+			[
+				ids.customer,
+				ids.organization,
+				ids.ownerUser,
+				ids.otherCustomer,
+				ids.otherOrganization,
+				ids.otherUser,
+			],
 		);
 		await admin.query(
 			`insert into project (id, organization_id, name, status, customer_id, billable_default, created_by, updated_at) values
@@ -425,7 +436,10 @@ describe("billable project reports on PostgreSQL", () => {
 			["2026-03-31", 4],
 		]);
 		expect(report.employeeBreakdown).toEqual([
-			expect.objectContaining({ employeeId: ids.worker, billable: expect.objectContaining(websiteFull) }),
+			expect.objectContaining({
+				employeeId: ids.worker,
+				billable: expect.objectContaining(websiteFull),
+			}),
 		]);
 	});
 
@@ -447,7 +461,9 @@ describe("billable project reports on PostgreSQL", () => {
 			[ids.website],
 		]);
 		for (const data of [overview, report, customers]) {
-			expect(JSON.stringify(data)).not.toMatch(/"(cost|margin|marginPercent|costUnknownWorkCount)"/);
+			expect(JSON.stringify(data)).not.toMatch(
+				/"(cost|margin|marginPercent|costUnknownWorkCount)"/,
+			);
 		}
 		// Their exports are built from the same data, so they carry no cost or margin either.
 		const context = { labels: DEFAULT_PROJECT_REPORT_EXPORT_LABELS, generatedAt: "now" };

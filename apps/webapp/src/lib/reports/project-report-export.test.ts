@@ -102,7 +102,12 @@ describe("project report export", () => {
 	});
 
 	it("exports cost and margin for owners, and an unknown cost as such", () => {
-		const unknown: BillableFigures = { ...fullFigures, cost: null, margin: null, marginPercent: null };
+		const unknown: BillableFigures = {
+			...fullFigures,
+			cost: null,
+			margin: null,
+			marginPercent: null,
+		};
 		const document = buildProjectReportDocument(projectReport(unknown), context);
 		const csv = exportReportDocumentToCSV(document);
 
@@ -115,7 +120,9 @@ describe("project report export", () => {
 	});
 
 	it("exports hours only when the report has no Billable Time figures", () => {
-		const csv = exportReportDocumentToCSV(buildProjectReportDocument(projectReport(undefined), context));
+		const csv = exportReportDocumentToCSV(
+			buildProjectReportDocument(projectReport(undefined), context),
+		);
 
 		expect(csv).toContain("Hours");
 		expect(csv).not.toMatch(/revenue|billable/i);
@@ -124,11 +131,14 @@ describe("project report export", () => {
 	it("writes money as two-decimal numbers in Excel", async () => {
 		const workbook = new ExcelJS.Workbook();
 		await workbook.xlsx.load(
-			await exportReportDocumentToExcel(buildProjectReportDocument(projectReport(fullFigures), context)),
+			await exportReportDocumentToExcel(
+				buildProjectReportDocument(projectReport(fullFigures), context),
+			),
 		);
 		const employees = workbook.getWorksheet("Employees");
-		const header = (employees?.getRow(1).values as ExcelJS.CellValue[]).slice(1);
-		const row = (employees?.getRow(2).values as ExcelJS.CellValue[]).slice(1);
+		if (!employees) throw new Error("Missing worksheet Employees");
+		const header = (employees.getRow(1).values as ExcelJS.CellValue[]).slice(1);
+		const row = (employees.getRow(2).values as ExcelJS.CellValue[]).slice(1);
 		const revenue = header.indexOf("Revenue (EUR)");
 
 		expect(workbook.worksheets.map((sheet) => sheet.name)).toEqual([
@@ -139,7 +149,7 @@ describe("project report export", () => {
 		]);
 		expect(row[0]).toBe("Robin, Worker");
 		expect(row[revenue]).toBe(740);
-		expect(employees?.getRow(2).getCell(revenue + 1).numFmt).toBe("#,##0.00");
+		expect(employees.getRow(2).getCell(revenue + 1).numFmt).toBe("#,##0.00");
 	});
 
 	it("renders the same document as a PDF", async () => {

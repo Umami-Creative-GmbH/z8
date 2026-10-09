@@ -73,7 +73,11 @@ export async function exportReportDocumentToPDF(document: ReportDocument): Promi
 								key={index}
 								style={index === 0 ? styles.firstCell : styles.cell}
 							>
-								{formatReportCell(cell, table.columns[index]?.kind ?? "text", document.unknownLabel)}
+								{formatReportCell(
+									cell,
+									table.columns[index]?.kind ?? "text",
+									document.unknownLabel,
+								)}
 							</Text>
 						));
 					return (
