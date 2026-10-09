@@ -1,4 +1,5 @@
 import type { AccountingConnector, AccountingProviderKind } from "./provider";
+import { createSevdeskConnector } from "./sevdesk/connector";
 
 /**
  * Accounting connectors by provider kind (#903). The connection store, contact
@@ -32,7 +33,7 @@ export function createAccountingProviderRegistry(
  * replace `getAccountingProviderRegistry` with `fakeAccountingProviderRegistry`
  * (`vi.mock("@/lib/billable-time/accounting/registry", ...)`).
  */
-const PRODUCTION_CONNECTORS: readonly AccountingConnector[] = [];
+const PRODUCTION_CONNECTORS: readonly AccountingConnector[] = [createSevdeskConnector()];
 
 let productionRegistry: AccountingProviderRegistry | null = null;
 
