@@ -34,6 +34,15 @@ function getNotificationStyle(type: NotificationType): {
 	iconColor: string;
 } {
 	switch (type) {
+		// Clocking reminders
+		case "missed_clock_in_reminder":
+		case "forgotten_clock_out_reminder":
+			return {
+				icon: <IconClock className="size-4" />,
+				bgColor: "bg-sky-100 dark:bg-sky-900/30",
+				iconColor: "text-sky-600 dark:text-sky-400",
+			};
+
 		// Approval notifications
 		case "approval_request_submitted":
 			return {

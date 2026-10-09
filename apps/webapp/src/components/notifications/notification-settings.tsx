@@ -144,6 +144,8 @@ const NOTIFICATION_CATEGORIES = [
 		types: [
 			"birthday_reminder",
 			"vacation_balance_alert",
+			"missed_clock_in_reminder",
+			"forgotten_clock_out_reminder",
 		] as NotificationType[],
 	},
 	{
@@ -225,6 +227,21 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 	travel_expense_recovery_recorded: "Expense recovery recorded",
 	// Reimbursement work arriving for expense officers
 	travel_expense_ready_for_reimbursement: "Ready for reimbursement (expense officers)",
+	// Clocking reminders
+	missed_clock_in_reminder: "Missed clock-in",
+	forgotten_clock_out_reminder: "Forgotten clock-out",
+};
+
+// Type labels with static keys, so the Tolgee extractor registers them with their defaults.
+const EXTRACTED_TYPE_LABELS: Partial<Record<NotificationType, { key: string; fallback: string }>> = {
+	missed_clock_in_reminder: {
+		key: "common:notifications.preferences.types.missed_clock_in_reminder",
+		fallback: "Missed clock-in",
+	},
+	forgotten_clock_out_reminder: {
+		key: "common:notifications.preferences.types.forgotten_clock_out_reminder",
+		fallback: "Forgotten clock-out",
+	},
 };
 
 // Channel icons and labels
@@ -337,8 +354,12 @@ function useNotificationSettingsViewModel() {
 			`common:notifications.preferences.channels.${channel}.description`,
 			CHANNEL_CONFIG[channel].description,
 		);
-	const getTypeLabel = (type: NotificationType) =>
-		t(`common:notifications.preferences.types.${type}`, TYPE_LABELS[type]);
+	const getTypeLabel = (type: NotificationType) => {
+		const extracted = EXTRACTED_TYPE_LABELS[type];
+		return extracted
+			? t(extracted.key, extracted.fallback)
+			: t(`common:notifications.preferences.types.${type}`, TYPE_LABELS[type]);
+	};
 
 	const [pendingToggle, setPendingToggle] = useState<string | null>(null);
 	const [showPermissionModal, setShowPermissionModal] = useState(false);

@@ -258,6 +258,9 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"travel_expense_recovery_recorded",
 	// Reimbursement work arriving for expense officers (#756)
 	"travel_expense_ready_for_reimbursement",
+	// Clocking reminders to the employee about their own clocking (#827)
+	"missed_clock_in_reminder",
+	"forgotten_clock_out_reminder",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [

@@ -42,6 +42,8 @@ const LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES: Partial<Record<NotificationType, st
 	travel_expense_partially_reimbursed: "/travel-expenses/",
 	travel_expense_recovery_recorded: "/travel-expenses/",
 	travel_expense_ready_for_reimbursement: "/travel-expenses/",
+	missed_clock_in_reminder: "/time-tracking",
+	forgotten_clock_out_reminder: "/time-tracking",
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
