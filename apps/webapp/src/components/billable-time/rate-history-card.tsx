@@ -48,6 +48,13 @@ export interface RateHistoryCardProps {
 	emptyText?: ReactNode;
 	/** Render without the card frame, e.g. inside an action panel. */
 	bare?: boolean;
+	/** Overrides the help text of the set-rate form. */
+	setRateHelp?: ReactNode;
+	/**
+	 * A starting value the form offers (e.g. an hourly employee's wage for a cost
+	 * rate). Only filled in when the user picks it; never submitted on its own.
+	 */
+	suggestion?: { rate: string; label: (formattedRate: string) => string } | null;
 }
 
 type FormMode = "set" | "end";
@@ -68,6 +75,8 @@ export function RateHistoryCard({
 	onEndRate,
 	emptyText,
 	bare,
+	setRateHelp,
+	suggestion,
 }: RateHistoryCardProps) {
 	const { t } = useTranslate();
 	const { locale, timezone } = useDisplayContext();
@@ -123,10 +132,11 @@ export function RateHistoryCard({
 		>
 			<p className="text-sm text-muted-foreground">
 				{mode === "set"
-					? t(
+					? (setRateHelp ??
+						t(
 							"settings.billableTime.rates.setRateHelp",
 							"The new rate applies from this date until the next rate change. Earlier dates reprice work that is not invoiced yet.",
-						)
+						))
 					: t(
 							"settings.billableTime.rates.endRateHelp",
 							"From this date, this rate no longer applies until the next rate change.",
@@ -199,6 +209,17 @@ export function RateHistoryCard({
 										rate: formatBillableAmount(locale, current.hourlyRate, currency),
 									})}
 								</TFormDescription>
+							)}
+							{suggestion && (
+								<Button
+									type="button"
+									variant="link"
+									size="sm"
+									className="h-auto px-0"
+									onClick={() => field.handleChange(suggestion.rate)}
+								>
+									{suggestion.label(formatBillableAmount(locale, suggestion.rate, currency))}
+								</Button>
 							)}
 							<TFormMessage field={field} />
 						</TFormItem>

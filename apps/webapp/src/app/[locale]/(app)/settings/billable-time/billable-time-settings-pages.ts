@@ -17,6 +17,12 @@ export const BILLABLE_TIME_SETTINGS_PAGES = [
 		titleKey: "settings.billableTime.nav.rates",
 		titleDefault: "Billable rates",
 	},
+	{
+		id: "cost-rates",
+		href: "/settings/billable-time/cost-rates",
+		titleKey: "settings.billableTime.nav.costRates",
+		titleDefault: "Cost rates",
+	},
 ] as const satisfies readonly {
 	id: string;
 	href: `/settings/billable-time${string}`;

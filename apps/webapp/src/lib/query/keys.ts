@@ -342,6 +342,9 @@ export const queryKeys = {
 			projectId: string | null,
 			customerId: string | null,
 		) => ["billableTime", "rateHistory", level, employeeId, projectId, customerId] as const,
+		/** One employee's cost rates (#899). */
+		costRateHistory: (employeeId: string) =>
+			["billableTime", "costRateHistory", employeeId] as const,
 	},
 
 	// Surcharges
