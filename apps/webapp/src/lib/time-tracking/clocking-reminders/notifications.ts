@@ -47,7 +47,7 @@ const policyReminderCopy = {
 		titleDefault: "You are still clocked in",
 		messageKey: "common:notifications.content.policyForgottenClockOutReminder.message",
 		messageDefault:
-			"You reached today's required hours at {endTime} ({timezone}). Clock out if you have finished working.",
+			"You reached the required hours for {day} at {endTime} ({timezone}). Clock out if you have finished working.",
 	},
 } as const satisfies Partial<Record<ClockingReminderType, Record<string, string>>>;
 
@@ -76,6 +76,12 @@ export function buildClockingReminderNotification(input: {
 		copy = policyReminderCopy[reminder.type as keyof typeof policyReminderCopy];
 		const expected = formatTime(reminder.expectedAt, locale, timezone);
 		params[reminder.type === "missed_clock_in_reminder" ? "startTime" : "endTime"] = expected;
+		// Live work past midnight is judged against the day it started, which need not be today.
+		params.day = reminder.day.toLocaleString(locale, {
+			weekday: "long",
+			month: "long",
+			day: "numeric",
+		});
 	}
 	if (reminder.type === "break_due_reminder") {
 		params.breakTime = formatTime(reminder.expectedAt, locale, timezone);

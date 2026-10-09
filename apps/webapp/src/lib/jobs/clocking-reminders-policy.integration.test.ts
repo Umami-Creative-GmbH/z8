@@ -372,6 +372,11 @@ describe("clocking reminders from work policies on PostgreSQL", () => {
 		expect(sent.map((row) => [row.type, row.metadata.day])).toEqual([
 			["forgotten_clock_out_reminder", MONDAY],
 		]);
+		// Sent on Tuesday, the message names Monday rather than "today".
+		expect(sent[0].metadata.i18n.params).toMatchObject({
+			day: "Montag, 27. April",
+			endTime: "06:00",
+		});
 	});
 
 	it("evaluates an employee in another timezone in their own local day", async () => {
