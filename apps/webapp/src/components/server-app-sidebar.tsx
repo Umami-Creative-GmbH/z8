@@ -25,6 +25,7 @@ function getOrganizationFeatureFlags(
 		surchargesEnabled: organization?.surchargesEnabled ?? false,
 		demoDataEnabled: organization?.demoDataEnabled ?? true,
 		worksCouncilEnabled: organization?.worksCouncilEnabled ?? false,
+		billableTimeEnabled: organization?.billableTimeEnabled ?? false,
 	};
 }
 

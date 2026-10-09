@@ -23,6 +23,10 @@
       },
       "title": "Contrato de processamento de dados (DPA)"
     },
+    "billableTime": {
+      "description": "Moeda de faturação e o que a sua organização cobra aos clientes pelo trabalho",
+      "title": "Tempo faturável"
+    },
     "billing": {
       "description": "Gerencie sua assinatura, métodos de pagamento e faturas",
       "title": "Faturamento e assinatura"

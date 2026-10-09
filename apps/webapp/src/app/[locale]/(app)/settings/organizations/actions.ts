@@ -51,7 +51,12 @@ import {
 	processWorkBalanceRebuildIntents,
 } from "@/lib/work-balance/rebuild-intents";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
-import { isOrganizationFeature } from "./organization-features";
+import {
+	isOrganizationFeature,
+	type OrganizationFeature,
+	organizationFeatureUpdate,
+	requiresDedicatedSwitch,
+} from "./organization-features";
 
 const logger = createLogger("OrganizationActions");
 
@@ -1119,6 +1124,16 @@ export async function toggleOrganizationFeature(
 						}),
 					);
 				}
+				const organizationFeature = feature as OrganizationFeature;
+				if (requiresDedicatedSwitch(organizationFeature)) {
+					return yield* Effect.fail(
+						new ValidationError({
+							message: "This feature has its own switch",
+							field: "feature",
+							value: feature,
+						}),
+					);
+				}
 
 				const authService = yield* AuthService;
 				const session = yield* authService.getSession();
@@ -1131,12 +1146,13 @@ export async function toggleOrganizationFeature(
 					action: "update",
 				});
 
-				// Update the organization feature directly
+				// Update the organization feature directly. Switching projects off
+				// also switches Billable Time off (#897).
 				yield* Effect.tryPromise({
 					try: async () => {
 						await db
 							.update(authSchema.organization)
-							.set({ [feature]: enabled })
+							.set(organizationFeatureUpdate(organizationFeature, enabled))
 							.where(eq(authSchema.organization.id, organizationId));
 					},
 					catch: (error) => {

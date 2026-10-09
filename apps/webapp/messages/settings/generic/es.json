@@ -23,6 +23,10 @@
       },
       "title": "Contrato de procesamiento de datos (CPD)"
     },
+    "billableTime": {
+      "description": "Moneda de facturación y lo que su organización cobra a los clientes por el trabajo",
+      "title": "Tiempo facturable"
+    },
     "billing": {
       "description": "Gestione su suscripción, métodos de pago y facturas",
       "title": "Facturación y suscripción"

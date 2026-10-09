@@ -5,6 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type * as authSchema from "@/db/auth-schema";
+import type { BillableCurrency } from "@/lib/billable-time/currency";
 import type { AutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/types";
 import { CreateOrganizationDialog } from "./create-organization-dialog";
 import { OrganizationAutoClockOutCard } from "./organization-auto-clock-out-card";
@@ -21,6 +22,7 @@ interface OrganizationTabProps {
 	currentMemberRole: "owner" | "admin" | "member";
 	defaultNotificationLanguage: string;
 	canCreateOrganizations: boolean;
+	billableCurrency: BillableCurrency | null;
 }
 
 export function OrganizationTab({
@@ -30,6 +32,7 @@ export function OrganizationTab({
 	currentMemberRole,
 	defaultNotificationLanguage,
 	canCreateOrganizations,
+	billableCurrency,
 }: OrganizationTabProps) {
 	const { t } = useTranslate();
 	const [createOrgDialogOpen, setCreateOrgDialogOpen] = useState(false);
@@ -61,6 +64,8 @@ export function OrganizationTab({
 				surchargesEnabled={organization.surchargesEnabled ?? false}
 				demoDataEnabled={organization.demoDataEnabled ?? true}
 				worksCouncilEnabled={organization.worksCouncilEnabled ?? false}
+				billableTimeEnabled={organization.billableTimeEnabled ?? false}
+				billableCurrency={billableCurrency}
 				currentMemberRole={currentMemberRole}
 			/>
 
