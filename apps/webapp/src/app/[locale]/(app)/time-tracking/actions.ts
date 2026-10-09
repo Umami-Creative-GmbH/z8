@@ -53,6 +53,7 @@ import {
 	PROJECT_TASK_INELIGIBILITY_MESSAGES,
 	projectTaskIneligibility,
 } from "@/lib/time-tracking/project-eligibility";
+import { namedTaskId } from "@/lib/time-tracking/task-attribution";
 import { changeWorkPeriodProject } from "@/lib/time-tracking/work-period-attribution";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import {
@@ -970,10 +971,11 @@ export async function updateWorkPeriodProject(
 		await changeWorkPeriodProject({
 			organizationId: emp.organizationId,
 			employeeId: emp.id,
+			teamId: emp.teamId,
 			actorUserId: session.user.id,
 			period,
 			projectId,
-			...(taskId !== undefined ? { taskId } : {}),
+			...namedTaskId(taskId),
 		});
 
 		return {

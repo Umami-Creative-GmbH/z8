@@ -7,6 +7,17 @@
  * clearing the project without naming a task of the new project clears the task.
  */
 
+const PROJECT_TASK_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Whether a value can name a task at all (a task ID is a UUID). Every task
+ * reader and request parser uses this one rule, so a malformed ID is an unknown
+ * task (`task_not_found`), never a database error.
+ */
+export function isProjectTaskId(value: unknown): value is string {
+	return typeof value === "string" && PROJECT_TASK_ID.test(value);
+}
+
 /** Omission preserves; clearing and replacement are explicit. */
 export type TaskAttributionIntent =
 	| { kind: "preserve" }
@@ -30,4 +41,45 @@ export function taskIntentFollowingProject(input: {
 export function taskIdAfter(intent: TaskAttributionIntent, currentTaskId: string | null) {
 	if (intent.kind === "preserve") return currentTaskId;
 	return intent.kind === "clear" ? null : intent.id;
+}
+
+/** The task a write leaves on work whose project it sets: the two rules above in one. */
+export function taskIdFollowingProject(input: {
+	task: TaskAttributionIntent | undefined;
+	projectId: string | null;
+	current: { projectId: string | null; taskId: string | null };
+}) {
+	return taskIdAfter(
+		taskIntentFollowingProject({
+			task: input.task,
+			projectId: input.projectId,
+			currentProjectId: input.current.projectId,
+		}),
+		input.current.taskId,
+	);
+}
+
+/**
+ * The intent of a named task ID (a write's optional `task` key): undefined names
+ * none, so the key stays absent and the task follows the project; null clears;
+ * an ID replaces.
+ */
+export function namedTaskIntent(taskId: string | null | undefined): {
+	task?: TaskAttributionIntent;
+} {
+	if (taskId === undefined) return {};
+	return { task: taskId === null ? { kind: "clear" } : { kind: "replace", id: taskId } };
+}
+
+/** A named task ID as an optional key: absent stays absent; null (clear) and an ID pass. */
+export function namedTaskId(taskId: string | null | undefined): { taskId?: string | null } {
+	return taskId === undefined ? {} : { taskId };
+}
+
+/**
+ * A recorded task as an optional key, present only when there is one, so stored
+ * commands, receipts and evidence without a task keep their earlier shape.
+ */
+export function recordedTaskId(taskId: string | null | undefined): { taskId?: string } {
+	return taskId ? { taskId } : {};
 }

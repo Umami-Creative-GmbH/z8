@@ -28,6 +28,7 @@ import {
 	clocking,
 } from "@/lib/time-tracking/clocking";
 import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
+import { isProjectTaskId } from "@/lib/time-tracking/task-attribution";
 import {
 	getUtcOffsetMinutesForZone,
 	isValidIanaTimezone,
@@ -225,13 +226,14 @@ function attributionOf(value: unknown): AttributionIntent {
 
 /**
  * The project task of a clock-out (#875): omitted, the task follows the project;
- * `null` or an empty ID clears it. An ID that cannot name a task is refused
- * as an unknown task before anything runs.
+ * `null` or an empty ID clears it. Anything else that cannot name a task (a
+ * malformed ID, a number, a boolean) is refused as an unknown task before
+ * anything runs.
  */
 function taskAttributionOf(value: unknown): { ok: true; task?: AttributionIntent } | { ok: false } {
 	if (value === undefined) return { ok: true };
-	if (typeof value === "string" && value && !ACTION_ID_PATTERN.test(value)) return { ok: false };
-	return { ok: true, task: attributionOf(value) };
+	if (value === null || value === "") return { ok: true, task: { kind: "clear" } };
+	return isProjectTaskId(value) ? { ok: true, task: { kind: "replace", id: value } } : { ok: false };
 }
 
 type LegacyClockFailure = ClockInRefusal["code"] | ClockOutRefusal["code"];
