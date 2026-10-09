@@ -70,9 +70,11 @@ import {
 	type ClockOutFailure,
 	type ClockOutRefusal,
 	type ClockOutResult,
+	type ClockPosition,
 	clocking,
 	type OperationIdentity,
 } from "@/lib/time-tracking/clocking";
+import { readClockPosition } from "@/lib/time-tracking/position-capture/clock-position";
 import { workCategoryIneligibility } from "@/lib/time-tracking/work-category-eligibility";
 import { acquireAdoptionGate, readAppendAdmission } from "@/lib/time-tracking/work-transaction";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
@@ -420,6 +422,15 @@ export type ClockActionContext = BrowserTimezoneContext & {
 	deviceInfo?: ClockChannel;
 };
 
+/**
+ * The web's own clock request: it may carry the position taken at the clock
+ * event (#826). Mobile and bots reach `clockInAs`/`clockOutAs` without one.
+ */
+export type WebClockPositionContext = {
+	/** Unvalidated wire value; a malformed position is dropped, never refused. */
+	position?: unknown;
+};
+
 export type ClockInCommandResult =
 	| { success: true; data: ClockInResult }
 	| { success: false; failure: ClockInFailure; refusal: ClockInRefusal };
@@ -466,7 +477,7 @@ export async function validateWorkCategoryAssignment(
  */
 export async function clockIn(
 	workLocationType?: WorkLocationType,
-	actionContext: ClockActionContext = {},
+	webContext: ClockActionContext & WebClockPositionContext = {},
 ): Promise<ServerActionResult<ClockInResult>> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
@@ -478,10 +489,12 @@ export async function clockIn(
 		return { success: false, error: await clockInFailureMessage("employee_not_found") };
 	}
 
+	const { position, ...actionContext } = webContext;
 	const result = await clockInAs(
 		webClockActor(session.user.id, currentEmployee),
 		workLocationType,
 		actionContext,
+		readClockPosition(position),
 	);
 	if (result.success) return { success: true, data: result.data };
 	const { refusal } = result;
@@ -552,8 +565,11 @@ export async function clockInAs(
 	actor: ClockActor,
 	workLocationType: WorkLocationType = "office",
 	actionContext: ClockActionContext = {},
+	/** The web's position; the module keeps it only for the web channel (#826). */
+	position?: ClockPosition,
 ): Promise<ClockInCommandResult> {
 	const outcome = await clocking.run({
+		...(position ? { position } : {}),
 		organizationId: actor.employee.organizationId,
 		principal: { kind: "user", userId: actor.userId },
 		subject: { employeeId: actor.employee.id },
@@ -594,7 +610,7 @@ export async function revalidateAfterClockOut(context: Record<string, unknown>) 
 export async function clockOut(
 	projectId: string | null | undefined,
 	workCategoryId: string | null | undefined,
-	actionContext: ClockOutActionContext,
+	webContext: ClockOutActionContext & WebClockPositionContext,
 ): Promise<ServerActionResult<ClockOutResult>> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
@@ -605,11 +621,13 @@ export async function clockOut(
 	if (!currentEmployee) {
 		return { success: false, error: await clockOutFailureMessage("employee_not_found") };
 	}
+	const { position, ...actionContext } = webContext;
 	const result = await clockOutAs(
 		webClockActor(session.user.id, currentEmployee),
 		projectId,
 		workCategoryId,
 		actionContext,
+		readClockPosition(position),
 	);
 	if (result.success) return { success: true, data: result.data };
 	if (result.refusal.code === "billing_required") {
@@ -655,8 +673,11 @@ export async function clockOutAs(
 	projectId: string | null | undefined,
 	workCategoryId: string | null | undefined,
 	actionContext: ClockOutActionContext,
+	/** The web's position; the module keeps it only for the web channel (#826). */
+	position?: ClockPosition,
 ): Promise<ClockOutCommandResult> {
 	const outcome = await clocking.run({
+		...(position ? { position } : {}),
 		organizationId: actor.employee.organizationId,
 		principal: { kind: "user", userId: actor.userId },
 		subject: { employeeId: actor.employee.id },
@@ -699,7 +720,7 @@ export type AddBreakActionContext = {
 	 */
 	submissionId?: string;
 	browserTimezone?: string | null;
-};
+} & WebClockPositionContext;
 
 /** Operator detail for refusals; the employee sees only the worded code. */
 function logBreakRefusal(refusal: BreakRefusal) {
@@ -742,7 +763,10 @@ export async function addBreakToActiveSession(
 		return { success: false, error: await breakFailureMessage({ code: "employee_not_found" }) };
 	}
 
+	// The break's one fix is taken at its end: it stamps only the resumed work (#826 D1).
+	const position = readClockPosition(actionContext.position);
 	const outcome = await clocking.run({
+		...(position ? { position } : {}),
 		organizationId: currentEmployee.organizationId,
 		principal: { kind: "user", userId: session.user.id },
 		subject: { employeeId: currentEmployee.id },

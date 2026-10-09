@@ -69,6 +69,23 @@ describe("web break adapter", () => {
 		});
 	});
 
+	it("carries the position taken at the break's end, and drops a malformed one (#826)", async () => {
+		const position = {
+			latitude: 52.52,
+			longitude: 13.4,
+			accuracyMeters: 20,
+			fixedAt: "2026-07-22T09:59:58.000Z",
+		};
+
+		await addBreakToActiveSession(15, { submissionId, position });
+		await addBreakToActiveSession(15, { submissionId, position: { latitude: 200 } });
+
+		expect(state.run.mock.calls[0]?.[0]).toMatchObject({
+			position: { ...position, fixedAt: parseInstant("2026-07-22T09:59:58Z") },
+		});
+		expect(state.run.mock.calls[1]?.[0]).not.toHaveProperty("position");
+	});
+
 	it("names an unkeyed request with a server identity", async () => {
 		await addBreakToActiveSession(15);
 
