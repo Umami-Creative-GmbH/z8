@@ -321,6 +321,23 @@ describe("payslip batches matched by personnel number (#868)", () => {
 			expect((await stage(batchId, "0042.pdf")).status).toBe(404);
 		});
 
+		it("holds at most 500 files, counting staged files whose objects expired", async () => {
+			signIn("officer");
+			const batchId = await startBatch();
+			// 499 files whose staging expired: no pending ledger rows any more.
+			await admin.query(
+				`insert into payslip_batch_file (id, organization_id, batch_id, original_file_name, file_name,
+				 storage_key, mime_type, size_bytes, checksum_sha256, match_kind)
+				 select gen_random_uuid(), $1::text, $2::uuid, 'f' || n || '.pdf', 'f' || n || '.pdf',
+				 'expired/' || n, 'application/pdf', 10, 'x',
+				 'unmatched'
+				 from generate_series(1, 499) as n`,
+				[ORG, batchId],
+			);
+			await stageOk(batchId, "0042.pdf");
+			expect((await stage(batchId, "00421.pdf")).status).toBe(409);
+		});
+
 		it("takes PDF files only", async () => {
 			signIn("officer");
 			const batchId = await startBatch();
@@ -498,7 +515,11 @@ describe("payslip batches matched by personnel number (#868)", () => {
 
 			// Deleting the document later still hands its own object to cleanup.
 			await admin.query("delete from employee_document where id = $1", [fileId]);
-			await runPersonnelFileCleanup(db, { deleteObject: deletePersonnelDocumentObject });
+			// The trigger stamps the database clock; run a minute later to stay clear of clock skew.
+			await runPersonnelFileCleanup(db, {
+				deleteObject: deletePersonnelDocumentObject,
+				now: Temporal.Instant.fromEpochMilliseconds(Date.now() + 60_000),
+			});
 			expect(harness.objects.size).toBe(0);
 		});
 

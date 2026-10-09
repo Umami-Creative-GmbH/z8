@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, count, desc, eq, inArray, isNull, lt, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, lt, notExists, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { employeeDocument, payslipBatch, payslipBatchFile, personnelFileUpload } from "@/db/schema";
@@ -275,7 +275,18 @@ export async function reservePayslipBatchFile(
 			.for("update");
 		if (!batch) return { kind: "not_found" };
 		if (batch.status !== "open") return { kind: "closed" };
-		const [staged] = await tx
+		// Every file of the batch counts, also those whose staged object expired,
+		// plus reservations whose file is still being stored.
+		const [files] = await tx
+			.select({ count: count() })
+			.from(payslipBatchFile)
+			.where(
+				and(
+					eq(payslipBatchFile.organizationId, access.organizationId),
+					eq(payslipBatchFile.batchId, batch.id),
+				),
+			);
+		const [reserved] = await tx
 			.select({ count: count() })
 			.from(personnelFileUpload)
 			.where(
@@ -283,9 +294,22 @@ export async function reservePayslipBatchFile(
 					eq(personnelFileUpload.organizationId, access.organizationId),
 					eq(personnelFileUpload.batchId, batch.id),
 					eq(personnelFileUpload.status, "pending"),
+					notExists(
+						tx
+							.select({ id: payslipBatchFile.id })
+							.from(payslipBatchFile)
+							.where(
+								and(
+									eq(payslipBatchFile.id, personnelFileUpload.id),
+									eq(payslipBatchFile.organizationId, personnelFileUpload.organizationId),
+								),
+							),
+					),
 				),
 			);
-		if ((staged?.count ?? 0) >= PAYSLIP_BATCH_MAX_FILES) return { kind: "full" };
+		if ((files?.count ?? 0) + (reserved?.count ?? 0) >= PAYSLIP_BATCH_MAX_FILES) {
+			return { kind: "full" };
+		}
 		await tx.insert(personnelFileUpload).values({
 			id: input.fileId,
 			organizationId: access.organizationId,
