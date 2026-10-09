@@ -8,6 +8,11 @@ import { worksCouncilAccessAudit, worksCouncilReviewExport } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { canExportWorksCouncilReview } from "@/lib/works-council/permissions";
+import {
+	type PositionCaptureReview,
+	positionCaptureReviewCsvRows,
+} from "@/lib/works-council/position-capture-review";
+import { loadWorksCouncilPositionCaptureReview } from "@/lib/works-council/position-capture-review-data";
 import type { WorksCouncilPortalModel } from "@/lib/works-council/review-data";
 import { buildWorksCouncilPortalModel } from "@/lib/works-council/review-data";
 import { loadWorksCouncilSettings } from "@/lib/works-council/settings";
@@ -76,6 +81,7 @@ function csvMetricValue(
 
 function buildCsv(
 	model: WorksCouncilPortalModel,
+	positionCapture: PositionCaptureReview,
 	snapshot: VisibilitySnapshot,
 	context: ExportContext,
 ) {
@@ -115,6 +121,9 @@ function buildCsv(
 		...model.scheduleReview.map((entry) =>
 			csvRow([entry.id, entry.startsAt, entry.endsAt, entry.teamName, entry.employeeName]),
 		),
+		csvRow([]),
+		// Configuration, consent counts and the access log only: never a position (#834).
+		...positionCaptureReviewCsvRows(positionCapture).map(csvRow),
 	];
 
 	return {
@@ -188,14 +197,17 @@ export async function POST(request: NextRequest) {
 			visibleLocationIds: settings.visibleLocationIds,
 		};
 
-		const model = await buildWorksCouncilPortalModel({
-			organizationId,
-			actorUserId: session.user.id,
-			dateRangeStart: dateRange.dateRangeStart,
-			dateRangeEnd: dateRange.dateRangeEnd,
-			settings,
-		});
-		const { csv, rowCount } = buildCsv(model, visibilitySnapshot, context);
+		const [model, positionCapture] = await Promise.all([
+			buildWorksCouncilPortalModel({
+				organizationId,
+				actorUserId: session.user.id,
+				dateRangeStart: dateRange.dateRangeStart,
+				dateRangeEnd: dateRange.dateRangeEnd,
+				settings,
+			}),
+			loadWorksCouncilPositionCaptureReview({ organizationId, settings }),
+		]);
+		const { csv, rowCount } = buildCsv(model, positionCapture, visibilitySnapshot, context);
 
 		await db.insert(worksCouncilReviewExport).values({
 			organizationId,

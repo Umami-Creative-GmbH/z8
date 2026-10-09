@@ -196,10 +196,11 @@ function clockOutCommand(
 	};
 }
 
-async function submit(command: unknown) {
+async function submit(command: unknown, headers: Record<string, string> = {}) {
 	const response = await commands.POST(
 		new Request(`${server}/api/time-entries/commands`, {
 			method: "POST",
+			headers,
 			body: JSON.stringify(command),
 		}),
 	);
@@ -424,7 +425,7 @@ describe("frozen direct-HTTP clock commands on PostgreSQL", () => {
 		expect(await read()).toEqual({
 			status: 200,
 			body: {
-				commandVersions: [2],
+				commandVersions: [2, 3],
 				kinds: ["clock_in", "clock_out", "break"],
 				submit: "available",
 				lookup: "available",
@@ -519,6 +520,72 @@ describe("frozen direct-HTTP clock commands on PostgreSQL", () => {
 			body: { ...executed.body, outcome: "replayed" },
 		});
 		expect(await snapshot()).toEqual(before);
+	});
+
+	it("stores a browser's version 3 position, never a bearer client's, and replays the identical stamped resend (#826)", async () => {
+		await admin.query(
+			`insert into position_capture_setting (organization_id, enabled, purpose_statement, retention_days)
+			 values ($1, true, 'Site attendance', 60)`,
+			[ids.organization],
+		);
+		await admin.query(
+			`insert into position_capture_assignment
+			 (organization_id, assignment_type, priority, capture_enabled, created_by)
+			 values ($1, 'organization', 0, true, $2)`,
+			[ids.organization, ids.requesterUser],
+		);
+		const {
+			rows: [notice],
+		} = await admin.query<{ id: string }>(
+			`insert into position_notice (organization_id, version, purpose_statement, retention_days, template_revision)
+			 values ($1, 1, 'Site attendance', 60, 1) returning id`,
+			[ids.organization],
+		);
+		await admin.query(
+			`insert into position_consent (organization_id, employee_id, notice_id, granted_at)
+			 values ($1, $2, $3, $4)`,
+			[ids.organization, ids.requester, notice?.id, new Date("2026-09-01T00:00:00Z")],
+		);
+		const position = {
+			latitude: 47.3769,
+			longitude: 8.5417,
+			accuracyMeters: 25,
+			fixedAt: "2026-09-20T09:59:58.500Z",
+		};
+		const stamped = clockInCommand({ version: 3, position });
+
+		const executed = await submit(stamped);
+		const replayed = await submit(stamped);
+		const stamps = async () =>
+			(
+				await admin.query(
+					"select time_entry_id, latitude, captured_at, purge_at from position_stamp where organization_id = $1",
+					[ids.organization],
+				)
+			).rows;
+
+		expect(executed.status).toBe(201);
+		expect(replayed).toEqual({ status: 200, body: { ...executed.body, outcome: "replayed" } });
+		expect(await receipt(stamped.operationId)).toMatchObject({ command_version: 3, command: stamped });
+		expect(await stamps()).toEqual([
+			{
+				time_entry_id: stamped.operationId,
+				latitude: 47.3769,
+				captured_at: new Date("2026-09-20T10:00:00Z"),
+				purge_at: new Date("2026-11-19T10:00:00Z"),
+			},
+		]);
+
+		// The desktop authenticates with a bearer token: its stamped command commits unstamped.
+		const target = { clockInOperationId: stamped.operationId };
+		const bearer = clockOutCommand(target, {
+			version: 3,
+			position,
+			occurredAt: now.add({ minutes: 2 }).toString(),
+		});
+		const closed = await submit(bearer, { authorization: "Bearer desktop-token" });
+		expect(closed.status).toBe(201);
+		expect(await stamps()).toHaveLength(1);
 	});
 
 	it("treats a changed command under a committed identity as a collision", async () => {

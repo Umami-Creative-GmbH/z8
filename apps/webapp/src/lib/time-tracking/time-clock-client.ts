@@ -1,3 +1,4 @@
+import type { ClockCommandPosition } from "./clock-command";
 import type { ClockOutResult } from "./clocking/types";
 import type { ServerActionResult } from "@/lib/effect/result";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
@@ -19,6 +20,8 @@ type TimeClockRequest =
 			submissionId: string;
 			workLocationType?: WorkLocationType;
 			browserTimezone?: string | null;
+			/** The position taken at the event (#826). */
+			position?: ClockCommandPosition;
 	  }
 	| {
 			action: "clock_out";
@@ -26,6 +29,7 @@ type TimeClockRequest =
 			projectId?: string | null;
 			workCategoryId?: string | null;
 			browserTimezone?: string | null;
+			position?: ClockCommandPosition;
 	  };
 
 function isActionResult(value: unknown): value is ServerActionResult<unknown> {
@@ -60,6 +64,7 @@ export function postClockIn(input: {
 	submissionId: string;
 	workLocationType?: WorkLocationType;
 	browserTimezone?: string | null;
+	position?: ClockCommandPosition;
 }): Promise<WebClockInResult> {
 	return postTimeClock({ action: "clock_in", ...input });
 }
@@ -69,6 +74,7 @@ export function postClockOut(input: {
 	projectId?: string | null;
 	workCategoryId?: string | null;
 	browserTimezone?: string | null;
+	position?: ClockCommandPosition;
 }): Promise<WebClockOutResult> {
 	return postTimeClock({ action: "clock_out", ...input });
 }

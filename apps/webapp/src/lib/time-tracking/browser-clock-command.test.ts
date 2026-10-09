@@ -89,6 +89,31 @@ describe("prepareBrowserClockCommand", () => {
 		});
 	});
 
+	it("carries the position taken at the event when the server accepts version 3 (#826)", () => {
+		const position = {
+			latitude: 52.520008,
+			longitude: 13.404954,
+			accuracyMeters: 18.5,
+			fixedAt: "2026-09-25T08:15:29.000Z",
+		};
+		const prepare = (commandVersions: number[]) =>
+			prepareBrowserClockCommand({
+				kind: "clock_in",
+				operationId,
+				capabilities: { ...capabilities, commandVersions },
+				session,
+				now,
+				timezone: "Europe/Berlin",
+				position,
+			});
+
+		expect(prepare([2, 3])).toMatchObject({ ok: true, request: { position } });
+		// An older server keeps the unstamped version: the event is never held for a position.
+		const unstamped = prepare([2]);
+		expect(unstamped.ok).toBe(true);
+		expect(unstamped.ok && unstamped.request).not.toHaveProperty("position");
+	});
+
 	it("defaults a missing work location the way the legacy clock-in does", () => {
 		expect(
 			prepareBrowserClockCommand({

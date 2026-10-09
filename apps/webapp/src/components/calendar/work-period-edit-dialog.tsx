@@ -8,6 +8,7 @@ import {
 	updateWorkPeriodNotes,
 	updateWorkPeriodProject,
 } from "@/app/[locale]/(app)/time-tracking/actions";
+import { WorkPeriodPositionsSection } from "@/components/position-capture/work-period-positions-section";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -212,6 +213,9 @@ export function WorkPeriodEditDialog({
 						onSave={handleSaveNotes}
 						t={t}
 					/>
+					{metadata.employeeId ? (
+						<WorkPeriodPositionsSection workPeriodId={event.id} employeeId={metadata.employeeId} />
+					) : null}
 				</ActionPanelBody>
 
 				<ActionPanelFooter className="flex-col gap-2 sm:flex-row">

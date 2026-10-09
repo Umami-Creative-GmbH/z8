@@ -17,6 +17,7 @@ import type { LegacyEscalationSuppression } from "@/lib/approvals/escalation/leg
 import type { ApprovalEscalationJobResult } from "@/lib/approvals/escalation/scheduled-job";
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
+import type { PositionStampPurgeResult } from "@/lib/jobs/position-stamp-purge";
 import type { SCIMMaintenanceResult } from "@/lib/jobs/scim-maintenance";
 import type { TravelExpenseReceiptCleanupJobResult } from "@/lib/jobs/travel-expense-receipt-cleanup";
 import type { TravelExpenseReferenceRatesJobResult } from "@/lib/jobs/travel-expense-reference-rates";
@@ -344,6 +345,17 @@ export const CRON_JOBS = {
 				"@/lib/jobs/execution-cleanup"
 			);
 			return runExecutionCleanup();
+		},
+		defaultJobOptions: { attempts: 2, priority: 9 },
+	},
+
+	"cron:position-stamp-purge": {
+		schedule: "0 1 * * *", // Daily at 1 AM
+		description:
+			"Delete position stamps past their purge date in every organization; clock events stay",
+		processor: async (): Promise<PositionStampPurgeResult> => {
+			const { runPositionStampPurge } = await import("@/lib/jobs/position-stamp-purge");
+			return runPositionStampPurge();
 		},
 		defaultJobOptions: { attempts: 2, priority: 9 },
 	},

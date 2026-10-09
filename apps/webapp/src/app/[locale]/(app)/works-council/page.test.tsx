@@ -19,6 +19,7 @@ const mockState = vi.hoisted(() => ({
 	loadWorksCouncilSettings: vi.fn(),
 	auditWorksCouncilPortalViewed: vi.fn(),
 	buildWorksCouncilPortalModel: vi.fn(),
+	loadWorksCouncilPositionCaptureReview: vi.fn(),
 	getTranslate: vi.fn(),
 	translate: vi.fn((key: string, fallback: string) =>
 		key === "worksCouncil.loadingLabel"
@@ -72,6 +73,10 @@ vi.mock("@/lib/works-council/access-audit", () => ({
 
 vi.mock("@/lib/works-council/review-data", () => ({
 	buildWorksCouncilPortalModel: mockState.buildWorksCouncilPortalModel,
+}));
+
+vi.mock("@/lib/works-council/position-capture-review-data", () => ({
+	loadWorksCouncilPositionCaptureReview: mockState.loadWorksCouncilPositionCaptureReview,
 }));
 
 vi.mock("@/components/works-council/works-council-dashboard", () => ({
@@ -129,6 +134,7 @@ describe("WorksCouncilPage", () => {
 			reviewWindowDays: 30,
 		});
 		mockState.buildWorksCouncilPortalModel.mockResolvedValue({ entries: [] });
+		mockState.loadWorksCouncilPositionCaptureReview.mockResolvedValue({ accessLog: [] });
 	});
 
 	it("renders the generic visual shell while translation and access remain unresolved", () => {
@@ -243,5 +249,34 @@ describe("WorksCouncilPage", () => {
 			mockState.buildWorksCouncilPortalModel.mock.invocationCallOrder[0],
 		);
 		expect(dashboard.props.model).toEqual({ entries: [] });
+	});
+
+	it("passes the position capture section, loaded for the active organization after the audit", async () => {
+		const settings = { identityVisibility: "pseudonymized", minimumAggregationThreshold: 3 };
+		mockState.loadWorksCouncilSettings.mockResolvedValue(settings);
+
+		const dashboard = await renderWorksCouncilContent();
+
+		expect(mockState.loadWorksCouncilPositionCaptureReview).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			settings,
+		});
+		expect(
+			mockState.auditWorksCouncilPortalViewed.mock.invocationCallOrder[0],
+		).toBeLessThan(
+			mockState.loadWorksCouncilPositionCaptureReview.mock.invocationCallOrder[0],
+		);
+		expect(dashboard.props.positionCapture).toEqual({
+			review: { accessLog: [] },
+			locale: "en",
+		});
+	});
+
+	it("does not load the position capture section when the organization feature is disabled", async () => {
+		mockState.findOrganization.mockResolvedValue({ worksCouncilEnabled: false });
+
+		await expect(renderWorksCouncilContent()).rejects.toThrow("redirect:/en");
+
+		expect(mockState.loadWorksCouncilPositionCaptureReview).not.toHaveBeenCalled();
 	});
 });
