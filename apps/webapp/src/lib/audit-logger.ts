@@ -162,6 +162,10 @@ export enum AuditAction {
 	CONTACT_LINK_REMOVED = "billable_time.contact_link_removed",
 	CUSTOMER_TAX_TREATMENT_SET = "billable_time.customer_tax_treatment_set",
 	CUSTOMER_TAX_TREATMENT_CLEARED = "billable_time.customer_tax_treatment_cleared",
+	INVOICE_DRAFT_CREATED = "billable_time.invoice_draft_created",
+	INVOICE_DRAFT_FAILED = "billable_time.invoice_draft_failed",
+	INVOICE_DRAFT_RELEASED = "billable_time.invoice_draft_released",
+	INVOICED_WORK_MARK_CLEARED = "billable_time.invoiced_work_mark_cleared",
 
 	// Location Operations
 	LOCATION_CREATED = "location.created",
@@ -234,6 +238,8 @@ export interface AuditLogEntry {
 		| "accounting_connection"
 		| "accounting_contact_link"
 		| "customer_tax_treatment"
+		| "invoice_draft"
+		| "invoiced_work"
 		| "work_period"
 		| "location"
 		| "subarea"

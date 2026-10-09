@@ -40,6 +40,7 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { timeEntryAppendControl } from "@/db/schema/time-entry-append";
+import { carryInvoicedWorkToSplit } from "@/lib/billable-time/hand-off/invoiced-work";
 import {
 	compareInstants,
 	dateFromInstant,
@@ -715,6 +716,12 @@ export async function adjustAutomaticBreakInTransaction(
 		})
 		.returning({ id: workPeriod.id, graphRevision: workPeriod.graphRevision });
 	if (!generated) throw new Error("Generated work period insert failed");
+	// Invoiced work stays invoiced in both halves; the source is marked by trigger (#903).
+	await carryInvoicedWorkToSplit(tx, {
+		organizationId,
+		sourceWorkPeriodId: period.id,
+		newWorkPeriodId: generated.id,
+	});
 
 	// Independent rounding can change the total: the refresh commits with the work.
 	const dirtyFromDate = earliestStartDate(sourceStart, sourceClockIn.utcOffsetMinutes);
@@ -1148,6 +1155,11 @@ export async function applyLegacyAutomaticBreakInTransaction(
 		})
 		.returning({ id: workPeriod.id });
 	if (!inserted) throw new Error("Break enforcement did not create a second work period");
+	await carryInvoicedWorkToSplit(tx, {
+		organizationId,
+		sourceWorkPeriodId: period.id,
+		newWorkPeriodId: inserted.id,
+	});
 	return {
 		kind: "adjusted",
 		operationId: null,

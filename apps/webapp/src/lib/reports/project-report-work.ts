@@ -1,12 +1,13 @@
 import "server-only";
 
-import { and, eq, gte, inArray, isNotNull, lt } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, isNull, lt } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import type { db } from "@/db";
-import { project, timeEntry, workPeriod } from "@/db/schema";
+import { invoicedWork, project, timeEntry, workPeriod } from "@/db/schema";
 import { workDayOf } from "@/lib/billable-time/applicable-rate";
 import { listBillableRatesForWork } from "@/lib/billable-time/billable-rates";
 import { listCostRatesForWork } from "@/lib/billable-time/cost-rates";
+import { rateFromStored } from "@/lib/billable-time/money";
 import type { ReportedWork, ReportRates } from "@/lib/billable-time/report-figures";
 import { dateFromInstant, instantFromDate, type PlainDate } from "@/lib/datetime/temporal-core";
 import { unresolvedWorkPeriodReviewSql } from "@/lib/time-tracking/unresolved-work-period-review";
@@ -53,8 +54,9 @@ function instantWindow(range: ReportDayRange) {
  * The work a project report counts (#794, #902): completed, non-deleted work of
  * the given projects in the organization whose employee-local start day (at the
  * offset captured on its start entry) falls in the range. Live work never
- * counts. Each row carries the project's current customer and whether a
- * correction or submission for it is pending.
+ * counts. Each row carries the project's current customer, whether a
+ * correction or submission for it is pending, and whether it is invoiced work
+ * (in an unreleased invoice draft, #903) with its frozen rates.
  */
 export async function loadReportedProjectWork(
 	reader: Reader,
@@ -75,6 +77,8 @@ export async function loadReportedProjectWork(
 			isBillable: workPeriod.isBillable,
 			startOffsetMinutes: timeEntry.utcOffsetMinutes,
 			pendingReview: unresolvedWorkPeriodReviewSql(),
+			invoicedShares: invoicedWork.shares,
+			changedAfterInvoicingAt: invoicedWork.changedAfterInvoicingAt,
 		})
 		.from(workPeriod)
 		.innerJoin(
@@ -87,6 +91,14 @@ export async function loadReportedProjectWork(
 		.innerJoin(
 			project,
 			and(eq(project.id, workPeriod.projectId), eq(project.organizationId, organizationId)),
+		)
+		.leftJoin(
+			invoicedWork,
+			and(
+				eq(invoicedWork.workPeriodId, workPeriod.id),
+				eq(invoicedWork.organizationId, organizationId),
+				isNull(invoicedWork.releasedAt),
+			),
 		)
 		.where(
 			and(
@@ -115,6 +127,16 @@ export async function loadReportedProjectWork(
 			durationMinutes: row.durationMinutes,
 			isBillable: row.isBillable,
 			pendingReview: row.pendingReview === true,
+			invoiced:
+				row.invoicedShares === null
+					? null
+					: {
+							shares: row.invoicedShares.map((share) => ({
+								durationMs: share.durationMs,
+								rate: rateFromStored(share.rate),
+							})),
+							changedAfterInvoicing: row.changedAfterInvoicingAt !== null,
+						},
 		};
 		if (isWithinDayRange(reportedWorkDay(item), scope.range)) work.push(item);
 	}

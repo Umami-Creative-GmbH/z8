@@ -4,8 +4,11 @@ import { type BillableRatePeriod, priceWorkPeriod } from "./applicable-rate";
 import { type CostRatePeriod, costWorkPeriod } from "./cost-rate";
 import {
 	type AccruedAmount,
+	accrueAmount,
+	addAccruedAmounts,
 	formatRate,
 	RATE_SCALE,
+	type RateUnits,
 	roundAccruedAmount,
 	ZERO_ACCRUED,
 } from "./money";
@@ -47,6 +50,32 @@ export interface ReportedWork {
 	isBillable: boolean;
 	/** A correction or submission for the work is still unresolved. */
 	pendingReview: boolean;
+	/** Set while the work is in an unreleased invoice draft (#903). */
+	invoiced?: ReportedInvoicing | null;
+}
+
+/** How a piece of invoiced work was handed off: its frozen rates (ADR 0001). */
+export interface ReportedInvoicing {
+	shares: readonly { durationMs: number; rate: RateUnits }[];
+	/** Its times, project or billability changed after the hand-off. */
+	changedAfterInvoicing: boolean;
+}
+
+/**
+ * Invoiced and un-invoiced billable work (#903). Invoiced revenue is the work's
+ * frozen hand-off amount; un-invoiced revenue is priced at the rates read now.
+ * Hours are the work's current recorded hours. Both halves add up to the
+ * billable hours and the revenue shown beside them.
+ */
+export interface InvoicingFigures {
+	invoicedMinutes: number;
+	invoicedHours: number;
+	invoicedRevenue: string;
+	uninvoicedMinutes: number;
+	uninvoicedHours: number;
+	uninvoicedRevenue: string;
+	/** Invoiced work (chargeable or not) marked as changed after invoicing. */
+	changedAfterInvoicingCount: number;
 }
 
 /** Who sees which figures: project managers see revenue, owners and admins everything. */
@@ -67,6 +96,8 @@ interface BillableFiguresBase {
 	pendingReviewCount: number;
 	/** Two-decimal amount in `currency`. */
 	revenue: string;
+	/** Invoiced and un-invoiced figures (#903). */
+	invoicing?: InvoicingFigures;
 }
 
 /** Figures for a project manager: hours and revenue, never cost or margin. */
@@ -104,6 +135,9 @@ export interface BillableFiguresTally {
 	revenue: AccruedAmount;
 	cost: AccruedAmount;
 	costUnknownWorkCount: number;
+	invoicedMinutes: number;
+	invoicedRevenue: AccruedAmount;
+	changedAfterInvoicingCount: number;
 }
 
 export interface ReportRates {
@@ -121,6 +155,9 @@ export function emptyBillableFiguresTally(): BillableFiguresTally {
 		revenue: ZERO_ACCRUED,
 		cost: ZERO_ACCRUED,
 		costUnknownWorkCount: 0,
+		invoicedMinutes: 0,
+		invoicedRevenue: ZERO_ACCRUED,
+		changedAfterInvoicingCount: 0,
 	};
 }
 
@@ -140,16 +177,27 @@ export function addReportedWork(
 	rates: ReportRates,
 ): BillableFiguresTally {
 	if (work.pendingReview) tally.pendingReviewCount += 1;
+	if (work.invoiced?.changedAfterInvoicing) tally.changedAfterInvoicingCount += 1;
 	if (!isChargeableWork(work)) {
 		tally.nonBillableMinutes += work.durationMinutes;
 		return tally;
 	}
 	tally.billableMinutes += work.durationMinutes;
-	const priced = priceWorkPeriod(work, rates.billable);
-	tally.revenue += priced.accrued;
-	if (priced.unpricedMs > 0) {
-		tally.unpricedWorkCount += 1;
-		tally.unpricedMs += priced.unpricedMs;
+	if (work.invoiced) {
+		// Invoiced work keeps the rates it was handed off at (ADR 0001).
+		const frozen = addAccruedAmounts(
+			work.invoiced.shares.map((share) => accrueAmount(share.rate, share.durationMs)),
+		);
+		tally.revenue += frozen;
+		tally.invoicedRevenue += frozen;
+		tally.invoicedMinutes += work.durationMinutes;
+	} else {
+		const priced = priceWorkPeriod(work, rates.billable);
+		tally.revenue += priced.accrued;
+		if (priced.unpricedMs > 0) {
+			tally.unpricedWorkCount += 1;
+			tally.unpricedMs += priced.unpricedMs;
+		}
 	}
 	const cost = costWorkPeriod(work, rates.cost);
 	tally.cost += cost.accrued;
@@ -181,6 +229,28 @@ function marginPercentOf(marginCents: bigint, revenueCents: bigint): string | nu
 	);
 }
 
+interface RoundedInvoicing {
+	invoicedMinutes: number;
+	invoicedRevenueCents: bigint;
+	changedAfterInvoicingCount: number;
+}
+
+function invoicingFigures(rounded: RoundedFigures): InvoicingFigures | undefined {
+	const invoicing = rounded.invoicing;
+	if (!invoicing) return undefined;
+	const uninvoicedMinutes = rounded.billableMinutes - invoicing.invoicedMinutes;
+	return {
+		invoicedMinutes: invoicing.invoicedMinutes,
+		invoicedHours: invoicing.invoicedMinutes / 60,
+		invoicedRevenue: formatRate(invoicing.invoicedRevenueCents),
+		uninvoicedMinutes,
+		uninvoicedHours: uninvoicedMinutes / 60,
+		// The rest of the rounded revenue, so the two always add up to it.
+		uninvoicedRevenue: formatRate(rounded.revenueCents - invoicing.invoicedRevenueCents),
+		changedAfterInvoicingCount: invoicing.changedAfterInvoicingCount,
+	};
+}
+
 interface RoundedFigures {
 	billableMinutes: number;
 	nonBillableMinutes: number;
@@ -188,6 +258,7 @@ interface RoundedFigures {
 	unpricedHours: number;
 	pendingReviewCount: number;
 	revenueCents: bigint;
+	invoicing: RoundedInvoicing | null;
 	/** Null while any of the work has no cost rate. */
 	costCents: bigint | null;
 	costUnknownWorkCount: number;
@@ -208,6 +279,8 @@ function figuresFromRounded(
 		pendingReviewCount: rounded.pendingReviewCount,
 		revenue: formatRate(rounded.revenueCents),
 	};
+	const invoicing = invoicingFigures(rounded);
+	if (invoicing) base.invoicing = invoicing;
 	if (options.access === "revenue") return { access: "revenue", ...base };
 	const marginCents = rounded.costCents === null ? null : rounded.revenueCents - rounded.costCents;
 	return {
@@ -233,6 +306,11 @@ export function billableFigures(
 			unpricedHours: tally.unpricedMs / MS_PER_HOUR,
 			pendingReviewCount: tally.pendingReviewCount,
 			revenueCents: roundAccruedAmount(tally.revenue),
+			invoicing: {
+				invoicedMinutes: tally.invoicedMinutes,
+				invoicedRevenueCents: roundAccruedAmount(tally.invoicedRevenue),
+				changedAfterInvoicingCount: tally.changedAfterInvoicingCount,
+			},
 			costCents: tally.costUnknownWorkCount > 0 ? null : roundAccruedAmount(tally.cost),
 			costUnknownWorkCount: tally.costUnknownWorkCount,
 		},
@@ -273,6 +351,22 @@ export function sumBillableFigures(
 			unpricedHours: parts.reduce((sum, part) => sum + part.unpricedHours, 0),
 			pendingReviewCount: parts.reduce((sum, part) => sum + part.pendingReviewCount, 0),
 			revenueCents: parts.reduce((sum, part) => sum + centsOf(part.revenue), BigInt(0)),
+			invoicing: parts.every((part) => part.invoicing)
+				? {
+						invoicedMinutes: parts.reduce(
+							(sum, part) => sum + (part.invoicing?.invoicedMinutes ?? 0),
+							0,
+						),
+						invoicedRevenueCents: parts.reduce(
+							(sum, part) => sum + centsOf(part.invoicing?.invoicedRevenue ?? "0.00"),
+							BigInt(0),
+						),
+						changedAfterInvoicingCount: parts.reduce(
+							(sum, part) => sum + (part.invoicing?.changedAfterInvoicingCount ?? 0),
+							0,
+						),
+					}
+				: null,
 			costCents,
 			costUnknownWorkCount,
 		},

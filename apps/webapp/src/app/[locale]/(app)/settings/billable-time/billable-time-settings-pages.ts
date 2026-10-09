@@ -29,6 +29,12 @@ export const BILLABLE_TIME_SETTINGS_PAGES = [
 		titleKey: "settings.billableTime.nav.accounting",
 		titleDefault: "Accounting",
 	},
+	{
+		id: "hand-off",
+		href: "/settings/billable-time/hand-off",
+		titleKey: "settings.billableTime.nav.handOff",
+		titleDefault: "Hand-off",
+	},
 ] as const satisfies readonly {
 	id: string;
 	href: `/settings/billable-time${string}`;

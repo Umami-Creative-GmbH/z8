@@ -408,6 +408,13 @@ describe("bulk billability change on PostgreSQL", () => {
 				"2026-07-10T08:00:00Z",
 				"2026-07-10T09:00:00Z",
 			),
+			invoiced: await record(
+				ids.employeeUser,
+				ids.employee,
+				ids.project,
+				"2026-07-11T08:00:00Z",
+				"2026-07-11T10:00:00Z",
+			),
 			secondEmployee: await record(
 				ids.secondUser,
 				ids.second,
@@ -437,7 +444,39 @@ describe("bulk billability change on PostgreSQL", () => {
 			  where organization_id = $1 and id = $2`,
 			[ids.organization, work.deleted, new Date("2026-07-20T00:00:00Z")],
 		);
+		await invoice(work.invoiced);
 		return work;
+	}
+
+	/** Puts a work period into an invoice draft (#903): it is invoiced work from now on. */
+	async function invoice(periodId: string) {
+		const { rows } = await admin.query<{ draft_id: string }>(
+			`with connection as (
+			   insert into accounting_connection
+			     (organization_id, provider_kind, status, account_ref, default_tax_treatment, default_tax_rate)
+			   values ($1, 'lexware_office', 'active', 't901-account', 'domestic_standard', 19)
+			   returning id
+			 )
+			 insert into invoice_draft
+			   (organization_id, connection_id, provider_kind, customer_id, status, idempotency_key, contact_id,
+			    contact_name, currency, tax_treatment, tax_rate, period_from, period_to, title, net_total,
+			    external_id, confirmed_at)
+			 select $1, connection.id, 'lexware_office', $2, 'created', gen_random_uuid()::text, 'c-1',
+			        'Acme', 'EUR', 'domestic_standard', 19, '2026-07-01', '2026-07-31', 'Invoice', 200.00,
+			        'draft-1', now()
+			   from connection
+			 returning id as draft_id`,
+			[ids.organization, ids.customer],
+		);
+		await admin.query(
+			`insert into invoiced_work
+			   (organization_id, invoice_draft_id, work_period_id, employee_id, project_id, started_at, ended_at,
+			    start_offset_minutes, duration_minutes, shares)
+			 select organization_id, $3, id, employee_id, project_id, start_time, end_time, 0, duration_minutes,
+			        '[{"line":0,"durationMs":7200000,"rate":"100.00"}]'::jsonb
+			   from work_period where organization_id = $1 and id = $2`,
+			[ids.organization, periodId, only(rows).draft_id],
+		);
 	}
 
 	beforeEach(async () => {
@@ -466,7 +505,8 @@ describe("bulk billability change on PostgreSQL", () => {
 				billable: true,
 				change: { count: 2, minutes: 240 + 90 },
 				alreadyInTarget: { count: 1, minutes: 120 },
-				skipped: { held_back: { count: 1, minutes: 60 } },
+				// Invoiced work is never changed in bulk (#903).
+				skipped: { invoiced: { count: 1, minutes: 120 }, held_back: { count: 1, minutes: 60 } },
 			};
 			expect(preview.summary).toEqual(expectedSummary);
 
@@ -485,6 +525,13 @@ describe("bulk billability change on PostgreSQL", () => {
 			await expectBillable(work.heldBack, false);
 			await expectBillable(work.deleted, false);
 			await expectBillable(work.otherProject, false);
+			await expectBillable(work.invoiced, false);
+			const { rows: invoicedRows } = await admin.query(
+				`select changed_after_invoicing_at, released_at from invoiced_work
+				  where organization_id = $1 and work_period_id = $2`,
+				[ids.organization, work.invoiced],
+			);
+			expect(invoicedRows).toEqual([{ changed_after_invoicing_at: null, released_at: null }]);
 			await expectBillable(work.outsideRange, false);
 			await expectBillable(work.nextLocalDay, false);
 
@@ -528,7 +575,7 @@ describe("bulk billability change on PostgreSQL", () => {
 				billable: true,
 				change: { count: 0, minutes: 0 },
 				alreadyInTarget: { count: 3, minutes: 240 + 90 + 120 },
-				skipped: { held_back: { count: 1, minutes: 60 } },
+				skipped: { invoiced: { count: 1, minutes: 120 }, held_back: { count: 1, minutes: 60 } },
 			});
 		});
 
@@ -560,8 +607,9 @@ describe("bulk billability change on PostgreSQL", () => {
 			expect(preview.summary).toEqual({
 				billable: false,
 				change: { count: 1, minutes: 120 },
-				alreadyInTarget: { count: 3, minutes: 240 + 60 + 90 },
-				skipped: { held_back: { count: 0, minutes: 0 } },
+				// The invoiced work is non-billable already: nothing to change.
+				alreadyInTarget: { count: 4, minutes: 240 + 60 + 90 + 120 },
+				skipped: { invoiced: { count: 0, minutes: 0 }, held_back: { count: 0, minutes: 0 } },
 			});
 			const applied = expectSuccess(
 				await applyBulkBillability({ ...range, billable: false, fingerprint: preview.fingerprint }),

@@ -315,6 +315,10 @@ export function BulkBillabilityForm({
 function useSkipReasonLabels(): Record<BulkBillabilitySkipReason, string> {
 	const { t } = useTranslate();
 	return {
+		invoiced: t(
+			"settings.billableTime.bulk.skipped.invoiced",
+			"Invoiced: in an invoice draft, never changed in bulk",
+		),
 		held_back: t(
 			"settings.billableTime.bulk.skipped.heldBack",
 			"Held back: a correction or submission is pending",

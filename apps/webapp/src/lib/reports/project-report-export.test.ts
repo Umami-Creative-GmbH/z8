@@ -91,6 +91,35 @@ function projectReport(billable: BillableFigures | undefined): ProjectDetailedRe
 }
 
 describe("project report export", () => {
+	it("exports invoiced and un-invoiced hours and revenue when the figures carry them", () => {
+		const withInvoicing: BillableFigures = {
+			...revenueFigures,
+			invoicing: {
+				invoicedMinutes: 300,
+				invoicedHours: 5,
+				invoicedRevenue: "500.00",
+				uninvoicedMinutes: 120,
+				uninvoicedHours: 2,
+				uninvoicedRevenue: "240.00",
+				changedAfterInvoicingCount: 1,
+			},
+		};
+		const csv = exportReportDocumentToCSV(
+			buildProjectReportDocument(projectReport(withInvoicing), context),
+		);
+		const header = csv.split(/\r?\n/).find((line) => line.includes("Invoiced hours")) ?? "";
+
+		expect(header).toContain("Invoiced revenue (EUR)");
+		expect(header).toContain("Un-invoiced hours");
+		expect(header).toContain("Un-invoiced revenue (EUR)");
+		expect(header).toContain("Changed after invoicing");
+		expect(csv).toContain("500.00");
+		expect(csv).toContain("240.00");
+		expect(
+			exportReportDocumentToCSV(buildProjectReportDocument(projectReport(revenueFigures), context)),
+		).not.toContain("Invoiced");
+	});
+
 	it("exports a project manager's report without any cost or margin column", () => {
 		const csv = exportReportDocumentToCSV(
 			buildProjectReportDocument(projectReport(revenueFigures), context),

@@ -22,6 +22,7 @@ import {
 	bulkBillabilityOutcome,
 	summarizeBulkBillability,
 } from "./bulk-billability";
+import { invoicedWorkPeriodSql } from "./hand-off/invoiced-work";
 
 type Reader = Pick<typeof db, "select">;
 
@@ -37,6 +38,7 @@ export const BULK_BILLABILITY_SKIP_CONDITIONS: Record<
 	BulkBillabilitySkipReason,
 	() => SQL<boolean>
 > = {
+	invoiced: invoicedWorkPeriodSql,
 	held_back: unresolvedWorkPeriodReviewSql,
 };
 

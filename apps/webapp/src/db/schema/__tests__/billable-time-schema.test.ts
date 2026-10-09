@@ -10,6 +10,10 @@ import {
 	customer,
 	customerTaxTreatment,
 	employee,
+	INVOICE_DRAFT_STATUSES,
+	invoiceDraft,
+	invoiceDraftLine,
+	invoicedWork,
 	project,
 } from "@/db/schema";
 import { ACCOUNTING_PROVIDER_KINDS } from "@/lib/billable-time/accounting/provider";
@@ -168,5 +172,62 @@ describe("accounting connection schema (#903)", () => {
 		expect(migration).toContain(
 			`CREATE UNIQUE INDEX IF NOT EXISTS "accounting_connection_one_active_idx" ON "accounting_connection" USING btree ("organization_id") WHERE "accounting_connection"."status" = 'active'`,
 		);
+	});
+});
+
+describe("hand-off schema (#903)", () => {
+	const migration = () =>
+		readFileSync(
+			new URL("../../../../drizzle/0149_billable_hand_off.sql", import.meta.url),
+			"utf8",
+		);
+
+	it("scopes drafts, lines and invoiced work to one organization", () => {
+		expect(compositeForeignKeys(invoiceDraft)).toEqual(
+			expect.arrayContaining([
+				{
+					columns: ["connection_id", "organization_id"],
+					target: "accounting_connection",
+					foreignColumns: ["id", "organization_id"],
+				},
+				{
+					columns: ["customer_id", "organization_id"],
+					target: "customer",
+					foreignColumns: ["id", "organization_id"],
+				},
+			]),
+		);
+		for (const table of [invoiceDraftLine, invoicedWork]) {
+			expect(compositeForeignKeys(table)).toContainEqual({
+				columns: ["invoice_draft_id", "organization_id"],
+				target: "invoice_draft",
+				foreignColumns: ["id", "organization_id"],
+			});
+		}
+	});
+
+	it("checks the same draft statuses and provider kinds as the code", () => {
+		const statuses = checkSql(invoiceDraft, "invoice_draft_status_check");
+		for (const status of INVOICE_DRAFT_STATUSES) expect(statuses).toContain(`'${status}'`);
+		const kinds = checkSql(invoiceDraft, "invoice_draft_provider_kind_check");
+		for (const kind of ACCOUNTING_PROVIDER_KINDS) expect(kinds).toContain(`'${kind}'`);
+	});
+
+	it("lets a work period be in at most one unreleased invoice draft", () => {
+		const index = getTableConfig(invoicedWork).indexes.find(
+			(candidate) => candidate.config.name === "invoiced_work_active_period_idx",
+		);
+		expect(index?.config.unique).toBe(true);
+		expect(migration()).toContain(
+			`CREATE UNIQUE INDEX IF NOT EXISTS "invoiced_work_active_period_idx" ON "invoiced_work" USING btree ("organization_id","work_period_id") WHERE "invoiced_work"."released_at" IS NULL`,
+		);
+	});
+
+	it("marks invoiced work from every writer of times, project, billability or deletion", () => {
+		const sql = migration();
+		expect(sql).toContain(
+			`CREATE TRIGGER "invoiced_work_mark_changed" AFTER UPDATE OF "start_time", "end_time", "duration_minutes", "project_id", "is_billable", "deleted_at" ON "work_period"`,
+		);
+		expect(sql).toContain('DROP TRIGGER IF EXISTS "invoiced_work_mark_changed" ON "work_period"');
 	});
 });

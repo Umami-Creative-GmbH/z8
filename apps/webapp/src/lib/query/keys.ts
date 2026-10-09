@@ -353,6 +353,13 @@ export const queryKeys = {
 		/** A contact picker search in the connected accounting tool (#903). */
 		contactSearch: (query: string) =>
 			["billableTime", "accounting", "contactSearch", query] as const,
+		/** The hand-off area: customers, hand-offs and marked work (#903). */
+		handOffOverview: () => ["billableTime", "handOff", "overview"] as const,
+		/** One hand-off (invoice draft) with its lines, work and timesheet (#903). */
+		invoiceDraft: (draftId: string) => ["billableTime", "handOff", "draft", draftId] as const,
+		/** The accounting tool's status of one invoice draft (#903). */
+		invoiceDraftStatus: (draftId: string) =>
+			["billableTime", "handOff", "draftStatus", draftId] as const,
 	},
 
 	// Surcharges

@@ -243,4 +243,62 @@ describe("billable report figures", () => {
 			JSON.stringify(sumBillableFigures([known, unknown], { access: "revenue", currency: "EUR" })),
 		).not.toMatch(/cost|margin/i);
 	});
+
+	it("keeps invoiced work at its frozen rates and splits invoiced from un-invoiced figures", () => {
+		const rates = { billable: [projectRate(12_000, "2026-01-01")] };
+		const invoiced = work("2026-03-02T08:00:00Z", "2026-03-02T10:00:00Z", {
+			// Handed off at 100.00 before the rate became 120.00 (ADR 0001).
+			invoiced: {
+				shares: [{ durationMs: 7_200_000, rate: BigInt(10_000) }],
+				changedAfterInvoicing: true,
+			},
+		});
+		const open = work("2026-03-03T08:00:00Z", "2026-03-03T09:30:00Z");
+
+		const result = figures([invoiced, open], rates);
+
+		expect(result.revenue).toBe("380.00");
+		expect(result.invoicing).toEqual({
+			invoicedMinutes: 120,
+			invoicedHours: 2,
+			invoicedRevenue: "200.00",
+			uninvoicedMinutes: 90,
+			uninvoicedHours: 1.5,
+			uninvoicedRevenue: "180.00",
+			changedAfterInvoicingCount: 1,
+		});
+		expect(
+			sumBillableFigures([result, result], { access: "revenue", currency: "EUR" }),
+		).toMatchObject({
+			revenue: "760.00",
+			invoicing: {
+				invoicedMinutes: 240,
+				invoicedRevenue: "400.00",
+				uninvoicedRevenue: "360.00",
+				changedAfterInvoicingCount: 2,
+			},
+		});
+	});
+
+	it("never counts invoiced work that is no longer chargeable as invoiced revenue", () => {
+		const result = figures(
+			[
+				work("2026-03-02T08:00:00Z", "2026-03-02T10:00:00Z", {
+					isBillable: false,
+					invoiced: {
+						shares: [{ durationMs: 7_200_000, rate: BigInt(10_000) }],
+						changedAfterInvoicing: true,
+					},
+				}),
+			],
+			{ billable: [projectRate(10_000, "2026-01-01")] },
+		);
+
+		expect(result).toMatchObject({ revenue: "0.00", nonBillableMinutes: 120 });
+		expect(result.invoicing).toMatchObject({
+			invoicedMinutes: 0,
+			invoicedRevenue: "0.00",
+			changedAfterInvoicingCount: 1,
+		});
+	});
 });

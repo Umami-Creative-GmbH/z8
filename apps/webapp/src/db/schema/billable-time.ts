@@ -1,9 +1,12 @@
 import { sql } from "drizzle-orm";
 import {
+	bigint,
+	boolean,
 	check,
 	date,
 	foreignKey,
 	index,
+	integer,
 	jsonb,
 	numeric,
 	pgTable,
@@ -17,6 +20,7 @@ import { organization, user } from "../auth-schema";
 import { customer } from "./customer";
 import { employee } from "./organization";
 import { project } from "./project";
+import { workPeriod } from "./time-tracking";
 
 /**
  * Billable Time module settings (#897). One row per organization, created the
@@ -324,5 +328,225 @@ export const customerTaxTreatment = pgTable(
 			foreignColumns: [customer.id, customer.organizationId],
 		}).onDelete("cascade"),
 		index("customer_tax_treatment_organization_idx").on(table.organizationId),
+	],
+);
+
+/**
+ * Hand-off attempt and invoice draft states (#903). Keep in sync with the
+ * CHECK on `invoice_draft.status`.
+ *
+ * - `pending`: the hand-off recorded its attempt (draft, lines and invoiced
+ *   work) and has not yet learned that the tool created the draft. Retrying
+ *   calls the tool with the same idempotency key.
+ * - `created`: the draft exists in the accounting tool.
+ * - `failed`: the tool certainly did not create it; its work was returned.
+ * - `released`: an admin released it; its work is un-invoiced again.
+ */
+export const INVOICE_DRAFT_STATUSES = ["pending", "created", "failed", "released"] as const;
+
+export type InvoiceDraftStatusValue = (typeof INVOICE_DRAFT_STATUSES)[number];
+
+/**
+ * Invoice drafts (#903): one per hand-off of one customer's un-invoiced
+ * billable work in a period, created in the accounting tool through the
+ * provider port. The row is written BEFORE the tool is called (the recorded
+ * attempt) with its idempotency key; retries send the same key and the same
+ * lines. The lines freeze project, rate, hours and amount (ADR 0001).
+ */
+export const invoiceDraft = pgTable(
+	"invoice_draft",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		connectionId: uuid("connection_id").notNull(),
+		providerKind: text("provider_kind").notNull(),
+		customerId: uuid("customer_id").notNull(),
+		status: text("status").$type<InvoiceDraftStatusValue>().notNull().default("pending"),
+		/** The hand-off's idempotency key: the tool call carries it, retries reuse it. */
+		idempotencyKey: text("idempotency_key").notNull(),
+		contactId: text("contact_id").notNull(),
+		contactName: text("contact_name").notNull(),
+		contactNumber: text("contact_number"),
+		currency: text("currency").notNull(),
+		taxTreatment: text("tax_treatment").notNull(),
+		taxRate: numeric("tax_rate", { precision: 5, scale: 2 }).notNull(),
+		periodFrom: date("period_from", { mode: "string" }).notNull(),
+		periodTo: date("period_to", { mode: "string" }).notNull(),
+		/** The projects the admin chose; null = all of the customer's projects. */
+		projectIds: uuid("project_ids").array(),
+		title: text("title").notNull(),
+		introduction: text("introduction"),
+		remark: text("remark"),
+		includeTimesheet: boolean("include_timesheet").notNull().default(false),
+		/** The sum of the work lines' amounts, in `currency`. */
+		netTotal: numeric("net_total", { precision: 14, scale: 2 }).notNull(),
+		externalId: text("external_id"),
+		externalUrl: text("external_url"),
+		firstAttemptAt: timestamp("first_attempt_at", { withTimezone: true }).defaultNow().notNull(),
+		lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
+		attemptCount: integer("attempt_count").notNull().default(0),
+		/** Some call may have reached the tool (timeout): never treat the attempt as failed. */
+		outcomeUnknown: boolean("outcome_unknown").notNull().default(false),
+		lastFailure: text("last_failure"),
+		lastFailureMessage: text("last_failure_message"),
+		toolStatus: text("tool_status"),
+		toolStatusCheckedAt: timestamp("tool_status_checked_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+		confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+		endedAt: timestamp("ended_at", { withTimezone: true }),
+		endedBy: text("ended_by").references(() => user.id, { onDelete: "set null" }),
+		releaseReason: text("release_reason"),
+	},
+	(table) => [
+		check(
+			"invoice_draft_status_check",
+			sql`${table.status} IN ('pending', 'created', 'failed', 'released')`,
+		),
+		check(
+			"invoice_draft_provider_kind_check",
+			sql`${table.providerKind} IN ('lexware_office', 'sevdesk')`,
+		),
+		check("invoice_draft_currency_check", sql`${table.currency} IN ('EUR', 'CHF', 'USD', 'GBP')`),
+		check(
+			"invoice_draft_tax_treatment_check",
+			sql`${table.taxTreatment} IN (${TAX_TREATMENT_KIND_SQL})`,
+		),
+		check("invoice_draft_period_check", sql`${table.periodTo} >= ${table.periodFrom}`),
+		check(
+			"invoice_draft_created_check",
+			sql`${table.status} <> 'created' OR ${table.externalId} IS NOT NULL`,
+		),
+		check(
+			"invoice_draft_ended_check",
+			sql`(${table.status} IN ('failed', 'released')) = (${table.endedAt} IS NOT NULL)`,
+		),
+		unique("invoice_draft_id_organization_idx").on(table.id, table.organizationId),
+		uniqueIndex("invoice_draft_idempotency_key_idx").on(table.organizationId, table.idempotencyKey),
+		foreignKey({
+			name: "invoice_draft_connection_fk",
+			columns: [table.connectionId, table.organizationId],
+			foreignColumns: [accountingConnection.id, accountingConnection.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "invoice_draft_customer_fk",
+			columns: [table.customerId, table.organizationId],
+			foreignColumns: [customer.id, customer.organizationId],
+		}).onDelete("cascade"),
+		index("invoice_draft_organization_created_idx").on(table.organizationId, table.createdAt),
+		index("invoice_draft_customer_idx").on(table.organizationId, table.customerId),
+	],
+);
+
+/**
+ * The lines of an invoice draft, frozen at hand-off (ADR 0001): a work line per
+ * project and applicable rate (exact duration, hours with two decimals, rate,
+ * amount), and optional text lines (the timesheet). `project_name` is the name
+ * the line was sent with.
+ */
+export const invoiceDraftLine = pgTable(
+	"invoice_draft_line",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		invoiceDraftId: uuid("invoice_draft_id").notNull(),
+		position: integer("position").notNull(),
+		kind: text("kind").$type<"work" | "text">().notNull(),
+		projectId: uuid("project_id"),
+		projectName: text("project_name"),
+		text: text("text").notNull(),
+		durationMs: bigint("duration_ms", { mode: "number" }),
+		quantityHundredths: integer("quantity_hundredths"),
+		unitPrice: numeric("unit_price", { precision: 12, scale: 2 }),
+		amount: numeric("amount", { precision: 14, scale: 2 }),
+	},
+	(table) => [
+		check(
+			"invoice_draft_line_kind_check",
+			sql`(${table.kind} = 'work' AND ${table.projectId} IS NOT NULL AND ${table.projectName} IS NOT NULL AND ${table.durationMs} > 0 AND ${table.quantityHundredths} > 0 AND ${table.unitPrice} > 0 AND ${table.amount} IS NOT NULL)
+			OR (${table.kind} = 'text' AND ${table.projectId} IS NULL AND ${table.durationMs} IS NULL AND ${table.quantityHundredths} IS NULL AND ${table.unitPrice} IS NULL AND ${table.amount} IS NULL)`,
+		),
+		foreignKey({
+			name: "invoice_draft_line_draft_fk",
+			columns: [table.invoiceDraftId, table.organizationId],
+			foreignColumns: [invoiceDraft.id, invoiceDraft.organizationId],
+		}).onDelete("cascade"),
+		uniqueIndex("invoice_draft_line_position_idx").on(table.invoiceDraftId, table.position),
+	],
+);
+
+/** One work period's share of one work line, frozen at hand-off. */
+export interface InvoicedWorkShare {
+	/** `invoice_draft_line.position` of the line. */
+	line: number;
+	durationMs: number;
+	/** The frozen hourly rate, two decimals. */
+	rate: string;
+}
+
+/**
+ * Invoiced work (#903): a work period included in an invoice draft that has not
+ * been released (`released_at` null). A work period is in at most one
+ * unreleased draft (partial unique index).
+ *
+ * The started/ended/duration/project columns are the work as it was handed off
+ * (the timesheet); `shares` freeze its rates per line. Rows with
+ * `carried_from_work_period_id` are the split-off half of invoiced work: still
+ * invoiced (never handed off twice), not in the timesheet, no shares.
+ *
+ * Changed after invoicing: the `invoiced_work_mark_changed` trigger on
+ * `work_period` (migration 0149) sets `changed_after_invoicing_at` and adds to
+ * `changed_fields` whenever ANY writer changes an invoiced period's times,
+ * project, billability or deletes it. Writers are never blocked (ADR 0002). An
+ * admin clears the mark (`mark_cleared_at`/`mark_cleared_by`, audited).
+ */
+export const invoicedWork = pgTable(
+	"invoiced_work",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		invoiceDraftId: uuid("invoice_draft_id").notNull(),
+		workPeriodId: uuid("work_period_id")
+			.notNull()
+			.references(() => workPeriod.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").notNull(),
+		projectId: uuid("project_id").notNull(),
+		startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+		endedAt: timestamp("ended_at", { withTimezone: true }).notNull(),
+		startOffsetMinutes: integer("start_offset_minutes").notNull(),
+		durationMinutes: integer("duration_minutes").notNull(),
+		shares: jsonb("shares").$type<InvoicedWorkShare[]>().notNull().default([]),
+		carriedFromWorkPeriodId: uuid("carried_from_work_period_id"),
+		releasedAt: timestamp("released_at", { withTimezone: true }),
+		changedAfterInvoicingAt: timestamp("changed_after_invoicing_at", { withTimezone: true }),
+		changedFields: text("changed_fields").array().notNull().default(sql`'{}'::text[]`),
+		markClearedAt: timestamp("mark_cleared_at", { withTimezone: true }),
+		markClearedBy: text("mark_cleared_by").references(() => user.id, { onDelete: "set null" }),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => [
+		foreignKey({
+			name: "invoiced_work_draft_fk",
+			columns: [table.invoiceDraftId, table.organizationId],
+			foreignColumns: [invoiceDraft.id, invoiceDraft.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "invoiced_work_employee_fk",
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+		uniqueIndex("invoiced_work_active_period_idx")
+			.on(table.organizationId, table.workPeriodId)
+			.where(sql`${table.releasedAt} IS NULL`),
+		index("invoiced_work_draft_idx").on(table.organizationId, table.invoiceDraftId),
+		index("invoiced_work_changed_idx")
+			.on(table.organizationId)
+			.where(sql`${table.changedAfterInvoicingAt} IS NOT NULL AND ${table.releasedAt} IS NULL`),
 	],
 );
