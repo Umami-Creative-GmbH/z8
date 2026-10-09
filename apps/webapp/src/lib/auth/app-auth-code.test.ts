@@ -1,8 +1,11 @@
 import { createHash } from "node:crypto";
+import { inspect } from "node:util";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const TEST_VERIFIER = "test-verifier";
-const TEST_CHALLENGE = createHash("sha256").update(TEST_VERIFIER).digest("base64url");
+const TEST_CHALLENGE = createHash("sha256")
+	.update(TEST_VERIFIER)
+	.digest("base64url");
 
 const mockState = vi.hoisted(() => ({
 	insertValues: vi.fn(),
@@ -37,7 +40,9 @@ describe("app auth code service", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.updateSet.mockReturnValue({ where: mockState.updateWhere });
-		mockState.updateWhere.mockReturnValue({ returning: mockState.updateReturning });
+		mockState.updateWhere.mockReturnValue({
+			returning: mockState.updateReturning,
+		});
 	});
 
 	it("creates a single-use mobile auth code with expiry metadata", async () => {
@@ -75,20 +80,30 @@ describe("app auth code service", () => {
 		mockState.updateReturning.mockResolvedValue([{ id: "code-1" }]);
 
 		await expect(
-			consumeAppAuthCode({ app: "mobile", code: "ABCD", verifier: TEST_VERIFIER }),
+			consumeAppAuthCode({
+				app: "mobile",
+				code: "ABCD",
+				verifier: TEST_VERIFIER,
+			}),
 		).resolves.toEqual({
 			sessionToken: "session-token",
 			status: "success",
 		});
 
-		expect(mockState.updateSet).toHaveBeenCalledWith(expect.objectContaining({ status: "used" }));
+		expect(mockState.updateSet).toHaveBeenCalledWith(
+			expect.objectContaining({ status: "used" }),
+		);
 	});
 
 	it("rejects missing codes", async () => {
 		mockState.findFirst.mockResolvedValue(undefined);
 
 		await expect(
-			consumeAppAuthCode({ app: "mobile", code: "MISSING", verifier: TEST_VERIFIER }),
+			consumeAppAuthCode({
+				app: "mobile",
+				code: "MISSING",
+				verifier: TEST_VERIFIER,
+			}),
 		).resolves.toEqual({
 			status: "invalid_code",
 		});
@@ -105,7 +120,11 @@ describe("app auth code service", () => {
 		});
 
 		await expect(
-			consumeAppAuthCode({ app: "mobile", code: "USED", verifier: TEST_VERIFIER }),
+			consumeAppAuthCode({
+				app: "mobile",
+				code: "USED",
+				verifier: TEST_VERIFIER,
+			}),
 		).resolves.toEqual({
 			status: "invalid_code",
 		});
@@ -122,7 +141,11 @@ describe("app auth code service", () => {
 		});
 
 		await expect(
-			consumeAppAuthCode({ app: "mobile", code: "LEGACY", verifier: TEST_VERIFIER }),
+			consumeAppAuthCode({
+				app: "mobile",
+				code: "LEGACY",
+				verifier: TEST_VERIFIER,
+			}),
 		).resolves.toEqual({
 			status: "invalid_code",
 		});
@@ -133,7 +156,11 @@ describe("app auth code service", () => {
 		mockState.findFirst.mockResolvedValue(undefined);
 
 		await expect(
-			consumeAppAuthCode({ app: "mobile", code: "DESKTOP-CODE", verifier: TEST_VERIFIER }),
+			consumeAppAuthCode({
+				app: "mobile",
+				code: "DESKTOP-CODE",
+				verifier: TEST_VERIFIER,
+			}),
 		).resolves.toEqual({
 			status: "invalid_code",
 		});
@@ -148,15 +175,23 @@ describe("app auth code service", () => {
 			status: "pending",
 			expiresAt: new Date(Date.now() + 60_000),
 		});
-		mockState.updateReturning.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+		mockState.updateReturning
+			.mockResolvedValueOnce([])
+			.mockResolvedValueOnce([]);
 
 		await expect(
-			consumeAppAuthCode({ app: "mobile", code: "DESKTOP-STORED", verifier: TEST_VERIFIER }),
+			consumeAppAuthCode({
+				app: "mobile",
+				code: "DESKTOP-STORED",
+				verifier: TEST_VERIFIER,
+			}),
 		).resolves.toEqual({
 			status: "invalid_code",
 		});
 
-		expect(mockState.updateSet).toHaveBeenCalledWith(expect.objectContaining({ status: "used" }));
+		expect(mockState.updateSet).toHaveBeenCalledWith(
+			expect.objectContaining({ status: "used" }),
+		);
 	});
 
 	it("rejects codes when the guarded update affects no rows", async () => {
@@ -171,7 +206,11 @@ describe("app auth code service", () => {
 		mockState.updateReturning.mockResolvedValue([]);
 
 		await expect(
-			consumeAppAuthCode({ app: "mobile", code: "RACE", verifier: TEST_VERIFIER }),
+			consumeAppAuthCode({
+				app: "mobile",
+				code: "RACE",
+				verifier: TEST_VERIFIER,
+			}),
 		).resolves.toEqual({
 			status: "invalid_code",
 		});
@@ -186,10 +225,16 @@ describe("app auth code service", () => {
 			status: "pending",
 			expiresAt: new Date(Date.now() + 60_000),
 		});
-		mockState.updateReturning.mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: "code-4" }]);
+		mockState.updateReturning
+			.mockResolvedValueOnce([])
+			.mockResolvedValueOnce([{ id: "code-4" }]);
 
 		await expect(
-			consumeAppAuthCode({ app: "mobile", code: "EDGE", verifier: TEST_VERIFIER }),
+			consumeAppAuthCode({
+				app: "mobile",
+				code: "EDGE",
+				verifier: TEST_VERIFIER,
+			}),
 		).resolves.toEqual({
 			status: "invalid_code",
 		});
@@ -213,10 +258,16 @@ describe("app auth code service", () => {
 			status: "pending",
 			expiresAt: new Date(Date.now() - 60_000),
 		});
-		mockState.updateReturning.mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: "code-2" }]);
+		mockState.updateReturning
+			.mockResolvedValueOnce([])
+			.mockResolvedValueOnce([{ id: "code-2" }]);
 
 		await expect(
-			consumeAppAuthCode({ app: "mobile", code: "EXPIRED", verifier: TEST_VERIFIER }),
+			consumeAppAuthCode({
+				app: "mobile",
+				code: "EXPIRED",
+				verifier: TEST_VERIFIER,
+			}),
 		).resolves.toEqual({
 			status: "invalid_code",
 		});
@@ -244,7 +295,11 @@ describe("app auth code service", () => {
 				.mockResolvedValueOnce([{ id: "code-boundary" }]);
 
 			await expect(
-				consumeAppAuthCode({ app: "mobile", code: "BOUNDARY", verifier: TEST_VERIFIER }),
+				consumeAppAuthCode({
+					app: "mobile",
+					code: "BOUNDARY",
+					verifier: TEST_VERIFIER,
+				}),
 			).resolves.toEqual({
 				status: "invalid_code",
 			});
@@ -261,4 +316,62 @@ describe("app auth code service", () => {
 			vi.useRealTimers();
 		}
 	});
+
+	it.each(["create", "lookup", "consume", "expire"] as const)(
+		"keeps credentials out of %s database failures while retaining SQLSTATE",
+		async (operation) => {
+			const failure = Object.assign(
+				new Error(
+					"Failed query containing fixture-code and fixture-secret-session",
+				),
+				{
+					params: ["fixture-code", "fixture-secret-session"],
+					cause: Object.assign(new Error("private row details"), {
+						code: "42703",
+					}),
+				},
+			);
+			mockState.findFirst.mockResolvedValue({
+				id: "code-storage-failure",
+				app: "desktop",
+				codeChallenge: TEST_CHALLENGE,
+				sessionToken: "fixture-secret-session",
+				status: "pending",
+				expiresAt: new Date(Date.now() + 60_000),
+			});
+			if (operation === "create")
+				mockState.insertValues.mockRejectedValueOnce(failure);
+			if (operation === "lookup")
+				mockState.findFirst.mockRejectedValueOnce(failure);
+			if (operation === "consume")
+				mockState.updateReturning.mockRejectedValueOnce(failure);
+			if (operation === "expire") {
+				mockState.updateReturning
+					.mockResolvedValueOnce([])
+					.mockRejectedValueOnce(failure);
+			}
+			const result = await (operation === "create"
+				? createAppAuthCode({
+						userId: "user-1",
+						app: "desktop",
+						codeChallenge: TEST_CHALLENGE,
+						sessionToken: "fixture-secret-session",
+					})
+				: consumeAppAuthCode({
+						app: "desktop",
+						code: "fixture-code",
+						verifier: TEST_VERIFIER,
+					})
+			).catch((error: unknown) => error);
+			expect(result).toBeInstanceOf(Error);
+			expect(result).toMatchObject({
+				message: "App sign-in code storage failed (SQLSTATE 42703)",
+			});
+			const logged = inspect(result, { depth: null });
+			expect(logged).not.toContain("fixture-secret-session");
+			expect(logged).not.toContain("fixture-code");
+			expect(logged).not.toContain("private row details");
+			expect(logged).not.toContain("params");
+		},
+	);
 });
