@@ -25,6 +25,7 @@ import { DeleteDocumentDialog } from "./delete-document-dialog";
 import { DocumentDialog } from "./document-dialog";
 import { usePersonnelFileLabels } from "./document-labels";
 import { DocumentList } from "./document-list";
+import { DownloadPersonnelFile } from "./download-personnel-file";
 
 const ALL_CATEGORIES = "all";
 
@@ -94,6 +95,7 @@ export function PersonnelFilePanel({ capability }: { capability: PersonnelFilePa
 							))}
 						</SelectContent>
 					</Select>
+					<DownloadPersonnelFile employeeId={employeeId} />
 					<Button type="button" onClick={() => setUploading(true)}>
 						<IconUpload aria-hidden="true" className="size-4" />
 						{t("settings.personnelFiles.panel.upload", "Upload document")}
