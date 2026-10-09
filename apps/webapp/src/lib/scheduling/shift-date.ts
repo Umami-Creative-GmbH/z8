@@ -5,6 +5,7 @@ import {
 	type PlainDate,
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
+import { resolveScheduleDateRange } from "./schedule-local-input";
 
 /**
  * `shift.date` stores the organization-local midnight of the shift's calendar date as a UTC
@@ -22,4 +23,20 @@ export function shiftDateBounds(
 ): { start: Date; endExclusive: Date } {
 	const day = localDayRange(date, organizationTimezone);
 	return { start: dateFromInstant(day.start), endExclusive: dateFromInstant(day.endExclusive) };
+}
+
+/**
+ * The `shift.date` bounds of the organization-local calendar days from `startDate` up to, not
+ * including, `endDateExclusive`. Query them with `gte(start)` and `lt(endExclusive)`.
+ */
+export function shiftDateRangeBounds(
+	startDate: string | PlainDate,
+	endDateExclusive: string | PlainDate,
+	organizationTimezone: string,
+): { start: Date; endExclusive: Date } {
+	const range = resolveScheduleDateRange(
+		{ startDate: startDate.toString(), endDateExclusive: endDateExclusive.toString() },
+		organizationTimezone,
+	);
+	return { start: dateFromInstant(range.start), endExclusive: dateFromInstant(range.endExclusive) };
 }
