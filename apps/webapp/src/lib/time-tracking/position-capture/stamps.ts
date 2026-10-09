@@ -3,18 +3,15 @@ import "server-only";
 import { and, eq, inArray } from "drizzle-orm";
 import { positionStamp } from "@/db/schema";
 import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import type { ClockPosition } from "../clocking/types";
 import type { PositionCaptureClient } from "./store";
 
-/** One stored position stamp (#826), as later slices read it. */
-export type PositionStampRecord = {
+/** One stored position stamp (#826), as later slices read it: the clock event's position and more. */
+export type PositionStampRecord = ClockPosition & {
 	id: string;
 	employeeId: string;
 	timeEntryId: string;
 	consentId: string;
-	latitude: number;
-	longitude: number;
-	accuracyMeters: number;
-	fixedAt: Instant;
 	capturedAt: Instant;
 	purgeAt: Instant;
 };

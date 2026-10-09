@@ -9,6 +9,7 @@ import { runPositionCaptureAction } from "@/lib/time-tracking/position-capture/a
 import {
 	type PositionCaptureActionResult,
 	PositionCaptureRefusal,
+	requireUuid,
 } from "@/lib/time-tracking/position-capture/errors";
 import type { PositionConsentDecision } from "@/lib/time-tracking/position-capture/policy";
 import { resolvePositionCapture } from "@/lib/time-tracking/position-capture/resolver";
@@ -42,7 +43,6 @@ export type OwnPositionCaptureData = {
 	asksForConsent: boolean;
 };
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PAGE_PATH = "/settings/position-stamps";
 
 export async function getOwnPositionCaptureAction(): Promise<
@@ -166,10 +166,7 @@ async function requireOwnEmployee(): Promise<{ organizationId: string; employeeI
 }
 
 function parseNoticeId(value: unknown): string {
-	if (typeof value !== "string" || !UUID_PATTERN.test(value)) {
-		throw new PositionCaptureRefusal("invalid_notice", "Invalid position notice.");
-	}
-	return value;
+	return requireUuid(value, { code: "invalid_notice", message: "Invalid position notice." });
 }
 
 function toConsentData(consent: PositionConsentDecision): OwnPositionConsentData {

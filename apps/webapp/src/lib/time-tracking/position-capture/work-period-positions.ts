@@ -4,6 +4,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { timeEntry, workPeriod } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
+import type { ClockPosition } from "../clocking/types";
 import type { WorkTransactionDatabase } from "../work-transaction";
 import { recordPositionStampAccess } from "./access-log";
 import { readPositionStampsForEntries } from "./stamps";
@@ -11,13 +12,9 @@ import type { PositionCaptureClient } from "./store";
 import { loadPositionStampViewer, positionStampAccess } from "./viewer";
 
 /** A stamp as shown on a work period's detail. No address, no map. */
-export type WorkPeriodPositionStamp = {
+export type WorkPeriodPositionStamp = ClockPosition & {
 	/** Which end of the work period the stamped clock event is. */
 	event: "clock_in" | "clock_out";
-	latitude: number;
-	longitude: number;
-	accuracyMeters: number;
-	fixedAt: Instant;
 	/** The instant of the clock event the position was recorded with. */
 	eventAt: Instant;
 	/** That clock event's own UTC offset, for event-local display. */

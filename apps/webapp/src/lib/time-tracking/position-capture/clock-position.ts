@@ -1,9 +1,6 @@
 import { parseInstant } from "@/lib/datetime/temporal-core";
-import { type ClockCommandPosition, clockCommandPositionSchema } from "../clock-command";
+import { clockCommandPositionSchema } from "../clock-command";
 import type { ClockPosition } from "../clocking/types";
-
-/** A position as the browser sends it: the frozen command's shape, `fixedAt` a UTC instant. */
-export type ClockPositionWire = ClockCommandPosition;
 
 /**
  * The position a web clock request carried (#826), or undefined. A missing or

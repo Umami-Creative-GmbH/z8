@@ -34,6 +34,19 @@ export class PositionCaptureRefusal extends Error {
 	}
 }
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** An action input that must be a UUID: returned as is, or refused with `code`. */
+export function requireUuid(
+	value: unknown,
+	refusal: { code: PositionCaptureErrorCode; message: string },
+): string {
+	if (typeof value !== "string" || !UUID_PATTERN.test(value)) {
+		throw new PositionCaptureRefusal(refusal.code, refusal.message);
+	}
+	return value;
+}
+
 /** A position capture server action's result; a failure always carries a stable code. */
 export type PositionCaptureActionResult<T> =
 	| { success: true; data: T }

@@ -8,12 +8,16 @@ import { runPositionCaptureAction } from "@/lib/time-tracking/position-capture/a
 import {
 	type PositionCaptureActionResult,
 	PositionCaptureRefusal,
+	requireUuid,
 } from "@/lib/time-tracking/position-capture/errors";
 import {
 	loadPositionStampViewer,
 	mayViewEveryonesPositionStamps,
 } from "@/lib/time-tracking/position-capture/viewer";
-import { showWorkPeriodPositions } from "@/lib/time-tracking/position-capture/work-period-positions";
+import {
+	showWorkPeriodPositions,
+	type WorkPeriodPositionStamp,
+} from "@/lib/time-tracking/position-capture/work-period-positions";
 
 export type PositionStampViewerAccessData = {
 	/** Whether the organization has ever published a position notice (no notice, no stamps). */
@@ -22,23 +26,16 @@ export type PositionStampViewerAccessData = {
 	mayViewOthers: boolean;
 };
 
-export type WorkPeriodPositionStampData = {
-	event: "clock_in" | "clock_out";
-	latitude: number;
-	longitude: number;
-	accuracyMeters: number;
+/** A `WorkPeriodPositionStamp` for the client: its instants as ISO strings. */
+export type WorkPeriodPositionStampData = Omit<WorkPeriodPositionStamp, "fixedAt" | "eventAt"> & {
 	fixedAt: string;
 	eventAt: string;
-	eventUtcOffsetMinutes: number;
-	originalEvent: boolean;
 };
 
 export type WorkPeriodPositionsData = {
 	workPeriodId: string;
 	stamps: WorkPeriodPositionStampData[];
 };
-
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Whether the work period detail offers "Show positions": for the viewer's own
@@ -75,10 +72,10 @@ export async function showWorkPeriodPositionsAction(input: {
 }): Promise<PositionCaptureActionResult<WorkPeriodPositionsData>> {
 	return runPositionCaptureAction("positionStamps.showWorkPeriod", async (db) => {
 		const { organizationId, userId } = await requireOrganizationUser();
-		const workPeriodId = input?.workPeriodId;
-		if (typeof workPeriodId !== "string" || !UUID_PATTERN.test(workPeriodId)) {
-			throw new PositionCaptureRefusal("invalid_work_period", "Invalid work period.");
-		}
+		const workPeriodId = requireUuid(input?.workPeriodId, {
+			code: "invalid_work_period",
+			message: "Invalid work period.",
+		});
 		const result = await showWorkPeriodPositions(db, {
 			organizationId,
 			viewerUserId: userId,

@@ -10,6 +10,7 @@ import { runPositionCaptureAction } from "@/lib/time-tracking/position-capture/a
 import {
 	type PositionCaptureActionResult,
 	PositionCaptureRefusal,
+	requireUuid,
 } from "@/lib/time-tracking/position-capture/errors";
 import type { PositionCaptureSettings } from "@/lib/time-tracking/position-capture/policy";
 import {
@@ -60,7 +61,6 @@ export type SetPositionCaptureAssignmentInput = {
 	captureEnabled: boolean;
 };
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SETTINGS_PATH = "/settings/position-capture";
 
 export async function getPositionCaptureAdminDataAction(): Promise<
@@ -194,8 +194,5 @@ function parseTarget(value: unknown): PositionCaptureAssignmentTarget {
 }
 
 function parseUuid(value: unknown, field: string): string {
-	if (typeof value !== "string" || !UUID_PATTERN.test(value)) {
-		throw new PositionCaptureRefusal("invalid_selection", `Invalid selection: ${field}.`);
-	}
-	return value;
+	return requireUuid(value, { code: "invalid_selection", message: `Invalid selection: ${field}.` });
 }
