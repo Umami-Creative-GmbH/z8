@@ -16,12 +16,9 @@ import {
 } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import { decideProjectBillableDefault } from "@/lib/billable-time/project-billable-default";
 import { readProjectActiveCustomerId } from "@/lib/billable-time/project-customer";
-import { getBillableTimeSettings } from "@/lib/billable-time/settings";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import type { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import {
@@ -30,6 +27,10 @@ import {
 	insertProjectManagers,
 } from "@/lib/projects/project-creation";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
+import {
+	projectBillableDefault,
+	requireBillableTimeForDefaultChange,
+} from "./project-billable-default-input";
 import {
 	ensureSettingsActorCanAccessCustomerTarget,
 	ensureSettingsActorCanAccessProjectTarget,
@@ -134,61 +135,6 @@ async function getProjectAssignmentTarget(
 	}
 
 	return getProjectRelationshipEmployee(targetId, organizationId, reader);
-}
-
-/**
- * The billable default a create or update stores (#900): refused without a customer,
- * switched off when the project loses its customer. Anything but a boolean is invalid.
- */
-function projectBillableDefault(input: {
-	requested: unknown;
-	current: boolean;
-	customerId: string | null;
-}): Effect.Effect<boolean, ValidationError> {
-	if (input.requested !== undefined && typeof input.requested !== "boolean") {
-		return Effect.fail(
-			new ValidationError({ message: "Invalid billable default", field: "billableDefault" }),
-		);
-	}
-	const decision = decideProjectBillableDefault({
-		requested: input.requested,
-		current: input.current,
-		customerId: input.customerId,
-	});
-	return decision.ok
-		? Effect.succeed(decision.billableDefault)
-		: Effect.fail(
-				new ValidationError({
-					message: "Only a project with a customer can be billable by default",
-					field: "billableDefault",
-				}),
-			);
-}
-
-/**
- * The billable default is part of Billable Time: while the module is off, a
- * request that would change it is refused (#768). Defaults already set keep being
- * applied to new work, and the automatic switch-off on customer removal still runs.
- */
-function requireBillableTimeForDefaultChange(
-	dbService: typeof DatabaseService.Service,
-	organizationId: string,
-	input: { requested: unknown; current: boolean },
-): Effect.Effect<void, ValidationError | DatabaseError> {
-	return Effect.gen(function* () {
-		if (input.requested === undefined || input.requested === input.current) return;
-		const settings = yield* dbService.query("billableTime.settings", () =>
-			getBillableTimeSettings(organizationId, dbService.db),
-		);
-		if (!settings.enabled) {
-			return yield* Effect.fail(
-				new ValidationError({
-					message: "Billable Time is switched off",
-					field: "billableDefault",
-				}),
-			);
-		}
-	});
 }
 
 /** Validation failures raised inside a guarded transaction keep their type. */

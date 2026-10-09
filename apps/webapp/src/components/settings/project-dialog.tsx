@@ -185,6 +185,7 @@ function useProjectDialogController({
 					description: value.description.trim() || null,
 					status: value.status,
 					customerId: customerId ?? null,
+					...billableDefault,
 				}).catch(() => null);
 
 				if (result?.success) {
