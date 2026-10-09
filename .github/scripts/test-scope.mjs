@@ -31,15 +31,19 @@ export function selectTestScopes(files, { full = false } = {}) {
 
 export function checkTestResults(needs) {
   if (needs.changes?.result !== "success") throw new Error("Test scope detection did not succeed");
+  const scopes = {};
+  for (const scope of Object.keys(allScopes)) {
+    const selected = needs.changes.outputs?.[scope];
+    if (selected !== "true" && selected !== "false") throw new Error(`Missing test scope: ${scope}`);
+    scopes[scope] = selected === "true";
+  }
   const jobs = {
-    "unit-tests": "webapp", "integration-tests": "webapp",
-    "workspace-tests": "workspace", "docker-tests": "docker",
+    "unit-tests": Object.values(scopes).some(Boolean),
+    "integration-tests": scopes.webapp,
   };
   const summary = [];
-  for (const [job, scope] of Object.entries(jobs)) {
-    const selected = needs.changes.outputs[scope];
-    if (selected !== "true" && selected !== "false") throw new Error(`Missing test scope: ${scope}`);
-    const expected = selected === "true" ? "success" : "skipped";
+  for (const [job, selected] of Object.entries(jobs)) {
+    const expected = selected ? "success" : "skipped";
     const actual = needs[job]?.result;
     if (actual !== expected) throw new Error(`${job}: expected ${expected}, received ${actual}`);
     summary.push(`${job}: ${actual}`);
