@@ -418,8 +418,8 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 				and(
 					eq(shift.organizationId, organizationId),
 					eq(shift.status, "published"),
-					gte(shift.date, bounds.from),
-					lt(shift.date, bounds.until),
+					gte(shift.date, bounds.start),
+					lt(shift.date, bounds.endExclusive),
 					inArray(shift.employeeId, employeeIds),
 				),
 			);

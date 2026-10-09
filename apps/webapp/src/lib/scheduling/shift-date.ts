@@ -15,14 +15,11 @@ export function shiftCalendarDate(storedDate: Date, organizationTimezone: string
 	return plainDateAt(instantFromDate(storedDate), organizationTimezone);
 }
 
-/**
- * Half-open `shift.date` bounds of the organization-local calendar day `date` (`YYYY-MM-DD`):
- * match shifts with `gte(shift.date, from)` and `lt(shift.date, until)`.
- */
+/** The `shift.date` bounds of the organization-local calendar day `date` (`YYYY-MM-DD`). */
 export function shiftDateBounds(
 	date: string,
 	organizationTimezone: string,
-): { from: Date; until: Date } {
+): { start: Date; endExclusive: Date } {
 	const day = localDayRange(date, organizationTimezone);
-	return { from: dateFromInstant(day.start), until: dateFromInstant(day.endExclusive) };
+	return { start: dateFromInstant(day.start), endExclusive: dateFromInstant(day.endExclusive) };
 }
