@@ -4,9 +4,8 @@
  * transport, auth and back-off, and `invoice-request.ts` for the draft body.
  *
  * Connection setup (`validateConnection`) refuses what the connector does not
- * support: a billable currency other than EUR, the old tax system (sevdesk-Update
- * 1.0 `taxType`), accounts whose prices are entered gross, and accounts without
- * an hour unit. It picks the sevdesk user that becomes every draft's required
+ * support: the old tax system (sevdesk-Update 1.0 `taxType`), accounts whose
+ * prices are entered gross, and accounts without an hour unit. It picks the sevdesk user that becomes every draft's required
  * `contactPerson`.
  */
 
@@ -18,6 +17,7 @@ import {
 	type PlainDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import { BILLABLE_CURRENCIES } from "@/lib/billable-time/currency";
 import { createLogger } from "@/lib/logger";
 import { normalizeDecimalInput, parseUnits } from "@/lib/money/exact-decimal";
 import { type InvoiceDraft, invoiceDraftNetTotal } from "../invoice-draft";
@@ -48,7 +48,9 @@ const SEVDESK_ID = /^\d{1,15}$/;
 export const SEVDESK_CAPABILITIES: AccountingProviderCapabilities = {
 	// Not documented by sevdesk; conservative until confirmed on a trial account.
 	maxDraftLines: 100,
-	supportedCurrencies: ["EUR"],
+	// openapi.yaml `Model_Invoice.currency`: "Needs to be currency code according to
+	// ISO-4217", with foreign-currency sums; no EUR-only rule (that is Lexware's).
+	supportedCurrencies: BILLABLE_CURRENCIES,
 	supportedTaxTreatments: [
 		"domestic_standard",
 		"domestic_reduced",
@@ -194,13 +196,7 @@ export function createSevdeskConnector(
 			return (await readContactPersons(clientFor(apiKey))).persons;
 		},
 
-		async validateConnection({ apiKey, settings, context }) {
-			if (context.billableCurrency !== "EUR") {
-				return refuse(
-					"currency_not_supported",
-					`sevdesk drafts from Z8 are in EUR only. This organization's billable currency is ${context.billableCurrency}`,
-				);
-			}
+		async validateConnection({ apiKey, settings }) {
 			const input = parseSetupInput(settings);
 			const client = clientFor(apiKey);
 

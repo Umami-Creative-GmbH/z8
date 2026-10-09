@@ -1,5 +1,6 @@
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
+import { BILLABLE_CURRENCIES } from "../../currency";
 import { buildInvoiceDraft, type InvoiceDraft, workLine } from "../invoice-draft";
 import type { AccountingProvider } from "../provider";
 import { getAccountingProviderRegistry } from "../registry";
@@ -99,11 +100,6 @@ describe("sevdesk connector: connection setup", () => {
 				context: { ...context, billableCurrency: currency },
 			});
 
-		await expect(refusal(setupRoutes(), netSettings, "CHF")).resolves.toMatchObject({
-			ok: false,
-			code: "currency_not_supported",
-			message: expect.stringContaining("EUR"),
-		});
 		await expect(refusal(setupRoutes({ version: "1.0" }), netSettings)).resolves.toMatchObject({
 			ok: false,
 			code: "tax_rule_system_not_supported",
@@ -118,6 +114,22 @@ describe("sevdesk connector: connection setup", () => {
 			code: "hour_unit_missing",
 		});
 	});
+
+	it.each(BILLABLE_CURRENCIES)(
+		"connects an organization billing in %s: sevdesk invoices take any ISO-4217 currency",
+		async (currency) => {
+			const { connector } = connectorWith(setupRoutes());
+
+			await expect(
+				connector.validateConnection({
+					apiKey: TOKEN,
+					settings: netSettings,
+					context: { ...context, billableCurrency: currency },
+				}),
+			).resolves.toMatchObject({ ok: true });
+			expect(connector.capabilities.supportedCurrencies).toContain(currency);
+		},
+	);
 
 	it("needs a choice of contact person when the account has several users", async () => {
 		const users = [
@@ -677,6 +689,17 @@ describe("sevdesk connector: invoice drafts", () => {
 			]);
 		},
 	);
+
+	it("creates a draft in the organization's billable currency", async () => {
+		const { provider, http } = providerWith(creationRoutes());
+
+		await provider.createInvoiceDraft(
+			draftWith({ kind: "third_country_service", rateBasisPoints: 0 }, { currency: "CHF" }),
+			{ idempotencyKey: "handoff-chf" },
+		);
+
+		expect(savedBody(http).invoice.currency).toBe("CHF");
+	});
 
 	it("refuses a domestic rate sevdesk's tax rule 1 does not allow, without calling sevdesk", async () => {
 		const { provider, http } = providerWith(creationRoutes());
