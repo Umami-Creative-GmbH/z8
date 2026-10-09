@@ -286,12 +286,14 @@ describe("desktop frozen commands (#280)", () => {
 			"utf8",
 		).trimEnd();
 
-	it.each(["desktop-v2-clock-in.json", "desktop-v2-clock-out.json", "desktop-v2-break.json"])(
-		"accepts the exact bytes the desktop sends: %s",
-		(name) => {
-			const sent = JSON.parse(fixture(name));
-			const parsed = parseClockCommand(sent);
-			expect(parsed).toEqual({ ok: true, command: sent });
-		},
-	);
+	it.each([
+		"desktop-v2-clock-in.json",
+		"desktop-v2-clock-out.json",
+		"desktop-v2-clock-out-task.json",
+		"desktop-v2-break.json",
+	])("accepts the exact bytes the desktop sends: %s", (name) => {
+		const sent = JSON.parse(fixture(name));
+		const parsed = parseClockCommand(sent);
+		expect(parsed).toEqual({ ok: true, command: sent });
+	});
 });

@@ -1144,6 +1144,41 @@ describe("frozen direct-HTTP clock commands on PostgreSQL", () => {
 			expect(await bookedTask(start.operationId)).toEqual({ period: null, allocation: null });
 		});
 
+		it("books the task of a clock-out in the exact shape the desktop freezes (#882)", async () => {
+			// Keys and value formats come from the desktop's pinned wire fixture. Only the
+			// identities, context and instants belong to this test.
+			const desktop: Command = JSON.parse(
+				readFileSync(
+					new URL(
+						"../../../../../../desktop/src-tauri/tests/clock-core/fixtures/desktop-v2-clock-out-task.json",
+						import.meta.url,
+					),
+					"utf8",
+				),
+			);
+			const start = clockInCommand();
+			await submit(start);
+			harness.now = now.add({ hours: 2 });
+			const close: Command = {
+				...desktop,
+				operationId: randomUUID(),
+				context: context(),
+				occurredAt: harness.now.toString({ fractionalSecondDigits: 3 }),
+				target: { clockInOperationId: start.operationId },
+				project: { ...(desktop.project as object), id: ids.projectA },
+				task: { ...(desktop.task as object), id: tasks.open },
+			};
+
+			const executed = await submit(close);
+
+			expect(executed.status).toBe(201);
+			expect(await bookedTask(start.operationId)).toEqual({
+				period: tasks.open,
+				allocation: tasks.open,
+			});
+			expect(await receipt(close.operationId)).toMatchObject({ command: close });
+		});
+
 		it.each([
 			["a done task", tasks.done, "task_done"],
 			["another project's task", tasks.otherProject, "task_other_project"],
