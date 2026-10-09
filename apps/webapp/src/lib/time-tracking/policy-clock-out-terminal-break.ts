@@ -35,6 +35,7 @@ import {
 	instantToCanonicalString,
 } from "@/lib/datetime/temporal-core";
 import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
+import type { AllocationEvidence } from "./allocation-evidence";
 import { calculateHash } from "./blockchain";
 import { calculateBreakDeficit } from "./break-policy-calculation";
 import type { PolicyClockOutBreakSnapshot } from "./policy-clock-out-break-snapshot";
@@ -118,15 +119,6 @@ export const POLICY_CLOCK_OUT_BREAK_WRITER_VERSION = 1;
 
 const OPERATION_NAMESPACE = "z8:policy-clock-out-break:v1";
 
-type AllocationEvidence = {
-	allocationKind: "project" | "cost_center";
-	projectId: string | null;
-	costCenterId: string | null;
-	weightPercent: number;
-	/** Absent on receipts committed before billability (#900), which were non-billable. */
-	isBillable?: boolean;
-};
-
 /** One segment by value: committed evidence, not a pointer to current rows. */
 export type PolicyClockOutBreakSegment = {
 	workPeriodId: string;
@@ -144,7 +136,7 @@ export type PolicyClockOutBreakSegment = {
 		isBillable?: boolean;
 		workCategoryId: string | null;
 		workLocationType: WorkLocationType;
-		allocations: AllocationEvidence[];
+		allocations: AllocationEvidence<"project" | "cost_center">[];
 	};
 };
 
