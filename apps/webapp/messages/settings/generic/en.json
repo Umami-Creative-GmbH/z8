@@ -918,6 +918,22 @@
         "noCustomer": "No customer",
         "status": "Status"
       },
+      "fromTemplate": {
+        "blank": "Blank project",
+        "budget": "{hours} h budget",
+        "copies": "Copied from the template",
+        "deadline": "Deadline {days, plural, one {# day} other {# days}} after creation",
+        "deadlineSameDay": "Deadline on the creation day",
+        "memberCount": "{count, plural, one {# manager or assignment} other {# managers and assignments}}",
+        "previewLabel": "From {name}",
+        "reasonDeparted": "left the organization",
+        "reasonRemoved": "no longer exists",
+        "skipped": "Not copied: {members}",
+        "skippedMember": "{name}: {reason}",
+        "startFrom": "Start from",
+        "taskCount": "{count, plural, one {# task} other {# tasks}}",
+        "willSkip": "Will not be copied"
+      },
       "list": {
         "description": "{count} projects total",
         "title": "All Projects"
@@ -950,6 +966,16 @@
         "teamPicker": "Team to assign",
         "teams": "Teams",
         "title": "Project members"
+      },
+      "saveAsTemplate": {
+        "action": "Save {name} as template",
+        "description": "The template gets this project's icon, colour, budget, open tasks, managers and assignments. It has no deadline offset.",
+        "failed": "Failed to save the template",
+        "formLabel": "Save {name} as a template",
+        "name": "Template name",
+        "saved": "Template {name} saved",
+        "submit": "Save as template",
+        "title": "Save as template"
       },
       "tabs": {
         "projects": "Projects",
