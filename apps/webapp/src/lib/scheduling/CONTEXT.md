@@ -10,6 +10,10 @@ Planners put employees on shifts ahead of time so every subarea is staffed. A sh
 A planned stretch of work in one subarea on one day, assigned to one employee or open.
 _Avoid_: work period (that is recorded work in Time Tracking), roster entry
 
+**Shift date**:
+The calendar day a shift belongs to, in the organization's timezone. It is stored as that day's organization-local midnight, so it is read back in the organization's zone, never as a UTC date (`scheduling/shift-date.ts`).
+_Avoid_: shift day in UTC, viewer-local shift date
+
 **Open shift**:
 A shift with no assigned employee, whether draft or published.
 _Avoid_: unassigned shift, vacant shift
