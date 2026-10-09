@@ -17,7 +17,6 @@ import {
 	holidayPresetAssignment,
 	holidayPresetHoliday,
 	project,
-	projectTask,
 	shift,
 	shiftRequest,
 	shiftTemplate,
@@ -35,6 +34,7 @@ import {
 	workPolicySchedule,
 	workPolicyScheduleDay,
 } from "@/db";
+import { projectTask } from "@/db/schema";
 import { env } from "@/env";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { createLogger } from "@/lib/logger";
