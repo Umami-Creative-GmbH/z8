@@ -364,10 +364,11 @@ describe("clocking reminders from work policies on PostgreSQL", () => {
 		]);
 	});
 
-	it("sends one policy forgotten clock-out for live work without a shift that outlasts the lookback", async () => {
+	it("sends one policy forgotten clock-out for unmatched live work past the lookback, and no missed clock-in for an old shift", async () => {
 		const org = await organization();
 		const person = await employee(org);
-		// A Monday shift the employee skipped; the job does not run while it lasts.
+		// A Monday shift the employee skipped while the job did not run. The live work reloads it on
+		// Saturday, after it left the lookback, and it must not send a missed clock-in then.
 		await shift(org, person, "08:00", "12:00");
 		// Wednesday 08:00 Berlin, never clocked out.
 		await clockIn(org, person, "2026-04-29T06:00:00Z");

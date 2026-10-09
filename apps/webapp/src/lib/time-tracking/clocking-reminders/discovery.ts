@@ -108,13 +108,16 @@ export async function listClockingReminderEmployees(
 	}));
 }
 
-/** How far back shifts and work are read: covers overnight shifts and every timezone offset. */
+/**
+ * How far back completed work and shifts are read (older live work extends the shifts below):
+ * covers overnight shifts and every timezone offset.
+ */
 const LOOKBACK_DAYS = 3;
 const LOOKAHEAD_DAYS = 2;
 /**
- * How far before live work's start a shift it matches can be dated: the shift ends after the work
- * starts and at most two days after its date begins in the employee's zone, which is at most 26 h
- * after the date begins in the organization's zone.
+ * How far before live work's start a shift it can match may be dated. The shift ends after the
+ * work starts, at most 48 h after its date begins in the employee's zone, and that is at most 26 h
+ * after the date begins in the organization's zone: 74 h, rounded up to whole days.
  */
 const LIVE_WORK_SHIFT_LOOKBACK_DAYS = 4;
 
@@ -128,9 +131,9 @@ export interface ShiftReminderFacts {
  * employees, read without a work transaction. `shift.date` stores the organization-local midnight
  * of the shift's calendar date, so it is read back as a calendar date in the organization's zone.
  *
- * Live work is read however old it is, so the shifts reach back as far as any live work's start:
- * live work that matched a shift keeps owing only that shift's forgotten clock-out, never a second
- * one from the work policy once the shift date leaves the lookback.
+ * Live work is read however old it is, so each employee's shifts reach back as far as their live
+ * work's start: live work that matched a shift keeps owing only that shift's forgotten clock-out,
+ * never a second one from the work policy once the shift date leaves the lookback.
  */
 export async function loadShiftReminderFacts(
 	input: {
@@ -148,6 +151,7 @@ export async function loadShiftReminderFacts(
 	const recentFrom = input.now.subtract({ hours: LOOKBACK_DAYS * 24 });
 	const from = dateFromInstant(recentFrom);
 	const until = dateFromInstant(input.now.add({ hours: LOOKAHEAD_DAYS * 24 }));
+	// Work first: shifts that live work can match bound how far back each employee's shifts go.
 	const work = await database
 		.select({
 			employeeId: workPeriod.employeeId,
@@ -165,15 +169,15 @@ export async function loadShiftReminderFacts(
 				or(gte(workPeriod.startTime, from), isNull(workPeriod.endTime)),
 			),
 		);
-	const shiftsFrom = work
-		.filter((row) => row.endTime === null && row.live)
-		.map((row) =>
-			instantFromDate(row.startTime).subtract({ hours: LIVE_WORK_SHIFT_LOOKBACK_DAYS * 24 }),
-		)
-		.reduce(
-			(earliest, bound) => (compareInstants(bound, earliest) < 0 ? bound : earliest),
-			recentFrom,
-		);
+	const liveWorkShiftsFrom = new Map<string, Instant>();
+	for (const row of work) {
+		if (!row.live) continue;
+		const bound = instantFromDate(row.startTime).subtract({
+			hours: LIVE_WORK_SHIFT_LOOKBACK_DAYS * 24,
+		});
+		const earliest = liveWorkShiftsFrom.get(row.employeeId) ?? recentFrom;
+		if (compareInstants(bound, earliest) < 0) liveWorkShiftsFrom.set(row.employeeId, bound);
+	}
 	const shifts = await database
 		.select({
 			id: shift.id,
@@ -188,7 +192,12 @@ export async function loadShiftReminderFacts(
 				eq(shift.organizationId, input.organizationId),
 				eq(shift.status, "published"),
 				inArray(shift.employeeId, [...input.employeeIds]),
-				gte(shift.date, dateFromInstant(shiftsFrom)),
+				or(
+					gte(shift.date, from),
+					...[...liveWorkShiftsFrom].map(([employeeId, bound]) =>
+						and(eq(shift.employeeId, employeeId), gte(shift.date, dateFromInstant(bound))),
+					),
+				),
 				lt(shift.date, until),
 			),
 		);
