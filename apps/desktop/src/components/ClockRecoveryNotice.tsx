@@ -40,7 +40,10 @@ const taskReasons: Record<TaskRefusalReason, string> = {
 	project_not_bookable: "The chosen project is not open for booking.",
 };
 function isTaskRefusalReason(value: unknown): value is TaskRefusalReason {
-	return typeof value === "string" && Object.hasOwn(taskReasons, value);
+	return (
+		typeof value === "string" &&
+		Object.prototype.hasOwnProperty.call(taskReasons, value)
+	);
 }
 /** Why the server refused a closing attribution (v2 422 `field`/`reason`). */
 function attributionRefusal(failure: CommandFailure | null): string | null {
