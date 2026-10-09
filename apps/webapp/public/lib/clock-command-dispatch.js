@@ -72,6 +72,8 @@ function buildCommand(request, target) {
 		: { workPeriodId: target.workPeriodId };
 	command.project = attribution(request.project);
 	command.workCategory = attribution(request.workCategory);
+	// Only a named task is frozen (#875): a command without one keeps its exact bytes.
+	if (request.task) command.task = attribution(request.task);
 	return command;
 }
 

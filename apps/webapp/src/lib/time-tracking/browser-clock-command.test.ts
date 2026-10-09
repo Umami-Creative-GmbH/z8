@@ -89,6 +89,36 @@ describe("prepareBrowserClockCommand", () => {
 		});
 	});
 
+	it("names a task only when the page names one (#875)", () => {
+		const taskId = "3f2504e0-4f89-41d3-9a0c-0305e82c3301";
+		const clockOut = (task: { taskId?: string | null }) =>
+			prepareBrowserClockCommand({
+				kind: "clock_out",
+				operationId,
+				capabilities,
+				session,
+				now,
+				timezone: "UTC",
+				projectId,
+				...task,
+			});
+
+		expect(clockOut({ taskId })).toMatchObject({
+			ok: true,
+			request: { task: { kind: "replace", id: taskId } },
+		});
+		expect(clockOut({ taskId: null })).toMatchObject({
+			ok: true,
+			request: { task: { kind: "clear" } },
+		});
+		const omitted = clockOut({});
+		expect(omitted.ok && "task" in omitted.request).toBe(false);
+		expect(clockOut({ taskId: "not-a-uuid" })).toEqual({
+			ok: false,
+			reason: "attribution_unsupported",
+		});
+	});
+
 	it("defaults a missing work location the way the legacy clock-in does", () => {
 		expect(
 			prepareBrowserClockCommand({

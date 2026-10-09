@@ -1035,6 +1035,177 @@ describe("frozen direct-HTTP clock commands on PostgreSQL", () => {
 		expect(await receipt(close.operationId)).toMatchObject({ command: close });
 	});
 
+	describe("project tasks on frozen clock-outs (#875)", () => {
+		const tasks = {
+			open: "f5000000-0000-4000-8000-000000000001",
+			done: "f5000000-0000-4000-8000-000000000002",
+			otherProject: "f5000000-0000-4000-8000-000000000003",
+			otherOrganization: "f5000000-0000-4000-8000-000000000004",
+			otherOrganizationProject: "f5000000-0000-4000-8000-000000000005",
+		} as const;
+
+		beforeEach(async () => {
+			await admin.query(
+				`insert into project (id, organization_id, name, status, is_active, created_by, updated_at)
+				 values ($1, $2, 'Other org project', 'active', true, $3, now())`,
+				[tasks.otherOrganizationProject, ids.otherOrganization, ids.requesterUser],
+			);
+			await admin.query(
+				`insert into project_task
+				 (id, organization_id, project_id, name, state, done_at, done_by, created_by, updated_at) values
+				 ($1, $5, $7, 'Design', 'open', null, null, $9, now()),
+				 ($2, $5, $7, 'Shipped', 'done', now(), $9, $9, now()),
+				 ($3, $5, $8, 'Elsewhere', 'open', null, null, $9, now()),
+				 ($4, $6, $10, 'Foreign', 'open', null, null, $9, now())`,
+				[
+					tasks.open,
+					tasks.done,
+					tasks.otherProject,
+					tasks.otherOrganization,
+					ids.organization,
+					ids.otherOrganization,
+					ids.projectA,
+					ids.projectB,
+					ids.requesterUser,
+					tasks.otherOrganizationProject,
+				],
+			);
+		});
+
+		async function bookedTask(clockInId: string) {
+			const { rows } = await admin.query<{ period: string | null; allocation: string | null }>(
+				`select wp.task_id as period, a.task_id as allocation
+				 from work_period wp
+				 left join time_record_allocation a
+				   on a.record_id = wp.canonical_record_id and a.organization_id = wp.organization_id
+				  and a.allocation_kind = 'project'
+				 where wp.clock_in_id = $1`,
+				[clockInId],
+			);
+			return only(rows);
+		}
+
+		it("stores the named task on the booking and replays the frozen bytes", async () => {
+			const start = clockInCommand();
+			await submit(start);
+			harness.now = now.add({ hours: 2 });
+			const close = clockOutCommand(
+				{ clockInOperationId: start.operationId },
+				{
+					occurredAt: harness.now.toString(),
+					project: { kind: "replace", id: ids.projectA },
+					task: { kind: "replace", id: tasks.open },
+				},
+			);
+
+			const executed = await submit(close);
+
+			expect(executed.status).toBe(201);
+			expect(executed.body.receipt.result.attribution).toMatchObject({
+				projectId: ids.projectA,
+				taskId: tasks.open,
+			});
+			expect(await bookedTask(start.operationId)).toEqual({
+				period: tasks.open,
+				allocation: tasks.open,
+			});
+			expect(await receipt(close.operationId)).toMatchObject({ command: close });
+
+			// Marking the task done afterwards never undoes a committed command.
+			await admin.query(
+				"update project_task set state = 'done', done_at = now(), done_by = $2 where id = $1",
+				[tasks.open, ids.requesterUser],
+			);
+			const before = await snapshot();
+			expect(await submit(close)).toEqual({
+				status: 200,
+				body: {
+					outcome: "replayed",
+					operationId: close.operationId,
+					receipt: executed.body.receipt,
+				},
+			});
+			expect(await snapshot()).toEqual(before);
+		});
+
+		it("books no task for a clock-out that names none", async () => {
+			const start = clockInCommand();
+			await submit(start);
+			harness.now = now.add({ hours: 1 });
+			const closed = await submit(
+				clockOutCommand(
+					{ clockInOperationId: start.operationId },
+					{ occurredAt: harness.now.toString(), project: { kind: "replace", id: ids.projectA } },
+				),
+			);
+
+			expect(closed.status).toBe(201);
+			expect(closed.body.receipt.result.attribution).not.toHaveProperty("taskId");
+			expect(await bookedTask(start.operationId)).toEqual({ period: null, allocation: null });
+		});
+
+		it.each([
+			["a done task", tasks.done, "task_done"],
+			["another project's task", tasks.otherProject, "task_other_project"],
+			["another organization's task", tasks.otherOrganization, "task_not_found"],
+			["an unknown task", "f5000000-0000-4000-8000-0000000000ff", "task_not_found"],
+		])("refuses %s with the stable reason and writes nothing", async (_label, taskId, reason) => {
+			const start = clockInCommand();
+			await submit(start);
+			const before = await snapshot();
+
+			const outcome = await submit(
+				clockOutCommand(
+					{ clockInOperationId: start.operationId },
+					{
+						project: { kind: "replace", id: ids.projectA },
+						task: { kind: "replace", id: taskId },
+					},
+				),
+			);
+
+			expect(outcome).toEqual({
+				status: 422,
+				body: {
+					outcome: "rejected",
+					operationId: outcome.body.operationId,
+					code: "attribution_not_allowed",
+					field: "taskId",
+					reason,
+				},
+			});
+			expect(await snapshot()).toEqual(before);
+			expect((await lookup(outcome.body.operationId)).body.outcome).toBe("not_committed");
+		});
+
+		it("refuses a task frozen offline that was done before the command arrived", async () => {
+			const start = clockInCommand();
+			await submit(start);
+			harness.now = now.add({ hours: 3 });
+			// Frozen while the task was open; it is done by the time the queue drains.
+			const close = clockOutCommand(
+				{ clockInOperationId: start.operationId },
+				{
+					admission: "delayed",
+					occurredAt: now.add({ hours: 2 }).toString(),
+					project: { kind: "replace", id: ids.projectA },
+					task: { kind: "replace", id: tasks.open },
+				},
+			);
+			await admin.query(
+				"update project_task set state = 'done', done_at = now(), done_by = $2 where id = $1",
+				[tasks.open, ids.requesterUser],
+			);
+			const before = await snapshot();
+
+			expect(await submit(close)).toMatchObject({
+				status: 422,
+				body: { code: "attribution_not_allowed", field: "taskId", reason: "task_done" },
+			});
+			expect(await snapshot()).toEqual(before);
+		});
+	});
+
 	describe("desktop idle breaks (#281)", () => {
 		/** The process-relative monotonic reading that agrees with the instant. */
 		const monotonicMs = (instant: Instant) =>

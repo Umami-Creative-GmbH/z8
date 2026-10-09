@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { projectTask, timeRecordAllocation, workPeriod } from "@/db/schema";
 import type { ProjectTask, ProjectTaskState } from "./project-task-model";
@@ -49,6 +49,37 @@ export async function listProjectTasks(
 			),
 		)
 		.orderBy(asc(projectTask.state), asc(sql`lower(${projectTask.name})`), asc(projectTask.id));
+}
+
+/** A task as clients offer it for booking (#875). */
+export type OfferedProjectTask = Pick<ProjectTask, "id" | "name">;
+
+/**
+ * The open tasks of several projects of one organization, by name, keyed by
+ * project; every given project has an entry, empty when it has no open task.
+ * Clients offer exactly these for an eligible project, which is what booking accepts.
+ */
+export async function listOpenTasksByProject(
+	scope: { organizationId: string; projectIds: readonly string[] },
+	reader: ProjectTaskReader = db,
+): Promise<Map<string, OfferedProjectTask[]>> {
+	const byProject = new Map<string, OfferedProjectTask[]>(
+		scope.projectIds.map((projectId) => [projectId, []]),
+	);
+	if (byProject.size === 0) return byProject;
+	const rows = await reader
+		.select({ id: projectTask.id, name: projectTask.name, projectId: projectTask.projectId })
+		.from(projectTask)
+		.where(
+			and(
+				eq(projectTask.organizationId, scope.organizationId),
+				inArray(projectTask.projectId, [...byProject.keys()]),
+				eq(projectTask.state, "open"),
+			),
+		)
+		.orderBy(asc(sql`lower(${projectTask.name})`), asc(projectTask.id));
+	for (const { projectId, id, name } of rows) byProject.get(projectId)?.push({ id, name });
+	return byProject;
 }
 
 /** One task of the organization, or null when it does not exist there. */

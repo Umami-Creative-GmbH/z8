@@ -13,6 +13,7 @@ import {
 import { auth } from "@/lib/auth";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
+import { listOpenTasksByProject } from "@/lib/projects/project-tasks";
 import { getAvailableCategoriesForEmployee } from "@/lib/query/work-category.queries";
 import {
 	ClockingAccessError,
@@ -122,6 +123,11 @@ export async function GET() {
 					})
 				: Promise.resolve([]),
 		]);
+		// Each listed project's open tasks (#875); older clients ignore the field.
+		const tasks = await listOpenTasksByProject({
+			organizationId,
+			projectIds: projects.map((item) => item.id),
+		});
 		return NextResponse.json(
 			{
 				userId: session.user.id,
@@ -131,7 +137,7 @@ export async function GET() {
 				locale: preferences?.locale ?? null,
 				fetchedAt: systemClock.nowInstant().toString(),
 				dayTotalBasis: summary.dayTotalBasis,
-				projects,
+				projects: projects.map((item) => ({ ...item, tasks: tasks.get(item.id) ?? [] })),
 				categories: categories.map(({ id, name }) => ({ id, name })),
 				liveWork: liveWork ?? null,
 			},
