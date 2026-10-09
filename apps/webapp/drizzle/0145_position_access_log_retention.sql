@@ -1,5 +1,5 @@
 -- Spec #766 "Retention": position stamp access-log entries follow the audit-log
--- lifetime (365 days, `AUDIT_LOG_RETENTION_DAYS` in src/lib/audit/cleanup.ts).
+-- lifetime (365 days, `AUDIT_LOG_RETENTION_DAYS` in src/lib/audit/retention.ts).
 -- Entries stay append-only: a delete passes only for an entry older than that
 -- lifetime (the retention cleanup), or when its organization, its access-log
 -- entry or its subject employee is already gone (parent-deletion cascades). No
