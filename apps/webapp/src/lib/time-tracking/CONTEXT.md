@@ -101,6 +101,10 @@ _Avoid_: Pause
 A break the employee starts explicitly and ends by explicitly resuming work. The employee may instead end their working day without resuming.
 _Avoid_: Pause, idle break
 
+**Break in progress**:
+A manual break that has started and not yet ended, recorded with the employee's live work so that any device can resume it or end the day from it.
+_Avoid_: On-break flag, pause, paused work
+
 **Idle-confirmed break**:
 A past break interval suggested by device inactivity and explicitly confirmed by the employee. Device inactivity alone does not establish that the employee was on break.
 _Avoid_: Automatic break, manual break
@@ -156,3 +160,28 @@ _Avoid_: Still-clocked-in reminder, overtime alert
 **Break-due reminder**:
 A clocking reminder, shortly before it happens, that the employee's live work is about to break their work policy's break rules for lack of a break.
 _Avoid_: Break overrun reminder, end-break reminder
+
+### Kiosks
+
+**Kiosk**:
+A shared device enrolled to one location of an organization, on which employees clock with their kiosk PIN. It acts as itself, never as a signed-in user.
+_Avoid_: Terminal, shared device, clock-in station
+
+**Kiosk clocking**:
+Clocking at a kiosk. It is the employee's own clocking, authorized by the kiosk together with the employee's kiosk PIN; never on behalf.
+
+**Kiosk PIN**:
+An employee's personal secret that proves at a kiosk which employee is clocking.
+_Avoid_: Password, passcode
+
+**Kiosk-only employee**:
+An employee who has no sign-in and clocks only at kiosks.
+_Avoid_: Terminal user, offline employee
+
+**Assigned location**:
+A location an employee works at. A kiosk accepts only employees assigned to its location.
+_Avoid_: Work location (that is office, home or remote), location supervisor
+
+**Pairing code**:
+A single-use, short-lived code with which an admin enrols a kiosk.
+_Avoid_: Activation code, link code
