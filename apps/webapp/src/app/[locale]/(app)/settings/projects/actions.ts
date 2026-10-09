@@ -24,6 +24,7 @@ import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import type { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
+import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
 import {
 	ensureSettingsActorCanAccessCustomerTarget,
@@ -306,6 +307,8 @@ export async function getProjects(
 									and(
 										inArray(workPeriod.projectId, projectIds),
 										eq(workPeriod.organizationId, organizationId),
+										// Completed work only, as the reports and budget alerts count (#794).
+										completedWorkPeriodCondition(),
 									),
 								)
 								.groupBy(workPeriod.projectId)

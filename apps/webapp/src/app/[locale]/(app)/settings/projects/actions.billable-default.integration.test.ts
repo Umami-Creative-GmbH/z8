@@ -90,6 +90,7 @@ vi.mock("@/lib/logger", async (importOriginal) => {
 
 const projects = await import("./actions");
 const customers = await import("../customers/actions");
+const { getProjectTotalHours } = await import("@/lib/notifications/project-notification-triggers");
 
 const ids = {
 	organization: "t900-default-org",
@@ -405,6 +406,32 @@ describe("project billable default on PostgreSQL", () => {
 			),
 		).resolves.toMatchObject({ success: true });
 		expect(await billableDefault(ids.customerProject)).toBe(true);
+	});
+
+	it("counts booked hours from completed work only, as the reports and budget alerts do (#794)", async () => {
+		// Deleted work keeps its times in the row; running work has no duration yet.
+		await admin.query(
+			`insert into time_entry (id, employee_id, organization_id, type, timestamp, utc_offset_minutes,
+			   timezone, timezone_source, hash, created_by) values
+			 ('e9001000-0000-4000-8000-000000000040', $1, $2, 'clock_in', '2026-07-21T08:00:00Z', 0, 'UTC', 'user_setting', 't900-hash-deleted', $3),
+			 ('e9001000-0000-4000-8000-000000000042', $1, $2, 'clock_in', '2026-07-22T08:00:00Z', 0, 'UTC', 'user_setting', 't900-hash-running', $3)`,
+			[ids.employee, ids.organization, ids.employeeUser],
+		);
+		await admin.query(
+			`insert into work_period (id, employee_id, organization_id, clock_in_id, start_time, end_time,
+			   duration_minutes, is_active, project_id, deleted_at, updated_at) values
+			 ('e9001000-0000-4000-8000-000000000041', $1, $2, 'e9001000-0000-4000-8000-000000000040',
+			  '2026-07-21T08:00:00Z', '2026-07-21T11:00:00Z', 180, false, $3, now(), now()),
+			 ('e9001000-0000-4000-8000-000000000043', $1, $2, 'e9001000-0000-4000-8000-000000000042',
+			  '2026-07-22T08:00:00Z', null, null, true, $3, null, now())`,
+			[ids.employee, ids.organization, ids.customerProject],
+		);
+
+		const listed = await actAs(ids.ownerUser, () => projects.getProjects(ids.organization));
+		expect(
+			listed.success && listed.data.find((project) => project.id === ids.customerProject),
+		).toMatchObject({ totalHoursBooked: 2 });
+		await expect(getProjectTotalHours(ids.customerProject, ids.organization)).resolves.toBe(2);
 	});
 
 	it("refuses a billable default that is not a boolean", async () => {

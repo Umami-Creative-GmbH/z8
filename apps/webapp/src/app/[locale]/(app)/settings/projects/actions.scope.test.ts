@@ -41,6 +41,9 @@ vi.mock("drizzle-orm", () => ({
 vi.mock("@/lib/billable-time/settings", () => ({
 	getBillableTimeSettings: vi.fn(async () => ({ enabled: true, currency: "EUR" })),
 }));
+vi.mock("@/lib/reports/completed-work", () => ({
+	completedWorkPeriodCondition: vi.fn(() => ({ completedWork: true })),
+}));
 vi.mock("@/lib/billable-time/project-customer", () => ({
 	readProjectActiveCustomerId: vi.fn(async () => "customer-active"),
 }));
