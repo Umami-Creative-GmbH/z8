@@ -24,6 +24,7 @@ import {
 	requiresNewNoticeVersion,
 	validatePositionCaptureSettings,
 } from "./policy";
+import { bringPositionStampPurgeDatesForward } from "./purge";
 
 /**
  * Position capture writes and reads (#825). Every function takes the caller's
@@ -130,7 +131,8 @@ function toNotice(row: {
 /**
  * Saves the organization's settings. Editing the purpose statement or
  * lengthening retention publishes a new notice version, which lapses every
- * existing consent; shortening retention does not.
+ * existing consent; shortening retention does not, but brings the purge dates
+ * of stamps already held forward in the same transaction (#829).
  */
 export async function savePositionCaptureSettings(
 	tx: PositionCaptureClient,
@@ -161,6 +163,15 @@ export async function savePositionCaptureSettings(
 		.set({ ...next, updatedBy: input.actorUserId })
 		.where(eq(positionCaptureSetting.organizationId, input.organizationId));
 
+	// Shortening applies to stamps already held (#829); lengthening never extends them.
+	const { movedCount: shortenedStampCount } =
+		next.retentionDays < previous.retentionDays
+			? await bringPositionStampPurgeDatesForward(tx, {
+					organizationId: input.organizationId,
+					retentionDays: next.retentionDays,
+				})
+			: { movedCount: 0 };
+
 	let publishedNotice: PositionNoticeVersion | null = null;
 	if (next.purposeStatement && requiresNewNoticeVersion(current, next)) {
 		const [inserted] = await tx
@@ -185,12 +196,18 @@ export async function savePositionCaptureSettings(
 			action: AuditAction.POSITION_CAPTURE_SETTINGS_CHANGED,
 			performedBy: input.actorUserId,
 			changes: JSON.stringify({ from: previous, to: next }),
-			metadata: publishedNotice
-				? JSON.stringify({
-						publishedNoticeId: publishedNotice.id,
-						publishedNoticeVersion: publishedNotice.version,
-					})
-				: null,
+			metadata:
+				publishedNotice || shortenedStampCount > 0
+					? JSON.stringify({
+							...(publishedNotice
+								? {
+										publishedNoticeId: publishedNotice.id,
+										publishedNoticeVersion: publishedNotice.version,
+									}
+								: {}),
+							...(shortenedStampCount > 0 ? { shortenedStampPurgeDates: shortenedStampCount } : {}),
+						})
+					: null,
 		});
 	}
 
