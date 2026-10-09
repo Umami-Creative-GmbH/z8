@@ -3,7 +3,7 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	HandOffForm,
@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/table";
 import { useDisplayContext } from "@/hooks/use-display-context";
 import { formatBillableAmount } from "@/lib/billable-time/format";
+import { CHANGED_AFTER_INVOICING_ANCHOR } from "@/lib/billable-time/hand-off/views";
 import { queryKeys } from "@/lib/query/keys";
 import {
 	checkInvoiceDraftStatusAction,
@@ -83,6 +84,13 @@ export function HandOffView() {
 		void queryClient.invalidateQueries({ queryKey: queryKeys.billableTime.all });
 	};
 
+	// Reports link owners and admins here; the section only exists once the overview loaded.
+	const loaded = overview.isSuccess;
+	useEffect(() => {
+		if (!loaded || window.location.hash !== `#${CHANGED_AFTER_INVOICING_ANCHOR}`) return;
+		document.getElementById(CHANGED_AFTER_INVOICING_ANCHOR)?.scrollIntoView({ block: "start" });
+	}, [loaded]);
+
 	if (overview.isPending) {
 		return (
 			<div className="flex justify-center p-6">
@@ -115,7 +123,7 @@ export function HandOffView() {
 			/>
 
 			{changedAfterInvoicing.length > 0 && (
-				<Card>
+				<Card id={CHANGED_AFTER_INVOICING_ANCHOR} className="scroll-mt-6">
 					<CardContent className="pt-6">
 						<MarkedWork
 							marked={changedAfterInvoicing}
@@ -128,9 +136,11 @@ export function HandOffView() {
 										return;
 									}
 									toast.success(
-										t("settings.billableTime.handOff.marks.cleared", "{count} marks cleared", {
-											count: result.data.cleared,
-										}),
+										t(
+											"settings.billableTime.handOff.marks.cleared",
+											"{count, plural, one {# mark cleared} other {# marks cleared}}",
+											{ count: result.data.cleared },
+										),
 									);
 									refresh();
 								})
@@ -176,9 +186,7 @@ export function HandOffView() {
 								{drafts.map((draft) => (
 									<TableRow key={draft.id}>
 										<TableCell className="font-medium">{draft.customerName}</TableCell>
-										<TableCell className="tabular-nums">
-											{draft.period.from} – {draft.period.to}
-										</TableCell>
+										<TableCell className="tabular-nums">{labels.period(draft.period)}</TableCell>
 										<TableCell>
 											<div className="flex flex-wrap gap-1">
 												<Badge variant={draft.status === "created" ? "default" : "secondary"}>
@@ -188,7 +196,7 @@ export function HandOffView() {
 													<Badge variant="outline">
 														{t(
 															"settings.billableTime.handOff.list.changed",
-															"{count} changed after invoicing",
+															"{count, plural, one {# work period changed after invoicing} other {# work periods changed after invoicing}}",
 															{ count: draft.changedCount },
 														)}
 													</Badge>

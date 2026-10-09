@@ -254,7 +254,7 @@ export function CustomerImportReviewTable({
 						<IconPlus aria-hidden="true" className="size-4" />
 						{t(
 							"settings.import.review.customers.createUnmatched",
-							"Create customers for {count} contacts without a match",
+							"{count, plural, one {Create a customer for # contact without a match} other {Create customers for # contacts without a match}}",
 							{ count: unmatched.length },
 						)}
 					</Button>

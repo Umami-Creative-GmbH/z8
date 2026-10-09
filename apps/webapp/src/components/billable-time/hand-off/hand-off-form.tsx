@@ -449,6 +449,7 @@ function WorkList({
 	items: HandOffWorkView[];
 	hint: string;
 }) {
+	const labels = useHandOffLabels();
 	if (items.length === 0) return null;
 	return (
 		<details className="rounded-md border p-3">
@@ -459,10 +460,10 @@ function WorkList({
 			<ul className="mt-2 space-y-1 text-sm">
 				{items.map((item) => (
 					<li key={item.workPeriodId} className="flex flex-wrap gap-x-3">
-						<span className="tabular-nums">{item.day}</span>
+						<span className="tabular-nums">{labels.day(item.day)}</span>
 						<span>{item.employeeName}</span>
 						<span className="text-muted-foreground">{item.projectName}</span>
-						<span className="tabular-nums">{item.hours} h</span>
+						<span className="tabular-nums">{labels.hoursWithUnit(item.hours)}</span>
 					</li>
 				))}
 			</ul>
@@ -495,9 +496,7 @@ export function HandOffPreviewView({
 		>
 			<div className="flex flex-wrap items-center gap-2 text-sm">
 				<span className="font-medium">{preview.customer.name}</span>
-				<span className="text-muted-foreground">
-					{preview.period.from} – {preview.period.to}
-				</span>
+				<span className="text-muted-foreground">{labels.period(preview.period)}</span>
 				{preview.connection && (
 					<Badge variant="outline">{accountingProviderName(preview.connection.providerKind)}</Badge>
 				)}
@@ -544,7 +543,9 @@ export function HandOffPreviewView({
 						{workLines.map((line) => (
 							<TableRow key={line.position}>
 								<TableCell>{line.text}</TableCell>
-								<TableCell className="text-right tabular-nums">{line.hours}</TableCell>
+								<TableCell className="text-right tabular-nums">
+									{line.hours && labels.hours(line.hours)}
+								</TableCell>
 								<TableCell className="text-right tabular-nums">
 									{line.rate && money(line.rate)}
 								</TableCell>
@@ -567,7 +568,9 @@ export function HandOffPreviewView({
 									</span>
 								)}
 							</TableCell>
-							<TableCell className="text-right tabular-nums">{preview.hours}</TableCell>
+							<TableCell className="text-right tabular-nums">
+								{labels.hours(preview.hours)}
+							</TableCell>
 							<TableCell />
 							<TableCell className="text-right font-semibold tabular-nums">
 								{money(preview.netTotal)}
@@ -580,7 +583,7 @@ export function HandOffPreviewView({
 				<p className="text-muted-foreground text-sm">
 					{t(
 						"settings.billableTime.handOff.preview.timesheetLines",
-						"{count} timesheet text lines are added to the draft.",
+						"{count, plural, one {# timesheet text line is} other {# timesheet text lines are}} added to the draft.",
 						{ count: preview.timesheetLineCount },
 					)}
 				</p>
@@ -618,7 +621,7 @@ export function HandOffPreviewView({
 							"{count, plural, one {# billable work period} other {# billable work periods}} ({hours} h) on projects without a customer ({projects}) cannot be handed off.",
 							{
 								count: preview.withoutCustomer.count,
-								hours: preview.withoutCustomer.hours,
+								hours: labels.hours(preview.withoutCustomer.hours),
 								projects: preview.withoutCustomer.projects.join(", "),
 							},
 						)}
@@ -629,7 +632,10 @@ export function HandOffPreviewView({
 						{t(
 							"settings.billableTime.handOff.preview.nonBillable",
 							"{count, plural, one {# non-billable work period} other {# non-billable work periods}} ({hours} h) are not handed off.",
-							{ count: preview.nonBillable.count, hours: preview.nonBillable.hours },
+							{
+								count: preview.nonBillable.count,
+								hours: labels.hours(preview.nonBillable.hours),
+							},
 						)}
 					</p>
 				)}

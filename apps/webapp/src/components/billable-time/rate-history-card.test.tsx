@@ -3,7 +3,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Temporal } from "temporal-polyfill";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RateHistoryCard } from "./rate-history-card";
 
 vi.mock("@tolgee/react", () => ({
@@ -15,8 +15,10 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 
+const display = vi.hoisted(() => ({ locale: "en-US" }));
+
 vi.mock("@/hooks/use-display-context", () => ({
-	useDisplayContext: () => ({ locale: "en-US", timezone: "UTC", hour12: false }),
+	useDisplayContext: () => ({ locale: display.locale, timezone: "UTC", hour12: false }),
 }));
 
 vi.mock("@/components/ui/date-picker", () => ({
@@ -63,11 +65,15 @@ function renderCard(overrides: Partial<Parameters<typeof RateHistoryCard>[0]> = 
 	return { onSetRate, onEndRate };
 }
 
+beforeEach(() => {
+	display.locale = "en-US";
+});
+
 describe("RateHistoryCard", () => {
 	it("marks the rate in effect today and shows each period's last day", () => {
 		renderCard();
 
-		expect(screen.getByText("Current")).toBeTruthy();
+		expect(screen.getByText("In effect")).toBeTruthy();
 		expect(screen.getByText("€95.00/h")).toBeTruthy();
 		expect(screen.getByText("Jan 1, 2025 to Jun 30, 2025")).toBeTruthy();
 	});
@@ -123,6 +129,26 @@ describe("RateHistoryCard", () => {
 		await user.click(screen.getByRole("button", { name: "Save rate" }));
 
 		expect(onSetRate).toHaveBeenCalledWith({ effectiveFrom: today.toString(), rate: "48" });
+	});
+
+	it("names the rate in effect today, never a current rate", async () => {
+		const user = userEvent.setup();
+		renderCard();
+
+		await user.click(screen.getByRole("button", { name: "Set rate" }));
+
+		expect(screen.getByText("In effect today: €95.00")).toBeTruthy();
+		expect(screen.queryByText(/current rate/i)).toBeNull();
+	});
+
+	it("suggests the rate in the viewer's number format", async () => {
+		display.locale = "de-DE";
+		const user = userEvent.setup();
+		renderCard();
+
+		await user.click(screen.getByRole("button", { name: "Set rate" }));
+
+		expect(screen.getByPlaceholderText("95,00")).toBeTruthy();
 	});
 
 	it("offers no change form to viewers who cannot edit", () => {

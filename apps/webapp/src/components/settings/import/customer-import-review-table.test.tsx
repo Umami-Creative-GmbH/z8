@@ -1,9 +1,10 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { applyImportDecisionAction } from "@/app/[locale]/(app)/settings/import/review-actions";
 import type { StagedCustomer } from "@/lib/import-review/staged-customer";
+import { render } from "@/test/render-with-translations";
 import {
 	type CustomerImportReviewRow,
 	CustomerImportReviewTable,
@@ -11,12 +12,6 @@ import {
 	customerDecisionOptions,
 } from "./customer-import-review-table";
 
-vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({
-		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
-			fallback.replace(/\{(\w+)\}/g, (_match, name: string) => String(params?.[name] ?? "")),
-	}),
-}));
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock("@/app/[locale]/(app)/settings/import/review-actions", () => ({
 	applyImportDecisionAction: vi.fn(),
@@ -188,6 +183,22 @@ describe("customer import decisions (#906)", () => {
 			decision: "accepted",
 			choice: undefined,
 		});
+	});
+
+	it("words the bulk decision for a single contact in the singular", () => {
+		render(
+			<CustomerImportReviewTable
+				organizationId="org_1"
+				batchId="batch_1"
+				editable
+				linkTargets={[]}
+				rows={[row("only")]}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("button", { name: "Create a customer for 1 contact without a match" }),
+		).toBeTruthy();
 	});
 
 	it("offers no bulk decision once the batch left review", () => {
