@@ -73,6 +73,8 @@ vi.mock("@/lib/logger", async (importOriginal) => {
 
 const templates = await import("./template-actions");
 const { getProjectTemplate, listProjectTemplates } = await import("@/lib/projects/project-templates");
+const { listEligibleProjects } = await import("@/lib/time-tracking/project-eligibility");
+const { getProjects } = await import("./actions");
 
 const ids = {
 	organization: "t878-template-org",
@@ -365,6 +367,226 @@ describe("project templates on PostgreSQL", () => {
 
 			expect(await templateNames()).toEqual(["Foreign template"]);
 			expect(await templateNames(ids.otherOrganization)).toEqual(["Foreign template"]);
+		});
+	});
+
+	describe("template input", () => {
+		it("refuses a blank name, a bad budget or offset and repeated task names, writing nothing", async () => {
+			const results = await actAs(ids.ownerUser, () =>
+				Promise.all([
+					templates.createProjectTemplate({ name: "   " }),
+					templates.createProjectTemplate({ name: "Zero budget", budgetHours: 0 }),
+					templates.createProjectTemplate({ name: "Late", deadlineOffsetDays: -1 }),
+					templates.createProjectTemplate({ name: "Fraction", deadlineOffsetDays: 1.5 }),
+					templates.createProjectTemplate({
+						name: "Twice",
+						tasks: [{ name: "Design" }, { name: " design " }],
+					}),
+					templates.createProjectTemplate({ name: "Bad colour", color: "blue" }),
+				]),
+			);
+
+			expect(results.map((result) => result.success)).toEqual([
+				false,
+				false,
+				false,
+				false,
+				false,
+				false,
+			]);
+			expect(await templateNames()).toEqual([]);
+		});
+	});
+
+	describe("template members", () => {
+		it("refuses teams and employees of another organization", async () => {
+			const results = await actAs(ids.ownerUser, () =>
+				Promise.all([
+					templates.createProjectTemplate({
+						name: "Foreign manager",
+						managerEmployeeIds: [ids.otherEmployee],
+					}),
+					templates.createProjectTemplate({
+						name: "Foreign team",
+						assignments: [{ type: "team", targetId: ids.otherTeam }],
+					}),
+					templates.createProjectTemplate({
+						name: "Foreign employee",
+						assignments: [{ type: "employee", targetId: ids.otherEmployee }],
+					}),
+				]),
+			);
+
+			expect(results.map((result) => result.success)).toEqual([false, false, false]);
+			expect(await templateNames()).toEqual([]);
+		});
+
+		it("refuses adding an employee who has left the organization", async () => {
+			const result = await actAs(ids.ownerUser, () =>
+				templates.createProjectTemplate({
+					name: "Departed",
+					managerEmployeeIds: [ids.departed],
+				}),
+			);
+
+			expect(result).toMatchObject({ success: false, error: expect.stringMatching(/left/i) });
+			expect(await templateNames()).toEqual([]);
+		});
+
+		it("keeps an employee who left after being added, and reports them as departed", async () => {
+			const id = await createTemplate(ids.ownerUser, {
+				name: "Relaunch",
+				managerEmployeeIds: [ids.employee],
+				assignments: [{ type: "employee", targetId: ids.employee }],
+			});
+			await admin.query("update employee set is_active = false where id = $1", [ids.employee]);
+
+			expect(await readTemplate(id)).toMatchObject({
+				managers: [{ employeeId: ids.employee, availability: "departed" }],
+				assignments: [{ employeeId: ids.employee, availability: "departed" }],
+			});
+
+			const resaved = await actAs(ids.ownerUser, () =>
+				templates.updateProjectTemplate(id, {
+					name: "Relaunch",
+					managerEmployeeIds: [ids.employee],
+					assignments: [{ type: "employee", targetId: ids.employee }],
+				}),
+			);
+			expect(resaved.success).toBe(true);
+			expect((await readTemplate(id))?.managers).toMatchObject([
+				{ employeeId: ids.employee, availability: "departed" },
+			]);
+		});
+
+		it("stays valid when a team or employee is deleted, keeping their last known name", async () => {
+			const id = await createTemplate(ids.ownerUser, {
+				name: "Relaunch",
+				managerEmployeeIds: [ids.employee],
+				assignments: [
+					{ type: "team", targetId: ids.team },
+					{ type: "employee", targetId: ids.employee },
+				],
+			});
+			await admin.query("delete from team where id = $1", [ids.team]);
+			await admin.query("delete from employee where id = $1", [ids.employee]);
+
+			expect(await readTemplate(id)).toMatchObject({
+				managers: [{ employeeId: null, name: "T878 Employee User", availability: "removed" }],
+				assignments: [
+					{ type: "team", teamId: null, name: "Design team", availability: "removed" },
+					{
+						type: "employee",
+						employeeId: null,
+						name: "T878 Employee User",
+						availability: "removed",
+					},
+				],
+			});
+
+			const resaved = await actAs(ids.ownerUser, () =>
+				templates.updateProjectTemplate(id, { name: "Relaunch", tasks: [{ name: "Design" }] }),
+			);
+			expect(resaved.success).toBe(true);
+			expect(await readTemplate(id)).toMatchObject({
+				tasks: [{ name: "Design" }],
+				managers: [],
+				assignments: [],
+			});
+		});
+	});
+
+	describe("who may manage templates", () => {
+		it("an org admin without a manager role may", async () => {
+			const id = await createTemplate(ids.adminUser, fullInput);
+			const results = [
+				await actAs(ids.adminUser, () => templates.updateProjectTemplate(id, { name: "Renamed" })),
+				await actAs(ids.adminUser, () => templates.getProjectTemplateDetails(id)),
+				await actAs(ids.adminUser, () => templates.deleteProjectTemplate(id)),
+			];
+
+			expect(results.map((result) => result.success)).toEqual([true, true, true]);
+		});
+
+		it("a project manager and a plain employee are refused every template action", async () => {
+			const id = await createTemplate(ids.ownerUser, fullInput);
+			audit.logAudit.mockClear();
+
+			for (const userId of [ids.projectManagerUser, ids.employeeUser]) {
+				const results = await actAs(userId, () =>
+					Promise.all([
+						templates.getProjectTemplates(),
+						templates.getProjectTemplateDetails(id),
+						templates.createProjectTemplate({ name: "Intrusion" }),
+						templates.updateProjectTemplate(id, { name: "Renamed" }),
+						templates.deleteProjectTemplate(id),
+					]),
+				);
+				expect(results.map((result) => result.success)).toEqual([false, false, false, false, false]);
+			}
+			expect(await templateNames()).toEqual(["Website relaunch"]);
+			expect(audit.logAudit).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("organization isolation", () => {
+		it("an org admin cannot read, change or delete another organization's template", async () => {
+			const results = await actAs(ids.ownerUser, () =>
+				Promise.all([
+					templates.getProjectTemplateDetails(ids.otherTemplate),
+					templates.updateProjectTemplate(ids.otherTemplate, { name: "Renamed" }),
+					templates.deleteProjectTemplate(ids.otherTemplate),
+				]),
+			);
+			const listed = await actAs(ids.ownerUser, () => templates.getProjectTemplates());
+
+			expect(results.map((result) => result.success)).toEqual([false, false, false]);
+			expect(listed).toEqual({ success: true, data: [] });
+			expect(await templateNames(ids.otherOrganization)).toEqual(["Foreign template"]);
+			expect(audit.logAudit).not.toHaveBeenCalled();
+		});
+
+		it("the template reads never return another organization's template", async () => {
+			await createTemplate(ids.ownerUser, { name: "Mine" });
+
+			expect(await readTemplate(ids.otherTemplate)).toBe(null);
+			expect(
+				(await listProjectTemplates({ organizationId: ids.organization })).map((t) => t.name),
+			).toEqual(["Mine"]);
+		});
+	});
+
+	describe("templates are never projects", () => {
+		it("never appear in project eligibility or the project list", async () => {
+			await admin.query(
+				`insert into project_assignment (project_id, organization_id, assignment_type, employee_id, created_by)
+				 values ($1, $2, 'employee', $3, $4)`,
+				[ids.project, ids.organization, ids.employee, ids.ownerUser],
+			);
+			await createTemplate(ids.ownerUser, {
+				...fullInput,
+				managerEmployeeIds: [ids.employee],
+				assignments: [
+					{ type: "employee", targetId: ids.employee },
+					{ type: "team", targetId: ids.team },
+				],
+			});
+			await admin.query("update employee set team_id = $1 where id = $2", [
+				ids.team,
+				ids.employee,
+			]);
+
+			const eligible = await listEligibleProjects({
+				employeeId: ids.employee,
+				teamId: ids.team,
+				organizationId: ids.organization,
+			});
+			const projectList = await actAs(ids.ownerUser, () => getProjects(ids.organization));
+
+			expect(eligible.map((project) => project.name)).toEqual(["T878 project"]);
+			expect(projectList.success && projectList.data.map((project) => project.name)).toEqual([
+				"T878 project",
+			]);
 		});
 	});
 
