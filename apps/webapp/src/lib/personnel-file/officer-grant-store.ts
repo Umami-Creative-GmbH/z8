@@ -11,6 +11,7 @@ import {
 import { AuditAction } from "@/lib/audit-logger";
 import { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { validateId, validateIdList } from "@/lib/payroll-access/grant-scope";
+import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import {
 	buildValidatedPersonnelFileOfficerGrant,
 	diffPersonnelFileOfficerGrant,
@@ -34,8 +35,6 @@ type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 /** Writes run in the caller's transaction, including a departure's work transaction. */
 type GrantTransaction = Pick<Transaction, "select" | "insert" | "update" | "delete">;
 type Executor = Database | GrantTransaction | Pick<Transaction, "select">;
-
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export interface PersonnelFileOfficerGrantRecord extends PersonnelFileOfficerGrantValues {
 	id: string;
@@ -199,7 +198,7 @@ export async function savePersonnelFileOfficerGrant(
 	const officerEmployeeId = validateId(input.grant.officerEmployeeId, "officerEmployeeId");
 	const requestedTeamIds = validateIdList(input.grant.teamIds, "teamIds");
 	const requestedEmployeeIds = validateIdList(input.grant.employeeIds, "employeeIds");
-	if (![officerEmployeeId, ...requestedTeamIds, ...requestedEmployeeIds].every(isUuid)) {
+	if (![officerEmployeeId, ...requestedTeamIds, ...requestedEmployeeIds].every(isCanonicalUuid)) {
 		throw new ValidationError({ message: "Personnel file officer IDs must be valid" });
 	}
 
@@ -349,7 +348,7 @@ export async function revokePersonnelFileOfficerGrant(
 		entityType: "personnel_file_officer_grant",
 		entityId: grantId,
 	});
-	if (!isUuid(grantId)) throw notFound;
+	if (!isCanonicalUuid(grantId)) throw notFound;
 
 	const [row] = await tx
 		.select(grantColumns())
@@ -497,8 +496,4 @@ async function writeGrantAudit(
 		changes: JSON.stringify(personnelFileOfficerGrantAuditChanges(input.from, input.to)),
 		metadata: input.metadata ? JSON.stringify(input.metadata) : null,
 	});
-}
-
-function isUuid(value: string): boolean {
-	return UUID_PATTERN.test(value);
 }
