@@ -57,6 +57,24 @@ function billingAddress(contact: Record<string, unknown>): string | null {
 	return lines.length === 0 ? null : lines.join("\n");
 }
 
+/**
+ * The first email address, business addresses first ("Contact Properties":
+ * `emailAddresses` has `business`, `office`, `private` and `other` lists).
+ */
+function emailAddress(contact: Record<string, unknown>): string | null {
+	const addresses = record(contact.emailAddresses);
+	if (!addresses) return null;
+	for (const kind of ["business", "office", "other", "private"]) {
+		const list = addresses[kind];
+		if (!Array.isArray(list)) continue;
+		for (const entry of list) {
+			const value = text(entry);
+			if (value) return value;
+		}
+	}
+	return null;
+}
+
 function contactName(contact: Record<string, unknown>): string | null {
 	const company = record(contact.company);
 	if (company) return text(company.name);
@@ -87,6 +105,7 @@ export function customerContactFromLexware(value: unknown): AccountingContact | 
 		name,
 		address: billingAddress(contact),
 		vatId: text(record(contact.company)?.vatRegistrationId),
+		email: emailAddress(contact),
 	};
 }
 

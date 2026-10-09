@@ -1,5 +1,6 @@
 import type { Job } from "bullmq";
 import type { JobResult } from "@/lib/queue";
+import { scanAccountingCustomerImport } from "./accounting-customer-adapter";
 import { scanClockinImportPartition } from "./clockin-adapter";
 import { scanClockodoImportPartition } from "./clockodo-adapter";
 import { commitAcceptedRowsForEntity } from "./committers";
@@ -10,9 +11,13 @@ import {
 	readyCommitJobsFromJobs,
 	updateImportBatchJob,
 } from "./repository";
-import type { ImportCommitJobData, ImportScanJobData } from "./types";
+import type {
+	AccountingCustomerScanJobData,
+	ImportCommitJobData,
+	ImportScanJobData,
+} from "./types";
 
-type ImportReviewJobData = ImportScanJobData | ImportCommitJobData;
+type ImportReviewJobData = ImportScanJobData | AccountingCustomerScanJobData | ImportCommitJobData;
 
 interface ImportScanResult {
 	stagedRows: number;
@@ -107,8 +112,13 @@ export async function processImportReviewJob(job: Job<ImportReviewJobData>): Pro
 					case "clockodo":
 						scanResult = await scanClockodoImportPartition(data);
 						break;
+					case "accounting":
+						scanResult = await scanAccountingCustomerImport(data);
+						break;
 					default:
-						throw new Error(`Unsupported import review provider: ${String(data.provider)}`);
+						throw new Error(
+							`Unsupported import review provider: ${String((data as { provider?: unknown }).provider)}`,
+						);
 				}
 
 				await markCompleted(data, scanResult.stagedRows);
@@ -173,7 +183,9 @@ export async function processImportReviewJob(job: Job<ImportReviewJobData>): Pro
 	}
 }
 
-export async function processImportReviewScanJob(job: Job<ImportScanJobData>): Promise<JobResult> {
+export async function processImportReviewScanJob(
+	job: Job<ImportScanJobData | AccountingCustomerScanJobData>,
+): Promise<JobResult> {
 	return processImportReviewJob(job);
 }
 

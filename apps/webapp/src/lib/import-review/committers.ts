@@ -27,6 +27,7 @@ import {
 } from "@/lib/time-tracking/record-imported-work";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
+import { type CustomerImportHold, commitCustomerRow } from "./customer-committer";
 import { reviewedImportRowMapping, withReviewedImportTransaction } from "./import-work-transaction";
 import { importedWorkProviderEvidence } from "./imported-work-evidence";
 import type { ImportCommitJobData, ImportProvider } from "./types";
@@ -153,14 +154,15 @@ async function markBlocked(
 }
 
 /**
- * A row the work operation held for review keeps its evidence durably: it is
- * blocked immediately, on any attempt, because retrying cannot change the outcome.
+ * A row the work operation (or the customer import, #906) held for review keeps
+ * its evidence durably: it is blocked immediately, on any attempt, because
+ * retrying cannot change the outcome.
  */
 async function markHeld(
 	database: CommitDb,
 	rowId: string,
 	job: ImportCommitJobData,
-	hold: ImportedWorkHold,
+	hold: ImportedWorkHold | CustomerImportHold,
 ): Promise<CommitRowOutcome> {
 	const message = `Held for review: ${hold.reason}`;
 	await database
@@ -624,6 +626,9 @@ async function getBatchProvider(job: ImportCommitJobData): Promise<ImportProvide
 		columns: { provider: true },
 	});
 	if (!batch) throw new Error(`Import batch ${job.batchId} not found`);
+	if (batch.provider === "accounting") {
+		throw new Error(`Import batch ${job.batchId} has no work from a time-tracking tool`);
+	}
 	return batch.provider;
 }
 
@@ -790,6 +795,14 @@ export async function commitAcceptedRowsForEntity(
 							case "surcharge":
 								await commitSurcharge(tx as CommitDb, claimedRow, job);
 								return { status: "committed" };
+							case "customer": {
+								const outcome = await commitCustomerRow(tx, claimedRow, job);
+								if (outcome.kind === "held") {
+									return markHeld(tx as CommitDb, claimedRow.id, job, outcome.hold);
+								}
+								await markCommitted(tx as CommitDb, claimedRow.id, job, "customer", outcome.customerId);
+								return { status: "committed" };
+							}
 							case "target_hours":
 							case "work_policy":
 							case "holiday_quota":

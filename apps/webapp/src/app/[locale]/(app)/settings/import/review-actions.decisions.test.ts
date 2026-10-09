@@ -207,7 +207,52 @@ describe("import review decision actions", () => {
 			decision: "accepted",
 			reason: "Reviewed source records",
 			decidedBy: "user_1",
+			choice: null,
 		});
+	});
+
+	it("passes a link choice for one accepted row through (#906)", async () => {
+		const targetId = "90600000-0000-4000-8000-000000000001";
+		const result = await applyImportDecisionAction({
+			organizationId: "org_1",
+			batchId: "batch_1",
+			rowIds: ["row_1"],
+			decision: "accepted",
+			choice: { kind: "link", targetId },
+		});
+
+		expect(result).toEqual({ success: true, data: { updatedCount: 2 } });
+		expect(mockState.applyImportRowDecision).toHaveBeenCalledWith(
+			expect.objectContaining({ rowIds: ["row_1"], choice: { kind: "link", targetId } }),
+		);
+	});
+
+	it.each([
+		[
+			"several rows",
+			{ rowIds: ["row_1", "row_2"], decision: "accepted" },
+			"Link one accepted import review row at a time",
+		],
+		["a rejection", { rowIds: ["row_1"], decision: "rejected" }, "Link one accepted import review row at a time"],
+		[
+			"a target that is not an id",
+			{ rowIds: ["row_1"], decision: "accepted", targetId: "not-a-uuid" },
+			"Invalid import review link target",
+		],
+	])("refuses a link choice with %s", async (_label, input, error) => {
+		const result = await applyImportDecisionAction({
+			organizationId: "org_1",
+			batchId: "batch_1",
+			rowIds: input.rowIds,
+			decision: input.decision,
+			choice: {
+				kind: "link",
+				targetId: "targetId" in input ? input.targetId : "90600000-0000-4000-8000-000000000001",
+			},
+		});
+
+		expect(result).toEqual({ success: false, error });
+		expect(mockState.applyImportRowDecision).not.toHaveBeenCalled();
 	});
 
 	it("rejects empty decisions before updating rows", async () => {

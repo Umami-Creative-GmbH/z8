@@ -59,6 +59,11 @@ export interface AccountingContact {
 	/** The billing address as display text (one line per address line). */
 	address: string | null;
 	vatId: string | null;
+	/**
+	 * The contact's email address, if the tool has one. The customer import
+	 * (#906) copies it onto a created customer. Optional while connectors add it.
+	 */
+	email?: string | null;
 }
 
 export interface ContactSearchResult {
