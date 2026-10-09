@@ -183,7 +183,7 @@ export const projectTask = pgTable(
 		index("projectTask_projectId_state_idx").on(table.projectId, table.state),
 		uniqueIndex("projectTask_project_name_unique_idx").on(
 			table.projectId,
-			sql`lower(${table.name})`,
+			sql`lower(btrim(${table.name}))`,
 		),
 		// Target of booking references that must stay inside one project (#873).
 		unique("project_task_id_project_org_idx").on(table.id, table.projectId, table.organizationId),
@@ -239,7 +239,7 @@ export const projectTemplate = pgTable(
 		index("projectTemplate_organizationId_idx").on(table.organizationId),
 		uniqueIndex("projectTemplate_org_name_unique_idx").on(
 			table.organizationId,
-			sql`lower(${table.name})`,
+			sql`lower(btrim(${table.name}))`,
 		),
 		// Target of the template's own rows, which stay in its organization.
 		unique("project_template_id_org_idx").on(table.id, table.organizationId),
@@ -276,7 +276,7 @@ export const projectTemplateTask = pgTable(
 		index("projectTemplateTask_templateId_idx").on(table.templateId),
 		uniqueIndex("projectTemplateTask_template_name_unique_idx").on(
 			table.templateId,
-			sql`lower(${table.name})`,
+			sql`lower(btrim(${table.name}))`,
 		),
 		check("project_template_task_name_check", sql`length(btrim(${table.name})) > 0`),
 		check(

@@ -1,8 +1,27 @@
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { Effect } from "effect";
+import {
+	AuthorizationError,
+	ConflictError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
 import { logger } from "@/lib/logger";
 
-/** Runs a project settings action inside an OpenTelemetry span, logging failures. */
+/** Refusals the caller is told about: expected outcomes, not failures to log. */
+function isExpectedRefusal(error: unknown) {
+	return (
+		error instanceof ValidationError ||
+		error instanceof AuthorizationError ||
+		error instanceof NotFoundError ||
+		error instanceof ConflictError
+	);
+}
+
+/**
+ * Runs a project settings action inside an OpenTelemetry span. Every failure
+ * marks the span; only unexpected ones are logged as errors.
+ */
 export function tracedProjectAction<A, E, R>(
 	name: string,
 	attributes: Record<string, string>,
@@ -15,7 +34,9 @@ export function tracedProjectAction<A, E, R>(
 				Effect.gen(function* () {
 					span.recordException(error as Error);
 					span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) });
-					logger.error({ error, ...attributes }, `Failed to run ${name}`);
+					if (!isExpectedRefusal(error)) {
+						logger.error({ error, ...attributes }, `Failed to run ${name}`);
+					}
 					return yield* Effect.fail(error);
 				}),
 			),

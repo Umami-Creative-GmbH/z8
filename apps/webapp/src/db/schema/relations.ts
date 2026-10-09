@@ -1693,6 +1693,10 @@ export const projectAssignmentRelations = relations(projectAssignment, ({ one })
 }));
 
 export const projectTaskRelations = relations(projectTask, ({ one }) => ({
+	organization: one(organization, {
+		fields: [projectTask.organizationId],
+		references: [organization.id],
+	}),
 	project: one(project, {
 		fields: [projectTask.projectId],
 		references: [project.id],

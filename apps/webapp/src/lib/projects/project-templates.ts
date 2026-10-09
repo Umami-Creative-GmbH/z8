@@ -16,6 +16,7 @@ import {
 	buildAuthUserDisplayName,
 } from "@/lib/auth/derived-user-name";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import { isConstraintViolation } from "./constraint-violation";
 import type {
 	NormalizedProjectTemplateInput,
 	ProjectTemplate,
@@ -466,13 +467,5 @@ export async function deleteProjectTemplateRow(
 
 /** Whether a write failed because the organization already has a template of that name. */
 export function isProjectTemplateNameConflict(error: unknown): boolean {
-	let candidate: unknown = error;
-	for (let depth = 0; depth < 5 && candidate && typeof candidate === "object"; depth += 1) {
-		const current = candidate as { code?: unknown; constraint?: unknown; cause?: unknown };
-		if (current.code === "23505" && current.constraint === "projectTemplate_org_name_unique_idx") {
-			return true;
-		}
-		candidate = current.cause;
-	}
-	return false;
+	return isConstraintViolation(error, "23505", "projectTemplate_org_name_unique_idx");
 }

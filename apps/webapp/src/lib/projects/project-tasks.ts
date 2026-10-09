@@ -3,6 +3,7 @@ import "server-only";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { projectTask, timeRecordAllocation, workPeriod } from "@/db/schema";
+import { isConstraintViolation } from "./constraint-violation";
 import type { ProjectTask, ProjectTaskState } from "./project-task-model";
 
 /**
@@ -127,13 +128,10 @@ export async function isProjectTaskBooked(
 
 /** Whether a write failed because the project already has a task of that name. */
 export function isProjectTaskNameConflict(error: unknown): boolean {
-	let candidate: unknown = error;
-	for (let depth = 0; depth < 5 && candidate && typeof candidate === "object"; depth += 1) {
-		const current = candidate as { code?: unknown; constraint?: unknown; cause?: unknown };
-		if (current.code === "23505" && current.constraint === "projectTask_project_name_unique_idx") {
-			return true;
-		}
-		candidate = current.cause;
-	}
-	return false;
+	return isConstraintViolation(error, "23505", "projectTask_project_name_unique_idx");
+}
+
+/** Whether a task delete failed because a booking still references the task. */
+export function isProjectTaskBookingReference(error: unknown): boolean {
+	return isConstraintViolation(error, "23503", ["timeRecordAllocation_task_fk", "workPeriod_task_fk"]);
 }

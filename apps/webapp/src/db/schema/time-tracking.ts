@@ -195,13 +195,16 @@ export const workPeriod = pgTable(
 		index("workPeriod_startTime_idx").on(table.startTime),
 		index("workPeriod_projectId_idx").on(table.projectId),
 		index("workPeriod_taskId_idx").on(table.taskId),
-		// The task belongs to the period's project and organization; a booked task
-		// cannot be deleted.
+		// The task belongs to the period's project and organization. The migration
+		// (0144) sets only task_id to null on delete, and its trigger clears the task
+		// whenever the project is cleared, so hard-deleting a project keeps the
+		// period without project and task. Deleting a booked task alone is refused
+		// by the application under the task's row lock.
 		foreignKey({
 			name: "workPeriod_task_fk",
 			columns: [table.taskId, table.projectId, table.organizationId],
 			foreignColumns: [projectTask.id, projectTask.projectId, projectTask.organizationId],
-		}),
+		}).onDelete("set null"),
 		check(
 			"workPeriod_task_project_chk",
 			sql`${table.taskId} IS NULL OR ${table.projectId} IS NOT NULL`,

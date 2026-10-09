@@ -29,4 +29,4 @@ ALTER TABLE "project_task" ADD CONSTRAINT "project_task_updated_by_user_id_fk" F
 ALTER TABLE "project_task" ADD CONSTRAINT "project_task_project_fk" FOREIGN KEY ("project_id","organization_id") REFERENCES "public"."project"("id","organization_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "projectTask_organizationId_idx" ON "project_task" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "projectTask_projectId_state_idx" ON "project_task" USING btree ("project_id","state");--> statement-breakpoint
-CREATE UNIQUE INDEX "projectTask_project_name_unique_idx" ON "project_task" USING btree ("project_id",lower("name"));
+CREATE UNIQUE INDEX "projectTask_project_name_unique_idx" ON "project_task" USING btree ("project_id",lower(btrim("name")));

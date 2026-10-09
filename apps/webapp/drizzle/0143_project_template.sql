@@ -69,9 +69,9 @@ ALTER TABLE "project_template_assignment" ADD CONSTRAINT "project_template_assig
 ALTER TABLE "project_template_assignment" ADD CONSTRAINT "project_template_assignment_employee_fk" FOREIGN KEY ("employee_id","organization_id") REFERENCES "public"."employee"("id","organization_id") ON DELETE SET NULL ("employee_id") ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "project_template_assignment" ADD CONSTRAINT "project_template_assignment_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "projectTemplate_organizationId_idx" ON "project_template" USING btree ("organization_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "projectTemplate_org_name_unique_idx" ON "project_template" USING btree ("organization_id",lower("name"));--> statement-breakpoint
+CREATE UNIQUE INDEX "projectTemplate_org_name_unique_idx" ON "project_template" USING btree ("organization_id",lower(btrim("name")));--> statement-breakpoint
 CREATE INDEX "projectTemplateTask_templateId_idx" ON "project_template_task" USING btree ("template_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "projectTemplateTask_template_name_unique_idx" ON "project_template_task" USING btree ("template_id",lower("name"));--> statement-breakpoint
+CREATE UNIQUE INDEX "projectTemplateTask_template_name_unique_idx" ON "project_template_task" USING btree ("template_id",lower(btrim("name")));--> statement-breakpoint
 CREATE INDEX "projectTemplateManager_templateId_idx" ON "project_template_manager" USING btree ("template_id");--> statement-breakpoint
 CREATE INDEX "projectTemplateManager_employeeId_idx" ON "project_template_manager" USING btree ("employee_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "projectTemplateManager_unique_idx" ON "project_template_manager" USING btree ("template_id","employee_id") WHERE employee_id IS NOT NULL;--> statement-breakpoint
