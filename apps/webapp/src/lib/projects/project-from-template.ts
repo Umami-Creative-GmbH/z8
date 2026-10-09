@@ -21,8 +21,9 @@ import {
 	insertProjectManagers,
 	type NewProjectStatus,
 } from "./project-creation";
-import type { ProjectTemplateInput } from "./project-template-model";
+import { listProjectTasks } from "./project-tasks";
 import { projectDeadlineFromTemplateOffset } from "./project-template-deadline";
+import type { ProjectTemplateInput } from "./project-template-model";
 import { getProjectTemplate } from "./project-templates";
 
 /**
@@ -114,14 +115,16 @@ export async function createProjectFromTemplateRows(
 	}
 
 	const skipped: SkippedProjectMember[] = [];
-	const skip = (role: SkippedProjectMember["role"]) => (member: {
-		name: string;
-		availability: string;
-	}) => {
-		if (member.availability === "available") return true;
-		skipped.push({ role, name: member.name, reason: member.availability as "departed" | "removed" });
-		return false;
-	};
+	const skip =
+		(role: SkippedProjectMember["role"]) => (member: { name: string; availability: string }) => {
+			if (member.availability === "available") return true;
+			skipped.push({
+				role,
+				name: member.name,
+				reason: member.availability as "departed" | "removed",
+			});
+			return false;
+		};
 
 	const managerIds = template.managers
 		.filter(skip("manager"))
@@ -153,4 +156,135 @@ export async function createProjectFromTemplateRows(
 	});
 
 	return { id: created.id, template: { id: template.id, name: template.name }, skipped };
+}
+
+const memberColumns = {
+	employeeId: employee.id,
+	hasAccess: employeeHasOrganizationAccess(),
+	userFirstName: user.firstName,
+	userLastName: user.lastName,
+	userName: user.name,
+	userEmail: user.email,
+};
+
+function memberName(row: {
+	userFirstName: string | null;
+	userLastName: string | null;
+	userName: string | null;
+	userEmail: string | null;
+}) {
+	return (
+		buildAuthUserDisplayName({
+			firstName: row.userFirstName,
+			lastName: row.userLastName,
+			name: row.userName,
+			email: row.userEmail,
+		}) || "Unknown"
+	);
+}
+
+/**
+ * What a template saved from a project holds: the project's icon, colour,
+ * budget, open tasks, managers and assignments. The deadline offset stays
+ * empty, because an absolute deadline has no meaningful offset. Managers and
+ * assigned employees who have left the organization are skipped and
+ * reported. Returns null when the project is not in the organization.
+ */
+export async function projectAsTemplateInput(
+	tx: Writer,
+	scope: { organizationId: string; projectId: string },
+): Promise<{
+	project: { id: string; name: string };
+	input: Omit<ProjectTemplateInput, "name">;
+	skipped: SkippedProjectMember[];
+} | null> {
+	const { organizationId, projectId } = scope;
+	const [source] = await tx
+		.select({
+			id: project.id,
+			name: project.name,
+			icon: project.icon,
+			color: project.color,
+			budgetHours: project.budgetHours,
+		})
+		.from(project)
+		.where(and(eq(project.id, projectId), eq(project.organizationId, organizationId)))
+		.limit(1);
+	if (!source) return null;
+
+	const tasks = await listProjectTasks({ organizationId, projectId }, { state: "open" }, tx);
+	const managers = await tx
+		.select(memberColumns)
+		.from(projectManager)
+		.innerJoin(
+			employee,
+			and(eq(employee.id, projectManager.employeeId), eq(employee.organizationId, organizationId)),
+		)
+		.leftJoin(user, eq(user.id, employee.userId))
+		.where(eq(projectManager.projectId, projectId))
+		.orderBy(asc(projectManager.assignedAt), asc(projectManager.id));
+	const teams = await tx
+		.select({ teamId: team.id })
+		.from(projectAssignment)
+		.innerJoin(
+			team,
+			and(eq(team.id, projectAssignment.teamId), eq(team.organizationId, organizationId)),
+		)
+		.where(
+			and(
+				eq(projectAssignment.projectId, projectId),
+				eq(projectAssignment.organizationId, organizationId),
+				eq(projectAssignment.assignmentType, "team"),
+			),
+		)
+		.orderBy(asc(sql`lower(${team.name})`));
+	const employees = await tx
+		.select(memberColumns)
+		.from(projectAssignment)
+		.innerJoin(
+			employee,
+			and(
+				eq(employee.id, projectAssignment.employeeId),
+				eq(employee.organizationId, organizationId),
+			),
+		)
+		.leftJoin(user, eq(user.id, employee.userId))
+		.where(
+			and(
+				eq(projectAssignment.projectId, projectId),
+				eq(projectAssignment.organizationId, organizationId),
+				eq(projectAssignment.assignmentType, "employee"),
+			),
+		)
+		.orderBy(asc(projectAssignment.createdAt), asc(projectAssignment.id));
+
+	const skipped: SkippedProjectMember[] = [];
+	const keep = (role: SkippedProjectMember["role"]) => (row: (typeof managers)[number]) => {
+		if (row.hasAccess) return true;
+		skipped.push({ role, name: memberName(row), reason: "departed" });
+		return false;
+	};
+	const managerEmployeeIds = managers.filter(keep("manager")).map((row) => row.employeeId);
+	const employeeIds = employees.filter(keep("employee")).map((row) => row.employeeId);
+
+	return {
+		project: { id: source.id, name: source.name },
+		input: {
+			icon: source.icon,
+			color: source.color,
+			budgetHours: source.budgetHours === null ? null : Number(source.budgetHours),
+			deadlineOffsetDays: null,
+			tasks: tasks.map((task) => ({
+				name: task.name,
+				description: task.description,
+				estimateHours: task.estimateHours === null ? null : Number(task.estimateHours),
+			})),
+			managerEmployeeIds,
+			assignments: [
+				...teams.map((row) => ({ type: "team" as const, targetId: row.teamId })),
+				...employeeIds.map((targetId) => ({ type: "employee" as const, targetId })),
+			],
+		},
+		skipped,
+	};
 }

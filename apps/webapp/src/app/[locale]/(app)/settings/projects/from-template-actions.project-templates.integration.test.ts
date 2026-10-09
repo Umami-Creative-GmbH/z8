@@ -346,7 +346,10 @@ describe("project templates in use on PostgreSQL", () => {
 				fromTemplate.createProjectFromTemplate({ templateId, name: " Acme relaunch " }),
 			);
 
-			expect(clash).toMatchObject({ success: false, error: expect.stringMatching(/already exists/) });
+			expect(clash).toMatchObject({
+				success: false,
+				error: expect.stringMatching(/already exists/),
+			});
 			const { rows } = await admin.query<{ count: string }>(
 				`select (select count(*) from project where organization_id = $1)
 				 + (select count(*) from project_task where organization_id = $1) as count`,
@@ -459,6 +462,127 @@ describe("project templates in use on PostgreSQL", () => {
 
 			expect(refused.map((result) => result.success)).toEqual([false, false]);
 			expect(foreign).toMatchObject({ success: false });
+		});
+	});
+
+	describe("saving a project as a template", () => {
+		async function seedProject() {
+			const projectId = "e8800000-0000-4000-8000-000000000020";
+			await admin.query(
+				`insert into project (id, organization_id, name, description, status, icon, color, budget_hours,
+				                      deadline, is_active, created_by, updated_at)
+				 values ($1, $2, 'Acme relaunch', 'For Acme', 'active', 'IconBolt', '#22c55e', 80,
+				         '2026-12-24', true, $3, now())`,
+				[projectId, ids.organization, ids.ownerUser],
+			);
+			await admin.query(
+				`insert into project_task (organization_id, project_id, name, description, estimate_hours,
+				                           state, done_at, done_by, created_by, updated_at) values
+				 ($1, $2, 'Design', 'Wireframes', 12.5, 'open', null, null, $3, now()),
+				 ($1, $2, 'Build', null, null, 'open', null, null, $3, now()),
+				 ($1, $2, 'Kickoff', null, 2, 'done', now(), $3, $3, now())`,
+				[ids.organization, projectId, ids.ownerUser],
+			);
+			await admin.query(
+				`insert into project_manager (project_id, employee_id, assigned_by) values
+				 ($1, $2, $4), ($1, $3, $4)`,
+				[projectId, ids.projectManager, ids.departed, ids.ownerUser],
+			);
+			await admin.query(
+				`insert into project_assignment (project_id, organization_id, assignment_type, team_id, employee_id, created_by)
+				 values ($1, $2, 'team', $3, null, $6), ($1, $2, 'employee', null, $4, $6),
+				        ($1, $2, 'employee', null, $5, $6)`,
+				[projectId, ids.organization, ids.team, ids.employee, ids.departed, ids.ownerUser],
+			);
+			await admin.query("update employee set is_active = false where id = $1", [ids.departed]);
+			return projectId;
+		}
+
+		it("builds a template from the project's icon, colour, budget, open tasks, managers and assignments", async () => {
+			const projectId = await seedProject();
+
+			const saved = await actAs(ids.adminUser, () =>
+				fromTemplate.saveProjectAsTemplate(projectId, { name: "Relaunch blueprint" }),
+			);
+
+			expect(saved).toEqual({
+				success: true,
+				data: {
+					id: expect.any(String),
+					name: "Relaunch blueprint",
+					skipped: [
+						{ role: "manager", name: "T880 Departed User", reason: "departed" },
+						{ role: "employee", name: "T880 Departed User", reason: "departed" },
+					],
+				},
+			});
+			if (!saved.success) return;
+			expect(await readTemplate(saved.data.id)).toMatchObject({
+				name: "Relaunch blueprint",
+				description: null,
+				icon: "IconBolt",
+				color: "#22c55e",
+				budgetHours: "80.00",
+				deadlineOffsetDays: null,
+				tasks: [
+					{ name: "Build", description: null, estimateHours: null },
+					{ name: "Design", description: "Wireframes", estimateHours: "12.50" },
+				],
+				managers: [{ employeeId: ids.projectManager, availability: "available" }],
+				assignments: [
+					{ type: "team", teamId: ids.team, availability: "available" },
+					{ type: "employee", employeeId: ids.employee, availability: "available" },
+				],
+			});
+			const template = await readTemplate(saved.data.id);
+			expect(template?.tasks).toHaveLength(2);
+			expect(template?.managers).toHaveLength(1);
+			expect(template?.assignments).toHaveLength(2);
+		});
+
+		it("names the template after the project unless told otherwise, and refuses a taken name", async () => {
+			const projectId = await seedProject();
+
+			const first = await actAs(ids.ownerUser, () => fromTemplate.saveProjectAsTemplate(projectId));
+			const second = await actAs(ids.ownerUser, () =>
+				fromTemplate.saveProjectAsTemplate(projectId, { name: "ACME RELAUNCH" }),
+			);
+
+			expect(first).toMatchObject({ success: true, data: { name: "Acme relaunch" } });
+			expect(second).toMatchObject({
+				success: false,
+				error: expect.stringMatching(/already exists/),
+			});
+		});
+
+		it("is refused to anyone but org owners and admins, and for another organization's project", async () => {
+			const projectId = await seedProject();
+			await admin.query(
+				"insert into project_manager (project_id, employee_id, assigned_by) values ($1, $2, $3)",
+				[projectId, ids.employee, ids.ownerUser],
+			);
+			await admin.query(
+				`insert into project (id, organization_id, name, status, is_active, created_by, updated_at)
+				 values ('e8800000-0000-4000-8000-000000000021', $1, 'Foreign project', 'active', true, $2, now())`,
+				[ids.otherOrganization, ids.otherUser],
+			);
+			audit.logAudit.mockClear();
+
+			const refused = [
+				await actAs(ids.projectManagerUser, () => fromTemplate.saveProjectAsTemplate(projectId)),
+				await actAs(ids.employeeUser, () => fromTemplate.saveProjectAsTemplate(projectId)),
+				await actAs(ids.ownerUser, () =>
+					fromTemplate.saveProjectAsTemplate("e8800000-0000-4000-8000-000000000021"),
+				),
+			];
+
+			expect(refused.map((result) => result.success)).toEqual([false, false, false]);
+			const { rows } = await admin.query(
+				"select id from project_template where organization_id = $1",
+				[ids.organization],
+			);
+			expect(rows).toEqual([]);
+			expect(audit.logAudit).not.toHaveBeenCalled();
 		});
 	});
 

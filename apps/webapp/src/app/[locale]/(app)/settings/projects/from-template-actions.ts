@@ -13,15 +13,29 @@ import { logger } from "@/lib/logger";
 import { isProjectNameConflict, type NewProjectStatus } from "@/lib/projects/project-creation";
 import {
 	createProjectFromTemplateRows,
+	projectAsTemplateInput,
 	type SkippedProjectMember,
 } from "@/lib/projects/project-from-template";
-import type { ProjectTemplate, ProjectTemplateSummary } from "@/lib/projects/project-template-model";
-import { getProjectTemplate, listProjectTemplates } from "@/lib/projects/project-templates";
+import type {
+	ProjectTemplate,
+	ProjectTemplateSummary,
+} from "@/lib/projects/project-template-model";
+import {
+	getProjectTemplate,
+	listProjectTemplates,
+	writeProjectTemplate,
+} from "@/lib/projects/project-templates";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
 import {
 	ensureSettingsActorCanUseProjectCustomer,
 	getProjectSettingsActorContext,
 } from "./project-scope";
+import {
+	getTemplateAdmin,
+	keepTypedTemplateError,
+	normalizedTemplateInput,
+	templateNotFound,
+} from "./project-template-access";
 import { tracedProjectAction } from "./traced-project-action";
 
 /**
@@ -40,14 +54,6 @@ export interface CreateProjectFromTemplateInput {
 	description?: string | null;
 	status?: NewProjectStatus;
 	customerId?: string | null;
-}
-
-function templateNotFound(templateId: string) {
-	return new NotFoundError({
-		message: "Project template not found",
-		entityType: "project_template",
-		entityId: templateId,
-	});
 }
 
 function keepTypedCreationError(error: DatabaseError) {
@@ -191,6 +197,73 @@ export async function createProjectFromTemplate(
 
 				revalidatePath("/settings/projects");
 				return { id: created.id, skipped: created.skipped };
+			}),
+		),
+	);
+}
+
+/**
+ * Saves a project as a new template (org owners and admins only): its icon,
+ * colour, budget, open tasks, managers and assignments, without a deadline
+ * offset. Managers and assigned employees who have left the organization are
+ * skipped and returned in `skipped`. The template is named after the project
+ * unless `name` is given.
+ */
+export async function saveProjectAsTemplate(
+	projectId: string,
+	input: { name?: string } = {},
+): Promise<ServerActionResult<{ id: string; name: string; skipped: SkippedProjectMember[] }>> {
+	return runServerActionSafe(
+		tracedProjectAction(
+			"saveProjectAsTemplate",
+			{ "project.id": projectId },
+			Effect.gen(function* () {
+				const admin = yield* getTemplateAdmin("saveFromProject");
+				const source = yield* admin.actor.dbService.query("projectTemplate.readProject", () =>
+					projectAsTemplateInput(db, { organizationId: admin.organizationId, projectId }),
+				);
+				if (!source) {
+					return yield* Effect.fail(
+						new NotFoundError({
+							message: "Project not found",
+							entityType: "project",
+							entityId: projectId,
+						}),
+					);
+				}
+				const values = yield* normalizedTemplateInput({
+					...source.input,
+					name: input.name ?? source.project.name,
+				});
+				const created = yield* admin.actor.dbService
+					.query("projectTemplate.saveFromProject", () =>
+						db.transaction((tx) =>
+							writeProjectTemplate(
+								tx,
+								{ organizationId: admin.organizationId, userId: admin.userId },
+								values,
+							),
+						),
+					)
+					.pipe(Effect.mapError(keepTypedTemplateError));
+
+				logAudit({
+					action: AuditAction.PROJECT_TEMPLATE_CREATED,
+					actorId: admin.userId,
+					targetId: created.id,
+					targetType: "project_template",
+					organizationId: admin.organizationId,
+					changes: { name: values.name, taskNames: values.tasks.map((task) => task.name) },
+					metadata: {
+						templateName: values.name,
+						fromProjectId: source.project.id,
+						skippedMembers: source.skipped,
+					},
+					timestamp: new Date(),
+				}).catch((err) => logger.error({ err }, "Failed to log audit"));
+
+				revalidatePath("/settings/projects");
+				return { id: created.id, name: values.name, skipped: source.skipped };
 			}),
 		),
 	);
