@@ -64,6 +64,10 @@ type NoticeTerms = { purposeStatement: string | null; retentionDays: number };
  * A save publishes a new notice version when it changes what an employee agreed
  * to: a different purpose statement or a longer retention. A shorter retention
  * only brings purge dates forward, so existing consents still cover it.
+ *
+ * "Longer" is measured against the current notice, not the previous setting:
+ * after shortening 90 → 30 days, going back up to 90 stays within what every
+ * consent agreed to and publishes nothing; going past 90 does.
  */
 export function requiresNewNoticeVersion(
 	current: { purposeStatement: string; retentionDays: number } | null,

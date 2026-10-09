@@ -29,8 +29,10 @@ import { currentTimestamp } from "./timestamp";
 export const positionCaptureSetting = pgTable(
 	"position_capture_setting",
 	{
+		id: uuid("id").defaultRandom().primaryKey(),
 		organizationId: text("organization_id")
-			.primaryKey()
+			.notNull()
+			.unique("positionCaptureSetting_organizationId_idx")
 			.references(() => organization.id, { onDelete: "cascade" }),
 		enabled: boolean("enabled").default(false).notNull(),
 		purposeStatement: text("purpose_statement"),

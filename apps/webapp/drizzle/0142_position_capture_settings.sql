@@ -17,13 +17,15 @@ CREATE TABLE "position_capture_assignment" (
 			or ("position_capture_assignment"."assignment_type" = 'employee' and "position_capture_assignment"."employee_id" is not null and "position_capture_assignment"."team_id" is null and "position_capture_assignment"."priority" = 2))
 );--> statement-breakpoint
 CREATE TABLE "position_capture_setting" (
-	"organization_id" text PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"organization_id" text NOT NULL,
 	"enabled" boolean DEFAULT false NOT NULL,
 	"purpose_statement" text,
 	"retention_days" integer DEFAULT 90 NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"updated_by" text,
+	CONSTRAINT "positionCaptureSetting_organizationId_idx" UNIQUE("organization_id"),
 	CONSTRAINT "position_capture_setting_retention_check" CHECK ("position_capture_setting"."retention_days" between 7 and 365),
 	CONSTRAINT "position_capture_setting_purpose_check" CHECK ("position_capture_setting"."enabled" = false or "position_capture_setting"."purpose_statement" is not null)
 );--> statement-breakpoint
