@@ -22,6 +22,7 @@ import {
 	completedWorkOperation,
 	employee,
 	timeRecord,
+	timeRecordAllocation,
 	timeRecordWork,
 	workPeriod,
 } from "@/db/schema";
@@ -48,6 +49,11 @@ import {
 	interpretImportedWorkInterval,
 } from "./imported-work-interval";
 import { resolveFallbackTimezoneCapture, type TimeEntryTimezoneCapture } from "./timezone-capture";
+import {
+	BillableWorkRefusedError,
+	readProjectBillability,
+	resolveWorkBillability,
+} from "./work-billability";
 import type { SealedWorkTransactionScope } from "./work-transaction";
 
 export const IMPORTED_WORK_COMMAND_VERSION = 1;
@@ -73,6 +79,19 @@ export type ImportedWorkCommand = {
 	startsAt: string;
 	endsAt: string | null;
 	providerEvidence: ImportedWorkProviderEvidence;
+	/**
+	 * The Z8 project the reviewed row is attributed to (#900; mapped by #907).
+	 * Absent from commands built before project attribution, so their frozen
+	 * receipts still replay; such work has no project and is never billable.
+	 */
+	attribution?: ImportedWorkAttribution;
+};
+
+/** An imported row's project and, when the import states it, its billability. */
+export type ImportedWorkAttribution = {
+	projectId: string;
+	/** Absent takes the project's billable default. */
+	billable?: boolean;
 };
 
 export type ImportedWorkFollowUp = {
@@ -102,6 +121,8 @@ export type ImportedWorkResult = {
 		timezoneSource: TimeEntryTimezoneCapture["timezoneSource"];
 	};
 	providerEvidence: ImportedWorkProviderEvidence;
+	/** Absent on receipts of unattributed imports (#900): no project, non-billable. */
+	attribution?: { projectId: string; isBillable: boolean };
 	revisions: { workPeriod: { source: null; result: number } };
 	append: {
 		admission: "append";
@@ -231,6 +252,9 @@ export async function recordImportedWork(
 	});
 	if (interval.kind === "held") return interval;
 	const end = interval.kind === "completed" ? interval.end : null;
+	const attribution = await resolveImportedAttribution(tx, organizationId, command.attribution);
+	if (attribution.kind === "held") return attribution;
+	const { recorded } = attribution;
 
 	const sourceKey = importedWorkSourceKey(command.source);
 	const [earlier] = await tx
@@ -314,6 +338,16 @@ export async function recordImportedWork(
 			workLocationType: null,
 			computationMetadata: null,
 		});
+		if (recorded) {
+			await tx.insert(timeRecordAllocation).values({
+				organizationId,
+				recordId: record.id,
+				allocationKind: "project",
+				projectId: recorded.projectId,
+				weightPercent: 100,
+				isBillable: recorded.isBillable,
+			});
+		}
 		canonicalRecordId = record.id;
 	}
 
@@ -331,6 +365,8 @@ export async function recordImportedWork(
 			isActive: endAt === null,
 			approvalStatus: "approved",
 			canonicalRecordId,
+			projectId: recorded?.projectId ?? null,
+			isBillable: recorded?.isBillable ?? false,
 			graphRevision: resultRevision,
 		})
 		.returning({ id: workPeriod.id });
@@ -367,6 +403,7 @@ export async function recordImportedWork(
 			...capture(interval.start),
 		},
 		providerEvidence: command.providerEvidence,
+		...(recorded ? { attribution: recorded } : {}),
 		revisions: { workPeriod: { source: null, result: resultRevision } },
 		append: {
 			admission: "append",
@@ -396,6 +433,42 @@ export async function recordImportedWork(
 		sourceKey,
 	});
 	return { kind: "executed", result };
+}
+
+/**
+ * The project and billability an imported row records (#900). The project must be
+ * the organization's; billability follows the project's billable default unless
+ * the command states it, and billable work needs a project with a customer. A
+ * refusal holds the row before anything is written.
+ */
+export async function resolveImportedAttribution(
+	tx: SealedWorkTransactionScope["db"],
+	organizationId: string,
+	requested: ImportedWorkAttribution | undefined,
+): Promise<
+	| { kind: "resolved"; recorded: { projectId: string; isBillable: boolean } | null }
+	| { kind: "held"; hold: ImportedWorkHold }
+> {
+	if (!requested) return { kind: "resolved", recorded: null };
+	const facts = await readProjectBillability(tx, organizationId, requested.projectId);
+	if (!facts) {
+		return {
+			kind: "held",
+			hold: { reason: "attribution_not_allowed", detail: "project_not_found" },
+		};
+	}
+	try {
+		const isBillable = resolveWorkBillability({
+			project: facts,
+			projectChosen: true,
+			current: false,
+			requested: requested.billable,
+		});
+		return { kind: "resolved", recorded: { projectId: facts.projectId, isBillable } };
+	} catch (error) {
+		if (!(error instanceof BillableWorkRefusedError)) throw error;
+		return { kind: "held", hold: { reason: "attribution_not_allowed", detail: error.reason } };
+	}
 }
 
 /**

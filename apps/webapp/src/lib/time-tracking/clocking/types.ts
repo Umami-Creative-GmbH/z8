@@ -99,6 +99,11 @@ export type ClockOutBody = {
 	target?: ClockTarget;
 	project: AttributionIntent;
 	workCategory: AttributionIntent;
+	/**
+	 * Explicit billability (#900); absent applies the project's billable default
+	 * when the project changes and preserves the period's billability otherwise.
+	 */
+	billable?: boolean;
 };
 
 export type ClockInBody = {
@@ -178,6 +183,8 @@ export type ClockOutFailure =
 	| ClockTargetFailure
 	| "not_clocked_in"
 	| "project_not_allowed"
+	/** Billable work was requested without a project or on a project without a customer (#900). */
+	| "billable_not_allowed"
 	| "work_category_not_allowed"
 	| "invalid_interval";
 

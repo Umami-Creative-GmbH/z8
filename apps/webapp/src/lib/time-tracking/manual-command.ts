@@ -50,6 +50,11 @@ export type ManualTimeEntryCommand = {
 	workCategoryId: string | null;
 	/** Omitted by older frozen commands; keep their submitted representation intact. */
 	workLocationType?: WorkLocationType;
+	/**
+	 * Explicit billability (#900). Omitted takes the project's billable default;
+	 * older frozen commands omit it and keep their representation intact.
+	 */
+	billable?: boolean;
 };
 
 export type ManualCommandRejection = { reason: "invalid_command"; field: string };
@@ -148,14 +153,17 @@ export function parseManualTimeEntryCommand(
 	| { ok: true; command: ManualTimeEntryCommand }
 	| { ok: false; rejection: ManualCommandRejection } {
 	try {
-		const hasWorkLocation = Boolean(
-			value &&
-				typeof value === "object" &&
-				Object.hasOwn(value, "workLocationType"),
-		);
+		const hasOwn = (key: string) =>
+			Boolean(value && typeof value === "object" && Object.hasOwn(value, key));
+		const hasWorkLocation = hasOwn("workLocationType");
+		const hasBillable = hasOwn("billable");
 		const record = exactRecord(
 			value,
-			hasWorkLocation ? [...COMMAND_KEYS, "workLocationType"] : COMMAND_KEYS,
+			[
+				...COMMAND_KEYS,
+				...(hasWorkLocation ? ["workLocationType"] : []),
+				...(hasBillable ? ["billable"] : []),
+			],
 			"command",
 		);
 		if (
@@ -163,6 +171,9 @@ export function parseManualTimeEntryCommand(
 			!isWorkLocationType(record.workLocationType as string)
 		) {
 			throw new InvalidCommandField("workLocationType");
+		}
+		if (hasBillable && typeof record.billable !== "boolean") {
+			throw new InvalidCommandField("billable");
 		}
 		if (record.version !== MANUAL_TIME_ENTRY_COMMAND_VERSION) {
 			throw new InvalidCommandField("version");
@@ -209,6 +220,7 @@ export function parseManualTimeEntryCommand(
 				...(hasWorkLocation
 					? { workLocationType: record.workLocationType as WorkLocationType }
 					: {}),
+				...(hasBillable ? { billable: record.billable as boolean } : {}),
 			},
 		};
 	} catch (error) {

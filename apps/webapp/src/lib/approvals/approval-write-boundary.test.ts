@@ -4476,6 +4476,7 @@ db.delete(approvalOutbox);`,
 				{
 					columns: [
 						"allocation_kind",
+						"is_billable",
 						"organization_id",
 						"project_id",
 						"record_id",
@@ -4693,6 +4694,7 @@ db.delete(approvalOutbox);`,
 						"cost_center_id",
 						"created_at",
 						"id",
+						"is_billable",
 						"organization_id",
 						"project_id",
 						"record_id",
@@ -4822,6 +4824,7 @@ db.delete(approvalOutbox);`,
 				{
 					columns: [
 						"allocation_kind",
+						"is_billable",
 						"organization_id",
 						"project_id",
 						"record_id",
@@ -4877,6 +4880,7 @@ db.delete(approvalOutbox);`,
 				{
 					columns: [
 						"allocation_kind",
+						"is_billable",
 						"organization_id",
 						"project_id",
 						"record_id",
@@ -4955,6 +4959,7 @@ db.delete(approvalOutbox);`,
 				{
 					columns: [
 						"allocation_kind",
+						"is_billable",
 						"organization_id",
 						"project_id",
 						"record_id",
@@ -5010,6 +5015,20 @@ db.delete(approvalOutbox);`,
 				},
 				{
 					columns: [
+						"allocation_kind",
+						"is_billable",
+						"organization_id",
+						"project_id",
+						"record_id",
+						"weight_percent",
+					],
+					functionName: "recordImportedWork",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_allocation",
+				},
+				{
+					columns: [
 						"approval_status",
 						"canonical_record_id",
 						"clock_in_id",
@@ -5055,6 +5074,7 @@ db.delete(approvalOutbox);`,
 				{
 					columns: [
 						"allocation_kind",
+						"is_billable",
 						"organization_id",
 						"project_id",
 						"record_id",
@@ -5079,6 +5099,22 @@ db.delete(approvalOutbox);`,
 					functionName: "recordManualWork",
 					operation: "insert",
 					table: "work_period",
+				},
+			],
+			"src/lib/time-tracking/work-period-attribution.ts": [
+				{
+					columns: [
+						"allocation_kind",
+						"is_billable",
+						"organization_id",
+						"project_id",
+						"record_id",
+						"weight_percent",
+					],
+					functionName: "changeLegacyWorkPeriodProject",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_allocation",
 				},
 			],
 			"src/lib/time-tracking/split-completed-work.ts": [
@@ -5107,6 +5143,7 @@ db.delete(approvalOutbox);`,
 					columns: [
 						"allocation_kind",
 						"cost_center_id",
+						"is_billable",
 						"organization_id",
 						"project_id",
 						"record_id",
@@ -5186,6 +5223,7 @@ db.delete(approvalOutbox);`,
 					columns: [
 						"allocation_kind",
 						"cost_center_id",
+						"is_billable",
 						"organization_id",
 						"project_id",
 						"record_id",
@@ -5472,6 +5510,7 @@ db.delete(approvalOutbox);`,
 					columns: [
 						"allocation_kind",
 						"cost_center_id",
+						"is_billable",
 						"organization_id",
 						"project_id",
 						"record_id",
@@ -5693,7 +5732,7 @@ export function renamedFinalizer() {
 export function applyPolicyClockOutTerminalBreakInTransaction(dynamic: object) {
   db.insert(timeRecord).values({ organizationId, employeeId, startAt, endAt, durationMinutes, approvalState: "approved" });
   db.insert(timeRecordWork).values({ recordId, organizationId, recordKind: "work", workCategoryId, workLocationType, computationMetadata });
-  db.insert(timeRecordAllocation).values({ id, organizationId, recordId, allocationKind, projectId, costCenterId, weightPercent, createdAt });
+  db.insert(timeRecordAllocation).values({ id, organizationId, recordId, allocationKind, projectId, costCenterId, weightPercent, isBillable, createdAt });
   db.insert(timeRecordAllocation).values(dynamic);
 }
 export function wrongSplitOwner() {

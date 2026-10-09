@@ -131,6 +131,10 @@ export const workPeriod = pgTable(
 		projectId: uuid("project_id").references(() => project.id, {
 			onDelete: "set null",
 		}),
+		// Billable work (#900): part of the work attribution, recorded and amended
+		// with the project. Never true without a project; the canonical record's
+		// project allocation carries the same value.
+		isBillable: boolean("is_billable").default(false).notNull(),
 
 		// Work category assignment (optional)
 		// When set, the factor from the category is used to calculate effective working time
@@ -190,6 +194,10 @@ export const workPeriod = pgTable(
 		index("workPeriod_organizationId_idx").on(table.organizationId),
 		index("workPeriod_startTime_idx").on(table.startTime),
 		index("workPeriod_projectId_idx").on(table.projectId),
+		check(
+			"workPeriod_billable_requires_project_chk",
+			sql`NOT ${table.isBillable} OR ${table.projectId} IS NOT NULL`,
+		),
 		index("workPeriod_workCategoryId_idx").on(table.workCategoryId),
 		index("workPeriod_approvalStatus_idx").on(table.approvalStatus),
 		index("workPeriod_org_canonicalRecordId_idx").on(

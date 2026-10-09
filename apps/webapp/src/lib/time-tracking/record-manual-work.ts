@@ -79,6 +79,8 @@ export type ManualWorkFacts = {
 	durationMinutes: number;
 	reason: string;
 	projectId: string | null;
+	/** Resolved under the transaction by preparation (#900); never true without a project. */
+	isBillable: boolean;
 	workCategoryId: string | null;
 	workLocationType?: ManualTimeEntryCommand["workLocationType"];
 	daysBack: number;
@@ -129,6 +131,8 @@ export type ManualWorkResult = {
 	};
 	attribution: {
 		projectId: string | null;
+		/** Absent on receipts committed before billability (#900), which were non-billable. */
+		isBillable?: boolean;
 		workCategoryId: string | null;
 		workLocationType?: ManualTimeEntryCommand["workLocationType"];
 	};
@@ -359,6 +363,7 @@ export async function recordManualWork(
 			allocationKind: "project",
 			projectId: facts.projectId,
 			weightPercent: 100,
+			isBillable: facts.isBillable,
 		});
 	}
 
@@ -375,6 +380,7 @@ export async function recordManualWork(
 			endTime: endAt,
 			durationMinutes: facts.durationMinutes,
 			projectId: facts.projectId,
+			isBillable: facts.projectId !== null && facts.isBillable,
 			workCategoryId: facts.workCategoryId,
 			workLocationType: facts.workLocationType ?? null,
 			canonicalRecordId: record.id,
@@ -486,6 +492,7 @@ export async function recordManualWork(
 		},
 		attribution: {
 			projectId: facts.projectId,
+			isBillable: facts.projectId !== null && facts.isBillable,
 			workCategoryId: facts.workCategoryId,
 			...(facts.workLocationType !== undefined
 				? { workLocationType: facts.workLocationType }

@@ -399,6 +399,9 @@ async function splitLegacyWorkPeriod(
 			endTime: locked.endTime,
 			durationMinutes: input.durations.secondDurationMinutes,
 			isActive: false,
+			// Both halves keep the source's project and billability (#900).
+			projectId: locked.projectId,
+			isBillable: locked.isBillable,
 		})
 		.returning();
 	if (!secondWorkPeriod) throw new Error("Second work period insert failed");
