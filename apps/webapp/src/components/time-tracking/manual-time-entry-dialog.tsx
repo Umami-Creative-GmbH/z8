@@ -33,6 +33,7 @@ import {
 } from "@/components/time-tracking/manual-command-recovery";
 import { ProjectSelectorView } from "@/components/time-tracking/project-selector";
 import { TaskSelectorView } from "@/components/time-tracking/task-selector";
+import { isProjectTaskRefusal } from "@/lib/projects/project-task-model";
 import { TimezoneMismatchDialog } from "@/components/time-tracking/timezone-mismatch-dialog";
 import {
 	type ManualAttemptOutcome,
@@ -216,14 +217,6 @@ const MESSAGES = {
 	taskNotAllowed: ["timeTracking.errors.taskNotAllowed", "Cannot book time to this task"],
 } as const satisfies Record<string, Message>;
 
-/** The stable reasons a named task is refused with (#873). */
-const TASK_REFUSAL_CODES: ReadonlySet<string> = new Set([
-	"task_not_found",
-	"task_other_project",
-	"task_done",
-	"project_not_bookable",
-]);
-
 const APPROVAL_STATUS_MESSAGES = {
 	pending: ["timeTracking.manualEntry.recovery.status.pending", "pending"],
 	approved: ["timeTracking.manualEntry.recovery.status.approved", "approved"],
@@ -361,7 +354,7 @@ function outcomeMessage(result: ManualTimeEntryResult): Message | null {
 		return MESSAGES.refresh;
 	}
 	if (result.code === MANUAL_ENTRY_COLLISION) return MESSAGES.collision;
-	if (result.code && TASK_REFUSAL_CODES.has(result.code)) return MESSAGES.taskNotAllowed;
+	if (isProjectTaskRefusal(result.code)) return MESSAGES.taskNotAllowed;
 	const reason = result.rejection?.reason;
 	if (reason === "reconfirmation_required") return MESSAGES.reconfirm;
 	if (reason === "occupancy_conflict") return MESSAGES.overlap;
