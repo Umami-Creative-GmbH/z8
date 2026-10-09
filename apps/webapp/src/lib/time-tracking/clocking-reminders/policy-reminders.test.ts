@@ -211,19 +211,34 @@ describe("forgotten clock-out reminders once the day's required hours are reache
 		).toEqual([]);
 	});
 
-	it("leaves a day with a published shift to the shift rules", async () => {
-		const shift = {
-			id: "shift-1",
-			date: parsePlainDate(MONDAY),
-			startTime: "08:00",
-			endTime: "12:00",
-		};
+	it("leaves live work that matches a published shift to the shift rules", async () => {
+		// The afternoon work started at 12:30, inside a 12:00 to 20:00 shift.
+		const shift = { id: "shift-1", date: monday, startTime: "12:00", endTime: "20:00" };
 		expect(
 			await evaluatePolicyReminders(
 				evening("2026-04-27T20:00:00Z", { shifts: [shift] }),
 				policy(noLatestClockIn),
 			),
 		).toEqual([]);
+	});
+
+	it("judges live work that matches no shift by the policy, even on a day with a shift", async () => {
+		// A morning shift ended at 12:00; the live work started at 12:30, after it.
+		const shift = { id: "shift-1", date: monday, startTime: "08:00", endTime: "12:00" };
+		expect(
+			await evaluatePolicyReminders(
+				evening("2026-04-27T15:00:00Z", { shifts: [shift] }),
+				policy(noLatestClockIn),
+			),
+		).toEqual([
+			{
+				type: "forgotten_clock_out_reminder",
+				occasionKey: "forgotten_clock_out_reminder:policy_day:employee-1:2026-04-27",
+				day: monday,
+				expectedAt: at("2026-04-27T14:30:00Z"),
+				shift: null,
+			},
+		]);
 	});
 
 	it("is not due when the reminder type is disabled", async () => {

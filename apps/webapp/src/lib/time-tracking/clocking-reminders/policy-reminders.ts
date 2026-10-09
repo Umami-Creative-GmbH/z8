@@ -22,8 +22,9 @@ export type PolicyReminderInput = ShiftReminderInput;
 const notBefore = (left: Instant, right: Instant) => compareInstants(left, right) >= 0;
 
 /**
- * The missed clock-in and forgotten clock-out reminders due now on employee-local days without a
- * published shift, judged by the employee's work policy. Policy facts are read only when needed.
+ * The reminders due now that the employee's work policy judges: a missed clock-in on an
+ * employee-local day without a published shift, and a forgotten clock-out for live work that
+ * matches no published shift. Policy facts are read only when needed.
  */
 export async function evaluatePolicyReminders(
 	input: PolicyReminderInput,
@@ -51,7 +52,8 @@ async function forgottenClockOut(
 	const live = input.work.find((work) => work.end === null);
 	if (!live) return null;
 	const day = plainDateAt(live.start, input.timezone);
-	if (hasShiftOn(input, day) || matchesAnyShift(input, live)) return null;
+	// Live work that matches a published shift owes the shift's forgotten clock-out instead.
+	if (matchesAnyShift(input, live)) return null;
 	const completedMs = input.work.reduce(
 		(total, work) =>
 			work.end !== null && plainDateAt(work.start, input.timezone).equals(day)
@@ -122,7 +124,7 @@ async function missedClockIn(
 	};
 }
 
-/** A published shift dated on `day` hands the whole day to the shift rules. */
+/** A published shift dated on `day` hands the day's missed clock-in to the shift rules. */
 function hasShiftOn(input: PolicyReminderInput, day: PlainDate): boolean {
 	return input.shifts.some((shift) => shift.date.equals(day));
 }
