@@ -207,8 +207,6 @@ describe("project reports on PostgreSQL", () => {
 		expect(result.data.teamBreakdown.flatMap((team) => team.members)).toEqual([
 			expect.objectContaining({ employeeId: ids.worker, workPeriodCount: 1 }),
 		]);
-		expect(result.data.timeSeries).toEqual([
-			{ date: "2026-03-10", hours: 2, cumulativeHours: 2 },
-		]);
+		expect(result.data.timeSeries).toEqual([{ date: "2026-03-10", hours: 2, cumulativeHours: 2 }]);
 	});
 });
