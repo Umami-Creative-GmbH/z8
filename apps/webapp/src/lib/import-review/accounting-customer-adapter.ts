@@ -2,9 +2,11 @@ import "server-only";
 
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
 import { accountingContactLink, customer } from "@/db/schema";
 import {
 	type AccountingDependencies,
+	type AccountingReader,
 	defaultAccountingDependencies,
 	type OpenAccountingProviderRefusal,
 	openAccountingProvider,
@@ -15,8 +17,8 @@ import {
 	isAccountingProviderError,
 } from "@/lib/billable-time/accounting/provider";
 import { systemClock } from "@/lib/datetime/temporal-core";
+import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { planCustomerImportRows } from "./customer-import-plan";
-import { enqueueImportScanJob } from "./queue";
 import {
 	createImportBatch,
 	createImportBatchJob,
@@ -80,20 +82,43 @@ export type StartCustomerImportOutcome =
 				| "import_not_supported";
 	  };
 
+export type CreateCustomerImportOutcome =
+	| { ok: true; batchId: string; scanJob: AccountingCustomerScanJobData }
+	| Extract<StartCustomerImportOutcome, { ok: false }>;
+
+type CustomerImportReader = AccountingReader;
+
+/** Today in the organization's time zone (UTC when it has none). */
+async function organizationToday(
+	reader: CustomerImportReader,
+	organizationId: string,
+): Promise<string> {
+	const [row] = await reader
+		.select({ timezone: organization.timezone })
+		.from(organization)
+		.where(eq(organization.id, organizationId))
+		.limit(1);
+	const zone = resolveEffectiveTimezone(undefined, row?.timezone);
+	return systemClock.nowInstant().toZonedDateTimeISO(zone).toPlainDate().toString();
+}
+
 /**
- * Starts a customer import from the organization's active accounting
- * connection: a review batch with one scan job, queued for the worker. The
- * caller has authorized an org admin and checked that Billable Time is on.
+ * Creates a customer import from the organization's active accounting
+ * connection: a review batch in `scanning` with one scan job. The caller has
+ * authorized an org admin and checked that Billable Time is on, then queues
+ * `scanJob` (`enqueueImportScanJob`), and marks the batch failed with
+ * `failAccountingCustomerImportStart` when queueing fails.
  */
-export async function startAccountingCustomerImport(
+export async function createAccountingCustomerImport(
+	reader: CustomerImportReader,
 	dependencies: AccountingDependencies,
 	input: { organizationId: string; actorUserId: string },
-): Promise<StartCustomerImportOutcome> {
-	const opened = await openAccountingProvider(db, dependencies, input.organizationId);
+): Promise<CreateCustomerImportOutcome> {
+	const opened = await openAccountingProvider(reader, dependencies, input.organizationId);
 	if (!opened.ok) return { ok: false, reason: opened.reason };
 	if (!opened.provider.listCustomerContacts) return { ok: false, reason: "import_not_supported" };
 	const { connection } = opened;
-	const today = systemClock.nowInstant().toZonedDateTimeISO("UTC").toPlainDate().toString();
+	const today = await organizationToday(reader, input.organizationId);
 
 	const batch = await createImportBatch({
 		organizationId: input.organizationId,
@@ -122,25 +147,39 @@ export async function startAccountingCustomerImport(
 			organizationId: input.organizationId,
 			status: "scanning",
 		});
-		await enqueueImportScanJob({
-			type: "import-review-scan",
+		return {
+			ok: true,
 			batchId: batch.id,
-			jobId: job.id,
-			organizationId: input.organizationId,
-			provider: "accounting",
-			entityType: "customer",
-			connectionId: connection.id,
-		});
+			scanJob: {
+				type: "import-review-scan",
+				batchId: batch.id,
+				jobId: job.id,
+				organizationId: input.organizationId,
+				provider: "accounting",
+				entityType: "customer",
+				connectionId: connection.id,
+			},
+		};
 	} catch (error) {
-		await updateImportBatchStatus({
+		await failAccountingCustomerImportStart({
 			batchId: batch.id,
 			organizationId: input.organizationId,
-			status: "scan_failed",
-			errorMessage: "The customer import could not be started",
 		});
 		throw error;
 	}
-	return { ok: true, batchId: batch.id };
+}
+
+/** Marks a customer import whose scan could not be queued as failed. */
+export async function failAccountingCustomerImportStart(input: {
+	batchId: string;
+	organizationId: string;
+}): Promise<void> {
+	await updateImportBatchStatus({
+		batchId: input.batchId,
+		organizationId: input.organizationId,
+		status: "scan_failed",
+		errorMessage: "The customer import could not be started",
+	});
 }
 
 export async function scanAccountingCustomerImport(

@@ -10,6 +10,7 @@ import {
 	customerTaxTreatment,
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
 import { lockBillableTimeSettings } from "../settings";
 import {
@@ -42,7 +43,7 @@ export interface ContactLink {
 	contactId: string;
 	contactName: string;
 	contactNumber: string | null;
-	linkedAt: Date;
+	linkedAt: Instant;
 }
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -78,7 +79,7 @@ function linkFromRow(row: typeof accountingContactLink.$inferSelect): ContactLin
 		contactId: row.contactId,
 		contactName: row.contactName,
 		contactNumber: row.contactNumber,
-		linkedAt: row.linkedAt,
+		linkedAt: instantFromDate(row.linkedAt),
 	};
 }
 
@@ -336,11 +337,16 @@ export async function linkCustomerToContact(
 			linkedAt: sql`now()`,
 			linkedBy: input.actorUserId,
 		};
+		const existingRow = (id: string) =>
+			and(
+				eq(accountingContactLink.id, id),
+				eq(accountingContactLink.organizationId, input.organizationId),
+			);
 		if (existing && existing.contactId === found.id) {
 			const [row] = await tx
 				.update(accountingContactLink)
 				.set({ contactName: found.name, contactNumber: found.customerNumber })
-				.where(eq(accountingContactLink.id, existing.id))
+				.where(existingRow(existing.id))
 				.returning();
 			return { ok: true, changed: false, link: linkFromRow(row) } as const;
 		}
@@ -348,7 +354,7 @@ export async function linkCustomerToContact(
 			? await tx
 					.update(accountingContactLink)
 					.set(values)
-					.where(eq(accountingContactLink.id, existing.id))
+					.where(existingRow(existing.id))
 					.returning()
 			: await tx
 					.insert(accountingContactLink)

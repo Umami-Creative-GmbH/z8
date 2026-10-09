@@ -11,6 +11,7 @@
  */
 
 import type { Job } from "bullmq";
+import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	ACME_CONTACT_ID,
@@ -42,6 +43,7 @@ const harness = vi.hoisted(() => ({
 	registry: null as AccountingProviderRegistry | null,
 	scanJobs: [] as unknown[],
 	commitJobs: [] as unknown[],
+	failScanQueue: false,
 }));
 
 vi.mock("next/server", async (importOriginal) =>
@@ -97,6 +99,7 @@ vi.mock("@/lib/billable-time/accounting/registry", async (importOriginal) => ({
 
 vi.mock("@/lib/import-review/queue", () => ({
 	enqueueImportScanJob: async (data: unknown) => {
+		if (harness.failScanQueue) throw new Error("Redis connection refused");
 		harness.scanJobs.push(data);
 	},
 	enqueueImportCommitJob: async (data: unknown) => {
@@ -176,6 +179,7 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 		harness.secrets.clear();
 		harness.scanJobs.length = 0;
 		harness.commitJobs.length = 0;
+		harness.failScanQueue = false;
 		useLexware();
 
 		const timestamp = new Date("2026-10-01T08:00:00Z");
@@ -581,5 +585,53 @@ describe("Customer import from the accounting connection on PostgreSQL (#906)", 
 			[ids.organization],
 		);
 		expect(batches).toEqual([]);
+	});
+
+	async function batchesOf(organizationId: string) {
+		const { rows: batches } = await admin.query<{
+			status: string;
+			error_message: string | null;
+			date_range: { startDate: string; endDate: string };
+		}>("select status, error_message, date_range from import_batch where organization_id = $1", [
+			organizationId,
+		]);
+		return batches;
+	}
+
+	it("records the day the import started in the organization's time zone", async () => {
+		await admin.query("update organization set timezone = 'Pacific/Kiritimati' where id = $1", [
+			ids.organization,
+		]);
+		harness.registry = createAccountingProviderRegistry([createFakeAccountingTool().connector]);
+		await connect();
+		const today = Temporal.Now.zonedDateTimeISO("Pacific/Kiritimati").toPlainDate().toString();
+
+		const started = await startCustomerImport();
+
+		expect(started).toMatchObject({ success: true });
+		expect((await batchesOf(ids.organization))[0]?.date_range).toEqual({
+			startDate: today,
+			endDate: today,
+		});
+	});
+
+	it("reports a queue failure as such and marks the batch failed", async () => {
+		harness.registry = createAccountingProviderRegistry([createFakeAccountingTool().connector]);
+		await connect();
+		harness.failScanQueue = true;
+
+		const started = await startCustomerImport();
+
+		expect(started).toMatchObject({
+			success: false,
+			code: "QueueError",
+			error: "The customer import could not be started",
+		});
+		expect(await batchesOf(ids.organization)).toEqual([
+			expect.objectContaining({
+				status: "scan_failed",
+				error_message: "The customer import could not be started",
+			}),
+		]);
 	});
 });

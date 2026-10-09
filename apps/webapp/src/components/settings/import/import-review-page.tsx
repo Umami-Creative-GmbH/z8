@@ -5,6 +5,7 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 import { startImportCommitAction } from "@/app/[locale]/(app)/settings/import/review-actions";
 import {
+	type CustomerImportPaging,
 	type CustomerImportReviewRow,
 	CustomerImportReviewTable,
 	type CustomerLinkTarget,
@@ -38,6 +39,7 @@ interface ImportReviewPageProps {
 		rows: CustomerImportReviewRow[];
 		linkTargets: CustomerLinkTarget[];
 		editable: boolean;
+		paging?: CustomerImportPaging;
 	};
 }
 
@@ -138,6 +140,7 @@ export function ImportReviewPage({
 					rows={customerImport.rows}
 					linkTargets={customerImport.linkTargets}
 					editable={customerImport.editable}
+					paging={customerImport.paging}
 				/>
 			) : (
 				<>

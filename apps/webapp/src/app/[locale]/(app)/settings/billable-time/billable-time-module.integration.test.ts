@@ -333,6 +333,57 @@ describe("Billable Time module switch on PostgreSQL", () => {
 				code: "ValidationError",
 			});
 		});
+
+		async function connectAccountingTool(organizationId: string, providerKind: string) {
+			await admin.query(
+				`insert into accounting_connection
+				 (organization_id, provider_kind, status, account_ref, default_tax_treatment, default_tax_rate)
+				 values ($1, $2, 'active', 't897-account', 'domestic_standard', 19)`,
+				[organizationId, providerKind],
+			);
+		}
+
+		it("refuses a currency the connected accounting tool cannot take (Lexware: EUR only)", async () => {
+			await connectAccountingTool(ids.organization, "lexware_office");
+			actAs(ids.adminUser);
+
+			await expect(updateBillableCurrency({ currency: "CHF" })).resolves.toMatchObject({
+				success: false,
+				code: "ConflictError",
+				error: expect.stringContaining("Lexware Office"),
+			});
+			// Switching the module off and on with another currency is the same change.
+			actAs(ids.ownerUser);
+			await switchBillableTime({ enabled: false });
+			await expect(switchBillableTime({ enabled: true, currency: "CHF" })).resolves.toMatchObject({
+				success: false,
+				code: "ConflictError",
+			});
+			await expect(getBillableTimeSettings(ids.organization)).resolves.toEqual({
+				enabled: false,
+				currency: "EUR",
+			});
+		});
+
+		it("allows a currency the connected accounting tool takes, and any once it is removed", async () => {
+			await connectAccountingTool(ids.organization, "sevdesk");
+			actAs(ids.adminUser);
+
+			await expect(updateBillableCurrency({ currency: "CHF" })).resolves.toMatchObject({
+				success: true,
+				data: { currency: "CHF" },
+			});
+
+			await admin.query(
+				"update accounting_connection set status = 'removed', ended_at = now() where organization_id = $1",
+				[ids.organization],
+			);
+			await connectAccountingTool(ids.otherOrganization, "lexware_office");
+			await expect(updateBillableCurrency({ currency: "USD" })).resolves.toMatchObject({
+				success: true,
+				data: { currency: "USD" },
+			});
+		});
 	});
 
 	describe("organization scoping", () => {

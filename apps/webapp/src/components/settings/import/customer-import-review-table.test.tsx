@@ -17,7 +17,14 @@ vi.mock("@/app/[locale]/(app)/settings/import/review-actions", () => ({
 	applyImportDecisionAction: vi.fn(),
 }));
 const refresh = vi.fn();
-vi.mock("@/navigation", () => ({ useRouter: () => ({ refresh, push: vi.fn() }) }));
+vi.mock("@/navigation", () => ({
+	useRouter: () => ({ refresh, push: vi.fn() }),
+	Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
+		<a href={href} {...props}>
+			{children}
+		</a>
+	),
+}));
 
 function staged(overrides: Partial<StagedCustomer> = {}): StagedCustomer {
 	return {
@@ -213,5 +220,39 @@ describe("customer import decisions (#906)", () => {
 		);
 
 		expect(screen.queryByRole("button", { name: /Create customers/ })).toBeNull();
+	});
+
+	it("pages through a long import instead of cutting it off", () => {
+		const { rerender } = render(
+			<CustomerImportReviewTable
+				organizationId="org_1"
+				batchId="batch_1"
+				editable
+				linkTargets={[]}
+				rows={[row("r101")]}
+				paging={{ page: 2, pageCount: 3 }}
+			/>,
+		);
+
+		expect(screen.getByText("Page 2 of 3")).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Previous page" }).getAttribute("href")).toBe(
+			"/settings/import/batch_1?page=1",
+		);
+		expect(screen.getByRole("link", { name: "Next page" }).getAttribute("href")).toBe(
+			"/settings/import/batch_1?page=3",
+		);
+
+		rerender(
+			<CustomerImportReviewTable
+				organizationId="org_1"
+				batchId="batch_1"
+				editable
+				linkTargets={[]}
+				rows={[row("r1")]}
+				paging={{ page: 1, pageCount: 1 }}
+			/>,
+		);
+		expect(screen.queryByText(/Page 1 of 1/)).toBeNull();
+		expect(screen.queryByRole("link", { name: "Next page" })).toBeNull();
 	});
 });

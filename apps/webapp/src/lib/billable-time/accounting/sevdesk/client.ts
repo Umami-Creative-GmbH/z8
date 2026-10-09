@@ -17,6 +17,7 @@
 
 import "server-only";
 import { AccountingProviderError } from "../provider";
+import { rateLimitBackoffMs } from "../retry-after";
 
 export const SEVDESK_BASE_URL = "https://my.sevdesk.de/api/v1";
 
@@ -71,12 +72,6 @@ export function sevdeskErrorMessage(body: unknown, token: string): string | null
 	return scrubbed.length > MAX_ERROR_MESSAGE_LENGTH
 		? `${scrubbed.slice(0, MAX_ERROR_MESSAGE_LENGTH)}…`
 		: scrubbed;
-}
-
-function retryAfterMs(header: string | null, attempt: number): number {
-	const seconds = header === null ? Number.NaN : Number(header);
-	if (Number.isFinite(seconds) && seconds >= 0) return Math.min(seconds * 1000, MAX_BACKOFF_MS);
-	return Math.min(BASE_BACKOFF_MS * 2 ** attempt, MAX_BACKOFF_MS);
 }
 
 async function readBody(response: Response): Promise<unknown> {
@@ -141,7 +136,12 @@ export function createSevdeskClient(
 						"sevdesk is limiting requests right now. Try again in a minute",
 					);
 				}
-				await sleep(retryAfterMs(response.headers.get("retry-after"), attempt));
+				await sleep(
+					rateLimitBackoffMs(response.headers.get("retry-after"), attempt, {
+						baseMs: BASE_BACKOFF_MS,
+						maxMs: MAX_BACKOFF_MS,
+					}),
+				);
 				continue;
 			}
 

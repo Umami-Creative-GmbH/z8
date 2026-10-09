@@ -4,14 +4,14 @@
  * transport, auth and back-off, and `invoice-request.ts` for the draft body.
  *
  * Connection setup (`validateConnection`) refuses what the connector does not
- * support: a billable currency other than EUR, the old tax system (sevdesk-Update
- * 1.0 `taxType`), accounts whose prices are entered gross, and accounts without
- * an hour unit. It picks the sevdesk user that becomes every draft's required
+ * support: the old tax system (sevdesk-Update 1.0 `taxType`), accounts whose
+ * prices are entered gross, and accounts without an hour unit. It picks the sevdesk user that becomes every draft's required
  * `contactPerson`.
  */
 
 import "server-only";
 import { createHash } from "node:crypto";
+import { BILLABLE_CURRENCIES } from "@/lib/billable-time/currency";
 import {
 	type Clock,
 	comparePlainDates,
@@ -48,7 +48,9 @@ const SEVDESK_ID = /^\d{1,15}$/;
 export const SEVDESK_CAPABILITIES: AccountingProviderCapabilities = {
 	// Not documented by sevdesk; conservative until confirmed on a trial account.
 	maxDraftLines: 100,
-	supportedCurrencies: ["EUR"],
+	// openapi.yaml `Model_Invoice.currency`: "Needs to be currency code according to
+	// ISO-4217", with foreign-currency sums; no EUR-only rule (that is Lexware's).
+	supportedCurrencies: BILLABLE_CURRENCIES,
 	supportedTaxTreatments: [
 		"domestic_standard",
 		"domestic_reduced",
@@ -194,13 +196,7 @@ export function createSevdeskConnector(
 			return (await readContactPersons(clientFor(apiKey))).persons;
 		},
 
-		async validateConnection({ apiKey, settings, context }) {
-			if (context.billableCurrency !== "EUR") {
-				return refuse(
-					"currency_not_supported",
-					`sevdesk drafts from Z8 are in EUR only. This organization's billable currency is ${context.billableCurrency}`,
-				);
-			}
+		async validateConnection({ apiKey, settings }) {
 			const input = parseSetupInput(settings);
 			const client = clientFor(apiKey);
 
@@ -296,6 +292,111 @@ function contactsOf(body: unknown): AccountingContact[] {
 	return rowsOf(body).flatMap((row) => contactOf(row) ?? []);
 }
 
+/**
+ * openapi.yaml `Model_ContactResponse.status`: "100 <-> Lead - 500 <-> Pending -
+ * 1000 <-> Active". sevdesk documents no archived flag or status, so the import
+ * keeps exactly these (and rows without a status) and leaves out any other
+ * status as archived or deactivated. To confirm on a trial account.
+ */
+const LIVE_CONTACT_STATUSES = new Set(["100", "500", "1000"]);
+
+function isLiveContact(row: Record<string, unknown>): boolean {
+	const status = text(row.status);
+	return status === null || LIVE_CONTACT_STATUSES.has(status);
+}
+
+/** Contact addresses and emails by sevdesk contact id, for the customer import. */
+interface ImportDetails {
+	addresses: Map<string, string>;
+	emails: Map<string, string>;
+}
+
+/** openapi.yaml "Pagination": `limit` "must be between 1 and 1000". */
+const DETAIL_PAGE_SIZE = 1_000;
+/** 100,000 rows; beyond that the import goes on without the rest of the details. */
+const MAX_DETAIL_PAGES = 100;
+
+async function readAll(
+	client: SevdeskClient,
+	path: string,
+	query: Record<string, string> = {},
+): Promise<Record<string, unknown>[]> {
+	const all: Record<string, unknown>[] = [];
+	for (let page = 0; page < MAX_DETAIL_PAGES; page += 1) {
+		const response = await client({
+			method: "GET",
+			path,
+			query: { ...query, limit: DETAIL_PAGE_SIZE, offset: page * DETAIL_PAGE_SIZE },
+		});
+		const rows = rowsOf(response.body);
+		all.push(...rows);
+		if (rows.length < DETAIL_PAGE_SIZE) return all;
+	}
+	logger.warn({ path }, "sevdesk listing stopped after the page limit; some contacts lack details");
+	return all;
+}
+
+function numericId(row: Record<string, unknown>): number {
+	const raw = text(row.id);
+	const id = raw === null ? Number.NaN : Number(raw);
+	return Number.isFinite(id) ? id : Number.MAX_SAFE_INTEGER;
+}
+
+function byNumericId(left: Record<string, unknown>, right: Record<string, unknown>): number {
+	return numericId(left) - numericId(right);
+}
+
+/** "Street", "zip city": `Model_ContactAddressResponse`. The country is only a `StaticCountry` id. */
+function addressText(row: Record<string, unknown>): string | null {
+	const cityLine = [text(row.zip), text(row.city)].filter(Boolean).join(" ");
+	const lines = [text(row.street), cityLine === "" ? null : cityLine].filter(
+		(line): line is string => line !== null,
+	);
+	return lines.length === 0 ? null : lines.join("\n");
+}
+
+/**
+ * Every contact address (`GET /ContactAddress`, "Retrieve all contact
+ * addresses") and every email communication way (`GET /CommunicationWay` with
+ * `type=EMAIL`) of the account, read in pages of 1,000. Per contact: the first
+ * address by id (as `takeDefaultAddress` on a draft), and the main email, else
+ * the first one by id.
+ */
+async function readImportDetails(client: SevdeskClient): Promise<ImportDetails> {
+	const [addressRows, emailRows] = await Promise.all([
+		readAll(client, "/ContactAddress"),
+		readAll(client, "/CommunicationWay", { type: "EMAIL" }),
+	]);
+	const addresses = new Map<string, string>();
+	for (const row of [...addressRows].sort(byNumericId)) {
+		const contactId = refId(row.contact);
+		const address = addressText(row);
+		if (contactId && address && !addresses.has(contactId)) addresses.set(contactId, address);
+	}
+	const emails = new Map<string, string>();
+	const isMain = (row: Record<string, unknown>) => text(row.main) === "1" || row.main === true;
+	const ordered = [...emailRows]
+		.filter((row) => text(row.type) === "EMAIL")
+		.sort(
+			(left, right) => Number(isMain(right)) - Number(isMain(left)) || byNumericId(left, right),
+		);
+	for (const row of ordered) {
+		const contactId = refId(row.contact);
+		const email = text(row.value);
+		if (contactId && email && !emails.has(contactId)) emails.set(contactId, email);
+	}
+	return { addresses, emails };
+}
+
+/** The listing cursor is the next offset Z8 handed out; anything else is refused. */
+function listOffset(cursor: string): number {
+	const offset = /^\d{1,9}$/.test(cursor) ? Number(cursor) : Number.NaN;
+	if (!Number.isSafeInteger(offset) || offset % LIST_PAGE_SIZE !== 0) {
+		throw new AccountingProviderError("rejected", "Not a sevdesk contact page");
+	}
+	return offset;
+}
+
 /** A sevdesk provider always has the port's paged customer listing (#906's import). */
 export type SevdeskProvider = AccountingProvider &
 	Required<Pick<AccountingProvider, "listCustomerContacts">>;
@@ -306,6 +407,16 @@ function openSevdeskProvider(
 	clock: Clock,
 ): SevdeskProvider {
 	const customerQuery = { "category[id]": CUSTOMER_CATEGORY_ID, depth: 1 };
+	// The customer import pages through contacts on one opened provider: read the
+	// addresses and emails once for all pages instead of once per contact.
+	let details: Promise<ImportDetails> | null = null;
+	const importDetails = () => {
+		details ??= readImportDetails(client).catch((error: unknown) => {
+			details = null;
+			throw error;
+		});
+		return details;
+	};
 	return {
 		kind: "sevdesk",
 		capabilities: SEVDESK_CAPABILITIES,
@@ -332,15 +443,23 @@ function openSevdeskProvider(
 		},
 
 		async listCustomerContacts({ cursor }) {
-			const offset = cursor && /^\d+$/.test(cursor) ? Number(cursor) : 0;
+			const offset = cursor === null ? 0 : listOffset(cursor);
 			const response = await client({
 				method: "GET",
 				path: "/Contact",
 				query: { ...customerQuery, limit: LIST_PAGE_SIZE, offset },
 			});
 			const rows = rowsOf(response.body);
+			const details = await importDetails();
 			return {
-				contacts: contactsOf(response.body),
+				contacts: rows
+					.filter(isLiveContact)
+					.flatMap((row) => contactOf(row) ?? [])
+					.map((contact) => ({
+						...contact,
+						address: details.addresses.get(contact.id) ?? null,
+						email: details.emails.get(contact.id) ?? null,
+					})),
 				nextCursor: rows.length === LIST_PAGE_SIZE ? String(offset + LIST_PAGE_SIZE) : null,
 			};
 		},
@@ -450,7 +569,8 @@ const MAX_LOOKUP_PAGES = 20;
 /**
  * The id of an invoice of this contact dated from `from` on that carries the
  * marker, or null. Uses `GET /Invoice` with `contact[id]`, `contact[objectName]`
- * and `startDate` (openapi.yaml), paging with limit/offset.
+ * and `startDate` (openapi.yaml), paging with limit/offset. Throws `rejected`
+ * when the page limit is reached without ruling out a marked draft.
  */
 async function findDraftByMarker(
 	client: SevdeskClient,
@@ -477,7 +597,11 @@ async function findDraftByMarker(
 		{ contactId: input.contactId },
 		"sevdesk draft lookup stopped after the page limit without finding the marker",
 	);
-	return null;
+	// Creating now could duplicate a draft an earlier attempt made: refuse, as Lexware does.
+	throw new AccountingProviderError(
+		"rejected",
+		`Too many sevdesk invoices for this contact to rule out a duplicate; look for a draft whose reference (customerInternalNote) is "${input.marker}"`,
+	);
 }
 
 /** A safety net for the net-price assumption: logs (ids only) when sevdesk's net total differs. */
