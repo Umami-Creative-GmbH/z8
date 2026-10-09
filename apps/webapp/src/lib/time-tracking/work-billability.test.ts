@@ -26,9 +26,9 @@ describe("projectAllocationAgrees", () => {
 	});
 
 	it("agrees when the one project allocation carries the period's billability", () => {
-		expect(projectAllocationAgrees({ projectId: "project-1", isBillable: true }, [allocation(true)])).toBe(
-			true,
-		);
+		expect(
+			projectAllocationAgrees({ projectId: "project-1", isBillable: true }, [allocation(true)]),
+		).toBe(true);
 		expect(
 			projectAllocationAgrees({ projectId: "project-1", isBillable: false }, [allocation(false)]),
 		).toBe(true);
@@ -45,25 +45,37 @@ describe("projectAllocationAgrees", () => {
 
 	it("agrees on work without a project only without project allocations", () => {
 		expect(projectAllocationAgrees({ projectId: null, isBillable: false }, [])).toBe(true);
-		expect(projectAllocationAgrees({ projectId: null, isBillable: false }, [allocation(false)])).toBe(
-			false,
-		);
+		expect(
+			projectAllocationAgrees({ projectId: null, isBillable: false }, [allocation(false)]),
+		).toBe(false);
 	});
 });
 
 describe("resolveWorkBillability", () => {
 	it("records new work on a project with its billable default", () => {
 		expect(
-			resolveWorkBillability({ project: customerProject(true), projectChosen: true, current: false }),
+			resolveWorkBillability({
+				project: customerProject(true),
+				projectChosen: true,
+				current: false,
+			}),
 		).toBe(true);
 		expect(
-			resolveWorkBillability({ project: customerProject(false), projectChosen: true, current: true }),
+			resolveWorkBillability({
+				project: customerProject(false),
+				projectChosen: true,
+				current: true,
+			}),
 		).toBe(false);
 	});
 
 	it("never records work without a project as billable", () => {
-		expect(resolveWorkBillability({ project: null, projectChosen: true, current: true })).toBe(false);
-		expect(resolveWorkBillability({ project: null, projectChosen: false, current: true })).toBe(false);
+		expect(resolveWorkBillability({ project: null, projectChosen: true, current: true })).toBe(
+			false,
+		);
+		expect(resolveWorkBillability({ project: null, projectChosen: false, current: true })).toBe(
+			false,
+		);
 	});
 
 	it("gives a project without a customer no billable default", () => {
@@ -78,10 +90,18 @@ describe("resolveWorkBillability", () => {
 
 	it("preserves the source's billability while the project stays", () => {
 		expect(
-			resolveWorkBillability({ project: customerProject(false), projectChosen: false, current: true }),
+			resolveWorkBillability({
+				project: customerProject(false),
+				projectChosen: false,
+				current: true,
+			}),
 		).toBe(true);
 		expect(
-			resolveWorkBillability({ project: customerProject(true), projectChosen: false, current: false }),
+			resolveWorkBillability({
+				project: customerProject(true),
+				projectChosen: false,
+				current: false,
+			}),
 		).toBe(false);
 	});
 
@@ -106,7 +126,12 @@ describe("resolveWorkBillability", () => {
 
 	it("refuses billable work without a project or without a customer", () => {
 		expect(() =>
-			resolveWorkBillability({ project: null, projectChosen: true, current: false, requested: true }),
+			resolveWorkBillability({
+				project: null,
+				projectChosen: true,
+				current: false,
+				requested: true,
+			}),
 		).toThrow(expect.objectContaining({ reason: "no_project" }));
 		expect(() =>
 			resolveWorkBillability({
@@ -128,7 +153,12 @@ describe("resolveWorkBillability", () => {
 
 	it("accepts an explicit non-billable request without a project", () => {
 		expect(
-			resolveWorkBillability({ project: null, projectChosen: true, current: false, requested: false }),
+			resolveWorkBillability({
+				project: null,
+				projectChosen: true,
+				current: false,
+				requested: false,
+			}),
 		).toBe(false);
 	});
 });

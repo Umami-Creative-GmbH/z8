@@ -452,7 +452,10 @@ export async function resolveImportedAttribution(
 	if (!requested) return { kind: "resolved", recorded: null };
 	const facts = await readProjectBillability(tx, organizationId, requested.projectId);
 	if (!facts) {
-		return { kind: "held", hold: { reason: "attribution_not_allowed", detail: "project_not_found" } };
+		return {
+			kind: "held",
+			hold: { reason: "attribution_not_allowed", detail: "project_not_found" },
+		};
 	}
 	try {
 		const isBillable = resolveWorkBillability({

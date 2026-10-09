@@ -500,9 +500,9 @@ describe("billable work across the work writers on PostgreSQL", () => {
 			it("applies the default when the project is chosen on live work, and the closure keeps it", async () => {
 				const periodId = await startWork();
 				actAs();
-				await expect(
-					updateWorkPeriodProject(periodId, ids.billableProject),
-				).resolves.toMatchObject({ success: true });
+				await expect(updateWorkPeriodProject(periodId, ids.billableProject)).resolves.toMatchObject(
+					{ success: true },
+				);
 				const live = await attributionOf(periodId);
 				expect({ projectId: live.project_id, billable: live.is_billable }).toEqual({
 					projectId: ids.billableProject,
@@ -521,9 +521,9 @@ describe("billable work across the work writers on PostgreSQL", () => {
 		it("keeps billability through a break", async () => {
 			const periodId = await startWork();
 			actAs();
-			await expect(
-				updateWorkPeriodProject(periodId, ids.billableProject),
-			).resolves.toMatchObject({ success: true });
+			await expect(updateWorkPeriodProject(periodId, ids.billableProject)).resolves.toMatchObject({
+				success: true,
+			});
 			harness.now = parseInstant("2026-07-22T10:00:00Z");
 
 			await expect(
@@ -724,11 +724,19 @@ describe("billable work across the work writers on PostgreSQL", () => {
 			const before = await snapshot();
 
 			actAs();
+			await expect(updateWorkPeriodProject(period.id, ids.customerProject)).resolves.toMatchObject({
+				success: false,
+			});
 			await expect(
-				updateWorkPeriodProject(period.id, ids.customerProject),
-			).resolves.toMatchObject({ success: false });
-			await expect(
-				splitWorkPeriod(period.id, "2026-07-22", "10:00", undefined, undefined, undefined, randomUUID()),
+				splitWorkPeriod(
+					period.id,
+					"2026-07-22",
+					"10:00",
+					undefined,
+					undefined,
+					undefined,
+					randomUUID(),
+				),
 			).resolves.toMatchObject({ success: false });
 			expect(await snapshot()).toEqual(before);
 		});
@@ -736,24 +744,31 @@ describe("billable work across the work writers on PostgreSQL", () => {
 		it.each([
 			["legacy", "inactive"],
 			["append", "active"],
-		] as const)("reports a %s billability divergence in diagnostics and reconciliation", async (_admission, mode) => {
-			await setAdmission(mode);
-			const period = await recordWork(ids.billableProject);
-			expect(await diagnose()).toEqual([]);
-			expect((await reconcileLegacyToCanonical(ids.organization)).missingProjectAllocationRows).toBe(0);
+		] as const)(
+			"reports a %s billability divergence in diagnostics and reconciliation",
+			async (_admission, mode) => {
+				await setAdmission(mode);
+				const period = await recordWork(ids.billableProject);
+				expect(await diagnose()).toEqual([]);
+				expect(
+					(await reconcileLegacyToCanonical(ids.organization)).missingProjectAllocationRows,
+				).toBe(0);
 
-			await divergeBillability(period);
+				await divergeBillability(period);
 
-			expect(await diagnose()).toContainEqual(
-				expect.objectContaining({
-					kind: "metadata_conflict",
-					shape: "conflicting",
-					workPeriodIds: [period.id],
-					details: { field: "billable", periodValue: true, canonicalValue: false },
-				}),
-			);
-			expect((await reconcileLegacyToCanonical(ids.organization)).missingProjectAllocationRows).toBe(1);
-		});
+				expect(await diagnose()).toContainEqual(
+					expect.objectContaining({
+						kind: "metadata_conflict",
+						shape: "conflicting",
+						workPeriodIds: [period.id],
+						details: { field: "billable", periodValue: true, canonicalValue: false },
+					}),
+				);
+				expect(
+					(await reconcileLegacyToCanonical(ids.organization)).missingProjectAllocationRows,
+				).toBe(1);
+			},
+		);
 
 		it("backfills a billable legacy period's canonical record with its billability", async () => {
 			await setAdmission("inactive");
@@ -769,7 +784,9 @@ describe("billable work across the work writers on PostgreSQL", () => {
 				projectId: ids.billableProject,
 				billable: true,
 			});
-			expect((await reconcileLegacyToCanonical(ids.organization)).missingProjectAllocationRows).toBe(0);
+			expect(
+				(await reconcileLegacyToCanonical(ids.organization)).missingProjectAllocationRows,
+			).toBe(0);
 		});
 	});
 });

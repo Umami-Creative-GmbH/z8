@@ -539,7 +539,11 @@ describe("historical gap repair on PostgreSQL", () => {
 	it("carries the period's billability into the repaired project allocation (#900)", async () => {
 		const created = await missingRecord("2026-07-02");
 		// A metadata-only gap: the record exists but lost its project allocation.
-		const metadata = await legacyManual({ date: "2026-07-03", clockInTime: "08:00", clockOutTime: "10:00" });
+		const metadata = await legacyManual({
+			date: "2026-07-03",
+			clockInTime: "08:00",
+			clockOutTime: "10:00",
+		});
 		await admin.query(
 			"update work_period set project_id = $2, is_billable = true where id = any($1::uuid[])",
 			[[created, metadata], ids.project],

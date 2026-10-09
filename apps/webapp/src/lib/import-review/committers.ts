@@ -69,7 +69,9 @@ interface WorkPeriodPayload {
 }
 
 /** The staged row's attribution, when it is well formed; anything else is none. */
-function stagedWorkAttribution(payload: Partial<WorkPeriodPayload>): ImportedWorkAttribution | undefined {
+function stagedWorkAttribution(
+	payload: Partial<WorkPeriodPayload>,
+): ImportedWorkAttribution | undefined {
 	const value = payload.attribution;
 	if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
 	const { projectId, billable } = value as Record<string, unknown>;

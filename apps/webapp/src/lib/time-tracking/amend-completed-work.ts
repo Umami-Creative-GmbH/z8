@@ -71,10 +71,7 @@ import {
 import { canonicalJson } from "./canonical-json";
 import { admitTimeEntryAppend, TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
-import {
-	projectAllocationAgrees,
-	resolveWorkBillabilityInTransaction,
-} from "./work-billability";
+import { projectAllocationAgrees, resolveWorkBillabilityInTransaction } from "./work-billability";
 import { WorkIntervalError } from "./work-duration";
 import type { WorkLocationType } from "./work-location";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";

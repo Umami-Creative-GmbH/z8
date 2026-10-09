@@ -685,9 +685,7 @@ export async function clockOutAs(
 			project: attributionIntent(projectId),
 			workCategory: attributionIntent(workCategoryId),
 			// Only a real boolean chooses billability; anything else applies the default.
-			...(typeof actionContext.billable === "boolean"
-				? { billable: actionContext.billable }
-				: {}),
+			...(typeof actionContext.billable === "boolean" ? { billable: actionContext.billable } : {}),
 		},
 	});
 	if (outcome.outcome === "refused") {

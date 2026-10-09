@@ -81,8 +81,7 @@ const holdReasonLabels: Record<ImportedWorkHoldReason, { key: string; fallback: 
 	},
 	attribution_not_allowed: {
 		key: "settings.import.review.hold.attributionNotAllowed",
-		fallback:
-			"The project is not available, or billable work needs a project that has a customer.",
+		fallback: "The project is not available, or billable work needs a project that has a customer.",
 	},
 };
 

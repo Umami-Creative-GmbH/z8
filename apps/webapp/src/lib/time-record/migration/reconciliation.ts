@@ -143,8 +143,7 @@ export async function reconcileLegacyToCanonical(
 		legacyWork
 			.filter((row) => row.projectId)
 			.map(
-				(row) =>
-					`${resolveExpectedCanonicalId(row)}:${row.projectId}:${row.isBillable ?? false}`,
+				(row) => `${resolveExpectedCanonicalId(row)}:${row.projectId}:${row.isBillable ?? false}`,
 			),
 	);
 	const canonicalProjectAllocationKeys = new Set(

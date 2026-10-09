@@ -686,7 +686,11 @@ export function assessHistoricalWork(
 						discriminator: "billable",
 						kind: "metadata_conflict",
 						shape: "conflicting",
-						details: { field: "billable", periodValue: periodBillable, canonicalValue: canonicalBillable },
+						details: {
+							field: "billable",
+							periodValue: periodBillable,
+							canonicalValue: canonicalBillable,
+						},
 					});
 				}
 			}

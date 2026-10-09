@@ -16,7 +16,11 @@ describe("decideProjectBillableDefault", () => {
 
 	it("keeps the stored default when the change does not mention it", () => {
 		expect(
-			decideProjectBillableDefault({ requested: undefined, current: true, customerId: "customer-1" }),
+			decideProjectBillableDefault({
+				requested: undefined,
+				current: true,
+				customerId: "customer-1",
+			}),
 		).toEqual({ ok: true, billableDefault: true });
 	});
 

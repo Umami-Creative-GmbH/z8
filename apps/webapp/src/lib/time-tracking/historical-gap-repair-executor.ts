@@ -378,7 +378,8 @@ async function applyUnit(tx: WorkTransactionClient, context: UnitContext) {
 					.returning({ id: timeRecord.id });
 				expectOne(inserted, unit);
 				await insertDetail(tx, organizationId, fill.recordId, fill.detail, unit);
-				if (fill.projectId) await insertProject(tx, organizationId, fill.recordId, fill.projectId, unit);
+				if (fill.projectId)
+					await insertProject(tx, organizationId, fill.recordId, fill.projectId, unit);
 				periodSet.canonicalRecordId = fill.recordId;
 				periodGuards.push(isNull(workPeriod.canonicalRecordId));
 				break;
@@ -389,7 +390,8 @@ async function applyUnit(tx: WorkTransactionClient, context: UnitContext) {
 				break;
 			case "canonical_detail":
 				await insertDetail(tx, organizationId, fill.recordId, fill.detail, unit);
-				if (fill.projectId) await insertProject(tx, organizationId, fill.recordId, fill.projectId, unit);
+				if (fill.projectId)
+					await insertProject(tx, organizationId, fill.recordId, fill.projectId, unit);
 				break;
 			case "canonical_completion": {
 				if (!expectedRecord) throw new StaleHistoricalRepairPlanError(unit.workPeriodId);

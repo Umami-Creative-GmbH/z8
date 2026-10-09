@@ -144,6 +144,7 @@ const SOURCE_COLUMN_NAMES: Readonly<Record<string, string>> = {
 	endAt: "end_at",
 	endTime: "end_time",
 	id: "id",
+	isBillable: "is_billable",
 	isSuperseded: "is_superseded",
 	organizationId: "organization_id",
 	pendingChanges: "pending_changes",
@@ -2530,6 +2531,8 @@ function analyzeApprovalWriteMutationsInContext(
 										"projectId",
 										"costCenterId",
 										"weightPercent",
+										// Billable work (#900) is part of the allocation, like its project.
+										"isBillable",
 										"createdAt",
 									];
 			const unresolvedPayload =
