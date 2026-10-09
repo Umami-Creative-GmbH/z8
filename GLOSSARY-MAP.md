@@ -9,6 +9,7 @@
 - [Projects](./apps/webapp/src/lib/projects/CONTEXT.md): keeps the organization's projects, the tasks inside them and the project templates new projects start from
 - [Public API](./apps/webapp/src/lib/public-api/CONTEXT.md): lets an organization's own systems read its data with an API key, limited to the key's scopes
 - [Personnel File](./apps/webapp/src/lib/personnel-file/CONTEXT.md): keeps each employee's documents and controls which of them the employee sees
+- [Scheduling](./apps/webapp/src/lib/scheduling/CONTEXT.md): plans shifts ahead of time and helps planners staff open shifts
 
 ## Relationships
 
@@ -22,3 +23,4 @@
 - **Employee lifecycle → Time Tracking**: a departure closes live work inside a Time Tracking **work transaction**
 - **Employee lifecycle → Personnel File**: a departure revokes the personnel file officer grant the employee holds and starts the **retention** clock of their documents; a rehire stops it
 - **Public API → Time Tracking**: the Public API reads work records and never writes them in v1
+- **Scheduling → Time Tracking**: a shift is planned work and a work period is recorded work; a staffing suggestion reads a candidate's work periods to judge compliance and never writes them
