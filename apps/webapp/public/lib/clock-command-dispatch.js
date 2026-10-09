@@ -72,6 +72,8 @@ function buildCommand(request, target) {
 		: { workPeriodId: target.workPeriodId };
 	command.project = attribution(request.project);
 	command.workCategory = attribution(request.workCategory);
+	// Explicit billability (#900); omitted keeps the bytes of earlier commands.
+	if (typeof request.billable === "boolean") command.billable = request.billable;
 	return command;
 }
 

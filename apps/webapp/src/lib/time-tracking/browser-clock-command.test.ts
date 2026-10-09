@@ -89,6 +89,24 @@ describe("prepareBrowserClockCommand", () => {
 		});
 	});
 
+	it("carries an explicit billable choice and omits it otherwise (#900)", () => {
+		const input = {
+			kind: "clock_out" as const,
+			operationId,
+			capabilities,
+			session,
+			now,
+			timezone: "Europe/Berlin",
+			projectId,
+		};
+		expect(prepareBrowserClockCommand({ ...input, billable: true })).toMatchObject({
+			ok: true,
+			request: { project: { kind: "replace", id: projectId }, billable: true },
+		});
+		const prepared = prepareBrowserClockCommand(input);
+		expect(prepared.ok && prepared.request).not.toHaveProperty("billable");
+	});
+
 	it("defaults a missing work location the way the legacy clock-in does", () => {
 		expect(
 			prepareBrowserClockCommand({

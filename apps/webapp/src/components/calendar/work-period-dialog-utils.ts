@@ -14,6 +14,8 @@ export interface WorkPeriodDialogMetadata {
 	projectId?: string;
 	projectName?: string;
 	projectColor?: string;
+	projectHasCustomer?: boolean;
+	isBillable?: boolean;
 	surchargeMinutes?: number;
 	totalCreditedMinutes?: number;
 	surchargeBreakdown?: Array<{

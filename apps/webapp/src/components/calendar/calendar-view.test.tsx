@@ -329,7 +329,7 @@ vi.mock("./calendar-event-dialogs", () => ({
 		isClockOutPending: boolean;
 		manualEntryDefaults: { date: string; clockInTime: string; clockOutTime: string } | null;
 		manualEntryOpen: boolean;
-		onConfirmClockOut: () => void;
+		onConfirmClockOut: (billable?: boolean) => void;
 		pendingClockOut: boolean;
 		selectedEmployeeId: string | null;
 		selectedEvent: CalendarEvent | null;
@@ -358,7 +358,7 @@ vi.mock("./calendar-event-dialogs", () => ({
 						This creates an auditable clock-out entry at the current server time. If anything needs
 						adjustment afterward, use corrections.
 					</p>
-					<button type="button" disabled={isClockOutPending} onClick={onConfirmClockOut}>
+					<button type="button" disabled={isClockOutPending} onClick={() => onConfirmClockOut()}>
 						Clock Out
 					</button>
 				</>

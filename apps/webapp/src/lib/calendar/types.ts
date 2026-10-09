@@ -112,6 +112,10 @@ export interface WorkPeriodEvent extends CalendarEvent {
 		projectId?: string;
 		projectName?: string;
 		projectColor?: string;
+		/** Billable Time (#900): only a project with a customer can make work billable. */
+		projectHasCustomer?: boolean;
+		/** Billable Time (#900): whether the work is billable. */
+		isBillable?: boolean;
 		// Surcharge fields - optional, only present if surcharges are enabled
 		surchargeMinutes?: number;
 		totalCreditedMinutes?: number;

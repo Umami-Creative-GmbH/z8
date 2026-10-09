@@ -110,6 +110,8 @@ describe("getManualEntryTargetContextForEmployee", () => {
 						status: "active",
 						budgetHours: "10.5",
 						deadline: new Date("2026-06-01T00:00:00.000Z"),
+						customerId: "customer-1",
+						billableDefault: true,
 					},
 				],
 				[
@@ -121,6 +123,9 @@ describe("getManualEntryTargetContextForEmployee", () => {
 						status: "planned",
 						budgetHours: null,
 						deadline: null,
+						// A billable default without a customer never reaches the form (#900).
+						customerId: null,
+						billableDefault: true,
 					},
 				],
 			]),
@@ -169,6 +174,8 @@ describe("getManualEntryTargetContextForEmployee", () => {
 						budgetHours: null,
 						deadline: null,
 						totalHoursBooked: 0,
+						hasCustomer: false,
+						billableDefault: false,
 					},
 					{
 						id: "project-b",
@@ -178,6 +185,8 @@ describe("getManualEntryTargetContextForEmployee", () => {
 						budgetHours: 10.5,
 						deadline: "2026-06-01T00:00:00.000Z",
 						totalHoursBooked: 2.5,
+						hasCustomer: true,
+						billableDefault: true,
 					},
 				],
 				categories: [

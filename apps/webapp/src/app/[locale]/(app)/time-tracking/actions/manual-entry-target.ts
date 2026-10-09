@@ -148,6 +148,8 @@ export async function listManualEntryProjectChoices(
 			budgetHours: project.budgetHours ? Number(project.budgetHours) : null,
 			deadline: project.deadline?.toISOString() ?? null,
 			totalHoursBooked: hoursByProjectId.get(project.id) ?? 0,
+			hasCustomer: project.customerId !== null,
+			billableDefault: project.customerId !== null && project.billableDefault,
 		}))
 		.sort((left, right) => left.name.localeCompare(right.name));
 }

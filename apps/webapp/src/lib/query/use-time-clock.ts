@@ -144,6 +144,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			browserTimezone?: string | null;
 			projectId?: string;
 			workCategoryId?: string;
+			billable?: boolean;
 		},
 	) {
 		if (!canFreeze || !pageSession) return null;
@@ -158,6 +159,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			knownWorkPeriodId: statusQuery.data?.activeWorkPeriod?.id ?? null,
 			projectId: params?.projectId,
 			workCategoryId: params?.workCategoryId,
+			billable: params?.billable,
 		});
 		return prepared.ok ? prepared.request : null;
 	}
@@ -246,6 +248,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		mutationFn: async (params?: {
 			projectId?: string;
 			workCategoryId?: string;
+			billable?: boolean;
 			browserTimezone?: string | null;
 			submissionId?: string;
 		}) => {
@@ -281,6 +284,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			return postClockOut({
 				projectId: params?.projectId,
 				workCategoryId: params?.workCategoryId,
+				...(params?.billable === undefined ? {} : { billable: params.billable }),
 				browserTimezone: resolveBrowserTimezone(params),
 				submissionId: params?.submissionId as string,
 			});
@@ -404,6 +408,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		clockOut: (params?: {
 			projectId?: string;
 			workCategoryId?: string;
+			billable?: boolean;
 			browserTimezone?: string | null;
 		}) =>
 			clockOutMutation.mutateAsync({

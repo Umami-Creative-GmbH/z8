@@ -95,22 +95,27 @@ function useClockOutOnBehalf({
 		setPendingClockOutEvent(event);
 	};
 
-	const handleConfirmClockOut = async () => {
+	/** illable is the manager's explicit choice (#900); undefined keeps the work's. */
+	const handleConfirmClockOut = async (billable?: boolean) => {
 		if (!pendingClockOutEvent || isClockOutPending) return;
 
 		setIsClockOutPending(true);
 		const workPeriodId = pendingClockOutEvent.id;
-		const operationId =
-			operationIdsRef.current.get(workPeriodId) ??
-			globalThis.crypto.randomUUID();
-		operationIdsRef.current.set(workPeriodId, operationId);
+		// A different billable choice is a different closure request with its own identity.
+		const intentKey = `:${billable ?? "keep"}`;
+		const operationId = operationIdsRef.current.get(intentKey) ?? globalThis.crypto.randomUUID();
+		operationIdsRef.current.set(intentKey, operationId);
 
 		await (async () => {
 			try {
 				const response = await fetch("/api/time-entries/clock-out-on-behalf", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ workPeriodId, operationId }),
+					body: JSON.stringify({
+						workPeriodId,
+						operationId,
+						...(billable === undefined ? {} : { billable }),
+					}),
 				});
 
 				if (!response.ok) {
@@ -132,7 +137,7 @@ function useClockOutOnBehalf({
 					return;
 				}
 
-				operationIdsRef.current.delete(workPeriodId);
+				operationIdsRef.current.delete(intentKey);
 				toast.success(
 					t(
 						"calendar.clockOutOnBehalf.success",
@@ -468,11 +473,12 @@ function CalendarViewContent({
 				onManualEntryOpenChange={setManualEntryOpen}
 				onManualEntrySuccess={refetch}
 				pendingClockOut={pendingClockOutEvent !== null}
+				pendingClockOutEvent={pendingClockOutEvent}
 				isClockOutPending={isClockOutPending}
 				onClockOutOpenChange={(open) => {
 					if (!open && !isClockOutPending) setPendingClockOutEvent(null);
 				}}
-				onConfirmClockOut={() => void handleConfirmClockOut()}
+				onConfirmClockOut={(billable) => void handleConfirmClockOut(billable)}
 				selectedEvent={selectedEvent}
 				showSplitDialog={showSplitDialog}
 				showDeleteDialog={showDeleteDialog}
