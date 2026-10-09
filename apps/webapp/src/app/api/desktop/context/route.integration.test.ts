@@ -72,8 +72,9 @@ describe("desktop context project tasks on PostgreSQL (#875)", () => {
 		await cleanup();
 		const timestamp = new Date("2026-07-01T00:00:00Z");
 		await admin.query(
-			`insert into organization (id, name, slug, created_at) values
-			 ($1, 'T875 desktop', $1, $3), ($2, 'T875 other', $2, $3)`,
+			// The context lists projects only where the organization has them enabled.
+			`insert into organization (id, name, slug, created_at, projects_enabled) values
+			 ($1, 'T875 desktop', $1, $3, true), ($2, 'T875 other', $2, $3, true)`,
 			[ids.organization, ids.otherOrganization, timestamp],
 		);
 		await admin.query(
