@@ -63,6 +63,12 @@ vi.mock("@/lib/logger", () => ({
 const { getCustomerBillableReport, getProjectDetailedReport, getProjectsOverview } = await import(
 	"./actions"
 );
+const { exportReportDocumentToCSV } = await import("@/lib/reports/exporters/report-document-csv");
+const {
+	buildCustomerReportDocument,
+	buildProjectReportDocument,
+	DEFAULT_PROJECT_REPORT_EXPORT_LABELS,
+} = await import("@/lib/reports/project-report-export");
 
 const ids = {
 	organization: "t902-org",
@@ -442,6 +448,15 @@ describe("billable project reports on PostgreSQL", () => {
 		]);
 		for (const data of [overview, report, customers]) {
 			expect(JSON.stringify(data)).not.toMatch(/"(cost|margin|marginPercent|costUnknownWorkCount)"/);
+		}
+		// Their exports are built from the same data, so they carry no cost or margin either.
+		const context = { labels: DEFAULT_PROJECT_REPORT_EXPORT_LABELS, generatedAt: "now" };
+		for (const csv of [
+			exportReportDocumentToCSV(buildProjectReportDocument(report, context)),
+			exportReportDocumentToCSV(buildCustomerReportDocument(customers, context)),
+		]) {
+			expect(csv).toContain("Revenue (EUR)");
+			expect(csv).not.toMatch(/cost|margin/i);
 		}
 
 		const otherProject = await getProjectDetailedReport(ids.support, rangeStart, rangeEnd);
