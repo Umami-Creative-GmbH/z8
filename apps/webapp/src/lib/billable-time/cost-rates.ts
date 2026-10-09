@@ -22,6 +22,7 @@ import {
 	type SuggestedWage,
 } from "./cost-rate";
 import type { BillableCurrency } from "./currency";
+import { isUuid, parsePlainDay } from "./input";
 import { formatRate, parseRate, type RateUnits, rateFromStored } from "./money";
 import { writeRatePeriodChange } from "./rate-period-writer";
 import type { RatePeriod, RatePeriodStore } from "./rate-periods";
@@ -36,11 +37,9 @@ import { lockBillableTimeSettings } from "./settings";
 
 export type CostRateReader = Pick<Transaction, "select">;
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 /** Whether an untrusted value is an employee id (a uuid). */
 export function isEmployeeId(value: unknown): value is string {
-	return typeof value === "string" && UUID_PATTERN.test(value);
+	return isUuid(value);
 }
 
 const plainDate = (value: string) => Temporal.PlainDate.from(value);
@@ -145,15 +144,6 @@ export type CostRateOutcome =
 	| { ok: true; changed: boolean; periods: CostRatePeriodView[] }
 	| { ok: false; reason: CostRateRefusal };
 
-function parseDate(value: string): PlainDate | null {
-	if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-	try {
-		return Temporal.PlainDate.from(value, { overflow: "reject" });
-	} catch {
-		return null;
-	}
-}
-
 /**
  * Sets or ends an employee's cost rate from a date (#899), for any contract
  * type. Backdating is allowed. Never touches the wage. The caller authorizes
@@ -170,7 +160,7 @@ export async function changeCostRate(
 		change: CostRateChange;
 	},
 ): Promise<CostRateOutcome> {
-	const from = parseDate(input.change.effectiveFrom);
+	const from = parsePlainDay(input.change.effectiveFrom);
 	if (!from) return { ok: false, reason: "invalid_date" };
 	let rate: RateUnits | null = null;
 	if (input.change.kind === "set") {

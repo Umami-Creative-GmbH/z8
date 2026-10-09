@@ -1,4 +1,5 @@
 import { isRateLevel } from "./applicable-rate";
+import { isUuid } from "./input";
 
 /**
  * A billable rate series: one rate level and its target (#898). Client-safe:
@@ -21,15 +22,13 @@ export interface BillableRatePeriodView {
 	hourlyRate: string;
 }
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 /** Reads an untrusted target (from a server action) into a typed one, or null. */
 export function parseBillableRateTarget(input: unknown): BillableRateTarget | null {
 	if (typeof input !== "object" || input === null) return null;
 	const value = input as Record<string, unknown>;
 	const id = (key: string) => {
 		const raw = value[key];
-		return typeof raw === "string" && UUID_PATTERN.test(raw) ? raw : null;
+		return isUuid(raw) ? raw : null;
 	};
 	if (!isRateLevel(value.level)) return null;
 	switch (value.level) {

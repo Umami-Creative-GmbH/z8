@@ -20,6 +20,7 @@ import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { activeOrganizationActor } from "./action-actor";
+import { billableTimeOff } from "./module-guard";
 
 export interface BulkBillabilityPreview {
 	summary: BulkBillabilitySummary;
@@ -52,12 +53,7 @@ function authorizedRequest(input: unknown, action: string) {
 			getBillableTimeSettings(actor.organizationId, dbService.db),
 		);
 		if (!settings.enabled) {
-			return yield* Effect.fail(
-				new ValidationError({
-					message: "Billable Time is switched off",
-					field: "billableTimeEnabled",
-				}),
-			);
+			return yield* Effect.fail(billableTimeOff());
 		}
 		const [target] = yield* dbService.query("billableTime.bulk.project", () =>
 			dbService.db

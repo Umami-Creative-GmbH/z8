@@ -15,6 +15,7 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import { activeOrganizationActor } from "./action-actor";
+import { billableTimeOff } from "./module-guard";
 
 const logger = createLogger("BillableTimeSettingsActions");
 
@@ -60,10 +61,7 @@ function refusalError(
 			});
 		}
 		case "billable_time_off":
-			return new ValidationError({
-				message: "Billable Time is switched off",
-				field: "billableTimeEnabled",
-			});
+			return billableTimeOff();
 	}
 }
 

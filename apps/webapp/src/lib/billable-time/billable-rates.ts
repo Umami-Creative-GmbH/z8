@@ -17,6 +17,7 @@ import {
 	resolveApplicableRate,
 	workDayOf,
 } from "./applicable-rate";
+import { parsePlainDay } from "./input";
 import { formatRate, parseRate, type RateUnits, rateFromStored } from "./money";
 import { writeRatePeriodChange } from "./rate-period-writer";
 import type { RatePeriod, RatePeriodStore } from "./rate-periods";
@@ -180,15 +181,6 @@ export type BillableRateOutcome =
 	| { ok: true; changed: boolean; periods: BillableRatePeriodView[] }
 	| { ok: false; reason: BillableRateRefusal };
 
-function parseDate(value: string): PlainDate | null {
-	if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-	try {
-		return Temporal.PlainDate.from(value, { overflow: "reject" });
-	} catch {
-		return null;
-	}
-}
-
 /**
  * Sets or ends a billable rate from a date, for one rate level and target of
  * one organization (#898). Backdating is allowed. The caller authorizes the
@@ -203,7 +195,7 @@ export async function changeBillableRate(
 		change: BillableRateChange;
 	},
 ): Promise<BillableRateOutcome> {
-	const from = parseDate(input.change.effectiveFrom);
+	const from = parsePlainDay(input.change.effectiveFrom);
 	if (!from) return { ok: false, reason: "invalid_date" };
 	let rate: RateUnits | null = null;
 	if (input.change.kind === "set") {
