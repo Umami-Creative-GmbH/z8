@@ -61,6 +61,22 @@ describe("fake accounting provider", () => {
 		await expect(provider.getContact("missing")).resolves.toBeNull();
 	});
 
+	it("lists every contact page by page for the customer import", async () => {
+		const provider = createFakeAccountingTool({ contacts, contactPageSize: 2 }).connector.open({
+			apiKey: "key",
+			settings: {},
+		});
+		const listCustomerContacts = provider.listCustomerContacts;
+		if (!listCustomerContacts) throw new Error("listCustomerContacts missing");
+
+		const first = await listCustomerContacts({ cursor: null });
+		expect(first).toEqual({ contacts: [contacts[0], contacts[1]], nextCursor: "2" });
+		await expect(listCustomerContacts({ cursor: first.nextCursor })).resolves.toEqual({
+			contacts: [contacts[2]],
+			nextCursor: null,
+		});
+	});
+
 	it("refuses a query shorter than the declared minimum", async () => {
 		const provider = createFakeAccountingTool({ contacts }).connector.open({
 			apiKey: "key",

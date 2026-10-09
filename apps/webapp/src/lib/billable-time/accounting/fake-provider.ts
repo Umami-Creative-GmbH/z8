@@ -35,6 +35,7 @@ type ProviderMethod =
 	| "getContact"
 	| "createInvoiceDraft"
 	| "getInvoiceDraftStatus"
+	| "listCustomerContacts"
 	| "validateConnection";
 
 export interface FakeInvoiceDraft {
@@ -81,6 +82,8 @@ export function createFakeAccountingTool(
 		apiKey?: string;
 		accountRef?: string;
 		accountLabel?: string | null;
+		/** Contacts per `listCustomerContacts` page (default 100). */
+		contactPageSize?: number;
 	} = {},
 ): FakeAccountingTool {
 	const kind = options.kind ?? "lexware_office";
@@ -170,6 +173,19 @@ export function createFakeAccountingTool(
 					throw new AccountingProviderError("outcome_unknown", "The accounting tool timed out");
 				}
 				return { externalId: created.externalId, externalUrl: urlOf(created.externalId) };
+			},
+			async listCustomerContacts({ cursor }) {
+				takeFailure("listCustomerContacts");
+				if (!keyAccepted(apiKey)) throw unauthorized();
+				const start = cursor === null ? 0 : Number(cursor);
+				if (!Number.isSafeInteger(start) || start < 0) {
+					throw new AccountingProviderError("rejected", "Unknown contact page");
+				}
+				const end = start + (options.contactPageSize ?? 100);
+				return {
+					contacts: contacts.slice(start, end).map((contact) => ({ ...contact })),
+					nextCursor: end < contacts.length ? String(end) : null,
+				};
 			},
 			async getInvoiceDraftStatus(externalId): Promise<InvoiceDraftStatus> {
 				if (!capabilities.draftStatusCheck) return { kind: "unsupported" };
