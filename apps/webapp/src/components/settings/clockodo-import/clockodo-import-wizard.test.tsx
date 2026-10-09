@@ -7,9 +7,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
 	fetchClockodoUsers: vi.fn(),
+	fetchProjectMappingData: vi.fn(),
 	fetchZ8Employees: vi.fn(),
 	getExistingDataCounts: vi.fn(),
 	importClockodoData: vi.fn(),
+	saveProjectMappings: vi.fn(),
 	saveUserMappings: vi.fn(),
 	startImportReviewScan: vi.fn(),
 	toastError: vi.fn(),
@@ -41,9 +43,11 @@ vi.mock("@/navigation", () => ({
 
 vi.mock("@/app/[locale]/(app)/settings/clockodo-import/actions", () => ({
 	fetchClockodoUsers: mocks.fetchClockodoUsers,
+	fetchProjectMappingData: mocks.fetchProjectMappingData,
 	fetchZ8Employees: mocks.fetchZ8Employees,
 	getExistingDataCounts: mocks.getExistingDataCounts,
 	importClockodoData: mocks.importClockodoData,
+	saveProjectMappings: mocks.saveProjectMappings,
 	saveUserMappings: mocks.saveUserMappings,
 	validateClockodoCredentials: mocks.validateClockodoCredentials,
 }));
@@ -88,6 +92,11 @@ describe("ClockodoImportWizard", () => {
 				surcharges: 0,
 			},
 		});
+		mocks.fetchProjectMappingData.mockResolvedValue({
+			success: true,
+			data: { clockodoProjects: [], z8Projects: [], savedMappings: [] },
+		});
+		mocks.saveProjectMappings.mockResolvedValue({ success: true, data: undefined });
 	});
 
 	afterEach(() => {
@@ -317,5 +326,90 @@ describe("ClockodoImportWizard", () => {
 			screen.getByText("Select at least one Clockodo user before starting the scan."),
 		).toBeTruthy();
 		expect(mocks.startImportReviewScan).not.toHaveBeenCalled();
+	});
+
+	it("maps Clockodo projects to existing Z8 projects before the scan (#907)", async () => {
+		mocks.validateClockodoCredentials.mockResolvedValue({
+			success: true,
+			data: {
+				users: 1,
+				teams: 0,
+				services: 0,
+				entries: 1,
+				absences: 0,
+				targetHours: 0,
+				holidayQuotas: 0,
+				nonBusinessDays: 0,
+				surcharges: 0,
+			},
+		});
+		mocks.fetchClockodoUsers.mockResolvedValue({
+			success: true,
+			data: [{ id: 101, name: "Ada Lovelace", email: "ada@example.com", active: true }],
+		});
+		mocks.fetchZ8Employees.mockResolvedValue({
+			success: true,
+			data: [{ id: "emp_1", userId: "user_1", name: "Ada Lovelace", email: "ada@example.com" }],
+		});
+		mocks.saveUserMappings.mockResolvedValue({ success: true, data: undefined });
+		mocks.fetchProjectMappingData.mockResolvedValue({
+			success: true,
+			data: {
+				clockodoProjects: [
+					{ id: 31, name: "Website", customerName: "Acme GmbH", active: true },
+					{ id: 32, name: "Support", customerName: "Acme GmbH", active: true },
+				],
+				z8Projects: [
+					{ id: "project_website", name: "Website", customerName: "Acme", isActive: true },
+					{ id: "project_internal", name: "Internal", customerName: null, isActive: true },
+				],
+				savedMappings: [],
+			},
+		});
+
+		renderWizard();
+
+		fireEvent.change(screen.getByLabelText("Clockodo Email"), {
+			target: { value: "admin@example.com" },
+		});
+		fireEvent.change(screen.getByLabelText("API Key"), { target: { value: "api-key-123" } });
+		fireEvent.click(screen.getByRole("button", { name: "Connect & Preview" }));
+		await screen.findByText("Data Preview");
+		fireEvent.click(screen.getByRole("button", { name: "Map Users" }));
+		fireEvent.click(await screen.findByRole("button", { name: "Continue" }));
+		await screen.findByText("Map Projects");
+		expect(mocks.fetchProjectMappingData).toHaveBeenCalledWith(
+			"admin@example.com",
+			"api-key-123",
+			"org_123",
+		);
+
+		// The second row (Support) has no name match and starts unmapped.
+		fireEvent.click(screen.getAllByRole("combobox", { name: "Z8 project for {project}" })[1]);
+		fireEvent.click(await screen.findByText("Internal"));
+		expect(
+			await screen.findByText(
+				"This project has no customer, so its imported time is non-billable.",
+			),
+		).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+		await screen.findByText("Select Data for Review");
+
+		expect(mocks.saveProjectMappings).toHaveBeenCalledWith("org_123", [
+			{
+				clockodoProjectId: 31,
+				clockodoProjectName: "Website",
+				clockodoCustomerName: "Acme GmbH",
+				projectId: "project_website",
+				source: "name",
+			},
+			{
+				clockodoProjectId: 32,
+				clockodoProjectName: "Support",
+				clockodoCustomerName: "Acme GmbH",
+				projectId: "project_internal",
+				source: "manual",
+			},
+		]);
 	});
 });

@@ -1,13 +1,16 @@
 "use server";
 
-import { and, count, eq, inArray } from "drizzle-orm";
+import { and, asc, count, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import {
 	absenceEntry,
+	clockodoProjectMapping,
 	clockodoUserMapping,
+	customer,
 	employee,
 	holiday,
+	project,
 	surchargeModel,
 	team,
 	workCategory,
@@ -23,11 +26,15 @@ import type {
 	ImportResult,
 	ImportUserMapping,
 	ImportSelections,
+	ProjectMappingEntry,
+	SavedProjectMapping,
 	UserMappingEntry,
 } from "@/lib/clockodo/types";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("ClockodoImportActions");
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // ============================================
 // TYPES
@@ -305,6 +312,186 @@ export async function saveUserMappings(
 			success: false,
 			error: error instanceof Error ? error.message : "Failed to save mappings",
 		};
+	}
+}
+
+// ============================================
+// PROJECT MAPPING (#907)
+// ============================================
+
+export interface ClockodoProjectInfo {
+	id: number;
+	name: string;
+	customerName: string | null;
+	active: boolean;
+}
+
+export interface Z8ProjectInfo {
+	id: string;
+	name: string;
+	customerName: string | null;
+	isActive: boolean;
+}
+
+export interface ProjectMappingData {
+	clockodoProjects: ClockodoProjectInfo[];
+	z8Projects: Z8ProjectInfo[];
+	savedMappings: SavedProjectMapping[];
+}
+
+/**
+ * Clockodo's projects, the organization's existing Z8 projects and the mappings
+ * saved by earlier imports, for the project-mapping step.
+ */
+export async function fetchProjectMappingData(
+	email: string,
+	apiKey: string,
+	organizationId: string,
+): Promise<ActionResult<ProjectMappingData>> {
+	try {
+		await requireAdmin(organizationId);
+
+		const client = new ClockodoClient(email.trim(), apiKey.trim());
+		const [clockodoProjects, clockodoCustomers, z8Projects, savedMappings] = await Promise.all([
+			client.getProjects(),
+			client.getCustomers(),
+			db
+				.select({
+					id: project.id,
+					name: project.name,
+					customerName: customer.name,
+					isActive: project.isActive,
+				})
+				.from(project)
+				.leftJoin(
+					customer,
+					and(eq(customer.id, project.customerId), eq(customer.organizationId, organizationId)),
+				)
+				.where(eq(project.organizationId, organizationId))
+				.orderBy(asc(project.name)),
+			db
+				.select({
+					clockodoProjectId: clockodoProjectMapping.clockodoProjectId,
+					projectId: clockodoProjectMapping.projectId,
+				})
+				.from(clockodoProjectMapping)
+				.where(eq(clockodoProjectMapping.organizationId, organizationId)),
+		]);
+		const customerNames = new Map(clockodoCustomers.map((entry) => [entry.id, entry.name]));
+
+		return {
+			success: true,
+			data: {
+				clockodoProjects: clockodoProjects.map((entry) => ({
+					id: entry.id,
+					name: entry.name,
+					customerName: customerNames.get(entry.customers_id) ?? null,
+					active: entry.active,
+				})),
+				z8Projects,
+				savedMappings,
+			},
+		};
+	} catch (error) {
+		logger.error({ error }, "Failed to fetch Clockodo project mapping data");
+		return {
+			success: false,
+			error: error instanceof Error ? error.message : "Failed to fetch projects",
+		};
+	}
+}
+
+/**
+ * Saves the organization's Clockodo project mappings. Mapped projects must be
+ * existing projects of the organization; an entry without a project removes its
+ * mapping. Projects are never created.
+ */
+export async function saveProjectMappings(
+	organizationId: string,
+	mappings: ProjectMappingEntry[],
+): Promise<ActionResult> {
+	try {
+		const authContext = await requireAdmin(organizationId);
+
+		if (
+			!Array.isArray(mappings) ||
+			mappings.some(
+				(mapping) =>
+					!Number.isSafeInteger(mapping?.clockodoProjectId) ||
+					typeof mapping.clockodoProjectName !== "string" ||
+					(mapping.projectId !== null &&
+						(typeof mapping.projectId !== "string" || !UUID_PATTERN.test(mapping.projectId))),
+			)
+		) {
+			return { success: false, error: "Invalid project mappings" };
+		}
+		const mapped = mappings.flatMap((mapping) =>
+			mapping.projectId === null ? [] : [{ ...mapping, projectId: mapping.projectId }],
+		);
+		const unmappedIds = mappings
+			.filter((mapping) => mapping.projectId === null)
+			.map((mapping) => mapping.clockodoProjectId);
+		await validateProjectOwnership(
+			mapped.map((mapping) => mapping.projectId),
+			organizationId,
+		);
+
+		await db.transaction(async (tx) => {
+			if (unmappedIds.length > 0) {
+				await tx
+					.delete(clockodoProjectMapping)
+					.where(
+						and(
+							eq(clockodoProjectMapping.organizationId, organizationId),
+							inArray(clockodoProjectMapping.clockodoProjectId, unmappedIds),
+						),
+					);
+			}
+			for (const mapping of mapped) {
+				await tx
+					.insert(clockodoProjectMapping)
+					.values({
+						organizationId,
+						clockodoProjectId: mapping.clockodoProjectId,
+						clockodoProjectName: mapping.clockodoProjectName,
+						projectId: mapping.projectId,
+						createdBy: authContext.user.id,
+					})
+					.onConflictDoUpdate({
+						target: [
+							clockodoProjectMapping.organizationId,
+							clockodoProjectMapping.clockodoProjectId,
+						],
+						set: {
+							clockodoProjectName: mapping.clockodoProjectName,
+							projectId: mapping.projectId,
+						},
+					});
+			}
+		});
+
+		logger.info({ organizationId, mapped: mapped.length }, "Project mappings saved");
+
+		return { success: true, data: undefined };
+	} catch (error) {
+		logger.error({ error }, "Failed to save project mappings");
+		return {
+			success: false,
+			error: error instanceof Error ? error.message : "Failed to save project mappings",
+		};
+	}
+}
+
+/** Refuses project IDs outside the organization (tampered client requests). */
+async function validateProjectOwnership(projectIds: string[], organizationId: string) {
+	const uniqueIds = [...new Set(projectIds)];
+	if (uniqueIds.length === 0) return;
+	const valid = await db
+		.select({ id: project.id })
+		.from(project)
+		.where(and(eq(project.organizationId, organizationId), inArray(project.id, uniqueIds)));
+	if (valid.length !== uniqueIds.length) {
+		throw new Error("One or more projects do not belong to this organization");
 	}
 }
 
