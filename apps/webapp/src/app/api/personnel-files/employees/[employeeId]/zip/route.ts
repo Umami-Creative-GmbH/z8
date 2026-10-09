@@ -7,6 +7,7 @@ import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-acc
 import {
 	planPersonnelFileZip,
 	streamPersonnelFileZip,
+	writePersonnelFileZipAbortAudit,
 	writePersonnelFileZipAudit,
 } from "@/lib/personnel-file/zip-download";
 import { personnelFileZipFileName } from "@/lib/personnel-file/zip-entries";
@@ -38,7 +39,9 @@ function contentDisposition(fileName: string): string {
  * employee are included; `?sharedOnly=0` adds HR-only documents (shared only
  * is the default). Actors without a grant for the employee, and everyone while
  * personnel files are off, get a not-found. The download is audited once with
- * the included documents, then streamed file by file.
+ * the included documents, then streamed file by file. When a document fails
+ * verification mid-stream, a follow-up audit record names it and the documents
+ * actually handed over, and the download aborts.
  */
 export async function GET(
 	request: NextRequest,
@@ -60,14 +63,25 @@ export async function GET(
 		if (!plan) return notFound();
 
 		const auditContext = getAuditContextFromRequest(request);
-		await writePersonnelFileZipAudit(db, {
+		const downloadAuditId = await writePersonnelFileZipAudit(db, {
 			actorUserId: access.userId,
 			plan,
 			ipAddress: auditContext.ipAddress,
 			userAgent: auditContext.userAgent,
 		});
+		const stream = streamPersonnelFileZip(plan, {
+			onAbort: (abort) =>
+				writePersonnelFileZipAbortAudit(db, {
+					actorUserId: access.userId,
+					plan,
+					downloadAuditId,
+					abort,
+					ipAddress: auditContext.ipAddress,
+					userAgent: auditContext.userAgent,
+				}),
+		});
 
-		return new Response(streamPersonnelFileZip(plan), {
+		return new Response(stream, {
 			headers: {
 				...privateHeaders,
 				"Content-Type": "application/zip",

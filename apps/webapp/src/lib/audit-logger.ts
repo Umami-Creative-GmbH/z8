@@ -132,6 +132,7 @@ export enum AuditAction {
 	PERSONNEL_FILE_RETENTION_CHANGED = "personnel_file.retention_changed",
 	// Personnel file ZIP download (#871)
 	PERSONNEL_FILE_ZIP_DOWNLOADED = "personnel_file.zip_downloaded",
+	PERSONNEL_FILE_ZIP_DOWNLOAD_ABORTED = "personnel_file.zip_download_aborted",
 
 	// App Access Operations
 	APP_ACCESS_GRANTED = "app_access.granted",

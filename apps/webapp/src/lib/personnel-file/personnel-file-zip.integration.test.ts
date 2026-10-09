@@ -273,7 +273,7 @@ describe("personnel file ZIP download (#871)", () => {
 	beforeEach(async () => {
 		harness.reads.length = 0;
 		await admin.query(
-			"delete from audit_log where organization_id = $1 and action = 'personnel_file.zip_downloaded'",
+			"delete from audit_log where organization_id = $1 and action like 'personnel_file.zip_download%'",
 			[ORG],
 		);
 		await admin.query("update organization set personnel_files_enabled = true where id = $1", [
@@ -395,6 +395,37 @@ describe("personnel file ZIP download (#871)", () => {
 			const response = await requestZip(ids.former);
 			expect(response.status).toBe(200);
 			await expect(response.arrayBuffer()).rejects.toThrow();
+
+			// The up-front record keeps the planned documents; a follow-up record
+			// names the failed document and what was actually handed over.
+			const [planned] = await zipAudits(ids.former);
+			expect(planned?.metadata.documents).toHaveLength(4);
+			const { rows } = await admin.query<{
+				id: string;
+				performed_by: string;
+				entity_type: string;
+				metadata: string;
+			}>(
+				"select id, performed_by, entity_type, metadata from audit_log where organization_id = $1 and employee_id = $2 and action = 'personnel_file.zip_download_aborted'",
+				[ORG, ids.former],
+			);
+			expect(rows).toHaveLength(1);
+			expect(rows[0]).toMatchObject({
+				performed_by: "t871-owner",
+				entity_type: "employee_personnel_file",
+			});
+			const { rows: plannedRows } = await admin.query<{ id: string }>(
+				"select id from audit_log where organization_id = $1 and employee_id = $2 and action = 'personnel_file.zip_downloaded'",
+				[ORG, ids.former],
+			);
+			expect(JSON.parse(rows[0]?.metadata ?? "{}")).toEqual({
+				downloadAuditId: plannedRows[0]?.id,
+				failedDocument: {
+					id: docs.certificate.id,
+					entryName: "certificate/2027-06-30_Arbeitszeugnis.pdf",
+				},
+				deliveredDocumentIds: [docs.contract.id, docs.payslipMarch.id, docs.payslipApril.id],
+			});
 		} finally {
 			harness.objects.set(key, original);
 		}

@@ -18,7 +18,9 @@ import { personnelFileZipEntryNames } from "./zip-entries";
  * categories the actor manages for that employee (never the actor's own
  * shared documents through the employee path), optionally shared ones only.
  * Each download is audited once with the list of included documents, before
- * any content leaves; the archive is then streamed one file at a time.
+ * any content leaves; the archive is then streamed one file at a time. A
+ * download that aborts mid-stream gets a follow-up record naming the failed
+ * document and the documents actually handed over.
  */
 
 const logger = createLogger("PersonnelFileZip");
@@ -142,25 +144,84 @@ async function readVerifiedDocument(document: DocumentRow): Promise<Uint8Array> 
 	return bytes;
 }
 
+export interface PersonnelFileZipAbort {
+	failedDocument: { id: string; entryName: string };
+	/** The documents handed to the archive before the failure, in order. */
+	deliveredDocumentIds: string[];
+}
+
+/**
+ * The follow-up audit record of an aborted ZIP download: the up-front record
+ * lists the planned documents, this one the document that failed and the
+ * documents actually handed over.
+ */
+export async function writePersonnelFileZipAbortAudit(
+	database: Database,
+	input: {
+		actorUserId: string;
+		plan: PersonnelFileZipPlan;
+		downloadAuditId: string;
+		abort: PersonnelFileZipAbort;
+		ipAddress?: string | null;
+		userAgent?: string | null;
+	},
+): Promise<void> {
+	await database.insert(auditLog).values({
+		id: randomUUID(),
+		organizationId: input.plan.organizationId,
+		entityType: PERSONNEL_FILE_ZIP_AUDIT_ENTITY_TYPE,
+		entityId: input.plan.employee.id,
+		action: AuditAction.PERSONNEL_FILE_ZIP_DOWNLOAD_ABORTED,
+		performedBy: input.actorUserId,
+		employeeId: input.plan.employee.id,
+		metadata: JSON.stringify({
+			downloadAuditId: input.downloadAuditId,
+			failedDocument: input.abort.failedDocument,
+			deliveredDocumentIds: input.abort.deliveredDocumentIds,
+		}),
+		ipAddress: input.ipAddress ?? null,
+		userAgent: input.userAgent ?? null,
+	});
+}
+
 /**
  * The archive as a stream. Files are read and verified one at a time, only as
  * the client consumes the download, so memory stays bounded by one document
  * however large the personnel file is. A file that fails verification aborts
- * the download rather than handing over an incomplete file unnoticed.
+ * the download rather than handing over an incomplete file unnoticed;
+ * `onAbort` records which document failed and which were handed over before
+ * the stream errors.
  */
-export function streamPersonnelFileZip(plan: PersonnelFileZipPlan): ReadableStream<Uint8Array> {
+export function streamPersonnelFileZip(
+	plan: PersonnelFileZipPlan,
+	options: { onAbort?: (abort: PersonnelFileZipAbort) => Promise<void> } = {},
+): ReadableStream<Uint8Array> {
+	const delivered: string[] = [];
 	return createStoredZipStream(
 		plan.entries.map(({ document, entryName }) => ({
 			name: entryName,
 			date: document.documentDate,
 			read: async () => {
 				try {
-					return await readVerifiedDocument(document);
+					const bytes = await readVerifiedDocument(document);
+					delivered.push(document.id);
+					return bytes;
 				} catch (error) {
 					logger.error(
 						{ error, documentId: document.id, organizationId: document.organizationId },
 						"Aborted a personnel file download: a document could not be read",
 					);
+					await options
+						.onAbort?.({
+							failedDocument: { id: document.id, entryName },
+							deliveredDocumentIds: [...delivered],
+						})
+						.catch((auditError) =>
+							logger.error(
+								{ error: auditError, documentId: document.id },
+								"Failed to audit an aborted personnel file download",
+							),
+						);
 					throw error;
 				}
 			},
