@@ -11,7 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { TFormControl, TFormItem, TFormLabel } from "@/components/ui/tanstack-form";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import {
 	CLOCKING_REMINDER_ROLES,
 	type ClockingReminderRole,
@@ -76,17 +77,6 @@ export function OrganizationClockingRemindersCard({
 			breakDueLead: String(settings.breakDue.leadMinutes),
 			roles: [...settings.roles] as ClockingReminderRole[],
 		},
-		validators: {
-			onSubmit: ({ value }) => {
-				if (
-					minutesFromField(value.missedClockInGrace) === null ||
-					minutesFromField(value.forgottenClockOutGrace) === null
-				)
-					return invalidGrace;
-				if (leadFromField(value.breakDueLead) === null) return invalidLead;
-				if (value.roles.length === 0) return noRoles;
-			},
-		},
 		onSubmit: async ({ value }) => {
 			if (!canEdit || submitting.current) return;
 			submitting.current = true;
@@ -137,6 +127,7 @@ export function OrganizationClockingRemindersCard({
 			enabledField: "missedClockInEnabled",
 			minutesField: "missedClockInGrace",
 			minMinutes: 0,
+			invalidMessage: invalidGrace,
 			label: t("organization.clockingReminders.missedClockIn.enabled", "Missed clock-in reminder"),
 			minutesLabel: t(
 				"organization.clockingReminders.missedClockIn.grace",
@@ -147,6 +138,7 @@ export function OrganizationClockingRemindersCard({
 			enabledField: "forgottenClockOutEnabled",
 			minutesField: "forgottenClockOutGrace",
 			minMinutes: 0,
+			invalidMessage: invalidGrace,
 			label: t(
 				"organization.clockingReminders.forgottenClockOut.enabled",
 				"Forgotten clock-out reminder",
@@ -160,6 +152,7 @@ export function OrganizationClockingRemindersCard({
 			enabledField: "breakDueEnabled",
 			minutesField: "breakDueLead",
 			minMinutes: MIN_BREAK_DUE_LEAD_MINUTES,
+			invalidMessage: invalidLead,
 			label: t("organization.clockingReminders.breakDue.enabled", "Break-due reminder"),
 			minutesLabel: t(
 				"organization.clockingReminders.breakDue.lead",
@@ -187,8 +180,8 @@ export function OrganizationClockingRemindersCard({
 						void form.handleSubmit();
 					}}
 				>
-					<form.Subscribe selector={(state) => [state.isSubmitting, state.errors] as const}>
-						{([pending, errors]) => (
+					<form.Subscribe selector={(state) => [state.isSubmitting, state.isValid] as const}>
+						{([pending, valid]) => (
 							<div className="space-y-6">
 								{reminders.map((reminder) => (
 									<div key={reminder.enabledField} className="space-y-3">
@@ -203,16 +196,29 @@ export function OrganizationClockingRemindersCard({
 															disabled={!canEdit || pending}
 														/>
 													</TFormControl>
+													<TFormMessage id={`${errorId}-${reminder.minutesField}`} field={field} />
 												</TFormItem>
 											)}
 										</form.Field>
-										<form.Field name={reminder.minutesField}>
+										<form.Field
+											name={reminder.minutesField}
+											validators={{
+												onSubmit: ({ value }) =>
+													minutesFromField(value, reminder.minMinutes) === null
+														? reminder.invalidMessage
+														: undefined,
+											}}
+										>
 											{(field) => (
 												<TFormItem className="max-w-xs">
 													<TFormLabel>{reminder.minutesLabel}</TFormLabel>
 													<TFormControl
-														hasError={errors.length > 0}
-														aria-describedby={errors.length > 0 ? `${helpId} ${errorId}` : helpId}
+														hasError={fieldHasError(field)}
+														aria-describedby={
+															fieldHasError(field)
+																? `${helpId} ${errorId}-${reminder.minutesField}`
+																: helpId
+														}
 													>
 														<Input
 															type="number"
@@ -225,14 +231,23 @@ export function OrganizationClockingRemindersCard({
 															disabled={!canEdit || pending}
 														/>
 													</TFormControl>
+													<TFormMessage id={`${errorId}-${reminder.minutesField}`} field={field} />
 												</TFormItem>
 											)}
 										</form.Field>
 									</div>
 								))}
-								<form.Field name="roles">
+								<form.Field
+									name="roles"
+									validators={{
+										onSubmit: ({ value }) => (value.length === 0 ? noRoles : undefined),
+									}}
+								>
 									{(field) => (
-										<fieldset className="space-y-2">
+										<fieldset
+											className="space-y-2"
+											aria-describedby={fieldHasError(field) ? `${errorId}-roles` : undefined}
+										>
 											<legend className="text-sm font-medium">
 												{t("organization.clockingReminders.roles.label", "Remind these roles")}
 											</legend>
@@ -255,6 +270,7 @@ export function OrganizationClockingRemindersCard({
 													</label>
 												))}
 											</div>
+											<TFormMessage id={`${errorId}-roles`} field={field} />
 										</fieldset>
 									)}
 								</form.Field>
@@ -272,23 +288,15 @@ export function OrganizationClockingRemindersCard({
 										)}
 									</p>
 								)}
-								{errors.length > 0 ? (
-									<p id={errorId} role="alert" className="text-sm text-destructive">
-										{String(errors[0])}
+								{valid && feedback && (
+									<p
+										role={feedback.error ? "alert" : "status"}
+										className={
+											feedback.error ? "text-sm text-destructive" : "text-sm text-muted-foreground"
+										}
+									>
+										{feedback.message}
 									</p>
-								) : (
-									feedback && (
-										<p
-											role={feedback.error ? "alert" : "status"}
-											className={
-												feedback.error
-													? "text-sm text-destructive"
-													: "text-sm text-muted-foreground"
-											}
-										>
-											{feedback.message}
-										</p>
-									)
 								)}
 								<Button type="submit" disabled={!canEdit || pending}>
 									{pending && (

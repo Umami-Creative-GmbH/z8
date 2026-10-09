@@ -107,6 +107,39 @@ describe("OrganizationClockingRemindersCard", () => {
 		expect(mocks.save).not.toHaveBeenCalled();
 	});
 
+	it("marks only the invalid minutes input and describes it by its own error", async () => {
+		show();
+		const lead = screen.getByLabelText("Minutes before the break is due");
+		fireEvent.change(lead, { target: { value: "0" } });
+		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+		const alert = await screen.findByRole("alert");
+		expect(screen.getAllByRole("alert")).toHaveLength(1);
+		expect(lead.getAttribute("aria-invalid")).toBe("true");
+		expect(lead.getAttribute("aria-describedby")?.split(" ")).toContain(alert.id);
+		for (const label of ["Minutes after the expected start", "Minutes after the expected end"]) {
+			const input = screen.getByLabelText(label);
+			expect(input.getAttribute("aria-invalid")).not.toBe("true");
+			expect(input.getAttribute("aria-describedby")?.split(" ")).not.toContain(alert.id);
+		}
+	});
+
+	it("saves once the invalid minutes are corrected", async () => {
+		show();
+		const lead = screen.getByLabelText("Minutes before the break is due");
+		fireEvent.change(lead, { target: { value: "0" } });
+		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+		await screen.findByRole("alert");
+		fireEvent.change(lead, { target: { value: "5" } });
+		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+		await waitFor(() =>
+			expect(mocks.save).toHaveBeenCalledWith(
+				expect.objectContaining({ breakDue: { enabled: false, leadMinutes: 5 } }),
+			),
+		);
+		expect(screen.queryByRole("alert")).toBeNull();
+		expect(lead.getAttribute("aria-invalid")).not.toBe("true");
+	});
+
 	it("requires at least one role", async () => {
 		show();
 		for (const name of ["Admins", "Managers", "Employees"])
