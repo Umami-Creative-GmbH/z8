@@ -19,6 +19,7 @@ export function clockingReminderSettingsFromRow(
 			...DEFAULT_CLOCKING_REMINDER_SETTINGS,
 			missedClockIn: { ...DEFAULT_CLOCKING_REMINDER_SETTINGS.missedClockIn },
 			forgottenClockOut: { ...DEFAULT_CLOCKING_REMINDER_SETTINGS.forgottenClockOut },
+			breakDue: { ...DEFAULT_CLOCKING_REMINDER_SETTINGS.breakDue },
 			roles: [...DEFAULT_CLOCKING_REMINDER_SETTINGS.roles],
 		};
 	}
@@ -30,6 +31,10 @@ export function clockingReminderSettingsFromRow(
 		forgottenClockOut: {
 			enabled: row.forgottenClockOutEnabled,
 			graceMinutes: row.forgottenClockOutGraceMinutes,
+		},
+		breakDue: {
+			enabled: row.breakDueEnabled,
+			leadMinutes: row.breakDueLeadMinutes,
 		},
 		roles: row.roles,
 		revision: row.revision,
@@ -54,6 +59,7 @@ export async function saveClockingReminderSettings(
 		organizationId: string;
 		missedClockIn: { enabled: boolean; graceMinutes: number };
 		forgottenClockOut: { enabled: boolean; graceMinutes: number };
+		breakDue: { enabled: boolean; leadMinutes: number };
 		roles: ClockingReminderRole[];
 	},
 	deps: { database: Database; clock: Clock },
@@ -64,6 +70,8 @@ export async function saveClockingReminderSettings(
 		missedClockInGraceMinutes: input.missedClockIn.graceMinutes,
 		forgottenClockOutEnabled: input.forgottenClockOut.enabled,
 		forgottenClockOutGraceMinutes: input.forgottenClockOut.graceMinutes,
+		breakDueEnabled: input.breakDue.enabled,
+		breakDueLeadMinutes: input.breakDue.leadMinutes,
 		roles: input.roles,
 	};
 	const [row] = await deps.database

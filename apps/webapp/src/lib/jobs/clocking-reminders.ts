@@ -1,6 +1,12 @@
 import type { db as rootDatabase } from "@/db";
-import { type Clock, systemClock } from "@/lib/datetime/temporal-core";
+import { type Clock, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import type { BreakDueRegulation } from "@/lib/time-tracking/break-due";
+import {
+	type BreakDueFacts,
+	loadBreakDueFacts,
+} from "@/lib/time-tracking/clocking-reminders/break-due-discovery";
+import { evaluateBreakDueReminders } from "@/lib/time-tracking/clocking-reminders/break-due-reminders";
 import {
 	type ClockingReminderTransport,
 	sendClockingReminder,
@@ -39,6 +45,12 @@ interface ClockingRemindersDeps {
 	clock: Clock;
 	transport: ClockingReminderTransport;
 	holidayDays: typeof loadHolidayDays;
+	/** The break rules of the employee's effective work policy at `at`; `null` without one. */
+	breakRegulation(input: {
+		organizationId: string;
+		employeeId: string;
+		at: Instant;
+	}): Promise<BreakDueRegulation | null>;
 }
 
 /**
@@ -100,6 +112,12 @@ async function remindOrganization(
 			},
 			deps.database,
 		);
+		const breakFacts = organization.settings.breakDue.enabled
+			? await loadBreakDueFacts(
+					{ organizationId: organization.organizationId, employees },
+					deps.database,
+				)
+			: new Map<string, BreakDueFacts>();
 		for (const person of employees) {
 			result.employees++;
 			const personFacts = facts.get(person.employeeId);
@@ -113,6 +131,23 @@ async function remindOrganization(
 					settings: organization.settings,
 					...personFacts,
 				});
+				const live = breakFacts.get(person.employeeId);
+				if (live) {
+					const regulation = await deps.breakRegulation({
+						organizationId: organization.organizationId,
+						employeeId: person.employeeId,
+						at: now,
+					});
+					due.push(
+						...evaluateBreakDueReminders({
+							now,
+							timezone: person.timezone,
+							settings: organization.settings,
+							regulation,
+							...live,
+						}),
+					);
+				}
 				for (const reminder of await withoutExemptDays(organization, person, due, deps)) {
 					const outcome = await sendClockingReminder(
 						{
@@ -171,6 +206,26 @@ async function withoutExemptDays(
 	);
 }
 
+/** The regulation of the work policy in force for the employee at `at`. */
+async function loadBreakRegulation(input: {
+	organizationId: string;
+	employeeId: string;
+	at: Instant;
+}): Promise<BreakDueRegulation | null> {
+	const [{ Effect }, { runtime }, { WorkPolicyService }] = await Promise.all([
+		import("effect"),
+		import("@/lib/effect/runtime"),
+		import("@/lib/effect/services/work-policy.service"),
+	]);
+	const policy = await runtime.runPromise(
+		Effect.gen(function* () {
+			const service = yield* WorkPolicyService;
+			return yield* service.getEffectivePolicyAt(input);
+		}),
+	);
+	return policy?.regulation ?? null;
+}
+
 /** Production wiring; tests pass their own database and clock. */
 export async function runClockingReminders(
 	overrides: { database?: typeof rootDatabase; clock?: Clock } = {},
@@ -190,6 +245,7 @@ export async function runClockingReminders(
 		database: overrides.database ?? db,
 		clock: overrides.clock ?? systemClock,
 		holidayDays: loadHolidayDays,
+		breakRegulation: loadBreakRegulation,
 		transport: {
 			locale: resolveRecipientNotificationLocale,
 			notify: async (params, locale) => {

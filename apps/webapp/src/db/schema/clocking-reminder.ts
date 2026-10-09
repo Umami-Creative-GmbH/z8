@@ -30,6 +30,9 @@ export const organizationClockingReminderSettings = pgTable(
 		forgottenClockOutGraceMinutes: integer("forgotten_clock_out_grace_minutes")
 			.default(30)
 			.notNull(),
+		// Break-due reminder (#833): minutes before live work breaks the policy's break rules.
+		breakDueEnabled: boolean("break_due_enabled").default(false).notNull(),
+		breakDueLeadMinutes: integer("break_due_lead_minutes").default(15).notNull(),
 		roles: roleEnum("roles").array().default(sql`'{admin,manager,employee}'::role[]`).notNull(),
 		revision: integer("revision").default(1).notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -43,6 +46,10 @@ export const organizationClockingReminderSettings = pgTable(
 		check(
 			"organization_clocking_reminder_settings_forgotten_grace_check",
 			sql`${table.forgottenClockOutGraceMinutes} BETWEEN 0 AND 1440`,
+		),
+		check(
+			"organization_clocking_reminder_settings_break_due_lead_check",
+			sql`${table.breakDueLeadMinutes} BETWEEN 1 AND 1440`,
 		),
 		check(
 			"organization_clocking_reminder_settings_roles_check",

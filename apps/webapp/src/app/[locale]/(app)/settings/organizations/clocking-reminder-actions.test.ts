@@ -38,11 +38,13 @@ const input = {
 	organizationId: "org-1",
 	missedClockIn: { enabled: true, graceMinutes: 20 },
 	forgottenClockOut: { enabled: false, graceMinutes: 30 },
+	breakDue: { enabled: true, leadMinutes: 10 },
 	roles: ["employee" as const, "manager" as const],
 };
 const saved = {
 	missedClockIn: { enabled: true, graceMinutes: 20 },
 	forgottenClockOut: { enabled: false, graceMinutes: 30 },
+	breakDue: { enabled: true, leadMinutes: 10 },
 	roles: ["employee", "manager"],
 	revision: 1,
 };
@@ -98,6 +100,9 @@ describe("updateClockingReminderSettings", () => {
 		{ missedClockIn: { enabled: true, graceMinutes: -1 } },
 		{ missedClockIn: { enabled: true, graceMinutes: 1441 } },
 		{ forgottenClockOut: { enabled: true, graceMinutes: 2.5 } },
+		{ breakDue: { enabled: true, leadMinutes: 0 } },
+		{ breakDue: { enabled: true, leadMinutes: 1441 } },
+		{ breakDue: undefined },
 		{ roles: [] },
 		{ roles: ["owner"] },
 		{ roles: ["employee", "employee"] },

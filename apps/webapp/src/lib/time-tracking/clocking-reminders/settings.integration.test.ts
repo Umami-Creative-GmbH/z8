@@ -23,6 +23,7 @@ describe("clocking reminder settings on PostgreSQL", () => {
 		).toEqual({
 			missedClockIn: { enabled: false, graceMinutes: 15 },
 			forgottenClockOut: { enabled: false, graceMinutes: 30 },
+			breakDue: { enabled: false, leadMinutes: 15 },
 			roles: ["admin", "manager", "employee"],
 			revision: 0,
 		});
@@ -36,6 +37,7 @@ describe("clocking reminder settings on PostgreSQL", () => {
 				organizationId: first,
 				missedClockIn: { enabled: true, graceMinutes: 5 },
 				forgottenClockOut: { enabled: true, graceMinutes: 45 },
+				breakDue: { enabled: true, leadMinutes: 20 },
 				roles: ["employee"],
 			},
 			{ database: fixture.db, clock },
@@ -43,6 +45,7 @@ describe("clocking reminder settings on PostgreSQL", () => {
 		expect(saved).toEqual({
 			missedClockIn: { enabled: true, graceMinutes: 5 },
 			forgottenClockOut: { enabled: true, graceMinutes: 45 },
+			breakDue: { enabled: true, leadMinutes: 20 },
 			roles: ["employee"],
 			revision: 1,
 		});
@@ -54,6 +57,7 @@ describe("clocking reminder settings on PostgreSQL", () => {
 				organizationId: first,
 				missedClockIn: { enabled: false, graceMinutes: 5 },
 				forgottenClockOut: { enabled: true, graceMinutes: 45 },
+				breakDue: { enabled: false, leadMinutes: 20 },
 				roles: ["admin", "manager"],
 			},
 			{ database: fixture.db, clock },

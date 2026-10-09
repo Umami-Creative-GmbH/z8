@@ -65,6 +65,8 @@ export const NOTIFICATION_TYPES = [
 	// Clocking reminders to the employee about their own clocking (#827)
 	"missed_clock_in_reminder",
 	"forgotten_clock_out_reminder",
+	// Break-due reminder before live work breaks the policy's break rules (#833)
+	"break_due_reminder",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -83,6 +85,7 @@ const IN_APP_ONLY_BY_DEFAULT: ReadonlySet<NotificationType> = new Set([
 const IN_APP_AND_PUSH_BY_DEFAULT: ReadonlySet<NotificationType> = new Set([
 	"missed_clock_in_reminder",
 	"forgotten_clock_out_reminder",
+	"break_due_reminder",
 ]);
 
 /** Whether a channel is on for a type the user stored no preference for. */

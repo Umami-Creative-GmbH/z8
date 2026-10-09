@@ -1002,6 +1002,13 @@
       "when": 1796572800000,
       "tag": "0142_clocking_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 144,
+      "version": "7",
+      "when": 1796745600000,
+      "tag": "0144_break_due_reminder",
+      "breakpoints": true
     }
   ]
 }

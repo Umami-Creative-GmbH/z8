@@ -146,6 +146,7 @@ const NOTIFICATION_CATEGORIES = [
 			"vacation_balance_alert",
 			"missed_clock_in_reminder",
 			"forgotten_clock_out_reminder",
+			"break_due_reminder",
 		] as NotificationType[],
 	},
 	{
@@ -230,6 +231,7 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 	// Clocking reminders
 	missed_clock_in_reminder: "Missed clock-in",
 	forgotten_clock_out_reminder: "Forgotten clock-out",
+	break_due_reminder: "Break due",
 };
 
 // Type labels with static keys, so the Tolgee extractor registers them with their defaults.
@@ -241,6 +243,10 @@ const EXTRACTED_TYPE_LABELS: Partial<Record<NotificationType, { key: string; fal
 	forgotten_clock_out_reminder: {
 		key: "common:notifications.preferences.types.forgotten_clock_out_reminder",
 		fallback: "Forgotten clock-out",
+	},
+	break_due_reminder: {
+		key: "common:notifications.preferences.types.break_due_reminder",
+		fallback: "Break due",
 	},
 };
 

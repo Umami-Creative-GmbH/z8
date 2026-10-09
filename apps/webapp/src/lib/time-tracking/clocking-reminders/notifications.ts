@@ -17,6 +17,13 @@ const reminderCopy = {
 		messageDefault:
 			"Your shift ended at {endTime} ({timezone}). Clock out if you have finished working.",
 	},
+	break_due_reminder: {
+		titleKey: "common:notifications.content.breakDueReminder.title",
+		titleDefault: "Time for a break soon",
+		messageKey: "common:notifications.content.breakDueReminder.message",
+		messageDefault:
+			"Your break is due at {breakTime} ({timezone}). Take a break by then to follow your work policy's break rules.",
+	},
 } as const satisfies Record<ClockingReminderType, Record<string, string>>;
 
 function formatTime(instant: Instant, locale: string, timezone: string): string {
@@ -25,7 +32,7 @@ function formatTime(instant: Instant, locale: string, timezone: string): string 
 
 /**
  * The reminder as the employee receives it: English text plus the i18n keys and parameters, with
- * shift times shown in the employee's own timezone and locale.
+ * shift and break times shown in the employee's own timezone and locale.
  */
 export function buildClockingReminderNotification(input: {
 	reminder: DueClockingReminder;
@@ -40,6 +47,9 @@ export function buildClockingReminderNotification(input: {
 	if (reminder.shift) {
 		params.startTime = formatTime(reminder.shift.start, locale, timezone);
 		params.endTime = formatTime(reminder.shift.end, locale, timezone);
+	}
+	if (reminder.type === "break_due_reminder") {
+		params.breakTime = formatTime(reminder.expectedAt, locale, timezone);
 	}
 	const render = (template: string) =>
 		template.replace(/\{(\w+)\}/g, (match, name: string) => params[name] ?? match);

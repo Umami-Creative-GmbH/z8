@@ -101,6 +101,7 @@ describe("clocking reminders for published shifts on PostgreSQL", () => {
 				organizationId,
 				missedClockIn: { enabled: options.missed ?? true, graceMinutes: 15 },
 				forgottenClockOut: { enabled: options.forgotten ?? true, graceMinutes: 30 },
+				breakDue: { enabled: false, leadMinutes: 15 },
 				roles: options.roles ?? ["admin", "manager", "employee"],
 			},
 			{ database: fixture.db, clock: { nowInstant: () => at("2026-04-01T00:00:00Z") } },
