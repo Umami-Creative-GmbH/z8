@@ -1030,6 +1030,13 @@
       "when": 1796918400000,
       "tag": "0146_accounting_connection",
       "breakpoints": true
+    },
+    {
+      "idx": 147,
+      "version": "7",
+      "when": 1797004800000,
+      "tag": "0147_clockodo_project_mapping",
+      "breakpoints": true
     }
   ]
 }

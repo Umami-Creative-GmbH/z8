@@ -8,6 +8,7 @@ import { render } from "@/test/render-with-translations";
 const mockState = vi.hoisted(() => ({
 	callOrder: [] as string[],
 	findBatch: vi.fn(),
+	getBillableTimeSettings: vi.fn(),
 	getImportReviewSummary: vi.fn(),
 	listImportReviewRows: vi.fn(),
 	notFound: vi.fn(() => {
@@ -52,6 +53,10 @@ vi.mock("@/lib/auth-helpers", () => ({
 	requireOrgAdminSettingsAccess: mockState.requireOrgAdminSettingsAccess,
 }));
 
+vi.mock("@/lib/billable-time/settings", () => ({
+	getBillableTimeSettings: mockState.getBillableTimeSettings,
+}));
+
 vi.mock("@/lib/import-review/repository", () => ({
 	getImportReviewSummary: mockState.getImportReviewSummary,
 	listImportReviewRows: mockState.listImportReviewRows,
@@ -88,6 +93,7 @@ describe("ImportReviewRoute", () => {
 		});
 		mockState.getImportReviewSummary.mockResolvedValue({ total: 1 });
 		mockState.listImportReviewRows.mockResolvedValue([{ id: "row-1" }]);
+		mockState.getBillableTimeSettings.mockResolvedValue({ enabled: false, currency: null });
 	});
 
 	it("renders the import review shell while params remain unresolved", () => {
@@ -125,8 +131,35 @@ describe("ImportReviewRoute", () => {
 			batchId: "batch-1",
 			organizationId: "org-1",
 			summary: { total: 1 },
-			rows: [{ id: "row-1" }],
+			rows: [{ id: "row-1", billability: null }],
+			showBillability: false,
 		});
+		expect(mockState.getBillableTimeSettings).toHaveBeenCalledWith("org-1");
+	});
+
+	it("shows staged work rows' billability while Billable Time is on (#907)", async () => {
+		mockState.getBillableTimeSettings.mockResolvedValue({ enabled: true, currency: "EUR" });
+		mockState.listImportReviewRows.mockResolvedValue([
+			{
+				id: "row-1",
+				entityType: "work_period",
+				normalizedPayload: {
+					billability: { providerValue: 1, billable: false, note: "no_customer" },
+				},
+			},
+			{ id: "row-2", entityType: "work_period", normalizedPayload: {} },
+			{ id: "row-3", entityType: "team", normalizedPayload: {} },
+		]);
+
+		const reviewPage = await renderRequestContent("batch-1");
+
+		const props = reviewPage.props.children.props.children.props;
+		expect(props.showBillability).toBe(true);
+		expect(props.rows.map((row: { billability: unknown }) => row.billability)).toEqual([
+			{ providerValue: 1, billable: false, note: "no_customer" },
+			{ providerValue: null, billable: false, note: "no_billable_value" },
+			null,
+		]);
 	});
 
 	it("hides another organization's batch", async () => {
