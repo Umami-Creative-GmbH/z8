@@ -2,6 +2,7 @@ import {
 	DOCUMENT_CATEGORIES,
 	type DocumentCategory,
 	type DocumentVisibility,
+	EMPLOYEE_UPLOAD_CATEGORIES,
 } from "./document.types";
 
 /**
@@ -15,7 +16,8 @@ import {
  *   category; a personnel file officer grant (#866, `officer-grant.ts`) adds
  *   a scoped one.
  *   Whoever holds a grant sees shared and HR-only documents in it.
- * - The **employee** sees their own shared documents and manages none.
+ * - The **employee** sees their own shared documents and manages none. They
+ *   may upload certificates and other documents into their own file (#867).
  *
  * Managers, payroll access and expense officer grants confer nothing.
  */
@@ -82,6 +84,19 @@ export function canManageDocument(
 
 export function isOwnDocument(access: PersonnelFileAccess, employeeId: string): boolean {
 	return access.selfEmployeeId !== null && access.selfEmployeeId === employeeId;
+}
+
+/**
+ * Whether the actor may upload a document of the category into the employee's
+ * file as that employee (#867): only into their own file, and only the
+ * categories in `EMPLOYEE_UPLOAD_CATEGORIES`. Such documents are always shared.
+ */
+export function canUploadOwnDocument(
+	access: PersonnelFileAccess,
+	employeeId: string,
+	category: DocumentCategory,
+): boolean {
+	return isOwnDocument(access, employeeId) && EMPLOYEE_UPLOAD_CATEGORIES.includes(category);
 }
 
 export function canViewDocument(

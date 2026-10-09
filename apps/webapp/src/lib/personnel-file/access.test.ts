@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	canManageDocument,
+	canUploadOwnDocument,
 	canViewDocument,
 	isOwnDocument,
 	managedCategoriesFor,
@@ -77,6 +78,16 @@ describe("personnel file access", () => {
 		expect(
 			canViewDocument(scoped, { employee: ben, category: "certificate", visibility: "hr_only" }),
 		).toBe(true);
+	});
+
+	it("lets an employee upload only certificates and other documents into their own file", () => {
+		expect(canUploadOwnDocument(employeeAnna, "anna", "certificate")).toBe(true);
+		expect(canUploadOwnDocument(employeeAnna, "anna", "other")).toBe(true);
+		for (const category of ["contract", "payslip", "sick_note"] as const) {
+			expect(canUploadOwnDocument(employeeAnna, "anna", category)).toBe(false);
+		}
+		expect(canUploadOwnDocument(employeeAnna, "ben", "certificate")).toBe(false);
+		expect(canUploadOwnDocument(access(), "anna", "certificate")).toBe(false);
 	});
 
 	it("tells an employee's own documents apart, so their views go unaudited", () => {
