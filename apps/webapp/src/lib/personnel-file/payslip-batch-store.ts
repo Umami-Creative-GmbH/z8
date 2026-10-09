@@ -321,7 +321,12 @@ export async function reservePayslipBatchFile(
 			createdAt: at,
 			updatedAt: at,
 		});
-		await tx.update(payslipBatch).set({ updatedAt: at }).where(eq(payslipBatch.id, batch.id));
+		await tx
+			.update(payslipBatch)
+			.set({ updatedAt: at })
+			.where(
+				and(eq(payslipBatch.id, batch.id), eq(payslipBatch.organizationId, access.organizationId)),
+			);
 		return { kind: "reserved" };
 	});
 }
