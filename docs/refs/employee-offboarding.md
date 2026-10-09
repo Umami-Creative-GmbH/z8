@@ -155,7 +155,11 @@ of employment (in the organization's timezone) and the year of its document
 date. Once the category's retention period has passed, the document is listed
 as *due for deletion* and is purged only when a personnel file officer confirms.
 The open period a rehire creates stops the clock: none of the employee's
-documents is due while they are employed again.
+documents is due while they are employed again. A former employee whose
+employment end was never recorded (no employment period, or only a legacy
+period without an end) has no retention start: their documents are listed
+separately as *retention start unknown*, never counted by the daily reminder,
+and purged only when an officer reviews and confirms them.
 
 ## Billing reconciliation
 

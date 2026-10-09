@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, exists, inArray, notExists, type SQL } from "drizzle-orm";
+import { and, asc, eq, exists, inArray, notExists, or, type SQL } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import type { db as appDb } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -148,8 +148,8 @@ export async function saveRetentionPeriods(
 	});
 }
 
-/** An employee document that is due for deletion. */
-export interface DueDocument {
+/** An employee document whose retention start cannot be computed (decision B). */
+export interface RetentionUnknownDocument {
 	id: string;
 	employeeId: string;
 	employeeName: string;
@@ -158,22 +158,36 @@ export interface DueDocument {
 	title: string;
 	documentDate: string;
 	payPeriod: PayPeriod | null;
+	retentionYears: number;
+}
+
+/** An employee document that is due for deletion. */
+export interface DueDocument extends RetentionUnknownDocument {
 	/** YYYY-MM-DD */
 	retentionStart: string;
 	/** YYYY-MM-DD: the day it became due. */
 	dueOn: string;
-	retentionYears: number;
 }
 
 export interface DueDocumentsResult {
 	/** The organization's calendar day the list was evaluated for. */
 	today: string;
 	documents: DueDocument[];
+	/**
+	 * Documents of former employees whose employment end is unknown (no
+	 * employment period, or a legacy period without an end): their retention
+	 * start cannot be computed, so they are never due on their own. An officer
+	 * reviews them and may purge them by hand (decision B); the daily reminder
+	 * never counts them.
+	 */
+	unknownStart: RetentionUnknownDocument[];
 }
 
 /**
  * The due documents of one organization matching `condition` (a condition on
- * `employee_document`), evaluated for the organization's current day.
+ * `employee_document`), evaluated for the organization's current day, and
+ * the documents whose retention start is unknown. Only categories with a
+ * retention period count.
  */
 export async function findDueDocuments(
 	database: Reader,
@@ -184,8 +198,9 @@ export async function findDueDocuments(
 		loadOrganizationDay(database, { organizationId: input.organizationId, now }),
 		loadRetentionPeriods(database, input.organizationId),
 	]);
+	const empty: DueDocumentsResult = { today: today.toString(), documents: [], unknownStart: [] };
 	const categories = DOCUMENT_CATEGORIES.filter((category) => periods[category] !== undefined);
-	if (categories.length === 0) return { today: today.toString(), documents: [] };
+	if (categories.length === 0) return empty;
 
 	const periodOf = (status: "open" | "legacy_unknown" | "closed") =>
 		database
@@ -209,6 +224,7 @@ export async function findDueDocuments(
 			payPeriodMonth: employeeDocument.payPeriodMonth,
 			userName: user.name,
 			employeeNumber: employee.employeeNumber,
+			employeeIsActive: employee.isActive,
 		})
 		.from(employeeDocument)
 		.innerJoin(
@@ -224,14 +240,17 @@ export async function findDueDocuments(
 				eq(employeeDocument.organizationId, input.organizationId),
 				inArray(employeeDocument.category, categories),
 				input.condition,
-				// Candidates only: an ended employment and no open (or unknown) one.
-				exists(periodOf("closed")),
+				// Candidates only: no open employment, and either a known end (an
+				// ended employment and no unknown one) or a former employee.
 				notExists(periodOf("open")),
-				notExists(periodOf("legacy_unknown")),
+				or(
+					and(exists(periodOf("closed")), notExists(periodOf("legacy_unknown"))),
+					eq(employee.isActive, false),
+				),
 			),
 		)
 		.orderBy(asc(user.name), asc(employeeDocument.documentDate), asc(employeeDocument.id));
-	if (rows.length === 0) return { today: today.toString(), documents: [] };
+	if (rows.length === 0) return empty;
 
 	const employeeIds = [...new Set(rows.map((row) => row.employeeId))];
 	const periodRows = await database
@@ -254,20 +273,12 @@ export async function findDueDocuments(
 		periodsByEmployee.set(row.employeeId, list);
 	}
 
-	const documents: DueDocument[] = [];
+	const result = empty;
 	for (const row of rows) {
 		const retentionYears = periods[row.category];
 		if (retentionYears === undefined) continue;
-		const input = {
-			periods: periodsByEmployee.get(row.employeeId) ?? [],
-			documentDate: row.documentDate,
-			timezone,
-			retentionYears,
-		};
-		const dueOn = retentionDueDate(input);
-		const start = retentionStart(input);
-		if (!dueOn || !start || Temporal.PlainDate.compare(today, dueOn) < 0) continue;
-		documents.push({
+		const employmentPeriods = periodsByEmployee.get(row.employeeId) ?? [];
+		const document: RetentionUnknownDocument = {
 			id: row.id,
 			employeeId: row.employeeId,
 			employeeName: row.userName?.trim() || row.employeeNumber || row.employeeId,
@@ -279,12 +290,31 @@ export async function findDueDocuments(
 				row.payPeriodYear !== null && row.payPeriodMonth !== null
 					? { year: row.payPeriodYear, month: row.payPeriodMonth }
 					: null,
-			retentionStart: start.toString(),
-			dueOn: dueOn.toString(),
 			retentionYears,
-		});
+		};
+		const retention = {
+			periods: employmentPeriods,
+			documentDate: row.documentDate,
+			timezone,
+			retentionYears,
+		};
+		const start = retentionStart(retention);
+		const dueOn = retentionDueDate(retention);
+		if (start && dueOn) {
+			if (Temporal.PlainDate.compare(today, dueOn) < 0) continue;
+			result.documents.push({
+				...document,
+				retentionStart: start.toString(),
+				dueOn: dueOn.toString(),
+			});
+		} else if (
+			!row.employeeIsActive &&
+			!employmentPeriods.some((period) => period.status === "open")
+		) {
+			result.unknownStart.push(document);
+		}
 	}
-	return { today: today.toString(), documents };
+	return result;
 }
 
 /** The due-for-deletion list of the actor's scope and categories. */
@@ -318,7 +348,8 @@ export interface PurgeResult {
 export const PURGE_REASON_MAX_LENGTH = 1000;
 
 /**
- * Purges the confirmed documents that are still due for deletion and in the
+ * Purges the confirmed documents that are still due for deletion, or whose
+ * retention start is unknown (decision B: reviewed by hand), and in the
  * actor's scope and categories, each with an audit record that survives it
  * (actor, employee, category, document date, pay period, reason; no title or
  * file). The deletion trigger hands each stored object to the cleanup ledger
@@ -359,7 +390,7 @@ export async function purgeDueDocuments(
 			)
 			.orderBy(asc(employee.id))
 			.for("share");
-		const { documents } = await findDueDocuments(tx, {
+		const { documents, unknownStart } = await findDueDocuments(tx, {
 			organizationId: access.organizationId,
 			condition: and(
 				managedDocumentsCondition(access),
@@ -370,7 +401,9 @@ export async function purgeDueDocuments(
 			),
 			now,
 		});
-		const due = new Map(documents.map((document) => [document.id, document]));
+		const due = new Map<string, DueDocument | RetentionUnknownDocument>(
+			[...documents, ...unknownStart].map((document) => [document.id, document]),
+		);
 		const purged: string[] = [];
 		for (const documentId of requested) {
 			const document = due.get(documentId);
@@ -405,12 +438,21 @@ export async function purgeDueDocuments(
 					documentDate: row.documentDate,
 					payPeriod: document.payPeriod,
 				},
-				metadata: {
-					reason,
-					retentionStart: document.retentionStart,
-					dueOn: document.dueOn,
-					retentionYears: document.retentionYears,
-				},
+				metadata:
+					"dueOn" in document
+						? {
+								reason,
+								retentionStart: document.retentionStart,
+								dueOn: document.dueOn,
+								retentionYears: document.retentionYears,
+							}
+						: {
+								reason,
+								retentionStartUnknown: true,
+								retentionStart: null,
+								dueOn: null,
+								retentionYears: document.retentionYears,
+							},
 			});
 			purged.push(documentId);
 		}

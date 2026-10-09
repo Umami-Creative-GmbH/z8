@@ -10,6 +10,7 @@ import {
 	type DueDocument,
 	getDueForDeletionAction,
 	purgeDueDocumentsAction,
+	type RetentionUnknownDocument,
 } from "@/app/[locale]/(app)/personnel-files/retention-actions";
 import { useAppLocale } from "@/components/providers/app-locale-provider";
 import {
@@ -149,7 +150,7 @@ function DueDocumentRow({
 	selected,
 	onSelectedChange,
 }: {
-	document: DueDocument;
+	document: DueDocument | RetentionUnknownDocument;
 	selected: boolean;
 	onSelectedChange: (selected: boolean) => void;
 }) {
@@ -178,9 +179,11 @@ function DueDocumentRow({
 							})
 						: formatDateOnly(document.documentDate, locale)}
 					{" · "}
-					{t("settings.personnelFiles.due.dueSince", "Due since {date}", {
-						date: formatDateOnly(document.dueOn, locale),
-					})}
+					{"dueOn" in document
+						? t("settings.personnelFiles.due.dueSince", "Due since {date}", {
+								date: formatDateOnly(document.dueOn, locale),
+							})
+						: t("settings.personnelFiles.due.unknownStartRow", "Employment end unknown")}
 				</span>
 			</label>
 			<Button asChild variant="ghost" size="icon">
@@ -234,7 +237,8 @@ export function DueForDeletionList() {
 			</div>
 		);
 	}
-	if (data.documents.length === 0) {
+	const unknownStart = data.unknownStart ?? [];
+	if (data.documents.length === 0 && unknownStart.length === 0) {
 		return (
 			<p className="text-sm text-muted-foreground">
 				{t("settings.personnelFiles.due.empty", "No documents in your scope are due for deletion.")}
@@ -242,10 +246,11 @@ export function DueForDeletionList() {
 		);
 	}
 
-	const selectedIds = data.documents
+	const selectedIds = [...data.documents, ...unknownStart]
 		.map((document) => document.id)
 		.filter((id) => selected.has(id));
-	const allSelected = selectedIds.length === data.documents.length;
+	const selectedDue = data.documents.filter((document) => selected.has(document.id)).length;
+	const allDueSelected = data.documents.length > 0 && selectedDue === data.documents.length;
 	const toggle = (id: string, checked: boolean) => {
 		const next = new Set(selected);
 		if (checked) next.add(id);
@@ -257,20 +262,27 @@ export function DueForDeletionList() {
 		<div className="flex flex-col gap-3">
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<div className="flex items-center gap-2">
-					<Checkbox
-						id="due-select-all"
-						checked={allSelected ? true : selectedIds.length > 0 ? "indeterminate" : false}
-						onCheckedChange={(checked) =>
-							setSelected(
-								checked === true
-									? new Set(data.documents.map((document) => document.id))
-									: new Set(),
-							)
-						}
-					/>
-					<label htmlFor="due-select-all" className="text-sm">
-						{t("settings.personnelFiles.due.selectAll", "Select all")}
-					</label>
+					{data.documents.length > 0 ? (
+						<>
+							<Checkbox
+								id="due-select-all"
+								checked={allDueSelected ? true : selectedDue > 0 ? "indeterminate" : false}
+								onCheckedChange={(checked) => {
+									// Select all covers the due documents only; documents with an
+									// unknown retention start are reviewed one by one.
+									const next = new Set(selected);
+									for (const document of data.documents) {
+										if (checked === true) next.add(document.id);
+										else next.delete(document.id);
+									}
+									setSelected(next);
+								}}
+							/>
+							<label htmlFor="due-select-all" className="text-sm">
+								{t("settings.personnelFiles.due.selectAll", "Select all")}
+							</label>
+						</>
+					) : null}
 				</div>
 				<Button
 					type="button"
@@ -286,16 +298,48 @@ export function DueForDeletionList() {
 					)}
 				</Button>
 			</div>
-			<ul className="divide-y rounded-md border">
-				{data.documents.map((document) => (
-					<DueDocumentRow
-						key={document.id}
-						document={document}
-						selected={selected.has(document.id)}
-						onSelectedChange={(checked) => toggle(document.id, checked)}
-					/>
-				))}
-			</ul>
+			{data.documents.length > 0 ? (
+				<ul className="divide-y rounded-md border">
+					{data.documents.map((document) => (
+						<DueDocumentRow
+							key={document.id}
+							document={document}
+							selected={selected.has(document.id)}
+							onSelectedChange={(checked) => toggle(document.id, checked)}
+						/>
+					))}
+				</ul>
+			) : (
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.personnelFiles.due.empty",
+						"No documents in your scope are due for deletion.",
+					)}
+				</p>
+			)}
+			{unknownStart.length > 0 ? (
+				<section aria-labelledby="due-unknown-start" className="flex flex-col gap-2 pt-3">
+					<h2 id="due-unknown-start" className="text-base font-semibold">
+						{t("settings.personnelFiles.due.unknownTitle", "Retention start unknown")}
+					</h2>
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"settings.personnelFiles.due.unknownDescription",
+							"These former employees left before employment periods were recorded, so their retention period cannot be calculated and these documents never become due on their own. Review them and purge the ones you no longer need to keep.",
+						)}
+					</p>
+					<ul className="divide-y rounded-md border">
+						{unknownStart.map((document) => (
+							<DueDocumentRow
+								key={document.id}
+								document={document}
+								selected={selected.has(document.id)}
+								onSelectedChange={(checked) => toggle(document.id, checked)}
+							/>
+						))}
+					</ul>
+				</section>
+			) : null}
 			<PurgeDialog
 				documentIds={selectedIds}
 				open={isConfirming}

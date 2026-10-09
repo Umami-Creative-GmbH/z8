@@ -26,6 +26,7 @@ export type {
 	DueDocument,
 	DueDocumentsResult,
 	PurgeResult,
+	RetentionUnknownDocument,
 } from "@/lib/personnel-file/retention-store";
 
 const NOT_FOUND = "Personnel files not found";

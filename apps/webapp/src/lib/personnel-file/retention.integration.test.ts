@@ -84,7 +84,8 @@ const settingsActions = await import(
 	"@/app/[locale]/(app)/settings/personnel-files/retention-actions"
 );
 const { resolvePersonnelFileAccess } = await import("./access-store");
-const { listDueDocuments, purgeDueDocuments, loadRetentionPeriods } = await import(
+const { listDueDocuments, listDueDocumentsWithDay, purgeDueDocuments, loadRetentionPeriods } =
+	await import(
 	"./retention-store"
 );
 const { runPersonnelFileRetentionReminders } = await import("./retention-reminders");
@@ -100,10 +101,13 @@ const ids = {
 	ben: "e8700000-0000-4000-8000-000000000004",
 	carla: "e8700000-0000-4000-8000-000000000005",
 	dora: "e8700000-0000-4000-8000-000000000006",
+	eva: "e8700000-0000-4000-8000-000000000007",
+	finn: "e8700000-0000-4000-8000-000000000008",
+	gina: "e8700000-0000-4000-8000-000000000009",
 	berlin: "e8701000-0000-4000-8000-000000000001",
 	munich: "e8701000-0000-4000-8000-000000000002",
 } as const;
-type Person = "owner" | "officer" | "anna" | "ben" | "carla" | "dora";
+type Person = "owner" | "officer" | "anna" | "ben" | "carla" | "dora" | "eva" | "finn" | "gina";
 const userOf = (person: Person) => `t870-${person}`;
 
 const admin = integrationAdminPool();
@@ -252,6 +256,19 @@ async function seed() {
 	await departed("ben", "2020-01-01", "2027-06-30");
 	await employed("carla", "2015-01-01");
 	await departed("dora", "2010-01-01", "2019-03-31");
+	// Former employees whose employment end is unknown (decision B): a legacy
+	// period without an end, or no period at all. Gina is current, without a period.
+	await seedPerson("eva", "member", ids.berlin);
+	await seedPerson("finn", "member", ids.munich);
+	await seedPerson("gina", "member", ids.munich);
+	await admin.query(
+		`insert into employee_employment_period (organization_id, employee_id, status, start_provenance)
+		 values ($1, $2, 'legacy_unknown', 'unknown')`,
+		[ORG, ids.eva],
+	);
+	await admin.query("update employee set is_active = false where id = any($1::uuid[])", [
+		[ids.eva, ids.finn],
+	]);
 
 	docs.anna2026 = await seedDocument("anna", {
 		category: "payslip",
@@ -302,6 +319,26 @@ async function seed() {
 		category: "payslip",
 		title: "Payslip 2018-12 Dora",
 		documentDate: "2018-12-31",
+	});
+	docs.eva2015 = await seedDocument("eva", {
+		category: "payslip",
+		title: "Payslip 2015-03 Eva",
+		documentDate: "2015-03-31",
+	});
+	docs.finn2016 = await seedDocument("finn", {
+		category: "payslip",
+		title: "Payslip 2016-01",
+		documentDate: "2016-01-31",
+	});
+	docs.finnContract = await seedDocument("finn", {
+		category: "contract",
+		title: "Contract",
+		documentDate: "2016-01-01",
+	});
+	docs.gina2010 = await seedDocument("gina", {
+		category: "payslip",
+		title: "Payslip 2010-01",
+		documentDate: "2010-01-31",
 	});
 	await setPeriods({ payslip: 6, sick_note: 2, contract: null });
 	harness.notifications.length = 0;
@@ -595,5 +632,90 @@ describe("daily reminder", () => {
 		expect(harness.notifications.map((notification) => notification.userId)).toEqual([
 			userOf("owner"),
 		]);
+	});
+});
+
+describe("retention start unknown (decision B)", () => {
+	const now = berlin("2034-01-06T12:00");
+
+	it("is never part of the daily reminder", async () => {
+		harness.notifications.length = 0;
+		await runPersonnelFileRetentionReminders(db, { now, organizationIds: [ORG] });
+		expect(harness.notifications).toEqual([]);
+	});
+
+	it("lists former employees without a known employment end in a separate section, in scope", async () => {
+		const owner = await listDueDocumentsWithDay(db, await accessOf("owner", now), now);
+		const unknownIds = [docs.eva2015, docs.finn2016, docs.finnContract];
+		for (const id of [...unknownIds, docs.gina2010]) {
+			expect(owner.documents.map((document) => document.id)).not.toContain(id);
+		}
+		// Gina is a current employee: never listed.
+		expect(owner.unknownStart.map((document) => document.id).toSorted()).toEqual(
+			unknownIds.toSorted(),
+		);
+		expect(owner.unknownStart.find((document) => document.id === docs.eva2015)).toMatchObject({
+			employeeId: ids.eva,
+			category: "payslip",
+			documentDate: "2015-03-31",
+			retentionYears: 6,
+		});
+
+		// The officer (payslips, Berlin) sees only Eva's payslip.
+		const officer = await listDueDocumentsWithDay(db, await accessOf("officer", now), now);
+		expect(officer.unknownStart.map((document) => document.id)).toEqual([docs.eva2015]);
+
+		// A category without a retention period is never listed.
+		await setPeriods({ contract: null });
+		try {
+			const withoutContracts = await listDueDocumentsWithDay(db, await accessOf("owner", now), now);
+			expect(withoutContracts.unknownStart.map((document) => document.id)).not.toContain(
+				docs.finnContract,
+			);
+		} finally {
+			await setPeriods({ contract: 1 });
+		}
+	});
+
+	it("is purged only by a confirmed purge in scope, with an audit record", async () => {
+		signIn("officer");
+		const outOfScope = await retentionActions.purgeDueDocumentsAction({
+			documentIds: [docs.finn2016],
+			reason: null,
+		});
+		expect(outOfScope).toEqual({ success: true, data: { purged: [], skipped: [docs.finn2016] } });
+
+		const key = `personnel-files/${ORG}/${ids.eva}/${docs.eva2015}-document.pdf`;
+		expect(harness.objects.has(key)).toBe(true);
+		const result = await retentionActions.purgeDueDocumentsAction({
+			documentIds: [docs.eva2015],
+			reason: "Legacy employee, left in 2015",
+		});
+		expect(result).toEqual({ success: true, data: { purged: [docs.eva2015], skipped: [] } });
+		expect(harness.objects.has(key)).toBe(false);
+
+		const { rows: audit } = await admin.query(
+			`select performed_by, employee_id, metadata from audit_log
+			 where organization_id = $1 and entity_id = $2 and action = 'personnel_file.document_purged'`,
+			[ORG, docs.eva2015],
+		);
+		expect(audit).toHaveLength(1);
+		expect(audit[0].performed_by).toBe(userOf("officer"));
+		expect(audit[0].employee_id).toBe(ids.eva);
+		expect(JSON.parse(audit[0].metadata)).toMatchObject({
+			reason: "Legacy employee, left in 2015",
+			retentionStartUnknown: true,
+			retentionStart: null,
+			dueOn: null,
+			retentionYears: 6,
+		});
+
+		// A current employee's documents are never purged this way.
+		signIn("owner");
+		const current = await retentionActions.purgeDueDocumentsAction({
+			documentIds: [docs.gina2010],
+			reason: null,
+		});
+		expect(current).toEqual({ success: true, data: { purged: [], skipped: [docs.gina2010] } });
 	});
 });

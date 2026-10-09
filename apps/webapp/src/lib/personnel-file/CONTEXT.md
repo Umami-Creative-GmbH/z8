@@ -69,7 +69,7 @@ How many years an organization keeps employee documents of one document category
 _Avoid_: storage period, archive period
 
 **Retention start**:
-The end of the later of two calendar years: the year the employee's last employment ended and the year of the document date. A current employee's documents have no retention start.
+The end of the later of two calendar years: the year the employee's last employment ended and the year of the document date. A current employee's documents have no retention start, and neither do those of a former employee whose employment end was never recorded: those are listed as "retention start unknown" and purged only after an officer reviews them.
 _Avoid_: retention date
 
 **Due for deletion**:
