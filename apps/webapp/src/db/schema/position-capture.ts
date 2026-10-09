@@ -7,6 +7,7 @@ import {
 	index,
 	integer,
 	pgTable,
+	primaryKey,
 	text,
 	timestamp,
 	unique,
@@ -267,6 +268,79 @@ export const positionStamp = pgTable(
 		check("position_stamp_purge_check", sql`${table.purgeAt} > ${table.capturedAt}`),
 		foreignKey({
 			name: "position_stamp_employee_fk",
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+	],
+);
+
+export const POSITION_STAMP_ACCESS_KINDS = ["work_period_detail", "data_export"] as const;
+export type PositionStampAccessKind = (typeof POSITION_STAMP_ACCESS_KINDS)[number];
+
+/**
+ * Position stamp access log (#831, spec #766, decision D4): one entry each time
+ * someone other than the employee is shown stamps, either on a work period's
+ * detail ("Show positions") or in an export containing stamps (#835). The
+ * employees covered are the entry's subjects. No position is stored here, so
+ * the stamp purge never touches the log.
+ *
+ * Entries are append-only: a trigger refuses every update except the
+ * `ON DELETE SET NULL` of a deleted viewer's user id.
+ */
+export const positionStampAccessLog = pgTable(
+	"position_stamp_access_log",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		/** Who was shown the stamps; null once that user is deleted. */
+		viewerUserId: text("viewer_user_id").references(() => user.id, { onDelete: "set null" }),
+		kind: text("kind").$type<PositionStampAccessKind>().notNull(),
+		/** The work periods shown, for `work_period_detail`. */
+		workPeriodIds: uuid("work_period_ids").array().default(sql`'{}'::uuid[]`).notNull(),
+		/** The export that contained stamps, for `data_export`. */
+		exportId: text("export_id"),
+		accessedAt: timestamp("accessed_at").notNull(),
+	},
+	(table) => [
+		unique("positionStampAccessLog_id_organizationId_idx").on(table.id, table.organizationId),
+		index("positionStampAccessLog_org_accessedAt_idx").on(table.organizationId, table.accessedAt),
+		index("positionStampAccessLog_viewerUserId_idx").on(table.viewerUserId),
+		check(
+			"position_stamp_access_log_kind_check",
+			sql`(${table.kind} = 'work_period_detail' and cardinality(${table.workPeriodIds}) >= 1 and ${table.exportId} is null)
+			or (${table.kind} = 'data_export' and ${table.exportId} is not null)`,
+		),
+	],
+);
+
+/** The employees whose stamps one access-log entry covers. */
+export const positionStampAccessLogSubject = pgTable(
+	"position_stamp_access_log_subject",
+	{
+		accessLogId: uuid("access_log_id").notNull(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").notNull(),
+	},
+	(table) => [
+		primaryKey({
+			name: "position_stamp_access_log_subject_pk",
+			columns: [table.accessLogId, table.employeeId],
+		}),
+		index("positionStampAccessLogSubject_org_employee_idx").on(
+			table.organizationId,
+			table.employeeId,
+		),
+		foreignKey({
+			name: "position_stamp_access_log_subject_log_fk",
+			columns: [table.accessLogId, table.organizationId],
+			foreignColumns: [positionStampAccessLog.id, positionStampAccessLog.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "position_stamp_access_log_subject_employee_fk",
 			columns: [table.employeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
 		}).onDelete("cascade"),
