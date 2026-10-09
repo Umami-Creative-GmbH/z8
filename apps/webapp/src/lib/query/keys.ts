@@ -331,6 +331,8 @@ export const queryKeys = {
 		teamSelection: (orgId: string) => ["projects", "teamSelection", orgId] as const,
 		employeeSelection: (orgId: string) => ["projects", "employeeSelection", orgId] as const,
 		tasks: (projectId: string) => ["projects", "tasks", projectId] as const,
+		templates: (orgId: string) => ["projects", "templates", orgId] as const,
+		templateDetail: (templateId: string) => ["projects", "templateDetail", templateId] as const,
 	},
 
 	// Surcharges

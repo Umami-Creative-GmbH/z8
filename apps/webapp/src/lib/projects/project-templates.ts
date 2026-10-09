@@ -184,7 +184,9 @@ export async function getProjectTemplate(
 				id: projectTemplateManager.id,
 				employeeId: projectTemplateManager.employeeId,
 				displayName: projectTemplateManager.displayName,
-				hasAccess: sql<boolean | null>`CASE WHEN ${employee.id} IS NULL THEN NULL ELSE ${employeeHasOrganizationAccess()} END`,
+				hasAccess: sql<
+					boolean | null
+				>`CASE WHEN ${employee.id} IS NULL THEN NULL ELSE ${employeeHasOrganizationAccess()} END`,
 				...liveUserColumns,
 			})
 			.from(projectTemplateManager)
@@ -210,7 +212,9 @@ export async function getProjectTemplate(
 				employeeId: projectTemplateAssignment.employeeId,
 				displayName: projectTemplateAssignment.displayName,
 				teamName: team.name,
-				hasAccess: sql<boolean | null>`CASE WHEN ${employee.id} IS NULL THEN NULL ELSE ${employeeHasOrganizationAccess()} END`,
+				hasAccess: sql<
+					boolean | null
+				>`CASE WHEN ${employee.id} IS NULL THEN NULL ELSE ${employeeHasOrganizationAccess()} END`,
 				...liveUserColumns,
 			})
 			.from(projectTemplateAssignment)
@@ -246,26 +250,25 @@ export async function getProjectTemplate(
 		}))
 		.sort(byName);
 	const assignments: ProjectTemplateAssignment[] = assignmentRows
-		.map((row) =>
-			row.type === "team"
-				? {
-						id: row.id,
-						type: row.type,
-						teamId: row.teamId,
-						employeeId: null,
-						name: row.teamName ?? row.displayName,
-						availability: (row.teamName === null
-							? "removed"
-							: "available") satisfies ProjectTemplateMemberAvailability,
-					}
-				: {
-						id: row.id,
-						type: row.type,
-						teamId: null,
-						employeeId: row.employeeId,
-						name: memberName(row.displayName, row),
-						availability: employeeAvailability(row),
-					},
+		.map(
+			(row): ProjectTemplateAssignment =>
+				row.type === "team"
+					? {
+							id: row.id,
+							type: row.type,
+							teamId: row.teamId,
+							employeeId: null,
+							name: row.teamName ?? row.displayName,
+							availability: row.teamName === null ? "removed" : "available",
+						}
+					: {
+							id: row.id,
+							type: row.type,
+							teamId: null,
+							employeeId: row.employeeId,
+							name: memberName(row.displayName, row),
+							availability: employeeAvailability(row),
+						},
 		)
 		.sort((a, b) => (a.type === b.type ? byName(a, b) : a.type === "team" ? -1 : 1));
 

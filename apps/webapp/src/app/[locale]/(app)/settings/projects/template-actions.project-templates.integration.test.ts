@@ -72,7 +72,9 @@ vi.mock("@/lib/logger", async (importOriginal) => {
 });
 
 const templates = await import("./template-actions");
-const { getProjectTemplate, listProjectTemplates } = await import("@/lib/projects/project-templates");
+const { getProjectTemplate, listProjectTemplates } = await import(
+	"@/lib/projects/project-templates"
+);
 const { listEligibleProjects } = await import("@/lib/time-tracking/project-eligibility");
 const { getProjects } = await import("./actions");
 
@@ -211,10 +213,7 @@ describe("project templates on PostgreSQL", () => {
 		color: "#3b82f6",
 		budgetHours: 120.555,
 		deadlineOffsetDays: 30,
-		tasks: [
-			{ name: "Design", description: "Wireframes", estimateHours: 12.5 },
-			{ name: "Build" },
-		],
+		tasks: [{ name: "Design", description: "Wireframes", estimateHours: 12.5 }, { name: "Build" }],
 		managerEmployeeIds: [ids.projectManager],
 		assignments: [
 			{ type: "team" as const, targetId: ids.team },
@@ -522,7 +521,13 @@ describe("project templates on PostgreSQL", () => {
 						templates.deleteProjectTemplate(id),
 					]),
 				);
-				expect(results.map((result) => result.success)).toEqual([false, false, false, false, false]);
+				expect(results.map((result) => result.success)).toEqual([
+					false,
+					false,
+					false,
+					false,
+					false,
+				]);
 			}
 			expect(await templateNames()).toEqual(["Website relaunch"]);
 			expect(audit.logAudit).not.toHaveBeenCalled();
@@ -571,10 +576,7 @@ describe("project templates on PostgreSQL", () => {
 					{ type: "team", targetId: ids.team },
 				],
 			});
-			await admin.query("update employee set team_id = $1 where id = $2", [
-				ids.team,
-				ids.employee,
-			]);
+			await admin.query("update employee set team_id = $1 where id = $2", [ids.team, ids.employee]);
 
 			const eligible = await listEligibleProjects({
 				employeeId: ids.employee,
