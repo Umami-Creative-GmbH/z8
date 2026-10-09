@@ -40,6 +40,7 @@ import {
 	type NotificationChannel,
 	type NotificationType,
 } from "@/lib/notifications/types";
+import type { ClockingReminderType } from "@/lib/time-tracking/clocking-reminders/occasion";
 import { PushPermissionModal } from "./push-permission-modal";
 
 // Group notification types by category for better UX
@@ -144,6 +145,9 @@ const NOTIFICATION_CATEGORIES = [
 		types: [
 			"birthday_reminder",
 			"vacation_balance_alert",
+			"missed_clock_in_reminder",
+			"forgotten_clock_out_reminder",
+			"break_due_reminder",
 		] as NotificationType[],
 	},
 	{
@@ -167,8 +171,9 @@ const NOTIFICATION_CATEGORIES = [
 	},
 ];
 
-// Human-readable labels for notification types
-const TYPE_LABELS: Record<NotificationType, string> = {
+// Human-readable labels for notification types. Clocking reminder labels are static `t()` calls in
+// `getTypeLabel`, so the Tolgee extractor registers them with their defaults.
+const TYPE_LABELS: Record<Exclude<NotificationType, ClockingReminderType>, string> = {
 	automatic_clock_out: "Automatic clock-out",
 	approval_request_submitted: "Request submitted",
 	approval_request_approved: "Request approved",
@@ -337,8 +342,24 @@ function useNotificationSettingsViewModel() {
 			`common:notifications.preferences.channels.${channel}.description`,
 			CHANNEL_CONFIG[channel].description,
 		);
-	const getTypeLabel = (type: NotificationType) =>
-		t(`common:notifications.preferences.types.${type}`, TYPE_LABELS[type]);
+	const getTypeLabel = (type: NotificationType) => {
+		switch (type) {
+			case "missed_clock_in_reminder":
+				return t(
+					"common:notifications.preferences.types.missed_clock_in_reminder",
+					"Missed clock-in",
+				);
+			case "forgotten_clock_out_reminder":
+				return t(
+					"common:notifications.preferences.types.forgotten_clock_out_reminder",
+					"Forgotten clock-out",
+				);
+			case "break_due_reminder":
+				return t("common:notifications.preferences.types.break_due_reminder", "Break due");
+			default:
+				return t(`common:notifications.preferences.types.${type}`, TYPE_LABELS[type]);
+		}
+	};
 
 	const [pendingToggle, setPendingToggle] = useState<string | null>(null);
 	const [showPermissionModal, setShowPermissionModal] = useState(false);

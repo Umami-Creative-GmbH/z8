@@ -114,5 +114,10 @@ export function comparePlainDates(left: PlainDate, right: PlainDate): number {
 }
 
 export function calendarYearAt(instant: Instant, timezone: string): number {
-	return instant.toZonedDateTimeISO(timezone).toPlainDate().year;
+	return plainDateAt(instant, timezone).year;
+}
+
+/** The local calendar date of `instant` in `timezone`. */
+export function plainDateAt(instant: Instant, timezone: string): PlainDate {
+	return instant.toZonedDateTimeISO(timezone).toPlainDate();
 }

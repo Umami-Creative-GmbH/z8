@@ -311,6 +311,17 @@ export const CRON_JOBS = {
 		defaultJobOptions: { attempts: 1, priority: 8 },
 	},
 
+	"cron:clocking-reminders": {
+		schedule: "*/5 * * * *",
+		description:
+			"Remind employees of a missed clock-in, a forgotten clock-out or a break that is about to be due",
+		processor: async () => {
+			const { runClockingReminders } = await import("@/lib/jobs/clocking-reminders");
+			return runClockingReminders();
+		},
+		defaultJobOptions: { attempts: 1, priority: 8 },
+	},
+
 	"cron:employee-departures": {
 		schedule: "* * * * *", // Every minute
 		description:
