@@ -35,6 +35,10 @@ _Avoid_: Hourly rate, wage, internal rate
 Completed work on a customer's project that is chargeable to that project's current customer. Work without a project, or on a project without a customer, is never billable.
 _Avoid_: Billable hours (for the work itself), chargeable time
 
+**Without customer**:
+Work marked billable on a project that has no customer, or whose customer was deleted. It has no revenue, reports show it apart, and it can't be handed off until the project has a customer again.
+_Avoid_: Orphaned work, unassigned billable work
+
 **Billable default**:
 A project's setting for whether new work on it starts as billable work. Changing it never changes existing work.
 _Avoid_: Billable flag (for the project setting)
