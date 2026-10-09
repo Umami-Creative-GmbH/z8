@@ -15,6 +15,8 @@ import {
 	createProjectFromTemplateRows,
 	type SkippedProjectMember,
 } from "@/lib/projects/project-from-template";
+import type { ProjectTemplate, ProjectTemplateSummary } from "@/lib/projects/project-template-model";
+import { getProjectTemplate, listProjectTemplates } from "@/lib/projects/project-templates";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
 import {
 	ensureSettingsActorCanUseProjectCustomer,
@@ -52,6 +54,54 @@ function keepTypedCreationError(error: DatabaseError) {
 	return isProjectNameConflict(error.cause)
 		? new ValidationError({ message: DUPLICATE_PROJECT_NAME, field: "name" })
 		: error;
+}
+
+/**
+ * The organization's templates, for anyone who may create projects. Managing
+ * them stays with org owners and admins (`./template-actions`).
+ */
+export async function getProjectTemplateChoices(): Promise<
+	ServerActionResult<ProjectTemplateSummary[]>
+> {
+	return runServerActionSafe(
+		tracedProjectAction(
+			"getProjectTemplateChoices",
+			{},
+			Effect.gen(function* () {
+				const actor = yield* getProjectSettingsActorContext({
+					queryName: "getProjectTemplateChoices:actor",
+				});
+				return yield* actor.dbService.query("listProjectTemplates", () =>
+					listProjectTemplates({ organizationId: actor.organizationId }),
+				);
+			}),
+		),
+	);
+}
+
+/**
+ * One template with what creating a project from it would copy, including
+ * which managers and assignments are no longer available.
+ */
+export async function getProjectTemplatePreview(
+	templateId: string,
+): Promise<ServerActionResult<ProjectTemplate>> {
+	return runServerActionSafe(
+		tracedProjectAction(
+			"getProjectTemplatePreview",
+			{ "template.id": templateId },
+			Effect.gen(function* () {
+				const actor = yield* getProjectSettingsActorContext({
+					queryName: "getProjectTemplatePreview:actor",
+				});
+				const template = yield* actor.dbService.query("getProjectTemplate", () =>
+					getProjectTemplate({ organizationId: actor.organizationId, templateId }),
+				);
+				if (!template) return yield* Effect.fail(templateNotFound(templateId));
+				return template;
+			}),
+		),
+	);
 }
 
 /**

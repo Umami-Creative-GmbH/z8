@@ -414,6 +414,54 @@ describe("project templates in use on PostgreSQL", () => {
 		});
 	});
 
+	describe("reading templates to create a project from", () => {
+		it("lets a manager-tier project creator list and preview the organization's templates", async () => {
+			const templateId = await createTemplate(relaunchTemplate);
+			await admin.query("update employee set is_active = false where id = $1", [ids.employee]);
+
+			const listed = await actAs(ids.projectManagerUser, () =>
+				fromTemplate.getProjectTemplateChoices(),
+			);
+			const preview = await actAs(ids.projectManagerUser, () =>
+				fromTemplate.getProjectTemplatePreview(templateId),
+			);
+
+			expect(listed).toMatchObject({
+				success: true,
+				data: [{ id: templateId, name: "Website relaunch", taskCount: 2, deadlineOffsetDays: 30 }],
+			});
+			expect(listed.success && listed.data).toHaveLength(1);
+			expect(preview).toMatchObject({
+				success: true,
+				data: {
+					id: templateId,
+					tasks: [{ name: "Build" }, { name: "Design" }],
+					assignments: [
+						{ type: "team", name: "Design team", availability: "available" },
+						{ type: "employee", name: "T880 Employee User", availability: "departed" },
+					],
+				},
+			});
+		});
+
+		it("refuses a plain employee and never shows another organization's template", async () => {
+			await createTemplate(relaunchTemplate);
+
+			const refused = await actAs(ids.employeeUser, () =>
+				Promise.all([
+					fromTemplate.getProjectTemplateChoices(),
+					fromTemplate.getProjectTemplatePreview(ids.otherTemplate),
+				]),
+			);
+			const foreign = await actAs(ids.ownerUser, () =>
+				fromTemplate.getProjectTemplatePreview(ids.otherTemplate),
+			);
+
+			expect(refused.map((result) => result.success)).toEqual([false, false]);
+			expect(foreign).toMatchObject({ success: false });
+		});
+	});
+
 	async function createTemplate(input: Parameters<typeof templates.createProjectTemplate>[0]) {
 		const result = await actAs(ids.ownerUser, () => templates.createProjectTemplate(input));
 		if (!result.success) throw new Error(`Template creation failed: ${result.error}`);
