@@ -52,7 +52,7 @@ export async function createSkill(
 		},
 		(span) => {
 			return Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "createSkill:actor" });
 				const { session } = actor;
 				const skillService = yield* SkillService;
 
@@ -125,7 +125,7 @@ export async function updateSkill(
 		},
 		(span) => {
 			return Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "updateSkill:actor" });
 				const { session } = actor;
 				const skillService = yield* SkillService;
 
@@ -182,7 +182,7 @@ export async function deleteSkill(skillId: string): Promise<ServerActionResult<v
 		},
 		(span) => {
 			return Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "deleteSkill:actor" });
 				const skillService = yield* SkillService;
 
 				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
@@ -225,7 +225,7 @@ export async function getOrganizationSkills(options?: {
 	includeInactive?: boolean;
 }): Promise<ServerActionResult<SkillWithRelations[]>> {
 	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext();
+		const actor = yield* getEmployeeSettingsActorContext({ queryName: "getOrganizationSkills:actor" });
 		const skillService = yield* SkillService;
 
 		const skills = yield* skillService.getOrganizationSkills(actor.organizationId, options);
@@ -259,7 +259,7 @@ export async function assignSkillToEmployee(
 		},
 		(span) => {
 			return Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "assignSkillToEmployee:actor" });
 				const { session } = actor;
 				const skillService = yield* SkillService;
 
@@ -345,7 +345,7 @@ export async function removeSkillFromEmployee(
 		},
 		(span) => {
 			return Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "removeSkillFromEmployee:actor" });
 				const skillService = yield* SkillService;
 
 				if (actor.accessTier !== "orgAdmin" && actor.accessTier !== "manager") {
@@ -407,7 +407,7 @@ export async function getEmployeeSkills(
 	employeeId: string,
 ): Promise<ServerActionResult<EmployeeSkillWithDetails[]>> {
 	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext();
+		const actor = yield* getEmployeeSettingsActorContext({ queryName: "getEmployeeSkills:actor" });
 		const skillService = yield* SkillService;
 
 		const targetEmployee = yield* getTargetEmployee(employeeId);
@@ -450,7 +450,7 @@ export async function setSubareaSkillRequirements(
 		},
 		(span) => {
 			return Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "setSubareaSkillRequirements:actor" });
 				const { session } = actor;
 				const skillService = yield* SkillService;
 
@@ -517,7 +517,7 @@ export async function setTemplateSkillRequirements(
 		},
 		(span) => {
 			return Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "setTemplateSkillRequirements:actor" });
 				const { session } = actor;
 				const skillService = yield* SkillService;
 
