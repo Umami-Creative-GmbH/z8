@@ -200,6 +200,11 @@ export const queryKeys = {
 		positionCapture: () => ["time-clock", "position-capture"] as const,
 	},
 
+	// Position stamps on a work period's detail (#831); never the positions themselves
+	positionStamps: {
+		viewerAccess: () => ["position-stamps", "viewer-access"] as const,
+	},
+
 	// Manual time entry form context (target zone and eligible choices)
 	manualEntry: {
 		all: ["manual-entry"] as const,
