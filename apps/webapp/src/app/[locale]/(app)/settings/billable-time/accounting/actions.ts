@@ -39,7 +39,6 @@ import {
 	taxTreatmentView,
 } from "@/lib/billable-time/accounting/views";
 import type { BillableCurrency } from "@/lib/billable-time/currency";
-import { getBillableTimeSettings } from "@/lib/billable-time/settings";
 import {
 	ConflictError,
 	ExternalServiceError,
@@ -55,6 +54,11 @@ import {
 } from "@/lib/import-review/accounting-customer-adapter";
 import { enqueueImportScanJob } from "@/lib/import-review/queue";
 import { activeOrganizationActor } from "../action-actor";
+import {
+	accountingProviderRefusalError,
+	billableTimeOff,
+	requireBillableTimeOn,
+} from "../module-guard";
 
 /**
  * Accounting connection, contact links and tax treatment (#903 pass A). Every
@@ -75,9 +79,6 @@ export interface AccountingSettings {
 const actor = (action: string) =>
 	activeOrganizationActor({ requiredRole: "admin", message: ADMIN_ONLY, action });
 
-const billableTimeOff = () =>
-	new ValidationError({ message: "Billable Time is switched off", field: "billableTimeEnabled" });
-
 /** A failure of the accounting tool or the secret store outside a mapped refusal. */
 const accountingServiceError = (operation: string, cause: unknown) =>
 	new ExternalServiceError({
@@ -87,11 +88,7 @@ const accountingServiceError = (operation: string, cause: unknown) =>
 		cause,
 	});
 
-const notConnected = () =>
-	new ValidationError({
-		message: "Connect an accounting tool first",
-		field: "accountingConnection",
-	});
+const notConnected = () => accountingProviderRefusalError("not_connected");
 
 const customerNotFound = () =>
 	new NotFoundError({ message: "The customer was not found", entityType: "customer" });
@@ -103,18 +100,8 @@ const invalidTaxTreatment = () =>
 		field: "taxTreatment",
 	});
 
-function requireModuleOn(organizationId: string) {
-	return Effect.gen(function* () {
-		const dbService = yield* DatabaseService;
-		const settings = yield* dbService.query("billableTime.accounting.settings", () =>
-			getBillableTimeSettings(organizationId, dbService.db),
-		);
-		if (!settings.enabled || settings.currency === null) {
-			return yield* Effect.fail(billableTimeOff());
-		}
-		return { currency: settings.currency };
-	});
-}
+const requireModuleOn = (organizationId: string) =>
+	requireBillableTimeOn(organizationId, "billableTime.accounting.settings");
 
 const customerIdOf = (input: unknown) =>
 	isCustomerId(input)
@@ -394,22 +381,10 @@ function providerRefusalError(
 		case "billable_time_off":
 			return billableTimeOff();
 		case "not_connected":
-			return notConnected();
 		case "provider_unavailable":
-			return new ValidationError({
-				message: "The connected accounting tool is not available in this installation",
-				field: "accountingConnection",
-			});
 		case "credentials_missing":
-			return new ValidationError({
-				message: "The API key of the accounting connection is missing. Replace the connection",
-				field: "accountingConnection",
-			});
 		case "credentials_refused":
-			return new ValidationError({
-				message: "The accounting tool refused the stored API key. Replace the connection",
-				field: "accountingConnection",
-			});
+			return accountingProviderRefusalError(refusal.reason);
 		case "tool_unreachable":
 			return new ValidationError({
 				message: `The accounting tool could not be reached: ${refusal.message}`,

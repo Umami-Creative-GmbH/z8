@@ -27,11 +27,16 @@ import type {
 	InvoiceDraftSummaryView,
 	InvoicedWorkView,
 } from "@/lib/billable-time/hand-off/views";
-import { getBillableTimeSettings } from "@/lib/billable-time/settings";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { activeOrganizationActor } from "../action-actor";
+import {
+	accountingProviderRefusalError,
+	accountingProviderRefusalMessage,
+	billableTimeOff,
+	requireBillableTimeOn,
+} from "../module-guard";
 
 /**
  * The hand-off (#903 pass B): preview, confirm (one invoice draft through the
@@ -46,23 +51,11 @@ const ADMIN_ONLY = "Only owners and admins can hand off billable work";
 const actor = (action: string) =>
 	activeOrganizationActor({ requiredRole: "admin", message: ADMIN_ONLY, action });
 
-const billableTimeOff = () =>
-	new ValidationError({ message: "Billable Time is switched off", field: "billableTimeEnabled" });
-
 const draftNotFound = () =>
 	new NotFoundError({ message: "The hand-off was not found", entityType: "invoice_draft" });
 
-function requireModuleOn(organizationId: string) {
-	return Effect.gen(function* () {
-		const dbService = yield* DatabaseService;
-		const settings = yield* dbService.query("billableTime.handOff.settings", () =>
-			getBillableTimeSettings(organizationId, dbService.db),
-		);
-		if (!settings.enabled || settings.currency === null) {
-			return yield* Effect.fail(billableTimeOff());
-		}
-	});
-}
+const requireModuleOn = (organizationId: string) =>
+	requireBillableTimeOn(organizationId, "billableTime.handOff.settings");
 
 function requestRefusalError(reason: HandOffRequestRefusal) {
 	switch (reason) {
@@ -85,11 +78,10 @@ function requestRefusalError(reason: HandOffRequestRefusal) {
 function blockerMessage(blocker: HandOffBlockerView): string {
 	switch (blocker.kind) {
 		case "billable_time_off":
-			return "Billable Time is switched off";
+			return billableTimeOff().message;
 		case "not_connected":
-			return "Connect an accounting tool first";
 		case "provider_unavailable":
-			return "The connected accounting tool is not available in this installation";
+			return accountingProviderRefusalMessage(blocker.kind);
 		case "no_contact_link":
 			return "Link this customer to a contact in the accounting tool first";
 		case "unpriced_work":
@@ -191,20 +183,9 @@ function outcomeError(outcome: Exclude<HandOffOutcome, { ok: true }>) {
 				conflictType: "hand_off_connection_changed",
 			});
 		case "not_connected":
-			return new ValidationError({
-				message: "Connect an accounting tool first",
-				field: "accountingConnection",
-			});
 		case "provider_unavailable":
-			return new ValidationError({
-				message: "The connected accounting tool is not available in this installation",
-				field: "accountingConnection",
-			});
 		case "credentials_missing":
-			return new ValidationError({
-				message: "The API key of the accounting connection is missing. Replace the connection",
-				field: "accountingConnection",
-			});
+			return accountingProviderRefusalError(outcome.reason);
 		case "outcome_unknown":
 			return new ConflictError({
 				message:
@@ -222,10 +203,7 @@ function outcomeError(outcome: Exclude<HandOffOutcome, { ok: true }>) {
 				field: "handOff",
 			});
 		case "credentials_refused":
-			return new ValidationError({
-				message: "The accounting tool refused the stored API key. Replace the connection",
-				field: "accountingConnection",
-			});
+			return accountingProviderRefusalError("credentials_refused");
 		case "not_pending":
 			return new ConflictError({
 				message: "This hand-off was already released or failed. Start a new one",
