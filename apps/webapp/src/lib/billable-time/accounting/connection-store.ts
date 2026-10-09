@@ -5,6 +5,7 @@ import type { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { accountingConnection, auditLog } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
 import { deleteOrgSecret, getOrgSecret, storeOrgSecret } from "@/lib/vault";
@@ -73,7 +74,7 @@ export interface ActiveAccountingConnection {
 	accountLabel: string | null;
 	settings: AccountingConnectionSettings;
 	defaultTaxTreatment: TaxTreatment;
-	connectedAt: Date;
+	connectedAt: Instant;
 	connectedBy: string | null;
 }
 
@@ -91,7 +92,7 @@ function connectionFromRow(
 		accountLabel: row.accountLabel,
 		settings: row.settings,
 		defaultTaxTreatment: taxTreatmentFromStored(row.defaultTaxTreatment, row.defaultTaxRate),
-		connectedAt: row.connectedAt,
+		connectedAt: instantFromDate(row.connectedAt),
 		connectedBy: row.connectedBy,
 	};
 }

@@ -159,7 +159,7 @@ function connectionView(
 		providerKind: connection.providerKind,
 		accountLabel: connection.accountLabel,
 		defaultTaxTreatment: taxTreatmentView(connection.defaultTaxTreatment),
-		connectedAt: connection.connectedAt.toISOString(),
+		connectedAt: connection.connectedAt.toString(),
 		connectedByName: connection.connectedByName,
 		apiKeyStored,
 		providerAvailable: connector !== null,
