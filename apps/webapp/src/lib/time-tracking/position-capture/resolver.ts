@@ -4,7 +4,6 @@ import { and, eq, or } from "drizzle-orm";
 import {
 	employee,
 	positionCaptureAssignment,
-	positionCaptureSetting,
 	positionConsent,
 	positionNotice,
 	positionNoticeDecline,
@@ -18,10 +17,10 @@ import {
 	positionConsentDecision,
 } from "./policy";
 import {
-	DEFAULT_POSITION_CAPTURE_SETTINGS,
 	type PositionCaptureClient,
 	type PositionNoticeVersion,
 	readCurrentPositionNotice,
+	readPositionCaptureSettings,
 } from "./store";
 
 /** What position capture means for one employee of one organization, right now. */
@@ -58,16 +57,7 @@ export async function resolvePositionCapture(
 	options: { lock?: "share" } = {},
 ): Promise<PositionCaptureResolution> {
 	const { organizationId, employeeId } = subject;
-	const settingsQuery = db
-		.select({
-			enabled: positionCaptureSetting.enabled,
-			retentionDays: positionCaptureSetting.retentionDays,
-		})
-		.from(positionCaptureSetting)
-		.where(eq(positionCaptureSetting.organizationId, organizationId))
-		.$dynamic();
-	const [settingsRow] = await (options.lock ? settingsQuery.for("share") : settingsQuery);
-	const settings = settingsRow ?? DEFAULT_POSITION_CAPTURE_SETTINGS;
+	const settings = await readPositionCaptureSettings(db, organizationId, options);
 
 	const [subjectRow] = await db
 		.select({ teamId: employee.teamId })

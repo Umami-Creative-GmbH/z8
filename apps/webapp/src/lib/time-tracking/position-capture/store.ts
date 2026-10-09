@@ -54,7 +54,7 @@ export type PositionCaptureAssignmentTarget =
 	| { type: "team"; teamId: string }
 	| { type: "employee"; employeeId: string };
 
-export const DEFAULT_POSITION_CAPTURE_SETTINGS: PositionCaptureSettings = {
+const DEFAULT_POSITION_CAPTURE_SETTINGS: PositionCaptureSettings = {
 	enabled: false,
 	purposeStatement: null,
 	retentionDays: POSITION_RETENTION_DEFAULT_DAYS,
@@ -67,11 +67,16 @@ const SETTINGS_REFUSAL_MESSAGES = {
 	retention_out_of_range: "Retention must be a whole number of days between 7 and 365.",
 } as const;
 
+/**
+ * The organization's settings, or the defaults while it has never saved any.
+ * `{ lock: "share" }` reads the row `FOR SHARE` (the clocking capture check).
+ */
 export async function readPositionCaptureSettings(
 	db: PositionCaptureClient,
 	organizationId: string,
+	options: { lock?: "share" } = {},
 ): Promise<PositionCaptureSettings> {
-	const [row] = await db
+	const query = db
 		.select({
 			enabled: positionCaptureSetting.enabled,
 			purposeStatement: positionCaptureSetting.purposeStatement,
@@ -79,7 +84,9 @@ export async function readPositionCaptureSettings(
 		})
 		.from(positionCaptureSetting)
 		.where(eq(positionCaptureSetting.organizationId, organizationId))
-		.limit(1);
+		.limit(1)
+		.$dynamic();
+	const [row] = await (options.lock ? query.for("share") : query);
 	return row ?? DEFAULT_POSITION_CAPTURE_SETTINGS;
 }
 
