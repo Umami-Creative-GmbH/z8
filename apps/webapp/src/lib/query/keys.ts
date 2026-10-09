@@ -155,6 +155,15 @@ export const queryKeys = {
 			] as const,
 	},
 
+	// Personnel file (#865)
+	personnelFile: {
+		all: ["personnel-file"] as const,
+		employee: (employeeId: string, category: string | null) =>
+			["personnel-file", "employee", employeeId, category] as const,
+		employeeAll: (employeeId: string) => ["personnel-file", "employee", employeeId] as const,
+		myDocuments: () => ["personnel-file", "my-documents"] as const,
+	},
+
 	// Employee clock statuses
 	employeeClockStatuses: {
 		all: ["employee-clock-statuses"] as const,

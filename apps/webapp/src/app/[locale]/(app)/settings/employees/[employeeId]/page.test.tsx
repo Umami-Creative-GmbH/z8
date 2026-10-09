@@ -11,6 +11,7 @@ const mockState = vi.hoisted(() => ({
 	getCurrentApprovedMembership: vi.fn(),
 	getCurrentSettingsRouteContext: vi.fn(),
 	getEmployee: vi.fn(),
+	loadPersonnelFilePanelCapability: vi.fn(),
 	redirect: vi.fn((path: string) => {
 		throw new Error(`redirect:${path}`);
 	}),
@@ -25,6 +26,9 @@ vi.mock("../current-approved-membership", () => ({
 	getCurrentApprovedMembership: mockState.getCurrentApprovedMembership,
 }));
 vi.mock("../actions", () => ({ getEmployee: mockState.getEmployee }));
+vi.mock("@/lib/personnel-file/panel", () => ({
+	loadPersonnelFilePanelCapability: mockState.loadPersonnelFilePanelCapability,
+}));
 vi.mock("./employee-detail-page-client", () => ({
 	EmployeeDetailPageClient: "EmployeeDetailPageClient",
 }));
@@ -80,6 +84,38 @@ describe("EmployeeDetailPage actor membership", () => {
 			currentUserId: "user-1",
 			currentMemberRole: "owner",
 		});
+	});
+
+	it("passes the personnel file panel only when the resolver grants it (#865)", async () => {
+		mockState.getCurrentApprovedMembership.mockResolvedValue({ role: "owner" });
+		const capability = {
+			employeeId: "employee-1",
+			categories: ["contract", "payslip"],
+			today: "2026-10-09",
+		};
+		mockState.loadPersonnelFilePanelCapability.mockResolvedValue(capability);
+
+		const page = EmployeeDetailPage({ params: Promise.resolve({ employeeId: "employee-1" }) });
+		const contentElement = getContentElement(page);
+		const detailPage = await contentElement.type(contentElement.props);
+
+		expect(mockState.loadPersonnelFilePanelCapability).toHaveBeenCalledWith("employee-1");
+		expect(detailPage.props.personnelFile).toEqual(capability);
+	});
+
+	it("passes no personnel file panel to managers the resolver refuses", async () => {
+		mockState.getCurrentApprovedMembership.mockResolvedValue({ role: "member" });
+		mockState.getCurrentSettingsRouteContext.mockResolvedValue({
+			authContext: { user: { id: "user-1" }, session: { activeOrganizationId: "org-1" } },
+			accessTier: "manager",
+		});
+		mockState.loadPersonnelFilePanelCapability.mockResolvedValue(null);
+
+		const page = EmployeeDetailPage({ params: Promise.resolve({ employeeId: "employee-1" }) });
+		const contentElement = getContentElement(page);
+		const detailPage = await contentElement.type(contentElement.props);
+
+		expect(detailPage.props.personnelFile).toBeNull();
 	});
 
 	it("denies detail access when no approved membership exists", async () => {

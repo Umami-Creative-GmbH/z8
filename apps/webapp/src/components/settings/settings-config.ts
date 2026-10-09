@@ -13,7 +13,8 @@ export type FeatureFlag =
 	| "projectsEnabled"
 	| "surchargesEnabled"
 	| "demoDataEnabled"
-	| "worksCouncilEnabled";
+	| "worksCouncilEnabled"
+	| "personnelFilesEnabled";
 
 export type FeatureFlagState = Partial<Record<FeatureFlag, boolean>>;
 

@@ -55,6 +55,7 @@ export interface UserOrganization {
 	surchargesEnabled: boolean;
 	demoDataEnabled: boolean;
 	worksCouncilEnabled: boolean;
+	personnelFilesEnabled: boolean;
 }
 
 /**
@@ -269,6 +270,7 @@ export async function getUserOrganizations(): Promise<UserOrganization[]> {
 		surchargesEnabled: org.surchargesEnabled ?? false,
 		demoDataEnabled: org.demoDataEnabled ?? true,
 		worksCouncilEnabled: org.worksCouncilEnabled ?? false,
+		personnelFilesEnabled: org.personnelFilesEnabled ?? false,
 	}));
 }
 

@@ -12,6 +12,7 @@ import {
 	IconClock,
 	IconDeviceMobile,
 	IconExclamationCircle,
+	IconFileText,
 	IconLoader2,
 	IconMail,
 	IconReceipt,
@@ -104,6 +105,15 @@ const NOTIFICATION_CATEGORIES = [
 			"travel_expense_recovery_recorded",
 			"travel_expense_ready_for_reimbursement",
 		] as NotificationType[],
+	},
+	{
+		id: "personnelFile",
+		titleKey: "common:notifications.preferences.categories.personnelFile.title",
+		titleFallback: "Personnel File",
+		descriptionKey: "common:notifications.preferences.categories.personnelFile.description",
+		descriptionFallback: "Notifications about documents shared with you in your personnel file",
+		icon: IconFileText,
+		types: ["personnel_file_document_shared"] as NotificationType[],
 	},
 	{
 		id: "team",
@@ -225,6 +235,8 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 	travel_expense_recovery_recorded: "Expense recovery recorded",
 	// Reimbursement work arriving for expense officers
 	travel_expense_ready_for_reimbursement: "Ready for reimbursement (expense officers)",
+	// An employee document became visible to the employee
+	personnel_file_document_shared: "Document shared with you",
 };
 
 // Channel icons and labels

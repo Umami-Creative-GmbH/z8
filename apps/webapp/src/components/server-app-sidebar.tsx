@@ -25,6 +25,7 @@ function getOrganizationFeatureFlags(
 		surchargesEnabled: organization?.surchargesEnabled ?? false,
 		demoDataEnabled: organization?.demoDataEnabled ?? true,
 		worksCouncilEnabled: organization?.worksCouncilEnabled ?? false,
+		personnelFilesEnabled: organization?.personnelFilesEnabled ?? false,
 	};
 }
 
@@ -87,6 +88,10 @@ export async function ServerAppSidebar({
 				payroll: Boolean(showPayrollNav),
 				finance: showFinanceNav,
 				worksCouncil: canShowWorksCouncilNav,
+				// My documents (#865): the employee's own shared documents, while the feature is on.
+				myDocuments:
+					featureFlags.personnelFilesEnabled &&
+					Boolean(activeEmployee && activeEmployee.organizationId === activeOrganizationId),
 				platformAdmin: authContext?.user.role === "admin",
 			}}
 			settingsAccessTier={settingsAccessTier ?? "member"}

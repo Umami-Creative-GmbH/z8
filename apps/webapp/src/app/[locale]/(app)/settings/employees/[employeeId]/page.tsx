@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { loadPersonnelFilePanelCapability } from "@/lib/personnel-file/panel";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import { getEmployee } from "../actions";
 import { getCurrentApprovedMembership } from "../current-approved-membership";
@@ -52,7 +53,12 @@ async function EmployeeDetailPageContent({
 		return redirectWithLocale("/settings");
 	}
 
-	const employeeResult = await getEmployee(employeeId);
+	const [employeeResult, personnelFile] = await Promise.all([
+		getEmployee(employeeId),
+		// Decided by the personnel file access resolver, never by the settings tier:
+		// managers reach this page but not the personnel file (#865, ADR 0001).
+		loadPersonnelFilePanelCapability(employeeId),
+	]);
 
 	if (!employeeResult.success) {
 		return redirectWithLocale("/settings/employees");
@@ -65,6 +71,7 @@ async function EmployeeDetailPageContent({
 			currentUserId={currentUserId}
 			currentMemberRole={currentMember.role}
 			highlightedReviewId={highlightedReviewId}
+			personnelFile={personnelFile}
 		/>
 	);
 }

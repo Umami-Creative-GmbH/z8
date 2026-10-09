@@ -8,6 +8,7 @@ import { use, useEffect } from "react";
 import { toast } from "sonner";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { EmployeeLifecycleActions } from "@/components/organization/employee-lifecycle-actions";
+import { PersonnelFilePanel } from "@/components/personnel-file/personnel-file-panel";
 import { EmployeeCustomRolesCard } from "@/components/settings/custom-roles/employee-custom-roles-card";
 import { EmployeeEmploymentHistoryCard } from "@/components/settings/employee-employment-history-card";
 import { EmployeeOffboardingSection } from "@/components/settings/employee-offboarding/employee-offboarding-section";
@@ -15,8 +16,10 @@ import { EmployeeSkillsCard } from "@/components/settings/employee-skills-card";
 import { ManagerAssignment } from "@/components/settings/manager-assignment";
 import { RateHistoryCard } from "@/components/settings/rate-history-card";
 import { WorkBalanceRecalculationCard } from "@/components/settings/work-balance-recalculation-card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
+import type { PersonnelFilePanelCapability } from "@/lib/personnel-file/panel";
 import { queryKeys } from "@/lib/query";
 import { type EmployeeDetail, useEmployee } from "@/lib/query/use-employee";
 import type { SettingsAccessTier } from "@/lib/settings-access";
@@ -106,12 +109,15 @@ export function EmployeeDetailPageClient({
 	currentUserId,
 	currentMemberRole,
 	highlightedReviewId = null,
+	personnelFile = null,
 }: {
 	params: Promise<{ employeeId: string }>;
 	accessTier: SettingsAccessTier;
 	currentUserId: string;
 	currentMemberRole: string;
 	highlightedReviewId?: string | null;
+	/** Decided on the server by the personnel file access resolver (#865). */
+	personnelFile?: PersonnelFilePanelCapability | null;
 }) {
 	const { employeeId } = use(params);
 	const { t } = useTranslate();
@@ -210,19 +216,8 @@ export function EmployeeDetailPageClient({
 		(hasOrganizationRole(currentMemberRole, "owner") ||
 			hasOrganizationRole(currentMemberRole, "admin"));
 
-	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<EmployeeDetailHeader
-				t={t}
-				actions={
-					<EmployeeDetailLifecycleActions
-						employee={employee}
-						currentUserId={currentUserId}
-						currentMemberRole={currentMemberRole}
-					/>
-				}
-			/>
-
+	const overview = (
+		<>
 			<div className="grid gap-4 lg:grid-cols-3">
 				<EmployeeOverviewCard employee={employee} schedule={schedule} t={t} />
 				{canEditDraftDetails && (
@@ -254,6 +249,42 @@ export function EmployeeDetailPageClient({
 					highlightedReviewId={highlightedReviewId}
 					data={employeeData}
 				/>
+			)}
+		</>
+	);
+
+	return (
+		<div className="flex flex-1 flex-col gap-4 p-4">
+			<EmployeeDetailHeader
+				t={t}
+				actions={
+					<EmployeeDetailLifecycleActions
+						employee={employee}
+						currentUserId={currentUserId}
+						currentMemberRole={currentMemberRole}
+					/>
+				}
+			/>
+
+			{personnelFile && canShowRealEmployeeSections ? (
+				<Tabs defaultValue="overview" className="gap-4">
+					<TabsList>
+						<TabsTrigger value="overview">
+							{t("settings.employees.detailView.tabs.overview", "Overview")}
+						</TabsTrigger>
+						<TabsTrigger value="personnel-file">
+							{t("settings.personnelFiles.panel.tab", "Personnel file")}
+						</TabsTrigger>
+					</TabsList>
+					<TabsContent value="overview" className="flex flex-col gap-4">
+						{overview}
+					</TabsContent>
+					<TabsContent value="personnel-file">
+						<PersonnelFilePanel capability={personnelFile} />
+					</TabsContent>
+				</Tabs>
+			) : (
+				overview
 			)}
 		</div>
 	);

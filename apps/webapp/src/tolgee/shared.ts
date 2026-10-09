@@ -67,6 +67,7 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/init": ["common", "setup"],
 	"/approvals": ["common", "approvals"],
 	"/my-requests": ["common", "myRequests"],
+	"/my-documents": ["common", "settings/people"],
 	"/payroll": ["common", "payroll"],
 	// Main app routes
 	"/": ["common", "dashboard"],

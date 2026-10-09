@@ -258,6 +258,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"travel_expense_recovery_recorded",
 	// Reimbursement work arriving for expense officers (#756)
 	"travel_expense_ready_for_reimbursement",
+	// An employee document became visible to its employee (#865)
+	"personnel_file_document_shared",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [

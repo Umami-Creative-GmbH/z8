@@ -193,6 +193,33 @@ describe("app sidebar compliance navigation", () => {
 		]);
 	});
 
+	it("renders My Documents after My Requests only while personnel files are on (#865)", () => {
+		const { unmount } = render(<AppSidebar employeeRole="employee" />);
+		expect(screen.queryByRole("link", { name: "My Documents" })).toBeNull();
+		unmount();
+
+		render(
+			<AppSidebar
+				employeeRole="employee"
+				navigationCapabilities={{
+					scheduling: false,
+					compliance: false,
+					payroll: false,
+					finance: false,
+					worksCouncil: false,
+					myDocuments: true,
+					platformAdmin: false,
+				}}
+			/>,
+		);
+
+		expect(screen.getByRole("link", { name: "My Documents" }).getAttribute("href")).toBe(
+			"/my-documents",
+		);
+		const urls = navMainSpy.mock.lastCall?.[0].map((item) => item.url) ?? [];
+		expect(urls.indexOf("/my-documents")).toBe(urls.indexOf("/my-requests") + 1);
+	});
+
 	it("renders Org Explorer as a primary personal navigation item", () => {
 		render(<AppSidebar />);
 
@@ -821,6 +848,7 @@ describe("app sidebar compliance navigation", () => {
 					surchargesEnabled: false,
 					demoDataEnabled: true,
 					worksCouncilEnabled: false,
+					personnelFilesEnabled: false,
 				},
 			}),
 		);
@@ -851,6 +879,7 @@ describe("app sidebar compliance navigation", () => {
 					surchargesEnabled: false,
 					demoDataEnabled: true,
 					worksCouncilEnabled: false,
+					personnelFilesEnabled: false,
 				},
 			}),
 		);

@@ -115,6 +115,14 @@ export enum AuditAction {
 	EXPENSE_OFFICER_GRANT_CHANGED = "expense_officer.grant_changed",
 	EXPENSE_OFFICER_GRANT_REVOKED = "expense_officer.grant_revoked",
 
+	// Personnel File Operations (#865)
+	PERSONNEL_FILE_DOCUMENT_UPLOADED = "personnel_file.document_uploaded",
+	PERSONNEL_FILE_DOCUMENT_UPDATED = "personnel_file.document_updated",
+	PERSONNEL_FILE_VISIBILITY_CHANGED = "personnel_file.visibility_changed",
+	PERSONNEL_FILE_DOCUMENT_DELETED = "personnel_file.document_deleted",
+	PERSONNEL_FILE_DOCUMENT_VIEWED = "personnel_file.document_viewed",
+	PERSONNEL_FILE_DOCUMENT_DOWNLOADED = "personnel_file.document_downloaded",
+
 	// App Access Operations
 	APP_ACCESS_GRANTED = "app_access.granted",
 	APP_ACCESS_REVOKED = "app_access.revoked",

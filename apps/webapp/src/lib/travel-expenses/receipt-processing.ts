@@ -56,7 +56,12 @@ export async function readUploadedReceipt(input: {
 	tusFileKey: string;
 	fileName: string | undefined;
 	maxBytes: number;
+	/** The detected types accepted; receipts by default (personnel documents pass their own, #865). */
+	isAllowedMime?: (mime: string) => boolean;
+	/** A specific refusal for a detected type that is not accepted. */
+	refusalFor?: (mime: string) => string | null;
 }): Promise<ReadUploadedReceiptResult> {
+	const isAllowedMime = input.isAllowedMime ?? isAllowedTravelExpenseMime;
 	const tooLarge = {
 		ok: false,
 		status: 413,
@@ -80,8 +85,9 @@ export async function readUploadedReceipt(input: {
 	}
 
 	const detectedType = await fileTypeFromBuffer(buffer);
-	if (!detectedType || !isAllowedTravelExpenseMime(detectedType.mime)) {
-		return { ok: false, status: 400, error: "Unsupported file type" };
+	if (!detectedType || !isAllowedMime(detectedType.mime)) {
+		const refusal = detectedType ? input.refusalFor?.(detectedType.mime) : null;
+		return { ok: false, status: 400, error: refusal ?? "Unsupported file type" };
 	}
 
 	const providedName = input.fileName?.trim() || `attachment.${detectedType.ext}`;
