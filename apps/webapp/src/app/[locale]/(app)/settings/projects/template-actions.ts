@@ -1,6 +1,5 @@
 "use server";
 
-import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
@@ -30,6 +29,7 @@ import {
 	writeProjectTemplate,
 } from "@/lib/projects/project-templates";
 import { getProjectSettingsActorContext, type ProjectSettingsActor } from "./project-scope";
+import { tracedProjectAction as traced } from "./traced-project-action";
 
 /**
  * Project template management (#878). Templates live under the project
@@ -90,27 +90,6 @@ function keepTypedTemplateError(error: DatabaseError) {
 		return new ValidationError(MEMBER_PROBLEM_MESSAGES[error.cause.problem]);
 	}
 	return error;
-}
-
-function traced<A, E, R>(
-	name: string,
-	attributes: Record<string, string>,
-	effect: Effect.Effect<A, E, R>,
-) {
-	return trace.getTracer("projects").startActiveSpan(name, { attributes }, (span) =>
-		effect.pipe(
-			Effect.tap(() => Effect.sync(() => span.setStatus({ code: SpanStatusCode.OK }))),
-			Effect.catch((error) =>
-				Effect.gen(function* () {
-					span.recordException(error as Error);
-					span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) });
-					logger.error({ error, ...attributes }, `Failed to run ${name}`);
-					return yield* Effect.fail(error);
-				}),
-			),
-			Effect.ensuring(Effect.sync(() => span.end())),
-		),
-	);
 }
 
 /** The caller as an org owner or admin of their active organization, or a refusal. */
