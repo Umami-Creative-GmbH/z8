@@ -209,8 +209,9 @@ export function useClock({
 		!savedCommandMutation.isPending &&
 		!statusQuery.isFetching &&
 		journalQuery.isSuccess &&
-		journal?.commandsEnabled &&
-		journal?.breaksEnabled &&
+		!journal?.busy &&
+		(journal?.commandsEnabled ||
+			(journal?.onlineClockingEnabled && journal.serverReachable)) &&
 		journal?.legacy.total === 0 &&
 		!journal?.workChangedElsewhere &&
 		!savedNeedReview &&

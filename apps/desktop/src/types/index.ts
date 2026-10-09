@@ -118,6 +118,9 @@ export interface ClockJournal {
 	legacy: RecoverySummary;
 	serverReachable: boolean;
 	commandsEnabled: boolean;
+	/** Fresh online requests; never permission to capture offline. */
+	onlineClockingEnabled?: boolean;
+	serverUpdateRequired?: boolean;
 	/** A confirmed idle break can be saved as one atomic action. */
 	breaksEnabled: boolean;
 	commands: SavedClockCommand[];
@@ -179,6 +182,8 @@ export interface DesktopContext {
 	fetchedAt: string;
 	cached: boolean;
 	dayTotalBasis: import("../lib/day-total").DayBasis;
+	/** Older servers omit this flag; available projects remain the fallback. */
+	projectsEnabled?: boolean;
 	projects: { id: string; name: string }[];
 	categories: { id: string; name: string }[];
 	liveWork: {

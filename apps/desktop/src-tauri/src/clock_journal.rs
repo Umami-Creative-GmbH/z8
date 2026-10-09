@@ -82,6 +82,8 @@ pub struct ClockJournal {
     pub server_reachable: bool,
     /// A new action can be frozen for the session's context now.
     pub commands_enabled: bool,
+    pub online_clocking_enabled: bool,
+    pub server_update_required: bool,
     /// A confirmed idle break can be frozen as one atomic command (#281).
     pub breaks_enabled: bool,
     pub commands: Vec<CommandView>,
@@ -152,6 +154,8 @@ pub fn build(
         legacy,
         server_reachable,
         commands_enabled,
+        online_clocking_enabled: false,
+        server_update_required: false,
         breaks_enabled,
         commands: shown.into_iter().map(CommandView::from).collect(),
         other_contexts,

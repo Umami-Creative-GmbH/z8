@@ -70,6 +70,8 @@ export async function GET(request: Request) {
 				// Fresh submission stays gated with the organization's completed-work
 				// adoption. Lookup and committed replay work in every mode.
 				submit: adopted ? "available" : "unavailable",
+				// Online fallback requires the context checks in the direct route.
+				onlineSubmit: adopted ? "unavailable" : "available",
 				lookup: "available",
 				admission: { immediate: windowSeconds("immediate"), delayed: windowSeconds("delayed") },
 				context: {

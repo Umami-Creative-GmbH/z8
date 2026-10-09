@@ -197,6 +197,7 @@ body {
 }
 
 .app-logo {
+	color: #fff;
 	width: 32px;
 	height: 32px;
 	border-radius: 8px;
@@ -314,119 +315,89 @@ body {
 	background: var(--color-muted-foreground);
 }
 
-/* Clock Button */
+/* Clock controls: one readable timer and compact, explicit actions. */
 .clock-container {
+	width: 100%;
 	display: flex;
 	flex-direction: column;
-	align-items: center;
-	gap: 24px;
+	align-items: stretch;
+	gap: 16px;
 }
-
 .clock-display {
+	padding-block: 8px 0;
 	text-align: center;
 }
-
 .clock-timer {
-	font-size: 48px;
-	font-family: ui-monospace, SFMono-Regular, monospace;
-	font-weight: 700;
+	font-size: clamp(36px, 11vw, 48px);
+	font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+	font-variant-numeric: tabular-nums;
+	font-weight: 600;
 	color: var(--color-foreground);
-	letter-spacing: -1px;
-	line-height: 1;
+	letter-spacing: -2px;
+	line-height: 1.15;
 }
-
 .clock-ready {
 	font-size: 28px;
 	font-weight: 600;
-	color: var(--color-foreground);
-	line-height: 1;
+	letter-spacing: -0.5px;
 }
-
 .clock-label {
-	font-size: 14px;
+	font-size: 12px;
 	color: var(--color-muted-foreground);
 	margin-top: 8px;
-	font-weight: 500;
 }
-
+.clock-actions {
+	display: flex;
+	gap: 8px;
+}
+.clock-actions > button {
+	flex: 1;
+	min-width: 0;
+	min-height: 48px;
+	padding: 10px 12px;
+	font-size: 13px;
+	font-weight: 600;
+	border-radius: 8px;
+}
 .clock-button {
-	position: relative;
-	width: 140px;
-	height: 140px;
-	border-radius: 50%;
-	border: none;
+	border: 1px solid transparent;
 	cursor: pointer;
-	display: flex;
+	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	gap: 8px;
+	color: #fff;
+	background: var(--color-primary);
 	transition:
-		transform 0.15s ease,
-		box-shadow 0.15s ease;
+		background-color 0.15s ease,
+		transform 0.15s ease;
 }
-
-.clock-button:active:not(.clock-button-disabled) {
-	transform: scale(0.95);
-}
-
-.clock-button-start {
-	background: linear-gradient(
-		135deg,
-		hsl(142.1 76.2% 42%) 0%,
-		hsl(142.1 76.2% 32%) 100%
+.clock-button:hover:not(:disabled) {
+	background: color-mix(
+		in srgb,
+		var(--color-primary) 88%,
+		var(--color-foreground)
 	);
-	box-shadow:
-		0 8px 32px hsl(142.1 76.2% 36.3% / 0.4),
-		inset 0 1px 0 hsl(142.1 76.2% 50%),
-		inset 0 -2px 0 hsl(142.1 76.2% 28%);
 }
-
+.clock-button:active:not(:disabled) {
+	transform: translateY(1px);
+}
 .clock-button-stop {
-	background: linear-gradient(
-		135deg,
-		hsl(0 84.2% 55%) 0%,
-		hsl(0 84.2% 45%) 100%
-	);
-	box-shadow:
-		0 8px 32px hsl(0 84.2% 60.2% / 0.4),
-		inset 0 1px 0 hsl(0 84.2% 70%),
-		inset 0 -2px 0 hsl(0 84.2% 35%);
+	background: var(--color-primary);
 }
-
-.clock-button-disabled {
-	cursor: not-allowed;
-	opacity: 0.6;
-}
-
 .clock-button-inner {
-	position: absolute;
-	width: 120px;
-	height: 120px;
-	border-radius: 50%;
-	display: flex;
+	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	flex-shrink: 0;
 }
-
-.clock-button-start .clock-button-inner {
-	background: linear-gradient(
-		180deg,
-		hsl(142.1 76.2% 44%) 0%,
-		hsl(142.1 76.2% 34%) 100%
-	);
+.clock-actions .secondary-action {
+	background: var(--color-card);
+	color: var(--color-foreground);
 }
-
-.clock-button-stop .clock-button-inner {
-	background: linear-gradient(
-		180deg,
-		hsl(0 84.2% 58%) 0%,
-		hsl(0 84.2% 48%) 100%
-	);
-}
-
 .clock-spinner {
 	animation: spin 1s linear infinite;
 }
-
 @keyframes spin {
 	from {
 		transform: rotate(0deg);
@@ -434,22 +405,6 @@ body {
 	to {
 		transform: rotate(360deg);
 	}
-}
-
-.clock-action-label {
-	font-size: 15px;
-	font-weight: 600;
-	padding: 10px 24px;
-	border-radius: 8px;
-	background: var(--color-muted);
-}
-
-.clock-action-start {
-	color: var(--color-success);
-}
-
-.clock-action-stop {
-	color: var(--color-destructive);
 }
 
 /* Work Location Selector */
@@ -555,6 +510,7 @@ body {
 }
 
 .login-logo {
+	color: #fff;
 	width: 72px;
 	height: 72px;
 	border-radius: 18px;
@@ -848,17 +804,6 @@ button:disabled {
 .app-footer {
 	flex-shrink: 0;
 }
-.clock-container {
-	flex-shrink: 0;
-	gap: 16px;
-}
-.clock-button {
-	width: 128px;
-	height: 128px;
-}
-.clock-button-inner {
-	color: var(--color-primary-foreground);
-}
 .day-total {
 	display: grid;
 	width: 100%;
@@ -948,8 +893,7 @@ button:disabled {
 }
 .dialog-header,
 .dialog-actions,
-.settings-footer,
-.webapp-links {
+.settings-footer {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -1038,51 +982,116 @@ button {
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
-/* Compact primary controls; supporting workflows scroll within the window. */
-.app-main {
-	gap: 12px;
-	padding: 16px;
+/* A compact companion window, with the organization on its own readable row. */
+.app-header {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	padding: 12px 16px 8px;
+	gap: 8px 12px;
+	background: var(--color-background);
 }
 .app-header-left {
 	flex-wrap: nowrap;
 	gap: 8px;
 }
-.org-selector-wrapper {
-	flex: 1;
-	min-width: 40px;
-	max-width: 160px;
+.app-header-brand {
+	gap: 8px;
 }
-.org-selector {
+.app-logo {
+	width: 28px;
+	height: 28px;
+	border-radius: 8px;
+}
+.app-title {
+	font-size: 13px;
+}
+.app-subtitle {
+	font-size: 10px;
+}
+.app-header-actions {
+	gap: 4px;
+}
+.settings-button {
+	width: 32px;
+	height: 32px;
+	padding: 6px;
+	border-radius: 8px;
+	box-shadow: none;
+	background: transparent;
+}
+.settings-button:hover {
+	box-shadow: none;
+	background: var(--color-muted);
+	color: var(--color-foreground);
+}
+.app-header-organization {
+	grid-column: 1 / -1;
+	min-width: 0;
+}
+.app-header-organization .org-selector-wrapper {
+	max-width: none;
+}
+.app-header-organization .org-selector {
 	width: 100%;
-	max-width: 100%;
+	max-width: none;
+	justify-content: flex-start;
+	padding: 6px 8px;
+	font-size: 12px;
+	background: transparent;
+	border-color: transparent;
+	border-radius: 6px;
+}
+.app-header-organization .org-selector > svg:last-child {
+	margin-left: auto;
+}
+.app-header-organization .org-selector:hover:not(:disabled) {
+	background: var(--color-muted);
+	border-color: var(--color-border);
 }
 .org-name {
 	min-width: 0;
 }
-.clock-container {
-	gap: 10px;
+.app-header-organization .org-name {
+	flex: 1;
+	max-width: none;
+	text-align: left;
 }
-.clock-button {
-	width: 88px;
-	height: 88px;
+.offline-badge {
+	padding: 4px;
+	background: transparent;
 }
-.clock-button-start {
-	background: var(--color-primary);
-	box-shadow: 0 3px 12px
-		color-mix(in srgb, var(--color-primary) 20%, transparent);
+.offline-badge span {
+	display: none;
 }
-.clock-timer {
-	font-size: 36px;
+.app-main {
+	gap: 12px;
+	padding: 16px 20px;
 }
-.clock-ready {
-	font-size: 24px;
+.day-total {
+	grid-template-columns: 1fr auto;
+	align-items: center;
+	padding: 12px 16px;
+	gap: 4px 12px;
+	text-align: left;
+	border: 1px solid var(--color-border);
+	border-radius: 10px;
+	background: var(--color-card);
 }
-.clock-label {
-	margin-top: 6px;
+.day-total > span:first-child {
 	font-size: 12px;
+	font-weight: 500;
 }
 .day-total > strong {
-	font-size: 24px;
+	font-size: 20px;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: -0.5px;
+}
+.day-total > .field-hint,
+.day-total > .pending-label {
+	grid-column: 1 / -1;
+	font-size: 10px;
+	text-align: left;
 }
 .work-location-options {
 	grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1093,47 +1102,80 @@ button {
 	min-height: 40px;
 	display: grid;
 	place-items: center;
+	gap: 4px;
 	font-size: 11px;
 	text-align: center;
+	border-radius: 6px;
+	box-shadow: none;
+}
+.work-location-selector {
+	width: 100%;
+}
+.work-location-option-active {
+	box-shadow: none;
+}
+.attribution-fields {
+	width: 100%;
+	padding-top: 16px;
+	border-top: 1px solid var(--color-border);
+}
+.attribution-fields .form-field {
+	margin-block: 12px 0;
+}
+.server-setup-notice {
+	width: 100%;
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 12px;
+	border: 1px solid var(--color-border);
+	border-radius: 8px;
+	background: var(--color-muted);
+	font-size: 11px;
+	color: var(--color-muted-foreground);
+}
+.server-setup-notice > svg {
+	flex-shrink: 0;
+	margin-top: 1px;
+}
+.server-setup-notice strong {
+	font-weight: 600;
+	color: var(--color-foreground);
+}
+.server-setup-notice p {
+	margin: 4px 0 0;
+	line-height: 1.6;
+}
+.online-clock-notice {
+	padding: 4px 8px;
+	background: transparent;
+}
+.online-clock-notice p {
+	line-height: 1.5;
 }
 .app-footer {
-	padding: 10px;
+	padding: 8px 16px;
+	background: var(--color-background);
+}
+.status-badge {
+	padding: 0;
+	gap: 6px;
+	font-size: 11px;
+}
+.status-badge.status-active,
+.status-badge.status-inactive {
+	background: transparent;
+}
+.status-dot {
+	width: 6px;
+	height: 6px;
+}
+.status-active .status-dot {
+	box-shadow: none;
 }
 .update-controls,
 .update-notice {
 	border-color: var(--color-border);
-}
-@media (max-width: 380px) {
-	.app-logo,
-	.app-subtitle {
-		display: none;
-	}
-}
-
-.clock-button-inner {
-	width: 100%;
-	height: 100%;
-}
-.clock-button-start .clock-button-inner,
-.clock-button-stop .clock-button-inner {
-	background: transparent;
-}
-.clock-action-label {
-	padding: 2px 12px;
-	background: transparent;
-}
-.clock-container {
-	gap: 8px;
-}
-.day-total {
-	grid-template-columns: 1fr auto;
-	align-items: center;
-	text-align: left;
-}
-.day-total > .field-hint,
-.day-total > .pending-label {
-	grid-column: 1 / -1;
-	text-align: center;
 }
 
 @media (prefers-color-scheme: dark) {

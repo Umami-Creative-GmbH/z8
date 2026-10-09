@@ -27,7 +27,7 @@ async fn pilot_never_falls_back_to_an_older_server_writer() {
     )
     .await
     .unwrap_err();
-    assert!(error.message.contains("not ready"));
+    assert!(error.message.contains("updated Z8 server"));
     assert!(device.saved().is_empty());
     let requests = requests.join().unwrap();
     assert_eq!(requests.len(), 1);

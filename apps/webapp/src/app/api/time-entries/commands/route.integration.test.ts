@@ -428,6 +428,7 @@ describe("frozen direct-HTTP clock commands on PostgreSQL", () => {
 				commandVersions: [2, 3],
 				kinds: ["clock_in", "clock_out", "break"],
 				submit: "available",
+				onlineSubmit: "unavailable",
 				lookup: "available",
 				admission: {
 					immediate: { pastSeconds: 300, futureSeconds: 300 },
@@ -437,7 +438,9 @@ describe("frozen direct-HTTP clock commands on PostgreSQL", () => {
 			},
 		});
 		await setAdmission("inactive");
-		expect((await read()).body.submit).toBe("unavailable");
+		const legacy = await read();
+		expect(legacy.body.submit).toBe("unavailable");
+		expect(legacy.body.onlineSubmit).toBe("available");
 		harness.userId = null;
 		expect((await read()).status).toBe(401);
 	});
