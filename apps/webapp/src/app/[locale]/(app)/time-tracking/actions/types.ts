@@ -102,6 +102,8 @@ export interface ManualTimeEntryInput {
 	timezone?: string;
 	browserTimezone?: string | null;
 	projectId?: string;
+	/** A task of `projectId` (#873). */
+	taskId?: string;
 	workCategoryId?: string;
 	workLocationType?: WorkLocationType;
 }
