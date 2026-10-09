@@ -114,6 +114,21 @@ describe("position record retention on PostgreSQL", () => {
 		return id;
 	}
 
+	async function decline(
+		organizationId: string,
+		employeeId: string,
+		noticeId: string,
+		declinedAt: string,
+	) {
+		const id = randomUUID();
+		await pool.query(
+			`insert into position_notice_decline (id, organization_id, employee_id, notice_id, declined_at)
+			 values ($1, $2, $3, $4, $5)`,
+			[id, organizationId, employeeId, noticeId, declinedAt],
+		);
+		return id;
+	}
+
 	async function remainingConsents() {
 		const { rows } = await pool.query<{ id: string }>(
 			"select id from position_consent where organization_id in ($1, $2) order by id",
@@ -268,6 +283,57 @@ describe("position record retention on PostgreSQL", () => {
 		});
 		expect(second.consents).toBe(1);
 		expect(await remainingConsents()).toEqual([]);
+	});
+
+	it("deletes declines of notices superseded for longer than the lifetime, and keeps declines of the current notice", async () => {
+		const [e1, e2, e3, , e5] = ids.employees;
+		const a = ids.organizationA;
+		const v1 = await publishNotice(a, 1, daysAgo(900));
+		const v2 = await publishNotice(a, 2, daysAgo(400));
+		const v3 = await publishNotice(a, 3, daysAgo(100));
+		const supersededLongAgo = await decline(a, e1, v1, daysAgo(850));
+		const supersededRecently = await decline(a, e1, v2, daysAgo(395));
+		const current = await decline(a, e2, v3, daysAgo(50));
+		const b = ids.organizationB;
+		const currentForYears = await decline(b, e5, await publishNotice(b, 1, daysAgo(700)), daysAgo(650));
+		await decline(a, e3, v1, daysAgo(890));
+
+		const result = await deletePositionRecordsPastAuditLifetime(db, {
+			now,
+			lifetimeDays: LIFETIME_DAYS,
+		});
+
+		expect(result.declines).toBe(2);
+		const { rows } = await pool.query<{ id: string }>(
+			"select id from position_notice_decline where organization_id in ($1, $2) order by id",
+			[a, b],
+		);
+		expect(rows.map((row) => row.id)).toEqual(
+			[supersededRecently, current, currentForYears].sort(),
+		);
+		expect(rows.map((row) => row.id)).not.toContain(supersededLongAgo);
+	});
+
+	it("is idempotent: a repeated run deletes nothing more", async () => {
+		const [e1, e2] = ids.employees;
+		const a = ids.organizationA;
+		const v1 = await publishNotice(a, 1, daysAgo(900));
+		await publishNotice(a, 2, daysAgo(400));
+		await consent(a, e1, v1, daysAgo(800));
+		await decline(a, e2, v1, daysAgo(800));
+		await logAccess(a, daysAgo(400), [e1]);
+
+		const input = { now, lifetimeDays: LIFETIME_DAYS };
+		expect(await deletePositionRecordsPastAuditLifetime(db, input)).toEqual({
+			accessLogEntries: 1,
+			consents: 1,
+			declines: 1,
+		});
+		expect(await deletePositionRecordsPastAuditLifetime(db, input)).toEqual({
+			accessLogEntries: 0,
+			consents: 0,
+			declines: 0,
+		});
 	});
 
 	it("refuses every other delete of access-log entries, but lets organization and employee deletion cascade", async () => {

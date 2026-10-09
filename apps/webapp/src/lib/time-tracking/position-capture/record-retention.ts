@@ -5,6 +5,7 @@ import { alias, type PgColumn } from "drizzle-orm/pg-core";
 import {
 	positionConsent,
 	positionNotice,
+	positionNoticeDecline,
 	positionStamp,
 	positionStampAccessLog,
 } from "@/db/schema";
@@ -14,6 +15,7 @@ import type { PositionCaptureClient } from "./store";
 export type PositionRecordRetentionResult = {
 	accessLogEntries: number;
 	consents: number;
+	declines: number;
 };
 
 type RetentionClient = Pick<PositionCaptureClient, "select" | "delete">;
@@ -32,6 +34,8 @@ type RetentionClient = Pick<PositionCaptureClient, "select" | "delete">;
  *   that is still the employee's latest answer to the current notice stays, so
  *   the consent dialog does not ask again. A consent that still has a stamp
  *   stays until the purge has deleted it, so this never deletes a position.
+ * - Declines ("Not now") of notices superseded before the cutoff. A decline of
+ *   the current notice is the employee's answer to it and stays.
  */
 export async function deletePositionRecordsPastAuditLifetime(
 	db: RetentionClient,
@@ -86,7 +90,23 @@ export async function deletePositionRecordsPastAuditLifetime(
 		)
 		.returning({ id: positionConsent.id });
 
-	return { accessLogEntries: accessLogEntries.length, consents: consents.length };
+	const declines = await db
+		.delete(positionNoticeDecline)
+		.where(
+			noticeSuperseded(
+				db,
+				positionNoticeDecline.noticeId,
+				positionNoticeDecline.organizationId,
+				cutoff,
+			),
+		)
+		.returning({ id: positionNoticeDecline.id });
+
+	return {
+		accessLogEntries: accessLogEntries.length,
+		consents: consents.length,
+		declines: declines.length,
+	};
 }
 
 /**
