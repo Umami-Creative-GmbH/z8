@@ -233,7 +233,11 @@ describe("import review decision actions", () => {
 			{ rowIds: ["row_1", "row_2"], decision: "accepted" },
 			"Link one accepted import review row at a time",
 		],
-		["a rejection", { rowIds: ["row_1"], decision: "rejected" }, "Link one accepted import review row at a time"],
+		[
+			"a rejection",
+			{ rowIds: ["row_1"], decision: "rejected" },
+			"Link one accepted import review row at a time",
+		],
 		[
 			"a target that is not an id",
 			{ rowIds: ["row_1"], decision: "accepted", targetId: "not-a-uuid" },

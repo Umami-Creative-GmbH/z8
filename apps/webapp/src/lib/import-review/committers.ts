@@ -800,7 +800,13 @@ export async function commitAcceptedRowsForEntity(
 								if (outcome.kind === "held") {
 									return markHeld(tx as CommitDb, claimedRow.id, job, outcome.hold);
 								}
-								await markCommitted(tx as CommitDb, claimedRow.id, job, "customer", outcome.customerId);
+								await markCommitted(
+									tx as CommitDb,
+									claimedRow.id,
+									job,
+									"customer",
+									outcome.customerId,
+								);
 								return { status: "committed" };
 							}
 							case "target_hours":

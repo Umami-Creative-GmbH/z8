@@ -45,12 +45,8 @@ export function planCustomerImportRows(input: {
 	const { account } = input;
 	const sameAccount = (link: CustomerImportExistingLink) =>
 		link.providerKind === account.providerKind && link.accountRef === account.accountRef;
-	const linkedContacts = new Set(
-		input.links.filter(sameAccount).map((link) => link.contactId),
-	);
-	const linkedCustomers = new Set(
-		input.links.filter(sameAccount).map((link) => link.customerId),
-	);
+	const linkedContacts = new Set(input.links.filter(sameAccount).map((link) => link.contactId));
+	const linkedCustomers = new Set(input.links.filter(sameAccount).map((link) => link.customerId));
 	const customerById = new Map(input.customers.map((entry) => [entry.id, entry]));
 
 	const seen = new Set<string>();
@@ -82,15 +78,17 @@ export function planCustomerImportRows(input: {
 	return contacts.map((entry): NormalizedImportRow => {
 		const name = clean(entry.name) ?? "";
 		const key = customerNameKey(name);
-		const sameName = input.customers.filter(
-			(candidate) => customerNameKey(candidate.name) === key,
-		);
+		const sameName = input.customers.filter((candidate) => customerNameKey(candidate.name) === key);
 		const unlinkedSameName = sameName.filter((candidate) => !linkedCustomers.has(candidate.id));
 		const customerNumber = clean(entry.customerNumber);
 		const suggestion: CustomerSuggestion | null =
 			byCustomerNumber(customerNumber) ??
 			(unlinkedSameName.length === 1
-				? { customerId: unlinkedSameName[0].id, customerName: unlinkedSameName[0].name, reason: "name" }
+				? {
+						customerId: unlinkedSameName[0].id,
+						customerName: unlinkedSameName[0].name,
+						reason: "name",
+					}
 				: null);
 		const nameTakenBy = sameName[0]
 			? { customerId: sameName[0].id, customerName: sameName[0].name }

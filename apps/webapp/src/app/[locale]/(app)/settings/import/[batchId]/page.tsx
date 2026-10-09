@@ -7,11 +7,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { importBatch } from "@/db/schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { listCustomerAccounting } from "@/lib/billable-time/accounting/customer-accounting";
 import { getBillableTimeSettings } from "@/lib/billable-time/settings";
 import {
 	getImportReviewSummary,
 	listImportReviewRows,
 } from "@/lib/import-review/repository";
+import { readStagedCustomer } from "@/lib/import-review/staged-customer";
 import { importRowBillability } from "@/lib/import-review/staged-work-billability";
 
 interface ImportReviewRouteProps {
@@ -40,18 +42,38 @@ async function ImportReviewRouteContent({ params }: ImportReviewRouteProps) {
 	});
 
 	if (!batch) notFound();
+	// A customer import from the accounting connection (#906) shows every contact.
+	const isCustomerImport = batch.provider === "accounting";
 
-	const [summary, rows, billableTime] = await Promise.all([
+	const [summary, rows, billableTime, customerAccounting] = await Promise.all([
 		getImportReviewSummary({ batchId: batch.id, organizationId }),
 		listImportReviewRows({
 			batchId: batch.id,
 			organizationId,
-			limit: 100,
+			limit: isCustomerImport ? 500 : 100,
 			offset: 0,
 		}),
 		getBillableTimeSettings(organizationId),
+		isCustomerImport ? listCustomerAccounting(db, organizationId) : Promise.resolve([]),
 	]);
 	const showBillability = billableTime.enabled;
+	const customerImport = isCustomerImport
+		? {
+				rows: rows.map((row) => ({
+					id: row.id,
+					rowStatus: row.rowStatus,
+					issueSeverity: row.issueSeverity,
+					commitChoice: row.commitChoice ?? null,
+					commitHold: row.commitHold ?? null,
+					customer: readStagedCustomer(row),
+				})),
+				// Customers that can still be linked: active and not linked for this account.
+				linkTargets: customerAccounting
+					.filter((entry) => entry.isActive && entry.contactLink === null)
+					.map((entry) => ({ customerId: entry.customerId, name: entry.name })),
+				editable: batch.status === "needs_review",
+			}
+		: undefined;
 
 	return (
 		<div className="p-6">
@@ -65,6 +87,7 @@ async function ImportReviewRouteContent({ params }: ImportReviewRouteProps) {
 						billability: showBillability ? importRowBillability(row) : null,
 					}))}
 					showBillability={showBillability}
+					customerImport={customerImport}
 				/>
 			</div>
 		</div>

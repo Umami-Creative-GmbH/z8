@@ -174,8 +174,20 @@ describe("planCustomerImportRows", () => {
 				{ id: "b", name: "B" },
 			],
 			links: [
-				{ customerId: "a", providerKind: "sevdesk", accountRef: "s1", contactId: "1", contactNumber: "10307" },
-				{ customerId: "b", providerKind: "sevdesk", accountRef: "s2", contactId: "2", contactNumber: "10307" },
+				{
+					customerId: "a",
+					providerKind: "sevdesk",
+					accountRef: "s1",
+					contactId: "1",
+					contactNumber: "10307",
+				},
+				{
+					customerId: "b",
+					providerKind: "sevdesk",
+					accountRef: "s2",
+					contactId: "2",
+					contactNumber: "10307",
+				},
 			],
 		});
 
@@ -191,11 +203,13 @@ describe("planCustomerImportRows", () => {
 			],
 		});
 
-		expect(view(rows).map((row) => [row.contactId, row.duplicateNameInTool, row.severity])).toEqual([
-			["m1", true, "warning"],
-			["m2", true, "warning"],
-			["x", false, "none"],
-		]);
+		expect(view(rows).map((row) => [row.contactId, row.duplicateNameInTool, row.severity])).toEqual(
+			[
+				["m1", true, "warning"],
+				["m2", true, "warning"],
+				["x", false, "none"],
+			],
+		);
 	});
 
 	it("keeps a contact only once when the tool lists it twice, and drops an unusable email", () => {

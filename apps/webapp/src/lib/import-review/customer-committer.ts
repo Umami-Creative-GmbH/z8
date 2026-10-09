@@ -215,7 +215,12 @@ async function createCustomer(
 		entityId: created.id,
 		action: AuditAction.CUSTOMER_CREATED,
 		performedBy: job.committedBy,
-		changes: JSON.stringify({ name, vatId: staged.vatId, email: staged.email, address: staged.address }),
+		changes: JSON.stringify({
+			name,
+			vatId: staged.vatId,
+			email: staged.email,
+			address: staged.address,
+		}),
 		metadata: JSON.stringify({
 			source: "customer_import",
 			batchId: job.batchId,

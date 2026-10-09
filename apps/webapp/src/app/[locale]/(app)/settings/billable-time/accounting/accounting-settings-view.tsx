@@ -1,9 +1,10 @@
 "use client";
 
-import { IconLoader2 } from "@tabler/icons-react";
+import { IconFileImport, IconLoader2 } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { AccountingConnectionCard } from "@/components/billable-time/accounting/accounting-connection-card";
 import { CustomerAccountingPanel } from "@/components/billable-time/accounting/customer-accounting-panel";
 import { useTaxTreatmentSummary } from "@/components/billable-time/accounting/tax-treatment-fields";
@@ -19,7 +20,8 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { queryKeys } from "@/lib/query/keys";
-import { type AccountingSettings, getAccountingSettings } from "./actions";
+import { useRouter } from "@/navigation";
+import { type AccountingSettings, getAccountingSettings, startCustomerImport } from "./actions";
 
 /** The accounting settings page (#903): the connection and every customer's accounting side. */
 export function AccountingSettingsView() {
@@ -28,6 +30,19 @@ export function AccountingSettingsView() {
 	const summary = useTaxTreatmentSummary();
 	const queryKey = queryKeys.billableTime.accountingSettings();
 	const [selected, setSelected] = useState<{ customerId: string; name: string } | null>(null);
+	const router = useRouter();
+	const [isImporting, startImport] = useTransition();
+
+	function importCustomers() {
+		startImport(async () => {
+			const result = await startCustomerImport();
+			if (!result.success) {
+				toast.error(result.error);
+				return;
+			}
+			router.push(`/settings/import/${result.data.batchId}`);
+		});
+	}
 
 	const settings = useQuery({
 		queryKey,
@@ -66,16 +81,41 @@ export function AccountingSettingsView() {
 			<AccountingConnectionCard settings={settings.data} onChanged={refresh} />
 
 			<Card>
-				<CardHeader>
-					<CardTitle>
-						{t("settings.billableTime.accounting.customers.title", "Customers")}
-					</CardTitle>
-					<CardDescription>
-						{t(
-							"settings.billableTime.accounting.customers.description",
-							"Link each customer to its existing contact in the accounting tool before its first hand-off, and override the tax treatment where needed.",
-						)}
-					</CardDescription>
+				<CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+					<div className="space-y-1.5">
+						<CardTitle>
+							{t("settings.billableTime.accounting.customers.title", "Customers")}
+						</CardTitle>
+						<CardDescription>
+							{t(
+								"settings.billableTime.accounting.customers.description",
+								"Link each customer to its existing contact in the accounting tool before its first hand-off, and override the tax treatment where needed.",
+							)}
+						</CardDescription>
+					</div>
+					{connection?.providerAvailable && connection.apiKeyStored ? (
+						<div className="flex flex-col gap-1 sm:items-end">
+							<Button
+								type="button"
+								variant="outline"
+								disabled={isImporting}
+								onClick={importCustomers}
+							>
+								{isImporting ? (
+									<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
+								) : (
+									<IconFileImport aria-hidden="true" className="size-4" />
+								)}
+								{t("settings.billableTime.accounting.import.start", "Import customers")}
+							</Button>
+							<p className="max-w-64 text-muted-foreground text-xs sm:text-right">
+								{t(
+									"settings.billableTime.accounting.import.hint",
+									"Review the accounting tool's customers that are not linked yet, then create or link them.",
+								)}
+							</p>
+						</div>
+					) : null}
 				</CardHeader>
 				<CardContent>
 					{customers.length === 0 ? (
