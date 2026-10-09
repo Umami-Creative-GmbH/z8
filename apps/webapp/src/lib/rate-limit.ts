@@ -16,6 +16,7 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
+import { createRatelimitRedisAdapter } from "@/lib/rate-limit-redis";
 import { ensureRedisReady, redis as redisClient } from "@/lib/redis";
 
 /**
@@ -55,7 +56,12 @@ function parseRateLimitEnv(
 	}
 	const requests = parseInt(parts[0], 10);
 	const seconds = parseInt(parts[1], 10);
-	if (Number.isNaN(requests) || Number.isNaN(seconds) || requests <= 0 || seconds <= 0) {
+	if (
+		Number.isNaN(requests) ||
+		Number.isNaN(seconds) ||
+		requests <= 0 ||
+		seconds <= 0
+	) {
 		logger.warn({ envValue }, "Invalid rate limit values, using defaults");
 		return { requests: defaultRequests, seconds: defaultSeconds };
 	}
@@ -64,107 +70,10 @@ function parseRateLimitEnv(
 
 const logger = createLogger("RateLimit");
 
-const SLIDING_WINDOW_LIMIT_SCRIPT = `
-  local currentKey  = KEYS[1]           -- identifier including prefixes
-  local previousKey = KEYS[2]           -- key of the previous bucket
-  local dynamicLimitKey = KEYS[3]       -- optional: key for dynamic limit in redis
-  local tokens      = tonumber(ARGV[1]) -- default tokens per window
-  local now         = ARGV[2]           -- current timestamp in milliseconds
-  local window      = ARGV[3]           -- interval in milliseconds
-  local incrementBy = tonumber(ARGV[4]) -- increment rate per request at a given value, default is 1
-
-  -- Check for dynamic limit
-  local effectiveLimit = tokens
-  if dynamicLimitKey ~= "" then
-    local dynamicLimit = redis.call("GET", dynamicLimitKey)
-    if dynamicLimit then
-      effectiveLimit = tonumber(dynamicLimit)
-    end
-  end
-
-  local requestsInCurrentWindow = redis.call("GET", currentKey)
-  if requestsInCurrentWindow == false then
-    requestsInCurrentWindow = 0
-  end
-
-  local requestsInPreviousWindow = redis.call("GET", previousKey)
-  if requestsInPreviousWindow == false then
-    requestsInPreviousWindow = 0
-  end
-  local percentageInCurrent = ( now % window ) / window
-  -- weighted requests to consider from the previous window
-  requestsInPreviousWindow = math.floor(( 1 - percentageInCurrent ) * requestsInPreviousWindow)
-
-  -- Only check limit if not refunding (negative rate)
-  if incrementBy > 0 and requestsInPreviousWindow + requestsInCurrentWindow >= effectiveLimit then
-    return {-1, effectiveLimit}
-  end
-
-  local newValue = redis.call("INCRBY", currentKey, incrementBy)
-  if newValue == incrementBy then
-    -- The first time this key is set, the value will be equal to incrementBy.
-    -- So we only need the expire command once
-    redis.call("PEXPIRE", currentKey, window * 2 + 1000) -- Enough time to overlap with a new window + 1 second
-  end
-  return {effectiveLimit - ( newValue + requestsInPreviousWindow ), effectiveLimit}
-`;
-
-let slidingWindowScriptLoaded = false;
-let slidingWindowScriptLoadPromise: Promise<void> | null = null;
-
-redisClient.on("connect", () => {
-	slidingWindowScriptLoaded = false;
-	slidingWindowScriptLoadPromise = null;
-});
-
+/** Script loading is handled by Upstash's EVALSHA/NOSCRIPT fallback. */
 export async function ensureRateLimitRedisReady(): Promise<boolean> {
-	if (!(await ensureRedisReady())) {
-		return false;
-	}
-
-	if (slidingWindowScriptLoaded) {
-		return true;
-	}
-
-	if (!slidingWindowScriptLoadPromise) {
-		slidingWindowScriptLoadPromise = redisClient
-			.script("LOAD", SLIDING_WINDOW_LIMIT_SCRIPT)
-			.then(() => {
-				slidingWindowScriptLoaded = true;
-			})
-			.catch((error) => {
-				slidingWindowScriptLoadPromise = null;
-				throw error;
-			});
-	}
-
-	try {
-		await slidingWindowScriptLoadPromise;
-		return true;
-	} catch (error) {
-		logger.warn({ error }, "Failed to preload rate limiting script");
-		return false;
-	}
+	return ensureRedisReady();
 }
-
-/**
- * Minimal Redis interface required by @upstash/ratelimit
- * Includes both evalsha and eval for NOSCRIPT fallback handling
- */
-type RatelimitRedis = {
-	evalsha: <TArgs extends unknown[], TData = unknown>(
-		sha: string,
-		keys: string[],
-		args: TArgs,
-	) => Promise<TData>;
-	eval: <TArgs extends unknown[], TData = unknown>(
-		script: string,
-		keys: string[],
-		args: TArgs,
-	) => Promise<TData>;
-	get: <TData = string>(key: string) => Promise<TData | null>;
-	set: (key: string, value: string, opts?: { ex?: number }) => Promise<string | null>;
-};
 
 export const RATE_LIMIT_RESPONSE_COPY = {
 	title: { key: "common:rateLimit.title", fallback: "Too Many Requests" },
@@ -180,9 +89,15 @@ export const RATE_LIMIT_RESPONSE_COPY = {
 		key: "common:rateLimit.countdownLabel",
 		fallback: "seconds until you can retry",
 	},
-	waitingButton: { key: "common:rateLimit.waitingButton", fallback: "Please wait..." },
+	waitingButton: {
+		key: "common:rateLimit.waitingButton",
+		fallback: "Please wait...",
+	},
 	retryButton: { key: "common:rateLimit.retryButton", fallback: "Try Again" },
-	retryingButton: { key: "common:rateLimit.retryingButton", fallback: "Retrying..." },
+	retryingButton: {
+		key: "common:rateLimit.retryingButton",
+		fallback: "Retrying...",
+	},
 } as const;
 
 type RateLimitResponseMessages = {
@@ -208,60 +123,7 @@ function escapeJsString(value: string): string {
 	return JSON.stringify(value).slice(1, -1);
 }
 
-/**
- * Custom error class that properly stringifies for NOSCRIPT detection
- * @upstash/ratelimit checks `${error}`.includes("NOSCRIPT")
- */
-class NoscriptError extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = "NOSCRIPT";
-	}
-
-	toString(): string {
-		return `NOSCRIPT: ${this.message}`;
-	}
-}
-
-/**
- * Redis adapter for @upstash/ratelimit using our existing ioredis connection
- *
- * Handles NOSCRIPT errors by re-throwing with proper format so the library
- * can detect them and fall back to EVAL
- */
-const redisAdapter: RatelimitRedis = {
-	evalsha: async <TArgs extends unknown[], TData = unknown>(
-		sha: string,
-		keys: string[],
-		args: TArgs,
-	): Promise<TData> => {
-		try {
-			return (await redisClient.evalsha(sha, keys.length, ...keys, ...args.map(String))) as TData;
-		} catch (error) {
-			// Re-throw NOSCRIPT errors with proper format for @upstash/ratelimit detection
-			if (error instanceof Error && error.message.includes("NOSCRIPT")) {
-				throw new NoscriptError(error.message);
-			}
-			throw error;
-		}
-	},
-	eval: async <TArgs extends unknown[], TData = unknown>(
-		script: string,
-		keys: string[],
-		args: TArgs,
-	): Promise<TData> => {
-		return redisClient.eval(script, keys.length, ...keys, ...args.map(String)) as Promise<TData>;
-	},
-	get: async <TData = string>(key: string): Promise<TData | null> => {
-		return redisClient.get(key) as Promise<TData | null>;
-	},
-	set: async (key: string, value: string, opts?: { ex?: number }): Promise<string | null> => {
-		if (opts?.ex) {
-			return redisClient.set(key, value, "EX", opts.ex);
-		}
-		return redisClient.set(key, value);
-	},
-};
+const redisAdapter = createRatelimitRedisAdapter(redisClient);
 
 // Rate limiters for different endpoints
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -270,7 +132,11 @@ const redis = redisAdapter as any;
 // Parse rate limits from env vars with defaults
 const authConfig = parseRateLimitEnv(env.RATE_LIMIT_AUTH, 10, 60);
 const signUpConfig = parseRateLimitEnv(env.RATE_LIMIT_SIGNUP, 5, 60);
-const passwordResetConfig = parseRateLimitEnv(env.RATE_LIMIT_PASSWORD_RESET, 3, 60);
+const passwordResetConfig = parseRateLimitEnv(
+	env.RATE_LIMIT_PASSWORD_RESET,
+	3,
+	60,
+);
 const apiConfig = parseRateLimitEnv(env.RATE_LIMIT_API, 100, 60);
 const exportConfig = parseRateLimitEnv(env.RATE_LIMIT_EXPORT, 5, 3600);
 
@@ -278,14 +144,20 @@ const limiters = {
 	/** Auth endpoints: configurable via RATE_LIMIT_AUTH (default: 10 requests per 60 seconds) */
 	auth: new Ratelimit({
 		redis,
-		limiter: Ratelimit.slidingWindow(authConfig.requests, `${authConfig.seconds} s`),
+		limiter: Ratelimit.slidingWindow(
+			authConfig.requests,
+			`${authConfig.seconds} s`,
+		),
 		prefix: "ratelimit:auth",
 		analytics: false,
 	}),
 	/** Sign-up: configurable via RATE_LIMIT_SIGNUP (default: 5 requests per 60 seconds) */
 	signUp: new Ratelimit({
 		redis,
-		limiter: Ratelimit.slidingWindow(signUpConfig.requests, `${signUpConfig.seconds} s`),
+		limiter: Ratelimit.slidingWindow(
+			signUpConfig.requests,
+			`${signUpConfig.seconds} s`,
+		),
 		prefix: "ratelimit:signup",
 		analytics: false,
 	}),
@@ -302,14 +174,20 @@ const limiters = {
 	/** API general: configurable via RATE_LIMIT_API (default: 100 requests per 60 seconds) */
 	api: new Ratelimit({
 		redis,
-		limiter: Ratelimit.slidingWindow(apiConfig.requests, `${apiConfig.seconds} s`),
+		limiter: Ratelimit.slidingWindow(
+			apiConfig.requests,
+			`${apiConfig.seconds} s`,
+		),
 		prefix: "ratelimit:api",
 		analytics: false,
 	}),
 	/** Export requests: configurable via RATE_LIMIT_EXPORT (default: 5 per hour) */
 	export: new Ratelimit({
 		redis,
-		limiter: Ratelimit.slidingWindow(exportConfig.requests, `${exportConfig.seconds} s`),
+		limiter: Ratelimit.slidingWindow(
+			exportConfig.requests,
+			`${exportConfig.seconds} s`,
+		),
 		prefix: "ratelimit:export",
 		analytics: false,
 	}),
@@ -331,13 +209,19 @@ export interface RateLimitResult {
 // Legacy config export for backwards compatibility (uses env var values)
 export const RATE_LIMIT_CONFIGS = {
 	auth: { maxRequests: authConfig.requests, windowSeconds: authConfig.seconds },
-	signUp: { maxRequests: signUpConfig.requests, windowSeconds: signUpConfig.seconds },
+	signUp: {
+		maxRequests: signUpConfig.requests,
+		windowSeconds: signUpConfig.seconds,
+	},
 	passwordReset: {
 		maxRequests: passwordResetConfig.requests,
 		windowSeconds: passwordResetConfig.seconds,
 	},
 	api: { maxRequests: apiConfig.requests, windowSeconds: apiConfig.seconds },
-	export: { maxRequests: exportConfig.requests, windowSeconds: exportConfig.seconds },
+	export: {
+		maxRequests: exportConfig.requests,
+		windowSeconds: exportConfig.seconds,
+	},
 };
 
 /**
@@ -364,7 +248,10 @@ export async function checkRateLimit(
 
 		// Check if Redis is available
 		if (!(await ensureRateLimitRedisReady())) {
-			logger.warn({ identifier, endpoint }, "Rate limiting unavailable - Redis not connected");
+			logger.warn(
+				{ identifier, endpoint },
+				"Rate limiting unavailable - Redis not connected",
+			);
 			return {
 				allowed: true,
 				remaining: RATE_LIMIT_CONFIGS[endpoint]?.maxRequests ?? 100,
@@ -443,8 +330,12 @@ function generateRateLimitHtml(
 	retryAfter: number,
 	messages: RateLimitResponseMessages = {},
 ): string {
-	const title = escapeHtml(messages.title ?? RATE_LIMIT_RESPONSE_COPY.title.fallback);
-	const message = escapeHtml(messages.message ?? RATE_LIMIT_RESPONSE_COPY.message.fallback);
+	const title = escapeHtml(
+		messages.title ?? RATE_LIMIT_RESPONSE_COPY.title.fallback,
+	);
+	const message = escapeHtml(
+		messages.message ?? RATE_LIMIT_RESPONSE_COPY.message.fallback,
+	);
 	const countdownLabel = escapeHtml(
 		messages.countdownLabel ?? RATE_LIMIT_RESPONSE_COPY.countdownLabel.fallback,
 	);
@@ -669,7 +560,8 @@ export function createRateLimitResponse(
 	return new Response(
 		JSON.stringify({
 			error: messages.title ?? RATE_LIMIT_RESPONSE_COPY.title.fallback,
-			message: messages.jsonMessage ?? RATE_LIMIT_RESPONSE_COPY.jsonMessage.fallback,
+			message:
+				messages.jsonMessage ?? RATE_LIMIT_RESPONSE_COPY.jsonMessage.fallback,
 			retryAfter: result.retryAfter,
 		}),
 		{
