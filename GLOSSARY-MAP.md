@@ -3,6 +3,7 @@
 ## Contexts
 
 - [Approvals](./apps/webapp/src/lib/approvals/CONTEXT.md): decides approval requests and delivers their cards while each approval kind moves from legacy requests to canonical workflows
+- [Billable Time](./apps/webapp/src/lib/billable-time/CONTEXT.md): prices customer-chargeable work, reports its revenue and margin, and hands it to accounting tools as invoice drafts
 - [Time Tracking](./apps/webapp/src/lib/time-tracking/CONTEXT.md): starts, ends and records employees' working time, and coordinates every writer of it
 - [Travel Expenses](./apps/webapp/src/lib/travel-expenses/CONTEXT.md): collects employees' expense reports for trips and single expenses, and reimburses them
 
@@ -12,4 +13,6 @@
 - **Admission ≠ lifecycle mode**: a Time Tracking organization's admission (`legacy`/`append`) and an Approvals kind's lifecycle mode are independent rollouts
 - **Approvals → Time Tracking**: approval decisions, corrections and cancellations that change work records run inside a Time Tracking **work transaction**, taking their approval write gate at the rank the acquisition protocol reserves for it
 - **Travel Expenses → Approvals**: a submitted expense report is an approval kind; Approvals decides it and Travel Expenses reimburses what was approved
+- **Time Tracking → Billable Time**: whether completed work is billable is part of its attribution, recorded and amended by Time Tracking like its project; Billable Time prices and reports it
+- **"Billing" ≠ Billable Time**: Time Tracking's billing entitlement is the organization's Z8 subscription; Billable Time is about the organization charging its own customers
 - **Employee lifecycle → Time Tracking**: a departure closes live work inside a Time Tracking **work transaction**

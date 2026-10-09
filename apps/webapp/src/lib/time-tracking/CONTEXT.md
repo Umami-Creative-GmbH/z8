@@ -59,6 +59,10 @@ _Avoid_: Active session, running timer
 A work period that has ended and now counts in the employee's work record.
 _Avoid_: Finished entries, closed session
 
+**Work attribution**:
+What a work period is recorded against: its project, work category, work location and whether it is billable. Changing it is an amendment of completed work, under the same change policy for every part.
+_Avoid_: Work metadata, tags
+
 **Day total**:
 An employee's work within one local day in their timezone: their completed work plus the part of any live work elapsed so far, split at local midnight. It differs from the compliance check's day, which counts each work period whole on the day it started.
 _Avoid_: Daily sum, actual hours, today's minutes
