@@ -359,8 +359,8 @@ export async function buildDigestDataForManager(
 	nowInstant: Instant = systemClock.nowInstant(),
 ): Promise<DailyDigestData> {
 	const now = DateTime.fromMillis(nowInstant.epochMilliseconds, { zone: timezone });
-	const todayStr = now.toISODate();
 	const today = plainDateAt(nowInstant, timezone);
+	const todayStr = today.toString();
 	// `shift.date` is keyed in the organization's zone: read the shifts of today's calendar date.
 	const organizationTimezone = await loadOrganizationTimezone(db, organizationId);
 	const todayShifts = shiftDateBounds(today.toString(), organizationTimezone);
@@ -488,8 +488,8 @@ export async function buildDigestDataForManager(
 				.where(
 					and(
 						eq(absenceEntry.status, "approved"),
-						lte(absenceEntry.startDate, todayStr!),
-						gte(absenceEntry.endDate, todayStr!),
+						lte(absenceEntry.startDate, todayStr),
+						gte(absenceEntry.endDate, todayStr),
 						inArray(absenceEntry.employeeId, managedEmployeeIds),
 					),
 				),

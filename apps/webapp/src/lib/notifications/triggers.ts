@@ -7,8 +7,8 @@
 
 import { DateTime } from "luxon";
 import type { PlainDate } from "@/lib/datetime/temporal-core";
-import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { createLogger } from "@/lib/logger";
+import { formatShiftDate } from "@/lib/scheduling/shift-date";
 import { createNotification } from "./notification-service";
 import type { CreateNotificationParams } from "./types";
 
@@ -1059,14 +1059,6 @@ export async function onVacationBalanceAlert(
 // =============================================================================
 // Shift Scheduling Notifications
 // =============================================================================
-
-/**
- * A shift's date as people read it, e.g. "Fri, Oct 9". Shift params carry the organization-local
- * calendar date (`shiftCalendarDate`), so the server's zone never shifts the day.
- */
-function formatShiftDate(date: PlainDate): string {
-	return formatPlainDate(date, "en-US", "weekdayMonthDay");
-}
 
 interface SchedulePublishedParams {
 	employeeUserId: string;

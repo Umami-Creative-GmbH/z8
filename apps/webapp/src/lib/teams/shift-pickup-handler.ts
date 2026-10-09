@@ -10,7 +10,6 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import { employee, employeeManagers, shift } from "@/db/schema";
-import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { runtime } from "@/lib/effect/runtime";
 import {
 	OpenShiftsService,
@@ -18,7 +17,7 @@ import {
 } from "@/lib/effect/services/open-shifts.service";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications/notification-service";
-import { shiftCalendarDate } from "@/lib/scheduling/shift-date";
+import { formatShiftDate, shiftCalendarDate } from "@/lib/scheduling/shift-date";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import type { ResolvedTenant } from "./types";
 
@@ -80,11 +79,7 @@ export async function notifyPrimaryManagerAboutShiftPickup({
 
 		const requesterName =
 			[requester.firstName, requester.lastName].filter(Boolean).join(" ") || "An employee";
-		const shiftDate = formatPlainDate(
-			shiftCalendarDate(requestedShift.date, organizationTimezone),
-			"en-US",
-			"weekdayMonthDay",
-		);
+		const shiftDate = formatShiftDate(shiftCalendarDate(requestedShift.date, organizationTimezone));
 
 		await createNotification({
 			userId: manager.userId,

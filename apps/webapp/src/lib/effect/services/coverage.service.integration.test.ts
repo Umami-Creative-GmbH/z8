@@ -112,4 +112,20 @@ describe("coverage service", () => {
 			]);
 		},
 	);
+
+	it("reports no gaps for a range that ends before it starts", async () => {
+		const org = await fixture.organization("Europe/Berlin");
+		const stored = STORED_SHIFT_DATES["Europe/Berlin"];
+
+		const gaps = await run((service) =>
+			service.getCoverageGaps({
+				organizationId: org.organizationId,
+				startDate: new Date(stored.next),
+				endDate: new Date(stored.day),
+				timezone: org.timezone,
+			}),
+		);
+
+		expect(gaps).toEqual([]);
+	});
 });

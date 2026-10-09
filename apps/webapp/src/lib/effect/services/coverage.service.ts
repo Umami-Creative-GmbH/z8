@@ -587,11 +587,10 @@ export const CoverageServiceLive = Layer.effect(
 					const subareas = yield* getSubareas(organizationId);
 					const subareaMap = new Map(subareas.map((s) => [s.id, s]));
 
-					const rangeBounds = shiftDateRangeBounds(
-						plainDateAt(instantFromDate(startDate), timezone),
-						plainDateAt(instantFromDate(endDate), timezone).add({ days: 1 }),
-						timezone,
-					);
+					const firstDay = plainDateAt(instantFromDate(startDate), timezone);
+					const lastDay = plainDateAt(instantFromDate(endDate), timezone);
+					if (Temporal.PlainDate.compare(firstDay, lastDay) > 0) return [];
+					const rangeBounds = shiftDateRangeBounds(firstDay, lastDay.add({ days: 1 }), timezone);
 
 					// Get scheduled shifts in range
 					const scheduledShifts = yield* dbService.query("getScheduledShiftsRange", async () => {

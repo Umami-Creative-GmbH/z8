@@ -13,6 +13,7 @@ import {
 } from "@/lib/absences/absence-plan-preview";
 import type { AbsenceRequest } from "@/lib/absences/types";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
+import type { DayOfWeek } from "@/lib/coverage/domain/entities/coverage-rule";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
@@ -37,7 +38,7 @@ type AffectedShift = {
 
 type ShiftRow = Omit<AffectedShift, "date"> & { date: Date };
 
-const DAY_OF_WEEK_BY_NUMBER: Record<number, string> = {
+const DAY_OF_WEEK_BY_NUMBER: Record<number, DayOfWeek> = {
 	1: "monday",
 	2: "tuesday",
 	3: "wednesday",

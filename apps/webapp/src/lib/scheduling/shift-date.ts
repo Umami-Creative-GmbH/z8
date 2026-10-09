@@ -5,6 +5,7 @@ import {
 	type PlainDate,
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { resolveScheduleDateRange } from "./schedule-local-input";
 
 /**
@@ -14,6 +15,14 @@ import { resolveScheduleDateRange } from "./schedule-local-input";
  */
 export function shiftCalendarDate(storedDate: Date, organizationTimezone: string): PlainDate {
 	return plainDateAt(instantFromDate(storedDate), organizationTimezone);
+}
+
+/**
+ * A shift's calendar date as people read it in English messages, e.g. "Fri, Oct 9". Pass the
+ * organization-local date (`shiftCalendarDate`), so the server's zone never moves the day.
+ */
+export function formatShiftDate(date: PlainDate): string {
+	return formatPlainDate(date, "en-US", "weekdayMonthDay");
 }
 
 /** The `shift.date` bounds of the organization-local calendar day `date` (`YYYY-MM-DD`). */
