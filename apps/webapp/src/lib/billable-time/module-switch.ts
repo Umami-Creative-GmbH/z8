@@ -7,7 +7,10 @@ import { billableTimeSettings } from "@/db/schema/billable-time";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
 import { getActiveAccountingConnection } from "./accounting/connection-store";
 import type { AccountingProviderKind } from "./accounting/provider";
-import { type AccountingProviderRegistry, getAccountingProviderRegistry } from "./accounting/registry";
+import {
+	type AccountingProviderRegistry,
+	getAccountingProviderRegistry,
+} from "./accounting/registry";
 import { type BillableCurrency, isBillableCurrency } from "./currency";
 import { isBillableCurrencyLocked } from "./currency-lock";
 import {

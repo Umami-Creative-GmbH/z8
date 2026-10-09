@@ -11,13 +11,13 @@
 
 import "server-only";
 import { createHash } from "node:crypto";
+import { BILLABLE_CURRENCIES } from "@/lib/billable-time/currency";
 import {
 	type Clock,
 	comparePlainDates,
 	type PlainDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import { BILLABLE_CURRENCIES } from "@/lib/billable-time/currency";
 import { createLogger } from "@/lib/logger";
 import { normalizeDecimalInput, parseUnits } from "@/lib/money/exact-decimal";
 import { type InvoiceDraft, invoiceDraftNetTotal } from "../invoice-draft";
@@ -377,7 +377,9 @@ async function readImportDetails(client: SevdeskClient): Promise<ImportDetails> 
 	const isMain = (row: Record<string, unknown>) => text(row.main) === "1" || row.main === true;
 	const ordered = [...emailRows]
 		.filter((row) => text(row.type) === "EMAIL")
-		.sort((left, right) => Number(isMain(right)) - Number(isMain(left)) || byNumericId(left, right));
+		.sort(
+			(left, right) => Number(isMain(right)) - Number(isMain(left)) || byNumericId(left, right),
+		);
 	for (const row of ordered) {
 		const contactId = refId(row.contact);
 		const email = text(row.value);

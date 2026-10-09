@@ -315,13 +315,30 @@ describe("sevdesk connector: contacts", () => {
 		const { provider, http } = providerWith([
 			...importLookupRoutes({
 				addresses: [
-					contactAddressRow({ id: 72, contactId: "1001", street: "Second 2", zip: "20095", city: "Hamburg" }),
-					contactAddressRow({ id: 71, contactId: "1001", street: "Hauptstr. 1", zip: "10115", city: "Berlin" }),
+					contactAddressRow({
+						id: 72,
+						contactId: "1001",
+						street: "Second 2",
+						zip: "20095",
+						city: "Hamburg",
+					}),
+					contactAddressRow({
+						id: 71,
+						contactId: "1001",
+						street: "Hauptstr. 1",
+						zip: "10115",
+						city: "Berlin",
+					}),
 					contactAddressRow({ id: 73, contactId: "1003", city: "München" }),
 				],
 				emails: [
 					communicationWayRow({ id: "81", contactId: "1001", value: "info@acme.example" }),
-					communicationWayRow({ id: "82", contactId: "1001", value: "billing@acme.example", main: true }),
+					communicationWayRow({
+						id: "82",
+						contactId: "1001",
+						value: "billing@acme.example",
+						main: true,
+					}),
 					communicationWayRow({ id: "83", contactId: "1003", value: "erika@example.org" }),
 				],
 			}),
@@ -329,7 +346,10 @@ describe("sevdesk connector: contacts", () => {
 				method: "GET",
 				path: "/Contact",
 				responses: [
-					{ status: 200, body: { objects: [contacts.acme, contacts.acmeSchweiz, contacts.person] } },
+					{
+						status: 200,
+						body: { objects: [contacts.acme, contacts.acmeSchweiz, contacts.person] },
+					},
 				],
 			},
 		]);
@@ -374,7 +394,11 @@ describe("sevdesk connector: contacts", () => {
 
 	it("reads emails and addresses once per import, page by page, not once per contact page", async () => {
 		const emails = Array.from({ length: 1000 }, (_, index) =>
-			communicationWayRow({ id: String(5000 + index), contactId: "9", value: `x${index}@example.org` }),
+			communicationWayRow({
+				id: String(5000 + index),
+				contactId: "9",
+				value: `x${index}@example.org`,
+			}),
 		);
 		const { provider, http } = providerWith([
 			{
@@ -419,9 +443,9 @@ describe("sevdesk connector: contacts", () => {
 		const second = await lister.listCustomerContacts({ cursor: first.nextCursor });
 
 		expect(second.contacts[0]?.email).toBe("a@acme.example");
-		expect(http.to("GET", "/CommunicationWay").map((request) => request.query.get("offset"))).toEqual(
-			["0", "1000"],
-		);
+		expect(
+			http.to("GET", "/CommunicationWay").map((request) => request.query.get("offset")),
+		).toEqual(["0", "1000"]);
 		expect(http.to("GET", "/ContactAddress")).toHaveLength(1);
 	});
 
@@ -458,7 +482,11 @@ describe("sevdesk connector: contacts", () => {
 
 	it("pages by the raw page size even when it leaves contacts out", async () => {
 		const rows = Array.from({ length: 100 }, (_, index) =>
-			contactRow({ id: String(index + 1), name: `C ${index}`, status: index === 0 ? "50" : "1000" }),
+			contactRow({
+				id: String(index + 1),
+				name: `C ${index}`,
+				status: index === 0 ? "50" : "1000",
+			}),
 		);
 		const { provider } = providerWith([
 			...importLookupRoutes(),

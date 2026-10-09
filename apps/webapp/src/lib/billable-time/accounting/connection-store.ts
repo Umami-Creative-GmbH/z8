@@ -464,7 +464,11 @@ export async function finishAccountingConnection(
 		return;
 	}
 	if (outcome.replacedConnectionId) {
-		await bestEffortDeleteSecret(dependencies, prepared.organizationId, outcome.replacedConnectionId);
+		await bestEffortDeleteSecret(
+			dependencies,
+			prepared.organizationId,
+			outcome.replacedConnectionId,
+		);
 	}
 	logger.info(
 		{
@@ -476,7 +480,6 @@ export async function finishAccountingConnection(
 		"Accounting connection stored",
 	);
 }
-
 
 export type UpdateAccountingDefaultsOutcome =
 	| { ok: true; changed: boolean; connection: ActiveAccountingConnection }

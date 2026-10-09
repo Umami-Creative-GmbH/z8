@@ -261,8 +261,7 @@ export async function connectAccountingTool(input: {
 					settings: input.settings ?? {},
 					defaultTaxTreatment: input.defaultTaxTreatment,
 				}),
-			catch: (cause) =>
-				accountingServiceError("billableTime.accounting.prepareConnection", cause),
+			catch: (cause) => accountingServiceError("billableTime.accounting.prepareConnection", cause),
 		});
 		if (!preparation.ok) return yield* Effect.fail(connectRefusalError(preparation));
 		const { prepared } = preparation;
