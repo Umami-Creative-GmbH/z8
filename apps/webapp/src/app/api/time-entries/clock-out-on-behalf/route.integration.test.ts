@@ -667,6 +667,8 @@ describe("manager on-behalf clock-out on PostgreSQL", () => {
 		expect(preserved.status).toBe(201);
 		expect(preserved.body.receipt.attribution).toEqual({
 			projectId: ids.projectA,
+			// The kept project keeps the work's billability (#900).
+			isBillable: false,
 			workCategoryId: ids.categoryA,
 			workLocationType: "office",
 		});
