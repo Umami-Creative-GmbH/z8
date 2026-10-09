@@ -101,6 +101,21 @@ describe("schema import boundaries", () => {
 		expect(offenders).toEqual([]);
 	});
 
+	it("imports personnel file vocabulary only from import-free `.types` modules", () => {
+		// The schema reaches the Personnel File module only through its
+		// dependency-free vocabulary (`*.types.ts`), which imports nothing; the
+		// runtime logic (Temporal, storage, auth) re-exports it.
+		const offenders = [...schemaImportClosure()]
+			.filter(([filePath]) => sourceRelative(filePath).startsWith("lib/personnel-file/"))
+			.flatMap(([filePath, specifiers]) => {
+				const relative = sourceRelative(filePath);
+				if (!relative.endsWith(".types.ts")) return [`${relative} is not a .types module`];
+				return specifiers.map((specifier) => `${relative} -> ${specifier}`);
+			});
+
+		expect(offenders).toEqual([]);
+	});
+
 	it("keeps schema declarations independent from the Temporal runtime adapter", () => {
 		const runtimeAdapterImports = readdirSync(schemaDirectory)
 			.filter((fileName) => fileName.endsWith(".ts"))

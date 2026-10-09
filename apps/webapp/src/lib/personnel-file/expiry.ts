@@ -1,4 +1,7 @@
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import type { ExpiryReminderKind } from "./expiry.types";
+
+export { EXPIRY_REMINDER_KINDS, type ExpiryReminderKind } from "./expiry.types";
 
 /**
  * Expiry reminders (#869): officers and, for shared documents, the employee
@@ -7,9 +10,6 @@ import { parsePlainDate } from "@/lib/datetime/temporal-core";
  * (CONTEXT.md "Expiry date"). All days are plain calendar days; "today" is
  * the organization's calendar day (`todayInOrganization`).
  */
-
-export const EXPIRY_REMINDER_KINDS = ["upcoming", "expired_today"] as const;
-export type ExpiryReminderKind = (typeof EXPIRY_REMINDER_KINDS)[number];
 
 export const DEFAULT_EXPIRY_REMINDER_LEAD_DAYS = 30;
 export const MIN_EXPIRY_REMINDER_LEAD_DAYS = 1;

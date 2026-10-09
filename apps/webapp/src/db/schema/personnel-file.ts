@@ -19,7 +19,7 @@ import type {
 	PersonnelFileCleanupReason,
 	PersonnelFileUploadStatus,
 } from "@/lib/personnel-file/document.types";
-import type { ExpiryReminderKind } from "@/lib/personnel-file/expiry";
+import type { ExpiryReminderKind } from "@/lib/personnel-file/expiry.types";
 import type {
 	PayslipBatchStatus,
 	PayslipFileFailure,
