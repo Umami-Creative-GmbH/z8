@@ -15,6 +15,7 @@
  */
 
 import type { BillableCurrency } from "@/lib/billable-time/currency";
+import type { Instant } from "@/lib/datetime/temporal-core";
 import type { InvoiceDraft } from "./invoice-draft";
 import type { TaxTreatmentKind } from "./tax-treatment";
 
@@ -159,15 +160,35 @@ export interface AccountingProvider {
 	 */
 	createInvoiceDraft(
 		draft: InvoiceDraft,
-		options: { idempotencyKey: string },
+		options: {
+			idempotencyKey: string;
+			/**
+			 * When the first call with this key was attempted (the recorded attempt).
+			 * Connectors that look drafts up by marker search the tool from this
+			 * instant; without it they search from now, which only covers retries on
+			 * the same day. The hand-off passes it on every retry.
+			 */
+			firstAttemptAt?: Instant;
+		},
 	): Promise<CreatedInvoiceDraft>;
 
 	/** The tool's status of a draft Z8 created, `gone`, or `unsupported`. */
 	getInvoiceDraftStatus(externalId: string): Promise<InvoiceDraftStatus>;
 
-	// #906 adds `listCustomerContacts(page: { cursor: string | null }): Promise<{
-	// contacts: AccountingContact[]; nextCursor: string | null }>` here: a paged
-	// listing of every customer contact, for the customer import.
+	/**
+	 * Every customer contact, one page at a time, for the customer import (#906).
+	 * Start with `cursor: null` and pass each `nextCursor` back until it is null.
+	 * Cursors are opaque to callers. Archived contacts are left out.
+	 *
+	 * Optional while connectors add it: a provider without it cannot import.
+	 */
+	listCustomerContacts?(page: { cursor: string | null }): Promise<CustomerContactPage>;
+}
+
+export interface CustomerContactPage {
+	contacts: AccountingContact[];
+	/** Pass to the next call; null when this was the last page. */
+	nextCursor: string | null;
 }
 
 /** A non-secret settings value a connector stores on the connection (JSON). */

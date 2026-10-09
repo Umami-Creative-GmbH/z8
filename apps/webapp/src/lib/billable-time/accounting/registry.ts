@@ -1,3 +1,4 @@
+import { createLexwareOfficeConnector } from "./lexware/connector";
 import type { AccountingConnector, AccountingProviderKind } from "./provider";
 
 /**
@@ -32,7 +33,7 @@ export function createAccountingProviderRegistry(
  * replace `getAccountingProviderRegistry` with `fakeAccountingProviderRegistry`
  * (`vi.mock("@/lib/billable-time/accounting/registry", ...)`).
  */
-const PRODUCTION_CONNECTORS: readonly AccountingConnector[] = [];
+const PRODUCTION_CONNECTORS: readonly AccountingConnector[] = [createLexwareOfficeConnector()];
 
 let productionRegistry: AccountingProviderRegistry | null = null;
 
