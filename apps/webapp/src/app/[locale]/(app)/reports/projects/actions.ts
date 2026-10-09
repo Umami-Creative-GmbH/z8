@@ -14,6 +14,7 @@ import {
 } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
+import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { buildProjectHealthFields, buildProjectHealthTotals } from "@/lib/reports/project-health";
 import type {
 	ProjectDetailedReport,
@@ -148,6 +149,7 @@ export async function getProjectsOverview(
 											and(
 												eq(workPeriod.projectId, p.id),
 												eq(workPeriod.organizationId, organizationId),
+												completedWorkPeriodCondition(),
 												gte(workPeriod.startTime, startDate),
 												lte(workPeriod.startTime, endDate),
 											),
@@ -161,6 +163,7 @@ export async function getProjectsOverview(
 											and(
 												eq(workPeriod.projectId, p.id),
 												eq(workPeriod.organizationId, organizationId),
+												completedWorkPeriodCondition(),
 											),
 										),
 								]);
@@ -338,6 +341,7 @@ export async function getProjectDetailedReport(
 						where: and(
 							eq(workPeriod.projectId, projectId),
 							eq(workPeriod.organizationId, organizationId),
+							completedWorkPeriodCondition(),
 							gte(workPeriod.startTime, startDate),
 							lte(workPeriod.startTime, endDate),
 						),
