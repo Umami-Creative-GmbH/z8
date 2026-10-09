@@ -101,6 +101,8 @@ export function toClockingCommand(
 					target: closeTarget(command.target),
 					project: command.project,
 					workCategory: command.workCategory,
+					// Named only when the command names one (#875); absent, it follows the project.
+					...(command.task ? { task: command.task } : {}),
 				},
 			};
 		case "break":

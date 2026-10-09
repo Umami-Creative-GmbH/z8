@@ -44,7 +44,7 @@ import type { ComplianceWarning } from "@/lib/effect/services/work-policy.servic
 import { WorkPolicyService } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
 import type { ProjectTaskChoice } from "@/lib/projects/project-task-model";
-import { listOpenTaskChoicesByProject } from "@/lib/projects/project-tasks";
+import { listOpenTasksByProject } from "@/lib/projects/project-tasks";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
 import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
@@ -841,7 +841,7 @@ export async function getAssignedProjects(): Promise<
 			}
 		}
 
-		const tasksByProjectId = await listOpenTaskChoicesByProject({
+		const tasksByProjectId = await listOpenTasksByProject({
 			organizationId: emp.organizationId,
 			projectIds,
 		});

@@ -4,6 +4,7 @@ import { connection, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee, project, projectAssignment } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { listOpenTasksByProject } from "@/lib/projects/project-tasks";
 
 /**
  * GET /api/extension/projects
@@ -11,7 +12,8 @@ import { auth } from "@/lib/auth";
  *
  * Used by the browser extension to populate the project selector
  *
- * Response: { projects: Array<{ id, name, color, icon }> }
+ * Response: { projects: Array<{ id, name, color, icon, tasks: Array<{ id, name }> }> }
+ * `tasks` are the project's open tasks, by name (#875).
  */
 export async function GET() {
 	await connection();
@@ -80,7 +82,14 @@ export async function GET() {
 			orderBy: (project, { asc }) => [asc(project.name)],
 		});
 
-		return NextResponse.json({ projects });
+		// Each listed project's open tasks (#875); older clients ignore the field.
+		const tasks = await listOpenTasksByProject({
+			organizationId: activeOrgId,
+			projectIds: projects.map((item) => item.id),
+		});
+		return NextResponse.json({
+			projects: projects.map((item) => ({ ...item, tasks: tasks.get(item.id) ?? [] })),
+		});
 	} catch (error) {
 		console.error("Failed to fetch projects for extension:", error);
 		return NextResponse.json({ error: "Internal server error" }, { status: 500 });

@@ -5,7 +5,7 @@ import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
 import type { ServerActionResult } from "@/lib/effect/result";
 import type { BookedProjectTask, ProjectTaskChoice } from "@/lib/projects/project-task-model";
-import { findProjectTask, listOpenTaskChoicesByProject } from "@/lib/projects/project-tasks";
+import { findProjectTask, listOpenTasksByProject } from "@/lib/projects/project-tasks";
 import { workPeriodOwner } from "@/lib/time-tracking/clocking";
 import { authorizedSubject } from "@/lib/time-tracking/clocking/authorize";
 import { isProjectEligible } from "@/lib/time-tracking/project-eligibility";
@@ -78,7 +78,7 @@ export async function getClockOutOnBehalfTaskChoices(
 		]);
 		const tasks = bookable
 			? ((
-					await listOpenTaskChoicesByProject({
+					await listOpenTasksByProject({
 						organizationId,
 						projectIds: [period.projectId],
 					})

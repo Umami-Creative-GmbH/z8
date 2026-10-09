@@ -101,6 +101,12 @@ const clockCommandSchema = z.discriminatedUnion("kind", [
 		target: closeTarget,
 		project: attribution,
 		workCategory: attribution,
+		/**
+		 * The project task (#875). Optional and omitted when not named, so commands
+		 * frozen before tasks existed keep their exact bytes. Absent, the task
+		 * follows the project.
+		 */
+		task: attribution.optional(),
 	}),
 	/**
 	 * A confirmed desktop idle break (#281, resolution #263 §8): one atomic
