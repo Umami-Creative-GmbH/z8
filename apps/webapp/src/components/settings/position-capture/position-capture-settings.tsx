@@ -24,7 +24,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import {
+	TFormControl,
+	TFormDescription,
+	TFormItem,
+	TFormLabel,
+	TFormMessage,
+} from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import {
 	POSITION_PURPOSE_MAX_LENGTH,
@@ -38,9 +53,6 @@ interface PositionCaptureSettingsProps {
 }
 
 type AssignmentTargetType = "organization" | "team" | "employee";
-
-const SELECT_CLASS =
-	"flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground";
 
 /** Owner/admin position capture settings (#825): switch, purpose, retention, assignments, notices. */
 export function PositionCaptureSettings({ data }: PositionCaptureSettingsProps) {
@@ -168,34 +180,29 @@ function CaptureSettingsForm({ data }: PositionCaptureSettingsProps) {
 						}}
 					>
 						{(field) => (
-							<div className="space-y-2">
-								<Label htmlFor="position-capture-purpose">
+							<TFormItem>
+								<TFormLabel hasError={fieldHasError(field)}>
 									{t("settings.positionCapture.purpose", "Purpose statement")}
-								</Label>
-								<Textarea
-									id="position-capture-purpose"
-									name="purposeStatement"
-									rows={4}
-									maxLength={POSITION_PURPOSE_MAX_LENGTH}
-									value={field.state.value}
-									onChange={(event) => field.handleChange(event.target.value)}
-									onBlur={field.handleBlur}
-									disabled={saving}
-									aria-invalid={field.state.meta.errors.length > 0}
-									aria-describedby="position-capture-purpose-help"
-								/>
-								<p id="position-capture-purpose-help" className="text-sm text-muted-foreground">
+								</TFormLabel>
+								<TFormControl hasError={fieldHasError(field)}>
+									<Textarea
+										name="purposeStatement"
+										rows={4}
+										maxLength={POSITION_PURPOSE_MAX_LENGTH}
+										value={field.state.value}
+										onChange={(event) => field.handleChange(event.target.value)}
+										onBlur={field.handleBlur}
+										disabled={saving}
+									/>
+								</TFormControl>
+								<TFormDescription>
 									{t(
 										"settings.positionCapture.purposeDescription",
 										"Shown to employees in the position notice. Explain why your organization records positions.",
 									)}
-								</p>
-								{field.state.meta.errors.length > 0 ? (
-									<p className="text-sm text-destructive" role="alert">
-										{String(field.state.meta.errors[0])}
-									</p>
-								) : null}
-							</div>
+								</TFormDescription>
+								<TFormMessage field={field} />
+							</TFormItem>
 						)}
 					</form.Field>
 
@@ -215,37 +222,33 @@ function CaptureSettingsForm({ data }: PositionCaptureSettingsProps) {
 						}}
 					>
 						{(field) => (
-							<div className="space-y-2">
-								<Label htmlFor="position-capture-retention">
+							<TFormItem>
+								<TFormLabel hasError={fieldHasError(field)}>
 									{t("settings.positionCapture.retention", "Retention (days)")}
-								</Label>
-								<Input
-									id="position-capture-retention"
-									name="retentionDays"
-									type="number"
-									inputMode="numeric"
-									autoComplete="off"
-									min={POSITION_RETENTION_MIN_DAYS}
-									max={POSITION_RETENTION_MAX_DAYS}
-									className="max-w-40"
-									value={Number.isNaN(field.state.value) ? "" : field.state.value}
-									onChange={(event) => field.handleChange(event.target.valueAsNumber)}
-									onBlur={field.handleBlur}
-									disabled={saving}
-									aria-invalid={field.state.meta.errors.length > 0}
-								/>
-								<p className="text-sm text-muted-foreground">
+								</TFormLabel>
+								<TFormControl hasError={fieldHasError(field)}>
+									<Input
+										name="retentionDays"
+										type="number"
+										inputMode="numeric"
+										autoComplete="off"
+										min={POSITION_RETENTION_MIN_DAYS}
+										max={POSITION_RETENTION_MAX_DAYS}
+										className="max-w-40"
+										value={Number.isNaN(field.state.value) ? "" : field.state.value}
+										onChange={(event) => field.handleChange(event.target.valueAsNumber)}
+										onBlur={field.handleBlur}
+										disabled={saving}
+									/>
+								</TFormControl>
+								<TFormDescription>
 									{t(
 										"settings.positionCapture.retentionDescription",
 										"Each position is deleted this many days after it was recorded. Shortening it also brings existing deletion dates forward.",
 									)}
-								</p>
-								{field.state.meta.errors.length > 0 ? (
-									<p className="text-sm text-destructive" role="alert">
-										{String(field.state.meta.errors[0])}
-									</p>
-								) : null}
-							</div>
+								</TFormDescription>
+								<TFormMessage field={field} />
+							</TFormItem>
 						)}
 					</form.Field>
 
@@ -412,81 +415,94 @@ function CaptureAssignments({ data }: PositionCaptureSettingsProps) {
 				>
 					<form.Field name="targetType">
 						{(field) => (
-							<div className="space-y-2">
-								<Label htmlFor="position-capture-target-type">
-									{t("settings.positionCapture.targetType", "Applies to")}
-								</Label>
-								<select
-									id="position-capture-target-type"
-									className={SELECT_CLASS}
+							<TFormItem>
+								<TFormLabel>{t("settings.positionCapture.targetType", "Applies to")}</TFormLabel>
+								<Select
+									name="targetType"
 									value={field.state.value}
-									onChange={(event) =>
-										field.handleChange(event.target.value as AssignmentTargetType)
-									}
+									onValueChange={(value: AssignmentTargetType) => field.handleChange(value)}
 									disabled={pending}
 								>
-									<option value="team">{t("settings.positionCapture.targetTeam", "A team")}</option>
-									<option value="employee">
-										{t("settings.positionCapture.targetEmployee", "An employee")}
-									</option>
-									<option value="organization">
-										{t("settings.positionCapture.targetOrganization", "Whole organization")}
-									</option>
-								</select>
-							</div>
+									<TFormControl>
+										<SelectTrigger className="h-10 w-full" onBlur={field.handleBlur}>
+											<SelectValue />
+										</SelectTrigger>
+									</TFormControl>
+									<SelectContent>
+										<SelectItem value="team">
+											{t("settings.positionCapture.targetTeam", "A team")}
+										</SelectItem>
+										<SelectItem value="employee">
+											{t("settings.positionCapture.targetEmployee", "An employee")}
+										</SelectItem>
+										<SelectItem value="organization">
+											{t("settings.positionCapture.targetOrganization", "Whole organization")}
+										</SelectItem>
+									</SelectContent>
+								</Select>
+							</TFormItem>
 						)}
 					</form.Field>
 
 					{targetType === "team" ? (
 						<form.Field name="teamId">
 							{(field) => (
-								<div className="space-y-2">
-									<Label htmlFor="position-capture-team">
-										{t("settings.positionCapture.team", "Team")}
-									</Label>
-									<select
-										id="position-capture-team"
-										className={SELECT_CLASS}
-										value={field.state.value}
-										onChange={(event) => field.handleChange(event.target.value)}
+								<TFormItem>
+									<TFormLabel>{t("settings.positionCapture.team", "Team")}</TFormLabel>
+									<Select
+										name="teamId"
+										value={field.state.value || null}
+										onValueChange={(value: string | null) => field.handleChange(value ?? "")}
 										disabled={pending}
 									>
-										<option value="">
-											{t("settings.positionCapture.selectTeam", "Select a team")}
-										</option>
-										{data.teams.map((team) => (
-											<option key={team.id} value={team.id}>
-												{team.name}
-											</option>
-										))}
-									</select>
-								</div>
+										<TFormControl>
+											<SelectTrigger className="h-10 w-full" onBlur={field.handleBlur}>
+												<SelectValue
+													placeholder={t("settings.positionCapture.selectTeam", "Select a team")}
+												/>
+											</SelectTrigger>
+										</TFormControl>
+										<SelectContent>
+											{data.teams.map((team) => (
+												<SelectItem key={team.id} value={team.id}>
+													{team.name}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</TFormItem>
 							)}
 						</form.Field>
 					) : targetType === "employee" ? (
 						<form.Field name="employeeId">
 							{(field) => (
-								<div className="space-y-2">
-									<Label htmlFor="position-capture-employee">
-										{t("settings.positionCapture.employee", "Employee")}
-									</Label>
-									<select
-										id="position-capture-employee"
-										className={SELECT_CLASS}
-										value={field.state.value}
-										onChange={(event) => field.handleChange(event.target.value)}
+								<TFormItem>
+									<TFormLabel>{t("settings.positionCapture.employee", "Employee")}</TFormLabel>
+									<Select
+										name="employeeId"
+										value={field.state.value || null}
+										onValueChange={(value: string | null) => field.handleChange(value ?? "")}
 										disabled={pending}
 									>
-										<option value="">
-											{t("settings.positionCapture.selectEmployee", "Select an employee")}
-										</option>
-										{data.employees.map((employee) => (
-											<option key={employee.id} value={employee.id}>
-												{employee.name}
-											</option>
-										))}
-									</select>
-								</div>
+										<TFormControl>
+											<SelectTrigger className="h-10 w-full" onBlur={field.handleBlur}>
+												<SelectValue
+													placeholder={t(
+														"settings.positionCapture.selectEmployee",
+														"Select an employee",
+													)}
+												/>
+											</SelectTrigger>
+										</TFormControl>
+										<SelectContent>
+											{data.employees.map((employee) => (
+												<SelectItem key={employee.id} value={employee.id}>
+													{employee.name}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</TFormItem>
 							)}
 						</form.Field>
 					) : (

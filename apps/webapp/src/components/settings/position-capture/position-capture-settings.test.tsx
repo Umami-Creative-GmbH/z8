@@ -156,8 +156,9 @@ describe("PositionCaptureSettings", () => {
 		expect(
 			screen.getByText("Nobody is assigned. Capture applies to nobody until you assign it."),
 		).toBeTruthy();
-		await userEvent.selectOptions(screen.getByLabelText("Applies to"), "team");
-		await userEvent.selectOptions(screen.getByLabelText("Team"), teamId);
+		expect(screen.getByRole("combobox", { name: "Applies to" }).textContent).toContain("A team");
+		await userEvent.click(screen.getByRole("combobox", { name: "Team" }));
+		await userEvent.click(await screen.findByRole("option", { name: "Field" }));
 		await userEvent.click(screen.getByRole("button", { name: "Add assignment" }));
 
 		expect(setAssignmentMock).toHaveBeenCalledWith({
