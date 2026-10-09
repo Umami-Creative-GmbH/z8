@@ -3,6 +3,8 @@ import type { db } from "@/db";
 import { organizationClockingReminderSettings } from "@/db/schema/clocking-reminder";
 import { type Clock, dateFromInstant } from "@/lib/datetime/temporal-core";
 import {
+	type ClockingReminderGrace,
+	type ClockingReminderLead,
 	type ClockingReminderRole,
 	type ClockingReminderSettings,
 	DEFAULT_CLOCKING_REMINDER_SETTINGS,
@@ -57,9 +59,9 @@ export async function loadClockingReminderSettings(
 export async function saveClockingReminderSettings(
 	input: {
 		organizationId: string;
-		missedClockIn: { enabled: boolean; graceMinutes: number };
-		forgottenClockOut: { enabled: boolean; graceMinutes: number };
-		breakDue: { enabled: boolean; leadMinutes: number };
+		missedClockIn: ClockingReminderGrace;
+		forgottenClockOut: ClockingReminderGrace;
+		breakDue: ClockingReminderLead;
 		roles: ClockingReminderRole[];
 	},
 	deps: { database: Database; clock: Clock },
