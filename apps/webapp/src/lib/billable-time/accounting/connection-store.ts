@@ -10,6 +10,7 @@ import { createLogger } from "@/lib/logger";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
 import { deleteOrgSecret, getOrgSecret, storeOrgSecret } from "@/lib/vault";
 import type { BillableCurrency } from "../currency";
+import { isUniqueViolation } from "../input";
 import { lockBillableTimeSettings } from "../settings";
 import {
 	type AccountingConnectionSettings,
@@ -211,16 +212,6 @@ function parseApiKey(value: unknown): string | null {
 
 function describeTax(treatment: TaxTreatment) {
 	return { kind: treatment.kind, rate: formatTaxRate(treatment.rateBasisPoints) };
-}
-
-function isUniqueViolation(error: unknown): boolean {
-	let candidate: unknown = error;
-	for (let depth = 0; depth < 4 && candidate && typeof candidate === "object"; depth += 1) {
-		const current = candidate as { code?: unknown; cause?: unknown };
-		if (current.code === "23505") return true;
-		candidate = current.cause;
-	}
-	return false;
 }
 
 async function bestEffortDeleteSecret(

@@ -7,6 +7,7 @@ import { customer, invoicedWork, project, timeEntry, workPeriod } from "@/db/sch
 import { workDayOf } from "@/lib/billable-time/applicable-rate";
 import { listBillableRatesForWork } from "@/lib/billable-time/billable-rates";
 import { listCostRatesForWork } from "@/lib/billable-time/cost-rates";
+import { parsePlainDay } from "@/lib/billable-time/input";
 import { rateFromStored } from "@/lib/billable-time/money";
 import type { ReportedWork, ReportRates } from "@/lib/billable-time/report-figures";
 import { dateFromInstant, instantFromDate, type PlainDate } from "@/lib/datetime/temporal-core";
@@ -36,16 +37,8 @@ export function reportDayRangeFromDates(startDate: Date, endDate: Date): ReportD
  * inclusive. Null for anything else, or when the range ends before it starts.
  */
 export function reportDayRangeFromDays(fromDay: unknown, toDay: unknown): ReportDayRange | null {
-	const parse = (value: unknown) => {
-		if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-		try {
-			return Temporal.PlainDate.from(value, { overflow: "reject" });
-		} catch {
-			return null;
-		}
-	};
-	const from = parse(fromDay);
-	const to = parse(toDay);
+	const from = parsePlainDay(fromDay);
+	const to = parsePlainDay(toDay);
 	if (!from || !to || Temporal.PlainDate.compare(from, to) > 0) return null;
 	return { fromDay: from, toDay: to };
 }

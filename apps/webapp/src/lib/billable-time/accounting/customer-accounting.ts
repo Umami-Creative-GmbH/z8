@@ -12,6 +12,7 @@ import {
 import { AuditAction } from "@/lib/audit-logger";
 import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
+import { isUuid } from "../input";
 import { lockBillableTimeSettings } from "../settings";
 import {
 	type AccountingDependencies,
@@ -46,12 +47,8 @@ export interface ContactLink {
 	linkedAt: Instant;
 }
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 /** Whether an untrusted value is a customer id (a uuid). */
-export function isCustomerId(value: unknown): value is string {
-	return typeof value === "string" && UUID_PATTERN.test(value);
-}
+export const isCustomerId = isUuid;
 
 async function customerInOrganization(
 	reader: AccountingReader,

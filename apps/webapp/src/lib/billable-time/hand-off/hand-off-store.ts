@@ -18,7 +18,7 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
-import { dateFromInstant, instantFromDate, type PlainDate } from "@/lib/datetime/temporal-core";
+import { dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import { createLogger } from "@/lib/logger";
 import { formatUnits } from "@/lib/money/exact-decimal";
@@ -53,6 +53,7 @@ import {
 import { formatTaxRate, taxTreatmentFromStored } from "../accounting/tax-treatment";
 import { taxTreatmentView } from "../accounting/views";
 import { isBillableCurrency } from "../currency";
+import { isUniqueViolation, isUuid, parsePlainDay } from "../input";
 import { formatRate, rateFromStored } from "../money";
 import { getBillableTimeSettings, lockBillableTimeSettings } from "../settings";
 import {
@@ -101,7 +102,6 @@ const logger = createLogger("BillableTimeHandOff");
 
 type Reader = Pick<typeof db, "select">;
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_PERIOD_DAYS = 366;
 const MAX_PROJECTS = 500;
 const MAX_RELEASE_REASON = 500;
@@ -117,26 +117,17 @@ export interface HandOffRequest {
 
 export type HandOffRequestRefusal = "invalid_customer" | "invalid_period" | "invalid_projects";
 
-function parseDay(value: unknown): PlainDate | null {
-	if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-	try {
-		return Temporal.PlainDate.from(value, { overflow: "reject" });
-	} catch {
-		return null;
-	}
-}
-
 /** Reads a hand-off request from untrusted input. */
 export function parseHandOffRequest(
 	input: unknown,
 ): { ok: true; request: HandOffRequest } | { ok: false; reason: HandOffRequestRefusal } {
 	if (typeof input !== "object" || input === null) return { ok: false, reason: "invalid_customer" };
 	const raw = input as Record<string, unknown>;
-	if (typeof raw.customerId !== "string" || !UUID_PATTERN.test(raw.customerId)) {
+	if (!isUuid(raw.customerId)) {
 		return { ok: false, reason: "invalid_customer" };
 	}
-	const from = parseDay(raw.periodFrom);
-	const to = parseDay(raw.periodTo);
+	const from = parsePlainDay(raw.periodFrom);
+	const to = parsePlainDay(raw.periodTo);
 	if (
 		!from ||
 		!to ||
@@ -151,7 +142,7 @@ export function parseHandOffRequest(
 			!Array.isArray(raw.projectIds) ||
 			raw.projectIds.length === 0 ||
 			raw.projectIds.length > MAX_PROJECTS ||
-			!raw.projectIds.every((id) => typeof id === "string" && UUID_PATTERN.test(id))
+			!raw.projectIds.every((id) => isUuid(id))
 		) {
 			return { ok: false, reason: "invalid_projects" };
 		}
@@ -1118,7 +1109,7 @@ export async function confirmHandOff(
 		expectedFingerprint: unknown;
 	},
 ): Promise<HandOffOutcome> {
-	if (typeof input.idempotencyKey !== "string" || !UUID_PATTERN.test(input.idempotencyKey)) {
+	if (!isUuid(input.idempotencyKey)) {
 		return { ok: false, reason: "invalid_key" };
 	}
 	if (typeof input.expectedFingerprint !== "string" || input.expectedFingerprint === "") {
@@ -1170,22 +1161,12 @@ export async function retryHandOff(
 	return continueAttempt(database, dependencies, draft, input.actorUserId);
 }
 
-function isUniqueViolation(error: unknown): boolean {
-	let candidate: unknown = error;
-	for (let depth = 0; depth < 4 && candidate && typeof candidate === "object"; depth += 1) {
-		const current = candidate as { code?: unknown; cause?: unknown };
-		if (current.code === "23505") return true;
-		candidate = current.cause;
-	}
-	return false;
-}
-
 async function findDraft(
 	reader: Reader,
 	organizationId: string,
 	draftId: string,
 ): Promise<DraftRow | null> {
-	if (!UUID_PATTERN.test(draftId)) return null;
+	if (!isUuid(draftId)) return null;
 	const [row] = await reader
 		.select()
 		.from(invoiceDraft)
@@ -1210,7 +1191,7 @@ export async function releaseInvoiceDraft(
 	database: typeof db,
 	input: { organizationId: string; actorUserId: string; draftId: string; reason: unknown },
 ): Promise<ReleaseOutcome> {
-	if (!UUID_PATTERN.test(input.draftId)) return { ok: false, reason: "not_found" };
+	if (!isUuid(input.draftId)) return { ok: false, reason: "not_found" };
 	const reason =
 		typeof input.reason === "string" && input.reason.trim() !== ""
 			? input.reason.trim().slice(0, MAX_RELEASE_REASON)
@@ -1328,7 +1309,7 @@ export async function clearChangedAfterInvoicing(
 		!Array.isArray(ids) ||
 		ids.length === 0 ||
 		ids.length > 1000 ||
-		!ids.every((id) => typeof id === "string" && UUID_PATTERN.test(id))
+		!ids.every((id) => isUuid(id))
 	) {
 		return { ok: false, reason: "invalid_input" };
 	}
@@ -1534,7 +1515,7 @@ export async function getInvoiceDraftDetail(
 	dependencies: Pick<AccountingDependencies, "registry">,
 	input: { organizationId: string; draftId: string },
 ): Promise<InvoiceDraftDetailView | null> {
-	if (!UUID_PATTERN.test(input.draftId)) return null;
+	if (!isUuid(input.draftId)) return null;
 	const [row] = await reader
 		.select({
 			draft: invoiceDraft,
