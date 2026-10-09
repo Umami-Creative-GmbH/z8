@@ -9,9 +9,9 @@ import {
 	updateWorkPeriodNotes,
 	updateWorkPeriodProject,
 } from "@/app/[locale]/(app)/time-tracking/actions";
+import { WorkPeriodPositionsSection } from "@/components/position-capture/work-period-positions-section";
 import { billableChoice } from "@/components/time-tracking/billable-choice";
 import { BillableWorkSwitch } from "@/components/time-tracking/billable-work-switch";
-import { WorkPeriodPositionsSection } from "@/components/position-capture/work-period-positions-section";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -24,8 +24,8 @@ import {
 import { Button } from "@/components/ui/button";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import type { DisplayContext } from "@/lib/datetime/temporal-format";
-import { useAssignedProjects } from "@/lib/query/use-assigned-projects";
 import { projectTaskRefusalMessage } from "@/lib/projects/project-task-model";
+import { useAssignedProjects } from "@/lib/query/use-assigned-projects";
 import { chooseProject, taskIdToSend } from "@/lib/time-tracking/task-attribution";
 import { useProjectsEnabled } from "@/stores/organization-settings-store";
 import { formatWorkPeriodEditedBy, getWorkPeriodDialogMetadata } from "./work-period-dialog-utils";

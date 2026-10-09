@@ -7,8 +7,8 @@ import "server-only";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { project, workPeriod } from "@/db/schema";
-import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { listOpenTasksByProject } from "@/lib/projects/project-tasks";
+import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import {
 	BOOKABLE_PROJECT_STATUSES,
 	isProjectEligible,

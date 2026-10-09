@@ -286,12 +286,12 @@ describe("planCompletedWorkAmendment", () => {
 			expect(
 				planAttributionChange(
 					{
-					projectId: "project-a",
-					taskId: null,
-					workCategoryId: null,
-					workLocationType: null,
-					isBillable: false,
-				},
+						projectId: "project-a",
+						taskId: null,
+						workCategoryId: null,
+						workLocationType: null,
+						isBillable: false,
+					},
 					{
 						project: { kind: "preserve" },
 						task: { kind: "replace", id: "task-b" },

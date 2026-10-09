@@ -27,10 +27,8 @@ function isAttribution(value: unknown): value is string | null | undefined {
 /** Strict request parsing. Returns null for anything but the documented shape. */
 export function parseOnBehalfClockOutRequest(value: unknown): OnBehalfClockOutRequest | null {
 	if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-	const { workPeriodId, operationId, projectId, taskId, workCategoryId, billable } = value as Record<
-		string,
-		unknown
-	>;
+	const { workPeriodId, operationId, projectId, taskId, workCategoryId, billable } =
+		value as Record<string, unknown>;
 	if (
 		typeof workPeriodId !== "string" ||
 		workPeriodId.length === 0 ||
