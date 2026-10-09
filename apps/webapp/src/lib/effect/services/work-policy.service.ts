@@ -24,6 +24,8 @@ export interface WorkPolicyScheduleDay {
 	dayOfWeek: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
 	hoursPerDay: string;
 	isWorkDay: boolean;
+	/** Latest clock-in (`HH:mm`, local wall-clock) on detailed schedules; null when none. */
+	latestClockIn: string | null;
 }
 
 export interface BreakRuleOption {
@@ -397,6 +399,7 @@ export const WorkPolicyServiceLive = Layer.effect(
 								dayOfWeek: d.dayOfWeek,
 								hoursPerDay: d.hoursPerDay,
 								isWorkDay: d.isWorkDay,
+								latestClockIn: d.latestClockIn ?? null,
 							})),
 						}
 					: null,

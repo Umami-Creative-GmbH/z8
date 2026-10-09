@@ -20,6 +20,8 @@ import {
 	type DueClockingReminder,
 	isExemptOnAbsenceOrHoliday,
 } from "@/lib/time-tracking/clocking-reminders/occasion";
+import { createPolicyDayFacts } from "@/lib/time-tracking/clocking-reminders/policy-day-facts";
+import { evaluatePolicyReminders } from "@/lib/time-tracking/clocking-reminders/policy-reminders";
 import { evaluateShiftReminders } from "@/lib/time-tracking/clocking-reminders/shift-reminders";
 
 const logger = createLogger("ClockingReminders");
@@ -39,6 +41,7 @@ interface ClockingRemindersDeps {
 	clock: Clock;
 	transport: ClockingReminderTransport;
 	holidayDays: typeof loadHolidayDays;
+	policyDays: typeof createPolicyDayFacts;
 }
 
 /**
@@ -105,14 +108,26 @@ async function remindOrganization(
 			const personFacts = facts.get(person.employeeId);
 			if (!personFacts) continue;
 			try {
-				const due = evaluateShiftReminders({
+				const evaluation = {
 					now,
 					employeeId: person.employeeId,
 					timezone: person.timezone,
 					organizationTimezone: organization.timezone,
 					settings: organization.settings,
 					...personFacts,
-				});
+				};
+				const due = [
+					...evaluateShiftReminders(evaluation),
+					...(await evaluatePolicyReminders(
+						evaluation,
+						deps.policyDays({
+							organizationId: organization.organizationId,
+							employeeId: person.employeeId,
+							timezone: person.timezone,
+							now,
+						}),
+					)),
+				];
 				for (const reminder of await withoutExemptDays(organization, person, due, deps)) {
 					const outcome = await sendClockingReminder(
 						{
@@ -190,6 +205,7 @@ export async function runClockingReminders(
 		database: overrides.database ?? db,
 		clock: overrides.clock ?? systemClock,
 		holidayDays: loadHolidayDays,
+		policyDays: createPolicyDayFacts,
 		transport: {
 			locale: resolveRecipientNotificationLocale,
 			notify: async (params, locale) => {

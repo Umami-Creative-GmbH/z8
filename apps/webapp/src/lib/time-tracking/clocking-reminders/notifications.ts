@@ -2,6 +2,13 @@ import type { Instant } from "@/lib/datetime/temporal-core";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
 import type { ClockingReminderType, DueClockingReminder } from "./occasion";
 
+interface ReminderCopy {
+	titleKey: string;
+	titleDefault: string;
+	messageKey: string;
+	messageDefault: string;
+}
+
 // Each key sits next to its English default so the Tolgee extractor reads both.
 const reminderCopy = {
 	missed_clock_in_reminder: {
@@ -19,6 +26,24 @@ const reminderCopy = {
 	},
 } as const satisfies Record<ClockingReminderType, Record<string, string>>;
 
+/** Days without a shift are judged by the work policy (#830): the message names the policy times. */
+const policyReminderCopy = {
+	missed_clock_in_reminder: {
+		titleKey: "common:notifications.content.missedClockInReminder.title",
+		titleDefault: "You have not clocked in yet",
+		messageKey: "common:notifications.content.policyMissedClockInReminder.message",
+		messageDefault:
+			"Your latest clock-in today was {startTime} ({timezone}). Clock in if you are working.",
+	},
+	forgotten_clock_out_reminder: {
+		titleKey: "common:notifications.content.forgottenClockOutReminder.title",
+		titleDefault: "You are still clocked in",
+		messageKey: "common:notifications.content.policyForgottenClockOutReminder.message",
+		messageDefault:
+			"You reached today's required hours at {endTime} ({timezone}). Clock out if you have finished working.",
+	},
+} as const satisfies Partial<Record<ClockingReminderType, Record<string, string>>>;
+
 function formatTime(instant: Instant, locale: string, timezone: string): string {
 	return instant.toLocaleString(locale, { timeStyle: "short", timeZone: timezone });
 }
@@ -35,11 +60,15 @@ export function buildClockingReminderNotification(input: {
 	locale: string;
 }): CreateNotificationParams {
 	const { reminder, timezone, locale } = input;
-	const copy = reminderCopy[reminder.type];
 	const params: Record<string, string> = { timezone };
+	let copy: ReminderCopy = reminderCopy[reminder.type];
 	if (reminder.shift) {
 		params.startTime = formatTime(reminder.shift.start, locale, timezone);
 		params.endTime = formatTime(reminder.shift.end, locale, timezone);
+	} else if (reminder.type in policyReminderCopy) {
+		copy = policyReminderCopy[reminder.type as keyof typeof policyReminderCopy];
+		const expected = formatTime(reminder.expectedAt, locale, timezone);
+		params[reminder.type === "missed_clock_in_reminder" ? "startTime" : "endTime"] = expected;
 	}
 	const render = (template: string) =>
 		template.replace(/\{(\w+)\}/g, (match, name: string) => params[name] ?? match);

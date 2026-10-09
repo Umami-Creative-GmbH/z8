@@ -6,11 +6,10 @@ export type ClockingReminderType = "missed_clock_in_reminder" | "forgotten_clock
  * What one reminder is about. At most one reminder is ever sent per type and source, across all
  * channels. New sources (a work-policy day, a live work's break rule) are added as new kinds.
  */
-export type ClockingReminderOccasionSource = {
-	kind: "shift";
-	shiftId: string;
-	employeeId: string;
-};
+export type ClockingReminderOccasionSource =
+	| { kind: "shift"; shiftId: string; employeeId: string }
+	/** An employee-local day without a shift, judged by the effective work policy (#830). */
+	| { kind: "policy_day"; employeeId: string; day: string };
 
 /** The organization-unique key that dedupes one reminder occasion. */
 export function clockingReminderOccasionKey(
@@ -20,6 +19,8 @@ export function clockingReminderOccasionKey(
 	switch (source.kind) {
 		case "shift":
 			return `${type}:shift:${source.shiftId}:${source.employeeId}`;
+		case "policy_day":
+			return `${type}:policy_day:${source.employeeId}:${source.day}`;
 	}
 }
 
