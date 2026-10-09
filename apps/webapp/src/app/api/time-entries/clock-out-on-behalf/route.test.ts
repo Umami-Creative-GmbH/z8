@@ -185,7 +185,7 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 		expect(await respond({ workPeriodId: "period-1", operationId, taskId: "task-1" })).toEqual({
 			status: 422,
 			body: {
-				error: "Cannot book time to this task",
+				error: "This task is done, so no time can be booked to it",
 				code: "attribution_not_allowed",
 				field: "taskId",
 				reason: "task_done",

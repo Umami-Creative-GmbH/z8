@@ -83,6 +83,22 @@ export async function listOpenTasksByProject(
 	return byProject;
 }
 
+/**
+ * The given projects of one organization, each with its open tasks by name, as
+ * booking clients list them (#875); a project without open tasks gets none.
+ */
+export async function withOpenTasks<P extends { id: string }>(
+	organizationId: string,
+	projects: readonly P[],
+	reader: ProjectTaskReader = db,
+): Promise<Array<P & { tasks: OfferedProjectTask[] }>> {
+	const tasks = await listOpenTasksByProject(
+		{ organizationId, projectIds: projects.map((item) => item.id) },
+		reader,
+	);
+	return projects.map((item) => ({ ...item, tasks: tasks.get(item.id) ?? [] }));
+}
+
 /** One task of the organization, or null when it does not exist there. */
 export async function findProjectTask(
 	scope: { organizationId: string; taskId: string },

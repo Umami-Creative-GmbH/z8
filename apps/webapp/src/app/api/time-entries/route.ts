@@ -28,6 +28,7 @@ import {
 	clocking,
 } from "@/lib/time-tracking/clocking";
 import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
+import { PROJECT_TASK_INELIGIBILITY_MESSAGES } from "@/lib/time-tracking/project-eligibility";
 import { isProjectTaskId } from "@/lib/time-tracking/task-attribution";
 import {
 	getUtcOffsetMinutesForZone,
@@ -294,7 +295,7 @@ function refusedResponse(failure: ClockInRefusal | ClockOutRefusal) {
 			// The stable task reason, worded as the other clock adapters word it (#875).
 			return NextResponse.json(
 				{
-					error: FAILURE_REPLIES.task_not_allowed.error,
+					error: PROJECT_TASK_INELIGIBILITY_MESSAGES[failure.reason],
 					code: "attribution_not_allowed",
 					field: "taskId",
 					reason: failure.reason,

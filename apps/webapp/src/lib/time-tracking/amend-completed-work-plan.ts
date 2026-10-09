@@ -15,7 +15,7 @@
  */
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { AttributionIntent } from "./close-active-work";
-import { taskIdAfter, taskIntentFollowingProject } from "./task-attribution";
+import { attributionAfter, taskIdFollowingProject } from "./task-attribution";
 import { validateTimeCorrectionRange } from "./time-correction-temporal";
 import { deriveWorkDurationMinutes } from "./work-duration";
 import { getRecordedWorkLocationType, isWorkLocationType } from "./work-location";
@@ -100,7 +100,7 @@ function resolveAttribution(
 	current: string | null,
 	same: (left: string | null, right: string | null) => boolean = (left, right) => left === right,
 ) {
-	const value = intent.kind === "preserve" ? current : intent.kind === "clear" ? null : intent.id;
+	const value = attributionAfter(intent, current);
 	return same(value, current) ? { changed: false, value: current } : { changed: true, value };
 }
 
@@ -122,14 +122,11 @@ function resolveAttributions(
 	}
 	const project = resolveAttribution(intent.project, source.projectId);
 	const currentTaskId = source.taskId ?? null;
-	const taskId = taskIdAfter(
-		taskIntentFollowingProject({
-			task: intent.task,
-			projectId: project.value,
-			currentProjectId: source.projectId,
-		}),
-		currentTaskId,
-	);
+	const taskId = taskIdFollowingProject({
+		task: intent.task,
+		projectId: project.value,
+		current: { projectId: source.projectId, taskId: currentTaskId },
+	});
 	const workCategory = resolveAttribution(intent.workCategory, source.workCategoryId);
 	// Retired aliases retain their meaning; selecting a missing location records a change.
 	const workLocation = resolveAttribution(

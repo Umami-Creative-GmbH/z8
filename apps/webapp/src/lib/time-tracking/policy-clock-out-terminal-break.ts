@@ -39,6 +39,7 @@ import { calculateHash } from "./blockchain";
 import { calculateBreakDeficit } from "./break-policy-calculation";
 import type { PolicyClockOutBreakSnapshot } from "./policy-clock-out-break-snapshot";
 import type { PolicyClockOutSurchargeSnapshot } from "./policy-clock-out-surcharge-snapshot";
+import { recordedTaskId } from "./task-attribution";
 import {
 	admitTimeEntryAppend,
 	type TimeEntryAppend,
@@ -940,7 +941,7 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 		const allocations = source.allocations.map(validateAllocation);
 		const attribution = {
 			projectId: source.projectId,
-			...(source.taskId ? { taskId: source.taskId } : {}),
+			...recordedTaskId(source.taskId),
 			workCategoryId: source.workCategoryId,
 			workLocationType: source.workLocationType,
 			allocations,

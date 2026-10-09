@@ -560,7 +560,11 @@ describe("legacy direct clock writer in adopted organizations on PostgreSQL", ()
 			expect(clockOut).toEqual({
 				status: 400,
 				body: {
-					error: "Cannot book time to this task",
+					error: {
+						task_done: "This task is done, so no time can be booked to it",
+						task_other_project: "This task belongs to another project",
+						task_not_found: "Task not found",
+					}[reason],
 					code: "attribution_not_allowed",
 					field: "taskId",
 					reason,

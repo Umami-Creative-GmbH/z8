@@ -37,10 +37,18 @@ export function taskIntentFollowingProject(input: {
 	return projectId === currentProjectId ? { kind: "preserve" } : { kind: "clear" };
 }
 
+/**
+ * The value any attribution intent (project, task, work category) leaves:
+ * preserving keeps the current value, clearing leaves none, replacing names it.
+ */
+export function attributionAfter(intent: TaskAttributionIntent, current: string | null) {
+	if (intent.kind === "preserve") return current;
+	return intent.kind === "clear" ? null : intent.id;
+}
+
 /** The task a write leaves: a preserving intent keeps the current task. */
 export function taskIdAfter(intent: TaskAttributionIntent, currentTaskId: string | null) {
-	if (intent.kind === "preserve") return currentTaskId;
-	return intent.kind === "clear" ? null : intent.id;
+	return attributionAfter(intent, currentTaskId);
 }
 
 /** The task a write leaves on work whose project it sets: the two rules above in one. */
