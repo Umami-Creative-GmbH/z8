@@ -3,7 +3,7 @@ import "server-only";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { projectTask } from "@/db/schema";
-import type { ProjectTaskState } from "./project-task-rules";
+import type { ProjectTask, ProjectTaskState } from "./project-task-model";
 
 /**
  * Project task reads (#872). Every read is scoped by organization and
@@ -11,20 +11,7 @@ import type { ProjectTaskState } from "./project-task-rules";
  * reuse these instead of querying `project_task` directly.
  */
 
-export interface ProjectTask {
-	id: string;
-	organizationId: string;
-	projectId: string;
-	name: string;
-	description: string | null;
-	/** numeric(8, 2) text, e.g. "12.50"; null = no estimate. */
-	estimateHours: string | null;
-	state: ProjectTaskState;
-	doneAt: Date | null;
-	doneBy: string | null;
-	createdAt: Date;
-	updatedAt: Date;
-}
+export type { ProjectTask, ProjectTaskState } from "./project-task-model";
 
 export type ProjectTaskReader = Pick<typeof db, "select">;
 

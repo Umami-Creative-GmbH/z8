@@ -81,16 +81,27 @@ const ids = {
 	projectManagerUser: "t872-pm-user",
 	employeeUser: "t872-employee-user",
 	otherUser: "t872-other-user",
+	plainUser: "t872-plain-user",
+	formerManagerUser: "t872-former-pm-user",
 	owner: "e8720000-0000-4000-8000-000000000001",
 	projectManager: "e8720000-0000-4000-8000-000000000002",
 	employee: "e8720000-0000-4000-8000-000000000003",
 	otherEmployee: "e8720000-0000-4000-8000-000000000004",
+	plainEmployee: "e8720000-0000-4000-8000-000000000005",
+	formerManager: "e8720000-0000-4000-8000-000000000006",
 	project: "e8720000-0000-4000-8000-000000000020",
 	unmanagedProject: "e8720000-0000-4000-8000-000000000021",
 	otherProject: "e8720000-0000-4000-8000-000000000022",
 	otherTask: "e8720000-0000-4000-8000-000000000050",
 } as const;
-const users = [ids.ownerUser, ids.projectManagerUser, ids.employeeUser, ids.otherUser];
+const users = [
+	ids.ownerUser,
+	ids.projectManagerUser,
+	ids.employeeUser,
+	ids.otherUser,
+	ids.plainUser,
+	ids.formerManagerUser,
+];
 
 describe("project tasks on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -142,6 +153,8 @@ describe("project tasks on PostgreSQL", () => {
 			[ids.organization, ids.ownerUser, "owner"],
 			[ids.organization, ids.projectManagerUser, "member"],
 			[ids.organization, ids.employeeUser, "member"],
+			[ids.organization, ids.plainUser, "member"],
+			[ids.organization, ids.formerManagerUser, "member"],
 			[ids.otherOrganization, ids.otherUser, "owner"],
 		];
 		for (const [organizationId, userId, role] of members) {
@@ -151,17 +164,19 @@ describe("project tasks on PostgreSQL", () => {
 				[`${userId}-member`, organizationId, userId, role, timestamp],
 			);
 		}
-		const employees: Array<[string, string, string, string]> = [
+		const employees: Array<[string, string, string, string, boolean?]> = [
 			[ids.owner, ids.ownerUser, ids.organization, "admin"],
 			[ids.projectManager, ids.projectManagerUser, ids.organization, "manager"],
 			[ids.employee, ids.employeeUser, ids.organization, "employee"],
 			[ids.otherEmployee, ids.otherUser, ids.otherOrganization, "admin"],
+			[ids.plainEmployee, ids.plainUser, ids.organization, "employee"],
+			[ids.formerManager, ids.formerManagerUser, ids.organization, "employee", false],
 		];
-		for (const [id, userId, organizationId, role] of employees) {
+		for (const [id, userId, organizationId, role, isActive = true] of employees) {
 			await admin.query(
 				`insert into employee (id, user_id, organization_id, role, is_active, updated_at)
-				 values ($1, $2, $3, $4, true, $5)`,
-				[id, userId, organizationId, role, timestamp],
+				 values ($1, $2, $3, $4, $6, $5)`,
+				[id, userId, organizationId, role, timestamp, isActive],
 			);
 		}
 		await admin.query(
@@ -187,6 +202,11 @@ describe("project tasks on PostgreSQL", () => {
 		await admin.query(
 			`insert into project_manager (project_id, employee_id, assigned_by) values ($1, $2, $3)`,
 			[ids.project, ids.employee, ids.ownerUser],
+		);
+		// A former employee keeps a stale project manager row.
+		await admin.query(
+			`insert into project_manager (project_id, employee_id, assigned_by) values ($1, $2, $3)`,
+			[ids.project, ids.formerManager, ids.ownerUser],
 		);
 		await admin.query(
 			`insert into project_task (id, organization_id, project_id, name, created_by, updated_at)
@@ -379,21 +399,70 @@ describe("project tasks on PostgreSQL", () => {
 		});
 	});
 
-	describe("a plain employee", () => {
-		it("is refused every task action, even as a listed project manager", async () => {
-			const id = await createTask(ids.ownerUser, "Design");
+	describe("a project manager with the plain employee role", () => {
+		it("manages the tasks of the project they manage", async () => {
+			const id = await createTask(ids.employeeUser, "Design");
+			const results = [
+				await actAs(ids.employeeUser, () => tasks.updateProjectTask(id, { name: "Build" })),
+				await actAs(ids.employeeUser, () => tasks.markProjectTaskDone(id)),
+				await actAs(ids.employeeUser, () => tasks.reopenProjectTask(id)),
+				await actAs(ids.employeeUser, () => tasks.getProjectTasks(ids.project)),
+				await actAs(ids.employeeUser, () => tasks.deleteProjectTask(id)),
+			];
 
-			const results = await actAs(ids.employeeUser, () =>
-				Promise.all([
-					tasks.createProjectTask({ projectId: ids.project, name: "Build" }),
-					tasks.updateProjectTask(id, { name: "Renamed" }),
-					tasks.markProjectTaskDone(id),
-					tasks.reopenProjectTask(id),
-					tasks.deleteProjectTask(id),
-				]),
+			expect(results.map((result) => result.success)).toEqual([true, true, true, true, true]);
+			expect(await taskRows()).toEqual([]);
+		});
+
+		it("is refused on a project they do not manage", async () => {
+			const result = await actAs(ids.employeeUser, () =>
+				tasks.createProjectTask({ projectId: ids.unmanagedProject, name: "Build" }),
 			);
 
-			expect(results.map((result) => result.success)).toEqual([false, false, false, false, false]);
+			expect(result.success).toBe(false);
+			expect(await taskRows(ids.unmanagedProject)).toEqual([]);
+		});
+
+		it("is offered only the projects they manage", async () => {
+			const managed = await actAs(ids.employeeUser, () => tasks.getProjectsWithManageableTasks());
+			const all = await actAs(ids.ownerUser, () => tasks.getProjectsWithManageableTasks());
+
+			expect(managed).toMatchObject({ success: true, data: [{ id: ids.project }] });
+			expect(all.success && all.data.map((project) => project.id)).toEqual([
+				ids.project,
+				ids.unmanagedProject,
+			]);
+		});
+	});
+
+	describe("a plain employee who manages no project, or a departed project manager", () => {
+		it("is refused every task action", async () => {
+			const id = await createTask(ids.ownerUser, "Design");
+
+			for (const userId of [ids.plainUser, ids.formerManagerUser]) {
+				const results = await actAs(userId, () =>
+					Promise.all([
+						tasks.createProjectTask({ projectId: ids.project, name: "Build" }),
+						tasks.updateProjectTask(id, { name: "Renamed" }),
+						tasks.markProjectTaskDone(id),
+						tasks.reopenProjectTask(id),
+						tasks.deleteProjectTask(id),
+						tasks.getProjectTasks(ids.project),
+					]),
+				);
+				expect(results.map((result) => result.success)).toEqual([
+					false,
+					false,
+					false,
+					false,
+					false,
+					false,
+				]);
+				expect(await actAs(userId, () => tasks.getProjectsWithManageableTasks())).toEqual({
+					success: true,
+					data: [],
+				});
+			}
 			expect(await taskRows()).toMatchObject([{ id, name: "Design", state: "open" }]);
 			expect(audit.logAudit).toHaveBeenCalledTimes(1);
 		});

@@ -8,20 +8,30 @@ import { db } from "@/db";
 import { projectTask } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import {
+	AuthorizationError,
 	ConflictError,
 	type DatabaseError,
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AuthService } from "@/lib/effect/services/auth.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
+import {
+	canManageProjectTasks,
+	listProjectsWithManageableTasks,
+	loadProjectTaskManager,
+	type ProjectTaskManager,
+	type TaskManagedProject,
+} from "@/lib/projects/project-task-permission";
 import {
 	normalizeProjectTaskDescription,
 	normalizeProjectTaskEstimate,
 	normalizeProjectTaskName,
 	type ProjectTaskInputProblem,
 	type ProjectTaskState,
-} from "@/lib/projects/project-task-rules";
+} from "@/lib/projects/project-task-model";
 import {
 	findProjectTask,
 	isProjectTaskBooked,
@@ -30,17 +40,11 @@ import {
 	type ProjectTask,
 } from "@/lib/projects/project-tasks";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
-import {
-	ensureSettingsActorCanManageProjectTasks,
-	getProjectSettingsActorContext,
-	getProjectTarget,
-	type ProjectSettingsActor,
-} from "./project-scope";
 
 /**
  * Project task management (#872). Every action runs in the caller's active
- * organization and is allowed only to org admins/owners and to manager-tier
- * managers of the task's project (`ensureSettingsActorCanManageProjectTasks`).
+ * organization and is allowed only to org owners/admins and to that project's
+ * managers, whatever their employee role (`canManageProjectTasks`).
  */
 
 export interface CreateProjectTaskInput {
@@ -111,24 +115,75 @@ function traced<A, E, R>(
 	);
 }
 
+/** The caller in their active organization, as a potential task manager. */
+function getTaskActor(action: string) {
+	return Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
+		const userId = session.user.id;
+		const organizationId = session.session.activeOrganizationId;
+		const manager = organizationId
+			? yield* dbService.query(`${action}:manager`, () =>
+					loadProjectTaskManager({ userId, organizationId }),
+				)
+			: null;
+		if (!organizationId || !manager) {
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "No organization access",
+					userId,
+					resource: "project_task",
+					action,
+				}),
+			);
+		}
+		const actor: TaskActor = { userId, organizationId, manager, dbService };
+		return actor;
+	});
+}
+
+interface TaskActor {
+	userId: string;
+	organizationId: string;
+	manager: ProjectTaskManager;
+	dbService: {
+		query: <T>(name: string, fn: () => Promise<T>) => Effect.Effect<T, DatabaseError>;
+	};
+}
+
+/** Refuses unless the actor may manage the tasks of this project of their organization. */
+function ensureCanManageTasksOf(actor: TaskActor, projectId: string, action: string) {
+	return Effect.gen(function* () {
+		const allowed = yield* actor.dbService.query(`${action}:permission`, () =>
+			canManageProjectTasks(actor.manager, projectId),
+		);
+		if (!allowed) {
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: TASK_ACCESS_DENIED,
+					userId: actor.userId,
+					resource: "project_task",
+					action,
+				}),
+			);
+		}
+	});
+}
+
 /** The actor and the project whose tasks they may manage, or a refusal. */
 function getTaskManagerForProject(projectId: string, action: string) {
 	return Effect.gen(function* () {
-		const actor = yield* getProjectSettingsActorContext({ queryName: `${action}:actor` });
-		const targetProject = yield* getProjectTarget(projectId, `${action}:getProject`);
-		yield* ensureSettingsActorCanManageProjectTasks(actor, targetProject, {
-			message: TASK_ACCESS_DENIED,
-			resource: "project_task",
-			action,
-		});
-		return { actor, targetProject };
+		const actor = yield* getTaskActor(action);
+		yield* ensureCanManageTasksOf(actor, projectId, action);
+		return { actor, targetProject: { id: projectId } };
 	});
 }
 
 /** The actor and an existing task of their organization they may manage. */
 function getTaskManagerForTask(taskId: string, action: string) {
 	return Effect.gen(function* () {
-		const actor = yield* getProjectSettingsActorContext({ queryName: `${action}:actor` });
+		const actor = yield* getTaskActor(action);
 		const task = yield* actor.dbService.query(`${action}:getTask`, () =>
 			findProjectTask({ organizationId: actor.organizationId, taskId }),
 		);
@@ -137,25 +192,20 @@ function getTaskManagerForTask(taskId: string, action: string) {
 				new NotFoundError({ message: "Task not found", entityType: "project_task", entityId: taskId }),
 			);
 		}
-		const targetProject = yield* getProjectTarget(task.projectId, `${action}:getProject`);
-		yield* ensureSettingsActorCanManageProjectTasks(actor, targetProject, {
-			message: TASK_ACCESS_DENIED,
-			resource: "project_task",
-			action,
-		});
+		yield* ensureCanManageTasksOf(actor, task.projectId, action);
 		return { actor, task };
 	});
 }
 
 function auditTask(
-	actor: ProjectSettingsActor,
+	actor: TaskActor,
 	action: AuditAction,
 	task: Pick<ProjectTask, "id" | "projectId" | "name">,
 	changes?: Record<string, unknown>,
 ) {
 	logAudit({
 		action,
-		actorId: actor.session.user.id,
+		actorId: actor.userId,
 		targetId: task.id,
 		targetType: "project_task",
 		organizationId: actor.organizationId,
@@ -210,7 +260,7 @@ export async function createProjectTask(
 								name,
 								description,
 								estimateHours,
-								createdBy: actor.session.user.id,
+								createdBy: actor.userId,
 								updatedAt: new Date(),
 							})
 							.returning({ id: projectTask.id }),
@@ -261,7 +311,7 @@ export async function updateProjectTask(
 					.query("projectTask.update", () =>
 						db
 							.update(projectTask)
-							.set({ ...changes, updatedBy: actor.session.user.id })
+							.set({ ...changes, updatedBy: actor.userId })
 							.where(
 								and(
 									eq(projectTask.id, task.id),
@@ -291,7 +341,7 @@ function setProjectTaskState(taskId: string, state: ProjectTaskState) {
 					.update(projectTask)
 					.set(
 						state === "done"
-							? { state, doneAt: now, doneBy: actor.session.user.id }
+							? { state, doneAt: now, doneBy: actor.userId }
 							: { state, doneAt: null, doneBy: null },
 					)
 					.where(
@@ -357,6 +407,28 @@ export async function deleteProjectTask(taskId: string): Promise<ServerActionRes
 
 				auditTask(actor, AuditAction.PROJECT_TASK_DELETED, task);
 				revalidatePath("/settings/projects");
+			}),
+		),
+	);
+}
+
+/**
+ * The projects whose tasks the caller may manage: every project for org
+ * owners/admins, otherwise the projects they manage. Feeds the task-only view
+ * that project managers without project settings access see.
+ */
+export async function getProjectsWithManageableTasks(): Promise<
+	ServerActionResult<TaskManagedProject[]>
+> {
+	return runServerActionSafe(
+		traced(
+			"getProjectsWithManageableTasks",
+			{},
+			Effect.gen(function* () {
+				const actor = yield* getTaskActor("listProjects");
+				return yield* actor.dbService.query("listProjectsWithManageableTasks", () =>
+					listProjectsWithManageableTasks(actor.manager),
+				);
 			}),
 		),
 	);

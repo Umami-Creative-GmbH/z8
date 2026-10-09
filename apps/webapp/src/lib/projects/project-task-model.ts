@@ -1,10 +1,27 @@
 /**
- * Input rules for project tasks (#872), shared by the task settings form and
- * the server actions. Pure: safe in client and server code.
+ * The project task model (#872): its shape and input rules, shared by the
+ * task settings screen and the server. Pure: safe in client and server code.
+ * Reads live in `./project-tasks` (server only).
  */
 
 export const PROJECT_TASK_STATES = ["open", "done"] as const;
 export type ProjectTaskState = (typeof PROJECT_TASK_STATES)[number];
+
+/** A task as every task read returns it. */
+export interface ProjectTask {
+	id: string;
+	organizationId: string;
+	projectId: string;
+	name: string;
+	description: string | null;
+	/** numeric(8, 2) text, e.g. "12.50"; null = no estimate. */
+	estimateHours: string | null;
+	state: ProjectTaskState;
+	doneAt: Date | null;
+	doneBy: string | null;
+	createdAt: Date;
+	updatedAt: Date;
+}
 
 export const PROJECT_TASK_NAME_MAX_LENGTH = 200;
 export const PROJECT_TASK_DESCRIPTION_MAX_LENGTH = 2000;
