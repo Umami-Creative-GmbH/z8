@@ -14,6 +14,38 @@ export function formatBillableAmount(locale: string, amount: string, currency: s
 	}
 }
 
+/**
+ * Hours (a number, or a decimal string such as "12.50") with a fixed number of
+ * decimals in the viewer's locale, without a unit.
+ */
+export function formatBillableHours(
+	locale: string,
+	hours: number | string,
+	fractionDigits: number,
+): string {
+	return new Intl.NumberFormat(locale, {
+		minimumFractionDigits: fractionDigits,
+		maximumFractionDigits: fractionDigits,
+	}).format(typeof hours === "string" ? (hours as Intl.StringNumericLiteral) : hours);
+}
+
+/**
+ * A two-decimal rate (`"95.00"`) as the viewer types it, e.g. "95,00" in
+ * German: no currency and no grouping, so it can be entered back as is.
+ */
+export function formatRateInput(locale: string, rate: string): string {
+	return new Intl.NumberFormat(locale, {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2,
+		useGrouping: false,
+	}).format(rate as Intl.StringNumericLiteral);
+}
+
+/** A calendar day (`YYYY-MM-DD`) as a medium date, with no time zone conversion. */
+export function formatBillableDay(locale: string, value: string): string {
+	return formatRateDate(locale, value);
+}
+
 /** A rate date (`YYYY-MM-DD`) as a medium date, with no time zone conversion. */
 export function formatRateDate(locale: string, value: string): string {
 	try {

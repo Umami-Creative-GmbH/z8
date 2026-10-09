@@ -44,6 +44,12 @@ export interface HandOffShare {
 	line: number;
 	durationMs: number;
 	rate: RateUnits;
+	/**
+	 * The share's part of the line's amount, in cents: the line amount allocated
+	 * across its shares by duration (largest remainder), so any set of invoiced
+	 * work sums to its lines and a whole draft to its net total.
+	 */
+	amount: bigint;
 }
 
 export interface IncludedWork {
@@ -69,6 +75,8 @@ export interface HandOffPlan {
 	durationMs: number;
 	/** The timesheet as text lines, when asked for; otherwise empty. */
 	timesheetLines: InvoiceDraftTextLine[];
+	/** Periods the timesheet lines leave out to fit the tool's line limit. */
+	timesheetOmitted: number;
 	blockers: HandOffBlocker[];
 }
 
@@ -94,6 +102,8 @@ export interface HandOffTextFormat {
 		projectName: string;
 		hundredths: number;
 	}): string;
+	/** The last timesheet line when it had to be shortened to fit the tool. */
+	timesheetOmitted(count: number): string;
 }
 
 const pad = (value: number, length = 2) => String(value).padStart(length, "0");
@@ -124,6 +134,10 @@ export function handOffTextFormat(locale: HandOffLocale): HandOffTextFormat {
 			`${projectName}, ${formatPeriod(period)}: ${formatHours(hundredths)}`,
 		timesheetLine: ({ day, employeeName, projectName, hundredths }) =>
 			`${formatDay(day)} · ${employeeName} · ${projectName} · ${formatHours(hundredths)}`,
+		timesheetOmitted: (count) =>
+			german
+				? `… und ${count} weitere: siehe vollständigen Stundennachweis`
+				: `… and ${count} more: see the full timesheet`,
 	};
 }
 
@@ -208,9 +222,18 @@ export function planHandOff(input: {
 			durationMs: group.durationMs,
 			unitPrice: group.rate,
 		});
-		for (const share of group.shares) {
-			share.item.shares.push({ line: index, durationMs: share.durationMs, rate: group.rate });
-		}
+		const amounts = allocateByDuration(
+			priced.amount,
+			group.shares.map((share) => share.durationMs),
+		);
+		group.shares.forEach((share, position) => {
+			share.item.shares.push({
+				line: index,
+				durationMs: share.durationMs,
+				rate: group.rate,
+				amount: amounts[position] ?? BigInt(0),
+			});
+		});
 		return {
 			...priced,
 			text: input.texts.lineText({
@@ -222,30 +245,23 @@ export function planHandOff(input: {
 	});
 	for (const entry of included) entry.shares.sort((left, right) => left.line - right.line);
 
-	const timesheetLines: InvoiceDraftTextLine[] =
-		input.includeTimesheet && included.length > 0
-			? [
-					{ kind: "text", text: input.texts.timesheetHeading },
-					...included.map(
-						({ work }): InvoiceDraftTextLine => ({
-							kind: "text",
-							text: input.texts.timesheetLine({
-								day: workDayOf(work.startedAt, work.startOffsetMinutes),
-								employeeName: work.employeeName,
-								projectName: work.projectName,
-								hundredths: minutesAsHundredths(work.durationMinutes),
-							}),
-						}),
-					),
-				]
-			: [];
+	const timesheet = input.includeTimesheet
+		? timesheetWithinLimit(
+				included,
+				input.texts,
+				input.maxDraftLines === null ? null : input.maxDraftLines - lines.length,
+			)
+		: { lines: [], omitted: 0 };
 
 	const blockers: HandOffBlocker[] = [];
 	if (unpriced.length > 0) blockers.push({ kind: "unpriced_work", count: unpriced.length });
 	if (lines.length === 0) blockers.push({ kind: "nothing_to_hand_off" });
-	const lineCount = lines.length + timesheetLines.length;
-	if (input.maxDraftLines !== null && lineCount > input.maxDraftLines) {
-		blockers.push({ kind: "too_many_lines", lines: lineCount, maxDraftLines: input.maxDraftLines });
+	if (input.maxDraftLines !== null && lines.length > input.maxDraftLines) {
+		blockers.push({
+			kind: "too_many_lines",
+			lines: lines.length,
+			maxDraftLines: input.maxDraftLines,
+		});
 	}
 
 	return {
@@ -257,8 +273,71 @@ export function planHandOff(input: {
 		nonBillable,
 		netTotal: lines.reduce((sum, line) => sum + line.amount, BigInt(0)),
 		durationMs: lines.reduce((sum, line) => sum + line.durationMs, 0),
-		timesheetLines,
+		timesheetLines: timesheet.lines,
+		timesheetOmitted: timesheet.omitted,
 		blockers,
+	};
+}
+
+/**
+ * Splits `total` cents across weights (durations) in proportion, to the cent:
+ * each part gets its floor, then the cents left over go to the largest
+ * remainders (earlier parts first on ties). The parts always sum to `total`.
+ */
+export function allocateByDuration(total: bigint, weights: readonly number[]): bigint[] {
+	const sum = weights.reduce((acc, weight) => acc + BigInt(weight), BigInt(0));
+	if (sum === BigInt(0)) return weights.map(() => BigInt(0));
+	const parts = weights.map((weight, index) => {
+		const exact = total * BigInt(weight);
+		return { index, floor: exact / sum, remainder: exact % sum };
+	});
+	let left = total - parts.reduce((acc, part) => acc + part.floor, BigInt(0));
+	const byRemainder = [...parts].sort((a, b) =>
+		a.remainder === b.remainder ? a.index - b.index : a.remainder > b.remainder ? -1 : 1,
+	);
+	for (const part of byRemainder) {
+		if (left <= BigInt(0)) break;
+		part.floor += BigInt(1);
+		left -= BigInt(1);
+	}
+	return parts.map((part) => part.floor);
+}
+
+/**
+ * The timesheet as text lines (a heading and one line per period) within the
+ * room the tool's line limit leaves after the work lines. When it does not fit,
+ * it keeps as many periods as fit and ends with a note naming how many more the
+ * full timesheet has; with no room for a period it is left out. The timesheet
+ * download always has every period.
+ */
+function timesheetWithinLimit(
+	included: readonly IncludedWork[],
+	texts: HandOffTextFormat,
+	room: number | null,
+): { lines: InvoiceDraftTextLine[]; omitted: number } {
+	if (included.length === 0) return { lines: [], omitted: 0 };
+	const entries = included.map(
+		({ work }): InvoiceDraftTextLine => ({
+			kind: "text",
+			text: texts.timesheetLine({
+				day: workDayOf(work.startedAt, work.startOffsetMinutes),
+				employeeName: work.employeeName,
+				projectName: work.projectName,
+				hundredths: minutesAsHundredths(work.durationMinutes),
+			}),
+		}),
+	);
+	const heading: InvoiceDraftTextLine = { kind: "text", text: texts.timesheetHeading };
+	if (room === null || entries.length + 1 <= room) {
+		return { lines: [heading, ...entries], omitted: 0 };
+	}
+	// Heading, at least one period and the note.
+	if (room < 3) return { lines: [], omitted: entries.length };
+	const kept = entries.slice(0, room - 2);
+	const omitted = entries.length - kept.length;
+	return {
+		lines: [heading, ...kept, { kind: "text", text: texts.timesheetOmitted(omitted) }],
+		omitted,
 	};
 }
 

@@ -56,7 +56,12 @@ export interface ReportedWork {
 
 /** How a piece of invoiced work was handed off: its frozen rates (ADR 0001). */
 export interface ReportedInvoicing {
-	shares: readonly { durationMs: number; rate: RateUnits }[];
+	shares: readonly {
+		durationMs: number;
+		rate: RateUnits;
+		/** The share's part of its draft line's amount, in cents (absent on older rows). */
+		amount?: bigint;
+	}[];
 	/** Its times, project or billability changed after the hand-off. */
 	changedAfterInvoicing: boolean;
 }
@@ -88,6 +93,13 @@ interface BillableFiguresBase {
 	billableHours: number;
 	nonBillableMinutes: number;
 	nonBillableHours: number;
+	/**
+	 * Work marked billable on a project without an (active) customer: shown as
+	 * billable *without customer*, never priced and never handed off.
+	 */
+	withoutCustomerMinutes: number;
+	withoutCustomerHours: number;
+	withoutCustomerWorkCount: number;
 	/** Billable work with time that no rate level prices. */
 	unpricedWorkCount: number;
 	/** The unpriced share of that work, in hours. */
@@ -129,6 +141,8 @@ export interface BillableFiguresOptions {
 export interface BillableFiguresTally {
 	billableMinutes: number;
 	nonBillableMinutes: number;
+	withoutCustomerMinutes: number;
+	withoutCustomerWorkCount: number;
 	unpricedWorkCount: number;
 	unpricedMs: number;
 	pendingReviewCount: number;
@@ -149,6 +163,8 @@ export function emptyBillableFiguresTally(): BillableFiguresTally {
 	return {
 		billableMinutes: 0,
 		nonBillableMinutes: 0,
+		withoutCustomerMinutes: 0,
+		withoutCustomerWorkCount: 0,
 		unpricedWorkCount: 0,
 		unpricedMs: 0,
 		pendingReviewCount: 0,
@@ -163,11 +179,38 @@ export function emptyBillableFiguresTally(): BillableFiguresTally {
 
 /**
  * Billable work as the glossary defines it: marked billable and on a project
- * that has a customer. Work marked billable on a project that has since lost
- * its customer is not chargeable to anyone and counts as non-billable.
+ * that has an (active) customer.
  */
-export function isChargeableWork(work: Pick<ReportedWork, "isBillable" | "customerId">): boolean {
+export function isBillableWork(work: Pick<ReportedWork, "isBillable" | "customerId">): boolean {
 	return work.isBillable && work.customerId !== null;
+}
+
+/**
+ * Work marked billable on a project that has lost its customer (or whose
+ * customer was deleted): billable *without customer*. It has no revenue and
+ * cannot be handed off until the project has a customer again.
+ */
+export function isBillableWithoutCustomer(
+	work: Pick<ReportedWork, "isBillable" | "customerId">,
+): boolean {
+	return work.isBillable && work.customerId === null;
+}
+
+const MS_PER_HOUR_UNITS = BigInt(3_600_000);
+
+/**
+ * Invoiced work's revenue: its share of the draft lines' frozen amounts (ADR
+ * 0001), so invoiced revenue equals the drafts' net totals. Shares recorded
+ * without an amount fall back to their frozen rate for the exact time.
+ */
+function frozenRevenue(invoiced: ReportedInvoicing): AccruedAmount {
+	return addAccruedAmounts(
+		invoiced.shares.map((share) =>
+			share.amount === undefined
+				? accrueAmount(share.rate, share.durationMs)
+				: share.amount * MS_PER_HOUR_UNITS,
+		),
+	);
 }
 
 /** Adds one piece of work to a tally (mutates and returns it). */
@@ -178,16 +221,19 @@ export function addReportedWork(
 ): BillableFiguresTally {
 	if (work.pendingReview) tally.pendingReviewCount += 1;
 	if (work.invoiced?.changedAfterInvoicing) tally.changedAfterInvoicingCount += 1;
-	if (!isChargeableWork(work)) {
+	if (isBillableWithoutCustomer(work)) {
+		tally.withoutCustomerMinutes += work.durationMinutes;
+		tally.withoutCustomerWorkCount += 1;
+		return tally;
+	}
+	if (!isBillableWork(work)) {
 		tally.nonBillableMinutes += work.durationMinutes;
 		return tally;
 	}
 	tally.billableMinutes += work.durationMinutes;
 	if (work.invoiced) {
-		// Invoiced work keeps the rates it was handed off at (ADR 0001).
-		const frozen = addAccruedAmounts(
-			work.invoiced.shares.map((share) => accrueAmount(share.rate, share.durationMs)),
-		);
+		// Invoiced work keeps the amounts it was handed off with (ADR 0001).
+		const frozen = frozenRevenue(work.invoiced);
 		tally.revenue += frozen;
 		tally.invoicedRevenue += frozen;
 		tally.invoicedMinutes += work.durationMinutes;
@@ -254,6 +300,8 @@ function invoicingFigures(rounded: RoundedFigures): InvoicingFigures | undefined
 interface RoundedFigures {
 	billableMinutes: number;
 	nonBillableMinutes: number;
+	withoutCustomerMinutes: number;
+	withoutCustomerWorkCount: number;
 	unpricedWorkCount: number;
 	unpricedHours: number;
 	pendingReviewCount: number;
@@ -274,6 +322,9 @@ function figuresFromRounded(
 		billableHours: rounded.billableMinutes / 60,
 		nonBillableMinutes: rounded.nonBillableMinutes,
 		nonBillableHours: rounded.nonBillableMinutes / 60,
+		withoutCustomerMinutes: rounded.withoutCustomerMinutes,
+		withoutCustomerHours: rounded.withoutCustomerMinutes / 60,
+		withoutCustomerWorkCount: rounded.withoutCustomerWorkCount,
 		unpricedWorkCount: rounded.unpricedWorkCount,
 		unpricedHours: rounded.unpricedHours,
 		pendingReviewCount: rounded.pendingReviewCount,
@@ -302,6 +353,8 @@ export function billableFigures(
 		{
 			billableMinutes: tally.billableMinutes,
 			nonBillableMinutes: tally.nonBillableMinutes,
+			withoutCustomerMinutes: tally.withoutCustomerMinutes,
+			withoutCustomerWorkCount: tally.withoutCustomerWorkCount,
 			unpricedWorkCount: tally.unpricedWorkCount,
 			unpricedHours: tally.unpricedMs / MS_PER_HOUR,
 			pendingReviewCount: tally.pendingReviewCount,
@@ -347,6 +400,8 @@ export function sumBillableFigures(
 		{
 			billableMinutes: parts.reduce((sum, part) => sum + part.billableMinutes, 0),
 			nonBillableMinutes: parts.reduce((sum, part) => sum + part.nonBillableMinutes, 0),
+			withoutCustomerMinutes: parts.reduce((sum, part) => sum + part.withoutCustomerMinutes, 0),
+			withoutCustomerWorkCount: parts.reduce((sum, part) => sum + part.withoutCustomerWorkCount, 0),
 			unpricedWorkCount: parts.reduce((sum, part) => sum + part.unpricedWorkCount, 0),
 			unpricedHours: parts.reduce((sum, part) => sum + part.unpricedHours, 0),
 			pendingReviewCount: parts.reduce((sum, part) => sum + part.pendingReviewCount, 0),

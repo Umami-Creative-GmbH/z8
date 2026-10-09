@@ -6,6 +6,7 @@ import type { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { billableRate, customer, employee, project } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
 import {
@@ -16,6 +17,7 @@ import {
 	resolveApplicableRate,
 	workDayOf,
 } from "./applicable-rate";
+import { parsePlainDay } from "./input";
 import { formatRate, parseRate, type RateUnits, rateFromStored } from "./money";
 import { writeRatePeriodChange } from "./rate-period-writer";
 import type { RatePeriod, RatePeriodStore } from "./rate-periods";
@@ -179,15 +181,6 @@ export type BillableRateOutcome =
 	| { ok: true; changed: boolean; periods: BillableRatePeriodView[] }
 	| { ok: false; reason: BillableRateRefusal };
 
-function parseDate(value: string): PlainDate | null {
-	if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-	try {
-		return Temporal.PlainDate.from(value, { overflow: "reject" });
-	} catch {
-		return null;
-	}
-}
-
 /**
  * Sets or ends a billable rate from a date, for one rate level and target of
  * one organization (#898). Backdating is allowed. The caller authorizes the
@@ -202,7 +195,7 @@ export async function changeBillableRate(
 		change: BillableRateChange;
 	},
 ): Promise<BillableRateOutcome> {
-	const from = parseDate(input.change.effectiveFrom);
+	const from = parsePlainDay(input.change.effectiveFrom);
 	if (!from) return { ok: false, reason: "invalid_date" };
 	let rate: RateUnits | null = null;
 	if (input.change.kind === "set") {
@@ -361,9 +354,10 @@ export async function listBillableRateTargetOptions(
 		reader
 			.select({
 				id: employee.id,
-				firstName: employee.firstName,
-				lastName: employee.lastName,
-				userName: user.name,
+				firstName: user.firstName,
+				lastName: user.lastName,
+				name: user.name,
+				email: user.email,
 			})
 			.from(employee)
 			.leftJoin(user, eq(user.id, employee.userId))
@@ -387,7 +381,7 @@ export async function listBillableRateTargetOptions(
 		employees: employees
 			.map((row) => ({
 				id: row.id,
-				name: [row.firstName, row.lastName].filter(Boolean).join(" ") || row.userName || row.id,
+				name: buildAuthUserDisplayName(row) || row.id,
 			}))
 			.sort((left, right) => left.name.localeCompare(right.name)),
 		projects,
@@ -416,9 +410,12 @@ export async function listBillableRateSeries(
 	const rows = await reader
 		.select({
 			rate: billableRate,
-			employeeFirstName: employee.firstName,
-			employeeLastName: employee.lastName,
-			userName: user.name,
+			employeeUser: {
+				firstName: user.firstName,
+				lastName: user.lastName,
+				name: user.name,
+				email: user.email,
+			},
 			projectName: project.name,
 			customerName: customer.name,
 		})
@@ -464,13 +461,13 @@ export async function listBillableRateSeries(
 			existing.periods.push(view);
 			continue;
 		}
-		const employeeName = [row.employeeFirstName, row.employeeLastName].filter(Boolean).join(" ");
+		const employeeName = row.employeeUser ? buildAuthUserDisplayName(row.employeeUser) : "";
 		series.set(key, {
 			level: period.level,
 			employeeId: period.employeeId,
 			projectId: period.projectId,
 			customerId: period.customerId,
-			employeeName: period.employeeId ? employeeName || row.userName || null : null,
+			employeeName: period.employeeId ? employeeName || null : null,
 			projectName: row.projectName,
 			customerName: row.customerName,
 			periods: [view],

@@ -260,7 +260,7 @@ describe("sevdesk connection on PostgreSQL", () => {
 			providerKind: "sevdesk",
 			apiKeyStored: true,
 			providerAvailable: true,
-			capabilities: { supportedCurrencies: ["EUR"], draftStatusCheck: true },
+			capabilities: { supportedCurrencies: ["EUR", "CHF", "USD", "GBP"], draftStatusCheck: true },
 		});
 		expect(harness.secrets).toEqual(
 			new Map([[`${ids.organization}|accounting/${result.data.id}/api_key`, TOKEN]]),
@@ -388,7 +388,7 @@ describe("sevdesk connection on PostgreSQL", () => {
 		},
 	);
 
-	it("refuses an organization whose billable currency is not EUR", async () => {
+	it("connects an organization whose billable currency is not EUR (EUR-only is Lexware's rule)", async () => {
 		actAs(ids.chfOwnerUser, ids.chfOrganization);
 
 		const result = await connectAccountingTool({
@@ -398,9 +398,10 @@ describe("sevdesk connection on PostgreSQL", () => {
 			settings: { netPrices: true },
 		});
 
-		expect(result).toMatchObject({ success: false, error: expect.stringContaining("EUR") });
-		expect(harness.secrets.size).toBe(0);
-		expect(await connectionRows(ids.chfOrganization)).toEqual([]);
+		expect(result).toMatchObject({ success: true, data: { providerKind: "sevdesk" } });
+		expect(await connectionRows(ids.chfOrganization)).toEqual([
+			expect.objectContaining({ provider_kind: "sevdesk", status: "active" }),
+		]);
 	});
 
 	it("refuses a token sevdesk does not accept", async () => {

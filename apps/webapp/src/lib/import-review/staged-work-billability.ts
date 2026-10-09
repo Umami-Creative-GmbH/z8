@@ -53,6 +53,15 @@ export function readStagedWorkBillability(
 	};
 }
 
+/** The Z8 project a staged work row is attributed to (`normalizedPayload.attribution`), if any. */
+export function stagedAttributionProjectId(normalizedPayload: unknown): string | null {
+	if (!isRecord(normalizedPayload)) return null;
+	const attribution = normalizedPayload.attribution;
+	if (!isRecord(attribution)) return null;
+	const { projectId } = attribution;
+	return typeof projectId === "string" && projectId.length > 0 ? projectId : null;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }

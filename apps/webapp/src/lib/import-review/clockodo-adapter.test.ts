@@ -423,12 +423,20 @@ describe("scanClockodoImportPartition", () => {
 		);
 		expect(payloads).toEqual([
 			{
-				attribution: { projectId: "project_customer", billable: true },
+				attribution: {
+					projectId: "project_customer",
+					billable: true,
+					nonBillableWhenRefused: true,
+				},
 				billability: { providerValue: 1, billable: true, note: null },
 				providerProjectId: 31,
 			},
 			{
-				attribution: { projectId: "project_customer", billable: true },
+				attribution: {
+					projectId: "project_customer",
+					billable: true,
+					nonBillableWhenRefused: true,
+				},
 				billability: { providerValue: 2, billable: true, note: "already_billed" },
 				providerProjectId: 31,
 			},

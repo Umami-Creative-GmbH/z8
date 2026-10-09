@@ -5,10 +5,13 @@ import type { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { accountingConnection, auditLog } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
 import { deleteOrgSecret, getOrgSecret, storeOrgSecret } from "@/lib/vault";
-import { getBillableTimeSettings, lockBillableTimeSettings } from "../settings";
+import type { BillableCurrency } from "../currency";
+import { isUniqueViolation } from "../input";
+import { lockBillableTimeSettings } from "../settings";
 import {
 	type AccountingConnectionSettings,
 	type AccountingProvider,
@@ -72,7 +75,7 @@ export interface ActiveAccountingConnection {
 	accountLabel: string | null;
 	settings: AccountingConnectionSettings;
 	defaultTaxTreatment: TaxTreatment;
-	connectedAt: Date;
+	connectedAt: Instant;
 	connectedBy: string | null;
 }
 
@@ -90,7 +93,7 @@ function connectionFromRow(
 		accountLabel: row.accountLabel,
 		settings: row.settings,
 		defaultTaxTreatment: taxTreatmentFromStored(row.defaultTaxTreatment, row.defaultTaxRate),
-		connectedAt: row.connectedAt,
+		connectedAt: instantFromDate(row.connectedAt),
 		connectedBy: row.connectedBy,
 	};
 }
@@ -211,16 +214,6 @@ function describeTax(treatment: TaxTreatment) {
 	return { kind: treatment.kind, rate: formatTaxRate(treatment.rateBasisPoints) };
 }
 
-function isUniqueViolation(error: unknown): boolean {
-	let candidate: unknown = error;
-	for (let depth = 0; depth < 4 && candidate && typeof candidate === "object"; depth += 1) {
-		const current = candidate as { code?: unknown; cause?: unknown };
-		if (current.code === "23505") return true;
-		candidate = current.cause;
-	}
-	return false;
-}
-
 async function bestEffortDeleteSecret(
 	dependencies: AccountingDependencies,
 	organizationId: string,
@@ -243,25 +236,54 @@ async function lockConnections(tx: Transaction, organizationId: string): Promise
 	);
 }
 
-/**
- * Connects the organization to an accounting tool, or replaces its active
- * connection (new key, other tool, or both). The connector validates the
- * connection first and may refuse it. The key goes into the secret store under
- * the new connection's id; a replaced connection's key is deleted after commit.
- * Audited as created or replaced, without the key.
+/** A connection the connector accepted, its API key already in the secret store. */
+export interface PreparedAccountingConnection {
+	connectionId: string;
+	organizationId: string;
+	actorUserId: string;
+	providerKind: AccountingProviderKind;
+	/** The billable currency the connector validated the connection against. */
+	billableCurrency: BillableCurrency;
+	defaultTaxTreatment: TaxTreatment;
+	accountRef: string;
+	accountLabel: string | null;
+	settings: AccountingConnectionSettings;
+}
+
+export type PrepareAccountingConnectionOutcome =
+	| { ok: true; prepared: PreparedAccountingConnection }
+	| ({ ok: false } & ConnectAccountingRefusal);
+
+/*
+ * Connecting the organization to an accounting tool, or replacing its active
+ * connection (new key, other tool, or both), runs in three steps so that the
+ * database work stays apart from the calls to the tool and the secret store:
+ *
+ * 1. `prepareAccountingConnection` (no database): the connector validates the
+ *    connection and may refuse it; the key goes into the secret store under
+ *    the new connection's id.
+ * 2. `commitAccountingConnection` (database only): stores the connection,
+ *    marks the previous one replaced, audits it (without the key).
+ * 3. `finishAccountingConnection` (no database): deletes the replaced
+ *    connection's key, or the prepared key when the commit refused or failed.
  */
-export async function connectAccounting(
-	database: typeof db,
+
+/**
+ * Step 1. The caller read the organization's Billable Time settings and passes
+ * its billable currency (refusing while the module is off).
+ */
+export async function prepareAccountingConnection(
 	dependencies: AccountingDependencies,
 	input: {
 		organizationId: string;
 		actorUserId: string;
+		billableCurrency: BillableCurrency;
 		providerKind: unknown;
 		apiKey: unknown;
 		settings: unknown;
 		defaultTaxTreatment: unknown;
 	},
-): Promise<ConnectAccountingOutcome> {
+): Promise<PrepareAccountingConnectionOutcome> {
 	if (!isAccountingProviderKind(input.providerKind)) {
 		return { ok: false, reason: "invalid_provider" };
 	}
@@ -270,11 +292,6 @@ export async function connectAccounting(
 	if (!apiKey) return { ok: false, reason: "invalid_api_key" };
 	const tax = parseTaxTreatment(input.defaultTaxTreatment);
 	if (!tax.ok) return { ok: false, reason: "invalid_tax_treatment" };
-
-	const settings = await getBillableTimeSettings(input.organizationId, database);
-	if (!settings.enabled || settings.currency === null) {
-		return { ok: false, reason: "billable_time_off" };
-	}
 	const connector = dependencies.registry.get(providerKind);
 	if (!connector) return { ok: false, reason: "provider_unavailable" };
 
@@ -283,7 +300,7 @@ export async function connectAccounting(
 		validation = await connector.validateConnection({
 			apiKey,
 			settings: input.settings,
-			context: { organizationId: input.organizationId, billableCurrency: settings.currency },
+			context: { organizationId: input.organizationId, billableCurrency: input.billableCurrency },
 		});
 	} catch (error) {
 		if (error instanceof AccountingProviderError) {
@@ -302,25 +319,53 @@ export async function connectAccounting(
 		};
 	}
 
-	const accepted = validation;
 	const connectionId = crypto.randomUUID();
 	await dependencies.secrets.store(
 		input.organizationId,
 		accountingApiKeySecretKey(connectionId),
 		apiKey,
 	);
+	return {
+		ok: true,
+		prepared: {
+			connectionId,
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			providerKind,
+			billableCurrency: input.billableCurrency,
+			defaultTaxTreatment: tax.treatment,
+			accountRef: validation.accountRef,
+			accountLabel: validation.accountLabel,
+			settings: validation.settings,
+		},
+	};
+}
 
-	let outcome: ConnectAccountingOutcome;
+/**
+ * Step 2: stores a prepared connection as the organization's active one.
+ * Refuses when the module was switched off or the billable currency changed
+ * since the connector validated it, and on a concurrent connection change.
+ */
+export async function commitAccountingConnection(
+	database: typeof db,
+	prepared: PreparedAccountingConnection,
+): Promise<ConnectAccountingOutcome> {
+	const { connectionId, providerKind } = prepared;
 	try {
-		outcome = await database.transaction(async (tx) => {
-			const locked = await lockBillableTimeSettings(tx, input.organizationId, "share");
+		return await database.transaction(async (tx) => {
+			const locked = await lockBillableTimeSettings(tx, prepared.organizationId, "share");
 			if (!locked.enabled) return { ok: false, reason: "billable_time_off" } as const;
-			await lockConnections(tx, input.organizationId);
+			// A currency change checks the active connection under this row's update
+			// lock; a change since the connector validated the currency must refuse here.
+			if (locked.currency !== prepared.billableCurrency) {
+				return { ok: false, reason: "concurrent_change" } as const;
+			}
+			await lockConnections(tx, prepared.organizationId);
 
 			const [previousRow] = await tx
 				.select()
 				.from(accountingConnection)
-				.where(activeCondition(input.organizationId))
+				.where(activeCondition(prepared.organizationId))
 				.limit(1)
 				.for("update");
 			const previous = previousRow ? connectionFromRow(previousRow) : null;
@@ -330,14 +375,14 @@ export async function connectAccounting(
 					.set({
 						status: "replaced",
 						endedAt: sql`now()`,
-						endedBy: input.actorUserId,
+						endedBy: prepared.actorUserId,
 						updatedAt: sql`now()`,
-						updatedBy: input.actorUserId,
+						updatedBy: prepared.actorUserId,
 					})
 					.where(
 						and(
 							eq(accountingConnection.id, previous.id),
-							eq(accountingConnection.organizationId, input.organizationId),
+							eq(accountingConnection.organizationId, prepared.organizationId),
 						),
 					);
 			}
@@ -346,36 +391,36 @@ export async function connectAccounting(
 				.insert(accountingConnection)
 				.values({
 					id: connectionId,
-					organizationId: input.organizationId,
+					organizationId: prepared.organizationId,
 					providerKind,
 					status: "active",
-					accountRef: accepted.accountRef,
-					accountLabel: accepted.accountLabel,
-					settings: accepted.settings,
-					defaultTaxTreatment: tax.treatment.kind,
-					defaultTaxRate: formatTaxRate(tax.treatment.rateBasisPoints),
-					connectedBy: input.actorUserId,
-					updatedBy: input.actorUserId,
+					accountRef: prepared.accountRef,
+					accountLabel: prepared.accountLabel,
+					settings: prepared.settings,
+					defaultTaxTreatment: prepared.defaultTaxTreatment.kind,
+					defaultTaxRate: formatTaxRate(prepared.defaultTaxTreatment.rateBasisPoints),
+					connectedBy: prepared.actorUserId,
+					updatedBy: prepared.actorUserId,
 				})
 				.returning();
 
 			await tx.insert(auditLog).values({
-				organizationId: input.organizationId,
+				organizationId: prepared.organizationId,
 				entityType: "accounting_connection",
 				entityId: connectionId,
 				action: previous
 					? AuditAction.ACCOUNTING_CONNECTION_REPLACED
 					: AuditAction.ACCOUNTING_CONNECTION_CREATED,
-				performedBy: input.actorUserId,
+				performedBy: prepared.actorUserId,
 				changes: JSON.stringify({
 					providerKind: { from: previous?.providerKind ?? null, to: providerKind },
 					account: {
 						from: previous ? { ref: previous.accountRef, label: previous.accountLabel } : null,
-						to: { ref: accepted.accountRef, label: accepted.accountLabel },
+						to: { ref: prepared.accountRef, label: prepared.accountLabel },
 					},
 					defaultTaxTreatment: {
 						from: previous ? describeTax(previous.defaultTaxTreatment) : null,
-						to: describeTax(tax.treatment),
+						to: describeTax(prepared.defaultTaxTreatment),
 					},
 					// The key itself is never recorded, only that a new one was stored.
 					apiKey: "stored_in_secret_store",
@@ -390,28 +435,41 @@ export async function connectAccounting(
 			} as const;
 		});
 	} catch (error) {
-		await bestEffortDeleteSecret(dependencies, input.organizationId, connectionId);
 		if (isUniqueViolation(error)) return { ok: false, reason: "concurrent_change" };
 		throw error;
 	}
+}
 
-	if (!outcome.ok) {
-		await bestEffortDeleteSecret(dependencies, input.organizationId, connectionId);
-		return outcome;
+/**
+ * Step 3: after a stored connection, deletes the replaced connection's key;
+ * after a refused or failed commit (`outcome` null or not ok), the prepared
+ * key. Never throws.
+ */
+export async function finishAccountingConnection(
+	dependencies: AccountingDependencies,
+	prepared: PreparedAccountingConnection,
+	outcome: ConnectAccountingOutcome | null,
+): Promise<void> {
+	if (!outcome?.ok) {
+		await bestEffortDeleteSecret(dependencies, prepared.organizationId, prepared.connectionId);
+		return;
 	}
 	if (outcome.replacedConnectionId) {
-		await bestEffortDeleteSecret(dependencies, input.organizationId, outcome.replacedConnectionId);
+		await bestEffortDeleteSecret(
+			dependencies,
+			prepared.organizationId,
+			outcome.replacedConnectionId,
+		);
 	}
 	logger.info(
 		{
-			organizationId: input.organizationId,
-			connectionId,
-			providerKind,
+			organizationId: prepared.organizationId,
+			connectionId: prepared.connectionId,
+			providerKind: prepared.providerKind,
 			replacedConnectionId: outcome.replacedConnectionId,
 		},
 		"Accounting connection stored",
 	);
-	return outcome;
 }
 
 export type UpdateAccountingDefaultsOutcome =

@@ -1,6 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { clockodoProjectMapping, project } from "@/db/schema";
+import { activeProjectCustomerIdSql } from "@/lib/billable-time/project-customer";
 import type { MappedClockodoProject } from "./clockodo-billability";
 
 /**
@@ -20,7 +21,8 @@ export async function loadClockodoProjectTargets(input: {
 		.select({
 			clockodoProjectId: clockodoProjectMapping.clockodoProjectId,
 			projectId: project.id,
-			customerId: project.customerId,
+			// A deleted customer leaves the project without customer (#768).
+			customerId: activeProjectCustomerIdSql(),
 		})
 		.from(clockodoProjectMapping)
 		.innerJoin(

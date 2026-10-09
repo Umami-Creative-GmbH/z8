@@ -1,11 +1,6 @@
 "use client";
 
-import {
-	IconAlertTriangle,
-	IconBuilding,
-	IconChevronDown,
-	IconChevronRight,
-} from "@tabler/icons-react";
+import { IconBuilding, IconChevronDown, IconChevronRight } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { Fragment, useState } from "react";
 import { ReportDocumentExportButtons } from "@/components/reports/report-document-export-buttons";
@@ -21,41 +16,18 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { buildCustomerReportDocument } from "@/lib/reports/project-report-export";
-import type { BillableFigures, CustomerBillableReport } from "@/lib/reports/project-types";
-import { BillableFiguresCard, MarginValue, useBillableFigureFormat } from "./billable-figures";
+import type { CustomerBillableReport } from "@/lib/reports/project-types";
+import {
+	BillableFigureCells,
+	BillableFiguresCard,
+	useBillableFigureFormat,
+} from "./billable-figures";
+
+const WITHOUT_CUSTOMER_KEY = "without-customer";
 
 interface CustomerBillableViewProps {
 	report: CustomerBillableReport;
 	onProjectSelect: (projectId: string) => void;
-}
-
-function FigureCells({ figures, showMargin }: { figures: BillableFigures; showMargin: boolean }) {
-	const { t } = useTranslate();
-	const format = useBillableFigureFormat();
-	return (
-		<>
-			<TableCell className="text-right tabular-nums">
-				{format.hours(figures.billableHours)}
-			</TableCell>
-			<TableCell className="text-right tabular-nums">
-				{format.hours(figures.nonBillableHours)}
-			</TableCell>
-			<TableCell className="text-right tabular-nums">
-				{format.money(figures.revenue, figures.currency)}
-				{figures.unpricedWorkCount > 0 && (
-					<IconAlertTriangle
-						className="ml-1 inline size-3 text-amber-600"
-						aria-label={t("reports.projects.billable.hasUnpriced", "Has unpriced work")}
-					/>
-				)}
-			</TableCell>
-			{showMargin && (
-				<TableCell className="text-right tabular-nums">
-					{figures.access === "full" ? <MarginValue figures={figures} /> : null}
-				</TableCell>
-			)}
-		</>
-	);
 }
 
 /**
@@ -65,7 +37,21 @@ function FigureCells({ figures, showMargin }: { figures: BillableFigures; showMa
 export function CustomerBillableView({ report, onProjectSelect }: CustomerBillableViewProps) {
 	const { t } = useTranslate();
 	const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
+	const format = useBillableFigureFormat();
 	const showMargin = report.access === "full";
+	// Customers, then projects without an (active) customer as a group of their own.
+	const groups = [
+		...report.customers.map((row) => ({ key: row.customer.id, name: row.customer.name, ...row })),
+		...(report.withoutCustomer
+			? [
+					{
+						key: WITHOUT_CUSTOMER_KEY,
+						name: t("reports.projects.customers.withoutCustomer", "Without customer"),
+						...report.withoutCustomer,
+					},
+				]
+			: []),
+	];
 
 	const toggle = (customerId: string) =>
 		setExpanded((current) => {
@@ -99,7 +85,7 @@ export function CustomerBillableView({ report, onProjectSelect }: CustomerBillab
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="overflow-x-auto">
-					{report.customers.length === 0 ? (
+					{groups.length === 0 ? (
 						<p className="py-6 text-center text-sm text-muted-foreground">
 							{t("reports.projects.customers.empty", "No work on customer projects in this period")}
 						</p>
@@ -125,10 +111,10 @@ export function CustomerBillableView({ report, onProjectSelect }: CustomerBillab
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{report.customers.map((row) => {
-									const isOpen = expanded.has(row.customer.id);
+								{groups.map((row) => {
+									const isOpen = expanded.has(row.key);
 									return (
-										<Fragment key={row.customer.id}>
+										<Fragment key={row.key}>
 											<TableRow>
 												<TableCell className="font-medium">
 													<Button
@@ -136,17 +122,26 @@ export function CustomerBillableView({ report, onProjectSelect }: CustomerBillab
 														size="sm"
 														className="-ml-2 gap-1"
 														aria-expanded={isOpen}
-														onClick={() => toggle(row.customer.id)}
+														onClick={() => toggle(row.key)}
 													>
 														{isOpen ? (
 															<IconChevronDown className="size-4" aria-hidden="true" />
 														) : (
 															<IconChevronRight className="size-4" aria-hidden="true" />
 														)}
-														{row.customer.name}
+														{row.name}
 													</Button>
+													{row.billable.withoutCustomerWorkCount > 0 && (
+														<div className="text-xs font-normal text-amber-700 dark:text-amber-400">
+															{t(
+																"reports.projects.customers.withoutCustomerHint",
+																"{hours} billable without customer, cannot be handed off",
+																{ hours: format.hours(row.billable.withoutCustomerHours) },
+															)}
+														</div>
+													)}
 												</TableCell>
-												<FigureCells figures={row.billable} showMargin={showMargin} />
+												<BillableFigureCells figures={row.billable} showMargin={showMargin} />
 											</TableRow>
 											{isOpen &&
 												row.projects.map((projectRow) => (
@@ -161,7 +156,10 @@ export function CustomerBillableView({ report, onProjectSelect }: CustomerBillab
 																{projectRow.project.name}
 															</Button>
 														</TableCell>
-														<FigureCells figures={projectRow.billable} showMargin={showMargin} />
+														<BillableFigureCells
+															figures={projectRow.billable}
+															showMargin={showMargin}
+														/>
 													</TableRow>
 												))}
 										</Fragment>
@@ -171,7 +169,7 @@ export function CustomerBillableView({ report, onProjectSelect }: CustomerBillab
 							<TableFooter>
 								<TableRow>
 									<TableCell>{t("reports.projects.customers.total", "Total")}</TableCell>
-									<FigureCells figures={report.totals.billable} showMargin={showMargin} />
+									<BillableFigureCells figures={report.totals.billable} showMargin={showMargin} />
 								</TableRow>
 							</TableFooter>
 						</Table>

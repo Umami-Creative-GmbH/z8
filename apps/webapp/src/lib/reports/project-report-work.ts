@@ -7,7 +7,9 @@ import { invoicedWork, project, timeEntry, workPeriod } from "@/db/schema";
 import { workDayOf } from "@/lib/billable-time/applicable-rate";
 import { listBillableRatesForWork } from "@/lib/billable-time/billable-rates";
 import { listCostRatesForWork } from "@/lib/billable-time/cost-rates";
+import { parsePlainDay } from "@/lib/billable-time/input";
 import { rateFromStored } from "@/lib/billable-time/money";
+import { activeProjectCustomerIdSql } from "@/lib/billable-time/project-customer";
 import type { ReportedWork, ReportRates } from "@/lib/billable-time/report-figures";
 import { dateFromInstant, instantFromDate, type PlainDate } from "@/lib/datetime/temporal-core";
 import { unresolvedWorkPeriodReviewSql } from "@/lib/time-tracking/unresolved-work-period-review";
@@ -29,6 +31,17 @@ export interface ReportDayRange {
 export function reportDayRangeFromDates(startDate: Date, endDate: Date): ReportDayRange {
 	const dayOf = (value: Date) => instantFromDate(value).toZonedDateTimeISO("UTC").toPlainDate();
 	return { fromDay: dayOf(startDate), toDay: dayOf(endDate) };
+}
+
+/**
+ * The calendar days of a report request sent as ISO dates ("2026-03-31"), both
+ * inclusive. Null for anything else, or when the range ends before it starts.
+ */
+export function reportDayRangeFromDays(fromDay: unknown, toDay: unknown): ReportDayRange | null {
+	const from = parsePlainDay(fromDay);
+	const to = parsePlainDay(toDay);
+	if (!from || !to || Temporal.PlainDate.compare(from, to) > 0) return null;
+	return { fromDay: from, toDay: to };
 }
 
 export function isWithinDayRange(day: PlainDate, range: ReportDayRange): boolean {
@@ -54,7 +67,7 @@ function instantWindow(range: ReportDayRange) {
  * The work a project report counts (#794, #902): completed, non-deleted work of
  * the given projects in the organization whose employee-local start day (at the
  * offset captured on its start entry) falls in the range. Live work never
- * counts. Each row carries the project's current customer, whether a
+ * counts. Each row carries the project's current active customer, whether a
  * correction or submission for it is pending, and whether it is invoiced work
  * (in an unreleased invoice draft, #903) with its frozen rates.
  */
@@ -70,7 +83,8 @@ export async function loadReportedProjectWork(
 			id: workPeriod.id,
 			employeeId: workPeriod.employeeId,
 			projectId: workPeriod.projectId,
-			customerId: project.customerId,
+			// A deleted (inactive) customer counts as no customer.
+			customerId: activeProjectCustomerIdSql(),
 			startTime: workPeriod.startTime,
 			endTime: workPeriod.endTime,
 			durationMinutes: workPeriod.durationMinutes,
@@ -134,6 +148,7 @@ export async function loadReportedProjectWork(
 							shares: row.invoicedShares.map((share) => ({
 								durationMs: share.durationMs,
 								rate: rateFromStored(share.rate),
+								...(share.amount === undefined ? {} : { amount: rateFromStored(share.amount) }),
 							})),
 							changedAfterInvoicing: row.changedAfterInvoicingAt !== null,
 						},

@@ -62,6 +62,18 @@ vi.mock("@/lib/billable-time/settings", () => ({
 	getBillableTimeSettings: mockState.getBillableTimeSettings,
 }));
 
+// The live customer check runs on PostgreSQL (clockodo-billability.integration.test.ts).
+vi.mock("@/lib/import-review/import-row-billability", async () => {
+	const { importRowBillability } = await import("@/lib/import-review/staged-work-billability");
+	return {
+		listImportRowBillability: async (
+			_reader: unknown,
+			_organizationId: string,
+			rows: Parameters<typeof importRowBillability>[0][],
+		) => rows.map(importRowBillability),
+	};
+});
+
 vi.mock("@/lib/import-review/repository", () => ({
 	getImportReviewSummary: mockState.getImportReviewSummary,
 	listImportReviewRows: mockState.listImportReviewRows,
@@ -69,17 +81,22 @@ vi.mock("@/lib/import-review/repository", () => ({
 
 const { default: ImportReviewRoute } = await import("./page");
 
-async function renderRequestContent(batchId: string) {
-	const route = ImportReviewRoute({ params: Promise.resolve({ batchId }) });
+async function renderRequestContent(batchId: string, searchParams: Record<string, string> = {}) {
+	const route = ImportReviewRoute({
+		params: Promise.resolve({ batchId }),
+		searchParams: Promise.resolve(searchParams),
+	});
 	if (!isValidElement(route) || !isValidElement(route.props.children)) {
 		throw new Error("Expected a focused import review boundary");
 	}
 
+	type ContentProps = {
+		params: Promise<{ batchId: string }>;
+		searchParams: Promise<Record<string, string>>;
+	};
 	const content = route.props.children as React.ReactElement<
-		{ params: Promise<{ batchId: string }> },
-		(props: {
-			params: Promise<{ batchId: string }>;
-		}) => Promise<React.ReactNode>
+		ContentProps,
+		(props: ContentProps) => Promise<React.ReactNode>
 	>;
 	return content.type(content.props);
 }
@@ -140,7 +157,7 @@ describe("ImportReviewRoute", () => {
 			showBillability: false,
 			customerImport: undefined,
 		});
-		expect(mockState.getBillableTimeSettings).toHaveBeenCalledWith("org-1");
+		expect(mockState.getBillableTimeSettings).toHaveBeenCalledWith("org-1", expect.anything());
 		expect(mockState.listCustomerAccounting).not.toHaveBeenCalled();
 	});
 
@@ -174,7 +191,7 @@ describe("ImportReviewRoute", () => {
 		const reviewPage = await renderRequestContent("batch-1");
 
 		expect(mockState.listImportReviewRows).toHaveBeenCalledWith(
-			expect.objectContaining({ limit: 500 }),
+			expect.objectContaining({ limit: 100, offset: 0 }),
 		);
 		expect(mockState.listCustomerAccounting).toHaveBeenCalledWith(expect.anything(), "org-1");
 		expect(reviewPage.props.children.props.children.props.customerImport).toMatchObject({
@@ -192,6 +209,38 @@ describe("ImportReviewRoute", () => {
 					},
 				},
 			],
+		});
+	});
+
+	it.each([
+		["2", 2, 100],
+		["3", 3, 200],
+		// Past the end: the last page.
+		["9", 3, 200],
+		["0", 1, 0],
+		["abc", 1, 0],
+	])("pages a customer import: ?page=%s shows page %i", async (page, shown, offset) => {
+		mockState.findBatch.mockResolvedValue({
+			id: "batch-1",
+			organizationId: "org-1",
+			provider: "accounting",
+			status: "needs_review",
+		});
+		mockState.getImportReviewSummary.mockResolvedValue({ totalRows: 250 });
+		mockState.listImportReviewRows.mockResolvedValue([]);
+		mockState.listCustomerAccounting.mockResolvedValue([]);
+
+		const reviewPage = await renderRequestContent("batch-1", { page });
+
+		expect(mockState.listImportReviewRows).toHaveBeenCalledWith({
+			batchId: "batch-1",
+			organizationId: "org-1",
+			limit: 100,
+			offset,
+		});
+		expect(reviewPage.props.children.props.children.props.customerImport.paging).toEqual({
+			page: shown,
+			pageCount: 3,
 		});
 	});
 

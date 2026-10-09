@@ -5,10 +5,12 @@ import {
 	type AccountingDependencies,
 	type ActiveAccountingConnection,
 	type ConnectAccountingRefusal,
-	connectAccounting,
+	commitAccountingConnection,
 	defaultAccountingDependencies,
+	finishAccountingConnection,
 	getActiveAccountingConnectionSummary,
 	hasAccountingApiKey,
+	prepareAccountingConnection,
 	removeAccountingConnection,
 	updateAccountingConnectionDefaults,
 } from "@/lib/billable-time/accounting/connection-store";
@@ -37,12 +39,26 @@ import {
 	taxTreatmentView,
 } from "@/lib/billable-time/accounting/views";
 import type { BillableCurrency } from "@/lib/billable-time/currency";
-import { getBillableTimeSettings } from "@/lib/billable-time/settings";
-import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
+import {
+	ConflictError,
+	ExternalServiceError,
+	NotFoundError,
+	QueueError,
+	ValidationError,
+} from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { startAccountingCustomerImport } from "@/lib/import-review/accounting-customer-adapter";
+import {
+	createAccountingCustomerImport,
+	failAccountingCustomerImportStart,
+} from "@/lib/import-review/accounting-customer-adapter";
+import { enqueueImportScanJob } from "@/lib/import-review/queue";
 import { activeOrganizationActor } from "../action-actor";
+import {
+	accountingProviderRefusalError,
+	billableTimeOff,
+	requireBillableTimeOn,
+} from "../module-guard";
 
 /**
  * Accounting connection, contact links and tax treatment (#903 pass A). Every
@@ -63,14 +79,16 @@ export interface AccountingSettings {
 const actor = (action: string) =>
 	activeOrganizationActor({ requiredRole: "admin", message: ADMIN_ONLY, action });
 
-const billableTimeOff = () =>
-	new ValidationError({ message: "Billable Time is switched off", field: "billableTimeEnabled" });
-
-const notConnected = () =>
-	new ValidationError({
-		message: "Connect an accounting tool first",
-		field: "accountingConnection",
+/** A failure of the accounting tool or the secret store outside a mapped refusal. */
+const accountingServiceError = (operation: string, cause: unknown) =>
+	new ExternalServiceError({
+		message: "The accounting tool or the secret store failed. Try again later",
+		service: "accounting",
+		operation,
+		cause,
 	});
+
+const notConnected = () => accountingProviderRefusalError("not_connected");
 
 const customerNotFound = () =>
 	new NotFoundError({ message: "The customer was not found", entityType: "customer" });
@@ -82,18 +100,8 @@ const invalidTaxTreatment = () =>
 		field: "taxTreatment",
 	});
 
-function requireModuleOn(organizationId: string) {
-	return Effect.gen(function* () {
-		const dbService = yield* DatabaseService;
-		const settings = yield* dbService.query("billableTime.accounting.settings", () =>
-			getBillableTimeSettings(organizationId, dbService.db),
-		);
-		if (!settings.enabled || settings.currency === null) {
-			return yield* Effect.fail(billableTimeOff());
-		}
-		return { currency: settings.currency };
-	});
-}
+const requireModuleOn = (organizationId: string) =>
+	requireBillableTimeOn(organizationId, "billableTime.accounting.settings");
 
 const customerIdOf = (input: unknown) =>
 	isCustomerId(input)
@@ -138,7 +146,7 @@ function connectionView(
 		providerKind: connection.providerKind,
 		accountLabel: connection.accountLabel,
 		defaultTaxTreatment: taxTreatmentView(connection.defaultTaxTreatment),
-		connectedAt: connection.connectedAt.toISOString(),
+		connectedAt: connection.connectedAt.toString(),
 		connectedByName: connection.connectedByName,
 		apiKeyStored,
 		providerAvailable: connector !== null,
@@ -226,18 +234,35 @@ export async function connectAccountingTool(input: {
 }): Promise<ServerActionResult<AccountingConnectionView>> {
 	const effect = Effect.gen(function* () {
 		const { organizationId, userId } = yield* actor("connectAccounting");
+		const { currency } = yield* requireModuleOn(organizationId);
 		const dependencies = defaultAccountingDependencies();
+		// The tool and the secret store first, outside the database work.
+		const preparation = yield* Effect.tryPromise({
+			try: () =>
+				prepareAccountingConnection(dependencies, {
+					organizationId,
+					actorUserId: userId,
+					billableCurrency: currency,
+					providerKind: input.providerKind,
+					apiKey: input.apiKey,
+					settings: input.settings ?? {},
+					defaultTaxTreatment: input.defaultTaxTreatment,
+				}),
+			catch: (cause) => accountingServiceError("billableTime.accounting.prepareConnection", cause),
+		});
+		if (!preparation.ok) return yield* Effect.fail(connectRefusalError(preparation));
+		const { prepared } = preparation;
 		const dbService = yield* DatabaseService;
-		const outcome = yield* dbService.query("billableTime.accounting.connect", () =>
-			connectAccounting(dbService.db, dependencies, {
-				organizationId,
-				actorUserId: userId,
-				providerKind: input.providerKind,
-				apiKey: input.apiKey,
-				settings: input.settings ?? {},
-				defaultTaxTreatment: input.defaultTaxTreatment,
-			}),
-		);
+		const outcome = yield* dbService
+			.query("billableTime.accounting.connect", () =>
+				commitAccountingConnection(dbService.db, prepared),
+			)
+			.pipe(
+				Effect.tapError(() =>
+					Effect.promise(() => finishAccountingConnection(dependencies, prepared, null)),
+				),
+			);
+		yield* Effect.promise(() => finishAccountingConnection(dependencies, prepared, outcome));
 		if (!outcome.ok) return yield* Effect.fail(connectRefusalError(outcome));
 		const view = yield* readConnectionView(organizationId, dependencies);
 		if (!view) return yield* Effect.fail(notConnected());
@@ -257,10 +282,10 @@ export async function listAccountingContactPersons(input: {
 	const effect = Effect.gen(function* () {
 		const { organizationId } = yield* actor("listAccountingContactPersons");
 		yield* requireModuleOn(organizationId);
-		const dbService = yield* DatabaseService;
-		const outcome = yield* dbService.query("billableTime.accounting.contactPersons", () =>
-			listToolContactPersons(defaultAccountingDependencies(), input),
-		);
+		const outcome = yield* Effect.tryPromise({
+			try: () => listToolContactPersons(defaultAccountingDependencies(), input),
+			catch: (cause) => accountingServiceError("billableTime.accounting.contactPersons", cause),
+		});
 		if (outcome.ok) return outcome.persons;
 		return yield* Effect.fail(connectRefusalError(outcome));
 	});
@@ -356,22 +381,10 @@ function providerRefusalError(
 		case "billable_time_off":
 			return billableTimeOff();
 		case "not_connected":
-			return notConnected();
 		case "provider_unavailable":
-			return new ValidationError({
-				message: "The connected accounting tool is not available in this installation",
-				field: "accountingConnection",
-			});
 		case "credentials_missing":
-			return new ValidationError({
-				message: "The API key of the accounting connection is missing. Replace the connection",
-				field: "accountingConnection",
-			});
 		case "credentials_refused":
-			return new ValidationError({
-				message: "The accounting tool refused the stored API key. Replace the connection",
-				field: "accountingConnection",
-			});
+			return accountingProviderRefusalError(refusal.reason);
 		case "tool_unreachable":
 			return new ValidationError({
 				message: `The accounting tool could not be reached: ${refusal.message}`,
@@ -506,12 +519,30 @@ export async function startCustomerImport(): Promise<ServerActionResult<{ batchI
 		yield* requireModuleOn(organizationId);
 		const dbService = yield* DatabaseService;
 		const outcome = yield* dbService.query("billableTime.accounting.startCustomerImport", () =>
-			startAccountingCustomerImport(defaultAccountingDependencies(), {
+			createAccountingCustomerImport(dbService.db, defaultAccountingDependencies(), {
 				organizationId,
 				actorUserId: userId,
 			}),
 		);
-		if (outcome.ok) return { batchId: outcome.batchId };
+		if (outcome.ok) {
+			const { batchId, scanJob } = outcome;
+			yield* Effect.tryPromise({
+				try: () => enqueueImportScanJob(scanJob),
+				catch: (cause) =>
+					new QueueError({
+						message: "The customer import could not be started",
+						operation: "billableTime.accounting.enqueueCustomerImportScan",
+						cause,
+					}),
+			}).pipe(
+				Effect.tapError(() =>
+					dbService.query("billableTime.accounting.failCustomerImportStart", () =>
+						failAccountingCustomerImportStart({ batchId, organizationId }),
+					),
+				),
+			);
+			return { batchId };
+		}
 		const { reason } = outcome;
 		if (reason === "import_not_supported") {
 			return yield* Effect.fail(

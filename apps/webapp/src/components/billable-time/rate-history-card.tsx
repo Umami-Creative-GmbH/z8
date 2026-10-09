@@ -22,6 +22,7 @@ import { useDisplayContext } from "@/hooks/use-display-context";
 import {
 	formatBillableAmount,
 	formatRateDate,
+	formatRateInput,
 	lastDayBefore,
 	periodContains,
 } from "@/lib/billable-time/format";
@@ -60,7 +61,7 @@ export interface RateHistoryCardProps {
 type FormMode = "set" | "end";
 
 /**
- * The current rate and the history of one effective-dated rate series, with a
+ * The rate in effect today and the history of one effective-dated rate series, with a
  * form to set a rate from a date (backdating allowed) or end it. Shared by
  * billable rates (#898) and cost rates (#899).
  */
@@ -82,7 +83,7 @@ export function RateHistoryCard({
 	const { locale, timezone } = useDisplayContext();
 	const [mode, setMode] = useState<FormMode | null>(null);
 	const today = Temporal.Now.plainDateISO(timezone).toString();
-	const current = periods.find((period) => periodContains(period, today)) ?? null;
+	const inEffectToday = periods.find((period) => periodContains(period, today)) ?? null;
 
 	const form = useForm({
 		defaultValues: { effectiveFrom: today, rate: "" },
@@ -195,7 +196,7 @@ export function RateHistoryCard({
 										value={field.state.value}
 										onChange={(event) => field.handleChange(event.target.value)}
 										onBlur={field.handleBlur}
-										placeholder={current?.hourlyRate ?? "0.00"}
+										placeholder={formatRateInput(locale, inEffectToday?.hourlyRate ?? "0.00")}
 										className="pr-16"
 									/>
 									<span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground">
@@ -203,10 +204,10 @@ export function RateHistoryCard({
 									</span>
 								</div>
 							</TFormControl>
-							{current && (
+							{inEffectToday && (
 								<TFormDescription>
-									{t("settings.billableTime.rates.currentRateHint", "Current rate: {rate}", {
-										rate: formatBillableAmount(locale, current.hourlyRate, currency),
+									{t("settings.billableTime.rates.inEffectTodayHint", "In effect today: {rate}", {
+										rate: formatBillableAmount(locale, inEffectToday.hourlyRate, currency),
 									})}
 								</TFormDescription>
 							)}
@@ -270,7 +271,7 @@ export function RateHistoryCard({
 			<div aria-hidden="true" className="absolute bottom-0 left-[11px] top-0 w-px bg-border" />
 			<ol className="space-y-4">
 				{periods.map((period) => {
-					const isCurrent = period.id === current?.id;
+					const isInEffectToday = period.id === inEffectToday?.id;
 					const from = formatRateDate(locale, period.effectiveFrom);
 					return (
 						<li key={period.id} className="relative flex items-start gap-4">
@@ -278,21 +279,23 @@ export function RateHistoryCard({
 								aria-hidden="true"
 								className={cn(
 									"absolute left-[-13px] flex size-6 items-center justify-center rounded-full",
-									isCurrent ? "bg-primary text-primary-foreground" : "bg-muted",
+									isInEffectToday ? "bg-primary text-primary-foreground" : "bg-muted",
 								)}
 							>
 								<IconCircleDot className="size-4" />
 							</div>
 							<div className="ml-4 flex-1 space-y-1">
 								<div className="flex items-center gap-2">
-									<span className={cn("font-medium tabular-nums", isCurrent && "text-primary")}>
+									<span
+										className={cn("font-medium tabular-nums", isInEffectToday && "text-primary")}
+									>
 										{t("settings.billableTime.rates.ratePerHour", "{rate}/h", {
 											rate: formatBillableAmount(locale, period.hourlyRate, currency),
 										})}
 									</span>
-									{isCurrent && (
+									{isInEffectToday && (
 										<Badge variant="default">
-											{t("settings.billableTime.rates.current", "Current")}
+											{t("settings.billableTime.rates.inEffect", "In effect")}
 										</Badge>
 									)}
 								</div>

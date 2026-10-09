@@ -167,13 +167,30 @@ describe("billable report figures", () => {
 		expect(JSON.stringify(result)).not.toMatch(/cost|margin/i);
 	});
 
-	it("treats work marked billable on a project without a customer as non-billable", () => {
+	it("shows billable work on a project without a customer as without customer, with no revenue", () => {
 		const result = figures(
-			[work("2026-03-02T08:00:00Z", "2026-03-02T10:00:00Z", { customerId: null })],
+			[
+				work("2026-03-02T08:00:00Z", "2026-03-02T10:00:00Z", { customerId: null }),
+				work("2026-03-03T08:00:00Z", "2026-03-03T09:00:00Z", {
+					customerId: null,
+					isBillable: false,
+				}),
+				work("2026-03-04T08:00:00Z", "2026-03-04T09:00:00Z"),
+			],
 			{ billable: [projectRate(10_000, "2026-01-01")] },
 		);
 
-		expect(result).toMatchObject({ billableHours: 0, nonBillableHours: 2, revenue: "0.00" });
+		expect(result).toMatchObject({
+			billableHours: 1,
+			nonBillableHours: 1,
+			withoutCustomerMinutes: 120,
+			withoutCustomerHours: 2,
+			withoutCustomerWorkCount: 1,
+			revenue: "100.00",
+		});
+		expect(
+			sumBillableFigures([result, result], { access: "revenue", currency: "EUR" }),
+		).toMatchObject({ withoutCustomerMinutes: 240, withoutCustomerWorkCount: 2 });
 	});
 
 	it("counts work with a pending correction or submission", () => {
@@ -278,6 +295,24 @@ describe("billable report figures", () => {
 				changedAfterInvoicingCount: 2,
 			},
 		});
+	});
+
+	it("counts invoiced work at its frozen draft amounts, so it equals the draft's net total", () => {
+		// 61 minutes at 85.50: the draft line states 1.02 h = 87.21; exact time would give 86.93.
+		const result = figures(
+			[
+				work("2026-03-02T08:00:00Z", "2026-03-02T09:01:00Z", {
+					invoiced: {
+						shares: [{ durationMs: 3_660_000, rate: BigInt(8_550), amount: BigInt(8_721) }],
+						changedAfterInvoicing: false,
+					},
+				}),
+			],
+			{ billable: [projectRate(8_550, "2026-01-01")] },
+		);
+
+		expect(result.revenue).toBe("87.21");
+		expect(result.invoicing).toMatchObject({ invoicedRevenue: "87.21", uninvoicedRevenue: "0.00" });
 	});
 
 	it("never counts invoiced work that is no longer chargeable as invoiced revenue", () => {

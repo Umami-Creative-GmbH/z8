@@ -67,11 +67,7 @@ export function ProjectReportsContainer() {
 			}
 			// The customer view exists for viewers who see Billable Time figures.
 			const customers = result.data.billableTime
-				? await getCustomerBillableReport(
-						new Date(range.startDate),
-						new Date(range.endDate),
-						statusFilter,
-					)
+				? await getCustomerBillableReport(range.startDate, range.endDate, statusFilter)
 				: null;
 			setPortfolioData(result.data);
 			setCustomerReport(customers?.success ? customers.data : null);

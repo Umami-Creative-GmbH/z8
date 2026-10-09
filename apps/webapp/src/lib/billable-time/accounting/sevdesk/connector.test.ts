@@ -1,10 +1,14 @@
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
+import { BILLABLE_CURRENCIES } from "../../currency";
 import { buildInvoiceDraft, type InvoiceDraft, workLine } from "../invoice-draft";
+import type { AccountingProvider } from "../provider";
 import { getAccountingProviderRegistry } from "../registry";
 import { createSevdeskConnector } from "./connector";
 import {
 	authenticationRequired,
+	communicationWayRow,
+	contactAddressRow,
 	contactRow,
 	contacts,
 	type FixtureRoute,
@@ -96,11 +100,6 @@ describe("sevdesk connector: connection setup", () => {
 				context: { ...context, billableCurrency: currency },
 			});
 
-		await expect(refusal(setupRoutes(), netSettings, "CHF")).resolves.toMatchObject({
-			ok: false,
-			code: "currency_not_supported",
-			message: expect.stringContaining("EUR"),
-		});
 		await expect(refusal(setupRoutes({ version: "1.0" }), netSettings)).resolves.toMatchObject({
 			ok: false,
 			code: "tax_rule_system_not_supported",
@@ -115,6 +114,22 @@ describe("sevdesk connector: connection setup", () => {
 			code: "hour_unit_missing",
 		});
 	});
+
+	it.each(BILLABLE_CURRENCIES)(
+		"connects an organization billing in %s: sevdesk invoices take any ISO-4217 currency",
+		async (currency) => {
+			const { connector } = connectorWith(setupRoutes());
+
+			await expect(
+				connector.validateConnection({
+					apiKey: TOKEN,
+					settings: netSettings,
+					context: { ...context, billableCurrency: currency },
+				}),
+			).resolves.toMatchObject({ ok: true });
+			expect(connector.capabilities.supportedCurrencies).toContain(currency);
+		},
+	);
 
 	it("needs a choice of contact person when the account has several users", async () => {
 		const users = [
@@ -162,6 +177,31 @@ const storedSettings = {
 function providerWith(routes: FixtureRoute[]) {
 	const setup = connectorWith(routes);
 	return { ...setup, provider: setup.connector.open({ apiKey: TOKEN, settings: storedSettings }) };
+}
+
+/** The sevdesk provider always lists customer contacts (the port keeps it optional). */
+function listerOf(provider: AccountingProvider) {
+	const list = provider.listCustomerContacts;
+	if (!list) throw new Error("sevdesk lists customer contacts");
+	return { listCustomerContacts: list.bind(provider) };
+}
+
+/** The address and email look-ups of the customer import, answering with no rows. */
+function importLookupRoutes(
+	options: { addresses?: unknown[]; emails?: unknown[] } = {},
+): FixtureRoute[] {
+	return [
+		{
+			method: "GET",
+			path: "/ContactAddress",
+			responses: [{ status: 200, body: { objects: options.addresses ?? [] } }],
+		},
+		{
+			method: "GET",
+			path: "/CommunicationWay",
+			responses: [{ status: 200, body: { objects: options.emails ?? [] } }],
+		},
+	];
 }
 
 describe("sevdesk connector: contacts", () => {
@@ -246,6 +286,7 @@ describe("sevdesk connector: contacts", () => {
 				contactRow({ id: String(from + index), name: `Customer ${from + index}` }),
 			);
 		const { provider, http } = providerWith([
+			...importLookupRoutes(),
 			{
 				method: "GET",
 				path: "/Contact",
@@ -255,12 +296,7 @@ describe("sevdesk connector: contacts", () => {
 				],
 			},
 		]);
-		const lister = provider as typeof provider & {
-			listCustomerContacts(page: { cursor: string | null }): Promise<{
-				contacts: unknown[];
-				nextCursor: string | null;
-			}>;
-		};
+		const lister = listerOf(provider);
 
 		const first = await lister.listCustomerContacts({ cursor: null });
 		expect(first.contacts).toHaveLength(100);
@@ -274,6 +310,207 @@ describe("sevdesk connector: contacts", () => {
 			{ "category[id]": "3", depth: "1", limit: "100", offset: "100" },
 		]);
 	});
+
+	it("fills each listed contact's email and address from sevdesk's communication ways and contact addresses", async () => {
+		const { provider, http } = providerWith([
+			...importLookupRoutes({
+				addresses: [
+					contactAddressRow({
+						id: 72,
+						contactId: "1001",
+						street: "Second 2",
+						zip: "20095",
+						city: "Hamburg",
+					}),
+					contactAddressRow({
+						id: 71,
+						contactId: "1001",
+						street: "Hauptstr. 1",
+						zip: "10115",
+						city: "Berlin",
+					}),
+					contactAddressRow({ id: 73, contactId: "1003", city: "München" }),
+				],
+				emails: [
+					communicationWayRow({ id: "81", contactId: "1001", value: "info@acme.example" }),
+					communicationWayRow({
+						id: "82",
+						contactId: "1001",
+						value: "billing@acme.example",
+						main: true,
+					}),
+					communicationWayRow({ id: "83", contactId: "1003", value: "erika@example.org" }),
+				],
+			}),
+			{
+				method: "GET",
+				path: "/Contact",
+				responses: [
+					{
+						status: 200,
+						body: { objects: [contacts.acme, contacts.acmeSchweiz, contacts.person] },
+					},
+				],
+			},
+		]);
+
+		const page = await listerOf(provider).listCustomerContacts({ cursor: null });
+
+		expect(page.contacts).toEqual([
+			{
+				id: "1001",
+				customerNumber: "10001",
+				name: "Acme GmbH",
+				// The first address by id; sevdesk's draft takes the contact's first address too.
+				address: "Hauptstr. 1\n10115 Berlin",
+				vatId: "DE123456789",
+				// The main email wins over an earlier one.
+				email: "billing@acme.example",
+			},
+			{
+				id: "1002",
+				customerNumber: "10002",
+				name: "Acme Schweiz AG",
+				address: null,
+				vatId: null,
+				email: null,
+			},
+			{
+				id: "1003",
+				customerNumber: "10003",
+				name: "Erika Mustermann",
+				address: "München",
+				vatId: null,
+				email: "erika@example.org",
+			},
+		]);
+		expect(
+			http.to("GET", "/CommunicationWay").map((request) => Object.fromEntries(request.query)),
+		).toEqual([{ type: "EMAIL", limit: "1000", offset: "0" }]);
+		expect(
+			http.to("GET", "/ContactAddress").map((request) => Object.fromEntries(request.query)),
+		).toEqual([{ limit: "1000", offset: "0" }]);
+	});
+
+	it("reads emails and addresses once per import, page by page, not once per contact page", async () => {
+		const emails = Array.from({ length: 1000 }, (_, index) =>
+			communicationWayRow({
+				id: String(5000 + index),
+				contactId: "9",
+				value: `x${index}@example.org`,
+			}),
+		);
+		const { provider, http } = providerWith([
+			{
+				method: "GET",
+				path: "/ContactAddress",
+				responses: [{ status: 200, body: { objects: [] } }],
+			},
+			{
+				method: "GET",
+				path: "/CommunicationWay",
+				responses: [
+					{ status: 200, body: { objects: emails } },
+					{
+						status: 200,
+						body: {
+							objects: [
+								communicationWayRow({ id: "1", contactId: "1001", value: "a@acme.example" }),
+							],
+						},
+					},
+				],
+			},
+			{
+				method: "GET",
+				path: "/Contact",
+				responses: [
+					{
+						status: 200,
+						body: {
+							objects: Array.from({ length: 100 }, (_, index) =>
+								contactRow({ id: String(index + 1), name: `C ${index}` }),
+							),
+						},
+					},
+					{ status: 200, body: { objects: [contacts.acme] } },
+				],
+			},
+		]);
+		const lister = listerOf(provider);
+
+		const first = await lister.listCustomerContacts({ cursor: null });
+		const second = await lister.listCustomerContacts({ cursor: first.nextCursor });
+
+		expect(second.contacts[0]?.email).toBe("a@acme.example");
+		expect(
+			http.to("GET", "/CommunicationWay").map((request) => request.query.get("offset")),
+		).toEqual(["0", "1000"]);
+		expect(http.to("GET", "/ContactAddress")).toHaveLength(1);
+	});
+
+	it("leaves out contacts outside sevdesk's documented live statuses (lead, pending, active)", async () => {
+		const { provider } = providerWith([
+			...importLookupRoutes(),
+			{
+				method: "GET",
+				path: "/Contact",
+				responses: [
+					{
+						status: 200,
+						body: {
+							objects: [
+								contactRow({ id: "1", name: "Lead AG", status: "100" }),
+								contactRow({ id: "2", name: "Pending AG", status: "500" }),
+								contactRow({ id: "3", name: "Active AG", status: "1000" }),
+								contactRow({ id: "4", name: "Archived AG", status: "50" }),
+							],
+						},
+					},
+				],
+			},
+		]);
+
+		const page = await listerOf(provider).listCustomerContacts({ cursor: null });
+
+		expect(page.contacts.map((contact) => contact.name)).toEqual([
+			"Lead AG",
+			"Pending AG",
+			"Active AG",
+		]);
+	});
+
+	it("pages by the raw page size even when it leaves contacts out", async () => {
+		const rows = Array.from({ length: 100 }, (_, index) =>
+			contactRow({
+				id: String(index + 1),
+				name: `C ${index}`,
+				status: index === 0 ? "50" : "1000",
+			}),
+		);
+		const { provider } = providerWith([
+			...importLookupRoutes(),
+			{ method: "GET", path: "/Contact", responses: [{ status: 200, body: { objects: rows } }] },
+		]);
+
+		const page = await listerOf(provider).listCustomerContacts({ cursor: null });
+
+		expect(page.contacts).toHaveLength(99);
+		expect(page.nextCursor).toBe("100");
+	});
+
+	it.each(["", "abc", "-100", "1.5", "1e3", "99999999999999999999"])(
+		"rejects the malformed cursor %j without calling sevdesk",
+		async (cursor) => {
+			const { provider, http } = providerWith(importLookupRoutes());
+
+			await expect(listerOf(provider).listCustomerContacts({ cursor })).rejects.toMatchObject({
+				name: "AccountingProviderError",
+				failure: "rejected",
+			});
+			expect(http.to("GET", "/Contact")).toHaveLength(0);
+		},
+	);
 });
 
 function draftWith(
@@ -481,6 +718,17 @@ describe("sevdesk connector: invoice drafts", () => {
 		},
 	);
 
+	it("creates a draft in the organization's billable currency", async () => {
+		const { provider, http } = providerWith(creationRoutes());
+
+		await provider.createInvoiceDraft(
+			draftWith({ kind: "third_country_service", rateBasisPoints: 0 }, { currency: "CHF" }),
+			{ idempotencyKey: "handoff-chf" },
+		);
+
+		expect(savedBody(http).invoice.currency).toBe("CHF");
+	});
+
 	it("refuses a domestic rate sevdesk's tax rule 1 does not allow, without calling sevdesk", async () => {
 		const { provider, http } = providerWith(creationRoutes());
 
@@ -605,6 +853,29 @@ describe("sevdesk connector: idempotency without a provider key", () => {
 			"100",
 		]);
 		expect(http.to("POST", "/Invoice/Factory/saveInvoice")).toHaveLength(1);
+	});
+});
+
+describe("sevdesk connector: duplicate check that cannot finish", () => {
+	it("refuses to create when the lookup hits its page limit without ruling out a duplicate", async () => {
+		const fullPage = Array.from({ length: 100 }, (_, index) =>
+			invoiceRow({ id: String(10_000 + index), status: "200" }),
+		);
+		const { provider, http } = providerWith(
+			creationRoutes({ lookup: [{ status: 200, body: { objects: fullPage } }] }),
+		);
+
+		const error = await provider
+			.createInvoiceDraft(draftWith(), { idempotencyKey: "handoff-1" })
+			.catch((caught: unknown) => caught);
+
+		expect(error).toMatchObject({
+			name: "AccountingProviderError",
+			failure: "rejected",
+			message: expect.stringMatching(/Z8-[0-9a-f]{24}/),
+		});
+		expect(http.to("GET", "/Invoice")).toHaveLength(20);
+		expect(http.to("POST", "/Invoice/Factory/saveInvoice")).toHaveLength(0);
 	});
 });
 

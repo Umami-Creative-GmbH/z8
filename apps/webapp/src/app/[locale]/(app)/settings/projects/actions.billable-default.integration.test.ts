@@ -89,6 +89,8 @@ vi.mock("@/lib/logger", async (importOriginal) => {
 });
 
 const projects = await import("./actions");
+const customers = await import("../customers/actions");
+const { getProjectTotalHours } = await import("@/lib/notifications/project-notification-triggers");
 
 const ids = {
 	organization: "t900-default-org",
@@ -142,9 +144,13 @@ describe("project billable default on PostgreSQL", () => {
 		await cleanup();
 		const timestamp = new Date("2026-01-01T00:00:00Z");
 		await admin.query(
-			`insert into organization (id, name, slug, timezone, projects_enabled, created_at)
-			 values ($1, 'T900 default', $1, 'UTC', true, $2)`,
+			`insert into organization (id, name, slug, timezone, projects_enabled, billable_time_enabled, created_at)
+			 values ($1, 'T900 default', $1, 'UTC', true, true, $2)`,
 			[ids.organization, timestamp],
+		);
+		await admin.query(
+			`insert into billable_time_settings (organization_id, billable_currency) values ($1, 'EUR')`,
+			[ids.organization],
 		);
 		await admin.query(
 			`insert into "user" (id, name, email, created_at, updated_at)
@@ -329,6 +335,103 @@ describe("project billable default on PostgreSQL", () => {
 			projects.updateProject(ids.customerProject, { billableDefault: false }),
 		);
 		expect(await workBillability()).toEqual(before);
+	});
+
+	it("treats a project whose customer was deleted as a project without customer", async () => {
+		await admin.query("update customer set is_active = false where id = $1", [ids.customer]);
+
+		await expect(
+			actAs(ids.ownerUser, () =>
+				projects.updateProject(ids.customerProject, { billableDefault: true }),
+			),
+		).resolves.toMatchObject({ success: false });
+		expect(await billableDefault(ids.customerProject)).toBe(false);
+
+		// Another edit switches a default left on from before the deletion off.
+		await admin.query("update project set billable_default = true where id = $1", [
+			ids.unmanagedProject,
+		]);
+		await expect(
+			actAs(ids.ownerUser, () =>
+				projects.updateProject(ids.unmanagedProject, { description: "Still running" }),
+			),
+		).resolves.toMatchObject({ success: true });
+		expect(await billableDefault(ids.unmanagedProject)).toBe(false);
+	});
+
+	it("switches the billable default off on the customer's projects when the customer is deleted", async () => {
+		await actAs(ids.ownerUser, () =>
+			projects.updateProject(ids.customerProject, { billableDefault: true }),
+		);
+		const before = await workBillability();
+
+		await expect(
+			actAs(ids.ownerUser, () => customers.deleteCustomer(ids.customer)),
+		).resolves.toMatchObject({ success: true });
+
+		expect(await billableDefault(ids.customerProject)).toBe(false);
+		// Existing work keeps its billability; reports show it as without customer.
+		expect(await workBillability()).toEqual(before);
+	});
+
+	it("refuses to change the billable default while Billable Time is off, and keeps it", async () => {
+		await actAs(ids.ownerUser, () =>
+			projects.updateProject(ids.customerProject, { billableDefault: true }),
+		);
+		await admin.query("update organization set billable_time_enabled = false where id = $1", [
+			ids.organization,
+		]);
+
+		await expect(
+			actAs(ids.ownerUser, () =>
+				projects.updateProject(ids.customerProject, { billableDefault: false }),
+			),
+		).resolves.toMatchObject({ success: false });
+		await expect(
+			actAs(ids.ownerUser, () =>
+				projects.createProject({
+					organizationId: ids.organization,
+					name: "Created while off",
+					customerId: ids.customer,
+					billableDefault: true,
+				}),
+			),
+		).resolves.toMatchObject({ success: false });
+		expect(await billableDefault(ids.customerProject)).toBe(true);
+
+		// Other edits still work and keep the default, which new work keeps taking.
+		await expect(
+			actAs(ids.ownerUser, () =>
+				projects.updateProject(ids.customerProject, { description: "Edited while off" }),
+			),
+		).resolves.toMatchObject({ success: true });
+		expect(await billableDefault(ids.customerProject)).toBe(true);
+	});
+
+	it("counts booked hours from completed work only, as the reports and budget alerts do (#794)", async () => {
+		// Deleted work keeps its times in the row; running work has no duration yet.
+		await admin.query(
+			`insert into time_entry (id, employee_id, organization_id, type, timestamp, utc_offset_minutes,
+			   timezone, timezone_source, hash, created_by) values
+			 ('e9001000-0000-4000-8000-000000000040', $1, $2, 'clock_in', '2026-07-21T08:00:00Z', 0, 'UTC', 'user_setting', 't900-hash-deleted', $3),
+			 ('e9001000-0000-4000-8000-000000000042', $1, $2, 'clock_in', '2026-07-22T08:00:00Z', 0, 'UTC', 'user_setting', 't900-hash-running', $3)`,
+			[ids.employee, ids.organization, ids.employeeUser],
+		);
+		await admin.query(
+			`insert into work_period (id, employee_id, organization_id, clock_in_id, start_time, end_time,
+			   duration_minutes, is_active, project_id, deleted_at, updated_at) values
+			 ('e9001000-0000-4000-8000-000000000041', $1, $2, 'e9001000-0000-4000-8000-000000000040',
+			  '2026-07-21T08:00:00Z', '2026-07-21T11:00:00Z', 180, false, $3, now(), now()),
+			 ('e9001000-0000-4000-8000-000000000043', $1, $2, 'e9001000-0000-4000-8000-000000000042',
+			  '2026-07-22T08:00:00Z', null, null, true, $3, null, now())`,
+			[ids.employee, ids.organization, ids.customerProject],
+		);
+
+		const listed = await actAs(ids.ownerUser, () => projects.getProjects(ids.organization));
+		expect(
+			listed.success && listed.data.find((project) => project.id === ids.customerProject),
+		).toMatchObject({ totalHoursBooked: 2 });
+		await expect(getProjectTotalHours(ids.customerProject, ids.organization)).resolves.toBe(2);
 	});
 
 	it("refuses a billable default that is not a boolean", async () => {

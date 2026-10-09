@@ -37,6 +37,7 @@ import {
 import {
 	loadReportedProjectWork,
 	reportDayRangeFromDates,
+	reportDayRangeFromDays,
 	reportedWorkDay,
 } from "@/lib/reports/project-report-work";
 import type {
@@ -90,7 +91,10 @@ function projectReportReader() {
 	});
 }
 
-/** Projects of the organization with their current customer (from the same organization). */
+/**
+ * Projects of the organization with their current customer (from the same
+ * organization). A deleted (inactive) customer counts as no customer.
+ */
 function loadReportProjects(
 	dbService: typeof DatabaseService.Service,
 	organizationId: string,
@@ -105,7 +109,11 @@ function loadReportProjects(
 			.from(project)
 			.leftJoin(
 				customer,
-				and(eq(customer.id, project.customerId), eq(customer.organizationId, organizationId)),
+				and(
+					eq(customer.id, project.customerId),
+					eq(customer.organizationId, organizationId),
+					eq(customer.isActive, true),
+				),
 			)
 			.where(and(eq(project.organizationId, organizationId), ...conditions))
 			.orderBy(project.name);
@@ -531,8 +539,8 @@ export async function getProjectDetailedReport(
  * Nobody else sees it, and nobody sees it while Billable Time is off.
  */
 export async function getCustomerBillableReport(
-	startDate: Date,
-	endDate: Date,
+	fromDay: string,
+	toDay: string,
 	statusFilter?: string[],
 ): Promise<ServerActionResult<CustomerBillableReport>> {
 	const tracer = trace.getTracer("project-reports");
@@ -541,12 +549,22 @@ export async function getCustomerBillableReport(
 		"getCustomerBillableReport",
 		{
 			attributes: {
-				"report.start_date": startDate.toISOString(),
-				"report.end_date": endDate.toISOString(),
+				"report.start_date": String(fromDay),
+				"report.end_date": String(toDay),
 			},
 		},
 		(span) => {
 			return Effect.gen(function* () {
+				// The report's calendar days, both inclusive (never read in a time zone).
+				const range = reportDayRangeFromDays(fromDay, toDay);
+				if (!range) {
+					return yield* Effect.fail(
+						new ValidationError({
+							message: "Choose a period whose end is not before its start",
+							field: "period",
+						}),
+					);
+				}
 				const { authContext, dbService, organizationId, viewer } = yield* projectReportReader();
 				span.setAttribute("user.id", authContext.user.id);
 
@@ -558,17 +576,14 @@ export async function getCustomerBillableReport(
 					);
 				}
 
-				const projects = (yield* loadReportProjects(dbService, organizationId, [
+				// Projects without an (active) customer form the "without customer" group.
+				const projects = yield* loadReportProjects(dbService, organizationId, [
 					...statusConditions(statusFilter),
 					...(viewer.isOrganizationAdmin
 						? []
 						: [inArray(project.id, [...viewer.managedProjectIds])]),
-				])).filter(
-					(p): p is ReportProject & { customer: { id: string; name: string } } =>
-						p.customer !== null,
-				);
+				]);
 				const projectIds = projects.map((p) => p.id);
-				const range = reportDayRangeFromDates(startDate, endDate);
 				const work = yield* dbService.query("getReportedProjectWork", () =>
 					loadReportedProjectWork(dbService.db, organizationId, { projectIds, range }),
 				);
@@ -589,7 +604,7 @@ export async function getCustomerBillableReport(
 
 				const workByProject = groupBy(work, (item) => item.projectId);
 				const report = buildCustomerBillableReport({
-					period: { startDate: startDate.toISOString(), endDate: endDate.toISOString() },
+					period: { startDate: range.fromDay.toString(), endDate: range.toDay.toString() },
 					pricing,
 					access: viewer.isOrganizationAdmin ? "full" : "revenue",
 					projects: projects.map((p) => ({

@@ -1,6 +1,6 @@
 "use client";
 
-import { IconLink, IconPlus } from "@tabler/icons-react";
+import { IconChevronLeft, IconChevronRight, IconLink, IconPlus } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useTransition } from "react";
 import { toast } from "sonner";
@@ -28,7 +28,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { StagedCustomer } from "@/lib/import-review/staged-customer";
-import { useRouter } from "@/navigation";
+import { Link, useRouter } from "@/navigation";
 
 /** A staged customer row of a customer import (#906), as the review screen shows it. */
 export interface CustomerImportReviewRow {
@@ -146,13 +146,21 @@ const statusLabels: Record<ImportReviewRowStatus, { key: string; fallback: strin
 	staged: { key: "settings.import.review.status.staged", fallback: "Staged" },
 };
 
+/** Which page of the import's contacts the table shows (1-based). */
+export interface CustomerImportPaging {
+	page: number;
+	pageCount: number;
+}
+
 interface CustomerImportReviewTableProps {
 	organizationId: string;
 	batchId: string;
+	/** The contacts of the current page. */
 	rows: CustomerImportReviewRow[];
 	linkTargets: CustomerLinkTarget[];
 	/** The batch is waiting for review decisions. */
 	editable: boolean;
+	paging?: CustomerImportPaging;
 }
 
 export function CustomerImportReviewTable({
@@ -161,6 +169,7 @@ export function CustomerImportReviewTable({
 	rows,
 	linkTargets,
 	editable,
+	paging,
 }: CustomerImportReviewTableProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
@@ -254,7 +263,7 @@ export function CustomerImportReviewTable({
 						<IconPlus aria-hidden="true" className="size-4" />
 						{t(
 							"settings.import.review.customers.createUnmatched",
-							"Create customers for {count} contacts without a match",
+							"{count, plural, one {Create a customer for # contact without a match} other {Create customers for # contacts without a match}}",
 							{ count: unmatched.length },
 						)}
 					</Button>
@@ -408,6 +417,37 @@ export function CustomerImportReviewTable({
 						</TableBody>
 					</Table>
 				)}
+				{paging && paging.pageCount > 1 ? (
+					<nav
+						aria-label={t("settings.import.review.customers.paging.label", "Contact pages")}
+						className="mt-4 flex flex-wrap items-center justify-between gap-3"
+					>
+						<span className="text-muted-foreground text-sm tabular-nums">
+							{t("settings.import.review.customers.paging.position", "Page {page} of {pageCount}", {
+								page: paging.page,
+								pageCount: paging.pageCount,
+							})}
+						</span>
+						<div className="flex gap-2">
+							{paging.page > 1 ? (
+								<Button asChild variant="outline" size="sm">
+									<Link href={`/settings/import/${batchId}?page=${paging.page - 1}`}>
+										<IconChevronLeft aria-hidden="true" className="size-4" />
+										{t("settings.import.review.customers.paging.previous", "Previous page")}
+									</Link>
+								</Button>
+							) : null}
+							{paging.page < paging.pageCount ? (
+								<Button asChild variant="outline" size="sm">
+									<Link href={`/settings/import/${batchId}?page=${paging.page + 1}`}>
+										{t("settings.import.review.customers.paging.next", "Next page")}
+										<IconChevronRight aria-hidden="true" className="size-4" />
+									</Link>
+								</Button>
+							) : null}
+						</div>
+					</nav>
+				) : null}
 			</CardContent>
 		</Card>
 	);

@@ -33,7 +33,7 @@ export function BillableWorkSwitch({
 				<Label htmlFor={id}>{t("timeTracking.billable.label", "Billable")}</Label>
 				<p id={descriptionId} className="text-xs text-muted-foreground">
 					{choice.enabled
-						? t("timeTracking.billable.description", "Chargeable to the project's customer")
+						? t("timeTracking.billable.description", "Billable work for the project's customer")
 						: t(
 								"timeTracking.billable.noCustomer",
 								"Only work on a project with a customer can be billable",

@@ -2,7 +2,7 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 import { and, eq, gte, inArray, isNotNull, isNull, lt, type SQL, sql } from "drizzle-orm";
-import { db } from "@/db";
+import type { db } from "@/db";
 import { completedWorkOperation, timeEntry, workPeriod } from "@/db/schema";
 import { comparePlainDates, dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
@@ -142,6 +142,12 @@ export async function loadBulkBillabilityWork(
 
 export interface BulkBillabilityPlanItem extends BulkBillabilityCandidate {
 	outcome: BulkBillabilityOutcome;
+	/**
+	 * The receipt identity an apply uses for this item (only planned with
+	 * `appliedBy`): the latest earlier change of this preview to replay when the
+	 * work is still in the target state, else a new one.
+	 */
+	operationId?: string;
 }
 
 export interface BulkBillabilityPlan {
@@ -176,12 +182,18 @@ function fingerprintOf(
 	return hash.digest("hex");
 }
 
-/** Stable receipt identity of one period's change in one applied preview by one actor. */
+/**
+ * Stable receipt identity of one period's change in one applied preview by one
+ * actor. `attempt` counts earlier changes of the same period by the same preview:
+ * a retry after someone changed the work back changes it again (attempt + 1)
+ * instead of replaying a receipt whose change no longer holds.
+ */
 export function bulkBillabilityOperationId(input: {
 	organizationId: string;
 	actorUserId: string;
 	fingerprint: string;
 	workPeriodId: string;
+	attempt?: number;
 }): string {
 	const bytes = new Uint8Array(
 		createHash("sha1")
@@ -192,6 +204,8 @@ export function bulkBillabilityOperationId(input: {
 					input.actorUserId,
 					input.fingerprint,
 					input.workPeriodId,
+					// The first attempt keeps the identity receipts were recorded under.
+					...(input.attempt ? [String(input.attempt)] : []),
 				].join("\0"),
 			)
 			.digest()
@@ -205,9 +219,11 @@ export function bulkBillabilityOperationId(input: {
 
 /**
  * Plans a bulk change: every candidate with its outcome, the counts and the
- * fingerprint. With `appliedBy`, work this actor's earlier apply of the same
- * preview already changed (its receipt exists) counts as changed again, so a
- * retry plans exactly what the preview showed and replays the receipts.
+ * fingerprint. With `appliedBy` (an apply), each item also gets the receipt
+ * identity to use: work this actor's earlier apply of the same preview already
+ * changed (its receipt exists) counts as changed again and replays the latest
+ * receipt, so a retry plans exactly what the preview showed; work changed back
+ * since then is changed again under a new identity.
  */
 export async function planBulkBillability(
 	reader: Reader,
@@ -222,26 +238,28 @@ export async function planBulkBillability(
 	}));
 	const appliedBy = options.appliedBy;
 	if (appliedBy) {
-		const settled = items.filter((item) => item.outcome === "already_in_target");
-		const operationIds = new Map(
-			settled.map((item) => [
-				bulkBillabilityOperationId({ organizationId, ...appliedBy, workPeriodId: item.id }),
-				item,
-			]),
+		const earlier = await earlierChangeCounts(
+			reader,
+			organizationId,
+			appliedBy,
+			items.flatMap((item) =>
+				item.outcome === "change" || item.outcome === "already_in_target" ? [item.id] : [],
+			),
 		);
-		if (operationIds.size > 0) {
-			const receipts = await reader
-				.select({ id: completedWorkOperation.id })
-				.from(completedWorkOperation)
-				.where(
-					and(
-						eq(completedWorkOperation.organizationId, organizationId),
-						inArray(completedWorkOperation.id, [...operationIds.keys()]),
-					),
-				);
-			for (const receipt of receipts) {
-				const item = operationIds.get(receipt.id);
-				if (item) item.outcome = "change";
+		for (const item of items) {
+			const changes = earlier.get(item.id) ?? 0;
+			const operationId = (attempt: number) =>
+				bulkBillabilityOperationId({
+					organizationId,
+					...appliedBy,
+					workPeriodId: item.id,
+					attempt,
+				});
+			if (item.outcome === "already_in_target" && changes > 0) {
+				item.outcome = "change";
+				item.operationId = operationId(changes - 1);
+			} else if (item.outcome === "change") {
+				item.operationId = operationId(changes);
 			}
 		}
 	}
@@ -252,9 +270,43 @@ export async function planBulkBillability(
 	};
 }
 
+/** How many changes this actor's applies of the preview committed per work period. */
+async function earlierChangeCounts(
+	reader: Reader,
+	organizationId: string,
+	appliedBy: { actorUserId: string; fingerprint: string },
+	workPeriodIds: readonly string[],
+): Promise<Map<string, number>> {
+	if (workPeriodIds.length === 0) return new Map();
+	const rows = await reader
+		.select({
+			workPeriodId: completedWorkOperation.workPeriodId,
+			changes: sql<number>`count(*)::int`,
+		})
+		.from(completedWorkOperation)
+		.where(
+			and(
+				eq(completedWorkOperation.organizationId, organizationId),
+				eq(completedWorkOperation.actorUserId, appliedBy.actorUserId),
+				eq(completedWorkOperation.writer, "work_period_attribution_edit"),
+				inArray(completedWorkOperation.workPeriodId, [...workPeriodIds]),
+				sql`${completedWorkOperation.command} -> 'request' ->> 'bulkBillabilityPreview' = ${appliedBy.fingerprint}`,
+			),
+		)
+		.groupBy(completedWorkOperation.workPeriodId);
+	return new Map(rows.map((row) => [row.workPeriodId, row.changes]));
+}
+
 export type BulkBillabilityApplyOutcome =
 	| { status: "applied"; summary: BulkBillabilitySummary; failed: BulkBillabilityTally }
 	| { status: "stale"; preview: { summary: BulkBillabilitySummary; fingerprint: string } };
+
+export interface BulkBillabilityApplyInput {
+	organizationId: string;
+	actorUserId: string;
+	request: BulkBillabilityRequest;
+	fingerprint: string;
+}
 
 /** A skip reason found under the period's lock after the change: the change rolls back. */
 class BulkBillabilitySkipped extends Error {
@@ -298,6 +350,20 @@ async function assertStillChangeable(
 	if (reason) throw new BulkBillabilitySkipped(reason);
 }
 
+/** A replayed change is reported only while the work still has the target billability. */
+async function assertStillInTarget(
+	scope: SealedWorkTransactionScope,
+	organizationId: string,
+	workPeriodId: string,
+	billable: boolean,
+) {
+	const [row] = await scope.db
+		.select({ isBillable: workPeriod.isBillable })
+		.from(workPeriod)
+		.where(and(eq(workPeriod.id, workPeriodId), eq(workPeriod.organizationId, organizationId)));
+	if (row?.isBillable !== billable) throw new BulkBillabilityWorkMoved();
+}
+
 /**
  * Applies a previewed bulk change. Plans again; when the plan no longer matches
  * the preview's fingerprint nothing is written and the fresh plan is returned.
@@ -310,14 +376,12 @@ async function assertStillChangeable(
  * that the project belongs to the organization; the amendment verifies the
  * authority again under its locks.
  */
-export async function applyBulkBillability(input: {
-	organizationId: string;
-	actorUserId: string;
-	request: BulkBillabilityRequest;
-	fingerprint: string;
-}): Promise<BulkBillabilityApplyOutcome> {
+export async function applyBulkBillability(
+	reader: Reader,
+	input: BulkBillabilityApplyInput,
+): Promise<BulkBillabilityApplyOutcome> {
 	const { organizationId, actorUserId, request, fingerprint } = input;
-	const plan = await planBulkBillability(db, organizationId, request, {
+	const plan = await planBulkBillability(reader, organizationId, request, {
 		appliedBy: { actorUserId, fingerprint },
 	});
 	if (plan.fingerprint !== fingerprint) {
@@ -331,7 +395,7 @@ export async function applyBulkBillability(input: {
 			outcomes.push(item);
 			continue;
 		}
-		const outcome = await applyOne(input, item);
+		const outcome = await applyOne(reader, input, item);
 		if (outcome === "failed") {
 			failed.count += 1;
 			failed.minutes += item.durationMinutes;
@@ -354,7 +418,8 @@ export async function applyBulkBillability(input: {
 }
 
 async function applyOne(
-	input: Parameters<typeof applyBulkBillability>[0],
+	reader: Reader,
+	input: BulkBillabilityApplyInput,
 	item: BulkBillabilityPlanItem,
 ): Promise<BulkBillabilityOutcome | "failed"> {
 	const { organizationId, actorUserId, request, fingerprint } = input;
@@ -368,17 +433,23 @@ async function applyOne(
 					actorUserId,
 					period: item,
 					billable: request.billable,
-					operationId: bulkBillabilityOperationId({
-						organizationId,
-						actorUserId,
-						fingerprint,
-						workPeriodId: item.id,
-					}),
+					operationId:
+						item.operationId ??
+						bulkBillabilityOperationId({
+							organizationId,
+							actorUserId,
+							fingerprint,
+							workPeriodId: item.id,
+						}),
 					evidence: { bulkBillabilityPreview: fingerprint },
 				});
-				// A replay wrote nothing now; it reports the committed change.
 				if (result === "executed") {
 					await assertStillChangeable(scope, organizationId, request.projectId, item.id);
+				}
+				// A replay wrote nothing now; it reports the committed change only while
+				// that change still holds.
+				if (result === "replayed") {
+					await assertStillInTarget(scope, organizationId, item.id, request.billable);
 				}
 				return result;
 			},
@@ -387,7 +458,7 @@ async function applyOne(
 	} catch (error) {
 		if (error instanceof BulkBillabilitySkipped) return error.reason;
 		// The work changed since it was planned: count it as what it is now.
-		const [current] = await loadBulkBillabilityWork(db, organizationId, request, {
+		const [current] = await loadBulkBillabilityWork(reader, organizationId, request, {
 			periodIds: [item.id],
 		}).catch(() => []);
 		const outcome = current ? bulkBillabilityOutcome(current, request.billable) : null;

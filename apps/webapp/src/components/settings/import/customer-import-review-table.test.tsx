@@ -1,9 +1,10 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { applyImportDecisionAction } from "@/app/[locale]/(app)/settings/import/review-actions";
 import type { StagedCustomer } from "@/lib/import-review/staged-customer";
+import { render } from "@/test/render-with-translations";
 import {
 	type CustomerImportReviewRow,
 	CustomerImportReviewTable,
@@ -11,18 +12,19 @@ import {
 	customerDecisionOptions,
 } from "./customer-import-review-table";
 
-vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({
-		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
-			fallback.replace(/\{(\w+)\}/g, (_match, name: string) => String(params?.[name] ?? "")),
-	}),
-}));
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock("@/app/[locale]/(app)/settings/import/review-actions", () => ({
 	applyImportDecisionAction: vi.fn(),
 }));
 const refresh = vi.fn();
-vi.mock("@/navigation", () => ({ useRouter: () => ({ refresh, push: vi.fn() }) }));
+vi.mock("@/navigation", () => ({
+	useRouter: () => ({ refresh, push: vi.fn() }),
+	Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
+		<a href={href} {...props}>
+			{children}
+		</a>
+	),
+}));
 
 function staged(overrides: Partial<StagedCustomer> = {}): StagedCustomer {
 	return {
@@ -190,6 +192,22 @@ describe("customer import decisions (#906)", () => {
 		});
 	});
 
+	it("words the bulk decision for a single contact in the singular", () => {
+		render(
+			<CustomerImportReviewTable
+				organizationId="org_1"
+				batchId="batch_1"
+				editable
+				linkTargets={[]}
+				rows={[row("only")]}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("button", { name: "Create a customer for 1 contact without a match" }),
+		).toBeTruthy();
+	});
+
 	it("offers no bulk decision once the batch left review", () => {
 		render(
 			<CustomerImportReviewTable
@@ -202,5 +220,39 @@ describe("customer import decisions (#906)", () => {
 		);
 
 		expect(screen.queryByRole("button", { name: /Create customers/ })).toBeNull();
+	});
+
+	it("pages through a long import instead of cutting it off", () => {
+		const { rerender } = render(
+			<CustomerImportReviewTable
+				organizationId="org_1"
+				batchId="batch_1"
+				editable
+				linkTargets={[]}
+				rows={[row("r101")]}
+				paging={{ page: 2, pageCount: 3 }}
+			/>,
+		);
+
+		expect(screen.getByText("Page 2 of 3")).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Previous page" }).getAttribute("href")).toBe(
+			"/settings/import/batch_1?page=1",
+		);
+		expect(screen.getByRole("link", { name: "Next page" }).getAttribute("href")).toBe(
+			"/settings/import/batch_1?page=3",
+		);
+
+		rerender(
+			<CustomerImportReviewTable
+				organizationId="org_1"
+				batchId="batch_1"
+				editable
+				linkTargets={[]}
+				rows={[row("r1")]}
+				paging={{ page: 1, pageCount: 1 }}
+			/>,
+		);
+		expect(screen.queryByText(/Page 1 of 1/)).toBeNull();
+		expect(screen.queryByRole("link", { name: "Next page" })).toBeNull();
 	});
 });

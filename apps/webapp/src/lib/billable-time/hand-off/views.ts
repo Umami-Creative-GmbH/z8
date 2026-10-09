@@ -6,6 +6,11 @@
 import type { AccountingProviderKind, InvoiceDraftToolStatus } from "../accounting/provider";
 import type { TaxTreatmentView } from "../accounting/views";
 
+/** The hand-off area's section listing work changed after invoicing. */
+export const CHANGED_AFTER_INVOICING_ANCHOR = "changed-after-invoicing";
+/** Where reports send owners and admins to see which work is marked. */
+export const CHANGED_AFTER_INVOICING_HREF = `/settings/billable-time/hand-off#${CHANGED_AFTER_INVOICING_ANCHOR}`;
+
 export interface HandOffWorkView {
 	workPeriodId: string;
 	/** The employee-local day the work started on (ISO). */
@@ -64,6 +69,8 @@ export interface HandOffPreview {
 	withoutCustomer: { count: number; hours: string; projects: string[] };
 	nonBillable: { count: number; hours: string };
 	timesheetLineCount: number;
+	/** Periods the timesheet lines leave out to fit the tool (the download has all). */
+	timesheetOmitted: number;
 	blockers: HandOffBlockerView[];
 	/** Identifies exactly this preview; confirm refuses when the work changed since. */
 	fingerprint: string;

@@ -40,6 +40,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import type { AllocationEvidence } from "./allocation-evidence";
 import { CompletedWorkReviewRequiredError, lockAuthority } from "./amend-completed-work";
 import { calculateHash } from "./blockchain";
 import { canonicalJson } from "./canonical-json";
@@ -79,15 +80,6 @@ export type SplitCompletedWorkCommand = {
 		beforeNotes: string | null;
 		afterNotes: string | null;
 	};
-};
-
-type AllocationEvidence = {
-	allocationKind: string;
-	projectId: string | null;
-	costCenterId: string | null;
-	weightPercent: number;
-	/** Absent on receipts committed before billability (#900), which were non-billable. */
-	isBillable?: boolean;
 };
 
 /** One segment by value: committed evidence, not a pointer to current rows. */

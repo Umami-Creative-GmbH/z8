@@ -9,6 +9,7 @@
  */
 
 import { AccountingProviderError } from "../provider";
+import { rateLimitBackoffMs } from "../retry-after";
 
 export const LEXWARE_API_BASE_URL = "https://api.lexware.io";
 
@@ -95,15 +96,6 @@ function ambiguous(method: LexwareMethod, message: string): AccountingProviderEr
 	);
 }
 
-function retryAfterMs(response: Response, attempt: number): number {
-	const header = response.headers.get("retry-after");
-	const seconds = header === null ? Number.NaN : Number(header);
-	if (Number.isFinite(seconds) && seconds >= 0) {
-		return Math.min(seconds * 1000, MAX_RETRY_AFTER_MS);
-	}
-	return RATE_LIMIT_BACKOFF_MS * 2 ** attempt;
-}
-
 /**
  * Sends one request and returns its status and parsed JSON body. Retries a 429
  * with back-off (Lexware did not perform it). Throws `AccountingProviderError`
@@ -148,7 +140,10 @@ export async function lexwareRequest(
 					`${PROVIDER} is limiting requests right now; try again in a minute`,
 				);
 			}
-			const delay = retryAfterMs(response, attempt);
+			const delay = rateLimitBackoffMs(response.headers.get("retry-after"), attempt, {
+				baseMs: RATE_LIMIT_BACKOFF_MS,
+				maxMs: MAX_RETRY_AFTER_MS,
+			});
 			pacer.defer(delay);
 			continue;
 		}

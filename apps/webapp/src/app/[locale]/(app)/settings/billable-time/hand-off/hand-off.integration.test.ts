@@ -492,13 +492,22 @@ describe("hand-off on PostgreSQL", () => {
 		]);
 		// Held-back, deleted, live, non-billable, customerless and out-of-period work never lands in it.
 		expect((await invoiced()).map((row) => row.work_period_id)).toEqual([work.website, work.app]);
-		expect(await auditActions()).toEqual([
+		const audit = await auditActions();
+		expect(audit).toEqual([
+			expect.objectContaining({
+				action: "billable_time.invoice_draft_started",
+				entity_type: "invoice_draft",
+				changes: expect.objectContaining({ netTotal: "237.21", workCount: 2 }),
+			}),
 			expect.objectContaining({
 				action: "billable_time.invoice_draft_created",
 				entity_type: "invoice_draft",
 				changes: expect.objectContaining({ netTotal: "237.21", workCount: 2 }),
 			}),
 		]);
+		// No key or secret in the audit trail.
+		expect(JSON.stringify(audit)).not.toContain(API_KEY);
+		expect(JSON.stringify(audit)).not.toMatch(/idempotency/i);
 
 		const again = await preview();
 		expect(again.alreadyInvoiced.map((item) => item.workPeriodId)).toEqual([
@@ -571,6 +580,121 @@ describe("hand-off on PostgreSQL", () => {
 		expect(await invoiced()).toHaveLength(2);
 	});
 
+	it("lets one call per draft reach the tool: a concurrent retry or same-key confirm is told it is in progress", async () => {
+		const key = randomUUID();
+		const held = tool.holdNextCreate();
+		const first = confirm({ idempotencyKey: key });
+		await held.reached;
+		const [pending] = await drafts();
+
+		await expect(retryHandOffAction({ draftId: pending?.id ?? "" })).resolves.toMatchObject({
+			success: false,
+			code: "ConflictError",
+			error: expect.stringContaining("is being sent to the accounting tool"),
+		});
+		await expect(
+			confirmHandOffAction({ ...september, idempotencyKey: key, fingerprint: "stale" }),
+		).resolves.toMatchObject({ success: false, code: "ConflictError" });
+		expect(tool.createCalls()).toBe(1);
+
+		held.release();
+		await expect(unwrap(first)).resolves.toMatchObject({ status: "created" });
+		expect(tool.createCalls()).toBe(1);
+		expect(tool.drafts()).toHaveLength(1);
+		expect(await drafts()).toEqual([
+			expect.objectContaining({ status: "created", attempt_count: 1 }),
+		]);
+	});
+
+	it("takes over a call whose claim ran out, and treats its outcome as unknown", async () => {
+		const held = tool.holdNextCreate();
+		const first = confirm();
+		await held.reached;
+		await admin.query(
+			"update invoice_draft set call_claimed_until = now() - interval '1 second' where organization_id = $1",
+			[ids.organization],
+		);
+		tool.failNext("createInvoiceDraft", "rejected");
+
+		const [pending] = await drafts();
+		// The first call may still create the draft: a refusal now must not fail it.
+		await expect(unwrap(retryHandOffAction({ draftId: pending?.id ?? "" }))).resolves.toMatchObject(
+			{ status: "pending" },
+		);
+		expect(await drafts()).toEqual([
+			expect.objectContaining({ status: "pending", outcome_unknown: true }),
+		]);
+		expect((await invoiced()).every((row) => row.released_at === null)).toBe(true);
+
+		held.release();
+		await expect(unwrap(first)).resolves.toMatchObject({ status: "created" });
+		expect(tool.drafts()).toHaveLength(1);
+	});
+
+	it("never fails a draft once a call may have created it, also when recording the creation failed", async () => {
+		await admin.query(
+			`create or replace function trf_refuse_created() returns trigger language plpgsql as $$
+			 begin if new.status = 'created' then raise exception 'simulated crash'; end if; return new; end $$`,
+		);
+		await admin.query(
+			"create trigger trf_refuse_created before update on invoice_draft for each row execute function trf_refuse_created()",
+		);
+		try {
+			await expect(confirm()).resolves.toMatchObject({ success: false });
+		} finally {
+			await admin.query("drop trigger if exists trf_refuse_created on invoice_draft");
+			await admin.query("drop function if exists trf_refuse_created()");
+		}
+		expect(tool.drafts()).toHaveLength(1);
+		const [pending] = await drafts();
+		expect(pending).toMatchObject({ status: "pending" });
+
+		tool.failNext("createInvoiceDraft", "rejected");
+		await expect(unwrap(retryHandOffAction({ draftId: pending?.id ?? "" }))).resolves.toMatchObject(
+			{ status: "pending" },
+		);
+		expect(await drafts()).toEqual([
+			expect.objectContaining({ status: "pending", outcome_unknown: true }),
+		]);
+		expect((await invoiced()).every((row) => row.released_at === null)).toBe(true);
+
+		// The next retry finds the draft the first call created.
+		await expect(unwrap(retryHandOffAction({ draftId: pending?.id ?? "" }))).resolves.toMatchObject(
+			{ status: "created" },
+		);
+		expect(tool.drafts()).toHaveLength(1);
+	});
+
+	it("refuses a confirm without the preview's fingerprint", async () => {
+		await expect(
+			confirmHandOffAction({ ...september, idempotencyKey: randomUUID(), fingerprint: "" }),
+		).resolves.toMatchObject({
+			success: false,
+			error: "Preview the hand-off before confirming it",
+		});
+		expect(tool.createCalls()).toBe(0);
+		expect(await drafts()).toEqual([]);
+	});
+
+	it("says a pending draft no longer fits the tool instead of blaming the connection", async () => {
+		tool.simulateTimeout();
+		const first = await unwrap(confirm());
+		tool = createFakeAccountingTool({
+			apiKey: API_KEY,
+			contacts: [acmeContact],
+			capabilities: { maxDraftLines: 1 },
+		});
+		harness.registry = fakeAccountingProviderRegistry(tool);
+
+		await expect(retryHandOffAction({ draftId: first.draftId })).resolves.toMatchObject({
+			success: false,
+			code: "ValidationError",
+			error:
+				"The accounting tool no longer takes this draft (2 lines; it takes at most 1). Release it and hand off again",
+		});
+		expect(tool.createCalls()).toBe(0);
+	});
+
 	it("fails a refused draft and returns its work", async () => {
 		tool.failNext("createInvoiceDraft", "rejected");
 
@@ -580,6 +704,7 @@ describe("hand-off on PostgreSQL", () => {
 		expect((await invoiced()).every((row) => row.released_at !== null)).toBe(true);
 		expect((await preview()).included).toHaveLength(2);
 		expect((await auditActions()).map((row) => row.action)).toEqual([
+			"billable_time.invoice_draft_started",
 			"billable_time.invoice_draft_failed",
 		]);
 	});
@@ -731,6 +856,22 @@ describe("hand-off on PostgreSQL", () => {
 		});
 	});
 
+	it("reports invoiced revenue equal to the draft's frozen line amounts", async () => {
+		// 61 minutes at 85.50: the draft line states 1.02 h = 87.21 (exact time would be 86.93).
+		const { draftId } = await unwrap(confirm({ projectIds: [ids.app] }));
+		const detail = await unwrap(getInvoiceDraftAction({ draftId }));
+		expect(detail.netTotal).toBe("87.21");
+
+		actAs(ids.ownerUser);
+		const report = await unwrap(
+			getProjectDetailedReport(ids.app, new Date("2026-09-01"), new Date("2026-09-30")),
+		);
+		expect(report.summary.billable).toMatchObject({
+			revenue: "87.21",
+			invoicing: { invoicedRevenue: "87.21", uninvoicedRevenue: "0.00" },
+		});
+	});
+
 	it("lets only owners and admins hand off, within their own organization", async () => {
 		const { draftId } = await unwrap(confirm());
 
@@ -767,6 +908,26 @@ describe("hand-off on PostgreSQL", () => {
 			previewHandOffAction({ ...september, projectIds: [ids.foreignProject] }),
 		).resolves.toMatchObject({ success: false, error: "Choose projects of this customer" });
 		expect(await drafts()).toEqual([expect.objectContaining({ status: "created" })]);
+	});
+
+	it("treats a deleted customer's billable work as without customer, never handed off", async () => {
+		await admin.query("update customer set is_active = false where id = $1", [ids.acme]);
+
+		await expect(previewHandOffAction(september)).resolves.toMatchObject({
+			success: false,
+			error: "Choose a customer",
+		});
+		await expect(
+			confirmHandOffAction({ ...september, idempotencyKey: randomUUID(), fingerprint: "x" }),
+		).resolves.toMatchObject({ success: false, error: "Choose a customer" });
+		const other = await preview({ customerId: ids.beta });
+		// Website 1.50 h + held 1.00 h, App 1.02 h (61 min), Internal 0.50 h: no active customer.
+		expect(other.withoutCustomer).toEqual({
+			count: 4,
+			hours: "4.02",
+			projects: ["App", "Internal", "Website"],
+		});
+		expect(tool.createCalls()).toBe(0);
 	});
 
 	it("refuses a customer without a contact link", async () => {

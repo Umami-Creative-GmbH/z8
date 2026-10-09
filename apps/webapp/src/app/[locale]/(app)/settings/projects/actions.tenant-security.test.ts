@@ -35,11 +35,24 @@ const apiRouteSource = readFileSync(
 	"utf8",
 );
 
+const projectReportWorkSource = readFileSync(
+	fileURLToPath(new URL("../../../../../lib/reports/project-report-work.ts", import.meta.url)),
+	"utf8",
+);
+
 function functionBody(source: string, name: string) {
 	const start = source.indexOf(`export async function ${name}`);
 	expect(start, `${name} should exist`).toBeGreaterThanOrEqual(0);
 	const nextExport = source.indexOf("export async function", start + 1);
 	return source.slice(start, nextExport === -1 ? undefined : nextExport);
+}
+
+/** A module-private function's source, up to the next top-level declaration. */
+function privateFunctionBody(source: string, name: string) {
+	const start = source.indexOf(`\nfunction ${name}(`);
+	expect(start, `${name} should exist`).toBeGreaterThanOrEqual(0);
+	const next = source.slice(start + 1).search(/\n(?:export |async |function |const |type )/);
+	return source.slice(start, next === -1 ? undefined : start + 1 + next);
 }
 
 describe("project relationship tenant security", () => {
@@ -102,10 +115,18 @@ describe("project relationship tenant security", () => {
 
 	it("scopes detailed report employees and work periods to the active organization", () => {
 		const body = functionBody(reportsSource, "getProjectDetailedReport");
+		const readerBody = privateFunctionBody(reportsSource, "projectReportReader");
 
-		expect(body).toContain("await requireAuth()");
-		expect(body).toContain("authContext.session.activeOrganizationId");
-		expect(body).toContain("eq(workPeriod.organizationId, organizationId)");
+		// The shared report reader authenticates and takes the active organization.
+		expect(body).toContain("yield* projectReportReader()");
+		expect(readerBody).toContain("await requireAuth()");
+		expect(readerBody).toContain("authContext.session.activeOrganizationId");
+		// Employees and work are read in that organization only (#902 moved the work query).
+		expect(body).toContain("eq(employee.organizationId, organizationId)");
+		expect(body).toContain("loadReportedProjectWork(dbService.db, organizationId");
+		const workBody = functionBody(projectReportWorkSource, "loadReportedProjectWork");
+		expect(workBody).toContain("eq(workPeriod.organizationId, organizationId)");
+		expect(workBody).toContain("eq(project.organizationId, organizationId)");
 		expect(functionBody(reportsSource, "getProjectsOverview")).toContain(
 			"eq(workPeriod.organizationId, organizationId)",
 		);

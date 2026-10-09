@@ -16,6 +16,7 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import { activeOrganizationActor } from "../action-actor";
+import { billableTimeOff } from "../module-guard";
 
 const logger = createLogger("BillableRateActions");
 
@@ -37,10 +38,7 @@ const targetOf = (input: unknown) => {
 function refusalError(reason: BillableRateRefusal) {
 	switch (reason) {
 		case "billable_time_off":
-			return new ValidationError({
-				message: "Billable Time is switched off",
-				field: "billableTimeEnabled",
-			});
+			return billableTimeOff();
 		case "target_not_found":
 			return new NotFoundError({
 				message: "The employee, project or customer was not found",

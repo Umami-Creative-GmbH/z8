@@ -75,6 +75,12 @@ export function contactRow(input: {
 	familyname?: string | null;
 	customerNumber?: string | null;
 	vatNumber?: string | null;
+	/**
+	 * `status`: "Defines the status of the contact. 100 <-> Lead - 500 <->
+	 * Pending - 1000 <-> Active." openapi.yaml documents no archived status;
+	 * any other value stands for one in the tests.
+	 */
+	status?: string;
 }) {
 	return {
 		id: input.id,
@@ -82,7 +88,7 @@ export function contactRow(input: {
 		create: "2025-03-02T10:00:00+01:00",
 		update: "2025-03-02T10:00:00+01:00",
 		name: input.name ?? null,
-		status: "1000",
+		status: input.status ?? "1000",
 		customerNumber: input.customerNumber ?? null,
 		parent: null,
 		surename: input.surename ?? null,
@@ -127,6 +133,65 @@ export const contacts = {
 		customerNumber: "10003",
 	}),
 };
+
+/**
+ * One `Model_ContactAddressResponse` (openapi.yaml, `GET /ContactAddress`
+ * "Retrieve all contact addresses"): integer `id`, `contact` and `country`
+ * references (`country` is a `StaticCountry` id only), nullable `street`, `zip`,
+ * `city`, `name`, `name2`–`name4`, a `category` reference.
+ */
+export function contactAddressRow(input: {
+	id: number;
+	contactId: string;
+	street?: string | null;
+	zip?: string | null;
+	city?: string | null;
+}) {
+	return {
+		id: input.id,
+		objectName: "ContactAddress",
+		create: "2025-03-02T10:00:00+01:00",
+		update: "2025-03-02T10:00:00+01:00",
+		contact: { id: Number(input.contactId), objectName: "Contact" },
+		street: input.street ?? null,
+		zip: input.zip ?? null,
+		city: input.city ?? null,
+		country: { id: 1, objectName: "StaticCountry" },
+		category: { id: 47, objectName: "Category" },
+		name: null,
+		sevClient: { id: Number(SEV_CLIENT_ID), objectName: "SevClient" },
+		name2: null,
+		name3: null,
+		name4: null,
+	};
+}
+
+/**
+ * One `Model_CommunicationWayResponse` (openapi.yaml, `GET /CommunicationWay`
+ * with the filters `contact[id]`, `contact[objectName]`, `type` and `main`):
+ * `type` enum `EMAIL | PHONE | WEB | MOBILE`, `value` ("the phone number, e-mail
+ * address or website"), `main` '0' | '1', `key` a `CommunicationWayKey` reference.
+ */
+export function communicationWayRow(input: {
+	id: string;
+	contactId: string;
+	value: string;
+	main?: boolean;
+	type?: "EMAIL" | "PHONE" | "WEB" | "MOBILE";
+}) {
+	return {
+		id: input.id,
+		objectName: "CommunicationWay",
+		create: "2025-03-02T10:00:00+01:00",
+		update: "2025-03-02T10:00:00+01:00",
+		contact: { id: input.contactId, objectName: "Contact" },
+		type: input.type ?? "EMAIL",
+		value: input.value,
+		key: { id: "2", objectName: "CommunicationWayKey" },
+		main: input.main ? "1" : "0",
+		sevClient: { id: SEV_CLIENT_ID, objectName: "SevClient" },
+	};
+}
 
 /**
  * One `Model_InvoiceResponse` (openapi.yaml): string id and `status` (enum

@@ -119,6 +119,26 @@ describe("planHandOff", () => {
 		expect(result.included.map((item) => item.work.durationMinutes)).toEqual([90, 50, 61]);
 	});
 
+	it("allocates each line's frozen amount across its work by duration, to the cent", () => {
+		const result = plan({
+			work: [
+				work({ start: "2026-09-02T08:00:00Z", minutes: 90 }),
+				work({ start: "2026-09-03T08:00:00Z", minutes: 50 }),
+			],
+			rates: [rate(PROJECT_A, 10_000, "2026-01-01")],
+		});
+
+		// 233.00 split 90:50 = 149.785… : 83.214… → the larger remainder gets the cent.
+		expect(result.included.map((item) => item.shares.map((share) => share.amount))).toEqual([
+			[BigInt(14_979)],
+			[BigInt(8_321)],
+		]);
+		const allocated = result.included
+			.flatMap((item) => item.shares)
+			.reduce((sum, share) => sum + share.amount, BigInt(0));
+		expect(allocated).toBe(result.netTotal);
+	});
+
 	it("splits a period that spans a rate change across the two rates' lines", () => {
 		const result = plan({
 			// 22:00–02:00 UTC across the rate change on 2026-09-10, 240 minutes recorded.
@@ -134,8 +154,8 @@ describe("planHandOff", () => {
 			[BigInt(12_000), 200],
 		]);
 		expect(result.included[0]?.shares).toEqual([
-			{ line: 0, durationMs: 7_200_000, rate: BigInt(10_000) },
-			{ line: 1, durationMs: 7_200_000, rate: BigInt(12_000) },
+			{ line: 0, durationMs: 7_200_000, rate: BigInt(10_000), amount: BigInt(20_000) },
+			{ line: 1, durationMs: 7_200_000, rate: BigInt(12_000), amount: BigInt(24_000) },
 		]);
 	});
 
@@ -207,9 +227,69 @@ describe("planHandOff", () => {
 		]);
 		expect(withTimesheet.blockers).toEqual([]);
 
-		const tooLong = plan({ work: items, rates, includeTimesheet: true, maxDraftLines: 3 });
-		expect(tooLong.blockers).toEqual([{ kind: "too_many_lines", lines: 4, maxDraftLines: 3 }]);
-		expect(plan({ work: items, rates, maxDraftLines: 3 }).blockers).toEqual([]);
+		expect(withTimesheet.timesheetOmitted).toBe(0);
+	});
+
+	it("shortens a timesheet that does not fit the tool's line limit instead of blocking", () => {
+		const items = [
+			work({ start: "2026-09-02T08:00:00Z", minutes: 90 }),
+			work({ start: "2026-09-03T08:00:00Z", minutes: 50 }),
+			work({ start: "2026-09-04T08:00:00Z", minutes: 30 }),
+		];
+		const rates = [rate(PROJECT_A, 10_000, "2026-01-01")];
+
+		// One work line + heading + one period + the note = 4 lines.
+		const shortened = plan({ work: items, rates, includeTimesheet: true, maxDraftLines: 4 });
+		expect(shortened.blockers).toEqual([]);
+		expect(shortened.timesheetLines.map((line) => line.text)).toEqual([
+			"Timesheet",
+			"2026-09-02 · Anna Berg · Website · 1.50 h",
+			"… and 2 more: see the full timesheet",
+		]);
+		expect(shortened.timesheetOmitted).toBe(2);
+		expect(shortened.lines).toHaveLength(1);
+
+		// No room for any period: the timesheet lines are left out entirely.
+		const none = plan({ work: items, rates, includeTimesheet: true, maxDraftLines: 3 });
+		expect(none.blockers).toEqual([]);
+		expect(none.timesheetLines).toEqual([]);
+		expect(none.timesheetOmitted).toBe(3);
+
+		// Only work lines beyond the limit block.
+		const twoProjects = [
+			...items,
+			work({
+				start: "2026-09-05T08:00:00Z",
+				minutes: 30,
+				projectId: PROJECT_B,
+				projectName: "App",
+			}),
+		];
+		const blocked = plan({
+			work: twoProjects,
+			rates: [...rates, rate(PROJECT_B, 9_000, "2026-01-01")],
+			includeTimesheet: true,
+			maxDraftLines: 1,
+		});
+		expect(blocked.blockers).toEqual([{ kind: "too_many_lines", lines: 2, maxDraftLines: 1 }]);
+	});
+
+	it("writes the German shortened-timesheet note", () => {
+		const german = planHandOff({
+			period: september,
+			work: [
+				work({ start: "2026-09-02T08:00:00Z", minutes: 90 }),
+				work({ start: "2026-09-03T08:00:00Z", minutes: 90 }),
+				work({ start: "2026-09-04T08:00:00Z", minutes: 90 }),
+			],
+			rates: [rate(PROJECT_A, 10_000, "2026-01-01")],
+			texts: handOffTextFormat("de"),
+			includeTimesheet: true,
+			maxDraftLines: 4,
+		});
+		expect(german.timesheetLines.at(-1)?.text).toBe(
+			"… und 2 weitere: siehe vollständigen Stundennachweis",
+		);
 	});
 
 	it("writes German texts with German dates and decimal commas", () => {

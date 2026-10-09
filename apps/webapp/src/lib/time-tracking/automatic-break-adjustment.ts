@@ -50,6 +50,7 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import type { AllocationEvidence } from "./allocation-evidence";
 import {
 	deriveAutomaticBreakIntentId,
 	deriveAutomaticBreakOperationId,
@@ -148,15 +149,6 @@ export type AutomaticBreakAdjustmentCommand = {
 	workPeriodId: string;
 	sourceRevision: number;
 	intent: { id: string; closureEntryId: string | null } | null;
-};
-
-type AllocationEvidence = {
-	allocationKind: string;
-	projectId: string | null;
-	costCenterId: string | null;
-	weightPercent: number;
-	/** Absent on receipts committed before billability (#900), which were non-billable. */
-	isBillable?: boolean;
 };
 
 /** One segment by value: committed evidence, not a pointer to current rows. */

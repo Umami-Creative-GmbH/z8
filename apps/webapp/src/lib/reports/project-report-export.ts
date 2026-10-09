@@ -15,6 +15,7 @@
  * `PROJECT_REPORT_FIGURE_GROUPS`, without touching the exporters.
  */
 
+import { Temporal } from "temporal-polyfill";
 import type { BillableFigures, InvoicingFigures } from "@/lib/billable-time/report-figures";
 import type {
 	ReportCell,
@@ -49,6 +50,8 @@ export interface ProjectReportExportLabels {
 	workPeriods: string;
 	billableHours: string;
 	nonBillableHours: string;
+	withoutCustomerHours: string;
+	withoutCustomer: string;
 	revenue: string;
 	unpricedWork: string;
 	unpricedHours: string;
@@ -91,6 +94,8 @@ export const DEFAULT_PROJECT_REPORT_EXPORT_LABELS: ProjectReportExportLabels = {
 	workPeriods: "Work periods",
 	billableHours: "Billable hours",
 	nonBillableHours: "Non-billable hours",
+	withoutCustomerHours: "Billable hours without customer",
+	withoutCustomer: "Without customer",
 	revenue: "Revenue",
 	unpricedWork: "Unpriced work",
 	unpricedHours: "Unpriced hours",
@@ -177,6 +182,16 @@ export const billableFigureGroup: ReportFigureGroup = {
 				kind: "hours",
 				value: figure((f) => hours(f.nonBillableMinutes)),
 			},
+			...(rows.some((row) => (row.billable?.withoutCustomerMinutes ?? 0) > 0)
+				? [
+						{
+							key: "withoutCustomerHours",
+							header: labels.withoutCustomerHours,
+							kind: "hours" as const,
+							value: figure((f) => hours(f.withoutCustomerMinutes)),
+						},
+					]
+				: []),
 			{
 				key: "revenue",
 				header: money(labels.revenue),
@@ -316,7 +331,15 @@ function figureTable<Row extends ReportFigureRow>(
 	};
 }
 
-const dayOf = (isoInstant: string) => isoInstant.slice(0, 10);
+/**
+ * A report period bound as a calendar day. The customer view sends ISO dates;
+ * the project report sends the UTC midnight its filter chose for the day (see
+ * `reportDayRangeFromDates`), so that instant's UTC date is the day.
+ */
+function dayOf(bound: string): string {
+	if (/^\d{4}-\d{2}-\d{2}$/.test(bound)) return bound;
+	return Temporal.Instant.from(bound).toZonedDateTimeISO("UTC").toPlainDate().toString();
+}
 
 function billableFacts(
 	billableTime: BillableTimeReportContext | undefined,
@@ -413,8 +436,13 @@ export function buildCustomerReportDocument(
 ): ReportDocument {
 	const { labels } = context;
 	const tableContext = { ...context, currency: view.billableTime.currency };
-	const projects = view.customers.flatMap((row) =>
-		row.projects.map((project) => ({ ...project, customerName: row.customer.name })),
+	// Customers, then projects without an (active) customer as a group of their own.
+	const customerGroups = [
+		...view.customers.map((row) => ({ ...row, name: row.customer.name })),
+		...(view.withoutCustomer ? [{ ...view.withoutCustomer, name: labels.withoutCustomer }] : []),
+	];
+	const projects = customerGroups.flatMap((row) =>
+		row.projects.map((project) => ({ ...project, customerName: row.name })),
 	);
 	return {
 		title: labels.customerReportTitle,
@@ -430,10 +458,8 @@ export function buildCustomerReportDocument(
 			figureTable(
 				{
 					title: labels.customersTable,
-					leading: [
-						{ key: "customer", header: labels.customer, value: (row) => row.customer.name },
-					],
-					rows: view.customers,
+					leading: [{ key: "customer", header: labels.customer, value: (row) => row.name }],
+					rows: customerGroups,
 					totals: { label: labels.total, row: view.totals },
 				},
 				groups,

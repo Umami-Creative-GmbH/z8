@@ -89,6 +89,7 @@ export function InvoiceDraftPanel({
 	onChanged: () => void;
 }) {
 	const { t } = useTranslate();
+	const labels = useHandOffLabels();
 	const detail = useQuery({
 		queryKey: queryKeys.billableTime.invoiceDraft(draftId ?? ""),
 		queryFn: () => unwrap(actions.load(draftId ?? "")),
@@ -108,7 +109,7 @@ export function InvoiceDraftPanel({
 					</ActionPanelTitle>
 					{detail.data && (
 						<ActionPanelDescription>
-							{detail.data.period.from} – {detail.data.period.to} ·{" "}
+							{labels.period(detail.data.period)} ·{" "}
 							{accountingProviderName(detail.data.providerKind)}
 						</ActionPanelDescription>
 					)}
@@ -293,7 +294,9 @@ function DraftDetail({
 						.map((line) => (
 							<TableRow key={line.position}>
 								<TableCell>{line.text}</TableCell>
-								<TableCell className="text-right tabular-nums">{line.hours}</TableCell>
+								<TableCell className="text-right tabular-nums">
+									{line.hours && labels.hours(line.hours)}
+								</TableCell>
 								<TableCell className="text-right tabular-nums">
 									{line.rate && money(line.rate)}
 								</TableCell>
@@ -340,9 +343,11 @@ function DraftDetail({
 					run(
 						() => actions.clearMarks(ids),
 						(data) =>
-							t("settings.billableTime.handOff.marks.cleared", "{count} marks cleared", {
-								count: data.cleared,
-							}),
+							t(
+								"settings.billableTime.handOff.marks.cleared",
+								"{count, plural, one {# mark cleared} other {# marks cleared}}",
+								{ count: data.cleared },
+							),
 					)
 				}
 			/>
@@ -390,7 +395,7 @@ function DraftDetail({
 									(data) =>
 										t(
 											"settings.billableTime.handOff.release.done",
-											"Released. {count} work periods are un-invoiced again.",
+											"Released. {count, plural, one {# work period is} other {# work periods are}} un-invoiced again.",
 											{ count: data.workReturned },
 										),
 								);
@@ -442,7 +447,7 @@ export function MarkedWork({
 			<ul className="divide-y rounded-md border text-sm">
 				{marked.map((item) => (
 					<li key={item.invoicedWorkId} className="flex flex-wrap items-center gap-x-3 gap-y-1 p-2">
-						<span className="tabular-nums">{item.day}</span>
+						<span className="tabular-nums">{labels.day(item.day)}</span>
 						<span>{item.employeeName}</span>
 						<span className="text-muted-foreground">{item.projectName}</span>
 						<span className="flex flex-wrap gap-1">

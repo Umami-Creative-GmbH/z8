@@ -93,6 +93,9 @@ const ids = {
 const users = [ids.ownerUser, ids.pmUser, ids.teamManagerUser, ids.workerUser, ids.otherUser];
 const rangeStart = new Date("2026-03-01");
 const rangeEnd = new Date("2026-04-30");
+// The customer view takes the report's calendar days as ISO dates.
+const fromDay = "2026-03-01";
+const toDay = "2026-04-30";
 
 function actAs(userId: string) {
 	harness.userId = userId;
@@ -347,7 +350,7 @@ describe("billable project reports on PostgreSQL", () => {
 			end: "2026-03-15T10:00:00Z",
 			minutes: 120,
 		});
-		// Internal has no customer: marked billable, counted as non-billable.
+		// Internal has no customer: marked billable, shown as billable without customer.
 		await work({
 			employeeId: ids.worker,
 			projectId: ids.internal,
@@ -410,12 +413,15 @@ describe("billable project reports on PostgreSQL", () => {
 		});
 		expect(byId.get(ids.internal)?.billable).toMatchObject({
 			billableHours: 0,
-			nonBillableHours: 1,
+			nonBillableHours: 0,
+			withoutCustomerHours: 1,
+			withoutCustomerWorkCount: 1,
 			revenue: "0.00",
 		});
 		expect(overview.totals.billable).toMatchObject({
 			billableHours: 9,
-			nonBillableHours: 2,
+			nonBillableHours: 1,
+			withoutCustomerHours: 1,
 			revenue: "740.00",
 			cost: null,
 			margin: null,
@@ -447,7 +453,7 @@ describe("billable project reports on PostgreSQL", () => {
 		actAs(ids.pmUser);
 		const overview = await unwrap(getProjectsOverview(rangeStart, rangeEnd));
 		const report = await unwrap(getProjectDetailedReport(ids.website, rangeStart, rangeEnd));
-		const customers = await unwrap(getCustomerBillableReport(rangeStart, rangeEnd));
+		const customers = await unwrap(getCustomerBillableReport(fromDay, toDay));
 
 		expect(overview.projects.map((summary) => summary.id)).toEqual([ids.website]);
 		expect(overview.projects[0]?.billable).toMatchObject({
@@ -489,14 +495,24 @@ describe("billable project reports on PostgreSQL", () => {
 		expect(overview.totals.billable).toBeUndefined();
 		expect(report.summary.billable).toBeUndefined();
 		expect(JSON.stringify([overview, report])).not.toMatch(/revenue|billableHours/);
-		expect((await getCustomerBillableReport(rangeStart, rangeEnd)).success).toBe(false);
+		expect((await getCustomerBillableReport(fromDay, toDay)).success).toBe(false);
 	});
 
 	it("rolls figures up per customer, its totals the sum of its projects", async () => {
 		actAs(ids.ownerUser);
-		const view = await unwrap(getCustomerBillableReport(rangeStart, rangeEnd));
+		const view = await unwrap(getCustomerBillableReport(fromDay, toDay));
 
 		expect(view.access).toBe("full");
+		expect(view.period).toEqual({ startDate: "2026-03-01", endDate: "2026-04-30" });
+		for (const [from, to] of [
+			["2026-02-30", "2026-04-30"],
+			["2026-04-30", "2026-03-01"],
+			["2026-03-01T00:00:00Z", "2026-04-30"],
+		]) {
+			await expect(getCustomerBillableReport(from, to)).resolves.toMatchObject({
+				success: false,
+			});
+		}
 		expect(view.customers).toHaveLength(1);
 		const [acme] = view.customers;
 		expect(acme?.customer).toEqual({ id: ids.customer, name: "Acme" });
@@ -514,7 +530,41 @@ describe("billable project reports on PostgreSQL", () => {
 		expect(acme?.totalMinutes).toBe(
 			(acme?.projects ?? []).reduce((sum, row) => sum + row.totalMinutes, 0),
 		);
-		expect(view.totals.billable).toEqual(acme?.billable);
+		// Billable work on Internal (no customer) is listed apart, never under a customer.
+		expect(view.withoutCustomer?.projects.map((row) => row.project.id)).toEqual([ids.internal]);
+		expect(view.withoutCustomer?.billable).toMatchObject({
+			billableHours: 0,
+			withoutCustomerHours: 1,
+			revenue: "0.00",
+		});
+		expect(view.totals.billable).toMatchObject({
+			billableHours: 9,
+			withoutCustomerHours: 1,
+			revenue: "740.00",
+		});
+		expect(view.totals.totalMinutes).toBe((acme?.totalMinutes ?? 0) + 60);
+	});
+
+	it("treats a deleted customer's projects as without customer", async () => {
+		await admin.query("update customer set is_active = false where id = $1", [ids.customer]);
+		actAs(ids.ownerUser);
+
+		const overview = await unwrap(getProjectsOverview(rangeStart, rangeEnd));
+		const website = overview.projects.find((summary) => summary.id === ids.website);
+		expect(website?.customer).toBeNull();
+		expect(website?.billable).toMatchObject({
+			billableHours: 0,
+			withoutCustomerHours: 7,
+			revenue: "0.00",
+		});
+
+		const view = await unwrap(getCustomerBillableReport(fromDay, toDay));
+		expect(view.customers).toEqual([]);
+		expect(view.withoutCustomer?.projects.map((row) => row.project.id)).toEqual([
+			ids.internal,
+			ids.support,
+			ids.website,
+		]);
 	});
 
 	it("shows no Billable Time figures while the module is off", async () => {
@@ -528,7 +578,7 @@ describe("billable project reports on PostgreSQL", () => {
 		expect(overview.projects.every((summary) => summary.billable === undefined)).toBe(true);
 		expect(report.summary.billable).toBeUndefined();
 		expect(report.billableTime).toBeUndefined();
-		expect((await getCustomerBillableReport(rangeStart, rangeEnd)).success).toBe(false);
+		expect((await getCustomerBillableReport(fromDay, toDay)).success).toBe(false);
 	});
 
 	it("never reads another organization's projects", async () => {
