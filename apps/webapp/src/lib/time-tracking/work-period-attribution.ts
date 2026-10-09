@@ -11,9 +11,11 @@ import {
 	type AmendmentAuthority,
 	amendCompletedWork,
 	lockAuthority,
+	replayOrAmendCompletedWork,
 } from "./amend-completed-work";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
 import { resolveWorkBillabilityInTransaction } from "./work-billability";
+import { assertNoUnresolvedWorkPeriodReview } from "./work-period-review";
 import type { SealedWorkTransactionScope } from "./work-transaction";
 
 type PeriodSource = Pick<
@@ -134,6 +136,100 @@ async function changeWorkPeriodAttribution(
 			});
 		},
 	);
+}
+
+/**
+ * An organization admin's billability-only change of one work period inside the
+ * caller's coordinated scope (#901 bulk billability), with a caller-chosen
+ * operation identity so a retry replays the committed receipt. Same path as a
+ * single billability change: the `work_period_attribution_edit` writer and
+ * receipt in adopted organizations, the legacy writer otherwise, both under the
+ * `organization_admin` authority. Work with an unresolved review is refused in
+ * both admissions. `unchanged` means the work already had this billability
+ * (legacy; adopted organizations refuse a no-change amendment).
+ */
+export async function setWorkPeriodBillabilityAsAdmin(
+	scope: SealedWorkTransactionScope,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		actorUserId: string;
+		period: PeriodSource;
+		billable: boolean;
+		operationId: string;
+		/** Request evidence recorded on the receipt besides the period and billability. */
+		evidence: Record<string, string>;
+	},
+): Promise<"executed" | "replayed" | "unchanged"> {
+	const authority = "organization_admin" as const;
+	if (scope.admission === "legacy") {
+		await lockAuthority(scope.db, { ...input, authority, workPeriodId: input.period.id });
+		const [period] = await scope.db
+			.select({
+				id: workPeriod.id,
+				approvalStatus: workPeriod.approvalStatus,
+				isBillable: workPeriod.isBillable,
+			})
+			.from(workPeriod)
+			.where(
+				and(
+					eq(workPeriod.id, input.period.id),
+					eq(workPeriod.organizationId, input.organizationId),
+					eq(workPeriod.employeeId, input.employeeId),
+					isNull(workPeriod.deletedAt),
+				),
+			)
+			.for("update");
+		if (!period) {
+			throw new NotFoundError({
+				message: "Work period not found",
+				entityType: "workPeriod",
+				entityId: input.period.id,
+			});
+		}
+		await assertNoUnresolvedWorkPeriodReview(scope.db, input.organizationId, period);
+		if (period.isBillable === input.billable) return "unchanged";
+		await changeLegacyWorkPeriodProject(scope.db, {
+			...input,
+			authorizedProjectId: null,
+		});
+		return "executed";
+	}
+	const receipt = await replayOrAmendCompletedWork(scope, {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		actorUserId: input.actorUserId,
+		authority,
+		writer: "work_period_attribution_edit",
+		command: {
+			version: AMEND_COMPLETED_WORK_COMMAND_VERSION,
+			operationId: input.operationId,
+			request: {
+				...input.evidence,
+				workPeriodId: input.period.id,
+				billable: String(input.billable),
+			},
+		},
+		intent: {
+			workPeriodId: input.period.id,
+			clockIn: { kind: "preserve" },
+			clockOut: { kind: "preserve" },
+			project: { kind: "preserve" },
+			workCategory: { kind: "preserve" },
+			workLocation: { kind: "preserve" },
+			billable: { kind: "set", billable: input.billable },
+			notes: null,
+		},
+		expectedSource: {
+			clockInId: input.period.clockInId,
+			clockOutId: input.period.clockOutId,
+			startAt: instantFromDate(input.period.startTime),
+			endAt: input.period.endTime ? instantFromDate(input.period.endTime) : null,
+		},
+		evaluatedAt: systemClock.nowInstant(),
+		request: { ipAddress: null, deviceInfo: null },
+	});
+	return receipt.disposition;
 }
 
 /**
