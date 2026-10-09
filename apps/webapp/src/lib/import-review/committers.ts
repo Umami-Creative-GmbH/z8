@@ -75,9 +75,13 @@ function stagedWorkAttribution(
 ): ImportedWorkAttribution | undefined {
 	const value = payload.attribution;
 	if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
-	const { projectId, billable } = value as Record<string, unknown>;
+	const { projectId, billable, nonBillableWhenRefused } = value as Record<string, unknown>;
 	if (typeof projectId !== "string" || projectId.length === 0) return undefined;
-	return typeof billable === "boolean" ? { projectId, billable } : { projectId };
+	if (typeof billable !== "boolean") return { projectId };
+	// A provider's billable value downgrades to non-billable instead of holding (#907).
+	return nonBillableWhenRefused === true
+		? { projectId, billable, nonBillableWhenRefused: true }
+		: { projectId, billable };
 }
 
 interface AbsencePayload {

@@ -9,12 +9,12 @@ import { importBatch } from "@/db/schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { listCustomerAccounting } from "@/lib/billable-time/accounting/customer-accounting";
 import { getBillableTimeSettings } from "@/lib/billable-time/settings";
+import { listImportRowBillability } from "@/lib/import-review/import-row-billability";
 import {
 	getImportReviewSummary,
 	listImportReviewRows,
 } from "@/lib/import-review/repository";
 import { readStagedCustomer } from "@/lib/import-review/staged-customer";
-import { importRowBillability } from "@/lib/import-review/staged-work-billability";
 
 interface ImportReviewRouteProps {
 	params: Promise<{ batchId: string }>;
@@ -57,6 +57,10 @@ async function ImportReviewRouteContent({ params }: ImportReviewRouteProps) {
 		isCustomerImport ? listCustomerAccounting(db, organizationId) : Promise.resolve([]),
 	]);
 	const showBillability = billableTime.enabled;
+	// Rows whose mapped project has no active customer now import as non-billable (#907).
+	const billability = showBillability
+		? await listImportRowBillability(db, organizationId, rows)
+		: rows.map(() => null);
 	const customerImport = isCustomerImport
 		? {
 				rows: rows.map((row) => ({
@@ -82,9 +86,9 @@ async function ImportReviewRouteContent({ params }: ImportReviewRouteProps) {
 					organizationId={organizationId}
 					batchId={batch.id}
 					summary={summary}
-					rows={rows.map((row) => ({
+					rows={rows.map((row, index) => ({
 						...row,
-						billability: showBillability ? importRowBillability(row) : null,
+						billability: billability[index] ?? null,
 					}))}
 					showBillability={showBillability}
 					customerImport={customerImport}

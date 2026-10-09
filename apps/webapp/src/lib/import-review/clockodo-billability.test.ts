@@ -17,7 +17,10 @@ describe("clockodoEntryBillability (#907)", () => {
 				mappedProject: customerProject,
 			}),
 		).toEqual({
-			attribution: { projectId: "project_customer", billable },
+			// A billable value is a request: it downgrades if the customer is gone at commit.
+			attribution: billable
+				? { projectId: "project_customer", billable, nonBillableWhenRefused: true }
+				: { projectId: "project_customer", billable },
 			billability: { providerValue: value, billable, note },
 		});
 	});

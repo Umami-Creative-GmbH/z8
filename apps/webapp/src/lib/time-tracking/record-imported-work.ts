@@ -92,6 +92,13 @@ export type ImportedWorkAttribution = {
 	projectId: string;
 	/** Absent takes the project's billable default. */
 	billable?: boolean;
+	/**
+	 * A provider's billable value is a request, not an override (#907): when the
+	 * project cannot carry billable work at commit time (no customer, or it was
+	 * deleted since the scan), the row imports as non-billable instead of being held.
+	 * Absent: a refused billable value holds the row.
+	 */
+	nonBillableWhenRefused?: true;
 };
 
 export type ImportedWorkFollowUp = {
@@ -439,7 +446,8 @@ export async function recordImportedWork(
  * The project and billability an imported row records (#900). The project must be
  * the organization's; billability follows the project's billable default unless
  * the command states it, and billable work needs a project with a customer. A
- * refusal holds the row before anything is written.
+ * refusal holds the row before anything is written, unless the billable value is
+ * a provider's request (`nonBillableWhenRefused`): then the row records non-billable.
  */
 export async function resolveImportedAttribution(
 	tx: SealedWorkTransactionScope["db"],
@@ -467,6 +475,9 @@ export async function resolveImportedAttribution(
 		return { kind: "resolved", recorded: { projectId: facts.projectId, isBillable } };
 	} catch (error) {
 		if (!(error instanceof BillableWorkRefusedError)) throw error;
+		if (requested.nonBillableWhenRefused) {
+			return { kind: "resolved", recorded: { projectId: facts.projectId, isBillable: false } };
+		}
 		return { kind: "held", hold: { reason: "attribution_not_allowed", detail: error.reason } };
 	}
 }
