@@ -7,12 +7,16 @@
 import { deleteOldAuditLogs } from "@/lib/audit/cleanup";
 import { AUDIT_LOG_RETENTION_DAYS } from "@/lib/audit/retention";
 import { cleanupExpiredExports } from "@/lib/export/export-service";
+import { runClockingReminderOccasionRetention } from "@/lib/jobs/clocking-reminder-occasion-retention";
 import { runPositionRecordRetention } from "@/lib/jobs/position-record-retention";
 import { createLogger } from "@/lib/logger";
 import { deleteOldNotifications } from "@/lib/notifications/notification-service";
 import type { CleanupJobData } from "@/lib/queue";
 
 const logger = createLogger("Cleanup");
+
+/** How long a sent clocking reminder occasion is kept once its employee has no live work. */
+const CLOCKING_REMINDER_OCCASION_RETENTION_DAYS = 7;
 
 /**
  * Run cleanup job from worker queue
@@ -30,10 +34,17 @@ export async function runCleanup(data: CleanupJobData): Promise<{
 			logger.info({ count: deletedCount }, "Cleaned up expired exports");
 			break;
 
-		case "old_notifications":
+		case "old_notifications": {
 			deletedCount = await deleteOldNotifications(90);
 			logger.info({ count: deletedCount }, "Cleaned up old notifications");
+			// Sent-reminder claims are kept only while a reminder could still be due again (#919).
+			const occasions = await runClockingReminderOccasionRetention(
+				CLOCKING_REMINDER_OCCASION_RETENTION_DAYS,
+			);
+			logger.info({ count: occasions }, "Cleaned up clocking reminder occasions past retention");
+			deletedCount += occasions;
 			break;
+		}
 
 		case "old_audit_logs": {
 			deletedCount = await deleteOldAuditLogs(AUDIT_LOG_RETENTION_DAYS);

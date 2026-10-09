@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { deleteOldAuditLogs } from "@/lib/audit/cleanup";
 import { cleanupExpiredExports } from "@/lib/export/export-service";
+import { runClockingReminderOccasionRetention } from "@/lib/jobs/clocking-reminder-occasion-retention";
 import { runPositionRecordRetention } from "@/lib/jobs/position-record-retention";
 import { deleteOldNotifications } from "@/lib/notifications/notification-service";
 import { runCleanup } from "./cleanup";
@@ -27,6 +28,10 @@ vi.mock("@/lib/jobs/position-record-retention", () => ({
 	runPositionRecordRetention: vi.fn(),
 }));
 
+vi.mock("@/lib/jobs/clocking-reminder-occasion-retention", () => ({
+	runClockingReminderOccasionRetention: vi.fn(),
+}));
+
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({
 		info: infoMock,
@@ -39,6 +44,7 @@ const cleanupExpiredExportsMock = vi.mocked(cleanupExpiredExports);
 const deleteOldAuditLogsMock = vi.mocked(deleteOldAuditLogs);
 const deleteOldNotificationsMock = vi.mocked(deleteOldNotifications);
 const runPositionRecordRetentionMock = vi.mocked(runPositionRecordRetention);
+const runClockingReminderOccasionRetentionMock = vi.mocked(runClockingReminderOccasionRetention);
 
 describe("runCleanup", () => {
 	beforeEach(() => {
@@ -49,6 +55,7 @@ describe("runCleanup", () => {
 		deleteOldAuditLogsMock.mockReset();
 		deleteOldNotificationsMock.mockReset();
 		runPositionRecordRetentionMock.mockReset();
+		runClockingReminderOccasionRetentionMock.mockReset();
 	});
 
 	it("routes expired export cleanup to cleanupExpiredExports", async () => {
@@ -62,12 +69,27 @@ describe("runCleanup", () => {
 
 	it("routes old notification cleanup with 90 day retention", async () => {
 		deleteOldNotificationsMock.mockResolvedValue(7);
+		runClockingReminderOccasionRetentionMock.mockResolvedValue(0);
 
 		const result = await runCleanup({ type: "cleanup", task: "old_notifications" });
 
 		expect(deleteOldNotificationsMock).toHaveBeenCalledWith(90);
 		expect(result).toEqual({ deletedCount: 7 });
 		expect(infoMock).toHaveBeenCalledWith({ count: 7 }, "Cleaned up old notifications");
+	});
+
+	it("deletes clocking reminder occasions older than 7 days with the old notifications", async () => {
+		deleteOldNotificationsMock.mockResolvedValue(7);
+		runClockingReminderOccasionRetentionMock.mockResolvedValue(5);
+
+		const result = await runCleanup({ type: "cleanup", task: "old_notifications" });
+
+		expect(runClockingReminderOccasionRetentionMock).toHaveBeenCalledWith(7);
+		expect(result).toEqual({ deletedCount: 12 });
+		expect(infoMock).toHaveBeenCalledWith(
+			{ count: 5 },
+			"Cleaned up clocking reminder occasions past retention",
+		);
 	});
 
 	it("routes old audit log cleanup with 365 day retention", async () => {

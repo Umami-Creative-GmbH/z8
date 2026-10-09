@@ -10,6 +10,7 @@ import {
 	createClockingService,
 	createDatabaseClockingStore,
 } from "@/lib/time-tracking/clocking-core";
+import { deleteExpiredClockingReminderOccasions } from "@/lib/time-tracking/clocking-reminders/occasion-retention";
 import { saveClockingReminderSettings } from "@/lib/time-tracking/clocking-reminders/settings";
 import { runClockingReminders } from "./clocking-reminders";
 
@@ -344,6 +345,32 @@ describe("clocking reminders from work policies on PostgreSQL", () => {
 				params: { endTime: "16:30" },
 			},
 		});
+	});
+
+	it("keeps a forgotten clock-out's occasion past retention while the work is live, so a later run does not re-send it", async () => {
+		const org = await organization();
+		const person = await employee(org);
+		// Without an inbox row, whose idempotency key would also catch a re-send, the occasion
+		// claim is the only dedupe, as it is once the notification itself has been cleaned up.
+		await fixture.pool.query(
+			`insert into notification_preference (user_id, notification_type, channel, enabled, updated_at)
+			 values ($1, 'forgotten_clock_out_reminder', 'in_app', false, now())`,
+			[person.userId],
+		);
+		const pushes = () =>
+			channels.push.mock.calls.filter((call) => (call as unknown[])[0] === person.userId).length;
+		await clockIn(org, person, "2026-04-27T06:00:00Z");
+		await run("2026-04-27T15:00:00Z");
+		expect(pushes()).toBe(1);
+
+		// Ten days later the work is still live and the reminder is still due.
+		const later = "2026-05-07T15:00:00Z";
+		await deleteExpiredClockingReminderOccasions(fixture.db, {
+			now: at(later),
+			retentionDays: 7,
+		});
+		await run(later);
+		expect(pushes()).toBe(1);
 	});
 
 	it("sends no forgotten clock-out reminder on a day without required hours", async () => {

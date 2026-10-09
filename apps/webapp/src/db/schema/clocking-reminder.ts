@@ -3,6 +3,7 @@ import {
 	boolean,
 	check,
 	foreignKey,
+	index,
 	integer,
 	pgTable,
 	text,
@@ -83,5 +84,7 @@ export const clockingReminderOccasion = pgTable(
 			foreignColumns: [employee.id, employee.organizationId],
 		}).onDelete("cascade"),
 		uniqueIndex("clockingReminderOccasion_org_key_idx").on(table.organizationId, table.occasionKey),
+		// Serves the per-organization retention delete (#919).
+		index("clockingReminderOccasion_org_expectedAt_idx").on(table.organizationId, table.expectedAt),
 	],
 );
