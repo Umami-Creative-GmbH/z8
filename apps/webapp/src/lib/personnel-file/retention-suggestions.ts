@@ -3,10 +3,17 @@ import type { DocumentCategory } from "./document.types";
 /**
  * Suggested retention periods per document category (#870). They are shown as
  * "suggested, not legal advice" and only applied when an owner or admin
- * chooses to. Each value is the longest of the German, Austrian and Swiss
- * periods listed below, so applying it never deletes a document earlier than
- * one of these rules requires. All periods count from the end of the year of
- * the triggering event, as the retention start does.
+ * chooses to. The rule used for each value:
+ * - where a statutory retention duty exists (tax and bookkeeping records:
+ *   contracts, payslips), the longest of the German, Austrian and Swiss
+ *   duties listed below;
+ * - otherwise, the longest of the three countries' ordinary limitation
+ *   periods for employment claims (3 years DE and AT, 5 years CH).
+ * Longer special limitation periods are noted in the sources but not applied:
+ * notably the Austrian 30 years for the employment reference (§ 1478 ABGB),
+ * so an Austrian organization that wants to keep contracts that long must set
+ * a longer period itself. All periods count from the end of the year of the
+ * triggering event, as the retention start does.
  *
  * These are a starting point for maintainer review, not a legal assessment:
  * collective agreements, pending disputes, works agreements and other
