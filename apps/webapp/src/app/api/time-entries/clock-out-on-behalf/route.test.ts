@@ -176,6 +176,24 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 		});
 	});
 
+	it("maps a task refusal to 422 with its field and stable reason (#874)", async () => {
+		mocks.run.mockResolvedValue({
+			outcome: "refused",
+			failure: { code: "task_not_allowed", reason: "task_done" },
+		});
+
+		expect(await respond({ workPeriodId: "period-1", operationId, taskId: "task-1" })).toEqual({
+			status: 422,
+			body: {
+				error: "Cannot book time to this task",
+				code: "attribution_not_allowed",
+				field: "taskId",
+				reason: "task_done",
+				operationId,
+			},
+		});
+	});
+
 	it("answers billing refusals with the billing guard's 402", async () => {
 		mocks.run.mockResolvedValue({
 			outcome: "refused",
