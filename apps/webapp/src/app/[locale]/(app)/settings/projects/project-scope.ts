@@ -198,6 +198,20 @@ export function ensureSettingsActorCanManageProjectManagers(
 	});
 }
 
+/**
+ * Managing a project's tasks (#872): org admins and owners for any project of
+ * their organization, manager-tier project managers only for the projects
+ * they manage. Member-tier employees never reach this (the actor context
+ * refuses them), even when they are listed as a project's manager.
+ */
+export function ensureSettingsActorCanManageProjectTasks(
+	actor: ProjectSettingsActor,
+	targetProject: Pick<typeof project.$inferSelect, "id" | "organizationId">,
+	options: AuthorizationFailureDetails,
+) {
+	return ensureSettingsActorCanAccessProjectTarget(actor, targetProject, options);
+}
+
 export function getManagedCustomerIdsForSettingsActor(actor: ProjectSettingsActor) {
 	return Effect.gen(function* () {
 		if (actor.accessTier === "orgAdmin") {

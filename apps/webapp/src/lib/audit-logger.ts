@@ -146,6 +146,11 @@ export enum AuditAction {
 	PROJECT_MANAGER_REMOVED = "project.manager_removed",
 	PROJECT_ASSIGNMENT_ADDED = "project.assignment_added",
 	PROJECT_ASSIGNMENT_REMOVED = "project.assignment_removed",
+	PROJECT_TASK_CREATED = "project.task_created",
+	PROJECT_TASK_UPDATED = "project.task_updated",
+	PROJECT_TASK_DONE = "project.task_done",
+	PROJECT_TASK_REOPENED = "project.task_reopened",
+	PROJECT_TASK_DELETED = "project.task_deleted",
 	WORK_PERIOD_PROJECT_ASSIGNED = "work_period.project_assigned",
 	WORK_PERIOD_PROJECT_UNASSIGNED = "work_period.project_unassigned",
 
@@ -215,6 +220,7 @@ export interface AuditLogEntry {
 		| "customer"
 		| "project"
 		| "project_assignment"
+		| "project_task"
 		| "work_period"
 		| "location"
 		| "subarea"

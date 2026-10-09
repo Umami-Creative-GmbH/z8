@@ -296,6 +296,8 @@ export const projectStatusEnum = pgEnum("project_status", [
 	"archived",
 ]);
 export const projectAssignmentTypeEnum = pgEnum("project_assignment_type", ["team", "employee"]);
+// An open task takes bookings; a done task keeps its bookings and takes no new ones (#872).
+export const projectTaskStateEnum = pgEnum("project_task_state", ["open", "done"]);
 
 // Time regulation enums
 export const timeRegulationViolationTypeEnum = pgEnum("time_regulation_violation_type", [

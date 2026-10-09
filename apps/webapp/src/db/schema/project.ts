@@ -1,7 +1,9 @@
 import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
 	decimal,
+	foreignKey,
 	index,
 	integer,
 	pgTable,
@@ -16,7 +18,7 @@ import { currentTimestamp } from "./timestamp";
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
 import { customer } from "./customer";
-import { projectAssignmentTypeEnum, projectStatusEnum } from "./enums";
+import { projectAssignmentTypeEnum, projectStatusEnum, projectTaskStateEnum } from "./enums";
 import { employee, team } from "./organization";
 
 // ============================================
@@ -135,6 +137,65 @@ export const projectAssignment = pgTable(
 		uniqueIndex("projectAssignment_employee_unique_idx")
 			.on(table.projectId, table.employeeId)
 			.where(sql`employee_id IS NOT NULL`),
+	],
+);
+
+// Project tasks (#872) - named pieces of work inside exactly one project.
+// A task never moves between projects: the composite key ties it to its
+// project's organization, and later booking references (#873) point at
+// (id, project_id, organization_id) so a booking's task always belongs to
+// the booking's project.
+export const projectTask = pgTable(
+	"project_task",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		projectId: uuid("project_id").notNull(),
+
+		// Stored trimmed; unique within the project, case-insensitively.
+		name: text("name").notNull(),
+		description: text("description"),
+		// Task estimate in hours (null = no estimate). Never raises budget alerts.
+		estimateHours: decimal("estimate_hours", { precision: 8, scale: 2 }),
+
+		state: projectTaskStateEnum("state").default("open").notNull(),
+		doneAt: timestamp("done_at"),
+		doneBy: text("done_by").references(() => user.id),
+
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id),
+		updatedAt: timestamp("updated_at")
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+		updatedBy: text("updated_by").references(() => user.id),
+	},
+	(table) => [
+		foreignKey({
+			name: "project_task_project_fk",
+			columns: [table.projectId, table.organizationId],
+			foreignColumns: [project.id, project.organizationId],
+		}).onDelete("cascade"),
+		index("projectTask_organizationId_idx").on(table.organizationId),
+		index("projectTask_projectId_state_idx").on(table.projectId, table.state),
+		uniqueIndex("projectTask_project_name_unique_idx").on(
+			table.projectId,
+			sql`lower(${table.name})`,
+		),
+		// Target of booking references that must stay inside one project (#873).
+		unique("project_task_id_project_org_idx").on(table.id, table.projectId, table.organizationId),
+		check("project_task_name_check", sql`length(btrim(${table.name})) > 0`),
+		check(
+			"project_task_estimate_check",
+			sql`${table.estimateHours} IS NULL OR ${table.estimateHours} > 0`,
+		),
+		check(
+			"project_task_done_check",
+			sql`(${table.state} = 'done') = (${table.doneAt} IS NOT NULL AND ${table.doneBy} IS NOT NULL)`,
+		),
 	],
 );
 

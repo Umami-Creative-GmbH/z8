@@ -92,7 +92,13 @@ import {
 	payrollExportSyncRecord,
 	payrollWageTypeMapping,
 } from "./payroll-export";
-import { project, projectAssignment, projectManager, projectNotificationState } from "./project";
+import {
+	project,
+	projectAssignment,
+	projectManager,
+	projectNotificationState,
+	projectTask,
+} from "./project";
 // SCIM provisioning
 import {
 	scimProviderConfig,
@@ -1621,6 +1627,7 @@ export const projectRelations = relations(project, ({ one, many }) => ({
 	}),
 	managers: many(projectManager),
 	assignments: many(projectAssignment),
+	tasks: many(projectTask),
 	workPeriods: many(workPeriod),
 	timeRecordAllocations: many(timeRecordAllocation),
 	travelExpenseClaims: many(travelExpenseClaim),
@@ -1670,6 +1677,13 @@ export const projectAssignmentRelations = relations(projectAssignment, ({ one })
 	creator: one(user, {
 		fields: [projectAssignment.createdBy],
 		references: [user.id],
+	}),
+}));
+
+export const projectTaskRelations = relations(projectTask, ({ one }) => ({
+	project: one(project, {
+		fields: [projectTask.projectId],
+		references: [project.id],
 	}),
 }));
 
