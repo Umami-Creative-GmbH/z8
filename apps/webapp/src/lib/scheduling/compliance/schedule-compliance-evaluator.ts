@@ -1,10 +1,46 @@
-import { DateTime } from "luxon";
+import {
+	comparePlainDates,
+	type PlainDate,
+	parseInstant,
+	parsePlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
 import type {
 	ComplianceFinding,
 	EmployeeScheduleComplianceInput,
 	ScheduleComplianceInput,
 	ScheduleComplianceResult,
+	ScheduleComplianceWindow,
 } from "./types";
+
+function tryParse<T>(parse: (value: string) => T, value: string): T | null {
+	try {
+		return parse(value);
+	} catch {
+		return null;
+	}
+}
+
+/** Whether the days `[start, endExclusive)` share at least one day with the window. */
+function overlapsWindow(
+	start: PlainDate,
+	endExclusive: PlainDate,
+	window: ScheduleComplianceWindow,
+): boolean {
+	return (
+		comparePlainDates(start, window.endExclusive) < 0 &&
+		comparePlainDates(endExclusive, window.start) > 0
+	);
+}
+
+function isInWindow(date: PlainDate, window: ScheduleComplianceWindow): boolean {
+	return overlapsWindow(date, date.add({ days: 1 }), window);
+}
+
+function isDayInWindow(day: string, window: ScheduleComplianceWindow): boolean {
+	const date = tryParse(parsePlainDate, day);
+	return date != null && isInWindow(date, window);
+}
 
 function toCombinedDailyMinutes(employee: EmployeeScheduleComplianceInput): Map<string, number> {
 	const dailyMinutes = new Map<string, number>();
@@ -30,13 +66,14 @@ function collectRestTimeFindings(input: ScheduleComplianceInput): ComplianceFind
 
 	for (const employee of input.employees) {
 		for (const transition of employee.restTransitions) {
-			const from = DateTime.fromISO(transition.fromEndIso, { setZone: true });
-			const to = DateTime.fromISO(transition.toStartIso, { setZone: true });
-			if (!from.isValid || !to.isValid) {
+			const from = tryParse(parseInstant, transition.fromEndIso);
+			const to = tryParse(parseInstant, transition.toStartIso);
+			// Only rest before an interval that starts inside the window is judged.
+			if (!from || !to || !isInWindow(plainDateAt(to, input.timezone), input.window)) {
 				continue;
 			}
 
-			const restMinutes = Math.round(to.diff(from, "minutes").minutes);
+			const restMinutes = Math.round((to.epochMilliseconds - from.epochMilliseconds) / 60_000);
 			if (restMinutes < minRestPeriodMinutes) {
 				findings.push({
 					type: "restTime",
@@ -64,7 +101,7 @@ function collectMaxHoursFindings(input: ScheduleComplianceInput): ComplianceFind
 	for (const employee of input.employees) {
 		const dailyMinutes = toCombinedDailyMinutes(employee);
 		for (const [day, totalMinutes] of dailyMinutes) {
-			if (totalMinutes > maxDailyMinutes) {
+			if (totalMinutes > maxDailyMinutes && isDayInWindow(day, input.window)) {
 				findings.push({
 					type: "maxHours",
 					employeeId: employee.employeeId,
@@ -100,7 +137,7 @@ function collectOvertimeFindings(input: ScheduleComplianceInput): ComplianceFind
 
 		if (overtimeDailyThresholdMinutes != null) {
 			for (const [day, totalMinutes] of dailyMinutes) {
-				if (totalMinutes > overtimeDailyThresholdMinutes) {
+				if (totalMinutes > overtimeDailyThresholdMinutes && isDayInWindow(day, input.window)) {
 					findings.push({
 						type: "overtime",
 						employeeId: employee.employeeId,
@@ -116,15 +153,21 @@ function collectOvertimeFindings(input: ScheduleComplianceInput): ComplianceFind
 		if (overtimeWeeklyThresholdMinutes != null) {
 			const weeklyTotals = new Map<string, number>();
 			for (const [day, totalMinutes] of dailyMinutes) {
-				const weekKey = DateTime.fromISO(day, { zone: input.timezone }).startOf("week").toISODate();
-				if (!weekKey) {
+				const date = tryParse(parsePlainDate, day);
+				if (!date) {
 					continue;
 				}
+				// ISO weeks start on Monday.
+				const weekKey = date.subtract({ days: date.dayOfWeek - 1 }).toString();
 				weeklyTotals.set(weekKey, (weeklyTotals.get(weekKey) ?? 0) + totalMinutes);
 			}
 
 			for (const [periodKey, totalMinutes] of weeklyTotals) {
-				if (totalMinutes > overtimeWeeklyThresholdMinutes) {
+				const weekStart = parsePlainDate(periodKey);
+				if (
+					totalMinutes > overtimeWeeklyThresholdMinutes &&
+					overlapsWindow(weekStart, weekStart.add({ weeks: 1 }), input.window)
+				) {
 					findings.push({
 						type: "overtime",
 						employeeId: employee.employeeId,
@@ -140,12 +183,20 @@ function collectOvertimeFindings(input: ScheduleComplianceInput): ComplianceFind
 		if (overtimeMonthlyThresholdMinutes != null) {
 			const monthlyTotals = new Map<string, number>();
 			for (const [day, totalMinutes] of dailyMinutes) {
-				const monthKey = DateTime.fromISO(day, { zone: input.timezone }).toFormat("yyyy-MM");
+				const date = tryParse(parsePlainDate, day);
+				if (!date) {
+					continue;
+				}
+				const monthKey = date.toPlainYearMonth().toString();
 				monthlyTotals.set(monthKey, (monthlyTotals.get(monthKey) ?? 0) + totalMinutes);
 			}
 
 			for (const [periodKey, totalMinutes] of monthlyTotals) {
-				if (totalMinutes > overtimeMonthlyThresholdMinutes) {
+				const monthStart = parsePlainDate(`${periodKey}-01`);
+				if (
+					totalMinutes > overtimeMonthlyThresholdMinutes &&
+					overlapsWindow(monthStart, monthStart.add({ months: 1 }), input.window)
+				) {
 					findings.push({
 						type: "overtime",
 						employeeId: employee.employeeId,

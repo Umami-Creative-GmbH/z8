@@ -86,8 +86,8 @@ describe("ScheduleComplianceService", () => {
 				const service = yield* ScheduleComplianceService;
 				return yield* service.evaluateScheduleWindow({
 					organizationId: "org_1",
-					startDate: new Date("2026-02-17T00:00:00.000Z"),
-					endDate: new Date("2026-02-23T23:59:59.999Z"),
+					startDate: new Date("2026-02-16T23:00:00.000Z"),
+					endDateExclusive: new Date("2026-02-23T23:00:00.000Z"),
 					timezone: "Europe/Berlin",
 				});
 			}).pipe(Effect.provide(layer)),

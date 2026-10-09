@@ -1,22 +1,30 @@
 import { createHash } from "node:crypto";
-import { and, eq, gte, inArray, isNotNull, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, lt } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import { schedulePublishComplianceAck, shift, workPeriod } from "@/db/schema";
+import { localDayRange } from "@/lib/datetime/temporal-boundaries";
+import { dateFromInstant, instantFromDate, plainDateAt } from "@/lib/datetime/temporal-core";
+import type { DatabaseError } from "@/lib/effect/errors";
 import { evaluateScheduleCompliance } from "@/lib/scheduling/compliance/schedule-compliance-evaluator";
 import type {
 	EmployeeScheduleComplianceInput,
 	ScheduleComplianceRegulation,
 	ScheduleComplianceResult,
+	ScheduleComplianceWindow,
 } from "@/lib/scheduling/compliance/types";
-import type { DatabaseError } from "@/lib/effect/errors";
+import { shiftCalendarDate } from "@/lib/scheduling/shift-date";
 import { DatabaseService } from "./database.service";
 import { WorkPolicyService } from "./work-policy.service";
 
+/**
+ * The half-open window `[startDate, endDateExclusive)`, both at organization-local midnight in
+ * `timezone`. Only shifts, work periods and rest transitions on the window's days are judged.
+ */
 export interface EvaluateScheduleWindowInput {
 	organizationId: string;
 	startDate: Date;
-	endDate: Date;
+	endDateExclusive: Date;
 	timezone: string;
 }
 
@@ -89,10 +97,7 @@ function toShiftInterval(params: {
 	endTime: string;
 	timezone: string;
 }): Interval | null {
-	const baseDate = DateTime.fromJSDate(params.date).setZone(params.timezone).toISODate();
-	if (!baseDate) {
-		return null;
-	}
+	const baseDate = shiftCalendarDate(params.date, params.timezone).toString();
 
 	const start = DateTime.fromISO(`${baseDate}T${params.startTime}`, {
 		zone: params.timezone,
@@ -115,7 +120,7 @@ function toShiftInterval(params: {
 function buildFingerprint(params: {
 	organizationId: string;
 	startDate: Date;
-	endDate: Date;
+	endDateExclusive: Date;
 	timezone: string;
 	result: ScheduleComplianceResult;
 }): string {
@@ -126,7 +131,7 @@ function buildFingerprint(params: {
 	const payload = {
 		organizationId: params.organizationId,
 		startDate: params.startDate.toISOString(),
-		endDate: params.endDate.toISOString(),
+		endDate: params.endDateExclusive.toISOString(),
 		timezone: params.timezone,
 		summary: params.result.summary,
 		findings: normalizedFindings,
@@ -172,7 +177,7 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 								where: and(
 									eq(shift.organizationId, input.organizationId),
 									gte(shift.date, input.startDate),
-									lte(shift.date, input.endDate),
+									lt(shift.date, input.endDateExclusive),
 									isNotNull(shift.employeeId),
 								),
 								columns: {
@@ -193,15 +198,14 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 						),
 					).toSorted();
 
-					const lookbackStart = DateTime.fromJSDate(input.startDate)
-						.setZone(input.timezone)
-						.startOf("day")
-						.minus({ days: 35 })
-						.toJSDate();
-					const rangeEnd = DateTime.fromJSDate(input.endDate)
-						.setZone(input.timezone)
-						.endOf("day")
-						.toJSDate();
+					const window: ScheduleComplianceWindow = {
+						start: plainDateAt(instantFromDate(input.startDate), input.timezone),
+						endExclusive: plainDateAt(instantFromDate(input.endDateExclusive), input.timezone),
+					};
+					// Lookback gives weekly/monthly totals and the first rest gap their history.
+					const lookbackStart = dateFromInstant(
+						localDayRange(window.start.subtract({ days: 35 }).toString(), input.timezone).start,
+					);
 
 					const periods =
 						employeeIds.length === 0
@@ -212,7 +216,7 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 											eq(workPeriod.organizationId, input.organizationId),
 											inArray(workPeriod.employeeId, employeeIds),
 											gte(workPeriod.startTime, lookbackStart),
-											lte(workPeriod.startTime, rangeEnd),
+											lt(workPeriod.startTime, input.endDateExclusive),
 											isNotNull(workPeriod.endTime),
 										),
 										columns: {
@@ -251,11 +255,6 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 						existing.push(period);
 						periodsByEmployee.set(period.employeeId, existing);
 					}
-
-					const windowStart = DateTime.fromJSDate(input.startDate)
-						.setZone(input.timezone)
-						.startOf("day");
-					const windowEnd = DateTime.fromJSDate(input.endDate).setZone(input.timezone).endOf("day");
 
 					const employees: EmployeeScheduleComplianceInput[] = employeeIds.map((employeeId) => {
 						const actualMinutesByDay: Record<string, number> = {};
@@ -303,11 +302,8 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 						for (let index = 1; index < intervals.length; index++) {
 							const previous = intervals[index - 1];
 							const current = intervals[index];
-							if (
-								current.start > previous.end &&
-								current.start >= windowStart &&
-								current.start <= windowEnd
-							) {
+							// The evaluator judges only transitions into the window.
+							if (current.start > previous.end) {
 								restTransitions.push({
 									fromEndIso: previous.end.toISO() ?? previous.end.toUTC().toISO() ?? "",
 									toStartIso: current.start.toISO() ?? current.start.toUTC().toISO() ?? "",
@@ -325,6 +321,7 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 
 					const evaluationResult = evaluateScheduleCompliance({
 						timezone: input.timezone,
+						window,
 						regulation: effectiveRegulation,
 						employees,
 					});
@@ -335,7 +332,7 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 						fingerprint: buildFingerprint({
 							organizationId: input.organizationId,
 							startDate: input.startDate,
-							endDate: input.endDate,
+							endDateExclusive: input.endDateExclusive,
 							timezone: input.timezone,
 							result: evaluationResult,
 						}),
