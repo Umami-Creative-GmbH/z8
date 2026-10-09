@@ -1,7 +1,8 @@
-import type { NextRequest } from "next/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { type NextRequest, NextResponse } from "next/server";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
+	logError: vi.fn(),
 	getSession: vi.fn(),
 	createAppAuthCode: vi.fn(),
 	checkRateLimit: vi.fn(),
@@ -27,6 +28,10 @@ vi.mock("@/lib/rate-limit", () => ({
 	getClientIp: mockState.getClientIp,
 }));
 
+vi.mock("@/lib/logger", () => ({
+	createLogger: () => ({ error: mockState.logError }),
+}));
+
 const { GET } = await import("./route");
 
 function createRequest(url: string): NextRequest {
@@ -38,6 +43,129 @@ function createRequest(url: string): NextRequest {
 }
 
 describe("GET /api/auth/app-login", () => {
+	afterEach(() => vi.restoreAllMocks());
+
+	it("identifies a session lookup failure without logging its request or cause", async () => {
+		const error = Object.assign(new Error("fixture-cookie-secret"), {
+			cause: {
+				params: ["fixture-session-secret"],
+				detail: "fixture-row-secret",
+			},
+		});
+		mockState.getSession.mockRejectedValue(error);
+		const request = createRequest(
+			"https://app.example.com/api/auth/app-login?app=desktop&redirect=z8://auth/callback&challenge=fixture-challenge-secret",
+		);
+		request.headers.set("cookie", "fixture-cookie-secret");
+
+		await expect(GET(request)).rejects.toBe(error);
+		expect(mockState.createAppAuthCode).not.toHaveBeenCalled();
+		expect(mockState.logError).toHaveBeenCalledExactlyOnceWith(
+			{
+				app: "desktop",
+				stage: "session_lookup",
+				failure: "unknown",
+				sqlState: undefined,
+			},
+			"App sign-in failed",
+		);
+	});
+
+	it.each([
+		[
+			"App sign-in code storage failed (SQLSTATE 23503)",
+			"auth_code_storage",
+			"23503",
+		],
+		[
+			"App sign-in code storage failed (SQLSTATE 23503) fixture-secret",
+			"unknown",
+			undefined,
+		],
+	])(
+		"only logs allowlisted storage diagnostics for %s",
+		async (message, failure, sqlState) => {
+			mockState.getSession.mockResolvedValue({
+				user: { id: "user-1" },
+				session: { token: "fixture-session-secret" },
+			});
+			const error = new Error(message);
+			mockState.createAppAuthCode.mockRejectedValue(error);
+
+			await expect(
+				GET(
+					createRequest(
+						"https://app.example.com/api/auth/app-login?app=desktop&redirect=z8://auth/callback&challenge=fixture-challenge-secret",
+					),
+				),
+			).rejects.toBe(error);
+			expect(mockState.logError).toHaveBeenCalledExactlyOnceWith(
+				{ app: "desktop", stage: "auth_code_creation", failure, sqlState },
+				"App sign-in failed",
+			);
+		},
+	);
+
+	it("identifies organization session invalidation without bypassing it", async () => {
+		const error = new Error("Organization session invalidation failed");
+		mockState.getSession.mockRejectedValue(error);
+
+		await expect(
+			GET(
+				createRequest(
+					"https://app.example.com/api/auth/app-login?app=desktop&redirect=z8://auth/callback&challenge=fixture-challenge",
+				),
+			),
+		).rejects.toBe(error);
+		expect(mockState.createAppAuthCode).not.toHaveBeenCalled();
+		expect(mockState.logError).toHaveBeenCalledExactlyOnceWith(
+			{
+				app: "desktop",
+				stage: "session_lookup",
+				failure: "organization_session_invalidation",
+				sqlState: undefined,
+			},
+			"App sign-in failed",
+		);
+	});
+
+	it.each([true, false])(
+		"identifies redirect failure with authenticated=%s without logging the URL",
+		async (authenticated) => {
+			mockState.getSession.mockResolvedValue(
+				authenticated
+					? {
+							user: { id: "user-1" },
+							session: { token: "fixture-session-secret" },
+						}
+					: null,
+			);
+			mockState.createAppAuthCode.mockResolvedValue({
+				code: "fixture-auth-code-secret",
+			});
+			const error = new TypeError("fixture-redirect-url-secret");
+			vi.spyOn(NextResponse, "redirect").mockImplementation(() => {
+				throw error;
+			});
+
+			await expect(
+				GET(
+					createRequest(
+						"https://app.example.com/api/auth/app-login?app=desktop&redirect=z8://auth/callback&challenge=fixture-challenge-secret",
+					),
+				),
+			).rejects.toBe(error);
+			expect(mockState.logError).toHaveBeenCalledExactlyOnceWith(
+				{
+					app: "desktop",
+					stage: authenticated ? "callback_redirect" : "sign_in_redirect",
+					failure: "unknown",
+					sqlState: undefined,
+				},
+				"App sign-in failed",
+			);
+		},
+	);
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.checkRateLimit.mockResolvedValue({
