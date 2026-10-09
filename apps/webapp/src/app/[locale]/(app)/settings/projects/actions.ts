@@ -17,10 +17,13 @@ import {
 } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { decideProjectBillableDefault } from "@/lib/billable-time/project-billable-default";
+import { readProjectActiveCustomerId } from "@/lib/billable-time/project-customer";
+import { getBillableTimeSettings } from "@/lib/billable-time/settings";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import type { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
-import { decideProjectBillableDefault } from "@/lib/billable-time/project-billable-default";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
 import {
 	ensureSettingsActorCanAccessCustomerTarget,
@@ -154,6 +157,32 @@ function projectBillableDefault(input: {
 					field: "billableDefault",
 				}),
 			);
+}
+
+/**
+ * The billable default is part of Billable Time: while the module is off, a
+ * request that would change it is refused (#768). Defaults already set keep being
+ * applied to new work, and the automatic switch-off on customer removal still runs.
+ */
+function requireBillableTimeForDefaultChange(
+	dbService: typeof DatabaseService.Service,
+	organizationId: string,
+	input: { requested: unknown; current: boolean },
+): Effect.Effect<void, ValidationError | DatabaseError> {
+	return Effect.gen(function* () {
+		if (input.requested === undefined || input.requested === input.current) return;
+		const settings = yield* dbService.query("billableTime.settings", () =>
+			getBillableTimeSettings(organizationId, dbService.db),
+		);
+		if (!settings.enabled) {
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "Billable Time is switched off",
+					field: "billableDefault",
+				}),
+			);
+		}
+	});
 }
 
 /** Validation failures raised inside a guarded transaction keep their type. */
@@ -439,6 +468,10 @@ export async function createProject(
 					});
 				}
 
+				yield* requireBillableTimeForDefaultChange(dbService, input.organizationId, {
+					requested: input.billableDefault,
+					current: false,
+				});
 				const billableDefault = yield* projectBillableDefault({
 					requested: input.billableDefault,
 					current: false,
@@ -582,12 +615,30 @@ export async function updateProject(
 					updateData.budgetHours = input.budgetHours?.toString() || null;
 				if (input.deadline !== undefined) updateData.deadline = input.deadline;
 				if (input.customerId !== undefined) updateData.customerId = input.customerId;
-				// Settable by whoever may edit the project; no configuration guard (ADR 0001).
+				// Settable by whoever may edit the project while Billable Time is on; no
+				// configuration guard (ADR 0001).
+				yield* requireBillableTimeForDefaultChange(dbService, existingProject.organizationId, {
+					requested: input.billableDefault,
+					current: existingProject.billableDefault,
+				});
+				// A deleted customer leaves the project without customer (#768): its default
+				// switches off with the next edit and cannot be switched on.
+				const customerForDefault =
+					input.customerId !== undefined
+						? input.customerId
+						: existingProject.customerId === null
+							? null
+							: yield* dbService.query("project.activeCustomer", () =>
+									readProjectActiveCustomerId(
+										dbService.db,
+										existingProject.organizationId,
+										projectId,
+									),
+								);
 				const billableDefault = yield* projectBillableDefault({
 					requested: input.billableDefault,
 					current: existingProject.billableDefault,
-					customerId:
-						input.customerId !== undefined ? input.customerId : existingProject.customerId,
+					customerId: customerForDefault,
 				});
 				if (billableDefault !== existingProject.billableDefault) {
 					updateData.billableDefault = billableDefault;

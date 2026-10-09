@@ -251,9 +251,12 @@ async function changeLegacyWorkPeriodProject(
 ): Promise<void> {
 	const [period] = await tx
 		.select({
+			id: workPeriod.id,
 			projectId: workPeriod.projectId,
 			isBillable: workPeriod.isBillable,
 			canonicalRecordId: workPeriod.canonicalRecordId,
+			approvalStatus: workPeriod.approvalStatus,
+			endTime: workPeriod.endTime,
 		})
 		.from(workPeriod)
 		.where(
@@ -277,6 +280,15 @@ async function changeLegacyWorkPeriodProject(
 		throw new ConflictError({
 			message: "Work period changed while editing",
 			conflictType: "time_correction_work_period_stale",
+		});
+	}
+	// Work under review keeps its facts, as in adopted organizations (#256).
+	await assertNoUnresolvedWorkPeriodReview(tx, input.organizationId, period);
+	// Billability is changed after recording; live work gets it at clock-out.
+	if (input.projectId === undefined && period.endTime === null) {
+		throw new ConflictError({
+			message: "Cannot edit an active work period. Please clock out first.",
+			conflictType: "work_period_running",
 		});
 	}
 	const projectId = input.projectId === undefined ? period.projectId : input.projectId;

@@ -37,6 +37,14 @@ vi.mock("drizzle-orm", () => ({
 	sql: vi.fn((strings: TemplateStringsArray) => strings.join("")),
 }));
 
+// Billable Time reads (#768) run on PostgreSQL in actions.billable-default.integration.test.ts.
+vi.mock("@/lib/billable-time/settings", () => ({
+	getBillableTimeSettings: vi.fn(async () => ({ enabled: true, currency: "EUR" })),
+}));
+vi.mock("@/lib/billable-time/project-customer", () => ({
+	readProjectActiveCustomerId: vi.fn(async () => "customer-active"),
+}));
+
 vi.mock("@/db/schema", () => ({
 	customer: { id: "id", organizationId: "organizationId", isActive: "isActive" },
 	employee: {
