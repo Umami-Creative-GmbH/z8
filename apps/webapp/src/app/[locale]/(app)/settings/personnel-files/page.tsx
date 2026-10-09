@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { PersonnelFileOfficerSettingsCard } from "@/components/personnel-file/officer-grant-settings";
 import { PersonnelFileSettingsTabs } from "@/components/personnel-file/personnel-file-settings-tabs";
+import { PersonnelFileRetentionSettingsCard } from "@/components/personnel-file/retention-settings";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
@@ -33,7 +34,10 @@ async function PersonnelFileSettingsPageContent() {
 					)}
 				</p>
 			</div>
-			<PersonnelFileSettingsTabs access={<PersonnelFileOfficerSettingsCard />} />
+			<PersonnelFileSettingsTabs
+				access={<PersonnelFileOfficerSettingsCard />}
+				retention={<PersonnelFileRetentionSettingsCard />}
+			/>
 		</div>
 	);
 }
