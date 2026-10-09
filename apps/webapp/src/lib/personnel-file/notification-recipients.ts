@@ -6,7 +6,11 @@ import { employee } from "@/db/schema";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import { canManageDocument, isEmployeeInScope } from "./access";
-import { isPersonnelFilesEnabled, loadEmployeeRef, resolvePersonnelFileAccess } from "./access-store";
+import {
+	isPersonnelFilesEnabled,
+	loadEmployeeRef,
+	resolvePersonnelFileAccess,
+} from "./access-store";
 import type { DocumentCategory } from "./document.types";
 import { manageGrantOf } from "./officer-grant";
 import { listActivePersonnelFileOfficers } from "./officer-grant-store";
@@ -61,7 +65,9 @@ export async function listPersonnelFileNotificationRecipients(
 		officers
 			.filter(({ grant }) => {
 				const manageGrant = manageGrantOf(grant);
-				return manageGrant.categories.has(category) && isEmployeeInScope(manageGrant.scope, subject);
+				return (
+					manageGrant.categories.has(category) && isEmployeeInScope(manageGrant.scope, subject)
+				);
 			})
 			.map((officer) => officer.userId),
 	);

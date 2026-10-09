@@ -68,6 +68,7 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/approvals": ["common", "approvals"],
 	"/my-requests": ["common", "myRequests"],
 	"/my-documents": ["common", "settings/people"],
+	"/personnel-files": ["common", "settings/people"],
 	"/payroll": ["common", "payroll"],
 	// Main app routes
 	"/": ["common", "dashboard"],
@@ -97,6 +98,7 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/settings/holidays": ["common", "settings/generic", "settings/holidays"],
 	"/settings/permissions": ["common", "settings/generic", "settings/people"],
 	"/settings/payroll-export": ["common", "settings/generic", "settings/payrollExport"],
+	"/settings/personnel-files": ["common", "settings/generic", "settings/people"],
 	"/settings/payroll-readiness": ["common", "settings/generic", "settings/payrollExport"],
 	"/settings/work-diagnostics": ["common", "settings/generic", "settings/payrollExport"],
 	"/settings/roles": ["common", "settings/generic", "settings/people"],

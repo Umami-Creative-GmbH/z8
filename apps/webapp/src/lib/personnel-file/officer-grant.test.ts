@@ -39,10 +39,8 @@ describe("personnel file officer grant rules", () => {
 	it("covers all five document categories when none are given", () => {
 		const { categories: _omitted, ...withoutCategories } = base;
 		expect(
-			buildValidatedPersonnelFileOfficerGrant(
-				withoutCategories as typeof base,
-				ownership,
-			).categories,
+			buildValidatedPersonnelFileOfficerGrant(withoutCategories as typeof base, ownership)
+				.categories,
 		).toEqual(["contract", "payslip", "certificate", "sick_note", "other"]);
 	});
 
@@ -102,9 +100,8 @@ describe("personnel file officer grant rules", () => {
 			).field,
 		).toBe("employeeIds");
 		expect(
-			refusal(() =>
-				buildValidatedPersonnelFileOfficerGrant({ ...base, teamIds: [] }, ownership),
-			).field,
+			refusal(() => buildValidatedPersonnelFileOfficerGrant({ ...base, teamIds: [] }, ownership))
+				.field,
 		).toBe("scope");
 	});
 
@@ -118,7 +115,12 @@ describe("personnel file officer grant rules", () => {
 	});
 
 	it("sees a category change as a change and a reordering as none", () => {
-		const before = { scope: "all" as const, teamIds: [], employeeIds: [], categories: ["payslip", "contract"] as const };
+		const before = {
+			scope: "all" as const,
+			teamIds: [],
+			employeeIds: [],
+			categories: ["payslip", "contract"] as const,
+		};
 		expect(
 			diffPersonnelFileOfficerGrant(
 				{ ...before, categories: [...before.categories] },
@@ -136,7 +138,12 @@ describe("personnel file officer grant rules", () => {
 	it("records old and new scope and categories for the audit", () => {
 		expect(
 			personnelFileOfficerGrantAuditChanges(
-				{ scope: "specific", teamIds: ["b", "a"], employeeIds: [], categories: ["other", "payslip"] },
+				{
+					scope: "specific",
+					teamIds: ["b", "a"],
+					employeeIds: [],
+					categories: ["other", "payslip"],
+				},
 				null,
 			),
 		).toEqual({

@@ -460,9 +460,9 @@ describe("personnel file officer grants (#866)", () => {
 				categories: ["certificate"],
 			});
 			signIn("owner");
-			expect(
-				await officerActions.revokePersonnelFileOfficerGrantAction({ grantId }),
-			).toMatchObject({ success: true });
+			expect(await officerActions.revokePersonnelFileOfficerGrantAction({ grantId })).toMatchObject(
+				{ success: true },
+			);
 
 			const audits = await grantAudits(grantId);
 			const allContractCertificate = {

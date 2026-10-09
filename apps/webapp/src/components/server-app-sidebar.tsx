@@ -7,6 +7,8 @@ import {
 } from "@/lib/auth-helpers";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { hasActivePayrollAccessGrant } from "@/lib/payroll-access/permissions";
+import { managesAnyDocuments } from "@/lib/personnel-file/access";
+import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
 import { loadFinanceActor } from "@/lib/travel-expenses/finance-access";
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
 import { AppSidebar } from "./app-sidebar";
@@ -75,6 +77,14 @@ export async function ServerAppSidebar({
 		// Read access: owners, admins and any active expense officer grant (#753).
 		showFinanceNav = financeActor?.canRead ?? false;
 	}
+	// Personnel files (#866): decided by the personnel file access resolver, never by roles.
+	let showPersonnelFilesNav = false;
+	if (featureFlags.personnelFilesEnabled) {
+		const personnelFileAccess = await loadCurrentPersonnelFileAccess();
+		showPersonnelFilesNav =
+			personnelFileAccess.status === "resolved" &&
+			managesAnyDocuments(personnelFileAccess.access);
+	}
 
 	return (
 		<AppSidebar
@@ -92,6 +102,7 @@ export async function ServerAppSidebar({
 				myDocuments:
 					featureFlags.personnelFilesEnabled &&
 					Boolean(activeEmployee && activeEmployee.organizationId === activeOrganizationId),
+				personnelFiles: showPersonnelFilesNav,
 				platformAdmin: authContext?.user.role === "admin",
 			}}
 			settingsAccessTier={settingsAccessTier ?? "member"}

@@ -35,7 +35,8 @@ function notFound() {
 /**
  * Serves an employee document (#865) like the hardened receipt route: only to
  * actors the personnel file access resolver lets see it (owners and admins,
- * and the employee for their shared documents); everyone else, and everyone
+ * personnel file officers for their scope and categories, and the employee
+ * for their shared documents); everyone else, and everyone
  * while personnel files are off, gets a not-found. The stored object is
  * refused unless its size and sha256 still match the recorded identity.
  * Every view or download by someone other than the employee is audited

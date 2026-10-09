@@ -12,7 +12,8 @@ import {
  *
  * - A **manage grant** covers an employee scope and a set of document
  *   categories. Owners and admins hold the organization-wide grant for every
- *   category; personnel file officer grants (slice 2, #866) add scoped ones.
+ *   category; a personnel file officer grant (#866, `officer-grant.ts`) adds
+ *   a scoped one.
  *   Whoever holds a grant sees shared and HR-only documents in it.
  * - The **employee** sees their own shared documents and manages none.
  *

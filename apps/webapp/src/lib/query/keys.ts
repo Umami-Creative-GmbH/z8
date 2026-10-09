@@ -162,6 +162,7 @@ export const queryKeys = {
 			["personnel-file", "employee", employeeId, category] as const,
 		employeeAll: (employeeId: string) => ["personnel-file", "employee", employeeId] as const,
 		myDocuments: () => ["personnel-file", "my-documents"] as const,
+		officerGrants: () => ["personnel-file", "settings", "officer-grants"] as const,
 	},
 
 	// Employee clock statuses

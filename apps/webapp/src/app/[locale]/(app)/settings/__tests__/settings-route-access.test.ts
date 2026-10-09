@@ -38,6 +38,7 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"export-operations/page.tsx",
 	"scheduled-exports/page.tsx",
 	"implementation-checklist/page.tsx",
+	"personnel-files/page.tsx",
 ] as const;
 
 function stripComments(source: string): string {
@@ -129,6 +130,7 @@ describe("org-admin settings route access", () => {
 			"/settings/export-operations",
 			"/settings/scheduled-exports",
 			"/settings/implementation-checklist",
+			"/settings/personnel-files",
 		]);
 	});
 

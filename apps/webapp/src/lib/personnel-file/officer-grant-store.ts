@@ -402,7 +402,12 @@ export async function revokePersonnelFileOfficerGrantHeldBy(
 	const [grant] = row ? await withScopeRows(tx, organizationId, [row]) : [];
 	if (!grant) return;
 
-	await revokeLockedGrant(tx, { organizationId, actorUserId, grant, metadata: input.auditMetadata });
+	await revokeLockedGrant(tx, {
+		organizationId,
+		actorUserId,
+		grant,
+		metadata: input.auditMetadata,
+	});
 }
 
 async function revokeLockedGrant(

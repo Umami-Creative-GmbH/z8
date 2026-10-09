@@ -163,6 +163,7 @@ export interface ManagedEmployee {
 export async function listManagedEmployees(
 	database: Reader,
 	access: PersonnelFileAccess,
+	filter: { employeeId?: string } = {},
 ): Promise<ManagedEmployee[]> {
 	const scopes = access.grants
 		.filter((grant) => grant.categories.size > 0)
@@ -172,22 +173,22 @@ export async function listManagedEmployees(
 		.select({
 			id: employee.id,
 			userName: user.name,
-			firstName: employee.firstName,
-			lastName: employee.lastName,
 			employeeNumber: employee.employeeNumber,
 			isActive: employee.isActive,
 		})
 		.from(employee)
 		.leftJoin(user, eq(user.id, employee.userId))
-		.where(and(eq(employee.organizationId, access.organizationId), or(...scopes)))
-		.orderBy(asc(user.name), asc(employee.lastName), asc(employee.id));
+		.where(
+			and(
+				eq(employee.organizationId, access.organizationId),
+				filter.employeeId ? eq(employee.id, filter.employeeId) : undefined,
+				or(...scopes),
+			),
+		)
+		.orderBy(asc(user.name), asc(employee.employeeNumber), asc(employee.id));
 	return rows.map((row) => ({
 		id: row.id,
-		name:
-			row.userName?.trim() ||
-			[row.firstName, row.lastName].filter(Boolean).join(" ").trim() ||
-			row.employeeNumber ||
-			row.id,
+		name: row.userName?.trim() || row.employeeNumber || row.id,
 		employeeNumber: row.employeeNumber,
 		isActive: row.isActive,
 	}));

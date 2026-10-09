@@ -26,6 +26,7 @@ const {
 	canViewWorksCouncilPortalMock,
 	hasActivePayrollAccessGrantMock,
 	loadFinanceActorMock,
+	loadCurrentPersonnelFileAccessMock,
 } = vi.hoisted(() => ({
 	navMainSpy: vi.fn(),
 	navSecondarySpy: vi.fn(),
@@ -40,6 +41,7 @@ const {
 	canViewWorksCouncilPortalMock: vi.fn(),
 	hasActivePayrollAccessGrantMock: vi.fn(),
 	loadFinanceActorMock: vi.fn(),
+	loadCurrentPersonnelFileAccessMock: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -65,6 +67,10 @@ vi.mock("@/lib/payroll-access/permissions", () => ({
 
 vi.mock("@/lib/travel-expenses/finance-access", () => ({
 	loadFinanceActor: loadFinanceActorMock,
+}));
+
+vi.mock("@/lib/personnel-file/current-access", () => ({
+	loadCurrentPersonnelFileAccess: loadCurrentPersonnelFileAccessMock,
 }));
 
 vi.mock("@/components/travel-expenses/finance/finance-nav-badge", () => ({
@@ -158,6 +164,7 @@ describe("app sidebar compliance navigation", () => {
 		canViewWorksCouncilPortalMock.mockReset();
 		hasActivePayrollAccessGrantMock.mockReset();
 		loadFinanceActorMock.mockReset();
+		loadCurrentPersonnelFileAccessMock.mockReset();
 		vi.resetModules();
 	});
 
@@ -219,6 +226,99 @@ describe("app sidebar compliance navigation", () => {
 		const urls = navMainSpy.mock.lastCall?.[0].map((item) => item.url) ?? [];
 		expect(urls.indexOf("/my-documents")).toBe(urls.indexOf("/my-requests") + 1);
 	});
+
+	it("renders Personnel Files after My Documents only with the capability (#866)", () => {
+		const { unmount } = render(<AppSidebar employeeRole="employee" />);
+		expect(screen.queryByRole("link", { name: "Personnel Files" })).toBeNull();
+		unmount();
+
+		render(
+			<AppSidebar
+				employeeRole="employee"
+				navigationCapabilities={{
+					scheduling: false,
+					compliance: false,
+					payroll: false,
+					finance: false,
+					worksCouncil: false,
+					myDocuments: true,
+					personnelFiles: true,
+					platformAdmin: false,
+				}}
+			/>,
+		);
+
+		expect(screen.getByRole("link", { name: "Personnel Files" }).getAttribute("href")).toBe(
+			"/personnel-files",
+		);
+		const urls = navMainSpy.mock.lastCall?.[0].map((item) => item.url) ?? [];
+		expect(urls.indexOf("/personnel-files")).toBe(urls.indexOf("/my-documents") + 1);
+	});
+
+	it.each([
+		["shows", true, { status: "resolved", access: { grants: [{ categories: new Set(["payslip"]) }] } }, true],
+		["hides", true, { status: "resolved", access: { grants: [] } }, false],
+		["hides", true, { status: "unavailable" }, false],
+		["hides", false, { status: "resolved", access: { grants: [{ categories: new Set(["payslip"]) }] } }, false],
+	])(
+		"%s Personnel Files navigation from the personnel file access resolver (flag %s, #866)",
+		async (_verb, enabled, current, personnelFiles) => {
+			vi.stubEnv("BILLING_ENABLED", "false");
+			canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
+			getUserOrganizationsMock.mockResolvedValue([
+				{
+					id: "org_1",
+					shiftsEnabled: false,
+					projectsEnabled: false,
+					surchargesEnabled: false,
+					demoDataEnabled: true,
+					worksCouncilEnabled: false,
+					personnelFilesEnabled: enabled,
+				},
+			]);
+			getAuthContextMock.mockResolvedValue({
+				user: { role: "user" },
+				session: { activeOrganizationId: "org_1" },
+				employee: { id: "emp_1", organizationId: "org_1", role: "employee" },
+			});
+			getCurrentSettingsAccessTierMock.mockResolvedValueOnce("member");
+			hasActivePayrollAccessGrantMock.mockResolvedValue(false);
+			loadFinanceActorMock.mockResolvedValue(null);
+			loadCurrentPersonnelFileAccessMock.mockResolvedValue(current);
+
+			vi.doMock("@/lib/auth-helpers", () => ({
+				getUserOrganizations: getUserOrganizationsMock,
+				getAuthContext: getAuthContextMock,
+				getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+				requireAbility: requireAbilityMock,
+			}));
+			vi.doMock("@/lib/organization/creation-policy.server", () => ({
+				canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
+			}));
+			vi.doMock("./app-sidebar", () => ({
+				AppSidebar: (props: Record<string, unknown>) => {
+					appSidebarSpy(props);
+					return <div data-testid="server-sidebar-proxy" />;
+				},
+			}));
+
+			try {
+				const { ServerAppSidebar } = await import("./server-app-sidebar");
+
+				render(await ServerAppSidebar({}));
+
+				expect(appSidebarSpy).toHaveBeenCalledWith(
+					expect.objectContaining({
+						navigationCapabilities: expect.objectContaining({ personnelFiles }),
+					}),
+				);
+				if (!enabled) expect(loadCurrentPersonnelFileAccessMock).not.toHaveBeenCalled();
+			} finally {
+				// Later tests render the real sidebar through the server component.
+				vi.doUnmock("./app-sidebar");
+			}
+		},
+	);
 
 	it("renders Org Explorer as a primary personal navigation item", () => {
 		render(<AppSidebar />);
