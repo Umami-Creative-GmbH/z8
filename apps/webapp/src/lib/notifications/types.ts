@@ -67,6 +67,15 @@ export const NOTIFICATION_TYPES = [
 	"forgotten_clock_out_reminder",
 	// Break-due reminder before live work breaks the policy's break rules (#833)
 	"break_due_reminder",
+	// An employee document became visible to its employee (#865)
+	"personnel_file_document_shared",
+	// An employee uploaded a document into their own personnel file (#867)
+	"personnel_file_employee_upload",
+	// Expiry reminders for certificates and other documents (#869)
+	"personnel_file_expiry_upcoming",
+	"personnel_file_expired_today",
+	// Documents newly due for deletion, for covering officers (#870)
+	"personnel_file_due_for_deletion",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

@@ -116,9 +116,12 @@ export async function runOrganizationCleanup(): Promise<OrganizationCleanupResul
  * handled here first. Everything runs in one transaction: a failure, including a
  * future non-cascading reference, rolls the whole tenant back.
  *
- * Staged receipt uploads (`travel_expense_receipt_upload`) are kept by value on
- * purpose: they are outstanding storage cleanup work that must outlive the
- * tenant until the stored object is deleted (#295).
+ * Staged receipt uploads (`travel_expense_receipt_upload`) and personnel file
+ * uploads (`personnel_file_upload`, #865) are kept by value on purpose: they are
+ * outstanding storage cleanup work that must outlive the tenant until the stored
+ * object is deleted (#295). The cascade deletes every employee document, whose
+ * deletion trigger queues its stored object there, so the personnel file
+ * cleanup job purges all of the organization's personnel file objects.
  *
  * The delete removes every manual dependency of the organization and every
  * membership and employee of its users (#318). Before the first delete it takes

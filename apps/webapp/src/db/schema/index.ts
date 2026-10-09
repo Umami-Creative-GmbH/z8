@@ -68,6 +68,8 @@ export * from "./organization-time-tracking-settings";
 export * from "./payroll-access";
 export * from "./payroll-blocker";
 export * from "./payroll-export";
+// Personnel file (employee documents)
+export * from "./personnel-file";
 // Platform admin (audit log, org suspension)
 export * from "./platform-admin";
 export * from "./project";

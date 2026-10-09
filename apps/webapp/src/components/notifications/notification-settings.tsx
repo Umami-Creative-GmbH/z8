@@ -12,6 +12,7 @@ import {
 	IconClock,
 	IconDeviceMobile,
 	IconExclamationCircle,
+	IconFileText,
 	IconLoader2,
 	IconMail,
 	IconReceipt,
@@ -104,6 +105,21 @@ const NOTIFICATION_CATEGORIES = [
 			"travel_expense_partially_reimbursed",
 			"travel_expense_recovery_recorded",
 			"travel_expense_ready_for_reimbursement",
+		] as NotificationType[],
+	},
+	{
+		id: "personnelFile",
+		titleKey: "common:notifications.preferences.categories.personnelFile.title",
+		titleFallback: "Personnel File",
+		descriptionKey: "common:notifications.preferences.categories.personnelFile.description",
+		descriptionFallback: "Notifications about documents shared with you in your personnel file",
+		icon: IconFileText,
+		types: [
+			"personnel_file_document_shared",
+			"personnel_file_employee_upload",
+			"personnel_file_expiry_upcoming",
+			"personnel_file_expired_today",
+			"personnel_file_due_for_deletion",
 		] as NotificationType[],
 	},
 	{
@@ -230,6 +246,15 @@ const TYPE_LABELS: Record<Exclude<NotificationType, ClockingReminderType>, strin
 	travel_expense_recovery_recorded: "Expense recovery recorded",
 	// Reimbursement work arriving for expense officers
 	travel_expense_ready_for_reimbursement: "Ready for reimbursement (expense officers)",
+	// An employee document became visible to the employee
+	personnel_file_document_shared: "Document shared with you",
+	// An employee uploaded a document (officers, or owners and admins)
+	personnel_file_employee_upload: "Employee uploaded a document",
+	// Expiry reminders for certificates and other documents
+	personnel_file_expiry_upcoming: "Document expires soon",
+	personnel_file_expired_today: "Document expires today",
+	// Employee documents newly due for deletion (personnel file officers)
+	personnel_file_due_for_deletion: "Documents due for deletion (personnel file officers)",
 };
 
 // Channel icons and labels

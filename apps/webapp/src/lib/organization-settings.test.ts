@@ -38,6 +38,7 @@ describe("getOrganizationSettings", () => {
 			surchargesEnabled: null,
 			demoDataEnabled: null,
 			worksCouncilEnabled: true,
+			personnelFilesEnabled: null,
 			timezone: null,
 			deletedAt: null,
 		});
@@ -60,6 +61,7 @@ describe("getOrganizationSettings", () => {
 			surchargesEnabled: false,
 			demoDataEnabled: true,
 			worksCouncilEnabled: true,
+			personnelFilesEnabled: false,
 			timezone: "UTC",
 			deletedAt: null,
 		});

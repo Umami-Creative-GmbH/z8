@@ -356,6 +356,7 @@ export const organization = pgTable("organization", {
   surchargesEnabled: boolean("surcharges_enabled").default(false),
   demoDataEnabled: boolean("demo_data_enabled").default(true),
   worksCouncilEnabled: boolean("works_council_enabled").default(false),
+  personnelFilesEnabled: boolean("personnel_files_enabled").default(false),
   timezone: text("timezone").default("UTC"),
   deletedAt: timestamp("deleted_at"),
   deletedBy: text("deleted_by"),

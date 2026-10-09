@@ -1,4 +1,5 @@
 import {
+	CopyObjectCommand,
 	DeleteObjectCommand,
 	GetObjectCommand,
 	HeadObjectCommand,
@@ -232,6 +233,40 @@ export async function uploadPrivateObject(
 	logger.info({ organizationId, key }, "Export uploaded successfully");
 
 	// Versioned buckets report the immutable version of the stored object.
+	return { bucket: config.bucket, versionId: response?.VersionId ?? null };
+}
+
+/**
+ * Copies one recorded private object/version to a new key in the same bucket,
+ * server side; the copy keeps the source's bytes, content type and metadata.
+ * A recorded bucket that no longer matches the organization's storage
+ * configuration is refused.
+ */
+export async function copyPrivateObject(input: {
+	organizationId: string;
+	sourceKey: string;
+	sourceBucket: string | null;
+	sourceVersionId: string | null;
+	targetKey: string;
+}): Promise<{ bucket: string; versionId: string | null }> {
+	const config = await getStorageConfig(input.organizationId);
+	if (!config) {
+		throw new Error("S3 storage is not configured for this organization");
+	}
+	if (input.sourceBucket && input.sourceBucket !== config.bucket) {
+		throw new Error("Recorded private object bucket is unavailable");
+	}
+	const source = `${config.bucket}/${encodeURIComponent(input.sourceKey).replaceAll("%2F", "/")}`;
+	const response = await createS3Client(config).send(
+		new CopyObjectCommand({
+			Bucket: config.bucket,
+			Key: input.targetKey,
+			CopySource: input.sourceVersionId
+				? `${source}?versionId=${encodeURIComponent(input.sourceVersionId)}`
+				: source,
+			MetadataDirective: "COPY",
+		}),
+	);
 	return { bucket: config.bucket, versionId: response?.VersionId ?? null };
 }
 

@@ -120,6 +120,25 @@ export enum AuditAction {
 	EXPENSE_OFFICER_GRANT_CHANGED = "expense_officer.grant_changed",
 	EXPENSE_OFFICER_GRANT_REVOKED = "expense_officer.grant_revoked",
 
+	// Personnel File Operations (#865)
+	PERSONNEL_FILE_DOCUMENT_UPLOADED = "personnel_file.document_uploaded",
+	PERSONNEL_FILE_DOCUMENT_UPDATED = "personnel_file.document_updated",
+	PERSONNEL_FILE_VISIBILITY_CHANGED = "personnel_file.visibility_changed",
+	PERSONNEL_FILE_DOCUMENT_DELETED = "personnel_file.document_deleted",
+	PERSONNEL_FILE_DOCUMENT_VIEWED = "personnel_file.document_viewed",
+	PERSONNEL_FILE_DOCUMENT_DOWNLOADED = "personnel_file.document_downloaded",
+	// Personnel file officer grants (#866)
+	PERSONNEL_FILE_GRANT_CREATED = "personnel_file.grant_created",
+	PERSONNEL_FILE_GRANT_CHANGED = "personnel_file.grant_changed",
+	PERSONNEL_FILE_GRANT_REVOKED = "personnel_file.grant_revoked",
+	// Payslip batches (#868)
+	PERSONNEL_FILE_PAYSLIP_BATCH_CONFIRMED = "personnel_file.payslip_batch_confirmed",
+	PERSONNEL_FILE_DOCUMENT_PURGED = "personnel_file.document_purged",
+	PERSONNEL_FILE_RETENTION_CHANGED = "personnel_file.retention_changed",
+	// Personnel file ZIP download (#871)
+	PERSONNEL_FILE_ZIP_DOWNLOADED = "personnel_file.zip_downloaded",
+	PERSONNEL_FILE_ZIP_DOWNLOAD_ABORTED = "personnel_file.zip_download_aborted",
+
 	// App Access Operations
 	APP_ACCESS_GRANTED = "app_access.granted",
 	APP_ACCESS_REVOKED = "app_access.revoked",

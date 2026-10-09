@@ -37,6 +37,7 @@ export async function getOrganizationSettings(
 			surchargesEnabled: true,
 			demoDataEnabled: true,
 			worksCouncilEnabled: true,
+			personnelFilesEnabled: true,
 			timezone: true,
 			deletedAt: true,
 		},
@@ -53,6 +54,7 @@ export async function getOrganizationSettings(
 		surchargesEnabled: record.surchargesEnabled ?? false,
 		demoDataEnabled: record.demoDataEnabled ?? true,
 		worksCouncilEnabled: record.worksCouncilEnabled ?? false,
+		personnelFilesEnabled: record.personnelFilesEnabled ?? false,
 		timezone: record.timezone ?? "UTC",
 		deletedAt: record.deletedAt?.toISOString() ?? null,
 	};
