@@ -239,7 +239,7 @@ function mapSelectableEmployeeRow(row: SelectableEmployeeRow): SelectableEmploye
 
 function loadEmployeePage(params: EmployeeListParams) {
 	return Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext();
+		const actor = yield* getEmployeeSettingsActorContext({ queryName: "loadEmployeePage:actor" });
 		const { dbService } = actor;
 		const approvedMembership = dbService.db
 			.select({ id: member.id, role: member.role, status: member.status })
@@ -362,7 +362,7 @@ function loadEmployeePage(params: EmployeeListParams) {
 
 function loadSelectableEmployeePage(params: EmployeeSelectParams) {
 	return Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext();
+		const actor = yield* getEmployeeSettingsActorContext({ queryName: "loadSelectableEmployeePage:actor" });
 		const { dbService } = actor;
 		const limit = params.limit ?? DEFAULT_LIMIT;
 		const offset = params.offset ?? 0;
@@ -431,7 +431,7 @@ export async function getEmployeeAction(
 	employeeId: string,
 ): Promise<ServerActionResult<EmployeeDetailRecord>> {
 	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext();
+		const actor = yield* getEmployeeSettingsActorContext({ queryName: "getEmployeeAction:actor" });
 		const { dbService } = actor;
 		const draftId = decodeEmployeeInvitationDraftId(employeeId);
 
@@ -615,7 +615,7 @@ export async function getEmployeesByIdsAction(
 	}
 
 	const effect = Effect.gen(function* () {
-		const actor = yield* getEmployeeSettingsActorContext();
+		const actor = yield* getEmployeeSettingsActorContext({ queryName: "getEmployeesByIdsAction:actor" });
 		const { dbService } = actor;
 
 		const rows = yield* dbService.query("getEmployeesByIds", async () => {

@@ -40,7 +40,7 @@ export async function createRateHistoryEntryAction(
 		},
 		execute: () =>
 			Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext();
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "createRateHistoryEntryAction:actor" });
 				const { session, dbService } = actor;
 
 				const validatedData = yield* validateInput(

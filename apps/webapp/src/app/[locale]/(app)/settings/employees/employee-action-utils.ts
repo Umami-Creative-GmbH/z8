@@ -1,4 +1,9 @@
-import { type Attributes, type Span, SpanStatusCode, trace } from "@opentelemetry/api";
+import {
+	type Attributes,
+	type Span,
+	SpanStatusCode,
+	trace,
+} from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidateTag } from "next/cache";
@@ -12,10 +17,14 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import {
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
+import { createLogger } from "@/lib/logger";
 import {
 	isSettingsAccessMembershipRole,
 	resolveSettingsAccessTier,
@@ -23,13 +32,18 @@ import {
 } from "@/lib/settings-access";
 import { canAccessManagedEmployeeSettingsTarget } from "./employee-scope";
 
+const settingsAccessLogger = createLogger("EmployeeSettingsAccess");
+
 const employeeNotFoundError = () =>
 	new NotFoundError({
 		message: "Employee profile not found",
 		entityType: "employee",
 	});
 
-export function getEmployeeContext(options?: { organizationId?: string; queryName?: string }) {
+export function getEmployeeContext(options?: {
+	organizationId?: string;
+	queryName?: string;
+}) {
 	return Effect.gen(function* () {
 		const authService = yield* AuthService;
 		const session = yield* authService.getSession(options?.organizationId);
@@ -54,13 +68,21 @@ export function getEmployeeContext(options?: { organizationId?: string; queryNam
 			eq(employee.isActive, true),
 		);
 
-		const currentEmployee = yield* dbService.query(options?.queryName ?? "getCurrentEmployee", async () => {
+		const currentEmployee = yield* dbService
+			.query(options?.queryName ?? "getCurrentEmployee", async () => {
 				return await dbService.db.query.employee.findFirst({ where });
-			}).pipe(Effect.flatMap((value) =>
-				value ? Effect.succeed(value) : Effect.fail(employeeNotFoundError()),
-			));
+			})
+			.pipe(
+				Effect.flatMap((value) =>
+					value ? Effect.succeed(value) : Effect.fail(employeeNotFoundError()),
+				),
+			);
 
-		return { session, dbService, currentEmployee: currentEmployee as typeof employee.$inferSelect };
+		return {
+			session,
+			dbService,
+			currentEmployee: currentEmployee as typeof employee.$inferSelect,
+		};
 	});
 }
 
@@ -72,9 +94,47 @@ export function getEmployeeSettingsActorContext(options?: {
 		const authService = yield* AuthService;
 		const session = yield* authService.getSession(options?.organizationId);
 		const dbService = yield* DatabaseService;
-		const organizationId = options?.organizationId ?? session.session.activeOrganizationId;
+		const organizationId =
+			options?.organizationId ?? session.session.activeOrganizationId;
+		const queryName = options?.queryName ?? "getEmployeeSettingsActor";
+		const logDenial = (
+			reason:
+				| "no_organization"
+				| "no_approved_membership"
+				| "inactive_employee"
+				| "insufficient_role",
+			membershipRecord: { role: string; status?: string | null } | null,
+			employeeRecord: Pick<
+				typeof employee.$inferSelect,
+				"id" | "role" | "isActive"
+			> | null,
+			accessTier: SettingsAccessTier | null = null,
+			membershipLookupFailed = false,
+		) =>
+			Effect.sync(() => {
+				settingsAccessLogger.warn(
+					{
+						event: "employee_settings_access_denied",
+						operation: queryName,
+						reason,
+						userId: session.user.id,
+						organizationId,
+						activeOrganizationId: session.session.activeOrganizationId,
+						requestedOrganizationId: options?.organizationId ?? null,
+						membershipRole: membershipRecord?.role ?? null,
+						membershipStatus: membershipRecord?.status ?? null,
+						membershipLookupFailed,
+						employeeId: employeeRecord?.id ?? null,
+						employeeRole: employeeRecord?.role ?? null,
+						employeeIsActive: employeeRecord?.isActive ?? null,
+						accessTier,
+					},
+					"[DEBUG-employee-settings-access] Authorization denied",
+				);
+			});
 
 		if (!organizationId) {
+			yield* logDenial("no_organization", null, null);
 			return yield* Effect.fail(
 				new AuthorizationError({
 					message: "No active organization selected",
@@ -95,7 +155,7 @@ export function getEmployeeSettingsActorContext(options?: {
 							eq(member.organizationId, organizationId),
 							eq(member.status, "approved"),
 						),
-						columns: { role: true },
+						columns: { role: true, status: true },
 					});
 				},
 			),
@@ -113,6 +173,28 @@ export function getEmployeeSettingsActorContext(options?: {
 		]);
 
 		if (!membershipRecord) {
+			// The probe runs only after denial and cannot change its authorization result.
+			const diagnostic = yield* dbService
+				.query(queryName + ":deniedMembershipDiagnostic", async () => {
+					return await dbService.db.query.member.findFirst({
+						where: and(
+							eq(member.userId, session.user.id),
+							eq(member.organizationId, organizationId),
+						),
+						columns: { role: true, status: true },
+					});
+				})
+				.pipe(
+					Effect.map((record) => ({ record: record ?? null, failed: false })),
+					Effect.catch(() => Effect.succeed({ record: null, failed: true })),
+				);
+			yield* logDenial(
+				"no_approved_membership",
+				diagnostic.record,
+				employeeRecord ?? null,
+				null,
+				diagnostic.failed,
+			);
 			return yield* Effect.fail(
 				new AuthorizationError({
 					message: "You do not have access to employee settings",
@@ -124,6 +206,7 @@ export function getEmployeeSettingsActorContext(options?: {
 		}
 
 		if (employeeRecord?.isActive === false) {
+			yield* logDenial("inactive_employee", membershipRecord, employeeRecord);
 			return yield* Effect.fail(
 				new AuthorizationError({
 					message: "Organization access is inactive",
@@ -143,6 +226,12 @@ export function getEmployeeSettingsActorContext(options?: {
 		});
 
 		if (accessTier === "member") {
+			yield* logDenial(
+				"insufficient_role",
+				membershipRecord,
+				employeeRecord ?? null,
+				accessTier,
+			);
 			return yield* Effect.fail(
 				new AuthorizationError({
 					message: "You do not have access to employee settings",
@@ -158,7 +247,9 @@ export function getEmployeeSettingsActorContext(options?: {
 			dbService,
 			organizationId,
 			accessTier,
-			currentEmployee: employeeRecord ? (employeeRecord as typeof employee.$inferSelect) : null,
+			currentEmployee: employeeRecord
+				? (employeeRecord as typeof employee.$inferSelect)
+				: null,
 		};
 	});
 }
@@ -195,7 +286,12 @@ export function ensureCanAccessEmployeeSettingsTarget(
 	},
 ) {
 	return Effect.gen(function* () {
-		yield* ensureSameOrganization(currentEmployee, targetEmployee, options.resource, options.action);
+		yield* ensureSameOrganization(
+			currentEmployee,
+			targetEmployee,
+			options.resource,
+			options.action,
+		);
 
 		if (currentEmployee.role === "admin") {
 			return;
@@ -213,7 +309,10 @@ export function ensureCanAccessEmployeeSettingsTarget(
 		}
 
 		const managerService = yield* ManagerService;
-		const isManagedEmployee = yield* managerService.isManagerOf(currentEmployee.id, targetEmployee.id);
+		const isManagedEmployee = yield* managerService.isManagerOf(
+			currentEmployee.id,
+			targetEmployee.id,
+		);
 
 		if (
 			!canAccessManagedEmployeeSettingsTarget({
@@ -301,7 +400,10 @@ export function ensureSettingsActorCanAccessEmployeeTarget(
 		}
 
 		const managerService = yield* ManagerService;
-		const isManagedEmployee = yield* managerService.isManagerOf(actor.currentEmployee.id, targetEmployee.id);
+		const isManagedEmployee = yield* managerService.isManagerOf(
+			actor.currentEmployee.id,
+			targetEmployee.id,
+		);
 
 		if (
 			!canAccessManagedEmployeeSettingsTarget({
@@ -431,9 +533,13 @@ export function getManagedEmployeeIdsForSettingsActor(actor: {
 		}
 
 		const managerService = yield* ManagerService;
-		const managedEmployees = yield* managerService.getManagedEmployees(actor.currentEmployee.id);
+		const managedEmployees = yield* managerService.getManagedEmployees(
+			actor.currentEmployee.id,
+		);
 
-		return new Set(managedEmployees.map((managedEmployee) => managedEmployee.id));
+		return new Set(
+			managedEmployees.map((managedEmployee) => managedEmployee.id),
+		);
 	});
 }
 
@@ -477,7 +583,11 @@ export function filterItemsToManagedEmployees<
 	});
 }
 
-export function validateInput<T>(schema: ZodType<T>, data: unknown, fallbackField = "data") {
+export function validateInput<T>(
+	schema: ZodType<T>,
+	data: unknown,
+	fallbackField = "data",
+) {
 	const result = schema.safeParse(data);
 	if (result.success) {
 		return Effect.succeed(result.data);
@@ -492,11 +602,15 @@ export function validateInput<T>(schema: ZodType<T>, data: unknown, fallbackFiel
 	);
 }
 
-export function getTargetEmployee(employeeId: string, queryName = "getTargetEmployee") {
+export function getTargetEmployee(
+	employeeId: string,
+	queryName = "getTargetEmployee",
+) {
 	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
 
-		return yield* dbService.query(queryName, async () => {
+		return yield* dbService
+			.query(queryName, async () => {
 				return await dbService.db.query.employee.findFirst({
 					where: eq(employee.id, employeeId),
 					with: {
@@ -509,17 +623,20 @@ export function getTargetEmployee(employeeId: string, queryName = "getTargetEmpl
 						},
 					},
 				});
-			}).pipe(Effect.flatMap((value) =>
-				value
-					? Effect.succeed(value)
-					: Effect.fail(
-							new NotFoundError({
-								message: "Employee not found",
-								entityType: "employee",
-								entityId: employeeId,
-							}),
-						),
-			));
+			})
+			.pipe(
+				Effect.flatMap((value) =>
+					value
+						? Effect.succeed(value)
+						: Effect.fail(
+								new NotFoundError({
+									message: "Employee not found",
+									entityType: "employee",
+									entityId: employeeId,
+								}),
+							),
+				),
+			);
 	});
 }
 
@@ -531,21 +648,28 @@ export function getOrganizationTeam(
 	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
 
-		return yield* dbService.query(queryName, async () => {
+		return yield* dbService
+			.query(queryName, async () => {
 				return await dbService.db.query.team.findFirst({
-					where: and(eq(team.id, teamId), eq(team.organizationId, organizationId)),
+					where: and(
+						eq(team.id, teamId),
+						eq(team.organizationId, organizationId),
+					),
 				});
-			}).pipe(Effect.flatMap((value) =>
-				value
-					? Effect.succeed(value)
-					: Effect.fail(
-							new NotFoundError({
-								message: "Team not found",
-								entityType: "team",
-								entityId: teamId,
-							}),
-						),
-			));
+			})
+			.pipe(
+				Effect.flatMap((value) =>
+					value
+						? Effect.succeed(value)
+						: Effect.fail(
+								new NotFoundError({
+									message: "Team not found",
+									entityType: "team",
+									entityId: teamId,
+								}),
+							),
+				),
+			);
 	});
 }
 
@@ -553,21 +677,25 @@ export function getTargetUser(userId: string, queryName = "getTargetUser") {
 	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
 
-		return yield* dbService.query(queryName, async () => {
+		return yield* dbService
+			.query(queryName, async () => {
 				return await dbService.db.query.user.findFirst({
 					where: eq(user.id, userId),
 				});
-			}).pipe(Effect.flatMap((value) =>
-				value
-					? Effect.succeed(value)
-					: Effect.fail(
-							new NotFoundError({
-								message: "User not found",
-								entityType: "user",
-								entityId: userId,
-							}),
-						),
-			));
+			})
+			.pipe(
+				Effect.flatMap((value) =>
+					value
+						? Effect.succeed(value)
+						: Effect.fail(
+								new NotFoundError({
+									message: "User not found",
+									entityType: "user",
+									entityId: userId,
+								}),
+							),
+				),
+			);
 	});
 }
 
@@ -628,7 +756,11 @@ export function runTracedEmployeeAction<T>(options: {
 		);
 
 	const effect = options.attributes
-		? tracer.startActiveSpan(options.name, { attributes: options.attributes }, runWithSpan)
+		? tracer.startActiveSpan(
+				options.name,
+				{ attributes: options.attributes },
+				runWithSpan,
+			)
 		: tracer.startActiveSpan(options.name, runWithSpan);
 
 	return runServerActionSafe(effect);
