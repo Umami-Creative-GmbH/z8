@@ -21,7 +21,22 @@ const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 	now: null as Instant | null,
+	/** Routes edits of the employee's own work to approval, as a change policy would. */
+	editsNeedApproval: false,
 }));
+
+vi.mock("./policy-helpers", async (importOriginal) => {
+	const original = await importOriginal<typeof import("./policy-helpers")>();
+	return {
+		...original,
+		getEditCapabilityForPeriod: async (
+			...args: Parameters<typeof original.getEditCapabilityForPeriod>
+		) =>
+			harness.editsNeedApproval
+				? { type: "approval_required" as const }
+				: original.getEditCapabilityForPeriod(...args),
+	};
+});
 
 vi.mock("@/lib/datetime/temporal-core", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/datetime/temporal-core")>();
@@ -62,8 +77,31 @@ vi.mock("@/lib/auth-helpers", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/auth-helpers")>();
 	const { db } = await import("@/db");
 	const { loadOrganizationPrincipalContext } = await import("@/lib/authorization/principal-loader");
+	const { employee } = await import("@/db/schema");
+	const { and, eq } = await import("drizzle-orm");
 	return {
 		...original,
+		// React `cache` would pin the first actor for the whole test process.
+		getAuthContext: async () => {
+			if (!harness.userId || !harness.organizationId) return null;
+			const [row] = await db
+				.select()
+				.from(employee)
+				.where(
+					and(
+						eq(employee.userId, harness.userId),
+						eq(employee.organizationId, harness.organizationId),
+					),
+				)
+				.limit(1);
+			return {
+				user: { id: harness.userId, name: harness.userId, email: `${harness.userId}@example.test` },
+				session: { activeOrganizationId: harness.organizationId },
+				employee: row
+					? { id: row.id, organizationId: row.organizationId, role: row.role, teamId: row.teamId }
+					: null,
+			};
+		},
 		// The real loader on the test database, without Better Auth's session store.
 		getPrincipalContext: async () =>
 			harness.userId && harness.organizationId
@@ -103,8 +141,11 @@ vi.mock("./shared", async (importOriginal) => {
 	};
 });
 
-const { createManualTimeEntry } = await import("../actions");
-const { clockIn, clockOut } = await import("./clocking");
+const { createManualTimeEntry, splitWorkPeriod } = await import("../actions");
+const { clockIn, clockOut, addBreakToActiveSession } = await import("./clocking");
+const { requestTimeCorrection } = await import("./corrections");
+await import("@/lib/approvals/init");
+const { approveApprovalInboxItem } = await import("@/lib/approvals/inbox/decision-service");
 const { updateWorkPeriodProject } = await import("./mutations");
 const { systemClock } = await import("@/lib/datetime/temporal-core");
 
@@ -295,7 +336,9 @@ describe("booking time to a project task on PostgreSQL", () => {
 		await admin.query(
 			`insert into approval_workflow_rollout
 			 (organization_id, workflow_type, lifecycle_mode, side_effect_mode, created_at, updated_at)
-			 values ($1, 'manual_time_submission', 'legacy', 'legacy', now(), now())`,
+			 values ($1, 'manual_time_submission', 'legacy', 'legacy', now(), now()),
+			        ($1, 'policy_clock_out', 'legacy', 'legacy', now(), now()),
+			        ($1, 'time_correction', 'legacy', 'legacy', now(), now())`,
 			[ids.organization],
 		);
 		await admin.query(
@@ -352,6 +395,7 @@ describe("booking time to a project task on PostgreSQL", () => {
 
 	beforeEach(async () => {
 		harness.now = null;
+		harness.editsNeedApproval = false;
 		await seed();
 	});
 
@@ -537,10 +581,162 @@ describe("booking time to a project task on PostgreSQL", () => {
 		});
 	});
 
-	/** Clocks the employee in two hours ago and returns the live period. */
-	async function clockInEmployee() {
+	/** The task of every period of the employee and of its allocation, in work order. */
+	async function bookings() {
+		const { rows } = await admin.query<{ period_task: string | null; allocation_task: string | null }>(
+			`select p.task_id as period_task, a.task_id as allocation_task
+			 from work_period p
+			 left join time_record_allocation a
+			   on a.record_id = p.canonical_record_id and a.organization_id = p.organization_id
+			 where p.organization_id = $1 and p.deleted_at is null
+			 order by p.start_time`,
+			[ids.organization],
+		);
+		return rows;
+	}
+
+	describe("writers that keep the project keep the task", () => {
+		it("a split keeps the task on both halves", async () => {
+			await setAdmission("adopted");
+			const workPeriodId = await bookedWork("adopted");
+
+			actAs(ids.employeeUser);
+			await expect(
+				splitWorkPeriod(workPeriodId, "2026-09-01", "10:00", undefined, undefined, undefined, randomUUID()),
+			).resolves.toMatchObject({ success: true });
+
+			expect(await bookings()).toEqual([
+				{ period_task: ids.task, allocation_task: ids.task },
+				{ period_task: ids.task, allocation_task: ids.task },
+			]);
+		});
+
+		it.each(["legacy", "adopted"] as const)(
+			"an automatic break adjustment keeps the task on both segments (%s)",
+			async (admission) => {
+				await setAdmission(admission);
+				await seedBreakPolicy();
+				const now = systemClock.nowInstant();
+				await clockInEmployee(now.subtract({ hours: 8 }));
+
+				// Seven hours without a break: the policy owes 30 minutes after six.
+				await expect(
+					clockOutEmployee(ids.project, ids.task, now.subtract({ hours: 1 })),
+				).resolves.toMatchObject({ success: true });
+
+				expect(await bookings()).toEqual([
+					{ period_task: ids.task, allocation_task: ids.task },
+					{ period_task: ids.task, allocation_task: ids.task },
+				]);
+			},
+		);
+
+		it("resuming after a break keeps the task of the resumed work", async () => {
+			await setAdmission("adopted");
+			const workPeriodId = await clockInEmployee();
+			// The task of running work changes like a project (an attribution amend).
+			await expect(
+				changeProject(workPeriodId, ids.project, ids.task),
+			).resolves.toMatchObject({ success: true });
+
+			actAs(ids.employeeUser);
+			await expect(
+				addBreakToActiveSession(15, { submissionId: randomUUID(), browserTimezone: "UTC" }),
+			).resolves.toMatchObject({ success: true });
+
+			expect(await bookings()).toEqual([
+				{ period_task: ids.task, allocation_task: ids.task },
+				// The resumed work is live: it has no canonical record yet.
+				{ period_task: ids.task, allocation_task: null },
+			]);
+		});
+
+		it.each(["legacy", "adopted"] as const)(
+			"an approved time correction keeps the task (%s)",
+			async (admission) => {
+				await setAdmission(admission);
+				await admin.query(
+					`insert into employee_managers (employee_id, manager_id, is_primary, assigned_by)
+					 values ($1, $2, true, $3)`,
+					[ids.employee, ids.owner, ids.ownerUser],
+				);
+				const workPeriodId = await bookedWork(admission);
+				harness.editsNeedApproval = true;
+
+				actAs(ids.employeeUser);
+				const requested = await requestTimeCorrection({
+					workPeriodId,
+					submissionId: randomUUID(),
+					newClockInDate: "2026-09-01",
+					newClockInTime: "07:30",
+					newClockOutDate: "2026-09-01",
+					newClockOutTime: "12:30",
+					reason: "Started earlier",
+					workLocationType: "office",
+					workCategoryId: null,
+				});
+				expect(requested).toMatchObject({ success: true });
+				const { rows } = await admin.query<{ id: string }>(
+					`select id from approval_request
+					 where organization_id = $1 and entity_type = 'time_entry' and entity_id = $2
+					   and status = 'pending'`,
+					[ids.organization, workPeriodId],
+				);
+				actAs(ids.ownerUser);
+				await expect(
+					approveApprovalInboxItem({
+						approvalId: only(rows).id,
+						actorEmployeeId: ids.owner,
+						organizationId: ids.organization,
+					}),
+				).resolves.toMatchObject({ status: "approved" });
+
+				expect(await booking(workPeriodId)).toEqual({
+					period_project: ids.project,
+					period_task: ids.task,
+					allocation_project: ids.project,
+					allocation_task: ids.task,
+				});
+				const { rows: corrected } = await admin.query(
+					"select start_time from work_period where id = $1",
+					[workPeriodId],
+				);
+				expect(corrected).toEqual([{ start_time: new Date("2026-09-01T05:30:00Z") }]);
+			},
+		);
+	});
+
+	async function seedBreakPolicy() {
+		const policy = randomUUID();
+		const regulation = randomUUID();
+		await admin.query(
+			`insert into work_policy
+			 (id, organization_id, name, schedule_enabled, regulation_enabled, is_active, created_by, updated_at)
+			 values ($1, $2, 'T873 break', false, true, true, $3, now())`,
+			[policy, ids.organization, ids.ownerUser],
+		);
+		await admin.query(
+			`insert into work_policy_regulation (id, policy_id, max_uninterrupted_minutes, updated_at)
+			 values ($1, $2, 360, now())`,
+			[regulation, policy],
+		);
+		await admin.query(
+			`insert into work_policy_break_rule
+			 (id, regulation_id, working_minutes_threshold, required_break_minutes, updated_at)
+			 values ($1, $2, 360, 30, now())`,
+			[randomUUID(), regulation],
+		);
+		await admin.query(
+			`insert into work_policy_assignment
+			 (id, policy_id, organization_id, assignment_type, employee_id, priority, is_active, created_by, updated_at)
+			 values ($1, $2, $3, 'employee', $4, 2, true, $5, now())`,
+			[randomUUID(), policy, ids.organization, ids.employee, ids.ownerUser],
+		);
+	}
+
+	/** Clocks the employee in (two hours ago by default) and returns the live period. */
+	async function clockInEmployee(instant = systemClock.nowInstant().subtract({ hours: 2 })) {
 		actAs(ids.employeeUser);
-		const instant = systemClock.nowInstant().subtract({ hours: 2 });
 		await expect(clockIn("office", { instant, browserTimezone: "UTC" })).resolves.toMatchObject({
 			success: true,
 		});
@@ -551,11 +747,15 @@ describe("booking time to a project task on PostgreSQL", () => {
 		return only(rows).id;
 	}
 
-	function clockOutEmployee(projectId: string | null | undefined, taskId?: string | null) {
+	function clockOutEmployee(
+		projectId: string | null | undefined,
+		taskId?: string | null,
+		instant = systemClock.nowInstant().subtract({ hours: 1 }),
+	) {
 		actAs(ids.employeeUser);
 		return clockOut(projectId, undefined, {
 			submissionId: randomUUID(),
-			instant: systemClock.nowInstant().subtract({ hours: 1 }),
+			instant,
 			browserTimezone: "UTC",
 			...(taskId !== undefined ? { taskId } : {}),
 		});
