@@ -4,13 +4,13 @@ import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import type {
 	ProjectTemplatePreviewData,
-	SkippedProjectMember,
+	SkippedManagerOrAssignment,
 } from "@/lib/projects/project-template-model";
 
 /** The reason a manager or assignment is not copied, as a short lower-case phrase. */
 function useSkipReason() {
 	const { t } = useTranslate();
-	return (reason: SkippedProjectMember["reason"]) => {
+	return (reason: SkippedManagerOrAssignment["reason"]) => {
 		switch (reason) {
 			case "departed":
 				return t("settings.projects.fromTemplate.reasonDeparted", "left the organization");
@@ -26,11 +26,11 @@ function useSkipReason() {
 }
 
 /** One sentence naming the managers and assignments that were not copied, and why. */
-export function useSkippedMembersMessage() {
+export function useNotCopiedMessage() {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const reasonOf = useSkipReason();
-	return (skipped: readonly Pick<SkippedProjectMember, "name" | "reason">[]) =>
+	return (skipped: readonly Pick<SkippedManagerOrAssignment, "name" | "reason">[]) =>
 		t("settings.projects.fromTemplate.skipped", "Not copied: {members}", {
 			members: new Intl.ListFormat(locale, { type: "conjunction" }).format(
 				skipped.map((member) =>

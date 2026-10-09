@@ -14,7 +14,7 @@ import { isProjectNameConflict, type NewProjectStatus } from "@/lib/projects/pro
 import {
 	createProjectFromTemplateRows,
 	projectAsTemplateInput,
-	type SkippedProjectMember,
+	type SkippedManagerOrAssignment,
 } from "@/lib/projects/project-from-template";
 import {
 	normalizeProjectTemplateInput,
@@ -121,7 +121,7 @@ export async function getProjectTemplatePreview(
  */
 export async function createProjectFromTemplate(
 	input: CreateProjectFromTemplateInput,
-): Promise<ServerActionResult<{ id: string; skipped: SkippedProjectMember[] }>> {
+): Promise<ServerActionResult<{ id: string; skipped: SkippedManagerOrAssignment[] }>> {
 	return runServerActionSafe(
 		tracedProjectAction(
 			"createProjectFromTemplate",
@@ -217,7 +217,7 @@ export async function createProjectFromTemplate(
 export async function saveProjectAsTemplate(
 	projectId: string,
 	input: { name?: string } = {},
-): Promise<ServerActionResult<{ id: string; name: string; skipped: SkippedProjectMember[] }>> {
+): Promise<ServerActionResult<{ id: string; name: string; skipped: SkippedManagerOrAssignment[] }>> {
 	return runServerActionSafe(
 		tracedProjectAction(
 			"saveProjectAsTemplate",
@@ -247,7 +247,7 @@ export async function saveProjectAsTemplate(
 								{ skipDeparted: true },
 							);
 							const leftMeanwhile = written.departed.flatMap(
-								({ employeeId, name }): SkippedProjectMember[] => [
+								({ employeeId, name }): SkippedManagerOrAssignment[] => [
 									...(values.managerEmployeeIds.includes(employeeId)
 										? [{ role: "manager" as const, name, reason: "departed" as const }]
 										: []),

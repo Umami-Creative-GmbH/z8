@@ -14,6 +14,8 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+
 import { ProjectTaskBreakdown } from "./project-task-breakdown";
 
 const rows: ProjectTaskBreakdownRow[] = [

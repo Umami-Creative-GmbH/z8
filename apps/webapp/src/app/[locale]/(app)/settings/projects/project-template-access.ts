@@ -14,7 +14,7 @@ import {
 } from "@/lib/projects/project-template-model";
 import {
 	isProjectTemplateNameConflict,
-	ProjectTemplateMemberError,
+	ProjectTemplateReferenceError,
 } from "@/lib/projects/project-templates";
 import { getProjectSettingsActorContext, type ProjectSettingsActor } from "./project-scope";
 
@@ -52,8 +52,8 @@ const INPUT_PROBLEM_MESSAGES: Record<
 	},
 };
 
-const MEMBER_PROBLEM_MESSAGES: Record<
-	ProjectTemplateMemberError["problem"],
+const REFERENCE_PROBLEM_MESSAGES: Record<
+	ProjectTemplateReferenceError["problem"],
 	{ message: string; field: string }
 > = {
 	employeeNotFound: { message: "Employee not found", field: "employees" },
@@ -69,8 +69,8 @@ export function keepTypedTemplateError(error: DatabaseError) {
 	if (isProjectTemplateNameConflict(error.cause)) {
 		return new ValidationError({ message: DUPLICATE_NAME_MESSAGE, field: "name" });
 	}
-	if (error.cause instanceof ProjectTemplateMemberError) {
-		return new ValidationError(MEMBER_PROBLEM_MESSAGES[error.cause.problem]);
+	if (error.cause instanceof ProjectTemplateReferenceError) {
+		return new ValidationError(REFERENCE_PROBLEM_MESSAGES[error.cause.problem]);
 	}
 	if (error.cause instanceof ValidationError) return error.cause;
 	return error;

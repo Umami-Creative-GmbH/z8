@@ -111,17 +111,29 @@ export function normalizeProjectTaskDescription(
 }
 
 /**
+ * Hours as numeric(8, 2) text, the one rounding rule for task estimates and
+ * template budgets: positive hours rounded to two decimals, at most `max`, or
+ * null for none. Numeric text as stored (e.g. a project's budget) passes as is.
+ */
+export function positiveHoursText(
+	hours: number | string | null | undefined,
+	max: number = PROJECT_TASK_ESTIMATE_MAX_HOURS,
+): { ok: true; value: string | null } | { ok: false } {
+	if (hours === null || hours === undefined) return { ok: true, value: null };
+	const value = typeof hours === "string" ? Number(hours) : hours;
+	if (!Number.isFinite(value)) return { ok: false };
+	const rounded = Math.round(value * 100) / 100;
+	if (rounded <= 0 || rounded > max) return { ok: false };
+	return { ok: true, value: rounded.toFixed(2) };
+}
+
+/**
  * The stored task estimate as numeric(8, 2) text: positive hours rounded to
  * two decimals, or null for no estimate.
  */
 export function normalizeProjectTaskEstimate(
-	hours: number | null | undefined,
+	hours: number | string | null | undefined,
 ): RuleResult<string | null> {
-	if (hours === null || hours === undefined) return { ok: true, value: null };
-	if (!Number.isFinite(hours)) return { ok: false, problem: "estimateInvalid" };
-	const rounded = Math.round(hours * 100) / 100;
-	if (rounded <= 0 || rounded > PROJECT_TASK_ESTIMATE_MAX_HOURS) {
-		return { ok: false, problem: "estimateInvalid" };
-	}
-	return { ok: true, value: rounded.toFixed(2) };
+	const estimate = positiveHoursText(hours);
+	return estimate.ok ? estimate : { ok: false, problem: "estimateInvalid" };
 }

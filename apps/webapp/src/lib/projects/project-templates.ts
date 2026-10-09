@@ -22,7 +22,7 @@ import type {
 	ProjectTemplate,
 	ProjectTemplateAssignment,
 	ProjectTemplateManager,
-	ProjectTemplateMemberAvailability,
+	ManagerOrAssignmentAvailability,
 	ProjectTemplateSummary,
 } from "./project-template-model";
 
@@ -36,7 +36,7 @@ export type {
 	ProjectTemplate,
 	ProjectTemplateAssignment,
 	ProjectTemplateManager,
-	ProjectTemplateMemberAvailability,
+	ManagerOrAssignmentAvailability,
 	ProjectTemplateSummary,
 	ProjectTemplateTask,
 } from "./project-template-model";
@@ -92,14 +92,17 @@ export async function listProjectTemplates(
 function employeeAvailability(row: {
 	employeeId: string | null;
 	hasAccess: boolean | null;
-}): ProjectTemplateMemberAvailability {
+}): ManagerOrAssignmentAvailability {
 	if (row.employeeId === null || row.hasAccess === null) return "removed";
 	return row.hasAccess ? "available" : "departed";
 }
 
-// Flat, not a nested object: Drizzle nulls a left-joined nested object whose
-// first column is null, and first/last names are optional.
-const liveUserColumns = {
+/**
+ * The user columns an employee's display name is built from, for reads that
+ * join `user`. Flat, not a nested object: Drizzle nulls a left-joined nested
+ * object whose first column is null, and first/last names are optional.
+ */
+export const liveUserColumns = {
 	userFirstName: user.firstName,
 	userLastName: user.lastName,
 	userName: user.name,
@@ -113,15 +116,15 @@ type LiveUserColumns = {
 	userEmail: string | null;
 };
 
-/** The employee's current display name, or the stored one once they are gone. */
-function memberName(snapshot: string, live: LiveUserColumns) {
+/** The employee's current display name, or `fallback` (a stored name) once they are gone. */
+export function liveUserName(live: LiveUserColumns, fallback = "Unknown") {
 	const current: AuthUserDisplayNameInput = {
 		firstName: live.userFirstName,
 		lastName: live.userLastName,
 		name: live.userName,
 		email: live.userEmail,
 	};
-	return buildAuthUserDisplayName(current) || snapshot;
+	return buildAuthUserDisplayName(current) || fallback;
 }
 
 const byName = <T extends { name: string }>(a: T, b: T) =>
@@ -241,7 +244,7 @@ export async function getProjectTemplate(
 		.map((row) => ({
 			id: row.id,
 			employeeId: row.employeeId,
-			name: memberName(row.displayName, row),
+			name: liveUserName(row, row.displayName),
 			availability: employeeAvailability(row),
 		}))
 		.sort(byName);
@@ -262,7 +265,7 @@ export async function getProjectTemplate(
 							type: row.type,
 							teamId: null,
 							employeeId: row.employeeId,
-							name: memberName(row.displayName, row),
+							name: liveUserName(row, row.displayName),
 							availability: employeeAvailability(row),
 						},
 		)
@@ -272,13 +275,13 @@ export async function getProjectTemplate(
 }
 
 /** Raised by `writeProjectTemplate` when the input names unusable people or teams. */
-export class ProjectTemplateMemberError extends Error {
+export class ProjectTemplateReferenceError extends Error {
 	constructor(
 		readonly problem: "employeeNotFound" | "employeeDeparted" | "teamNotFound",
 		readonly targetId: string,
 	) {
 		super(`Project template member problem: ${problem} (${targetId})`);
-		this.name = "ProjectTemplateMemberError";
+		this.name = "ProjectTemplateReferenceError";
 	}
 }
 
@@ -309,13 +312,13 @@ async function resolveEmployees(
 	const found = new Map(rows.map((row) => [row.id, row]));
 	for (const id of employeeIds) {
 		const row = found.get(id);
-		if (!row) throw new ProjectTemplateMemberError("employeeNotFound", id);
+		if (!row) throw new ProjectTemplateReferenceError("employeeNotFound", id);
 		if (!row.hasAccess && !keepDepartedIds.has(id)) {
-			if (!skipDeparted) throw new ProjectTemplateMemberError("employeeDeparted", id);
-			departed.set(id, memberName("Unknown", row));
+			if (!skipDeparted) throw new ProjectTemplateReferenceError("employeeDeparted", id);
+			departed.set(id, liveUserName(row));
 			continue;
 		}
-		names.set(id, memberName("Unknown", row));
+		names.set(id, liveUserName(row));
 	}
 	return { names, departed };
 }
@@ -328,7 +331,7 @@ async function resolveTeams(tx: Writer, organizationId: string, teamIds: string[
 		.where(and(eq(team.organizationId, organizationId), inArray(team.id, teamIds)));
 	const names = new Map(rows.map((row) => [row.id, row.name]));
 	for (const id of teamIds) {
-		if (!names.has(id)) throw new ProjectTemplateMemberError("teamNotFound", id);
+		if (!names.has(id)) throw new ProjectTemplateReferenceError("teamNotFound", id);
 	}
 	return names;
 }
@@ -364,7 +367,7 @@ async function currentTemplateEmployeeIds(tx: Writer, organizationId: string, te
  * caller's transaction. Managers and assignments must be teams and employees
  * of the organization; an employee without organization access may only stay
  * on a template that already has them, never be added. References to removed
- * teams and employees are dropped. Throws `ProjectTemplateMemberError` for
+ * teams and employees are dropped. Throws `ProjectTemplateReferenceError` for
  * unusable members, and the database error for a duplicate template name (see
  * `isProjectTemplateNameConflict`). Authorization is the caller's job.
  *

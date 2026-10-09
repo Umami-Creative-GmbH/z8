@@ -44,7 +44,7 @@ import { queryKeys } from "@/lib/query";
 import { PROJECT_COLOR_OPTIONS } from "./project-appearance";
 import {
 	ProjectTemplatePreview,
-	useSkippedMembersMessage,
+	useNotCopiedMessage,
 } from "./project-template-preview";
 
 interface ProjectDialogProps {
@@ -100,7 +100,7 @@ function useProjectDialogController({
 	});
 
 	const customers = customersData || [];
-	const skippedMembersMessage = useSkippedMembersMessage();
+	const skippedMembersMessage = useNotCopiedMessage();
 
 	// Anyone who may create projects may start one from a template (#880).
 	const { data: templateChoices = [] } = useQuery({

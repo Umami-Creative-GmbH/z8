@@ -256,7 +256,7 @@
       "viewCalendar": "View Calendar"
     },
     "taskPicker": {
-      "doneSuffix": "(done)",
+      "doneTask": "{name} (done)",
       "empty": "No task found",
       "label": "Task",
       "none": "No task",

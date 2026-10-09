@@ -66,7 +66,7 @@ import {
 	PROJECT_TEMPLATE_NAME_MAX_LENGTH,
 	type ProjectTemplate,
 	type ProjectTemplateInput,
-	type ProjectTemplateMemberAvailability,
+	type ManagerOrAssignmentAvailability,
 	type ProjectTemplateSummary,
 } from "@/lib/projects/project-template-model";
 import { queryKeys } from "@/lib/query";
@@ -212,7 +212,7 @@ function TemplateIcon({ icon, className }: { icon: string | null; className?: st
 interface MemberListItem {
 	key: string;
 	name: string;
-	availability: ProjectTemplateMemberAvailability;
+	availability: ManagerOrAssignmentAvailability;
 	/** Omitted for removed teams and employees, which are dropped on save anyway. */
 	onRemove?: () => void;
 }
@@ -338,7 +338,7 @@ function TemplateForm({
 	// are not offered by the pickers but may stay.
 	const known = new Map<
 		string,
-		{ name: string; availability: ProjectTemplateMemberAvailability }
+		{ name: string; availability: ManagerOrAssignmentAvailability }
 	>();
 	for (const option of [...teams, ...employees]) {
 		known.set(option.id, { name: option.name, availability: "available" });
@@ -521,7 +521,7 @@ function TemplateForm({
 					<form.Field name="color">
 						{(field) => (
 							<TFormItem>
-								<TFormLabel>{t("settings.projects.templates.field.color", "Colour")}</TFormLabel>
+								<TFormLabel>{t("settings.projects.templates.field.color", "Color")}</TFormLabel>
 								<div className="flex flex-wrap gap-2">
 									{PROJECT_COLOR_OPTIONS.map((color) => (
 										<button

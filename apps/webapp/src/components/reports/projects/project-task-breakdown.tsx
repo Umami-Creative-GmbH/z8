@@ -2,6 +2,7 @@
 
 import { IconListCheck } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -26,6 +27,7 @@ interface ProjectTaskBreakdownProps {
  */
 export function ProjectTaskBreakdown({ taskBreakdown }: ProjectTaskBreakdownProps) {
 	const { t } = useTranslate();
+	const format = useReportNumberFormat();
 	const title = (
 		<CardTitle className="flex items-center gap-2">
 			<IconListCheck className="size-5" />
@@ -93,10 +95,12 @@ export function ProjectTaskBreakdown({ taskBreakdown }: ProjectTaskBreakdownProp
 									</span>
 								</TableCell>
 								<TableCell className="text-right tabular-nums">
-									{row.totalHours.toFixed(1)}h
+									{t("reports.projects.task.hoursValue", "{hours}h", {
+										hours: format.hours(row.totalHours),
+									})}
 								</TableCell>
 								<TableCell className="text-right tabular-nums">
-									{row.percentOfTotal.toFixed(0)}%
+									{format.percent(row.percentOfTotal)}
 								</TableCell>
 								<TableCell>
 									{row.estimate ? (
@@ -120,14 +124,15 @@ function EstimateProgress({
 	estimate: NonNullable<ProjectTaskBreakdownRow["estimate"]>;
 }) {
 	const { t } = useTranslate();
+	const format = useReportNumberFormat();
 	const isOver = estimate.percentUsed > 100;
 	const label = t(
 		"reports.projects.task.estimateProgress",
-		"{booked}h of {estimate}h ({percent}%)",
+		"{booked}h of {estimate}h ({percent})",
 		{
-			booked: estimate.bookedHours.toFixed(1),
-			estimate: estimate.estimateHours.toFixed(1).replace(/\.0$/, ""),
-			percent: estimate.percentUsed.toFixed(0),
+			booked: format.hours(estimate.bookedHours),
+			estimate: format.hours(estimate.estimateHours),
+			percent: format.percent(estimate.percentUsed),
 		},
 	);
 	return (
@@ -142,4 +147,15 @@ function EstimateProgress({
 			</p>
 		</div>
 	);
+}
+
+/** Hours with one decimal at most and whole percentages, in the viewer's locale. */
+function useReportNumberFormat() {
+	const locale = useLocale();
+	const hours = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
+	const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
+	return {
+		hours: (value: number) => hours.format(value),
+		percent: (value: number) => percent.format(value / 100),
+	};
 }
