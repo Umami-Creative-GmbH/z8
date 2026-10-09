@@ -569,6 +569,7 @@ export async function fetchSchedules(organizationId: string) {
 			hoursPerDay: sd.hoursPerDay,
 			isWorkDay: sd.isWorkDay,
 			cycleWeek: sd.cycleWeek,
+			latestClockIn: sd.latestClockIn,
 		})),
 		regulations: regulations.map((r) => ({
 			policyId: r.policyId,

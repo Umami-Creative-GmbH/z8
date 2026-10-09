@@ -28,7 +28,7 @@ type RetentionClient = Pick<PositionCaptureClient, "select" | "delete">;
  * the works council's history.
  *
  * - Access-log entries older than the lifetime, with their subjects. The
- *   append-only guard (migration 0145) lets only these deletes through.
+ *   append-only guard (migration 0148) lets only these deletes through.
  * - Consents out of force for longer than the lifetime: lapsed by a newer
  *   notice published before the cutoff, or withdrawn before it. A withdrawal
  *   that is still the employee's latest answer to the current notice stays, so

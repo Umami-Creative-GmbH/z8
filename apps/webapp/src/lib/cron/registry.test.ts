@@ -17,6 +17,14 @@ vi.mock("@/lib/jobs/position-stamp-purge", () => {
 	positionStampPurge.imported();
 	return { runPositionStampPurge: positionStampPurge.run };
 });
+const clockingReminders = vi.hoisted(() => ({
+	imported: vi.fn(),
+	run: vi.fn(async () => ({ sent: 2 })),
+}));
+vi.mock("@/lib/jobs/clocking-reminders", () => {
+	clockingReminders.imported();
+	return { runClockingReminders: clockingReminders.run };
+});
 const {
 	calculateTelemetryMetrics,
 	getOrCreateTelemetryIdentity,
@@ -269,5 +277,16 @@ describe("automatic clock-out cron", () => {
 			await CRON_JOBS["cron:auto-clock-out"].processor({ triggeredAt: "2026-10-25T06:00:00Z" }),
 		).toEqual({ closed: 1 });
 		expect(autoClockOut.run).toHaveBeenCalledOnce();
+	});
+});
+
+describe("clocking reminders cron", () => {
+	it("loads the reminder job lazily and checks every five minutes", async () => {
+		expect(clockingReminders.imported).not.toHaveBeenCalled();
+		expect(CRON_JOBS["cron:clocking-reminders"].schedule).toBe("*/5 * * * *");
+		expect(
+			await CRON_JOBS["cron:clocking-reminders"].processor({ triggeredAt: "2026-10-25T06:00:00Z" }),
+		).toEqual({ sent: 2 });
+		expect(clockingReminders.run).toHaveBeenCalledOnce();
 	});
 });

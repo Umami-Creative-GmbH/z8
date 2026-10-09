@@ -6,7 +6,7 @@ import { AUDIT_LOG_RETENTION_DAYS } from "@/lib/audit/retention";
 describe("position access-log retention guard", () => {
 	it("lets deletes through only past the audit-log lifetime the cleanup uses", () => {
 		const migration = readFileSync(
-			path.resolve(__dirname, "../../../../drizzle/0145_position_access_log_retention.sql"),
+			path.resolve(__dirname, "../../../../drizzle/0148_position_access_log_retention.sql"),
 			"utf8",
 		);
 
