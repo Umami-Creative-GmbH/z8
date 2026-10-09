@@ -92,9 +92,10 @@ describe("attribution refusals of saved clock-outs", () => {
 	});
 
 	it("explains project and work category refusals the same way", () => {
+		// The server refuses a project it may not book for any reason, not only a closed one.
 		show(refused({ field: "projectId" }));
 		expect(
-			screen.getByText("The chosen project is not open for booking."),
+			screen.getByText("Time cannot be booked to the chosen project."),
 		).toBeDefined();
 		cleanup();
 		show(refused({ field: "workCategoryId" }));
