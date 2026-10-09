@@ -9,6 +9,7 @@ import { randomUUID } from "node:crypto";
 import { Effect, Layer } from "effect";
 import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { dateFromInstant } from "@/lib/datetime/temporal-core";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -129,7 +130,7 @@ describe.each(["Europe/Berlin", "UTC"])("schedule compliance window (%s)", (time
 				clockInId,
 				person.employeeId,
 				org.organizationId,
-				new Date(start.epochMilliseconds),
+				dateFromInstant(start.toInstant()),
 				start.offsetNanoseconds / 60_000_000_000,
 				timezone,
 				`t944-${clockInId}`,
@@ -146,21 +147,21 @@ describe.each(["Europe/Berlin", "UTC"])("schedule compliance window (%s)", (time
 				person.employeeId,
 				org.organizationId,
 				clockInId,
-				new Date(start.epochMilliseconds),
-				new Date(end.epochMilliseconds),
+				dateFromInstant(start.toInstant()),
+				dateFromInstant(end.toInstant()),
 				start.until(end).total("minutes"),
 			],
 		);
 	}
 
-	function evaluate(org: Org) {
+	function evaluate(org: Org, window = WINDOW) {
 		return Effect.runPromise(
 			Effect.gen(function* () {
 				const service = yield* ScheduleComplianceService;
 				return yield* service.evaluateScheduleWindow({
 					organizationId: org.organizationId,
-					startDate: shiftDateBounds(WINDOW.start, timezone).start,
-					endDateExclusive: shiftDateBounds(WINDOW.endExclusive, timezone).start,
+					startDate: shiftDateBounds(window.start, timezone).start,
+					endDateExclusive: shiftDateBounds(window.endExclusive, timezone).start,
 					timezone,
 				});
 			}).pipe(Effect.provide(serviceLayer)),
@@ -181,6 +182,27 @@ describe.each(["Europe/Berlin", "UTC"])("schedule compliance window (%s)", (time
 		]);
 		expect(withDayAfter.findings).toEqual(lastDayOnly.findings);
 		expect(withDayAfter.fingerprint).toBe(lastDayOnly.fingerprint);
+	});
+
+	it("keeps the window's org-local days across a daylight saving change", async () => {
+		// Berlin springs forward on Sun 2026-03-29, the window's last day.
+		const dstWindow = { start: "2026-03-26", endExclusive: "2026-03-30" };
+		const org = await organization();
+		await workPeriod(org, "2026-03-28", "15:00", "23:00");
+		await shift(org, "2026-03-29", "08:00", "19:00");
+		await shift(org, "2026-03-30", "08:00", "19:00");
+
+		const result = await evaluate(org, dstWindow);
+
+		expect(result.findings).toEqual([
+			expect.objectContaining({
+				type: "restTime",
+				// 23:00 to 08:00 on the wall clock, one hour shorter in Berlin.
+				restMinutes: timezone === "Europe/Berlin" ? 8 * 60 : 9 * 60,
+			}),
+			expect.objectContaining({ type: "maxHours", day: "2026-03-29", totalMinutes: 660 }),
+			expect.objectContaining({ type: "overtime", period: "daily", periodKey: "2026-03-29" }),
+		]);
 	});
 
 	it("ignores a work period on the day after the window", async () => {

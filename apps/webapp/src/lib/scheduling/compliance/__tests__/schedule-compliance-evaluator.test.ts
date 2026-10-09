@@ -3,7 +3,7 @@ import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { evaluateScheduleCompliance } from "@/lib/scheduling/compliance/schedule-compliance-evaluator";
 import type { ScheduleComplianceWindow } from "@/lib/scheduling/compliance/types";
 
-function window(start: string, endExclusive: string): ScheduleComplianceWindow {
+function windowOf(start: string, endExclusive: string): ScheduleComplianceWindow {
 	return { start: parsePlainDate(start), endExclusive: parsePlainDate(endExclusive) };
 }
 
@@ -11,7 +11,7 @@ describe("evaluateScheduleCompliance", () => {
 	it("flags rest-time, max-hours, and overtime from actual+scheduled data", () => {
 		const result = evaluateScheduleCompliance({
 			timezone: "Europe/Berlin",
-			window: window("2026-02-16", "2026-02-23"),
+			window: windowOf("2026-02-16", "2026-02-23"),
 			regulation: {
 				minRestPeriodMinutes: 660,
 				maxDailyMinutes: 590,
@@ -49,7 +49,7 @@ describe("evaluateScheduleCompliance", () => {
 	it("does not emit findings when values are exactly at thresholds", () => {
 		const result = evaluateScheduleCompliance({
 			timezone: "UTC",
-			window: window("2026-02-16", "2026-02-23"),
+			window: windowOf("2026-02-16", "2026-02-23"),
 			regulation: {
 				minRestPeriodMinutes: 600,
 				maxDailyMinutes: 600,
@@ -79,7 +79,7 @@ describe("evaluateScheduleCompliance", () => {
 	it("ignores open shifts with no employeeId", () => {
 		const result = evaluateScheduleCompliance({
 			timezone: "UTC",
-			window: window("2026-02-16", "2026-02-23"),
+			window: windowOf("2026-02-16", "2026-02-23"),
 			regulation: {},
 			employees: [],
 		});
@@ -90,7 +90,7 @@ describe("evaluateScheduleCompliance", () => {
 
 	describe("judges only the half-open window", () => {
 		// Window: Wed 2026-03-04 up to (excluding) Sun 2026-03-08, Europe/Berlin.
-		const march = window("2026-03-04", "2026-03-08");
+		const march = windowOf("2026-03-04", "2026-03-08");
 
 		it("reports daily max-hours and overtime only for days inside the window", () => {
 			const result = evaluateScheduleCompliance({
@@ -162,7 +162,7 @@ describe("evaluateScheduleCompliance", () => {
 		it("reports monthly overtime for a month that only partly overlaps the window", () => {
 			const result = evaluateScheduleCompliance({
 				timezone: "Europe/Berlin",
-				window: window("2026-02-26", "2026-03-02"),
+				window: windowOf("2026-02-26", "2026-03-02"),
 				regulation: { overtimeMonthlyThresholdMinutes: 1000 },
 				employees: [
 					{

@@ -131,7 +131,7 @@ function buildFingerprint(params: {
 	const payload = {
 		organizationId: params.organizationId,
 		startDate: params.startDate.toISOString(),
-		endDate: params.endDateExclusive.toISOString(),
+		endDateExclusive: params.endDateExclusive.toISOString(),
 		timezone: params.timezone,
 		summary: params.result.summary,
 		findings: normalizedFindings,
