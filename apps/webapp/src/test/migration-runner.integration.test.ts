@@ -8,10 +8,13 @@ import { promisify } from "node:util";
 import { readMigrationFiles } from "drizzle-orm/migrator";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
-import { Pool } from "pg";
+import type { Pool } from "pg";
 import { expect, it } from "vitest";
-import { withUtcPostgresSession } from "@/db/postgres-utc";
-import { integrationAdminPool, parseIntegrationDatabaseUrl } from "@/test/integration-database";
+import {
+	integrationAdminPool,
+	openIntegrationPool,
+	parseIntegrationDatabaseUrl,
+} from "@/test/integration-database";
 
 const execute = promisify(execFile);
 const appDirectory = fileURLToPath(new URL("../../", import.meta.url));
@@ -98,7 +101,7 @@ it("the production migration runner recovers a deployed database and safely retr
 		);
 		await admin.query(`create database "${databaseName}"`);
 		databaseCreated = true;
-		pool = new Pool(withUtcPostgresSession({ connectionString: databaseUrl }));
+		pool = openIntegrationPool({ databaseName });
 		await migrate(drizzle({ client: pool }), { migrationsFolder: deployedFolder });
 
 		// Production ledger drift: missing gap rows and rows for retired tags.

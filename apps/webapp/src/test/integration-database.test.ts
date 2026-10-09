@@ -130,6 +130,32 @@ describe("integration database gate", () => {
 		});
 	});
 
+	describe("a dedicated pool on a sibling database", () => {
+		beforeEach(() => {
+			vi.stubEnv("APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL", databaseUrl);
+			vi.stubEnv("APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL", integrationDatabaseSentinel);
+		});
+
+		it("targets the named disposable database on the verified server", async () => {
+			const pool = openIntegrationPool({
+				databaseName: "approval_workflow_repository_test_runner_1a2b",
+			});
+			try {
+				expect(pool.options.connectionString).toBe(
+					"postgresql://postgres:test@localhost:5432/approval_workflow_repository_test_runner_1a2b",
+				);
+			} finally {
+				await pool.end();
+			}
+		});
+
+		it("refuses a database outside the disposable naming convention", () => {
+			expect(() => openIntegrationPool({ databaseName: "z8_production" })).toThrow(
+				"non-isolated integration test database",
+			);
+		});
+	});
+
 	it("does not need the test project marker to parse a URL for the migration verifier", () => {
 		vi.stubEnv("Z8_TEST_PROJECT", "unit");
 
