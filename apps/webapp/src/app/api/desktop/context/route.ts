@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { connection, NextResponse } from "next/server";
 import { readTimeSummary } from "@/app/[locale]/(app)/time-tracking/read-queries";
 import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
 import {
 	employee,
 	project,
@@ -62,6 +63,7 @@ export async function GET() {
 			timezone,
 			weekStartDay,
 			preferences,
+			organizationSettings,
 			categories,
 			assignments,
 			liveWork,
@@ -71,6 +73,10 @@ export async function GET() {
 			db.query.userSettings.findFirst({
 				where: eq(userSettings.userId, session.user.id),
 				columns: { locale: true },
+			}),
+			db.query.organization.findFirst({
+				where: eq(organization.id, organizationId),
+				columns: { projectsEnabled: true },
 			}),
 			getAvailableCategoriesForEmployee(emp.id, organizationId),
 			db
@@ -107,7 +113,7 @@ export async function GET() {
 				timezone,
 				weekStartDay,
 			),
-			assignments.length
+			organizationSettings?.projectsEnabled && assignments.length
 				? db.query.project.findMany({
 						where: and(
 							eq(project.organizationId, organizationId),
@@ -131,6 +137,7 @@ export async function GET() {
 				locale: preferences?.locale ?? null,
 				fetchedAt: systemClock.nowInstant().toString(),
 				dayTotalBasis: summary.dayTotalBasis,
+				projectsEnabled: organizationSettings?.projectsEnabled ?? false,
 				projects,
 				categories: categories.map(({ id, name }) => ({ id, name })),
 				liveWork: liveWork ?? null,

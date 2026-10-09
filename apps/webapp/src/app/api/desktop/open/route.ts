@@ -11,6 +11,7 @@ import {
 } from "@/lib/time-tracking/clocking-service";
 
 const paths = {
+	dashboard: "/",
 	time: "/time-tracking",
 	reports: "/reports",
 	preferences: "/settings/profile",
@@ -33,7 +34,10 @@ async function handoff(request: Request) {
 	if (
 		!organizationId ||
 		!userId ||
-		(section !== "time" && section !== "reports" && section !== "preferences")
+		(section !== "dashboard" &&
+			section !== "time" &&
+			section !== "reports" &&
+			section !== "preferences")
 	)
 		return {
 			response: NextResponse.json(

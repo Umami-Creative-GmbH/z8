@@ -65,6 +65,7 @@ const german: Record<string, string> = {
 	"No assignment": "Keine Zuordnung",
 	"Applied when work ends": "Wird beim Arbeitsende zugeordnet",
 	Settings: "Einstellungen",
+	"Open dashboard": "Dashboard öffnen",
 	"Open settings": "Einstellungen öffnen",
 	"Close settings": "Einstellungen schließen",
 	Server: "Server",
@@ -100,9 +101,15 @@ const german: Record<string, string> = {
 	Offline: "Offline",
 	"Reconnect to switch organizations":
 		"Zum Organisationswechsel wieder verbinden",
-	"Server setup required": "Servereinrichtung erforderlich",
-	"Ask your administrator to enable reliable offline clocking and atomic breaks for this organization.":
-		"Bitten Sie Ihre Administration, zuverlässiges Offline-Stempeln und atomare Pausen für diese Organisation einzurichten.",
+	"Online mode": "Online-Modus",
+	"Z8 update required": "Z8-Update erforderlich",
+	"The Z8 webapp needs an update for online desktop clocking. Use the dashboard icon above until it is deployed; no setup is needed on your computer.":
+		"Die Z8-Webapp benötigt ein Update zum Stempeln in der Desktop-App. Nutzen Sie bis dahin das Dashboard-Symbol oben. Auf Ihrem Computer müssen Sie nichts einrichten.",
+	"Connection required": "Verbindung erforderlich",
+	"Internet required. Offline recording and automatic idle breaks are not available yet.":
+		"Internet erforderlich. Offline-Stempeln und automatische Pausen sind noch nicht verfügbar.",
+	"Connect to Z8 and refresh status to use the clock. You can also open your dashboard using the icon above.":
+		"Verbinden Sie sich mit Z8 und aktualisieren Sie den Status. Über das Symbol oben können Sie auch Ihr Dashboard öffnen.",
 	"Refresh status": "Status aktualisieren",
 	"Clock recovery": "Wiederherstellung",
 	"Saved actions": "Gespeicherte Aktionen",

@@ -1,4 +1,9 @@
-import { IconSettings, IconWifiOff, IconClock } from "@tabler/icons-react";
+import {
+	IconSettings,
+	IconWifiOff,
+	IconClock,
+	IconExternalLink,
+} from "@tabler/icons-react";
 import { OrganizationSelector } from "./OrganizationSelector";
 import { ThemeToggle } from "./ThemeToggle";
 import type { useOrganizations } from "../hooks/useOrganizations";
@@ -10,12 +15,14 @@ export function CompanionHeader({
 	busy,
 	offline,
 	onOpenSettings,
+	onOpenDashboard,
 }: {
 	organizations: ReturnType<typeof useOrganizations>;
 	theme: ReturnType<typeof useTheme>;
 	busy: boolean;
 	offline: boolean;
 	onOpenSettings: () => void;
+	onOpenDashboard: () => void;
 }) {
 	const { t } = useI18n();
 	return (
@@ -30,12 +37,6 @@ export function CompanionHeader({
 						<div className="app-subtitle">{t("Time tracking")}</div>
 					</div>
 				</div>
-				<OrganizationSelector
-					organizations={organizations.organizations}
-					activeOrganizationId={organizations.activeOrganizationId}
-					onSwitch={organizations.switchOrganization}
-					isSwitching={busy || organizations.isOffline}
-				/>
 			</div>
 			<div className="app-header-actions">
 				{offline && (
@@ -44,6 +45,16 @@ export function CompanionHeader({
 						<span>{t("Offline")}</span>
 					</div>
 				)}
+				<button
+					type="button"
+					className="settings-button"
+					onClick={onOpenDashboard}
+					disabled={busy}
+					aria-label={t("Open dashboard")}
+					title={t("Open dashboard")}
+				>
+					<IconExternalLink size={18} aria-hidden="true" />
+				</button>
 				<ThemeToggle {...theme} />
 				<button
 					type="button"
@@ -54,6 +65,14 @@ export function CompanionHeader({
 				>
 					<IconSettings size={18} aria-hidden="true" />
 				</button>
+			</div>
+			<div className="app-header-organization">
+				<OrganizationSelector
+					organizations={organizations.organizations}
+					activeOrganizationId={organizations.activeOrganizationId}
+					onSwitch={organizations.switchOrganization}
+					isSwitching={busy || organizations.isOffline}
+				/>
 			</div>
 		</header>
 	);

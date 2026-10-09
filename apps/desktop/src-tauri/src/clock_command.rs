@@ -246,11 +246,12 @@ fn now_ms() -> i64 {
     Utc::now().timestamp_millis()
 }
 
-async fn choose_route(
+fn choose_route(
     session: &ClockSession<'_>,
     kind: CommandKind,
+    negotiated: Negotiated,
 ) -> Result<Route, ClockCommandError> {
-    let capabilities = match negotiate(session).await.map_err(|_| storage_paused())? {
+    let capabilities = match negotiated {
         Negotiated::Unauthorized => {
             return Err(ClockCommandError::pre_send(
                 "Your session has expired. Sign in again before clocking.",
@@ -313,7 +314,7 @@ pub async fn execute(
     command: ClockCommand,
     evidence: ActionEvidence,
 ) -> Result<ClockCommandOutcome, ClockCommandError> {
-    execute_internal(session, command, evidence, None).await
+    execute_internal(session, command, evidence, None, false, None).await
 }
 
 pub async fn execute_pilot(
@@ -322,7 +323,163 @@ pub async fn execute_pilot(
     evidence: ActionEvidence,
     organization_id: &str,
 ) -> Result<ClockCommandOutcome, ClockCommandError> {
-    execute_internal(session, command, evidence, Some(organization_id)).await
+    execute_internal(
+        session,
+        command,
+        evidence,
+        Some(organization_id),
+        true,
+        None,
+    )
+    .await
+}
+
+/// Existing organizations use fresh online requests; adopted organizations keep
+/// the durable command transport. Cached capabilities never authorize online writes.
+pub async fn execute_companion(
+    session: &ClockSession<'_>,
+    command: ClockCommand,
+    evidence: ActionEvidence,
+    organization_id: &str,
+) -> Result<ClockCommandOutcome, ClockCommandError> {
+    let negotiated = negotiate(session).await.map_err(|_| storage_paused())?;
+    if let Negotiated::Live(capabilities) = &negotiated {
+        if capabilities.accepts_online_commands() && !capabilities.accepts_frozen_commands() {
+            let context = capabilities.command_context().unwrap();
+            if context.organization_id != organization_id {
+                return Err(ClockCommandError::pre_send(
+                    "Organization changed. Refresh the selected organization before clocking.",
+                ));
+            }
+            return execute_online(session, command, evidence, context).await;
+        }
+    }
+    execute_internal(
+        session,
+        command,
+        evidence,
+        Some(organization_id),
+        false,
+        Some(negotiated),
+    )
+    .await
+}
+
+async fn execute_online(
+    session: &ClockSession<'_>,
+    command: ClockCommand,
+    evidence: ActionEvidence,
+    context: CommandContext,
+) -> Result<ClockCommandOutcome, ClockCommandError> {
+    if session.queue.lock().count().map_err(|_| storage_paused())? > 0
+        || session
+            .store
+            .lock()
+            .active()
+            .map_err(|_| storage_paused())?
+            .iter()
+            .any(|saved| saved.endpoint == session.endpoint)
+    {
+        return Err(ClockCommandError::pre_send("Earlier saved clock actions require review before another action. Check your time entries in Z8."));
+    }
+    if matches!(command, ClockCommand::Break { .. }) {
+        return Err(ClockCommandError::pre_send("Automatic idle breaks are unavailable in online mode. Enter this break as a correction in Z8."));
+    }
+    let timezone = evidence.timezone.ok_or_else(|| {
+        ClockCommandError::pre_send("The device time zone could not be read. Nothing was recorded.")
+    })?;
+    let status = session
+        .service
+        .get_status(session.endpoint, session.token)
+        .await
+        .map_err(|_| {
+            ClockCommandError::pre_send("Connect and refresh clock status before clocking.")
+        })?;
+    if !status.has_employee || status.employee_id.as_deref() != Some(context.employee_id.as_str()) {
+        return Err(ClockCommandError::pre_send(
+            "Clock context changed. Refresh the selected organization.",
+        ));
+    }
+    let clock_in = matches!(command, ClockCommand::ClockIn(_));
+    if clock_in == status.is_clocked_in {
+        return Err(ClockCommandError::pre_send(
+            "Clock status changed. Refresh status before clocking.",
+        ));
+    }
+    let mut body = serde_json::json!({
+        "type": if clock_in { "clock_in" } else { "clock_out" },
+        "timestamp": evidence.occurred_at.to_rfc3339_opts(SecondsFormat::Millis, true),
+        "browserTimezone": timezone,
+        "desktopContext": context,
+    });
+    if let ClockCommand::ClockIn(location) = &command {
+        body["workLocationType"] = serde_json::json!(location.as_str());
+    }
+    if let ClockCommand::AttributedClose { attribution, .. } = &command {
+        use crate::frozen_command::AttributionIntent;
+        for (key, intent) in [
+            ("projectId", &attribution.project),
+            ("workCategoryId", &attribution.work_category),
+        ] {
+            match intent {
+                AttributionIntent::Preserve => {}
+                AttributionIntent::Clear => {
+                    body[key] = serde_json::Value::Null;
+                }
+                AttributionIntent::Replace { id } => {
+                    body[key] = serde_json::json!(id);
+                }
+            }
+        }
+    }
+    let manual_break = matches!(
+        command,
+        ClockCommand::StartBreak
+            | ClockCommand::AttributedClose {
+                manual_break: true,
+                ..
+            }
+    );
+    match session
+        .service
+        .online_clock_with_status(session.endpoint, session.token, &body)
+        .await
+    {
+        Ok(mut write) => {
+            if write.entries[0].employee_id != context.employee_id {
+                return Err(ClockCommandError::uncertain("Clock context changed during the request. Check your time entries before another action."));
+            }
+            if write.status.as_ref().is_some_and(|status| {
+                status.employee_id.as_deref() != Some(context.employee_id.as_str())
+            }) {
+                write.status = None;
+                write.status_refresh_failed = true;
+                write.context_changed = true;
+            }
+            if let Some(status) = &write.status {
+                remember_status(session.store, session.endpoint, session.token, status);
+            }
+            let saved = if manual_break {
+                session.store.lock().begin_online_break(
+                    session.endpoint,
+                    &context,
+                    &write.entries[0].id,
+                )
+            } else {
+                session.store.lock().end_break(session.endpoint, &context)
+            };
+            saved.map_err(|_| ClockCommandError::uncertain("The server saved this action but local break state could not be saved. Check your time entries before another action."))?;
+            Ok(ClockCommandOutcome::Committed { write })
+        }
+        Err(error) => {
+            if let Some(refusal) = error.downcast_ref::<crate::clock::OnlineClockRefusal>() {
+                return Err(ClockCommandError::pre_send(refusal.to_string()));
+            }
+            // A lost response may follow a commit. Preserve evidence, never replay.
+            let recovery_id = session.queue.lock().enqueue(ActionType::OnlineClock, evidence.occurred_at.timestamp(), Some(body.to_string())).map_err(|_| ClockCommandError::uncertain("Clock outcome is unconfirmed and local recovery could not be saved. Check your time entries before trying again."))?;
+            Ok(ClockCommandOutcome::RetainedForReview { recovery_id })
+        }
+    }
 }
 
 async fn execute_internal(
@@ -330,6 +487,8 @@ async fn execute_internal(
     command: ClockCommand,
     evidence: ActionEvidence,
     expected_organization: Option<&str>,
+    require_atomic_breaks: bool,
+    negotiated: Option<Negotiated>,
 ) -> Result<ClockCommandOutcome, ClockCommandError> {
     if session.queue.lock().count().map_err(|_| {
         ClockCommandError::pre_send("Cannot read local recovery storage. Clock action paused.")
@@ -346,7 +505,11 @@ async fn execute_internal(
         }
     }
 
-    match choose_route(session, command.kind()).await? {
+    let negotiated = match negotiated {
+        Some(value) => value,
+        None => negotiate(session).await.map_err(|_| storage_paused())?,
+    };
+    match choose_route(session, command.kind(), negotiated)? {
         Route::Commands {
             capabilities,
             context,
@@ -360,7 +523,7 @@ async fn execute_internal(
                     "Organization changed. Refresh the selected organization before clocking.",
                 ));
             }
-            if expected_organization.is_some() && !capabilities.supports(CommandKind::Break) {
+            if require_atomic_breaks && !capabilities.supports(CommandKind::Break) {
                 return Err(ClockCommandError::pre_send("This pilot requires atomic breaks and reliable offline clocking. Ask your administrator to finish server setup."));
             }
             if expected_organization.is_some()
@@ -415,7 +578,7 @@ async fn execute_internal(
         }
         Route::Legacy => {
             if expected_organization.is_some() {
-                return Err(ClockCommandError::pre_send("This organization is not ready for reliable offline clocking. Ask your administrator to finish timekeeping adoption."));
+                return Err(ClockCommandError::pre_send("Online desktop clocking requires an updated Z8 server. Use the dashboard until the update is deployed. Nothing was recorded."));
             }
             let unresolved = session
                 .store
@@ -732,6 +895,9 @@ pub async fn sync(session: &ClockSession<'_>, pacing: Pacing) -> anyhow::Result<
         },
     )?;
     reconcile_journal(session, context.as_ref(), &mut journal)?;
+    journal.online_clocking_enabled =
+        matches!(&negotiated, Negotiated::Live(caps) if caps.accepts_online_commands());
+    journal.server_update_required = matches!(&negotiated, Negotiated::Live(caps) if caps.command_context().is_some() && caps.supports(CommandKind::ClockIn) && !caps.accepts_frozen_commands() && !caps.accepts_online_commands());
     journal.sign_in_required = matches!(negotiated, Negotiated::Unauthorized);
     Ok(journal)
 }
