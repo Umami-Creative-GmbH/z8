@@ -228,9 +228,7 @@ function attributionOf(value: unknown): AttributionIntent {
  * `null` or an empty ID clears it. An ID that cannot name a task is refused
  * as an unknown task before anything runs.
  */
-function taskAttributionOf(
-	value: unknown,
-): { ok: true; task?: AttributionIntent } | { ok: false } {
+function taskAttributionOf(value: unknown): { ok: true; task?: AttributionIntent } | { ok: false } {
 	if (value === undefined) return { ok: true };
 	if (typeof value === "string" && value && !ACTION_ID_PATTERN.test(value)) return { ok: false };
 	return { ok: true, task: attributionOf(value) };

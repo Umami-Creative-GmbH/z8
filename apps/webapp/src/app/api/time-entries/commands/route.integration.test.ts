@@ -1119,7 +1119,11 @@ describe("frozen direct-HTTP clock commands on PostgreSQL", () => {
 			const before = await snapshot();
 			expect(await submit(close)).toEqual({
 				status: 200,
-				body: { outcome: "replayed", operationId: close.operationId, receipt: executed.body.receipt },
+				body: {
+					outcome: "replayed",
+					operationId: close.operationId,
+					receipt: executed.body.receipt,
+				},
 			});
 			expect(await snapshot()).toEqual(before);
 		});

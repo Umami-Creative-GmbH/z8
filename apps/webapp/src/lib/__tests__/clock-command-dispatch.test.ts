@@ -169,12 +169,7 @@ describe("browser clock command dispatch", () => {
 		);
 		const without = dispatch.buildCommand(request, target);
 
-		expect(Object.keys(withTask).slice(-4)).toEqual([
-			"target",
-			"project",
-			"workCategory",
-			"task",
-		]);
+		expect(Object.keys(withTask).slice(-4)).toEqual(["target", "project", "workCategory", "task"]);
 		expect(withTask.task).toEqual({ kind: "replace", id: "task-1" });
 		expect(without).not.toHaveProperty("task");
 	});

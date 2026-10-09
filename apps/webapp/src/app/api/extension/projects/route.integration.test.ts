@@ -75,7 +75,14 @@ describe("extension project tasks on PostgreSQL (#875)", () => {
 		await admin.query(
 			`insert into employee (id, user_id, organization_id, role, updated_at) values
 			 ($1, $3, $4, 'employee', $6), ($2, $3, $5, 'employee', $6)`,
-			[ids.employee, ids.otherEmployee, ids.user, ids.organization, ids.otherOrganization, timestamp],
+			[
+				ids.employee,
+				ids.otherEmployee,
+				ids.user,
+				ids.organization,
+				ids.otherOrganization,
+				timestamp,
+			],
 		);
 		await admin.query(
 			`insert into project (id, organization_id, name, color, status, is_active, created_by, updated_at) values

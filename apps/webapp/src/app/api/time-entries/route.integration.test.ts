@@ -503,7 +503,15 @@ describe("legacy direct clock writer in adopted organizations on PostgreSQL", ()
 				 ($1, $4, $5, 'Design', 'open', null, null, $7, now()),
 				 ($2, $4, $5, 'Shipped', 'done', now(), $7, $7, now()),
 				 ($3, $4, $6, 'Elsewhere', 'open', null, null, $7, now())`,
-				[tasks.open, tasks.done, tasks.otherProject, ids.organization, project.a, project.b, ids.requesterUser],
+				[
+					tasks.open,
+					tasks.done,
+					tasks.otherProject,
+					ids.organization,
+					project.a,
+					project.b,
+					ids.requesterUser,
+				],
 			);
 			await post(desktopClock("clock_in", "2026-07-22T08:00:00Z"));
 		});
