@@ -2,13 +2,16 @@ import { sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { auditLog, db } from "@/db";
 import { createLogger } from "@/lib/logger";
+import { AUDIT_LOG_RETENTION_DAYS } from "./retention";
 
 const logger = createLogger("AuditCleanup");
 
 /**
  * Delete old audit logs (cleanup job)
  */
-export async function deleteOldAuditLogs(olderThanDays: number = 365): Promise<number> {
+export async function deleteOldAuditLogs(
+	olderThanDays: number = AUDIT_LOG_RETENTION_DAYS,
+): Promise<number> {
 	try {
 		const cutoffDate = DateTime.utc().minus({ days: olderThanDays }).toJSDate();
 

@@ -28,6 +28,7 @@
 		"dotenv": "^18.0.5",
 		"drizzle-orm": "^0.45.3",
 		"effect": "4.0.1",
+		"file-type": "^22.1.1",
 		"ioredis": "^6.0.0",
 		"jszip": "^3.10.2",
 		"luxon": "^3.7.2",

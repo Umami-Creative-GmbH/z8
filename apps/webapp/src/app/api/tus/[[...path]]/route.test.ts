@@ -297,6 +297,123 @@ describe("TUS route", () => {
 		expect(mockState.handleWeb).toHaveBeenCalledWith(request);
 	});
 
+	describe("personnel document purpose (#865)", () => {
+		const personnel = `purpose ${btoa("personnel-document")}`;
+
+		it("accepts a PDF of up to 20 MB, above the receipt limit", async () => {
+			const request = new Request("https://app.example.com/api/tus", {
+				method: "POST",
+				headers: {
+					"upload-length": String(20 * 1024 * 1024),
+					"upload-metadata": `${personnel}, filetype ${btoa("application/pdf")}`,
+				},
+			});
+
+			const response = await POST(request);
+
+			expect(response.status).toBe(204);
+			expect(mockState.handleWeb).toHaveBeenCalledWith(request);
+		});
+
+		it("refuses a file larger than 20 MB", async () => {
+			const response = await POST(
+				new Request("https://app.example.com/api/tus", {
+					method: "POST",
+					headers: {
+						"upload-length": String(20 * 1024 * 1024 + 1),
+						"upload-metadata": `${personnel}, filetype ${btoa("application/pdf")}`,
+					},
+				}),
+			);
+
+			expect(response.status).toBe(413);
+			expect(mockState.handleWeb).not.toHaveBeenCalled();
+		});
+
+		it("refuses a receipt-only type such as GIF", async () => {
+			const response = await POST(
+				new Request("https://app.example.com/api/tus", {
+					method: "POST",
+					headers: {
+						"upload-length": "100",
+						"upload-metadata": `${personnel}, filetype ${btoa("image/gif")}`,
+					},
+				}),
+			);
+
+			expect(response.status).toBe(400);
+			await expect(response.json()).resolves.toEqual({ error: "Invalid file type" });
+		});
+
+		it("refuses HEIC with a hint to export as JPEG", async () => {
+			const response = await POST(
+				new Request("https://app.example.com/api/tus", {
+					method: "POST",
+					headers: {
+						"upload-length": "100",
+						"upload-metadata": `${personnel}, filetype ${btoa("image/heic")}`,
+					},
+				}),
+			);
+
+			expect(response.status).toBe(400);
+			await expect(response.json()).resolves.toEqual({
+				error: "HEIC images are not supported. Export the photo as JPEG and upload it again.",
+			});
+		});
+
+		it("refuses an unknown purpose", async () => {
+			const response = await POST(
+				new Request("https://app.example.com/api/tus", {
+					method: "POST",
+					headers: {
+						"upload-length": "100",
+						"upload-metadata": `purpose ${btoa("anything")}, filetype ${btoa("application/pdf")}`,
+					},
+				}),
+			);
+
+			expect(response.status).toBe(400);
+			expect(mockState.handleWeb).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("payslip batch purpose (#868)", () => {
+		const payslips = `purpose ${btoa("payslip-batch")}`;
+
+		it("accepts a PDF of up to 20 MB", async () => {
+			const request = new Request("https://app.example.com/api/tus", {
+				method: "POST",
+				headers: {
+					"upload-length": String(20 * 1024 * 1024),
+					"upload-metadata": `${payslips}, filetype ${btoa("application/pdf")}`,
+				},
+			});
+
+			const response = await POST(request);
+
+			expect(response.status).toBe(204);
+			expect(mockState.handleWeb).toHaveBeenCalledWith(request);
+		});
+
+		it("refuses anything but PDF", async () => {
+			const response = await POST(
+				new Request("https://app.example.com/api/tus", {
+					method: "POST",
+					headers: {
+						"upload-length": "100",
+						"upload-metadata": `${payslips}, filetype ${btoa("image/png")}`,
+					},
+				}),
+			);
+
+			expect(response.status).toBe(400);
+			await expect(response.json()).resolves.toEqual({
+				error: "A payslip batch takes PDF files only.",
+			});
+		});
+	});
+
 	it("allows valid POST upload creation lengths through to TUS handling", async () => {
 		const request = new Request("https://app.example.com/api/tus", {
 			method: "POST",

@@ -1,4 +1,6 @@
 import { DateTime } from "luxon";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { workMatchesShift } from "@/lib/scheduling/shift-occasion";
 import type {
 	BriefingAbsence,
 	BriefingActionItem,
@@ -106,16 +108,17 @@ export function detectAttendanceExceptions({
 
 		const scheduledStart = DateTime.fromISO(`${shift.date}T${shift.startTime}`, { zone: now.zone });
 		const scheduledEnd = getShiftEnd(scheduledStart, shift.endTime);
-		const associationStart = scheduledStart.minus({ hours: 2 });
+		const interval = {
+			start: instantFromDate(scheduledStart.toJSDate()),
+			end: instantFromDate(scheduledEnd.toJSDate()),
+		};
 		const firstClockIn = records.reduce<DateTime | null>((earliest, record) => {
 				if (record.employeeId !== shift.employeeId) return earliest;
 				const startAt = DateTime.fromJSDate(record.startAt).setZone(now.zone);
-				const endAt = record.endAt ? DateTime.fromJSDate(record.endAt).setZone(now.zone) : null;
-
-				const matchesShift =
-					startAt >= associationStart &&
-					startAt < scheduledEnd &&
-					(endAt === null || endAt > scheduledStart);
+				const matchesShift = workMatchesShift(interval, {
+					start: instantFromDate(record.startAt),
+					end: record.endAt ? instantFromDate(record.endAt) : null,
+				});
 
 				if (!matchesShift) return earliest;
 

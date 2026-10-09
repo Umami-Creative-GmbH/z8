@@ -67,9 +67,29 @@ function closeTarget(
 export function toClockingCommand(
 	command: FrozenClockCommand,
 	actor: FrozenCommandActor,
-	input: { now: Instant; fallbackZone: string },
+	input: {
+		now: Instant;
+		fallbackZone: string;
+		/**
+		 * Whether the request may carry a position (#826, decision D5): only a
+		 * cookie-authenticated browser request. A bearer client's stamped command
+		 * still runs, without its position; its bytes stay the receipt command.
+		 */
+		acceptsPosition: boolean;
+	},
 ): ClockCommand {
 	const window = CLOCK_COMMAND_ADMISSION_WINDOWS[command.admission];
+	const position =
+		input.acceptsPosition && "position" in command
+			? {
+					position: {
+						latitude: command.position.latitude,
+						longitude: command.position.longitude,
+						accuracyMeters: command.position.accuracyMeters,
+						fixedAt: parseInstant(command.position.fixedAt),
+					},
+				}
+			: {};
 	const common = {
 		organizationId: actor.organizationId,
 		principal: { kind: "user", userId: actor.userId },
@@ -86,6 +106,7 @@ export function toClockingCommand(
 				: {}),
 		},
 		payload: command,
+		...position,
 	} satisfies Omit<ClockCommand, "body">;
 	switch (command.kind) {
 		case "clock_in":

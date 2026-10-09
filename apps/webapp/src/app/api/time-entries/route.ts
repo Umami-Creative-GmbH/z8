@@ -16,6 +16,7 @@ import {
 	UnsupportedAuthorizationConditionError,
 } from "@/lib/authorization";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { resolvePublicRequestOrigin } from "@/lib/domain/request-origin";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import { preserveLateClockEvidence } from "@/lib/employee-lifecycle/late-clock-evidence";
@@ -247,19 +248,31 @@ const FAILURE_REPLIES: Record<
 	Exclude<LegacyClockFailure, "billing_required" | "legacy_not_accepted">,
 	{ status: number; error: string }
 > = {
-	access_denied: { status: 403, error: "Active employee record required for the organization" },
+	access_denied: {
+		status: 403,
+		error: "Active employee record required for the organization",
+	},
 	invalid_command: { status: 400, error: "Invalid clock action id" },
 	invalid_work_location: { status: 400, error: "Invalid work location type" },
 	// Legacy commands carry no freshness; the route checks the capture window itself.
-	admission_window: { status: 400, error: "Clock instant is outside the allowed capture window" },
+	admission_window: {
+		status: 400,
+		error: "Clock instant is outside the allowed capture window",
+	},
 	collision: { status: 409, error: "Clock action id collision" },
 	append_review_required: {
 		status: 409,
 		error: "Clock action was not saved because time history needs review",
 	},
 	frozen_not_accepted: { status: 400, error: "Invalid clock action" },
-	already_clocked_in: { status: 409, error: "Active work period already exists" },
-	holiday_blocked: { status: 409, error: "Clock-in is not allowed on a holiday" },
+	already_clocked_in: {
+		status: 409,
+		error: "Active work period already exists",
+	},
+	holiday_blocked: {
+		status: 409,
+		error: "Clock-in is not allowed on a holiday",
+	},
 	occupancy_conflict: { status: 409, error: "Clock-in overlaps recorded work" },
 	// Legacy closures always close the active work.
 	not_clocked_in: { status: 409, error: "No active work period found" },
@@ -268,7 +281,10 @@ const FAILURE_REPLIES: Record<
 	project_not_allowed: { status: 400, error: "Cannot assign to this project" },
 	// Also names the stable reason; see `refusedResponse`.
 	task_not_allowed: { status: 400, error: "Cannot book time to this task" },
-	work_category_not_allowed: { status: 400, error: "Cannot assign to this work category" },
+	work_category_not_allowed: {
+		status: 400,
+		error: "Cannot assign to this work category",
+	},
 	invalid_interval: { status: 409, error: "Clock-out precedes clock-in" },
 	failed: { status: 500, error: "Internal server error" },
 	unconfirmed: { status: 500, error: "Internal server error" },
@@ -340,11 +356,11 @@ export async function POST(request: NextRequest) {
 
 	return fenceLegacyClockConsumerResponse(
 		classifyLegacyClockConsumer(resolvedHeaders, body),
-		await runLegacyClockCommand(resolvedHeaders, body),
+		await runLegacyClockCommand(resolvedHeaders, body, request),
 	);
 }
 
-async function runLegacyClockCommand(resolvedHeaders: Headers, body: any) {
+async function runLegacyClockCommand(resolvedHeaders: Headers, body: any, request: NextRequest) {
 	try {
 		// With Bearer plugin, getSession handles both cookie and Bearer token auth
 		const session = await auth.api.getSession({ headers: resolvedHeaders });
@@ -406,6 +422,27 @@ async function runLegacyClockCommand(resolvedHeaders: Headers, body: any) {
 				await preserveRefusedReplay(session.user.id, activeOrgId, body);
 			}
 			throw error;
+		}
+
+		// Captured desktop context is an assertion, never authorization. Bind the
+		// fresh request to the same account and tenant that offered capabilities.
+		if (body.desktopContext !== undefined) {
+			const context = body.desktopContext;
+			if (
+				!context ||
+				typeof context !== "object" ||
+				context.userId !== session.user.id ||
+				context.organizationId !== actor.organizationId ||
+				context.employeeId !== actor.employee.id ||
+				context.server !== (await resolvePublicRequestOrigin(request))
+			) {
+				return NextResponse.json(
+					{
+						error: "Clock context changed. Refresh the selected organization.",
+					},
+					{ status: 409 },
+				);
+			}
 		}
 
 		const isReplay = replay === true;
@@ -490,7 +527,10 @@ async function runLegacyClockCommand(resolvedHeaders: Headers, body: any) {
 			type === "clock_in"
 				? await clocking.run({
 						...command,
-						body: { kind: "clock_in", workLocationType: workLocationType ?? "office" },
+						body: {
+							kind: "clock_in",
+							workLocationType: workLocationType ?? "office",
+						},
 					})
 				: await clocking.run({
 						...command,

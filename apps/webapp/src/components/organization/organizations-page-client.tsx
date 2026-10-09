@@ -3,10 +3,12 @@
 import { useTranslate } from "@tolgee/react";
 import type * as authSchema from "@/db/auth-schema";
 import type { AutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/types";
+import type { ClockingReminderSettings } from "@/lib/time-tracking/clocking-reminders/settings-policy";
 import { OrganizationTab } from "./organization-tab";
 
 interface OrganizationsPageClientProps {
 	autoClockOutSettings: AutoClockOutSettings;
+	clockingReminderSettings: ClockingReminderSettings;
 	organization: typeof authSchema.organization.$inferSelect;
 	memberCount: number;
 	currentMemberRole: "owner" | "admin" | "member";
@@ -16,6 +18,7 @@ interface OrganizationsPageClientProps {
 
 export function OrganizationsPageClient({
 	autoClockOutSettings,
+	clockingReminderSettings,
 	organization,
 	memberCount,
 	currentMemberRole,
@@ -39,6 +42,7 @@ export function OrganizationsPageClient({
 
 				<OrganizationTab
 					autoClockOutSettings={autoClockOutSettings}
+					clockingReminderSettings={clockingReminderSettings}
 					organization={organization}
 					memberCount={memberCount}
 					currentMemberRole={currentMemberRole}

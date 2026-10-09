@@ -11,6 +11,7 @@ export interface OrganizationSettings {
 	surchargesEnabled: boolean;
 	demoDataEnabled: boolean;
 	worksCouncilEnabled: boolean;
+	personnelFilesEnabled: boolean;
 	timezone: string;
 	deletedAt: string | null;
 	isHydrated: boolean;
@@ -33,6 +34,7 @@ const initialState: OrganizationSettings = {
 	surchargesEnabled: false,
 	demoDataEnabled: true,
 	worksCouncilEnabled: false,
+	personnelFilesEnabled: false,
 	timezone: "UTC",
 	deletedAt: null,
 	isHydrated: false,
@@ -102,5 +104,7 @@ export const useSurchargesEnabled = () =>
 export const useDemoDataEnabled = () => useOrganizationSettings((state) => state.demoDataEnabled);
 export const useWorksCouncilEnabled = () =>
 	useOrganizationSettings((state) => state.worksCouncilEnabled);
+export const usePersonnelFilesEnabled = () =>
+	useOrganizationSettings((state) => state.personnelFilesEnabled);
 export const useOrganizationTimezone = () => useOrganizationSettings((state) => state.timezone);
 export const useOrganizationDeletedAt = () => useOrganizationSettings((state) => state.deletedAt);

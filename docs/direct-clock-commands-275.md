@@ -8,7 +8,7 @@ Direct-HTTP clients get a versioned transport next to the legacy
 | Route | Purpose |
 | --- | --- |
 | `GET /api/time-entries/commands` | Capabilities and the server-derived context a client captures into each command |
-| `POST /api/time-entries/commands` | Submit one frozen version 2 command |
+| `POST /api/time-entries/commands` | Submit one frozen version 2 command, or a position-stamped version 3 browser command (#826) |
 | `GET /api/time-entries/commands/{operationId}` | Lookup-only recovery of that command's outcome |
 
 Fresh submission is gated with the same per-organization `time_entry_append_control`
@@ -75,6 +75,32 @@ collision, never new work.
   device and desktop capture is a client-adoption follow-up (#329). The extension
   is retired and will not send version 2 commands
   ([retirement record](extension-clock-client-retirement-282.md)).
+
+## Version 3: position-stamped browser commands (#826)
+
+Version 3 is version 2's `clock_in` or `clock_out` plus one required field, appended
+last, with the device position taken at the event (spec #766, Time Tracking ADR 0004):
+
+```jsonc
+"position": {
+  "latitude": 52.520008,           // -90..90
+  "longitude": 13.404954,          // -180..180
+  "accuracyMeters": 18.5,          // finite, >= 0
+  "fixedAt": "2026-09-20T09:59:58.500Z" // when the device determined it; UTC, <= ms precision
+}
+```
+
+- Capabilities advertise `commandVersions: [2, 3]`. Version 2 stays accepted and never
+  carries a position; a version 3 `break` does not exist.
+- The position is part of the frozen bytes, so an identical stamped resend replays and
+  a resend with a different position is a collision.
+- Only a cookie-authenticated browser request may stamp. A request with an
+  `Authorization` header (the desktop, any bearer client) still runs, without its
+  position, and the receipt keeps its bytes. The desktop stays on version 2.
+- The server keeps the position as a `position_stamp` only if, when the command
+  arrives, capture is on for the employee and their consent to the current notice is
+  active and was given before `occurredAt`. Otherwise it drops the position silently
+  and accepts the event. The check runs inside the clocking work transaction.
 
 ## Order of checks
 

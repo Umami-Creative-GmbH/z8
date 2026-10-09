@@ -12,6 +12,12 @@ import { WORK_LOCATION_TYPES } from "@/lib/time-tracking/work-location";
  * contract for the web time clock. Keep the contract backwards compatible:
  * clients from the previous deployment still post here.
  */
+/**
+ * The position taken at the clock event (#826). Read by the clock action, which
+ * drops a malformed one: a position never refuses the clock event.
+ */
+const position = z.unknown().optional();
+
 const timeClockSchema = z.discriminatedUnion("action", [
 	z.object({
 		action: z.literal("clock_in"),
@@ -19,6 +25,7 @@ const timeClockSchema = z.discriminatedUnion("action", [
 		submissionId: z.uuid().optional(),
 		workLocationType: z.enum(WORK_LOCATION_TYPES).optional(),
 		browserTimezone: z.string().nullish(),
+		position,
 	}),
 	z.object({
 		action: z.literal("clock_out"),
@@ -29,6 +36,7 @@ const timeClockSchema = z.discriminatedUnion("action", [
 		taskId: z.string().min(1).nullable().optional(),
 		workCategoryId: z.string().min(1).nullable().optional(),
 		browserTimezone: z.string().nullish(),
+		position,
 	}),
 ]);
 
@@ -58,17 +66,22 @@ export async function POST(request: Request) {
 	}
 
 	const body = parsedBody.data;
+	// Positions come only from the browser's session cookie; a bearer client's
+	// clock event goes ahead unstamped, as on the frozen command route (#826 D5).
+	const position = request.headers.has("authorization") ? undefined : body.position;
 	try {
 		const result =
 			body.action === "clock_in"
 				? await clockIn(body.workLocationType, {
 						browserTimezone: body.browserTimezone,
 						submissionId: body.submissionId,
+						position,
 					})
 				: await clockOut(body.projectId, body.workCategoryId, {
 						browserTimezone: body.browserTimezone,
 						submissionId: body.submissionId,
 						...namedTaskId(body.taskId),
+						position,
 					});
 
 		return NextResponse.json(result, { status: result.success ? 200 : 422 });

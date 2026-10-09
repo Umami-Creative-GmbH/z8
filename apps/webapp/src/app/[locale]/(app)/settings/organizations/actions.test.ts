@@ -174,6 +174,7 @@ describe("organization feature allowlist", () => {
 		expect(isOrganizationFeature("surchargesEnabled")).toBe(true);
 		expect(isOrganizationFeature("demoDataEnabled")).toBe(true);
 		expect(isOrganizationFeature("worksCouncilEnabled")).toBe(true);
+		expect(isOrganizationFeature("personnelFilesEnabled")).toBe(true);
 		expect(isOrganizationFeature("metadata")).toBe(false);
 		expect(isOrganizationFeature("deletedAt")).toBe(false);
 	});
@@ -606,6 +607,37 @@ describe("organization invitation actions", () => {
 		});
 		expect(updateSetMock).not.toHaveBeenCalled();
 		expect(updateMemberRoleMock).not.toHaveBeenCalled();
+	});
+
+	it("lets an admin switch personnel files (#865)", async () => {
+		memberFindFirstMock.mockResolvedValue({
+			id: "actor-member",
+			userId: "user-admin",
+			organizationId: "org-1",
+			role: "admin",
+			status: "approved",
+		});
+		updateWhereMock.mockResolvedValue(undefined);
+
+		const result = await toggleOrganizationFeature("org-1", "personnelFilesEnabled", false);
+
+		expect(result).toMatchObject({ success: true });
+		expect(updateSetMock).toHaveBeenCalledWith({ personnelFilesEnabled: false });
+	});
+
+	it("keeps every other feature owner-only for admins", async () => {
+		memberFindFirstMock.mockResolvedValue({
+			id: "actor-member",
+			userId: "user-admin",
+			organizationId: "org-1",
+			role: "admin",
+			status: "approved",
+		});
+
+		const result = await toggleOrganizationFeature("org-1", "shiftsEnabled", true);
+
+		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(updateSetMock).not.toHaveBeenCalled();
 	});
 
 	it("scopes approved actor and target role-update lookups to the organization", async () => {

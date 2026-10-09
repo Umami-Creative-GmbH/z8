@@ -65,7 +65,7 @@ describe("parseClockCommand", () => {
 	});
 
 	it("reports other versions as unsupported rather than invalid", () => {
-		expect(parseClockCommand({ ...clockIn, version: 3 })).toEqual({
+		expect(parseClockCommand({ ...clockIn, version: 4 })).toEqual({
 			ok: false,
 			code: "unsupported_version",
 		});
@@ -109,6 +109,61 @@ describe("parseClockCommand", () => {
 		expect(parseClockCommand(body)).toEqual({ ok: false, code: "invalid_command" });
 	});
 });
+
+describe("position-stamped version 3 commands (#826)", () => {
+	const position = {
+		latitude: 52.520008,
+		longitude: 13.404954,
+		accuracyMeters: 18.5,
+		fixedAt: "2026-09-25T07:59:30.250Z",
+	};
+	const stampedIn = { ...clockIn, version: 3, position };
+	const stampedOut = { ...clockOut, version: 3, position };
+
+	it("accepts a clock-in or clock-out carrying the device position verbatim", () => {
+		expect(parseClockCommand(stampedIn)).toEqual({ ok: true, command: stampedIn });
+		expect(parseClockCommand(stampedOut)).toEqual({ ok: true, command: stampedOut });
+	});
+
+	it("still accepts version 2 commands, which never carry a position", () => {
+		expect(parseClockCommand(clockIn)).toEqual({ ok: true, command: clockIn });
+		expect(parseClockCommand({ ...clockIn, position })).toEqual({
+			ok: false,
+			code: "invalid_command",
+		});
+	});
+
+	it.each([
+		["a version 3 command without a position", { ...stampedIn, position: undefined }],
+		["a latitude beyond the pole", { ...stampedIn, position: { ...position, latitude: 90.1 } }],
+		[
+			"a longitude beyond the antimeridian",
+			{ ...stampedIn, position: { ...position, longitude: -180.5 } },
+		],
+		["a negative accuracy", { ...stampedIn, position: { ...position, accuracyMeters: -1 } }],
+		["a textual latitude", { ...stampedIn, position: { ...position, latitude: "52.5" } }],
+		[
+			"a fix time with an offset",
+			{ ...stampedIn, position: { ...position, fixedAt: "2026-09-25T09:59:30+02:00" } },
+		],
+		["an altitude", { ...stampedIn, position: { ...position, altitude: 34 } }],
+		["a desktop break", { ...breakFixture(), version: 3, position }],
+	])("rejects %s", (_label, body) => {
+		expect(parseClockCommand(body)).toEqual({ ok: false, code: "invalid_command" });
+	});
+});
+
+function breakFixture() {
+	return JSON.parse(
+		readFileSync(
+			new URL(
+				"../../../../desktop/src-tauri/tests/clock-core/fixtures/desktop-v2-break.json",
+				import.meta.url,
+			),
+			"utf8",
+		),
+	) as Record<string, unknown>;
+}
 
 describe("break commands (#281)", () => {
 	// Idle from the last input at 10:00:05.123 until the detected return at

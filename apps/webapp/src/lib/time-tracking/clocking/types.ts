@@ -128,6 +128,20 @@ export type BreakBody = {
 
 export type ClockBody = ClockInBody | ClockOutBody | BreakBody;
 
+/**
+ * The device position taken at the clock event (#826, Time Tracking ADR 0004).
+ * Only the employee's own web/PWA commands may carry one; the module keeps it
+ * as a position stamp only when the capture check passes inside the work
+ * transaction, and otherwise silently drops it.
+ */
+export type ClockPosition = {
+	latitude: number;
+	longitude: number;
+	accuracyMeters: number;
+	/** When the device determined the position; a cached fix may predate the event. */
+	fixedAt: Instant;
+};
+
 type ClockCommandOf<Body extends ClockBody> = {
 	organizationId: string;
 	principal: ClockPrincipal;
@@ -144,6 +158,8 @@ type ClockCommandOf<Body extends ClockBody> = {
 	 * organization answers only its committed replays (#327).
 	 */
 	legacy?: true;
+	/** The position taken at the event; see `ClockPosition`. Never part of a web receipt. */
+	position?: ClockPosition;
 	body: Body;
 };
 

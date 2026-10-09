@@ -17,9 +17,14 @@ import type { LegacyEscalationSuppression } from "@/lib/approvals/escalation/leg
 import type { ApprovalEscalationJobResult } from "@/lib/approvals/escalation/scheduled-job";
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
+import type { PersonnelFileExpiryRemindersJobResult } from "@/lib/jobs/personnel-file-expiry-reminders";
+import type { PersonnelFileRetentionRemindersJobResult } from "@/lib/jobs/personnel-file-retention-reminders";
+import type { PersonnelFileUploadCleanupJobResult } from "@/lib/jobs/personnel-file-upload-cleanup";
+import type { PositionStampPurgeResult } from "@/lib/jobs/position-stamp-purge";
 import type { SCIMMaintenanceResult } from "@/lib/jobs/scim-maintenance";
 import type { TravelExpenseReceiptCleanupJobResult } from "@/lib/jobs/travel-expense-receipt-cleanup";
 import type { TravelExpenseReferenceRatesJobResult } from "@/lib/jobs/travel-expense-reference-rates";
+import type { CleanupJobData } from "@/lib/queue";
 import type { WorkBalanceRebuildResult } from "@/lib/work-balance/rebuild-intents";
 
 // ============================================
@@ -113,6 +118,12 @@ export interface ExecutionCleanupResult {
 	success: true;
 	deletedCount: number;
 	daysToKeep: number;
+}
+
+/** Result from a retention cleanup job (notifications, audit logs) */
+export interface RetentionCleanupResult {
+	task: CleanupJobData["task"];
+	deletedCount: number;
 }
 
 /** Result from break enforcement job */
@@ -311,6 +322,17 @@ export const CRON_JOBS = {
 		defaultJobOptions: { attempts: 1, priority: 8 },
 	},
 
+	"cron:clocking-reminders": {
+		schedule: "*/5 * * * *",
+		description:
+			"Remind employees of a missed clock-in, a forgotten clock-out or a break that is about to be due",
+		processor: async () => {
+			const { runClockingReminders } = await import("@/lib/jobs/clocking-reminders");
+			return runClockingReminders();
+		},
+		defaultJobOptions: { attempts: 1, priority: 8 },
+	},
+
 	"cron:employee-departures": {
 		schedule: "* * * * *", // Every minute
 		description:
@@ -337,6 +359,45 @@ export const CRON_JOBS = {
 		defaultJobOptions: { attempts: 2, priority: 9 },
 	},
 
+	"cron:notification-cleanup": {
+		schedule: "30 2 * * *", // Daily at 2:30 AM
+		description: "Delete notifications older than 90 days",
+		processor: async (): Promise<RetentionCleanupResult> => {
+			const { runCleanup } = await import("@/lib/cleanup");
+			const { deletedCount } = await runCleanup({
+				type: "cleanup",
+				task: "old_notifications",
+			});
+			return { task: "old_notifications", deletedCount };
+		},
+		defaultJobOptions: { attempts: 2, priority: 9 },
+	},
+
+	"cron:audit-log-cleanup": {
+		schedule: "30 2 * * *", // Daily at 2:30 AM
+		description: "Delete audit log records past the audit-log retention period",
+		processor: async (): Promise<RetentionCleanupResult> => {
+			const { runCleanup } = await import("@/lib/cleanup");
+			const { deletedCount } = await runCleanup({
+				type: "cleanup",
+				task: "old_audit_logs",
+			});
+			return { task: "old_audit_logs", deletedCount };
+		},
+		defaultJobOptions: { attempts: 2, priority: 9 },
+	},
+
+	"cron:position-stamp-purge": {
+		schedule: "0 1 * * *", // Daily at 1 AM
+		description:
+			"Delete position stamps past their purge date in every organization; clock events stay",
+		processor: async (): Promise<PositionStampPurgeResult> => {
+			const { runPositionStampPurge } = await import("@/lib/jobs/position-stamp-purge");
+			return runPositionStampPurge();
+		},
+		defaultJobOptions: { attempts: 2, priority: 9 },
+	},
+
 	"cron:travel-expense-receipt-cleanup": {
 		schedule: "*/15 * * * *", // Every 15 minutes
 		description:
@@ -346,6 +407,45 @@ export const CRON_JOBS = {
 				"@/lib/jobs/travel-expense-receipt-cleanup"
 			);
 			return runTravelExpenseReceiptCleanupJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 9 },
+	},
+
+	"cron:personnel-file-upload-cleanup": {
+		schedule: "*/15 * * * *", // Every 15 minutes
+		description:
+			"Delete private personnel file objects of deleted employee documents and of failed or abandoned uploads",
+		processor: async (): Promise<PersonnelFileUploadCleanupJobResult> => {
+			const { runPersonnelFileUploadCleanupJob } = await import(
+				"@/lib/jobs/personnel-file-upload-cleanup"
+			);
+			return runPersonnelFileUploadCleanupJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 9 },
+	},
+
+	"cron:personnel-file-expiry-reminders": {
+		schedule: "0 * * * *", // Hourly, so each organization's day starts soon after its midnight
+		description:
+			"Remind officers and employees of personnel file documents expiring within the lead time or today",
+		processor: async (): Promise<PersonnelFileExpiryRemindersJobResult> => {
+			const { runPersonnelFileExpiryRemindersJob } = await import(
+				"@/lib/jobs/personnel-file-expiry-reminders"
+			);
+			return runPersonnelFileExpiryRemindersJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 7 },
+	},
+
+	"cron:personnel-file-retention-reminders": {
+		schedule: "0 * * * *", // Hourly; at most one reminder per recipient and organization day
+		description:
+			"Tell personnel file officers about employee documents newly due for deletion (never deletes)",
+		processor: async (): Promise<PersonnelFileRetentionRemindersJobResult> => {
+			const { runPersonnelFileRetentionRemindersJob } = await import(
+				"@/lib/jobs/personnel-file-retention-reminders"
+			);
+			return runPersonnelFileRetentionRemindersJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 9 },
 	},

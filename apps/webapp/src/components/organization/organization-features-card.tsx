@@ -4,14 +4,25 @@ import {
 	IconBriefcase,
 	IconCalendarTime,
 	IconDatabase,
+	IconFileText,
 	IconGavel,
 	IconLoader2,
 	IconPercentage,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useReducer, useTransition } from "react";
+import { useReducer, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { toggleOrganizationFeature } from "@/app/[locale]/(app)/settings/organizations/actions";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -30,6 +41,7 @@ interface OrganizationFeaturesCardProps {
 	surchargesEnabled: boolean;
 	demoDataEnabled: boolean;
 	worksCouncilEnabled: boolean;
+	personnelFilesEnabled: boolean;
 	currentMemberRole: "owner" | "admin" | "member";
 }
 
@@ -39,6 +51,7 @@ export function OrganizationFeaturesCard({
 	surchargesEnabled,
 	demoDataEnabled,
 	worksCouncilEnabled,
+	personnelFilesEnabled,
 	...props
 }: OrganizationFeaturesCardProps) {
 	const initialFeatures = {
@@ -47,6 +60,7 @@ export function OrganizationFeaturesCard({
 		surchargesEnabled,
 		demoDataEnabled,
 		worksCouncilEnabled,
+		personnelFilesEnabled,
 	};
 
 	return (
@@ -72,9 +86,12 @@ function OrganizationFeaturesCardContent({
 	const setOrgSettings = useOrganizationSettings((state) => state.setSettings);
 
 	const canEdit = currentMemberRole === "owner";
+	// Personnel files are switched by owners and admins (#865).
+	const canEditPersonnelFiles = canEdit || currentMemberRole === "admin";
+	const [confirmPersonnelFilesOff, setConfirmPersonnelFilesOff] = useState(false);
 
 	const handleToggleFeature = async (feature: OrganizationFeature, enabled: boolean) => {
-		if (!canEdit) return;
+		if (feature === "personnelFilesEnabled" ? !canEditPersonnelFiles : !canEdit) return;
 
 		dispatch({ type: "set", feature, enabled });
 		setOrgSettings({ [feature]: enabled });
@@ -277,12 +294,86 @@ function OrganizationFeaturesCardContent({
 					</div>
 				</div>
 
+				{/* Personnel Files Feature */}
+				<div className="flex items-center justify-between">
+					<div className="flex items-start gap-3">
+						<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
+							<IconFileText aria-hidden="true" className="size-5 text-primary" />
+						</div>
+						<div className="space-y-1">
+							<Label
+								htmlFor="personnel-files-toggle"
+								className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+							>
+								{t("organization.features.personnel-files", "Personnel Files")}
+							</Label>
+							<p className="text-sm text-muted-foreground">
+								{t(
+									"organization.features.personnel-files-description",
+									"Keep contracts, payslips, certificates and other employee documents in a personnel file per employee.",
+								)}
+							</p>
+						</div>
+					</div>
+					<div className="flex items-center gap-2">
+						{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+						<Switch
+							id="personnel-files-toggle"
+							checked={features.personnelFilesEnabled}
+							onCheckedChange={(enabled) => {
+								if (enabled) {
+									void handleToggleFeature("personnelFilesEnabled", true);
+								} else {
+									setConfirmPersonnelFilesOff(true);
+								}
+							}}
+							disabled={!canEditPersonnelFiles || isPending}
+							aria-label={t(
+								"organization.features.toggle-personnel-files",
+								"Toggle personnel files",
+							)}
+						/>
+					</div>
+				</div>
+
+				<AlertDialog open={confirmPersonnelFilesOff} onOpenChange={setConfirmPersonnelFilesOff}>
+					<AlertDialogContent>
+						<AlertDialogHeader>
+							<AlertDialogTitle>
+								{t(
+									"organization.features.personnel-files-disable-title",
+									"Turn off personnel files?",
+								)}
+							</AlertDialogTitle>
+							<AlertDialogDescription>
+								{t(
+									"organization.features.personnel-files-disable-description",
+									"Personnel file pages and downloads are hidden for everyone. Documents stay stored and still count for retention. Turning personnel files back on restores everything.",
+								)}
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						<AlertDialogFooter>
+							<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+							<AlertDialogAction
+								onClick={() => void handleToggleFeature("personnelFilesEnabled", false)}
+							>
+								{t("organization.features.personnel-files-disable-confirm", "Turn off")}
+							</AlertDialogAction>
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
+
 				{!canEdit && (
 					<p className="text-xs text-muted-foreground">
-						{t(
-							"organization.features.owner-only",
-							"Only organization owners can change feature settings.",
-						)}
+						{canEditPersonnelFiles
+							? t(
+									"organization.features.owner-only-except-personnel-files",
+									"Only organization owners can change feature settings, except personnel files.",
+								)
+							: t(
+									"organization.features.owner-only",
+									"Only organization owners can change feature settings.",
+								)}
 					</p>
 				)}
 			</CardContent>

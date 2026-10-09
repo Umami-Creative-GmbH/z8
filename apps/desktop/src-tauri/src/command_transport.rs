@@ -22,6 +22,7 @@ struct CapabilitiesBody {
     command_versions: Vec<u32>,
     kinds: Vec<String>,
     submit: String,
+    online_submit: Option<String>,
     context: CapabilitiesContext,
 }
 
@@ -64,6 +65,14 @@ impl Capabilities {
     /// Fresh submission follows the organization's completed-work adoption.
     pub fn accepts_fresh_commands(&self) -> bool {
         self.body.submit == "available"
+    }
+
+    /// Online clocking does not require the receipt-backed offline rollout.
+    pub fn accepts_online_commands(&self) -> bool {
+        self.body.online_submit.as_deref() == Some("available")
+            && self.command_context().is_some()
+            && self.supports(CommandKind::ClockIn)
+            && self.supports(CommandKind::ClockOut)
     }
 
     /// The desktop may freeze clock-in and clock-out for this context.

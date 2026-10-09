@@ -1,7 +1,6 @@
 import "server-only";
 
 import { and, eq, gte, lte, sql } from "drizzle-orm";
-import { Effect } from "effect";
 import { DateTime, IANAZone } from "luxon";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
@@ -29,8 +28,6 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { runtime } from "@/lib/effect/runtime";
-import { WorkPolicyService } from "@/lib/effect/services/work-policy.service";
 import type { WorkCategoryReader } from "@/lib/query/work-category.queries";
 import { canonicalWorkRecordClient } from "@/lib/time-tracking/canonical-work-record";
 import { attributionIntent, type ClockChannel } from "@/lib/time-tracking/close-active-work";
@@ -70,9 +67,11 @@ import {
 	type ClockOutFailure,
 	type ClockOutRefusal,
 	type ClockOutResult,
+	type ClockPosition,
 	clocking,
 	type OperationIdentity,
 } from "@/lib/time-tracking/clocking";
+import { readClockPosition } from "@/lib/time-tracking/position-capture/clock-position";
 import { workCategoryIneligibility } from "@/lib/time-tracking/work-category-eligibility";
 import { acquireAdoptionGate, readAppendAdmission } from "@/lib/time-tracking/work-transaction";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
@@ -92,7 +91,6 @@ import {
 	getRequestMetadata,
 	getUserTimezone,
 } from "./auth";
-import { calculateBreaksTakenToday } from "./compliance";
 import {
 	PROJECT_TASK_INELIGIBILITY_MESSAGES,
 	type ProjectTaskIneligibility,
@@ -105,10 +103,7 @@ import {
 	resolveManualEntryTargetZone,
 } from "./manual-entry-target";
 import { getEditCapabilityForPeriod } from "./policy-helpers";
-import { getActiveWorkPeriod, getComplianceDailyMinutes } from "./queries";
 import {
-	BREAK_WARNING_THRESHOLD_MINUTES,
-	EMPTY_BREAK_REMINDER_STATUS,
 	logger,
 	ONE_MINUTE_MS,
 } from "./shared";
@@ -431,6 +426,15 @@ export type ClockActionContext = BrowserTimezoneContext & {
 	deviceInfo?: ClockChannel;
 };
 
+/**
+ * The web's own clock request: it may carry the position taken at the clock
+ * event (#826). Mobile and bots reach `clockInAs`/`clockOutAs` without one.
+ */
+export type WebClockPositionContext = {
+	/** Unvalidated wire value; a malformed position is dropped, never refused. */
+	position?: unknown;
+};
+
 export type ClockInCommandResult =
 	| { success: true; data: ClockInResult }
 	| { success: false; failure: ClockInFailure; refusal: ClockInRefusal };
@@ -477,7 +481,7 @@ export async function validateWorkCategoryAssignment(
  */
 export async function clockIn(
 	workLocationType?: WorkLocationType,
-	actionContext: ClockActionContext = {},
+	webContext: ClockActionContext & WebClockPositionContext = {},
 ): Promise<ServerActionResult<ClockInResult>> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
@@ -489,10 +493,12 @@ export async function clockIn(
 		return { success: false, error: await clockInFailureMessage("employee_not_found") };
 	}
 
+	const { position, ...actionContext } = webContext;
 	const result = await clockInAs(
 		webClockActor(session.user.id, currentEmployee),
 		workLocationType,
 		actionContext,
+		readClockPosition(position),
 	);
 	if (result.success) return { success: true, data: result.data };
 	const { refusal } = result;
@@ -563,8 +569,11 @@ export async function clockInAs(
 	actor: ClockActor,
 	workLocationType: WorkLocationType = "office",
 	actionContext: ClockActionContext = {},
+	/** The web's position; the module keeps it only for the web channel (#826). */
+	position?: ClockPosition,
 ): Promise<ClockInCommandResult> {
 	const outcome = await clocking.run({
+		...(position ? { position } : {}),
 		organizationId: actor.employee.organizationId,
 		principal: { kind: "user", userId: actor.userId },
 		subject: { employeeId: actor.employee.id },
@@ -605,7 +614,7 @@ export async function revalidateAfterClockOut(context: Record<string, unknown>) 
 export async function clockOut(
 	projectId: string | null | undefined,
 	workCategoryId: string | null | undefined,
-	actionContext: ClockOutActionContext,
+	webContext: ClockOutActionContext & WebClockPositionContext,
 ): Promise<ServerActionResult<ClockOutResult>> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
@@ -616,11 +625,13 @@ export async function clockOut(
 	if (!currentEmployee) {
 		return { success: false, error: await clockOutFailureMessage("employee_not_found") };
 	}
+	const { position, ...actionContext } = webContext;
 	const result = await clockOutAs(
 		webClockActor(session.user.id, currentEmployee),
 		projectId,
 		workCategoryId,
 		actionContext,
+		readClockPosition(position),
 	);
 	if (result.success) return { success: true, data: result.data };
 	if (result.refusal.code === "billing_required") {
@@ -671,8 +682,11 @@ export async function clockOutAs(
 	projectId: string | null | undefined,
 	workCategoryId: string | null | undefined,
 	actionContext: ClockOutActionContext,
+	/** The web's position; the module keeps it only for the web channel (#826). */
+	position?: ClockPosition,
 ): Promise<ClockOutCommandResult> {
 	const outcome = await clocking.run({
+		...(position ? { position } : {}),
 		organizationId: actor.employee.organizationId,
 		principal: { kind: "user", userId: actor.userId },
 		subject: { employeeId: actor.employee.id },
@@ -716,7 +730,7 @@ export type AddBreakActionContext = {
 	 */
 	submissionId?: string;
 	browserTimezone?: string | null;
-};
+} & WebClockPositionContext;
 
 /** Operator detail for refusals; the employee sees only the worded code. */
 function logBreakRefusal(refusal: BreakRefusal) {
@@ -759,7 +773,10 @@ export async function addBreakToActiveSession(
 		return { success: false, error: await breakFailureMessage({ code: "employee_not_found" }) };
 	}
 
+	// The break's one fix is taken at its end: it stamps only the resumed work (#826 D1).
+	const position = readClockPosition(actionContext.position);
 	const outcome = await clocking.run({
+		...(position ? { position } : {}),
 		organizationId: currentEmployee.organizationId,
 		principal: { kind: "user", userId: session.user.id },
 		subject: { employeeId: currentEmployee.id },
@@ -794,99 +811,6 @@ export async function addBreakToActiveSession(
 		success: true,
 		data: { id: outcome.result.workPeriodId, startTime: dateFromInstant(outcome.result.start) },
 	};
-}
-
-export async function getBreakReminderStatus(): Promise<
-	ServerActionResult<{
-		needsBreakSoon: boolean;
-		uninterruptedMinutes: number;
-		maxUninterrupted: number | null;
-		minutesUntilBreakRequired: number | null;
-		breakRequirement: {
-			isRequired: boolean;
-			totalNeeded: number;
-			taken: number;
-			remaining: number;
-		} | null;
-	}>
-> {
-	const session = await getCurrentSession();
-	if (!session?.user) {
-		return { success: false, error: "Not authenticated" };
-	}
-
-	const currentEmployee = await getCurrentEmployee();
-	if (!currentEmployee) {
-		return { success: false, error: "Employee profile not found" };
-	}
-
-	const [timezone, activeWorkPeriod] = await Promise.all([
-		getUserTimezone(session.user.id),
-		getActiveWorkPeriod(currentEmployee.id),
-	]);
-	if (!activeWorkPeriod) {
-		return { success: true, data: EMPTY_BREAK_REMINDER_STATUS };
-	}
-
-	try {
-		const currentSessionMinutes = calculateDurationMinutes(
-			activeWorkPeriod.startTime,
-			new Date(),
-		);
-		const [completedMinutesToday, breaksTaken] = await Promise.all([
-			getComplianceDailyMinutes(currentEmployee.id, timezone),
-			calculateBreaksTakenToday(currentEmployee.id, timezone),
-		]);
-
-		const breakStatusEffect = Effect.gen(function* () {
-			const workPolicyService = yield* WorkPolicyService;
-			const policy = yield* workPolicyService.getEffectivePolicy(currentEmployee.id);
-
-			if (!policy?.regulation) {
-				return {
-					...EMPTY_BREAK_REMINDER_STATUS,
-					uninterruptedMinutes: currentSessionMinutes,
-				};
-			}
-
-			const breakRequirement = workPolicyService.calculateBreakRequirements({
-				regulation: policy.regulation,
-				workedMinutes: completedMinutesToday + currentSessionMinutes,
-				breaksTakenMinutes: breaksTaken,
-			});
-
-			const maxUninterrupted = policy.regulation.maxUninterruptedMinutes;
-			const minutesUntilBreakRequired = maxUninterrupted
-				? maxUninterrupted - currentSessionMinutes
-				: null;
-			const isBreakThresholdReached =
-				minutesUntilBreakRequired !== null &&
-				minutesUntilBreakRequired <= BREAK_WARNING_THRESHOLD_MINUTES;
-			const needsBreakSoon =
-				isBreakThresholdReached ||
-				(breakRequirement.isRequired && breakRequirement.remaining > 0);
-
-			return {
-				needsBreakSoon,
-				uninterruptedMinutes: currentSessionMinutes,
-				maxUninterrupted,
-				minutesUntilBreakRequired,
-				breakRequirement: breakRequirement.isRequired
-					? {
-							isRequired: true,
-							totalNeeded: breakRequirement.totalBreakNeeded,
-							taken: breakRequirement.breakTaken,
-							remaining: breakRequirement.remaining,
-						}
-					: null,
-			};
-		});
-
-		return { success: true, data: await runtime.runPromise(breakStatusEffect) };
-	} catch (error) {
-		logger.error({ error }, "Failed to get break reminder status");
-		return { success: false, error: "Failed to check break status" };
-	}
 }
 
 function adjustManualEntryForOverlaps(

@@ -155,6 +155,17 @@ export const queryKeys = {
 			] as const,
 	},
 
+	// Personnel file (#865)
+	personnelFile: {
+		all: ["personnel-file"] as const,
+		employee: (employeeId: string, category: string | null) =>
+			["personnel-file", "employee", employeeId, category] as const,
+		employeeAll: (employeeId: string) => ["personnel-file", "employee", employeeId] as const,
+		myDocuments: () => ["personnel-file", "my-documents"] as const,
+		officerGrants: () => ["personnel-file", "settings", "officer-grants"] as const,
+		payslipBatch: (batchId: string) => ["personnel-file", "payslip-batch", batchId] as const,
+	},
+
 	// Employee clock statuses
 	employeeClockStatuses: {
 		all: ["employee-clock-statuses"] as const,
@@ -196,6 +207,13 @@ export const queryKeys = {
 	timeClock: {
 		status: () => ["time-clock", "status"] as const,
 		breakStatus: () => ["time-clock", "break-status"] as const,
+		/** The signed-in employee's own position capture and consent (#826). */
+		positionCapture: () => ["time-clock", "position-capture"] as const,
+	},
+
+	// Position stamps on a work period's detail (#831); never the positions themselves
+	positionStamps: {
+		viewerAccess: () => ["position-stamps", "viewer-access"] as const,
 	},
 
 	// Manual time entry form context (target zone and eligible choices)

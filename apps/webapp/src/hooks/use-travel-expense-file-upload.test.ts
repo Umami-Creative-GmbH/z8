@@ -85,6 +85,22 @@ describe("useTravelExpenseFileUpload", () => {
 		expect(result.current.isUploading).toBe(false);
 	});
 
+	it("sends a declared upload purpose as TUS metadata (#865)", () => {
+		const { result } = renderHook(() =>
+			useTravelExpenseFileUpload({
+				process: vi.fn(),
+				allowedFileTypes: ["application/pdf"],
+				uploadMetadata: { purpose: "personnel-document" },
+			}),
+		);
+		const file = new File(["%PDF"], "contract.pdf", { type: "application/pdf" });
+		act(() => result.current.addFile(file));
+
+		expect(uppyState.instances[0]?.addFile).toHaveBeenCalledWith(
+			expect.objectContaining({ meta: { purpose: "personnel-document" } }),
+		);
+	});
+
 	it("reports a processing failure and becomes ready again", async () => {
 		const onError = vi.fn();
 		const { result } = renderHook(() =>

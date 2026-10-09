@@ -15,7 +15,16 @@ import { parseInstant } from "@/lib/datetime/temporal-core";
 import { isValidIanaTimezone } from "./timezone-capture";
 import { WORK_LOCATION_TYPES } from "./work-location";
 
-export const CLOCK_COMMAND_VERSION = 2;
+/** The frozen command without a position; the desktop and every unstamped browser command. */
+export const UNSTAMPED_CLOCK_COMMAND_VERSION = 2;
+/**
+ * The newest frozen command (#826): a clock-in or clock-out that carries the
+ * device position taken at the event. Accepted with its position only from
+ * cookie-authenticated browser requests.
+ */
+export const CLOCK_COMMAND_VERSION = 3;
+/** Every version the commands route accepts and advertises. */
+export const CLOCK_COMMAND_VERSIONS = [UNSTAMPED_CLOCK_COMMAND_VERSION, CLOCK_COMMAND_VERSION];
 
 const MINUTE_MILLISECONDS = 60_000;
 /** Elapsed-instant windows, not local calendar days (#263 §5). */
@@ -63,8 +72,20 @@ const contextAssertion = z.strictObject({
 	server: origin,
 });
 
+/**
+ * The device position taken at a clock event (#826). `fixedAt` is when the device
+ * determined it, which for a cached fix may lie before the event.
+ */
+export const clockCommandPositionSchema = z.strictObject({
+	latitude: z.number().min(-90).max(90),
+	longitude: z.number().min(-180).max(180),
+	accuracyMeters: z.number().nonnegative().finite(),
+	fixedAt: utcInstant,
+});
+export type ClockCommandPosition = z.infer<typeof clockCommandPositionSchema>;
+
 const commandFields = {
-	version: z.literal(CLOCK_COMMAND_VERSION),
+	version: z.literal(UNSTAMPED_CLOCK_COMMAND_VERSION),
 	operationId,
 	admission: z.enum(["immediate", "delayed"]),
 	/** Original UTC event instant. The server derives the endpoint offset. */
@@ -89,25 +110,41 @@ const observation = z.strictObject({
 });
 const zonedObservation = z.strictObject({ ...observation.shape, timezone: ianaZone });
 
-const clockCommandSchema = z.discriminatedUnion("kind", [
-	z.strictObject({
-		...commandFields,
-		kind: z.literal("clock_in"),
-		workLocationType: z.enum(WORK_LOCATION_TYPES),
-	}),
-	z.strictObject({
-		...commandFields,
-		kind: z.literal("clock_out"),
-		target: closeTarget,
-		project: attribution,
-		workCategory: attribution,
-		/**
-		 * The project task (#875). Optional and omitted when not named, so commands
-		 * frozen before tasks existed keep their exact bytes. Absent, the task
-		 * follows the project.
-		 */
-		task: attribution.optional(),
-	}),
+const clockInFields = {
+	kind: z.literal("clock_in"),
+	workLocationType: z.enum(WORK_LOCATION_TYPES),
+};
+const clockOutFields = {
+	kind: z.literal("clock_out"),
+	target: closeTarget,
+	project: attribution,
+	workCategory: attribution,
+	/**
+	 * The project task (#875). Optional and omitted when not named, so commands
+	 * frozen before tasks existed keep their exact bytes. Absent, the task
+	 * follows the project.
+	 */
+	task: attribution.optional(),
+};
+
+/**
+ * Version 3 (#826): the employee's own browser clock-in or clock-out with the
+ * position taken at the event. The position is part of the frozen bytes, so an
+ * identical stamped resubmission is the same command.
+ */
+const stampedFields = {
+	...commandFields,
+	version: z.literal(CLOCK_COMMAND_VERSION),
+	position: clockCommandPositionSchema,
+};
+const stampedClockCommandSchema = z.discriminatedUnion("kind", [
+	z.strictObject({ ...stampedFields, ...clockInFields }),
+	z.strictObject({ ...stampedFields, ...clockOutFields }),
+]);
+
+const unstampedClockCommandSchema = z.discriminatedUnion("kind", [
+	z.strictObject({ ...commandFields, ...clockInFields }),
+	z.strictObject({ ...commandFields, ...clockOutFields }),
 	/**
 	 * A confirmed desktop idle break (#281, resolution #263 §8): one atomic
 	 * operation closes the target at the estimated idle start and resumes at the
@@ -135,7 +172,9 @@ const clockCommandSchema = z.discriminatedUnion("kind", [
 	}),
 ]);
 
-export type ClockCommand = z.infer<typeof clockCommandSchema>;
+export type ClockCommand =
+	| z.infer<typeof unstampedClockCommandSchema>
+	| z.infer<typeof stampedClockCommandSchema>;
 export type ClockInCommand = Extract<ClockCommand, { kind: "clock_in" }>;
 export type ClockOutCommand = Extract<ClockCommand, { kind: "clock_out" }>;
 export type BreakCommand = Extract<ClockCommand, { kind: "break" }>;
@@ -175,16 +214,14 @@ export type ParsedClockCommand =
 	| { ok: false; code: "unsupported_version" | "invalid_command" };
 
 export function parseClockCommand(body: unknown): ParsedClockCommand {
-	if (
-		!body ||
-		typeof body !== "object" ||
-		(body as { version?: unknown }).version !== CLOCK_COMMAND_VERSION
-	) {
-		return body && typeof body === "object"
-			? { ok: false, code: "unsupported_version" }
-			: { ok: false, code: "invalid_command" };
+	if (!body || typeof body !== "object") return { ok: false, code: "invalid_command" };
+	const { version } = body as { version?: unknown };
+	if (version !== UNSTAMPED_CLOCK_COMMAND_VERSION && version !== CLOCK_COMMAND_VERSION) {
+		return { ok: false, code: "unsupported_version" };
 	}
-	const parsed = clockCommandSchema.safeParse(body);
+	const parsed = (
+		version === CLOCK_COMMAND_VERSION ? stampedClockCommandSchema : unstampedClockCommandSchema
+	).safeParse(body);
 	if (!parsed.success) return { ok: false, code: "invalid_command" };
 	if (parsed.data.kind === "break" && !breakEndpointsMatchObservations(parsed.data)) {
 		return { ok: false, code: "invalid_command" };

@@ -45,10 +45,24 @@ function attribution(value) {
 }
 
 /**
- * The frozen version 2 command, built once at capture with a fixed key order.
+ * The frozen command, built once at capture with a fixed key order: version 2,
+ * or version 3 when the request carries the position taken at the event (#826).
  * Its serialization is stored and every attempt sends exactly those bytes.
  */
 function buildCommand(request, target) {
+	const command = buildUnstampedCommand(request, target);
+	if (!request.position) return command;
+	command.version = 3;
+	command.position = {
+		latitude: request.position.latitude,
+		longitude: request.position.longitude,
+		accuracyMeters: request.position.accuracyMeters,
+		fixedAt: request.position.fixedAt,
+	};
+	return command;
+}
+
+function buildUnstampedCommand(request, target) {
 	const command = {
 		version: 2,
 		operationId: request.operationId,

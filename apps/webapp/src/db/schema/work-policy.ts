@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
 	decimal,
 	index,
 	integer,
@@ -134,9 +135,17 @@ export const workPolicyScheduleDay = pgTable(
 		// For biweekly cycles: which week (1 or 2)
 		cycleWeek: integer("cycle_week").default(1),
 
+		// Latest clock-in (#830): local wall-clock "HH:mm" by which the employee is expected to
+		// have clocked in on this work day. Null means no expected start.
+		latestClockIn: text("latest_clock_in"),
+
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
 	(table) => [
+		check(
+			"work_policy_schedule_day_latest_clock_in_check",
+			sql`${table.latestClockIn} IS NULL OR ${table.latestClockIn} ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'`,
+		),
 		index("workPolicyScheduleDay_scheduleId_idx").on(table.scheduleId),
 		uniqueIndex("workPolicyScheduleDay_unique_idx").on(
 			table.scheduleId,

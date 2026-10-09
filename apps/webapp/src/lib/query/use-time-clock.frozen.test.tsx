@@ -17,6 +17,10 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions", () => ({
 	getTimeClockStatus: mocks.getTimeClockStatus,
 	updateTimeEntryNotes: vi.fn(),
 }));
+// Position capture is off here; use-time-clock.position.test.tsx covers it (#826).
+vi.mock("@/app/[locale]/(app)/settings/position-stamps/actions", () => ({
+	getOwnPositionCaptureAction: async () => ({ success: false, error: "off" }),
+}));
 vi.mock("@/hooks/use-offline-clock", () => ({ useOfflineClock: mocks.useOfflineClock }));
 vi.mock("@/lib/auth-client", () => ({
 	useSession: () => ({

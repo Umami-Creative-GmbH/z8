@@ -16,6 +16,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { revokePayrollAccessGrantHeldBy } from "@/lib/payroll-access/grant-store";
+import { revokePersonnelFileOfficerGrantHeldBy } from "@/lib/personnel-file/officer-grant-store";
 import { WorkTransactionProtocolViolation } from "@/lib/time-tracking/work-transaction";
 import { revokeExpenseOfficerGrantHeldBy } from "@/lib/travel-expenses/expense-officer-grant-store";
 import { captureApprovalHandoverDuties } from "./approval-handover";
@@ -257,8 +258,8 @@ async function closeEmploymentWindows(
 }
 
 /**
- * Revokes the expense officer and payroll access grants the employee holds
- * (#750), audited under the departure's initiator and naming the departure. A
+ * Revokes the expense officer, payroll access and personnel file officer
+ * grants the employee holds (#750, #866), audited under the departure's initiator and naming the departure. A
  * rehire never restores them. Grants of other officers that name the employee
  * stay, so the departed employee's reports can still be reimbursed.
  */
@@ -282,6 +283,13 @@ async function revokeHeldAccessGrants(
 		organizationId: identity.organizationId,
 		actorUserId,
 		payrollEmployeeId: identity.employeeId,
+		auditMetadata,
+	});
+	// Personnel file officer grants (#866): grants naming the employee stay, so their file stays managed.
+	await revokePersonnelFileOfficerGrantHeldBy(tx, {
+		organizationId: identity.organizationId,
+		actorUserId,
+		officerEmployeeId: identity.employeeId,
 		auditMetadata,
 	});
 }
