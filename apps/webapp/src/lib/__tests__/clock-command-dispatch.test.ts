@@ -149,6 +149,36 @@ describe("browser clock command dispatch", () => {
 		);
 	});
 
+	it("appends a named task after the other attributions, and only then (#875)", () => {
+		const request = {
+			operationId: "op-out",
+			kind: "clock_out",
+			admission: "delayed",
+			occurredAt: "2026-09-25T09:00:00.000Z",
+			timezone: "Europe/Berlin",
+			context,
+			knownWorkPeriodId: "period-1",
+			project: { kind: "replace", id: "project-1" },
+			workCategory: { kind: "preserve" },
+		};
+		const target = { workPeriodId: "period-1" };
+
+		const withTask = dispatch.buildCommand(
+			{ ...request, task: { kind: "replace", id: "task-1", label: "ignored" } },
+			target,
+		);
+		const without = dispatch.buildCommand(request, target);
+
+		expect(Object.keys(withTask).slice(-4)).toEqual([
+			"target",
+			"project",
+			"workCategory",
+			"task",
+		]);
+		expect(withTask.task).toEqual({ kind: "replace", id: "task-1" });
+		expect(without).not.toHaveProperty("task");
+	});
+
 	it("persists the attempt before sending, sends the stored bytes and stores the receipt", async () => {
 		const store = memoryStore([record({ operationId: "op-in" })]);
 		const order: string[] = [];
