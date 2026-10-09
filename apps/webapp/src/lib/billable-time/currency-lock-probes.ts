@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { billableRate } from "@/db/schema/billable-time";
+import { billableRate, costRate } from "@/db/schema/billable-time";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
 
 /** The client a probe reads through: the transaction that changes the currency. */
@@ -33,6 +33,17 @@ export const BILLABLE_CURRENCY_LOCK_PROBES: readonly BillableCurrencyLockProbe[]
 				.select({ id: billableRate.id })
 				.from(billableRate)
 				.where(eq(billableRate.organizationId, organizationId))
+				.limit(1);
+			return row !== undefined;
+		},
+	},
+	{
+		name: "cost rates",
+		async hasPricedRows(tx, organizationId) {
+			const [row] = await tx
+				.select({ id: costRate.id })
+				.from(costRate)
+				.where(eq(costRate.organizationId, organizationId))
 				.limit(1);
 			return row !== undefined;
 		},
