@@ -9,6 +9,7 @@ import {
 	positionConsent,
 	positionNotice,
 	positionNoticeDecline,
+	positionStamp,
 	team,
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
@@ -365,17 +366,16 @@ export async function declinePositionNotice(
 }
 
 /**
- * Withdraws every unwithdrawn consent of the employee, active or lapsed.
- *
- * #826 deletes all of the employee's position stamps in this same transaction:
- * withdrawal updates the consent rows the resolver reads `FOR SHARE`, so a
- * concurrent clock command either commits its stamp first (and the deletion
- * removes it) or sees the withdrawal.
+ * Withdraws every unwithdrawn consent of the employee, active or lapsed, and
+ * deletes all of the employee's position stamps in the same transaction (#826).
+ * Withdrawal updates the consent rows the clocking capture check reads
+ * `FOR SHARE`, so a concurrent clock command either commits its stamp first (and
+ * the deletion, a later statement, removes it) or sees the withdrawal.
  */
 export async function withdrawPositionConsent(
 	tx: PositionCaptureClient,
 	input: { organizationId: string; employeeId: string; now: Instant },
-): Promise<{ withdrawnConsentIds: string[] }> {
+): Promise<{ withdrawnConsentIds: string[]; deletedStampCount: number }> {
 	const rows = await tx
 		.update(positionConsent)
 		.set({ withdrawnAt: dateFromInstant(input.now) })
@@ -387,7 +387,16 @@ export async function withdrawPositionConsent(
 			),
 		)
 		.returning({ id: positionConsent.id });
-	return { withdrawnConsentIds: rows.map((row) => row.id) };
+	const deleted = await tx
+		.delete(positionStamp)
+		.where(
+			and(
+				eq(positionStamp.organizationId, input.organizationId),
+				eq(positionStamp.employeeId, input.employeeId),
+			),
+		)
+		.returning({ id: positionStamp.id });
+	return { withdrawnConsentIds: rows.map((row) => row.id), deletedStampCount: deleted.length };
 }
 
 async function lockSettingsRow(tx: PositionCaptureClient, organizationId: string) {

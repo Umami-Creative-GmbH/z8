@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
 	boolean,
 	check,
+	doublePrecision,
 	foreignKey,
 	index,
 	integer,
@@ -15,6 +16,7 @@ import {
 import { organization, user } from "../auth-schema";
 import { holidayPresetAssignmentTypeEnum } from "./enums";
 import { employee, team } from "./organization";
+import { timeEntry } from "./time-tracking";
 import { currentTimestamp } from "./timestamp";
 
 /**
@@ -208,6 +210,65 @@ export const positionNoticeDecline = pgTable(
 			name: "position_notice_decline_notice_fk",
 			columns: [table.noticeId, table.organizationId],
 			foreignColumns: [positionNotice.id, positionNotice.organizationId],
+		}).onDelete("cascade"),
+	],
+);
+
+/**
+ * Position stamps (#826, Time Tracking ADR 0004): the device position an
+ * employee's own web/PWA clock command carried, kept only when the server check
+ * passed inside the clocking work transaction. One stamp per clock event
+ * (`time_entry`), outside the hash-chained fields; `time_entry.location` never
+ * holds one. Nothing records why a clock event has no stamp.
+ *
+ * Stamps are immutable: a trigger refuses every update except bringing
+ * `purge_at` forward (a shortened retention, #829). Withdrawing consent deletes
+ * all of the employee's stamps; the purge job deletes stamps past `purge_at`.
+ */
+export const positionStamp = pgTable(
+	"position_stamp",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").notNull(),
+		/** The clock event the position was captured with. */
+		timeEntryId: uuid("time_entry_id")
+			.notNull()
+			.references(() => timeEntry.id, { onDelete: "cascade" }),
+		/** The consent the stamp was accepted under (current notice, given before the event). */
+		consentId: uuid("consent_id")
+			.notNull()
+			.references(() => positionConsent.id, { onDelete: "cascade" }),
+		latitude: doublePrecision("latitude").notNull(),
+		longitude: doublePrecision("longitude").notNull(),
+		accuracyMeters: doublePrecision("accuracy_meters").notNull(),
+		/** When the device determined the position (a cached fix may predate the event). */
+		fixedAt: timestamp("fixed_at").notNull(),
+		/** The clock event's instant: when the position was recorded with it. */
+		capturedAt: timestamp("captured_at").notNull(),
+		/** `capturedAt` + the organization's retention days at capture time. */
+		purgeAt: timestamp("purge_at").notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(table) => [
+		uniqueIndex("positionStamp_timeEntryId_idx").on(table.timeEntryId),
+		index("positionStamp_org_employee_idx").on(table.organizationId, table.employeeId),
+		index("positionStamp_purgeAt_idx").on(table.purgeAt),
+		check(
+			"position_stamp_coordinates_check",
+			sql`${table.latitude} between -90 and 90 and ${table.longitude} between -180 and 180`,
+		),
+		check(
+			"position_stamp_accuracy_check",
+			sql`${table.accuracyMeters} >= 0 and ${table.accuracyMeters} < 'Infinity'::float8`,
+		),
+		check("position_stamp_purge_check", sql`${table.purgeAt} > ${table.capturedAt}`),
+		foreignKey({
+			name: "position_stamp_employee_fk",
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
 		}).onDelete("cascade"),
 	],
 );
