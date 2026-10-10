@@ -117,7 +117,7 @@ function ChannelForm({ setting }: { setting: ReimbursementChannelSetting }) {
 												)
 											: t(
 													"travelExpenses.settings.reimbursementChannel.payrollRunDescription",
-													"The payroll export carries reimbursements, and expense officers confirm them once payroll is paid. Reports a payroll run cannot carry are paid by bank transfer.",
+													"The payroll run carries reimbursements, which are recorded once the payroll run is confirmed as paid. Reports a payroll run cannot carry are paid by bank transfer.",
 												)}
 									</p>
 								</div>
@@ -134,7 +134,7 @@ function ChannelForm({ setting }: { setting: ReimbursementChannelSetting }) {
 							<AlertDescription>
 								{t(
 									"travelExpenses.settings.reimbursementChannel.unconfirmedRuns",
-									"{count, plural, one {# payroll run is} other {# payroll runs are}} not confirmed yet. Expense officers can still confirm or discard them.",
+									"{count, plural, one {# payroll run is} other {# payroll runs are}} not confirmed yet. They can still be confirmed or discarded.",
 									{ count: setting.unconfirmedPayrollRuns },
 								)}
 							</AlertDescription>

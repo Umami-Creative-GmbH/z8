@@ -21,26 +21,24 @@ type Database = typeof appDb;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type Executor = Pick<Database, "select">;
 
-/** The audit log keys entities by uuid; the settings row is keyed by the organization. */
-const SETTINGS_AUDIT_ENTITY_ID = "00000000-0000-0000-0000-000000000000";
+/** The settings row is keyed by the organization, not a uuid; as in `logAudit`, the nil uuid stands in. */
+const NO_AUDIT_ENTITY_ID = "00000000-0000-0000-0000-000000000000";
 
 /** The organization's channel; one that never chose reads as bank transfer. */
 export async function getReimbursementChannel(
 	organizationId: string,
-	options: { database?: Executor; lock?: "share" } = {},
+	options: { database?: Executor } = {},
 ): Promise<ReimbursementChannel> {
-	const query = (options.database ?? appDb)
+	const [row] = await (options.database ?? appDb)
 		.select({ channel: travelExpenseSettings.reimbursementChannel })
 		.from(travelExpenseSettings)
 		.where(eq(travelExpenseSettings.organizationId, organizationId))
 		.limit(1);
-	// Shared lock: a reader that acts on the channel serializes with a change of it.
-	const [row] = await (options.lock === "share" ? query.for("share") : query);
 	return row?.channel ?? DEFAULT_REIMBURSEMENT_CHANNEL;
 }
 
 /**
- * The organization's payroll runs that no expense officer has confirmed yet.
+ * The organization's payroll runs that are not confirmed yet.
  * They can still be confirmed or discarded after a switch to bank transfer.
  * Always 0 until payroll runs exist (#852, #853).
  */
@@ -64,22 +62,20 @@ export type SaveReimbursementChannelResult =
  */
 export async function saveReimbursementChannel(
 	input: { organizationId: string; actorUserId: string; channel: unknown },
-	deps: {
-		database?: Database;
-		payrollRunPreviewOpen?: (organizationId: string) => Promise<boolean>;
-	} = {},
+	options: { database?: Database } = {},
 ): Promise<SaveReimbursementChannelResult> {
 	const { organizationId, actorUserId, channel } = input;
 	if (!isReimbursementChannel(channel)) return { kind: "invalid" };
-	const database = deps.database ?? appDb;
-	const previewOpen =
-		deps.payrollRunPreviewOpen ?? ((id: string) => isPayrollRunPreviewOpen(id, { database }));
-	if (channel === "payroll_run" && !(await previewOpen(organizationId))) {
-		return { kind: "preview_closed" };
-	}
-	return database.transaction(async (tx) => {
-		const previous = await lockChannel(tx, organizationId);
+	return (options.database ?? appDb).transaction(async (tx) => {
+		const previous = await createAndLockSettings(tx, organizationId);
+		// Keeping the current channel is never refused, even after the gate closed again.
 		if (previous === channel) return { kind: "unchanged", channel };
+		if (
+			channel === "payroll_run" &&
+			!(await isPayrollRunPreviewOpen(organizationId, { database: tx }))
+		) {
+			return { kind: "preview_closed" };
+		}
 		const now = new Date();
 		await tx
 			.update(travelExpenseSettings)
@@ -88,7 +84,7 @@ export async function saveReimbursementChannel(
 		await tx.insert(auditLog).values({
 			organizationId,
 			entityType: "travel_expense_settings",
-			entityId: SETTINGS_AUDIT_ENTITY_ID,
+			entityId: NO_AUDIT_ENTITY_ID,
 			action: AuditAction.TRAVEL_EXPENSE_REIMBURSEMENT_CHANNEL_CHANGED,
 			performedBy: actorUserId,
 			changes: JSON.stringify({
@@ -102,7 +98,10 @@ export async function saveReimbursementChannel(
 }
 
 /** Creates the organization's settings row when missing and locks it. */
-async function lockChannel(tx: Transaction, organizationId: string): Promise<ReimbursementChannel> {
+async function createAndLockSettings(
+	tx: Transaction,
+	organizationId: string,
+): Promise<ReimbursementChannel> {
 	await tx.insert(travelExpenseSettings).values({ organizationId }).onConflictDoNothing();
 	const [row] = await tx
 		.select({ channel: travelExpenseSettings.reimbursementChannel })

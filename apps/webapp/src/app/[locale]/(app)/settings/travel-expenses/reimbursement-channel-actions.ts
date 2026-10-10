@@ -27,12 +27,13 @@ export interface ReimbursementChannelSetting {
 	unconfirmedPayrollRuns: number;
 }
 
-async function settingOf(
+/** The setting as the card shows it; a just-saved channel is not read back. */
+async function readSetting(
 	organizationId: string,
-	channel?: ReimbursementChannel,
+	savedChannel?: ReimbursementChannel,
 ): Promise<ReimbursementChannelSetting> {
 	const [current, payrollRunAvailable, unconfirmedPayrollRuns] = await Promise.all([
-		channel ?? getReimbursementChannel(organizationId, { database: db }),
+		savedChannel ?? getReimbursementChannel(organizationId, { database: db }),
 		isPayrollRunPreviewOpen(organizationId, { database: db }),
 		countUnconfirmedPayrollRuns(organizationId, { database: db }),
 	]);
@@ -45,7 +46,7 @@ export async function getReimbursementChannelSetting(): Promise<
 	try {
 		const admin = await requireExpenseAdministrator();
 		if ("error" in admin) return { success: false, error: admin.error };
-		return { success: true, data: await settingOf(admin.organizationId) };
+		return { success: true, data: await readSetting(admin.organizationId) };
 	} catch (error) {
 		logger.error({ error }, "Failed to load the reimbursement channel");
 		return { success: false, error: "Failed to load the reimbursement channel" };
@@ -73,7 +74,7 @@ export async function saveReimbursementChannelSetting(input: {
 			return { success: false, error: "The payroll run is not available for this organization" };
 		}
 		if (result.kind === "saved") revalidatePath("/settings/travel-expenses");
-		return { success: true, data: await settingOf(admin.organizationId, result.channel) };
+		return { success: true, data: await readSetting(admin.organizationId, result.channel) };
 	} catch (error) {
 		logger.error({ error }, "Failed to save the reimbursement channel");
 		return { success: false, error: "Failed to save the reimbursement channel" };

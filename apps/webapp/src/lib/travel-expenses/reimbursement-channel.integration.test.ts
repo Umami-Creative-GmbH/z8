@@ -6,9 +6,6 @@ import {
 import { isPayrollRunPreviewOpen } from "./payroll-run-preview";
 import { getReimbursementChannel, saveReimbursementChannel } from "./reimbursement-channel";
 
-const open = async () => true;
-const closed = async () => false;
-
 describe("reimbursement channel on PostgreSQL (#849)", () => {
 	let fixture: LifecycleDatabaseFixture;
 	beforeAll(async () => {
@@ -17,6 +14,15 @@ describe("reimbursement channel on PostgreSQL (#849)", () => {
 	afterAll(async () => {
 		await fixture?.close();
 	});
+
+	async function setPreview(organizationId: string, mode: "inactive" | "active") {
+		await fixture.pool.query(
+			`insert into travel_expense_payroll_run_preview_control (organization_id, mode)
+			 values ($1, $2)
+			 on conflict (organization_id) do update set mode = excluded.mode`,
+			[organizationId, mode],
+		);
+	}
 
 	async function channelAudits(organizationId: string) {
 		const { rows } = await fixture.pool.query<{ changes: string; performed_by: string }>(
@@ -50,7 +56,7 @@ describe("reimbursement channel on PostgreSQL (#849)", () => {
 		expect(
 			await saveReimbursementChannel(
 				{ organizationId, actorUserId: fixture.ownerUserId, channel: "payroll_run" },
-				{ database: fixture.db, payrollRunPreviewOpen: closed },
+				{ database: fixture.db },
 			),
 		).toEqual({ kind: "preview_closed" });
 		expect(await getReimbursementChannel(organizationId, { database: fixture.db })).toBe(
@@ -63,11 +69,8 @@ describe("reimbursement channel on PostgreSQL (#849)", () => {
 		const withoutRow = await fixture.createOrganization();
 		const inactive = await fixture.createOrganization();
 		const active = await fixture.createOrganization();
-		await fixture.pool.query(
-			`insert into travel_expense_payroll_run_preview_control (organization_id, mode)
-			 values ($1, 'inactive'), ($2, 'active')`,
-			[inactive, active],
-		);
+		await setPreview(inactive, "inactive");
+		await setPreview(active, "active");
 		const database = fixture.db;
 
 		expect(await isPayrollRunPreviewOpen(withoutRow, { database })).toBe(false);
@@ -93,7 +96,7 @@ describe("reimbursement channel on PostgreSQL (#849)", () => {
 		expect(
 			await saveReimbursementChannel(
 				{ organizationId, actorUserId: fixture.ownerUserId, channel: "cash" },
-				{ database: fixture.db, payrollRunPreviewOpen: open },
+				{ database: fixture.db },
 			),
 		).toEqual({ kind: "invalid" });
 	});
@@ -105,7 +108,8 @@ describe("reimbursement channel on PostgreSQL (#849)", () => {
 			"insert into travel_expense_settings (organization_id, reimbursement_currency) values ($1, 'CHF')",
 			[organizationId],
 		);
-		const deps = { database: fixture.db, payrollRunPreviewOpen: open };
+		await setPreview(organizationId, "active");
+		const deps = { database: fixture.db };
 
 		expect(
 			await saveReimbursementChannel(
@@ -123,11 +127,18 @@ describe("reimbursement channel on PostgreSQL (#849)", () => {
 		);
 		expect(rows).toEqual([{ currency: "CHF" }]);
 
-		// Switching away from the payroll run is always allowed.
+		// After the gate closes again, keeping and leaving the payroll run are both allowed.
+		await setPreview(organizationId, "inactive");
+		expect(
+			await saveReimbursementChannel(
+				{ organizationId, actorUserId: fixture.ownerUserId, channel: "payroll_run" },
+				deps,
+			),
+		).toEqual({ kind: "unchanged", channel: "payroll_run" });
 		expect(
 			await saveReimbursementChannel(
 				{ organizationId, actorUserId: fixture.ownerUserId, channel: "bank_transfer" },
-				{ database: fixture.db, payrollRunPreviewOpen: closed },
+				deps,
 			),
 		).toEqual({ kind: "saved", channel: "bank_transfer", previous: "payroll_run" });
 		expect(
@@ -158,10 +169,11 @@ describe("reimbursement channel on PostgreSQL (#849)", () => {
 
 	it("creates the settings row of an organization that never saved settings", async () => {
 		const organizationId = await fixture.createOrganization();
+		await setPreview(organizationId, "active");
 
 		await saveReimbursementChannel(
 			{ organizationId, actorUserId: fixture.ownerUserId, channel: "payroll_run" },
-			{ database: fixture.db, payrollRunPreviewOpen: open },
+			{ database: fixture.db },
 		);
 
 		const { rows } = await fixture.pool.query(
