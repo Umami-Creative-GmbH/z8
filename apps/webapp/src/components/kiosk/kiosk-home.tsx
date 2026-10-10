@@ -94,7 +94,7 @@ export function KioskHome({
 				<KioskLanguageSwitch locale={locale} onChoose={onChooseLanguage} />
 			</header>
 
-			<div className="grid flex-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+			<div className="grid flex-1 content-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
 				<section aria-labelledby="kiosk-employees" className="flex min-w-0 flex-col gap-4">
 					<h2 id="kiosk-employees" className="text-xl font-semibold">
 						{t("timeTracking.kiosk.home.title", "Tap your name to clock in or out")}

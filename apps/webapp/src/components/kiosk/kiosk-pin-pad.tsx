@@ -54,7 +54,8 @@ export function KioskPinPad({ name, error, busy, disabled, onSubmit, onBack }: K
 		return () => window.removeEventListener("keydown", listener);
 	}, []);
 
-	const keyClass = "h-20 text-3xl font-semibold sm:h-24";
+	// Large keys, but the whole pad (with a message) still fits a landscape tablet screen.
+	const keyClass = "h-16 text-3xl font-semibold [@media(min-height:860px)]:h-20";
 
 	return (
 		<div className="mx-auto flex w-full max-w-md flex-col gap-6">

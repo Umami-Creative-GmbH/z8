@@ -63,7 +63,10 @@ export function KioskWhoIsInBoard({ token, onRevoked, onUnpaired }: KioskWhoIsIn
 	if (entries === null) return null;
 
 	return (
-		<section aria-labelledby="kiosk-who-is-in" className="w-full rounded-xl border bg-card p-4">
+		<section
+			aria-labelledby="kiosk-who-is-in"
+			className="@container w-full rounded-xl border bg-card p-4"
+		>
 			<h2 id="kiosk-who-is-in" className="mb-3 text-lg font-semibold">
 				{t("timeTracking.kiosk.board.title", "Who is in")}
 			</h2>
@@ -72,7 +75,7 @@ export function KioskWhoIsInBoard({ token, onRevoked, onUnpaired }: KioskWhoIsIn
 					{t("timeTracking.kiosk.board.empty", "Nobody is clocked in right now.")}
 				</p>
 			) : (
-				<ul className="grid gap-2 sm:grid-cols-2">
+				<ul className="grid gap-2 @lg:grid-cols-2">
 					{withKeys(entries).map(({ key, entry }) => (
 						<li
 							key={key}

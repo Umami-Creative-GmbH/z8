@@ -31,13 +31,15 @@ export function KioskConfirmation({
 	const { t } = useTranslate();
 	const [secondsLeft, setSecondsLeft] = useState(Math.ceil(returnsInMs / 1000));
 
+	// Counted from a deadline, so a throttled timer never lets the countdown drift from the return.
 	useEffect(() => {
+		const deadline = Date.now() + returnsInMs;
 		const timer = window.setInterval(
-			() => setSecondsLeft((seconds) => Math.max(0, seconds - 1)),
-			1000,
+			() => setSecondsLeft(Math.max(0, Math.ceil((deadline - Date.now()) / 1000))),
+			250,
 		);
 		return () => window.clearInterval(timer);
-	}, []);
+	}, [returnsInMs]);
 
 	return (
 		// The whole screen is a tap target; the button is its accessible equivalent.
