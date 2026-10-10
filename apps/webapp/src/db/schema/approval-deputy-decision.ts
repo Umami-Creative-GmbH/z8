@@ -1,5 +1,6 @@
 import {
 	check,
+	date,
 	foreignKey,
 	index,
 	pgTable,
@@ -10,7 +11,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization } from "../auth-schema";
-import { absenceEntry } from "./absence";
 import { employee } from "./organization";
 
 /**
@@ -32,8 +32,14 @@ export const approvalDeputyDecision = pgTable(
 		deputyEmployeeId: uuid("deputy_employee_id").notNull(),
 		/** The absent approver X the decision was made for. */
 		actingForEmployeeId: uuid("acting_for_employee_id").notNull(),
-		/** X's absence that made the cover; cleared if the absence is deleted. */
+		/**
+		 * X's absence that made the cover. A plain reference with the absence's
+		 * dates at decision time: cancelling deletes the absence, and the return
+		 * summary (#1018) is still owed for what the deputy decided during it.
+		 */
 		absenceId: uuid("absence_id"),
+		absenceStartDate: date("absence_start_date"),
+		absenceEndDate: date("absence_end_date"),
 		authority: text("authority").$type<"legacy" | "canonical">().notNull(),
 		/** `absence_entry` | `time_entry` | `travel_expense_report`. */
 		entityType: text("entity_type").notNull(),
@@ -56,11 +62,7 @@ export const approvalDeputyDecision = pgTable(
 			columns: [table.actingForEmployeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
 		}).onDelete("cascade"),
-		foreignKey({
-			name: "approval_deputy_decision_absence_fk",
-			columns: [table.absenceId, table.organizationId],
-			foreignColumns: [absenceEntry.id, absenceEntry.organizationId],
-		}).onDelete("set null"),
+
 		check(
 			"approval_deputy_decision_shape_check",
 			sql`${table.authority} IN ('legacy', 'canonical') AND ${table.decision} IN ('approved', 'rejected') AND ${table.deputyEmployeeId} <> ${table.actingForEmployeeId} AND (${table.authority} = 'legacy' OR (${table.workflowId} IS NOT NULL AND ${table.assignmentId} IS NOT NULL))`,

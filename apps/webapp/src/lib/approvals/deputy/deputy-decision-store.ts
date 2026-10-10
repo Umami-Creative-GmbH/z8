@@ -1,6 +1,6 @@
 import "server-only";
 
-import { aliasedTable, and, eq, inArray, lt } from "drizzle-orm";
+import { aliasedTable, and, eq, inArray, lt, sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import {
@@ -199,6 +199,22 @@ export interface DeputyDecisionRecordInput {
 	decidedAt?: Date;
 }
 
+/**
+ * The covering absence by value: its id and, read in the same statement, its
+ * dates. Cancelling deletes the absence; the record keeps its window so the
+ * return summary (#1018) is still sent.
+ */
+function coverAbsenceValues(organizationId: string, actingFor: ActingFor) {
+	const absenceDate = (column: "start_date" | "end_date") =>
+		sql<string | null>`(select ${sql.raw(column)} from absence_entry
+			where id = ${actingFor.absenceId}::uuid and organization_id = ${organizationId})`;
+	return {
+		absenceId: actingFor.absenceId,
+		absenceStartDate: absenceDate("start_date"),
+		absenceEndDate: absenceDate("end_date"),
+	};
+}
+
 /** Inserts the acting-for record, in the decision's transaction. */
 export async function recordDeputyDecision(
 	executor: Pick<Database | Transaction, "insert">,
@@ -208,7 +224,7 @@ export async function recordDeputyDecision(
 		organizationId: input.organizationId,
 		deputyEmployeeId: input.deputyEmployeeId,
 		actingForEmployeeId: input.actingFor.approverEmployeeId,
-		absenceId: input.actingFor.absenceId,
+		...coverAbsenceValues(input.organizationId, input.actingFor),
 		authority: input.authority,
 		entityType: input.entityType,
 		entityId: input.entityId,
@@ -252,7 +268,7 @@ export async function recordCanonicalDeputyDecision(
 			organizationId: input.organizationId,
 			deputyEmployeeId: input.deputyEmployeeId,
 			actingForEmployeeId: input.actingFor.approverEmployeeId,
-			absenceId: input.actingFor.absenceId,
+			...coverAbsenceValues(input.organizationId, input.actingFor),
 			authority: "canonical",
 			entityType: input.entityType,
 			entityId: input.entityId,

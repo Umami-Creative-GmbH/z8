@@ -12,7 +12,6 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 import { organization } from "../auth-schema";
-import { absenceEntry } from "./absence";
 import { employee } from "./organization";
 
 /**
@@ -28,7 +27,10 @@ export const approvalDeputyCoverSummary = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		/** The absent approver X's absence. */
+		/**
+		 * The absent approver X's absence, by value: a cancelled (deleted)
+		 * absence keeps its sent markers, so nothing is sent twice.
+		 */
 		absenceId: uuid("absence_id").notNull(),
 		/** The covering deputy Y. */
 		deputyEmployeeId: uuid("deputy_employee_id").notNull(),
@@ -51,11 +53,7 @@ export const approvalDeputyCoverSummary = pgTable(
 			"approval_deputy_cover_summary_kind_check",
 			sql`${table.kind} IN ('cover_start', 'return')`,
 		),
-		foreignKey({
-			name: "approval_deputy_cover_summary_absence_fk",
-			columns: [table.absenceId, table.organizationId],
-			foreignColumns: [absenceEntry.id, absenceEntry.organizationId],
-		}).onDelete("cascade"),
+
 		foreignKey({
 			name: "approval_deputy_cover_summary_deputy_fk",
 			columns: [table.deputyEmployeeId, table.organizationId],

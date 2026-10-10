@@ -10,7 +10,10 @@ import {
 	isNotNull,
 	isNull,
 	lte,
+	max,
+	min,
 	ne,
+	or,
 } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { organization, user } from "@/db/auth-schema";
@@ -25,7 +28,7 @@ import {
 	userSettings,
 } from "@/db/schema";
 import { loadWorkingDays } from "@/lib/absences/absence-days-resolver";
-import { dateFromInstant, type Instant, plainDateAt } from "@/lib/datetime/temporal-core";
+import { dateFromInstant, type Instant, type PlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { createLogger } from "@/lib/logger";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
@@ -273,7 +276,8 @@ async function sendCoverStartSummaries(database: Database, deps: Deps): Promise<
  * The approver's summary on return: one per absence and deputy who decided
  * something for them during it (from the acting-for record), on the
  * approver's first local working day after the absence. None when the deputy
- * decided nothing.
+ * decided nothing. A cancelled absence is deleted; its acting-for records keep
+ * its id and dates, and it counts as ended once cancelled.
  */
 async function sendReturnSummaries(database: Database, deps: Deps): Promise<Tally> {
 	// The approver's day after the absence is at most one day ahead of the UTC day.
@@ -281,17 +285,19 @@ async function sendReturnSummaries(database: Database, deps: Deps): Promise<Tall
 	const rows = await database
 		.select({
 			organizationId: approvalDeputyDecision.organizationId,
-			absenceId: absenceEntry.id,
+			absenceId: approvalDeputyDecision.absenceId,
 			deputyEmployeeId: approvalDeputyDecision.deputyEmployeeId,
-			approverEmployeeId: absenceEntry.employeeId,
+			approverEmployeeId: approvalDeputyDecision.actingForEmployeeId,
 			approverUserId: employee.userId,
-			endDate: absenceEntry.endDate,
+			liveEndDate: absenceEntry.endDate,
+			liveStatus: absenceEntry.status,
+			recordedEndDate: max(approvalDeputyDecision.absenceEndDate),
 			userTimezone: userSettings.timezone,
 			organizationTimezone: organization.timezone,
 			decisionCount: count(approvalDeputyDecision.id),
 		})
 		.from(approvalDeputyDecision)
-		.innerJoin(
+		.leftJoin(
 			absenceEntry,
 			and(
 				eq(absenceEntry.id, approvalDeputyDecision.absenceId),
@@ -302,7 +308,7 @@ async function sendReturnSummaries(database: Database, deps: Deps): Promise<Tall
 		.innerJoin(
 			employee,
 			and(
-				eq(employee.id, absenceEntry.employeeId),
+				eq(employee.id, approvalDeputyDecision.actingForEmployeeId),
 				eq(employee.organizationId, approvalDeputyDecision.organizationId),
 			),
 		)
@@ -319,18 +325,25 @@ async function sendReturnSummaries(database: Database, deps: Deps): Promise<Tall
 		)
 		.where(
 			and(
+				isNotNull(approvalDeputyDecision.absenceId),
 				isNull(approvalDeputyCoverSummary.id),
-				lte(absenceEntry.endDate, utcToday.toString()),
+				// Ended by its dates, or no longer an approved absence (cancelled or overridden).
+				or(
+					isNull(absenceEntry.id),
+					ne(absenceEntry.status, "approved"),
+					lte(absenceEntry.endDate, utcToday.toString()),
+				),
 				employeeHasOrganizationAccess(deps.now),
 			),
 		)
 		.groupBy(
 			approvalDeputyDecision.organizationId,
-			absenceEntry.id,
+			approvalDeputyDecision.absenceId,
 			approvalDeputyDecision.deputyEmployeeId,
-			absenceEntry.employeeId,
+			approvalDeputyDecision.actingForEmployeeId,
 			employee.userId,
 			absenceEntry.endDate,
+			absenceEntry.status,
 			userSettings.timezone,
 			organization.timezone,
 		);
@@ -339,19 +352,21 @@ async function sendReturnSummaries(database: Database, deps: Deps): Promise<Tall
 	// One due check, claim and delivery per absence and deputy; few rows per run.
 	// react-doctor-disable-next-line react-doctor/async-await-in-loop
 	for (const row of rows) {
+		const absenceId = row.absenceId as string;
 		try {
 			const timezone = resolveEffectiveTimezone(
 				row.userTimezone ?? undefined,
 				row.organizationTimezone ?? undefined,
 			);
 			const today = plainDateAt(deps.now, timezone);
-			if (today.toString() <= row.endDate) continue;
+			const endDate = returnSummaryEndDate(row, today);
+			if (!endDate || today.toString() <= endDate) continue;
 			const [otherAbsences, isWorkingDay] = await Promise.all([
 				loadOtherAbsences(database, {
 					organizationId: row.organizationId,
 					employeeId: row.approverEmployeeId,
-					absenceId: row.absenceId,
-					from: row.endDate,
+					absenceId,
+					from: endDate,
 					until: today.toString(),
 				}),
 				loadWorkingDays(database, {
@@ -364,7 +379,7 @@ async function sendReturnSummaries(database: Database, deps: Deps): Promise<Tall
 			if (
 				!isReturnSummaryDue({
 					today,
-					absenceEndDate: row.endDate,
+					absenceEndDate: endDate,
 					otherAbsences,
 					isWorkingDay,
 				})
@@ -387,7 +402,7 @@ async function sendReturnSummaries(database: Database, deps: Deps): Promise<Tall
 				database,
 				{
 					organizationId: row.organizationId,
-					absenceId: row.absenceId,
+					absenceId,
 					deputyEmployeeId: row.deputyEmployeeId,
 					kind: "return",
 					localDate: today.toString(),
@@ -397,7 +412,7 @@ async function sendReturnSummaries(database: Database, deps: Deps): Promise<Tall
 					organizationId: row.organizationId,
 					recipientUserId: row.approverUserId,
 					deputyName: displayName(deputy?.name),
-					absenceId: row.absenceId,
+					absenceId,
 					deputyEmployeeId: row.deputyEmployeeId,
 					decisionCount,
 				}),
@@ -407,7 +422,7 @@ async function sendReturnSummaries(database: Database, deps: Deps): Promise<Tall
 		} catch (error) {
 			tally.failed += 1;
 			logger.error(
-				{ error, organizationId: row.organizationId, absenceId: row.absenceId },
+				{ error, organizationId: row.organizationId, absenceId },
 				"Failed to send the cover return summary",
 			);
 		}
@@ -415,6 +430,21 @@ async function sendReturnSummaries(database: Database, deps: Deps): Promise<Tall
 	return tally;
 }
 
+/**
+ * The last day the return summary waits for: the absence's end while it is
+ * still approved; once cancelled or no longer approved, its recorded end, but
+ * no later than yesterday (it has ended). Null when nothing tells the end.
+ */
+function returnSummaryEndDate(
+	row: { liveEndDate: string | null; liveStatus: string | null; recordedEndDate: string | null },
+	today: PlainDate,
+): string | null {
+	if (row.liveEndDate && row.liveStatus === "approved") return row.liveEndDate;
+	const yesterday = today.subtract({ days: 1 }).toString();
+	const recorded = row.liveEndDate ?? row.recordedEndDate;
+	if (!recorded) return yesterday;
+	return recorded < yesterday ? recorded : yesterday;
+}
 /**
  * The approver's other approved absences that do not count as working time,
  * ending on or after this one's end and starting by `until`: the back-to-back
@@ -466,7 +496,8 @@ export interface AbsenceDeputyDecision {
 }
 
 export interface AbsenceDeputyDecisions {
-	absence: { id: string; startDate: string; endDate: string };
+	/** Null dates: a cancelled absence recorded before its dates were kept. */
+	absence: { id: string; startDate: string | null; endDate: string | null };
 	decisions: AbsenceDeputyDecision[];
 }
 
@@ -485,7 +516,7 @@ export async function loadDeputyDecisionsForAbsence(
 		deputyEmployeeId?: string;
 	},
 ): Promise<AbsenceDeputyDecisions | null> {
-	const [absence] = await reader
+	const [live] = await reader
 		.select({
 			id: absenceEntry.id,
 			employeeId: absenceEntry.employeeId,
@@ -500,6 +531,25 @@ export async function loadDeputyDecisionsForAbsence(
 			),
 		)
 		.limit(1);
+	// A cancelled absence is gone; its acting-for records keep its dates.
+	const [recorded] = live
+		? []
+		: await reader
+				.select({
+					employeeId: approvalDeputyDecision.actingForEmployeeId,
+					startDate: min(approvalDeputyDecision.absenceStartDate),
+					endDate: max(approvalDeputyDecision.absenceEndDate),
+				})
+				.from(approvalDeputyDecision)
+				.where(
+					and(
+						eq(approvalDeputyDecision.organizationId, input.organizationId),
+						eq(approvalDeputyDecision.absenceId, input.absenceId),
+						eq(approvalDeputyDecision.actingForEmployeeId, input.viewerEmployeeId),
+					),
+				)
+				.groupBy(approvalDeputyDecision.actingForEmployeeId);
+	const absence = live ?? (recorded ? { id: input.absenceId, ...recorded } : undefined);
 	if (!absence || absence.employeeId !== input.viewerEmployeeId) return null;
 
 	const deputyEmployee = aliasedTable(employee, "deputy_employee");
@@ -575,7 +625,11 @@ export async function loadDeputyDecisionsForAbsence(
 	const requesterNames = new Map(requesters.map((row) => [row.id, row.name]));
 
 	return {
-		absence: { id: absence.id, startDate: absence.startDate, endDate: absence.endDate },
+		absence: {
+			id: absence.id,
+			startDate: absence.startDate ?? null,
+			endDate: absence.endDate ?? null,
+		},
 		decisions: rows.map((row) => {
 			const requesterId = row.legacyRequesterId ?? row.canonicalRequesterId;
 			return {

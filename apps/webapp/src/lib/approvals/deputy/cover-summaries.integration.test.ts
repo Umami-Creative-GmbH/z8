@@ -34,14 +34,16 @@ const ids = {
 	contactOnly: "e1018000-0000-4000-8000-000000000005",
 	xContact: "e1018000-0000-4000-8000-000000000006",
 	xSwitch: "e1018000-0000-4000-8000-000000000007",
+	xCancel: "e1018000-0000-4000-8000-000000000008",
 	vacation: "e1018100-0000-4000-8000-000000000001",
 	absence: "e1018200-0000-4000-8000-000000000001",
 	earlierAbsence: "e1018200-0000-4000-8000-000000000002",
 	contactAbsence: "e1018200-0000-4000-8000-000000000003",
 	switchAbsence: "e1018200-0000-4000-8000-000000000004",
 	pendingAbsence: "e1018200-0000-4000-8000-000000000005",
+	cancelledAbsence: "e1018200-0000-4000-8000-000000000006",
 } as const;
-type Person = "x" | "y" | "y2" | "requester" | "contactOnly" | "xContact" | "xSwitch";
+type Person = "x" | "y" | "y2" | "requester" | "contactOnly" | "xContact" | "xSwitch" | "xCancel";
 const userOf = (person: Person) => `t1018-${person}`;
 
 const admin = integrationAdminPool();
@@ -155,6 +157,7 @@ describe("cover summaries (#1018)", { timeout: 60_000 }, () => {
 		await seedPerson("contactOnly", { employeeRole: "employee" });
 		await seedPerson("xContact", { employeeRole: "manager" });
 		await seedPerson("xSwitch", { employeeRole: "manager" });
+		await seedPerson("xCancel", { employeeRole: "manager" });
 
 		await insertAbsence({
 			id: ids.absence,
@@ -339,5 +342,61 @@ describe("cover summaries (#1018)", { timeout: 60_000 }, () => {
 				viewerEmployeeId: ids.x,
 			}),
 		).toBeNull();
+	});
+
+	it("still tells the approver on return when the absence was cancelled after the deputy decided", async () => {
+		const { db } = await import("@/db");
+		const { recordDeputyDecision: recordActingFor } = await import("./deputy-decision-store");
+		await insertAbsence({
+			id: ids.cancelledAbsence,
+			employee: "xCancel",
+			deputy: "y",
+			startDate: "2026-03-10",
+			endDate: "2026-03-20",
+		});
+		await recordActingFor(db, {
+			organizationId: ORG,
+			deputyEmployeeId: ids.y,
+			actingFor: { approverEmployeeId: ids.xCancel, absenceId: ids.cancelledAbsence },
+			authority: "legacy",
+			entityType: "absence_entry",
+			entityId: randomUUID(),
+			approvalRequestId: randomUUID(),
+			decision: "approved",
+			decidedAt: new Date("2026-03-11T10:00:00Z"),
+		});
+		// Cancelling deletes the absence before its planned end (20 March).
+		await admin.query("delete from absence_entry where id = $1", [ids.cancelledAbsence]);
+
+		// Monday 16 March in Berlin, xCancel's zone (the organization's).
+		await run("2026-03-16T09:00:00Z");
+		const summaries = ours().filter((params) => params.userId === userOf("xCancel"));
+		expect(summaries.map((params) => [params.type, params.message, params.actionUrl])).toEqual([
+			[
+				"approval_cover_return_summary",
+				"While you were away, Name y decided 1 approval.",
+				`/approvals/deputy-decisions/${ids.cancelledAbsence}?deputy=${ids.y}`,
+			],
+		]);
+
+		const { loadDeputyDecisionsForAbsence } = await import("./cover-summary-store");
+		const list = await loadDeputyDecisionsForAbsence(db, {
+			organizationId: ORG,
+			absenceId: ids.cancelledAbsence,
+			viewerEmployeeId: ids.xCancel,
+		});
+		expect(list?.absence).toMatchObject({ startDate: "2026-03-10", endDate: "2026-03-20" });
+		expect(list?.decisions).toHaveLength(1);
+		expect(
+			await loadDeputyDecisionsForAbsence(db, {
+				organizationId: ORG,
+				absenceId: ids.cancelledAbsence,
+				viewerEmployeeId: ids.x,
+			}),
+		).toBeNull();
+
+		sent.length = 0;
+		await run("2026-03-17T09:00:00Z");
+		expect(ours().filter((params) => params.userId === userOf("xCancel"))).toEqual([]);
 	});
 });
