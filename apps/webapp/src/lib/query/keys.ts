@@ -125,8 +125,26 @@ export const queryKeys = {
 			["travel-expenses", "reports", reportId, "adjustments"] as const,
 		legacyConversion: (reportId: string) =>
 			["travel-expenses", "reports", reportId, "legacy-conversion"] as const,
+		/** Every payroll run query: the runs and payroll run readiness. */
+		payrollRuns: () => ["travel-expenses", "payroll-runs"] as const,
 		/** The payroll access holder's unconfirmed payroll runs (#852). */
 		scopedPayrollRuns: () => ["travel-expenses", "payroll-runs", "scoped"] as const,
+		/** What a payroll run of the period, format and employees would not carry (#854). */
+		payrollRunReadiness: (request: {
+			startDate: string;
+			endDate: string;
+			formatId: string;
+			employeeIds?: readonly string[];
+		}) =>
+			[
+				"travel-expenses",
+				"payroll-runs",
+				"readiness",
+				request.startDate,
+				request.endDate,
+				request.formatId,
+				request.employeeIds?.join(",") ?? "scope",
+			] as const,
 	},
 
 	// Employees
