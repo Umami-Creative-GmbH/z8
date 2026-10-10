@@ -163,7 +163,8 @@ export const customFieldOption = pgTable(
  * - `valid_from` is the plain calendar date a tracked field's value is valid
  *   from (#819). `tracked` copies the field's tracked flag through the
  *   definition foreign key, so the database enforces that tracked values have a
- *   valid-from date and untracked ones don't (`custom_field_value_valid_from_check`).
+ *   valid-from date and untracked ones have none: CHECK
+ *   `custom_field_value_valid_from_check`.
  *   A record holds at most one undated value per field and at most one value per
  *   field and valid-from date (partial unique indexes per record kind).
  *
