@@ -260,6 +260,49 @@ describe("getEmployeeClockStatuses", () => {
 		});
 	});
 
+	it("reports an employee on a break in progress as on break, since its start (#861)", async () => {
+		const dbService = createDbService({
+			activeRows: [
+				{
+					employeeId: "emp-1",
+					breakSince: new Date("2026-07-28T09:45:00.000Z"),
+					breakZone: "Europe/Berlin",
+				},
+				{ employeeId: "emp-2", breakSince: null, breakZone: null },
+			] as never,
+			organizationEmployeeRows: [{ id: "emp-1" }, { id: "emp-2" }],
+		});
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(
+			Effect.succeed({
+				dbService,
+				organizationId: "org-1",
+				accessTier: "orgAdmin",
+				currentEmployee: { id: "admin-1", role: "admin" },
+				session: { user: { id: "user-1" } },
+			}),
+		);
+		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(Effect.succeed(null));
+
+		const result = await getEmployeeClockStatuses(["emp-1", "emp-2"]);
+
+		expect(result.success).toBe(true);
+		if (!result.success) return;
+		expect(result.data).toEqual({
+			"emp-1": {
+				status: "on-break",
+				lastActivityAt: null,
+				lastActivityUtcOffsetMinutes: null,
+				breakStartedAt: "2026-07-28T09:45:00.000Z",
+				breakStartedZone: "Europe/Berlin",
+			},
+			"emp-2": {
+				status: "clocked-in",
+				lastActivityAt: null,
+				lastActivityUtcOffsetMinutes: null,
+			},
+		});
+	});
+
 	it("filters manager requests to managed employees", async () => {
 		const dbService = createDbService({
 			activeRows: [{ employeeId: "emp-1" }, { employeeId: "emp-2" }],

@@ -35,6 +35,8 @@ vi.mock("@/lib/billing/guard", () => ({
 const { createClocking } = await import("./clocking");
 const { recordingFollowUps } = await import("./follow-ups");
 const { coordinatedTransactions } = await import("./transactions");
+const { readClockPresence } = await import("../clock-presence");
+const { db } = await import("@/db");
 type BreakCommand = import("./types").BreakCommand;
 type ClockOutCommand = import("./types").ClockOutCommand;
 type BreakInProgressCommand = import("./break-in-progress").BreakInProgressCommand;
@@ -281,6 +283,40 @@ describe("Clocking break in progress on PostgreSQL", () => {
 			expect(await workRecords()).toEqual(expected);
 			expect(followUps.closures).toHaveLength(1);
 			expect(followUps.closures[0]?.end.toString()).toBe("2026-07-22T09:45:00Z");
+		});
+
+		it("reads who is on break since when, scoped to the organization, for the who-is-in board", async () => {
+			const active = await startWork();
+			const scope = { organizationId: ids.organization, employeeIds: [ids.employee, ids.manager] };
+			await expect(readClockPresence(db, scope)).resolves.toEqual([
+				{
+					employeeId: ids.employee,
+					workPeriodId: active.id,
+					workSince: new Date("2026-07-22T08:00:00Z"),
+					state: "clocked_in",
+					breakSince: null,
+					breakZone: null,
+				},
+			]);
+			await startBreak();
+
+			await expect(readClockPresence(db, scope)).resolves.toEqual([
+				{
+					employeeId: ids.employee,
+					workPeriodId: active.id,
+					workSince: new Date("2026-07-22T08:00:00Z"),
+					state: "on_break",
+					breakSince: new Date("2026-07-22T09:45:00Z"),
+					breakZone: "Europe/Berlin",
+				},
+			]);
+			await expect(
+				readClockPresence(db, { ...scope, organizationId: "t861-other-org" }),
+			).resolves.toEqual([]);
+			await newClocking(resumeAt).clocking.resumeBreak(breakCommand());
+			await expect(readClockPresence(db, scope)).resolves.toMatchObject([
+				{ state: "clocked_in", workSince: new Date("2026-07-22T10:00:00Z"), breakSince: null },
+			]);
 		});
 
 		it("refuses a start without live work, a second start and a resume without a break, without writes", async () => {
