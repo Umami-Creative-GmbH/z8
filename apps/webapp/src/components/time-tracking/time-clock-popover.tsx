@@ -26,6 +26,7 @@ import { getTimeFormatDateTimeOptions, type TimeFormat } from "@/lib/user-prefer
 import { showAppendReviewRequiredToast } from "./append-review-toast";
 import { billableChoice } from "./billable-choice";
 import { BillableWorkSwitch } from "./billable-work-switch";
+import { BreakInProgressNotice } from "./break-in-progress-notice";
 import { WorkLocationSelector } from "./clock-in-out-widget-parts";
 import { ProjectSelectorView } from "./project-selector";
 import { QuickBreakPopover } from "./quick-break-popover";
@@ -95,6 +96,9 @@ interface ClockControlsViewProps {
 	onClockIn: () => Promise<void>;
 	onClockOut: () => Promise<void>;
 	activeStartTime: string | Date | null;
+	/** An open break in progress (#861), read-only. */
+	breakInProgress: { since: Date; zone: string | null } | null;
+	timeFormat: TimeFormat;
 	elapsedSeconds: number;
 	employeeId: string | null | undefined;
 	isClockedIn: boolean;
@@ -128,6 +132,8 @@ function ClockControlsView({
 	onClockIn,
 	onClockOut,
 	activeStartTime,
+	breakInProgress,
+	timeFormat,
 	elapsedSeconds,
 	employeeId,
 	isClockedIn,
@@ -173,6 +179,13 @@ function ClockControlsView({
 						{t("timeTracking.startedAt", "Started at")}{" "}
 						{timeFormatter.format(new Date(activeStartTime))}
 					</div>
+					{breakInProgress ? (
+						<BreakInProgressNotice
+							since={breakInProgress.since}
+							zone={breakInProgress.zone}
+							timeFormat={timeFormat}
+						/>
+					) : null}
 				</div>
 			)}
 			{showBookingChoices && (
@@ -517,6 +530,15 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 								onClockIn={handleClockIn}
 								onClockOut={handleClockOut}
 								activeStartTime={activeWorkPeriod?.startTime ?? null}
+								breakInProgress={
+									isClockedIn && activeWorkPeriod?.breakStartedAt
+										? {
+												since: activeWorkPeriod.breakStartedAt,
+												zone: activeWorkPeriod.breakStartedZone ?? null,
+											}
+										: null
+								}
+								timeFormat={timeFormat}
 								elapsedSeconds={elapsedSeconds}
 								employeeId={employeeId}
 								isClockedIn={isClockedIn}
@@ -551,7 +573,8 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 					</div>
 				</PopoverContent>
 			</Popover>
-			{isClockedIn ? (
+			{/* A break in progress ends only by its resume at a kiosk (#861). */}
+			{isClockedIn && !activeWorkPeriod?.breakStartedAt ? (
 				<QuickBreakPopover
 					onAddBreak={handleAddBreak}
 					isAddingBreak={isAddingBreak}

@@ -22,7 +22,8 @@ const shapeConfig = {
 
 export type UserAvatarSize = keyof typeof sizeConfig;
 export type UserAvatarShape = keyof typeof shapeConfig;
-export type EmployeeClockStatus = "clocked-in" | "clocked-out" | "unknown";
+/** `on-break`: clocked in with a break in progress (#861). */
+export type EmployeeClockStatus = "clocked-in" | "on-break" | "clocked-out" | "unknown";
 
 function getClockStatusBadge(
 	clockStatus: EmployeeClockStatus | undefined,
@@ -32,6 +33,13 @@ function getClockStatusBadge(
 		return {
 			label: t("presence.clockedIn", "Clocked in"),
 			className: "bg-emerald-500",
+		};
+	}
+
+	if (clockStatus === "on-break") {
+		return {
+			label: t("presence.onBreak", "On break"),
+			className: "bg-amber-500",
 		};
 	}
 

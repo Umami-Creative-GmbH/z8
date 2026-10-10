@@ -1,10 +1,12 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import type { db } from "@/db";
-import { automaticClockOutExecution, automaticClockOutTask } from "@/db/schema";
+import { automaticClockOutExecution, automaticClockOutTask, timeEntry } from "@/db/schema";
 import {
 	type Clock,
+	compareInstants,
 	dateFromInstant,
+	type Instant,
 	instantFromDate,
 	parseInstant,
 } from "@/lib/datetime/temporal-core";
@@ -16,6 +18,7 @@ import {
 } from "@/lib/notifications/types";
 import type { ClockOutFollowUpEffects, ClosedLiveWork } from "../clocking/follow-ups";
 import { parsePolicyClockOutSurchargeSnapshot } from "../policy-clock-out-surcharge-snapshot";
+import { deriveWorkDurationMinutes } from "../work-duration";
 import { runAutoClockOutFollowUps } from "./follow-ups";
 import { buildAutoClockOutNotification, planAutoClockOutChannels } from "./notifications";
 import { AutoClockOutTaskLeaseNotOwnedError, createAutoClockOutTaskOutbox } from "./outbox";
@@ -72,6 +75,26 @@ export type AutoClockOutNotificationTransport = {
 	): Promise<"sent" | "unavailable">;
 };
 
+/** Whether the execution's clock-out entry ended the work at `end`, in its tenant. */
+async function isClockOutEntryAt(
+	database: typeof db,
+	execution: typeof automaticClockOutExecution.$inferSelect,
+	end: Instant,
+) {
+	const [entry] = await database
+		.select({ type: timeEntry.type, timestamp: timeEntry.timestamp })
+		.from(timeEntry)
+		.where(
+			and(
+				eq(timeEntry.organizationId, execution.organizationId),
+				eq(timeEntry.employeeId, execution.employeeId),
+				eq(timeEntry.id, execution.clockOutEntryId),
+			),
+		)
+		.limit(1);
+	return entry?.type === "clock_out" && instantFromDate(entry.timestamp).equals(end);
+}
+
 async function loadFacts(database: typeof db, claim: AutoClockOutTaskClaim) {
 	if (claim.payload.version !== 1 || claim.payload.operationId !== claim.operationId)
 		throw new Error("invalid_task_payload");
@@ -89,6 +112,10 @@ async function loadFacts(database: typeof db, claim: AutoClockOutTaskClaim) {
 	const payload = closureSchema.parse(execution.closurePayload);
 	const start = parseInstant(payload.start),
 		end = parseInstant(payload.end);
+	const cutoff = instantFromDate(execution.cutoffTime);
+	// The closure ends at the cutoff, or earlier at a forgotten break's start (#861),
+	// which its clock-out entry records.
+	const atBreakStart = compareInstants(end, cutoff) < 0;
 	if (
 		payload.organizationId !== claim.organizationId ||
 		payload.employeeId !== claim.employeeId ||
@@ -96,10 +123,14 @@ async function loadFacts(database: typeof db, claim: AutoClockOutTaskClaim) {
 		payload.clockOutEntryId !== execution.clockOutEntryId ||
 		payload.actorUserId !== execution.provenanceUserId ||
 		payload.timezone !== execution.timezone ||
-		payload.durationMinutes !== execution.maxUninterruptedMinutes ||
 		!start.equals(instantFromDate(execution.startTime)) ||
-		!end.equals(instantFromDate(execution.cutoffTime)) ||
-		!start.add({ minutes: payload.durationMinutes }).equals(end) ||
+		(atBreakStart
+			? compareInstants(end, start) <= 0 ||
+				payload.durationMinutes !== deriveWorkDurationMinutes(start, end) ||
+				!(await isClockOutEntryAt(database, execution, end))
+			: !end.equals(cutoff) ||
+				payload.durationMinutes !== execution.maxUninterruptedMinutes ||
+				!start.add({ minutes: payload.durationMinutes }).equals(end)) ||
 		payload.endCapture.utcOffsetMinutes !== execution.utcOffsetMinutes ||
 		payload.endCapture.timezone !== execution.timezone ||
 		end.toZonedDateTimeISO(execution.timezone).offsetNanoseconds / 60e9 !==
@@ -123,7 +154,8 @@ async function loadFacts(database: typeof db, claim: AutoClockOutTaskClaim) {
 		operationId: execution.id,
 		provenanceUserId: execution.provenanceUserId,
 		start,
-		cutoff: end,
+		cutoff,
+		...(atBreakStart ? { closesAt: end } : {}),
 		timezone: execution.timezone,
 		settings: {
 			autoClockOutEnabled: true,
