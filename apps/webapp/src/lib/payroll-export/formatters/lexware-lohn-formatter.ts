@@ -10,11 +10,7 @@
  */
 import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
-import {
-	CUSTOM_FIELD_IDENTIFIER,
-	personnelNumberTypeError,
-	requirePersonnelIdentifier,
-} from "../personnel-identifier";
+import { personnelNumberTypeError } from "../personnel-identifier";
 import type {
 	AbsenceData,
 	ExpenseLineData,
@@ -218,7 +214,7 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 		for (const period of workPeriods) {
 			if (!period.durationMinutes || !period.endTime) continue;
 
-			const personnelNumber = this.getPersonnelNumber(period, config);
+			const personnelNumber = this.personnelNumber(period, config);
 			const year = period.startTime.toFormat("yyyy");
 			const month = period.startTime.toFormat("MM");
 			const yearMonth = `${year}-${month}`;
@@ -275,7 +271,7 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 			const mappedCode = wageTypeCodeFor(mapping, "lexware");
 			if (!mapping || !mappedCode) continue; // Skip if no mapping
 
-			const personnelNumber = this.getPersonnelNumberFromAbsence(absence, config);
+			const personnelNumber = this.personnelNumber(absence, config);
 			const wageTypeCode = mappedCode;
 
 			// Calculate days
@@ -313,42 +309,17 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 	}
 
 	/**
-	 * Get personnel number from work period based on config
+	 * The row's personnel number (`germanPersonnelNumber`, shared with expense
+	 * lines); an employee number that isn't set is logged before the fallback.
 	 */
-	private getPersonnelNumber(period: WorkPeriodData, config: LexwareLohnConfig): string {
-		// A custom field identifier never falls back (#821).
-		if (config.personnelNumberType === CUSTOM_FIELD_IDENTIFIER) {
-			return requirePersonnelIdentifier(period);
-		}
-		if (config.personnelNumberType === "employeeNumber") {
-			if (period.employeeNumber) {
-				return period.employeeNumber;
-			}
+	private personnelNumber(row: WorkPeriodData | AbsenceData, config: LexwareLohnConfig): string {
+		if (config.personnelNumberType === "employeeNumber" && !row.employeeNumber) {
 			logger.warn(
-				{ employeeId: period.employeeId, periodId: period.id },
+				{ employeeId: row.employeeId, rowId: row.id },
 				"Employee number not set, falling back to employeeId",
 			);
 		}
-		return period.employeeId;
-	}
-
-	/**
-	 * Get personnel number from absence based on config
-	 */
-	private getPersonnelNumberFromAbsence(absence: AbsenceData, config: LexwareLohnConfig): string {
-		if (config.personnelNumberType === CUSTOM_FIELD_IDENTIFIER) {
-			return requirePersonnelIdentifier(absence);
-		}
-		if (config.personnelNumberType === "employeeNumber") {
-			if (absence.employeeNumber) {
-				return absence.employeeNumber;
-			}
-			logger.warn(
-				{ employeeId: absence.employeeId, absenceId: absence.id },
-				"Employee number not set, falling back to employeeId for absence",
-			);
-		}
-		return absence.employeeId;
+		return germanPersonnelNumber(row, config);
 	}
 
 

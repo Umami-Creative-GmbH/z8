@@ -3,10 +3,12 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { customer, employee } from "@/db/schema";
+import { isUuid } from "@/lib/billable-time/input";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import {
 	CUSTOM_FIELD_ENTITIES,
 	type CustomFieldEntity,
@@ -29,8 +31,6 @@ import {
 	getProjectTarget,
 } from "../projects/project-scope";
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 function notFound(entity: CustomFieldEntity, recordId: string) {
 	return new NotFoundError({
 		message: "Record not found",
@@ -47,7 +47,7 @@ function notFound(entity: CustomFieldEntity, recordId: string) {
  */
 function reachRecord(entity: CustomFieldEntity, recordId: string | null) {
 	return Effect.gen(function* () {
-		if (recordId !== null && !UUID.test(recordId)) {
+		if (recordId !== null && !isUuid(recordId)) {
 			return yield* Effect.fail(notFound(entity, recordId));
 		}
 		const denied = { resource: entity, action: "read" };
@@ -162,7 +162,7 @@ export async function getOwnCustomFieldValues(): Promise<ServerActionResult<Cust
 						and(
 							eq(employee.organizationId, organizationId),
 							eq(employee.userId, session.user.id),
-							eq(employee.isActive, true),
+							employeeHasOrganizationAccess(),
 						),
 					)
 					.limit(1);

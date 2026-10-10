@@ -107,7 +107,7 @@ export async function getCustomers(
 				const missingRequired = yield* dbService.query(
 					"customFields.customersMissingRequired",
 					() =>
-						findRecordsMissingRequiredValues(db, {
+						findRecordsMissingRequiredValues(dbService.db, {
 							organizationId,
 							entity: "customer",
 							recordIds: visibleCustomers.map((customerRecord) => customerRecord.id),
@@ -268,7 +268,7 @@ export async function createCustomer(
 							return newCustomer;
 						});
 					})
-					.pipe(Effect.mapError(keepCustomFieldRefusal));
+					.pipe(keepCustomFieldRefusal);
 
 				// Log audit (fire-and-forget)
 				logAudit({
@@ -391,7 +391,7 @@ export async function updateCustomer(
 				// Update the customer, with the dialog's custom field values (#818) in the same transaction.
 				yield* dbService
 					.query("customer.update", async () => {
-						await db.transaction(async (tx) => {
+						await dbService.db.transaction(async (tx) => {
 							await tx
 								.update(customer)
 								.set(updateData)
@@ -410,7 +410,7 @@ export async function updateCustomer(
 							});
 						});
 					})
-					.pipe(Effect.mapError(keepCustomFieldRefusal));
+					.pipe(keepCustomFieldRefusal);
 
 				// Log audit (fire-and-forget)
 				logAudit({

@@ -462,6 +462,38 @@ describe("custom field definitions on PostgreSQL", () => {
 
 			expect(await refusal({ kind: "restore", fieldId: a.id })).toBe("name_taken");
 		});
+
+		it("refuses to archive a payroll identifier field, also of an inactive configuration", async () => {
+			const payrollId = await create({ name: "Payroll ID" });
+			await admin.query(
+				`insert into payroll_export_format (id, name, version, updated_at) values
+				 ('sage_lohn', 'Sage Lohn', '1.0', now())
+				 on conflict (id) do nothing`,
+			);
+			const { rows: formats } = await admin.query<{ id: string; name: string }>(
+				"select id, name from payroll_export_format where id = 'sage_lohn'",
+			);
+			await admin.query(
+				`insert into payroll_export_config (organization_id, format_id, config, is_active, created_by, updated_at)
+				 values ($1, 'sage_lohn', $2::jsonb, false, $3, now())`,
+				[
+					ids.organization,
+					JSON.stringify({ personnelNumberType: "customField", personnelNumberCustomFieldId: payrollId.id }),
+					ids.ownerUser,
+				],
+			);
+
+			const outcome = await changeCustomFields({ kind: "archive", fieldId: payrollId.id });
+
+			expect(outcome).toEqual({
+				success: true,
+				data: {
+					ok: false,
+					reason: "used_as_payroll_identifier",
+					configurations: [formats.find((format) => format.id === "sage_lohn")?.name],
+				},
+			});
+		});
 	});
 
 	describe("select options", () => {

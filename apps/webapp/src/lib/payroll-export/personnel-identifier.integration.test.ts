@@ -95,6 +95,7 @@ const { listPayrollIdentifierFields, savePayrollExportConfig } = await import(
 	"./personnel-identifier-store"
 );
 const { changeCustomFields } = await import("@/lib/organization/custom-fields/definitions");
+const { payrollIdentifierArchiveGuard } = await import("./personnel-identifier-usage");
 const { db } = await import("@/db");
 
 const ORG = "t821-org";
@@ -505,7 +506,12 @@ describe("employee custom field as payroll identifier on PostgreSQL", () => {
 		const archive = { kind: "archive", fieldId: ids.payrollId };
 
 		await expect(
-			changeCustomFields(db, { organizationId: ORG, actorUserId: ids.ownerUser, change: archive }),
+			changeCustomFields(db, {
+				organizationId: ORG,
+				actorUserId: ids.ownerUser,
+				change: archive,
+				archiveGuards: [payrollIdentifierArchiveGuard],
+			}),
 		).resolves.toEqual({
 			ok: false,
 			reason: "used_as_payroll_identifier",
@@ -515,7 +521,12 @@ describe("employee custom field as payroll identifier on PostgreSQL", () => {
 		await configure("datev_lohn", { ...DATEV, personnelNumberType: "employeeNumber" });
 		await configure("personio", { employeeMatchStrategy: "email" });
 		await expect(
-			changeCustomFields(db, { organizationId: ORG, actorUserId: ids.ownerUser, change: archive }),
+			changeCustomFields(db, {
+				organizationId: ORG,
+				actorUserId: ids.ownerUser,
+				change: archive,
+				archiveGuards: [payrollIdentifierArchiveGuard],
+			}),
 		).resolves.toMatchObject({ ok: true });
 	});
 

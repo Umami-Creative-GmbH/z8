@@ -1,20 +1,21 @@
 import "server-only";
 
-import { and, eq } from "drizzle-orm";
-import type { db as database } from "@/db";
+import { eq } from "drizzle-orm";
 import { payrollExportConfig, payrollExportFormat } from "@/db/schema";
+import type {
+	CustomFieldArchiveGuard,
+	CustomFieldReader,
+} from "@/lib/organization/custom-fields/definitions";
 import { payrollIdentifierCustomFieldId } from "./personnel-identifier";
 
-type Database = typeof database;
-type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-
 /**
- * Names of the organization's active payroll configurations that use the custom
- * field as personnel identifier or match key (#821), sorted. Archiving such a
- * field is refused with these names.
+ * Names of the organization's payroll configurations, active or not, that use
+ * the custom field as personnel identifier or match key (#821), sorted and
+ * without duplicates. An inactive configuration counts too: activating it again
+ * must not find its identifier archived.
  */
 export async function payrollConfigurationsUsingCustomField(
-	reader: Pick<Transaction, "select">,
+	reader: CustomFieldReader,
 	organizationId: string,
 	customFieldId: string,
 ): Promise<string[]> {
@@ -22,14 +23,22 @@ export async function payrollConfigurationsUsingCustomField(
 		.select({ config: payrollExportConfig.config, name: payrollExportFormat.name })
 		.from(payrollExportConfig)
 		.innerJoin(payrollExportFormat, eq(payrollExportFormat.id, payrollExportConfig.formatId))
-		.where(
-			and(
-				eq(payrollExportConfig.organizationId, organizationId),
-				eq(payrollExportConfig.isActive, true),
-			),
-		);
-	return rows
+		.where(eq(payrollExportConfig.organizationId, organizationId));
+	const names = rows
 		.filter((row) => payrollIdentifierCustomFieldId(row.config) === customFieldId)
-		.map((row) => row.name)
-		.toSorted((left, right) => left.localeCompare(right));
+		.map((row) => row.name);
+	return [...new Set(names)].toSorted((left, right) => left.localeCompare(right));
 }
+
+/** Archiving an employee field a payroll configuration names as identifier is refused, naming them. */
+export const payrollIdentifierArchiveGuard: CustomFieldArchiveGuard = async (reader, field) => {
+	if (field.entity !== "employee") return null;
+	const configurations = await payrollConfigurationsUsingCustomField(
+		reader,
+		field.organizationId,
+		field.fieldId,
+	);
+	return configurations.length > 0
+		? { reason: "used_as_payroll_identifier", configurations }
+		: null;
+};

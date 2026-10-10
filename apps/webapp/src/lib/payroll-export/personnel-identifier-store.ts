@@ -9,11 +9,13 @@
  */
 import "server-only";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { db as database } from "@/db";
 import { customFieldDefinition, payrollExportConfig } from "@/db/schema";
 import type { PlainDate } from "@/lib/datetime/temporal-core";
+import { isUuid } from "@/lib/billable-time/input";
 import type { CustomFieldReader } from "@/lib/organization/custom-fields/definitions";
+import { lockCustomFieldDefinitions } from "@/lib/organization/custom-fields/lock";
 import { readCustomFieldValues } from "@/lib/organization/custom-fields/values";
 import {
 	CUSTOM_FIELD_IDENTIFIER,
@@ -24,13 +26,10 @@ import {
 } from "./personnel-identifier";
 
 type Database = typeof database;
-type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type ConfigRow = typeof payrollExportConfig.$inferSelect;
 
 /** Keeps each `IN` list well under PostgreSQL's bind-parameter limit. */
 const ID_CHUNK = 5_000;
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Each employee's value of the identifier field as of `asOf`, by employee ID.
@@ -99,16 +98,6 @@ export async function listPayrollIdentifierFields(
 		.map(({ id, name, type }) => ({ id, name, type }));
 }
 
-/** Serializes custom field definition changes and identifier choices of one organization. */
-export async function lockOrganizationCustomFields(
-	tx: Pick<Transaction, "execute">,
-	organizationId: string,
-): Promise<void> {
-	await tx.execute(
-		sql`select pg_advisory_xact_lock(hashtextextended(${`custom_fields:${organizationId}`}, 0))`,
-	);
-}
-
 export type SavePayrollExportConfigOutcome =
 	| { ok: true; config: ConfigRow }
 	| { ok: false; reason: "invalid_identifier_field" };
@@ -132,9 +121,9 @@ export async function savePayrollExportConfig(
 	const fieldId = payrollIdentifierCustomFieldId(config);
 	return db.transaction(async (tx) => {
 		if (fieldId !== null) {
-			await lockOrganizationCustomFields(tx, input.organizationId);
+			await lockCustomFieldDefinitions(tx, input.organizationId);
 			const eligible =
-				UUID.test(fieldId) &&
+				isUuid(fieldId) &&
 				(await listPayrollIdentifierFields(tx, input.organizationId)).some(
 					(field) => field.id === fieldId,
 				);

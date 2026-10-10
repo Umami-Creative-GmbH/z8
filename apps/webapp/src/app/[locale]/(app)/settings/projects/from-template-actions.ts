@@ -216,7 +216,7 @@ export async function createProjectFromTemplate(
 							return copied;
 						}),
 					)
-					.pipe(Effect.mapError((error) => keepCustomFieldRefusal(keepTypedCreationError(error))));
+					.pipe(Effect.mapError(keepTypedCreationError), keepCustomFieldRefusal);
 				if (!created) return yield* Effect.fail(templateNotFound(input.templateId));
 
 				logAudit({

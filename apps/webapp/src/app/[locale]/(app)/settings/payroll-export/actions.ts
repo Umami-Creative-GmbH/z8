@@ -178,6 +178,20 @@ function payrollConfigSaved(outcome: SavePayrollExportConfigOutcome) {
 			);
 }
 
+/**
+ * Saves a format's configuration through the `DatabaseService` (a database
+ * failure stays a typed `DatabaseError`), refusing an ineligible custom field
+ * identifier (#821).
+ */
+function saveConfig(input: Parameters<typeof savePayrollExportConfig>[1]) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		return yield* dbService.query("payrollExportConfig.save", () =>
+			savePayrollExportConfig(dbService.db, input),
+		);
+	}).pipe(Effect.flatMap(payrollConfigSaved));
+}
+
 /** An employee custom field a payroll configuration may use as personnel identifier (#821). */
 export interface PayrollIdentifierFieldOption {
 	id: string;
@@ -207,7 +221,10 @@ export async function getPayrollIdentifierFieldsAction(
 			);
 		}
 
-		const fields = yield* Effect.promise(() => listPayrollIdentifierFields(db, organizationId));
+		const dbService = yield* DatabaseService;
+		const fields = yield* dbService.query("payrollExport.identifierFields", () =>
+			listPayrollIdentifierFields(dbService.db, organizationId),
+		);
 		return fields.map(({ id, name }) => ({ id, name }));
 	});
 
@@ -304,14 +321,12 @@ export async function saveDatevConfigAction(
 		});
 
 		// Save or update config; a custom field identifier must be eligible (#821)
-		const config = yield* Effect.promise(() =>
-			savePayrollExportConfig(db, {
-				organizationId: input.organizationId,
-				formatId: "datev_lohn",
-				config: input.config as unknown as Record<string, unknown>,
-				actorUserId: session.user.id,
-			}),
-		).pipe(Effect.flatMap(payrollConfigSaved));
+		const config = yield* saveConfig({
+			organizationId: input.organizationId,
+			formatId: "datev_lohn",
+			config: input.config as unknown as Record<string, unknown>,
+			actorUserId: session.user.id,
+		});
 
 		revalidatePath("/settings/payroll-export");
 
@@ -424,14 +439,12 @@ export async function saveLexwareConfigAction(
 		});
 
 		// Save or update config; a custom field identifier must be eligible (#821)
-		const config = yield* Effect.promise(() =>
-			savePayrollExportConfig(db, {
-				organizationId: input.organizationId,
-				formatId: LEXWARE_FORMAT_ID,
-				config: input.config as unknown as Record<string, unknown>,
-				actorUserId: session.user.id,
-			}),
-		).pipe(Effect.flatMap(payrollConfigSaved));
+		const config = yield* saveConfig({
+			organizationId: input.organizationId,
+			formatId: LEXWARE_FORMAT_ID,
+			config: input.config as unknown as Record<string, unknown>,
+			actorUserId: session.user.id,
+		});
 
 		revalidatePath("/settings/payroll-export");
 
@@ -544,14 +557,12 @@ export async function saveSageConfigAction(
 		});
 
 		// Save or update config; a custom field identifier must be eligible (#821)
-		const config = yield* Effect.promise(() =>
-			savePayrollExportConfig(db, {
-				organizationId: input.organizationId,
-				formatId: SAGE_FORMAT_ID,
-				config: input.config as unknown as Record<string, unknown>,
-				actorUserId: session.user.id,
-			}),
-		).pipe(Effect.flatMap(payrollConfigSaved));
+		const config = yield* saveConfig({
+			organizationId: input.organizationId,
+			formatId: SAGE_FORMAT_ID,
+			config: input.config as unknown as Record<string, unknown>,
+			actorUserId: session.user.id,
+		});
 
 		revalidatePath("/settings/payroll-export");
 
@@ -715,14 +726,12 @@ export async function saveSuccessFactorsConfigAction(
 		});
 
 		// Save or update config; a custom field identifier must be eligible (#821)
-		const config = yield* Effect.promise(() =>
-			savePayrollExportConfig(db, {
-				organizationId: input.organizationId,
-				formatId: SF_FORMAT_ID,
-				config: input.config as unknown as Record<string, unknown>,
-				actorUserId: session.user.id,
-			}),
-		).pipe(Effect.flatMap(payrollConfigSaved));
+		const config = yield* saveConfig({
+			organizationId: input.organizationId,
+			formatId: SF_FORMAT_ID,
+			config: input.config as unknown as Record<string, unknown>,
+			actorUserId: session.user.id,
+		});
 
 		const hasCredentials = yield* Effect.promise(async () => {
 			const [clientId, clientSecret] = await Promise.all([
@@ -1014,14 +1023,12 @@ export async function saveWorkdayConfigAction(
 		});
 
 		// Save or update config; a custom field identifier must be eligible (#821)
-		const config = yield* Effect.promise(() =>
-			savePayrollExportConfig(db, {
-				organizationId: input.organizationId,
-				formatId: WORKDAY_FORMAT_ID,
-				config: input.config as unknown as Record<string, unknown>,
-				actorUserId: session.user.id,
-			}),
-		).pipe(Effect.flatMap(payrollConfigSaved));
+		const config = yield* saveConfig({
+			organizationId: input.organizationId,
+			formatId: WORKDAY_FORMAT_ID,
+			config: input.config as unknown as Record<string, unknown>,
+			actorUserId: session.user.id,
+		});
 
 		const hasCredentials = yield* Effect.promise(async () => {
 			const [clientId, clientSecret] = await Promise.all([
@@ -1917,14 +1924,12 @@ export async function savePersonioConfigAction(
 		});
 
 		// Save or update config; a custom field identifier must be eligible (#821)
-		const config = yield* Effect.promise(() =>
-			savePayrollExportConfig(db, {
-				organizationId: input.organizationId,
-				formatId: PERSONIO_FORMAT_ID,
-				config: input.config as unknown as Record<string, unknown>,
-				actorUserId: session.user.id,
-			}),
-		).pipe(Effect.flatMap(payrollConfigSaved));
+		const config = yield* saveConfig({
+			organizationId: input.organizationId,
+			formatId: PERSONIO_FORMAT_ID,
+			config: input.config as unknown as Record<string, unknown>,
+			actorUserId: session.user.id,
+		});
 
 		// Check if credentials exist
 		const hasCredentials = yield* Effect.promise(async () => {

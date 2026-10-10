@@ -290,7 +290,7 @@ export async function updateEmployeeAction(
 							dbService.db,
 						),
 					)
-					.pipe(Effect.mapError(keepCustomFieldRefusal));
+					.pipe(keepCustomFieldRefusal);
 
 				if (
 					actor.accessTier === "orgAdmin" &&

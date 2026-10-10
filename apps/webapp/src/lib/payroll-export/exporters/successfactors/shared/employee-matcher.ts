@@ -3,7 +3,11 @@
  * Maps local employees to SAP SuccessFactors user identifiers
  */
 import { createLogger } from "@/lib/logger";
-import { type PayrollIdentityRow, requirePersonnelIdentifier } from "../../../personnel-identifier";
+import {
+	CUSTOM_FIELD_IDENTIFIER,
+	type PayrollIdentityRow,
+	requirePersonnelIdentifier,
+} from "../../../personnel-identifier";
 import type { AbsenceData, WorkPeriodData } from "../../../types";
 import type { SuccessFactorsEmployeeMatchStrategy } from "../types";
 
@@ -60,7 +64,7 @@ export function getEmployeeIdentifier(
 			);
 			return employee.employeeNumber || null;
 
-		case "customField":
+		case CUSTOM_FIELD_IDENTIFIER:
 			// The frozen custom field value is the userId (#821); it never falls back.
 			return requirePersonnelIdentifier(employee);
 

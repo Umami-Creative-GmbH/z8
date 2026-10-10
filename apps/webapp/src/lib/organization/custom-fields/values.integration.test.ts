@@ -5,12 +5,16 @@
  * history.
  */
 
+import { eq } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, onTestFinished } from "vitest";
+import { customFieldDefinition, customFieldOption } from "@/db/schema";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const { db } = await import("@/db");
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const { changeCustomFields } = await import("./definitions");
+const { lockCustomFieldDefinitions } = await import("./lock");
 const {
 	CustomFieldValuesRefused,
 	loadCustomFieldViewerLevel,
@@ -28,6 +32,7 @@ const ids = {
 	customRoleMember: "t818s-custom-role-member",
 	inactive: "t818s-inactive",
 	otherOwner: "t818s-other-owner",
+	departed: "t818s-departed",
 } as const;
 const users = Object.values(ids).filter((id) => !id.endsWith("org"));
 const asOf = Temporal.PlainDate.from("2026-10-10");
@@ -389,6 +394,71 @@ describe("custom field values on PostgreSQL", () => {
 		expect(await refusal(write("employee", employeeId, { [select.id]: gold.id }))).toBe(
 			"option_archived",
 		);
+	});
+
+	it("waits for a definition change in flight and re-checks the field and option under its lock", async () => {
+		const text = await define(ids.organization, { name: "Racy" });
+		const select = await define(ids.organization, {
+			name: "Racy tier",
+			type: "select",
+			options: ["Gold", "Silver"],
+		});
+		const [gold] = select.options;
+		const inFlight: (() => Promise<void>)[] = [];
+		onTestFinished(() => Promise.all(inFlight.map((commit) => commit())).then(() => {}));
+
+		/** A definition change holding the organization's lock until it commits. */
+		async function definitionChangeInFlight(change: (tx: Tx) => Promise<unknown>) {
+			let release!: () => void;
+			const released = new Promise<void>((resolve) => {
+				release = resolve;
+			});
+			let locked!: () => void;
+			const isLocked = new Promise<void>((resolve) => {
+				locked = resolve;
+			});
+			const done = db.transaction(async (tx) => {
+				await lockCustomFieldDefinitions(tx, ids.organization);
+				await change(tx);
+				locked();
+				await released;
+			});
+			await isLocked;
+			const commit = async () => {
+				release();
+				await done;
+			};
+			inFlight.push(commit);
+			return commit;
+		}
+		const settledWithin = (promise: Promise<unknown>, ms: number) =>
+			Promise.race([
+				promise.then(() => true),
+				new Promise((resolve) => setTimeout(() => resolve(false), ms)),
+			]);
+
+		const archiveField = await definitionChangeInFlight((tx) =>
+			tx
+				.update(customFieldDefinition)
+				.set({ archivedAt: new Date() })
+				.where(eq(customFieldDefinition.id, text.id)),
+		);
+		const fieldWrite = refusal(write("employee", employeeId, { [text.id]: "late" }));
+		expect(await settledWithin(fieldWrite, 300)).toBe(false);
+		await archiveField();
+		expect(await fieldWrite).toBe("field_archived");
+
+		const archiveOption = await definitionChangeInFlight((tx) =>
+			tx
+				.update(customFieldOption)
+				.set({ archivedAt: new Date() })
+				.where(eq(customFieldOption.id, gold.id)),
+		);
+		const optionWrite = refusal(write("employee", employeeId, { [select.id]: gold.id }));
+		expect(await settledWithin(optionWrite, 300)).toBe(false);
+		await archiveOption();
+		expect(await optionWrite).toBe("option_archived");
+		expect((await read("employee", [employeeId])).values[employeeId] ?? {}).toEqual({});
 	});
 
 	it("rejects fields of another record kind or organization", async () => {
@@ -793,6 +863,44 @@ describe("custom field values on PostgreSQL", () => {
 			expect(await level(ids.customRoleMember)).toBe("manager");
 			expect(await level(ids.inactive)).toBeNull();
 			expect(await level(ids.otherOwner)).toBeNull();
+		});
+
+		it("gives no level to a still-active employee past a due departure's cutoff", async () => {
+			await admin.query(
+				`insert into member (id, organization_id, user_id, role, status, created_at)
+				 values ('t818s-m-departed', $1, $2, 'member', 'approved', now())`,
+				[ids.organization, ids.departed],
+			);
+			const {
+				rows: [departed],
+			} = await admin.query<{ id: string }>(
+				`insert into employee (user_id, organization_id, first_name, last_name, role, is_active, updated_at)
+				 values ($1, $2, 'Dora', 'Departed', 'manager', true, now()) returning id`,
+				[ids.departed, ids.organization],
+			);
+			const {
+				rows: [period],
+			} = await admin.query<{ id: string }>(
+				`insert into employee_employment_period
+				 (id, organization_id, employee_id, status, started_at, start_provenance)
+				 values (gen_random_uuid(), $1, $2, 'open', '2026-01-01T00:00:00Z', 'recorded') returning id`,
+				[ids.organization, departed.id],
+			);
+			await admin.query(
+				`insert into employee_departure
+				 (organization_id, employee_id, employment_period_id, mode, last_working_day, timezone,
+				  cutoff_at, created_by, request_id, request_fingerprint, revision, status)
+				 values ($1, $2, $3, 'scheduled', '2026-09-14', 'UTC', '2026-09-15T00:00:00Z', $4,
+				         gen_random_uuid(), 'test', 1, 'pending')`,
+				[ids.organization, departed.id, period.id, ids.admin],
+			);
+
+			expect(
+				await loadCustomFieldViewerLevel(db, {
+					organizationId: ids.organization,
+					userId: ids.departed,
+				}),
+			).toBeNull();
 		});
 	});
 

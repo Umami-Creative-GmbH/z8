@@ -80,6 +80,12 @@ function canonicalDecimal(text: string): { value: string; fractional: boolean } 
 	};
 }
 
+/** A numeric as PostgreSQL returns it ("12.500", "-0.0") as a canonical decimal string ("12.5", "0"). */
+export function canonicalStoredDecimal(value: string): string {
+	const canonical = value.includes(".") ? value.replace(/\.?0+$/, "") : value;
+	return canonical === "-0" ? "0" : canonical;
+}
+
 /** Compares two canonical decimal strings exactly (no floating point). */
 export function compareCanonicalDecimals(left: string, right: string): number {
 	const negativeLeft = left.startsWith("-");

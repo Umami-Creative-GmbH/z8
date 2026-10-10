@@ -5,7 +5,6 @@ import type {
 	CustomFieldType,
 	FieldVisibility,
 } from "@/lib/organization/custom-fields/definition-rules";
-import type { CustomFieldValueRefusal } from "@/lib/organization/custom-fields/value-rules";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -157,29 +156,5 @@ export function refusalMessage(
 	}
 }
 
-/** Why a value doesn't fit its field's type rules (#819 history editor). */
-export function valueRefusalMessage(t: Translate, reason: CustomFieldValueRefusal): string {
-	switch (reason) {
-		case "text_too_long":
-			return t("settings.customFields.valueRefusal.textTooLong", "Enter at most 255 characters.");
-		case "invalid_number":
-			return t("settings.customFields.valueRefusal.invalidNumber", "Enter a number.");
-		case "number_not_integer":
-			return t("settings.customFields.valueRefusal.numberNotInteger", "Enter a whole number.");
-		case "number_out_of_range":
-			return t(
-				"settings.customFields.valueRefusal.numberOutOfRange",
-				"Enter a number within the allowed range.",
-			);
-		case "invalid_date":
-			return t("settings.customFields.valueRefusal.invalidDate", "Enter a valid date.");
-		case "option_archived":
-			return t(
-				"settings.customFields.valueRefusal.optionArchived",
-				"This option is archived. Choose another one.",
-			);
-		case "invalid_option":
-		case "invalid_value":
-			return t("settings.customFields.valueRefusal.invalidValue", "Enter a valid value.");
-	}
-}
+/** Why a value doesn't fit its field (#819 history editor); shared with the save actions. */
+export { valueRefusalMessage } from "@/lib/organization/custom-fields/refusal-messages";

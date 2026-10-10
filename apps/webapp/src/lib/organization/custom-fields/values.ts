@@ -6,7 +6,9 @@ import type { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { auditLog, customFieldValue, customRole, employee, employeeCustomRole } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { isUuid } from "@/lib/billable-time/input";
 import { type PlainDate, plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
+import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import type { CustomFieldEntity, CustomFieldType } from "./definition-rules";
 import {
@@ -19,13 +21,18 @@ import {
 	applyCustomFieldHistoryChanges,
 	type CustomFieldHistoryEffect,
 	type CustomFieldHistoryEntry,
-	type CustomFieldHistoryRefusal,
 	customFieldValueAsOf,
 	newestFirst,
 } from "./history-rules";
+import { lockCustomFieldValueWrites } from "./lock";
+import {
+	type CustomFieldValuesRefusal,
+	englishDefaults,
+	namedValueRefusalMessage,
+} from "./refusal-messages";
 import {
 	type CustomFieldValue,
-	type CustomFieldValueRefusal,
+	canonicalStoredDecimal,
 	missingRequiredCustomFieldIds,
 	parseCustomFieldValueInput,
 	sameCustomFieldValue,
@@ -73,7 +80,8 @@ export async function loadCustomFieldViewerLevel(
 	if (!membership) return null;
 
 	const [employeeRow] = await reader
-		.select({ id: employee.id, role: employee.role, isActive: employee.isActive })
+		// Past a due departure's cutoff counts as inactive, like everywhere else.
+		.select({ id: employee.id, role: employee.role, isActive: employeeHasOrganizationAccess() })
 		.from(employee)
 		.where(
 			and(eq(employee.organizationId, input.organizationId), eq(employee.userId, input.userId)),
@@ -142,29 +150,39 @@ export interface CustomFieldValuesAsOf {
 	missingRequired: Record<string, string[]>;
 }
 
-const RECORD_COLUMN = {
-	employee: customFieldValue.employeeId,
-	project: customFieldValue.projectId,
-	customer: customFieldValue.customerId,
-} as const;
+/** The value row column naming the record, by record kind. */
+const RECORD_KEY = {
+	employee: "employeeId",
+	project: "projectId",
+	customer: "customerId",
+} as const satisfies Record<CustomFieldEntity, keyof ValueRow>;
 
-function recordIdOf(row: ValueRow, entity: CustomFieldEntity): string | null {
-	switch (entity) {
-		case "employee":
-			return row.employeeId;
-		case "project":
-			return row.projectId;
-		case "customer":
-			return row.customerId;
-	}
+const recordColumn = (entity: CustomFieldEntity) => customFieldValue[RECORD_KEY[entity]];
+
+const recordIdOf = (row: ValueRow, entity: CustomFieldEntity): string | null =>
+	row[RECORD_KEY[entity]];
+
+/** The record columns of a new value row: the record's own set, the others null. */
+function recordColumns(scope: Pick<CustomFieldWriteScope, "entity" | "recordId">) {
+	const columns: Record<(typeof RECORD_KEY)[CustomFieldEntity], string | null> = {
+		employeeId: null,
+		projectId: null,
+		customerId: null,
+	};
+	columns[RECORD_KEY[scope.entity]] = scope.recordId;
+	return columns;
 }
+
+/** One value row of the organization, by id. */
+const valueRow = (scope: Pick<CustomFieldWriteScope, "organizationId">, id: string) =>
+	and(eq(customFieldValue.organizationId, scope.organizationId), eq(customFieldValue.id, id));
 
 function storedValue(row: ValueRow, type: CustomFieldType): CustomFieldValue | null {
 	switch (type) {
 		case "text":
 			return row.textValue === null ? null : { type, value: row.textValue };
 		case "number":
-			return row.numberValue === null ? null : { type, value: canonicalNumeric(row.numberValue) };
+			return row.numberValue === null ? null : { type, value: canonicalStoredDecimal(row.numberValue) };
 		case "date":
 			return row.dateValue === null ? null : { type, value: row.dateValue };
 		case "boolean":
@@ -172,12 +190,6 @@ function storedValue(row: ValueRow, type: CustomFieldType): CustomFieldValue | n
 		case "select":
 			return row.selectOptionId === null ? null : { type, value: row.selectOptionId };
 	}
-}
-
-/** PostgreSQL returns numerics as stored; strip trailing fractional zeros. */
-function canonicalNumeric(value: string): string {
-	const canonical = value.includes(".") ? value.replace(/\.?0+$/, "") : value;
-	return canonical === "-0" ? "0" : canonical;
 }
 
 /** A tracked field's dated row as a history entry (null for an undated row). */
@@ -238,7 +250,7 @@ export async function readCustomFieldValues(
 			? definitions
 			: definitions.filter((field) => canViewCustomField(level, field.visibility));
 
-	const recordIds = [...new Set(input.recordIds)].filter((id) => UUID.test(id));
+	const recordIds = [...new Set(input.recordIds)].filter(isUuid);
 	const values: Record<string, Record<string, CustomFieldValue>> = {};
 	if (fields.length > 0 && recordIds.length > 0) {
 		const rows = await reader
@@ -247,7 +259,7 @@ export async function readCustomFieldValues(
 			.where(
 				and(
 					eq(customFieldValue.organizationId, input.organizationId),
-					inArray(RECORD_COLUMN[input.entity], recordIds),
+					inArray(recordColumn(input.entity), recordIds),
 					inArray(
 						customFieldValue.definitionId,
 						fields.map((field) => field.id),
@@ -367,14 +379,14 @@ async function readHistory(
 		fields: readonly CustomFieldDefinitionView[];
 	},
 ): Promise<Record<string, CustomFieldHistoryEntry[]>> {
-	if (!UUID.test(input.recordId)) return {};
+	if (!isUuid(input.recordId)) return {};
 	const rows = await reader
 		.select()
 		.from(customFieldValue)
 		.where(
 			and(
 				eq(customFieldValue.organizationId, input.organizationId),
-				eq(RECORD_COLUMN[input.entity], input.recordId),
+				eq(recordColumn(input.entity), input.recordId),
 				inArray(
 					customFieldValue.definitionId,
 					input.fields.map((field) => field.id),
@@ -420,56 +432,30 @@ export async function findRecordsMissingRequiredValues(
 // Writes
 // ---------------------------------------------------------------------------
 
-export type CustomFieldValuesRefusal =
-	| CustomFieldValueRefusal
-	| CustomFieldHistoryRefusal
-	/** Not an active-or-archived field of this record kind in this organization. */
-	| "unknown_field"
-	| "field_archived"
-	/** Above the writer's edit level (or a field they can't see). */
-	| "not_editable"
-	/** A plain value for a tracked field, which takes dated changes (`{ history }`). */
-	| "tracked_field"
-	/** A required field the writer may edit is left without a value (as of today). */
-	| "missing_required";
+export type { CustomFieldValuesRefusal } from "./refusal-messages";
 
-const REFUSAL_MESSAGES: Record<CustomFieldValuesRefusal, string> = {
-	invalid_valid_from: "needs a valid 'valid from' date",
-	duplicate_valid_from: "already has a value valid from that date",
-	unknown_history_entry: "has changed meanwhile; reload and try again",
-	missing_value: "needs a value for each date",
-	tracked_field: "keeps a history; add a dated change instead",
-	invalid_value: "has an invalid value",
-	text_too_long: "is longer than 255 characters",
-	invalid_number: "needs a number",
-	number_not_integer: "needs a whole number",
-	number_out_of_range: "is outside the allowed range",
-	invalid_date: "needs a valid date",
-	invalid_option: "needs one of its options",
-	option_archived: "can't use an archived option",
-	unknown_field: "doesn't exist",
-	field_archived: "is archived",
-	not_editable: "can't be changed by you",
-	missing_required: "is required",
-};
-
-/** A refused custom field value write. The message is safe to show users. */
+/**
+ * A refused custom field value write. The message is the English default, for
+ * logs; save actions show `namedValueRefusalMessage` in the user's language.
+ */
 export class CustomFieldValuesRefused extends Error {
 	constructor(
 		readonly reason: CustomFieldValuesRefusal,
 		readonly fieldId: string,
 		readonly fieldName: string | null,
 	) {
-		super(
-			fieldName
-				? `Custom field "${fieldName}" ${REFUSAL_MESSAGES[reason]}`
-				: `A custom field ${REFUSAL_MESSAGES[reason]}`,
-		);
+		super(namedValueRefusalMessage(englishDefaults, reason, fieldName));
 		this.name = "CustomFieldValuesRefused";
 	}
 }
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Whose values are written, by whom: one record of one organization. */
+export interface CustomFieldWriteScope {
+	organizationId: string;
+	actorUserId: string;
+	entity: CustomFieldEntity;
+	recordId: string;
+}
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
 	typeof value === "object" && value !== null && !Array.isArray(value);
@@ -516,12 +502,8 @@ function auditValue(field: CustomFieldDefinitionView, value: CustomFieldValue | 
  */
 export async function writeCustomFieldValues(
 	tx: CustomFieldWriter,
-	input: {
-		organizationId: string;
-		actorUserId: string;
+	input: CustomFieldWriteScope & {
 		level: CustomFieldViewerLevel | null;
-		entity: CustomFieldEntity;
-		recordId: string;
 		values: unknown;
 		requireComplete: boolean;
 		/** The date required tracked fields are checked as of. Default: today in the organization's timezone. */
@@ -534,6 +516,9 @@ export async function writeCustomFieldValues(
 	const requested = Object.entries(input.values ?? {});
 	if (requested.length === 0 && !input.requireComplete) return;
 
+	// Shared with other value writes, exclusive with definition changes (archiving a
+	// field or option): the definitions read below are the ones in force at commit.
+	await lockCustomFieldValueWrites(tx, input.organizationId);
 	await tx.execute(
 		sql`select pg_advisory_xact_lock(hashtextextended(${`custom_field_values:${input.recordId}`}, 0))`,
 	);
@@ -547,7 +532,7 @@ export async function writeCustomFieldValues(
 		.where(
 			and(
 				eq(customFieldValue.organizationId, input.organizationId),
-				eq(RECORD_COLUMN[input.entity], input.recordId),
+				eq(recordColumn(input.entity), input.recordId),
 			),
 		);
 	const rowByField = new Map(
@@ -620,74 +605,50 @@ export async function writeCustomFieldValues(
 
 async function writeOne(
 	tx: CustomFieldWriter,
-	input: {
-		organizationId: string;
-		actorUserId: string;
-		entity: CustomFieldEntity;
-		recordId: string;
-	},
+	scope: CustomFieldWriteScope,
 	field: CustomFieldDefinitionView,
 	row: ValueRow | null,
 	before: CustomFieldValue | null,
 	after: CustomFieldValue | null,
 ) {
-	const scoped = (id: string) =>
-		and(eq(customFieldValue.organizationId, input.organizationId), eq(customFieldValue.id, id));
 	if (after === null) {
-		if (row) await tx.delete(customFieldValue).where(scoped(row.id));
+		if (row) await tx.delete(customFieldValue).where(valueRow(scope, row.id));
 	} else if (row) {
 		await tx
 			.update(customFieldValue)
-			.set({ ...columnsOf(after), updatedAt: sql`now()`, updatedBy: input.actorUserId })
-			.where(scoped(row.id));
+			.set({ ...columnsOf(after), updatedAt: sql`now()`, updatedBy: scope.actorUserId })
+			.where(valueRow(scope, row.id));
 	} else {
 		await tx.insert(customFieldValue).values({
-			organizationId: input.organizationId,
+			organizationId: scope.organizationId,
 			definitionId: field.id,
-			employeeId: input.entity === "employee" ? input.recordId : null,
-			projectId: input.entity === "project" ? input.recordId : null,
-			customerId: input.entity === "customer" ? input.recordId : null,
+			...recordColumns(scope),
 			...columnsOf(after),
 			tracked: false,
-			createdBy: input.actorUserId,
-			updatedBy: input.actorUserId,
+			createdBy: scope.actorUserId,
+			updatedBy: scope.actorUserId,
 		});
 	}
 
 	await tx.insert(auditLog).values({
-		organizationId: input.organizationId,
-		entityType: input.entity,
-		entityId: input.recordId,
+		organizationId: scope.organizationId,
+		entityType: scope.entity,
+		entityId: scope.recordId,
 		action:
 			before === null
 				? AuditAction.CUSTOM_FIELD_VALUE_SET
 				: after === null
 					? AuditAction.CUSTOM_FIELD_VALUE_CLEARED
 					: AuditAction.CUSTOM_FIELD_VALUE_CHANGED,
-		performedBy: input.actorUserId,
+		performedBy: scope.actorUserId,
 		changes: JSON.stringify({ before: auditValue(field, before), after: auditValue(field, after) }),
 		metadata: JSON.stringify({
 			fieldId: field.id,
 			fieldName: field.name,
 			fieldType: field.type,
-			entity: input.entity,
+			entity: scope.entity,
 		}),
 	});
-}
-
-type WriteScope = {
-	organizationId: string;
-	actorUserId: string;
-	entity: CustomFieldEntity;
-	recordId: string;
-};
-
-function recordColumns(input: WriteScope) {
-	return {
-		employeeId: input.entity === "employee" ? input.recordId : null,
-		projectId: input.entity === "project" ? input.recordId : null,
-		customerId: input.entity === "customer" ? input.recordId : null,
-	};
 }
 
 function auditEntry(
@@ -706,13 +667,11 @@ function auditEntry(
  */
 async function writeHistory(
 	tx: CustomFieldWriter,
-	input: WriteScope,
+	scope: CustomFieldWriteScope,
 	field: CustomFieldDefinitionView,
 	effects: readonly CustomFieldHistoryEffect[],
 	rowById: ReadonlyMap<string, ValueRow>,
 ) {
-	const scoped = (id: string) =>
-		and(eq(customFieldValue.organizationId, input.organizationId), eq(customFieldValue.id, id));
 	const steps = effects.map((effect) => {
 		const before = effect.kind === "added" ? null : effect.before;
 		const after = effect.kind === "deleted" ? null : effect.after;
@@ -727,7 +686,7 @@ async function writeHistory(
 
 	for (const step of steps) {
 		if (step.before && (step.after === null || step.moves)) {
-			await tx.delete(customFieldValue).where(scoped(step.entryId));
+			await tx.delete(customFieldValue).where(valueRow(scope, step.entryId));
 		}
 	}
 	for (const step of steps) {
@@ -737,9 +696,9 @@ async function writeHistory(
 				.set({
 					...columnsOf(step.after.value),
 					updatedAt: sql`now()`,
-					updatedBy: input.actorUserId,
+					updatedBy: scope.actorUserId,
 				})
-				.where(scoped(step.entryId));
+				.where(valueRow(scope, step.entryId));
 		}
 	}
 	for (const step of steps) {
@@ -747,25 +706,25 @@ async function writeHistory(
 		const original = step.before ? rowById.get(step.entryId) : undefined;
 		await tx.insert(customFieldValue).values({
 			id: step.entryId,
-			organizationId: input.organizationId,
+			organizationId: scope.organizationId,
 			definitionId: field.id,
-			...recordColumns(input),
+			...recordColumns(scope),
 			...columnsOf(step.after.value),
 			validFrom: step.after.validFrom,
 			tracked: true,
 			...(original ? { createdAt: original.createdAt } : {}),
-			createdBy: original ? original.createdBy : input.actorUserId,
-			updatedBy: input.actorUserId,
+			createdBy: original ? original.createdBy : scope.actorUserId,
+			updatedBy: scope.actorUserId,
 		});
 	}
 
 	for (const step of steps) {
 		await tx.insert(auditLog).values({
-			organizationId: input.organizationId,
-			entityType: input.entity,
-			entityId: input.recordId,
+			organizationId: scope.organizationId,
+			entityType: scope.entity,
+			entityId: scope.recordId,
 			action: HISTORY_AUDIT_ACTIONS[step.kind],
-			performedBy: input.actorUserId,
+			performedBy: scope.actorUserId,
 			changes: JSON.stringify({
 				before: auditEntry(field, step.before),
 				after: auditEntry(field, step.after),
@@ -774,7 +733,7 @@ async function writeHistory(
 				fieldId: field.id,
 				fieldName: field.name,
 				fieldType: field.type,
-				entity: input.entity,
+				entity: scope.entity,
 				entryId: step.entryId,
 			}),
 		});

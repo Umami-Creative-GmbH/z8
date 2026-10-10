@@ -14,6 +14,7 @@ import {
 	changeCustomFields as changeCustomFieldsInStore,
 	listCustomFieldDefinitions,
 } from "@/lib/organization/custom-fields/definitions";
+import { payrollIdentifierArchiveGuard } from "@/lib/payroll-export/personnel-identifier-usage";
 
 const ADMIN_ONLY = "Only owners and admins can manage custom fields";
 
@@ -76,6 +77,7 @@ export async function changeCustomFields(
 					organizationId: actor.organizationId,
 					actorUserId: actor.userId,
 					change,
+					archiveGuards: [payrollIdentifierArchiveGuard],
 				}),
 			);
 			if (outcome.ok) revalidatePath("/settings/custom-fields");

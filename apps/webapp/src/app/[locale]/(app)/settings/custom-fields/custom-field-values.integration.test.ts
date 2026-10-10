@@ -59,6 +59,11 @@ vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
 	(await import("@/test/integration-harness")).notificationTriggers(importOriginal),
 );
 
+vi.mock("@/tolgee/server", async () => ({
+	getTranslate: async () =>
+		(await import("@/lib/organization/custom-fields/refusal-messages")).englishDefaults,
+}));
+
 vi.mock("@/lib/audit-logger", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/audit-logger")>()),
 	logAudit: vi.fn(async () => undefined),
@@ -76,7 +81,9 @@ vi.mock("@/lib/logger", async (importOriginal) => {
 
 const { getCustomFieldSection, getOwnCustomFieldValues } = await import("./value-actions");
 const { updateEmployee, listEmployees } = await import("../employees/actions");
-const { createProject, updateProject, getProjects } = await import("../projects/actions");
+const { archiveProject, createProject, updateProject, getProjects } = await import(
+	"../projects/actions"
+);
 const { createProjectFromTemplate } = await import("../projects/from-template-actions");
 const { createCustomer, updateCustomer, getCustomers } = await import("../customers/actions");
 const { db } = await import("@/db");
@@ -381,7 +388,7 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 				failure(updateEmployee(ids.employee, { position: "Lead" }, { [fields.desk.id]: "1" })),
 			);
 			expect(result).toEqual({
-				error: 'Custom field "Payroll id" is required',
+				error: 'Custom field "Payroll id": This field is required.',
 				code: "ValidationError",
 			});
 			const { rows } = await admin.query<{ position: string | null }>(
@@ -464,7 +471,7 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 						}),
 					),
 				),
-			).toEqual({ error: 'Custom field "Rate class" is required', code: "ValidationError" });
+			).toEqual({ error: 'Custom field "Rate class": This field is required.', code: "ValidationError" });
 
 			const customer = await actAs(ids.ownerUser, () =>
 				ok(
@@ -514,14 +521,14 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 						}),
 					),
 				),
-			).toEqual({ error: 'Custom field "Rate class" is required', code: "ValidationError" });
+			).toEqual({ error: 'Custom field "Rate class": This field is required.', code: "ValidationError" });
 			// A plain value for a tracked field is refused.
 			expect(
 				await actAs(ids.ownerUser, () =>
 					failure(updateCustomer(customer.id, { customFieldValues: { [rateClass.id]: "R9" } })),
 				),
 			).toEqual({
-				error: 'Custom field "Rate class" keeps a history; add a dated change instead',
+				error: 'Custom field "Rate class": This field keeps a history. Add a dated change instead.',
 				code: "ValidationError",
 			});
 		});
@@ -537,7 +544,7 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 						}),
 					),
 				),
-			).toEqual({ error: 'Custom field "PO number" is required', code: "ValidationError" });
+			).toEqual({ error: 'Custom field "PO number": This field is required.', code: "ValidationError" });
 			expect(
 				await actAs(ids.ownerUser, () =>
 					failure(
@@ -548,7 +555,7 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 						}),
 					),
 				),
-			).toEqual({ error: 'Custom field "PO number" is required', code: "ValidationError" });
+			).toEqual({ error: 'Custom field "PO number": This field is required.', code: "ValidationError" });
 			expect(
 				await actAs(ids.ownerUser, () =>
 					failure(
@@ -560,7 +567,7 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 					),
 				),
 			).toEqual({
-				error: 'Custom field "Budget code" needs a whole number',
+				error: 'Custom field "Budget code": Enter a whole number.',
 				code: "ValidationError",
 			});
 			expect(
@@ -573,18 +580,16 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 						}),
 					),
 				),
-			).toEqual({ error: 'Custom field "Customer number" is required', code: "ValidationError" });
+			).toEqual({ error: 'Custom field "Customer number": This field is required.', code: "ValidationError" });
 			const { rows } = await admin.query(
 				"select name from project where organization_id = $1 and name in ('Bare', 'From template', 'Bad code') union all select name from customer where name = 'Initech'",
 				[ids.organization],
 			);
 			expect(rows).toEqual([]);
 
-			// Paths without the form's values (archiving a project) are not held to required fields.
+			// Paths other than the forms (archiving a project) are not held to required fields.
 			expect(
-				await actAs(ids.ownerUser, () =>
-					failure(updateProject(ids.unmanagedProject, { status: "archived" })),
-				),
+				await actAs(ids.ownerUser, () => failure(archiveProject(ids.unmanagedProject))),
 			).toBe("accepted");
 			// A template creation with the required value goes through.
 			const fromTemplate = await actAs(ids.ownerUser, () =>
@@ -599,6 +604,63 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			expect(
 				(await actAs(ids.ownerUser, () => ok(section("project", fromTemplate.id)))).values,
 			).toEqual({ [fields.po.id]: { type: "text", value: "PO-T" } });
+		});
+
+		it("hold form saves without custom field values to the stored required values", async () => {
+			const required = (name: string) => ({
+				error: `Custom field "${name}": This field is required.`,
+				code: "ValidationError",
+			});
+			// A client that sends no values (its section never loaded) can't skip required fields.
+			expect(
+				await actAs(ids.ownerUser, () =>
+					failure(updateEmployee(ids.employee, { position: "Lead" })),
+				),
+			).toEqual(required("Payroll id"));
+			expect(
+				await actAs(ids.ownerUser, () =>
+					failure(createProject({ organizationId: ids.organization, name: "No section" })),
+				),
+			).toEqual(required("PO number"));
+			expect(
+				await actAs(ids.ownerUser, () =>
+					failure(createProjectFromTemplate({ templateId: ids.template, name: "No section" })),
+				),
+			).toEqual(required("PO number"));
+			expect(
+				await actAs(ids.ownerUser, () => failure(updateProject(ids.project, { name: "Renamed" }))),
+			).toEqual(required("PO number"));
+			expect(
+				await actAs(ids.ownerUser, () =>
+					failure(createCustomer({ organizationId: ids.organization, name: "No section" })),
+				),
+			).toEqual(required("Customer number"));
+			expect(
+				await actAs(ids.ownerUser, () =>
+					failure(updateCustomer(ids.customer, { name: "Renamed" })),
+				),
+			).toEqual(required("Customer number"));
+			const { rows } = await admin.query(
+				`select name from project where organization_id = $1 and name in ('No section', 'Renamed')
+				 union all select name from customer where organization_id = $1 and name in ('No section', 'Renamed')
+				 union all select position from employee where id = $2 and position = 'Lead'`,
+				[ids.organization, ids.employee],
+			);
+			expect(rows).toEqual([]);
+
+			// With the stored values complete, the same saves go through.
+			await actAs(ids.ownerUser, () =>
+				ok(updateEmployee(ids.employee, {}, { [fields.payrollId.id]: "P-1" })),
+			);
+			await actAs(ids.ownerUser, () =>
+				ok(updateProject(ids.project, { customFieldValues: { [fields.po.id]: "PO-1" } })),
+			);
+			await actAs(ids.ownerUser, () =>
+				ok(updateCustomer(ids.customer, { customFieldValues: { [fields.customerNo.id]: "C-1" } })),
+			);
+			await actAs(ids.ownerUser, () => ok(updateEmployee(ids.employee, { position: "Lead" })));
+			await actAs(ids.ownerUser, () => ok(updateProject(ids.project, { name: "Renamed" })));
+			await actAs(ids.ownerUser, () => ok(updateCustomer(ids.customer, { name: "Renamed" })));
 		});
 
 		it("mark employees, projects and customers with missing required values in the lists", async () => {
@@ -667,7 +729,7 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 					failure(updateEmployee(ids.employee, {}, { [fields.payrollId.id]: "P-1" })),
 				),
 			).toEqual({
-				error: 'Custom field "Payroll id" can\'t be changed by you',
+				error: "Custom field \"Payroll id\": You can't change this field.",
 				code: "ValidationError",
 			});
 			expect(

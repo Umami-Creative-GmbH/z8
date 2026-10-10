@@ -4,7 +4,7 @@ import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { auditLog, customFieldDefinition, customFieldOption } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
-import { payrollConfigurationsUsingCustomField } from "@/lib/payroll-export/personnel-identifier-usage";
+import { isUuid } from "@/lib/billable-time/input";
 import {
 	type CustomFieldChange,
 	type CustomFieldEntity,
@@ -17,6 +17,8 @@ import {
 	nameKey,
 	parseCustomFieldChange,
 } from "./definition-rules";
+import { lockCustomFieldDefinitions } from "./lock";
+import { canonicalStoredDecimal } from "./value-rules";
 
 type Database = typeof db;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
@@ -64,15 +66,9 @@ function numberOf(row: DefinitionRow): CustomFieldNumberSettings | null {
 	if (row.type !== "number") return null;
 	return {
 		integerOnly: row.numberIntegerOnly,
-		min: canonicalDecimal(row.numberMin),
-		max: canonicalDecimal(row.numberMax),
+		min: row.numberMin === null ? null : canonicalStoredDecimal(row.numberMin),
+		max: row.numberMax === null ? null : canonicalStoredDecimal(row.numberMax),
 	};
-}
-
-/** PostgreSQL returns numerics as written; strip trailing fractional zeros. */
-function canonicalDecimal(value: string | null): string | null {
-	if (value === null) return null;
-	return value.includes(".") ? value.replace(/\.?0+$/, "") : value;
 }
 
 const byPosition = (a: { position: number; id: string }, b: { position: number; id: string }) =>
@@ -180,10 +176,23 @@ function refuse(reason: CustomFieldRefusal, configurations?: string[]): never {
 	throw new Refused(reason, configurations);
 }
 
+/**
+ * A check another module runs before a field is archived, inside the change's
+ * transaction and under the organization's custom field lock. Returns a
+ * refusal to keep the field, or null. Payroll uses one so a configuration's
+ * personnel identifier can't disappear (#821); the composing server action
+ * passes it, so this module doesn't depend on payroll.
+ */
+export type CustomFieldArchiveGuard = (
+	reader: CustomFieldReader,
+	field: { organizationId: string; fieldId: string; entity: CustomFieldEntity },
+) => Promise<{ reason: CustomFieldRefusal; configurations?: string[] } | null>;
+
 interface ChangeContext {
 	tx: Transaction;
 	organizationId: string;
 	actorUserId: string;
+	archiveGuards: readonly CustomFieldArchiveGuard[];
 }
 
 async function writeAudit(
@@ -207,10 +216,8 @@ async function writeAudit(
 	});
 }
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 async function loadField(context: ChangeContext, fieldId: string): Promise<DefinitionRow> {
-	if (!UUID.test(fieldId)) refuse("field_not_found");
+	if (!isUuid(fieldId)) refuse("field_not_found");
 	const [row] = await context.tx
 		.select()
 		.from(customFieldDefinition)
@@ -270,7 +277,7 @@ async function loadOption(
 	context: ChangeContext,
 	optionId: string,
 ): Promise<{ option: OptionRow; field: DefinitionRow }> {
-	if (!UUID.test(optionId)) refuse("option_not_found");
+	if (!isUuid(optionId)) refuse("option_not_found");
 	const [row] = await context.tx
 		.select({ option: customFieldOption, field: customFieldDefinition })
 		.from(customFieldOption)
@@ -462,14 +469,15 @@ async function setArchived(context: ChangeContext, fieldId: string, archived: bo
 	const row = await loadField(context, fieldId);
 	if ((row.archivedAt !== null) === archived) return;
 
-	if (archived && row.entity === "employee") {
-		// A payroll configuration's personnel identifier can't disappear (#821).
-		const configurations = await payrollConfigurationsUsingCustomField(
-			context.tx,
-			context.organizationId,
-			row.id,
-		);
-		if (configurations.length > 0) refuse("used_as_payroll_identifier", configurations);
+	if (archived) {
+		for (const guard of context.archiveGuards) {
+			const refusal = await guard(context.tx, {
+				organizationId: context.organizationId,
+				fieldId: row.id,
+				entity: row.entity as CustomFieldEntity,
+			});
+			if (refusal) refuse(refusal.reason, refusal.configurations);
+		}
 	}
 
 	let position = row.position;
@@ -684,22 +692,31 @@ async function applyChange(context: ChangeContext, change: CustomFieldChange) {
  * audited in the same transaction. Changes of one organization are serialized,
  * so the 25-active-field cap and unique names hold under concurrency.
  *
- * The caller authorizes the actor as an org admin of `organizationId` first.
+ * The caller authorizes the actor as an org admin of `organizationId` first,
+ * and passes the archive guards of the modules that depend on fields.
  * Returns every definition of the organization after the change.
  */
 export async function changeCustomFields(
 	database: Database,
-	input: { organizationId: string; actorUserId: string; change: unknown },
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		change: unknown;
+		archiveGuards?: readonly CustomFieldArchiveGuard[];
+	},
 ): Promise<CustomFieldChangeOutcome> {
 	const parsed = parseCustomFieldChange(input.change);
 	if (!parsed.ok) return parsed;
 
 	try {
 		return await database.transaction(async (tx) => {
-			await tx.execute(
-				sql`select pg_advisory_xact_lock(hashtextextended(${`custom_fields:${input.organizationId}`}, 0))`,
-			);
-			const context = { tx, organizationId: input.organizationId, actorUserId: input.actorUserId };
+			await lockCustomFieldDefinitions(tx, input.organizationId);
+			const context = {
+				tx,
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				archiveGuards: input.archiveGuards ?? [],
+			};
 			await applyChange(context, parsed.change);
 			const fields = await listCustomFieldDefinitions(tx, input.organizationId);
 			return { ok: true, fields } as const;

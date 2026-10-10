@@ -319,7 +319,7 @@ export async function getProjects(
 					hoursBooked.map((h) => [h.projectId, Math.round((h.totalMinutes / 60) * 100) / 100]),
 				);
 				const missingRequired = yield* dbService.query("customFields.projectsMissingRequired", () =>
-					findRecordsMissingRequiredValues(db, {
+					findRecordsMissingRequiredValues(dbService.db, {
 						organizationId,
 						entity: "project",
 						recordIds: projectIds,
@@ -466,7 +466,7 @@ export async function createProject(
 							return newProject;
 						});
 					})
-					.pipe(Effect.mapError(keepCustomFieldRefusal));
+					.pipe(keepCustomFieldRefusal);
 
 				// Log audit (fire-and-forget)
 				logAudit({
@@ -501,11 +501,28 @@ export async function createProject(
 }
 
 /**
- * Update a project
+ * Saves the project dialog. Its custom field values are written in the same
+ * transaction, and every required custom field the actor may edit must have a
+ * value afterwards, also when the dialog sent none (#818, P7).
  */
 export async function updateProject(
 	projectId: string,
 	input: UpdateProjectInput,
+): Promise<ServerActionResult<void>> {
+	return saveProjectChanges(projectId, input, { form: true });
+}
+
+/**
+ * Archive a project. Not a form save: required custom fields don't hold it up.
+ */
+export async function archiveProject(projectId: string): Promise<ServerActionResult<void>> {
+	return saveProjectChanges(projectId, { status: "archived" }, { form: false });
+}
+
+async function saveProjectChanges(
+	projectId: string,
+	input: UpdateProjectInput,
+	options: { form: boolean },
 ): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("projects");
 
@@ -624,14 +641,18 @@ export async function updateProject(
 
 				// Update the project, with the dialog's custom field values (#818) in the same transaction.
 				const { customFieldValues, ...projectChanges } = input;
-				const saveCustomFieldValues = (tx: Parameters<typeof saveFormCustomFieldValues>[0]) =>
-					saveFormCustomFieldValues(tx, {
+				const saveCustomFieldValues = async (
+					tx: Parameters<typeof saveFormCustomFieldValues>[0],
+				) => {
+					if (!options.form) return;
+					await saveFormCustomFieldValues(tx, {
 						organizationId: existingProject.organizationId,
 						actorUserId: session.user.id,
 						entity: "project",
 						recordId: projectId,
 						values: customFieldValues,
 					});
+				};
 				yield* dbService
 					.query("project.update", async () => {
 						const scopedProject = and(
@@ -639,7 +660,7 @@ export async function updateProject(
 							eq(project.organizationId, existingProject.organizationId),
 						);
 						if (input.status === undefined) {
-							await db.transaction(async (tx) => {
+							await dbService.db.transaction(async (tx) => {
 								await tx.update(project).set(updateData).where(scopedProject);
 								await saveCustomFieldValues(tx);
 							});
@@ -655,7 +676,7 @@ export async function updateProject(
 							},
 						);
 					})
-					.pipe(Effect.mapError(keepCustomFieldRefusal));
+					.pipe(keepCustomFieldRefusal);
 
 				// Log audit (fire-and-forget)
 				logAudit({
@@ -686,13 +707,6 @@ export async function updateProject(
 	);
 
 	return runServerActionSafe(effect);
-}
-
-/**
- * Archive a project
- */
-export async function archiveProject(projectId: string): Promise<ServerActionResult<void>> {
-	return updateProject(projectId, { status: "archived" });
 }
 
 /**

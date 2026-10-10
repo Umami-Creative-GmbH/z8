@@ -135,9 +135,13 @@ vi.mock("@/lib/effect/services/auth.service", async () => {
 
 vi.mock("@/lib/effect/services/database.service", async () => {
 	const { Context, Effect, Layer } = await import("effect");
+	const dbModule = await import("@/db");
 	const DatabaseService = Context.Service<any>("DatabaseService");
 	const DatabaseServiceLive = Layer.succeed(DatabaseService, {
 		query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
+		get db() {
+			return dbModule.db;
+		},
 	});
 	return { DatabaseService, DatabaseServiceLive };
 });
