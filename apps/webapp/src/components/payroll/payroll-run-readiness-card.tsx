@@ -5,15 +5,15 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { getPayrollRunReadinessAction } from "@/app/[locale]/(app)/payroll/actions";
+import { settlementTitle } from "@/components/travel-expenses/finance/settlement-title";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { queryKeys } from "@/lib/query/keys";
 import { formatMoney, formatPlainDate, formatPlainDateRange } from "@/lib/travel-expenses/format";
-import type { PayrollLineKind } from "@/lib/travel-expenses/payroll-line-kind";
 import type { NoStatutoryBaselineCause } from "@/lib/travel-expenses/payroll-lines";
 import type { PayrollRunSkip } from "@/lib/travel-expenses/payroll-run-classification";
 import type { PayrollRunReadinessEntry } from "@/lib/travel-expenses/payroll-run-readiness";
-import type { SettlementTitle } from "@/lib/travel-expenses/settlement-store";
 import { Link } from "@/navigation";
+import { payrollLineKindLabel } from "./payroll-line-kind-label";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -72,51 +72,46 @@ export function PayrollRunReadinessList({ entries }: { entries: PayrollRunReadin
 
 	return (
 		<ul className="divide-y">
-			{entries.map((entry) => (
-				<li
-					key={`${entry.source.type}:${entry.source.id}`}
-					className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start sm:justify-between"
-				>
-					<div className="min-w-0 space-y-1">
-						<p className="font-medium">{titleText(t, locale, entry.title)}</p>
-						<p className="text-sm text-muted-foreground">
-							<span>
-								{entry.employeeName ?? t("payroll.runReadiness.unknownEmployee", "Employee")}
-							</span>
-							{entry.outstanding.map((line) => (
-								<span key={line.currency} className="tabular-nums">
-									{" · "}
-									{formatMoney(locale, line.amount, line.currency)}
-								</span>
-							))}
-						</p>
-						<p className="text-sm">{reasonText(t, locale, entry.skip)}</p>
-					</div>
-					<Link
-						href={entry.financeQueueHref}
-						className="shrink-0 text-sm font-medium text-primary underline-offset-4 hover:underline"
+			{entries.map((entry) => {
+				const title = settlementTitle(t, locale, entry.title);
+				return (
+					<li
+						key={`${entry.source.type}:${entry.source.id}`}
+						className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start sm:justify-between"
 					>
-						{t("payroll.runReadiness.payByBankTransfer", "Pay by bank transfer")}
-					</Link>
-				</li>
-			))}
+						<div className="min-w-0 space-y-1">
+							<p className="font-medium">
+								{title.name}
+								{title.dates && (
+									<span className="ml-2 text-sm font-normal text-muted-foreground tabular-nums">
+										{title.dates}
+									</span>
+								)}
+							</p>
+							<p className="text-sm text-muted-foreground">
+								<span>
+									{entry.employeeName ?? t("payroll.runReadiness.unknownEmployee", "Employee")}
+								</span>
+								{entry.outstanding.map((line) => (
+									<span key={line.currency} className="tabular-nums">
+										{" · "}
+										{formatMoney(locale, line.amount, line.currency)}
+									</span>
+								))}
+							</p>
+							<p className="text-sm">{reasonText(t, locale, entry.skip)}</p>
+						</div>
+						<Link
+							href={entry.financeQueueHref}
+							className="shrink-0 text-sm font-medium text-primary underline-offset-4 hover:underline"
+						>
+							{t("payroll.runReadiness.payByBankTransfer", "Pay by bank transfer")}
+						</Link>
+					</li>
+				);
+			})}
 		</ul>
 	);
-}
-
-function titleText(t: Translate, locale: string, title: SettlementTitle): string {
-	switch (title.kind) {
-		case "trip":
-			return (
-				title.purpose ??
-				(title.startDate ? formatPlainDateRange(locale, title.startDate, title.endDate) : null) ??
-				t("payroll.runReadiness.trip", "Trip")
-			);
-		case "standalone":
-			return title.description ?? t("payroll.runReadiness.expense", "Expense");
-		case "legacy_claim":
-			return t("payroll.runReadiness.legacyClaimTitle", "Legacy claim");
-	}
 }
 
 // Literal keys keep the Tolgee extractor able to find every label.
@@ -136,7 +131,7 @@ function reasonText(t: Translate, locale: string, skip: PayrollRunSkip): string 
 			return t(
 				"payroll.runReadiness.reason.unmappedWageType",
 				"No wage type is mapped for this format for: {kinds}.",
-				{ kinds: skip.kinds.map((kind) => kindLabel(t, kind)).join(", ") },
+				{ kinds: skip.kinds.map((kind) => payrollLineKindLabel(t, kind)).join(", ") },
 			);
 		case "no_statutory_baseline":
 			return t(
@@ -162,7 +157,7 @@ function reasonText(t: Translate, locale: string, skip: PayrollRunSkip): string 
 			return t(
 				"payroll.runReadiness.reason.negativeDifference",
 				"An adjustment lowered what earlier payroll runs carried for: {kinds}.",
-				{ kinds: skip.kinds.map((kind) => kindLabel(t, kind)).join(", ") },
+				{ kinds: skip.kinds.map((kind) => payrollLineKindLabel(t, kind)).join(", ") },
 			);
 		case "included_in_other_run":
 			return t(
@@ -200,28 +195,5 @@ function causeLabel(t: Translate, cause: NoStatutoryBaselineCause): string {
 				"payroll.runReadiness.cause.outsideVerifiedTables",
 				"no verified statutory table for its days",
 			);
-	}
-}
-
-function kindLabel(t: Translate, kind: PayrollLineKind): string {
-	switch (kind) {
-		case "per_diem_statutory":
-			return t("payroll.runReadiness.kind.perDiemStatutory", "Per diem: statutory share");
-		case "per_diem_excess":
-			return t("payroll.runReadiness.kind.perDiemExcess", "Per diem: taxable excess");
-		case "mileage_statutory":
-			return t("payroll.runReadiness.kind.mileageStatutory", "Mileage: statutory share");
-		case "mileage_excess":
-			return t("payroll.runReadiness.kind.mileageExcess", "Mileage: taxable excess");
-		case "receipt_transport":
-			return t("payroll.runReadiness.kind.receiptTransport", "Receipts: transport");
-		case "receipt_accommodation":
-			return t("payroll.runReadiness.kind.receiptAccommodation", "Receipts: accommodation");
-		case "receipt_meals":
-			return t("payroll.runReadiness.kind.receiptMeals", "Receipts: meals");
-		case "receipt_parking":
-			return t("payroll.runReadiness.kind.receiptParking", "Receipts: parking");
-		case "receipt_other":
-			return t("payroll.runReadiness.kind.receiptOther", "Receipts: other");
 	}
 }
