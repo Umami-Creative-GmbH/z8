@@ -53,9 +53,9 @@ function outcomeText(t: Translate, locale: string, row: PayrollRunConfirmationRo
 					});
 		case "overpaid_by_payroll":
 			return t(
-				"travelExpenses.finance.payrollRun.confirm.outcome.overpaid",
-				"Overpaid by payroll: {overpaid} more than was still owed. Reimbursed {amount}; settle the difference with the employee by hand.",
-				{ overpaid: money(row.overpaid), amount: money(row.amount ?? "0.00") },
+				"travelExpenses.finance.payrollRun.confirm.outcome.overpaidByPayroll",
+				"Reimbursed {amount}, {overpaid} more than was still owed. The expense is now overpaid: record the recovery by hand.",
+				{ overpaid: money(row.overpaid), amount: money(row.amount) },
 			);
 		case "own_expense":
 			return t(

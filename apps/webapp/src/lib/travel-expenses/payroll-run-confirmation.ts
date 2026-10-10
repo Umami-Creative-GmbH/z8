@@ -46,8 +46,9 @@ import {
  * Confirming a payroll run as paid (#853, ADR 0003). An expense officer who
  * records reimbursements, an owner or an admin confirms that payroll paid the
  * run; each included report in their officer scope, never their own, then
- * gets a reimbursement of the amount the run froze, capped at what the account
- * still owes. Every report goes through `recordSettlementEntry` in its own
+ * gets a reimbursement of the amount the run froze: what payroll paid, even
+ * beyond what the account still owes (the excess shows as an overpayment,
+ * recovered by hand). Every report goes through `recordSettlementEntry` in its own
  * transaction (row lock, idempotency key per run and report) together with
  * its inclusion's confirmation, so partial success is expected and each report
  * reports its own outcome. Reports outside the confirmer's scope stay included
@@ -64,7 +65,7 @@ const ZERO = BigInt(0);
 export const PAYROLL_RUN_CONFIRMATION_OUTCOMES = [
 	/** The frozen amount is recorded as reimbursed. */
 	"confirmed",
-	/** The account owed less than the run paid: only what was owed is recorded; the excess is flagged. */
+	/** The account owed less than the run paid: recorded in full, the account is now overpaid. */
 	"overpaid_by_payroll",
 	/** The confirmer's own report: it stays included for someone else. */
 	"own_expense",
@@ -320,53 +321,46 @@ async function confirmInclusion(
 	if (!inScope) return { row: row("out_of_scope"), recorded: null };
 	if (account.employeeId === actor.employeeId) return { row: row("own_expense"), recorded: null };
 
-	// What the account owes now, under the lock: the run never records more (decision 11).
+	// Payroll paid the frozen amount: it is recorded in full (decision 11). When an
+	// adjustment lowered what is owed since the export, the balance goes negative,
+	// the account shows as overpaid and an officer records the recovery by hand.
 	const line = account.summary.currencies.find((entry) => entry.currency === PAYROLL_CURRENCY);
 	const balance = line ? units(line.balance) : ZERO;
 	const owed = balance > ZERO ? balance : ZERO;
-	const amount = frozen < owed ? frozen : owed;
-	let recorded: Extract<RecordSettlementResult, { status: "recorded" }> | null = null;
-	if (amount > ZERO) {
-		const result = await recordSettlementEntryInTransaction(
-			tx,
-			{
-				actor,
-				scope: input.scope,
-				source,
-				idempotencyKey: input.idempotencyKey,
-				command: {
-					kind: "reimbursement",
-					amount: text(amount),
-					currency: PAYROLL_CURRENCY,
-					...input.payment,
-				},
-				expectedBalance: { currency: PAYROLL_CURRENCY, amount: text(balance) },
-				payrollRunId: input.jobId,
+	const overpaid = frozen > owed ? frozen - owed : ZERO;
+	const result = await recordSettlementEntryInTransaction(
+		tx,
+		{
+			actor,
+			scope: input.scope,
+			source,
+			idempotencyKey: input.idempotencyKey,
+			command: {
+				kind: "reimbursement",
+				amount: text(frozen),
+				currency: PAYROLL_CURRENCY,
+				...input.payment,
 			},
-			now,
+			// Read under the same lock, so it can only be stale if the lock is broken.
+			expectedBalance: { currency: PAYROLL_CURRENCY, amount: text(balance) },
+			payrollRunId: input.jobId,
+		},
+		now,
+	);
+	if (result.status !== "recorded") {
+		logger.warn(
+			{ organizationId, jobId: input.jobId, reportId: source.id, status: result.status },
+			"A payroll run's report could not be recorded as reimbursed",
 		);
-		if (result.status !== "recorded") {
-			logger.warn(
-				{ organizationId, jobId: input.jobId, reportId: source.id, status: result.status },
-				"A payroll run's report could not be recorded as reimbursed",
-			);
-			return {
-				row: row(result.status === "own_expense" ? "own_expense" : "failed"),
-				recorded: null,
-			};
-		}
-		recorded = result;
+		return {
+			row: row(result.status === "own_expense" ? "own_expense" : "failed"),
+			recorded: null,
+		};
 	}
-	const overpaid = frozen - amount;
 	const endedAt = dateFromInstant(now);
 	await tx
 		.update(travelExpensePayrollRunInclusion)
-		.set({
-			state: "confirmed",
-			endedAt,
-			endedByUserId: actor.userId,
-			overpaidAmount: overpaid > ZERO ? text(overpaid) : null,
-		})
+		.set({ state: "confirmed", endedAt, endedByUserId: actor.userId })
 		.where(
 			and(
 				eq(travelExpensePayrollRunInclusion.id, input.inclusionId),
@@ -381,24 +375,24 @@ async function confirmInclusion(
 		performedBy: actor.userId,
 		changes: JSON.stringify({
 			payrollExportJobId: input.jobId,
-			entryId: recorded?.entry.id ?? null,
-			amount: text(amount),
+			entryId: result.entry.id,
+			amount: result.entry.amount,
 			currency: PAYROLL_CURRENCY,
 			occurredOn: input.payment.occurredOn,
 			overpaid: overpaid > ZERO ? text(overpaid) : null,
 		}),
 		timestamp: endedAt,
 	});
-	const after = (recorded?.account ?? account).summary.currencies.find(
+	const after = result.account.summary.currencies.find(
 		(entry) => entry.currency === PAYROLL_CURRENCY,
 	);
 	return {
 		row: row(overpaid > ZERO ? "overpaid_by_payroll" : "confirmed", {
-			amount: recorded ? text(amount) : null,
+			amount: result.entry.amount,
 			overpaid: overpaid > ZERO ? text(overpaid) : null,
 			remaining: after?.state === "outstanding" ? after.balance : null,
 		}),
-		recorded,
+		recorded: result,
 	};
 }
 

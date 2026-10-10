@@ -1,7 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
 	check,
-	decimal,
 	foreignKey,
 	index,
 	jsonb,
@@ -79,12 +78,6 @@ export const travelExpensePayrollRunInclusion = pgTable(
 		endedAt: timestamp("ended_at", { withTimezone: true }),
 		// Who removed, discarded or confirmed it; null for a superseded or failed export.
 		endedByUserId: text("ended_by_user_id"),
-		/**
-		 * Overpaid by payroll (#853): how much more the run paid than the account
-		 * still owed when it was confirmed. Only the owed part is recorded as a
-		 * reimbursement; an officer settles the rest by hand. Confirmed only.
-		 */
-		overpaidAmount: decimal("overpaid_amount", { precision: 12, scale: 2 }),
 		// The run that took the report over; set only when superseded.
 		supersededByJobId: uuid("superseded_by_job_id").references(() => payrollExportJob.id, {
 			onDelete: "set null",
@@ -111,10 +104,6 @@ export const travelExpensePayrollRunInclusion = pgTable(
 			"travel_expense_payroll_run_inclusion_ended_check",
 			sql`(${table.state} = 'included') = (${table.endedAt} IS NULL)
 			AND (${table.supersededByJobId} IS NULL OR ${table.state} = 'superseded')`,
-		),
-		check(
-			"travel_expense_payroll_run_inclusion_overpaid_check",
-			sql`${table.overpaidAmount} IS NULL OR (${table.state} = 'confirmed' AND ${table.overpaidAmount} > 0)`,
 		),
 		index("travelExpensePayrollRunInclusion_org_report_confirmed_idx")
 			.on(table.organizationId, table.reportId)

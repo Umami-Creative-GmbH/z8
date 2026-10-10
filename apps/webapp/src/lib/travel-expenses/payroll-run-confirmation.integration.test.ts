@@ -98,6 +98,7 @@ const actions = await import("@/app/[locale]/(app)/travel-expenses/report-action
 const adjustments = await import("@/app/[locale]/(app)/travel-expenses/adjustment-actions");
 const finance = await import("@/app/[locale]/(app)/travel-expenses/finance-actions");
 const reopen = await import("@/app/[locale]/(app)/travel-expenses/report-reopen-actions");
+const recovery = await import("@/app/[locale]/(app)/travel-expenses/finance-recovery-actions");
 const officerGrants = await import(
 	"@/app/[locale]/(app)/settings/travel-expenses/expense-officer-actions"
 );
@@ -384,8 +385,7 @@ async function entries(reportId: string) {
 
 async function inclusions(reportId: string) {
 	const { rows } = await admin.query(
-		`select state, payroll_export_job_id::text as job, ended_by_user_id as ended_by,
-		        overpaid_amount::text as overpaid
+		`select state, payroll_export_job_id::text as job, ended_by_user_id as ended_by
 		 from travel_expense_payroll_run_inclusion where report_id = $1 order by included_at, id`,
 		[reportId],
 	);
@@ -452,7 +452,7 @@ describe("confirming a payroll run as paid (#853)", () => {
 			},
 		]);
 		expect(await inclusions(own)).toEqual([
-			{ state: "confirmed", job: run.jobId, ended_by: "t853-officer", overpaid: null },
+			{ state: "confirmed", job: run.jobId, ended_by: "t853-officer" },
 		]);
 		expect(await countUnconfirmedPayrollRuns(ORG)).toBe(0);
 
@@ -547,7 +547,7 @@ describe("confirming a payroll run as paid (#853)", () => {
 		]);
 	});
 
-	it("records only what is still owed after an adjustment lowered it, and flags the run as overpaid", async () => {
+	it("records what payroll paid after an adjustment lowered it: the overpayment shows and is recovered by hand", async () => {
 		const reportId = await approvedHotel("100.00");
 		const run = await exportPayroll(current);
 		// The run's file carries it like an export: correcting it needs an adjustment, not a reopen.
@@ -564,24 +564,57 @@ describe("confirming a payroll run as paid (#853)", () => {
 			{
 				reportId,
 				outcome: "overpaid_by_payroll",
-				amount: "70.00",
+				amount: "100.00",
 				overpaid: "30.00",
 				remaining: null,
 			},
 		]);
 		expect(await entries(reportId)).toEqual([
-			expect.objectContaining({ amount: "70.00", run: run.jobId }),
+			expect.objectContaining({ amount: "100.00", run: run.jobId }),
 		]);
-		expect(await inclusions(reportId)).toEqual([
-			expect.objectContaining({ state: "confirmed", overpaid: "30.00" }),
-		]);
-		// No recovery is recorded: the officer sees the flag and settles it by hand.
+		// The balance goes negative: the existing overpaid state, never clamped.
 		const view = await settlementAs("officer", reportId);
-		expect(view.account.summary.state).toBe("settled");
-		expect(view.account.confirmedPayrollRuns).toEqual([
-			expect.objectContaining({ jobId: run.jobId, overpaidAmount: "30.00" }),
+		expect(view.account.summary).toEqual(
+			expect.objectContaining({
+				state: "overpaid",
+				currencies: [expect.objectContaining({ balance: "-30.00", state: "overpaid" })],
+			}),
+		);
+		// No recovery is recorded automatically; an officer records it by hand.
+		signIn("officer");
+		const recovered = await recovery.recordTravelExpenseRecoveryAction({
+			source: { type: "report", id: reportId },
+			idempotencyKey: randomUUID(),
+			amount: "30.00",
+			occurredOn: today.toString(),
+			reference: "SEPA-BACK-1",
+			expectedBalance: { currency: "EUR", amount: "-30.00" },
+		});
+		expect(recovered).toEqual({
+			success: true,
+			data: expect.objectContaining({ status: "recorded" }),
+		});
+		expect((await settlementAs("officer", reportId)).account.summary.state).toBe("settled");
+	});
+
+	it("stays coherent when a later adjustment raises what an overpaid run paid: the next run carries the difference once", async () => {
+		const reportId = await approvedHotel("100.00");
+		const first = await exportPayroll(current);
+		await approvedAdjustment(reportId, "70.00");
+		await confirmed("officer", first.jobId);
+		// Paid 100.00 on payroll; now corrected up to 130.00: 30.00 is owed, not 60.00.
+		await approvedAdjustment(reportId, "130.00");
+		expect((await settlementAs("officer", reportId)).account.summary.currencies[0]?.balance).toBe(
+			"30.00",
+		);
+
+		const next = await exportPayroll(overlapping);
+
+		expect(next.content).toContain(datevLine("P-REQ", "30.00", overlapping));
+		expect(await confirmed("officer", next.jobId)).toEqual([
+			{ reportId, outcome: "confirmed", amount: "30.00", overpaid: null, remaining: null },
 		]);
-		expect((await settlementAs("requester", reportId)).account.confirmedPayrollRuns).toEqual([]);
+		expect((await settlementAs("officer", reportId)).account.summary.state).toBe("settled");
 	});
 
 	it("leaves what an adjustment added for the next run, which carries only the difference", async () => {
