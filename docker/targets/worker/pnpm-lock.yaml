@@ -207,6 +207,9 @@ importers:
       '@t3-oss/env-nextjs':
         specifier: ^0.13.11
         version: 0.13.11(zod@4.6.5)
+      '@tabler/icons-react':
+        specifier: ^3.49.0
+        version: 3.49.0(react@19.3.0)
       '@tolgee/format-icu':
         specifier: ^7.2.1
         version: 7.2.1
@@ -1439,6 +1442,14 @@ packages:
         optional: true
       zod:
         optional: true
+
+  '@tabler/icons-react@3.49.0':
+    resolution: {integrity: sha512-Um59pm5RVNUaQjFUtG0r4oYJbZuBS3tGugAA2tgBg0WufMk34Eio3nsO30RUkLuL2giYPQUNdY9HvqltLLYyNA==}
+    peerDependencies:
+      react: '>= 16'
+
+  '@tabler/icons@3.49.0':
+    resolution: {integrity: sha512-l+GnSkFETx0U26icxv1VUFnxxiTqXfCcVRiRAnyMwibupM2S2L/hSaZ9gmSgz01rkrsH/93NvLsxykqdanc6lw==}
 
   '@tokenizer/inflate@0.4.1':
     resolution: {integrity: sha512-2mAv+8pkG6GIZiF1kNg1jAjh27IDxEPKwdGul3snfztFerfPGI1LjDezZp3i7BElXompqEtPmoPx6c2wgtWsOA==}
@@ -4042,6 +4053,13 @@ snapshots:
       '@t3-oss/env-core': 0.13.11(zod@4.6.5)
     optionalDependencies:
       zod: 4.6.5
+
+  '@tabler/icons-react@3.49.0(react@19.3.0)':
+    dependencies:
+      '@tabler/icons': 3.49.0
+      react: 19.3.0
+
+  '@tabler/icons@3.49.0': {}
 
   '@tokenizer/inflate@0.4.1':
     dependencies:
