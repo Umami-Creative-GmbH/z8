@@ -1436,6 +1436,13 @@
       "when": 1801929600000,
       "tag": "0204_approval_deputy_cover_summaries",
       "breakpoints": true
+    },
+    {
+      "idx": 205,
+      "version": "7",
+      "when": 1802016000000,
+      "tag": "0205_period_submission_settings",
+      "breakpoints": true
     }
   ]
 }
