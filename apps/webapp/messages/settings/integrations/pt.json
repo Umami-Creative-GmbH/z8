@@ -120,9 +120,11 @@
       },
       "errors": {
         "connectionFailed": "Falha ao conectar ao Clockodo",
+        "fetchProjectsFailed": "Falha ao obter os dados do projeto",
         "fetchUsersFailed": "Falha ao buscar dados do usuário",
         "importFailed": "Falha na verificação de revisão de importação",
-        "saveMappingsFailed": "Falha ao salvar mapeamentos de usuário"
+        "saveMappingsFailed": "Falha ao salvar mapeamentos de usuário",
+        "saveProjectMappingsFailed": "Falha ao salvar os mapeamentos do projeto"
       },
       "importing": {
         "description": "Por favor, não feche esta página. A verificação de revisão está sendo enfileirada e pode levar algum tempo para grandes conjuntos de dados.",
@@ -148,6 +150,19 @@
         "next": "Mapear usuários",
         "title": "Visualização de dados"
       },
+      "projectMapping": {
+        "clockodoCustomer": "Cliente do Clockodo",
+        "clockodoProject": "Projeto do Clockodo",
+        "continue": "Continuar",
+        "description": "Mapeie os projetos do Clockodo para projetos existentes do Z8. As entradas de tempo importadas mantêm seu projeto e o valor faturável do Clockodo. Entradas em projetos não mapeados ou em projetos sem cliente são importadas como não faturáveis. Nenhum projeto é criado.",
+        "mappedCount": "{mapped} de {total} projetos mapeados",
+        "noCustomer": "Este projeto não tem cliente, portanto o tempo importado não é faturável.",
+        "noZ8Projects": "Esta organização ainda não possui projetos. Crie projetos primeiro para importar o tempo do Clockodo com seu respectivo projeto e valor faturável.",
+        "title": "Mapear Projetos",
+        "unmapped": "Não mapeado (sem projeto)",
+        "z8Project": "Projeto do Z8",
+        "z8ProjectFor": "Projeto do Z8 para {project}"
+      },
       "review": {
         "startedToast": "Verificação de revisão de importação iniciada. A revisão é necessária antes que os registros sejam confirmados."
       },
@@ -167,6 +182,7 @@
         "credentials": "Credenciais",
         "import": "Revisão",
         "preview": "Visualização",
+        "projectMapping": "Mapeamento de Projetos",
         "selection": "Seleção",
         "userMapping": "Mapeamento de usuário"
       },

@@ -213,8 +213,11 @@
       "workLocation": "Lieu de travail"
     },
     "edit": {
+      "billableSaveFailed": "Impossible de mettre à jour la facturabilité",
       "deleteEntry": "Supprimer l'entrée",
       "locationRequired": "Choisissez un lieu de travail.",
+      "markedBillable": "Marqué comme facturable",
+      "markedNonBillable": "Marqué comme non facturable",
       "noNotes": "Aucune note ajoutée",
       "noProject": "Aucun projet attribué",
       "notesSaved": "Notes enregistrées",
@@ -359,6 +362,7 @@
       "notRecorded": "Non enregistré"
     },
     "workPeriod": {
+      "billable": "Facturable",
       "editedBy": "(modifié par {name} à {date})"
     },
     "workStatus": {

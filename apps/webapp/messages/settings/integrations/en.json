@@ -120,9 +120,11 @@
       },
       "errors": {
         "connectionFailed": "Failed to connect to Clockodo",
+        "fetchProjectsFailed": "Failed to fetch project data",
         "fetchUsersFailed": "Failed to fetch user data",
         "importFailed": "Import review scan failed",
-        "saveMappingsFailed": "Failed to save user mappings"
+        "saveMappingsFailed": "Failed to save user mappings",
+        "saveProjectMappingsFailed": "Failed to save project mappings"
       },
       "importing": {
         "description": "Please do not close this page. The review scan is being queued and may take a while for large datasets.",
@@ -148,6 +150,19 @@
         "next": "Map Users",
         "title": "Data Preview"
       },
+      "projectMapping": {
+        "clockodoCustomer": "Clockodo Customer",
+        "clockodoProject": "Clockodo Project",
+        "continue": "Continue",
+        "description": "Map Clockodo projects to existing Z8 projects. Imported time entries keep their project and Clockodo's billable value. Entries on unmapped projects, or on projects without a customer, are imported as non-billable. No projects are created.",
+        "mappedCount": "{mapped} of {total} projects mapped",
+        "noCustomer": "This project has no customer, so its imported time is non-billable.",
+        "noZ8Projects": "This organization has no projects yet. Create projects first to import Clockodo time with its project and billable value.",
+        "title": "Map Projects",
+        "unmapped": "Not mapped (no project)",
+        "z8Project": "Z8 Project",
+        "z8ProjectFor": "Z8 project for {project}"
+      },
       "review": {
         "startedToast": "Import review scan started. Review is required before records are committed."
       },
@@ -167,6 +182,7 @@
         "credentials": "Credentials",
         "import": "Review",
         "preview": "Preview",
+        "projectMapping": "Project Mapping",
         "selection": "Selection",
         "userMapping": "User Mapping"
       },

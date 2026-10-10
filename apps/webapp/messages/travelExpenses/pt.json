@@ -999,6 +999,20 @@
         "adoptForeignTitle": "Adotar as diárias legais alemãs com as taxas oficiais para o exterior",
         "foreignAreas": "Taxas para o exterior: {countries} países e {places} cidades"
       },
+      "reimbursementChannel": {
+        "bankTransfer": "Transferência bancária",
+        "bankTransferDescription": "Os responsáveis pelas despesas realizam os reembolsos por transferência bancária e os registram no Z8.",
+        "intro": "Como sua organização paga os reembolsos. A escolha se aplica a todos os funcionários.",
+        "loadFailed": "Não foi possível carregar o canal de reembolso.",
+        "payrollRun": "Processamento da folha de pagamento",
+        "payrollRunDescription": "O processamento da folha de pagamento inclui reembolsos, que são registrados assim que a folha é confirmada como paga. Os relatórios que não puderem ser incluídos na folha são pagos por transferência bancária.",
+        "payrollRunPreview": "Em versão preliminar e ainda não disponível para a sua organização.",
+        "save": "Salvar canal",
+        "saved": "Canal de reembolso salvo",
+        "saveFailed": "Não foi possível salvar o canal de reembolso.",
+        "title": "Canal de reembolso",
+        "unconfirmedRuns": "{count, plural, one {# processamento de folha de pagamento ainda não está confirmado. Ele ainda pode ser confirmado ou descartado.} other {# processamentos de folha de pagamento ainda não estão confirmados. Eles ainda podem ser confirmados ou descartados.}}"
+      },
       "tabs": {
         "access": "Acesso",
         "currencies": "Moedas",

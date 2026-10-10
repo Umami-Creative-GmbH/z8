@@ -213,8 +213,11 @@
       "workLocation": "Arbetsplats"
     },
     "edit": {
+      "billableSaveFailed": "Kunde inte uppdatera debiterbarhet",
       "deleteEntry": "Ta bort post",
       "locationRequired": "Välj en arbetsplats.",
+      "markedBillable": "Markerad som debiterbar",
+      "markedNonBillable": "Markerad som ej debiterbar",
       "noNotes": "Inga anteckningar har lagts till",
       "noProject": "Inget projekt tilldelat",
       "notesSaved": "Anteckningar sparade",
@@ -359,6 +362,7 @@
       "notRecorded": "Inte registrerad"
     },
     "workPeriod": {
+      "billable": "Debiterbar",
       "editedBy": "(redigerad av {name} {date})"
     },
     "workStatus": {

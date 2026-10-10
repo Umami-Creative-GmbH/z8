@@ -999,6 +999,20 @@
         "adoptForeignTitle": "Adopt the German statutory per diem with the official foreign rates",
         "foreignAreas": "Foreign rates: {countries} countries and {places} cities"
       },
+      "reimbursementChannel": {
+        "bankTransfer": "Bank transfer",
+        "bankTransferDescription": "Expense officers pay reimbursements by bank transfer and record them in Z8.",
+        "intro": "How your organization pays reimbursements. The choice applies to every employee.",
+        "loadFailed": "The reimbursement channel could not be loaded.",
+        "payrollRun": "Payroll run",
+        "payrollRunDescription": "The payroll run carries reimbursements, which are recorded once the payroll run is confirmed as paid. Reports a payroll run cannot carry are paid by bank transfer.",
+        "payrollRunPreview": "In preview and not yet available for your organization.",
+        "save": "Save channel",
+        "saved": "Reimbursement channel saved",
+        "saveFailed": "The reimbursement channel could not be saved.",
+        "title": "Reimbursement channel",
+        "unconfirmedRuns": "{count, plural, one {# payroll run is not confirmed yet. They can still be confirmed or discarded.} other {# payroll runs are not confirmed yet. They can still be confirmed or discarded.}}"
+      },
       "tabs": {
         "access": "Access",
         "currencies": "Currencies",

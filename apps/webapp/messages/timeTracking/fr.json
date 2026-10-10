@@ -11,6 +11,11 @@
         "title": "Pause ajoutée automatiquement pour conformité"
       }
     },
+    "billable": {
+      "description": "Travail facturable pour le client du projet",
+      "label": "Facturable",
+      "noCustomer": "Seul le travail sur un projet avec un client peut être facturable"
+    },
     "budget": "Budget",
     "clockedOutSuccess": "Vous avez pointé votre départ !",
     "clockIn": "Pointer l'entrée",
@@ -69,6 +74,7 @@
       "alreadyClockedIn": "Vous avez déjà pointé votre arrivée",
       "appendReviewRequired": "Le pointage d'arrivée nécessite une vérification de votre historique des heures",
       "appendReviewRequiredDesc": "Vos saisies d'heures précédentes n'ont pas pu être vérifiées, le nouveau pointage d'arrivée n'a donc pas été enregistré. Veuillez contacter votre administrateur.",
+      "billableNotAllowed": "Seul le travail sur un projet qui a un client peut être facturable",
       "breakAwaitingApproval": "Cette période de travail est en attente d'approbation et ne peut pas être modifiée. Ajoutez la pause une fois la situation résolue.",
       "breakDurationInvalid": "Saisissez une durée de pause d'au moins 1 minute.",
       "breakNotAllowed": "Vous ne pouvez pas ajouter de pause à ce travail.",
@@ -243,6 +249,7 @@
       "approveEntry": "Approuver l'entrée",
       "approveFailed": "Échec de l'approbation de l'entrée",
       "approving": "Approbation en cours...",
+      "billable": "Facturable",
       "clockIn": "Pointer l'arrivée",
       "clockOut": "Pointer le départ",
       "corrected": "Corrigé",

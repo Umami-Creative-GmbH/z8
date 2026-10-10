@@ -213,8 +213,11 @@
       "workLocation": "Arbeitsort"
     },
     "edit": {
+      "billableSaveFailed": "Abrechenbarkeit konnte nicht aktualisiert werden",
       "deleteEntry": "Eintrag löschen",
       "locationRequired": "Wählen Sie einen Arbeitsort aus.",
+      "markedBillable": "Als abrechenbar markiert",
+      "markedNonBillable": "Als nicht abrechenbar markiert",
       "noNotes": "Keine Notizen hinzugefügt",
       "noProject": "Kein Projekt zugewiesen",
       "notesSaved": "Notizen gespeichert",
@@ -359,6 +362,7 @@
       "notRecorded": "Nicht erfasst"
     },
     "workPeriod": {
+      "billable": "Abrechenbar",
       "editedBy": "(bearbeitet von {name} am {date})"
     },
     "workStatus": {

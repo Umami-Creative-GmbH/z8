@@ -999,6 +999,20 @@
         "adoptForeignTitle": "Adopter les indemnités journalières légales allemandes avec les barèmes officiels pour l'étranger",
         "foreignAreas": "Taux à l'étranger : {countries} pays et {places} villes"
       },
+      "reimbursementChannel": {
+        "bankTransfer": "Virement bancaire",
+        "bankTransferDescription": "Les gestionnaires de notes de frais effectuent les remboursements par virement bancaire et les enregistrent dans Z8.",
+        "intro": "Mode de versement des remboursements par votre organisation. Ce choix s'applique à tous les employés.",
+        "loadFailed": "Impossible de charger le canal de remboursement.",
+        "payrollRun": "Cycle de paie",
+        "payrollRunDescription": "Le cycle de paie prend en charge les remboursements, qui sont enregistrés une fois le cycle de paie confirmé comme payé. Les notes de frais qui ne peuvent pas être intégrées à un cycle de paie sont payées par virement bancaire.",
+        "payrollRunPreview": "En préversion et pas encore disponible pour votre organisation.",
+        "save": "Enregistrer le canal",
+        "saved": "Canal de remboursement enregistré",
+        "saveFailed": "Impossible d'enregistrer le canal de remboursement.",
+        "title": "Canal de remboursement",
+        "unconfirmedRuns": "{count, plural, one {# cycle de paie n'est pas encore confirmé. Il peut toujours être confirmé ou annulé.} other {# cycles de paie ne sont pas encore confirmés. Ils peuvent toujours être confirmés ou annulés.}}"
+      },
       "tabs": {
         "access": "Accès",
         "currencies": "Devises",

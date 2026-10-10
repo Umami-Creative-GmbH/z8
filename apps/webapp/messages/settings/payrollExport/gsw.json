@@ -20,6 +20,34 @@
         "title": "DATEV Stammdate"
       },
       "description": "Arbeitsziite für Lohnabrechnigssystem wie DATEV oder Personio exportiere",
+      "expenseMappings": {
+        "apiConnectors": "Personio, Workday und die SuccessFactors-API übertragen keine Spesenrückerstattungen.",
+        "codeLabel": "{line}, {format} Lohnart",
+        "description": "Ordnen Sie jede Spesenzeile einer Lohnart für die von Ihnen exportierten Lohnabrechnungsformate zu. Eine Spesenzeile ohne Lohnart für das exportierte Format schliesst die betroffenen Berichte vom Lohnlauf aus; sie werden stattdessen per Banküberweisung bezahlt.",
+        "format": {
+          "datevLohn": "DATEV Payroll",
+          "lexware": "Lexware",
+          "sage": "Sage",
+          "successFactorsFile": "SuccessFactors-Datei"
+        },
+        "kind": {
+          "mileageExcess": "Kilometerpauschale: steuerpflichtiger Mehraufwand",
+          "mileageStatutory": "Kilometerpauschale: gesetzlicher Anteil",
+          "perDiemExcess": "Verpflegungspauschale: steuerpflichtiger Mehraufwand",
+          "perDiemStatutory": "Verpflegungspauschale: gesetzlicher Anteil",
+          "receiptAccommodation": "Belege: Unterkunft",
+          "receiptMeals": "Belege: Verpflegung",
+          "receiptOther": "Belege: Sonstiges",
+          "receiptParking": "Belege: Parken",
+          "receiptTransport": "Belege: Transport"
+        },
+        "line": "Spesenzeile",
+        "loadFailed": "Die Spesenlohnarten konnten nicht geladen werden.",
+        "save": "Lohnarten speichern",
+        "saved": "Lohnarten gespeichert",
+        "saveFailed": "Einige Lohnarten konnten nicht gespeichert werden.",
+        "title": "Spesenrückerstattungen"
+      },
       "export": {
         "allEmployees": "Alli Mitarbeiter",
         "allProjects": "Alli Projekt",

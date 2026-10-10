@@ -20,6 +20,34 @@
         "title": "DATEV-stamdata"
       },
       "description": "Exportera arbetsperioder till lönesystem som DATEV eller Personio",
+      "expenseMappings": {
+        "apiConnectors": "Personio, Workday och SuccessFactors-API:et hanterar inte utläggsersättningar.",
+        "codeLabel": "{line}, löneart för {format}",
+        "description": "Koppla varje utläggsrad till en löneart för de lönefilsformat du exporterar. En utläggsrad utan löneart för det exporterade formatet utesluter de berörda rapporterna från lönekörningen; de betalas i stället via banköverföring.",
+        "format": {
+          "datevLohn": "DATEV Payroll",
+          "lexware": "Lexware",
+          "sage": "Sage",
+          "successFactorsFile": "SuccessFactors-fil"
+        },
+        "kind": {
+          "mileageExcess": "Milersättning: skattepliktigt överskott",
+          "mileageStatutory": "Milersättning: lagstadgad del",
+          "perDiemExcess": "Traktamente: skattepliktigt överskott",
+          "perDiemStatutory": "Traktamente: lagstadgad del",
+          "receiptAccommodation": "Kvitton: boende",
+          "receiptMeals": "Kvitton: måltider",
+          "receiptOther": "Kvitton: övrigt",
+          "receiptParking": "Kvitton: parkering",
+          "receiptTransport": "Kvitton: transport"
+        },
+        "line": "Utläggsrad",
+        "loadFailed": "Lönearterna för utlägg kunde inte läsas in.",
+        "save": "Spara lönearter",
+        "saved": "Lönearter sparade",
+        "saveFailed": "Vissa lönearter kunde inte sparas.",
+        "title": "Utläggsersättningar"
+      },
       "export": {
         "allEmployees": "Alla anställda",
         "allProjects": "Alla projekt",

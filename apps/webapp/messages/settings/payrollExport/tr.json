@@ -20,6 +20,34 @@
         "title": "DATEV Ana Verileri"
       },
       "description": "Çalışma dönemlerini DATEV veya Personio gibi bordro sistemlerine aktarın",
+      "expenseMappings": {
+        "apiConnectors": "Personio, Workday ve SuccessFactors API masraf geri ödemelerini aktarmaz.",
+        "codeLabel": "{line}, {format} ücret türü",
+        "description": "Dışa aktardığınız bordro dosyası formatları için her masraf satırını bir ücret türüyle eşleyin. Dışa aktarılan format için ücret türü olmayan bir masraf satırı, etkilenen raporların bordro çalıştırmasının dışında kalmasına neden olur; bunun yerine banka havalesiyle ödenirler.",
+        "format": {
+          "datevLohn": "DATEV Lohn",
+          "lexware": "Lexware",
+          "sage": "Sage",
+          "successFactorsFile": "SuccessFactors dosyası"
+        },
+        "kind": {
+          "mileageExcess": "Kilometre: vergiye tabi aşım",
+          "mileageStatutory": "Kilometre: yasal pay",
+          "perDiemExcess": "Harcırah: vergiye tabi aşım",
+          "perDiemStatutory": "Harcırah: yasal pay",
+          "receiptAccommodation": "Fişler: konaklama",
+          "receiptMeals": "Fişler: yemek",
+          "receiptOther": "Fişler: diğer",
+          "receiptParking": "Fişler: otopark",
+          "receiptTransport": "Fişler: ulaşım"
+        },
+        "line": "Masraf satırı",
+        "loadFailed": "Masraf ücret türleri yüklenemedi.",
+        "save": "Ücret türlerini kaydet",
+        "saved": "Ücret türleri kaydedildi",
+        "saveFailed": "Bazı ücret türleri kaydedilemedi.",
+        "title": "Masraf geri ödemeleri"
+      },
       "export": {
         "allEmployees": "Tüm Çalışanlar",
         "allProjects": "Tüm Projeler",

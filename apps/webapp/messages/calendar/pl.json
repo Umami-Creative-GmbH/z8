@@ -213,8 +213,11 @@
       "workLocation": "Miejsce pracy"
     },
     "edit": {
+      "billableSaveFailed": "Nie udało się zaktualizować rozliczalności",
       "deleteEntry": "Usuń wpis",
       "locationRequired": "Wybierz miejsce pracy.",
+      "markedBillable": "Oznaczono jako rozliczalne",
+      "markedNonBillable": "Oznaczono jako nierozliczalne",
       "noNotes": "Nie dodano notatek",
       "noProject": "Brak przypisanego projektu",
       "notesSaved": "Notatki zapisano",
@@ -359,6 +362,7 @@
       "notRecorded": "Nie zarejestrowano"
     },
     "workPeriod": {
+      "billable": "Rozliczalne",
       "editedBy": "(edytowane przez {name}, {date})"
     },
     "workStatus": {

@@ -999,6 +999,20 @@
         "adoptForeignTitle": "Zastosuj niemieckie ustawowe diety z oficjalnymi stawkami zagranicznymi",
         "foreignAreas": "Stawki zagraniczne: {countries} krajów i {places} miast"
       },
+      "reimbursementChannel": {
+        "bankTransfer": "Przelew bankowy",
+        "bankTransferDescription": "Osoby odpowiedzialne za wydatki wypłacają zwroty przelewem bankowym i rejestrują je w Z8.",
+        "intro": "Sposób wypłacania zwrotów przez Twoją organizację. Wybór dotyczy każdego pracownika.",
+        "loadFailed": "Nie udało się załadować kanału zwrotu kosztów.",
+        "payrollRun": "Lista płac",
+        "payrollRunDescription": "Lista płac obejmuje zwroty kosztów, które są rejestrowane po potwierdzeniu opłacenia listy płac. Raporty, których nie można uwzględnić na liście płac, są wypłacane przelewem bankowym.",
+        "payrollRunPreview": "W wersji zapoznawczej i jeszcze niedostępne dla Twojej organizacji.",
+        "save": "Zapisz kanał",
+        "saved": "Zapisano kanał zwrotu kosztów",
+        "saveFailed": "Nie udało się zapisać kanału zwrotu kosztów.",
+        "title": "Kanał zwrotu kosztów",
+        "unconfirmedRuns": "{count, plural, one {# lista płac nie została jeszcze potwierdzona. Można ją nadal potwierdzić lub odrzucić.} few {# listy płac nie zostały jeszcze potwierdzone. Można je nadal potwierdzić lub odrzucić.} many {# list płac nie zostało jeszcze potwierdzonych. Można je nadal potwierdzić lub odrzucić.} other {# listy płac nie zostało jeszcze potwierdzone. Można je nadal potwierdzić lub odrzucić.}}"
+      },
       "tabs": {
         "access": "Dostęp",
         "currencies": "Waluty",

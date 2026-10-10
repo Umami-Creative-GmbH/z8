@@ -11,6 +11,11 @@
         "title": "Descanso agregado automáticamente por cumplimiento"
       }
     },
+    "billable": {
+      "description": "Trabajo facturable para el cliente del proyecto",
+      "label": "Facturable",
+      "noCustomer": "Solo el trabajo en un proyecto con un cliente puede ser facturable"
+    },
     "budget": "Presupuesto",
     "clockedOutSuccess": "Has marcado salida!",
     "clockIn": "Entrada",
@@ -69,6 +74,7 @@
       "alreadyClockedIn": "Ya ha registrado su entrada",
       "appendReviewRequired": "El registro de entrada requiere una revisión de su historial de horas",
       "appendReviewRequiredDesc": "No se pudieron verificar sus registros de tiempo anteriores, por lo que no se guardó un nuevo registro de entrada. Póngase en contacto con su administrador.",
+      "billableNotAllowed": "Solo el trabajo en un proyecto que tiene un cliente puede ser facturable",
       "breakAwaitingApproval": "Este período de trabajo está pendiente de aprobación y no se puede editar. Agregue el descanso una vez que se haya resuelto.",
       "breakDurationInvalid": "Ingrese una duración de descanso de al menos 1 minuto.",
       "breakNotAllowed": "No puede agregar un descanso a este trabajo.",
@@ -243,6 +249,7 @@
       "approveEntry": "Aprobar entrada",
       "approveFailed": "Error al aprobar la entrada",
       "approving": "Aprobando...",
+      "billable": "Facturable",
       "clockIn": "Registrar entrada",
       "clockOut": "Registrar salida",
       "corrected": "Corregido",

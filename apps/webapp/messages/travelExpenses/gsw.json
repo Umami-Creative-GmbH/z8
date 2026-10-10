@@ -999,6 +999,20 @@
         "adoptForeignTitle": "Di dütsche gsetzliche Verpflegigspuuschale mit de offizielle Usslandssätz übernäh",
         "foreignAreas": "Usslandssätz: {countries} Länder und {places} Städt"
       },
+      "reimbursementChannel": {
+        "bankTransfer": "Banküberweisung",
+        "bankTransferDescription": "Spesenverantwortliche zahlen Rückerstattungen per Banküberweisung aus und erfassen sie in Z8.",
+        "intro": "Wie Ihre Organisation Rückerstattungen auszahlt. Die Auswahl gilt für alle Mitarbeitenden.",
+        "loadFailed": "Der Rückerstattungskanal konnte nicht geladen werden.",
+        "payrollRun": "Lohnlauf",
+        "payrollRunDescription": "Der Lohnlauf enthält Rückerstattungen, die erfasst werden, sobald der Lohnlauf als bezahlt bestätigt ist. Abrechnungen, die ein Lohnlauf nicht enthalten kann, werden per Banküberweisung ausbezahlt.",
+        "payrollRunPreview": "In der Vorschau und für Ihre Organisation noch nicht verfügbar.",
+        "save": "Kanal speichern",
+        "saved": "Rückerstattungskanal gespeichert",
+        "saveFailed": "Der Rückerstattungskanal konnte nicht gespeichert werden.",
+        "title": "Rückerstattungskanal",
+        "unconfirmedRuns": "{count, plural, one {# Lohnlauf ist noch nicht bestätigt. Er kann noch bestätigt oder verworfen werden.} other {# Lohnläufe sind noch nicht bestätigt. Sie können noch bestätigt oder verworfen werden.}}"
+      },
       "tabs": {
         "access": "Zuegriff",
         "currencies": "Währige",

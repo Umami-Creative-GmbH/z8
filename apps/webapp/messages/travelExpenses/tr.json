@@ -999,6 +999,20 @@
         "adoptForeignTitle": "Resmi yurt dışı oranlarıyla Alman yasal harcırahını uygulayın",
         "foreignAreas": "Yurt dışı oranları: {countries} ülke ve {places} şehir"
       },
+      "reimbursementChannel": {
+        "bankTransfer": "Banka havalesi",
+        "bankTransferDescription": "Masraf yetkilileri geri ödemeleri banka havalesiyle yapar ve Z8'e kaydeder.",
+        "intro": "Kuruluşunuzun geri ödemeleri nasıl yaptığı. Bu seçim tüm çalışanlar için geçerlidir.",
+        "loadFailed": "Geri ödeme kanalı yüklenemedi.",
+        "payrollRun": "Bordro işlemi",
+        "payrollRunDescription": "Geri ödemeler bordro işlemine dahil edilir ve bordro işleminin ödendiği onaylandığında kaydedilir. Bordro işlemine dahil edilemeyen raporlar banka havalesiyle ödenir.",
+        "payrollRunPreview": "Önizleme aşamasında ve henüz kuruluşunuz için kullanılamıyor.",
+        "save": "Kanalı kaydet",
+        "saved": "Geri ödeme kanalı kaydedildi",
+        "saveFailed": "Geri ödeme kanalı kaydedilemedi.",
+        "title": "Geri ödeme kanalı",
+        "unconfirmedRuns": "{count, plural, other {# bordro çalıştırması henüz onaylanmadı. Hâlâ onaylanabilir veya iptal edilebilir.} }"
+      },
       "tabs": {
         "access": "Erişim",
         "currencies": "Para birimleri",

@@ -11,6 +11,11 @@
         "title": "Pause lagt til automatisk for samsvar"
       }
     },
+    "billable": {
+      "description": "Fakturerbart arbeid for prosjektets kunde",
+      "label": "Fakturerbar",
+      "noCustomer": "Kun arbeid på et prosjekt med en kunde kan være fakturerbart"
+    },
     "budget": "Budsjett",
     "clockedOutSuccess": "Du har stemplet ut!",
     "clockIn": "Stemple inn",
@@ -69,6 +74,7 @@
       "alreadyClockedIn": "Du er allerede stemplet inn",
       "appendReviewRequired": "Innstempling krever en gjennomgang av tidshistorikken din",
       "appendReviewRequiredDesc": "De tidligere tidsoppføringene dine kunne ikke bekreftes, så en ny innstempling ble ikke lagret. Kontakt administratoren din.",
+      "billableNotAllowed": "Kun arbeid på et prosjekt som har en kunde kan være fakturerbart",
       "breakAwaitingApproval": "Denne arbeidsperioden venter på godkjenning og kan ikke redigeres. Legg til pausen når den er avklart.",
       "breakDurationInvalid": "Angi en pausevarighet på minst 1 minutt.",
       "breakNotAllowed": "Du kan ikke legge til en pause for dette arbeidet.",
@@ -243,6 +249,7 @@
       "approveEntry": "Godkjenn oppføring",
       "approveFailed": "Kunne ikke godkjenne oppføring",
       "approving": "Godkjenner...",
+      "billable": "Fakturerbar",
       "clockIn": "Stemple inn",
       "clockOut": "Stemple ut",
       "corrected": "Korrigert",

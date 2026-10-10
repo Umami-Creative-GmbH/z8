@@ -999,6 +999,20 @@
         "adoptForeignTitle": "Ta i bruk de tyske lovfestede diettsatsene med offisielle utenlandssatser",
         "foreignAreas": "Utenlandssatser: {countries} land og {places} byer"
       },
+      "reimbursementChannel": {
+        "bankTransfer": "Bankoverføring",
+        "bankTransferDescription": "Utgiftsansvarlige utbetaler refusjoner via bankoverføring og registrerer dem i Z8.",
+        "intro": "Hvordan organisasjonen din utbetaler refusjoner. Valget gjelder for alle ansatte.",
+        "loadFailed": "Kunne ikke laste inn refusjonskanalen.",
+        "payrollRun": "Lønnskjøring",
+        "payrollRunDescription": "Lønnskjøringen inkluderer refusjoner, som registreres så snart lønnskjøringen er bekreftet som betalt. Rapporter som en lønnskjøring ikke kan inkludere, utbetales via bankoverføring.",
+        "payrollRunPreview": "I forhåndsvisning og foreløpig ikke tilgjengelig for din organisasjon.",
+        "save": "Lagre kanal",
+        "saved": "Refusjonskanal lagret",
+        "saveFailed": "Refusjonskanalen kunne ikke lagres.",
+        "title": "Refusjonskanal",
+        "unconfirmedRuns": "{count, plural, one {# lønnskjøring er ikke bekreftet ennå. Den kan fortsatt bekreftes eller forkastes.} other {# lønnskjøringer er ikke bekreftet ennå. De kan fortsatt bekreftes eller forkastes.}}"
+      },
       "tabs": {
         "access": "Tilgang",
         "currencies": "Valutaer",

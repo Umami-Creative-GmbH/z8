@@ -11,6 +11,11 @@
         "title": "Break auto-added for compliance"
       }
     },
+    "billable": {
+      "description": "Billable work for the project's customer",
+      "label": "Billable",
+      "noCustomer": "Only work on a project with a customer can be billable"
+    },
     "budget": "Budget",
     "clockedOutSuccess": "You've clocked out!",
     "clockIn": "Clock In",
@@ -69,6 +74,7 @@
       "alreadyClockedIn": "You are already clocked in",
       "appendReviewRequired": "Clock-in needs a review of your time history",
       "appendReviewRequiredDesc": "Your earlier time entries could not be verified, so a new clock-in was not saved. Please contact your administrator.",
+      "billableNotAllowed": "Only work on a project that has a customer can be billable",
       "breakAwaitingApproval": "This work period is awaiting approval and cannot be edited. Add the break once it is resolved.",
       "breakDurationInvalid": "Enter a break duration of at least 1 minute.",
       "breakNotAllowed": "You cannot add a break to this work.",
@@ -243,6 +249,7 @@
       "approveEntry": "Approve entry",
       "approveFailed": "Failed to approve entry",
       "approving": "Approving...",
+      "billable": "Billable",
       "clockIn": "Clock In",
       "clockOut": "Clock Out",
       "corrected": "Corrected",

@@ -11,6 +11,11 @@
         "title": "Pausa adicionada automaticamente para conformidade"
       }
     },
+    "billable": {
+      "description": "Trabalho faturável para o cliente do projeto",
+      "label": "Faturável",
+      "noCustomer": "Apenas o trabalho em um projeto com cliente pode ser faturável"
+    },
     "budget": "Orçamento",
     "clockedOutSuccess": "Você registrou a saída!",
     "clockIn": "Registrar Entrada",
@@ -69,6 +74,7 @@
       "alreadyClockedIn": "Você já registrou a entrada",
       "appendReviewRequired": "A entrada requer uma revisão do seu histórico de horas",
       "appendReviewRequiredDesc": "Não foi possível verificar seus registros de horas anteriores, portanto, uma nova entrada não foi salva. Entre em contato com seu administrador.",
+      "billableNotAllowed": "Apenas o trabalho em um projeto que possui um cliente pode ser faturável",
       "breakAwaitingApproval": "Este período de trabalho está aguardando aprovação e não pode ser editado. Adicione o intervalo assim que for resolvido.",
       "breakDurationInvalid": "Insira uma duração de intervalo de pelo menos 1 minuto.",
       "breakNotAllowed": "Você não pode adicionar um intervalo a este trabalho.",
@@ -243,6 +249,7 @@
       "approveEntry": "Aprovar registro",
       "approveFailed": "Falha ao aprovar registro",
       "approving": "Aprovando...",
+      "billable": "Faturável",
       "clockIn": "Registrar entrada",
       "clockOut": "Registrar saída",
       "corrected": "Corrigido",

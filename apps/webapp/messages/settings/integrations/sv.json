@@ -120,9 +120,11 @@
       },
       "errors": {
         "connectionFailed": "Kunde inte ansluta till Clockodo",
+        "fetchProjectsFailed": "Det gick inte att hämta projektdata",
         "fetchUsersFailed": "Kunde inte hämta användardata",
         "importFailed": "Skanning för importgranskning misslyckades",
-        "saveMappingsFailed": "Kunde inte spara användarmappningar"
+        "saveMappingsFailed": "Kunde inte spara användarmappningar",
+        "saveProjectMappingsFailed": "Det gick inte att spara projektmappningar"
       },
       "importing": {
         "description": "Stäng inte den här sidan. Granskningsskanningen läggs i kö och kan ta en stund för stora datamängder.",
@@ -148,6 +150,19 @@
         "next": "Mappa användare",
         "title": "Förhandsgranskning av data"
       },
+      "projectMapping": {
+        "clockodoCustomer": "Clockodo-kund",
+        "clockodoProject": "Clockodo-projekt",
+        "continue": "Fortsätt",
+        "description": "Koppla Clockodo-projekt till befintliga Z8-projekt. Importerade tidrapporter behåller sitt projekt och Clockodos fakturerbara värde. Registreringar på okopplade projekt, eller på projekt utan kund, importeras som ej fakturerbara. Inga projekt skapas.",
+        "mappedCount": "{mapped} av {total} projekt kopplade",
+        "noCustomer": "Det här projektet har ingen kund, så dess importerade tid är ej fakturerbar.",
+        "noZ8Projects": "Denna organisation har inga projekt ännu. Skapa projekt först för att importera Clockodo-tid med dess projekt och fakturerbara värde.",
+        "title": "Koppla projekt",
+        "unmapped": "Ej kopplat (inget projekt)",
+        "z8Project": "Z8-projekt",
+        "z8ProjectFor": "Z8-projekt för {project}"
+      },
       "review": {
         "startedToast": "Skanning för importgranskning har startat. Granskning krävs innan posterna verkställs."
       },
@@ -167,6 +182,7 @@
         "credentials": "Inloggningsuppgifter",
         "import": "Granskning",
         "preview": "Förhandsgranskning",
+        "projectMapping": "Projektkoppling",
         "selection": "Val",
         "userMapping": "Användarkoppling"
       },

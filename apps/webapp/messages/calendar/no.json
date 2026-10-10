@@ -213,8 +213,11 @@
       "workLocation": "Arbeidssted"
     },
     "edit": {
+      "billableSaveFailed": "Kunne ikke oppdatere fakturerbarhet",
       "deleteEntry": "Slett oppføring",
       "locationRequired": "Velg et arbeidssted.",
+      "markedBillable": "Markert som fakturerbar",
+      "markedNonBillable": "Markert som ikke-fakturerbar",
       "noNotes": "Ingen notater lagt til",
       "noProject": "Ingen prosjekter tilordnet",
       "notesSaved": "Notater lagret",
@@ -359,6 +362,7 @@
       "notRecorded": "Ikke registrert"
     },
     "workPeriod": {
+      "billable": "Fakturerbar",
       "editedBy": "(redigert av {name} {date})"
     },
     "workStatus": {

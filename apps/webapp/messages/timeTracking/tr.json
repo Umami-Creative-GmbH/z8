@@ -11,6 +11,11 @@
         "title": "Uyumluluk için otomatik mola eklendi"
       }
     },
+    "billable": {
+      "description": "Projenin müşterisi için faturalandırılabilir çalışma",
+      "label": "Faturalandırılabilir",
+      "noCustomer": "Yalnızca müşterisi olan bir projedeki çalışma faturalandırılabilir"
+    },
     "budget": "Bütçe",
     "clockedOutSuccess": "Mesainizi bitirdiniz!",
     "clockIn": "İşe Giriş",
@@ -69,6 +74,7 @@
       "alreadyClockedIn": "Zaten giriş yaptınız",
       "appendReviewRequired": "Giriş yapabilmeniz için zaman geçmişinizin incelenmesi gerekiyor",
       "appendReviewRequiredDesc": "Önceki zaman girişleriniz doğrulanamadığı için yeni bir giriş kaydedilmedi. Lütfen yöneticinizle iletişime geçin.",
+      "billableNotAllowed": "Yalnızca müşterisi olan bir projedeki çalışma faturalandırılabilir",
       "breakAwaitingApproval": "Bu çalışma dönemi onay bekliyor ve düzenlenemez. Sonuçlandıktan sonra molayı ekleyin.",
       "breakDurationInvalid": "En az 1 dakikalık bir mola süresi girin.",
       "breakNotAllowed": "Bu çalışmaya mola ekleyemezsiniz.",
@@ -243,6 +249,7 @@
       "approveEntry": "Girişi onayla",
       "approveFailed": "Giriş onaylanamadı",
       "approving": "Onaylanıyor...",
+      "billable": "Faturalandırılabilir",
       "clockIn": "Giriş Yap",
       "clockOut": "Çıkış Yap",
       "corrected": "Düzeltildi",

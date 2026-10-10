@@ -213,8 +213,11 @@
       "workLocation": "Çalışma konumu"
     },
     "edit": {
+      "billableSaveFailed": "Faturalandırılabilirlik güncellenemedi",
       "deleteEntry": "Girdiyi sil",
       "locationRequired": "Bir çalışma konumu seçin.",
+      "markedBillable": "Faturalandırılabilir olarak işaretlendi",
+      "markedNonBillable": "Faturalandırılamaz olarak işaretlendi",
       "noNotes": "Not eklenmedi",
       "noProject": "Proje atanmadı",
       "notesSaved": "Notlar kaydedildi",
@@ -359,6 +362,7 @@
       "notRecorded": "Kaydedilmedi"
     },
     "workPeriod": {
+      "billable": "Faturalandırılabilir",
       "editedBy": "({name} tarafından {date} tarihinde düzenlendi)"
     },
     "workStatus": {

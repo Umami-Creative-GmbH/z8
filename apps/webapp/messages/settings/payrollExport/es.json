@@ -20,6 +20,34 @@
         "title": "Datos maestros de DATEV"
       },
       "description": "Exporta periodos de trabajo a sistemas de nómina como DATEV o Personio",
+      "expenseMappings": {
+        "apiConnectors": "Personio, Workday y la API de SuccessFactors no incluyen reembolsos de gastos.",
+        "codeLabel": "{line}, concepto de nómina de {format}",
+        "description": "Asigne cada línea de gasto a un concepto de nómina para los formatos de archivo de nómina que exporte. Una línea de gasto sin un concepto de nómina para el formato exportado deja los informes afectados fuera del procesamiento de nóminas; en su lugar, se pagan por transferencia bancaria.",
+        "format": {
+          "datevLohn": "DATEV Payroll",
+          "lexware": "Lexware",
+          "sage": "Sage",
+          "successFactorsFile": "Archivo de SuccessFactors"
+        },
+        "kind": {
+          "mileageExcess": "Kilometraje: exceso imponible",
+          "mileageStatutory": "Kilometraje: parte legal",
+          "perDiemExcess": "Dietas: exceso imponible",
+          "perDiemStatutory": "Dietas: parte legal",
+          "receiptAccommodation": "Recibos: alojamiento",
+          "receiptMeals": "Recibos: comidas",
+          "receiptOther": "Recibos: otros",
+          "receiptParking": "Recibos: aparcamiento",
+          "receiptTransport": "Recibos: transporte"
+        },
+        "line": "Línea de gasto",
+        "loadFailed": "No se pudieron cargar los conceptos de nómina de gastos.",
+        "save": "Guardar conceptos de nómina",
+        "saved": "Conceptos de nómina guardados",
+        "saveFailed": "No se pudieron guardar algunos conceptos de nómina.",
+        "title": "Reembolsos de gastos"
+      },
       "export": {
         "allEmployees": "Todos los empleados",
         "allProjects": "Todos los proyectos",

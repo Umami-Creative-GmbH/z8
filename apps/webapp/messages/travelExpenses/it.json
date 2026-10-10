@@ -999,6 +999,20 @@
         "adoptForeignTitle": "Adotta la diaria legale tedesca con le tariffe ufficiali per l'estero",
         "foreignAreas": "Tariffe estere: {countries} paesi e {places} città"
       },
+      "reimbursementChannel": {
+        "bankTransfer": "Bonifico bancario",
+        "bankTransferDescription": "I responsabili delle note spese liquidano i rimborsi tramite bonifico bancario e li registrano in Z8.",
+        "intro": "La modalità con cui la tua organizzazione liquida i rimborsi. La scelta si applica a ogni dipendente.",
+        "loadFailed": "Impossibile caricare il canale di rimborso.",
+        "payrollRun": "Elaborazione buste paga",
+        "payrollRunDescription": "L'elaborazione delle buste paga include i rimborsi, che vengono registrati una volta confermato il pagamento dell'elaborazione. Le note spese che non possono essere incluse nell'elaborazione vengono liquidate tramite bonifico bancario.",
+        "payrollRunPreview": "In anteprima e non ancora disponibile per la tua organizzazione.",
+        "save": "Salva canale",
+        "saved": "Canale di rimborso salvato",
+        "saveFailed": "Non è stato possibile salvare il canale di rimborso.",
+        "title": "Canale di rimborso",
+        "unconfirmedRuns": "{count, plural, one {# elaborazione buste paga non è ancora confermata. Può ancora essere confermata o scartata.} other {# elaborazioni buste paga non sono ancora confermate. Possono ancora essere confermate o scartate.}}"
+      },
       "tabs": {
         "access": "Accesso",
         "currencies": "Valute",

@@ -11,6 +11,11 @@
         "title": "Pausa aggiunta automaticamente per conformità"
       }
     },
+    "billable": {
+      "description": "Lavoro fatturabile per il cliente del progetto",
+      "label": "Fatturabile",
+      "noCustomer": "Solo il lavoro su un progetto con un cliente può essere fatturabile"
+    },
     "budget": "Budget",
     "clockedOutSuccess": "Hai timbrato l'uscita!",
     "clockIn": "Entrata",
@@ -69,6 +74,7 @@
       "alreadyClockedIn": "Hai già registrato l'ingresso",
       "appendReviewRequired": "L'ingresso richiede una revisione della tua cronologia oraria",
       "appendReviewRequiredDesc": "Impossibile verificare i tuoi inserimenti orari precedenti, pertanto il nuovo ingresso non è stato salvato. Contatta l'amministratore.",
+      "billableNotAllowed": "Solo il lavoro su un progetto che ha un cliente può essere fatturabile",
       "breakAwaitingApproval": "Questo periodo di lavoro è in attesa di approvazione e non può essere modificato. Aggiungi la pausa dopo la risoluzione.",
       "breakDurationInvalid": "Inserisci una durata della pausa di almeno 1 minuto.",
       "breakNotAllowed": "Non puoi aggiungere una pausa a questa sessione di lavoro.",
@@ -243,6 +249,7 @@
       "approveEntry": "Approva voce",
       "approveFailed": "Approvazione della voce non riuscita",
       "approving": "Approvazione in corso...",
+      "billable": "Fatturabile",
       "clockIn": "Timbra entrata",
       "clockOut": "Timbra uscita",
       "corrected": "Corretto",

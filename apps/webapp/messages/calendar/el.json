@@ -213,8 +213,11 @@
       "workLocation": "Τοποθεσία εργασίας"
     },
     "edit": {
+      "billableSaveFailed": "Αποτυχία ενημέρωσης χρεωσιμότητας",
       "deleteEntry": "Διαγραφή εγγραφής",
       "locationRequired": "Επιλέξτε μια τοποθεσία εργασίας.",
+      "markedBillable": "Σημειώθηκε ως χρεώσιμο",
+      "markedNonBillable": "Σημειώθηκε ως μη χρεώσιμο",
       "noNotes": "Δεν έχουν προστεθεί σημειώσεις",
       "noProject": "Δεν έχει ανατεθεί έργο",
       "notesSaved": "Οι σημειώσεις αποθηκεύτηκαν",
@@ -359,6 +362,7 @@
       "notRecorded": "Δεν έχει καταγραφεί"
     },
     "workPeriod": {
+      "billable": "Χρεώσιμο",
       "editedBy": "(επεξεργάστηκε από {name} στις {date})"
     },
     "workStatus": {

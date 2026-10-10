@@ -999,6 +999,20 @@
         "adoptForeignTitle": "Deutsche gesetzliche Verpflegungspauschalen mit den offiziellen Auslandssätzen übernehmen",
         "foreignAreas": "Auslandssätze: {countries} Länder und {places} Städte"
       },
+      "reimbursementChannel": {
+        "bankTransfer": "Banküberweisung",
+        "bankTransferDescription": "Spesenbeauftragte zahlen Erstattungen per Banküberweisung aus und erfassen sie in Z8.",
+        "intro": "Wie Ihre Organisation Erstattungen auszahlt. Die Auswahl gilt für alle Mitarbeitenden.",
+        "loadFailed": "Der Erstattungskanal konnte nicht geladen werden.",
+        "payrollRun": "Gehaltsabrechnungslauf",
+        "payrollRunDescription": "Der Gehaltsabrechnungslauf umfasst Erstattungen, die erfasst werden, sobald der Gehaltsabrechnungslauf als bezahlt bestätigt wurde. Berichte, die ein Gehaltsabrechnungslauf nicht enthalten kann, werden per Banküberweisung ausgezahlt.",
+        "payrollRunPreview": "In der Vorschau und noch nicht für Ihre Organisation verfügbar.",
+        "save": "Kanal speichern",
+        "saved": "Erstattungskanal gespeichert",
+        "saveFailed": "Der Erstattungskanal konnte nicht gespeichert werden.",
+        "title": "Erstattungskanal",
+        "unconfirmedRuns": "{count, plural, one {# Gehaltsabrechnungslauf ist noch nicht bestätigt. Er kann noch bestätigt oder verworfen werden.} other {# Gehaltsabrechnungsläufe sind noch nicht bestätigt. Sie können noch bestätigt oder verworfen werden.}}"
+      },
       "tabs": {
         "access": "Zugriff",
         "currencies": "Währungen",

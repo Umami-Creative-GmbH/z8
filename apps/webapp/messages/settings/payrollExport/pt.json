@@ -20,6 +20,34 @@
         "title": "Dados mestres DATEV"
       },
       "description": "Exportar períodos de trabalho para sistemas de folha de pagamento como DATEV ou Personio",
+      "expenseMappings": {
+        "apiConnectors": "O Personio, o Workday e a API do SuccessFactors não incluem reembolsos de despesas.",
+        "codeLabel": "{line}, tipo de remuneração {format}",
+        "description": "Mapeie cada linha de despesa para um tipo de remuneração nos formatos de arquivo de folha de pagamento exportados. Uma linha de despesa sem um tipo de remuneração para o formato exportado deixa os relatórios afetados fora do processamento da folha de pagamento; em vez disso, eles são pagos por transferência bancária.",
+        "format": {
+          "datevLohn": "DATEV Payroll",
+          "lexware": "Lexware",
+          "sage": "Sage",
+          "successFactorsFile": "Arquivo do SuccessFactors"
+        },
+        "kind": {
+          "mileageExcess": "Quilometragem: excedente tributável",
+          "mileageStatutory": "Quilometragem: parcela legal",
+          "perDiemExcess": "Diárias: excedente tributável",
+          "perDiemStatutory": "Diárias: parcela legal",
+          "receiptAccommodation": "Recibos: hospedagem",
+          "receiptMeals": "Recibos: refeições",
+          "receiptOther": "Recibos: outros",
+          "receiptParking": "Recibos: estacionamento",
+          "receiptTransport": "Recibos: transporte"
+        },
+        "line": "Linha de despesa",
+        "loadFailed": "Não foi possível carregar os tipos de remuneração de despesas.",
+        "save": "Salvar tipos de remuneração",
+        "saved": "Tipos de remuneração salvos",
+        "saveFailed": "Não foi possível salvar alguns tipos de remuneração.",
+        "title": "Reembolsos de despesas"
+      },
       "export": {
         "allEmployees": "Todos os Funcionários",
         "allProjects": "Todos os Projetos",

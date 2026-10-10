@@ -120,9 +120,11 @@
       },
       "errors": {
         "connectionFailed": "Verbindung zu Clockodo fehlgeschlagen",
+        "fetchProjectsFailed": "Projektdaten konnten nicht abgerufen werden",
         "fetchUsersFailed": "Abrufen der Benutzerdaten fehlgeschlagen",
         "importFailed": "Import-Prüfscan fehlgeschlagen",
-        "saveMappingsFailed": "Speichern der Benutzerzuordnungen fehlgeschlagen"
+        "saveMappingsFailed": "Speichern der Benutzerzuordnungen fehlgeschlagen",
+        "saveProjectMappingsFailed": "Projektzuordnungen konnten nicht gespeichert werden"
       },
       "importing": {
         "description": "Bitte schließen Sie diese Seite nicht. Der Prüfscan wird in die Warteschlange gestellt und kann bei großen Datensätzen einige Zeit in Anspruch nehmen.",
@@ -148,6 +150,19 @@
         "next": "Benutzer zuordnen",
         "title": "Datenvorschau"
       },
+      "projectMapping": {
+        "clockodoCustomer": "Clockodo-Kunde",
+        "clockodoProject": "Clockodo-Projekt",
+        "continue": "Weiter",
+        "description": "Weisen Sie Clockodo-Projekte bestehenden Z8-Projekten zu. Importierte Zeiteinträge behalten ihr Projekt und den Abrechenbarkeitswert von Clockodo bei. Einträge zu nicht zugewiesenen Projekten oder zu Projekten ohne Kunden werden als nicht abrechenbar importiert. Es werden keine Projekte erstellt.",
+        "mappedCount": "{mapped} von {total} Projekten zugewiesen",
+        "noCustomer": "Dieses Projekt hat keinen Kunden, daher ist die importierte Zeit nicht abrechenbar.",
+        "noZ8Projects": "Diese Organisation hat noch keine Projekte. Erstellen Sie zuerst Projekte, um Clockodo-Zeiten mit ihrem Projekt und Abrechenbarkeitswert zu importieren.",
+        "title": "Projekte zuweisen",
+        "unmapped": "Nicht zugewiesen (kein Projekt)",
+        "z8Project": "Z8-Projekt",
+        "z8ProjectFor": "Z8-Projekt für {project}"
+      },
       "review": {
         "startedToast": "Import-Prüfscan gestartet. Eine Überprüfung ist erforderlich, bevor Datensätze übernommen werden."
       },
@@ -167,6 +182,7 @@
         "credentials": "Anmeldedaten",
         "import": "Überprüfung",
         "preview": "Vorschau",
+        "projectMapping": "Projektzuweisung",
         "selection": "Auswahl",
         "userMapping": "Benutzerzuordnung"
       },

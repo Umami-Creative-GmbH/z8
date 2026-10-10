@@ -213,8 +213,11 @@
       "workLocation": "Work location"
     },
     "edit": {
+      "billableSaveFailed": "Failed to update billability",
       "deleteEntry": "Delete entry",
       "locationRequired": "Choose a work location.",
+      "markedBillable": "Marked as billable",
+      "markedNonBillable": "Marked as non-billable",
       "noNotes": "No notes added",
       "noProject": "No project assigned",
       "notesSaved": "Notes saved",
@@ -359,6 +362,7 @@
       "notRecorded": "Not recorded"
     },
     "workPeriod": {
+      "billable": "Billable",
       "editedBy": "(edited by {name} at {date})"
     },
     "workStatus": {

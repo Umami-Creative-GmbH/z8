@@ -213,8 +213,11 @@
       "workLocation": "Arbetsort"
     },
     "edit": {
+      "billableSaveFailed": "Verrechebarkeit hät nöd chönne aktualisiert wärde",
       "deleteEntry": "Iitrag lösche",
       "locationRequired": "Wähl en Arbetsort us.",
+      "markedBillable": "Als verrechebar markiert",
+      "markedNonBillable": "Als nöd verrechebar markiert",
       "noNotes": "Kei Notize hinzuegfüegt",
       "noProject": "Keis Projekt zuegwise",
       "notesSaved": "Notize gspicheret",
@@ -359,6 +362,7 @@
       "notRecorded": "Nöd erfasst"
     },
     "workPeriod": {
+      "billable": "Verrechebar",
       "editedBy": "(bearbeitet vo {name} am {date})"
     },
     "workStatus": {

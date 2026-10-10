@@ -11,6 +11,11 @@
         "title": "Przerwa dodana automatycznie w celu zachowania zgodności"
       }
     },
+    "billable": {
+      "description": "Praca rozliczalna dla klienta projektu",
+      "label": "Rozliczalne",
+      "noCustomer": "Tylko praca nad projektem z klientem może być rozliczalna"
+    },
     "budget": "Budżet",
     "clockedOutSuccess": "Wylogowano z systemu!",
     "clockIn": "Rozpocznij pracę",
@@ -69,6 +74,7 @@
       "alreadyClockedIn": "Jesteś już w trakcie pracy",
       "appendReviewRequired": "Rozpoczęcie pracy wymaga weryfikacji historii czasu pracy",
       "appendReviewRequiredDesc": "Nie udało się zweryfikować Twoich wcześniejszych wpisów czasu pracy, dlatego nowe rozpoczęcie pracy nie zostało zapisane. Skontaktuj się z administratorem.",
+      "billableNotAllowed": "Tylko praca nad projektem, który ma klienta, może być rozliczalna",
       "breakAwaitingApproval": "Ten okres pracy oczekuje na zatwierdzenie i nie można go edytować. Dodaj przerwę po jego rozpatrzeniu.",
       "breakDurationInvalid": "Wprowadź czas trwania przerwy wynoszący co najmniej 1 minutę.",
       "breakNotAllowed": "Nie możesz dodać przerwy do tego okresu pracy.",
@@ -243,6 +249,7 @@
       "approveEntry": "Zatwierdź wpis",
       "approveFailed": "Nie udało się zatwierdzić wpisu",
       "approving": "Zatwierdzanie...",
+      "billable": "Rozliczalne",
       "clockIn": "Zarejestruj wejście",
       "clockOut": "Zarejestruj wyjście",
       "corrected": "Skorygowano",

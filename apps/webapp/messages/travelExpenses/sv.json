@@ -999,6 +999,20 @@
         "adoptForeignTitle": "Tillämpa det tyska lagstadgade traktamentet med de officiella utlandssatserna",
         "foreignAreas": "Utlandssatser: {countries} länder och {places} städer"
       },
+      "reimbursementChannel": {
+        "bankTransfer": "Banköverföring",
+        "bankTransferDescription": "Utläggsansvariga betalar ersättningar via banköverföring och registrerar dem i Z8.",
+        "intro": "Hur din organisation betalar ut ersättningar. Valet gäller för alla anställda.",
+        "loadFailed": "Ersättningskanalen kunde inte läsas in.",
+        "payrollRun": "Lönekörning",
+        "payrollRunDescription": "Lönekörningen hanterar ersättningar, vilka registreras när lönekörningen har bekräftats som betald. Rapporter som en lönekörning inte kan hantera betalas via banköverföring.",
+        "payrollRunPreview": "I förhandsvisning och ännu inte tillgängligt för din organisation.",
+        "save": "Spara kanal",
+        "saved": "Ersättningskanal sparad",
+        "saveFailed": "Ersättningskanalen kunde inte sparas.",
+        "title": "Ersättningskanal",
+        "unconfirmedRuns": "{count, plural, one {# lönekörning har inte bekräftats ännu. Den kan fortfarande bekräftas eller makuleras.} other {# lönekörningar har inte bekräftats ännu. De kan fortfarande bekräftas eller makuleras.}}"
+      },
       "tabs": {
         "access": "Åtkomst",
         "currencies": "Valutor",

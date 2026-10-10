@@ -20,6 +20,34 @@
         "title": "DATEV-Stammdaten"
       },
       "description": "Arbeitszeiträume an Lohnabrechnungssysteme wie DATEV oder Personio exportieren",
+      "expenseMappings": {
+        "apiConnectors": "Personio, Workday und die SuccessFactors-API übertragen keine Auslagenerstattungen.",
+        "codeLabel": "{line}, {format}-Lohnart",
+        "description": "Ordnen Sie jeder Ausgabenzeile eine Lohnart für die von Ihnen exportierten Abrechnungsdateiformate zu. Eine Ausgabenzeile ohne Lohnart für das exportierte Format schließt die betroffenen Berichte aus dem Abrechnungslauf aus; sie werden stattdessen per Banküberweisung ausgezahlt.",
+        "format": {
+          "datevLohn": "DATEV Lohn",
+          "lexware": "Lexware",
+          "sage": "Sage",
+          "successFactorsFile": "SuccessFactors-Datei"
+        },
+        "kind": {
+          "mileageExcess": "Kilometerpauschale: steuerpflichtiger Mehrbetrag",
+          "mileageStatutory": "Kilometerpauschale: gesetzlicher Anteil",
+          "perDiemExcess": "Verpflegungspauschale: steuerpflichtiger Mehrbetrag",
+          "perDiemStatutory": "Verpflegungspauschale: gesetzlicher Anteil",
+          "receiptAccommodation": "Belege: Unterkunft",
+          "receiptMeals": "Belege: Verpflegung",
+          "receiptOther": "Belege: Sonstiges",
+          "receiptParking": "Belege: Parkgebühren",
+          "receiptTransport": "Belege: Transport"
+        },
+        "line": "Ausgabenzeile",
+        "loadFailed": "Die Lohnarten für Ausgaben konnten nicht geladen werden.",
+        "save": "Lohnarten speichern",
+        "saved": "Lohnarten gespeichert",
+        "saveFailed": "Einige Lohnarten konnten nicht gespeichert werden.",
+        "title": "Auslagenerstattungen"
+      },
       "export": {
         "allEmployees": "Alle Mitarbeiter",
         "allProjects": "Alle Projekte",
