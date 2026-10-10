@@ -67,6 +67,7 @@ export interface AttachStagedSickNotesResult {
 const REFUSALS: Record<SickNoteAttachRefusal, string> = {
 	setting_off: "Your organization does not let employees attach sick notes.",
 	not_own: "Absence not found",
+	not_managed: "Absence not found",
 	not_sick: "Sick notes can be attached only to sick leave.",
 	rejected: "Sick notes cannot be attached to a rejected absence.",
 };
@@ -96,8 +97,10 @@ export async function discardStagedSickNotes(
  * another, with the same rules, sick-detail switch, audit and notification as
  * attaching one later (#982). A note that fails is reported with its file name
  * and never undoes the absence or the notes before it. The authority decides
- * who may attach; with "employee" the notes are shared and the covering
- * officers are notified.
+ * who may attach: the employee, or whoever records the absence on their
+ * behalf (#984, only from inside the recording). Either way the notes are
+ * shared, so the employee sees them, and the covering officers are notified;
+ * a recorder is named in the notification.
  */
 export async function attachStagedSickNotes(
 	database: Database,
@@ -107,7 +110,9 @@ export async function attachStagedSickNotes(
 		/** The absence's employee: the personnel file the notes go into. */
 		employeeId: string;
 		notes: readonly StagedSickNoteInput[];
-		authority: SickNoteAuthority;
+		authority: Extract<SickNoteAuthority, "employee" | "recorder">;
+		/** The recorder's name for the officers' notification (with "recorder"). */
+		uploaderName?: string;
 	},
 ): Promise<AttachStagedSickNotesResult> {
 	const { access } = input;
@@ -131,7 +136,7 @@ export async function attachStagedSickNotes(
 			title: note.title,
 			documentDate: note.documentDate,
 			payPeriod: null,
-			// The employee's own uploads are always shared; sick notes have no expiry date.
+			// The employee sees notes attached by them or for them; sick notes have no expiry date.
 			visibility: "shared",
 			expiryDate: null,
 		});
@@ -147,7 +152,7 @@ export async function attachStagedSickNotes(
 				tusFileKey: note.tusFileKey,
 				fileName: note.fileName,
 				metadata: validated.value,
-				source: "employee",
+				source: input.authority,
 				sickNote: { absenceId: input.absenceId, authority: input.authority },
 			});
 			if (recorded.kind !== "recorded") {
@@ -167,6 +172,9 @@ export async function attachStagedSickNotes(
 			await notifyEmployeeUpload(database, {
 				organizationId: access.organizationId,
 				document: recorded.document,
+				...(input.authority === "recorder"
+					? { uploader: { userId: access.userId, name: input.uploaderName ?? "" } }
+					: {}),
 			});
 		} catch (error) {
 			logger.error({ error, absenceId: input.absenceId }, "Failed to attach a staged sick note");

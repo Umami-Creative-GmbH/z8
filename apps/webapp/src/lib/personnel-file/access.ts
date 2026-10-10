@@ -109,14 +109,68 @@ export function canUploadOwnDocument(
 	return isOwnDocument(access, employeeId) && EMPLOYEE_UPLOAD_CATEGORIES.includes(category);
 }
 
-/** Why an employee may not attach a sick note to an absence (#982, ADR 0002). */
-export type SickNoteAttachRefusal = "setting_off" | "not_own" | "not_sick" | "rejected";
+/** Why a sick note may not be attached to an absence (#982, #984, ADR 0002). */
+export type SickNoteAttachRefusal =
+	| "setting_off"
+	| "not_own"
+	/** The actor does not manage the employee's sick notes (or it is their own file). */
+	| "not_managed"
+	| "not_sick"
+	| "rejected";
 
 /**
- * On whose behalf a sick note is attached to an absence (ADR 0002). Only the
- * employee themselves so far (#982, #983), decided by `sickNoteAttachRefusal`.
+ * On whose authority a sick note is attached to an absence (ADR 0002):
+ * - "employee": the employee to their own absence (#982), `sickNoteAttachRefusal`;
+ * - "recorder": whoever records the absence on the employee's behalf, from
+ *   inside the recording only (#984), `recorderSickNoteAttachRefusal`;
+ * - "officer": whoever manages the employee's sick notes (#984),
+ *   `officerSickNoteAttachRefusal`.
  */
-export type SickNoteAuthority = "employee";
+export type SickNoteAuthority = "employee" | "recorder" | "officer";
+
+type SickNoteTargetAbsence = {
+	employeeId: string;
+	/** The absence category's type; sick leave is "sick". */
+	categoryType: string;
+	status: "pending" | "approved" | "rejected";
+};
+
+function sickLeaveRefusal(absence: SickNoteTargetAbsence): SickNoteAttachRefusal | null {
+	if (absence.categoryType !== "sick") return "not_sick";
+	if (absence.status === "rejected") return "rejected";
+	return null;
+}
+
+/**
+ * Whether the recorder may upload a sick note to the absence they are
+ * recording for the employee (#984): any pending or approved sick leave,
+ * whatever the employee-upload setting says. Their authority comes from the
+ * recording itself, so only the recording action may decide with it.
+ */
+export function recorderSickNoteAttachRefusal(input: {
+	absence: SickNoteTargetAbsence;
+}): SickNoteAttachRefusal | null {
+	return sickLeaveRefusal(input.absence);
+}
+
+/**
+ * Whether the actor may attach, link or unlink sick notes on the employee's
+ * absence as whoever manages the employee's sick notes (#984): an officer
+ * covering `sick_note` for the employee, an owner or an admin, never on their
+ * own file. `employee` is the absence's employee.
+ */
+export function officerSickNoteAttachRefusal(
+	access: PersonnelFileAccess,
+	input: { employee: EmployeeRef; absence: SickNoteTargetAbsence },
+): SickNoteAttachRefusal | null {
+	if (
+		input.employee.id !== input.absence.employeeId ||
+		!canManageDocument(access, input.employee, "sick_note")
+	) {
+		return "not_managed";
+	}
+	return sickLeaveRefusal(input.absence);
+}
 
 /**
  * Whether the actor may upload a sick note to the absence as its employee: only
@@ -130,19 +184,12 @@ export function sickNoteAttachRefusal(
 	access: PersonnelFileAccess,
 	input: {
 		employeeSickNoteUpload: boolean;
-		absence: {
-			employeeId: string;
-			/** The absence category's type; sick leave is "sick". */
-			categoryType: string;
-			status: "pending" | "approved" | "rejected";
-		};
+		absence: SickNoteTargetAbsence;
 	},
 ): SickNoteAttachRefusal | null {
 	if (!input.employeeSickNoteUpload) return "setting_off";
 	if (!isOwnDocument(access, input.absence.employeeId)) return "not_own";
-	if (input.absence.categoryType !== "sick") return "not_sick";
-	if (input.absence.status === "rejected") return "rejected";
-	return null;
+	return sickLeaveRefusal(input.absence);
 }
 
 /** How long an employee may delete a sick note they uploaded themselves. */

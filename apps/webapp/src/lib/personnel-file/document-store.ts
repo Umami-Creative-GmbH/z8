@@ -142,6 +142,9 @@ function metadataColumns(metadata: DocumentMetadata) {
 	};
 }
 
+/** Who uploaded a document, when not whoever manages the file (recorded in the audit). */
+export type PersonnelDocumentUploadSource = "employee" | "recorder";
+
 export type FinalizePersonnelDocumentResult =
 	| {
 			kind: "recorded";
@@ -170,8 +173,11 @@ export async function finalizePersonnelDocumentUpload(
 		mimeType: string;
 		sizeBytes: number;
 		checksumSha256: string;
-		/** "employee" when the employee uploaded into their own file (#867). */
-		source?: "employee";
+		/**
+		 * "employee" when the employee uploaded into their own file (#867),
+		 * "recorder" when whoever recorded the absence uploaded its sick note (#984).
+		 */
+		source?: PersonnelDocumentUploadSource;
 		/** The sick note is attached to this absence, on the given authority (#982). */
 		sickNote?: { absenceId: string; access: PersonnelFileAccess; authority: SickNoteAuthority };
 	},
@@ -257,7 +263,8 @@ export async function finalizePersonnelDocumentUpload(
 	});
 }
 
-async function lockDocument(
+/** The document of the organization, locked for the rest of the transaction. */
+export async function lockDocument(
 	tx: Parameters<Parameters<Database["transaction"]>[0]>[0],
 	organizationId: string,
 	documentId: string,

@@ -9,6 +9,7 @@ import type { DocumentMetadata } from "./document-rules";
 import {
 	type FinalizePersonnelDocumentResult,
 	finalizePersonnelDocumentUpload,
+	type PersonnelDocumentUploadSource,
 	personnelDocumentStorageKey,
 } from "./document-store";
 import {
@@ -58,8 +59,8 @@ export async function recordUploadedPersonnelDocument(
 		tusFileKey: string;
 		fileName: string | undefined;
 		metadata: DocumentMetadata;
-		/** "employee" when the employee uploads into their own file (#867). */
-		source?: "employee";
+		/** "employee" or "recorder" (#867, #984), see `finalizePersonnelDocumentUpload`. */
+		source?: PersonnelDocumentUploadSource;
 		/** Attaches the document as a sick note to the absence (#982). */
 		sickNote?: { absenceId: string; authority: SickNoteAuthority };
 	},

@@ -73,6 +73,10 @@ const employeeUploadMessages = {
 		messageKey: "common:notifications.content.personnelFileEmployeeUpload.sickNote",
 		messageDefault: "{name} uploaded a sick note for {dateRange}",
 	},
+	sickNoteOnBehalf: {
+		messageKey: "common:notifications.content.personnelFileEmployeeUpload.sickNoteOnBehalf",
+		messageDefault: "{uploader} uploaded a sick note for {name}, {dateRange}",
+	},
 } as const;
 
 /** The stored message's fallback date format; readers get theirs from `dateRangeDays`. */
@@ -87,9 +91,9 @@ type UploadedDocument = {
 	absence?: { startDate: string; endDate: string } | null;
 };
 
-function employeeUploadMessage(document: UploadedDocument) {
+function employeeUploadMessage(document: UploadedDocument, onBehalf: boolean) {
 	if (document.category === "sick_note" && document.absence) {
-		return employeeUploadMessages.sickNote;
+		return onBehalf ? employeeUploadMessages.sickNoteOnBehalf : employeeUploadMessages.sickNote;
 	}
 	return document.category === "certificate"
 		? employeeUploadMessages.certificate
@@ -99,17 +103,25 @@ function employeeUploadMessage(document: UploadedDocument) {
 /**
  * Tells an officer (or owner/admin) that an employee uploaded a document
  * (#867). A sick note names its absence and leads to the employee's sick
- * notes (#982).
+ * notes (#982); one uploaded by whoever recorded the absence on the
+ * employee's behalf also names them (#984).
  */
 export function buildEmployeeUploadNotification(input: {
 	organizationId: string;
 	recipientUserId: string;
 	employeeName: string;
+	/** Who uploaded it on the employee's behalf (#984); the employee when absent. */
+	uploaderName?: string;
 	document: UploadedDocument;
 }): CreateNotificationParams {
-	const copy = { ...employeeUploadCopy, ...employeeUploadMessage(input.document) };
 	const absence = input.document.category === "sick_note" ? input.document.absence : null;
+	const uploader = absence ? input.uploaderName : undefined;
+	const copy = {
+		...employeeUploadCopy,
+		...employeeUploadMessage(input.document, uploader !== undefined),
+	};
 	const params = {
+		...(uploader !== undefined ? { uploader } : {}),
 		name: input.employeeName,
 		title: input.document.title,
 		...(absence
@@ -128,6 +140,7 @@ export function buildEmployeeUploadNotification(input: {
 		type: "personnel_file_employee_upload",
 		title: copy.titleDefault,
 		message: copy.messageDefault
+			.replace("{uploader}", uploader ?? "")
 			.replace("{name}", params.name)
 			.replace("{dateRange}", params.dateRange ?? ""),
 		entityType: "employee_document",
@@ -154,13 +167,16 @@ type Database = typeof appDb;
 /**
  * Tells the officers covering the employee and the document's category that
  * the employee uploaded it, or the owners and admins when no officer covers
- * them (#867). Call after the upload committed. Never throws.
+ * them (#867). Call after the upload committed. Never throws. With an
+ * `uploader` (whoever recorded the absence on the employee's behalf, #984)
+ * the message names them, and they are not told about their own upload.
  */
 export async function notifyEmployeeUpload(
 	database: Database,
 	input: {
 		organizationId: string;
 		document: UploadedDocument;
+		uploader?: { userId: string; name: string };
 	},
 ): Promise<void> {
 	try {
@@ -183,17 +199,21 @@ export async function notifyEmployeeUpload(
 				.limit(1),
 		]);
 		const employeeName = subject?.name?.trim() || subject?.employeeNumber || "An employee";
+		const uploader = input.uploader;
 		await Promise.all(
-			recipients.map((recipientUserId) =>
-				createNotification(
-					buildEmployeeUploadNotification({
-						organizationId: input.organizationId,
-						recipientUserId,
-						employeeName,
-						document: input.document,
-					}),
+			recipients
+				.filter((recipientUserId) => recipientUserId !== uploader?.userId)
+				.map((recipientUserId) =>
+					createNotification(
+						buildEmployeeUploadNotification({
+							organizationId: input.organizationId,
+							recipientUserId,
+							employeeName,
+							...(uploader ? { uploaderName: uploader.name } : {}),
+							document: input.document,
+						}),
+					),
 				),
-			),
 		);
 	} catch (error) {
 		logger.error(

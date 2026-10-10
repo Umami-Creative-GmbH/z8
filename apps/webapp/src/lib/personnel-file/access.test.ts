@@ -8,7 +8,9 @@ import {
 	isOwnDocument,
 	managedCategoriesFor,
 	ORGANIZATION_ADMIN_GRANT,
+	officerSickNoteAttachRefusal,
 	type PersonnelFileAccess,
+	recorderSickNoteAttachRefusal,
 	sickNoteAttachRefusal,
 } from "./access";
 
@@ -177,6 +179,101 @@ describe("sick notes on absences (#982)", () => {
 				absence: { ...sickLeave, status: "rejected" },
 			}),
 		).toBe("rejected");
+	});
+
+	describe("recording sick leave on the employee's behalf (#984)", () => {
+		it("lets the recorder attach to sick leave, whatever the employee-upload setting says", () => {
+			for (const status of ["pending", "approved"] as const) {
+				expect(recorderSickNoteAttachRefusal({ absence: { ...sickLeave, status } })).toBeNull();
+			}
+		});
+
+		it("refuses an absence that is no sick leave, or a rejected one", () => {
+			expect(
+				recorderSickNoteAttachRefusal({ absence: { ...sickLeave, categoryType: "vacation" } }),
+			).toBe("not_sick");
+			expect(recorderSickNoteAttachRefusal({ absence: { ...sickLeave, status: "rejected" } })).toBe(
+				"rejected",
+			);
+		});
+	});
+
+	describe("officers attaching to an employee's absence (#984)", () => {
+		const berlinSickNotes = access({
+			selfEmployeeId: "otto",
+			grants: [
+				{
+					source: "officer_grant",
+					scope: { kind: "specific", employeeIds: [], teamIds: ["berlin"] },
+					categories: new Set(["sick_note"]),
+				},
+			],
+		});
+
+		it("lets an officer covering sick notes, an owner or an admin attach to pending or approved sick leave", () => {
+			for (const actor of [berlinSickNotes, admin]) {
+				for (const status of ["pending", "approved"] as const) {
+					expect(
+						officerSickNoteAttachRefusal(actor, {
+							employee: anna,
+							absence: { ...sickLeave, status },
+						}),
+					).toBeNull();
+				}
+			}
+		});
+
+		it("refuses an employee outside the grant, or a grant without sick notes", () => {
+			expect(
+				officerSickNoteAttachRefusal(berlinSickNotes, {
+					employee: ben,
+					absence: { ...sickLeave, employeeId: "ben" },
+				}),
+			).toBe("not_managed");
+			const certificatesOnly = access({
+				grants: [
+					{
+						source: "officer_grant",
+						scope: { kind: "all" },
+						categories: new Set(["certificate"]),
+					},
+				],
+			});
+			expect(
+				officerSickNoteAttachRefusal(certificatesOnly, { employee: anna, absence: sickLeave }),
+			).toBe("not_managed");
+		});
+
+		it("refuses an officer or admin acting on their own personnel file", () => {
+			const adminAnna = access({ selfEmployeeId: "anna", grants: [ORGANIZATION_ADMIN_GRANT] });
+			expect(officerSickNoteAttachRefusal(adminAnna, { employee: anna, absence: sickLeave })).toBe(
+				"not_managed",
+			);
+		});
+
+		it("refuses an absence that is no sick leave, or a rejected one", () => {
+			expect(
+				officerSickNoteAttachRefusal(admin, {
+					employee: anna,
+					absence: { ...sickLeave, categoryType: "vacation" },
+				}),
+			).toBe("not_sick");
+			expect(
+				officerSickNoteAttachRefusal(admin, {
+					employee: anna,
+					absence: { ...sickLeave, status: "rejected" },
+				}),
+			).toBe("rejected");
+		});
+
+		it("refuses when the employee is not the absence's employee", () => {
+			expect(
+				officerSickNoteAttachRefusal(admin, {
+					employee: ben,
+					absence: sickLeave,
+				}),
+			).toBe("not_managed");
+		});
 	});
 
 	describe("deleting an own sick note", () => {

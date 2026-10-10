@@ -6,17 +6,21 @@ import { loadAbsenceSettings } from "@/lib/absences/absence-settings";
 import type { SickDetail } from "@/lib/absences/types";
 import { AuditAction } from "@/lib/audit-logger";
 import {
+	officerSickNoteAttachRefusal,
 	type PersonnelFileAccess,
+	recorderSickNoteAttachRefusal,
 	type SickNoteAttachRefusal,
 	type SickNoteAuthority,
 	sickNoteAttachRefusal,
 } from "./access";
+import { loadEmployeeRef } from "./access-store";
 
 /**
  * Attaching a sick note to a sick-leave absence (#982, Personnel File ADR
- * 0002): the employee uploads it as a shared `sick_note` employee document
- * linked to their own absence. The upload route checks the target before it
- * stores the file; document finalization locks and checks it again.
+ * 0002): a `sick_note` employee document linked to the absence, uploaded by
+ * the employee, by whoever records the absence on their behalf, or by whoever
+ * manages their sick notes (#984). The upload route checks the target before
+ * it stores the file; document finalization locks and checks it again.
  */
 
 type Database = typeof appDb;
@@ -89,33 +93,43 @@ async function decideSickNoteTarget(
 				eq(absenceEntry.organizationId, access.organizationId),
 			),
 		);
-	const [[row], settings] = await Promise.all([
-		input.lock ? query.for("update", { of: absenceEntry }) : query.limit(1),
-		loadAbsenceSettings(database, access.organizationId),
-	]);
+	const [row] = await (input.lock ? query.for("update", { of: absenceEntry }) : query.limit(1));
 	if (!row) return { kind: "not_found" };
-	const reason = attachRefusalUnder(input.authority, access, {
-		employeeSickNoteUpload: settings.employeeSickNoteUpload,
-		absence: row,
-	});
+	const reason = await attachRefusalUnder(database, input.authority, access, row);
 	return reason ? { kind: "refused", reason } : { kind: "ok", absence: absenceOf(row) };
 }
 
-function attachRefusalUnder(
+async function attachRefusalUnder(
+	database: Reader,
 	authority: SickNoteAuthority,
 	access: PersonnelFileAccess,
-	input: Parameters<typeof sickNoteAttachRefusal>[1],
-): SickNoteAttachRefusal | null {
+	absence: { employeeId: string; categoryType: string; status: SickNoteAbsence["status"] },
+): Promise<SickNoteAttachRefusal | null> {
 	switch (authority) {
-		case "employee":
-			return sickNoteAttachRefusal(access, input);
+		case "employee": {
+			const settings = await loadAbsenceSettings(database, access.organizationId);
+			return sickNoteAttachRefusal(access, {
+				employeeSickNoteUpload: settings.employeeSickNoteUpload,
+				absence,
+			});
+		}
+		case "recorder":
+			return recorderSickNoteAttachRefusal({ absence });
+		case "officer": {
+			const employee = await loadEmployeeRef(database, {
+				organizationId: access.organizationId,
+				employeeId: absence.employeeId,
+			});
+			return employee ? officerSickNoteAttachRefusal(access, { employee, absence }) : "not_managed";
+		}
 	}
 }
 
 /**
  * Whether the actor may attach a sick note to the absence now, on the given
  * authority (the employee's own by default). Absences of other organizations
- * are not found; everything else is decided by `sickNoteAttachRefusal`.
+ * are not found; everything else is decided by the authority's rule in
+ * access.ts.
  */
 export function loadSickNoteAttachTarget(
 	database: Reader,
@@ -127,20 +141,30 @@ export function loadSickNoteAttachTarget(
 }
 
 /**
+ * `loadSickNoteAttachTarget` with the absence row locked for the rest of the
+ * transaction, for writes that link a sick note to it.
+ */
+export function lockSickNoteAttachTarget(
+	tx: Transaction,
+	access: PersonnelFileAccess,
+	input: { absenceId: string; authority: SickNoteAuthority },
+): Promise<SickNoteAttachTarget> {
+	return decideSickNoteTarget(tx, access, { ...input, lock: true });
+}
+
+/**
  * Locks the absence for the transaction that records the sick note and checks
- * again that it may still take one (the employee's own, still sick leave, not
- * rejected, the setting still on). Null when not: the upload is not recorded.
+ * again that it may still take one on the authority (for the employee: their
+ * own, still sick leave, not rejected, the setting still on), and that it is
+ * the absence of the document's employee. Null when not: the upload is not
+ * recorded.
  */
 export async function lockSickNoteAbsence(
 	tx: Transaction,
 	access: PersonnelFileAccess,
 	input: { absenceId: string; employeeId: string; authority: SickNoteAuthority },
 ): Promise<SickNoteAbsence | null> {
-	const target = await decideSickNoteTarget(tx, access, {
-		absenceId: input.absenceId,
-		authority: input.authority,
-		lock: true,
-	});
+	const target = await lockSickNoteAttachTarget(tx, access, input);
 	return target.kind === "ok" && target.absence.employeeId === input.employeeId
 		? target.absence
 		: null;

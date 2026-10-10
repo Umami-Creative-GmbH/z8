@@ -8,6 +8,7 @@ import {
 	isOwnDocument,
 	managedCategoriesFor,
 	type SickNoteAttachRefusal,
+	type SickNoteAuthority,
 } from "@/lib/personnel-file/access";
 import { loadEmployeeRef } from "@/lib/personnel-file/access-store";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
@@ -24,7 +25,11 @@ const requestSchema = z.object({
 	employeeId: z.uuid(),
 	/** "own": the employee uploads into their own file (#867). */
 	source: z.literal("own").optional(),
-	/** With "own": the employee attaches a sick note to this absence of theirs (#982). */
+	/**
+	 * Attaches the upload as a sick note to this sick-leave absence of the
+	 * employee: with "own" the employee to theirs (#982), otherwise whoever
+	 * manages the employee's sick notes (#984).
+	 */
 	absenceId: z.uuid().optional(),
 	fileName: z.string().max(255).optional(),
 	metadata: z.object({
@@ -41,7 +46,10 @@ function notFound() {
 	return NextResponse.json({ error: "Employee not found" }, { status: 404 });
 }
 
-const SICK_NOTE_REFUSALS: Record<Exclude<SickNoteAttachRefusal, "not_own">, string> = {
+const SICK_NOTE_REFUSALS: Record<
+	Exclude<SickNoteAttachRefusal, "not_own" | "not_managed">,
+	string
+> = {
 	setting_off: "Your organization does not let employees attach sick notes.",
 	not_sick: "Sick notes can be attached only to sick leave.",
 	rejected: "Sick notes cannot be attached to a rejected absence.",
@@ -60,6 +68,11 @@ const ABSENCE_UNAVAILABLE = "This absence can no longer take a sick note.";
  * (or owners and admins) are notified instead of the employee. With an
  * `absenceId` as well, the upload is a sick note attached to that sick-leave
  * absence of theirs (#982): always a shared sick note without expiry date.
+ *
+ * Without "own", an `absenceId` attaches a sick note to the employee's
+ * sick-leave absence on the authority of whoever manages the employee's sick
+ * notes (#984): HR-only unless they choose shared, without expiry date.
+ * Managers manage nothing here; they attach only while recording an absence.
  */
 export async function POST(request: NextRequest) {
 	await connection();
@@ -78,9 +91,7 @@ export async function POST(request: NextRequest) {
 		}
 		const { tusFileKey, employeeId, fileName, metadata, absenceId } = parsed.data;
 		const own = parsed.data.source === "own";
-		if (absenceId && !own) {
-			return NextResponse.json({ error: "Invalid upload request" }, { status: 400 });
-		}
+		const authority: SickNoteAuthority = own ? "employee" : "officer";
 
 		const employee = await loadEmployeeRef(db, {
 			organizationId: access.organizationId,
@@ -94,27 +105,35 @@ export async function POST(request: NextRequest) {
 			return notFound();
 
 		if (absenceId) {
-			const target = await loadSickNoteAttachTarget(db, access, absenceId);
-			if (target.kind !== "ok") {
-				// Someone else's absence reads as not found, like another organization's.
-				const reason = target.kind === "refused" ? target.reason : "not_own";
-				return reason === "not_own"
-					? NextResponse.json({ error: "Absence not found" }, { status: 404 })
-					: NextResponse.json({ error: SICK_NOTE_REFUSALS[reason] }, { status: 403 });
+			const target = await loadSickNoteAttachTarget(db, access, absenceId, authority);
+			// Someone else's absence, or one the officer does not cover, reads as not
+			// found, like another organization's; so does another employee's absence.
+			const reason =
+				target.kind === "refused"
+					? target.reason
+					: target.kind === "not_found" || target.absence.employeeId !== employee.id
+						? "not_own"
+						: null;
+			if (reason === "not_own" || reason === "not_managed") {
+				return NextResponse.json({ error: "Absence not found" }, { status: 404 });
+			}
+			if (reason) {
+				return NextResponse.json({ error: SICK_NOTE_REFUSALS[reason] }, { status: 403 });
 			}
 		}
 
+		// A sick note attached to an absence has no expiry date (#982).
+		const category = absenceId ? "sick_note" : metadata.category;
 		const validated = validateDocumentMetadata({
 			...metadata,
-			// A sick note attached to an absence has no expiry date (#982).
-			...(absenceId ? { category: "sick_note" } : {}),
+			category,
 			payPeriod: metadata.payPeriod ?? null,
 			expiryDate: absenceId ? null : (metadata.expiryDate ?? null),
 			// Employee uploads are always shared; the employee chooses no visibility.
 			visibility: own
 				? "shared"
 				: (metadata.visibility ??
-					(isDocumentCategory(metadata.category) ? DEFAULT_VISIBILITY[metadata.category] : null)),
+					(isDocumentCategory(category) ? DEFAULT_VISIBILITY[category] : null)),
 		});
 		if (!validated.ok) {
 			return NextResponse.json(
@@ -141,7 +160,7 @@ export async function POST(request: NextRequest) {
 			fileName,
 			metadata: validated.value,
 			...(own ? { source: "employee" as const } : {}),
-			...(absenceId ? { sickNote: { absenceId, authority: "employee" as const } } : {}),
+			...(absenceId ? { sickNote: { absenceId, authority } } : {}),
 		});
 
 		if (finalized.kind === "invalid_file_key") {

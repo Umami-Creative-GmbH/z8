@@ -77,6 +77,36 @@ describe("buildEmployeeUploadNotification", () => {
 			},
 		});
 	});
+
+	it("names the recorder of a sick note uploaded on the employee's behalf (#984)", () => {
+		const params = buildEmployeeUploadNotification({
+			...input,
+			uploaderName: "Max Manager",
+			document: {
+				...input.document,
+				title: "Sick note 12–14 Oct 2026",
+				category: "sick_note",
+				absence: { startDate: "2026-10-12", endDate: "2026-10-14" },
+			},
+		});
+		expect(params.message.replace(/\s/gu, " ")).toMatch(
+			/^Max Manager uploaded a sick note for Anna Example, 12\s?–\s?14 Oct 2026$/,
+		);
+		expect(params.actionUrl).toBe(
+			"/personnel-files/44444444-4444-4444-8444-444444444444?category=sick_note",
+		);
+		expect(params.metadata).toMatchObject({
+			dateRangeDays: { startDate: "2026-10-12", endDate: "2026-10-14" },
+			i18n: {
+				messageKey: "common:notifications.content.personnelFileEmployeeUpload.sickNoteOnBehalf",
+				params: {
+					uploader: "Max Manager",
+					name: "Anna Example",
+					dateRange: expect.stringContaining("Oct 2026"),
+				},
+			},
+		});
+	});
 });
 
 describe("buildDocumentSharedNotification", () => {
