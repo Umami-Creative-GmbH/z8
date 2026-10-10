@@ -40,6 +40,8 @@ interface CalendarMainContentProps {
 	onRangeChange: (range: { startDateKey: string; endDateKey: string }) => void;
 	onTimeRangeSelect: (range: { start: Date; end: Date }) => void;
 	onRefresh: () => void;
+	/** The viewed employee's closed months (`YYYY-MM`, #762). */
+	closedMonths: readonly string[];
 }
 
 export function CalendarMainContent({
@@ -70,6 +72,7 @@ export function CalendarMainContent({
 	onRangeChange,
 	onTimeRangeSelect,
 	onRefresh,
+	closedMonths,
 }: CalendarMainContentProps) {
 	return (
 		<div
@@ -120,6 +123,7 @@ export function CalendarMainContent({
 						onDayClick={onDayClick}
 						onRefresh={onRefresh}
 						isSummaryLoading={isSummaryLoading}
+						closedMonths={closedMonths}
 					/>
 				) : (
 					<ScheduleXWrapper

@@ -72,8 +72,11 @@ import {
 	type PayrollBlockerIdentity,
 	payrollBlockerIdentity,
 } from "@/lib/payroll-workspace/blocker-identity";
+import { MonthClosureStrip } from "@/components/closed-months/month-closure-strip";
+import { UnclosedMonthsNotice } from "@/components/closed-months/unclosed-months-notice";
 import type { PayrollDateRangeMode, PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 import { queryKeys } from "@/lib/query/keys";
+import { monthsOfDateRange } from "@/lib/time-tracking/closed-months/month-label";
 import { PayrollRunReadinessCard } from "./payroll-run-readiness-card";
 import { PayrollRunsCard } from "./payroll-runs-card";
 
@@ -659,6 +662,19 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 				t={t}
 			/>
 
+			{filtersHaveNoMatches ? null : (
+				// Whether the period's months are closed for this selection (#762).
+				<>
+					<MonthClosureStrip
+						months={monthsOfDateRange(summary.period.start, summary.period.end)}
+						employeeIds={filteredEmployeeIds ?? scopedEmployees.map((employee) => employee.id)}
+					/>
+					<UnclosedMonthsNotice
+						months={monthsOfDateRange(summary.period.start, summary.period.end)}
+						employeeIds={filteredEmployeeIds ?? scopedEmployees.map((employee) => employee.id)}
+					/>
+				</>
+			)}
 			<PayrollBlockersAlert
 				blockers={displayedBlockers}
 				clearingBlockerKeys={clearingBlockerKeys}

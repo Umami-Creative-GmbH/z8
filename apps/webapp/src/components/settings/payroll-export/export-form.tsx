@@ -12,6 +12,7 @@ import {
 	getFilterOptionsAction,
 	startExportAction,
 } from "@/app/[locale]/(app)/settings/payroll-export/actions";
+import { UnclosedMonthsNotice } from "@/components/closed-months/unclosed-months-notice";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +40,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { monthsOfDateRange } from "@/lib/time-tracking/closed-months/month-label";
 
 interface ExportFormProps {
 	organizationId: string;
@@ -111,6 +113,15 @@ export function ExportForm({
 	const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
 	const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
 	const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
+	const selectedMonthRange = DateTime.fromObject({
+		year: selectedYear,
+		month: selectedMonth,
+	});
+	// The calendar months the chosen range touches, for the closed-month warning (#762).
+	const rangeMonths =
+		dateMode === "month"
+			? [selectedMonthRange.toFormat("yyyy-MM")]
+			: monthsOfDateRange(customStartDate, customEndDate);
 
 	const handleExport = () => {
 		const dateRange =
@@ -259,6 +270,10 @@ export function ExportForm({
 					onStartChange={setCustomStartDate}
 					onEndChange={setCustomEndDate}
 					t={t}
+				/>
+				<UnclosedMonthsNotice
+					months={rangeMonths}
+					employeeIds={selectedEmployeeIds.length ? selectedEmployeeIds : undefined}
 				/>
 				<FiltersSection
 					options={filterOptions}

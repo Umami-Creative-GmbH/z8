@@ -59,6 +59,8 @@ export interface UseCalendarDataResult {
 	liveWork: LiveWork[];
 	workBalance: EmployeeWorkBalancePayload | null;
 	calendarTimezone: string | null;
+	/** The viewed employee's closed months (`YYYY-MM`, #762), for the lock marker. */
+	closedMonths: string[];
 	eventsByDate: Map<string, CalendarEvent[]>;
 	isLoading: boolean;
 	isFetching: boolean;
@@ -83,6 +85,7 @@ async function fetchCalendarEvents(
 	liveWork: LiveWork[];
 	workBalance: EmployeeWorkBalancePayload | null;
 	calendarTimezone: string | null;
+	closedMonths: string[];
 }> {
 	const params = new URLSearchParams({
 		organizationId,
@@ -121,6 +124,7 @@ async function fetchCalendarEvents(
 		liveWork?: unknown;
 		workBalance?: unknown;
 		calendarTimezone?: unknown;
+		closedMonths?: unknown;
 	}>(response);
 
 	// Validate events with Zod schema
@@ -135,6 +139,7 @@ async function fetchCalendarEvents(
 			.string()
 			.nullable()
 			.parse(data.calendarTimezone ?? null),
+		closedMonths: z.array(z.string().regex(/^\d{4}-\d{2}$/)).parse(data.closedMonths ?? []),
 	};
 }
 
@@ -175,6 +180,7 @@ export function useCalendarData({
 			liveWork: [],
 			workBalance: null,
 			calendarTimezone: null,
+			closedMonths: [],
 		},
 		isLoading,
 		isFetching,
@@ -233,6 +239,7 @@ export function useCalendarData({
 		liveWork: calendarData.liveWork,
 		workBalance: calendarData.workBalance,
 		calendarTimezone: calendarData.calendarTimezone,
+		closedMonths: calendarData.closedMonths,
 		eventsByDate,
 		isLoading,
 		isFetching: isPollingLiveWork ? isFetching && isRefreshing : isFetching,

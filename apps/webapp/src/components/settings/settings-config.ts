@@ -26,6 +26,7 @@ interface ResolveSettingsVisibilityInput {
 }
 
 export type SettingsIconName =
+	| "lock"
 	| "user-circle"
 	| "shield"
 	| "shield-check"
@@ -655,6 +656,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Export work periods to DATEV Lohn & Gehalt",
 		href: "/settings/payroll-export",
 		icon: "database-export",
+		minimumTier: "orgAdmin",
+		group: "data",
+	},
+	{
+		id: "closed-months",
+		titleKey: "settings.closedMonths.title",
+		titleDefault: "Closed months",
+		descriptionKey: "settings.closedMonths.description",
+		descriptionDefault:
+			"Close months after payroll so their work and absences can no longer change",
+		href: "/settings/closed-months",
+		icon: "lock",
 		minimumTier: "orgAdmin",
 		group: "data",
 	},

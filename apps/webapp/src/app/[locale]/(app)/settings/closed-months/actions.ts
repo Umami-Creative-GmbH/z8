@@ -320,3 +320,34 @@ export async function saveClosedMonthSettingsAction(
 		}),
 	);
 }
+
+/**
+ * Whether the viewer may close months, and the teams a close may cover: what
+ * the payroll export's `Close this month` offer needs. Never fails for a
+ * viewer without the permission; they just get no offer.
+ */
+export async function getMonthCloseContext(): Promise<
+	ServerActionResult<{ canClose: boolean; teams: Array<{ id: string; name: string }> }>
+> {
+	return runServerActionSafe(
+		Effect.gen(function* () {
+			const authService = yield* AuthService;
+			const session = yield* authService.getSession();
+			const organizationId = session.session.activeOrganizationId;
+			if (!organizationId) return { canClose: false, teams: [] };
+			const ability = yield* Effect.promise(() => getAbility());
+			if (!ability || !canCloseMonths(ability, organizationId, organizationId)) {
+				return { canClose: false, teams: [] };
+			}
+			const dbService = yield* DatabaseService;
+			const teams = yield* dbService.query("closedMonths.teams", () =>
+				dbService.db
+					.select({ id: team.id, name: team.name })
+					.from(team)
+					.where(eq(team.organizationId, organizationId))
+					.orderBy(asc(team.name)),
+			);
+			return { canClose: true, teams };
+		}),
+	);
+}

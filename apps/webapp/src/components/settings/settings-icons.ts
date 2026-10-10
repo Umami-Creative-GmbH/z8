@@ -25,6 +25,7 @@ import {
 	IconGitBranch,
 	IconHistory,
 	IconKey,
+	IconLock,
 	IconMail,
 	IconMapPin,
 	IconPercentage,
@@ -48,6 +49,7 @@ export const SETTINGS_ICON_MAP: Record<
 	React.ComponentType<{ className?: string }>
 > = {
 	"address-book": IconAddressBook,
+	lock: IconLock,
 	"user-circle": IconUserCircle,
 	shield: IconShield,
 	"shield-check": IconShieldCheck,
