@@ -26,8 +26,6 @@ import {
 import { approvalAuthorityOf, approvalAuthoritySql } from "../authority";
 import { loadCover, resolveDeputyCardRecipients } from "../deputy/deputy-reads";
 import { isDeputyDecisionEntityType } from "../deputy/deputy-decision";
-
-
 import type { ApprovalReviewReference } from "../presentation/review-navigation";
 import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
 import type { ApprovalWorkflowType } from "../workflow/ports";

@@ -1,6 +1,7 @@
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { DeputyCardCandidate, DeputyCardRecipient } from "../delivery/deputy-cards";
-import type { Cover, CoverQuery, CoveringExecutor } from "./covering-store";
+import type { Cover } from "./covering";
+import type { CoverQuery, CoveringExecutor } from "./covering-store";
 import type { DeputyDecisionReader } from "./deputy-decision-store";
 
 /**
