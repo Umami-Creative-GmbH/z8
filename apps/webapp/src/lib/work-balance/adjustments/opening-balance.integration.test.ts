@@ -455,6 +455,60 @@ describe("opening balances on PostgreSQL", () => {
 		expect(await balanceMinutes()).toBe(fullBalance);
 	});
 
+	it("lets a payroll grant holder covering the employee set and cancel it, as with payouts", async () => {
+		const holder = await fixture.seedEmployee();
+		const grantId = randomUUID();
+		await fixture.pool.query(
+			`insert into payroll_access_grant
+			 (id, organization_id, payroll_employee_id, scope, is_active, created_by, updated_at)
+			 values ($1, $2, $3, 'specific', true, $4, now())`,
+			[grantId, organizationId, holder.employeeId, owner.userId],
+		);
+		await fixture.pool.query(
+			`insert into payroll_access_employee (organization_id, grant_id, employee_id, created_by)
+			 values ($1, $2, $3, $4)`,
+			[organizationId, grantId, employeeId, owner.userId],
+		);
+
+		const set = await setOpeningBalance({}, holder.userId);
+		expect(set).toMatchObject({ success: true });
+		const adjustmentId = set.success ? set.data.adjustmentId : "";
+		expect(await balanceMinutes()).toBe(840 + sinceOpeningDay);
+
+		actAs(holder.userId);
+		expect(
+			await actions.cancelBalanceAdjustmentAction({
+				employeeId,
+				adjustmentId,
+				reason: "Entered for the wrong person",
+			}),
+		).toMatchObject({ success: true });
+		expect(await balanceMinutes()).toBe(fullBalance);
+
+		const audit = await fixture.pool.query<{
+			action: string;
+			performed_by: string;
+			metadata: unknown;
+		}>(
+			`select action, performed_by, metadata from audit_log
+			 where organization_id = $1 and entity_id = $2 order by timestamp`,
+			[organizationId, adjustmentId],
+		);
+		const metadata = (value: unknown) => (typeof value === "string" ? JSON.parse(value) : value);
+		expect(audit.rows.map((row) => ({ ...row, metadata: metadata(row.metadata) }))).toEqual([
+			{
+				action: "balance_adjustment.recorded",
+				performed_by: holder.userId,
+				metadata: expect.objectContaining({ via: "payroll_access_grant", grantId }),
+			},
+			{
+				action: "balance_adjustment.cancelled",
+				performed_by: holder.userId,
+				metadata: expect.objectContaining({ via: "payroll_access_grant", grantId }),
+			},
+		]);
+	});
+
 	it("replaces the yearly team balance of the year it is dated in", async () => {
 		// The yearly team balance covers one calendar year; 2025 contains 31 October.
 		const in2025 = DateTime.fromISO("2025-12-15T12:00:00Z", { zone: "utc" });

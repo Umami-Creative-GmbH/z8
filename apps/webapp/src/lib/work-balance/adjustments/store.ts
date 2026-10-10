@@ -122,6 +122,8 @@ export async function recordOvertimePayout(
 		amountMinutes: number;
 		reason: string;
 		now: Instant;
+		/** Recorded with the audit entry, e.g. the payroll access grant the actor used (#995). */
+		auditMetadata?: Record<string, unknown> | null;
 	},
 ): Promise<{ adjustmentId: string }> {
 	const day = parseDay(input.day);
@@ -182,6 +184,7 @@ export async function recordOvertimePayout(
 				from: null,
 				to: { kind: "overtime_payout", day: input.day, minutes: -input.amountMinutes, reason },
 			},
+			metadata: input.auditMetadata ?? null,
 		});
 		await markEmployeeWorkBalanceDirty(
 			{
@@ -209,6 +212,8 @@ export async function cancelBalanceAdjustment(
 		adjustmentId: string;
 		reason: string;
 		now: Instant;
+		/** Recorded with the audit entry, e.g. the payroll access grant the actor used (#995). */
+		auditMetadata?: Record<string, unknown> | null;
 	},
 ): Promise<{ adjustmentId: string }> {
 	const reason = requireReason(input.reason);
@@ -256,6 +261,7 @@ export async function cancelBalanceAdjustment(
 				from: { kind: current.kind, day: current.day, minutes: current.minutes, cancelled: false },
 				to: { cancelled: true, reason },
 			},
+			metadata: input.auditMetadata ?? null,
 		});
 		if (current.kind === "opening_balance") {
 			// The months before its day were computed as replaced (zero); only a
@@ -360,6 +366,8 @@ export async function writeOpeningBalance(
 		minutes: number;
 		reason: string;
 		now: Instant;
+		/** Written to both audit entries, e.g. the payroll grant that authorized it (#995). */
+		auditMetadata?: Record<string, unknown> | null;
 	},
 ): Promise<{ adjustmentId: string; cancelledAdjustmentId: string | null }> {
 	await lockEmployeeLedger(tx, input);
@@ -393,6 +401,7 @@ export async function writeOpeningBalance(
 				},
 				to: { cancelled: true, reason: checked.reason },
 			},
+			metadata: input.auditMetadata ?? null,
 		});
 	}
 
@@ -428,6 +437,7 @@ export async function writeOpeningBalance(
 				...(checked.replaces ? { replaces: checked.replaces.id } : {}),
 			},
 		},
+		metadata: input.auditMetadata ?? null,
 	});
 	await requestEmployeeWorkBalanceFullRebuild(input, { dbClient: tx });
 	return { adjustmentId: inserted.id, cancelledAdjustmentId: checked.replaces?.id ?? null };
