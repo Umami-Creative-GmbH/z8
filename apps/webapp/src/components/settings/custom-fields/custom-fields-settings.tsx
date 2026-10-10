@@ -26,6 +26,7 @@ import {
 	IconRestore,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useSearchParams } from "next/navigation";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 import { changeCustomFields } from "@/app/[locale]/(app)/settings/custom-fields/actions";
@@ -33,7 +34,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-	CUSTOM_FIELD_ENTITIES,
 	type CustomFieldChange,
 	type CustomFieldEntity,
 	MAX_ACTIVE_CUSTOM_FIELDS,
@@ -56,22 +56,47 @@ async function sendChange(change: CustomFieldChange) {
 	}
 }
 
-const isEntity = (value: unknown): value is CustomFieldEntity =>
-	typeof value === "string" && (CUSTOM_FIELD_ENTITIES as readonly string[]).includes(value);
+/** The `?tab=` value of each entity's tab. */
+const TAB_OF_ENTITY: Record<CustomFieldEntity, string> = {
+	employee: "employees",
+	project: "projects",
+	customer: "customers",
+};
+
+/** The tab named by `?tab=`; a missing, unknown or hidden tab opens Employees. */
+function entityFromTab(
+	value: string | null,
+	entities: readonly CustomFieldEntity[],
+): CustomFieldEntity {
+	return entities.find((entity) => TAB_OF_ENTITY[entity] === value) ?? "employee";
+}
 
 /**
  * The custom fields settings (#817): one tab per entity, active fields in
  * drag-and-drop order, archived fields apart. Org admins only (page gate and
- * server actions).
+ * server actions). `entities` are the tabs shown: Projects and Customers only
+ * with the projects module on. The active tab lives in the `tab` search param;
+ * switching replaces the history entry.
  */
 export function CustomFieldsSettings({
+	entities,
 	initialFields,
 }: {
+	entities: readonly CustomFieldEntity[];
 	initialFields: CustomFieldDefinitionView[];
 }) {
 	const { t } = useTranslate();
+	const searchParams = useSearchParams();
 	const [fields, setFields] = useState(initialFields);
-	const [entity, setEntity] = useState<CustomFieldEntity>("employee");
+	const entity = entityFromTab(searchParams.get("tab"), entities);
+
+	function selectTab(value: unknown) {
+		const selected = entities.find((shown) => shown === value);
+		if (selected === undefined) return;
+		const params = new URLSearchParams(window.location.search);
+		params.set("tab", TAB_OF_ENTITY[selected]);
+		window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+	}
 	const [dialog, setDialog] = useState<DialogState>({ session: 0, open: false, fieldId: null });
 	const [pending, setPending] = useState(false);
 
@@ -102,23 +127,17 @@ export function CustomFieldsSettings({
 
 	return (
 		<>
-			<Tabs
-				value={entity}
-				onValueChange={(value: unknown) => {
-					if (isEntity(value)) setEntity(value);
-				}}
-				className="gap-4"
-			>
+			<Tabs value={entity} onValueChange={selectTab} className="gap-4">
 				<div className="max-w-full overflow-x-auto">
 					<TabsList>
-						{CUSTOM_FIELD_ENTITIES.map((value) => (
+						{entities.map((value) => (
 							<TabsTrigger key={value} value={value}>
 								{entityLabel(t, value)}
 							</TabsTrigger>
 						))}
 					</TabsList>
 				</div>
-				{CUSTOM_FIELD_ENTITIES.map((value) => (
+				{entities.map((value) => (
 					<TabsContent key={value} value={value}>
 						<EntityFields
 							entity={value}

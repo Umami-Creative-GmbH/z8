@@ -11,6 +11,15 @@
 export const CUSTOM_FIELD_ENTITIES = ["employee", "project", "customer"] as const;
 export type CustomFieldEntity = (typeof CUSTOM_FIELD_ENTITIES)[number];
 
+/**
+ * The record types the custom fields settings show: projects and customers
+ * only while the organization's projects module is on. Definitions of hidden
+ * types stay valid data.
+ */
+export function customFieldSettingsEntities(projectsEnabled: boolean): CustomFieldEntity[] {
+	return projectsEnabled ? [...CUSTOM_FIELD_ENTITIES] : ["employee"];
+}
+
 export const CUSTOM_FIELD_TYPES = ["text", "number", "date", "select", "boolean"] as const;
 export type CustomFieldType = (typeof CUSTOM_FIELD_TYPES)[number];
 

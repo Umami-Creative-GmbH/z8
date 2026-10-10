@@ -101,15 +101,16 @@ function viewOf(row: DefinitionRow, options: OptionRow[]): CustomFieldDefinition
 async function readViews(
 	reader: CustomFieldReader,
 	organizationId: string,
-	filter: { entity?: CustomFieldEntity; activeOnly?: boolean },
+	filter: { entities?: readonly CustomFieldEntity[]; activeOnly?: boolean },
 ): Promise<CustomFieldDefinitionView[]> {
+	if (filter.entities?.length === 0) return [];
 	const rows = await reader
 		.select()
 		.from(customFieldDefinition)
 		.where(
 			and(
 				eq(customFieldDefinition.organizationId, organizationId),
-				filter.entity ? eq(customFieldDefinition.entity, filter.entity) : undefined,
+				filter.entities ? inArray(customFieldDefinition.entity, filter.entities) : undefined,
 				filter.activeOnly ? isNull(customFieldDefinition.archivedAt) : undefined,
 			),
 		)
@@ -143,12 +144,14 @@ async function readViews(
 /**
  * Every custom field of an organization, active and archived, for the settings
  * page: grouped by entity, active fields in order, then archived ones.
+ * `entities` limits the result to those record types (all when omitted).
  */
 export function listCustomFieldDefinitions(
 	reader: CustomFieldReader,
 	organizationId: string,
+	entities?: readonly CustomFieldEntity[],
 ): Promise<CustomFieldDefinitionView[]> {
-	return readViews(reader, organizationId, {});
+	return readViews(reader, organizationId, { entities });
 }
 
 /**
@@ -162,7 +165,7 @@ export function listActiveCustomFields(
 	organizationId: string,
 	entity: CustomFieldEntity,
 ): Promise<CustomFieldDefinitionView[]> {
-	return readViews(reader, organizationId, { entity, activeOnly: true });
+	return readViews(reader, organizationId, { entities: [entity], activeOnly: true });
 }
 
 class Refused {
