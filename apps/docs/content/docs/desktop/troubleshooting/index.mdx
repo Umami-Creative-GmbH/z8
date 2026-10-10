@@ -19,7 +19,7 @@ Before diving deep, try these common solutions:
 | Not syncing | Check internet connection |
 | Can't sign in | Verify webapp URL is correct |
 | Tray icon missing | Check hidden icons / restart app |
-| Idle detection not working | Check permissions (macOS) |
+| Idle detection not working | Check you are clocked in |
 
 ---
 
@@ -32,9 +32,9 @@ Before diving deep, try these common solutions:
     href="/docs/desktop/troubleshooting/common-issues"
   />
   <Card
-    title="Platform-Specific"
-    description="Windows, macOS, and Linux specific issues"
-    href="/docs/desktop/troubleshooting/platform-specific"
+    title="Windows Issues"
+    description="WebView2, tray icon, auto-start, and deep link issues on Windows"
+    href="/docs/desktop/troubleshooting/windows"
   />
 </Cards>
 
@@ -52,19 +52,11 @@ When reporting issues, gather this information:
 
 ### System Information
 
-| Platform | How to Find |
-|----------|-------------|
-| Windows | Settings → System → About |
-| macOS | Apple menu → About This Mac |
-| Linux | `uname -a` in terminal |
+Open **Settings → System → About** in Windows.
 
 ### Log Files
 
-| Platform | Location |
-|----------|----------|
-| Windows | `%APPDATA%\com.z8.timer\logs\` |
-| macOS | `~/Library/Logs/com.z8.timer/` |
-| Linux | `~/.local/share/com.z8.timer/logs/` |
+Logs are stored in `%APPDATA%\com.z8.timer\logs\`.
 
 ---
 
@@ -82,19 +74,8 @@ If all else fails, reset to a clean state:
 2. **Quit the app** completely
 3. **Delete app data**:
 
-**Windows:**
 ```powershell
 Remove-Item -Recurse "$env:APPDATA\com.z8.timer"
-```
-
-**macOS:**
-```bash
-rm -rf ~/Library/Application\ Support/com.z8.timer
-```
-
-**Linux:**
-```bash
-rm -rf ~/.config/com.z8.timer
 ```
 
 4. **Restart the app**

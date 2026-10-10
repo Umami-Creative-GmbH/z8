@@ -162,11 +162,7 @@ Idle detection is always active when you're clocked in. The threshold is fixed a
 
 ### Input Monitoring
 
-The app uses the `rdev` library for cross-platform input monitoring:
-
-- **Windows**: Raw input API
-- **macOS**: IOKit (requires Accessibility permission)
-- **Linux**: libevdev
+The app uses the `rdev` library to monitor keyboard and mouse input through the Windows raw input API.
 
 ### Detection Algorithm
 
@@ -189,32 +185,9 @@ Idle detection runs in a separate thread:
 
 ---
 
-## Platform-Specific Notes
+## Permissions
 
-### macOS
-
-You must grant Accessibility permission:
-
-1. Go to **System Preferences → Security & Privacy → Privacy**
-2. Select **Accessibility**
-3. Enable **z8 Timer**
-
-Without this permission, idle detection won't work.
-
-### Linux
-
-Ensure your user has access to input devices:
-
-```bash
-# Add yourself to the input group
-sudo usermod -aG input $USER
-
-# Log out and back in for changes to take effect
-```
-
-### Windows
-
-No special permissions required. Works out of the box.
+Idle detection needs no special Windows permissions. It works out of the box.
 
 ---
 
@@ -225,7 +198,6 @@ No special permissions required. Works out of the box.
 1. **Check if clocked in** - Only works while clocked in
 2. **Wait 5 minutes** - Threshold must be exceeded
 3. **Verify app is running** - Check tray icon
-4. **macOS**: Check Accessibility permission
 
 ### False positives
 

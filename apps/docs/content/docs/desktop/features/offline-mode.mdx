@@ -176,13 +176,7 @@ The server is the source of truth. Local queue only stores *intent*.
 
 ## Data Storage Location
 
-The offline queue is stored in:
-
-| Platform | Location |
-|----------|----------|
-| Windows | `%APPDATA%\com.z8.timer\offline_queue.db` |
-| macOS | `~/Library/Application Support/com.z8.timer/offline_queue.db` |
-| Linux | `~/.config/com.z8.timer/offline_queue.db` |
+The offline queue is stored in `%APPDATA%\com.z8.timer\offline_queue.db`.
 
 This is a SQLite database that persists across app restarts.
 
