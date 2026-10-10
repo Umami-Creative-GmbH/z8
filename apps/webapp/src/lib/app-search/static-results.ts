@@ -148,6 +148,13 @@ export function buildStaticAppSearchResults({
 				href: "/scheduling",
 			});
 		}
+	} else if (employeeRole === "employee" && featureFlags?.shiftsEnabled) {
+		pageResults.push({
+			type: "page",
+			id: "page:my-schedule",
+			title: t("nav.my-schedule", "My Schedule"),
+			href: "/scheduling",
+		});
 	}
 
 	if (showComplianceNav) {

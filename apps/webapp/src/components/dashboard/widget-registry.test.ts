@@ -28,6 +28,7 @@ describe("dashboard widget registry", () => {
 			"dashboard.pending-approvals.title",
 			"dashboard.team-overview.title",
 			"dashboard.quick-stats.title",
+			"dashboard.upcoming-shifts.title",
 			"dashboard.presence.workLocation",
 			"dashboard.whos-out.title",
 			"dashboard.upcoming-time-off.title",

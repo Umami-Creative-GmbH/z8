@@ -438,6 +438,25 @@ export async function resendInvitation(
 					);
 				}
 
+				// The restriction may have been activated after this invitation was created.
+				yield* Effect.tryPromise({
+					try: async () => {
+						await assertEnterpriseIdentityInvitationAllowed({
+							organizationId,
+							email: normalizedEmail,
+						});
+					},
+					catch: (error) =>
+						new ValidationError({
+							message:
+								error instanceof Error
+									? error.message
+									: "Invitation is not allowed",
+							field: "email",
+							value: normalizedEmail,
+						}),
+				});
+
 				const invitationRole = invitation.role;
 				failurePhase = "createInvitation";
 				const resentInvitation = yield* Effect.tryPromise({

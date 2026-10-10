@@ -7,6 +7,7 @@ import {
 import {
 	deleteShift as deleteShiftAction,
 	getIncompleteDays as getIncompleteDaysAction,
+	getMyUpcomingShifts as getMyUpcomingShiftsAction,
 	getOpenShifts as getOpenShiftsAction,
 	getScheduleComplianceSummary as getScheduleComplianceSummaryAction,
 	getShifts as getShiftsAction,
@@ -40,6 +41,10 @@ export async function deleteShift(...args: Parameters<typeof deleteShiftAction>)
 
 export async function getIncompleteDays(...args: Parameters<typeof getIncompleteDaysAction>) {
 	return getIncompleteDaysAction(...args);
+}
+
+export async function getMyUpcomingShifts() {
+	return getMyUpcomingShiftsAction();
 }
 
 export async function getOpenShifts(...args: Parameters<typeof getOpenShiftsAction>) {
