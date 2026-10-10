@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { listManagedEmployees } from "@/lib/personnel-file/access-store";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
+import { isDocumentCategory } from "@/lib/personnel-file/document.types";
 import { personnelFilePanelCapabilityFor } from "@/lib/personnel-file/panel";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import { Link } from "@/navigation";
@@ -15,17 +16,20 @@ import { getTranslate } from "@/tolgee/server";
 
 interface PersonnelFilePageProps {
 	params: Promise<{ employeeId: string }>;
+	searchParams: Promise<{ category?: string | string[] }>;
 }
 
 /**
  * One employee's personnel file in the officer area (#866), for whoever
  * manages at least one of its categories. Not found for everyone else.
+ * `?category=` opens it filtered, e.g. from a sick note notification (#982).
  */
-async function PersonnelFileContent({ params }: PersonnelFilePageProps) {
-	const [t, current, { employeeId }] = await Promise.all([
+async function PersonnelFileContent({ params, searchParams }: PersonnelFilePageProps) {
+	const [t, current, { employeeId }, { category }] = await Promise.all([
 		getTranslate(),
 		loadCurrentPersonnelFileAccess(),
 		params,
+		searchParams,
 	]);
 	if (current.status !== "resolved" || !isCanonicalUuid(employeeId)) notFound();
 	const [capability, [employee]] = await Promise.all([
@@ -53,7 +57,12 @@ async function PersonnelFileContent({ params }: PersonnelFilePageProps) {
 					)}
 				</div>
 			</header>
-			<PersonnelFilePanel capability={capability} />
+			<PersonnelFilePanel
+				capability={capability}
+				initialCategory={
+					isDocumentCategory(category) && capability.categories.includes(category) ? category : null
+				}
+			/>
 		</div>
 	);
 }

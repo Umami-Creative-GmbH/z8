@@ -8,7 +8,9 @@ import { createNotification } from "@/lib/notifications/notification-service";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
 import type { DocumentCategory, PayPeriod } from "./document.types";
 import { listPersonnelFileNotificationRecipients } from "./notification-recipients";
+import { personnelFilePath } from "./paths";
 import { payPeriodCode } from "./payslip-batch.types";
+import { formatAbsenceDateRange } from "./sick-note-labels";
 
 /**
  * Tells the employee when one of their employee documents becomes shared
@@ -67,35 +69,73 @@ const employeeUploadMessages = {
 		messageKey: "common:notifications.content.personnelFileEmployeeUpload.other",
 		messageDefault: "{name} uploaded a document",
 	},
+	sickNote: {
+		messageKey: "common:notifications.content.personnelFileEmployeeUpload.sickNote",
+		messageDefault: "{name} uploaded a sick note for {dateRange}",
+	},
 } as const;
 
-export function personnelFilePath(employeeId: string): string {
-	return `/personnel-files/${employeeId}`;
+/** Notifications are built once for all recipients, so their dates use one fixed format. */
+const NOTIFICATION_DATE_LOCALE = "en-GB";
+
+type UploadedDocument = {
+	id: string;
+	employeeId: string;
+	title: string;
+	category: DocumentCategory;
+	/** The absence a sick note was attached to (#982). */
+	absence?: { startDate: string; endDate: string } | null;
+};
+
+function employeeUploadMessage(document: UploadedDocument) {
+	if (document.category === "sick_note" && document.absence) {
+		return employeeUploadMessages.sickNote;
+	}
+	return document.category === "certificate"
+		? employeeUploadMessages.certificate
+		: employeeUploadMessages.other;
 }
 
-/** Tells an officer (or owner/admin) that an employee uploaded a document (#867). */
+/**
+ * Tells an officer (or owner/admin) that an employee uploaded a document
+ * (#867). A sick note names its absence and leads to the employee's sick
+ * notes (#982).
+ */
 export function buildEmployeeUploadNotification(input: {
 	organizationId: string;
 	recipientUserId: string;
 	employeeName: string;
-	document: { id: string; employeeId: string; title: string; category: DocumentCategory };
+	document: UploadedDocument;
 }): CreateNotificationParams {
-	const copy = {
-		...employeeUploadCopy,
-		...(input.document.category === "certificate"
-			? employeeUploadMessages.certificate
-			: employeeUploadMessages.other),
+	const copy = { ...employeeUploadCopy, ...employeeUploadMessage(input.document) };
+	const absence = input.document.category === "sick_note" ? input.document.absence : null;
+	const params = {
+		name: input.employeeName,
+		title: input.document.title,
+		...(absence
+			? {
+					dateRange: formatAbsenceDateRange(
+						absence.startDate,
+						absence.endDate,
+						NOTIFICATION_DATE_LOCALE,
+					),
+				}
+			: {}),
 	};
-	const params = { name: input.employeeName, title: input.document.title };
 	return {
 		userId: input.recipientUserId,
 		organizationId: input.organizationId,
 		type: "personnel_file_employee_upload",
 		title: copy.titleDefault,
-		message: copy.messageDefault.replace("{name}", params.name),
+		message: copy.messageDefault
+			.replace("{name}", params.name)
+			.replace("{dateRange}", params.dateRange ?? ""),
 		entityType: "employee_document",
 		entityId: input.document.id,
-		actionUrl: personnelFilePath(input.document.employeeId),
+		actionUrl: personnelFilePath(
+			input.document.employeeId,
+			absence ? { category: "sick_note" } : {},
+		),
 		idempotencyKey: `personnel-file-employee-upload:${input.document.id}:${input.recipientUserId}`,
 		metadata: {
 			category: input.document.category,
@@ -116,7 +156,7 @@ export async function notifyEmployeeUpload(
 	database: Database,
 	input: {
 		organizationId: string;
-		document: { id: string; employeeId: string; title: string; category: DocumentCategory };
+		document: UploadedDocument;
 	},
 ): Promise<void> {
 	try {

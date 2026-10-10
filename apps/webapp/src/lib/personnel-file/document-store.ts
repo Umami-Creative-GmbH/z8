@@ -1,13 +1,23 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import type { db as appDb } from "@/db";
-import { employeeDocument, personnelFileUpload } from "@/db/schema";
+import { absenceEntry, employeeDocument, personnelFileUpload } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
-import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
-import { canManageDocument, type PersonnelFileAccess } from "./access";
+import {
+	dateFromInstant,
+	type Instant,
+	instantFromDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
+import { canDeleteOwnSickNote, canManageDocument, type PersonnelFileAccess } from "./access";
 import { loadEmployeeRef, visibleDocumentsCondition } from "./access-store";
 import { writeDocumentAudit } from "./audit";
 import type { DocumentCategory, DocumentVisibility, PayPeriod } from "./document.types";
 import { type DocumentMetadata, validateDocumentMetadata } from "./document-rules";
+import {
+	lockSickNoteAbsence,
+	recordSickNoteCertificate,
+	type SickNoteAbsence,
+} from "./sick-note-attach";
 import type { StagedPersonnelFileUpload, StoredPersonnelFileObject } from "./upload-ledger";
 
 /**
@@ -18,6 +28,8 @@ import type { StagedPersonnelFileUpload, StoredPersonnelFileObject } from "./upl
  */
 
 type Database = typeof appDb;
+type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+type Reader = Database | Pick<Transaction, "select">;
 type DocumentRow = typeof employeeDocument.$inferSelect;
 
 export const PERSONNEL_DOCUMENT_STORAGE_PROVIDER = "s3-private";
@@ -46,9 +58,17 @@ export interface EmployeeDocumentView {
 	sizeBytes: number;
 	/** ISO instant. */
 	createdAt: string;
+	/** The sick-leave absence a sick note covers (#982), with its plain days. */
+	absence: { id: string; startDate: string; endDate: string } | null;
 }
 
-export function toDocumentView(row: DocumentRow): EmployeeDocumentView {
+type AbsenceDays = { startDate: string; endDate: string };
+
+export function toDocumentView(
+	row: DocumentRow,
+	absences: ReadonlyMap<string, AbsenceDays> = new Map(),
+): EmployeeDocumentView {
+	const absenceDays = row.absenceEntryId ? absences.get(row.absenceEntryId) : undefined;
 	return {
 		id: row.id,
 		employeeId: row.employeeId,
@@ -65,7 +85,44 @@ export function toDocumentView(row: DocumentRow): EmployeeDocumentView {
 		mimeType: row.mimeType,
 		sizeBytes: row.sizeBytes,
 		createdAt: row.createdAt.toISOString(),
+		absence: row.absenceEntryId && absenceDays ? { id: row.absenceEntryId, ...absenceDays } : null,
 	};
+}
+
+/** The plain days of the absences the documents are linked to, in one query. */
+export async function loadLinkedAbsenceDays(
+	database: Reader,
+	input: { organizationId: string; rows: readonly DocumentRow[] },
+): Promise<Map<string, AbsenceDays>> {
+	const ids = [
+		...new Set(input.rows.flatMap((row) => (row.absenceEntryId ? [row.absenceEntryId] : []))),
+	];
+	if (ids.length === 0) return new Map();
+	const absences = await database
+		.select({
+			id: absenceEntry.id,
+			startDate: absenceEntry.startDate,
+			endDate: absenceEntry.endDate,
+		})
+		.from(absenceEntry)
+		.where(
+			and(eq(absenceEntry.organizationId, input.organizationId), inArray(absenceEntry.id, ids)),
+		);
+	return new Map(
+		absences.map((absence) => [
+			absence.id,
+			{ startDate: absence.startDate, endDate: absence.endDate },
+		]),
+	);
+}
+
+async function toDocumentViews(
+	database: Reader,
+	organizationId: string,
+	rows: readonly DocumentRow[],
+): Promise<EmployeeDocumentView[]> {
+	const absences = await loadLinkedAbsenceDays(database, { organizationId, rows });
+	return rows.map((row) => toDocumentView(row, absences));
 }
 
 function metadataColumns(metadata: DocumentMetadata) {
@@ -81,13 +138,23 @@ function metadataColumns(metadata: DocumentMetadata) {
 }
 
 export type FinalizePersonnelDocumentResult =
-	| { kind: "recorded"; document: EmployeeDocumentView; shareEventId: string | null }
-	| { kind: "not_pending" };
+	| {
+			kind: "recorded";
+			document: EmployeeDocumentView;
+			shareEventId: string | null;
+			/** The absence the document was attached to as a sick note (#982). */
+			absence: SickNoteAbsence | null;
+	  }
+	| { kind: "not_pending" }
+	/** The absence can no longer take the sick note (cancelled, rejected, setting off). */
+	| { kind: "absence_unavailable" };
 
 /**
  * Records a stored object as an employee document and releases its staging
  * row in one transaction, with the upload audit record. The caller checked
- * access and validated the metadata before storing the object.
+ * access and validated the metadata before storing the object. A sick note
+ * attached to an absence (#982) is linked to it, after the absence was locked
+ * and checked again in the same transaction.
  */
 export async function finalizePersonnelDocumentUpload(
 	database: Database,
@@ -100,11 +167,21 @@ export async function finalizePersonnelDocumentUpload(
 		checksumSha256: string;
 		/** "employee" when the employee uploaded into their own file (#867). */
 		source?: "employee";
+		/** The employee attaches the sick note to their own absence (#982). */
+		sickNote?: { absenceId: string; access: PersonnelFileAccess };
 	},
 	now: Instant = systemClock.nowInstant(),
 ): Promise<FinalizePersonnelDocumentResult> {
 	const at = dateFromInstant(now);
 	return database.transaction(async (tx) => {
+		let absence: SickNoteAbsence | null = null;
+		if (input.sickNote) {
+			absence = await lockSickNoteAbsence(tx, input.sickNote.access, {
+				absenceId: input.sickNote.absenceId,
+				employeeId: input.employeeId,
+			});
+			if (!absence) return { kind: "absence_unavailable" };
+		}
 		const released = await tx
 			.delete(personnelFileUpload)
 			.where(
@@ -124,6 +201,7 @@ export async function finalizePersonnelDocumentUpload(
 				organizationId: input.organizationId,
 				employeeId: input.employeeId,
 				...metadataColumns(input.metadata),
+				absenceEntryId: absence?.id ?? null,
 				storageProvider: PERSONNEL_DOCUMENT_STORAGE_PROVIDER,
 				storageBucket: input.stored.bucket,
 				storageKey: input.storageKey,
@@ -148,12 +226,27 @@ export async function finalizePersonnelDocumentUpload(
 				mimeType: row.mimeType,
 				sizeBytes: row.sizeBytes,
 				...(input.source ? { source: input.source } : {}),
+				...(absence ? { absenceId: absence.id } : {}),
 			},
 		});
+		if (absence) {
+			await recordSickNoteCertificate(tx, {
+				organizationId: input.organizationId,
+				absence,
+				documentId: row.id,
+				actorUserId: input.uploadedBy,
+			});
+		}
 		return {
 			kind: "recorded",
-			document: toDocumentView(row),
+			document: toDocumentView(
+				row,
+				absence
+					? new Map([[absence.id, { startDate: absence.startDate, endDate: absence.endDate }]])
+					: undefined,
+			),
 			shareEventId: row.visibility === "shared" ? auditId : null,
+			absence,
 		};
 	});
 }
@@ -237,13 +330,27 @@ export async function updateDocumentMetadata(
 			if (current[field] !== next[field])
 				changes[field] = { from: current[field], to: next[field] };
 		}
+		// Only a sick note covers an absence (#982): moving it to another
+		// category removes its link, recorded with the other changes.
+		const unlinksAbsence = current.absenceEntryId !== null && next.category !== "sick_note";
+		if (unlinksAbsence) changes.absenceEntryId = { from: current.absenceEntryId, to: null };
 		const visibilityChanged = current.visibility !== next.visibility;
 		if (Object.keys(changes).length === 0 && !visibilityChanged) {
-			return { kind: "unchanged", document: toDocumentView(current) };
+			return {
+				kind: "unchanged",
+				document:
+					(await toDocumentViews(tx, access.organizationId, [current]))[0] ??
+					toDocumentView(current),
+			};
 		}
 		const [row] = await tx
 			.update(employeeDocument)
-			.set({ ...next, updatedBy: access.userId, updatedAt: at })
+			.set({
+				...next,
+				...(unlinksAbsence ? { absenceEntryId: null } : {}),
+				updatedBy: access.userId,
+				updatedAt: at,
+			})
 			.where(
 				and(
 					eq(employeeDocument.id, current.id),
@@ -258,6 +365,7 @@ export async function updateDocumentMetadata(
 				actorUserId: access.userId,
 				document: row,
 				changes,
+				...(unlinksAbsence ? { metadata: { absenceId: current.absenceEntryId } } : {}),
 			});
 		}
 		let shareEventId: string | null = null;
@@ -270,7 +378,8 @@ export async function updateDocumentMetadata(
 			});
 			if (row.visibility === "shared") shareEventId = auditId;
 		}
-		return { kind: "updated", document: toDocumentView(row), shareEventId };
+		const [document] = await toDocumentViews(tx, access.organizationId, [row]);
+		return { kind: "updated", document: document ?? toDocumentView(row), shareEventId };
 	});
 }
 
@@ -280,6 +389,8 @@ export type DeleteDocumentResult = { kind: "deleted"; documentId: string } | { k
  * Deletes a document with an audit record and the optional reason. The
  * deletion trigger hands its stored object to the cleanup ledger in the same
  * transaction, so it is deleted durably even when the immediate attempt fails.
+ * Besides whoever manages the document, an employee may delete a sick note
+ * they uploaded themselves within 24 hours (#982).
  */
 export async function deleteDocument(
 	database: Database,
@@ -295,9 +406,17 @@ export async function deleteDocument(
 			organizationId: access.organizationId,
 			employeeId: current.employeeId,
 		});
-		if (!employeeRef || !canManageDocument(access, employeeRef, current.category)) {
-			return { kind: "not_found" };
-		}
+		if (!employeeRef) return { kind: "not_found" };
+		const managed = canManageDocument(access, employeeRef, current.category);
+		const ownSickNote =
+			!managed &&
+			current.visibility === "shared" &&
+			canDeleteOwnSickNote(
+				access,
+				{ ...current, createdAt: instantFromDate(current.createdAt) },
+				now,
+			);
+		if (!managed && !ownSickNote) return { kind: "not_found" };
 		await tx
 			.delete(employeeDocument)
 			.where(
@@ -321,7 +440,12 @@ export async function deleteDocument(
 			action: AuditAction.PERSONNEL_FILE_DOCUMENT_DELETED,
 			actorUserId: access.userId,
 			document: current,
-			metadata: { reason: input.reason, fileName: current.fileName },
+			metadata: {
+				reason: input.reason,
+				fileName: current.fileName,
+				...(current.absenceEntryId ? { absenceId: current.absenceEntryId } : {}),
+				...(ownSickNote ? { source: "employee" } : {}),
+			},
 		});
 		return { kind: "deleted", documentId: current.id };
 	});
@@ -348,7 +472,7 @@ export async function listEmployeeDocuments(
 			desc(employeeDocument.createdAt),
 			desc(employeeDocument.id),
 		);
-	return rows.map(toDocumentView);
+	return toDocumentViews(database, access.organizationId, rows);
 }
 
 /** The actor's own shared documents ("My documents"), also for an owner or admin. */
@@ -372,7 +496,7 @@ export async function listOwnSharedDocuments(
 			desc(employeeDocument.createdAt),
 			desc(employeeDocument.id),
 		);
-	return rows.map(toDocumentView);
+	return toDocumentViews(database, access.organizationId, rows);
 }
 
 /** A document the actor may see, with its stored object, for serving it. */

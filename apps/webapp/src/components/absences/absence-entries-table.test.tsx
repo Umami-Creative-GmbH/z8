@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { cancelAbsenceRequest } from "@/app/[locale]/(app)/absences/actions";
 import type { AbsenceWithCategory } from "@/lib/absences/types";
 import { AbsenceEntriesTable } from "./absence-entries-table";
@@ -16,6 +16,28 @@ vi.mock("@/navigation", () => ({
 
 vi.mock("@/app/[locale]/(app)/absences/actions", () => ({
 	cancelAbsenceRequest: vi.fn(),
+}));
+
+const sickNotes = vi.hoisted(() => ({
+	canAttach: false,
+	markers: {} as Record<string, { count: number; viewable: boolean }>,
+	refresh: async () => undefined,
+}));
+
+vi.mock("./sick-notes/use-own-absence-sick-notes", () => ({
+	useOwnAbsenceSickNotes: () => sickNotes,
+}));
+
+vi.mock("./sick-notes/absence-sick-notes-panel", () => ({
+	AbsenceSickNotesPanel: ({ absence }: { absence: { id: string } }) => (
+		<div>{`sick notes of ${absence.id}`}</div>
+	),
+}));
+
+vi.mock("./sick-notes/attach-sick-note-dialog", () => ({
+	AttachSickNoteDialog: ({ absence }: { absence: { id: string } }) => (
+		<div>{`attaching to ${absence.id}`}</div>
+	),
 }));
 
 beforeAll(() => {
@@ -204,6 +226,79 @@ describe("AbsenceEntriesTable", () => {
 		fireEvent.focus(screen.getByLabelText("Cancel absence"));
 
 		expect((await screen.findAllByText("Cancel absence")).length).toBeGreaterThan(0);
+	});
+
+	describe("sick notes (#982)", () => {
+		const sickCategory = {
+			id: "category-sick",
+			name: "Sick Leave",
+			type: "sick",
+			color: null,
+			countsAgainstVacation: false,
+		};
+
+		afterEach(() => {
+			sickNotes.canAttach = false;
+			sickNotes.markers = {};
+		});
+
+		it("offers no attach action while the organization does not allow it", () => {
+			render(
+				<AbsenceEntriesTable
+					currentDate="2026-05-20"
+					absences={[buildAbsence({ id: "sick", category: sickCategory })]}
+				/>,
+			);
+			expect(screen.queryByLabelText("Attach sick note")).toBeNull();
+		});
+
+		it("offers attaching on pending and approved sick leave only", () => {
+			sickNotes.canAttach = true;
+			render(
+				<AbsenceEntriesTable
+					currentDate="2026-05-20"
+					absences={[
+						buildAbsence({ id: "sick-pending", category: sickCategory, status: "pending" }),
+						// Approved and already started: no cancel action, but notes still go on.
+						buildAbsence({
+							id: "sick-approved",
+							category: sickCategory,
+							status: "approved",
+							startDate: "2026-05-18",
+						}),
+						buildAbsence({ id: "sick-rejected", category: sickCategory, status: "rejected" }),
+						buildAbsence({ id: "vacation", status: "pending" }),
+					]}
+				/>,
+			);
+			const attach = screen.getAllByLabelText("Attach sick note");
+			expect(attach).toHaveLength(2);
+			fireEvent.click(attach[1] as HTMLElement);
+			expect(screen.getByText("attaching to sick-approved")).toBeTruthy();
+		});
+
+		it("shows the attached count and opens the notes when they may be opened", () => {
+			sickNotes.markers = {
+				"sick-own": { count: 2, viewable: true },
+				"sick-hidden": { count: 1, viewable: false },
+			};
+			render(
+				<AbsenceEntriesTable
+					currentDate="2026-05-20"
+					absences={[
+						buildAbsence({ id: "sick-own", category: sickCategory }),
+						buildAbsence({ id: "sick-hidden", category: sickCategory }),
+					]}
+				/>,
+			);
+			fireEvent.click(screen.getByRole("button", { name: "Sick note attached ({count})" }));
+			expect(screen.getByText("sick notes of sick-own")).toBeTruthy();
+			// A note the viewer cannot open is a marker only.
+			expect(screen.getAllByText("Sick note attached ({count})")).toHaveLength(2);
+			expect(screen.getAllByRole("button", { name: "Sick note attached ({count})" })).toHaveLength(
+				1,
+			);
+		});
 	});
 
 	it("renders the search input with the shared card surface", () => {

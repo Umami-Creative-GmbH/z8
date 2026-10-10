@@ -28,6 +28,7 @@ import { getVacationHolidays } from "@/lib/absences/vacation-holidays";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { createLogger } from "@/lib/logger";
+import { countSickNotesForAbsences } from "@/lib/personnel-file/sick-note-store";
 import { addCalendarSyncJob } from "@/lib/queue";
 import {
 	buildCanonicalAbsenceRecordValues,
@@ -258,12 +259,20 @@ export async function getManagerAbsenceCalendar(params: {
 						.where(and(...absenceConditions))
 						.orderBy(asc(absenceEntry.startDate), asc(user.name));
 
+		// Only that sick notes exist (#982, ADR 0002); opening them is not offered here.
+		const sickNotes = await countSickNotesForAbsences(db, {
+			organizationId: actor.organizationId,
+			absenceIds: rows.filter((row) => row.categoryType === "sick").map((row) => row.id),
+			access: null,
+		});
+
 		return {
 			success: true,
 			data: {
 				year: normalized.year,
 				teamId: normalized.teamId,
 				entries: rows.map((row) => ({
+					...(sickNotes.has(row.id) ? { sickNoteCount: sickNotes.get(row.id)?.count } : {}),
 					id: row.id,
 					employeeId: row.employeeId,
 					employeeName: row.employeeName,

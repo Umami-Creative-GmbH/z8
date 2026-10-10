@@ -34,11 +34,17 @@ const ALL_CATEGORIES = "all";
  * documents of the categories they manage, filterable by category, with
  * upload, metadata edits and deletion. The server decides what is listed.
  */
-export function PersonnelFilePanel({ capability }: { capability: PersonnelFilePanelCapability }) {
+export function PersonnelFilePanel({
+	capability,
+	initialCategory = null,
+}: {
+	capability: PersonnelFilePanelCapability;
+	initialCategory?: DocumentCategory | null;
+}) {
 	const { t } = useTranslate();
 	const labels = usePersonnelFileLabels();
 	const queryClient = useQueryClient();
-	const [category, setCategory] = useState<DocumentCategory | null>(null);
+	const [category, setCategory] = useState<DocumentCategory | null>(initialCategory);
 	const [uploading, setUploading] = useState(false);
 	const [editing, setEditing] = useState<EmployeeDocumentView | null>(null);
 	const [deleting, setDeleting] = useState<EmployeeDocumentView | null>(null);
