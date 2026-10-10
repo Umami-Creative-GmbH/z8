@@ -10,6 +10,7 @@ export interface AbsenceCategoryForSettings {
 	requiresWorkTime: boolean;
 	requiresApproval: boolean;
 	countsAgainstVacation: boolean;
+	drawsOnWorkBalance: boolean;
 	color: string | null;
 	isActive: boolean;
 }
@@ -23,6 +24,7 @@ export type AbsenceCategoryFormValues = {
 	requiresWorkTime: boolean;
 	requiresApproval: boolean;
 	countsAgainstVacation: boolean;
+	drawsOnWorkBalance: boolean;
 	color: string;
 	isActive: boolean;
 };
@@ -38,6 +40,7 @@ export const defaultAbsenceCategoryFormValues: AbsenceCategoryFormValues = {
 	requiresWorkTime: false,
 	requiresApproval: true,
 	countsAgainstVacation: false,
+	drawsOnWorkBalance: false,
 	color: DEFAULT_CATEGORY_COLOR,
 	isActive: true,
 };
@@ -74,6 +77,7 @@ export function getAbsenceCategoryFormValues(
 		requiresWorkTime: existingCategory.requiresWorkTime,
 		requiresApproval: existingCategory.requiresApproval,
 		countsAgainstVacation: existingCategory.countsAgainstVacation,
+		drawsOnWorkBalance: existingCategory.drawsOnWorkBalance,
 		color: existingCategory.color ?? DEFAULT_CATEGORY_COLOR,
 		isActive: existingCategory.isActive,
 	};
@@ -89,6 +93,7 @@ export function buildAbsenceCategoryPayload(value: AbsenceCategoryFormValues) {
 		requiresWorkTime: value.requiresWorkTime,
 		requiresApproval: value.requiresApproval,
 		countsAgainstVacation: value.countsAgainstVacation,
+		drawsOnWorkBalance: value.drawsOnWorkBalance,
 		color: value.color.trim(),
 		isActive: value.isActive,
 	};

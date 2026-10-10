@@ -10,6 +10,7 @@ import {
 	workPeriod,
 	workPolicy,
 } from "@/db/schema";
+import { absenceCategoryReleasesRequiredTime } from "@/lib/absences/required-time-release";
 import { comparePlainDates, instantFromDate, plainDateAt } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -306,7 +307,7 @@ async function getApprovedAbsenceRanges(params: {
 						eq(absenceEntry.organizationId, params.organizationId),
 						eq(absenceEntry.status, "approved"),
 						eq(absenceCategory.organizationId, params.organizationId),
-						eq(absenceCategory.requiresWorkTime, false),
+						absenceCategoryReleasesRequiredTime(),
 						lte(absenceEntry.startDate, end),
 						gte(absenceEntry.endDate, start),
 					),

@@ -27,6 +27,22 @@ describe("absence category display helpers", () => {
 		).toBe("settings.absenceCategories.defaults.homeOffice.name:Home Office");
 	});
 
+	it("translates the built-in time off in lieu category like the other built-in categories", () => {
+		const category = {
+			type: "time_off_in_lieu" as const,
+			name: "Time off in lieu",
+			description: "Time off taken against the work balance",
+			nameTranslations: { de: "Custom" },
+		};
+
+		expect(getAbsenceCategoryDisplayName(category, "de", t)).toBe(
+			"settings.absenceCategories.defaults.timeOffInLieu.name:Time off in lieu",
+		);
+		expect(getAbsenceCategoryDisplayDescription(category, "de", t)).toBe(
+			"settings.absenceCategories.defaults.timeOffInLieu.description:Time off taken against the work balance",
+		);
+	});
+
 	it("uses custom category translations for the active locale", () => {
 		expect(
 			getAbsenceCategoryDisplayName(

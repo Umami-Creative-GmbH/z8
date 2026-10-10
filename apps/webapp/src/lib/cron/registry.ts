@@ -15,6 +15,7 @@ import type { JobsOptions } from "bullmq";
 import type { ApprovalDeliveryJobResult } from "@/lib/approvals/delivery/scheduled-job";
 import type { LegacyEscalationSuppression } from "@/lib/approvals/escalation/legacy-execution";
 import type { ApprovalEscalationJobResult } from "@/lib/approvals/escalation/scheduled-job";
+import type { AbsenceCategoryNoticesJobResult } from "@/lib/jobs/absence-category-notices";
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
 import type { PersonnelFileExpiryRemindersJobResult } from "@/lib/jobs/personnel-file-expiry-reminders";
@@ -446,6 +447,17 @@ export const CRON_JOBS = {
 				"@/lib/jobs/personnel-file-retention-reminders"
 			);
 			return runPersonnelFileRetentionRemindersJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 9 },
+	},
+
+	"cron:absence-category-notices": {
+		schedule: "0 * * * *", // Hourly; pending notices exist only after migration 0187
+		description:
+			"Tell owners and admins once that the time off in lieu absence category is available",
+		processor: async (): Promise<AbsenceCategoryNoticesJobResult> => {
+			const { runAbsenceCategoryNoticesJob } = await import("@/lib/jobs/absence-category-notices");
+			return runAbsenceCategoryNoticesJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 9 },
 	},

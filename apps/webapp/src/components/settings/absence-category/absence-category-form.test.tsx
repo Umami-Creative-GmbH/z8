@@ -58,6 +58,7 @@ describe("absence category form helpers", () => {
 			requiresWorkTime: false,
 			requiresApproval: true,
 			countsAgainstVacation: false,
+			drawsOnWorkBalance: false,
 			color: "#3b82f6",
 			isActive: true,
 		});
@@ -74,6 +75,7 @@ describe("absence category form helpers", () => {
 			requiresWorkTime: false,
 			requiresApproval: false,
 			countsAgainstVacation: false,
+			drawsOnWorkBalance: false,
 			color: null,
 			isActive: false,
 		};
@@ -87,6 +89,7 @@ describe("absence category form helpers", () => {
 			requiresWorkTime: false,
 			requiresApproval: false,
 			countsAgainstVacation: false,
+			drawsOnWorkBalance: false,
 			color: "#3b82f6",
 			isActive: false,
 		});
@@ -109,6 +112,7 @@ describe("absence category form helpers", () => {
 			requiresWorkTime: false,
 			requiresApproval: true,
 			countsAgainstVacation: false,
+			drawsOnWorkBalance: false,
 			color: "#3b82f6",
 			isActive: false,
 		});
@@ -140,6 +144,7 @@ describe("absence category form helpers", () => {
 			requiresWorkTime: false,
 			requiresApproval: true,
 			countsAgainstVacation: false,
+			drawsOnWorkBalance: false,
 			color: "#ef4444",
 			isActive: true,
 		};
@@ -153,6 +158,7 @@ describe("absence category form helpers", () => {
 			requiresWorkTime: false,
 			requiresApproval: false,
 			countsAgainstVacation: false,
+			drawsOnWorkBalance: false,
 			color: "#8b5cf6",
 			isActive: false,
 		};
@@ -183,5 +189,54 @@ describe("absence category form helpers", () => {
 		);
 
 		expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("Parental leave");
+	});
+
+	it.each([["Counts Against Vacation Balance"], ["Requires Work Time"]])(
+		"refuses to save a category that draws on the work balance and %s",
+		async (combined) => {
+			const { createAbsenceCategory } = await import(
+				"@/app/[locale]/(app)/settings/vacation/actions"
+			);
+			vi.mocked(createAbsenceCategory).mockClear();
+			render(<AbsenceCategoryForm open={true} onOpenChange={vi.fn()} organizationId="org_1" />);
+
+			fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Overtime off" } });
+			fireEvent.click(screen.getByRole("checkbox", { name: "Draws on Work Balance" }));
+			fireEvent.click(screen.getByRole("checkbox", { name: combined }));
+			fireEvent.click(screen.getByRole("button", { name: "Create Category" }));
+
+			expect(
+				await screen.findByText(
+					'"Draws on work balance" cannot be combined with "Counts against vacation" or "Requires work time".',
+				),
+			).toBeTruthy();
+			expect(createAbsenceCategory).not.toHaveBeenCalled();
+		},
+	);
+
+	it("saves a category that draws on the work balance", async () => {
+		const { createAbsenceCategory } = await import(
+			"@/app/[locale]/(app)/settings/vacation/actions"
+		);
+		vi.mocked(createAbsenceCategory).mockReset();
+		vi.mocked(createAbsenceCategory).mockResolvedValue({
+			success: true,
+			data: {} as never,
+		});
+		render(<AbsenceCategoryForm open={true} onOpenChange={vi.fn()} organizationId="org_1" />);
+
+		fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Overtime off" } });
+		fireEvent.click(screen.getByRole("checkbox", { name: "Draws on Work Balance" }));
+		fireEvent.click(screen.getByRole("button", { name: "Create Category" }));
+
+		await vi.waitFor(() =>
+			expect(createAbsenceCategory).toHaveBeenCalledWith(
+				expect.objectContaining({
+					drawsOnWorkBalance: true,
+					countsAgainstVacation: false,
+					requiresWorkTime: false,
+				}),
+			),
+		);
 	});
 });
