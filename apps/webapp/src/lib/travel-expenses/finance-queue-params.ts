@@ -67,7 +67,9 @@ export function payrollRunToConfirmHref(jobId: string): string {
 }
 
 /** The payroll run whose confirm dialog the finance page opens; null for none or a malformed id. */
-export function parseConfirmRun(params: Record<string, string | string[] | undefined>): string | null {
+export function parseConfirmRun(
+	params: Record<string, string | string[] | undefined>,
+): string | null {
 	const value = params[CONFIRM_RUN_PARAM];
 	return typeof value === "string" ? match(value, UUID) : null;
 }

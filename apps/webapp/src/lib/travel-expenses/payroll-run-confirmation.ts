@@ -1,10 +1,7 @@
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import {
 	auditLog,
-	payrollExportConfig,
-	payrollExportFormat,
-	payrollExportJob,
 	type TravelExpensePayrollRunInclusionLine,
 	travelExpensePayrollRunInclusion,
 	travelExpenseReport,
@@ -14,8 +11,6 @@ import {
 	comparePlainDates,
 	dateFromInstant,
 	type Instant,
-	instantFromDate,
-	instantToCanonicalString,
 	parsePlainDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
@@ -26,6 +21,11 @@ import { latestCalendarDate } from "./future-dates";
 import { STORED_AMOUNT_SCALE } from "./money";
 import type { OfficerScope } from "./officer-scope";
 import { isSourceInOfficerScope, reportInOfficerScope } from "./officer-scope-read";
+import {
+	loadPayrollRunHeader,
+	loadPayrollRunHeaders,
+	type PayrollRunHeader,
+} from "./payroll-run-inclusion-read";
 import { payrollPeriodText } from "./payroll-run-period";
 import {
 	parseSettlementPayment,
@@ -100,13 +100,6 @@ export type ConfirmPayrollRunResult =
 	/** One row per report the run still included; empty when nothing was left to confirm. */
 	| { status: "processed"; rows: PayrollRunConfirmationRow[] };
 
-export interface PayrollRunHeader {
-	jobId: string;
-	formatName: string;
-	periodStart: string;
-	periodEnd: string;
-}
-
 /**
  * The payday a confirmation records when the confirmer picks none: the end of
  * the run's period, or today when the period has not ended yet. Never later
@@ -129,36 +122,6 @@ export function payrollRunReference(
 /** One key per run and report: confirming again never records a second reimbursement. */
 export function payrollRunConfirmationKey(jobId: string, reportId: string): string {
 	return `payroll-run:${jobId}:report:${reportId}`;
-}
-
-/** The run of payroll export job `jobId`: its format's name and period. */
-export async function loadPayrollRunHeader(
-	database: Executor,
-	input: { organizationId: string; jobId: string },
-): Promise<PayrollRunHeader | null> {
-	const [row] = await database
-		.select({
-			jobId: payrollExportJob.id,
-			filters: payrollExportJob.filters,
-			formatName: payrollExportFormat.name,
-		})
-		.from(payrollExportJob)
-		.innerJoin(payrollExportConfig, eq(payrollExportConfig.id, payrollExportJob.configId))
-		.innerJoin(payrollExportFormat, eq(payrollExportFormat.id, payrollExportConfig.formatId))
-		.where(
-			and(
-				eq(payrollExportJob.id, input.jobId),
-				eq(payrollExportJob.organizationId, input.organizationId),
-			),
-		)
-		.limit(1);
-	if (!row) return null;
-	return {
-		jobId: row.jobId,
-		formatName: row.formatName,
-		periodStart: row.filters.dateRange.start,
-		periodEnd: row.filters.dateRange.end,
-	};
 }
 
 function units(amount: string): bigint {
@@ -499,7 +462,9 @@ export async function loadIncludedReportsForConfirmer(
 			and(
 				eq(travelExpensePayrollRunInclusion.organizationId, input.organizationId),
 				eq(travelExpensePayrollRunInclusion.state, "included"),
-				input.jobId ? eq(travelExpensePayrollRunInclusion.payrollExportJobId, input.jobId) : undefined,
+				input.jobId
+					? eq(travelExpensePayrollRunInclusion.payrollExportJobId, input.jobId)
+					: undefined,
 			),
 		);
 	return rows.map((row) => ({
@@ -540,40 +505,25 @@ export async function listPayrollRunsToConfirm(
 	}
 	const confirmable = [...runs.entries()].filter(([, run]) => run.confirmable > 0);
 	if (confirmable.length === 0) return [];
-	const headers = await database
-		.select({
-			jobId: payrollExportJob.id,
-			filters: payrollExportJob.filters,
-			createdAt: payrollExportJob.createdAt,
-			formatName: payrollExportFormat.name,
-		})
-		.from(payrollExportJob)
-		.innerJoin(payrollExportConfig, eq(payrollExportConfig.id, payrollExportJob.configId))
-		.innerJoin(payrollExportFormat, eq(payrollExportFormat.id, payrollExportConfig.formatId))
-		.where(
-			and(
-				eq(payrollExportJob.organizationId, organizationId),
-				inArray(
-					payrollExportJob.id,
-					confirmable.map(([jobId]) => jobId),
-				),
-			),
-		);
-	return headers
-		.flatMap((header): PayrollRunToConfirm[] => {
-			const run = runs.get(header.jobId);
-			if (!run) return [];
+	const headers = await loadPayrollRunHeaders(database, {
+		organizationId,
+		jobIds: confirmable.map(([jobId]) => jobId),
+	});
+	return confirmable
+		.flatMap(([jobId, run]): PayrollRunToConfirm[] => {
+			const header = headers.get(jobId);
+			if (!header) return [];
 			return [
 				{
-					jobId: header.jobId,
+					jobId,
 					formatName: header.formatName,
-					periodStart: header.filters.dateRange.start,
-					periodEnd: header.filters.dateRange.end,
-					exportedAt: instantToCanonicalString(instantFromDate(header.createdAt)),
+					periodStart: header.periodStart,
+					periodEnd: header.periodEnd,
+					exportedAt: header.exportedAt,
 					includedReports: run.included,
 					confirmableReports: run.confirmable,
 					confirmableAmount: text(run.amount),
-					defaultPayday: defaultPayday(header.filters.dateRange.end, today),
+					defaultPayday: defaultPayday(header.periodEnd, today),
 				},
 			];
 		})

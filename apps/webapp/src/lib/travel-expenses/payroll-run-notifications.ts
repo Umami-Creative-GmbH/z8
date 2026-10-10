@@ -5,11 +5,8 @@ import type { CreateNotificationParams } from "@/lib/notifications/types";
 import { listReimbursingOfficers } from "./expense-officer-grant-store";
 import { payrollRunToConfirmHref } from "./finance-queue-params";
 import type { PayrollRunSkipped } from "./payroll-run";
-import {
-	loadIncludedReportsForConfirmer,
-	loadPayrollRunHeader,
-	type PayrollRunHeader,
-} from "./payroll-run-confirmation";
+import { loadIncludedReportsForConfirmer } from "./payroll-run-confirmation";
+import { loadPayrollRunHeader, type PayrollRunHeader } from "./payroll-run-inclusion-read";
 import { payrollPeriodText } from "./payroll-run-period";
 import { notifyReportsLeftOutOfPayrollRun } from "./ready-for-reimbursement";
 
@@ -34,7 +31,9 @@ const awaitingConfirmationCopy = {
 } as const;
 
 export function buildPayrollRunAwaitingConfirmationNotification(
-	run: PayrollRunHeader & { organizationId: string },
+	run: Pick<PayrollRunHeader, "jobId" | "formatName" | "periodStart" | "periodEnd"> & {
+		organizationId: string;
+	},
 	recipient: { userId: string; reports: number },
 ): CreateNotificationParams {
 	const params = {
