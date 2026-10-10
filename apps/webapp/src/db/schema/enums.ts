@@ -26,6 +26,8 @@ export const absenceTypeEnum = pgEnum("absence_type", [
 	"parental",
 	"bereavement",
 	"custom",
+	// Built-in category drawing on the work balance (#1000)
+	"time_off_in_lieu",
 ]);
 export const approvalStatusEnum = pgEnum("approval_status", ["pending", "approved", "rejected"]);
 export const approvalWorkflowTypeEnum = pgEnum(
@@ -274,6 +276,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"personnel_file_expired_today",
 	// Documents newly due for deletion, for covering officers (#870)
 	"personnel_file_due_for_deletion",
+	// One-time notice to owners and admins that time off in lieu is available (#1000)
+	"time_off_in_lieu_available",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [

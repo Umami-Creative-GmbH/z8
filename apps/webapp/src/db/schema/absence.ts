@@ -43,6 +43,9 @@ export const absenceCategory = pgTable(
 		requiresWorkTime: boolean("requires_work_time").default(false).notNull(), // Does work need to be logged on this day?
 		requiresApproval: boolean("requires_approval").default(true).notNull(),
 		countsAgainstVacation: boolean("counts_against_vacation").default(true).notNull(), // Determines if absence deducts from vacation balance
+		// Time off in lieu (#1000): an approved absence keeps its days' required time, so the
+		// work balance falls by it. Never combined with the vacation or work-time rules.
+		drawsOnWorkBalance: boolean("draws_on_work_balance").default(false).notNull(),
 		color: text("color"), // For UI display
 		isActive: boolean("is_active").default(true).notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -53,6 +56,34 @@ export const absenceCategory = pgTable(
 	(table) => [
 		index("absenceCategory_organizationId_idx").on(table.organizationId),
 		unique("absenceCategory_id_organizationId_idx").on(table.id, table.organizationId),
+		check(
+			"absence_category_draws_on_work_balance_check",
+			sql`NOT ${table.drawsOnWorkBalance} OR (NOT ${table.countsAgainstVacation} AND NOT ${table.requiresWorkTime})`,
+		),
+	],
+);
+
+/**
+ * A built-in category added to an organization that existed before it (#1000). Each
+ * row tells the organization's owners and admins once, in-app, that the category is
+ * available; the delivery marks it delivered.
+ */
+export const absenceCategoryNotice = pgTable(
+	"absence_category_notice",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		categoryId: uuid("category_id")
+			.notNull()
+			.references(() => absenceCategory.id, { onDelete: "cascade" }),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		deliveredAt: timestamp("delivered_at"),
+	},
+	(table) => [
+		unique("absenceCategoryNotice_categoryId_unique").on(table.categoryId),
+		index("absenceCategoryNotice_pending_idx").on(table.createdAt).where(sql`delivered_at IS NULL`),
 	],
 );
 

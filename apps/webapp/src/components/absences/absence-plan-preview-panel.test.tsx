@@ -22,6 +22,7 @@ const riskyPreview: AbsencePlanPreview = {
 		remainingAfterRequest: -2,
 		countsAgainstVacation: true,
 	},
+	workBalance: null,
 	holidays: [
 		{
 			id: "holiday-1",
@@ -179,5 +180,31 @@ describe("AbsencePlanPreviewPanel", () => {
 		const { container } = render(<AbsencePlanPreviewPanel />);
 
 		expect(container.firstChild).toBeNull();
+	});
+});
+
+describe("AbsencePlanPreviewPanel for time off in lieu", () => {
+	it("shows the projected work balance and warns when it would be negative", () => {
+		render(
+			<AbsencePlanPreviewPanel
+				preview={{
+					...nonVacationPreview,
+					workBalance: {
+						currentBalanceMinutes: 240,
+						drawnMinutes: 480,
+						projectedBalanceMinutes: -240,
+						wouldBeNegative: true,
+					},
+				}}
+			/>,
+		);
+
+		const section = screen.getByRole("region", { name: "Work balance" });
+		expect(section.textContent).toContain("+4:00h");
+		expect(section.textContent).toContain("-8:00h");
+		expect(section.textContent).toContain("-4:00h");
+		expect(section.textContent).toContain(
+			"Your work balance would be negative after this request.",
+		);
 	});
 });
