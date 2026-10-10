@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import type { ReactNode } from "react";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { formatSignedWorkBalance, getWorkBalanceStatus } from "@/lib/work-balance/format";
@@ -10,12 +11,15 @@ interface WorkBalanceCardProps {
 	balance: EmployeeWorkBalancePayload | null;
 	compact?: boolean;
 	mobileCompact?: boolean;
+	/** Below the figure, e.g. the balance adjustment history (#996); hidden when mobile-compact. */
+	action?: ReactNode;
 }
 
 export function WorkBalanceCard({
 	balance,
 	compact = false,
 	mobileCompact = false,
+	action,
 }: WorkBalanceCardProps) {
 	const { t } = useTranslate();
 	const status = balance ? getWorkBalanceStatus(balance.balanceMinutes) : "neutral";
@@ -49,6 +53,7 @@ export function WorkBalanceCard({
 						? t("workBalance.updatedEveryThreeHours", "Updated every 3 hours")
 						: t("workBalance.pendingDescription", "The worker will calculate this balance soon.")}
 				</p>
+				{action && !mobileCompact ? action : null}
 			</CardHeader>
 		</Card>
 	);

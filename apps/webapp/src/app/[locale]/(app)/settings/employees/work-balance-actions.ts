@@ -5,7 +5,10 @@ import { withAuditTrail } from "@/lib/audit-trail";
 import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import { runRefusalAction } from "@/lib/effect/refusal-action";
 import { isUuid } from "@/lib/validations/uuid";
-import { requireBalanceAdjustmentWriter } from "@/lib/work-balance/adjustments/authorization";
+import {
+	requireBalanceAdjustmentViewer,
+	requireBalanceAdjustmentWriter,
+} from "@/lib/work-balance/adjustments/authorization";
 import { payoutMinutes } from "@/lib/work-balance/adjustments/rules";
 import {
 	cancelBalanceAdjustment,
@@ -23,7 +26,9 @@ import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
 /**
  * The Work balance section of an employee's settings page (#993): the current
  * work balance, the history of balance adjustments, and recording and
- * cancelling overtime payouts. Authorization: `requireBalanceAdjustmentWriter`.
+ * cancelling overtime payouts. Writes: `requireBalanceAdjustmentWriter`. The
+ * section also serves the employee's own history and their managers' view of
+ * it, read-only (#996): `requireBalanceAdjustmentViewer`.
  */
 
 export type EmployeeWorkBalanceSectionData = {
@@ -32,6 +37,8 @@ export type EmployeeWorkBalanceSectionData = {
 	/** Today in the employee's effective timezone; adjustments may not be dated later. */
 	today: string;
 	timezone: string;
+	/** Whether the viewer may record and cancel adjustments; employees and managers only see them (#996). */
+	canManage: boolean;
 };
 
 export type RecordOvertimePayoutInput = {
@@ -53,7 +60,9 @@ export async function getEmployeeWorkBalanceSectionAction(input: {
 	employeeId: string;
 }): Promise<BalanceAdjustmentActionResult<EmployeeWorkBalanceSectionData>> {
 	return runRefusalAction("balanceAdjustments.section", BalanceAdjustmentRefusal, async (db) => {
-		const { organizationId } = await requireBalanceAdjustmentWriter();
+		const { organizationId, canManage } = await requireBalanceAdjustmentViewer(db, {
+			employeeId: String(input?.employeeId ?? ""),
+		});
 		const employeeId = parseUuid(input?.employeeId);
 		const subject = await loadWorkBalanceEmployee({ employeeId, organizationId }, db);
 		if (!subject) throw new BalanceAdjustmentRefusal("employee_not_found", "Employee not found");
@@ -66,6 +75,7 @@ export async function getEmployeeWorkBalanceSectionAction(input: {
 			adjustments,
 			today: plainDateAt(systemClock.nowInstant(), subject.timezone).toString(),
 			timezone: subject.timezone,
+			canManage,
 		};
 	});
 }

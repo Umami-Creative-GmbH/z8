@@ -75,6 +75,8 @@ const NOTIFICATION_CATEGORIES = [
 			"time_correction_approved",
 			"time_correction_rejected",
 			"automatic_clock_out",
+			"work_balance_adjustment_recorded",
+			"work_balance_adjustment_cancelled",
 		] as NotificationType[],
 	},
 	{
@@ -190,7 +192,7 @@ const NOTIFICATION_CATEGORIES = [
 
 // Human-readable labels for notification types. Clocking reminder labels are static `t()` calls in
 // `getTypeLabel`, so the Tolgee extractor registers them with their defaults.
-const TYPE_LABELS: Record<Exclude<NotificationType, ClockingReminderType>, string> = {
+const TYPE_LABELS: Record<Exclude<NotificationType, StaticallyLabeledType>, string> = {
 	automatic_clock_out: "Automatic clock-out",
 	approval_request_submitted: "Request submitted",
 	approval_request_approved: "Request approved",
@@ -259,6 +261,12 @@ const TYPE_LABELS: Record<Exclude<NotificationType, ClockingReminderType>, strin
 	// Employee documents newly due for deletion (personnel file officers)
 	personnel_file_due_for_deletion: "Documents due for deletion (personnel file officers)",
 };
+
+/** Labeled by static `t()` calls in `getTypeLabel`, so the Tolgee extractor registers them. */
+type StaticallyLabeledType =
+	| ClockingReminderType
+	| "work_balance_adjustment_recorded"
+	| "work_balance_adjustment_cancelled";
 
 // Channel icons and labels
 const CHANNEL_CONFIG: Record<
@@ -384,6 +392,16 @@ function useNotificationSettingsViewModel() {
 				);
 			case "break_due_reminder":
 				return t("common:notifications.preferences.types.break_due_reminder", "Break due");
+			case "work_balance_adjustment_recorded":
+				return t(
+					"common:notifications.preferences.types.work_balance_adjustment_recorded",
+					"Balance adjustment recorded",
+				);
+			case "work_balance_adjustment_cancelled":
+				return t(
+					"common:notifications.preferences.types.work_balance_adjustment_cancelled",
+					"Balance adjustment cancelled",
+				);
 			default:
 				return t(`common:notifications.preferences.types.${type}`, TYPE_LABELS[type]);
 		}

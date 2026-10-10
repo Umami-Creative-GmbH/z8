@@ -3,43 +3,40 @@
 import { IconCash, IconLoader2, IconScale } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useDisplayContext } from "@/hooks/use-display-context";
-import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
-import { formatInstant, formatPlainDate } from "@/lib/datetime/temporal-format";
+import {
+	BalanceAdjustmentHistory,
+	useBalanceAdjustmentLabels,
+} from "@/components/work-balance/balance-adjustment-history";
 import { cn } from "@/lib/utils";
-import type { BalanceAdjustmentView } from "@/lib/work-balance/adjustments/types";
 import { formatSignedWorkBalance, getWorkBalanceStatus } from "@/lib/work-balance/format";
 import { CancelBalanceAdjustmentDialog } from "./cancel-balance-adjustment-dialog";
 import { RecordOvertimePayoutDialog } from "./record-overtime-payout-dialog";
-import { useEmployeeWorkBalance } from "./use-employee-work-balance";
+import { isRefusal, useEmployeeWorkBalance } from "./use-employee-work-balance";
 
 /**
  * The Work balance section of an employee's settings page (#993): the current
  * work balance, the history of balance adjustments, and recording and
- * cancelling overtime payouts. Render it only for organization owners and
- * admins; the actions refuse everyone else.
+ * cancelling overtime payouts. Owners and admins record and cancel; managers
+ * see it read-only for the employees they manage (#996). The server decides:
+ * a viewer it refuses sees nothing.
  */
 export function EmployeeWorkBalanceSection({ employeeId }: { employeeId: string }) {
 	const { t } = useTranslate();
-	const displayContext = useDisplayContext();
+	const label = useBalanceAdjustmentLabels();
 	const { section, recordPayout, cancelAdjustment } = useEmployeeWorkBalance(employeeId);
 	const [isRecording, setIsRecording] = useState(false);
 	const [cancelling, setCancelling] = useState<{ id: string; summary: string } | null>(null);
 	const data = section.data;
 	const balance = data?.balance ?? null;
 	const status = balance ? getWorkBalanceStatus(balance.balanceMinutes) : "neutral";
+	const canManage = data?.canManage ?? false;
 
-	const formatDay = (day: string) =>
-		formatPlainDate(parsePlainDate(day), displayContext.locale, "dateMedium");
-	const formatRecordedAt = (instant: string) =>
-		formatInstant(parseInstant(instant), displayContext, "dateTimeMedium");
-	const kindLabel = (adjustment: BalanceAdjustmentView) =>
-		adjustment.kind === "overtime_payout"
-			? t("settings.employees.workBalance.kind.overtimePayout", "Overtime payout")
-			: t("settings.employees.workBalance.kind.openingBalance", "Opening balance");
+	// A manager without the manager relation to this employee is refused by the server.
+	if (section.isError && isRefusal(section.error) && section.error.code === "not_permitted") {
+		return null;
+	}
 
 	return (
 		<Card>
@@ -56,15 +53,12 @@ export function EmployeeWorkBalanceSection({ employeeId }: { employeeId: string 
 						)}
 					</CardDescription>
 				</div>
-				<Button
-					type="button"
-					variant="outline"
-					onClick={() => setIsRecording(true)}
-					disabled={!data}
-				>
-					<IconCash className="size-4" aria-hidden="true" />
-					{t("settings.employees.workBalance.recordPayout", "Record overtime payout")}
-				</Button>
+				{canManage ? (
+					<Button type="button" variant="outline" onClick={() => setIsRecording(true)}>
+						<IconCash className="size-4" aria-hidden="true" />
+						{t("settings.employees.workBalance.recordPayout", "Record overtime payout")}
+					</Button>
+				) : null}
 			</CardHeader>
 			<CardContent className="space-y-6">
 				{section.isLoading ? (
@@ -101,7 +95,7 @@ export function EmployeeWorkBalanceSection({ employeeId }: { employeeId: string 
 							{balance ? (
 								<p className="text-muted-foreground text-xs">
 									{t("settings.employees.workBalance.through", "Through {date}", {
-										date: formatDay(balance.computedThroughDate),
+										date: label.day(balance.computedThroughDate),
 									})}
 								</p>
 							) : null}
@@ -111,94 +105,24 @@ export function EmployeeWorkBalanceSection({ employeeId }: { employeeId: string 
 							<h3 id={`work-balance-history-${employeeId}`} className="font-medium text-sm">
 								{t("settings.employees.workBalance.history", "Balance adjustments")}
 							</h3>
-							{data && data.adjustments.length > 0 ? (
-								<ul className="divide-y rounded-md border">
-									{data.adjustments.map((adjustment) => (
-										<li
-											key={adjustment.id}
-											className="flex flex-col gap-2 p-3 sm:flex-row sm:items-start sm:justify-between"
-										>
-											<div
-												className={cn("min-w-0 space-y-1", adjustment.cancellation && "opacity-70")}
-											>
-												<div className="flex flex-wrap items-center gap-2">
-													<span className="font-medium text-sm">{kindLabel(adjustment)}</span>
-													<span
-														className={cn(
-															"text-sm tabular-nums",
-															adjustment.cancellation && "line-through",
-														)}
-													>
-														{formatSignedWorkBalance(adjustment.minutes)}
-													</span>
-													<span className="text-muted-foreground text-sm">
-														{formatDay(adjustment.day)}
-													</span>
-													{adjustment.cancellation ? (
-														<Badge variant="outline">
-															{t("settings.employees.workBalance.cancelled", "Cancelled")}
-														</Badge>
-													) : null}
-												</div>
-												<p className="break-words text-sm">{adjustment.reason}</p>
-												<p className="text-muted-foreground text-xs">
-													{t(
-														"settings.employees.workBalance.recordedBy",
-														"Recorded by {name} on {date}",
-														{
-															name:
-																adjustment.recordedBy.name ||
-																t("settings.employees.workBalance.unknownUser", "a deleted user"),
-															date: formatRecordedAt(adjustment.recordedAt),
-														},
-													)}
-												</p>
-												{adjustment.cancellation ? (
-													<p className="text-muted-foreground text-xs">
-														{t(
-															"settings.employees.workBalance.cancelledBy",
-															"Cancelled by {name} on {date}: {reason}",
-															{
-																name:
-																	adjustment.cancellation.cancelledBy.name ||
-																	t("settings.employees.workBalance.unknownUser", "a deleted user"),
-																date: formatRecordedAt(adjustment.cancellation.cancelledAt),
-																reason: adjustment.cancellation.reason,
-															},
-														)}
-													</p>
-												) : null}
-											</div>
-											{adjustment.cancellation ? null : (
-												<Button
-													type="button"
-													variant="ghost"
-													size="sm"
-													className="self-start"
-													onClick={() =>
-														setCancelling({
-															id: adjustment.id,
-															summary: `${kindLabel(adjustment)} ${formatSignedWorkBalance(adjustment.minutes)}, ${formatDay(adjustment.day)}`,
-														})
-													}
-												>
-													{t("settings.employees.workBalance.cancel", "Cancel")}
-												</Button>
-											)}
-										</li>
-									))}
-								</ul>
-							) : (
-								<p className="text-muted-foreground text-sm">
-									{t("settings.employees.workBalance.empty", "No balance adjustments yet.")}
-								</p>
-							)}
+							<BalanceAdjustmentHistory
+								adjustments={data?.adjustments ?? []}
+								onCancel={
+									canManage
+										? (adjustment) =>
+												setCancelling({
+													id: adjustment.id,
+													summary: `${label.kind(adjustment)} ${formatSignedWorkBalance(adjustment.minutes)}, ${label.day(adjustment.day)}`,
+												})
+										: undefined
+								}
+							/>
 						</section>
 					</>
 				)}
 			</CardContent>
 
-			{data ? (
+			{data?.canManage ? (
 				<RecordOvertimePayoutDialog
 					open={isRecording}
 					onOpenChange={setIsRecording}

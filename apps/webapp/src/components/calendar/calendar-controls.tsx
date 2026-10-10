@@ -13,6 +13,7 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
+import { BalanceAdjustmentHistoryButton } from "@/components/work-balance/balance-adjustment-history-button";
 import { WorkBalanceCard } from "@/components/work-balance/work-balance-card";
 import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
@@ -56,7 +57,15 @@ export function CalendarControls({
 				isManagerOrAbove={isManagerOrAbove}
 			/>
 			<div data-testid="calendar-desktop-work-balance" className="hidden md:block">
-				<WorkBalanceCard balance={workBalance} compact />
+				<WorkBalanceCard
+					balance={workBalance}
+					compact
+					action={
+						workBalance ? (
+							<BalanceAdjustmentHistoryButton employeeId={workBalance.employeeId} />
+						) : null
+					}
+				/>
 			</div>
 			<div data-testid="calendar-mobile-work-balance" className="md:hidden">
 				<WorkBalanceCard balance={workBalance} compact mobileCompact />

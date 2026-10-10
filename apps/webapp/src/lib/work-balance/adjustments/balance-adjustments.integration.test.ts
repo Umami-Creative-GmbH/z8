@@ -319,7 +319,7 @@ describe("overtime payouts on PostgreSQL", () => {
 		]);
 	});
 
-	it("refuses managers and employees, for reads and writes", async () => {
+	it("refuses managers and employees to record or cancel", async () => {
 		const recorded = await recordPayout({ hours: 1 });
 		const adjustmentId = recorded.success ? recorded.data.adjustmentId : "";
 
@@ -332,11 +332,18 @@ describe("overtime payouts on PostgreSQL", () => {
 			expect(
 				await actions.cancelBalanceAdjustmentAction({ employeeId, adjustmentId, reason: "No" }),
 			).toMatchObject({ success: false, code: "not_permitted" });
-			expect(await actions.getEmployeeWorkBalanceSectionAction({ employeeId })).toMatchObject({
-				success: false,
-				code: "not_permitted",
-			});
 		}
+		// The direct manager sees the history read-only (#996); an unrelated member does not.
+		actAs(manager.userId);
+		expect(await actions.getEmployeeWorkBalanceSectionAction({ employeeId })).toMatchObject({
+			success: true,
+			data: { canManage: false },
+		});
+		actAs(member.userId);
+		expect(await actions.getEmployeeWorkBalanceSectionAction({ employeeId })).toMatchObject({
+			success: false,
+			code: "not_permitted",
+		});
 		expect(await balanceMinutes()).toBe(660);
 	});
 

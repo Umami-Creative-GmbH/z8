@@ -78,6 +78,9 @@ export const NOTIFICATION_TYPES = [
 	"personnel_file_expired_today",
 	// Documents newly due for deletion, for covering officers (#870)
 	"personnel_file_due_for_deletion",
+	// A balance adjustment on the employee's own work balance (#996)
+	"work_balance_adjustment_recorded",
+	"work_balance_adjustment_cancelled",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

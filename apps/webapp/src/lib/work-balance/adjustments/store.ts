@@ -23,6 +23,7 @@ import {
 	refreshEmployeeWorkBalanceFromPeriods,
 	type WorkBalanceDbClient,
 } from "@/lib/work-balance/service";
+import { notifyBalanceAdjustmentChanges } from "./notifications";
 import { refuseOvertimePayout } from "./rules";
 import {
 	type BalanceAdjustmentErrorCode,
@@ -39,7 +40,8 @@ import {
  * A write commits the adjustment, its audit entry and the employee's dirty
  * mark (from the adjustment's day) together, then refreshes that employee's
  * stored balance right away, so every balance view shows it without waiting
- * for the balance worker. Employees who have left are refreshed too.
+ * for the balance worker. Employees who have left are refreshed too. Then the
+ * employee is notified of the change (#996).
  */
 
 const logger = createLogger("BalanceAdjustments");
@@ -183,6 +185,21 @@ export async function recordOvertimePayout(
 	});
 
 	await refreshAfterCommit({ ...input, dirtyFromDate: input.day });
+	await notifyBalanceAdjustmentChanges(database, {
+		organizationId: input.organizationId,
+		changes: [
+			{
+				event: "recorded",
+				employeeId: input.employeeId,
+				adjustment: {
+					id: adjustmentId,
+					kind: "overtime_payout",
+					day: input.day,
+					minutes: -input.amountMinutes,
+				},
+			},
+		],
+	});
 	return { adjustmentId };
 }
 
@@ -200,7 +217,7 @@ export async function cancelBalanceAdjustment(
 	},
 ): Promise<{ adjustmentId: string }> {
 	const reason = requireReason(input.reason);
-	const day = await database.transaction(async (tx) => {
+	const cancelled = await database.transaction(async (tx) => {
 		const client = tx as unknown as WorkBalanceDbClient;
 		await lockEmployeeLedger(client, input);
 		const [current] = await tx
@@ -253,10 +270,14 @@ export async function cancelBalanceAdjustment(
 			},
 			tx,
 		);
-		return current.day;
+		return current;
 	});
 
-	await refreshAfterCommit({ ...input, dirtyFromDate: day });
+	await refreshAfterCommit({ ...input, dirtyFromDate: cancelled.day });
+	await notifyBalanceAdjustmentChanges(database, {
+		organizationId: input.organizationId,
+		changes: [{ event: "cancelled", employeeId: input.employeeId, adjustment: cancelled }],
+	});
 	return { adjustmentId: input.adjustmentId };
 }
 
