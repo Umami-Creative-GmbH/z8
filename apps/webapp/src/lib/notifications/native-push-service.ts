@@ -4,33 +4,25 @@
  * One more delivery channel under the same "push" preference as web push:
  * `sendPushToUser()` calls `sendNativePushToUser()` next to web push. Device
  * tokens are user-scoped; the organization comes with each notification.
+ * Each token is bound to the session that registered it, and pushes go only
+ * to tokens whose session is still live, so a sign-out on the server (revoked,
+ * expired or ended by an admin) stops pushes to that device.
  * Without FCM credentials every function here is a no-op.
  */
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
+import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
+import { session } from "@/db/auth-schema";
 import { type PushDevicePlatform, pushDeviceToken } from "@/db/schema";
 import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
-import { loadNamespaces, TolgeeBase } from "@/tolgee/shared";
 import { createFcmSender, type FcmSender, readFcmCredentials } from "./fcm-client";
-import {
-	buildNativePushMessage,
-	type NativePushInput,
-	type NativePushTranslate,
-} from "./native-push-message";
-import { resolveRecipientNotificationLocale } from "./recipient-locale";
+import { buildNativePushMessage, type NativePushInput } from "./native-push-message";
+import { recipientNotificationTranslator } from "./outbound-localization";
+import { NOTHING_SENT, type PushDeliveryResult } from "./push-delivery";
 
 const logger = createLogger("NativePushService");
-
-export interface PushDeliveryResult {
-	sent: number;
-	failed: number;
-	/** Ids of subscriptions or device tokens that were deactivated as dead. */
-	expired: string[];
-}
-
-const NOTHING_SENT: PushDeliveryResult = { sent: 0, failed: 0, expired: [] };
 
 let sender: FcmSender | null | undefined;
 
@@ -47,25 +39,24 @@ export function isNativePushAvailable(): boolean {
 	return readFcmCredentials(env) !== null;
 }
 
-async function recipientTranslator(
-	userId: string,
-	organizationId: string | null | undefined,
-): Promise<NativePushTranslate> {
-	try {
-		const locale = await resolveRecipientNotificationLocale({ userId, organizationId });
-		const tolgee = TolgeeBase().init({
-			language: locale,
-			staticData: await loadNamespaces(locale, ["common"]),
-		});
-		await tolgee.run();
-		return (key, defaultValue) => tolgee.t({ key, defaultValue });
-	} catch (error) {
-		logger.warn({ err: error, userId }, "Falling back to default native push text");
-		return (_key, defaultValue) => defaultValue;
-	}
+/** Active device tokens of the user whose registering session is still live. */
+function findDeliverableDevices(userId: string) {
+	const now = new Date(Temporal.Now.instant().epochMilliseconds);
+	return db
+		.select({ id: pushDeviceToken.id, token: pushDeviceToken.token })
+		.from(pushDeviceToken)
+		.innerJoin(session, eq(session.id, pushDeviceToken.sessionId))
+		.where(
+			and(
+				eq(pushDeviceToken.userId, userId),
+				eq(pushDeviceToken.isActive, true),
+				eq(session.userId, userId),
+				gt(session.expiresAt, now),
+			),
+		);
 }
 
-/** Send one content-free message to every active device token of the user. */
+/** Send one content-free message to every deliverable device token of the user. */
 export async function sendNativePushToUser(
 	userId: string,
 	input: NativePushInput,
@@ -75,15 +66,12 @@ export async function sendNativePushToUser(
 	if (!fcm) return NOTHING_SENT;
 
 	try {
-		const devices = await db.query.pushDeviceToken.findMany({
-			where: and(eq(pushDeviceToken.userId, userId), eq(pushDeviceToken.isActive, true)),
-			columns: { id: true, token: true },
-		});
+		const devices = await findDeliverableDevices(userId);
 		if (devices.length === 0) return NOTHING_SENT;
 
 		const message = buildNativePushMessage(
 			input,
-			await recipientTranslator(userId, input.organizationId),
+			await recipientNotificationTranslator({ userId, organizationId: input.organizationId }),
 		);
 		const results = await Promise.all(
 			devices.map(async (device) => {
@@ -126,28 +114,27 @@ export async function sendNativePushToUser(
 }
 
 /**
- * Save the device token for the signed-in user. A token is one device: when
- * another user registers it (a shared phone after a missed sign-out), the
- * token moves to that user, so the previous user's pushes stop.
+ * Save the device token for the signed-in user and bind it to the current
+ * session. A token is one device: when another user registers it (a shared
+ * phone after a missed sign-out), the token moves to that user and session,
+ * so the previous user's pushes stop.
  */
 export async function registerNativePushToken(
-	userId: string,
+	owner: { userId: string; sessionId: string },
 	device: { token: string; platform: PushDevicePlatform },
 ): Promise<void> {
 	const now = new Date();
+	const binding = {
+		userId: owner.userId,
+		sessionId: owner.sessionId,
+		platform: device.platform,
+		isActive: true,
+		lastSeenAt: now,
+	};
 	await db
 		.insert(pushDeviceToken)
-		.values({
-			userId,
-			token: device.token,
-			platform: device.platform,
-			isActive: true,
-			lastSeenAt: now,
-		})
-		.onConflictDoUpdate({
-			target: pushDeviceToken.token,
-			set: { userId, platform: device.platform, isActive: true, lastSeenAt: now },
-		});
+		.values({ ...binding, token: device.token })
+		.onConflictDoUpdate({ target: pushDeviceToken.token, set: binding });
 }
 
 /** Remove the device token of the signed-in user, for sign-out or opting out. */

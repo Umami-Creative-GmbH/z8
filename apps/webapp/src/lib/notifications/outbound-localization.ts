@@ -96,6 +96,43 @@ function parseMetadata(
 	return i18n ? { i18n } : {};
 }
 
+export type NotificationTranslate = (
+	key: string,
+	defaultValue: string,
+	params?: Record<string, TranslationParam>,
+) => string;
+
+/** Tolgee's `t` for notification texts (`common` namespace) in `locale`. */
+async function loadNotificationTranslator(locale: string): Promise<NotificationTranslate> {
+	const staticData = await loadNamespaces(locale, NOTIFICATION_NAMESPACES);
+	const tolgee = TolgeeBase().init({ language: locale, staticData });
+	await tolgee.run();
+	return (key, defaultValue, params) => tolgee.t({ key, defaultValue, params });
+}
+
+/**
+ * Notification texts in the recipient's notification locale. When the locale
+ * or the catalog cannot be loaded, every text falls back to its default.
+ */
+export async function recipientNotificationTranslator({
+	userId,
+	organizationId,
+}: {
+	userId: string;
+	organizationId?: string | null;
+}): Promise<NotificationTranslate> {
+	try {
+		const locale = await resolveRecipientNotificationLocale({ userId, organizationId });
+		return await loadNotificationTranslator(locale);
+	} catch (error) {
+		logger.warn(
+			{ err: error, userId, organizationId },
+			"Falling back to default notification text",
+		);
+		return (_key, defaultValue) => defaultValue;
+	}
+}
+
 export async function localizeOutboundNotification({
 	userId,
 	organizationId,
@@ -124,25 +161,13 @@ export async function localizeOutboundNotification({
 	}
 
 	try {
-		const staticData = await loadNamespaces(resolvedLocale, NOTIFICATION_NAMESPACES);
-		const tolgee = TolgeeBase().init({ language: resolvedLocale, staticData });
-		await tolgee.run();
+		const t = await loadNotificationTranslator(resolvedLocale);
 
 		return {
 			locale: resolvedLocale,
-			title: i18n.titleKey
-				? tolgee.t({
-						key: i18n.titleKey,
-						defaultValue: i18n.titleDefault ?? title,
-						params: i18n.params,
-					})
-				: title,
+			title: i18n.titleKey ? t(i18n.titleKey, i18n.titleDefault ?? title, i18n.params) : title,
 			message: i18n.messageKey
-				? tolgee.t({
-						key: i18n.messageKey,
-						defaultValue: i18n.messageDefault ?? message,
-						params: i18n.params,
-					})
+				? t(i18n.messageKey, i18n.messageDefault ?? message, i18n.params)
 				: message,
 		};
 	} catch (error) {

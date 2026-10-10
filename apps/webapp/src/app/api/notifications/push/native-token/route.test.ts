@@ -48,14 +48,14 @@ describe("GET /api/notifications/push/native-token", () => {
 });
 
 describe("POST /api/notifications/push/native-token", () => {
-	it("saves the device token for the signed-in user", async () => {
+	it("saves the device token for the signed-in user, bound to the current session", async () => {
 		const response = await POST(request("POST", { token: "fcm-token", platform: "ios" }));
 
 		expect(response.status).toBe(200);
-		expect(mockState.registerNativePushToken).toHaveBeenCalledWith("user-1", {
-			token: "fcm-token",
-			platform: "ios",
-		});
+		expect(mockState.registerNativePushToken).toHaveBeenCalledWith(
+			{ userId: "user-1", sessionId: "s-1" },
+			{ token: "fcm-token", platform: "ios" },
+		);
 	});
 
 	it("refuses without a session", async () => {

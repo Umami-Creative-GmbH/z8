@@ -1927,6 +1927,10 @@ export const pushDeviceTokenRelations = relations(pushDeviceToken, ({ one }) => 
 		fields: [pushDeviceToken.userId],
 		references: [user.id],
 	}),
+	session: one(session, {
+		fields: [pushDeviceToken.sessionId],
+		references: [session.id],
+	}),
 }));
 
 // Enterprise relations

@@ -13,11 +13,8 @@ import { db } from "@/db";
 import { pushSubscription } from "@/db/schema";
 import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
-import {
-	isNativePushAvailable,
-	type PushDeliveryResult,
-	sendNativePushToUser,
-} from "./native-push-service";
+import { isNativePushAvailable, sendNativePushToUser } from "./native-push-service";
+import { NOTHING_SENT, type PushDeliveryResult } from "./push-delivery";
 import type { NotificationType } from "./types";
 
 const logger = createLogger("PushService");
@@ -137,8 +134,6 @@ export async function sendPushNotification(
 	}
 }
 
-const NOTHING_SENT: PushDeliveryResult = { sent: 0, failed: 0, expired: [] };
-
 /**
  * Send a push notification to every active web subscription and native
  * device of a user. A user with the PWA and the store app gets one
@@ -189,7 +184,7 @@ async function sendWebPushToUser(
 
 		if (subscriptions.length === 0) {
 			logger.debug({ userId }, "No active push subscriptions for user");
-			return { sent: 0, failed: 0, expired: [] };
+			return NOTHING_SENT;
 		}
 
 		let sent = 0;
@@ -253,7 +248,7 @@ async function sendWebPushToUser(
 	} catch (error) {
 		logger.error({ error, userId }, "Failed to send push notifications to user");
 		if (options.throwOnError) throw error;
-		return { sent: 0, failed: 0, expired: [] };
+		return NOTHING_SENT;
 	}
 }
 

@@ -12,7 +12,7 @@ import {
 import { currentTimestamp } from "./timestamp";
 
 // Import auth tables for FK references
-import { organization, user } from "../auth-schema";
+import { organization, session, user } from "../auth-schema";
 import { notificationChannelEnum, notificationTypeEnum } from "./enums";
 
 // ============================================
@@ -146,6 +146,10 @@ export type PushDevicePlatform = (typeof PUSH_DEVICE_PLATFORMS)[number];
 // Native push device tokens (Firebase Cloud Messaging) of the store app (#843).
 // User-scoped like web push subscriptions: the organization of a notification
 // is resolved when it is sent. One row per device token.
+// Each token is bound to the session that registered it. Pushes go only to
+// tokens whose session still exists and has not expired, so a server-side
+// sign-out (revoked, expired or admin-ended session) stops pushes to that
+// device. The next registration after sign-in binds the token again.
 export const pushDeviceToken = pgTable(
 	"push_device_token",
 	{
@@ -153,6 +157,7 @@ export const pushDeviceToken = pgTable(
 		userId: text("user_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
+		sessionId: text("session_id").references(() => session.id, { onDelete: "set null" }),
 		platform: text("platform").$type<PushDevicePlatform>().notNull(),
 		token: text("token").notNull(),
 		isActive: boolean("is_active").default(true).notNull(),
@@ -168,6 +173,7 @@ export const pushDeviceToken = pgTable(
 	(table) => [
 		uniqueIndex("pushDeviceToken_token_idx").on(table.token),
 		index("pushDeviceToken_userId_isActive_idx").on(table.userId, table.isActive),
+		index("pushDeviceToken_sessionId_idx").on(table.sessionId),
 		check("push_device_token_platform_check", sql`${table.platform} IN ('ios', 'android')`),
 	],
 );

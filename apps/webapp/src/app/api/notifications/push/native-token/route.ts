@@ -34,7 +34,9 @@ export async function GET() {
 
 /**
  * POST /api/notifications/push/native-token
- * Save this device's FCM token for the signed-in user. Body: { token, platform }.
+ * Save this device's FCM token for the signed-in user and session. Every app
+ * start re-registers, so a new session after sign-in binds the token again.
+ * Body: { token, platform }.
  */
 export async function POST(request: NextRequest) {
 	await connection();
@@ -50,7 +52,11 @@ export async function POST(request: NextRequest) {
 		if (!body.success) {
 			return NextResponse.json({ error: "Invalid device token" }, { status: 400 });
 		}
-		await registerNativePushToken(session.user.id, body.data);
+		// Binds the token to this session: once it ends, pushes to this device stop.
+		await registerNativePushToken(
+			{ userId: session.user.id, sessionId: session.session.id },
+			body.data,
+		);
 		return NextResponse.json({ success: true });
 	} catch (error) {
 		logger.error({ err: error }, "Failed to save native push token");

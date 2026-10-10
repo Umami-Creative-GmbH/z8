@@ -24,12 +24,17 @@ vi.mock("@/db", () => ({
 	db: {
 		query: {
 			pushSubscription: { findMany: vi.fn(async () => state.webSubscriptions) },
-			pushDeviceToken: {
-				findMany: state.deviceTokenQuery.mockImplementation(async () => state.deviceTokens),
-			},
 			userSettings: { findFirst: vi.fn(async () => ({ locale: "en" })) },
 			organizationNotificationSettings: { findFirst: vi.fn(async () => null) },
 		},
+		// Device tokens joined with their live session (see the PostgreSQL suite).
+		select: vi.fn(() => ({
+			from: vi.fn(() => ({
+				innerJoin: vi.fn(() => ({
+					where: state.deviceTokenQuery.mockImplementation(async () => state.deviceTokens),
+				})),
+			})),
+		})),
 		update: vi.fn((table: unknown) => ({
 			set: vi.fn((set: Record<string, unknown>) => ({
 				where: vi.fn(async (where: unknown) => {
