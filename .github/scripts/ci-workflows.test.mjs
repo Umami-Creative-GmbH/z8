@@ -14,10 +14,10 @@ test("actual PostgreSQL condition requires successful combined shards except exp
   // Evaluate the trusted workflow expression itself so its behavior, not a duplicate
   // policy function, is exercised across failure/selection/override combinations.
   const evaluate = new Function("needs", "github", "inputs", "cancelled", `return (${expression})`);
-  for (const webapp of ["true", "false"]) for (const unit of ["success", "failure", "cancelled", "skipped", undefined]) for (const changes of ["success", "failure"]) for (const event of ["pull_request", "workflow_dispatch"]) for (const override of [false, true]) for (const cancelled of [false, true]) {
+  for (const webapp of ["true", "false"]) for (const unit of ["success", "failure", "cancelled", "skipped", undefined]) for (const changes of ["success", "failure"]) for (const event of ["pull_request", "workflow_dispatch"]) for (const override of [false, true]) for (const cancelled of [false, true]) for (const draft of [false, true]) {
     const needs = { changes: { result: changes, outputs: { webapp } }, "unit-tests": { result: unit } };
-    const expected = !cancelled && changes === "success" && webapp === "true" && (unit === "success" || (event === "workflow_dispatch" && override));
-    assert.equal(Boolean(evaluate(needs, { event_name: event }, { diagnose_integration: override }, () => cancelled)), expected, JSON.stringify({ webapp, unit, changes, event, override, cancelled }));
+    const expected = (event !== "pull_request" || !draft) && !cancelled && changes === "success" && webapp === "true" && (unit === "success" || (event === "workflow_dispatch" && override));
+    assert.equal(Boolean(evaluate(needs, { event_name: event, event: { pull_request: { draft } } }, { diagnose_integration: override }, () => cancelled)), expected, JSON.stringify({ webapp, unit, changes, event, override, cancelled, draft }));
   }
 });
 test("expensive PR jobs wait on shared Linux debounce once, with independent cancellation", () => {
@@ -30,7 +30,7 @@ test("expensive PR jobs wait on shared Linux debounce once, with independent can
     assert.match(source, /cancel-in-progress: true/);
   }
   assert.match(tests, /needs: \[changes, debounce\]/);
-  assert.match(desktop, /windows:\s+needs: debounce/);
+  assert.match(desktop.split("  windows:\n")[1].split("    runs-on:")[0], /needs: debounce/);
   assert.match(tests, /needs: \[changes, debounce, unit-tests, integration-tests\]/);
 });
 test("privileged cleanup executes trusted default-branch code with no producer checkout", () => {
@@ -59,5 +59,30 @@ test("base dependency warming cannot execute arbitrary PR refs or repeat an exac
   for (const source of [tests, desktop, warm]) {
     assert.match(source, /setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e/);
     assert.match(source, /node-version: 24\s+cache: pnpm/);
+  }
+});
+test("draft PRs skip every validation job, including setup, summary and reusable debounce", () => {
+  const guardJobs = ["tests", "desktop-windows", "check-package-lock-sync", "react-doctor", "ci-debounce"];
+  for (const name of guardJobs) {
+    const source = workflow(name);
+    if (name !== "ci-debounce") {
+      assert.match(source, /types: \[opened, synchronize, reopened, ready_for_review, converted_to_draft\]/);
+      assert.match(source, /group: .*github.event.pull_request.number/);
+      assert.match(source, /cancel-in-progress: true/);
+    }
+    const blocks = source.split("\njobs:\n")[1].split(/(?=^  [\w-]+:\s*$)/m).filter(block => /^  [\w-]+:/.test(block));
+    assert.ok(blocks.length > 0, name);
+    for (const block of blocks) {
+      const id = block.split("\n")[0].trim();
+      const line = block.match(/^    if: (.+)$/m)?.[1];
+      assert.ok(line, name + "/" + id + " must guard draft PRs");
+      const condition = line === ">-" ? block.match(/^    if: >-\n((?:      .+\n)+)/m)[1].trim() : line;
+      const expression = condition.replace(/^\$\{\{\s*|\s*\}\}$/g, "").replace(/needs\.unit-tests/g, 'needs["unit-tests"]');
+      const evaluate = new Function("needs", "github", "inputs", "always", "cancelled", "return (" + expression + ")");
+      const needs = {changes:{result:"success",outputs:{webapp:"true",workspace:"true",docker:"true"}},"unit-tests":{result:"success"}};
+      assert.equal(Boolean(evaluate(needs, {event_name:"pull_request",event:{pull_request:{draft:true}}}, {}, ()=>true, ()=>false)), false, name + "/" + id + " draft");
+      assert.equal(Boolean(evaluate(needs, {event_name:"pull_request",event:{pull_request:{draft:false}}}, {}, ()=>true, ()=>false)), true, name + "/" + id + " ready");
+      assert.equal(Boolean(evaluate(needs, {event_name:"workflow_dispatch",event:{}}, {}, ()=>true, ()=>false)), true, name + "/" + id + " manual");
+    }
   }
 });

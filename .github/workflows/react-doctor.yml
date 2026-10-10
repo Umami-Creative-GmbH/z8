@@ -2,7 +2,7 @@ name: React Doctor
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     branches:
       - main
     # React Doctor only analyzes component and hook source; tests and non-TS files cannot change its findings.
@@ -27,7 +27,7 @@ jobs:
   react-doctor:
     name: React Doctor
     # Drafts are reviewed once they are marked ready (ready_for_review trigger).
-    if: ${{ !github.event.pull_request.draft }}
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
