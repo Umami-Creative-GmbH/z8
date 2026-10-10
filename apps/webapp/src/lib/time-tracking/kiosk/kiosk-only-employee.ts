@@ -170,13 +170,15 @@ export async function createKioskOnlyEmployee(
 /**
  * Turns a kiosk-only employee into an ordinary one (ADR 0006, #857): the real
  * address replaces the reserved one on the same user, so the employee keeps
- * their user, kiosk PIN and history. The address counts as verified because,
- * as with any invitation, signing in still needs control of it: the emailed
- * password setup link, a password reset, or a provider vouching for it. The
- * organization's invitation email then carries the password setup link.
+ * their user, kiosk PIN and history. The organization's invitation email then
+ * carries the password setup link. The address stays unverified until the
+ * person completes that link (`passwordSetupVerification`), so a mistyped
+ * address never becomes a verified identity and Better Auth links no social or
+ * SSO account to the user before then.
  *
  * If delivery fails after the address changed, the person can still use
- * "Forgot password" with the new address; `invitationSent` reports it.
+ * "Forgot password" with the new address and then verify it through the
+ * ordinary verification email at sign-in; `invitationSent` reports it.
  */
 export async function addEmailToKioskOnlyEmployee(
 	db: Database,
@@ -240,7 +242,7 @@ export async function addEmailToKioskOnlyEmployee(
 			}
 			await tx
 				.update(user)
-				.set({ email, emailVerified: true, updatedAt: new Date() })
+				.set({ email, emailVerified: false, updatedAt: new Date() })
 				.where(eq(user.id, target.userId));
 			return target.userId;
 		})

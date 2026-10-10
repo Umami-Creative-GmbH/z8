@@ -251,7 +251,8 @@ describe("kiosk-only employees on PostgreSQL", () => {
 			{
 				id: created.userId,
 				email: "jamie.doe@example.com",
-				email_verified: true,
+				// Verified only when the person completes the emailed setup link, never by the admin typing it.
+				email_verified: false,
 				employee_id: created.employeeId,
 			},
 		]);

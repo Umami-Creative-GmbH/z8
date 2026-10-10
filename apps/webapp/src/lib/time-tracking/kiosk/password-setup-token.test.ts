@@ -1,6 +1,7 @@
 import { memoryAdapter } from "better-auth/adapters/memory";
 import { betterAuth } from "better-auth/minimal";
 import { describe, expect, it, vi } from "vitest";
+import { passwordSetupVerification } from "@/lib/auth/password-setup-verification";
 import { createPasswordSetupToken } from "./password-setup-token";
 
 const email = "jamie@example.com";
@@ -24,15 +25,19 @@ async function setup() {
 		},
 		emailVerification: { sendVerificationEmail: vi.fn() },
 		rateLimit: { enabled: false },
+		plugins: [passwordSetupVerification()],
 	});
 	const context = await auth.$context;
-	// A former kiosk-only employee: a credential-less user whose address was replaced and verified.
+	// A former kiosk-only employee: a credential-less user whose address the admin replaced. Typing an
+	// address proves nothing, so it stays unverified until the person uses the emailed setup link.
 	const user = await context.internalAdapter.createUser({
 		name: "Jamie",
 		email,
-		emailVerified: true,
+		emailVerified: false,
 	});
-	return { auth, context, user };
+	const isVerified = async () =>
+		(await context.internalAdapter.findUserById(user.id))?.emailVerified ?? null;
+	return { auth, context, user, isVerified };
 }
 
 describe("password setup link for a former kiosk-only employee (#857)", () => {
@@ -48,7 +53,40 @@ describe("password setup link for a former kiosk-only employee (#857)", () => {
 		).resolves.toEqual({ status: true });
 
 		await expect(auth.api.signInEmail({ body: { email, password } })).resolves.toMatchObject({
-			user: { id: user.id, email },
+			user: { id: user.id, email, emailVerified: true },
+		});
+	});
+
+	it("verifies the address only when the emailed setup link is used", async () => {
+		const { auth, context, user, isVerified } = await setup();
+		const token = await createPasswordSetupToken(context, user.id);
+		expect(await isVerified()).toBe(false);
+
+		// A refused attempt (password too short) proves nothing and leaves the link usable.
+		await expect(
+			auth.api.resetPassword({ body: { newPassword: "short", token } }),
+		).rejects.toMatchObject({ status: "BAD_REQUEST" });
+		expect(await isVerified()).toBe(false);
+
+		await auth.api.resetPassword({ body: { newPassword: password, token } });
+		expect(await isVerified()).toBe(true);
+	});
+
+	it("leaves an ordinary password reset to the normal email verification", async () => {
+		const { auth, context, user, isVerified } = await setup();
+		await context.internalAdapter.createVerificationValue({
+			identifier: "reset-password:ordinary-reset-token",
+			value: user.id,
+			expiresAt: new Date(Date.now() + 60_000),
+		});
+
+		await auth.api.resetPassword({
+			body: { newPassword: password, token: "ordinary-reset-token" },
+		});
+
+		expect(await isVerified()).toBe(false);
+		await expect(auth.api.signInEmail({ body: { email, password } })).rejects.toMatchObject({
+			status: "FORBIDDEN",
 		});
 	});
 
