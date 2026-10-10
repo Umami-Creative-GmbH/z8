@@ -6,9 +6,10 @@ import {
 	employee,
 	payrollExportConfig,
 	payrollExportJob,
+	type TravelExpensePayrollRunInclusionLine,
+	travelExpenseClaim,
 	travelExpensePayrollRunInclusion,
 	travelExpenseReport,
-	type TravelExpensePayrollRunInclusionLine,
 } from "@/db/schema";
 import { loadTravelExpenseReportSubmittedRevisions } from "@/lib/approvals/evidence/travel-expense-report-store";
 import { AuditAction } from "@/lib/audit-logger";
@@ -35,14 +36,20 @@ import { isAwaitingReimbursement } from "./finance-queue-store";
 import { STORED_AMOUNT_SCALE } from "./money";
 import type { OfficerScope } from "./officer-scope";
 import { isSourceInOfficerScope } from "./officer-scope-read";
+import type { PayrollRevision } from "./payroll-lines";
 import {
-	computePayrollLines,
-	type PayrollExclusionReason,
-	type PayrollLine,
-} from "./payroll-lines";
+	classifyPayrollRunCandidate,
+	type PayrollRunClassification,
+	type PayrollRunSkip,
+} from "./payroll-run-classification";
 import { isPayrollRunPreviewOpen } from "./payroll-run-preview";
 import { getReimbursementChannel } from "./reimbursement-channel";
-import { buildSettlementAccounts, type SettlementActor } from "./settlement-store";
+import {
+	buildSettlementAccounts,
+	type SettlementAccount,
+	type SettlementActor,
+	type SettlementSource,
+} from "./settlement-store";
 
 /**
  * Payroll runs (#852, ADR 0003). With the payroll reimbursement channel, a
@@ -60,19 +67,22 @@ type Database = typeof appDb;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type Executor = Database | Transaction;
 
-/** Why a run did not take a report that awaits reimbursement in its scope. */
-export type PayrollRunSkipReason =
-	| PayrollExclusionReason
-	/** A payroll line kind has no wage type mapped for the run's format. */
-	| "unmapped_wage_type"
-	/** An unconfirmed run of another period includes it. */
-	| "included_in_other_run";
+export type { PayrollRunSkip, PayrollRunSkipReason } from "./payroll-run-classification";
+
+/** A report or legacy claim awaiting reimbursement that a run does not take, and why. */
+export type PayrollRunSkipped = PayrollRunSkip & { source: SettlementSource; employeeId: string };
 
 export interface PayrollRunInclusionResult {
 	/** The money lines the run's file carries, one per employee and wage type. */
 	expenseLines: ExpenseLineData[];
 	includedReportIds: string[];
-	skipped: Array<{ reportId: string; reason: PayrollRunSkipReason }>;
+	skipped: PayrollRunSkipped[];
+}
+
+/** One report or legacy claim awaiting reimbursement in a run's scope, and what the run does with it. */
+export interface PayrollRunCandidate {
+	account: SettlementAccount;
+	classification: PayrollRunClassification;
 }
 
 const EMPTY_RESULT: PayrollRunInclusionResult = {
@@ -91,11 +101,126 @@ export async function exportIsPayrollRun(
 	input: { organizationId: string; formatId: string },
 ): Promise<boolean> {
 	if (!isExpensePayrollFormat(input.formatId)) return false;
+	return paysThroughPayrollRuns(database, input.organizationId);
+}
+
+/**
+ * Whether the organization pays reimbursements with the payroll run while it
+ * passes the preview gate: the only case payroll readiness reports on runs.
+ */
+export async function paysThroughPayrollRuns(
+	database: Executor,
+	organizationId: string,
+): Promise<boolean> {
 	const [channel, previewOpen] = await Promise.all([
-		getReimbursementChannel(input.organizationId, { database }),
-		isPayrollRunPreviewOpen(input.organizationId, { database }),
+		getReimbursementChannel(organizationId, { database }),
+		isPayrollRunPreviewOpen(organizationId, { database }),
 	]);
 	return channel === "payroll_run" && previewOpen;
+}
+
+/**
+ * Every report and legacy claim awaiting reimbursement in a run's scope, each
+ * with what a run of `format` does with it: awaiting reimbursement, approved
+ * on or before the period's last day (in the organization's zone), and of an
+ * employee of `employeeIds`. Approved adjustment reports have no account of
+ * their own and are not candidates. The export includes exactly the candidates
+ * it classifies `include`; payroll readiness (#854) lists exactly the others.
+ *
+ * With `lock`, the reports' rows are locked first, in a fixed order: the lock
+ * every settlement write takes.
+ */
+export async function classifyPayrollRunCandidates(
+	database: Executor,
+	input: {
+		organizationId: string;
+		format: string;
+		period: { startDate: string; endDate: string };
+		employeeIds: readonly string[];
+	},
+	options: { lock?: boolean } = {},
+): Promise<PayrollRunCandidate[]> {
+	const { organizationId, period } = input;
+	if (input.employeeIds.length === 0) return [];
+	const employeeIds = [...input.employeeIds];
+	const reportQuery = database
+		.select({ row: travelExpenseReport })
+		.from(travelExpenseReport)
+		.where(
+			and(
+				eq(travelExpenseReport.organizationId, organizationId),
+				eq(travelExpenseReport.status, "approved"),
+				inArray(travelExpenseReport.employeeId, employeeIds),
+			),
+		)
+		.orderBy(asc(travelExpenseReport.id));
+	const [reports, claims] = await Promise.all([
+		options.lock ? reportQuery.for("update") : reportQuery,
+		database
+			.select({ row: travelExpenseClaim })
+			.from(travelExpenseClaim)
+			.where(
+				and(
+					eq(travelExpenseClaim.organizationId, organizationId),
+					eq(travelExpenseClaim.status, "approved"),
+					inArray(travelExpenseClaim.employeeId, employeeIds),
+				),
+			)
+			.orderBy(asc(travelExpenseClaim.id)),
+	]);
+
+	const accounts = await buildSettlementAccounts(
+		database,
+		organizationId,
+		reports.map(({ row }) => ({ row, employeeName: null })),
+		claims.map(({ row }) => ({ row, employeeName: null })),
+	);
+	const periodEnd = await periodEndExclusive(database, organizationId, period.endDate);
+	const awaiting = accounts.filter(
+		(account) =>
+			account.approved &&
+			account.adjustmentOf === null &&
+			account.basis?.approvedAt &&
+			compareInstants(parseInstant(account.basis.approvedAt), periodEnd) < 0 &&
+			isAwaitingReimbursement(account),
+	);
+	if (awaiting.length === 0) return [];
+
+	const awaitingReports = awaiting.filter((account) => account.source.type === "report");
+	const [revisions, codes] = await Promise.all([
+		latestApprovedRevisions(database, {
+			organizationId,
+			reports: awaitingReports.map((account) => ({
+				reportId: account.source.id,
+				revisionId: account.basis?.revisionId ?? "",
+				submissionCycle: account.basis?.submissionCycle ?? 0,
+			})),
+		}),
+		isExpensePayrollFormat(input.format)
+			? wageTypeCodes(database, organizationId, input.format)
+			: new Map<string, string>(),
+	]);
+
+	return awaiting.map((account) => {
+		let revision: { id: string; facts: PayrollRevision } | null = null;
+		if (account.source.type === "report") {
+			const loaded = revisions.get(account.source.id);
+			if (!loaded) throw new Error(`Approved revision of report ${account.source.id} not readable`);
+			revision = { id: loaded.id, facts: loaded.facts };
+		}
+		return {
+			account,
+			classification: classifyPayrollRunCandidate({
+				account,
+				revision,
+				format: input.format,
+				period,
+				codes,
+				// No payroll run is confirmed before confirmation exists (#853).
+				priorLines: [],
+			}),
+		};
+	});
 }
 
 /**
@@ -103,7 +228,8 @@ export async function exportIsPayrollRun(
  * approved on or before the period's last day (in the organization's zone),
  * belongs to an employee of `employeeIds` and is not included in an
  * unconfirmed run of another period. Each is passed to `computePayrollLines`;
- * only reports whose every line kind is mapped are included.
+ * only reports whose every line kind is mapped are included. Which ones is
+ * decided by `classifyPayrollRunCandidates`, as payroll readiness decides it.
  *
  * Exporting the same period again moves to this run the reports earlier
  * unconfirmed runs of that period included for these employees: their
@@ -138,50 +264,14 @@ export async function includeReportsInPayrollRun(
 				eq(travelExpensePayrollRunInclusion.state, "included"),
 			),
 		);
-	if (input.employeeIds.length === 0) return EMPTY_RESULT;
-
-	// The reports' rows first, in a fixed order: the lock settlement writes take.
-	const reports = await tx
-		.select({ row: travelExpenseReport })
-		.from(travelExpenseReport)
-		.where(
-			and(
-				eq(travelExpenseReport.organizationId, organizationId),
-				eq(travelExpenseReport.status, "approved"),
-				inArray(travelExpenseReport.employeeId, [...input.employeeIds]),
-			),
-		)
-		.orderBy(asc(travelExpenseReport.id))
-		.for("update");
-
-	const accounts = await buildSettlementAccounts(
+	const candidates = await classifyPayrollRunCandidates(
 		tx,
-		organizationId,
-		reports.map(({ row }) => ({ row, employeeName: null })),
-		[],
+		{ organizationId, format: input.format, period, employeeIds: input.employeeIds },
+		{ lock: true },
 	);
-	const periodEnd = await periodEndExclusive(tx, organizationId, period.endDate);
-	const awaiting = accounts.filter(
-		(account) =>
-			account.approved &&
-			account.adjustmentOf === null &&
-			account.basis?.approvedAt &&
-			compareInstants(parseInstant(account.basis.approvedAt), periodEnd) < 0 &&
-			isAwaitingReimbursement(account),
-	);
-	if (awaiting.length === 0) return EMPTY_RESULT;
+	if (candidates.length === 0) return EMPTY_RESULT;
 
-	const revisions = await latestApprovedRevisions(tx, {
-		organizationId,
-		reports: awaiting.map((account) => ({
-			reportId: account.source.id,
-			revisionId: account.basis?.revisionId ?? "",
-			submissionCycle: account.basis?.submissionCycle ?? 0,
-		})),
-	});
-	const codes = await wageTypeCodes(tx, organizationId, input.format);
-
-	const skipped: PayrollRunInclusionResult["skipped"] = [];
+	const skipped: PayrollRunSkipped[] = [];
 	const included: Array<{
 		reportId: string;
 		employeeId: string;
@@ -190,37 +280,22 @@ export async function includeReportsInPayrollRun(
 	}> = [];
 	// Reports an earlier unconfirmed run of the same period holds, which this run takes over.
 	const takenOver: string[] = [];
-	for (const account of awaiting) {
+	for (const { account, classification } of candidates) {
+		if (classification.outcome === "skip") {
+			skipped.push({
+				...classification.skip,
+				source: account.source,
+				employeeId: account.employeeId,
+			});
+			continue;
+		}
 		const reportId = account.source.id;
-		const held = account.payrollRun;
-		if (held && !(held.periodStart === period.startDate && held.periodEnd === period.endDate)) {
-			skipped.push({ reportId, reason: "included_in_other_run" });
-			continue;
-		}
-		const revision = revisions.get(reportId);
-		if (!revision) throw new Error(`Approved revision of report ${reportId} not readable`);
-		const result = computePayrollLines({
-			source: "report",
-			revision: revision.facts,
-			// No reimbursement names a payroll run before confirmation exists (#853).
-			settlementEntries: account.entries.map((entry) => ({ kind: entry.kind, payrollRunId: null })),
-			priorLines: [],
-		});
-		if (!result.ok) {
-			skipped.push({ reportId, reason: result.reason });
-			continue;
-		}
-		const mapped = mapLines(result.lines, codes);
-		if (!mapped) {
-			skipped.push({ reportId, reason: "unmapped_wage_type" });
-			continue;
-		}
-		if (held) takenOver.push(reportId);
+		if (classification.takesOver) takenOver.push(reportId);
 		included.push({
 			reportId,
 			employeeId: account.employeeId,
-			basisRevisionId: revision.id,
-			lines: mapped,
+			basisRevisionId: classification.basisRevisionId,
+			lines: classification.lines,
 		});
 	}
 	if (takenOver.length > 0) {
@@ -255,7 +330,7 @@ export async function includeReportsInPayrollRun(
 
 /** The instant the period's last day ends in the organization's zone. */
 async function periodEndExclusive(
-	tx: Transaction,
+	tx: Executor,
 	organizationId: string,
 	endDate: string,
 ): Promise<Instant> {
@@ -268,7 +343,7 @@ async function periodEndExclusive(
  * which holds the whole corrected report, else the original's.
  */
 async function latestApprovedRevisions(
-	tx: Transaction,
+	tx: Executor,
 	input: {
 		organizationId: string;
 		reports: ReadonlyArray<{ reportId: string; revisionId: string; submissionCycle: number }>;
@@ -302,7 +377,7 @@ async function latestApprovedRevisions(
 }
 
 async function wageTypeCodes(
-	tx: Transaction,
+	tx: Executor,
 	organizationId: string,
 	format: ExpensePayrollFormat,
 ): Promise<Map<string, string>> {
@@ -313,20 +388,6 @@ async function wageTypeCodes(
 			return code ? [[mapping.kind, code] as const] : [];
 		}),
 	);
-}
-
-/** The lines with their wage types, or null when any kind is unmapped. */
-function mapLines(
-	lines: readonly PayrollLine[],
-	codes: ReadonlyMap<string, string>,
-): TravelExpensePayrollRunInclusionLine[] | null {
-	const mapped: TravelExpensePayrollRunInclusionLine[] = [];
-	for (const line of lines) {
-		const wageTypeCode = codes.get(line.kind);
-		if (!wageTypeCode) return null;
-		mapped.push({ ...line, wageTypeCode });
-	}
-	return mapped;
 }
 
 /** One money line per employee and wage type, summed over the included reports. */

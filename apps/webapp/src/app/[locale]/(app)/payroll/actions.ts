@@ -24,16 +24,20 @@ import {
 	generatePayrollPDFFilename,
 } from "@/lib/payroll-workspace/pdf-exporter";
 import { getPayrollWorkspaceSummary } from "@/lib/payroll-workspace/summary";
+import type {
+	DismissiblePayrollBlockerType,
+	PayrollWorkspaceSummary,
+} from "@/lib/payroll-workspace/types";
 import {
 	type DiscardPayrollRunResult,
 	discardPayrollRun,
 	listUnconfirmedPayrollRuns,
 	type UnconfirmedPayrollRun,
 } from "@/lib/travel-expenses/payroll-run";
-import type {
-	DismissiblePayrollBlockerType,
-	PayrollWorkspaceSummary,
-} from "@/lib/payroll-workspace/types";
+import {
+	getPayrollRunReadiness,
+	type PayrollRunReadiness,
+} from "@/lib/travel-expenses/payroll-run-readiness";
 import { getTranslate } from "@/tolgee/server";
 import { mapPayrollWorkspaceActionError } from "./action-errors";
 import { resolveScopedPayrollEmployeeIdsForAction } from "./action-helpers";
@@ -278,6 +282,29 @@ export async function discardScopedPayrollRunAction(
 		});
 		if (result.status === "discarded") revalidatePath("/payroll");
 		return result;
+	});
+}
+
+/**
+ * Payroll readiness for payroll runs (#854): the expense reports and legacy
+ * claims awaiting reimbursement that an export of this period, format and
+ * employee selection would not carry, limited to the reader's payroll scope.
+ */
+export async function getPayrollRunReadinessAction(
+	request: PayrollWorkspaceRequest & { formatId: string },
+): Promise<ServerActionResult<PayrollRunReadiness>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const formatId = validateExportFormatId(t, request.formatId);
+		const { authContext, period, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
+			t,
+			request,
+		);
+		return getPayrollRunReadiness(db, {
+			organizationId: authContext.employee.organizationId,
+			formatId,
+			period: { startDate: period.start.toISODate() ?? "", endDate: period.end.toISODate() ?? "" },
+			employeeIds: scopedEmployeeIds,
+		});
 	});
 }
 
