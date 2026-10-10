@@ -9,8 +9,14 @@ import {
 	employeeVacationAllowance,
 	vacationAllowance,
 } from "@/db/schema";
+import { getAbsenceDaysByAbsenceId, loadWorkingDays } from "@/lib/absences/absence-days-resolver";
 import { getYearRange } from "@/lib/absences/date-utils";
-import type { AbsenceWithCategory, Holiday, VacationBalance } from "@/lib/absences/types";
+import type {
+	AbsenceWithCategory,
+	AbsenceWithDays,
+	Holiday,
+	VacationBalance,
+} from "@/lib/absences/types";
 import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
 import { getVacationHolidays } from "@/lib/absences/vacation-holidays";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
@@ -34,7 +40,7 @@ export async function getVacationBalance(
 	const startOfYear = yearRange.start.toISODate() ?? `${year}-01-01`;
 	const endOfYear = yearRange.end.toISODate() ?? `${year}-12-31`;
 
-	const [orgAllowance, empAllowance, absences, holidays] = await Promise.all([
+	const [orgAllowance, empAllowance, absences, isWorkingDay] = await Promise.all([
 		db.query.vacationAllowance.findFirst({
 			where: and(
 				eq(vacationAllowance.organizationId, emp.organizationId),
@@ -65,7 +71,7 @@ export async function getVacationBalance(
 				category: true,
 			},
 		}),
-		getVacationHolidays({
+		loadWorkingDays(db, {
 			organizationId: emp.organizationId,
 			employeeId,
 			startDate: startOfYear,
@@ -84,7 +90,7 @@ export async function getVacationBalance(
 		organizationAllowance: orgAllowance,
 		employeeAllowance: empAllowance,
 		absences: absencesWithCategory,
-		holidays,
+		isWorkingDay,
 		currentDate: currentTimestamp(),
 		year,
 		timezone,
@@ -95,10 +101,17 @@ export async function getAbsenceEntries(
 	employeeId: string,
 	startDate: string,
 	endDate: string,
-): Promise<AbsenceWithCategory[]> {
+): Promise<AbsenceWithDays[]> {
+	const emp = await db.query.employee.findFirst({
+		where: eq(employee.id, employeeId),
+		columns: { organizationId: true },
+	});
+	if (!emp) return [];
+
 	const absences = await db.query.absenceEntry.findMany({
 		where: and(
 			eq(absenceEntry.employeeId, employeeId),
+			or(isNull(absenceEntry.organizationId), eq(absenceEntry.organizationId, emp.organizationId)),
 			lte(absenceEntry.startDate, endDate),
 			gte(absenceEntry.endDate, startDate),
 		),
@@ -108,8 +121,15 @@ export async function getAbsenceEntries(
 		orderBy: [desc(absenceEntry.startDate)],
 	});
 
-	const typedAbsences = absences as unknown as AbsenceWithCategory[];
-	return typedAbsences.map(mapAbsenceWithCategory);
+	const typedAbsences = (absences as unknown as AbsenceWithCategory[]).map(mapAbsenceWithCategory);
+	const absenceDays = await getAbsenceDaysByAbsenceId(db, {
+		organizationId: emp.organizationId,
+		absences: typedAbsences,
+	});
+	return typedAbsences.map((absence) => ({
+		...absence,
+		absenceDays: absenceDays.get(absence.id) ?? 0,
+	}));
 }
 
 export async function getHolidays(

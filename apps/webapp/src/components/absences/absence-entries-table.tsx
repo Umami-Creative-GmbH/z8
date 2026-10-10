@@ -22,13 +22,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-	calculateBusinessDaysWithHalfDays,
-	formatDateRange,
-	formatDays,
-} from "@/lib/absences/date-utils";
+import { formatDateRange, formatDays } from "@/lib/absences/date-utils";
 import { getSickDetailLabel, getSickDetailLabelKey } from "@/lib/absences/sick-details";
-import type { AbsenceWithCategory, DayPeriod } from "@/lib/absences/types";
+import type { AbsenceWithDays, DayPeriod } from "@/lib/absences/types";
 import { useRouter } from "@/navigation";
 import { CategoryBadge } from "./category-badge";
 import { AbsenceSickNotesPanel } from "./sick-notes/absence-sick-notes-panel";
@@ -37,19 +33,19 @@ import { SickNoteMarker } from "./sick-notes/sick-note-marker";
 import { useOwnAbsenceSickNotes } from "./sick-notes/use-own-absence-sick-notes";
 
 interface AbsenceEntriesTableProps {
-	absences: AbsenceWithCategory[];
+	absences: AbsenceWithDays[];
 	currentDate: string;
 	onUpdate?: () => void;
 }
 
-function canShowCancelAction(absence: AbsenceWithCategory, today: string): boolean {
+function canShowCancelAction(absence: AbsenceWithDays, today: string): boolean {
 	if (absence.status === "pending") return true;
 	if (absence.status === "approved") return absence.startDate > today;
 	return false;
 }
 
 /** Sick notes go on the employee's own sick leave unless it was rejected (#982). */
-function takesSickNotes(absence: AbsenceWithCategory): boolean {
+function takesSickNotes(absence: AbsenceWithDays): boolean {
 	return absence.category.type === "sick" && absence.status !== "rejected";
 }
 
@@ -59,8 +55,8 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 	const [cancelingId, setCancelingId] = useState<string | null>(null);
 	const [search, setSearch] = useState("");
 	const sickNotes = useOwnAbsenceSickNotes(absences);
-	const [sickNotesOf, setSickNotesOf] = useState<AbsenceWithCategory | null>(null);
-	const [attachingTo, setAttachingTo] = useState<AbsenceWithCategory | null>(null);
+	const [sickNotesOf, setSickNotesOf] = useState<AbsenceWithDays | null>(null);
+	const [attachingTo, setAttachingTo] = useState<AbsenceWithDays | null>(null);
 
 	// Attaching can turn "without certificate" into "with certificate".
 	const handleSickNotesChanged = () => {
@@ -125,7 +121,7 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 	})();
 
 	// Column definitions
-	const columns: ColumnDef<DataTableFeatures, AbsenceWithCategory>[] = [
+	const columns: ColumnDef<DataTableFeatures, AbsenceWithDays>[] = [
 		{
 			accessorKey: "dateRange",
 			header: t("absences.table.headers.dateRange", "Date Range"),
@@ -195,14 +191,9 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 			accessorKey: "days",
 			header: () => <div className="text-right">{t("absences.table.headers.days", "Days")}</div>,
 			cell: ({ row }) => {
-				const days = calculateBusinessDaysWithHalfDays(
-					row.original.startDate,
-					row.original.startPeriod,
-					row.original.endDate,
-					row.original.endPeriod,
-					[],
+				return (
+					<div className="text-right tabular-nums">{formatDays(row.original.absenceDays, t)}</div>
 				);
-				return <div className="text-right tabular-nums">{formatDays(days, t)}</div>;
 			},
 		},
 		{

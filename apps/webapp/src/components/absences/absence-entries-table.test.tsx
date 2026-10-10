@@ -3,7 +3,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { cancelAbsenceRequest } from "@/app/[locale]/(app)/absences/actions";
-import type { AbsenceWithCategory } from "@/lib/absences/types";
+import type { AbsenceWithDays } from "@/lib/absences/types";
 import { AbsenceEntriesTable } from "./absence-entries-table";
 
 vi.mock("@tolgee/react", () => ({
@@ -50,7 +50,7 @@ beforeAll(() => {
 	globalThis.ResizeObserver = ResizeObserverMock;
 });
 
-function buildAbsence(overrides: Partial<AbsenceWithCategory>): AbsenceWithCategory {
+function buildAbsence(overrides: Partial<AbsenceWithDays>): AbsenceWithDays {
 	return {
 		id: "absence-1",
 		employeeId: "employee-1",
@@ -72,11 +72,26 @@ function buildAbsence(overrides: Partial<AbsenceWithCategory>): AbsenceWithCateg
 		approvedAt: null,
 		rejectionReason: null,
 		createdAt: new Date("2026-05-01T00:00:00Z"),
+		absenceDays: 1,
 		...overrides,
 	};
 }
 
 describe("AbsenceEntriesTable", () => {
+	it("shows the absence days the server resolved (#979)", () => {
+		render(
+			<AbsenceEntriesTable
+				currentDate="2026-05-20"
+				absences={[
+					// A Monday-to-Friday range the client would have counted as 5.
+					buildAbsence({ startDate: "2026-10-12", endDate: "2026-10-16", absenceDays: 1 }),
+				]}
+			/>,
+		);
+
+		expect(screen.getByText("1 day")).toBeTruthy();
+	});
+
 	it("keeps the cancel action on a phone screen with a visible label (#846)", () => {
 		render(
 			<AbsenceEntriesTable

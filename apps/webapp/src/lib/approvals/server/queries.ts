@@ -8,6 +8,7 @@ import {
 	workCategory,
 	workPeriod,
 } from "@/db/schema";
+import { getAbsenceDaysByAbsenceId } from "@/lib/absences/absence-days-resolver";
 import type { SickDetail } from "@/lib/absences/types";
 import { classifyTimeApprovalRequest } from "@/lib/approvals/time-request-kind";
 import { logger } from "@/lib/logger";
@@ -175,6 +176,7 @@ export function buildPendingApprovalResult({
 	periodsById,
 	categoryNamesById = new Map<string, string>(),
 	sickNotesByAbsenceId = new Map<string, SickNoteMarker>(),
+	absenceDaysByAbsenceId = new Map<string, number>(),
 }: {
 	pendingRequests: PendingRequestRecord[];
 	absencesById: Map<string, AbsenceLookupRecord>;
@@ -182,6 +184,8 @@ export function buildPendingApprovalResult({
 	categoryNamesById?: Map<string, string>;
 	/** "Sick note attached (n)" per sick-leave absence (#982). */
 	sickNotesByAbsenceId?: Map<string, SickNoteMarker>;
+	/** Each absence's absence days, resolved on the server (#979). */
+	absenceDaysByAbsenceId?: Map<string, number>;
 }): {
 	absenceApprovals: ApprovalWithAbsence[];
 	timeCorrectionApprovals: ApprovalWithTimeCorrection[];
@@ -206,6 +210,7 @@ export function buildPendingApprovalResult({
 					startPeriod: absence.startPeriod,
 					endDate: absence.endDate,
 					endPeriod: absence.endPeriod,
+					absenceDays: absenceDaysByAbsenceId.get(absence.id) ?? 0,
 					notes: absence.notes,
 					sickDetail:
 						absence.category.type === "sick" ? absence.sickDetail : null,
@@ -402,11 +407,18 @@ export async function getPendingApprovals(): Promise<{
 		];
 	}
 
+	const absenceRecords = absences as AbsenceLookupRecord[];
+	const absenceDaysByAbsenceId = await getAbsenceDaysByAbsenceId(db, {
+		organizationId: currentEmployee.organizationId,
+		absences: absenceRecords,
+	});
+
 	return buildPendingApprovalResult({
 		pendingRequests,
 		absencesById,
 		periodsById,
 		categoryNamesById,
+		absenceDaysByAbsenceId,
 		sickNotesByAbsenceId: await loadSickNoteMarkers({
 			organizationId: currentEmployee.organizationId,
 			viewerUserId: currentEmployee.userId,

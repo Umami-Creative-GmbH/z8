@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { mondayToFriday } from "./absence-days";
 import {
-	calculateAbsenceDurationDays,
+	countRequestedAbsenceDays,
 	mapAbsenceDurationToCanonicalTimestamps,
 	normalizeAbsenceDurationInput,
 	toAbsenceEntryDurationFields,
 	validateAbsenceDurationInput,
 } from "./duration";
+import { workingDaysFrom } from "./working-days";
 
 describe("absence duration helpers", () => {
 	it("normalizes an empty end date to the start date", () => {
@@ -36,7 +38,7 @@ describe("absence duration helpers", () => {
 			notes: "",
 		});
 
-		expect(calculateAbsenceDurationDays(normalized)).toBe(0.5);
+		expect(countRequestedAbsenceDays(normalized, mondayToFriday)).toBe(0.5);
 	});
 
 	it("excludes explicit partial-day absences on holidays", () => {
@@ -51,15 +53,21 @@ describe("absence duration helpers", () => {
 		});
 
 		expect(
-			calculateAbsenceDurationDays(normalized, [
-				{
-					id: "holiday-1",
-					name: "Liberation Day",
-					startDate: new Date("2026-05-15T00:00:00.000Z"),
-					endDate: new Date("2026-05-15T23:59:59.999Z"),
-					categoryId: "public",
-				},
-			]),
+			countRequestedAbsenceDays(
+				normalized,
+				workingDaysFrom({
+					assignments: [],
+					holidays: [
+						{
+							id: "holiday-1",
+							name: "Liberation Day",
+							startDate: new Date("2026-05-15T00:00:00.000Z"),
+							endDate: new Date("2026-05-15T23:59:59.999Z"),
+							categoryId: "public",
+						},
+					],
+				}),
+			),
 		).toBe(0);
 	});
 
@@ -74,7 +82,7 @@ describe("absence duration helpers", () => {
 			notes: "",
 		});
 
-		expect(calculateAbsenceDurationDays(normalized)).toBe(0);
+		expect(countRequestedAbsenceDays(normalized, mondayToFriday)).toBe(0);
 	});
 
 	it("maps same-day partial-day times to UTC canonical timestamps", () => {
@@ -216,14 +224,17 @@ describe("absence duration helpers", () => {
 
 	it("calculates legacy multi-day period-only absences with half-day semantics", () => {
 		expect(
-			calculateAbsenceDurationDays({
-				categoryId: "category-1",
-				startDate: "2026-05-11",
-				startPeriod: "pm",
-				endDate: "2026-05-12",
-				endPeriod: "am",
-				notes: "",
-			}),
+			countRequestedAbsenceDays(
+				{
+					categoryId: "category-1",
+					startDate: "2026-05-11",
+					startPeriod: "pm",
+					endDate: "2026-05-12",
+					endPeriod: "am",
+					notes: "",
+				},
+				mondayToFriday,
+			),
 		).toBe(1);
 	});
 

@@ -1,4 +1,5 @@
 import { Data } from "effect";
+import type { AbsenceDaysRefusal } from "@/lib/absences/absence-days";
 
 export class ValidationError extends Data.TaggedError("ValidationError")<{
 	message: string;
@@ -91,6 +92,12 @@ export class MonthClosedError extends Data.TaggedError("MonthClosedError")<{
 	month: string;
 }> {}
 
+/** An absence request refused for its absence days, such as vacation on no working day (#979). */
+export class AbsenceDaysRefusedError extends Data.TaggedError("AbsenceDaysRefusedError")<{
+	message: string;
+	reason: AbsenceDaysRefusal;
+}> {}
+
 export type AnyAppError =
 	| ValidationError
 	| AuthenticationError
@@ -103,4 +110,5 @@ export type AnyAppError =
 	| BillingError
 	| QueueError
 	| ExternalServiceError
-	| MonthClosedError;
+	| MonthClosedError
+	| AbsenceDaysRefusedError;
