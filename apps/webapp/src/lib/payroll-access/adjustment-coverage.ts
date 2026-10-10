@@ -1,7 +1,8 @@
 import "server-only";
 
 import { type SQL, sql } from "drizzle-orm";
-import type { db as globalDb } from "@/db";
+import { adjustmentDisplayName } from "@/lib/work-balance/adjustments/display-name";
+import type { WorkBalanceDbClient } from "@/lib/work-balance/db-client";
 
 /**
  * What a payroll access grant covers for balance adjustments (#995, spec #804):
@@ -27,7 +28,7 @@ import type { db as globalDb } from "@/db";
  * holder records their adjustments.
  */
 
-type Reader = Pick<typeof globalDb, "execute">;
+type Reader = Pick<WorkBalanceDbClient, "execute">;
 
 export type BalanceAdjustmentGrantEmployee = {
 	id: string;
@@ -127,42 +128,46 @@ export async function listBalanceAdjustmentGrantEmployees(
 	client: Reader,
 	input: { organizationId: string; actorUserId: string; employeeId?: string },
 ): Promise<{ grantId: string; employees: BalanceAdjustmentGrantEmployee[] } | null> {
-	const grant = await client.execute<{ id: string }>(sql`
-		with ${holderGrant(input)}
-		select id from holder_grant
-	`);
-	const grantId = grant.rows[0]?.id;
-	if (!grantId) return null;
-
+	// One query: the grant, with each covered employee, or a single row without
+	// one when it covers nobody; no row at all without an active grant.
 	const result = await client.execute<{
-		id: string;
+		grant_id: string;
+		id: string | null;
 		user_name: string | null;
 		first_name: string | null;
 		last_name: string | null;
 		employee_number: string | null;
-		is_active: boolean;
+		is_active: boolean | null;
 	}>(sql`
 		with ${holderGrant(input)}
-		select e.id, u.name as user_name, e.first_name, e.last_name, e.employee_number, e.is_active
+		select hg.id as grant_id, e.id, u.name as user_name, e.first_name, e.last_name,
+			e.employee_number, e.is_active
 		from holder_grant hg
-		join employee e on e.organization_id = hg.organization_id
-		left join "user" u on u.id = e.user_id
-		where ${grantCoversEmployee}
+		left join employee e on e.organization_id = hg.organization_id
+			and ${grantCoversEmployee}
 			${input.employeeId ? sql`and e.id = ${input.employeeId}` : sql``}
+		left join "user" u on u.id = e.user_id
 		order by e.is_active desc, lower(coalesce(u.name, '')), e.employee_number, e.id
 	`);
+	const grantId = result.rows[0]?.grant_id;
+	if (!grantId) return null;
 	return {
 		grantId,
-		employees: result.rows.map((row) => ({
-			id: row.id,
-			name:
-				[row.first_name, row.last_name].filter(Boolean).join(" ").trim() ||
-				row.user_name?.trim() ||
-				row.employee_number ||
-				row.id,
-			employeeNumber: row.employee_number,
-			isActive: row.is_active,
-		})),
+		employees: result.rows.flatMap((row) =>
+			row.id
+				? [
+						{
+							id: row.id,
+							name: adjustmentDisplayName(
+								{ firstName: row.first_name, lastName: row.last_name, name: row.user_name },
+								row.employee_number || row.id,
+							),
+							employeeNumber: row.employee_number,
+							isActive: row.is_active === true,
+						},
+					]
+				: [],
+		),
 	};
 }
 

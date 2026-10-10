@@ -1,7 +1,6 @@
 import "server-only";
 
 import { sql } from "drizzle-orm";
-import { db } from "@/db";
 import {
 	type OrganizationActor,
 	requireOrganizationActor,
@@ -12,6 +11,7 @@ import {
 	findBalanceAdjustmentGrant,
 } from "@/lib/payroll-access/adjustment-coverage";
 import { isUuid } from "@/lib/validations/uuid";
+import type { WorkBalanceDbClient } from "@/lib/work-balance/db-client";
 import { BalanceAdjustmentRefusal } from "./types";
 
 /** Why the actor may record and cancel the employee's balance adjustments. */
@@ -20,6 +20,9 @@ export type BalanceAdjustmentAuthority =
 	| { via: "payroll_access_grant"; grantId: string };
 
 export type BalanceAdjustmentWriter = OrganizationActor & { authority: BalanceAdjustmentAuthority };
+
+/** The caller's database client, such as its `DatabaseService`'s (docs/refs/effect.md). */
+type AuthorizationClient = Pick<WorkBalanceDbClient, "execute">;
 
 /**
  * Who may record and cancel balance adjustments, and see them with their
@@ -34,22 +37,24 @@ export type BalanceAdjustmentWriter = OrganizationActor & { authority: BalanceAd
  *
  * The employee and their managers only see them: `requireBalanceAdjustmentViewer` (#996).
  */
-export async function requireBalanceAdjustmentWriter(target?: {
-	employeeId: string;
-}): Promise<BalanceAdjustmentWriter> {
+export async function requireBalanceAdjustmentWriter(
+	database: AuthorizationClient,
+	target?: { employeeId: string },
+): Promise<BalanceAdjustmentWriter> {
 	const actor = await requireOrganizationActor(notPermitted);
-	const authority = await findWriterAuthority(actor, target);
+	const authority = await findWriterAuthority(database, actor, target);
 	if (!authority) throw notPermitted();
 	return { ...actor, authority };
 }
 
 async function findWriterAuthority(
+	database: AuthorizationClient,
 	actor: OrganizationActor,
 	target: { employeeId: string } | undefined,
 ): Promise<BalanceAdjustmentAuthority | null> {
 	if (await canManageCurrentOrganizationSettings()) return { via: "organization_admin" };
 	if (!target) return null;
-	const grant = await findBalanceAdjustmentGrant(db, {
+	const grant = await findBalanceAdjustmentGrant(database, {
 		organizationId: actor.organizationId,
 		actorUserId: actor.userId,
 		employeeId: target.employeeId,
@@ -63,12 +68,14 @@ async function findWriterAuthority(
  * Which rows a holder may write is decided per row by the upload (the grant's
  * coverage for balance adjustments, never the holder's own record).
  */
-export async function requireOpeningBalanceUploader(): Promise<BalanceAdjustmentWriter> {
+export async function requireOpeningBalanceUploader(
+	database: AuthorizationClient,
+): Promise<BalanceAdjustmentWriter> {
 	const actor = await requireOrganizationActor(notPermitted);
 	if (await canManageCurrentOrganizationSettings()) {
 		return { ...actor, authority: { via: "organization_admin" } };
 	}
-	const grant = await findActiveBalanceAdjustmentGrant(db, {
+	const grant = await findActiveBalanceAdjustmentGrant(database, {
 		organizationId: actor.organizationId,
 		actorUserId: actor.userId,
 	});
@@ -103,12 +110,12 @@ function notPermitted() {
  * screens use it to decide whether to offer a payout, such as the final payout
  * in the offboarding review (#1002); recording re-checks.
  */
-export async function mayWriteBalanceAdjustments(input: {
-	organizationId: string;
-	employeeId: string;
-}): Promise<boolean> {
+export async function mayWriteBalanceAdjustments(
+	database: AuthorizationClient,
+	input: { organizationId: string; employeeId: string },
+): Promise<boolean> {
 	try {
-		const writer = await requireBalanceAdjustmentWriter({ employeeId: input.employeeId });
+		const writer = await requireBalanceAdjustmentWriter(database, { employeeId: input.employeeId });
 		return writer.organizationId === input.organizationId;
 	} catch (error) {
 		if (error instanceof BalanceAdjustmentRefusal) return false;
@@ -134,12 +141,12 @@ const notPermittedToView = () =>
  * employee exists.
  */
 export async function requireBalanceAdjustmentViewer(
-	database: Pick<typeof db, "execute">,
+	database: AuthorizationClient,
 	input: { employeeId: string },
 ): Promise<BalanceAdjustmentViewer> {
 	const actor = await requireOrganizationActor(notPermittedToView);
 	const target = isUuid(input.employeeId) ? { employeeId: input.employeeId } : undefined;
-	if (await findWriterAuthority(actor, target)) return { ...actor, canManage: true };
+	if (await findWriterAuthority(database, actor, target)) return { ...actor, canManage: true };
 	if (!target) throw notPermittedToView();
 
 	const related = await database.execute(sql`

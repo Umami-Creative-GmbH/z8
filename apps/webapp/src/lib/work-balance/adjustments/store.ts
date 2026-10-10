@@ -2,7 +2,6 @@ import "server-only";
 
 import { and, desc, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import type { db as globalDb } from "@/db";
 import { user } from "@/db/auth-schema";
 import { balanceAdjustment } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
@@ -20,14 +19,15 @@ import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal"
 import { closedMonthTouchedByDays } from "@/lib/time-tracking/closed-months/rules";
 import { closedRangesForEmployee } from "@/lib/time-tracking/closed-months/store";
 import { acquireOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction/ranks";
+import type { WorkBalanceDatabase, WorkBalanceDbClient } from "@/lib/work-balance/db-client";
 import {
 	computeEmployeeWorkBalanceAtEndOfDay,
 	loadWorkBalanceEmployee,
 	markEmployeeWorkBalanceDirty,
 	refreshEmployeeWorkBalanceFromPeriods,
 	requestEmployeeWorkBalanceFullRebuild,
-	type WorkBalanceDbClient,
 } from "@/lib/work-balance/service";
+import { adjustmentDisplayName } from "./display-name";
 import {
 	listUncancelledPayouts,
 	type OpeningBalanceInEffect,
@@ -37,6 +37,7 @@ import { type BalanceAdjustmentChange, notifyBalanceAdjustmentChanges } from "./
 import { refuseOpeningBalance, refuseOvertimePayout } from "./rules";
 import {
 	type BalanceAdjustmentErrorCode,
+	type BalanceAdjustmentKind,
 	BalanceAdjustmentRefusal,
 	type BalanceAdjustmentView,
 } from "./types";
@@ -56,24 +57,27 @@ import {
 
 const logger = createLogger("BalanceAdjustments");
 
-export type BalanceAdjustmentDatabase = Pick<typeof globalDb, "transaction" | "select">;
+/** The database a ledger write opens its transaction on: the app's or the caller's. */
+export type BalanceAdjustmentDatabase = WorkBalanceDatabase;
+
+/** Who writes an adjustment of which employee, and when: what every ledger write carries. */
+export type BalanceAdjustmentWriteContext = {
+	organizationId: string;
+	actorUserId: string;
+	employeeId: string;
+	now: Instant;
+	/** Recorded with the audit entries, e.g. the payroll access grant the actor used (#995). */
+	auditMetadata?: Record<string, unknown> | null;
+};
 
 const MAX_REASON_LENGTH = 1000;
 
 const recorder = alias(user, "balance_adjustment_recorder");
 const canceller = alias(user, "balance_adjustment_canceller");
 
-function displayName(
-	row: { name: string | null; firstName: string | null; lastName: string | null } | null,
-) {
-	if (!row) return "";
-	const structured = [row.firstName, row.lastName].filter(Boolean).join(" ").trim();
-	return structured || row.name || "";
-}
-
 /** The employee's adjustments, cancelled ones included, newest day first. */
 export async function listBalanceAdjustments(
-	client: Pick<typeof globalDb, "select">,
+	client: Pick<WorkBalanceDbClient, "select">,
 	input: { organizationId: string; employeeId: string },
 ): Promise<BalanceAdjustmentView[]> {
 	const rows = await client
@@ -104,11 +108,14 @@ export async function listBalanceAdjustments(
 		minutes: adjustment.minutes,
 		reason: adjustment.reason,
 		recordedAt: adjustment.recordedAt.toISOString(),
-		recordedBy: { userId: adjustment.recordedBy ?? "", name: displayName(recordedBy) },
+		recordedBy: { userId: adjustment.recordedBy ?? "", name: adjustmentDisplayName(recordedBy) },
 		cancellation: adjustment.cancelledAt
 			? {
 					cancelledAt: adjustment.cancelledAt.toISOString(),
-					cancelledBy: { userId: adjustment.cancelledBy ?? "", name: displayName(cancelledBy) },
+					cancelledBy: {
+						userId: adjustment.cancelledBy ?? "",
+						name: adjustmentDisplayName(cancelledBy),
+					},
 					reason: adjustment.cancellationReason ?? "",
 				}
 			: null,
@@ -119,32 +126,25 @@ export async function listBalanceAdjustments(
 export async function recordOvertimePayout(
 	database: BalanceAdjustmentDatabase,
 	audit: AuditTrail,
-	input: {
-		organizationId: string;
-		actorUserId: string;
-		employeeId: string;
+	input: BalanceAdjustmentWriteContext & {
 		/** Local date in the employee's effective timezone. */
 		day: string;
 		amountMinutes: number;
 		reason: string;
-		now: Instant;
-		/** Recorded with the audit entry, e.g. the payroll access grant the actor used (#995). */
-		auditMetadata?: Record<string, unknown> | null;
 	},
 ): Promise<{ adjustmentId: string }> {
 	const day = parseDay(input.day);
 	const reason = requireReason(input.reason);
 	const adjustmentId = await inLedgerTransaction(database, async (tx) => {
-		const client = tx as unknown as WorkBalanceDbClient;
-		await lockEmployeeLedger(client, input);
-		const subject = await loadWorkBalanceEmployee(input, client);
+		await lockEmployeeLedger(tx, input);
+		const subject = await loadWorkBalanceEmployee(input, tx);
 		if (!subject) throw refusal("employee_not_found", "Employee not found");
 
 		// Checked under the ledger lock, so two payouts recorded at once cannot
 		// together exceed the balance, and no opening balance slips in between.
 		const today = plainDateAt(input.now, subject.timezone);
-		const closedMonth = await closedMonthOfDay(client, input);
-		const openingBalance = await readOpeningBalanceInEffect(client, input);
+		const closedMonth = await closedMonthOfDay(tx, input);
+		const openingBalance = await readOpeningBalanceInEffect(tx, input);
 		const openingBalanceDay = openingBalance ? parsePlainDate(openingBalance.day) : null;
 		const needsBalance =
 			input.amountMinutes > 0 &&
@@ -154,7 +154,7 @@ export async function recordOvertimePayout(
 		const balanceAtEndOf = (balanceDay: string) =>
 			computeEmployeeWorkBalanceAtEndOfDay(
 				{ organizationId: input.organizationId, employee: subject, day: balanceDay },
-				client,
+				tx,
 			);
 		const balanceAtEndOfDayMinutes = needsBalance ? await balanceAtEndOf(input.day) : 0;
 		// The payout lowers the balance on every later day too, so it may not take
@@ -162,7 +162,7 @@ export async function recordOvertimePayout(
 		const laterPayoutBalancesMinutes: number[] = [];
 		if (needsBalance && input.amountMinutes <= balanceAtEndOfDayMinutes) {
 			const laterDays = new Set(
-				(await listUncancelledPayouts(client, input))
+				(await listUncancelledPayouts(tx, input))
 					.map((payout) => payout.day)
 					.filter((payoutDay) => payoutDay > input.day),
 			);
@@ -182,33 +182,11 @@ export async function recordOvertimePayout(
 		if (refused === "month_closed" && closedMonth) throw monthClosed(closedMonth);
 		if (refused) throw refusal(refused, `Overtime payout refused: ${refused}`);
 
-		const [inserted] = await tx
-			.insert(balanceAdjustment)
-			.values({
-				organizationId: input.organizationId,
-				employeeId: input.employeeId,
-				kind: "overtime_payout",
-				day: input.day,
-				minutes: -input.amountMinutes,
-				reason,
-				recordedBy: input.actorUserId,
-				recordedAt: dateFromInstant(input.now),
-			})
-			.returning({ id: balanceAdjustment.id });
-		if (!inserted) throw new Error("Balance adjustment insert returned no row");
-
-		await audit.record(tx, {
-			organizationId: input.organizationId,
-			targetType: "balance_adjustment",
-			targetId: inserted.id,
-			action: AuditAction.BALANCE_ADJUSTMENT_RECORDED,
-			actorUserId: input.actorUserId,
-			employeeId: input.employeeId,
-			changes: {
-				from: null,
-				to: { kind: "overtime_payout", day: input.day, minutes: -input.amountMinutes, reason },
-			},
-			metadata: input.auditMetadata ?? null,
+		const insertedId = await insertAdjustment(tx, audit, input, {
+			kind: "overtime_payout",
+			day: input.day,
+			minutes: -input.amountMinutes,
+			reason,
 		});
 		await markEmployeeWorkBalanceDirty(
 			{
@@ -218,7 +196,7 @@ export async function recordOvertimePayout(
 			},
 			tx,
 		);
-		return inserted.id;
+		return insertedId;
 	});
 
 	await refreshAfterCommit({ ...input, dirtyFromDate: input.day });
@@ -244,21 +222,11 @@ export async function recordOvertimePayout(
 export async function cancelBalanceAdjustment(
 	database: BalanceAdjustmentDatabase,
 	audit: AuditTrail,
-	input: {
-		organizationId: string;
-		actorUserId: string;
-		employeeId: string;
-		adjustmentId: string;
-		reason: string;
-		now: Instant;
-		/** Recorded with the audit entry, e.g. the payroll access grant the actor used (#995). */
-		auditMetadata?: Record<string, unknown> | null;
-	},
+	input: BalanceAdjustmentWriteContext & { adjustmentId: string; reason: string },
 ): Promise<{ adjustmentId: string }> {
 	const reason = requireReason(input.reason);
 	const cancelled = await inLedgerTransaction(database, async (tx) => {
-		const client = tx as unknown as WorkBalanceDbClient;
-		await lockEmployeeLedger(client, input);
+		await lockEmployeeLedger(tx, input);
 		const [current] = await tx
 			.select({
 				id: balanceAdjustment.id,
@@ -278,36 +246,14 @@ export async function cancelBalanceAdjustment(
 			.for("update");
 		if (!current) throw refusal("adjustment_not_found", "Balance adjustment not found");
 		if (current.cancelledAt) throw refusal("already_cancelled", "Already cancelled");
-		const closedMonth = await closedMonthOfDay(client, { ...input, day: current.day });
+		const closedMonth = await closedMonthOfDay(tx, { ...input, day: current.day });
 		if (closedMonth) throw monthClosed(closedMonth);
 
-		const cancelledAt = dateFromInstant(input.now);
-		await tx
-			.update(balanceAdjustment)
-			.set({ cancelledAt, cancelledBy: input.actorUserId, cancellationReason: reason })
-			.where(
-				and(
-					eq(balanceAdjustment.organizationId, input.organizationId),
-					eq(balanceAdjustment.id, current.id),
-				),
-			);
-		await audit.record(tx, {
-			organizationId: input.organizationId,
-			targetType: "balance_adjustment",
-			targetId: current.id,
-			action: AuditAction.BALANCE_ADJUSTMENT_CANCELLED,
-			actorUserId: input.actorUserId,
-			employeeId: input.employeeId,
-			changes: {
-				from: { kind: current.kind, day: current.day, minutes: current.minutes, cancelled: false },
-				to: { cancelled: true, reason },
-			},
-			metadata: input.auditMetadata ?? null,
-		});
+		await cancelAdjustment(tx, audit, input, current, reason);
 		if (current.kind === "opening_balance") {
 			// The months before its day were computed as replaced (zero); only a
 			// full rebuild brings back the calculation from the employee's start.
-			await requestEmployeeWorkBalanceFullRebuild(input, { dbClient: client });
+			await requestEmployeeWorkBalanceFullRebuild(input, { dbClient: tx });
 		} else {
 			await markEmployeeWorkBalanceDirty(
 				{
@@ -318,7 +264,7 @@ export async function cancelBalanceAdjustment(
 				tx,
 			);
 		}
-		return current;
+		return { id: current.id, kind: current.kind, day: current.day, minutes: current.minutes };
 	});
 
 	if (cancelled.kind === "opening_balance") {
@@ -342,9 +288,10 @@ export async function cancelBalanceAdjustment(
 /**
  * Checks a single opening balance for the employee without writing anything
  * (#997): the employee is in the organization, the day is a valid local date
- * no later than today in the employee's timezone and not in a closed month,
- * no uncancelled overtime payout is dated on or before it (the refusal lists
- * them), and the reason is given. Throws a `BalanceAdjustmentRefusal`.
+ * no later than today in the employee's timezone and not in a closed month
+ * (nor is the opening balance it replaces), no uncancelled overtime payout is
+ * dated on or before it (the refusal lists them), and the reason is given.
+ * Throws a `BalanceAdjustmentRefusal`.
  *
  * The bulk upload (#999) runs it per row to report row errors; it gives the
  * authoritative answer only inside the writing transaction, which
@@ -412,88 +359,28 @@ export async function checkOpeningBalance(
  * `notifyBalanceAdjustmentChanges` after the commit (#996).
  */
 export async function writeOpeningBalance(
-	tx: WorkBalanceDbClient & Pick<typeof globalDb, "update">,
+	tx: WorkBalanceDbClient,
 	audit: AuditTrail,
-	input: {
-		organizationId: string;
-		actorUserId: string;
-		employeeId: string;
-		day: string;
-		minutes: number;
-		reason: string;
-		now: Instant;
-		/** Written to both audit entries, e.g. the payroll grant that authorized it (#995). */
-		auditMetadata?: Record<string, unknown> | null;
-	},
+	input: BalanceAdjustmentWriteContext & { day: string; minutes: number; reason: string },
 ): Promise<OpeningBalanceWritten> {
 	await lockEmployeeLedger(tx, input);
 	const checked = await checkOpeningBalance(tx, input);
-	const at = dateFromInstant(input.now);
 
 	if (checked.replaces) {
-		const previous = checked.replaces;
-		await tx
-			.update(balanceAdjustment)
-			.set({ cancelledAt: at, cancelledBy: input.actorUserId, cancellationReason: checked.reason })
-			.where(
-				and(
-					eq(balanceAdjustment.organizationId, input.organizationId),
-					eq(balanceAdjustment.id, previous.id),
-				),
-			);
-		await audit.record(tx, {
-			organizationId: input.organizationId,
-			targetType: "balance_adjustment",
-			targetId: previous.id,
-			action: AuditAction.BALANCE_ADJUSTMENT_CANCELLED,
-			actorUserId: input.actorUserId,
-			employeeId: input.employeeId,
-			changes: {
-				from: {
-					kind: "opening_balance",
-					day: previous.day,
-					minutes: previous.minutes,
-					cancelled: false,
-				},
-				to: { cancelled: true, reason: checked.reason },
-			},
-			metadata: input.auditMetadata ?? null,
-		});
+		await cancelAdjustment(
+			tx,
+			audit,
+			input,
+			{ ...checked.replaces, kind: "opening_balance" },
+			checked.reason,
+		);
 	}
-
-	const [inserted] = await tx
-		.insert(balanceAdjustment)
-		.values({
-			organizationId: input.organizationId,
-			employeeId: input.employeeId,
-			kind: "opening_balance",
-			day: checked.day,
-			minutes: checked.minutes,
-			reason: checked.reason,
-			recordedBy: input.actorUserId,
-			recordedAt: at,
-		})
-		.returning({ id: balanceAdjustment.id });
-	if (!inserted) throw new Error("Balance adjustment insert returned no row");
-
-	await audit.record(tx, {
-		organizationId: input.organizationId,
-		targetType: "balance_adjustment",
-		targetId: inserted.id,
-		action: AuditAction.BALANCE_ADJUSTMENT_RECORDED,
-		actorUserId: input.actorUserId,
-		employeeId: input.employeeId,
-		changes: {
-			from: null,
-			to: {
-				kind: "opening_balance",
-				day: checked.day,
-				minutes: checked.minutes,
-				reason: checked.reason,
-				...(checked.replaces ? { replaces: checked.replaces.id } : {}),
-			},
-		},
-		metadata: input.auditMetadata ?? null,
+	const insertedId = await insertAdjustment(tx, audit, input, {
+		kind: "opening_balance",
+		day: checked.day,
+		minutes: checked.minutes,
+		reason: checked.reason,
+		...(checked.replaces ? { replaces: checked.replaces.id } : {}),
 	});
 	await requestEmployeeWorkBalanceFullRebuild(input, { dbClient: tx });
 	// The employee is told about both after the commit: the replaced one as
@@ -516,14 +403,14 @@ export async function writeOpeningBalance(
 		event: "recorded",
 		employeeId: input.employeeId,
 		adjustment: {
-			id: inserted.id,
+			id: insertedId,
 			kind: "opening_balance",
 			day: checked.day,
 			minutes: checked.minutes,
 		},
 	});
 	return {
-		adjustmentId: inserted.id,
+		adjustmentId: insertedId,
 		cancelledAdjustmentId: checked.replaces?.id ?? null,
 		changes,
 	};
@@ -548,11 +435,92 @@ export async function setOpeningBalance(
 	input: Parameters<typeof writeOpeningBalance>[2],
 ): Promise<{ adjustmentId: string; cancelledAdjustmentId: string | null }> {
 	const { changes, ...result } = await inLedgerTransaction(database, (tx) =>
-		writeOpeningBalance(tx as unknown as Parameters<typeof writeOpeningBalance>[0], audit, input),
+		writeOpeningBalance(tx, audit, input),
 	);
 	await refreshAfterCommit({ ...input, fullRebuild: true });
 	await notifyBalanceAdjustmentChanges(database, { organizationId: input.organizationId, changes });
 	return result;
+}
+
+/** Records the adjustment and its audit entry inside the caller's transaction. */
+async function insertAdjustment(
+	tx: WorkBalanceDbClient,
+	audit: AuditTrail,
+	context: BalanceAdjustmentWriteContext,
+	adjustment: {
+		kind: BalanceAdjustmentKind;
+		day: string;
+		minutes: number;
+		reason: string;
+		/** With an opening balance: the one it replaces, for the audit entry. */
+		replaces?: string;
+	},
+): Promise<string> {
+	const { replaces, ...values } = adjustment;
+	const [inserted] = await tx
+		.insert(balanceAdjustment)
+		.values({
+			...values,
+			organizationId: context.organizationId,
+			employeeId: context.employeeId,
+			recordedBy: context.actorUserId,
+			recordedAt: dateFromInstant(context.now),
+		})
+		.returning({ id: balanceAdjustment.id });
+	if (!inserted) throw new Error("Balance adjustment insert returned no row");
+
+	await audit.record(tx, {
+		organizationId: context.organizationId,
+		targetType: "balance_adjustment",
+		targetId: inserted.id,
+		action: AuditAction.BALANCE_ADJUSTMENT_RECORDED,
+		actorUserId: context.actorUserId,
+		employeeId: context.employeeId,
+		changes: { from: null, to: { ...values, ...(replaces ? { replaces } : {}) } },
+		metadata: context.auditMetadata ?? null,
+	});
+	return inserted.id;
+}
+
+/** Cancels the adjustment with a reason and audits it, inside the caller's transaction. */
+async function cancelAdjustment(
+	tx: WorkBalanceDbClient,
+	audit: AuditTrail,
+	context: BalanceAdjustmentWriteContext,
+	adjustment: { id: string; kind: BalanceAdjustmentKind; day: string; minutes: number },
+	reason: string,
+): Promise<void> {
+	await tx
+		.update(balanceAdjustment)
+		.set({
+			cancelledAt: dateFromInstant(context.now),
+			cancelledBy: context.actorUserId,
+			cancellationReason: reason,
+		})
+		.where(
+			and(
+				eq(balanceAdjustment.organizationId, context.organizationId),
+				eq(balanceAdjustment.id, adjustment.id),
+			),
+		);
+	await audit.record(tx, {
+		organizationId: context.organizationId,
+		targetType: "balance_adjustment",
+		targetId: adjustment.id,
+		action: AuditAction.BALANCE_ADJUSTMENT_CANCELLED,
+		actorUserId: context.actorUserId,
+		employeeId: context.employeeId,
+		changes: {
+			from: {
+				kind: adjustment.kind,
+				day: adjustment.day,
+				minutes: adjustment.minutes,
+				cancelled: false,
+			},
+			to: { cancelled: true, reason },
+		},
+		metadata: context.auditMetadata ?? null,
+	});
 }
 
 /**
@@ -594,7 +562,7 @@ async function lockEmployeeLedger(
  */
 async function inLedgerTransaction<T>(
 	database: BalanceAdjustmentDatabase,
-	write: (tx: Parameters<Parameters<BalanceAdjustmentDatabase["transaction"]>[0]>[0]) => Promise<T>,
+	write: (tx: WorkBalanceDbClient) => Promise<T>,
 ): Promise<T> {
 	try {
 		return await database.transaction(write);

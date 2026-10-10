@@ -1,9 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { withAuditTrail } from "@/lib/audit-trail";
 import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import { runRefusalAction } from "@/lib/effect/refusal-action";
+import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { isUuid } from "@/lib/validations/uuid";
 import {
 	balanceAdjustmentAuditMetadata,
@@ -24,6 +24,7 @@ import {
 } from "@/lib/work-balance/adjustments/types";
 import { getEmployeeWorkBalance, loadWorkBalanceEmployee } from "@/lib/work-balance/service";
 import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
+import { revalidateWorkBalancePaths } from "./work-balance-paths";
 
 /**
  * The Work balance section of an employee's settings page (#993): the current
@@ -82,7 +83,7 @@ export async function getEmployeeWorkBalanceSectionAction(input: {
 		const subject = await loadWorkBalanceEmployee({ employeeId, organizationId }, db);
 		if (!subject) throw new BalanceAdjustmentRefusal("employee_not_found", "Employee not found");
 		const [balance, adjustments] = await Promise.all([
-			getEmployeeWorkBalance({ employeeId, organizationId }),
+			getEmployeeWorkBalance({ employeeId, organizationId }, db),
 			listBalanceAdjustments(db, { organizationId, employeeId }),
 		]);
 		return {
@@ -102,7 +103,7 @@ export async function recordOvertimePayoutAction(
 		"balanceAdjustments.recordPayout",
 		BalanceAdjustmentRefusal,
 		async (db) => {
-			const { organizationId, userId, authority } = await requireWriterFor(input?.employeeId);
+			const { organizationId, userId, authority } = await requireWriterFor(db, input?.employeeId);
 			const employeeId = parseUuid(input?.employeeId);
 			const amountMinutes = payoutMinutes({
 				hours: Number(input?.hours),
@@ -123,7 +124,7 @@ export async function recordOvertimePayoutAction(
 					auditMetadata: balanceAdjustmentAuditMetadata(authority),
 				}),
 			);
-			revalidateEmployeePaths(employeeId);
+			revalidateWorkBalancePaths([employeeId]);
 			return result;
 		},
 	);
@@ -142,7 +143,7 @@ export async function setOpeningBalanceAction(
 		"balanceAdjustments.setOpeningBalance",
 		BalanceAdjustmentRefusal,
 		async (db) => {
-			const { organizationId, userId, authority } = await requireWriterFor(input?.employeeId);
+			const { organizationId, userId, authority } = await requireWriterFor(db, input?.employeeId);
 			const employeeId = parseUuid(input?.employeeId);
 			const minutes = openingBalanceMinutes({
 				negative: input?.negative === true,
@@ -164,7 +165,7 @@ export async function setOpeningBalanceAction(
 					auditMetadata: balanceAdjustmentAuditMetadata(authority),
 				}),
 			);
-			revalidateEmployeePaths(employeeId);
+			revalidateWorkBalancePaths([employeeId]);
 			return written;
 		},
 	);
@@ -174,7 +175,7 @@ export async function cancelBalanceAdjustmentAction(
 	input: CancelBalanceAdjustmentInput,
 ): Promise<BalanceAdjustmentActionResult<{ adjustmentId: string }>> {
 	return runRefusalAction("balanceAdjustments.cancel", BalanceAdjustmentRefusal, async (db) => {
-		const { organizationId, userId, authority } = await requireWriterFor(input?.employeeId);
+		const { organizationId, userId, authority } = await requireWriterFor(db, input?.employeeId);
 		const employeeId = parseUuid(input?.employeeId);
 		const adjustmentId = parseUuid(input?.adjustmentId);
 		const result = await withAuditTrail((audit) =>
@@ -188,7 +189,7 @@ export async function cancelBalanceAdjustmentAction(
 				auditMetadata: balanceAdjustmentAuditMetadata(authority),
 			}),
 		);
-		revalidateEmployeePaths(employeeId);
+		revalidateWorkBalancePaths([employeeId]);
 		return result;
 	});
 }
@@ -197,14 +198,8 @@ export async function cancelBalanceAdjustmentAction(
  * Authorizes the actor for the employee. An id that is not a UUID is checked
  * without a target, so only owners and admins learn that it is invalid.
  */
-function requireWriterFor(employeeId: unknown) {
-	return requireBalanceAdjustmentWriter(isUuid(employeeId) ? { employeeId } : undefined);
-}
-
-function revalidateEmployeePaths(employeeId: string) {
-	revalidatePath(`/settings/employees/${employeeId}`);
-	revalidatePath(`/payroll/work-balances/${employeeId}`);
-	revalidatePath("/team");
+function requireWriterFor(db: DatabaseClient, employeeId: unknown) {
+	return requireBalanceAdjustmentWriter(db, isUuid(employeeId) ? { employeeId } : undefined);
 }
 
 function parseUuid(value: unknown): string {

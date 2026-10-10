@@ -11,6 +11,7 @@ import {
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { readWorkBalanceAdjustments } from "./adjustments/ledger";
+import type { WorkBalanceDbClient } from "./db-client";
 import {
 	computeEmployeePeriodBalance,
 	rebuildEmployeeYearBalanceFromMonths,
@@ -21,10 +22,7 @@ import type { EmployeeWorkBalancePayload } from "./types";
 
 const WORK_BALANCE_RESET_MARKER_DATE = "0001-01-01";
 
-export type WorkBalanceDbClient = Pick<
-	typeof db,
-	"delete" | "execute" | "insert" | "query" | "select"
->;
+export type { WorkBalanceDbClient } from "./db-client";
 
 function isEmployeeWorkBalanceResetMarker(row: {
 	computedFromDate: string;
@@ -142,8 +140,11 @@ export function shouldIncludeWorkBalanceInBatch(
  * changed: none of them is current. An organization intent (#311) covers every
  * projection, a user intent (#312) that user's employees.
  */
-async function readPendingWorkBalanceRebuilds(organizationId: string) {
-	const intents = await db.query.workBalanceRebuildIntent.findMany({
+async function readPendingWorkBalanceRebuilds(
+	organizationId: string,
+	dbClient: Pick<WorkBalanceDbClient, "query">,
+) {
+	const intents = await dbClient.query.workBalanceRebuildIntent.findMany({
 		where: eq(workBalanceRebuildIntent.organizationId, organizationId),
 		columns: { userId: true },
 	});
@@ -153,16 +154,19 @@ async function readPendingWorkBalanceRebuilds(organizationId: string) {
 	};
 }
 
-export async function getEmployeeWorkBalance(input: {
-	employeeId: string;
-	organizationId: string;
-}): Promise<EmployeeWorkBalancePayload | null> {
+export async function getEmployeeWorkBalance(
+	input: {
+		employeeId: string;
+		organizationId: string;
+	},
+	dbClient: Pick<WorkBalanceDbClient, "query"> = db,
+): Promise<EmployeeWorkBalancePayload | null> {
 	// Intent first: a rebuild deletes its intent in the transaction that resets
 	// the rows, so a row read afterwards is never an old-zone projection.
-	const pending = await readPendingWorkBalanceRebuilds(input.organizationId);
+	const pending = await readPendingWorkBalanceRebuilds(input.organizationId, dbClient);
 	if (pending.organizationWide) return null;
 	if (pending.userIds.size > 0) {
-		const scopedEmployee = await db.query.employee.findFirst({
+		const scopedEmployee = await dbClient.query.employee.findFirst({
 			where: and(
 				eq(employee.id, input.employeeId),
 				eq(employee.organizationId, input.organizationId),
@@ -171,7 +175,7 @@ export async function getEmployeeWorkBalance(input: {
 		});
 		if (!scopedEmployee || pending.userIds.has(scopedEmployee.userId)) return null;
 	}
-	const row = await db.query.employeeWorkBalance.findFirst({
+	const row = await dbClient.query.employeeWorkBalance.findFirst({
 		where: and(
 			eq(employeeWorkBalance.employeeId, input.employeeId),
 			eq(employeeWorkBalance.organizationId, input.organizationId),
@@ -210,18 +214,21 @@ function toEmployeeWorkBalancePayload(
 	};
 }
 
-export async function getEmployeeWorkBalances(input: {
-	employeeIds: string[];
-	organizationId: string;
-}): Promise<Map<string, EmployeeWorkBalancePayload>> {
+export async function getEmployeeWorkBalances(
+	input: {
+		employeeIds: string[];
+		organizationId: string;
+	},
+	dbClient: Pick<WorkBalanceDbClient, "query"> = db,
+): Promise<Map<string, EmployeeWorkBalancePayload>> {
 	let employeeIds = [...new Set(input.employeeIds)];
 	if (employeeIds.length === 0) return new Map();
 
 	// Intent first, as in getEmployeeWorkBalance.
-	const pending = await readPendingWorkBalanceRebuilds(input.organizationId);
+	const pending = await readPendingWorkBalanceRebuilds(input.organizationId, dbClient);
 	if (pending.organizationWide) return new Map();
 	if (pending.userIds.size > 0) {
-		const scopedEmployees = await db.query.employee.findMany({
+		const scopedEmployees = await dbClient.query.employee.findMany({
 			where: and(
 				eq(employee.organizationId, input.organizationId),
 				inArray(employee.id, employeeIds),
@@ -233,7 +240,7 @@ export async function getEmployeeWorkBalances(input: {
 			.map(({ id }) => id);
 		if (employeeIds.length === 0) return new Map();
 	}
-	const rows = await db.query.employeeWorkBalance.findMany({
+	const rows = await dbClient.query.employeeWorkBalance.findMany({
 		where: and(
 			eq(employeeWorkBalance.organizationId, input.organizationId),
 			inArray(employeeWorkBalance.employeeId, employeeIds),

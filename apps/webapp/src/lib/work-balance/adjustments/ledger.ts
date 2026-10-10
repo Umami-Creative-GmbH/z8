@@ -1,14 +1,14 @@
 import { and, asc, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
-import type { db } from "@/db";
 import { balanceAdjustment } from "@/db/schema";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import type { WorkBalanceDbClient } from "../db-client";
 
 /**
  * Reads of the balance adjustment ledger that the work-balance projection
  * adds in (#993, ADR-0008). Kept free of the projection itself, so the
  * projection can import it. Every query is filtered by `organizationId`.
  */
-export type BalanceAdjustmentReadClient = Pick<typeof db, "select">;
+type BalanceAdjustmentReadClient = Pick<WorkBalanceDbClient, "select">;
 
 /**
  * The signed minutes of the employee's uncancelled overtime payouts whose day

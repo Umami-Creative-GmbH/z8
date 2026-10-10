@@ -1,5 +1,4 @@
 import { and, eq, inArray } from "drizzle-orm";
-import type { db as appDb } from "@/db";
 import { employee } from "@/db/schema";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { createLogger } from "@/lib/logger";
@@ -11,6 +10,7 @@ import {
 import { resolveRecipientNotificationLocale } from "@/lib/notifications/recipient-locale";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
 import { formatAbsenceDateRange } from "@/lib/personnel-file/sick-note-labels";
+import type { WorkBalanceDbClient } from "@/lib/work-balance/db-client";
 import { formatSignedWorkBalance } from "@/lib/work-balance/format";
 import type { BalanceAdjustmentKind } from "./types";
 
@@ -145,7 +145,7 @@ const FALLBACK_LOCALE = "en";
  * preference for the type is on.
  */
 export async function notifyBalanceAdjustmentChanges(
-	database: Pick<typeof appDb, "select">,
+	database: Pick<WorkBalanceDbClient, "select">,
 	input: { organizationId: string; changes: readonly BalanceAdjustmentChange[] },
 ): Promise<void> {
 	if (input.changes.length === 0) return;

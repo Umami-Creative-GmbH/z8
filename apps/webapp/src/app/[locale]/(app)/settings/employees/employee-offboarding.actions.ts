@@ -44,6 +44,7 @@ import {
 	scheduleDepartureSchema,
 } from "@/lib/validations/employee-offboarding";
 import { mayWriteBalanceAdjustments } from "@/lib/work-balance/adjustments/authorization";
+import type { WorkBalanceDbClient } from "@/lib/work-balance/db-client";
 import { getEmployeeWorkBalance, loadWorkBalanceEmployee } from "@/lib/work-balance/service";
 import {
 	getEmployeeSettingsActorContext,
@@ -339,7 +340,7 @@ export async function getEmployeeOffboardingViewAction(
 					// Information only: a balance that fails to load never hides the departure.
 					const workBalance = yield* actorContext.dbService
 						.query("employeeOffboarding.workBalance", () =>
-							loadOffboardingWorkBalance({
+							loadOffboardingWorkBalance(actorContext.dbService.db, {
 								organizationId: actorContext.organizationId,
 								employeeId,
 								state: result.view.state,
@@ -375,17 +376,20 @@ export async function getEmployeeOffboardingViewAction(
  * projection every balance view reads, and a final overtime payout when the
  * viewer may record payouts (the #993 rule, re-checked when recording).
  */
-async function loadOffboardingWorkBalance(input: {
-	organizationId: string;
-	employeeId: string;
-	state: EmployeeOffboardingState;
-}): Promise<OffboardingWorkBalance | null> {
+async function loadOffboardingWorkBalance(
+	dbClient: WorkBalanceDbClient,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		state: EmployeeOffboardingState;
+	},
+): Promise<OffboardingWorkBalance | null> {
 	if (input.state === "active") return null;
 	const scope = { organizationId: input.organizationId, employeeId: input.employeeId };
 	const [subject, balance, mayRecordPayouts] = await Promise.all([
-		loadWorkBalanceEmployee(scope),
-		getEmployeeWorkBalance(scope),
-		mayWriteBalanceAdjustments(scope),
+		loadWorkBalanceEmployee(scope, dbClient),
+		getEmployeeWorkBalance(scope, dbClient),
+		mayWriteBalanceAdjustments(dbClient, scope),
 	]);
 	if (!subject) return null;
 	return offboardingWorkBalance({

@@ -1,14 +1,14 @@
 import "server-only";
 
 import { and, eq, isNotNull } from "drizzle-orm";
-import type { db as globalDb } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { AuditTrail } from "@/lib/audit-trail";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import { listBalanceAdjustmentGrantEmployees } from "@/lib/payroll-access/adjustment-coverage";
-import type { WorkBalanceDbClient } from "@/lib/work-balance/service";
+import type { WorkBalanceDbClient } from "@/lib/work-balance/db-client";
 import { type BalanceAdjustmentAuthority, balanceAdjustmentAuditMetadata } from "./authorization";
+import { adjustmentDisplayName } from "./display-name";
 import { type BalanceAdjustmentChange, notifyBalanceAdjustmentChanges } from "./notifications";
 import { type OpeningBalanceCsvRow, parseOpeningBalanceCsv } from "./opening-balance-csv";
 import {
@@ -108,8 +108,7 @@ export async function commitOpeningBalanceUpload(
 	const audit = new AuditTrail();
 	let written: { rows: OpeningBalanceUploadRow[]; changes: BalanceAdjustmentChange[] };
 	try {
-		written = await database.transaction(async (transaction) => {
-			const tx = transaction as unknown as Parameters<typeof writeOpeningBalance>[0];
+		written = await database.transaction(async (tx) => {
 			const rows = resolveRows(parsed.rows, await loadUploadScope(tx, input));
 			const changes: BalanceAdjustmentChange[] = [];
 			const auditMetadata = {
@@ -215,7 +214,7 @@ function rowErrorOf(refusal: BalanceAdjustmentRefusal): OpeningBalanceUploadRowE
 }
 
 async function loadUploadScope(
-	client: Pick<typeof globalDb, "select" | "execute">,
+	client: Pick<WorkBalanceDbClient, "select" | "execute">,
 	input: UploadInput,
 ): Promise<UploadScope> {
 	const rows = await client
@@ -236,10 +235,10 @@ async function loadUploadScope(
 		id: row.id,
 		employeeNumber: row.employeeNumber as string,
 		isActive: row.isActive,
-		name:
-			[row.firstName, row.lastName].filter(Boolean).join(" ").trim() ||
-			row.userName?.trim() ||
-			(row.employeeNumber as string),
+		name: adjustmentDisplayName(
+			{ firstName: row.firstName, lastName: row.lastName, name: row.userName },
+			row.employeeNumber as string,
+		),
 	}));
 	if (input.authority.via === "organization_admin") return { employees, writable: null };
 

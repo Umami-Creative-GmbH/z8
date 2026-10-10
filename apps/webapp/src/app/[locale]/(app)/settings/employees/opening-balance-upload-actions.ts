@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { runRefusalAction } from "@/lib/effect/refusal-action";
 import { requireOpeningBalanceUploader } from "@/lib/work-balance/adjustments/authorization";
@@ -13,7 +12,7 @@ import {
 	BalanceAdjustmentRefusal,
 	type OpeningBalanceUploadOutcome,
 } from "@/lib/work-balance/adjustments/types";
-import type { WorkBalanceDbClient } from "@/lib/work-balance/service";
+import { revalidateWorkBalancePaths } from "./work-balance-paths";
 
 /**
  * The bulk opening balance upload (#999), offered on the employee settings
@@ -32,8 +31,8 @@ export async function previewOpeningBalanceUploadAction(
 		"balanceAdjustments.previewOpeningBalanceUpload",
 		BalanceAdjustmentRefusal,
 		async (db) => {
-			const { organizationId, userId, authority } = await requireOpeningBalanceUploader();
-			return previewOpeningBalanceUpload(db as unknown as WorkBalanceDbClient, {
+			const { organizationId, userId, authority } = await requireOpeningBalanceUploader(db);
+			return previewOpeningBalanceUpload(db, {
 				organizationId,
 				actorUserId: userId,
 				authority,
@@ -51,7 +50,7 @@ export async function commitOpeningBalanceUploadAction(
 		"balanceAdjustments.commitOpeningBalanceUpload",
 		BalanceAdjustmentRefusal,
 		async (db) => {
-			const { organizationId, userId, authority } = await requireOpeningBalanceUploader();
+			const { organizationId, userId, authority } = await requireOpeningBalanceUploader(db);
 			const outcome = await commitOpeningBalanceUpload(db, {
 				organizationId,
 				actorUserId: userId,
@@ -60,13 +59,7 @@ export async function commitOpeningBalanceUploadAction(
 				now: systemClock.nowInstant(),
 			});
 			if (outcome.status === "committed") {
-				for (const row of outcome.rows) {
-					if (row.employee) {
-						revalidatePath(`/settings/employees/${row.employee.id}`);
-						revalidatePath(`/payroll/work-balances/${row.employee.id}`);
-					}
-				}
-				revalidatePath("/team");
+				revalidateWorkBalancePaths(outcome.rows.flatMap((row) => (row.employee ? [row.employee.id] : [])));
 			}
 			return outcome;
 		},
