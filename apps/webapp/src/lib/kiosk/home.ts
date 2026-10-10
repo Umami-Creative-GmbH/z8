@@ -18,20 +18,21 @@ export async function readKioskEmployees(
 		organizationId: kiosk.organizationId,
 		locationId: kiosk.locationId,
 	});
-	return employees.map((employee) => ({
-		id: employee.employeeId,
-		name: displayName(employee),
+	return employees.map((assigned) => ({
+		id: assigned.employeeId,
+		name: displayName(assigned),
 	}));
 }
 
-function displayName(employee: {
+/** The user's names (#858 reads them from the user, never the deprecated employee columns). */
+function displayName(names: {
 	firstName: string | null;
 	lastName: string | null;
 	userName: string;
 }): string {
-	const structured = [employee.firstName, employee.lastName]
+	const structured = [names.firstName, names.lastName]
 		.map((part) => part?.trim())
 		.filter(Boolean)
 		.join(" ");
-	return structured || employee.userName;
+	return structured || names.userName;
 }
