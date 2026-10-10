@@ -23,9 +23,14 @@ export interface OfficialSource {
 export interface PerDiemRuleSet {
 	key: string;
 	country: "DE";
-	/** First and last calendar day (inclusive) the verified edition covers. */
+	/** First calendar day (inclusive) the verified edition covers. */
 	validFrom: string;
-	validThrough: string;
+	/**
+	 * Last calendar day (inclusive) it covers. Absent for rules taken from the
+	 * law text itself: they cover every later day until a new entry replaces
+	 * them when the law changes (#891).
+	 */
+	validThrough?: string;
 	/** A single-day absence must be MORE than this to earn the partial-day allowance. */
 	partialDayMinimumExclusiveMinutes: number;
 	reference: string;
@@ -63,13 +68,15 @@ const LSTR_R_9_6: OfficialSource = {
  * - Satz 6 / Rz. 53-55: limited to the first three months at the same
  *   workplace (not calculated here: flagged as exceptional);
  * - R 9.6 Abs. 2 LStR: one allowance per calendar day (overlaps flagged).
- * The edition is verified for 2026 only; later days need a re-verified entry.
+ * These rules are written into § 9 Abs. 4a EStG and verified against the law
+ * text; the yearly LStH edition only republishes them. The set is therefore
+ * open-ended (#891): replace it with a new entry when § 9 Abs. 4a EStG
+ * changes, not every year. Keep the key: submitted per diems stamp it.
  */
 export const GERMAN_DOMESTIC_PER_DIEM_RULES: PerDiemRuleSet = {
 	key: "de-domestic-per-diem-estg-9-4a-2026",
 	country: "DE",
 	validFrom: "2026-01-01",
-	validThrough: "2026-12-31",
 	partialDayMinimumExclusiveMinutes: 8 * 60,
 	reference:
 		"§ 9 Abs. 4a Satz 3 Nr. 1-3 and Satz 6-10 EStG; BMF letter of 25.11.2020 (BStBl I S. 1228), Rz. 47-49, 53-55, 73-77, 87; R 9.6 Abs. 2 LStR",
@@ -84,16 +91,22 @@ export function findPerDiemRuleSet(key: string): PerDiemRuleSet | null {
 	return PER_DIEM_RULE_SETS.find((entry) => entry.key === key) ?? null;
 }
 
+/** Whether `rules` cover every calendar day from `firstDay` through `lastDay`. */
+export function perDiemRulesCover(
+	rules: PerDiemRuleSet,
+	firstDay: string,
+	lastDay: string = firstDay,
+): boolean {
+	return (
+		comparePlainDates(parsePlainDate(firstDay), parsePlainDate(rules.validFrom)) >= 0 &&
+		(!rules.validThrough ||
+			comparePlainDates(parsePlainDate(lastDay), parsePlainDate(rules.validThrough)) <= 0)
+	);
+}
+
 /** The verified rule set covering `date`, if any. */
 export function perDiemRulesOn(date: string): PerDiemRuleSet | null {
-	const day = parsePlainDate(date);
-	return (
-		PER_DIEM_RULE_SETS.find(
-			(entry) =>
-				comparePlainDates(day, parsePlainDate(entry.validFrom)) >= 0 &&
-				comparePlainDates(day, parsePlainDate(entry.validThrough)) <= 0,
-		) ?? null
-	);
+	return PER_DIEM_RULE_SETS.find((entry) => perDiemRulesCover(entry, date)) ?? null;
 }
 
 export type { PerDiemRates } from "./per-diem.types";
