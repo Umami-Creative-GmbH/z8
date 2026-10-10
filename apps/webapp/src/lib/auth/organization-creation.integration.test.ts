@@ -134,6 +134,7 @@ describe("coordinated organization creation on PostgreSQL", () => {
 				},
 				organizationHooks: createCoordinatedOrganizationHooks({
 					beforeUpdateOrganization: async () => undefined,
+					beforeCreateInvitation: async () => undefined,
 					afterAcceptInvitation: async () => undefined,
 					afterAddMember: async ({ user }) => {
 						harness.provisioned.push(`added:${user.id}`);
