@@ -80,6 +80,17 @@ export class ExternalServiceError extends Data.TaggedError("ExternalServiceError
 	cause?: unknown;
 }> {}
 
+/**
+ * A change refused because it touches a closed month (#762, Time Tracking
+ * ADR-0004). `month` is `YYYY-MM`. Writers raise it before writing; the
+ * database refusal behind them surfaces as the same error
+ * (`closed-months/refusal.ts`).
+ */
+export class MonthClosedError extends Data.TaggedError("MonthClosedError")<{
+	message: string;
+	month: string;
+}> {}
+
 export type AnyAppError =
 	| ValidationError
 	| AuthenticationError
@@ -91,4 +102,5 @@ export type AnyAppError =
 	| StripeError
 	| BillingError
 	| QueueError
-	| ExternalServiceError;
+	| ExternalServiceError
+	| MonthClosedError;
