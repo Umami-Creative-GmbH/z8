@@ -124,6 +124,29 @@ describe("sendEmailNotification", () => {
 			"https://org.example.com",
 		]);
 	});
+	it("sends deputy notifications as plain localized emails linking to the dashboard (#1013)", async () => {
+		findUserMock.mockResolvedValue({ email: "alex@example.com", name: "Alex" });
+		for (const type of [
+			"absence_deputy_assigned",
+			"absence_deputy_removed",
+			"absence_deputy_dates_changed",
+			"absence_deputy_reminder",
+		] as const) {
+			await sendEmailNotification({
+				userId: "user_123",
+				organizationId: "org",
+				type,
+				title: "Absence deputy",
+				message: "You're covering for Sam (12–14 Oct 2026).",
+				actionUrl: "/",
+			});
+		}
+		expect(renderOrganizationEmailTemplateMock).not.toHaveBeenCalled();
+		expect(localizeOutboundNotificationMock).toHaveBeenCalledTimes(4);
+		expect(
+			sendEmailMock.mock.calls.map(([message]) => /href="([^"]+)"/.exec(message.html ?? "")?.[1]),
+		).toEqual(Array(4).fill("https://org.example.com/"));
+	});
 	beforeEach(() => {
 		debugMock.mockReset();
 		errorMock.mockReset();

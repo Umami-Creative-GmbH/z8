@@ -18,6 +18,8 @@ type NotificationMetadata = {
 	categoryName?: string;
 	/** Plain days the `dateRange` param stands for, formatted in the reader's locale (#982). */
 	dateRangeDays?: { startDate: string; endDate: string };
+	/** The plain day the `untilDate` param stands for, in the reader's locale (#1013). */
+	untilDay?: string;
 	i18n?: {
 		titleKey?: string;
 		titleDefault?: string;
@@ -105,9 +107,14 @@ function localizedParams(
 ): Record<string, TranslationParam> | undefined {
 	const params = metadata.i18n?.params;
 	const days = metadata.dateRangeDays;
-	if (!params || !days) return params;
+	const untilDay = metadata.untilDay;
+	if (!params || (!days && !untilDay)) return params;
 	try {
-		return { ...params, dateRange: formatAbsenceDateRange(days.startDate, days.endDate, locale) };
+		return {
+			...params,
+			...(days ? { dateRange: formatAbsenceDateRange(days.startDate, days.endDate, locale) } : {}),
+			...(untilDay ? { untilDate: formatAbsenceDateRange(untilDay, untilDay, locale) } : {}),
+		};
 	} catch {
 		return params;
 	}

@@ -17,6 +17,8 @@ export type VacationOverrideSummary = {
 	updatedAbsenceIds: string[];
 	createdAbsenceIds: string[];
 	deletedAbsenceIds: string[];
+	/** The deleted (rejected) ones that were approved, so their deputies are told (#1013). */
+	overriddenApprovedAbsenceIds?: string[];
 };
 
 type AbsenceTransaction = Pick<
@@ -340,6 +342,9 @@ export async function adjustVacationAbsencesForSickness(input: {
 						updatedBy: input.updatedBy,
 					});
 					summary.deletedAbsenceIds.push(vacation.id);
+					if (vacation.status === "approved") {
+						summary.overriddenApprovedAbsenceIds = [vacation.id];
+					}
 					return summary;
 				}
 
@@ -398,6 +403,8 @@ export async function adjustVacationAbsencesForSickness(input: {
 							endPeriod: "full_day",
 							status: vacation.status,
 							notes: vacation.notes,
+							// The deputy covers the split-off part too (#1013).
+							deputyEmployeeId: vacation.deputyEmployeeId,
 							approvedBy: vacation.approvedBy,
 							approvedAt: vacation.approvedAt,
 							canonicalRecordId,
@@ -451,6 +458,10 @@ export async function adjustVacationAbsencesForSickness(input: {
 			deletedAbsenceIds: [
 				...summary.deletedAbsenceIds,
 				...vacationSummary.deletedAbsenceIds,
+			],
+			overriddenApprovedAbsenceIds: [
+				...(summary.overriddenApprovedAbsenceIds ?? []),
+				...(vacationSummary.overriddenApprovedAbsenceIds ?? []),
 			],
 		}),
 		{ updatedAbsenceIds: [], createdAbsenceIds: [], deletedAbsenceIds: [] },

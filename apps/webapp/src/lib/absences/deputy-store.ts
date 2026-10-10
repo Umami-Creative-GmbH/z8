@@ -18,6 +18,7 @@ import {
 	deputyAwayPeriods,
 	type PlainDateSpan,
 } from "./deputy";
+import { notifyAbsenceDeputies } from "./deputy-notifier";
 
 type Database = typeof db;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
@@ -113,7 +114,8 @@ export async function changeAbsenceDeputy(
 		today: string;
 	},
 ): Promise<ChangeAbsenceDeputyResult> {
-	return withAuditTrail((audit) =>
+	let previousDeputyEmployeeId: string | null = null;
+	const result = await withAuditTrail((audit) =>
 		database.transaction(async (tx): Promise<ChangeAbsenceDeputyResult> => {
 			const [absence] = await tx
 				.select({
@@ -184,9 +186,27 @@ export async function changeAbsenceDeputy(
 				from: absence.deputyEmployeeId,
 				to: input.deputyEmployeeId,
 			});
+			previousDeputyEmployeeId = absence.deputyEmployeeId;
 			return { kind: "changed", deputyEmployeeId: input.deputyEmployeeId };
 		}),
 	);
+	if (result.kind === "changed") {
+		// After the commit: on an approved absence the old deputy is told they
+		// were removed and the new one that they were named (#1013).
+		await notifyAbsenceDeputies(database, {
+			organizationId: input.organizationId,
+			events: [
+				{
+					kind: "deputy_changed",
+					absenceId: input.absenceId,
+					changeId: crypto.randomUUID(),
+					from: previousDeputyEmployeeId,
+					to: result.deputyEmployeeId,
+				},
+			],
+		});
+	}
+	return result;
 }
 
 export interface DeputyCandidate {
