@@ -18,6 +18,9 @@
 	],
 	"tags": [
 		{
+			"name": "Time entries"
+		},
+		{
 			"name": "Employees"
 		},
 		{
@@ -28,6 +31,391 @@
 		}
 	],
 	"paths": {
+		"/api/v1/work-periods": {
+			"get": {
+				"operationId": "listWorkPeriods",
+				"tags": [
+					"Time entries"
+				],
+				"summary": "List work periods",
+				"description": "Recorded work, one period from clock-in to clock-out, in its current state: approved corrections are applied, and raw time entries and correction history are not returned. Rejected and deleted work is left out. Running work is included with no end.\n\nEach endpoint is a UTC instant with the UTC offset where it was recorded. A break is the time between two consecutive work periods of an employee.\n\n`from` and `to` select periods by their start instant.\n\nRequires the key scope `time-entries:read`.",
+				"security": [
+					{
+						"apiKey": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "from",
+						"in": "query",
+						"required": true,
+						"description": "Start of the range, inclusive. An ISO 8601 instant with offset or `Z`.",
+						"schema": {
+							"type": "string",
+							"format": "date-time",
+							"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+						}
+					},
+					{
+						"name": "to",
+						"in": "query",
+						"required": true,
+						"description": "End of the range, exclusive. At most 366 days after `from`.",
+						"schema": {
+							"type": "string",
+							"format": "date-time",
+							"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+						}
+					},
+					{
+						"name": "employeeId",
+						"in": "query",
+						"required": false,
+						"description": "Only this employee's work.",
+						"schema": {
+							"type": "string",
+							"format": "uuid",
+							"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+						}
+					},
+					{
+						"name": "limit",
+						"in": "query",
+						"required": false,
+						"description": "Rows per page, 1 to 200.",
+						"schema": {
+							"default": 50,
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 200
+						}
+					},
+					{
+						"name": "cursor",
+						"in": "query",
+						"required": false,
+						"description": "The `nextCursor` of the previous page. Omit it for the first page.",
+						"schema": {
+							"type": "string",
+							"minLength": 1,
+							"maxLength": 1024
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"data": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"id": {
+														"type": "string",
+														"format": "uuid"
+													},
+													"employeeId": {
+														"type": "string",
+														"format": "uuid"
+													},
+													"projectId": {
+														"anyOf": [
+															{
+																"type": "string",
+																"format": "uuid"
+															},
+															{
+																"type": "null"
+															}
+														]
+													},
+													"start": {
+														"type": "object",
+														"properties": {
+															"at": {
+																"type": "string",
+																"format": "date-time",
+																"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+																"description": "A UTC instant, ISO 8601 with `Z`, such as 2026-10-01T06:00:00.000Z."
+															},
+															"utcOffset": {
+																"type": "string",
+																"description": "The UTC offset where the clock event happened, such as +02:00. Use it to show local time; never the caller's zone."
+															}
+														},
+														"required": [
+															"at",
+															"utcOffset"
+														],
+														"additionalProperties": false,
+														"title": "WorkPeriodEndpoint"
+													},
+													"end": {
+														"anyOf": [
+															{
+																"type": "object",
+																"properties": {
+																	"at": {
+																		"type": "string",
+																		"format": "date-time",
+																		"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+																		"description": "A UTC instant, ISO 8601 with `Z`, such as 2026-10-01T06:00:00.000Z."
+																	},
+																	"utcOffset": {
+																		"type": "string",
+																		"description": "The UTC offset where the clock event happened, such as +02:00. Use it to show local time; never the caller's zone."
+																	}
+																},
+																"required": [
+																	"at",
+																	"utcOffset"
+																],
+																"additionalProperties": false,
+																"title": "WorkPeriodEndpoint"
+															},
+															{
+																"type": "null"
+															}
+														],
+														"description": "Null while the work is still running."
+													},
+													"durationMinutes": {
+														"anyOf": [
+															{
+																"type": "integer",
+																"minimum": -9007199254740991,
+																"maximum": 9007199254740991
+															},
+															{
+																"type": "null"
+															}
+														],
+														"description": "Worked minutes; null while running."
+													},
+													"approvalStatus": {
+														"type": "string",
+														"enum": [
+															"approved",
+															"pending"
+														],
+														"description": "`pending` while the work waits for approval."
+													}
+												},
+												"required": [
+													"id",
+													"employeeId",
+													"projectId",
+													"start",
+													"end",
+													"durationMinutes",
+													"approvalStatus"
+												],
+												"additionalProperties": false,
+												"title": "WorkPeriod"
+											}
+										},
+										"nextCursor": {
+											"description": "Pass as `cursor` to read the next page; null on the last page.",
+											"type": [
+												"string",
+												"null"
+											]
+										}
+									},
+									"required": [
+										"data",
+										"nextCursor"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "`validation_failed`: a query parameter is invalid.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "`invalid_key`: the API key is missing, unknown, revoked or expired.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"402": {
+						"description": "`billing_required`: the organization has no billing access.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "`scope_missing`: the key lacks the endpoint's key scope.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "`rate_limited`: the key's or the organization's request limit is used up.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"Retry-After": {
+								"description": "Seconds until a request may be retried.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				},
+				"x-z8-scope": "time-entries:read"
+			}
+		},
 		"/api/v1/employees": {
 			"get": {
 				"operationId": "listEmployees",
