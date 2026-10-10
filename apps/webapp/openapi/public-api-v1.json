@@ -21,6 +21,9 @@
 			"name": "Time entries"
 		},
 		{
+			"name": "Absences"
+		},
+		{
 			"name": "Employees"
 		},
 		{
@@ -414,6 +417,419 @@
 					}
 				},
 				"x-z8-scope": "time-entries:read"
+			}
+		},
+		"/api/v1/absences": {
+			"get": {
+				"operationId": "listAbsences",
+				"tags": [
+					"Absences"
+				],
+				"summary": "List absences",
+				"description": "Approved and pending absences that overlap the `from`/`to` range, each with its status. Rejected and cancelled absences are left out.\n\nDates are local calendar dates with the half day where one applies; they are never instants.\n\nHealth detail: without the key scope `absences:read-health`, a sick absence is returned as `absent`, with no category and no sick detail.\n\nRequires the key scope `absences:read`.",
+				"security": [
+					{
+						"apiKey": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "from",
+						"in": "query",
+						"required": true,
+						"description": "First day of the range, inclusive (YYYY-MM-DD).",
+						"schema": {
+							"type": "string",
+							"format": "date",
+							"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+						}
+					},
+					{
+						"name": "to",
+						"in": "query",
+						"required": true,
+						"description": "Last day of the range, inclusive (YYYY-MM-DD). At most 366 days after `from`.",
+						"schema": {
+							"type": "string",
+							"format": "date",
+							"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+						}
+					},
+					{
+						"name": "employeeId",
+						"in": "query",
+						"required": false,
+						"description": "Only this employee's absences.",
+						"schema": {
+							"type": "string",
+							"format": "uuid",
+							"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+						}
+					},
+					{
+						"name": "status",
+						"in": "query",
+						"required": false,
+						"description": "Only absences with this status.",
+						"schema": {
+							"type": "string",
+							"enum": [
+								"approved",
+								"pending"
+							]
+						}
+					},
+					{
+						"name": "limit",
+						"in": "query",
+						"required": false,
+						"description": "Rows per page, 1 to 200.",
+						"schema": {
+							"default": 50,
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 200
+						}
+					},
+					{
+						"name": "cursor",
+						"in": "query",
+						"required": false,
+						"description": "The `nextCursor` of the previous page. Omit it for the first page.",
+						"schema": {
+							"type": "string",
+							"minLength": 1,
+							"maxLength": 1024
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"data": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"id": {
+														"type": "string",
+														"format": "uuid"
+													},
+													"employeeId": {
+														"type": "string",
+														"format": "uuid"
+													},
+													"status": {
+														"type": "string",
+														"enum": [
+															"approved",
+															"pending"
+														]
+													},
+													"startDate": {
+														"type": "string",
+														"format": "date",
+														"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+														"description": "A local calendar date, YYYY-MM-DD."
+													},
+													"startPeriod": {
+														"type": "string",
+														"enum": [
+															"full_day",
+															"am",
+															"pm"
+														],
+														"description": "`full_day`, or the half day (`am`, `pm`) the absence starts or ends with."
+													},
+													"endDate": {
+														"type": "string",
+														"format": "date",
+														"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+														"description": "A local calendar date, YYYY-MM-DD."
+													},
+													"endPeriod": {
+														"type": "string",
+														"enum": [
+															"full_day",
+															"am",
+															"pm"
+														],
+														"description": "`full_day`, or the half day (`am`, `pm`) the absence starts or ends with."
+													},
+													"type": {
+														"type": "string",
+														"enum": [
+															"home_office",
+															"sick",
+															"vacation",
+															"personal",
+															"unpaid",
+															"parental",
+															"bereavement",
+															"custom",
+															"absent"
+														],
+														"description": "The absence category's type. A sick absence read without the key scope `absences:read-health` is plain `absent`."
+													},
+													"category": {
+														"anyOf": [
+															{
+																"type": "object",
+																"properties": {
+																	"id": {
+																		"type": "string",
+																		"format": "uuid"
+																	},
+																	"name": {
+																		"type": "string"
+																	}
+																},
+																"required": [
+																	"id",
+																	"name"
+																],
+																"additionalProperties": false
+															},
+															{
+																"type": "null"
+															}
+														],
+														"description": "Null for a sick absence read without `absences:read-health`."
+													},
+													"sickDetail": {
+														"anyOf": [
+															{
+																"type": "string",
+																"enum": [
+																	"child_sick",
+																	"with_certificate",
+																	"without_certificate",
+																	"other"
+																]
+															},
+															{
+																"type": "null"
+															}
+														],
+														"description": "The kind of sick leave. Only with `absences:read-health`, else null."
+													}
+												},
+												"required": [
+													"id",
+													"employeeId",
+													"status",
+													"startDate",
+													"startPeriod",
+													"endDate",
+													"endPeriod",
+													"type",
+													"category",
+													"sickDetail"
+												],
+												"additionalProperties": false,
+												"title": "Absence"
+											}
+										},
+										"nextCursor": {
+											"description": "Pass as `cursor` to read the next page; null on the last page.",
+											"type": [
+												"string",
+												"null"
+											]
+										}
+									},
+									"required": [
+										"data",
+										"nextCursor"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "`validation_failed`: a query parameter is invalid.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "`invalid_key`: the API key is missing, unknown, revoked or expired.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"402": {
+						"description": "`billing_required`: the organization has no billing access.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "`scope_missing`: the key lacks the endpoint's key scope.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "`rate_limited`: the key's or the organization's request limit is used up.",
+						"headers": {
+							"X-RateLimit-Limit": {
+								"description": "Requests allowed in the current window of the tighter limit (key or organization).",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "Requests left in that window.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"description": "When that window resets, as Unix epoch seconds.",
+								"schema": {
+									"type": "integer"
+								}
+							},
+							"Retry-After": {
+								"description": "Seconds until a request may be retried.",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				},
+				"x-z8-scope": "absences:read"
 			}
 		},
 		"/api/v1/employees": {
