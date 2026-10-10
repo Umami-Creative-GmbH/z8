@@ -253,7 +253,8 @@ describe("period submissions on PostgreSQL", () => {
 			employeeId: employee.employeeId,
 			startDate: "2026-03-05",
 			endDate: "2026-03-05",
-			status: "pending",
+			// Not approved, so not captured. (A pending one would refuse the submission, #1060.)
+			status: "rejected",
 		});
 		for (const [at, type] of [
 			["2026-03-01 23:30:00", "max_daily"], // 00:30 on Monday in Berlin

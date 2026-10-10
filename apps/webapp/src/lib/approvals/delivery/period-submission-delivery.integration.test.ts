@@ -70,6 +70,9 @@ const { createClosedMonthDatabaseFixture } = await import(
 const { submitPeriodSubmission } = await import(
 	"@/lib/time-tracking/period-submissions/submission-service"
 );
+const { withdrawOwnPeriodSubmission } = await import(
+	"@/lib/time-tracking/period-submissions/submission-withdrawal"
+);
 const { processApprovalDeliveries } = await import("./owner");
 const { decideBoundPeriodSubmissionInvocation } = await import(
 	"../server/period-submission-bound-decision"
@@ -198,6 +201,48 @@ describe("period submission cards on PostgreSQL", () => {
 
 		await deliver();
 		expect(sent.refreshes).toHaveLength(1);
+	});
+
+	it("takes the controls off the approver's card when the employee withdraws (#1060)", async () => {
+		await deliver();
+		const card = sent.cards[0] as { bindingId: string };
+		await expect(
+			withdrawOwnPeriodSubmission(
+				{ organizationId, userId: employee.userId, periodStartDate: "2026-03-02" },
+				{ database: db, clock: { nowInstant: () => parseInstant("2026-03-08T15:00:00Z") } },
+			),
+		).resolves.toMatchObject({ kind: "withdrawn", workflowId });
+
+		await deliver();
+		expect(sent.refreshes).toHaveLength(1);
+		const { rows } = await fixture.pool.query(
+			"select state from approval_delivery_message where organization_id = $1 and workflow_id = $2",
+			[organizationId, workflowId],
+		);
+		expect(rows).toEqual([{ state: "retired" }]);
+		// The withdrawn card cannot decide anything any more.
+		await expect(
+			decideBoundPeriodSubmissionInvocation({
+				database: db,
+				organizationId,
+				actorEmployeeId: manager.employeeId,
+				actorUserId: manager.userId,
+				bindingId: card.bindingId,
+				action: "approve",
+				reason: null,
+				invocation: {
+					identity: {
+						organizationId,
+						scheme: "telegram_callback_query",
+						schemeVersion: 1,
+						receiverScope: "telegram-bot:1059",
+						invocationId: "callback-after-withdrawal",
+					},
+					deliveryId: "update-2",
+					providerActorId: "telegram-user-1059",
+				},
+			}),
+		).resolves.toMatchObject({ status: "review_required" });
 	});
 
 	it("never binds a card for anyone but the assigned approver", async () => {

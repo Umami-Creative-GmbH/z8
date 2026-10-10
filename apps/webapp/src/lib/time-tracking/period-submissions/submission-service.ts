@@ -29,6 +29,7 @@ import {
 import { isUuid } from "@/lib/validations/uuid";
 import { loadExpectedSubmissionPeriods } from "./employee-expected-periods";
 import type { ExpectedSubmissionPeriod } from "./expected-periods";
+import { findPeriodSubmissionBlockers, type PeriodSubmissionBlocker } from "./submission-blockers";
 import {
 	bindPeriodSubmissionWorkflow,
 	countPeriodSubmissionsOfWorkflow,
@@ -59,7 +60,9 @@ export type PeriodSubmissionRefusal =
 	/** The period has a pending or approved submission. */
 	| "already_submitted"
 	/** Nobody other than the employee can decide it. */
-	| "no_approver";
+	| "no_approver"
+	/** Live work started in the period is running, or a request touching it is undecided (#1060). */
+	| "period_open";
 
 export type SubmitPeriodSubmissionResult =
 	| {
@@ -68,11 +71,18 @@ export type SubmitPeriodSubmissionResult =
 			workflowId: string;
 			approverEmployeeIds: string[];
 	  }
-	| { kind: "refused"; reason: PeriodSubmissionRefusal };
+	| { kind: "refused"; reason: "period_open"; blockers: PeriodSubmissionBlocker[] }
+	| { kind: "refused"; reason: Exclude<PeriodSubmissionRefusal, "period_open"> };
 
 class SubmissionRefused extends Error {
-	constructor(readonly reason: PeriodSubmissionRefusal) {
+	constructor(readonly reason: Exclude<PeriodSubmissionRefusal, "period_open">) {
 		super(`Period submission refused: ${reason}`);
+	}
+}
+
+class PeriodOpen extends Error {
+	constructor(readonly blockers: PeriodSubmissionBlocker[]) {
+		super("Period submission refused: period_open");
 	}
 }
 
@@ -86,8 +96,9 @@ function rangeOf(period: ExpectedSubmissionPeriod): { start: Instant; end: Insta
 /**
  * Submits one expected period of the user's own employee. The period is named by the first date
  * of its (clipped) range, as `deriveExpectedSubmissionPeriods` gives it. Refused before the
- * period's last day in the employee's zone, for a period that is not expected, and while the
- * period has a pending or approved submission. Routed by a matching period submission policy,
+ * period's last day in the employee's zone, for a period that is not expected, while the
+ * period has a pending or approved submission, and while it is still open (#1060: live work
+ * started in it is running, or a request touching it is undecided; the refusal lists them). Routed by a matching period submission policy,
  * else to the primary manager; never to the employee themselves.
  */
 export async function submitPeriodSubmission(
@@ -142,6 +153,15 @@ export async function submitPeriodSubmission(
 				startDate: period.startDate.toString(),
 			});
 			if (live) throw new SubmissionRefused("already_submitted");
+			const blockers = await findPeriodSubmissionBlockers(tx, {
+				organizationId: input.organizationId,
+				employeeId: submitter.id,
+				timezone: period.timezone,
+				startDate: period.startDate.toString(),
+				endDate: period.endDate.toString(),
+				range,
+			});
+			if (blockers.length > 0) throw new PeriodOpen(blockers);
 			const row = await insertPendingPeriodSubmission(tx, {
 				organizationId: input.organizationId,
 				employeeId: submitter.id,
@@ -304,6 +324,9 @@ export async function submitPeriodSubmission(
 		return submitted;
 	} catch (error) {
 		if (error instanceof SubmissionRefused) return { kind: "refused", reason: error.reason };
+		if (error instanceof PeriodOpen) {
+			return { kind: "refused", reason: "period_open", blockers: error.blockers };
+		}
 		throw error;
 	}
 }

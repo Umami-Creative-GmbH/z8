@@ -1,15 +1,19 @@
 "use client";
 
-import { IconSend } from "@tabler/icons-react";
+import { IconArrowBackUp, IconSend } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { startTransition, useRef, useState } from "react";
 import { toast } from "sonner";
-import { submitPeriod } from "@/app/[locale]/(app)/time-tracking/actions/period-submissions";
+import {
+	submitPeriod,
+	withdrawPeriod,
+} from "@/app/[locale]/(app)/time-tracking/actions/period-submissions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { EmployeePeriodViewRow } from "@/lib/time-tracking/period-submissions/employee-period-view";
+import type { PeriodSubmissionBlocker } from "@/lib/time-tracking/period-submissions/submission-blockers";
 import type { PeriodSubmissionRefusal } from "@/lib/time-tracking/period-submissions/submission-service";
 import type { PeriodSubmissionViewStatus } from "@/lib/time-tracking/period-submissions/submission-status";
 import { formatPlainDate, formatPlainDateRange } from "@/lib/travel-expenses/format";
@@ -32,13 +36,18 @@ const STATUS_VARIANTS: Record<
 
 /**
  * The employee's period view (#1059): their recent submission periods with each one's status,
- * and Submit from the period's last day onward.
+ * and Submit from the period's last day onward. A pending submission can be withdrawn; a refusal
+ * of an open period lists what keeps it open (#1060).
  */
 export function PeriodSubmissionsCard({ periods }: Props) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const { refresh } = useRouter();
 	const [submitting, setSubmitting] = useState<string | null>(null);
+	const [openPeriod, setOpenPeriod] = useState<{
+		startDate: string;
+		blockers: PeriodSubmissionBlocker[];
+	} | null>(null);
 	const inFlight = useRef(false);
 
 	const statusLabel = (status: PeriodSubmissionViewStatus) => {
@@ -56,8 +65,49 @@ export function PeriodSubmissionsCard({ periods }: Props) {
 		}
 	};
 
+	const at = (instant: string, timeZone: string) =>
+		new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone }).format(
+			new Date(instant),
+		);
+
+	const blockerMessage = (blocker: PeriodSubmissionBlocker) => {
+		switch (blocker.kind) {
+			case "live_work":
+				return t(
+					"timeTracking.periodSubmissions.blocker.liveWork",
+					"Work started {start} is still running.",
+					{ start: at(blocker.startTime, blocker.timezone) },
+				);
+			case "time_correction":
+				return t(
+					"timeTracking.periodSubmissions.blocker.timeCorrection",
+					"A time correction for work on {start} is undecided.",
+					{ start: at(blocker.startTime, blocker.timezone) },
+				);
+			case "manual_work":
+				return t(
+					"timeTracking.periodSubmissions.blocker.manualWork",
+					"Manual work on {start} is undecided.",
+					{ start: at(blocker.startTime, blocker.timezone) },
+				);
+			case "absence_request":
+				return t(
+					"timeTracking.periodSubmissions.blocker.absenceRequest",
+					"An absence request for {dates} is undecided.",
+					{
+						dates:
+							blocker.startDate === blocker.endDate
+								? formatPlainDate(locale, blocker.startDate)
+								: formatPlainDateRange(locale, blocker.startDate, blocker.endDate),
+					},
+				);
+		}
+	};
+
 	const refusalMessage = (reason: PeriodSubmissionRefusal) => {
 		switch (reason) {
+			case "period_open":
+				return t("timeTracking.periodSubmissions.refusal.periodOpen", "This period is still open");
 			case "period_not_ended":
 				return t(
 					"timeTracking.periodSubmissions.refusal.notEnded",
@@ -86,6 +136,7 @@ export function PeriodSubmissionsCard({ periods }: Props) {
 		if (inFlight.current) return;
 		inFlight.current = true;
 		setSubmitting(startDate);
+		setOpenPeriod(null);
 		try {
 			const result = await submitPeriod({ periodStartDate: startDate });
 			if (!result.success) {
@@ -95,10 +146,45 @@ export function PeriodSubmissionsCard({ periods }: Props) {
 				return;
 			}
 			if (result.data.kind === "refused") {
+				if (result.data.reason === "period_open") {
+					setOpenPeriod({ startDate, blockers: result.data.blockers });
+				}
 				toast.error(refusalMessage(result.data.reason));
 				return;
 			}
 			toast.success(t("timeTracking.periodSubmissions.submitted", "Period submitted for approval"));
+			startTransition(() => refresh());
+		} finally {
+			inFlight.current = false;
+			setSubmitting(null);
+		}
+	}
+
+	async function handleWithdraw(startDate: string) {
+		if (inFlight.current) return;
+		inFlight.current = true;
+		setSubmitting(startDate);
+		try {
+			const result = await withdrawPeriod({ periodStartDate: startDate });
+			if (!result.success) {
+				toast.error(
+					t(
+						"timeTracking.periodSubmissions.withdrawFailed",
+						"The submission could not be withdrawn",
+					),
+				);
+				return;
+			}
+			if (result.data.kind === "refused") {
+				toast.error(
+					t(
+						"timeTracking.periodSubmissions.withdrawRefused",
+						"This submission was already decided and can no longer be withdrawn.",
+					),
+				);
+			} else {
+				toast.success(t("timeTracking.periodSubmissions.withdrawn", "Submission withdrawn"));
+			}
 			startTransition(() => refresh());
 		} finally {
 			inFlight.current = false;
@@ -146,6 +232,29 @@ export function PeriodSubmissionsCard({ periods }: Props) {
 										})}
 									</span>
 								) : null}
+								{openPeriod?.startDate === period.startDate ? (
+									<div role="alert" className="text-sm text-destructive">
+										<p className="font-medium">
+											{t(
+												"timeTracking.periodSubmissions.refusal.periodOpen",
+												"This period is still open",
+											)}
+										</p>
+										<ul className="list-disc ps-5">
+											{openPeriod.blockers.map((blocker) => (
+												<li
+													key={
+														blocker.kind === "absence_request"
+															? `absence:${blocker.absenceId}`
+															: `${blocker.kind}:${blocker.workPeriodId}`
+													}
+												>
+													{blockerMessage(blocker)}
+												</li>
+											))}
+										</ul>
+									</div>
+								) : null}
 							</div>
 							<div className="flex items-center gap-3">
 								<Badge variant={STATUS_VARIANTS[period.status]}>{statusLabel(period.status)}</Badge>
@@ -157,6 +266,17 @@ export function PeriodSubmissionsCard({ periods }: Props) {
 									>
 										<IconSend className="size-4" aria-hidden="true" />
 										{t("timeTracking.periodSubmissions.submit", "Submit")}
+									</Button>
+								) : null}
+								{period.status === "submitted" ? (
+									<Button
+										size="sm"
+										variant="outline"
+										onClick={() => handleWithdraw(period.startDate)}
+										disabled={submitting !== null}
+									>
+										<IconArrowBackUp className="size-4" aria-hidden="true" />
+										{t("timeTracking.periodSubmissions.withdraw", "Withdraw")}
 									</Button>
 								) : null}
 							</div>

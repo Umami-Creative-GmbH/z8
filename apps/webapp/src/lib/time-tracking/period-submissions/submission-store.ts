@@ -259,6 +259,43 @@ export async function recordPeriodSubmissionDecision(
 	return row;
 }
 
+/**
+ * Closes a pending submission without a decision (withdrawn by the employee, #1060, or after a
+ * change, #1062), in the cancellation's transaction. Throws when the row is not the pending
+ * submission of that workflow.
+ */
+export async function closePendingPeriodSubmission(
+	database: PeriodSubmissionDatabase,
+	input: {
+		organizationId: string;
+		submissionId: string;
+		workflowId: string;
+		closedAt: Instant;
+		closedCause: PeriodSubmissionClosedCause;
+	},
+): Promise<PeriodSubmissionRow> {
+	const [row] = await database
+		.update(periodSubmission)
+		.set({
+			status: "withdrawn",
+			closedAt: dateFromInstant(input.closedAt),
+			closedCause: input.closedCause,
+			revision: sql`${periodSubmission.revision} + 1`,
+			updatedAt: dateFromInstant(input.closedAt),
+		})
+		.where(
+			and(
+				eq(periodSubmission.organizationId, input.organizationId),
+				eq(periodSubmission.id, input.submissionId),
+				eq(periodSubmission.approvalWorkflowId, input.workflowId),
+				eq(periodSubmission.status, "pending"),
+			),
+		)
+		.returning();
+	if (!row) throw new Error("Period submission is not pending for this workflow");
+	return row;
+}
+
 /** Audit actions of period submissions (spec #805: actor, time and any reason). */
 export type PeriodSubmissionAuditAction =
 	| AuditAction.PERIOD_SUBMISSION_SUBMITTED
