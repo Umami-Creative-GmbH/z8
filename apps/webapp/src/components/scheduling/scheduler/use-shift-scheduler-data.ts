@@ -123,7 +123,7 @@ export function useShiftSchedulerData({
 
 	const events = filterShiftsForEmployee(shifts, employeeFilter).map((shift) =>
 		shiftToEvent(shift, organizationTimezone),
-	) as any[];
+	);
 
 	return {
 		shifts,

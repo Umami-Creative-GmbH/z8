@@ -47,6 +47,7 @@ const SCHEDULE_X_GLOBAL_POLYFILL_ALLOWLIST = new Set([
 	"components/calendar/calendar-work-event.test.tsx",
 	"components/calendar/schedule-x-calendar.test.tsx",
 	"components/calendar/schedule-x-wrapper.tsx",
+	"components/scheduling/scheduler/shift-scheduler-calendar.test.tsx",
 	"components/scheduling/scheduler/shift-scheduler.tsx",
 	"lib/calendar/schedule-x-adapter.test.ts",
 ]);
