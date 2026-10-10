@@ -195,6 +195,37 @@ describe("project report export", () => {
 		expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("%PDF-");
 	}, 30_000);
 
+	it("exports the project's and the customer's custom fields as a table, in order", () => {
+		const report = projectReport(undefined);
+		report.project.customFields = [
+			{ fieldId: "f-phase", name: "Phase", type: "select", value: "Delivery" },
+			{ fieldId: "f-kickoff", name: "Kickoff", type: "date", value: "2026-02-02" },
+			{ fieldId: "f-fixed", name: "Fixed price", type: "boolean", value: false },
+		];
+		report.project.customer = {
+			id: "c1",
+			name: "Acme",
+			customFields: [{ fieldId: "f-region", name: "Region", type: "text", value: null }],
+		};
+		const document = buildProjectReportDocument(report, context);
+		const table = document.tables.find((entry) => entry.title === "Custom fields");
+
+		expect(table?.columns.map((column) => column.header)).toEqual(["Record", "Field", "Value"]);
+		expect(table?.rows).toEqual([
+			["Project", "Phase", "Delivery"],
+			["Project", "Kickoff", "2026-02-02"],
+			["Project", "Fixed price", "No"],
+			["Customer", "Region", ""],
+		]);
+		expect(exportReportDocumentToCSV(document)).toContain("Project,Kickoff,2026-02-02");
+		// Without custom fields there is no such table.
+		expect(
+			buildProjectReportDocument(projectReport(undefined), context).tables.map(
+				(entry) => entry.title,
+			),
+		).not.toContain("Custom fields");
+	});
+
 	it("exports the customer view with its totals row", () => {
 		const view: CustomerBillableReport = {
 			period: { startDate: "2026-03-01", endDate: "2026-04-30" },

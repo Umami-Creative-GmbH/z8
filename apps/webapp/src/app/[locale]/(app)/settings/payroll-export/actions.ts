@@ -40,6 +40,11 @@ import {
 	type WageTypeMapping,
 	type WorkdayConfig,
 } from "@/lib/payroll-export";
+import {
+	listPayrollIdentifierFields,
+	type SavePayrollExportConfigOutcome,
+	savePayrollExportConfig,
+} from "@/lib/payroll-export/personnel-identifier-store";
 import { type DiscardPayrollRunResult, discardPayrollRun } from "@/lib/travel-expenses/payroll-run";
 
 // Using isOrgAdminCasl from auth-helpers for CASL-based authorization
@@ -160,6 +165,72 @@ export interface FilterOptions {
 // CONFIGURATION ACTIONS
 // ============================================
 
+/** A saved configuration, or the refusal of a custom field identifier that isn't eligible (#821). */
+function payrollConfigSaved(outcome: SavePayrollExportConfigOutcome) {
+	return outcome.ok
+		? Effect.succeed(outcome.config)
+		: Effect.fail(
+				new ValidationError({
+					message:
+						"Choose an active employee custom field of type text or number as the personnel identifier.",
+					field: "config",
+				}),
+			);
+}
+
+/**
+ * Saves a format's configuration through the `DatabaseService` (a database
+ * failure stays a typed `DatabaseError`), refusing an ineligible custom field
+ * identifier (#821).
+ */
+function saveConfig(input: Parameters<typeof savePayrollExportConfig>[1]) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		return yield* dbService.query("payrollExportConfig.save", () =>
+			savePayrollExportConfig(dbService.db, input),
+		);
+	}).pipe(Effect.flatMap(payrollConfigSaved));
+}
+
+/** An employee custom field a payroll configuration may use as personnel identifier (#821). */
+export interface PayrollIdentifierFieldOption {
+	id: string;
+	name: string;
+}
+
+/**
+ * The active employee custom fields of type text or number, in order: the
+ * "Custom field: <name>" options of every identifier and match setting.
+ */
+export async function getPayrollIdentifierFieldsAction(
+	organizationId: string,
+): Promise<ServerActionResult<PayrollIdentifierFieldOption[]>> {
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
+		if (!hasPermission) {
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export_config",
+					action: "read",
+				}),
+			);
+		}
+
+		const dbService = yield* DatabaseService;
+		const fields = yield* dbService.query("payrollExport.identifierFields", () =>
+			listPayrollIdentifierFields(dbService.db, organizationId),
+		);
+		return fields.map(({ id, name }) => ({ id, name }));
+	});
+
+	return runServerActionSafe(effect);
+}
+
 /**
  * Get DATEV configuration for organization
  */
@@ -249,41 +320,12 @@ export async function saveDatevConfigAction(
 			}
 		});
 
-		// Save or update config
-		const config = yield* Effect.promise(async () => {
-			const existing = await db.query.payrollExportConfig.findFirst({
-				where: and(
-					eq(payrollExportConfig.organizationId, input.organizationId),
-					eq(payrollExportConfig.formatId, "datev_lohn"),
-				),
-			});
-
-			if (existing) {
-				const [updated] = await db
-					.update(payrollExportConfig)
-					.set({
-						config: input.config as unknown as Record<string, unknown>,
-						updatedBy: session.user.id,
-					})
-					.where(eq(payrollExportConfig.id, existing.id))
-					.returning();
-
-				return updated;
-			} else {
-				const [inserted] = await db
-					.insert(payrollExportConfig)
-					.values({
-						organizationId: input.organizationId,
-						formatId: "datev_lohn",
-						config: input.config as unknown as Record<string, unknown>,
-						isActive: true,
-						createdBy: session.user.id,
-						updatedAt: new Date(),
-					})
-					.returning();
-
-				return inserted;
-			}
+		// Save or update config; a custom field identifier must be eligible (#821)
+		const config = yield* saveConfig({
+			organizationId: input.organizationId,
+			formatId: "datev_lohn",
+			config: input.config as unknown as Record<string, unknown>,
+			actorUserId: session.user.id,
 		});
 
 		revalidatePath("/settings/payroll-export");
@@ -396,41 +438,12 @@ export async function saveLexwareConfigAction(
 			}
 		});
 
-		// Save or update config
-		const config = yield* Effect.promise(async () => {
-			const existing = await db.query.payrollExportConfig.findFirst({
-				where: and(
-					eq(payrollExportConfig.organizationId, input.organizationId),
-					eq(payrollExportConfig.formatId, LEXWARE_FORMAT_ID),
-				),
-			});
-
-			if (existing) {
-				const [updated] = await db
-					.update(payrollExportConfig)
-					.set({
-						config: input.config as unknown as Record<string, unknown>,
-						updatedBy: session.user.id,
-					})
-					.where(eq(payrollExportConfig.id, existing.id))
-					.returning();
-
-				return updated;
-			} else {
-				const [inserted] = await db
-					.insert(payrollExportConfig)
-					.values({
-						organizationId: input.organizationId,
-						formatId: LEXWARE_FORMAT_ID,
-						config: input.config as unknown as Record<string, unknown>,
-						isActive: true,
-						createdBy: session.user.id,
-						updatedAt: new Date(),
-					})
-					.returning();
-
-				return inserted;
-			}
+		// Save or update config; a custom field identifier must be eligible (#821)
+		const config = yield* saveConfig({
+			organizationId: input.organizationId,
+			formatId: LEXWARE_FORMAT_ID,
+			config: input.config as unknown as Record<string, unknown>,
+			actorUserId: session.user.id,
 		});
 
 		revalidatePath("/settings/payroll-export");
@@ -543,41 +556,12 @@ export async function saveSageConfigAction(
 			}
 		});
 
-		// Save or update config
-		const config = yield* Effect.promise(async () => {
-			const existing = await db.query.payrollExportConfig.findFirst({
-				where: and(
-					eq(payrollExportConfig.organizationId, input.organizationId),
-					eq(payrollExportConfig.formatId, SAGE_FORMAT_ID),
-				),
-			});
-
-			if (existing) {
-				const [updated] = await db
-					.update(payrollExportConfig)
-					.set({
-						config: input.config as unknown as Record<string, unknown>,
-						updatedBy: session.user.id,
-					})
-					.where(eq(payrollExportConfig.id, existing.id))
-					.returning();
-
-				return updated;
-			} else {
-				const [inserted] = await db
-					.insert(payrollExportConfig)
-					.values({
-						organizationId: input.organizationId,
-						formatId: SAGE_FORMAT_ID,
-						config: input.config as unknown as Record<string, unknown>,
-						isActive: true,
-						createdBy: session.user.id,
-						updatedAt: new Date(),
-					})
-					.returning();
-
-				return inserted;
-			}
+		// Save or update config; a custom field identifier must be eligible (#821)
+		const config = yield* saveConfig({
+			organizationId: input.organizationId,
+			formatId: SAGE_FORMAT_ID,
+			config: input.config as unknown as Record<string, unknown>,
+			actorUserId: session.user.id,
 		});
 
 		revalidatePath("/settings/payroll-export");
@@ -741,41 +725,12 @@ export async function saveSuccessFactorsConfigAction(
 			}
 		});
 
-		// Save or update config (shared between API and CSV modes)
-		const config = yield* Effect.promise(async () => {
-			const existing = await db.query.payrollExportConfig.findFirst({
-				where: and(
-					eq(payrollExportConfig.organizationId, input.organizationId),
-					eq(payrollExportConfig.formatId, SF_FORMAT_ID),
-				),
-			});
-
-			if (existing) {
-				const [updated] = await db
-					.update(payrollExportConfig)
-					.set({
-						config: input.config as unknown as Record<string, unknown>,
-						updatedBy: session.user.id,
-					})
-					.where(eq(payrollExportConfig.id, existing.id))
-					.returning();
-
-				return updated;
-			} else {
-				const [inserted] = await db
-					.insert(payrollExportConfig)
-					.values({
-						organizationId: input.organizationId,
-						formatId: SF_FORMAT_ID,
-						config: input.config as unknown as Record<string, unknown>,
-						isActive: true,
-						createdBy: session.user.id,
-						updatedAt: new Date(),
-					})
-					.returning();
-
-				return inserted;
-			}
+		// Save or update config; a custom field identifier must be eligible (#821)
+		const config = yield* saveConfig({
+			organizationId: input.organizationId,
+			formatId: SF_FORMAT_ID,
+			config: input.config as unknown as Record<string, unknown>,
+			actorUserId: session.user.id,
 		});
 
 		const hasCredentials = yield* Effect.promise(async () => {
@@ -1067,40 +1022,12 @@ export async function saveWorkdayConfigAction(
 			}
 		});
 
-		const config = yield* Effect.promise(async () => {
-			const existing = await db.query.payrollExportConfig.findFirst({
-				where: and(
-					eq(payrollExportConfig.organizationId, input.organizationId),
-					eq(payrollExportConfig.formatId, WORKDAY_FORMAT_ID),
-				),
-			});
-
-			if (existing) {
-				const [updated] = await db
-					.update(payrollExportConfig)
-					.set({
-						config: input.config as unknown as Record<string, unknown>,
-						updatedBy: session.user.id,
-					})
-					.where(eq(payrollExportConfig.id, existing.id))
-					.returning();
-
-				return updated;
-			}
-
-			const [inserted] = await db
-				.insert(payrollExportConfig)
-				.values({
-					organizationId: input.organizationId,
-					formatId: WORKDAY_FORMAT_ID,
-					config: input.config as unknown as Record<string, unknown>,
-					isActive: true,
-					createdBy: session.user.id,
-					updatedAt: new Date(),
-				})
-				.returning();
-
-			return inserted;
+		// Save or update config; a custom field identifier must be eligible (#821)
+		const config = yield* saveConfig({
+			organizationId: input.organizationId,
+			formatId: WORKDAY_FORMAT_ID,
+			config: input.config as unknown as Record<string, unknown>,
+			actorUserId: session.user.id,
 		});
 
 		const hasCredentials = yield* Effect.promise(async () => {
@@ -1996,41 +1923,12 @@ export async function savePersonioConfigAction(
 			}
 		});
 
-		// Save or update config
-		const config = yield* Effect.promise(async () => {
-			const existing = await db.query.payrollExportConfig.findFirst({
-				where: and(
-					eq(payrollExportConfig.organizationId, input.organizationId),
-					eq(payrollExportConfig.formatId, PERSONIO_FORMAT_ID),
-				),
-			});
-
-			if (existing) {
-				const [updated] = await db
-					.update(payrollExportConfig)
-					.set({
-						config: input.config as unknown as Record<string, unknown>,
-						updatedBy: session.user.id,
-					})
-					.where(eq(payrollExportConfig.id, existing.id))
-					.returning();
-
-				return updated;
-			} else {
-				const [inserted] = await db
-					.insert(payrollExportConfig)
-					.values({
-						organizationId: input.organizationId,
-						formatId: PERSONIO_FORMAT_ID,
-						config: input.config as unknown as Record<string, unknown>,
-						isActive: true,
-						createdBy: session.user.id,
-						updatedAt: new Date(),
-					})
-					.returning();
-
-				return inserted;
-			}
+		// Save or update config; a custom field identifier must be eligible (#821)
+		const config = yield* saveConfig({
+			organizationId: input.organizationId,
+			formatId: PERSONIO_FORMAT_ID,
+			config: input.config as unknown as Record<string, unknown>,
+			actorUserId: session.user.id,
 		});
 
 		// Check if credentials exist

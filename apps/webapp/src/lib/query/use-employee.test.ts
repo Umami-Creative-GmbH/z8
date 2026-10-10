@@ -141,7 +141,7 @@ describe("useEmployee contracts", () => {
 		expect(source).toContain("mutationFn: async (historyId: string)");
 		expect(source).toContain("mutationFn: async () =>");
 		expect(source).toContain("mutationFn: async (data: CreateRateHistory)");
-		expect(source).toContain("mutationFn: async (data: UpdateEmployee)");
+		expect(source).toContain("mutationFn: async (input: EmployeeDetailUpdate)");
 	});
 
 	it("exposes a stable employment history query key", () => {

@@ -6,13 +6,19 @@
 import { and, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db, payrollExportJob, payrollExportSyncRecord } from "@/db";
+import type { PayrollExportJobPersonnelIdentifier } from "@/db/schema";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import {
 	insertPayrollExportWorkInput,
 	PayrollExportWorkInputIntegrityError,
 	readPayrollExportWorkInput,
 } from "@/lib/payroll-collection/payroll-export-work-input";
-import type { CollectedPayrollWorkInput } from "@/lib/payroll-collection/payroll-work-collection";
+import {
+	type CollectedPayrollWorkInput,
+	frozenPersonnelIdentifier,
+	type StoredPayrollWorkInput,
+} from "@/lib/payroll-collection/payroll-work-collection";
 import { PayrollWorkCollectionBlockedError } from "@/lib/payroll-collection/payroll-work-collection-blocked-error";
 import {
 	collectPayrollWork,
@@ -20,6 +26,7 @@ import {
 } from "@/lib/payroll-collection/payroll-work-collection-reader";
 import { getPresignedUrl, uploadExport } from "@/lib/storage/export-s3-client";
 import {
+	classifyPayrollRunCandidates,
 	countIncludedReportsByRun,
 	exportIsPayrollRun,
 	includeReportsInPayrollRun,
@@ -27,10 +34,10 @@ import {
 } from "@/lib/travel-expenses/payroll-run";
 import { notifyPayrollRunExported } from "@/lib/travel-expenses/payroll-run-notifications";
 import { parsePayrollLogicalDate, serializePayrollLogicalDate } from "./calendar-boundaries";
+import { workPeriodsFromCollectedInput } from "./collected-work";
 import { personioConnector } from "./connectors/personio-connector";
 import { PayrollConnectorRegistry } from "./connectors/registry";
 import { successFactorsConnector } from "./connectors/successfactors-connector";
-import { workPeriodsFromCollectedInput } from "./collected-work";
 import {
 	countWorkPeriods,
 	fetchAbsencesForExport,
@@ -45,6 +52,14 @@ import { workdayConnector } from "./exporters/workday/workday-connector";
 import { DatevLohnFormatter } from "./formatters/datev-lohn-formatter";
 import { LexwareLohnFormatter } from "./formatters/lexware-lohn-formatter";
 import { SageLohnFormatter } from "./formatters/sage-lohn-formatter";
+import {
+	employeesWithoutIdentifier,
+	PayrollIdentifierChangedError,
+	PayrollIdentifierMissingError,
+	payrollIdentifierCustomFieldId,
+	withPersonnelIdentifiers,
+} from "./personnel-identifier";
+import { readPersonnelIdentifierValues } from "./personnel-identifier-store";
 import type {
 	AbsenceData,
 	ApiExportResult,
@@ -170,11 +185,40 @@ export async function createExportJob(params: {
 		throw new Error(`No configuration found for format: ${params.formatId}`);
 	}
 
+	// A custom field identifier (#821) is checked for every employee the export
+	// carries rows for, before the job exists, and frozen with it.
+	const identifierFieldId = payrollIdentifierCustomFieldId(configResult.config.config);
+	const scopedCollection = await isPayrollWorkCollectionActive(db, params.organizationId);
+	const employeesWithOtherRows =
+		identifierFieldId === null
+			? []
+			: await employeesWithAbsencesOrExpenseLines({
+					organizationId: params.organizationId,
+					formatId: params.formatId,
+					filters: params.filters,
+					scopedCollection,
+				});
+
 	// Under scoped collection (#322) the work is collected now, before the job exists,
 	// and stored with it; otherwise the legacy read runs when the job is processed.
-	const collectedInput = (await isPayrollWorkCollectionActive(db, params.organizationId))
-		? await collectExportWorkInput(params)
+	const collectedInput = scopedCollection
+		? await collectExportWorkInput({
+				...params,
+				personnelIdentifier:
+					identifierFieldId === null
+						? null
+						: { customFieldId: identifierFieldId, employeesWithOtherRows },
+			})
 		: null;
+	const legacyIdentifier =
+		!scopedCollection && identifierFieldId !== null
+			? await freezeLegacyPersonnelIdentifier({
+					organizationId: params.organizationId,
+					filters: params.filters,
+					customFieldId: identifierFieldId,
+					employeesWithOtherRows,
+				})
+			: null;
 
 	// Count work periods to determine sync/async
 	// Use the sync threshold from whichever is available (formatter or exporter)
@@ -204,6 +248,7 @@ export async function createExportJob(params: {
 				configId: configResult.config.id,
 				requestedById: params.requestedById,
 				filters: serializedFilters,
+				personnelIdentifier: legacyIdentifier,
 				isAsync,
 				status: "pending",
 			})
@@ -292,7 +337,7 @@ export async function processExportJob({
 		}
 
 		// Fetch data
-		const [workPeriods, absences, mappings] = await Promise.all([
+		const [collectedWorkPeriods, fetchedAbsences, mappings] = await Promise.all([
 			storedInput
 				? workPeriodsFromCollectedInput(storedInput)
 				: fetchWorkPeriodsForExport(job.organizationId, filters),
@@ -301,6 +346,20 @@ export async function processExportJob({
 			}),
 			getWageTypeMappings(job.organizationId),
 		]);
+
+		// A custom field identifier (#821): the run's frozen values, never the employee number.
+		const identify = personnelIdentifierResolver({
+			jobId,
+			organizationId: job.organizationId,
+			config: job.config.config,
+			frozen: storedInput
+				? frozenPersonnelIdentifier(storedInput)
+				: (job.personnelIdentifier ?? null),
+		});
+		const [workPeriods, absences] = await identify.workAndAbsences(
+			collectedWorkPeriods,
+			fetchedAbsences,
+		);
 
 		// BRANCH: API-based exporter (Personio, etc.)
 		if (exporter) {
@@ -389,6 +448,8 @@ export async function processExportJob({
 					},
 					"Payroll run included reports awaiting reimbursement",
 				);
+				// A missing identifier throws here and rolls the inclusions back.
+				const expenseLines = await identify.rows(inclusion.expenseLines);
 				skipped = inclusion.skipped;
 				return writeFileExport(
 					tx,
@@ -396,7 +457,7 @@ export async function processExportJob({
 					formatter.transform(
 						workPeriods,
 						absences,
-						inclusion.expenseLines,
+						expenseLines,
 						mappings,
 						job.config.config as Record<string, unknown>,
 					),
@@ -498,6 +559,8 @@ async function collectExportWorkInput(params: {
 	organizationId: string;
 	filters: PayrollExportFilters;
 	repairActorUserId?: string | null;
+	/** The configured custom field identifier (#821), read as of the period's last day. */
+	personnelIdentifier: { customFieldId: string; employeesWithOtherRows: string[] } | null;
 }): Promise<CollectedPayrollWorkInput> {
 	const startDate = params.filters.dateRange.start.toISODate();
 	const endDate = params.filters.dateRange.end.toISODate();
@@ -515,6 +578,7 @@ async function collectExportWorkInput(params: {
 			projectIds: params.filters.projectIds,
 		},
 		repairActorUserId: params.repairActorUserId ?? null,
+		personnelIdentifier: params.personnelIdentifier,
 	});
 
 	if (collection.blockers.length > 0) {
@@ -539,6 +603,142 @@ async function collectExportWorkInput(params: {
 		"Payroll work collected for export",
 	);
 	return collection.input;
+}
+
+/**
+ * The employees an export carries absences or expense lines for (#821): they
+ * need an identifier value like employees with work. Absences are the ones the
+ * export reads; expense lines those a payroll run of the format would include.
+ */
+async function employeesWithAbsencesOrExpenseLines(input: {
+	organizationId: string;
+	formatId: string;
+	filters: PayrollExportFilters;
+	scopedCollection: boolean;
+}): Promise<string[]> {
+	const absences = await fetchAbsencesForExport(input.organizationId, input.filters, {
+		canonicalReadiness: input.scopedCollection ? "absences" : "cutover",
+	});
+	const employeeIds = new Set(absences.map((absence) => absence.employeeId));
+	if (
+		formatters.has(input.formatId) &&
+		(await exportIsPayrollRun(db, {
+			organizationId: input.organizationId,
+			formatId: input.formatId,
+		}))
+	) {
+		const candidates = await classifyPayrollRunCandidates(db, {
+			organizationId: input.organizationId,
+			format: input.formatId,
+			period: logicalPeriod(input.filters),
+			employeeIds: await resolvePayrollRunEmployeeIds(input.organizationId, input.filters),
+		});
+		for (const candidate of candidates) {
+			if (candidate.classification.outcome === "include") {
+				employeeIds.add(candidate.account.employeeId);
+			}
+		}
+	}
+	return [...employeeIds].toSorted();
+}
+
+function logicalPeriod(filters: PayrollExportFilters): { startDate: string; endDate: string } {
+	const startDate = filters.dateRange.start.toISODate();
+	const endDate = filters.dateRange.end.toISODate();
+	if (!startDate || !endDate) {
+		throw new Error("Invalid payroll export date range");
+	}
+	return { startDate, endDate };
+}
+
+/**
+ * Without scoped collection (#821): reads the identifier of the export's
+ * employees as of the period's last day, refuses the export before the job
+ * exists when an employee with work, absences or expense lines has none, and
+ * returns the values to freeze with the job.
+ */
+async function freezeLegacyPersonnelIdentifier(input: {
+	organizationId: string;
+	filters: PayrollExportFilters;
+	customFieldId: string;
+	employeesWithOtherRows: readonly string[];
+}): Promise<PayrollExportJobPersonnelIdentifier> {
+	const { endDate } = logicalPeriod(input.filters);
+	const [scope, workPeriods] = await Promise.all([
+		resolvePayrollRunEmployeeIds(input.organizationId, input.filters),
+		fetchWorkPeriodsForExport(input.organizationId, input.filters),
+	]);
+	const values = await readPersonnelIdentifierValues(db, {
+		organizationId: input.organizationId,
+		customFieldId: input.customFieldId,
+		employeeIds: scope,
+		asOf: parsePlainDate(endDate),
+	});
+	const missing = employeesWithoutIdentifier(
+		[...workPeriods.map((period) => period.employeeId), ...input.employeesWithOtherRows].map(
+			(employeeId) => ({ employeeId }),
+		),
+		values,
+	);
+	if (missing.length > 0) {
+		throw new PayrollIdentifierMissingError(missing, input.organizationId);
+	}
+	return { customFieldId: input.customFieldId, asOf: endDate, values };
+}
+
+/**
+ * Sets the configured custom field identifier (#821) on export rows, from the
+ * values frozen when the job was created: with its collected input, or on the
+ * job without scoped collection. A later change never alters a run, retry,
+ * recovery or re-delivery. A configuration now naming another field than the
+ * frozen one refuses the job. Rows of an employee without a value refuse the
+ * export (only reachable when rows appeared after creation). Without a custom
+ * field identifier, rows pass through unchanged.
+ */
+function personnelIdentifierResolver(input: {
+	jobId: string;
+	organizationId: string;
+	config: Record<string, unknown>;
+	frozen: { customFieldId: string; values: Record<string, string> } | null;
+}) {
+	const customFieldId = payrollIdentifierCustomFieldId(input.config);
+
+	function frozenValues(): Record<string, string> {
+		if (customFieldId === null) return {};
+		if (input.frozen?.customFieldId !== customFieldId) {
+			throw new PayrollIdentifierChangedError(input.jobId, input.organizationId);
+		}
+		return input.frozen.values;
+	}
+
+	/** The values for the rows' employees; any employee without one refuses the export. */
+	async function complete(items: readonly { employeeId: string }[]) {
+		const values = frozenValues();
+		const missing = employeesWithoutIdentifier(items, values);
+		if (missing.length > 0) {
+			throw new PayrollIdentifierMissingError(missing, input.organizationId);
+		}
+		return values;
+	}
+
+	return {
+		async rows<T extends { employeeId: string }>(items: T[]): Promise<T[]> {
+			if (customFieldId === null) return items;
+			return withPersonnelIdentifiers(items, await complete(items));
+		},
+		/** Both row sets, refused together when any of their employees has no value. */
+		async workAndAbsences(
+			workPeriods: WorkPeriodData[],
+			absences: AbsenceData[],
+		): Promise<[WorkPeriodData[], AbsenceData[]]> {
+			if (customFieldId === null) return [workPeriods, absences];
+			const values = await complete([...workPeriods, ...absences]);
+			return [
+				withPersonnelIdentifiers(workPeriods, values),
+				withPersonnelIdentifiers(absences, values),
+			];
+		},
+	};
 }
 
 export async function markPayrollExportJobFailed({

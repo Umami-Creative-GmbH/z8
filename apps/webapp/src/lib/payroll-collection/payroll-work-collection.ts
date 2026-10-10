@@ -34,7 +34,11 @@ import type {
 	WorkFinding,
 } from "@/lib/time-tracking/historical-work-diagnostics";
 
-export const PAYROLL_WORK_INPUT_VERSION = 1;
+/**
+ * Version 2 (#821) adds the frozen personnel identifier. Version 1 input stays
+ * readable: it never had one, and recovers with the identifier settings of its time.
+ */
+export const PAYROLL_WORK_INPUT_VERSION = 2;
 
 /** A requested collection: the scope is already resolved to employee IDs. */
 export interface PayrollCollectionRequest {
@@ -46,6 +50,16 @@ export interface PayrollCollectionRequest {
 	/** The filters the employee scope was resolved from, kept as scope evidence. */
 	teamIds: readonly string[] | null;
 	projectIds: readonly string[] | null;
+	/**
+	 * The employee custom field the export configuration names as personnel
+	 * identifier or match key (#821); absent or null when it names none.
+	 * `employeesWithOtherRows`: employees the export also carries absences or
+	 * expense lines for; they need a value like employees with work.
+	 */
+	personnelIdentifier?: {
+		customFieldId: string;
+		employeesWithOtherRows?: readonly string[];
+	} | null;
 }
 
 export interface PayrollCollectionEmployee {
@@ -89,6 +103,11 @@ export interface PayrollCollectionSnapshot {
 		findings: readonly WorkFinding[];
 	};
 	departureRepairs: readonly PayrollCollectionDepartureRepair[];
+	/**
+	 * Each employee's value of the requested identifier field as of the period's
+	 * last day, by employee ID; an employee without a value is absent (#821).
+	 */
+	personnelIdentifiers?: Readonly<Record<string, string>>;
 }
 
 export type PayrollWorkBlockerKind =
@@ -97,7 +116,9 @@ export type PayrollWorkBlockerKind =
 	| "pending_work_correction"
 	| "unresolved_work_minutes"
 	| "uncertain_historical_work"
-	| "offboarding_clock_repair";
+	| "offboarding_clock_repair"
+	/** Work of an employee without a value for the configured identifier field (#821). */
+	| "missing_identifier";
 
 export interface PayrollWorkBlocker {
 	kind: PayrollWorkBlockerKind;
@@ -135,6 +156,15 @@ export type PayrollWorkExclusionReason =
 	| "zero_minutes"
 	| "outside_project_filter";
 
+/** A custom field identifier frozen at collection (#821). */
+export interface FrozenPersonnelIdentifier {
+	customFieldId: string;
+	/** The period's last day: the date the values were read as of. */
+	asOf: string;
+	/** Scoped employees' values by employee ID; an employee without a value is absent. */
+	values: Record<string, string>;
+}
+
 export interface CollectedPayrollWorkInput {
 	version: typeof PAYROLL_WORK_INPUT_VERSION;
 	organizationId: string;
@@ -148,7 +178,25 @@ export interface CollectedPayrollWorkInput {
 	work: CollectedPayrollWork[];
 	/** In-scope work deliberately not credited, with the reason. */
 	excluded: { recordId: string; reason: PayrollWorkExclusionReason }[];
+	/** The configured custom field identifier and its values, or null when none is configured. */
+	personnelIdentifier: FrozenPersonnelIdentifier | null;
 	digest: string;
+}
+
+/** Input stored before #821: no frozen identifier. */
+export type CollectedPayrollWorkInputV1 = Omit<
+	CollectedPayrollWorkInput,
+	"version" | "personnelIdentifier"
+> & { version: 1 };
+
+/** Any stored input version a job may be recovered from. */
+export type StoredPayrollWorkInput = CollectedPayrollWorkInput | CollectedPayrollWorkInputV1;
+
+/** The identifier frozen with the input; version 1 input has none. */
+export function frozenPersonnelIdentifier(
+	input: StoredPayrollWorkInput,
+): FrozenPersonnelIdentifier | null {
+	return input.version === PAYROLL_WORK_INPUT_VERSION ? input.personnelIdentifier : null;
 }
 
 export interface PayrollWorkCollection {
@@ -286,6 +334,30 @@ export function assessPayrollWorkCollection(
 		});
 	}
 
+	const personnelIdentifier = request.personnelIdentifier
+		? freezePersonnelIdentifier(
+				request.personnelIdentifier.customFieldId,
+				request.endDate,
+				scope,
+				snapshot.personnelIdentifiers ?? {},
+			)
+		: null;
+	if (personnelIdentifier) {
+		// Never a silent fallback to the employee number: every row without a value blocks.
+		blockers.push(
+			...missingPersonnelIdentifierBlockers({
+				customFieldId: personnelIdentifier.customFieldId,
+				values: personnelIdentifier.values,
+				employeeIds: [
+					...work.map((line) => line.employeeId),
+					...(request.personnelIdentifier?.employeesWithOtherRows ?? []).filter((id) =>
+						scoped.has(id),
+					),
+				],
+			}),
+		);
+	}
+
 	const unsigned: Omit<CollectedPayrollWorkInput, "digest"> = {
 		version: PAYROLL_WORK_INPUT_VERSION,
 		organizationId: request.organizationId,
@@ -303,6 +375,7 @@ export function assessPayrollWorkCollection(
 				compare(left.recordId, right.recordId),
 		),
 		excluded: excluded.toSorted((left, right) => compare(left.recordId, right.recordId)),
+		personnelIdentifier,
 	};
 
 	return {
@@ -320,9 +393,53 @@ export function assessPayrollWorkCollection(
 	};
 }
 
+/**
+ * One `missing_identifier` blocker per employee among `employeeIds` (those an
+ * export carries rows for) without a value of the identifier field, in ID order.
+ * Collection and the payroll workspace summary report them alike.
+ */
+export function missingPersonnelIdentifierBlockers(input: {
+	customFieldId: string;
+	values: Readonly<Record<string, string>>;
+	employeeIds: readonly string[];
+}): PayrollWorkBlocker[] {
+	return [...new Set(input.employeeIds)]
+		.filter((employeeId) => input.values[employeeId] === undefined)
+		.toSorted(compare)
+		.map((employeeId) => ({
+			kind: "missing_identifier",
+			sourceId: input.customFieldId,
+			employeeId,
+			at: null,
+			reason: null,
+		}));
+}
+
+/** The scoped employees' identifier values, read as of the period's last day. */
+function freezePersonnelIdentifier(
+	customFieldId: string,
+	asOf: string,
+	scope: readonly string[],
+	values: Readonly<Record<string, string>>,
+): FrozenPersonnelIdentifier {
+	return {
+		customFieldId,
+		asOf,
+		values: Object.fromEntries(
+			scope.flatMap((employeeId) => {
+				const value = values[employeeId];
+				return value === undefined ? [] : [[employeeId, value]];
+			}),
+		),
+	};
+}
+
 /** Digest over every collected fact; the stored digest must match on reuse. */
 export function payrollWorkInputDigest(
-	input: Omit<CollectedPayrollWorkInput, "digest"> & { digest?: string },
+	input: (
+		| Omit<CollectedPayrollWorkInput, "digest">
+		| Omit<CollectedPayrollWorkInputV1, "digest">
+	) & { digest?: string },
 ): string {
 	const { digest: _digest, ...facts } = input;
 	return createHash("sha256").update(canonicalJson(facts)).digest("hex");

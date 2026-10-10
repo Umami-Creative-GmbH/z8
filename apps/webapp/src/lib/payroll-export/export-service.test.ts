@@ -66,6 +66,9 @@ vi.mock("@/lib/payroll-collection/payroll-export-work-input", () => ({
 	readPayrollExportWorkInput: mockState.readInput,
 }));
 
+// The custom field identifier read (#821) has its own PostgreSQL suite.
+vi.mock("./personnel-identifier-store", () => ({ readPersonnelIdentifierValues: vi.fn() }));
+
 vi.mock("@/lib/logger", () => ({
 	createLogger: vi.fn(() => ({
 		info: vi.fn(),
@@ -276,6 +279,8 @@ describe("payroll export under scoped work collection (#322)", () => {
 				projectIds: undefined,
 			},
 			repairActorUserId: "user-1",
+			// The configuration names no custom field identifier (#821).
+			personnelIdentifier: null,
 		});
 		expect(dataFetcher.countWorkPeriods).not.toHaveBeenCalled();
 		expect(mockState.inserts).toHaveLength(1);

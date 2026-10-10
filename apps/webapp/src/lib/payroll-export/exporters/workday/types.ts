@@ -2,7 +2,8 @@
  * Workday-specific types and configurations
  */
 
-export type WorkdayEmployeeMatchStrategy = "employeeNumber" | "email";
+/** A custom field matches by Workday employee number (#821). */
+export type WorkdayEmployeeMatchStrategy = "employeeNumber" | "email" | "customField";
 
 /**
  * Workday API configuration
@@ -12,6 +13,8 @@ export interface WorkdayConfig {
 	instanceUrl: string;
 	tenantId: string;
 	employeeMatchStrategy: WorkdayEmployeeMatchStrategy;
+	/** The employee custom field matched by when the strategy is "customField" */
+	employeeMatchCustomFieldId?: string;
 	includeZeroHours: boolean;
 	batchSize: number;
 	apiTimeoutMs: number;

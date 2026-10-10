@@ -34,7 +34,7 @@ describe("WorkdayConnector", () => {
 			errors: [
 				"instanceUrl is required",
 				"tenantId is required",
-				"employeeMatchStrategy must be 'employeeNumber' or 'email'",
+				"employeeMatchStrategy must be 'employeeNumber', 'email' or 'customField'",
 				"batchSize must be between 1 and 500",
 				"apiTimeoutMs must be between 1000 and 120000",
 			],
@@ -91,7 +91,7 @@ describe("WorkdayConnector", () => {
 			errors: [
 				"instanceUrl must be a string",
 				"tenantId must be a string",
-				"employeeMatchStrategy must be 'employeeNumber' or 'email'",
+				"employeeMatchStrategy must be 'employeeNumber', 'email' or 'customField'",
 				"batchSize must be a number",
 				"apiTimeoutMs must be a number",
 			],
@@ -343,6 +343,81 @@ describe("WorkdayConnector", () => {
 
 		expect(findWorkerByEmail).toHaveBeenCalledWith("token_123", "email@example.com");
 		expect(createAttendance).toHaveBeenCalledTimes(1);
+	});
+
+	it("matches workers by the frozen custom field value as employee number (#821)", async () => {
+		const findWorkerByEmployeeNumber = vi.fn().mockResolvedValue({ id: "worker-field" });
+		const createAttendance = vi.fn().mockResolvedValue(undefined);
+		const connector = new WorkdayConnector({
+			getCredentials: vi.fn().mockResolvedValue({
+				clientId: "client_123",
+				clientSecret: "secret_123",
+			}),
+			createApiClient: () => ({
+				getOAuthToken: vi.fn().mockResolvedValue({
+					accessToken: "token_123",
+					tokenType: "Bearer",
+					expiresAt: Date.now() + 3600_000,
+				}),
+				testConnection: vi.fn().mockResolvedValue({ success: true }),
+				findWorkerByEmployeeNumber,
+				findWorkerByEmail: vi.fn(),
+				createAttendance,
+				createAbsence: vi.fn(),
+			}),
+		});
+		const config = {
+			...DEFAULT_WORKDAY_CONFIG,
+			instanceUrl: "https://example.workday.com",
+			tenantId: "acme",
+			employeeMatchStrategy: "customField",
+			employeeMatchCustomFieldId: "field-1",
+		};
+		await expect(connector.validateConfig(config)).resolves.toEqual({ valid: true });
+
+		const result = await connector.export(
+			"org_123",
+			[
+				{
+					id: "wp_field",
+					employeeId: "emp_field",
+					employeeNumber: "1001",
+					firstName: "Field",
+					lastName: "Match",
+					email: "field@example.com",
+					startTime: DateTime.fromISO("2026-01-10T08:00:00Z"),
+					endTime: DateTime.fromISO("2026-01-10T10:00:00Z"),
+					durationMinutes: 120,
+					workCategoryId: null,
+					workCategoryName: "Regular",
+					workCategoryFactor: null,
+					projectId: null,
+					projectName: null,
+					personnelIdentifier: "LG-0042",
+				},
+			],
+			[],
+			[],
+			config,
+		);
+
+		expect(result.success).toBe(true);
+		expect(findWorkerByEmployeeNumber).toHaveBeenCalledWith("token_123", "LG-0042");
+		expect(createAttendance).toHaveBeenCalledTimes(1);
+	});
+
+	it("refuses the custom field strategy without a field", async () => {
+		await expect(
+			new WorkdayConnector().validateConfig({
+				...DEFAULT_WORKDAY_CONFIG,
+				instanceUrl: "https://example.workday.com",
+				tenantId: "acme",
+				employeeMatchStrategy: "customField",
+			}),
+		).resolves.toEqual({
+			valid: false,
+			errors: ["Choose the custom field to match employees by"],
+		});
 	});
 
 	it("returns stable sync threshold", () => {

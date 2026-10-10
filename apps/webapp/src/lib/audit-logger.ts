@@ -216,6 +216,27 @@ export enum AuditAction {
 	INVOICE_DRAFT_RELEASED = "billable_time.invoice_draft_released",
 	INVOICED_WORK_MARK_CLEARED = "billable_time.invoiced_work_mark_cleared",
 
+	// Custom field definitions (#817)
+	CUSTOM_FIELD_CREATED = "custom_field.created",
+	CUSTOM_FIELD_RENAMED = "custom_field.renamed",
+	CUSTOM_FIELD_UPDATED = "custom_field.updated",
+	CUSTOM_FIELD_REORDERED = "custom_field.reordered",
+	CUSTOM_FIELD_ARCHIVED = "custom_field.archived",
+	CUSTOM_FIELD_RESTORED = "custom_field.restored",
+	CUSTOM_FIELD_OPTION_ADDED = "custom_field.option_added",
+	CUSTOM_FIELD_OPTION_RENAMED = "custom_field.option_renamed",
+	CUSTOM_FIELD_OPTION_REORDERED = "custom_field.option_reordered",
+	CUSTOM_FIELD_OPTION_ARCHIVED = "custom_field.option_archived",
+	CUSTOM_FIELD_OPTION_RESTORED = "custom_field.option_restored",
+	// Custom field values (#818): on the employee, project or customer record.
+	CUSTOM_FIELD_VALUE_SET = "custom_field_value.set",
+	CUSTOM_FIELD_VALUE_CHANGED = "custom_field_value.changed",
+	CUSTOM_FIELD_VALUE_CLEARED = "custom_field_value.cleared",
+	// Tracked custom field history (#819): dated entries added, corrected or deleted.
+	CUSTOM_FIELD_VALUE_HISTORY_ADDED = "custom_field_value.history_added",
+	CUSTOM_FIELD_VALUE_HISTORY_CORRECTED = "custom_field_value.history_corrected",
+	CUSTOM_FIELD_VALUE_HISTORY_DELETED = "custom_field_value.history_deleted",
+
 	// Location Operations
 	LOCATION_CREATED = "location.created",
 	LOCATION_UPDATED = "location.updated",
@@ -291,6 +312,8 @@ export interface AuditLogEntry {
 		| "invoiced_work"
 		| "project_task"
 		| "project_template"
+		| "custom_field"
+		| "custom_field_option"
 		| "work_period"
 		| "location"
 		| "subarea"

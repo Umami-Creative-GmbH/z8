@@ -3,6 +3,7 @@
 import type { employee } from "@/db/schema";
 import type { ServerActionResult } from "@/lib/effect/result";
 import type { ExecuteDepartureResult } from "@/lib/employee-lifecycle/types";
+import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
 import type {
 	AssignManagers,
 	CreateEmployee,
@@ -65,8 +66,9 @@ export async function createEmployee(
 export async function updateEmployee(
 	employeeId: string,
 	data: UpdateEmployee,
+	customFieldValues?: CustomFieldValuesInput,
 ): Promise<ServerActionResult<void>> {
-	return updateEmployeeAction(employeeId, data);
+	return updateEmployeeAction(employeeId, data, customFieldValues);
 }
 
 export async function deactivateEmployee(

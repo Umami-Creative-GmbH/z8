@@ -123,3 +123,37 @@ describe("time entries file of the org data export", () => {
 		);
 	});
 });
+
+describe("table datasets (projects, customers)", () => {
+	it("write their own columns, keep custom field dates and texts as they are, and always a header", () => {
+		const table = {
+			format: "csv-table" as const,
+			columns: [
+				{ key: "id", header: "id" },
+				{ key: "createdAt", header: "createdAt" },
+				{ key: "customField:f-start", header: "Start date" },
+				{ key: "customField:f-code", header: "Rate" },
+			],
+			rows: [
+				{
+					id: "project-1",
+					createdAt: new Date("2026-01-05T09:30:00Z"),
+					"customField:f-start": "2024-02-29",
+					"customField:f-code": "2024",
+				},
+			],
+		};
+
+		const files = buildExportFiles("org-1", {
+			projects: table,
+			customers: { ...table, rows: [] },
+		});
+
+		expect(files.map((file) => file.name)).toEqual(["projects.csv", "customers.csv"]);
+		expect(files[0]?.content.split("\n")).toEqual([
+			"id,createdAt,Start date,Rate",
+			"project-1,2026-01-05T09:30:00.000Z,2024-02-29,2024",
+		]);
+		expect(files[1]?.content).toBe("id,createdAt,Start date,Rate");
+	});
+});
