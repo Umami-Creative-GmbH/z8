@@ -11,6 +11,7 @@ import {
 	type ClosedMonthDatabaseFixture,
 	createClosedMonthDatabaseFixture,
 } from "@/lib/time-tracking/closed-months/testing/closed-month-database.test.fixture";
+import { loadEmployeePeriodView } from "./employee-period-view-store";
 import {
 	decidePeriodSubmission,
 	PeriodSubmissionDecisionError,
@@ -241,6 +242,17 @@ describe("period submissions on PostgreSQL", () => {
 		await expect(
 			decide(assignment.id, "reject", { reason: "Friday is missing" }),
 		).resolves.toMatchObject({ status: "rejected" });
+
+		const view = await loadEmployeePeriodView(db, {
+			organizationId,
+			employeeId: employee.employeeId,
+			now: parseInstant("2026-03-10T09:00:00Z"),
+		});
+		expect(view?.periods.find((period) => period.startDate === WEEK_START)).toMatchObject({
+			status: "rejected",
+			rejectionReason: "Friday is missing",
+			canSubmit: true,
+		});
 
 		const second = await submit();
 		expect(second).toMatchObject({ kind: "submitted", approverEmployeeIds: [manager.employeeId] });
