@@ -1,12 +1,12 @@
 import { parseISO } from "@/lib/datetime/luxon-utils";
-import type { CollectedPayrollWorkInput } from "@/lib/payroll-collection/payroll-work-collection";
+import type { StoredPayrollWorkInput } from "@/lib/payroll-collection/payroll-work-collection";
 import type { WorkPeriodData } from "./types";
 
 /**
  * Formatter lines from collected payroll work (#322). Each line is the credited part
  * of one work record, with its protected minutes; nothing is recomputed or reread.
  */
-export function workPeriodsFromCollectedInput(input: CollectedPayrollWorkInput): WorkPeriodData[] {
+export function workPeriodsFromCollectedInput(input: StoredPayrollWorkInput): WorkPeriodData[] {
 	return input.work.map((line) => ({
 		id: line.recordId,
 		employeeId: line.employeeId,

@@ -471,3 +471,81 @@ describe("assessPayrollWorkCollection", () => {
 		expect(payrollWorkInputDigest({ ...base, work: changed.work })).not.toBe(base.digest);
 	});
 });
+
+describe("assessPayrollWorkCollection with a custom field as personnel identifier (#821)", () => {
+	const byField = { ...july, personnelIdentifier: { customFieldId: "field-1" } };
+
+	it("collects version 2 input without a frozen identifier when the configuration uses none", () => {
+		const result = assessPayrollWorkCollection(snapshot({ records: [work("a")] }), july);
+
+		expect(result.input.version).toBe(2);
+		expect(result.input.personnelIdentifier).toBeNull();
+		expect(result.blockers).toEqual([]);
+	});
+
+	it("freezes every scoped employee's value as of the period's last day into the digested input", () => {
+		const result = assessPayrollWorkCollection(
+			snapshot({
+				records: [work("a")],
+				personnelIdentifiers: { [berlin.id]: "LOHN-7", [tokyo.id]: "4711", outsider: "X" },
+			}),
+			byField,
+		);
+
+		expect(result.blockers).toEqual([]);
+		expect(result.input.personnelIdentifier).toEqual({
+			customFieldId: "field-1",
+			asOf: "2026-07-31",
+			values: { [berlin.id]: "LOHN-7", [tokyo.id]: "4711" },
+		});
+		expect(result.input.digest).toBe(payrollWorkInputDigest(result.input));
+		const otherValue = assessPayrollWorkCollection(
+			snapshot({
+				records: [work("a")],
+				personnelIdentifiers: { [berlin.id]: "LOHN-8", [tokyo.id]: "4711" },
+			}),
+			byField,
+		).input;
+		expect(otherValue.digest).not.toBe(result.input.digest);
+	});
+
+	it("reports each employee with collected work but no value as missing identifier", () => {
+		const result = assessPayrollWorkCollection(
+			snapshot({
+				records: [
+					work("a"),
+					work("b", { employeeId: tokyo.id, workPeriod: null }),
+					work("c", {
+						employeeId: tokyo.id,
+						workPeriod: null,
+						startAt: instant("2026-07-11T07:00:00Z"),
+						endAt: instant("2026-07-11T08:00:00Z"),
+						durationMinutes: 60,
+					}),
+				],
+				personnelIdentifiers: { [berlin.id]: "LOHN-7" },
+			}),
+			byField,
+		);
+
+		expect(result.blockers).toEqual([
+			{
+				kind: "missing_identifier",
+				sourceId: "field-1",
+				employeeId: tokyo.id,
+				at: null,
+				reason: null,
+			},
+		]);
+		expect(result.input.personnelIdentifier?.values).toEqual({ [berlin.id]: "LOHN-7" });
+	});
+
+	it("does not block an employee without a value who has nothing to export", () => {
+		const result = assessPayrollWorkCollection(
+			snapshot({ records: [work("a")], personnelIdentifiers: { [berlin.id]: "LOHN-7" } }),
+			byField,
+		);
+
+		expect(result.blockers).toEqual([]);
+	});
+});

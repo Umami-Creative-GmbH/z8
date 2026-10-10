@@ -47,8 +47,19 @@ export function levelLabel(t: Translate, level: FieldVisibility): string {
 	}
 }
 
-export function refusalMessage(t: Translate, reason: CustomFieldRefusal): string {
+export function refusalMessage(
+	t: Translate,
+	reason: CustomFieldRefusal,
+	/** For `used_as_payroll_identifier`: the payroll configurations using the field. */
+	configurations: readonly string[] = [],
+): string {
 	switch (reason) {
+		case "used_as_payroll_identifier":
+			return t(
+				"settings.customFields.refusal.usedAsPayrollIdentifier",
+				"This field is the personnel identifier of the payroll export configuration {configurations}. Choose another identifier there first.",
+				{ configurations: configurations.join(", ") },
+			);
 		case "invalid_name":
 			return t(
 				"settings.customFields.refusal.invalidName",

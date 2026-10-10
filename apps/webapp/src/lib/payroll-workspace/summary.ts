@@ -196,6 +196,7 @@ const COLLECTION_BLOCKER_LABELS: Record<PayrollWorkBlockerKind, string> = {
 	unresolved_work_minutes: "Unresolved work minutes",
 	uncertain_historical_work: "Historical work needs review",
 	offboarding_clock_repair: "Offboarding clock-out needs repair",
+	missing_identifier: "Missing identifier",
 };
 
 /**

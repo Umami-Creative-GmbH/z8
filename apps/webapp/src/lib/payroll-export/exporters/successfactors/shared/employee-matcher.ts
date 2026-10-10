@@ -3,6 +3,7 @@
  * Maps local employees to SAP SuccessFactors user identifiers
  */
 import { createLogger } from "@/lib/logger";
+import { type PayrollIdentityRow, requirePersonnelIdentifier } from "../../../personnel-identifier";
 import type { AbsenceData, WorkPeriodData } from "../../../types";
 import type { SuccessFactorsEmployeeMatchStrategy } from "../types";
 
@@ -11,9 +12,7 @@ const logger = createLogger("SFEmployeeMatcher");
 /**
  * Employee data that can be used for matching
  */
-interface MatchableEmployee {
-	employeeId: string;
-	employeeNumber: string | null;
+interface MatchableEmployee extends PayrollIdentityRow {
 	firstName: string | null;
 	lastName: string | null;
 }
@@ -60,6 +59,10 @@ export function getEmployeeIdentifier(
 				"Email matching not available in current data, falling back to employeeNumber",
 			);
 			return employee.employeeNumber || null;
+
+		case "customField":
+			// The frozen custom field value is the userId (#821); it never falls back.
+			return requirePersonnelIdentifier(employee);
 
 		default:
 			logger.error({ strategy }, "Unknown employee matching strategy");

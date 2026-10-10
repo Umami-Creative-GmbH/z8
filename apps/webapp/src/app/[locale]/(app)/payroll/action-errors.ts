@@ -8,6 +8,10 @@ import {
 } from "@/lib/effect/errors";
 import { PayrollWorkCollectionBlockedError } from "@/lib/payroll-collection/payroll-work-collection-blocked-error";
 import { PayrollOffboardingRepairBlockedError } from "@/lib/payroll-export/offboarding-repair-guard";
+import {
+	PayrollIdentifierChangedError,
+	PayrollIdentifierMissingError,
+} from "@/lib/payroll-export/personnel-identifier";
 import { PayrollWorkAllocationBlockedError } from "@/lib/payroll-export/work-allocation-blocked-error";
 import { CanonicalCutoverNotReadyError } from "@/lib/time-record/migration/cutover-state";
 
@@ -50,13 +54,40 @@ export function mapPayrollWorkspaceActionError(
 		});
 	}
 
-	if (error instanceof PayrollWorkCollectionBlockedError) {
-		// Counts only; the workspace lists the scoped blockers the reader may see.
+	if (error instanceof PayrollIdentifierMissingError) {
+		return new ConflictError({
+			message: missingIdentifierMessage(t),
+			conflictType: "payroll_identifier_missing",
+			details: {
+				organizationId: error.organizationId,
+				affectedEmployeeCount: error.employeeIds.length,
+			},
+		});
+	}
+
+	if (error instanceof PayrollIdentifierChangedError) {
 		return new ConflictError({
 			message: t(
-				"payroll.errors.exportBlockedByUncertainWork",
-				"Export blocked: resolve the uncertain work in the selected scope first",
+				"payroll.errors.exportIdentifierChanged",
+				"The payroll identifier setting changed after this export was collected. Start a new export.",
 			),
+			conflictType: "payroll_identifier_changed",
+			details: { organizationId: error.organizationId },
+		});
+	}
+
+	if (error instanceof PayrollWorkCollectionBlockedError) {
+		// Counts only; the workspace lists the scoped blockers the reader may see.
+		const onlyMissingIdentifiers = error.blockers.every(
+			(blocker) => blocker.kind === "missing_identifier",
+		);
+		return new ConflictError({
+			message: onlyMissingIdentifiers
+				? missingIdentifierMessage(t)
+				: t(
+						"payroll.errors.exportBlockedByUncertainWork",
+						"Export blocked: resolve the uncertain work in the selected scope first",
+					),
 			conflictType: "payroll_work_collection_blocked",
 			details: {
 				organizationId: error.organizationId,
@@ -87,6 +118,13 @@ export function mapPayrollWorkspaceActionError(
 		operation: "payroll_workspace_action",
 		cause: error,
 	});
+}
+
+function missingIdentifierMessage(t: PayrollErrorTranslator): string {
+	return t(
+		"payroll.errors.exportBlockedByMissingIdentifier",
+		"Export blocked: some employees have no value for the custom field used as payroll identifier",
+	);
 }
 
 function isKnownPayrollActionError(error: unknown): error is AnyAppError {

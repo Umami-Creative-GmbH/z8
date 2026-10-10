@@ -1467,6 +1467,12 @@ function PayrollBlockersAlert({
 							);
 							href = "/approvals/inbox?types=absence_entry";
 							break;
+						case "missing_identifier":
+							// The configured custom field identifier has no value (#821).
+							blockerType = t("payroll.blockers.missingIdentifier", "Missing identifier");
+							actionLabel = t("payroll.blockers.openEmployee", "Open employee");
+							href = `/settings/employees/${encodeURIComponent(blocker.employeeId)}`;
+							break;
 					}
 
 					return (

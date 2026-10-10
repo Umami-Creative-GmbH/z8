@@ -99,7 +99,9 @@ export type CustomFieldRefusal =
 	| "not_select"
 	| "option_not_found"
 	| "option_archived"
-	| "last_active_option";
+	| "last_active_option"
+	/** Archiving a field a payroll configuration uses as personnel identifier (#821). */
+	| "used_as_payroll_identifier";
 
 export type ParsedCustomFieldChange =
 	| { ok: true; change: CustomFieldChange }

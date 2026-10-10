@@ -2,6 +2,7 @@
  * Core types for payroll export system
  */
 import type { DateTime } from "luxon";
+import type { PersonnelNumberType } from "./personnel-identifier";
 
 // ============================================
 // CONFIGURATION TYPES
@@ -16,7 +17,9 @@ export interface DatevLohnConfig {
 	/** Consultant number (Beraternummer) - 1-7 digits */
 	beraternummer: string;
 	/** Personnel number type - which field to use as employee identifier */
-	personnelNumberType: "employeeNumber" | "employeeId";
+	personnelNumberType: PersonnelNumberType;
+	/** The employee custom field used when personnelNumberType is "customField" (#821). */
+	personnelNumberCustomFieldId?: string;
 	/** Whether to include rows with zero hours */
 	includeZeroHours: boolean;
 }
@@ -36,7 +39,9 @@ export const DEFAULT_DATEV_CONFIG: DatevLohnConfig = {
  */
 export interface LexwareLohnConfig {
 	/** Personnel number type - which field to use as employee identifier */
-	personnelNumberType: "employeeNumber" | "employeeId";
+	personnelNumberType: PersonnelNumberType;
+	/** The employee custom field used when personnelNumberType is "customField" (#821). */
+	personnelNumberCustomFieldId?: string;
 	/** Whether to include rows with zero hours */
 	includeZeroHours: boolean;
 	/** Whether to include optional Stunden (hours) column */
@@ -60,7 +65,9 @@ export const DEFAULT_LEXWARE_CONFIG: LexwareLohnConfig = {
  */
 export interface SageLohnConfig {
 	/** Personnel number type - which field to use as employee identifier */
-	personnelNumberType: "employeeNumber" | "employeeId";
+	personnelNumberType: PersonnelNumberType;
+	/** The employee custom field used when personnelNumberType is "customField" (#821). */
+	personnelNumberCustomFieldId?: string;
 	/** Whether to include rows with zero hours */
 	includeZeroHours: boolean;
 	/** Output format - DATEV-compatible or Sage-native CSV */
@@ -214,6 +221,8 @@ export interface WorkPeriodData {
 	email?: string | null;
 	firstName: string | null;
 	lastName: string | null;
+	/** The frozen custom field identifier value, when the configuration names one (#821). */
+	personnelIdentifier?: string | null;
 	startTime: DateTime;
 	endTime: DateTime | null;
 	durationMinutes: number | null;
@@ -234,6 +243,8 @@ export interface AbsenceData {
 	email?: string | null;
 	firstName: string | null;
 	lastName: string | null;
+	/** The frozen custom field identifier value, when the configuration names one (#821). */
+	personnelIdentifier?: string | null;
 	startDate: string; // ISO date string
 	endDate: string; // ISO date string
 	absenceCategoryId: string;
@@ -253,6 +264,8 @@ export interface ExpenseLineData {
 	email?: string | null;
 	firstName: string | null;
 	lastName: string | null;
+	/** The frozen custom field identifier value, when the configuration names one (#821). */
+	personnelIdentifier?: string | null;
 	/** The expense wage type the organization mapped for this file format. */
 	wageTypeCode: string;
 	/** Euros at two decimals with a "." separator, e.g. "123.40". */
@@ -354,7 +367,7 @@ export interface IPayrollExportFormatter {
 /**
  * Employee matching strategy for API-based exports
  */
-export type EmployeeMatchStrategy = "employeeNumber" | "email";
+export type EmployeeMatchStrategy = "employeeNumber" | "email" | "customField";
 
 /**
  * Sync record status for individual records in API exports

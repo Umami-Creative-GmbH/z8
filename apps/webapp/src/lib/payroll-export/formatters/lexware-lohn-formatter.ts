@@ -10,6 +10,11 @@
  */
 import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
+import {
+	CUSTOM_FIELD_IDENTIFIER,
+	personnelNumberTypeError,
+	requirePersonnelIdentifier,
+} from "../personnel-identifier";
 import type {
 	AbsenceData,
 	ExpenseLineData,
@@ -52,14 +57,8 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 
 	validateConfig(config: Record<string, unknown>): { valid: boolean; errors?: string[] } {
 		const errors: string[] = [];
-		const lexwareConfig = config as Partial<LexwareLohnConfig>;
-
-		if (
-			!lexwareConfig.personnelNumberType ||
-			!["employeeNumber", "employeeId"].includes(lexwareConfig.personnelNumberType)
-		) {
-			errors.push("Personnel number type must be 'employeeNumber' or 'employeeId'");
-		}
+		const personnelNumberError = personnelNumberTypeError(config);
+		if (personnelNumberError) errors.push(personnelNumberError);
 
 		return {
 			valid: errors.length === 0,
@@ -317,6 +316,10 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 	 * Get personnel number from work period based on config
 	 */
 	private getPersonnelNumber(period: WorkPeriodData, config: LexwareLohnConfig): string {
+		// A custom field identifier never falls back (#821).
+		if (config.personnelNumberType === CUSTOM_FIELD_IDENTIFIER) {
+			return requirePersonnelIdentifier(period);
+		}
 		if (config.personnelNumberType === "employeeNumber") {
 			if (period.employeeNumber) {
 				return period.employeeNumber;
@@ -333,6 +336,9 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 	 * Get personnel number from absence based on config
 	 */
 	private getPersonnelNumberFromAbsence(absence: AbsenceData, config: LexwareLohnConfig): string {
+		if (config.personnelNumberType === CUSTOM_FIELD_IDENTIFIER) {
+			return requirePersonnelIdentifier(absence);
+		}
 		if (config.personnelNumberType === "employeeNumber") {
 			if (absence.employeeNumber) {
 				return absence.employeeNumber;

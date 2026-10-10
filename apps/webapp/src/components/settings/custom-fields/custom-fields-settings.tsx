@@ -88,7 +88,7 @@ export function CustomFieldsSettings({
 			return false;
 		}
 		if (!result.data.ok) {
-			toast.error(refusalMessage(t, result.data.reason));
+			toast.error(refusalMessage(t, result.data.reason, result.data.configurations));
 			return false;
 		}
 		setFields(result.data.fields);

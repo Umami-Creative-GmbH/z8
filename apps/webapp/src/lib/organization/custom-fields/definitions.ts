@@ -4,6 +4,7 @@ import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { auditLog, customFieldDefinition, customFieldOption } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { payrollConfigurationsUsingCustomField } from "@/lib/payroll-export/personnel-identifier-usage";
 import {
 	type CustomFieldChange,
 	type CustomFieldEntity,
@@ -49,7 +50,12 @@ export interface CustomFieldDefinitionView {
 
 export type CustomFieldChangeOutcome =
 	| { ok: true; fields: CustomFieldDefinitionView[] }
-	| { ok: false; reason: CustomFieldRefusal };
+	| {
+			ok: false;
+			reason: CustomFieldRefusal;
+			/** For `used_as_payroll_identifier`: the payroll configurations using the field (#821). */
+			configurations?: string[];
+	  };
 
 type DefinitionRow = typeof customFieldDefinition.$inferSelect;
 type OptionRow = typeof customFieldOption.$inferSelect;
@@ -164,11 +170,14 @@ export function listActiveCustomFields(
 }
 
 class Refused {
-	constructor(readonly reason: CustomFieldRefusal) {}
+	constructor(
+		readonly reason: CustomFieldRefusal,
+		readonly configurations?: string[],
+	) {}
 }
 
-function refuse(reason: CustomFieldRefusal): never {
-	throw new Refused(reason);
+function refuse(reason: CustomFieldRefusal, configurations?: string[]): never {
+	throw new Refused(reason, configurations);
 }
 
 interface ChangeContext {
@@ -453,6 +462,16 @@ async function setArchived(context: ChangeContext, fieldId: string, archived: bo
 	const row = await loadField(context, fieldId);
 	if ((row.archivedAt !== null) === archived) return;
 
+	if (archived && row.entity === "employee") {
+		// A payroll configuration's personnel identifier can't disappear (#821).
+		const configurations = await payrollConfigurationsUsingCustomField(
+			context.tx,
+			context.organizationId,
+			row.id,
+		);
+		if (configurations.length > 0) refuse("used_as_payroll_identifier", configurations);
+	}
+
 	let position = row.position;
 	if (!archived) {
 		const active = await activeFields(context, row.entity);
@@ -687,7 +706,11 @@ export async function changeCustomFields(
 		});
 	} catch (error) {
 		// A refusal rolls the whole change back.
-		if (error instanceof Refused) return { ok: false, reason: error.reason };
+		if (error instanceof Refused) {
+			return error.configurations
+				? { ok: false, reason: error.reason, configurations: error.configurations }
+				: { ok: false, reason: error.reason };
+		}
 		throw error;
 	}
 }

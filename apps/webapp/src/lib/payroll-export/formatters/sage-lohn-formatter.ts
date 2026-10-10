@@ -11,6 +11,11 @@
  */
 import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
+import {
+	CUSTOM_FIELD_IDENTIFIER,
+	personnelNumberTypeError,
+	requirePersonnelIdentifier,
+} from "../personnel-identifier";
 import type {
 	AbsenceData,
 	ExpenseLineData,
@@ -56,12 +61,8 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 		const errors: string[] = [];
 		const sageConfig = config as Partial<SageLohnConfig>;
 
-		if (
-			!sageConfig.personnelNumberType ||
-			!["employeeNumber", "employeeId"].includes(sageConfig.personnelNumberType)
-		) {
-			errors.push("Personnel number type must be 'employeeNumber' or 'employeeId'");
-		}
+		const personnelNumberError = personnelNumberTypeError(config);
+		if (personnelNumberError) errors.push(personnelNumberError);
 
 		if (
 			!sageConfig.outputFormat ||
@@ -315,6 +316,10 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 	 * Get personnel number from work period based on config
 	 */
 	private getPersonnelNumber(period: WorkPeriodData, config: SageLohnConfig): string {
+		// A custom field identifier never falls back (#821).
+		if (config.personnelNumberType === CUSTOM_FIELD_IDENTIFIER) {
+			return requirePersonnelIdentifier(period);
+		}
 		if (config.personnelNumberType === "employeeNumber") {
 			if (period.employeeNumber) {
 				return period.employeeNumber;
@@ -331,6 +336,9 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 	 * Get personnel number from absence based on config
 	 */
 	private getPersonnelNumberFromAbsence(absence: AbsenceData, config: SageLohnConfig): string {
+		if (config.personnelNumberType === CUSTOM_FIELD_IDENTIFIER) {
+			return requirePersonnelIdentifier(absence);
+		}
 		if (config.personnelNumberType === "employeeNumber") {
 			if (absence.employeeNumber) {
 				return absence.employeeNumber;
