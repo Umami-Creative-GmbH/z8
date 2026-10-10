@@ -114,11 +114,11 @@ function GetTheAppBannerContent({ storeUrls }: GetTheAppBannerProps) {
 				</div>
 				<div className="min-w-0 flex-1">
 					<p id={titleId} className="text-sm font-medium leading-tight">
-						{t("common:storeAppBanner.title", "Z8 for your phone")}
+						{t("storeAppBanner.title", "Z8 for your phone")}
 					</p>
 					<p id={descriptionId} className="text-xs leading-snug text-muted-foreground">
 						{t(
-							"common:storeAppBanner.description",
+							"storeAppBanner.description",
 							"Get reminders and approval notifications in the app.",
 						)}
 					</p>
@@ -130,7 +130,7 @@ function GetTheAppBannerContent({ storeUrls }: GetTheAppBannerProps) {
 						rel="noopener noreferrer"
 						aria-describedby={descriptionId}
 					>
-						{t("common:storeAppBanner.getApp", "Get the app")}
+						{t("storeAppBanner.getApp", "Get the app")}
 					</a>
 				</Button>
 				<Button
@@ -139,7 +139,7 @@ function GetTheAppBannerContent({ storeUrls }: GetTheAppBannerProps) {
 					size="icon"
 					className="-mr-1 size-11 shrink-0 text-muted-foreground"
 					onClick={dismiss}
-					aria-label={t("common:storeAppBanner.dismiss", "Dismiss app suggestion")}
+					aria-label={t("storeAppBanner.dismiss", "Dismiss app suggestion")}
 				>
 					<IconX className="size-5" aria-hidden="true" />
 				</Button>
