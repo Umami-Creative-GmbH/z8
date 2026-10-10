@@ -13,6 +13,7 @@ import {
 	useTimeClock,
 } from "@/lib/query";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
+import { isClockConnectionRequired } from "@/lib/time-tracking/browser-clock-command";
 import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import {
 	normalizeWorkLocationType,
@@ -166,6 +167,8 @@ export function useClockInOutWidget(
 			return;
 		}
 
+		// Needing a connection in this organization is shown inline (#845).
+		if (isClockConnectionRequired(result)) return;
 		if (showAppendReviewRequiredToast(result, t)) return;
 
 		const holidayName =
@@ -246,6 +249,7 @@ export function useClockInOutWidget(
 			return;
 		}
 
+		if (isClockConnectionRequired(result)) return;
 		const holidayName =
 			"holidayName" in result ? result.holidayName : undefined;
 		const errorMessage = holidayName

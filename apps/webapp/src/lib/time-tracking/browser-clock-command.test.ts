@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	type BrowserClockCommandCapabilities,
+	clockConnectionRequired,
 	frozenClockCommandsAvailable,
+	isClockConnectionRequired,
+	offlineClockCaptureAllowed,
 	prepareBrowserClockCommand,
 	toBrowserClockActionResult,
 } from "./browser-clock-command";
@@ -364,5 +367,33 @@ describe("frozenClockCommandsAvailable", () => {
 		expect(
 			frozenClockCommandsAvailable(capabilities, { ...session, origin: "https://other.test" }),
 		).toBe(false);
+	});
+});
+
+describe("offlineClockCaptureAllowed (#845)", () => {
+	it("allows offline capture only where the last capabilities for this context say adopted", () => {
+		expect(offlineClockCaptureAllowed(capabilities, session)).toBe(true);
+		// Never read for this context: treated as not adopted.
+		expect(offlineClockCaptureAllowed(null, session)).toBe(false);
+		expect(offlineClockCaptureAllowed(undefined, session)).toBe(false);
+		expect(offlineClockCaptureAllowed({ ...capabilities, submit: "unavailable" }, session)).toBe(
+			false,
+		);
+		expect(offlineClockCaptureAllowed(capabilities, { ...session, organizationId: "org-2" })).toBe(
+			false,
+		);
+		expect(offlineClockCaptureAllowed(capabilities, { ...session, userId: "user-2" })).toBe(false);
+	});
+
+	it("words the refusal as needing a connection, distinct from other failures", () => {
+		const refused = clockConnectionRequired();
+		expect(refused).toEqual({
+			success: false,
+			code: "connection_required",
+			error: "Clocking needs a connection in this organization. Reconnect and try again.",
+		});
+		expect(isClockConnectionRequired(refused)).toBe(true);
+		expect(isClockConnectionRequired({ success: false, code: "already_clocked_in" })).toBe(false);
+		expect(isClockConnectionRequired({ success: true })).toBe(false);
 	});
 });
