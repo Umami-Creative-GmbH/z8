@@ -36,6 +36,7 @@ import { createGuardedAuthSecondaryStorage } from "@/lib/auth/guarded-secondary-
 import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
 import { rejectOrganizationSsoApprovalUpdate } from "@/lib/auth/organization-sso-approval-update-guard";
 import { rejectOrganizationTimezoneUpdate } from "@/lib/auth/organization-timezone-update-guard";
+import { reservedEmailGuard } from "@/lib/auth/reserved-email-guard";
 import { socialOrgOAuthPlugin } from "@/lib/auth/social-org-oauth";
 import {
 	provisionSsoProviderOrganization,
@@ -489,6 +490,7 @@ export const auth = betterAuth({
 	plugins: [
 		turnstileAuthGuard(),
 		accountBanPlugin(),
+		reservedEmailGuard(), // Kiosk-only placeholder addresses never sign in (#857)
 		socialOrgOAuthPlugin(),
 		bearer(), // Enable Bearer token auth for desktop app
 		createZ8SCIMPlugin(getSCIMCredentialHashSecret()),
