@@ -4,7 +4,7 @@
 
 - [Delivery](./.github/GLOSSARY.md): verifies proposed Z8 changes, provides desktop installers for review, and prepares releases for publication
 
-- [Absences](./apps/webapp/src/lib/absences/CONTEXT.md): counts the working days employees take off and draws vacation from their allowance
+- [Absences](./apps/webapp/src/lib/absences/CONTEXT.md): counts the working days employees take off, draws vacation from their allowance, and records who covers for them while they are away
 - [Approvals](./apps/webapp/src/lib/approvals/CONTEXT.md): decides approval requests and delivers their cards while each approval kind moves from legacy requests to canonical workflows
 - [Billable Time](./apps/webapp/src/lib/billable-time/CONTEXT.md): prices customer-chargeable work, reports its revenue and margin, and hands it to accounting tools as invoice drafts
 - [Organization](./apps/webapp/src/lib/organization/CONTEXT.md): holds an organization's master data about its employees and customers, and the custom fields it defines on employees, projects and customers
@@ -32,5 +32,6 @@
 - **Employee lifecycle → Personnel File**: a departure revokes the personnel file officer grant the employee holds and starts the **retention** clock of their documents; a rehire stops it
 - **Absences → Personnel File**: a sick-leave absence can have sick notes, which are employee documents in the personnel file; the absence knows only that they exist, and personnel file access decides who sees them
 - **Public API → Time Tracking**: the Public API reads work records and never writes them in v1
+- **Absences → Approvals**: an absence request is an approval kind; Approvals decides it, and while an approver is away the deputy named on their absence may decide their approvals as a **deputy decision**
 - **Work policy → Absences**: the schedule of an employee's work policy decides which of their days are working days; Absences reads it to count absence days and never changes it
 - **Scheduling → Time Tracking**: a shift is planned work and a work period is recorded work; a staffing suggestion reads a candidate's work periods to judge compliance and never writes them
