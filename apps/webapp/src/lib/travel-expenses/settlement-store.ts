@@ -148,9 +148,8 @@ export interface SettlementAccount {
 	payrollRun: IncludedPayrollRun | null;
 	/**
 	 * The payroll runs confirmed as having paid the report (#853), oldest first:
-	 * their lines are what payroll already carried, and a run that paid more
-	 * than was owed is flagged as overpaid by payroll. Finance views only; empty
-	 * in the employee's own view and for legacy claims.
+	 * their lines are what payroll already carried (decision 17). Finance views
+	 * only; empty in the employee's own view and for legacy claims.
 	 */
 	confirmedPayrollRuns: ConfirmedPayrollRun[];
 }
@@ -813,6 +812,8 @@ export async function recordSettlementEntryInTransaction(
 	if (account.employeeId === actor.employeeId) return { status: "own_expense" } as const;
 	const plan = planSettlementEntry(account.summary, command, input.expectedBalance, {
 		inFull: input.inFull,
+		// Only confirming a payroll run records what payroll paid beyond what is owed (#853).
+		paidByPayroll: payrollRunId !== null,
 	});
 	if (!plan.ok) {
 		return { status: "refused", reason: plan.reason, balance: plan.balance, account } as const;

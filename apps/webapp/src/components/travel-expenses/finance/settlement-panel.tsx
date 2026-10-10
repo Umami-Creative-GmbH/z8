@@ -1,6 +1,5 @@
 "use client";
 
-import { IconAlertTriangle } from "@tabler/icons-react";
 import { type QueryKey, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
@@ -8,7 +7,6 @@ import {
 	getTravelExpenseSettlement,
 	type SettlementAccountView,
 } from "@/app/[locale]/(app)/travel-expenses/finance-actions";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardAction, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query/keys";
@@ -120,8 +118,6 @@ function SettlementAccountCard({
 						<SettlementHistory entries={account.entries} viewer={viewer} headingId={headingId} />
 					)}
 
-					{viewer === "finance" && <PayrollOverpaymentNotices account={account} />}
-
 					{viewer === "finance" && account.payrollRun && source.type === "report" && (
 						<PayrollRunNotice
 							reportId={source.id}
@@ -210,37 +206,6 @@ function SettlementCurrencyLine({
 				)}
 			</dl>
 		</div>
-	);
-}
-
-/**
- * Overpaid by payroll (#853): a confirmed run paid more than was still owed,
- * e.g. after an adjustment lowered the amount. Only the owed part is recorded;
- * nothing is recovered automatically.
- */
-function PayrollOverpaymentNotices({ account }: { account: SettlementAccount }) {
-	const { t } = useTranslate();
-	const locale = useLocale();
-	const overpaid = account.confirmedPayrollRuns.filter((run) => run.overpaidAmount !== null);
-	if (overpaid.length === 0) return null;
-	return (
-		<>
-			{overpaid.map((run) => (
-				<Alert key={run.jobId}>
-					<IconAlertTriangle aria-hidden="true" className="size-4" />
-					<AlertDescription>
-						{t(
-							"travelExpenses.settlement.payrollOverpaid",
-							"Overpaid by payroll: payroll {period} paid {amount} more than was still owed when it was confirmed. Recover it from the employee by hand; payroll never deducts it.",
-							{
-								period: formatPayrollPeriod(locale, run.periodStart, run.periodEnd),
-								amount: formatMoney(locale, run.overpaidAmount ?? "0.00", "EUR"),
-							},
-						)}
-					</AlertDescription>
-				</Alert>
-			))}
-		</>
 	);
 }
 

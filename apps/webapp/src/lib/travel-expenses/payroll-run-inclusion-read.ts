@@ -77,8 +77,6 @@ export interface ConfirmedPayrollRun extends Omit<IncludedPayrollRun, "includedA
 	confirmedAt: string;
 	/** The lines the run carried: what earlier payroll runs paid, per wage type (decision 17). */
 	lines: TravelExpensePayrollRunInclusionLine[];
-	/** Overpaid by payroll: how much more the run paid than was owed at confirmation. */
-	overpaidAmount: string | null;
 }
 
 /** Each report's confirmed payroll runs, oldest confirmation first. */
@@ -94,7 +92,6 @@ export async function loadConfirmedPayrollRuns(
 			jobId: travelExpensePayrollRunInclusion.payrollExportJobId,
 			confirmedAt: travelExpensePayrollRunInclusion.endedAt,
 			lines: travelExpensePayrollRunInclusion.lines,
-			overpaidAmount: travelExpensePayrollRunInclusion.overpaidAmount,
 			filters: payrollExportJob.filters,
 			formatId: payrollExportConfig.formatId,
 			formatName: payrollExportFormat.name,
@@ -133,7 +130,6 @@ export async function loadConfirmedPayrollRuns(
 				? instantToCanonicalString(instantFromDate(row.confirmedAt))
 				: "",
 			lines: row.lines,
-			overpaidAmount: row.overpaidAmount,
 		});
 		runs.set(row.reportId, list);
 	}
