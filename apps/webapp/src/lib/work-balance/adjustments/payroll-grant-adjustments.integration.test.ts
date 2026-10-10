@@ -127,12 +127,13 @@ describe("overtime payouts by payroll grant holders on PostgreSQL", () => {
 			[organizationId, teamId, viaTeamMembership.employeeId],
 		);
 
-		specificHolder = await fixture.seedEmployee();
+		// Both holders worked too, and the "specific" one is assigned to their own grant.
+		specificHolder = await seedWorker();
 		specificGrantId = await seedGrant(specificHolder, "specific", {
-			employeeIds: [direct.employeeId, leftDirect.employeeId],
+			employeeIds: [direct.employeeId, leftDirect.employeeId, specificHolder.employeeId],
 			teamIds: [teamId],
 		});
-		allHolder = await fixture.seedEmployee();
+		allHolder = await seedWorker();
 		allGrantId = await seedGrant(allHolder, "all");
 		deactivatedHolder = await fixture.seedEmployee();
 		await seedGrant(deactivatedHolder, "all", { isActive: false });
@@ -373,19 +374,31 @@ describe("overtime payouts by payroll grant holders on PostgreSQL", () => {
 		}
 	});
 
+	it("refuses grant holders on their own record; another holder or an owner may act on it", async () => {
+		await expectRefused(allHolder, allHolder);
+		await expectRefused(specificHolder, specificHolder);
+		await expectRecordAndCancel(allHolder, specificHolder, allGrantId);
+	});
+
 	it("covers employees who have left for payouts only, not for the other payroll screens", async () => {
 		for (const target of [leftDirect, leftViaTeam]) {
 			await expectRecordAndCancel(specificHolder, target, specificGrantId);
 		}
 
-		// The payroll workspace and exports keep their scope: active employees only.
+		// The payroll workspace and exports keep their scope: active employees only
+		// (and, as before, the holder when the grant covers them).
 		expect(
 			await resolvePayrollAccessibleEmployeeIds({
 				organizationId,
 				payrollEmployeeId: specificHolder.employeeId,
 			}),
 		).toEqual(
-			[direct.employeeId, viaTeamColumn.employeeId, viaTeamMembership.employeeId].toSorted(),
+			[
+				direct.employeeId,
+				viaTeamColumn.employeeId,
+				viaTeamMembership.employeeId,
+				specificHolder.employeeId,
+			].toSorted(),
 		);
 		const allScope = await resolvePayrollAccessibleEmployeeIds({
 			organizationId,
@@ -394,6 +407,26 @@ describe("overtime payouts by payroll grant holders on PostgreSQL", () => {
 		expect(allScope).toContain(outsider.employeeId);
 		expect(allScope).not.toContain(leftOutsider.employeeId);
 		expect(allScope).not.toContain(leftDirect.employeeId);
+	});
+
+	it("keeps a grant that covers only employees who have left usable for payouts", async () => {
+		// /payroll has nothing to show this holder and offers Work balances instead.
+		const formerOnlyHolder = await fixture.seedEmployee();
+		const grantId = await seedGrant(formerOnlyHolder, "specific", {
+			employeeIds: [leftDirect.employeeId],
+		});
+		expect(
+			await resolvePayrollAccessibleEmployeeIds({
+				organizationId,
+				payrollEmployeeId: formerOnlyHolder.employeeId,
+			}),
+		).toEqual([]);
+		const coverage = await listBalanceAdjustmentGrantEmployees(fixture.db, {
+			organizationId,
+			actorUserId: formerOnlyHolder.userId,
+		});
+		expect(coverage?.employees.map((row) => row.id)).toEqual([leftDirect.employeeId]);
+		await expectRecordAndCancel(formerOnlyHolder, leftDirect, grantId);
 	});
 
 	it("gives a deactivated grant, or a grant whose holder has left, no access", async () => {
@@ -425,7 +458,7 @@ describe("overtime payouts by payroll grant holders on PostgreSQL", () => {
 		).toMatchObject({ success: false, code: "not_permitted" });
 	});
 
-	it("lists the employees a grant covers for payouts, including those who have left", async () => {
+	it("lists the employees a grant covers for payouts, including those who have left, never the holder", async () => {
 		const specific = await listBalanceAdjustmentGrantEmployees(fixture.db, {
 			organizationId,
 			actorUserId: specificHolder.userId,
@@ -456,6 +489,7 @@ describe("overtime payouts by payroll grant holders on PostgreSQL", () => {
 			expect.objectContaining({ id: leftViaTeam.employeeId, isActive: false }),
 		]);
 		expect((await one(outsider.employeeId))?.employees).toEqual([]);
+		expect((await one(specificHolder.employeeId))?.employees).toEqual([]);
 
 		const all = await listBalanceAdjustmentGrantEmployees(fixture.db, {
 			organizationId,
@@ -464,6 +498,8 @@ describe("overtime payouts by payroll grant holders on PostgreSQL", () => {
 		expect(all?.employees.map((row) => row.id)).toEqual(
 			expect.arrayContaining([outsider.employeeId, leftOutsider.employeeId, direct.employeeId]),
 		);
+		expect(all?.employees.map((row) => row.id)).toContain(specificHolder.employeeId);
+		expect(all?.employees.map((row) => row.id)).not.toContain(allHolder.employeeId);
 		expect(all?.employees.map((row) => row.id)).not.toContain(foreignHolder.employeeId);
 
 		for (const actor of [deactivatedHolder, departedHolder, manager, member]) {
