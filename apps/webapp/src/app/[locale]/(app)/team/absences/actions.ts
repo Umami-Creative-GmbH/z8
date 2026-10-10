@@ -38,7 +38,8 @@ import {
 import type { AbsenceWithCategory } from "@/lib/absences/types";
 import { AuditTrail } from "@/lib/audit-trail";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { systemClock } from "@/lib/datetime/temporal-core";
+import { type Instant, parseInstant, systemClock } from "@/lib/datetime/temporal-core";
+import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { createLogger } from "@/lib/logger";
 import { countSickNotesForAbsences } from "@/lib/personnel-file/sick-note-store";
@@ -201,6 +202,12 @@ export async function getManagerAbsenceEmployees(
 export async function getManagerAbsenceCalendar(params: {
 	year?: number;
 	teamId?: string | null;
+	/**
+	 * Only the absences this employee covers as deputy that have not ended at
+	 * `at` (ISO instant), on each absent employee's day: what a departure at
+	 * `at` clears (#1014, the offboarding checklist's link).
+	 */
+	deputyCover?: { deputyEmployeeId: string; at: string };
 }): Promise<ServerActionResult<ManagerAbsenceCalendarResult>> {
 	try {
 		const actorResult = await resolveActor();
@@ -255,8 +262,15 @@ export async function getManagerAbsenceCalendar(params: {
 			gte(absenceEntry.endDate, yearStart),
 			or(eq(absenceEntry.status, "approved"), eq(absenceEntry.status, "pending"))!,
 		];
+		const deputyCover = parseDeputyCover(params.deputyCover);
+		if (params.deputyCover && !deputyCover) {
+			return { success: false, error: "Invalid deputy filter", code: "ValidationError" };
+		}
+		if (deputyCover) {
+			absenceConditions.push(eq(absenceEntry.deputyEmployeeId, deputyCover.deputyEmployeeId));
+		}
 
-		const rows =
+		const listedRows =
 			actor.role === "manager"
 				? await db
 						.select(selectedFields)
@@ -275,6 +289,9 @@ export async function getManagerAbsenceCalendar(params: {
 						.innerJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
 						.where(and(...absenceConditions))
 						.orderBy(asc(absenceEntry.startDate), asc(user.name));
+		const rows = deputyCover
+			? await notEndedAt(listedRows, actor.organizationId, deputyCover.at)
+			: listedRows;
 
 		// Only that sick notes exist (#982, ADR 0002); opening them is not offered here.
 		const sickNotes = await countSickNotesForAbsences(db, {
@@ -618,6 +635,31 @@ export async function recordAbsenceForEmployee(
 			code: "UNKNOWN_ERROR",
 		};
 	}
+}
+
+function parseDeputyCover(
+	input: { deputyEmployeeId: string; at: string } | undefined,
+): { deputyEmployeeId: string; at: Instant } | null {
+	if (!input || !isCanonicalUuid(input.deputyEmployeeId)) return null;
+	try {
+		return { deputyEmployeeId: input.deputyEmployeeId, at: parseInstant(input.at) };
+	} catch {
+		return null;
+	}
+}
+
+/** The absences not ended at the instant, on each absent employee's own day. */
+async function notEndedAt<T extends { employeeId: string; endDate: string }>(
+	rows: T[],
+	organizationId: string,
+	at: Instant,
+): Promise<T[]> {
+	const todays = await loadAbsentEmployeeTodays(db, {
+		organizationId,
+		employeeIds: rows.map((row) => row.employeeId),
+		at,
+	});
+	return rows.filter((row) => row.endDate >= (todays.get(row.employeeId) ?? row.endDate));
 }
 
 /** The deputies the actor sees on the calendar, and each absent employee's date today (#1012). */

@@ -227,6 +227,26 @@ describe("deputies on absence surfaces (PostgreSQL)", () => {
 				canChangeDeputy: false,
 			});
 		});
+
+		it("narrows to the absences a deputy covers that have not ended at an instant (#1014)", async () => {
+			const covered = await seedAbsence({
+				employee: "anna",
+				deputy: "ben",
+				startDate: "2099-06-09",
+				endDate: "2099-06-12",
+			});
+			// Ended at the instant, or covered by someone else: not listed.
+			await seedAbsence({ employee: "carla", deputy: "ben", startDate: "2099-01-05", endDate: "2099-01-06" });
+			await seedAbsence({ employee: "carla", deputy: "anna", startDate: "2099-07-01", endDate: "2099-07-02" });
+
+			signIn("manager");
+			const result = await getManagerAbsenceCalendar({
+				year: 2099,
+				deputyCover: { deputyEmployeeId: ids.ben, at: "2099-03-01T12:00:00Z" },
+			});
+
+			expect(result.success && result.data.entries.map((entry) => entry.id)).toEqual([covered]);
+		});
 	});
 
 	describe("/calendar absence events", () => {

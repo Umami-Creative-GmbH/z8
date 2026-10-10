@@ -127,7 +127,7 @@ describe("DepartureCard", () => {
 		expect(kept.textContent).not.toContain("Employment terms");
 	});
 
-	it("lists the absences the employee is deputy on, linked to the team absences of the cutoff year", () => {
+	it("lists the absences the employee is deputy on, linked to exactly those team absences", () => {
 		renderCard(view({ state: "scheduled", departure, deputyAbsences: 3 }));
 
 		const cover = screen.getByRole("list", { name: "Cover to rearrange" });
@@ -135,7 +135,9 @@ describe("DepartureCard", () => {
 			screen
 				.getByRole("link", { name: "Deputy on running or upcoming absences: 3" })
 				.getAttribute("href"),
-		).toBe("/team/absences?year=2026");
+		).toBe(
+			"/team/absences?year=2026&deputy=employee-1&coverAt=2026-09-30T22%3A00%3A00Z",
+		);
 		expect(cover.textContent).toContain("Deputy on running or upcoming absences: 3");
 	});
 
