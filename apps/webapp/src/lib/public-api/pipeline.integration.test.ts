@@ -146,6 +146,14 @@ describe("the Public API pipeline on PostgreSQL", () => {
 			 select user_id, user_id, user_id || '@example.test', $2, $2 from unnest($1::text[]) as user_id`,
 			[users, timestamp],
 		);
+		// Names live on the auth user; the employee columns are deprecated.
+		await admin.query(
+			`update "user" set first_name = names.first, last_name = names.last
+			 from (values ($1, 'Ana', 'Active'), ($2, 'Ben', 'Boss'), ($3, 'Cleo', 'Left'), ($4, 'Otto', 'Other'))
+			   as names(id, first, last)
+			 where "user".id = names.id`,
+			[ids.ana, ids.ben, ids.cleo, ids.otherAdmin],
+		);
 		await admin.query(
 			`insert into member (id, organization_id, user_id, role, status, created_at) values
 			 ('t763p-m-admin', $1, $2, 'owner', 'approved', $4),
