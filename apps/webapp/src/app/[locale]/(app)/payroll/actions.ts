@@ -8,6 +8,7 @@ import { z } from "zod";
 import { db, payrollExportConfig, payrollExportFormat } from "@/db";
 import { payrollBlockerDismissal } from "@/db/schema";
 import { type AuthContext, getAbility, getAuthContext } from "@/lib/auth-helpers";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { resolvePayrollAccessibleEmployeeIds } from "@/lib/payroll-access/permissions";
@@ -24,16 +25,20 @@ import {
 	generatePayrollPDFFilename,
 } from "@/lib/payroll-workspace/pdf-exporter";
 import { getPayrollWorkspaceSummary } from "@/lib/payroll-workspace/summary";
+import type {
+	DismissiblePayrollBlockerType,
+	PayrollWorkspaceSummary,
+} from "@/lib/payroll-workspace/types";
 import {
 	type DiscardPayrollRunResult,
 	discardPayrollRun,
 	listUnconfirmedPayrollRuns,
 	type UnconfirmedPayrollRun,
 } from "@/lib/travel-expenses/payroll-run";
-import type {
-	DismissiblePayrollBlockerType,
-	PayrollWorkspaceSummary,
-} from "@/lib/payroll-workspace/types";
+import {
+	getPayrollRunReadiness,
+	type PayrollRunReadiness,
+} from "@/lib/travel-expenses/payroll-run-readiness";
 import { getTranslate } from "@/tolgee/server";
 import { mapPayrollWorkspaceActionError } from "./action-errors";
 import { resolveScopedPayrollEmployeeIdsForAction } from "./action-helpers";
@@ -278,6 +283,33 @@ export async function discardScopedPayrollRunAction(
 		});
 		if (result.status === "discarded") revalidatePath("/payroll");
 		return result;
+	});
+}
+
+/**
+ * Payroll readiness for payroll runs (#854): the expense reports and legacy
+ * claims awaiting reimbursement that an export of this period, format and
+ * employee selection would not carry, limited to the reader's payroll scope.
+ */
+export async function getPayrollRunReadinessAction(
+	request: PayrollWorkspaceRequest & { formatId: string },
+): Promise<ServerActionResult<PayrollRunReadiness>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const formatId = validateExportFormatId(t, request.formatId);
+		const { authContext, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
+			t,
+			request,
+		);
+		return getPayrollRunReadiness(db, {
+			organizationId: authContext.employee.organizationId,
+			formatId,
+			// Validated above as exact ISO dates: the period's logical dates.
+			period: {
+				startDate: parsePlainDate(request.startDate).toString(),
+				endDate: parsePlainDate(request.endDate).toString(),
+			},
+			employeeIds: scopedEmployeeIds,
+		});
 	});
 }
 

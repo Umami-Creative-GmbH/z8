@@ -132,8 +132,8 @@ export function mergeCatalogRecords(
 	// The predecessor intentionally links/mutates source branches during this
 	// merge; those source objects then supply the expanded canonical aliases.
 	mergeTreeTranslations(sources.map(({ data }) => data));
+	// `common:` keys need their aliases as much as any other namespace (#976).
 	for (const { namespace, data } of sources) {
-		if (namespace === "common") continue;
 		for (const [key, value] of Object.entries(data))
 			tree[`${namespace}:${key}`] = value;
 	}

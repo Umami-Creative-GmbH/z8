@@ -87,6 +87,9 @@ vi.mock("@/lib/travel-expenses/payroll-run", () => ({
 	exportIsPayrollRun: vi.fn(async () => false),
 	includeReportsInPayrollRun: vi.fn(),
 }));
+vi.mock("@/lib/travel-expenses/payroll-run-notifications", () => ({
+	notifyPayrollRunExported: vi.fn(),
+}));
 
 vi.mock("./connectors/personio-connector", () => ({ personioConnector: {} }));
 vi.mock("./connectors/successfactors-connector", () => ({ successFactorsConnector: {} }));

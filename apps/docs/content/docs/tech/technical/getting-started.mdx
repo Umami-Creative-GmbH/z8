@@ -73,6 +73,15 @@ import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
     VAPID_SUBJECT=mailto:support@yourdomain.com
     ```
   </Step>
+  <Step>
+    Optional: native push for the iOS and Android store app goes through Firebase Cloud Messaging. Add a Firebase service account that may send Cloud Messaging messages:
+    ```ini
+    FCM_PROJECT_ID=<firebase-project-id>
+    FCM_CLIENT_EMAIL=<service-account-client-email>
+    FCM_PRIVATE_KEY=<service-account-private-key>
+    ```
+    Without these, native push is off and web push works as before. The app side is described in `apps/mobile/README.md`.
+  </Step>
 </Steps>
 
 ---

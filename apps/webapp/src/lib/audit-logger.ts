@@ -87,6 +87,8 @@ export enum AuditAction {
 	TRAVEL_EXPENSE_ALLOWANCE_OVERRIDE_AUTHORIZED = "travel_expense.allowance_override_authorized",
 	TRAVEL_EXPENSE_ALLOWANCE_OVERRIDE_REVOKED = "travel_expense.allowance_override_revoked",
 	TRAVEL_EXPENSE_PAYROLL_RUN_REPORT_REMOVED = "travel_expense.payroll_run_report_removed",
+	// #853: a payroll run confirmed as paid recorded the report's reimbursement.
+	TRAVEL_EXPENSE_PAYROLL_RUN_REPORT_CONFIRMED = "travel_expense.payroll_run_report_confirmed",
 
 	// Approval Escalation Management
 	APPROVAL_ESCALATION_POLICY_UPDATED = "approval_escalation.policy_updated",

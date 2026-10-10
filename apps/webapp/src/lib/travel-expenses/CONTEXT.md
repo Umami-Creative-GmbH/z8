@@ -81,7 +81,7 @@ How an organization pays its reimbursements: by **bank transfer** or with the **
 _Avoid_: payment method, payout method
 
 **Payroll run**:
-The organization's payroll export for one period, which with the payroll channel also carries the euro amounts awaiting reimbursement for the employees it covers, on the wage types the organization mapped. Like an export, a payroll run moves no money; its reimbursements are recorded only when an expense officer **confirms** it was paid, each officer for the reports in their officer scope. A confirmed payroll run is final; an unconfirmed one can be replaced or discarded.
+The organization's payroll export for one period, which with the payroll channel also carries the euro amounts awaiting reimbursement for the employees it covers, on the wage types the organization mapped. Like an export, a payroll run moves no money; its reimbursements are recorded only when an expense officer **confirms** it was paid, each officer for the reports in their officer scope. Confirming records the full amount the run carried for each report, because payroll paid it; if an adjustment lowered what is owed in the meantime, the report becomes overpaid and the **Recovery** is recorded by hand. A confirmed payroll run is final; an unconfirmed one can be replaced or discarded.
 _Avoid_: payroll export (the file alone), payslip, salary run
 
 **Included in a payroll run**:

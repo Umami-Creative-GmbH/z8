@@ -7,6 +7,9 @@
 
 import { RECEIPT_EXPENSE_CATEGORIES, type ReceiptExpenseCategory } from "./receipt-report.types";
 
+/** Payroll runs carry euro amounts only; nothing is converted. */
+export const PAYROLL_CURRENCY = "EUR";
+
 export type PayrollLineKind =
 	| "per_diem_statutory"
 	| "per_diem_excess"

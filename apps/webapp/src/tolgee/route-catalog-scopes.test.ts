@@ -153,13 +153,13 @@ describe("route catalog wiring", () => {
 			const source = readFileSync(path.join(root, layout), "utf8");
 			const route = /route="([^"]+)"/.exec(source)?.[1];
 			const scope = route ? getRouteCatalogScope(route) : undefined;
+			// The root provider always applies the shell through the merge, which adds its aliases.
 			const actual = leaves(
-				(scope
-					? mergeCatalogRecords(
-							shell,
-							await loadCatalogSlice("en", scope.namespaces),
-						)
-					: shell
+				mergeCatalogRecords(
+					shell,
+					scope
+						? await loadCatalogSlice("en", scope.namespaces)
+						: { ...shell, records: { en: {} } },
 				).records.en as TreeTranslationsData,
 			);
 			for (const key of reachableKeys(path.join(root, layout)))

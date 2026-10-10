@@ -236,7 +236,18 @@ function Sidebar({
 							)}
 						</SheetDescription>
 					</SheetHeader>
-					<div className="flex size-full flex-col">{children}</div>
+					{/* Phone navigation: clear the status bar and home indicator, 44 px rows (#846). */}
+					<div
+						className={cn(
+							"flex size-full flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]",
+							side === "left"
+								? "pl-[env(safe-area-inset-left)]"
+								: "pr-[env(safe-area-inset-right)]",
+							"[&_[data-sidebar=menu-button]]:min-h-11 [&_[data-sidebar=menu-sub-button]]:min-h-11",
+						)}
+					>
+						{children}
+					</div>
 				</SheetContent>
 			</Sheet>
 		);

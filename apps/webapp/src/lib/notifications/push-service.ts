@@ -1,8 +1,10 @@
 /**
  * Push Notification Service
  *
- * Server-side service for sending push notifications using web-push.
- * Requires VAPID keys to be configured in environment variables.
+ * Server-side service for sending push notifications. Two channels share the
+ * user's "push" preference: web push (VAPID keys) to browser subscriptions,
+ * and native push (FCM credentials) to store app devices (#843). Either one
+ * may be configured alone.
  */
 
 import { and, eq } from "drizzle-orm";
@@ -11,6 +13,8 @@ import { db } from "@/db";
 import { pushSubscription } from "@/db/schema";
 import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
+import { isNativePushAvailable, sendNativePushToUser } from "./native-push-service";
+import { NOTHING_SENT, type PushDeliveryResult } from "./push-delivery";
 import type { NotificationType } from "./types";
 
 const logger = createLogger("PushService");
@@ -49,10 +53,17 @@ export function getVapidPublicKey(): string | null {
 }
 
 /**
- * Check if push notifications are available (VAPID keys configured)
+ * Check if web push is available (VAPID keys configured)
+ */
+export function isWebPushAvailable(): boolean {
+	return Boolean(vapidPublicKey && vapidPrivateKey);
+}
+
+/**
+ * Check if push notifications are available on any channel (web or native)
  */
 export function isPushAvailable(): boolean {
-	return Boolean(vapidPublicKey && vapidPrivateKey);
+	return isWebPushAvailable() || isNativePushAvailable();
 }
 
 /**
@@ -124,15 +135,45 @@ export async function sendPushNotification(
 }
 
 /**
- * Send push notification to all active subscriptions for a user
+ * Send a push notification to every active web subscription and native
+ * device of a user. A user with the PWA and the store app gets one
+ * notification per device. Native push carries only a generic text, the
+ * type, the path and `organizationId` (see native-push-message.ts).
  */
 export async function sendPushToUser(
 	userId: string,
 	payload: PushPayload,
-	options: { throwOnError?: boolean } = {},
-): Promise<{ sent: number; failed: number; expired: string[] }> {
+	options: { throwOnError?: boolean; organizationId?: string | null } = {},
+): Promise<PushDeliveryResult> {
+	const type = payload.data?.type;
+	const [web, native] = await Promise.all([
+		sendWebPushToUser(userId, payload, options),
+		type
+			? sendNativePushToUser(
+					userId,
+					{
+						type,
+						organizationId: options.organizationId,
+						actionUrl: payload.data?.actionUrl ?? payload.data?.url,
+					},
+					options,
+				)
+			: NOTHING_SENT,
+	]);
+	return {
+		sent: web.sent + native.sent,
+		failed: web.failed + native.failed,
+		expired: [...web.expired, ...native.expired],
+	};
+}
+
+async function sendWebPushToUser(
+	userId: string,
+	payload: PushPayload,
+	options: { throwOnError?: boolean },
+): Promise<PushDeliveryResult> {
 	if (!configureWebPush()) {
-		return { sent: 0, failed: 0, expired: [] };
+		return NOTHING_SENT;
 	}
 
 	try {
@@ -143,7 +184,7 @@ export async function sendPushToUser(
 
 		if (subscriptions.length === 0) {
 			logger.debug({ userId }, "No active push subscriptions for user");
-			return { sent: 0, failed: 0, expired: [] };
+			return NOTHING_SENT;
 		}
 
 		let sent = 0;
@@ -207,7 +248,7 @@ export async function sendPushToUser(
 	} catch (error) {
 		logger.error({ error, userId }, "Failed to send push notifications to user");
 		if (options.throwOnError) throw error;
-		return { sent: 0, failed: 0, expired: [] };
+		return NOTHING_SENT;
 	}
 }
 

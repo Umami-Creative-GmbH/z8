@@ -446,7 +446,7 @@ export function ApprovalDetailPanel({
 									rows={3}
 								/>
 							</div>
-							<div className="flex gap-2">
+							<div className="flex flex-wrap gap-2">
 								<Button
 									variant="outline"
 									onClick={() => {
@@ -476,7 +476,8 @@ export function ApprovalDetailPanel({
 							</div>
 						</div>
 					) : (
-						<div className="flex w-full gap-2">
+						// Wraps on phones, where German labels need more than one row (#846).
+						<div className="flex w-full flex-wrap gap-2">
 							{panelItem.type === "travel_expense_report" && (
 								<TravelExpenseReportReturnButton
 									approvalId={approval.id}

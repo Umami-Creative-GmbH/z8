@@ -159,7 +159,19 @@
     "wrong-account": "Falsches Konto",
     "wrong-account-description": "Sie sind mit einer anderen E-Mail-Adresse angemeldet. Melden Sie sich ab und verwenden Sie die eingeladene E-Mail-Adresse, um diese Einladung anzunehmen.",
     "wrong-account-description-short": "Verwenden Sie die eingeladene E-Mail-Adresse, um das Konto zu wechseln und fortzufahren.",
-    "you-are-invited": "Sie wurden eingeladen"
+    "you-are-invited": "Sie wurden eingeladen",
+    "storeApp": {
+      "continue": "Weiter",
+      "description": "Geben Sie Ihre geschäftliche E-Mail-Adresse ein. Anschließend melden Sie sich im Browser Ihres Telefons auf der Anmeldeseite Ihrer Organisation an.",
+      "error": {
+        "browser": "Die Anmeldeseite konnte nicht geöffnet werden. Bitte versuchen Sie es erneut.",
+        "expired": "Die Anmeldung wurde nicht abgeschlossen oder ist abgelaufen. Bitte versuchen Sie es erneut.",
+        "rateLimited": "Zu viele Anmeldeversuche. Bitte warten Sie einen Moment und versuchen Sie es erneut.",
+        "unavailable": "Z8 ist nicht erreichbar. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut."
+      },
+      "title": "Bei Z8 anmelden",
+      "waiting": "Warten auf die Anmeldung…"
+    }
   },
   "profile": {
     "change-password": "Passwort ändern",

@@ -4,6 +4,10 @@ import { useTranslate } from "@tolgee/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
+import { isNativePushPromptMoment } from "@/lib/store-app/native-push";
+import { isStoreAppShell } from "@/lib/store-app/shell";
+import { usePathname } from "@/navigation";
+import { NativePushBridge } from "./native-push-bridge";
 import { PushPermissionModal } from "./push-permission-modal";
 
 const COOKIE_NAME = "z8_push_dismissed";
@@ -36,11 +40,14 @@ interface PushPermissionProviderProps {
  * - Push notifications are supported
  * - Permission has not been asked yet (is "default")
  * - User has not dismissed the modal before
+ * In the store app shell it waits for a page whose news arrives by push
+ * instead of asking on launch (#843).
  */
 export function PushPermissionProvider({ children }: PushPermissionProviderProps) {
 	const { t } = useTranslate();
 	const [showModal, setShowModal] = useState(false);
 	const hasCheckedRef = useRef(false);
+	const pathname = usePathname();
 
 	const {
 		isSupported,
@@ -79,23 +86,27 @@ export function PushPermissionProvider({ children }: PushPermissionProviderProps
 
 		// Only check once
 		if (hasCheckedRef.current) return;
-		hasCheckedRef.current = true;
 
 		// Don't show if:
 		// - Not supported
 		// - Already asked (granted or denied)
 		// - Previously dismissed
 		if (!isSupported || permission !== "default" || isDismissed()) {
+			hasCheckedRef.current = true;
 			return;
 		}
+		// The store app asks at a meaningful moment, not on launch.
+		if (isStoreAppShell() && !isNativePushPromptMoment(pathname)) return;
 
-		// Show modal after a short delay to not interrupt initial page load
+		// Show modal after a short delay to not interrupt initial page load;
+		// navigating away before then re-evaluates on the next page.
 		const timer = setTimeout(() => {
+			hasCheckedRef.current = true;
 			setShowModal(true);
 		}, SHOW_DELAY_MS);
 
 		return () => clearTimeout(timer);
-	}, [isSupported, permission, isPushLoading]);
+	}, [isSupported, permission, isPushLoading, pathname]);
 
 	const handleEnable = async (): Promise<boolean> => {
 		const success = await subscribe();
@@ -114,6 +125,7 @@ export function PushPermissionProvider({ children }: PushPermissionProviderProps
 	return (
 		<>
 			{children}
+			<NativePushBridge />
 			<PushPermissionModal
 				open={showModal}
 				onOpenChange={setShowModal}

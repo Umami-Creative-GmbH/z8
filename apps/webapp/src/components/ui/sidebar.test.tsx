@@ -10,7 +10,7 @@ vi.mock("@/hooks/use-mobile", () => ({
 	useIsMobile: () => true,
 }));
 
-import { SidebarMenuButton, SidebarProvider, useSidebar } from "./sidebar";
+import { Sidebar, SidebarMenuButton, SidebarProvider, useSidebar } from "./sidebar";
 
 beforeEach(() => {
 	const storage = new Map<string, string>();
@@ -57,6 +57,35 @@ describe("SidebarMenuButton", () => {
 });
 
 describe("Sidebar", () => {
+	it("keeps the phone navigation clear of the status bar and home indicator with 44 px rows (#846)", () => {
+		function OpenMobileSidebar() {
+			const { setOpenMobile } = useSidebar();
+			return (
+				<>
+					<button type="button" onClick={() => setOpenMobile(true)}>
+						Open sidebar
+					</button>
+					<Sidebar>
+						<SidebarMenuButton>Absences</SidebarMenuButton>
+					</Sidebar>
+				</>
+			);
+		}
+
+		render(
+			<SidebarProvider>
+				<OpenMobileSidebar />
+			</SidebarProvider>,
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Open sidebar" }));
+
+		const navigation = screen.getByRole("button", { name: "Absences" }).parentElement;
+		expect(navigation?.className).toContain("pt-[env(safe-area-inset-top)]");
+		expect(navigation?.className).toContain("pb-[env(safe-area-inset-bottom)]");
+		expect(navigation?.className).toContain("pl-[env(safe-area-inset-left)]");
+		expect(navigation?.className).toContain("[&_[data-sidebar=menu-button]]:min-h-11");
+	});
+
 	it("uses CSS motion for synchronized offcanvas content expansion", async () => {
 		const source = await readFile(
 			join(process.cwd(), "src/components/ui/sidebar.tsx"),

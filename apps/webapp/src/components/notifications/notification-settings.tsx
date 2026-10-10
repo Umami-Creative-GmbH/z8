@@ -105,6 +105,7 @@ const NOTIFICATION_CATEGORIES = [
 			"travel_expense_partially_reimbursed",
 			"travel_expense_recovery_recorded",
 			"travel_expense_ready_for_reimbursement",
+			"travel_expense_payroll_run_awaiting_confirmation",
 		] as NotificationType[],
 	},
 	{
@@ -246,6 +247,8 @@ const TYPE_LABELS: Record<Exclude<NotificationType, ClockingReminderType>, strin
 	travel_expense_recovery_recorded: "Expense recovery recorded",
 	// Reimbursement work arriving for expense officers
 	travel_expense_ready_for_reimbursement: "Ready for reimbursement (expense officers)",
+	travel_expense_payroll_run_awaiting_confirmation:
+		"Payroll run awaiting confirmation (expense officers)",
 	// An employee document became visible to the employee
 	personnel_file_document_shared: "Document shared with you",
 	// An employee uploaded a document (officers, or owners and admins)
