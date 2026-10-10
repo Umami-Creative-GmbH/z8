@@ -1,0 +1,41 @@
+---
+title: Public API
+description: Read your organization's Z8 data from your own systems
+icon: Code
+---
+
+The Z8 Public API v1 lets your organization's own systems read its data. It is read-only and lives under `/api/v1`. The pages in this section are generated from the [OpenAPI document](https://ui.z8-time.app/api/v1/openapi.json) the API itself serves.
+
+## Authentication
+
+Create an API key under **Settings → Enterprise → API Keys** (see [API Keys](/docs/guide/admin-guide/api-keys)) and send it as a Bearer token:
+
+```bash
+curl "https://ui.z8-time.app/api/v1/work-periods?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z" \
+  -H "Authorization: Bearer z8_org…"
+```
+
+A key acts as its organization, limited to its key scopes. Each endpoint names the scope it requires; a key without it gets `403 scope_missing`. Browser sessions are never accepted.
+
+## Lists and pagination
+
+Every endpoint returns a page: `{ "data": [...], "nextCursor": "..." }`. Pass `nextCursor` as `cursor` to read the next page; it is `null` on the last page. `limit` sets the page size (1 to 200, default 50). Walking the cursor returns every row exactly once.
+
+Work periods and absences require a `from`/`to` range of at most 366 days.
+
+## Times and dates
+
+- Work periods are UTC instants (`2026-10-01T06:00:00.000Z`), each with the UTC offset where the clock event was recorded (`+02:00`). Show local times with that offset, not your own time zone.
+- Absences are local calendar dates (`2026-10-05`) with a half day (`am`, `pm`) where one applies. They are never instants.
+
+## Errors
+
+Errors are `application/problem+json` (RFC 9457) with a stable `type`: `invalid_key`, `scope_missing`, `billing_required`, `rate_limited`, `validation_failed` or `not_found`. A `validation_failed` problem lists each invalid parameter in `errors`.
+
+## Rate limits
+
+Every response carries `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset` for the tighter of the key's own limit and your organization's limit. A `429 rate_limited` response also carries `Retry-After`.
+
+## Versioning
+
+Within `/api/v1`, changes only add fields or endpoints. Ignore fields you don't know. Removing or renaming anything would require `/api/v2`.

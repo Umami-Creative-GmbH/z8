@@ -2,6 +2,8 @@
  * Drift test for the committed Public API OpenAPI document (#763). When a
  * route schema changes, regenerate it with `pnpm public-api:openapi`.
  */
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { PUBLIC_API_ENDPOINTS } from "./endpoints";
@@ -26,6 +28,20 @@ describe("Public API OpenAPI document", () => {
 			};
 			expect(operation["x-z8-scope"]).toBe(endpoint.scope);
 			expect(Object.keys(operation.responses)).toEqual(["200", "400", "401", "402", "403", "429"]);
+		}
+	});
+
+	it("has a generated docs reference page for every endpoint", () => {
+		// `pnpm generate:api-reference` in apps/docs writes one page per operation.
+		const reference = join(import.meta.dirname, "../../../../docs/content/docs/api-reference");
+		const meta = JSON.parse(readFileSync(join(reference, "meta.json"), "utf8")) as {
+			pages: string[];
+		};
+		for (const endpoint of PUBLIC_API_ENDPOINTS) {
+			expect(existsSync(join(reference, `${endpoint.operationId}.mdx`)), endpoint.operationId).toBe(
+				true,
+			);
+			expect(meta.pages).toContain(endpoint.operationId);
 		}
 	});
 
