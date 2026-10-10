@@ -10,7 +10,7 @@ Lokale Entwicklung: `pnpm dev:webapp` startet die Webapp mit Portless unter
 
 Z8 ist eine Workforce-Management-Plattform für Organisationen, die zuverlässige Zeiterfassung, prüfungssichere Unterlagen und klare operative Kontrolle im Rahmen des deutschen Arbeitsrechts und der GoBD-Compliance (*Grundsätze zur ordnungsmäßigen Führung und Aufbewahrung von Büchern*) benötigen.
 
-Über Web, Mobile und Desktop hinweg gibt Z8 Teams ein verlässliches operatives System für Zeiterfassung, Abwesenheiten, Reisekosten und das tägliche Workforce Management.
+Im Web und auf dem Windows-Desktop gibt Z8 Teams ein verlässliches operatives System für Zeiterfassung, Abwesenheiten, Reisekosten und das tägliche Workforce Management.
 
 > [!IMPORTANT]
 > **Hinweis Zum Entwicklungsstand**  
@@ -31,7 +31,7 @@ Z8 ist darauf ausgelegt, Organisationen in compliance-sensiblen Umgebungen ein s
 
 ## ⏱️ Erweiterte Zeiterfassung
 
-- **Plattformübergreifender Zugriff**: Ein- und Ausstempeln über das vollwertige **Web-Dashboard**, die **Mobile App** (iOS/Android) oder das unaufdringliche **Tauri-Desktop-Widget**.
+- **Zwei Stempel-Clients**: Ein- und Ausstempeln über das vollwertige **Web-Dashboard** oder das unaufdringliche **Tauri-Desktop-Widget** für Windows.
 - **Korrektur-Workflows**: Schlanker Prozess für Mitarbeitende, um Zeitkorrekturen anzufragen, mit freigabebewusster Prüfung und schneller Rückmeldung durch Vorgesetzte.
 - **Import-Hub für Stempelzeiten**: Historische oder externe Stempeldaten lassen sich über einen geführten Import statt manueller Nacherfassung in Z8 übernehmen.
 - **Schnellaktionen**: Globales "Time Clock"-Popover im Web-Header für reibungsarmes Ein- und Ausstempeln auch während der Navigation in anderen Modulen.

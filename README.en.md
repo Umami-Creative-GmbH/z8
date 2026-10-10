@@ -34,7 +34,7 @@ execution policy blocks the `pnpm.ps1` shim.
 
 Z8 is a workforce management platform built for organizations that need reliable time tracking, audit-ready records, and clear operational control under German labor law and GoBD compliance (*Grundsätze zur ordnungsmäßigen Führung und Aufbewahrung von Büchern*).
 
-Across Web, Mobile, and Desktop, Z8 gives teams a dependable operational system for time tracking, absences, travel expenses, and day-to-day workforce management.
+On the web and the Windows desktop, Z8 gives teams a dependable operational system for time tracking, absences, travel expenses, and day-to-day workforce management.
 
 > [!IMPORTANT]
 > **WIP Notice**  
@@ -55,7 +55,7 @@ Z8 is designed to help organizations operate with confidence in compliance-sensi
 
 ## ⏱️ Advanced Time Tracking
 
-- **Multi-Platform Access**: Clock in via the full-featured **Web Dashboard**, the **Mobile App** (iOS/Android), or the low-profile **Tauri Desktop widget**.
+- **Two Clock Clients**: Clock in via the full-featured **Web Dashboard** or the low-profile **Tauri Desktop widget** for Windows.
 - **Correction Workflows**: Streamlined process for employees to request time corrections, with approval-aware reviews and fast manager follow-up.
 - **Clock-In Import Hub**: Bring historical or external clock-in data into Z8 with a guided import flow instead of manual re-entry.
 - **Quick Actions**: Global "Time Clock" popover in the web header for friction-less clock-in/out even when navigating other modules.
