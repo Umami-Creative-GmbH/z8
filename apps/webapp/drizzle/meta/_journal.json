@@ -1233,6 +1233,13 @@
       "when": 1799424000000,
       "tag": "0175_kiosk",
       "breakpoints": true
+    },
+    {
+      "idx": 177,
+      "version": "7",
+      "when": 1799596800000,
+      "tag": "0177_kiosk_clocking",
+      "breakpoints": true
     }
   ]
 }
