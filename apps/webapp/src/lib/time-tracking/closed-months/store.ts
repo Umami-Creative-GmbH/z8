@@ -72,6 +72,8 @@ export type CloseMonthBlocker =
 			employeeName: string;
 			workPeriodId: string;
 			startTime: string;
+			/** The employee's effective timezone, to show `startTime` in. */
+			timezone: string;
 	  }
 	| {
 			kind: "live_work";
@@ -79,6 +81,8 @@ export type CloseMonthBlocker =
 			employeeName: string;
 			workPeriodId: string;
 			startTime: string;
+			/** The employee's effective timezone, to show `startTime` in. */
+			timezone: string;
 	  };
 
 export type CloseMonthResult =
@@ -452,6 +456,7 @@ async function closeBlockers(
 			employeeName: covered.name,
 			workPeriodId: period.id,
 			startTime: period.startTime.toISOString(),
+			timezone: covered.timezone,
 		};
 		if (period.endTime === null) {
 			blockers.push({ kind: "live_work", ...base });

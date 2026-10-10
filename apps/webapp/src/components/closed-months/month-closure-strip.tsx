@@ -1,10 +1,9 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { useTolgee, useTranslate } from "@tolgee/react";
-import { getMonthClosureStatuses } from "@/app/[locale]/(app)/settings/closed-months/actions";
-import { ClosureStatusBadge } from "./closure-status-badge";
 import { formatClosedMonthLabel } from "@/lib/time-tracking/closed-months/month-label";
+import { ClosureStatusBadge } from "./closure-status-badge";
+import { useMonthClosureStatuses } from "./use-month-closure-statuses";
 
 /**
  * Closed, partly closed or open, for each month of a selection (#762): the
@@ -20,18 +19,7 @@ export function MonthClosureStrip({
 }) {
 	const { t } = useTranslate();
 	const locale = useTolgee(["language"]).getLanguage() ?? "en";
-	const { data } = useQuery({
-		queryKey: ["closed-months", "statuses", months, employeeIds ?? null],
-		queryFn: async () => {
-			const result = await getMonthClosureStatuses({
-				months: [...months],
-				employeeIds: employeeIds ? [...employeeIds] : undefined,
-			});
-			return result.success ? result.data : [];
-		},
-		enabled: months.length > 0,
-		staleTime: 30_000,
-	});
+	const { data } = useMonthClosureStatuses(months, employeeIds);
 	if (!data || data.length === 0) return null;
 
 	return (

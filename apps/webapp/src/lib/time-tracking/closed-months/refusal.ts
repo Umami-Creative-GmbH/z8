@@ -1,5 +1,6 @@
 import { MonthClosedError } from "@/lib/effect/errors";
-import { type ClosedMonthKey, firstDayOfMonth, parseClosedMonth } from "./rules";
+import { formatClosedMonthLabel } from "./month-label";
+import { type ClosedMonthKey, parseClosedMonth } from "./rules";
 
 /**
  * The typed "month closed" refusal (#762). Writers raise it before writing;
@@ -11,17 +12,17 @@ export const MONTH_CLOSED_SQLSTATE = "Z8M01";
 
 /** `March 2026`: the English name of a month, for fallback copy and logs. */
 export function englishMonthLabel(month: ClosedMonthKey): string {
-	return new Intl.DateTimeFormat("en", {
-		month: "long",
-		year: "numeric",
-		timeZone: "UTC",
-	}).format(new Date(`${firstDayOfMonth(month)}T00:00:00Z`));
+	return formatClosedMonthLabel(month, "en");
 }
+
+/** The refusal's words; `{month}` is the month's name. */
+export const MONTH_CLOSED_FALLBACK =
+	"{month} is closed. It must be reopened before its work or absences can change.";
 
 export function monthClosedError(month: ClosedMonthKey): MonthClosedError {
 	return new MonthClosedError({
 		month,
-		message: `${englishMonthLabel(month)} is closed. It must be reopened before its work or absences can change.`,
+		message: MONTH_CLOSED_FALLBACK.replace("{month}", englishMonthLabel(month)),
 	});
 }
 

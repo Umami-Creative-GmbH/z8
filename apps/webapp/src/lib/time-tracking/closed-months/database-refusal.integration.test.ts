@@ -13,6 +13,7 @@ import * as authSchema from "@/db/auth-schema";
 import * as schema from "@/db/schema";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { openIntegrationPool } from "@/test/integration-database";
+import { acquireOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction/ranks";
 import { MONTH_CLOSED_SQLSTATE, monthClosedRefusalOf } from "./refusal";
 import { assertAbsenceDaysOpen, closeMonth, reopenMonth } from "./store";
 import {
@@ -295,6 +296,55 @@ describe("the closed-month database refusal", () => {
 			blockers: [expect.objectContaining({ kind: "absence_request" })],
 		});
 		await writerPool.end();
+	});
+
+	it("serializes a close with a work writer holding the configuration guard shared", async () => {
+		const org = await fixture.organization("UTC");
+		const person = await fixture.employee({ organizationId: org.organizationId });
+		const writerPool = openIntegrationPool({ max: 1 });
+		const writer = writerPool.connect();
+		const client = await writer;
+		let closeSettled = false;
+		try {
+			// A coordinator writer takes the guard shared, then starts work in March.
+			await client.query("begin");
+			await acquireOrganizationConfigurationGuard(
+				drizzle({ client, schema: { ...authSchema, ...schema } }),
+				org.organizationId,
+			);
+			const clockIn = await client.query<{ id: string }>(
+				`insert into time_entry (employee_id, organization_id, type, timestamp, utc_offset_minutes,
+				 timezone, timezone_source, hash, created_by)
+				 values ($1, $2, 'clock_in', '2026-03-31 20:00', 0, 'UTC', 'backfill', 'race', $3) returning id`,
+				[person.employeeId, org.organizationId, person.userId],
+			);
+			await client.query(
+				`insert into work_period (employee_id, organization_id, clock_in_id, start_time, is_active, updated_at)
+				 values ($1, $2, $3, '2026-03-31 20:00', true, now())`,
+				[person.employeeId, org.organizationId, clockIn.rows[0].id],
+			);
+
+			const close = closeMonth(fixture.db, {
+				organizationId: org.organizationId,
+				month: "2026-03",
+				scope: { kind: "organization" },
+				actor: { kind: "user", userId: org.ownerUserId },
+				now,
+			}).finally(() => {
+				closeSettled = true;
+			});
+			await new Promise((resolve) => setTimeout(resolve, 300));
+			expect(closeSettled).toBe(false);
+			await client.query("commit");
+
+			await expect(close).resolves.toMatchObject({
+				kind: "blocked",
+				blockers: [expect.objectContaining({ kind: "live_work" })],
+			});
+		} finally {
+			client.release();
+			await writerPool.end();
+		}
 	});
 
 	it("refuses an absence writer that comes after the close, even under its own guard", async () => {

@@ -419,6 +419,9 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 		label: summary.period.label,
 		employeeIds: filteredEmployeeIds,
 	};
+	// The period's months and the selection, for the closed-month status (#762).
+	const periodMonths = monthsOfDateRange(summary.period.start, summary.period.end);
+	const closureEmployeeIds = filteredEmployeeIds ?? scopedEmployees.map((employee) => employee.id);
 	const { loadSummary, refreshLatestSummary } = usePayrollSummaryLoader({
 		dispatch,
 		initialRequest: request,
@@ -665,14 +668,8 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 			{filtersHaveNoMatches ? null : (
 				// Whether the period's months are closed for this selection (#762).
 				<>
-					<MonthClosureStrip
-						months={monthsOfDateRange(summary.period.start, summary.period.end)}
-						employeeIds={filteredEmployeeIds ?? scopedEmployees.map((employee) => employee.id)}
-					/>
-					<UnclosedMonthsNotice
-						months={monthsOfDateRange(summary.period.start, summary.period.end)}
-						employeeIds={filteredEmployeeIds ?? scopedEmployees.map((employee) => employee.id)}
-					/>
+					<MonthClosureStrip months={periodMonths} employeeIds={closureEmployeeIds} />
+					<UnclosedMonthsNotice months={periodMonths} employeeIds={closureEmployeeIds} />
 				</>
 			)}
 			<PayrollBlockersAlert

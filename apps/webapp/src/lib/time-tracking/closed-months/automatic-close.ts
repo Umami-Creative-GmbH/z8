@@ -1,30 +1,31 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, lt } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { organization } from "@/db/auth-schema";
-import {
-	auditLog,
-	closedMonthAutoCloseRun,
-	closedMonthReopening,
-	closedMonthSetting,
-} from "@/db/schema";
+import { auditLog, closedMonth, closedMonthAutoCloseRun, closedMonthSetting } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction/ranks";
 import { notifyAutomaticClose, notifyBlockedAutomaticClose } from "./notifications";
-import { autoCloseMonthDue, type ClosedMonthKey, firstDayOfMonth } from "./rules";
+import {
+	type ClosedMonthKey,
+	firstDayOfMonth,
+	latestAutoCloseMonth,
+	monthOfFirstDay,
+} from "./rules";
 import { CLOSED_MONTH_AUDIT_ENTITY_TYPE, closeMonth } from "./store";
 
 /**
  * Automatic close (#762): an organization setting, off by default, that closes
  * the month before organization-wide once N days have passed since it ended
  * on the organization's calendar. A blocker stops the close: everyone allowed
- * to close is told, and the next day tries again. Each organization day is
- * attempted once (`closed_month_auto_close_run`). A month that was ever
- * reopened is never closed automatically again.
+ * to close is told, and the next day tries again, also after later months came
+ * due. Each organization day attempts each month once
+ * (`closed_month_auto_close_run`). Only months that were never closed are
+ * closed, so a reopened month is never closed automatically again.
  */
 
 const logger = createLogger("ClosedMonthAutomaticClose");
@@ -95,37 +96,66 @@ export async function saveClosedMonthSettings(
 }
 
 export type AutomaticCloseOutcome =
-	| { kind: "not_due" }
 	| { kind: "already_attempted"; month: ClosedMonthKey }
-	| { kind: "reopened_before"; month: ClosedMonthKey }
+	| { kind: "closed_before"; month: ClosedMonthKey }
 	| { kind: "closed"; month: ClosedMonthKey; employeeCount: number }
 	| { kind: "nothing_to_close"; month: ClosedMonthKey }
 	| { kind: "blocked"; month: ClosedMonthKey; blockerCount: number };
 
-/** One organization's automatic close attempt for its current day. */
-export async function closeMonthAutomatically(
+/**
+ * One organization's automatic close attempts for its current day: the latest
+ * month due, and every earlier month an attempt found blocked, oldest first.
+ */
+export async function closeMonthsAutomatically(
 	database: Database,
 	input: { organizationId: string; afterDays: number; timezone: string; now: Instant },
-): Promise<AutomaticCloseOutcome> {
+): Promise<AutomaticCloseOutcome[]> {
 	const today = input.now.toZonedDateTimeISO(input.timezone).toPlainDate();
-	const month = autoCloseMonthDue(today, input.afterDays);
-	if (!month) return { kind: "not_due" };
-	const first = firstDayOfMonth(month);
-
-	const [reopened] = await database
-		.select({ id: closedMonthReopening.id })
-		.from(closedMonthReopening)
+	const latest = latestAutoCloseMonth(today, input.afterDays);
+	const blocked = await database
+		.select({ month: closedMonthAutoCloseRun.month })
+		.from(closedMonthAutoCloseRun)
 		.where(
 			and(
-				eq(closedMonthReopening.organizationId, input.organizationId),
-				eq(closedMonthReopening.month, first),
+				eq(closedMonthAutoCloseRun.organizationId, input.organizationId),
+				eq(closedMonthAutoCloseRun.outcome, "blocked"),
+				lt(closedMonthAutoCloseRun.month, firstDayOfMonth(latest)),
 			),
-		)
+		);
+	const months = [...new Set([...blocked.map((row) => monthOfFirstDay(row.month)), latest])].sort();
+	const outcomes: AutomaticCloseOutcome[] = [];
+	// Oldest first: a month is closed before the months after it.
+	// react-doctor-disable-next-line react-doctor/async-await-in-loop
+	for (const month of months) {
+		outcomes.push(
+			await closeMonthAutomatically(database, {
+				organizationId: input.organizationId,
+				month,
+				runDate: today.toString(),
+				now: input.now,
+			}),
+		);
+	}
+	return outcomes;
+}
+
+/** One automatic close attempt of one month, at most once per organization day. */
+async function closeMonthAutomatically(
+	database: Database,
+	input: { organizationId: string; month: ClosedMonthKey; runDate: string; now: Instant },
+): Promise<AutomaticCloseOutcome> {
+	const { month, runDate } = input;
+	const first = firstDayOfMonth(month);
+
+	// Only a month that was never closed, for a team or the organization.
+	const [closedBefore] = await database
+		.select({ id: closedMonth.id })
+		.from(closedMonth)
+		.where(and(eq(closedMonth.organizationId, input.organizationId), eq(closedMonth.month, first)))
 		.limit(1);
-	if (reopened) return { kind: "reopened_before", month };
+	if (closedBefore) return { kind: "closed_before", month };
 
 	// One attempt per organization day: a rerun neither closes nor notifies twice.
-	const runDate = today.toString();
 	const [claimed] = await database
 		.insert(closedMonthAutoCloseRun)
 		.values({ organizationId: input.organizationId, month: first, runDate, outcome: "pending" })
@@ -205,15 +235,15 @@ export async function runAutomaticMonthClose(
 	// react-doctor-disable-next-line react-doctor/async-await-in-loop
 	for (const org of organizations) {
 		try {
-			const outcome = await closeMonthAutomatically(database, {
+			const outcomes = await closeMonthsAutomatically(database, {
 				organizationId: org.id,
 				afterDays: org.afterDays,
 				timezone: resolveOrganizationTimezone(org.timezone).timezone,
 				now,
 			});
 			result.organizations += 1;
-			if (outcome.kind === "closed") result.closed += 1;
-			if (outcome.kind === "blocked") result.blocked += 1;
+			result.closed += outcomes.filter((outcome) => outcome.kind === "closed").length;
+			result.blocked += outcomes.filter((outcome) => outcome.kind === "blocked").length;
 		} catch (error) {
 			result.failed += 1;
 			logger.error({ error, organizationId: org.id }, "Automatic month close failed");

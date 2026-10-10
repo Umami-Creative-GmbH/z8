@@ -18,6 +18,7 @@ import {
 } from "@/lib/time-tracking/closed-months/automatic-close";
 import { notifyReopening } from "@/lib/time-tracking/closed-months/notifications";
 import { canCloseMonths, canReopenMonths } from "@/lib/time-tracking/closed-months/permissions";
+import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import { parseClosedMonth } from "@/lib/time-tracking/closed-months/rules";
 import {
 	type ClosedMonthHistoryEntry,
@@ -117,7 +118,7 @@ export async function getClosedMonthsOverview(): Promise<ServerActionResult<Clos
 					.from(organization)
 					.where(eq(organization.id, actor.organizationId))
 					.limit(1);
-				const timezone = org?.timezone || "UTC";
+				const timezone = resolveOrganizationTimezone(org?.timezone).timezone;
 				const [months, history, teams, employees, settings] = await Promise.all([
 					monthClosureStatuses(database, {
 						organizationId: actor.organizationId,

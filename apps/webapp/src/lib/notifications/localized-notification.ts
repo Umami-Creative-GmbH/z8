@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import { formatAbsenceDateRange } from "@/lib/personnel-file/sick-note-labels";
+import { formatClosedMonthLabel } from "@/lib/time-tracking/closed-months/month-label";
 import type { NotificationWithMeta } from "./types";
 
 type TranslationParam = string | number | bigint | boolean | Date | null | undefined;
@@ -114,21 +115,12 @@ function localizedParams(
 			localized.dateRange = formatAbsenceDateRange(days.startDate, days.endDate, locale);
 		}
 		if (metadata.closedMonth) {
-			localized.month = formatClosedMonth(metadata.closedMonth, locale);
+			localized.month = formatClosedMonthLabel(metadata.closedMonth, locale);
 		}
 	} catch {
 		return params;
 	}
 	return localized;
-}
-
-/** `2026-03` as `March 2026` in the reader's locale. */
-function formatClosedMonth(month: string, locale: string): string {
-	return new Intl.DateTimeFormat(locale, {
-		month: "long",
-		year: "numeric",
-		timeZone: "UTC",
-	}).format(new Date(`${month}-01T00:00:00Z`));
 }
 
 export function getLocalizedNotificationContent(

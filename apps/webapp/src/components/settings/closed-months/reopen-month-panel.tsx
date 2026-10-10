@@ -76,10 +76,14 @@ export function ReopenMonthPanel({
 			switch (result.data.kind) {
 				case "reopened":
 					toast.success(
-						t("settings.closedMonths.reopenSuccess", "{month} reopened for {count} employees", {
-							month: formatClosedMonthLabel(month, locale),
-							count: result.data.employeeIds.length,
-						}),
+						t(
+							"settings.closedMonths.reopenSuccess",
+							"{month} reopened for {count, plural, one {# employee} other {# employees}}",
+							{
+								month: formatClosedMonthLabel(month, locale),
+								count: result.data.employeeIds.length,
+							},
+						),
 					);
 					handleOpenChange(false);
 					refresh();

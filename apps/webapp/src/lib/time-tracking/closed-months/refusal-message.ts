@@ -1,23 +1,13 @@
+import { formatClosedMonthLabel } from "./month-label";
 import { englishMonthLabel, monthClosedRefusalOf } from "./refusal";
-import { type ClosedMonthKey, firstDayOfMonth } from "./rules";
+import type { ClosedMonthKey } from "./rules";
 
+// A literal in this file, so the Tolgee extractor reads it as the key's default.
 const MONTH_CLOSED_FALLBACK =
 	"{month} is closed. It must be reopened before its work or absences can change.";
 
 function interpolate(template: string, params: Record<string, string>): string {
 	return template.replace(/\{(\w+)\}/g, (match, name: string) => params[name] ?? match);
-}
-
-function monthLabel(month: ClosedMonthKey, locale: string): string {
-	try {
-		return new Intl.DateTimeFormat(locale, {
-			month: "long",
-			year: "numeric",
-			timeZone: "UTC",
-		}).format(new Date(`${firstDayOfMonth(month)}T00:00:00Z`));
-	} catch {
-		return englishMonthLabel(month);
-	}
 }
 
 /**
@@ -62,7 +52,7 @@ export async function monthClosedMessage(month: ClosedMonthKey): Promise<string>
 		const [tolgee, t] = await Promise.all([getTolgee(), getTranslate()]);
 		const locale = tolgee.getLanguage() ?? "en";
 		return t("common.errors.monthClosed", MONTH_CLOSED_FALLBACK, {
-			month: monthLabel(month, locale),
+			month: formatClosedMonthLabel(month, locale),
 		});
 	} catch {
 		return interpolate(MONTH_CLOSED_FALLBACK, { month: englishMonthLabel(month) });

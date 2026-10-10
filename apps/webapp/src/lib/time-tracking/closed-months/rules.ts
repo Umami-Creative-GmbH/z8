@@ -106,13 +106,11 @@ export function closedMonthTouchedByDays(
 }
 
 /**
- * The month an automatic close is due for on the organization's local day:
- * the month before, once `afterDays` days have passed since it ended.
+ * The latest month an automatic close is due for on the organization's local
+ * day: the last month that ended at least `afterDays` days ago. A month ends
+ * when the next one begins, so it is the month before the one `afterDays`
+ * days ago lies in.
  */
-export function autoCloseMonthDue(today: PlainDate, afterDays: number): ClosedMonthKey | null {
-	const firstOfMonth = today.with({ day: 1 });
-	if (Temporal.PlainDate.compare(today, firstOfMonth.add({ days: afterDays })) < 0) {
-		return null;
-	}
-	return firstOfMonth.subtract({ months: 1 }).toPlainYearMonth().toString();
+export function latestAutoCloseMonth(today: PlainDate, afterDays: number): ClosedMonthKey {
+	return today.subtract({ days: afterDays }).toPlainYearMonth().subtract({ months: 1 }).toString();
 }

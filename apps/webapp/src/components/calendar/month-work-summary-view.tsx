@@ -7,7 +7,9 @@ import { useWeekStartDay } from "@/components/providers/user-preferences-provide
 import { WorkLocationIndicator } from "@/components/time-tracking/work-location-indicator";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { CalendarClosedRange } from "@/hooks/use-calendar-data";
 import { todayCalendarDateKey } from "@/lib/calendar/date-keys";
+import { dayTouchesClosedRange } from "@/lib/time-tracking/closed-months/calendar-day";
 import {
 	buildMonthWorkSummary,
 	type MonthWorkDay,
@@ -35,8 +37,8 @@ interface MonthWorkSummaryViewProps {
 	onDayClick: (dateKey: string) => void;
 	onRefresh: () => void;
 	isSummaryLoading?: boolean;
-	/** The viewed employee's closed months (`YYYY-MM`, #762); their days carry a lock. */
-	closedMonths?: readonly string[];
+	/** The viewed employee's closed ranges (#762); days touching one carry a lock. */
+	closedRanges?: readonly CalendarClosedRange[];
 }
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -353,13 +355,13 @@ function WeekRow({
 	locale,
 	t,
 	onDayClick,
-	closedMonths,
+	isClosedDay,
 }: {
 	week: MonthWorkWeek;
 	locale: string;
 	t: Translate;
 	onDayClick: (dateKey: string) => void;
-	closedMonths: ReadonlySet<string>;
+	isClosedDay: (dateKey: string) => boolean;
 }) {
 	return (
 		<div className="grid grid-cols-[48px_repeat(7,minmax(112px,1fr))_112px] gap-2">
@@ -373,7 +375,7 @@ function WeekRow({
 					locale={locale}
 					t={t}
 					onDayClick={onDayClick}
-					isClosed={closedMonths.has(day.dateKey.slice(0, 7))}
+					isClosed={isClosedDay(day.dateKey)}
 				/>
 			))}
 			<div className="flex min-h-32 items-start justify-end rounded-md border bg-muted/30 p-3">
@@ -394,7 +396,7 @@ export function MonthWorkSummaryView({
 	onDayClick,
 	onRefresh,
 	isSummaryLoading: _isSummaryLoading,
-	closedMonths = [],
+	closedRanges = [],
 }: MonthWorkSummaryViewProps) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);
@@ -411,7 +413,7 @@ export function MonthWorkSummaryView({
 		workHoursData,
 		events,
 	});
-	const closed = new Set(closedMonths);
+	const isClosedDay = (dateKey: string) => dayTouchesClosedRange(dateKey, timeZone, closedRanges);
 
 	return (
 		<div className="flex h-full flex-col gap-4">
@@ -499,7 +501,7 @@ export function MonthWorkSummaryView({
 							locale={locale}
 							t={t}
 							onDayClick={onDayClick}
-							closedMonths={closed}
+							isClosedDay={isClosedDay}
 						/>
 					))}
 				</div>

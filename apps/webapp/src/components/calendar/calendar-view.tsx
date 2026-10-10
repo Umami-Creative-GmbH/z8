@@ -268,7 +268,7 @@ function useCalendarViewController({
 		liveWork,
 		workBalance,
 		calendarTimezone,
-		closedMonths,
+		closedRanges,
 		isLoading,
 		isFetching,
 		error,
@@ -474,7 +474,7 @@ function useCalendarViewController({
 			refetch,
 			isManagerOrAbove,
 			workBalance,
-			closedMonths,
+			closedRanges,
 			effectiveFilters,
 			setFilters,
 			events,
@@ -541,7 +541,7 @@ function CalendarViewContent({
 			refetch,
 			isManagerOrAbove,
 			workBalance,
-			closedMonths,
+			closedRanges,
 			effectiveFilters,
 			setFilters,
 			events,
@@ -611,7 +611,7 @@ function CalendarViewContent({
 				onEmployeeChange={handleEmployeeChange}
 				isManagerOrAbove={isManagerOrAbove}
 				workBalance={workBalance}
-				closedMonths={closedMonths}
+				closedRanges={closedRanges}
 				filters={effectiveFilters}
 				onFiltersChange={setFilters}
 				events={events}

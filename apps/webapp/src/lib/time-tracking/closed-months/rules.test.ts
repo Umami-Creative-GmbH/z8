@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import {
-	autoCloseMonthDue,
+	latestAutoCloseMonth,
 	type ClosedRange,
 	closedMonthTouchedByDays,
 	closedRangeTouchedByWork,
@@ -120,18 +120,26 @@ describe("closedMonthTouchedByDays", () => {
 	});
 });
 
-describe("autoCloseMonthDue", () => {
-	it("is the month before once N days of the new month have passed", () => {
-		expect(autoCloseMonthDue(parsePlainDate("2026-04-06"), 5)).toBe("2026-03");
-		expect(autoCloseMonthDue(parsePlainDate("2026-04-30"), 5)).toBe("2026-03");
+describe("latestAutoCloseMonth", () => {
+	it("is the month before once N days have passed since it ended", () => {
+		expect(latestAutoCloseMonth(parsePlainDate("2026-04-06"), 5)).toBe("2026-03");
+		expect(latestAutoCloseMonth(parsePlainDate("2026-04-30"), 5)).toBe("2026-03");
 	});
 
-	it("is nothing before N days have passed", () => {
-		expect(autoCloseMonthDue(parsePlainDate("2026-04-05"), 5)).toBeNull();
-		expect(autoCloseMonthDue(parsePlainDate("2026-04-01"), 1)).toBeNull();
+	it("is the month before that while the last month's N days are still running", () => {
+		expect(latestAutoCloseMonth(parsePlainDate("2026-04-05"), 5)).toBe("2026-02");
+		expect(latestAutoCloseMonth(parsePlainDate("2026-04-01"), 1)).toBe("2026-02");
+	});
+
+	it("reaches back more than a month for long delays", () => {
+		// March ended on 1 April; 45 days later is 16 May.
+		expect(latestAutoCloseMonth(parsePlainDate("2026-05-15"), 45)).toBe("2026-02");
+		expect(latestAutoCloseMonth(parsePlainDate("2026-05-16"), 45)).toBe("2026-03");
+		expect(latestAutoCloseMonth(parsePlainDate("2026-03-03"), 31)).toBe("2025-12");
+		expect(latestAutoCloseMonth(parsePlainDate("2026-03-04"), 31)).toBe("2026-01");
 	});
 
 	it("crosses the year", () => {
-		expect(autoCloseMonthDue(parsePlainDate("2027-01-03"), 2)).toBe("2026-12");
+		expect(latestAutoCloseMonth(parsePlainDate("2027-01-03"), 2)).toBe("2026-12");
 	});
 });

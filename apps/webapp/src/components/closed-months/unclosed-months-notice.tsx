@@ -4,17 +4,13 @@ import { IconAlertTriangle, IconLock } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { useState } from "react";
-import {
-	getMonthCloseContext,
-	getMonthClosureStatuses,
-} from "@/app/[locale]/(app)/settings/closed-months/actions";
+import { getMonthCloseContext } from "@/app/[locale]/(app)/settings/closed-months/actions";
 import { CloseMonthPanel } from "@/components/settings/closed-months/close-month-panel";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { formatClosedMonthLabel } from "@/lib/time-tracking/closed-months/month-label";
 import { ClosureStatusBadge } from "./closure-status-badge";
-
-const STATUS_KEY = ["closed-months", "statuses"] as const;
+import { MONTH_CLOSURE_STATUSES_KEY, useMonthClosureStatuses } from "./use-month-closure-statuses";
 
 /**
  * The payroll export's warning (#762): the chosen range contains months that
@@ -33,18 +29,7 @@ export function UnclosedMonthsNotice({
 	const locale = useTolgee(["language"]).getLanguage() ?? "en";
 	const queryClient = useQueryClient();
 	const [closing, setClosing] = useState<string | null>(null);
-	const { data: statuses } = useQuery({
-		queryKey: [...STATUS_KEY, months, employeeIds ?? null],
-		queryFn: async () => {
-			const result = await getMonthClosureStatuses({
-				months: [...months],
-				employeeIds: employeeIds ? [...employeeIds] : undefined,
-			});
-			return result.success ? result.data : [];
-		},
-		enabled: months.length > 0,
-		staleTime: 30_000,
-	});
+	const { data: statuses } = useMonthClosureStatuses(months, employeeIds);
 	const { data: context } = useQuery({
 		queryKey: ["closed-months", "close-context"],
 		queryFn: async () => {
@@ -94,7 +79,9 @@ export function UnclosedMonthsNotice({
 					month={closing}
 					teams={context.teams}
 					onOpenChange={(open) => !open && setClosing(null)}
-					onClosed={() => void queryClient.invalidateQueries({ queryKey: STATUS_KEY })}
+					onClosed={() =>
+						void queryClient.invalidateQueries({ queryKey: MONTH_CLOSURE_STATUSES_KEY })
+					}
 				/>
 			) : null}
 		</>

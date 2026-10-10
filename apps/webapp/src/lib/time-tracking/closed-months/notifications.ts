@@ -112,7 +112,7 @@ const blockedCopy = {
 	titleDefault: "Month could not be closed",
 	messageKey: "common:notifications.content.monthCloseBlocked.message",
 	messageDefault:
-		"{month} was not closed automatically: {count, plural, one {# open item blocks} other {# open items block}} it, such as undecided requests or work still running. It will be tried again tomorrow.",
+		"{month} was not closed automatically. Undecided absence requests: {absenceRequests}. Undecided time requests: {timeRequests}. Work still running: {liveWork}. Month not yet ended: {notEnded}. Employees: {employees}. It will be tried again tomorrow.",
 } as const;
 
 const reopenedCopy = {
@@ -120,7 +120,7 @@ const reopenedCopy = {
 	titleDefault: "Month reopened",
 	messageKey: "common:notifications.content.monthReopened.message",
 	messageDefault:
-		"{month} was reopened for {count, plural, one {# of your employees} other {# of your employees}}: {reason}",
+		"{month} was reopened for {count, plural, one {one of your employees} other {# of your employees}}: {reason}",
 } as const;
 
 function notification(
@@ -190,6 +190,24 @@ export async function notifyAutomaticClose(
 	);
 }
 
+const LISTED_EMPLOYEES = 5;
+
+/** The blockers of a refused close, by kind, and the employees they belong to. */
+function blockerParams(blockers: readonly CloseMonthBlocker[]) {
+	const count = (kind: CloseMonthBlocker["kind"]) =>
+		blockers.filter((blocker) => blocker.kind === kind).length;
+	const names = [...new Set(blockers.map((blocker) => blocker.employeeName))];
+	const listed = names.slice(0, LISTED_EMPLOYEES).join(", ");
+	return {
+		absenceRequests: count("absence_request"),
+		timeRequests: count("time_request"),
+		liveWork: count("live_work"),
+		notEnded: count("month_not_ended"),
+		employees:
+			names.length > LISTED_EMPLOYEES ? `${listed} +${names.length - LISTED_EMPLOYEES}` : listed,
+	};
+}
+
 export async function notifyBlockedAutomaticClose(
 	database: Reader,
 	input: {
@@ -202,7 +220,7 @@ export async function notifyBlockedAutomaticClose(
 ): Promise<number> {
 	const recipients = await listMonthCloseRecipients(database, input.organizationId);
 	const label = englishMonthLabel(input.month);
-	const count = input.blockers.length;
+	const params = blockerParams(input.blockers);
 	return deliver(
 		recipients.map((userId) =>
 			notification(
@@ -211,11 +229,11 @@ export async function notifyBlockedAutomaticClose(
 					userId,
 					month: input.month,
 					idempotencyKey: `closed-month:blocked:${input.organizationId}:${input.month}:${input.runDate}:${userId}`,
-					params: { count },
+					params,
 				},
 				"month_close_blocked",
 				blockedCopy,
-				`${label} was not closed automatically: ${count} open items block it.`,
+				`${label} was not closed automatically. Open items for: ${params.employees}.`,
 			),
 		),
 	);

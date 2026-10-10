@@ -70,10 +70,14 @@ export function CloseMonthPanel({
 			switch (result.data.kind) {
 				case "closed":
 					toast.success(
-						t("settings.closedMonths.closeSuccess", "{month} closed for {count} employees", {
-							month: formatClosedMonthLabel(month, locale),
-							count: result.data.employeeIds.length,
-						}),
+						t(
+							"settings.closedMonths.closeSuccess",
+							"{month} closed for {count, plural, one {# employee} other {# employees}}",
+							{
+								month: formatClosedMonthLabel(month, locale),
+								count: result.data.employeeIds.length,
+							},
+						),
 					);
 					handleOpenChange(false);
 					onClosed?.();
@@ -187,7 +191,11 @@ export function CloseMonthPanel({
 function CloseBlockers({ blockers }: { blockers: CloseMonthBlocker[] }) {
 	const { t } = useTranslate();
 	const locale = useTolgee(["language"]).getLanguage() ?? "en";
-	const at = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
+	// Each blocker's time in its employee's own zone, never the viewer's.
+	const at = (instant: string, timeZone: string) =>
+		new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone }).format(
+			new Date(instant),
+		);
 	return (
 		<div
 			role="alert"
@@ -220,10 +228,10 @@ function CloseBlockers({ blockers }: { blockers: CloseMonthBlocker[] }) {
 									? t(
 											"settings.closedMonths.blocker.timeRequest",
 											"undecided request about work from {start}",
-											{ start: at.format(new Date(blocker.startTime)) },
+											{ start: at(blocker.startTime, blocker.timezone) },
 										)
 									: t("settings.closedMonths.blocker.liveWork", "still clocked in since {start}", {
-											start: at.format(new Date(blocker.startTime)),
+											start: at(blocker.startTime, blocker.timezone),
 										})}
 					</li>
 				))}

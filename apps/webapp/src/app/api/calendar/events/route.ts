@@ -402,7 +402,7 @@ export async function GET(request: NextRequest) {
 			liveWork = uniqueLiveWork([monthResult]);
 		}
 
-		const [resolvedDailyRequirements, resolvedWorkBalance, closedMonths] = await Promise.all([
+		const [resolvedDailyRequirements, resolvedWorkBalance, closedRanges] = await Promise.all([
 			fetchDailyRequirements({
 				organizationId,
 				employeeId: scopedEmployeeId,
@@ -411,12 +411,17 @@ export async function GET(request: NextRequest) {
 				timezone: calendarTimezone,
 			}),
 			fetchWorkBalance({ organizationId, employeeId: scopedEmployeeId }),
-			// The viewed employee's closed months, for the calendar's lock marker (#762).
+			// The viewed employee's closed ranges, fixed at close, for the lock marker (#762).
 			scopedEmployeeId
 				? closedRangesForEmployee(db, { organizationId, employeeId: scopedEmployeeId }).then(
-						(ranges) => ranges.map((closed) => closed.month),
+						(ranges) =>
+							ranges.map((closed) => ({
+								month: closed.month,
+								start: closed.start.toString(),
+								endExclusive: closed.endExclusive.toString(),
+							})),
 					)
-				: Promise.resolve([] as string[]),
+				: Promise.resolve([]),
 		]);
 		dailyRequirements = resolvedDailyRequirements;
 		workBalance = resolvedWorkBalance;
@@ -430,7 +435,7 @@ export async function GET(request: NextRequest) {
 			liveWork,
 			workBalance,
 			calendarTimezone,
-			closedMonths,
+			closedRanges,
 		});
 	} catch (error) {
 		console.error("Error fetching calendar events:", error);

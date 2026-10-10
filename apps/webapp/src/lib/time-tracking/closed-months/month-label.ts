@@ -1,3 +1,5 @@
+import { Temporal } from "temporal-polyfill";
+
 /**
  * `2026-03` as `March 2026` in the reader's locale, for closed-month display
  * (#762). Safe on client and server; an unknown locale falls back to English.
@@ -12,18 +14,26 @@ export function formatClosedMonthLabel(month: string, locale: string): string {
 	}
 }
 
-/** The calendar months (`YYYY-MM`) a range of local dates touches, oldest first. */
+/**
+ * The calendar months (`YYYY-MM`) a range of local dates (or ISO date-times)
+ * touches, oldest first; none for an unreadable or reversed range.
+ */
 export function monthsOfDateRange(startDate: string, endDate: string): string[] {
+	let first: Temporal.PlainYearMonth;
+	let last: Temporal.PlainYearMonth;
+	try {
+		first = Temporal.PlainYearMonth.from(startDate.slice(0, 7));
+		last = Temporal.PlainYearMonth.from(endDate.slice(0, 7));
+	} catch {
+		return [];
+	}
 	const months: string[] = [];
-	let [year, month] = startDate.slice(0, 7).split("-").map(Number);
-	const [lastYear, lastMonth] = endDate.slice(0, 7).split("-").map(Number);
-	while ((year < lastYear || (year === lastYear && month <= lastMonth)) && months.length < 240) {
-		months.push(`${year}-${String(month).padStart(2, "0")}`);
-		month += 1;
-		if (month > 12) {
-			month = 1;
-			year += 1;
-		}
+	for (
+		let month = first;
+		Temporal.PlainYearMonth.compare(month, last) <= 0 && months.length < 240;
+		month = month.add({ months: 1 })
+	) {
+		months.push(month.toString());
 	}
 	return months;
 }

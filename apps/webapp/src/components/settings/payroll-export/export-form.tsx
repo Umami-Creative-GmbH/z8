@@ -4,6 +4,7 @@ import { IconDownload, IconLoader2 } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
@@ -108,14 +109,10 @@ export function ExportForm({
 	const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
 	const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
 	const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
-	const selectedMonthRange = DateTime.fromObject({
-		year: selectedYear,
-		month: selectedMonth,
-	});
 	// The calendar months the chosen range touches, for the closed-month warning (#762).
 	const rangeMonths =
 		dateMode === "month"
-			? [selectedMonthRange.toFormat("yyyy-MM")]
+			? [Temporal.PlainYearMonth.from({ year: selectedYear, month: selectedMonth }).toString()]
 			: monthsOfDateRange(customStartDate, customEndDate);
 
 	const handleExport = () => {
