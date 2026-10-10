@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { renderToReadableStream } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import type { CatalogSlice } from "@/tolgee/catalog-slices";
-import LocaleLayout from "./layout";
+import LocaleLayout, { viewport } from "./layout";
 
 vi.mock("@tolgee/react", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@tolgee/react")>()),
@@ -112,6 +112,7 @@ vi.mock("@/components/theme-provider", () => ({
 	ThemeProvider: ({ children }: { children: React.ReactNode }) => (
 		<>{children}</>
 	),
+	useTheme: () => ({ theme: "system" }),
 }));
 
 vi.mock("@/components/ui/tooltip", () => ({
@@ -181,6 +182,22 @@ vi.mock("drizzle-orm", () => ({
 }));
 
 describe("LocaleLayout", () => {
+	it("lets the page draw edge to edge so safe-area insets reach the app (#846)", () => {
+		expect(viewport).toMatchObject({
+			width: "device-width",
+			initialScale: 1,
+			viewportFit: "cover",
+		});
+	});
+
+	it("uses the themed toaster, kept above the home indicator (#846)", () => {
+		const source = readFileSync("src/app/[locale]/layout.tsx", "utf8");
+
+		expect(source).toContain('import { Toaster } from "@/components/ui/sonner";');
+		expect(source).not.toContain('from "sonner"');
+		expect(source).toContain("env(safe-area-inset-bottom)");
+	});
+
 	it("does not render font size initialization as a script during locale navigation", async () => {
 		const layout = await LocaleLayout({
 			children: <div>Auth content</div>,
