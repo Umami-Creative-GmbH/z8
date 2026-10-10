@@ -53,7 +53,6 @@ type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
 
 const ENDPOINT = "/api/notifications/push/native-token";
 const TOKEN_KEY = "z8.nativePush.token";
-const SIGN_OUT_TIMEOUT_MS = 3000;
 
 function toPermission(state: PluginPermission): NativePushPermission {
 	if (state === "granted") return "granted";
@@ -69,13 +68,12 @@ export function createNativePushClient(deps: {
 }) {
 	const { plugin, platform, storage } = deps;
 
-	const send = (method: "POST" | "DELETE", body: Record<string, string>, signal?: AbortSignal) =>
+	const send = (method: "POST" | "DELETE", body: Record<string, string>) =>
 		deps.fetch(ENDPOINT, {
 			method,
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(body),
 			credentials: "same-origin",
-			signal,
 		});
 
 	async function available(): Promise<boolean> {
@@ -182,27 +180,18 @@ export function createNativePushClient(deps: {
 		},
 
 		/**
-		 * Remove the device token while the session still exists. Best effort and
-		 * bounded: sign-out continues when the server is slow or unreachable.
+		 * Remove the device token while the session still exists. Best effort:
+		 * failures are swallowed. `signOut()` (sign-out.ts) bounds how long
+		 * sign-out waits for it.
 		 */
-		async removeForSignOut(options: { timeoutMs?: number } = {}): Promise<void> {
+		async removeForSignOut(): Promise<void> {
 			const token = storage.get(TOKEN_KEY);
 			if (!token) return;
 			storage.remove(TOKEN_KEY);
-			const controller = new AbortController();
-			let timer: ReturnType<typeof setTimeout> | undefined;
-			const timeout = new Promise<void>((resolve) => {
-				timer = setTimeout(() => {
-					controller.abort();
-					resolve();
-				}, options.timeoutMs ?? SIGN_OUT_TIMEOUT_MS);
-			});
-			const removal = Promise.allSettled([
-				Promise.resolve().then(() => send("DELETE", { token }, controller.signal)),
+			await Promise.allSettled([
+				Promise.resolve().then(() => send("DELETE", { token })),
 				Promise.resolve().then(() => plugin.deleteToken()),
-			]).then(() => undefined);
-			await Promise.race([removal, timeout]);
-			clearTimeout(timer);
+			]);
 		},
 	};
 }

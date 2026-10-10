@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { withCallbackUrl } from "@/lib/auth/callback-url";
 import { authClient, useSession } from "@/lib/auth-client";
-import { runStoreAppSignOutTasks } from "@/lib/store-app/sign-out";
+import { signOut } from "@/lib/store-app/sign-out";
 import { useRouter } from "@/navigation";
 import {
 	AcceptInvitationFormBody,
@@ -157,9 +157,7 @@ export function AcceptInvitationForm({
 	};
 
 	const handleSignOut = async () => {
-		// Device cleanup that needs the session runs first (#842).
-		await runStoreAppSignOutTasks();
-		await authClient.signOut({
+		await signOut({
 			fetchOptions: {
 				onSuccess: () => {
 					// Sign-out ends this tab's manual-entry recovery (#310).

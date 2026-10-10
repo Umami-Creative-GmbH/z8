@@ -1,51 +1,41 @@
 /**
- * Sign-out seam for the store app shell (#842).
+ * The web app's one sign-out (#842, #843).
  *
- * The shell's session is the web view's Better Auth session cookie, so
- * `authClient.signOut()` clears it: the server deletes the session and expires
- * the cookie, and the next launch shows the email screen. Device-bound state
- * that needs the session to clean up runs first: native push removes the
- * device's token (`removeNativePushTokenBeforeSignOut`, #843), then every task
- * registered here. Every web app sign-out awaits `runStoreAppSignOutTasks()`
- * before it signs out.
+ * In the store app shell the session is the web view's Better Auth session
+ * cookie, so `authClient.signOut()` clears it: the server deletes the session
+ * and expires the cookie, and the next launch shows the email screen. Device
+ * cleanup that needs the session runs first: native push removes the
+ * device's token. Every sign-out button calls `signOut()` so none can skip it.
  *
- * A task that fails or hangs never blocks sign-out.
+ * The cleanup is bounded and best effort: it never blocks sign-out. When it
+ * gives up, the server still stops pushes once the session is deleted (#843).
  */
 
+import { authClient } from "@/lib/auth-client";
 import { removeNativePushTokenBeforeSignOut } from "./native-push";
 
-export type StoreAppSignOutTask = () => Promise<void> | void;
+const CLEANUP_TIMEOUT_MS = 3_000;
 
-const TASK_TIMEOUT_MS = 3_000;
-const tasks = new Set<StoreAppSignOutTask>();
-
-/** Registers a task to run before sign-out; returns its unregister function. */
-export function onStoreAppSignOut(task: StoreAppSignOutTask): () => void {
-	tasks.add(task);
-	return () => {
-		tasks.delete(task);
-	};
-}
-
-async function runBounded(task: StoreAppSignOutTask): Promise<void> {
+async function cleanUpDeviceBeforeSignOut(): Promise<void> {
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	try {
 		await Promise.race([
-			Promise.resolve().then(task),
+			removeNativePushTokenBeforeSignOut(),
 			new Promise<void>((resolve) => {
-				timer = setTimeout(resolve, TASK_TIMEOUT_MS);
+				timer = setTimeout(resolve, CLEANUP_TIMEOUT_MS);
 			}),
 		]);
 	} catch {
-		// Sign-out must still happen; the task's own module reports its failures.
+		// Sign-out must still happen.
 	} finally {
 		clearTimeout(timer);
 	}
 }
 
-/** Every web app sign-out awaits this before `authClient.signOut()`. */
-export async function runStoreAppSignOutTasks(): Promise<void> {
-	// Native push (#843) removes this device's token while the session still exists.
-	await runBounded(removeNativePushTokenBeforeSignOut);
-	for (const task of [...tasks]) await runBounded(task);
+/** Sign out: device cleanup while the session still exists, then Better Auth. */
+export async function signOut(
+	...args: Parameters<typeof authClient.signOut>
+): ReturnType<typeof authClient.signOut> {
+	await cleanUpDeviceBeforeSignOut();
+	return authClient.signOut(...args);
 }

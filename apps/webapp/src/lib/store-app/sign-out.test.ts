@@ -1,75 +1,66 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const nativePush = vi.hoisted(() => ({
+const mocks = vi.hoisted(() => ({
 	removeNativePushTokenBeforeSignOut: vi.fn(async () => undefined),
+	signOut: vi.fn(async (..._args: unknown[]) => ({ data: { success: true }, error: null })),
 }));
-vi.mock("./native-push", () => nativePush);
+vi.mock("./native-push", () => ({
+	removeNativePushTokenBeforeSignOut: mocks.removeNativePushTokenBeforeSignOut,
+}));
+vi.mock("@/lib/auth-client", () => ({ authClient: { signOut: mocks.signOut } }));
 
-import { onStoreAppSignOut, runStoreAppSignOutTasks } from "./sign-out";
+import { signOut } from "./sign-out";
 
-const unsubscribers: Array<() => void> = [];
-function register(task: () => Promise<void> | void) {
-	unsubscribers.push(onStoreAppSignOut(task));
-}
+beforeEach(() => {
+	mocks.removeNativePushTokenBeforeSignOut.mockReset().mockResolvedValue(undefined);
+	mocks.signOut.mockClear();
+});
 
 afterEach(() => {
-	for (const unsubscribe of unsubscribers.splice(0)) unsubscribe();
 	vi.useRealTimers();
 });
 
-describe("store app sign-out tasks", () => {
-	it("removes this device's push token (#843) before any other task", async () => {
+describe("signOut", () => {
+	it("removes this device's push token (#843) while the session still exists", async () => {
 		const order: string[] = [];
-		nativePush.removeNativePushTokenBeforeSignOut.mockImplementationOnce(async () => {
+		mocks.removeNativePushTokenBeforeSignOut.mockImplementationOnce(async () => {
 			order.push("remove push token");
 		});
-		register(() => void order.push("other task"));
-
-		await runStoreAppSignOutTasks();
-
-		expect(order).toEqual(["remove push token", "other task"]);
-	});
-
-	it("runs every registered task while the session still exists", async () => {
-		const order: string[] = [];
-		register(async () => void order.push("remove device token"));
-		register(() => void order.push("forget device"));
-
-		await runStoreAppSignOutTasks();
-		order.push("sign out");
-
-		expect(order).toEqual(["remove device token", "forget device", "sign out"]);
-	});
-
-	it("still signs out when a task fails", async () => {
-		const later = vi.fn();
-		register(async () => {
-			throw new Error("Network down");
+		mocks.signOut.mockImplementationOnce(async () => {
+			order.push("sign out");
+			return { data: { success: true }, error: null };
 		});
-		register(later);
 
-		await expect(runStoreAppSignOutTasks()).resolves.toBeUndefined();
-		expect(later).toHaveBeenCalledOnce();
+		await signOut();
+
+		expect(order).toEqual(["remove push token", "sign out"]);
 	});
 
-	it("does not let a hanging task hold sign-out", async () => {
+	it("passes its options through to Better Auth", async () => {
+		const onSuccess = vi.fn();
+
+		await signOut({ fetchOptions: { onSuccess } });
+
+		expect(mocks.signOut).toHaveBeenCalledWith({ fetchOptions: { onSuccess } });
+	});
+
+	it("still signs out when the device cleanup fails", async () => {
+		mocks.removeNativePushTokenBeforeSignOut.mockRejectedValueOnce(new Error("Network down"));
+
+		await signOut();
+
+		expect(mocks.signOut).toHaveBeenCalledOnce();
+	});
+
+	it("does not let a hanging device cleanup hold sign-out", async () => {
 		vi.useFakeTimers();
-		register(() => new Promise<void>(() => {}));
+		mocks.removeNativePushTokenBeforeSignOut.mockImplementationOnce(() => new Promise(() => {}));
 
 		const done = vi.fn();
-		void runStoreAppSignOutTasks().then(done);
-		await vi.advanceTimersByTimeAsync(5_000);
+		void signOut().then(done);
+		await vi.advanceTimersByTimeAsync(3_000);
 
+		expect(mocks.signOut).toHaveBeenCalledOnce();
 		expect(done).toHaveBeenCalledOnce();
-	});
-
-	it("stops running a task once it is unregistered", async () => {
-		const task = vi.fn();
-		const unsubscribe = onStoreAppSignOut(task);
-		unsubscribe();
-
-		await runStoreAppSignOutTasks();
-
-		expect(task).not.toHaveBeenCalled();
 	});
 });

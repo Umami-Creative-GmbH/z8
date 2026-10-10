@@ -213,7 +213,7 @@ describe("native push client", () => {
 		expect(removed.sort()).toEqual(["notificationActionPerformed", "tokenReceived"]);
 	});
 
-	it("removes the device token before sign-out and never blocks sign-out", async () => {
+	it("removes the device token before sign-out and swallows failures", async () => {
 		const { plugin } = fakePlugin({ permission: "granted" });
 		storage.set(STORED, "token-1");
 		const failing = vi.fn(async () => {
@@ -228,23 +228,6 @@ describe("native push client", () => {
 		);
 		expect(plugin.deleteToken).toHaveBeenCalledOnce();
 		expect(storage.values[STORED]).toBeUndefined();
-	});
-
-	it("gives up waiting for the server after the sign-out timeout", async () => {
-		vi.useFakeTimers();
-		try {
-			const { plugin } = fakePlugin({ permission: "granted" });
-			storage.set(STORED, "token-1");
-			const hanging = vi.fn(() => new Promise<Response>(() => undefined));
-			const client = createNativePushClient({ plugin, platform: "ios", fetch: hanging, storage });
-
-			const removal = client.removeForSignOut({ timeoutMs: 1000 });
-			await vi.advanceTimersByTimeAsync(1000);
-
-			await expect(removal).resolves.toBeUndefined();
-		} finally {
-			vi.useRealTimers();
-		}
 	});
 });
 

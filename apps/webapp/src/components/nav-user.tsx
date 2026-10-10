@@ -30,8 +30,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
-import { authClient } from "@/lib/auth-client";
-import { runStoreAppSignOutTasks } from "@/lib/store-app/sign-out";
+import { signOut } from "@/lib/store-app/sign-out";
 import { useRouter } from "@/navigation";
 
 export function NavUser({
@@ -61,9 +60,7 @@ export function NavUser({
 			});
 		};
 		try {
-			// Device cleanup that needs the session runs first (#842).
-			await runStoreAppSignOutTasks();
-			await authClient.signOut({
+			await signOut({
 				fetchOptions: {
 					onSuccess: () => {
 						// Sign-out ends this tab's manual-entry recovery (#310).
