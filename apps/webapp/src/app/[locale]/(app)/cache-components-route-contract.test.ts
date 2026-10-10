@@ -616,14 +616,6 @@ const SHELL_WORK_QUEUE = [
 		requiresSynchronousDefaultExport: true,
 	},
 	{
-		file: "src/app/[locale]/(app)/settings/export/history/page.tsx",
-		fallbackComponent: "ExportHistorySettingsLoading",
-		contentComponent: "ExportHistorySettingsContent",
-		fallbackFrameClass: "flex flex-1 flex-col gap-6 p-4 md:p-6",
-		fallbackAriaLabel: "Loading data export settings",
-		requiresSynchronousDefaultExport: true,
-	},
-	{
 		file: "src/app/[locale]/(app)/settings/export/history/[organizationId]/page.tsx",
 		fallbackComponent: "OrganizationExportHistoryLoading",
 		contentComponent: "OrganizationExportHistoryContent",
@@ -1445,7 +1437,7 @@ describe("low-risk route streaming boundaries", () => {
 	it("registers every shell work queue route exactly once", () => {
 		const workQueueFiles = SHELL_WORK_QUEUE.map(({ file }) => file);
 
-		expect(workQueueFiles).toHaveLength(67);
+		expect(workQueueFiles).toHaveLength(66);
 		expect(new Set(workQueueFiles).size).toBe(workQueueFiles.length);
 	});
 

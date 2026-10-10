@@ -34,8 +34,9 @@ vi.mock("@/navigation", () => ({
 }));
 vi.mock("@/tolgee/server", () => ({ getTranslate: async () => mocks.translate }));
 vi.mock("@tolgee/react", () => ({ useTranslate: () => ({ t: mocks.translate }) }));
+// Unconfigured storage would otherwise open the Storage Settings tab.
 vi.mock("@/lib/storage/export-s3-client", () => ({
-	isExportS3Configured: async () => true,
+	isExportS3Configured: async () => false,
 }));
 vi.mock("@/app/[locale]/(app)/settings/export/actions", () => ({
 	getExportHistoryAction: async () => ({ success: true, data: [] }),
