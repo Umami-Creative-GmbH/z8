@@ -14,7 +14,11 @@ import type {
 	WorkPeriodData,
 } from "../types";
 import { wageTypeCodeFor } from "../wage-type-code";
-import { expenseLinesInFileOrder, GERMAN_EXPENSE_LINE_NOTE } from "./expense-lines";
+import {
+	expenseLinesInFileOrder,
+	GERMAN_EXPENSE_LINE_NOTE,
+	germanPersonnelNumber,
+} from "./expense-lines";
 
 const logger = createLogger("DatevLohnFormatter");
 
@@ -140,7 +144,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 
 		// Expense money lines (#852): a euro Betrag on the period's last day, labeled as money.
 		for (const { personnelNumber, line } of expenseLinesInFileOrder(expenseLines, (line) =>
-			this.getPersonnelNumberFromExpenseLine(line, datevConfig),
+			germanPersonnelNumber(line, datevConfig),
 		)) {
 			lines.push(
 				[
@@ -331,18 +335,6 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		return absence.employeeId;
 	}
 
-	/**
-	 * Get personnel number of an expense line based on config
-	 */
-	private getPersonnelNumberFromExpenseLine(
-		line: ExpenseLineData,
-		config: DatevLohnConfig,
-	): string {
-		if (config.personnelNumberType === "employeeNumber" && line.employeeNumber) {
-			return line.employeeNumber;
-		}
-		return line.employeeId;
-	}
 
 	/**
 	 * Generate CSV header row

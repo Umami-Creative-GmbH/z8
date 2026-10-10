@@ -554,6 +554,22 @@ describe("payroll file exports carry expense lines (#852)", () => {
 		vi.restoreAllMocks();
 	});
 
+	it("leaves a report in the earlier run when a re-export of the period cannot take it", async () => {
+		const reportId = await approvedHotel("100.00");
+		const earlier = await exportPayroll("datev_lohn", current);
+		await admin.query(
+			"update payroll_expense_wage_type_mapping set datev_wage_type_code = null where organization_id = $1",
+			[ORG],
+		);
+
+		const again = await exportPayroll("datev_lohn", current);
+
+		expect(again.content).not.toContain("Reisekostenerstattung");
+		expect(await inclusions(reportId)).toEqual([
+			expect.objectContaining({ state: "included", job: earlier.jobId, superseded_by: null }),
+		]);
+	});
+
 	it("takes only reports approved by the end of the period, with every kind mapped", async () => {
 		const reportId = await approvedHotel("100.00");
 

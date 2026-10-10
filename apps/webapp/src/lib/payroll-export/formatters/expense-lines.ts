@@ -23,6 +23,20 @@ export function expenseLinesInFileOrder(
 		);
 }
 
+/**
+ * The personnel number of the German formats' configs: the employee number
+ * when configured and set, else the employee id, as for hours and absences.
+ */
+export function germanPersonnelNumber(
+	line: ExpenseLineData,
+	config: { personnelNumberType: "employeeNumber" | "employeeId" },
+): string {
+	if (config.personnelNumberType === "employeeNumber" && line.employeeNumber) {
+		return line.employeeNumber;
+	}
+	return line.employeeId;
+}
+
 /** "123.40" as "123,40": the stored amount is never parsed into a float. */
 export function commaDecimalAmount(amount: string): string {
 	return amount.replace(".", ",");

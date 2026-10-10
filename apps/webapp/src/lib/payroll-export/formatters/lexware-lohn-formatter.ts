@@ -20,7 +20,11 @@ import type {
 	WorkPeriodData,
 } from "../types";
 import { wageTypeCodeFor } from "../wage-type-code";
-import { commaDecimalAmount, expenseLinesInFileOrder } from "./expense-lines";
+import {
+	commaDecimalAmount,
+	expenseLinesInFileOrder,
+	germanPersonnelNumber,
+} from "./expense-lines";
 
 const logger = createLogger("LexwareLohnFormatter");
 
@@ -144,7 +148,7 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 
 		// Expense money lines (#852): the euro amount is the Wert, with no hours or rate.
 		for (const { personnelNumber, line } of expenseLinesInFileOrder(expenseLines, (line) =>
-			this.getPersonnelNumberFromExpenseLine(line, lexwareConfig),
+			germanPersonnelNumber(line, lexwareConfig),
 		)) {
 			const [year, month] = line.date.split("-");
 			const fields = [
@@ -341,18 +345,6 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 		return absence.employeeId;
 	}
 
-	/**
-	 * Get personnel number of an expense line based on config
-	 */
-	private getPersonnelNumberFromExpenseLine(
-		line: ExpenseLineData,
-		config: LexwareLohnConfig,
-	): string {
-		if (config.personnelNumberType === "employeeNumber" && line.employeeNumber) {
-			return line.employeeNumber;
-		}
-		return line.employeeId;
-	}
 
 	/**
 	 * Generate CSV header row

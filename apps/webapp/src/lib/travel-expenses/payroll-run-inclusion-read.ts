@@ -2,6 +2,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import {
 	payrollExportConfig,
+	payrollExportFormat,
 	payrollExportJob,
 	travelExpensePayrollRunInclusion,
 } from "@/db/schema";
@@ -21,6 +22,8 @@ export interface IncludedPayrollRun {
 	/** The payroll export job that is the run. */
 	jobId: string;
 	formatId: string;
+	/** The file format's product name, e.g. "DATEV Lohn & Gehalt". */
+	formatName: string;
 	/** The payroll period, as logical dates. */
 	periodStart: string;
 	periodEnd: string;
@@ -57,6 +60,7 @@ export async function loadIncludedPayrollRuns(
 			includedAt: travelExpensePayrollRunInclusion.includedAt,
 			filters: payrollExportJob.filters,
 			formatId: payrollExportConfig.formatId,
+			formatName: payrollExportFormat.name,
 		})
 		.from(travelExpensePayrollRunInclusion)
 		.innerJoin(
@@ -67,6 +71,7 @@ export async function loadIncludedPayrollRuns(
 			),
 		)
 		.innerJoin(payrollExportConfig, eq(payrollExportConfig.id, payrollExportJob.configId))
+		.innerJoin(payrollExportFormat, eq(payrollExportFormat.id, payrollExportConfig.formatId))
 		.where(
 			and(
 				eq(travelExpensePayrollRunInclusion.organizationId, input.organizationId),
@@ -78,6 +83,7 @@ export async function loadIncludedPayrollRuns(
 		runs.set(row.reportId, {
 			jobId: row.jobId,
 			formatId: row.formatId,
+			formatName: row.formatName,
 			periodStart: row.filters.dateRange.start,
 			periodEnd: row.filters.dateRange.end,
 			includedAt: instantToCanonicalString(instantFromDate(row.includedAt)),

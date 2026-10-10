@@ -21,14 +21,6 @@ import { Button } from "@/components/ui/button";
 import type { IncludedPayrollRun } from "@/lib/travel-expenses/payroll-run-inclusion-read";
 import { formatPlainDateRange } from "../report/format";
 
-/** Product names of the payroll file formats; not translated. */
-const PAYROLL_FORMAT_NAMES: Record<string, string> = {
-	datev_lohn: "DATEV Lohn & Gehalt",
-	lexware_lohn: "Lexware lohn+gehalt",
-	sage_lohn: "Sage Lohn",
-	successfactors_csv: "SAP SuccessFactors (CSV)",
-};
-
 /** The payroll run of a report as officers read it: its period and file format. */
 export function payrollRunLabel(
 	t: ReturnType<typeof useTranslate>["t"],
@@ -37,7 +29,7 @@ export function payrollRunLabel(
 ): string {
 	return t("travelExpenses.finance.payrollRun.label", "Payroll run {period} ({format})", {
 		period: formatPlainDateRange(locale, run.periodStart, run.periodEnd),
-		format: PAYROLL_FORMAT_NAMES[run.formatId] ?? run.formatId,
+		format: run.formatName,
 	});
 }
 

@@ -1,6 +1,6 @@
-import { and, asc, eq, inArray, ne } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import type { db as appDb } from "@/db";
-import { organization, user } from "@/db/auth-schema";
+import { user } from "@/db/auth-schema";
 import {
 	auditLog,
 	employee,
@@ -29,6 +29,7 @@ import {
 	isExpensePayrollFormat,
 } from "@/lib/payroll-export/expense-wage-type.types";
 import type { ExpenseLineData } from "@/lib/payroll-export/types";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { latestApprovedAdjustment, loadApprovedAdjustments } from "./adjustment-read";
 import { isAwaitingReimbursement } from "./finance-queue-store";
 import { STORED_AMOUNT_SCALE } from "./money";
@@ -104,10 +105,12 @@ export async function exportIsPayrollRun(
  * unconfirmed run of another period. Each is passed to `computePayrollLines`;
  * only reports whose every line kind is mapped are included.
  *
- * Exporting the same period again replaces what earlier unconfirmed runs of
- * that period included for these employees: those inclusions are superseded,
- * whether or not this run takes the report again. A retried export of the
- * same job first discards what it included before.
+ * Exporting the same period again moves to this run the reports earlier
+ * unconfirmed runs of that period included for these employees: their
+ * inclusions there are superseded. A report this run cannot take (its kinds
+ * are no longer mapped, say) stays in the earlier run rather than in none, so
+ * it is never freed for a bank transfer while a payroll file may still pay
+ * it. A retried export of the same job first discards what it included before.
  *
  * Runs inside the caller's transaction, so the inclusions commit with the
  * file the caller writes from the returned lines, or not at all.
@@ -151,9 +154,6 @@ export async function includeReportsInPayrollRun(
 		.orderBy(asc(travelExpenseReport.id))
 		.for("update");
 
-	// Earlier unconfirmed runs of the same period lose these employees' reports.
-	await supersedeSamePeriodInclusions(tx, { ...input, endedAt });
-
 	const accounts = await buildSettlementAccounts(
 		tx,
 		organizationId,
@@ -188,10 +188,12 @@ export async function includeReportsInPayrollRun(
 		basisRevisionId: string;
 		lines: TravelExpensePayrollRunInclusionLine[];
 	}> = [];
+	// Reports an earlier unconfirmed run of the same period holds, which this run takes over.
+	const takenOver: string[] = [];
 	for (const account of awaiting) {
 		const reportId = account.source.id;
-		if (account.payrollRun) {
-			// Still included after the supersede: a run of another period holds it.
+		const held = account.payrollRun;
+		if (held && !(held.periodStart === period.startDate && held.periodEnd === period.endDate)) {
 			skipped.push({ reportId, reason: "included_in_other_run" });
 			continue;
 		}
@@ -213,12 +215,26 @@ export async function includeReportsInPayrollRun(
 			skipped.push({ reportId, reason: "unmapped_wage_type" });
 			continue;
 		}
+		if (held) takenOver.push(reportId);
 		included.push({
 			reportId,
 			employeeId: account.employeeId,
 			basisRevisionId: revision.id,
 			lines: mapped,
 		});
+	}
+	if (takenOver.length > 0) {
+		// Superseded before the new rows exist: a report is never included twice.
+		await tx
+			.update(travelExpensePayrollRunInclusion)
+			.set({ state: "superseded", endedAt, supersededByJobId: jobId })
+			.where(
+				and(
+					eq(travelExpensePayrollRunInclusion.organizationId, organizationId),
+					eq(travelExpensePayrollRunInclusion.state, "included"),
+					inArray(travelExpensePayrollRunInclusion.reportId, takenOver),
+				),
+			);
 	}
 	if (included.length > 0) {
 		await tx.insert(travelExpensePayrollRunInclusion).values(
@@ -243,63 +259,8 @@ async function periodEndExclusive(
 	organizationId: string,
 	endDate: string,
 ): Promise<Instant> {
-	const [row] = await tx
-		.select({ timezone: organization.timezone })
-		.from(organization)
-		.where(eq(organization.id, organizationId))
-		.limit(1);
-	return localDayRange(endDate, row?.timezone ?? "UTC").endExclusive;
-}
-
-async function supersedeSamePeriodInclusions(
-	tx: Transaction,
-	input: {
-		organizationId: string;
-		jobId: string;
-		period: { startDate: string; endDate: string };
-		employeeIds: readonly string[];
-		endedAt: Date;
-	},
-): Promise<void> {
-	const held = await tx
-		.select({
-			id: travelExpensePayrollRunInclusion.id,
-			filters: payrollExportJob.filters,
-		})
-		.from(travelExpensePayrollRunInclusion)
-		.innerJoin(
-			payrollExportJob,
-			and(
-				eq(payrollExportJob.id, travelExpensePayrollRunInclusion.payrollExportJobId),
-				eq(payrollExportJob.organizationId, travelExpensePayrollRunInclusion.organizationId),
-			),
-		)
-		.where(
-			and(
-				eq(travelExpensePayrollRunInclusion.organizationId, input.organizationId),
-				eq(travelExpensePayrollRunInclusion.state, "included"),
-				ne(travelExpensePayrollRunInclusion.payrollExportJobId, input.jobId),
-				inArray(travelExpensePayrollRunInclusion.employeeId, [...input.employeeIds]),
-			),
-		);
-	const samePeriod = held
-		.filter(
-			({ filters }) =>
-				filters.dateRange.start === input.period.startDate &&
-				filters.dateRange.end === input.period.endDate,
-		)
-		.map(({ id }) => id);
-	if (samePeriod.length === 0) return;
-	await tx
-		.update(travelExpensePayrollRunInclusion)
-		.set({ state: "superseded", endedAt: input.endedAt, supersededByJobId: input.jobId })
-		.where(
-			and(
-				eq(travelExpensePayrollRunInclusion.organizationId, input.organizationId),
-				eq(travelExpensePayrollRunInclusion.state, "included"),
-				inArray(travelExpensePayrollRunInclusion.id, samePeriod),
-			),
-		);
+	const timezone = await loadOrganizationTimezone(tx, organizationId);
+	return localDayRange(endDate, timezone).endExclusive;
 }
 
 /**
@@ -556,9 +517,12 @@ export async function discardPayrollRun(
 			.update(travelExpensePayrollRunInclusion)
 			.set({ state: "discarded", endedAt, endedByUserId: input.actorUserId })
 			.where(
-				inArray(
-					travelExpensePayrollRunInclusion.id,
-					held.map((inclusion) => inclusion.id),
+				and(
+					eq(travelExpensePayrollRunInclusion.organizationId, organizationId),
+					inArray(
+						travelExpensePayrollRunInclusion.id,
+						held.map((inclusion) => inclusion.id),
+					),
 				),
 			);
 		const reportIds = held.map((inclusion) => inclusion.reportId);

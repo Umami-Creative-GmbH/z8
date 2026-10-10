@@ -25,6 +25,7 @@ import {
 	commaDecimalAmount,
 	expenseLinesInFileOrder,
 	GERMAN_EXPENSE_LINE_NOTE,
+	germanPersonnelNumber,
 } from "./expense-lines";
 
 const logger = createLogger("SageLohnFormatter");
@@ -149,7 +150,7 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 
 		// Expense money lines (#852): a euro Betrag on the period's last day, labeled as money.
 		for (const { personnelNumber, line } of expenseLinesInFileOrder(expenseLines, (line) =>
-			this.getPersonnelNumberFromExpenseLine(line, sageConfig),
+			germanPersonnelNumber(line, sageConfig),
 		)) {
 			const amount =
 				sageConfig.outputFormat === "sage_native" ? commaDecimalAmount(line.amount) : line.amount;
@@ -342,15 +343,6 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 		return absence.employeeId;
 	}
 
-	/**
-	 * Get personnel number of an expense line based on config
-	 */
-	private getPersonnelNumberFromExpenseLine(line: ExpenseLineData, config: SageLohnConfig): string {
-		if (config.personnelNumberType === "employeeNumber" && line.employeeNumber) {
-			return line.employeeNumber;
-		}
-		return line.employeeId;
-	}
 
 	/**
 	 * Generate CSV header row
