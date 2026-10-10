@@ -1214,6 +1214,13 @@
       "breakpoints": true
     },
     {
+      "idx": 174,
+      "version": "7",
+      "when": 1799337600000,
+      "tag": "0174_employee_assigned_location",
+      "breakpoints": true
+    },
+    {
       "idx": 175,
       "version": "7",
       "when": 1799424000000,

@@ -218,6 +218,9 @@ export enum AuditAction {
 	SUBAREA_DELETED = "subarea.deleted",
 	SUBAREA_EMPLOYEE_ASSIGNED = "subarea.employee_assigned",
 	SUBAREA_EMPLOYEE_REMOVED = "subarea.employee_removed",
+	// Assigned locations (#858): where an employee works, distinct from supervisors
+	ASSIGNED_LOCATION_ADDED = "location.assigned_employee_added",
+	ASSIGNED_LOCATION_REMOVED = "location.assigned_employee_removed",
 
 	// Kiosk enrolment (#859)
 	KIOSK_CREATED = "kiosk.created",
