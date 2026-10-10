@@ -83,6 +83,10 @@ const NATIVE_PUSH_CATEGORY: Record<NotificationType, NativePushCategory> = {
 	personnel_file_expiry_upcoming: "document",
 	personnel_file_expired_today: "document",
 	personnel_file_due_for_deletion: "attention",
+	absence_deputy_assigned: "schedule",
+	absence_deputy_removed: "schedule",
+	absence_deputy_dates_changed: "schedule",
+	absence_deputy_reminder: "reminder",
 	absence_deputy_unavailable: "attention",
 };
 

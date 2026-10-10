@@ -274,6 +274,11 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"personnel_file_expired_today",
 	// Documents newly due for deletion, for covering officers (#870)
 	"personnel_file_due_for_deletion",
+	// Deputy on an absence: named, removed, new dates, day-before reminder (#1013)
+	"absence_deputy_assigned",
+	"absence_deputy_removed",
+	"absence_deputy_dates_changed",
+	"absence_deputy_reminder",
 	// A departed or deactivated deputy was cleared from an absence (#1014)
 	"absence_deputy_unavailable",
 ]);

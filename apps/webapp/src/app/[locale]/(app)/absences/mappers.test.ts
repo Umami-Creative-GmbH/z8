@@ -82,4 +82,12 @@ describe("mapAbsenceWithCategory", () => {
 		expect(mapped.category.deputyRequired).toBe(true);
 		expect(mapAbsenceWithCategory(buildAbsence()).deputy).toBeNull();
 	});
+
+	it("keeps whether the viewer may open the deputy's profile (#1012)", () => {
+		const mapped = mapAbsenceWithCategory(
+			buildAbsence({ deputy: { id: "employee-2", name: "Ben Example", canOpenProfile: true } }),
+		);
+
+		expect(mapped.deputy).toEqual({ id: "employee-2", name: "Ben Example", canOpenProfile: true });
+	});
 });

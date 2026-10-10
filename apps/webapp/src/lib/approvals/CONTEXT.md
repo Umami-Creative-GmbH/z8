@@ -36,6 +36,10 @@ _Avoid_: reverse mirroring
 A decision made by an approver's deputy, during the approver's approved absence, on an approval still assigned to that approver. It records both people.
 _Avoid_: delegated decision, proxy approval, on-behalf decision (that term means acting for the requester)
 
+**Covering**:
+A deputy covers for an approver on each day, in the approver's timezone, of the approver's approved absence that names them and does not count as working time, while the organization lets deputies decide approvals and the deputy is active and can use the approval inbox. Resolved only by `deputy/covering-store.ts`.
+_Avoid_: standing in, substituting, "Vertretung" (German copy says "Abwesenheitsvertretung")
+
 ### Cards
 
 **Review binding**:

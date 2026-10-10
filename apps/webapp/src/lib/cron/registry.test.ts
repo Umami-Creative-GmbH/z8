@@ -33,6 +33,14 @@ vi.mock("@/lib/jobs/clocking-reminders", () => {
 	clockingReminders.imported();
 	return { runClockingReminders: clockingReminders.run };
 });
+const absenceDeputyReminders = vi.hoisted(() => ({
+	imported: vi.fn(),
+	run: vi.fn(async () => ({ candidates: 3, sent: 1 })),
+}));
+vi.mock("@/lib/jobs/absence-deputy-reminders", () => {
+	absenceDeputyReminders.imported();
+	return { runAbsenceDeputyRemindersJob: absenceDeputyReminders.run };
+});
 const {
 	calculateTelemetryMetrics,
 	getOrCreateTelemetryIdentity,
@@ -314,5 +322,18 @@ describe("clocking reminders cron", () => {
 			await CRON_JOBS["cron:clocking-reminders"].processor({ triggeredAt: "2026-10-25T06:00:00Z" }),
 		).toEqual({ sent: 2 });
 		expect(clockingReminders.run).toHaveBeenCalledOnce();
+	});
+});
+
+describe("absence deputy reminders cron (#1013)", () => {
+	it("loads the reminder job lazily and runs hourly, so each zone's day starts soon after midnight", async () => {
+		expect(absenceDeputyReminders.imported).not.toHaveBeenCalled();
+		expect(CRON_JOBS["cron:absence-deputy-reminders"].schedule).toBe("0 * * * *");
+		expect(
+			await CRON_JOBS["cron:absence-deputy-reminders"].processor({
+				triggeredAt: "2026-10-25T06:00:00Z",
+			}),
+		).toEqual({ candidates: 3, sent: 1 });
+		expect(absenceDeputyReminders.run).toHaveBeenCalledOnce();
 	});
 });

@@ -35,6 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
+import type { AbsenceDeputyNotificationType } from "@/lib/absences/deputy-notification-types";
 import {
 	hasMandatoryInbox,
 	NOTIFICATION_CHANNELS,
@@ -89,6 +90,10 @@ const NOTIFICATION_CATEGORIES = [
 			"absence_request_submitted",
 			"absence_request_approved",
 			"absence_request_rejected",
+			"absence_deputy_assigned",
+			"absence_deputy_removed",
+			"absence_deputy_dates_changed",
+			"absence_deputy_reminder",
 			"absence_deputy_unavailable",
 		] as NotificationType[],
 	},
@@ -189,9 +194,12 @@ const NOTIFICATION_CATEGORIES = [
 	},
 ];
 
-// Human-readable labels for notification types. Clocking reminder labels are static `t()` calls in
-// `getTypeLabel`, so the Tolgee extractor registers them with their defaults.
-const TYPE_LABELS: Record<Exclude<NotificationType, ClockingReminderType>, string> = {
+// Human-readable labels for notification types. Clocking reminder and deputy labels are static
+// `t()` calls in `getTypeLabel`, so the Tolgee extractor registers them with their defaults.
+const TYPE_LABELS: Record<
+	Exclude<NotificationType, ClockingReminderType | AbsenceDeputyNotificationType>,
+	string
+> = {
 	automatic_clock_out: "Automatic clock-out",
 	approval_request_submitted: "Request submitted",
 	approval_request_approved: "Request approved",
@@ -387,6 +395,26 @@ function useNotificationSettingsViewModel() {
 				);
 			case "break_due_reminder":
 				return t("common:notifications.preferences.types.break_due_reminder", "Break due");
+			case "absence_deputy_assigned":
+				return t(
+					"common:notifications.preferences.types.absence_deputy_assigned",
+					"Named as absence deputy",
+				);
+			case "absence_deputy_removed":
+				return t(
+					"common:notifications.preferences.types.absence_deputy_removed",
+					"No longer absence deputy",
+				);
+			case "absence_deputy_dates_changed":
+				return t(
+					"common:notifications.preferences.types.absence_deputy_dates_changed",
+					"Absence deputy dates changed",
+				);
+			case "absence_deputy_reminder":
+				return t(
+					"common:notifications.preferences.types.absence_deputy_reminder",
+					"Absence cover starts tomorrow",
+				);
 			default:
 				return t(`common:notifications.preferences.types.${type}`, TYPE_LABELS[type]);
 		}

@@ -5,6 +5,7 @@ const mockState = vi.hoisted(() => ({
 	connection: vi.fn(),
 	getVerifiedOrgContext: vi.fn(),
 	getAbsencesForMonth: vi.fn(async () => []),
+	linkAbsenceDeputyProfiles: vi.fn(async (events: unknown[]) => events),
 	getAssignedHolidaysForEmployee: vi.fn(async () => []),
 	assignedHolidayToCalendarEvent: vi.fn(),
 	getHolidaysForMonth: vi.fn(async () => []),
@@ -47,6 +48,7 @@ vi.mock("@/db", () => ({
 
 vi.mock("@/lib/calendar/absence-service", () => ({
 	getAbsencesForMonth: mockState.getAbsencesForMonth,
+	linkAbsenceDeputyProfiles: mockState.linkAbsenceDeputyProfiles,
 }));
 
 vi.mock("@/lib/calendar/holiday-service", () => ({

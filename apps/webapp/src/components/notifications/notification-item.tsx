@@ -8,6 +8,8 @@ import {
 	IconCircleFilled,
 	IconClock,
 	IconShield,
+	IconUserMinus,
+	IconUserShare,
 	IconUsers,
 	IconUserX,
 	IconX,
@@ -109,6 +111,22 @@ function getNotificationStyle(type: NotificationType): {
 				icon: <IconUserX className="size-4" />,
 				bgColor: "bg-amber-100 dark:bg-amber-900/30",
 				iconColor: "text-amber-600 dark:text-amber-400",
+			};
+
+		// Deputy on an absence (#1013)
+		case "absence_deputy_assigned":
+		case "absence_deputy_dates_changed":
+		case "absence_deputy_reminder":
+			return {
+				icon: <IconUserShare className="size-4" />,
+				bgColor: "bg-purple-100 dark:bg-purple-900/30",
+				iconColor: "text-purple-600 dark:text-purple-400",
+			};
+		case "absence_deputy_removed":
+			return {
+				icon: <IconUserMinus className="size-4" />,
+				bgColor: "bg-slate-100 dark:bg-slate-900/30",
+				iconColor: "text-slate-600 dark:text-slate-400",
 			};
 
 		// Team notifications

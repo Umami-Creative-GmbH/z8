@@ -528,7 +528,10 @@ export async function fetchAbsences(organizationId: string) {
 
 	// Fetch absences with proper database-level filtering
 	const filteredAbsences = await db.query.absenceEntry.findMany({
-		where: inArray(absenceEntry.employeeId, employeeIds),
+		where: and(
+			eq(absenceEntry.organizationId, organizationId),
+			inArray(absenceEntry.employeeId, employeeIds),
+		),
 		with: {
 			employee: {
 				columns: {
@@ -538,6 +541,11 @@ export async function fetchAbsences(organizationId: string) {
 				with: { user: { columns: { firstName: true, lastName: true, name: true, email: true } } },
 			},
 			category: true,
+			// The deputy (#1012): an employee of the same organization, by the composite relation.
+			deputy: {
+				columns: { id: true },
+				with: { user: { columns: { firstName: true, lastName: true, name: true, email: true } } },
+			},
 		},
 	});
 
@@ -560,6 +568,8 @@ export async function fetchAbsences(organizationId: string) {
 			approvedAt: absence.approvedAt,
 			rejectionReason: absence.rejectionReason,
 			createdAt: absence.createdAt,
+			deputyEmployeeId: absence.deputy?.id ?? null,
+			deputyName: absence.deputy?.user ? buildAuthUserDisplayName(absence.deputy.user) : null,
 		})),
 		categories: categories.map((cat) => ({
 			id: cat.id,

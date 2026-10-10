@@ -87,6 +87,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"dashboard.layout.saved",
 		"dashboard.customize",
 		"dashboard.birthday.title",
+		"dashboard.covering-for.title",
 		"dashboard.hydration.title",
 		"dashboard.managed-employees.title",
 		"dashboard.manager-today.title",

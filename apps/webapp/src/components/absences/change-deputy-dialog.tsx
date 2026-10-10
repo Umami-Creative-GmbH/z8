@@ -19,8 +19,16 @@ import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/
 import type { AbsenceWithCategory } from "@/lib/absences/types";
 import { DeputyPicker, deputyRefusalText, deputyRequiredText } from "./deputy-picker";
 
+/** What the dialog needs of an absence: its own, or one a manager sees (#1012). */
+export type ChangeDeputyAbsence = Pick<
+	AbsenceWithCategory,
+	"id" | "employeeId" | "startDate" | "endDate" | "deputy"
+> & { category: Pick<AbsenceWithCategory["category"], "deputyRequired"> };
+
 interface ChangeDeputyDialogProps {
-	absence: AbsenceWithCategory;
+	absence: ChangeDeputyAbsence;
+	/** The absent employee, when a manager or admin changes the deputy (#1012). */
+	employeeName?: string;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onChanged?: () => void;
@@ -32,6 +40,7 @@ interface ChangeDeputyDialogProps {
  */
 export function ChangeDeputyDialog({
 	absence,
+	employeeName,
 	open,
 	onOpenChange,
 	onChanged,
@@ -77,10 +86,16 @@ export function ChangeDeputyDialog({
 					<ActionPanelHeader>
 						<ActionPanelTitle>{t("absences.deputy.changeTitle", "Change deputy")}</ActionPanelTitle>
 						<ActionPanelDescription>
-							{t(
-								"absences.deputy.changeDescription",
-								"The deputy covers while you are away. Changing them needs no new approval.",
-							)}
+							{employeeName
+								? t(
+										"absences.deputy.changeDescriptionFor",
+										"The deputy covers while {name} is away. Changing them needs no new approval.",
+										{ name: employeeName },
+									)
+								: t(
+										"absences.deputy.changeDescription",
+										"The deputy covers while you are away. Changing them needs no new approval.",
+									)}
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 					<ActionPanelBody className="space-y-4">
