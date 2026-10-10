@@ -11,6 +11,7 @@ export type WidgetId =
 	| "pending-approvals"
 	| "team-overview"
 	| "quick-stats"
+	| "upcoming-shifts"
 	| "whos-out-today"
 	| "upcoming-time-off"
 	| "recently-approved"
@@ -29,6 +30,7 @@ export const DEFAULT_WIDGET_ORDER: WidgetId[] = [
 	"pending-approvals",
 	"team-overview",
 	"quick-stats",
+	"upcoming-shifts",
 	"presence-status",
 	"whos-out-today",
 	"upcoming-time-off",
@@ -77,6 +79,11 @@ export const WIDGET_CONFIGS: WidgetConfig[] = [
 		id: "quick-stats",
 		label: "Time Tracking",
 		labelKey: "dashboard.quick-stats.title",
+	},
+	{
+		id: "upcoming-shifts",
+		label: "Upcoming Shifts",
+		labelKey: "dashboard.upcoming-shifts.title",
 	},
 	{
 		id: "presence-status",
