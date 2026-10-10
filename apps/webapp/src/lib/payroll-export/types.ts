@@ -275,6 +275,39 @@ export interface ExpenseLineData {
 	date: string;
 }
 
+/**
+ * One uncancelled overtime payout (#1001, a balance adjustment of #993) whose
+ * day lies within the export's dates. The DATEV, Lexware and Sage files carry
+ * it as hours under the wage type mapped to the "overtime" special category.
+ */
+export interface OvertimePayoutData {
+	/** The balance adjustment's id. */
+	id: string;
+	employeeId: string;
+	employeeNumber: string | null;
+	email?: string | null;
+	firstName: string | null;
+	lastName: string | null;
+	/** The frozen custom field identifier value, when the configuration names one (#821). */
+	personnelIdentifier?: string | null;
+	/** The payout's local day (ISO date) in the employee's timezone. */
+	day: string;
+	/** The paid-out minutes, always positive. */
+	minutes: number;
+}
+
+/**
+ * An overtime payout a file could not carry because no wage type is mapped to
+ * the "overtime" special category for its format (#1001). Stored on the job.
+ */
+export interface UnmappedOvertimePayout {
+	/** The balance adjustment's id. */
+	id: string;
+	employeeId: string;
+	day: string;
+	minutes: number;
+}
+
 // ============================================
 // EXPORT RESULT TYPES
 // ============================================
@@ -291,6 +324,8 @@ export interface ExportResult {
 		workPeriodCount: number;
 		employeeCount: number;
 		dateRange: { start: string; end: string };
+		/** Overtime payouts left out for want of an "overtime" mapping (#1001). */
+		unmappedOvertimePayouts: UnmappedOvertimePayout[];
 	};
 }
 
@@ -318,6 +353,8 @@ export interface PayrollExportJobSummary {
 	 * includes (#852); 0 when it is no unconfirmed payroll run.
 	 */
 	payrollRunIncludedReports: number;
+	/** How many overtime payouts the file left out for want of an "overtime" mapping (#1001). */
+	unmappedOvertimePayoutCount: number;
 }
 
 // ============================================
@@ -344,7 +381,8 @@ export interface IPayrollExportFormatter {
 	/**
 	 * Transform work periods, absences and expense money lines to export format.
 	 * Expense lines arrive already mapped and summed per employee and wage type
-	 * (#852); with the bank-transfer channel there are none.
+	 * (#852); with the bank-transfer channel there are none. Overtime payouts
+	 * (#1001) are mapped by the formatter; a format that carries none ignores them.
 	 */
 	transform(
 		workPeriods: WorkPeriodData[],
@@ -352,6 +390,7 @@ export interface IPayrollExportFormatter {
 		expenseLines: ExpenseLineData[],
 		mappings: WageTypeMapping[],
 		config: Record<string, unknown>,
+		overtimePayouts?: OvertimePayoutData[],
 	): ExportResult;
 
 	/**
