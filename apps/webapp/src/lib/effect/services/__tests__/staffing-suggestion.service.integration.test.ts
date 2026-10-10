@@ -27,16 +27,20 @@ import { type EffectiveWorkPolicy, WorkPolicyService } from "../work-policy.serv
 
 const weeklyRequirements = vi.hoisted(() => new Map<string, Record<string, number>>());
 
-vi.mock("@/lib/calendar/work-policy-requirements", () => ({
-	getDailyWorkRequirementsForEmployee: vi.fn(async (params: { employeeId: string }) =>
-		Object.fromEntries(
-			Object.entries(weeklyRequirements.get(params.employeeId) ?? {}).map(([day, minutes]) => [
-				day,
-				{ requiredMinutes: minutes, policyId: "policy", policyName: "Policy" },
-			]),
-		),
-	),
-}));
+vi.mock("@/lib/calendar/work-policy-requirements", async () => {
+	const { Effect } = await import("effect");
+	return {
+		loadDailyWorkRequirementsForEmployee: (params: { employeeId: string }) =>
+			Effect.succeed(
+				Object.fromEntries(
+					Object.entries(weeklyRequirements.get(params.employeeId) ?? {}).map(([day, minutes]) => [
+						day,
+						{ requiredMinutes: minutes, policyId: "policy", policyName: "Policy" },
+					]),
+				),
+			),
+	};
+});
 
 const TZ = "Europe/Berlin";
 const policies = new Map<string, Partial<EffectiveWorkPolicy>>();
@@ -310,7 +314,8 @@ describe("staffing suggestions", () => {
 	it("warns about a pending absence without leaving the employee out", async () => {
 		const org = await fixture.organization(TZ);
 		const person = await fixture.seedEmployee({ organizationId: org.organizationId });
-		await absence(org, person, { startDate: SHIFT_DAY, status: "pending" });
+		// A pending absence warns in any category, a work-time one included.
+		await absence(org, person, { startDate: SHIFT_DAY, status: "pending", requiresWorkTime: true });
 
 		const [suggestion] = await suggest(org, [candidate(person, "Person")]);
 
@@ -402,6 +407,31 @@ describe("staffing suggestions", () => {
 		expect(byName.get("Over")?.warnings).toEqual([]);
 		expect(byName.get("Over")?.reasons).toContainEqual({ type: "restPeriodOk" });
 		expect(suggestions.at(-1)?.displayName).toBe("Strict");
+	});
+
+	it("counts planned shifts from the start of the month toward monthly overtime", async () => {
+		const org = await fixture.organization(TZ);
+		const person = await fixture.seedEmployee({ organizationId: org.organizationId });
+		policies.set(person.employeeId, {
+			regulation: regulation({ overtimeMonthlyThresholdMinutes: 1000 }),
+		});
+		// Both lie in October but before the shift's ISO week (from Monday 2026-10-05).
+		await fixture.shift(org, { employeeId: person.employeeId, stored: stored("2026-10-01") });
+		await fixture.shift(org, { employeeId: person.employeeId, stored: stored("2026-10-02") });
+
+		const [suggestion] = await suggest(org, [candidate(person, "Person")]);
+
+		expect(suggestion.warnings).toEqual([
+			{
+				type: "compliance",
+				findingType: "overtime",
+				finding: expect.objectContaining({
+					period: "monthly",
+					periodKey: "2026-10",
+					totalMinutes: 3 * 480,
+				}),
+			},
+		]);
 	});
 
 	it("marks pickup requesters and ranks them before remaining contracted hours", async () => {

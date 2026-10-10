@@ -137,8 +137,9 @@ export interface StaffingBlockerFacts {
 }
 
 /**
- * What the staffing blockers need for every candidate, one query per kind. Absences count only in
- * categories that are not work time, as for daily work targets.
+ * What the staffing blockers and absence warnings need for every candidate, one query per kind.
+ * Approved absences count only in categories that are not work time, as for daily work targets;
+ * pending absences count in every category.
  */
 export async function loadStaffingBlockerFacts(
 	database: StaffingDatabase,
@@ -188,8 +189,11 @@ export async function loadStaffingBlockerFacts(
 					eq(absenceEntry.organizationId, input.organizationId),
 					eq(absenceCategory.organizationId, input.organizationId),
 					inArray(absenceEntry.employeeId, employeeIds),
-					inArray(absenceEntry.status, ["approved", "pending"]),
-					eq(absenceCategory.requiresWorkTime, false),
+					// Approved absences block only outside work time; any pending one is a warning.
+					or(
+						and(eq(absenceEntry.status, "approved"), eq(absenceCategory.requiresWorkTime, false)),
+						eq(absenceEntry.status, "pending"),
+					),
 					lte(absenceEntry.startDate, nextDay),
 					gte(absenceEntry.endDate, input.shiftDate.toString()),
 				),

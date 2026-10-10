@@ -1,5 +1,5 @@
 import { Context, Effect, Layer } from "effect";
-import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
+import { loadDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import {
 	comparePlainDates,
@@ -88,8 +88,9 @@ function minPlainDate(...dates: PlainDate[]): PlainDate {
 	);
 }
 
-function shiftMinutes(shift: ComplianceShiftSource, timezone: string): number {
-	const interval = shiftInterval(
+/** A stored shift's instants, its date read as the organization-local calendar day. */
+function storedShiftInterval(shift: ComplianceShiftSource, timezone: string): ShiftInterval {
+	return shiftInterval(
 		{
 			date: shiftCalendarDate(shift.date, timezone),
 			startTime: shift.startTime,
@@ -97,6 +98,10 @@ function shiftMinutes(shift: ComplianceShiftSource, timezone: string): number {
 		},
 		timezone,
 	);
+}
+
+function shiftMinutes(shift: ComplianceShiftSource, timezone: string): number {
+	const interval = storedShiftInterval(shift, timezone);
 	return Math.round(interval.start.until(interval.end).total({ unit: "minutes" }));
 }
 
@@ -126,27 +131,29 @@ function hasUsableTarget(facts: StaffingRankingFacts, policy: EffectiveWorkPolic
 	return cycle === "weekly";
 }
 
+/** The contracted target for the ISO week from `weekStart`, from the daily work requirements. */
 function loadWeeklyTargetMinutes(input: {
 	organizationId: string;
 	employeeId: string;
 	weekStart: PlainDate;
 	timezone: string;
 }) {
-	return Effect.promise(async () => {
-		const requirements = await getDailyWorkRequirementsForEmployee({
-			organizationId: input.organizationId,
-			employeeId: input.employeeId,
-			startDate: dateFromInstant(localDayRange(input.weekStart.toString(), input.timezone).start),
-			endDate: dateFromInstant(
-				localDayRange(input.weekStart.add({ days: 6 }).toString(), input.timezone).start,
+	return loadDailyWorkRequirementsForEmployee({
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		startDate: dateFromInstant(localDayRange(input.weekStart.toString(), input.timezone).start),
+		endDate: dateFromInstant(
+			localDayRange(input.weekStart.add({ days: 6 }).toString(), input.timezone).start,
+		),
+		timezone: input.timezone,
+	}).pipe(
+		Effect.map((requirements) =>
+			Object.values(requirements).reduce(
+				(total, requirement) => total + requirement.requiredMinutes,
+				0,
 			),
-			timezone: input.timezone,
-		});
-		return Object.values(requirements).reduce(
-			(total, requirement) => total + requirement.requiredMinutes,
-			0,
-		);
-	});
+		),
+	);
 }
 
 export class StaffingSuggestionService extends Context.Service<
@@ -214,14 +221,7 @@ export const StaffingSuggestionServiceLive = Layer.effect(
 							shift: shift.interval,
 							approvedAbsences: facts.approvedAbsences,
 							otherShifts: facts.nearbyShifts.map((nearby) =>
-								shiftInterval(
-									{
-										date: shiftCalendarDate(nearby.date, timezone),
-										startTime: nearby.startTime,
-										endTime: nearby.endTime,
-									},
-									timezone,
-								),
+								storedShiftInterval(nearby, timezone),
 							),
 						});
 						return blocker
@@ -245,7 +245,8 @@ export const StaffingSuggestionServiceLive = Layer.effect(
 							employeeIds: available.map(({ candidate }) => candidate.employeeId),
 							timezone,
 							shiftDate: shift.date,
-							shiftsFrom: minPlainDate(weekStart, shift.date.subtract({ days: 1 })),
+							// Month start: monthly totals need every planned shift of the month.
+							shiftsFrom: minPlainDate(weekStart, monthStart, shift.date.subtract({ days: 1 })),
 							until: maxPlainDate(
 								weekStart.add({ weeks: 1 }),
 								monthStart.add({ months: 1 }),
@@ -277,7 +278,11 @@ export const StaffingSuggestionServiceLive = Layer.effect(
 											employeeId: candidate.employeeId,
 											weekStart,
 											timezone,
-										})
+										}).pipe(
+											Effect.provideService(DatabaseService, dbService),
+											Effect.provideService(WorkPolicyService, workPolicyService),
+											Effect.catchTag("NotFoundError", () => Effect.succeed(null)),
+										)
 									: null;
 
 								return [
@@ -287,7 +292,7 @@ export const StaffingSuggestionServiceLive = Layer.effect(
 										skills: assessStaffingSkills({
 											requirements: context.requirements,
 											held: facts.heldSkills,
-											shiftStart: shift.interval.start,
+											shiftEnd: shift.interval.end,
 										}),
 										complianceFindings: addedComplianceFindings({
 											employeeId: candidate.employeeId,

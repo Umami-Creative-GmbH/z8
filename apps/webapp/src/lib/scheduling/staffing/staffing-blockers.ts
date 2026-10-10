@@ -1,3 +1,7 @@
+import type {
+	AbsenceDayPeriod,
+	ApprovedAbsenceRange,
+} from "@/lib/calendar/absence-adjusted-requirements";
 import { localDayRange, resolveScheduledWallClock } from "@/lib/datetime/temporal-boundaries";
 import {
 	compareInstants,
@@ -15,17 +19,8 @@ import type { ShiftInterval } from "@/lib/scheduling/shift-occasion";
 /** A fact that rules an employee out of an open shift entirely. */
 export type StaffingBlocker = "notEmployed" | "approvedAbsence" | "overlappingShift";
 
-export type AbsenceDayPeriod = "full_day" | "am" | "pm";
-
 /** An absence's calendar days as stored: `am` ends a day at noon, `pm` starts one at noon. */
-export interface AbsenceRange {
-	/** `YYYY-MM-DD` */
-	startDate: string;
-	startPeriod: AbsenceDayPeriod;
-	/** `YYYY-MM-DD` */
-	endDate: string;
-	endPeriod: AbsenceDayPeriod;
-}
+export type AbsenceRange = ApprovedAbsenceRange;
 
 const NOON = "12:00";
 

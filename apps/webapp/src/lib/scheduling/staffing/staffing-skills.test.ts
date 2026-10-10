@@ -2,7 +2,8 @@ import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
 import { assessStaffingSkills, resolveSkillRequirements } from "./staffing-skills";
 
-const shiftStart = Temporal.Instant.from("2026-10-20T06:00:00Z");
+// The shift runs 2026-10-20 06:00-14:00 UTC.
+const shiftEnd = Temporal.Instant.from("2026-10-20T14:00:00Z");
 
 describe("resolveSkillRequirements", () => {
 	it("unites subarea and template requirements, with required winning", () => {
@@ -37,7 +38,7 @@ describe("assessStaffingSkills", () => {
 				{ skillId: "first-aid", expiresAt: new Date("2027-01-01T00:00:00Z") },
 				{ skillId: "french", expiresAt: null },
 			],
-			shiftStart,
+			shiftEnd,
 		});
 
 		expect(result).toEqual({
@@ -51,7 +52,7 @@ describe("assessStaffingSkills", () => {
 		const result = assessStaffingSkills({
 			requirements,
 			held: [{ skillId: "first-aid", expiresAt: null }],
-			shiftStart,
+			shiftEnd,
 		});
 
 		expect(result.warnings).toEqual([
@@ -72,7 +73,7 @@ describe("assessStaffingSkills", () => {
 				{ skillId: "first-aid", expiresAt: new Date("2026-10-15T00:00:00Z") },
 				{ skillId: "french", expiresAt: null },
 			],
-			shiftStart,
+			shiftEnd,
 		});
 
 		expect(result.warnings).toEqual([
@@ -85,21 +86,31 @@ describe("assessStaffingSkills", () => {
 		]);
 	});
 
-	it("counts a certificate expiring exactly at the shift start as expired", () => {
+	it("counts a certificate expiring during the shift as expired", () => {
 		const result = assessStaffingSkills({
 			requirements: [requirements[1]],
-			held: [{ skillId: "first-aid", expiresAt: new Date("2026-10-20T06:00:00Z") }],
-			shiftStart,
+			held: [{ skillId: "first-aid", expiresAt: new Date("2026-10-20T10:00:00Z") }],
+			shiftEnd,
 		});
 
 		expect(result.warnings.map((warning) => warning.type)).toEqual(["expiredRequiredSkill"]);
+	});
+
+	it("keeps a certificate valid until the shift ends", () => {
+		const result = assessStaffingSkills({
+			requirements: [requirements[1]],
+			held: [{ skillId: "first-aid", expiresAt: new Date("2026-10-20T14:00:00Z") }],
+			shiftEnd,
+		});
+
+		expect(result.warnings).toEqual([]);
 	});
 
 	it("only notes an expired preferred skill", () => {
 		const result = assessStaffingSkills({
 			requirements: [requirements[2]],
 			held: [{ skillId: "french", expiresAt: new Date("2026-10-01T00:00:00Z") }],
-			shiftStart,
+			shiftEnd,
 		});
 
 		expect(result).toEqual({
@@ -110,7 +121,7 @@ describe("assessStaffingSkills", () => {
 	});
 
 	it("gives no skill reason when nothing is required", () => {
-		expect(assessStaffingSkills({ requirements: [], held: [], shiftStart })).toEqual({
+		expect(assessStaffingSkills({ requirements: [], held: [], shiftEnd })).toEqual({
 			warnings: [],
 			notes: [],
 			reasons: [],

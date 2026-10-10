@@ -37,14 +37,14 @@ export function resolveSkillRequirements(
 }
 
 /**
- * Judges the employee's skills against the shift's requirements as of the shift start: a
- * certificate valid today but expired by then counts as expired. A missing or expired preferred
+ * Judges the employee's skills against the shift's requirements as of the shift: a certificate must
+ * stay valid until the shift ends, so one valid today but expiring by then counts as expired. A missing or expired preferred
  * skill is only a note.
  */
 export function assessStaffingSkills(input: {
 	requirements: readonly StaffingSkillRequirement[];
 	held: readonly HeldSkill[];
-	shiftStart: Instant;
+	shiftEnd: Instant;
 }): { warnings: StaffingWarning[]; notes: StaffingNote[]; reasons: StaffingReason[] } {
 	const heldBySkill = new Map(input.held.map((skill) => [skill.skillId, skill]));
 	const warnings: StaffingWarning[] = [];
@@ -54,7 +54,7 @@ export function assessStaffingSkills(input: {
 	for (const requirement of input.requirements) {
 		const held = heldBySkill.get(requirement.skillId);
 		const expiresAt = held?.expiresAt ? instantFromDate(held.expiresAt) : null;
-		const isExpired = expiresAt !== null && compareInstants(expiresAt, input.shiftStart) <= 0;
+		const isExpired = expiresAt !== null && compareInstants(expiresAt, input.shiftEnd) < 0;
 
 		if (held && !isExpired) {
 			skillNamesHeld.push(requirement.skillName);
