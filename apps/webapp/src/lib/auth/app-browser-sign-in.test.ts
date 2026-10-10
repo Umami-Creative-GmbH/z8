@@ -2,7 +2,10 @@
 import { runInNewContext } from "node:vm";
 import { NextRequest } from "next/server";
 import { describe, expect, it, vi } from "vitest";
-import { createDesktopCallbackResponse } from "./app-browser-sign-in";
+import {
+	createAppCallbackResponse,
+	createDesktopCallbackResponse,
+} from "./app-browser-sign-in";
 
 vi.mock("@/env", () => ({ env: {} }));
 
@@ -97,4 +100,33 @@ describe("desktop browser handoff", () => {
 			createDesktopCallbackResponse(request(), new URL(url)),
 		).toThrow("Invalid desktop callback");
 	});
+});
+
+describe("store app browser handoff", () => {
+	const mobileCallback = new URL("z8mobile://auth/callback?code=fixture-code");
+
+	it("opens the store app callback and names the app, not the desktop app", async () => {
+		const response = createAppCallbackResponse(request(), mobileCallback, "mobile");
+		const document = new DOMParser().parseFromString(await response.text(), "text/html");
+		const launch = vi.fn();
+		runInNewContext(document.querySelector("script")?.textContent ?? "", {
+			document,
+			window: { location: { assign: launch } },
+		});
+		expect(launch).toHaveBeenCalledExactlyOnceWith(mobileCallback.toString());
+		expect(document.querySelector<HTMLAnchorElement>("#open-z8")?.href).toBe(
+			mobileCallback.toString(),
+		);
+		expect(document.body.textContent).toContain("We are opening the Z8 app.");
+		expect(document.body.textContent).not.toContain("desktop");
+	});
+
+	it.each(["z8://auth/callback?code=fixture-code", "z8mobile://evil/callback"])(
+		"rejects a callback %s that is not the store app's",
+		(url) => {
+			expect(() => createAppCallbackResponse(request(), new URL(url), "mobile")).toThrow(
+				"Invalid mobile callback",
+			);
+		},
+	);
 });

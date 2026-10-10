@@ -1,7 +1,9 @@
 import { randomBytes } from "node:crypto";
 import { type NextRequest, NextResponse } from "next/server";
 import { resolvePublicRedirectOrigin } from "@/lib/domain/request-origin";
+import type { SupportedApp } from "./app-auth-code";
 import { getValidatedAppRedirectUrl } from "./app-redirect";
+import { clearBetterAuthSessionCookies, hasBetterAuthSessionCookie } from "./session-cookies";
 
 const privateResponseHeaders = {
 	"Cache-Control": "private, no-store",
@@ -9,18 +11,36 @@ const privateResponseHeaders = {
 	"X-Content-Type-Options": "nosniff",
 };
 
-/** Next's request origin can be the pod's listening address behind a proxy. */
-export async function createAppSignInRedirect(request: NextRequest) {
+/** Next's request origin can be the pod's listening address behind a proxy.
+ *
+ * `clearStaleSession` expires a leftover session cookie. The store app's
+ * system browser keeps the cookie of a session the app has signed out since;
+ * with it, the proxy would send `/sign-in` to the dashboard and drop the way
+ * back to the app.
+ */
+export async function createAppSignInRedirect(
+	request: NextRequest,
+	{ clearStaleSession = false }: { clearStaleSession?: boolean } = {},
+) {
 	const origin = await resolvePublicRedirectOrigin(request);
 	const callbackUrl = new URL(origin);
 	callbackUrl.pathname = request.nextUrl.pathname;
 	callbackUrl.search = request.nextUrl.search;
 	const signInUrl = new URL("/sign-in", origin);
 	signInUrl.searchParams.set("callbackUrl", callbackUrl.toString());
-	return NextResponse.redirect(signInUrl, { headers: privateResponseHeaders });
+	const response = NextResponse.redirect(signInUrl, { headers: privateResponseHeaders });
+	if (clearStaleSession && hasBetterAuthSessionCookie(request.headers.get("cookie"))) {
+		clearBetterAuthSessionCookies(response);
+	}
+	return response;
 }
 
-const handoffCopy = {
+type HandoffCopy = Record<
+	"en" | "de",
+	{ title: string; description: string; action: string; hint: string; close: string }
+>;
+
+const desktopHandoffCopy: HandoffCopy = {
 	en: {
 		title: "Continue to Z8",
 		description: "Your sign-in is ready. We are opening the Z8 desktop app.",
@@ -35,6 +55,28 @@ const handoffCopy = {
 		hint: "Falls Z8 nicht automatisch startet, nutze den Button oben und erlaube deinem Browser, die App zu öffnen.",
 		close: "Sobald Z8 geöffnet ist, kannst du diesen Tab schließen.",
 	},
+};
+
+const mobileHandoffCopy: HandoffCopy = {
+	en: {
+		title: "Continue to Z8",
+		description: "Your sign-in is ready. We are opening the Z8 app.",
+		action: "Open Z8",
+		hint: "If Z8 does not open automatically, use the button above.",
+		close: "Once Z8 opens, you can close this page.",
+	},
+	de: {
+		title: "Weiter zu Z8",
+		description: "Deine Anmeldung ist bereit. Wir öffnen die Z8 App.",
+		action: "Z8 öffnen",
+		hint: "Falls Z8 nicht automatisch startet, nutze den Button oben.",
+		close: "Sobald Z8 geöffnet ist, kannst du diese Seite schließen.",
+	},
+};
+
+const handoffCopyByApp: Record<SupportedApp, HandoffCopy> = {
+	desktop: desktopHandoffCopy,
+	mobile: mobileHandoffCopy,
 };
 
 function escapeHtml(value: string) {
@@ -53,11 +95,20 @@ export function createDesktopCallbackResponse(
 	request: NextRequest,
 	callback: URL,
 ) {
-	const safeCallback = getValidatedAppRedirectUrl(
-		callback.toString(),
-		"desktop",
-	);
-	if (!safeCallback) throw new Error("Invalid desktop callback");
+	return createAppCallbackResponse(request, callback, "desktop");
+}
+
+/** The same handoff for either app. Android's Custom Tabs, like desktop browsers,
+ * may block an external launch that no user gesture started; iOS's
+ * ASWebAuthenticationSession intercepts the callback before it loads.
+ */
+export function createAppCallbackResponse(
+	request: NextRequest,
+	callback: URL,
+	app: SupportedApp,
+) {
+	const safeCallback = getValidatedAppRedirectUrl(callback.toString(), app);
+	if (!safeCallback) throw new Error(`Invalid ${app} callback`);
 	if (!request.headers.get("accept")?.includes("text/html")) {
 		return NextResponse.redirect(safeCallback, {
 			headers: privateResponseHeaders,
@@ -72,7 +123,7 @@ export function createDesktopCallbackResponse(
 			/^de(?:-|;|,|$)/i.test(request.headers.get("accept-language") ?? ""))
 			? "de"
 			: "en";
-	const copy = handoffCopy[language];
+	const copy = handoffCopyByApp[app][language];
 	const nonce = randomBytes(16).toString("base64");
 	const html = `<!DOCTYPE html>
 <html lang="${language}">

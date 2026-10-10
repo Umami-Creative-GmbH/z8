@@ -2,8 +2,8 @@ import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { createAppAuthCode, type SupportedApp } from "@/lib/auth/app-auth-code";
 import {
+	createAppCallbackResponse,
 	createAppSignInRedirect,
-	createDesktopCallbackResponse,
 } from "@/lib/auth/app-browser-sign-in";
 import {
 	getAllowedAppRedirect,
@@ -78,7 +78,9 @@ export async function GET(request: NextRequest) {
 
 		if (!session?.user) {
 			stage = "sign_in_redirect";
-			return await createAppSignInRedirect(request);
+			return await createAppSignInRedirect(request, {
+				clearStaleSession: app === "mobile",
+			});
 		}
 
 		stage = "auth_code_creation";
@@ -91,9 +93,7 @@ export async function GET(request: NextRequest) {
 
 		stage = "callback_redirect";
 		safeCallbackUrl.searchParams.set("code", authCode.code);
-		return app === "desktop"
-			? createDesktopCallbackResponse(request, safeCallbackUrl)
-			: NextResponse.redirect(safeCallbackUrl.toString());
+		return createAppCallbackResponse(request, safeCallbackUrl, app);
 	} catch (error) {
 		logger.error(
 			{ app, stage, ...getSafeFailureDetails(error) },
