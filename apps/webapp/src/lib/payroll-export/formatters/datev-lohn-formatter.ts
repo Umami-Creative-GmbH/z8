@@ -21,7 +21,12 @@ import {
 	GERMAN_EXPENSE_LINE_NOTE,
 	germanPersonnelNumber,
 } from "./expense-lines";
-import { GERMAN_OVERTIME_PAYOUT_NOTE, overtimePayoutsForFormat } from "./overtime-payouts";
+import {
+	addOvertimePayoutHours,
+	GERMAN_OVERTIME_PAYOUT_NOTE,
+	overtimePayoutsForFormat,
+	widenDateRangeByPayouts,
+} from "./overtime-payouts";
 
 const logger = createLogger("DatevLohnFormatter");
 
@@ -112,18 +117,14 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 
 		// Overtime payouts (#1001): hours on the payout's day under the "overtime" wage type.
 		const payouts = overtimePayoutsForFormat(overtimePayouts, mappings, "datev");
-		for (const { payout, wageTypeCode, hours } of payouts.mapped) {
-			const personnelNumber = this.personnelNumber(payout, datevConfig);
-			const employeeData = aggregatedData.get(personnelNumber) ?? new Map();
-			aggregatedData.set(personnelNumber, employeeData);
-			const dateData = employeeData.get(payout.day) ?? new Map();
-			employeeData.set(payout.day, dateData);
-			const existing = dateData.get(wageTypeCode) ?? { hours: 0, note: "" };
-			dateData.set(wageTypeCode, {
-				hours: existing.hours + hours,
-				note: existing.note || GERMAN_OVERTIME_PAYOUT_NOTE,
-			});
-		}
+		addOvertimePayoutHours(aggregatedData, payouts.mapped, {
+			personnelNumber: (payout) => this.personnelNumber(payout, datevConfig),
+			period: (payout) => payout.day,
+			add: (existing, hours) => ({
+				hours: (existing?.hours ?? 0) + hours,
+				note: existing?.note || GERMAN_OVERTIME_PAYOUT_NOTE,
+			}),
+		});
 
 		// Generate CSV content
 		const lines: string[] = [];
@@ -174,10 +175,9 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		for (const line of expenseLines) uniqueEmployees.add(line.employeeId);
 		for (const { payout } of payouts.mapped) uniqueEmployees.add(payout.employeeId);
 
-		const dateRange = this.getDateRange(
-			workPeriods,
-			absences,
-			payouts.mapped.map(({ payout }) => payout.day),
+		const dateRange = widenDateRangeByPayouts(
+			this.getDateRange(workPeriods, absences),
+			payouts.mapped,
 		);
 		const fileName = this.generateFileName(dateRange);
 
@@ -390,7 +390,6 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	private getDateRange(
 		workPeriods: WorkPeriodData[],
 		absences: AbsenceData[],
-		payoutDays: string[],
 	): { start: DateTime | null; end: DateTime | null } {
 		let start: DateTime | null = null;
 		let end: DateTime | null = null;
@@ -414,12 +413,6 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 			if (!end || absEnd > end) {
 				end = absEnd;
 			}
-		}
-
-		for (const day of payoutDays) {
-			const payoutDay = DateTime.fromISO(day);
-			if (!start || payoutDay < start) start = payoutDay;
-			if (!end || payoutDay > end) end = payoutDay;
 		}
 
 		return { start, end };

@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import { type PayrollExportFileFormatId, payrollExportFormatKind } from "../format-registry";
 import type {
 	OvertimePayoutData,
@@ -72,4 +73,45 @@ export function overtimePayoutsForFormat(
 		mapped: payouts.map((payout) => ({ payout, wageTypeCode, hours: payout.minutes / 60 })),
 		unmapped: [],
 	};
+}
+
+export type MappedOvertimePayout = ReturnType<typeof overtimePayoutsForFormat>["mapped"][number];
+
+/**
+ * Adds each mapped payout's hours to a formatter's aggregation, keyed by
+ * personnel number, then period (the payout's day or month), then wage type
+ * code. `add` merges the hours into the entry already there, if any.
+ */
+export function addOvertimePayoutHours<Entry>(
+	aggregated: Map<string, Map<string, Map<string, Entry>>>,
+	mapped: readonly MappedOvertimePayout[],
+	options: {
+		personnelNumber: (payout: OvertimePayoutData) => string;
+		period: (payout: OvertimePayoutData) => string;
+		add: (existing: Entry | undefined, hours: number) => Entry;
+	},
+): void {
+	for (const { payout, wageTypeCode, hours } of mapped) {
+		const personnelNumber = options.personnelNumber(payout);
+		const employeeData = aggregated.get(personnelNumber) ?? new Map<string, Map<string, Entry>>();
+		aggregated.set(personnelNumber, employeeData);
+		const period = options.period(payout);
+		const periodData = employeeData.get(period) ?? new Map<string, Entry>();
+		employeeData.set(period, periodData);
+		periodData.set(wageTypeCode, options.add(periodData.get(wageTypeCode), hours));
+	}
+}
+
+/** A file's date range widened to the days of the payouts it carries. */
+export function widenDateRangeByPayouts(
+	range: { start: DateTime | null; end: DateTime | null },
+	mapped: readonly MappedOvertimePayout[],
+): { start: DateTime | null; end: DateTime | null } {
+	let { start, end } = range;
+	for (const { payout } of mapped) {
+		const payoutDay = DateTime.fromISO(payout.day);
+		if (!start || payoutDay < start) start = payoutDay;
+		if (!end || payoutDay > end) end = payoutDay;
+	}
+	return { start, end };
 }
