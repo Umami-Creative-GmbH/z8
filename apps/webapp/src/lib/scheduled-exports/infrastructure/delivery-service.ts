@@ -4,18 +4,57 @@
  * Handles S3 upload and email notification delivery for scheduled exports.
  */
 import { DateTime } from "luxon";
+import type { Instant } from "@/lib/datetime/temporal-core";
 import { sendEmail } from "@/lib/email/email-service";
 import { createLogger } from "@/lib/logger";
-import { getPresignedUrl } from "@/lib/storage/export-s3-client";
 import {
 	type CalculatedDateRange,
 	type DeliveryConfig,
 	type DeliveryResult,
 	deliversByEmail,
 	type ExecutionResult,
+	type SignedFileUrl,
 } from "../domain/types";
 
 const logger = createLogger("ScheduledExportDeliveryService");
+
+const MONTHS = [
+	"January",
+	"February",
+	"March",
+	"April",
+	"May",
+	"June",
+	"July",
+	"August",
+	"September",
+	"October",
+	"November",
+	"December",
+];
+
+/** "October 10, 2026 at 2:15 PM UTC" */
+function formatExpiry(expiresAt: Instant): string {
+	const utc = expiresAt.toZonedDateTimeISO("UTC");
+	const hour = utc.hour % 12 || 12;
+	const minute = String(utc.minute).padStart(2, "0");
+	const meridiem = utc.hour < 12 ? "AM" : "PM";
+	return `${MONTHS[utc.month - 1]} ${utc.day}, ${utc.year} at ${hour}:${minute} ${meridiem} UTC`;
+}
+
+/** "15 minutes", "7 days", "1 hour 30 minutes" */
+function formatLifetime(totalSeconds: number): string {
+	const units: Array<[number, string]> = [
+		[Math.floor(totalSeconds / 86400), "day"],
+		[Math.floor((totalSeconds % 86400) / 3600), "hour"],
+		[Math.floor((totalSeconds % 3600) / 60), "minute"],
+		[totalSeconds % 60, "second"],
+	];
+	return units
+		.filter(([count]) => count > 0)
+		.map(([count, unit]) => `${count} ${unit}${count === 1 ? "" : "s"}`)
+		.join(" ");
+}
 
 /**
  * HTML escape function to prevent XSS in email templates
@@ -47,9 +86,8 @@ interface EmailTemplateData {
 	scheduleName: string;
 	dateRangeStart: string;
 	dateRangeEnd: string;
-	downloadUrl?: string;
+	fileUrl?: SignedFileUrl;
 	recordCount?: number;
-	expiresAt: string;
 }
 
 /**
@@ -71,22 +109,18 @@ export class DeliveryService {
 		};
 
 		try {
-			// Determine S3 key and URL
-			const s3Key = exportResult.s3Key;
-			let s3Url = exportResult.s3Url;
+			// The executor signs the URL of each file it stores, with its lifetime (#1008).
+			const { s3Key, fileUrl } = exportResult;
 
-			// If export result doesn't have S3 info but we need it, generate it
-			if (
-				(deliveryConfig.method === "s3_only" || deliveryConfig.method === "s3_and_email") &&
-				!s3Url &&
-				s3Key
-			) {
-				// Generate presigned URL with 7-day expiry
-				s3Url = await getPresignedUrl(organizationId, s3Key, 604800);
+			if (!s3Key) {
+				logger.warn(
+					{ organizationId, scheduleName, underlyingJobId: exportResult.underlyingJobId },
+					"Scheduled export produced no file",
+				);
 			}
 
 			result.s3Key = s3Key;
-			result.s3Url = s3Url;
+			result.s3Url = fileUrl?.url;
 
 			// Send emails if configured
 			if (deliversByEmail(deliveryConfig.method)) {
@@ -95,7 +129,7 @@ export class DeliveryService {
 					scheduleName,
 					dateRange,
 					recipients: deliveryConfig.emailRecipients,
-					downloadUrl: s3Url,
+					fileUrl,
 					recordCount: exportResult.recordCount,
 					subjectTemplate: deliveryConfig.emailSubjectTemplate,
 				});
@@ -121,7 +155,7 @@ export class DeliveryService {
 		scheduleName: string;
 		dateRange: CalculatedDateRange;
 		recipients: string[];
-		downloadUrl?: string;
+		fileUrl?: SignedFileUrl;
 		recordCount?: number;
 		subjectTemplate?: string;
 	}): Promise<{
@@ -134,7 +168,7 @@ export class DeliveryService {
 			scheduleName,
 			dateRange,
 			recipients,
-			downloadUrl,
+			fileUrl,
 			recordCount,
 			subjectTemplate,
 		} = params;
@@ -145,15 +179,12 @@ export class DeliveryService {
 			dateRange: `${dateRange.start.toISODate()} - ${dateRange.end.toISODate()}`,
 		});
 
-		const expiresAt = DateTime.utc().plus({ days: 7 }).toFormat("LLLL d, yyyy 'at' h:mm a");
-
 		const templateData: EmailTemplateData = {
 			scheduleName,
 			dateRangeStart: dateRange.start.toFormat("LLLL d, yyyy"),
 			dateRangeEnd: dateRange.end.toFormat("LLLL d, yyyy"),
-			downloadUrl,
+			fileUrl,
 			recordCount,
-			expiresAt,
 		};
 
 		const html = this.renderEmailHtml(templateData);
@@ -231,14 +262,12 @@ export class DeliveryService {
 	 * Render email HTML content
 	 */
 	private renderEmailHtml(data: EmailTemplateData): string {
-		const { scheduleName, dateRangeStart, dateRangeEnd, downloadUrl, recordCount, expiresAt } =
-			data;
+		const { scheduleName, dateRangeStart, dateRangeEnd, fileUrl, recordCount } = data;
 
 		// Escape user-controlled data to prevent XSS
 		const safeScheduleName = escapeHtml(scheduleName);
 		const safeDateRangeStart = escapeHtml(dateRangeStart);
 		const safeDateRangeEnd = escapeHtml(dateRangeEnd);
-		const safeExpiresAt = escapeHtml(expiresAt);
 
 		return `
 <!DOCTYPE html>
@@ -260,8 +289,13 @@ export class DeliveryService {
 </head>
 <body>
   <div class="header">
-    <h1>Scheduled Export Ready</h1>
-    <p>Your scheduled export <strong>${safeScheduleName}</strong> has completed successfully.</p>
+    ${
+			fileUrl
+				? `<h1>Scheduled Export Ready</h1>
+    <p>Your scheduled export <strong>${safeScheduleName}</strong> has completed successfully.</p>`
+				: `<h1>Scheduled Export Finished</h1>
+    <p>Your scheduled export <strong>${safeScheduleName}</strong> ran, but there is nothing to download.</p>`
+		}
   </div>
 
   <div class="info-row">
@@ -281,12 +315,14 @@ export class DeliveryService {
 	}
 
   ${
-		downloadUrl
+		fileUrl
 			? `
-  <a href="${escapeHtml(downloadUrl)}" class="button">Download Export</a>
-  <p class="expiry">This download link will expire on ${safeExpiresAt}.</p>
+  <a href="${escapeHtml(fileUrl.url)}" class="button">Download Export</a>
+  <p class="expiry">This download link is valid for ${formatLifetime(fileUrl.lifetimeSeconds)} and expires on ${formatExpiry(fileUrl.expiresAt)}.</p>
   `
-			: ""
+			: `
+  <p>No file was produced for this run.</p>
+  `
 	}
 
   <div class="footer">
