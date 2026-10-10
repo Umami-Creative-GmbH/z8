@@ -293,6 +293,21 @@ describe("overtime payouts on PostgreSQL", () => {
 		expect(await balanceMinutes()).toBe(0);
 	});
 
+	it("counts a payout dated today from tomorrow in the yearly team balance too", async () => {
+		const yearly = async () =>
+			(await refreshEmployeeTimeBalances({ employeeIds: [employeeId], organizationId })).get(
+				employeeId,
+			)?.balanceMinutes;
+		const before = await yearly();
+
+		expect(await recordPayout({ day: today.toString(), hours: 5 })).toMatchObject({
+			success: true,
+		});
+		// Like the card and the team badge, which run through yesterday.
+		expect(await balanceMinutes()).toBe(720);
+		expect(await yearly()).toBe(before);
+	});
+
 	it("cancels a payout, which restores the balance and stays in the history as cancelled", async () => {
 		const recorded = await recordPayout();
 		const adjustmentId = recorded.success ? recorded.data.adjustmentId : "";

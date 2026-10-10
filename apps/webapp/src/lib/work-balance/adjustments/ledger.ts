@@ -118,12 +118,17 @@ export function dayAfter(day: string): string {
  * `throughDate`: `count` (the stored projection, which runs through yesterday
  * while an opening balance may be dated today) treats it as in effect;
  * `ignore` (a balance as of an earlier day) computes without it.
+ *
+ * `fromDate` limits the window to the days from it, as for the yearly team
+ * balance: an opening balance dated before it has already replaced earlier
+ * days only, so it does not count, and payouts count from that day.
  */
 export async function readWorkBalanceAdjustments(
 	client: BalanceAdjustmentReadClient,
 	input: {
 		organizationId: string;
 		employeeId: string;
+		fromDate?: string;
 		throughDate: string;
 		openingBalanceDatedLater: "count" | "ignore";
 	},
@@ -135,14 +140,17 @@ export async function readWorkBalanceAdjustments(
 	const scope = { organizationId: input.organizationId, employeeId: input.employeeId };
 	const inEffect = await readOpeningBalanceInEffect(client, scope);
 	const openingBalance =
-		inEffect && (inEffect.day <= input.throughDate || input.openingBalanceDatedLater === "count")
+		inEffect &&
+		(!input.fromDate || inEffect.day >= input.fromDate) &&
+		(inEffect.day <= input.throughDate || input.openingBalanceDatedLater === "count")
 			? inEffect
 			: null;
 	const countFrom = openingBalance ? dayAfter(openingBalance.day) : null;
+	const payoutsFrom = countFrom ?? input.fromDate;
 	const payoutMinutes = await sumBalanceAdjustmentMinutes(client, {
 		...scope,
 		throughDate: input.throughDate,
-		...(countFrom ? { fromDate: countFrom } : {}),
+		...(payoutsFrom ? { fromDate: payoutsFrom } : {}),
 	});
 	return {
 		openingBalance,
