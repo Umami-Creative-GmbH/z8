@@ -14,6 +14,14 @@ describe("Public API cursors", () => {
 		expect(decodeCursor(Buffer.from("{}").toString("base64url"), ["string"])).toBeNull();
 	});
 
+	it("checks every part of the sort key", () => {
+		const id = "4f8c2a1e-9b7d-4c3a-8e2f-1a2b3c4d5e6f";
+		expect(decodeCursor(encodeCursor([id]), ["uuid"])).toEqual([id]);
+		expect(decodeCursor(encodeCursor(["x'); drop table"]), ["uuid"])).toBeNull();
+		expect(decodeCursor(encodeCursor(["2026-10-01"]), ["date"])).toEqual(["2026-10-01"]);
+		expect(decodeCursor(encodeCursor(["yesterday"]), ["instant"])).toBeNull();
+	});
+
 	it("pages limit rows and points past the last one only when more follow", () => {
 		const rows = [{ id: "a" }, { id: "b" }, { id: "c" }];
 		const first = pageOf(

@@ -4,8 +4,7 @@ import { user } from "@/db/auth-schema";
 import { employee, employeeManagers, teamMembership } from "@/db/schema";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { defineEndpoint } from "../endpoint";
-import { decodeCursor, pageOf, pageQueryShape, pageSchema } from "../pagination";
-import { problem } from "../problem";
+import { decodeCursor, invalidCursor, pageOf, pageQueryShape, pageSchema } from "../pagination";
 import { idSchema, localDateSchema } from "../schemas";
 
 const localDate = localDateSchema();
@@ -65,15 +64,8 @@ export const listEmployees = defineEndpoint({
 	}),
 	response: pageSchema(employeeSchema),
 	async run({ principal, query, database }) {
-		const after = query.cursor ? decodeCursor(query.cursor, ["string"]) : null;
-		if (query.cursor && !after) {
-			return {
-				ok: false,
-				problem: problem("validation_failed", {
-					errors: [{ parameter: "cursor", message: "Not a cursor of this list" }],
-				}),
-			};
-		}
+		const after = query.cursor ? decodeCursor(query.cursor, ["uuid"]) : null;
+		if (query.cursor && !after) return invalidCursor();
 		const { organizationId } = principal;
 		const rows = await database
 			.select({
