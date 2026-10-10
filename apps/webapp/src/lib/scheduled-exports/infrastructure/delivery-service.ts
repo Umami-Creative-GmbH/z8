@@ -158,26 +158,39 @@ export class DeliveryService {
 
 		const html = this.renderEmailHtml(templateData);
 
+		const failedDelivery = (recipient: string, errorMessage: string) => {
+			logger.error({ recipient, error: errorMessage, scheduleName }, "Email sending failed");
+			return {
+				recipient,
+				success: false as const,
+				error: errorMessage,
+				timestamp: DateTime.utc().toISO()!,
+			};
+		};
+
 		const deliveryResults = await Promise.all(
 			recipients.map(async (recipient) => {
 				try {
-					await sendEmail({
+					// sendEmail reports transport failures through its result instead of throwing.
+					const sendResult = await sendEmail({
 						to: recipient,
 						subject,
 						html,
 						organizationId,
 					});
+					if (!sendResult.success) {
+						return failedDelivery(
+							recipient,
+							sendResult.error || "Email transport reported failure",
+						);
+					}
 					logger.info({ recipient, scheduleName }, "Notification email sent");
 					return { recipient, success: true as const };
 				} catch (error) {
-					const errorMessage = error instanceof Error ? error.message : "Unknown error";
-					logger.error({ recipient, error: errorMessage, scheduleName }, "Email sending failed");
-					return {
+					return failedDelivery(
 						recipient,
-						success: false as const,
-						error: errorMessage,
-						timestamp: DateTime.utc().toISO()!,
-					};
+						error instanceof Error ? error.message : "Unknown error",
+					);
 				}
 			}),
 		);
