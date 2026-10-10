@@ -6,11 +6,12 @@ import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import { runRefusalAction } from "@/lib/effect/refusal-action";
 import { isUuid } from "@/lib/validations/uuid";
 import { requireBalanceAdjustmentWriter } from "@/lib/work-balance/adjustments/authorization";
-import { payoutMinutes } from "@/lib/work-balance/adjustments/rules";
+import { openingBalanceMinutes, payoutMinutes } from "@/lib/work-balance/adjustments/rules";
 import {
 	cancelBalanceAdjustment,
 	listBalanceAdjustments,
 	recordOvertimePayout,
+	setOpeningBalance,
 } from "@/lib/work-balance/adjustments/store";
 import {
 	type BalanceAdjustmentActionResult,
@@ -38,6 +39,17 @@ export type RecordOvertimePayoutInput = {
 	employeeId: string;
 	/** Local date in the employee's effective timezone (`YYYY-MM-DD`). */
 	day: string;
+	hours: number;
+	minutes: number;
+	reason: string;
+};
+
+export type SetOpeningBalanceInput = {
+	employeeId: string;
+	/** Local date in the employee's effective timezone (`YYYY-MM-DD`). */
+	day: string;
+	/** True for a negative opening balance. */
+	negative: boolean;
 	hours: number;
 	minutes: number;
 	reason: string;
@@ -101,6 +113,55 @@ export async function recordOvertimePayoutAction(
 			return result;
 		},
 	);
+}
+
+/**
+ * Sets the employee's opening balance (#997), cancelling the one in effect with
+ * this one's reason. A refusal for payouts dated on or after its day lists them.
+ */
+export async function setOpeningBalanceAction(
+	input: SetOpeningBalanceInput,
+): Promise<
+	BalanceAdjustmentActionResult<{ adjustmentId: string; cancelledAdjustmentId: string | null }>
+> {
+	let refusal: BalanceAdjustmentRefusal | null = null;
+	const result = await runRefusalAction(
+		"balanceAdjustments.setOpeningBalance",
+		BalanceAdjustmentRefusal,
+		async (db) => {
+			try {
+				const { organizationId, userId } = await requireBalanceAdjustmentWriter();
+				const employeeId = parseUuid(input?.employeeId);
+				const minutes = openingBalanceMinutes({
+					negative: input?.negative === true,
+					hours: Number(input?.hours),
+					minutes: Number(input?.minutes),
+				});
+				if (minutes === null) {
+					throw new BalanceAdjustmentRefusal("invalid_input", "Invalid hours or minutes");
+				}
+				const written = await withAuditTrail((audit) =>
+					setOpeningBalance(db, audit, {
+						organizationId,
+						actorUserId: userId,
+						employeeId,
+						day: input.day,
+						minutes,
+						reason: input.reason,
+						now: systemClock.nowInstant(),
+					}),
+				);
+				revalidateEmployeePaths(employeeId);
+				return written;
+			} catch (error) {
+				if (error instanceof BalanceAdjustmentRefusal) refusal = error;
+				throw error;
+			}
+		},
+	);
+	const conflictingPayouts = (refusal as BalanceAdjustmentRefusal | null)?.conflictingPayouts;
+	if (!result.success && conflictingPayouts) return { ...result, conflictingPayouts };
+	return result;
 }
 
 export async function cancelBalanceAdjustmentAction(

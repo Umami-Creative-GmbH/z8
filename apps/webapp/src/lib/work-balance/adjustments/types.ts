@@ -41,21 +41,52 @@ export type BalanceAdjustmentErrorCode =
 	| "future_day"
 	| "exceeds_balance"
 	| "already_cancelled"
+	/** #997: a payout on or before the day of the opening balance in effect. */
+	| "before_opening_balance"
+	/**
+	 * #997: an opening balance on or after the day of an uncancelled payout. The
+	 * refusal lists those payouts (`conflictingPayouts`).
+	 */
+	| "conflicting_payouts"
+	/** A day in a closed month (#762, ADR-0004); not raised until closed months exist. */
+	| "month_closed"
 	/** Anything unexpected: the action failed for a reason the user cannot act on. */
 	| "failed";
+
+/** An uncancelled overtime payout that keeps an opening balance from being set (#997). */
+export type ConflictingPayout = {
+	id: string;
+	/** Local date in the employee's effective timezone (`YYYY-MM-DD`). */
+	day: string;
+	/** Signed minutes, negative like every payout. */
+	minutes: number;
+};
 
 /** A refusal the user can act on; thrown by the balance adjustment store and actions. */
 export class BalanceAdjustmentRefusal extends Error {
 	readonly code: BalanceAdjustmentErrorCode;
+	/** Set with `conflicting_payouts`: the payouts dated on or before the opening balance's day. */
+	readonly conflictingPayouts?: ConflictingPayout[];
 
-	constructor(code: BalanceAdjustmentErrorCode, message: string) {
+	constructor(
+		code: BalanceAdjustmentErrorCode,
+		message: string,
+		details?: { conflictingPayouts?: ConflictingPayout[] },
+	) {
 		super(message);
 		this.name = "BalanceAdjustmentRefusal";
 		this.code = code;
+		if (details?.conflictingPayouts) this.conflictingPayouts = details.conflictingPayouts;
 	}
 }
 
 /** A balance adjustment server action's result; a failure always carries a stable code. */
 export type BalanceAdjustmentActionResult<T> =
 	| { success: true; data: T }
-	| { success: false; error: string; code: BalanceAdjustmentErrorCode };
+	| {
+			success: false;
+			error: string;
+			code: BalanceAdjustmentErrorCode;
+			/** With `conflicting_payouts` (#997). */
+			conflictingPayouts?: ConflictingPayout[];
+	  };
