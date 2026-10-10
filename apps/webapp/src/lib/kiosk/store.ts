@@ -1,11 +1,12 @@
 import "server-only";
 
 import { and, asc, eq, gt, isNull } from "drizzle-orm";
-import { auditLog, kiosk, location } from "@/db/schema";
+import { auditLog, kiosk, location, organizationNotificationSettings } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { type Clock, dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { parseIanaTimeZone } from "@/lib/timezone/validation";
+import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import {
 	formatPairingCode,
 	generateDeviceToken,
@@ -318,8 +319,12 @@ export async function readKioskDeviceInfo(
 	authenticated: PairedKiosk,
 ): Promise<KioskDeviceInfo> {
 	const [site] = await client
-		.select({ name: location.name })
+		.select({ name: location.name, language: organizationNotificationSettings.defaultLanguage })
 		.from(location)
+		.leftJoin(
+			organizationNotificationSettings,
+			eq(organizationNotificationSettings.organizationId, location.organizationId),
+		)
 		.where(
 			and(
 				eq(location.organizationId, authenticated.organizationId),
@@ -334,7 +339,13 @@ export async function readKioskDeviceInfo(
 		locationName: site?.name ?? "",
 		timezone: authenticated.timezone,
 		boardEnabled: authenticated.boardEnabled,
+		language: kioskLanguage(site?.language),
 	};
+}
+
+/** The kiosk opens in its organization's default language (#862), English when none is usable. */
+function kioskLanguage(language: string | null | undefined): string {
+	return language && ALL_LANGUAGES.includes(language) ? language : DEFAULT_LANGUAGE;
 }
 
 export type KioskPairingOutcome =

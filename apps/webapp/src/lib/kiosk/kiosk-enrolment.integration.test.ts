@@ -252,6 +252,7 @@ describe("kiosk enrolment on PostgreSQL", () => {
 				locationName: "Store",
 				timezone: "Europe/Berlin",
 				boardEnabled: false,
+				language: "en",
 			},
 		});
 		const resolved = await resolveKioskFromRequest(

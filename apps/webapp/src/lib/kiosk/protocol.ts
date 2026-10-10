@@ -99,7 +99,19 @@ export type KioskDeviceInfo = {
 	locationName: string;
 	timezone: string;
 	boardEnabled: boolean;
+	/** The organization's default language (#862); the kiosk opens in it. */
+	language: string;
 };
+
+/** One employee on the kiosk home screen (#862). */
+export type KioskEmployeeListing = { id: string; name: string };
+
+/**
+ * `GET /api/kiosk/employees` (#862): the active employees assigned to the
+ * kiosk's location, ordered by name. The device keeps the list only while its
+ * home screen shows.
+ */
+export type KioskEmployeesResponse = { employees: KioskEmployeeListing[] };
 
 /**
  * `GET /api/kiosk/board` (#863): who of the location's assigned employees is
