@@ -1,4 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+const nativePush = vi.hoisted(() => ({
+	removeNativePushTokenBeforeSignOut: vi.fn(async () => undefined),
+}));
+vi.mock("./native-push", () => nativePush);
+
 import { onStoreAppSignOut, runStoreAppSignOutTasks } from "./sign-out";
 
 const unsubscribers: Array<() => void> = [];
@@ -12,6 +18,18 @@ afterEach(() => {
 });
 
 describe("store app sign-out tasks", () => {
+	it("removes this device's push token (#843) before any other task", async () => {
+		const order: string[] = [];
+		nativePush.removeNativePushTokenBeforeSignOut.mockImplementationOnce(async () => {
+			order.push("remove push token");
+		});
+		register(() => void order.push("other task"));
+
+		await runStoreAppSignOutTasks();
+
+		expect(order).toEqual(["remove push token", "other task"]);
+	});
+
 	it("runs every registered task while the session still exists", async () => {
 		const order: string[] = [];
 		register(async () => void order.push("remove device token"));

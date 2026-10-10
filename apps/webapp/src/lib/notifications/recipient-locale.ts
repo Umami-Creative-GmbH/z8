@@ -6,7 +6,8 @@ import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/shared";
 
 interface ResolveRecipientNotificationLocaleParams {
 	userId: string;
-	organizationId: string;
+	/** Without an organization, only the user's own language counts. */
+	organizationId?: string | null;
 }
 
 function isSupportedLanguage(value: string | null | undefined): value is string {
@@ -25,6 +26,7 @@ export async function resolveRecipientNotificationLocale({
 	if (isSupportedLanguage(settings?.locale)) {
 		return settings.locale;
 	}
+	if (!organizationId) return DEFAULT_LANGUAGE;
 
 	const organizationSettings = await db.query.organizationNotificationSettings.findFirst({
 		where: eq(organizationNotificationSettings.organizationId, organizationId),

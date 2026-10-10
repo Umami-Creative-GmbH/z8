@@ -4,12 +4,15 @@
  * The shell's session is the web view's Better Auth session cookie, so
  * `authClient.signOut()` clears it: the server deletes the session and expires
  * the cookie, and the next launch shows the email screen. Device-bound state
- * that needs the session to clean up (for example native push removing the
- * device's token, #843) registers a task here; every web app sign-out awaits
- * `runStoreAppSignOutTasks()` before it signs out.
+ * that needs the session to clean up runs first: native push removes the
+ * device's token (`removeNativePushTokenBeforeSignOut`, #843), then every task
+ * registered here. Every web app sign-out awaits `runStoreAppSignOutTasks()`
+ * before it signs out.
  *
  * A task that fails or hangs never blocks sign-out.
  */
+
+import { removeNativePushTokenBeforeSignOut } from "./native-push";
 
 export type StoreAppSignOutTask = () => Promise<void> | void;
 
@@ -40,6 +43,9 @@ async function runBounded(task: StoreAppSignOutTask): Promise<void> {
 	}
 }
 
+/** Every web app sign-out awaits this before `authClient.signOut()`. */
 export async function runStoreAppSignOutTasks(): Promise<void> {
+	// Native push (#843) removes this device's token while the session still exists.
+	await runBounded(removeNativePushTokenBeforeSignOut);
 	for (const task of [...tasks]) await runBounded(task);
 }

@@ -1,5 +1,14 @@
 import { sql } from "drizzle-orm";
-import { boolean, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+	boolean,
+	check,
+	index,
+	pgTable,
+	text,
+	timestamp,
+	uniqueIndex,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { currentTimestamp } from "./timestamp";
 
 // Import auth tables for FK references
@@ -128,5 +137,37 @@ export const pushSubscription = pgTable(
 		index("pushSubscription_endpoint_idx").on(table.endpoint),
 		index("pushSubscription_isActive_idx").on(table.isActive),
 		index("pushSubscription_userId_isActive_idx").on(table.userId, table.isActive),
+	],
+);
+
+export const PUSH_DEVICE_PLATFORMS = ["ios", "android"] as const;
+export type PushDevicePlatform = (typeof PUSH_DEVICE_PLATFORMS)[number];
+
+// Native push device tokens (Firebase Cloud Messaging) of the store app (#843).
+// User-scoped like web push subscriptions: the organization of a notification
+// is resolved when it is sent. One row per device token.
+export const pushDeviceToken = pgTable(
+	"push_device_token",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		platform: text("platform").$type<PushDevicePlatform>().notNull(),
+		token: text("token").notNull(),
+		isActive: boolean("is_active").default(true).notNull(),
+		// Last registration from the device (each app start re-registers).
+		lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).defaultNow().notNull(),
+		lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		uniqueIndex("pushDeviceToken_token_idx").on(table.token),
+		index("pushDeviceToken_userId_isActive_idx").on(table.userId, table.isActive),
+		check("push_device_token_platform_check", sql`${table.platform} IN ('ios', 'android')`),
 	],
 );

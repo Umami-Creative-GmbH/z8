@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { getVapidPublicKey, isPushAvailable } from "@/lib/notifications/push-service";
+import { getVapidPublicKey, isWebPushAvailable } from "@/lib/notifications/push-service";
 
 /**
  * GET /api/notifications/push/vapid-key
  * Get the VAPID public key for push notification subscription
  */
 export async function GET() {
-	if (!isPushAvailable()) {
+	if (!isWebPushAvailable()) {
 		return NextResponse.json({ error: "Push notifications not configured" }, { status: 503 });
 	}
 
