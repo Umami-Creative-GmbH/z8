@@ -93,6 +93,11 @@ export function ApprovalPolicyDialog({
 					"settings.approvalPolicies.approvalType.complianceException",
 					"Compliance exception",
 				);
+			case "period_submission":
+				return t(
+					"settings.approvalPolicies.approvalType.periodSubmission",
+					"Period submission",
+				);
 		}
 	}
 	const form = useForm({

@@ -6,6 +6,8 @@ export const APPROVAL_WORKFLOW_TYPES = [
 	"travel_expense",
 	"shift_request",
 	"compliance_exception",
+	// Canonical-only from day one (Approvals ADR-0002, #805).
+	"period_submission",
 ] as const;
 
 export type ApprovalWorkflowType = (typeof APPROVAL_WORKFLOW_TYPES)[number];

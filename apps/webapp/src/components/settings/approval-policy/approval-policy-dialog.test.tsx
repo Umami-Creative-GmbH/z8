@@ -116,6 +116,7 @@ describe("approval policy dialog helpers", () => {
 			"travel_expense",
 			"shift_request",
 			"compliance_exception",
+			"period_submission",
 		]);
 	});
 
