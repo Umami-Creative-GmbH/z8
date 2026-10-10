@@ -4,6 +4,7 @@ import { employee } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications/notification-service";
 import type { CreateNotificationParams, NotificationType } from "@/lib/notifications/types";
+import { fillMessageDefault } from "./notification-message";
 import { payrollPeriodText } from "./payroll-run-period";
 import type { CurrencySettlement } from "./settlement";
 import type { SettlementAccount, SettlementEntryView } from "./settlement-store";
@@ -117,10 +118,7 @@ export function buildSettlementNotification(input: {
 		organizationId: account.organizationId,
 		type,
 		title: copy.titleDefault,
-		message: copy.messageDefault.replace(
-			/\{(amount|currency|reference|remaining|remainingCurrency|period)\}/g,
-			(match, key: keyof typeof params) => params[key] ?? match,
-		),
+		message: fillMessageDefault(copy.messageDefault, params),
 		entityType: report ? "travel_expense_report" : "travel_expense_claim",
 		entityId: account.source.id,
 		actionUrl: report

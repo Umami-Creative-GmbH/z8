@@ -4,6 +4,7 @@ import { createNotification } from "@/lib/notifications/notification-service";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
 import { listReimbursingOfficers } from "./expense-officer-grant-store";
 import { payrollRunToConfirmHref } from "./finance-queue-params";
+import { fillMessageDefault } from "./notification-message";
 import type { PayrollRunSkipped } from "./payroll-run";
 import { loadIncludedReportsForConfirmer } from "./payroll-run-confirmation";
 import { loadPayrollRunHeader, type PayrollRunHeader } from "./payroll-run-inclusion-read";
@@ -46,10 +47,7 @@ export function buildPayrollRunAwaitingConfirmationNotification(
 		organizationId: run.organizationId,
 		type: "travel_expense_payroll_run_awaiting_confirmation",
 		title: awaitingConfirmationCopy.titleDefault,
-		message: awaitingConfirmationCopy.messageDefault.replace(
-			/\{(period|format|count)\}/g,
-			(_, key: keyof typeof params) => String(params[key]),
-		),
+		message: fillMessageDefault(awaitingConfirmationCopy.messageDefault, params),
 		entityType: "payroll_export_job",
 		entityId: run.jobId,
 		actionUrl: payrollRunToConfirmHref(run.jobId),

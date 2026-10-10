@@ -6,6 +6,7 @@ import { latestApprovedAdjustment, loadApprovedAdjustments } from "./adjustment-
 import { readApprovalTeamIds } from "./approval-teams";
 import { listReimbursingOfficers } from "./expense-officer-grant-store";
 import { parseUnits, STORED_AMOUNT_SCALE } from "./money";
+import { fillMessageDefault } from "./notification-message";
 import { coveringOfficers, type ReimbursingOfficer } from "./officer-scope";
 import { paysThroughPayrollRuns } from "./reimbursement-channel";
 import { loadSettlementAccount, type SettlementAccount } from "./settlement-store";
@@ -145,10 +146,7 @@ export function buildReadyForReimbursementNotification(
 		organizationId: account.organizationId,
 		type: "travel_expense_ready_for_reimbursement",
 		title: readyTitle.titleDefault,
-		message: copy.messageDefault.replace(
-			/\{(employee|report|amounts)\}/g,
-			(_, key: keyof typeof params) => params[key],
-		),
+		message: fillMessageDefault(copy.messageDefault, params),
 		entityType: "travel_expense_report",
 		entityId: account.source.id,
 		actionUrl: `/travel-expenses/reports/${account.source.id}`,
