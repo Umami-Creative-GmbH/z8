@@ -48,7 +48,13 @@ function deferred<T>() {
 	return { promise, resolve };
 }
 
-function historyResult(id: string) {
+function historyResult(
+	id: string,
+	emails: { emailsSent: number; emailsFailed: number } = {
+		emailsSent: 1,
+		emailsFailed: 0,
+	},
+) {
 	return {
 		success: true,
 		data: [
@@ -59,8 +65,7 @@ function historyResult(id: string) {
 				dateRangeStart: `${id}-start`,
 				dateRangeEnd: `${id}-end`,
 				recordCount: 1,
-				emailsSent: 1,
-				emailsFailed: 0,
+				...emails,
 				errorMessage: null,
 				durationMs: 100,
 				completedAt: new Date("2026-07-29T10:00:00Z"),
@@ -69,9 +74,47 @@ function historyResult(id: string) {
 	};
 }
 
+function renderDialog() {
+	return render(
+		<ExecutionHistoryDialog
+			open
+			onOpenChange={vi.fn()}
+			organizationId="org-1"
+			scheduleId="schedule-1"
+			scheduleName="Monthly"
+		/>,
+	);
+}
+
 describe("ExecutionHistoryDialog", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+	});
+
+	it("shows the failed email count next to the sent count", async () => {
+		mocks.getExecutionHistoryAction.mockResolvedValue(
+			historyResult("run", { emailsSent: 1, emailsFailed: 1 }),
+		);
+
+		renderDialog();
+
+		const failed = await screen.findByText(/1\s+failed/);
+		expect(failed.parentElement?.textContent).toBe("1(1 failed)");
+	});
+
+	it("shows only the sent count when no email failed", async () => {
+		mocks.getExecutionHistoryAction.mockResolvedValue(
+			historyResult("run", { emailsSent: 2, emailsFailed: 0 }),
+		);
+
+		renderDialog();
+
+		const row = (await screen.findByText(/run-start/)).closest("tr");
+		const cells = Array.from(row?.querySelectorAll("td") ?? [], (cell) =>
+			cell.textContent?.trim(),
+		);
+		expect(cells).toContain("2");
+		expect(cells).not.toContain("20");
 	});
 
 	it("does not let stale schedule history overwrite the current schedule", async () => {

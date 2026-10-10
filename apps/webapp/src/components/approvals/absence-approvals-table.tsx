@@ -22,7 +22,7 @@ import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/dat
 import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
-import { calculateBusinessDaysWithHalfDays, formatDateRange } from "@/lib/absences/date-utils";
+import { formatDateRange } from "@/lib/absences/date-utils";
 import { getSickDetailLabel, getSickDetailLabelKey } from "@/lib/absences/sick-details";
 import { personnelFilePath } from "@/lib/personnel-file/paths";
 import { queryKeys } from "@/lib/query";
@@ -245,14 +245,11 @@ export function AbsenceApprovalsTable() {
 			accessorKey: "days",
 			header: () => <div className="text-right">{t("approvals:approvals.days", "Days")}</div>,
 			cell: ({ row }) => {
-				const days = calculateBusinessDaysWithHalfDays(
-					row.original.absence.startDate,
-					row.original.absence.startPeriod,
-					row.original.absence.endDate,
-					row.original.absence.endPeriod,
-					[],
+				return (
+					<div className="text-right tabular-nums">
+						{formatDays(row.original.absence.absenceDays)}
+					</div>
 				);
-				return <div className="text-right tabular-nums">{formatDays(days)}</div>;
 			},
 		},
 		{
@@ -356,7 +353,7 @@ export function AbsenceApprovalsTable() {
 							? t("approvals:approvals.approveTitle", "Approve Absence Request")
 							: t("approvals:approvals.rejectTitle", "Reject Absence Request")
 					}
-					description={`${selectedApproval.requester.user.name} ${t("approvals:approvals.requestingOff", "is requesting")} ${formatDays(calculateBusinessDaysWithHalfDays(selectedApproval.absence.startDate, selectedApproval.absence.startPeriod, selectedApproval.absence.endDate, selectedApproval.absence.endPeriod, []))} ${t("approvals:approvals.offFrom", "off from")} ${formatDateRange(selectedApproval.absence.startDate, selectedApproval.absence.endDate)}.`}
+					description={`${selectedApproval.requester.user.name} ${t("approvals:approvals.requestingOff", "is requesting")} ${formatDays(selectedApproval.absence.absenceDays)} ${t("approvals:approvals.offFrom", "off from")} ${formatDateRange(selectedApproval.absence.startDate, selectedApproval.absence.endDate)}.`}
 					onConfirm={handleConfirm}
 				/>
 			)}

@@ -16,7 +16,7 @@ import { absenceEntry } from "./absence";
 import { employee } from "./organization";
 
 /**
- * Sent markers of the cover summaries (#1018, spec #802, migration 0193): one
+ * Sent markers of the cover summaries (#1018, spec #802, migration 0199): one
  * per absence, deputy and kind, claimed before notifying so each summary goes
  * out at most once, even with in-app notifications off. `cover_start` tells the
  * deputy what is waiting; `return` tells the approver what the deputy decided.

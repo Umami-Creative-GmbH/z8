@@ -32,6 +32,8 @@ export interface ApprovalWithAbsence {
 		startPeriod: "full_day" | "am" | "pm";
 		endDate: string;
 		endPeriod: "full_day" | "am" | "pm";
+		/** The absence's absence days for the requester (Absences ADR 0001). */
+		absenceDays: number;
 		notes: string | null;
 		sickDetail: SickDetail | null;
 		/** "Sick note attached (n)" on sick leave (#982); null without notes. */

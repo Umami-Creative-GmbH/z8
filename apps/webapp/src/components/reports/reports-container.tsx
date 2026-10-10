@@ -5,9 +5,11 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { generateReport } from "@/app/[locale]/(app)/reports/actions";
+import { MonthClosureStrip } from "@/components/closed-months/month-closure-strip";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import type { ReportData, ReportDateRange } from "@/lib/reports/types";
+import { monthsOfDateRange } from "@/lib/time-tracking/closed-months/month-label";
 import { ExportButtons } from "./export-buttons";
 import { ReportCustomFieldsCard } from "./report-custom-fields";
 import { ReportFilters } from "./report-filters";
@@ -78,6 +80,12 @@ export function ReportsContainer({ currentEmployeeId }: ReportsContainerProps) {
 			{/* Report Results */}
 			{reportData && !isGenerating && (
 				<>
+					{/* Whether the report's months are closed for this employee (#762) */}
+					<MonthClosureStrip
+						months={monthsOfDateRange(reportData.period.startDate, reportData.period.endDate)}
+						employeeIds={[reportData.employee.id]}
+					/>
+
 					{/* Summary Cards */}
 					<ReportSummaryCards reportData={reportData} />
 

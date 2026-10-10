@@ -10,6 +10,7 @@ import {
 } from "@/db/schema";
 import type { AbsenceDeputyView } from "@/lib/absences/deputy";
 import { loadAbsenceDeputyViews } from "@/lib/absences/deputy-store";
+import { getAbsenceDaysByAbsenceId } from "@/lib/absences/absence-days-resolver";
 import type { SickDetail } from "@/lib/absences/types";
 import { classifyTimeApprovalRequest } from "@/lib/approvals/time-request-kind";
 import { logger } from "@/lib/logger";
@@ -179,6 +180,7 @@ export function buildPendingApprovalResult({
 	categoryNamesById = new Map<string, string>(),
 	sickNotesByAbsenceId = new Map<string, SickNoteMarker>(),
 	deputiesById = new Map<string, AbsenceDeputyView>(),
+	absenceDaysByAbsenceId = new Map<string, number>(),
 }: {
 	pendingRequests: PendingRequestRecord[];
 	absencesById: Map<string, AbsenceLookupRecord>;
@@ -188,6 +190,8 @@ export function buildPendingApprovalResult({
 	sickNotesByAbsenceId?: Map<string, SickNoteMarker>;
 	/** Each absence's deputy by employee id (#1011). */
 	deputiesById?: Map<string, AbsenceDeputyView>;
+	/** Each absence's absence days, resolved on the server (#979). */
+	absenceDaysByAbsenceId?: Map<string, number>;
 }): {
 	absenceApprovals: ApprovalWithAbsence[];
 	timeCorrectionApprovals: ApprovalWithTimeCorrection[];
@@ -212,6 +216,7 @@ export function buildPendingApprovalResult({
 					startPeriod: absence.startPeriod,
 					endDate: absence.endDate,
 					endPeriod: absence.endPeriod,
+					absenceDays: absenceDaysByAbsenceId.get(absence.id) ?? 0,
 					notes: absence.notes,
 					sickDetail:
 						absence.category.type === "sick" ? absence.sickDetail : null,
@@ -411,11 +416,18 @@ export async function getPendingApprovals(): Promise<{
 		];
 	}
 
+	const absenceRecords = absences as AbsenceLookupRecord[];
+	const absenceDaysByAbsenceId = await getAbsenceDaysByAbsenceId(db, {
+		organizationId: currentEmployee.organizationId,
+		absences: absenceRecords,
+	});
+
 	return buildPendingApprovalResult({
 		pendingRequests,
 		absencesById,
 		periodsById,
 		categoryNamesById,
+		absenceDaysByAbsenceId,
 		sickNotesByAbsenceId: await loadSickNoteMarkers({
 			organizationId: currentEmployee.organizationId,
 			viewerUserId: currentEmployee.userId,

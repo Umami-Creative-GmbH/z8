@@ -5,7 +5,7 @@ import { AuditAction } from "@/lib/audit-logger";
 import { withAuditTrail } from "@/lib/audit-trail";
 
 /**
- * Organization-wide approval settings (#1015, migration 0188). No row means
+ * Organization-wide approval settings (#1015, migration 0194). No row means
  * the defaults. Users who can manage approvals (`manage Approval`) change them
  * on the approval escalation settings page; every change is audit-logged.
  */

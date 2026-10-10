@@ -78,6 +78,9 @@ const NOTIFICATION_CATEGORIES = [
 			"time_correction_approved",
 			"time_correction_rejected",
 			"automatic_clock_out",
+			"month_closed_automatically",
+			"month_close_blocked",
+			"month_reopened",
 		] as NotificationType[],
 	},
 	{
@@ -273,6 +276,10 @@ const TYPE_LABELS: Record<
 	absence_deputy_unavailable: "Deputy no longer available",
 	approval_cover_started: "Absence cover started",
 	approval_cover_return_summary: "Decided by your deputy",
+	// Closed months (#762)
+	month_closed_automatically: "Month closed automatically",
+	month_close_blocked: "Automatic month close blocked",
+	month_reopened: "Closed month reopened for your employees",
 };
 
 // Channel icons and labels

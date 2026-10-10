@@ -9,7 +9,12 @@ import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { createExportJob, getPayrollExportConfig, processExportJob } from "@/lib/payroll-export";
+import {
+	isPayrollExportFormatId,
+	payrollExportFormatIds,
+} from "@/lib/payroll-export/format-registry";
 import type { ExecutionResult, PayrollExportReportConfig, ReportConfig } from "../../domain/types";
+import { signFileUrl } from "../../infrastructure/signed-file-url";
 import type { ExecuteParams, IReportExecutor } from "./base-executor";
 
 const logger = createLogger("PayrollExportExecutor");
@@ -17,7 +22,7 @@ const logger = createLogger("PayrollExportExecutor");
 /**
  * Payroll Export Executor
  *
- * Executes payroll exports using DATEV, Lexware, Sage, or Personio formats.
+ * Executes payroll exports in any registered payroll export format.
  */
 export class PayrollExportExecutor implements IReportExecutor {
 	readonly reportType = "payroll_export";
@@ -88,23 +93,20 @@ export class PayrollExportExecutor implements IReportExecutor {
 
 			logger.info({ jobId, isAsync }, "Payroll export job created");
 
-			// Process the job (handles both sync and async)
-			const result = await processExportJob({ jobId, organizationId });
+			// Process the job inline, storing its file whatever its size (#1008)
+			const result = await processExportJob({ jobId, organizationId }, { storeFile: true });
 
-			// Determine S3 key from result
-			let s3Key: string | undefined;
-			if (result.downloadUrl) {
-				// Extract S3 key from presigned URL (it's in the path)
-				const url = new URL(result.downloadUrl);
-				s3Key = url.pathname.slice(1); // Remove leading slash
-			}
+			// The job's own key; an API-based format stores no file. The link keeps the
+			// payroll job's default lifetime and carries it to the email.
+			const s3Key = result.s3Key;
+			const fileUrl = s3Key ? await signFileUrl(organizationId, s3Key) : undefined;
 
 			return {
 				success: true,
 				underlyingJobId: jobId,
 				underlyingJobType: "payroll_export",
 				s3Key,
-				s3Url: result.downloadUrl,
+				fileUrl,
 				recordCount: result.result?.metadata?.workPeriodCount,
 			};
 		} catch (error) {
@@ -122,23 +124,42 @@ export class PayrollExportExecutor implements IReportExecutor {
 	 * Validate payroll export configuration
 	 */
 	validateConfig(config: ReportConfig): { valid: boolean; errors?: string[] } {
-		const errors: string[] = [];
-		const payrollConfig = config as PayrollExportReportConfig;
+		const { formatId } = config as Partial<PayrollExportReportConfig>;
 
-		if (!payrollConfig.formatId) {
-			errors.push("formatId is required for payroll exports");
+		if (!formatId) {
+			return { valid: false, errors: ["formatId is required for payroll exports"] };
+		}
+		if (!isPayrollExportFormatId(formatId)) {
+			return {
+				valid: false,
+				errors: [
+					`Invalid formatId: ${formatId}. Valid formats: ${payrollExportFormatIds().join(", ")}`,
+				],
+			};
 		}
 
-		const validFormats = ["datev_lohn", "sage_lohn", "lexware_lohn", "personio"];
-		if (payrollConfig.formatId && !validFormats.includes(payrollConfig.formatId)) {
-			errors.push(
-				`Invalid formatId: ${payrollConfig.formatId}. Valid formats: ${validFormats.join(", ")}`,
-			);
+		return { valid: true };
+	}
+
+	/**
+	 * A schedule is saved only for a known format the organization has an
+	 * active payroll export configuration for.
+	 */
+	async validateForOrganization(
+		organizationId: string,
+		config: ReportConfig,
+	): Promise<{ valid: boolean; errors?: string[] }> {
+		const validation = this.validateConfig(config);
+		if (!validation.valid) return validation;
+
+		const { formatId } = config as PayrollExportReportConfig;
+		if (!(await getPayrollExportConfig(organizationId, formatId))) {
+			return {
+				valid: false,
+				errors: [`Payroll export format is not configured: ${formatId}`],
+			};
 		}
 
-		return {
-			valid: errors.length === 0,
-			errors: errors.length > 0 ? errors : undefined,
-		};
+		return { valid: true };
 	}
 }

@@ -22,6 +22,7 @@ import {
 	requestShiftPickup as requestShiftPickupAction,
 	requestShiftSwap as requestShiftSwapAction,
 } from "./actions/shift-request-actions";
+import { suggestStaffingForShift as suggestStaffingForShiftAction } from "./actions/staffing-actions";
 import {
 	createShiftTemplate as createShiftTemplateAction,
 	deleteShiftTemplate as deleteShiftTemplateAction,
@@ -67,6 +68,12 @@ export async function publishShifts(...args: Parameters<typeof publishShiftsActi
 
 export async function upsertShift(...args: Parameters<typeof upsertShiftAction>) {
 	return upsertShiftAction(...args);
+}
+
+export async function suggestStaffingForShift(
+	...args: Parameters<typeof suggestStaffingForShiftAction>
+) {
+	return suggestStaffingForShiftAction(...args);
 }
 
 export async function approveShiftRequest(...args: Parameters<typeof approveShiftRequestAction>) {

@@ -131,7 +131,7 @@ export const absenceEntry = pgTable(
 		index("absenceEntry_employeeId_status_idx").on(table.employeeId, table.status),
 		// Target of org-scoped references such as a sick note's link (#982).
 		unique("absenceEntry_id_organizationId_idx").on(table.id, table.organizationId),
-		// Migration 0187 deletes with SET NULL ("deputy_employee_id") only, keeping the organization.
+		// Migration 0193 deletes with SET NULL ("deputy_employee_id") only, keeping the organization.
 		foreignKey({
 			name: "absence_entry_deputy_employee_fk",
 			columns: [table.deputyEmployeeId, table.organizationId],

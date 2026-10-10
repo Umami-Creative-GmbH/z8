@@ -40,6 +40,8 @@ import type {
 	ApprovalInboxDecisionSuccess,
 	ApprovalInboxStatus,
 } from "./types";
+import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
+import { monthClosedMessage } from "@/lib/time-tracking/closed-months/refusal-message";
 
 type InboxDecisionAction = "approve" | "reject";
 // Runs a handler's approve/reject effect, providing the services it declares.
@@ -267,7 +269,7 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 			} catch (error) {
 				return {
 					status: "failed" as const,
-					failure: mapDecisionFailure(request.id, error),
+					failure: await decisionFailure(request.id, error),
 				};
 			}
 		}),
@@ -843,6 +845,25 @@ function canDecideRequest({
 				scope.eligibleApproverIds.includes(request.approverId),
 		) ?? false
 	);
+}
+
+/**
+ * A closed month (#762) refuses the decision with its own words; every other
+ * failure is classified below.
+ */
+async function decisionFailure(
+	id: string,
+	error: unknown,
+): Promise<ApprovalInboxDecisionFailure> {
+	const closed = monthClosedRefusalOf(error);
+	if (closed) {
+		return {
+			id,
+			code: "validation_failed",
+			message: await monthClosedMessage(closed.month),
+		};
+	}
+	return mapDecisionFailure(id, error);
 }
 
 function mapDecisionFailure(

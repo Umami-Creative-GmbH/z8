@@ -90,6 +90,9 @@ const NATIVE_PUSH_CATEGORY: Record<NotificationType, NativePushCategory> = {
 	absence_deputy_unavailable: "attention",
 	approval_cover_started: "review",
 	approval_cover_return_summary: "request_update",
+	month_closed_automatically: "attention",
+	month_close_blocked: "attention",
+	month_reopened: "attention",
 };
 
 /** One static `t()` default per key, so the extractor can read every default. */

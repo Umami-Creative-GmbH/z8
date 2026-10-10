@@ -284,6 +284,10 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	// Cover summaries: to the deputy when cover starts, to the approver on return (#1018)
 	"approval_cover_started",
 	"approval_cover_return_summary",
+	// Closed months (#762): automatic close, its blockers, and reopenings
+	"month_closed_automatically",
+	"month_close_blocked",
+	"month_reopened",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [
@@ -415,15 +419,6 @@ export const memberStatusEnum = pgEnum("member_status", [
 	"approved", // active member
 	"rejected", // invitation rejected
 	"suspended", // temporarily disabled
-]);
-
-// Payroll export format enum
-export const payrollExportFormatEnum = pgEnum("payroll_export_format_type", [
-	"datev_lohn",
-	"personio",
-	"sage",
-	"lexware",
-	"custom",
 ]);
 
 // Payroll export status enum

@@ -1,13 +1,15 @@
 "use client";
 
-import { IconChevronLeft, IconChevronRight, IconReload } from "@tabler/icons-react";
+import { IconChevronLeft, IconChevronRight, IconLock, IconReload } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { WorkLocationIndicator } from "@/components/time-tracking/work-location-indicator";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { CalendarClosedRange } from "@/hooks/use-calendar-data";
 import { todayCalendarDateKey } from "@/lib/calendar/date-keys";
+import { dayTouchesClosedRange } from "@/lib/time-tracking/closed-months/calendar-day";
 import {
 	buildMonthWorkSummary,
 	type MonthWorkDay,
@@ -35,6 +37,8 @@ interface MonthWorkSummaryViewProps {
 	onDayClick: (dateKey: string) => void;
 	onRefresh: () => void;
 	isSummaryLoading?: boolean;
+	/** The viewed employee's closed ranges (#762); days touching one carry a lock. */
+	closedRanges?: readonly CalendarClosedRange[];
 }
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -281,11 +285,13 @@ function DayCell({
 	locale,
 	t,
 	onDayClick,
+	isClosed,
 }: {
 	day: MonthWorkDay;
 	locale: string;
 	t: Translate;
 	onDayClick: (dateKey: string) => void;
+	isClosed: boolean;
 }) {
 	const summary = day.isActiveMonth ? day.workHoursSummary : null;
 	const requirement = summary?.requirement ?? null;
@@ -303,7 +309,17 @@ function DayCell({
 			)}
 		>
 			<div className="flex items-start justify-between gap-2">
-				<span className="font-medium text-sm tabular-nums">{day.date.day}</span>
+				<span className="flex items-center gap-1 font-medium text-sm tabular-nums">
+					{day.date.day}
+					{isClosed ? (
+						<>
+							<IconLock className="size-3.5 text-muted-foreground" aria-hidden="true" />
+							<span className="sr-only">
+								{t("calendar.monthSummary.closedDay", "In a closed month")}
+							</span>
+						</>
+					) : null}
+				</span>
 				{requirement ? (
 					<span className="sr-only">{getWorkStatusLabel(requirement.status, t)}</span>
 				) : null}
@@ -339,11 +355,13 @@ function WeekRow({
 	locale,
 	t,
 	onDayClick,
+	isClosedDay,
 }: {
 	week: MonthWorkWeek;
 	locale: string;
 	t: Translate;
 	onDayClick: (dateKey: string) => void;
+	isClosedDay: (dateKey: string) => boolean;
 }) {
 	return (
 		<div className="grid grid-cols-[48px_repeat(7,minmax(112px,1fr))_112px] gap-2">
@@ -351,7 +369,14 @@ function WeekRow({
 				{week.weekNumber}
 			</div>
 			{week.days.map((day) => (
-				<DayCell key={day.dateKey} day={day} locale={locale} t={t} onDayClick={onDayClick} />
+				<DayCell
+					key={day.dateKey}
+					day={day}
+					locale={locale}
+					t={t}
+					onDayClick={onDayClick}
+					isClosed={isClosedDay(day.dateKey)}
+				/>
 			))}
 			<div className="flex min-h-32 items-start justify-end rounded-md border bg-muted/30 p-3">
 				<TotalDisplay total={week.total} t={t} compact />
@@ -371,6 +396,7 @@ export function MonthWorkSummaryView({
 	onDayClick,
 	onRefresh,
 	isSummaryLoading: _isSummaryLoading,
+	closedRanges = [],
 }: MonthWorkSummaryViewProps) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);
@@ -387,6 +413,7 @@ export function MonthWorkSummaryView({
 		workHoursData,
 		events,
 	});
+	const isClosedDay = (dateKey: string) => dayTouchesClosedRange(dateKey, timeZone, closedRanges);
 
 	return (
 		<div className="flex h-full flex-col gap-4">
@@ -474,6 +501,7 @@ export function MonthWorkSummaryView({
 							locale={locale}
 							t={t}
 							onDayClick={onDayClick}
+							isClosedDay={isClosedDay}
 						/>
 					))}
 				</div>

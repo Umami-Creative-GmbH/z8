@@ -210,6 +210,8 @@ type SharedClockFailure =
 	| "admission_window"
 	| "collision"
 	| "append_review_required"
+	/** The work touches a closed month (#762); the refusal names the month. */
+	| "month_closed"
 	/** A frozen command in an organization that has not adopted append admission. */
 	| "frozen_not_accepted"
 	/** A legacy command in an adopted organization, which it never commits. */
@@ -265,6 +267,8 @@ type SharedClockRefusal =
 	| { code: "billing_required"; reason: string }
 	| { code: "admission_window"; reason: "too_old" | "in_future" }
 	| { code: "append_review_required"; requirement: unknown }
+	/** `YYYY-MM` of the closed month the work touches (#762). */
+	| { code: "month_closed"; month: string }
 	| { code: "collision" | "failed" | "unconfirmed"; cause?: unknown };
 
 type DetailedClockFailure =

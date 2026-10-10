@@ -17,6 +17,7 @@ import type { LegacyEscalationSuppression } from "@/lib/approvals/escalation/leg
 import type { ApprovalEscalationJobResult } from "@/lib/approvals/escalation/scheduled-job";
 import type { AbsenceDeputyRemindersJobResult } from "@/lib/jobs/absence-deputy-reminders";
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
+import type { ClosedMonthAutoCloseJobResult } from "@/lib/jobs/closed-month-auto-close";
 import type { DeputyCoverSummariesJobResult } from "@/lib/jobs/deputy-cover-summaries";
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
 import type { PersonnelFileExpiryRemindersJobResult } from "@/lib/jobs/personnel-file-expiry-reminders";
@@ -457,6 +458,17 @@ export const CRON_JOBS = {
 		processor: async (): Promise<DeputyCoverSummariesJobResult> => {
 			const { runDeputyCoverSummariesJob } = await import("@/lib/jobs/deputy-cover-summaries");
 			return runDeputyCoverSummariesJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 7 },
+	},
+
+	"cron:closed-month-auto-close": {
+		schedule: "30 * * * *", // Hourly; each organization day is attempted once
+		description:
+			"Close the previous month for organizations with automatic close on, N days after it ended (#762)",
+		processor: async (): Promise<ClosedMonthAutoCloseJobResult> => {
+			const { runClosedMonthAutoCloseJob } = await import("@/lib/jobs/closed-month-auto-close");
+			return runClosedMonthAutoCloseJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 7 },
 	},

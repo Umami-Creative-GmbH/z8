@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import { formatAbsenceDateRange } from "@/lib/personnel-file/sick-note-labels";
+import { formatClosedMonthLabel } from "@/lib/time-tracking/closed-months/month-label";
 import type { NotificationWithMeta } from "./types";
 
 type TranslationParam = string | number | bigint | boolean | Date | null | undefined;
@@ -20,6 +21,8 @@ type NotificationMetadata = {
 	dateRangeDays?: { startDate: string; endDate: string };
 	/** The plain day the `untilDate` param stands for, in the reader's locale (#1013). */
 	untilDay?: string;
+	/** A closed month (`YYYY-MM`) the `month` param stands for, in the reader's locale (#762). */
+	closedMonth?: string;
 	i18n?: {
 		titleKey?: string;
 		titleDefault?: string;
@@ -106,18 +109,24 @@ function localizedParams(
 	locale: string,
 ): Record<string, TranslationParam> | undefined {
 	const params = metadata.i18n?.params;
+	if (!params) return params;
 	const days = metadata.dateRangeDays;
 	const untilDay = metadata.untilDay;
-	if (!params || (!days && !untilDay)) return params;
+	const localized = { ...params };
 	try {
-		return {
-			...params,
-			...(days ? { dateRange: formatAbsenceDateRange(days.startDate, days.endDate, locale) } : {}),
-			...(untilDay ? { untilDate: formatAbsenceDateRange(untilDay, untilDay, locale) } : {}),
-		};
+		if (days) {
+			localized.dateRange = formatAbsenceDateRange(days.startDate, days.endDate, locale);
+		}
+		if (untilDay) {
+			localized.untilDate = formatAbsenceDateRange(untilDay, untilDay, locale);
+		}
+		if (metadata.closedMonth) {
+			localized.month = formatClosedMonthLabel(metadata.closedMonth, locale);
+		}
 	} catch {
 		return params;
 	}
+	return localized;
 }
 
 export function getLocalizedNotificationContent(

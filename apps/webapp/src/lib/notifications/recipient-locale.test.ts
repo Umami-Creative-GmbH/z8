@@ -49,6 +49,23 @@ describe("resolveRecipientNotificationLocale", () => {
 		).resolves.toBe("fr");
 	});
 
+	it("resolves an organization's language without a recipient", async () => {
+		orgSettingsFindFirstMock.mockResolvedValue({ defaultLanguage: "fr" });
+
+		const { resolveOrganizationNotificationLocale } = await import("./recipient-locale");
+
+		await expect(resolveOrganizationNotificationLocale("org-1")).resolves.toBe("fr");
+		expect(userSettingsFindFirstMock).not.toHaveBeenCalled();
+	});
+
+	it("falls back to English when the organization has no supported language", async () => {
+		const { resolveOrganizationNotificationLocale } = await import("./recipient-locale");
+
+		await expect(resolveOrganizationNotificationLocale("org-1")).resolves.toBe("en");
+		orgSettingsFindFirstMock.mockResolvedValue({ defaultLanguage: "yy" });
+		await expect(resolveOrganizationNotificationLocale("org-1")).resolves.toBe("en");
+	});
+
 	it("falls back to English for missing or invalid values", async () => {
 		userSettingsFindFirstMock.mockResolvedValue({ locale: "xx" });
 		orgSettingsFindFirstMock.mockResolvedValue({ defaultLanguage: "yy" });

@@ -88,6 +88,10 @@ export const NOTIFICATION_TYPES = [
 	// Cover summaries: to the deputy when cover starts, to the approver on return (#1018)
 	"approval_cover_started",
 	"approval_cover_return_summary",
+	// Closed months (#762): automatic close, its blockers, and reopenings
+	"month_closed_automatically",
+	"month_close_blocked",
+	"month_reopened",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -103,6 +107,10 @@ const IN_APP_ONLY_BY_DEFAULT: ReadonlySet<NotificationType> = new Set([
 	"travel_expense_payroll_run_awaiting_confirmation",
 	// The approver hears in the app what their deputy decided (#1018).
 	"approval_cover_return_summary",
+	// Closed months notify in-app only (#762).
+	"month_closed_automatically",
+	"month_close_blocked",
+	"month_reopened",
 ]);
 
 /** Clocking reminders: in-app and push until the user turns on another channel. */

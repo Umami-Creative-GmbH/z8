@@ -7,7 +7,7 @@ import { getAbsenceCalendarYearData } from "@/app/[locale]/(app)/absences/action
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toLocalDateString } from "@/lib/absences/date-utils";
-import type { AbsenceWithCategory, Holiday } from "@/lib/absences/types";
+import type { AbsenceWithDays, Holiday } from "@/lib/absences/types";
 import { AbsenceEntriesTable } from "./absence-entries-table";
 import { AbsenceYearCalendar } from "./absence-year-calendar";
 import { RequestAbsenceDialog } from "./request-absence-dialog";
@@ -15,7 +15,7 @@ import { RequestAbsenceDialog } from "./request-absence-dialog";
 type ViewType = "calendar" | "table";
 
 interface AbsencesViewContainerProps {
-	absences: AbsenceWithCategory[];
+	absences: AbsenceWithDays[];
 	holidays: Holiday[];
 	categories: Array<{
 		id: string;
@@ -166,7 +166,6 @@ export function AbsencesViewContainer({
 				categories={categories}
 				organizationId={organizationId}
 				remainingDays={remainingDays}
-				holidays={calendarHolidays}
 				initialDate={prefilledDate}
 				onSuccess={handleAbsencesUpdated}
 			/>

@@ -1,3 +1,5 @@
+import type { StaffingShiftInput } from "@/lib/scheduling/staffing/types";
+
 /**
  * Query key factory for TanStack Query
  *
@@ -360,6 +362,9 @@ export const queryKeys = {
 			["shifts", "incomplete", orgId, dateRange] as const,
 		open: (orgId: string, dateRange: { start: Date; end: Date }) =>
 			["shifts", "open", orgId, dateRange] as const,
+		// Under "shifts" so saving any shift refreshes them.
+		staffingSuggestions: (orgId: string, input: StaffingShiftInput) =>
+			["shifts", "staffing-suggestions", orgId, input] as const,
 	},
 
 	// Shift requests (swaps, pickups)

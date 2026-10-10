@@ -9,6 +9,7 @@ import { AUDIT_LOG_RETENTION_DAYS } from "@/lib/audit/retention";
 import { cleanupExpiredExports } from "@/lib/export/export-service";
 import { runClockingReminderOccasionRetention } from "@/lib/jobs/clocking-reminder-occasion-retention";
 import { runPositionRecordRetention } from "@/lib/jobs/position-record-retention";
+import { runKeyRequestLogRetention } from "@/lib/jobs/public-api-request-log-retention";
 import { createLogger } from "@/lib/logger";
 import { deleteOldNotifications } from "@/lib/notifications/notification-service";
 import type { CleanupJobData } from "@/lib/queue";
@@ -44,6 +45,13 @@ export async function runCleanup(data: CleanupJobData): Promise<{
 				"Cleaned up clocking reminder occasions past retention",
 			);
 			deletedCount += deletedOccasionCount;
+			// The key request log keeps a Public API request for 90 days (#763).
+			const deletedKeyRequestCount = await runKeyRequestLogRetention();
+			logger.info(
+				{ count: deletedKeyRequestCount },
+				"Cleaned up key request log entries past retention",
+			);
+			deletedCount += deletedKeyRequestCount;
 			break;
 		}
 

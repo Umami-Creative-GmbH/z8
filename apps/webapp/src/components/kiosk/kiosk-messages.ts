@@ -82,6 +82,11 @@ export function useKioskRefusalMessage(zone: string, locale: string) {
 					"timeTracking.kiosk.refusal.underReview",
 					"Your time for today is under review. Ask your manager.",
 				);
+			case "month_closed":
+				return t(
+					"timeTracking.kiosk.refusal.monthClosed",
+					"This time is in a closed month and cannot be changed. Ask your manager.",
+				);
 			case "billing_required":
 				return t(
 					"timeTracking.kiosk.refusal.billing",

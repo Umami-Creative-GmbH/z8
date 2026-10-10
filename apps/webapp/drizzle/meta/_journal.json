@@ -1315,49 +1315,91 @@
       "idx": 187,
       "version": "7",
       "when": 1800460800000,
-      "tag": "0187_absence_deputy",
+      "tag": "0187_drop_payroll_export_format_type",
       "breakpoints": true
     },
     {
       "idx": 188,
       "version": "7",
       "when": 1800547200000,
-      "tag": "0188_approval_setting_deputy_decisions",
+      "tag": "0188_organization_api_keys",
       "breakpoints": true
     },
     {
       "idx": 189,
       "version": "7",
       "when": 1800633600000,
-      "tag": "0189_absence_deputy_notifications",
+      "tag": "0189_public_api_request_log",
       "breakpoints": true
     },
     {
       "idx": 190,
       "version": "7",
       "when": 1800720000000,
-      "tag": "0190_absence_deputy_release",
+      "tag": "0190_closed_months",
       "breakpoints": true
     },
     {
       "idx": 191,
       "version": "7",
       "when": 1800806400000,
-      "tag": "0191_approval_deputy_decision",
+      "tag": "0191_closed_month_refusal",
       "breakpoints": true
     },
     {
       "idx": 192,
       "version": "7",
       "when": 1800892800000,
-      "tag": "0192_approval_deputy_cards",
+      "tag": "0192_closed_month_notifications",
       "breakpoints": true
     },
     {
       "idx": 193,
       "version": "7",
       "when": 1800979200000,
-      "tag": "0193_approval_deputy_cover_summaries",
+      "tag": "0193_absence_deputy",
+      "breakpoints": true
+    },
+    {
+      "idx": 194,
+      "version": "7",
+      "when": 1801065600000,
+      "tag": "0194_approval_setting_deputy_decisions",
+      "breakpoints": true
+    },
+    {
+      "idx": 195,
+      "version": "7",
+      "when": 1801152000000,
+      "tag": "0195_absence_deputy_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 196,
+      "version": "7",
+      "when": 1801238400000,
+      "tag": "0196_absence_deputy_release",
+      "breakpoints": true
+    },
+    {
+      "idx": 197,
+      "version": "7",
+      "when": 1801324800000,
+      "tag": "0197_approval_deputy_decision",
+      "breakpoints": true
+    },
+    {
+      "idx": 198,
+      "version": "7",
+      "when": 1801411200000,
+      "tag": "0198_approval_deputy_cards",
+      "breakpoints": true
+    },
+    {
+      "idx": 199,
+      "version": "7",
+      "when": 1801497600000,
+      "tag": "0199_approval_deputy_cover_summaries",
       "breakpoints": true
     }
   ]

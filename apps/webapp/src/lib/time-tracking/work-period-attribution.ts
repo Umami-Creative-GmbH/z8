@@ -13,6 +13,7 @@ import {
 	lockAuthority,
 	replayOrAmendCompletedWork,
 } from "./amend-completed-work";
+import { assertWorkOpen, workInterval } from "./closed-months/store";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
 import {
 	PROJECT_TASK_INELIGIBILITY_MESSAGES,
@@ -282,6 +283,7 @@ async function changeLegacyWorkPeriodProject(
 			isBillable: workPeriod.isBillable,
 			canonicalRecordId: workPeriod.canonicalRecordId,
 			approvalStatus: workPeriod.approvalStatus,
+			startTime: workPeriod.startTime,
 			endTime: workPeriod.endTime,
 		})
 		.from(workPeriod)
@@ -310,6 +312,12 @@ async function changeLegacyWorkPeriodProject(
 	}
 	// Work under review keeps its facts, as in adopted organizations (#256).
 	await assertNoUnresolvedWorkPeriodReview(tx, input.organizationId, period);
+	// Attribution of work touching a closed month is frozen (#762).
+	await assertWorkOpen(tx, {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		intervals: [workInterval(period.startTime, period.endTime)],
+	});
 	// Billability is changed after recording; live work gets it at clock-out.
 	if (input.projectId === undefined && period.endTime === null) {
 		throw new ConflictError({

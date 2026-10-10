@@ -289,6 +289,10 @@ const REJECTION_MESSAGES: Partial<Record<string, Message | Record<ClockKind, Mes
 		"timeTracking.errors.clockOutBeforeClockIn",
 		"Clock-out must be after clock-in",
 	],
+	month_closed: [
+		"timeTracking.errors.clockMonthClosed",
+		"This time is in a closed month and cannot be changed until the month is reopened.",
+	],
 };
 
 const HOLIDAY_BLOCKED_CLOCK_IN: Message = [
