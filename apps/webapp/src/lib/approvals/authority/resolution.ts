@@ -1,6 +1,8 @@
+import { APPROVAL_KIND_START } from "../workflow/kind-start";
 import {
 	APPROVAL_WORKFLOW_LIFECYCLE_MODES,
 	type ApprovalWorkflowLifecycleMode,
+	type ApprovalWorkflowType,
 } from "../workflow/ports";
 
 /**
@@ -77,6 +79,65 @@ export function resolveApprovalAuthority(
 ): ApprovalAuthorityResolution {
 	const parsed = parseApprovalLifecycleMode(mode);
 	return Object.freeze({ mode: parsed, ...LIFECYCLE[parsed] });
+}
+
+/** Raised when a canonical-only kind's stored lifecycle mode is not `complete`. */
+export const CANONICAL_ONLY_MODE_UNAVAILABLE =
+	"Canonical-only approval kind is not in complete mode";
+
+/**
+ * Whether the kind is decided by canonical workflows from its first day
+ * (Approvals ADR-0002): it starts in `complete` mode and has no cutover.
+ */
+export function isCanonicalOnlyApprovalKind(workflowType: ApprovalWorkflowType): boolean {
+	return APPROVAL_KIND_START[workflowType] === "canonical_only";
+}
+
+/**
+ * The lifecycle mode a kind's rollout row starts in, wherever it is created
+ * (organization creation, the write gate, the rollout bootstrap) and whenever
+ * an organization has no row: `complete` for a canonical-only kind, otherwise
+ * `legacy`.
+ */
+export function initialApprovalLifecycleMode(
+	workflowType: ApprovalWorkflowType,
+): Extract<ApprovalWorkflowLifecycleMode, "legacy" | "complete"> {
+	return isCanonicalOnlyApprovalKind(workflowType) ? "complete" : "legacy";
+}
+
+/** The side-effect mode a kind's rollout row starts in, paired with its lifecycle mode. */
+export function initialApprovalSideEffectMode(
+	workflowType: ApprovalWorkflowType,
+): "legacy" | "canonical" {
+	return isCanonicalOnlyApprovalKind(workflowType) ? "canonical" : "legacy";
+}
+
+/**
+ * What one kind's stored lifecycle mode means, with no row (null or
+ * undefined) resolved to the kind's initial mode. Advisory, like
+ * `resolveApprovalAuthority`.
+ */
+export function resolveApprovalKindAuthority(
+	workflowType: ApprovalWorkflowType,
+	mode: ApprovalWorkflowLifecycleMode | null | undefined,
+): ApprovalAuthorityResolution {
+	return resolveApprovalAuthority(mode ?? initialApprovalLifecycleMode(workflowType));
+}
+
+/**
+ * Narrows the mode the gated read found for a kind. A canonical-only kind
+ * decides and writes only in `complete` mode; any other stored mode is refused
+ * so no legacy request can be written for it.
+ */
+export function parseGatedApprovalLifecycleMode(
+	workflowType: ApprovalWorkflowType,
+	value: unknown,
+): ApprovalWorkflowLifecycleMode {
+	const mode = parseApprovalLifecycleMode(value);
+	if (isCanonicalOnlyApprovalKind(workflowType) && mode !== "complete") {
+		throw new Error(CANONICAL_ONLY_MODE_UNAVAILABLE);
+	}
+	return mode;
 }
 
 /** The approval authority of a lifecycle mode; no row (null) is `legacy`. */

@@ -13,10 +13,12 @@ import {
 	type ApprovalAuthorityResolution,
 	type ApprovalWriteGateResult,
 	approvalWriteGateResult,
+	initialApprovalLifecycleMode,
+	initialApprovalSideEffectMode,
 	LIFECYCLE_MODE_UNAVAILABLE,
 	lifecycleModesWithAuthority,
-	parseApprovalLifecycleMode,
-	resolveApprovalAuthority,
+	parseGatedApprovalLifecycleMode,
+	resolveApprovalKindAuthority,
 } from "./resolution";
 
 export interface ApprovalAuthorityScope {
@@ -69,13 +71,14 @@ async function readGatedLifecycleMode(dbService: ApprovalDbService, input: Appro
 	if (row.lifecycle_mode === null) {
 		throw new Error(LIFECYCLE_MODE_UNAVAILABLE);
 	}
-	return parseApprovalLifecycleMode(row.lifecycle_mode);
+	return parseGatedApprovalLifecycleMode(input.workflowType, row.lifecycle_mode);
 }
 
 /**
- * The gated read: takes the shared rollout lock, inserts the `legacy` row
- * when none exists and reads the kind's authority. Only this read may back a
- * decision or a write; the lock holds the answer until the transaction ends.
+ * The gated read: takes the shared rollout lock, inserts the kind's initial
+ * row (`legacy`, or `complete` for a canonical-only kind) when none exists and
+ * reads the kind's authority. Only this read may back a decision or a write;
+ * the lock holds the answer until the transaction ends.
  */
 export async function acquireApprovalWriteGate(
 	dbService: ApprovalDbService,
@@ -93,8 +96,8 @@ export async function acquireApprovalWriteGate(
 		values (
 			${input.organizationId},
 			${input.workflowType},
-			${"legacy"},
-			${"legacy"},
+			${initialApprovalLifecycleMode(input.workflowType)},
+			${initialApprovalSideEffectMode(input.workflowType)},
 			${currentTimestamp()}
 		)
 		on conflict (organization_id, workflow_type) do nothing
@@ -109,7 +112,8 @@ export function createApprovalWriteGate(dbService: ApprovalDbService): ApprovalW
 }
 
 /**
- * The snapshot read: no lock, no write, and no row is `legacy`. Advisory only,
+ * The snapshot read: no lock, no write, and no row is the kind's initial mode
+ * (`legacy`, or `complete` for a canonical-only kind). Advisory only,
  * for presentation, reports, planners, self-service and escalation context;
  * it can never back a decision or a write.
  */
@@ -127,7 +131,7 @@ export async function readApprovalAuthoritySnapshot(
 			),
 		)
 		.limit(1);
-	return resolveApprovalAuthority(row?.mode ?? null);
+	return resolveApprovalKindAuthority(input.workflowType, row?.mode);
 }
 
 /** Snapshot reads of several kinds of one organization in one query. */
@@ -157,7 +161,7 @@ export async function readApprovalAuthoritySnapshots<T extends ApprovalWorkflowT
 	return new Map(
 		workflowTypes.map((workflowType) => [
 			workflowType,
-			resolveApprovalAuthority(modes.get(workflowType) ?? null),
+			resolveApprovalKindAuthority(workflowType, modes.get(workflowType)),
 		]),
 	);
 }
@@ -175,6 +179,9 @@ function modeList(authority: ApprovalAuthority): SQL {
  * null when the organization has no row) has the given approval authority.
  * Derived from the same table as `resolveApprovalAuthority`; no row is legacy.
  * Both conditions are true or false, never null, so they can also be negated.
+ * No row is legacy even for a canonical-only kind: callers left-join rollouts
+ * only to find legacy requests and intents, which such a kind never has, and a
+ * canonical workflow exists only after the write gate created its row.
  */
 export function approvalAuthoritySql(lifecycleMode: SQLWrapper, authority: ApprovalAuthority): SQL {
 	return authority === "canonical"

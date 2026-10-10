@@ -1,6 +1,11 @@
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { type SQL, sql } from "drizzle-orm";
+import {
+	initialApprovalLifecycleMode,
+	initialApprovalSideEffectMode,
+	isCanonicalOnlyApprovalKind,
+} from "@/lib/approvals/authority/resolution";
 import { acquireApprovalCutoverLock } from "@/lib/approvals/workflow/cutover";
 import type { ApprovalTransactionClient } from "@/lib/approvals/workflow/ports";
 import {
@@ -76,18 +81,22 @@ function rowsFrom(result: unknown): unknown[] {
 	return Array.isArray(result.rows) ? result.rows : [];
 }
 
+/** Each kind starts in its initial modes; a canonical-only kind in `complete` (#1058). */
 function bootstrapSql(): SQL {
 	const workflowRows = APPROVAL_WORKFLOW_TYPES.map(
-		(workflowType) => sql`(${workflowType}::approval_workflow_type)`,
+		(workflowType) =>
+			sql`(${workflowType}::approval_workflow_type, ${initialApprovalLifecycleMode(workflowType)}::approval_workflow_lifecycle_mode, ${initialApprovalSideEffectMode(workflowType)}::approval_side_effect_mode)`,
 	);
 	const updatedAt = currentTimestamp();
 	return sql`
 		insert into approval_workflow_rollout (
 			organization_id, workflow_type, lifecycle_mode, side_effect_mode, updated_at
 		)
-		select organization.id, workflow_type.value, ${"legacy"}, ${"legacy"}, ${updatedAt}
+		select organization.id, workflow_type.value, workflow_type.lifecycle_mode,
+			workflow_type.side_effect_mode, ${updatedAt}
 		from organization
-		cross join (values ${sql.join(workflowRows, sql`, `)}) as workflow_type(value)
+		cross join (values ${sql.join(workflowRows, sql`, `)})
+			as workflow_type(value, lifecycle_mode, side_effect_mode)
 		on conflict (organization_id, workflow_type) do nothing
 	`;
 }
@@ -116,6 +125,12 @@ export async function executeApprovalWorkflowRollout(
 			await transaction.execute(bootstrapSql());
 		});
 		return;
+	}
+	// A canonical-only kind starts and stays in `complete` (Approvals ADR-0002).
+	if (isCanonicalOnlyApprovalKind(command.workflowType)) {
+		throw new Error(
+			`Canonical-only approval kind ${command.workflowType} cannot enter shadow`,
+		);
 	}
 
 	await database.transaction(async (transaction) => {
