@@ -4,6 +4,7 @@ import { IconDownload, IconLoader2 } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
@@ -12,6 +13,7 @@ import {
 	getFilterOptionsAction,
 	startExportAction,
 } from "@/app/[locale]/(app)/settings/payroll-export/actions";
+import { UnclosedMonthsNotice } from "@/components/closed-months/unclosed-months-notice";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +45,7 @@ import {
 	type PayrollExportFormatId,
 	payrollExportFormatIds,
 } from "@/lib/payroll-export/format-registry";
+import { monthsOfDateRange } from "@/lib/time-tracking/closed-months/month-label";
 
 interface ExportFormProps {
 	organizationId: string;
@@ -106,6 +109,11 @@ export function ExportForm({
 	const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
 	const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
 	const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
+	// The calendar months the chosen range touches, for the closed-month warning (#762).
+	const rangeMonths =
+		dateMode === "month"
+			? [Temporal.PlainYearMonth.from({ year: selectedYear, month: selectedMonth }).toString()]
+			: monthsOfDateRange(customStartDate, customEndDate);
 
 	const handleExport = () => {
 		const dateRange =
@@ -254,6 +262,10 @@ export function ExportForm({
 					onStartChange={setCustomStartDate}
 					onEndChange={setCustomEndDate}
 					t={t}
+				/>
+				<UnclosedMonthsNotice
+					months={rangeMonths}
+					employeeIds={selectedEmployeeIds.length ? selectedEmployeeIds : undefined}
 				/>
 				<FiltersSection
 					options={filterOptions}

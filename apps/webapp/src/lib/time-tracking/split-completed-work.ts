@@ -44,6 +44,7 @@ import type { AllocationEvidence } from "./allocation-evidence";
 import { CompletedWorkReviewRequiredError, lockAuthority } from "./amend-completed-work";
 import { calculateHash } from "./blockchain";
 import { canonicalJson } from "./canonical-json";
+import { assertWorkOpen } from "./closed-months/store";
 import {
 	CompletedWorkCollisionError,
 	type CompletedWorkFollowUp,
@@ -466,6 +467,12 @@ export async function splitCompletedWork(
 		employeeId,
 		interval: { startAt: sourceStart, endAt: sourceEnd },
 		excludeWorkPeriodIds: [period.id],
+	});
+	// Splitting work that touches a closed month changes it (#762).
+	await assertWorkOpen(tx, {
+		organizationId,
+		employeeId,
+		intervals: [{ start: sourceStart, end: sourceEnd }],
 	});
 
 	const decisions = await tx

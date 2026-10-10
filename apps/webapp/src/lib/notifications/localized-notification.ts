@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import { formatAbsenceDateRange } from "@/lib/personnel-file/sick-note-labels";
+import { formatClosedMonthLabel } from "@/lib/time-tracking/closed-months/month-label";
 import type { NotificationWithMeta } from "./types";
 
 type TranslationParam = string | number | bigint | boolean | Date | null | undefined;
@@ -18,6 +19,8 @@ type NotificationMetadata = {
 	categoryName?: string;
 	/** Plain days the `dateRange` param stands for, formatted in the reader's locale (#982). */
 	dateRangeDays?: { startDate: string; endDate: string };
+	/** A closed month (`YYYY-MM`) the `month` param stands for, in the reader's locale (#762). */
+	closedMonth?: string;
 	i18n?: {
 		titleKey?: string;
 		titleDefault?: string;
@@ -104,13 +107,20 @@ function localizedParams(
 	locale: string,
 ): Record<string, TranslationParam> | undefined {
 	const params = metadata.i18n?.params;
+	if (!params) return params;
 	const days = metadata.dateRangeDays;
-	if (!params || !days) return params;
+	const localized = { ...params };
 	try {
-		return { ...params, dateRange: formatAbsenceDateRange(days.startDate, days.endDate, locale) };
+		if (days) {
+			localized.dateRange = formatAbsenceDateRange(days.startDate, days.endDate, locale);
+		}
+		if (metadata.closedMonth) {
+			localized.month = formatClosedMonthLabel(metadata.closedMonth, locale);
+		}
 	} catch {
 		return params;
 	}
+	return localized;
 }
 
 export function getLocalizedNotificationContent(

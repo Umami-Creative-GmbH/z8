@@ -57,6 +57,8 @@ import type {
 	ManagerAbsenceTeamOption,
 	RecordAbsenceForEmployeeInput,
 } from "./manager-absence-types";
+import { monthClosedActionResult } from "@/lib/time-tracking/closed-months/refusal-message";
+import { assertAbsenceDaysOpen } from "@/lib/time-tracking/closed-months/store";
 
 const logger = createLogger("ManagerAbsenceActions");
 const ACCESS_ERROR = "Employee not found or not accessible";
@@ -361,6 +363,12 @@ export async function recordAbsenceForEmployee(
 			await tx.execute(
 				sql`select pg_advisory_xact_lock(hashtext(${managerAbsenceAdvisoryLockKey(target.id)}))`,
 			);
+			// Refused before any write when its days touch a closed month (#762).
+			await assertAbsenceDaysOpen(tx, {
+				organizationId: actor.organizationId,
+				employeeId: target.id,
+				days: [{ startDate: normalizedInput.startDate, endDate: normalizedInput.endDate }],
+			});
 
 			const existingAbsences = await tx.query.absenceEntry.findMany({
 				where: and(
@@ -540,6 +548,8 @@ export async function recordAbsenceForEmployee(
 
 		return { success: true, data: { absenceId: transactionResult.absenceId } };
 	} catch (error) {
+		const closed = await monthClosedActionResult(error);
+		if (closed) return closed;
 		logger.error({ error }, "Failed to record absence for employee");
 		return {
 			success: false,

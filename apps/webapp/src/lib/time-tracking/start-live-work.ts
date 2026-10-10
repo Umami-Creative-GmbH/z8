@@ -27,6 +27,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { assertEmployeeMayClock } from "@/lib/employee-lifecycle/clocking-gate";
 import { canonicalJson } from "./canonical-json";
+import { assertWorkOpen } from "./closed-months/store";
 import {
 	appendClockEntry,
 	ClockingConflictError,
@@ -276,6 +277,12 @@ export async function startLiveWorkGraph(
 	}
 
 	const startAt = dateFromInstant(input.eventInstant);
+	// A delayed frozen clock-in may name an instant inside a closed month (#762).
+	await assertWorkOpen(tx, {
+		organizationId,
+		employeeId,
+		intervals: [{ start: input.eventInstant, end: input.eventInstant }],
+	});
 	const occupant = await findLiveWorkOccupant(tx, { organizationId, employeeId }, startAt);
 	if (occupant) throw new LiveWorkOccupiedError(occupant);
 

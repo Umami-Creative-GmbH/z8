@@ -81,6 +81,17 @@ export class ExternalServiceError extends Data.TaggedError("ExternalServiceError
 	cause?: unknown;
 }> {}
 
+/**
+ * A change refused because it touches a closed month (#762, Time Tracking
+ * ADR-0004). `month` is `YYYY-MM`. Writers raise it before writing; the
+ * database refusal behind them surfaces as the same error
+ * (`closed-months/refusal.ts`).
+ */
+export class MonthClosedError extends Data.TaggedError("MonthClosedError")<{
+	message: string;
+	month: string;
+}> {}
+
 /** An absence request refused for its absence days, such as vacation on no working day (#979). */
 export class AbsenceDaysRefusedError extends Data.TaggedError("AbsenceDaysRefusedError")<{
 	message: string;
@@ -99,4 +110,5 @@ export type AnyAppError =
 	| BillingError
 	| QueueError
 	| ExternalServiceError
+	| MonthClosedError
 	| AbsenceDaysRefusedError;

@@ -44,6 +44,7 @@ import type { SealedWorkTransactionScope } from "@/lib/time-tracking/work-transa
 import { getCurrentEmployee, getCurrentSession, getRequestMetadata, getUserTimezone } from "./auth";
 import { calculateAndPersistSurcharges } from "./compliance";
 import { logger } from "./shared";
+import { localizeMonthClosed } from "@/lib/time-tracking/closed-months/refusal-message";
 
 export type SplitWorkPeriodResult = ServerActionResult<{
 	firstPeriodId: string;
@@ -79,7 +80,9 @@ function committedResponse(result: SplitCompletedWorkResult): SplitWorkPeriodRes
 }
 
 /** Operation and guard refusals as the user-facing message; null for unexpected failures. */
-function describeSplitFailure(error: unknown): { error: string; code?: string } | null {
+async function describeSplitFailure(
+	error: unknown,
+): Promise<{ error: string; code?: string } | null> {
 	if (error instanceof ConflictError) {
 		return { error: error.message, code: error.conflictType };
 	}
@@ -88,7 +91,7 @@ function describeSplitFailure(error: unknown): { error: string; code?: string } 
 	if (error instanceof WorkIntervalError) {
 		return { error: "Split time must be between work period start and end times" };
 	}
-	const failure = describeAmendmentFailure(error);
+	const failure = await localizeMonthClosed(describeAmendmentFailure(error));
 	return failure ? { error: failure.message, code: failure.code } : null;
 }
 
@@ -272,7 +275,7 @@ export async function splitOwnWorkPeriod(
 		}
 		return committedResponse(outcome.receipt.result);
 	} catch (error) {
-		const failure = describeSplitFailure(error);
+		const failure = await describeSplitFailure(error);
 		if (failure) {
 			logger.warn({ error }, "Split work period refused");
 			return { success: false, ...failure };

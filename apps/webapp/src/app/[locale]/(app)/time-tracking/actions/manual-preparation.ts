@@ -35,6 +35,8 @@ import {
 	BillableWorkRefusedError,
 	resolveWorkBillabilityInTransaction,
 } from "@/lib/time-tracking/work-billability";
+import { closedRangesForEmployee } from "@/lib/time-tracking/closed-months/store";
+import { closedRangeTouchedByWork } from "@/lib/time-tracking/closed-months/rules";
 import type { SealedWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 import { validateWorkCategoryAssignment } from "./clocking";
 import { validateProjectAssignment } from "./entry-helpers";
@@ -66,7 +68,9 @@ export type ManualPreparationRejection =
 	| { reason: "category_ineligible"; message: string }
 	/** Billable work was requested without a project or customer (#900). */
 	| { reason: "billable_not_allowed"; detail: BillableWorkRefusal }
-	| { reason: "policy_ambiguous"; level: ManualPolicyLevel };
+	| { reason: "policy_ambiguous"; level: ManualPolicyLevel }
+	/** The work touches a closed month (#762), named as `YYYY-MM`. */
+	| { reason: "month_closed"; month: string };
 
 /** Normalized authoritative facts; the submitted command stays separate. */
 export type PreparedManualWork = {
@@ -270,6 +274,17 @@ export async function prepareManualWork(
 				},
 			};
 		}
+	}
+	// Work touching a closed month cannot be recorded, whoever records it (#762).
+	const closed = closedRangeTouchedByWork(
+		[{ start: interval.start, end: interval.end }],
+		await closedRangesForEmployee(tx, {
+			organizationId: target.organizationId,
+			employeeId: target.id,
+		}),
+	);
+	if (closed) {
+		return { ok: false, rejection: { reason: "month_closed", month: closed.month } };
 	}
 
 	const at = dateFromInstant(now);

@@ -23,6 +23,8 @@ import {
 	approvalRequest,
 	changePolicy,
 	changePolicyAssignment,
+	closedMonth,
+	closedMonthReopening,
 	employee,
 	employeeManagers,
 	employeeVacationAllowance,
@@ -95,6 +97,7 @@ import {
 } from "./demo-work";
 import { runWorkTransaction, type Transaction } from "@/lib/time-tracking/work-transaction";
 import { type DemoEmployee, withDemoConfigurationMutation } from "./demo-configuration";
+import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction/ranks";
 
 const demoLogger = createLogger("demo-data");
 
@@ -2859,6 +2862,15 @@ export async function clearOrganizationTimeData(
 	// ============================================
 	// TIME HISTORY CLEANUP
 	// ============================================
+
+	// A demo reset erases the organization's closed months and their history
+	// first, so the work and absences below can go (#762).
+	await withOrganizationConfigurationMutation(db, organizationId, async (tx) => {
+		await tx.delete(closedMonth).where(eq(closedMonth.organizationId, organizationId));
+		await tx
+			.delete(closedMonthReopening)
+			.where(eq(closedMonthReopening.organizationId, organizationId));
+	});
 
 	// Time history goes first, before the categories its periods reference. Each
 	// employee's history is removed atomically under its employee key, so a

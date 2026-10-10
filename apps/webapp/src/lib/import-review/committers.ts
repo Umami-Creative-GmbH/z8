@@ -31,6 +31,8 @@ import { type CustomerImportHold, commitCustomerRow } from "./customer-committer
 import { reviewedImportRowMapping, withReviewedImportTransaction } from "./import-work-transaction";
 import { importedWorkProviderEvidence } from "./imported-work-evidence";
 import type { ImportCommitJobData, ImportProvider } from "./types";
+import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
+import { assertAbsenceDaysOpen } from "@/lib/time-tracking/closed-months/store";
 
 type CommitRowError = { rowId: string; message: string };
 type CommitSummary = {
@@ -483,9 +485,24 @@ async function commitAbsence(
 	database: CommitDb,
 	row: typeof importStagedRow.$inferSelect,
 	job: ImportCommitJobData,
-) {
+	options: BlockOptions,
+): Promise<CommitRowOutcome> {
 	const payload = row.normalizedPayload as unknown as AbsencePayload;
 	await assertEmployeeInOrganization(database, payload.employeeId, job.organizationId);
+	const startDate = parseUtcDateTime(payload.startsAt, "startsAt").toISODate()!;
+	const endDate = parseUtcDateTime(payload.endsAt, "endsAt").toISODate()!;
+	// An absence touching a closed month is blocked, never written (#762).
+	try {
+		await assertAbsenceDaysOpen(database, {
+			organizationId: job.organizationId,
+			employeeId: payload.employeeId,
+			days: [{ startDate, endDate }],
+		});
+	} catch (error) {
+		const closed = monthClosedRefusalOf(error);
+		if (!closed) throw error;
+		return blockRow(database, row.id, job, closed.message, options);
+	}
 
 	const categoryId = await ensureAbsenceCategory(
 		database,
@@ -498,14 +515,15 @@ async function commitAbsence(
 			employeeId: payload.employeeId,
 			organizationId: job.organizationId,
 			categoryId,
-			startDate: parseUtcDateTime(payload.startsAt, "startsAt").toISODate()!,
-			endDate: parseUtcDateTime(payload.endsAt, "endsAt").toISODate()!,
+			startDate,
+			endDate,
 			status: "approved",
 			notes: payload.note ?? null,
 		})
 		.returning({ id: absenceEntry.id });
 
 	await markCommitted(database, row.id, job, "absence_entry", absence.id);
+	return { status: "committed" };
 }
 
 async function commitTeam(
@@ -785,8 +803,7 @@ export async function commitAcceptedRowsForEntity(
 
 						switch (job.entityType) {
 							case "absence":
-								await commitAbsence(tx as CommitDb, claimedRow, job);
-								return { status: "committed" };
+								return commitAbsence(tx as CommitDb, claimedRow, job, blockOptions);
 							case "team":
 								await commitTeam(tx as CommitDb, claimedRow, job);
 								return { status: "committed" };

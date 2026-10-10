@@ -51,6 +51,13 @@ export interface UseCalendarDataOptions {
 	};
 }
 
+/** One closed range of the viewed employee: ISO instants, end exclusive (#762). */
+export interface CalendarClosedRange {
+	month: string;
+	start: string;
+	endExclusive: string;
+}
+
 export interface UseCalendarDataResult {
 	events: CalendarEvent[];
 	dailyRequirements: DailyWorkRequirements;
@@ -59,6 +66,8 @@ export interface UseCalendarDataResult {
 	liveWork: LiveWork[];
 	workBalance: EmployeeWorkBalancePayload | null;
 	calendarTimezone: string | null;
+	/** The viewed employee's closed ranges (#762), fixed at close, for the lock marker. */
+	closedRanges: CalendarClosedRange[];
 	eventsByDate: Map<string, CalendarEvent[]>;
 	isLoading: boolean;
 	isFetching: boolean;
@@ -83,6 +92,7 @@ async function fetchCalendarEvents(
 	liveWork: LiveWork[];
 	workBalance: EmployeeWorkBalancePayload | null;
 	calendarTimezone: string | null;
+	closedRanges: CalendarClosedRange[];
 }> {
 	const params = new URLSearchParams({
 		organizationId,
@@ -121,6 +131,7 @@ async function fetchCalendarEvents(
 		liveWork?: unknown;
 		workBalance?: unknown;
 		calendarTimezone?: unknown;
+		closedRanges?: unknown;
 	}>(response);
 
 	// Validate events with Zod schema
@@ -135,6 +146,15 @@ async function fetchCalendarEvents(
 			.string()
 			.nullable()
 			.parse(data.calendarTimezone ?? null),
+		closedRanges: z
+			.array(
+				z.object({
+					month: z.string().regex(/^\d{4}-\d{2}$/),
+					start: z.string(),
+					endExclusive: z.string(),
+				}),
+			)
+			.parse(data.closedRanges ?? []),
 	};
 }
 
@@ -175,6 +195,7 @@ export function useCalendarData({
 			liveWork: [],
 			workBalance: null,
 			calendarTimezone: null,
+			closedRanges: [],
 		},
 		isLoading,
 		isFetching,
@@ -233,6 +254,7 @@ export function useCalendarData({
 		liveWork: calendarData.liveWork,
 		workBalance: calendarData.workBalance,
 		calendarTimezone: calendarData.calendarTimezone,
+		closedRanges: calendarData.closedRanges,
 		eventsByDate,
 		isLoading,
 		isFetching: isPollingLiveWork ? isFetching && isRefreshing : isFetching,

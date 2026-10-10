@@ -40,7 +40,8 @@ type RejectionCode =
 	| "collision"
 	| "invalid_interval"
 	| "attribution_not_allowed"
-	| "append_review_required";
+	| "append_review_required"
+	| "month_closed";
 
 /** Wire codes that carry detail beyond the code; mapped case by case. */
 type DetailedFailure =
@@ -48,10 +49,15 @@ type DetailedFailure =
 	| "project_not_allowed"
 	| "task_not_allowed"
 	| "work_category_not_allowed"
-	| "billable_not_allowed";
+	| "billable_not_allowed"
+	| "month_closed";
 
 export type OnBehalfClockOutRejection =
-	| { code: Exclude<RejectionCode, "billing_required" | "attribution_not_allowed"> }
+	| {
+			code: Exclude<RejectionCode, "billing_required" | "attribution_not_allowed" | "month_closed">;
+	  }
+	/** The work touches a closed month (#762), named as `YYYY-MM`. */
+	| { code: "month_closed"; month: string }
 	| { code: "billing_required"; reason: string }
 	| { code: "attribution_not_allowed"; field: "projectId" | "workCategoryId" | "billable" }
 	/** The task cannot be booked, with the stable reason why (#873). */
@@ -86,7 +92,8 @@ export type OnBehalfClockOutSession = {
  */
 const FAILURE_CODES: Record<
 	Exclude<ClockOutFailure, DetailedFailure>,
-	Exclude<RejectionCode, "billing_required" | "attribution_not_allowed"> | "unknown"
+	| Exclude<RejectionCode, "billing_required" | "attribution_not_allowed" | "month_closed">
+	| "unknown"
 > = {
 	access_denied: "access_denied",
 	invalid_command: "invalid_command",
@@ -117,6 +124,8 @@ function rejection(refusal: ClockOutRefusal): OnBehalfClockOutRejection | null {
 			return { code: "attribution_not_allowed", field: "workCategoryId" };
 		case "billable_not_allowed":
 			return { code: "attribution_not_allowed", field: "billable" };
+		case "month_closed":
+			return { code: "month_closed", month: refusal.month };
 	}
 	const code = FAILURE_CODES[refusal.code];
 	return code === "unknown" ? null : { code };

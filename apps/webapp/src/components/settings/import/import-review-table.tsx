@@ -88,6 +88,10 @@ const holdReasonLabels: Record<ImportedWorkHoldReason, { key: string; fallback: 
 		key: "settings.import.review.hold.attributionNotAllowed",
 		fallback: "The project is not available, or billable work needs a project that has a customer.",
 	},
+	month_closed: {
+		key: "settings.import.review.hold.monthClosed",
+		fallback: "The time is in a closed month. It can be imported once the month is reopened.",
+	},
 };
 
 const billabilityNoteLabels: Record<

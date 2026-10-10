@@ -53,6 +53,8 @@ export type ImportedWorkHold =
 	| { reason: "source_collision"; operationId: string }
 	| { reason: "operation_collision" }
 	| { reason: "append_review_required"; reasons: AppendReviewReason[] }
+	/** The work touches a closed month (#762), named as `YYYY-MM`. */
+	| { reason: "month_closed"; month: string }
 	/**
 	 * The command's project attribution cannot be recorded (#900): the project is
 	 * not the organization's, or billable work names no project or no customer.

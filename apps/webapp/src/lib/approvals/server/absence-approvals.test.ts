@@ -17,6 +17,13 @@ const {
 	getAbsenceDays: vi.fn().mockResolvedValue(4),
 }));
 
+// The closed-month check (#762) has its own PostgreSQL suites; here it never refuses.
+vi.mock("@/lib/time-tracking/closed-months/store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/time-tracking/closed-months/store")>()),
+	assertAbsenceDaysOpen: vi.fn(async () => {}),
+	assertAbsenceOpenById: vi.fn(async () => {}),
+}));
+
 vi.mock("@/env", () => ({
 	env: {
 		BETTER_AUTH_SECRET: "test-secret",

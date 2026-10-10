@@ -30,6 +30,8 @@ export * from "./change-policy";
 export * from "./clocking-reminder";
 // Clockodo import (user mapping)
 export * from "./clockodo-import";
+// Closed months (#762)
+export * from "./closed-month";
 export * from "./completed-work";
 // ArbZG Compliance
 export * from "./compliance";

@@ -274,6 +274,10 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"personnel_file_expired_today",
 	// Documents newly due for deletion, for covering officers (#870)
 	"personnel_file_due_for_deletion",
+	// Closed months (#762): automatic close, its blockers, and reopenings
+	"month_closed_automatically",
+	"month_close_blocked",
+	"month_reopened",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [

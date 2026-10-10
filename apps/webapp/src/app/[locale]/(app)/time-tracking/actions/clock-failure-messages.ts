@@ -6,6 +6,7 @@ import type {
 	ClockInFailure,
 	ClockOutFailure,
 } from "@/lib/time-tracking/clocking/types";
+import { monthClosedMessage } from "@/lib/time-tracking/closed-months/refusal-message";
 
 type Message = readonly [key: string, fallback: string];
 type Params = Record<string, string>;
@@ -22,6 +23,12 @@ const NOT_CLOCKED_IN: Message = [
 const CLOCK_IN_RETRY: Message = [
 	"timeTracking.errors.clockInRetry",
 	"Failed to clock in. Please try again.",
+];
+
+/** Worded by `monthClosedMessage` with the month's name; this is its key (#762). */
+const MONTH_CLOSED: Message = [
+	"common.errors.monthClosed",
+	"{month} is closed. It must be reopened before its work or absences can change.",
 ];
 
 /** What the web adapter itself refuses before a command exists. */
@@ -62,6 +69,7 @@ const CLOCK_OUT_FAILURE_MESSAGES: Record<
 		"Your time history needs review before you can clock out. Please contact your administrator.",
 	],
 	access_denied: ["timeTracking.errors.clockOutNotAllowed", "You cannot clock out this work."],
+	month_closed: MONTH_CLOSED,
 	// The web closes its active work with live commands: named targets and frozen
 	// payloads never reach these words.
 	target_unknown: NOT_CLOCKED_IN,
@@ -99,6 +107,7 @@ const CLOCK_IN_FAILURE_MESSAGES: Record<
 		"Your time history needs review before you can clock in. Please contact your administrator.",
 	],
 	access_denied: ["timeTracking.errors.clockInNotAllowed", "You cannot clock in."],
+	month_closed: MONTH_CLOSED,
 	frozen_not_accepted: CLOCK_IN_RETRY,
 	legacy_not_accepted: CLOCK_IN_RETRY,
 	admission_window: CLOCK_IN_RETRY,
@@ -143,6 +152,7 @@ const BREAK_FAILURE_MESSAGES: Record<
 	collision: CLOCK_OUT_FAILURE_MESSAGES.collision,
 	append_review_required: CLOCK_OUT_FAILURE_MESSAGES.append_review_required,
 	access_denied: ["timeTracking.errors.breakNotAllowed", "You cannot add a break to this work."],
+	month_closed: MONTH_CLOSED,
 	target_unknown: NOT_CLOCKED_IN,
 	target_not_active: NOT_CLOCKED_IN,
 	frozen_not_accepted: BREAK_RETRY,
@@ -186,17 +196,22 @@ async function translator(): Promise<Translate> {
 	}
 }
 
+/** `month` is the closed month (`YYYY-MM`) of a `month_closed` refusal. */
 export async function clockOutFailureMessage(
 	failure: Exclude<ClockOutFailure, "billing_required"> | WebClockRefusal,
+	params?: Params,
 ): Promise<string> {
+	if (failure === "month_closed" && params?.month) return monthClosedMessage(params.month);
 	const [key, fallback] = CLOCK_OUT_FAILURE_MESSAGES[failure];
-	return (await translator())(key, fallback);
+	return (await translator())(key, fallback, params);
 }
 
+/** `month` is the closed month (`YYYY-MM`) of a `month_closed` refusal. */
 export async function clockInFailureMessage(
 	failure: Exclude<ClockInFailure, "billing_required"> | WebClockRefusal,
 	params?: Params,
 ): Promise<string> {
+	if (failure === "month_closed" && params?.month) return monthClosedMessage(params.month);
 	const [key, fallback] = CLOCK_IN_FAILURE_MESSAGES[failure];
 	return (await translator())(key, fallback, params);
 }
@@ -206,6 +221,8 @@ export async function breakFailureMessage(
 ): Promise<string> {
 	const translate = await translator();
 	switch (refusal.code) {
+		case "month_closed":
+			return monthClosedMessage(refusal.month);
 		case "under_review":
 			return translate(...BREAK_REVIEW_MESSAGES[refusal.review]);
 		case "holiday_blocked":

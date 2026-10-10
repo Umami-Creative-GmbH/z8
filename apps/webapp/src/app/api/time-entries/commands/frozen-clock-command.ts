@@ -178,7 +178,8 @@ type RejectionCode =
 	| "already_clocked_in"
 	| "not_allowed_at_time"
 	| "occupancy_conflict"
-	| "review_pending";
+	| "review_pending"
+	| "month_closed";
 
 /**
  * The HTTP status table: every Clocking failure code, as its HTTP status and v2
@@ -214,6 +215,8 @@ const FAILURE_REPLIES: Record<
 	holiday_blocked: { status: 422, code: "not_allowed_at_time" },
 	occupancy_conflict: { status: 409, code: "occupancy_conflict" },
 	under_review: { status: 409, code: "review_pending" },
+	// The work touches a closed month (#762): terminal until someone reopens it.
+	month_closed: { status: 409, code: "month_closed" },
 	// A break in progress is open (#861): the work is not available to this break.
 	on_break: { status: 409, code: "target_not_active" },
 	failed: { status: 500, code: "unknown" },
@@ -236,6 +239,8 @@ function refusalDetails(refusal: ClockRefusal): Record<string, unknown> {
 			return { field: "workCategoryId" };
 		case "billable_not_allowed":
 			return { field: "billable" };
+		case "month_closed":
+			return { month: refusal.month };
 		default:
 			return {};
 	}

@@ -83,6 +83,9 @@ const NATIVE_PUSH_CATEGORY: Record<NotificationType, NativePushCategory> = {
 	personnel_file_expiry_upcoming: "document",
 	personnel_file_expired_today: "document",
 	personnel_file_due_for_deletion: "attention",
+	month_closed_automatically: "attention",
+	month_close_blocked: "attention",
+	month_reopened: "attention",
 };
 
 /** One static `t()` default per key, so the extractor can read every default. */

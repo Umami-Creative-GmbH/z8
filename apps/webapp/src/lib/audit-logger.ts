@@ -146,6 +146,10 @@ export enum AuditAction {
 	PERSONNEL_FILE_PAYSLIP_BATCH_CONFIRMED = "personnel_file.payslip_batch_confirmed",
 	PERSONNEL_FILE_DOCUMENT_PURGED = "personnel_file.document_purged",
 	PERSONNEL_FILE_RETENTION_CHANGED = "personnel_file.retention_changed",
+	// Closed months (#762), written in the close's or reopening's transaction
+	CLOSED_MONTH_CLOSED = "closed_month.closed",
+	CLOSED_MONTH_REOPENED = "closed_month.reopened",
+	CLOSED_MONTH_SETTINGS_CHANGED = "closed_month.settings_changed",
 	// Personnel file ZIP download (#871)
 	PERSONNEL_FILE_ZIP_DOWNLOADED = "personnel_file.zip_downloaded",
 	PERSONNEL_FILE_ZIP_DOWNLOAD_ABORTED = "personnel_file.zip_download_aborted",

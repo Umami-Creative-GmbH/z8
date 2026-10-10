@@ -35,6 +35,9 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 
+vi.mock("@/components/closed-months/unclosed-months-notice", () => ({
+	UnclosedMonthsNotice: () => null,
+}));
 vi.mock("@/app/[locale]/(app)/settings/payroll-export/actions", () => ({
 	getFilterOptionsAction: getFilterOptionsActionMock,
 	startExportAction: startExportActionMock,

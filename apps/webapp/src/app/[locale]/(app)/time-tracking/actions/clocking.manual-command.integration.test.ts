@@ -891,6 +891,44 @@ describe("strict versioned manual commands on PostgreSQL", () => {
 			});
 		});
 
+		it("refuses work touching a closed month, also when the owner enters it on behalf (#762)", async () => {
+			harness.now = parseInstant("2026-09-10T10:00:00Z");
+			const { db } = await import("@/db");
+			const { closeMonth } = await import("@/lib/time-tracking/closed-months/store");
+			await expect(
+				closeMonth(db, {
+					organizationId: ids.organization,
+					month: "2026-08",
+					scope: { kind: "organization" },
+					actor: { kind: "user", userId: ids.ownerUser },
+					now: harness.now,
+				}),
+			).resolves.toMatchObject({ kind: "closed" });
+			const before = await snapshot();
+
+			// The last evening of the closed month, in the employee's own Berlin zone.
+			await expect(
+				submit(
+					manualCommand({
+						date: "2026-08-31",
+						clockIn: at("23:30", 120),
+						clockOut: at("23:59", 120),
+					}),
+				),
+			).resolves.toMatchObject({
+				success: false,
+				code: "month_closed",
+				rejection: { reason: "month_closed", month: "2026-08" },
+			});
+			await expect(
+				submit(manualCommand({ date: "2026-08-14" }), ids.ownerUser),
+			).resolves.toMatchObject({ success: false, code: "month_closed" });
+			expect(await snapshot()).toEqual(before);
+			await expect(submit(manualCommand({ date: "2026-09-01" }))).resolves.toMatchObject({
+				success: true,
+			});
+		});
+
 		it("requires a category from the target's current effective set", async () => {
 			harness.now = parseInstant("2026-09-10T10:00:00Z");
 			await admin.query(

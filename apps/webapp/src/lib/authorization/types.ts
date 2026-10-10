@@ -33,7 +33,9 @@ export type Action =
 	| "invite"
 	| "generate" // For reports
 	| "configure" // For policies/settings
-	| "settle"; // Record money moved outside Z8 (travel expense reimbursements)
+	| "settle" // Record money moved outside Z8 (travel expense reimbursements)
+	| "close" // Close a month (#762)
+	| "reopen"; // Reopen a closed month (#762)
 
 // ============================================
 // SUBJECTS
@@ -62,6 +64,7 @@ export type OrganizationSubject =
 	| "AuditLog" // Audit log access
 	| "Export" // Data exports
 	| "PayrollExport" // Payroll exports
+	| "PayrollPeriod" // Closed months (#762): `close` and `reopen`, never `manage`
 	| "PayrollOfficerSettings" // Payroll officer access grants
 	| "ScheduledExport" // Scheduled exports
 	| "WorksCouncil" // Works council review portal
@@ -218,6 +221,7 @@ export type SubjectTypeMap = {
 	AuditLog: OrgScopedSubject;
 	Export: OrgScopedSubject;
 	PayrollExport: OrgScopedSubject;
+	PayrollPeriod: OrgScopedSubject;
 	PayrollOfficerSettings: OrgScopedSubject;
 	ScheduledExport: OrgScopedSubject;
 	WorksCouncil: OrgScopedSubject;

@@ -103,6 +103,7 @@ import {
 	shouldApplySickVacationOverrideImmediately,
 	validateAbsenceSickDetail,
 } from "./request-absence-effect-helpers";
+import { assertAbsenceDaysOpen } from "@/lib/time-tracking/closed-months/store";
 
 const logger = createLogger("AbsenceActionsEffect");
 
@@ -387,6 +388,12 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 				tx: ApprovalDbService["db"],
 				approvalContext?: ApprovalWorkflowTransactionContext,
 			) => {
+				// Refused before any write when its days touch a closed month (#762).
+				await assertAbsenceDaysOpen(tx, {
+					organizationId: currentEmployee.organizationId,
+					employeeId: currentEmployee.id,
+					days: [{ startDate: data.startDate, endDate: data.endDate }],
+				});
 				let vacationOverrideSummary: VacationOverrideSummary = {
 					updatedAbsenceIds: [],
 					createdAbsenceIds: [],
