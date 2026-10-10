@@ -335,6 +335,13 @@ export const queryKeys = {
 		byShift: (shiftId: string) => ["shift-requests", "shift", shiftId] as const,
 	},
 
+	// Custom field values (#818): the "Custom fields" section of a record (null = being created)
+	customFields: {
+		all: ["custom-fields"] as const,
+		section: (entity: string, recordId: string | null) =>
+			["custom-fields", "section", entity, recordId ?? "new"] as const,
+	},
+
 	// Customers
 	customers: {
 		all: ["customers"] as const,

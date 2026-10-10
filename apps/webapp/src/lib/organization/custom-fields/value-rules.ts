@@ -191,6 +191,25 @@ export function customFieldInputOfDraft(
 	return draft;
 }
 
+/**
+ * What a form sends for its custom fields section: the drafts of the fields
+ * the viewer edited and may change. Untouched fields are left out, so they keep
+ * their value.
+ */
+export function customFieldValuesOfDrafts(
+	fields: readonly { id: string; type: CustomFieldType; editable: boolean }[],
+	drafts: Readonly<Record<string, string>>,
+): CustomFieldValuesInput {
+	const values: CustomFieldValuesInput = {};
+	for (const field of fields) {
+		const draft = drafts[field.id];
+		if (field.editable && draft !== undefined) {
+			values[field.id] = customFieldInputOfDraft(field.type, draft);
+		}
+	}
+	return values;
+}
+
 /** Ids of the required fields that have no value, in field order. */
 export function missingRequiredCustomFieldIds(
 	fields: readonly { id: string; required: boolean }[],

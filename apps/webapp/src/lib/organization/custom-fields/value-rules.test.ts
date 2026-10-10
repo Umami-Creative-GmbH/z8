@@ -3,6 +3,7 @@ import {
 	type CustomFieldValueField,
 	customFieldDraftOf,
 	customFieldInputOfDraft,
+	customFieldValuesOfDrafts,
 	missingRequiredCustomFieldIds,
 	parseCustomFieldValueInput,
 } from "./value-rules";
@@ -146,6 +147,21 @@ describe("form drafts", () => {
 		expect(customFieldInputOfDraft("boolean", "")).toBeNull();
 		expect(customFieldInputOfDraft("text", "")).toBeNull();
 		expect(customFieldInputOfDraft("date", "2024-01-05")).toBe("2024-01-05");
+	});
+});
+
+describe("customFieldValuesOfDrafts", () => {
+	it("sends the edited fields the viewer may change, as inputs", () => {
+		const fields = [
+			{ id: "t", type: "text" as const, editable: true },
+			{ id: "b", type: "boolean" as const, editable: true },
+			{ id: "n", type: "number" as const, editable: true },
+			{ id: "ro", type: "text" as const, editable: false },
+		];
+		expect(customFieldValuesOfDrafts(fields, { t: "", b: "false", ro: "x", gone: "y" })).toEqual({
+			t: null,
+			b: false,
+		});
 	});
 });
 
