@@ -182,7 +182,9 @@ function storedValue(row: ValueRow, type: CustomFieldType): CustomFieldValue | n
 		case "text":
 			return row.textValue === null ? null : { type, value: row.textValue };
 		case "number":
-			return row.numberValue === null ? null : { type, value: canonicalStoredDecimal(row.numberValue) };
+			return row.numberValue === null
+				? null
+				: { type, value: canonicalStoredDecimal(row.numberValue) };
 		case "date":
 			return row.dateValue === null ? null : { type, value: row.dateValue };
 		case "boolean":

@@ -4,11 +4,12 @@ import { IconAlertTriangle } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useId } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
+import { TFormItem, TFormLabel, TFormMessage, useTFormItem } from "@/components/ui/tanstack-form";
 import {
 	type CustomFieldHistoryDraft,
 	customFieldHistoryDraftsOf,
 } from "@/lib/organization/custom-fields/history-rules";
+import { valueRefusalMessage } from "@/lib/organization/custom-fields/refusal-messages";
 import { customFieldDraftOf } from "@/lib/organization/custom-fields/value-rules";
 import type {
 	CustomFieldSection,
@@ -155,34 +156,48 @@ export function CustomFieldDraftsSection({
 	);
 }
 
-function CustomFieldInput({
-	field,
-	draft,
-	missing,
-	onChange,
-	disabled,
-}: {
+type CustomFieldInputProps = {
 	field: CustomFieldSectionField;
 	draft: string;
 	missing: boolean;
 	onChange: (draft: string) => void;
 	disabled: boolean;
-}) {
-	const id = `custom-field-${field.id}`;
+};
+
+/** One editable field, wired like the forms' fields (label, invalid state, message). */
+function CustomFieldInput(props: CustomFieldInputProps) {
 	return (
-		<div className="grid gap-2">
-			<Label htmlFor={id}>
+		<TFormItem>
+			<CustomFieldInputBody {...props} />
+		</TFormItem>
+	);
+}
+
+function CustomFieldInputBody({
+	field,
+	draft,
+	missing,
+	onChange,
+	disabled,
+}: CustomFieldInputProps) {
+	const { t } = useTranslate();
+	const { id } = useTFormItem();
+	const hasError = missing && draft === "";
+	return (
+		<>
+			<TFormLabel hasError={hasError} required={field.required}>
 				{field.name}
-				{field.required ? " *" : ""}
-			</Label>
+			</TFormLabel>
 			<CustomFieldControl
-				id={id}
+				id={`${id}-form-item`}
+				describedBy={hasError ? `${id}-form-item-message` : undefined}
 				field={field}
 				draft={draft}
 				onChange={onChange}
 				disabled={disabled}
-				invalid={missing && draft === ""}
+				invalid={hasError}
 			/>
-		</div>
+			{hasError ? <TFormMessage>{valueRefusalMessage(t, "missing_required")}</TFormMessage> : null}
+		</>
 	);
 }

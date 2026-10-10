@@ -63,7 +63,8 @@ export function useCustomFieldDrafts(input: {
 		reset,
 		/**
 		 * What the save sends. Undefined while the section isn't loaded: the save
-		 * then neither writes values nor checks required fields it couldn't show.
+		 * then writes no values, and the server still refuses it when a required
+		 * field the user may edit has no stored value.
 		 */
 		values: (): CustomFieldValuesInput | undefined => {
 			if (!section) return undefined;

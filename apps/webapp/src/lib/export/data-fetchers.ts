@@ -76,11 +76,31 @@ const logger = createLogger("ExportDataFetchers");
  * as it is now (for a scheduled export, its creator's role when the run
  * starts), with values as of today in the organization's business zone. A
  * requester whose employee record can't be found sees no custom fields.
+ * Resolved once per requester and organization: the categories of one export
+ * share it.
  */
-async function exportCustomFieldView(
+function exportCustomFieldView(
 	organizationId: string,
 	requester: ExportRequester,
-): Promise<{ viewer: CustomFieldViewer; asOf: PlainDate }> {
+): Promise<CustomFieldView> {
+	const byOrganization =
+		customFieldViews.get(requester) ?? new Map<string, Promise<CustomFieldView>>();
+	customFieldViews.set(requester, byOrganization);
+	const cached = byOrganization.get(organizationId);
+	if (cached) return cached;
+	const view = readCustomFieldView(organizationId, requester);
+	byOrganization.set(organizationId, view);
+	return view;
+}
+
+type CustomFieldView = { viewer: CustomFieldViewer; asOf: PlainDate };
+
+const customFieldViews = new WeakMap<ExportRequester, Map<string, Promise<CustomFieldView>>>();
+
+async function readCustomFieldView(
+	organizationId: string,
+	requester: ExportRequester,
+): Promise<CustomFieldView> {
 	const [requesterEmployee, asOf] = await Promise.all([
 		db.query.employee.findFirst({
 			where: and(
@@ -111,11 +131,28 @@ function customFieldCells(values: readonly CustomFieldReportValue[]) {
 
 const customFieldColumnKey = (fieldId: string) => `customField:${fieldId}`;
 
+/** One JSON property per column, in column order: `customField:<name>` -> value or null. */
+function customFieldProperties(
+	columns: readonly CustomFieldReportColumn[],
+	values: readonly CustomFieldReportValue[],
+) {
+	const valueByField = new Map(values.map((value) => [value.fieldId, value.value]));
+	return Object.fromEntries(
+		columns.map((column) => [
+			`customField:${column.name}`,
+			valueByField.get(column.fieldId) ?? null,
+		]),
+	);
+}
+
 /**
  * Fetch all employees for an organization
- * Format: JSON (structured data with relations). Each row carries
- * `customFields`: the employee fields the requester sees, keyed by field name
- * in their defined order (#820).
+ * Format: JSON (structured data with relations). After its built-in
+ * properties, each row carries one property per active employee custom field
+ * the requester sees (#820), in the fields' defined order, keyed
+ * `customField:<field name>` (null without a value). The prefix keeps the keys
+ * apart from the built-in ones and never integer-like, so JSON keeps them in
+ * field order.
  */
 export async function fetchEmployees(organizationId: string, requester: ExportRequester) {
 	logger.info({ organizationId }, "Fetching employees for export");
@@ -182,9 +219,7 @@ export async function fetchEmployees(organizationId: string, requester: ExportRe
 			email: emp.user?.email,
 			name: emp.user?.name,
 			timezone: emp.userSettings?.timezone,
-			customFields: Object.fromEntries(
-				(customFields.byRecord[emp.id] ?? []).map((value) => [value.name, value.value]),
-			),
+			...customFieldProperties(customFields.columns, customFields.byRecord[emp.id] ?? []),
 		})),
 		managerRelations: relevantManagerRelations.map((mr) => ({
 			employeeId: mr.employeeId,

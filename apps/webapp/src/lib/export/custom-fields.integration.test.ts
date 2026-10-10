@@ -111,7 +111,11 @@ describe("custom fields in the data export on PostgreSQL", () => {
 		);
 	}
 
-	type ExportedEmployee = { id: string; customFields: Record<string, unknown> };
+	type ExportedEmployee = { id: string; email?: string } & Record<string, unknown>;
+
+	/** The custom field properties of an exported employee, in order. */
+	const customFieldEntries = (row: ExportedEmployee | undefined) =>
+		Object.entries(row ?? {}).filter(([key]) => key.startsWith("customField:"));
 
 	async function exportedEmployee(employeeId: string, requestedBy: string) {
 		const data = await fetchExportData(ids.organization, ["employees"], requester(requestedBy));
@@ -185,6 +189,9 @@ describe("custom fields in the data export on PostgreSQL", () => {
 		const tier = await define({ name: "Tier", type: "select", options: ["Gold", "Silver"] });
 		const rate = await define({ name: "Rate", type: "number" });
 		const retired = await define({ name: "Retired" });
+		// A name like an integer keeps its place; a name like a built-in property never replaces it.
+		const year = await define({ name: "2024" });
+		const email = await define({ name: "email" });
 		await define({ name: "Foreign field", visibility: "employee" }, ids.other);
 		await write("employee", ids.managerEmployee, {
 			[salaryBand.id]: "B2",
@@ -193,6 +200,8 @@ describe("custom fields in the data export on PostgreSQL", () => {
 			[tier.id]: tier.options[0].id,
 			[rate.id]: "12,50",
 			[retired.id]: "old",
+			[year.id]: "Y",
+			[email.id]: "custom@example.test",
 		});
 		await changeCustomFields(db, {
 			organizationId: ids.organization,
@@ -201,28 +210,35 @@ describe("custom fields in the data export on PostgreSQL", () => {
 		});
 
 		const asAdmin = await exportedEmployee(ids.managerEmployee, ids.adminEmployee);
-		expect(Object.entries(asAdmin?.customFields ?? {})).toEqual([
-			["Salary band", "B2"],
-			["Start date", "2024-02-29"],
-			["Union member", false],
-			["Tier", "Gold"],
-			["Rate", "12.5"],
+		expect(customFieldEntries(asAdmin)).toEqual([
+			["customField:Salary band", "B2"],
+			["customField:Start date", "2024-02-29"],
+			["customField:Union member", false],
+			["customField:Tier", "Gold"],
+			["customField:Rate", "12.5"],
+			["customField:2024", "Y"],
+			["customField:email", "custom@example.test"],
 		]);
+		expect(asAdmin?.email).toBe(`${ids.manager}@example.test`);
 		const forAdminWithoutValues = await exportedEmployee(ids.adminEmployee, ids.adminEmployee);
-		expect(forAdminWithoutValues?.customFields).toEqual({
-			"Salary band": null,
-			"Start date": null,
-			"Union member": null,
-			Tier: null,
-			Rate: null,
-		});
+		expect(customFieldEntries(forAdminWithoutValues)).toEqual([
+			["customField:Salary band", null],
+			["customField:Start date", null],
+			["customField:Union member", null],
+			["customField:Tier", null],
+			["customField:Rate", null],
+			["customField:2024", null],
+			["customField:email", null],
+		]);
 		// A manager never gets admin-only fields.
 		const asManager = await exportedEmployee(ids.managerEmployee, ids.managerEmployee);
-		expect(Object.keys(asManager?.customFields ?? {})).toEqual([
-			"Start date",
-			"Union member",
-			"Tier",
-			"Rate",
+		expect(customFieldEntries(asManager).map(([key]) => key)).toEqual([
+			"customField:Start date",
+			"customField:Union member",
+			"customField:Tier",
+			"customField:Rate",
+			"customField:2024",
+			"customField:email",
 		]);
 	});
 
@@ -289,14 +305,14 @@ describe("custom fields in the data export on PostgreSQL", () => {
 			const row = (file.data.employees as ExportedEmployee[]).find(
 				(entry) => entry.id === ids.adminEmployee,
 			);
-			return Object.keys(row?.customFields ?? {});
+			return customFieldEntries(row).map(([key]) => key);
 		};
 
-		expect(await run()).toEqual(["Salary band", "Badge"]);
+		expect(await run()).toEqual(["customField:Salary band", "customField:Badge"]);
 
 		await admin.query("update member set role = 'member' where id = 't820e-m-admin'");
 		await admin.query("update employee set role = 'manager' where id = $1", [ids.adminEmployee]);
 
-		expect(await run()).toEqual(["Badge"]);
+		expect(await run()).toEqual(["customField:Badge"]);
 	});
 });

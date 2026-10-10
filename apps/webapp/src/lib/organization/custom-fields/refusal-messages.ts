@@ -84,10 +84,7 @@ export function valueRefusalMessage(
 		case "field_archived":
 			return t("settings.customFields.valueRefusal.fieldArchived", "This field is archived.");
 		case "not_editable":
-			return t(
-				"settings.customFields.valueRefusal.notEditable",
-				"You can't change this field.",
-			);
+			return t("settings.customFields.valueRefusal.notEditable", "You can't change this field.");
 		case "missing_required":
 			return t("settings.customFields.valueRefusal.missingRequired", "This field is required.");
 	}

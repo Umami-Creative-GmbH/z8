@@ -27,6 +27,7 @@ export function CustomFieldControl({
 	disabled,
 	invalid,
 	required,
+	describedBy,
 }: {
 	id: string;
 	field: CustomFieldSectionField;
@@ -36,6 +37,8 @@ export function CustomFieldControl({
 	invalid: boolean;
 	/** Whether "no value" can't be picked. Default: the field's required flag. */
 	required?: boolean;
+	/** The id of the message describing the control (its error). */
+	describedBy?: string;
 }) {
 	const { t } = useTranslate();
 	const isRequired = required ?? field.required;
@@ -49,6 +52,7 @@ export function CustomFieldControl({
 					required={isRequired}
 					disabled={disabled}
 					aria-invalid={invalid || undefined}
+					aria-describedby={describedBy}
 				/>
 			);
 		case "select":
@@ -60,7 +64,7 @@ export function CustomFieldControl({
 					}
 					disabled={disabled}
 				>
-					<SelectTrigger id={id} aria-invalid={invalid || undefined}>
+					<SelectTrigger id={id} aria-invalid={invalid || undefined} aria-describedby={describedBy}>
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
@@ -90,7 +94,7 @@ export function CustomFieldControl({
 					}
 					disabled={disabled}
 				>
-					<SelectTrigger id={id} aria-invalid={invalid || undefined}>
+					<SelectTrigger id={id} aria-invalid={invalid || undefined} aria-describedby={describedBy}>
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
@@ -112,6 +116,7 @@ export function CustomFieldControl({
 					onChange={(event) => onChange(event.target.value)}
 					disabled={disabled}
 					aria-invalid={invalid || undefined}
+					aria-describedby={describedBy}
 				/>
 			);
 		default:
@@ -124,6 +129,7 @@ export function CustomFieldControl({
 					onChange={(event) => onChange(event.target.value)}
 					disabled={disabled}
 					aria-invalid={invalid || undefined}
+					aria-describedby={describedBy}
 				/>
 			);
 	}

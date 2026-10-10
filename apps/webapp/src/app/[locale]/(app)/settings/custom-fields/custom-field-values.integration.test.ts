@@ -471,7 +471,10 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 						}),
 					),
 				),
-			).toEqual({ error: 'Custom field "Rate class": This field is required.', code: "ValidationError" });
+			).toEqual({
+				error: 'Custom field "Rate class": This field is required.',
+				code: "ValidationError",
+			});
 
 			const customer = await actAs(ids.ownerUser, () =>
 				ok(
@@ -521,7 +524,10 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 						}),
 					),
 				),
-			).toEqual({ error: 'Custom field "Rate class": This field is required.', code: "ValidationError" });
+			).toEqual({
+				error: 'Custom field "Rate class": This field is required.',
+				code: "ValidationError",
+			});
 			// A plain value for a tracked field is refused.
 			expect(
 				await actAs(ids.ownerUser, () =>
@@ -544,7 +550,10 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 						}),
 					),
 				),
-			).toEqual({ error: 'Custom field "PO number": This field is required.', code: "ValidationError" });
+			).toEqual({
+				error: 'Custom field "PO number": This field is required.',
+				code: "ValidationError",
+			});
 			expect(
 				await actAs(ids.ownerUser, () =>
 					failure(
@@ -555,7 +564,10 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 						}),
 					),
 				),
-			).toEqual({ error: 'Custom field "PO number": This field is required.', code: "ValidationError" });
+			).toEqual({
+				error: 'Custom field "PO number": This field is required.',
+				code: "ValidationError",
+			});
 			expect(
 				await actAs(ids.ownerUser, () =>
 					failure(
@@ -580,7 +592,10 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 						}),
 					),
 				),
-			).toEqual({ error: 'Custom field "Customer number": This field is required.', code: "ValidationError" });
+			).toEqual({
+				error: 'Custom field "Customer number": This field is required.',
+				code: "ValidationError",
+			});
 			const { rows } = await admin.query(
 				"select name from project where organization_id = $1 and name in ('Bare', 'From template', 'Bad code') union all select name from customer where name = 'Initech'",
 				[ids.organization],
@@ -588,9 +603,9 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			expect(rows).toEqual([]);
 
 			// Paths other than the forms (archiving a project) are not held to required fields.
-			expect(
-				await actAs(ids.ownerUser, () => failure(archiveProject(ids.unmanagedProject))),
-			).toBe("accepted");
+			expect(await actAs(ids.ownerUser, () => failure(archiveProject(ids.unmanagedProject)))).toBe(
+				"accepted",
+			);
 			// A template creation with the required value goes through.
 			const fromTemplate = await actAs(ids.ownerUser, () =>
 				ok(
@@ -729,7 +744,7 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 					failure(updateEmployee(ids.employee, {}, { [fields.payrollId.id]: "P-1" })),
 				),
 			).toEqual({
-				error: "Custom field \"Payroll id\": You can't change this field.",
+				error: 'Custom field "Payroll id": You can\'t change this field.',
 				code: "ValidationError",
 			});
 			expect(

@@ -90,7 +90,7 @@ describe("CustomFieldValuesSection", () => {
 			today: "2026-10-10",
 		});
 
-		const desk = screen.getByLabelText("Desk *");
+		const desk = screen.getByLabelText(/^Desk\s*\*$/);
 		expect((desk as HTMLInputElement).value).toBe("4.12");
 		await userEvent.type(desk, "a");
 		expect(onDraftChange).toHaveBeenLastCalledWith("desk", "4.12a");
@@ -112,8 +112,24 @@ describe("CustomFieldValuesSection", () => {
 			},
 			{ desk: "7.01" },
 		);
-		expect((screen.getByLabelText("Desk *") as HTMLInputElement).value).toBe("7.01");
+		expect((screen.getByLabelText(/^Desk\s*\*$/) as HTMLInputElement).value).toBe("7.01");
 		expect(screen.getByText("Missing required values")).toBeTruthy();
+		expect(screen.queryByRole("alert")).toBeNull();
+	});
+
+	it("marks an empty required field invalid with its message, like the form fields", () => {
+		renderSection({
+			fields: [field({ id: "desk", name: "Desk", required: true })],
+			values: {},
+			missingRequiredFieldIds: ["desk"],
+			history: {},
+			today: "2026-10-10",
+		});
+		const desk = screen.getByLabelText(/^Desk\s*\*$/);
+		const message = screen.getByRole("alert");
+		expect(message.textContent).toBe("This field is required.");
+		expect(desk.getAttribute("aria-invalid")).toBe("true");
+		expect(desk.getAttribute("aria-describedby")).toBe(message.id);
 	});
 
 	it("shows tracked fields with their history, editable only at the edit level", () => {

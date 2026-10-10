@@ -7,6 +7,7 @@ import { and, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db, payrollExportJob, payrollExportSyncRecord } from "@/db";
 import type { PayrollExportJobPersonnelIdentifier } from "@/db/schema";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import {
 	insertPayrollExportWorkInput,
@@ -31,13 +32,12 @@ import {
 	includeReportsInPayrollRun,
 	type PayrollRunSkipped,
 } from "@/lib/travel-expenses/payroll-run";
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { notifyPayrollRunExported } from "@/lib/travel-expenses/payroll-run-notifications";
 import { parsePayrollLogicalDate, serializePayrollLogicalDate } from "./calendar-boundaries";
+import { workPeriodsFromCollectedInput } from "./collected-work";
 import { personioConnector } from "./connectors/personio-connector";
 import { PayrollConnectorRegistry } from "./connectors/registry";
 import { successFactorsConnector } from "./connectors/successfactors-connector";
-import { workPeriodsFromCollectedInput } from "./collected-work";
 import {
 	countWorkPeriods,
 	fetchAbsencesForExport,
@@ -622,7 +622,10 @@ async function employeesWithAbsencesOrExpenseLines(input: {
 	const employeeIds = new Set(absences.map((absence) => absence.employeeId));
 	if (
 		formatters.has(input.formatId) &&
-		(await exportIsPayrollRun(db, { organizationId: input.organizationId, formatId: input.formatId }))
+		(await exportIsPayrollRun(db, {
+			organizationId: input.organizationId,
+			formatId: input.formatId,
+		}))
 	) {
 		const candidates = await classifyPayrollRunCandidates(db, {
 			organizationId: input.organizationId,
@@ -672,10 +675,9 @@ async function freezeLegacyPersonnelIdentifier(input: {
 		asOf: parsePlainDate(endDate),
 	});
 	const missing = employeesWithoutIdentifier(
-		[
-			...workPeriods.map((period) => period.employeeId),
-			...input.employeesWithOtherRows,
-		].map((employeeId) => ({ employeeId })),
+		[...workPeriods.map((period) => period.employeeId), ...input.employeesWithOtherRows].map(
+			(employeeId) => ({ employeeId }),
+		),
 		values,
 	);
 	if (missing.length > 0) {

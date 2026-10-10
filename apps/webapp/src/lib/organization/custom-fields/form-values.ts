@@ -6,8 +6,8 @@ import { namedValueRefusalMessage } from "./refusal-messages";
 import type { CustomFieldValuesInput } from "./value-rules";
 import {
 	CustomFieldValuesRefused,
-	type CustomFieldWriteScope,
 	type CustomFieldWriter,
+	type CustomFieldWriteScope,
 	loadCustomFieldViewerLevel,
 	writeCustomFieldValues,
 } from "./values";

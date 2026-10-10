@@ -97,8 +97,8 @@ export function CustomerDialog({
 	organizationId,
 	customer,
 	open,
-	onOpenChange: onPanelOpenChange,
-	onSuccess: onSaved,
+	onOpenChange,
+	onSuccess,
 }: CustomerDialogProps) {
 	const { t } = useTranslate();
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -108,10 +108,9 @@ export function CustomerDialog({
 		entity: "customer",
 		recordId: customer?.id ?? null,
 		enabled: open,
-		onOpenChange: onPanelOpenChange,
-		onSaved,
+		onOpenChange,
+		onSaved: onSuccess,
 	});
-	const { handleOpenChange: onOpenChange, handleSaved: onSuccess } = customFields;
 	const requiresScopedProject = requiresScopedProjectSelection(
 		accessTier,
 		isEditing,
@@ -164,7 +163,7 @@ export function CustomerDialog({
 						? t("settings.customers.updated", "Customer updated")
 						: t("settings.customers.created", "Customer created"),
 				);
-				onSuccess();
+				customFields.handleSaved();
 			} else {
 				toast.error(
 					result?.error ||
@@ -177,7 +176,7 @@ export function CustomerDialog({
 	});
 
 	return (
-		<ActionPanel open={open} onOpenChange={onOpenChange}>
+		<ActionPanel open={open} onOpenChange={customFields.handleOpenChange}>
 			<ActionPanelContent>
 				<CustomerDialogHeader isEditing={isEditing} />
 
@@ -372,7 +371,7 @@ export function CustomerDialog({
 					<CustomerDialogFooter
 						isEditing={isEditing}
 						isSubmitting={isSubmitting}
-						onCancel={() => onOpenChange(false)}
+						onCancel={() => customFields.handleOpenChange(false)}
 					/>
 				</form>
 			</ActionPanelContent>

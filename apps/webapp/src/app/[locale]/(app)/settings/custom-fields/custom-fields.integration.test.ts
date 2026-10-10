@@ -478,7 +478,10 @@ describe("custom field definitions on PostgreSQL", () => {
 				 values ($1, 'sage_lohn', $2::jsonb, false, $3, now())`,
 				[
 					ids.organization,
-					JSON.stringify({ personnelNumberType: "customField", personnelNumberCustomFieldId: payrollId.id }),
+					JSON.stringify({
+						personnelNumberType: "customField",
+						personnelNumberCustomFieldId: payrollId.id,
+					}),
 					ids.ownerUser,
 				],
 			);
