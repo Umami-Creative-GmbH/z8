@@ -13,7 +13,8 @@ import {
 } from "./format-registry";
 
 /** The file formats of the format registry (#823). */
-export const EXPENSE_PAYROLL_FORMATS: readonly ExpensePayrollFormat[] = payrollExportFileFormatIds();
+export const EXPENSE_PAYROLL_FORMATS: readonly ExpensePayrollFormat[] =
+	payrollExportFileFormatIds();
 export type ExpensePayrollFormat = PayrollExportFileFormatId;
 
 export function isExpensePayrollFormat(value: unknown): value is ExpensePayrollFormat {

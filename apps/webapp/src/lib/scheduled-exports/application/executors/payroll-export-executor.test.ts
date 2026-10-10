@@ -129,13 +129,12 @@ describe("scheduled payroll export configuration", () => {
 		vi.resetAllMocks();
 	});
 
-	it.each([
-		"successfactors_api",
-		"successfactors_csv",
-		"workday_api",
-	])("accepts the registered format %s", (formatId) => {
-		expect(new PayrollExportExecutor().validateConfig({ formatId })).toEqual({ valid: true });
-	});
+	it.each(["successfactors_api", "successfactors_csv", "workday_api"])(
+		"accepts the registered format %s",
+		(formatId) => {
+			expect(new PayrollExportExecutor().validateConfig({ formatId })).toEqual({ valid: true });
+		},
+	);
 
 	it("rejects an unknown format id", () => {
 		const result = new PayrollExportExecutor().validateConfig({ formatId: "lexware" });

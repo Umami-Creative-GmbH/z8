@@ -7,8 +7,13 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 	uploadExport: vi.fn(),
 }));
 
-const { getAvailableExporters, getAvailableFormatters, getExporter, getFormatter, isApiBasedExport } =
-	await import("./export-service");
+const {
+	getAvailableExporters,
+	getAvailableFormatters,
+	getExporter,
+	getFormatter,
+	isApiBasedExport,
+} = await import("./export-service");
 const { payrollExportFormatIds, payrollExportFormatKind } = await import("./format-registry");
 
 describe("payroll export service formats", () => {

@@ -39,16 +39,15 @@ describe("validateScheduledReportConfig", () => {
 		mocks.getPayrollExportConfig.mockResolvedValue({ config: { id: "config-1" } });
 	});
 
-	it.each([
-		"successfactors_api",
-		"successfactors_csv",
-		"workday_api",
-	])("saves a payroll schedule for the configured format %s", async (formatId) => {
-		await expect(
-			validateScheduledReportConfig("org-1", "payroll_export", { formatId }),
-		).resolves.toEqual([]);
-		expect(mocks.getPayrollExportConfig).toHaveBeenCalledWith("org-1", formatId);
-	});
+	it.each(["successfactors_api", "successfactors_csv", "workday_api"])(
+		"saves a payroll schedule for the configured format %s",
+		async (formatId) => {
+			await expect(
+				validateScheduledReportConfig("org-1", "payroll_export", { formatId }),
+			).resolves.toEqual([]);
+			expect(mocks.getPayrollExportConfig).toHaveBeenCalledWith("org-1", formatId);
+		},
+	);
 
 	it("refuses a payroll schedule for an unknown format", async () => {
 		await expect(

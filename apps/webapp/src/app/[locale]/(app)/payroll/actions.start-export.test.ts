@@ -128,7 +128,10 @@ describe("payroll workspace export formats", () => {
 	});
 
 	afterEach(() => {
-		registered.splice(registered.findIndex((format) => "id" in format && format.id === "fake_lohn"), 1);
+		registered.splice(
+			registered.findIndex((format) => "id" in format && format.id === "fake_lohn"),
+			1,
+		);
 	});
 
 	it("exports in a file format registered for the workspace with no further edits", async () => {
@@ -141,14 +144,13 @@ describe("payroll workspace export formats", () => {
 		);
 	});
 
-	it.each([
-		"successfactors_csv",
-		"personio",
-		"unknown_lohn",
-	])("refuses %s, which the workspace does not offer", async (formatId) => {
-		registered.push({ id: "fake_lohn", kind: "file", payrollWorkspace: true });
+	it.each(["successfactors_csv", "personio", "unknown_lohn"])(
+		"refuses %s, which the workspace does not offer",
+		async (formatId) => {
+			registered.push({ id: "fake_lohn", kind: "file", payrollWorkspace: true });
 
-		await expect(startScopedPayrollExportAction({ ...request, formatId })).rejects.toBeDefined();
-		expect(mockState.createExportJob).not.toHaveBeenCalled();
-	});
+			await expect(startScopedPayrollExportAction({ ...request, formatId })).rejects.toBeDefined();
+			expect(mockState.createExportJob).not.toHaveBeenCalled();
+		},
+	);
 });
