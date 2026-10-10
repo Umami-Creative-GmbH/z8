@@ -417,6 +417,9 @@ importers:
       '@bprogress/core':
         specifier: ^1.3.4
         version: 1.3.4
+      '@capacitor/core':
+        specifier: 8.5.3
+        version: 8.5.3
       '@casl/ability':
         specifier: ^7.0.1
         version: 7.0.1

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getStoreAppPlatform, isStoreAppShell } from "./shell";
+import { getStoreAppPlatform, getStoreAppPlatformFromUserAgent, isStoreAppShell } from "./shell";
 
 const IPHONE_SAFARI =
 	"Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148";
@@ -59,5 +59,17 @@ describe("store app shell detection", () => {
 		runInBrowserWithUserAgent(`${ANDROID_CHROME} NotZ8StoreApp/android`);
 
 		expect(isStoreAppShell()).toBe(false);
+	});
+});
+
+describe("store app shell detection from a request's user agent", () => {
+	it.each([
+		[`${IPHONE_SAFARI} Z8StoreApp/ios`, "ios"],
+		[`${ANDROID_WEBVIEW} Z8StoreApp/android`, "android"],
+		[IPHONE_SAFARI, null],
+		[`${ANDROID_CHROME} NotZ8StoreApp/android`, null],
+		[null, null],
+	])("reads %j as %s", (userAgent, platform) => {
+		expect(getStoreAppPlatformFromUserAgent(userAgent)).toBe(platform);
 	});
 });

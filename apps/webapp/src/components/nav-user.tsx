@@ -31,6 +31,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
 import { authClient } from "@/lib/auth-client";
+import { runStoreAppSignOutTasks } from "@/lib/store-app/sign-out";
 import { useRouter } from "@/navigation";
 
 export function NavUser({
@@ -60,6 +61,8 @@ export function NavUser({
 			});
 		};
 		try {
+			// Device cleanup that needs the session runs first (#842).
+			await runStoreAppSignOutTasks();
 			await authClient.signOut({
 				fetchOptions: {
 					onSuccess: () => {
