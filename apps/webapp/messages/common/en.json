@@ -729,6 +729,42 @@
       "read": "Read",
       "unread": "Unread"
     },
+    "nativePush": {
+      "attention": {
+        "title": "Something needs your attention"
+      },
+      "body": "Open Z8 to see the details.",
+      "document": {
+        "title": "News about your documents"
+      },
+      "project": {
+        "title": "News about a project"
+      },
+      "reminder": {
+        "title": "Reminder from Z8"
+      },
+      "requestUpdate": {
+        "title": "Your request was updated"
+      },
+      "review": {
+        "title": "You have a request to review"
+      },
+      "schedule": {
+        "title": "Your schedule has changed"
+      },
+      "security": {
+        "title": "Security notice for your account"
+      },
+      "team": {
+        "title": "Your teams have changed"
+      },
+      "travelExpense": {
+        "title": "News about your travel expenses"
+      },
+      "workingTime": {
+        "title": "News about your working time"
+      }
+    },
     "preferences": {
       "categories": {
         "personnelFile": {
