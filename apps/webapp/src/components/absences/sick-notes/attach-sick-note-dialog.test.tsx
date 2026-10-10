@@ -144,6 +144,59 @@ describe("AttachSickNoteDialog", () => {
 		expect(vi.mocked(toast).success).toHaveBeenCalledTimes(1);
 	});
 
+	describe("for whoever manages the employee's sick notes (#984)", () => {
+		function renderOfficerDialog(onAttached = vi.fn()) {
+			render(
+				<AttachSickNoteDialog
+					absence={absence}
+					authority="officer"
+					open
+					onOpenChange={vi.fn()}
+					onAttached={onAttached}
+				/>,
+			);
+			return { onAttached };
+		}
+
+		function postedBodies() {
+			return vi
+				.mocked(fetch)
+				.mock.calls.map(([, init]) => JSON.parse(String((init as RequestInit).body)));
+		}
+
+		it("attaches HR-only notes into the employee's file by default", async () => {
+			const { onAttached } = renderOfficerDialog();
+			expect(screen.getByRole("switch", { name: "Share with the employee" })).toBeTruthy();
+			fireEvent.change(screen.getByTestId("sick-note-file-input"), {
+				target: { files: [pdf("a.pdf")] },
+			});
+
+			fireEvent.click(screen.getByRole("button", { name: "Attach" }));
+
+			await waitFor(() => expect(onAttached).toHaveBeenCalledTimes(1));
+			const [body] = postedBodies();
+			expect(body).toMatchObject({
+				employeeId: "employee-1",
+				absenceId: "absence-1",
+				metadata: { category: "sick_note", visibility: "hr_only" },
+			});
+			expect(body).not.toHaveProperty("source");
+		});
+
+		it("shares them with the employee when chosen", async () => {
+			const { onAttached } = renderOfficerDialog();
+			fireEvent.click(screen.getByRole("switch", { name: "Share with the employee" }));
+			fireEvent.change(screen.getByTestId("sick-note-file-input"), {
+				target: { files: [pdf("a.pdf")] },
+			});
+
+			fireEvent.click(screen.getByRole("button", { name: "Attach" }));
+
+			await waitFor(() => expect(onAttached).toHaveBeenCalledTimes(1));
+			expect(postedBodies()[0]).toMatchObject({ metadata: { visibility: "shared" } });
+		});
+	});
+
 	it("keeps the notes attached before a failed file and names it", async () => {
 		uploads.stage.mockRejectedValue(
 			new StagedSickNoteUploadError("b.pdf", "Unsupported file type", [

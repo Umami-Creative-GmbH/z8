@@ -3,7 +3,8 @@
 import { IconChevronLeft, IconChevronRight, IconFileText, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { type ReactNode, useId, useTransition } from "react";
+import { type ReactNode, useId, useState, useTransition } from "react";
+import { AbsenceSickNotesPanel } from "@/components/absences/sick-notes/absence-sick-notes-panel";
 import { useAppLocale } from "@/components/providers/app-locale-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,7 +53,8 @@ export interface SickLeaveOverviewProps {
 	teams: Array<{ id: string; name: string }>;
 }
 
-function useSickLeaveLabels() {
+/** Labels of sick details, statuses and the notes filter in the officer area (#985). */
+export function useSickLeaveLabels() {
 	const { t } = useTranslate();
 	const sickDetails: Record<SickDetail, string> = {
 		child_sick: t("settings.personnelFiles.sickLeave.sickDetail.childSick", "Child sick"),
@@ -141,9 +143,10 @@ function SickNotesCell({ row }: { row: SickLeaveOverviewRow }) {
 export function SickLeaveOverview(props: SickLeaveOverviewProps) {
 	const { t } = useTranslate();
 	const locale = useAppLocale();
-	const { push } = useRouter();
+	const { push, refresh } = useRouter();
 	const searchParams = useSearchParams();
 	const [isPending, startTransition] = useTransition();
+	const [managing, setManaging] = useState<SickLeaveOverviewRow | null>(null);
 	const labels = useSickLeaveLabels();
 	const { filters } = props;
 
@@ -414,6 +417,23 @@ export function SickLeaveOverview(props: SickLeaveOverviewProps) {
 									</TableCell>
 									<TableCell className="align-top">
 										<SickNotesCell row={row} />
+										<Button
+											type="button"
+											variant="link"
+											size="sm"
+											className="h-auto px-0"
+											onClick={() => setManaging(row)}
+											aria-label={t(
+												"settings.personnelFiles.sickNotes.manageFor",
+												"Attach or link sick notes for {name}, {dateRange}",
+												{
+													name: row.employeeName,
+													dateRange: formatAbsenceDateRange(row.startDate, row.endDate, locale),
+												},
+											)}
+										>
+											{t("settings.personnelFiles.sickNotes.manage", "Attach or link")}
+										</Button>
 									</TableCell>
 								</TableRow>
 							))}
@@ -486,6 +506,24 @@ export function SickLeaveOverview(props: SickLeaveOverviewProps) {
 					</div>
 				</div>
 			</div>
+			{managing ? (
+				<AbsenceSickNotesPanel
+					key={managing.absenceId}
+					absence={{
+						id: managing.absenceId,
+						employeeId: managing.employeeId,
+						startDate: managing.startDate,
+						endDate: managing.endDate,
+					}}
+					open
+					onOpenChange={(open) => {
+						if (!open) setManaging(null);
+					}}
+					canAttach={false}
+					manage
+					onChanged={refresh}
+				/>
+			) : null}
 		</div>
 	);
 }

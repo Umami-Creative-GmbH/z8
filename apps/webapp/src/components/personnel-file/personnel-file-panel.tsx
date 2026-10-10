@@ -1,13 +1,15 @@
 "use client";
 
-import { IconPencil, IconTrash, IconUpload } from "@tabler/icons-react";
+import { IconLink, IconPencil, IconTrash, IconUnlink, IconUpload } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
+import { toast } from "sonner";
 import {
 	type EmployeeDocumentView,
 	getPersonnelFileAction,
 } from "@/app/[locale]/(app)/personnel-files/actions";
+import { unlinkSickNoteAction } from "@/app/[locale]/(app)/personnel-files/sick-note-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -26,6 +28,7 @@ import { DocumentDialog } from "./document-dialog";
 import { usePersonnelFileLabels } from "./document-labels";
 import { DocumentList } from "./document-list";
 import { DownloadPersonnelFile } from "./download-personnel-file";
+import { LinkSickNoteToAbsenceDialog } from "./sick-note-links";
 
 const ALL_CATEGORIES = "all";
 
@@ -48,6 +51,8 @@ export function PersonnelFilePanel({
 	const [uploading, setUploading] = useState(false);
 	const [editing, setEditing] = useState<EmployeeDocumentView | null>(null);
 	const [deleting, setDeleting] = useState<EmployeeDocumentView | null>(null);
+	const [linking, setLinking] = useState<EmployeeDocumentView | null>(null);
+	const [unlinkingId, setUnlinkingId] = useState<string | null>(null);
 	const employeeId = capability.employeeId;
 
 	const query = useQuery({
@@ -63,6 +68,32 @@ export function PersonnelFilePanel({
 		void queryClient.invalidateQueries({
 			queryKey: queryKeys.personnelFile.employeeAll(employeeId),
 		});
+	}
+
+	function refreshSickNotes() {
+		refresh();
+		void queryClient.invalidateQueries({ queryKey: queryKeys.personnelFile.sickNotesAll() });
+	}
+
+	async function unlink(document: EmployeeDocumentView) {
+		setUnlinkingId(document.id);
+		try {
+			const result = await unlinkSickNoteAction({ documentId: document.id });
+			if (!result.success) {
+				toast.error(
+					result.error ||
+						t(
+							"settings.personnelFiles.sickNotes.unlinkFailed",
+							"The sick note could not be unlinked.",
+						),
+				);
+				return;
+			}
+			toast.success(t("settings.personnelFiles.sickNotes.unlinked", "Sick note unlinked"));
+			refreshSickNotes();
+		} finally {
+			setUnlinkingId(null);
+		}
 	}
 
 	return (
@@ -136,6 +167,38 @@ export function PersonnelFilePanel({
 						showVisibility
 						actions={(document) => (
 							<>
+								{document.category === "sick_note" ? (
+									document.absence ? (
+										<Button
+											type="button"
+											variant="ghost"
+											size="icon"
+											disabled={unlinkingId === document.id}
+											onClick={() => void unlink(document)}
+											aria-label={t(
+												"settings.personnelFiles.sickNotes.unlinkFromAbsence",
+												"Unlink {title} from its sick leave",
+												{ title: document.title },
+											)}
+										>
+											<IconUnlink aria-hidden="true" className="size-4" />
+										</Button>
+									) : (
+										<Button
+											type="button"
+											variant="ghost"
+											size="icon"
+											onClick={() => setLinking(document)}
+											aria-label={t(
+												"settings.personnelFiles.sickNotes.linkToAbsence",
+												"Link {title} to sick leave",
+												{ title: document.title },
+											)}
+										>
+											<IconLink aria-hidden="true" className="size-4" />
+										</Button>
+									)
+								) : null}
 								<Button
 									type="button"
 									variant="ghost"
@@ -195,6 +258,17 @@ export function PersonnelFilePanel({
 				}}
 				onDeleted={refresh}
 			/>
+			{linking ? (
+				<LinkSickNoteToAbsenceDialog
+					key={linking.id}
+					document={linking}
+					open
+					onOpenChange={(open) => {
+						if (!open) setLinking(null);
+					}}
+					onLinked={refreshSickNotes}
+				/>
+			) : null}
 		</Card>
 	);
 }

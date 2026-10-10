@@ -218,6 +218,9 @@ export const queryKeys = {
 			["personnel-file", "sick-notes", "own", ...absenceIds] as const,
 		absenceSickNotes: (absenceId: string) =>
 			["personnel-file", "sick-notes", "absence", absenceId] as const,
+		/** An employee's sick leave in the officer area (#984). */
+		employeeSickLeave: (employeeId: string) =>
+			["personnel-file", "sick-notes", "sick-leave", employeeId] as const,
 	},
 
 	// Employee clock statuses

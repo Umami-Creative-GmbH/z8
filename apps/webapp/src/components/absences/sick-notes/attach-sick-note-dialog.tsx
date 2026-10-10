@@ -3,6 +3,7 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	ActionPanel,
@@ -14,8 +15,11 @@ import {
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import { TFormItem, TFormMessage } from "@/components/ui/tanstack-form";
+import { DEFAULT_VISIBILITY, type DocumentVisibility } from "@/lib/personnel-file/document.types";
 import {
 	resolveStagedSickNoteFiles,
 	SickNoteFilesField,
@@ -38,11 +42,20 @@ export interface SickNoteAbsenceTarget {
 	endDate: string;
 }
 
+/**
+ * Who attaches: the employee to their own absence (always shared), or whoever
+ * manages the employee's sick notes (#984), HR-only unless they share it.
+ */
+export type SickNoteAttacher = "employee" | "officer";
+
 async function attachSickNote(input: {
 	uploaded: UploadedSickNote;
 	absence: SickNoteAbsenceTarget;
+	authority: SickNoteAttacher;
+	visibility: DocumentVisibility;
 }): Promise<void> {
 	const { uploaded, absence } = input;
+	const officer = input.authority === "officer";
 	const response = await fetch("/api/upload/personnel-file", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -50,12 +63,13 @@ async function attachSickNote(input: {
 			tusFileKey: uploaded.tusFileKey,
 			fileName: uploaded.fileName,
 			employeeId: absence.employeeId,
-			source: "own",
+			...(officer ? {} : { source: "own" }),
 			absenceId: absence.id,
 			metadata: {
 				category: "sick_note",
 				title: uploaded.title,
 				documentDate: uploaded.documentDate,
+				...(officer ? { visibility: input.visibility } : {}),
 			},
 		}),
 	});
@@ -69,15 +83,18 @@ async function attachSickNote(input: {
  * Attaches one or more sick notes to the employee's own sick leave (#982).
  * Each file, picked or taken with the phone camera (#983), becomes its own
  * shared sick note in the personnel file with its own title and document
- * date; there is no expiry or visibility.
+ * date; there is no expiry or visibility. Whoever manages the employee's sick
+ * notes attaches HR-only notes, or shares them with the employee (#984).
  */
 export function AttachSickNoteDialog({
 	absence,
+	authority = "employee",
 	open,
 	onOpenChange,
 	onAttached,
 }: {
 	absence: SickNoteAbsenceTarget;
+	authority?: SickNoteAttacher;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onAttached: () => void;
@@ -85,9 +102,12 @@ export function AttachSickNoteDialog({
 	const { t } = useTranslate();
 	const dates = { startDate: absence.startDate, endDate: absence.endDate };
 	const defaults = useSickNoteDefaults(dates);
+	const [shared, setShared] = useState(false);
+	const visibility: DocumentVisibility = shared ? "shared" : DEFAULT_VISIBILITY.sick_note;
 	const uploads = useStagedSickNoteUploads({
-		process: (uploaded) => attachSickNote({ uploaded, absence }),
+		process: (uploaded) => attachSickNote({ uploaded, absence, authority, visibility }),
 	});
+	const officer = authority === "officer";
 
 	const form = useForm({
 		defaultValues: { sickNotes: [] as StagedSickNoteFile[] },
@@ -124,6 +144,7 @@ export function AttachSickNoteDialog({
 
 	function close() {
 		form.reset();
+		setShared(false);
 		onOpenChange(false);
 	}
 
@@ -149,10 +170,15 @@ export function AttachSickNoteDialog({
 									{t("absences.sickNotes.attach.title", "Attach sick note")}
 								</ActionPanelTitle>
 								<ActionPanelDescription>
-									{t(
-										"absences.sickNotes.attach.description",
-										"Add photos or PDFs of your sick note: PDF, JPEG, PNG or WebP files of up to 20 MB each. Each file is saved as its own sick note in your personnel file.",
-									)}
+									{officer
+										? t(
+												"absences.sickNotes.attach.officerDescription",
+												"Add photos or PDFs of the sick note: PDF, JPEG, PNG or WebP files of up to 20 MB each. Each file is saved as its own sick note in the employee's personnel file.",
+											)
+										: t(
+												"absences.sickNotes.attach.description",
+												"Add photos or PDFs of your sick note: PDF, JPEG, PNG or WebP files of up to 20 MB each. Each file is saved as its own sick note in your personnel file.",
+											)}
 								</ActionPanelDescription>
 							</ActionPanelHeader>
 
@@ -185,12 +211,34 @@ export function AttachSickNoteDialog({
 									)}
 								</form.Field>
 
-								<p className="text-sm text-muted-foreground">
-									{t(
-										"absences.sickNotes.attach.sharedNote",
-										"You see your sick notes under My Documents and on this absence. Your approver only sees that a sick note is attached. You can delete a sick note within 24 hours of uploading it.",
-									)}
-								</p>
+								{officer ? (
+									<div className="flex items-start justify-between gap-4 rounded-md border p-3">
+										<div className="space-y-1">
+											<Label htmlFor="attach-sick-note-shared">
+												{t("absences.sickNotes.attach.share", "Share with the employee")}
+											</Label>
+											<p className="text-sm text-muted-foreground">
+												{t(
+													"absences.sickNotes.attach.shareHint",
+													"Off: HR-only, the employee only sees that a sick note is attached. On: the employee sees it under My Documents.",
+												)}
+											</p>
+										</div>
+										<Switch
+											id="attach-sick-note-shared"
+											checked={shared}
+											onCheckedChange={setShared}
+											disabled={busy}
+										/>
+									</div>
+								) : (
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"absences.sickNotes.attach.sharedNote",
+											"You see your sick notes under My Documents and on this absence. Your approver only sees that a sick note is attached. You can delete a sick note within 24 hours of uploading it.",
+										)}
+									</p>
+								)}
 
 								{uploads.isStaging ? (
 									<div className="space-y-1">
