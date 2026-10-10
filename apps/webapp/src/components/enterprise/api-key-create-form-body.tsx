@@ -38,9 +38,12 @@ import {
 	API_KEY_SCOPES,
 	type ApiKeyScope,
 	type CreateApiKeyResponse,
+	DEFAULT_RATE_LIMIT_MAX,
+	DEFAULT_RATE_LIMIT_WINDOW,
 	EXPIRATION_OPTIONS,
 	SCOPE_LABELS,
 } from "@/lib/validations/api-key";
+import { RateLimitWindowField } from "./api-key-rate-limit-window-field";
 
 export interface ApiKeyCreateDialogProps {
 	organizationId: string;
@@ -57,6 +60,7 @@ interface ApiKeyCreateFormValues {
 	selectedScopes: ApiKeyScope[];
 	rateLimitEnabled: boolean;
 	rateLimitMax: string;
+	rateLimitTimeWindow: string;
 }
 
 const DEFAULT_FORM_VALUES: ApiKeyCreateFormValues = {
@@ -64,7 +68,8 @@ const DEFAULT_FORM_VALUES: ApiKeyCreateFormValues = {
 	expiresIn: "30",
 	selectedScopes: ["time-entries:read"],
 	rateLimitEnabled: true,
-	rateLimitMax: "100",
+	rateLimitMax: String(DEFAULT_RATE_LIMIT_MAX),
+	rateLimitTimeWindow: String(DEFAULT_RATE_LIMIT_WINDOW),
 };
 
 function isRateLimitMaxValid(value: string) {
@@ -131,7 +136,11 @@ function useApiKeyCreateController({
 						? value.rateLimitMax
 						: DEFAULT_FORM_VALUES.rateLimitMax,
 				),
-				rateLimitTimeWindow: 60000, // 1 minute
+				rateLimitTimeWindow: Number(
+					value.rateLimitEnabled
+						? value.rateLimitTimeWindow
+						: DEFAULT_FORM_VALUES.rateLimitTimeWindow,
+				),
 			});
 			if (!result.success)
 				throw new Error(result.error || "Failed to create API key");
@@ -371,48 +380,62 @@ export function ApiKeyCreateFormBody(props: ApiKeyCreateDialogProps) {
 										</Label>
 									</div>
 									{field.state.value && (
-										<form.Field
-											name="rateLimitMax"
-											validators={{
-												onChange: ({ value }) =>
-													validateRateLimitMax(
-														value,
-														rateLimitMaxInvalidMessage,
-													),
-											}}
-										>
-											{(rateLimitField) => (
-												<TFormItem className="ml-6">
-													<TFormLabel
-														htmlFor="rateLimitMax"
-														hasError={fieldHasError(rateLimitField)}
-													>
-														{t(
-															"settings.apiKeys.form.rateLimitMax",
-															"Max requests per minute",
-														)}
-													</TFormLabel>
-													<TFormControl
-														hasError={fieldHasError(rateLimitField)}
-													>
-														<Input
-															id="rateLimitMax"
-															name="rateLimitMax"
-															type="number"
-															value={rateLimitField.state.value}
-															onChange={(event) =>
-																rateLimitField.handleChange(event.target.value)
-															}
-															onBlur={rateLimitField.handleBlur}
-															min={10}
-															max={10000}
-															className="w-32"
-														/>
-													</TFormControl>
-													<TFormMessage field={rateLimitField} />
-												</TFormItem>
-											)}
-										</form.Field>
+										<div className="ml-6 flex flex-wrap items-start gap-4">
+											<form.Field
+												name="rateLimitMax"
+												validators={{
+													onChange: ({ value }) =>
+														validateRateLimitMax(
+															value,
+															rateLimitMaxInvalidMessage,
+														),
+												}}
+											>
+												{(rateLimitField) => (
+													<TFormItem>
+														<TFormLabel
+															htmlFor="rateLimitMax"
+															hasError={fieldHasError(rateLimitField)}
+														>
+															{t(
+																"settings.apiKeys.form.rateLimitMaxRequests",
+																"Max requests",
+															)}
+														</TFormLabel>
+														<TFormControl
+															hasError={fieldHasError(rateLimitField)}
+														>
+															<Input
+																id="rateLimitMax"
+																name="rateLimitMax"
+																type="number"
+																value={rateLimitField.state.value}
+																onChange={(event) =>
+																	rateLimitField.handleChange(
+																		event.target.value,
+																	)
+																}
+																onBlur={rateLimitField.handleBlur}
+																min={10}
+																max={10000}
+																className="w-32"
+															/>
+														</TFormControl>
+														<TFormMessage field={rateLimitField} />
+													</TFormItem>
+												)}
+											</form.Field>
+											<form.Field name="rateLimitTimeWindow">
+												{(windowField) => (
+													<RateLimitWindowField
+														id="rateLimitTimeWindow"
+														value={windowField.state.value}
+														onChange={windowField.handleChange}
+														onBlur={windowField.handleBlur}
+													/>
+												)}
+											</form.Field>
+										</div>
 									)}
 								</div>
 							)}

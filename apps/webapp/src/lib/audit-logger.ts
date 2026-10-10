@@ -155,6 +155,11 @@ export enum AuditAction {
 	ICS_FEED_REGENERATED = "ics_feed.regenerated",
 	ICS_FEED_REVOKED = "ics_feed.revoked",
 
+	// Public API key lifecycle (#763); key usage goes to the key request log instead
+	API_KEY_CREATED = "api_key.created",
+	API_KEY_UPDATED = "api_key.updated",
+	API_KEY_REVOKED = "api_key.revoked",
+
 	// App Access Operations
 	APP_ACCESS_GRANTED = "app_access.granted",
 	APP_ACCESS_REVOKED = "app_access.revoked",
@@ -325,7 +330,8 @@ export interface AuditLogEntry {
 		| "works_council_export"
 		| "travel_expense_policy_version"
 		| "travel_expense_export"
-		| "ics_feed";
+		| "ics_feed"
+		| "api_key";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates

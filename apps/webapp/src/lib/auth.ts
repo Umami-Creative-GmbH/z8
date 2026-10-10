@@ -58,6 +58,7 @@ import {
 	recordVerifiedSsoLogin,
 } from "@/lib/enterprise-identity/sso-enforcement-plugin";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
+import { API_KEY_HTTP_PATHS, API_KEY_PLUGIN_OPTIONS } from "@/lib/public-api/keys/plugin-config";
 import {
 	createSCIMCallbackModelRegistration,
 	createZ8SCIMPlugin,
@@ -337,6 +338,11 @@ export const auth = betterAuth({
 
 		return [...new Set(origins)];
 	},
+
+	// Organization API keys are managed only through the guarded settings actions,
+	// which write the key, the per-org limit and the audit entry in one transaction
+	// (#763). The plugin's own HTTP endpoints would bypass all three.
+	disabledPaths: [...API_KEY_HTTP_PATHS],
 
 	advanced: {
 		database: {
@@ -794,19 +800,10 @@ export const auth = betterAuth({
 		}),
 		ssoVerifiedDomainMembershipPlugin(db),
 		authMutationCoordinationPlugin(),
-		// API Key plugin for organization-level API access
-		// Organization-specific data (organizationId, scopes, etc.) is stored in the metadata field
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Used at runtime
-		apiKey({
-			// Rate limiting configuration
-			rateLimit: {
-				enabled: true,
-				timeWindow: 60 * 1000, // 1 minute
-				maxRequests: 100, // 100 requests per minute default
-			},
-			// Enable metadata storage for additional key info (organizationId, scopes, displayName, createdBy)
-			enableMetadata: true,
-		}),
+		// Public API keys (#763): owned by the organization (`referenceId`), scopes in
+		// `permissions`, the key creator in metadata for attribution only (ADR 0001).
+		// The plugin verifies keys and enforces their per-key rate limit.
+		apiKey(API_KEY_PLUGIN_OPTIONS),
 		createSsoEnforcementPlugin(sessionSsoStore),
 		enterpriseIdentityInvitationResendPlugin(),
 		// Server-only: hands an exchanged store app session to the web view (#842).

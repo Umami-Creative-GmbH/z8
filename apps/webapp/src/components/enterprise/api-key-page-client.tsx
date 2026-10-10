@@ -277,6 +277,29 @@ function ApiKeysCard({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 													date: formatDate(apiKey.createdAt),
 												})}
 											</div>
+											{apiKey.creator ? (
+												<div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+													<span>
+														{t("settings.apiKeys.createdBy", "by {name}", {
+															name:
+																apiKey.creator.name ||
+																apiKey.creator.email ||
+																t(
+																	"settings.apiKeys.unknownCreator",
+																	"a former admin",
+																),
+														})}
+													</span>
+													{apiKey.creator.departed ? (
+														<Badge variant="outline" className="text-[10px]">
+															{t(
+																"settings.apiKeys.creatorDeparted",
+																"Departed",
+															)}
+														</Badge>
+													) : null}
+												</div>
+											) : null}
 										</TableCell>
 										<TableCell>
 											<div className="flex items-center gap-2">

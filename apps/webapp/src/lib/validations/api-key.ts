@@ -1,30 +1,18 @@
 import { z } from "zod";
+import { API_KEY_SCOPES, type ApiKeyScope } from "@/lib/public-api/scopes";
+
+export { API_KEY_SCOPES, type ApiKeyScope };
 
 /**
- * Available permission scopes for API keys
- * These define what operations an API key can perform
- */
-export const API_KEY_SCOPES = [
-	"time-entries:read",
-	"time-entries:write",
-	"employees:read",
-	"reports:read",
-	"projects:read",
-	"projects:write",
-] as const;
-
-export type ApiKeyScope = (typeof API_KEY_SCOPES)[number];
-
-/**
- * Human-readable labels for permission scopes
+ * Human-readable labels for the key scopes
  */
 export const SCOPE_LABELS: Record<ApiKeyScope, string> = {
 	"time-entries:read": "Read time entries",
-	"time-entries:write": "Write time entries",
+	"absences:read": "Read absences",
+	"absences:read-health": "Read absence health detail",
 	"employees:read": "Read employees",
-	"reports:read": "Read reports",
 	"projects:read": "Read projects",
-	"projects:write": "Write projects",
+	"customers:read": "Read customers",
 };
 
 /**
@@ -40,18 +28,49 @@ export const EXPIRATION_OPTIONS = [
 ] as const;
 
 /**
+ * Time windows an admin can choose for a key's rate limit, in milliseconds.
+ */
+export const RATE_LIMIT_WINDOW_OPTIONS = [
+	{ value: 1_000, label: "per second" },
+	{ value: 60_000, label: "per minute" },
+	{ value: 3_600_000, label: "per hour" },
+] as const;
+
+export type RateLimitWindow = (typeof RATE_LIMIT_WINDOW_OPTIONS)[number]["value"];
+
+export const DEFAULT_RATE_LIMIT_MAX = 100;
+export const DEFAULT_RATE_LIMIT_WINDOW: RateLimitWindow = 60_000;
+
+/**
  * Maximum number of API keys per organization
  */
 export const MAX_API_KEYS_PER_ORG = 10;
+
+const nameSchema = z
+	.string()
+	.trim()
+	.min(3, "Name must be at least 3 characters")
+	.max(100, "Name must be at most 100 characters");
+
+const scopesSchema = z.array(z.enum(API_KEY_SCOPES)).min(1, "At least one scope is required");
+
+const rateLimitMaxSchema = z
+	.number()
+	.int()
+	.min(10, "Rate limit must be at least 10 requests")
+	.max(10000, "Rate limit must be at most 10,000 requests");
+
+const rateLimitTimeWindowSchema = z
+	.number()
+	.int()
+	.min(1000, "Time window must be at least 1 second")
+	.max(3600000, "Time window must be at most 1 hour");
 
 /**
  * Schema for creating a new API key
  */
 export const createApiKeySchema = z.object({
-	name: z
-		.string()
-		.min(3, "Name must be at least 3 characters")
-		.max(100, "Name must be at most 100 characters"),
+	name: nameSchema,
 	expiresInDays: z
 		.number()
 		.int()
@@ -59,47 +78,24 @@ export const createApiKeySchema = z.object({
 		.max(365, "Expiration must be at most 365 days")
 		.optional()
 		.nullable(),
-	scopes: z
-		.array(z.enum(API_KEY_SCOPES))
-		.min(1, "At least one scope is required")
-		.default(["time-entries:read"]),
+	scopes: scopesSchema,
 	rateLimitEnabled: z.boolean().default(true),
-	rateLimitMax: z
-		.number()
-		.int()
-		.min(10, "Rate limit must be at least 10 requests")
-		.max(10000, "Rate limit must be at most 10,000 requests")
-		.optional()
-		.default(100),
-	rateLimitTimeWindow: z
-		.number()
-		.int()
-		.min(1000, "Time window must be at least 1 second")
-		.max(3600000, "Time window must be at most 1 hour")
-		.optional()
-		.default(60000), // 1 minute in milliseconds
+	rateLimitMax: rateLimitMaxSchema.optional().default(DEFAULT_RATE_LIMIT_MAX),
+	rateLimitTimeWindow: rateLimitTimeWindowSchema.optional().default(DEFAULT_RATE_LIMIT_WINDOW),
 });
 
-export type CreateApiKeyData = z.infer<typeof createApiKeySchema>;
+export type CreateApiKeyData = z.input<typeof createApiKeySchema>;
 
 /**
  * Schema for updating an existing API key
  */
 export const updateApiKeySchema = z.object({
-	name: z
-		.string()
-		.min(3, "Name must be at least 3 characters")
-		.max(100, "Name must be at most 100 characters")
-		.optional(),
+	name: nameSchema.optional(),
 	enabled: z.boolean().optional(),
 	rateLimitEnabled: z.boolean().optional(),
-	rateLimitMax: z
-		.number()
-		.int()
-		.min(10, "Rate limit must be at least 10 requests")
-		.max(10000, "Rate limit must be at most 10,000 requests")
-		.optional(),
-	scopes: z.array(z.enum(API_KEY_SCOPES)).min(1, "At least one scope is required").optional(),
+	rateLimitMax: rateLimitMaxSchema.optional(),
+	rateLimitTimeWindow: rateLimitTimeWindowSchema.optional(),
+	scopes: scopesSchema.optional(),
 });
 
 export type UpdateApiKeyData = z.infer<typeof updateApiKeySchema>;
@@ -115,7 +111,9 @@ export interface ApiKeyResponse {
 	/** First few characters of the key for identification */
 	prefix: string | null;
 	organizationId: string;
+	/** The admin who created the key, for attribution only (ADR 0001). */
 	createdBy: string | null;
+	creator: ApiKeyCreator | null;
 	/** ISO date string */
 	createdAt: string;
 	/** ISO date string */
@@ -130,6 +128,14 @@ export interface ApiKeyResponse {
 	rateLimitMax: number | null;
 	rateLimitTimeWindow: number | null;
 	requestCount: number | null;
+}
+
+export interface ApiKeyCreator {
+	userId: string;
+	name: string | null;
+	email: string | null;
+	/** No longer an active member of the organization; the key keeps working. */
+	departed: boolean;
 }
 
 /**
