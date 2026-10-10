@@ -74,6 +74,7 @@ const NATIVE_PUSH_CATEGORY: Record<NotificationType, NativePushCategory> = {
 	travel_expense_partially_reimbursed: "travel_expense",
 	travel_expense_recovery_recorded: "travel_expense",
 	travel_expense_ready_for_reimbursement: "attention",
+	travel_expense_payroll_run_awaiting_confirmation: "attention",
 	missed_clock_in_reminder: "reminder",
 	forgotten_clock_out_reminder: "reminder",
 	break_due_reminder: "reminder",

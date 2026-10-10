@@ -7,6 +7,8 @@ import {
 	discardScopedPayrollRunAction,
 	getScopedPayrollRunsAction,
 } from "@/app/[locale]/(app)/payroll/actions";
+import { getPayrollRunsToConfirmAction } from "@/app/[locale]/(app)/travel-expenses/finance-actions";
+import { ConfirmPayrollRunButton } from "@/components/travel-expenses/finance/confirm-payroll-run-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { queryKeys } from "@/lib/query/keys";
 import { formatPlainDateRange } from "@/lib/travel-expenses/format";
@@ -29,7 +31,20 @@ export function PayrollRunsCard() {
 			return result.data;
 		},
 	});
+	// A payroll access holder who also records reimbursements confirms here too (#853).
+	const { data: toConfirm } = useQuery({
+		queryKey: queryKeys.travelExpenses.payrollRunsToConfirm(),
+		queryFn: async () => {
+			const result = await getPayrollRunsToConfirmAction();
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
+		enabled: Boolean(runs && runs.length > 0),
+	});
 	if (!runs || runs.length === 0) return null;
+	const confirmable = new Map((toConfirm ?? []).map((run) => [run.jobId, run]));
+	const refresh = () =>
+		void queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.payrollRuns() });
 
 	return (
 		<Card>
@@ -44,31 +59,37 @@ export function PayrollRunsCard() {
 			</CardHeader>
 			<CardContent>
 				<ul className="divide-y">
-					{runs.map((run) => (
-						<li key={run.jobId} className="flex items-center justify-between gap-4 py-2">
-							<div className="min-w-0">
-								<p className="font-medium tabular-nums">
-									{formatPlainDateRange(locale, run.periodStart, run.periodEnd)}
-								</p>
-								<p className="text-sm text-muted-foreground">
-									{t(
-										"payroll.runs.reports",
-										"{count, plural, one {# expense report} other {# expense reports}}",
-										{ count: run.includedReports },
+					{runs.map((run) => {
+						const confirmRun = confirmable.get(run.jobId);
+						return (
+							<li key={run.jobId} className="flex items-center justify-between gap-4 py-2">
+								<div className="min-w-0">
+									<p className="font-medium tabular-nums">
+										{formatPlainDateRange(locale, run.periodStart, run.periodEnd)}
+									</p>
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"payroll.runs.reports",
+											"{count, plural, one {# expense report} other {# expense reports}}",
+											{ count: run.includedReports },
+										)}
+									</p>
+								</div>
+								<div className="flex shrink-0 items-center gap-2">
+									{confirmRun && <ConfirmPayrollRunButton run={confirmRun} onConfirmed={refresh} />}
+									{/* A run confirmed for some report is final (#853). */}
+									{!run.partlyConfirmed && (
+										<DiscardPayrollRunButton
+											includedReports={run.includedReports}
+											discard={() => discardScopedPayrollRunAction(run.jobId)}
+											// Freed reports change payroll run readiness too (#854).
+											onDiscarded={refresh}
+										/>
 									)}
-								</p>
-							</div>
-							<DiscardPayrollRunButton
-								includedReports={run.includedReports}
-								discard={() => discardScopedPayrollRunAction(run.jobId)}
-								onDiscarded={() =>
-									void queryClient.invalidateQueries({
-										queryKey: queryKeys.travelExpenses.scopedPayrollRuns(),
-									})
-								}
-							/>
-						</li>
-					))}
+								</div>
+							</li>
+						);
+					})}
 				</ul>
 			</CardContent>
 		</Card>

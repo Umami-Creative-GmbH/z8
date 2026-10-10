@@ -279,7 +279,8 @@ export type SettlementPlanRefusal =
  * balance the person recording saw: if anything changed since (another
  * reimbursement, an adjustment), the command is refused instead of applied to
  * a balance nobody looked at. A reimbursement never exceeds what is
- * outstanding; a recovery never exceeds the overpayment. With `inFull`
+ * outstanding, except what a confirmed payroll run already paid
+ * (`paidByPayroll`, #853); a recovery never exceeds the overpayment. With `inFull`
  * (bulk reimbursement, #754) the entry must leave every currency of the
  * account settled: a partial payment or a mixed account is refused.
  */
@@ -287,7 +288,15 @@ export function planSettlementEntry(
 	summary: SettlementSummary,
 	command: Pick<SettlementCommand, "kind" | "amount" | "currency">,
 	expectedBalance: { currency: string; amount: string },
-	options: { inFull?: boolean } = {},
+	options: {
+		inFull?: boolean;
+		/**
+		 * Confirming a payroll run (#853): payroll already paid this amount, so it
+		 * is recorded in full even beyond what is outstanding. The excess shows as
+		 * an overpayment, recovered by hand (decision 11).
+		 */
+		paidByPayroll?: boolean;
+	} = {},
 ):
 	| { ok: true; balanceBefore: string; balanceAfter: string }
 	| { ok: false; reason: SettlementPlanRefusal; balance: string } {
@@ -305,8 +314,10 @@ export function planSettlementEntry(
 	const amount = storedUnits(command.amount);
 	if (amount <= ZERO) throw new RangeError("Settlement amounts are positive");
 	if (command.kind === "reimbursement") {
-		if (balance <= ZERO) return refuse("nothing_outstanding");
-		if (amount > balance) return refuse("exceeds_outstanding");
+		if (!options.paidByPayroll) {
+			if (balance <= ZERO) return refuse("nothing_outstanding");
+			if (amount > balance) return refuse("exceeds_outstanding");
+		}
 	} else {
 		if (balance >= ZERO) return refuse("no_overpayment");
 		if (amount > -balance) return refuse("exceeds_overpayment");

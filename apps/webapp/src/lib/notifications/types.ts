@@ -62,6 +62,8 @@ export const NOTIFICATION_TYPES = [
 	"travel_expense_recovery_recorded",
 	// Reimbursement work arriving for expense officers (#756)
 	"travel_expense_ready_for_reimbursement",
+	// A payroll run awaits the officer's confirmation (#855)
+	"travel_expense_payroll_run_awaiting_confirmation",
 	// Clocking reminders to the employee about their own clocking (#827)
 	"missed_clock_in_reminder",
 	"forgotten_clock_out_reminder",
@@ -88,6 +90,7 @@ export function hasMandatoryInbox(type: NotificationType): boolean {
 /** Types delivered only to the inbox until the user turns on another channel. */
 const IN_APP_ONLY_BY_DEFAULT: ReadonlySet<NotificationType> = new Set([
 	"travel_expense_ready_for_reimbursement",
+	"travel_expense_payroll_run_awaiting_confirmation",
 ]);
 
 /** Clocking reminders: in-app and push until the user turns on another channel. */
