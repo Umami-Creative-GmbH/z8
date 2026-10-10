@@ -42,7 +42,7 @@ function eachDayKey(startDate: PlainDate, endDate: PlainDate): string[] {
  * scheduled working day in the range (no work policy schedule, or an hourly contract without
  * published shifts) no day is treated as non-working.
  */
-async function loadNonWorkingDays(input: {
+export async function loadNonWorkingDays(input: {
 	organizationId: string;
 	employeeId: string;
 	timezone: string;
@@ -64,7 +64,7 @@ async function loadNonWorkingDays(input: {
 	return new Set(eachDayKey(input.startDate, input.endDate).filter((key) => !requirements[key]));
 }
 
-async function loadPublicHolidays(
+export async function loadPublicHolidays(
 	database: Database,
 	input: { organizationId: string; employeeId: string; startDate: PlainDate; endDate: PlainDate },
 ): Promise<Set<string>> {
@@ -109,17 +109,36 @@ async function loadEmployment(
 			)
 			.limit(1),
 	]);
+	return submissionEmployment({
+		coverage,
+		legacyStartDate: input.legacyStartDate,
+		timezone: input.timezone,
+		upcomingCutoff: upcomingDeparture?.cutoffAt ?? null,
+	});
+}
+
+/**
+ * Employment intervals from lifecycle coverage (null: no evidence), the legacy employee start
+ * date for a stint without a recorded start, and the cutoff of a pending or blocked departure,
+ * which ends the open stint.
+ */
+export function submissionEmployment(input: {
+	coverage: readonly EmploymentInterval[] | null;
+	legacyStartDate: Date | null;
+	timezone: string;
+	upcomingCutoff: Date | null;
+}): EmploymentInterval[] {
 	const legacyStart = input.legacyStartDate
 		? parsePlainDate(input.legacyStartDate.toISOString().slice(0, 10))
 				.toZonedDateTime(input.timezone)
 				.toInstant()
 		: null;
-	const intervals = (coverage ?? [{ startedAt: null, endedAt: null }]).map((interval) => ({
+	const intervals = (input.coverage ?? [{ startedAt: null, endedAt: null }]).map((interval) => ({
 		startedAt: interval.startedAt ?? legacyStart,
 		endedAt: interval.endedAt,
 	}));
-	if (!upcomingDeparture) return intervals;
-	const cutoff = instantFromDate(upcomingDeparture.cutoffAt);
+	if (!input.upcomingCutoff) return intervals;
+	const cutoff = instantFromDate(input.upcomingCutoff);
 	return intervals.map((interval) =>
 		interval.endedAt === null ? { ...interval, endedAt: cutoff } : interval,
 	);
