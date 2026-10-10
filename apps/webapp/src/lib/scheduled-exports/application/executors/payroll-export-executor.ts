@@ -9,6 +9,10 @@ import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { createExportJob, getPayrollExportConfig, processExportJob } from "@/lib/payroll-export";
+import {
+	isPayrollExportFormatId,
+	payrollExportFormatIds,
+} from "@/lib/payroll-export/format-registry";
 import type { ExecutionResult, PayrollExportReportConfig, ReportConfig } from "../../domain/types";
 import { signFileUrl } from "../../infrastructure/signed-file-url";
 import type { ExecuteParams, IReportExecutor } from "./base-executor";
@@ -18,7 +22,7 @@ const logger = createLogger("PayrollExportExecutor");
 /**
  * Payroll Export Executor
  *
- * Executes payroll exports using DATEV, Lexware, Sage, or Personio formats.
+ * Executes payroll exports in any registered payroll export format.
  */
 export class PayrollExportExecutor implements IReportExecutor {
 	readonly reportType = "payroll_export";
@@ -120,23 +124,42 @@ export class PayrollExportExecutor implements IReportExecutor {
 	 * Validate payroll export configuration
 	 */
 	validateConfig(config: ReportConfig): { valid: boolean; errors?: string[] } {
-		const errors: string[] = [];
-		const payrollConfig = config as PayrollExportReportConfig;
+		const { formatId } = config as Partial<PayrollExportReportConfig>;
 
-		if (!payrollConfig.formatId) {
-			errors.push("formatId is required for payroll exports");
+		if (!formatId) {
+			return { valid: false, errors: ["formatId is required for payroll exports"] };
+		}
+		if (!isPayrollExportFormatId(formatId)) {
+			return {
+				valid: false,
+				errors: [
+					`Invalid formatId: ${formatId}. Valid formats: ${payrollExportFormatIds().join(", ")}`,
+				],
+			};
 		}
 
-		const validFormats = ["datev_lohn", "sage_lohn", "lexware_lohn", "personio"];
-		if (payrollConfig.formatId && !validFormats.includes(payrollConfig.formatId)) {
-			errors.push(
-				`Invalid formatId: ${payrollConfig.formatId}. Valid formats: ${validFormats.join(", ")}`,
-			);
+		return { valid: true };
+	}
+
+	/**
+	 * A schedule is saved only for a known format the organization has an
+	 * active payroll export configuration for.
+	 */
+	async validateForOrganization(
+		organizationId: string,
+		config: ReportConfig,
+	): Promise<{ valid: boolean; errors?: string[] }> {
+		const validation = this.validateConfig(config);
+		if (!validation.valid) return validation;
+
+		const { formatId } = config as PayrollExportReportConfig;
+		if (!(await getPayrollExportConfig(organizationId, formatId))) {
+			return {
+				valid: false,
+				errors: [`Payroll export format is not configured: ${formatId}`],
+			};
 		}
 
-		return {
-			valid: errors.length === 0,
-			errors: errors.length > 0 ? errors : undefined,
-		};
+		return { valid: true };
 	}
 }

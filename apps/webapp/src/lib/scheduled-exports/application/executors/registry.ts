@@ -5,6 +5,7 @@
  * Provides lookup by report type for the orchestrator.
  */
 
+import type { ReportConfig } from "../../domain/types";
 import { AuditReportExecutor } from "./audit-report-executor";
 import type { IReportExecutor } from "./base-executor";
 import { DataExportExecutor } from "./data-export-executor";
@@ -64,3 +65,22 @@ class ExecutorRegistry {
 
 // Singleton instance
 export const executorRegistry = new ExecutorRegistry();
+
+/**
+ * The errors that keep a schedule's report configuration from being saved:
+ * its executor's validation, against the organization's setup where the
+ * executor checks it. Empty when the configuration is valid.
+ */
+export async function validateScheduledReportConfig(
+	organizationId: string,
+	reportType: string,
+	config: ReportConfig,
+): Promise<string[]> {
+	const executor = executorRegistry.get(reportType);
+	if (!executor) return [`Unknown report type: ${reportType}`];
+
+	const validation = executor.validateForOrganization
+		? await executor.validateForOrganization(organizationId, config)
+		: executor.validateConfig(config);
+	return validation.valid ? [] : (validation.errors ?? ["Invalid report configuration"]);
+}

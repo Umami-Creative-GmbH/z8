@@ -12,6 +12,7 @@ import { WorkdayConfigForm } from "@/components/settings/payroll-export/workday-
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import type { PayrollExportFormatId } from "@/lib/payroll-export/format-registry";
 import { getTranslate } from "@/tolgee/server";
 import {
 	getDatevConfigAction,
@@ -73,7 +74,8 @@ async function PayrollExportContent() {
 	const exports = historyResult.success ? historyResult.data : [];
 	// Employee custom fields every identifier and match setting can use (#821).
 	const identifierFields = identifierFieldsResult.success ? identifierFieldsResult.data : [];
-	const exportAvailability: Record<string, ExportAvailabilityEntry> = {
+	// Every registered format (#823) states whether it can export.
+	const exportAvailability: Record<PayrollExportFormatId, ExportAvailabilityEntry> = {
 		datev_lohn: {
 			configured: Boolean(datevConfig),
 			reason: datevConfig ? null : "missingConfiguration",

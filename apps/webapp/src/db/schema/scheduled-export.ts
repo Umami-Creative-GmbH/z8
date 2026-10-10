@@ -36,7 +36,7 @@ import { payrollExportConfig } from "./payroll-export";
  */
 export interface ScheduledExportReportConfig {
 	// For payroll exports
-	formatId?: string; // "datev_lohn", "sage", "lexware", "personio"
+	formatId?: string; // An id of the payroll export format registry (#823)
 
 	// For data exports
 	categories?: string[]; // ["employees", "time_entries", "absences"]

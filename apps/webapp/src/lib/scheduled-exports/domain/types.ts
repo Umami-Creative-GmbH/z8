@@ -76,7 +76,8 @@ export type ReportType = "payroll_export" | "data_export" | "audit_report";
  * Payroll export report configuration
  */
 export interface PayrollExportReportConfig {
-	formatId: string; // "datev_lohn", "sage", "lexware", "personio"
+	/** An id of the payroll export format registry (#823), checked when the schedule is saved. */
+	formatId: string;
 	includeMetadata?: boolean;
 }
 

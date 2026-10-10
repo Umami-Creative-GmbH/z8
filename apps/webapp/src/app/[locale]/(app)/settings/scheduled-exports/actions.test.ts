@@ -6,9 +6,15 @@ type Condition = { column: string; value: unknown };
 const mockState = vi.hoisted(() => ({
 	schedules: [] as Row[],
 	adminOrgs: ["org-1", "org-2"],
+	reportConfigErrors: [] as string[],
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+
+// Each executor's own validation has its suite (executors/registry.test.ts).
+vi.mock("@/lib/scheduled-exports/application/executors/registry", () => ({
+	validateScheduledReportConfig: vi.fn(async () => mockState.reportConfigErrors),
+}));
 
 // A fake that honours `where`: conditions are flattened to column = value pairs.
 vi.mock("drizzle-orm", () => ({
@@ -128,6 +134,32 @@ const createInput = {
 beforeEach(() => {
 	mockState.schedules = [storedSchedule()];
 	mockState.adminOrgs = ["org-1", "org-2"];
+	mockState.reportConfigErrors = [];
+});
+
+describe("scheduled export report configuration", () => {
+	it("refuses a report configuration its executor rejects on create and update", async () => {
+		mockState.reportConfigErrors = ["Payroll export format is not configured: sage_lohn"];
+		const before = structuredClone(mockState.schedules);
+
+		const created = await createScheduledExportAction({
+			...createInput,
+			reportConfig: { formatId: "sage_lohn" },
+		});
+		const updated = await updateScheduledExportAction({
+			id: "schedule-1",
+			organizationId: "org-1",
+			reportConfig: { formatId: "sage_lohn" },
+		});
+
+		expect(created).toEqual({
+			success: false,
+			error: "Payroll export format is not configured: sage_lohn",
+			code: "ValidationError",
+		});
+		expect(updated).toEqual(created);
+		expect(mockState.schedules).toEqual(before);
+	});
 });
 
 describe("scheduled export recipient validation", () => {

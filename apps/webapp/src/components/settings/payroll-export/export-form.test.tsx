@@ -200,6 +200,7 @@ vi.mock("@/components/ui/alert", () => ({
 	),
 }));
 
+import { PAYROLL_EXPORT_FORMATS } from "@/lib/payroll-export/format-registry";
 import { ExportForm } from "./export-form";
 
 function render(ui: ReactNode) {
@@ -581,4 +582,63 @@ describe("ExportForm", () => {
 			);
 		});
 	}, 15_000);
+
+	describe("format options", () => {
+		const registered = PAYROLL_EXPORT_FORMATS as unknown as object[];
+
+		afterEach(() => {
+			const fake = registered.findIndex(
+				(format) => "id" in format && format.id === "fake_lohn",
+			);
+			if (fake >= 0) registered.splice(fake, 1);
+		});
+
+		function formatOptionValues() {
+			const formatSelect = screen
+				.getAllByRole("combobox")
+				.find((combobox) =>
+					within(combobox).queryByRole("option", { name: "DATEV" }),
+				);
+			return within(formatSelect as HTMLSelectElement)
+				.getAllByRole("option")
+				.map((option) => (option as HTMLOptionElement).value);
+		}
+
+		it("offers every registered format in registry order", () => {
+			render(
+				<ExportForm
+					organizationId="org_123"
+					exportAvailability={fullyConfiguredAvailability}
+					config={null}
+				/>,
+			);
+
+			expect(formatOptionValues()).toEqual([
+				"datev_lohn",
+				"lexware_lohn",
+				"sage_lohn",
+				"personio",
+				"successfactors_api",
+				"successfactors_csv",
+				"workday_api",
+			]);
+		});
+
+		it("offers a newly registered format with no further edits", () => {
+			registered.push({ id: "fake_lohn", kind: "file", payrollWorkspace: false });
+
+			render(
+				<ExportForm
+					organizationId="org_123"
+					exportAvailability={{
+						...fullyConfiguredAvailability,
+						fake_lohn: { configured: true, reason: null },
+					}}
+					config={null}
+				/>,
+			);
+
+			expect(formatOptionValues()).toContain("fake_lohn");
+		});
+	});
 });

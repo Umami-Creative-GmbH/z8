@@ -38,6 +38,7 @@ import { workPeriodsFromCollectedInput } from "./collected-work";
 import { personioConnector } from "./connectors/personio-connector";
 import { PayrollConnectorRegistry } from "./connectors/registry";
 import { successFactorsConnector } from "./connectors/successfactors-connector";
+import type { PayrollApiConnector } from "./connectors/types";
 import {
 	countWorkPeriods,
 	fetchAbsencesForExport,
@@ -49,6 +50,7 @@ import {
 import { isExpensePayrollFormat } from "./expense-wage-type.types";
 import { successFactorsFormatter } from "./exporters/successfactors/successfactors-formatter";
 import { workdayConnector } from "./exporters/workday/workday-connector";
+import type { PayrollExportApiFormatId, PayrollExportFileFormatId } from "./format-registry";
 import { DatevLohnFormatter } from "./formatters/datev-lohn-formatter";
 import { LexwareLohnFormatter } from "./formatters/lexware-lohn-formatter";
 import { SageLohnFormatter } from "./formatters/sage-lohn-formatter";
@@ -75,38 +77,33 @@ import type {
 const logger = createLogger("PayrollExportService");
 
 /**
+ * One implementation per format in the format registry (#823), of the format's
+ * kind: a format registered without one fails typechecking.
+ */
+const fileFormatters: Record<PayrollExportFileFormatId, IPayrollExportFormatter> = {
+	datev_lohn: new DatevLohnFormatter(),
+	lexware_lohn: new LexwareLohnFormatter(),
+	sage_lohn: new SageLohnFormatter(),
+	successfactors_csv: successFactorsFormatter,
+};
+const apiConnectors: Record<PayrollExportApiFormatId, PayrollApiConnector> = {
+	personio: personioConnector,
+	successfactors_api: successFactorsConnector,
+	workday_api: workdayConnector,
+};
+
+/**
  * Registry of available file-based export formatters (DATEV, SAGE, etc.)
  */
-const formatters = new Map<string, IPayrollExportFormatter>();
+const formatters = new Map<string, IPayrollExportFormatter>(Object.entries(fileFormatters));
 
 /**
  * Registry of available API-based exporters (Personio, etc.)
  */
 const connectorRegistry = new PayrollConnectorRegistry();
-
-// Register DATEV formatter
-const datevFormatter = new DatevLohnFormatter();
-formatters.set(datevFormatter.formatId, datevFormatter);
-
-// Register Lexware formatter
-const lexwareFormatter = new LexwareLohnFormatter();
-formatters.set(lexwareFormatter.formatId, lexwareFormatter);
-
-// Register Sage formatter
-const sageFormatter = new SageLohnFormatter();
-formatters.set(sageFormatter.formatId, sageFormatter);
-
-// Register Personio exporter
-connectorRegistry.register(personioConnector);
-
-// Register SAP SuccessFactors exporter (API mode)
-connectorRegistry.register(successFactorsConnector);
-
-// Register Workday exporter (API mode)
-connectorRegistry.register(workdayConnector);
-
-// Register SAP SuccessFactors formatter (CSV mode)
-formatters.set(successFactorsFormatter.formatId, successFactorsFormatter);
+for (const connector of Object.values(apiConnectors)) {
+	connectorRegistry.register(connector);
+}
 
 /**
  * Get formatter by ID

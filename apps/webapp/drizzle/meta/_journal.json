@@ -1310,6 +1310,13 @@
       "when": 1800374400000,
       "tag": "0186_kiosk_clocking",
       "breakpoints": true
+    },
+    {
+      "idx": 187,
+      "version": "7",
+      "when": 1800460800000,
+      "tag": "0187_drop_payroll_export_format_type",
+      "breakpoints": true
     }
   ]
 }

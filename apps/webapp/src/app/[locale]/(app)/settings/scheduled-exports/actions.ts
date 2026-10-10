@@ -22,6 +22,7 @@ import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { validateScheduledReportConfig } from "@/lib/scheduled-exports/application/executors/registry";
 import { resolveRecipientEmails } from "@/lib/scheduled-exports/domain/recipient-emails";
 import {
 	calculateNextExecution,
@@ -114,6 +115,25 @@ export interface ExecutionHistoryItem {
 
 // Using isOrgAdminCasl from auth-helpers for CASL-based authorization
 
+/** Refuses a report configuration its executor rejects, e.g. an unconfigured payroll format. */
+function validateReportConfig(
+	organizationId: string,
+	reportType: string,
+	reportConfig: ScheduledExportReportConfig,
+) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const errors = yield* dbService.query("scheduledExport.validateReportConfig", () =>
+			validateScheduledReportConfig(organizationId, reportType, reportConfig),
+		);
+		if (errors.length > 0) {
+			yield* Effect.fail(
+				new ValidationError({ message: errors.join("; "), field: "reportConfig" }),
+			);
+		}
+	});
+}
+
 /** The normalised recipient emails for the schedule as it will be stored, or a validation failure. */
 function recipientEmailsFor(deliveryMethod: DeliveryMethod, emailRecipients: readonly string[]) {
 	const result = resolveRecipientEmails(deliveryMethod, emailRecipients);
@@ -172,6 +192,8 @@ export async function createScheduledExportAction(
 			input.deliveryMethod,
 			input.emailRecipients ?? [],
 		);
+
+		yield* validateReportConfig(input.organizationId, input.reportType, input.reportConfig);
 
 		// Calculate next execution time
 		const scheduleConfig: ScheduleConfig = {
@@ -367,6 +389,10 @@ export async function updateScheduledExportAction(
 
 		if (!existing) {
 			return yield* scheduledExportNotFound(input.id);
+		}
+
+		if (input.reportConfig !== undefined) {
+			yield* validateReportConfig(input.organizationId, existing.reportType, input.reportConfig);
 		}
 
 		// Build update object

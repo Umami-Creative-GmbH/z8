@@ -64,4 +64,13 @@ export interface IReportExecutor {
 	 * @returns Validation result with any errors
 	 */
 	validateConfig(config: ReportConfig): { valid: boolean; errors?: string[] };
+
+	/**
+	 * Validate report configuration against what the organization has set up,
+	 * when saving a schedule. Without it, `validateConfig` alone decides.
+	 */
+	validateForOrganization?(
+		organizationId: string,
+		config: ReportConfig,
+	): Promise<{ valid: boolean; errors?: string[] }>;
 }
