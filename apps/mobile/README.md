@@ -41,7 +41,7 @@ Checks: `pnpm --filter mobile test` and `pnpm --filter mobile typecheck`.
 | Variable | Default | Meaning |
 |---|---|---|
 | `Z8_APP_ORIGIN` | `https://ui.z8-time.app` | The web app the shell loads. Must be https. Plain http is accepted only for `localhost`, `127.0.0.1` and `10.0.2.2` (the Android emulator's host), for development. |
-| `Z8_APP_ALLOWED_HOSTS` | none | Comma-separated extra host names that stay inside the app, for example a custom sign-in domain. No scheme, path or wildcard. |
+| `Z8_APP_ALLOWED_HOSTS` | none | Comma-separated extra host names that stay inside the app. No scheme, path or wildcard. Custom sign-in domains do not belong here: sign-in runs in the system browser. |
 
 ~~~sh
 Z8_APP_ORIGIN=https://staging.example.com pnpm --filter mobile build:android
@@ -58,6 +58,7 @@ Service workers need a secure context, which `http://10.0.2.2` is not. For offli
 - **Shell detection.** The shell appends `Z8StoreApp/ios` or `Z8StoreApp/android` to the web view's user agent. The web app checks it with `isStoreAppShell()` and `getStoreAppPlatform()` from `apps/webapp/src/lib/store-app/shell.ts`. Both return `false`/`null` during server rendering. Use them for presentation and channel choices only, never for authorization. A test in this app checks that the token matches the helper.
 - **Camera.** File inputs with `capture` (the travel-expense receipt) open the camera. iOS needs `NSCameraUsageDescription` and `NSPhotoLibraryUsageDescription` in `Info.plist`. Android launches the camera app through `ACTION_IMAGE_CAPTURE`, declared under `<queries>` in `AndroidManifest.xml`, and needs no camera permission.
 - **Offline screen.** When the web app cannot be loaded and the service worker has nothing cached, Capacitor shows `www/z8-shell-offline.html` (`server.errorPath`) instead of a web view error page. It retries when the device comes back online or the user taps the button. On Android, `ShellWebViewClient` keeps the web app's own 404 and error pages: Capacitor would otherwise show the offline screen for every HTTP error status.
+- **Sign-in.** Signed out, the web app's `/sign-in` shows an email screen in the shell (it reads the user-agent marker). The email's domain picks where sign-in runs: the organization's verified custom sign-in domain, or the app origin. Sign-in then runs in the system browser with that domain's methods (password, passkey, SSO, social). On iOS this is an ephemeral `ASWebAuthenticationSession` (the app's `Z8AuthSession` plugin), which keeps no browser cookie afterwards. On Android it is a Custom Tab (`@capacitor/browser`). The browser returns a one-time code to `z8mobile://auth/callback`: iOS's session intercepts it, Android routes it to `MainActivity` and `@capacitor/app`'s `appUrlOpen`. The web view exchanges the code and its PKCE verifier at its own origin's `/api/auth/app-exchange`, which sets the session cookie. Sign-out in the web app ends that session, so the next launch shows the email screen again. Code: `apps/webapp/src/lib/store-app/` (`store-app-sign-in.ts`, `native-auth-session.ts`, `sign-out.ts`).
 - **Icons and splash.** Generated from the web app's brand icon (`apps/webapp/public/android-chrome-512x512.png`) by `pnpm --filter mobile generate-assets`. The outputs are committed.
 
 ## Adding a native plugin
@@ -67,7 +68,7 @@ Sign-in through the system browser and native push add plugins here:
 1. Add the plugin to this package with an exact version, for example `pnpm --filter mobile add --save-exact @capacitor/browser@<version>`.
 2. Configure it in `createCapacitorConfig()` in `shell-config.ts` (under `plugins`), and add any `Info.plist` or `AndroidManifest.xml` entries it requires.
 3. Run `pnpm --filter mobile sync`, which registers the plugin in both native projects.
-4. In the web app, call the plugin only when `isStoreAppShell()` is true. The shell injects `window.Capacitor` into pages on the app origin; add `@capacitor/core` and the plugin's JavaScript package to `apps/webapp` to call it with types. Plugins that are not npm packages are registered in `android/app/src/main/java/com/z8/app/MainActivity.java` and in the iOS project.
+4. In the web app, call the plugin only when `isStoreAppShell()` is true. The shell injects `window.Capacitor` into pages on the app origin. `apps/webapp` depends on `@capacitor/core`; load it with a dynamic `import()` so browsers outside the shell never download it, and use `registerPlugin()` or the plugin's JavaScript package. Plugins that are not npm packages are registered in `android/app/src/main/java/com/z8/app/MainActivity.java` and, on iOS, in `Z8BridgeViewController.capacitorDidLoad()` (`ios/App/App/Z8AuthSessionPlugin.swift`); add new Swift files to the App target in `project.pbxproj`.
 
 If a plugin registers a `WebViewListener` on Android, check `ShellWebViewClient`: it does not forward HTTP-error callbacks.
 
@@ -75,10 +76,11 @@ If a plugin registers a `WebViewListener` on Android, check `ShellWebViewClient`
 
 The native projects were generated by `cap add` and are committed. These parts were changed by hand and must survive a regeneration:
 
-- `android/app/src/main/AndroidManifest.xml`: camera `<queries>`, `allowBackup="false"` (the web view holds the session).
+- `android/app/src/main/AndroidManifest.xml`: camera `<queries>`, `allowBackup="false"` (the web view holds the session), the `z8mobile://auth/callback` intent filter.
 - `android/app/src/main/java/com/z8/app/`: `MainActivity` and `ShellWebViewClient`.
 - `android/app/src/main/res/values/`: brand background for the launcher icon and the Android 12+ splash.
 - `ios/App/App/Info.plist`: camera and photo descriptions, `WKAppBoundDomains` (written by `sync`).
+- `ios/App/App/Z8AuthSessionPlugin.swift` (in the App target's sources), `SceneDelegate.swift` and `Base.lproj/Main.storyboard`: the `Z8BridgeViewController` that registers the sign-in plugin.
 
 ## Manual checks per release
 
@@ -88,3 +90,6 @@ The native projects were generated by `cap add` and are committed. These parts w
 4. A link to another origin opens in the system browser.
 5. A travel-expense receipt can be photographed.
 6. First launch in airplane mode shows the offline screen; a missing web page shows the web app's 404 page.
+7. Signed out, the app shows the email screen. An email of an organization without a custom domain signs in with password, passkey and Google in the system browser and lands signed in in the web view. An email whose domain matches a verified custom sign-in domain opens that domain and its SSO.
+8. Closing the system browser without signing in returns to the email screen without an error.
+9. Sign-out in the web app, then a relaunch, shows the email screen. Revoking the session elsewhere (Security settings on another device) also returns to the email screen on the next page load.

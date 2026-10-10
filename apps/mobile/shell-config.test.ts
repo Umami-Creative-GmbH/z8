@@ -119,6 +119,56 @@ describe("Capacitor configuration", () => {
 	});
 });
 
+describe("system-browser sign-in (#842)", () => {
+	const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
+	const webappCallback = /mobile: "([^"]+)"/.exec(
+		read("../webapp/src/lib/auth/app-redirect.ts"),
+	)?.[1];
+
+	it("routes the web app's mobile callback to the Android app", () => {
+		assert.ok(webappCallback, "app-redirect.ts names the mobile callback");
+		const callback = new URL(webappCallback);
+		const manifest = read("android/app/src/main/AndroidManifest.xml");
+		const filter = /<intent-filter>(?:(?!<\/intent-filter>)[\s\S])*android\.intent\.action\.VIEW[\s\S]*?<\/intent-filter>/.exec(
+			manifest,
+		)?.[0];
+
+		assert.ok(filter, "MainActivity has a VIEW intent filter");
+		assert.match(filter, /android\.intent\.category\.BROWSABLE/);
+		assert.match(filter, new RegExp(`android:scheme="${callback.protocol.slice(0, -1)}"`));
+		assert.match(filter, new RegExp(`android:host="${callback.host}"`));
+		assert.match(filter, new RegExp(`android:path="${callback.pathname}"`));
+	});
+
+	it("registers the iOS auth session plugin under the name the web app calls", () => {
+		const bridge = read("../webapp/src/lib/store-app/native-auth-session.ts");
+		const plugin = read("ios/App/App/Z8AuthSessionPlugin.swift");
+		const jsName = /registerPlugin<IosAuthSessionPlugin>\("([^"]+)"\)/.exec(bridge)?.[1];
+
+		assert.ok(jsName);
+		assert.match(plugin, new RegExp(`jsName = "${jsName}"`));
+		assert.match(plugin, /registerPluginInstance\(Z8AuthSessionPlugin\(\)\)/);
+		assert.match(read("ios/App/App/SceneDelegate.swift"), /Z8BridgeViewController\(\)/);
+		assert.match(
+			read("ios/App/App/Base.lproj/Main.storyboard"),
+			/customClass="Z8BridgeViewController" customModule="App"/,
+		);
+		assert.match(
+			read("ios/App/App.xcodeproj/project.pbxproj"),
+			/Z8AuthSessionPlugin\.swift in Sources \*\/,/,
+		);
+	});
+
+	it("installs the Android browser and app-link plugins the web app calls", () => {
+		const manifest = JSON.parse(read("package.json")) as {
+			dependencies: Record<string, string>;
+		};
+
+		assert.match(manifest.dependencies["@capacitor/browser"] ?? "", /^\d+\.\d+\.\d+$/);
+		assert.match(manifest.dependencies["@capacitor/app"] ?? "", /^\d+\.\d+\.\d+$/);
+	});
+});
+
 describe("app-bound domains in Info.plist", () => {
 	const plist = [
 		'<?xml version="1.0" encoding="UTF-8"?>',
