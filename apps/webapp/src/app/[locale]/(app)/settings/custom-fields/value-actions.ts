@@ -129,7 +129,14 @@ export async function getCustomFieldSection(input: {
 	);
 }
 
-const EMPTY_SECTION: CustomFieldSection = { fields: [], values: {}, missingRequiredFieldIds: [] };
+/** No fields to show (`today` is unused then). */
+const EMPTY_SECTION: CustomFieldSection = {
+	fields: [],
+	values: {},
+	missingRequiredFieldIds: [],
+	history: {},
+	today: "",
+};
 
 /**
  * The signed-in user's own employee custom fields for their profile (#818):

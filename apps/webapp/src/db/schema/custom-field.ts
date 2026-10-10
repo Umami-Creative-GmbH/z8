@@ -32,8 +32,9 @@ import { project } from "./project";
  *   their values and do not count towards the 25-active-field cap.
  * - `position` orders the active fields of one entity (forms, reports, exports).
  *
- * `UNIQUE(id, organization_id)` is the target of the value table's composite
- * same-organization foreign key (ADR 0001, #818).
+ * `UNIQUE(id, organization_id)` is the target of the option table's composite
+ * same-organization foreign key, `UNIQUE(id, organization_id, tracked)` the
+ * value table's (ADR 0001, #818, #819): a value carries its field's tracked flag.
  *
  * Keep the value lists in sync with `src/lib/organization/custom-fields/definition-rules.ts`.
  */
@@ -63,6 +64,11 @@ export const customFieldDefinition = pgTable(
 	},
 	(table) => [
 		unique("custom_field_definition_id_organization_id_unique").on(table.id, table.organizationId),
+		unique("custom_field_definition_id_organization_id_tracked_unique").on(
+			table.id,
+			table.organizationId,
+			table.tracked,
+		),
 		check(
 			"custom_field_definition_entity_check",
 			sql`${table.entity} IN ('employee', 'project', 'customer')`,
@@ -155,8 +161,11 @@ export const customFieldOption = pgTable(
  *   Whether that column matches the field's type, and whether the field is
  *   for that kind of record, is checked by the value store.
  * - `valid_from` is the plain calendar date a tracked field's value is valid
- *   from (#819). Untracked values leave it empty, and a record holds at most one
- *   undated value per field (partial unique indexes per record kind).
+ *   from (#819). `tracked` copies the field's tracked flag through the
+ *   definition foreign key, so the database enforces that tracked values have a
+ *   valid-from date and untracked ones don't (`custom_field_value_valid_from_check`).
+ *   A record holds at most one undated value per field and at most one value per
+ *   field and valid-from date (partial unique indexes per record kind).
  *
  * Adding a record kind (time entries are planned) means another nullable
  * foreign key column and a wider CHECK.
@@ -178,6 +187,7 @@ export const customFieldValue = pgTable(
 		booleanValue: boolean("boolean_value"),
 		selectOptionId: uuid("select_option_id"),
 		validFrom: date("valid_from", { mode: "string" }),
+		tracked: boolean("tracked").default(false).notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -186,8 +196,12 @@ export const customFieldValue = pgTable(
 	(table) => [
 		foreignKey({
 			name: "custom_field_value_definition_fk",
-			columns: [table.definitionId, table.organizationId],
-			foreignColumns: [customFieldDefinition.id, customFieldDefinition.organizationId],
+			columns: [table.definitionId, table.organizationId, table.tracked],
+			foreignColumns: [
+				customFieldDefinition.id,
+				customFieldDefinition.organizationId,
+				customFieldDefinition.tracked,
+			],
 		}).onDelete("cascade"),
 		foreignKey({
 			name: "custom_field_value_employee_fk",
@@ -221,6 +235,10 @@ export const customFieldValue = pgTable(
 			"custom_field_value_text_length_check",
 			sql`${table.textValue} IS NULL OR length(${table.textValue}) <= 255`,
 		),
+		check(
+			"custom_field_value_valid_from_check",
+			sql`${table.tracked} = (${table.validFrom} IS NOT NULL)`,
+		),
 		uniqueIndex("custom_field_value_employee_undated_unique")
 			.on(table.definitionId, table.employeeId)
 			.where(sql`${table.employeeId} IS NOT NULL AND ${table.validFrom} IS NULL`),
@@ -230,6 +248,15 @@ export const customFieldValue = pgTable(
 		uniqueIndex("custom_field_value_customer_undated_unique")
 			.on(table.definitionId, table.customerId)
 			.where(sql`${table.customerId} IS NOT NULL AND ${table.validFrom} IS NULL`),
+		uniqueIndex("custom_field_value_employee_dated_unique")
+			.on(table.definitionId, table.employeeId, table.validFrom)
+			.where(sql`${table.employeeId} IS NOT NULL AND ${table.validFrom} IS NOT NULL`),
+		uniqueIndex("custom_field_value_project_dated_unique")
+			.on(table.definitionId, table.projectId, table.validFrom)
+			.where(sql`${table.projectId} IS NOT NULL AND ${table.validFrom} IS NOT NULL`),
+		uniqueIndex("custom_field_value_customer_dated_unique")
+			.on(table.definitionId, table.customerId, table.validFrom)
+			.where(sql`${table.customerId} IS NOT NULL AND ${table.validFrom} IS NOT NULL`),
 		index("custom_field_value_employee_idx").on(table.organizationId, table.employeeId),
 		index("custom_field_value_project_idx").on(table.organizationId, table.projectId),
 		index("custom_field_value_customer_idx").on(table.organizationId, table.customerId),

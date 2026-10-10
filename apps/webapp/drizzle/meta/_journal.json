@@ -1226,6 +1226,13 @@
       "when": 1799337600000,
       "tag": "0174_custom_field_values",
       "breakpoints": true
+    },
+    {
+      "idx": 175,
+      "version": "7",
+      "when": 1799424000000,
+      "tag": "0175_custom_field_value_history",
+      "breakpoints": true
     }
   ]
 }
