@@ -99,20 +99,32 @@ export async function verifyIntegrationDatabase(input: {
 	return { databaseUrl, databaseName };
 }
 
+function siblingDatabaseUrl(databaseUrl: string, databaseName: string) {
+	const url = new URL(databaseUrl);
+	url.pathname = `/${encodeURIComponent(databaseName)}`;
+	return url.toString();
+}
+
 const openedPools: Pool[] = [];
 let appPool: Pool | undefined;
 let adminPool: Pool | undefined;
 
 /**
  * A pool on the verified database with UTC sessions. Closed after the suite;
- * a test may end it earlier.
+ * a test may end it earlier. `databaseName` targets a sibling database on the
+ * same verified server instead (one the test creates and drops itself), which
+ * must follow the same disposable naming convention.
  */
 export function openIntegrationPool(
-	config: Pick<PoolConfig, "max" | "idleTimeoutMillis"> = {},
+	config: Pick<PoolConfig, "max" | "idleTimeoutMillis"> & { databaseName?: string } = {},
 ): Pool {
-	const { databaseUrl } = resolveIntegrationDatabaseUrl(environment());
+	const { databaseName, ...poolConfig } = config;
+	const verified = resolveIntegrationDatabaseUrl(environment()).databaseUrl;
+	const { databaseUrl } = databaseName
+		? parseIntegrationDatabaseUrl(siblingDatabaseUrl(verified, databaseName))
+		: { databaseUrl: verified };
 	configurePostgresUtcTypes();
-	const pool = new Pool(withUtcPostgresSession({ ...config, connectionString: databaseUrl }));
+	const pool = new Pool(withUtcPostgresSession({ ...poolConfig, connectionString: databaseUrl }));
 	// Crash scenarios terminate backends; the affected query fails, but an idle
 	// client's error must not take down the test process.
 	pool.on("error", () => {});

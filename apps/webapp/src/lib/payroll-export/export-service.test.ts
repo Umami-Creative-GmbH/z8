@@ -79,6 +79,12 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 	uploadExport: vi.fn(),
 }));
 
+// Bank transfer: a file export is no payroll run (#852's own suite covers runs).
+vi.mock("@/lib/travel-expenses/payroll-run", () => ({
+	exportIsPayrollRun: vi.fn(async () => false),
+	includeReportsInPayrollRun: vi.fn(),
+}));
+
 vi.mock("./connectors/personio-connector", () => ({ personioConnector: {} }));
 vi.mock("./connectors/successfactors-connector", () => ({ successFactorsConnector: {} }));
 vi.mock("./exporters/workday/workday-connector", () => ({ workdayConnector: {} }));

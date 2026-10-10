@@ -536,6 +536,69 @@ describe("historical gap repair on PostgreSQL", () => {
 		expect((await readPlan()).plan.employees).toEqual([]);
 	});
 
+	it("carries the period's billability into the repaired project allocation (#900)", async () => {
+		const created = await missingRecord("2026-07-02");
+		// A metadata-only gap: the record exists but lost its project allocation.
+		const metadata = await legacyManual({
+			date: "2026-07-03",
+			clockInTime: "08:00",
+			clockOutTime: "10:00",
+		});
+		await admin.query(
+			"update work_period set project_id = $2, is_billable = true where id = any($1::uuid[])",
+			[[created, metadata], ids.project],
+		);
+		await authorizeRepair();
+
+		const applied = await apply(await readPlan());
+
+		expect(applied.status).toBe(200);
+		const { rows } = await admin.query(
+			`select wp.id, wp.is_billable, a.project_id, a.is_billable as allocation_billable
+			 from work_period wp join time_record_allocation a on a.record_id = wp.canonical_record_id
+			 where wp.id = any($1::uuid[]) order by wp.start_time`,
+			[[created, metadata]],
+		);
+		expect(rows).toEqual([
+			{ id: created, is_billable: true, project_id: ids.project, allocation_billable: true },
+			{ id: metadata, is_billable: true, project_id: ids.project, allocation_billable: true },
+		]);
+	});
+
+	it("restores a project allocation with the period's task, so period and allocation agree", async () => {
+		const task = "d3200000-0000-4000-8000-0000000000a3";
+		await admin.query(
+			`insert into project_task (id, organization_id, project_id, name, created_by, updated_at)
+			 values ($1, $2, $3, 'T320 task', $4, now())`,
+			[task, ids.organization, ids.project, ids.ownerUser],
+		);
+		const created = await missingRecord("2026-07-02");
+		await admin.query("update work_period set task_id = $2 where id = $1", [created, task]);
+		// An existing record that lost its allocation gets it back with the task too.
+		const { periodId: detailed, recordId } = await incompleteRecord("2026-07-03");
+		await admin.query("update work_period set project_id = $2, task_id = $3 where id = $1", [
+			detailed,
+			ids.project,
+			task,
+		]);
+		await authorizeRepair();
+
+		const applied = await apply(await readPlan());
+
+		expect(applied.body.outcomes).toMatchObject([{ status: "applied" }]);
+		const { rows } = await admin.query(
+			`select record_id, project_id, task_id from time_record_allocation
+			 where organization_id = $1 order by record_id`,
+			[ids.organization],
+		);
+		expect(rows).toEqual(
+			[
+				{ record_id: created, project_id: ids.project, task_id: task },
+				{ record_id: recordId, project_id: ids.project, task_id: task },
+			].sort((a, b) => a.record_id.localeCompare(b.record_id)),
+		);
+	});
+
 	it("holds conflicting, unrestorable and deleted work for review and never writes them", async () => {
 		await authorizeRepair();
 		// A metadata gap on work whose durations disagree.

@@ -129,6 +129,7 @@
           "alreadyReimbursed": "Hoppet over: allerede refundert",
           "balanceChanged": "Hoppet over: saldo endret",
           "failed": "Mislyktes",
+          "inPayrollRun": "Hoppet over: inkludert i en lønnskjøring",
           "outOfScope": "Hoppet over: utenfor omfang",
           "overpaidOrReview": "Hoppet over: for mye utbetalt eller krever gjennomgang",
           "ownExpense": "Hoppet over: din egen utgift",
@@ -247,6 +248,7 @@
           "search": "Søk etter team…"
         }
       },
+      "inPayrollRun": "Inkludert i {run}",
       "legacyClaim": "Eldre {type}-krav",
       "loading": "Laster inn økonomikø…",
       "pagination": {
@@ -254,6 +256,16 @@
         "next": "Neste",
         "page": "Side {page}",
         "previous": "Forrige"
+      },
+      "payrollRun": {
+        "included": "Inkludert i {run}. Den utbetales med den lønnen og registreres som refundert når kjøringen bekreftes.",
+        "label": "Lønnskjøring {period} ({format})",
+        "notIncluded": "Ingen lønnskjøring inkluderer denne utgiften lenger.",
+        "remove": "Fjern fra lønnskjøring",
+        "removed": "Fjernet fra lønnskjøringen. Utgiften avventer refusjon igjen.",
+        "removeDescription": "Fjern den bare hvis den ikke skal utbetales med denne kjøringen, for eksempel etter korrigering av lønnsfilen. Fjerningen registreres i revisjonsloggen.",
+        "removeFailed": "Utgiften kunne ikke fjernes fra lønnskjøringen.",
+        "removeTitle": "Fjerne denne utgiften fra lønnskjøringen?"
       },
       "queue": {
         "description": "Åpne et utlegg for å se oppgjøret og registrere en refusjon.",
@@ -999,6 +1011,20 @@
         "adoptForeignTitle": "Ta i bruk de tyske lovfestede diettsatsene med offisielle utenlandssatser",
         "foreignAreas": "Utenlandssatser: {countries} land og {places} byer"
       },
+      "reimbursementChannel": {
+        "bankTransfer": "Bankoverføring",
+        "bankTransferDescription": "Utgiftsansvarlige utbetaler refusjoner via bankoverføring og registrerer dem i Z8.",
+        "intro": "Hvordan organisasjonen din utbetaler refusjoner. Valget gjelder for alle ansatte.",
+        "loadFailed": "Kunne ikke laste inn refusjonskanalen.",
+        "payrollRun": "Lønnskjøring",
+        "payrollRunDescription": "Lønnskjøringen inkluderer refusjoner, som registreres så snart lønnskjøringen er bekreftet som betalt. Rapporter som en lønnskjøring ikke kan inkludere, utbetales via bankoverføring.",
+        "payrollRunPreview": "I forhåndsvisning og foreløpig ikke tilgjengelig for din organisasjon.",
+        "save": "Lagre kanal",
+        "saved": "Refusjonskanal lagret",
+        "saveFailed": "Refusjonskanalen kunne ikke lagres.",
+        "title": "Refusjonskanal",
+        "unconfirmedRuns": "{count, plural, one {# lønnskjøring er ikke bekreftet ennå. Den kan fortsatt bekreftes eller forkastes.} other {# lønnskjøringer er ikke bekreftet ennå. De kan fortsatt bekreftes eller forkastes.}}"
+      },
       "tabs": {
         "access": "Tilgang",
         "currencies": "Valutaer",
@@ -1034,6 +1060,7 @@
         "exceedsOutstanding": "Beløpet er høyere enn det som er utestående.",
         "exceedsOverpayment": "Beløpet er høyere enn det som ble betalt for mye.",
         "failed": "Betalingen kunne ikke registreres. Vennligst prøv igjen.",
+        "inPayrollRun": "En lønnskjøring inkluderer nå denne utgiften, så den utbetales via lønn. Fjern den fra kjøringen før du registrerer en betaling.",
         "load": "Kunne ikke laste refusjonssaldoen. Vennligst prøv igjen.",
         "noOverpayment": "Ingenting ble overbetalt for denne utgiften.",
         "notApproved": "Denne utgiften er ikke lenger godkjent, så ingen betaling kan registreres.",

@@ -368,6 +368,7 @@ describe("time correction request safety", () => {
 	it.each([
 		["legacy notes", legacySource, "updateWorkPeriodNotes"],
 		["legacy project", legacySource, "updateWorkPeriodProject"],
+		["legacy billability", legacySource, "updateWorkPeriodBillability"],
 		["modular notes", modularMutationsSource, "updateWorkPeriodNotes"],
 	])(
 		"excludes deleted work periods from %s calendar mutations",
@@ -392,7 +393,9 @@ describe("time correction request safety", () => {
 	it("keeps one project mutation: the modular export delegates to the calendar action", () => {
 		const body = functionBody(modularMutationsSource, "updateWorkPeriodProject");
 
-		expect(body).toContain("updateWorkPeriodProjectAction(workPeriodId, projectId)");
+		expect(body).toContain(
+			"updateWorkPeriodProjectAction(workPeriodId, projectId, taskId, options)",
+		);
 		expect(body).not.toContain(".update(workPeriod)");
 	});
 

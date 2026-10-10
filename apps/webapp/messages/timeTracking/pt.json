@@ -11,6 +11,11 @@
         "title": "Pausa adicionada automaticamente para conformidade"
       }
     },
+    "billable": {
+      "description": "Trabalho faturável para o cliente do projeto",
+      "label": "Faturável",
+      "noCustomer": "Apenas o trabalho em um projeto com cliente pode ser faturável"
+    },
     "budget": "Orçamento",
     "clockedOutSuccess": "Você registrou a saída!",
     "clockIn": "Registrar Entrada",
@@ -69,6 +74,7 @@
       "alreadyClockedIn": "Você já registrou a entrada",
       "appendReviewRequired": "A entrada requer uma revisão do seu histórico de horas",
       "appendReviewRequiredDesc": "Não foi possível verificar seus registros de horas anteriores, portanto, uma nova entrada não foi salva. Entre em contato com seu administrador.",
+      "billableNotAllowed": "Apenas o trabalho em um projeto que possui um cliente pode ser faturável",
       "breakAwaitingApproval": "Este período de trabalho está aguardando aprovação e não pode ser editado. Adicione o intervalo assim que for resolvido.",
       "breakDurationInvalid": "Insira uma duração de intervalo de pelo menos 1 minuto.",
       "breakNotAllowed": "Você não pode adicionar um intervalo a este trabalho.",
@@ -105,6 +111,11 @@
       "projectNotAllowed": "Não é possível atribuir a este projeto",
       "restPeriodBlocked": "Período de descanso não concluído",
       "restPeriodBlockedDesc": "Você deve completar o período de descanso obrigatório antes de registrar a entrada. Solicite uma exceção se necessário.",
+      "taskDone": "Esta tarefa está concluída, pelo que não é possível registar horas na mesma",
+      "taskNotAllowed": "Não é possível registar horas nesta tarefa",
+      "taskNotFound": "Esta tarefa já não existe",
+      "taskOtherProject": "Esta tarefa pertence a outro projeto",
+      "taskProjectNotBookable": "Não é mais possível registrar horas no projeto desta tarefa",
       "workCategoryNotAllowed": "Não é possível atribuir a esta categoria de trabalho"
     },
     "manualEntry": {
@@ -120,6 +131,7 @@
         "retry": "Tentar novamente",
         "targetChanged": "O colaborador foi alterado, portanto o projeto e a categoria foram limpos.",
         "targetTimezone": "Os horários estão no fuso horário de {employee}: {timezone}",
+        "taskCleared": "Uma tarefa selecionada não está mais disponível e foi removida.",
         "thisEmployee": "este colaborador",
         "utcFallback": "Nem {employee} nem a organização têm um fuso horário definido, portanto o UTC é usado."
       },
@@ -237,6 +249,7 @@
       "approveEntry": "Aprovar registro",
       "approveFailed": "Falha ao aprovar registro",
       "approving": "Aprovando...",
+      "billable": "Faturável",
       "clockIn": "Registrar entrada",
       "clockOut": "Registrar saída",
       "corrected": "Corrigido",
@@ -248,6 +261,13 @@
       "rowActions": "Ações do registro de horas",
       "title": "Registros de Tempo",
       "viewCalendar": "Ver Calendário"
+    },
+    "taskPicker": {
+      "doneTask": "{name} (concluída)",
+      "empty": "Nenhuma tarefa encontrada",
+      "label": "Tarefa",
+      "none": "Nenhuma tarefa",
+      "search": "Pesquisar tarefas…"
     },
     "timeline": {
       "dayPicker": "Seletor de dia da linha do tempo",

@@ -1,6 +1,14 @@
 "use client";
 
-import { IconAddressBook, IconEdit, IconPlus, IconRefresh, IconTrash } from "@tabler/icons-react";
+import {
+	IconAddressBook,
+	IconCoin,
+	IconEdit,
+	IconPlugConnected,
+	IconPlus,
+	IconRefresh,
+	IconTrash,
+} from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -11,6 +19,8 @@ import {
 	getCustomers,
 } from "@/app/[locale]/(app)/settings/customers/actions";
 import { getProjects } from "@/app/[locale]/(app)/settings/projects/actions";
+import { CustomerAccountingPanel } from "@/components/billable-time/accounting/customer-accounting-panel";
+import { BillableRateActionPanel } from "@/components/billable-time/billable-rate-series";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -34,6 +44,7 @@ import {
 } from "@/components/ui/table";
 import { queryKeys } from "@/lib/query";
 import type { SettingsAccessTier } from "@/lib/settings-access";
+import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
 import { CustomerDialog } from "./customer-dialog";
 
 interface CustomerManagementProps {
@@ -41,13 +52,17 @@ interface CustomerManagementProps {
 	accessTier: SettingsAccessTier;
 }
 
-export function CustomerManagement({ organizationId, accessTier }: CustomerManagementProps) {
+function useCustomerManagement({ organizationId, accessTier }: CustomerManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editingCustomer, setEditingCustomer] = useState<CustomerData | null>(null);
 	const [deletingCustomer, setDeletingCustomer] = useState<CustomerData | null>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
+	const [ratesCustomer, setRatesCustomer] = useState<CustomerData | null>(null);
+	const [accountingCustomer, setAccountingCustomer] = useState<CustomerData | null>(null);
+	// Billable rates are for owners and admins only (#898); the actions check again.
+	const canSetBillableRates = useBillableTimeEnabled() && accessTier === "orgAdmin";
 
 	const {
 		data: customersResult,
@@ -125,6 +140,57 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 		setDeletingCustomer(null);
 	};
 
+	return {
+		t,
+		refetch,
+		isFetching,
+		handleCreate,
+		canCreateCustomer,
+		isLoading,
+		customers,
+		handleEdit,
+		canSetBillableRates,
+		setRatesCustomer,
+		setAccountingCustomer,
+		setDeletingCustomer,
+		ratesCustomer,
+		accountingCustomer,
+		accessTier,
+		organizationId,
+		editingCustomer,
+		dialogOpen,
+		setDialogOpen,
+		handleSuccess,
+		deletingCustomer,
+		isDeleting,
+		handleDelete,
+	};
+}
+
+export function CustomerManagement({ organizationId, accessTier }: CustomerManagementProps) {
+	const {
+		t,
+		refetch,
+		isFetching,
+		handleCreate,
+		canCreateCustomer,
+		isLoading,
+		customers,
+		handleEdit,
+		canSetBillableRates,
+		setRatesCustomer,
+		setAccountingCustomer,
+		setDeletingCustomer,
+		ratesCustomer,
+		accountingCustomer,
+		editingCustomer,
+		dialogOpen,
+		setDialogOpen,
+		handleSuccess,
+		deletingCustomer,
+		isDeleting,
+		handleDelete,
+	} = useCustomerManagement({ organizationId, accessTier });
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex items-center justify-between">
@@ -197,73 +263,43 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 					</CardContent>
 				</Card>
 			) : (
-				<Card>
-					<CardHeader>
-						<CardTitle>{t("settings.customers.list.title", "All Customers")}</CardTitle>
-						<CardDescription>
-							{t("settings.customers.list.description", "{count} customers total", {
-								count: customers.length,
-							})}
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>{t("settings.customers.column.name", "Company Name")}</TableHead>
-									<TableHead>
-										{t("settings.customers.column.contactPerson", "Contact Person")}
-									</TableHead>
-									<TableHead>{t("settings.customers.column.email", "Email")}</TableHead>
-									<TableHead>{t("settings.customers.column.phone", "Phone")}</TableHead>
-									<TableHead className="w-[100px]" />
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{customers.map((cust) => (
-									<TableRow key={cust.id}>
-										<TableCell>
-											<div className="font-medium">{cust.name}</div>
-											{cust.address && (
-												<div className="text-sm text-muted-foreground line-clamp-1">
-													{cust.address}
-												</div>
-											)}
-										</TableCell>
-										<TableCell>
-											{cust.contactPerson || <span className="text-muted-foreground">-</span>}
-										</TableCell>
-										<TableCell>
-											{cust.email ? (
-												<a
-													href={`mailto:${cust.email}`}
-													className="text-sm text-primary hover:underline"
-												>
-													{cust.email}
-												</a>
-											) : (
-												<span className="text-muted-foreground">-</span>
-											)}
-										</TableCell>
-										<TableCell>
-											{cust.phone || <span className="text-muted-foreground">-</span>}
-										</TableCell>
-										<TableCell>
-											<div className="flex items-center gap-1">
-												<Button variant="ghost" size="sm" onClick={() => handleEdit(cust)}>
-													<IconEdit className="size-4" />
-												</Button>
-												<Button variant="ghost" size="sm" onClick={() => setDeletingCustomer(cust)}>
-													<IconTrash className="size-4 text-destructive" />
-												</Button>
-											</div>
-										</TableCell>
-									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					</CardContent>
-				</Card>
+				<CustomerTableCard
+					t={t}
+					customers={customers}
+					handleEdit={handleEdit}
+					canSetBillableRates={canSetBillableRates}
+					setRatesCustomer={setRatesCustomer}
+					setAccountingCustomer={setAccountingCustomer}
+					setDeletingCustomer={setDeletingCustomer}
+				/>
+			)}
+
+			{canSetBillableRates && (
+				<BillableRateActionPanel
+					open={ratesCustomer !== null}
+					onOpenChange={(open) => {
+						if (!open) setRatesCustomer(null);
+					}}
+					target={ratesCustomer ? { level: "customer", customerId: ratesCustomer.id } : null}
+					title={t("settings.billableTime.rates.customerRateTitle", "Billable rate for {name}", {
+						name: ratesCustomer?.name ?? "",
+					})}
+					description={t(
+						"settings.billableTime.rates.level.customerDescription",
+						"Applies to work on the customer's projects without a project rate.",
+					)}
+				/>
+			)}
+
+			{canSetBillableRates && (
+				<CustomerAccountingPanel
+					open={accountingCustomer !== null}
+					onOpenChange={(open) => {
+						if (!open) setAccountingCustomer(null);
+					}}
+					customerId={accountingCustomer?.id ?? null}
+					customerName={accountingCustomer?.name ?? ""}
+				/>
 			)}
 
 			<CustomerDialog
@@ -304,5 +340,117 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 				</AlertDialogContent>
 			</AlertDialog>
 		</div>
+	);
+}
+
+function CustomerTableCard({
+	t,
+	customers,
+	handleEdit,
+	canSetBillableRates,
+	setRatesCustomer,
+	setAccountingCustomer,
+	setDeletingCustomer,
+}: Pick<
+	ReturnType<typeof useCustomerManagement>,
+	| "t"
+	| "customers"
+	| "handleEdit"
+	| "canSetBillableRates"
+	| "setRatesCustomer"
+	| "setAccountingCustomer"
+	| "setDeletingCustomer"
+>) {
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>{t("settings.customers.list.title", "All Customers")}</CardTitle>
+				<CardDescription>
+					{t("settings.customers.list.description", "{count} customers total", {
+						count: customers.length,
+					})}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<Table>
+					<TableHeader>
+						<TableRow>
+							<TableHead>{t("settings.customers.column.name", "Company Name")}</TableHead>
+							<TableHead>
+								{t("settings.customers.column.contactPerson", "Contact Person")}
+							</TableHead>
+							<TableHead>{t("settings.customers.column.email", "Email")}</TableHead>
+							<TableHead>{t("settings.customers.column.phone", "Phone")}</TableHead>
+							<TableHead className="w-[100px]" />
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{customers.map((cust) => (
+							<TableRow key={cust.id}>
+								<TableCell>
+									<div className="font-medium">{cust.name}</div>
+									{cust.address && (
+										<div className="text-sm text-muted-foreground line-clamp-1">{cust.address}</div>
+									)}
+								</TableCell>
+								<TableCell>
+									{cust.contactPerson || <span className="text-muted-foreground">-</span>}
+								</TableCell>
+								<TableCell>
+									{cust.email ? (
+										<a
+											href={`mailto:${cust.email}`}
+											className="text-sm text-primary hover:underline"
+										>
+											{cust.email}
+										</a>
+									) : (
+										<span className="text-muted-foreground">-</span>
+									)}
+								</TableCell>
+								<TableCell>
+									{cust.phone || <span className="text-muted-foreground">-</span>}
+								</TableCell>
+								<TableCell>
+									<div className="flex items-center gap-1">
+										<Button variant="ghost" size="sm" onClick={() => handleEdit(cust)}>
+											<IconEdit className="size-4" />
+										</Button>
+										{canSetBillableRates && (
+											<Button
+												variant="ghost"
+												size="sm"
+												onClick={() => setRatesCustomer(cust)}
+												aria-label={t("settings.billableTime.rates.customerRate", "Billable rate")}
+												title={t("settings.billableTime.rates.customerRate", "Billable rate")}
+											>
+												<IconCoin aria-hidden="true" className="size-4" />
+											</Button>
+										)}
+										{canSetBillableRates && (
+											<Button
+												variant="ghost"
+												size="sm"
+												onClick={() => setAccountingCustomer(cust)}
+												aria-label={t(
+													"settings.billableTime.accounting.customer.entry",
+													"Accounting",
+												)}
+												title={t("settings.billableTime.accounting.customer.entry", "Accounting")}
+											>
+												<IconPlugConnected aria-hidden="true" className="size-4" />
+											</Button>
+										)}
+										<Button variant="ghost" size="sm" onClick={() => setDeletingCustomer(cust)}>
+											<IconTrash className="size-4 text-destructive" />
+										</Button>
+									</div>
+								</TableCell>
+							</TableRow>
+						))}
+					</TableBody>
+				</Table>
+			</CardContent>
+		</Card>
 	);
 }

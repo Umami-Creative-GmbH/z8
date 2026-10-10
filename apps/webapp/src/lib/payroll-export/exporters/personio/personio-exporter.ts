@@ -12,6 +12,7 @@ import type {
 	WageTypeMapping,
 	WorkPeriodData,
 } from "../../types";
+import { legacyOnlyWageTypeCode } from "../../wage-type-code";
 import { PersonioApiClient } from "./api-client";
 import type {
 	PersonioAbsenceRequest,
@@ -395,8 +396,11 @@ export class PersonioExporter implements IPayrollExporter {
 	): (PersonioAbsenceRequest | null)[] {
 		return absences.map((absence) => {
 			// Get mapping for this absence category
+			// Personio has no code column of its own. Rows saved in the settings tab carry
+			// payroll file codes, never a Personio time-off type, so only legacy-only rows count.
 			const mapping = mappings.get(absence.absenceCategoryId);
-			if (!mapping?.wageTypeCode) {
+			const wageTypeCode = legacyOnlyWageTypeCode(mapping);
+			if (!wageTypeCode) {
 				logger.warn(
 					{
 						absenceId: absence.id,
@@ -408,12 +412,12 @@ export class PersonioExporter implements IPayrollExporter {
 			}
 
 			// Parse wage type code as Personio time-off type ID
-			const timeOffTypeId = parseInt(mapping.wageTypeCode, 10);
+			const timeOffTypeId = parseInt(wageTypeCode, 10);
 			if (Number.isNaN(timeOffTypeId)) {
 				logger.warn(
 					{
 						absenceId: absence.id,
-						wageTypeCode: mapping.wageTypeCode,
+						wageTypeCode,
 					},
 					"Invalid Personio time-off type ID, skipping",
 				);

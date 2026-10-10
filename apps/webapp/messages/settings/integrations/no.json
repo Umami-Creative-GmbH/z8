@@ -120,9 +120,11 @@
       },
       "errors": {
         "connectionFailed": "Kunne ikke koble til Clockodo",
+        "fetchProjectsFailed": "Kunne ikke hente prosjektdata",
         "fetchUsersFailed": "Kunne ikke hente brukerdata",
         "importFailed": "Gjennomgangsskanning for import mislyktes",
-        "saveMappingsFailed": "Kunne ikke lagre brukertilordninger"
+        "saveMappingsFailed": "Kunne ikke lagre brukertilordninger",
+        "saveProjectMappingsFailed": "Kunne ikke lagre prosjekttilordninger"
       },
       "importing": {
         "description": "Vennligst ikke lukk denne siden. Gjennomgangsskanningen settes i kø og kan ta litt tid for store datasett.",
@@ -148,6 +150,19 @@
         "next": "Tilordne brukere",
         "title": "Forhåndsvisning av data"
       },
+      "projectMapping": {
+        "clockodoCustomer": "Clockodo-kunde",
+        "clockodoProject": "Clockodo-prosjekt",
+        "continue": "Fortsett",
+        "description": "Koble Clockodo-prosjekter til eksisterende Z8-prosjekter. Importerte timeregistreringer beholder prosjektet sitt og Clockodos fakturerbare verdi. Føringer på ikke-koblede prosjekter, eller på prosjekter uten kunde, importeres som ikke-fakturerbare. Ingen prosjekter blir opprettet.",
+        "mappedCount": "{mapped} av {total} prosjekter koblet",
+        "noCustomer": "Dette prosjektet har ingen kunde, så importert tid er ikke-fakturerbar.",
+        "noZ8Projects": "Denne organisasjonen har ingen prosjekter ennå. Opprett prosjekter først for å importere Clockodo-tid med prosjekt og fakturerbar verdi.",
+        "title": "Koble prosjekter",
+        "unmapped": "Ikke koblet (intet prosjekt)",
+        "z8Project": "Z8-prosjekt",
+        "z8ProjectFor": "Z8-prosjekt for {project}"
+      },
       "review": {
         "startedToast": "Gjennomgangsskanning for import er startet. Gjennomgang kreves før oppføringene lagres."
       },
@@ -167,6 +182,7 @@
         "credentials": "Påloggingsinformasjon",
         "import": "Gjennomgang",
         "preview": "Forhåndsvisning",
+        "projectMapping": "Prosjektkobling",
         "selection": "Utvalg",
         "userMapping": "Brukertilordning"
       },

@@ -110,6 +110,8 @@ describe("getManualEntryTargetContextForEmployee", () => {
 						status: "active",
 						budgetHours: "10.5",
 						deadline: new Date("2026-06-01T00:00:00.000Z"),
+						customerId: "customer-1",
+						billableDefault: true,
 					},
 				],
 				[
@@ -121,10 +123,18 @@ describe("getManualEntryTargetContextForEmployee", () => {
 						status: "planned",
 						budgetHours: null,
 						deadline: null,
+						// A billable default without a customer never reaches the form (#900).
+						customerId: null,
+						billableDefault: true,
 					},
 				],
 			]),
 			hoursByProjectId: new Map([["project-b", 2.5]]),
+			// Open tasks per project (#874); a project without open tasks has an empty list.
+			tasksByProjectId: new Map([
+				["project-a", []],
+				["project-b", [{ id: "task-1", name: "Design" }]],
+			]),
 		});
 		mocks.getAvailableCategoriesForEmployee.mockResolvedValue([
 			{
@@ -169,6 +179,9 @@ describe("getManualEntryTargetContextForEmployee", () => {
 						budgetHours: null,
 						deadline: null,
 						totalHoursBooked: 0,
+						hasCustomer: false,
+						billableDefault: false,
+						tasks: [],
 					},
 					{
 						id: "project-b",
@@ -178,6 +191,9 @@ describe("getManualEntryTargetContextForEmployee", () => {
 						budgetHours: 10.5,
 						deadline: "2026-06-01T00:00:00.000Z",
 						totalHoursBooked: 2.5,
+						hasCustomer: true,
+						billableDefault: true,
+						tasks: [{ id: "task-1", name: "Design" }],
 					},
 				],
 				categories: [

@@ -9,11 +9,18 @@ import {
 
 export interface WorkPeriodDialogMetadata {
 	durationMinutes: number;
+	employeeId?: string;
 	employeeName: string;
 	notes?: string;
 	projectId?: string;
 	projectName?: string;
 	projectColor?: string;
+	projectHasCustomer?: boolean;
+	isBillable?: boolean;
+	/** The booking's task (#874), present only with its project. */
+	taskId?: string;
+	taskName?: string;
+	taskState?: "open" | "done";
 	surchargeMinutes?: number;
 	totalCreditedMinutes?: number;
 	surchargeBreakdown?: Array<{

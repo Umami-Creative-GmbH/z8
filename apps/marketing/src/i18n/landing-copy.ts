@@ -31,21 +31,15 @@ const navConfig = {
 const comparisonAvailability = {
 	"time-clock": { z8: true, others: true },
 	"gobd-archiving": { z8: true, others: false },
-	"payroll-export": { z8: true, others: false },
+	"payroll-export": { z8: true, others: true },
 	"enterprise-sso": { z8: true, others: false },
 	"scim-provisioning": { z8: true, others: false },
 	"multi-tenant": { z8: true, others: false },
 	"real-time-dashboards": { z8: true, others: true },
-	"geo-fencing": { z8: true, others: true },
 	"sql-report-editor": { z8: true, others: false },
-	"api-access": { z8: true, others: true },
 } as const;
 
 export type LandingCopy = {
-	announcement: {
-		badge: string;
-		text: string;
-	};
 	header: {
 		brand: string;
 		navItems: Array<{ id: StableId; href: string; label: string }>;
@@ -90,11 +84,6 @@ export type LandingCopy = {
 		items: Array<{ id: StableId; tag: string; title: string; desc: string; image: string }>;
 	};
 	galleryImages: string[];
-	testimonials: {
-		eyebrow: string;
-		title: string;
-		items: Array<{ id: StableId; quote: string; name: string; role: string; avatar: string }>;
-	};
 	largeBanner: {
 		image: string;
 		imageAlt: string;
@@ -165,10 +154,6 @@ export type LandingCopy = {
 
 export const landingCopy: Record<Locale, LandingCopy> = {
 	de: {
-		announcement: {
-			badge: "Neu",
-			text: "Z8 v4 ist da: Schneller, schöner, smarter.",
-		},
 		header: {
 			brand: "Z8",
 			navItems: [
@@ -221,14 +206,14 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			},
 		},
 		logos: {
-			label: "Vertraut von",
-			items: ["DATEV", "Lexware", "Personio", "SAP", "Sage"],
+			label: "Exportiert nach",
+			items: ["DATEV", "Lexware", "Personio", "SAP SuccessFactors", "Sage"],
 		},
 		stats: [
-			{ value: "2.400+", label: "Unternehmen", sub: "vertrauen auf Z8" },
-			{ value: "99,98%", label: "Uptime", sub: "seit 2022" },
-			{ value: "340k", label: "Mitarbeiter", sub: "erfassen täglich" },
-			{ value: "<2s", label: "Ladezeit", sub: "Median weltweit" },
+			{ value: "4 €", label: "pro Nutzer", sub: "im Monat, zzgl. MwSt." },
+			{ value: "14 Tage", label: "kostenlos testen", sub: "ohne Kreditkarte" },
+			{ value: "5", label: "Lohnexport-Ziele", sub: "DATEV bis SAP SuccessFactors" },
+			{ value: "SSO", label: "SAML & OIDC", sub: "plus SCIM-Provisioning" },
 		],
 		featuresGrid: {
 			eyebrow: "Funktionen",
@@ -239,7 +224,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 				{
 					id: "time-clock",
 					title: "Stempeluhr",
-					desc: "Ein Klick. Alle Geräte. Sofort synchronisiert über Web, Desktop und Mobile.",
+					desc: "Ein Klick. Im Browser oder im Desktop-Widget für Windows. Sofort synchronisiert.",
 				},
 				{
 					id: "gobd-compliance",
@@ -249,7 +234,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 				{
 					id: "payroll-export",
 					title: "Lohnexport",
-					desc: "DATEV, Lexware, Personio, SAP. Automatisch und fehlerfrei.",
+					desc: "Dateiexport für DATEV, Lexware und Sage. API-Anbindung an Personio und SAP SuccessFactors.",
 				},
 				{
 					id: "multi-tenant",
@@ -277,7 +262,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 					id: "time-clock",
 					tag: "Stempeluhr",
 					title: "Ein Klick. Überall.",
-					desc: "Ihre Mitarbeiter stempeln per Web, iOS, Android, Terminal oder NFC-Badge ein. Alles synchronisiert sich in Echtzeit \u2014 auch offline. Geo-Fencing und IP-Whitelisting verhindern Missbrauch, ohne ehrliche Mitarbeiter zu behindern.",
+					desc: "Ihre Mitarbeiter stempeln im Browser oder mit dem Desktop-Widget für Windows ein. Alles synchronisiert sich in Echtzeit \u2014 das Desktop-Widget speichert Stempelungen auch offline und überträgt sie, sobald die Verbindung zurück ist.",
 					image: detailedFeatureImages["time-clock"],
 				},
 				{
@@ -290,43 +275,13 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 				{
 					id: "payroll-export",
 					tag: "Lohnexport",
-					title: "Null manuelle Schritte.",
-					desc: "Verbinden Sie Z8 direkt mit DATEV, Lexware, Sage, Personio oder SAP. Monatliche Lohndaten werden automatisch übertragen \u2014 ohne CSV-Download, ohne Copy-Paste, ohne Fehler. Ihre Buchhaltung liebt es.",
+					title: "Kein Abtippen mehr.",
+					desc: "Exportieren Sie die monatlichen Lohndaten als Datei für DATEV Lohn & Gehalt, Lexware oder Sage. Mit Personio und SAP SuccessFactors überträgt Z8 die Daten per API-Anbindung. Kein Copy-Paste, keine Tippfehler.",
 					image: detailedFeatureImages["payroll-export"],
 				},
 			],
 		},
 		galleryImages,
-		testimonials: {
-			eyebrow: "Kundenstimmen",
-			title: "Was unsere Kunden sagen.",
-			items: [
-				{
-					id: "katharina-voss",
-					quote:
-						"Wir haben drei Tools durch Z8 ersetzt. Die Zeitersparnis in der HR-Abteilung ist spürbar \u2014 mindestens 8 Stunden pro Woche.",
-					name: "Dr. Katharina Voss",
-					role: "Head of People, Finleap",
-					avatar: "KV",
-				},
-				{
-					id: "markus-hein",
-					quote:
-						"GoBD-Konformität war für uns ein Muss. Z8 ist das einzige Tool, das das sauber löst und gleichzeitig schön aussieht.",
-					name: "Markus Hein",
-					role: "Geschäftsführer, Hein & Partner",
-					avatar: "MH",
-				},
-				{
-					id: "sophie-brandt",
-					quote:
-						"Unser Onboarding dauert jetzt 3 Minuten statt 2 Tage. Die SCIM-Integration mit unserem IdP funktioniert einwandfrei.",
-					name: "Sophie Brandt",
-					role: "IT-Leiterin, Commerz Real",
-					avatar: "SB",
-				},
-			],
-		},
 		largeBanner: {
 			image: largeBannerImage,
 			imageAlt: "Team collaboration",
@@ -356,7 +311,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			items: [
 				{
 					id: "time-clock",
-					feature: "Stempeluhr (Web + Mobile)",
+					feature: "Stempeluhr (Web + Desktop)",
 					...comparisonAvailability["time-clock"],
 				},
 				{
@@ -366,7 +321,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 				},
 				{
 					id: "payroll-export",
-					feature: "Automatischer Lohnexport",
+					feature: "Lohnexport",
 					...comparisonAvailability["payroll-export"],
 				},
 				{
@@ -389,13 +344,11 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 					feature: "Echtzeit-Dashboards",
 					...comparisonAvailability["real-time-dashboards"],
 				},
-				{ id: "geo-fencing", feature: "Geo-Fencing", ...comparisonAvailability["geo-fencing"] },
 				{
 					id: "sql-report-editor",
 					feature: "SQL-Report-Editor",
 					...comparisonAvailability["sql-report-editor"],
 				},
-				{ id: "api-access", feature: "API-Zugang", ...comparisonAvailability["api-access"] },
 			],
 		},
 		integrations: {
@@ -405,16 +358,13 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			items: [
 				{ id: "datev", name: "DATEV", category: "Lohn" },
 				{ id: "lexware", name: "Lexware", category: "Lohn" },
-				{ id: "sap", name: "SAP", category: "ERP" },
+				{ id: "sap-successfactors", name: "SAP SuccessFactors", category: "HR" },
 				{ id: "personio", name: "Personio", category: "HR" },
 				{ id: "sage", name: "Sage", category: "Lohn" },
 				{ id: "microsoft-365", name: "Microsoft 365", category: "Identität" },
 				{ id: "google-workspace", name: "Google Workspace", category: "Identität" },
 				{ id: "okta", name: "Okta", category: "SSO" },
 				{ id: "slack", name: "Slack", category: "Kommunikation" },
-				{ id: "jira", name: "Jira", category: "Projekt" },
-				{ id: "asana", name: "Asana", category: "Projekt" },
-				{ id: "zapier", name: "Zapier", category: "Automation" },
 			],
 		},
 		howItWorks: {
@@ -453,17 +403,17 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 				{
 					id: "gobd-compliance",
 					q: "Ist Z8 wirklich GoBD-konform?",
-					a: "Ja. Alle Zeiteinträge werden revisionssicher gespeichert. Nachträgliche Änderungen werden dokumentiert und sind jederzeit nachvollziehbar. Wir arbeiten mit spezialisierten Wirtschaftsprüfern zusammen.",
+					a: "Ja. Alle Zeiteinträge werden revisionssicher gespeichert. Nachträgliche Änderungen werden dokumentiert und sind jederzeit nachvollziehbar.",
 				},
 				{
 					id: "payroll-integration",
 					q: "Kann ich Z8 mit meiner bestehenden Lohnsoftware verbinden?",
-					a: "Absolut. Wir unterstützen DATEV, Lexware, Sage, Personio und SAP out-of-the-box. Für andere Systeme bieten wir eine REST-API und Zapier-Integration.",
+					a: "Ja. Für DATEV Lohn & Gehalt, Lexware und Sage erstellt Z8 Exportdateien, die Sie in Ihre Lohnsoftware importieren. Mit Personio und SAP SuccessFactors verbindet sich Z8 per API-Anbindung.",
 				},
 				{
 					id: "offline-mode",
 					q: "Was passiert, wenn das Internet ausfällt?",
-					a: "Die Z8-App funktioniert offline. Stempelungen werden lokal gespeichert und automatisch synchronisiert, sobald die Verbindung wiederhergestellt ist.",
+					a: "Das Z8-Desktop-Widget für Windows funktioniert offline. Stempelungen werden lokal gespeichert und automatisch synchronisiert, sobald die Verbindung wiederhergestellt ist.",
 				},
 				{
 					id: "contract-term",
@@ -495,7 +445,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 				"Workforce Management für moderne Unternehmen. Zeiterfassung, Lohnexport und Analyse in einem.",
 			socialLinks: ["Li", "X", "GH"],
 			linkGroups: {
-				Produkt: ["Funktionen", "Preise", "Integrationen", "API", "Changelog", "Roadmap"],
+				Produkt: ["Funktionen", "Preise", "Integrationen", "Changelog", "Roadmap"],
 				Unternehmen: ["Über uns", "Karriere", "Blog", "Presse", "Partner"],
 				Ressourcen: ["Hilfe-Center", "Dokumentation", "Status", "Webinare", "Tutorials"],
 				Rechtliches: [
@@ -512,10 +462,6 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 		},
 	},
 	en: {
-		announcement: {
-			badge: "New",
-			text: "Z8 v4 is here: faster, cleaner, smarter.",
-		},
 		header: {
 			brand: "Z8",
 			navItems: [
@@ -568,14 +514,14 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			},
 		},
 		logos: {
-			label: "Trusted by",
-			items: ["DATEV", "Lexware", "Personio", "SAP", "Sage"],
+			label: "Exports to",
+			items: ["DATEV", "Lexware", "Personio", "SAP SuccessFactors", "Sage"],
 		},
 		stats: [
-			{ value: "2,400+", label: "companies", sub: "trust Z8" },
-			{ value: "99.98%", label: "uptime", sub: "since 2022" },
-			{ value: "340k", label: "employees", sub: "track daily" },
-			{ value: "<2s", label: "load time", sub: "global median" },
+			{ value: "€4", label: "per user", sub: "per month, excl. tax" },
+			{ value: "14 days", label: "free trial", sub: "no credit card" },
+			{ value: "5", label: "payroll export targets", sub: "DATEV to SAP SuccessFactors" },
+			{ value: "SSO", label: "SAML & OIDC", sub: "plus SCIM provisioning" },
 		],
 		featuresGrid: {
 			eyebrow: "Features",
@@ -586,7 +532,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 				{
 					id: "time-clock",
 					title: "Time clock",
-					desc: "One click. Every device. Instantly synced across web, desktop, and mobile.",
+					desc: "One click. In the browser or the Windows desktop widget. Instantly synced.",
 				},
 				{
 					id: "gobd-compliance",
@@ -596,7 +542,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 				{
 					id: "payroll-export",
 					title: "Payroll export",
-					desc: "DATEV, Lexware, Personio, SAP. Automatic and error-free.",
+					desc: "File export for DATEV, Lexware, and Sage. API connectors for Personio and SAP SuccessFactors.",
 				},
 				{
 					id: "multi-tenant",
@@ -624,7 +570,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 					id: "time-clock",
 					tag: "Time clock",
 					title: "One click. Anywhere.",
-					desc: "Your employees clock in from web, iOS, Android, terminal, or NFC badge. Everything syncs in real time - even offline. Geo-fencing and IP allowlisting prevent abuse without slowing honest employees down.",
+					desc: "Your employees clock in from the browser or the Windows desktop widget. Everything syncs in real time - the desktop widget also stores clock-ins offline and sends them once the connection is back.",
 					image: detailedFeatureImages["time-clock"],
 				},
 				{
@@ -637,43 +583,13 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 				{
 					id: "payroll-export",
 					tag: "Payroll export",
-					title: "Zero manual steps.",
-					desc: "Connect Z8 directly with DATEV, Lexware, Sage, Personio, or SAP. Monthly payroll data transfers automatically - no CSV download, no copy-paste, no errors. Your accounting team will love it.",
+					title: "No more retyping.",
+					desc: "Export monthly payroll data as a file for DATEV Lohn & Gehalt, Lexware, or Sage. For Personio and SAP SuccessFactors, Z8 sends the data through an API connector. No copy-paste, no typos.",
 					image: detailedFeatureImages["payroll-export"],
 				},
 			],
 		},
 		galleryImages,
-		testimonials: {
-			eyebrow: "Customer voices",
-			title: "What our customers say.",
-			items: [
-				{
-					id: "katharina-voss",
-					quote:
-						"We replaced three tools with Z8. The time savings for our HR team are noticeable - at least 8 hours per week.",
-					name: "Dr. Katharina Voss",
-					role: "Head of People, Finleap",
-					avatar: "KV",
-				},
-				{
-					id: "markus-hein",
-					quote:
-						"GoBD compliance was non-negotiable for us. Z8 is the only tool that solves it cleanly and still looks great.",
-					name: "Markus Hein",
-					role: "Managing Director, Hein & Partner",
-					avatar: "MH",
-				},
-				{
-					id: "sophie-brandt",
-					quote:
-						"Our onboarding now takes 3 minutes instead of 2 days. The SCIM integration with our IdP works flawlessly.",
-					name: "Sophie Brandt",
-					role: "Head of IT, Commerz Real",
-					avatar: "SB",
-				},
-			],
-		},
 		largeBanner: {
 			image: largeBannerImage,
 			imageAlt: "Team collaboration",
@@ -702,7 +618,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			items: [
 				{
 					id: "time-clock",
-					feature: "Time clock (web + mobile)",
+					feature: "Time clock (web + desktop)",
 					...comparisonAvailability["time-clock"],
 				},
 				{
@@ -712,7 +628,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 				},
 				{
 					id: "payroll-export",
-					feature: "Automatic payroll export",
+					feature: "Payroll export",
 					...comparisonAvailability["payroll-export"],
 				},
 				{
@@ -735,13 +651,11 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 					feature: "Real-time dashboards",
 					...comparisonAvailability["real-time-dashboards"],
 				},
-				{ id: "geo-fencing", feature: "Geo-fencing", ...comparisonAvailability["geo-fencing"] },
 				{
 					id: "sql-report-editor",
 					feature: "SQL report editor",
 					...comparisonAvailability["sql-report-editor"],
 				},
-				{ id: "api-access", feature: "API access", ...comparisonAvailability["api-access"] },
 			],
 		},
 		integrations: {
@@ -751,16 +665,13 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			items: [
 				{ id: "datev", name: "DATEV", category: "Payroll" },
 				{ id: "lexware", name: "Lexware", category: "Payroll" },
-				{ id: "sap", name: "SAP", category: "ERP" },
+				{ id: "sap-successfactors", name: "SAP SuccessFactors", category: "HR" },
 				{ id: "personio", name: "Personio", category: "HR" },
 				{ id: "sage", name: "Sage", category: "Payroll" },
 				{ id: "microsoft-365", name: "Microsoft 365", category: "Identity" },
 				{ id: "google-workspace", name: "Google Workspace", category: "Identity" },
 				{ id: "okta", name: "Okta", category: "SSO" },
 				{ id: "slack", name: "Slack", category: "Communication" },
-				{ id: "jira", name: "Jira", category: "Project" },
-				{ id: "asana", name: "Asana", category: "Project" },
-				{ id: "zapier", name: "Zapier", category: "Automation" },
 			],
 		},
 		howItWorks: {
@@ -799,17 +710,17 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 				{
 					id: "gobd-compliance",
 					q: "Is Z8 really GoBD-compliant?",
-					a: "Yes. All time entries are stored in an audit-proof way. Later changes are documented and traceable at any time. We work with specialized auditors.",
+					a: "Yes. All time entries are stored in an audit-proof way. Later changes are documented and traceable at any time.",
 				},
 				{
 					id: "payroll-integration",
 					q: "Can I connect Z8 to my existing payroll software?",
-					a: "Absolutely. We support DATEV, Lexware, Sage, Personio, and SAP out of the box. For other systems, we offer a REST API and Zapier integration.",
+					a: "Yes. For DATEV Lohn & Gehalt, Lexware, and Sage, Z8 creates export files that you import into your payroll software. Z8 connects to Personio and SAP SuccessFactors through an API connector.",
 				},
 				{
 					id: "offline-mode",
 					q: "What happens if the internet goes down?",
-					a: "The Z8 app works offline. Clock-ins are stored locally and synced automatically as soon as the connection is restored.",
+					a: "The Z8 desktop widget for Windows works offline. Clock-ins are stored locally and synced automatically as soon as the connection is restored.",
 				},
 				{
 					id: "contract-term",
@@ -840,7 +751,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 				"Workforce management for modern companies. Time tracking, payroll export, and analytics in one.",
 			socialLinks: ["Li", "X", "GH"],
 			linkGroups: {
-				Product: ["Features", "Pricing", "Integrations", "API", "Changelog", "Roadmap"],
+				Product: ["Features", "Pricing", "Integrations", "Changelog", "Roadmap"],
 				Company: ["About us", "Careers", "Blog", "Press", "Partners"],
 				Resources: ["Help Center", "Documentation", "Status", "Webinars", "Tutorials"],
 				Legal: ["Privacy", "Terms", "Legal notice", "Cookie settings", "Data processing agreement"],

@@ -21,6 +21,7 @@ import {
 	resolveScheduleDateRange,
 	resolveScheduleWallTime,
 } from "@/lib/scheduling/schedule-local-input";
+import { shiftStoredDate } from "@/lib/scheduling/shift-date";
 import { parseIanaTimeZone } from "@/lib/timezone/validation";
 import { buildPublishDecision } from "../publish-decision";
 import type {
@@ -114,7 +115,7 @@ function getScheduleComplianceEvaluation(
 		const evaluation = yield* scheduleComplianceService.evaluateScheduleWindow({
 			organizationId: context.organizationId,
 			startDate: range.start,
-			endDate: range.endExclusive,
+			endDateExclusive: range.endExclusive,
 			timezone,
 		});
 
@@ -137,12 +138,7 @@ export async function upsertShift(
 			"getOrganizationTimezoneForUpsertShift",
 			async () => getOrganizationTimezone(currentEmployee.organizationId),
 		);
-		const shiftDate = dateFromInstant(
-			resolveScheduleWallTime(
-				{ date: input.date, time: "00:00" },
-				timezone,
-			).toInstant(),
-		);
+		const shiftDate = shiftStoredDate(input.date, timezone);
 		resolveScheduleWallTime(
 			{ date: input.date, time: input.startTime },
 			timezone,

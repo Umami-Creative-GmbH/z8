@@ -124,6 +124,11 @@ vi.mock("@/components/settings/rate-history-card", () => ({
 vi.mock("@/components/settings/work-balance-recalculation-card", () => ({
 	WorkBalanceRecalculationCard: () => null,
 }));
+vi.mock("@/components/personnel-file/personnel-file-panel", () => ({
+	PersonnelFilePanel: ({ capability }: { capability: { employeeId: string } }) => (
+		<section aria-label="Personnel file panel">{capability.employeeId}</section>
+	),
+}));
 
 const approvedMembership = {
 	id: "member-2",
@@ -199,11 +204,13 @@ function renderDetail({
 	currentUserId = "owner-user",
 	currentMemberRole = "owner",
 	accessTier = "orgAdmin",
+	personnelFile = null,
 }: {
 	employee?: EmployeeDetail;
 	currentUserId?: string;
 	currentMemberRole?: string;
 	accessTier?: "orgAdmin" | "manager" | "member";
+	personnelFile?: { employeeId: string; categories: []; today: string } | null;
 } = {}) {
 	useEmployeeMock.mockImplementation(
 		({ employeeId }: { employeeId: string }) => {
@@ -229,11 +236,37 @@ function renderDetail({
 					accessTier={accessTier}
 					currentUserId={currentUserId}
 					currentMemberRole={currentMemberRole}
+					personnelFile={personnelFile}
 				/>
 			</QueryClientProvider>,
 		),
 	};
 }
+
+describe("employee detail personnel file tab (#865)", () => {
+	beforeEach(() => vi.clearAllMocks());
+
+	it("shows no tabs without a personnel file capability", async () => {
+		renderDetail();
+		expect(await screen.findByText("Alex Morgan")).toBeTruthy();
+		expect(screen.queryByRole("tab", { name: "Personnel file" })).toBeNull();
+	});
+
+	it("offers the personnel file as a tab when the server grants it", async () => {
+		renderDetail({
+			personnelFile: { employeeId: "employee-2", categories: [], today: "2026-10-09" },
+		});
+		const tab = await screen.findByRole("tab", { name: "Personnel file" });
+		expect(screen.getByRole("tab", { name: "Overview" })).toBeTruthy();
+
+		act(() => {
+			fireEvent.mouseDown(tab);
+			fireEvent.click(tab);
+		});
+
+		expect(await screen.findByRole("region", { name: "Personnel file panel" })).toBeTruthy();
+	});
+});
 
 describe("employee detail lifecycle integration", () => {
 	beforeEach(() => vi.clearAllMocks());

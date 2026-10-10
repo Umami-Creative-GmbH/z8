@@ -120,9 +120,11 @@
       },
       "errors": {
         "connectionFailed": "Error al conectar con Clockodo",
+        "fetchProjectsFailed": "Error al obtener los datos del proyecto",
         "fetchUsersFailed": "Error al obtener los datos del usuario",
         "importFailed": "Error en el escaneo de revisión de importación",
-        "saveMappingsFailed": "Error al guardar las asignaciones de usuario"
+        "saveMappingsFailed": "Error al guardar las asignaciones de usuario",
+        "saveProjectMappingsFailed": "Error al guardar las asignaciones del proyecto"
       },
       "importing": {
         "description": "Por favor, no cierre esta página. El escaneo de revisión se está poniendo en cola y puede tardar un tiempo si los conjuntos de datos son grandes.",
@@ -148,6 +150,19 @@
         "next": "Asignar usuarios",
         "title": "Vista previa de datos"
       },
+      "projectMapping": {
+        "clockodoCustomer": "Cliente de Clockodo",
+        "clockodoProject": "Proyecto de Clockodo",
+        "continue": "Continuar",
+        "description": "Asigne proyectos de Clockodo a proyectos existentes de Z8. Las entradas de tiempo importadas conservan su proyecto y el valor facturable de Clockodo. Las entradas en proyectos no asignados o en proyectos sin cliente se importan como no facturables. No se crea ningún proyecto.",
+        "mappedCount": "{mapped} de {total} proyectos asignados",
+        "noCustomer": "Este proyecto no tiene cliente, por lo que el tiempo importado no es facturable.",
+        "noZ8Projects": "Esta organización aún no tiene proyectos. Cree proyectos primero para importar el tiempo de Clockodo con su proyecto y valor facturable.",
+        "title": "Asignar proyectos",
+        "unmapped": "No asignado (sin proyecto)",
+        "z8Project": "Proyecto de Z8",
+        "z8ProjectFor": "Proyecto de Z8 para {project}"
+      },
       "review": {
         "startedToast": "Se ha iniciado el escaneo de revisión de importación. Se requiere una revisión antes de confirmar los registros."
       },
@@ -167,6 +182,7 @@
         "credentials": "Credenciales",
         "import": "Revisión",
         "preview": "Vista previa",
+        "projectMapping": "Asignación de proyectos",
         "selection": "Selección",
         "userMapping": "Asignación de usuario"
       },

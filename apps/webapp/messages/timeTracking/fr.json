@@ -11,6 +11,11 @@
         "title": "Pause ajoutée automatiquement pour conformité"
       }
     },
+    "billable": {
+      "description": "Travail facturable pour le client du projet",
+      "label": "Facturable",
+      "noCustomer": "Seul le travail sur un projet avec un client peut être facturable"
+    },
     "budget": "Budget",
     "clockedOutSuccess": "Vous avez pointé votre départ !",
     "clockIn": "Pointer l'entrée",
@@ -69,6 +74,7 @@
       "alreadyClockedIn": "Vous avez déjà pointé votre arrivée",
       "appendReviewRequired": "Le pointage d'arrivée nécessite une vérification de votre historique des heures",
       "appendReviewRequiredDesc": "Vos saisies d'heures précédentes n'ont pas pu être vérifiées, le nouveau pointage d'arrivée n'a donc pas été enregistré. Veuillez contacter votre administrateur.",
+      "billableNotAllowed": "Seul le travail sur un projet qui a un client peut être facturable",
       "breakAwaitingApproval": "Cette période de travail est en attente d'approbation et ne peut pas être modifiée. Ajoutez la pause une fois la situation résolue.",
       "breakDurationInvalid": "Saisissez une durée de pause d'au moins 1 minute.",
       "breakNotAllowed": "Vous ne pouvez pas ajouter de pause à ce travail.",
@@ -105,6 +111,11 @@
       "projectNotAllowed": "Impossible d'affecter à ce projet",
       "restPeriodBlocked": "Période de repos non terminée",
       "restPeriodBlockedDesc": "Vous devez terminer la période de repos obligatoire avant de pointer. Demandez une exception si nécessaire.",
+      "taskDone": "Cette tâche est terminée, aucun temps ne peut y être enregistré",
+      "taskNotAllowed": "Impossible d'enregistrer du temps sur cette tâche",
+      "taskNotFound": "Cette tâche n'existe plus",
+      "taskOtherProject": "Cette tâche appartient à un autre projet",
+      "taskProjectNotBookable": "Il n'est plus possible d'enregistrer du temps sur le projet de cette tâche",
       "workCategoryNotAllowed": "Impossible d'affecter à cette catégorie de travail"
     },
     "manualEntry": {
@@ -120,6 +131,7 @@
         "retry": "Réessayer",
         "targetChanged": "L'employé a changé, le projet et la catégorie ont donc été réinitialisés.",
         "targetTimezone": "Les heures sont dans le fuseau horaire de {employee} : {timezone}",
+        "taskCleared": "Une tâche sélectionnée n'est plus disponible et a été retirée.",
         "thisEmployee": "cet employé",
         "utcFallback": "Ni {employee} ni l'organisation n'ont de fuseau horaire défini, UTC est donc utilisé."
       },
@@ -237,6 +249,7 @@
       "approveEntry": "Approuver l'entrée",
       "approveFailed": "Échec de l'approbation de l'entrée",
       "approving": "Approbation en cours...",
+      "billable": "Facturable",
       "clockIn": "Pointer l'arrivée",
       "clockOut": "Pointer le départ",
       "corrected": "Corrigé",
@@ -248,6 +261,13 @@
       "rowActions": "Actions sur les entrées de temps",
       "title": "Entrées de temps",
       "viewCalendar": "Voir le calendrier"
+    },
+    "taskPicker": {
+      "doneTask": "{name} (terminée)",
+      "empty": "Aucune tâche trouvée",
+      "label": "Tâche",
+      "none": "Aucune tâche",
+      "search": "Rechercher des tâches…"
     },
     "timeline": {
       "dayPicker": "Sélecteur de jour de la chronologie",

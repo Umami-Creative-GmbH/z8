@@ -9,7 +9,7 @@ import {
 	getVisibleSettings,
 	SETTINGS_ENTRIES,
 } from "@/components/settings/settings-config";
-import { resolveSettingsAccessTier } from "@/lib/settings-access";
+import { canResolvedTierAccessRoute, resolveSettingsAccessTier } from "@/lib/settings-access";
 
 describe("settings visibility tiers", () => {
 	it("shows only member entries for the member tier", () => {
@@ -20,6 +20,7 @@ describe("settings visibility tiers", () => {
 			"security",
 			"notifications",
 			"wellness",
+			"position-stamps",
 		]);
 	});
 
@@ -141,6 +142,24 @@ describe("settings visibility tiers", () => {
 		});
 		expect(managerEntries.some((entry) => entry.id === "payroll-access")).toBe(false);
 		expect(memberEntries.some((entry) => entry.id === "payroll-access")).toBe(false);
+	});
+
+	it("shows position capture to org admins and every member's own position stamps", () => {
+		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
+		const managerEntries = getVisibleSettings("manager", true);
+		const memberEntries = getVisibleSettings("member", true);
+
+		expect(orgAdminEntries.find((entry) => entry.id === "position-capture")).toMatchObject({
+			href: "/settings/position-capture",
+			minimumTier: "orgAdmin",
+			group: "administration",
+		});
+		expect(managerEntries.some((entry) => entry.id === "position-capture")).toBe(false);
+		expect(memberEntries.find((entry) => entry.id === "position-stamps")).toMatchObject({
+			href: "/settings/position-stamps",
+			minimumTier: "member",
+			group: "account",
+		});
 	});
 
 	it("groups notification preferences and channel configuration together", () => {
@@ -356,5 +375,50 @@ describe("settings visibility tiers", () => {
 		});
 
 		expect(entries.some((entry) => entry.id === "demo-data")).toBe(true);
+	});
+
+	describe("Billable Time settings area", () => {
+		const billableTimeOn = {
+			projectsEnabled: true,
+			billableTimeEnabled: true,
+		};
+		const isVisible = (
+			accessTier: "member" | "manager" | "orgAdmin",
+			featureFlags: Parameters<typeof getResolvedSettingsVisibility>[0]["featureFlags"],
+		) =>
+			getResolvedSettingsVisibility({ accessTier, featureFlags }).visibleSettings.some(
+				(entry) => entry.id === "billable-time",
+			);
+
+		it("shows the area to org admins while the module is on", () => {
+			expect(isVisible("orgAdmin", billableTimeOn)).toBe(true);
+			expect(
+				getVisibleSettings("orgAdmin").find((entry) => entry.id === "billable-time"),
+			).toMatchObject({ href: "/settings/billable-time" });
+		});
+
+		it("hides the area from managers and members even while the module is on", () => {
+			expect(isVisible("manager", billableTimeOn)).toBe(false);
+			expect(isVisible("member", billableTimeOn)).toBe(false);
+		});
+
+		it("hides the area from everyone while the module is off", () => {
+			expect(isVisible("orgAdmin", { projectsEnabled: true, billableTimeEnabled: false })).toBe(
+				false,
+			);
+			expect(isVisible("orgAdmin", { projectsEnabled: true })).toBe(false);
+		});
+
+		it("hides the area while projects are off, even if the module flag is still set", () => {
+			expect(isVisible("orgAdmin", { projectsEnabled: false, billableTimeEnabled: true })).toBe(
+				false,
+			);
+		});
+
+		it("guards the area's routes as org admin only", () => {
+			expect(canResolvedTierAccessRoute("orgAdmin", "/settings/billable-time")).toBe(true);
+			expect(canResolvedTierAccessRoute("manager", "/settings/billable-time")).toBe(false);
+			expect(canResolvedTierAccessRoute("member", "/settings/billable-time")).toBe(false);
+		});
 	});
 });

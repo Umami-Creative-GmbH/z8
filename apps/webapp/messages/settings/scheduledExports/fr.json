@@ -18,7 +18,8 @@
         "absences": "Absences",
         "employees": "Employés",
         "projects": "Projets",
-        "timeEntries": "Entrées de temps"
+        "timeEntries": "Entrées de temps",
+        "workPeriods": "Périodes de travail (avec projet et tâche)"
       },
       "dateRange": {
         "customOffset": "Décalage personnalisé",

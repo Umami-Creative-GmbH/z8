@@ -7,6 +7,8 @@ import {
 } from "@/lib/auth-helpers";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { hasActivePayrollAccessGrant } from "@/lib/payroll-access/permissions";
+import { managesAnyDocuments } from "@/lib/personnel-file/access";
+import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
 import { loadFinanceActor } from "@/lib/travel-expenses/finance-access";
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
 import { AppSidebar } from "./app-sidebar";
@@ -25,6 +27,8 @@ function getOrganizationFeatureFlags(
 		surchargesEnabled: organization?.surchargesEnabled ?? false,
 		demoDataEnabled: organization?.demoDataEnabled ?? true,
 		worksCouncilEnabled: organization?.worksCouncilEnabled ?? false,
+		billableTimeEnabled: organization?.billableTimeEnabled ?? false,
+		personnelFilesEnabled: organization?.personnelFilesEnabled ?? false,
 	};
 }
 
@@ -32,6 +36,48 @@ export async function ServerAppSidebar({
 	showWorksCouncilNav = false,
 	...props
 }: ServerAppSidebarProps) {
+	const {
+		organizations,
+		currentOrganization,
+		activeEmployee,
+		featureFlags,
+		settingsAccessTier,
+		showPayrollNav,
+		showFinanceNav,
+		canShowWorksCouncilNav,
+		activeOrganizationId,
+		showPersonnelFilesNav,
+		authContext,
+		canCreateOrganizations,
+	} = await resolveSidebarAccess(showWorksCouncilNav);
+	return (
+		<AppSidebar
+			{...props}
+			organizations={organizations}
+			currentOrganization={currentOrganization}
+			employeeRole={activeEmployee?.role ?? null}
+			navigationCapabilities={{
+				scheduling: featureFlags.shiftsEnabled,
+				compliance: settingsAccessTier === "orgAdmin",
+				payroll: Boolean(showPayrollNav),
+				finance: showFinanceNav,
+				worksCouncil: canShowWorksCouncilNav,
+				// My documents (#865): the employee's own shared documents, while the feature is on.
+				myDocuments:
+					featureFlags.personnelFilesEnabled &&
+					Boolean(activeEmployee && activeEmployee.organizationId === activeOrganizationId),
+				personnelFiles: showPersonnelFilesNav,
+				platformAdmin: authContext?.user.role === "admin",
+			}}
+			settingsAccessTier={settingsAccessTier ?? "member"}
+			billingEnabled={env.BILLING_ENABLED === "true"}
+			featureFlags={featureFlags}
+			canCreateOrganizations={canCreateOrganizations}
+		/>
+	);
+}
+
+async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 	const [organizations, authContext, settingsAccessTier] = await Promise.all([
 		getUserOrganizations(),
 		getAuthContext(),
@@ -74,25 +120,26 @@ export async function ServerAppSidebar({
 		// Read access: owners, admins and any active expense officer grant (#753).
 		showFinanceNav = financeActor?.canRead ?? false;
 	}
+	// Personnel files (#866): decided by the personnel file access resolver, never by roles.
+	let showPersonnelFilesNav = false;
+	if (featureFlags.personnelFilesEnabled) {
+		const personnelFileAccess = await loadCurrentPersonnelFileAccess();
+		showPersonnelFilesNav =
+			personnelFileAccess.status === "resolved" && managesAnyDocuments(personnelFileAccess.access);
+	}
 
-	return (
-		<AppSidebar
-			{...props}
-			organizations={organizations}
-			currentOrganization={currentOrganization}
-			employeeRole={activeEmployee?.role ?? null}
-			navigationCapabilities={{
-				scheduling: featureFlags.shiftsEnabled,
-				compliance: settingsAccessTier === "orgAdmin",
-				payroll: Boolean(showPayrollNav),
-				finance: showFinanceNav,
-				worksCouncil: canShowWorksCouncilNav,
-				platformAdmin: authContext?.user.role === "admin",
-			}}
-			settingsAccessTier={settingsAccessTier ?? "member"}
-			billingEnabled={env.BILLING_ENABLED === "true"}
-			featureFlags={featureFlags}
-			canCreateOrganizations={canCreateOrganizations}
-		/>
-	);
+	return {
+		organizations,
+		currentOrganization,
+		activeEmployee,
+		featureFlags,
+		settingsAccessTier,
+		showPayrollNav,
+		showFinanceNav,
+		canShowWorksCouncilNav,
+		activeOrganizationId,
+		showPersonnelFilesNav,
+		authContext,
+		canCreateOrganizations,
+	};
 }

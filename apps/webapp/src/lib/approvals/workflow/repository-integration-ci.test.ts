@@ -2,6 +2,8 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+const packagePath = fileURLToPath(new URL("../../../../package.json", import.meta.url));
+
 const workflowPath = fileURLToPath(
 	new URL("../../../../../../.github/workflows/tests.yml", import.meta.url),
 );
@@ -18,6 +20,7 @@ describe("approval workflow repository integration CI contract", () => {
 		// `apps/webapp/**` covers vitest.config.ts and the shared suite runner.
 		expect(workflow).toMatch(`on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     branches:
       - main
     paths:
@@ -28,17 +31,21 @@ describe("approval workflow repository integration CI contract", () => {
       - "docker/scripts/**"
       - "docker/Dockerfile.*"
       - "docker/targets/**"
+      - "scripts/**"
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "turbo.json"
+      - ".github/scripts/**"
       - ".github/workflows/tests.yml"
+      - ".github/workflows/ci-debounce.yml"
   workflow_dispatch:`);
-		expect(workflow).toContain(`services:
-      postgres:
-        image: postgres:16`);
+		expect(workflow).toMatch(
+			/services:\n {6}postgres:\n(?: {8}#[^\n]*\n)* {8}image: public\.ecr\.aws\/docker\/library\/postgres:16/,
+		);
 		expect(workflow).toContain(
 			`- name: Run PostgreSQL integration suites
+        id: test-run
         run: |
           set -euo pipefail
           database_name="approval_workflow_repository_test_\${GITHUB_RUN_ID}_\${GITHUB_RUN_ATTEMPT}"`,
@@ -61,10 +68,12 @@ describe("approval workflow repository integration CI contract", () => {
 
 	it("runs only the unit project in the sharded unit job", async () => {
 		const workflow = await readWorkflow();
+		const packageJson = JSON.parse(await readFile(packagePath, "utf8"));
+		expect(packageJson.scripts.test).toContain("vitest run --project unit");
 
 		expect(workflow).toContain(
 			// biome-ignore lint/suspicious/noTemplateCurlyInString: GitHub Actions expression
-			"pnpm exec turbo test --filter=webapp --output-logs=full --log-order=stream -- --project unit --shard=${{ matrix.shard }}/4",
+			"pnpm --filter webapp test --shard=${{ matrix.shard }}/2",
 		);
 	});
 });

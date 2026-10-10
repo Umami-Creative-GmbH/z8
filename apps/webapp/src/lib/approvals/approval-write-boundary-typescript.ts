@@ -144,6 +144,7 @@ const SOURCE_COLUMN_NAMES: Readonly<Record<string, string>> = {
 	endAt: "end_at",
 	endTime: "end_time",
 	id: "id",
+	isBillable: "is_billable",
 	isSuperseded: "is_superseded",
 	organizationId: "organization_id",
 	pendingChanges: "pending_changes",
@@ -154,6 +155,7 @@ const SOURCE_COLUMN_NAMES: Readonly<Record<string, string>> = {
 	startAt: "start_at",
 	startTime: "start_time",
 	supersededById: "superseded_by_id",
+	taskId: "task_id",
 	type: "type",
 	weightPercent: "weight_percent",
 	workCategoryId: "work_category_id",
@@ -2528,8 +2530,11 @@ function analyzeApprovalWriteMutationsInContext(
 										"recordId",
 										"allocationKind",
 										"projectId",
+										"taskId",
 										"costCenterId",
 										"weightPercent",
+										// Billable work (#900) is part of the allocation, like its project.
+										"isBillable",
 										"createdAt",
 									];
 			const unresolvedPayload =

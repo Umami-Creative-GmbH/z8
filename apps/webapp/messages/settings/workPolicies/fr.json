@@ -286,6 +286,12 @@
       "homeOfficeDaysPreview": "{count} télétravail",
       "hoursPerCycle": "Heures par cycle",
       "hoursUnit": "heures",
+      "latestClockIn": {
+        "dayLabel": "Heure limite de pointage d'arrivée le {day}",
+        "description": "Heure limite facultative de pointage d'arrivée par jour de travail : les jours sans quart, les employés qui n'ont pas encore pointé d'ici là peuvent recevoir un rappel.",
+        "label": "Heure limite de pointage d'arrivée",
+        "simpleHint": "Une heure limite de pointage d'arrivée par jour nécessite un planning détaillé. Passez au mode Détaillé pour en définir une."
+      },
       "monthly": "Mensuel",
       "preview": "Aperçu du planning",
       "scheduleCycle": "Cycle de planning",

@@ -13,7 +13,9 @@ export type FeatureFlag =
 	| "projectsEnabled"
 	| "surchargesEnabled"
 	| "demoDataEnabled"
-	| "worksCouncilEnabled";
+	| "worksCouncilEnabled"
+	| "billableTimeEnabled"
+	| "personnelFilesEnabled";
 
 export type FeatureFlagState = Partial<Record<FeatureFlag, boolean>>;
 
@@ -62,7 +64,8 @@ export type SettingsIconName =
 	| "brand-slack"
 	| "brand-teams"
 	| "brand-telegram"
-	| "database-import";
+	| "database-import"
+	| "receipt";
 
 export interface SettingsEntry {
 	id: string;
@@ -161,6 +164,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure water reminders and hydration tracking",
 		href: "/settings/wellness",
 		icon: "droplet",
+		minimumTier: "member",
+		group: "account",
+	},
+	{
+		id: "position-stamps",
+		titleKey: "settings.positionStamps.title",
+		titleDefault: "Position stamps",
+		descriptionKey: "settings.positionStamps.description",
+		descriptionDefault:
+			"Whether your position is recorded with your clock events, and your consent",
+		href: "/settings/position-stamps",
+		icon: "map-pin",
 		minimumTier: "member",
 		group: "account",
 	},
@@ -313,6 +328,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "administration",
 	},
 	{
+		id: "position-capture",
+		titleKey: "settings.positionCapture.title",
+		titleDefault: "Position capture",
+		descriptionKey: "settings.positionCapture.description",
+		descriptionDefault: "Record positions with employees' own clock events, with their consent",
+		href: "/settings/position-capture",
+		icon: "map-pin",
+		minimumTier: "orgAdmin",
+		group: "administration",
+	},
+	{
 		id: "approval-policies",
 		titleKey: "settings.approvalPolicies.title",
 		titleDefault: "Approval Policies",
@@ -438,6 +464,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		minimumTier: "manager",
 		group: "administration",
 		requiredFeature: "projectsEnabled",
+	},
+	{
+		id: "billable-time",
+		titleKey: "settings.billableTime.title",
+		titleDefault: "Billable Time",
+		descriptionKey: "settings.billableTime.description",
+		descriptionDefault: "Billable currency and what your organization charges customers for work",
+		href: "/settings/billable-time",
+		icon: "receipt",
+		minimumTier: "orgAdmin",
+		group: "administration",
+		requiredFeature: "billableTimeEnabled",
 	},
 	// Enterprise settings
 	{
@@ -702,6 +740,10 @@ export function filterSettingsByFeatureFlags(
 		if (!entry.requiredFeature) return true;
 		if (entry.requiredFeature === "demoDataEnabled") {
 			return featureFlags.demoDataEnabled ?? true;
+		}
+		if (entry.requiredFeature === "billableTimeEnabled") {
+			// Billable Time needs projects; never show it on a stale flag without them.
+			return (featureFlags.billableTimeEnabled ?? false) && (featureFlags.projectsEnabled ?? false);
 		}
 
 		return featureFlags[entry.requiredFeature] ?? false;

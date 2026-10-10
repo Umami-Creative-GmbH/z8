@@ -19,6 +19,7 @@ import type {
 	ExpensePayer,
 	ReceiptExpenseCategory,
 } from "@/lib/travel-expenses/receipt-report.types";
+import type { ReimbursementChannel } from "@/lib/travel-expenses/reimbursement-channel.types";
 import type { TripDestination } from "@/lib/travel-expenses/trip-destination";
 import { organization, user } from "../auth-schema";
 import { approvalWorkflow } from "./approval-workflow";
@@ -491,22 +492,60 @@ export const travelExpensePolicy = pgTable(
 // Organization travel expense settings (#602). The expense approver reviews a
 // submitted report when neither a direct nor a team manager other than the
 // requester is eligible; routing checks they are active in this organization.
-export const travelExpenseSettings = pgTable("travel_expense_settings", {
-	organizationId: text("organization_id")
-		.primaryKey()
-		.references(() => organization.id, { onDelete: "cascade" }),
-	expenseApproverEmployeeId: uuid("expense_approver_employee_id").references(() => employee.id, {
-		onDelete: "set null",
-	}),
-	// Whether employees may submit an explained missing-receipt exception (#604).
-	missingReceiptExceptionsAllowed: boolean("missing_receipt_exceptions_allowed")
-		.default(false)
-		.notNull(),
-	// #607: currency of new reports; existing reports keep theirs.
-	reimbursementCurrency: text("reimbursement_currency").default("EUR").notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-	updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
-});
+export const travelExpenseSettings = pgTable(
+	"travel_expense_settings",
+	{
+		organizationId: text("organization_id")
+			.primaryKey()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		expenseApproverEmployeeId: uuid("expense_approver_employee_id").references(() => employee.id, {
+			onDelete: "set null",
+		}),
+		// Whether employees may submit an explained missing-receipt exception (#604).
+		missingReceiptExceptionsAllowed: boolean("missing_receipt_exceptions_allowed")
+			.default(false)
+			.notNull(),
+		// #607: currency of new reports; existing reports keep theirs.
+		reimbursementCurrency: text("reimbursement_currency").default("EUR").notNull(),
+		// #849: bank transfer or payroll run; read through getReimbursementChannel.
+		reimbursementChannel: text("reimbursement_channel")
+			.$type<ReimbursementChannel>()
+			.default("bank_transfer")
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+	},
+	(table) => [
+		check(
+			"travel_expense_settings_reimbursement_channel_check",
+			sql`${table.reimbursementChannel} in ('bank_transfer', 'payroll_run')`,
+		),
+	],
+);
+
+export type PayrollRunPreviewMode = "inactive" | "active";
+
+/**
+ * Per-organization preview gate of the payroll run reimbursement channel (#849).
+ * While it is not `active`, the organization can only choose bank transfer. There
+ * is no application setter: the activation ticket (#856) opens it per organization.
+ */
+export const travelExpensePayrollRunPreviewControl = pgTable(
+	"travel_expense_payroll_run_preview_control",
+	{
+		organizationId: text("organization_id")
+			.primaryKey()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		mode: text("mode").$type<PayrollRunPreviewMode>().default("inactive").notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => [
+		check(
+			"travel_expense_payroll_run_preview_control_mode_check",
+			sql`${table.mode} IN ('inactive', 'active')`,
+		),
+	],
+);
 
 export const travelExpenseDecisionLog = pgTable(
 	"travel_expense_decision_log",

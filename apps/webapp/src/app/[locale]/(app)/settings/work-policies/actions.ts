@@ -28,6 +28,7 @@ import {
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { hasValidLatestClockIns, latestClockInForDay } from "@/lib/scheduling/latest-clock-in";
 import { markOrganizationWorkBalancesDirty } from "@/lib/work-balance/service";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,
@@ -84,7 +85,7 @@ type EffectiveWorkPolicyAssignment = typeof workPolicyAssignment.$inferSelect & 
 					  > & {
 							days: Pick<
 								typeof workPolicyScheduleDay.$inferSelect,
-								"dayOfWeek" | "hoursPerDay" | "isWorkDay" | "cycleWeek"
+								"dayOfWeek" | "hoursPerDay" | "isWorkDay" | "cycleWeek" | "latestClockIn"
 							>[];
 					  })
 					| null;
@@ -126,6 +127,8 @@ export interface ScheduleDayInput {
 	hoursPerDay: string;
 	isWorkDay: boolean;
 	cycleWeek?: number;
+	/** Latest clock-in (`HH:mm`, local wall-clock) on a work day; null or absent means none. */
+	latestClockIn?: string | null;
 }
 
 export interface CreateWorkPolicyInput {
@@ -278,6 +281,18 @@ export async function getWorkPolicy(
 	return runServerActionSafe(effect);
 }
 
+/** Fails unless every work day's latest clock-in is blank or a `HH:mm` time. */
+function validateLatestClockIns(days: ScheduleDayInput[] | undefined) {
+	return days && !hasValidLatestClockIns(days)
+		? Effect.fail(
+				new ValidationError({
+					message: "Latest clock-in must be a time between 00:00 and 23:59",
+					field: "schedule.days.latestClockIn",
+				}),
+			)
+		: Effect.void;
+}
+
 // ============================================
 // CREATE POLICY
 // ============================================
@@ -312,6 +327,7 @@ export async function createWorkPolicy(
 				}),
 			);
 		}
+		yield* validateLatestClockIns(data.schedule?.days);
 
 		const dbService = yield* DatabaseService;
 
@@ -384,6 +400,7 @@ export async function createWorkPolicy(
 							hoursPerDay: day.hoursPerDay,
 							isWorkDay: day.isWorkDay,
 							cycleWeek: day.cycleWeek ?? 1,
+							latestClockIn: latestClockInForDay(day),
 						})),
 					);
 				});
@@ -538,6 +555,7 @@ export async function updateWorkPolicy(
 				}),
 			);
 		}
+		yield* validateLatestClockIns(data.schedule?.days);
 
 		// Check for duplicate name if name is being changed
 		if (data.name && data.name !== existingPolicy!.name) {
@@ -621,6 +639,7 @@ export async function updateWorkPolicy(
 							hoursPerDay: day.hoursPerDay,
 							isWorkDay: day.isWorkDay,
 							cycleWeek: day.cycleWeek ?? 1,
+							latestClockIn: latestClockInForDay(day),
 						})),
 					);
 				});
@@ -2305,6 +2324,7 @@ export async function duplicateWorkPolicy(
 							hoursPerDay: day.hoursPerDay,
 							isWorkDay: day.isWorkDay,
 							cycleWeek: day.cycleWeek,
+							latestClockIn: day.latestClockIn,
 						})),
 					);
 				});

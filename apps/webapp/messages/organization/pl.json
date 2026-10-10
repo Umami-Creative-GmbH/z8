@@ -14,6 +14,37 @@
       "saving": "Zapisywanie…",
       "title": "Automatyczne zakończenie pracy"
     },
+    "clockingReminders": {
+      "adminOnly": "Tylko administratorzy i właściciele organizacji mogą zmieniać te ustawienia.",
+      "breakDue": {
+        "enabled": "Przypomnienie o przerwie",
+        "lead": "Minuty przed przerwą"
+      },
+      "description": "Przypominaj pracownikom, gdy nie zarejestrują wejścia przed rozpoczęciem opublikowanej zmiany, nadal mają zarejestrowane wejście po jej zakończeniu lub gdy zbliżają się do przekroczenia dozwolonego czasu pracy bez przerwy.",
+      "forgottenClockOut": {
+        "enabled": "Przypomnienie o braku rejestracji wyjścia",
+        "grace": "Minuty po oczekiwanym zakończeniu"
+      },
+      "help": "Weryfikacja odbywa się co pięć minut. Godziny uwzględniają strefę czasową każdego pracownika. Każde przypomnienie jest wysyłane raz na zmianę lub raz na regułę przerwy podczas zarejestrowanej pracy, w aplikacji i za pomocą powiadomień push, chyba że pracownik zmieni swoje preferencje powiadomień. Przypomnienie o braku rejestracji wejścia nie jest wysyłane w przypadku zatwierdzonej nieobecności lub dnia ustawowo wolnego od pracy.",
+      "invalidLeadMinutes": "Wprowadź liczbę pełnych minut od 1 do 1440 przed przerwą.",
+      "invalidMinutes": "Wprowadź liczbę pełnych minut od 0 do 1440.",
+      "missedClockIn": {
+        "enabled": "Przypomnienie o braku rejestracji wejścia",
+        "grace": "Minuty po oczekiwanym rozpoczęciu"
+      },
+      "noRoles": "Wybierz co najmniej jedną rolę, która ma otrzymywać przypomnienia.",
+      "roles": {
+        "admin": "Administratorzy",
+        "employee": "Pracownicy",
+        "label": "Przypominaj tym rolom",
+        "manager": "Menedżerowie"
+      },
+      "save": "Zapisz zmiany",
+      "saved": "Zapisano ustawienia przypomnień o rejestracji czasu",
+      "saveFailed": "Nie udało się zaktualizować ustawień przypomnień o rejestracji czasu pracy",
+      "saving": "Zapisywanie…",
+      "title": "Przypomnienia o rejestracji czasu"
+    },
     "create": "Utwórz organizację",
     "createDialog": {
       "description": "Skonfiguruj swoją organizację, aby rozpocząć",
@@ -68,16 +99,33 @@
     },
     "feature": "poznaj swoją organizację",
     "features": {
+      "billable-time": "Czas rozliczalny",
+      "billable-time-currency": "Waluta rozliczeniowa: {currency}",
+      "billable-time-description": "Wyceniaj pracę w projektach klientów według stawek rozliczeniowych i przekazuj ją do programu księgowego jako projekty faktur.",
+      "billable-time-dialog-confirm": "Włącz",
+      "billable-time-dialog-description": "Wybierz walutę, w której Twoja organizacja rozlicza swoich klientów.",
+      "billable-time-dialog-title": "Włącz Czas rozliczalny",
+      "billable-time-disabled": "Czas rozliczalny wyłączony",
+      "billable-time-enabled": "Czas rozliczalny włączony",
+      "billable-time-requires-projects": "Wymaga Projektów. Wyłączenie Projektów wyłącza również Czas rozliczalny; jego ustawienia zostaną zachowane.",
       "demo-data": "Dane demonstracyjne",
       "demo-data-description": "Pozwól administratorom generować i usuwać przykładowe dane organizacji do celów testowych.",
       "description": "Włącz lub wyłącz opcjonalne funkcje dla swojej organizacji",
       "owner-only": "Tylko właściciele organizacji mogą zmieniać ustawienia funkcji.",
+      "owner-only-except-personnel-files": "Tylko właściciele organizacji mogą zmieniać ustawienia funkcji, z wyjątkiem akt osobowych.",
+      "personnel-files": "Akta osobowe",
+      "personnel-files-description": "Przechowuj umowy, paski wynagrodzeń, certyfikaty i inne dokumenty w aktach osobowych każdego pracownika.",
+      "personnel-files-disable-confirm": "Wyłącz",
+      "personnel-files-disable-description": "Strony akt osobowych i pliki do pobrania są ukryte dla wszystkich. Dokumenty pozostają zapisane i nadal podlegają okresowi retencji. Ponowne włączenie akt osobowych przywraca wszystko.",
+      "personnel-files-disable-title": "Wyłączyć akta osobowe?",
       "projects": "Projekty",
       "projects-description": "Przypisuj wpisy czasu pracy do projektów, śledź budżety i terminy oraz generuj raporty projektowe.",
       "surcharges": "Dopłaty",
       "surcharges-description": "Skonfiguruj dopłaty do czasu pracy za nadgodziny, pracę w nocy, weekendy i święta.",
       "title": "Funkcje",
+      "toggle-billable-time": "Przełącz Czas rozliczalny",
       "toggle-demo-data": "Przełącz dane demonstracyjne",
+      "toggle-personnel-files": "Przełącz akta osobowe",
       "toggle-projects": "Przełącz projekty",
       "toggle-surcharges": "Przełącz dopłaty",
       "toggle-works-council": "Przełącz Radę Zakładową",

@@ -2,6 +2,7 @@ name: Tests
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     branches:
       - main
     paths:
@@ -12,12 +13,20 @@ on:
       - "docker/scripts/**"
       - "docker/Dockerfile.*"
       - "docker/targets/**"
+      - "scripts/**"
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "turbo.json"
+      - ".github/scripts/**"
       - ".github/workflows/tests.yml"
+      - ".github/workflows/ci-debounce.yml"
   workflow_dispatch:
+    inputs:
+      diagnose_integration:
+        description: Run PostgreSQL despite a failed shard (the required check still fails)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -27,109 +36,215 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  unit-tests:
-    name: Unit tests (${{ matrix.shard }}/4)
+  changes:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    name: Select test groups
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3, 4]
-
+    timeout-minutes: 2
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      webapp: ${{ steps.scope.outputs.webapp }}
+      workspace: ${{ steps.scope.outputs.workspace }}
+      docker: ${{ steps.scope.outputs.docker }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+      - name: Verify test selection and required-check handling
+        run: node --test .github/scripts/*.test.mjs
+      - name: Select groups from all PR files
+        id: scope
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
-          package_json_file: package.json
+          script: |
+            const { pathToFileURL } = require('node:url');
+            const { resolve } = require('node:path');
+            const { selectTestScopes } = await import(pathToFileURL(resolve('.github/scripts/test-scope.mjs')).href);
+            const pull = context.payload.pull_request;
+            // Manual runs and PRs beyond the API's 3000-file limit run everything.
+            let full = !pull || !Number.isInteger(pull.changed_files) || pull.changed_files >= 3000;
+            let paths = [];
+            if (!full) {
+              try {
+                const files = await github.paginate(github.rest.pulls.listFiles, {
+                  ...context.repo, pull_number: pull.number, per_page: 100,
+                });
+                full = files.length !== pull.changed_files;
+                // Include both sides of renames and deleted files.
+                paths = files.flatMap(file => [file.filename, file.previous_filename].filter(Boolean));
+              } catch (error) {
+                core.warning(`Cannot determine changed files; running every test group: ${error.message}`);
+                full = true;
+              }
+            }
+            const scopes = selectTestScopes(paths, { full });
+            for (const [name, selected] of Object.entries(scopes)) core.setOutput(name, String(selected));
+            core.info(`Selected test groups: ${JSON.stringify(scopes)}`);
 
+  debounce:
+    needs: changes
+    if: ${{ (github.event_name != 'pull_request' || !github.event.pull_request.draft) && (needs.changes.outputs.webapp == 'true' || needs.changes.outputs.workspace == 'true' || needs.changes.outputs.docker == 'true') }}
+    uses: ./.github/workflows/ci-debounce.yml
+
+  unit-tests:
+    name: Tests (shard ${{ matrix.shard }})
+    needs: [changes, debounce]
+    if: ${{ (github.event_name != 'pull_request' || !github.event.pull_request.draft) && (needs.changes.outputs.webapp == 'true' || needs.changes.outputs.workspace == 'true' || needs.changes.outputs.docker == 'true') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: true
+      matrix:
+        shard: ${{ fromJSON(needs.changes.outputs.webapp == 'true' && '[1,2]' || '[1]') }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - name: Set up Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 24
           cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
+      - name: Install selected workspace dependencies
+        env:
+          WEBAPP_TESTS: ${{ needs.changes.outputs.webapp }}
+          WORKSPACE_TESTS: ${{ matrix.shard == 1 && needs.changes.outputs.workspace == 'true' }}
+          DOCKER_TESTS: ${{ matrix.shard == 1 && needs.changes.outputs.docker == 'true' }}
+        run: |
+          if [[ "$WORKSPACE_TESTS" == true && ( "$WEBAPP_TESTS" == true || "$DOCKER_TESTS" == true ) ]]; then
+            pnpm install --frozen-lockfile
+          elif [[ "$WEBAPP_TESTS" == true || "$DOCKER_TESTS" == true ]]; then
+            pnpm --filter webapp... install --frozen-lockfile
+          else
+            pnpm --filter '!webapp' install --frozen-lockfile
+          fi
+      - name: Cache Rust test dependencies
+        if: matrix.shard == 1 && needs.changes.outputs.workspace == 'true'
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: apps/desktop/src-tauri/tests/clock-core -> target
+      # Reuse the first shard's checkout and installed dependencies for auxiliary suites.
       - name: Run Docker runtime tests
-        if: matrix.shard == 1
-        run: pnpm node --test docker/scripts/prepare-target-runtime.test.mjs
-
-      - name: Run test shard
-        run: pnpm exec turbo test --filter=webapp --output-logs=full --log-order=stream -- --project unit --shard=${{ matrix.shard }}/4
-
+        if: matrix.shard == 1 && needs.changes.outputs.docker == 'true'
+        run: node --test docker/scripts/prepare-target-runtime.test.mjs
       - name: Run other workspace tests
-        if: matrix.shard == 1
-        run: pnpm exec turbo test --filter='!webapp' --output-logs=full --log-order=stream
+        if: matrix.shard == 1 && needs.changes.outputs.workspace == 'true'
+        run: pnpm --filter '!webapp' --filter '!z8' --recursive --if-present test
+      - name: Restore Vitest transforms
+        if: needs.changes.outputs.webapp == 'true'
+        id: vitest-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/webapp-vitest-cache
+          key: webapp-vitest-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'apps/webapp/*config*') }}-unit-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            webapp-vitest-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'apps/webapp/*config*') }}-unit-${{ matrix.shard }}-
+      - name: Prepare transform cache directory
+        if: needs.changes.outputs.webapp == 'true'
+        run: mkdir -p "$RUNNER_TEMP/webapp-vitest-cache"
+      - name: Run test shard
+        if: needs.changes.outputs.webapp == 'true'
+        id: test-run
+        run: pnpm --filter webapp test --shard=${{ matrix.shard }}/2 --fsModuleCache --fsModuleCachePath="$RUNNER_TEMP/webapp-vitest-cache"
+
+      - name: Save Vitest transforms
+        if: ${{ always() && (steps.test-run.outcome == 'success' || steps.test-run.outcome == 'failure') }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/webapp-vitest-cache
+          key: ${{ steps.vitest-cache.outputs.cache-primary-key }}
 
   integration-tests:
     name: PostgreSQL integration tests
+    needs: [changes, unit-tests]
+    if: >-
+      (github.event_name != 'pull_request' || !github.event.pull_request.draft) &&
+      !cancelled() && needs.changes.result == 'success' && needs.changes.outputs.webapp == 'true' &&
+      (needs.unit-tests.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.diagnose_integration))
     runs-on: ubuntu-latest
     timeout-minutes: 20
-
     services:
       postgres:
-        image: postgres:16
+        # Use Docker's official mirror to avoid Docker Hub anonymous pull limits.
+        image: public.ecr.aws/docker/library/postgres:16
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
         ports:
           - 5432:5432
+        # Keep PostgreSQL durability settings; only the disposable storage moves to RAM.
         options: >-
+          --tmpfs /var/lib/postgresql/data:rw,size=1g
           --health-cmd "pg_isready --username=postgres --dbname=postgres"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 12
-
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-
       - name: Set up pnpm
-        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
-        with:
-          package_json_file: package.json
-
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - name: Set up Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 24
           cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
+      - name: Install web-app dependencies
+        run: pnpm --filter webapp... install --frozen-lockfile
+      - name: Restore Vitest transforms
+        id: vitest-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/webapp-vitest-cache
+          key: webapp-vitest-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'apps/webapp/*config*') }}-integration-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            webapp-vitest-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'apps/webapp/*config*') }}-integration-
+      - name: Prepare transform cache directory
+        run: mkdir -p "$RUNNER_TEMP/webapp-vitest-cache"
       - name: Run PostgreSQL integration suites
+        id: test-run
         run: |
           set -euo pipefail
           database_name="approval_workflow_repository_test_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
           PGPASSWORD=postgres psql --host 127.0.0.1 --port 5432 --username postgres --dbname postgres \
             --command "create database \"${database_name}\""
           bash apps/webapp/scripts/run-postgres-integration-suites.sh \
-            "postgresql://postgres:postgres@127.0.0.1:5432/${database_name}"
+            "postgresql://postgres:postgres@127.0.0.1:5432/${database_name}" --fsModuleCache --fsModuleCachePath="$RUNNER_TEMP/webapp-vitest-cache"
+
+      - name: Save Vitest transforms
+        if: ${{ always() && (steps.test-run.outcome == 'success' || steps.test-run.outcome == 'failure') }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/webapp-vitest-cache
+          key: ${{ steps.vitest-cache.outputs.cache-primary-key }}
 
   tests:
-    # Preserve the required check name and fail if any shard/integration job fails or skips.
     name: Tests
-    if: always()
-    needs: [unit-tests, integration-tests]
+    if: ${{ always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft) }}
+    needs: [changes, debounce, unit-tests, integration-tests]
     runs-on: ubuntu-latest
-    timeout-minutes: 1
+    timeout-minutes: 2
     steps:
-      - name: Check test results
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Check selected test results
         env:
-          UNIT_RESULT: ${{ needs.unit-tests.result }}
-          INTEGRATION_RESULT: ${{ needs.integration-tests.result }}
+          NEEDS_JSON: ${{ toJSON(needs) }}
         run: |
-          echo "Unit test shards: $UNIT_RESULT" >> "$GITHUB_STEP_SUMMARY"
-          echo "PostgreSQL integration: $INTEGRATION_RESULT" >> "$GITHUB_STEP_SUMMARY"
-          test "$UNIT_RESULT" = success
-          test "$INTEGRATION_RESULT" = success
+          node --input-type=module <<'NODE'
+          import { appendFileSync } from 'node:fs';
+          import { checkTestResults } from './.github/scripts/test-scope.mjs';
+          const summary = checkTestResults(JSON.parse(process.env.NEEDS_JSON));
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary.join('\n') + '\n');
+          NODE

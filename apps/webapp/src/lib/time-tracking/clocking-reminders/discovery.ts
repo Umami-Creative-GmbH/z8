@@ -1,0 +1,245 @@
+import { and, asc, eq, gt, gte, inArray, isNull, lt, or, sql } from "drizzle-orm";
+import type { db } from "@/db";
+import { organization } from "@/db/auth-schema";
+import {
+	clockingReminderOccasion,
+	employee,
+	organizationClockingReminderSettings,
+	shift,
+	userSettings,
+	workPeriod,
+} from "@/db/schema";
+import {
+	compareInstants,
+	dateFromInstant,
+	type Instant,
+	instantFromDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
+import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import { clockingReminderSettingsFromRow } from "./settings";
+import type { ClockingReminderRole, ClockingReminderSettings } from "./settings-policy";
+import type { ReminderShift, ReminderWork } from "./shift-reminders";
+
+type Database = Pick<typeof db, "select">;
+
+export interface ClockingReminderOrganization {
+	organizationId: string;
+	/** The zone `shift.date` is keyed in and employees fall back to. */
+	timezone: string;
+	settings: ClockingReminderSettings;
+}
+
+/** Organizations that are not deleted and have at least one reminder type enabled. */
+export async function listClockingReminderOrganizations(
+	input: { after: string | null; limit: number },
+	database: Database,
+): Promise<ClockingReminderOrganization[]> {
+	const rows = await database
+		.select({ settings: organizationClockingReminderSettings, timezone: organization.timezone })
+		.from(organizationClockingReminderSettings)
+		.innerJoin(
+			organization,
+			eq(organization.id, organizationClockingReminderSettings.organizationId),
+		)
+		.where(
+			and(
+				isNull(organization.deletedAt),
+				or(
+					eq(organizationClockingReminderSettings.missedClockInEnabled, true),
+					eq(organizationClockingReminderSettings.forgottenClockOutEnabled, true),
+					eq(organizationClockingReminderSettings.breakDueEnabled, true),
+				),
+				input.after
+					? gt(organizationClockingReminderSettings.organizationId, input.after)
+					: undefined,
+			),
+		)
+		.orderBy(asc(organizationClockingReminderSettings.organizationId))
+		.limit(input.limit);
+	return rows.map((row) => ({
+		organizationId: row.settings.organizationId,
+		timezone: resolveEffectiveTimezone(null, row.timezone),
+		settings: clockingReminderSettingsFromRow(row.settings),
+	}));
+}
+
+export interface ClockingReminderEmployee {
+	employeeId: string;
+	userId: string;
+	/** The employee's own timezone, otherwise the organization's. */
+	timezone: string;
+}
+
+/** Active, not departed employees of the organization whose role receives reminders. */
+export async function listClockingReminderEmployees(
+	input: {
+		organization: ClockingReminderOrganization;
+		roles: readonly ClockingReminderRole[];
+		now: Instant;
+		after: string | null;
+		limit: number;
+	},
+	database: Database,
+): Promise<ClockingReminderEmployee[]> {
+	if (input.roles.length === 0) return [];
+	const rows = await database
+		.select({
+			employeeId: employee.id,
+			userId: employee.userId,
+			userTimezone: userSettings.timezone,
+		})
+		.from(employee)
+		.leftJoin(userSettings, eq(userSettings.userId, employee.userId))
+		.where(
+			and(
+				eq(employee.organizationId, input.organization.organizationId),
+				inArray(employee.role, [...input.roles]),
+				employeeHasOrganizationAccess(input.now),
+				input.after ? gt(employee.id, input.after) : undefined,
+			),
+		)
+		.orderBy(asc(employee.id))
+		.limit(input.limit);
+	return rows.map((row) => ({
+		employeeId: row.employeeId,
+		userId: row.userId,
+		timezone: resolveEffectiveTimezone(row.userTimezone, input.organization.timezone),
+	}));
+}
+
+/**
+ * How far back completed work and shifts are read (older live work extends the shifts below):
+ * covers overnight shifts and every timezone offset.
+ */
+const LOOKBACK_DAYS = 3;
+const LOOKAHEAD_DAYS = 2;
+/**
+ * How far before live work's start a shift it can match may be dated. The shift ends after the
+ * work starts, at most 48 h after its date begins in the employee's zone, and that is at most 26 h
+ * after the date begins in the organization's zone: 74 h, rounded up to whole days.
+ */
+const LIVE_WORK_SHIFT_LOOKBACK_DAYS = 4;
+
+export interface ShiftReminderFacts {
+	shifts: ReminderShift[];
+	work: ReminderWork[];
+}
+
+/**
+ * The published, assigned shifts around `now` and the recent and live work of a page of
+ * employees, read without a work transaction. `shift.date` stores the organization-local midnight
+ * of the shift's calendar date, so it is read back as a calendar date in the organization's zone.
+ *
+ * Live work is read however old it is, so each employee's shifts reach back as far as their live
+ * work's start: live work that matched a shift keeps owing only that shift's forgotten clock-out,
+ * never a second one from the work policy once the shift date leaves the lookback.
+ */
+export async function loadShiftReminderFacts(
+	input: {
+		organizationId: string;
+		organizationTimezone: string;
+		employeeIds: readonly string[];
+		now: Instant;
+	},
+	database: Database,
+): Promise<Map<string, ShiftReminderFacts>> {
+	const facts = new Map<string, ShiftReminderFacts>(
+		input.employeeIds.map((id) => [id, { shifts: [], work: [] }]),
+	);
+	if (input.employeeIds.length === 0) return facts;
+	const recentFrom = input.now.subtract({ hours: LOOKBACK_DAYS * 24 });
+	const from = dateFromInstant(recentFrom);
+	const until = dateFromInstant(input.now.add({ hours: LOOKAHEAD_DAYS * 24 }));
+	// Work first: shifts that live work can match bound how far back each employee's shifts go.
+	const work = await database
+		.select({
+			employeeId: workPeriod.employeeId,
+			startTime: workPeriod.startTime,
+			endTime: workPeriod.endTime,
+			durationMinutes: workPeriod.durationMinutes,
+			live: sql<boolean>`(${workPeriod.isActive} = true AND ${workPeriod.endTime} IS NULL AND ${workPeriod.clockOutId} IS NULL)`,
+		})
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.organizationId, input.organizationId),
+				inArray(workPeriod.employeeId, [...input.employeeIds]),
+				isNull(workPeriod.deletedAt),
+				or(gte(workPeriod.startTime, from), isNull(workPeriod.endTime)),
+			),
+		);
+	const liveWorkShiftsFrom = new Map<string, Instant>();
+	for (const row of work) {
+		if (!row.live) continue;
+		const bound = instantFromDate(row.startTime).subtract({
+			hours: LIVE_WORK_SHIFT_LOOKBACK_DAYS * 24,
+		});
+		const earliest = liveWorkShiftsFrom.get(row.employeeId) ?? recentFrom;
+		if (compareInstants(bound, earliest) < 0) liveWorkShiftsFrom.set(row.employeeId, bound);
+	}
+	const shifts = await database
+		.select({
+			id: shift.id,
+			employeeId: shift.employeeId,
+			date: shift.date,
+			startTime: shift.startTime,
+			endTime: shift.endTime,
+		})
+		.from(shift)
+		.where(
+			and(
+				eq(shift.organizationId, input.organizationId),
+				eq(shift.status, "published"),
+				inArray(shift.employeeId, [...input.employeeIds]),
+				or(
+					gte(shift.date, from),
+					...[...liveWorkShiftsFrom].map(([employeeId, bound]) =>
+						and(eq(shift.employeeId, employeeId), gte(shift.date, dateFromInstant(bound))),
+					),
+				),
+				lt(shift.date, until),
+			),
+		);
+	for (const row of shifts) {
+		if (!row.employeeId) continue;
+		facts.get(row.employeeId)?.shifts.push({
+			id: row.id,
+			date: plainDateAt(instantFromDate(row.date), input.organizationTimezone),
+			startTime: row.startTime,
+			endTime: row.endTime,
+		});
+	}
+	for (const row of work) {
+		// An unended period that is not live work is not evidence of either state.
+		if (row.endTime === null && !row.live) continue;
+		facts.get(row.employeeId)?.work.push({
+			start: instantFromDate(row.startTime),
+			end: row.endTime ? instantFromDate(row.endTime) : null,
+			durationMinutes: row.durationMinutes,
+		});
+	}
+	return facts;
+}
+
+/**
+ * Which of the given occasion keys the organization already recorded as sent, in one query. A
+ * claim released after a failed delivery has no row, so its occasion is judged again.
+ */
+export async function loadRecordedOccasionKeys(
+	input: { organizationId: string; occasionKeys: readonly string[] },
+	database: Database,
+): Promise<Set<string>> {
+	if (input.occasionKeys.length === 0) return new Set();
+	const rows = await database
+		.select({ occasionKey: clockingReminderOccasion.occasionKey })
+		.from(clockingReminderOccasion)
+		.where(
+			and(
+				eq(clockingReminderOccasion.organizationId, input.organizationId),
+				inArray(clockingReminderOccasion.occasionKey, [...input.occasionKeys]),
+			),
+		);
+	return new Set(rows.map((row) => row.occasionKey));
+}

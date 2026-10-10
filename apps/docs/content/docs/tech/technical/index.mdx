@@ -7,7 +7,7 @@ icon: Code
 import { Cards, Card } from "fumadocs-ui/components/card";
 import { File, Folder, Files } from "fumadocs-ui/components/files";
 
-Technical documentation for developers working on Z8, a Turborepo monorepo with product, docs, marketing, extension, mobile, and desktop applications.
+Technical documentation for developers working on Z8, a Turborepo monorepo with product, docs, marketing, and desktop applications.
 
 <Cards>
   <Card
@@ -37,7 +37,7 @@ Technical documentation for developers working on Z8, a Turborepo monorepo with 
   />
   <Card
     title="Enterprise Features"
-    description="API keys, webhooks, SCIM, and social OAuth"
+    description="Webhooks, SCIM, social OAuth, and API key status"
     href="/docs/tech/technical/enterprise"
   />
   <Card
@@ -78,17 +78,9 @@ The tree below is a simplified view of the current top-level app layout, not a f
       <File name="package.json" />
       <Folder name="src" />
     </Folder>
-    <Folder name="mobile">
-      <File name="package.json" />
-      <File name="app.json" />
-    </Folder>
     <Folder name="desktop">
       <File name="package.json" />
       <File name="tauri.conf.json" />
-    </Folder>
-    <Folder name="extension">
-      <File name="package.json" />
-      <Folder name="src" />
     </Folder>
     <Folder name="docs">
       <File name="package.json" />
@@ -106,7 +98,7 @@ The tree below is a simplified view of the current top-level app layout, not a f
 
 ### Tech Stack
 
-- **Frameworks**: Next.js 16 for web and docs, Expo for mobile, Tauri for desktop
+- **Frameworks**: Next.js 16 for web and docs, Tauri for desktop
 - **Language**: TypeScript, plus Rust for Tauri internals
 - **Database**: PostgreSQL with Drizzle ORM
 - **Auth**: Better Auth with passkeys, 2FA, social OAuth, and organization-scoped auth extensions

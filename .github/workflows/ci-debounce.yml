@@ -1,0 +1,15 @@
+name: Debounce expensive PR jobs
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  wait:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    name: Wait for a stable PR update
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Debounce PR updates before allocating expensive runners
+        if: github.event_name == 'pull_request'
+        run: sleep 90

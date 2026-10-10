@@ -18,7 +18,8 @@
         "absences": "Απουσίες",
         "employees": "Εργαζόμενοι",
         "projects": "Έργα",
-        "timeEntries": "Εγγραφές χρόνου"
+        "timeEntries": "Εγγραφές χρόνου",
+        "workPeriods": "Περίοδοι εργασίας (με έργο και εργασία)"
       },
       "dateRange": {
         "customOffset": "Προσαρμοσμένη μετατόπιση",

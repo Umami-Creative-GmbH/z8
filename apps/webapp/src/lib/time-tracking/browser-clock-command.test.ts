@@ -89,6 +89,79 @@ describe("prepareBrowserClockCommand", () => {
 		});
 	});
 
+	it("carries an explicit billable choice and omits it otherwise (#900)", () => {
+		const input = {
+			kind: "clock_out" as const,
+			operationId,
+			capabilities,
+			session,
+			now,
+			timezone: "Europe/Berlin",
+			projectId,
+		};
+		expect(prepareBrowserClockCommand({ ...input, billable: true })).toMatchObject({
+			ok: true,
+			request: { project: { kind: "replace", id: projectId }, billable: true },
+		});
+		const prepared = prepareBrowserClockCommand(input);
+		expect(prepared.ok && prepared.request).not.toHaveProperty("billable");
+	});
+
+	it("names a task only when the page names one (#875)", () => {
+		const taskId = "3f2504e0-4f89-41d3-9a0c-0305e82c3301";
+		const clockOut = (task: { taskId?: string | null }) =>
+			prepareBrowserClockCommand({
+				kind: "clock_out",
+				operationId,
+				capabilities,
+				session,
+				now,
+				timezone: "UTC",
+				projectId,
+				...task,
+			});
+
+		expect(clockOut({ taskId })).toMatchObject({
+			ok: true,
+			request: { task: { kind: "replace", id: taskId } },
+		});
+		expect(clockOut({ taskId: null })).toMatchObject({
+			ok: true,
+			request: { task: { kind: "clear" } },
+		});
+		const omitted = clockOut({});
+		expect(omitted.ok && "task" in omitted.request).toBe(false);
+		expect(clockOut({ taskId: "not-a-uuid" })).toEqual({
+			ok: false,
+			reason: "attribution_unsupported",
+		});
+	});
+
+	it("carries the position taken at the event when the server accepts version 3 (#826)", () => {
+		const position = {
+			latitude: 52.520008,
+			longitude: 13.404954,
+			accuracyMeters: 18.5,
+			fixedAt: "2026-09-25T08:15:29.000Z",
+		};
+		const prepare = (commandVersions: number[]) =>
+			prepareBrowserClockCommand({
+				kind: "clock_in",
+				operationId,
+				capabilities: { ...capabilities, commandVersions },
+				session,
+				now,
+				timezone: "Europe/Berlin",
+				position,
+			});
+
+		expect(prepare([2, 3])).toMatchObject({ ok: true, request: { position } });
+		// An older server keeps the unstamped version: the event is never held for a position.
+		const unstamped = prepare([2]);
+		expect(unstamped.ok).toBe(true);
+		expect(unstamped.ok && unstamped.request).not.toHaveProperty("position");
+	});
+
 	it("defaults a missing work location the way the legacy clock-in does", () => {
 		expect(
 			prepareBrowserClockCommand({

@@ -13,6 +13,7 @@ import { queryKeys } from "@/lib/query/keys";
 import type { SettlementAccount, SettlementSource } from "@/lib/travel-expenses/settlement-store";
 import { formatMoney, formatPlainDate, formatRecordedInstant } from "../report/format";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
+import { PayrollRunNotice } from "./payroll-run-notice";
 import { RecordReimbursementForm } from "./record-reimbursement-form";
 import { OverpaidOwnerNotice, SettlementAdjustmentLines } from "./settlement-adjustments";
 import { BalanceText, SettlementStateBadge } from "./settlement-status";
@@ -112,7 +113,17 @@ function SettlementAccountCard({
 						<SettlementHistory entries={account.entries} viewer={viewer} headingId={headingId} />
 					)}
 
-					{viewer === "finance" && canSettle && account.approved && (
+					{viewer === "finance" && account.payrollRun && source.type === "report" && (
+						<PayrollRunNotice
+							reportId={source.id}
+							run={account.payrollRun}
+							canRemove={canSettle}
+							onRemoved={() => settled(null)}
+						/>
+					)}
+
+					{/* An included report is paid with its payroll run (#852); nothing else is recorded. */}
+					{viewer === "finance" && canSettle && account.approved && !account.payrollRun && (
 						<RecordReimbursementForms source={source} account={account} onSettled={settled} />
 					)}
 				</CardContent>

@@ -1,9 +1,11 @@
 import { createLogger } from "@/lib/logger";
 import type {
 	ClockodoAbsence,
+	ClockodoCustomer,
 	ClockodoEntry,
 	ClockodoHolidayQuota,
 	ClockodoNonBusinessDay,
+	ClockodoProject,
 	ClockodoService,
 	ClockodoSurcharge,
 	ClockodoTargetHours,
@@ -123,6 +125,16 @@ export class ClockodoClient {
 	async getServices(): Promise<ClockodoService[]> {
 		const data = await this.request<{ services: ClockodoService[] }>("/v2/services");
 		return data.services ?? [];
+	}
+
+	/** Get all customers (paginated) */
+	async getCustomers(): Promise<ClockodoCustomer[]> {
+		return this.fetchAllPages<ClockodoCustomer>("/v2/customers", "customers");
+	}
+
+	/** Get all projects (paginated) */
+	async getProjects(): Promise<ClockodoProject[]> {
+		return this.fetchAllPages<ClockodoProject>("/v2/projects", "projects");
 	}
 
 	/**

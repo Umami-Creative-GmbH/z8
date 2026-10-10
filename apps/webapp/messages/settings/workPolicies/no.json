@@ -286,6 +286,12 @@
       "homeOfficeDaysPreview": "{count} hjemmekontor",
       "hoursPerCycle": "Timer per syklus",
       "hoursUnit": "timer",
+      "latestClockIn": {
+        "dayLabel": "Seneste innstempling på {day}",
+        "description": "Valgfri seneste innstempling per arbeidsdag: På dager uten vakt kan ansatte som ikke har stemplet inn innen da, få en påminnelse.",
+        "label": "Seneste innstempling",
+        "simpleHint": "En seneste innstempling per dag krever en detaljert tidsplan. Bytt til Detaljert for å angi en."
+      },
       "monthly": "Månedlig",
       "preview": "Forhåndsvisning av timeplan",
       "scheduleCycle": "Tidsplansyklus",

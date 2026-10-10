@@ -30,6 +30,7 @@ describe("cron schedule presets", () => {
 		expect(isHighRiskCronJob("cron:execution-cleanup")).toBe(true);
 		expect(isHighRiskCronJob("cron:export")).toBe(false);
 		expect(isHighRiskCronJob("cron:auto-clock-out")).toBe(true);
+		expect(isHighRiskCronJob("cron:position-stamp-purge")).toBe(true);
 		expect(
 			resolveEffectiveCronSchedules({ overrides: [] })["cron:auto-clock-out"].effectivePattern,
 		).toBe("*/5 * * * *");
@@ -54,6 +55,42 @@ describe("cron schedule presets", () => {
 			isOverridden: true,
 		});
 		expect(schedules["cron:vacation"].isOverridden).toBe(false);
+	});
+
+	it.each(["cron:notification-cleanup", "cron:audit-log-cleanup"] as const)(
+		"lets operators move the daily %s to another preset, behind the high-risk confirmation",
+		(jobName) => {
+			const schedules = resolveEffectiveCronSchedules({
+				overrides: [{ jobName, presetId: "daily-1am", pattern: "0 1 * * *" }],
+			});
+
+			expect(isHighRiskCronJob(jobName)).toBe(true);
+			expect(schedules[jobName]).toMatchObject({
+				defaultPattern: "30 2 * * *",
+				effectivePattern: "0 1 * * *",
+				isOverridden: true,
+				canEdit: true,
+			});
+		},
+	);
+
+	it("lets operators move the daily position stamp purge to another preset", () => {
+		const schedules = resolveEffectiveCronSchedules({
+			overrides: [
+				{
+					jobName: "cron:position-stamp-purge",
+					presetId: "daily-230am",
+					pattern: "30 2 * * *",
+				},
+			],
+		});
+
+		expect(schedules["cron:position-stamp-purge"]).toMatchObject({
+			defaultPattern: "0 1 * * *",
+			effectivePattern: "30 2 * * *",
+			isOverridden: true,
+			canEdit: true,
+		});
 	});
 
 	it("ignores unknown override job names", () => {

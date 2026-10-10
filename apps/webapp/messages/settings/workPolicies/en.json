@@ -286,6 +286,12 @@
       "homeOfficeDaysPreview": "{count} home office",
       "hoursPerCycle": "Hours per Cycle",
       "hoursUnit": "hours",
+      "latestClockIn": {
+        "dayLabel": "Latest clock-in on {day}",
+        "description": "Optional latest clock-in per work day: on days without a shift, employees who have not clocked in by then can get a reminder.",
+        "label": "Latest clock-in",
+        "simpleHint": "A latest clock-in per day needs a detailed schedule. Switch to Detailed to set one."
+      },
       "monthly": "Monthly",
       "preview": "Schedule Preview",
       "scheduleCycle": "Schedule cycle",

@@ -103,6 +103,27 @@ describe("sendEmailNotification", () => {
 		await expect(sendEmailNotification(params, { throwOnError: true })).rejects.toThrow();
 		await expect(sendEmailNotification(params)).resolves.toBe(false);
 	});
+	it("links personnel file expiry reminders to the personnel file or My documents only", async () => {
+		const reminder = {
+			userId: "user_123",
+			organizationId: "org",
+			type: "personnel_file_expiry_upcoming" as const,
+			title: "A document expires soon",
+			message: "Soon",
+		};
+		findUserMock.mockResolvedValue({ email: "alex@example.com", name: "Alex" });
+		await sendEmailNotification({ ...reminder, actionUrl: "/personnel-files/emp-1" });
+		await sendEmailNotification({ ...reminder, actionUrl: "/my-documents" });
+		await sendEmailNotification({ ...reminder, actionUrl: "/settings/billing" });
+		const links = sendEmailMock.mock.calls.map(([message]) =>
+			/href="([^"]+)"/.exec(message.html ?? "")?.[1],
+		);
+		expect(links).toEqual([
+			"https://org.example.com/personnel-files/emp-1",
+			"https://org.example.com/my-documents",
+			"https://org.example.com",
+		]);
+	});
 	beforeEach(() => {
 		debugMock.mockReset();
 		errorMock.mockReset();

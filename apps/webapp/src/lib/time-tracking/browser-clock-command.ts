@@ -1,7 +1,8 @@
 /**
  * Browser adoption of frozen clock commands (#279 / T15, resolution #263 §1–§3, §7).
  *
- * The page prepares one version 2 command request per clock action. The service
+ * The page prepares one command request per clock action: version 2, or version 3
+ * when it carries the position taken at the event (#826). The service
  * worker persists it in IndexedDB, resolves the clock-out target inside that same
  * transaction, and only then sends it. This module is the pure page half: when a
  * command may be frozen at all, and how a stored record reads back to the caller.
@@ -11,7 +12,9 @@ import type { Instant } from "@/lib/datetime/temporal-core";
 import {
 	CLOCK_COMMAND_VERSION,
 	type ClockCommandContext,
+	type ClockCommandPosition,
 	type ClockOutCommand,
+	UNSTAMPED_CLOCK_COMMAND_VERSION,
 } from "./clock-command";
 import { isValidIanaTimezone } from "./timezone-capture";
 import { normalizeWorkLocationType, type WorkLocationType } from "./work-location";
@@ -37,6 +40,11 @@ export type ClockCommandCaptureRequest = {
 	occurredAt: string;
 	timezone: string;
 	context: ClockCommandContext;
+	/**
+	 * The position taken at the event (#826): the worker then freezes a version 3
+	 * command. Absent, it freezes version 2.
+	 */
+	position?: ClockCommandPosition;
 } & (
 	| { kind: "clock_in"; workLocationType: WorkLocationType }
 	| {
@@ -45,6 +53,10 @@ export type ClockCommandCaptureRequest = {
 			knownWorkPeriodId: string | null;
 			project: Attribution;
 			workCategory: Attribution;
+			/** Explicit billability (#900); omitted applies the project's billable default. */
+			billable?: boolean;
+			/** The project task (#875); present only when the page names one. */
+			task?: Attribution;
 	  }
 );
 
@@ -73,7 +85,7 @@ export function frozenClockCommandsAvailable(
 	return Boolean(
 		capabilities &&
 			capabilities.submit === "available" &&
-			capabilities.commandVersions.includes(CLOCK_COMMAND_VERSION) &&
+			capabilities.commandVersions.includes(UNSTAMPED_CLOCK_COMMAND_VERSION) &&
 			capabilities.context.server === session.origin &&
 			capabilities.context.userId === session.userId &&
 			capabilities.context.organizationId === session.organizationId,
@@ -97,11 +109,16 @@ export function prepareBrowserClockCommand(input: {
 	knownWorkPeriodId?: string | null;
 	projectId?: string | null;
 	workCategoryId?: string | null;
+	billable?: boolean;
+	/** Omitted, the task follows the project; `null` clears it (#875). */
+	taskId?: string | null;
+	/** The position taken at this event, if the employee's capture is on and consented (#826). */
+	position?: ClockCommandPosition | null;
 }): PreparedBrowserClockCommand {
 	const { capabilities } = input;
 	if (
 		capabilities?.submit !== "available" ||
-		!capabilities.commandVersions.includes(CLOCK_COMMAND_VERSION) ||
+		!capabilities.commandVersions.includes(UNSTAMPED_CLOCK_COMMAND_VERSION) ||
 		// The worker sends to its own origin; the asserted server must be that one.
 		capabilities.context.server !== input.session.origin
 	) {
@@ -123,6 +140,10 @@ export function prepareBrowserClockCommand(input: {
 		timezone: input.timezone,
 		// Checked equal to the page origin above; typed here as a string.
 		context: { ...capabilities.context, server: input.session.origin },
+		// A server without version 3 gets the unstamped command; the event never waits.
+		...(input.position && capabilities.commandVersions.includes(CLOCK_COMMAND_VERSION)
+			? { position: input.position }
+			: {}),
 	};
 	if (input.kind === "clock_in") {
 		return {
@@ -136,7 +157,10 @@ export function prepareBrowserClockCommand(input: {
 	}
 	const project = attribution(input.projectId);
 	const workCategory = attribution(input.workCategoryId);
-	if (!project || !workCategory) return { ok: false, reason: "attribution_unsupported" };
+	const task = input.taskId === undefined ? undefined : attribution(input.taskId);
+	if (!project || !workCategory || task === null) {
+		return { ok: false, reason: "attribution_unsupported" };
+	}
 	return {
 		ok: true,
 		request: {
@@ -145,6 +169,8 @@ export function prepareBrowserClockCommand(input: {
 			knownWorkPeriodId: input.knownWorkPeriodId ?? null,
 			project,
 			workCategory,
+			...(input.billable === undefined ? {} : { billable: input.billable }),
+			...(task ? { task } : {}),
 		},
 	};
 }

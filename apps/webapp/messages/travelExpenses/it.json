@@ -129,6 +129,7 @@
           "alreadyReimbursed": "Ignorato: già rimborsato",
           "balanceChanged": "Ignorato: saldo modificato",
           "failed": "Non riuscito",
+          "inPayrollRun": "Ignorata: inclusa in un'elaborazione paghe",
           "outOfScope": "Ignorato: fuori ambito",
           "overpaidOrReview": "Ignorato: pagato in eccesso o richiede verifica",
           "ownExpense": "Ignorato: tua spesa",
@@ -247,6 +248,7 @@
           "search": "Cerca team…"
         }
       },
+      "inPayrollRun": "Inclusa in {run}",
       "legacyClaim": "Richiesta {type} legacy",
       "loading": "Caricamento coda finanziaria…",
       "pagination": {
@@ -254,6 +256,16 @@
         "next": "Successivo",
         "page": "Pagina {page}",
         "previous": "Precedente"
+      },
+      "payrollRun": {
+        "included": "Inclusa in {run}. Viene liquidata con tale elaborazione paghe e registrata come rimborsata quando l'elaborazione viene confermata.",
+        "label": "Elaborazione paghe {period} ({format})",
+        "notIncluded": "Nessuna elaborazione paghe include più questa spesa.",
+        "remove": "Rimuovi dall'elaborazione paghe",
+        "removed": "Rimossa dall'elaborazione paghe. La spesa è di nuovo in attesa di rimborso.",
+        "removeDescription": "Rimuovila solo se non verrà liquidata con questa elaborazione paghe, ad esempio dopo aver corretto il file delle paghe. La rimozione viene registrata nel registro di controllo.",
+        "removeFailed": "Impossibile rimuovere la spesa dall'elaborazione paghe.",
+        "removeTitle": "Rimuovere questa spesa dall'elaborazione paghe?"
       },
       "queue": {
         "description": "Apri una spesa per visualizzarne la liquidazione e registrare un rimborso.",
@@ -999,6 +1011,20 @@
         "adoptForeignTitle": "Adotta la diaria legale tedesca con le tariffe ufficiali per l'estero",
         "foreignAreas": "Tariffe estere: {countries} paesi e {places} città"
       },
+      "reimbursementChannel": {
+        "bankTransfer": "Bonifico bancario",
+        "bankTransferDescription": "I responsabili delle note spese liquidano i rimborsi tramite bonifico bancario e li registrano in Z8.",
+        "intro": "La modalità con cui la tua organizzazione liquida i rimborsi. La scelta si applica a ogni dipendente.",
+        "loadFailed": "Impossibile caricare il canale di rimborso.",
+        "payrollRun": "Elaborazione buste paga",
+        "payrollRunDescription": "L'elaborazione delle buste paga include i rimborsi, che vengono registrati una volta confermato il pagamento dell'elaborazione. Le note spese che non possono essere incluse nell'elaborazione vengono liquidate tramite bonifico bancario.",
+        "payrollRunPreview": "In anteprima e non ancora disponibile per la tua organizzazione.",
+        "save": "Salva canale",
+        "saved": "Canale di rimborso salvato",
+        "saveFailed": "Non è stato possibile salvare il canale di rimborso.",
+        "title": "Canale di rimborso",
+        "unconfirmedRuns": "{count, plural, one {# elaborazione buste paga non è ancora confermata. Può ancora essere confermata o scartata.} other {# elaborazioni buste paga non sono ancora confermate. Possono ancora essere confermate o scartate.}}"
+      },
       "tabs": {
         "access": "Accesso",
         "currencies": "Valute",
@@ -1034,6 +1060,7 @@
         "exceedsOutstanding": "L'importo è superiore a quello in sospeso.",
         "exceedsOverpayment": "L'importo è superiore a quanto pagato in eccesso.",
         "failed": "Impossibile registrare il pagamento. Riprova.",
+        "inPayrollRun": "Questa spesa è ora inclusa in un'elaborazione paghe, quindi viene liquidata con le paghe. Rimuovila dall'elaborazione prima di registrare un pagamento.",
         "load": "Impossibile caricare il saldo del rimborso. Riprova.",
         "noOverpayment": "Non è stato pagato alcun importo in eccesso per questa spesa.",
         "notApproved": "Questa spesa non è più approvata, quindi non è possibile registrare alcun pagamento.",

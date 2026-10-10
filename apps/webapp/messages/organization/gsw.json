@@ -14,6 +14,37 @@
       "saving": "Am Spychere…",
       "title": "Automatischs Usstämpfle"
     },
+    "clockingReminders": {
+      "adminOnly": "Nur Organisations-Admins und -Inhaber können diese Einstellungen ändern.",
+      "breakDue": {
+        "enabled": "Erinnerung an fällige Pause",
+        "lead": "Minuten vor Fälligkeit der Pause"
+      },
+      "description": "Erinnern Sie Mitarbeitende, wenn sie sich bis zum Beginn ihrer veröffentlichten Schicht nicht eingestempelt haben, nach deren Ende immer noch eingestempelt sind oder im Begriff sind, länger ohne Pause zu arbeiten, als es ihre Arbeitsrichtlinie erlaubt.",
+      "forgottenClockOut": {
+        "enabled": "Erinnerung an vergessenes Ausstempeln",
+        "grace": "Minuten nach dem erwarteten Ende"
+      },
+      "help": "Überprüfungen finden alle fünf Minuten statt. Die Zeiten richten sich nach der Zeitzone der jeweiligen Mitarbeitenden. Jede Erinnerung wird einmal pro Schicht oder einmal pro Pausenregel im eingestempelten Zustand gesendet – in der App und per Push, ausser wenn Mitarbeitende ihre Benachrichtigungseinstellungen ändern. Bei einer bewilligten Abwesenheit oder an einem gesetzlichen Feiertag wird keine Erinnerung an ein verpasstes Einstempeln gesendet.",
+      "invalidLeadMinutes": "Geben Sie ganze Minuten von 1 bis 1440 vor Fälligkeit der Pause ein.",
+      "invalidMinutes": "Geben Sie ganze Minuten von 0 bis 1440 ein.",
+      "missedClockIn": {
+        "enabled": "Erinnerung an verpasstes Einstempeln",
+        "grace": "Minuten nach dem erwarteten Beginn"
+      },
+      "noRoles": "Wählen Sie mindestens eine Rolle aus, die Erinnerungen erhält.",
+      "roles": {
+        "admin": "Admins",
+        "employee": "Mitarbeitende",
+        "label": "Diese Rollen erinnern",
+        "manager": "Manager"
+      },
+      "save": "Änderungen speichern",
+      "saved": "Iistellige für d Stämpflierinnerig gspicheret",
+      "saveFailed": "Einstellungen für Stempelerinnerungen konnten nicht aktualisiert werden",
+      "saving": "Am Spichere…",
+      "title": "Stämpflierinnerige"
+    },
     "create": "Organisation erstelle",
     "createDialog": {
       "description": "Richte dini Organisation ii, zum aafange",
@@ -68,16 +99,33 @@
     },
     "feature": "dini Organisation entdecke",
     "features": {
+      "billable-time": "Verrechebari Ziit",
+      "billable-time-currency": "Verrechebari Währig: {currency}",
+      "billable-time-description": "Bewerte d Arbet a Chundeprojekt mit verrechebare Asätz und gib si als Rächnigsentwürf a dis Buechhaltigstool wiiter.",
+      "billable-time-dialog-confirm": "Iischalte",
+      "billable-time-dialog-description": "Wähl d Währig, wo dini Organisation de Chunde verrechnet.",
+      "billable-time-dialog-title": "Verrechebari Ziit iischalte",
+      "billable-time-disabled": "Verrechebari Ziit deaktiviert",
+      "billable-time-enabled": "Verrechebari Ziit aktiviert",
+      "billable-time-requires-projects": "Erforderet Projekt. S Uusschalte vo Projekt schaltet au d Verrechebari Ziit uus; d Iistellige bliibed erhalte.",
       "demo-data": "Demodate",
       "demo-data-description": "Erlaub Admins, Demodate für Teschtzwecke z'generiere und z'lösche.",
       "description": "Aktivier oder deaktivier optionali Funktione für dini Organisation",
       "owner-only": "Nur Organisationsinhaber chönd Funktione-Iistellige ändere.",
+      "owner-only-except-personnel-files": "Nur d Organisationseigätümer chönd d Funktionsiistellige ändere, usser bi de Personaldossiers.",
+      "personnel-files": "Personaldossiers",
+      "personnel-files-description": "Bhalt Verträg, Lohnabrechnige, Zügnis und anderi Mitarbeiterdokument imene Personaldossier pro Mitarbeiter.",
+      "personnel-files-disable-confirm": "Uusschalte",
+      "personnel-files-disable-description": "D Personaldossier-Siitene und Downloads sind für alli usblendet. Dokument bliibid gspicheret und zellid wiiterhin für d Ufbewahrigspflicht. Wänn d Personaldossiers wider iigschaltet wärdid, wird alles widerhergstellt.",
+      "personnel-files-disable-title": "Personaldossiers uusschalte?",
       "projects": "Projekt",
       "projects-description": "Wiis Ziiterfassige Projekt zue, verfolg Budget und Termine, und erstell Projektbericht.",
       "surcharges": "Zueschläg",
       "surcharges-description": "Konfigurier Ziitzueschläg für Überziit, Nachtarbeit, Wucheendi und Fiirtig.",
       "title": "Funktione",
+      "toggle-billable-time": "Verrechebari Ziit umschalte",
       "toggle-demo-data": "Demodate umschalte",
+      "toggle-personnel-files": "Personaldossiers ii-/uusschalte",
       "toggle-projects": "Projekt umschalte",
       "toggle-surcharges": "Zueschläg umschalte",
       "toggle-works-council": "Betriebsrat umschalte",

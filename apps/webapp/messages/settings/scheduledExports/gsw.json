@@ -18,7 +18,8 @@
         "absences": "Absenzen",
         "employees": "Mitarbeiter",
         "projects": "Projekte",
-        "timeEntries": "Zeiteinträge"
+        "timeEntries": "Zeiteinträge",
+        "workPeriods": "Arbetsperiode (mit Projekt und Ufgab)"
       },
       "dateRange": {
         "customOffset": "Benutzerdefinierter Offset",

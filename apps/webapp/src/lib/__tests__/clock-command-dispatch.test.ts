@@ -149,6 +149,110 @@ describe("browser clock command dispatch", () => {
 		);
 	});
 
+	it("freezes an explicit billable choice and omits it otherwise (#900)", () => {
+		const request = {
+			operationId: "op-out",
+			kind: "clock_out",
+			admission: "delayed",
+			occurredAt: "2026-09-25T09:00:00.000Z",
+			timezone: "Europe/Berlin",
+			context,
+			knownWorkPeriodId: "period-1",
+			project: { kind: "preserve" },
+			workCategory: { kind: "preserve" },
+		};
+		const target = { workPeriodId: "period-1" };
+		expect(dispatch.buildCommand({ ...request, billable: false }, target)).toMatchObject({
+			billable: false,
+		});
+		expect(dispatch.buildCommand(request, target)).not.toHaveProperty("billable");
+		expect(dispatch.buildCommand({ ...request, billable: "yes" }, target)).not.toHaveProperty(
+			"billable",
+		);
+	});
+
+	it("appends a named task after the other attributions, and only then (#875)", () => {
+		const request = {
+			operationId: "op-out",
+			kind: "clock_out",
+			admission: "delayed",
+			occurredAt: "2026-09-25T09:00:00.000Z",
+			timezone: "Europe/Berlin",
+			context,
+			knownWorkPeriodId: "period-1",
+			project: { kind: "replace", id: "project-1" },
+			workCategory: { kind: "preserve" },
+		};
+		const target = { workPeriodId: "period-1" };
+
+		const withTask = dispatch.buildCommand(
+			{ ...request, task: { kind: "replace", id: "task-1", label: "ignored" } },
+			target,
+		);
+		const without = dispatch.buildCommand(request, target);
+
+		expect(Object.keys(withTask).slice(-4)).toEqual(["target", "project", "workCategory", "task"]);
+		expect(withTask.task).toEqual({ kind: "replace", id: "task-1" });
+		expect(without).not.toHaveProperty("task");
+	});
+
+	it("freezes a stamped request as version 3 with the position last, in a fixed key order (#826)", () => {
+		const command = dispatch.buildCommand(
+			{
+				operationId: "op-in",
+				kind: "clock_in",
+				admission: "delayed",
+				occurredAt: "2026-09-25T09:00:00.000Z",
+				timezone: "Europe/Berlin",
+				context,
+				workLocationType: "home",
+				// Key order as the page might send it; the frozen bytes never depend on it.
+				position: {
+					fixedAt: "2026-09-25T08:59:58.000Z",
+					accuracyMeters: 12,
+					longitude: 13.4,
+					latitude: 52.5,
+				},
+			},
+			null,
+		);
+		expect(JSON.stringify(command)).toBe(
+			JSON.stringify({
+				version: 3,
+				operationId: "op-in",
+				kind: "clock_in",
+				admission: "delayed",
+				occurredAt: "2026-09-25T09:00:00.000Z",
+				timezone: "Europe/Berlin",
+				context: {
+					userId: context.userId,
+					organizationId: context.organizationId,
+					employeeId: context.employeeId,
+					server: context.server,
+				},
+				workLocationType: "home",
+				position: {
+					latitude: 52.5,
+					longitude: 13.4,
+					accuracyMeters: 12,
+					fixedAt: "2026-09-25T08:59:58.000Z",
+				},
+			}),
+		);
+	});
+
+	it("holds a stored version 3 command while the server offers only version 2", async () => {
+		const stamped = record({ operationId: "op-in" });
+		stamped.command = { ...(stamped.command as object), version: 3 };
+		const store = memoryStore([stamped]);
+		const fetch = vi.fn(async () => json(200, capabilities));
+
+		await dispatch.process({ store, origin: "https://z8.test", fetch });
+
+		expect(fetch).toHaveBeenCalledTimes(1);
+		expect(store.records[0]?.hold).toEqual({ reason: "unsupported_version" });
+	});
+
 	it("persists the attempt before sending, sends the stored bytes and stores the receipt", async () => {
 		const store = memoryStore([record({ operationId: "op-in" })]);
 		const order: string[] = [];

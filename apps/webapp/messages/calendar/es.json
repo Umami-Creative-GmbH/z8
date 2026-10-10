@@ -183,6 +183,20 @@
       "notes": "Notas",
       "pendingApproval": "Pendiente de aprobación",
       "pendingApprovalDescription": "Este periodo de trabajo está pendiente de la aprobación del responsable. Las horas registradas pueden cambiar si se rechaza.",
+      "positions": {
+        "accuracy": "a menos de {meters} m",
+        "clockIn": "Fichaje de entrada",
+        "clockOut": "Fichaje de salida",
+        "failed": "No se pudieron cargar las ubicaciones",
+        "hide": "Ocultar ubicaciones",
+        "loggedHint": "El empleado puede ver quién consultó sus ubicaciones: la visualización queda registrada.",
+        "none": "No se registraron ubicaciones para este periodo de trabajo.",
+        "openInMaps": "Abrir en Mapas",
+        "originalClockIn": "Registrado con el fichaje de entrada original a las {time}. Las horas se corrigieron más tarde.",
+        "originalClockOut": "Registrado con el fichaje de salida original a las {time}. Las horas se corrigieron más tarde.",
+        "show": "Mostrar ubicaciones",
+        "title": "Ubicaciones"
+      },
       "project": "Proyecto",
       "recurring": "Recurrente anualmente",
       "rejected": "Rechazado",
@@ -192,13 +206,18 @@
       "surcharge": "Recargo",
       "surchargeBreakdown": "Desglose de recargos",
       "system": "Sistema",
+      "task": "Tarea",
+      "taskDone": "{name} (completada)",
       "time": "Tiempo",
       "type": "Tipo",
       "workLocation": "Ubicación de trabajo"
     },
     "edit": {
+      "billableSaveFailed": "Error al actualizar la facturabilidad",
       "deleteEntry": "Eliminar entrada",
       "locationRequired": "Elige una ubicación de trabajo.",
+      "markedBillable": "Marcado como facturable",
+      "markedNonBillable": "Marcado como no facturable",
       "noNotes": "No se han añadido notas",
       "noProject": "Ningún proyecto asignado",
       "notesSaved": "Notas guardadas",
@@ -343,6 +362,7 @@
       "notRecorded": "No registrado"
     },
     "workPeriod": {
+      "billable": "Facturable",
       "editedBy": "(editado por {name} el {date})"
     },
     "workStatus": {

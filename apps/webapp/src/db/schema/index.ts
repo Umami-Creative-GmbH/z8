@@ -18,12 +18,16 @@ export * from "./audit";
 export * from "./audit-export";
 export * from "./audit-pack";
 export * from "./automatic-clock-out";
+// Billable Time module (#768): what work is charged to customers. Not the Z8 subscription.
+export * from "./billable-time";
 // Billing & subscriptions (Stripe integration)
 export * from "./billing";
 export * from "./billing-seat-delivery";
 // Calendar sync
 export * from "./calendar-sync";
 export * from "./change-policy";
+// Clocking reminders (#760)
+export * from "./clocking-reminder";
 // Clockodo import (user mapping)
 export * from "./clockodo-import";
 export * from "./completed-work";
@@ -66,6 +70,8 @@ export * from "./organization-time-tracking-settings";
 export * from "./payroll-access";
 export * from "./payroll-blocker";
 export * from "./payroll-export";
+// Personnel file (employee documents)
+export * from "./personnel-file";
 // Platform admin (audit log, org suspension)
 export * from "./platform-admin";
 export * from "./project";
@@ -102,9 +108,11 @@ export * from "./travel-expense-project";
 export * from "./travel-expense-reference-rate";
 export * from "./travel-expense-review";
 export * from "./travel-expense-settlement";
+export * from "./travel-expense-payroll-run";
 export * from "./travel-expense-export";
 export * from "./travel-expense-adjustment";
 export * from "./expense-officer";
+export * from "./position-capture";
 // TypeScript types
 export * from "./types";
 export * from "./user-settings";

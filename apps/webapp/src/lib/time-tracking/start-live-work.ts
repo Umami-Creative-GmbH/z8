@@ -79,6 +79,10 @@ export type StartLiveWorkResult = {
 	attribution: {
 		workLocationType: WorkLocationType;
 		projectId?: string | null;
+		/** Carried with the project by a resumed start (#900). */
+		isBillable?: boolean;
+		/** Present only when the resumed work carries a task (#873). */
+		taskId?: string;
 		workCategoryId?: string | null;
 	};
 	revisions: { workPeriod: { result: number } };
@@ -205,7 +209,14 @@ export type StartLiveWorkInput = {
 	command: StartLiveWorkOperationCommand;
 	writer: StartLiveWorkWriter;
 	/** Attribution a resumed start carries over from the work it continues. */
-	carriedAttribution?: { projectId: string | null; workCategoryId: string | null };
+	carriedAttribution?: {
+		projectId: string | null;
+		/** The continued work's billability (#900); it travels with its project. */
+		isBillable?: boolean;
+		/** The task of the carried project (#873); absent when there is none. */
+		taskId?: string;
+		workCategoryId: string | null;
+	};
 	eventInstant: Instant;
 	capture: {
 		utcOffsetMinutes: number;
@@ -290,6 +301,10 @@ export async function startLiveWorkGraph(
 			isActive: true,
 			workLocationType: command.workLocationType,
 			projectId: input.carriedAttribution?.projectId ?? null,
+			isBillable:
+				(input.carriedAttribution?.projectId ?? null) !== null &&
+				(input.carriedAttribution?.isBillable ?? false),
+			taskId: input.carriedAttribution?.taskId ?? null,
 			workCategoryId: input.carriedAttribution?.workCategoryId ?? null,
 		})
 		.returning({ id: workPeriod.id, graphRevision: workPeriod.graphRevision });

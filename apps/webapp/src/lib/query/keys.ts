@@ -91,6 +91,8 @@ export const queryKeys = {
 		approverSettings: () => ["travel-expenses", "settings", "approver"] as const,
 		expenseOfficers: () => ["travel-expenses", "settings", "expense-officers"] as const,
 		reimbursementCurrency: () => ["travel-expenses", "settings", "reimbursement-currency"] as const,
+		reimbursementChannel: () => ["travel-expenses", "settings", "reimbursement-channel"] as const,
+		payrollWageTypes: () => ["travel-expenses", "settings", "payroll-wage-types"] as const,
 		foreignDraftExpenses: () => ["travel-expenses", "settings", "foreign-draft-expenses"] as const,
 		mileagePolicy: () => ["travel-expenses", "settings", "mileage-policy"] as const,
 		perDiemPolicy: () => ["travel-expenses", "settings", "per-diem-policy"] as const,
@@ -123,6 +125,8 @@ export const queryKeys = {
 			["travel-expenses", "reports", reportId, "adjustments"] as const,
 		legacyConversion: (reportId: string) =>
 			["travel-expenses", "reports", reportId, "legacy-conversion"] as const,
+		/** The payroll access holder's unconfirmed payroll runs (#852). */
+		scopedPayrollRuns: () => ["travel-expenses", "payroll-runs", "scoped"] as const,
 	},
 
 	// Employees
@@ -153,6 +157,17 @@ export const queryKeys = {
 				lastWorkingDay,
 				replacementEmployeeId,
 			] as const,
+	},
+
+	// Personnel file (#865)
+	personnelFile: {
+		all: ["personnel-file"] as const,
+		employee: (employeeId: string, category: string | null) =>
+			["personnel-file", "employee", employeeId, category] as const,
+		employeeAll: (employeeId: string) => ["personnel-file", "employee", employeeId] as const,
+		myDocuments: () => ["personnel-file", "my-documents"] as const,
+		officerGrants: () => ["personnel-file", "settings", "officer-grants"] as const,
+		payslipBatch: (batchId: string) => ["personnel-file", "payslip-batch", batchId] as const,
 	},
 
 	// Employee clock statuses
@@ -196,6 +211,13 @@ export const queryKeys = {
 	timeClock: {
 		status: () => ["time-clock", "status"] as const,
 		breakStatus: () => ["time-clock", "break-status"] as const,
+		/** The signed-in employee's own position capture and consent (#826). */
+		positionCapture: () => ["time-clock", "position-capture"] as const,
+	},
+
+	// Position stamps on a work period's detail (#831); never the positions themselves
+	positionStamps: {
+		viewerAccess: () => ["position-stamps", "viewer-access"] as const,
 	},
 
 	// Manual time entry form context (target zone and eligible choices)
@@ -330,6 +352,46 @@ export const queryKeys = {
 		assignable: (orgId: string) => ["projects", "assignable", orgId] as const,
 		teamSelection: (orgId: string) => ["projects", "teamSelection", orgId] as const,
 		employeeSelection: (orgId: string) => ["projects", "employeeSelection", orgId] as const,
+		tasks: (projectId: string) => ["projects", "tasks", projectId] as const,
+		/** Task choices for clocking out another employee's running work (#874). */
+		onBehalfClockOutTasks: (workPeriodId: string) =>
+			["projects", "onBehalfClockOutTasks", workPeriodId] as const,
+		templates: (orgId: string) => ["projects", "templates", orgId] as const,
+		templateDetail: (templateId: string) => ["projects", "templateDetail", templateId] as const,
+		// Under `templates`/`templateDetail`, so template changes refresh them too.
+		templateChoices: (orgId: string) => ["projects", "templates", orgId, "choices"] as const,
+		templatePreview: (templateId: string) =>
+			["projects", "templateDetail", templateId, "preview"] as const,
+	},
+
+	// Billable Time (#768; not the Z8 subscription)
+	billableTime: {
+		all: ["billableTime"] as const,
+		/** One billable rate series: a rate level and its target ids. */
+		rateHistory: (
+			level: string,
+			employeeId: string | null,
+			projectId: string | null,
+			customerId: string | null,
+		) => ["billableTime", "rateHistory", level, employeeId, projectId, customerId] as const,
+		/** One employee's cost rates (#899). */
+		costRateHistory: (employeeId: string) =>
+			["billableTime", "costRateHistory", employeeId] as const,
+		/** The accounting connection and every customer's accounting side (#903). */
+		accountingSettings: () => ["billableTime", "accounting", "settings"] as const,
+		/** One customer's contact link and tax treatment (#903). */
+		customerAccounting: (customerId: string) =>
+			["billableTime", "accounting", "customer", customerId] as const,
+		/** A contact picker search in the connected accounting tool (#903). */
+		contactSearch: (query: string) =>
+			["billableTime", "accounting", "contactSearch", query] as const,
+		/** The hand-off area: customers, hand-offs and marked work (#903). */
+		handOffOverview: () => ["billableTime", "handOff", "overview"] as const,
+		/** One hand-off (invoice draft) with its lines, work and timesheet (#903). */
+		invoiceDraft: (draftId: string) => ["billableTime", "handOff", "draft", draftId] as const,
+		/** The accounting tool's status of one invoice draft (#903). */
+		invoiceDraftStatus: (draftId: string) =>
+			["billableTime", "handOff", "draftStatus", draftId] as const,
 	},
 
 	// Surcharges

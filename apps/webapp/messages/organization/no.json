@@ -14,6 +14,37 @@
       "saving": "Lagrer…",
       "title": "Automatisk utstempling"
     },
+    "clockingReminders": {
+      "adminOnly": "Bare organisasjonsadministratorer og -eiere kan endre disse innstillingene.",
+      "breakDue": {
+        "enabled": "Påminnelse om pause",
+        "lead": "Minutter før pausen må tas"
+      },
+      "description": "Minn ansatte på når de ikke har stemplet inn innen starten av det publiserte skiftet sitt, fortsatt er stemplet inn etter at det er avsluttet, eller er i ferd med å jobbe lenger enn retningslinjene tillater uten pause.",
+      "forgottenClockOut": {
+        "enabled": "Påminnelse om glemt utstempling",
+        "grace": "Minutter etter forventet slutt"
+      },
+      "help": "Sjekker kjøres hvert femte minutt. Tidspunkter følger den enkelte ansattes tidssone. Hver påminnelse sendes én gang per skift, eller én gang per pauseregel mens man er stemplet inn, i appen og via push-varsel med mindre den ansatte endrer varslingsinnstillingene sine. Det sendes ingen påminnelse om manglende innstempling ved godkjent fravær eller på offentlige fridager.",
+      "invalidLeadMinutes": "Angi hele minutter fra 1 til 1440 før pausen må tas.",
+      "invalidMinutes": "Angi hele minutter fra 0 til 1440.",
+      "missedClockIn": {
+        "enabled": "Påminnelse om manglende innstempling",
+        "grace": "Minutter etter forventet start"
+      },
+      "noRoles": "Velg minst én rolle som skal motta påminnelser.",
+      "roles": {
+        "admin": "Administratorer",
+        "employee": "Ansatte",
+        "label": "Påminn disse rollene",
+        "manager": "Ledere"
+      },
+      "save": "Lagre endringer",
+      "saved": "Innstillinger for stemplingspåminnelser lagret",
+      "saveFailed": "Kunne ikke oppdatere innstillingene for stemplingspåminnelser",
+      "saving": "Lagrer…",
+      "title": "Stemplingspåminnelser"
+    },
     "create": "Opprett organisasjon",
     "createDialog": {
       "description": "Konfigurer organisasjonen din for å komme i gang",
@@ -68,16 +99,33 @@
     },
     "feature": "utforsk organisasjonen din",
     "features": {
+      "billable-time": "Fakturerbar tid",
+      "billable-time-currency": "Fakturerbar valuta: {currency}",
+      "billable-time-description": "Prissett arbeid på kundeprosjekter med fakturerbare satser og overfør det til regnskapsverktøyet ditt som fakturautkast.",
+      "billable-time-dialog-confirm": "Slå på",
+      "billable-time-dialog-description": "Velg valutaen organisasjonen din fakturerer kundene sine i.",
+      "billable-time-dialog-title": "Slå på Fakturerbar tid",
+      "billable-time-disabled": "Fakturerbar tid deaktivert",
+      "billable-time-enabled": "Fakturerbar tid aktivert",
+      "billable-time-requires-projects": "Krever Prosjekter. Hvis du slår av Prosjekter, slås også Fakturerbar tid av; innstillingene beholdes.",
       "demo-data": "Demodata",
       "demo-data-description": "Tillat administratorer å generere og fjerne eksempeldata for organisasjonen til testing.",
       "description": "Aktiver eller deaktiver valgfrie funksjoner for organisasjonen din",
       "owner-only": "Bare organisasjonseiere kan endre funksjonsinnstillinger.",
+      "owner-only-except-personnel-files": "Bare organisasjonseiere kan endre funksjonsinnstillinger, med unntak av personalmapper.",
+      "personnel-files": "Personalmapper",
+      "personnel-files-description": "Oppbevar kontrakter, lønnsslipper, attester og andre ansattdokumenter i en personalmappe per ansatt.",
+      "personnel-files-disable-confirm": "Slå av",
+      "personnel-files-disable-description": "Sider og nedlastinger for personalmapper skjules for alle. Dokumenter forblir lagret og teller fortsatt mot oppbevaringstid. Alt gjenopprettes hvis personalmapper slås på igjen.",
+      "personnel-files-disable-title": "Slå av personalmapper?",
       "projects": "Prosjekter",
       "projects-description": "Tilordne timeføringer til prosjekter, følg opp budsjetter og tidsfrister, og generer prosjektrapporter.",
       "surcharges": "Tillegg",
       "surcharges-description": "Konfigurer timetillegg for overtid, nattarbeid, helger og helligdager.",
       "title": "Funksjoner",
+      "toggle-billable-time": "Slå av/på Fakturerbar tid",
       "toggle-demo-data": "Slå av/på demodata",
+      "toggle-personnel-files": "Slå av/på personalmapper",
       "toggle-projects": "Slå av/på prosjekter",
       "toggle-surcharges": "Slå av/på tillegg",
       "toggle-works-council": "Slå av/på bedriftsråd",

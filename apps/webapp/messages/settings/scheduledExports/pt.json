@@ -18,7 +18,8 @@
         "absences": "Ausências",
         "employees": "Funcionários",
         "projects": "Projetos",
-        "timeEntries": "Registros de horas"
+        "timeEntries": "Registros de horas",
+        "workPeriods": "Períodos de trabalho (com projeto e tarefa)"
       },
       "dateRange": {
         "customOffset": "Deslocamento personalizado",

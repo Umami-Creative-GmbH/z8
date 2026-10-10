@@ -320,6 +320,40 @@
       "pagination": "Paginacja"
     },
     "pending": "Oczekujące",
+    "positionCaptureErrors": {
+      "adminOnly": "Tylko właściciele i administratorzy organizacji mogą zarządzać rejestrowaniem pozycji.",
+      "assignmentNotFound": "To przypisanie już nie istnieje.",
+      "employeeNotFound": "Nie znaleziono tego pracownika.",
+      "employeeProfileRequired": "Wymagany jest profil pracownika w tej organizacji.",
+      "invalidTarget": "Wybierz, kogo dotyczy to przypisanie.",
+      "noticeChanged": "Informacja o pozycji uległa zmianie. Przejrzyj aktualną treść przed podjęciem decyzji.",
+      "positionsForbidden": "Nie masz uprawnień do przeglądania pozycji z tego okresu pracy.",
+      "purposeRequired": "Przed włączeniem rejestrowania pozycji wymagane jest określenie celu.",
+      "purposeTooLong": "Określenie celu jest zbyt długie.",
+      "retentionOutOfRange": "Okres przechowywania musi być liczbą całkowitą dni z zakresu od {min} do {max}.",
+      "signInRequired": "Najpierw zaloguj się do organizacji.",
+      "teamNotFound": "Nie znaleziono tego zespołu.",
+      "workPeriodNotFound": "Nie znaleziono tego okresu pracy."
+    },
+    "positionConsent": {
+      "agree": "Zgadzam się",
+      "description": "Twoja organizacja prosi o rejestrowanie pozycji Twojego urządzenia podczas rejestrowania wejścia, wyjścia lub przerwy. Twoje zdarzenie rejestracji czasu pracy zostało i tak zapisane. Jeśli wyrazisz zgodę, pozycje będą rejestrowane od kolejnego zdarzenia rejestracji.",
+      "notNow": "Nie teraz",
+      "title": "Rejestrować pozycję przy zdarzeniach rejestracji czasu pracy?"
+    },
+    "positionNotice": {
+      "never": "Rejestracje wyjścia dokonane za Ciebie przez kogoś innego, automatyczne rejestracje wyjścia, importy i korekty nigdy nie zawierają pozycji. Jeśli Twoje urządzenie nie może ustalić pozycji, zdarzenie rejestracji czasu zostanie zapisane bez niej i nigdzie nie jest rejestrowana tego przyczyna.",
+      "purposeTitle": "Dlaczego Twoja organizacja rejestruje pozycje",
+      "retention": "{days, plural, one {Każda pozycja jest usuwana # dzień po jej zarejestrowaniu. Zdarzenia rejestracji czasu pracy pozostają.} few {Każda pozycja jest usuwana # dni po jej zarejestrowaniu. Zdarzenia rejestracji czasu pracy pozostają.} many {Każda pozycja jest usuwana # dni po jej zarejestrowaniu. Zdarzenia rejestracji czasu pracy pozostają.} other {Każda pozycja jest usuwana # dnia po jej zarejestrowaniu. Zdarzenia rejestracji czasu pracy pozostają.}}",
+      "retentionTitle": "Jak długo pozycje są przechowywane",
+      "version": "Informacja o rejestrowaniu pozycji, wersja {version}",
+      "viewers": "Możesz zobaczyć swoje własne pozycje. Właściciele i administratorzy organizacji oraz osoby z wyraźnie przyznanymi uprawnieniami mogą je przeglądać dla pojedynczego okresu pracy, a każde takie wyświetlenie jest rejestrowane w widocznym dla Ciebie dzienniku. Bycie Twoim menedżerem nie daje dostępu. Rada zakładowa nigdy nie widzi poszczególnych pozycji.",
+      "viewersTitle": "Kto może widzieć pozycje",
+      "what": "Gdy rejestrujesz wejście, wyjście, rozpoczęcie lub zakończenie przerwy w aplikacji internetowej Z8 na swoim urządzeniu, pozycja Twojego urządzenia jest zapisywana wraz z tym zdarzeniem: szerokość i długość geograficzna, dokładność pozycji oraz czas jej ustalenia przez urządzenie. Nie są rejestrowane adres, wysokość ani prędkość, a pomiędzy zdarzeniami rejestracji czasu nic nie jest rejestrowane.",
+      "whatTitle": "Co jest rejestrowane",
+      "withdraw": "Pozycje są rejestrowane tylko wtedy, gdy wyrażasz na to zgodę. Możesz wycofać zgodę w dowolnym momencie w sekcji Ustawienia, Znaczniki pozycji. Wycofanie zgody zatrzymuje rejestrowanie i natychmiast usuwa wszystkie zarejestrowane pozycje. To, czy wyrazisz zgodę, nie ma żadnego wpływu na Twoje zdarzenia rejestracji czasu pracy.",
+      "withdrawTitle": "Twój wybór"
+    },
     "present": "Obecny",
     "previous": "Poprzedni",
     "recovering": "Odzyskiwanie...",
@@ -400,6 +434,43 @@
       "identityHidden": "Tożsamość ukryta",
       "insufficientData": "Niewystarczająca ilość danych",
       "policyChanges": "Zmiany w zasadach",
+      "positionStamps": {
+        "accessAt": "Kiedy",
+        "accessEmployees": "Pozycje użytkownika",
+        "accessKindDetail": "{count, plural, one {Szczegóły okresu pracy (# okres pracy)} few {Szczegóły okresu pracy (# okresy pracy)} many {Szczegóły okresu pracy (# okresów pracy)} other {Szczegóły okresu pracy (# okresu pracy)}}",
+        "accessKindExport": "Eksport danych",
+        "accessLog": "Dziennik dostępu do pozycji",
+        "accessLogDescription": "Każdy przypadek wyświetlenia lub wyeksportowania pozycji przez osobę inną niż pracownik, od najnowszych.",
+        "accessLogEmpty": "Nikt nie wyświetlał pozycji.",
+        "accessViewer": "Wyświetlone przez",
+        "consentActive": "Aktywna zgoda",
+        "consentDescription": "{count, plural, one {Spośród # aktywnego pracownika, dla którego włączono rejestrowanie. Kategoria „Niezdecydowani” obejmuje pracowników, którzy wybrali opcję „Nie teraz” lub wyrazili zgodę tylko na wcześniejszą wersję powiadomienia.} other {Spośród # aktywnych pracowników, dla których włączono rejestrowanie. Kategoria „Niezdecydowani” obejmuje pracowników, którzy wybrali opcję „Nie teraz” lub wyrazili zgodę tylko na wcześniejszą wersję powiadomienia.} }",
+        "consentTitle": "Zgoda na pozycję",
+        "consentUndecided": "Niezdecydowani",
+        "consentWithdrawn": "Wycofana",
+        "currentNotice": "Aktualne powiadomienie",
+        "deletedViewer": "Usunięty użytkownik",
+        "description": "Informacje o tym, jak organizacja rejestruje pozycje pracowników wraz ze zdarzeniami rejestracji czasu pracy oraz kto je przeglądał. Rada zakładowa nigdy nie widzi indywidualnych pozycji.",
+        "employeeAssignmentCounts": "{on} włączono, {off} wyłączono indywidualnie",
+        "employeeAssignments": "Przypisania pracowników",
+        "employeeCount": "{count, plural, one {# pracownik} few {# pracownicy} other {# pracowników} }",
+        "employeePseudonym": "Pracownik {ref}",
+        "enabled": "Rejestrowanie",
+        "noEmployeeAssignments": "Brak przypisań pracowników.",
+        "noNotice": "Nie opublikowano żadnego powiadomienia.",
+        "notAssigned": "Nie przypisano",
+        "noTeamAssignments": "Brak przypisań zespołów.",
+        "noticeHistory": "Wersje powiadomienia",
+        "noticeVersion": "{days, plural, one {Wersja {version}, opublikowano {publishedAt}, pozycje przechowywane przez # dzień} other {Wersja {version}, opublikowano {publishedAt}, pozycje przechowywane przez # dni} }",
+        "off": "Wyłączone",
+        "on": "Włączone",
+        "organizationAssignment": "Cała organizacja",
+        "retention": "Okres przechowywania",
+        "retentionDays": "{days, plural, one {# dzień} other {# dni} }",
+        "teamAssignments": "Przypisania zespołów",
+        "title": "Rejestrowanie pozycji",
+        "viewerPseudonym": "Przeglądarka {ref}"
+      },
       "scheduleChanges": "Zmiany w harmonogramie",
       "scheduleDescription": "Wpisy w harmonogramie z filtrem prywatności dla wybranego okresu.",
       "scheduleEmpty": "Nie znaleziono wpisów w harmonogramie dla tego okresu.",
@@ -505,9 +576,11 @@
     "finance": "Finanse",
     "financeAwaiting": "{count, plural, one {# wydatek oczekujący na zwrot} few {# wydatki oczekujące na zwrot} other {# wydatków oczekujących na zwrot} }",
     "get-help": "Uzyskaj pomoc",
+    "my-documents": "Moje dokumenty",
     "my-requests": "Moje wnioski",
     "org-explorer": "Eksplorator organizacji",
     "payroll": "Płace",
+    "personnel-files": "Akta osobowe",
     "platform-admin": "Administrator platformy",
     "reports": "Raporty",
     "scheduling": "Harmonogram",
@@ -545,6 +618,10 @@
         "message": "Automatycznie zarejestrowano wyjście po {duration} minutach nieprzerwanej pracy o {cutoff} ({timezone}), ponieważ osiągnięto limit czasu w Twojej organizacji.",
         "title": "Automatycznie zarejestrowano wyjście"
       },
+      "breakDueReminder": {
+        "message": "Twoja przerwa przypada na {breakTime} ({timezone}). Wykorzystaj przerwę do tego czasu, aby przestrzegać zasad dotyczących przerw w pracy.",
+        "title": "Wkrótce czas na przerwę"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Obowiązki zatwierdzania wymagają zastępstwa (odejście z dniem {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Wymaga weryfikacji: rejestracja wyjścia (offboarding) (odejście z dniem {cutoff}, {timezone}).",
@@ -553,12 +630,53 @@
         "future_work": "{employeeName}: Przyszła praca wymaga weryfikacji (odejście z dniem {cutoff}, {timezone}).",
         "title": "Offboarding pracownika wymaga weryfikacji"
       },
+      "forgottenClockOutReminder": {
+        "message": "Twoja zmiana zakończyła się o {endTime} ({timezone}). Zarejestruj wyjście, jeśli zakończono pracę.",
+        "title": "Nadal masz zarejestrowane wejście"
+      },
+      "missedClockInReminder": {
+        "message": "Twoja zmiana rozpoczęła się o {startTime} ({timezone}). Zarejestruj wejście, jeśli pracujesz.",
+        "title": "Nie masz jeszcze zarejestrowanego wejścia"
+      },
       "newAbsenceRequest": {
         "title": "Nowy wniosek o nieobecność"
       },
       "passwordChanged": {
         "message": "Twoje hasło zostało pomyślnie zmienione. Jeśli nie dokonałeś tej zmiany, skontaktuj się natychmiast z działem wsparcia.",
         "title": "Hasło zmienione"
+      },
+      "personnelFileDocumentShared": {
+        "message": "Dokument \"{title}\" został Ci udostępniony.",
+        "title": "Nowy dokument w Twoich aktach osobowych"
+      },
+      "personnelFileDueForDeletion": {
+        "message": "{count, plural, one {# dokument pracownika kwalifikuje się do usunięcia. Przejrzyj i potwierdź trwałe usunięcie.} other {# dokumentów pracowników kwalifikuje się do usunięcia. Przejrzyj i potwierdź trwałe usunięcie.}}",
+        "title": "Dokumenty do usunięcia"
+      },
+      "personnelFileEmployeeUpload": {
+        "certificate": "{name} przesłał(a) certyfikat",
+        "other": "{name} przesłał(a) dokument",
+        "title": "Nowy dokument w aktach osobowych"
+      },
+      "personnelFileExpiredToday": {
+        "employeeMessage": "Twój dokument \"{title}\" traci ważność dzisiaj.",
+        "message": "Dokument \"{title}\" pracownika {employee} traci ważność dzisiaj.",
+        "title": "Dokument traci ważność dzisiaj"
+      },
+      "personnelFileExpiryUpcoming": {
+        "employeeMessage": "Twój dokument \"{title}\" traci ważność w dniu {expiryDate}.",
+        "message": "Dokument \"{title}\" pracownika {employee} traci ważność w dniu {expiryDate}.",
+        "title": "Dokument wkrótce traci ważność"
+      },
+      "personnelFilePayslipsShared": {
+        "message": "Twój pasek płacowy za okres {payPeriod} został Ci udostępniony.",
+        "title": "Nowy pasek płacowy w Twoich aktach osobowych"
+      },
+      "policyForgottenClockOutReminder": {
+        "message": "Wymagana liczba godzin dla dnia {day} została osiągnięta o {endTime} ({timezone}). Zarejestruj wyjście, jeśli praca została zakończona."
+      },
+      "policyMissedClockInReminder": {
+        "message": "Twoje ostatnie zarejestrowane wejście dzisiaj to {startTime} ({timezone}). Zarejestruj wejście, jeśli pracujesz."
       },
       "shiftAssigned": {
         "message": "Przydzielono Ci zmianę w dniu {shiftDate} od {startTime} do {endTime} przez {assignedByName}.",
@@ -613,6 +731,10 @@
     },
     "preferences": {
       "categories": {
+        "personnelFile": {
+          "description": "Powiadomienia o dokumentach udostępnionych Ci w aktach osobowych",
+          "title": "Akta osobowe"
+        },
         "travelExpenses": {
           "description": "Powiadomienia o zwrotach i odzyskaniach wydatków na podróż",
           "title": "Koszty podróży"
@@ -646,6 +768,11 @@
         "errorToast": "Błąd powiadomień push"
       },
       "toggleAria": "Powiadomienia {channel} dla {type}",
+      "types": {
+        "break_due_reminder": "Czas na przerwę",
+        "forgotten_clock_out_reminder": "Zapomniana rejestracja wyjścia",
+        "missed_clock_in_reminder": "Brak rejestracji wejścia"
+      },
       "updateFailed": "Nie udało się zaktualizować preferencji"
     },
     "search": {

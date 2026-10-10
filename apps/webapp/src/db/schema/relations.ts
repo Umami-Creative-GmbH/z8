@@ -92,7 +92,17 @@ import {
 	payrollExportSyncRecord,
 	payrollWageTypeMapping,
 } from "./payroll-export";
-import { project, projectAssignment, projectManager, projectNotificationState } from "./project";
+import {
+	project,
+	projectAssignment,
+	projectManager,
+	projectNotificationState,
+	projectTask,
+	projectTemplate,
+	projectTemplateAssignment,
+	projectTemplateManager,
+	projectTemplateTask,
+} from "./project";
 // SCIM provisioning
 import {
 	scimProviderConfig,
@@ -1060,6 +1070,10 @@ export const workPeriodRelations = relations(workPeriod, ({ one }) => ({
 		fields: [workPeriod.projectId],
 		references: [project.id],
 	}),
+	task: one(projectTask, {
+		fields: [workPeriod.taskId],
+		references: [projectTask.id],
+	}),
 	surchargeCalculation: one(surchargeCalculation),
 	workCategory: one(workCategory, {
 		fields: [workPeriod.workCategoryId],
@@ -1195,6 +1209,10 @@ export const timeRecordAllocationRelations = relations(timeRecordAllocation, ({ 
 	project: one(project, {
 		fields: [timeRecordAllocation.projectId],
 		references: [project.id],
+	}),
+	task: one(projectTask, {
+		fields: [timeRecordAllocation.taskId],
+		references: [projectTask.id],
 	}),
 	costCenter: one(costCenter, {
 		fields: [timeRecordAllocation.costCenterId],
@@ -1621,6 +1639,7 @@ export const projectRelations = relations(project, ({ one, many }) => ({
 	}),
 	managers: many(projectManager),
 	assignments: many(projectAssignment),
+	tasks: many(projectTask),
 	workPeriods: many(workPeriod),
 	timeRecordAllocations: many(timeRecordAllocation),
 	travelExpenseClaims: many(travelExpenseClaim),
@@ -1672,6 +1691,51 @@ export const projectAssignmentRelations = relations(projectAssignment, ({ one })
 		references: [user.id],
 	}),
 }));
+
+export const projectTaskRelations = relations(projectTask, ({ one }) => ({
+	organization: one(organization, {
+		fields: [projectTask.organizationId],
+		references: [organization.id],
+	}),
+	project: one(project, {
+		fields: [projectTask.projectId],
+		references: [project.id],
+	}),
+}));
+
+export const projectTemplateRelations = relations(projectTemplate, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [projectTemplate.organizationId],
+		references: [organization.id],
+	}),
+	tasks: many(projectTemplateTask),
+	managers: many(projectTemplateManager),
+	assignments: many(projectTemplateAssignment),
+}));
+
+export const projectTemplateTaskRelations = relations(projectTemplateTask, ({ one }) => ({
+	template: one(projectTemplate, {
+		fields: [projectTemplateTask.templateId],
+		references: [projectTemplate.id],
+	}),
+}));
+
+export const projectTemplateManagerRelations = relations(projectTemplateManager, ({ one }) => ({
+	template: one(projectTemplate, {
+		fields: [projectTemplateManager.templateId],
+		references: [projectTemplate.id],
+	}),
+}));
+
+export const projectTemplateAssignmentRelations = relations(
+	projectTemplateAssignment,
+	({ one }) => ({
+		template: one(projectTemplate, {
+			fields: [projectTemplateAssignment.templateId],
+			references: [projectTemplate.id],
+		}),
+	}),
+);
 
 export const projectNotificationStateRelations = relations(projectNotificationState, ({ one }) => ({
 	project: one(project, {
@@ -2458,14 +2522,13 @@ export const payrollExportConfigRelations = relations(payrollExportConfig, ({ on
 		references: [user.id],
 		relationName: "payrollExportConfig_updater",
 	}),
-	mappings: many(payrollWageTypeMapping),
 	jobs: many(payrollExportJob),
 }));
 
 export const payrollWageTypeMappingRelations = relations(payrollWageTypeMapping, ({ one }) => ({
-	config: one(payrollExportConfig, {
-		fields: [payrollWageTypeMapping.configId],
-		references: [payrollExportConfig.id],
+	organization: one(organization, {
+		fields: [payrollWageTypeMapping.organizationId],
+		references: [organization.id],
 	}),
 	workCategory: one(workCategory, {
 		fields: [payrollWageTypeMapping.workCategoryId],
@@ -3387,7 +3450,18 @@ export const discordUserMappingRelations = relations(discordUserMapping, ({ one 
 }));
 
 // Clockodo import
-import { clockodoUserMapping } from "./clockodo-import";
+import { clockodoProjectMapping, clockodoUserMapping } from "./clockodo-import";
+
+export const clockodoProjectMappingRelations = relations(clockodoProjectMapping, ({ one }) => ({
+	organization: one(organization, {
+		fields: [clockodoProjectMapping.organizationId],
+		references: [organization.id],
+	}),
+	project: one(project, {
+		fields: [clockodoProjectMapping.projectId],
+		references: [project.id],
+	}),
+}));
 
 export const clockodoUserMappingRelations = relations(clockodoUserMapping, ({ one }) => ({
 	user: one(user, {

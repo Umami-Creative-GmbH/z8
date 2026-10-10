@@ -772,6 +772,38 @@ describe("authorized repair and continuation proposals on PostgreSQL", () => {
 		expect(await periodRow(periodId)).toMatchObject({ project_id: ids.project });
 	});
 
+	it("clears the period's task when the repair changes its project (#873)", async () => {
+		await authorizeRepair();
+		const { periodId } = await conflictingWork("2026-07-12", 200);
+		const otherProject = randomUUID();
+		const task = randomUUID();
+		await admin.query(
+			`insert into project (id, organization_id, name, created_by, updated_at)
+			 values ($1, $2, 'T873 earlier project', $3, now())`,
+			[otherProject, ids.organization, ids.ownerUser],
+		);
+		await admin.query(
+			`insert into project_task (id, organization_id, project_id, name, created_by, updated_at)
+			 values ($1, $2, $3, 'Earlier task', $4, now())`,
+			[task, ids.organization, otherProject, ids.ownerUser],
+		);
+		await admin.query("update work_period set project_id = $2, task_id = $3 where id = $1", [
+			periodId,
+			otherProject,
+			task,
+		]);
+		const proposal = (
+			await proposeRepair(periodId, [
+				{ target: "time_record", field: "duration_minutes", after: 240 },
+				{ target: "work_period", field: "project_id", after: ids.project },
+			])
+		).body.proposal;
+		await approve(proposal);
+
+		expect((await applyProposal(proposal.id)).body).toMatchObject({ status: "applied" });
+		expect(await periodRow(periodId)).toMatchObject({ project_id: ids.project, task_id: null });
+	});
+
 	it("refuses non-waivable proposals and unauthorized or foreign callers", async () => {
 		const { periodId, recordId } = await conflictingWork("2026-07-13", 200);
 		const minutes = [{ target: "time_record", field: "duration_minutes", after: 240 }];

@@ -25,6 +25,8 @@ function escapeCSV(value: unknown): string {
  * Format a date value for CSV
  */
 function formatDate(value: unknown): string {
+	// A number in a column whose name merely contains "at" (positionLatitude) is no date; 0 is a value.
+	if (typeof value === "number") return String(value);
 	if (!value) return "";
 
 	if (value instanceof Date) {
@@ -115,7 +117,6 @@ export const CSV_COLUMNS = {
 		"type",
 		"timestamp",
 		"notes",
-		"location",
 		"deviceInfo",
 		"replacesEntryId",
 		"isSuperseded",
@@ -133,6 +134,12 @@ export const CSV_COLUMNS = {
 		"clockInId",
 		"clockOutId",
 		"createdAt",
+		// Appended last so readers of the older column order keep working (#876).
+		// Key names must avoid "date", "time" and "at", which toCSV treats as dates.
+		"projectId",
+		"projectName",
+		"taskId",
+		"taskName",
 	],
 	absences: [
 		"id",
@@ -175,6 +182,26 @@ export const CSV_COLUMNS = {
 		"timestamp",
 	],
 };
+
+/**
+ * The position stamp columns (#835, spec #766) of a time entry row. They exist
+ * only when the requesting user may view everyone's position stamps; otherwise
+ * the rows carry none of these keys and the file has no position column.
+ */
+export const TIME_ENTRY_POSITION_COLUMNS = [
+	"positionLatitude",
+	"positionLongitude",
+	"positionAccuracyMeters",
+	"positionFixedAt",
+] as const;
+
+/** The time entries file's columns: the position stamp columns sit where `location` was. */
+export function timeEntryCsvColumns(rows: readonly Record<string, unknown>[]): string[] {
+	const columns = [...CSV_COLUMNS.time_entries];
+	if (!rows.some((row) => TIME_ENTRY_POSITION_COLUMNS[0] in row)) return columns;
+	columns.splice(columns.indexOf("notes") + 1, 0, ...TIME_ENTRY_POSITION_COLUMNS);
+	return columns;
+}
 
 /**
  * Check if a category should be exported as CSV (large volume data)

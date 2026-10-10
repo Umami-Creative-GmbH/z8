@@ -52,7 +52,15 @@ export type ImportedWorkHold =
 	| { reason: "occupancy_conflict"; occupants: ImportedWorkOccupant[] }
 	| { reason: "source_collision"; operationId: string }
 	| { reason: "operation_collision" }
-	| { reason: "append_review_required"; reasons: AppendReviewReason[] };
+	| { reason: "append_review_required"; reasons: AppendReviewReason[] }
+	/**
+	 * The command's project attribution cannot be recorded (#900): the project is
+	 * not the organization's, or billable work names no project or no customer.
+	 */
+	| {
+			reason: "attribution_not_allowed";
+			detail: "project_not_found" | "no_project" | "no_customer";
+	  };
 
 export type ImportedWorkHoldReason = ImportedWorkHold["reason"];
 

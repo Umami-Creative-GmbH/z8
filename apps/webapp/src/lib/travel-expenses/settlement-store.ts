@@ -25,6 +25,7 @@ import { loadAdjustmentOriginals, loadApprovedAdjustments } from "./adjustment-r
 import type { OfficerScope } from "./officer-scope";
 import { isSourceInOfficerScope } from "./officer-scope-read";
 import { OWNER_SELF_APPROVAL_REASON } from "./owner-self-approval";
+import { type IncludedPayrollRun, loadIncludedPayrollRuns } from "./payroll-run-inclusion-read";
 import {
 	computeSettlement,
 	type EntitlementComponent,
@@ -120,6 +121,12 @@ export interface SettlementAccount {
 	adjustmentOf: string | null;
 	/** An approved adjustment report's frozen signed delta (#615); null otherwise. */
 	adjustmentDelta: string | null;
+	/**
+	 * The unconfirmed payroll run that includes the report (#852): no other way
+	 * of recording money works until it is removed or the run is confirmed.
+	 * Finance views only; null in the employee's own view and for legacy claims.
+	 */
+	payrollRun: IncludedPayrollRun | null;
 }
 
 export type SettlementTitle =
@@ -356,7 +363,7 @@ export async function buildSettlementAccounts(
 		...reports.map(({ row }) => ({ type: "report" as const, id: row.id })),
 		...claims.map(({ row }) => ({ type: "legacy_claim" as const, id: row.id })),
 	];
-	const [decisions, entries, adjustments, adjustmentOriginals] = await Promise.all([
+	const [decisions, entries, adjustments, adjustmentOriginals, payrollRuns] = await Promise.all([
 		loadApprovedRevisionDecisions(
 			database,
 			organizationId,
@@ -367,6 +374,10 @@ export async function buildSettlementAccounts(
 		loadAdjustmentOriginals(database, {
 			organizationId,
 			reportIds: reports.map(({ row }) => row.id),
+		}),
+		loadIncludedPayrollRuns(database, {
+			organizationId,
+			reportIds: approvedReports.map(({ row }) => row.id),
 		}),
 	]);
 
@@ -421,6 +432,7 @@ export async function buildSettlementAccounts(
 			adjustmentOf,
 			adjustmentDelta:
 				adjustmentOf && approved ? (revision?.facts.adjustment?.delta.amount ?? null) : null,
+			payrollRun: payrollRuns.get(row.id) ?? null,
 		});
 	}
 	for (const { row, employeeName } of claims) {
@@ -470,6 +482,8 @@ export async function buildSettlementAccounts(
 			adjustments: [],
 			adjustmentOf: null,
 			adjustmentDelta: null,
+			// Legacy claims are never included in a payroll run (#745, decision 6).
+			payrollRun: null,
 		});
 	}
 	return accounts;
@@ -646,6 +660,11 @@ export type RecordSettlementResult =
 	| { status: "adjustment_report" }
 	/** Finance cannot record money for their own expenses. */
 	| { status: "own_expense" }
+	/**
+	 * An unconfirmed payroll run includes the report (#852): it is paid with
+	 * that run, or removed from it before anything else is recorded.
+	 */
+	| { status: "in_payroll_run"; payrollRun: IncludedPayrollRun }
 	| {
 			status: "refused";
 			reason: SettlementPlanRefusal;
@@ -698,6 +717,10 @@ export async function recordSettlementEntry(
 		if (!inScope) return { status: "not_found" } as const;
 		const replay = await findByIdempotencyKey(tx, actor.organizationId, input.idempotencyKey);
 		if (replay) return replayResult(replay, fingerprint, account);
+		// Read under the report lock that including and removing take too (#852).
+		if (account.payrollRun) {
+			return { status: "in_payroll_run", payrollRun: account.payrollRun } as const;
+		}
 		if (account.adjustmentOf) return { status: "adjustment_report" } as const;
 		if (!account.approved) return { status: "not_approved" } as const;
 		if (account.employeeId === actor.employeeId) return { status: "own_expense" } as const;

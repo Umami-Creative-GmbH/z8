@@ -183,6 +183,20 @@
       "notes": "Notes",
       "pendingApproval": "En attente d'approbation",
       "pendingApprovalDescription": "Cette période de travail est en attente de l'approbation d'un responsable. Les heures enregistrées peuvent être modifiées en cas de refus.",
+      "positions": {
+        "accuracy": "dans un rayon de {meters} m",
+        "clockIn": "Pointage d'arrivée",
+        "clockOut": "Pointage de départ",
+        "failed": "Impossible de charger les positions",
+        "hide": "Masquer les positions",
+        "loggedHint": "L'employé peut voir qui a consulté ses positions : la consultation est enregistrée.",
+        "none": "Aucune position n'a été enregistrée pour cette période de travail.",
+        "openInMaps": "Ouvrir dans Maps",
+        "originalClockIn": "Enregistré lors du pointage d'arrivée initial à {time}. Les heures ont été corrigées ultérieurement.",
+        "originalClockOut": "Enregistré lors du pointage de départ initial à {time}. Les heures ont été corrigées ultérieurement.",
+        "show": "Afficher les positions",
+        "title": "Positions"
+      },
       "project": "Projet",
       "recurring": "Récurrent annuellement",
       "rejected": "Refusé",
@@ -192,13 +206,18 @@
       "surcharge": "Supplément",
       "surchargeBreakdown": "Détail des suppléments",
       "system": "Système",
+      "task": "Tâche",
+      "taskDone": "{name} (terminé)",
       "time": "Temps",
       "type": "Type",
       "workLocation": "Lieu de travail"
     },
     "edit": {
+      "billableSaveFailed": "Impossible de mettre à jour la facturabilité",
       "deleteEntry": "Supprimer l'entrée",
       "locationRequired": "Choisissez un lieu de travail.",
+      "markedBillable": "Marqué comme facturable",
+      "markedNonBillable": "Marqué comme non facturable",
       "noNotes": "Aucune note ajoutée",
       "noProject": "Aucun projet attribué",
       "notesSaved": "Notes enregistrées",
@@ -343,6 +362,7 @@
       "notRecorded": "Non enregistré"
     },
     "workPeriod": {
+      "billable": "Facturable",
       "editedBy": "(modifié par {name} à {date})"
     },
     "workStatus": {

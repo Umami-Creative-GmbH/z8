@@ -20,7 +20,8 @@ export const importBatch = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		provider: text("provider").$type<"clockodo" | "clockin">().notNull(),
+		// "accounting": the customer import from the accounting connection (#906).
+		provider: text("provider").$type<"clockodo" | "clockin" | "accounting">().notNull(),
 		status: text("status")
 			.$type<
 				| "draft"
@@ -139,6 +140,10 @@ export const importStagedRow = pgTable(
 		decisionReason: text("decision_reason"),
 		decidedBy: text("decided_by").references(() => user.id),
 		decidedAt: timestamp("decided_at"),
+		// The reviewer's commit choice for an accepted row that links onto an
+		// existing Z8 record instead of creating one (#906 customer import: link to
+		// an existing customer). Null = accepted rows create, rejected rows skip.
+		commitChoice: jsonb("commit_choice").$type<{ kind: "link"; targetId: string } | null>(),
 		commitTargetTable: text("commit_target_table"),
 		commitTargetId: text("commit_target_id"),
 		commitError: text("commit_error"),

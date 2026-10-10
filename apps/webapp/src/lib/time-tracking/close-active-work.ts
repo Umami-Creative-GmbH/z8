@@ -54,8 +54,15 @@ import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
 } from "./policy-clock-out-surcharge-snapshot";
+import {
+	PROJECT_TASK_INELIGIBILITY_MESSAGES,
+	type ProjectTaskIneligibility,
+	taskBookingIneligibility,
+} from "./project-eligibility";
+import { recordedTaskId, taskIdFollowingProject } from "./task-attribution";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type { WorkTransactionContext } from "./web-clock-out-transaction";
+import { resolveWorkBillabilityInTransaction } from "./work-billability";
 import { deriveWorkDurationMinutes } from "./work-duration";
 import type { SealedWorkTransactionScope, WorkTransactionAdmission } from "./work-transaction";
 
@@ -114,6 +121,17 @@ export type CloseActiveWorkOperationCommand = {
 	operationId: string;
 	project: AttributionIntent;
 	workCategory: AttributionIntent;
+	/**
+	 * The task of the project (#873). Omitted, never stored, when the writer names
+	 * none: the task then follows the project (kept while it stays, else cleared).
+	 */
+	task?: AttributionIntent;
+	/**
+	 * Explicit billability (#900). Absent from commands that do not choose it, so
+	 * commands frozen before billability still replay byte for byte: absent takes
+	 * the project's billable default when the project changes, else preserves.
+	 */
+	billable?: boolean;
 };
 
 /** The writer that submitted the command; replay only matches the same writer. */
@@ -240,6 +258,10 @@ export type CloseActiveWorkResult = {
 	};
 	attribution: {
 		projectId: string | null;
+		/** Absent on receipts committed before billability (#900), which were non-billable. */
+		isBillable?: boolean;
+		/** Present only when the closure left a task (#873). */
+		taskId?: string;
 		workCategoryId: string | null;
 		workLocationType: string | null;
 	};
@@ -275,10 +297,47 @@ export class CompletedWorkIntegrityError extends Error {
 }
 
 export class CompletedWorkAttributionError extends Error {
-	constructor(readonly field: "projectId" | "workCategoryId") {
-		super(field === "projectId" ? "Project not found" : "Work category not found");
+	constructor(
+		readonly field: "projectId" | "workCategoryId" | "taskId",
+		/** Why a task cannot be booked; only for `taskId`. */
+		readonly taskReason?: ProjectTaskIneligibility,
+	) {
+		super(
+			field === "projectId"
+				? "Project not found"
+				: field === "workCategoryId"
+					? "Work category not found"
+					: PROJECT_TASK_INELIGIBILITY_MESSAGES[taskReason ?? "task_not_found"],
+		);
 		this.name = "CompletedWorkAttributionError";
 	}
+}
+
+/**
+ * The task a write leaves on work whose project it resolved (#873), re-read in
+ * the transaction: a replacement must be an open task of that project in this
+ * organization. Employee eligibility of the project stays with the caller's
+ * validators. A preserving intent keeps the current task without a check.
+ */
+export async function resolveTaskAttribution(
+	tx: Pick<WorkTransactionContext["db"], "select">,
+	input: {
+		organizationId: string;
+		task: AttributionIntent | undefined;
+		projectId: string | null;
+		current: { projectId: string | null; taskId: string | null };
+	},
+): Promise<string | null> {
+	const taskId = taskIdFollowingProject(input);
+	if (input.task?.kind !== "replace" || taskId === null) return taskId;
+	// The work transaction already holds the task rows it names.
+	const reason = await taskBookingIneligibility(tx, {
+		organizationId: input.organizationId,
+		projectId: input.projectId,
+		taskId,
+	});
+	if (reason) throw new CompletedWorkAttributionError("taskId", reason);
+	return taskId;
 }
 
 /**
@@ -492,6 +551,20 @@ export async function closeActiveWorkGraph(
 		command.project,
 		period.projectId,
 	);
+	// Choosing another project takes its billable default; keeping it keeps the
+	// live period's billability, unless the command chose it (#900).
+	const isBillable = await resolveWorkBillabilityInTransaction(tx, organizationId, {
+		projectId,
+		projectChosen: projectId !== period.projectId,
+		current: period.isBillable,
+		requested: command.billable,
+	});
+	const taskId = await resolveTaskAttribution(tx, {
+		organizationId,
+		task: command.task,
+		projectId,
+		current: { projectId: period.projectId, taskId: period.taskId },
+	});
 	const workCategoryId = await resolveAttribution(
 		tx,
 		organizationId,
@@ -539,7 +612,9 @@ export async function closeActiveWorkGraph(
 			recordId: record.id,
 			allocationKind: "project",
 			projectId,
+			taskId,
 			weightPercent: 100,
+			isBillable,
 		});
 	}
 
@@ -566,6 +641,8 @@ export async function closeActiveWorkGraph(
 			durationMinutes,
 			isActive: false,
 			projectId,
+			isBillable,
+			taskId,
 			workCategoryId,
 			canonicalRecordId: record.id,
 			approvalStatus: "approved",
@@ -637,6 +714,8 @@ export async function closeActiveWorkGraph(
 		},
 		attribution: {
 			projectId,
+			isBillable,
+			...recordedTaskId(taskId),
 			workCategoryId,
 			workLocationType: period.workLocationType ?? null,
 		},

@@ -43,10 +43,7 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 			<SheetContent>
 				<SheetHeader>
 					<div className="flex items-center gap-2">
-						<div
-							className="size-3 rounded-full"
-							style={{ backgroundColor: event.color }}
-						/>
+						<div className="size-3 rounded-full" style={{ backgroundColor: event.color }} />
 						<SheetTitle>{getEventTitle(event, t)}</SheetTitle>
 					</div>
 					<SheetDescription className="flex items-center gap-2">
@@ -56,11 +53,7 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 				</SheetHeader>
 
 				<div className="mt-6">
-					<EventTypeDetails
-						event={event}
-						projectsEnabled={projectsEnabled}
-						t={t}
-					/>
+					<EventTypeDetails event={event} projectsEnabled={projectsEnabled} t={t} />
 				</div>
 
 				{event.description && (
@@ -91,13 +84,7 @@ function EventTypeDetails({
 		case "absence":
 			return <AbsenceDetails event={event} t={t} />;
 		case "work_period":
-			return (
-				<WorkPeriodDetails
-					event={event}
-					projectsEnabled={projectsEnabled}
-					t={t}
-				/>
-			);
+			return <WorkPeriodDetails event={event} projectsEnabled={projectsEnabled} t={t} />;
 		case "time_entry":
 			return <TimeEntryDetails event={event} t={t} />;
 		default:
@@ -125,9 +112,7 @@ function HolidayDetails({ event, t }: { event: CalendarEvent; t: Translate }) {
 				</Badge>
 			)}
 			{metadata.isRecurring && (
-				<Badge variant="outline">
-					{t("calendar.details.recurring", "Recurring yearly")}
-				</Badge>
+				<Badge variant="outline">{t("calendar.details.recurring", "Recurring yearly")}</Badge>
 			)}
 		</div>
 	);
@@ -140,10 +125,8 @@ function AbsenceDetails({ event, t }: { event: CalendarEvent; t: Translate }) {
 		employeeName: string;
 	};
 	const statusColors = {
-		pending:
-			"bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
-		approved:
-			"bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+		pending: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+		approved: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
 		rejected: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
 	};
 	const statusLabels = {
@@ -166,9 +149,7 @@ function AbsenceDetails({ event, t }: { event: CalendarEvent; t: Translate }) {
 					{t("calendar.details.status", "Status")}
 				</span>
 				<div className="mt-1">
-					<Badge className={statusColors[metadata.status]}>
-						{statusLabels[metadata.status]}
-					</Badge>
+					<Badge className={statusColors[metadata.status]}>{statusLabels[metadata.status]}</Badge>
 				</div>
 			</div>
 			{event.endDate && event.date.getTime() !== event.endDate.getTime() && (
@@ -191,8 +172,7 @@ function WorkPeriodDetails({
 	t: Translate;
 }) {
 	const metadata = event.metadata as WorkPeriodEvent["metadata"];
-	const hasSurcharge =
-		metadata.surchargeMinutes && metadata.surchargeMinutes > 0;
+	const hasSurcharge = metadata.surchargeMinutes && metadata.surchargeMinutes > 0;
 	return (
 		<div className="space-y-3">
 			<DetailValue
@@ -215,65 +195,40 @@ function WorkPeriodDetails({
 					</div>
 				</div>
 			)}
-			<div>
-				<span className="text-sm text-muted-foreground">
-					{t("calendar.details.duration", "Duration")}
-				</span>
-				{hasSurcharge ? (
-					<div className="space-y-1 mt-1">
-						<div className="flex justify-between text-sm">
-							<span className="text-muted-foreground">
-								{t("calendar.details.baseWorked", "Base worked")}
-							</span>
-							<span className="tabular-nums">
-								{formatDuration(metadata.durationMinutes)}
-							</span>
-						</div>
-						<div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
-							<span>{t("calendar.details.surcharge", "Surcharge")}</span>
-							<span className="tabular-nums">
-								+{formatDuration(metadata.surchargeMinutes!)}
-							</span>
-						</div>
-						<div className="flex justify-between font-medium border-t pt-1">
-							<span>{t("calendar.details.credited", "Credited")}</span>
-							<span className="tabular-nums">
-								{formatDuration(metadata.totalCreditedMinutes!)}
-							</span>
-						</div>
+			{projectsEnabled && metadata.projectName && metadata.taskName && (
+				<DetailValue
+					label={t("calendar.details.task", "Task")}
+					value={
+						metadata.taskState === "done"
+							? t("calendar.details.taskDone", "{name} (done)", { name: metadata.taskName })
+							: metadata.taskName
+					}
+				/>
+			)}
+			<WorkDurationDetails t={t} hasSurcharge={hasSurcharge} metadata={metadata} />
+			{metadata.surchargeBreakdown && metadata.surchargeBreakdown.length > 0 && (
+				<div>
+					<span className="text-sm text-muted-foreground">
+						{t("calendar.details.surchargeBreakdown", "Surcharge Breakdown")}
+					</span>
+					<div className="mt-1 space-y-1">
+						{metadata.surchargeBreakdown.map((rule) => (
+							<div
+								key={`${rule.ruleName}-${rule.percentage}-${rule.surchargeMinutes}`}
+								className="flex justify-between text-sm bg-muted/50 rounded px-2 py-1"
+							>
+								<span>
+									{rule.ruleName}{" "}
+									<span className="text-muted-foreground">({rule.percentage}%)</span>
+								</span>
+								<span className="tabular-nums text-emerald-600 dark:text-emerald-400">
+									+{formatDuration(rule.surchargeMinutes)}
+								</span>
+							</div>
+						))}
 					</div>
-				) : (
-					<p className="font-medium">
-						{formatDuration(metadata.durationMinutes)}
-					</p>
-				)}
-			</div>
-			{metadata.surchargeBreakdown &&
-				metadata.surchargeBreakdown.length > 0 && (
-					<div>
-						<span className="text-sm text-muted-foreground">
-							{t("calendar.details.surchargeBreakdown", "Surcharge Breakdown")}
-						</span>
-						<div className="mt-1 space-y-1">
-							{metadata.surchargeBreakdown.map((rule) => (
-								<div
-									key={`${rule.ruleName}-${rule.percentage}-${rule.surchargeMinutes}`}
-									className="flex justify-between text-sm bg-muted/50 rounded px-2 py-1"
-								>
-									<span>
-										{rule.ruleName}{" "}
-										<span className="text-muted-foreground">
-											({rule.percentage}%)
-										</span>
-									</span>
-									<span className="tabular-nums text-emerald-600 dark:text-emerald-400">
-										+{formatDuration(rule.surchargeMinutes)}
-									</span>
-								</div>
-							))}
-						</div>
-					</div>
-				)}
+				</div>
+			)}
 			{metadata.startTime && metadata.endTime && (
 				<DetailValue
 					label={t("calendar.details.time", "Time")}
@@ -320,13 +275,7 @@ function formatAutomaticCutoff(metadata: WorkPeriodEvent["metadata"]): string {
 	return `${date} ${time} (${offset !== undefined ? formatUtcOffset(offset) : zone})`;
 }
 
-function TimeEntryDetails({
-	event,
-	t,
-}: {
-	event: CalendarEvent;
-	t: Translate;
-}) {
+function TimeEntryDetails({ event, t }: { event: CalendarEvent; t: Translate }) {
 	const metadata = event.metadata as {
 		entryType: "clock_in" | "clock_out" | "correction";
 		employeeName: string;
@@ -338,11 +287,9 @@ function TimeEntryDetails({
 		correction: t("calendar.entryType.correction", "Correction"),
 	};
 	const entryTypeColors = {
-		clock_in:
-			"bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+		clock_in: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
 		clock_out: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-		correction:
-			"bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+		correction: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
 	};
 	return (
 		<div className="space-y-3">
@@ -351,9 +298,7 @@ function TimeEntryDetails({
 				value={metadata.employeeName}
 			/>
 			<div>
-				<span className="text-sm text-muted-foreground">
-					{t("calendar.details.type", "Type")}
-				</span>
+				<span className="text-sm text-muted-foreground">{t("calendar.details.type", "Type")}</span>
 				<div className="mt-1">
 					<Badge className={entryTypeColors[metadata.entryType]}>
 						{entryTypeLabels[metadata.entryType]}
@@ -361,10 +306,7 @@ function TimeEntryDetails({
 				</div>
 			</div>
 			{metadata.time && (
-				<DetailValue
-					label={t("calendar.details.time", "Time")}
-					value={metadata.time}
-				/>
+				<DetailValue label={t("calendar.details.time", "Time")} value={metadata.time} />
 			)}
 		</div>
 	);
@@ -405,11 +347,7 @@ function getEventTitle(event: CalendarEvent, t: Translate) {
 function getEventDescription(event: CalendarEvent, t: Translate) {
 	if (!event.description) return "";
 	return event.descriptionKey
-		? t(
-				event.descriptionKey,
-				event.description,
-				getEventTranslationParams(event),
-			)
+		? t(event.descriptionKey, event.description, getEventTranslationParams(event))
 		: event.description;
 }
 
@@ -427,4 +365,41 @@ function formatDurationParam(value: unknown) {
 	if (hours === 0) return `${mins}m`;
 	if (mins === 0) return `${hours}h`;
 	return `${hours}h ${mins}m`;
+}
+
+function WorkDurationDetails({
+	t,
+	hasSurcharge,
+	metadata,
+}: Pick<Parameters<typeof WorkPeriodDetails>[0], "t"> & {
+	hasSurcharge: number | boolean | null | undefined;
+	metadata: WorkPeriodEvent["metadata"];
+}) {
+	return (
+		<div>
+			<span className="text-sm text-muted-foreground">
+				{t("calendar.details.duration", "Duration")}
+			</span>
+			{hasSurcharge ? (
+				<div className="space-y-1 mt-1">
+					<div className="flex justify-between text-sm">
+						<span className="text-muted-foreground">
+							{t("calendar.details.baseWorked", "Base worked")}
+						</span>
+						<span className="tabular-nums">{formatDuration(metadata.durationMinutes)}</span>
+					</div>
+					<div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
+						<span>{t("calendar.details.surcharge", "Surcharge")}</span>
+						<span className="tabular-nums">+{formatDuration(metadata.surchargeMinutes!)}</span>
+					</div>
+					<div className="flex justify-between font-medium border-t pt-1">
+						<span>{t("calendar.details.credited", "Credited")}</span>
+						<span className="tabular-nums">{formatDuration(metadata.totalCreditedMinutes!)}</span>
+					</div>
+				</div>
+			) : (
+				<p className="font-medium">{formatDuration(metadata.durationMinutes)}</p>
+			)}
+		</div>
+	);
 }

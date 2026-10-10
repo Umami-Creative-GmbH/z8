@@ -431,7 +431,11 @@ export async function getProjectTotalHours(
 	projectId: string,
 	organizationId: string,
 ): Promise<number> {
-	const [schema, drizzle] = await Promise.all([import("@/db/schema"), import("drizzle-orm")]);
+	const [schema, drizzle, completedWork] = await Promise.all([
+		import("@/db/schema"),
+		import("drizzle-orm"),
+		import("@/lib/reports/completed-work"),
+	]);
 	const { workPeriod } = schema;
 	const { and, eq, sql } = drizzle;
 
@@ -440,7 +444,14 @@ export async function getProjectTotalHours(
 			totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
 		})
 		.from(workPeriod)
-		.where(and(eq(workPeriod.projectId, projectId), eq(workPeriod.organizationId, organizationId)));
+		.where(
+			and(
+				eq(workPeriod.projectId, projectId),
+				eq(workPeriod.organizationId, organizationId),
+				// Completed work only, as the project report counts it (#794).
+				completedWork.completedWorkPeriodCondition(),
+			),
+		);
 
 	const totalMinutes = result[0]?.totalMinutes ?? 0;
 	return totalMinutes / 60;

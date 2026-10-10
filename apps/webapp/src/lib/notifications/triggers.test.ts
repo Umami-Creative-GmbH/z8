@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 
 const { createNotification } = vi.hoisted(() => ({
 	createNotification: vi.fn(),
@@ -18,7 +19,13 @@ import {
 	onClockOutRejected,
 	onManualEntryApproved,
 	onManualEntryRejected,
+	onOpenShiftAvailable,
+	onShiftAssigned,
+	onShiftPickupApproved,
+	onShiftSwapApproved,
+	onShiftSwapRejected,
 	onShiftSwapRequestedToManager,
+	onShiftSwapRequestedToTarget,
 	onTimeCorrectionPendingApproval,
 	onTravelExpenseApproved,
 	onTravelExpenseRejected,
@@ -325,7 +332,7 @@ describe("approval notification triggers", () => {
 			organizationId: "org-1",
 			managerUserId: "user-manager",
 			requesterName: "Avery Requester",
-			shiftDate: new Date("2026-05-11T00:00:00.000Z"),
+			shiftDate: parsePlainDate("2026-05-11"),
 			startTime: "08:00",
 			endTime: "16:00",
 			targetEmployeeName: "Taylor Target",
@@ -341,6 +348,81 @@ describe("approval notification triggers", () => {
 				actionUrl: "/approvals/inbox",
 			}),
 		);
+	});
+
+	describe("shift dates", () => {
+		// A Berlin shift on Friday 2026-10-09, stored at 2026-10-08T22:00Z.
+		const shiftDate = parsePlainDate("2026-10-09");
+		const shift = {
+			shiftId: "shift-1",
+			organizationId: "org-1",
+			startTime: "08:00",
+			endTime: "16:00",
+		};
+		const swap = { ...shift, requestId: "request-1", requesterName: "Avery Requester" };
+		const decision = { ...swap, requesterUserId: "user-requester", approverName: "Morgan Manager" };
+
+		it.each([
+			[
+				"shift assigned",
+				() =>
+					onShiftAssigned({
+						...shift,
+						employeeUserId: "user-1",
+						shiftDate,
+						assignedByName: "Morgan",
+					}),
+			],
+			[
+				"swap requested to the manager",
+				() => onShiftSwapRequestedToManager({ ...swap, managerUserId: "user-manager", shiftDate }),
+			],
+			[
+				"swap requested to the target",
+				() => onShiftSwapRequestedToTarget({ ...swap, targetEmployeeUserId: "user-2", shiftDate }),
+			],
+			["swap approved", () => onShiftSwapApproved({ ...decision, shiftDate })],
+			["swap rejected", () => onShiftSwapRejected({ ...decision, shiftDate })],
+			[
+				"open shift available",
+				() => onOpenShiftAvailable({ ...shift, teamMemberUserIds: ["user-1"], shiftDate }),
+			],
+			[
+				"pickup approved",
+				() =>
+					onShiftPickupApproved({
+						...shift,
+						employeeUserId: "user-1",
+						approverName: "Morgan",
+						shiftDate,
+					}),
+			],
+		])("announces the %s notification on the shift's calendar date", async (_name, trigger) => {
+			await trigger();
+
+			expect(createNotification).toHaveBeenCalledWith(
+				expect.objectContaining({ message: expect.stringContaining("Fri, Oct 9") }),
+			);
+		});
+
+		it("passes the calendar date to the shift-assigned translation", async () => {
+			await onShiftAssigned({
+				...shift,
+				employeeUserId: "user-1",
+				shiftDate,
+				assignedByName: "Morgan",
+			});
+
+			expect(createNotification).toHaveBeenCalledWith(
+				expect.objectContaining({
+					metadata: expect.objectContaining({
+						i18n: expect.objectContaining({
+							params: expect.objectContaining({ shiftDate: "Fri, Oct 9" }),
+						}),
+					}),
+				}),
+			);
+		});
 	});
 
 	it("creates a requester notification for approved travel expenses", async () => {

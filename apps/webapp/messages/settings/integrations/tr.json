@@ -120,9 +120,11 @@
       },
       "errors": {
         "connectionFailed": "Clockodo'ya bağlanılamadı",
+        "fetchProjectsFailed": "Proje verileri alınamadı",
         "fetchUsersFailed": "Kullanıcı verileri alınamadı",
         "importFailed": "İçe aktarma inceleme taraması başarısız oldu",
-        "saveMappingsFailed": "Kullanıcı eşleştirmeleri kaydedilemedi"
+        "saveMappingsFailed": "Kullanıcı eşleştirmeleri kaydedilemedi",
+        "saveProjectMappingsFailed": "Proje eşlemeleri kaydedilemedi"
       },
       "importing": {
         "description": "Lütfen bu sayfayı kapatmayın. İnceleme taraması sıraya alındı ve büyük veri kümeleri için biraz zaman alabilir.",
@@ -148,6 +150,19 @@
         "next": "Kullanıcıları Eşleştir",
         "title": "Veri Önizlemesi"
       },
+      "projectMapping": {
+        "clockodoCustomer": "Clockodo Müşterisi",
+        "clockodoProject": "Clockodo Projesi",
+        "continue": "Devam Et",
+        "description": "Clockodo projelerini mevcut Z8 projeleriyle eşleyin. İçe aktarılan zaman kayıtları projelerini ve Clockodo'nun faturalandırılabilir değerini korur. Eşlenmemiş projelerdeki veya müşterisi olmayan projelerdeki kayıtlar faturalandırılamaz olarak içe aktarılır. Hiçbir proje oluşturulmaz.",
+        "mappedCount": "{total} projeden {mapped} tanesi eşlendi",
+        "noCustomer": "Bu projenin müşterisi yok, bu nedenle içe aktarılan süre faturalandırılamaz.",
+        "noZ8Projects": "Bu kuruluşta henüz hiç proje yok. Clockodo çalışma sürelerini projesi ve faturalandırılabilir değeriyle içe aktarmak için önce proje oluşturun.",
+        "title": "Projeleri Eşle",
+        "unmapped": "Eşlenmedi (proje yok)",
+        "z8Project": "Z8 Projesi",
+        "z8ProjectFor": "{project} için Z8 projesi"
+      },
       "review": {
         "startedToast": "İnceleme taraması başlatıldı. Kayıtlar işlenmeden önce inceleme gereklidir."
       },
@@ -167,6 +182,7 @@
         "credentials": "Kimlik Bilgileri",
         "import": "İnceleme",
         "preview": "Önizleme",
+        "projectMapping": "Proje Eşleme",
         "selection": "Seçim",
         "userMapping": "Kullanıcı Eşleştirme"
       },

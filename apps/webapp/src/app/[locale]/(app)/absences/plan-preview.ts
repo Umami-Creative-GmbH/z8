@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, lt, lte } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
@@ -13,6 +13,10 @@ import {
 } from "@/lib/absences/absence-plan-preview";
 import type { AbsenceRequest } from "@/lib/absences/types";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
+import type { DayOfWeek } from "@/lib/coverage/domain/entities/coverage-rule";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
+import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import { getCurrentEmployee } from "./current-employee";
 import { getHolidays, getVacationBalance } from "./queries";
 
@@ -26,9 +30,22 @@ type AffectedShift = {
 	id: string;
 	employeeId: string | null;
 	subareaId: string;
-	date: Date;
+	/** The organization-local calendar date, `YYYY-MM-DD`. */
+	date: string;
 	startTime: string;
 	endTime: string;
+};
+
+type ShiftRow = Omit<AffectedShift, "date"> & { date: Date };
+
+const DAY_OF_WEEK_BY_NUMBER: Record<number, DayOfWeek> = {
+	1: "monday",
+	2: "tuesday",
+	3: "wednesday",
+	4: "thursday",
+	5: "friday",
+	6: "saturday",
+	7: "sunday",
 };
 
 type ExistingAbsenceRow = Pick<
@@ -78,9 +95,14 @@ export async function getAbsencePlanPreview(
 			where: eq(organization.id, currentEmployee.organizationId),
 			columns: { timezone: true },
 		});
-		const timezone = org?.timezone || "UTC";
+		const timezone = resolveOrganizationTimezone(org?.timezone).timezone;
+		const shiftBounds = shiftDateRangeBounds(
+			request.startDate,
+			parsePlainDate(request.endDate).add({ days: 1 }),
+			timezone,
+		);
 
-		const [vacationBalance, holidays, existingAbsences, affectedShifts, managerId] =
+		const [vacationBalance, holidays, existingAbsences, affectedShiftRows, managerId] =
 			await Promise.all([
 				getVacationBalance(currentEmployee.id, range.start.year, timezone),
 				getHolidays(currentEmployee.id, range.startDate, range.endDate),
@@ -98,8 +120,8 @@ export async function getAbsencePlanPreview(
 						eq(shift.organizationId, currentEmployee.organizationId),
 						eq(shift.employeeId, currentEmployee.id),
 						eq(shift.status, "published"),
-						gte(shift.date, range.startDate),
-						lte(shift.date, range.endDate),
+						gte(shift.date, shiftBounds.start),
+						lt(shift.date, shiftBounds.endExclusive),
 					),
 				}),
 				getPrimaryEligibleManagerIdForRequester({
@@ -110,11 +132,11 @@ export async function getAbsencePlanPreview(
 			]);
 
 		const typedExistingAbsences = existingAbsences as unknown as ExistingAbsenceRow[];
-		const typedAffectedShifts = affectedShifts as AffectedShift[];
+		const typedAffectedShifts = toAffectedShifts(affectedShiftRows, timezone);
 		const coverage = await evaluateCoverageRisk({
 			organizationId: currentEmployee.organizationId,
-			startDate: range.startDate,
-			endDate: range.endDate,
+			shiftBounds,
+			timezone,
 			employeeId: currentEmployee.id,
 			affectedShifts: typedAffectedShifts,
 		});
@@ -163,16 +185,28 @@ function parsePreviewRange(request: AbsencePlanPreviewRequest) {
 	};
 }
 
+/** Reads each shift's `shift.date` as its calendar date in the organization's zone. */
+function toAffectedShifts(rows: ShiftRow[], timezone: string): AffectedShift[] {
+	return rows.map((row) => ({
+		id: row.id,
+		employeeId: row.employeeId,
+		subareaId: row.subareaId,
+		date: shiftCalendarDate(row.date, timezone).toString(),
+		startTime: row.startTime,
+		endTime: row.endTime,
+	}));
+}
+
 async function evaluateCoverageRisk({
 	organizationId,
-	startDate,
-	endDate,
+	shiftBounds,
+	timezone,
 	employeeId,
 	affectedShifts,
 }: {
 	organizationId: string;
-	startDate: Date;
-	endDate: Date;
+	shiftBounds: { start: Date; endExclusive: Date };
+	timezone: string;
 	employeeId: string;
 	affectedShifts: AffectedShift[];
 }): Promise<CoverageEvaluationInput> {
@@ -194,25 +228,20 @@ async function evaluateCoverageRisk({
 				eq(shift.organizationId, organizationId),
 				eq(shift.status, "published"),
 				inArray(shift.subareaId, subareaIds),
-				gte(shift.date, startDate),
-				lte(shift.date, endDate),
+				gte(shift.date, shiftBounds.start),
+				lt(shift.date, shiftBounds.endExclusive),
 			),
 		}),
 	]);
 
 	const coverageRisks: CoverageEvaluationInput["risks"] = [];
 	const typedRules = rules as unknown as CoverageRuleWithSubarea[];
-	const typedPublishedShifts = publishedShifts as AffectedShift[];
+	const typedPublishedShifts = toAffectedShifts(publishedShifts, timezone);
 	let hasMatchingRuleForAffectedShifts = false;
 
 	for (const affectedShift of affectedShifts) {
-		const date = DateTime.fromJSDate(affectedShift.date, { zone: "utc" });
-		const dateKey = date.toISODate();
-		const weekday = date.setLocale("en-US").weekdayLong;
-		if (!dateKey || !weekday) {
-			continue;
-		}
-		const dayOfWeek = weekday.toLowerCase();
+		const dateKey = affectedShift.date;
+		const dayOfWeek = DAY_OF_WEEK_BY_NUMBER[parsePlainDate(dateKey).dayOfWeek];
 
 		for (const rule of typedRules) {
 			if (
@@ -287,7 +316,7 @@ function findUnderstaffedSegments({
 			publishedShift.employeeId &&
 			publishedShift.employeeId !== employeeId &&
 			publishedShift.subareaId === rule.subareaId &&
-			isSameDate(publishedShift.date, affectedShift.date) &&
+			publishedShift.date === affectedShift.date &&
 			timeRangesOverlap(
 				evaluationStart,
 				evaluationEnd,
@@ -366,13 +395,6 @@ function clampTime(time: string, startTime: string, endTime: string) {
 	}
 
 	return time;
-}
-
-function isSameDate(left: Date, right: Date) {
-	return (
-		DateTime.fromJSDate(left, { zone: "utc" }).toISODate() ===
-		DateTime.fromJSDate(right, { zone: "utc" }).toISODate()
-	);
 }
 
 function dedupeCoverageRisks(risks: CoverageEvaluationInput["risks"]) {

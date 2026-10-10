@@ -30,6 +30,7 @@ import {
 	timeRecordWork,
 	workPeriod,
 } from "@/db/schema";
+import { carryInvoicedWorkToSplit } from "@/lib/billable-time/hand-off/invoiced-work";
 import {
 	compareInstants,
 	dateFromInstant,
@@ -39,6 +40,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import type { AllocationEvidence } from "./allocation-evidence";
 import { CompletedWorkReviewRequiredError, lockAuthority } from "./amend-completed-work";
 import { calculateHash } from "./blockchain";
 import { canonicalJson } from "./canonical-json";
@@ -50,8 +52,10 @@ import {
 } from "./close-active-work";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
 import { planCompletedWorkSplit } from "./split-work-period";
+import { recordedTaskId } from "./task-attribution";
 import { admitTimeEntryAppend, TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 import type { TimeEntryTimezoneCapture } from "./timezone-capture";
+import { projectAllocationAgrees } from "./work-billability";
 import { WorkIntervalError } from "./work-duration";
 import { assertWorkOccupancyFree } from "./work-occupancy";
 import { assertNoUnresolvedWorkPeriodReview } from "./work-period-review";
@@ -79,13 +83,6 @@ export type SplitCompletedWorkCommand = {
 	};
 };
 
-type AllocationEvidence = {
-	allocationKind: string;
-	projectId: string | null;
-	costCenterId: string | null;
-	weightPercent: number;
-};
-
 /** One segment by value: committed evidence, not a pointer to current rows. */
 export type SplitSegment = {
 	workPeriodId: string;
@@ -99,6 +96,10 @@ export type SplitSegment = {
 	endUtcOffsetMinutes: number | null;
 	attribution: {
 		projectId: string | null;
+		/** Present only when the work is booked to a task (#873). */
+		taskId?: string;
+		/** Absent on receipts committed before billability (#900), which were non-billable. */
+		isBillable?: boolean;
 		workCategoryId: string | null;
 		workLocationType: string | null;
 		allocations: AllocationEvidence[];
@@ -425,14 +426,8 @@ export async function splitCompletedWork(
 			conflictType: "work_period_pending_approval",
 		});
 	}
-	const projectAllocations = allocations.filter(
-		({ allocationKind }) => allocationKind === "project",
-	);
-	const allocationAgrees = period.projectId
-		? projectAllocations.length === 1 &&
-			projectAllocations[0]?.projectId === period.projectId &&
-			projectAllocations[0]?.weightPercent === 100
-		: projectAllocations.length === 0;
+	// Project and billability must agree in both representations (#900).
+	const allocationAgrees = projectAllocationAgrees(period, allocations);
 	const sourceStart = instantFromDate(period.startTime);
 	const sourceEnd = instantFromDate(period.endTime);
 	if (
@@ -638,8 +633,11 @@ export async function splitCompletedWork(
 			recordId: generatedRecordId,
 			allocationKind: allocation.allocationKind,
 			projectId: allocation.projectId,
+			taskId: allocation.taskId,
 			costCenterId: allocation.costCenterId,
 			weightPercent: allocation.weightPercent,
+			// Both halves keep the source's billability (#900).
+			isBillable: allocation.isBillable,
 		});
 	}
 	const [generated] = await tx
@@ -650,6 +648,8 @@ export async function splitCompletedWork(
 			clockInId: splitClockIn.id,
 			clockOutId: period.clockOutId,
 			projectId: period.projectId,
+			isBillable: period.isBillable,
+			taskId: period.taskId,
 			workCategoryId: period.workCategoryId,
 			workLocationType: period.workLocationType,
 			startTime: splitAtDate,
@@ -663,6 +663,12 @@ export async function splitCompletedWork(
 		})
 		.returning({ id: workPeriod.id, graphRevision: workPeriod.graphRevision });
 	if (!generated) throw new Error("Generated work period insert failed");
+	// Invoiced work stays invoiced in both halves; the source is marked by trigger (#903).
+	await carryInvoicedWorkToSplit(tx, {
+		organizationId,
+		sourceWorkPeriodId: period.id,
+		newWorkPeriodId: generated.id,
+	});
 
 	// Independent rounding can change the total: the refresh commits with the work,
 	// from the earliest UTC or captured-offset local date of the affected endpoints.
@@ -679,13 +685,17 @@ export async function splitCompletedWork(
 
 	const attribution = {
 		projectId: period.projectId,
+		...recordedTaskId(period.taskId),
+		isBillable: period.isBillable,
 		workCategoryId: period.workCategoryId,
 		workLocationType: period.workLocationType,
 		allocations: allocations.map((allocation) => ({
 			allocationKind: allocation.allocationKind,
 			projectId: allocation.projectId,
+			...recordedTaskId(allocation.taskId),
 			costCenterId: allocation.costCenterId,
 			weightPercent: allocation.weightPercent,
+			isBillable: allocation.isBillable,
 		})),
 	};
 	const segment = (values: {

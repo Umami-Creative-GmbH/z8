@@ -129,6 +129,7 @@
           "alreadyReimbursed": "Übersprungen: bereits erstattet",
           "balanceChanged": "Übersprungen: Saldo geändert",
           "failed": "Fehlgeschlagen",
+          "inPayrollRun": "Übersprungen: in einem Abrechnungslauf enthalten",
           "outOfScope": "Übersprungen: außerhalb des Zuständigkeitsbereichs",
           "overpaidOrReview": "Übersprungen: überzahlt oder Überprüfung erforderlich",
           "ownExpense": "Übersprungen: eigene Ausgabe",
@@ -247,6 +248,7 @@
           "search": "Teams suchen…"
         }
       },
+      "inPayrollRun": "In {run} enthalten",
       "legacyClaim": "Alter {type}-Antrag",
       "loading": "Finanz-Warteschlange wird geladen…",
       "pagination": {
@@ -254,6 +256,16 @@
         "next": "Weiter",
         "page": "Seite {page}",
         "previous": "Zurück"
+      },
+      "payrollRun": {
+        "included": "In {run} enthalten. Die Auszahlung erfolgt über diese Gehaltsabrechnung und wird als erstattet erfasst, sobald der Lauf bestätigt wird.",
+        "label": "Abrechnungslauf {period} ({format})",
+        "notIncluded": "Diese Ausgabe ist in keinem Abrechnungslauf mehr enthalten.",
+        "remove": "Aus Abrechnungslauf entfernen",
+        "removed": "Aus dem Abrechnungslauf entfernt. Die Ausgabe wartet wieder auf Erstattung.",
+        "removeDescription": "Entfernen Sie sie nur, wenn sie nicht mit diesem Lauf über die Gehaltsabrechnung ausgezahlt wird, z. B. nach Korrektur der Abrechnungsdatei. Das Entfernen wird im Audit-Protokoll erfasst.",
+        "removeFailed": "Die Ausgabe konnte nicht aus dem Abrechnungslauf entfernt werden.",
+        "removeTitle": "Diese Ausgabe aus dem Abrechnungslauf entfernen?"
       },
       "queue": {
         "description": "Öffnen Sie eine Ausgabe, um deren Abrechnung einzusehen und eine Erstattung zu erfassen.",
@@ -999,6 +1011,20 @@
         "adoptForeignTitle": "Deutsche gesetzliche Verpflegungspauschalen mit den offiziellen Auslandssätzen übernehmen",
         "foreignAreas": "Auslandssätze: {countries} Länder und {places} Städte"
       },
+      "reimbursementChannel": {
+        "bankTransfer": "Banküberweisung",
+        "bankTransferDescription": "Spesenbeauftragte zahlen Erstattungen per Banküberweisung aus und erfassen sie in Z8.",
+        "intro": "Wie Ihre Organisation Erstattungen auszahlt. Die Auswahl gilt für alle Mitarbeitenden.",
+        "loadFailed": "Der Erstattungskanal konnte nicht geladen werden.",
+        "payrollRun": "Gehaltsabrechnungslauf",
+        "payrollRunDescription": "Der Gehaltsabrechnungslauf umfasst Erstattungen, die erfasst werden, sobald der Gehaltsabrechnungslauf als bezahlt bestätigt wurde. Berichte, die ein Gehaltsabrechnungslauf nicht enthalten kann, werden per Banküberweisung ausgezahlt.",
+        "payrollRunPreview": "In der Vorschau und noch nicht für Ihre Organisation verfügbar.",
+        "save": "Kanal speichern",
+        "saved": "Erstattungskanal gespeichert",
+        "saveFailed": "Der Erstattungskanal konnte nicht gespeichert werden.",
+        "title": "Erstattungskanal",
+        "unconfirmedRuns": "{count, plural, one {# Gehaltsabrechnungslauf ist noch nicht bestätigt. Er kann noch bestätigt oder verworfen werden.} other {# Gehaltsabrechnungsläufe sind noch nicht bestätigt. Sie können noch bestätigt oder verworfen werden.}}"
+      },
       "tabs": {
         "access": "Zugriff",
         "currencies": "Währungen",
@@ -1034,6 +1060,7 @@
         "exceedsOutstanding": "Der Betrag ist höher als der ausstehende Betrag.",
         "exceedsOverpayment": "Der Betrag ist höher als der überzahlte Betrag.",
         "failed": "Die Zahlung konnte nicht erfasst werden. Bitte versuchen Sie es erneut.",
+        "inPayrollRun": "Diese Ausgabe ist jetzt in einem Abrechnungslauf enthalten und wird daher über die Gehaltsabrechnung ausgezahlt. Entfernen Sie sie aus dem Lauf, bevor Sie eine Zahlung erfassen.",
         "load": "Der Erstattungssaldo konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
         "noOverpayment": "Für diese Ausgabe wurde nichts überzahlt.",
         "notApproved": "Diese Ausgabe ist nicht mehr genehmigt, daher kann keine Zahlung erfasst werden.",

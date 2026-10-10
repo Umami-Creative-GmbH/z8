@@ -18,7 +18,8 @@
         "absences": "İzinler",
         "employees": "Çalışanlar",
         "projects": "Projeler",
-        "timeEntries": "Zaman Kayıtları"
+        "timeEntries": "Zaman Kayıtları",
+        "workPeriods": "Çalışma Dönemleri (proje ve görev ile)"
       },
       "dateRange": {
         "customOffset": "Özel Ofset",

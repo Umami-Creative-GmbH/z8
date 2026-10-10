@@ -96,6 +96,22 @@
       "selected": "Période sélectionnée",
       "start": "Début"
     },
+    "run": {
+      "discard": {
+        "action": "Abandonner le cycle de paie",
+        "description": "{count, plural, one {La # note de frais qu'il contient sera de nouveau en attente de remboursement : le prochain export de paie ou un virement bancaire pourra la prendre en charge. Ne l'abandonnez que si ce fichier n'est pas payé avec la paie.} other {Les # notes de frais qu'il contient seront de nouveau en attente de remboursement : le prochain export de paie ou un virement bancaire pourra les prendre en charge. Ne l'abandonnez que si ce fichier n'est pas payé avec la paie.}}",
+        "done": "Cycle de paie abandonné. Ses notes de frais sont de nouveau en attente de remboursement.",
+        "failed": "Impossible d'abandonner le cycle de paie.",
+        "notFound": "Ce cycle de paie ne contient plus aucune note de frais.",
+        "outOfScope": "Ce cycle de paie inclut des employés hors de votre périmètre de paie.",
+        "title": "Abandonner ce cycle de paie ?"
+      }
+    },
+    "runs": {
+      "description": "Ces exports contiennent des notes de frais en attente de remboursement. Un gestionnaire des notes de frais confirme chaque cycle une fois qu'il a été payé avec la paie ; abandonnez un cycle dont le fichier n'est pas payé.",
+      "reports": "{count, plural, one {# note de frais} other {# notes de frais}}",
+      "title": "Cycles de paie non confirmés"
+    },
     "scope": {
       "allManaged": "Tous les employés et équipes que je gère",
       "apply": "Appliquer",

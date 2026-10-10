@@ -12,6 +12,10 @@ interface UseTravelExpenseFileUploadOptions<Result> {
 	/** Attaches the finished upload on the server, e.g. to a report item. */
 	process: (input: { tusFileKey: string; fileName: string | undefined }) => Promise<Result>;
 	maxFileSize?: number;
+	/** Accepted MIME types; receipt types by default. */
+	allowedFileTypes?: readonly string[];
+	/** Extra TUS upload metadata, e.g. `{ purpose: "personnel-document" }` (#865). */
+	uploadMetadata?: Readonly<Record<string, string>>;
 	onSuccess?: (result: Result) => void;
 	onError?: (error: Error) => void;
 }
@@ -63,22 +67,25 @@ function travelExpenseUploadReducer(
 export function useTravelExpenseFileUpload<Result>({
 	process,
 	maxFileSize = DEFAULT_MAX_TRAVEL_EXPENSE_FILE_SIZE,
+	allowedFileTypes = ALLOWED_TRAVEL_EXPENSE_MIME_TYPES,
+	uploadMetadata,
 	onSuccess,
 	onError,
 }: UseTravelExpenseFileUploadOptions<Result>): UseTravelExpenseFileUploadReturn {
 	const [uploadState, dispatchUploadState] = useReducer(travelExpenseUploadReducer, idle);
 	const uppyRef = useRef<Uppy | null>(null);
-	const callbacks = useRef({ process, onSuccess, onError });
+	const callbacks = useRef({ process, onSuccess, onError, uploadMetadata });
 	useLayoutEffect(() => {
-		callbacks.current = { process, onSuccess, onError };
+		callbacks.current = { process, onSuccess, onError, uploadMetadata };
 	});
+	const allowedFileTypesKey = allowedFileTypes.join(",");
 
 	useEffect(() => {
 		const uppy = new Uppy({
 			restrictions: {
 				maxFileSize,
 				maxNumberOfFiles: 1,
-				allowedFileTypes: [...ALLOWED_TRAVEL_EXPENSE_MIME_TYPES],
+				allowedFileTypes: allowedFileTypesKey.split(","),
 			},
 			autoProceed: true,
 		}).use(Tus, {
@@ -153,7 +160,7 @@ export function useTravelExpenseFileUpload<Result>({
 			uppy.destroy();
 			if (uppyRef.current === uppy) uppyRef.current = null;
 		};
-	}, [maxFileSize]);
+	}, [maxFileSize, allowedFileTypesKey]);
 
 	const addFile = (file: File) => {
 		const uppy = uppyRef.current;
@@ -167,6 +174,9 @@ export function useTravelExpenseFileUpload<Result>({
 				name: file.name,
 				type: file.type,
 				data: file,
+				...(callbacks.current.uploadMetadata
+					? { meta: { ...callbacks.current.uploadMetadata } }
+					: {}),
 			});
 		} catch (error) {
 			callbacks.current.onError?.(

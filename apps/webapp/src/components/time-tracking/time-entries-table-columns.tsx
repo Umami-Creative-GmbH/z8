@@ -33,6 +33,8 @@ export interface WorkPeriodData {
 	totalCreditedMinutes?: number | null;
 	wasAutoAdjusted?: boolean;
 	autoAdjustmentReason?: WorkPeriodAutoAdjustmentReason | null;
+	/** Billable Time (#900): whether the work is billable. */
+	isBillable?: boolean;
 }
 
 export function getTimeEntriesColumns({
@@ -43,6 +45,7 @@ export function getTimeEntriesColumns({
 	hasManager,
 	renderEditAction,
 	renderAdminAction,
+	showBillable = false,
 }: {
 	t: TFnType;
 	locale: string;
@@ -51,6 +54,8 @@ export function getTimeEntriesColumns({
 	hasManager: boolean;
 	renderEditAction: (period: WorkPeriodData, isSameDay: boolean) => ReactNode;
 	renderAdminAction?: (period: WorkPeriodData) => ReactNode;
+	/** Mark billable work (#900); only while Billable Time is on. */
+	showBillable?: boolean;
 }): ColumnDef<DataTableFeatures, WorkPeriodData>[] {
 	return [
 		{
@@ -146,12 +151,21 @@ export function getTimeEntriesColumns({
 			header: t("timeTracking.table.description", "Description"),
 			cell: ({ row }) => {
 				const notes = row.original.clockOut?.notes;
-				return notes ? (
+				const description = notes ? (
 					<span className="block max-w-[200px] truncate text-sm" title={notes}>
 						{notes}
 					</span>
 				) : (
 					<span className="text-muted-foreground">-</span>
+				);
+				if (!showBillable || !row.original.isBillable) return description;
+				return (
+					<div className="flex flex-col gap-1">
+						{description}
+						<Badge variant="outline" className="w-fit text-xs">
+							{t("timeTracking.table.billable", "Billable")}
+						</Badge>
+					</div>
 				);
 			},
 		},

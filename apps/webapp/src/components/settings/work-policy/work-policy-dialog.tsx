@@ -70,6 +70,7 @@ const defaultDays: ScheduleDayInput[] = DAYS_OF_WEEK.map((day) => ({
 	hoursPerDay: day.value === "saturday" || day.value === "sunday" ? "0" : "8",
 	isWorkDay: day.value !== "saturday" && day.value !== "sunday",
 	cycleWeek: 1,
+	latestClockIn: null,
 }));
 
 const defaultBreakRule: BreakRuleInput = {
@@ -155,6 +156,7 @@ function buildWorkPolicyFormValues(
 					hoursPerDay: day.hoursPerDay,
 					isWorkDay: day.isWorkDay,
 					cycleWeek: day.cycleWeek ?? 1,
+					latestClockIn: day.latestClockIn ?? null,
 				}))
 			: defaultDays,
 		maxDailyMinutes: editingPolicy.regulation?.maxDailyMinutes ?? null,
@@ -182,7 +184,7 @@ function buildWorkPolicyFormValues(
 	};
 }
 
-export function WorkPolicyDialog({
+function useWorkPolicyForm({
 	open,
 	onOpenChange,
 	organizationId,
@@ -211,7 +213,14 @@ export function WorkPolicyDialog({
 								value.scheduleType === "detailed" ? ("custom" as const) : value.workingDaysPreset,
 							hoursPerCycle: value.scheduleType === "simple" ? value.hoursPerCycle : undefined,
 							homeOfficeDaysPerCycle: value.homeOfficeDaysPerCycle,
-							days: value.scheduleType === "detailed" ? value.days : undefined,
+							days:
+								value.scheduleType === "detailed"
+									? value.days.map((day) => ({
+											...day,
+											// Only work days carry a latest clock-in; an empty field clears it.
+											latestClockIn: (day.isWorkDay && day.latestClockIn) || null,
+										}))
+									: undefined,
 						}
 					: undefined,
 				regulation: value.regulationEnabled
@@ -351,6 +360,47 @@ export function WorkPolicyDialog({
 		}));
 	})();
 
+	return {
+		open,
+		onOpenChange,
+		isEditing,
+		t,
+		form,
+		scheduleEnabled,
+		regulationEnabled,
+		presenceEnabled,
+		days,
+		totalHours,
+		previewDays,
+		homeOfficeDaysPerCycle,
+		scheduleCycle,
+		presenceMode,
+		isPending,
+	};
+}
+
+export function WorkPolicyDialog({
+	open,
+	onOpenChange,
+	organizationId,
+	editingPolicy,
+	onSuccess,
+}: WorkPolicyDialogProps) {
+	const {
+		isEditing,
+		t,
+		form,
+		scheduleEnabled,
+		regulationEnabled,
+		presenceEnabled,
+		days,
+		totalHours,
+		previewDays,
+		homeOfficeDaysPerCycle,
+		scheduleCycle,
+		presenceMode,
+		isPending,
+	} = useWorkPolicyForm({ open, onOpenChange, organizationId, editingPolicy, onSuccess });
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent size="wide">
@@ -624,14 +674,26 @@ export function WorkPolicyDialog({
 															</div>
 														)}
 													</form.Field>
+													<p className="text-sm text-muted-foreground">
+														{t(
+															"settings.workSchedules.latestClockIn.simpleHint",
+															"A latest clock-in per day needs a detailed schedule. Switch to Detailed to set one.",
+														)}
+													</p>
 												</TabsContent>
 
 												<TabsContent value="detailed" className="space-y-4 pt-4">
+													<p className="text-sm text-muted-foreground">
+														{t(
+															"settings.workSchedules.latestClockIn.description",
+															"Optional latest clock-in per work day: on days without a shift, employees who have not clocked in by then can get a reminder.",
+														)}
+													</p>
 													<div className="space-y-3">
 														{DAYS_OF_WEEK.map((day, index) => (
 															<div
 																key={day.value}
-																className="flex items-center gap-4 p-3 rounded-lg border"
+																className="flex flex-wrap items-center gap-4 p-3 rounded-lg border"
 															>
 																<Checkbox
 																	checked={days[index]?.isWorkDay ?? false}
@@ -640,6 +702,8 @@ export function WorkPolicyDialog({
 																		newDays[index] = {
 																			...newDays[index],
 																			isWorkDay: !!checked,
+																			// A latest clock-in applies only to work days.
+																			latestClockIn: checked ? newDays[index]?.latestClockIn : null,
 																		};
 																		form.setFieldValue("days", newDays);
 																	}}
@@ -669,6 +733,32 @@ export function WorkPolicyDialog({
 																<span className="text-sm text-muted-foreground w-12">
 																	{t("settings.workSchedules.hoursUnit", "hours")}
 																</span>
+																{days[index]?.isWorkDay ? (
+																	<Input
+																		type="time"
+																		className="w-32"
+																		aria-label={t(
+																			"settings.workSchedules.latestClockIn.dayLabel",
+																			"Latest clock-in on {day}",
+																			{ day: t(`common.days.${day.value}`, day.label) },
+																		)}
+																		title={t(
+																			"settings.workSchedules.latestClockIn.label",
+																			"Latest clock-in",
+																		)}
+																		value={days[index]?.latestClockIn ?? ""}
+																		onChange={(e) => {
+																			const newDays = [...days];
+																			newDays[index] = {
+																				...newDays[index],
+																				latestClockIn: e.target.value || null,
+																			};
+																			form.setFieldValue("days", newDays);
+																		}}
+																	/>
+																) : (
+																	<span className="w-32" aria-hidden="true" />
+																)}
 															</div>
 														))}
 													</div>

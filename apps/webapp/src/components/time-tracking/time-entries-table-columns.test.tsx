@@ -132,4 +132,31 @@ describe("getTimeEntriesColumns", () => {
 			expect.any(Boolean),
 		);
 	});
+	it.each([
+		[true, true, true],
+		[false, true, false],
+		[true, false, false],
+	])(
+		"marks billable work only while Billable Time is on (shown %s, billable %s)",
+		(showBillable, isBillable, marked) => {
+			const columns = getTimeEntriesColumns({
+				t,
+				locale: "en-US",
+				employeeTimezone: "Europe/Berlin",
+				timeFormat: "24h",
+				hasManager: false,
+				renderEditAction: vi.fn(),
+				showBillable,
+			});
+			const description = columns.find((column) => column.id === "description");
+
+			render(
+				typeof description?.cell === "function"
+					? description.cell({ row: { original: { ...workPeriod, isBillable } } } as never)
+					: null,
+			);
+
+			expect(screen.queryByText("Billable") !== null).toBe(marked);
+		},
+	);
 });

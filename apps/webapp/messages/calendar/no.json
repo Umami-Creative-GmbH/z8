@@ -183,6 +183,20 @@
       "notes": "Notater",
       "pendingApproval": "Venter på godkjenning",
       "pendingApprovalDescription": "Denne arbeidsperioden venter på godkjenning fra leder. De registrerte tidene kan endres hvis den avvises.",
+      "positions": {
+        "accuracy": "innenfor {meters} m",
+        "clockIn": "Stemple inn",
+        "clockOut": "Stemple ut",
+        "failed": "Posisjoner kunne ikke lastes inn",
+        "hide": "Skjul posisjoner",
+        "loggedHint": "Den ansatte kan se hvem som har sett på posisjonene sine: visningen loggføres.",
+        "none": "Ingen posisjoner ble registrert for denne arbeidsperioden.",
+        "openInMaps": "Åpne i kart",
+        "originalClockIn": "Registrert med den opprinnelige innstemplingen kl. {time}. Tidspunktene ble korrigert senere.",
+        "originalClockOut": "Registrert med den opprinnelige utstemplingen kl. {time}. Tidspunktene ble korrigert senere.",
+        "show": "Vis posisjoner",
+        "title": "Posisjoner"
+      },
       "project": "Prosjekt",
       "recurring": "Gjentakende årlig",
       "rejected": "Avvist",
@@ -192,13 +206,18 @@
       "surcharge": "Tillegg",
       "surchargeBreakdown": "Fordeling av tillegg",
       "system": "System",
+      "task": "Oppgave",
+      "taskDone": "{name} (fullført)",
       "time": "Tid",
       "type": "Type",
       "workLocation": "Arbeidssted"
     },
     "edit": {
+      "billableSaveFailed": "Kunne ikke oppdatere fakturerbarhet",
       "deleteEntry": "Slett oppføring",
       "locationRequired": "Velg et arbeidssted.",
+      "markedBillable": "Markert som fakturerbar",
+      "markedNonBillable": "Markert som ikke-fakturerbar",
       "noNotes": "Ingen notater lagt til",
       "noProject": "Ingen prosjekter tilordnet",
       "notesSaved": "Notater lagret",
@@ -343,6 +362,7 @@
       "notRecorded": "Ikke registrert"
     },
     "workPeriod": {
+      "billable": "Fakturerbar",
       "editedBy": "(redigert av {name} {date})"
     },
     "workStatus": {

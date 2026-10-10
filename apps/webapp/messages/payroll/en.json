@@ -96,6 +96,22 @@
       "selected": "Selected period",
       "start": "Start"
     },
+    "run": {
+      "discard": {
+        "action": "Discard payroll run",
+        "description": "{count, plural, one {The # expense report it includes will await reimbursement again: the next payroll export or a bank transfer can take them. Discard it only if this file is not paid with payroll.} other {The # expense reports it includes will await reimbursement again: the next payroll export or a bank transfer can take them. Discard it only if this file is not paid with payroll.}}",
+        "done": "Payroll run discarded. Its expense reports await reimbursement again.",
+        "failed": "The payroll run could not be discarded.",
+        "notFound": "This payroll run no longer includes any reports.",
+        "outOfScope": "This payroll run includes employees outside your payroll scope.",
+        "title": "Discard this payroll run?"
+      }
+    },
+    "runs": {
+      "description": "These exports carry expense reports awaiting reimbursement. An expense officer confirms each run once payroll has paid it; discard a run whose file is not paid.",
+      "reports": "{count, plural, one {# expense report} other {# expense reports}}",
+      "title": "Unconfirmed payroll runs"
+    },
     "scope": {
       "allManaged": "All employees and teams I manage",
       "apply": "Apply",

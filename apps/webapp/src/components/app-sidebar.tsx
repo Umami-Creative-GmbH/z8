@@ -9,6 +9,8 @@ import {
 	IconClock,
 	IconDashboard,
 	IconFileDescription,
+	IconFolder,
+	IconFolders,
 	IconGavel,
 	IconHelp,
 	IconHierarchy,
@@ -57,6 +59,10 @@ export interface NavigationCapabilities {
 	/** Owners, admins and active expense officers (#753). */
 	finance: boolean;
 	worksCouncil: boolean;
+	/** The employee's own shared documents while personnel files are on (#865). */
+	myDocuments?: boolean;
+	/** Owners, admins and active personnel file officers while personnel files are on (#866). */
+	personnelFiles?: boolean;
 	platformAdmin: boolean;
 }
 
@@ -84,6 +90,8 @@ const DEFAULT_NAVIGATION_CAPABILITIES: NavigationCapabilities = {
 	payroll: false,
 	finance: false,
 	worksCouncil: false,
+	myDocuments: false,
+	personnelFiles: false,
 	platformAdmin: false,
 };
 
@@ -176,6 +184,24 @@ export function AppSidebar({
 			url: "/my-requests",
 			icon: IconFileDescription,
 		},
+		...(navigationCapabilities.myDocuments
+			? [
+					{
+						title: t("nav.my-documents", "My Documents"),
+						url: "/my-documents",
+						icon: IconFolder,
+					},
+				]
+			: []),
+		...(navigationCapabilities.personnelFiles
+			? [
+					{
+						title: t("nav.personnel-files", "Personnel Files"),
+						url: "/personnel-files",
+						icon: IconFolders,
+					},
+				]
+			: []),
 		{
 			title: t("nav.reports", "Reports"),
 			url: "/reports",

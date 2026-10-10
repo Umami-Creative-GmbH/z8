@@ -10,6 +10,7 @@ import {
 	workPeriod,
 	workPolicy,
 } from "@/db/schema";
+import { comparePlainDates, instantFromDate, plainDateAt } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { clipRequirementsToEmployment } from "@/lib/employee-lifecycle/employment-coverage";
@@ -18,6 +19,10 @@ import {
 	type EffectiveWorkPolicy,
 	WorkPolicyService,
 } from "@/lib/effect/services/work-policy.service";
+import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
+import { shiftInterval } from "@/lib/scheduling/shift-occasion";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 import {
 	type ApprovedAbsenceRange,
 	applyAbsenceAdjustmentsToRequirements,
@@ -64,7 +69,8 @@ interface ShiftRequirementSource {
 
 interface BuildShiftDailyWorkRequirementsOptions {
 	shifts: ShiftRequirementSource[];
-	timezone?: string | null;
+	/** The organization's timezone, which `shift.date` and the wall times are read in. */
+	organizationTimezone: string;
 }
 
 type EmploymentRequirementSlice = {
@@ -86,6 +92,7 @@ type PolicyWithDetails = typeof workPolicy.$inferSelect & {
 			dayOfWeek: EffectiveWorkPolicyScheduleDayName;
 			hoursPerDay: string;
 			isWorkDay: boolean;
+			latestClockIn: string | null;
 		}>;
 	} | null;
 };
@@ -218,6 +225,7 @@ function mapPolicyToEffective(policy: PolicyWithDetails): EffectiveWorkPolicy {
 							dayOfWeek: day.dayOfWeek,
 							hoursPerDay: day.hoursPerDay,
 							isWorkDay: day.isWorkDay,
+							latestClockIn: day.latestClockIn ?? null,
 						})),
 					}
 				: null,
@@ -229,25 +237,20 @@ function mapPolicyToEffective(policy: PolicyWithDetails): EffectiveWorkPolicy {
 
 export function buildShiftDailyWorkRequirements({
 	shifts,
-	timezone,
+	organizationTimezone,
 }: BuildShiftDailyWorkRequirementsOptions): DailyWorkRequirements {
-	const requestedZone = timezone || "utc";
 	const requirements: DailyWorkRequirements = {};
 
 	for (const assignedShift of shifts) {
-		const dateKey = DateTime.fromJSDate(assignedShift.date, { zone: "utc" }).toISODate();
-		if (!dateKey) continue;
-
-		const start = DateTime.fromISO(`${dateKey}T${assignedShift.startTime}`, {
-			zone: requestedZone,
-		});
-		const parsedEnd = DateTime.fromISO(`${dateKey}T${assignedShift.endTime}`, {
-			zone: requestedZone,
-		});
-		if (!start.isValid || !parsedEnd.isValid) continue;
-
-		const end = parsedEnd <= start ? parsedEnd.plus({ days: 1 }) : parsedEnd;
-		const requiredMinutes = Math.round(end.diff(start, "minutes").minutes);
+		const date = shiftCalendarDate(assignedShift.date, organizationTimezone);
+		const dateKey = date.toString();
+		const interval = shiftInterval(
+			{ date, startTime: assignedShift.startTime, endTime: assignedShift.endTime },
+			organizationTimezone,
+		);
+		const requiredMinutes = Math.round(
+			interval.start.until(interval.end).total({ unit: "minutes" }),
+		);
 		if (requiredMinutes <= 0) continue;
 
 		const existing = requirements[dateKey]?.requiredMinutes ?? 0;
@@ -312,7 +315,12 @@ async function getApprovedAbsenceRanges(params: {
 	);
 }
 
-async function getPublishedShiftRequirementsForEmployee(params: {
+/**
+ * Requirements from the employee's published shifts on the calendar days from `startDate`'s
+ * through `endDate`'s in the requested zone. Shifts are matched to those days by their
+ * organization-local date.
+ */
+export async function getPublishedShiftRequirementsForEmployee(params: {
 	database: typeof DatabaseService.Service;
 	organizationId: string;
 	employeeId: string;
@@ -320,9 +328,20 @@ async function getPublishedShiftRequirementsForEmployee(params: {
 	endDate: Date;
 	timezone?: string | null;
 }): Promise<DailyWorkRequirements> {
+	const requestedZone =
+		params.timezone && isValidIanaTimeZone(params.timezone) ? params.timezone : "UTC";
+	const firstDay = plainDateAt(instantFromDate(params.startDate), requestedZone);
+	const lastDay = plainDateAt(instantFromDate(params.endDate), requestedZone);
+	if (comparePlainDates(firstDay, lastDay) > 0) return {};
+
 	const assignedShifts = await Effect.runPromise(
 		params.database.query("getPublishedShiftsForCalendarRequirements", async () => {
-			return params.database.db
+			const organizationTimezone = await loadOrganizationTimezone(
+				params.database.db,
+				params.organizationId,
+			);
+			const bounds = shiftDateRangeBounds(firstDay, lastDay.add({ days: 1 }), organizationTimezone);
+			const shifts = await params.database.db
 				.select({
 					date: shift.date,
 					startTime: shift.startTime,
@@ -334,16 +353,17 @@ async function getPublishedShiftRequirementsForEmployee(params: {
 						eq(shift.employeeId, params.employeeId),
 						eq(shift.organizationId, params.organizationId),
 						eq(shift.status, "published"),
-						gte(shift.date, params.startDate),
-						lte(shift.date, params.endDate),
+						gte(shift.date, bounds.start),
+						lt(shift.date, bounds.endExclusive),
 					),
 				);
+			return { organizationTimezone, shifts };
 		}),
 	);
 
 	return buildShiftDailyWorkRequirements({
-		shifts: assignedShifts,
-		timezone: params.timezone,
+		shifts: assignedShifts.shifts,
+		organizationTimezone: assignedShifts.organizationTimezone,
 	});
 }
 

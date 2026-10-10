@@ -221,9 +221,11 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"allocation_kind",
+				"is_billable",
 				"organization_id",
 				"project_id",
 				"record_id",
+				"task_id",
 				"weight_percent",
 			],
 			functionName: "createForCompletedPeriodInTransaction",
@@ -438,9 +440,11 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 				"cost_center_id",
 				"created_at",
 				"id",
+				"is_billable",
 				"organization_id",
 				"project_id",
 				"record_id",
+				"task_id",
 				"weight_percent",
 			],
 			functionName: "applyPolicyClockOutTerminalBreakInTransaction",
@@ -569,9 +573,11 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"allocation_kind",
+				"is_billable",
 				"organization_id",
 				"project_id",
 				"record_id",
+				"task_id",
 				"weight_percent",
 			],
 			functionName: "amendCompletedWork",
@@ -626,9 +632,11 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"allocation_kind",
+				"is_billable",
 				"organization_id",
 				"project_id",
 				"record_id",
+				"task_id",
 				"weight_percent",
 			],
 			functionName: "insertProject",
@@ -706,9 +714,11 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"allocation_kind",
+				"is_billable",
 				"organization_id",
 				"project_id",
 				"record_id",
+				"task_id",
 				"weight_percent",
 			],
 			functionName: "closeActiveWorkGraph",
@@ -759,6 +769,21 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			semantic: "policy_clock_out_terminal_break",
 			table: "time_record_work",
 		},
+		// The reviewed row's project attribution and billability (#900).
+		{
+			columns: [
+				"allocation_kind",
+				"is_billable",
+				"organization_id",
+				"project_id",
+				"record_id",
+				"weight_percent",
+			],
+			functionName: "recordImportedWork",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_allocation",
+		},
 		{
 			columns: [
 				"approval_status",
@@ -806,9 +831,11 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"allocation_kind",
+				"is_billable",
 				"organization_id",
 				"project_id",
 				"record_id",
+				"task_id",
 				"weight_percent",
 			],
 			functionName: "recordManualWork",
@@ -830,6 +857,25 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			functionName: "recordManualWork",
 			operation: "insert",
 			table: "work_period",
+		},
+	],
+	// The legacy project change (#900) moves the canonical project allocation with the
+	// period inside the coordinated completed-work transaction, so both agree.
+	"src/lib/time-tracking/work-period-attribution.ts": [
+		{
+			columns: [
+				"allocation_kind",
+				"is_billable",
+				"organization_id",
+				"project_id",
+				"record_id",
+				"task_id",
+				"weight_percent",
+			],
+			functionName: "changeLegacyWorkPeriodProject",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_allocation",
 		},
 	],
 	// Calendar splits (#304) divide one completed period inside the outer completed-work
@@ -860,9 +906,11 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			columns: [
 				"allocation_kind",
 				"cost_center_id",
+				"is_billable",
 				"organization_id",
 				"project_id",
 				"record_id",
+				"task_id",
 				"weight_percent",
 			],
 			functionName: "splitCompletedWork",
@@ -941,9 +989,11 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			columns: [
 				"allocation_kind",
 				"cost_center_id",
+				"is_billable",
 				"organization_id",
 				"project_id",
 				"record_id",
+				"task_id",
 				"weight_percent",
 			],
 			functionName: "adjustAutomaticBreakInTransaction",
@@ -1216,9 +1266,11 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 			columns: [
 				"allocation_kind",
 				"cost_center_id",
+				"is_billable",
 				"organization_id",
 				"project_id",
 				"record_id",
+				"task_id",
 				"weight_percent",
 			],
 			functionName: "applyLegacyAutomaticBreakInTransaction",

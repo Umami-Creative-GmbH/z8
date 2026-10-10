@@ -339,12 +339,13 @@ export async function getPayrollExportConfig(
 }
 
 /**
- * Get wage type mappings for a configuration
+ * Get an organization's wage type mappings. One set serves every export format;
+ * each format reads its own code column (`wageTypeCodeFor`).
  */
-export async function getWageTypeMappings(configId: string): Promise<WageTypeMapping[]> {
+export async function getWageTypeMappings(organizationId: string): Promise<WageTypeMapping[]> {
 	const mappings = await db.query.payrollWageTypeMapping.findMany({
 		where: and(
-			eq(payrollWageTypeMapping.configId, configId),
+			eq(payrollWageTypeMapping.organizationId, organizationId),
 			eq(payrollWageTypeMapping.isActive, true),
 		),
 		with: {
@@ -622,6 +623,19 @@ function serializeFilters(filters: PayrollExportFilters) {
 		teamIds: filters.teamIds,
 		projectIds: filters.projectIds,
 	};
+}
+
+/**
+ * The employees whose expense amounts a payroll run carries (#852): the
+ * export's employee set, so a payroll access holder's run covers only their
+ * payroll scope. An explicitly empty selection covers nobody.
+ */
+export async function resolvePayrollRunEmployeeIds(
+	organizationId: string,
+	filters: PayrollExportFilters,
+): Promise<string[]> {
+	if (hasEmptyEmployeeScope(filters)) return [];
+	return resolveExportEmployeeIds(organizationId, filters);
 }
 
 /** Employees an export covers: the explicit selection, else the organization (optionally by team). */

@@ -66,6 +66,7 @@ export enum AuditAction {
 	TRAVEL_EXPENSE_CONVERSION_RECORDED = "travel_expense.conversion_recorded",
 	TRAVEL_EXPENSE_CONVERSION_REMOVED = "travel_expense.conversion_removed",
 	TRAVEL_EXPENSE_REIMBURSEMENT_CURRENCY_UPDATED = "travel_expense.reimbursement_currency_updated",
+	TRAVEL_EXPENSE_REIMBURSEMENT_CHANNEL_CHANGED = "travel_expense.reimbursement_channel_changed",
 	TRAVEL_EXPENSE_POLICY_VERSION_ACTIVATED = "travel_expense.policy_version_activated",
 	TRAVEL_EXPENSE_POLICY_VERSION_WITHDRAWN = "travel_expense.policy_version_withdrawn",
 	TRAVEL_EXPENSE_REFERENCE_RATE_APPROVED = "travel_expense.reference_rate_approved",
@@ -85,6 +86,7 @@ export enum AuditAction {
 	TRAVEL_EXPENSE_RECOVERY_RECORDED = "travel_expense.recovery_recorded",
 	TRAVEL_EXPENSE_ALLOWANCE_OVERRIDE_AUTHORIZED = "travel_expense.allowance_override_authorized",
 	TRAVEL_EXPENSE_ALLOWANCE_OVERRIDE_REVOKED = "travel_expense.allowance_override_revoked",
+	TRAVEL_EXPENSE_PAYROLL_RUN_REPORT_REMOVED = "travel_expense.payroll_run_report_removed",
 
 	// Approval Escalation Management
 	APPROVAL_ESCALATION_POLICY_UPDATED = "approval_escalation.policy_updated",
@@ -110,10 +112,39 @@ export enum AuditAction {
 	PAYROLL_ACCESS_GRANT_CHANGED = "payroll_access.grant_changed",
 	PAYROLL_ACCESS_GRANT_REVOKED = "payroll_access.grant_revoked",
 
+	// Payroll Export Operations (#851)
+	PAYROLL_EXPENSE_WAGE_TYPE_CHANGED = "payroll_export.expense_wage_type_changed",
+	// #852
+	PAYROLL_RUN_DISCARDED = "payroll_export.payroll_run_discarded",
+
+	// Position Capture Operations (#825)
+	POSITION_CAPTURE_SETTINGS_CHANGED = "position_capture.settings_changed",
+	POSITION_CAPTURE_ASSIGNMENT_SET = "position_capture.assignment_set",
+	POSITION_CAPTURE_ASSIGNMENT_REMOVED = "position_capture.assignment_removed",
+
 	// Expense Officer Grant Operations
 	EXPENSE_OFFICER_GRANT_CREATED = "expense_officer.grant_created",
 	EXPENSE_OFFICER_GRANT_CHANGED = "expense_officer.grant_changed",
 	EXPENSE_OFFICER_GRANT_REVOKED = "expense_officer.grant_revoked",
+
+	// Personnel File Operations (#865)
+	PERSONNEL_FILE_DOCUMENT_UPLOADED = "personnel_file.document_uploaded",
+	PERSONNEL_FILE_DOCUMENT_UPDATED = "personnel_file.document_updated",
+	PERSONNEL_FILE_VISIBILITY_CHANGED = "personnel_file.visibility_changed",
+	PERSONNEL_FILE_DOCUMENT_DELETED = "personnel_file.document_deleted",
+	PERSONNEL_FILE_DOCUMENT_VIEWED = "personnel_file.document_viewed",
+	PERSONNEL_FILE_DOCUMENT_DOWNLOADED = "personnel_file.document_downloaded",
+	// Personnel file officer grants (#866)
+	PERSONNEL_FILE_GRANT_CREATED = "personnel_file.grant_created",
+	PERSONNEL_FILE_GRANT_CHANGED = "personnel_file.grant_changed",
+	PERSONNEL_FILE_GRANT_REVOKED = "personnel_file.grant_revoked",
+	// Payslip batches (#868)
+	PERSONNEL_FILE_PAYSLIP_BATCH_CONFIRMED = "personnel_file.payslip_batch_confirmed",
+	PERSONNEL_FILE_DOCUMENT_PURGED = "personnel_file.document_purged",
+	PERSONNEL_FILE_RETENTION_CHANGED = "personnel_file.retention_changed",
+	// Personnel file ZIP download (#871)
+	PERSONNEL_FILE_ZIP_DOWNLOADED = "personnel_file.zip_downloaded",
+	PERSONNEL_FILE_ZIP_DOWNLOAD_ABORTED = "personnel_file.zip_download_aborted",
 
 	// App Access Operations
 	APP_ACCESS_GRANTED = "app_access.granted",
@@ -146,8 +177,35 @@ export enum AuditAction {
 	PROJECT_MANAGER_REMOVED = "project.manager_removed",
 	PROJECT_ASSIGNMENT_ADDED = "project.assignment_added",
 	PROJECT_ASSIGNMENT_REMOVED = "project.assignment_removed",
+	PROJECT_TASK_CREATED = "project.task_created",
+	PROJECT_TASK_UPDATED = "project.task_updated",
+	PROJECT_TASK_DONE = "project.task_done",
+	PROJECT_TASK_REOPENED = "project.task_reopened",
+	PROJECT_TASK_DELETED = "project.task_deleted",
+	PROJECT_TEMPLATE_CREATED = "project_template.created",
+	PROJECT_TEMPLATE_UPDATED = "project_template.updated",
+	PROJECT_TEMPLATE_DELETED = "project_template.deleted",
 	WORK_PERIOD_PROJECT_ASSIGNED = "work_period.project_assigned",
 	WORK_PERIOD_PROJECT_UNASSIGNED = "work_period.project_unassigned",
+
+	// Billable Time Operations (#768; not the Z8 subscription)
+	BILLABLE_RATE_SET = "billable_time.rate_set",
+	BILLABLE_RATE_ENDED = "billable_time.rate_ended",
+	COST_RATE_SET = "billable_time.cost_rate_set",
+	COST_RATE_ENDED = "billable_time.cost_rate_ended",
+	ACCOUNTING_CONNECTION_CREATED = "billable_time.accounting_connection_created",
+	ACCOUNTING_CONNECTION_REPLACED = "billable_time.accounting_connection_replaced",
+	ACCOUNTING_CONNECTION_UPDATED = "billable_time.accounting_connection_updated",
+	ACCOUNTING_CONNECTION_REMOVED = "billable_time.accounting_connection_removed",
+	CONTACT_LINK_SET = "billable_time.contact_link_set",
+	CONTACT_LINK_REMOVED = "billable_time.contact_link_removed",
+	CUSTOMER_TAX_TREATMENT_SET = "billable_time.customer_tax_treatment_set",
+	CUSTOMER_TAX_TREATMENT_CLEARED = "billable_time.customer_tax_treatment_cleared",
+	INVOICE_DRAFT_STARTED = "billable_time.invoice_draft_started",
+	INVOICE_DRAFT_CREATED = "billable_time.invoice_draft_created",
+	INVOICE_DRAFT_FAILED = "billable_time.invoice_draft_failed",
+	INVOICE_DRAFT_RELEASED = "billable_time.invoice_draft_released",
+	INVOICED_WORK_MARK_CLEARED = "billable_time.invoiced_work_mark_cleared",
 
 	// Location Operations
 	LOCATION_CREATED = "location.created",
@@ -215,6 +273,15 @@ export interface AuditLogEntry {
 		| "customer"
 		| "project"
 		| "project_assignment"
+		| "billable_rate"
+		| "cost_rate"
+		| "accounting_connection"
+		| "accounting_contact_link"
+		| "customer_tax_treatment"
+		| "invoice_draft"
+		| "invoiced_work"
+		| "project_task"
+		| "project_template"
 		| "work_period"
 		| "location"
 		| "subarea"

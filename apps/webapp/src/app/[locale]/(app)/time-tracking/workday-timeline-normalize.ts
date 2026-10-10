@@ -1,4 +1,6 @@
 import { DateTime } from "luxon";
+import { dateFromInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { shiftInterval } from "@/lib/scheduling/shift-occasion";
 import { formatTimeInZone } from "@/lib/time-tracking/timezone-utils";
 import { formatTimeStringForPreference, type TimeFormat } from "@/lib/user-preferences/time-format";
 import type {
@@ -27,6 +29,7 @@ export interface WorkdayWorkPeriodSource {
 
 export interface WorkdayShiftSource {
 	id: string;
+	/** The organization-local calendar date, `YYYY-MM-DD`. */
 	date: string;
 	startTime: string;
 	endTime: string;
@@ -58,6 +61,8 @@ export interface WorkdayPendingRequestSource {
 export interface NormalizeWorkdayTimelineInput {
 	selectedDate: SelectedWorkdayDate;
 	timezone: string;
+	/** The zone shift dates and wall times are read in. */
+	organizationTimezone: string;
 	timeFormat?: TimeFormat;
 	workPeriods: WorkdayWorkPeriodSource[];
 	shifts: WorkdayShiftSource[];
@@ -68,6 +73,7 @@ export interface NormalizeWorkdayTimelineInput {
 export function normalizeWorkdayTimeline({
 	selectedDate,
 	timezone,
+	organizationTimezone,
 	timeFormat = "24h",
 	workPeriods,
 	shifts,
@@ -87,7 +93,7 @@ export function normalizeWorkdayTimeline({
 	}));
 	const timedItems = [
 		...shifts.map<WorkdayTimelineItem>((shift) => {
-			const { startTime, endTime } = getShiftDateTimes(shift, timezone);
+			const { startTime, endTime } = getShiftDateTimes(shift, organizationTimezone);
 
 			return {
 				id: `shift:${shift.id}`,
@@ -190,22 +196,17 @@ function getWorkPeriodWarnings(period: WorkdayWorkPeriodSource): WorkdayTimeline
 
 function getShiftDateTimes(
 	shift: WorkdayShiftSource,
-	timezone: string,
+	organizationTimezone: string,
 ): { startTime: Date; endTime: Date } {
-	const startDateTime = getShiftDateTime(shift.date, shift.startTime, timezone);
-	const parsedEndDateTime = getShiftDateTime(shift.date, shift.endTime, timezone);
-	const endDateTime =
-		parsedEndDateTime <= startDateTime ? parsedEndDateTime.plus({ days: 1 }) : parsedEndDateTime;
+	const interval = shiftInterval(
+		{ date: parsePlainDate(shift.date), startTime: shift.startTime, endTime: shift.endTime },
+		organizationTimezone,
+	);
 
 	return {
-		startTime: startDateTime.toJSDate(),
-		endTime: endDateTime.toJSDate(),
+		startTime: dateFromInstant(interval.start),
+		endTime: dateFromInstant(interval.end),
 	};
-}
-
-function getShiftDateTime(date: string, time: string, timezone: string): DateTime {
-	const dateTime = DateTime.fromISO(`${date}T${time}`, { zone: timezone });
-	return dateTime.isValid ? dateTime : DateTime.fromISO(`${date}T${time}`);
 }
 
 function compareTimedItems(

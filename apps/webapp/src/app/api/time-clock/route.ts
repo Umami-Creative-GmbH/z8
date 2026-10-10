@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { clockIn, clockOut } from "@/app/[locale]/(app)/time-tracking/actions/clocking";
+import { namedTaskId } from "@/lib/time-tracking/task-attribution";
 import { WORK_LOCATION_TYPES } from "@/lib/time-tracking/work-location";
 
 /**
@@ -11,6 +12,12 @@ import { WORK_LOCATION_TYPES } from "@/lib/time-tracking/work-location";
  * contract for the web time clock. Keep the contract backwards compatible:
  * clients from the previous deployment still post here.
  */
+/**
+ * The position taken at the clock event (#826). Read by the clock action, which
+ * drops a malformed one: a position never refuses the clock event.
+ */
+const position = z.unknown().optional();
+
 const timeClockSchema = z.discriminatedUnion("action", [
 	z.object({
 		action: z.literal("clock_in"),
@@ -18,14 +25,20 @@ const timeClockSchema = z.discriminatedUnion("action", [
 		submissionId: z.uuid().optional(),
 		workLocationType: z.enum(WORK_LOCATION_TYPES).optional(),
 		browserTimezone: z.string().nullish(),
+		position,
 	}),
 	z.object({
 		action: z.literal("clock_out"),
 		submissionId: z.uuid(),
 		// Omitted keeps the active period's attribution; null clears it explicitly.
 		projectId: z.string().min(1).nullable().optional(),
+		// A task of the project (#874). Omitted, the task follows the project.
+		taskId: z.string().min(1).nullable().optional(),
 		workCategoryId: z.string().min(1).nullable().optional(),
+		// Omitted applies the project's billable default (#900).
+		billable: z.boolean().optional(),
 		browserTimezone: z.string().nullish(),
+		position,
 	}),
 ]);
 
@@ -55,16 +68,23 @@ export async function POST(request: Request) {
 	}
 
 	const body = parsedBody.data;
+	// Positions come only from the browser's session cookie; a bearer client's
+	// clock event goes ahead unstamped, as on the frozen command route (#826 D5).
+	const position = request.headers.has("authorization") ? undefined : body.position;
 	try {
 		const result =
 			body.action === "clock_in"
 				? await clockIn(body.workLocationType, {
 						browserTimezone: body.browserTimezone,
 						submissionId: body.submissionId,
+						position,
 					})
 				: await clockOut(body.projectId, body.workCategoryId, {
 						browserTimezone: body.browserTimezone,
 						submissionId: body.submissionId,
+						...namedTaskId(body.taskId),
+						position,
+						...(body.billable === undefined ? {} : { billable: body.billable }),
 					});
 
 		return NextResponse.json(result, { status: result.success ? 200 : 422 });

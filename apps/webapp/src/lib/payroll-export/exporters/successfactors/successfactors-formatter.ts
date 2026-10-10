@@ -11,8 +11,10 @@
  */
 import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
+import { expenseLinesInFileOrder } from "../../formatters/expense-lines";
 import type {
 	AbsenceData,
+	ExpenseLineData,
 	ExportResult,
 	IPayrollExportFormatter,
 	WageTypeMapping,
@@ -20,6 +22,7 @@ import type {
 } from "../../types";
 import { aggregateAbsencesForCSV } from "./shared/absence-transformer";
 import { validateSuccessFactorsConfig } from "./shared/config-validator";
+import { getEmployeeIdentifier } from "./shared/employee-matcher";
 import { aggregateWorkPeriodsForCSV } from "./shared/time-transformer";
 import type { SuccessFactorsConfig } from "./types";
 import { DEFAULT_SUCCESSFACTORS_CONFIG } from "./types";
@@ -27,6 +30,9 @@ import { DEFAULT_SUCCESSFACTORS_CONFIG } from "./types";
 const logger = createLogger("SuccessFactorsFormatter");
 
 const SYNC_THRESHOLD = 500;
+
+/** Comment of an expense money line (#852). */
+const EXPENSE_LINE_COMMENT = "Expense reimbursement";
 
 /**
  * SAP SuccessFactors CSV Formatter
@@ -47,6 +53,7 @@ export class SuccessFactorsFormatter implements IPayrollExportFormatter {
 	transform(
 		workPeriods: WorkPeriodData[],
 		absences: AbsenceData[],
+		expenseLines: ExpenseLineData[],
 		mappings: WageTypeMapping[],
 		config: Record<string, unknown>,
 	): ExportResult {
@@ -73,6 +80,9 @@ export class SuccessFactorsFormatter implements IPayrollExportFormatter {
 
 		// Generate CSV content
 		const lines: string[] = [];
+		// Expense money lines (#852) need their own amount columns; hours-only files keep their shape.
+		const withAmounts = expenseLines.length > 0;
+		const amountColumns = withAmounts ? ["", ""] : [];
 
 		// Header row - SAP SuccessFactors import format
 		lines.push(
@@ -82,6 +92,7 @@ export class SuccessFactorsFormatter implements IPayrollExportFormatter {
 				this.escapeCSV("Time Type"),
 				this.escapeCSV("Hours"),
 				this.escapeCSV("Comment"),
+				...(withAmounts ? [this.escapeCSV("Amount"), this.escapeCSV("Currency")] : []),
 			].join(";"),
 		);
 
@@ -99,15 +110,42 @@ export class SuccessFactorsFormatter implements IPayrollExportFormatter {
 
 				for (const [timeType, data] of sortedTimeTypes) {
 					if (data.hours > 0 || sfConfig.includeZeroHours) {
-						lines.push(this.generateDataRow(userId, dateStr, timeType, data.hours, data.note));
+						lines.push(
+							[
+								this.generateDataRow(userId, dateStr, timeType, data.hours, data.note),
+								...amountColumns.map((value) => this.escapeCSV(value)),
+							].join(";"),
+						);
 					}
 				}
 			}
 		}
 
+		// Expense lines carry no hours. An employee the strategy cannot match keeps their
+		// internal id, so the import reports the line instead of the file dropping money.
+		for (const { personnelNumber, line } of expenseLinesInFileOrder(
+			expenseLines,
+			(line) => getEmployeeIdentifier(line, sfConfig.employeeMatchStrategy) ?? line.employeeId,
+		)) {
+			lines.push(
+				[
+					personnelNumber,
+					line.date,
+					line.wageTypeCode,
+					"",
+					EXPENSE_LINE_COMMENT,
+					line.amount,
+					line.currency,
+				]
+					.map((value) => this.escapeCSV(value))
+					.join(";"),
+			);
+		}
+
 		// Calculate metadata
 		const uniqueEmployees = new Set(workPeriods.map((p) => p.employeeId));
 		absences.forEach((a) => uniqueEmployees.add(a.employeeId));
+		for (const line of expenseLines) uniqueEmployees.add(line.employeeId);
 
 		const dateRange = this.getDateRange(workPeriods, absences);
 		const fileName = this.generateFileName(dateRange);

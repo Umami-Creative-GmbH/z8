@@ -320,6 +320,40 @@
       "pagination": "Paginierung"
     },
     "pending": "Ausstehend",
+    "positionCaptureErrors": {
+      "adminOnly": "Nur Inhaber und Administratoren der Organisation können die Standorterfassung verwalten.",
+      "assignmentNotFound": "Diese Zuweisung existiert nicht mehr.",
+      "employeeNotFound": "Dieser Mitarbeiter wurde nicht gefunden.",
+      "employeeProfileRequired": "Ein Mitarbeiterprofil in dieser Organisation ist erforderlich.",
+      "invalidTarget": "Wählen Sie aus, für wen die Zuweisung gilt.",
+      "noticeChanged": "Der Standorthinweis hat sich geändert. Prüfen Sie den aktuellen Hinweis, bevor Sie eine Entscheidung treffen.",
+      "positionsForbidden": "Sie sind nicht berechtigt, die Standorte dieses Arbeitszeitraums einzusehen.",
+      "purposeRequired": "Eine Zweckangabe ist erforderlich, bevor die Standorterfassung aktiviert werden kann.",
+      "purposeTooLong": "Die Zweckangabe ist zu lang.",
+      "retentionOutOfRange": "Die Aufbewahrungsdauer muss eine ganze Anzahl von Tagen zwischen {min} und {max} sein.",
+      "signInRequired": "Melden Sie sich zuerst bei einer Organisation an.",
+      "teamNotFound": "Dieses Team wurde nicht gefunden.",
+      "workPeriodNotFound": "Dieser Arbeitszeitraum wurde nicht gefunden."
+    },
+    "positionConsent": {
+      "agree": "Zustimmen",
+      "description": "Ihre Organisation bittet darum, den Standort Ihres Geräts zu erfassen, wenn Sie sich ein- oder ausstempeln oder eine Pause machen. Ihr Stempelvorgang wurde in jedem Fall erfasst. Wenn Sie zustimmen, werden Standorte ab Ihrem nächsten Stempelvorgang erfasst.",
+      "notNow": "Nicht jetzt",
+      "title": "Standort bei Stempelvorgängen erfassen?"
+    },
+    "positionNotice": {
+      "never": "Ausstempelungen, die von jemand anderem für Sie vorgenommen wurden, automatische Ausstempelungen, Importe und Korrekturen enthalten niemals einen Standort. Wenn Ihr Gerät keinen Standort bereitstellen kann, wird Ihr Stempelvorgang ohne Standort erfasst, und es wird kein Grund dafür gespeichert.",
+      "purposeTitle": "Warum Ihre Organisation Standorte erfasst",
+      "retention": "{days, plural, one {Jeder Standort wird # Tag nach der Erfassung gelöscht. Ihre Stempelvorgänge bleiben erhalten.} other {Jeder Standort wird # Tage nach der Erfassung gelöscht. Ihre Stempelvorgänge bleiben erhalten.}}",
+      "retentionTitle": "Wie lange Standorte gespeichert werden",
+      "version": "Standorthinweis, Version {version}",
+      "viewers": "Sie können Ihre eigenen Standorte sehen. Organisationsinhaber und -admins sowie Personen mit ausdrücklicher Berechtigung können sie für einen einzelnen Arbeitszeitraum sehen, und jede solche Ansicht wird protokolliert, damit Sie sie einsehen können. Die Rolle als Ihre Führungskraft gewährt keinen Zugriff. Der Betriebsrat sieht niemals einzelne Standorte.",
+      "viewersTitle": "Wer Standorte sehen kann",
+      "what": "Wenn Sie sich in der Z8-Web-App auf Ihrem Gerät ein- oder ausstempeln, eine Pause beginnen oder beenden, wird der Standort Ihres Geräts mit diesem Stempelvorgang erfasst: Breitengrad, Längengrad, die Genauigkeit der Position und der Zeitpunkt der Ermittlung durch das Gerät. Es werden keine Adresse, Höhe oder Geschwindigkeit erfasst, und zwischen Stempelvorgängen wird nichts erfasst.",
+      "whatTitle": "Was erfasst wird",
+      "withdraw": "Standorte werden nur erfasst, solange Sie zustimmen. Sie können Ihre Zustimmung jederzeit unter Einstellungen, Standortstempel widerrufen. Ein Widerruf stoppt die Erfassung und löscht unverzüglich alle Ihre erfassten Standorte. Ob Sie zustimmen, hat keine Auswirkungen auf Ihre Stempelvorgänge.",
+      "withdrawTitle": "Ihre Entscheidung"
+    },
     "present": "Vorhanden",
     "previous": "Zurück",
     "recovering": "Wiederherstellung läuft...",
@@ -400,6 +434,43 @@
       "identityHidden": "Identität verborgen",
       "insufficientData": "Unzureichende Daten",
       "policyChanges": "Richtlinienänderungen",
+      "positionStamps": {
+        "accessAt": "Wann",
+        "accessEmployees": "Standorte von",
+        "accessKindDetail": "{count, plural, one {Arbeitszeitraum-Details (# Arbeitszeitraum)} other {Arbeitszeitraum-Details (# Arbeitszeiträume)}}",
+        "accessKindExport": "Datenexport",
+        "accessLog": "Standort-Zugriffsprotokoll",
+        "accessLogDescription": "Jedes Mal, wenn jemand anderes als der Mitarbeiter Standorte eingesehen oder exportiert hat, neueste zuerst.",
+        "accessLogEmpty": "Niemand hat Standorte eingesehen.",
+        "accessViewer": "Eingesehen von",
+        "consentActive": "Aktive Einwilligung",
+        "consentDescription": "{count, plural, one {Unter dem # aktiven Mitarbeiter, für den die Erfassung aktiviert ist. Zu „Unentschieden“ gehören Mitarbeiter, die „Nicht jetzt“ gewählt oder nur einer früheren Hinweisversion zugestimmt haben.} other {Unter den # aktiven Mitarbeitern, für die die Erfassung aktiviert ist. Zu „Unentschieden“ gehören Mitarbeiter, die „Nicht jetzt“ gewählt oder nur einer früheren Hinweisversion zugestimmt haben.}}",
+        "consentTitle": "Standorteinwilligung",
+        "consentUndecided": "Unentschieden",
+        "consentWithdrawn": "Widerrufen",
+        "currentNotice": "Aktueller Hinweis",
+        "deletedViewer": "Ein gelöschter Benutzer",
+        "description": "Wie die Organisation die Standorte der Mitarbeiter bei deren Zeiterfassungsereignissen erfasst und wer diese eingesehen hat. Der Betriebsrat sieht niemals einzelne Standorte.",
+        "employeeAssignmentCounts": "{on} aktiviert, {off} individuell deaktiviert",
+        "employeeAssignments": "Mitarbeiterzuweisungen",
+        "employeeCount": "{count, plural, other {# Mitarbeiter} }",
+        "employeePseudonym": "Mitarbeiter {ref}",
+        "enabled": "Erfassung",
+        "noEmployeeAssignments": "Keine Mitarbeiterzuweisungen.",
+        "noNotice": "Es wurde kein Hinweis veröffentlicht.",
+        "notAssigned": "Nicht zugewiesen",
+        "noTeamAssignments": "Keine Teamzuweisungen.",
+        "noticeHistory": "Hinweisversionen",
+        "noticeVersion": "{days, plural, one {Version {version}, veröffentlicht {publishedAt}, Standorte # Tag aufbewahrt} other {Version {version}, veröffentlicht {publishedAt}, Standorte # Tage aufbewahrt}}",
+        "off": "Aus",
+        "on": "Ein",
+        "organizationAssignment": "Gesamte Organisation",
+        "retention": "Aufbewahrung",
+        "retentionDays": "{days, plural, one {# Tag} other {# Tage}}",
+        "teamAssignments": "Teamzuweisungen",
+        "title": "Standorterfassung",
+        "viewerPseudonym": "Viewer {ref}"
+      },
       "scheduleChanges": "Dienstplanänderungen",
       "scheduleDescription": "Datenschutzgefilterte Dienstplaneinträge für den ausgewählten Zeitraum.",
       "scheduleEmpty": "Keine Dienstplaneinträge für diesen Zeitraum gefunden.",
@@ -505,9 +576,11 @@
     "finance": "Finanzen",
     "financeAwaiting": "{count, plural, one {# Ausgabe wartet auf Erstattung} other {# Ausgaben warten auf Erstattung}}",
     "get-help": "Hilfe",
+    "my-documents": "Meine Dokumente",
     "my-requests": "Meine Anfragen",
     "org-explorer": "Organisations-Explorer",
     "payroll": "Lohnabrechnung",
+    "personnel-files": "Personalakten",
     "platform-admin": "Plattform-Administrator",
     "reports": "Berichte",
     "scheduling": "Planung",
@@ -545,6 +618,10 @@
         "message": "Du wurdest nach {duration} Minuten ununterbrochener Arbeit am {cutoff} ({timezone}) automatisch ausgestempelt, weil das Zeitlimit deiner Organisation erreicht wurde.",
         "title": "Automatisch ausgestempelt"
       },
+      "breakDueReminder": {
+        "message": "Ihre Pause ist um {breakTime} ({timezone}) fällig. Machen Sie bis dahin eine Pause, um die Pausenregeln Ihrer Arbeitsrichtlinie einzuhalten.",
+        "title": "Bald Zeit für eine Pause"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Genehmigungsaufgaben erfordern eine Vertretung (Austritt wirksam {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Prüfung erforderlich: Offboarding-Ausstempeln (Austritt wirksam {cutoff}, {timezone}).",
@@ -553,12 +630,53 @@
         "future_work": "{employeeName}: Zukünftige Arbeit muss überprüft werden (Austritt wirksam {cutoff}, {timezone}).",
         "title": "Offboarding benötigt eine Prüfung"
       },
+      "forgottenClockOutReminder": {
+        "message": "Ihre Schicht endete um {endTime} ({timezone}). Stempeln Sie aus, wenn Sie Ihre Arbeit beendet haben.",
+        "title": "Sie sind noch eingestempelt"
+      },
+      "missedClockInReminder": {
+        "message": "Ihre Schicht hat um {startTime} ({timezone}) begonnen. Stempeln Sie ein, wenn Sie arbeiten.",
+        "title": "Sie haben sich noch nicht eingestempelt"
+      },
       "newAbsenceRequest": {
         "title": "Neuer Abwesenheitsantrag"
       },
       "passwordChanged": {
         "message": "Ihr Passwort wurde erfolgreich geändert. Falls Sie diese Änderung nicht vorgenommen haben, kontaktieren Sie bitte umgehend den Support.",
         "title": "Passwort geändert"
+      },
+      "personnelFileDocumentShared": {
+        "message": "Das Dokument \"{title}\" wurde mit Ihnen geteilt.",
+        "title": "Neues Dokument in Ihrer Personalakte"
+      },
+      "personnelFileDueForDeletion": {
+        "message": "{count, plural, one {# Mitarbeiterdokument ist jetzt zur Löschung fällig. Überprüfen und bestätigen Sie die endgültige Löschung.} other {# Mitarbeiterdokumente sind jetzt zur Löschung fällig. Überprüfen und bestätigen Sie die endgültige Löschung.}}",
+        "title": "Zur Löschung fällige Dokumente"
+      },
+      "personnelFileEmployeeUpload": {
+        "certificate": "{name} hat ein Zertifikat hochgeladen",
+        "other": "{name} hat ein Dokument hochgeladen",
+        "title": "Neues Dokument in einer Personalakte"
+      },
+      "personnelFileExpiredToday": {
+        "employeeMessage": "Ihr Dokument \"{title}\" läuft heute ab.",
+        "message": "Das Dokument \"{title}\" von {employee} läuft heute ab.",
+        "title": "Ein Dokument läuft heute ab"
+      },
+      "personnelFileExpiryUpcoming": {
+        "employeeMessage": "Ihr Dokument \"{title}\" läuft am {expiryDate} ab.",
+        "message": "Das Dokument \"{title}\" von {employee} läuft am {expiryDate} ab.",
+        "title": "Ein Dokument läuft bald ab"
+      },
+      "personnelFilePayslipsShared": {
+        "message": "Ihre Gehaltsabrechnung für {payPeriod} wurde mit Ihnen geteilt.",
+        "title": "Neue Gehaltsabrechnung in Ihrer Personalakte"
+      },
+      "policyForgottenClockOutReminder": {
+        "message": "Sie haben die erforderlichen Stunden für {day} um {endTime} ({timezone}) erreicht. Stempeln Sie aus, wenn Sie Ihre Arbeit beendet haben."
+      },
+      "policyMissedClockInReminder": {
+        "message": "Ihre letzte Einstempelung heute war um {startTime} ({timezone}). Stempeln Sie ein, wenn Sie arbeiten."
       },
       "shiftAssigned": {
         "message": "Ihnen wurde von {assignedByName} eine Schicht am {shiftDate} von {startTime} bis {endTime} zugewiesen.",
@@ -613,6 +731,10 @@
     },
     "preferences": {
       "categories": {
+        "personnelFile": {
+          "description": "Benachrichtigungen über Dokumente, die in Ihrer Personalakte geteilt wurden",
+          "title": "Personalakte"
+        },
         "travelExpenses": {
           "description": "Benachrichtigungen über Erstattungen und Rückforderungen Ihrer Reisekosten",
           "title": "Reisekosten"
@@ -646,6 +768,11 @@
         "errorToast": "Fehler bei Push-Benachrichtigung"
       },
       "toggleAria": "{channel}-Benachrichtigungen für {type}",
+      "types": {
+        "break_due_reminder": "Pause fällig",
+        "forgotten_clock_out_reminder": "Vergessenes Ausstempeln",
+        "missed_clock_in_reminder": "Verpasstes Einstempeln"
+      },
       "updateFailed": "Einstellung konnte nicht aktualisiert werden"
     },
     "search": {

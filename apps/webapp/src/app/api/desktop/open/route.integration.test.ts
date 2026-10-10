@@ -93,6 +93,9 @@ const url =
 describe("desktop context and browser handoff", () => {
 	vi.setConfig({ testTimeout: 60000, hookTimeout: 60000 });
 	it("returns the authenticated employee's day basis, language and eligible projects only", async () => {
+		await admin.query(
+			"update organization set projects_enabled=true where id='t780-org'",
+		);
 		const response = await metadata.GET();
 		expect(response.status).toBe(200);
 		expect(response.headers.get("Cache-Control")).toBe("private, no-store");
@@ -105,6 +108,28 @@ describe("desktop context and browser handoff", () => {
 			projects: [{ id: project, name: "Assigned" }],
 			categories: [],
 		});
+	});
+	it("omits assigned projects when project tracking is disabled for the tenant", async () => {
+		const response = await metadata.GET();
+		expect(response.status).toBe(200);
+		expect(await response.json()).toMatchObject({
+			projectsEnabled: false,
+			projects: [],
+			categories: [],
+		});
+	});
+	it("opens the dashboard after confirming the same account and organization", async () => {
+		const destination = url.replace("section=time", "section=dashboard");
+		expect((await browser.GET(new Request(destination))).status).toBe(200);
+		expect(session.switches).toEqual([]);
+		const response = await browser.POST(
+			new Request(destination, {
+				method: "POST",
+				headers: { origin: "http://localhost:3000" },
+			}),
+		);
+		expect(response.headers.get("Location")).toBe("http://localhost:3000/de/");
+		expect(session.switches).toEqual(["t780-org"]);
 	});
 	it("refuses metadata after membership is revoked, and refuses a signed-out request", async () => {
 		await admin.query(

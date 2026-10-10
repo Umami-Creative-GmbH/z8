@@ -73,6 +73,11 @@ export async function recordTravelExpenseRecoveryAction(
 					success: true,
 					data: { status: "refused", reason: result.reason, account: result.account },
 				};
+			case "in_payroll_run":
+				return {
+					success: true,
+					data: { status: "in_payroll_run", payrollRun: result.payrollRun },
+				};
 			case "recorded":
 				if (!result.replayed) {
 					logAudit({

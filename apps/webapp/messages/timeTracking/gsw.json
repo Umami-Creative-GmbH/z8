@@ -11,6 +11,11 @@
         "title": "Pause automatisch dezuegfüegt für d'Compliance"
       }
     },
+    "billable": {
+      "description": "Verrechebari Arbet für de Chund vom Projekt",
+      "label": "Verrechebar",
+      "noCustomer": "Nur Arbet an eme Projekt mit emne Chund cha verrechebar si"
+    },
     "budget": "Budget",
     "clockedOutSuccess": "Du häsch usgstämplet!",
     "clockIn": "Iistämple",
@@ -69,6 +74,7 @@
       "alreadyClockedIn": "Du bisch scho iigstämplet",
       "appendReviewRequired": "Fürs Iistämple mues dini Zithistorie überprüft wärde",
       "appendReviewRequiredDesc": "Dini früenerige Zitiiträg hend nid chönne überprüft wärde, drum isch kes neus Iistämple gspycheret worde. Bitte kontaktier din Administrator.",
+      "billableNotAllowed": "Nur Arbet an eme Projekt, wo en Chund hät, cha verrechebar si",
       "breakAwaitingApproval": "Dä Arbetszytruum wartet no uf d Freigab und cha nid bearbeitet wärde. Füeg d Pause dezue, sobald das erledigt isch.",
       "breakDurationInvalid": "Gib e Pauseduur vo mindestens 1 Minute ii.",
       "breakNotAllowed": "Du chasch zu däre Arbet keni Pause hinzuefüege.",
@@ -105,6 +111,11 @@
       "projectNotAllowed": "Chan däm Projekt nöd zuegordnet werde",
       "restPeriodBlocked": "Ruehziit nöd abgschlosse",
       "restPeriodBlockedDesc": "Du muesch die erforderlechi Ruehziit iihalte, bevor du dich iistemplisch. Frag en Uusnahm aa, falls nötig.",
+      "taskDone": "Die Ufgab isch erledigt, drum cha kei Ziit druf buecht werde",
+      "taskNotAllowed": "Uf die Ufgab cha kei Ziit buecht werde",
+      "taskNotFound": "Die Ufgab git s nüme",
+      "taskOtherProject": "Die Ufgab ghört zu me andere Projekt",
+      "taskProjectNotBookable": "Uf s Projekt vo dere Ufgab cha kei Ziit meh buecht werde",
       "workCategoryNotAllowed": "Chan dere Arbetskategorie nöd zuegordnet werde"
     },
     "manualEntry": {
@@ -120,6 +131,7 @@
         "retry": "Nomol probiere",
         "targetChanged": "De Mitarbeiter hät gwechslet, drum sind s Projekt und d Kategori zrugggsetzt worde.",
         "targetTimezone": "Ziite sind ir Ziitzone vo {employee}: {timezone}",
+        "taskCleared": "E usgwählti Ufgab isch nümme verfüegbar und isch entfernt worde.",
         "thisEmployee": "dä Mitarbeiter",
         "utcFallback": "Weder {employee} no d Organisation hät e Ziitzone igstellt, drum wird UTC bruucht."
       },
@@ -237,6 +249,7 @@
       "approveEntry": "Iitrag freigä",
       "approveFailed": "Iitrag hät nöd chönne freigää wärde",
       "approving": "Am freigää...",
+      "billable": "Verrechebar",
       "clockIn": "Iistämpfle",
       "clockOut": "Usstämpfle",
       "corrected": "Korrigiert",
@@ -248,6 +261,13 @@
       "rowActions": "Aktione für Ziitiiträg",
       "title": "Ziit-Iiträg",
       "viewCalendar": "Kaländer aaluege"
+    },
+    "taskPicker": {
+      "doneTask": "{name} (erledigt)",
+      "empty": "Kei Ufgab gfunde",
+      "label": "Ufgab",
+      "none": "Kei Ufgab",
+      "search": "Ufgabe sueche…"
     },
     "timeline": {
       "dayPicker": "Zytstrahl-Tagesuuswahl",

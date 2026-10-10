@@ -14,6 +14,37 @@
       "saving": "Enregistrement…",
       "title": "Dépointage automatique"
     },
+    "clockingReminders": {
+      "adminOnly": "Seuls les administrateurs et les propriétaires de l'organisation peuvent modifier ces paramètres.",
+      "breakDue": {
+        "enabled": "Rappel de pause",
+        "lead": "Minutes avant l'heure de la pause"
+      },
+      "description": "Rappeler aux employés lorsqu'ils n'ont pas pointé leur arrivée au début de leur quart publié, qu'ils sont toujours pointés après sa fin ou qu'ils sont sur le point de travailler plus longtemps que ce que permet la politique de travail sans pause.",
+      "forgottenClockOut": {
+        "enabled": "Rappel d'oubli de pointage de sortie",
+        "grace": "Minutes après la fin prévue"
+      },
+      "help": "Les vérifications sont effectuées toutes les cinq minutes. Les heures suivent le fuseau horaire de chaque employé. Chaque rappel est envoyé une seule fois par quart, ou une fois par règle de pause pendant le pointage, dans l'application et par notification push, sauf si l'employé modifie ses préférences de notification. Aucun rappel de pointage d'arrivée manqué n'est envoyé lors d'une absence approuvée ou d'un jour férié.",
+      "invalidLeadMinutes": "Saisissez un nombre entier de minutes compris entre 1 et 1440 avant l'heure de la pause.",
+      "invalidMinutes": "Saisissez un nombre entier de minutes compris entre 0 et 1440.",
+      "missedClockIn": {
+        "enabled": "Rappel de pointage d'arrivée manqué",
+        "grace": "Minutes après le début prévu"
+      },
+      "noRoles": "Choisissez au moins un rôle qui recevra les rappels.",
+      "roles": {
+        "admin": "Administrateurs",
+        "employee": "Employés",
+        "label": "Envoyer un rappel à ces rôles",
+        "manager": "Managers"
+      },
+      "save": "Enregistrer les modifications",
+      "saved": "Paramètres des rappels de pointage enregistrés",
+      "saveFailed": "Impossible de mettre à jour les paramètres de rappel de pointage",
+      "saving": "Enregistrement…",
+      "title": "Rappels de pointage"
+    },
     "create": "Créer une organisation",
     "createDialog": {
       "description": "Configurez votre organisation pour commencer",
@@ -68,16 +99,33 @@
     },
     "feature": "explorer votre organisation",
     "features": {
+      "billable-time": "Temps facturable",
+      "billable-time-currency": "Devise de facturation : {currency}",
+      "billable-time-description": "Tarifez le travail sur les projets clients avec des taux facturables et transmettez-le à votre outil de comptabilité sous forme de brouillons de factures.",
+      "billable-time-dialog-confirm": "Activer",
+      "billable-time-dialog-description": "Choisissez la devise dans laquelle votre organisation facture ses clients.",
+      "billable-time-dialog-title": "Activer le temps facturable",
+      "billable-time-disabled": "Temps facturable désactivé",
+      "billable-time-enabled": "Temps facturable activé",
+      "billable-time-requires-projects": "Nécessite Projets. La désactivation de Projets désactive également Temps facturable ; ses paramètres sont conservés.",
       "demo-data": "Données de démonstration",
       "demo-data-description": "Autoriser les administrateurs à générer et effacer des données d'organisation exemples pour les tests.",
       "description": "Activez ou désactivez des fonctionnalités facultatives pour votre organisation",
       "owner-only": "Seuls les propriétaires de l'organisation peuvent modifier les paramètres des fonctionnalités.",
+      "owner-only-except-personnel-files": "Seuls les propriétaires de l'organisation peuvent modifier les paramètres des fonctionnalités, à l'exception des dossiers du personnel.",
+      "personnel-files": "Dossiers du personnel",
+      "personnel-files-description": "Conservez les contrats, fiches de paie, certificats et autres documents des employés dans un dossier individuel par employé.",
+      "personnel-files-disable-confirm": "Désactiver",
+      "personnel-files-disable-description": "Les pages et les téléchargements des dossiers du personnel sont masqués pour tout le monde. Les documents restent conservés et sont toujours pris en compte pour la durée de rétention. La réactivation des dossiers du personnel restaure l'ensemble.",
+      "personnel-files-disable-title": "Désactiver les dossiers du personnel ?",
       "projects": "Projets",
       "projects-description": "Assignez des saisies de temps à des projets, suivez les budgets et les délais, et générez des rapports de projet.",
       "surcharges": "Suppléments",
       "surcharges-description": "Configurez des suppléments de temps pour les heures supplémentaires, le travail de nuit, les week-ends et les jours fériés.",
       "title": "Fonctionnalités",
+      "toggle-billable-time": "Activer/désactiver le temps facturable",
       "toggle-demo-data": "Activer/désactiver les données de démonstration",
+      "toggle-personnel-files": "Activer/désactiver les dossiers du personnel",
       "toggle-projects": "Basculer les projets",
       "toggle-surcharges": "Basculer les suppléments",
       "toggle-works-council": "Activer/Désactiver le comité d'entreprise",

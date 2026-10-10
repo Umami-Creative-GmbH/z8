@@ -183,6 +183,20 @@
       "notes": "Notizen",
       "pendingApproval": "Genehmigung ausstehend",
       "pendingApprovalDescription": "Dieser Arbeitszeitraum wartet auf die Genehmigung durch eine Führungskraft. Die erfassten Zeiten können sich ändern, falls er abgelehnt wird.",
+      "positions": {
+        "accuracy": "innerhalb von {meters} m",
+        "clockIn": "Einstempeln",
+        "clockOut": "Ausstempeln",
+        "failed": "Standorte konnten nicht geladen werden",
+        "hide": "Standorte ausblenden",
+        "loggedHint": "Der Mitarbeiter kann sehen, wer seine Standorte eingesehen hat: Die Einsicht wird protokolliert.",
+        "none": "Für diesen Arbeitszeitraum wurden keine Standorte erfasst.",
+        "openInMaps": "In Maps öffnen",
+        "originalClockIn": "Erfasst beim ursprünglichen Einstempeln um {time}. Die Zeiten wurden später korrigiert.",
+        "originalClockOut": "Erfasst beim ursprünglichen Ausstempeln um {time}. Die Zeiten wurden später korrigiert.",
+        "show": "Standorte anzeigen",
+        "title": "Standorte"
+      },
       "project": "Projekt",
       "recurring": "Jährlich wiederkehrend",
       "rejected": "Abgelehnt",
@@ -192,13 +206,18 @@
       "surcharge": "Zuschlag",
       "surchargeBreakdown": "Aufschlüsselung der Zuschläge",
       "system": "System",
+      "task": "Aufgabe",
+      "taskDone": "{name} (erledigt)",
       "time": "Zeit",
       "type": "Typ",
       "workLocation": "Arbeitsort"
     },
     "edit": {
+      "billableSaveFailed": "Abrechenbarkeit konnte nicht aktualisiert werden",
       "deleteEntry": "Eintrag löschen",
       "locationRequired": "Wählen Sie einen Arbeitsort aus.",
+      "markedBillable": "Als abrechenbar markiert",
+      "markedNonBillable": "Als nicht abrechenbar markiert",
       "noNotes": "Keine Notizen hinzugefügt",
       "noProject": "Kein Projekt zugewiesen",
       "notesSaved": "Notizen gespeichert",
@@ -343,6 +362,7 @@
       "notRecorded": "Nicht erfasst"
     },
     "workPeriod": {
+      "billable": "Abrechenbar",
       "editedBy": "(bearbeitet von {name} am {date})"
     },
     "workStatus": {

@@ -21,6 +21,7 @@ describe("normalizeWorkdayTimeline", () => {
 		const result = normalizeWorkdayTimeline({
 			selectedDate,
 			timezone: "Europe/Berlin",
+			organizationTimezone: "Europe/Berlin",
 			workPeriods: [
 				{
 					id: "period-1",
@@ -67,6 +68,7 @@ describe("normalizeWorkdayTimeline", () => {
 		const result = normalizeWorkdayTimeline({
 			selectedDate,
 			timezone: "Europe/Berlin",
+			organizationTimezone: "Europe/Berlin",
 			workPeriods: [
 				{
 					id: "period-pending",
@@ -103,6 +105,7 @@ describe("normalizeWorkdayTimeline", () => {
 		const result = normalizeWorkdayTimeline({
 			selectedDate,
 			timezone: "Europe/Berlin",
+			organizationTimezone: "Europe/Berlin",
 			workPeriods: [
 				{
 					id: "period-pending",
@@ -128,6 +131,7 @@ describe("normalizeWorkdayTimeline", () => {
 		const result = normalizeWorkdayTimeline({
 			selectedDate,
 			timezone: "Europe/Berlin",
+			organizationTimezone: "Europe/Berlin",
 			workPeriods: [],
 			shifts: [
 				{
@@ -153,10 +157,39 @@ describe("normalizeWorkdayTimeline", () => {
 		});
 	});
 
+	it("resolves shift wall times in the organization's zone, not the viewer's", () => {
+		const result = normalizeWorkdayTimeline({
+			selectedDate,
+			timezone: "America/New_York",
+			organizationTimezone: "Europe/Berlin",
+			workPeriods: [],
+			shifts: [
+				{
+					id: "night-shift",
+					date: "2026-05-03",
+					startTime: "22:00",
+					endTime: "06:00",
+					status: "published",
+					notes: null,
+				},
+			],
+			absences: [],
+			pendingRequests: [],
+		});
+
+		expect(result.items[0]).toMatchObject({
+			startTime: new Date("2026-05-03T20:00:00.000Z"),
+			endTime: new Date("2026-05-04T04:00:00.000Z"),
+			startLabel: "22:00",
+			endLabel: "06:00",
+		});
+	});
+
 	it("formats shift labels with the selected time format", () => {
 		const result = normalizeWorkdayTimeline({
 			selectedDate,
 			timezone: "Europe/Berlin",
+			organizationTimezone: "Europe/Berlin",
 			timeFormat: "12h",
 			workPeriods: [],
 			shifts: [
@@ -185,6 +218,7 @@ describe("normalizeWorkdayTimeline", () => {
 		const input: NormalizeWorkdayTimelineInput = {
 			selectedDate,
 			timezone: "Europe/Berlin",
+			organizationTimezone: "Europe/Berlin",
 			workPeriods: [
 				{
 					id: "z-period",
@@ -243,6 +277,7 @@ describe("normalizeWorkdayTimeline", () => {
 		const result = normalizeWorkdayTimeline({
 			selectedDate,
 			timezone: "Europe/Berlin",
+			organizationTimezone: "Europe/Berlin",
 			workPeriods: [],
 			shifts: [],
 			absences: [],
@@ -279,6 +314,7 @@ describe("normalizeWorkdayTimeline", () => {
 		const result = normalizeWorkdayTimeline({
 			selectedDate,
 			timezone: "Europe/Berlin",
+			organizationTimezone: "Europe/Berlin",
 			timeFormat: "12h",
 			workPeriods: [
 				{

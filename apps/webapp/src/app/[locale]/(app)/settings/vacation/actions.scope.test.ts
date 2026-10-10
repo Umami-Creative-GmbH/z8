@@ -133,7 +133,7 @@ vi.mock("@/db/schema", () => ({
 	},
 	payrollWageTypeMapping: {
 		id: "id",
-		configId: "configId",
+		organizationId: "organizationId",
 		absenceCategoryId: "absenceCategoryId",
 	},
 	vacationAdjustment: { id: "id", employeeId: "employeeId", year: "year" },

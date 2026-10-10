@@ -1,13 +1,16 @@
 "use client";
 
-import { IconLoader2 } from "@tabler/icons-react";
+import { IconCoin, IconLoader2, IconReceipt2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { use, useEffect } from "react";
 import { toast } from "sonner";
+import { BillableRateSeries } from "@/components/billable-time/billable-rate-series";
+import { CostRateSeries } from "@/components/billable-time/cost-rate-series";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { EmployeeLifecycleActions } from "@/components/organization/employee-lifecycle-actions";
+import { PersonnelFilePanel } from "@/components/personnel-file/personnel-file-panel";
 import { EmployeeCustomRolesCard } from "@/components/settings/custom-roles/employee-custom-roles-card";
 import { EmployeeEmploymentHistoryCard } from "@/components/settings/employee-employment-history-card";
 import { EmployeeOffboardingSection } from "@/components/settings/employee-offboarding/employee-offboarding-section";
@@ -15,18 +18,17 @@ import { EmployeeSkillsCard } from "@/components/settings/employee-skills-card";
 import { ManagerAssignment } from "@/components/settings/manager-assignment";
 import { RateHistoryCard } from "@/components/settings/rate-history-card";
 import { WorkBalanceRecalculationCard } from "@/components/settings/work-balance-recalculation-card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
+import type { PersonnelFilePanelCapability } from "@/lib/personnel-file/panel";
 import { queryKeys } from "@/lib/query";
 import { type EmployeeDetail, useEmployee } from "@/lib/query/use-employee";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 import { useRouter } from "@/navigation";
+import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
 import { EmployeeDraftActions } from "./employee-draft-actions";
-import {
-	EmployeeDetailHeader,
-	EmployeeEditFormCard,
-	EmployeeOverviewCard,
-} from "./page-sections";
+import { EmployeeDetailHeader, EmployeeEditFormCard, EmployeeOverviewCard } from "./page-sections";
 import {
 	buildEmployeeUpdatePayload,
 	defaultFormValues,
@@ -106,56 +108,47 @@ export function EmployeeDetailPageClient({
 	currentUserId,
 	currentMemberRole,
 	highlightedReviewId = null,
+	personnelFile = null,
 }: {
 	params: Promise<{ employeeId: string }>;
 	accessTier: SettingsAccessTier;
 	currentUserId: string;
 	currentMemberRole: string;
 	highlightedReviewId?: string | null;
+	/** Decided on the server by the personnel file access resolver (#865). */
+	personnelFile?: PersonnelFilePanelCapability | null;
 }) {
 	const { employeeId } = use(params);
 	const { t } = useTranslate();
 	const { push } = useRouter();
 
 	const employeeData = useEmployee({ employeeId, accessTier });
-	const { employee, schedule, isLoading, hasEmployee, updateEmployee, isUpdating } =
-		employeeData;
-	const canManageEmployeeDetails =
-		accessTier === "orgAdmin" || accessTier === "manager";
+	const { employee, schedule, isLoading, hasEmployee, updateEmployee, isUpdating } = employeeData;
+	const canManageEmployeeDetails = accessTier === "orgAdmin" || accessTier === "manager";
 
 	const form = useForm({
 		defaultValues: defaultFormValues,
-		onSubmitInvalid: ({ formApi }) =>
-			focusFirstInvalidEmployeeDetailField(formApi),
+		onSubmitInvalid: ({ formApi }) => focusFirstInvalidEmployeeDetailField(formApi),
 		onSubmit: async ({ value }) => {
 			const payload = buildEmployeeUpdatePayload(value);
 			const result = await updateEmployee(payload).catch(() => null);
 
 			if (!result) {
 				toast.error(
-					t(
-						"settings.employees.detailView.unexpectedError",
-						"An unexpected error occurred",
-					),
+					t("settings.employees.detailView.unexpectedError", "An unexpected error occurred"),
 				);
 				return;
 			}
 
 			if (result.success) {
 				toast.success(
-					t(
-						"settings.employees.detailView.updateSuccess",
-						"Employee updated successfully",
-					),
+					t("settings.employees.detailView.updateSuccess", "Employee updated successfully"),
 				);
 				push("/settings/employees");
 			} else {
 				toast.error(
 					result.error ||
-						t(
-							"settings.employees.detailView.updateFailed",
-							"Failed to update employee",
-						),
+						t("settings.employees.detailView.updateFailed", "Failed to update employee"),
 				);
 			}
 		},
@@ -171,10 +164,7 @@ export function EmployeeDetailPageClient({
 		return (
 			<div className="flex flex-1 items-center justify-center p-6">
 				<NoEmployeeError
-					feature={t(
-						"settings.employees.detailView.manageEmployees",
-						"manage employees",
-					)}
+					feature={t("settings.employees.detailView.manageEmployees", "manage employees")}
 				/>
 			</div>
 		);
@@ -190,39 +180,18 @@ export function EmployeeDetailPageClient({
 						"Loading employee data",
 					)}
 				>
-					<IconLoader2
-						className="size-8 animate-spin text-muted-foreground"
-						aria-hidden="true"
-					/>
+					<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-hidden="true" />
 				</output>
 			</div>
 		);
 	}
 
 	const isDraft = employee.kind === "invitationDraft";
-	const isAcceptedDraft = isDraft && Boolean(employee.realEmployeeId);
 	const canShowRealEmployeeSections = !isDraft;
-	const canEditDraftDetails =
-		!isAcceptedDraft && (!isDraft || !employee.realEmployeeId);
-	const canManageDraftActions =
-		isDraft &&
-		accessTier === "orgAdmin" &&
-		(hasOrganizationRole(currentMemberRole, "owner") ||
-			hasOrganizationRole(currentMemberRole, "admin"));
+	const canEditDraftDetails = !isDraft || !employee.realEmployeeId;
 
-	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<EmployeeDetailHeader
-				t={t}
-				actions={
-					<EmployeeDetailLifecycleActions
-						employee={employee}
-						currentUserId={currentUserId}
-						currentMemberRole={currentMemberRole}
-					/>
-				}
-			/>
-
+	const overview = (
+		<>
 			<div className="grid gap-4 lg:grid-cols-3">
 				<EmployeeOverviewCard employee={employee} schedule={schedule} t={t} />
 				{canEditDraftDetails && (
@@ -237,14 +206,11 @@ export function EmployeeDetailPageClient({
 				)}
 			</div>
 
-			{canManageDraftActions && (
-				<EmployeeDraftActions
-					organizationId={employee.organizationId}
-					encodedDraftEmployeeId={employee.encodedId}
-					invitationId={employee.invitation.id}
-					invitationStatus={employee.invitationStatus}
-				/>
-			)}
+			<EmployeeInvitationActions
+				employee={employee}
+				accessTier={accessTier}
+				currentMemberRole={currentMemberRole}
+			/>
 
 			{canShowRealEmployeeSections && (
 				<EmployeeRecordSections
@@ -254,6 +220,42 @@ export function EmployeeDetailPageClient({
 					highlightedReviewId={highlightedReviewId}
 					data={employeeData}
 				/>
+			)}
+		</>
+	);
+
+	return (
+		<div className="flex flex-1 flex-col gap-4 p-4">
+			<EmployeeDetailHeader
+				t={t}
+				actions={
+					<EmployeeDetailLifecycleActions
+						employee={employee}
+						currentUserId={currentUserId}
+						currentMemberRole={currentMemberRole}
+					/>
+				}
+			/>
+
+			{personnelFile && canShowRealEmployeeSections ? (
+				<Tabs defaultValue="overview" className="gap-4">
+					<TabsList>
+						<TabsTrigger value="overview">
+							{t("settings.employees.detailView.tabs.overview", "Overview")}
+						</TabsTrigger>
+						<TabsTrigger value="personnel-file">
+							{t("settings.personnelFiles.panel.tab", "Personnel file")}
+						</TabsTrigger>
+					</TabsList>
+					<TabsContent value="overview" className="flex flex-col gap-4">
+						{overview}
+					</TabsContent>
+					<TabsContent value="personnel-file">
+						<PersonnelFilePanel capability={personnelFile} />
+					</TabsContent>
+				</Tabs>
+			) : (
+				overview
 			)}
 		</div>
 	);
@@ -276,6 +278,7 @@ function EmployeeRecordSections({
 	const { t } = useTranslate();
 	const isOrgAdmin = accessTier === "orgAdmin";
 	const isOrgAdminOrManager = isOrgAdmin || accessTier === "manager";
+	const billableTimeEnabled = useBillableTimeEnabled();
 	const { availableManagers, workPolicies } = data;
 
 	const handleWorkBalanceRecalculation = async () => {
@@ -283,10 +286,7 @@ function EmployeeRecordSections({
 
 		if (result?.success) {
 			toast.success(
-				t(
-					"settings.workBalanceRecalculation.requestSuccess",
-					"Work balance recalculation queued",
-				),
+				t("settings.workBalanceRecalculation.requestSuccess", "Work balance recalculation queued"),
 			);
 			return;
 		}
@@ -365,6 +365,62 @@ function EmployeeRecordSections({
 					isAddingRate={data.isUpdatingRate}
 				/>
 			)}
+
+			{isOrgAdmin && billableTimeEnabled && (
+				<BillableRateSeries
+					target={{ level: "employee", employeeId }}
+					title={
+						<>
+							<IconCoin aria-hidden="true" className="size-5" />
+							{t("settings.billableTime.rates.employeeRateTitle", "Billable rate")}
+						</>
+					}
+					description={t(
+						"settings.billableTime.rates.employeeRateDescription",
+						"What your organization charges customers per hour of this employee's work when no project, customer or employee-on-project rate applies.",
+					)}
+				/>
+			)}
+
+			{isOrgAdmin && billableTimeEnabled && (
+				<CostRateSeries
+					employeeId={employeeId}
+					title={
+						<>
+							<IconReceipt2 aria-hidden="true" className="size-5" />
+							{t("settings.billableTime.costRates.employeeTitle", "Cost rate")}
+						</>
+					}
+					description={t(
+						"settings.billableTime.costRates.employeeDescription",
+						"This employee's fully loaded internal cost per hour, used for margin. Separate from the wage.",
+					)}
+				/>
+			)}
 		</>
+	);
+}
+
+function EmployeeInvitationActions({
+	employee,
+	accessTier,
+	currentMemberRole,
+}: {
+	employee: NonNullable<ReturnType<typeof useEmployee>["employee"]>;
+	accessTier: SettingsAccessTier;
+	currentMemberRole: string;
+}) {
+	const canManageDraftActions =
+		accessTier === "orgAdmin" &&
+		(hasOrganizationRole(currentMemberRole, "owner") ||
+			hasOrganizationRole(currentMemberRole, "admin"));
+	if (employee.kind !== "invitationDraft" || !canManageDraftActions) return null;
+	return (
+		<EmployeeDraftActions
+			organizationId={employee.organizationId}
+			encodedDraftEmployeeId={employee.encodedId}
+			invitationId={employee.invitation.id}
+			invitationStatus={employee.invitationStatus}
+		/>
 	);
 }

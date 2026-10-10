@@ -13,12 +13,20 @@ import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
 import type {
 	AbsenceData,
+	ExpenseLineData,
 	ExportResult,
 	IPayrollExportFormatter,
 	SageLohnConfig,
 	WageTypeMapping,
 	WorkPeriodData,
 } from "../types";
+import { wageTypeCodeFor } from "../wage-type-code";
+import {
+	commaDecimalAmount,
+	expenseLinesInFileOrder,
+	GERMAN_EXPENSE_LINE_NOTE,
+	germanPersonnelNumber,
+} from "./expense-lines";
 
 const logger = createLogger("SageLohnFormatter");
 
@@ -71,6 +79,7 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 	transform(
 		workPeriods: WorkPeriodData[],
 		absences: AbsenceData[],
+		expenseLines: ExpenseLineData[],
 		mappings: WageTypeMapping[],
 		config: Record<string, unknown>,
 	): ExportResult {
@@ -139,9 +148,27 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 			}
 		}
 
+		// Expense money lines (#852): a euro Betrag on the period's last day, labeled as money.
+		for (const { personnelNumber, line } of expenseLinesInFileOrder(expenseLines, (line) =>
+			germanPersonnelNumber(line, sageConfig),
+		)) {
+			const amount =
+				sageConfig.outputFormat === "sage_native" ? commaDecimalAmount(line.amount) : line.amount;
+			lines.push(
+				[
+					this.escapeCSV(personnelNumber),
+					this.escapeCSV(line.wageTypeCode),
+					this.escapeCSV(amount),
+					this.escapeCSV(line.date),
+					this.escapeCSV(GERMAN_EXPENSE_LINE_NOTE),
+				].join(";"),
+			);
+		}
+
 		// Calculate metadata
 		const uniqueEmployees = new Set(workPeriods.map((p) => p.employeeId));
 		absences.forEach((a) => uniqueEmployees.add(a.employeeId));
+		for (const line of expenseLines) uniqueEmployees.add(line.employeeId);
 
 		const dateRange = this.getDateRange(workPeriods, absences);
 		const fileName = this.generateFileName(dateRange);
@@ -193,22 +220,16 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 			const dateStr = period.startTime.toISODate()!;
 			const hours = period.durationMinutes / 60;
 
-			// Determine wage type code (prefer Sage-specific, fall back to DATEV, then legacy)
+			// Determine wage type code (use Sage-specific column)
 			let wageTypeCode = DEFAULT_WAGE_TYPE_CODE;
 			let note = "";
 
 			if (period.workCategoryId) {
 				const mapping = workCategoryMappings.get(period.workCategoryId);
-				const mappedCode =
-					mapping?.sageWageTypeCode || mapping?.datevWageTypeCode || mapping?.wageTypeCode;
+				const mappedCode = wageTypeCodeFor(mapping, "sage");
 				if (mapping && mappedCode) {
 					wageTypeCode = mappedCode;
-					note =
-						mapping.sageWageTypeName ||
-						mapping.datevWageTypeName ||
-						mapping.wageTypeName ||
-						period.workCategoryName ||
-						"";
+					note = mapping.sageWageTypeName || period.workCategoryName || "";
 				} else {
 					note = period.workCategoryName || "";
 				}
@@ -252,19 +273,12 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 	): void {
 		for (const absence of absences) {
 			const mapping = absenceCategoryMappings.get(absence.absenceCategoryId);
-			// Prefer Sage-specific, fall back to DATEV, then legacy
-			const mappedCode =
-				mapping?.sageWageTypeCode || mapping?.datevWageTypeCode || mapping?.wageTypeCode;
+			const mappedCode = wageTypeCodeFor(mapping, "sage");
 			if (!mapping || !mappedCode) continue; // Skip if no mapping
 
 			const personnelNumber = this.getPersonnelNumberFromAbsence(absence, config);
 			const wageTypeCode = mappedCode;
-			const note =
-				mapping.sageWageTypeName ||
-				mapping.datevWageTypeName ||
-				mapping.wageTypeName ||
-				absence.absenceCategoryName ||
-				"";
+			const note = mapping.sageWageTypeName || absence.absenceCategoryName || "";
 
 			// Calculate days
 			const startDate = DateTime.fromISO(absence.startDate).startOf("day");
@@ -328,6 +342,7 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 		}
 		return absence.employeeId;
 	}
+
 
 	/**
 	 * Generate CSV header row

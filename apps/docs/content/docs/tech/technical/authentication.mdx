@@ -31,7 +31,7 @@ Key behaviors:
 
 - Web requests use secure, `httpOnly` session cookies through the Next.js Better Auth integration.
 - Desktop clients can use bearer-token auth where cookies are not the primary transport.
-- The mobile app is currently an Expo workspace in the monorepo, but it should not be documented as a finished bearer-token client until that runtime behavior exists.
+- The monorepo has no mobile client. The server keeps the mobile login handoff and `/api/mobile/*` routes for a future mobile client, but nothing ships that uses them.
 - Sessions carry `activeOrganizationId`, which is the current org context used by authorization and data-access layers.
 - Organization-scoped routes and services should trust `session.session.activeOrganizationId` rather than user-supplied org identifiers.
 - Email verification and password-reset links are rewritten to the correct organization-aware base URL when auth emails are sent.
@@ -112,7 +112,7 @@ await fetch('/api/organizations/switch', {
 
 ### Native App Login Handoff
 
-Desktop and mobile clients use a browser-based login handoff with a one-time authorization code:
+The desktop client uses a browser-based login handoff with a one-time authorization code. The server also accepts `app=mobile` for a future mobile client:
 
 ```text
 /api/auth/app-login?app=mobile&redirect=z8mobile://auth/callback&challenge=<code-challenge>

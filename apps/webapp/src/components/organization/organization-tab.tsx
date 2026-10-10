@@ -5,9 +5,12 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type * as authSchema from "@/db/auth-schema";
+import type { BillableCurrency } from "@/lib/billable-time/currency";
 import type { AutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/types";
+import type { ClockingReminderSettings } from "@/lib/time-tracking/clocking-reminders/settings-policy";
 import { CreateOrganizationDialog } from "./create-organization-dialog";
 import { OrganizationAutoClockOutCard } from "./organization-auto-clock-out-card";
+import { OrganizationClockingRemindersCard } from "./organization-clocking-reminders-card";
 import { OrganizationDangerZoneCard } from "./organization-danger-zone-card";
 import { OrganizationDetailsCard } from "./organization-details-card";
 import { OrganizationFeaturesCard } from "./organization-features-card";
@@ -16,20 +19,24 @@ import { OrganizationTimezoneCard } from "./organization-timezone-card";
 
 interface OrganizationTabProps {
 	autoClockOutSettings: AutoClockOutSettings;
+	clockingReminderSettings: ClockingReminderSettings;
 	organization: typeof authSchema.organization.$inferSelect;
 	memberCount: number;
 	currentMemberRole: "owner" | "admin" | "member";
 	defaultNotificationLanguage: string;
 	canCreateOrganizations: boolean;
+	billableCurrency: BillableCurrency | null;
 }
 
 export function OrganizationTab({
 	autoClockOutSettings,
+	clockingReminderSettings,
 	organization,
 	memberCount,
 	currentMemberRole,
 	defaultNotificationLanguage,
 	canCreateOrganizations,
+	billableCurrency,
 }: OrganizationTabProps) {
 	const { t } = useTranslate();
 	const [createOrgDialogOpen, setCreateOrgDialogOpen] = useState(false);
@@ -61,6 +68,9 @@ export function OrganizationTab({
 				surchargesEnabled={organization.surchargesEnabled ?? false}
 				demoDataEnabled={organization.demoDataEnabled ?? true}
 				worksCouncilEnabled={organization.worksCouncilEnabled ?? false}
+				billableTimeEnabled={organization.billableTimeEnabled ?? false}
+				billableCurrency={billableCurrency}
+				personnelFilesEnabled={organization.personnelFilesEnabled ?? false}
 				currentMemberRole={currentMemberRole}
 			/>
 
@@ -68,6 +78,13 @@ export function OrganizationTab({
 				key={organization.id}
 				organizationId={organization.id}
 				settings={autoClockOutSettings}
+				currentMemberRole={currentMemberRole}
+			/>
+
+			<OrganizationClockingRemindersCard
+				key={`clocking-reminders-${organization.id}`}
+				organizationId={organization.id}
+				settings={clockingReminderSettings}
 				currentMemberRole={currentMemberRole}
 			/>
 

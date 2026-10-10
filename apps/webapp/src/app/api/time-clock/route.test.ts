@@ -59,6 +59,39 @@ describe("POST /api/time-clock", () => {
 		expect(mockState.clockIn).not.toHaveBeenCalled();
 	});
 
+	it.each([
+		["books a named task", "task-1"],
+		["clears the task", null],
+	])("passes a clock-out's task to the clocking service: %s", async (_case, taskId) => {
+		mockState.clockOut.mockResolvedValue({ success: true, data: { id: "entry-2" } });
+
+		const response = await POST(
+			timeClockRequest({ action: "clock_out", submissionId, projectId: "project-1", taskId }),
+		);
+
+		expect(response.status).toBe(200);
+		expect(mockState.clockOut).toHaveBeenCalledWith("project-1", undefined, {
+			browserTimezone: undefined,
+			submissionId,
+			taskId,
+		});
+	});
+
+	it("keeps a clock-out without a task as it was, so the task follows the project", async () => {
+		mockState.clockOut.mockResolvedValue({ success: true, data: { id: "entry-2" } });
+
+		await POST(timeClockRequest({ action: "clock_out", submissionId, projectId: "project-1" }));
+
+		expect(mockState.clockOut.mock.calls[0]?.[2]).not.toHaveProperty("taskId");
+	});
+
+	it("rejects an empty task id", async () => {
+		const response = await POST(timeClockRequest({ action: "clock_out", submissionId, taskId: "" }));
+
+		expect(response.status).toBe(400);
+		expect(mockState.clockOut).not.toHaveBeenCalled();
+	});
+
 	it("clocks in with the selected work location and the submission id", async () => {
 		mockState.clockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
 
@@ -78,6 +111,58 @@ describe("POST /api/time-clock", () => {
 			submissionId,
 		});
 		expect(mockState.clockOut).not.toHaveBeenCalled();
+	});
+
+	it("forwards the position taken at the clock event to clock-in and clock-out (#826)", async () => {
+		mockState.clockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
+		mockState.clockOut.mockResolvedValue({ success: true, data: { id: "entry-2" } });
+		const position = {
+			latitude: 52.52,
+			longitude: 13.4,
+			accuracyMeters: 20,
+			fixedAt: "2026-09-25T07:59:30.250Z",
+		};
+
+		await POST(timeClockRequest({ action: "clock_in", submissionId, position }));
+		await POST(timeClockRequest({ action: "clock_out", submissionId, position }));
+
+		expect(mockState.clockIn.mock.calls[0]?.[1]).toMatchObject({ position });
+		expect(mockState.clockOut.mock.calls[0]?.[2]).toMatchObject({ position });
+	});
+
+	it("drops the position of a request with an authorization header and still clocks (#826 D5)", async () => {
+		mockState.clockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
+		mockState.clockOut.mockResolvedValue({ success: true, data: { id: "entry-2" } });
+		const position = {
+			latitude: 52.52,
+			longitude: 13.4,
+			accuracyMeters: 20,
+			fixedAt: "2026-09-25T07:59:30.250Z",
+		};
+		const bearer = { authorization: "Bearer desktop-token" };
+
+		const clockedIn = await POST(
+			timeClockRequest({ action: "clock_in", submissionId, position }, bearer),
+		);
+		const clockedOut = await POST(
+			timeClockRequest({ action: "clock_out", submissionId, position }, bearer),
+		);
+
+		expect(clockedIn.status).toBe(200);
+		expect(clockedOut.status).toBe(200);
+		expect(mockState.clockIn.mock.calls[0]?.[1]?.position).toBeUndefined();
+		expect(mockState.clockOut.mock.calls[0]?.[2]?.position).toBeUndefined();
+	});
+
+	it("never refuses a clock event over a malformed position", async () => {
+		mockState.clockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
+
+		const response = await POST(
+			timeClockRequest({ action: "clock_in", submissionId, position: { latitude: "north" } }),
+		);
+
+		expect(response.status).toBe(200);
+		expect(mockState.clockIn).toHaveBeenCalled();
 	});
 
 	it("still clocks in for clients from before clock-in identities", async () => {

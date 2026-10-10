@@ -31,6 +31,7 @@ import type {
 	ImportEmployeeMapping,
 	ImportEntityType,
 	ImportProvider,
+	ImportRowChoice,
 	ImportRowStatus,
 } from "@/lib/import-review/types";
 
@@ -46,6 +47,7 @@ const MAX_REVIEW_PAGE_OFFSET = 100_000;
 const MAX_DECISION_REASON_LENGTH = 1_000;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const SAFE_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const GENERIC_SCAN_START_ERROR = "Failed to start import review scan";
 const GENERIC_COMMIT_START_ERROR = "Failed to start import commit";
 function isImportProvider(value: string): value is ImportProvider {
@@ -115,6 +117,8 @@ interface ApplyImportDecisionInput extends ImportReviewBatchInput {
 	rowIds: string[];
 	decision: "accepted" | "rejected";
 	reason?: string | null;
+	/** Link the accepted row onto an existing record instead of creating one (#906). */
+	choice?: ImportRowChoice | null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -233,11 +237,28 @@ function validateApplyImportDecisionInput(
 		if (!reason) reason = null;
 	}
 
+	let choice: ImportRowChoice | null = null;
+	if (input.choice !== undefined && input.choice !== null) {
+		if (
+			!isRecord(input.choice) ||
+			input.choice.kind !== "link" ||
+			typeof input.choice.targetId !== "string" ||
+			!UUID_PATTERN.test(input.choice.targetId)
+		) {
+			throw new Error("Invalid import review link target");
+		}
+		if (input.decision !== "accepted" || rowIds.length !== 1) {
+			throw new Error("Link one accepted import review row at a time");
+		}
+		choice = { kind: "link", targetId: input.choice.targetId };
+	}
+
 	return {
 		...batchInput,
 		rowIds,
 		decision: input.decision,
 		reason,
+		choice,
 	};
 }
 

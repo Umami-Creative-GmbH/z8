@@ -1,6 +1,6 @@
 ---
 title: Enterprise Features
-description: API keys, webhooks, SCIM, social OAuth, and organization-level access control
+description: Webhooks, SCIM, social OAuth, API key status, and organization-level access control
 icon: Building
 ---
 
@@ -15,7 +15,6 @@ Enterprise features provide advanced capabilities for organizations requiring pr
 
 Enterprise-facing capabilities currently center on:
 
-- API keys for scoped programmatic access
 - webhooks for outbound event delivery
 - SCIM provisioning for managed identity lifecycle flows
 - social OAuth and organization SSO configuration
@@ -30,23 +29,10 @@ For SCIM specifically, keep expectations organization-scoped: organization owner
 
 ---
 
-## API Key Management
+## API Keys
 
-API keys enable secure programmatic access to Z8 APIs for integrations, automation, and third-party applications.
-
-### Permission Scopes
-
-| Scope | Description |
-|-------|-------------|
-| `time-entries:read` | Read time entries |
-| `time-entries:write` | Create and update time entries |
-| `employees:read` | Read employee data |
-| `reports:read` | Access analytics reports |
-| `projects:read` | Read project information |
-| `projects:write` | Manage projects |
-
-<Callout type="warn" title="API Key Security">
-  The full API key is shown only once at creation. Store it in a proper secret manager and rotate unused keys regularly.
+<Callout type="info" title="Public API Not Yet Available">
+  Z8 does not offer a public API yet. The Better Auth API key plugin is registered and admins can create keys in settings, but no API route accepts a key and no scope is enforced.
 </Callout>
 
 ## Webhook System
@@ -111,9 +97,6 @@ Enterprise organizations can configure their own OAuth providers for branded sig
 ## Configuration
 
 ```ini
-# API keys
-API_KEY_ENCRYPTION_KEY=<32-byte-hex-key>
-
 # Default social OAuth providers
 GOOGLE_CLIENT_ID=<default-client-id>
 GOOGLE_CLIENT_SECRET=<default-secret>

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { and, asc, count, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
+	customer,
 	importBatch,
 	importBatchJob,
 	importIssue,
@@ -12,6 +13,7 @@ import {
 import type { EncryptedImportCredential } from "./credential-secret";
 import { nextBatchStatusAfterJobs } from "./state";
 import type {
+	ImportBatchProvider,
 	ImportBatchStatus,
 	ImportDateRange,
 	ImportEntityType,
@@ -19,7 +21,7 @@ import type {
 	ImportIssueSeverity,
 	ImportJobKind,
 	ImportJobStatus,
-	ImportProvider,
+	ImportRowChoice,
 	ImportRowStatus,
 	NormalizedImportRow,
 } from "./types";
@@ -43,6 +45,7 @@ const COMMIT_ENTITY_DEPENDENCY_ORDER: ImportEntityType[] = [
 	"holiday_quota",
 	"holiday",
 	"surcharge",
+	"customer",
 	"absence",
 	"time_entry",
 	"work_period",
@@ -106,7 +109,7 @@ function sourcePayloadHash(row: NormalizedImportRow): string {
 
 export async function createImportBatch(input: {
 	organizationId: string;
-	provider: ImportProvider;
+	provider: ImportBatchProvider;
 	selectedScope: Record<string, unknown>;
 	dateRange: ImportDateRange;
 	startedBy: string;
@@ -384,7 +387,14 @@ export async function applyImportRowDecision(input: {
 	decision: ImportRowDecision;
 	reason?: string | null;
 	decidedBy: string;
+	/**
+	 * Accept the rows by linking them onto an existing record instead of
+	 * creating one (#906: customer rows only, onto a customer of the batch's
+	 * organization). Ignored for rejections.
+	 */
+	choice?: ImportRowChoice | null;
 }) {
+	const choice = input.decision === "accepted" ? (input.choice ?? null) : null;
 	return db.transaction(async (tx) => {
 		const [batch] = await tx
 			.select({ status: importBatch.status })
@@ -401,6 +411,17 @@ export async function applyImportRowDecision(input: {
 			throw new Error("Import batch is not ready for review decisions");
 		}
 
+		if (choice) {
+			const [target] = await tx
+				.select({ id: customer.id })
+				.from(customer)
+				.where(
+					and(eq(customer.id, choice.targetId), eq(customer.organizationId, input.organizationId)),
+				)
+				.limit(1);
+			if (!target) throw new Error("The chosen customer does not exist in this organization");
+		}
+
 		const rows = await tx
 			.select({ id: importStagedRow.id, issueSeverity: importStagedRow.issueSeverity })
 			.from(importStagedRow)
@@ -410,10 +431,13 @@ export async function applyImportRowDecision(input: {
 					eq(importStagedRow.organizationId, input.organizationId),
 					inArray(importStagedRow.id, input.rowIds),
 					inArray(importStagedRow.rowStatus, REVIEW_DECISION_ROW_STATUSES),
+					// Only customer rows can be linked onto an existing record.
+					...(choice ? [eq(importStagedRow.entityType, "customer")] : []),
 				),
 			);
 
 		const baseUpdate = {
+			commitChoice: choice,
 			decisionReason: input.reason ?? null,
 			decidedBy: input.decidedBy,
 			decidedAt: new Date(),

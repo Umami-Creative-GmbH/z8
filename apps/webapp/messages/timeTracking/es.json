@@ -11,6 +11,11 @@
         "title": "Descanso agregado automáticamente por cumplimiento"
       }
     },
+    "billable": {
+      "description": "Trabajo facturable para el cliente del proyecto",
+      "label": "Facturable",
+      "noCustomer": "Solo el trabajo en un proyecto con un cliente puede ser facturable"
+    },
     "budget": "Presupuesto",
     "clockedOutSuccess": "Has marcado salida!",
     "clockIn": "Entrada",
@@ -69,6 +74,7 @@
       "alreadyClockedIn": "Ya ha registrado su entrada",
       "appendReviewRequired": "El registro de entrada requiere una revisión de su historial de horas",
       "appendReviewRequiredDesc": "No se pudieron verificar sus registros de tiempo anteriores, por lo que no se guardó un nuevo registro de entrada. Póngase en contacto con su administrador.",
+      "billableNotAllowed": "Solo el trabajo en un proyecto que tiene un cliente puede ser facturable",
       "breakAwaitingApproval": "Este período de trabajo está pendiente de aprobación y no se puede editar. Agregue el descanso una vez que se haya resuelto.",
       "breakDurationInvalid": "Ingrese una duración de descanso de al menos 1 minuto.",
       "breakNotAllowed": "No puede agregar un descanso a este trabajo.",
@@ -105,6 +111,11 @@
       "projectNotAllowed": "No se puede asignar a este proyecto",
       "restPeriodBlocked": "Periodo de descanso no completado",
       "restPeriodBlockedDesc": "Debe completar el periodo de descanso requerido antes de marcar la entrada. Solicite una excepción si es necesario.",
+      "taskDone": "Esta tarea está completada, por lo que no se puede registrar tiempo en ella",
+      "taskNotAllowed": "No se puede registrar tiempo en esta tarea",
+      "taskNotFound": "Esta tarea ya no existe",
+      "taskOtherProject": "Esta tarea pertenece a otro proyecto",
+      "taskProjectNotBookable": "Ya no se puede registrar tiempo en el proyecto de esta tarea",
       "workCategoryNotAllowed": "No se puede asignar a esta categoría de trabajo"
     },
     "manualEntry": {
@@ -120,6 +131,7 @@
         "retry": "Reintentar",
         "targetChanged": "El empleado cambió, por lo que se eliminaron el proyecto y la categoría.",
         "targetTimezone": "Las horas corresponden a la zona horaria de {employee}: {timezone}",
+        "taskCleared": "Una tarea seleccionada ya no está disponible y se ha quitado.",
         "thisEmployee": "este empleado",
         "utcFallback": "Ni {employee} ni la organización tienen una zona horaria configurada, por lo que se utiliza UTC."
       },
@@ -237,6 +249,7 @@
       "approveEntry": "Aprobar entrada",
       "approveFailed": "Error al aprobar la entrada",
       "approving": "Aprobando...",
+      "billable": "Facturable",
       "clockIn": "Registrar entrada",
       "clockOut": "Registrar salida",
       "corrected": "Corregido",
@@ -248,6 +261,13 @@
       "rowActions": "Acciones de entrada de tiempo",
       "title": "Entradas de tiempo",
       "viewCalendar": "Ver calendario"
+    },
+    "taskPicker": {
+      "doneTask": "{name} (completada)",
+      "empty": "No se encontró ninguna tarea",
+      "label": "Tarea",
+      "none": "Sin tarea",
+      "search": "Buscar tareas…"
     },
     "timeline": {
       "dayPicker": "Selector de día en la línea de tiempo",

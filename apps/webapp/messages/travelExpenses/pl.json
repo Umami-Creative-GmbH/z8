@@ -129,6 +129,7 @@
           "alreadyReimbursed": "Pominięto: już zwrócono",
           "balanceChanged": "Pominięto: saldo uległo zmianie",
           "failed": "Niepowodzenie",
+          "inPayrollRun": "Pominięto: uwzględniono w przebiegu listy płac",
           "outOfScope": "Pominięto: poza zakresem",
           "overpaidOrReview": "Pominięto: nadpłacono lub wymaga weryfikacji",
           "ownExpense": "Pominięto: wydatek własny",
@@ -247,6 +248,7 @@
           "search": "Szukaj zespołów…"
         }
       },
+      "inPayrollRun": "Uwzględniono w {run}",
       "legacyClaim": "Archiwalny wniosek: {type}",
       "loading": "Wczytywanie kolejki finansowej…",
       "pagination": {
@@ -254,6 +256,16 @@
         "next": "Następna",
         "page": "Strona {page}",
         "previous": "Poprzednia"
+      },
+      "payrollRun": {
+        "included": "Uwzględniono w {run}. Wydatek jest wypłacany z tą listą płac i rejestrowany jako zwrócony po potwierdzeniu przebiegu.",
+        "label": "Przebieg listy płac {period} ({format})",
+        "notIncluded": "Żaden przebieg listy płac nie obejmuje już tego wydatku.",
+        "remove": "Usuń z przebiegu listy płac",
+        "removed": "Usunięto z przebiegu listy płac. Wydatek ponownie oczekuje na zwrot kosztów.",
+        "removeDescription": "Usuń go tylko wtedy, gdy nie zostanie opłacony w ramach tego przebiegu listy płac, na przykład po skorygowaniu pliku płacowego. Usunięcie zostanie zarejestrowane w dzienniku audytu.",
+        "removeFailed": "Nie udało się usunąć wydatku z przebiegu listy płac.",
+        "removeTitle": "Usunąć ten wydatek z przebiegu listy płac?"
       },
       "queue": {
         "description": "Otwórz wydatek, aby zobaczyć jego rozliczenie i zarejestrować zwrot kosztów.",
@@ -999,6 +1011,20 @@
         "adoptForeignTitle": "Zastosuj niemieckie ustawowe diety z oficjalnymi stawkami zagranicznymi",
         "foreignAreas": "Stawki zagraniczne: {countries} krajów i {places} miast"
       },
+      "reimbursementChannel": {
+        "bankTransfer": "Przelew bankowy",
+        "bankTransferDescription": "Osoby odpowiedzialne za wydatki wypłacają zwroty przelewem bankowym i rejestrują je w Z8.",
+        "intro": "Sposób wypłacania zwrotów przez Twoją organizację. Wybór dotyczy każdego pracownika.",
+        "loadFailed": "Nie udało się załadować kanału zwrotu kosztów.",
+        "payrollRun": "Lista płac",
+        "payrollRunDescription": "Lista płac obejmuje zwroty kosztów, które są rejestrowane po potwierdzeniu opłacenia listy płac. Raporty, których nie można uwzględnić na liście płac, są wypłacane przelewem bankowym.",
+        "payrollRunPreview": "W wersji zapoznawczej i jeszcze niedostępne dla Twojej organizacji.",
+        "save": "Zapisz kanał",
+        "saved": "Zapisano kanał zwrotu kosztów",
+        "saveFailed": "Nie udało się zapisać kanału zwrotu kosztów.",
+        "title": "Kanał zwrotu kosztów",
+        "unconfirmedRuns": "{count, plural, one {# lista płac nie została jeszcze potwierdzona. Można ją nadal potwierdzić lub odrzucić.} few {# listy płac nie zostały jeszcze potwierdzone. Można je nadal potwierdzić lub odrzucić.} many {# list płac nie zostało jeszcze potwierdzonych. Można je nadal potwierdzić lub odrzucić.} other {# listy płac nie zostało jeszcze potwierdzone. Można je nadal potwierdzić lub odrzucić.}}"
+      },
       "tabs": {
         "access": "Dostęp",
         "currencies": "Waluty",
@@ -1034,6 +1060,7 @@
         "exceedsOutstanding": "Kwota jest wyższa niż kwota do uregulowania.",
         "exceedsOverpayment": "Kwota jest wyższa niż nadpłata.",
         "failed": "Nie udało się zarejestrować płatności. Spróbuj ponownie.",
+        "inPayrollRun": "Przebieg listy płac obejmuje teraz ten wydatek, więc jest on opłacany z listą płac. Usuń go z przebiegu przed zarejestrowaniem płatności.",
         "load": "Nie udało się załadować salda zwrotu kosztów. Spróbuj ponownie.",
         "noOverpayment": "Brak nadpłaty dla tego wydatku.",
         "notApproved": "Ten wydatek nie jest już zatwierdzony, więc nie można zarejestrować płatności.",

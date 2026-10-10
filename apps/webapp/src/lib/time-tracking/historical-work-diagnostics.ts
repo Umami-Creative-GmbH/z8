@@ -71,6 +71,8 @@ export interface HistoricalPeriodEvidence {
 	approvalWorkflowId: string | null;
 	deletedAt: Instant | null;
 	projectId: string | null;
+	/** Billable work (#900); absent reads as non-billable. */
+	isBillable?: boolean;
 	workCategoryId: string | null;
 	workLocationType: string | null;
 	canonicalRecordId: string | null;
@@ -95,6 +97,8 @@ export interface HistoricalRecordEvidence {
 		computationMetadata: string | null;
 	} | null;
 	projectIds: readonly string[];
+	/** The projects whose allocation is billable (#900); absent reads as none. */
+	billableProjectIds?: readonly string[];
 }
 
 export interface HistoricalOperationEvidence {
@@ -669,6 +673,29 @@ export function assessHistoricalWork(
 			compare("project", period.projectId, record.projectIds);
 			compare("work_category", period.workCategoryId, nonNull(detail.workCategoryId));
 			compare("work_location_type", period.workLocationType, nonNull(detail.workLocationType));
+			// Billability (#900) is compared only where both sides name the same
+			// project; both representations always carry it, so any difference is a
+			// conflict for review, never a value to fill in.
+			if (period.projectId !== null && record.projectIds.includes(period.projectId)) {
+				const periodBillable = period.isBillable ?? false;
+				// One lookup against this record's small project list, not repeated lookups against a shared list.
+				// react-doctor-disable-next-line react-doctor/js-set-map-lookups
+				const canonicalBillable = (record.billableProjectIds ?? []).includes(period.projectId);
+				if (periodBillable !== canonicalBillable) {
+					push({
+						timeRecordIds: [record.id],
+						relevance,
+						discriminator: "billable",
+						kind: "metadata_conflict",
+						shape: "conflicting",
+						details: {
+							field: "billable",
+							periodValue: periodBillable,
+							canonicalValue: canonicalBillable,
+						},
+					});
+				}
+			}
 		}
 
 		// Approval relationships and state.

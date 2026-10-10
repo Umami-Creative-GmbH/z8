@@ -18,11 +18,18 @@ import {
 	workPolicyPresence,
 } from "@/db/schema";
 import { getRequestSession } from "@/lib/auth/request-session";
+import { projectHasActiveCustomerSql } from "@/lib/billable-time/project-customer";
+import { getBillableTimeSettings } from "@/lib/billable-time/settings";
 import {
 	isBillingMutationAllowed,
 	requireBillingForMutation,
 } from "@/lib/billing/guard";
-import { dateToDB } from "@/lib/datetime/drizzle-adapter";
+import {
+	compareInstants,
+	type Instant,
+	instantFromDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -43,11 +50,25 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import { WorkPolicyService } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
+import type { BookedProjectTask, ProjectTaskChoice } from "@/lib/projects/project-task-model";
+import { listOpenTasksByProject } from "@/lib/projects/project-tasks";
+import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
-import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
+import { breakDueStatus } from "@/lib/time-tracking/break-due";
+import { readComplianceTotals } from "@/lib/time-tracking/compliance-totals";
+import { readEffectiveWorkPolicyAt } from "@/lib/time-tracking/effective-work-policy";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
-import { changeWorkPeriodProject } from "@/lib/time-tracking/work-period-attribution";
+import {
+	PROJECT_TASK_INELIGIBILITY_MESSAGES,
+	projectTaskIneligibility,
+} from "@/lib/time-tracking/project-eligibility";
+import { namedTaskId } from "@/lib/time-tracking/task-attribution";
+import {
+	changeWorkPeriodBillability,
+	changeWorkPeriodProject,
+} from "@/lib/time-tracking/work-period-attribution";
+import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import {
 	type AddBreakActionContext,
@@ -70,7 +91,7 @@ import {
 	parsePresenceFixedDays,
 	validatePresenceFixedDaysConfig,
 } from "./actions/presence-status";
-import { getActiveWorkPeriod, getComplianceDailyMinutes } from "./actions/queries";
+import { getActiveWorkPeriod } from "./actions/queries";
 import { splitOwnWorkPeriod } from "./actions/work-period-split";
 import {
 	createManualTimeEntryFromCommand,
@@ -102,10 +123,20 @@ export async function addBreakToActiveSession(
 
 const logger = createLogger("TimeTrackingActionsEffect");
 
+/** The page warns this many minutes before a break is due. */
+const BREAK_WARNING_LEAD_MINUTES = 15;
+
 type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
 	project: Pick<
 		typeof project.$inferSelect,
-		"id" | "name" | "color" | "status" | "budgetHours" | "deadline"
+		| "id"
+		| "name"
+		| "color"
+		| "status"
+		| "budgetHours"
+		| "deadline"
+		| "customerId"
+		| "billableDefault"
 	> | null;
 };
 
@@ -174,7 +205,8 @@ export async function getTimeClockStatus(): Promise<{
 	hasEmployee: boolean;
 	employeeId: string | null;
 	isClockedIn: boolean;
-	activeWorkPeriod: { id: string; startTime: Date } | null;
+	/** `currentTask`: the running work's task (#874), which the clock-out keeps unless changed. */
+	activeWorkPeriod: { id: string; startTime: Date; currentTask: BookedProjectTask | null } | null;
 }> {
 	const session = await getRequestSession();
 	if (!session?.user) {
@@ -219,6 +251,8 @@ export async function getTimeClockStatus(): Promise<{
 			eq(workPeriod.organizationId, emp.organizationId),
 			isNull(workPeriod.endTime),
 		),
+		// The task key keeps the task in the period's project and organization.
+		with: { task: { columns: { id: true, name: true, state: true, projectId: true } } },
 	});
 
 	return {
@@ -226,7 +260,7 @@ export async function getTimeClockStatus(): Promise<{
 		employeeId: emp.id,
 		isClockedIn: !!period,
 		activeWorkPeriod: period
-			? { id: period.id, startTime: period.startTime }
+			? { id: period.id, startTime: period.startTime, currentTask: period.task ?? null }
 			: null,
 	};
 }
@@ -344,49 +378,6 @@ async function validateProjectAssignment(
 	return { isValid: true };
 }
 
-/**
- * Calculate total break minutes taken today (gaps between completed work periods)
- * Uses employee's timezone for "today" calculation
- */
-async function calculateBreaksTakenToday(
-	employeeId: string,
-	timezone: string = "UTC",
-): Promise<number> {
-	const { start: todayStartDT, end: todayEndDT } =
-		getTodayRangeInTimezone(timezone);
-	const todayStart = dateToDB(todayStartDT)!;
-	const todayEnd = dateToDB(todayEndDT)!;
-
-	// Get all completed work periods for today, sorted by start time
-	const periods = await db.query.workPeriod.findMany({
-		where: and(
-			eq(workPeriod.employeeId, employeeId),
-			gte(workPeriod.startTime, todayStart),
-			lte(workPeriod.startTime, todayEnd),
-		),
-		orderBy: [workPeriod.startTime],
-	});
-
-	// Calculate gaps between consecutive work periods
-	let totalBreakMinutes = 0;
-
-	for (let i = 0; i < periods.length - 1; i++) {
-		const currentEnd = periods[i].endTime;
-		const nextStart = periods[i + 1].startTime;
-
-		if (currentEnd && nextStart) {
-			const gapMs = nextStart.getTime() - currentEnd.getTime();
-			const gapMinutes = Math.floor(gapMs / 60000);
-			// Only count gaps > 1 minute as breaks
-			if (gapMinutes > 1) {
-				totalBreakMinutes += gapMinutes;
-			}
-		}
-	}
-
-	return totalBreakMinutes;
-}
-
 export async function requestTimeCorrection(
 	data: CorrectionRequest,
 ): Promise<
@@ -415,8 +406,9 @@ export async function requestTimeCorrection(
 }
 
 /**
- * Get break reminder status for the currently active session
- * Returns information about break requirements and whether a break is needed soon
+ * Break reminder status for the current live work. It reads the same shared
+ * break-due computation as the break-due reminder, so the page and the
+ * reminder never disagree.
  */
 export async function getBreakReminderStatus(): Promise<
 	ServerActionResult<{
@@ -442,14 +434,6 @@ export async function getBreakReminderStatus(): Promise<
 		return { success: false, error: "Employee profile not found" };
 	}
 
-	// Get user's timezone for calculations from userSettings
-	const settingsData = await db.query.userSettings.findFirst({
-		where: eq(userSettings.userId, session.user.id),
-		columns: { timezone: true },
-	});
-	const timezone = settingsData?.timezone || "UTC";
-
-	// Get active work period
 	const activePeriod = await getActiveWorkPeriod(emp.id);
 	if (!activePeriod) {
 		return {
@@ -465,80 +449,47 @@ export async function getBreakReminderStatus(): Promise<
 	}
 
 	try {
-		// Calculate current session duration
-		const now = new Date();
-		const durationMs = now.getTime() - activePeriod.startTime.getTime();
-		const currentSessionMinutes = Math.floor(durationMs / 60000);
-
-		// Get the compliance check's day and breaks using employee's timezone
-		const completedMinutesToday = await getComplianceDailyMinutes(emp.id, timezone);
-		const breaksTaken = await calculateBreaksTakenToday(emp.id, timezone);
-
-		// Use Effect to get regulation and check break requirements
-		const breakStatusEffect = Effect.gen(function* () {
-			const workPolicyService = yield* WorkPolicyService;
-
-			const policy = yield* workPolicyService.getEffectivePolicy(emp.id);
-
-			if (!policy?.regulation) {
-				return {
-					needsBreakSoon: false,
-					uninterruptedMinutes: currentSessionMinutes,
-					maxUninterrupted: null,
-					minutesUntilBreakRequired: null,
-					breakRequirement: null,
-				};
-			}
-
-			const { regulation } = policy;
-
-			// Calculate break requirements
-			const breakReq = workPolicyService.calculateBreakRequirements({
-				regulation,
-				workedMinutes: completedMinutesToday + currentSessionMinutes,
-				breaksTakenMinutes: breaksTaken,
-			});
-
-			// Calculate time until break is required
-			const maxUninterrupted = regulation.maxUninterruptedMinutes;
-			let minutesUntilBreakRequired: number | null = null;
-			let needsBreakSoon = false;
-
-			if (maxUninterrupted) {
-				const remaining = maxUninterrupted - currentSessionMinutes;
-				minutesUntilBreakRequired = remaining;
-
-				// Warn when 15 minutes or less remaining
-				if (remaining <= 15 && remaining > 0) {
-					needsBreakSoon = true;
-				} else if (remaining <= 0) {
-					needsBreakSoon = true;
-				}
-			}
-
-			// Also check if break requirement is approaching
-			if (breakReq.isRequired && breakReq.remaining > 0) {
-				needsBreakSoon = true;
-			}
-
-			return {
-				needsBreakSoon,
-				uninterruptedMinutes: currentSessionMinutes,
-				maxUninterrupted: maxUninterrupted,
-				minutesUntilBreakRequired,
-				breakRequirement: breakReq.isRequired
-					? {
-							isRequired: true,
-							totalNeeded: breakReq.totalBreakNeeded,
-							taken: breakReq.breakTaken,
-							remaining: breakReq.remaining,
-						}
-					: null,
-			};
+		const now = systemClock.nowInstant();
+		const liveStart = instantFromDate(activePeriod.startTime);
+		const timezone = await getEffectiveTimezone(session.user.id, emp.organizationId);
+		const [totals, policy] = await Promise.all([
+			readComplianceTotals({
+				organizationId: emp.organizationId,
+				employeeId: emp.id,
+				workStart: liveStart,
+				timezone,
+			}),
+			readEffectiveWorkPolicyAt({
+				employeeId: emp.id,
+				organizationId: emp.organizationId,
+				at: now,
+			}),
+		]);
+		const regulation = policy?.regulation ?? null;
+		const status = breakDueStatus({
+			regulation,
+			completedMinutes: totals.dailyMinutes,
+			breakMinutes: totals.breakMinutes,
+			liveStart,
+			now,
 		});
+		const warnFrom = (due: Instant) =>
+			due.subtract({ minutes: BREAK_WARNING_LEAD_MINUTES });
 
-		const breakStatus = await runtime.runPromise(breakStatusEffect);
-		return { success: true, data: breakStatus };
+		return {
+			success: true,
+			data: {
+				needsBreakSoon: status.breaches.some(
+					(breach) => compareInstants(now, warnFrom(breach.at)) >= 0,
+				),
+				uninterruptedMinutes: status.uninterruptedMinutes,
+				maxUninterrupted: regulation?.maxUninterruptedMinutes ?? null,
+				minutesUntilBreakRequired: status.minutesUntilUninterruptedLimit,
+				breakRequirement: status.requirement
+					? { isRequired: true, ...status.requirement }
+					: null,
+			},
+		};
 	} catch (error) {
 		logger.error({ error }, "Failed to get break reminder status");
 		return { success: false, error: "Failed to check break status" };
@@ -728,6 +679,12 @@ export interface AssignedProject {
 	budgetHours: number | null;
 	deadline: string | null; // ISO string for serialization
 	totalHoursBooked: number;
+	/** Billable Time (#900): only a project with a customer can make work billable. */
+	hasCustomer: boolean;
+	/** The billable default new work on it takes; false without a customer. */
+	billableDefault: boolean;
+	/** The project's open tasks, by name (#874); empty when it has none. */
+	tasks: ProjectTaskChoice[];
 }
 
 /**
@@ -781,6 +738,8 @@ export async function getAssignedProjects(): Promise<
 				status: string;
 				budgetHours: string | null;
 				deadline: Date | null;
+				customerId: string | null;
+				billableDefault: boolean;
 			}
 		>();
 
@@ -803,6 +762,8 @@ export async function getAssignedProjects(): Promise<
 					status: proj.status,
 					budgetHours: proj.budgetHours,
 					deadline: proj.deadline,
+					customerId: proj.customerId,
+					billableDefault: proj.billableDefault,
 				});
 			}
 		}
@@ -810,28 +771,50 @@ export async function getAssignedProjects(): Promise<
 		// Batch query: get total hours booked per project in one query
 		const projectIds = Array.from(bookableProjects.keys());
 		const hoursMap = new Map<string, number>();
+		// Billable Time (#768): a deleted customer leaves the project without customer.
+		const withActiveCustomer = new Set<string>();
 
 		if (projectIds.length > 0) {
-			const hoursResult = await db
-				.select({
-					projectId: workPeriod.projectId,
-					totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
-				})
-				.from(workPeriod)
-				.where(
-					and(
-						inArray(workPeriod.projectId, projectIds),
-						eq(workPeriod.organizationId, emp.organizationId),
+			const [hoursResult, customerResult] = await Promise.all([
+				db
+					.select({
+						projectId: workPeriod.projectId,
+						totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
+					})
+					.from(workPeriod)
+					.where(
+						and(
+							inArray(workPeriod.projectId, projectIds),
+							eq(workPeriod.organizationId, emp.organizationId),
+							// Booked hours count completed work only, as the reports do (#794).
+							completedWorkPeriodCondition(),
+						),
+					)
+					.groupBy(workPeriod.projectId),
+				db
+					.select({ id: project.id })
+					.from(project)
+					.where(
+						and(
+							inArray(project.id, projectIds),
+							eq(project.organizationId, emp.organizationId),
+							projectHasActiveCustomerSql(),
+						),
 					),
-				)
-				.groupBy(workPeriod.projectId);
+			]);
 
 			for (const row of hoursResult) {
 				if (row.projectId) {
 					hoursMap.set(row.projectId, row.totalMinutes / 60);
 				}
 			}
+			for (const row of customerResult) withActiveCustomer.add(row.id);
 		}
+
+		const tasksByProjectId = await listOpenTasksByProject({
+			organizationId: emp.organizationId,
+			projectIds,
+		});
 
 		// Build final result with budget/deadline data
 		const projectsMap = new Map<string, AssignedProject>();
@@ -844,6 +827,9 @@ export async function getAssignedProjects(): Promise<
 				budgetHours: proj.budgetHours ? Number(proj.budgetHours) : null,
 				deadline: proj.deadline?.toISOString() ?? null,
 				totalHoursBooked: hoursMap.get(proj.id) ?? 0,
+				hasCustomer: withActiveCustomer.has(proj.id),
+				billableDefault: withActiveCustomer.has(proj.id) && proj.billableDefault,
+				tasks: tasksByProjectId.get(proj.id) ?? [],
 			});
 		}
 
@@ -861,17 +847,29 @@ export async function getAssignedProjects(): Promise<
 
 /**
  * Update the project assignment for a work period
- * Allows changing or removing the project after the fact
+ * Allows changing or removing the project after the fact. The new project's
+ * billable default applies unless `options.billable` sets billability in the
+ * same edit (#900); with the same project it is a billability-only change.
+ *
+ * `taskId` (#873): undefined keeps the period's task while its project stays
+ * and clears it when the project changes; null clears it; an ID books the work
+ * to that task of `projectId`. Passing the current project with a task changes
+ * only the task. A refused task answers with its stable reason as `code`.
  */
 export async function updateWorkPeriodProject(
 	workPeriodId: string,
 	projectId: string | null,
+	taskId?: string | null,
+	options: { billable?: boolean } = {},
 ): Promise<
 	ServerActionResult<{ workPeriodId: string; projectId: string | null }>
 > {
 	const session = await getRequestSession();
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
+	}
+	if (options.billable !== undefined && typeof options.billable !== "boolean") {
+		return { success: false, error: "Invalid billability" };
 	}
 
 	const emp = await getCurrentEmployee();
@@ -906,6 +904,22 @@ export async function updateWorkPeriodProject(
 			};
 		}
 
+		// A named task is checked first: it covers its project's bookability, so a
+		// task-only change of a project that can no longer be booked names that reason.
+		if (taskId) {
+			const taskIneligibility = await projectTaskIneligibility(
+				{ employeeId: emp.id, teamId: emp.teamId, organizationId: emp.organizationId },
+				{ projectId, taskId },
+			);
+			if (taskIneligibility) {
+				return {
+					success: false,
+					error: PROJECT_TASK_INELIGIBILITY_MESSAGES[taskIneligibility],
+					code: taskIneligibility,
+				};
+			}
+		}
+
 		// Validate project if provided
 		if (projectId) {
 			const projectValidation = await validateProjectAssignment(
@@ -921,6 +935,13 @@ export async function updateWorkPeriodProject(
 				};
 			}
 		}
+		// Explicit billability belongs to Billable Time; defaults keep applying while it is off.
+		if (
+			options.billable !== undefined &&
+			!(await getBillableTimeSettings(emp.organizationId, db)).enabled
+		) {
+			return { success: false, error: BILLABLE_TIME_OFF };
+		}
 
 		const billingAccess = await requireBillingForMutation(emp.organizationId);
 		if (!isBillingMutationAllowed(billingAccess)) {
@@ -934,15 +955,105 @@ export async function updateWorkPeriodProject(
 		await changeWorkPeriodProject({
 			organizationId: emp.organizationId,
 			employeeId: emp.id,
+			teamId: emp.teamId,
 			actorUserId: session.user.id,
 			period,
 			projectId,
+			...namedTaskId(taskId),
+			...(options.billable === undefined ? {} : { billable: options.billable }),
 		});
 
 		return {
 			success: true,
 			data: { workPeriodId, projectId },
 		};
+	} catch (error) {
+		const failure = describeAmendmentFailure(error);
+		if (failure) {
+			return { success: false, error: failure.message, code: failure.code };
+		}
+		// The task re-check under the work locks names its stable reason (#873).
+		if (error instanceof ValidationError && error.field === "taskId") {
+			return { success: false, error: error.message, code: String(error.value) };
+		}
+		if (
+			error instanceof ValidationError ||
+			error instanceof ConflictError ||
+			error instanceof AuthorizationError ||
+			error instanceof NotFoundError
+		) {
+			return { success: false, error: error.message };
+		}
+		logger.error({ error }, "Failed to update work period project");
+		return { success: false, error: "Failed to update project assignment" };
+	}
+}
+
+const workPeriodIdSchema = z.uuid();
+
+const BILLABLE_TIME_OFF = "Billable Time is switched off";
+
+/**
+ * Marks a work period billable or non-billable after recording (#900). The
+ * employee, organization owners and admins, the employee's managers and the
+ * project managers of the work's project may change it; the attribution
+ * operation verifies that authority under its locks. Billable work needs a
+ * project with a customer.
+ */
+export async function updateWorkPeriodBillability(
+	workPeriodId: string,
+	billable: boolean,
+): Promise<ServerActionResult<{ workPeriodId: string; isBillable: boolean }>> {
+	const session = await getRequestSession();
+	if (!session?.user) {
+		return { success: false, error: "Not authenticated" };
+	}
+	const organizationId = session.session.activeOrganizationId;
+	if (!organizationId) {
+		return { success: false, error: "No active organization" };
+	}
+	if (!workPeriodIdSchema.safeParse(workPeriodId).success || typeof billable !== "boolean") {
+		return { success: false, error: "Work period not found" };
+	}
+
+	try {
+		const [period] = await db
+			.select()
+			.from(workPeriod)
+			.where(
+				and(
+					eq(workPeriod.id, workPeriodId),
+					eq(workPeriod.organizationId, organizationId),
+					isNull(workPeriod.deletedAt),
+				),
+			)
+			.limit(1);
+		if (!period) {
+			return { success: false, error: "Work period not found" };
+		}
+		// Explicit billability belongs to Billable Time; defaults keep applying while it is off.
+		if (!(await getBillableTimeSettings(organizationId, db)).enabled) {
+			return { success: false, error: BILLABLE_TIME_OFF };
+		}
+
+		const billingAccess = await requireBillingForMutation(organizationId);
+		if (!isBillingMutationAllowed(billingAccess)) {
+			return {
+				success: false,
+				error: "billing_required",
+				code: billingAccess.reason ?? "subscription_required",
+			};
+		}
+
+		await changeWorkPeriodBillability({
+			organizationId,
+			employeeId: period.employeeId,
+			actorUserId: session.user.id,
+			period,
+			billable,
+		});
+
+		return { success: true, data: { workPeriodId, isBillable: billable } };
 	} catch (error) {
 		const failure = describeAmendmentFailure(error);
 		if (failure) {
@@ -956,8 +1067,8 @@ export async function updateWorkPeriodProject(
 		) {
 			return { success: false, error: error.message };
 		}
-		logger.error({ error }, "Failed to update work period project");
-		return { success: false, error: "Failed to update project assignment" };
+		logger.error({ error }, "Failed to update work period billability");
+		return { success: false, error: "Failed to update billability" };
 	}
 }
 

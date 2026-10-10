@@ -183,6 +183,20 @@
       "notes": "Notes",
       "pendingApproval": "Pending Approval",
       "pendingApprovalDescription": "This work period is awaiting manager approval. The recorded times may change if rejected.",
+      "positions": {
+        "accuracy": "within {meters} m",
+        "clockIn": "Clock-in",
+        "clockOut": "Clock-out",
+        "failed": "Positions could not be loaded",
+        "hide": "Hide positions",
+        "loggedHint": "The employee can see who looked at their positions: the viewing is logged.",
+        "none": "No positions were recorded for this work period.",
+        "openInMaps": "Open in maps",
+        "originalClockIn": "Recorded with the original clock-in at {time}. The times were corrected later.",
+        "originalClockOut": "Recorded with the original clock-out at {time}. The times were corrected later.",
+        "show": "Show positions",
+        "title": "Positions"
+      },
       "project": "Project",
       "recurring": "Recurring yearly",
       "rejected": "Rejected",
@@ -192,13 +206,18 @@
       "surcharge": "Surcharge",
       "surchargeBreakdown": "Surcharge Breakdown",
       "system": "System",
+      "task": "Task",
+      "taskDone": "{name} (done)",
       "time": "Time",
       "type": "Type",
       "workLocation": "Work location"
     },
     "edit": {
+      "billableSaveFailed": "Failed to update billability",
       "deleteEntry": "Delete entry",
       "locationRequired": "Choose a work location.",
+      "markedBillable": "Marked as billable",
+      "markedNonBillable": "Marked as non-billable",
       "noNotes": "No notes added",
       "noProject": "No project assigned",
       "notesSaved": "Notes saved",
@@ -343,6 +362,7 @@
       "notRecorded": "Not recorded"
     },
     "workPeriod": {
+      "billable": "Billable",
       "editedBy": "(edited by {name} at {date})"
     },
     "workStatus": {

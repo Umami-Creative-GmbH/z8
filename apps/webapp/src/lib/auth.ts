@@ -556,6 +556,22 @@ export const auth = betterAuth({
 							defaultValue: false,
 							input: false,
 						},
+						// Billable Time module switch (#897). System-managed: switching it on
+						// needs projects and a billable currency, so only the module's own
+						// server action writes it.
+						billableTimeEnabled: {
+							type: "boolean",
+							required: false,
+							defaultValue: false,
+							input: false,
+						},
+						// Personnel files (#865): switched by owners and admins through the features card.
+						personnelFilesEnabled: {
+							type: "boolean",
+							required: false,
+							defaultValue: false,
+							input: false,
+						},
 						timezone: {
 							type: "string",
 							required: false,

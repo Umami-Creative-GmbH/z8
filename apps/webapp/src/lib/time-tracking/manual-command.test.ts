@@ -49,6 +49,44 @@ describe("parseManualTimeEntryCommand", () => {
 		},
 	);
 
+	it.each([true, false])("preserves an explicit billable choice %s", (billable) => {
+		const submitted = { ...command, projectId: crypto.randomUUID(), billable };
+		expect(parseManualTimeEntryCommand(submitted)).toEqual({ ok: true, command: submitted });
+	});
+
+	it("keeps a command without a billable choice free of the key", () => {
+		const parsed = parseManualTimeEntryCommand(structuredClone(command));
+		expect(parsed.ok && Object.hasOwn(parsed.command, "billable")).toBe(false);
+	});
+
+	it.each(["true", 1, null, undefined])("rejects a non-boolean billable choice %s", (billable) => {
+		expect(parseManualTimeEntryCommand({ ...command, billable })).toEqual({
+			ok: false,
+			rejection: { reason: "invalid_command", field: "billable" },
+		});
+	});
+
+	it("preserves a task of the command's project, alongside a work location", () => {
+		const submitted = {
+			...command,
+			projectId: "c0000000-0000-4000-8000-000000000001",
+			taskId: "d0000000-0000-4000-8000-000000000001",
+			workLocationType: "home",
+		};
+		expect(parseManualTimeEntryCommand(submitted)).toEqual({ ok: true, command: submitted });
+	});
+
+	it.each([
+		["without a project", { taskId: "d0000000-0000-4000-8000-000000000001" }],
+		["that is blank", { projectId: "c0000000-0000-4000-8000-000000000001", taskId: "" }],
+		["that is null", { projectId: "c0000000-0000-4000-8000-000000000001", taskId: null }],
+	])("rejects a task %s", (_case, fields) => {
+		expect(parseManualTimeEntryCommand({ ...command, ...fields })).toEqual({
+			ok: false,
+			rejection: { reason: "invalid_command", field: "taskId" },
+		});
+	});
+
 	it("accepts a complete version-2 command unchanged", () => {
 		expect(parseManualTimeEntryCommand(structuredClone(command))).toEqual({
 			ok: true,

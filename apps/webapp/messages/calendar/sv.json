@@ -183,6 +183,20 @@
       "notes": "Anteckningar",
       "pendingApproval": "Väntar på godkännande",
       "pendingApprovalDescription": "Denna arbetsperiod väntar på godkännande från chef. De registrerade tiderna kan ändras om den avvisas.",
+      "positions": {
+        "accuracy": "inom {meters} m",
+        "clockIn": "Stämpla in",
+        "clockOut": "Stämpla ut",
+        "failed": "Positioner kunde inte läsas in",
+        "hide": "Dölj positioner",
+        "loggedHint": "Den anställde kan se vem som har tittat på deras positioner: visningen loggas.",
+        "none": "Inga positioner registrerades för den här arbetsperioden.",
+        "openInMaps": "Öppna i kartor",
+        "originalClockIn": "Registrerades vid den ursprungliga instämplingen kl. {time}. Tiderna korrigerades senare.",
+        "originalClockOut": "Registrerades vid den ursprungliga utstämplingen kl. {time}. Tiderna korrigerades senare.",
+        "show": "Visa positioner",
+        "title": "Positioner"
+      },
       "project": "Projekt",
       "recurring": "Återkommer årligen",
       "rejected": "Avvisad",
@@ -192,13 +206,18 @@
       "surcharge": "Tillägg",
       "surchargeBreakdown": "Uppdelning av tillägg",
       "system": "System",
+      "task": "Uppgift",
+      "taskDone": "{name} (klar)",
       "time": "Tid",
       "type": "Typ",
       "workLocation": "Arbetsplats"
     },
     "edit": {
+      "billableSaveFailed": "Kunde inte uppdatera debiterbarhet",
       "deleteEntry": "Ta bort post",
       "locationRequired": "Välj en arbetsplats.",
+      "markedBillable": "Markerad som debiterbar",
+      "markedNonBillable": "Markerad som ej debiterbar",
       "noNotes": "Inga anteckningar har lagts till",
       "noProject": "Inget projekt tilldelat",
       "notesSaved": "Anteckningar sparade",
@@ -343,6 +362,7 @@
       "notRecorded": "Inte registrerad"
     },
     "workPeriod": {
+      "billable": "Debiterbar",
       "editedBy": "(redigerad av {name} {date})"
     },
     "workStatus": {

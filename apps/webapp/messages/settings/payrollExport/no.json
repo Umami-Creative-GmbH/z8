@@ -20,6 +20,34 @@
         "title": "DATEV-stamdata"
       },
       "description": "Eksporter arbeidsperioder til lønnssystemer som DATEV eller Personio",
+      "expenseMappings": {
+        "apiConnectors": "Personio, Workday og SuccessFactors-API-et overfører ikke utgiftsrefusjoner.",
+        "codeLabel": "{line}, {format} lønnsart",
+        "description": "Koble hver utgiftslinje til en lønnsart for lønnsfilformatene du eksporterer. En utgiftslinje uten en lønnsart for det eksporterte formatet utelater de berørte rapportene fra lønnskjøringen; de betales via bankoverføring i stedet.",
+        "format": {
+          "datevLohn": "DATEV Payroll",
+          "lexware": "Lexware",
+          "sage": "Sage",
+          "successFactorsFile": "SuccessFactors-fil"
+        },
+        "kind": {
+          "mileageExcess": "Kilometergodtgjørelse: skattepliktig overskytende",
+          "mileageStatutory": "Kilometergodtgjørelse: lovbestemt andel",
+          "perDiemExcess": "Diett: skattepliktig overskytende",
+          "perDiemStatutory": "Diett: lovbestemt andel",
+          "receiptAccommodation": "Kvitteringer: overnatting",
+          "receiptMeals": "Kvitteringer: måltider",
+          "receiptOther": "Kvitteringer: annet",
+          "receiptParking": "Kvitteringer: parkering",
+          "receiptTransport": "Kvitteringer: transport"
+        },
+        "line": "Utgiftslinje",
+        "loadFailed": "Kunne ikke laste inn lønnsartene for utgifter.",
+        "save": "Lagre lønnsarter",
+        "saved": "Lønnsarter lagret",
+        "saveFailed": "Noen lønnsarter kunne ikke lagres.",
+        "title": "Utgiftsrefusjoner"
+      },
       "export": {
         "allEmployees": "Alle ansatte",
         "allProjects": "Alle prosjekter",
@@ -71,6 +99,7 @@
         "downloadError": "Kunne ikke hente nedlastings-URL",
         "employees": "ansatte",
         "noExports": "Ingen eksporter ennå",
+        "payrollRun": "{count, plural, one {Lønnskjøring: # utgiftsrapport} other {Lønnskjøring: # utgiftsrapporter}}",
         "periods": "perioder",
         "status": {
           "completed": "Fullført",

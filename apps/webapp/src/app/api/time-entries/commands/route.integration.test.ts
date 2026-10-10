@@ -196,10 +196,11 @@ function clockOutCommand(
 	};
 }
 
-async function submit(command: unknown) {
+async function submit(command: unknown, headers: Record<string, string> = {}) {
 	const response = await commands.POST(
 		new Request(`${server}/api/time-entries/commands`, {
 			method: "POST",
+			headers,
 			body: JSON.stringify(command),
 		}),
 	);
@@ -424,9 +425,10 @@ describe("frozen direct-HTTP clock commands on PostgreSQL", () => {
 		expect(await read()).toEqual({
 			status: 200,
 			body: {
-				commandVersions: [2],
+				commandVersions: [2, 3],
 				kinds: ["clock_in", "clock_out", "break"],
 				submit: "available",
+				onlineSubmit: "unavailable",
 				lookup: "available",
 				admission: {
 					immediate: { pastSeconds: 300, futureSeconds: 300 },
@@ -436,7 +438,9 @@ describe("frozen direct-HTTP clock commands on PostgreSQL", () => {
 			},
 		});
 		await setAdmission("inactive");
-		expect((await read()).body.submit).toBe("unavailable");
+		const legacy = await read();
+		expect(legacy.body.submit).toBe("unavailable");
+		expect(legacy.body.onlineSubmit).toBe("available");
 		harness.userId = null;
 		expect((await read()).status).toBe(401);
 	});
@@ -519,6 +523,72 @@ describe("frozen direct-HTTP clock commands on PostgreSQL", () => {
 			body: { ...executed.body, outcome: "replayed" },
 		});
 		expect(await snapshot()).toEqual(before);
+	});
+
+	it("stores a browser's version 3 position, never a bearer client's, and replays the identical stamped resend (#826)", async () => {
+		await admin.query(
+			`insert into position_capture_setting (organization_id, enabled, purpose_statement, retention_days)
+			 values ($1, true, 'Site attendance', 60)`,
+			[ids.organization],
+		);
+		await admin.query(
+			`insert into position_capture_assignment
+			 (organization_id, assignment_type, priority, capture_enabled, created_by)
+			 values ($1, 'organization', 0, true, $2)`,
+			[ids.organization, ids.requesterUser],
+		);
+		const {
+			rows: [notice],
+		} = await admin.query<{ id: string }>(
+			`insert into position_notice (organization_id, version, purpose_statement, retention_days, template_revision)
+			 values ($1, 1, 'Site attendance', 60, 1) returning id`,
+			[ids.organization],
+		);
+		await admin.query(
+			`insert into position_consent (organization_id, employee_id, notice_id, granted_at)
+			 values ($1, $2, $3, $4)`,
+			[ids.organization, ids.requester, notice?.id, new Date("2026-09-01T00:00:00Z")],
+		);
+		const position = {
+			latitude: 47.3769,
+			longitude: 8.5417,
+			accuracyMeters: 25,
+			fixedAt: "2026-09-20T09:59:58.500Z",
+		};
+		const stamped = clockInCommand({ version: 3, position });
+
+		const executed = await submit(stamped);
+		const replayed = await submit(stamped);
+		const stamps = async () =>
+			(
+				await admin.query(
+					"select time_entry_id, latitude, captured_at, purge_at from position_stamp where organization_id = $1",
+					[ids.organization],
+				)
+			).rows;
+
+		expect(executed.status).toBe(201);
+		expect(replayed).toEqual({ status: 200, body: { ...executed.body, outcome: "replayed" } });
+		expect(await receipt(stamped.operationId)).toMatchObject({ command_version: 3, command: stamped });
+		expect(await stamps()).toEqual([
+			{
+				time_entry_id: stamped.operationId,
+				latitude: 47.3769,
+				captured_at: new Date("2026-09-20T10:00:00Z"),
+				purge_at: new Date("2026-11-19T10:00:00Z"),
+			},
+		]);
+
+		// The desktop authenticates with a bearer token: its stamped command commits unstamped.
+		const target = { clockInOperationId: stamped.operationId };
+		const bearer = clockOutCommand(target, {
+			version: 3,
+			position,
+			occurredAt: now.add({ minutes: 2 }).toString(),
+		});
+		const closed = await submit(bearer, { authorization: "Bearer desktop-token" });
+		expect(closed.status).toBe(201);
+		expect(await stamps()).toHaveLength(1);
 	});
 
 	it("treats a changed command under a committed identity as a collision", async () => {
@@ -1033,6 +1103,212 @@ describe("frozen direct-HTTP clock commands on PostgreSQL", () => {
 			clock_out_id: close.operationId,
 		});
 		expect(await receipt(close.operationId)).toMatchObject({ command: close });
+	});
+
+	describe("project tasks on frozen clock-outs (#875)", () => {
+		const tasks = {
+			open: "f5000000-0000-4000-8000-000000000001",
+			done: "f5000000-0000-4000-8000-000000000002",
+			otherProject: "f5000000-0000-4000-8000-000000000003",
+			otherOrganization: "f5000000-0000-4000-8000-000000000004",
+			otherOrganizationProject: "f5000000-0000-4000-8000-000000000005",
+		} as const;
+
+		beforeEach(async () => {
+			await admin.query(
+				`insert into project (id, organization_id, name, status, is_active, created_by, updated_at)
+				 values ($1, $2, 'Other org project', 'active', true, $3, now())`,
+				[tasks.otherOrganizationProject, ids.otherOrganization, ids.requesterUser],
+			);
+			await admin.query(
+				`insert into project_task
+				 (id, organization_id, project_id, name, state, done_at, done_by, created_by, updated_at) values
+				 ($1, $5, $7, 'Design', 'open', null, null, $9, now()),
+				 ($2, $5, $7, 'Shipped', 'done', now(), $9, $9, now()),
+				 ($3, $5, $8, 'Elsewhere', 'open', null, null, $9, now()),
+				 ($4, $6, $10, 'Foreign', 'open', null, null, $9, now())`,
+				[
+					tasks.open,
+					tasks.done,
+					tasks.otherProject,
+					tasks.otherOrganization,
+					ids.organization,
+					ids.otherOrganization,
+					ids.projectA,
+					ids.projectB,
+					ids.requesterUser,
+					tasks.otherOrganizationProject,
+				],
+			);
+		});
+
+		async function bookedTask(clockInId: string) {
+			const { rows } = await admin.query<{ period: string | null; allocation: string | null }>(
+				`select wp.task_id as period, a.task_id as allocation
+				 from work_period wp
+				 left join time_record_allocation a
+				   on a.record_id = wp.canonical_record_id and a.organization_id = wp.organization_id
+				  and a.allocation_kind = 'project'
+				 where wp.clock_in_id = $1`,
+				[clockInId],
+			);
+			return only(rows);
+		}
+
+		it("stores the named task on the booking and replays the frozen bytes", async () => {
+			const start = clockInCommand();
+			await submit(start);
+			harness.now = now.add({ hours: 2 });
+			const close = clockOutCommand(
+				{ clockInOperationId: start.operationId },
+				{
+					occurredAt: harness.now.toString(),
+					project: { kind: "replace", id: ids.projectA },
+					task: { kind: "replace", id: tasks.open },
+				},
+			);
+
+			const executed = await submit(close);
+
+			expect(executed.status).toBe(201);
+			expect(executed.body.receipt.result.attribution).toMatchObject({
+				projectId: ids.projectA,
+				taskId: tasks.open,
+			});
+			expect(await bookedTask(start.operationId)).toEqual({
+				period: tasks.open,
+				allocation: tasks.open,
+			});
+			expect(await receipt(close.operationId)).toMatchObject({ command: close });
+
+			// Marking the task done afterwards never undoes a committed command.
+			await admin.query(
+				"update project_task set state = 'done', done_at = now(), done_by = $2 where id = $1",
+				[tasks.open, ids.requesterUser],
+			);
+			const before = await snapshot();
+			expect(await submit(close)).toEqual({
+				status: 200,
+				body: {
+					outcome: "replayed",
+					operationId: close.operationId,
+					receipt: executed.body.receipt,
+				},
+			});
+			expect(await snapshot()).toEqual(before);
+		});
+
+		it("books no task for a clock-out that names none", async () => {
+			const start = clockInCommand();
+			await submit(start);
+			harness.now = now.add({ hours: 1 });
+			const closed = await submit(
+				clockOutCommand(
+					{ clockInOperationId: start.operationId },
+					{ occurredAt: harness.now.toString(), project: { kind: "replace", id: ids.projectA } },
+				),
+			);
+
+			expect(closed.status).toBe(201);
+			expect(closed.body.receipt.result.attribution).not.toHaveProperty("taskId");
+			expect(await bookedTask(start.operationId)).toEqual({ period: null, allocation: null });
+		});
+
+		it("books the task of a clock-out in the exact shape the desktop freezes (#882)", async () => {
+			// Keys and value formats come from the desktop's pinned wire fixture. Only the
+			// identities, context and instants belong to this test.
+			const desktop: Command = JSON.parse(
+				readFileSync(
+					new URL(
+						"../../../../../../desktop/src-tauri/tests/clock-core/fixtures/desktop-v2-clock-out-task.json",
+						import.meta.url,
+					),
+					"utf8",
+				),
+			);
+			const start = clockInCommand();
+			await submit(start);
+			harness.now = now.add({ hours: 2 });
+			const close: Command = {
+				...desktop,
+				operationId: randomUUID(),
+				context: context(),
+				occurredAt: harness.now.toString({ fractionalSecondDigits: 3 }),
+				target: { clockInOperationId: start.operationId },
+				project: { ...(desktop.project as object), id: ids.projectA },
+				task: { ...(desktop.task as object), id: tasks.open },
+			};
+
+			const executed = await submit(close);
+
+			expect(executed.status).toBe(201);
+			expect(await bookedTask(start.operationId)).toEqual({
+				period: tasks.open,
+				allocation: tasks.open,
+			});
+			expect(await receipt(close.operationId)).toMatchObject({ command: close });
+		});
+
+		it.each([
+			["a done task", tasks.done, "task_done"],
+			["another project's task", tasks.otherProject, "task_other_project"],
+			["another organization's task", tasks.otherOrganization, "task_not_found"],
+			["an unknown task", "f5000000-0000-4000-8000-0000000000ff", "task_not_found"],
+		])("refuses %s with the stable reason and writes nothing", async (_label, taskId, reason) => {
+			const start = clockInCommand();
+			await submit(start);
+			const before = await snapshot();
+
+			const outcome = await submit(
+				clockOutCommand(
+					{ clockInOperationId: start.operationId },
+					{
+						project: { kind: "replace", id: ids.projectA },
+						task: { kind: "replace", id: taskId },
+					},
+				),
+			);
+
+			expect(outcome).toEqual({
+				status: 422,
+				body: {
+					outcome: "rejected",
+					operationId: outcome.body.operationId,
+					code: "attribution_not_allowed",
+					field: "taskId",
+					reason,
+				},
+			});
+			expect(await snapshot()).toEqual(before);
+			expect((await lookup(outcome.body.operationId)).body.outcome).toBe("not_committed");
+		});
+
+		it("refuses a task frozen offline that was done before the command arrived", async () => {
+			const start = clockInCommand();
+			await submit(start);
+			harness.now = now.add({ hours: 3 });
+			// Frozen while the task was open; it is done by the time the queue drains.
+			const close = clockOutCommand(
+				{ clockInOperationId: start.operationId },
+				{
+					admission: "delayed",
+					occurredAt: now.add({ hours: 2 }).toString(),
+					project: { kind: "replace", id: ids.projectA },
+					task: { kind: "replace", id: tasks.open },
+				},
+			);
+			await admin.query(
+				"update project_task set state = 'done', done_at = now(), done_by = $2 where id = $1",
+				[tasks.open, ids.requesterUser],
+			);
+			const before = await snapshot();
+
+			expect(await submit(close)).toMatchObject({
+				status: 422,
+				body: { code: "attribution_not_allowed", field: "taskId", reason: "task_done" },
+			});
+			expect(await snapshot()).toEqual(before);
+		});
 	});
 
 	describe("desktop idle breaks (#281)", () => {

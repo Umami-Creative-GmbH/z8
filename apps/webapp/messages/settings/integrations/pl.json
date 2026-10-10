@@ -120,9 +120,11 @@
       },
       "errors": {
         "connectionFailed": "Nie udało się połączyć z Clockodo",
+        "fetchProjectsFailed": "Nie udało się pobrać danych projektu",
         "fetchUsersFailed": "Nie udało się pobrać danych użytkownika",
         "importFailed": "Skanowanie przeglądu importu nie powiodło się",
-        "saveMappingsFailed": "Nie udało się zapisać przypisań użytkowników"
+        "saveMappingsFailed": "Nie udało się zapisać przypisań użytkowników",
+        "saveProjectMappingsFailed": "Nie udało się zapisać mapowań projektów"
       },
       "importing": {
         "description": "Prosimy nie zamykać tej strony. Skanowanie przeglądu jest w kolejce i w przypadku dużych zbiorów danych może chwilę potrwać.",
@@ -148,6 +150,19 @@
         "next": "Mapuj użytkowników",
         "title": "Podgląd danych"
       },
+      "projectMapping": {
+        "clockodoCustomer": "Klient Clockodo",
+        "clockodoProject": "Projekt Clockodo",
+        "continue": "Kontynuuj",
+        "description": "Przypisz projekty Clockodo do istniejących projektów Z8. Zaimportowane wpisy czasu zachowują swój projekt oraz status rozliczalności z Clockodo. Wpisy w nieprzypisanych projektach lub w projektach bez klienta są importowane jako nierozliczalne. Żadne projekty nie zostaną utworzone.",
+        "mappedCount": "Przypisano {mapped} z {total} projektów",
+        "noCustomer": "Ten projekt nie ma klienta, więc zaimportowany dla niego czas jest nierozliczalny.",
+        "noZ8Projects": "Ta organizacja nie ma jeszcze żadnych projektów. Najpierw utwórz projekty, aby zaimportować czas z Clockodo wraz z projektem i statusem rozliczalności.",
+        "title": "Przypisz projekty",
+        "unmapped": "Nieprzypisany (brak projektu)",
+        "z8Project": "Projekt Z8",
+        "z8ProjectFor": "Projekt Z8 dla {project}"
+      },
       "review": {
         "startedToast": "Rozpoczęto skanowanie przeglądu importu. Wymagane jest sprawdzenie przed zatwierdzeniem rekordów."
       },
@@ -167,6 +182,7 @@
         "credentials": "Poświadczenia",
         "import": "Przegląd",
         "preview": "Podgląd",
+        "projectMapping": "Mapowanie projektów",
         "selection": "Wybór",
         "userMapping": "Mapowanie użytkowników"
       },

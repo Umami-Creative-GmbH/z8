@@ -63,8 +63,26 @@ const german: Record<string, string> = {
 	"Work category": "Arbeitskategorie",
 	"Keep current assignment": "Aktuelle Zuordnung beibehalten",
 	"No assignment": "Keine Zuordnung",
+	Task: "Aufgabe",
+	"Keep current task": "Aktuelle Aufgabe beibehalten",
+	"No task": "Keine Aufgabe",
+	"The chosen task was marked done.":
+		"Die gewählte Aufgabe wurde als erledigt markiert.",
+	"The chosen task belongs to another project.":
+		"Die gewählte Aufgabe gehört zu einem anderen Projekt.",
+	"The chosen task no longer exists.":
+		"Die gewählte Aufgabe existiert nicht mehr.",
+	"The chosen task is not available.":
+		"Die gewählte Aufgabe ist nicht verfügbar.",
+	"The chosen project is not open for booking.":
+		"Das gewählte Projekt ist nicht für Buchungen geöffnet.",
+	"Time cannot be booked to the chosen project.":
+		"Auf das gewählte Projekt kann keine Zeit gebucht werden.",
+	"The chosen work category is not available.":
+		"Die gewählte Arbeitskategorie ist nicht verfügbar.",
 	"Applied when work ends": "Wird beim Arbeitsende zugeordnet",
 	Settings: "Einstellungen",
+	"Open dashboard": "Dashboard öffnen",
 	"Open settings": "Einstellungen öffnen",
 	"Close settings": "Einstellungen schließen",
 	Server: "Server",
@@ -100,9 +118,15 @@ const german: Record<string, string> = {
 	Offline: "Offline",
 	"Reconnect to switch organizations":
 		"Zum Organisationswechsel wieder verbinden",
-	"Server setup required": "Servereinrichtung erforderlich",
-	"Ask your administrator to enable reliable offline clocking and atomic breaks for this organization.":
-		"Bitten Sie Ihre Administration, zuverlässiges Offline-Stempeln und atomare Pausen für diese Organisation einzurichten.",
+	"Online mode": "Online-Modus",
+	"Z8 update required": "Z8-Update erforderlich",
+	"The Z8 webapp needs an update for online desktop clocking. Use the dashboard icon above until it is deployed; no setup is needed on your computer.":
+		"Die Z8-Webapp benötigt ein Update zum Stempeln in der Desktop-App. Nutzen Sie bis dahin das Dashboard-Symbol oben. Auf Ihrem Computer müssen Sie nichts einrichten.",
+	"Connection required": "Verbindung erforderlich",
+	"Internet required. Offline recording and automatic idle breaks are not available yet.":
+		"Internet erforderlich. Offline-Stempeln und automatische Pausen sind noch nicht verfügbar.",
+	"Connect to Z8 and refresh status to use the clock. You can also open your dashboard using the icon above.":
+		"Verbinden Sie sich mit Z8 und aktualisieren Sie den Status. Über das Symbol oben können Sie auch Ihr Dashboard öffnen.",
 	"Refresh status": "Status aktualisieren",
 	"Clock recovery": "Wiederherstellung",
 	"Saved actions": "Gespeicherte Aktionen",

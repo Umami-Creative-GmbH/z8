@@ -286,6 +286,12 @@
       "homeOfficeDaysPreview": "{count} teletrabajo",
       "hoursPerCycle": "Horas por ciclo",
       "hoursUnit": "horas",
+      "latestClockIn": {
+        "dayLabel": "Hora límite de fichaje de entrada el {day}",
+        "description": "Hora límite de fichaje de entrada opcional por día laborable: en días sin turno, los empleados que no hayan fichado para entonces pueden recibir un recordatorio.",
+        "label": "Hora límite de fichaje de entrada",
+        "simpleHint": "Para definir una hora límite de fichaje de entrada por día se necesita un horario detallado. Cambia a Detallado para configurarla."
+      },
       "monthly": "Mensual",
       "preview": "Vista previa del horario",
       "scheduleCycle": "Ciclo de horario",

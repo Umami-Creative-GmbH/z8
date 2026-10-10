@@ -129,6 +129,7 @@
           "alreadyReimbursed": "Hoppades över: redan ersatt",
           "balanceChanged": "Hoppades över: saldot har ändrats",
           "failed": "Misslyckades",
+          "inPayrollRun": "Överhoppad: ingår i en lönekörning",
           "outOfScope": "Hoppades över: utanför omfattningen",
           "overpaidOrReview": "Hoppades över: för mycket utbetalt eller behöver granskas",
           "ownExpense": "Hoppades över: ditt eget utlägg",
@@ -247,6 +248,7 @@
           "search": "Sök team…"
         }
       },
+      "inPayrollRun": "Ingår i {run}",
       "legacyClaim": "Äldre {type}-anspråk",
       "loading": "Läser in ekonomikön…",
       "pagination": {
@@ -254,6 +256,16 @@
         "next": "Nästa",
         "page": "Sida {page}",
         "previous": "Föregående"
+      },
+      "payrollRun": {
+        "included": "Ingår i {run}. Det betalas med den lönen och registreras som återbetalt när körningen bekräftas.",
+        "label": "Lönekörning {period} ({format})",
+        "notIncluded": "Ingen lönekörning innehåller detta utlägg längre.",
+        "remove": "Ta bort från lönekörning",
+        "removed": "Borttaget från lönekörningen. Utlägget väntar på återbetalning igen.",
+        "removeDescription": "Ta endast bort det om lönen inte kommer att betala ut det med denna körning, till exempel efter att lönefilen har korrigerats. Borttagningen registreras i granskningsloggen.",
+        "removeFailed": "Utlägget kunde inte tas bort från lönekörningen.",
+        "removeTitle": "Vill du ta bort detta utlägg från lönekörningen?"
       },
       "queue": {
         "description": "Öppna ett utlägg för att se dess reglering och registrera en ersättning.",
@@ -999,6 +1011,20 @@
         "adoptForeignTitle": "Tillämpa det tyska lagstadgade traktamentet med de officiella utlandssatserna",
         "foreignAreas": "Utlandssatser: {countries} länder och {places} städer"
       },
+      "reimbursementChannel": {
+        "bankTransfer": "Banköverföring",
+        "bankTransferDescription": "Utläggsansvariga betalar ersättningar via banköverföring och registrerar dem i Z8.",
+        "intro": "Hur din organisation betalar ut ersättningar. Valet gäller för alla anställda.",
+        "loadFailed": "Ersättningskanalen kunde inte läsas in.",
+        "payrollRun": "Lönekörning",
+        "payrollRunDescription": "Lönekörningen hanterar ersättningar, vilka registreras när lönekörningen har bekräftats som betald. Rapporter som en lönekörning inte kan hantera betalas via banköverföring.",
+        "payrollRunPreview": "I förhandsvisning och ännu inte tillgängligt för din organisation.",
+        "save": "Spara kanal",
+        "saved": "Ersättningskanal sparad",
+        "saveFailed": "Ersättningskanalen kunde inte sparas.",
+        "title": "Ersättningskanal",
+        "unconfirmedRuns": "{count, plural, one {# lönekörning har inte bekräftats ännu. Den kan fortfarande bekräftas eller makuleras.} other {# lönekörningar har inte bekräftats ännu. De kan fortfarande bekräftas eller makuleras.}}"
+      },
       "tabs": {
         "access": "Åtkomst",
         "currencies": "Valutor",
@@ -1034,6 +1060,7 @@
         "exceedsOutstanding": "Beloppet är högre än det utestående beloppet.",
         "exceedsOverpayment": "Beloppet är högre än det som betalades för mycket.",
         "failed": "Betalningen kunde inte registreras. Försök igen.",
+        "inPayrollRun": "En lönekörning innehåller nu detta utlägg, så det betalas med lönen. Ta bort det från körningen innan du registrerar en betalning.",
         "load": "Det gick inte att läsa in ersättningssaldot. Försök igen.",
         "noOverpayment": "Inget betalades för mycket för det här utlägget.",
         "notApproved": "Det här utlägget är inte längre godkänt, så ingen betalning kan registreras.",

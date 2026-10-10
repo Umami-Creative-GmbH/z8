@@ -5,15 +5,24 @@ import { useTranslate } from "@tolgee/react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
+	getCustomerBillableReport,
 	getProjectDetailedReport,
 	getProjectsOverview,
 } from "@/app/[locale]/(app)/reports/projects/actions";
+import { ReportDocumentExportButtons } from "@/components/reports/report-document-export-buttons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { ProjectDetailedReport, ProjectPortfolioData } from "@/lib/reports/project-types";
+import { buildProjectReportDocument } from "@/lib/reports/project-report-export";
+import type {
+	CustomerBillableReport,
+	ProjectDetailedReport,
+	ProjectPortfolioData,
+} from "@/lib/reports/project-types";
 import type { ReportDateRange } from "@/lib/reports/types";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
+import { BillableEmployeeTable, BillableFiguresCard } from "./billable-figures";
+import { CustomerBillableView } from "./customer-billable-view";
 import { ProjectBudgetProgress } from "./project-budget-progress";
 import { ProjectBudgetUtilizationSummary } from "./project-budget-utilization-summary";
 import { ProjectFilters } from "./project-filters";
@@ -21,53 +30,65 @@ import { ProjectHealthAlerts } from "./project-health-alerts";
 import { ProjectHoursChart } from "./project-hours-chart";
 import { ProjectPortfolioTable } from "./project-portfolio-table";
 import { ProjectSummaryCards } from "./project-summary-cards";
+import { ProjectTaskBreakdown } from "./project-task-breakdown";
 import { ProjectTeamBreakdown } from "./project-team-breakdown";
 
 export function ProjectReportsContainer() {
 	const { t } = useTranslate();
 	const [portfolioData, setPortfolioData] = useState<ProjectPortfolioData | null>(null);
 	const [detailedReport, setDetailedReport] = useState<ProjectDetailedReport | null>(null);
+	const [customerReport, setCustomerReport] = useState<CustomerBillableReport | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const dateRangeRef = useRef<ReportDateRange | null>(null);
-	const [activeTab, setActiveTab] = useState<"portfolio" | "project">("portfolio");
+	const [activeTab, setActiveTab] = useState<"portfolio" | "customers" | "project">("portfolio");
 
 	const handleGeneratePortfolio = async (range: ReportDateRange, statusFilter?: string[]) => {
 		setIsLoading(true);
 		setError(null);
 		dateRangeRef.current = range;
 
-		await runWithCleanup(async () => {
-		try {
-			const result = await getProjectsOverview(
-				new Date(range.startDate),
-				new Date(range.endDate),
-				statusFilter,
-			);
+		await runWithCleanup(
+			async () => {
+				try {
+					const result = await getProjectsOverview(
+						new Date(range.startDate),
+						new Date(range.endDate),
+						statusFilter,
+					);
 
-			if (!result.success) {
-				setError(
-					result.error ||
-						t("reports.projects.toast.failedPortfolio", "Failed to generate portfolio report"),
-				);
-				toast.error(t("reports.projects.toast.failedGenerate", "Failed to generate report"), {
-					description: result.error,
-				});
-				return;
-			}
-			setPortfolioData(result.data);
-			setDetailedReport(null);
-			setActiveTab("portfolio");
-			toast.success(t("reports.projects.toast.portfolioGenerated", "Portfolio report generated"));
-		} catch (err) {
-			const errorMessage =
-				err instanceof Error
-					? err.message
-					: t("reports.projects.toast.unexpectedError", "An unexpected error occurred");
-			setError(errorMessage);
-			toast.error(t("reports.projects.toast.failedGenerate", "Failed to generate report"));
-		}
-		}, () => setIsLoading(false));
+					if (!result.success) {
+						setError(
+							result.error ||
+								t("reports.projects.toast.failedPortfolio", "Failed to generate portfolio report"),
+						);
+						toast.error(t("reports.projects.toast.failedGenerate", "Failed to generate report"), {
+							description: result.error,
+						});
+						return;
+					}
+					// The customer view exists for viewers who see Billable Time figures.
+					const customers = result.data.billableTime
+						? await getCustomerBillableReport(range.startDate, range.endDate, statusFilter)
+						: null;
+					setPortfolioData(result.data);
+					setCustomerReport(customers?.success ? customers.data : null);
+					setDetailedReport(null);
+					setActiveTab("portfolio");
+					toast.success(
+						t("reports.projects.toast.portfolioGenerated", "Portfolio report generated"),
+					);
+				} catch (err) {
+					const errorMessage =
+						err instanceof Error
+							? err.message
+							: t("reports.projects.toast.unexpectedError", "An unexpected error occurred");
+					setError(errorMessage);
+					toast.error(t("reports.projects.toast.failedGenerate", "Failed to generate report"));
+				}
+			},
+			() => setIsLoading(false),
+		);
 	};
 
 	const handleSelectProject = async (projectId: string) => {
@@ -79,45 +100,48 @@ export function ProjectReportsContainer() {
 		setIsLoading(true);
 		setError(null);
 
-		await runWithCleanup(async () => {
-		try {
-			const result = await getProjectDetailedReport(
-				projectId,
-				new Date(dateRange.startDate),
-				new Date(dateRange.endDate),
-			);
+		await runWithCleanup(
+			async () => {
+				try {
+					const result = await getProjectDetailedReport(
+						projectId,
+						new Date(dateRange.startDate),
+						new Date(dateRange.endDate),
+					);
 
-			if (!result.success) {
-				setError(
-					result.error ||
-						t("reports.projects.toast.failedProject", "Failed to generate project report"),
-				);
-				toast.error(
-					t("reports.projects.toast.failedProjectReport", "Failed to generate project report"),
-					{
-						description: result.error,
-					},
-				);
-				return;
-			}
-			setDetailedReport(result.data);
-			setActiveTab("project");
-			toast.success(
-				t("reports.projects.toast.projectGenerated", "Report generated for {name}", {
-					name: result.data.project.name,
-				}),
-			);
-		} catch (err) {
-			const errorMessage =
-				err instanceof Error
-					? err.message
-					: t("reports.projects.toast.unexpectedError", "An unexpected error occurred");
-			setError(errorMessage);
-			toast.error(
-				t("reports.projects.toast.failedProjectReport", "Failed to generate project report"),
-			);
-		}
-		}, () => setIsLoading(false));
+					if (!result.success) {
+						setError(
+							result.error ||
+								t("reports.projects.toast.failedProject", "Failed to generate project report"),
+						);
+						toast.error(
+							t("reports.projects.toast.failedProjectReport", "Failed to generate project report"),
+							{
+								description: result.error,
+							},
+						);
+						return;
+					}
+					setDetailedReport(result.data);
+					setActiveTab("project");
+					toast.success(
+						t("reports.projects.toast.projectGenerated", "Report generated for {name}", {
+							name: result.data.project.name,
+						}),
+					);
+				} catch (err) {
+					const errorMessage =
+						err instanceof Error
+							? err.message
+							: t("reports.projects.toast.unexpectedError", "An unexpected error occurred");
+					setError(errorMessage);
+					toast.error(
+						t("reports.projects.toast.failedProjectReport", "Failed to generate project report"),
+					);
+				}
+			},
+			() => setIsLoading(false),
+		);
 	};
 
 	return (
@@ -158,11 +182,19 @@ export function ProjectReportsContainer() {
 
 			{/* Results */}
 			{!isLoading && portfolioData && (
-				<Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "portfolio" | "project")}>
+				<Tabs
+					value={activeTab}
+					onValueChange={(v) => setActiveTab(v as "portfolio" | "customers" | "project")}
+				>
 					<TabsList>
 						<TabsTrigger value="portfolio">
 							{t("reports.projects.container.portfolioOverview", "Portfolio Overview")}
 						</TabsTrigger>
+						{customerReport && (
+							<TabsTrigger value="customers">
+								{t("reports.projects.container.customers", "Customers")}
+							</TabsTrigger>
+						)}
 						<TabsTrigger value="project" disabled={!detailedReport}>
 							{detailedReport
 								? detailedReport.project.name
@@ -173,6 +205,13 @@ export function ProjectReportsContainer() {
 					<TabsContent value="portfolio" className="space-y-6">
 						{/* Summary Cards */}
 						<ProjectSummaryCards data={portfolioData.totals} />
+
+						{portfolioData.totals.billable && portfolioData.billableTime && (
+							<BillableFiguresCard
+								figures={portfolioData.totals.billable}
+								context={portfolioData.billableTime}
+							/>
+						)}
 
 						<ProjectHealthAlerts
 							projects={portfolioData.projects}
@@ -188,46 +227,13 @@ export function ProjectReportsContainer() {
 						/>
 					</TabsContent>
 
-					<TabsContent value="project" className="space-y-6">
-						{detailedReport && (
-							<>
-								{/* Project Summary Cards */}
-								<ProjectSummaryCards
-									data={{
-										totalProjects: 1,
-										activeProjects: detailedReport.project.status === "active" ? 1 : 0,
-										totalHours: detailedReport.summary.totalHours,
-										projectsOverBudget:
-											detailedReport.summary.percentBudgetUsed &&
-											detailedReport.summary.percentBudgetUsed > 100
-												? 1
-												: 0,
-										projectsOverdue: 0,
-									}}
-									isSingleProject
-									project={detailedReport.project}
-									summary={detailedReport.summary}
-								/>
+					{customerReport && (
+						<TabsContent value="customers" className="space-y-6">
+							<CustomerBillableView report={customerReport} onProjectSelect={handleSelectProject} />
+						</TabsContent>
+					)}
 
-								{/* Budget Progress */}
-								{detailedReport.summary.budgetHours && (
-									<ProjectBudgetProgress
-										budgetHours={detailedReport.summary.budgetHours}
-										usedHours={detailedReport.summary.totalHours}
-									/>
-								)}
-
-								{/* Hours Chart */}
-								<ProjectHoursChart data={detailedReport.timeSeries} />
-
-								{/* Team Breakdown */}
-								<ProjectTeamBreakdown
-									teamBreakdown={detailedReport.teamBreakdown}
-									employeeBreakdown={detailedReport.employeeBreakdown}
-								/>
-							</>
-						)}
-					</TabsContent>
+					<DetailedProjectReport detailedReport={detailedReport} />
 				</Tabs>
 			)}
 
@@ -253,5 +259,71 @@ export function ProjectReportsContainer() {
 				</Card>
 			)}
 		</div>
+	);
+}
+
+function DetailedProjectReport({
+	detailedReport,
+}: {
+	detailedReport: ProjectDetailedReport | null;
+}) {
+	return (
+		<TabsContent value="project" className="space-y-6">
+			{detailedReport && (
+				<>
+					<div className="flex justify-end">
+						<ReportDocumentExportButtons
+							buildDocument={(context) => buildProjectReportDocument(detailedReport, context)}
+						/>
+					</div>
+
+					{/* Project Summary Cards */}
+					<ProjectSummaryCards
+						data={{
+							totalProjects: 1,
+							activeProjects: detailedReport.project.status === "active" ? 1 : 0,
+							totalHours: detailedReport.summary.totalHours,
+							projectsOverBudget:
+								detailedReport.summary.percentBudgetUsed &&
+								detailedReport.summary.percentBudgetUsed > 100
+									? 1
+									: 0,
+							projectsOverdue: 0,
+						}}
+						isSingleProject
+						project={detailedReport.project}
+						summary={detailedReport.summary}
+					/>
+
+					{/* Budget Progress */}
+					{detailedReport.summary.budgetHours && (
+						<ProjectBudgetProgress
+							budgetHours={detailedReport.summary.budgetHours}
+							usedHours={detailedReport.summary.totalHours}
+						/>
+					)}
+
+					{detailedReport.summary.billable && detailedReport.billableTime && (
+						<BillableFiguresCard
+							figures={detailedReport.summary.billable}
+							context={detailedReport.billableTime}
+						/>
+					)}
+
+					{/* Hours Chart */}
+					<ProjectHoursChart data={detailedReport.timeSeries} />
+
+					{/* Team Breakdown */}
+					<ProjectTeamBreakdown
+						teamBreakdown={detailedReport.teamBreakdown}
+						employeeBreakdown={detailedReport.employeeBreakdown}
+					/>
+
+					{/* Task Breakdown */}
+					<ProjectTaskBreakdown taskBreakdown={detailedReport.taskBreakdown} />
+					<BillableEmployeeTable employees={detailedReport.employeeBreakdown} />
+				</>
+			)}
+		</TabsContent>
 	);
 }

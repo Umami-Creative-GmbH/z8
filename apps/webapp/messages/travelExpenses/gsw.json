@@ -129,6 +129,7 @@
           "alreadyReimbursed": "Übersprungen: bereits zurückerstattet",
           "balanceChanged": "Übersprungen: Saldo hat sich geändert",
           "failed": "Fehlgeschlagen",
+          "inPayrollRun": "Übersprungen: in einem Lohnlauf enthalten",
           "outOfScope": "Übersprungen: ausserhalb des Zuständigkeitsbereichs",
           "overpaidOrReview": "Übersprungen: Überzahlung oder Überprüfung erforderlich",
           "ownExpense": "Übersprungen: eigene Ausgabe",
@@ -247,6 +248,7 @@
           "search": "Teams sueche…"
         }
       },
+      "inPayrollRun": "In {run} enthalten",
       "legacyClaim": "Veralteti {type}-Aaforderig",
       "loading": "Finanz-Warteschlange wird glade…",
       "pagination": {
@@ -254,6 +256,16 @@
         "next": "Wiiter",
         "page": "Siite {page}",
         "previous": "Zrugg"
+      },
+      "payrollRun": {
+        "included": "In {run} enthalten. Sie wird mit dieser Lohnabrechnung bezahlt und als rückerstattet erfasst, sobald der Lauf bestätigt ist.",
+        "label": "Lohnlauf {period} ({format})",
+        "notIncluded": "Diese Ausgabe ist in keinem Lohnlauf mehr enthalten.",
+        "remove": "Aus Lohnlauf entfernen",
+        "removed": "Aus dem Lohnlauf entfernt. Die Ausgabe wartet wieder auf die Rückerstattung.",
+        "removeDescription": "Entfernen Sie sie nur, wenn sie nicht mit diesem Lauf über die Lohnabrechnung bezahlt wird, beispielsweise nach einer Korrektur der Lohndatei. Die Entfernung wird im Audit-Log erfasst.",
+        "removeFailed": "Die Ausgabe konnte nicht aus dem Lohnlauf entfernt werden.",
+        "removeTitle": "Diese Ausgabe aus dem Lohnlauf entfernen?"
       },
       "queue": {
         "description": "Öffne e Spese, zum d Abrechnig z gseh und e Rückerstattig z erfasse.",
@@ -999,6 +1011,20 @@
         "adoptForeignTitle": "Di dütsche gsetzliche Verpflegigspuuschale mit de offizielle Usslandssätz übernäh",
         "foreignAreas": "Usslandssätz: {countries} Länder und {places} Städt"
       },
+      "reimbursementChannel": {
+        "bankTransfer": "Banküberweisung",
+        "bankTransferDescription": "Spesenverantwortliche zahlen Rückerstattungen per Banküberweisung aus und erfassen sie in Z8.",
+        "intro": "Wie Ihre Organisation Rückerstattungen auszahlt. Die Auswahl gilt für alle Mitarbeitenden.",
+        "loadFailed": "Der Rückerstattungskanal konnte nicht geladen werden.",
+        "payrollRun": "Lohnlauf",
+        "payrollRunDescription": "Der Lohnlauf enthält Rückerstattungen, die erfasst werden, sobald der Lohnlauf als bezahlt bestätigt ist. Abrechnungen, die ein Lohnlauf nicht enthalten kann, werden per Banküberweisung ausbezahlt.",
+        "payrollRunPreview": "In der Vorschau und für Ihre Organisation noch nicht verfügbar.",
+        "save": "Kanal speichern",
+        "saved": "Rückerstattungskanal gespeichert",
+        "saveFailed": "Der Rückerstattungskanal konnte nicht gespeichert werden.",
+        "title": "Rückerstattungskanal",
+        "unconfirmedRuns": "{count, plural, one {# Lohnlauf ist noch nicht bestätigt. Er kann noch bestätigt oder verworfen werden.} other {# Lohnläufe sind noch nicht bestätigt. Sie können noch bestätigt oder verworfen werden.}}"
+      },
       "tabs": {
         "access": "Zuegriff",
         "currencies": "Währige",
@@ -1034,6 +1060,7 @@
         "exceedsOutstanding": "Der Betrag ist höher als der ausstehende Betrag.",
         "exceedsOverpayment": "Der Betrag ist höher als der zu viel bezahlte Betrag.",
         "failed": "Die Zahlung konnte nicht erfasst werden. Bitte versuchen Sie es erneut.",
+        "inPayrollRun": "Diese Ausgabe ist jetzt in einem Lohnlauf enthalten und wird daher über die Lohnabrechnung bezahlt. Entfernen Sie sie aus dem Lauf, bevor Sie eine Zahlung erfassen.",
         "load": "Der Rückerstattungssaldo konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
         "noOverpayment": "Für diese Ausgabe wurde nichts zu viel bezahlt.",
         "notApproved": "Diese Ausgabe ist nicht mehr genehmigt, daher kann keine Zahlung erfasst werden.",

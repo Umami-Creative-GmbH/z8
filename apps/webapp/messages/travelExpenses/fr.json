@@ -129,6 +129,7 @@
           "alreadyReimbursed": "Ignoré : déjà remboursé",
           "balanceChanged": "Ignoré : solde modifié",
           "failed": "Échec",
+          "inPayrollRun": "Ignoré : inclus dans un cycle de paie",
           "outOfScope": "Ignoré : hors périmètre",
           "overpaidOrReview": "Ignoré : trop-perçu ou vérification requise",
           "ownExpense": "Ignoré : votre propre dépense",
@@ -247,6 +248,7 @@
           "search": "Rechercher des équipes…"
         }
       },
+      "inPayrollRun": "Inclus dans {run}",
       "legacyClaim": "Ancienne demande de {type}",
       "loading": "Chargement de la file d'attente financière…",
       "pagination": {
@@ -254,6 +256,16 @@
         "next": "Suivant",
         "page": "Page {page}",
         "previous": "Précédent"
+      },
+      "payrollRun": {
+        "included": "Inclus dans {run}. La dépense est réglée avec cette paie et enregistrée comme remboursée lorsque le cycle est confirmé.",
+        "label": "Cycle de paie {period} ({format})",
+        "notIncluded": "Plus aucun cycle de paie n'inclut cette dépense.",
+        "remove": "Retirer du cycle de paie",
+        "removed": "Retirée du cycle de paie. La dépense est de nouveau en attente de remboursement.",
+        "removeDescription": "Ne la retirez que si la paie ne la règle pas avec ce cycle, par exemple après correction du fichier de paie. Ce retrait est consigné dans le journal d'audit.",
+        "removeFailed": "Impossible de retirer la dépense du cycle de paie.",
+        "removeTitle": "Retirer cette dépense du cycle de paie ?"
       },
       "queue": {
         "description": "Ouvrez une dépense pour consulter son règlement et enregistrer un remboursement.",
@@ -999,6 +1011,20 @@
         "adoptForeignTitle": "Adopter les indemnités journalières légales allemandes avec les barèmes officiels pour l'étranger",
         "foreignAreas": "Taux à l'étranger : {countries} pays et {places} villes"
       },
+      "reimbursementChannel": {
+        "bankTransfer": "Virement bancaire",
+        "bankTransferDescription": "Les gestionnaires de notes de frais effectuent les remboursements par virement bancaire et les enregistrent dans Z8.",
+        "intro": "Mode de versement des remboursements par votre organisation. Ce choix s'applique à tous les employés.",
+        "loadFailed": "Impossible de charger le canal de remboursement.",
+        "payrollRun": "Cycle de paie",
+        "payrollRunDescription": "Le cycle de paie prend en charge les remboursements, qui sont enregistrés une fois le cycle de paie confirmé comme payé. Les notes de frais qui ne peuvent pas être intégrées à un cycle de paie sont payées par virement bancaire.",
+        "payrollRunPreview": "En préversion et pas encore disponible pour votre organisation.",
+        "save": "Enregistrer le canal",
+        "saved": "Canal de remboursement enregistré",
+        "saveFailed": "Impossible d'enregistrer le canal de remboursement.",
+        "title": "Canal de remboursement",
+        "unconfirmedRuns": "{count, plural, one {# cycle de paie n'est pas encore confirmé. Il peut toujours être confirmé ou annulé.} other {# cycles de paie ne sont pas encore confirmés. Ils peuvent toujours être confirmés ou annulés.}}"
+      },
       "tabs": {
         "access": "Accès",
         "currencies": "Devises",
@@ -1034,6 +1060,7 @@
         "exceedsOutstanding": "Le montant est supérieur au montant restant dû.",
         "exceedsOverpayment": "Le montant est supérieur au trop-perçu.",
         "failed": "Impossible d'enregistrer le paiement. Veuillez réessayer.",
+        "inPayrollRun": "Un cycle de paie inclut désormais cette dépense, elle est donc payée avec la paie. Retirez-la du cycle avant d'enregistrer un paiement.",
         "load": "Impossible de charger le solde du remboursement. Veuillez réessayer.",
         "noOverpayment": "Il n'y a aucun trop-perçu pour cette dépense.",
         "notApproved": "Cette dépense n'est plus approuvée, aucun paiement ne peut donc être enregistré.",

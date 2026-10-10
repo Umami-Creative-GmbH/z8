@@ -24,6 +24,7 @@ import {
 	employeeManagers,
 	project,
 	projectAssignment,
+	projectManager,
 	timeEntry,
 	timeRecord,
 	timeRecordAllocation,
@@ -34,7 +35,13 @@ import {
 	authorizeTimeCorrectionCategoryChange,
 	lockTrustedTimeCorrectionEmployeeTeamId,
 } from "@/lib/approvals/server/time-correction-category-authorization";
-import { BOOKABLE_PROJECT_STATUSES } from "./project-eligibility";
+import {
+	BOOKABLE_PROJECT_STATUSES,
+	PROJECT_TASK_INELIGIBILITY_MESSAGES,
+	type ProjectTaskIneligibility,
+	taskBookingIneligibility,
+} from "./project-eligibility";
+import { recordedTaskId } from "./task-attribution";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import {
 	compareInstants,
@@ -56,6 +63,7 @@ import {
 	type AmendmentIntent,
 	AmendmentNoChangeError,
 	AmendmentRangeError,
+	type BillableIntent,
 	type EndpointIntent,
 	planAttributionChange,
 	planCompletedWorkAmendment,
@@ -71,6 +79,11 @@ import {
 import { canonicalJson } from "./canonical-json";
 import { admitTimeEntryAppend, TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
+import {
+	BillableWorkRefusedError,
+	projectAllocationAgrees,
+	resolveWorkBillabilityInTransaction,
+} from "./work-billability";
 import { WorkIntervalError } from "./work-duration";
 import type { WorkLocationType } from "./work-location";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
@@ -93,8 +106,15 @@ export type AmendmentWriter =
  * - `owner`: the actor's own active employee record owns the work;
  * - `organization_admin`: the actor is an approved owner/admin member;
  * - `owner_or_manager`: the owner, an admin employee, or a direct manager.
+ * - `owner_manager_or_project_manager` (#900): the owner, an approved owner/admin
+ *   member, an admin employee, a direct manager, or a project manager of the
+ *   work's project. It permits billability-only changes and nothing else.
  */
-export type AmendmentAuthority = "owner" | "organization_admin" | "owner_or_manager";
+export type AmendmentAuthority =
+	| "owner"
+	| "organization_admin"
+	| "owner_or_manager"
+	| "owner_manager_or_project_manager";
 
 export type EndpointCommand =
 	| { kind: "preserve" }
@@ -126,8 +146,19 @@ export type AmendCompletedWorkIntent = {
 	clockIn: EndpointCommand;
 	clockOut: EndpointCommand;
 	project: AttributionIntent;
+	/**
+	 * The task of the project (#873). Omitted, never stored, when the writer names
+	 * none: the task then follows the project (kept while it stays, else cleared).
+	 */
+	task?: AttributionIntent;
 	workCategory: AttributionIntent;
 	workLocation: AttributionIntent;
+	/**
+	 * Billability (#900). Absent or `preserve` keeps it with the project and applies
+	 * a new project's billable default; `set` is an explicit choice that wins.
+	 * Intents recorded before #900 omit it.
+	 */
+	billable?: BillableIntent;
 	/** Note recorded on each correction entry. */
 	notes: string | null;
 };
@@ -143,6 +174,10 @@ export type AmendedSegment = {
 	endUtcOffsetMinutes: number | null;
 	attribution: {
 		projectId: string | null;
+		/** Absent on receipts committed before billability (#900), which were non-billable. */
+		isBillable?: boolean;
+		/** Present only when the segment has a task (#873). */
+		taskId?: string;
 		workCategoryId: string | null;
 		workLocationType: string | null;
 	};
@@ -165,8 +200,12 @@ export type AmendCompletedWorkResult = {
 		clockIn: boolean;
 		clockOut: boolean;
 		project: boolean;
+		/** Present only when the task changed (#873). */
+		task?: true;
 		workCategory: boolean;
 		workLocation: boolean;
+		/** Whether billability changed (#900); absent on receipts committed before it. */
+		billable?: boolean;
 	};
 	corrections: Array<{
 		endpoint: "clock_in" | "clock_out";
@@ -319,7 +358,11 @@ export async function replayAmendCompletedWork(
 	const result = receipt.result as AmendCompletedWorkResult;
 	// Replay keeps current access rules: the actor must still hold the authority
 	// the operation was committed under.
-	await lockAuthority(scope.db, { ...input, authority: result.authority });
+	await lockAuthority(scope.db, {
+		...input,
+		authority: result.authority,
+		workPeriodId: result.workPeriodId,
+	});
 	const [period] = await scope.db
 		.select({
 			clockInId: workPeriod.clockInId,
@@ -409,13 +452,19 @@ export async function replayOrAmendCompletedWork(
 /**
  * Locks and verifies the actor's current authority over the owner's work. Shared
  * with the other direct completed-work writers (#304 calendar splits).
+ *
+ * `owner_manager_or_project_manager` needs `workPeriodId`: a project manager's
+ * authority comes from the work's project, whose `project_manager` row (and
+ * project) are share-locked here, before the work rows. The result names that
+ * project as `authorizedProjectId`; the caller must find the locked work still on
+ * it. It is null for every other path.
  */
 export async function lockAuthority(
 	tx: TransactionClient,
 	input: Pick<
 		AmendCompletedWorkInput,
 		"organizationId" | "employeeId" | "actorUserId" | "authority"
-	>,
+	> & { workPeriodId?: string },
 ) {
 	// Lock order: employees by ascending ID, membership, manager link, teams, then work rows.
 	const lockedEmployees = await tx
@@ -458,12 +507,12 @@ export async function lockAuthority(
 		)
 		.for("update");
 	if (!membership) throw notAuthorized(input.actorUserId);
+	const authorized = { ...target, authorizedProjectId: null as string | null };
+	const isOrganizationAdmin =
+		hasOrganizationRole(membership.role, "owner") || hasOrganizationRole(membership.role, "admin");
 
 	if (input.authority === "organization_admin") {
-		if (
-			!hasOrganizationRole(membership.role, "owner") &&
-			!hasOrganizationRole(membership.role, "admin")
-		) {
+		if (!isOrganizationAdmin) {
 			throw new AuthorizationError({
 				message: "Only organization owners and admins can edit this time entry",
 				userId: input.actorUserId,
@@ -471,26 +520,91 @@ export async function lockAuthority(
 				action: "correct",
 			});
 		}
-		return target;
+		return authorized;
 	}
+	const billability = input.authority === "owner_manager_or_project_manager";
+	if (billability && isOrganizationAdmin) return authorized;
 	const actorEmployee = actorEmployees.length === 1 ? actorEmployees[0] : undefined;
 	if (!actorEmployee) throw notAuthorized(input.actorUserId);
-	if (actorEmployee.id === input.employeeId) return target;
+	if (actorEmployee.id === input.employeeId) return authorized;
 	if (input.authority === "owner") throw notAuthorized(input.actorUserId);
-	if (actorEmployee.role !== "admin") {
-		const [link] = await tx
-			.select({ id: employeeManagers.id })
-			.from(employeeManagers)
-			.where(
-				and(
-					eq(employeeManagers.employeeId, input.employeeId),
-					eq(employeeManagers.managerId, actorEmployee.id),
-				),
-			)
-			.for("update");
-		if (!link) throw notAuthorized(input.actorUserId);
+	if (actorEmployee.role === "admin") return authorized;
+	const [link] = await tx
+		.select({ id: employeeManagers.id })
+		.from(employeeManagers)
+		.where(
+			and(
+				eq(employeeManagers.employeeId, input.employeeId),
+				eq(employeeManagers.managerId, actorEmployee.id),
+			),
+		)
+		.for("update");
+	if (link) return authorized;
+	if (billability) {
+		const projectId = await lockManagedProjectOfWork(tx, input, actorEmployee.id);
+		if (projectId) return { ...authorized, authorizedProjectId: projectId };
 	}
-	return target;
+	throw notAuthorized(input.actorUserId);
+}
+
+/**
+ * The work's project when the actor is one of its project managers (#900), with
+ * the `project_manager` row and the project share-locked; otherwise null. The
+ * work row is read without a lock: the amendment locks it afterwards and checks
+ * that it is still on this project.
+ */
+async function lockManagedProjectOfWork(
+	tx: TransactionClient,
+	input: { organizationId: string; employeeId: string; workPeriodId?: string },
+	actorEmployeeId: string,
+): Promise<string | null> {
+	if (!input.workPeriodId) return null;
+	const [work] = await tx
+		.select({ projectId: workPeriod.projectId })
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.id, input.workPeriodId),
+				eq(workPeriod.organizationId, input.organizationId),
+				eq(workPeriod.employeeId, input.employeeId),
+			),
+		)
+		.limit(1);
+	if (!work?.projectId) return null;
+	const [managed] = await tx
+		.select({ id: projectManager.id })
+		.from(projectManager)
+		.innerJoin(project, eq(project.id, projectManager.projectId))
+		.where(
+			and(
+				eq(projectManager.projectId, work.projectId),
+				eq(projectManager.employeeId, actorEmployeeId),
+				eq(project.organizationId, input.organizationId),
+			),
+		)
+		.for("share");
+	return managed ? work.projectId : null;
+}
+
+/** The billability authority changes billability and nothing else (#900). */
+function assertAuthorityPermitsIntent(input: AmendCompletedWorkInput): void {
+	if (input.authority !== "owner_manager_or_project_manager") return;
+	const { intent } = input;
+	if (
+		intent.clockIn.kind !== "preserve" ||
+		intent.clockOut.kind !== "preserve" ||
+		intent.project.kind !== "preserve" ||
+		intent.workCategory.kind !== "preserve" ||
+		intent.workLocation.kind !== "preserve" ||
+		intent.billable?.kind !== "set"
+	) {
+		throw new AuthorizationError({
+			message: "Only billability can be changed with this authority",
+			userId: input.actorUserId,
+			resource: "time_entry",
+			action: "correct",
+		});
+	}
 }
 
 async function assertProjectEligible(
@@ -539,6 +653,65 @@ async function assertProjectEligible(
 	}
 }
 
+function taskRefusal(reason: ProjectTaskIneligibility) {
+	return new ValidationError({
+		message: PROJECT_TASK_INELIGIBILITY_MESSAGES[reason],
+		field: "taskId",
+		value: reason,
+	});
+}
+
+/**
+ * A newly booked task (#873), re-checked under locks: an open task of the
+ * resulting project, which must itself stay bookable for the owner (the project
+ * row is locked like a project change). The stable reason is the refusal's `value`.
+ */
+async function assertTaskBookable(
+	tx: TransactionClient,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		teamId: string | null;
+		projectId: string | null;
+		taskId: string;
+	},
+) {
+	const reason = await taskBookingIneligibility(tx, input, { lock: "share" });
+	if (reason) throw taskRefusal(reason);
+	try {
+		// The task is in the resulting project, so that project is not null here.
+		await assertProjectEligible(tx, { ...input, projectId: input.projectId as string });
+	} catch (error) {
+		if (error instanceof ValidationError) throw taskRefusal("project_not_bookable");
+		throw error;
+	}
+}
+
+/** A segment's attribution; the task is recorded only when there is one. */
+function segmentAttribution(values: {
+	projectId: string | null;
+	taskId?: string | null;
+	isBillable: boolean;
+	workCategoryId: string | null;
+	workLocationType: string | null;
+}): AmendedSegment["attribution"] {
+	return {
+		projectId: values.projectId,
+		...recordedTaskId(values.taskId),
+		isBillable: values.isBillable,
+		workCategoryId: values.workCategoryId,
+		workLocationType: values.workLocationType,
+	};
+}
+
+/** The receipt's changes: `task` only when it changed, keeping earlier receipts' shape. */
+function receiptChanges(
+	changes: Omit<AmendCompletedWorkResult["changes"], "task"> & { task: boolean },
+): AmendCompletedWorkResult["changes"] {
+	const { task, ...rest } = changes;
+	return task ? { ...rest, task: true } : rest;
+}
+
 /**
  * Fresh amendment. The caller has already ruled out committed replay under the
  * same transaction, so an existing receipt with this identity is a collision.
@@ -560,9 +733,12 @@ export async function amendCompletedWork(
 		.limit(1);
 	if (existing) throw new CompletedWorkCollisionError();
 
-	const target = await lockAuthority(tx, input);
+	assertAuthorityPermitsIntent(input);
+	const target = await lockAuthority(tx, { ...input, workPeriodId: requested.workPeriodId });
 	const changesAttribution =
-		requested.project.kind === "replace" || requested.workCategory.kind === "replace";
+		requested.project.kind === "replace" ||
+		requested.task?.kind === "replace" ||
+		requested.workCategory.kind === "replace";
 	const teamId = changesAttribution
 		? await lockTrustedTimeCorrectionEmployeeTeamId({
 				tx,
@@ -598,6 +774,10 @@ export async function amendCompletedWork(
 		!sameInstant(period.startTime, input.expectedSource.startAt) ||
 		!sameInstant(period.endTime, input.expectedSource.endAt)
 	) {
+		throw staleSource();
+	}
+	// A project manager's authority holds only while the work is on their project.
+	if (target.authorizedProjectId !== null && period.projectId !== target.authorizedProjectId) {
 		throw staleSource();
 	}
 	await assertNoUnresolvedWorkPeriodReview(tx, organizationId, period);
@@ -675,11 +855,8 @@ export async function amendCompletedWork(
 		.orderBy(asc(timeRecordAllocation.id))
 		.for("update");
 	if (!record || !detail) throw new CompletedWorkReviewRequiredError("canonical_record_missing");
-	const allocationAgrees = period.projectId
-		? projectAllocations.length === 1 &&
-			projectAllocations[0]?.projectId === period.projectId &&
-			projectAllocations[0]?.weightPercent === 100
-		: projectAllocations.length === 0;
+	// Project and billability must agree in both representations (#900).
+	const allocationAgrees = projectAllocationAgrees(period, projectAllocations);
 	if (
 		!sameInstant(record.startAt, instantFromDate(period.startTime)) ||
 		!sameInstant(record.endAt, instantFromDate(period.endTime)) ||
@@ -694,8 +871,10 @@ export async function amendCompletedWork(
 		clockIn: endpointIntent(requested.clockIn),
 		clockOut: endpointIntent(requested.clockOut),
 		project: requested.project,
+		task: requested.task,
 		workCategory: requested.workCategory,
 		workLocation: requested.workLocation,
+		billable: requested.billable,
 	};
 	let plan: ReturnType<typeof planCompletedWorkAmendment>;
 	try {
@@ -705,22 +884,24 @@ export async function amendCompletedWork(
 				endAt: instantFromDate(period.endTime),
 				durationMinutes: period.durationMinutes,
 				projectId: period.projectId,
+				taskId: period.taskId,
 				workCategoryId: period.workCategoryId,
 				workLocationType: period.workLocationType,
+				isBillable: period.isBillable,
 			},
 			intent,
 		);
 	} catch (error) {
 		throw planningFailure(error);
 	}
-	const { changes, result: resulting } = plan;
-	if (changes.clockIn && compareInstants(resulting.startAt, input.evaluatedAt) > 0) {
+	const { result: resulting } = plan;
+	if (plan.changes.clockIn && compareInstants(resulting.startAt, input.evaluatedAt) > 0) {
 		throw new ValidationError({
 			message: "Clock in time cannot be in the future",
 			field: "timestamp",
 		});
 	}
-	if (changes.clockOut && compareInstants(resulting.endAt, input.evaluatedAt) > 0) {
+	if (plan.changes.clockOut && compareInstants(resulting.endAt, input.evaluatedAt) > 0) {
 		throw new ValidationError({
 			message: "Clock out time cannot be in the future",
 			field: "timestamp",
@@ -730,10 +911,19 @@ export async function amendCompletedWork(
 		organizationId,
 		employeeId,
 		teamId,
-		changes,
+		changes: plan.changes,
 		resulting,
 		currentWorkCategoryId: period.workCategoryId,
 	});
+	// An explicit `set` wins; a changed project applies its default; else kept (#900).
+	const isBillable = await resolveWorkBillabilityInTransaction(tx, organizationId, {
+		projectId: resulting.projectId,
+		projectChosen: plan.changes.project,
+		current: period.isBillable,
+		requested: requested.billable?.kind === "set" ? requested.billable.billable : undefined,
+	});
+	// The resolved billability decides the change: a new project's default may change it too.
+	const changes = { ...plan.changes, billable: isBillable !== period.isBillable };
 	const endpointsChanged = changes.clockIn || changes.clockOut;
 	if (endpointsChanged) {
 		await assertWorkOccupancyFree(tx, {
@@ -843,6 +1033,8 @@ export async function amendCompletedWork(
 			endTime: endAt,
 			durationMinutes: resulting.durationMinutes,
 			projectId: resulting.projectId,
+			isBillable,
+			taskId: resulting.taskId,
 			workCategoryId: resulting.workCategoryId,
 			workLocationType: resulting.workLocationType as WorkLocationType | null,
 			graphRevision: resultRevision,
@@ -901,8 +1093,8 @@ export async function amendCompletedWork(
 			throw new CompletedWorkIntegrityError("Canonical work metadata update failed");
 		}
 	}
-	// Only project allocations follow the project; other allocation kinds stay.
-	if (changes.project) {
+	// Only project allocations follow the project and its task; other allocation kinds stay.
+	if (changes.project || changes.task) {
 		if (projectAllocations.length > 0) {
 			await tx.delete(timeRecordAllocation).where(
 				and(
@@ -920,8 +1112,28 @@ export async function amendCompletedWork(
 				recordId: record.id,
 				allocationKind: "project",
 				projectId: resulting.projectId,
+				taskId: resulting.taskId,
 				weightPercent: 100,
+				isBillable,
 			});
+		}
+	} else if (changes.billable) {
+		// The same project's allocation carries the new billability (#900).
+		const updatedAllocations = await tx
+			.update(timeRecordAllocation)
+			.set({ isBillable })
+			.where(
+				and(
+					eq(timeRecordAllocation.organizationId, organizationId),
+					inArray(
+						timeRecordAllocation.id,
+						projectAllocations.map(({ id }) => id),
+					),
+				),
+			)
+			.returning({ id: timeRecordAllocation.id });
+		if (updatedAllocations.length !== 1) {
+			throw new CompletedWorkIntegrityError("Canonical project allocation update failed");
 		}
 	}
 
@@ -948,6 +1160,8 @@ export async function amendCompletedWork(
 			endAt: Instant;
 			durationMinutes: number | null;
 			projectId: string | null;
+			isBillable: boolean;
+			taskId: string | null;
 			workCategoryId: string | null;
 			workLocationType: string | null;
 		},
@@ -959,11 +1173,7 @@ export async function amendCompletedWork(
 		durationMinutes: values.durationMinutes,
 		startUtcOffsetMinutes: clockIn.utcOffsetMinutes ?? null,
 		endUtcOffsetMinutes: clockOut.utcOffsetMinutes ?? null,
-		attribution: {
-			projectId: values.projectId,
-			workCategoryId: values.workCategoryId,
-			workLocationType: values.workLocationType,
-		},
+		attribution: segmentAttribution(values),
 	});
 	const result: AmendCompletedWorkResult = {
 		version: AMEND_COMPLETED_WORK_RESULT_VERSION,
@@ -979,11 +1189,13 @@ export async function amendCompletedWork(
 			endAt: instantFromDate(period.endTime),
 			durationMinutes: period.durationMinutes,
 			projectId: period.projectId,
+			taskId: period.taskId,
+			isBillable: period.isBillable,
 			workCategoryId: period.workCategoryId,
 			workLocationType: period.workLocationType,
 		}),
-		segment: segmentOf(resultClockIn, resultClockOut, resulting),
-		changes,
+		segment: segmentOf(resultClockIn, resultClockOut, { ...resulting, isBillable }),
+		changes: receiptChanges(changes),
 		corrections,
 		revisions: { workPeriod: { source: period.graphRevision, result: resultRevision } },
 		append: { admission: "append", used: endpointsChanged },
@@ -1002,8 +1214,8 @@ async function assertAttributionEligible(
 		organizationId: string;
 		employeeId: string;
 		teamId: string | null;
-		changes: { project: boolean; workCategory: boolean };
-		resulting: { projectId: string | null; workCategoryId: string | null };
+		changes: { project: boolean; task: boolean; workCategory: boolean };
+		resulting: { projectId: string | null; taskId: string | null; workCategoryId: string | null };
 		currentWorkCategoryId: string | null;
 	},
 ) {
@@ -1013,6 +1225,15 @@ async function assertAttributionEligible(
 			employeeId: input.employeeId,
 			teamId: input.teamId,
 			projectId: input.resulting.projectId,
+		});
+	}
+	if (input.changes.task && input.resulting.taskId) {
+		await assertTaskBookable(tx, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			teamId: input.teamId,
+			projectId: input.resulting.projectId,
+			taskId: input.resulting.taskId,
 		});
 	}
 	if (input.changes.workCategory) {
@@ -1042,8 +1263,10 @@ async function amendActiveAttribution(
 	const { organizationId, employeeId, command, intent: requested } = input;
 	const source = {
 		projectId: period.projectId,
+		taskId: period.taskId,
 		workCategoryId: period.workCategoryId,
 		workLocationType: period.workLocationType,
+		isBillable: period.isBillable,
 	};
 	let planned: ReturnType<typeof planAttributionChange>;
 	try {
@@ -1059,11 +1282,20 @@ async function amendActiveAttribution(
 		resulting: planned.result,
 		currentWorkCategoryId: period.workCategoryId,
 	});
+	const isBillable = await resolveWorkBillabilityInTransaction(tx, organizationId, {
+		projectId: planned.result.projectId,
+		projectChosen: planned.changes.project,
+		current: period.isBillable,
+		requested: requested.billable?.kind === "set" ? requested.billable.billable : undefined,
+	});
+	const changes = { ...planned.changes, billable: isBillable !== period.isBillable };
 	const resultRevision = period.graphRevision + 1;
 	const updated = await tx
 		.update(workPeriod)
 		.set({
 			projectId: planned.result.projectId,
+			isBillable,
+			taskId: planned.result.taskId,
 			workCategoryId: planned.result.workCategoryId,
 			workLocationType: planned.result.workLocationType as WorkLocationType | null,
 			graphRevision: resultRevision,
@@ -1107,9 +1339,9 @@ async function amendActiveAttribution(
 		intent: requested,
 		workPeriodId: period.id,
 		canonicalRecordId: null,
-		source: activeSegment(source),
-		segment: activeSegment(planned.result),
-		changes: { clockIn: false, clockOut: false, ...planned.changes },
+		source: activeSegment(segmentAttribution(source)),
+		segment: activeSegment(segmentAttribution({ ...planned.result, isBillable })),
+		changes: receiptChanges({ clockIn: false, clockOut: false, ...changes }),
 		corrections: [],
 		revisions: { workPeriod: { source: period.graphRevision, result: resultRevision } },
 		append: { admission: "append", used: false },
@@ -1155,6 +1387,9 @@ export function describeAmendmentFailure(error: unknown): { message: string; cod
 	}
 	if (error instanceof WorkOccupancyConflictError) {
 		return { message: error.message, code: "work_interval_occupied" };
+	}
+	if (error instanceof BillableWorkRefusedError) {
+		return { message: error.message, code: "billable_not_allowed" };
 	}
 	if (error instanceof CompletedWorkReviewRequiredError) {
 		return { message: error.message, code: "completed_work_review_required" };

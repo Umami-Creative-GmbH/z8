@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { TimeFormat } from "@/lib/user-preferences/time-format";
 import { Link, useRouter } from "@/navigation";
+import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
 
 const TimeCorrectionDialog = dynamic(
 	() =>
@@ -61,6 +62,7 @@ export function TimeEntriesTable({
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const { refresh } = useRouter();
+	const billableTimeEnabled = useBillableTimeEnabled();
 	const [approvingWorkPeriodId, setApprovingWorkPeriodId] = useState<
 		string | null
 	>(null);
@@ -92,6 +94,7 @@ export function TimeEntriesTable({
 		employeeTimezone,
 		timeFormat,
 		hasManager,
+		showBillable: billableTimeEnabled,
 		renderAdminAction: canApproveTimeEntries
 			? (period) => (
 					<TimeEntryAdminMenu

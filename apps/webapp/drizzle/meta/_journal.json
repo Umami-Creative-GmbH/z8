@@ -995,6 +995,223 @@
       "when": 1796486400000,
       "tag": "0141_app_auth_code_pkce_recovery",
       "breakpoints": true
+    },
+    {
+      "idx": 142,
+      "version": "7",
+      "when": 1796572800000,
+      "tag": "0142_clocking_reminders",
+      "breakpoints": true
+    },
+    {
+      "idx": 143,
+      "version": "7",
+      "when": 1796659200000,
+      "tag": "0143_work_policy_latest_clock_in",
+      "breakpoints": true
+    },
+    {
+      "idx": 144,
+      "version": "7",
+      "when": 1796745600000,
+      "tag": "0144_break_due_reminder",
+      "breakpoints": true
+    },
+    {
+      "idx": 145,
+      "version": "7",
+      "when": 1796832000000,
+      "tag": "0145_position_capture_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 146,
+      "version": "7",
+      "when": 1796918400000,
+      "tag": "0146_position_stamps",
+      "breakpoints": true
+    },
+    {
+      "idx": 147,
+      "version": "7",
+      "when": 1797004800000,
+      "tag": "0147_position_stamp_access_log",
+      "breakpoints": true
+    },
+    {
+      "idx": 148,
+      "version": "7",
+      "when": 1797091200000,
+      "tag": "0148_position_access_log_retention",
+      "breakpoints": true
+    },
+    {
+      "idx": 149,
+      "version": "7",
+      "when": 1797177600000,
+      "tag": "0149_personnel_file_documents",
+      "breakpoints": true
+    },
+    {
+      "idx": 150,
+      "version": "7",
+      "when": 1797264000000,
+      "tag": "0150_personnel_file_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 151,
+      "version": "7",
+      "when": 1797350400000,
+      "tag": "0151_personnel_file_officer_grants",
+      "breakpoints": true
+    },
+    {
+      "idx": 152,
+      "version": "7",
+      "when": 1797436800000,
+      "tag": "0152_personnel_file_employee_upload_notification",
+      "breakpoints": true
+    },
+    {
+      "idx": 153,
+      "version": "7",
+      "when": 1797523200000,
+      "tag": "0153_personnel_file_payslip_batches",
+      "breakpoints": true
+    },
+    {
+      "idx": 154,
+      "version": "7",
+      "when": 1797609600000,
+      "tag": "0154_personnel_file_expiry_reminders",
+      "breakpoints": true
+    },
+    {
+      "idx": 155,
+      "version": "7",
+      "when": 1797696000000,
+      "tag": "0155_personnel_file_retention",
+      "breakpoints": true
+    },
+    {
+      "idx": 156,
+      "version": "7",
+      "when": 1797782400000,
+      "tag": "0156_project_task",
+      "breakpoints": true
+    },
+    {
+      "idx": 157,
+      "version": "7",
+      "when": 1797868800000,
+      "tag": "0157_project_template",
+      "breakpoints": true
+    },
+    {
+      "idx": 158,
+      "version": "7",
+      "when": 1797955200000,
+      "tag": "0158_project_task_booking",
+      "breakpoints": true
+    },
+    {
+      "idx": 159,
+      "version": "7",
+      "when": 1798041600000,
+      "tag": "0159_billable_time_module",
+      "breakpoints": true
+    },
+    {
+      "idx": 160,
+      "version": "7",
+      "when": 1798128000000,
+      "tag": "0160_billable_rates",
+      "breakpoints": true
+    },
+    {
+      "idx": 161,
+      "version": "7",
+      "when": 1798214400000,
+      "tag": "0161_cost_rates",
+      "breakpoints": true
+    },
+    {
+      "idx": 162,
+      "version": "7",
+      "when": 1798300800000,
+      "tag": "0162_billable_work",
+      "breakpoints": true
+    },
+    {
+      "idx": 163,
+      "version": "7",
+      "when": 1798387200000,
+      "tag": "0163_accounting_connection",
+      "breakpoints": true
+    },
+    {
+      "idx": 164,
+      "version": "7",
+      "when": 1798473600000,
+      "tag": "0164_clockodo_project_mapping",
+      "breakpoints": true
+    },
+    {
+      "idx": 165,
+      "version": "7",
+      "when": 1798560000000,
+      "tag": "0165_import_row_commit_choice",
+      "breakpoints": true
+    },
+    {
+      "idx": 166,
+      "version": "7",
+      "when": 1798646400000,
+      "tag": "0166_billable_hand_off",
+      "breakpoints": true
+    },
+    {
+      "idx": 167,
+      "version": "7",
+      "when": 1798732800000,
+      "tag": "0167_billable_hand_off_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 168,
+      "version": "7",
+      "when": 1798819200000,
+      "tag": "0168_clocking_reminder_occasion_retention_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 169,
+      "version": "7",
+      "when": 1798905600000,
+      "tag": "0169_travel_expense_reimbursement_channel",
+      "breakpoints": true
+    },
+    {
+      "idx": 170,
+      "version": "7",
+      "when": 1798992000000,
+      "tag": "0170_payroll_expense_wage_type_mapping",
+      "breakpoints": true
+    },
+    {
+      "idx": 171,
+      "version": "7",
+      "when": 1799078400000,
+      "tag": "0171_payroll_wage_type_mapping_organization",
+      "breakpoints": true
+    },
+    {
+      "idx": 172,
+      "version": "7",
+      "when": 1799164800000,
+      "tag": "0172_travel_expense_payroll_run_inclusion",
+      "breakpoints": true
     }
   ]
 }

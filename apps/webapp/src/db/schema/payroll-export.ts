@@ -7,11 +7,13 @@ import {
 	jsonb,
 	numeric,
 	pgTable,
+	primaryKey,
 	text,
 	timestamp,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
+import type { PayrollLineKind } from "@/lib/travel-expenses/payroll-line-kind";
 import { currentTimestamp } from "./timestamp";
 
 // Import auth tables for FK references
@@ -98,14 +100,17 @@ export const payrollExportConfig = pgTable(
  * Wage type mappings (normalized)
  * Maps work categories and absence types to payroll-specific codes
  * Example: "Working time" → DATEV code 1000, "Vacation" → 1600
+ *
+ * One mapping set per organization (#816): each row carries a code per format,
+ * and every format's export reads only its own column.
  */
 export const payrollWageTypeMapping = pgTable(
 	"payroll_wage_type_mapping",
 	{
 		id: uuid("id").defaultRandom().primaryKey(),
-		configId: uuid("config_id")
+		organizationId: text("organization_id")
 			.notNull()
-			.references(() => payrollExportConfig.id, { onDelete: "cascade" }),
+			.references(() => organization.id, { onDelete: "cascade" }),
 
 		// Source: either a work category OR an absence category OR a special type
 		workCategoryId: uuid("work_category_id").references(() => workCategory.id, {
@@ -146,21 +151,52 @@ export const payrollWageTypeMapping = pgTable(
 			.notNull(),
 	},
 	(table) => [
-		index("payrollWageTypeMapping_configId_idx").on(table.configId),
+		index("payrollWageTypeMapping_organizationId_idx").on(table.organizationId),
 		index("payrollWageTypeMapping_workCategoryId_idx").on(table.workCategoryId),
 		index("payrollWageTypeMapping_absenceCategoryId_idx").on(table.absenceCategoryId),
-		// Unique constraint: one mapping per work category per config
-		uniqueIndex("payrollWageTypeMapping_config_workCategory_idx")
-			.on(table.configId, table.workCategoryId)
+		// Unique constraint: one mapping per work category per organization
+		uniqueIndex("payrollWageTypeMapping_org_workCategory_idx")
+			.on(table.organizationId, table.workCategoryId)
 			.where(sql`work_category_id IS NOT NULL AND is_active = true`),
-		// Unique constraint: one mapping per absence category per config
-		uniqueIndex("payrollWageTypeMapping_config_absenceCategory_idx")
-			.on(table.configId, table.absenceCategoryId)
+		// Unique constraint: one mapping per absence category per organization
+		uniqueIndex("payrollWageTypeMapping_org_absenceCategory_idx")
+			.on(table.organizationId, table.absenceCategoryId)
 			.where(sql`absence_category_id IS NOT NULL AND is_active = true`),
-		// Unique constraint: one mapping per special category per config
-		uniqueIndex("payrollWageTypeMapping_config_specialCategory_idx")
-			.on(table.configId, table.specialCategory)
+		// Unique constraint: one mapping per special category per organization
+		uniqueIndex("payrollWageTypeMapping_org_specialCategory_idx")
+			.on(table.organizationId, table.specialCategory)
 			.where(sql`special_category IS NOT NULL AND is_active = true`),
+	],
+);
+
+/**
+ * Expense wage types (#851): the code each payroll line kind is paid under, per
+ * payroll file format. Keyed by the organization, not an export config, so an
+ * organization maps its expense lines whichever file formats it configured. A
+ * missing row or `null` code leaves the kind unmapped for that format. Read
+ * through `resolveExpenseWageType`.
+ */
+export const payrollExpenseWageTypeMapping = pgTable(
+	"payroll_expense_wage_type_mapping",
+	{
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		payrollLineKind: text("payroll_line_kind").$type<PayrollLineKind>().notNull(),
+		datevWageTypeCode: text("datev_wage_type_code"),
+		lexwareWageTypeCode: text("lexware_wage_type_code"),
+		sageWageTypeCode: text("sage_wage_type_code"),
+		successFactorsWageTypeCode: text("successfactors_wage_type_code"),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+	},
+	(table) => [
+		primaryKey({ columns: [table.organizationId, table.payrollLineKind] }),
+		check(
+			"payroll_expense_wage_type_mapping_kind_check",
+			sql`${table.payrollLineKind} IN ('per_diem_statutory', 'per_diem_excess', 'mileage_statutory', 'mileage_excess', 'receipt_transport', 'receipt_accommodation', 'receipt_meals', 'receipt_parking', 'receipt_other')`,
+		),
 	],
 );
 

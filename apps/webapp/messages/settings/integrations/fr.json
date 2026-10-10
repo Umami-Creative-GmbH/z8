@@ -120,9 +120,11 @@
       },
       "errors": {
         "connectionFailed": "Échec de la connexion à Clockodo",
+        "fetchProjectsFailed": "Échec de la récupération des données du projet",
         "fetchUsersFailed": "Échec de la récupération des données utilisateur",
         "importFailed": "L'analyse de révision de l'importation a échoué",
-        "saveMappingsFailed": "Échec de l'enregistrement des correspondances utilisateur"
+        "saveMappingsFailed": "Échec de l'enregistrement des correspondances utilisateur",
+        "saveProjectMappingsFailed": "Échec de l'enregistrement des correspondances de projets"
       },
       "importing": {
         "description": "Veuillez ne pas fermer cette page. L'analyse de révision est en file d'attente et peut prendre un certain temps pour les grands ensembles de données.",
@@ -148,6 +150,19 @@
         "next": "Mapper les utilisateurs",
         "title": "Aperçu des données"
       },
+      "projectMapping": {
+        "clockodoCustomer": "Client Clockodo",
+        "clockodoProject": "Projet Clockodo",
+        "continue": "Continuer",
+        "description": "Associez les projets Clockodo aux projets Z8 existants. Les saisies de temps importées conservent leur projet et la valeur facturable de Clockodo. Les saisies sur des projets non associés, ou sur des projets sans client, sont importées comme non facturables. Aucun projet n'est créé.",
+        "mappedCount": "{mapped} sur {total} projets associés",
+        "noCustomer": "Ce projet n'a aucun client, le temps importé est donc non facturable.",
+        "noZ8Projects": "Cette organisation n'a pas encore de projet. Créez d'abord des projets pour importer le temps Clockodo avec son projet et sa valeur facturable.",
+        "title": "Associer les projets",
+        "unmapped": "Non associé (aucun projet)",
+        "z8Project": "Projet Z8",
+        "z8ProjectFor": "Projet Z8 pour {project}"
+      },
       "review": {
         "startedToast": "L'analyse de révision de l'importation a démarré. Une révision est requise avant que les enregistrements ne soient validés."
       },
@@ -167,6 +182,7 @@
         "credentials": "Identifiants",
         "import": "Révision",
         "preview": "Aperçu",
+        "projectMapping": "Association des projets",
         "selection": "Sélection",
         "userMapping": "Mappage utilisateur"
       },

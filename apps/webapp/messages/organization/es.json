@@ -14,6 +14,37 @@
       "saving": "Guardando…",
       "title": "Fichaje de salida automático"
     },
+    "clockingReminders": {
+      "adminOnly": "Solo los administradores y propietarios de la organización pueden cambiar esta configuración.",
+      "breakDue": {
+        "enabled": "Recordatorio de descanso pendiente",
+        "lead": "Minutos antes de que corresponda el descanso"
+      },
+      "description": "Recuerda a los empleados cuando no hayan registrado su entrada al inicio de su turno publicado, sigan con la entrada registrada una vez finalizado o estén a punto de trabajar más tiempo sin un descanso del que permite su política laboral.",
+      "forgottenClockOut": {
+        "enabled": "Recordatorio de registro de salida olvidado",
+        "grace": "Minutos después de la hora de finalización prevista"
+      },
+      "help": "Las comprobaciones se ejecutan cada cinco minutos. Las horas se basan en la zona horaria de cada empleado. Cada recordatorio se envía una vez por turno, o una vez por regla de descanso mientras se mantenga la entrada registrada, en la aplicación y por notificación push, a menos que el empleado cambie sus preferencias de notificación. No se envía ningún recordatorio de registro de entrada omitido durante una ausencia aprobada o un día festivo.",
+      "invalidLeadMinutes": "Introduce minutos enteros del 1 al 1440 antes de que corresponda el descanso.",
+      "invalidMinutes": "Introduce minutos enteros del 0 al 1440.",
+      "missedClockIn": {
+        "enabled": "Recordatorio de registro de entrada omitido",
+        "grace": "Minutos después de la hora de inicio prevista"
+      },
+      "noRoles": "Elige al menos un rol que reciba recordatorios.",
+      "roles": {
+        "admin": "Administradores",
+        "employee": "Empleados",
+        "label": "Recordar a estos roles",
+        "manager": "Gerentes"
+      },
+      "save": "Guardar cambios",
+      "saved": "Configuración de recordatorios de fichaje guardada",
+      "saveFailed": "Error al actualizar la configuración de los recordatorios de registro horario",
+      "saving": "Guardando…",
+      "title": "Recordatorios de fichaje"
+    },
     "create": "Crear organización",
     "createDialog": {
       "description": "Configure su organización para comenzar",
@@ -68,16 +99,33 @@
     },
     "feature": "explore su organización",
     "features": {
+      "billable-time": "Tiempo facturable",
+      "billable-time-currency": "Moneda de facturación: {currency}",
+      "billable-time-description": "Valore el trabajo en proyectos de clientes con tarifas facturables y envíelo a su herramienta de contabilidad como borradores de factura.",
+      "billable-time-dialog-confirm": "Activar",
+      "billable-time-dialog-description": "Elija la moneda en la que su organización cobra a sus clientes.",
+      "billable-time-dialog-title": "Activar Tiempo facturable",
+      "billable-time-disabled": "Tiempo facturable desactivado",
+      "billable-time-enabled": "Tiempo facturable activado",
+      "billable-time-requires-projects": "Requiere Proyectos. Desactivar Proyectos también desactiva Tiempo facturable; se conservan sus ajustes.",
       "demo-data": "Datos de demostración",
       "demo-data-description": "Permitir a los administradores generar y borrar datos de organización de muestra para pruebas.",
       "description": "Habilite o deshabilite funciones opcionales para su organización",
       "owner-only": "Solo los propietarios de la organización pueden cambiar la configuración de funciones.",
+      "owner-only-except-personnel-files": "Solo los propietarios de la organización pueden cambiar la configuración de las funciones, excepto los expedientes de personal.",
+      "personnel-files": "Expedientes de personal",
+      "personnel-files-description": "Guarde contratos, nóminas, certificados y otros documentos de los empleados en un expediente de personal por empleado.",
+      "personnel-files-disable-confirm": "Desactivar",
+      "personnel-files-disable-description": "Las páginas de expedientes de personal y las descargas se ocultan para todos. Los documentos permanecen guardados y siguen contando para la retención. Volver a activar los expedientes de personal restaura todo.",
+      "personnel-files-disable-title": "¿Desactivar los expedientes de personal?",
       "projects": "Proyectos",
       "projects-description": "Asigne entradas de tiempo a proyectos, siga presupuestos y plazos, y genere informes de proyectos.",
       "surcharges": "Recargos",
       "surcharges-description": "Configure recargos de tiempo para horas extras, trabajo nocturno, fines de semana y festivos.",
       "title": "Funciones",
+      "toggle-billable-time": "Alternar Tiempo facturable",
       "toggle-demo-data": "Alternar datos de demostración",
+      "toggle-personnel-files": "Activar/desactivar expedientes de personal",
       "toggle-projects": "Alternar proyectos",
       "toggle-surcharges": "Alternar recargos",
       "toggle-works-council": "Alternar Comité de Empresa",

@@ -67,6 +67,8 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/init": ["common", "setup"],
 	"/approvals": ["common", "approvals"],
 	"/my-requests": ["common", "myRequests"],
+	"/my-documents": ["common", "settings/people"],
+	"/personnel-files": ["common", "settings/people"],
 	"/payroll": ["common", "payroll"],
 	// Main app routes
 	"/": ["common", "dashboard"],
@@ -80,6 +82,7 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/today": ["common", "today"],
 	"/scheduling": ["common", "scheduling", "compliance"],
 	"/settings/billing": ["common", "settings/generic", "billing"],
+	"/settings/billable-time/hand-off": ["common", "settings/generic", "reports"],
 	"/settings": ["common", "settings/generic"],
 	"/settings/approval-escalation": ["common", "settings/generic", "settings/rules"],
 	"/settings/approval-policies": ["common", "settings/generic", "settings/rules"],
@@ -95,7 +98,9 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/settings/enterprise": ["common", "settings/generic", "settings/enterprise"],
 	"/settings/holidays": ["common", "settings/generic", "settings/holidays"],
 	"/settings/permissions": ["common", "settings/generic", "settings/people"],
-	"/settings/payroll-export": ["common", "settings/generic", "settings/payrollExport"],
+	// `payroll`: the payroll run discard dialog (#852) is shared with the payroll workspace.
+	"/settings/payroll-export": ["common", "settings/generic", "settings/payrollExport", "payroll"],
+	"/settings/personnel-files": ["common", "settings/generic", "settings/people"],
 	"/settings/payroll-readiness": ["common", "settings/generic", "settings/payrollExport"],
 	"/settings/work-diagnostics": ["common", "settings/generic", "settings/payrollExport"],
 	"/settings/roles": ["common", "settings/generic", "settings/people"],

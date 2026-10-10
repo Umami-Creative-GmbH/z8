@@ -99,6 +99,16 @@ impl WorkLocationType {
     }
 }
 
+/// A definite server refusal: no command was accepted, so retry requires no recovery.
+#[derive(Debug)]
+pub struct OnlineClockRefusal(pub String);
+impl std::fmt::Display for OnlineClockRefusal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+impl std::error::Error for OnlineClockRefusal {}
+
 pub struct ClockService {
     pub(crate) client: reqwest::Client,
 }
@@ -144,6 +154,42 @@ impl ClockService {
             entries,
             status,
         }
+    }
+
+    /// Fresh online-only request. Never retried automatically.
+    pub async fn online_clock_with_status(
+        &self,
+        webapp_url: &str,
+        token: &str,
+        body: &serde_json::Value,
+    ) -> Result<ClockWriteOutcome> {
+        let response = self
+            .client
+            .post(format!("{webapp_url}/api/time-entries"))
+            .bearer_auth(token)
+            .json(body)
+            .send()
+            .await?;
+        if response.status().is_client_error() {
+            let status = response.status();
+            let value = response.json::<serde_json::Value>().await.ok();
+            let message = value
+                .as_ref()
+                .and_then(|value| value["error"].as_str())
+                .map(str::to_owned)
+                .unwrap_or_else(|| format!("Clock request refused: {status}"));
+            return Err(OnlineClockRefusal(message).into());
+        }
+        anyhow::ensure!(
+            response.status().is_success(),
+            "Clock request unconfirmed: {}",
+            response.status()
+        );
+        let value: serde_json::Value = response.json().await?;
+        let entry: TimeEntry = serde_json::from_value(value["entry"].clone())?;
+        Ok(self
+            .committed_with_status(webapp_url, token, vec![entry])
+            .await)
     }
 
     pub async fn clock_in_with_status(

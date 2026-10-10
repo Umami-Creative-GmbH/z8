@@ -44,33 +44,35 @@ export function ClockButton({
 				<div className={isClockedIn ? "clock-timer" : "clock-ready"}>
 					{t(title)}
 				</div>
-				<div className="clock-label">{t(subtitle)}</div>
+				{(isClockedIn || disabled) && (
+					<div className="clock-label">{t(subtitle)}</div>
+				)}
 			</div>
-			<button
-				type="button"
-				aria-label={t(action)}
-				onClick={isClockedIn ? onClockOut : onClockIn}
-				disabled={blocked}
-				className={`clock-button ${isClockedIn ? "clock-button-stop" : "clock-button-start"} ${blocked ? "clock-button-disabled" : ""}`}
-			>
-				<span className="clock-button-inner">
-					<ClockGlyph loading={isLoading} working={isClockedIn} />
-				</span>
-			</button>
-			<div className="clock-action-label">
-				{t(isLoading ? "Processing…" : action)}
-			</div>
-			{secondary && (
+			<div className="clock-actions">
 				<button
 					type="button"
-					className="secondary-action"
+					aria-label={t(action)}
+					onClick={isClockedIn ? onClockOut : onClockIn}
 					disabled={blocked}
-					onClick={mode === "working" ? onStartBreak : onEndDay}
+					className={`clock-button ${isClockedIn ? "clock-button-stop" : "clock-button-start"} ${blocked ? "clock-button-disabled" : ""}`}
 				>
-					{mode === "working" && <IconCoffee size={18} aria-hidden="true" />}
-					{t(secondary)}
+					<span className="clock-button-inner">
+						<ClockGlyph loading={isLoading} working={isClockedIn} />
+					</span>
+					<span>{t(isLoading ? "Processing…" : action)}</span>
 				</button>
-			)}
+				{secondary && (
+					<button
+						type="button"
+						className="secondary-action"
+						disabled={blocked}
+						onClick={mode === "working" ? onStartBreak : onEndDay}
+					>
+						{mode === "working" && <IconCoffee size={18} aria-hidden="true" />}
+						{t(secondary)}
+					</button>
+				)}
+			</div>
 		</div>
 	);
 }
@@ -84,8 +86,8 @@ function ClockGlyph({
 }) {
 	if (loading)
 		return (
-			<IconLoader2 size={48} className="clock-spinner" aria-hidden="true" />
+			<IconLoader2 size={20} className="clock-spinner" aria-hidden="true" />
 		);
-	if (working) return <IconSquare size={48} aria-hidden="true" />;
-	return <IconPlayerPlay size={48} aria-hidden="true" />;
+	if (working) return <IconSquare size={20} aria-hidden="true" />;
+	return <IconPlayerPlay size={20} aria-hidden="true" />;
 }

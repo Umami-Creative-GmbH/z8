@@ -52,6 +52,10 @@ vi.mock("@/lib/effect/runtime", () => ({
 	runtime: { runPromise: vi.fn(() => mockState.checkBillingAccess()) },
 }));
 
+vi.mock("@/components/position-capture/position-consent-dialog", () => ({
+	PositionConsentDialogHost: () => null,
+}));
+
 vi.mock("@/components/billing/trial-banner", () => ({
 	TrialBanner: () => null,
 }));
@@ -61,9 +65,7 @@ vi.mock("@/components/offline", () => ({
 }));
 
 vi.mock("@/components/notifications/push-permission-provider", () => ({
-	PushPermissionProvider: ({ children }: { children: React.ReactNode }) => (
-		<>{children}</>
-	),
+	PushPermissionProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 vi.mock("@/components/organization/organization-deletion-banner", () => ({
@@ -81,11 +83,7 @@ vi.mock("@/components/posthog-provider", () => ({
 }));
 
 vi.mock("@/components/providers/organization-settings-provider", () => ({
-	OrganizationSettingsProvider: ({
-		children,
-	}: {
-		children: React.ReactNode;
-	}) => <>{children}</>,
+	OrganizationSettingsProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 vi.mock("@/components/providers/user-preferences-provider", () => ({
@@ -100,11 +98,7 @@ vi.mock("@/components/providers/user-preferences-provider", () => ({
 		timeFormat: string;
 		timezone: string;
 	}) => (
-		<div
-			data-week-start={weekStartDay}
-			data-time-format={timeFormat}
-			data-timezone={timezone}
-		>
+		<div data-week-start={weekStartDay} data-time-format={timeFormat} data-timezone={timezone}>
 			{children}
 		</div>
 	),
@@ -119,24 +113,12 @@ vi.mock("@/components/site-header", () => ({
 }));
 
 vi.mock("@/components/ui/sidebar", () => ({
-	Sidebar: ({ children }: { children: React.ReactNode }) => (
-		<aside>{children}</aside>
-	),
-	SidebarContent: ({ children }: { children: React.ReactNode }) => (
-		<div>{children}</div>
-	),
-	SidebarFooter: ({ children }: { children: React.ReactNode }) => (
-		<div>{children}</div>
-	),
-	SidebarHeader: ({ children }: { children: React.ReactNode }) => (
-		<div>{children}</div>
-	),
-	SidebarInset: ({ children }: { children: React.ReactNode }) => (
-		<main>{children}</main>
-	),
-	SidebarProvider: ({ children }: { children: React.ReactNode }) => (
-		<>{children}</>
-	),
+	Sidebar: ({ children }: { children: React.ReactNode }) => <aside>{children}</aside>,
+	SidebarContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+	SidebarFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+	SidebarHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+	SidebarInset: ({ children }: { children: React.ReactNode }) => <main>{children}</main>,
+	SidebarProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 vi.mock("@/components/ui/skeleton", () => ({
@@ -249,23 +231,17 @@ describe("authenticated app layout gates", () => {
 			expect.objectContaining({ message: "TEST_REDIRECT:/de/time-tracking" }),
 		]);
 		expect(mockState.checkBillingAccess).not.toHaveBeenCalled();
-		expect(mockState.getOrganizationSettings).toHaveBeenCalledWith(
-			"organization-1",
-			"user-1",
-		);
+		expect(mockState.getOrganizationSettings).toHaveBeenCalledWith("organization-1", "user-1");
 	});
 
-	it.each([null, "", "invalid", "en"])(
-		"does not redirect saved locale %j",
-		async (locale) => {
-			mockState.findUserSettings.mockResolvedValue({ locale });
-			const { errors } = await serverRender("/en/time-tracking");
-			expect(errors).toEqual([]);
-			expect(mockState.redirect).not.toHaveBeenCalled();
-			expect(mockState.checkBillingAccess).toHaveBeenCalledOnce();
-			expect(mockState.findUserSettings).toHaveBeenCalledOnce();
-		},
-	);
+	it.each([null, "", "invalid", "en"])("does not redirect saved locale %j", async (locale) => {
+		mockState.findUserSettings.mockResolvedValue({ locale });
+		const { errors } = await serverRender("/en/time-tracking");
+		expect(errors).toEqual([]);
+		expect(mockState.redirect).not.toHaveBeenCalled();
+		expect(mockState.checkBillingAccess).toHaveBeenCalledOnce();
+		expect(mockState.findUserSettings).toHaveBeenCalledOnce();
+	});
 
 	it("passes exact saved preferences and explicit false consent to providers", async () => {
 		mockState.findUserSettings.mockResolvedValue({
@@ -296,10 +272,7 @@ describe("authenticated app layout gates", () => {
 		expect(html).toContain('data-week-start="sunday"');
 		expect(html).toContain('data-time-format="24h"');
 		expect(html).toContain('data-timezone="UTC"');
-		expect(mockState.getOrganizationSettings).toHaveBeenCalledWith(
-			null,
-			"user-1",
-		);
+		expect(mockState.getOrganizationSettings).toHaveBeenCalledWith(null, "user-1");
 		expect(mockState.checkBillingAccess).not.toHaveBeenCalled();
 	});
 
@@ -330,9 +303,7 @@ describe("authenticated app layout gates", () => {
 			session: { activeOrganizationId: "organization-1" },
 			user: { id: "user-1" },
 		});
-		mockState.checkBillingAccess.mockRejectedValue(
-			new Error("billing unavailable"),
-		);
+		mockState.checkBillingAccess.mockRejectedValue(new Error("billing unavailable"));
 
 		const { errors } = await serverRender("/en/settings/profile");
 

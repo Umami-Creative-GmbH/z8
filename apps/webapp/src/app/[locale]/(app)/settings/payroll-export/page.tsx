@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { DatevConfigForm } from "@/components/settings/payroll-export/datev-config-form";
+import { ExpenseWageTypeMappings } from "@/components/settings/payroll-export/expense-wage-type-mappings";
 import { ExportForm } from "@/components/settings/payroll-export/export-form";
 import { ExportHistory } from "@/components/settings/payroll-export/export-history";
 import { LexwareConfigForm } from "@/components/settings/payroll-export/lexware-config-form";
@@ -113,7 +114,11 @@ async function PayrollExportContent() {
 		(entry) => entry.configured,
 	);
 
-	const config = datevConfig;
+	// Mappings belong to the organization; any format that reads them
+	// unlocks the Wage Types tab (#816).
+	const hasMappingFormat = Boolean(
+		datevConfig || lexwareConfig || sageConfig || successFactorsConfig,
+	);
 
 	return (
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
@@ -169,7 +174,7 @@ async function PayrollExportContent() {
 				<TabsContent value="export" className="mt-4">
 					<ExportForm
 						organizationId={organizationId}
-						config={config}
+						config={datevConfig}
 						exportAvailability={exportAvailability}
 					/>
 				</TabsContent>
@@ -216,8 +221,12 @@ async function PayrollExportContent() {
 					/>
 				</TabsContent>
 
-				<TabsContent value="mappings" className="mt-4">
-					<WageTypeMappings organizationId={organizationId} config={config} />
+				<TabsContent value="mappings" className="mt-4 space-y-6">
+					<WageTypeMappings
+						organizationId={organizationId}
+						hasMappingFormat={hasMappingFormat}
+					/>
+					<ExpenseWageTypeMappings />
 				</TabsContent>
 
 				<TabsContent value="history" className="mt-4">

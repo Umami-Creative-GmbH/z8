@@ -20,41 +20,28 @@ import "@schedule-x/theme-default/dist/index.css";
 import "./schedule-x-calendar.css";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { formatTimeHours } from "@/lib/calendar/work-hours-summary";
-
 import type { RefObject } from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import {
-	useUserTimezone,
-	useWeekStartDay,
-} from "@/components/providers/user-preferences-provider";
+import { useUserTimezone, useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { useTheme } from "@/components/theme-provider";
-import {
-	addCalendarDateKey,
-	todayCalendarDateKey,
-} from "@/lib/calendar/date-keys";
+import { addCalendarDateKey, todayCalendarDateKey } from "@/lib/calendar/date-keys";
 import {
 	calendarEventsToScheduleX,
 	generateBreakEvents,
 	getScheduleXCalendars,
 } from "@/lib/calendar/schedule-x-adapter";
 import { toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
-import type {
-	CalendarEvent,
-	DailyWorkHoursSummaries,
-} from "@/lib/calendar/types";
+import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
+import { formatTimeHours } from "@/lib/calendar/work-hours-summary";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
-import { calendarEventComponents } from "./calendar-work-event";
+import { calendarEventComponents } from "./calendar-event-components";
 import { ScheduleXCalendarHeader } from "./schedule-x-calendar-header";
 import {
 	filterEventsForScheduleXView,
 	resolveClickableCalendarEvent,
 } from "./schedule-x-calendar-utils";
 import { useScheduleXDomLifecycle } from "./use-schedule-x-dom-lifecycle";
-import {
-	type WorkPeriodActions,
-	WorkPeriodContextMenu,
-} from "./work-period-context-menu";
+import { type WorkPeriodActions, WorkPeriodContextMenu } from "./work-period-context-menu";
 import { formatWorkPeriodEditedBy } from "./work-period-dialog-utils";
 
 export type ViewMode = "day" | "week" | "month" | "year";
@@ -117,20 +104,14 @@ export function ScheduleXCalendarWrapper({
 	const isDark = resolvedTheme === "dark";
 
 	const nextInitialDateKey = initialDateKey ?? todayCalendarDateKey(timeZone);
-	const [currentDateKey, setCurrentDateKey] = useState(
-		() => nextInitialDateKey,
-	);
-	const [previousInitialDateKey, setPreviousInitialDateKey] = useState(
-		() => nextInitialDateKey,
-	);
+	const [currentDateKey, setCurrentDateKey] = useState(() => nextInitialDateKey);
+	const [previousInitialDateKey, setPreviousInitialDateKey] = useState(() => nextInitialDateKey);
 	if (nextInitialDateKey !== previousInitialDateKey) {
 		setPreviousInitialDateKey(nextInitialDateKey);
 		setCurrentDateKey(nextInitialDateKey);
 	}
 	const currentDate = DateTime.fromISO(currentDateKey, { zone: timeZone });
-	const [runningPeriodNow, setRunningPeriodNow] = useState<Date>(
-		() => new Date(),
-	);
+	const [runningPeriodNow, setRunningPeriodNow] = useState<Date>(() => new Date());
 
 	// Create calendar plugins (must be stable references)
 	const [calendarControls] = useState(() => createCalendarControlsPlugin());
@@ -138,9 +119,7 @@ export function ScheduleXCalendarWrapper({
 
 	const hasVisibleRunningPeriod =
 		(viewMode === "day" || viewMode === "week") &&
-		events.some(
-			(event) => event.type === "work_period" && event.metadata.isRunning,
-		);
+		events.some((event) => event.type === "work_period" && event.metadata.isRunning);
 
 	const liveEvents = hasVisibleRunningPeriod
 		? events.map((event) =>
@@ -218,26 +197,14 @@ export function ScheduleXCalendarWrapper({
 		calendarControls.setDate(Temporal.PlainDate.from(today));
 	};
 
-	const dateRangeDisplay = formatDateRange(
-		currentDate,
-		locale,
-		viewMode,
-		weekStartDay,
-	);
-	const mobileDateRangeDisplay = formatMobileDateRange(
-		currentDate,
-		locale,
-		viewMode,
-		weekStartDay,
-	);
+	const dateRangeDisplay = formatDateRange(currentDate, locale, viewMode, weekStartDay);
+	const mobileDateRangeDisplay = formatMobileDateRange(currentDate, locale, viewMode, weekStartDay);
 
 	const visibleRequirementDates = (() => {
 		if (viewMode === "day") return [currentDate.startOf("day")];
 		if (viewMode === "week") {
 			const { start } = getWeekBounds(currentDate, weekStartDay);
-			return Array.from({ length: 7 }, (_, index) =>
-				start.plus({ days: index }),
-			);
+			return Array.from({ length: 7 }, (_, index) => start.plus({ days: index }));
 		}
 		return [];
 	})();
@@ -272,12 +239,7 @@ export function ScheduleXCalendarWrapper({
 
 	// Create calendar instance with controls plugin
 	const calendar = useCalendarApp({
-		views: [
-			createViewDay(),
-			createViewWeek(),
-			createViewMonthGrid(),
-			createViewMonthAgenda(),
-		],
+		views: [createViewDay(), createViewWeek(), createViewMonthGrid(), createViewMonthAgenda()],
 		defaultView: viewModeToScheduleX[viewMode],
 		selectedDate: Temporal.PlainDate.from(currentDateKey),
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -424,11 +386,7 @@ function formatMobileDateRange(
 	}
 }
 
-function ScheduleXCalendarLoading({
-	t,
-}: {
-	t: ReturnType<typeof useTranslate>["t"];
-}) {
+function ScheduleXCalendarLoading({ t }: { t: ReturnType<typeof useTranslate>["t"] }) {
 	return (
 		<div className="flex items-center justify-center h-full min-h-[400px]">
 			<div className="animate-pulse text-muted-foreground">
@@ -484,10 +442,7 @@ function ScheduleXCalendarBody({
 				<span hidden aria-hidden="true" data-requirement-sum-icon>
 					<IconSum size={12} aria-hidden="true" focusable="false" />
 				</span>
-				<ScheduleXCalendar
-					calendarApp={calendar}
-					customComponents={calendarEventComponents}
-				/>
+				<ScheduleXCalendar calendarApp={calendar} customComponents={calendarEventComponents} />
 			</div>
 		</div>
 	);

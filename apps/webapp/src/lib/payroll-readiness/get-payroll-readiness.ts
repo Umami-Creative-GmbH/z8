@@ -347,7 +347,7 @@ export async function getPayrollReadiness(
 			? await db.query.payrollWageTypeMapping.findMany({
 					where: and(
 						eq(payrollWageTypeMapping.isActive, true),
-						or(...exportConfigs.map((config) => eq(payrollWageTypeMapping.configId, config.id))),
+						eq(payrollWageTypeMapping.organizationId, organizationId),
 					),
 				})
 			: [];

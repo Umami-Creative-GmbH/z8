@@ -11,6 +11,11 @@
         "title": "Break auto-added for compliance"
       }
     },
+    "billable": {
+      "description": "Billable work for the project's customer",
+      "label": "Billable",
+      "noCustomer": "Only work on a project with a customer can be billable"
+    },
     "budget": "Budget",
     "clockedOutSuccess": "You've clocked out!",
     "clockIn": "Clock In",
@@ -69,6 +74,7 @@
       "alreadyClockedIn": "You are already clocked in",
       "appendReviewRequired": "Clock-in needs a review of your time history",
       "appendReviewRequiredDesc": "Your earlier time entries could not be verified, so a new clock-in was not saved. Please contact your administrator.",
+      "billableNotAllowed": "Only work on a project that has a customer can be billable",
       "breakAwaitingApproval": "This work period is awaiting approval and cannot be edited. Add the break once it is resolved.",
       "breakDurationInvalid": "Enter a break duration of at least 1 minute.",
       "breakNotAllowed": "You cannot add a break to this work.",
@@ -105,6 +111,11 @@
       "projectNotAllowed": "Cannot assign to this project",
       "restPeriodBlocked": "Rest period not complete",
       "restPeriodBlockedDesc": "You must complete the required rest period before clocking in. Request an exception if needed.",
+      "taskDone": "This task is done, so no time can be booked to it",
+      "taskNotAllowed": "Cannot book time to this task",
+      "taskNotFound": "This task no longer exists",
+      "taskOtherProject": "This task belongs to another project",
+      "taskProjectNotBookable": "Time can no longer be booked to this task's project",
       "workCategoryNotAllowed": "Cannot assign to this work category"
     },
     "manualEntry": {
@@ -120,6 +131,7 @@
         "retry": "Try again",
         "targetChanged": "The employee changed, so the project and category were cleared.",
         "targetTimezone": "Times are in {employee}'s timezone: {timezone}",
+        "taskCleared": "A selected task is no longer available and was cleared.",
         "thisEmployee": "this employee",
         "utcFallback": "Neither {employee} nor the organization has a timezone set, so UTC is used."
       },
@@ -237,6 +249,7 @@
       "approveEntry": "Approve entry",
       "approveFailed": "Failed to approve entry",
       "approving": "Approving...",
+      "billable": "Billable",
       "clockIn": "Clock In",
       "clockOut": "Clock Out",
       "corrected": "Corrected",
@@ -248,6 +261,13 @@
       "rowActions": "Time entry actions",
       "title": "Time Entries",
       "viewCalendar": "View Calendar"
+    },
+    "taskPicker": {
+      "doneTask": "{name} (done)",
+      "empty": "No task found",
+      "label": "Task",
+      "none": "No task",
+      "search": "Search tasks…"
     },
     "timeline": {
       "dayPicker": "Timeline day picker",

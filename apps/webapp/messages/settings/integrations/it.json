@@ -120,9 +120,11 @@
       },
       "errors": {
         "connectionFailed": "Connessione a Clockodo non riuscita",
+        "fetchProjectsFailed": "Impossibile recuperare i dati del progetto",
         "fetchUsersFailed": "Recupero dati utente non riuscito",
         "importFailed": "Scansione di revisione importazione non riuscita",
-        "saveMappingsFailed": "Salvataggio mappature utente non riuscito"
+        "saveMappingsFailed": "Salvataggio mappature utente non riuscito",
+        "saveProjectMappingsFailed": "Impossibile salvare le mappature del progetto"
       },
       "importing": {
         "description": "Si prega di non chiudere questa pagina. La scansione di revisione è in coda e potrebbe richiedere del tempo per set di dati di grandi dimensioni.",
@@ -148,6 +150,19 @@
         "next": "Mappa utenti",
         "title": "Anteprima dati"
       },
+      "projectMapping": {
+        "clockodoCustomer": "Cliente Clockodo",
+        "clockodoProject": "Progetto Clockodo",
+        "continue": "Continua",
+        "description": "Mappa i progetti Clockodo su progetti Z8 esistenti. Le voci orarie importate mantengono il loro progetto e il valore fatturabile di Clockodo. Le voci su progetti non mappati o su progetti senza cliente vengono importate come non fatturabili. Non viene creato alcun progetto.",
+        "mappedCount": "{mapped} di {total} progetti mappati",
+        "noCustomer": "Questo progetto non ha un cliente, quindi il tempo importato non è fatturabile.",
+        "noZ8Projects": "Questa organizzazione non ha ancora progetti. Crea prima i progetti per importare il tempo di Clockodo con il relativo progetto e valore fatturabile.",
+        "title": "Mappa progetti",
+        "unmapped": "Non mappato (nessun progetto)",
+        "z8Project": "Progetto Z8",
+        "z8ProjectFor": "Progetto Z8 per {project}"
+      },
       "review": {
         "startedToast": "Scansione di revisione importazione avviata. È richiesta una revisione prima che i record vengano confermati."
       },
@@ -167,6 +182,7 @@
         "credentials": "Credenziali",
         "import": "Revisione",
         "preview": "Anteprima",
+        "projectMapping": "Mappatura progetti",
         "selection": "Selezione",
         "userMapping": "Mappatura utente"
       },

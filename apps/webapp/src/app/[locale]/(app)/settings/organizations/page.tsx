@@ -6,9 +6,11 @@ import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { organizationNotificationSettings } from "@/db/schema";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getBillableTimeSettings } from "@/lib/billable-time/settings";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { loadAutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/settings";
+import { loadClockingReminderSettings } from "@/lib/time-tracking/clocking-reminders/settings";
 import { getTranslate } from "@/tolgee/server";
 
 async function OrganizationsPageContent() {
@@ -39,6 +41,8 @@ async function OrganizationsPageContent() {
 		memberCountRows,
 		organizationNotificationSettingsRecord,
 		autoClockOutSettings,
+		billableTimeSettings,
+		clockingReminderSettings,
 	] = await Promise.all([
 		db.query.organization.findFirst({
 			where: eq(authSchema.organization.id, organizationId),
@@ -65,6 +69,8 @@ async function OrganizationsPageContent() {
 			columns: { defaultLanguage: true },
 		}),
 		loadAutoClockOutSettings(db, organizationId),
+		getBillableTimeSettings(organizationId, db),
+		loadClockingReminderSettings(db, organizationId),
 	]);
 
 	const [currentMemberRecord] = currentMember;
@@ -93,6 +99,7 @@ async function OrganizationsPageContent() {
 	return (
 		<OrganizationsPageClient
 			autoClockOutSettings={autoClockOutSettings}
+			clockingReminderSettings={clockingReminderSettings}
 			organization={organization}
 			memberCount={memberCountRows[0]?.value ?? 0}
 			currentMemberRole={
@@ -101,6 +108,7 @@ async function OrganizationsPageContent() {
 			defaultNotificationLanguage={
 				organizationNotificationSettingsRecord?.defaultLanguage ?? "en"
 			}
+			billableCurrency={billableTimeSettings.currency}
 			canCreateOrganizations={canCreateOrganizationsForDeployment(
 				authContext.user.canCreateOrganizations ||
 					authContext.user.role === "admin",

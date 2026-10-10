@@ -129,6 +129,7 @@
           "alreadyReimbursed": "Ignorado: já reembolsado",
           "balanceChanged": "Ignorado: saldo alterado",
           "failed": "Falhou",
+          "inPayrollRun": "Ignorado: incluído em um processamento da folha",
           "outOfScope": "Ignorado: fora do escopo",
           "overpaidOrReview": "Ignorado: pago a mais ou precisa de revisão",
           "ownExpense": "Ignorado: sua própria despesa",
@@ -247,6 +248,7 @@
           "search": "Pesquisar equipes…"
         }
       },
+      "inPayrollRun": "Incluído em {run}",
       "legacyClaim": "Reivindicação herdada de {type}",
       "loading": "Carregando fila financeira…",
       "pagination": {
@@ -254,6 +256,16 @@
         "next": "Próximo",
         "page": "Página {page}",
         "previous": "Anterior"
+      },
+      "payrollRun": {
+        "included": "Incluído em {run}. É pago nessa folha de pagamento e registrado como reembolsado quando o processamento for confirmado.",
+        "label": "Processamento da folha {period} ({format})",
+        "notIncluded": "Nenhum processamento da folha inclui mais esta despesa.",
+        "remove": "Remover do processamento da folha",
+        "removed": "Removida do processamento da folha. A despesa aguarda reembolso novamente.",
+        "removeDescription": "Remova apenas se a folha de pagamento não for pagá-la neste processamento, por exemplo, após corrigir o arquivo da folha. A remoção é registrada no log de auditoria.",
+        "removeFailed": "Não foi possível remover a despesa do processamento da folha de pagamento.",
+        "removeTitle": "Remover esta despesa do processamento da folha de pagamento?"
       },
       "queue": {
         "description": "Abra uma despesa para ver sua liquidação e registrar um reembolso.",
@@ -999,6 +1011,20 @@
         "adoptForeignTitle": "Adotar as diárias legais alemãs com as taxas oficiais para o exterior",
         "foreignAreas": "Taxas para o exterior: {countries} países e {places} cidades"
       },
+      "reimbursementChannel": {
+        "bankTransfer": "Transferência bancária",
+        "bankTransferDescription": "Os responsáveis pelas despesas realizam os reembolsos por transferência bancária e os registram no Z8.",
+        "intro": "Como sua organização paga os reembolsos. A escolha se aplica a todos os funcionários.",
+        "loadFailed": "Não foi possível carregar o canal de reembolso.",
+        "payrollRun": "Processamento da folha de pagamento",
+        "payrollRunDescription": "O processamento da folha de pagamento inclui reembolsos, que são registrados assim que a folha é confirmada como paga. Os relatórios que não puderem ser incluídos na folha são pagos por transferência bancária.",
+        "payrollRunPreview": "Em versão preliminar e ainda não disponível para a sua organização.",
+        "save": "Salvar canal",
+        "saved": "Canal de reembolso salvo",
+        "saveFailed": "Não foi possível salvar o canal de reembolso.",
+        "title": "Canal de reembolso",
+        "unconfirmedRuns": "{count, plural, one {# processamento de folha de pagamento ainda não está confirmado. Ele ainda pode ser confirmado ou descartado.} other {# processamentos de folha de pagamento ainda não estão confirmados. Eles ainda podem ser confirmados ou descartados.}}"
+      },
       "tabs": {
         "access": "Acesso",
         "currencies": "Moedas",
@@ -1034,6 +1060,7 @@
         "exceedsOutstanding": "O valor é superior ao saldo pendente.",
         "exceedsOverpayment": "O valor é superior ao montante pago a mais.",
         "failed": "Não foi possível registrar o pagamento. Tente novamente.",
+        "inPayrollRun": "Um processamento da folha de pagamento agora inclui esta despesa, portanto ela é paga pela folha. Remova-a do processamento antes de registrar um pagamento.",
         "load": "Não foi possível carregar o saldo de reembolso. Tente novamente.",
         "noOverpayment": "Nada foi pago a mais nesta despesa.",
         "notApproved": "Esta despesa não está mais aprovada, portanto nenhum pagamento pode ser registrado.",

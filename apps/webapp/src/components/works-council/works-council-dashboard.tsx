@@ -1,7 +1,9 @@
 import { DateTime } from "luxon";
+import type { PositionCaptureReview } from "@/lib/works-council/position-capture-review";
 import type { SuppressedValue } from "@/lib/works-council/privacy";
 import type { WorksCouncilPortalModel } from "@/lib/works-council/review-data";
 import { getTranslate } from "@/tolgee/server";
+import { PositionCaptureReviewSection } from "./position-capture-review-section";
 
 function formatTimestamp(timestamp: string) {
 	return DateTime.fromISO(timestamp)
@@ -71,8 +73,11 @@ function MetricCard({
 
 export async function WorksCouncilDashboard({
 	model,
+	positionCapture,
 }: {
 	model: WorksCouncilPortalModel;
+	/** The read-only position capture section (#834). */
+	positionCapture?: { review: PositionCaptureReview; locale: string };
 }) {
 	const t = await getTranslate();
 	if (model.state === "disabled") {
@@ -268,6 +273,14 @@ export async function WorksCouncilDashboard({
 					</ul>
 				)}
 			</div>
+
+			{positionCapture && (
+				<PositionCaptureReviewSection
+					review={positionCapture.review}
+					locale={positionCapture.locale}
+					t={t}
+				/>
+			)}
 		</section>
 	);
 }

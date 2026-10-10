@@ -320,6 +320,40 @@
       "pagination": "Pagination"
     },
     "pending": "En attente",
+    "positionCaptureErrors": {
+      "adminOnly": "Seuls les propriétaires et les administrateurs de l'organisation peuvent gérer l'enregistrement des positions.",
+      "assignmentNotFound": "Cette affectation n'existe plus.",
+      "employeeNotFound": "Cet employé n'a pas été trouvé.",
+      "employeeProfileRequired": "Un profil d'employé dans cette organisation est requis.",
+      "invalidTarget": "Choisissez à qui s'applique l'affectation.",
+      "noticeChanged": "La notice relative aux positions a changé. Veuillez consulter la notice actuelle avant de prendre une décision.",
+      "positionsForbidden": "Vous n'êtes pas autorisé à voir les positions pour cette période de travail.",
+      "purposeRequired": "Une déclaration de finalité est requise avant de pouvoir activer l'enregistrement des positions.",
+      "purposeTooLong": "La déclaration de finalité est trop longue.",
+      "retentionOutOfRange": "La durée de conservation doit être un nombre entier de jours compris entre {min} et {max}.",
+      "signInRequired": "Connectez-vous d'abord à une organisation.",
+      "teamNotFound": "Cette équipe n'a pas été trouvée.",
+      "workPeriodNotFound": "Cette période de travail n'a pas été trouvée."
+    },
+    "positionConsent": {
+      "agree": "Accepter",
+      "description": "Votre organisation demande à enregistrer la position de votre appareil lorsque vous pointez à l'arrivée, au départ ou lors d'une pause. Votre pointage a été enregistré dans tous les cas. Si vous acceptez, les positions seront enregistrées à partir de votre prochain pointage.",
+      "notNow": "Pas maintenant",
+      "title": "Enregistrer votre position lors des pointages ?"
+    },
+    "positionNotice": {
+      "never": "Les pointages de sortie effectués pour vous par quelqu'un d'autre, les pointages automatiques, les imports et les corrections ne comportent jamais de position. Si votre appareil ne peut pas fournir de position, votre pointage est enregistré sans celle-ci, et aucune explication n'est enregistrée.",
+      "purposeTitle": "Pourquoi votre organisation enregistre les positions",
+      "retention": "{days, plural, one {Chaque position est supprimée # jour après avoir été enregistrée. Vos pointages sont conservés.} other {Chaque position est supprimée # jours après avoir été enregistrée. Vos pointages sont conservés.}}",
+      "retentionTitle": "Durée de conservation des positions",
+      "version": "Notice sur les positions, version {version}",
+      "viewers": "Vous pouvez voir vos propres positions. Les propriétaires et administrateurs de l'organisation, ainsi que les personnes ayant reçu une autorisation explicite, peuvent les consulter pour une période de travail donnée, et chaque consultation est consignée afin que vous puissiez la voir. Le fait d'être votre responsable ne donne pas accès. Le comité d'entreprise n'a jamais accès aux positions individuelles.",
+      "viewersTitle": "Qui peut voir les positions",
+      "what": "Lorsque vous pointez à l'arrivée, au départ, au début ou à la fin d'une pause dans l'application web Z8 sur votre appareil, la position de votre appareil est enregistrée avec ce pointage : latitude, longitude, précision de la position et heure à laquelle l'appareil l'a déterminée. Aucune adresse, altitude ou vitesse n'est enregistrée, et rien n'est enregistré entre les pointages.",
+      "whatTitle": "Ce qui est enregistré",
+      "withdraw": "Les positions ne sont enregistrées que tant que vous y consentez. Vous pouvez retirer votre consentement à tout moment dans Paramètres, Relevés de position. Le retrait interrompt l'enregistrement et supprime immédiatement toutes vos positions enregistrées. Votre accord ou refus n'a aucune incidence sur vos pointages.",
+      "withdrawTitle": "Votre choix"
+    },
     "present": "Présent",
     "previous": "Précédent",
     "recovering": "Récupération...",
@@ -400,6 +434,43 @@
       "identityHidden": "Identité masquée",
       "insufficientData": "Données insuffisantes",
       "policyChanges": "Modifications des politiques",
+      "positionStamps": {
+        "accessAt": "Quand",
+        "accessEmployees": "Positions de",
+        "accessKindDetail": "{count, plural, one {Détail de la période de travail (# période de travail)} other {Détail de la période de travail (# périodes de travail)}}",
+        "accessKindExport": "Exportation des données",
+        "accessLog": "Journal d'accès aux positions",
+        "accessLogDescription": "Chaque fois qu'une personne autre que l'employé a consulté ou exporté des positions, de la plus récente à la plus ancienne.",
+        "accessLogEmpty": "Personne n'a consulté les positions.",
+        "accessViewer": "Consulté par",
+        "consentActive": "Consentement actif",
+        "consentDescription": "{count, plural, one {Parmi le # employé actif pour lequel la saisie est activée. « Indécis » inclut les employés ayant choisi « Pas maintenant » ou ayant consenti uniquement à une version antérieure de la notification.} other {Parmi les # employés actifs pour lesquels la saisie est activée. « Indécis » inclut les employés ayant choisi « Pas maintenant » ou ayant consenti uniquement à une version antérieure de la notification.}}",
+        "consentTitle": "Consentement de localisation",
+        "consentUndecided": "Indécis",
+        "consentWithdrawn": "Retiré",
+        "currentNotice": "Notification actuelle",
+        "deletedViewer": "Un utilisateur supprimé",
+        "description": "Comment l'organisation enregistre les positions des employés lors de leurs pointages, et qui les a consultées. Le comité d'entreprise ne voit jamais les positions individuelles.",
+        "employeeAssignmentCounts": "{on} activé(s), {off} désactivé(s) individuellement",
+        "employeeAssignments": "Attributions d'employés",
+        "employeeCount": "{count, plural, one {# employé} other {# employés}}",
+        "employeePseudonym": "Employé {ref}",
+        "enabled": "Saisie",
+        "noEmployeeAssignments": "Aucune attribution d'employé.",
+        "noNotice": "Aucune notification n'a été publiée.",
+        "notAssigned": "Non attribué",
+        "noTeamAssignments": "Aucune attribution d'équipe.",
+        "noticeHistory": "Versions de la notification",
+        "noticeVersion": "{days, plural, one {Version {version}, publiée le {publishedAt}, positions conservées # jour} other {Version {version}, publiée le {publishedAt}, positions conservées # jours}}",
+        "off": "Désactivé",
+        "on": "Activé",
+        "organizationAssignment": "Toute l'organisation",
+        "retention": "Conservation",
+        "retentionDays": "{days, plural, one {# jour} other {# jours}}",
+        "teamAssignments": "Attributions d'équipe",
+        "title": "Capture de position",
+        "viewerPseudonym": "Visionneuse {ref}"
+      },
       "scheduleChanges": "Modifications du planning",
       "scheduleDescription": "Entrées de planning filtrées par confidentialité pour la période sélectionnée.",
       "scheduleEmpty": "Aucune entrée de planning trouvée pour cette période.",
@@ -505,9 +576,11 @@
     "finance": "Finances",
     "financeAwaiting": "{count, plural, one {# dépense en attente de remboursement} other {# dépenses en attente de remboursement}}",
     "get-help": "Obtenir de l'aide",
+    "my-documents": "Mes documents",
     "my-requests": "Mes demandes",
     "org-explorer": "Explorateur d'organisation",
     "payroll": "Paie",
+    "personnel-files": "Dossiers du personnel",
     "platform-admin": "Administrateur de la plateforme",
     "reports": "Rapports",
     "scheduling": "Planification",
@@ -545,6 +618,10 @@
         "message": "Vous avez été automatiquement dépointé après {duration} minutes de travail ininterrompu à {cutoff} ({timezone}) car la limite de temps de votre organisation a été atteinte.",
         "title": "Dépointé automatiquement"
       },
+      "breakDueReminder": {
+        "message": "Votre pause est prévue à {breakTime} ({timezone}). Prenez une pause d'ici là pour respecter les règles de pause de votre entreprise.",
+        "title": "Bientôt l'heure de la pause"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName} : Les tâches d'approbation nécessitent un remplaçant (départ effectif le {cutoff}, {timezone}).",
         "clock_out": "{employeeName} : À vérifier : pointage de sortie (départ de l'employé) (départ effectif le {cutoff}, {timezone}).",
@@ -553,12 +630,53 @@
         "future_work": "{employeeName} : Le travail futur doit être vérifié (départ effectif le {cutoff}, {timezone}).",
         "title": "Le départ de l'employé doit être vérifié"
       },
+      "forgottenClockOutReminder": {
+        "message": "Votre quart de travail s'est terminé à {endTime} ({timezone}). Pointez votre départ si vous avez fini de travailler.",
+        "title": "Vous n'avez pas encore pointé votre départ"
+      },
+      "missedClockInReminder": {
+        "message": "Votre quart de travail a commencé à {startTime} ({timezone}). Pointez votre arrivée si vous êtes en train de travailler.",
+        "title": "Vous n'avez pas encore pointé votre arrivée"
+      },
       "newAbsenceRequest": {
         "title": "Nouvelle demande d'absence"
       },
       "passwordChanged": {
         "message": "Votre mot de passe a été modifié avec succès. Si vous n'êtes pas à l'origine de ce changement, veuillez contacter immédiatement le support.",
         "title": "Mot de passe modifié"
+      },
+      "personnelFileDocumentShared": {
+        "message": "Le document « {title} » a été partagé avec vous.",
+        "title": "Nouveau document dans votre dossier du personnel"
+      },
+      "personnelFileDueForDeletion": {
+        "message": "{count, plural, one {# document d'employé doit maintenant être supprimé. Vérifiez et confirmez la suppression définitive.} other {# documents d'employés doivent maintenant être supprimés. Vérifiez et confirmez la suppression définitive.}}",
+        "title": "Documents arrivant à échéance de suppression"
+      },
+      "personnelFileEmployeeUpload": {
+        "certificate": "{name} a importé un certificat",
+        "other": "{name} a importé un document",
+        "title": "Nouveau document dans un dossier du personnel"
+      },
+      "personnelFileExpiredToday": {
+        "employeeMessage": "Votre document « {title} » expire aujourd'hui.",
+        "message": "Le document « {title} » de {employee} expire aujourd'hui.",
+        "title": "Un document expire aujourd'hui"
+      },
+      "personnelFileExpiryUpcoming": {
+        "employeeMessage": "Votre document « {title} » expire le {expiryDate}.",
+        "message": "Le document « {title} » de {employee} expire le {expiryDate}.",
+        "title": "Un document expire bientôt"
+      },
+      "personnelFilePayslipsShared": {
+        "message": "Votre bulletin de paie pour la période {payPeriod} a été partagé avec vous.",
+        "title": "Nouveau bulletin de paie dans votre dossier du personnel"
+      },
+      "policyForgottenClockOutReminder": {
+        "message": "Vous avez atteint le nombre d'heures requis pour {day} à {endTime} ({timezone}). Pointez votre sortie si vous avez terminé de travailler."
+      },
+      "policyMissedClockInReminder": {
+        "message": "Votre dernier pointage d'arrivée aujourd'hui a eu lieu à {startTime} ({timezone}). Pointez votre arrivée si vous travaillez."
       },
       "shiftAssigned": {
         "message": "Un quart de travail vous a été attribué le {shiftDate} de {startTime} à {endTime} par {assignedByName}.",
@@ -613,6 +731,10 @@
     },
     "preferences": {
       "categories": {
+        "personnelFile": {
+          "description": "Notifications concernant les documents partagés avec vous dans votre dossier du personnel",
+          "title": "Dossier du personnel"
+        },
         "travelExpenses": {
           "description": "Notifications concernant les remboursements et recouvrements de vos frais de déplacement",
           "title": "Frais de déplacement"
@@ -646,6 +768,11 @@
         "errorToast": "Erreur de notification push"
       },
       "toggleAria": "Notifications {channel} pour {type}",
+      "types": {
+        "break_due_reminder": "Pause requise",
+        "forgotten_clock_out_reminder": "Oubli de pointage de sortie",
+        "missed_clock_in_reminder": "Pointage d'arrivée manqué"
+      },
       "updateFailed": "Échec de la mise à jour de la préférence"
     },
     "search": {

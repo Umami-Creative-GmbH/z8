@@ -14,7 +14,11 @@
 import { type ConnectionOptions, type Job, type JobsOptions, Queue, Worker } from "bullmq";
 import { env } from "@/env";
 import type { CronJobData, CronJobName, CronJobResult } from "@/lib/cron/registry";
-import type { ImportCommitJobData, ImportScanJobData } from "@/lib/import-review/types";
+import type {
+	AccountingCustomerScanJobData,
+	ImportCommitJobData,
+	ImportScanJobData,
+} from "@/lib/import-review/types";
 import { createLogger } from "@/lib/logger";
 import { createRedisConnectionOptions } from "@/lib/redis-config";
 
@@ -143,7 +147,7 @@ export interface EmployeeDepartureJobData {
 	revision: number;
 }
 
-export type ImportReviewScanQueueJobData = ImportScanJobData;
+export type ImportReviewScanQueueJobData = ImportScanJobData | AccountingCustomerScanJobData;
 
 export type ImportReviewCommitQueueJobData = ImportCommitJobData;
 

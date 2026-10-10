@@ -51,7 +51,13 @@ import {
 	processWorkBalanceRebuildIntents,
 } from "@/lib/work-balance/rebuild-intents";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
-import { isOrganizationFeature } from "./organization-features";
+import {
+	isOrganizationFeature,
+	type OrganizationFeature,
+	organizationFeatureRequiredRole,
+	organizationFeatureUpdate,
+	requiresDedicatedSwitch,
+} from "./organization-features";
 
 const logger = createLogger("OrganizationActions");
 
@@ -1111,7 +1117,7 @@ export async function toggleOrganizationFeature(
 		(span) => {
 			return Effect.gen(function* () {
 				if (!isOrganizationFeature(feature)) {
-					yield* Effect.fail(
+					return yield* Effect.fail(
 						new ValidationError({
 							message: "Invalid organization feature",
 							field: "feature",
@@ -1119,24 +1125,39 @@ export async function toggleOrganizationFeature(
 						}),
 					);
 				}
+				const organizationFeature = feature as OrganizationFeature;
+				if (requiresDedicatedSwitch(organizationFeature)) {
+					return yield* Effect.fail(
+						new ValidationError({
+							message: "This feature has its own switch",
+							field: "feature",
+							value: feature,
+						}),
+					);
+				}
+				const requiredRole = organizationFeatureRequiredRole(organizationFeature);
 
 				const authService = yield* AuthService;
 				const session = yield* authService.getSession();
 				yield* requireActiveOrganizationActionActor({
 					userId: session.user.id,
 					organizationId,
-					requiredRole: "owner",
-					message: "Only owners can change organization features",
+					requiredRole,
+					message:
+						requiredRole === "admin"
+							? "Only owners and admins can change this organization feature"
+							: "Only owners can change organization features",
 					resource: "organization",
 					action: "update",
 				});
 
-				// Update the organization feature directly
+				// Update the organization feature directly. Switching projects off
+				// also switches Billable Time off (#897).
 				yield* Effect.tryPromise({
 					try: async () => {
 						await db
 							.update(authSchema.organization)
-							.set({ [feature]: enabled })
+							.set(organizationFeatureUpdate(organizationFeature, enabled))
 							.where(eq(authSchema.organization.id, organizationId));
 					},
 					catch: (error) => {

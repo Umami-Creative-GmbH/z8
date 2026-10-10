@@ -20,6 +20,34 @@
         "title": "Dati anagrafici DATEV"
       },
       "description": "Esporta i periodi di lavoro verso sistemi di buste paga come DATEV o Personio",
+      "expenseMappings": {
+        "apiConnectors": "Personio, Workday e l'API di SuccessFactors non gestiscono i rimborsi spese.",
+        "codeLabel": "{line}, voce retributiva {format}",
+        "description": "Mappa ogni voce di spesa a una voce retributiva per i formati di file paghe che esporti. Una voce di spesa senza una voce retributiva per il formato esportato esclude i report interessati dall'elaborazione delle paghe; verranno invece pagati tramite bonifico bancario.",
+        "format": {
+          "datevLohn": "DATEV Payroll",
+          "lexware": "Lexware",
+          "sage": "Sage",
+          "successFactorsFile": "File SuccessFactors"
+        },
+        "kind": {
+          "mileageExcess": "Chilometraggio: eccedenza imponibile",
+          "mileageStatutory": "Chilometraggio: quota prevista per legge",
+          "perDiemExcess": "Diaria: eccedenza imponibile",
+          "perDiemStatutory": "Diaria: quota prevista per legge",
+          "receiptAccommodation": "Ricevute: alloggio",
+          "receiptMeals": "Ricevute: pasti",
+          "receiptOther": "Ricevute: altro",
+          "receiptParking": "Ricevute: parcheggio",
+          "receiptTransport": "Ricevute: trasporti"
+        },
+        "line": "Voce di spesa",
+        "loadFailed": "Impossibile caricare le voci retributive di spesa.",
+        "save": "Salva voci retributive",
+        "saved": "Voci retributive salvate",
+        "saveFailed": "Impossibile salvare alcune voci retributive.",
+        "title": "Rimborsi spese"
+      },
       "export": {
         "allEmployees": "Tutti i dipendenti",
         "allProjects": "Tutti i progetti",
@@ -71,6 +99,7 @@
         "downloadError": "Impossibile ottenere l'URL di download",
         "employees": "dipendenti",
         "noExports": "Nessuna esportazione ancora",
+        "payrollRun": "{count, plural, one {Elaborazione paghe: # nota spese} other {Elaborazione paghe: # note spese}}",
         "periods": "periodi",
         "status": {
           "completed": "Completato",

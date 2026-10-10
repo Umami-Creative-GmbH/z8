@@ -37,6 +37,7 @@ import {
 	timeEntry,
 	timeEntryAppendPosition,
 	timeRecord,
+	timeRecordAllocation,
 	timeRecordWork,
 	workCategory,
 	workPeriod,
@@ -761,6 +762,29 @@ function equalsBefore(column: AnyColumn, before: RepairChange["before"]) {
 	return before === null ? isNull(column) : eq(column, before);
 }
 
+/** The billability the canonical record carries for a project; none without a record. */
+async function canonicalProjectBillability(
+	tx: WorkTransactionClient,
+	organizationId: string,
+	recordId: string | null,
+	projectId: string,
+): Promise<boolean> {
+	if (recordId === null) return false;
+	const [allocation] = await tx
+		.select({ isBillable: timeRecordAllocation.isBillable })
+		.from(timeRecordAllocation)
+		.where(
+			and(
+				eq(timeRecordAllocation.organizationId, organizationId),
+				eq(timeRecordAllocation.recordId, recordId),
+				eq(timeRecordAllocation.allocationKind, "project"),
+				eq(timeRecordAllocation.projectId, projectId),
+			),
+		)
+		.limit(1);
+	return allocation?.isBillable ?? false;
+}
+
 async function applyFieldRepair(
 	tx: WorkTransactionClient,
 	admission: "legacy" | "append",
@@ -863,7 +887,17 @@ async function applyFieldRepair(
 				break;
 			case "project_id":
 				periodSet.projectId = change.after as string;
+				// A task never outlives its project (#873).
+				periodSet.taskId = null;
 				periodGuards.push(equalsBefore(workPeriod.projectId, change.before));
+				// The period takes the canonical allocation's billability for that
+				// project, so both representations agree afterwards (#900).
+				periodSet.isBillable = await canonicalProjectBillability(
+					tx,
+					organizationId,
+					recordId,
+					change.after as string,
+				);
 				break;
 		}
 	}

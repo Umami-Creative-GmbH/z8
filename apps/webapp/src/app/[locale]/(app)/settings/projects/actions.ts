@@ -11,20 +11,31 @@ import {
 	project,
 	projectAssignment,
 	projectManager,
-	projectNotificationState,
 	team,
 	workPeriod,
 } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { readProjectActiveCustomerId } from "@/lib/billable-time/project-customer";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
+import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
+import {
+	insertProject,
+	insertProjectAssignments,
+	insertProjectManagers,
+} from "@/lib/projects/project-creation";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
+import {
+	projectBillableDefault,
+	requireBillableTimeForDefaultChange,
+} from "./project-billable-default-input";
 import {
 	ensureSettingsActorCanAccessCustomerTarget,
 	ensureSettingsActorCanAccessProjectTarget,
 	ensureSettingsActorCanManageProjectManagers,
+	ensureSettingsActorCanUseProjectCustomer,
 	filterItemsToManagedProjects,
 	getManagedProjectIdsForSettingsActor,
 	getProjectSettingsActorContext,
@@ -49,6 +60,8 @@ export interface ProjectWithDetails {
 	deadline: Date | null;
 	customerId: string | null;
 	customerName: string | null;
+	/** Whether new work on the project starts as billable work (#900). */
+	billableDefault: boolean;
 	isActive: boolean;
 	createdAt: Date;
 	createdBy: string;
@@ -141,6 +154,8 @@ export interface CreateProjectInput {
 	budgetHours?: number;
 	deadline?: Date;
 	customerId?: string;
+	/** Billable default (#900); only a project with a customer can have it on. */
+	billableDefault?: boolean;
 }
 
 export interface UpdateProjectInput {
@@ -152,6 +167,8 @@ export interface UpdateProjectInput {
 	budgetHours?: number | null;
 	deadline?: Date | null;
 	customerId?: string | null;
+	/** Billable default (#900); never changes existing work. */
+	billableDefault?: boolean;
 }
 
 /**
@@ -241,6 +258,8 @@ export async function getProjects(
 									and(
 										inArray(workPeriod.projectId, projectIds),
 										eq(workPeriod.organizationId, organizationId),
+										// Completed work only, as the reports and budget alerts count (#794).
+										completedWorkPeriodCondition(),
 									),
 								)
 								.groupBy(workPeriod.projectId)
@@ -301,6 +320,7 @@ export async function getProjects(
 					deadline: p.deadline,
 					customerId: p.customerId,
 					customerName: p.customer?.name ?? null,
+					billableDefault: p.billableDefault,
 					isActive: p.isActive,
 					createdAt: p.createdAt,
 					createdBy: p.createdBy,
@@ -376,63 +396,39 @@ export async function createProject(
 
 				// Validate customerId if provided
 				if (input.customerId) {
-					const customerExists = yield* dbService.query("verifyCustomer", async () => {
-						return await db.query.customer.findFirst({
-							where: and(
-								eq(customer.id, input.customerId!),
-								eq(customer.organizationId, input.organizationId),
-								eq(customer.isActive, true),
-							),
-						});
-					});
-
-					if (!customerExists) {
-						return yield* Effect.fail(
-							new ValidationError({
-								message: "Customer not found",
-								field: "customerId",
-							}),
-						);
-					}
-
-					yield* ensureSettingsActorCanAccessCustomerTarget(actor, customerExists, {
-						message: "You do not have access to assign this customer",
-						resource: "project",
-						action: "create",
-					});
+					yield* ensureSettingsActorCanUseProjectCustomer(actor, input.customerId, "create");
 				}
+
+				yield* requireBillableTimeForDefaultChange(dbService, input.organizationId, {
+					requested: input.billableDefault,
+					current: false,
+				});
+				const billableDefault = yield* projectBillableDefault({
+					requested: input.billableDefault,
+					current: false,
+					customerId: input.customerId || null,
+				});
 
 				const created = yield* dbService.query("project.create", async () => {
 					return await db.transaction(async (tx) => {
-						const [newProject] = await tx
-							.insert(project)
-							.values({
-								organizationId: input.organizationId,
-								name: input.name,
-								description: input.description || null,
-								status: input.status || "planned",
-								icon: input.icon || null,
-								color: input.color || null,
-								budgetHours: input.budgetHours?.toString() || null,
-								deadline: input.deadline || null,
-								customerId: input.customerId || null,
-								isActive: true,
-								createdBy: session.user.id,
-								updatedAt: new Date(),
-							})
-							.returning();
-
-						await tx.insert(projectNotificationState).values({
-							projectId: newProject.id,
-							budgetThresholdsNotified: [],
-							deadlineThresholdsNotified: [],
-							updatedAt: new Date(),
+						const newProject = await insertProject(tx, {
+							organizationId: input.organizationId,
+							name: input.name,
+							description: input.description || null,
+							status: input.status || "planned",
+							icon: input.icon || null,
+							color: input.color || null,
+							budgetHours: input.budgetHours?.toString() || null,
+							deadline: input.deadline || null,
+							customerId: input.customerId || null,
+							billableDefault,
+							createdBy: session.user.id,
 						});
 
 						if (actor.accessTier === "manager" && actor.currentEmployee) {
-							await tx.insert(projectManager).values({
+							await insertProjectManagers(tx, {
 								projectId: newProject.id,
-								employeeId: actor.currentEmployee.id,
+								employeeIds: [actor.currentEmployee.id],
 								assignedBy: session.user.id,
 							});
 						}
@@ -538,6 +534,34 @@ export async function updateProject(
 					updateData.budgetHours = input.budgetHours?.toString() || null;
 				if (input.deadline !== undefined) updateData.deadline = input.deadline;
 				if (input.customerId !== undefined) updateData.customerId = input.customerId;
+				// Settable by whoever may edit the project while Billable Time is on; no
+				// configuration guard (ADR 0001).
+				yield* requireBillableTimeForDefaultChange(dbService, existingProject.organizationId, {
+					requested: input.billableDefault,
+					current: existingProject.billableDefault,
+				});
+				// A deleted customer leaves the project without customer (#768): its default
+				// switches off with the next edit and cannot be switched on.
+				const customerForDefault =
+					input.customerId !== undefined
+						? input.customerId
+						: existingProject.customerId === null
+							? null
+							: yield* dbService.query("project.activeCustomer", () =>
+									readProjectActiveCustomerId(
+										dbService.db,
+										existingProject.organizationId,
+										projectId,
+									),
+								);
+				const billableDefault = yield* projectBillableDefault({
+					requested: input.billableDefault,
+					current: existingProject.billableDefault,
+					customerId: customerForDefault,
+				});
+				if (billableDefault !== existingProject.billableDefault) {
+					updateData.billableDefault = billableDefault;
+				}
 
 				// Validate customerId if changing to a new customer
 				if (input.customerId) {
@@ -689,13 +713,13 @@ export async function addProjectManager(
 				}
 
 				// Add the manager
-				yield* dbService.query("project.addManager", async () => {
-					await db.insert(projectManager).values({
+				yield* dbService.query("project.addManager", () =>
+					insertProjectManagers(db, {
 						projectId,
-						employeeId,
+						employeeIds: [employeeId],
 						assignedBy: session.user.id,
-					});
-				});
+					}),
+				);
 
 				// Log audit (fire-and-forget)
 				logAudit({
@@ -890,12 +914,11 @@ export async function addProjectAssignment(
 									});
 								}
 
-								await tx.insert(projectAssignment).values({
+								await insertProjectAssignments(tx, {
 									projectId,
 									organizationId: existingProject.organizationId,
-									assignmentType: type,
-									teamId: type === "team" ? targetId : null,
-									employeeId: type === "employee" ? targetId : null,
+									teamIds: type === "team" ? [targetId] : [],
+									employeeIds: type === "employee" ? [targetId] : [],
 									createdBy: session.user.id,
 								});
 							},

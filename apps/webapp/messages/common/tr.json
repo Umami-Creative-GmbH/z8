@@ -320,6 +320,40 @@
       "pagination": "Sayfalama"
     },
     "pending": "Beklemede",
+    "positionCaptureErrors": {
+      "adminOnly": "Konum kaydını yalnızca kuruluş sahipleri ve yöneticiler yönetebilir.",
+      "assignmentNotFound": "Bu atama artık mevcut değil.",
+      "employeeNotFound": "Bu çalışan bulunamadı.",
+      "employeeProfileRequired": "Bu kuruluşta bir çalışan profili gereklidir.",
+      "invalidTarget": "Atamanın kime uygulanacağını seçin.",
+      "noticeChanged": "Konum bildirimi değişti. Karar vermeden önce güncel bildirimi inceleyin.",
+      "positionsForbidden": "Bu çalışma döneminin konumlarını görme yetkiniz yok.",
+      "purposeRequired": "Konum kaydı açılmadan önce bir amaç açıklaması gereklidir.",
+      "purposeTooLong": "Amaç açıklaması çok uzun.",
+      "retentionOutOfRange": "Saklama süresi, {min} ile {max} arasında tam bir gün sayısı olmalıdır.",
+      "signInRequired": "Önce bir kuruluşta oturum açın.",
+      "teamNotFound": "Bu ekip bulunamadı.",
+      "workPeriodNotFound": "Bu çalışma dönemi bulunamadı."
+    },
+    "positionConsent": {
+      "agree": "Kabul Et",
+      "description": "Kuruluşunuz işe giriş, işten çıkış veya mola anında cihazınızın konumunu kaydetmeyi talep ediyor. Giriş/çıkış kaydınız her iki durumda da kaydedilmiştir. Kabul ederseniz konumlar bir sonraki giriş/çıkış işleminizden itibaren kaydedilir.",
+      "notNow": "Şimdi değil",
+      "title": "Giriş/çıkış işlemleriyle konumunuz kaydedilsin mi?"
+    },
+    "positionNotice": {
+      "never": "Sizin adınıza bir başkası tarafından yapılan çıkışlar, otomatik çıkışlar, içe aktarmalar ve düzeltmeler asla konum içermez. Cihazınız bir konum sağlayamazsa giriş/çıkış kaydınız konum olmadan kaydedilir ve bunun nedeni kaydedilmez.",
+      "purposeTitle": "Kuruluşunuz konumları neden kaydeder",
+      "retention": "{days, plural, other {Her konum kaydedildikten # gün sonra silinir. Giriş/çıkış kayıtlarınız kalır.} }",
+      "retentionTitle": "Konumlar ne kadar süre saklanır",
+      "version": "Konum bildirimi, sürüm {version}",
+      "viewers": "Kendi konumlarınızı görebilirsiniz. Kuruluş sahipleri ve yöneticileri ile kendilerine açıkça izin verilmiş kişiler, bunları tek bir çalışma dönemi için görebilir ve görmeniz için bu tür her görüntüleme günlüğe kaydedilir. Yöneticiniz olmak erişim hakkı vermez. İşyeri konseyi bireysel konumları asla görmez.",
+      "viewersTitle": "Konumları kimler görebilir",
+      "what": "Cihazınızdaki Z8 web uygulamasında işe giriş veya çıkış yaptığınızda, bir mola başlattığınızda veya bitirdiğinizde cihazınızın konumu bu giriş/çıkış işlemiyle birlikte kaydedilir: enlem, boylam, konumun doğruluk derecesi ve cihazın bunu ne zaman belirlediği. Adres, irtifa veya hız kaydedilmez ve giriş/çıkış işlemleri arasında hiçbir şey kaydedilmez.",
+      "whatTitle": "Neler kaydedilir",
+      "withdraw": "Konumlar yalnızca siz onay verdiğiniz sürece kaydedilir. Onayınızı Ayarlar, Konum damgaları altından istediğiniz zaman geri çekebilirsiniz. Onayı geri çekmek kaydı durdurur ve kaydedilen tüm konumlarınızı anında siler. Onay verip vermemenizin giriş/çıkış kayıtlarınıza hiçbir etkisi yoktur.",
+      "withdrawTitle": "Tercihiniz"
+    },
     "present": "Mevcut",
     "previous": "Önceki",
     "recovering": "Kurtarılıyor...",
@@ -400,6 +434,43 @@
       "identityHidden": "Kimlik gizli",
       "insufficientData": "Yetersiz veri",
       "policyChanges": "Politika değişiklikleri",
+      "positionStamps": {
+        "accessAt": "Zaman",
+        "accessEmployees": "Konum sahibi",
+        "accessKindDetail": "{count, plural, other {Çalışma dönemi ayrıntısı (# çalışma dönemi)} }",
+        "accessKindExport": "Veri dışa aktarma",
+        "accessLog": "Konum erişim günlüğü",
+        "accessLogDescription": "Çalışan haricinde birinin konumları her görüntülediği veya dışa aktardığı zaman; en yeniden en eskiye.",
+        "accessLogEmpty": "Hiç kimse konumları görüntülemedi.",
+        "accessViewer": "Görüntüleyen",
+        "consentActive": "Aktif onay",
+        "consentDescription": "{count, plural, other {Kaydın etkin olduğu # aktif çalışan arasında. Kararsız; \"Şimdi değil\"i seçen veya yalnızca önceki bir bildirim sürümünü kabul eden çalışanları kapsar.} }",
+        "consentTitle": "Konum onayı",
+        "consentUndecided": "Kararsız",
+        "consentWithdrawn": "Geri çekildi",
+        "currentNotice": "Mevcut bildirim",
+        "deletedViewer": "Silinmiş bir kullanıcı",
+        "description": "Kuruluşun, çalışanların konumlarını giriş-çıkış kayıtlarıyla birlikte nasıl kaydettiği ve bunları kimlerin görüntülediği. İş konseyi bireysel konumları hiçbir zaman görmez.",
+        "employeeAssignmentCounts": "{on} açık, {off} tek tek kapatıldı",
+        "employeeAssignments": "Çalışan atamaları",
+        "employeeCount": "{count, plural, other {# çalışan} }",
+        "employeePseudonym": "Çalışan {ref}",
+        "enabled": "Kayıt",
+        "noEmployeeAssignments": "Çalışan ataması yok.",
+        "noNotice": "Yayınlanmış bildirim yok.",
+        "notAssigned": "Atanmadı",
+        "noTeamAssignments": "Ekip ataması yok.",
+        "noticeHistory": "Bildirim sürümleri",
+        "noticeVersion": "{days, plural, other {Sürüm {version}, yayınlanma tarihi {publishedAt}, konumlar # gün saklanır} }",
+        "off": "Kapalı",
+        "on": "Açık",
+        "organizationAssignment": "Tüm kuruluş",
+        "retention": "Saklama süresi",
+        "retentionDays": "{days, plural, other {# gün} }",
+        "teamAssignments": "Ekip atamaları",
+        "title": "Konum yakalama",
+        "viewerPseudonym": "Görüntüleyici {ref}"
+      },
       "scheduleChanges": "Program değişiklikleri",
       "scheduleDescription": "Seçilen dönem için gizlilik filtreli program girişleri.",
       "scheduleEmpty": "Bu dönem için program girişi bulunamadı.",
@@ -505,9 +576,11 @@
     "finance": "Finans",
     "financeAwaiting": "{count, plural, other {# masraf geri ödeme bekliyor} }",
     "get-help": "Yardım Al",
+    "my-documents": "Belgelerim",
     "my-requests": "Taleplerim",
     "org-explorer": "Kuruluş Gezgini",
     "payroll": "Bordro",
+    "personnel-files": "Özlük Dosyaları",
     "platform-admin": "Platform Yöneticisi",
     "reports": "Raporlar",
     "scheduling": "Planlama",
@@ -545,6 +618,10 @@
         "message": "Kuruluşunuzun zaman sınırına ulaşıldığı için {cutoff} ({timezone}) itibarıyla {duration} dakikalık kesintisiz çalışmanın ardından otomatik olarak çıkışınız yapıldı.",
         "title": "Otomatik olarak çıkış yapıldı"
       },
+      "breakDueReminder": {
+        "message": "Molanız {breakTime} ({timezone}) saatinde planlanmıştır. Çalışma politikanızın mola kurallarına uymak için o zamana kadar mola verin.",
+        "title": "Yakında mola zamanı"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Onay görevleri için bir vekil gerekiyor (ayrılış geçerlilik tarihi {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: İnceleme gerekiyor: işten ayrılış çıkış kaydı (ayrılış geçerlilik tarihi {cutoff}, {timezone}).",
@@ -553,12 +630,53 @@
         "future_work": "{employeeName}: Gelecekteki çalışmaların incelenmesi gerekiyor (ayrılış geçerlilik tarihi {cutoff}, {timezone}).",
         "title": "Çalışan işten ayrılış sürecinin incelenmesi gerekiyor"
       },
+      "forgottenClockOutReminder": {
+        "message": "Vardiyanız {endTime} ({timezone}) saatinde sona erdi. Çalışmayı bitirdiyseniz çıkış yapın.",
+        "title": "Hâlâ giriş yapmış durumdasınız"
+      },
+      "missedClockInReminder": {
+        "message": "Vardiyanız {startTime} ({timezone}) saatinde başladı. Çalışıyorsanız giriş yapın.",
+        "title": "Henüz giriş yapmadınız"
+      },
       "newAbsenceRequest": {
         "title": "Yeni izin talebi"
       },
       "passwordChanged": {
         "message": "Parolanız başarıyla değiştirildi. Bu değişikliği siz yapmadıysanız, lütfen derhal destek ekibiyle iletişime geçin.",
         "title": "Parola değiştirildi"
+      },
+      "personnelFileDocumentShared": {
+        "message": "\"{title}\" adlı belge sizinle paylaşıldı.",
+        "title": "Özlük dosyanızda yeni belge"
+      },
+      "personnelFileDueForDeletion": {
+        "message": "{count, plural, other {# çalışan belgesinin silinme süresi geldi. İnceleyin ve kalıcı olarak silmeyi onaylayın.} }",
+        "title": "Silinmesi gereken belgeler"
+      },
+      "personnelFileEmployeeUpload": {
+        "certificate": "{name} bir sertifika yükledi",
+        "other": "{name} bir belge yükledi",
+        "title": "Bir özlük dosyasında yeni belge"
+      },
+      "personnelFileExpiredToday": {
+        "employeeMessage": "\"{title}\" adlı belgenizin süresi bugün doluyor.",
+        "message": "{employee} adlı çalışana ait \"{title}\" belgesinin süresi bugün doluyor.",
+        "title": "Bir belgenin süresi bugün doluyor"
+      },
+      "personnelFileExpiryUpcoming": {
+        "employeeMessage": "\"{title}\" adlı belgenizin süresi {expiryDate} tarihinde doluyor.",
+        "message": "{employee} adlı çalışana ait \"{title}\" belgesinin süresi {expiryDate} tarihinde doluyor.",
+        "title": "Bir belgenin süresi yakında doluyor"
+      },
+      "personnelFilePayslipsShared": {
+        "message": "{payPeriod} dönemi için maaş bordronuz sizinle paylaşıldı.",
+        "title": "Özlük dosyanızda yeni maaş bordrosu"
+      },
+      "policyForgottenClockOutReminder": {
+        "message": "{day} günü için gereken çalışma süresine {endTime} ({timezone}) saatinde ulaştınız. Çalışmayı bitirdiyseniz çıkış yapın."
+      },
+      "policyMissedClockInReminder": {
+        "message": "Bugünkü en son giriş kaydınız: {startTime} ({timezone}). Çalışıyorsanız giriş yapın."
       },
       "shiftAssigned": {
         "message": "{assignedByName} tarafından {shiftDate} tarihinde {startTime} ile {endTime} saatleri arasında bir vardiya atandı.",
@@ -613,6 +731,10 @@
     },
     "preferences": {
       "categories": {
+        "personnelFile": {
+          "description": "Özlük dosyanızda sizinle paylaşılan belgelere ilişkin bildirimler",
+          "title": "Özlük Dosyası"
+        },
         "travelExpenses": {
           "description": "Seyahat masraflarınızın geri ödemeleri ve tahsilatları ile ilgili bildirimler",
           "title": "Seyahat Masrafları"
@@ -646,6 +768,11 @@
         "errorToast": "Anlık bildirim hatası"
       },
       "toggleAria": "{type} için {channel} bildirimleri",
+      "types": {
+        "break_due_reminder": "Mola vakti",
+        "forgotten_clock_out_reminder": "Unutulan çıkış",
+        "missed_clock_in_reminder": "Kaçırılan giriş"
+      },
       "updateFailed": "Tercih güncellenemedi"
     },
     "search": {

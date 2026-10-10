@@ -163,13 +163,9 @@ Automatically launch z8 Timer when you log in to your computer.
 | **On** | App starts automatically on login |
 | **Off** | Must launch manually |
 
-### Platform Implementation
+### How It Works
 
-| Platform | Method |
-|----------|--------|
-| Windows | Registry entry in `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` |
-| macOS | Login Items (System Preferences) |
-| Linux | XDG autostart desktop file |
+Auto-start adds a registry entry in `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.
 
 ### Recommended
 
@@ -214,13 +210,7 @@ Useful for:
 
 ## Settings Storage
 
-Settings are stored locally:
-
-| Platform | Location |
-|----------|----------|
-| Windows | `%APPDATA%\com.z8.timer\settings.json` |
-| macOS | `~/Library/Application Support/com.z8.timer/settings.json` |
-| Linux | `~/.config/com.z8.timer/settings.json` |
+Settings are stored locally in `%APPDATA%\com.z8.timer\settings.json`.
 
 ### Settings File Format
 
@@ -255,17 +245,8 @@ To reset to defaults:
 
 ### Auto-start not working
 
-**Windows:**
 - Check Task Manager → Startup tab
 - Ensure z8 Timer is enabled
-
-**macOS:**
-- Check System Preferences → Users & Groups → Login Items
-- Re-add if missing
-
-**Linux:**
-- Check `~/.config/autostart/`
-- Ensure desktop file exists and is valid
 
 ### URL not accepted
 

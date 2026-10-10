@@ -40,9 +40,14 @@ const CLOCK_OUT_FAILURE_MESSAGES: Record<
 	...WEB_REFUSAL_MESSAGES,
 	not_clocked_in: NOT_CLOCKED_IN,
 	project_not_allowed: ["timeTracking.errors.projectNotAllowed", "Cannot assign to this project"],
+	task_not_allowed: ["timeTracking.errors.taskNotAllowed", "Cannot book time to this task"],
 	work_category_not_allowed: [
 		"timeTracking.errors.workCategoryNotAllowed",
 		"Cannot assign to this work category",
+	],
+	billable_not_allowed: [
+		"timeTracking.errors.billableNotAllowed",
+		"Only work on a project that has a customer can be billable",
 	],
 	invalid_interval: [
 		"timeTracking.errors.clockOutBeforeClockIn",

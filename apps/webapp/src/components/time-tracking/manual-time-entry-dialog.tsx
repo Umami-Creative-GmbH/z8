@@ -4,14 +4,7 @@ import { IconAlertCircle, IconLoader2, IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import {
-	type ReactNode,
-	useEffect,
-	useId,
-	useMemo,
-	useRef,
-	useState,
-} from "react";
+import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import { updateTimezone } from "@/app/[locale]/(app)/settings/profile/actions";
@@ -24,6 +17,8 @@ import {
 	type ManualTimeEntryResult,
 } from "@/app/[locale]/(app)/time-tracking/actions/types";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
+import { billableChoice } from "@/components/time-tracking/billable-choice";
+import { BillableWorkSwitch } from "@/components/time-tracking/billable-work-switch";
 import { WorkLocationSelector } from "@/components/time-tracking/clock-in-out-widget-parts";
 import {
 	canDiscardManualRecovery,
@@ -32,6 +27,7 @@ import {
 	type ManualRecoveryScope,
 } from "@/components/time-tracking/manual-command-recovery";
 import { ProjectSelectorView } from "@/components/time-tracking/project-selector";
+import { TaskSelectorView } from "@/components/time-tracking/task-selector";
 import { TimezoneMismatchDialog } from "@/components/time-tracking/timezone-mismatch-dialog";
 import {
 	type ManualAttemptOutcome,
@@ -60,15 +56,11 @@ import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-	TFormControl,
-	TFormItem,
-	TFormLabel,
-	TFormMessage,
-} from "@/components/ui/tanstack-form";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
+import { projectTaskRefusalMessage } from "@/lib/projects/project-task-model";
 import { queryKeys } from "@/lib/query/keys";
 import {
 	describeManualWallTime,
@@ -80,14 +72,8 @@ import {
 	type ManualWallTime,
 	type ManualZoneBasis,
 } from "@/lib/time-tracking/manual-command";
-import {
-	formatUtcOffset,
-	getBrowserTimezone,
-} from "@/lib/time-tracking/timezone-capture";
-import {
-	formatTimeInZone,
-	getTimezoneAbbreviation,
-} from "@/lib/time-tracking/timezone-utils";
+import { formatUtcOffset, getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
+import { formatTimeInZone, getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { useRouter } from "@/navigation";
 
@@ -112,6 +98,10 @@ interface FormValues {
 	clockOutTime: string;
 	reason: string;
 	projectId: string | undefined;
+	/** The explicit billable choice (#900); undefined applies the project's default. */
+	billable: boolean | undefined;
+	/** A task of `projectId` (#874); cleared whenever the project changes. */
+	taskId: string | undefined;
 	workCategoryId: string | undefined;
 	workLocationType: WorkLocationType;
 	/** Version-2 commands: the chosen occurrence of a repeated wall-clock time. */
@@ -149,10 +139,7 @@ const MESSAGES = {
 		"timeTracking.manualEntry.errors.futureTime",
 		"Cannot create entries for future times",
 	],
-	tooLong: [
-		"timeTracking.manualEntry.errors.tooLong",
-		"Work period cannot exceed 24 hours",
-	],
+	tooLong: ["timeTracking.manualEntry.errors.tooLong", "Work period cannot exceed 24 hours"],
 	nonexistentTime: [
 		"timeTracking.manualEntry.errors.nonexistentTime",
 		"This time doesn't exist on this date because the clocks move forward.",
@@ -239,13 +226,10 @@ function endpointCommand(
 	time: string,
 	occurrence: ManualEndpointOccurrence | undefined,
 	timezone: string,
-):
-	| { ok: true; endpoint: ManualEndpointCommand }
-	| { ok: false; message: Message } {
+): { ok: true; endpoint: ManualEndpointCommand } | { ok: false; message: Message } {
 	const wallTime = describeEndpoint(date, time, timezone);
 	if (!wallTime) return { ok: false, message: MESSAGES.invalidTimeRange };
-	if (wallTime.kind === "gap")
-		return { ok: false, message: MESSAGES.nonexistentTime };
+	if (wallTime.kind === "gap") return { ok: false, message: MESSAGES.nonexistentTime };
 	if (wallTime.kind === "unique") {
 		return {
 			ok: true,
@@ -263,9 +247,7 @@ function endpointCommand(
 			time,
 			occurrence,
 			displayedOffsetMinutes:
-				occurrence === "earlier"
-					? wallTime.earlierOffsetMinutes
-					: wallTime.laterOffsetMinutes,
+				occurrence === "earlier" ? wallTime.earlierOffsetMinutes : wallTime.laterOffsetMinutes,
 		},
 	};
 }
@@ -290,16 +272,9 @@ function buildManualCommand(input: {
 	basis: ManualZoneBasis;
 	browserTimezone: string | null;
 	submissionId: string;
-}):
-	| { ok: true; command: ManualTimeEntryCommand }
-	| { ok: false; message: Message } {
+}): { ok: true; command: ManualTimeEntryCommand } | { ok: false; message: Message } {
 	const { value, timezone } = input;
-	const clockIn = endpointCommand(
-		value.date,
-		value.clockInTime,
-		value.clockInOccurrence,
-		timezone,
-	);
+	const clockIn = endpointCommand(value.date, value.clockInTime, value.clockInOccurrence, timezone);
 	if (!clockIn.ok) return clockIn;
 	const clockOut = endpointCommand(
 		value.date,
@@ -319,8 +294,11 @@ function buildManualCommand(input: {
 		browserTimezone: input.browserTimezone,
 		reason: value.reason,
 		projectId: value.projectId ?? null,
+		// Optional key: absent unless a task of the project is named (#873).
+		...(value.projectId && value.taskId ? { taskId: value.taskId } : {}),
 		workCategoryId: value.workCategoryId ?? null,
 		workLocationType: value.workLocationType,
+		...(value.billable === undefined ? {} : { billable: value.billable }),
 	};
 	const interval = interpretManualInterval({
 		command,
@@ -330,8 +308,7 @@ function buildManualCommand(input: {
 	if (!interval.ok) {
 		return {
 			ok: false,
-			message:
-				INTERVAL_MESSAGES[interval.rejection.reason] ?? MESSAGES.reconfirm,
+			message: INTERVAL_MESSAGES[interval.rejection.reason] ?? MESSAGES.reconfirm,
 		};
 	}
 	return { ok: true, command };
@@ -340,13 +317,12 @@ function buildManualCommand(input: {
 /** The localized message for a server outcome that needs the user's review. */
 function outcomeMessage(result: ManualTimeEntryResult): Message | null {
 	if (result.success) return null;
-	if (
-		result.code === MANUAL_ENTRY_NOT_ADOPTED ||
-		result.code === MANUAL_ENTRY_REFRESH_REQUIRED
-	) {
+	if (result.code === MANUAL_ENTRY_NOT_ADOPTED || result.code === MANUAL_ENTRY_REFRESH_REQUIRED) {
 		return MESSAGES.refresh;
 	}
 	if (result.code === MANUAL_ENTRY_COLLISION) return MESSAGES.collision;
+	const taskRefusal = projectTaskRefusalMessage(result.code);
+	if (taskRefusal) return taskRefusal;
 	const reason = result.rejection?.reason;
 	if (reason === "reconfirmation_required") return MESSAGES.reconfirm;
 	if (reason === "occupancy_conflict") return MESSAGES.overlap;
@@ -378,10 +354,7 @@ function needsReconfirmation(result: ManualTimeEntryResult): boolean {
 
 function getDefaultValues(
 	timezone: string,
-	defaults: Pick<
-		Props,
-		"defaultDate" | "defaultClockInTime" | "defaultClockOutTime"
-	>,
+	defaults: Pick<Props, "defaultDate" | "defaultClockInTime" | "defaultClockOutTime">,
 ): FormValues {
 	const now = Temporal.Now.zonedDateTimeISO(timezone);
 	return {
@@ -392,6 +365,8 @@ function getDefaultValues(
 			`${String(now.hour).padStart(2, "0")}:${String(now.minute).padStart(2, "0")}`,
 		reason: "",
 		projectId: undefined,
+		billable: undefined,
+		taskId: undefined,
 		workCategoryId: undefined,
 		workLocationType: "office",
 		clockInOccurrence: undefined,
@@ -432,10 +407,7 @@ function useManualEntryForm({
 	recoveryScope: ManualRecoveryScope | null;
 	/** `browser` while a self entry continues once in the browser zone. */
 	zoneBasis: ManualZoneBasis;
-	defaults: Pick<
-		Props,
-		"defaultDate" | "defaultClockInTime" | "defaultClockOutTime"
-	>;
+	defaults: Pick<Props, "defaultDate" | "defaultClockInTime" | "defaultClockOutTime">;
 	/** The authoritative target zone, or null until the target context has loaded. */
 	effectiveTimezone: string | null;
 	setPendingMismatch: (value: PendingMismatch) => void;
@@ -484,11 +456,7 @@ function useManualEntryForm({
 					toast.error(t(message[0], message[1]));
 					return;
 				}
-				if (
-					!targetEmployeeId &&
-					browserTimezone &&
-					browserTimezone !== effectiveTimezone
-				) {
+				if (!targetEmployeeId && browserTimezone && browserTimezone !== effectiveTimezone) {
 					setPendingMismatch({
 						value,
 						browserTimezone,
@@ -525,29 +493,19 @@ function useManualEntryForm({
 
 			if (isFutureDate(value.date, effectiveTimezone)) {
 				toast.error(
-					t(
-						"timeTracking.manualEntry.errors.futureDate",
-						"Cannot create entries for future dates",
-					),
+					t("timeTracking.manualEntry.errors.futureDate", "Cannot create entries for future dates"),
 				);
 				return;
 			}
 
 			if (clockOutMinutes - clockInMinutes > 24 * 60) {
 				toast.error(
-					t(
-						"timeTracking.manualEntry.errors.tooLong",
-						"Work period cannot exceed 24 hours",
-					),
+					t("timeTracking.manualEntry.errors.tooLong", "Work period cannot exceed 24 hours"),
 				);
 				return;
 			}
 
-			if (
-				!targetEmployeeId &&
-				browserTimezone &&
-				browserTimezone !== effectiveTimezone
-			) {
+			if (!targetEmployeeId && browserTimezone && browserTimezone !== effectiveTimezone) {
 				setPendingMismatch({
 					value,
 					browserTimezone,
@@ -560,9 +518,7 @@ function useManualEntryForm({
 			await submitManualEntry(
 				value,
 				effectiveTimezone,
-				!targetEmployeeId && browserTimezone === effectiveTimezone
-					? browserTimezone
-					: null,
+				!targetEmployeeId && browserTimezone === effectiveTimezone ? browserTimezone : null,
 				submissionId,
 				"target",
 				null,
@@ -634,30 +590,20 @@ function EndpointOccurrenceChoice({
 						</legend>
 						<RadioGroup
 							value={field.state.value ?? ""}
-							onValueChange={(value) =>
-								field.handleChange(value as ManualEndpointOccurrence)
-							}
+							onValueChange={(value) => field.handleChange(value as ManualEndpointOccurrence)}
 							className="gap-2"
 						>
 							<Label className="flex items-center gap-2 font-normal">
 								<RadioGroupItem value="earlier" />
-								{t(
-									"timeTracking.manualEntry.occurrence.earlier",
-									"First, {offset}",
-									{
-										offset: formatUtcOffset(wallTime.earlierOffsetMinutes),
-									},
-								)}
+								{t("timeTracking.manualEntry.occurrence.earlier", "First, {offset}", {
+									offset: formatUtcOffset(wallTime.earlierOffsetMinutes),
+								})}
 							</Label>
 							<Label className="flex items-center gap-2 font-normal">
 								<RadioGroupItem value="later" />
-								{t(
-									"timeTracking.manualEntry.occurrence.later",
-									"Second, {offset}",
-									{
-										offset: formatUtcOffset(wallTime.laterOffsetMinutes),
-									},
-								)}
+								{t("timeTracking.manualEntry.occurrence.later", "Second, {offset}", {
+									offset: formatUtcOffset(wallTime.laterOffsetMinutes),
+								})}
 							</Label>
 						</RadioGroup>
 					</fieldset>
@@ -690,8 +636,7 @@ function TargetContextStatus({
 	targetEmployeeName?: string;
 }) {
 	if (error) {
-		const notAuthorized =
-			error instanceof ManualEntryTargetContextError && error.notAuthorized;
+		const notAuthorized = error instanceof ManualEntryTargetContextError && error.notAuthorized;
 		return (
 			<Alert variant="destructive">
 				<IconAlertCircle aria-hidden="true" />
@@ -708,12 +653,7 @@ function TargetContextStatus({
 								)}
 					</p>
 					{notAuthorized ? null : (
-						<Button
-							type="button"
-							variant="link"
-							className="h-auto p-0"
-							onClick={onRetry}
-						>
+						<Button type="button" variant="link" className="h-auto p-0" onClick={onRetry}>
 							{t("timeTracking.manualEntry.context.retry", "Try again")}
 						</Button>
 					)}
@@ -724,15 +664,9 @@ function TargetContextStatus({
 
 	if (isLoading || !context || !effectiveTimezone) {
 		return (
-			<p
-				role="status"
-				className="flex items-center gap-2 text-xs text-muted-foreground"
-			>
+			<p role="status" className="flex items-center gap-2 text-xs text-muted-foreground">
 				<IconLoader2 className="size-3.5 animate-spin" aria-hidden="true" />
-				{t(
-					"timeTracking.manualEntry.context.loading",
-					"Loading entry options…",
-				)}
+				{t("timeTracking.manualEntry.context.loading", "Loading entry options…")}
 			</p>
 		);
 	}
@@ -751,8 +685,7 @@ function TargetContextStatus({
 	}
 
 	const employee =
-		targetEmployeeName ??
-		t("timeTracking.manualEntry.context.thisEmployee", "this employee");
+		targetEmployeeName ?? t("timeTracking.manualEntry.context.thisEmployee", "this employee");
 	const timezone = `${effectiveTimezone} (${timezoneLabel})`;
 	return (
 		<div role="status" className="grid gap-0.5 text-xs text-muted-foreground">
@@ -793,10 +726,7 @@ function recoveryStatusMessage(record: ManualRecoveryRecord): Message {
 				"Not confirmed. It may already be saved.",
 			];
 		case "not_committed":
-			return [
-				"timeTracking.manualEntry.recovery.notCommitted",
-				"No save found.",
-			];
+			return ["timeTracking.manualEntry.recovery.notCommitted", "No save found."];
 		case "conflict":
 			return MESSAGES.collision;
 		case "unsupported":
@@ -831,10 +761,7 @@ function ManualRecoveryPanel({
 	const headingId = useId();
 	if (records.length === 0) return null;
 	return (
-		<section
-			aria-labelledby={headingId}
-			className="grid gap-2 rounded-md border p-3"
-		>
+		<section aria-labelledby={headingId} className="grid gap-2 rounded-md border p-3">
 			<div className="grid gap-0.5">
 				<h3 id={headingId} className="text-sm font-medium">
 					{t("timeTracking.manualEntry.recovery.title", "Unconfirmed entries")}
@@ -868,9 +795,7 @@ function ManualRecoveryPanel({
 							className="grid gap-1.5 rounded-md bg-muted/50 p-2"
 						>
 							<p className="text-sm font-medium tabular-nums">{summary}</p>
-							<p className="truncate text-xs text-muted-foreground">
-								{command.reason}
-							</p>
+							<p className="truncate text-xs text-muted-foreground">{command.reason}</p>
 							<p className="text-xs">
 								{t(status[0], status[1])}
 								{record.code === MANUAL_ENTRY_CONTEXT_MISMATCH
@@ -888,15 +813,9 @@ function ManualRecoveryPanel({
 											onClick={() => onRetry(record)}
 										>
 											{busyId === record.submissionId ? (
-												<IconLoader2
-													className="size-3.5 animate-spin"
-													aria-hidden="true"
-												/>
+												<IconLoader2 className="size-3.5 animate-spin" aria-hidden="true" />
 											) : null}
-											{t(
-												"timeTracking.manualEntry.recovery.retry",
-												"Retry exactly",
-											)}
+											{t("timeTracking.manualEntry.recovery.retry", "Retry exactly")}
 										</Button>
 										<Button
 											type="button"
@@ -905,10 +824,7 @@ function ManualRecoveryPanel({
 											disabled={busy}
 											onClick={() => onLookup(record)}
 										>
-											{t(
-												"timeTracking.manualEntry.recovery.check",
-												"Check status",
-											)}
+											{t("timeTracking.manualEntry.recovery.check", "Check status")}
 										</Button>
 									</>
 								) : null}
@@ -920,10 +836,7 @@ function ManualRecoveryPanel({
 										disabled={busy}
 										onClick={() => onEditAsNew(record)}
 									>
-										{t(
-											"timeTracking.manualEntry.recovery.editAsNew",
-											"Edit as new entry",
-										)}
+										{t("timeTracking.manualEntry.recovery.editAsNew", "Edit as new entry")}
 									</Button>
 								) : null}
 								{canDiscardManualRecovery(record) ? (
@@ -976,14 +889,10 @@ function ManualEntryFormContent({
 	const validateTime = ({ value }: { value: string }) =>
 		/^([01]\d|2[0-3]):[0-5]\d$/.test(value)
 			? undefined
-			: t(
-					"timeTracking.manualEntry.errors.invalidTime",
-					"Enter a complete, valid time",
-				);
+			: t("timeTracking.manualEntry.errors.invalidTime", "Enter a complete, valid time");
 	const isContextReady = Boolean(context && effectiveTimezone && !contextError);
 	const isOwnEntry = context?.isOwnEntry ?? !targetEmployeeId;
 	const selectorsLoading = isContextLoading || (!context && !contextError);
-
 	return (
 		<ActionPanelContent size="compact">
 			<ActionPanelHeader>
@@ -1044,9 +953,7 @@ function ManualEntryFormContent({
 										onBlur={field.handleBlur}
 										max={
 											effectiveTimezone
-												? Temporal.Now.plainDateISO(
-														effectiveTimezone,
-													).toString()
+												? Temporal.Now.plainDateISO(effectiveTimezone).toString()
 												: undefined
 										}
 										required
@@ -1057,66 +964,7 @@ function ManualEntryFormContent({
 						)}
 					</form.Field>
 
-					<div className="grid grid-cols-2 gap-4">
-						<form.Field
-							name="clockInTime"
-							validators={{ onChange: validateTime, onSubmit: validateTime }}
-							listeners={{
-								onChange: () =>
-									form.setFieldValue("clockInOccurrence", undefined),
-							}}
-						>
-							{(field) => (
-								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)}>
-										{t("timeTracking.manualEntry.clockInLabel", "Clock In")}
-									</TFormLabel>
-									<TFormControl hasError={fieldHasError(field)}>
-										<TimeInput
-											name="clockInTime"
-											autoComplete="off"
-											value={field.state.value}
-											onChange={(event) =>
-												field.handleChange(event.target.value)
-											}
-											onBlur={field.handleBlur}
-											required
-										/>
-									</TFormControl>
-									<TFormMessage field={field} />
-								</TFormItem>
-							)}
-						</form.Field>
-						<form.Field
-							name="clockOutTime"
-							validators={{ onChange: validateTime, onSubmit: validateTime }}
-							listeners={{
-								onChange: () =>
-									form.setFieldValue("clockOutOccurrence", undefined),
-							}}
-						>
-							{(field) => (
-								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)}>
-										{t("timeTracking.manualEntry.clockOutLabel", "Clock Out")}
-									</TFormLabel>
-									<TFormControl hasError={fieldHasError(field)}>
-										<TimeInput
-											name="clockOutTime"
-											autoComplete="off"
-											value={field.state.value}
-											onChange={(event) =>
-												field.handleChange(event.target.value)
-											}
-											onBlur={field.handleBlur}
-											required
-										/>
-									</TFormControl>
-									<TFormMessage field={field} />
-								</TFormItem>
-							)}
-						</form.Field>
-					</div>
+					<ManualEntryTimeFields form={form} validateTime={validateTime} t={t} />
 					{context?.manualCommandVersion === 2 ? (
 						<>
 							<EndpointOccurrenceChoice
@@ -1181,7 +1029,13 @@ function ManualEntryFormContent({
 						{(field) => (
 							<ProjectSelectorView
 								value={field.state.value}
-								onValueChange={field.handleChange}
+								onValueChange={(projectId) => {
+									// A task never outlives its project (#874).
+									if (projectId !== field.state.value) form.setFieldValue("taskId", undefined);
+									field.handleChange(projectId);
+									// A newly chosen project prefills its own billable default.
+									form.setFieldValue("billable", undefined);
+								}}
 								projects={context?.projects ?? []}
 								isLoading={selectorsLoading}
 								isError={Boolean(contextError)}
@@ -1189,6 +1043,35 @@ function ManualEntryFormContent({
 							/>
 						)}
 					</form.Field>
+					{context && !contextError ? (
+						<form.Subscribe<string | undefined> selector={(state) => state.values.projectId}>
+							{(projectId: string | undefined) => (
+								<form.Field name="taskId">
+									{(field) => (
+										<TaskSelectorView
+											projectId={projectId}
+											projects={context.projects}
+											value={field.state.value}
+											onValueChange={field.handleChange}
+										/>
+									)}
+								</form.Field>
+							)}
+						</form.Subscribe>
+					) : null}
+					<form.Subscribe
+						selector={(state) => [state.values.projectId, state.values.billable] as const}
+					>
+						{([projectId, billable]) => (
+							<BillableWorkSwitch
+								choice={billableChoice({
+									project: context?.projects.find((project) => project.id === projectId),
+									explicit: billable,
+								})}
+								onChange={(value) => form.setFieldValue("billable", value)}
+							/>
+						)}
+					</form.Subscribe>
 					<form.Field name="workCategoryId">
 						{(field) => (
 							<WorkCategorySelectorView
@@ -1205,9 +1088,7 @@ function ManualEntryFormContent({
 					{/* Kept mounted so screen readers announce changes to it. */}
 					<p
 						role="status"
-						className={
-							revalidationMessage ? "text-xs text-muted-foreground" : "sr-only"
-						}
+						className={revalidationMessage ? "text-xs text-muted-foreground" : "sr-only"}
 					>
 						{revalidationMessage}
 					</p>
@@ -1215,11 +1096,7 @@ function ManualEntryFormContent({
 
 				<ActionPanelFooter className="gap-2">
 					<ActionPanelClose asChild>
-						<Button
-							type="button"
-							variant="outline"
-							disabled={isTimezoneContinuationPending}
-						>
+						<Button type="button" variant="outline" disabled={isTimezoneContinuationPending}>
 							{t("common.cancel", "Cancel")}
 						</Button>
 					</ActionPanelClose>
@@ -1227,11 +1104,7 @@ function ManualEntryFormContent({
 						{(isSubmitting: boolean) => (
 							<Button
 								type="submit"
-								disabled={
-									isSubmitting ||
-									isTimezoneContinuationPending ||
-									!isContextReady
-								}
+								disabled={isSubmitting || isTimezoneContinuationPending || !isContextReady}
 							>
 								{isSubmitting ? (
 									<>
@@ -1281,6 +1154,8 @@ function useTargetDraftRevalidation({
 
 		const { projectId, workCategoryId } = form.state.values;
 		form.setFieldValue("projectId", undefined);
+		form.setFieldValue("billable", undefined);
+		form.setFieldValue("taskId", undefined);
 		form.setFieldValue("workCategoryId", undefined);
 		setPendingMismatch(null);
 		setMessage(
@@ -1296,17 +1171,31 @@ function useTargetDraftRevalidation({
 	useEffect(() => {
 		if (!context) return;
 
-		const { projectId, workCategoryId } = form.state.values;
-		const projectIneligible =
-			projectId !== undefined &&
-			!context.projects.some((project) => project.id === projectId);
+		const { projectId, taskId, workCategoryId } = form.state.values;
+		const project = context.projects.find((candidate) => candidate.id === projectId);
+		const projectIneligible = projectId !== undefined && !project;
 		const categoryIneligible =
 			workCategoryId !== undefined &&
 			!context.categories.some((category) => category.id === workCategoryId);
+		// Only open tasks of the chosen project are offered; one done since is dropped (#874).
+		const taskIneligible =
+			taskId !== undefined && !project?.tasks.some((task) => task.id === taskId);
 
-		if (projectIneligible) form.setFieldValue("projectId", undefined);
+		if (projectIneligible) {
+			form.setFieldValue("projectId", undefined);
+			form.setFieldValue("billable", undefined);
+		}
 		if (categoryIneligible) form.setFieldValue("workCategoryId", undefined);
-		if (projectIneligible || categoryIneligible) {
+		if (taskIneligible) form.setFieldValue("taskId", undefined);
+		if (taskIneligible && !projectIneligible && !categoryIneligible) {
+			// react-doctor-disable-next-line react-hooks-js/set-state-in-effect
+			setMessage(
+				t(
+					"timeTracking.manualEntry.context.taskCleared",
+					"A selected task is no longer available and was cleared.",
+				),
+			);
+		} else if (projectIneligible || categoryIneligible) {
 			// The TanStack form store is external; this reports what was just cleared in it
 			// after fresh context arrived, which render cannot derive afterwards.
 			// react-doctor-disable-next-line react-hooks-js/set-state-in-effect
@@ -1337,17 +1226,12 @@ function resolveManualEntryZone(
 	if (!contextTimezone || !context?.isOwnEntry) {
 		return { effectiveTimezone: contextTimezone, zoneBasis: "target" };
 	}
-	if (
-		context.manualCommandVersion === 2 &&
-		continueOnceZone?.source === contextTimezone
-	) {
+	if (context.manualCommandVersion === 2 && continueOnceZone?.source === contextTimezone) {
 		return { effectiveTimezone: continueOnceZone.value, zoneBasis: "browser" };
 	}
 	return {
 		effectiveTimezone:
-			timezoneOverride?.source === contextTimezone
-				? timezoneOverride.value
-				: contextTimezone,
+			timezoneOverride?.source === contextTimezone ? timezoneOverride.value : contextTimezone,
 		zoneBasis: "target",
 	};
 }
@@ -1388,10 +1272,7 @@ function announceCreatedEntry(
 					"timeTracking.manualEntry.success.pendingApproval",
 					"Time entry submitted for manager approval",
 				)
-			: t(
-					"timeTracking.manualEntry.success.created",
-					"Time entry created successfully",
-				),
+			: t("timeTracking.manualEntry.success.created", "Time entry created successfully"),
 	);
 }
 
@@ -1404,10 +1285,7 @@ function announceRefusedEntry(
 		message
 			? t(message[0], message[1])
 			: result.error ||
-					t(
-						"timeTracking.manualEntry.errors.createFailed",
-						"Failed to create time entry",
-					),
+					t("timeTracking.manualEntry.errors.createFailed", "Failed to create time entry"),
 	);
 }
 
@@ -1441,10 +1319,7 @@ function ConnectedManualRecoveryPanel({
 							"timeTracking.manualEntry.success.pendingApproval",
 							"Time entry submitted for manager approval",
 						)
-					: t(
-							"timeTracking.manualEntry.success.created",
-							"Time entry created successfully",
-						),
+					: t("timeTracking.manualEntry.success.created", "Time entry created successfully"),
 			);
 			return;
 		}
@@ -1504,11 +1379,10 @@ function ConnectedManualRecoveryPanel({
 		form.setFieldValue("clockOutTime", command.clockOut.time);
 		form.setFieldValue("reason", command.reason);
 		form.setFieldValue("projectId", command.projectId ?? undefined);
+		form.setFieldValue("billable", command.billable);
+		form.setFieldValue("taskId", command.taskId ?? undefined);
 		form.setFieldValue("workCategoryId", command.workCategoryId ?? undefined);
-		form.setFieldValue(
-			"workLocationType",
-			command.workLocationType ?? "office",
-		);
+		form.setFieldValue("workLocationType", command.workLocationType ?? "office");
 		recovery.discard(record);
 	}
 
@@ -1565,8 +1439,7 @@ function useTimezoneContinuation({
 					return;
 				}
 
-				const { value, browserTimezone, submissionId, target } =
-					pendingMismatch;
+				const { value, browserTimezone, submissionId, target } = pendingMismatch;
 				if (contextTimezone) {
 					setTimezoneOverride({
 						source: contextTimezone,
@@ -1577,14 +1450,9 @@ function useTimezoneContinuation({
 				void queryClient.invalidateQueries({
 					queryKey: queryKeys.manualEntry.all,
 				});
-				if (
-					context?.manualCommandVersion === 2 &&
-					needsReviewInZone(value, browserTimezone)
-				) {
+				if (context?.manualCommandVersion === 2 && needsReviewInZone(value, browserTimezone)) {
 					clearOccurrences();
-					toast.error(
-						t(MESSAGES.occurrenceRequired[0], MESSAGES.occurrenceRequired[1]),
-					);
+					toast.error(t(MESSAGES.occurrenceRequired[0], MESSAGES.occurrenceRequired[1]));
 					return;
 				}
 				await submitManualEntry(
@@ -1596,12 +1464,7 @@ function useTimezoneContinuation({
 					target,
 				);
 			} catch {
-				toast.error(
-					t(
-						"header.timezone.updateError",
-						"An error occurred while updating timezone",
-					),
-				);
+				toast.error(t("header.timezone.updateError", "An error occurred while updating timezone"));
 			}
 		});
 	}
@@ -1620,9 +1483,7 @@ function useTimezoneContinuation({
 				if (needsReviewInZone(value, browserTimezone)) {
 					setPendingMismatch(null);
 					clearOccurrences();
-					toast.error(
-						t(MESSAGES.occurrenceRequired[0], MESSAGES.occurrenceRequired[1]),
-					);
+					toast.error(t(MESSAGES.occurrenceRequired[0], MESSAGES.occurrenceRequired[1]));
 					return;
 				}
 			}
@@ -1657,8 +1518,7 @@ export function ManualTimeEntryDialog({
 }: Props) {
 	const { t } = useTranslate();
 	const [internalOpen, setInternalOpen] = useState(false);
-	const [pendingMismatch, setPendingMismatch] =
-		useState<PendingMismatch | null>(null);
+	const [pendingMismatch, setPendingMismatch] = useState<PendingMismatch | null>(null);
 	const [timezoneOverride, setTimezoneOverride] = useState<{
 		source: string;
 		value: string;
@@ -1683,9 +1543,7 @@ export function ManualTimeEntryDialog({
 	const defaultsTimezone = effectiveTimezone ?? employeeTimezone;
 	// Callers may not know the target's name (e.g. a calendar opened by URL).
 	const resolvedTargetName =
-		targetEmployeeName ||
-		(context && !context.isOwnEntry ? context.targetName : "") ||
-		undefined;
+		targetEmployeeName || (context && !context.isOwnEntry ? context.targetName : "") || undefined;
 	// Frozen commands belong to the session's user and organization and the target (#310).
 	const recoveryScope: ManualRecoveryScope | null = context?.recoveryContext
 		? {
@@ -1741,6 +1599,8 @@ export function ManualTimeEntryDialog({
 				timezone,
 				browserTimezone,
 				projectId: value.projectId,
+				...(value.projectId && value.taskId ? { taskId: value.taskId } : {}),
+				...(value.billable === undefined ? {} : { billable: value.billable }),
 				workCategoryId: value.workCategoryId,
 				workLocationType: value.workLocationType,
 			});
@@ -1854,10 +1714,7 @@ export function ManualTimeEntryDialog({
 				{hideTrigger ? null : (
 					<ActionPanelTrigger asChild>
 						<Button
-							aria-label={t(
-								"timeTracking.manualEntry.addButton",
-								"Add Manual Entry",
-							)}
+							aria-label={t("timeTracking.manualEntry.addButton", "Add Manual Entry")}
 							className="size-8"
 							variant="outline"
 							size="icon"
@@ -1903,5 +1760,72 @@ export function ManualTimeEntryDialog({
 				/>
 			) : null}
 		</>
+	);
+}
+
+function ManualEntryTimeFields({
+	form,
+	validateTime,
+	t,
+}: {
+	form: ManualEntryFormApi;
+	validateTime: ({ value }: { value: string }) => string | undefined;
+	t: Translate;
+}) {
+	return (
+		<div className="grid grid-cols-2 gap-4">
+			<form.Field
+				name="clockInTime"
+				validators={{ onChange: validateTime, onSubmit: validateTime }}
+				listeners={{
+					onChange: () => form.setFieldValue("clockInOccurrence", undefined),
+				}}
+			>
+				{(field) => (
+					<TFormItem>
+						<TFormLabel hasError={fieldHasError(field)}>
+							{t("timeTracking.manualEntry.clockInLabel", "Clock In")}
+						</TFormLabel>
+						<TFormControl hasError={fieldHasError(field)}>
+							<TimeInput
+								name="clockInTime"
+								autoComplete="off"
+								value={field.state.value}
+								onChange={(event) => field.handleChange(event.target.value)}
+								onBlur={field.handleBlur}
+								required
+							/>
+						</TFormControl>
+						<TFormMessage field={field} />
+					</TFormItem>
+				)}
+			</form.Field>
+			<form.Field
+				name="clockOutTime"
+				validators={{ onChange: validateTime, onSubmit: validateTime }}
+				listeners={{
+					onChange: () => form.setFieldValue("clockOutOccurrence", undefined),
+				}}
+			>
+				{(field) => (
+					<TFormItem>
+						<TFormLabel hasError={fieldHasError(field)}>
+							{t("timeTracking.manualEntry.clockOutLabel", "Clock Out")}
+						</TFormLabel>
+						<TFormControl hasError={fieldHasError(field)}>
+							<TimeInput
+								name="clockOutTime"
+								autoComplete="off"
+								value={field.state.value}
+								onChange={(event) => field.handleChange(event.target.value)}
+								onBlur={field.handleBlur}
+								required
+							/>
+						</TFormControl>
+						<TFormMessage field={field} />
+					</TFormItem>
+				)}
+			</form.Field>
+		</div>
 	);
 }

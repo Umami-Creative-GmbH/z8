@@ -288,8 +288,11 @@ export function validateCommonEvidence(input: {
 				allocation.organizationId !== input.organizationId ||
 				allocation.allocationKind !== "project" ||
 				allocation.projectId !== expectedProjectId ||
+				(allocation.taskId ?? null) !== (period.taskId ?? null) ||
 				allocation.costCenterId !== null ||
-				allocation.weightPercent !== 100)
+				allocation.weightPercent !== 100 ||
+				// Both representations agree on billability (#900).
+				(allocation.isBillable ?? false) !== (period.isBillable ?? false))
 	) {
 		throw new Error("Submission collision");
 	}
@@ -303,6 +306,8 @@ export async function findPolicyClockOutSubmissionEvidence(input: {
 	/** Undefined preserved the period's attribution, so any stored value matches. */
 	projectId: string | null | undefined;
 	workCategoryId: string | null | undefined;
+	/** Undefined when the command named no task (#873), so any stored task matches. */
+	taskId?: string | null;
 }) {
 	const periods = (await input.tx.query.workPeriod.findMany({
 		where: and(
@@ -380,6 +385,7 @@ export async function findPolicyClockOutSubmissionEvidence(input: {
 		intended === undefined || intended === stored;
 	if (
 		!matches(input.projectId, period.projectId) ||
+		!matches(input.taskId, period.taskId ?? null) ||
 		!matches(input.workCategoryId, period.workCategoryId)
 	) {
 		throw new CompletedWorkCollisionError();

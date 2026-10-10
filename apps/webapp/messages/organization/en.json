@@ -14,6 +14,37 @@
       "saving": "Saving…",
       "title": "Automatic clock-out"
     },
+    "clockingReminders": {
+      "adminOnly": "Only organization admins and owners can change these settings.",
+      "breakDue": {
+        "enabled": "Break-due reminder",
+        "lead": "Minutes before the break is due"
+      },
+      "description": "Remind employees when they have not clocked in by the start of their published shift, are still clocked in after it ends, or are about to work longer than their work policy allows without a break.",
+      "forgottenClockOut": {
+        "enabled": "Forgotten clock-out reminder",
+        "grace": "Minutes after the expected end"
+      },
+      "help": "Checks run every five minutes. Times follow each employee's timezone. Each reminder is sent once per shift, or once per break rule while clocked in, in-app and by push unless the employee changes their notification preferences. No missed clock-in reminder is sent on an approved absence or a public holiday.",
+      "invalidLeadMinutes": "Enter whole minutes from 1 to 1440 before the break is due.",
+      "invalidMinutes": "Enter whole minutes from 0 to 1440.",
+      "missedClockIn": {
+        "enabled": "Missed clock-in reminder",
+        "grace": "Minutes after the expected start"
+      },
+      "noRoles": "Choose at least one role that receives reminders.",
+      "roles": {
+        "admin": "Admins",
+        "employee": "Employees",
+        "label": "Remind these roles",
+        "manager": "Managers"
+      },
+      "save": "Save changes",
+      "saved": "Clocking reminder settings saved",
+      "saveFailed": "Failed to update clocking reminder settings",
+      "saving": "Saving…",
+      "title": "Clocking reminders"
+    },
     "create": "Create Organization",
     "createDialog": {
       "description": "Set up your organization to get started",
@@ -68,16 +99,33 @@
     },
     "feature": "explore your organization",
     "features": {
+      "billable-time": "Billable Time",
+      "billable-time-currency": "Billable currency: {currency}",
+      "billable-time-description": "Price work on customer projects with billable rates and hand it to your accounting tool as invoice drafts.",
+      "billable-time-dialog-confirm": "Switch on",
+      "billable-time-dialog-description": "Choose the currency your organization charges its customers in.",
+      "billable-time-dialog-title": "Switch on Billable Time",
+      "billable-time-disabled": "Billable Time disabled",
+      "billable-time-enabled": "Billable Time enabled",
+      "billable-time-requires-projects": "Requires Projects. Switching Projects off also switches Billable Time off; its settings are kept.",
       "demo-data": "Demo Data",
       "demo-data-description": "Allow admins to generate and clear sample organization data for testing.",
       "description": "Enable or disable optional features for your organization",
       "owner-only": "Only organization owners can change feature settings.",
+      "owner-only-except-personnel-files": "Only organization owners can change feature settings, except personnel files.",
+      "personnel-files": "Personnel Files",
+      "personnel-files-description": "Keep contracts, payslips, certificates and other employee documents in a personnel file per employee.",
+      "personnel-files-disable-confirm": "Turn off",
+      "personnel-files-disable-description": "Personnel file pages and downloads are hidden for everyone. Documents stay stored and still count for retention. Turning personnel files back on restores everything.",
+      "personnel-files-disable-title": "Turn off personnel files?",
       "projects": "Projects",
       "projects-description": "Assign time entries to projects, track budgets and deadlines, and generate project reports.",
       "surcharges": "Surcharges",
       "surcharges-description": "Configure time surcharges for overtime, night work, weekends, and holidays.",
       "title": "Features",
+      "toggle-billable-time": "Toggle Billable Time",
       "toggle-demo-data": "Toggle demo data",
+      "toggle-personnel-files": "Toggle personnel files",
       "toggle-projects": "Toggle projects",
       "toggle-surcharges": "Toggle surcharges",
       "toggle-works-council": "Toggle Works Council",

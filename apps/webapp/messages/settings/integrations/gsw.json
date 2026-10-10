@@ -120,9 +120,11 @@
       },
       "errors": {
         "connectionFailed": "Verbindung zu Clockodo fehlgeschlagen",
+        "fetchProjectsFailed": "Projektdaten händ nöd chönne abgrüeft werde",
         "fetchUsersFailed": "Abrufen der Benutzerdaten fehlgeschlagen",
         "importFailed": "Import-Prüfscan fehlgeschlagen",
-        "saveMappingsFailed": "Speichern der Benutzerzuordnungen fehlgeschlagen"
+        "saveMappingsFailed": "Speichern der Benutzerzuordnungen fehlgeschlagen",
+        "saveProjectMappingsFailed": "Projektzueordnige händ nöd chönne gspycheret werde"
       },
       "importing": {
         "description": "Bitte schliesse diese Seite nicht. Der Prüfscan wird in die Warteschlange eingereiht und kann bei grossen Datensätzen einige Zeit in Anspruch nehmen.",
@@ -148,6 +150,19 @@
         "next": "Benutzer zueordne",
         "title": "Date-Vorschau"
       },
+      "projectMapping": {
+        "clockodoCustomer": "Clockodo-Chund",
+        "clockodoProject": "Clockodo-Projekt",
+        "continue": "Wiiter",
+        "description": "Ordne Clockodo-Projekt bestehende Z8-Projekt zue. Importierti Ziitiiträg bhalted ihres Projekt und de verrechebari Wert vo Clockodo. Iiträg uf nöd zuegordnete Projekt oder uf Projekt ohni Chund werded als nöd verrechebar importiert. Es werded keini Projekt erstellt.",
+        "mappedCount": "{mapped} vo {total} Projekt zuegordnet",
+        "noCustomer": "Das Projekt hät kein Chund, drum isch die importierti Ziit nöd verrechebar.",
+        "noZ8Projects": "Die Organisation hät no keini Projekt. Erstell zerst Projekt, zum Clockodo-Ziit mit ihrem Projekt und em verrechebare Wert z importiere.",
+        "title": "Projekt zueordne",
+        "unmapped": "Nöd zuegordnet (kei Projekt)",
+        "z8Project": "Z8-Projekt",
+        "z8ProjectFor": "Z8-Projekt für {project}"
+      },
       "review": {
         "startedToast": "De Import-Prüfscan isch gstartet. E Überprüfig isch nötig, bevor d Datensätz übertreit wärded."
       },
@@ -167,6 +182,7 @@
         "credentials": "Zuegangsdate",
         "import": "Überprüfig",
         "preview": "Vorschau",
+        "projectMapping": "Projektzueordnig",
         "selection": "Uswahl",
         "userMapping": "Benutzer-Zueordnig"
       },

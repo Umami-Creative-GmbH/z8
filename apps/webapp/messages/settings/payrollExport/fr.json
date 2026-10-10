@@ -20,6 +20,34 @@
         "title": "Données de base DATEV"
       },
       "description": "Exporter les périodes de travail vers des systèmes de paie comme DATEV ou Personio",
+      "expenseMappings": {
+        "apiConnectors": "Personio, Workday et l'API SuccessFactors ne prennent pas en charge les remboursements de frais.",
+        "codeLabel": "{line}, rubrique de paie {format}",
+        "description": "Associez chaque ligne de dépense à une rubrique de paie pour les formats de fichier de paie que vous exportez. Une ligne de dépense sans rubrique de paie pour le format exporté exclut les notes de frais concernées du cycle de paie ; elles sont réglées par virement bancaire à la place.",
+        "format": {
+          "datevLohn": "DATEV Payroll",
+          "lexware": "Lexware",
+          "sage": "Sage",
+          "successFactorsFile": "Fichier SuccessFactors"
+        },
+        "kind": {
+          "mileageExcess": "Indemnités kilométriques : excédent imposable",
+          "mileageStatutory": "Indemnités kilométriques : part légale",
+          "perDiemExcess": "Indemnités journalières : excédent imposable",
+          "perDiemStatutory": "Indemnités journalières : part légale",
+          "receiptAccommodation": "Reçus : hébergement",
+          "receiptMeals": "Reçus : repas",
+          "receiptOther": "Reçus : autre",
+          "receiptParking": "Reçus : parking",
+          "receiptTransport": "Reçus : transport"
+        },
+        "line": "Ligne de dépense",
+        "loadFailed": "Impossible de charger les rubriques de paie des dépenses.",
+        "save": "Enregistrer les rubriques de paie",
+        "saved": "Rubriques de paie enregistrées",
+        "saveFailed": "Certaines rubriques de paie n'ont pas pu être enregistrées.",
+        "title": "Remboursements de frais"
+      },
       "export": {
         "allEmployees": "Tous les employés",
         "allProjects": "Tous les projets",
@@ -71,6 +99,7 @@
         "downloadError": "Échec de l'obtention de l'URL de téléchargement",
         "employees": "employés",
         "noExports": "Aucune exportation pour le moment",
+        "payrollRun": "{count, plural, one {Cycle de paie : # note de frais} other {Cycle de paie : # notes de frais}}",
         "periods": "périodes",
         "status": {
           "completed": "Terminé",

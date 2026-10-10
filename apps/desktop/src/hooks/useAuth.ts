@@ -14,6 +14,27 @@ export function useAuth() {
 		staleTime: Infinity, // Session doesn't change unless we explicitly update it
 	});
 
+	// Publish the local sign-out immediately. A refetch can fail or return an old
+	// in-flight session; neither may keep the previous tenant on screen.
+	const clearSession = useCallback(() => {
+		setAuthError(null);
+		void queryClient.cancelQueries({ queryKey: ["session"] });
+		queryClient.setQueryData<Session>(["session"], (previous) => ({
+			isAuthenticated: false,
+			credentialError: null,
+			sessionRevision: previous?.sessionRevision ?? 0,
+		}));
+		for (const key of [
+			"clock-status",
+			"clock-journal",
+			"organizations",
+			"desktop-context",
+		]) {
+			void queryClient.cancelQueries({ queryKey: [key] });
+			queryClient.removeQueries({ queryKey: [key] });
+		}
+	}, [queryClient]);
+
 	// Listen for auth events from Rust backend
 	useEffect(() => {
 		const unlistenSuccess = listen("auth_success", () => {
@@ -22,17 +43,7 @@ export function useAuth() {
 			queryClient.invalidateQueries({ queryKey: ["clock-status"] });
 		});
 
-		const unlistenLogout = listen("logout", () => {
-			setAuthError(null);
-			queryClient.invalidateQueries({ queryKey: ["session"] });
-			for (const key of [
-				"clock-status",
-				"clock-journal",
-				"organizations",
-				"desktop-context",
-			])
-				queryClient.removeQueries({ queryKey: [key] });
-		});
+		const unlistenLogout = listen("logout", clearSession);
 
 		const unlistenError = listen("auth_error", (event) => {
 			setAuthError(String(event.payload));
@@ -43,7 +54,7 @@ export function useAuth() {
 			unlistenLogout.then((fn) => fn());
 			unlistenError.then((fn) => fn());
 		};
-	}, [queryClient]);
+	}, [queryClient, clearSession]);
 
 	const login = useCallback(async () => {
 		try {
@@ -58,13 +69,12 @@ export function useAuth() {
 	const logout = useCallback(async () => {
 		try {
 			await invoke("logout");
-			setAuthError(null);
-			queryClient.invalidateQueries({ queryKey: ["session"] });
+			clearSession();
 		} catch (error) {
 			console.error("Failed to logout:", error);
 			throw error;
 		}
-	}, [queryClient]);
+	}, [clearSession]);
 
 	return {
 		authError: authError ?? sessionQuery.data?.credentialError ?? null,

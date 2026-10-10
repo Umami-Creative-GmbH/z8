@@ -129,6 +129,7 @@
           "alreadyReimbursed": "Atlandı: zaten geri ödendi",
           "balanceChanged": "Atlandı: bakiye değişti",
           "failed": "Başarısız",
+          "inPayrollRun": "Atlandı: bir bordro çalıştırmasına dahil edildi",
           "outOfScope": "Atlandı: kapsam dışı",
           "overpaidOrReview": "Atlandı: fazla ödeme yapıldı veya incelenmesi gerekiyor",
           "ownExpense": "Atlandı: kendi masrafınız",
@@ -247,6 +248,7 @@
           "search": "Ekip ara…"
         }
       },
+      "inPayrollRun": "{run} içine dahil edildi",
       "legacyClaim": "Eski {type} talebi",
       "loading": "Finans kuyruğu yükleniyor…",
       "pagination": {
@@ -254,6 +256,16 @@
         "next": "Sonraki",
         "page": "Sayfa {page}",
         "previous": "Önceki"
+      },
+      "payrollRun": {
+        "included": "{run} içine dahil edildi. Bu bordro ile ödenir ve çalıştırma onaylandığında geri ödendi olarak kaydedilir.",
+        "label": "Bordro çalıştırması {period} ({format})",
+        "notIncluded": "Artık hiçbir bordro çalıştırması bu masrafı içermiyor.",
+        "remove": "Bordro çalıştırmasından kaldır",
+        "removed": "Bordro çalıştırmasından kaldırıldı. Masraf yeniden geri ödeme bekliyor.",
+        "removeDescription": "Yalnızca bordro bu çalıştırma ile ödeme yapmayacaksa (örneğin bordro dosyasını düzelttikten sonra) kaldırın. Kaldırma işlemi denetim kaydına işlenir.",
+        "removeFailed": "Masraf bordro çalıştırmasından kaldırılamadı.",
+        "removeTitle": "Bu masraf bordro çalıştırmasından kaldırılsın mı?"
       },
       "queue": {
         "description": "Mutabakatını görmek ve geri ödeme kaydetmek için bir masrafı açın.",
@@ -999,6 +1011,20 @@
         "adoptForeignTitle": "Resmi yurt dışı oranlarıyla Alman yasal harcırahını uygulayın",
         "foreignAreas": "Yurt dışı oranları: {countries} ülke ve {places} şehir"
       },
+      "reimbursementChannel": {
+        "bankTransfer": "Banka havalesi",
+        "bankTransferDescription": "Masraf yetkilileri geri ödemeleri banka havalesiyle yapar ve Z8'e kaydeder.",
+        "intro": "Kuruluşunuzun geri ödemeleri nasıl yaptığı. Bu seçim tüm çalışanlar için geçerlidir.",
+        "loadFailed": "Geri ödeme kanalı yüklenemedi.",
+        "payrollRun": "Bordro işlemi",
+        "payrollRunDescription": "Geri ödemeler bordro işlemine dahil edilir ve bordro işleminin ödendiği onaylandığında kaydedilir. Bordro işlemine dahil edilemeyen raporlar banka havalesiyle ödenir.",
+        "payrollRunPreview": "Önizleme aşamasında ve henüz kuruluşunuz için kullanılamıyor.",
+        "save": "Kanalı kaydet",
+        "saved": "Geri ödeme kanalı kaydedildi",
+        "saveFailed": "Geri ödeme kanalı kaydedilemedi.",
+        "title": "Geri ödeme kanalı",
+        "unconfirmedRuns": "{count, plural, other {# bordro çalıştırması henüz onaylanmadı. Hâlâ onaylanabilir veya iptal edilebilir.} }"
+      },
       "tabs": {
         "access": "Erişim",
         "currencies": "Para birimleri",
@@ -1034,6 +1060,7 @@
         "exceedsOutstanding": "Tutar, ödenmemiş tutardan daha fazla.",
         "exceedsOverpayment": "Tutar, fazla ödenen tutardan daha fazla.",
         "failed": "Ödeme kaydedilemedi. Lütfen tekrar deneyin.",
+        "inPayrollRun": "Bir bordro çalıştırması artık bu masrafı içeriyor, bu nedenle bordro ile ödenir. Bir ödeme kaydetmeden önce masrafı çalıştırmadan kaldırın.",
         "load": "Geri ödeme bakiyesi yüklenemedi. Lütfen tekrar deneyin.",
         "noOverpayment": "Bu masraf için herhangi bir fazla ödeme yapılmadı.",
         "notApproved": "Bu masraf artık onaylı olmadığından ödeme kaydedilemez.",

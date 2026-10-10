@@ -10,7 +10,6 @@ import {
 	approvalPolicyCondition,
 	employee,
 	employeeVacationAllowance,
-	payrollExportConfig,
 	payrollWageTypeMapping,
 	timeRecordAbsence,
 	vacationAdjustment,
@@ -1113,14 +1112,10 @@ export async function deleteAbsenceCategory(
 					const [referencedPayrollWageTypeMapping] = await tx
 						.select({ id: payrollWageTypeMapping.id })
 						.from(payrollWageTypeMapping)
-						.innerJoin(
-							payrollExportConfig,
-							eq(payrollWageTypeMapping.configId, payrollExportConfig.id),
-						)
 						.where(
 							and(
 								eq(payrollWageTypeMapping.absenceCategoryId, category.id),
-								eq(payrollExportConfig.organizationId, actor.organizationId),
+								eq(payrollWageTypeMapping.organizationId, actor.organizationId),
 							),
 						)
 						.limit(1);
