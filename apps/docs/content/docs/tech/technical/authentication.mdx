@@ -31,7 +31,7 @@ Key behaviors:
 
 - Web requests use secure, `httpOnly` session cookies through the Next.js Better Auth integration.
 - Desktop clients can use bearer-token auth where cookies are not the primary transport.
-- The monorepo has no mobile client yet. The server keeps the mobile login handoff for the planned store app, which wraps the web app's own pages and has no separate data API.
+- The store app (`apps/mobile`) wraps the web app's own pages and has no separate data API. It signs in through the system browser and then uses the same session cookie as the web app.
 - Sessions carry `activeOrganizationId`, which is the current org context used by authorization and data-access layers.
 - Organization-scoped routes and services should trust `session.session.activeOrganizationId` rather than user-supplied org identifiers.
 - Email verification and password-reset links are rewritten to the correct organization-aware base URL when auth emails are sent.
@@ -112,7 +112,7 @@ await fetch('/api/organizations/switch', {
 
 ### Native App Login Handoff
 
-The desktop client uses a browser-based login handoff with a one-time authorization code. The server also accepts `app=mobile` for a future mobile client:
+The desktop client and the store app use a browser-based login handoff with a one-time, PKCE-bound authorization code:
 
 ```text
 /api/auth/app-login?app=mobile&redirect=z8mobile://auth/callback&challenge=<code-challenge>
@@ -122,14 +122,20 @@ The desktop client uses a browser-based login handoff with a one-time authorizat
 Flow summary:
 1. The native app opens `/api/auth/app-login` in the browser.
 2. If the user is not signed in, the route redirects to `/sign-in` with a `callbackUrl` back to the app-login request.
-3. After sign-in, the route redirects back to the native deep link with a one-time code.
-4. The client exchanges the code and its verifier through `/api/auth/app-exchange` for a bearer session token.
+3. After sign-in, the route redirects back to the native deep link with a one-time code (a page with an "Open Z8" button when the browser asks for HTML).
+4. The client exchanges the code and its verifier through `/api/auth/app-exchange`. Desktop receives a bearer session token.
+
+The store app runs these steps from its web view:
+
+1. Signed out, `/sign-in` shows an email screen in the shell. `POST /api/auth/app-sign-in` returns the app-login URL. It is on the organization's verified custom sign-in domain when the email's domain belongs to exactly one organization (a verified custom domain under it, or a verified SSO provider domain), otherwise on the app origin. Only the domain decides, so the answer does not reveal whether an account exists.
+2. The system browser (`ASWebAuthenticationSession` on iOS, Custom Tabs on Android) signs in on that domain with its own methods.
+3. The web view exchanges the code with `X-Z8-App-Type: mobile` at its own origin. The request must carry that origin in `Origin`. The response sets the Better Auth session cookie for the same session row and never returns the token, so the active organization, SSO provenance and revocation stay server-side.
 
 ---
 
 ## Native Client Requests
 
-Native clients authenticate API requests with bearer session tokens. The app exchange endpoint uses `X-Z8-App-Type` (`mobile` or `desktop`) to identify the client for its code exchange.
+The desktop client authenticates API requests with bearer session tokens. The store app's web view uses the session cookie like any browser. The app exchange endpoint uses `X-Z8-App-Type` (`mobile` or `desktop`) to identify the client for its code exchange; a code issued for one app type cannot be exchanged as the other.
 
 ---
 
