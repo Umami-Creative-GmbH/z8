@@ -18,7 +18,8 @@ import { isRefusal, useEmployeeWorkBalance } from "./use-employee-work-balance";
 /**
  * The Work balance section of an employee's settings page (#993): the current
  * work balance, the history of balance adjustments, and recording and
- * cancelling overtime payouts. Owners and admins record and cancel; managers
+ * cancelling overtime payouts. Owners and admins, and payroll grant holders
+ * on the payroll area's Work balances page (#995), record and cancel; managers
  * see it read-only for the employees they manage (#996). The server decides:
  * a viewer it refuses sees nothing.
  */
