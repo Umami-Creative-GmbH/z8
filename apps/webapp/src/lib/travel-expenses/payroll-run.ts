@@ -42,8 +42,8 @@ import {
 	type PayrollRunClassification,
 	type PayrollRunSkip,
 } from "./payroll-run-classification";
-import { isPayrollRunPreviewOpen } from "./payroll-run-preview";
-import { getReimbursementChannel } from "./reimbursement-channel";
+import { notifyReportsLeftOutOfPayrollRun } from "./ready-for-reimbursement";
+import { paysThroughPayrollRuns } from "./reimbursement-channel";
 import {
 	buildSettlementAccounts,
 	type SettlementAccount,
@@ -104,20 +104,7 @@ export async function exportIsPayrollRun(
 	return paysThroughPayrollRuns(database, input.organizationId);
 }
 
-/**
- * Whether the organization pays reimbursements with the payroll run while it
- * passes the preview gate: the only case payroll readiness reports on runs.
- */
-export async function paysThroughPayrollRuns(
-	database: Executor,
-	organizationId: string,
-): Promise<boolean> {
-	const [channel, previewOpen] = await Promise.all([
-		getReimbursementChannel(organizationId, { database }),
-		isPayrollRunPreviewOpen(organizationId, { database }),
-	]);
-	return channel === "payroll_run" && previewOpen;
-}
+export { paysThroughPayrollRuns };
 
 /**
  * Every report and legacy claim awaiting reimbursement in a run's scope, each
@@ -577,7 +564,7 @@ export async function discardPayrollRun(
 	now: Instant = systemClock.nowInstant(),
 ): Promise<DiscardPayrollRunResult> {
 	const { organizationId, jobId } = input;
-	return database.transaction(async (tx): Promise<DiscardPayrollRunResult> => {
+	const result = await database.transaction(async (tx): Promise<DiscardPayrollRunResult> => {
 		const held = await tx
 			.select({
 				id: travelExpensePayrollRunInclusion.id,
@@ -636,6 +623,15 @@ export async function discardPayrollRun(
 		});
 		return { status: "discarded", reportIds };
 	});
+	if (result.status === "discarded") {
+		// Freed reports may need a bank transfer now (#855).
+		await notifyReportsLeftOutOfPayrollRun(database, {
+			organizationId,
+			reportIds: result.reportIds,
+			exceptUserId: input.actorUserId,
+		});
+	}
+	return result;
 }
 
 export type RemoveFromPayrollRunResult =
@@ -658,7 +654,7 @@ export async function removeReportFromPayrollRun(
 ): Promise<RemoveFromPayrollRunResult> {
 	const { actor, reportId } = input;
 	const { organizationId } = actor;
-	return database.transaction(async (tx): Promise<RemoveFromPayrollRunResult> => {
+	const result = await database.transaction(async (tx): Promise<RemoveFromPayrollRunResult> => {
 		const [report] = await tx
 			.select({ employeeId: travelExpenseReport.employeeId })
 			.from(travelExpenseReport)
@@ -701,4 +697,13 @@ export async function removeReportFromPayrollRun(
 		});
 		return { status: "removed", jobId: removed.jobId };
 	});
+	if (result.status === "removed") {
+		// The report may need a bank transfer now (#855); its remover knows.
+		await notifyReportsLeftOutOfPayrollRun(database, {
+			organizationId,
+			reportIds: [reportId],
+			exceptUserId: actor.userId,
+		});
+	}
+	return result;
 }

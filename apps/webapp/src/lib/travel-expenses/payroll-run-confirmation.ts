@@ -96,7 +96,7 @@ export type ConfirmPayrollRunResult =
 	/** One row per report the run still included; empty when nothing was left to confirm. */
 	| { status: "processed"; rows: PayrollRunConfirmationRow[] };
 
-interface PayrollRunHeader {
+export interface PayrollRunHeader {
 	jobId: string;
 	formatName: string;
 	periodStart: string;
@@ -127,7 +127,8 @@ export function payrollRunConfirmationKey(jobId: string, reportId: string): stri
 	return `payroll-run:${jobId}:report:${reportId}`;
 }
 
-async function loadRunHeader(
+/** The run of payroll export job `jobId`: its format's name and period. */
+export async function loadPayrollRunHeader(
 	database: Executor,
 	input: { organizationId: string; jobId: string },
 ): Promise<PayrollRunHeader | null> {
@@ -185,7 +186,7 @@ export async function confirmPayrollRun(
 ): Promise<ConfirmPayrollRunResult> {
 	const { actor, jobId } = input;
 	const { organizationId } = actor;
-	const run = await loadRunHeader(database, { organizationId, jobId });
+	const run = await loadPayrollRunHeader(database, { organizationId, jobId });
 	if (!run) return { status: "not_found" };
 	const inclusions = await database
 		.select({

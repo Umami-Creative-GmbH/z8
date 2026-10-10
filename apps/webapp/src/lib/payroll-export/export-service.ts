@@ -23,7 +23,9 @@ import {
 	countIncludedReportsByRun,
 	exportIsPayrollRun,
 	includeReportsInPayrollRun,
+	type PayrollRunSkipped,
 } from "@/lib/travel-expenses/payroll-run";
+import { notifyPayrollRunExported } from "@/lib/travel-expenses/payroll-run-notifications";
 import { parsePayrollLogicalDate, serializePayrollLogicalDate } from "./calendar-boundaries";
 import { personioConnector } from "./connectors/personio-connector";
 import { PayrollConnectorRegistry } from "./connectors/registry";
@@ -369,7 +371,8 @@ export async function processExportJob({
 			// A payroll run (#852): the inclusions commit with the finished job, or not at all,
 			// so a failed export never holds reports and earlier runs keep theirs.
 			const employeeIds = await resolvePayrollRunEmployeeIds(job.organizationId, filters);
-			return await db.transaction(async (tx) => {
+			let skipped: PayrollRunSkipped[] = [];
+			const exported = await db.transaction(async (tx) => {
 				const inclusion = await includeReportsInPayrollRun(tx, {
 					organizationId: job.organizationId,
 					jobId: job.id,
@@ -386,6 +389,7 @@ export async function processExportJob({
 					},
 					"Payroll run included reports awaiting reimbursement",
 				);
+				skipped = inclusion.skipped;
 				return writeFileExport(
 					tx,
 					job,
@@ -398,6 +402,14 @@ export async function processExportJob({
 					),
 				);
 			});
+			// After the commit (#855): officers learn of the run and of the reports it left out.
+			// Never throws, so the finished export is never marked failed.
+			await notifyPayrollRunExported(db, {
+				organizationId: job.organizationId,
+				jobId: job.id,
+				skipped,
+			});
+			return exported;
 		}
 
 		throw new Error("Neither formatter nor exporter available");

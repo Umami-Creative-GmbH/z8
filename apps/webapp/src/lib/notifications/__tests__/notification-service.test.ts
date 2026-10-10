@@ -290,6 +290,24 @@ describe("Notification Service", () => {
 				.email,
 		).toBe(true);
 	});
+	test("an expense officer's payroll run notice is in-app only, like the ready-for-reimbursement notice", async () => {
+		mockFindMany.mockImplementation(async () => []);
+		const { loadNotificationChannelPreferences } = await import("../notification-service");
+		expect(
+			await loadNotificationChannelPreferences(
+				"user-1",
+				"travel_expense_payroll_run_awaiting_confirmation",
+			),
+		).toEqual({
+			in_app: true,
+			push: false,
+			email: false,
+			teams: false,
+			telegram: false,
+			discord: false,
+			slack: false,
+		});
+	});
 	test.each([
 		"missed_clock_in_reminder",
 		"forgotten_clock_out_reminder",

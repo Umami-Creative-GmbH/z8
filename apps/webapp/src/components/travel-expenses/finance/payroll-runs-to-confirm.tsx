@@ -30,7 +30,8 @@ export function PayrollRunsToConfirm() {
 	if (!runs || runs.length === 0) return null;
 
 	return (
-		<Card>
+		// Officers' payroll run notifications (#855) link here.
+		<Card id="payroll-runs" className="scroll-mt-20">
 			<CardHeader>
 				<CardTitle>
 					{t("travelExpenses.finance.payrollRuns.title", "Payroll runs awaiting confirmation")}
