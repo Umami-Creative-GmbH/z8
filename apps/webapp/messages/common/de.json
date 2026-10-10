@@ -914,6 +914,12 @@
     "active": "Aktiv",
     "inactive": "Inaktiv"
   },
+  "storeAppBanner": {
+    "title": "Z8 für Ihr Smartphone",
+    "description": "Erhalten Sie Erinnerungen und Benachrichtigungen zu Genehmigungen in der App.",
+    "getApp": "App laden",
+    "dismiss": "App-Hinweis ausblenden"
+  },
   "table": {
     "clearFilters": "Filter löschen",
     "clearSort": "Sortierung löschen",

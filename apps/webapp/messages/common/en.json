@@ -914,6 +914,12 @@
     "active": "Active",
     "inactive": "Inactive"
   },
+  "storeAppBanner": {
+    "title": "Z8 for your phone",
+    "description": "Get reminders and approval notifications in the app.",
+    "getApp": "Get the app",
+    "dismiss": "Dismiss app suggestion"
+  },
   "table": {
     "clearFilters": "Clear filters",
     "clearSort": "Clear sort",

@@ -23,17 +23,19 @@ export function SiteHeader() {
 	const routeMetadata = resolveAppRouteMetadata(pathname);
 
 	return (
-		<header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
-			<div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
+		// Edge to edge (store app shell, #846) the header sits below the status bar.
+		<header className="box-content flex h-(--header-height) shrink-0 items-center gap-2 border-b pt-[env(safe-area-inset-top)] transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
+			<div className="flex w-full min-w-0 items-center gap-1 px-4 lg:gap-2 lg:px-6">
 				<SidebarTrigger className="-ml-1" />
 				<Separator
 					className="mx-2 data-[orientation=vertical]:h-4"
 					orientation="vertical"
 				/>
-				<h1 className="font-medium text-base">
+				{/* Truncates on phones so the clock and notification controls stay on screen. */}
+				<h1 className="min-w-0 truncate font-medium text-base">
 					{t(routeMetadata.titleKey, routeMetadata.titleDefault)}
 				</h1>
-				<div className="ml-auto flex items-center gap-2">
+				<div className="ml-auto flex shrink-0 items-center gap-2">
 					{isDashboardRoute ? <DashboardHeaderCustomize /> : null}
 					<HeaderTimezoneControl />
 					<TimeClockPopover timeFormat={timeFormat} />

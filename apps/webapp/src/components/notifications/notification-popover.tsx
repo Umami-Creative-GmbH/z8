@@ -81,7 +81,8 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 
 	const notificationContent = (
 		<>
-			<div className="flex items-center justify-between px-4 py-3">
+			{/* Below the status bar in the top sheet; the inset is 0 in the desktop popover (#846). */}
+			<div className="mt-[var(--sheet-inset-top,0px)] flex items-center justify-between px-4 py-3">
 				<div className="flex items-center gap-2">
 					<h3 className="font-semibold">{t("common:notifications.title", "Notifications")}</h3>
 					{unreadCount > 0 && (
@@ -92,12 +93,12 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 						</span>
 					)}
 				</div>
-				<div className="flex items-center gap-1">
+				<div className="flex items-center gap-1 pointer-coarse:gap-2">
 					{unreadCount > 0 && (
 						<Button
 							size="icon"
 							variant="ghost"
-							className="size-8"
+							className="size-8 pointer-coarse:size-9"
 							onClick={handleMarkAllAsRead}
 							disabled={isMarkingAllRead}
 							aria-label={t("common:notifications.actions.markAllRead", "Mark all read")}
@@ -110,7 +111,7 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 						<Button
 							size="icon"
 							variant="ghost"
-							className="size-8 text-muted-foreground hover:text-destructive"
+							className="size-8 text-muted-foreground hover:text-destructive pointer-coarse:size-9"
 							onClick={handleDeleteAll}
 							disabled={isDeletingAll}
 							aria-label={t("common:notifications.actions.deleteAll", "Delete all")}
@@ -119,7 +120,13 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 							<IconTrash className="size-4" />
 						</Button>
 					)}
-					<Button size="icon" variant="ghost" className="size-8" asChild onClick={handleClose}>
+					<Button
+						size="icon"
+						variant="ghost"
+						className="size-8 pointer-coarse:size-9"
+						asChild
+						onClick={handleClose}
+					>
 						<Link
 							href="/settings/notifications"
 							aria-label={t("common:notifications.actions.settings", "Notification settings")}

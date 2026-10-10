@@ -34,6 +34,7 @@ const SHELL_SOURCES = [
 	"components/organization/create-organization-dialog.tsx",
 	"components/organization/organization-deletion-banner.tsx",
 	"components/billing/trial-banner.tsx",
+	"components/store-app/get-the-app-banner.tsx",
 	"components/offline/sw-update-prompt.tsx",
 	"components/offline/offline-banner.tsx",
 	"components/offline/offline-recovery-dialog.tsx",

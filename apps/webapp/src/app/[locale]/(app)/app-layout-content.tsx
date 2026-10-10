@@ -14,6 +14,7 @@ import { OrganizationSettingsProvider } from "@/components/providers/organizatio
 import { UserPreferencesProvider } from "@/components/providers/user-preferences-provider";
 import { ServerAppSidebar } from "@/components/server-app-sidebar";
 import { SiteHeader } from "@/components/site-header";
+import { GetTheAppBanner } from "@/components/store-app/get-the-app-banner";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
@@ -60,7 +61,7 @@ interface AuthenticatedAppContentProps {
 
 function SiteHeaderLoading() {
 	return (
-		<header className="flex h-(--header-height) shrink-0 items-center border-b px-4 lg:px-6">
+		<header className="box-content flex h-(--header-height) shrink-0 items-center border-b px-4 pt-[env(safe-area-inset-top)] lg:px-6">
 			<Skeleton className="h-5 w-40" />
 			<div className="ml-auto flex items-center gap-2">
 				<Skeleton className="size-8 rounded-md" />
@@ -157,7 +158,17 @@ export async function AuthenticatedAppContent({ children, params }: Authenticate
 								<OrganizationDeletionBanner />
 								{/* Asked on the next clock action when position capture needs consent (#826). */}
 								<PositionConsentDialogHost />
-								<div className="flex flex-1 flex-col min-h-0 overflow-y-auto">{children}</div>
+								{/* Keeps the end of each page above the home indicator when drawn edge to edge. */}
+								<div className="flex flex-1 flex-col min-h-0 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
+									{children}
+								</div>
+								{/* Floats over the page on phone browsers, so it never shifts the layout (#847). */}
+								<GetTheAppBanner
+									storeUrls={{
+										ios: env.STORE_APP_IOS_URL ?? null,
+										android: env.STORE_APP_ANDROID_URL ?? null,
+									}}
+								/>
 							</SidebarInset>
 						</SidebarProvider>
 					</OrganizationSettingsProvider>

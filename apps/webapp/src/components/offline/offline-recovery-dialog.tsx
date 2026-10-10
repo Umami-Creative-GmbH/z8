@@ -269,6 +269,7 @@ export function OfflineRecoveryDialog({
 								<Button
 									variant="outline"
 									size="sm"
+									className="h-auto min-h-8 max-w-full whitespace-normal py-1.5"
 									disabled={busy}
 									onClick={() => void load(record.id)}
 								>
@@ -282,8 +283,10 @@ export function OfflineRecoveryDialog({
 						</li>
 					))}
 				</ul>
+				{/* Long labels wrap on phones instead of scrolling the dialog sideways (#846). */}
 				<Button
 					variant="outline"
+					className="h-auto min-h-9 max-w-full whitespace-normal"
 					disabled={busy || records.length === 0}
 					onClick={() => void exportRecords()}
 				>
