@@ -1,24 +1,26 @@
 "use server";
 
-import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
+import type { z } from "zod";
 import { requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
-import {
-	type AnyAppError,
-	AuthorizationError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
+import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
+import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import {
+	type ApiKeyView,
+	createOrganizationApiKey,
+	getOrganizationApiKey,
+	listOrganizationApiKeys,
+	revokeOrganizationApiKey,
+	updateOrganizationApiKey,
+} from "@/lib/public-api/keys/key-store";
+import { listRecentKeyRequests } from "@/lib/public-api/request-log";
+import {
 	type ApiKeyResponse,
-	type ApiKeyScope,
 	type CreateApiKeyData,
 	type CreateApiKeyResponse,
 	createApiKeySchema,
@@ -28,63 +30,15 @@ import {
 } from "@/lib/validations/api-key";
 
 const logger = createLogger("ApiKeyActions");
+const API_KEYS_PATH = "/settings/enterprise/api-keys";
 
 // =============================================================================
 // Helper Functions
 // =============================================================================
 
 /**
- * Parse metadata safely from Better Auth API response
- */
-function parseMetadata(metadata: unknown): Record<string, unknown> {
-	if (!metadata) return {};
-	if (typeof metadata === "string") {
-		try {
-			return JSON.parse(metadata);
-		} catch {
-			return {};
-		}
-	}
-	if (typeof metadata === "object") {
-		return metadata as Record<string, unknown>;
-	}
-	return {};
-}
-
-/**
- * Convert a date value to ISO string for serialization
- */
-function toISOString(value: unknown): string | null {
-	if (!value) return null;
-	if (typeof value === "string") {
-		return DateTime.fromISO(value).isValid ? value : null;
-	}
-	if (value instanceof Date) {
-		return DateTime.fromJSDate(value).toISO();
-	}
-	return null;
-}
-
-function extractApiKeys(result: unknown): unknown[] {
-	if (Array.isArray(result)) {
-		return result;
-	}
-
-	if (
-		result &&
-		typeof result === "object" &&
-		"apiKeys" in result &&
-		Array.isArray((result as { apiKeys?: unknown[] }).apiKeys)
-	) {
-		return (result as { apiKeys: unknown[] }).apiKeys;
-	}
-
-	return [];
-}
-
-/**
- * Verify that the current user has admin/owner permissions for the organization
- * Returns session and member record if authorized
+ * Verify that the current user has admin/owner permissions for the organization.
+ * Every org admin manages all of the organization's keys (ADR 0001).
  */
 function verifyApiKeyPermission(
 	organizationId: string,
@@ -106,78 +60,39 @@ function verifyApiKeyPermission(
 	});
 }
 
-/**
- * Fetch an API key and verify it belongs to the organization
- */
-function getAndVerifyApiKey(
-	keyId: string,
-	organizationId: string,
-	userId: string,
-	action: "update" | "delete",
-) {
-	return Effect.gen(function* () {
-		const existingKey = yield* Effect.tryPromise({
-			try: async () => {
-				const result = await auth.api.getApiKey({
-					query: { id: keyId },
-					headers: await headers(),
-				});
-				return result;
-			},
-			catch: () => {
-				return new NotFoundError({
-					message: "API key not found",
-					entityType: "apiKey",
-					entityId: keyId,
-				});
-			},
-		});
-
-		// Verify the key belongs to this organization
-		const keyMeta = parseMetadata((existingKey as Record<string, unknown>)?.metadata);
-		if (keyMeta.organizationId !== organizationId) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "API key does not belong to this organization",
-					userId,
-					resource: "apiKey",
-					action,
-				}),
-			);
-		}
-
-		return { existingKey, keyMeta };
-	});
+function parseInput<T>(result: z.ZodSafeParseResult<T>) {
+	if (result.success) return Effect.succeed(result.data);
+	const issue = result.error.issues[0];
+	return Effect.fail(
+		new ValidationError({
+			message: issue?.message || "Invalid input",
+			field: issue?.path.map(String).join(".") || "data",
+		}),
+	);
 }
 
-/**
- * Filter API keys by organization and transform to response format
- */
-function transformApiKeysResponse(apiKeys: unknown[], organizationId: string): ApiKeyResponse[] {
-	return (apiKeys as Record<string, unknown>[]).flatMap((key) => {
-		const meta = parseMetadata(key.metadata);
-		return meta.organizationId === organizationId
-			? [
-					{
-						id: key.id as string,
-						name: (meta.displayName as string) || (key.name as string) || "Unnamed Key",
-						prefix: (key.start as string) || null,
-						organizationId: (meta.organizationId as string) || organizationId,
-						createdBy: (meta.createdBy as string) || null,
-						createdAt: toISOString(key.createdAt) || DateTime.now().toISO(),
-						updatedAt: toISOString(key.updatedAt) || DateTime.now().toISO(),
-						expiresAt: toISOString(key.expiresAt),
-						lastRequest: toISOString(key.lastRequest),
-						enabled: (key.enabled as boolean) ?? true,
-						scopes: meta.scopes ? (meta.scopes as ApiKeyScope[]) : [],
-						rateLimitEnabled: (key.rateLimitEnabled as boolean) ?? true,
-						rateLimitMax: (key.rateLimitMax as number) || null,
-						rateLimitTimeWindow: (key.rateLimitTimeWindow as number) || null,
-						requestCount: (key.requestCount as number) || null,
-					},
-				]
-			: [];
-	});
+const keyNotFound = (keyId: string) =>
+	new NotFoundError({ message: "API key not found", entityType: "apiKey", entityId: keyId });
+
+function toResponse(view: ApiKeyView): ApiKeyResponse {
+	return {
+		id: view.id,
+		name: view.name || "Unnamed Key",
+		prefix: view.start,
+		organizationId: view.organizationId,
+		createdBy: view.creator?.userId ?? null,
+		creator: view.creator,
+		createdAt: view.createdAt.toISOString(),
+		updatedAt: view.updatedAt.toISOString(),
+		expiresAt: view.expiresAt?.toISOString() ?? null,
+		lastRequest: view.lastRequest?.toISOString() ?? null,
+		enabled: view.enabled,
+		scopes: view.scopes,
+		rateLimitEnabled: view.rateLimitEnabled,
+		rateLimitMax: view.rateLimitMax,
+		rateLimitTimeWindow: view.rateLimitTimeWindow,
+		requestCount: view.requestCount,
+	};
 }
 
 // =============================================================================
@@ -185,64 +100,74 @@ function transformApiKeysResponse(apiKeys: unknown[], organizationId: string): A
 // =============================================================================
 
 /**
- * List all API keys for the current organization
- * Requires admin or owner role
+ * List all API keys of the organization, whichever admin created them.
+ * Requires admin or owner role.
  */
 export async function listApiKeys(
 	organizationId: string,
 ): Promise<ServerActionResult<ApiKeyResponse[]>> {
-	const tracer = trace.getTracer("api-keys");
-
-	const effect = tracer.startActiveSpan(
-		"listApiKeys",
-		{ attributes: { "organization.id": organizationId } },
-		(span) => {
-			return Effect.gen(function* () {
-				// Verify permissions
-				yield* verifyApiKeyPermission(organizationId, "list");
-
-				// Fetch API keys using Better Auth's API
-				const apiKeys = yield* Effect.tryPromise({
-					try: async () => {
-						const result = await auth.api.listApiKeys({
-							headers: await headers(),
-						});
-						return extractApiKeys(result);
-					},
-					catch: (error) => {
-						logger.error({ error }, "Failed to list API keys via auth API");
-						return new ValidationError({
-							message: "Failed to fetch API keys",
-							field: "apiKeys",
-						});
-					},
-				});
-
-				// Filter and transform to response format
-				const orgKeys = transformApiKeysResponse(apiKeys as unknown[], organizationId);
-
-				logger.info(
-					{ organizationId, keyCount: orgKeys.length },
-					"Listed API keys for organization",
-				);
-
-				span.setStatus({ code: SpanStatusCode.OK });
-				return orgKeys;
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as unknown as Error);
-						span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) });
-						logger.error({ error, organizationId }, "Failed to list API keys");
-						return yield* Effect.fail(error as unknown as AnyAppError);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
+	return runServerActionSafe(
+		Effect.gen(function* () {
+			yield* verifyApiKeyPermission(organizationId, "list");
+			const dbService = yield* DatabaseService;
+			const keys = yield* dbService.query("apiKeys.list", () =>
+				listOrganizationApiKeys(dbService.db, organizationId),
 			);
-		},
+			return keys.map(toResponse);
+		}),
 	);
+}
 
-	return runServerActionSafe(effect);
+// =============================================================================
+// API Key Detail
+// =============================================================================
+
+export interface ApiKeyDetail {
+	key: ApiKeyResponse;
+	/** The key's most recent requests from the key request log, newest first. */
+	requests: {
+		id: string;
+		method: string;
+		route: string;
+		status: number;
+		rowCount: number | null;
+		ipAddress: string | null;
+		/** ISO date string */
+		requestedAt: string;
+	}[];
+}
+
+/**
+ * One API key of the organization with its recent requests.
+ * Requires admin or owner role.
+ */
+export async function getApiKeyDetail(
+	organizationId: string,
+	keyId: string,
+): Promise<ServerActionResult<ApiKeyDetail>> {
+	return runServerActionSafe(
+		Effect.gen(function* () {
+			yield* verifyApiKeyPermission(organizationId, "list");
+			const dbService = yield* DatabaseService;
+			const detail = yield* dbService.query("apiKeys.detail", async () => {
+				const key = await getOrganizationApiKey(dbService.db, organizationId, keyId);
+				if (!key) return null;
+				const requests = await listRecentKeyRequests(dbService.db, {
+					organizationId,
+					apiKeyId: key.id,
+				});
+				return { key, requests };
+			});
+			if (!detail) return yield* Effect.fail(keyNotFound(keyId));
+			return {
+				key: toResponse(detail.key),
+				requests: detail.requests.map((request) => ({
+					...request,
+					requestedAt: request.requestedAt.toISOString(),
+				})),
+			};
+		}),
+	);
 }
 
 // =============================================================================
@@ -250,136 +175,57 @@ export async function listApiKeys(
 // =============================================================================
 
 /**
- * Create a new API key for the organization
- * Requires admin or owner role
- * Returns the full key (shown only once!)
+ * Create a new API key for the organization.
+ * Requires admin or owner role. Returns the full key (shown only once!).
  */
 export async function createApiKey(
 	organizationId: string,
 	data: CreateApiKeyData,
 ): Promise<ServerActionResult<CreateApiKeyResponse>> {
-	const tracer = trace.getTracer("api-keys");
+	return runServerActionSafe(
+		Effect.gen(function* () {
+			const { session } = yield* verifyApiKeyPermission(organizationId, "create");
+			const input = yield* parseInput(createApiKeySchema.safeParse(data));
+			const dbService = yield* DatabaseService;
 
-	const effect = tracer.startActiveSpan(
-		"createApiKey",
-		{ attributes: { "organization.id": organizationId, "apiKey.name": data.name } },
-		(span) => {
-			return Effect.gen(function* () {
-				// Verify permissions
-				const { session } = yield* verifyApiKeyPermission(organizationId, "create");
-
-				// Validate input
-				const validationResult = createApiKeySchema.safeParse(data);
-				if (!validationResult.success) {
-					return yield* Effect.fail(
-						new ValidationError({
-							message: validationResult.error.issues[0]?.message || "Invalid input",
-							field: validationResult.error.issues[0]?.path?.join(".") || "data",
-						}),
-					);
-				}
-
-				const validatedData = validationResult.data;
-
-				// Check key limit for organization
-				// IMPORTANT: This check is not atomic - there's a small race condition window
-				// A proper fix would use database-level constraints or transactions
-				const existingKeys = yield* Effect.tryPromise({
-					try: async () => {
-						const result = await auth.api.listApiKeys({
-							headers: await headers(),
-						});
-						return transformApiKeysResponse(extractApiKeys(result), organizationId);
-					},
-					catch: (error) => {
-						logger.error({ error, organizationId }, "Failed to check existing API keys");
-						return new ValidationError({
-							message: "Failed to verify API key limit. Please try again.",
-							field: "apiKeys",
-						});
-					},
-				});
-
-				if (existingKeys.length >= MAX_API_KEYS_PER_ORG) {
-					yield* Effect.fail(
-						new ValidationError({
-							message: `Organization has reached the maximum of ${MAX_API_KEYS_PER_ORG} API keys`,
-							field: "apiKeys",
-						}),
-					);
-				}
-
-				// Calculate expiration in seconds if specified
-				const expiresIn = validatedData.expiresInDays
-					? validatedData.expiresInDays * 24 * 60 * 60
-					: undefined;
-
-				// Create the API key via Better Auth
-				const result = yield* Effect.tryPromise({
-					try: async () => {
-						const createResult = await auth.api.createApiKey({
-							body: {
-								name: validatedData.name,
-								expiresIn,
-								prefix: "z8_org",
-								metadata: {
-									organizationId,
-									displayName: validatedData.name,
-									scopes: validatedData.scopes,
-									createdBy: session.user.id,
-									rateLimitEnabled: validatedData.rateLimitEnabled,
-									rateLimitMax: validatedData.rateLimitMax,
-									rateLimitTimeWindow: validatedData.rateLimitTimeWindow,
-								},
-							},
-							headers: await headers(),
-						});
-						return createResult;
-					},
-					catch: (error) => {
-						logger.error({ error }, "Failed to create API key via auth API");
-						return new ValidationError({
-							message: error instanceof Error ? error.message : "Failed to create API key",
-							field: "apiKey",
-						});
-					},
-				});
-
-				logger.info(
-					{
-						organizationId,
-						keyId: result?.id,
-						keyName: validatedData.name,
-						createdBy: session.user.id,
-					},
-					"API key created successfully",
-				);
-
-				revalidatePath("/settings/enterprise/api-keys");
-				span.setStatus({ code: SpanStatusCode.OK });
-
-				return {
-					id: result?.id || "",
-					key: result?.key || "",
-					name: validatedData.name,
-					prefix: result?.key?.substring(0, 12) || null,
-					expiresAt: result?.expiresAt ? toISOString(result.expiresAt) : null,
-				};
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as unknown as Error);
-						span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) });
-						logger.error({ error, organizationId }, "Failed to create API key");
-						return yield* Effect.fail(error as unknown as AnyAppError);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
+			const expiresAt = input.expiresInDays
+				? dateFromInstant(systemClock.nowInstant().add({ hours: input.expiresInDays * 24 }))
+				: null;
+			const outcome = yield* dbService.query("apiKeys.create", () =>
+				createOrganizationApiKey(dbService.db, {
+					organizationId,
+					actorUserId: session.user.id,
+					name: input.name,
+					scopes: input.scopes,
+					rateLimitEnabled: input.rateLimitEnabled,
+					rateLimitMax: input.rateLimitMax,
+					rateLimitTimeWindow: input.rateLimitTimeWindow,
+					expiresAt,
+				}),
 			);
-		},
-	);
+			if (!outcome.ok) {
+				return yield* Effect.fail(
+					new ValidationError({
+						message: `Organization has reached the maximum of ${MAX_API_KEYS_PER_ORG} API keys`,
+						field: "apiKeys",
+					}),
+				);
+			}
 
-	return runServerActionSafe(effect);
+			logger.info(
+				{ organizationId, keyId: outcome.key.id, createdBy: session.user.id },
+				"API key created",
+			);
+			revalidatePath(API_KEYS_PATH);
+			return {
+				id: outcome.key.id,
+				key: outcome.key.key,
+				name: outcome.key.name,
+				prefix: outcome.key.start,
+				expiresAt: outcome.key.expiresAt?.toISOString() ?? null,
+			};
+		}),
+	);
 }
 
 // =============================================================================
@@ -387,109 +233,34 @@ export async function createApiKey(
 // =============================================================================
 
 /**
- * Update an existing API key
- * Requires admin or owner role
+ * Update an existing API key of the organization.
+ * Requires admin or owner role.
  */
 export async function updateApiKey(
 	organizationId: string,
 	keyId: string,
 	data: UpdateApiKeyData,
 ): Promise<ServerActionResult<void>> {
-	const tracer = trace.getTracer("api-keys");
+	return runServerActionSafe(
+		Effect.gen(function* () {
+			const { session } = yield* verifyApiKeyPermission(organizationId, "update");
+			const change = yield* parseInput(updateApiKeySchema.safeParse(data));
+			const dbService = yield* DatabaseService;
 
-	const effect = tracer.startActiveSpan(
-		"updateApiKey",
-		{ attributes: { "organization.id": organizationId, "apiKey.id": keyId } },
-		(span) => {
-			return Effect.gen(function* () {
-				// Verify permissions
-				const { session } = yield* verifyApiKeyPermission(organizationId, "update");
-
-				// Validate input
-				const validationResult = updateApiKeySchema.safeParse(data);
-				if (!validationResult.success) {
-					return yield* Effect.fail(
-						new ValidationError({
-							message: validationResult.error.issues[0]?.message || "Invalid input",
-							field: validationResult.error.issues[0]?.path?.join(".") || "data",
-						}),
-					);
-				}
-
-				const validatedData = validationResult.data;
-
-				// Get and verify the API key belongs to this organization
-				const { keyMeta } = yield* getAndVerifyApiKey(
-					keyId,
+			const outcome = yield* dbService.query("apiKeys.update", () =>
+				updateOrganizationApiKey(dbService.db, {
 					organizationId,
-					session.user.id,
-					"update",
-				);
-
-				// Update the API key via Better Auth
-				yield* Effect.tryPromise({
-					try: async () => {
-						// Build updated metadata
-						const updatedMetadata = {
-							...keyMeta,
-							...(validatedData.name && { displayName: validatedData.name }),
-							...(validatedData.scopes && { scopes: validatedData.scopes }),
-							...(validatedData.rateLimitEnabled !== undefined && {
-								rateLimitEnabled: validatedData.rateLimitEnabled,
-							}),
-							...(validatedData.rateLimitMax !== undefined && {
-								rateLimitMax: validatedData.rateLimitMax,
-							}),
-						};
-
-						await auth.api.updateApiKey({
-							body: {
-								keyId,
-								...(validatedData.name && { name: validatedData.name }),
-								...(validatedData.enabled !== undefined && {
-									enabled: validatedData.enabled,
-								}),
-								...(validatedData.rateLimitEnabled !== undefined && {
-									rateLimitEnabled: validatedData.rateLimitEnabled,
-								}),
-								...(validatedData.rateLimitMax !== undefined && {
-									rateLimitMax: validatedData.rateLimitMax,
-								}),
-								metadata: updatedMetadata,
-							},
-							headers: await headers(),
-						});
-					},
-					catch: (error) => {
-						return new ValidationError({
-							message: error instanceof Error ? error.message : "Failed to update API key",
-							field: "apiKey",
-						});
-					},
-				});
-
-				logger.info(
-					{ organizationId, keyId, updatedBy: session.user.id },
-					"API key updated successfully",
-				);
-
-				revalidatePath("/settings/enterprise/api-keys");
-				span.setStatus({ code: SpanStatusCode.OK });
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as unknown as Error);
-						span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) });
-						logger.error({ error, organizationId, keyId }, "Failed to update API key");
-						return yield* Effect.fail(error as unknown as AnyAppError);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
+					actorUserId: session.user.id,
+					keyId,
+					change,
+				}),
 			);
-		},
-	);
+			if (!outcome.ok) return yield* Effect.fail(keyNotFound(keyId));
 
-	return runServerActionSafe(effect);
+			logger.info({ organizationId, keyId, updatedBy: session.user.id }, "API key updated");
+			revalidatePath(API_KEYS_PATH);
+		}),
+	);
 }
 
 // =============================================================================
@@ -497,62 +268,29 @@ export async function updateApiKey(
 // =============================================================================
 
 /**
- * Delete an API key
- * Requires admin or owner role
+ * Revoke (delete) an API key of the organization. Any application using it
+ * loses access at once. Requires admin or owner role.
  */
 export async function deleteApiKey(
 	organizationId: string,
 	keyId: string,
 ): Promise<ServerActionResult<void>> {
-	const tracer = trace.getTracer("api-keys");
+	return runServerActionSafe(
+		Effect.gen(function* () {
+			const { session } = yield* verifyApiKeyPermission(organizationId, "delete");
+			const dbService = yield* DatabaseService;
 
-	const effect = tracer.startActiveSpan(
-		"deleteApiKey",
-		{ attributes: { "organization.id": organizationId, "apiKey.id": keyId } },
-		(span) => {
-			return Effect.gen(function* () {
-				// Verify permissions
-				const { session } = yield* verifyApiKeyPermission(organizationId, "delete");
-
-				// Get and verify the API key belongs to this organization
-				yield* getAndVerifyApiKey(keyId, organizationId, session.user.id, "delete");
-
-				// Delete the API key via Better Auth
-				yield* Effect.tryPromise({
-					try: async () => {
-						await auth.api.deleteApiKey({
-							body: { keyId },
-							headers: await headers(),
-						});
-					},
-					catch: (error) => {
-						return new ValidationError({
-							message: error instanceof Error ? error.message : "Failed to delete API key",
-							field: "apiKey",
-						});
-					},
-				});
-
-				logger.info(
-					{ organizationId, keyId, deletedBy: session.user.id },
-					"API key deleted successfully",
-				);
-
-				revalidatePath("/settings/enterprise/api-keys");
-				span.setStatus({ code: SpanStatusCode.OK });
-			}).pipe(
-				Effect.catch((error) =>
-					Effect.gen(function* () {
-						span.recordException(error as unknown as Error);
-						span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) });
-						logger.error({ error, organizationId, keyId }, "Failed to delete API key");
-						return yield* Effect.fail(error as unknown as AnyAppError);
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
+			const outcome = yield* dbService.query("apiKeys.revoke", () =>
+				revokeOrganizationApiKey(dbService.db, {
+					organizationId,
+					actorUserId: session.user.id,
+					keyId,
+				}),
 			);
-		},
-	);
+			if (!outcome.ok) return yield* Effect.fail(keyNotFound(keyId));
 
-	return runServerActionSafe(effect);
+			logger.info({ organizationId, keyId, revokedBy: session.user.id }, "API key revoked");
+			revalidatePath(API_KEYS_PATH);
+		}),
+	);
 }

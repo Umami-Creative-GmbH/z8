@@ -17,6 +17,7 @@ import type { LegacyEscalationSuppression } from "@/lib/approvals/escalation/leg
 import type { ApprovalEscalationJobResult } from "@/lib/approvals/escalation/scheduled-job";
 import type { AbsenceCategoryNoticesJobResult } from "@/lib/jobs/absence-category-notices";
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
+import type { ClosedMonthAutoCloseJobResult } from "@/lib/jobs/closed-month-auto-close";
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
 import type { PersonnelFileExpiryRemindersJobResult } from "@/lib/jobs/personnel-file-expiry-reminders";
 import type { PersonnelFileRetentionRemindersJobResult } from "@/lib/jobs/personnel-file-retention-reminders";
@@ -438,6 +439,17 @@ export const CRON_JOBS = {
 		defaultJobOptions: { attempts: 2, priority: 7 },
 	},
 
+	"cron:closed-month-auto-close": {
+		schedule: "30 * * * *", // Hourly; each organization day is attempted once
+		description:
+			"Close the previous month for organizations with automatic close on, N days after it ended (#762)",
+		processor: async (): Promise<ClosedMonthAutoCloseJobResult> => {
+			const { runClosedMonthAutoCloseJob } = await import("@/lib/jobs/closed-month-auto-close");
+			return runClosedMonthAutoCloseJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 7 },
+	},
+
 	"cron:personnel-file-retention-reminders": {
 		schedule: "0 * * * *", // Hourly; at most one reminder per recipient and organization day
 		description:
@@ -452,7 +464,7 @@ export const CRON_JOBS = {
 	},
 
 	"cron:absence-category-notices": {
-		schedule: "0 * * * *", // Hourly; pending notices exist only after migration 0188
+		schedule: "0 * * * *", // Hourly; pending notices exist only after migration 0195
 		description:
 			"Tell owners and admins once that the time off in lieu absence category is available",
 		processor: async (): Promise<AbsenceCategoryNoticesJobResult> => {

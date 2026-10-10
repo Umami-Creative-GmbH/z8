@@ -150,6 +150,10 @@ export enum AuditAction {
 	PERSONNEL_FILE_PAYSLIP_BATCH_CONFIRMED = "personnel_file.payslip_batch_confirmed",
 	PERSONNEL_FILE_DOCUMENT_PURGED = "personnel_file.document_purged",
 	PERSONNEL_FILE_RETENTION_CHANGED = "personnel_file.retention_changed",
+	// Closed months (#762), written in the close's or reopening's transaction
+	CLOSED_MONTH_CLOSED = "closed_month.closed",
+	CLOSED_MONTH_REOPENED = "closed_month.reopened",
+	CLOSED_MONTH_SETTINGS_CHANGED = "closed_month.settings_changed",
 	// Personnel file ZIP download (#871)
 	PERSONNEL_FILE_ZIP_DOWNLOADED = "personnel_file.zip_downloaded",
 	PERSONNEL_FILE_ZIP_DOWNLOAD_ABORTED = "personnel_file.zip_download_aborted",
@@ -158,6 +162,11 @@ export enum AuditAction {
 	ICS_FEED_CREATED = "ics_feed.created",
 	ICS_FEED_REGENERATED = "ics_feed.regenerated",
 	ICS_FEED_REVOKED = "ics_feed.revoked",
+
+	// Public API key lifecycle (#763); key usage goes to the key request log instead
+	API_KEY_CREATED = "api_key.created",
+	API_KEY_UPDATED = "api_key.updated",
+	API_KEY_REVOKED = "api_key.revoked",
 
 	// App Access Operations
 	APP_ACCESS_GRANTED = "app_access.granted",
@@ -352,7 +361,8 @@ export interface AuditLogEntry {
 		| "works_council_export"
 		| "travel_expense_policy_version"
 		| "travel_expense_export"
-		| "ics_feed";
+		| "ics_feed"
+		| "api_key";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates

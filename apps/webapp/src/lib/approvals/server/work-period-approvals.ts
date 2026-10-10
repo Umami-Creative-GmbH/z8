@@ -133,6 +133,7 @@ import type {
 	PendingApprovalRequest,
 } from "./types";
 import type { WorkPeriodPostCommitDescriptor } from "./work-period-submission";
+import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 
 export type OrdinaryTimeApprovalKind = OrdinaryWorkPeriodApprovalKind;
 export type {
@@ -511,6 +512,9 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 			throw error;
 		}
 		if (input.bound && isBoundTimeDecisionSignal(error)) throw error;
+		// A decision touching a closed month is refused as such (#762).
+		const closed = monthClosedRefusalOf(error);
+		if (closed) throw closed;
 		throw unresolvedWorkPeriodReviewFrom(error) ?? new Error(ORDINARY_DECISION_ERROR);
 	}
 }

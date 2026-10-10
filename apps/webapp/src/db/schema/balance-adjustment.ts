@@ -26,7 +26,7 @@ export const balanceAdjustmentKindEnum = pgEnum("balance_adjustment_kind", [
  * edited or deleted, and a cancelled one stays on record. The work-balance
  * projection reads the uncancelled ones each time it is computed; they are
  * never written into the stored balance rows. A database trigger (migration
- * 0187) refuses every update except the one cancellation, and every delete
+ * 0193) refuses every update except the one cancellation, and every delete
  * except the cascade from an erased employee or organization.
  */
 export const balanceAdjustment = pgTable(

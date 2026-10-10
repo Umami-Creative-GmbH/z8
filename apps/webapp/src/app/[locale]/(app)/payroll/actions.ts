@@ -27,6 +27,11 @@ import {
 	unmappedOvertimePayoutsForExport,
 } from "@/lib/payroll-export";
 import {
+	isPayrollWorkspaceExportFormatId,
+	type PayrollWorkspaceExportFormatId,
+	payrollWorkspaceExportFormatIds,
+} from "@/lib/payroll-export/format-registry";
+import {
 	exportPayrollSummaryToPDF,
 	generatePayrollPDFFilename,
 } from "@/lib/payroll-workspace/pdf-exporter";
@@ -68,7 +73,6 @@ export interface PayrollExportFormatOption {
 	label: string;
 }
 
-const PAYROLL_WORKSPACE_EXPORT_FORMATS = ["datev_lohn", "lexware_lohn", "sage_lohn"] as const;
 const PAYROLL_BLOCKER_TYPES = [
 	"missing_clock_out",
 	"pending_absence",
@@ -76,7 +80,6 @@ const PAYROLL_BLOCKER_TYPES = [
 ] as const satisfies readonly DismissiblePayrollBlockerType[];
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-type PayrollWorkspaceExportFormatId = (typeof PAYROLL_WORKSPACE_EXPORT_FORMATS)[number];
 export async function getPayrollWorkspaceSummaryAction(
 	request: PayrollWorkspaceRequest,
 ): Promise<ServerActionResult<PayrollWorkspaceSummary>> {
@@ -463,7 +466,7 @@ export async function getConfiguredPayrollExportFormatsAction(): Promise<
 					eq(payrollExportConfig.organizationId, authContext.employee.organizationId),
 					eq(payrollExportConfig.isActive, true),
 					eq(payrollExportFormat.isEnabled, true),
-					inArray(payrollExportFormat.id, [...PAYROLL_WORKSPACE_EXPORT_FORMATS]),
+					inArray(payrollExportFormat.id, payrollWorkspaceExportFormatIds()),
 				),
 			);
 
@@ -692,7 +695,7 @@ function validateExportFormatId(
 ): PayrollWorkspaceExportFormatId {
 	if (
 		typeof formatId !== "string" ||
-		!PAYROLL_WORKSPACE_EXPORT_FORMATS.includes(formatId as PayrollWorkspaceExportFormatId) ||
+		!isPayrollWorkspaceExportFormatId(formatId) ||
 		!getFormatter(formatId)
 	) {
 		throw new ValidationError({
@@ -701,7 +704,7 @@ function validateExportFormatId(
 		});
 	}
 
-	return formatId as PayrollWorkspaceExportFormatId;
+	return formatId;
 }
 
 async function runPayrollWorkspaceAction<T>(

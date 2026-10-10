@@ -1,3 +1,4 @@
+import { type PayrollExportFileFormatId, payrollExportFormatKind } from "../format-registry";
 import type {
 	OvertimePayoutData,
 	SpecialWageCategory,
@@ -16,10 +17,13 @@ import { type WageTypeCodeFormat, wageTypeCodeFor } from "../wage-type-code";
 export const OVERTIME_PAYOUT_CATEGORY: SpecialWageCategory = "overtime";
 
 /**
- * The file formats that carry overtime payouts, with the code column each
- * reads. SuccessFactors CSV and the API connectors do not (follow-ups of #1004).
+ * The file formats of the format registry (#823) that carry overtime payouts,
+ * with the code column each reads. SuccessFactors CSV and the API connectors do
+ * not (follow-ups of #1004).
  */
-const OVERTIME_PAYOUT_FORMATS: Readonly<Record<string, WageTypeCodeFormat>> = {
+const OVERTIME_PAYOUT_FORMATS: Readonly<
+	Partial<Record<PayrollExportFileFormatId, WageTypeCodeFormat>>
+> = {
 	datev_lohn: "datev",
 	lexware_lohn: "lexware",
 	sage_lohn: "sage",
@@ -27,9 +31,10 @@ const OVERTIME_PAYOUT_FORMATS: Readonly<Record<string, WageTypeCodeFormat>> = {
 
 /** The code column a format pays overtime payouts under; null when it carries none. */
 export function overtimePayoutCodeFormat(formatId: string): WageTypeCodeFormat | null {
-	return Object.hasOwn(OVERTIME_PAYOUT_FORMATS, formatId)
-		? OVERTIME_PAYOUT_FORMATS[formatId]
-		: null;
+	if (payrollExportFormatKind(formatId) !== "file") {
+		return null;
+	}
+	return OVERTIME_PAYOUT_FORMATS[formatId as PayrollExportFileFormatId] ?? null;
 }
 
 /** Bemerkung of an overtime payout row in DATEV and Sage files. */

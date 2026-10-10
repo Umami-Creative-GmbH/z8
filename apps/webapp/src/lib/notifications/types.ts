@@ -78,6 +78,10 @@ export const NOTIFICATION_TYPES = [
 	"personnel_file_expired_today",
 	// Documents newly due for deletion, for covering officers (#870)
 	"personnel_file_due_for_deletion",
+	// Closed months (#762): automatic close, its blockers, and reopenings
+	"month_closed_automatically",
+	"month_close_blocked",
+	"month_reopened",
 	// One-time notice to owners and admins that time off in lieu is available (#1000)
 	"time_off_in_lieu_available",
 	// A balance adjustment on the employee's own work balance (#996)
@@ -96,6 +100,10 @@ export function hasMandatoryInbox(type: NotificationType): boolean {
 const IN_APP_ONLY_BY_DEFAULT: ReadonlySet<NotificationType> = new Set([
 	"travel_expense_ready_for_reimbursement",
 	"travel_expense_payroll_run_awaiting_confirmation",
+	// Closed months notify in-app only (#762).
+	"month_closed_automatically",
+	"month_close_blocked",
+	"month_reopened",
 ]);
 
 /** Clocking reminders: in-app and push until the user turns on another channel. */

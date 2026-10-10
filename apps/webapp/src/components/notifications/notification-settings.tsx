@@ -75,6 +75,9 @@ const NOTIFICATION_CATEGORIES = [
 			"time_correction_approved",
 			"time_correction_rejected",
 			"automatic_clock_out",
+			"month_closed_automatically",
+			"month_close_blocked",
+			"month_reopened",
 			"work_balance_adjustment_recorded",
 			"work_balance_adjustment_cancelled",
 		] as NotificationType[],
@@ -260,6 +263,10 @@ const TYPE_LABELS: Record<Exclude<NotificationType, StaticallyLabeledType>, stri
 	personnel_file_expired_today: "Document expires today",
 	// Employee documents newly due for deletion (personnel file officers)
 	personnel_file_due_for_deletion: "Documents due for deletion (personnel file officers)",
+	// Closed months (#762)
+	month_closed_automatically: "Month closed automatically",
+	month_close_blocked: "Automatic month close blocked",
+	month_reopened: "Closed month reopened for your employees",
 	// One-time notice to owners and admins; not listed in any preference category
 	time_off_in_lieu_available: "Time off in lieu available",
 };

@@ -35,7 +35,7 @@ import { workCategory } from "./work-category";
 export const payrollExportFormat = pgTable(
 	"payroll_export_format",
 	{
-		id: text("id").primaryKey(), // "datev_lohn", "sage", etc.
+		id: text("id").primaryKey(), // An id of the payroll export format registry (#823)
 		name: text("name").notNull(), // "DATEV Lohn & Gehalt"
 		version: text("version").notNull(), // "2024.1"
 		description: text("description"),

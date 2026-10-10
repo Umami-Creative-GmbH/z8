@@ -9,7 +9,7 @@ import { insertInAppNotification } from "@/lib/notifications/notification-servic
 import type { CreateNotificationParams } from "@/lib/notifications/types";
 
 /**
- * One-time notices that a built-in absence category is available (#1000). Migration 0188
+ * One-time notices that a built-in absence category is available (#1000). Migration 0195
  * gave every organization that existed then the time-off-in-lieu category inactive, with
  * one pending notice. Delivering a notice tells each owner and admin of its organization
  * once, in-app; the idempotency key keeps a retried delivery from telling anyone twice.

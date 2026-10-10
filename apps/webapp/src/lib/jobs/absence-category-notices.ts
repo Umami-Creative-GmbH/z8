@@ -10,7 +10,7 @@ export interface AbsenceCategoryNoticesJobResult extends AbsenceCategoryNoticesR
 
 /**
  * Tells the owners and admins of organizations that existed before time off in lieu (#1000)
- * once that it is available. Pending notices come from migration 0188; with none left the
+ * once that it is available. Pending notices come from migration 0195; with none left the
  * job only finds nothing to do.
  */
 export async function runAbsenceCategoryNoticesJob(): Promise<AbsenceCategoryNoticesJobResult> {

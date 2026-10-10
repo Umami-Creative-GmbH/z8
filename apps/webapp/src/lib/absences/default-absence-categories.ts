@@ -68,7 +68,7 @@ export const defaultAbsenceCategories = [
 		color: "#64748b",
 	},
 	{
-		// #1000: organizations that existed before it got it inactive (migration 0188).
+		// #1000: organizations that existed before it got it inactive (migration 0195).
 		type: "time_off_in_lieu",
 		name: builtInAbsenceCategoryText.time_off_in_lieu.name,
 		description: builtInAbsenceCategoryText.time_off_in_lieu.description,

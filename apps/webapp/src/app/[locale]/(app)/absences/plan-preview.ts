@@ -11,6 +11,7 @@ import {
 	type CoverageEvaluationInput,
 	type ExistingAbsenceInput,
 } from "@/lib/absences/absence-plan-preview";
+import { loadWorkingDays } from "@/lib/absences/absence-days-resolver";
 import { loadTimeOffInLieuPreview } from "@/lib/absences/time-off-in-lieu-preview.server";
 import type { AbsenceRequest } from "@/lib/absences/types";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
@@ -103,34 +104,46 @@ export async function getAbsencePlanPreview(
 			timezone,
 		);
 
-		const [vacationBalance, holidays, existingAbsences, affectedShiftRows, managerId] =
-			await Promise.all([
-				getVacationBalance(currentEmployee.id, range.start.year, timezone),
-				getHolidays(currentEmployee.id, range.startDate, range.endDate),
-				db.query.absenceEntry.findMany({
-					where: and(
-						eq(absenceEntry.employeeId, currentEmployee.id),
-						eq(absenceEntry.organizationId, currentEmployee.organizationId),
-						lte(absenceEntry.startDate, request.endDate),
-						gte(absenceEntry.endDate, request.startDate),
-					),
-					with: { category: true },
-				}),
-				db.query.shift.findMany({
-					where: and(
-						eq(shift.organizationId, currentEmployee.organizationId),
-						eq(shift.employeeId, currentEmployee.id),
-						eq(shift.status, "published"),
-						gte(shift.date, shiftBounds.start),
-						lt(shift.date, shiftBounds.endExclusive),
-					),
-				}),
-				getPrimaryEligibleManagerIdForRequester({
-					db,
-					requesterEmployeeId: currentEmployee.id,
-					organizationId: currentEmployee.organizationId,
-				}),
-			]);
+		const [
+			vacationBalance,
+			holidays,
+			isWorkingDay,
+			existingAbsences,
+			affectedShiftRows,
+			managerId,
+		] = await Promise.all([
+			getVacationBalance(currentEmployee.id, range.start.year, timezone),
+			getHolidays(currentEmployee.id, range.startDate, range.endDate),
+			loadWorkingDays(db, {
+				organizationId: currentEmployee.organizationId,
+				employeeId: currentEmployee.id,
+				startDate: request.startDate,
+				endDate: request.endDate,
+			}),
+			db.query.absenceEntry.findMany({
+				where: and(
+					eq(absenceEntry.employeeId, currentEmployee.id),
+					eq(absenceEntry.organizationId, currentEmployee.organizationId),
+					lte(absenceEntry.startDate, request.endDate),
+					gte(absenceEntry.endDate, request.startDate),
+				),
+				with: { category: true },
+			}),
+			db.query.shift.findMany({
+				where: and(
+					eq(shift.organizationId, currentEmployee.organizationId),
+					eq(shift.employeeId, currentEmployee.id),
+					eq(shift.status, "published"),
+					gte(shift.date, shiftBounds.start),
+					lt(shift.date, shiftBounds.endExclusive),
+				),
+			}),
+			getPrimaryEligibleManagerIdForRequester({
+				db,
+				requesterEmployeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+			}),
+		]);
 
 		const workBalance = category.drawsOnWorkBalance
 			? await loadTimeOffInLieuPreview({
@@ -165,6 +178,7 @@ export async function getAbsencePlanPreview(
 			request,
 			vacationBalance,
 			holidays,
+			isWorkingDay,
 			existingAbsences: typedExistingAbsences.map((absence) => ({
 				id: absence.id,
 				startDate: absence.startDate,

@@ -7,6 +7,7 @@ import {
 import { logger } from "@/app/[locale]/(app)/time-tracking/actions/shared";
 import { auth } from "@/lib/auth";
 import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
+import { monthClosedMessage } from "@/lib/time-tracking/closed-months/refusal-message";
 import { parseOnBehalfClockOutRequest } from "@/lib/time-tracking/on-behalf-clock-out-request";
 import { PROJECT_TASK_INELIGIBILITY_MESSAGES } from "@/lib/time-tracking/project-eligibility";
 
@@ -20,7 +21,10 @@ import { PROJECT_TASK_INELIGIBILITY_MESSAGES } from "@/lib/time-tracking/project
  * attribution preserves the period's; `null` clears it; an ID replaces it.
  */
 const REJECTIONS: Record<
-	Exclude<OnBehalfClockOutRejection["code"], "billing_required" | "attribution_not_allowed">,
+	Exclude<
+		OnBehalfClockOutRejection["code"],
+		"billing_required" | "attribution_not_allowed" | "month_closed"
+	>,
 	{ status: number; error: string }
 > = {
 	access_denied: { status: 403, error: "Not authorized to clock out this employee" },
@@ -35,7 +39,19 @@ const REJECTIONS: Record<
 	},
 };
 
-function rejected(rejection: OnBehalfClockOutRejection, operationId: string | null) {
+async function rejected(rejection: OnBehalfClockOutRejection, operationId: string | null) {
+	if (rejection.code === "month_closed") {
+		// The work touches a closed month (#762).
+		return NextResponse.json(
+			{
+				error: await monthClosedMessage(rejection.month),
+				code: rejection.code,
+				month: rejection.month,
+				operationId,
+			},
+			{ status: 409 },
+		);
+	}
 	if (rejection.code === "billing_required") {
 		// The billing guard's response shape.
 		return NextResponse.json(
@@ -109,7 +125,7 @@ export async function POST(request: NextRequest) {
 	}
 	// Authentication: an organization that requires SSO admits only SSO sessions.
 	if (!(await canAccessOrganizationWithSso(session.session, activeOrganizationId))) {
-		return rejected({ code: "access_denied" }, parsed.operationId ?? null);
+		return await rejected({ code: "access_denied" }, parsed.operationId ?? null);
 	}
 
 	try {
@@ -117,7 +133,7 @@ export async function POST(request: NextRequest) {
 			request: parsed,
 			session: { userId: session.user.id, activeOrganizationId },
 		});
-		if (result.outcome === "rejected") return rejected(result, result.operationId);
+		if (result.outcome === "rejected") return await rejected(result, result.operationId);
 		if (result.outcome === "unknown") {
 			logger.error({ error: result.cause }, "On-behalf clock-out failed");
 			return unknownOutcome(result.operationId);

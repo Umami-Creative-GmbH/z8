@@ -1,15 +1,87 @@
 ---
 title: API Keys
-description: The public Z8 API is not yet available
+description: Let your organization's own systems read Z8 data through the Public API
 icon: Key
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-<Callout type="info" title="Public API Not Yet Available">
-  Z8 does not offer a public API yet. API keys cannot be used to access Z8 data, and no integration should rely on them.
+An API key lets your own systems, such as payroll, BI or HR tools, read your organization's data through the [Public API](/docs/api-reference). The API is read-only.
+
+## Who owns a key
+
+An API key belongs to your organization, not to the admin who created it:
+
+- Every owner and admin of the organization sees and manages all of its keys.
+- The key list names the admin who created each key. When that person leaves the organization, the key keeps working and the list marks the creator as departed.
+- A key stops working only when an admin revokes or disables it, or when it expires.
+
+An organization can have at most 10 API keys.
+
+## Create a key
+
+1. Go to **Settings → Enterprise → API Keys** and select **Create Key**.
+2. Enter a name, choose an expiration and the permissions (key scopes) the key needs.
+3. Optionally set the key's rate limit: the maximum number of requests per second, minute or hour.
+4. Copy the key. It starts with `z8_org` and is shown only once.
+
+<Callout type="warn" title="Keep keys secret">
+  A key reads your organization's data within its scopes. Store it in your integration's secret store, never in client-side code or a public repository.
 </Callout>
 
-To move data out of Z8 today, use [Payroll Export](/docs/guide/admin-guide/payroll-export) or [Analytics & Exports](/docs/guide/admin-guide/analytics-and-exports) in the web app.
+## Key scopes
 
-This page will document API access once the public API is available.
+| Scope | Grants |
+| --- | --- |
+| `time-entries:read` | Work periods: recorded work in its current, corrected state |
+| `absences:read` | Approved and pending absences |
+| `absences:read-health` | Health detail of absences: sick absences with their category and sick detail |
+| `employees:read` | Employees (no contract, salary, address or birthday) |
+| `projects:read` | Projects |
+| `customers:read` | Customers |
+
+Without `absences:read-health`, a sick absence is returned as plain `absent`, with no category and no sick detail. Grant the health scope only to integrations that need it.
+
+## Call the API
+
+Send the key as a Bearer token. The API accepts no browser sessions.
+
+```bash
+curl https://ui.z8-time.app/api/v1/employees \
+  -H "Authorization: Bearer z8_org…"
+```
+
+Use the address you sign in to Z8 at. Every endpoint, its parameters and its responses are in the [API reference](/docs/api-reference). The OpenAPI document is at `/api/v1/openapi.json`.
+
+## Rate limits
+
+Each request counts against the key's own limit and against a limit for your whole organization. Every response to a request with a known key, refusals included, carries:
+
+- `X-RateLimit-Limit`: requests allowed in the current window of the tighter limit.
+- `X-RateLimit-Remaining`: requests left in that window.
+- `X-RateLimit-Reset`: when the window resets, in Unix epoch seconds.
+
+When a limit is used up, the API answers `429` with a `Retry-After` header in seconds.
+
+## Recent requests
+
+Select a key's name to open its detail page. It lists the key's recent requests: when, which endpoint, the response status, the number of rows returned and the caller's IP address. Requests are kept for 90 days.
+
+Creating, editing and revoking a key are recorded in the organization's audit log (**Settings → Enterprise → Audit Log**) with the admin who did it.
+
+## Revoke a key
+
+Open the key's menu in the key list and select **Delete**. Applications using the key lose access immediately. To pause a key instead, edit it and turn **Key Enabled** off.
+
+## Errors
+
+Errors are `application/problem+json` documents with a stable `type`:
+
+| Status | `type` | Meaning |
+| --- | --- | --- |
+| 400 | `validation_failed` | A query parameter is missing or invalid |
+| 401 | `invalid_key` | The key is missing, unknown, revoked, disabled or expired |
+| 402 | `billing_required` | The organization's subscription does not allow API access |
+| 403 | `scope_missing` | The key lacks the endpoint's scope |
+| 404 | `not_found` | No such endpoint |
+| 429 | `rate_limited` | The key's or the organization's limit is used up |

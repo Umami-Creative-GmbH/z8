@@ -43,6 +43,7 @@ import {
 	isClosureCarriedByAutomaticBreak,
 } from "./automatic-break-intent";
 import { canonicalJson } from "./canonical-json";
+import { assertWorkOpen } from "./closed-months/store";
 import {
 	appendClockEntry,
 	ClockingConflictError,
@@ -567,6 +568,13 @@ export async function closeActiveWorkGraph(
 	}
 
 	const start = instantFromDate(period.startTime);
+	// Every writer, the departure and automatic closures included, refuses work
+	// touching a closed month (#762).
+	await assertWorkOpen(tx, {
+		organizationId,
+		employeeId,
+		intervals: [{ start, end: input.eventInstant }],
+	});
 	const durationMinutes = deriveWorkDurationMinutes(start, input.eventInstant);
 	const projectId = await resolveAttribution(
 		tx,

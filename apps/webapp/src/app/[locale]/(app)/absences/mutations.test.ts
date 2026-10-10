@@ -51,6 +51,13 @@ const mockState = vi.hoisted(() => ({
 }));
 
 // Sick notes go with a cancelled absence (#982): sick-notes.integration.test.ts.
+// The closed-month check (#762) has its own PostgreSQL suites; here it never refuses.
+vi.mock("@/lib/time-tracking/closed-months/store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/time-tracking/closed-months/store")>()),
+	assertAbsenceDaysOpen: vi.fn(async () => {}),
+	assertAbsenceOpenById: vi.fn(async () => {}),
+}));
+
 vi.mock("@/lib/personnel-file/sick-note-store", () => ({
 	deleteSickNotesOfCancelledAbsence: mockState.deleteSickNotes,
 }));

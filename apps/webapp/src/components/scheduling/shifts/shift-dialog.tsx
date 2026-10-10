@@ -17,6 +17,7 @@ import { queryKeys } from "@/lib/query/keys";
 import { ShiftDialogFooterActions, ShiftDialogSections } from "./shift-dialog-sections";
 import { useShiftDialogData } from "./use-shift-dialog-data";
 import { type ShiftDialogFormValues, useShiftDialogForm } from "./use-shift-dialog-form";
+import { getStaffingShiftInput, useStaffingSuggestions } from "./use-staffing-suggestions";
 
 interface ShiftDialogProps {
 	open: boolean;
@@ -131,6 +132,13 @@ export function ShiftDialog({
 		templateId: formValues.templateId,
 	});
 
+	const staffingInput = getStaffingShiftInput({ ...formValues, shiftId: shift?.id ?? null });
+	const staffingSuggestions = useStaffingSuggestions({
+		enabled: open && isManager,
+		organizationId,
+		input: staffingInput,
+	});
+
 	const deleteMutation = useMutation({
 		mutationFn: async () => {
 			if (!shift) throw new Error("No shift to delete");
@@ -177,6 +185,16 @@ export function ShiftDialog({
 							isValidatingSkills={isValidatingSkills}
 							isEditing={isEditing}
 							shift={shift}
+							organizationTimezone={organizationTimezone}
+							staffing={
+								staffingInput
+									? {
+											suggestions: staffingSuggestions.data,
+											isLoading: staffingSuggestions.isFetching,
+											isError: staffingSuggestions.isError,
+										}
+									: null
+							}
 						/>
 					</ActionPanelBody>
 

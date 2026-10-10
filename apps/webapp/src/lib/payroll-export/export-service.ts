@@ -38,6 +38,7 @@ import { workPeriodsFromCollectedInput } from "./collected-work";
 import { personioConnector } from "./connectors/personio-connector";
 import { PayrollConnectorRegistry } from "./connectors/registry";
 import { successFactorsConnector } from "./connectors/successfactors-connector";
+import type { PayrollApiConnector } from "./connectors/types";
 import {
 	countWorkPeriods,
 	fetchAbsencesForExport,
@@ -50,6 +51,7 @@ import {
 import { isExpensePayrollFormat } from "./expense-wage-type.types";
 import { successFactorsFormatter } from "./exporters/successfactors/successfactors-formatter";
 import { workdayConnector } from "./exporters/workday/workday-connector";
+import type { PayrollExportApiFormatId, PayrollExportFileFormatId } from "./format-registry";
 import { DatevLohnFormatter } from "./formatters/datev-lohn-formatter";
 import { LexwareLohnFormatter } from "./formatters/lexware-lohn-formatter";
 import { overtimePayoutCodeFormat, overtimePayoutsForFormat } from "./formatters/overtime-payouts";
@@ -78,38 +80,33 @@ import type {
 const logger = createLogger("PayrollExportService");
 
 /**
+ * One implementation per format in the format registry (#823), of the format's
+ * kind: a format registered without one fails typechecking.
+ */
+const fileFormatters: Record<PayrollExportFileFormatId, IPayrollExportFormatter> = {
+	datev_lohn: new DatevLohnFormatter(),
+	lexware_lohn: new LexwareLohnFormatter(),
+	sage_lohn: new SageLohnFormatter(),
+	successfactors_csv: successFactorsFormatter,
+};
+const apiConnectors: Record<PayrollExportApiFormatId, PayrollApiConnector> = {
+	personio: personioConnector,
+	successfactors_api: successFactorsConnector,
+	workday_api: workdayConnector,
+};
+
+/**
  * Registry of available file-based export formatters (DATEV, SAGE, etc.)
  */
-const formatters = new Map<string, IPayrollExportFormatter>();
+const formatters = new Map<string, IPayrollExportFormatter>(Object.entries(fileFormatters));
 
 /**
  * Registry of available API-based exporters (Personio, etc.)
  */
 const connectorRegistry = new PayrollConnectorRegistry();
-
-// Register DATEV formatter
-const datevFormatter = new DatevLohnFormatter();
-formatters.set(datevFormatter.formatId, datevFormatter);
-
-// Register Lexware formatter
-const lexwareFormatter = new LexwareLohnFormatter();
-formatters.set(lexwareFormatter.formatId, lexwareFormatter);
-
-// Register Sage formatter
-const sageFormatter = new SageLohnFormatter();
-formatters.set(sageFormatter.formatId, sageFormatter);
-
-// Register Personio exporter
-connectorRegistry.register(personioConnector);
-
-// Register SAP SuccessFactors exporter (API mode)
-connectorRegistry.register(successFactorsConnector);
-
-// Register Workday exporter (API mode)
-connectorRegistry.register(workdayConnector);
-
-// Register SAP SuccessFactors formatter (CSV mode)
-formatters.set(successFactorsFormatter.formatId, successFactorsFormatter);
+for (const connector of Object.values(apiConnectors)) {
+	connectorRegistry.register(connector);
+}
 
 /**
  * Get formatter by ID
@@ -149,6 +146,14 @@ export function isApiBasedExport(formatId: string): boolean {
 export interface ProcessPayrollExportJobInput {
 	jobId: string;
 	organizationId: string;
+}
+
+export interface ProcessPayrollExportJobOptions {
+	/**
+	 * Upload a file export whatever its size (#1008): a scheduled run has no
+	 * one to hand an inline file to. Interactive runs upload only async jobs.
+	 */
+	storeFile?: boolean;
 }
 
 /**
@@ -271,13 +276,15 @@ export async function createExportJob(params: {
  * Interactive asynchronous execution is handled by the dedicated worker.
  * Supports both file-based formatters (DATEV) and API-based exporters (Personio)
  */
-export async function processExportJob({
-	jobId,
-	organizationId,
-}: ProcessPayrollExportJobInput): Promise<{
+export async function processExportJob(
+	{ jobId, organizationId }: ProcessPayrollExportJobInput,
+	{ storeFile = false }: ProcessPayrollExportJobOptions = {},
+): Promise<{
 	result?: ExportResult;
 	apiResult?: ApiExportResult;
 	downloadUrl?: string;
+	/** The uploaded file's object key. */
+	s3Key?: string;
 }> {
 	logger.info({ jobId, organizationId }, "Processing payroll export job");
 
@@ -432,6 +439,7 @@ export async function processExportJob({
 						job.config.config as Record<string, unknown>,
 						overtimePayouts,
 					),
+					storeFile,
 				);
 			}
 
@@ -470,6 +478,7 @@ export async function processExportJob({
 						job.config.config as Record<string, unknown>,
 						overtimePayouts,
 					),
+					storeFile,
 				);
 			});
 			// After the commit (#855): officers learn of the run and of the reports it left out.
@@ -494,15 +503,16 @@ export async function processExportJob({
 }
 
 /**
- * Stores a file export's result: uploaded for an asynchronous job, returned
- * inline for a synchronous one. `database` is the payroll run's transaction
- * when the file carries expense lines (#852).
+ * Stores a file export's result: uploaded for an asynchronous job or when
+ * `storeFile` asks for it (#1008), otherwise returned inline. `database` is
+ * the payroll run's transaction when the file carries expense lines (#852).
  */
 async function writeFileExport(
 	database: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0],
 	job: { id: string; organizationId: string; isAsync: boolean },
 	exportResult: ExportResult,
-): Promise<{ result?: ExportResult; downloadUrl?: string }> {
+	storeFile: boolean,
+): Promise<{ result?: ExportResult; downloadUrl?: string; s3Key?: string }> {
 	const jobId = job.id;
 	const organizationId = job.organizationId;
 	const contentBuffer =
@@ -510,7 +520,7 @@ async function writeFileExport(
 			? Buffer.from(exportResult.content, exportResult.encoding)
 			: exportResult.content;
 
-	if (job.isAsync) {
+	if (job.isAsync || storeFile) {
 		// Upload to S3
 		const s3Key = `payroll-exports/${organizationId}/${jobId}/${exportResult.fileName}`;
 		await uploadExport(organizationId, s3Key, contentBuffer, exportResult.mimeType);
@@ -536,9 +546,9 @@ async function writeFileExport(
 				and(eq(payrollExportJob.id, jobId), eq(payrollExportJob.organizationId, organizationId)),
 			);
 
-		logger.info({ jobId, organizationId, s3Key }, "Async file export completed");
+		logger.info({ jobId, organizationId, s3Key }, "Stored file export completed");
 
-		return { downloadUrl };
+		return storeFile ? { result: exportResult, downloadUrl, s3Key } : { downloadUrl, s3Key };
 	}
 
 	// Sync export - update job and return result

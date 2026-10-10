@@ -276,6 +276,10 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"personnel_file_expired_today",
 	// Documents newly due for deletion, for covering officers (#870)
 	"personnel_file_due_for_deletion",
+	// Closed months (#762): automatic close, its blockers, and reopenings
+	"month_closed_automatically",
+	"month_close_blocked",
+	"month_reopened",
 	// One-time notice to owners and admins that time off in lieu is available (#1000)
 	"time_off_in_lieu_available",
 	// A balance adjustment on the employee's own work balance (#996)
@@ -412,15 +416,6 @@ export const memberStatusEnum = pgEnum("member_status", [
 	"approved", // active member
 	"rejected", // invitation rejected
 	"suspended", // temporarily disabled
-]);
-
-// Payroll export format enum
-export const payrollExportFormatEnum = pgEnum("payroll_export_format_type", [
-	"datev_lohn",
-	"personio",
-	"sage",
-	"lexware",
-	"custom",
 ]);
 
 // Payroll export status enum

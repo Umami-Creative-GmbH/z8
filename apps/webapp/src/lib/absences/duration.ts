@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
-import { calculateBusinessDaysWithHalfDays } from "./date-utils";
-import type { AbsenceDurationKind, DayPeriod, Holiday } from "./types";
+import { countAbsenceDays, type IsWorkingDay } from "./absence-days";
+import type { AbsenceDurationKind, DayPeriod } from "./types";
 
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -144,40 +144,14 @@ export function validateAbsenceDurationInput(input: AbsenceDurationInput): strin
 	return null;
 }
 
-export function calculateAbsenceDurationDays(
+/** The absence days a requested absence takes; an explicit partial day counts ½ on its start day. */
+export function countRequestedAbsenceDays(
 	input: AbsenceDurationInput,
-	holidays: Holiday[] = [],
+	isWorkingDay: IsWorkingDay,
 ): number {
-	const normalized = normalizeAbsenceDurationInput(input);
-
-	if (normalized.durationKind === "partial_day" && hasExplicitPartialTimes(normalized)) {
-		return calculateBusinessDaysWithHalfDays(
-			normalized.startDate,
-			"am",
-			normalized.startDate,
-			"am",
-			holidays,
-		) > 0
-			? 0.5
-			: 0;
-	}
-
-	if (normalized.durationKind === "partial_day") {
-		return calculateBusinessDaysWithHalfDays(
-			normalized.startDate,
-			normalized.startPeriod,
-			normalized.endDate,
-			normalized.endPeriod,
-			holidays,
-		);
-	}
-
-	return calculateBusinessDaysWithHalfDays(
-		normalized.startDate,
-		"full_day",
-		normalized.endDate,
-		"full_day",
-		holidays,
+	return countAbsenceDays(
+		toAbsenceEntryDurationFields(normalizeAbsenceDurationInput(input)),
+		isWorkingDay,
 	);
 }
 

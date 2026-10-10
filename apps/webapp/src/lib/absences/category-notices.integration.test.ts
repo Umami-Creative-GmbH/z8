@@ -32,7 +32,7 @@ describe("time off in lieu for new and existing organizations", () => {
 		await fixture?.close();
 	});
 
-	/** An organization that existed before #1000: seeded the way migration 0188 seeds it. */
+	/** An organization that existed before #1000: seeded the way migration 0195 seeds it. */
 	async function existingOrganization() {
 		const organizationId = await fixture.createOrganization();
 		const owner = await fixture.seedEmployee({ organizationId, role: "owner" });
@@ -125,7 +125,7 @@ describe("time off in lieu for new and existing organizations", () => {
 	it("seeds an organization that existed before the migration inactive, with one pending notice", async () => {
 		const organizationId = await fixture.createOrganization();
 		const migration = await readFile(
-			fileURLToPath(new URL("../../../drizzle/0189_time_off_in_lieu.sql", import.meta.url)),
+			fileURLToPath(new URL("../../../drizzle/0195_time_off_in_lieu.sql", import.meta.url)),
 			"utf8",
 		);
 		const seeding = migration.split("--> statement-breakpoint").at(-1) ?? "";

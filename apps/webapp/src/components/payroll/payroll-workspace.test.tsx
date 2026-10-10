@@ -41,6 +41,12 @@ vi.mock("@tanstack/react-query", () => ({
 	useQueryClient: () => ({ invalidateQueries: async () => undefined }),
 }));
 vi.mock("./payroll-runs-card", () => ({ PayrollRunsCard: () => null }));
+vi.mock("@/components/closed-months/month-closure-strip", () => ({
+	MonthClosureStrip: () => null,
+}));
+vi.mock("@/components/closed-months/unclosed-months-notice", () => ({
+	UnclosedMonthsNotice: () => null,
+}));
 vi.mock("./payroll-run-readiness-card", () => ({ PayrollRunReadinessCard: () => null }));
 vi.mock("./overtime-payout-readiness-alert", () => ({ OvertimePayoutReadinessAlert: () => null }));
 vi.mock("@/app/[locale]/(app)/payroll/actions", () => ({

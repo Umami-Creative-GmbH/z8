@@ -10,6 +10,10 @@ const typeSource = readFileSync(
 	fileURLToPath(new URL("./employee-action-types.ts", import.meta.url)),
 	"utf8",
 );
+const selectableSource = readFileSync(
+	fileURLToPath(new URL("./selectable-employees.ts", import.meta.url)),
+	"utf8",
+);
 const eligibilitySource = readFileSync(
 	fileURLToPath(new URL("./employee-invitation-draft-eligibility.ts", import.meta.url)),
 	"utf8",
@@ -17,19 +21,19 @@ const eligibilitySource = readFileSync(
 
 describe("employee query name source", () => {
 	it("uses auth user structured names for employee search and sort", () => {
-		expect(source).toContain("$" + "{user.firstName}");
-		expect(source).toContain("$" + "{user.lastName}");
-		expect(source).toContain("ilike(user.firstName, pattern)");
-		expect(source).toContain("ilike(user.lastName, pattern)");
-		expect(source).not.toContain("ilike(employee.firstName, pattern)");
-		expect(source).not.toContain("ilike(employee.lastName, pattern)");
+		expect(selectableSource).toContain("$" + "{user.firstName}");
+		expect(selectableSource).toContain("$" + "{user.lastName}");
+		expect(selectableSource).toContain("ilike(user.firstName, pattern)");
+		expect(selectableSource).toContain("ilike(user.lastName, pattern)");
+		expect(selectableSource).not.toContain("ilike(employee.firstName, pattern)");
+		expect(selectableSource).not.toContain("ilike(employee.lastName, pattern)");
 	});
 
 	it("mirrors auth structured names onto selectable root fields", () => {
-		expect(source).toContain("firstName: row.user.firstName");
-		expect(source).toContain("lastName: row.user.lastName");
-		expect(source).not.toContain("firstName: row.employee.firstName");
-		expect(source).not.toContain("lastName: row.employee.lastName");
+		expect(selectableSource).toContain("firstName: row.user.firstName");
+		expect(selectableSource).toContain("lastName: row.user.lastName");
+		expect(selectableSource).not.toContain("firstName: row.employee.firstName");
+		expect(selectableSource).not.toContain("lastName: row.employee.lastName");
 	});
 
 	it("includes invitation draft rows for org admins", () => {

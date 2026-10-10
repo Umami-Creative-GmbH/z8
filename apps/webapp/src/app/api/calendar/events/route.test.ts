@@ -70,6 +70,10 @@ vi.mock("@/lib/calendar/work-policy-requirements", () => ({
 	getDailyWorkRequirementsForEmployee: mockState.getDailyWorkRequirementsForEmployee,
 }));
 
+vi.mock("@/lib/time-tracking/closed-months/store", () => ({
+	closedRangesForEmployee: vi.fn().mockResolvedValue([]),
+}));
+
 vi.mock("@/lib/work-balance/service", () => ({
 	getEmployeeWorkBalance: mockState.getEmployeeWorkBalance,
 }));

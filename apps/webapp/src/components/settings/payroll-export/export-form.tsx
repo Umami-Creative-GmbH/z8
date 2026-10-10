@@ -4,6 +4,7 @@ import { IconDownload, IconLoader2 } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
@@ -12,6 +13,7 @@ import {
 	getFilterOptionsAction,
 	startExportAction,
 } from "@/app/[locale]/(app)/settings/payroll-export/actions";
+import { UnclosedMonthsNotice } from "@/components/closed-months/unclosed-months-notice";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +41,11 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+	type PayrollExportFormatId,
+	payrollExportFormatIds,
+} from "@/lib/payroll-export/format-registry";
+import { monthsOfDateRange } from "@/lib/time-tracking/closed-months/month-label";
 
 interface ExportFormProps {
 	organizationId: string;
@@ -53,15 +60,6 @@ interface ExportFormProps {
 	onExportComplete?: () => void;
 }
 
-const EXPORT_FORMAT_IDS = [
-	"datev_lohn",
-	"lexware_lohn",
-	"sage_lohn",
-	"personio",
-	"successfactors_api",
-	"successfactors_csv",
-	"workday_api",
-] as const;
 type Translate = ReturnType<typeof useTranslate>["t"];
 type DateMode = "month" | "custom";
 
@@ -82,7 +80,7 @@ export function ExportForm({
 	});
 	const formatOptions = getFormatOptions(t);
 	const firstConfiguredFormatId =
-		EXPORT_FORMAT_IDS.find((id) => exportAvailability[id]?.configured) ??
+		payrollExportFormatIds().find((id) => exportAvailability[id]?.configured) ??
 		"datev_lohn";
 	const [requestedFormatId, setRequestedFormatId] = useState(
 		config?.formatId && exportAvailability[config.formatId]?.configured
@@ -111,6 +109,11 @@ export function ExportForm({
 	const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
 	const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
 	const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
+	// The calendar months the chosen range touches, for the closed-month warning (#762).
+	const rangeMonths =
+		dateMode === "month"
+			? [Temporal.PlainYearMonth.from({ year: selectedYear, month: selectedMonth }).toString()]
+			: monthsOfDateRange(customStartDate, customEndDate);
 
 	const handleExport = () => {
 		const dateRange =
@@ -275,6 +278,10 @@ export function ExportForm({
 					onEndChange={setCustomEndDate}
 					t={t}
 				/>
+				<UnclosedMonthsNotice
+					months={rangeMonths}
+					employeeIds={selectedEmployeeIds.length ? selectedEmployeeIds : undefined}
+				/>
 				<FiltersSection
 					options={filterOptions}
 					employeeIds={selectedEmployeeIds}
@@ -313,47 +320,32 @@ export function ExportForm({
 	);
 }
 
+/** Every registered format, in registry order; a format without a label shows its id. */
 function getFormatOptions(t: Translate) {
-	return [
-		{
-			id: "datev_lohn",
-			label: t("settings.payrollExport.export.format.datev", "DATEV"),
-		},
-		{
-			id: "lexware_lohn",
-			label: t("settings.payrollExport.export.format.lexware", "Lexware"),
-		},
-		{
-			id: "sage_lohn",
-			label: t("settings.payrollExport.export.format.sage", "Sage"),
-		},
-		{
-			id: "personio",
-			label: t("settings.payrollExport.export.format.personio", "Personio"),
-		},
-		{
-			id: "successfactors_api",
-			label: t(
-				"settings.payrollExport.export.format.successfactorsApi",
-				"SAP SuccessFactors (API)",
-			),
-		},
-		{
-			id: "successfactors_csv",
-			label: t(
-				"settings.payrollExport.export.format.successfactorsCsv",
-				"SAP SuccessFactors (CSV)",
-			),
-		},
-		{
-			id: "workday_api",
-			label: t("settings.payrollExport.export.format.workday", "Workday"),
-		},
-	];
+	const labels: Record<PayrollExportFormatId, string> = {
+		datev_lohn: t("settings.payrollExport.export.format.datev", "DATEV"),
+		lexware_lohn: t("settings.payrollExport.export.format.lexware", "Lexware"),
+		sage_lohn: t("settings.payrollExport.export.format.sage", "Sage"),
+		personio: t("settings.payrollExport.export.format.personio", "Personio"),
+		successfactors_api: t(
+			"settings.payrollExport.export.format.successfactorsApi",
+			"SAP SuccessFactors (API)",
+		),
+		successfactors_csv: t(
+			"settings.payrollExport.export.format.successfactorsCsv",
+			"SAP SuccessFactors (CSV)",
+		),
+		workday_api: t("settings.payrollExport.export.format.workday", "Workday"),
+	};
+	return payrollExportFormatIds().map((id) => ({ id, label: labels[id] ?? id }));
 }
 
 function getExportButtonLabel(id: string, t: Translate) {
-	const labels: Record<string, [string, string]> = {
+	const labels: Record<PayrollExportFormatId, [string, string]> = {
+		datev_lohn: [
+			"settings.payrollExport.export.exportButtonDatev",
+			"Export to DATEV",
+		],
 		lexware_lohn: [
 			"settings.payrollExport.export.exportButtonLexware",
 			"Export to Lexware",
@@ -379,9 +371,9 @@ function getExportButtonLabel(id: string, t: Translate) {
 			"Export to Workday",
 		],
 	};
-	const [key, fallback] = labels[id] ?? [
-		"settings.payrollExport.export.exportButtonDatev",
-		"Export to DATEV",
+	const [key, fallback] = labels[id as PayrollExportFormatId] ?? [
+		"settings.payrollExport.export.title",
+		"Export Payroll Data",
 	];
 	return t(key, fallback);
 }

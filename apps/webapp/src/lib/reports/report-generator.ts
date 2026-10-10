@@ -12,6 +12,8 @@ import {
 	employeeRateHistory,
 	workPeriod,
 } from "@/db/schema";
+import { clipAbsenceDayRange, countAbsenceDays } from "@/lib/absences/absence-days";
+import { loadWorkingDays } from "@/lib/absences/absence-days-resolver";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import {
 	endOfDay,
@@ -99,28 +101,6 @@ async function loadCompletedWorkPeriods(
 			),
 		)
 		.orderBy(workPeriod.startTime);
-}
-
-function clippedBusinessDays(
-	startDate: string,
-	endDate: string,
-	rangeStart: string,
-	rangeEnd: string,
-): number {
-	let date =
-		comparePlainDates(parsePlainDate(startDate), parsePlainDate(rangeStart)) < 0
-			? parsePlainDate(rangeStart)
-			: parsePlainDate(startDate);
-	const end =
-		comparePlainDates(parsePlainDate(endDate), parsePlainDate(rangeEnd)) > 0
-			? parsePlainDate(rangeEnd)
-			: parsePlainDate(endDate);
-	let days = 0;
-	while (comparePlainDates(date, end) <= 0) {
-		if (date.dayOfWeek < 6) days += 1;
-		date = date.add({ days: 1 });
-	}
-	return days;
 }
 
 /**
@@ -384,6 +364,12 @@ export async function aggregateAbsences(
 		},
 		orderBy: (absences, { asc }) => [asc(absences.startDate)],
 	});
+	const isWorkingDay = await loadWorkingDays(db, {
+		organizationId,
+		employeeId,
+		startDate: rangeStartStr,
+		endDate: rangeEndStr,
+	});
 
 	const byCategory = new Map<string, AbsenceSummary>();
 	let totalDays = 0;
@@ -398,12 +384,11 @@ export async function aggregateAbsences(
 		const categoryName = absence.category.name;
 		const categoryType = absence.category.type;
 
-		const days = clippedBusinessDays(
-			absence.startDate,
-			absence.endDate,
-			rangeStartStr,
-			rangeEndStr,
-		);
+		const clipped = clipAbsenceDayRange(absence, {
+			startDate: rangeStartStr,
+			endDate: rangeEndStr,
+		});
+		const days = clipped ? countAbsenceDays(clipped, isWorkingDay) : 0;
 
 		// Update category totals
 		if (!byCategory.has(categoryName)) {

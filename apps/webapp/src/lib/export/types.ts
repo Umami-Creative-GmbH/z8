@@ -3,6 +3,15 @@
  * This file is safe to import from client components
  */
 
+/**
+ * Locale-free settings route that opens Data Export on the Export History tab
+ * of one organization. The organization sits in the path, not the query,
+ * because the sign-in redirect keeps only the path of the requested page.
+ */
+export function exportHistoryPath(organizationId: string): string {
+	return `/settings/export/history/${encodeURIComponent(organizationId)}`;
+}
+
 export type ExportCategory =
 	| "employees"
 	| "teams"
