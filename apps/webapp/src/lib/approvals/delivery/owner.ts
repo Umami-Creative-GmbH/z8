@@ -13,7 +13,7 @@ import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { loadNotificationChannelPreferences } from "@/lib/notifications/notification-service";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
-import { readApprovalAuthoritySnapshot } from "../authority";
+import { isCanonicalOnlyApprovalKind, readApprovalAuthoritySnapshot } from "../authority";
 import { isCovering, loadEmployeeName } from "../deputy/deputy-reads";
 import type { EscalationAttentionInput } from "../escalation/attention";
 import {
@@ -86,7 +86,13 @@ export interface ApprovalDeliveryAdapter {
 	acceptsEscalationDelivery(organizationId: string): Promise<boolean>;
 	sendInitial(input: {
 		organizationId: string;
-		approvalRequestId: string;
+		/** The compatibility request the card names; null for a canonical-only kind. */
+		approvalRequestId: string | null;
+		/**
+		 * The exact assignment of a canonical-only kind (#1059), which has no legacy
+		 * request: the card is prepared and bound for it instead.
+		 */
+		canonicalAssignment?: { workflowId: string; stageId: string; assignmentId: string };
 		recipientEmployeeId: string;
 		recipientUserId: string;
 		/**
@@ -438,7 +444,16 @@ async function processInitial(
 		)
 		.limit(1);
 	if (!recipient) return finishSimply(work, "cancelled", "recipient_inactive");
-	if (!state.approvalRequestId) {
+	// A canonical-only kind (#1059) has no legacy request: its card names the assignment.
+	const canonicalAssignment =
+		!state.approvalRequestId &&
+		isCanonicalOnlyApprovalKind(work.workflowType) &&
+		work.workflowId &&
+		work.assignmentId &&
+		state.stageId
+			? { workflowId: work.workflowId, stageId: state.stageId, assignmentId: work.assignmentId }
+			: null;
+	if (!state.approvalRequestId && !canonicalAssignment) {
 		const finished = await finishWithAttention(work, {
 			status: "failed",
 			outcome: "permanent:unsupported_reference",
@@ -466,6 +481,7 @@ async function processInitial(
 	const sent = await adapter.sendInitial({
 		organizationId: work.organizationId,
 		approvalRequestId: state.approvalRequestId,
+		...(canonicalAssignment ? { canonicalAssignment } : {}),
 		recipientEmployeeId: work.recipientEmployeeId,
 		recipientUserId: recipient.userId,
 		...(work.actingForEmployeeId ? { actingForEmployeeId: work.actingForEmployeeId } : {}),

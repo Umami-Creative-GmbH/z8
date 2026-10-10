@@ -117,6 +117,7 @@ const WORKFLOW_TYPES = new Set<ApprovalWorkflowType>([
 	"travel_expense",
 	"shift_request",
 	"compliance_exception",
+	"period_submission",
 ]);
 
 function fail(

@@ -12,6 +12,7 @@ export const approvalTypeOptions = [
 	{ value: "travel_expense" },
 	{ value: "shift_request" },
 	{ value: "compliance_exception" },
+	{ value: "period_submission" },
 ] as const;
 
 export type ApprovalPolicyApprovalType =

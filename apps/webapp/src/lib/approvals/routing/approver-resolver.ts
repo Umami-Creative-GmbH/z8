@@ -129,6 +129,30 @@ function resolveDisposition(
 	return { activationMode: "human", approverEmployeeIds };
 }
 
+/**
+ * Kinds a requester never completes by being their own approver (#1059). A stage that resolves
+ * to the requester among others goes to the others; one that resolves to the requester alone
+ * goes to the organization's admins other than the requester, and is refused without one.
+ */
+const REQUESTER_NEVER_AUTO_APPROVES: ReadonlySet<string> = new Set(["period_submission"]);
+
+function resolveWithoutRequester(
+	candidateIds: string[],
+	context: ApprovalRoutingContext,
+	directory: ApprovalStageReviewerDirectory,
+): ApprovalStageReviewerResolution {
+	const others = candidateIds.filter((id) => id !== context.requesterEmployeeId);
+	if (others.length > 0 || candidateIds.length === 0) {
+		return resolveDisposition(others, context);
+	}
+	return resolveDisposition(
+		activeOrganizationAdminIds(directory, context.organizationId).filter(
+			(id) => id !== context.requesterEmployeeId,
+		),
+		context,
+	);
+}
+
 export function resolveApprovalStageReviewers({
 	context,
 	stage,
@@ -229,22 +253,24 @@ export function resolveApprovalStageReviewers({
 			})()
 		: [];
 
+	const dispose = (candidateIds: string[]) =>
+		REQUESTER_NEVER_AUTO_APPROVES.has(context.workflowType)
+			? resolveWithoutRequester(candidateIds, context, directory)
+			: resolveDisposition(candidateIds, context);
+
 	if (primaryCandidateIds.length > 0) {
-		return resolveDisposition(primaryCandidateIds, context);
+		return dispose(primaryCandidateIds);
 	}
 
 	switch (stage.fallbackBehavior) {
 		case "fail":
-			return resolveDisposition([], context);
+			return dispose([]);
 		case "default_manager": {
 			const result = resolveEligibleManagers(managerInput);
-			return resolveDisposition(result.ok ? result.managerIds : [], context);
+			return dispose(result.ok ? result.managerIds : []);
 		}
 		case "organization_admin":
-			return resolveDisposition(
-				activeOrganizationAdminIds(directory, context.organizationId),
-				context,
-			);
+			return dispose(activeOrganizationAdminIds(directory, context.organizationId));
 		default:
 			throw new ApprovalStageActivationError(
 				"invalid_stage_resolver",

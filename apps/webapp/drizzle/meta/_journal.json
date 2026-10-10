@@ -1443,6 +1443,13 @@
       "when": 1802016000000,
       "tag": "0205_period_submission_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 206,
+      "version": "7",
+      "when": 1802102400000,
+      "tag": "0206_period_submission",
+      "breakpoints": true
     }
   ]
 }

@@ -4,6 +4,11 @@ import { unstable_rethrow } from "next/navigation";
 import { db } from "@/db";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
+import { systemClock } from "@/lib/datetime/temporal-core";
+import {
+	type EmployeePeriodView,
+	loadEmployeePeriodView,
+} from "@/lib/time-tracking/period-submissions/employee-period-view-store";
 import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import type { TimeSummary } from "@/lib/time-tracking/types";
 import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
@@ -67,6 +72,17 @@ export async function readHistoryRegion(
 		canApproveTimeEntries:
 			context.membershipRole === "admin" || context.membershipRole === "owner",
 	};
+}
+
+/** The employee's period submissions (#1059); null when the organization collects none. */
+export async function readPeriodsRegion(
+	context: EmployeeRenderContext,
+): Promise<EmployeePeriodView | null> {
+	return loadEmployeePeriodView(db, {
+		organizationId: context.employee.organizationId,
+		employeeId: context.employee.id,
+		now: systemClock.nowInstant(),
+	});
 }
 
 export async function getSafeEmployeeWorkBalance(

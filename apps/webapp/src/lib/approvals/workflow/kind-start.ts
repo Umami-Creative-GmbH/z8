@@ -23,4 +23,5 @@ export const APPROVAL_KIND_START: Readonly<Record<ApprovalWorkflowType, Approval
 	travel_expense: "legacy",
 	shift_request: "legacy",
 	compliance_exception: "legacy",
+	period_submission: "canonical_only",
 };

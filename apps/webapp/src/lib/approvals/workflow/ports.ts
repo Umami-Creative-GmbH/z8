@@ -3,6 +3,7 @@ import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ApprovalWriteGateResult } from "../authority/resolution";
 import type { ApprovedCancellationAuthorization } from "../domain-adapters/registry";
 import type { ApprovalTerminalFinalizationResult } from "../domain-adapters/types";
+import type { PeriodSubmissionApprovalSource } from "../domain-adapters/period-submission-contract";
 import type { OrdinaryWorkPeriodApprovalSource } from "../domain-adapters/work-period-contract";
 import type { RequesterEligibilityMode } from "../policies/manager-eligibility";
 import type { ApprovalProjectionWriteInput } from "../projection/contracts";
@@ -750,6 +751,7 @@ export interface ApprovalWorkflowSourceMap {
 	travel_expense: unknown;
 	shift_request: unknown;
 	compliance_exception: unknown;
+	period_submission: PeriodSubmissionApprovalSource;
 }
 
 /** Loads a source only from the transaction-scoped canonical workflow identity. */

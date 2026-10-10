@@ -766,10 +766,16 @@ function toPersistedCanonicalDecisionRequest(
 ): PersistedApprovalRequestForDecision | null {
 	const workflow = assignment?.workflow;
 	const stage = assignment?.stage;
+	// A decided period submission (#1059) is reported as already decided, like the time kinds.
+	const periodSubmission =
+		workflow?.workflowType === "period_submission" &&
+		workflow.sourceType === "period_submission";
 	const supportedWorkflow =
-		workflow?.workflowType === "manual_time_submission" ||
-		workflow?.workflowType === "policy_clock_out" ||
-		workflow?.workflowType === "time_correction";
+		periodSubmission ||
+		(workflow?.sourceType === "time_entry" &&
+			(workflow.workflowType === "manual_time_submission" ||
+				workflow.workflowType === "policy_clock_out" ||
+				workflow.workflowType === "time_correction"));
 	const ordinaryWorkflow =
 		workflow?.workflowType === "manual_time_submission" ||
 		workflow?.workflowType === "policy_clock_out";
@@ -799,7 +805,6 @@ function toPersistedCanonicalDecisionRequest(
 		workflow.organizationId !== organizationId ||
 		stage.organizationId !== organizationId ||
 		stage.workflowId !== workflow.id ||
-		workflow.sourceType !== "time_entry" ||
 		!workflow.sourceId ||
 		!workflow.requesterEmployeeId ||
 		!supportedWorkflow ||
@@ -810,13 +815,15 @@ function toPersistedCanonicalDecisionRequest(
 	return {
 		id: assignment.id,
 		targetType: "canonical_assignment",
-		entityType: "time_entry",
+		entityType: periodSubmission ? "period_submission" : "time_entry",
 		entityId: workflow.sourceId,
 		organizationId,
 		approverId: assignment.approverEmployeeId,
 		requesterEmployeeId: workflow.requesterEmployeeId,
 		status: assignment.status as ApprovalInboxStatus,
-		workflowKind: workflow.workflowType as TimeApprovalKind,
+		workflowKind: periodSubmission
+			? "period_submission"
+			: (workflow.workflowType as TimeApprovalKind),
 	};
 }
 
