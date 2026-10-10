@@ -3,8 +3,9 @@ import type { db as appDb } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { DEFAULT_FINANCE_QUEUE_VIEW, financeQueueSearch } from "./finance-queue-params";
-import { classifyPayrollRunCandidates, paysThroughPayrollRuns } from "./payroll-run";
+import { classifyPayrollRunCandidates } from "./payroll-run";
 import type { PayrollRunSkip } from "./payroll-run-classification";
+import { paysThroughPayrollRuns } from "./reimbursement-channel";
 import type { SettlementSource, SettlementTitle } from "./settlement-store";
 
 /**
@@ -17,7 +18,7 @@ import type { SettlementSource, SettlementTitle } from "./settlement-store";
  * report is listed exactly when the export would skip it.
  */
 
-type Executor = typeof appDb;
+type Database = typeof appDb;
 
 export interface PayrollRunReadinessEntry {
 	source: SettlementSource;
@@ -36,7 +37,7 @@ export type PayrollRunReadiness =
 	{ applies: false } | { applies: true; entries: PayrollRunReadinessEntry[] };
 
 export async function getPayrollRunReadiness(
-	database: Executor,
+	database: Database,
 	input: {
 		organizationId: string;
 		/** Any payroll export format; an API connector carries nothing. */
@@ -82,7 +83,7 @@ export async function getPayrollRunReadiness(
 }
 
 async function employeeNames(
-	database: Executor,
+	database: Database,
 	input: { organizationId: string; employeeIds: string[] },
 ): Promise<Map<string, string | null>> {
 	if (input.employeeIds.length === 0) return new Map();

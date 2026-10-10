@@ -69,8 +69,6 @@ type Database = typeof appDb;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type Executor = Database | Transaction;
 
-export type { PayrollRunSkip, PayrollRunSkipReason } from "./payroll-run-classification";
-
 /** A report or legacy claim awaiting reimbursement that a run does not take, and why. */
 export type PayrollRunSkipped = PayrollRunSkip & { source: SettlementSource; employeeId: string };
 
@@ -105,8 +103,6 @@ export async function exportIsPayrollRun(
 	if (!isExpensePayrollFormat(input.formatId)) return false;
 	return paysThroughPayrollRuns(database, input.organizationId);
 }
-
-export { paysThroughPayrollRuns };
 
 /**
  * Every report and legacy claim awaiting reimbursement in a run's scope, each
