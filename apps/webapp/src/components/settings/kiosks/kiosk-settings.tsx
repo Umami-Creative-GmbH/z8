@@ -141,6 +141,7 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 				open={creating}
 				onOpenChange={setCreating}
 				locations={data.locations}
+				defaultTimezone={data.organizationTimezone}
 				onCreated={(code, kioskName) => {
 					setCreating(false);
 					setPairing({ code, kioskName });

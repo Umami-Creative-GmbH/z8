@@ -17,6 +17,7 @@ import {
 	revokeKiosk,
 	updateKiosk,
 } from "@/lib/time-tracking/kiosk/kiosk-store";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { isUuid } from "@/lib/validations/uuid";
 
 export type KioskData = {
@@ -39,6 +40,8 @@ export type KioskLocationOption = { id: string; name: string };
 export type KioskAdminData = {
 	kiosks: KioskData[];
 	locations: KioskLocationOption[];
+	/** The organization's zone, the default zone of a new kiosk (locations carry no zone). */
+	organizationTimezone: string;
 };
 
 export type IssuedPairingCodeData = {
@@ -66,13 +69,14 @@ export async function getKioskAdminDataAction(): Promise<
 > {
 	return runRefusalAction("kiosk.adminData", KioskSettingsRefusal, async (db) => {
 		const { organizationId } = await requireKioskAdmin();
-		const [kiosks, locations] = await Promise.all([
+		const [kiosks, locations, organizationTimezone] = await Promise.all([
 			listKiosks(db, organizationId),
 			db
 				.select({ id: location.id, name: location.name })
 				.from(location)
 				.where(and(eq(location.organizationId, organizationId), eq(location.isActive, true)))
 				.orderBy(asc(location.name)),
+			loadOrganizationTimezone(db, organizationId),
 		]);
 		return {
 			kiosks: kiosks.map((row) => ({
@@ -89,6 +93,7 @@ export async function getKioskAdminDataAction(): Promise<
 				revokedAt: row.revokedAt?.toISOString() ?? null,
 			})),
 			locations,
+			organizationTimezone,
 		};
 	});
 }

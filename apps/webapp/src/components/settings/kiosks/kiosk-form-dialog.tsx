@@ -50,6 +50,8 @@ type KioskFormDialogProps = {
 } & (
 	| {
 			mode: "create";
+			/** The organization's zone, the default zone of a new kiosk. */
+			defaultTimezone: string;
 			onCreated: (issued: IssuedPairingCodeData, kioskName: string) => void;
 	  }
 	| { mode: "edit"; kiosk: KioskData; onSaved: () => void }
@@ -61,15 +63,6 @@ type KioskFormValues = {
 	timezone: string;
 	boardEnabled: boolean;
 };
-
-/** The IANA zone of the admin's browser, the default zone of a new kiosk. */
-function browserTimeZone(): string {
-	try {
-		return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-	} catch {
-		return "UTC";
-	}
-}
 
 /** Creates a kiosk, or edits one: name, location, zone and (when editing) the who-is-in board. */
 export function KioskFormDialog(props: KioskFormDialogProps) {
@@ -87,7 +80,8 @@ function KioskFormDialogContent(props: KioskFormDialogProps) {
 		defaultValues: {
 			name: editing?.name ?? "",
 			locationId: editing?.locationId ?? props.locations[0]?.id ?? "",
-			timezone: editing?.timezone ?? browserTimeZone(),
+			// A new kiosk starts in the organization's zone, never the admin's browser zone.
+			timezone: props.mode === "edit" ? props.kiosk.timezone : props.defaultTimezone,
 			boardEnabled: editing?.boardEnabled ?? false,
 		} satisfies KioskFormValues,
 		onSubmit: async ({ value }) => {

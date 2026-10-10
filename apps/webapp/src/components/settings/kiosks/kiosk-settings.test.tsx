@@ -61,7 +61,11 @@ function kiosk(overrides: Partial<KioskData> = {}): KioskData {
 }
 
 function renderSettings(kiosks: KioskData[] = []) {
-	const data: KioskAdminData = { kiosks, locations: [store] };
+	const data: KioskAdminData = {
+		kiosks,
+		locations: [store],
+		organizationTimezone: "America/New_York",
+	};
 	return render(<KioskSettings data={data} />);
 }
 
@@ -83,7 +87,7 @@ describe("KioskSettings", () => {
 		expect(within(row).getByText(/9:30\sAM \(Europe\/Berlin\)/)).toBeTruthy();
 	});
 
-	it("creates a kiosk in the browser's zone and shows its pairing code with a QR link", async () => {
+	it("creates a kiosk in the organization's zone by default and shows its pairing code with a QR link", async () => {
 		mocks.createKioskAction.mockResolvedValue({
 			success: true,
 			data: {
@@ -95,9 +99,8 @@ describe("KioskSettings", () => {
 		renderSettings();
 
 		fireEvent.click(screen.getByRole("button", { name: "Add kiosk" }));
-		expect((screen.getByLabelText("Time zone") as HTMLInputElement).value).toBe(
-			Intl.DateTimeFormat().resolvedOptions().timeZone,
-		);
+		// The organization's zone, never the admin's browser zone (#761).
+		expect((screen.getByLabelText("Time zone") as HTMLInputElement).value).toBe("America/New_York");
 		fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Back door" } });
 		fireEvent.change(screen.getByLabelText("Time zone"), { target: { value: "Europe/Vienna" } });
 		fireEvent.click(screen.getByRole("button", { name: "Create kiosk" }));

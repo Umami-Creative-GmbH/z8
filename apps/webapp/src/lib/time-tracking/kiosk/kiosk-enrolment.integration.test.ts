@@ -237,6 +237,13 @@ describe("kiosk enrolment on PostgreSQL", () => {
 		]);
 	});
 
+	it("offers the organization's zone as a new kiosk's zone (#761)", async () => {
+		expect(await admin.getKioskAdminDataAction()).toMatchObject({
+			success: true,
+			data: { organizationTimezone: "Europe/Berlin" },
+		});
+	});
+
 	it("pairs a device with the code once and authenticates its requests", async () => {
 		const created = await createdKiosk();
 
