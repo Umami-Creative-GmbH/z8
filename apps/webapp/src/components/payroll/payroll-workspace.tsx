@@ -594,6 +594,21 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 					? t("payroll.export.queued", "Payroll export queued")
 					: t("payroll.export.completed", "Payroll export completed"),
 			);
+			if (result.data.unmappedOvertimePayoutCount) {
+				toast.warning(
+					t(
+						"payroll.export.unmappedOvertimePayouts",
+						"{count, plural, one {# overtime payout was} other {# overtime payouts were}} not exported",
+						{ count: result.data.unmappedOvertimePayoutCount },
+					),
+					{
+						description: t(
+							"payroll.export.unmappedOvertimePayoutsDescription",
+							"No wage type is mapped to Overtime for this format. Ask an organization administrator to map one, or pay these hours out another way.",
+						),
+					},
+				);
+			}
 			// A payroll run may now include expense reports (#852), which changes readiness (#854).
 			void queryClient.invalidateQueries({
 				queryKey: queryKeys.travelExpenses.payrollRuns(),

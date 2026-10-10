@@ -176,6 +176,8 @@ export class SuccessFactorsFormatter implements IPayrollExportFormatter {
 					start: dateRange.start?.toISODate() || "",
 					end: dateRange.end?.toISODate() || "",
 				},
+				// Overtime payouts (#1001) go into the DATEV, Lexware and Sage files only.
+				unmappedOvertimePayouts: [],
 			},
 		};
 	}
