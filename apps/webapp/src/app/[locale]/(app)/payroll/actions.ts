@@ -8,6 +8,7 @@ import { z } from "zod";
 import { db, payrollExportConfig, payrollExportFormat } from "@/db";
 import { payrollBlockerDismissal } from "@/db/schema";
 import { type AuthContext, getAbility, getAuthContext } from "@/lib/auth-helpers";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { resolvePayrollAccessibleEmployeeIds } from "@/lib/payroll-access/permissions";
@@ -295,14 +296,18 @@ export async function getPayrollRunReadinessAction(
 ): Promise<ServerActionResult<PayrollRunReadiness>> {
 	return runPayrollWorkspaceAction(async (t) => {
 		const formatId = validateExportFormatId(t, request.formatId);
-		const { authContext, period, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
+		const { authContext, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
 			t,
 			request,
 		);
 		return getPayrollRunReadiness(db, {
 			organizationId: authContext.employee.organizationId,
 			formatId,
-			period: { startDate: period.start.toISODate() ?? "", endDate: period.end.toISODate() ?? "" },
+			// Validated above as exact ISO dates: the period's logical dates.
+			period: {
+				startDate: parsePlainDate(request.startDate).toString(),
+				endDate: parsePlainDate(request.endDate).toString(),
+			},
 			employeeIds: scopedEmployeeIds,
 		});
 	});
