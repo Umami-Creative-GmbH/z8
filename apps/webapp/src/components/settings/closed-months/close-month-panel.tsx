@@ -196,6 +196,37 @@ function CloseBlockers({ blockers }: { blockers: CloseMonthBlocker[] }) {
 		new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone }).format(
 			new Date(instant),
 		);
+	const describeBlocker = (blocker: CloseMonthBlocker): string => {
+		switch (blocker.kind) {
+			case "month_not_ended":
+				return t(
+					"settings.closedMonths.blocker.notEnded",
+					"the month has not ended in their timezone",
+				);
+			case "absence_request":
+				return t(
+					"settings.closedMonths.blocker.absenceRequest",
+					"undecided absence request {startDate} – {endDate}",
+					{ startDate: blocker.startDate, endDate: blocker.endDate },
+				);
+			case "time_request":
+				return t(
+					"settings.closedMonths.blocker.timeRequest",
+					"undecided request about work from {start}",
+					{ start: at(blocker.startTime, blocker.timezone) },
+				);
+			case "live_work":
+				return t("settings.closedMonths.blocker.liveWork", "still clocked in since {start}", {
+					start: at(blocker.startTime, blocker.timezone),
+				});
+			case "period_submission":
+				return t(
+					"settings.closedMonths.blocker.periodSubmission",
+					"undecided period submission {startDate} – {endDate}",
+					{ startDate: blocker.startDate, endDate: blocker.endDate },
+				);
+		}
+	};
 	return (
 		<div
 			role="alert"
@@ -213,26 +244,7 @@ function CloseBlockers({ blockers }: { blockers: CloseMonthBlocker[] }) {
 					<li key={blockerKey(blocker)} className="break-words">
 						{blocker.employeeName}
 						{": "}
-						{blocker.kind === "month_not_ended"
-							? t(
-									"settings.closedMonths.blocker.notEnded",
-									"the month has not ended in their timezone",
-								)
-							: blocker.kind === "absence_request"
-								? t(
-										"settings.closedMonths.blocker.absenceRequest",
-										"undecided absence request {startDate} – {endDate}",
-										{ startDate: blocker.startDate, endDate: blocker.endDate },
-									)
-								: blocker.kind === "time_request"
-									? t(
-											"settings.closedMonths.blocker.timeRequest",
-											"undecided request about work from {start}",
-											{ start: at(blocker.startTime, blocker.timezone) },
-										)
-									: t("settings.closedMonths.blocker.liveWork", "still clocked in since {start}", {
-											start: at(blocker.startTime, blocker.timezone),
-										})}
+						{describeBlocker(blocker)}
 					</li>
 				))}
 			</ul>
@@ -247,6 +259,8 @@ function blockerKey(blocker: CloseMonthBlocker): string {
 		case "time_request":
 		case "live_work":
 			return `${blocker.kind}:${blocker.workPeriodId}`;
+		case "period_submission":
+			return `period_submission:${blocker.submissionId}`;
 		default:
 			return `${blocker.kind}:${blocker.employeeId}`;
 	}

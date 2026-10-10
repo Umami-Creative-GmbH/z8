@@ -216,6 +216,86 @@ describe("closing and reopening months on PostgreSQL", () => {
 		).toEqual([]);
 	});
 
+	it("refuses closing both months a pending weekly submission touches, and only those", async () => {
+		const org = await fixture.organization("UTC");
+		const person = await fixture.employee({ organizationId: org.organizationId });
+		await fixture.submissionCadence({
+			organizationId: org.organizationId,
+			cadence: "weekly",
+			changedAt: "2026-01-01T00:00:00Z",
+			changedBy: org.ownerUserId,
+		});
+		const submissionId = await fixture.periodSubmission({
+			organizationId: org.organizationId,
+			employeeId: person.employeeId,
+			submittedBy: person.userId,
+			cadence: "weekly",
+			startDate: "2026-03-30",
+			endDate: "2026-04-05",
+		});
+		const close = (month: "2026-02" | "2026-03" | "2026-04") =>
+			closeMonth(fixture.db, {
+				organizationId: org.organizationId,
+				month,
+				scope: { kind: "organization" },
+				actor: { kind: "user", userId: org.ownerUserId },
+				now: parseInstant("2026-05-10T12:00:00Z"),
+			});
+
+		const march = await close("2026-03");
+		const april = await close("2026-04");
+
+		for (const result of [march, april]) {
+			expect(result.kind === "blocked" && result.blockers).toEqual([
+				{
+					kind: "period_submission",
+					employeeId: person.employeeId,
+					employeeName: expect.any(String),
+					submissionId,
+					startDate: "2026-03-30",
+					endDate: "2026-04-05",
+				},
+			]);
+		}
+		expect((await close("2026-02")).kind).toBe("closed");
+	});
+
+	it("does not block a close on decided or withdrawn submissions, or another organization's", async () => {
+		const org = await fixture.organization("UTC");
+		const other = await fixture.organization("UTC");
+		const person = await fixture.employee({ organizationId: org.organizationId });
+		const stranger = await fixture.employee({ organizationId: other.organizationId });
+		for (const status of ["approved", "rejected", "withdrawn", "outdated"] as const) {
+			await fixture.periodSubmission({
+				organizationId: org.organizationId,
+				employeeId: person.employeeId,
+				submittedBy: person.userId,
+				cadence: "monthly",
+				startDate: "2026-03-01",
+				endDate: "2026-03-31",
+				status,
+			});
+		}
+		await fixture.periodSubmission({
+			organizationId: other.organizationId,
+			employeeId: stranger.employeeId,
+			submittedBy: stranger.userId,
+			cadence: "monthly",
+			startDate: "2026-03-01",
+			endDate: "2026-03-31",
+		});
+
+		const result = await closeMonth(fixture.db, {
+			organizationId: org.organizationId,
+			month: "2026-03",
+			scope: { kind: "organization" },
+			actor: { kind: "user", userId: org.ownerUserId },
+			now,
+		});
+
+		expect(result.kind).toBe("closed");
+	});
+
 	it("refuses to close a month that has not ended yet", async () => {
 		const org = await fixture.organization("UTC");
 		await fixture.employee({ organizationId: org.organizationId });

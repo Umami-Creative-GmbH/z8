@@ -11,6 +11,7 @@ import {
 	closedMonthEmployee,
 	closedMonthReopening,
 	employee,
+	periodSubmission,
 	team,
 	userSettings,
 	workPeriod,
@@ -83,6 +84,16 @@ export type CloseMonthBlocker =
 			startTime: string;
 			/** The employee's effective timezone, to show `startTime` in. */
 			timezone: string;
+	  }
+	| {
+			/** A pending period submission (#805) whose period touches the month. */
+			kind: "period_submission";
+			employeeId: string;
+			employeeName: string;
+			submissionId: string;
+			/** The submitted period's first and last local day. */
+			startDate: string;
+			endDate: string;
 	  };
 
 export type CloseMonthResult =
@@ -400,6 +411,42 @@ async function closeBlockers(
 			absenceId: absence.id,
 			startDate: absence.startDate,
 			endDate: absence.endDate,
+		});
+	}
+
+	// A pending period submission is an undecided request about every month its
+	// period's local days touch: a week spanning two months blocks both.
+	const pendingSubmissions = await transaction
+		.select({
+			id: periodSubmission.id,
+			employeeId: periodSubmission.employeeId,
+			startDate: periodSubmission.startDate,
+			endDate: periodSubmission.endDate,
+		})
+		.from(periodSubmission)
+		.where(
+			and(
+				eq(periodSubmission.organizationId, input.organizationId),
+				inArray(periodSubmission.employeeId, ids),
+				eq(periodSubmission.status, "pending"),
+				lte(
+					periodSubmission.startDate,
+					sql`(${first}::date + interval '1 month' - interval '1 day')::date`,
+				),
+				sql`${periodSubmission.endDate} >= ${first}::date`,
+			),
+		)
+		.orderBy(asc(periodSubmission.startDate));
+	for (const submission of pendingSubmissions) {
+		const covered = byId.get(submission.employeeId);
+		if (!covered) continue;
+		blockers.push({
+			kind: "period_submission",
+			employeeId: covered.id,
+			employeeName: covered.name,
+			submissionId: submission.id,
+			startDate: submission.startDate,
+			endDate: submission.endDate,
 		});
 	}
 
