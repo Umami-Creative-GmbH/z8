@@ -1,0 +1,14 @@
+{
+  "root": true,
+  "title": "API Reference",
+  "description": "The Z8 Public API v1: read your organization's data with an API key",
+  "icon": "Code",
+  "pages": [
+    "index",
+    "listWorkPeriods",
+    "listAbsences",
+    "listEmployees",
+    "listProjects",
+    "listCustomers"
+  ]
+}

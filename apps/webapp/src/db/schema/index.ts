@@ -78,6 +78,8 @@ export * from "./personnel-file";
 export * from "./platform-admin";
 export * from "./project";
 export * from "./project-assignment-history";
+// Public API key request log (#763)
+export * from "./public-api";
 // All relations (centralized)
 export * from "./relations";
 // Scheduled exports

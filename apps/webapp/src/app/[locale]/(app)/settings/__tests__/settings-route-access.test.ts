@@ -22,6 +22,7 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"enterprise/email/page.tsx",
 	"email-templates/page.tsx",
 	"enterprise/api-keys/page.tsx",
+	"enterprise/api-keys/[keyId]/page.tsx",
 	"enterprise/audit-log/page.tsx",
 	"telegram/page.tsx",
 	"slack/page.tsx",
