@@ -54,8 +54,8 @@ import {
 import { formatRateDate } from "@/lib/billable-time/format";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { ContactPersonPicker } from "./contact-person-picker";
+import { DEFAULT_TAX_TREATMENT } from "./tax-treatment-default";
 import {
-	DEFAULT_TAX_TREATMENT,
 	TaxTreatmentFields,
 	useTaxTreatmentError,
 	useTaxTreatmentSummary,

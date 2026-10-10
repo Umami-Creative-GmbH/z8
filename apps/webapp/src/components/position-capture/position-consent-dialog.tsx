@@ -50,19 +50,21 @@ export function PositionConsentDialogHost() {
 	async function answer(decision: "agreed" | "declined") {
 		if (!question) return;
 		setPending(true);
-		try {
-			const input = { noticeId: question.notice.id };
-			const result =
-				decision === "agreed"
-					? await agreeToPositionNoticeAction(input)
-					: await declinePositionNoticeAction(input);
-			// A failed save asks again next time; the clock event was recorded already.
-			answerPositionConsent(result.success ? decision : "dismissed");
-		} catch {
-			answerPositionConsent("dismissed");
-		} finally {
+		await (async () => {
+			try {
+				const input = { noticeId: question.notice.id };
+				const result =
+					decision === "agreed"
+						? await agreeToPositionNoticeAction(input)
+						: await declinePositionNoticeAction(input);
+				// A failed save asks again next time; the clock event was recorded already.
+				answerPositionConsent(result.success ? decision : "dismissed");
+			} catch {
+				answerPositionConsent("dismissed");
+			}
+		})().finally(() => {
 			setPending(false);
-		}
+		});
 	}
 
 	return (

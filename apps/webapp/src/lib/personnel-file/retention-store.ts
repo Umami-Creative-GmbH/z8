@@ -90,11 +90,12 @@ export async function saveRetentionPeriods(
 			.from(personnelFileRetentionPeriod)
 			.where(eq(personnelFileRetentionPeriod.organizationId, input.organizationId))
 			.for("update");
+		const currentByCategory = new Map(current.map((row) => [row.category, row]));
 		const changed: DocumentCategory[] = [];
 		for (const category of DOCUMENT_CATEGORIES) {
 			const next = input.periods[category];
 			if (next === undefined) continue;
-			const row = current.find((candidate) => candidate.category === category);
+			const row = currentByCategory.get(category);
 			const from = row?.retentionYears ?? null;
 			if (from === next) continue;
 			let entityId = row?.id ?? randomUUID();

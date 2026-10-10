@@ -92,3 +92,41 @@ open maintainability observations, not suppressed defects:
 - `src/app/[locale]/(app)/settings/payroll-export/page.tsx`: `PayrollExportContent`, cyclomatic 19, cognitive 21, nesting 2.
 - `src/components/settings/holiday/holiday-list.tsx`: `HolidayList`, cyclomatic 18, cognitive 21, nesting 2.
 - `src/components/settings/vacation/vacation-assignment-manager.tsx`: `VacationAssignmentManager`, cyclomatic 18, cognitive 21, nesting 2.
+
+## Release PR #927 follow-up (October 9, 2026, React Doctor 0.9.17)
+
+The release pass resolves compiler failures and refactors the reported component
+size/complexity findings. The added exceptions in `doctor.config.ts` are limited
+to the following verified boundaries:
+
+- **Serialized database work:** Clockodo mapping upserts, project/template reads
+  and writes, payslip upload reservations, retention purges, upload leases,
+  canonical backfill, position-capture resolution/export audits, and Billable Time
+  settings use transaction or snapshot readers. The clock path reads settings
+  under its share lock before resolving the subject. Review these exceptions when
+  a helper stops accepting or using the transaction reader.
+- **Ordered rate changes and bulk amendments:** Rate steps remove overlap before
+  inserting a successor. Bulk work changes acquire ranked owner/organization
+  guards and finish their after-commit work in order. These are not independent
+  requests to fan out.
+- **Bounded reminder jobs and ZIP expansion:** Delivery stays at one tenant or
+  reminder at a time; retention recipient reads populate a shared cache. ZIP
+  members decompress sequentially to bound transient memory. Revisit these
+  throughput tradeoffs only with transport-capacity and peak-memory evidence.
+- **Client form submission:** `BillableCurrencyForm` uses TanStack Form validation
+  and a caller-supplied client callback. Native form navigation bypasses that
+  contract. This is the same exception as the client forms documented above.
+- **Redacted works-council snapshots:** Position review rows are immutable server
+  output, without client state, filters or reordering. Names can repeat and
+  identifiers are intentionally withheld. Index keys cannot misassign editable
+  state here. Revisit the exception if the section becomes interactive.
+- **Read-only Clockodo wizard data:** `fetchProjectsMutation` performs a
+  user-triggered fetch into wizard-local state; it changes no server record or
+  cached query. No cache invalidation is required. The payslip staging request is
+  likewise an upload-completion operation, now isolated in its client transport
+  module; its effect owns Uppy subscription setup and teardown.
+
+Independent accounting reads now overlap. Independent purge cleanups and import
+insert chunks use bounded concurrency, with every in-flight worker joined before
+an error is returned. The concurrency helper has tests for its limit, result order,
+and failure joining.

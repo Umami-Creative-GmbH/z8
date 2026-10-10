@@ -75,8 +75,7 @@ export const CLOCKODO_IMPORT_ENTITIES = [
 	{ key: "surcharges", label: "Surcharges", icon: "percentage" },
 ] as const;
 
-export type ClockodoEntityKey =
-	(typeof CLOCKODO_IMPORT_ENTITIES)[number]["key"];
+export type ClockodoEntityKey = (typeof CLOCKODO_IMPORT_ENTITIES)[number]["key"];
 
 const entityTypeBySelection = {
 	users: "employee",
@@ -104,10 +103,7 @@ export const CLOCKODO_DATE_RANGE_PRESETS: {
 
 function isoDate(value: string) {
 	try {
-		return Temporal.Instant.from(value)
-			.toZonedDateTimeISO("UTC")
-			.toPlainDate()
-			.toString();
+		return Temporal.Instant.from(value).toZonedDateTimeISO("UTC").toPlainDate().toString();
 	} catch {
 		return Temporal.PlainDate.from(value.slice(0, 10)).toString();
 	}
@@ -115,11 +111,7 @@ function isoDate(value: string) {
 
 function resolveReviewDateRange(dateRange: ImportSelections["dateRange"]) {
 	const now = Temporal.Now.plainDateISO("UTC");
-	if (
-		dateRange.preset === "custom" &&
-		dateRange.startDate &&
-		dateRange.endDate
-	) {
+	if (dateRange.preset === "custom" && dateRange.startDate && dateRange.endDate) {
 		return {
 			startDate: isoDate(dateRange.startDate),
 			endDate: isoDate(dateRange.endDate),
@@ -139,13 +131,9 @@ function resolveReviewDateRange(dateRange: ImportSelections["dateRange"]) {
 	};
 }
 
-function selectedClockodoUserIds(
-	userMappings: UserMappingEntry[],
-	onlyImportMapped: boolean,
-) {
+function selectedClockodoUserIds(userMappings: UserMappingEntry[], onlyImportMapped: boolean) {
 	return userMappings.flatMap((mapping) =>
-		mapping.mappingType !== "skipped" &&
-		(!onlyImportMapped || mapping.employeeId != null)
+		mapping.mappingType !== "skipped" && (!onlyImportMapped || mapping.employeeId != null)
 			? [String(mapping.clockodoUserId)]
 			: [],
 	);
@@ -189,14 +177,11 @@ export function useClockodoImportController(organizationId: string) {
 	const [email, setEmail] = useState("");
 	const [apiKey, setApiKey] = useState("");
 	const [preview, setPreview] = useState<ClockodoDataPreview | null>(null);
-	const [existingCounts, setExistingCounts] =
-		useState<ExistingDataCounts | null>(null);
+	const [existingCounts, setExistingCounts] = useState<ExistingDataCounts | null>(null);
 	const [z8Employees, setZ8Employees] = useState<Z8EmployeeInfo[]>([]);
 	const [userMappings, setUserMappings] = useState<UserMappingEntry[]>([]);
 	const [z8Projects, setZ8Projects] = useState<Z8ProjectInfo[]>([]);
-	const [projectMappings, setProjectMappings] = useState<ProjectMappingEntry[]>(
-		[],
-	);
+	const [projectMappings, setProjectMappings] = useState<ProjectMappingEntry[]>([]);
 	const [onlyImportMapped, setOnlyImportMapped] = useState(false);
 	const [reviewBatchId, setReviewBatchId] = useState<string | null>(null);
 	const [selections, setSelections] = useState<ImportSelections>({
@@ -229,10 +214,7 @@ export function useClockodoImportController(organizationId: string) {
 		},
 		onError: () =>
 			toast.error(
-				t(
-					"settings.clockodoImport.errors.connectionFailed",
-					"Failed to connect to Clockodo",
-				),
+				t("settings.clockodoImport.errors.connectionFailed", "Failed to connect to Clockodo"),
 			),
 	});
 
@@ -255,20 +237,17 @@ export function useClockodoImportController(organizationId: string) {
 			}
 			queryClient.invalidateQueries();
 			setZ8Employees(employeesResult.data);
-			setUserMappings(
-				buildUserMappings(usersResult.data, employeesResult.data),
-			);
+			setUserMappings(buildUserMappings(usersResult.data, employeesResult.data));
 			setStep("user-mapping");
 		},
 		onError: () =>
 			toast.error(
-				t(
-					"settings.clockodoImport.errors.fetchUsersFailed",
-					"Failed to fetch user data",
-				),
+				t("settings.clockodoImport.errors.fetchUsersFailed", "Failed to fetch user data"),
 			),
 	});
 
+	// This user-triggered read populates wizard-local mappings; it does not mutate server data.
+	// react-doctor-disable-next-line react-doctor/query-mutation-missing-invalidation
 	const fetchProjectsMutation = useMutation({
 		mutationFn: () => fetchProjectMappingData(email, apiKey, organizationId),
 		onSuccess: (result) => {
@@ -282,18 +261,11 @@ export function useClockodoImportController(organizationId: string) {
 				),
 			);
 			// Nothing to map: Clockodo has no projects.
-			setStep(
-				result.data.clockodoProjects.length > 0
-					? "project-mapping"
-					: "selection",
-			);
+			setStep(result.data.clockodoProjects.length > 0 ? "project-mapping" : "selection");
 		},
 		onError: () =>
 			toast.error(
-				t(
-					"settings.clockodoImport.errors.fetchProjectsFailed",
-					"Failed to fetch project data",
-				),
+				t("settings.clockodoImport.errors.fetchProjectsFailed", "Failed to fetch project data"),
 			),
 	});
 
@@ -306,10 +278,7 @@ export function useClockodoImportController(organizationId: string) {
 		},
 		onError: () =>
 			toast.error(
-				t(
-					"settings.clockodoImport.errors.saveMappingsFailed",
-					"Failed to save user mappings",
-				),
+				t("settings.clockodoImport.errors.saveMappingsFailed", "Failed to save user mappings"),
 			),
 	});
 
@@ -329,10 +298,7 @@ export function useClockodoImportController(organizationId: string) {
 			),
 	});
 
-	const selectedEmployeeIds = selectedClockodoUserIds(
-		userMappings,
-		onlyImportMapped,
-	);
+	const selectedEmployeeIds = selectedClockodoUserIds(userMappings, onlyImportMapped);
 	const importMutation = useMutation({
 		mutationFn: () =>
 			startImportReviewScan({
@@ -363,12 +329,7 @@ export function useClockodoImportController(organizationId: string) {
 			setStep("complete");
 		},
 		onError: () => {
-			toast.error(
-				t(
-					"settings.clockodoImport.errors.importFailed",
-					"Import review scan failed",
-				),
-			);
+			toast.error(t("settings.clockodoImport.errors.importFailed", "Import review scan failed"));
 			setStep("selection");
 		},
 	});
@@ -406,10 +367,7 @@ export function useClockodoImportController(organizationId: string) {
 			),
 		);
 	};
-	const updateProjectMapping = (
-		clockodoProjectId: number,
-		projectId: string | null,
-	) =>
+	const updateProjectMapping = (clockodoProjectId: number, projectId: string | null) =>
 		setProjectMappings((current) =>
 			current.map((mapping) =>
 				mapping.clockodoProjectId === clockodoProjectId
@@ -481,6 +439,4 @@ export function useClockodoImportController(organizationId: string) {
 	};
 }
 
-export type ClockodoImportController = ReturnType<
-	typeof useClockodoImportController
->;
+export type ClockodoImportController = ReturnType<typeof useClockodoImportController>;

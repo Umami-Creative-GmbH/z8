@@ -142,6 +142,8 @@ export async function applyRatePeriodChange<V>(
 ): Promise<AppliedRatePeriodChange<V>> {
 	const plan = planRatePeriodChange(await store.lockAndLoad(), change, equals);
 	let periodId: string | null = plan.previous?.id ?? null;
+	// Shorten or remove the predecessor before inserting its successor; the exclusion constraint rejects overlap.
+	// react-doctor-disable-next-line react-doctor/async-await-in-loop
 	for (const step of plan.steps) {
 		switch (step.kind) {
 			case "shorten":

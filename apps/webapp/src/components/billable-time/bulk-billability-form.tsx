@@ -3,7 +3,7 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -338,7 +338,10 @@ function BulkBillabilitySummaryTable({
 	const { t } = useTranslate();
 	const { locale } = useDisplayContext();
 	const skipLabels = useSkipReasonLabels();
-	const hours = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
+	const hours = useMemo(
+		() => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }),
+		[locale],
+	);
 	const formatHours = (minutes: number) =>
 		t("settings.billableTime.bulk.hours", "{hours} h", { hours: hours.format(minutes / 60) });
 

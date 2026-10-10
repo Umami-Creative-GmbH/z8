@@ -17,18 +17,24 @@ const mockState = vi.hoisted(() => ({
 	getDailyWorkRequirementsForEmployee: vi.fn(),
 }));
 
-vi.mock("drizzle-orm", async (importOriginal) => ({
-	...(await importOriginal<typeof import("drizzle-orm")>()),
-	and: vi.fn((...args: unknown[]) => ({ and: args })),
-	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
-	gte: vi.fn((left: unknown, right: unknown) => ({ gte: [left, right] })),
-	isNotNull: vi.fn((value: unknown) => ({ isNotNull: value })),
-	lte: vi.fn((left: unknown, right: unknown) => ({ lte: [left, right] })),
-	sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
-		sql: Array.from(strings),
-		values,
-	})),
-}));
+vi.mock("drizzle-orm", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("drizzle-orm")>();
+	return {
+		...actual,
+		and: vi.fn((...args: unknown[]) => ({ and: args })),
+		eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
+		gte: vi.fn((left: unknown, right: unknown) => ({ gte: [left, right] })),
+		isNotNull: vi.fn((value: unknown) => ({ isNotNull: value })),
+		lte: vi.fn((left: unknown, right: unknown) => ({ lte: [left, right] })),
+		sql: Object.assign(
+			vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
+				sql: Array.from(strings),
+				values,
+			})),
+			{ raw: actual.sql.raw },
+		),
+	};
+});
 
 vi.mock("@/db", () => ({ db: mockState.db }));
 

@@ -4,7 +4,7 @@ import { IconEdit, IconPlus, IconRefresh, IconTemplate, IconTrash } from "@table
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
 	deleteProjectTemplate,
@@ -215,7 +215,10 @@ export function ProjectTemplateManagement({ organizationId }: { organizationId: 
 		},
 	});
 
-	const hours = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
+	const hours = useMemo(
+		() => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }),
+		[locale],
+	);
 
 	function refresh() {
 		queryClient.invalidateQueries({ queryKey: queryKeys.projects.templates(organizationId) });

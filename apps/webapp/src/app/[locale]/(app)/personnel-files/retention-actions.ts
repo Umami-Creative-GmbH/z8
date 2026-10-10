@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
+import { mapConcurrently } from "@/lib/async/map-concurrently";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 import { managesAnyDocuments } from "@/lib/personnel-file/access";
@@ -77,12 +78,12 @@ export async function purgeDueDocumentsAction(input: {
 		}
 		const reason = typeof input.reason === "string" ? input.reason : null;
 		const result = await purgeDueDocuments(db, current.access, { documentIds, reason });
-		for (const documentId of result.purged) {
-			await runPersonnelFileCleanup(db, {
+		await mapConcurrently(result.purged, 4, (documentId) =>
+			runPersonnelFileCleanup(db, {
 				deleteObject: deletePersonnelDocumentObject,
 				only: { documentId, organizationId: current.access.organizationId },
-			}).catch((error) => logger.error({ error }, "Deferred personnel file object cleanup"));
-		}
+			}).catch((error) => logger.error({ error }, "Deferred personnel file object cleanup")),
+		);
 		revalidatePath("/personnel-files");
 		return { success: true, data: result };
 	} catch (error) {

@@ -69,8 +69,7 @@ export async function exportReportDocumentToPDF(document: ReportDocument): Promi
 					const cells = (row: readonly ReportCell[]) =>
 						row.map((cell, index) => (
 							<Text
-								// biome-ignore lint/suspicious/noArrayIndexKey: columns are positional
-								key={index}
+								key={table.columns[index]?.key}
 								style={index === 0 ? styles.firstCell : styles.cell}
 							>
 								{formatReportCell(

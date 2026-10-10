@@ -390,6 +390,8 @@ export async function applyBulkBillability(
 
 	const outcomes: { durationMinutes: number; outcome: BulkBillabilityOutcome }[] = [];
 	const failed: BulkBillabilityTally = { count: 0, minutes: 0 };
+	// Amendments acquire the same organization and owner guards. Keep lock acquisition and after-commit work ordered.
+	// react-doctor-disable-next-line react-doctor/async-await-in-loop
 	for (const item of plan.items) {
 		if (item.outcome !== "change") {
 			outcomes.push(item);

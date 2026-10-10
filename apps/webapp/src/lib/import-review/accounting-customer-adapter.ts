@@ -1,3 +1,4 @@
+import { mapConcurrently } from "@/lib/async/map-concurrently";
 import "server-only";
 
 import { eq } from "drizzle-orm";
@@ -204,8 +205,8 @@ export async function scanAccountingCustomerImport(
 		throw scanFailure("This accounting tool cannot list its customers for an import");
 	}
 
-	const contacts = await listEveryContact(listCustomerContacts);
-	const [customers, links] = await Promise.all([
+	const [contacts, customers, links] = await Promise.all([
+		listEveryContact(listCustomerContacts),
 		db
 			.select({ id: customer.id, name: customer.name })
 			.from(customer)
@@ -232,14 +233,16 @@ export async function scanAccountingCustomerImport(
 		links,
 	});
 
-	let stagedRows = 0;
-	for (let start = 0; start < rows.length; start += INSERT_CHUNK) {
-		const inserted = await insertStagedRows({
+	const chunks = Array.from({ length: Math.ceil(rows.length / INSERT_CHUNK) }, (_, chunk) =>
+		rows.slice(chunk * INSERT_CHUNK, (chunk + 1) * INSERT_CHUNK),
+	);
+	const inserted = await mapConcurrently(chunks, 2, (chunk) =>
+		insertStagedRows({
 			batchId: job.batchId,
 			organizationId: job.organizationId,
-			rows: rows.slice(start, start + INSERT_CHUNK),
-		});
-		stagedRows += inserted.length;
-	}
+			rows: chunk,
+		}),
+	);
+	const stagedRows = inserted.reduce((count, chunk) => count + chunk.length, 0);
 	return { stagedRows, issues: 0 };
 }

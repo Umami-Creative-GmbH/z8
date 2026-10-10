@@ -16,7 +16,6 @@ import { toast } from "sonner";
 import { switchBillableTime } from "@/app/[locale]/(app)/settings/billable-time/actions";
 import { toggleOrganizationFeature } from "@/app/[locale]/(app)/settings/organizations/actions";
 import { BillableCurrencyForm } from "@/components/billable-time/billable-currency-form";
-import { Button } from "@/components/ui/button";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -27,6 +26,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Dialog,
@@ -42,9 +42,9 @@ import type { BillableCurrency } from "@/lib/billable-time/currency";
 import { useRouter } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import {
-	organizationFeatureReducer,
 	type OrganizationFeature,
 	type OrganizationFeatureState,
+	organizationFeatureReducer,
 } from "./organization-feature-state";
 
 interface OrganizationFeaturesCardProps {
@@ -90,7 +90,7 @@ export function OrganizationFeaturesCard({
 	);
 }
 
-function OrganizationFeaturesCardContent({
+function useOrganizationFeatures({
 	organizationId,
 	currentMemberRole,
 	billableCurrency,
@@ -134,7 +134,9 @@ function OrganizationFeaturesCardContent({
 		if (result.success) {
 			toast.success(
 				t(
-					enabled ? `organization.features.${feature}-enabled` : `organization.features.${feature}-disabled`,
+					enabled
+						? `organization.features.${feature}-enabled`
+						: `organization.features.${feature}-disabled`,
 					enabled ? "Feature enabled" : "Feature disabled",
 				),
 			);
@@ -187,6 +189,50 @@ function OrganizationFeaturesCardContent({
 		await saveBillableTime(enabled, null);
 	};
 
+	return {
+		t,
+		isPending,
+		features,
+		handleToggleFeature,
+		canEdit,
+		billableCurrency,
+		handleToggleBillableTime,
+		currencyDialogOpen,
+		setCurrencyDialogOpen,
+		saveBillableTime,
+		setConfirmPersonnelFilesOff,
+		canEditPersonnelFiles,
+		confirmPersonnelFilesOff,
+	};
+}
+
+function OrganizationFeaturesCardContent({
+	organizationId,
+	currentMemberRole,
+	billableCurrency,
+	initialFeatures,
+}: Omit<OrganizationFeaturesCardProps, OrganizationFeature> & {
+	initialFeatures: OrganizationFeatureState;
+}) {
+	const {
+		t,
+		isPending,
+		features,
+		handleToggleFeature,
+		canEdit,
+		handleToggleBillableTime,
+		currencyDialogOpen,
+		setCurrencyDialogOpen,
+		saveBillableTime,
+		setConfirmPersonnelFilesOff,
+		canEditPersonnelFiles,
+		confirmPersonnelFilesOff,
+	} = useOrganizationFeatures({
+		organizationId,
+		currentMemberRole,
+		billableCurrency,
+		initialFeatures,
+	});
 	return (
 		<Card>
 			<CardHeader>
@@ -200,120 +246,32 @@ function OrganizationFeaturesCardContent({
 			</CardHeader>
 			<CardContent className="space-y-6">
 				{/* Work Shifts Feature */}
-				<div className="flex items-center justify-between">
-					<div className="flex items-start gap-3">
-						<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
-							<IconCalendarTime className="size-5 text-primary" />
-						</div>
-						<div className="space-y-1">
-							<Label
-								htmlFor="shifts-toggle"
-								className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-							>
-								{t("organization.features.work-shifts", "Work Shifts")}
-							</Label>
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"organization.features.work-shifts-description",
-									"Enable work shifts with drag-and-drop planning, open shifts, and swap requests.",
-								)}
-							</p>
-						</div>
-					</div>
-					<div className="flex items-center gap-2">
-						{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
-						<Switch
-							id="shifts-toggle"
-							checked={features.shiftsEnabled}
-							onCheckedChange={(enabled) => handleToggleFeature("shiftsEnabled", enabled)}
-							disabled={!canEdit || isPending}
-							aria-label={t("organization.features.toggle-work-shifts", "Toggle work shifts")}
-						/>
-					</div>
-				</div>
+				<ShiftFeature
+					t={t}
+					isPending={isPending}
+					features={features}
+					handleToggleFeature={handleToggleFeature}
+					canEdit={canEdit}
+				/>
 
 				{/* Projects Feature */}
-				<div className="flex items-center justify-between">
-					<div className="flex items-start gap-3">
-						<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
-							<IconBriefcase className="size-5 text-primary" />
-						</div>
-						<div className="space-y-1">
-							<Label
-								htmlFor="projects-toggle"
-								className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-							>
-								{t("organization.features.projects", "Projects")}
-							</Label>
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"organization.features.projects-description",
-									"Assign time entries to projects, track budgets and deadlines, and generate project reports.",
-								)}
-							</p>
-						</div>
-					</div>
-					<div className="flex items-center gap-2">
-						{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
-						<Switch
-							id="projects-toggle"
-							checked={features.projectsEnabled}
-							onCheckedChange={(enabled) => handleToggleFeature("projectsEnabled", enabled)}
-							disabled={!canEdit || isPending}
-							aria-label={t("organization.features.toggle-projects", "Toggle projects")}
-						/>
-					</div>
-				</div>
+				<ProjectFeature
+					t={t}
+					isPending={isPending}
+					features={features}
+					handleToggleFeature={handleToggleFeature}
+					canEdit={canEdit}
+				/>
 
 				{/* Billable Time Feature (#897): needs projects */}
-				<div className="flex items-center justify-between">
-					<div className="flex items-start gap-3">
-						<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
-							<IconReceipt aria-hidden="true" className="size-5 text-primary" />
-						</div>
-						<div className="space-y-1">
-							<Label
-								htmlFor="billable-time-toggle"
-								className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-							>
-								{t("organization.features.billable-time", "Billable Time")}
-							</Label>
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"organization.features.billable-time-description",
-									"Price work on customer projects with billable rates and hand it to your accounting tool as invoice drafts.",
-								)}
-							</p>
-							{!features.projectsEnabled && (
-								<p className="text-sm text-muted-foreground">
-									{t(
-										"organization.features.billable-time-requires-projects",
-										"Requires Projects. Switching Projects off also switches Billable Time off; its settings are kept.",
-									)}
-								</p>
-							)}
-							{billableCurrency && (
-								<p className="text-sm text-muted-foreground">
-									{t(
-										"organization.features.billable-time-currency",
-										"Billable currency: {currency}",
-										{ currency: billableCurrency },
-									)}
-								</p>
-							)}
-						</div>
-					</div>
-					<div className="flex items-center gap-2">
-						{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
-						<Switch
-							id="billable-time-toggle"
-							checked={features.billableTimeEnabled && features.projectsEnabled}
-							onCheckedChange={(enabled) => void handleToggleBillableTime(enabled)}
-							disabled={!canEdit || isPending || !features.projectsEnabled}
-							aria-label={t("organization.features.toggle-billable-time", "Toggle Billable Time")}
-						/>
-					</div>
-				</div>
+				<BillableTimeFeature
+					t={t}
+					features={features}
+					billableCurrency={billableCurrency}
+					isPending={isPending}
+					handleToggleBillableTime={handleToggleBillableTime}
+					canEdit={canEdit}
+				/>
 
 				<Dialog open={currencyDialogOpen} onOpenChange={setCurrencyDialogOpen}>
 					<DialogContent>
@@ -359,145 +317,41 @@ function OrganizationFeaturesCardContent({
 				</Dialog>
 
 				{/* Surcharges Feature */}
-				<div className="flex items-center justify-between">
-					<div className="flex items-start gap-3">
-						<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
-							<IconPercentage className="size-5 text-primary" />
-						</div>
-						<div className="space-y-1">
-							<Label
-								htmlFor="surcharges-toggle"
-								className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-							>
-								{t("organization.features.surcharges", "Surcharges")}
-							</Label>
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"organization.features.surcharges-description",
-									"Configure time surcharges for overtime, night work, weekends, and holidays.",
-								)}
-							</p>
-						</div>
-					</div>
-					<div className="flex items-center gap-2">
-						{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
-						<Switch
-							id="surcharges-toggle"
-							checked={features.surchargesEnabled}
-							onCheckedChange={(enabled) => handleToggleFeature("surchargesEnabled", enabled)}
-							disabled={!canEdit || isPending}
-							aria-label={t("organization.features.toggle-surcharges", "Toggle surcharges")}
-						/>
-					</div>
-				</div>
+				<SurchargeFeature
+					t={t}
+					isPending={isPending}
+					features={features}
+					handleToggleFeature={handleToggleFeature}
+					canEdit={canEdit}
+				/>
 
 				{/* Works Council Feature */}
-				<div className="flex items-center justify-between">
-					<div className="flex items-start gap-3">
-						<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
-							<IconGavel aria-hidden="true" className="size-5 text-primary" />
-						</div>
-						<div className="space-y-1">
-							<Label
-								htmlFor="works-council-toggle"
-								className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-							>
-								{t("organization.features.works-council", "Works Council")}
-							</Label>
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"organization.features.works-council-description",
-									"Enable the Works Council portal for authorized owners, admins, and assigned reviewers.",
-								)}
-							</p>
-						</div>
-					</div>
-					<div className="flex items-center gap-2">
-						{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
-						<Switch
-							id="works-council-toggle"
-							checked={features.worksCouncilEnabled}
-							onCheckedChange={(enabled) => handleToggleFeature("worksCouncilEnabled", enabled)}
-							disabled={!canEdit || isPending}
-							aria-label={t("organization.features.toggle-works-council", "Toggle Works Council")}
-						/>
-					</div>
-				</div>
+				<WorksCouncilFeature
+					t={t}
+					isPending={isPending}
+					features={features}
+					handleToggleFeature={handleToggleFeature}
+					canEdit={canEdit}
+				/>
 
 				{/* Demo Data Feature */}
-				<div className="flex items-center justify-between">
-					<div className="flex items-start gap-3">
-						<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
-							<IconDatabase className="size-5 text-primary" />
-						</div>
-						<div className="space-y-1">
-							<Label
-								htmlFor="demo-data-toggle"
-								className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-							>
-								{t("organization.features.demo-data", "Demo Data")}
-							</Label>
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"organization.features.demo-data-description",
-									"Allow admins to generate and clear sample organization data for testing.",
-								)}
-							</p>
-						</div>
-					</div>
-					<div className="flex items-center gap-2">
-						{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
-						<Switch
-							id="demo-data-toggle"
-							checked={features.demoDataEnabled}
-							onCheckedChange={(enabled) => handleToggleFeature("demoDataEnabled", enabled)}
-							disabled={!canEdit || isPending}
-							aria-label={t("organization.features.toggle-demo-data", "Toggle demo data")}
-						/>
-					</div>
-				</div>
+				<DemoFeature
+					t={t}
+					isPending={isPending}
+					features={features}
+					handleToggleFeature={handleToggleFeature}
+					canEdit={canEdit}
+				/>
 
 				{/* Personnel Files Feature */}
-				<div className="flex items-center justify-between">
-					<div className="flex items-start gap-3">
-						<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
-							<IconFileText aria-hidden="true" className="size-5 text-primary" />
-						</div>
-						<div className="space-y-1">
-							<Label
-								htmlFor="personnel-files-toggle"
-								className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-							>
-								{t("organization.features.personnel-files", "Personnel Files")}
-							</Label>
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"organization.features.personnel-files-description",
-									"Keep contracts, payslips, certificates and other employee documents in a personnel file per employee.",
-								)}
-							</p>
-						</div>
-					</div>
-					<div className="flex items-center gap-2">
-						{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
-						<Switch
-							id="personnel-files-toggle"
-							checked={features.personnelFilesEnabled}
-							onCheckedChange={(enabled) => {
-								if (enabled) {
-									void handleToggleFeature("personnelFilesEnabled", true);
-								} else {
-									setConfirmPersonnelFilesOff(true);
-								}
-							}}
-							disabled={!canEditPersonnelFiles || isPending}
-							aria-label={t(
-								"organization.features.toggle-personnel-files",
-								"Toggle personnel files",
-							)}
-						/>
-					</div>
-				</div>
+				<PersonnelFileFeature
+					t={t}
+					isPending={isPending}
+					features={features}
+					handleToggleFeature={handleToggleFeature}
+					setConfirmPersonnelFilesOff={setConfirmPersonnelFilesOff}
+					canEditPersonnelFiles={canEditPersonnelFiles}
+				/>
 
 				<AlertDialog open={confirmPersonnelFilesOff} onOpenChange={setConfirmPersonnelFilesOff}>
 					<AlertDialogContent>
@@ -541,5 +395,348 @@ function OrganizationFeaturesCardContent({
 				)}
 			</CardContent>
 		</Card>
+	);
+}
+
+function ShiftFeature({
+	t,
+	isPending,
+	features,
+	handleToggleFeature,
+	canEdit,
+}: Pick<
+	ReturnType<typeof useOrganizationFeatures>,
+	"t" | "isPending" | "features" | "handleToggleFeature" | "canEdit"
+>) {
+	return (
+		<div className="flex items-center justify-between">
+			<div className="flex items-start gap-3">
+				<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
+					<IconCalendarTime className="size-5 text-primary" />
+				</div>
+				<div className="space-y-1">
+					<Label
+						htmlFor="shifts-toggle"
+						className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+					>
+						{t("organization.features.work-shifts", "Work Shifts")}
+					</Label>
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"organization.features.work-shifts-description",
+							"Enable work shifts with drag-and-drop planning, open shifts, and swap requests.",
+						)}
+					</p>
+				</div>
+			</div>
+			<div className="flex items-center gap-2">
+				{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+				<Switch
+					id="shifts-toggle"
+					checked={features.shiftsEnabled}
+					onCheckedChange={(enabled) => handleToggleFeature("shiftsEnabled", enabled)}
+					disabled={!canEdit || isPending}
+					aria-label={t("organization.features.toggle-work-shifts", "Toggle work shifts")}
+				/>
+			</div>
+		</div>
+	);
+}
+
+function ProjectFeature({
+	t,
+	isPending,
+	features,
+	handleToggleFeature,
+	canEdit,
+}: Pick<
+	ReturnType<typeof useOrganizationFeatures>,
+	"t" | "isPending" | "features" | "handleToggleFeature" | "canEdit"
+>) {
+	return (
+		<div className="flex items-center justify-between">
+			<div className="flex items-start gap-3">
+				<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
+					<IconBriefcase className="size-5 text-primary" />
+				</div>
+				<div className="space-y-1">
+					<Label
+						htmlFor="projects-toggle"
+						className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+					>
+						{t("organization.features.projects", "Projects")}
+					</Label>
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"organization.features.projects-description",
+							"Assign time entries to projects, track budgets and deadlines, and generate project reports.",
+						)}
+					</p>
+				</div>
+			</div>
+			<div className="flex items-center gap-2">
+				{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+				<Switch
+					id="projects-toggle"
+					checked={features.projectsEnabled}
+					onCheckedChange={(enabled) => handleToggleFeature("projectsEnabled", enabled)}
+					disabled={!canEdit || isPending}
+					aria-label={t("organization.features.toggle-projects", "Toggle projects")}
+				/>
+			</div>
+		</div>
+	);
+}
+
+function BillableTimeFeature({
+	t,
+	features,
+	billableCurrency,
+	isPending,
+	handleToggleBillableTime,
+	canEdit,
+}: Pick<
+	ReturnType<typeof useOrganizationFeatures>,
+	"t" | "features" | "billableCurrency" | "isPending" | "handleToggleBillableTime" | "canEdit"
+>) {
+	return (
+		<div className="flex items-center justify-between">
+			<div className="flex items-start gap-3">
+				<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
+					<IconReceipt aria-hidden="true" className="size-5 text-primary" />
+				</div>
+				<div className="space-y-1">
+					<Label
+						htmlFor="billable-time-toggle"
+						className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+					>
+						{t("organization.features.billable-time", "Billable Time")}
+					</Label>
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"organization.features.billable-time-description",
+							"Price work on customer projects with billable rates and hand it to your accounting tool as invoice drafts.",
+						)}
+					</p>
+					{!features.projectsEnabled && (
+						<p className="text-sm text-muted-foreground">
+							{t(
+								"organization.features.billable-time-requires-projects",
+								"Requires Projects. Switching Projects off also switches Billable Time off; its settings are kept.",
+							)}
+						</p>
+					)}
+					{billableCurrency && (
+						<p className="text-sm text-muted-foreground">
+							{t("organization.features.billable-time-currency", "Billable currency: {currency}", {
+								currency: billableCurrency,
+							})}
+						</p>
+					)}
+				</div>
+			</div>
+			<div className="flex items-center gap-2">
+				{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+				<Switch
+					id="billable-time-toggle"
+					checked={features.billableTimeEnabled && features.projectsEnabled}
+					onCheckedChange={(enabled) => void handleToggleBillableTime(enabled)}
+					disabled={!canEdit || isPending || !features.projectsEnabled}
+					aria-label={t("organization.features.toggle-billable-time", "Toggle Billable Time")}
+				/>
+			</div>
+		</div>
+	);
+}
+
+function SurchargeFeature({
+	t,
+	isPending,
+	features,
+	handleToggleFeature,
+	canEdit,
+}: Pick<
+	ReturnType<typeof useOrganizationFeatures>,
+	"t" | "isPending" | "features" | "handleToggleFeature" | "canEdit"
+>) {
+	return (
+		<div className="flex items-center justify-between">
+			<div className="flex items-start gap-3">
+				<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
+					<IconPercentage className="size-5 text-primary" />
+				</div>
+				<div className="space-y-1">
+					<Label
+						htmlFor="surcharges-toggle"
+						className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+					>
+						{t("organization.features.surcharges", "Surcharges")}
+					</Label>
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"organization.features.surcharges-description",
+							"Configure time surcharges for overtime, night work, weekends, and holidays.",
+						)}
+					</p>
+				</div>
+			</div>
+			<div className="flex items-center gap-2">
+				{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+				<Switch
+					id="surcharges-toggle"
+					checked={features.surchargesEnabled}
+					onCheckedChange={(enabled) => handleToggleFeature("surchargesEnabled", enabled)}
+					disabled={!canEdit || isPending}
+					aria-label={t("organization.features.toggle-surcharges", "Toggle surcharges")}
+				/>
+			</div>
+		</div>
+	);
+}
+
+function WorksCouncilFeature({
+	t,
+	isPending,
+	features,
+	handleToggleFeature,
+	canEdit,
+}: Pick<
+	ReturnType<typeof useOrganizationFeatures>,
+	"t" | "isPending" | "features" | "handleToggleFeature" | "canEdit"
+>) {
+	return (
+		<div className="flex items-center justify-between">
+			<div className="flex items-start gap-3">
+				<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
+					<IconGavel aria-hidden="true" className="size-5 text-primary" />
+				</div>
+				<div className="space-y-1">
+					<Label
+						htmlFor="works-council-toggle"
+						className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+					>
+						{t("organization.features.works-council", "Works Council")}
+					</Label>
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"organization.features.works-council-description",
+							"Enable the Works Council portal for authorized owners, admins, and assigned reviewers.",
+						)}
+					</p>
+				</div>
+			</div>
+			<div className="flex items-center gap-2">
+				{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+				<Switch
+					id="works-council-toggle"
+					checked={features.worksCouncilEnabled}
+					onCheckedChange={(enabled) => handleToggleFeature("worksCouncilEnabled", enabled)}
+					disabled={!canEdit || isPending}
+					aria-label={t("organization.features.toggle-works-council", "Toggle Works Council")}
+				/>
+			</div>
+		</div>
+	);
+}
+
+function DemoFeature({
+	t,
+	isPending,
+	features,
+	handleToggleFeature,
+	canEdit,
+}: Pick<
+	ReturnType<typeof useOrganizationFeatures>,
+	"t" | "isPending" | "features" | "handleToggleFeature" | "canEdit"
+>) {
+	return (
+		<div className="flex items-center justify-between">
+			<div className="flex items-start gap-3">
+				<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
+					<IconDatabase className="size-5 text-primary" />
+				</div>
+				<div className="space-y-1">
+					<Label
+						htmlFor="demo-data-toggle"
+						className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+					>
+						{t("organization.features.demo-data", "Demo Data")}
+					</Label>
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"organization.features.demo-data-description",
+							"Allow admins to generate and clear sample organization data for testing.",
+						)}
+					</p>
+				</div>
+			</div>
+			<div className="flex items-center gap-2">
+				{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+				<Switch
+					id="demo-data-toggle"
+					checked={features.demoDataEnabled}
+					onCheckedChange={(enabled) => handleToggleFeature("demoDataEnabled", enabled)}
+					disabled={!canEdit || isPending}
+					aria-label={t("organization.features.toggle-demo-data", "Toggle demo data")}
+				/>
+			</div>
+		</div>
+	);
+}
+
+function PersonnelFileFeature({
+	t,
+	isPending,
+	features,
+	handleToggleFeature,
+	setConfirmPersonnelFilesOff,
+	canEditPersonnelFiles,
+}: Pick<
+	ReturnType<typeof useOrganizationFeatures>,
+	| "t"
+	| "isPending"
+	| "features"
+	| "handleToggleFeature"
+	| "setConfirmPersonnelFilesOff"
+	| "canEditPersonnelFiles"
+>) {
+	return (
+		<div className="flex items-center justify-between">
+			<div className="flex items-start gap-3">
+				<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
+					<IconFileText aria-hidden="true" className="size-5 text-primary" />
+				</div>
+				<div className="space-y-1">
+					<Label
+						htmlFor="personnel-files-toggle"
+						className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+					>
+						{t("organization.features.personnel-files", "Personnel Files")}
+					</Label>
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"organization.features.personnel-files-description",
+							"Keep contracts, payslips, certificates and other employee documents in a personnel file per employee.",
+						)}
+					</p>
+				</div>
+			</div>
+			<div className="flex items-center gap-2">
+				{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+				<Switch
+					id="personnel-files-toggle"
+					checked={features.personnelFilesEnabled}
+					onCheckedChange={(enabled) => {
+						if (enabled) {
+							void handleToggleFeature("personnelFilesEnabled", true);
+						} else {
+							setConfirmPersonnelFilesOff(true);
+						}
+					}}
+					disabled={!canEditPersonnelFiles || isPending}
+					aria-label={t("organization.features.toggle-personnel-files", "Toggle personnel files")}
+				/>
+			</div>
+		</div>
 	);
 }

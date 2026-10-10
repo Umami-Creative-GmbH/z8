@@ -108,9 +108,10 @@ function OfficerGrantEditor({ data }: { data: PersonnelFileOfficerAdminData }) {
 	const values = useStore(form.store, (state) => state.values);
 	const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
 	const editingGrant = data.grants.find((grant) => grant.id === editingGrantId);
-	const officerIds = data.grants.map((grant) => grant.officerEmployeeId);
+	const officerIds = new Set(data.grants.map((grant) => grant.officerEmployeeId));
+	const selectedEmployeeIds = new Set(values.employeeIds);
 	const selectedDepartedNames = data.departedEmployees
-		.filter((person) => values.employeeIds.includes(person.id))
+		.filter((person) => selectedEmployeeIds.has(person.id))
 		.map((person) => person.name);
 	const canSubmit =
 		values.officerEmployeeId.length > 0 &&
@@ -132,7 +133,7 @@ function OfficerGrantEditor({ data }: { data: PersonnelFileOfficerAdminData }) {
 	const revoke = async () => {
 		if (!revokingGrant) return;
 		setIsRevoking(true);
-		try {
+		await (async () => {
 			const result = await revokePersonnelFileOfficerGrantAction({ grantId: revokingGrant.id });
 			if (!result.success) {
 				toast.error(
@@ -153,9 +154,9 @@ function OfficerGrantEditor({ data }: { data: PersonnelFileOfficerAdminData }) {
 				setEditingGrantId(null);
 			}
 			setRevokingGrant(null);
-		} finally {
+		})().finally(() => {
 			setIsRevoking(false);
-		}
+		});
 	};
 
 	return (
@@ -171,7 +172,7 @@ function OfficerGrantEditor({ data }: { data: PersonnelFileOfficerAdminData }) {
 						</>
 					),
 				}))}
-				canAdd={data.employees.some((person) => !officerIds.includes(person.id))}
+				canAdd={data.employees.some((person) => !officerIds.has(person.id))}
 				onAdd={() => openEditor(null)}
 				onEdit={(id) => openEditor(data.grants.find((grant) => grant.id === id) ?? null)}
 				onRevoke={(id) => setRevokingGrant(data.grants.find((grant) => grant.id === id) ?? null)}
@@ -241,7 +242,9 @@ function OfficerGrantEditor({ data }: { data: PersonnelFileOfficerAdminData }) {
 										)}
 										value={field.state.value || null}
 										onChange={(value) => field.handleChange(value ?? "")}
-										excludeIds={officerIds.filter((id) => id !== editingGrant?.officerEmployeeId)}
+										excludeIds={[...officerIds].filter(
+											(id) => id !== editingGrant?.officerEmployeeId,
+										)}
 										employees={officerOptions}
 										disabled={isSubmitting || Boolean(editingGrant)}
 									/>
@@ -300,45 +303,11 @@ function OfficerGrantEditor({ data }: { data: PersonnelFileOfficerAdminData }) {
 								}}
 							/>
 
-							<fieldset className="space-y-3">
-								<legend className="text-sm font-medium">
-									{t("settings.personnelFiles.officers.categories", "Document categories")}
-								</legend>
-								<div className="grid gap-2 sm:grid-cols-2">
-									{DOCUMENT_CATEGORIES.map((category) => (
-										<div key={category} className="flex items-start gap-2">
-											<Checkbox
-												id={`personnel-file-officer-category-${category}`}
-												checked={values.categories.includes(category)}
-												onCheckedChange={(checked) =>
-													form.setFieldValue(
-														"categories",
-														toggleCategory(values.categories, category, checked === true),
-													)
-												}
-												disabled={isSubmitting}
-											/>
-											<Label
-												htmlFor={`personnel-file-officer-category-${category}`}
-												className="font-normal"
-											>
-												{labels.categories[category]}
-											</Label>
-										</div>
-									))}
-								</div>
-								<p className="text-muted-foreground text-sm">
-									{values.categories.length === 0
-										? t(
-												"settings.personnelFiles.officers.categoriesRequired",
-												"Choose at least one document category.",
-											)
-										: t(
-												"settings.personnelFiles.officers.categoriesDescription",
-												"The officer never sees documents of other categories, not even of employees in scope.",
-											)}
-								</p>
-							</fieldset>
+							<OfficerDocumentCategories
+								categories={values.categories}
+								onChange={(categories) => form.setFieldValue("categories", categories)}
+								disabled={isSubmitting}
+							/>
 
 							<div className="flex flex-wrap gap-2">
 								<Button type="submit" disabled={!canSubmit}>
@@ -410,5 +379,53 @@ export function PersonnelFileOfficerSettingsCard() {
 				{data && <OfficerGrantEditor data={data} />}
 			</CardContent>
 		</Card>
+	);
+}
+
+function OfficerDocumentCategories({
+	categories,
+	onChange,
+	disabled,
+}: {
+	categories: DocumentCategory[];
+	onChange: (categories: DocumentCategory[]) => void;
+	disabled: boolean;
+}) {
+	const { t } = useTranslate();
+	const labels = usePersonnelFileLabels();
+	return (
+		<fieldset className="space-y-3">
+			<legend className="text-sm font-medium">
+				{t("settings.personnelFiles.officers.categories", "Document categories")}
+			</legend>
+			<div className="grid gap-2 sm:grid-cols-2">
+				{DOCUMENT_CATEGORIES.map((category) => (
+					<div key={category} className="flex items-start gap-2">
+						<Checkbox
+							id={`personnel-file-officer-category-${category}`}
+							checked={categories.includes(category)}
+							onCheckedChange={(checked) =>
+								onChange(toggleCategory(categories, category, checked === true))
+							}
+							disabled={disabled}
+						/>
+						<Label htmlFor={`personnel-file-officer-category-${category}`} className="font-normal">
+							{labels.categories[category]}
+						</Label>
+					</div>
+				))}
+			</div>
+			<p className="text-muted-foreground text-sm">
+				{categories.length === 0
+					? t(
+							"settings.personnelFiles.officers.categoriesRequired",
+							"Choose at least one document category.",
+						)
+					: t(
+							"settings.personnelFiles.officers.categoriesDescription",
+							"The officer never sees documents of other categories, not even of employees in scope.",
+						)}
+			</p>
+		</fieldset>
 	);
 }

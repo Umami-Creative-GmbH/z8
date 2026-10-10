@@ -1,18 +1,12 @@
 /** @vitest-environment jsdom */
 import "temporal-polyfill/global";
-import {
-	createCalendar,
-	createViewDay,
-	createViewMonthAgenda,
-} from "@schedule-x/calendar";
+import { createCalendar, createViewDay, createViewMonthAgenda } from "@schedule-x/calendar";
 import { ScheduleXCalendar } from "@schedule-x/react";
 import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { calendarEventToScheduleX } from "@/lib/calendar/schedule-x-adapter";
-import {
-	CalendarTimeGridEvent,
-	calendarEventComponents,
-} from "./calendar-work-event";
+import { calendarEventComponents } from "./calendar-event-components";
+import { CalendarTimeGridEvent } from "./calendar-work-event";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
@@ -29,9 +23,7 @@ describe("calendar work event", () => {
 					title: "Work",
 					color: "green",
 					date: new Date("2026-09-01T07:00:00Z"),
-					endDate: new Date(
-						isRunning ? "2026-09-01T07:01:00Z" : "2026-09-01T12:00:00Z",
-					),
+					endDate: new Date(isRunning ? "2026-09-01T07:01:00Z" : "2026-09-01T12:00:00Z"),
 					metadata: {
 						workLocationType: "remote",
 						isRunning,
@@ -43,9 +35,7 @@ describe("calendar work event", () => {
 			);
 			expect(event).not.toBeNull();
 			render(<CalendarTimeGridEvent calendarEvent={event!} />);
-			expect(
-				screen.getByText(isRunning ? "09:00" : "09:00 - 08:00"),
-			).toBeTruthy();
+			expect(screen.getByText(isRunning ? "09:00" : "09:00 - 08:00")).toBeTruthy();
 			expect(screen.queryByText("09:00 - 14:00")).toBeNull();
 			expect(screen.queryByText("09:00 - 09:30")).toBeNull();
 		},
@@ -80,10 +70,7 @@ describe("calendar work event", () => {
 				],
 			});
 			render(
-				<ScheduleXCalendar
-					calendarApp={calendarApp}
-					customComponents={calendarEventComponents}
-				/>,
+				<ScheduleXCalendar calendarApp={calendarApp} customComponents={calendarEventComponents} />,
 			);
 			await waitFor(() => expect(screen.getByTitle("Remote")).toBeTruthy());
 			expect(screen.getAllByText("Work")).toHaveLength(1);
@@ -105,15 +92,11 @@ describe("calendar work event", () => {
 				/>,
 			);
 			expect(
-				screen.getByTitle(
-					workLocationType[0].toUpperCase() + workLocationType.slice(1),
-				),
+				screen.getByTitle(workLocationType[0].toUpperCase() + workLocationType.slice(1)),
 			).toBeTruthy();
 			expect(screen.getByText("UTC+02:00")).toBeTruthy();
 			expect(
-				screen
-					.getByRole("button", { name: "Stop" })
-					.getAttribute("data-running-clock-out-button"),
+				screen.getByRole("button", { name: "Stop" }).getAttribute("data-running-clock-out-button"),
 			).toBe("true");
 		},
 	);

@@ -2,6 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
+import { useMemo } from "react";
 import type {
 	ProjectTemplatePreviewData,
 	SkippedManagerOrAssignment,
@@ -30,9 +31,10 @@ export function useNotCopiedMessage() {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const reasonOf = useSkipReason();
+	const listFormat = useMemo(() => new Intl.ListFormat(locale, { type: "conjunction" }), [locale]);
 	return (skipped: readonly Pick<SkippedManagerOrAssignment, "name" | "reason">[]) =>
 		t("settings.projects.fromTemplate.skipped", "Not copied: {members}", {
-			members: new Intl.ListFormat(locale, { type: "conjunction" }).format(
+			members: listFormat.format(
 				skipped.map((member) =>
 					t("settings.projects.fromTemplate.skippedMemberReason", "{name} ({reason})", {
 						name: member.name,

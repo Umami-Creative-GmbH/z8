@@ -68,8 +68,7 @@ export function CustomerAccountingEditor({
 		successMessage: string,
 	): Promise<boolean> => {
 		setPending(true);
-		const result = await change.catch(() => null);
-		setPending(false);
+		const result = await change.catch(() => null).finally(() => setPending(false));
 		if (!result) {
 			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
 			return false;

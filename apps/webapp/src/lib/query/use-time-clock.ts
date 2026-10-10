@@ -11,15 +11,15 @@ import type { PositionConsentQuestion } from "@/components/position-capture/posi
 import { useOfflineClock } from "@/hooks/use-offline-clock";
 import { useSession } from "@/lib/auth-client";
 import { type Instant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
+import type { BookedProjectTask } from "@/lib/projects/project-task-model";
 import {
 	frozenClockCommandsAvailable,
 	prepareBrowserClockCommand,
 } from "@/lib/time-tracking/browser-clock-command";
 import type { ClockCommandPosition } from "@/lib/time-tracking/clock-command";
 import { useClockPosition } from "@/lib/time-tracking/position-capture/use-clock-position";
-import { postClockIn, postClockOut } from "@/lib/time-tracking/time-clock-client";
-import type { BookedProjectTask } from "@/lib/projects/project-task-model";
 import { namedTaskId } from "@/lib/time-tracking/task-attribution";
+import { postClockIn, postClockOut } from "@/lib/time-tracking/time-clock-client";
 import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { queryKeys } from "./keys";
@@ -62,9 +62,7 @@ function getServerOrigin(): string | null {
 }
 
 function resolveBrowserTimezone(params?: { browserTimezone?: string | null }) {
-	return params && "browserTimezone" in params
-		? params.browserTimezone
-		: getBrowserTimezone();
+	return params && "browserTimezone" in params ? params.browserTimezone : getBrowserTimezone();
 }
 
 /**
@@ -84,9 +82,7 @@ export function useElapsedTimer(startTime: Date | null): number {
 	);
 	if (!startTime || currentEpochSecond === 0) return 0;
 
-	const startEpochSecond = Math.floor(
-		instantFromDate(startTime).epochMilliseconds / 1000,
-	);
+	const startEpochSecond = Math.floor(instantFromDate(startTime).epochMilliseconds / 1000);
 	return Math.max(0, currentEpochSecond - startEpochSecond);
 }
 
@@ -438,28 +434,16 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		isFetching: statusQuery.isFetching,
 		isError: statusQuery.isError,
 
-		// Derived state
-		hasEmployee: status?.hasEmployee ?? false,
-		employeeId: status?.employeeId ?? null,
-		isClockedIn: status?.isClockedIn ?? false,
-		activeWorkPeriod: status?.activeWorkPeriod ?? null,
-
+		...clockStatusView(status),
 		// Offline state
 		isOnline,
 		isOffline,
-		captureMode: !isOffline
-			? ("server" as const)
-			: canFreeze
-				? ("local-queue" as const)
-				: ("local-review" as const),
+		captureMode: clockCaptureMode(isOffline, canFreeze),
 		pendingCount,
 		isSyncing,
 
 		// Mutations
-		clockIn: (params?: {
-			workLocationType?: WorkLocationType;
-			browserTimezone?: string | null;
-		}) =>
+		clockIn: (params?: { workLocationType?: WorkLocationType; browserTimezone?: string | null }) =>
 			// One identity per request, as for clock-out; the server replays a committed identity.
 			clockInMutation.mutateAsync({
 				...(params ?? {}),
@@ -493,4 +477,18 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		// Utilities
 		refetchStatus,
 	};
+}
+
+function clockStatusView(status: TimeClockState | undefined) {
+	return {
+		hasEmployee: status?.hasEmployee ?? false,
+		employeeId: status?.employeeId ?? null,
+		isClockedIn: status?.isClockedIn ?? false,
+		activeWorkPeriod: status?.activeWorkPeriod ?? null,
+	};
+}
+
+function clockCaptureMode(isOffline: boolean, canFreeze: boolean) {
+	if (!isOffline) return "server" as const;
+	return canFreeze ? ("local-queue" as const) : ("local-review" as const);
 }

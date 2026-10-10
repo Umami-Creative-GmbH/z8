@@ -99,7 +99,12 @@ export function createSevdeskClient(
 	const timeoutMs = options.timeoutMs ?? REQUEST_TIMEOUT_MS;
 
 	return async (request) => {
-		const url = new URL(`${baseUrl}${request.path}`);
+		const address = `${baseUrl}${request.path}`;
+		if (!URL.canParse(address)) {
+			throw new AccountingProviderError("not_performed", "Invalid sevdesk request URL");
+		}
+		const url = new URL(address);
+		const acceptedStatuses = new Set(request.accept);
 		for (const [name, value] of Object.entries(request.query ?? {})) {
 			url.searchParams.set(name, String(value));
 		}
@@ -146,7 +151,7 @@ export function createSevdeskClient(
 			}
 
 			const body = await readBody(response);
-			if (response.ok || request.accept?.includes(response.status)) {
+			if (response.ok || acceptedStatuses.has(response.status)) {
 				return { status: response.status, body };
 			}
 			const detail = sevdeskErrorMessage(body, token);
