@@ -95,6 +95,27 @@ describe("KioskApp", () => {
 		expect(header(calls[0].init, "authorization")).toBeNull();
 	});
 
+	it("shows the who-is-in board on the home screen only when the kiosk's board is on (#863)", async () => {
+		window.localStorage.setItem(KIOSK_TOKEN_STORAGE_KEY, "z8k_device-token");
+		const board = { enabled: true, entries: [{ name: "Anna B.", state: "in" }] };
+		const calls = stubFetch(({ url }) =>
+			url === "/api/kiosk/board"
+				? Response.json(board)
+				: Response.json({ kiosk: { ...kiosk, boardEnabled: true } }),
+		);
+		render(<KioskApp />);
+
+		expect(await screen.findByText("Anna B.")).toBeTruthy();
+		expect(header(calls[1].init, "x-kiosk-token")).toBe("z8k_device-token");
+
+		cleanup();
+		const offCalls = stubFetch(() => Response.json({ kiosk }));
+		render(<KioskApp />);
+		expect(await screen.findByText("Front door")).toBeTruthy();
+		expect(offCalls.map((call) => call.url)).not.toContain("/api/kiosk/board");
+		expect(screen.queryByText("Who is in")).toBeNull();
+	});
+
 	it("shows the revoked screen for a revoked kiosk", async () => {
 		window.localStorage.setItem(KIOSK_TOKEN_STORAGE_KEY, "z8k_device-token");
 		stubFetch(() => Response.json({ code: "kiosk_revoked" }, { status: 401 }));

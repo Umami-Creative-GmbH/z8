@@ -100,3 +100,12 @@ export type KioskDeviceInfo = {
 	timezone: string;
 	boardEnabled: boolean;
 };
+
+/**
+ * `GET /api/kiosk/board` (#863): who of the location's assigned employees is
+ * in or on break. First name and last initial only, no times, nobody who is out.
+ */
+export type KioskBoardResponse = {
+	enabled: boolean;
+	entries: { name: string; state: "in" | "on_break" }[];
+};
