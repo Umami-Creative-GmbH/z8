@@ -885,10 +885,16 @@ export async function deleteEmployeeWorkBalance(input: {
 		);
 }
 
+/**
+ * The employees the worker refreshes: active employees whose balance is
+ * missing, marked for recomputation or behind yesterday (in their zone), and
+ * employees who have left (#1002) whose existing balance is marked for
+ * recomputation or still behind the end of their employment. The latter are
+ * caught up once through their last working day, and later runs skip them; an
+ * inactive employee without a recorded employment end is left alone.
+ */
 export async function listEmployeesForWorkBalanceBatch(limit = 1000, now = new Date()) {
-	const employeeLocalCutoffDate = sql<string>`(
-		(
-			${now}::timestamptz AT TIME ZONE COALESCE(
+	const employeeLocalZone = sql<string>`COALESCE(
 				(
 					SELECT NULLIF("work_balance_user_settings"."timezone", 'UTC')
 					FROM "user_settings" AS "work_balance_user_settings"
@@ -908,9 +914,21 @@ export async function listEmployeesForWorkBalanceBatch(limit = 1000, now = new D
 						)
 				),
 				'UTC'
-			)
-		)::date - 1
+			)`;
+	const employeeLocalCutoffDate = sql<string>`(
+		(${now}::timestamptz AT TIME ZONE ${employeeLocalZone})::date - 1
 	)`;
+	// The last local day of the employee's latest closed employment period. Periods
+	// are half-open, so a cutoff at midnight ends employment on the day before.
+	const employmentEndLocalDate = sql<string>`(
+		(
+			SELECT max("work_balance_period"."ended_at") - interval '1 microsecond'
+			FROM "employee_employment_period" AS "work_balance_period"
+			WHERE "work_balance_period"."organization_id" = ${employee.organizationId}
+				AND "work_balance_period"."employee_id" = ${employee.id}
+				AND "work_balance_period"."status" = 'closed'
+		) AT TIME ZONE ${employeeLocalZone}
+	)::date`;
 
 	return db
 		.select({
@@ -931,14 +949,27 @@ export async function listEmployeesForWorkBalanceBatch(limit = 1000, now = new D
 		)
 		.where(
 			and(
-				eq(employee.isActive, true),
 				isNotNull(employee.organizationId),
 				// A pending rebuild resets these projections first; see rebuild-intents.ts.
 				sql`not exists (select 1 from ${workBalanceRebuildIntent} where ${workBalanceRebuildIntent.organizationId} = ${employee.organizationId} and (${workBalanceRebuildIntent.userId} is null or ${workBalanceRebuildIntent.userId} = ${employee.userId}))`,
 				or(
-					isNull(employeeWorkBalance.id),
-					eq(employeeWorkBalance.isDirty, true),
-					lt(employeeWorkBalance.computedThroughDate, employeeLocalCutoffDate),
+					and(
+						eq(employee.isActive, true),
+						or(
+							isNull(employeeWorkBalance.id),
+							eq(employeeWorkBalance.isDirty, true),
+							lt(employeeWorkBalance.computedThroughDate, employeeLocalCutoffDate),
+						),
+					),
+					and(
+						eq(employee.isActive, false),
+						isNotNull(employeeWorkBalance.id),
+						or(
+							eq(employeeWorkBalance.isDirty, true),
+							// LEAST ignores NULL, so an unknown employment end must not reach it.
+							sql`(${employmentEndLocalDate} is not null and ${employeeWorkBalance.computedThroughDate} < least(${employeeLocalCutoffDate}, ${employmentEndLocalDate}))`,
+						),
+					),
 				),
 			),
 		)

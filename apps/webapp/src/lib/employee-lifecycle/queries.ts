@@ -137,8 +137,14 @@ export function publicReviewMetadata(metadata: unknown): {
 	};
 }
 
+/**
+ * The lifecycle part of the view. The work balance (#1002) is added by the
+ * server action, which knows whether the viewer may record payouts.
+ */
+export type EmployeeLifecycleView = Omit<EmployeeOffboardingView, "workBalance">;
+
 export type EmployeeOffboardingViewResult =
-	| { kind: "ok"; view: EmployeeOffboardingView }
+	| { kind: "ok"; view: EmployeeLifecycleView }
 	| { kind: "not_found" }
 	| { kind: "forbidden" };
 

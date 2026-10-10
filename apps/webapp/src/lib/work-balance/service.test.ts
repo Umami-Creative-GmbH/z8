@@ -964,7 +964,6 @@ describe("work balance helpers", () => {
 		// Projections awaiting a rebuild (organization-wide or the employee's user) are left to it.
 		expect(and).toHaveBeenCalledWith(
 			expect.anything(),
-			expect.anything(),
 			expect.objectContaining({
 				sql: expect.arrayContaining([
 					expect.stringContaining("not exists (select 1 from "),
@@ -973,6 +972,8 @@ describe("work balance helpers", () => {
 			}),
 			expect.anything(),
 		);
+		// Employees who have left are caught up through the end of their employment (#1002).
+		expect(eq).toHaveBeenCalledWith(employee.isActive, false);
 	});
 
 	it("refreshes old dirty months rebuilds years and upserts read model from closed plus hot totals", async () => {

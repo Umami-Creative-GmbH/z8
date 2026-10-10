@@ -258,6 +258,8 @@ const TYPE_LABELS: Record<Exclude<NotificationType, ClockingReminderType>, strin
 	personnel_file_expired_today: "Document expires today",
 	// Employee documents newly due for deletion (personnel file officers)
 	personnel_file_due_for_deletion: "Documents due for deletion (personnel file officers)",
+	// One-time notice to owners and admins; not listed in any preference category
+	time_off_in_lieu_available: "Time off in lieu available",
 };
 
 // Channel icons and labels

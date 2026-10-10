@@ -35,17 +35,26 @@ type RecordOvertimePayoutValues = {
 	reason: string;
 };
 
-/** Records an overtime payout for the employee (#993). */
+/**
+ * Records an overtime payout for the employee (#993). The offboarding review
+ * opens it for a final payout prefilled with the remaining balance (#1002).
+ */
 export function RecordOvertimePayoutDialog({
 	open,
 	onOpenChange,
 	today,
+	initial,
+	title,
 	onRecord,
 }: {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	/** Today in the employee's timezone: the latest day a payout may have. */
 	today: string;
+	/** Prefilled day and amount; without it the day is today and the amount empty. */
+	initial?: { day: string; amountMinutes: number };
+	/** Replaces the default dialog title. */
+	title?: string;
 	onRecord: (input: {
 		day: string;
 		hours: number;
@@ -55,12 +64,19 @@ export function RecordOvertimePayoutDialog({
 }) {
 	const { t } = useTranslate();
 	const errorMessage = useBalanceAdjustmentErrorMessage();
-	const defaultValues: RecordOvertimePayoutValues = {
-		day: today,
-		hours: "",
-		minutes: "0",
-		reason: "",
-	};
+	const defaultValues: RecordOvertimePayoutValues = initial
+		? {
+				day: initial.day,
+				hours: String(Math.floor(initial.amountMinutes / 60)),
+				minutes: String(initial.amountMinutes % 60),
+				reason: "",
+			}
+		: {
+				day: today,
+				hours: "",
+				minutes: "0",
+				reason: "",
+			};
 	const form = useForm({
 		defaultValues,
 		onSubmit: async ({ value }) => {
@@ -101,7 +117,8 @@ export function RecordOvertimePayoutDialog({
 				>
 					<DialogHeader>
 						<DialogTitle>
-							{t("settings.employees.workBalance.recordPayoutTitle", "Record overtime payout")}
+							{title ??
+								t("settings.employees.workBalance.recordPayoutTitle", "Record overtime payout")}
 						</DialogTitle>
 						<DialogDescription>
 							{t(
