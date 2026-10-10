@@ -58,6 +58,7 @@ vi.mock("@/app/[locale]/(app)/approvals/actions", () => ({
 					startPeriod: "full_day",
 					endDate: "2026-05-18",
 					endPeriod: "full_day",
+					absenceDays: 1,
 					notes: null,
 					sickDetail: "child_sick",
 					sickNotes: { count: 2, viewable: false },
@@ -85,6 +86,7 @@ vi.mock("@/app/[locale]/(app)/approvals/actions", () => ({
 					startPeriod: "full_day",
 					endDate: "2026-05-19",
 					endPeriod: "full_day",
+					absenceDays: 1,
 					notes: null,
 					sickDetail: "other",
 					sickNotes: { count: 1, viewable: true },
@@ -112,6 +114,7 @@ vi.mock("@/app/[locale]/(app)/approvals/actions", () => ({
 					startPeriod: "full_day",
 					endDate: "2026-06-01",
 					endPeriod: "full_day",
+					absenceDays: 0.5,
 					notes: null,
 					sickDetail: "with_certificate",
 					sickNotes: null,
@@ -138,6 +141,13 @@ function renderTable() {
 }
 
 describe("AbsenceApprovalsTable", () => {
+	it("shows the absence days the server resolved (#979)", async () => {
+		renderTable();
+
+		// A full Monday the client would have counted as 1.
+		expect(await screen.findByText("0.5 day")).toBeTruthy();
+	});
+
 	it("shows sick detail labels for sick absence approvals only", async () => {
 		renderTable();
 

@@ -38,9 +38,9 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
+import type { AbsencePlanPreview } from "@/lib/absences/absence-plan-preview";
 import { formatDays } from "@/lib/absences/date-utils";
 import {
-	calculateAbsenceDurationDays,
 	normalizeAbsenceDurationInput,
 	validateAbsenceDurationInput,
 } from "@/lib/absences/duration";
@@ -48,12 +48,11 @@ import { sickDetailOptions } from "@/lib/absences/sick-details";
 import type {
 	AbsenceDurationKind,
 	DayPeriod,
-	Holiday,
 	SickDetail,
 } from "@/lib/absences/types";
 import { queryKeys } from "@/lib/query/keys";
 import { useRouter } from "@/navigation";
-import { AbsencePlanPreviewPanel } from "./absence-plan-preview-panel";
+import { AbsencePlanPreviewPanel, noWorkingDaysMessage } from "./absence-plan-preview-panel";
 import { CategoryBadge } from "./category-badge";
 
 interface RequestAbsenceDialogProps {
@@ -67,7 +66,6 @@ interface RequestAbsenceDialogProps {
 	}>;
 	organizationId: string;
 	remainingDays: number;
-	holidays?: Holiday[];
 	trigger?: React.ReactNode;
 	onSuccess?: () => void;
 	open?: boolean;
@@ -90,7 +88,6 @@ const createDefaultValues = (initialDate?: string) => ({
 
 type RequestAbsenceFormValues = ReturnType<typeof createDefaultValues>;
 
-const EMPTY_HOLIDAYS: Holiday[] = [];
 const PARTIAL_DAY_TIME_ERRORS = new Set([
 	"Enter a start time and end time for a partial-day absence.",
 	"Enter times in HH:mm format.",
@@ -101,7 +98,6 @@ function useRequestAbsenceDialogController({
 	categories,
 	controlledOnOpenChange,
 	controlledOpen,
-	holidays,
 	initialDate,
 	onSuccess,
 	organizationId,
@@ -110,7 +106,6 @@ function useRequestAbsenceDialogController({
 	categories: RequestAbsenceDialogProps["categories"];
 	controlledOnOpenChange: RequestAbsenceDialogProps["onOpenChange"];
 	controlledOpen: RequestAbsenceDialogProps["open"];
-	holidays: Holiday[];
 	initialDate: RequestAbsenceDialogProps["initialDate"];
 	onSuccess: RequestAbsenceDialogProps["onSuccess"];
 	organizationId: string;
@@ -162,11 +157,18 @@ function useRequestAbsenceDialogController({
 				);
 				return;
 			}
-			const requestedDays = calculateAbsenceDurationDays(normalized, holidays);
-			const balanceAfterRequest = selectedCategory?.countsAgainstVacation
-				? remainingDays - requestedDays
-				: remainingDays;
-			if (selectedCategory?.countsAgainstVacation && balanceAfterRequest < 0) {
+			// The plan preview counts the absence days; the server refuses on its own count too.
+			if (selectedCategory?.countsAgainstVacation && planPreviewQuery.isLoading) return;
+			const preview = planPreviewQuery.data;
+			if (preview?.refusal === "no_working_days") {
+				toast.error(noWorkingDaysMessage(t));
+				return;
+			}
+			if (
+				selectedCategory?.countsAgainstVacation &&
+				preview &&
+				remainingDays - preview.requestedAbsenceDays < 0
+			) {
 				toast.error(
 					t(
 						"absences.form.errors.insufficientBalance",
@@ -198,6 +200,8 @@ function useRequestAbsenceDialogController({
 				form.reset();
 				refresh();
 				onSuccess?.();
+			} else if (result.code === "AbsenceDaysRefusedError") {
+				toast.error(noWorkingDaysMessage(t));
 			} else {
 				toast.error(
 					result.error ||
@@ -267,7 +271,6 @@ export function RequestAbsenceDialog({
 	categories,
 	organizationId,
 	remainingDays,
-	holidays = EMPTY_HOLIDAYS,
 	trigger,
 	onSuccess,
 	open: controlledOpen,
@@ -287,7 +290,6 @@ export function RequestAbsenceDialog({
 		categories,
 		controlledOnOpenChange,
 		controlledOpen,
-		holidays,
 		initialDate,
 		onSuccess,
 		organizationId,
@@ -338,7 +340,6 @@ export function RequestAbsenceDialog({
 							canLoadPlanPreview={canLoadPlanPreview}
 							categories={categories}
 							form={form}
-							holidays={holidays}
 							planPreviewQuery={planPreviewQuery}
 							remainingDays={remainingDays}
 						/>
@@ -362,16 +363,14 @@ export function RequestAbsenceDialog({
 						}) => {
 							const normalizedValues = normalizeAbsenceDurationInput(values);
 							const validationError = validateAbsenceDurationInput(values);
-							const requestedDays =
-								values.categoryId && values.startDate && !validationError
-									? calculateAbsenceDurationDays(normalizedValues, holidays)
-									: 0;
+							const preview = validationError ? undefined : planPreviewQuery.data;
+							const requestedAbsenceDays = preview?.requestedAbsenceDays ?? 0;
 							const selectedCategory = categories.find(
 								(c) => c.id === normalizedValues.categoryId,
 							);
 							const balanceAfterRequest =
 								selectedCategory?.countsAgainstVacation
-									? remainingDays - requestedDays
+									? remainingDays - requestedAbsenceDays
 									: remainingDays;
 							const insufficientBalance =
 								selectedCategory?.countsAgainstVacation &&
@@ -391,6 +390,8 @@ export function RequestAbsenceDialog({
 										disabled={
 											isSubmitting ||
 											insufficientBalance ||
+											Boolean(preview?.refusal) ||
+											(selectedCategory?.countsAgainstVacation && planPreviewQuery.isLoading) ||
 											Boolean(validationError)
 										}
 									>
@@ -692,14 +693,12 @@ function RequestAbsenceSummaryAndNotes({
 	canLoadPlanPreview,
 	categories,
 	form,
-	holidays,
 	planPreviewQuery,
 	remainingDays,
 }: {
 	canLoadPlanPreview: boolean;
 	categories: RequestAbsenceDialogProps["categories"];
 	form: RequestAbsenceFormApi;
-	holidays: Holiday[];
 	planPreviewQuery: ReturnType<
 		typeof useRequestAbsenceDialogController
 	>["planPreviewQuery"];
@@ -714,16 +713,15 @@ function RequestAbsenceSummaryAndNotes({
 				{(values: RequestAbsenceFormValues) => {
 					const normalized = normalizeAbsenceDurationInput(values);
 					const validationError = validateAbsenceDurationInput(values);
-					const requestedDays =
-						values.categoryId && values.startDate && !validationError
-							? calculateAbsenceDurationDays(normalized, holidays)
-							: 0;
+					const preview: AbsencePlanPreview | undefined =
+						canLoadPlanPreview && !validationError ? planPreviewQuery.data : undefined;
+					const requestedAbsenceDays = preview?.requestedAbsenceDays ?? 0;
 					const selectedCategory = categories.find(
 						(category) => category.id === normalized.categoryId,
 					);
-					if (requestedDays <= 0) return null;
+					if (requestedAbsenceDays <= 0) return null;
 					const balanceAfterRequest = selectedCategory?.countsAgainstVacation
-						? remainingDays - requestedDays
+						? remainingDays - requestedAbsenceDays
 						: remainingDays;
 					const insufficientBalance =
 						selectedCategory?.countsAgainstVacation && balanceAfterRequest < 0;
@@ -731,8 +729,8 @@ function RequestAbsenceSummaryAndNotes({
 						<div className="rounded-md border p-3 text-sm">
 							<BalanceRow
 								className=""
-								label={t("absences.form.businessDays", "Business days:")}
-								value={formatDays(requestedDays, t)}
+								label={t("absences.form.absenceDays", "Absence days:")}
+								value={formatDays(requestedAbsenceDays, t)}
 							/>
 							{selectedCategory?.countsAgainstVacation && (
 								<>

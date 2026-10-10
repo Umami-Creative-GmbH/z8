@@ -7,12 +7,14 @@ const {
 	onAbsenceRequestApproved,
 	onAbsenceRequestRejected,
 	isEligibleManagerForApprovalRequest,
+	getAbsenceDays,
 } = vi.hoisted(() => ({
 	addCalendarSyncJob: vi.fn().mockResolvedValue(undefined),
 	markEmployeeWorkBalanceDirty: vi.fn().mockResolvedValue(undefined),
 	onAbsenceRequestApproved: vi.fn(),
 	onAbsenceRequestRejected: vi.fn(),
 	isEligibleManagerForApprovalRequest: vi.fn(),
+	getAbsenceDays: vi.fn().mockResolvedValue(4),
 }));
 
 vi.mock("@/env", () => ({
@@ -53,6 +55,10 @@ vi.mock("@/lib/notifications/triggers", () => ({
 	onAbsenceRequestApproved,
 	onAbsenceRequestRejected,
 }));
+
+// Absence days resolve from work policies and holidays (#979), covered against PostgreSQL in
+// absences/absence-days-resolver.integration.test.ts.
+vi.mock("@/lib/absences/absence-days-resolver", () => ({ getAbsenceDays }));
 
 vi.mock("@/lib/queue", () => ({
 	addCalendarSyncJob,
@@ -1301,6 +1307,10 @@ describe("absence requester decision notifications", () => {
 				categoryName: "Vacation",
 				approverName: "Morgan Manager",
 			}),
+		);
+		expect(getAbsenceDays).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ organizationId: "org-1" }),
 		);
 		expect(onAbsenceRequestRejected).not.toHaveBeenCalled();
 		vi.doUnmock("@/lib/approvals/server/shared");

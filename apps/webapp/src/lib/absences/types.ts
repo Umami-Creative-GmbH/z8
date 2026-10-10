@@ -59,6 +59,11 @@ export interface AbsenceWithCategory {
 	createdAt: Date;
 }
 
+/** An absence with its absence days, resolved on the server (Absences ADR 0001). */
+export interface AbsenceWithDays extends AbsenceWithCategory {
+	absenceDays: number;
+}
+
 export interface Holiday {
 	id: string;
 	name: string;
