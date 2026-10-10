@@ -73,6 +73,8 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	// travelExpenses: confirming a payroll run as paid (#853).
 	// settings/payrollExport: payroll line kind labels in payroll readiness (#854).
 	"/payroll": ["common", "payroll", "travelExpenses", "settings/payrollExport"],
+	// settings/people: the Work balance section of the employee settings page (#995).
+	"/payroll/work-balances": ["common", "payroll", "settings/people"],
 	// Main app routes
 	"/": ["common", "dashboard"],
 	"/analytics": ["common", "analytics"],

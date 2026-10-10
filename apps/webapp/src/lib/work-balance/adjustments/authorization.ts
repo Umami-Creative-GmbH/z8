@@ -1,27 +1,69 @@
 import "server-only";
 
+import { db } from "@/db";
 import {
 	type OrganizationActor,
-	requireOrganizationAdmin,
+	requireOrganizationActor,
 } from "@/lib/auth/current-organization-actor";
+import { canManageCurrentOrganizationSettings } from "@/lib/auth-helpers";
+import { findBalanceAdjustmentGrant } from "@/lib/payroll-access/adjustment-coverage";
 import { BalanceAdjustmentRefusal } from "./types";
+
+/** Why the actor may record and cancel the employee's balance adjustments. */
+export type BalanceAdjustmentAuthority =
+	| { via: "organization_admin" }
+	| { via: "payroll_access_grant"; grantId: string };
+
+export type BalanceAdjustmentWriter = OrganizationActor & { authority: BalanceAdjustmentAuthority };
 
 /**
  * Who may record and cancel balance adjustments, and see them with their
- * actions in the employee's Work balance section (#993): owners and admins of
- * the active organization, for any of its employees. No approval step.
+ * actions in the employee's Work balance section. No approval step.
  *
- * #995 extends this with holders of an active payroll access grant for the
- * employees it covers, including employees who have left; #996 adds read-only
- * access for the employee and their managers.
+ * - Owners and admins of the active organization, for any of its employees (#993).
+ * - With a `target`, also the holder of an active payroll access grant whose
+ *   coverage for balance adjustments includes that employee, including an
+ *   employee who has left (#995, `findBalanceAdjustmentGrant`). Without a
+ *   target, as for an organization-wide action, only owners and admins pass.
+ *
+ * #996 adds read-only access for the employee and their managers.
  */
-export function requireBalanceAdjustmentWriter(): Promise<OrganizationActor> {
-	return requireOrganizationAdmin(
-		() =>
-			new BalanceAdjustmentRefusal(
-				"not_permitted",
-				"Only organization owners and admins can record or cancel balance adjustments.",
-			),
+export async function requireBalanceAdjustmentWriter(target?: {
+	employeeId: string;
+}): Promise<BalanceAdjustmentWriter> {
+	const actor = await requireOrganizationActor(notPermitted);
+	if (await canManageCurrentOrganizationSettings()) {
+		return { ...actor, authority: { via: "organization_admin" } };
+	}
+	if (target) {
+		const grant = await findBalanceAdjustmentGrant(db, {
+			organizationId: actor.organizationId,
+			actorUserId: actor.userId,
+			employeeId: target.employeeId,
+		});
+		if (grant) {
+			return { ...actor, authority: { via: "payroll_access_grant", grantId: grant.grantId } };
+		}
+	}
+	throw notPermitted();
+}
+
+/**
+ * The audit metadata for an adjustment the actor writes: a grant holder's
+ * entries name the grant; an owner's or admin's entries carry none.
+ */
+export function balanceAdjustmentAuditMetadata(
+	authority: BalanceAdjustmentAuthority,
+): Record<string, unknown> | null {
+	return authority.via === "payroll_access_grant"
+		? { via: "payroll_access_grant", grantId: authority.grantId }
+		: null;
+}
+
+function notPermitted() {
+	return new BalanceAdjustmentRefusal(
+		"not_permitted",
+		"Only organization owners and admins, and payroll staff for the employees their grant covers, can record or cancel balance adjustments.",
 	);
 }
 

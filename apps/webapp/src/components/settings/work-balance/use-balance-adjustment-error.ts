@@ -13,7 +13,7 @@ export function useBalanceAdjustmentErrorMessage() {
 				case "not_permitted":
 					return t(
 						"settings.employees.workBalance.errors.notPermitted",
-						"Only organization owners and admins can record or cancel balance adjustments.",
+						"Only organization owners and admins, and payroll staff for the employees their payroll access covers, can record or cancel balance adjustments.",
 					);
 				case "employee_not_found":
 					return t("settings.employees.workBalance.errors.employeeNotFound", "Employee not found.");
