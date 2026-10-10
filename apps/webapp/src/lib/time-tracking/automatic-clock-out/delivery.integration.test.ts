@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createLifecycleDatabaseFixture } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import {
@@ -7,6 +8,9 @@ import {
 import { NOTIFICATION_CHANNELS, type NotificationChannel } from "@/lib/notifications/types";
 import { assessRollbackReadiness } from "@/lib/rollout/rollback/readiness";
 import { readRollbackSnapshot } from "@/lib/rollout/rollback/readiness-reader";
+import { createClocking } from "../clocking/clocking";
+import { recordingFollowUps } from "../clocking/follow-ups";
+import { coordinatedTransactions } from "../clocking/transactions";
 import { createClockingService, createDatabaseClockingStore } from "../clocking-core";
 import { createAutoClockOutCommands } from "./commands";
 import { createAutoClockOutDelivery } from "./delivery";
@@ -216,6 +220,68 @@ describe("automatic clock-out durable delivery", () => {
 				])
 			).rowCount,
 		).toBe(1);
+	});
+	it("delivers a closure that ended at a forgotten break's start (#861)", async () => {
+		const organizationId = await fixture.createOrganization();
+		const person = await fixture.seedEmployee({ organizationId });
+		const service = createClockingService({
+			transaction: (body) => fixture.db.transaction((tx) => body(createDatabaseClockingStore(tx))),
+		});
+		const opened = await service.clockIn({
+			organizationId,
+			employeeId: person.employeeId,
+			createdBy: person.userId,
+			action: {
+				instant: NOW.subtract({ hours: 12 }),
+				timezone: "Europe/Berlin",
+				utcOffsetMinutes: 120,
+				timezoneSource: "user_setting",
+			},
+			source: { deviceInfo: "test", ipAddress: null },
+			workLocationType: "office",
+		});
+		if (!("period" in opened)) throw new Error("Expected live work");
+		const breakStart = NOW.subtract({ hours: 8, seconds: 20 });
+		expect(
+			await createClocking({
+				clock: { nowInstant: () => breakStart },
+				transactions: coordinatedTransactions(),
+				followUps: recordingFollowUps(),
+			}).startBreak({
+				organizationId,
+				principal: { kind: "user", userId: person.userId },
+				subject: { employeeId: person.employeeId },
+				identity: { origin: "client", id: randomUUID() },
+				channel: "web",
+				at: { kind: "now" },
+				zone: { device: "Europe/Berlin", fallback: "UTC" },
+			}),
+		).toMatchObject({ outcome: "executed" });
+		expect(
+			await createAutoClockOutCommands({
+				database: fixture.db,
+				clock: { nowInstant: () => NOW },
+			}).close({ organizationId, employeeId: person.employeeId, workPeriodId: opened.period.id }),
+		).toMatchObject({ status: "closed" });
+		effects.enforceBreaks.mockClear();
+
+		expect(await runner()(100)).toMatchObject({ completed: 4, deferred: 0, failed: 0 });
+
+		expect(effects.enforceBreaks).toHaveBeenCalledWith(
+			expect.objectContaining({ workPeriodId: opened.period.id, durationMinutes: 240 }),
+		);
+		const { rows } = await fixture.pool.query(
+			"select message, metadata from notification where organization_id=$1",
+			[organizationId],
+		);
+		expect(rows).toEqual([
+			{
+				message: expect.stringContaining("Pause"),
+				metadata: expect.stringContaining(
+					'"messageKey":"common:notifications.content.automaticClockOut.breakMessage"',
+				),
+			},
+		]);
 	});
 	function runner(
 		options: {

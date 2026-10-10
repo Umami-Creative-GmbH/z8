@@ -19,17 +19,20 @@ import type { WorkTransactionClient } from "../work-transaction";
  */
 export type AssignedLocationReadClient = Pick<WorkTransactionClient, "select">;
 
-/** An employee actively assigned to a location. */
+/**
+ * An employee actively assigned to a location. Names come from the user (the
+ * employee name columns are deprecated); see `buildAuthUserDisplayName`.
+ */
 export type ActiveAssignedEmployee = {
 	employeeId: string;
 	userId: string;
 	firstName: string | null;
 	lastName: string | null;
-	/** The user's display name, the fallback when the employee has no first or last name. */
+	/** The user's display name, the fallback when the user has no first or last name. */
 	userName: string;
 };
 
-const displayName = sql<string>`coalesce(nullif(trim(concat_ws(' ', ${employee.firstName}, ${employee.lastName})), ''), ${user.name})`;
+const displayName = sql<string>`coalesce(nullif(trim(concat_ws(' ', ${user.firstName}, ${user.lastName})), ''), ${user.name})`;
 
 /** The active employees assigned to an active location, ordered by name. */
 export async function listActiveEmployeesAssignedToLocation(
@@ -40,8 +43,8 @@ export async function listActiveEmployeesAssignedToLocation(
 		.select({
 			employeeId: employee.id,
 			userId: employee.userId,
-			firstName: employee.firstName,
-			lastName: employee.lastName,
+			firstName: user.firstName,
+			lastName: user.lastName,
 			userName: user.name,
 		})
 		.from(employeeAssignedLocation)

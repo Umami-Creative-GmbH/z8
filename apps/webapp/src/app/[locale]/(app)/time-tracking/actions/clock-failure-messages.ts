@@ -135,6 +135,10 @@ const BREAK_FAILURE_MESSAGES: Record<
 		"timeTracking.errors.breakOccupied",
 		"The break overlaps other recorded work.",
 	],
+	on_break: [
+		"timeTracking.errors.breakInProgressOpen",
+		"You are on a break. Resume it before adding another break.",
+	],
 	// A break closes work as a clock-out does, and shares its wording.
 	collision: CLOCK_OUT_FAILURE_MESSAGES.collision,
 	append_review_required: CLOCK_OUT_FAILURE_MESSAGES.append_review_required,

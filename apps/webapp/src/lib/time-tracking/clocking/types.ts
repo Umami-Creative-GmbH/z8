@@ -177,6 +177,11 @@ export type BreakCommand = ClockCommandOf<BreakBody> & {
 	 * channel's source, as the operation's own entries always do.
 	 */
 	request?: TimeEntryRequestMetadata;
+	/**
+	 * The resume of the target's break in progress (#861): its start is the
+	 * recorded one, not a device observation, so the age window skips it.
+	 */
+	resumesBreakInProgress?: true;
 };
 export type ClockCommand = ClockInCommand | ClockOutCommand | BreakCommand;
 
@@ -231,7 +236,9 @@ export type BreakFailure =
 	/** The active work has an unresolved approval or correction. */
 	| "under_review"
 	/** Other recorded work occupies the resumed interval. */
-	| "occupancy_conflict";
+	| "occupancy_conflict"
+	/** A break in progress is open on the target: only its resume ends it (#861). */
+	| "on_break";
 
 /** One failure taxonomy; each adapter words every code. */
 export type ClockCommandFailure = ClockOutFailure | ClockInFailure | BreakFailure;
