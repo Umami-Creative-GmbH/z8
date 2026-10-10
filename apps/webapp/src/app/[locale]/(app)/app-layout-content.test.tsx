@@ -64,6 +64,20 @@ vi.mock("@/components/offline", () => ({
 	OfflineBanner: () => <div data-testid="offline-banner" />,
 }));
 
+vi.mock("@/components/store-app/get-the-app-banner", () => ({
+	GetTheAppBanner: ({
+		storeUrls,
+	}: {
+		storeUrls: { ios: string | null; android: string | null };
+	}) => (
+		<div
+			data-testid="get-the-app-banner"
+			data-ios={String(storeUrls.ios)}
+			data-android={String(storeUrls.android)}
+		/>
+	),
+}));
+
 vi.mock("@/components/notifications/push-permission-provider", () => ({
 	PushPermissionProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -145,7 +159,11 @@ vi.mock("@/db/schema", () => ({
 }));
 
 vi.mock("@/env", () => ({
-	env: { BILLING_ENABLED: "true", NODE_ENV: "test" },
+	env: {
+		BILLING_ENABLED: "true",
+		NODE_ENV: "test",
+		STORE_APP_IOS_URL: "https://apps.apple.com/app/z8/id1234567890",
+	},
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -344,5 +362,13 @@ describe("authenticated app layout gates", () => {
 		expect(header).toBeGreaterThan(-1);
 		expect(banner).toBeGreaterThan(header);
 		expect(html.indexOf("Protected child content")).toBeGreaterThan(banner);
+	});
+
+	it("passes the configured store listings to the get-the-app banner", async () => {
+		const { html } = await serverRender("/en/time-tracking");
+
+		expect(html).toContain('data-testid="get-the-app-banner"');
+		expect(html).toContain('data-ios="https://apps.apple.com/app/z8/id1234567890"');
+		expect(html).toContain('data-android="null"');
 	});
 });

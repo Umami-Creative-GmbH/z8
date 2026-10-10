@@ -76,7 +76,8 @@ export function NotificationList({
 	}
 
 	return (
-		<ScrollArea className="h-[400px]">
+		// Shrinks inside the phone sheet so its footer stays on short screens (#846).
+		<ScrollArea className="h-[400px] min-h-0">
 			<div className="divide-y">
 				{notifications.map((notification) => (
 					<NotificationItem

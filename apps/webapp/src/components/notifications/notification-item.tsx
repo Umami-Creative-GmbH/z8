@@ -219,13 +219,13 @@ export function NotificationItem({
 				</span>
 			</button>
 
-			{/* Actions (visible on hover) */}
-			<div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+			{/* Actions show on hover or focus, and always on touch screens, which cannot hover (#846). */}
+			<div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:gap-2 pointer-coarse:opacity-100">
 				{!notification.isRead && (
 					<Button
 						size="icon"
 						variant="ghost"
-						className="size-7"
+						className="size-7 pointer-coarse:size-9"
 						onClick={handleMarkAsRead}
 						title={t("common:notifications.actions.markAsRead", "Mark as read")}
 					>
@@ -235,7 +235,7 @@ export function NotificationItem({
 				<Button
 					size="icon"
 					variant="ghost"
-					className="size-7 text-muted-foreground hover:text-destructive"
+					className="size-7 text-muted-foreground hover:text-destructive pointer-coarse:size-9"
 					onClick={handleDelete}
 					title={t("common:actions.delete", "Delete")}
 				>

@@ -261,7 +261,7 @@ export function ApprovalSprintPanel({
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="max-h-[90vh] overflow-y-auto overscroll-contain sm:max-w-2xl">
+			<DialogContent className="max-h-[90dvh] overflow-y-auto overscroll-contain sm:max-w-2xl">
 				<DialogHeader>
 					<DialogTitle>{t("approvals:sprint.title", "Approval sprint")}</DialogTitle>
 					<DialogDescription>

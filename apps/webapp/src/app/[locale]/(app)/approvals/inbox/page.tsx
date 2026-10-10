@@ -326,9 +326,10 @@ function ApprovalInboxPageHeader({
 	onRefresh: () => void;
 }) {
 	return (
-		<div className="flex items-center justify-between px-4 lg:px-6">
-			<div>
-				<h1 className="text-2xl font-semibold tracking-tight">
+		// Stacks and wraps on phones so the bulk actions stay on screen (#846).
+		<div className="flex flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between lg:px-6">
+			<div className="min-w-0">
+				<h1 className="break-words text-2xl font-semibold tracking-tight">
 					{t("approvals:approvals.inbox", "Approval Inbox")}
 				</h1>
 				<p className="text-sm text-muted-foreground">
@@ -338,7 +339,7 @@ function ApprovalInboxPageHeader({
 					)}
 				</p>
 			</div>
-			<div className="flex items-center gap-2">
+			<div className="flex flex-wrap items-center gap-2">
 				{selectedCount > 0 && (
 					<>
 						<Button
