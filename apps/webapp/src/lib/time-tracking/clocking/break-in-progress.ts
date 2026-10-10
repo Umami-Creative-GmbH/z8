@@ -29,7 +29,8 @@ export type BreakInProgressCommand = Pick<
 >;
 
 /** A resume becomes a break command; it may carry that command's request evidence. */
-export type ResumeBreakCommand = BreakInProgressCommand & Pick<BreakCommand, "request" | "position">;
+export type ResumeBreakCommand = BreakInProgressCommand &
+	Pick<BreakCommand, "request" | "position">;
 
 export type StartBreakResult = {
 	/** The live work the break interrupts. */

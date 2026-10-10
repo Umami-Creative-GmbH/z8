@@ -346,7 +346,9 @@ describe("Clocking break in progress on PostgreSQL", () => {
 			const before = await snapshot();
 
 			await expect(
-				clocking.startBreak(breakCommand({ subject: { employeeId: ids.employee, onBehalf: true } })),
+				clocking.startBreak(
+					breakCommand({ subject: { employeeId: ids.employee, onBehalf: true } }),
+				),
 			).resolves.toEqual({ outcome: "refused", failure: { code: "access_denied" } });
 			await expect(
 				clocking.startBreak(breakCommand({ principal: { kind: "user", userId: ids.managerUser } })),

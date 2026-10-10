@@ -2,8 +2,8 @@
 
 import { IconClockPause } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { cn } from "@/lib/utils";
 import { getTimeFormatDateTimeOptions, type TimeFormat } from "@/lib/user-preferences/time-format";
+import { cn } from "@/lib/utils";
 
 /**
  * A break in progress, read-only (#861, Time Tracking ADR 0007): the employee
