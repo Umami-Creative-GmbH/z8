@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TravelExpenseReportSubmittedItem } from "@/lib/approvals/evidence/travel-expense-report-facts";
 import type { TravelExpenseReportSubmittedPerDiem } from "@/lib/approvals/evidence/travel-expense-report-per-diem";
 import type { MileageVehicle } from "../mileage";
+import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "../money";
 import {
 	computePayrollLines,
 	type PayrollLine,
@@ -30,6 +31,29 @@ import {
  * 5.60 / 11.20 / 11.20) and § 5 BRKG (0.30 / 0.20 per km), never recomputed
  * the way the code does.
  */
+
+/**
+ * The domestic rule edition ends with 2026 until #891 extends it. Setting
+ * `validThrough` simulates that, so a test can tell the domestic rules apart
+ * from the yearly foreign table; null keeps the verified edition.
+ */
+const domesticRules = vi.hoisted(() => ({ validThrough: null as string | null }));
+vi.mock("../statutory-per-diem-defaults", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("../statutory-per-diem-defaults")>();
+	const edition = () =>
+		domesticRules.validThrough
+			? { ...actual.GERMAN_DOMESTIC_PER_DIEM_RULES, validThrough: domesticRules.validThrough }
+			: actual.GERMAN_DOMESTIC_PER_DIEM_RULES;
+	return {
+		...actual,
+		findPerDiemRuleSet: (key: string) =>
+			key === actual.GERMAN_DOMESTIC_PER_DIEM_RULES.key ? edition() : null,
+		perDiemRulesOn: (date: string) => {
+			const rules = edition();
+			return date >= rules.validFrom && date <= rules.validThrough ? rules : null;
+		},
+	};
+});
 
 const noMeal = { provided: false, employeePayment: null };
 const provided = { provided: true, employeePayment: null };
@@ -203,15 +227,8 @@ function revision(
 	items: TravelExpenseReportSubmittedItem[],
 	options: { currency?: string; destinations?: string[] } = {},
 ): PayrollRevision {
-	const currency = options.currency ?? "EUR";
-	const cents = items
-		.filter((item) => item.paidBy === "employee")
-		.map((item) =>
-			Math.round(Number(item.conversion?.reimbursement.amount ?? item.original.amount) * 100),
-		)
-		.reduce((sum, value) => sum + value, 0);
 	return {
-		reimbursementCurrency: currency,
+		reimbursementCurrency: options.currency ?? "EUR",
 		trip: {
 			purpose: "Customer visit",
 			startDate: "2026-03-02",
@@ -220,7 +237,6 @@ function revision(
 			destinations: destinationsOf(options.destinations),
 		},
 		items: items.map((item, position) => ({ ...item, position })),
-		totals: { currency, reimbursable: (cents / 100).toFixed(2), companyPaid: "0.00" },
 	};
 }
 
@@ -476,8 +492,8 @@ describe("no statutory baseline", () => {
 		});
 	});
 
-	it("leaves out an exceptional itinerary, which only an override can price", () => {
-		// A trip abroad in 2027 before the BMF table for 2027 is verified (#892).
+	it("leaves out an exceptional itinerary through the override that alone prices it", () => {
+		// A trip abroad in 2027 before the BMF table for 2027 is verified (#892): no ordinary result.
 		const { perDiem: _ordinary, ...exceptional } = inYear2027(
 			perDiemItem(ABROAD, BMF_AT, { destinations: ["AT"] }),
 		);
@@ -491,10 +507,38 @@ describe("no statutory baseline", () => {
 		});
 	});
 
-	it("leaves out frozen per diem days no verified table covers", () => {
-		const item = inYear2027(perDiemItem(ABROAD, BMF_AT, { destinations: ["AT"] }));
+	describe("once the domestic rules are verified beyond 2026 (#891)", () => {
+		beforeEach(() => {
+			domesticRules.validThrough = "2027-12-31";
+		});
+		afterEach(() => {
+			domesticRules.validThrough = null;
+		});
 
-		expect(computePayrollLines(reportInput([item], {}, ["AT"]))).toEqual({
+		it("splits a domestic trip in 2027", () => {
+			const item = inYear2027(perDiemItem(itinerary("2026-03-02T08:00", "2026-03-04T18:00")));
+
+			expect(computePayrollLines(reportInput([item]))).toEqual({
+				ok: true,
+				lines: [{ kind: "per_diem_statutory", amount: "56.00", currency: "EUR" }],
+			});
+		});
+
+		it("leaves out a trip abroad in 2027 until that year's BMF table is verified (#892)", () => {
+			const item = inYear2027(perDiemItem(ABROAD, BMF_AT, { destinations: ["AT"] }));
+
+			expect(computePayrollLines(reportInput([item], {}, ["AT"]))).toEqual({
+				ok: false,
+				reason: "no_statutory_baseline",
+				items: [{ itemId: "per-diem", cause: "outside_verified_tables" }],
+			});
+		});
+	});
+
+	it("leaves out frozen per diem days outside the verified rule edition", () => {
+		const item = inYear2027(perDiemItem(itinerary("2026-03-02T08:00", "2026-03-04T18:00")));
+
+		expect(computePayrollLines(reportInput([item]))).toEqual({
 			ok: false,
 			reason: "no_statutory_baseline",
 			items: [{ itemId: "per-diem", cause: "outside_verified_tables" }],
@@ -688,9 +732,11 @@ describe("rounding", () => {
 		const amounts = Object.fromEntries(result.lines.map((entry) => [entry.kind, entry.amount]));
 
 		expect(amounts.mileage_statutory).toBe(statutory);
-		expect(
-			(Number(amounts.mileage_statutory ?? 0) * 100 + Number(amounts.mileage_excess ?? 0) * 100) /
-				100,
-		).toBeCloseTo(Number(paid), 10);
+		const parts = [amounts.mileage_statutory, amounts.mileage_excess].map((amount = "0.00") => {
+			const units = parseUnits(amount, STORED_AMOUNT_SCALE);
+			if (units === null) throw new Error(`not an amount: ${amount}`);
+			return units;
+		});
+		expect(formatUnits(sumUnits(parts), STORED_AMOUNT_SCALE)).toBe(paid);
 	});
 });

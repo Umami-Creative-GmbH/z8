@@ -33,16 +33,19 @@ import { GERMAN_DOMESTIC_PER_DIEM_DEFAULT, type PerDiemRates } from "./statutory
 
 export { PAYROLL_LINE_KINDS, type PayrollLineKind } from "./payroll-line-kind";
 
+/** Payroll runs carry euro amounts only; nothing is converted. */
+const PAYROLL_CURRENCY = "EUR";
+
 /** One amount a payroll run carries for a report, in euros at two decimals. */
 export interface PayrollLine {
 	kind: PayrollLineKind;
 	amount: string;
-	currency: "EUR";
+	currency: typeof PAYROLL_CURRENCY;
 }
 
 export type PayrollRevision = Pick<
 	TravelExpenseReportSubmittedFacts,
-	"reimbursementCurrency" | "trip" | "items" | "totals"
+	"reimbursementCurrency" | "trip" | "items"
 >;
 
 export type PayrollLinesInput =
@@ -87,15 +90,18 @@ export type PayrollLinesResult =
 export type PayrollExclusionReason = Extract<PayrollLinesResult, { ok: false }>["reason"];
 
 const ZERO = BigInt(0);
-const PAYROLL_CURRENCY = "EUR";
 
-function units(value: string): bigint {
+function storedUnits(value: string): bigint {
 	const parsed = parseUnits(value, STORED_AMOUNT_SCALE);
 	if (parsed === null) throw new RangeError(`Not a stored amount: ${value}`);
 	return parsed;
 }
 
-/** What a receipt counts with in the reimbursement currency: as paid, or at its frozen conversion. */
+/**
+ * What a receipt counts with in the reimbursement currency: as paid, or the
+ * frozen conversion's result (never converted again, unlike the live totals of
+ * `item-amount.ts`). A frozen employee-paid receipt always has one.
+ */
 function receiptAmount(item: TravelExpenseReportSubmittedItem, currency: string): string {
 	if (item.original.currency === currency && item.original.amount) return item.original.amount;
 	const converted = item.conversion?.reimbursement;
@@ -110,30 +116,28 @@ function receiptAmount(item: TravelExpenseReportSubmittedItem, currency: string)
  * § 9 Abs. 4a EStG, and abroad the verified BMF table covering that day. A
  * day no verified amount covers has no version.
  */
-const statutoryPerDiem: PerDiemPolicyResolver = (date, area = DOMESTIC_PER_DIEM_AREA) => {
-	const domestic = GERMAN_DOMESTIC_PER_DIEM_DEFAULT;
-	let rates: PerDiemRates | undefined;
-	let key: string;
+const statutoryPerDiemResolver: PerDiemPolicyResolver = (date, area = DOMESTIC_PER_DIEM_AREA) => {
+	let source: { key: string; validFrom: string; rates: PerDiemRates | undefined };
 	if (area === DOMESTIC_PER_DIEM_AREA) {
+		const domestic = GERMAN_DOMESTIC_PER_DIEM_DEFAULT;
 		if (comparePlainDates(parsePlainDate(date), parsePlainDate(domestic.validFrom)) < 0) {
 			return { status: "no_version" };
 		}
-		rates = domestic.rates;
-		key = domestic.key;
+		source = domestic;
 	} else {
 		const table = foreignPerDiemTableCovering([date]);
 		if (!table) return { status: "no_version" };
-		rates = foreignTableRates(table)[area];
-		key = table.key;
+		source = { key: table.key, validFrom: table.validFrom, rates: foreignTableRates(table)[area] };
 	}
+	const { key, validFrom, rates } = source;
 	if (!rates) return { status: "no_version" };
 	return {
 		status: "found",
 		policy: {
 			policyId: "statutory",
 			versionId: key,
-			effectiveFrom: domestic.validFrom,
-			currency: "EUR",
+			effectiveFrom: validFrom,
+			currency: PAYROLL_CURRENCY,
 			source: { kind: "statutory_default", reference: null, version: null, defaultKey: key },
 			area,
 			rates: { ...rates },
@@ -146,7 +150,9 @@ type StatutoryAmount = { amount: string } | { cause: NoStatutoryBaselineCause };
 /**
  * The per diem recomputed from its frozen itinerary, meals, daily locations
  * and claimed days, priced at the statutory amounts of each day. A frozen
- * per diem was calculated, so it was no longer workplace stay.
+ * per diem was calculated, so it was no longer workplace stay. The rule
+ * edition and foreign table are those covering the trip's days, not the
+ * stamped ones: the statutory share follows the verified statutory sources.
  */
 function statutoryPerDiemAmount(
 	frozen: TravelExpenseReportSubmittedPerDiem,
@@ -166,8 +172,8 @@ function statutoryPerDiemAmount(
 		},
 		{
 			trip: { destinations: revision.trip?.destinations ?? [] },
-			reimbursementCurrency: "EUR",
-			resolvePolicy: statutoryPerDiem,
+			reimbursementCurrency: PAYROLL_CURRENCY,
+			resolvePolicy: statutoryPerDiemResolver,
 			// Days another report already paid stay unpaid here too.
 			overlappingDays: frozen.days
 				.filter((day) => day.basis === "claimed_in_other_report")
@@ -181,6 +187,7 @@ function statutoryPerDiemAmount(
 	) {
 		return { cause: "outside_verified_tables" };
 	}
+	// Exceptional for any other reason (a frozen per diem is never incomplete or in another currency).
 	return { cause: "exceptional_itinerary" };
 }
 
@@ -199,26 +206,33 @@ function statutoryMileageAmount(
 	});
 }
 
-/** The statutory amount of an allowance item; null for a receipt. */
-function statutoryAmountOf(
+/** Where an item goes: a receipt to its category's line, an allowance split at its statutory amount. */
+type ItemPayroll =
+	| { kind: PayrollLineKind }
+	| {
+			kinds: readonly [share: PayrollLineKind, excess: PayrollLineKind];
+			statutory: StatutoryAmount;
+	  };
+
+function itemPayroll(
 	item: TravelExpenseReportSubmittedItem,
 	revision: PayrollRevision,
-): StatutoryAmount | null {
-	if (item.type === "receipt") return null;
-	if (item.allowanceOverride) return { cause: "allowance_override" };
-	if (item.type === "mileage" && item.mileage) {
-		return statutoryMileageAmount(item.mileage, item.expenseDate);
-	}
-	if (item.type === "per_diem" && item.perDiem) {
-		return statutoryPerDiemAmount(item.perDiem, revision);
+): ItemPayroll {
+	if (item.type === "receipt") return { kind: `receipt_${item.category}` };
+	const override = { cause: "allowance_override" } as const;
+	if (item.type === "mileage") {
+		const kinds = ["mileage_statutory", "mileage_excess"] as const;
+		if (item.allowanceOverride) return { kinds, statutory: override };
+		if (item.mileage) {
+			return { kinds, statutory: statutoryMileageAmount(item.mileage, item.expenseDate) };
+		}
+	} else {
+		const kinds = ["per_diem_statutory", "per_diem_excess"] as const;
+		if (item.allowanceOverride) return { kinds, statutory: override };
+		if (item.perDiem) return { kinds, statutory: statutoryPerDiemAmount(item.perDiem, revision) };
 	}
 	throw new RangeError(`Allowance item ${item.itemId} has neither facts nor an override`);
 }
-
-const ALLOWANCE_KINDS = {
-	mileage: ["mileage_statutory", "mileage_excess"],
-	per_diem: ["per_diem_statutory", "per_diem_excess"],
-} as const satisfies Record<string, readonly [PayrollLineKind, PayrollLineKind]>;
 
 export function computePayrollLines(input: PayrollLinesInput): PayrollLinesResult {
 	if (input.source === "legacy_claim") return { ok: false, reason: "legacy_claim" };
@@ -237,34 +251,33 @@ export function computePayrollLines(input: PayrollLinesInput): PayrollLinesResul
 	for (const item of revision.items) {
 		// Company-paid items are owed to nobody.
 		if (item.paidBy !== "employee") continue;
-		const statutory = statutoryAmountOf(item, revision);
-		if (!statutory) {
-			add(`receipt_${item.category}`, units(receiptAmount(item, revision.reimbursementCurrency)));
+		const payroll = itemPayroll(item, revision);
+		if ("kind" in payroll) {
+			add(payroll.kind, storedUnits(receiptAmount(item, revision.reimbursementCurrency)));
 			continue;
 		}
-		if ("cause" in statutory) {
-			unsupported.push({ itemId: item.itemId, cause: statutory.cause });
+		if ("cause" in payroll.statutory) {
+			unsupported.push({ itemId: item.itemId, cause: payroll.statutory.cause });
 			continue;
 		}
 		// The statutory share never exceeds what was paid; the rest is taxable excess.
-		const actual = units(item.original.amount ?? "0.00");
-		const capped = units(statutory.amount);
-		const share = capped < actual ? capped : actual;
-		const [shareKind, excessKind] = ALLOWANCE_KINDS[item.type as keyof typeof ALLOWANCE_KINDS];
-		add(shareKind, share);
-		add(excessKind, actual - share);
+		const paid = storedUnits(item.original.amount ?? "0.00");
+		const statutory = storedUnits(payroll.statutory.amount);
+		const share = statutory < paid ? statutory : paid;
+		add(payroll.kinds[0], share);
+		add(payroll.kinds[1], paid - share);
 	}
 	if (unsupported.length > 0) {
 		return { ok: false, reason: "no_statutory_baseline", items: unsupported };
 	}
 	// What earlier payroll runs carried is owed no more, kind by kind.
-	for (const prior of input.priorLines) add(prior.kind, -units(prior.amount));
+	for (const prior of input.priorLines) add(prior.kind, -storedUnits(prior.amount));
 	const negative = PAYROLL_LINE_KINDS.filter((kind) => (totals.get(kind) ?? ZERO) < ZERO);
 	if (negative.length > 0) return { ok: false, reason: "negative_difference", kinds: negative };
 	const lines = PAYROLL_LINE_KINDS.flatMap((kind): PayrollLine[] => {
 		const amount = totals.get(kind) ?? ZERO;
 		if (amount === ZERO) return [];
-		return [{ kind, amount: formatUnits(amount, STORED_AMOUNT_SCALE), currency: "EUR" }];
+		return [{ kind, amount: formatUnits(amount, STORED_AMOUNT_SCALE), currency: PAYROLL_CURRENCY }];
 	});
 	if (lines.length === 0) return { ok: false, reason: "nothing_owed" };
 	return { ok: true, lines };
