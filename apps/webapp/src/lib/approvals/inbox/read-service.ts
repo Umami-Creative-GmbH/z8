@@ -38,7 +38,11 @@ import {
 	type OrdinaryCanonicalListFilters,
 } from "./ordinary-canonical-read";
 import { isDeputyDecisionEntityType } from "../deputy/deputy-decision";
-import { loadDeputyDecidedEarlierStages } from "../deputy/deputy-decision-store";
+import {
+	type DeputyDecisionView,
+	loadDeputyDecidedEarlierStages,
+	loadDeputyDecisionsForEntities,
+} from "../deputy/deputy-decision-store";
 import { coversByApprover, markCoveringFor, markDecidedEarlierStage } from "./covering-marks";
 import { markOwnRequest } from "./own-request";
 import { getAgeDays, serializeDate } from "./serialization";
@@ -117,6 +121,45 @@ interface GetApprovalInboxDetailFromRequestInput {
 	loadTimeReviewEvidence?: (
 		input: Parameters<typeof prepareTimeReviewEvidence>[0],
 	) => ReturnType<typeof prepareTimeReviewEvidence>;
+	/** A covering deputy's decision of this request (#1016), for the timeline. */
+	loadDeputyDecision?: (input: {
+		organizationId: string;
+		approvalRequestId: string;
+		entityId: string;
+	}) => Promise<DeputyDecisionView | null>;
+}
+
+async function loadDeputyDecisionOfRequest(input: {
+	organizationId: string;
+	approvalRequestId: string;
+	entityId: string;
+}): Promise<DeputyDecisionView | null> {
+	const decisions = await loadDeputyDecisionsForEntities(db, {
+		organizationId: input.organizationId,
+		entityIds: [input.entityId],
+	});
+	return decisions.find((decision) => decision.approvalRequestId === input.approvalRequestId) ?? null;
+}
+
+/** The decision event reads "by Y (deputy for X)" when a covering deputy decided it. */
+function withDeputyDecider(
+	detail: ApprovalDetail,
+	decision: DeputyDecisionView | null,
+): ApprovalDetail {
+	if (!decision) return detail;
+	const decidedType = decision.decision === "approved" ? "approved" : "rejected";
+	return {
+		...detail,
+		timeline: detail.timeline.map((event) =>
+			event.type === decidedType
+				? {
+						...event,
+						performedBy: { name: decision.deputy.name, image: event.performedBy?.image ?? null },
+						actingFor: { name: decision.actingFor.name },
+					}
+				: event,
+		),
+	};
 }
 
 const DEFAULT_LIMIT = 50;
@@ -386,6 +429,7 @@ export async function getApprovalInboxDetailFromRequest({
 	loadTravelExpenseReportReviewEvidence = (input) =>
 		prepareTravelExpenseReportReviewEvidence(input),
 	loadTimeReviewEvidence = prepareTimeReviewEvidence,
+	loadDeputyDecision = loadDeputyDecisionOfRequest,
 }: GetApprovalInboxDetailFromRequestInput): Promise<ApprovalInboxDetailResult> {
 	if (!isSupportedInboxType(request.entityType)) {
 		throw new ApprovalInboxBadRequestError("Unsupported approval type");
@@ -394,12 +438,24 @@ export async function getApprovalInboxDetailFromRequest({
 		throw new ApprovalInboxBadRequestError("Approval detail mismatch");
 	}
 
-	const detail = await runtime.runPromise(
+	const handlerDetail = await runtime.runPromise(
 		handler.getDetail(request.entityId, request.organizationId, {
 			approvalId: request.id,
 		}),
 	);
-	validateDetailMatchesRequest(detail, request);
+	validateDetailMatchesRequest(handlerDetail, request);
+	const detail =
+		(request.status === "approved" || request.status === "rejected") &&
+		isDeputyDecisionEntityType(request.entityType)
+			? withDeputyDecider(
+					handlerDetail,
+					await loadDeputyDecision({
+						organizationId: request.organizationId,
+						approvalRequestId: request.id,
+						entityId: request.entityId,
+					}),
+				)
+			: handlerDetail;
 
 	const source: ApprovalInboxSource = {
 		type: request.entityType,
@@ -753,6 +809,7 @@ function buildDetailSections(
 				label: event.message,
 				at: serializeDate(event.timestamp) ?? "",
 				actorName: event.performedBy?.name ?? null,
+				...(event.actingFor ? { actingForName: event.actingFor.name } : {}),
 			})),
 		});
 	}

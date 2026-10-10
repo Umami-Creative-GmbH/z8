@@ -6,6 +6,7 @@ import {
 	IconInbox,
 	IconLoader2,
 	IconRefresh,
+	IconUserShare,
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
@@ -36,6 +37,7 @@ import type {
 	ApprovalInboxDecisionFailure,
 	ApprovalInboxFastLaneGroup,
 	ApprovalInboxItem,
+	ApprovalInboxListResult,
 	ApprovalInboxType,
 	ApprovalInboxWarning,
 } from "@/lib/approvals/inbox/types";
@@ -55,6 +57,7 @@ import { ApprovalFastLanes } from "./components/approval-fast-lanes";
 import { ApprovalInboxTable } from "./components/approval-inbox-table";
 import { ApprovalInboxToolbar } from "./components/approval-inbox-toolbar";
 import { ApprovalSprintPanel } from "./components/approval-sprint-panel";
+import { getCoveringForDescription, getCoveringForTitle } from "./components/covering-notes";
 
 type BulkDecision = "approve" | "reject";
 
@@ -200,9 +203,13 @@ function groupFastLaneItems(
 	}));
 }
 
-/** The viewer's own requests are never selected, sprinted or fast-laned (#686). */
+/**
+ * The viewer's own requests (#686) and covered requests whose earlier stage
+ * the viewer decided (four-eyes, #1016) are never selected, sprinted or
+ * fast-laned.
+ */
 function isDecidableByViewer(item: ApprovalInboxItem): boolean {
-	return item.capabilities.ownRequest !== true;
+	return item.capabilities.ownRequest !== true && item.capabilities.decidedEarlierStage !== true;
 }
 
 function sortSprintItems(items: ApprovalInboxItem[]): ApprovalInboxItem[] {
@@ -505,6 +512,7 @@ function ApprovalInboxRequestsCard({
 	onSelectItem,
 	onRowClick,
 	onFetchNextPage,
+	covering,
 }: {
 	t: ReturnType<typeof useTranslate>["t"];
 	warnings: ApprovalInboxWarning[];
@@ -524,11 +532,14 @@ function ApprovalInboxRequestsCard({
 	onSelectItem: (id: string, checked: boolean) => void;
 	onRowClick: (approval: ApprovalInboxItem) => void;
 	onFetchNextPage: () => void;
+	/** One "Covering for" section per absent approver the viewer covers for (#1016). */
+	covering?: ApprovalInboxCoveringSection[];
 }) {
 	const selectableCount = items.filter(isDecidableByViewer).length;
+	const ownItems = covering?.length ? items.filter((item) => !item.coveringFor) : items;
 
 	return (
-		<div className="px-4 lg:px-6">
+		<div className="flex flex-col gap-6 px-4 lg:px-6">
 			<ApprovalInboxWarnings warnings={warnings} />
 			<Card>
 				<CardHeader className="pb-0">
@@ -568,7 +579,7 @@ function ApprovalInboxRequestsCard({
 					</div>
 					<div className="mt-4">
 						<ApprovalInboxTable
-							items={items}
+							items={ownItems}
 							selectedIds={selectedIds}
 							onSelectItem={onSelectItem}
 							onRowClick={onRowClick}
@@ -594,9 +605,38 @@ function ApprovalInboxRequestsCard({
 					)}
 				</CardContent>
 			</Card>
+			{covering?.map((section) => (
+				<Card key={section.approverId} data-testid="approval-covering-section">
+					<CardHeader className="pb-0">
+						<CardTitle className="flex items-center gap-2">
+							<IconUserShare className="size-5" aria-hidden="true" />
+							{getCoveringForTitle(t, section.approverName)}
+							<span className="text-sm font-normal text-muted-foreground">
+								({section.count})
+							</span>
+						</CardTitle>
+						<CardDescription>
+							{getCoveringForDescription(t, section.approverName)}
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="pt-4">
+						<ApprovalInboxTable
+							items={items.filter(
+								(item) => item.coveringFor?.approverId === section.approverId,
+							)}
+							selectedIds={selectedIds}
+							onSelectItem={onSelectItem}
+							onRowClick={onRowClick}
+							isFetching={activityState.isFetching}
+						/>
+					</CardContent>
+				</Card>
+			))}
 		</div>
 	);
 }
+
+type ApprovalInboxCoveringSection = NonNullable<ApprovalInboxListResult["covering"]>[number];
 
 function BulkRejectPanel({
 	t,
@@ -704,6 +744,7 @@ type ApprovalInboxPanelsProps = {
 	onSelectItem: (id: string, checked: boolean) => void;
 	onFetchNextPage: () => void;
 	onBulkReject: () => void;
+	covering?: ApprovalInboxCoveringSection[];
 };
 
 function ApprovalInboxPanels({
@@ -731,6 +772,7 @@ function ApprovalInboxPanels({
 	onSelectItem,
 	onFetchNextPage,
 	onBulkReject,
+	covering,
 }: ApprovalInboxPanelsProps) {
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
@@ -775,6 +817,7 @@ function ApprovalInboxPanels({
 					dispatch({ type: "detailApprovalChanged", approval })
 				}
 				onFetchNextPage={onFetchNextPage}
+				covering={covering}
 			/>
 			<ApprovalDetailPanel
 				approval={panelState.detailApproval}
@@ -1088,6 +1131,7 @@ function ApprovalInboxContent({
 			onSelectItem={handleSelectItem}
 			onFetchNextPage={() => fetchNextPage()}
 			onBulkReject={handleBulkReject}
+			covering={firstPage?.covering}
 		/>
 	);
 }

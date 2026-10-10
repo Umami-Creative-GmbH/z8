@@ -119,6 +119,48 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		expect(structuredClone(result)).toEqual(result);
 	});
 
+	it("names the covering deputy and the absent approver on a deputy decision (#1016)", async () => {
+		const decided = createDetail({ status: "approved" });
+		decided.timeline.push({
+			id: "approved",
+			type: "approved",
+			// The handler only knows the assigned approver.
+			performedBy: { name: "Xavier Approver", image: null },
+			timestamp: new Date("2026-06-01T09:00:00.000Z"),
+			message: "Request approved",
+		});
+		const loadDeputyDecision = vi.fn(async () => ({
+			approvalRequestId: "approval-1",
+			entityType: "absence_entry",
+			entityId: "absence-1",
+			decision: "approved" as const,
+			decidedAt: new Date("2026-06-01T09:00:00.000Z"),
+			absenceId: "covering-absence-1",
+			deputy: { employeeId: "deputy-1", name: "Yara Deputy" },
+			actingFor: { employeeId: "manager-1", name: "Xavier Approver" },
+		}));
+
+		const result = await getApprovalInboxDetailFromRequest({
+			request: { ...request, status: "approved" },
+			handler: createHandler(decided),
+			loadAbsenceReviewEvidence: async () => null,
+			loadDeputyDecision,
+		});
+
+		expect(loadDeputyDecision).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			approvalRequestId: "approval-1",
+			entityId: "absence-1",
+		});
+		const timeline = result.sections.find((section) => section.type === "timeline");
+		expect(timeline).toMatchObject({
+			events: [
+				{ actorName: "Avery Employee" },
+				{ actorName: "Yara Deputy", actingForName: "Xavier Approver" },
+			],
+		});
+	});
+
 	it("states the request's status, type and summary as translatable texts (#687)", async () => {
 		const result = await getApprovalInboxDetailFromRequest({ request, handler: createHandler() });
 		const [requestSection, , timeline] = result.sections;
@@ -152,6 +194,7 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		};
 		const report = await getApprovalInboxDetailFromRequest({
 			request: { ...request, status: "rejected" },
+			loadDeputyDecision: async () => null,
 			handler: createHandler(
 				createDetail({
 					status: "rejected",

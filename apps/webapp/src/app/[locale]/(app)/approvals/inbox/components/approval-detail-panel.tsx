@@ -40,6 +40,7 @@ import {
 } from "@/lib/query/use-approval-inbox";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
+import { getCoveringForTitle, getDecidedEarlierStageNote } from "./covering-notes";
 import { getOwnRequestNote } from "./own-request-note";
 import { ReceiptExceptionAcceptance } from "./receipt-exception-acceptance";
 import {
@@ -189,13 +190,23 @@ function renderDetailSection(
 							<div key={event.id} className="border-l-2 border-primary/30 pl-3">
 								<p className="text-sm font-semibold">{text(event.label)}</p>
 								<p className="text-xs text-muted-foreground">
-									{event.actorName
+									{event.actorName && event.actingForName
 										? t(
-												"approvals:approvals.timelineActor",
-												"{at} by {actorName}",
-												{ at: formatRecordedInstant(locale, event.at), actorName: event.actorName },
+												"approvals:approvals.timelineActorActingFor",
+												"{at} by {actorName} (deputy for {actingForName})",
+												{
+													at: formatRecordedInstant(locale, event.at),
+													actorName: event.actorName,
+													actingForName: event.actingForName,
+												},
 											)
-										: formatRecordedInstant(locale, event.at)}
+										: event.actorName
+											? t(
+													"approvals:approvals.timelineActor",
+													"{at} by {actorName}",
+													{ at: formatRecordedInstant(locale, event.at), actorName: event.actorName },
+												)
+											: formatRecordedInstant(locale, event.at)}
 								</p>
 							</div>
 						))}
@@ -395,6 +406,12 @@ export function ApprovalDetailPanel({
 						</div>
 					</div>
 
+					{panelItem.coveringFor && (
+						<p className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm">
+							{getCoveringForTitle(t, panelItem.coveringFor.approverName)}
+						</p>
+					)}
+
 					<TravelExpenseClaimLink item={panelItem} />
 					{/* An approved report not yet exported or paid can be reopened from here too (#614). */}
 					{panelItem.type === "travel_expense_report" && panelItem.status === "approved" && (
@@ -422,6 +439,8 @@ export function ApprovalDetailPanel({
 				<SheetFooter className="border-t bg-muted/95 px-5 py-4 sm:px-6">
 					{panelActions.ownRequest ? (
 						<p className="text-muted-foreground text-sm">{getOwnRequestNote(t)}</p>
+					) : panelActions.decidedEarlierStage ? (
+						<p className="text-muted-foreground text-sm">{getDecidedEarlierStageNote(t)}</p>
 					) : isRejecting ? (
 						<div className="w-full space-y-4">
 							<div>

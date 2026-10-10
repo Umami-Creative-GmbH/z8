@@ -276,6 +276,8 @@ export interface ApprovalTimelineEvent {
 		| "returned"
 		/** A travel expense report withdrawn by its employee (#603). */
 		| "withdrawn";
+	/** A covering deputy decided this for the absent approver named here (#1016). */
+	actingFor?: { name: string };
 	performedBy: {
 		name: string;
 		image: string | null;

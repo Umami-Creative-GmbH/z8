@@ -187,6 +187,8 @@ export type ApprovalInboxDetailSection =
 				label: string | ApprovalInboxLocalizedText;
 				at: string;
 				actorName: string | null;
+				/** A covering deputy decided for this absent approver (#1016). */
+				actingForName?: string | null;
 			}>;
 	  }
 	| {
