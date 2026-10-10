@@ -1319,6 +1319,13 @@
       "breakpoints": true
     },
     {
+      "idx": 188,
+      "version": "7",
+      "when": 1800547200000,
+      "tag": "0188_approval_setting_deputy_decisions",
+      "breakpoints": true
+    },
+    {
       "idx": 189,
       "version": "7",
       "when": 1800633600000,
