@@ -905,6 +905,130 @@ describe("approval workflow runtime", () => {
 		]);
 	});
 
+	describe("covering deputy (#1016)", () => {
+		const deputyActor = {
+			kind: "employee" as const,
+			employeeId: ids.fallbackManager,
+			userId: "deputy-user",
+		};
+		const approve = {
+			type: "approve" as const,
+			stageId: ids.stage,
+			assignmentId: ids.assignment,
+		};
+
+		it("grants the approver's covering deputy an approve or reject, acting for the approver", async () => {
+			const coverChecks: unknown[] = [];
+			const transaction = dbService();
+			const authorization = createApprovalWorkflowAuthorization({
+				canManageApproval: async () => false,
+				deputyAuthority: {
+					coverFor: async (input) => {
+						coverChecks.push(input);
+						return { approverId: ids.approver, absenceId: "absence-1" };
+					},
+				},
+			});
+			for (const command of [approve, { ...approve, type: "reject" as const, reason: "no" }]) {
+				await expect(
+					authorization.authorize({
+						dbService: transaction.service,
+						organizationId: "org-1",
+						workflow: snapshot(),
+						actor: deputyActor,
+						command,
+					}),
+				).resolves.toEqual({
+					kind: "covering_deputy",
+					actingFor: { approverEmployeeId: ids.approver, absenceId: "absence-1" },
+				});
+			}
+			expect(coverChecks[0]).toEqual({
+				dbService: transaction.service,
+				organizationId: "org-1",
+				approverEmployeeId: ids.approver,
+				deputyEmployeeId: ids.fallbackManager,
+			});
+		});
+
+		it("lets own management rights win over the deputy right", async () => {
+			let asked = false;
+			const authorization = createApprovalWorkflowAuthorization({
+				canManageApproval: async () => true,
+				deputyAuthority: {
+					coverFor: async () => {
+						asked = true;
+						return { approverId: ids.approver, absenceId: "absence-1" };
+					},
+				},
+			});
+			await expect(
+				authorization.authorize({
+					dbService: dbService().service,
+					organizationId: "org-1",
+					workflow: snapshot(),
+					actor: deputyActor,
+					command: approve,
+				}),
+			).resolves.toBe("manage_approval");
+			expect(asked).toBe(false);
+		});
+
+		it("refuses a deputy who is not covering, and never grants a cancel", async () => {
+			const authorization = createApprovalWorkflowAuthorization({
+				canManageApproval: async () => false,
+				deputyAuthority: { coverFor: async () => null },
+			});
+			await expect(
+				authorization.authorize({
+					dbService: dbService().service,
+					organizationId: "org-1",
+					workflow: snapshot(),
+					actor: deputyActor,
+					command: approve,
+				}),
+			).rejects.toThrow(/forbidden command actor/i);
+		});
+
+		it("refuses the four-eyes case with a clear error", async () => {
+			const workflow = snapshot();
+			const [stage] = workflow.stages;
+			const earlier = {
+				...stage,
+				id: "00000000-0000-4000-8000-0000000000e1",
+				sequence: 0,
+				status: "approved" as const,
+				assignments: stage.assignments.map((assignment) => ({
+					...assignment,
+					id: "00000000-0000-4000-8000-0000000000e2",
+					stageId: "00000000-0000-4000-8000-0000000000e1",
+					approverEmployeeId: ids.fallbackManager,
+					status: "approved" as const,
+					resolvedBy: {
+						kind: "employee" as const,
+						employeeId: ids.fallbackManager,
+						userId: null,
+					},
+				})),
+			};
+			const authorization = createApprovalWorkflowAuthorization({
+				canManageApproval: async () => false,
+				deputyAuthority: {
+					coverFor: async () => ({ approverId: ids.approver, absenceId: "absence-1" }),
+				},
+			});
+			await expect(
+				authorization.authorize({
+					dbService: dbService().service,
+					organizationId: "org-1",
+					workflow: { ...workflow, stages: [earlier, ...workflow.stages] },
+					actor: deputyActor,
+					command: approve,
+				}),
+			).rejects.toThrow("You already decided an earlier stage of this request");
+		});
+	});
+
 	it("denies foreign scope, unrelated employees, and requester non-cancel commands", async () => {
 		const authorization = createApprovalWorkflowAuthorization({
 			canManageApproval: async () => false,

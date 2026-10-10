@@ -342,7 +342,28 @@ export type ApprovalWorkflowAuthorizationGrant =
 	| "requester"
 	| "manage_approval"
 	| "system"
-	| "offboarding_reassignment";
+	| "offboarding_reassignment"
+	| ApprovalCoveringDeputyGrant;
+
+/**
+ * A covering deputy decides an active assignment for its absent approver
+ * (#1016, Approvals ADR 0002). The decision event records whom it acted for.
+ */
+export interface ApprovalCoveringDeputyGrant {
+	kind: "covering_deputy";
+	actingFor: {
+		/** The assignment's approver X, who stays assigned. */
+		approverEmployeeId: string;
+		/** X's absence naming the deputy. */
+		absenceId: string;
+	};
+}
+
+export function isCoveringDeputyGrant(
+	grant: ApprovalWorkflowAuthorizationGrant,
+): grant is ApprovalCoveringDeputyGrant {
+	return typeof grant === "object" && grant !== null && grant.kind === "covering_deputy";
+}
 
 export interface ApprovalWorkflowAuthorization {
 	authorize(input: {
