@@ -49,7 +49,7 @@ const mockState = vi.hoisted(() => ({
 	computeEmployeePeriodBalance: vi.fn(),
 	upsertEmployeeWorkBalancePeriod: vi.fn(),
 	rebuildEmployeeYearBalanceFromMonths: vi.fn(),
-	sumBalanceAdjustmentMinutes: vi.fn(),
+	readWorkBalanceAdjustments: vi.fn(),
 }));
 
 vi.mock("drizzle-orm", async (importOriginal) => {
@@ -84,7 +84,7 @@ vi.mock("@/lib/calendar/work-policy-requirements", () => ({
 }));
 
 vi.mock("./adjustments/ledger", () => ({
-	sumBalanceAdjustmentMinutes: mockState.sumBalanceAdjustmentMinutes,
+	readWorkBalanceAdjustments: mockState.readWorkBalanceAdjustments,
 }));
 
 vi.mock("./period-aggregation", () => ({
@@ -163,8 +163,12 @@ describe("work balance helpers", () => {
 		mockState.db.insert.mockReturnValue({ values: mockState.insertValues });
 		mockState.insertValues.mockReturnValue({ onConflictDoUpdate: mockState.onConflictDoUpdate });
 		mockState.getDailyWorkRequirementsForEmployee.mockResolvedValue({});
-		mockState.sumBalanceAdjustmentMinutes.mockReset();
-		mockState.sumBalanceAdjustmentMinutes.mockResolvedValue(0);
+		mockState.readWorkBalanceAdjustments.mockReset();
+		mockState.readWorkBalanceAdjustments.mockResolvedValue({
+			openingBalance: null,
+			countFrom: null,
+			adjustmentMinutes: 0,
+		});
 		mockState.computeEmployeePeriodBalance.mockReset();
 		mockState.upsertEmployeeWorkBalancePeriod.mockReset();
 		mockState.rebuildEmployeeYearBalanceFromMonths.mockReset();

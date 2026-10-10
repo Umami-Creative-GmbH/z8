@@ -162,43 +162,42 @@ export async function refreshEmployeeTimeBalances(input: {
 				: range.start;
 			const countsAnyDay = countFrom <= range.end;
 			const countFromDate = dateToDB(countFrom)!;
-			const [actualMinutes, expectedMinutes, absenceAdjustedMinutes, payoutMinutes] =
-				countsAnyDay
-					? await Promise.all([
-							openingBalanceInYear
-								? sumCompletedWorkMinutes({
-										employeeId,
-										organizationId: input.organizationId,
-										startDate: countFromDate,
-										endDate,
-									})
-								: (actualByEmployee.get(employeeId) ?? 0),
-							runtime
-								.runPromise(
-									calculateExpectedWorkHoursForEmployee(
-										employeeId,
-										input.organizationId,
-										countFromDate,
-										endDate,
-										"utc",
-									),
-								)
-								.then((expected) => expected.totalMinutes),
-							calculateAbsenceAdjustedMinutes({
-								employeeId,
-								organizationId: input.organizationId,
-								rangeStart: countFrom,
-								rangeEnd: range.end,
-							}),
-							// Overtime payouts lower this balance too; worked minutes stay as worked.
-							sumBalanceAdjustmentMinutes(db, {
-								organizationId: input.organizationId,
-								employeeId,
-								fromDate: countFrom.toISODate()!,
-								throughDate: range.end.toISODate()!,
-							}),
-						])
-					: [0, 0, 0, 0];
+			const [actualMinutes, expectedMinutes, absenceAdjustedMinutes, payoutMinutes] = countsAnyDay
+				? await Promise.all([
+						openingBalanceInYear
+							? sumCompletedWorkMinutes({
+									employeeId,
+									organizationId: input.organizationId,
+									startDate: countFromDate,
+									endDate,
+								})
+							: (actualByEmployee.get(employeeId) ?? 0),
+						runtime
+							.runPromise(
+								calculateExpectedWorkHoursForEmployee(
+									employeeId,
+									input.organizationId,
+									countFromDate,
+									endDate,
+									"utc",
+								),
+							)
+							.then((expected) => expected.totalMinutes),
+						calculateAbsenceAdjustedMinutes({
+							employeeId,
+							organizationId: input.organizationId,
+							rangeStart: countFrom,
+							rangeEnd: range.end,
+						}),
+						// Overtime payouts lower this balance too; worked minutes stay as worked.
+						sumBalanceAdjustmentMinutes(db, {
+							organizationId: input.organizationId,
+							employeeId,
+							fromDate: countFrom.toISODate()!,
+							throughDate: range.end.toISODate()!,
+						}),
+					])
+				: [0, 0, 0, 0];
 			const values = buildEmployeeTimeBalanceValues({
 				employeeId,
 				organizationId: input.organizationId,
