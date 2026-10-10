@@ -10,6 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { organization } from "../auth-schema";
 import { absenceEntry } from "./absence";
+import { employee } from "./organization";
 
 /**
  * Sent markers of the deputy's day-before reminder (#1013): one per absence,
@@ -30,6 +31,7 @@ export const absenceDeputyReminder = pgTable(
 	},
 	(table) => [
 		uniqueIndex("absenceDeputyReminder_absence_deputy_start_idx").on(
+			table.organizationId,
 			table.absenceId,
 			table.deputyEmployeeId,
 			table.startDate,
@@ -39,6 +41,11 @@ export const absenceDeputyReminder = pgTable(
 			name: "absence_deputy_reminder_absence_fk",
 			columns: [table.absenceId, table.organizationId],
 			foreignColumns: [absenceEntry.id, absenceEntry.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "absence_deputy_reminder_deputy_fk",
+			columns: [table.deputyEmployeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
 		}).onDelete("cascade"),
 	],
 );

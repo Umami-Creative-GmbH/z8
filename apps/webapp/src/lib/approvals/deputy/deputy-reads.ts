@@ -25,6 +25,15 @@ export async function loadCover(executor: CoveringExecutor, query: CoverQuery): 
 	return (await coveringStore()).loadCover(executor, query);
 }
 
+/** The approvers the deputy covers for at the instant (employee ids). */
+export async function loadCoveredApproverIds(
+	executor: CoveringExecutor,
+	query: { organizationId: string; deputyId: string; at: Instant },
+): Promise<Set<string>> {
+	const covers = await (await coveringStore()).loadCoveredApprovers(executor, query);
+	return new Set(covers.map((cover) => cover.approverId));
+}
+
 /** Whether the deputy covers for this approver at the instant. */
 export async function isCovering(executor: CoveringExecutor, query: CoverQuery): Promise<boolean> {
 	return (await loadCover(executor, query)) !== null;

@@ -1,5 +1,5 @@
 import type { Instant } from "@/lib/datetime/temporal-core";
-import type { ActingFor } from "../deputy/deputy-decision";
+import { type ActingFor, actingForFromEventMetadata } from "../deputy/deputy-decision";
 import type {
 	ApprovalCommandResult,
 	ApprovalEventActorIdentity,
@@ -67,15 +67,8 @@ export function deriveCommandDecisionOutcome(input: {
 			field: "decision_event",
 		});
 	}
-	const metadata = event.metadata as Record<string, unknown> | null | undefined;
-	const actingFor =
-		typeof metadata?.actingForEmployeeId === "string" &&
-		typeof metadata.actingForAbsenceId === "string"
-			? {
-					approverEmployeeId: metadata.actingForEmployeeId,
-					absenceId: metadata.actingForAbsenceId,
-				}
-			: null;
+	const actingFor = actingForFromEventMetadata(event.metadata);
+
 	return {
 		stageId: input.command.stageId,
 		assignmentId: assignment.id,

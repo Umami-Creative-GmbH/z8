@@ -27,6 +27,7 @@ import {
 	type ApprovalDeliveryMessageRecord,
 	type ClaimedApprovalDeliveryWork,
 	approvalDeliveryMessageReviewReference,
+	cardHolderEmployeeId,
 	claimApprovalDeliveryWork,
 	expandApprovalDeliveryIntents,
 	finishApprovalDeliveryWork,
@@ -405,7 +406,7 @@ async function processInitial(
 	const state = await loadWorkState(work);
 	if (!state) return finishSimply(work, "cancelled", "purged");
 	// A deputy card (#1017) belongs to the absent approver it acts for.
-	const holder = work.actingForEmployeeId ?? work.recipientEmployeeId;
+	const holder = cardHolderEmployeeId(work);
 	if (
 		state.workflowStatus !== "pending" ||
 		state.assignmentStatus !== "pending" ||
@@ -664,7 +665,8 @@ async function retireDeputyCard(
 	message: ApprovalDeliveryMessageRecord,
 	state: WorkState,
 ): Promise<ApprovalDeliveryOutcome> {
-	const actingFor = message.actingForEmployeeId ?? "";
+	const actingFor = message.actingForEmployeeId;
+	if (!actingFor) return finishSimply(work, "cancelled", "obsolete");
 	if (
 		await isCovering(db, {
 			organizationId: work.organizationId,
@@ -679,15 +681,16 @@ async function retireDeputyCard(
 		userId: message.recipientUserId,
 		organizationId: work.organizationId,
 	});
+	// Without the approver's name the card reads "No longer actionable" instead.
+	const approverName = await loadEmployeeName(db, {
+		organizationId: work.organizationId,
+		employeeId: actingFor,
+	});
 	const notice = await approvalStatusNotice(
 		{
 			workflowStatus: state.workflowStatus,
 			evidence: null,
-			noLongerCoveringFor:
-				(await loadEmployeeName(db, {
-					organizationId: work.organizationId,
-					employeeId: actingFor,
-				})) ?? "",
+			...(approverName ? { noLongerCoveringFor: approverName } : {}),
 		},
 		display,
 		work.organizationId,

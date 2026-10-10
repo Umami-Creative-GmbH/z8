@@ -320,7 +320,7 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 				// Who covers, so the approver can reject when the cover does not work (#1011).
 				const deputyEmployeeId = absence.deputyEmployeeId;
 				const deputy = deputyEmployeeId
-					? ((yield* dbService.query("getAbsenceDeputy", () =>
+					? ((yield* dbService.query("approvals.getAbsenceDeputy", () =>
 							loadAbsenceDeputyViews(dbService.db, {
 								organizationId,
 								deputyEmployeeIds: [deputyEmployeeId],

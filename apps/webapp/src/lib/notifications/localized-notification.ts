@@ -1,4 +1,6 @@
 import { DateTime } from "luxon";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { formatAbsenceDateRange } from "@/lib/personnel-file/sick-note-labels";
 import { formatClosedMonthLabel } from "@/lib/time-tracking/closed-months/month-label";
 import type { NotificationWithMeta } from "./types";
@@ -118,7 +120,7 @@ function localizedParams(
 			localized.dateRange = formatAbsenceDateRange(days.startDate, days.endDate, locale);
 		}
 		if (untilDay) {
-			localized.untilDate = formatAbsenceDateRange(untilDay, untilDay, locale);
+			localized.untilDate = formatPlainDate(parsePlainDate(untilDay), locale, "dateMedium");
 		}
 		if (metadata.closedMonth) {
 			localized.month = formatClosedMonthLabel(metadata.closedMonth, locale);

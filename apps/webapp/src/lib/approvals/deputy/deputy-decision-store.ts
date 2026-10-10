@@ -16,6 +16,7 @@ import type { ApprovalWorkflowCommand } from "../workflow/state-machine";
 import { loadCover, loadCoveredApprovers } from "./covering-store";
 import {
 	type ActingFor,
+	actingForFromEventMetadata,
 	type DeputyDecisionEntityType,
 	decideDeputyRight,
 	isDeputyDecisionEntityType,
@@ -327,7 +328,7 @@ export async function recordCanonicalDeputyDecisionOf(
 	const actedFor = input.result.events?.some(
 		(event) =>
 			(event.eventType === "assignment.approved" || event.eventType === "assignment.rejected") &&
-			typeof (event.metadata as Record<string, unknown> | null)?.actingForEmployeeId === "string",
+			actingForFromEventMetadata(event.metadata) !== null,
 	);
 	if (!actedFor) return null;
 	const outcome = deriveCommandDecisionOutcome({ command: input.command, result: input.result });

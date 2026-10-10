@@ -28,7 +28,7 @@ import {
 	userSettings,
 } from "@/db/schema";
 import { loadWorkingDays } from "@/lib/absences/absence-days-resolver";
-import { dateFromInstant, type Instant, type PlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
+import { type Instant, type PlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { createLogger } from "@/lib/logger";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
@@ -88,7 +88,7 @@ async function countInboxPending(input: {
 	return countCoveredApproverPending({
 		organizationId: input.organizationId,
 		approverId: input.approverEmployeeId,
-		now: dateFromInstant(input.now),
+		now: input.now,
 	});
 }
 

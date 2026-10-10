@@ -10,6 +10,7 @@ import type {
 	UnifiedApprovalItem,
 } from "@/lib/approvals/domain/types";
 import type { AbsenceDeputyView } from "@/lib/absences/deputy";
+import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
 import { buildAbsenceDeputySection } from "../presentation/absence-deputy";
 import {
@@ -467,14 +468,15 @@ async function countCoveringSections(input: {
 export async function countCoveredApproverPending(input: {
 	organizationId: string;
 	approverId: string;
-	now?: Date;
+	now: Instant;
 }): Promise<number> {
 	const [section] = await countCoveringSections({
 		covers: [{ approverId: input.approverId, approverName: "" }],
 		organizationId: input.organizationId,
 		sources: getSupportedInboxSources(),
 		countCanonical: countOrdinaryCanonicalApprovals,
-		now: input.now ?? new Date(),
+		// The handlers' count boundary takes a Date.
+		now: dateFromInstant(input.now),
 	});
 	return section?.count ?? 0;
 }
@@ -520,8 +522,21 @@ function normalizeCanonicalFilters(
 export async function getApprovalInboxCounts(
 	params: ApprovalInboxListParams,
 ): Promise<ApprovalInboxListResult["counts"]> {
-	const result = await getApprovalInboxList({ ...params, limit: 1 });
-	return result.counts;
+	return countsWithCoveringSections(await getApprovalInboxList({ ...params, limit: 1 }));
+}
+
+/**
+ * The per-type pending counts of the viewer's own list plus their "Covering
+ * for" sections' rows (#1016): the work waiting for them, as the badge shows it.
+ */
+export function countsWithCoveringSections(
+	result: Pick<ApprovalInboxListResult, "counts" | "covering">,
+): ApprovalInboxListResult["counts"] {
+	const counts = { ...result.counts };
+	for (const row of (result.covering ?? []).flatMap((section) => section.rows)) {
+		counts[row.type] = (counts[row.type] ?? 0) + 1;
+	}
+	return counts;
 }
 
 export async function getApprovalInboxDetailFromRequest({

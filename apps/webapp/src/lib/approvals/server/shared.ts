@@ -404,8 +404,9 @@ function executeApprovalWithCurrentEmployee<T, R = never>(
 			} else {
 				// The deputy right follows the request's current approver, so a
 				// transfer away from the absent approver ends it by itself.
-				actingFor = yield* Effect.tryPromise({
-					try: () =>
+				// A refusal keeps its type; a database failure stays a DatabaseError.
+				actingFor = yield* dbService
+					.query("approvals.authorizeLegacyDeputyDecision", () =>
 						authorizeLegacyDeputyDecision(dbService.db, {
 							organizationId: currentEmployee.organizationId,
 							approvalRequestId: approval.id,
@@ -415,8 +416,14 @@ function executeApprovalWithCurrentEmployee<T, R = never>(
 							action,
 							at: systemClock.nowInstant(),
 						}),
-					catch: (error) => error as AnyAppError,
-				});
+					)
+					.pipe(
+						Effect.mapError((error) =>
+							error._tag === "DatabaseError" && error.cause instanceof AuthorizationError
+								? error.cause
+								: error,
+						),
+					);
 			}
 		}
 
@@ -456,7 +463,7 @@ function executeApprovalWithCurrentEmployee<T, R = never>(
 
 		if (actingFor) {
 			const recordedFor = actingFor;
-			yield* dbService.query("recordLegacyDeputyDecision", () =>
+			yield* dbService.query("approvals.recordLegacyDeputyDecision", () =>
 				recordDeputyDecision(dbService.db, {
 					organizationId: currentEmployee.organizationId,
 					deputyEmployeeId: currentEmployee.id,

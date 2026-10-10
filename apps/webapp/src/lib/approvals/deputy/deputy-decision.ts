@@ -33,6 +33,19 @@ export interface ActingFor {
 	absenceId: string;
 }
 
+/**
+ * The acting-for of a canonical decision event (#1016): its metadata names X
+ * and the absence as `actingForEmployeeId` and `actingForAbsenceId`. Null for
+ * an ordinary decision.
+ */
+export function actingForFromEventMetadata(metadata: unknown): ActingFor | null {
+	if (!metadata || typeof metadata !== "object") return null;
+	const { actingForEmployeeId, actingForAbsenceId } = metadata as Record<string, unknown>;
+	return typeof actingForEmployeeId === "string" && typeof actingForAbsenceId === "string"
+		? { approverEmployeeId: actingForEmployeeId, absenceId: actingForAbsenceId }
+		: null;
+}
+
 export type DeputyDecisionEntityType = "absence_entry" | "time_entry" | "travel_expense_report";
 
 /**

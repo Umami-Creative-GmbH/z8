@@ -2,7 +2,10 @@ import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import type { UnifiedApprovalItem } from "@/lib/approvals/domain/types";
 import type { OrdinaryCanonicalApproval } from "@/lib/approvals/inbox/ordinary-canonical-read";
-import { getApprovalInboxListFromSources } from "@/lib/approvals/inbox/read-service";
+import {
+	countsWithCoveringSections,
+	getApprovalInboxListFromSources,
+} from "@/lib/approvals/inbox/read-service";
 import type { ApprovalInboxSource } from "@/lib/approvals/inbox/source-adapters";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 
@@ -788,6 +791,23 @@ describe("getApprovalInboxListFromSources", () => {
 				decidedEarlierStage: true,
 			});
 			expect(rows.get("fine")?.capabilities.canApprove).toBe(true);
+		});
+
+		it("counts the sections' rows into the viewer's pending counts", async () => {
+			const result = await getApprovalInboxListFromSources({
+				sources: [
+					routedSource("absence_entry", [
+						item({ id: "own" }),
+						item({ id: "covered", approverId: "absent-1" }),
+					]),
+					routedSource("time_entry", [
+						item({ id: "covered-time", approvalType: "time_entry", approverId: "absent-1" }),
+					]),
+				],
+				params: { approverId: "manager-1", organizationId: "org-1", limit: 20, covering },
+			});
+
+			expect(countsWithCoveringSections(result)).toEqual({ absence_entry: 2, time_entry: 1 });
 		});
 
 		it("lets own rights win: what the viewer decides anyway stays out of the section", async () => {

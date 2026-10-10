@@ -23,8 +23,9 @@ import {
 	instantFromDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import { decodeApprovalDatabaseTimestamptz } from "../approval-database-row";
 import { approvalAuthorityOf, approvalAuthoritySql } from "../authority";
-import { loadCover, resolveDeputyCardRecipients } from "../deputy/deputy-reads";
+import { loadCoveredApproverIds, resolveDeputyCardRecipients } from "../deputy/deputy-reads";
 import { isDeputyDecisionEntityType } from "../deputy/deputy-decision";
 import type { ApprovalReviewReference } from "../presentation/review-navigation";
 import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
@@ -338,11 +339,6 @@ function deputyLegacyInitialDedupeKey(
 	return `approval-delivery:v1:deputy-legacy-initial:${approvalRequestId}:${deputyId}:${provider}`;
 }
 
-function timestampValue(value: unknown): Date {
-	if (value instanceof Date) return value;
-	if (typeof value === "string") return new Date(value);
-	throw new Error("Approval delivery row has no timestamp");
-}
 
 /**
  * A legacy-authoritative lifecycle (#296): a source and its legacy requests,
@@ -423,12 +419,26 @@ function legacyRecipientReplacedSql(input: {
 	)`;
 }
 
-// A deputy card (#1017) is its absent approver's card for this purpose: it is
+/**
+ * Whose card a delivery work or message is: a deputy card (#1017) belongs to
+ * the absent approver it acts for, any other card to its recipient.
+ */
+export function cardHolderEmployeeId(card: {
+	actingForEmployeeId?: string | null;
+	recipientEmployeeId: string;
+}): string {
+	return card.actingForEmployeeId ?? card.recipientEmployeeId;
+}
+
+/** `cardHolderEmployeeId` of a delivery message row `m`. */
+const messageHolderSql = sql`coalesce(m.acting_for_employee_id, m.recipient_employee_id)`;
+
+// A deputy card is its absent approver's card for this purpose: it is
 // replaced once escalation moved the request away from the approver it covers.
 const legacyMessageReplacedSql = legacyRecipientReplacedSql({
 	organizationId: sql`m.organization_id`,
 	approvalRequestId: sql`m.legacy_approval_request_id`,
-	recipientEmployeeId: sql`coalesce(m.acting_for_employee_id, m.recipient_employee_id)`,
+	recipientEmployeeId: messageHolderSql,
 });
 
 /**
@@ -540,7 +550,7 @@ async function planWorkflowEffects(
 						{
 							key: text(assignment.id, "assignment"),
 							approverId: text(assignment.approver_employee_id, "approver"),
-							assignedAt: instantFromDate(timestampValue(assignment.assigned_at)),
+							assignedAt: instantFromDate(decodeApprovalDatabaseTimestamptz(assignment.assigned_at)),
 							requesterEmployeeId: nullableText(assignment.requester_employee_id),
 						},
 					]
@@ -665,7 +675,7 @@ async function planLegacyLifecycleEffects(
 				candidates: pending.map((request) => ({
 					key: text(request.id, "legacy request"),
 					approverId: text(request.approver_id, "approver"),
-					assignedAt: instantFromDate(timestampValue(request.assigned_at)),
+					assignedAt: instantFromDate(decodeApprovalDatabaseTimestamptz(request.assigned_at)),
 					requesterEmployeeId: nullableText(request.requested_by),
 				})),
 			})
@@ -822,7 +832,7 @@ async function planLegacyMessageRefreshes(
 				${
 					input.recipientEmployeeId
 						? // The former holder's cards, and the cards of their deputies (#1017).
-							sql`and coalesce(m.acting_for_employee_id, m.recipient_employee_id) = ${input.recipientEmployeeId}::uuid`
+							sql`and ${messageHolderSql} = ${input.recipientEmployeeId}::uuid`
 						: sql``
 				}
 		`),
@@ -2002,7 +2012,7 @@ export async function isApprovalDeliveryAssignmentReplaced(
 	if (message.lifecycle === "legacy") {
 		if (!message.legacyApprovalRequestId) return false;
 		// A deputy card (#1017) follows the absent approver it covers for.
-		const holder = message.actingForEmployeeId ?? message.recipientEmployeeId;
+		const holder = cardHolderEmployeeId(message);
 		const [replaced] = rows(
 			await db.execute(sql`
 				select ${legacyRecipientReplacedSql({
@@ -2087,16 +2097,21 @@ export async function planDeputyCardRetirements(input: {
 				eq(approvalDeliveryMessage.controls, "actionable"),
 			),
 		);
+	// Each deputy's covers are judged once, for all of their open cards.
+	const coveredByDeputy = new Map<string, Set<string>>();
 	let planned = 0;
 	for (const pair of open) {
 		if (!pair.actingForEmployeeId) continue;
-		const cover = await loadCover(db, {
-			organizationId: input.organizationId,
-			approverId: pair.actingForEmployeeId,
-			deputyId: pair.recipientEmployeeId,
-			at: input.now,
-		});
-		if (cover) continue;
+		let covered = coveredByDeputy.get(pair.recipientEmployeeId);
+		if (!covered) {
+			covered = await loadCoveredApproverIds(db, {
+				organizationId: input.organizationId,
+				deputyId: pair.recipientEmployeeId,
+				at: input.now,
+			});
+			coveredByDeputy.set(pair.recipientEmployeeId, covered);
+		}
+		if (covered.has(pair.actingForEmployeeId)) continue;
 		const inserted = rows(
 			await db.execute(sql`
 				insert into approval_delivery_work (

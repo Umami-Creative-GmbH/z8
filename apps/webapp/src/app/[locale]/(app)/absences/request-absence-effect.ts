@@ -1146,7 +1146,7 @@ function requestAbsenceWithResolverEffect(
 					yield* Effect.fail(createSickDetailValidationError(sickDetailError));
 				}
 
-				const deputyRefusal = yield* dbService.query("checkAbsenceDeputy", () =>
+				const deputyRefusal = yield* dbService.query("absences.checkDeputy", () =>
 					checkDeputyNaming(dbService.db, {
 						organizationId: currentEmployee.organizationId,
 						absentEmployeeId: currentEmployee.id,

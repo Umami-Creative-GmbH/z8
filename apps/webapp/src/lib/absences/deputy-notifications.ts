@@ -1,5 +1,6 @@
 import type { VacationOverrideSummary } from "@/lib/absences/sick-vacation-override";
 import { type Instant, parsePlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
 import { formatAbsenceDateRange } from "@/lib/personnel-file/sick-note-labels";
 import type { AbsenceDeputyNotificationType } from "./deputy-notification-types";
@@ -262,7 +263,7 @@ export function buildDeputyReminderNotification(input: {
 	const { absence } = input;
 	const params = {
 		name: input.absentName,
-		untilDate: formatAbsenceDateRange(absence.endDate, absence.endDate, NOTIFICATION_DATE_LOCALE),
+		untilDate: formatPlainDate(parsePlainDate(absence.endDate), NOTIFICATION_DATE_LOCALE, "dateMedium"),
 	};
 	return {
 		userId: input.recipientUserId,

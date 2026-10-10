@@ -199,12 +199,16 @@ const NOTIFICATION_CATEGORIES = [
 	},
 ];
 
-// Human-readable labels for notification types. Clocking reminder and deputy labels are static
-// `t()` calls in `getTypeLabel`, so the Tolgee extractor registers them with their defaults.
-const TYPE_LABELS: Record<
-	Exclude<NotificationType, ClockingReminderType | AbsenceDeputyNotificationType>,
-	string
-> = {
+/** Types whose labels are static `t()` calls in `getTypeLabel` (extractable with their defaults). */
+type StaticallyLabelledType =
+	| ClockingReminderType
+	| AbsenceDeputyNotificationType
+	| "absence_deputy_unavailable"
+	| "approval_cover_started"
+	| "approval_cover_return_summary";
+
+// Human-readable labels for the other notification types, looked up by a computed key.
+const TYPE_LABELS: Record<Exclude<NotificationType, StaticallyLabelledType>, string> = {
 	automatic_clock_out: "Automatic clock-out",
 	approval_request_submitted: "Request submitted",
 	approval_request_approved: "Request approved",
@@ -272,10 +276,7 @@ const TYPE_LABELS: Record<
 	personnel_file_expired_today: "Document expires today",
 	// Employee documents newly due for deletion (personnel file officers)
 	personnel_file_due_for_deletion: "Documents due for deletion (personnel file officers)",
-	// A departed or deactivated deputy was cleared from an absence
-	absence_deputy_unavailable: "Deputy no longer available",
-	approval_cover_started: "Absence cover started",
-	approval_cover_return_summary: "Decided by your deputy",
+
 	// Closed months (#762)
 	month_closed_automatically: "Month closed automatically",
 	month_close_blocked: "Automatic month close blocked",
@@ -425,6 +426,23 @@ function useNotificationSettingsViewModel() {
 				return t(
 					"common:notifications.preferences.types.absence_deputy_reminder",
 					"Absence cover starts tomorrow",
+				);
+			// A departed or deactivated deputy was cleared from an absence (#1014).
+			case "absence_deputy_unavailable":
+				return t(
+					"common:notifications.preferences.types.absence_deputy_unavailable",
+					"Deputy no longer available",
+				);
+			// Cover summaries (#1018).
+			case "approval_cover_started":
+				return t(
+					"common:notifications.preferences.types.approval_cover_started",
+					"Absence cover started",
+				);
+			case "approval_cover_return_summary":
+				return t(
+					"common:notifications.preferences.types.approval_cover_return_summary",
+					"Decided by your deputy",
 				);
 			default:
 				return t(`common:notifications.preferences.types.${type}`, TYPE_LABELS[type]);
