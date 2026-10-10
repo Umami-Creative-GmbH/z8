@@ -12,6 +12,10 @@ import { createLogger } from "@/lib/logger";
 import { isDiscordAvailable, sendDiscordNotification } from "./discord-channel";
 import { sendEmailNotification } from "./email-notifications";
 import {
+	type NotificationRecipients,
+	resolveNotificationRecipients,
+} from "./kiosk-only-recipients";
+import {
 	isPushAvailable,
 	type PushPayload,
 	sendPushToUser,
@@ -293,12 +297,19 @@ export async function deliverNotificationToChannel(
  * 1. Check user preferences for in-app notifications
  * 2. Create the in-app notification if enabled
  * 3. Send a push notification if push is enabled for this notification type
+ *
+ * A kiosk-only employee sees no channel, so their notifications go to their
+ * managers instead (#860), each naming the employee.
  */
 export async function createNotification(
 	params: CreateNotificationParams,
 	options: { throwOnError?: boolean } = {},
 ): Promise<Notification | null> {
 	try {
+		const recipients = await resolveNotificationRecipients(db, params);
+		if (recipients.kind === "forwarded") {
+			return forwardNotification(params, recipients, options);
+		}
 		const channels = await loadNotificationChannelPreferences(
 			params.userId,
 			params.type,
@@ -473,6 +484,43 @@ export async function createNotification(
 		if (options.throwOnError) throw error;
 		return null;
 	}
+}
+
+/**
+ * A kiosk-only employee's notification, sent to each of their managers: the
+ * title names the employee, the metadata records whom it was for, and the
+ * employee's own link is dropped.
+ */
+async function forwardNotification(
+	params: CreateNotificationParams,
+	recipients: Extract<NotificationRecipients, { kind: "forwarded" }>,
+	options: { throwOnError?: boolean },
+): Promise<Notification | null> {
+	const { employee } = recipients;
+	if (recipients.userIds.length === 0) {
+		logger.warn(
+			{ employeeId: employee.employeeId, type: params.type },
+			"Kiosk-only employee notification has no manager to receive it",
+		);
+	}
+	let first: Notification | null = null;
+	for (const userId of recipients.userIds) {
+		const created = await createNotification(
+			{
+				...params,
+				userId,
+				title: `${employee.name}: ${params.title}`,
+				actionUrl: undefined,
+				metadata: { ...params.metadata, forwardedFor: employee },
+				idempotencyKey: params.idempotencyKey
+					? `${params.idempotencyKey}:kiosk-only:${userId}`
+					: undefined,
+			},
+			options,
+		);
+		first ??= created;
+	}
+	return first;
 }
 
 /**

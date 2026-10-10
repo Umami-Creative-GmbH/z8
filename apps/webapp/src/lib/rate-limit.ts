@@ -198,6 +198,13 @@ const limiters = {
 		prefix: "ratelimit:kiosk-pairing",
 		analytics: false,
 	}),
+	/** Kiosk PIN attempts per kiosk (#860): 30 per minute, every PIN-carrying call counts */
+	kioskPinAttempts: new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(30, "60 s"),
+		prefix: "ratelimit:kiosk-pin",
+		analytics: false,
+	}),
 };
 
 export type RateLimitEndpoint = keyof typeof limiters;
@@ -230,6 +237,7 @@ export const RATE_LIMIT_CONFIGS = {
 		windowSeconds: exportConfig.seconds,
 	},
 	kioskPairing: { maxRequests: 10, windowSeconds: 600 },
+	kioskPinAttempts: { maxRequests: 30, windowSeconds: 60 },
 };
 
 /**

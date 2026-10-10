@@ -41,6 +41,7 @@ const { hashKioskSecret } = await import("./credentials");
 const { KIOSK_TOKEN_HEADER } = await import("./protocol");
 const { createKioskClockService } = await import("./clock-service");
 const { proveKioskPin } = await import("@/lib/time-tracking/clocking/kiosk");
+const { createNotification } = await import("@/lib/notifications/notification-service");
 type ClockPrincipal = import("@/lib/time-tracking/clocking/types").ClockPrincipal;
 type ClockInCommand = import("@/lib/time-tracking/clocking/types").ClockInCommand;
 type KioskPinProof = import("@/lib/time-tracking/clocking/types").KioskPinProof;
@@ -609,6 +610,49 @@ describe("kiosk clocking on PostgreSQL", () => {
 			it("keeps the kiosk channel the kiosk principal's alone", async () => {
 				await expect(clockIn({ kind: "user", userId: ids.workerUser })).resolves.toEqual(denied);
 				expect(await entries()).toEqual([]);
+			});
+		});
+
+		describe("notifications of a kiosk-only employee", () => {
+			async function inbox(userId: string) {
+				const { rows } = await admin.query<{ title: string; message: string; metadata: string | null }>(
+					`select title, message, metadata from notification where user_id = $1 order by created_at`,
+					[userId],
+				);
+				return rows;
+			}
+
+			function remind(userId: string) {
+				return createNotification({
+					userId,
+					organizationId: ids.organization,
+					type: "forgotten_clock_out_reminder",
+					title: "Still clocked in?",
+					message: "You have been clocked in for 10 hours.",
+					actionUrl: "/time-tracking",
+				});
+			}
+
+			it("reach their managers instead, naming the employee", async () => {
+				await remind(ids.kioskOnlyUser);
+
+				expect(await inbox(ids.kioskOnlyUser)).toEqual([]);
+				const [forwarded, ...others] = await inbox(ids.managerUser);
+				expect(others).toEqual([]);
+				expect(forwarded).toMatchObject({
+					title: "Kim Kiosk: Still clocked in?",
+					message: "You have been clocked in for 10 hours.",
+				});
+				expect(JSON.parse(forwarded?.metadata ?? "{}")).toEqual({
+					forwardedFor: { userId: ids.kioskOnlyUser, employeeId: ids.kioskOnly, name: "Kim Kiosk" },
+				});
+			});
+
+			it("reach an employee with a sign-in themselves", async () => {
+				await remind(ids.workerUser);
+
+				expect(await inbox(ids.workerUser)).toMatchObject([{ title: "Still clocked in?" }]);
+				expect(await inbox(ids.managerUser)).toEqual([]);
 			});
 		});
 
