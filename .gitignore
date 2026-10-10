@@ -112,3 +112,5 @@ infra/hetzner-k8s/tofu/.terraform.tfstate.lock.info
 infra/hetzner-k8s/tofu/*.lock.info
 /apps/desktop/.release/
 /apps/desktop/.native-qa/
+
+/apps/webapp/src/tolgee/catalog-source-metadata.generated.ts
