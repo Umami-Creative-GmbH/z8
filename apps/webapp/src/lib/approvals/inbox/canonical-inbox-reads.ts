@@ -3,6 +3,7 @@ import {
 	countOrdinaryCanonicalApprovals,
 	loadOrdinaryCanonicalApprovals,
 } from "./ordinary-canonical-read";
+import { periodSubmissionInboxRead } from "./period-submission-read";
 
 /** Manual time submissions and policy clock-outs, listed as time entries. */
 export const ordinaryWorkPeriodInboxRead: CanonicalInboxRead = {
@@ -19,4 +20,7 @@ export const ordinaryWorkPeriodInboxRead: CanonicalInboxRead = {
  * `decide`) decides its approvals next to the legacy sources, with no legacy
  * request behind them.
  */
-export const CANONICAL_INBOX_READS: readonly CanonicalInboxRead[] = [ordinaryWorkPeriodInboxRead];
+export const CANONICAL_INBOX_READS: readonly CanonicalInboxRead[] = [
+	ordinaryWorkPeriodInboxRead,
+	periodSubmissionInboxRead,
+];

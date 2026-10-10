@@ -127,7 +127,9 @@ export type ApprovalType =
 	| "time_entry"
 	| "shift_request"
 	| "travel_expense_claim"
-	| "travel_expense_report";
+	| "travel_expense_report"
+	/** Canonical-only (#1059): no legacy handler. */
+	| "period_submission";
 
 export type ApprovalDecisionAction = "approve" | "reject";
 

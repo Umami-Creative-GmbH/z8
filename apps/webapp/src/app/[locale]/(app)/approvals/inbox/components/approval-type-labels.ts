@@ -12,5 +12,6 @@ export function getApprovalTypeLabels(
 			"approvals:approvals.types.travel_expense_report",
 			"Expense Reports",
 		),
+		period_submission: t("approvals:approvals.types.period_submission", "Period Submissions"),
 	};
 }
