@@ -34,8 +34,8 @@ import {
 } from "./adjustment-read";
 import { copyAllowanceOverrides } from "./allowance-override-copy";
 import { loadTravelExpenseReportExportState } from "./export-store";
-import type { ReportOwner } from "./report-store";
 import { isCarriedByPayrollRun } from "./payroll-run-inclusion-read";
+import type { ReportOwner } from "./report-store";
 import { hasRecordedSettlement } from "./settlement-store";
 
 /**

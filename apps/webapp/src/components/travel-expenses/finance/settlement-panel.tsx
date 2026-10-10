@@ -1,5 +1,6 @@
 "use client";
 
+import { IconAlertTriangle } from "@tabler/icons-react";
 import { type QueryKey, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
@@ -7,11 +8,17 @@ import {
 	getTravelExpenseSettlement,
 	type SettlementAccountView,
 } from "@/app/[locale]/(app)/travel-expenses/finance-actions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardAction, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query/keys";
 import type { SettlementAccount, SettlementSource } from "@/lib/travel-expenses/settlement-store";
-import { formatMoney, formatPlainDate, formatRecordedInstant } from "../report/format";
+import {
+	formatMoney,
+	formatPayrollPeriod,
+	formatPlainDate,
+	formatRecordedInstant,
+} from "../report/format";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { PayrollRunNotice } from "./payroll-run-notice";
 import { RecordReimbursementForm } from "./record-reimbursement-form";
@@ -113,6 +120,8 @@ function SettlementAccountCard({
 						<SettlementHistory entries={account.entries} viewer={viewer} headingId={headingId} />
 					)}
 
+					{viewer === "finance" && <PayrollOverpaymentNotices account={account} />}
+
 					{viewer === "finance" && account.payrollRun && source.type === "report" && (
 						<PayrollRunNotice
 							reportId={source.id}
@@ -204,6 +213,37 @@ function SettlementCurrencyLine({
 	);
 }
 
+/**
+ * Overpaid by payroll (#853): a confirmed run paid more than was still owed,
+ * e.g. after an adjustment lowered the amount. Only the owed part is recorded;
+ * nothing is recovered automatically.
+ */
+function PayrollOverpaymentNotices({ account }: { account: SettlementAccount }) {
+	const { t } = useTranslate();
+	const locale = useLocale();
+	const overpaid = account.confirmedPayrollRuns.filter((run) => run.overpaidAmount !== null);
+	if (overpaid.length === 0) return null;
+	return (
+		<>
+			{overpaid.map((run) => (
+				<Alert key={run.jobId}>
+					<IconAlertTriangle aria-hidden="true" className="size-4" />
+					<AlertDescription>
+						{t(
+							"travelExpenses.settlement.payrollOverpaid",
+							"Overpaid by payroll: payroll {period} paid {amount} more than was still owed when it was confirmed. Recover it from the employee by hand; payroll never deducts it.",
+							{
+								period: formatPayrollPeriod(locale, run.periodStart, run.periodEnd),
+								amount: formatMoney(locale, run.overpaidAmount ?? "0.00", "EUR"),
+							},
+						)}
+					</AlertDescription>
+				</Alert>
+			))}
+		</>
+	);
+}
+
 /** Company-paid costs, which are part of the expense but not owed to the employee. */
 function CompanyPaidNote({ account }: { account: SettlementAccount }) {
 	const { t } = useTranslate();
@@ -269,7 +309,18 @@ function SettlementEntryRow({
 						})}
 			</span>
 			<span>{formatPlainDate(locale, entry.occurredOn)}</span>
-			<span className="break-all text-muted-foreground">{entry.reference}</span>
+			<span className="break-all text-muted-foreground">
+				{entry.payrollRun
+					? // Paid on the payslip (#853): the payroll run replaces the bank reference.
+						t("travelExpenses.settlement.entry.payrollRun", "Reimbursed with payroll {period}", {
+							period: formatPayrollPeriod(
+								locale,
+								entry.payrollRun.periodStart,
+								entry.payrollRun.periodEnd,
+							),
+						})
+					: entry.reference}
+			</span>
 			{viewer === "finance" && (
 				<span className="w-full text-xs text-muted-foreground">
 					{t("travelExpenses.settlement.entry.recordedBy", "Recorded by {name}, {date}", {

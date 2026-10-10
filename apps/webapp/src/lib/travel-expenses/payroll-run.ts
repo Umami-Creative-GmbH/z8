@@ -478,6 +478,8 @@ export interface UnconfirmedPayrollRun {
 	includedReports: number;
 	/** The employees whose reports the run includes. */
 	employeeIds: string[];
+	/** Confirmed as paid for some report (#853): final, so it can no longer be discarded. */
+	partlyConfirmed: boolean;
 }
 
 /** The organization's unconfirmed payroll runs, most recently exported first. */
@@ -518,10 +520,27 @@ export async function listUnconfirmedPayrollRuns(
 			exportedAt: instantToCanonicalString(instantFromDate(row.createdAt)),
 			includedReports: 0,
 			employeeIds: [],
+			partlyConfirmed: false,
 		};
 		run.includedReports += 1;
 		if (!run.employeeIds.includes(row.employeeId)) run.employeeIds.push(row.employeeId);
 		runs.set(row.jobId, run);
+	}
+	if (runs.size > 0) {
+		const confirmed = await database
+			.selectDistinct({ jobId: travelExpensePayrollRunInclusion.payrollExportJobId })
+			.from(travelExpensePayrollRunInclusion)
+			.where(
+				and(
+					eq(travelExpensePayrollRunInclusion.organizationId, organizationId),
+					eq(travelExpensePayrollRunInclusion.state, "confirmed"),
+					inArray(travelExpensePayrollRunInclusion.payrollExportJobId, [...runs.keys()]),
+				),
+			);
+		for (const { jobId } of confirmed) {
+			const run = runs.get(jobId);
+			if (run) run.partlyConfirmed = true;
+		}
 	}
 	return [...runs.values()].toSorted((left, right) =>
 		right.exportedAt.localeCompare(left.exportedAt),

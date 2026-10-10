@@ -43,8 +43,7 @@ const settlementNotificationCopy = {
 	partiallyReimbursedWithPayroll: {
 		titleKey: "common:notifications.content.travelExpensePartiallyReimbursed.title",
 		titleDefault: "Expense partially reimbursed",
-		messageKey:
-			"common:notifications.content.travelExpensePartiallyReimbursedWithPayroll.message",
+		messageKey: "common:notifications.content.travelExpensePartiallyReimbursedWithPayroll.message",
 		messageDefault:
 			"{amount} {currency} of your travel expense has been reimbursed with payroll {period}. {remaining} {remainingCurrency} is still awaiting reimbursement.",
 	},

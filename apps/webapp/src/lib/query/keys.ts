@@ -129,6 +129,8 @@ export const queryKeys = {
 		payrollRuns: () => ["travel-expenses", "payroll-runs"] as const,
 		/** The payroll access holder's unconfirmed payroll runs (#852). */
 		scopedPayrollRuns: () => ["travel-expenses", "payroll-runs", "scoped"] as const,
+		/** The unconfirmed payroll runs the reader may confirm as paid (#853). */
+		payrollRunsToConfirm: () => ["travel-expenses", "payroll-runs", "to-confirm"] as const,
 		/** What a payroll run of the period, format and employees would not carry (#854). */
 		payrollRunReadiness: (request: {
 			startDate: string;

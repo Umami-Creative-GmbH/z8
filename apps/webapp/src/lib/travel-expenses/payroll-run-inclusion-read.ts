@@ -4,8 +4,8 @@ import {
 	payrollExportConfig,
 	payrollExportFormat,
 	payrollExportJob,
-	travelExpensePayrollRunInclusion,
 	type TravelExpensePayrollRunInclusionLine,
+	travelExpensePayrollRunInclusion,
 } from "@/db/schema";
 import { instantFromDate, instantToCanonicalString } from "@/lib/datetime/temporal-core";
 
@@ -116,7 +116,10 @@ export async function loadConfirmedPayrollRuns(
 				inArray(travelExpensePayrollRunInclusion.reportId, [...input.reportIds]),
 			),
 		)
-		.orderBy(asc(travelExpensePayrollRunInclusion.endedAt), asc(travelExpensePayrollRunInclusion.id));
+		.orderBy(
+			asc(travelExpensePayrollRunInclusion.endedAt),
+			asc(travelExpensePayrollRunInclusion.id),
+		);
 	for (const row of rows) {
 		const list = runs.get(row.reportId) ?? [];
 		list.push({

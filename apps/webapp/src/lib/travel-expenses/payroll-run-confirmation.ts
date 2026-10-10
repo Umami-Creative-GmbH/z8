@@ -5,9 +5,9 @@ import {
 	payrollExportConfig,
 	payrollExportFormat,
 	payrollExportJob,
+	type TravelExpensePayrollRunInclusionLine,
 	travelExpensePayrollRunInclusion,
 	travelExpenseReport,
-	type TravelExpensePayrollRunInclusionLine,
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import {
@@ -115,7 +115,9 @@ export function defaultPayday(periodEnd: string, today: string): string {
 }
 
 /** The reference every reimbursement of the run carries; the UI names the run from its join. */
-export function payrollRunReference(run: Pick<PayrollRunHeader, "formatName" | "periodStart" | "periodEnd">) {
+export function payrollRunReference(
+	run: Pick<PayrollRunHeader, "formatName" | "periodStart" | "periodEnd">,
+) {
 	const reference = `Payroll run ${payrollPeriodText(run.periodStart, run.periodEnd)} (${run.formatName})`;
 	return reference.slice(0, SETTLEMENT_REFERENCE_MAX_LENGTH);
 }
@@ -348,7 +350,10 @@ async function confirmInclusion(
 				{ organizationId, jobId: input.jobId, reportId: source.id, status: result.status },
 				"A payroll run's report could not be recorded as reimbursed",
 			);
-			return { row: row(result.status === "own_expense" ? "own_expense" : "failed"), recorded: null };
+			return {
+				row: row(result.status === "own_expense" ? "own_expense" : "failed"),
+				recorded: null,
+			};
 		}
 		recorded = result;
 	}

@@ -4,6 +4,7 @@ import { BackLink } from "@/components/travel-expenses/back-link";
 import { FinanceExports } from "@/components/travel-expenses/finance/finance-exports";
 import { FinanceQueue } from "@/components/travel-expenses/finance/finance-queue";
 import { OfficerCoverageGapNotice } from "@/components/travel-expenses/finance/officer-coverage-gap";
+import { PayrollRunsToConfirm } from "@/components/travel-expenses/finance/payroll-runs-to-confirm";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { loadFinanceActor } from "@/lib/travel-expenses/finance-access";
@@ -40,6 +41,7 @@ async function TravelExpenseFinancePageContent({ searchParams }: TravelExpenseFi
 			) : (
 				<>
 					<OfficerCoverageGapNotice />
+					{actor.canSettle && <PayrollRunsToConfirm />}
 					<FinanceQueue />
 				</>
 			)}

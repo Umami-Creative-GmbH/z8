@@ -54,6 +54,28 @@ export function formatPlainDateRange(locale: string, start: string | null, end: 
 }
 
 /**
+ * A payroll period (#853): the month ("October 2026") when it is one whole
+ * calendar month, else its first and last day.
+ */
+export function formatPayrollPeriod(locale: string, start: string, end: string): string {
+	try {
+		const first = parsePlainDate(start);
+		const last = parsePlainDate(end);
+		if (
+			first.day === 1 &&
+			last.year === first.year &&
+			last.month === first.month &&
+			last.day === first.daysInMonth
+		) {
+			return first.toLocaleString(locale, { month: "long", year: "numeric" });
+		}
+	} catch {
+		// Not dates: shown as stored below.
+	}
+	return formatPlainDateRange(locale, start, end) ?? `${start} – ${end}`;
+}
+
+/**
  * A recorded instant (submission, decision) shown in UTC with its zone, like
  * the claim history: never in the viewer's zone.
  */

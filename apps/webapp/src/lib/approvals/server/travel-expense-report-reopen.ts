@@ -15,6 +15,7 @@ import {
 	cancelUncompletedTravelExpenseExportsForReport,
 	loadTravelExpenseReportExportState,
 } from "@/lib/travel-expenses/export-store";
+import { isCarriedByPayrollRun } from "@/lib/travel-expenses/payroll-run-inclusion-read";
 import {
 	decideReopen,
 	parseReopenReason,
@@ -25,7 +26,6 @@ import {
 	hasRecordedSettlement,
 	loadSettlementAccount,
 } from "@/lib/travel-expenses/settlement-store";
-import { isCarriedByPayrollRun } from "@/lib/travel-expenses/payroll-run-inclusion-read";
 import { acquireApprovalWriteGate } from "../authority";
 import { kickApprovalDelivery } from "../delivery/kick";
 import { type LegacyDecisionEvidenceRecord, listLegacyDecisionEvidence } from "../evidence/store";

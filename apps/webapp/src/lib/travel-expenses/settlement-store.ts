@@ -6,7 +6,6 @@ import {
 	approvalDecisionEvidence,
 	employee,
 	payrollExportJob,
-	travelExpensePayrollRunInclusion,
 	travelExpenseClaim,
 	travelExpenseExportBatch,
 	travelExpenseReport,
@@ -417,20 +416,20 @@ export async function buildSettlementAccounts(
 	const approvedReportIds = approvedReports.map(({ row }) => row.id);
 	const [decisions, entries, adjustments, adjustmentOriginals, payrollRuns, confirmedRuns] =
 		await Promise.all([
-		loadApprovedRevisionDecisions(
-			database,
-			organizationId,
-			[...revisions.values()].map((revision) => revision.id),
-		),
-		loadEntries(database, organizationId, sources),
-		loadApprovedAdjustmentComponents(database, { organizationId, sources }),
-		loadAdjustmentOriginals(database, {
-			organizationId,
-			reportIds: reports.map(({ row }) => row.id),
-		}),
-		loadIncludedPayrollRuns(database, { organizationId, reportIds: approvedReportIds }),
-		loadConfirmedPayrollRuns(database, { organizationId, reportIds: approvedReportIds }),
-	]);
+			loadApprovedRevisionDecisions(
+				database,
+				organizationId,
+				[...revisions.values()].map((revision) => revision.id),
+			),
+			loadEntries(database, organizationId, sources),
+			loadApprovedAdjustmentComponents(database, { organizationId, sources }),
+			loadAdjustmentOriginals(database, {
+				organizationId,
+				reportIds: reports.map(({ row }) => row.id),
+			}),
+			loadIncludedPayrollRuns(database, { organizationId, reportIds: approvedReportIds }),
+			loadConfirmedPayrollRuns(database, { organizationId, reportIds: approvedReportIds }),
+		]);
 
 	const accounts: SettlementAccount[] = [];
 	for (const { row, employeeName } of reports) {
@@ -844,7 +843,10 @@ export async function recordSettlementEntryInTransaction(
 			payrollRunId,
 		})
 		.onConflictDoNothing({
-			target: [travelExpenseSettlementEntry.organizationId, travelExpenseSettlementEntry.idempotencyKey],
+			target: [
+				travelExpenseSettlementEntry.organizationId,
+				travelExpenseSettlementEntry.idempotencyKey,
+			],
 		})
 		.returning({ id: travelExpenseSettlementEntry.id });
 	if (inserted.length === 0) {

@@ -275,7 +275,8 @@ function SkippedList({ skipped }: { skipped: readonly BulkReimbursementSkippedIt
 	);
 }
 
-function ResultRow({ label, done, text }: { label: string; done: boolean; text: string }) {
+/** One expense's result line; payroll run confirmation (#853) reports the same way. */
+export function ResultRow({ label, done, text }: { label: string; done: boolean; text: string }) {
 	return (
 		<li className="flex items-start gap-3 px-3 py-2 text-sm">
 			{done ? (
