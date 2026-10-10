@@ -58,6 +58,15 @@ export const PERSONNEL_DOCUMENT_MIME_TYPES = [
 
 export const PERSONNEL_DOCUMENT_MAX_BYTES = 20 * 1024 * 1024;
 
+/**
+ * Photo types the camera input asks for. Without `image/*`, iOS hands over a
+ * JPEG instead of a HEIC photo (#983).
+ */
+export const SICK_NOTE_CAMERA_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+
+/** At most this many sick notes are staged with one absence (#983). */
+export const MAX_STAGED_SICK_NOTES = 10;
+
 export function isPersonnelDocumentMime(mime: string): boolean {
 	return (PERSONNEL_DOCUMENT_MIME_TYPES as readonly string[]).includes(mime.toLowerCase());
 }

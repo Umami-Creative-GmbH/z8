@@ -24,7 +24,9 @@ export type PersonnelFileAuditAction =
 	| AuditAction.PERSONNEL_FILE_DOCUMENT_DELETED
 	| AuditAction.PERSONNEL_FILE_DOCUMENT_VIEWED
 	| AuditAction.PERSONNEL_FILE_DOCUMENT_DOWNLOADED
-	| AuditAction.PERSONNEL_FILE_DOCUMENT_PURGED;
+	| AuditAction.PERSONNEL_FILE_DOCUMENT_PURGED
+	| AuditAction.PERSONNEL_FILE_SICK_NOTE_LINKED
+	| AuditAction.PERSONNEL_FILE_SICK_NOTE_UNLINKED;
 
 export interface AuditedDocument {
 	id: string;

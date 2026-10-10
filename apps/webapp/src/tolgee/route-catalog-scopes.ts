@@ -43,7 +43,10 @@ const DEPENDENCIES: Record<string, Namespace[]> = {
 	"/init": ["organization"],
 	"/analytics": ["reports"],
 	"/calendar": ["timeTracking"],
-	"/team": ["calendar"],
+	// settings/people: sick notes in the absence recording dialog (#984).
+	"/team": ["calendar", "settings/people"],
+	// Officers attach, link and unlink sick notes with the absence dialogs (#984).
+	"/personnel-files": ["calendar"],
 	// Report review panels and per diem place names render travelExpenses copy.
 	"/approvals": ["bot", "travelExpenses"],
 	"/platform-admin": ["settings/generic"],

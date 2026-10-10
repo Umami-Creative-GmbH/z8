@@ -1,6 +1,7 @@
 import { IconArrowLeft } from "@tabler/icons-react";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { EmployeeSickLeaveCard } from "@/components/personnel-file/employee-sick-leave-card";
 import { PersonnelFilePanel } from "@/components/personnel-file/personnel-file-panel";
 import { Badge } from "@/components/ui/badge";
 import { LoadingRegion } from "@/components/ui/loading-region";
@@ -63,6 +64,9 @@ async function PersonnelFileContent({ params, searchParams }: PersonnelFilePageP
 					isDocumentCategory(category) && capability.categories.includes(category) ? category : null
 				}
 			/>
+			{capability.categories.includes("sick_note") ? (
+				<EmployeeSickLeaveCard employeeId={capability.employeeId} />
+			) : null}
 		</div>
 	);
 }

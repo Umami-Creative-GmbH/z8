@@ -17,6 +17,7 @@ import {
 	lockSickNoteAbsence,
 	markAbsenceWithCertificate,
 	type SickNoteAbsence,
+	type SickNoteAttachAuthority,
 } from "./sick-note-attach";
 import type { StagedPersonnelFileUpload, StoredPersonnelFileObject } from "./upload-ledger";
 
@@ -137,6 +138,9 @@ function metadataColumns(metadata: DocumentMetadata) {
 	};
 }
 
+/** Who uploaded a document, when not whoever manages the file (recorded in the audit). */
+export type PersonnelDocumentUploadSource = "employee" | "recorder";
+
 export type FinalizePersonnelDocumentResult =
 	| {
 			kind: "recorded";
@@ -165,10 +169,17 @@ export async function finalizePersonnelDocumentUpload(
 		mimeType: string;
 		sizeBytes: number;
 		checksumSha256: string;
-		/** "employee" when the employee uploaded into their own file (#867). */
-		source?: "employee";
-		/** The employee attaches the sick note to their own absence (#982). */
-		sickNote?: { absenceId: string; access: PersonnelFileAccess };
+		/**
+		 * "employee" when the employee uploaded into their own file (#867),
+		 * "recorder" when whoever recorded the absence uploaded its sick note (#984).
+		 */
+		source?: PersonnelDocumentUploadSource;
+		/** The sick note is attached to this absence, on the given authority (#982). */
+		sickNote?: {
+			absenceId: string;
+			access: PersonnelFileAccess;
+			authority: SickNoteAttachAuthority;
+		};
 	},
 	now: Instant = systemClock.nowInstant(),
 ): Promise<FinalizePersonnelDocumentResult> {
@@ -179,6 +190,7 @@ export async function finalizePersonnelDocumentUpload(
 			absence = await lockSickNoteAbsence(tx, input.sickNote.access, {
 				absenceId: input.sickNote.absenceId,
 				employeeId: input.employeeId,
+				authority: input.sickNote.authority,
 			});
 			if (!absence) return { kind: "absence_unavailable" };
 		}
@@ -251,7 +263,8 @@ export async function finalizePersonnelDocumentUpload(
 	});
 }
 
-async function lockDocument(
+/** The document of the organization, locked for the rest of the transaction. */
+export async function lockDocument(
 	tx: Parameters<Parameters<Database["transaction"]>[0]>[0],
 	organizationId: string,
 	documentId: string,

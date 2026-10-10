@@ -24,6 +24,14 @@ vi.mock("@/app/[locale]/(app)/absences/actions", () => ({
 	getAbsencePlanPreview: vi.fn(),
 }));
 
+vi.mock("@/app/[locale]/(app)/absences/sick-note-actions", () => ({
+	getOwnAbsenceSickNotesAction: vi.fn(async () => ({
+		success: true,
+		data: { canAttach: false, markers: {} },
+	})),
+	discardStagedSickNoteUploadsAction: vi.fn(),
+}));
+
 vi.mock("@/app/[locale]/(app)/absences/deputy-actions", () => ({
 	getDeputyCandidates: vi.fn().mockResolvedValue({
 		success: true,
@@ -212,7 +220,7 @@ function fillRequiredFieldsForSickCategory() {
 describe("RequestAbsenceDialog", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		requestAbsenceMock.mockResolvedValue({ success: true });
+		requestAbsenceMock.mockResolvedValue({ success: true, data: { absenceId: "absence-1" } });
 		getAbsencePlanPreviewMock.mockResolvedValue({ success: true, data: riskyPreview });
 	});
 

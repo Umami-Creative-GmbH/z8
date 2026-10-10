@@ -11,6 +11,7 @@ import {
 	getAbsencePlanPreview,
 	requestAbsence,
 } from "@/app/[locale]/(app)/absences/actions";
+import { getOwnAbsenceSickNotesAction } from "@/app/[locale]/(app)/absences/sick-note-actions";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -55,6 +56,12 @@ import { useRouter } from "@/navigation";
 import { AbsencePlanPreviewPanel, noWorkingDaysMessage } from "./absence-plan-preview-panel";
 import { CategoryBadge } from "./category-badge";
 import { DeputyPicker, deputyRefusalText, deputyRequiredText } from "./deputy-picker";
+import type { StagedSickNoteFile } from "./sick-notes/sick-note-files-field";
+import {
+	failedSickNoteNames,
+	StagedSickNotesSection,
+	useStagedSickNotes,
+} from "./sick-notes/staged-sick-notes-section";
 
 interface RequestAbsenceDialogProps {
 	categories: Array<{
@@ -87,6 +94,8 @@ const createDefaultValues = (initialDate?: string) => ({
 	endTime: "",
 	notes: "",
 	sickDetail: "" as SickDetail | "",
+	/** Sick notes to attach once the sick leave is requested (#983). */
+	sickNotes: [] as StagedSickNoteFile[],
 	/** The colleague covering while the employee is away (#1011), or "". */
 	deputyEmployeeId: "",
 });
@@ -182,7 +191,7 @@ function useRequestAbsenceDialogController({
 				);
 				return;
 			}
-			const result = await requestAbsence({
+			const request = {
 				categoryId: normalized.categoryId,
 				startDate: normalized.startDate,
 				startPeriod: normalized.startPeriod,
@@ -194,7 +203,24 @@ function useRequestAbsenceDialogController({
 				notes: normalized.notes || undefined,
 				...(value.sickDetail ? { sickDetail: value.sickDetail } : {}),
 				...(value.deputyEmployeeId ? { deputyEmployeeId: value.deputyEmployeeId } : {}),
+			};
+			const failureMessage = t(
+				"absences.toast.requestFailed",
+				"Failed to submit absence request",
+			);
+			// Sick notes are uploaded first and attached once the absence exists (#983).
+			const result = await sickNotes.submit({
+				files:
+					selectedCategory?.type === "sick" && canAttachSickNotes
+						? value.sickNotes
+						: [],
+				send: (uploaded) =>
+					uploaded
+						? requestAbsence(request, uploaded)
+						: requestAbsence(request),
+				failureMessage,
 			});
+			if (!result) return;
 			const deputyError = result.success ? null : deputyRefusalText(t, result.refusal);
 			if (deputyError) {
 				// The server refused the deputy: show it on the deputy field.
@@ -211,6 +237,16 @@ function useRequestAbsenceDialogController({
 						"Absence request submitted successfully",
 					),
 				);
+				const failedFiles = failedSickNoteNames(result);
+				if (failedFiles) {
+					toast.warning(
+						t(
+							"absences.sickNotes.request.attachFailed",
+							"Your absence was requested, but {files} could not be attached. You can attach sick notes from the absence later.",
+							{ files: failedFiles },
+						),
+					);
+				}
 				setOpen(false);
 				form.reset();
 				refresh();
@@ -218,13 +254,7 @@ function useRequestAbsenceDialogController({
 			} else if (result.code === "AbsenceDaysRefusedError") {
 				toast.error(noWorkingDaysMessage(t));
 			} else {
-				toast.error(
-					result.error ||
-						t(
-							"absences.toast.requestFailed",
-							"Failed to submit absence request",
-						),
-				);
+				toast.error(result.error || failureMessage);
 			}
 		},
 	});
@@ -248,6 +278,21 @@ function useRequestAbsenceDialogController({
 	const selectedCategory = categories.find(
 		(category) => category.id === selectedCategoryId,
 	);
+	const sickNotesQuery = useQuery({
+		queryKey: queryKeys.personnelFile.ownAbsenceSickNotes([]),
+		queryFn: async () => {
+			const result = await getOwnAbsenceSickNotesAction([]);
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
+		enabled: open && selectedCategory?.type === "sick",
+	});
+	const canAttachSickNotes = sickNotesQuery.data?.canAttach ?? false;
+	const sickNoteDates = useStore(form.store, (state) => ({
+		startDate: state.values.startDate,
+		endDate: state.values.endDate,
+	}));
+	const sickNotes = useStagedSickNotes(sickNoteDates);
 	const canLoadPlanPreview = Boolean(
 		open &&
 			planPreviewValues.categoryId &&
@@ -274,6 +319,9 @@ function useRequestAbsenceDialogController({
 		planPreviewQuery,
 		setOpen,
 		showSickDetail: selectedCategory?.type === "sick",
+		showSickNotes: selectedCategory?.type === "sick" && canAttachSickNotes,
+		sickNoteDates,
+		sickNotes,
 		t,
 	};
 }
@@ -300,6 +348,9 @@ export function RequestAbsenceDialog({
 		planPreviewQuery,
 		setOpen,
 		showSickDetail,
+		showSickNotes,
+		sickNoteDates,
+		sickNotes,
 		t,
 	} = useRequestAbsenceDialogController({
 		categories,
@@ -351,6 +402,13 @@ export function RequestAbsenceDialog({
 							showSickDetail={showSickDetail}
 						/>
 						<RequestAbsenceDurationFields form={form} />
+						{showSickNotes && (
+							<RequestAbsenceSickNotes
+								dates={sickNoteDates}
+								form={form}
+								sickNotes={sickNotes}
+							/>
+						)}
 						<RequestAbsenceDeputyField categories={categories} form={form} />
 						<RequestAbsenceSummaryAndNotes
 							canLoadPlanPreview={canLoadPlanPreview}
@@ -453,6 +511,7 @@ function RequestAbsenceCategoryFields({
 									"sick"
 								) {
 									form.setFieldValue("sickDetail", "");
+									form.setFieldValue("sickNotes", []);
 								}
 							}}
 						>
@@ -530,6 +589,44 @@ function RequestAbsenceCategoryFields({
 				</form.Field>
 			)}
 		</>
+	);
+}
+
+/** Optional sick notes, uploaded with the sick-leave request (#983). */
+function RequestAbsenceSickNotes({
+	dates,
+	form,
+	sickNotes,
+}: {
+	dates: { startDate: string; endDate: string };
+	form: RequestAbsenceFormApi;
+	sickNotes: ReturnType<typeof useStagedSickNotes>;
+}) {
+	const { t } = useTranslate();
+	return (
+		<form.Subscribe<boolean> selector={(state) => state.isSubmitting}>
+			{(isSubmitting: boolean) => (
+				<form.Field
+					name="sickNotes"
+					validators={{ onSubmit: ({ value }) => sickNotes.validate(value) }}
+				>
+					{(field) => (
+						<StagedSickNotesSection
+							id="request-absence-sick-notes"
+							title={t("absences.sickNotes.request.title", "Sick note (optional)")}
+							description={t(
+								"absences.sickNotes.request.description",
+								"Add photos or PDFs of your sick note: PDF, JPEG, PNG or WebP files of up to 20 MB each. Each file is saved as its own sick note in your personnel file. Your approver only sees that a sick note is attached.",
+							)}
+							field={field}
+							dates={dates}
+							disabled={isSubmitting}
+							uploads={sickNotes.uploads}
+						/>
+					)}
+				</form.Field>
+			)}
+		</form.Subscribe>
 	);
 }
 

@@ -1,8 +1,10 @@
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Skeleton } from "@/components/ui/skeleton";
+import { db } from "@/db";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { isPersonnelFilesEnabled } from "@/lib/personnel-file/access-store";
 import { isUuid } from "@/lib/validations/uuid";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
@@ -74,7 +76,7 @@ export async function TeamAbsencesPageContent({ searchParams }: TeamAbsencesPage
 	const search = (params.search ?? "").trim();
 	const selectedYear = parsePositiveInteger(params.year);
 	const deputyCover = parseDeputyCover(params);
-	const [listResult, calendarResult, categories] = await Promise.all([
+	const [listResult, calendarResult, categories, sickNotesEnabled] = await Promise.all([
 		getManagerAbsenceEmployees({
 			search,
 			page: parsePositiveInteger(params.page),
@@ -90,6 +92,8 @@ export async function TeamAbsencesPageContent({ searchParams }: TeamAbsencesPage
 			...(deputyCover ? { deputyCover } : {}),
 		}),
 		getAbsenceCategories(currentEmployee.organizationId),
+		// Recorders may add the sick note while personnel files are on (#984).
+		isPersonnelFilesEnabled(db, currentEmployee.organizationId),
 	]);
 
 	if (!listResult.success) {
@@ -151,7 +155,12 @@ export async function TeamAbsencesPageContent({ searchParams }: TeamAbsencesPage
 						</p>
 					</div>
 				)}
-				<TeamAbsencesTable data={listResult.data} categories={categories} search={search} />
+				<TeamAbsencesTable
+					data={listResult.data}
+					categories={categories}
+					search={search}
+					sickNotesEnabled={sickNotesEnabled}
+				/>
 			</div>
 		</div>
 	);

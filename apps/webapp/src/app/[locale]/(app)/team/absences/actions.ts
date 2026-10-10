@@ -42,7 +42,13 @@ import { type Instant, parseInstant, systemClock } from "@/lib/datetime/temporal
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { createLogger } from "@/lib/logger";
+import { resolvePersonnelFileAccess } from "@/lib/personnel-file/access-store";
 import { countSickNotesForAbsences } from "@/lib/personnel-file/sick-note-store";
+import {
+	type AbsenceWithSickNotes,
+	createAbsenceWithStagedSickNotes,
+	type StagedSickNoteInput,
+} from "@/lib/personnel-file/sick-note-upload";
 import { addCalendarSyncJob } from "@/lib/queue";
 import {
 	buildCanonicalAbsenceRecordValues,
@@ -635,6 +641,45 @@ export async function recordAbsenceForEmployee(
 			code: "UNKNOWN_ERROR",
 		};
 	}
+}
+
+/**
+ * Records an absence for an employee with sick notes staged in the recording
+ * dialog (#984, Personnel File ADR 0002). The absence is recorded exactly as
+ * without notes; only then is each staged upload attached on the recorder's
+ * authority, granted for this absence alone: a shared sick note the employee
+ * sees, which a recorder who does not manage the employee's sick notes cannot
+ * open afterwards. This is the only way a manager uploads a sick note. See
+ * `createAbsenceWithStagedSickNotes` for what becomes of the uploads.
+ */
+export async function recordAbsenceWithSickNotes(
+	input: RecordAbsenceForEmployeeInput,
+	stagedSickNotes: readonly StagedSickNoteInput[],
+): Promise<ServerActionResult<AbsenceWithSickNotes>> {
+	const { getRequestSession } = await import("@/lib/auth/request-session");
+	const session = await getRequestSession();
+	return createAbsenceWithStagedSickNotes(db, {
+		userId: session?.user?.id ?? null,
+		stagedSickNotes,
+		create: () => recordAbsenceForEmployee(input),
+		attacher: async () => {
+			const actorResult = await resolveActor();
+			if (!actorResult.success) return null;
+			const actor = actorResult.data;
+			const access = await resolvePersonnelFileAccess(db, {
+				userId: actor.userId,
+				organizationId: actor.organizationId,
+			});
+			return access
+				? {
+						authority: "recorder",
+						access,
+						employeeId: input.employeeId,
+						uploaderName: actor.name,
+					}
+				: null;
+		},
+	});
 }
 
 function parseDeputyCover(
