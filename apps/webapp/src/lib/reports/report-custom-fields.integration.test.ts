@@ -182,13 +182,15 @@ describe("employee report custom fields on PostgreSQL", () => {
 
 	it("reads a tracked value as of the period's last day", async () => {
 		const grade = await define(ids.organization, { name: "Grade", tracked: true });
-		// Dated history rows (#819): "G1" from March 1st, "G2" from March 15th.
-		await admin.query(
-			`insert into custom_field_value
-			 (organization_id, definition_id, employee_id, text_value, valid_from, created_by, updated_by)
-			 values ($1, $2, $3, 'G1', '2026-03-01', $4, $4), ($1, $2, $3, 'G2', '2026-03-15', $4, $4)`,
-			[ids.organization, grade.id, workerEmployeeId, ids.admin],
-		);
+		// The tracked value's history (#819): "G1" from March 1st, "G2" from March 15th.
+		await write({
+			[grade.id]: {
+				history: [
+					{ op: "add", validFrom: "2026-03-01", value: "G1" },
+					{ op: "add", validFrom: "2026-03-15", value: "G2" },
+				],
+			},
+		});
 
 		expect((await report(ids.admin, "2026-03-10")).employee.customFields[0]?.value).toBe("G1");
 		expect((await report(ids.admin, "2026-03-31")).employee.customFields[0]?.value).toBe("G2");

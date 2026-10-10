@@ -274,12 +274,15 @@ describe("project report custom fields on PostgreSQL", () => {
 
 	it("reads tracked values as of the period's last day", async () => {
 		const stage = await define(ids.organization, { name: "Stage", tracked: true });
-		await admin.query(
-			`insert into custom_field_value
-			 (organization_id, definition_id, project_id, text_value, valid_from, created_by, updated_by)
-			 values ($1, $2, $3, 'Draft', '2026-03-01', $4, $4), ($1, $2, $3, 'Live', '2026-03-20', $4, $4)`,
-			[ids.organization, stage.id, ids.website, ids.ownerUser],
-		);
+		// The tracked value's history (#819): "Draft" from March 1st, "Live" from March 20th.
+		await write("project", ids.website, {
+			[stage.id]: {
+				history: [
+					{ op: "add", validFrom: "2026-03-01", value: "Draft" },
+					{ op: "add", validFrom: "2026-03-20", value: "Live" },
+				],
+			},
+		});
 
 		expect((await report(ids.ownerUser, ids.website, "2026-03-15")).project.customFields).toEqual([
 			{ fieldId: stage.id, name: "Stage", type: "text", value: "Draft" },
