@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
 	getPayrollExportConfig: vi.fn(),
 	createExportJob: vi.fn(),
 	processExportJob: vi.fn(),
-	signDownloadLink: vi.fn(),
+	signFileUrl: vi.fn(),
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -31,8 +31,8 @@ vi.mock("@/lib/payroll-export", () => ({
 	createExportJob: mocks.createExportJob,
 	processExportJob: mocks.processExportJob,
 }));
-vi.mock("../../infrastructure/download-link", () => ({
-	signDownloadLink: mocks.signDownloadLink,
+vi.mock("../../infrastructure/signed-file-url", () => ({
+	signFileUrl: mocks.signFileUrl,
 }));
 
 const { PayrollExportExecutor } = await import("./payroll-export-executor");
@@ -142,7 +142,7 @@ describe("scheduled payroll file (#1008)", () => {
 		mocks.getPayrollExportConfig.mockResolvedValue({ config: {} });
 		mocks.findEmployee.mockResolvedValue({ id: "employee-1" });
 		mocks.createExportJob.mockResolvedValue({ jobId: "job-1", isAsync: false });
-		mocks.signDownloadLink.mockResolvedValue(link);
+		mocks.signFileUrl.mockResolvedValue(link);
 	});
 
 	it("stores the file whatever its size and records the job's key with a link signed for it", async () => {
@@ -159,13 +159,13 @@ describe("scheduled payroll file (#1008)", () => {
 			{ storeFile: true },
 		);
 		// Signed with the private storage default, as the payroll job's own link is.
-		expect(mocks.signDownloadLink).toHaveBeenCalledWith("org-1", s3Key);
+		expect(mocks.signFileUrl).toHaveBeenCalledWith("org-1", s3Key);
 		expect(result).toEqual({
 			success: true,
 			underlyingJobId: "job-1",
 			underlyingJobType: "payroll_export",
 			s3Key,
-			downloadLink: link,
+			fileUrl: link,
 			recordCount: 3,
 		});
 	});
@@ -178,7 +178,7 @@ describe("scheduled payroll file (#1008)", () => {
 
 		expect(result.success).toBe(true);
 		expect(result.s3Key).toBeUndefined();
-		expect(result.downloadLink).toBeUndefined();
-		expect(mocks.signDownloadLink).not.toHaveBeenCalled();
+		expect(result.fileUrl).toBeUndefined();
+		expect(mocks.signFileUrl).not.toHaveBeenCalled();
 	});
 });

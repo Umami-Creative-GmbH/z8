@@ -170,10 +170,10 @@ export interface ScheduledExportDefinition {
 // ============================================
 
 /**
- * A presigned download URL with the lifetime it was signed with (#1008), so
- * an email never states another expiry than the link's own.
+ * A presigned URL to a run's stored file with the lifetime it was signed with
+ * (#1008), so an email never states another expiry than the URL's own.
  */
-export interface SignedDownloadLink {
+export interface SignedFileUrl {
 	url: string;
 	lifetimeSeconds: number;
 	expiresAt: Instant;
@@ -188,7 +188,7 @@ export interface ExecutionResult {
 	underlyingJobType?: string;
 	/** The stored object's key; absent when the run produced no file. */
 	s3Key?: string;
-	downloadLink?: SignedDownloadLink;
+	fileUrl?: SignedFileUrl;
 	fileSizeBytes?: number;
 	recordCount?: number;
 	error?: string;

@@ -4,7 +4,7 @@
  * Handles S3 upload and email notification delivery for scheduled exports.
  */
 import { DateTime } from "luxon";
-import { type Clock, type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import type { Instant } from "@/lib/datetime/temporal-core";
 import { sendEmail } from "@/lib/email/email-service";
 import { createLogger } from "@/lib/logger";
 import {
@@ -13,14 +13,10 @@ import {
 	type DeliveryResult,
 	deliversByEmail,
 	type ExecutionResult,
-	type SignedDownloadLink,
+	type SignedFileUrl,
 } from "../domain/types";
-import { signDownloadLink } from "./download-link";
 
 const logger = createLogger("ScheduledExportDeliveryService");
-
-/** The lifetime of a link signed here for a stored file that came without one. */
-const DELIVERY_LINK_LIFETIME_SECONDS = 604800;
 
 const MONTHS = [
 	"January",
@@ -90,7 +86,7 @@ interface EmailTemplateData {
 	scheduleName: string;
 	dateRangeStart: string;
 	dateRangeEnd: string;
-	downloadLink?: SignedDownloadLink;
+	fileUrl?: SignedFileUrl;
 	recordCount?: number;
 }
 
@@ -100,8 +96,6 @@ interface EmailTemplateData {
  * Handles S3 upload and email notifications for completed scheduled exports.
  */
 export class DeliveryService {
-	constructor(private readonly clock: Clock = systemClock) {}
-
 	/**
 	 * Deliver export results via configured method (S3, email, or both)
 	 */
@@ -115,18 +109,8 @@ export class DeliveryService {
 		};
 
 		try {
-			const s3Key = exportResult.s3Key;
-			// A stored file that came without a link gets one here.
-			const downloadLink =
-				exportResult.downloadLink ??
-				(s3Key
-					? await signDownloadLink(
-							organizationId,
-							s3Key,
-							DELIVERY_LINK_LIFETIME_SECONDS,
-							this.clock,
-						)
-					: undefined);
+			// The executor signs the URL of each file it stores, with its lifetime (#1008).
+			const { s3Key, fileUrl } = exportResult;
 
 			if (!s3Key) {
 				logger.warn(
@@ -136,7 +120,7 @@ export class DeliveryService {
 			}
 
 			result.s3Key = s3Key;
-			result.s3Url = downloadLink?.url;
+			result.s3Url = fileUrl?.url;
 
 			// Send emails if configured
 			if (deliversByEmail(deliveryConfig.method)) {
@@ -145,7 +129,7 @@ export class DeliveryService {
 					scheduleName,
 					dateRange,
 					recipients: deliveryConfig.emailRecipients,
-					downloadLink,
+					fileUrl,
 					recordCount: exportResult.recordCount,
 					subjectTemplate: deliveryConfig.emailSubjectTemplate,
 				});
@@ -171,7 +155,7 @@ export class DeliveryService {
 		scheduleName: string;
 		dateRange: CalculatedDateRange;
 		recipients: string[];
-		downloadLink?: SignedDownloadLink;
+		fileUrl?: SignedFileUrl;
 		recordCount?: number;
 		subjectTemplate?: string;
 	}): Promise<{
@@ -184,7 +168,7 @@ export class DeliveryService {
 			scheduleName,
 			dateRange,
 			recipients,
-			downloadLink,
+			fileUrl,
 			recordCount,
 			subjectTemplate,
 		} = params;
@@ -199,7 +183,7 @@ export class DeliveryService {
 			scheduleName,
 			dateRangeStart: dateRange.start.toFormat("LLLL d, yyyy"),
 			dateRangeEnd: dateRange.end.toFormat("LLLL d, yyyy"),
-			downloadLink,
+			fileUrl,
 			recordCount,
 		};
 
@@ -265,7 +249,7 @@ export class DeliveryService {
 	 * Render email HTML content
 	 */
 	private renderEmailHtml(data: EmailTemplateData): string {
-		const { scheduleName, dateRangeStart, dateRangeEnd, downloadLink, recordCount } = data;
+		const { scheduleName, dateRangeStart, dateRangeEnd, fileUrl, recordCount } = data;
 
 		// Escape user-controlled data to prevent XSS
 		const safeScheduleName = escapeHtml(scheduleName);
@@ -293,7 +277,7 @@ export class DeliveryService {
 <body>
   <div class="header">
     ${
-			downloadLink
+			fileUrl
 				? `<h1>Scheduled Export Ready</h1>
     <p>Your scheduled export <strong>${safeScheduleName}</strong> has completed successfully.</p>`
 				: `<h1>Scheduled Export Finished</h1>
@@ -318,10 +302,10 @@ export class DeliveryService {
 	}
 
   ${
-		downloadLink
+		fileUrl
 			? `
-  <a href="${escapeHtml(downloadLink.url)}" class="button">Download Export</a>
-  <p class="expiry">This download link is valid for ${formatLifetime(downloadLink.lifetimeSeconds)} and expires on ${formatExpiry(downloadLink.expiresAt)}.</p>
+  <a href="${escapeHtml(fileUrl.url)}" class="button">Download Export</a>
+  <p class="expiry">This download link is valid for ${formatLifetime(fileUrl.lifetimeSeconds)} and expires on ${formatExpiry(fileUrl.expiresAt)}.</p>
   `
 			: `
   <p>No file was produced for this run.</p>

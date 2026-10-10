@@ -10,7 +10,7 @@ import { employee } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { createExportJob, getPayrollExportConfig, processExportJob } from "@/lib/payroll-export";
 import type { ExecutionResult, PayrollExportReportConfig, ReportConfig } from "../../domain/types";
-import { signDownloadLink } from "../../infrastructure/download-link";
+import { signFileUrl } from "../../infrastructure/signed-file-url";
 import type { ExecuteParams, IReportExecutor } from "./base-executor";
 
 const logger = createLogger("PayrollExportExecutor");
@@ -95,14 +95,14 @@ export class PayrollExportExecutor implements IReportExecutor {
 			// The job's own key; an API-based format stores no file. The link keeps the
 			// payroll job's default lifetime and carries it to the email.
 			const s3Key = result.s3Key;
-			const downloadLink = s3Key ? await signDownloadLink(organizationId, s3Key) : undefined;
+			const fileUrl = s3Key ? await signFileUrl(organizationId, s3Key) : undefined;
 
 			return {
 				success: true,
 				underlyingJobId: jobId,
 				underlyingJobType: "payroll_export",
 				s3Key,
-				downloadLink,
+				fileUrl,
 				recordCount: result.result?.metadata?.workPeriodCount,
 			};
 		} catch (error) {
