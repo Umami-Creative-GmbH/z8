@@ -115,20 +115,8 @@ To sign out:
 
 **Solutions**:
 
-**Windows:**
 1. Reinstall the app to re-register the protocol
 2. Check Windows Registry: `HKEY_CLASSES_ROOT\z8`
-
-**macOS:**
-1. Run: `/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -dump | grep z8`
-2. If not found, reinstall the app
-
-**Linux:**
-1. Check: `xdg-mime query default x-scheme-handler/z8`
-2. Register manually:
-   ```bash
-   xdg-mime default z8-timer.desktop x-scheme-handler/z8
-   ```
 
 ### "Invalid token" error
 
@@ -161,11 +149,7 @@ To sign out:
 
 ### Token location
 
-| Platform | Location |
-|----------|----------|
-| Windows | `%APPDATA%\com.z8.timer\` |
-| macOS | `~/Library/Application Support/com.z8.timer/` |
-| Linux | `~/.config/com.z8.timer/` |
+The session token is stored in `%APPDATA%\com.z8.timer\`.
 
 ### Revoking access
 
