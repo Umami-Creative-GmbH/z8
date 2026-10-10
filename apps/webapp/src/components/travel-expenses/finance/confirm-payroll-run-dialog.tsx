@@ -79,6 +79,7 @@ function outcomeText(t: Translate, locale: string, row: PayrollRunConfirmationRo
  */
 export function ConfirmPayrollRunButton({
 	run,
+	defaultOpen = false,
 	onConfirmed,
 }: {
 	run: Pick<
@@ -86,12 +87,14 @@ export function ConfirmPayrollRunButton({
 		"jobId" | "formatName" | "periodStart" | "periodEnd" | "defaultPayday"
 	> &
 		Partial<Pick<PayrollRunToConfirm, "confirmableReports" | "confirmableAmount">>;
+	/** Opens the dialog on mount, as a link to this run's confirmation does. */
+	defaultOpen?: boolean;
 	/** Called once the results were shown and closed. */
 	onConfirmed: () => void;
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const [open, setOpen] = useState(false);
+	const [open, setOpen] = useState(defaultOpen);
 	const [rows, setRows] = useState<PayrollRunConfirmationRow[] | null>(null);
 	const period = formatPlainDateRange(locale, run.periodStart, run.periodEnd);
 

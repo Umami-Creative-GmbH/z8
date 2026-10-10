@@ -25,7 +25,7 @@ describe("buildPayrollRunAwaitingConfirmationNotification (#855)", () => {
 				"Payroll run 2026-10 (DATEV Lohn & Gehalt) is waiting for your confirmation. Reports in your scope: 3.",
 			entityType: "payroll_export_job",
 			entityId: "job-1",
-			actionUrl: "/travel-expenses/finance#payroll-runs",
+			actionUrl: "/travel-expenses/finance?confirmRun=job-1#payroll-runs",
 			idempotencyKey: "travel-expense-payroll-run-awaiting-confirmation:job-1:user-berlin",
 		});
 		expect(notification.metadata?.i18n).toEqual({

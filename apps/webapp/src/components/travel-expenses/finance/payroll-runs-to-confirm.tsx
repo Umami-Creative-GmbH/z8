@@ -15,7 +15,12 @@ import { ConfirmPayrollRunButton } from "./confirm-payroll-run-dialog";
  * admins. Hidden while there are none, so organizations paying by bank
  * transfer never see it.
  */
-export function PayrollRunsToConfirm() {
+export function PayrollRunsToConfirm({
+	openJobId = null,
+}: {
+	/** The run whose confirm dialog opens right away: a run notification's link (#855). */
+	openJobId?: string | null;
+}) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const queryClient = useQueryClient();
@@ -67,6 +72,7 @@ export function PayrollRunsToConfirm() {
 							</div>
 							<ConfirmPayrollRunButton
 								run={run}
+								defaultOpen={run.jobId === openJobId}
 								onConfirmed={() =>
 									void queryClient.invalidateQueries({ queryKey: ["travel-expenses"] })
 								}

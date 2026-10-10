@@ -3,6 +3,7 @@ import { createLogger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications/notification-service";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
 import { listReimbursingOfficers } from "./expense-officer-grant-store";
+import { payrollRunToConfirmHref } from "./finance-queue-params";
 import type { PayrollRunSkipped } from "./payroll-run";
 import {
 	loadIncludedReportsForConfirmer,
@@ -32,9 +33,6 @@ const awaitingConfirmationCopy = {
 		"Payroll run {period} ({format}) is waiting for your confirmation. Reports in your scope: {count}.",
 } as const;
 
-/** Where officers confirm runs: the finance page's "Payroll runs awaiting confirmation" card. */
-export const PAYROLL_RUNS_TO_CONFIRM_HREF = "/travel-expenses/finance#payroll-runs";
-
 export function buildPayrollRunAwaitingConfirmationNotification(
 	run: PayrollRunHeader & { organizationId: string },
 	recipient: { userId: string; reports: number },
@@ -55,7 +53,7 @@ export function buildPayrollRunAwaitingConfirmationNotification(
 		),
 		entityType: "payroll_export_job",
 		entityId: run.jobId,
-		actionUrl: PAYROLL_RUNS_TO_CONFIRM_HREF,
+		actionUrl: payrollRunToConfirmHref(run.jobId),
 		// A retried export of the same job tells nobody twice.
 		idempotencyKey: `travel-expense-payroll-run-awaiting-confirmation:${run.jobId}:${recipient.userId}`,
 		metadata: { i18n: { ...awaitingConfirmationCopy, params } },

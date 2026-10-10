@@ -446,7 +446,7 @@ describe("payroll run notifications for expense officers (#855)", () => {
 		]);
 		expect(notified[0]).toMatchObject({
 			entity_id: jobId,
-			action_url: "/travel-expenses/finance#payroll-runs",
+			action_url: `/travel-expenses/finance?confirmRun=${jobId}#payroll-runs`,
 		});
 		// In-app only until the officer turns on another channel.
 		expect(vi.mocked(sendEmail)).not.toHaveBeenCalled();

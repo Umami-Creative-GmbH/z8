@@ -8,11 +8,15 @@ import { PayrollRunsToConfirm } from "@/components/travel-expenses/finance/payro
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { loadFinanceActor } from "@/lib/travel-expenses/finance-access";
+import { parseConfirmRun } from "@/lib/travel-expenses/finance-queue-params";
 import { getTranslate } from "@/tolgee/server";
 
 interface TravelExpenseFinancePageProps {
-	/** `coverage=uncovered`: the coverage-gap warning's link (#756). */
-	searchParams: Promise<{ coverage?: string | string[] }>;
+	/**
+	 * `coverage=uncovered`: the coverage-gap warning's link (#756).
+	 * `confirmRun=<jobId>`: a payroll run notification's link (#855).
+	 */
+	searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 /** Travel expense finance queue (#612): owners, admins and expense officers (#747). */
@@ -41,7 +45,7 @@ async function TravelExpenseFinancePageContent({ searchParams }: TravelExpenseFi
 			) : (
 				<>
 					<OfficerCoverageGapNotice />
-					{actor.canSettle && <PayrollRunsToConfirm />}
+					{actor.canSettle && <PayrollRunsToConfirm openJobId={parseConfirmRun(params)} />}
 					<FinanceQueue />
 				</>
 			)}
