@@ -307,6 +307,7 @@ export interface AuditLogEntry {
 		| "location_employee"
 		| "subarea_employee"
 		| "kiosk"
+		| "employee_assigned_location"
 		| "user"
 		| "kiosk_pin"
 		| "audit_pack_request"
@@ -393,6 +394,22 @@ async function sendToExternalService(entry: AuditLogEntry): Promise<void> {
 	} catch (error) {
 		// Log error but don't fail the operation
 		logger.error({ error, action: entry.action }, "Failed to send audit log to external service");
+	}
+}
+
+/**
+ * Hands an audit entry whose row is already committed to the external audit
+ * service, as `logAudit` does after persisting. Fire-and-forget; never throws.
+ * Stores that write their audit row inside their own transaction call it only
+ * after that transaction committed (`withAuditTrail`).
+ */
+export function forwardAuditToExternalService(entry: AuditLogEntry): void {
+	try {
+		sendToExternalService(entry).catch(() => {
+			// Already logged in sendToExternalService
+		});
+	} catch (error) {
+		logger.error({ error, action: entry.action }, "Failed to forward audit log");
 	}
 }
 

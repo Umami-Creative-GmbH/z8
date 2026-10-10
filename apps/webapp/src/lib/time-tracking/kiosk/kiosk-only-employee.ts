@@ -4,8 +4,9 @@ import { and, eq, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { db as rootDatabase } from "@/db";
 import { member, user } from "@/db/auth-schema";
-import { auditLog, employee, team } from "@/db/schema";
+import { employee, team } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { withAuditTrail } from "@/lib/audit-trail";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import { acquireEmployeeIdentityLock } from "@/lib/auth/employee-identity-lock";
 import { normalizeInvitationEmail } from "@/lib/auth/employee-invitation-draft";
@@ -116,58 +117,60 @@ export async function createKioskOnlyEmployee(
 	const memberId = crypto.randomUUID();
 	const email = generateReservedEmail();
 	const now = new Date();
-	const employeeId = await withAuthorizationMutation(
-		{ organizationId: input.organizationId, userIds: [userId] },
-		async (tx) => {
-			await acquireEmployeeIdentityLock(tx, {
-				organizationId: input.organizationId,
-				normalizedEmail: email,
-			});
-			await tx.insert(user).values({
-				id: userId,
-				...toAuthStructuredName({ firstName, lastName }),
-				email,
-				emailVerified: false,
-				createdAt: now,
-				updatedAt: now,
-			});
-			await tx.insert(member).values({
-				id: memberId,
-				organizationId: input.organizationId,
-				userId,
-				role: "member",
-				status: "approved",
-				createdAt: now,
-			});
-			const [created] = await tx
-				.insert(employee)
-				.values({
+	const employeeId = await withAuditTrail((audit) =>
+		withAuthorizationMutation(
+			{ organizationId: input.organizationId, userIds: [userId] },
+			async (tx) => {
+				await acquireEmployeeIdentityLock(tx, {
+					organizationId: input.organizationId,
+					normalizedEmail: email,
+				});
+				await tx.insert(user).values({
+					id: userId,
+					...toAuthStructuredName({ firstName, lastName }),
+					email,
+					emailVerified: false,
+					createdAt: now,
+					updatedAt: now,
+				});
+				await tx.insert(member).values({
+					id: memberId,
+					organizationId: input.organizationId,
 					userId,
+					role: "member",
+					status: "approved",
+					createdAt: now,
+				});
+				const [created] = await tx
+					.insert(employee)
+					.values({
+						userId,
+						organizationId: input.organizationId,
+						teamId,
+						role: "employee",
+						isActive: true,
+					})
+					.returning({ id: employee.id });
+				for (const locationId of locationIds) {
+					await addAssignedLocation(tx, audit, {
+						organizationId: input.organizationId,
+						actorUserId: input.actorUserId,
+						employeeId: created.id,
+						locationId,
+					});
+				}
+				await audit.record(tx, {
 					organizationId: input.organizationId,
-					teamId,
-					role: "employee",
-					isActive: true,
-				})
-				.returning({ id: employee.id });
-			for (const locationId of locationIds) {
-				await addAssignedLocation(tx, {
-					organizationId: input.organizationId,
+					targetType: "employee",
+					targetId: created.id,
+					action: AuditAction.KIOSK_ONLY_EMPLOYEE_CREATED,
 					actorUserId: input.actorUserId,
 					employeeId: created.id,
-					locationId,
 				});
-			}
-			await tx.insert(auditLog).values({
-				organizationId: input.organizationId,
-				entityType: "employee",
-				entityId: created.id,
-				action: AuditAction.KIOSK_ONLY_EMPLOYEE_CREATED,
-				performedBy: input.actorUserId,
-				employeeId: created.id,
-			});
-			return created.id;
-		},
-		db,
+				return created.id;
+			},
+			db,
+		),
 	).catch((error: unknown) => {
 		if (error instanceof AssignedLocationRefusal) {
 			throw new KioskPinRefusal("location_not_found", "Location not found in this organization.");
@@ -223,8 +226,8 @@ export async function addEmailToKioskOnlyEmployee(
 		);
 	}
 
-	const userId = await db
-		.transaction(async (tx) => {
+	const userId = await withAuditTrail((audit) =>
+		db.transaction(async (tx) => {
 			await acquireEmployeeIdentityLock(tx, {
 				organizationId: input.organizationId,
 				normalizedEmail: email,
@@ -261,22 +264,22 @@ export async function addEmailToKioskOnlyEmployee(
 				.update(user)
 				.set({ email, emailVerified: false, updatedAt: new Date() })
 				.where(eq(user.id, target.userId));
-			await tx.insert(auditLog).values({
+			await audit.record(tx, {
 				organizationId: input.organizationId,
-				entityType: "employee",
-				entityId: input.employeeId,
+				targetType: "employee",
+				targetId: input.employeeId,
 				action: AuditAction.KIOSK_ONLY_EMPLOYEE_EMAIL_ADDED,
-				performedBy: input.actorUserId,
+				actorUserId: input.actorUserId,
 				employeeId: input.employeeId,
 			});
 			return target.userId;
-		})
-		.catch((error: unknown) => {
-			if (isUniqueViolation(error)) {
-				throw new KioskPinRefusal("email_in_use", "Another account already uses this address.");
-			}
-			throw error;
-		});
+		}),
+	).catch((error: unknown) => {
+		if (isUniqueViolation(error)) {
+			throw new KioskPinRefusal("email_in_use", "Another account already uses this address.");
+		}
+		throw error;
+	});
 
 	try {
 		const invitationUrl = await deps.createPasswordSetupUrl(input.organizationId, userId);

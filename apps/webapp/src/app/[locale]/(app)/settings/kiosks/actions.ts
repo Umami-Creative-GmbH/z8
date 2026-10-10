@@ -3,6 +3,7 @@
 import { and, asc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { location } from "@/db/schema";
+import { withAuditTrail } from "@/lib/audit-trail";
 import { requireOrganizationAdmin } from "@/lib/auth/current-organization-actor";
 import { runRefusalAction } from "@/lib/effect/refusal-action";
 import {
@@ -104,14 +105,16 @@ export async function createKioskAction(
 	return runRefusalAction("kiosk.create", KioskSettingsRefusal, async (db) => {
 		const { organizationId, userId } = await requireKioskAdmin();
 		const locationId = parseUuid(input?.locationId, "location_not_found");
-		const created = await db.transaction((tx) =>
-			createKiosk(tx, {
-				organizationId,
-				actorUserId: userId,
-				name: input?.name,
-				locationId,
-				timezone: input?.timezone,
-			}),
+		const created = await withAuditTrail((audit) =>
+			db.transaction((tx) =>
+				createKiosk(tx, audit, {
+					organizationId,
+					actorUserId: userId,
+					name: input?.name,
+					locationId,
+					timezone: input?.timezone,
+				}),
+			),
 		);
 		revalidatePath(SETTINGS_PATH);
 		return {
@@ -135,18 +138,20 @@ export async function updateKioskAction(
 		if (input?.boardEnabled !== undefined && typeof input.boardEnabled !== "boolean") {
 			throw new KioskSettingsRefusal("invalid_selection", "The board switch must be on or off.");
 		}
-		await db.transaction((tx) =>
-			updateKiosk(tx, {
-				organizationId,
-				actorUserId: userId,
-				kioskId,
-				change: {
-					name: input.name,
-					locationId,
-					timezone: input.timezone,
-					boardEnabled: input.boardEnabled,
-				},
-			}),
+		await withAuditTrail((audit) =>
+			db.transaction((tx) =>
+				updateKiosk(tx, audit, {
+					organizationId,
+					actorUserId: userId,
+					kioskId,
+					change: {
+						name: input.name,
+						locationId,
+						timezone: input.timezone,
+						boardEnabled: input.boardEnabled,
+					},
+				}),
+			),
 		);
 		revalidatePath(SETTINGS_PATH);
 		return { kioskId };
@@ -160,8 +165,10 @@ export async function issueKioskPairingCodeAction(input: {
 	return runRefusalAction("kiosk.issuePairingCode", KioskSettingsRefusal, async (db) => {
 		const { organizationId, userId } = await requireKioskAdmin();
 		const kioskId = parseUuid(input?.kioskId, "kiosk_not_found");
-		const issued = await db.transaction((tx) =>
-			issueKioskPairingCode(tx, { organizationId, actorUserId: userId, kioskId }),
+		const issued = await withAuditTrail((audit) =>
+			db.transaction((tx) =>
+				issueKioskPairingCode(tx, audit, { organizationId, actorUserId: userId, kioskId }),
+			),
 		);
 		revalidatePath(SETTINGS_PATH);
 		return { kioskId, pairingCode: issued.pairingCode, expiresAt: issued.expiresAt.toISOString() };
@@ -174,7 +181,11 @@ export async function revokeKioskAction(input: {
 	return runRefusalAction("kiosk.revoke", KioskSettingsRefusal, async (db) => {
 		const { organizationId, userId } = await requireKioskAdmin();
 		const kioskId = parseUuid(input?.kioskId, "kiosk_not_found");
-		await db.transaction((tx) => revokeKiosk(tx, { organizationId, actorUserId: userId, kioskId }));
+		await withAuditTrail((audit) =>
+			db.transaction((tx) =>
+				revokeKiosk(tx, audit, { organizationId, actorUserId: userId, kioskId }),
+			),
+		);
 		revalidatePath(SETTINGS_PATH);
 		return { kioskId };
 	});

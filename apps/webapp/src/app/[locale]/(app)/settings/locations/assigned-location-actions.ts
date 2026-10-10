@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { withAuditTrail } from "@/lib/audit-trail";
 import { requireOrganizationAdmin } from "@/lib/auth/current-organization-actor";
 import { runRefusalAction } from "@/lib/effect/refusal-action";
 import {
@@ -67,8 +68,10 @@ export async function addAssignedLocationAction(
 	return runRefusalAction("assignedLocations.add", AssignedLocationRefusal, async (db) => {
 		const { organizationId, userId } = await requireAssignedLocationAdmin();
 		const target = parseInput(input);
-		await db.transaction((tx) =>
-			addAssignedLocation(tx, { organizationId, actorUserId: userId, ...target }),
+		await withAuditTrail((audit) =>
+			db.transaction((tx) =>
+				addAssignedLocation(tx, audit, { organizationId, actorUserId: userId, ...target }),
+			),
 		);
 		revalidateAssignedLocationPaths(target);
 		return target;
@@ -81,8 +84,10 @@ export async function removeAssignedLocationAction(
 	return runRefusalAction("assignedLocations.remove", AssignedLocationRefusal, async (db) => {
 		const { organizationId, userId } = await requireAssignedLocationAdmin();
 		const target = parseInput(input);
-		await db.transaction((tx) =>
-			removeAssignedLocation(tx, { organizationId, actorUserId: userId, ...target }),
+		await withAuditTrail((audit) =>
+			db.transaction((tx) =>
+				removeAssignedLocation(tx, audit, { organizationId, actorUserId: userId, ...target }),
+			),
 		);
 		revalidateAssignedLocationPaths(target);
 		return target;

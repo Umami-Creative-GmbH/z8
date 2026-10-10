@@ -2,8 +2,9 @@ import "server-only";
 
 import { and, asc, eq, notExists, sql } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
-import { auditLog, employee, employeeAssignedLocation, location } from "@/db/schema";
+import { employee, employeeAssignedLocation, location } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import type { AuditTrail } from "@/lib/audit-trail";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import type { WorkTransactionClient } from "../work-transaction";
 import { AssignedLocationRefusal } from "./errors";
@@ -11,7 +12,8 @@ import { AssignedLocationRefusal } from "./errors";
 /**
  * Assigned-location settings reads and writes (#858). Every function takes the
  * caller's client: a transaction for writes, so each write and its audit entry
- * commit together. Every query is filtered by `organizationId`; the database
+ * commit together; writes also take the caller's `AuditTrail`, which forwards
+ * the entry to the external audit service after the commit. Every query is filtered by `organizationId`; the database
  * additionally refuses cross-organization rows through composite foreign keys.
  * Callers authorize: only organization owners and admins manage assignments.
  */
@@ -151,6 +153,7 @@ export async function listLocationAssignedEmployees(
 /** Assigns the employee to the location. Assigning again changes nothing. */
 export async function addAssignedLocation(
 	tx: AssignedLocationClient,
+	audit: AuditTrail,
 	input: { organizationId: string; actorUserId: string; employeeId: string; locationId: string },
 ): Promise<void> {
 	await Promise.all([
@@ -170,20 +173,21 @@ export async function addAssignedLocation(
 		})
 		.returning({ id: employeeAssignedLocation.id });
 	if (!inserted) return;
-	await tx.insert(auditLog).values({
+	await audit.record(tx, {
 		organizationId: input.organizationId,
-		entityType: "employee_assigned_location",
-		entityId: inserted.id,
+		targetType: "employee_assigned_location",
+		targetId: inserted.id,
 		action: AuditAction.ASSIGNED_LOCATION_ADDED,
-		performedBy: input.actorUserId,
+		actorUserId: input.actorUserId,
 		employeeId: input.employeeId,
-		changes: JSON.stringify({ from: null, to: { locationId: input.locationId } }),
+		changes: { from: null, to: { locationId: input.locationId } },
 	});
 }
 
 /** Removes the employee's assignment to the location. Removing an absent one changes nothing. */
 export async function removeAssignedLocation(
 	tx: AssignedLocationClient,
+	audit: AuditTrail,
 	input: { organizationId: string; actorUserId: string; employeeId: string; locationId: string },
 ): Promise<void> {
 	const [removed] = await tx
@@ -197,14 +201,14 @@ export async function removeAssignedLocation(
 		)
 		.returning({ id: employeeAssignedLocation.id });
 	if (!removed) return;
-	await tx.insert(auditLog).values({
+	await audit.record(tx, {
 		organizationId: input.organizationId,
-		entityType: "employee_assigned_location",
-		entityId: removed.id,
+		targetType: "employee_assigned_location",
+		targetId: removed.id,
 		action: AuditAction.ASSIGNED_LOCATION_REMOVED,
-		performedBy: input.actorUserId,
+		actorUserId: input.actorUserId,
 		employeeId: input.employeeId,
-		changes: JSON.stringify({ from: { locationId: input.locationId }, to: null }),
+		changes: { from: { locationId: input.locationId }, to: null },
 	});
 }
 

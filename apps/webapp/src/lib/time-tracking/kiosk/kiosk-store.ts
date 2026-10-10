@@ -1,8 +1,9 @@
 import "server-only";
 
 import { and, asc, eq, gt, isNotNull, isNull } from "drizzle-orm";
-import { auditLog, kiosk, location, organizationNotificationSettings } from "@/db/schema";
+import { kiosk, location, organizationNotificationSettings } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import type { AuditTrail } from "@/lib/audit-trail";
 import { type Clock, dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { parseIanaTimeZone } from "@/lib/timezone/validation";
@@ -21,7 +22,9 @@ import type { KioskDeviceInfo } from "./protocol";
 /**
  * Kiosk enrolment writes and reads (#859). Management functions take the
  * caller's client (a transaction, so each write and its audit entry commit
- * together) and are always filtered by `organizationId`. Pairing is the one
+ * together) and the caller's `AuditTrail`, which forwards the entry to the
+ * external audit service after the commit (`withAuditTrail`). They are always
+ * filtered by `organizationId`. Pairing is the one
  * write without an organization: the pairing code itself names the kiosk.
  */
 export type KioskClient = Pick<DatabaseClient, "select" | "insert" | "update">;
@@ -136,6 +139,7 @@ export async function listKiosks(
 /** Creates a kiosk on a location of the organization and issues its first pairing code. */
 export async function createKiosk(
 	tx: KioskClient,
+	audit: AuditTrail,
 	input: Actor & { name: unknown; locationId: string; timezone: unknown },
 	clock: Clock = systemClock,
 ): Promise<IssuedPairingCode & { kioskId: string }> {
@@ -159,16 +163,16 @@ export async function createKiosk(
 		})
 		.returning({ id: kiosk.id });
 
-	await tx.insert(auditLog).values({
+	await audit.record(tx, {
 		organizationId: input.organizationId,
-		entityType: "kiosk",
-		entityId: created.id,
+		targetType: "kiosk",
+		targetId: created.id,
 		action: AuditAction.KIOSK_CREATED,
-		performedBy: input.actorUserId,
-		changes: JSON.stringify({
+		actorUserId: input.actorUserId,
+		changes: {
 			from: null,
 			to: { name, locationId: site.id, timezone, boardEnabled: false },
-		}),
+		},
 	});
 
 	return { kioskId: created.id, pairingCode: pairing.code, expiresAt: pairing.expiresAt };
@@ -204,6 +208,7 @@ export type KioskConfigurationChange = Partial<{
 /** Renames a kiosk, moves it to another location of the organization, changes its zone or board. */
 export async function updateKiosk(
 	tx: KioskClient,
+	audit: AuditTrail,
 	input: Actor & { kioskId: string; change: KioskConfigurationChange },
 	clock: Clock = systemClock,
 ): Promise<void> {
@@ -232,13 +237,13 @@ export async function updateKiosk(
 		.update(kiosk)
 		.set({ ...next, updatedAt: dateFromInstant(clock.nowInstant()), updatedBy: input.actorUserId })
 		.where(and(eq(kiosk.organizationId, input.organizationId), eq(kiosk.id, input.kioskId)));
-	await tx.insert(auditLog).values({
+	await audit.record(tx, {
 		organizationId: input.organizationId,
-		entityType: "kiosk",
-		entityId: input.kioskId,
+		targetType: "kiosk",
+		targetId: input.kioskId,
 		action: AuditAction.KIOSK_UPDATED,
-		performedBy: input.actorUserId,
-		changes: JSON.stringify({ from, to }),
+		actorUserId: input.actorUserId,
+		changes: { from, to },
 	});
 }
 
@@ -249,6 +254,7 @@ export async function updateKiosk(
  */
 export async function issueKioskPairingCode(
 	tx: KioskClient,
+	audit: AuditTrail,
 	input: Actor & { kioskId: string },
 	clock: Clock = systemClock,
 ): Promise<IssuedPairingCode> {
@@ -266,15 +272,15 @@ export async function issueKioskPairingCode(
 			updatedBy: input.actorUserId,
 		})
 		.where(and(eq(kiosk.organizationId, input.organizationId), eq(kiosk.id, input.kioskId)));
-	await tx.insert(auditLog).values({
+	await audit.record(tx, {
 		organizationId: input.organizationId,
-		entityType: "kiosk",
-		entityId: input.kioskId,
+		targetType: "kiosk",
+		targetId: input.kioskId,
 		action: current.tokenHash
 			? AuditAction.KIOSK_TOKEN_ROTATED
 			: AuditAction.KIOSK_PAIRING_CODE_ISSUED,
-		performedBy: input.actorUserId,
-		metadata: JSON.stringify({ pairingCodeExpiresAt: pairing.expiresAt.toISOString() }),
+		actorUserId: input.actorUserId,
+		metadata: { pairingCodeExpiresAt: pairing.expiresAt.toISOString() },
 	});
 	return { pairingCode: pairing.code, expiresAt: pairing.expiresAt };
 }
@@ -285,6 +291,7 @@ export async function issueKioskPairingCode(
  */
 export async function revokeKiosk(
 	tx: KioskClient,
+	audit: AuditTrail,
 	input: Actor & { kioskId: string },
 	clock: Clock = systemClock,
 ) {
@@ -301,12 +308,12 @@ export async function revokeKiosk(
 			updatedBy: input.actorUserId,
 		})
 		.where(and(eq(kiosk.organizationId, input.organizationId), eq(kiosk.id, input.kioskId)));
-	await tx.insert(auditLog).values({
+	await audit.record(tx, {
 		organizationId: input.organizationId,
-		entityType: "kiosk",
-		entityId: input.kioskId,
+		targetType: "kiosk",
+		targetId: input.kioskId,
 		action: AuditAction.KIOSK_REVOKED,
-		performedBy: input.actorUserId,
+		actorUserId: input.actorUserId,
 	});
 }
 
@@ -367,6 +374,7 @@ export type KioskPairingOutcome =
  */
 export async function pairKiosk(
 	tx: KioskClient,
+	audit: AuditTrail,
 	input: { code: unknown; ipAddress?: string | null; userAgent?: string | null },
 	clock: Clock = systemClock,
 ): Promise<KioskPairingOutcome> {
@@ -405,13 +413,13 @@ export async function pairKiosk(
 	if (!paired?.issuedBy) return { status: "invalid_code" };
 
 	const { issuedBy, ...pairedKiosk } = paired;
-	await tx.insert(auditLog).values({
+	await audit.record(tx, {
 		organizationId: paired.organizationId,
-		entityType: "kiosk",
-		entityId: paired.kioskId,
+		targetType: "kiosk",
+		targetId: paired.kioskId,
 		action: AuditAction.KIOSK_PAIRED,
-		performedBy: issuedBy,
-		metadata: JSON.stringify({ pairedBy: "kiosk_device", pairingCodeIssuedBy: issuedBy }),
+		actorUserId: issuedBy,
+		metadata: { pairedBy: "kiosk_device", pairingCodeIssuedBy: issuedBy },
 		ipAddress: input.ipAddress ?? null,
 		userAgent: input.userAgent ?? null,
 	});

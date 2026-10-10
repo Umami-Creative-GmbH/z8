@@ -1,4 +1,5 @@
 import { db } from "@/db";
+import { withAuditTrail } from "@/lib/audit-trail";
 import { normalizePairingCode } from "@/lib/time-tracking/kiosk/credentials";
 import { pairKiosk, readKioskDeviceInfo } from "@/lib/time-tracking/kiosk/kiosk-store";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
@@ -26,12 +27,14 @@ export async function POST(request: Request) {
 		);
 	}
 
-	const outcome = await db.transaction((tx) =>
-		pairKiosk(tx, {
-			code,
-			ipAddress: clientIp === "unknown" ? null : clientIp,
-			userAgent: request.headers.get("user-agent"),
-		}),
+	const outcome = await withAuditTrail((audit) =>
+		db.transaction((tx) =>
+			pairKiosk(tx, audit, {
+				code,
+				ipAddress: clientIp === "unknown" ? null : clientIp,
+				userAgent: request.headers.get("user-agent"),
+			}),
+		),
 	);
 	if (outcome.status !== "paired") {
 		return Response.json(
