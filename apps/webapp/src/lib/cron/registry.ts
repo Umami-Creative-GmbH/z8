@@ -452,7 +452,7 @@ export const CRON_JOBS = {
 	},
 
 	"cron:absence-category-notices": {
-		schedule: "0 * * * *", // Hourly; pending notices exist only after migration 0187
+		schedule: "0 * * * *", // Hourly; pending notices exist only after migration 0188
 		description:
 			"Tell owners and admins once that the time off in lieu absence category is available",
 		processor: async (): Promise<AbsenceCategoryNoticesJobResult> => {

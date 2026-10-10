@@ -10,6 +10,7 @@ import {
 } from "@/db/schema";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import { sumBalanceAdjustmentMinutes } from "./adjustments/ledger";
 import {
 	computeEmployeePeriodBalance,
 	rebuildEmployeeYearBalanceFromMonths,
@@ -58,16 +59,20 @@ export function buildWorkBalanceValues(input: {
 	organizationId: string;
 	actualMinutes: number;
 	requiredMinutes: number;
+	/** Uncancelled balance adjustments counted through `computedThroughDate` (#993). */
+	adjustmentMinutes?: number;
 	computedFromDate: string;
 	computedThroughDate: string;
 	computedAt: Date;
 }) {
+	const adjustmentMinutes = input.adjustmentMinutes ?? 0;
 	return {
 		employeeId: input.employeeId,
 		organizationId: input.organizationId,
 		actualMinutes: input.actualMinutes,
 		requiredMinutes: input.requiredMinutes,
-		balanceMinutes: input.actualMinutes - input.requiredMinutes,
+		adjustmentMinutes,
+		balanceMinutes: input.actualMinutes - input.requiredMinutes + adjustmentMinutes,
 		computedFromDate: input.computedFromDate,
 		computedThroughDate: input.computedThroughDate,
 		computedAt: input.computedAt,
@@ -191,6 +196,7 @@ function toEmployeeWorkBalancePayload(
 		organizationId: row.organizationId,
 		actualMinutes: row.actualMinutes,
 		requiredMinutes: row.requiredMinutes,
+		adjustmentMinutes: row.adjustmentMinutes,
 		balanceMinutes: row.balanceMinutes,
 		computedFromDate: row.computedFromDate,
 		computedThroughDate: row.computedThroughDate,
@@ -461,6 +467,13 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 		: null;
 	const employeeStartDate = forceFullRebuild ? null : toUtcIsoDate(scopedEmployee.startDate);
 	const calculationStartDate = employeeStartDate ?? fullRebuildStartDate;
+	// Balance adjustments are read from their ledger on every computation, never
+	// kept in the stored rows, so a full rebuild counts them again (ADR-0008).
+	const adjustmentMinutes = await sumBalanceAdjustmentMinutes(dbClient, {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		throughDate: hotWindow.endDate,
+	});
 	if (calculationStartDate && calculationStartDate > hotWindow.endDate) {
 		await dbClient
 			.delete(employeeWorkBalancePeriod)
@@ -476,6 +489,7 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 				organizationId: input.organizationId,
 				actualMinutes: 0,
 				requiredMinutes: 0,
+				adjustmentMinutes,
 				computedFromDate: hotWindow.endDate,
 				computedThroughDate: hotWindow.endDate,
 				computedAt: now,
@@ -561,6 +575,7 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 			organizationId: input.organizationId,
 			actualMinutes: closedTotals.actualMinutes + hotWindowValues.actualMinutes,
 			requiredMinutes: closedTotals.requiredMinutes + hotWindowValues.requiredMinutes,
+			adjustmentMinutes,
 			computedFromDate:
 				calculationStartDate ?? closedTotals.firstPeriodStart ?? hotWindow.startDate,
 			computedThroughDate: hotWindow.endDate,
@@ -570,6 +585,73 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 	);
 
 	return { updated: true };
+}
+
+/**
+ * The employee of the organization with what their work balance is computed
+ * from: their start date and their effective timezone, in which balance
+ * adjustment days and the projection's days are local dates. Null when the
+ * employee is not in the organization.
+ */
+export async function loadWorkBalanceEmployee(
+	input: { employeeId: string; organizationId: string },
+	dbClient: WorkBalanceDbClient = db,
+): Promise<{ id: string; startDate: Date | null; timezone: string } | null> {
+	const scopedEmployee = await dbClient.query.employee.findFirst({
+		where: and(
+			eq(employee.id, input.employeeId),
+			eq(employee.organizationId, input.organizationId),
+		),
+		columns: { id: true, startDate: true },
+		with: {
+			userSettings: { columns: { timezone: true } },
+			organization: { columns: { timezone: true } },
+		},
+	});
+	if (!scopedEmployee) return null;
+	return {
+		id: scopedEmployee.id,
+		startDate: scopedEmployee.startDate,
+		timezone: resolveEffectiveTimezone(
+			scopedEmployee.userSettings?.timezone,
+			scopedEmployee.organization?.timezone,
+		),
+	};
+}
+
+/**
+ * The employee's work balance at the end of `day` as computed now (#993):
+ * completed work minus required time from the start of the calculation
+ * through `day`, plus the uncancelled balance adjustments on or before it.
+ * Computed from scratch, as a full rebuild through that day would, so it does
+ * not depend on how current the stored projection is.
+ */
+export async function computeEmployeeWorkBalanceAtEndOfDay(
+	input: {
+		organizationId: string;
+		employee: { id: string; startDate: Date | null; timezone: string };
+		day: string;
+	},
+	dbClient: WorkBalanceDbClient = db,
+): Promise<number> {
+	const scope = { employeeId: input.employee.id, organizationId: input.organizationId };
+	const [calculationStartDate, adjustmentMinutes] = await Promise.all([
+		getFirstRelevantDate(scope, dbClient, input.employee, input.employee.timezone),
+		sumBalanceAdjustmentMinutes(dbClient, { ...scope, throughDate: input.day }),
+	]);
+	if (!calculationStartDate || calculationStartDate > input.day) return adjustmentMinutes;
+
+	const work = await computeEmployeePeriodBalance({
+		...scope,
+		dbClient,
+		periodType: "month",
+		periodStart: calculationStartDate,
+		periodEnd: input.day,
+		calculationStartDate,
+		...(input.employee.timezone === "UTC" ? {} : { timezone: input.employee.timezone }),
+		isClosed: false,
+	});
+	return work.actualMinutes - work.requiredMinutes + adjustmentMinutes;
 }
 
 export async function upsertEmployeeWorkBalance(
@@ -586,6 +668,7 @@ export async function upsertEmployeeWorkBalance(
 			set: {
 				actualMinutes: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.actualMinutes} else ${values.actualMinutes} end`,
 				requiredMinutes: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.requiredMinutes} else ${values.requiredMinutes} end`,
+				adjustmentMinutes: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.adjustmentMinutes} else ${values.adjustmentMinutes} end`,
 				balanceMinutes: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.balanceMinutes} else ${values.balanceMinutes} end`,
 				computedFromDate: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.computedFromDate} else ${values.computedFromDate} end`,
 				computedThroughDate: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.computedThroughDate} else ${values.computedThroughDate} end`,
@@ -681,6 +764,7 @@ export async function requestEmployeeWorkBalanceFullRebuild(
 			organizationId: input.organizationId,
 			actualMinutes: 0,
 			requiredMinutes: 0,
+			adjustmentMinutes: 0,
 			balanceMinutes: 0,
 			computedFromDate: WORK_BALANCE_RESET_MARKER_DATE,
 			computedThroughDate: WORK_BALANCE_RESET_MARKER_DATE,
@@ -709,6 +793,7 @@ export async function requestEmployeeWorkBalanceFullRebuild(
 				set: {
 					actualMinutes: markerValues.actualMinutes,
 					requiredMinutes: markerValues.requiredMinutes,
+					adjustmentMinutes: markerValues.adjustmentMinutes,
 					balanceMinutes: markerValues.balanceMinutes,
 					computedFromDate: markerValues.computedFromDate,
 					computedThroughDate: markerValues.computedThroughDate,

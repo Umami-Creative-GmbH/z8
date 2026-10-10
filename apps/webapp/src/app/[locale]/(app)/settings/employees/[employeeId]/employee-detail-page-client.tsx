@@ -22,6 +22,7 @@ import { EmployeeKioskCard } from "@/components/settings/kiosk/employee-kiosk-ca
 import { ManagerAssignment } from "@/components/settings/manager-assignment";
 import { RateHistoryCard } from "@/components/settings/rate-history-card";
 import { WorkBalanceRecalculationCard } from "@/components/settings/work-balance-recalculation-card";
+import { EmployeeWorkBalanceSection } from "@/components/settings/work-balance/employee-work-balance-section";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
@@ -371,6 +372,8 @@ function EmployeeRecordSections({
 				isMutating={data.isConfirmingEmploymentHistory || data.isCancelingEmploymentHistory}
 				workPolicies={workPolicies}
 			/>
+
+			{isOrgAdmin && <EmployeeWorkBalanceSection employeeId={employeeId} />}
 
 			{isOrgAdmin && (
 				<WorkBalanceRecalculationCard

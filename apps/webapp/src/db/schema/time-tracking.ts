@@ -332,6 +332,12 @@ export const employeeWorkBalance = pgTable(
 			.references(() => organization.id, { onDelete: "cascade" }),
 		actualMinutes: integer("actual_minutes").notNull(),
 		requiredMinutes: integer("required_minutes").notNull(),
+		/**
+		 * Uncancelled balance adjustments counted through `computedThroughDate`
+		 * (#993), read from `balance_adjustment` each time the projection is
+		 * computed: balance = actual - required + adjustments.
+		 */
+		adjustmentMinutes: integer("adjustment_minutes").default(0).notNull(),
 		balanceMinutes: integer("balance_minutes").notNull(),
 		computedFromDate: date("computed_from_date").notNull(),
 		computedThroughDate: date("computed_through_date").notNull(),
