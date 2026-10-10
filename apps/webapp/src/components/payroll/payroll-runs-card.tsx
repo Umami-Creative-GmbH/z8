@@ -62,8 +62,9 @@ export function PayrollRunsCard() {
 								includedReports={run.includedReports}
 								discard={() => discardScopedPayrollRunAction(run.jobId)}
 								onDiscarded={() =>
+									// Freed reports change payroll run readiness too (#854).
 									void queryClient.invalidateQueries({
-										queryKey: queryKeys.travelExpenses.scopedPayrollRuns(),
+										queryKey: queryKeys.travelExpenses.payrollRuns(),
 									})
 								}
 							/>

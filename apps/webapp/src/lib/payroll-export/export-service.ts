@@ -382,7 +382,7 @@ export async function processExportJob({
 						jobId,
 						organizationId,
 						includedReports: inclusion.includedReportIds.length,
-						skippedReports: inclusion.skipped,
+						skippedReports: inclusion.skipped.map(({ source, reason }) => ({ source, reason })),
 					},
 					"Payroll run included reports awaiting reimbursement",
 				);
