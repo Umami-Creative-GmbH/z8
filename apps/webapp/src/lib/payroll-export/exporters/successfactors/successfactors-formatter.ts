@@ -12,11 +12,17 @@
 import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
 import { expenseLinesInFileOrder } from "../../formatters/expense-lines";
+import {
+	addOvertimePayoutHours,
+	overtimePayoutsForFormat,
+	widenDateRangeByPayouts,
+} from "../../formatters/overtime-payouts";
 import type {
 	AbsenceData,
 	ExpenseLineData,
 	ExportResult,
 	IPayrollExportFormatter,
+	OvertimePayoutData,
 	WageTypeMapping,
 	WorkPeriodData,
 } from "../../types";
@@ -33,6 +39,9 @@ const SYNC_THRESHOLD = 500;
 
 /** Comment of an expense money line (#852). */
 const EXPENSE_LINE_COMMENT = "Expense reimbursement";
+
+/** Comment of an overtime payout row that no work-period row shares (#1050). */
+const OVERTIME_PAYOUT_COMMENT = "Overtime payout";
 
 /**
  * SAP SuccessFactors CSV Formatter
@@ -56,6 +65,7 @@ export class SuccessFactorsFormatter implements IPayrollExportFormatter {
 		expenseLines: ExpenseLineData[],
 		mappings: WageTypeMapping[],
 		config: Record<string, unknown>,
+		overtimePayouts: OvertimePayoutData[] = [],
 	): ExportResult {
 		logger.info(
 			{ workPeriodCount: workPeriods.length, absenceCount: absences.length },
@@ -77,6 +87,20 @@ export class SuccessFactorsFormatter implements IPayrollExportFormatter {
 
 		// Add absences to aggregated data
 		aggregateAbsencesForCSV(absences, mappings, sfConfig.employeeMatchStrategy, aggregatedData);
+
+		// Overtime payouts (#1050): hours on the payout's day under the "overtime" time type. An
+		// employee the strategy cannot match keeps their internal id, like expense lines, so the
+		// import reports the row instead of the file dropping a payout.
+		const payouts = overtimePayoutsForFormat(overtimePayouts, mappings, "successFactors");
+		addOvertimePayoutHours(aggregatedData, payouts.mapped, {
+			personnelNumber: (payout) =>
+				getEmployeeIdentifier(payout, sfConfig.employeeMatchStrategy) ?? payout.employeeId,
+			period: (payout) => payout.day,
+			add: (existing, hours) => ({
+				hours: (existing?.hours ?? 0) + hours,
+				note: existing?.note || OVERTIME_PAYOUT_COMMENT,
+			}),
+		});
 
 		// Generate CSV content
 		const lines: string[] = [];
@@ -146,14 +170,19 @@ export class SuccessFactorsFormatter implements IPayrollExportFormatter {
 		const uniqueEmployees = new Set(workPeriods.map((p) => p.employeeId));
 		absences.forEach((a) => uniqueEmployees.add(a.employeeId));
 		for (const line of expenseLines) uniqueEmployees.add(line.employeeId);
+		for (const { payout } of payouts.mapped) uniqueEmployees.add(payout.employeeId);
 
-		const dateRange = this.getDateRange(workPeriods, absences);
+		const dateRange = widenDateRangeByPayouts(
+			this.getDateRange(workPeriods, absences),
+			payouts.mapped,
+		);
 		const fileName = this.generateFileName(dateRange);
 
 		logger.info(
 			{
 				lineCount: lines.length,
 				employeeCount: uniqueEmployees.size,
+				unmappedOvertimePayoutCount: payouts.unmapped.length,
 				fileName,
 			},
 			"SAP SuccessFactors CSV export generated",
@@ -176,8 +205,7 @@ export class SuccessFactorsFormatter implements IPayrollExportFormatter {
 					start: dateRange.start?.toISODate() || "",
 					end: dateRange.end?.toISODate() || "",
 				},
-				// Overtime payouts (#1001) go into the DATEV, Lexware and Sage files only.
-				unmappedOvertimePayouts: [],
+				unmappedOvertimePayouts: payouts.unmapped,
 			},
 		};
 	}
