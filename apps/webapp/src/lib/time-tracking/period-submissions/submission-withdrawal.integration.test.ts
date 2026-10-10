@@ -135,7 +135,12 @@ describe("period submission withdrawal on PostgreSQL", () => {
 		const approved = await submit();
 		const assignment = await pendingAssignment(approved.workflowId);
 		await decidePeriodSubmission(
-			{ organizationId, actorEmployeeId: manager.employeeId, assignmentId: assignment, action: "approve" },
+			{
+				organizationId,
+				actorEmployeeId: manager.employeeId,
+				assignmentId: assignment,
+				action: "approve",
+			},
 			{ database: db, clock: at(WITHDRAWN_AT) },
 		);
 		await expect(withdraw()).resolves.toEqual({ kind: "refused", reason: "not_pending" });
@@ -160,7 +165,11 @@ describe("period submission withdrawal on PostgreSQL", () => {
 		const other = await fixture.organization("Europe/Berlin");
 		await expect(
 			withdrawOwnPeriodSubmission(
-				{ organizationId: other.organizationId, userId: employee.userId, periodStartDate: WEEK_START },
+				{
+					organizationId: other.organizationId,
+					userId: employee.userId,
+					periodStartDate: WEEK_START,
+				},
 				{ database: db, clock: at(WITHDRAWN_AT) },
 			),
 		).resolves.toEqual({ kind: "refused", reason: "not_employee" });

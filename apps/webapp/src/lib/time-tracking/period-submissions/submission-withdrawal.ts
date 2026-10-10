@@ -11,6 +11,7 @@ import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/reposito
 import { AuditAction } from "@/lib/audit-logger";
 import { type Clock, parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
 import { isUuid } from "@/lib/validations/uuid";
+import type { PeriodSubmissionClosedCause } from "./submission-status";
 import {
 	findLivePeriodSubmission,
 	insertPeriodSubmissionAudit,
@@ -18,7 +19,6 @@ import {
 	lockEmployeePeriodSubmissions,
 	type PeriodSubmissionDatabase,
 } from "./submission-store";
-import type { PeriodSubmissionClosedCause } from "./submission-status";
 
 /**
  * Withdrawing a pending period submission (#1060). The canonical workflow is cancelled (its
@@ -30,16 +30,13 @@ import type { PeriodSubmissionClosedCause } from "./submission-status";
 type Database = typeof applicationDatabase;
 
 /** Who caused a withdrawal. `system` is a change nobody signed in made (#1062). */
-export type PeriodSubmissionWithdrawalActor =
-	| { kind: "user"; userId: string }
-	| { kind: "system" };
+export type PeriodSubmissionWithdrawalActor = { kind: "user"; userId: string } | { kind: "system" };
 
 export type WithdrawPeriodSubmissionResult =
 	| { kind: "withdrawn"; submissionId: string; workflowId: string }
 	| {
 			kind: "refused";
-			reason:
-				/** The user has no active employee in the organization. */
+			reason: /** The user has no active employee in the organization. */
 				| "not_employee"
 				/** No pending submission of the employee for that period or id. */
 				| "not_pending";
@@ -97,7 +94,7 @@ export async function withdrawPeriodSubmissionInTransaction(
 		organizationId: input.organizationId,
 		submissionId: input.submissionId,
 	});
-	if (!row || row.status !== "pending" || !row.approvalWorkflowId) {
+	if (row?.status !== "pending" || !row.approvalWorkflowId) {
 		return { kind: "refused", reason: "not_pending" };
 	}
 	const workflowId = row.approvalWorkflowId;
@@ -187,7 +184,7 @@ export async function withdrawOwnPeriodSubmission(
 		employeeId: submitter.id,
 		startDate: input.periodStartDate,
 	});
-	if (!live || live.status !== "pending") return { kind: "refused", reason: "not_pending" };
+	if (live?.status !== "pending") return { kind: "refused", reason: "not_pending" };
 	const result = await database.transaction((tx) =>
 		withdrawPeriodSubmissionInTransaction(
 			tx,

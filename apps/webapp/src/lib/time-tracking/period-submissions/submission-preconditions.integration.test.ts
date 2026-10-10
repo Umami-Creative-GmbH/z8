@@ -152,7 +152,12 @@ describe("period submission preconditions on PostgreSQL", () => {
 		const result = await submit();
 		expect(result).toMatchObject({ kind: "refused", reason: "period_open" });
 		if (result.kind !== "refused" || result.reason !== "period_open") return;
-		expect(result.blockers.map((blocker) => [blocker.kind, "workPeriodId" in blocker && blocker.workPeriodId])).toEqual([
+		expect(
+			result.blockers.map((blocker) => [
+				blocker.kind,
+				"workPeriodId" in blocker && blocker.workPeriodId,
+			]),
+		).toEqual([
 			["time_correction", corrected.workPeriodId],
 			["time_correction", legacy.workPeriodId],
 		]);
@@ -185,7 +190,12 @@ describe("period submission preconditions on PostgreSQL", () => {
 			kind: "refused",
 			reason: "period_open",
 			blockers: [
-				{ kind: "absence_request", absenceId: pending, startDate: "2026-03-08", endDate: "2026-03-10" },
+				{
+					kind: "absence_request",
+					absenceId: pending,
+					startDate: "2026-03-08",
+					endDate: "2026-03-10",
+				},
 			],
 		});
 	});
