@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
 	boolean,
 	check,
+	date,
 	foreignKey,
 	index,
 	integer,
@@ -10,9 +11,13 @@ import {
 	text,
 	timestamp,
 	unique,
+	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "../auth-schema";
+import { customer } from "./customer";
+import { employee } from "./organization";
+import { project } from "./project";
 
 /**
  * Custom field definitions (#817, spec #769): a piece of data an organization
@@ -135,5 +140,98 @@ export const customFieldOption = pgTable(
 			table.definitionId,
 			table.position,
 		),
+	],
+);
+
+/**
+ * Custom field values (#818, ADR 0001): typed rows, one per value.
+ *
+ * - Each row points at exactly one employee, project or customer through its
+ *   own foreign key (CHECK `custom_field_value_one_record_check`). Every
+ *   foreign key is composite with `organization_id`, so the record, the field
+ *   and the organization always match; a select option must belong to the
+ *   value's field. Values are deleted with their record or field (cascade).
+ * - The value sits in the column of its field's type; exactly one is set.
+ *   Whether that column matches the field's type, and whether the field is
+ *   for that kind of record, is checked by the value store.
+ * - `valid_from` is the plain calendar date a tracked field's value is valid
+ *   from (#819). Untracked values leave it empty, and a record holds at most one
+ *   undated value per field (partial unique indexes per record kind).
+ *
+ * Adding a record kind (time entries are planned) means another nullable
+ * foreign key column and a wider CHECK.
+ */
+export const customFieldValue = pgTable(
+	"custom_field_value",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		definitionId: uuid("definition_id").notNull(),
+		employeeId: uuid("employee_id"),
+		projectId: uuid("project_id"),
+		customerId: uuid("customer_id"),
+		textValue: text("text_value"),
+		numberValue: numeric("number_value"),
+		dateValue: date("date_value", { mode: "string" }),
+		booleanValue: boolean("boolean_value"),
+		selectOptionId: uuid("select_option_id"),
+		validFrom: date("valid_from", { mode: "string" }),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+	},
+	(table) => [
+		foreignKey({
+			name: "custom_field_value_definition_fk",
+			columns: [table.definitionId, table.organizationId],
+			foreignColumns: [customFieldDefinition.id, customFieldDefinition.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "custom_field_value_employee_fk",
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "custom_field_value_project_fk",
+			columns: [table.projectId, table.organizationId],
+			foreignColumns: [project.id, project.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "custom_field_value_customer_fk",
+			columns: [table.customerId, table.organizationId],
+			foreignColumns: [customer.id, customer.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "custom_field_value_select_option_fk",
+			columns: [table.selectOptionId, table.definitionId],
+			foreignColumns: [customFieldOption.id, customFieldOption.definitionId],
+		}).onDelete("cascade"),
+		check(
+			"custom_field_value_one_record_check",
+			sql`num_nonnulls(${table.employeeId}, ${table.projectId}, ${table.customerId}) = 1`,
+		),
+		check(
+			"custom_field_value_one_value_check",
+			sql`num_nonnulls(${table.textValue}, ${table.numberValue}, ${table.dateValue}, ${table.booleanValue}, ${table.selectOptionId}) = 1`,
+		),
+		check(
+			"custom_field_value_text_length_check",
+			sql`${table.textValue} IS NULL OR length(${table.textValue}) <= 255`,
+		),
+		uniqueIndex("custom_field_value_employee_undated_unique")
+			.on(table.definitionId, table.employeeId)
+			.where(sql`${table.employeeId} IS NOT NULL AND ${table.validFrom} IS NULL`),
+		uniqueIndex("custom_field_value_project_undated_unique")
+			.on(table.definitionId, table.projectId)
+			.where(sql`${table.projectId} IS NOT NULL AND ${table.validFrom} IS NULL`),
+		uniqueIndex("custom_field_value_customer_undated_unique")
+			.on(table.definitionId, table.customerId)
+			.where(sql`${table.customerId} IS NOT NULL AND ${table.validFrom} IS NULL`),
+		index("custom_field_value_employee_idx").on(table.organizationId, table.employeeId),
+		index("custom_field_value_project_idx").on(table.organizationId, table.projectId),
+		index("custom_field_value_customer_idx").on(table.organizationId, table.customerId),
 	],
 );

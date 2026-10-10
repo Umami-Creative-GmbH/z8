@@ -219,6 +219,10 @@ export enum AuditAction {
 	CUSTOM_FIELD_OPTION_REORDERED = "custom_field.option_reordered",
 	CUSTOM_FIELD_OPTION_ARCHIVED = "custom_field.option_archived",
 	CUSTOM_FIELD_OPTION_RESTORED = "custom_field.option_restored",
+	// Custom field values (#818): on the employee, project or customer record.
+	CUSTOM_FIELD_VALUE_SET = "custom_field_value.set",
+	CUSTOM_FIELD_VALUE_CHANGED = "custom_field_value.changed",
+	CUSTOM_FIELD_VALUE_CLEARED = "custom_field_value.cleared",
 
 	// Location Operations
 	LOCATION_CREATED = "location.created",
