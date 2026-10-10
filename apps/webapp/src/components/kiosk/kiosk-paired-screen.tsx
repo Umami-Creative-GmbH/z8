@@ -5,6 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import { useEffect, useEffectEvent } from "react";
 import { kioskFetch, kioskRefusalOf } from "@/lib/kiosk/device";
 import type { KioskDeviceInfo } from "@/lib/kiosk/protocol";
+import { KioskWhoIsInBoard } from "./kiosk-who-is-in-board";
 
 /** How often a paired kiosk checks in, so revocation shows and "last seen" stays current. */
 const KIOSK_HEARTBEAT_MS = 60_000;
@@ -18,7 +19,8 @@ interface KioskPairedScreenProps {
 
 /**
  * A paired kiosk (#859 placeholder). #862 replaces the body with the kiosk home
- * screen (employee list, PIN pad, clocking); the heartbeat stays.
+ * screen (employee list, PIN pad, clocking); the heartbeat stays, and so does
+ * the who-is-in board (#863), mounted while the kiosk's board is switched on.
  */
 export function KioskPairedScreen({ token, kiosk, onRevoked, onUnpaired }: KioskPairedScreenProps) {
 	const { t } = useTranslate();
@@ -52,6 +54,9 @@ export function KioskPairedScreen({ token, kiosk, onRevoked, onUnpaired }: Kiosk
 					"This device is paired as a kiosk. Clocking at the kiosk is not available yet.",
 				)}
 			</p>
+			{kiosk.boardEnabled ? (
+				<KioskWhoIsInBoard token={token} onRevoked={onRevoked} onUnpaired={onUnpaired} />
+			) : null}
 		</div>
 	);
 }
