@@ -33,17 +33,18 @@ test("a moved web-app file is covered when its previous filename is included", (
 function results(scopes = all) {
   return {
     changes: { result: "success", outputs: Object.fromEntries(Object.entries(scopes).map(([name, value]) => [name, String(value)])) },
+    debounce: { result: Object.values(scopes).some(Boolean) ? "success" : "skipped" },
     "unit-tests": { result: Object.values(scopes).some(Boolean) ? "success" : "skipped" },
     "integration-tests": { result: scopes.webapp ? "success" : "skipped" },
   };
 }
 test("the required check accepts success and deliberately unselected groups", () => {
-  assert.equal(checkTestResults(results()).length, 2);
-  assert.equal(checkTestResults(results({ ...none, workspace: true })).length, 2);
-  assert.equal(checkTestResults(results(none)).length, 2);
+  assert.equal(checkTestResults(results()).length, 3);
+  assert.equal(checkTestResults(results({ ...none, workspace: true })).length, 3);
+  assert.equal(checkTestResults(results(none)).length, 3);
 });
 test("the required check rejects failed, cancelled, missing or unexpectedly skipped jobs", () => {
-  for (const job of ["unit-tests", "integration-tests"]) {
+  for (const job of ["debounce", "unit-tests", "integration-tests"]) {
     for (const result of ["failure", "cancelled", "skipped", undefined]) {
       const needs = results();
       needs[job].result = result;
@@ -69,11 +70,23 @@ test("desktop API changes also select companion workspace tests", () => {
 test("the combined shard is required for every selected scope combination", () => {
   for (let mask = 0; mask < 8; mask++) {
     const scopes = { webapp: Boolean(mask & 1), workspace: Boolean(mask & 2), docker: Boolean(mask & 4) };
-    assert.equal(checkTestResults(results(scopes)).length, 2);
+    assert.equal(checkTestResults(results(scopes)).length, 3);
     if (mask) {
       const needs = results(scopes);
       needs["unit-tests"].result = "skipped";
       assert.throws(() => checkTestResults(needs), /unit-tests/);
     }
   }
+});
+
+test("a diagnostic integration success cannot hide a failed unit shard", () => {
+  const needs = results();
+  needs["unit-tests"].result = "failure";
+  assert.throws(() => checkTestResults(needs), /unit-tests/);
+});
+test("sequencing a failed unit shard cannot turn skipped PostgreSQL into success", () => {
+  const needs = results();
+  needs["unit-tests"].result = "failure";
+  needs["integration-tests"].result = "skipped";
+  assert.throws(() => checkTestResults(needs), /unit-tests/);
 });

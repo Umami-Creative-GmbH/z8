@@ -1,6 +1,6 @@
 # CI resource policy
 
-The user accepted the recommended priorities, debounce and review-installer policy on 2026-10-10 during the `grill-with-docs` interview. This document records the agreed direction and recommended execution design. It does not change running workflows or delete existing storage.
+The user accepted the recommended priorities, debounce and review-installer policy on 2026-10-10 during the `grill-with-docs` interview. This document records the accepted policy and its implementation in issue #962. Workflows become active when their changes merge into `dev`; the initial storage sweep is independently validated and applied from the same implementation.
 
 ## Priorities and success criteria
 
@@ -40,7 +40,7 @@ Keep the newest five unsigned review installers across the repository, plus the 
 
 Set `retention-days: 14` on future uploads. The initial sweep must explicitly delete eligible old artifacts because changed retention settings do not shorten existing artifacts' expiry. During reconciliation, delete unsigned installers older than 14 days and excess history, retaining protected installers only inside that age window.
 
-Match both the Desktop Windows producer workflow and the exact unsigned-review artifact name. Exclude signed release candidates, published releases, unrelated artifacts and in-progress producer runs. Associate artifacts with their originating PR rather than guessing from branch names. Record commit and run identity so an installer from a previous head cannot be presented as validation of the current head. A PR without a completed installer does not fabricate a protection candidate.
+Match both the Desktop Windows producer workflow and the exact unsigned-review artifact name. Exclude signed release candidates, published releases, unrelated artifacts and in-progress producer runs. Associate artifacts with their originating PR rather than guessing from branch names. Record commit and run identity so an installer from a previous head cannot be presented as validation of the current head. A PR without a completed installer does not fabricate a protection candidate. Prefer an installer for the current head over a rerun of an older head; otherwise choose the newest producer run. Manual builds receive per-PR protection only when repository and commit identity or API PR association can be verified. Unassociated manual builds follow the global five-installer rule; branch names alone do not prove ownership.
 
 Serialize cleanup, paginate results, calculate the keep set from a fresh snapshot, and recheck candidates before deletion. A fresh upload or changed PR state must not accidentally remove a newly protected installer. Delete artifacts individually rather than deleting workflow history. Report count, bytes and protected items.
 
@@ -77,6 +77,13 @@ Measure archive restore/upload time, dependency install time, hit rates and adde
 - Lint workflows and verify permissions and reusable-workflow cancellation behavior. Keep cleaners independent of PR code execution.
 - Record a comparable green full run, a scoped desktop run and a short superseded burst. Report cumulative runner time, wall time and storage separately; no invented percentage savings.
 
+## Implementation and initial sweep
+
+Issue [#962](https://github.com/Umami-Creative-GmbH/z8/issues/962) implements the five policies with dependency-free Node maintenance scripts, a shared Linux debounce, strict required-check handling and an independent base-cache seed. The seed workflow first runs when its workflow file merges into `dev`, then only on dependency changes or manual recovery.
+
+The user-approved initial sweep on 2026-10-10 deleted 18 closed-PR merge-ref caches (7,620,673,636 bytes, 7.10 GiB) and 14 excess unsigned installers (43,749,111 bytes, 41.72 MiB). Verified cache inventory fell from 66 entries / 9.97 GiB to 48 entries / 2.88 GiB. Unsigned installer inventory fell from 19 entries to five, occupying 14.93 MiB. Concurrent CI activity changed the inventory since the earlier analysis; these are measured sweep results. The [audit record](ci-storage-cleanup-2026-10-10.json) includes individual deleted IDs, protected installers and before/after inventory. No deletion was skipped by a state recheck.
+
+Local validation: 43 built-in Node safety/workflow tests, three existing Vitest CI-contract tests, actionlint 1.7.12 and `git diff --check` passed. The workflow-condition test evaluates the actual PostgreSQL expression across scope, shard outcome, cancellation and diagnostic override combinations. Hosted measurements and the first trusted seed remain separate validation steps; a measured green end-to-end latency claim is still pending.
 ## References
 
 - [GitHub Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions)

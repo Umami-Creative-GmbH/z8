@@ -19,7 +19,13 @@ on:
       - "turbo.json"
       - ".github/scripts/**"
       - ".github/workflows/tests.yml"
+      - ".github/workflows/ci-debounce.yml"
   workflow_dispatch:
+    inputs:
+      diagnose_integration:
+        description: Run PostgreSQL despite a failed shard (the required check still fails)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -46,7 +52,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Verify test selection and required-check handling
-        run: node --test .github/scripts/test-scope.test.mjs
+        run: node --test .github/scripts/*.test.mjs
       - name: Select groups from all PR files
         id: scope
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
@@ -76,9 +82,14 @@ jobs:
             for (const [name, selected] of Object.entries(scopes)) core.setOutput(name, String(selected));
             core.info(`Selected test groups: ${JSON.stringify(scopes)}`);
 
+  debounce:
+    needs: changes
+    if: needs.changes.outputs.webapp == 'true' || needs.changes.outputs.workspace == 'true' || needs.changes.outputs.docker == 'true'
+    uses: ./.github/workflows/ci-debounce.yml
+
   unit-tests:
     name: Tests (shard ${{ matrix.shard }})
-    needs: changes
+    needs: [changes, debounce]
     if: needs.changes.outputs.webapp == 'true' || needs.changes.outputs.workspace == 'true' || needs.changes.outputs.docker == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -149,8 +160,10 @@ jobs:
 
   integration-tests:
     name: PostgreSQL integration tests
-    needs: changes
-    if: needs.changes.outputs.webapp == 'true'
+    needs: [changes, unit-tests]
+    if: >-
+      !cancelled() && needs.changes.result == 'success' && needs.changes.outputs.webapp == 'true' &&
+      (needs.unit-tests.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.diagnose_integration))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
@@ -214,7 +227,7 @@ jobs:
   tests:
     name: Tests
     if: always()
-    needs: [changes, unit-tests, integration-tests]
+    needs: [changes, debounce, unit-tests, integration-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
