@@ -51,6 +51,8 @@ vi.mock("@/lib/queue", () => ({ addJob: async () => ({ id: "queued" }) }));
 
 const {
 	getOvertimePayoutExportReadinessAction,
+	getConfiguredPayrollExportFormatsAction,
+	getPayrollExportScopeAction,
 	getPayrollWorkspaceSummaryAction,
 	startScopedPayrollExportAction,
 } = await import("@/app/[locale]/(app)/payroll/actions");
@@ -65,6 +67,7 @@ const users = [
 	"t1001x-left-after",
 	"t1001x-left-before",
 	"t1001x-deactivated",
+	"t1001x-former-holder",
 ];
 const ids = {
 	owner: "d1001100-0000-4000-8000-000000000001",
@@ -74,6 +77,7 @@ const ids = {
 	leftAfterRange: "d1001100-0000-4000-8000-000000000005",
 	leftBeforeRange: "d1001100-0000-4000-8000-000000000006",
 	deactivated: "d1001100-0000-4000-8000-000000000007",
+	formerHolder: "d1001100-0000-4000-8000-000000000008",
 } as const;
 const july = { startDate: "2026-07-01", endDate: "2026-07-31", label: "July 2026" };
 const HEADER = '"Personalnummer";"Lohnart";"Betrag";"Datum";"Bemerkung"';
@@ -150,7 +154,8 @@ async function seed() {
 		`insert into member (id, organization_id, user_id, role, status, created_at) values
 		 ('t1001x-m-owner', $1, 't1001x-owner', 'owner', 'approved', now()),
 		 ('t1001x-m-holder', $1, 't1001x-holder', 'member', 'approved', now()),
-		 ('t1001x-m-worker', $1, 't1001x-worker', 'member', 'approved', now())`,
+		 ('t1001x-m-worker', $1, 't1001x-worker', 'member', 'approved', now()),
+		 ('t1001x-m-former-holder', $1, 't1001x-former-holder', 'member', 'approved', now())`,
 		[ORG],
 	);
 	await admin.query(
@@ -164,6 +169,7 @@ async function seed() {
 	await employee(ids.leftAfterRange, "t1001x-left-after", "LAF-1", false);
 	await employee(ids.leftBeforeRange, "t1001x-left-before", "LBF-1", false);
 	await employee(ids.deactivated, "t1001x-deactivated", "DEA-1", false);
+	await employee(ids.formerHolder, "t1001x-former-holder", "FHD-1", true);
 	await departed(ids.leftInRange, "2026-07-15");
 	await departed(ids.leftAfterRange, "2026-08-20");
 	await departed(ids.leftBeforeRange, "2026-06-30");
@@ -171,6 +177,17 @@ async function seed() {
 		`insert into payroll_access_grant (organization_id, payroll_employee_id, scope, created_by, updated_at)
 		 values ($1, $2, 'all', 't1001x-owner', now())`,
 		[ORG, ids.holder],
+	);
+	// A grant that covers only employees who have left (#995's former-only state).
+	const { rows: formerGrant } = await admin.query(
+		`insert into payroll_access_grant (organization_id, payroll_employee_id, scope, created_by, updated_at)
+		 values ($1, $2, 'specific', 't1001x-owner', now()) returning id`,
+		[ORG, ids.formerHolder],
+	);
+	await admin.query(
+		`insert into payroll_access_employee (organization_id, grant_id, employee_id, created_by)
+		 values ($1, $2, $3, 't1001x-owner'), ($1, $2, $4, 't1001x-owner')`,
+		[ORG, formerGrant[0].id, ids.leftInRange, ids.leftBeforeRange],
 	);
 	await admin.query(
 		`insert into payroll_export_format (id, name, version, updated_at) values
@@ -260,5 +277,48 @@ describe("payroll grant holder exports and the unmapped payout warning on Postgr
 		});
 
 		expect(result).toEqual({ success: true, data: { unmappedPayoutCount: 1 } });
+	});
+
+	describe("a grant that covers only employees who have left", () => {
+		beforeEach(() => {
+			harness.userId = "t1001x-former-holder";
+		});
+
+		it("exports a period in which one of them was still employed", async () => {
+			await mapOvertime({ datev: "1900" });
+
+			const formats = await getConfiguredPayrollExportFormatsAction();
+			const scope = await getPayrollExportScopeAction(july);
+			const result = await startScopedPayrollExportAction({ ...july, formatId: "datev_lohn" });
+
+			expect(formats).toEqual({
+				success: true,
+				data: [{ id: "datev_lohn", label: "DATEV Lohn & Gehalt" }],
+			});
+			expect(scope).toEqual({ success: true, data: { employeeCount: 1 } });
+			expect(result.success && result.data.fileContent?.split("\r\n")).toEqual([
+				HEADER,
+				'"LIN-1";"1900";1.00;"2026-07-10";"Überstundenauszahlung"',
+			]);
+		});
+
+		it("refuses a period in which none of them was employed any more, with a clear message", async () => {
+			const august = { startDate: "2026-08-01", endDate: "2026-08-31", label: "August 2026" };
+
+			const scope = await getPayrollExportScopeAction(august);
+			const result = await startScopedPayrollExportAction({ ...august, formatId: "datev_lohn" });
+
+			expect(scope).toEqual({ success: true, data: { employeeCount: 0 } });
+			expect(result).toMatchObject({
+				success: false,
+				error: "No one in your payroll access was employed in this period.",
+			});
+		});
+
+		it("still has no payroll workspace summary", async () => {
+			const summary = await getPayrollWorkspaceSummaryAction(july);
+
+			expect(summary).toMatchObject({ success: false, code: "AuthorizationError" });
+		});
 	});
 });

@@ -26,6 +26,7 @@ vi.mock("@/lib/auth-helpers", () => ({
 
 vi.mock("@/lib/payroll-access/permissions", () => ({
 	resolvePayrollAccessibleEmployeeIds: mockState.resolvePayrollAccessibleEmployeeIds,
+	hasActivePayrollAccessGrant: vi.fn(async () => true),
 	intersectPayrollScope: ({
 		allowedEmployeeIds,
 		requestedEmployeeIds,
