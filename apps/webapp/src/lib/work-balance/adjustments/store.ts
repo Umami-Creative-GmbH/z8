@@ -21,9 +21,15 @@ import {
 	loadWorkBalanceEmployee,
 	markEmployeeWorkBalanceDirty,
 	refreshEmployeeWorkBalanceFromPeriods,
+	requestEmployeeWorkBalanceFullRebuild,
 	type WorkBalanceDbClient,
 } from "@/lib/work-balance/service";
-import { refuseOvertimePayout } from "./rules";
+import {
+	listUncancelledPayouts,
+	type OpeningBalanceInEffect,
+	readOpeningBalanceInEffect,
+} from "./ledger";
+import { refuseOpeningBalance, refuseOvertimePayout } from "./rules";
 import {
 	type BalanceAdjustmentErrorCode,
 	BalanceAdjustmentRefusal,
@@ -129,9 +135,14 @@ export async function recordOvertimePayout(
 		if (!subject) throw refusal("employee_not_found", "Employee not found");
 
 		// Checked under the ledger lock, so two payouts recorded at once cannot
-		// together exceed the balance.
+		// together exceed the balance, and no opening balance slips in between.
 		const today = plainDateAt(input.now, subject.timezone);
-		const needsBalance = input.amountMinutes > 0 && comparePlainDates(day, today) <= 0;
+		const openingBalance = await readOpeningBalanceInEffect(client, input);
+		const openingBalanceDay = openingBalance ? parsePlainDate(openingBalance.day) : null;
+		const needsBalance =
+			input.amountMinutes > 0 &&
+			comparePlainDates(day, today) <= 0 &&
+			(!openingBalanceDay || comparePlainDates(day, openingBalanceDay) > 0);
 		const balanceAtEndOfDayMinutes = needsBalance
 			? await computeEmployeeWorkBalanceAtEndOfDay(
 					{ organizationId: input.organizationId, employee: subject, day: input.day },
@@ -143,6 +154,7 @@ export async function recordOvertimePayout(
 			day,
 			today,
 			balanceAtEndOfDayMinutes,
+			openingBalanceDay,
 		});
 		if (refused) throw refusal(refused, `Overtime payout refused: ${refused}`);
 
@@ -205,7 +217,7 @@ export async function cancelBalanceAdjustment(
 	},
 ): Promise<{ adjustmentId: string }> {
 	const reason = requireReason(input.reason);
-	const day = await database.transaction(async (tx) => {
+	const cancelled = await database.transaction(async (tx) => {
 		const client = tx as unknown as WorkBalanceDbClient;
 		await lockEmployeeLedger(client, input);
 		const [current] = await tx
@@ -251,19 +263,213 @@ export async function cancelBalanceAdjustment(
 			},
 			metadata: input.auditMetadata ?? null,
 		});
-		await markEmployeeWorkBalanceDirty(
-			{
-				employeeId: input.employeeId,
-				organizationId: input.organizationId,
-				dirtyFromDate: current.day,
-			},
-			tx,
-		);
-		return current.day;
+		if (current.kind === "opening_balance") {
+			// The months before its day were computed as replaced (zero); only a
+			// full rebuild brings back the calculation from the employee's start.
+			await requestEmployeeWorkBalanceFullRebuild(input, { dbClient: client });
+		} else {
+			await markEmployeeWorkBalanceDirty(
+				{
+					employeeId: input.employeeId,
+					organizationId: input.organizationId,
+					dirtyFromDate: current.day,
+				},
+				tx,
+			);
+		}
+		return current;
 	});
 
-	await refreshAfterCommit({ ...input, dirtyFromDate: day });
+	if (cancelled.kind === "opening_balance") {
+		await refreshAfterCommit({ ...input, fullRebuild: true });
+	} else {
+		await refreshAfterCommit({ ...input, dirtyFromDate: cancelled.day });
+	}
 	return { adjustmentId: input.adjustmentId };
+}
+
+/**
+ * Checks a single opening balance for the employee without writing anything
+ * (#997): the employee is in the organization, the day is a valid local date
+ * no later than today in the employee's timezone and not in a closed month,
+ * no uncancelled overtime payout is dated on or before it (the refusal lists
+ * them), and the reason is given. Throws a `BalanceAdjustmentRefusal`.
+ *
+ * The bulk upload (#999) runs it per row to report row errors; it gives the
+ * authoritative answer only inside the writing transaction, which
+ * `writeOpeningBalance` runs it in, under the employee's ledger lock.
+ */
+export async function checkOpeningBalance(
+	client: WorkBalanceDbClient,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		/** Local date in the employee's effective timezone. */
+		day: string;
+		/** Signed minutes: positive, negative or zero. */
+		minutes: number;
+		reason: string;
+		now: Instant;
+	},
+): Promise<{
+	day: string;
+	minutes: number;
+	reason: string;
+	/** The opening balance in effect, which setting this one cancels. */
+	replaces: OpeningBalanceInEffect | null;
+}> {
+	const day = parseDay(input.day);
+	const reason = requireReason(input.reason);
+	if (!Number.isInteger(input.minutes)) throw refusal("invalid_input", "Invalid minutes");
+	const subject = await loadWorkBalanceEmployee(input, client);
+	if (!subject) throw refusal("employee_not_found", "Employee not found");
+	const scope = { organizationId: input.organizationId, employeeId: input.employeeId };
+	// One after another: the client may be a transaction.
+	const uncancelledPayouts = await listUncancelledPayouts(client, scope);
+	const replaces = await readOpeningBalanceInEffect(client, scope);
+	const dayInClosedMonth = await isDayInClosedMonth(client, { ...scope, day: input.day });
+	const refused = refuseOpeningBalance({
+		day,
+		today: plainDateAt(input.now, subject.timezone),
+		uncancelledPayouts,
+		dayInClosedMonth,
+	});
+	if (refused?.code === "conflicting_payouts") {
+		throw new BalanceAdjustmentRefusal(
+			"conflicting_payouts",
+			"Uncancelled overtime payouts are dated on or before the opening balance's day",
+			{ conflictingPayouts: refused.conflictingPayouts },
+		);
+	}
+	if (refused) throw refusal(refused.code, `Opening balance refused: ${refused.code}`);
+	return { day: input.day, minutes: input.minutes, reason, replaces };
+}
+
+/**
+ * Sets the employee's opening balance inside the caller's transaction (#997,
+ * ADR-0008): checks it under the employee's ledger lock, cancels the opening
+ * balance in effect with the new one's reason, records the new one, audits
+ * both, and requests a full rebuild of the employee's work balance (any
+ * opening balance write can move where the calculation starts, earlier or
+ * later). The caller refreshes the balance after the commit; see
+ * `setOpeningBalance`. The bulk upload (#999) can write many rows in one
+ * transaction this way.
+ */
+export async function writeOpeningBalance(
+	tx: WorkBalanceDbClient & Pick<typeof globalDb, "update">,
+	audit: AuditTrail,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		employeeId: string;
+		day: string;
+		minutes: number;
+		reason: string;
+		now: Instant;
+		/** Written to both audit entries, e.g. the payroll grant that authorized it (#995). */
+		auditMetadata?: Record<string, unknown> | null;
+	},
+): Promise<{ adjustmentId: string; cancelledAdjustmentId: string | null }> {
+	await lockEmployeeLedger(tx, input);
+	const checked = await checkOpeningBalance(tx, input);
+	const at = dateFromInstant(input.now);
+
+	if (checked.replaces) {
+		const previous = checked.replaces;
+		await tx
+			.update(balanceAdjustment)
+			.set({ cancelledAt: at, cancelledBy: input.actorUserId, cancellationReason: checked.reason })
+			.where(
+				and(
+					eq(balanceAdjustment.organizationId, input.organizationId),
+					eq(balanceAdjustment.id, previous.id),
+				),
+			);
+		await audit.record(tx, {
+			organizationId: input.organizationId,
+			targetType: "balance_adjustment",
+			targetId: previous.id,
+			action: AuditAction.BALANCE_ADJUSTMENT_CANCELLED,
+			actorUserId: input.actorUserId,
+			employeeId: input.employeeId,
+			changes: {
+				from: {
+					kind: "opening_balance",
+					day: previous.day,
+					minutes: previous.minutes,
+					cancelled: false,
+				},
+				to: { cancelled: true, reason: checked.reason },
+			},
+			metadata: input.auditMetadata ?? null,
+		});
+	}
+
+	const [inserted] = await tx
+		.insert(balanceAdjustment)
+		.values({
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			kind: "opening_balance",
+			day: checked.day,
+			minutes: checked.minutes,
+			reason: checked.reason,
+			recordedBy: input.actorUserId,
+			recordedAt: at,
+		})
+		.returning({ id: balanceAdjustment.id });
+	if (!inserted) throw new Error("Balance adjustment insert returned no row");
+
+	await audit.record(tx, {
+		organizationId: input.organizationId,
+		targetType: "balance_adjustment",
+		targetId: inserted.id,
+		action: AuditAction.BALANCE_ADJUSTMENT_RECORDED,
+		actorUserId: input.actorUserId,
+		employeeId: input.employeeId,
+		changes: {
+			from: null,
+			to: {
+				kind: "opening_balance",
+				day: checked.day,
+				minutes: checked.minutes,
+				reason: checked.reason,
+				...(checked.replaces ? { replaces: checked.replaces.id } : {}),
+			},
+		},
+		metadata: input.auditMetadata ?? null,
+	});
+	await requestEmployeeWorkBalanceFullRebuild(input, { dbClient: tx });
+	return { adjustmentId: inserted.id, cancelledAdjustmentId: checked.replaces?.id ?? null };
+}
+
+/**
+ * Sets the employee's opening balance in its own transaction (see
+ * `writeOpeningBalance`), then rebuilds the stored work balance right away, so
+ * every balance view shows it, employees who have left included.
+ */
+export async function setOpeningBalance(
+	database: BalanceAdjustmentDatabase,
+	audit: AuditTrail,
+	input: Parameters<typeof writeOpeningBalance>[2],
+): Promise<{ adjustmentId: string; cancelledAdjustmentId: string | null }> {
+	const result = await database.transaction((tx) =>
+		writeOpeningBalance(tx as unknown as Parameters<typeof writeOpeningBalance>[0], audit, input),
+	);
+	await refreshAfterCommit({ ...input, fullRebuild: true });
+	return result;
+}
+
+/**
+ * Whether `day` lies in a closed month of the organization (ADR-0004). Closed
+ * months (#762) are not built yet, so nothing is closed; #762 wires its check
+ * here, which the opening balance check and the bulk upload already consult.
+ */
+async function isDayInClosedMonth(
+	_client: WorkBalanceDbClient,
+	_input: { organizationId: string; employeeId: string; day: string },
+): Promise<boolean> {
+	return false;
 }
 
 /** Serializes the ledger writes of one employee. */
@@ -279,16 +485,19 @@ async function lockEmployeeLedger(
  * Brings the stored balance up to date once the adjustment committed. A failure
  * leaves the dirty mark for the balance worker; the adjustment stands.
  */
-async function refreshAfterCommit(input: {
-	organizationId: string;
-	employeeId: string;
-	dirtyFromDate: string;
-}) {
+async function refreshAfterCommit(
+	input: { organizationId: string; employeeId: string } & (
+		| { dirtyFromDate: string }
+		| { fullRebuild: true }
+	),
+) {
 	try {
 		await refreshEmployeeWorkBalanceFromPeriods({
 			organizationId: input.organizationId,
 			employeeId: input.employeeId,
-			dirtyFromDate: input.dirtyFromDate,
+			...("fullRebuild" in input
+				? { forceFullRebuild: true }
+				: { dirtyFromDate: input.dirtyFromDate }),
 		});
 	} catch (error) {
 		logger.error(

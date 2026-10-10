@@ -44,6 +44,21 @@ export function useBalanceAdjustmentErrorMessage() {
 						"settings.employees.workBalance.errors.alreadyCancelled",
 						"This adjustment is already cancelled.",
 					);
+				case "before_opening_balance":
+					return t(
+						"settings.employees.workBalance.errors.beforeOpeningBalance",
+						"The payout must be dated after the day of the opening balance in effect.",
+					);
+				case "conflicting_payouts":
+					return t(
+						"settings.employees.workBalance.errors.conflictingPayouts",
+						"Overtime payouts are dated on or before this day. Cancel them first or choose an earlier day.",
+					);
+				case "month_closed":
+					return t(
+						"settings.employees.workBalance.errors.monthClosed",
+						"The day is in a closed month.",
+					);
 				case "invalid_input":
 					return t(
 						"settings.employees.workBalance.errors.invalidInput",
