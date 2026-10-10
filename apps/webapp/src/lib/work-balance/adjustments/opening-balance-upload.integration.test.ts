@@ -137,6 +137,15 @@ describe("bulk opening balance upload on PostgreSQL", () => {
 		}));
 	}
 
+	async function notifications(userIds: string[]) {
+		const result = await fixture.pool.query<{ user_id: string; type: string; entity_id: string }>(
+			`select user_id, type::text as type, entity_id from notification
+			 where organization_id = $1 and user_id = any($2) order by created_at`,
+			[organizationId, userIds],
+		);
+		return result.rows;
+	}
+
 	async function insertPayout(employeeId: string, day: string) {
 		const result = await fixture.pool.query<{ id: string }>(
 			`insert into balance_adjustment
@@ -190,6 +199,12 @@ describe("bulk opening balance upload on PostgreSQL", () => {
 			performed_by: admin.userId,
 			metadata: expect.objectContaining({ source: "opening_balance_upload" }),
 		});
+
+		// Each employee is notified once, as when it is set individually.
+		const notified = await notifications(employees.map((employee) => employee.userId));
+		expect(notified).toHaveLength(80);
+		expect(new Set(notified.map((row) => row.user_id)).size).toBe(80);
+		expect(notified.every((row) => row.type === "work_balance_adjustment_recorded")).toBe(true);
 
 		// Each balance is rebuilt right after the commit.
 		expect(
@@ -255,6 +270,11 @@ describe("bulk opening balance upload on PostgreSQL", () => {
 		}
 		expect(await openingBalancesInEffect(ids)).toEqual([]);
 		expect(await auditRows(ids)).toEqual([]);
+		expect(
+			await notifications(
+				[valid, sharedA, sharedB, twice, future, paidOut].map((employee) => employee.userId),
+			),
+		).toEqual([]);
 	});
 
 	it("re-checks every row when committing, so a payout recorded since the preview refuses it", async () => {
@@ -315,9 +335,25 @@ describe("bulk opening balance upload on PostgreSQL", () => {
 			[earlierId],
 		);
 		expect(cancelled.rows).toEqual([{ cancellation_reason: "Corrected carry-over" }]);
-		expect((await auditRows([subject.employeeId])).map((row) => row.action)).toEqual([
-			"balance_adjustment.recorded",
+		const inEffectId = (
+			await fixture.pool.query<{ id: string }>(
+				`select id from balance_adjustment where employee_id = $1 and cancelled_at is null`,
+				[subject.employeeId],
+			)
+		).rows[0]?.id;
+		// The replaced one as cancelled, the uploaded one as recorded.
+		expect(
+			(await notifications([subject.userId])).map(({ type, entity_id }) => ({ type, entity_id })),
+		).toEqual(
+			expect.arrayContaining([
+				{ type: "work_balance_adjustment_cancelled", entity_id: earlierId },
+				{ type: "work_balance_adjustment_recorded", entity_id: inEffectId },
+			]),
+		);
+		expect(await notifications([subject.userId])).toHaveLength(3);
+		expect((await auditRows([subject.employeeId])).map((row) => row.action).sort()).toEqual([
 			"balance_adjustment.cancelled",
+			"balance_adjustment.recorded",
 			"balance_adjustment.recorded",
 		]);
 	});

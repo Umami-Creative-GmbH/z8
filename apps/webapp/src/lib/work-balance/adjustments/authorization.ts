@@ -7,7 +7,10 @@ import {
 	requireOrganizationActor,
 } from "@/lib/auth/current-organization-actor";
 import { canManageCurrentOrganizationSettings } from "@/lib/auth-helpers";
-import { findBalanceAdjustmentGrant } from "@/lib/payroll-access/adjustment-coverage";
+import {
+	findActiveBalanceAdjustmentGrant,
+	findBalanceAdjustmentGrant,
+} from "@/lib/payroll-access/adjustment-coverage";
 import { isUuid } from "@/lib/validations/uuid";
 import { BalanceAdjustmentRefusal } from "./types";
 
@@ -52,6 +55,25 @@ async function findWriterAuthority(
 		employeeId: target.employeeId,
 	});
 	return grant ? { via: "payroll_access_grant", grantId: grant.grantId } : null;
+}
+
+/**
+ * Who may upload opening balances in bulk (#999): owners and admins of the
+ * active organization, and the holder of an active payroll access grant in it.
+ * Which rows a holder may write is decided per row by the upload (the grant's
+ * coverage for balance adjustments, never the holder's own record).
+ */
+export async function requireOpeningBalanceUploader(): Promise<BalanceAdjustmentWriter> {
+	const actor = await requireOrganizationActor(notPermitted);
+	if (await canManageCurrentOrganizationSettings()) {
+		return { ...actor, authority: { via: "organization_admin" } };
+	}
+	const grant = await findActiveBalanceAdjustmentGrant(db, {
+		organizationId: actor.organizationId,
+		actorUserId: actor.userId,
+	});
+	if (!grant) throw notPermitted();
+	return { ...actor, authority: { via: "payroll_access_grant", grantId: grant.grantId } };
 }
 
 /**

@@ -99,6 +99,23 @@ export async function findBalanceAdjustmentGrant(
 }
 
 /**
+ * The actor's active payroll access grant in the organization, whatever it
+ * covers; null without one. For organization-wide actions such as the bulk
+ * opening balance upload (#999), which then check each employee.
+ */
+export async function findActiveBalanceAdjustmentGrant(
+	client: Reader,
+	input: { organizationId: string; actorUserId: string },
+): Promise<{ grantId: string } | null> {
+	const result = await client.execute<{ id: string }>(sql`
+		with ${holderGrant(input)}
+		select id from holder_grant
+	`);
+	const grantId = result.rows[0]?.id;
+	return grantId ? { grantId } : null;
+}
+
+/**
  * The employees the actor's active payroll access grant covers for balance
  * adjustments, including those who have left (active ones first, then by
  * name); null when the actor holds no active grant in the organization.

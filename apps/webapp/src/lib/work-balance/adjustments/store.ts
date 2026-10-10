@@ -550,9 +550,10 @@ async function lockEmployeeLedger(
 
 /**
  * Brings the stored balance up to date once the adjustment committed. A failure
- * leaves the dirty mark for the balance worker; the adjustment stands.
+ * leaves the dirty mark for the balance worker; the adjustment stands. The
+ * bulk opening balance upload (#999) calls it per written employee.
  */
-async function refreshAfterCommit(
+export async function refreshAfterCommit(
 	input: { organizationId: string; employeeId: string } & (
 		| { dirtyFromDate: string }
 		| { fullRebuild: true }

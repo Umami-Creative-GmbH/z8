@@ -5,6 +5,12 @@
  * server-only imports.
  */
 
+import type {
+	OpeningBalanceCsvColumn,
+	OpeningBalanceCsvFileErrorCode,
+	OpeningBalanceCsvRowErrorCode,
+} from "./opening-balance-csv";
+
 export const BALANCE_ADJUSTMENT_KINDS = ["opening_balance", "overtime_payout"] as const;
 
 export type BalanceAdjustmentKind = (typeof BALANCE_ADJUSTMENT_KINDS)[number];
@@ -90,3 +96,55 @@ export type BalanceAdjustmentActionResult<T> =
 			/** With `conflicting_payouts` (#997). */
 			conflictingPayouts?: ConflictingPayout[];
 	  };
+
+/** Why one row of a bulk opening balance upload cannot be written (#999). */
+export type OpeningBalanceUploadRowErrorCode =
+	| OpeningBalanceCsvRowErrorCode
+	/** No employee of the organization has the number. */
+	| "unknown_employee"
+	/** Several employees of the organization share the number. */
+	| "ambiguous_employee"
+	/** The employee is outside the uploader's payroll access, or is the uploader. */
+	| "out_of_scope"
+	/** The employee has more than one row in the file. */
+	| "duplicate_employee"
+	| "future_day"
+	| "month_closed"
+	| "conflicting_payouts";
+
+export type OpeningBalanceUploadRowError = {
+	code: OpeningBalanceUploadRowErrorCode;
+	/** With `conflicting_payouts`: the payouts dated on or before the row's day. */
+	conflictingPayouts?: ConflictingPayout[];
+};
+
+/** One row of a bulk opening balance upload, as the preview shows it. */
+export type OpeningBalanceUploadRow = {
+	/** Spreadsheet row number; the header is row 1. */
+	row: number;
+	employeeNumber: string;
+	/** The matched employee; null when unknown, ambiguous or outside the scope. */
+	employee: { id: string; name: string; isActive: boolean } | null;
+	/** `YYYY-MM-DD` in the employee's timezone; null when the cell is invalid. */
+	day: string | null;
+	/** Signed minutes; null when the cell is invalid. */
+	minutes: number | null;
+	reason: string;
+	/** The opening balance in effect, which this row cancels and replaces. */
+	replaces: { day: string; minutes: number } | null;
+	errors: OpeningBalanceUploadRowError[];
+};
+
+/** The outcome of previewing or committing a bulk opening balance upload. */
+export type OpeningBalanceUploadOutcome =
+	| {
+			status: "invalid_file";
+			code: OpeningBalanceCsvFileErrorCode;
+			missingColumns?: OpeningBalanceCsvColumn[];
+	  }
+	/** At least one row has an error; nothing was written. */
+	| { status: "has_errors"; rows: OpeningBalanceUploadRow[] }
+	/** Preview only: every row can be written. */
+	| { status: "ready"; rows: OpeningBalanceUploadRow[] }
+	/** Every row was written in one transaction. */
+	| { status: "committed"; rows: OpeningBalanceUploadRow[]; created: number; replaced: number };
