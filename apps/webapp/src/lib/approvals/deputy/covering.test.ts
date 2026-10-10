@@ -16,6 +16,8 @@ function absence(overrides: Partial<CoverAbsenceFacts> = {}): CoverAbsenceFacts 
 		endPeriod: "full_day",
 		status: "approved",
 		countsAsWorkingTime: false,
+		approvedAt: null,
+		deputyAssignedAt: null,
 		...overrides,
 	};
 }
@@ -92,6 +94,32 @@ describe("resolveCovers: whom the deputy covers for at an instant", () => {
 		const running = absence({ startDate: "2026-06-01", endDate: "2026-06-05" });
 		expect(resolveCovers(facts({ absences: [{ ...running, status: "pending" }] }))).toEqual([]);
 		expect(resolveCovers(facts({ absences: [running] }))).toMatchObject([{ approverId: X }]);
+	});
+
+	it("covers an earlier instant of the absence only from when it was approved", () => {
+		const approvedLate = absence({
+			startDate: "2026-06-01",
+			approvedAt: parseInstant("2026-06-04T09:00:00Z"),
+		});
+		expect(
+			resolveCovers(facts({ at: parseInstant("2026-06-02T10:00:00Z"), absences: [approvedLate] })),
+		).toEqual([]);
+		expect(
+			resolveCovers(facts({ at: parseInstant("2026-06-04T09:00:00Z"), absences: [approvedLate] })),
+		).toMatchObject([{ approverId: X }]);
+	});
+
+	it("covers an earlier instant of the absence only from when this deputy was named", () => {
+		const namedLate = absence({
+			startDate: "2026-06-01",
+			deputyAssignedAt: parseInstant("2026-06-03T12:00:00Z"),
+		});
+		expect(
+			resolveCovers(facts({ at: parseInstant("2026-06-03T11:59:59Z"), absences: [namedLate] })),
+		).toEqual([]);
+		expect(
+			resolveCovers(facts({ at: parseInstant("2026-06-03T12:00:00Z"), absences: [namedLate] })),
+		).toMatchObject([{ approverId: X }]);
 	});
 
 	it("follows the deputy of each day across consecutive absences", () => {

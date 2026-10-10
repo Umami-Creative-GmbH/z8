@@ -477,6 +477,7 @@ export async function recordAbsenceForEmployee(
 					notes: normalizedInput.notes,
 					sickDetail: input.sickDetail ?? null,
 					deputyEmployeeId,
+					deputyAssignedAt: deputyEmployeeId ? currentTimestamp() : null,
 					status: "approved",
 					approvedBy: actor.id,
 					approvedAt: currentTimestamp(),

@@ -128,7 +128,7 @@ export async function releaseDeputyAssignments(
 	if (candidates.length === 0) return [];
 	const cleared = await executor
 		.update(absenceEntry)
-		.set({ deputyEmployeeId: null })
+		.set({ deputyEmployeeId: null, deputyAssignedAt: null })
 		.where(
 			and(
 				eq(absenceEntry.organizationId, input.organizationId),

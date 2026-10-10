@@ -14,12 +14,13 @@
  *
  * Day rules: X's local day comes from X's effective timezone (user setting,
  * then organization, then UTC). A half day counts as the whole day. Covering
- * ends after the absence's last day, with no grace period. Only the status
- * gates an absence, so one approved after it started covers from approval on.
+ * ends after the absence's last day, with no grace period. An absence approved
+ * after it started covers from its approval on, and a deputy named
+ * mid-absence covers from being named on.
  * Covering never chains: Z, the deputy of an absent Y, covers only for Y.
  */
 
-import { type Instant, plainDateAt } from "@/lib/datetime/temporal-core";
+import { compareInstants, type Instant, plainDateAt } from "@/lib/datetime/temporal-core";
 import { resolvePersonalTimezone } from "@/lib/timezone/resolve-timezone";
 
 /** An absence as covering reads it. Dates are inclusive `YYYY-MM-DD` calendar dates. */
@@ -36,6 +37,10 @@ export interface CoverAbsenceFacts {
 	status: "pending" | "approved" | "rejected";
 	/** The category counts as working time (`requires_work_time`, e.g. home office). */
 	countsAsWorkingTime: boolean;
+	/** When the absence was approved; null when not recorded. */
+	approvedAt: Instant | null;
+	/** When this deputy was named on the absence; null when not recorded. */
+	deputyAssignedAt: Instant | null;
 }
 
 /** The deputy candidate Y, evaluated once for all approvers. */
@@ -80,15 +85,26 @@ export interface Cover {
 	absenceEndDate: string;
 }
 
-/** Whether an absence covers a local day (`YYYY-MM-DD`) of its employee. */
-export function absenceCoversDay(absence: CoverAbsenceFacts, day: string): boolean {
+/**
+ * Whether an absence covers its employee's local day (`YYYY-MM-DD`) at the
+ * instant. The cover begins no earlier than the absence's approval and the
+ * naming of its current deputy, so an earlier instant (when an approval became
+ * the approver's, #1017) is not covered by a later approval or a replacement.
+ */
+export function absenceCoversDay(absence: CoverAbsenceFacts, day: string, at: Instant): boolean {
 	// ISO dates sort as strings; a half-day first or last day covers the whole day.
 	return (
 		absence.status === "approved" &&
 		!absence.countsAsWorkingTime &&
 		absence.startDate <= day &&
-		day <= absence.endDate
+		day <= absence.endDate &&
+		notBefore(at, absence.approvedAt) &&
+		notBefore(at, absence.deputyAssignedAt)
 	);
+}
+
+function notBefore(at: Instant, since: Instant | null): boolean {
+	return since === null || compareInstants(at, since) >= 0;
 }
 
 /** The approver's local day at `at`, in their effective timezone. */
@@ -122,7 +138,7 @@ export function resolveCovers(facts: CoverFacts): Cover[] {
 				(candidate) =>
 					candidate.employeeId === approver.employeeId &&
 					candidate.deputyEmployeeId === deputy.employeeId &&
-					absenceCoversDay(candidate, day),
+					absenceCoversDay(candidate, day, facts.at),
 			),
 		);
 		if (absence) {

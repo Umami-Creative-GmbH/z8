@@ -441,6 +441,7 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 						notes: data.notes,
 						sickDetail: data.sickDetail ?? null,
 						deputyEmployeeId,
+						deputyAssignedAt: deputyEmployeeId ? currentTimestamp() : null,
 						status: "pending",
 					})
 					.returning();

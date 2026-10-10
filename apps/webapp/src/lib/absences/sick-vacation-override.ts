@@ -405,6 +405,7 @@ export async function adjustVacationAbsencesForSickness(input: {
 							notes: vacation.notes,
 							// The deputy covers the split-off part too (#1013).
 							deputyEmployeeId: vacation.deputyEmployeeId,
+							deputyAssignedAt: vacation.deputyAssignedAt,
 							approvedBy: vacation.approvedBy,
 							approvedAt: vacation.approvedAt,
 							canonicalRecordId,

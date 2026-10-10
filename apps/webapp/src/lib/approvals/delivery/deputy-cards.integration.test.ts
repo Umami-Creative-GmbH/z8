@@ -570,6 +570,42 @@ describe("Deputy approval cards (PostgreSQL)", () => {
 		expect(sendsTo(DEPUTY_CHAT_ID)).toHaveLength(0);
 	});
 
+	it("sends a replacement deputy no card for an approval already waiting when they were named", async () => {
+		await seed();
+		await admin.query(
+			"update absence_entry set deputy_employee_id = $2, deputy_assigned_at = now() where id = $1",
+			[ids.coveringAbsence, ids.otherDeputy],
+		);
+		await submit();
+		// Y replaces Z after the approval became X's.
+		await admin.query(
+			`update absence_entry set deputy_employee_id = $2,
+				deputy_assigned_at = now() + interval '1 second' where id = $1`,
+			[ids.coveringAbsence, ids.deputy],
+		);
+
+		await deliver();
+		expect(sendsTo(APPROVER_CHAT_ID)).toHaveLength(1);
+		expect(sendsTo(DEPUTY_CHAT_ID)).toHaveLength(0);
+	});
+
+	it("sends no deputy card for an approval already waiting when X's absence was approved", async () => {
+		await seed();
+		await admin.query("update absence_entry set status = 'pending' where id = $1", [
+			ids.coveringAbsence,
+		]);
+		await submit();
+		await admin.query(
+			`update absence_entry set status = 'approved',
+				approved_at = (now() at time zone 'UTC') + interval '1 second' where id = $1`,
+			[ids.coveringAbsence],
+		);
+
+		await deliver();
+		expect(sendsTo(APPROVER_CHAT_ID)).toHaveLength(1);
+		expect(sendsTo(DEPUTY_CHAT_ID)).toHaveLength(0);
+	});
+
 	it("sends no deputy card once cover has ended", async () => {
 		await seed({ absenceStart: utcDay(-10), absenceEnd: utcDay(-2) });
 		await submit();

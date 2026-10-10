@@ -5,6 +5,7 @@ import type { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { absenceCategory, absenceEntry, employee, employeeManagers } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { type AuditInsertClient, type AuditTrail, withAuditTrail } from "@/lib/audit-trail";
 import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-loader";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
@@ -174,7 +175,10 @@ export async function changeAbsenceDeputy(
 
 			await tx
 				.update(absenceEntry)
-				.set({ deputyEmployeeId: input.deputyEmployeeId })
+				.set({
+					deputyEmployeeId: input.deputyEmployeeId,
+					deputyAssignedAt: input.deputyEmployeeId ? currentTimestamp() : null,
+				})
 				.where(
 					and(
 						eq(absenceEntry.id, absence.id),

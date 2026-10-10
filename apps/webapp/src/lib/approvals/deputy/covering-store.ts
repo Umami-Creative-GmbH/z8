@@ -8,7 +8,7 @@ import { absenceCategory, absenceEntry, employee, userSettings } from "@/db/sche
 import { canDeputyDecideApprovals } from "@/lib/absences/deputy";
 import { loadApprovalSettings } from "@/lib/approvals/approval-settings";
 import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-loader";
-import type { Instant } from "@/lib/datetime/temporal-core";
+import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { type Cover, type CoverFacts, findCover, resolveCovers } from "./covering";
@@ -108,23 +108,24 @@ export async function loadCoveringDeputies(
 			),
 		)
 		.orderBy(absenceEntry.employeeId, absenceEntry.deputyEmployeeId);
-	const candidates = new Map<string, { approverId: string; deputyId: string }>();
+	// Each candidate deputy's covers are judged once, for all their approvers.
+	const approversByDeputy = new Map<string, Set<string>>();
 	for (const row of rows) {
 		if (!row.deputyId || row.deputyId === row.approverId) continue;
-		candidates.set(`${row.approverId}:${row.deputyId}`, {
-			approverId: row.approverId,
-			deputyId: row.deputyId,
-		});
+		const approvers = approversByDeputy.get(row.deputyId) ?? new Set<string>();
+		approvers.add(row.approverId);
+		approversByDeputy.set(row.deputyId, approvers);
 	}
 	const covering: CoveringDeputy[] = [];
-	for (const candidate of candidates.values()) {
-		const cover = await loadCover(executor, {
+	for (const [deputyId, approvers] of approversByDeputy) {
+		const covers = await loadCoveredApprovers(executor, {
 			organizationId: query.organizationId,
-			approverId: candidate.approverId,
-			deputyId: candidate.deputyId,
+			deputyId,
 			at,
 		});
-		if (cover) covering.push({ ...cover, deputyId: candidate.deputyId });
+		for (const cover of covers) {
+			if (approvers.has(cover.approverId)) covering.push({ ...cover, deputyId });
+		}
 	}
 	return covering;
 }
@@ -197,6 +198,8 @@ async function loadCoverFacts(
 				endPeriod: absenceEntry.endPeriod,
 				status: absenceEntry.status,
 				countsAsWorkingTime: absenceCategory.requiresWorkTime,
+				approvedAt: absenceEntry.approvedAt,
+				deputyAssignedAt: absenceEntry.deputyAssignedAt,
 				userTimezone: userSettings.timezone,
 			})
 			.from(absenceEntry)
@@ -234,6 +237,10 @@ async function loadCoverFacts(
 		organizationTimezone: org?.timezone ?? null,
 		deputy: { employeeId: query.deputyId, active: true, canUseApprovalInbox: true },
 		approvers: [...approvers].map(([employeeId, userTimezone]) => ({ employeeId, userTimezone })),
-		absences,
+		absences: absences.map((absence) => ({
+			...absence,
+			approvedAt: absence.approvedAt ? instantFromDate(absence.approvedAt) : null,
+			deputyAssignedAt: absence.deputyAssignedAt ? instantFromDate(absence.deputyAssignedAt) : null,
+		})),
 	};
 }

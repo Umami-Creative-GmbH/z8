@@ -88,6 +88,11 @@ export const absenceEntry = pgTable(
 		 * the approver approves.
 		 */
 		deputyEmployeeId: uuid("deputy_employee_id"),
+		/**
+		 * When the current deputy was named (#1017): covering, and so deputy
+		 * cards, never reach back before it. Null without a deputy.
+		 */
+		deputyAssignedAt: timestamp("deputy_assigned_at", { withTimezone: true }),
 
 		// Legacy-to-canonical linkage used during big-bang cutover.
 		canonicalRecordId: uuid("canonical_record_id"),
