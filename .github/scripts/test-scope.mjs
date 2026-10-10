@@ -38,6 +38,7 @@ export function checkTestResults(needs) {
     scopes[scope] = selected === "true";
   }
   const jobs = {
+    debounce: Object.values(scopes).some(Boolean),
     "unit-tests": Object.values(scopes).some(Boolean),
     "integration-tests": scopes.webapp,
   };

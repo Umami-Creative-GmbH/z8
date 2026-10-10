@@ -2,6 +2,8 @@
 
 ## Contexts
 
+- [Delivery](./.github/GLOSSARY.md): verifies proposed Z8 changes, provides desktop installers for review, and prepares releases for publication
+
 - [Approvals](./apps/webapp/src/lib/approvals/CONTEXT.md): decides approval requests and delivers their cards while each approval kind moves from legacy requests to canonical workflows
 - [Billable Time](./apps/webapp/src/lib/billable-time/CONTEXT.md): prices customer-chargeable work, reports its revenue and margin, and hands it to accounting tools as invoice drafts
 - [Organization](./apps/webapp/src/lib/organization/CONTEXT.md): holds an organization's master data about its employees and customers, and the custom fields it defines on employees, projects and customers
