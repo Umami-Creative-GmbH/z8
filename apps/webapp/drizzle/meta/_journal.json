@@ -1191,6 +1191,13 @@
       "when": 1798905600000,
       "tag": "0169_travel_expense_reimbursement_channel",
       "breakpoints": true
+    },
+    {
+      "idx": 170,
+      "version": "7",
+      "when": 1798992000000,
+      "tag": "0170_payroll_expense_wage_type_mapping",
+      "breakpoints": true
     }
   ]
 }

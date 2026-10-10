@@ -92,6 +92,7 @@ export const queryKeys = {
 		expenseOfficers: () => ["travel-expenses", "settings", "expense-officers"] as const,
 		reimbursementCurrency: () => ["travel-expenses", "settings", "reimbursement-currency"] as const,
 		reimbursementChannel: () => ["travel-expenses", "settings", "reimbursement-channel"] as const,
+		payrollWageTypes: () => ["travel-expenses", "settings", "payroll-wage-types"] as const,
 		foreignDraftExpenses: () => ["travel-expenses", "settings", "foreign-draft-expenses"] as const,
 		mileagePolicy: () => ["travel-expenses", "settings", "mileage-policy"] as const,
 		perDiemPolicy: () => ["travel-expenses", "settings", "per-diem-policy"] as const,
