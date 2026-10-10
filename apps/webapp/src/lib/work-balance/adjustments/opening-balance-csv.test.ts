@@ -84,17 +84,18 @@ describe("parseOpeningBalanceCsv", () => {
 			].join("\n"),
 		);
 
-		expect(result.ok && result.rows.map(({ row, minutes, errors }) => ({ row, minutes, errors })))
-			.toEqual([
-				{
-					row: 2,
-					minutes: null,
-					errors: ["employee_number_required", "invalid_day", "invalid_amount", "reason_required"],
-				},
-				{ row: 3, minutes: null, errors: ["invalid_day", "invalid_amount"] },
-				{ row: 4, minutes: 0, errors: ["reason_too_long"] },
-				{ row: 5, minutes: null, errors: ["invalid_amount", "reason_required"] },
-			]);
+		expect(
+			result.ok && result.rows.map(({ row, minutes, errors }) => ({ row, minutes, errors })),
+		).toEqual([
+			{
+				row: 2,
+				minutes: null,
+				errors: ["employee_number_required", "invalid_day", "invalid_amount", "reason_required"],
+			},
+			{ row: 3, minutes: null, errors: ["invalid_day", "invalid_amount"] },
+			{ row: 4, minutes: 0, errors: ["reason_too_long"] },
+			{ row: 5, minutes: null, errors: ["invalid_amount", "reason_required"] },
+		]);
 	});
 
 	it("refuses a file without the required columns, without rows, or too large", () => {

@@ -294,7 +294,10 @@ describe("bulk opening balance upload on PostgreSQL", () => {
 			success: true,
 			data: {
 				status: "has_errors",
-				rows: [{ row: 2, errors: [] }, { row: 3, errors: [{ code: "conflicting_payouts" }] }],
+				rows: [
+					{ row: 2, errors: [] },
+					{ row: 3, errors: [{ code: "conflicting_payouts" }] },
+				],
 			},
 		});
 		expect(await openingBalancesInEffect([first.employeeId, second.employeeId])).toEqual([]);
@@ -461,7 +464,11 @@ describe("bulk opening balance upload on PostgreSQL", () => {
 			await actions.previewOpeningBalanceUploadAction({ csv: "employee_number,day\n1,2026-01-01" }),
 		).toEqual({
 			success: true,
-			data: { status: "invalid_file", code: "missing_columns", missingColumns: ["balance", "reason"] },
+			data: {
+				status: "invalid_file",
+				code: "missing_columns",
+				missingColumns: ["balance", "reason"],
+			},
 		});
 	});
 });

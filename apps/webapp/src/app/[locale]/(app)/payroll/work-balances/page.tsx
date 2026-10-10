@@ -1,6 +1,7 @@
 import { IconArrowLeft, IconChevronRight } from "@tabler/icons-react";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { OpeningBalanceUploadDialog } from "@/components/settings/work-balance/opening-balance-upload-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { LoadingRegion } from "@/components/ui/loading-region";
@@ -29,15 +30,20 @@ async function PayrollWorkBalancesContent() {
 					<IconArrowLeft aria-hidden="true" className="size-4" />
 					{t("payroll.workBalances.backToPayroll", "Payroll")}
 				</Link>
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("payroll.workBalances.title", "Work balances")}
-				</h1>
-				<p className="text-muted-foreground">
-					{t(
-						"payroll.workBalances.description",
-						"Record and cancel overtime payouts for the employees your payroll access covers, including employees who have left.",
-					)}
-				</p>
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+					<div className="space-y-2">
+						<h1 className="text-2xl font-semibold tracking-tight">
+							{t("payroll.workBalances.title", "Work balances")}
+						</h1>
+						<p className="text-muted-foreground">
+							{t(
+								"payroll.workBalances.description",
+								"Record and cancel overtime payouts for the employees your payroll access covers, including employees who have left.",
+							)}
+						</p>
+					</div>
+					{employees.length > 0 ? <OpeningBalanceUploadDialog /> : null}
+				</div>
 			</header>
 			{employees.length === 0 ? (
 				<p className="text-sm text-muted-foreground">

@@ -113,7 +113,8 @@ function detectDelimiter(headerLine: string): string {
 }
 
 export function parseOpeningBalanceCsv(text: string): OpeningBalanceCsvParseResult {
-	if (text.length > MAX_OPENING_BALANCE_UPLOAD_CHARACTERS) return { ok: false, code: "file_too_large" };
+	if (text.length > MAX_OPENING_BALANCE_UPLOAD_CHARACTERS)
+		return { ok: false, code: "file_too_large" };
 	let content = text.replace(/^﻿/u, "");
 	let delimiter: string | null = null;
 	const separatorLine = /^sep=(.)\r?\n/iu.exec(content);
@@ -140,7 +141,8 @@ export function parseOpeningBalanceCsv(text: string): OpeningBalanceCsvParseResu
 	const rows: OpeningBalanceCsvRow[] = [];
 	for (const [position, record] of records.entries()) {
 		if (record.every((cell) => !cell.trim())) continue;
-		if (rows.length === MAX_OPENING_BALANCE_UPLOAD_ROWS) return { ok: false, code: "too_many_rows" };
+		if (rows.length === MAX_OPENING_BALANCE_UPLOAD_ROWS)
+			return { ok: false, code: "too_many_rows" };
 		const cell = (column: OpeningBalanceCsvColumn) => record[index[column]] ?? "";
 		const employeeNumber = cell("employee_number").trim();
 		const day = parseOpeningBalanceDay(cell("day"));

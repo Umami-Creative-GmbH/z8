@@ -237,7 +237,10 @@ async function loadUploadScope(
 
 	const coverage = await listBalanceAdjustmentGrantEmployees(client, input);
 	if (!coverage || coverage.grantId !== input.authority.grantId) {
-		throw new BalanceAdjustmentRefusal("not_permitted", "The payroll access grant is no longer active");
+		throw new BalanceAdjustmentRefusal(
+			"not_permitted",
+			"The payroll access grant is no longer active",
+		);
 	}
 	return { employees, writable: new Set(coverage.employees.map((covered) => covered.id)) };
 }
