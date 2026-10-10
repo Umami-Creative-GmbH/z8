@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { canRequireDeputy } from "@/lib/absences/deputy";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 import {
 	type AbsenceCategoryForSettings,
@@ -487,28 +488,45 @@ export function AbsenceCategoryForm({
 								)}
 							</form.Field>
 
-							<form.Field name="deputyRequired">
-								{(field) => (
-									<div className="flex items-start gap-3 rounded-lg border p-4">
-										<Checkbox
-											id="absenceCategoryDeputyRequired"
-											checked={field.state.value}
-											onCheckedChange={(checked) => field.handleChange(checked === true)}
-										/>
-										<div className="space-y-1 leading-none">
-											<Label htmlFor="absenceCategoryDeputyRequired" className="cursor-pointer">
-												{t("settings.absenceCategories.form.deputyRequired", "Deputy required")}
-											</Label>
-											<p className="text-sm text-muted-foreground">
-												{t(
-													"settings.absenceCategories.form.deputyRequiredHelp",
-													"Every absence of this type must name a deputy who covers while the employee is away.",
-												)}
-											</p>
-										</div>
-									</div>
+							<form.Subscribe selector={(state) => state.values.type}>
+								{(type) => (
+									<form.Field name="deputyRequired">
+										{(field) => {
+											// Sick leave is never planned ahead, so it never requires a deputy.
+											const allowed = canRequireDeputy(type);
+											return (
+												<div className="flex items-start gap-3 rounded-lg border p-4">
+													<Checkbox
+														id="absenceCategoryDeputyRequired"
+														checked={allowed && field.state.value}
+														disabled={!allowed}
+														onCheckedChange={(checked) => field.handleChange(checked === true)}
+													/>
+													<div className="space-y-1 leading-none">
+														<Label
+															htmlFor="absenceCategoryDeputyRequired"
+															className={allowed ? "cursor-pointer" : undefined}
+														>
+															{t("settings.absenceCategories.form.deputyRequired", "Deputy required")}
+														</Label>
+														<p className="text-sm text-muted-foreground">
+															{allowed
+																? t(
+																		"settings.absenceCategories.form.deputyRequiredHelp",
+																		"Every absence of this type must name a deputy who covers while the employee is away.",
+																	)
+																: t(
+																		"settings.absenceCategories.form.deputyRequiredSick",
+																		"Sick leave never requires a deputy.",
+																	)}
+														</p>
+													</div>
+												</div>
+											);
+										}}
+									</form.Field>
 								)}
-							</form.Field>
+							</form.Subscribe>
 						</div>
 
 						<form.Field name="isActive">

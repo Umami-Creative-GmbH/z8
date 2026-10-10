@@ -16,6 +16,7 @@ import {
 	vacationAllowance,
 } from "@/db/schema";
 import type { LocaleTranslationMap } from "@/db/schema/absence";
+import { canRequireDeputy } from "@/lib/absences/deputy";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import {
@@ -95,6 +96,10 @@ function normalizeAbsenceCategoryData(data: AbsenceCategoryWriteData) {
 		nameTranslations: normalizeTranslationMap(data.nameTranslations),
 		descriptionTranslations: normalizeTranslationMap(data.descriptionTranslations),
 		color: normalizeOptionalText(data.color),
+		// Sick leave never requires a deputy (#1011).
+		...(data.deputyRequired !== undefined || data.type === "sick"
+			? { deputyRequired: canRequireDeputy(data.type) && data.deputyRequired === true }
+			: {}),
 	};
 }
 

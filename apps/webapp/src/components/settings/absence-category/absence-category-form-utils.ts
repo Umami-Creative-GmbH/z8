@@ -1,4 +1,5 @@
 import type { AbsenceCategoryType } from "@/app/[locale]/(app)/settings/vacation/actions";
+import { canRequireDeputy } from "@/lib/absences/deputy";
 
 export interface AbsenceCategoryForSettings {
 	id: string;
@@ -94,7 +95,7 @@ export function buildAbsenceCategoryPayload(value: AbsenceCategoryFormValues) {
 		requiresWorkTime: value.requiresWorkTime,
 		requiresApproval: value.requiresApproval,
 		countsAgainstVacation: value.countsAgainstVacation,
-		deputyRequired: value.deputyRequired,
+		deputyRequired: canRequireDeputy(value.type) && value.deputyRequired,
 		color: value.color.trim(),
 		isActive: value.isActive,
 	};
