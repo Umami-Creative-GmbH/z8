@@ -92,8 +92,9 @@ async function countInboxPending(input: {
 	});
 }
 
-function displayName(name: string | null | undefined): string {
-	return name?.trim() || "A colleague";
+/** Never untranslated filler text: the name, else the e-mail address. */
+function displayName(person: { name: string | null; email: string }): string {
+	return person.name?.trim() || person.email;
 }
 
 /**
@@ -175,6 +176,7 @@ async function sendCoverStartSummaries(database: Database, deps: Deps): Promise<
 			employeeId: absenceEntry.employeeId,
 			deputyEmployeeId: absenceEntry.deputyEmployeeId,
 			absentName: user.name,
+			absentEmail: user.email,
 		})
 		.from(absenceEntry)
 		.innerJoin(
@@ -252,7 +254,7 @@ async function sendCoverStartSummaries(database: Database, deps: Deps): Promise<
 				buildCoverStartedNotification({
 					organizationId,
 					recipientUserId: deputy.userId,
-					absentName: displayName(row.absentName),
+					absentName: displayName({ name: row.absentName, email: row.absentEmail }),
 					approverEmployeeId: row.employeeId,
 					absenceId: row.id,
 					deputyEmployeeId,
@@ -387,7 +389,7 @@ async function sendReturnSummaries(database: Database, deps: Deps): Promise<Tall
 				continue;
 			}
 			const [deputy] = await database
-				.select({ name: user.name })
+				.select({ name: user.name, email: user.email })
 				.from(employee)
 				.innerJoin(user, eq(user.id, employee.userId))
 				.where(
@@ -397,6 +399,7 @@ async function sendReturnSummaries(database: Database, deps: Deps): Promise<Tall
 					),
 				)
 				.limit(1);
+			if (!deputy) continue;
 			const decisionCount = Number(row.decisionCount);
 			const sent = await claimAndDeliver(
 				database,
@@ -411,7 +414,7 @@ async function sendReturnSummaries(database: Database, deps: Deps): Promise<Tall
 				buildCoverReturnSummaryNotification({
 					organizationId: row.organizationId,
 					recipientUserId: row.approverUserId,
-					deputyName: displayName(deputy?.name),
+					deputyName: displayName(deputy),
 					absenceId,
 					deputyEmployeeId: row.deputyEmployeeId,
 					decisionCount,
@@ -563,6 +566,7 @@ export async function loadDeputyDecisionsForAbsence(
 			decidedAt: approvalDeputyDecision.decidedAt,
 			deputyEmployeeId: approvalDeputyDecision.deputyEmployeeId,
 			deputyName: deputyUser.name,
+			deputyEmail: deputyUser.email,
 			legacyRequesterId: approvalRequest.requestedBy,
 			canonicalRequesterId: approvalWorkflow.requesterEmployeeId,
 		})
@@ -638,7 +642,7 @@ export async function loadDeputyDecisionsForAbsence(
 				entityId: row.entityId,
 				decision: row.decision,
 				decidedAt: row.decidedAt,
-				deputy: { employeeId: row.deputyEmployeeId, name: displayName(row.deputyName) },
+				deputy: { employeeId: row.deputyEmployeeId, name: displayName({ name: row.deputyName, email: row.deputyEmail }) },
 				requesterName: requesterId ? (requesterNames.get(requesterId) ?? null) : null,
 			};
 		}),

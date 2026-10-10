@@ -14,7 +14,7 @@ import { type Instant, plainDateAt } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications/notification-service";
-import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import { absentEmployeeTimezone } from "./deputy-missing";
 import {
 	type AbsenceDeputyEvent,
 	absenceIdsOfEvents,
@@ -46,14 +46,20 @@ async function loadAbsentNames(
 	const employeeIds = [...new Set(input.employeeIds)];
 	if (employeeIds.length === 0) return new Map();
 	const rows = await database
-		.select({ id: employee.id, name: user.name, employeeNumber: employee.employeeNumber })
+		.select({
+			id: employee.id,
+			name: user.name,
+			employeeNumber: employee.employeeNumber,
+			email: user.email,
+		})
 		.from(employee)
 		.innerJoin(user, eq(user.id, employee.userId))
 		.where(
 			and(eq(employee.organizationId, input.organizationId), inArray(employee.id, employeeIds)),
 		);
+	// Never untranslated filler text: the name, else the employee number, else the e-mail.
 	return new Map(
-		rows.map((row) => [row.id, row.name?.trim() || row.employeeNumber || "A colleague"]),
+		rows.map((row) => [row.id, row.name?.trim() || row.employeeNumber || row.email]),
 	);
 }
 
@@ -90,7 +96,6 @@ async function loadDeputyAbsenceFacts(
 			startDate: absenceEntry.startDate,
 			endDate: absenceEntry.endDate,
 			status: absenceEntry.status,
-			approvedAt: absenceEntry.approvedAt,
 		})
 		.from(absenceEntry)
 		.where(
@@ -109,7 +114,6 @@ async function loadDeputyAbsenceFacts(
 				startDate: row.startDate,
 				endDate: row.endDate,
 				status: row.status,
-				wasApproved: row.status === "approved" || row.approvedAt !== null,
 			},
 		]),
 	);
@@ -145,13 +149,14 @@ export async function notifyAbsenceDeputies(
 		await Promise.all(
 			notices.flatMap((notice) => {
 				const recipientUserId = deputies.get(notice.deputyEmployeeId);
-				if (!recipientUserId) return [];
+				const absentName = names.get(notice.absence.employeeId);
+				if (!recipientUserId || !absentName) return [];
 				return [
 					createNotification(
 						buildDeputyNotification({
 							organizationId: input.organizationId,
 							recipientUserId,
-							absentName: names.get(notice.absence.employeeId) ?? "A colleague",
+							absentName,
 							notice,
 						}),
 					),
@@ -227,10 +232,7 @@ export async function runAbsenceDeputyReminders(
 			row.deputyEmployeeId !== null &&
 			isDeputyReminderDue({
 				startDate: row.startDate,
-				timezone: resolveEffectiveTimezone(
-					row.userTimezone ?? undefined,
-					row.organizationTimezone ?? undefined,
-				),
+				timezone: absentEmployeeTimezone(row),
 				now: input.now,
 			}),
 	);
@@ -257,7 +259,8 @@ export async function runAbsenceDeputyReminders(
 			for (const absence of absences) {
 				const deputyEmployeeId = absence.deputyEmployeeId as string;
 				const recipientUserId = deputies.get(deputyEmployeeId);
-				if (!recipientUserId) continue;
+				const absentName = names.get(absence.employeeId);
+				if (!recipientUserId || !absentName) continue;
 				const [claimed] = await database
 					.insert(absenceDeputyReminder)
 					.values({
@@ -273,7 +276,7 @@ export async function runAbsenceDeputyReminders(
 					buildDeputyReminderNotification({
 						organizationId,
 						recipientUserId,
-						absentName: names.get(absence.employeeId) ?? "A colleague",
+						absentName,
 						absence,
 						deputyEmployeeId,
 					}),
