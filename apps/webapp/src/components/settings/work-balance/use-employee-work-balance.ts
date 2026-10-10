@@ -7,16 +7,23 @@ import {
 	getEmployeeWorkBalanceSectionAction,
 	type RecordOvertimePayoutInput,
 	recordOvertimePayoutAction,
+	type SetOpeningBalanceInput,
+	setOpeningBalanceAction,
 } from "@/app/[locale]/(app)/settings/employees/work-balance-actions";
 import type {
 	BalanceAdjustmentActionResult,
 	BalanceAdjustmentErrorCode,
+	ConflictingPayout,
 } from "@/lib/work-balance/adjustments/types";
 
 export const EMPLOYEE_WORK_BALANCE_QUERY_KEY = ["employeeWorkBalanceSection"] as const;
 
 export class BalanceAdjustmentActionError extends Error {
-	constructor(readonly code: BalanceAdjustmentErrorCode | null) {
+	constructor(
+		readonly code: BalanceAdjustmentErrorCode | null,
+		/** With `conflicting_payouts` (#997): the payouts that keep the opening balance out. */
+		readonly conflictingPayouts: ConflictingPayout[] = [],
+	) {
 		super(code ?? "failed");
 	}
 }
@@ -31,7 +38,9 @@ export function isRefusal(error: unknown): error is BalanceAdjustmentActionError
 async function unwrap<T>(action: Promise<BalanceAdjustmentActionResult<T>>): Promise<T> {
 	const result = await action.catch(() => null);
 	if (!result) throw new BalanceAdjustmentActionError(null);
-	if (!result.success) throw new BalanceAdjustmentActionError(result.code);
+	if (!result.success) {
+		throw new BalanceAdjustmentActionError(result.code, result.conflictingPayouts ?? []);
+	}
 	return result.data;
 }
 
@@ -49,7 +58,7 @@ export function useBalanceAdjustmentSection(employeeId: string) {
 	});
 }
 
-/** The employee's Work balance section data and its two writes (#993). */
+/** The employee's Work balance section data and its writes (#993, #997). */
 export function useEmployeeWorkBalance(employeeId: string) {
 	const queryClient = useQueryClient();
 	const queryKey = [...EMPLOYEE_WORK_BALANCE_QUERY_KEY, employeeId];
@@ -61,11 +70,36 @@ export function useEmployeeWorkBalance(employeeId: string) {
 			unwrap(recordOvertimePayoutAction({ ...input, employeeId })),
 		onSettled,
 	});
+	const setOpeningBalance = useMutation({
+		mutationFn: (input: Omit<SetOpeningBalanceInput, "employeeId">) =>
+			unwrap(setOpeningBalanceAction({ ...input, employeeId })),
+		onSettled,
+	});
 	const cancelAdjustment = useMutation({
 		mutationFn: (input: Omit<CancelBalanceAdjustmentInput, "employeeId">) =>
 			unwrap(cancelBalanceAdjustmentAction({ ...input, employeeId })),
 		onSettled,
 	});
 
-	return { section, recordPayout, cancelAdjustment };
+	return { section, recordPayout, setOpeningBalance, cancelAdjustment };
+}
+
+/**
+ * Records an overtime payout from outside the Work balance section, such as
+ * the final payout in the offboarding review (#1002). The section refreshes
+ * too; `onSettled` refreshes the caller's own view.
+ */
+export function useRecordOvertimePayout(employeeId: string, onSettled?: () => Promise<unknown>) {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (input: Omit<RecordOvertimePayoutInput, "employeeId">) =>
+			unwrap(recordOvertimePayoutAction({ ...input, employeeId })),
+		onSettled: () =>
+			Promise.all([
+				queryClient.invalidateQueries({
+					queryKey: [...EMPLOYEE_WORK_BALANCE_QUERY_KEY, employeeId],
+				}),
+				onSettled?.(),
+			]),
+	});
 }

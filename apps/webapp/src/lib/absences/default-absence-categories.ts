@@ -67,6 +67,17 @@ export const defaultAbsenceCategories = [
 		countsAgainstVacation: false,
 		color: "#64748b",
 	},
+	{
+		// #1000: organizations that existed before it got it inactive (migration 0188).
+		type: "time_off_in_lieu",
+		name: builtInAbsenceCategoryText.time_off_in_lieu.name,
+		description: builtInAbsenceCategoryText.time_off_in_lieu.description,
+		requiresWorkTime: false,
+		requiresApproval: true,
+		countsAgainstVacation: false,
+		drawsOnWorkBalance: true,
+		color: "#14b8a6",
+	},
 ] satisfies Array<Omit<typeof absenceCategory.$inferInsert, "organizationId" | "isActive">>;
 
 export async function ensureDefaultAbsenceCategoriesForOrganization(organizationId: string) {

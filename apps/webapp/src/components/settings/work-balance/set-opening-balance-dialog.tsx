@@ -3,7 +3,9 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
+import { useId, useState } from "react";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
@@ -15,6 +17,8 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
 	TFormControl,
 	TFormDescription,
@@ -24,85 +28,103 @@ import {
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
-import { payoutMinutes } from "@/lib/work-balance/adjustments/rules";
+import { useDisplayContext } from "@/hooks/use-display-context";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import { openingBalanceMinutes } from "@/lib/work-balance/adjustments/rules";
+import type { ConflictingPayout } from "@/lib/work-balance/adjustments/types";
+import { formatSignedWorkBalance } from "@/lib/work-balance/format";
 import { useBalanceAdjustmentErrorMessage } from "./use-balance-adjustment-error";
 import { BalanceAdjustmentActionError } from "./use-employee-work-balance";
 
-type RecordOvertimePayoutValues = {
+type SetOpeningBalanceValues = {
 	day: string;
+	direction: "positive" | "negative";
 	hours: string;
 	minutes: string;
 	reason: string;
 };
 
 /**
- * Records an overtime payout for the employee (#993). The offboarding review
- * opens it for a final payout prefilled with the remaining balance (#1002).
+ * Sets the employee's opening balance (#997, ADR-0008). It replaces the work
+ * balance up to and including its day; setting one cancels the one in effect.
+ * A refusal because of overtime payouts lists them in the dialog.
  */
-export function RecordOvertimePayoutDialog({
+export function SetOpeningBalanceDialog({
 	open,
 	onOpenChange,
 	today,
-	initial,
-	title,
-	onRecord,
+	replacesCurrent,
+	onSet,
 }: {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	/** Today in the employee's timezone: the latest day a payout may have. */
+	/** Today in the employee's timezone: the latest day an opening balance may have. */
 	today: string;
-	/** Prefilled day and amount; without it the day is today and the amount empty. */
-	initial?: { day: string; amountMinutes: number };
-	/** Replaces the default dialog title. */
-	title?: string;
-	onRecord: (input: {
+	/** Whether an opening balance is in effect, which this one cancels. */
+	replacesCurrent: boolean;
+	onSet: (input: {
 		day: string;
+		negative: boolean;
 		hours: number;
 		minutes: number;
 		reason: string;
 	}) => Promise<unknown>;
 }) {
 	const { t } = useTranslate();
+	const id = useId();
+	const displayContext = useDisplayContext();
 	const errorMessage = useBalanceAdjustmentErrorMessage();
-	const defaultValues: RecordOvertimePayoutValues = initial
-		? {
-				day: initial.day,
-				hours: String(Math.floor(initial.amountMinutes / 60)),
-				minutes: String(initial.amountMinutes % 60),
-				reason: "",
-			}
-		: {
-				day: today,
-				hours: "",
-				minutes: "0",
-				reason: "",
-			};
+	const [conflictingPayouts, setConflictingPayouts] = useState<ConflictingPayout[]>([]);
+	const defaultValues: SetOpeningBalanceValues = {
+		day: today,
+		direction: "positive",
+		hours: "",
+		minutes: "0",
+		reason: "",
+	};
 	const form = useForm({
 		defaultValues,
 		onSubmit: async ({ value }) => {
+			setConflictingPayouts([]);
 			try {
-				await onRecord({
+				await onSet({
 					day: value.day,
+					negative: value.direction === "negative",
 					hours: Number(value.hours || 0),
 					minutes: Number(value.minutes || 0),
 					reason: value.reason,
 				});
 			} catch (error) {
-				toast.error(
-					errorMessage(error instanceof BalanceAdjustmentActionError ? error.code : null),
-				);
+				const actionError = error instanceof BalanceAdjustmentActionError ? error : null;
+				if (actionError?.code === "conflicting_payouts") {
+					setConflictingPayouts(actionError.conflictingPayouts);
+				}
+				toast.error(errorMessage(actionError?.code ?? null));
 				return;
 			}
-			toast.success(t("settings.employees.workBalance.payoutRecorded", "Overtime payout recorded"));
+			toast.success(t("settings.employees.workBalance.openingBalanceSet", "Opening balance set"));
 			form.reset(defaultValues);
 			onOpenChange(false);
 		},
 	});
 
 	function handleOpenChange(nextOpen: boolean) {
-		if (!nextOpen) form.reset(defaultValues);
+		if (!nextOpen) {
+			form.reset(defaultValues);
+			setConflictingPayouts([]);
+		}
 		onOpenChange(nextOpen);
 	}
+
+	const formatDay = (day: string) =>
+		formatPlainDate(parsePlainDate(day), displayContext.locale, "dateMedium");
+	const amountIsValid = (hours: string, minutes: string) =>
+		openingBalanceMinutes({
+			negative: false,
+			hours: Number(hours || 0),
+			minutes: Number(minutes || 0),
+		}) !== null;
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
@@ -117,16 +139,24 @@ export function RecordOvertimePayoutDialog({
 				>
 					<DialogHeader>
 						<DialogTitle>
-							{title ??
-								t("settings.employees.workBalance.recordPayoutTitle", "Record overtime payout")}
+							{t("settings.employees.workBalance.setOpeningBalanceTitle", "Set opening balance")}
 						</DialogTitle>
 						<DialogDescription>
 							{t(
-								"settings.employees.workBalance.recordPayoutDescription",
-								"Record overtime paid as wages. It lowers the work balance from the end of its day and cannot be more than the balance on that day.",
+								"settings.employees.workBalance.setOpeningBalanceDescription",
+								"The opening balance replaces the work balance up to and including its day. Work and required time before then stay on record but no longer count.",
 							)}
 						</DialogDescription>
 					</DialogHeader>
+
+					{replacesCurrent ? (
+						<p className="text-muted-foreground text-sm">
+							{t(
+								"settings.employees.workBalance.replacesOpeningBalance",
+								"The opening balance in effect is cancelled, with this reason.",
+							)}
+						</p>
+					) : null}
 
 					<form.Field
 						name="day"
@@ -140,13 +170,19 @@ export function RecordOvertimePayoutDialog({
 						{(field) => (
 							<TFormItem>
 								<TFormLabel hasError={fieldHasError(field)} required>
-									{t("settings.employees.workBalance.day", "Day")}
+									{t(
+										"settings.employees.workBalance.openingBalanceDay",
+										"Balance as of the end of",
+									)}
 								</TFormLabel>
 								<TFormControl hasError={fieldHasError(field)}>
 									<DatePicker
 										name="day"
 										value={field.state.value}
-										onChange={(value) => field.handleChange(value)}
+										onChange={(value) => {
+											field.handleChange(value);
+											setConflictingPayouts([]);
+										}}
 										onBlur={field.handleBlur}
 										max={today}
 										required
@@ -154,12 +190,42 @@ export function RecordOvertimePayoutDialog({
 								</TFormControl>
 								<TFormDescription>
 									{t(
-										"settings.employees.workBalance.dayDescription",
-										"In the employee's timezone. The balance shown runs through yesterday, so a payout dated today counts from tomorrow.",
+										"settings.employees.workBalance.openingBalanceDayDescription",
+										"In the employee's timezone. The balance counts again from the next day.",
 									)}
 								</TFormDescription>
 								<TFormMessage field={field} />
 							</TFormItem>
+						)}
+					</form.Field>
+
+					<form.Field name="direction">
+						{(field) => (
+							<fieldset className="space-y-2">
+								<legend className="font-medium text-sm">
+									{t("settings.employees.workBalance.direction", "Balance")}
+								</legend>
+								<RadioGroup
+									value={field.state.value}
+									onValueChange={(value) =>
+										field.handleChange(value === "negative" ? "negative" : "positive")
+									}
+									className="flex flex-wrap gap-6"
+								>
+									<div className="flex items-center gap-2">
+										<RadioGroupItem id={`${id}-positive`} value="positive" />
+										<Label htmlFor={`${id}-positive`}>
+											{t("settings.employees.workBalance.positive", "Overtime (+)")}
+										</Label>
+									</div>
+									<div className="flex items-center gap-2">
+										<RadioGroupItem id={`${id}-negative`} value="negative" />
+										<Label htmlFor={`${id}-negative`}>
+											{t("settings.employees.workBalance.negative", "Hours owed (−)")}
+										</Label>
+									</div>
+								</RadioGroup>
+							</fieldset>
 						)}
 					</form.Field>
 
@@ -168,17 +234,14 @@ export function RecordOvertimePayoutDialog({
 							name="hours"
 							validators={{
 								onChange: ({ value, fieldApi }) =>
-									payoutMinutes({
-										hours: Number(value || 0),
-										minutes: Number(fieldApi.form.getFieldValue("minutes") || 0),
-									}) === null
-										? t("settings.employees.workBalance.hoursInvalid", "Enter whole hours.")
-										: undefined,
+									amountIsValid(value, fieldApi.form.getFieldValue("minutes"))
+										? undefined
+										: t("settings.employees.workBalance.hoursInvalid", "Enter whole hours."),
 							}}
 						>
 							{(field) => (
 								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)} required>
+									<TFormLabel hasError={fieldHasError(field)}>
 										{t("settings.employees.workBalance.hours", "Hours")}
 									</TFormLabel>
 									<TFormControl hasError={fieldHasError(field)}>
@@ -189,6 +252,7 @@ export function RecordOvertimePayoutDialog({
 											min={0}
 											step={1}
 											autoComplete="off"
+											placeholder="0"
 											value={field.state.value}
 											onChange={(event) => field.handleChange(event.target.value)}
 											onBlur={field.handleBlur}
@@ -261,8 +325,8 @@ export function RecordOvertimePayoutDialog({
 										onChange={(event) => field.handleChange(event.target.value)}
 										onBlur={field.handleBlur}
 										placeholder={t(
-											"settings.employees.workBalance.payoutReasonPlaceholder",
-											"For example: paid with the October payroll…",
+											"settings.employees.workBalance.openingBalanceReasonPlaceholder",
+											"For example: balance carried over from the previous system…",
 										)}
 									/>
 								</TFormControl>
@@ -270,6 +334,32 @@ export function RecordOvertimePayoutDialog({
 							</TFormItem>
 						)}
 					</form.Field>
+
+					{conflictingPayouts.length > 0 ? (
+						<Alert variant="destructive">
+							<AlertTitle>
+								{t(
+									"settings.employees.workBalance.conflictingPayoutsTitle",
+									"Overtime payouts on or before this day",
+								)}
+							</AlertTitle>
+							<AlertDescription>
+								<p>
+									{t(
+										"settings.employees.workBalance.conflictingPayoutsDescription",
+										"They would no longer count. Cancel them first or choose an earlier day.",
+									)}
+								</p>
+								<ul className="mt-2 list-disc space-y-1 pl-5">
+									{conflictingPayouts.map((payout) => (
+										<li key={payout.id} className="tabular-nums">
+											{formatDay(payout.day)}: {formatSignedWorkBalance(payout.minutes)}
+										</li>
+									))}
+								</ul>
+							</AlertDescription>
+						</Alert>
+					) : null}
 
 					<DialogFooter>
 						<Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
@@ -281,7 +371,10 @@ export function RecordOvertimePayoutDialog({
 									{isSubmitting ? (
 										<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 									) : null}
-									{t("settings.employees.workBalance.recordPayoutSubmit", "Record payout")}
+									{t(
+										"settings.employees.workBalance.setOpeningBalanceSubmit",
+										"Set opening balance",
+									)}
 								</Button>
 							)}
 						</form.Subscribe>

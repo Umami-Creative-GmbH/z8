@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,6 +10,7 @@ import type { EmployeeOffboardingView } from "@/lib/employee-lifecycle/view-type
 const hook = vi.hoisted(() => ({
 	useEmployeeOffboarding: vi.fn(),
 	scheduleDeparture: vi.fn(),
+	recordOvertimePayoutAction: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -53,6 +54,12 @@ vi.mock("@/components/ui/date-picker", () => ({
 	),
 }));
 
+vi.mock("@/app/[locale]/(app)/settings/employees/work-balance-actions", () => ({
+	getEmployeeWorkBalanceSectionAction: vi.fn(),
+	cancelBalanceAdjustmentAction: vi.fn(),
+	recordOvertimePayoutAction: hook.recordOvertimePayoutAction,
+}));
+
 vi.mock("@/lib/query/use-employee-offboarding", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/query/use-employee-offboarding")>()),
 	useEmployeeOffboarding: hook.useEmployeeOffboarding,
@@ -77,6 +84,7 @@ function activeView(employeeId: string): EmployeeOffboardingView {
 		failedTasks: [],
 		reviews: [],
 		futureWork: { shifts: 0, absences: 0, employmentTerms: 0 },
+		workBalance: null,
 		capabilities: {
 			schedule: true,
 			cancel: false,
@@ -187,6 +195,70 @@ describe("EmployeeOffboardingSection", () => {
 		expect(screen.getByText(/The employment status changed while this form was open/)).toBeTruthy();
 		expect(screen.getByTestId("departure-state").textContent).toBe("Departure effective");
 		expect(hook.scheduleDeparture).toHaveBeenCalledTimes(1);
+	});
+
+	it("records a final overtime payout of the whole remaining balance from the review", async () => {
+		const user = userEvent.setup();
+		hook.recordOvertimePayoutAction.mockResolvedValue({
+			success: true,
+			data: { adjustmentId: "33333333-3333-4333-8333-333333333333" },
+		});
+		hook.useEmployeeOffboarding.mockImplementation(() => ({
+			view: {
+				...activeView(employeeA),
+				state: "legacy_inactive",
+				employmentPeriodId: null,
+				capabilities: {
+					schedule: false,
+					cancel: false,
+					offboardNow: false,
+					rehire: false,
+					resolve: false,
+				},
+				workBalance: {
+					balance: { balanceMinutes: 375, computedThroughDate: "2026-10-09" },
+					finalPayout: {
+						defaultDay: "2026-10-09",
+						defaultMinutes: 375,
+						latestDay: "2026-10-10",
+					},
+				},
+			} satisfies EmployeeOffboardingView,
+			isLoading: false,
+			isMutating: false,
+			scheduleDeparture: hook.scheduleDeparture,
+			offboardNow: vi.fn(),
+			cancelDeparture: vi.fn(),
+			rehire: vi.fn(),
+			resolveReview: vi.fn(),
+			retryTask: vi.fn(),
+			assignReplacement: vi.fn(),
+		}));
+		render(section(employeeA));
+
+		await user.click(screen.getByRole("button", { name: "Record final overtime payout" }));
+		const dialog = await screen.findByRole("dialog");
+		expect(within(dialog).getByText("Record final overtime payout")).toBeTruthy();
+		expect((within(dialog).getByLabelText("day") as HTMLInputElement).value).toBe("2026-10-09");
+		expect(
+			(within(dialog).getByRole("spinbutton", { name: /Hours/ }) as HTMLInputElement).value,
+		).toBe("6");
+		expect(
+			(within(dialog).getByRole("spinbutton", { name: /Minutes/ }) as HTMLInputElement).value,
+		).toBe("15");
+		await user.type(within(dialog).getByRole("textbox", { name: /Reason/ }), "Paid on leaving");
+		await user.click(within(dialog).getByRole("button", { name: "Record payout" }));
+
+		await waitFor(() =>
+			expect(hook.recordOvertimePayoutAction).toHaveBeenCalledWith({
+				employeeId: employeeA,
+				day: "2026-10-09",
+				hours: 6,
+				minutes: 15,
+				reason: "Paid on leaving",
+			}),
+		);
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 	});
 
 	it("never submits an open form for a previous employee after navigating to another", async () => {

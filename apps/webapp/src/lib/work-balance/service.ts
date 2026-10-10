@@ -10,7 +10,7 @@ import {
 } from "@/db/schema";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
-import { sumBalanceAdjustmentMinutes } from "./adjustments/ledger";
+import { readWorkBalanceAdjustments } from "./adjustments/ledger";
 import {
 	computeEmployeePeriodBalance,
 	rebuildEmployeeYearBalanceFromMonths,
@@ -121,6 +121,12 @@ function toUtcIsoDate(value: Date | string | null | undefined) {
 
 function maxIsoDate(left: string, right: string) {
 	return left > right ? left : right;
+}
+
+function laterIsoDate(left: string | null, right: string | null) {
+	if (!left) return right;
+	if (!right) return left;
+	return maxIsoDate(left, right);
 }
 
 export function shouldIncludeWorkBalanceInBatch(
@@ -466,14 +472,17 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 		? await getFirstRelevantDate(input, dbClient, scopedEmployee, timezone)
 		: null;
 	const employeeStartDate = forceFullRebuild ? null : toUtcIsoDate(scopedEmployee.startDate);
-	const calculationStartDate = employeeStartDate ?? fullRebuildStartDate;
 	// Balance adjustments are read from their ledger on every computation, never
 	// kept in the stored rows, so a full rebuild counts them again (ADR-0008).
-	const adjustmentMinutes = await sumBalanceAdjustmentMinutes(dbClient, {
+	// An opening balance in effect replaces everything through its day: the
+	// calculation starts the day after it, in both the full and the dirty path.
+	const { countFrom, adjustmentMinutes } = await readWorkBalanceAdjustments(dbClient, {
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
 		throughDate: hotWindow.endDate,
+		openingBalanceDatedLater: "count",
 	});
+	const calculationStartDate = laterIsoDate(employeeStartDate ?? fullRebuildStartDate, countFrom);
 	if (calculationStartDate && calculationStartDate > hotWindow.endDate) {
 		await dbClient
 			.delete(employeeWorkBalancePeriod)
@@ -625,6 +634,11 @@ export async function loadWorkBalanceEmployee(
  * through `day`, plus the uncancelled balance adjustments on or before it.
  * Computed from scratch, as a full rebuild through that day would, so it does
  * not depend on how current the stored projection is.
+ *
+ * An opening balance in effect dated on or before `day` replaces everything
+ * through its day (#997): the result is its minutes plus what is computed from
+ * the day after it. One dated after `day` is left out, so the result is the
+ * full calculation as it stood before it.
  */
 export async function computeEmployeeWorkBalanceAtEndOfDay(
 	input: {
@@ -635,10 +649,15 @@ export async function computeEmployeeWorkBalanceAtEndOfDay(
 	dbClient: WorkBalanceDbClient = db,
 ): Promise<number> {
 	const scope = { employeeId: input.employee.id, organizationId: input.organizationId };
-	const [calculationStartDate, adjustmentMinutes] = await Promise.all([
+	const [firstRelevantDate, { countFrom, adjustmentMinutes }] = await Promise.all([
 		getFirstRelevantDate(scope, dbClient, input.employee, input.employee.timezone),
-		sumBalanceAdjustmentMinutes(dbClient, { ...scope, throughDate: input.day }),
+		readWorkBalanceAdjustments(dbClient, {
+			...scope,
+			throughDate: input.day,
+			openingBalanceDatedLater: "ignore",
+		}),
 	]);
+	const calculationStartDate = laterIsoDate(firstRelevantDate, countFrom);
 	if (!calculationStartDate || calculationStartDate > input.day) return adjustmentMinutes;
 
 	const work = await computeEmployeePeriodBalance({
@@ -866,10 +885,16 @@ export async function deleteEmployeeWorkBalance(input: {
 		);
 }
 
+/**
+ * The employees the worker refreshes: active employees whose balance is
+ * missing, marked for recomputation or behind yesterday (in their zone), and
+ * employees who have left (#1002) whose existing balance is marked for
+ * recomputation or still behind the end of their employment. The latter are
+ * caught up once through their last working day, and later runs skip them; an
+ * inactive employee without a recorded employment end is left alone.
+ */
 export async function listEmployeesForWorkBalanceBatch(limit = 1000, now = new Date()) {
-	const employeeLocalCutoffDate = sql<string>`(
-		(
-			${now}::timestamptz AT TIME ZONE COALESCE(
+	const employeeLocalZone = sql<string>`COALESCE(
 				(
 					SELECT NULLIF("work_balance_user_settings"."timezone", 'UTC')
 					FROM "user_settings" AS "work_balance_user_settings"
@@ -889,9 +914,21 @@ export async function listEmployeesForWorkBalanceBatch(limit = 1000, now = new D
 						)
 				),
 				'UTC'
-			)
-		)::date - 1
+			)`;
+	const employeeLocalCutoffDate = sql<string>`(
+		(${now}::timestamptz AT TIME ZONE ${employeeLocalZone})::date - 1
 	)`;
+	// The last local day of the employee's latest closed employment period. Periods
+	// are half-open, so a cutoff at midnight ends employment on the day before.
+	const employmentEndLocalDate = sql<string>`(
+		(
+			SELECT max("work_balance_period"."ended_at") - interval '1 microsecond'
+			FROM "employee_employment_period" AS "work_balance_period"
+			WHERE "work_balance_period"."organization_id" = ${employee.organizationId}
+				AND "work_balance_period"."employee_id" = ${employee.id}
+				AND "work_balance_period"."status" = 'closed'
+		) AT TIME ZONE ${employeeLocalZone}
+	)::date`;
 
 	return db
 		.select({
@@ -912,14 +949,27 @@ export async function listEmployeesForWorkBalanceBatch(limit = 1000, now = new D
 		)
 		.where(
 			and(
-				eq(employee.isActive, true),
 				isNotNull(employee.organizationId),
 				// A pending rebuild resets these projections first; see rebuild-intents.ts.
 				sql`not exists (select 1 from ${workBalanceRebuildIntent} where ${workBalanceRebuildIntent.organizationId} = ${employee.organizationId} and (${workBalanceRebuildIntent.userId} is null or ${workBalanceRebuildIntent.userId} = ${employee.userId}))`,
 				or(
-					isNull(employeeWorkBalance.id),
-					eq(employeeWorkBalance.isDirty, true),
-					lt(employeeWorkBalance.computedThroughDate, employeeLocalCutoffDate),
+					and(
+						eq(employee.isActive, true),
+						or(
+							isNull(employeeWorkBalance.id),
+							eq(employeeWorkBalance.isDirty, true),
+							lt(employeeWorkBalance.computedThroughDate, employeeLocalCutoffDate),
+						),
+					),
+					and(
+						eq(employee.isActive, false),
+						isNotNull(employeeWorkBalance.id),
+						or(
+							eq(employeeWorkBalance.isDirty, true),
+							// LEAST ignores NULL, so an unknown employment end must not reach it.
+							sql`(${employmentEndLocalDate} is not null and ${employeeWorkBalance.computedThroughDate} < least(${employeeLocalCutoffDate}, ${employmentEndLocalDate}))`,
+						),
+					),
 				),
 			),
 		)

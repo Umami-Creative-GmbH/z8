@@ -1,6 +1,6 @@
 "use client";
 
-import { IconCash, IconLoader2, IconScale } from "@tabler/icons-react";
+import { IconCash, IconFlag, IconLoader2, IconScale } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -13,24 +13,31 @@ import { cn } from "@/lib/utils";
 import { formatSignedWorkBalance, getWorkBalanceStatus } from "@/lib/work-balance/format";
 import { CancelBalanceAdjustmentDialog } from "./cancel-balance-adjustment-dialog";
 import { RecordOvertimePayoutDialog } from "./record-overtime-payout-dialog";
+import { SetOpeningBalanceDialog } from "./set-opening-balance-dialog";
 import { isRefusal, useEmployeeWorkBalance } from "./use-employee-work-balance";
 
 /**
  * The Work balance section of an employee's settings page (#993): the current
  * work balance, the history of balance adjustments, and recording and
- * cancelling overtime payouts. Owners and admins, and payroll grant holders
- * on the payroll area's Work balances page (#995), record and cancel; managers
- * see it read-only for the employees they manage (#996). The server decides:
- * a viewer it refuses sees nothing.
+ * cancelling overtime payouts and opening balances (#997). Owners and admins,
+ * and payroll grant holders on the payroll area's Work balances page (#995),
+ * record and cancel; managers see it read-only for the employees they manage
+ * (#996). The server decides: a viewer it refuses sees nothing.
  */
 export function EmployeeWorkBalanceSection({ employeeId }: { employeeId: string }) {
 	const { t } = useTranslate();
 	const label = useBalanceAdjustmentLabels();
-	const { section, recordPayout, cancelAdjustment } = useEmployeeWorkBalance(employeeId);
+	const { section, recordPayout, setOpeningBalance, cancelAdjustment } =
+		useEmployeeWorkBalance(employeeId);
 	const [isRecording, setIsRecording] = useState(false);
+	const [isSettingOpeningBalance, setIsSettingOpeningBalance] = useState(false);
 	const [cancelling, setCancelling] = useState<{ id: string; summary: string } | null>(null);
 	const data = section.data;
 	const balance = data?.balance ?? null;
+	const hasOpeningBalance =
+		data?.adjustments.some(
+			(adjustment) => adjustment.kind === "opening_balance" && !adjustment.cancellation,
+		) ?? false;
 	const status = balance ? getWorkBalanceStatus(balance.balanceMinutes) : "neutral";
 	const canManage = data?.canManage ?? false;
 
@@ -50,15 +57,25 @@ export function EmployeeWorkBalanceSection({ employeeId }: { employeeId: string 
 					<CardDescription>
 						{t(
 							"settings.employees.workBalance.description",
-							"Completed work minus required time, together with overtime payouts. Payouts are never edited: a mistaken one is cancelled.",
+							"Completed work minus required time, together with the opening balance and overtime payouts. Adjustments are never edited: a mistaken one is cancelled.",
 						)}
 					</CardDescription>
 				</div>
 				{canManage ? (
-					<Button type="button" variant="outline" onClick={() => setIsRecording(true)}>
-						<IconCash className="size-4" aria-hidden="true" />
-						{t("settings.employees.workBalance.recordPayout", "Record overtime payout")}
-					</Button>
+					<div className="flex flex-wrap gap-2">
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => setIsSettingOpeningBalance(true)}
+						>
+							<IconFlag className="size-4" aria-hidden="true" />
+							{t("settings.employees.workBalance.setOpeningBalance", "Set opening balance")}
+						</Button>
+						<Button type="button" variant="outline" onClick={() => setIsRecording(true)}>
+							<IconCash className="size-4" aria-hidden="true" />
+							{t("settings.employees.workBalance.recordPayout", "Record overtime payout")}
+						</Button>
+					</div>
 				) : null}
 			</CardHeader>
 			<CardContent className="space-y-6">
@@ -123,6 +140,15 @@ export function EmployeeWorkBalanceSection({ employeeId }: { employeeId: string 
 				)}
 			</CardContent>
 
+			{data?.canManage ? (
+				<SetOpeningBalanceDialog
+					open={isSettingOpeningBalance}
+					onOpenChange={setIsSettingOpeningBalance}
+					today={data.today}
+					replacesCurrent={hasOpeningBalance}
+					onSet={(input) => setOpeningBalance.mutateAsync(input)}
+				/>
+			) : null}
 			{data?.canManage ? (
 				<RecordOvertimePayoutDialog
 					open={isRecording}

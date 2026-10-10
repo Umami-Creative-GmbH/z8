@@ -73,6 +73,27 @@ function notPermitted() {
 	);
 }
 
+/**
+ * Whether the signed-in user may record balance adjustments for the employee
+ * in the given organization: the same rule as
+ * `requireBalanceAdjustmentWriter({ employeeId })` (owners and admins, and a
+ * payroll grant holder covering the employee), without throwing. Other
+ * screens use it to decide whether to offer a payout, such as the final payout
+ * in the offboarding review (#1002); recording re-checks.
+ */
+export async function mayWriteBalanceAdjustments(input: {
+	organizationId: string;
+	employeeId: string;
+}): Promise<boolean> {
+	try {
+		const writer = await requireBalanceAdjustmentWriter({ employeeId: input.employeeId });
+		return writer.organizationId === input.organizationId;
+	} catch (error) {
+		if (error instanceof BalanceAdjustmentRefusal) return false;
+		throw error;
+	}
+}
+
 /** An actor who may see an employee's balance adjustments; `canManage` also records and cancels. */
 export type BalanceAdjustmentViewer = OrganizationActor & { canManage: boolean };
 

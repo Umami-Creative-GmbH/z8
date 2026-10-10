@@ -287,6 +287,45 @@ describe("balance adjustments seen by employees and managers (#996)", () => {
 		expect(emailsTo(leaver.userId)).toEqual([]);
 	});
 
+	it("notifies the employee of an opening balance set, replaced and cancelled", async () => {
+		const openingDay = today.subtract({ days: 5 }).toString();
+		async function setOpeningBalance(hours: number, reason: string) {
+			actAs(admin.userId);
+			const result = await actions.setOpeningBalanceAction({
+				employeeId: employee.employeeId,
+				day: openingDay,
+				negative: false,
+				hours,
+				minutes: 0,
+				reason,
+			});
+			if (!result.success) throw new Error(`Opening balance refused: ${result.code}`);
+			return result.data.adjustmentId;
+		}
+
+		const first = await setOpeningBalance(10, "Carried over from the old system");
+		const second = await setOpeningBalance(8, "Corrected figure");
+		await cancel(second);
+
+		const rows = await notifications();
+		expect(rows.map((row) => [row.user_id, row.type, row.entity_id, row.title])).toEqual([
+			[employee.userId, "work_balance_adjustment_recorded", first, "Opening balance recorded"],
+			// Replacing cancels the one in effect with the new reason, then records the new one.
+			[employee.userId, "work_balance_adjustment_cancelled", first, "Opening balance cancelled"],
+			[employee.userId, "work_balance_adjustment_recorded", second, "Opening balance recorded"],
+			[employee.userId, "work_balance_adjustment_cancelled", second, "Opening balance cancelled"],
+		]);
+		expect(rows.map((row) => row.message)).toEqual([
+			expect.stringMatching(/^An opening balance of \+10:00h for .+ was recorded/u),
+			expect.stringMatching(/^The opening balance of \+10:00h .+ Reason: Corrected figure$/u),
+			expect.stringMatching(/^An opening balance of \+8:00h for .+ was recorded/u),
+			expect.stringMatching(
+				/^The opening balance of \+8:00h .+ Reason: Recorded for the wrong month$/u,
+			),
+		]);
+		await vi.waitFor(() => expect(emailsTo(employee.userId)).toHaveLength(4));
+	});
+
 	it("shows employees their own history, cancelled adjustments with reasons, and no one else's", async () => {
 		const cancelled = await recordPayout(employee.employeeId, 2);
 		await cancel(cancelled);

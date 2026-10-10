@@ -426,6 +426,7 @@ describe("vacation settings scope actions", () => {
 				requiresWorkTime: false,
 				requiresApproval: true,
 				countsAgainstVacation: true,
+				drawsOnWorkBalance: false,
 				color: "#2563eb",
 				isActive: true,
 			},
@@ -543,6 +544,86 @@ describe("vacation settings scope actions", () => {
 				isActive: false,
 			}),
 		);
+	});
+
+	it.each([
+		{ countsAgainstVacation: true, requiresWorkTime: false },
+		{ countsAgainstVacation: false, requiresWorkTime: true },
+	])("refuses a category that draws on the work balance with %o", async (combined) => {
+		mockState.actor.accessTier = "orgAdmin";
+
+		const created = await createAbsenceCategory({
+			organizationId: "org-1",
+			type: "custom",
+			name: "Overtime off",
+			requiresApproval: true,
+			drawsOnWorkBalance: true,
+			...combined,
+		});
+		const updated = await updateAbsenceCategory("absence-category-1", {
+			type: "custom",
+			name: "Overtime off",
+			requiresApproval: true,
+			drawsOnWorkBalance: true,
+			isActive: true,
+			...combined,
+		});
+
+		for (const result of [created, updated]) {
+			expect(result).toMatchObject({
+				success: false,
+				code: "ConflictError",
+				error:
+					'"Draws on work balance" cannot be combined with "Counts against vacation" or "Requires work time".',
+			});
+		}
+		expect(mockState.insertValues).not.toHaveBeenCalled();
+		expect(mockState.updateSet).not.toHaveBeenCalled();
+	});
+
+	it("creates a category that draws on the work balance", async () => {
+		mockState.actor.accessTier = "orgAdmin";
+		mockState.insertQueue = [[{ id: "absence-category-2" }]];
+
+		const result = await createAbsenceCategory({
+			organizationId: "org-1",
+			type: "custom",
+			name: "Overtime off",
+			requiresWorkTime: false,
+			requiresApproval: true,
+			countsAgainstVacation: false,
+			drawsOnWorkBalance: true,
+		});
+
+		expect(result).toMatchObject({ success: true });
+		expect(mockState.insertValues).toHaveBeenCalledWith(
+			expect.objectContaining({ drawsOnWorkBalance: true, countsAgainstVacation: false }),
+		);
+	});
+
+	it("rejects a work balance rule update for a category used by existing absences", async () => {
+		mockState.actor.accessTier = "orgAdmin";
+		mockState.absenceCategoryRows = [
+			{
+				...mockState.absenceCategoryRows[0],
+				countsAgainstVacation: false,
+			},
+		];
+		mockState.selectQueue = [[{ id: "absence-1" }]];
+
+		const result = await updateAbsenceCategory("absence-category-1", {
+			type: "vacation",
+			name: "Vacation",
+			requiresWorkTime: false,
+			requiresApproval: true,
+			countsAgainstVacation: false,
+			drawsOnWorkBalance: true,
+			color: "#2563eb",
+			isActive: true,
+		});
+
+		expect(result).toMatchObject({ success: false, code: "ConflictError" });
+		expect(mockState.updateSet).not.toHaveBeenCalled();
 	});
 
 	it("returns not found when updating, toggling, or deleting absence categories outside the actor organization", async () => {
