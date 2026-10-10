@@ -46,20 +46,33 @@ describe("buildBalanceAdjustmentNotification", () => {
 		});
 	});
 
-	it("sends a cancellation as its own notification, once", () => {
+	it("sends a cancellation as its own notification, once, with the cancellation reason", () => {
 		const params = buildBalanceAdjustmentNotification({
 			organizationId: "org-1",
 			recipientUserId: "user-employee",
 			event: "cancelled",
-			adjustment: payout,
+			adjustment: { ...payout, cancellationReason: "Recorded for the wrong month" },
 			locale: "en-GB",
 		});
 
 		expect(params).toMatchObject({
 			type: "work_balance_adjustment_cancelled",
 			title: "Overtime payout cancelled",
-			message: "The overtime payout of 5:00h for 8 Oct 2026 was cancelled.",
+			message:
+				"The overtime payout of 5:00h for 8 Oct 2026 was cancelled. Reason: Recorded for the wrong month",
 			idempotencyKey: `balance-adjustment:${payout.id}:cancelled:user-employee`,
+		});
+		expect(params.metadata).toMatchObject({
+			i18n: {
+				messageKey: "common:notifications.content.balanceAdjustment.payoutCancelled.message",
+				messageDefault:
+					"The overtime payout of {amount} for {dateRange} was cancelled. Reason: {reason}",
+				params: {
+					amount: "5:00h",
+					dateRange: "8 Oct 2026",
+					reason: "Recorded for the wrong month",
+				},
+			},
 		});
 	});
 
@@ -80,12 +93,18 @@ describe("buildBalanceAdjustmentNotification", () => {
 			organizationId: "org-1",
 			recipientUserId: "user-employee",
 			event: "cancelled",
-			adjustment: { ...payout, kind: "opening_balance", minutes: 750 },
+			adjustment: {
+				...payout,
+				kind: "opening_balance",
+				minutes: 750,
+				cancellationReason: "Wrong employee",
+			},
 			locale: "de",
 		});
 		expect(cancelled).toMatchObject({
 			title: "Opening balance cancelled",
-			message: "The opening balance of +12:30h for 8. Okt. 2026 was cancelled.",
+			message:
+				"The opening balance of +12:30h for 8. Okt. 2026 was cancelled. Reason: Wrong employee",
 		});
 	});
 });

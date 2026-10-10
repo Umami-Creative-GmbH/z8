@@ -3,7 +3,11 @@ import type { db as appDb } from "@/db";
 import { employee } from "@/db/schema";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { createLogger } from "@/lib/logger";
-import { createNotification } from "@/lib/notifications/notification-service";
+import { sendEmailNotification } from "@/lib/notifications/email-notifications";
+import {
+	createNotification,
+	loadNotificationChannelPreferences,
+} from "@/lib/notifications/notification-service";
 import { resolveRecipientNotificationLocale } from "@/lib/notifications/recipient-locale";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
 import { formatAbsenceDateRange } from "@/lib/personnel-file/sick-note-labels";
@@ -15,7 +19,9 @@ import type { BalanceAdjustmentKind } from "./types";
  * recorded or cancelled (#996): one notification per adjustment and event,
  * delivered in-app and on the employee's configured channels (email by
  * default) through the notification service and its preferences. The text
- * names the kind, the day and the time, and nothing about anyone else.
+ * names the kind, the day and the time, and for a cancellation its reason,
+ * and nothing about anyone else. An employee who has left gets the email only,
+ * so a final payout still reaches them.
  */
 
 const logger = createLogger("BalanceAdjustmentNotifications");
@@ -31,6 +37,8 @@ export type NotifiedBalanceAdjustment = {
 	day: string;
 	/** Signed minutes as stored: an overtime payout is negative. */
 	minutes: number;
+	/** Why it was cancelled; named in a cancellation notification. */
+	cancellationReason?: string | null;
 };
 
 /** A committed ledger change the employee is told about. */
@@ -52,7 +60,7 @@ const payoutCancelledCopy = {
 	titleKey: "common:notifications.content.balanceAdjustment.payoutCancelled.title",
 	titleDefault: "Overtime payout cancelled",
 	messageKey: "common:notifications.content.balanceAdjustment.payoutCancelled.message",
-	messageDefault: "The overtime payout of {amount} for {dateRange} was cancelled.",
+	messageDefault: "The overtime payout of {amount} for {dateRange} was cancelled. Reason: {reason}",
 } as const;
 
 const openingBalanceRecordedCopy = {
@@ -67,7 +75,7 @@ const openingBalanceCancelledCopy = {
 	titleKey: "common:notifications.content.balanceAdjustment.openingBalanceCancelled.title",
 	titleDefault: "Opening balance cancelled",
 	messageKey: "common:notifications.content.balanceAdjustment.openingBalanceCancelled.message",
-	messageDefault: "The opening balance of {amount} for {dateRange} was cancelled.",
+	messageDefault: "The opening balance of {amount} for {dateRange} was cancelled. Reason: {reason}",
 } as const;
 
 function copyFor(kind: BalanceAdjustmentKind, event: BalanceAdjustmentNotificationEvent) {
@@ -99,6 +107,7 @@ export function buildBalanceAdjustmentNotification(input: {
 		amount: formatAmount(adjustment),
 		// `dateRange` is the param the in-app reader re-formats from `dateRangeDays`.
 		dateRange: formatAbsenceDateRange(adjustment.day, adjustment.day, input.locale),
+		...(event === "cancelled" ? { reason: adjustment.cancellationReason ?? "" } : {}),
 	};
 	return {
 		userId: input.recipientUserId,
@@ -110,7 +119,8 @@ export function buildBalanceAdjustmentNotification(input: {
 		title: copy.titleDefault,
 		message: copy.messageDefault
 			.replace("{amount}", params.amount)
-			.replace("{dateRange}", params.dateRange),
+			.replace("{dateRange}", params.dateRange)
+			.replace("{reason}", params.reason ?? ""),
 		entityType: "balance_adjustment",
 		entityId: adjustment.id,
 		actionUrl: BALANCE_ADJUSTMENT_NOTIFICATION_PATH,
@@ -131,7 +141,8 @@ const FALLBACK_LOCALE = "en";
  * Notifies each employee of their committed ledger changes, one at a time.
  * Call after the transaction committed. Never throws: the adjustment stands
  * either way. An employee who can no longer use the organization (left or
- * deactivated) is not notified.
+ * deactivated) gets no in-app notification, only the email when their email
+ * preference for the type is on.
  */
 export async function notifyBalanceAdjustmentChanges(
 	database: Pick<typeof appDb, "select">,
@@ -141,20 +152,21 @@ export async function notifyBalanceAdjustmentChanges(
 	try {
 		const employeeIds = [...new Set(input.changes.map((change) => change.employeeId))];
 		const recipients = await database
-			.select({ employeeId: employee.id, userId: employee.userId })
+			.select({
+				employeeId: employee.id,
+				userId: employee.userId,
+				hasAccess: employeeHasOrganizationAccess(),
+			})
 			.from(employee)
 			.where(
-				and(
-					inArray(employee.id, employeeIds),
-					eq(employee.organizationId, input.organizationId),
-					employeeHasOrganizationAccess(),
-				),
+				and(inArray(employee.id, employeeIds), eq(employee.organizationId, input.organizationId)),
 			);
-		const userIdByEmployee = new Map(recipients.map((row) => [row.employeeId, row.userId]));
+		const recipientByEmployee = new Map(recipients.map((row) => [row.employeeId, row]));
 		const locales = new Map<string, string>();
 		for (const change of input.changes) {
-			const recipientUserId = userIdByEmployee.get(change.employeeId);
-			if (!recipientUserId) continue;
+			const recipient = recipientByEmployee.get(change.employeeId);
+			if (!recipient) continue;
+			const recipientUserId = recipient.userId;
 			try {
 				let locale = locales.get(recipientUserId);
 				if (!locale) {
@@ -164,15 +176,18 @@ export async function notifyBalanceAdjustmentChanges(
 					}).catch(() => FALLBACK_LOCALE);
 					locales.set(recipientUserId, locale);
 				}
-				await createNotification(
-					buildBalanceAdjustmentNotification({
-						organizationId: input.organizationId,
-						recipientUserId,
-						event: change.event,
-						adjustment: change.adjustment,
-						locale,
-					}),
-				);
+				const notification = buildBalanceAdjustmentNotification({
+					organizationId: input.organizationId,
+					recipientUserId,
+					event: change.event,
+					adjustment: change.adjustment,
+					locale,
+				});
+				if (recipient.hasAccess) {
+					await createNotification(notification);
+				} else {
+					await emailFormerEmployee(notification);
+				}
 			} catch (error) {
 				logger.error(
 					{ error, adjustmentId: change.adjustment.id, organizationId: input.organizationId },
@@ -186,4 +201,22 @@ export async function notifyBalanceAdjustmentChanges(
 			"Failed to notify employees of balance adjustments",
 		);
 	}
+}
+
+/**
+ * Someone who has left cannot open the app, so they get no in-app notification
+ * (or push or chat message); the email follows their email preference.
+ */
+async function emailFormerEmployee(notification: CreateNotificationParams) {
+	const channels = await loadNotificationChannelPreferences(notification.userId, notification.type);
+	if (!channels.email) return;
+	await sendEmailNotification({
+		userId: notification.userId,
+		organizationId: notification.organizationId,
+		type: notification.type,
+		title: notification.title,
+		message: notification.message,
+		metadata: notification.metadata,
+		actionUrl: notification.actionUrl,
+	});
 }

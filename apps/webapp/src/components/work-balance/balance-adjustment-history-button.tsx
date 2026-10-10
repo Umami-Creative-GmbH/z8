@@ -2,7 +2,7 @@
 
 import { IconHistory, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import {
 	isRefusal,
 	useBalanceAdjustmentSection,
@@ -25,16 +25,36 @@ import { BalanceAdjustmentHistory } from "./balance-adjustment-history";
  */
 export function BalanceAdjustmentHistoryButton({ employeeId }: { employeeId: string }) {
 	const { t } = useTranslate();
-	const [open, setOpen] = useState(false);
-
 	return (
-		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogTrigger asChild>
+		<BalanceAdjustmentHistoryDialog
+			employeeId={employeeId}
+			trigger={
 				<Button type="button" variant="link" size="sm" className="h-auto self-start px-0">
 					<IconHistory className="size-4" aria-hidden="true" />
 					{t("workBalance.adjustments.open", "Balance adjustments")}
 				</Button>
-			</DialogTrigger>
+			}
+		/>
+	);
+}
+
+/**
+ * The read-only history dialog behind any trigger, such as the /team list's
+ * balance badge (#996). `trigger` must be a single focusable element.
+ */
+export function BalanceAdjustmentHistoryDialog({
+	employeeId,
+	trigger,
+}: {
+	employeeId: string;
+	trigger: ReactNode;
+}) {
+	const { t } = useTranslate();
+	const [open, setOpen] = useState(false);
+
+	return (
+		<Dialog open={open} onOpenChange={setOpen}>
+			<DialogTrigger asChild>{trigger}</DialogTrigger>
 			<DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
 				<DialogHeader>
 					<DialogTitle>{t("workBalance.adjustments.title", "Balance adjustments")}</DialogTitle>

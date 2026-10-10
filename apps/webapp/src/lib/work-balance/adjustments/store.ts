@@ -282,7 +282,13 @@ export async function cancelBalanceAdjustment(
 	await refreshAfterCommit({ ...input, dirtyFromDate: cancelled.day });
 	await notifyBalanceAdjustmentChanges(database, {
 		organizationId: input.organizationId,
-		changes: [{ event: "cancelled", employeeId: input.employeeId, adjustment: cancelled }],
+		changes: [
+			{
+				event: "cancelled",
+				employeeId: input.employeeId,
+				adjustment: { ...cancelled, cancellationReason: reason },
+			},
+		],
 	});
 	return { adjustmentId: input.adjustmentId };
 }

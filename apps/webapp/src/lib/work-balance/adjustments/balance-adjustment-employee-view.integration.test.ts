@@ -233,9 +233,12 @@ describe("balance adjustments seen by employees and managers (#996)", () => {
 			[employee.userId, "work_balance_adjustment_recorded", adjustmentId],
 			[employee.userId, "work_balance_adjustment_cancelled", adjustmentId],
 		]);
-		expect(rows[1]?.message).toMatch(/^The overtime payout of 5:00h for .+ was cancelled\.$/u);
+		expect(rows[1]?.message).toMatch(
+			/^The overtime payout of 5:00h for .+ was cancelled\. Reason: Recorded for the wrong month$/u,
+		);
 		await vi.waitFor(() => expect(emailsTo(employee.userId)).toHaveLength(2));
 		expect(emailsTo(employee.userId)[1]).toMatchObject({ subject: "Overtime payout cancelled" });
+		expect(emailsTo(employee.userId)[1]?.html).toContain("Reason: Recorded for the wrong month");
 		// Nobody else hears about it, the admin who recorded it included.
 		expect(vi.mocked(sendEmail).mock.calls).toHaveLength(2);
 	});
@@ -259,13 +262,29 @@ describe("balance adjustments seen by employees and managers (#996)", () => {
 		expect(emailsTo(employee.userId)[0]).toMatchObject({ subject: "Overtime payout cancelled" });
 	});
 
-	it("does not notify an employee who has left", async () => {
+	it("emails an employee who has left, without an in-app notification, per their preference", async () => {
 		const leaver = await fixture.seedEmployee({ isActive: false });
 		await startedAWeekAgoWithTwelveHours(leaver.employeeId);
 
 		await cancel(await recordPayout(leaver.employeeId), leaver.employeeId);
 
 		expect(await notifications()).toEqual([]);
+		await vi.waitFor(() => expect(emailsTo(leaver.userId)).toHaveLength(2));
+		expect(emailsTo(leaver.userId).map((email) => email.subject)).toEqual([
+			"Overtime payout recorded",
+			"Overtime payout cancelled",
+		]);
+		expect(emailsTo(leaver.userId)[1]?.html).toContain("Reason: Recorded for the wrong month");
+
+		// With email turned off for payouts, nothing reaches them.
+		await fixture.pool.query(
+			`insert into notification_preference (user_id, notification_type, channel, enabled, updated_at)
+			 values ($1, 'work_balance_adjustment_recorded', 'email', false, now())`,
+			[leaver.userId],
+		);
+		vi.mocked(sendEmail).mockClear();
+		await recordPayout(leaver.employeeId, 1);
+		expect(emailsTo(leaver.userId)).toEqual([]);
 	});
 
 	it("shows employees their own history, cancelled adjustments with reasons, and no one else's", async () => {
