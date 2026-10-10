@@ -36,11 +36,7 @@ export function formatPairingCode(code: string): string {
  */
 export function normalizePairingCode(input: unknown): string | null {
 	if (typeof input !== "string") return null;
-	const code = input
-		.toUpperCase()
-		.replace(/[\s-]/g, "")
-		.replace(/O/g, "0")
-		.replace(/[IL]/g, "1");
+	const code = input.toUpperCase().replace(/[\s-]/g, "").replace(/O/g, "0").replace(/[IL]/g, "1");
 	if (code.length !== PAIRING_CODE_LENGTH) return null;
 	for (const character of code) {
 		if (!PAIRING_CODE_ALPHABET.includes(character)) return null;

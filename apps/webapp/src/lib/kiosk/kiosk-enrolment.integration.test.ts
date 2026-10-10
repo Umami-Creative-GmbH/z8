@@ -294,15 +294,17 @@ describe("kiosk enrolment on PostgreSQL", () => {
 	it("stores the token and the pairing code only as hashes", async () => {
 		const created = await createdKiosk();
 		const codeAtRest = created.pairingCode.replace("-", "");
-		const before = await pool.query("select row_to_json(kiosk)::text as row from kiosk where id = $1", [
-			created.kioskId,
-		]);
+		const before = await pool.query(
+			"select row_to_json(kiosk)::text as row from kiosk where id = $1",
+			[created.kioskId],
+		);
 		expect(before.rows[0].row).not.toContain(codeAtRest);
 
 		const token = await pairedToken(created.pairingCode);
-		const after = await pool.query("select row_to_json(kiosk)::text as row from kiosk where id = $1", [
-			created.kioskId,
-		]);
+		const after = await pool.query(
+			"select row_to_json(kiosk)::text as row from kiosk where id = $1",
+			[created.kioskId],
+		);
 		expect(after.rows[0].row).not.toContain(token);
 		expect(after.rows[0].row).not.toContain(codeAtRest);
 	});

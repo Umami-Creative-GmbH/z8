@@ -13,7 +13,10 @@ vi.mock("@/lib/rate-limit", () => ({
 	checkRateLimit: mocks.checkRateLimit,
 	getClientIp: () => "203.0.113.7",
 	createRateLimitResponse: (result: { retryAfter: number }) =>
-		Response.json({ error: "Too Many Requests" }, { status: 429, headers: { "Retry-After": String(result.retryAfter) } }),
+		Response.json(
+			{ error: "Too Many Requests" },
+			{ status: 429, headers: { "Retry-After": String(result.retryAfter) } },
+		),
 }));
 
 vi.mock("@/lib/kiosk/store", () => ({
@@ -54,7 +57,12 @@ describe("POST /api/kiosk/pair", () => {
 	});
 
 	it("counts malformed attempts against the limit too", async () => {
-		mocks.checkRateLimit.mockResolvedValue({ allowed: true, remaining: 9, resetAt: 0, retryAfter: 0 });
+		mocks.checkRateLimit.mockResolvedValue({
+			allowed: true,
+			remaining: 9,
+			resetAt: 0,
+			retryAfter: 0,
+		});
 
 		const response = await pair("nope");
 

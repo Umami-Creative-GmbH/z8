@@ -164,9 +164,7 @@ export async function revokeKioskAction(input: {
 	return runKioskAction("kiosk.revoke", async (db) => {
 		const { organizationId, userId } = await requireKioskAdmin();
 		const kioskId = parseUuid(input?.kioskId, "kiosk_not_found");
-		await db.transaction((tx) =>
-			revokeKiosk(tx, { organizationId, actorUserId: userId, kioskId }),
-		);
+		await db.transaction((tx) => revokeKiosk(tx, { organizationId, actorUserId: userId, kioskId }));
 		revalidatePath(SETTINGS_PATH);
 		return { kioskId };
 	});
