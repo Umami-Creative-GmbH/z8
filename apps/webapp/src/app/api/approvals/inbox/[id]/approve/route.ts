@@ -9,6 +9,8 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
+import { isDeputyDecisionEntityType } from "@/lib/approvals/deputy/deputy-decision";
+import { coversCurrentApprover } from "@/lib/approvals/deputy/deputy-decision-store";
 import {
 	type ApprovalDecisionDiagnosticStage,
 	buildApprovalDecisionFailureLog,
@@ -155,7 +157,20 @@ export async function POST(
 					})
 				: false;
 
-		if (!isAssignedApprover && !isEligibleManager && !canManageApprovals) {
+		// The absent approver's covering deputy (#1016); the owners judge the
+		// right again inside the decision transaction.
+		const isCoveringDeputy =
+			!isAssignedApprover &&
+			!isEligibleManager &&
+			!canManageApprovals &&
+			isDeputyDecisionEntityType(request.entityType) &&
+			(await coversCurrentApprover(db, {
+				organizationId: currentEmployee.organizationId,
+				approverEmployeeId: request.approverId,
+				actorEmployeeId: currentEmployee.id,
+			}));
+
+		if (!isAssignedApprover && !isEligibleManager && !canManageApprovals && !isCoveringDeputy) {
 			return NextResponse.json(
 				{ error: "Approval not found" },
 				{ status: 404 },
@@ -199,6 +214,7 @@ export async function POST(
 							},
 						]
 					: [],
+			...(isCoveringDeputy ? { coveredApproverIds: [request.approverId] } : {}),
 		});
 
 		logger.info(

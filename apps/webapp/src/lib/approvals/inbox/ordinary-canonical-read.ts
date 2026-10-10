@@ -161,6 +161,8 @@ interface SelectOrdinaryCanonicalApprovalsInput {
 	approverId: string;
 	includeAllApprovers?: boolean;
 	eligibleApprovalScopes?: EligibleApprovalScope[];
+	/** Absent approvers the viewer covers for (#1016). */
+	coveredApproverIds?: string[];
 	search?: string;
 	teamId?: string;
 	now?: Date;
@@ -380,6 +382,7 @@ function visible(
 ) {
 	if (input.includeAllApprovers) return true;
 	if (row.assignment.approverEmployeeId === input.approverId) return true;
+	if (input.coveredApproverIds?.includes(row.assignment.approverEmployeeId)) return true;
 	return (
 		input.eligibleApprovalScopes?.some(
 			(scope) =>
@@ -733,6 +736,15 @@ function candidateVisibility(input: OrdinaryCanonicalLoadInput): SQL {
 				]
 			: [],
 	);
+	// The absent approvers this viewer covers for (#1016).
+	if (input.coveredApproverIds && input.coveredApproverIds.length > 0) {
+		eligible.push(
+			sql`assignment.approver_employee_id in (${sql.join(
+				input.coveredApproverIds.map((id) => sql`${id}::uuid`),
+				sql`, `,
+			)})`,
+		);
+	}
 	return eligible.length > 0
 		? sql`(assignment.approver_employee_id = ${input.approverId}::uuid or ${sql.join(eligible, sql` or `)})`
 		: sql`assignment.approver_employee_id = ${input.approverId}::uuid`;

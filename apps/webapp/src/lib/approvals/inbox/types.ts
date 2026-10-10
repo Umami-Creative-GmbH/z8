@@ -70,6 +70,17 @@ export interface ApprovalInboxCapabilities {
 	requiresDetailReview?: boolean;
 	/** The viewer requested this; someone else decides it, so every decision is off (#686). */
 	ownRequest?: boolean;
+	/**
+	 * The viewer covers for this item's approver but already decided an
+	 * earlier stage of it (four-eyes, #1016); every decision is off.
+	 */
+	decidedEarlierStage?: boolean;
+}
+
+/** An absent approver the viewer covers for right now (#1016). */
+export interface ApprovalInboxCover {
+	approverId: string;
+	approverName: string;
 }
 
 export interface ApprovalInboxItem {
@@ -84,6 +95,8 @@ export interface ApprovalInboxItem {
 	timing: ApprovalInboxTiming;
 	triage: ApprovalInboxTriage;
 	capabilities: ApprovalInboxCapabilities;
+	/** Assigned to an absent approver the viewer covers for: their "Covering for" section (#1016). */
+	coveringFor?: ApprovalInboxCover;
 }
 
 /**
@@ -208,6 +221,8 @@ export interface ApprovalInboxListResult {
 	counts: Record<ApprovalInboxType, number>;
 	supportedTypes: ApprovalInboxType[];
 	warnings: ApprovalInboxWarning[];
+	/** One "Covering for" section per covered approver, with their pending count (#1016). */
+	covering?: Array<ApprovalInboxCover & { count: number }>;
 }
 
 export interface ApprovalInboxDecisionSuccess {

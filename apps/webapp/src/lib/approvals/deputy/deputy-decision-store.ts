@@ -13,10 +13,12 @@ import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/tempo
 import { deriveCommandDecisionOutcome } from "../evidence/decision-outcome";
 import type { ApprovalCommandResult } from "../workflow/ports";
 import type { ApprovalWorkflowCommand } from "../workflow/state-machine";
-import { loadCover } from "./covering-store";
+import { loadCover, loadCoveredApprovers } from "./covering-store";
 import {
 	type ActingFor,
+	type DeputyDecisionEntityType,
 	decideDeputyRight,
+	isDeputyDecisionEntityType,
 	deputyActorLabel,
 	deputyDecisionRefusalError,
 } from "./deputy-decision";
@@ -31,20 +33,13 @@ import {
 type Database = typeof db;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 export type DeputyDecisionExecutor = Pick<Database | Transaction, "select" | "insert">;
-export type DeputyDecisionReader = Pick<Database | Transaction, "select">;
+export type DeputyDecisionReader = Pick<Database | Transaction, "select" | "selectDistinct">;
 
-export type DeputyDecisionEntityType = "absence_entry" | "time_entry" | "travel_expense_report";
-
-/** The approval kinds a covering deputy may decide (spec #802). */
-export const DEPUTY_DECISION_ENTITY_TYPES: readonly DeputyDecisionEntityType[] = [
-	"absence_entry",
-	"time_entry",
-	"travel_expense_report",
-];
-
-export function isDeputyDecisionEntityType(value: string): value is DeputyDecisionEntityType {
-	return (DEPUTY_DECISION_ENTITY_TYPES as readonly string[]).includes(value);
-}
+export {
+	DEPUTY_DECISION_ENTITY_TYPES,
+	type DeputyDecisionEntityType,
+	isDeputyDecisionEntityType,
+} from "./deputy-decision";
 
 /**
  * Whether the actor approved or rejected an earlier step of the legacy chain
@@ -82,6 +77,41 @@ export async function legacyDecidedEarlierStage(
 		)
 		.limit(1);
 	return earlier !== undefined;
+}
+
+/**
+ * Of these approval requests, the ones whose chain has an earlier step the
+ * deputy decided (the inbox four-eyes mark). Compatibility rows of canonical
+ * workflows keep their chain steps too, so this covers both authorities for
+ * every request-backed item.
+ */
+export async function loadDeputyDecidedEarlierStages(
+	executor: DeputyDecisionReader,
+	input: { organizationId: string; deputyEmployeeId: string; approvalRequestIds: readonly string[] },
+): Promise<Set<string>> {
+	if (input.approvalRequestIds.length === 0) return new Set();
+	const current = aliasedTable(approvalChainStageInstance, "current_stage");
+	const earlier = aliasedTable(approvalChainStageInstance, "earlier_stage");
+	const rows = await executor
+		.selectDistinct({ approvalRequestId: current.approvalRequestId })
+		.from(current)
+		.innerJoin(
+			earlier,
+			and(
+				eq(earlier.organizationId, input.organizationId),
+				eq(earlier.chainInstanceId, current.chainInstanceId),
+				lt(earlier.stepOrder, current.stepOrder),
+				eq(earlier.decidedBy, input.deputyEmployeeId),
+				inArray(earlier.status, ["approved", "rejected"]),
+			),
+		)
+		.where(
+			and(
+				eq(current.organizationId, input.organizationId),
+				inArray(current.approvalRequestId, [...input.approvalRequestIds]),
+			),
+		);
+	return new Set(rows.flatMap((row) => (row.approvalRequestId ? [row.approvalRequestId] : [])));
 }
 
 /**
@@ -308,10 +338,6 @@ export interface DeputyDecisionView {
 	actingFor: { employeeId: string; name: string };
 }
 
-const deputyEmployee = aliasedTable(employee, "deputy_employee");
-const deputyUser = aliasedTable(user, "deputy_user");
-const actingForEmployee = aliasedTable(employee, "acting_for_employee");
-const actingForUser = aliasedTable(user, "acting_for_user");
 
 /** Deputy decisions on these subjects (entity ids), oldest first. */
 export async function loadDeputyDecisionsForEntities(
@@ -319,6 +345,10 @@ export async function loadDeputyDecisionsForEntities(
 	input: { organizationId: string; entityIds: readonly string[] },
 ): Promise<DeputyDecisionView[]> {
 	if (input.entityIds.length === 0) return [];
+	const deputyEmployee = aliasedTable(employee, "deputy_employee");
+	const deputyUser = aliasedTable(user, "deputy_user");
+	const actingForEmployee = aliasedTable(employee, "acting_for_employee");
+	const actingForUser = aliasedTable(user, "acting_for_user");
 	const rows = await executor
 		.select({
 			approvalRequestId: approvalDeputyDecision.approvalRequestId,
@@ -409,6 +439,107 @@ export async function asDeputyDecider<T extends { organizationId: string; user: 
 		...decider,
 		user: { ...decider.user, name: deputyActorLabel(decider.user.name, actingForName) },
 	};
+}
+
+/**
+ * The absent approvers the deputy covers for at the instant, with their
+ * names: one "Covering for" inbox section each (#1016).
+ */
+export async function loadInboxCovers(
+	executor: DeputyDecisionReader,
+	input: { organizationId: string; deputyEmployeeId: string; at: Instant },
+): Promise<Array<{ approverId: string; approverName: string; absenceId: string }>> {
+	const covers = await loadCoveredApprovers(executor, {
+		organizationId: input.organizationId,
+		deputyId: input.deputyEmployeeId,
+		at: input.at,
+	});
+	if (covers.length === 0) return [];
+	const names = await executor
+		.select({ id: employee.id, name: user.name })
+		.from(employee)
+		.innerJoin(user, eq(user.id, employee.userId))
+		.where(
+			and(
+				eq(employee.organizationId, input.organizationId),
+				inArray(
+					employee.id,
+					covers.map((cover) => cover.approverId),
+				),
+			),
+		);
+	const nameById = new Map(names.map((row) => [row.id, row.name]));
+	return covers.map((cover) => ({
+		approverId: cover.approverId,
+		approverName: nameById.get(cover.approverId) ?? "",
+		absenceId: cover.absenceId,
+	}));
+}
+
+export type DeputyDetailAccess =
+	| {
+			kind: "covering";
+			cover: { approverId: string; approverName: string };
+			decidedEarlierStage: boolean;
+	  }
+	| { kind: "decided_as_deputy" };
+
+/**
+ * Whether a viewer without own rights may open this request as a deputy:
+ * while covering for its pending approver, or read-only after deciding it as
+ * that approver's deputy (default 9). Null: no deputy access.
+ */
+export async function loadDeputyDetailAccess(
+	executor: DeputyDecisionReader,
+	input: {
+		organizationId: string;
+		approvalRequestId: string;
+		entityType: string;
+		status: string;
+		approverEmployeeId: string;
+		deputyEmployeeId: string;
+		at: Instant;
+	},
+): Promise<DeputyDetailAccess | null> {
+	if (!isDeputyDecisionEntityType(input.entityType)) return null;
+	if (input.status === "pending" && input.approverEmployeeId !== input.deputyEmployeeId) {
+		const cover = await loadCover(executor, {
+			organizationId: input.organizationId,
+			approverId: input.approverEmployeeId,
+			deputyId: input.deputyEmployeeId,
+			at: input.at,
+		});
+		if (cover) {
+			const [decidedEarlier, approverName] = await Promise.all([
+				legacyDecidedEarlierStage(executor, {
+					organizationId: input.organizationId,
+					approvalRequestId: input.approvalRequestId,
+					actorEmployeeId: input.deputyEmployeeId,
+				}),
+				loadEmployeeName(executor, {
+					organizationId: input.organizationId,
+					employeeId: input.approverEmployeeId,
+				}),
+			]);
+			return {
+				kind: "covering",
+				cover: { approverId: input.approverEmployeeId, approverName: approverName ?? "" },
+				decidedEarlierStage: decidedEarlier,
+			};
+		}
+	}
+	const [decided] = await executor
+		.select({ id: approvalDeputyDecision.id })
+		.from(approvalDeputyDecision)
+		.where(
+			and(
+				eq(approvalDeputyDecision.organizationId, input.organizationId),
+				eq(approvalDeputyDecision.approvalRequestId, input.approvalRequestId),
+				eq(approvalDeputyDecision.deputyEmployeeId, input.deputyEmployeeId),
+			),
+		)
+		.limit(1);
+	return decided ? { kind: "decided_as_deputy" } : null;
 }
 
 /** The approver's display name, org-scoped; null when unknown. */

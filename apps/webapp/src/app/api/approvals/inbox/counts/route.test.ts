@@ -22,9 +22,14 @@ const mockState = vi.hoisted(() => ({
 	findEmployee: vi.fn(),
 	getEligibleApprovalScopesForManager: vi.fn(),
 	getApprovalInboxCounts: vi.fn(),
+	loadInboxCovers: vi.fn(async (): Promise<unknown[]> => []),
 	logger: {
 		error: vi.fn(),
 	},
+}));
+
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
+	loadInboxCovers: mockState.loadInboxCovers,
 }));
 
 vi.mock("next/headers", () => ({
@@ -162,6 +167,7 @@ describe("GET /api/approvals/inbox/counts", () => {
 			limit: 1,
 			eligibleApprovalScopes: [],
 			includeAllApprovers: undefined,
+			covering: [],
 		});
 	});
 
@@ -184,6 +190,7 @@ describe("GET /api/approvals/inbox/counts", () => {
 			limit: 1,
 			eligibleApprovalScopes: [],
 			includeAllApprovers: true,
+			covering: [],
 		});
 	});
 
@@ -209,6 +216,7 @@ describe("GET /api/approvals/inbox/counts", () => {
 			limit: 1,
 			eligibleApprovalScopes,
 			includeAllApprovers: undefined,
+			covering: [],
 		});
 	});
 });

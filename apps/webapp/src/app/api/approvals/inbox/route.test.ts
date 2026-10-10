@@ -30,9 +30,14 @@ const mockState = vi.hoisted(() => ({
 	findEmployee: vi.fn(),
 	getEligibleApprovalScopesForManager: vi.fn(async () => []),
 	getApprovalInboxList: vi.fn(),
+	loadInboxCovers: vi.fn(async (): Promise<unknown[]> => []),
 	logger: {
 		error: vi.fn(),
 	},
+}));
+
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
+	loadInboxCovers: mockState.loadInboxCovers,
 }));
 
 vi.mock("next/headers", () => ({
@@ -309,6 +314,7 @@ describe("GET /api/approvals/inbox", () => {
 			cursor: undefined,
 			limit: 15,
 			eligibleApprovalScopes: [],
+			covering: [],
 		});
 	});
 
@@ -426,6 +432,23 @@ describe("GET /api/approvals/inbox", () => {
 		expect(mockState.accessibleByDrizzle).not.toHaveBeenCalled();
 		expect(mockState.getApprovalInboxList).toHaveBeenCalledWith(
 			expect.objectContaining({ includeAllApprovers: true }),
+		);
+	});
+
+	it("lists the approvals of absent approvers the employee covers for (#1016)", async () => {
+		const covers = [{ approverId: "absent-1", approverName: "Xenia", absenceId: "absence-1" }];
+		mockState.loadInboxCovers.mockResolvedValueOnce(covers);
+
+		const response = await GET(createRequest("https://app.example.com/api/approvals/inbox"));
+
+		expect(response.status).toBe(200);
+		expect(mockState.loadInboxCovers).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-1",
+			deputyEmployeeId: "employee-1",
+			at: expect.anything(),
+		});
+		expect(mockState.getApprovalInboxList).toHaveBeenCalledWith(
+			expect.objectContaining({ covering: covers }),
 		);
 	});
 

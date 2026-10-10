@@ -9,6 +9,8 @@ const state = vi.hoisted(() => ({
 	isEligibleManagerForApprovalRequest: vi.fn(async () => false),
 	getEligibleApprovalScopesForManager: vi.fn(async () => []),
 	getApprovalInboxDetail: vi.fn(),
+	loadDeputyDetailAccess: vi.fn(async (): Promise<unknown> => null),
+	loadInboxCovers: vi.fn(async (): Promise<unknown[]> => []),
 }));
 
 vi.mock("@/lib/auth-helpers", () => ({ getAbility: state.getAbility }));
@@ -26,6 +28,10 @@ vi.mock("@/db", () => ({
 }));
 vi.mock("./read-service", () => ({
 	getApprovalInboxDetail: state.getApprovalInboxDetail,
+}));
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
+	loadDeputyDetailAccess: state.loadDeputyDetailAccess,
+	loadInboxCovers: state.loadInboxCovers,
 }));
 
 const { loadAuthorizedApprovalDetail } = await import("./authorized-detail");
@@ -89,6 +95,96 @@ describe("loadAuthorizedApprovalDetail", () => {
 		).resolves.toEqual({ status: "found", detail });
 	});
 
+	describe("covering deputy (#1016)", () => {
+		const absentApproversRequest = {
+			id: "approval-1",
+			entityType: "time_entry",
+			approverId: "absent-1",
+			requestedBy: "requester-1",
+			organizationId: "org-1",
+			status: "pending",
+		};
+		const pendingDetail = {
+			item: {
+				id: "approval-1",
+				type: "time_entry",
+				status: "pending",
+				requester: { id: "requester-1" },
+				capabilities: { canApprove: true, canReject: true, canBulkApprove: true },
+			},
+			sections: [],
+			actions: { canApprove: true, canReject: true, canBulkApprove: true },
+		};
+
+		it("opens the absent approver's request to their covering deputy, in that section", async () => {
+			state.findApprovalRequest.mockResolvedValue(absentApproversRequest);
+			state.getApprovalInboxDetail.mockResolvedValue(pendingDetail);
+			state.loadDeputyDetailAccess.mockResolvedValueOnce({
+				kind: "covering",
+				cover: { approverId: "absent-1", approverName: "Xenia" },
+				decidedEarlierStage: false,
+			});
+
+			const result = await loadAuthorizedApprovalDetail({
+				userId: "user-1",
+				organizationId: "org-1",
+				approvalId: "approval-1",
+			});
+
+			expect(state.loadDeputyDetailAccess).toHaveBeenCalledWith(expect.anything(), {
+				organizationId: "org-1",
+				approvalRequestId: "approval-1",
+				entityType: "time_entry",
+				status: "pending",
+				approverEmployeeId: "absent-1",
+				deputyEmployeeId: "employee-1",
+				at: expect.anything(),
+			});
+			expect(result).toMatchObject({
+				status: "found",
+				detail: {
+					item: { coveringFor: { approverId: "absent-1", approverName: "Xenia" } },
+					actions: { canApprove: true },
+				},
+			});
+		});
+
+		it("shows a four-eyes request without decisions", async () => {
+			state.findApprovalRequest.mockResolvedValue(absentApproversRequest);
+			state.getApprovalInboxDetail.mockResolvedValue(pendingDetail);
+			state.loadDeputyDetailAccess.mockResolvedValueOnce({
+				kind: "covering",
+				cover: { approverId: "absent-1", approverName: "Xenia" },
+				decidedEarlierStage: true,
+			});
+
+			const result = await loadAuthorizedApprovalDetail({
+				userId: "user-1",
+				organizationId: "org-1",
+				approvalId: "approval-1",
+			});
+
+			expect(result).toMatchObject({
+				status: "found",
+				detail: {
+					actions: { canApprove: false, canReject: false, decidedEarlierStage: true },
+				},
+			});
+		});
+
+		it("refuses someone who neither covers for the approver nor decided it as deputy", async () => {
+			state.findApprovalRequest.mockResolvedValue(absentApproversRequest);
+
+			await expect(
+				loadAuthorizedApprovalDetail({
+					userId: "user-1",
+					organizationId: "org-1",
+					approvalId: "approval-1",
+				}),
+			).resolves.toEqual({ status: "forbidden" });
+		});
+	});
+
 	it("never resolves a canonical target to a compatibility request", async () => {
 		await expect(
 			loadAuthorizedApprovalDetail({
@@ -130,6 +226,7 @@ describe("loadAuthorizedApprovalDetail", () => {
 			approverId: "employee-1",
 			includeAllApprovers: undefined,
 			eligibleApprovalScopes: [],
+			covering: [],
 		});
 	});
 

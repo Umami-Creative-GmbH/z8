@@ -21,10 +21,15 @@ const mockState = vi.hoisted(() => ({
 	findApprovalRequest: vi.fn(),
 	isEligibleManagerForApprovalRequest: vi.fn(async () => false),
 	approveApprovalInboxItem: vi.fn(),
+	coversCurrentApprover: vi.fn(async () => false),
 	logger: {
 		info: vi.fn(),
 		error: vi.fn(),
 	},
+}));
+
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
+	coversCurrentApprover: mockState.coversCurrentApprover,
 }));
 
 vi.mock("drizzle-orm", async (importOriginal) => {
@@ -201,6 +206,58 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 				},
 			],
 		});
+	});
+
+	it("lets the covering deputy of the absent approver approve (#1016)", async () => {
+		mockState.getAbility.mockResolvedValue(createManagerAbility());
+		mockState.coversCurrentApprover.mockResolvedValueOnce(true);
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			targetType: "compatibility_request",
+			entityId: "entity-1",
+			entityType: "time_entry",
+			approverId: "absent-1",
+			requesterEmployeeId: "requester-1",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		const response = await POST(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(200);
+		expect(mockState.coversCurrentApprover).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-1",
+			approverEmployeeId: "absent-1",
+			actorEmployeeId: "employee-1",
+		});
+		expect(mockState.approveApprovalInboxItem).toHaveBeenCalledWith(
+			expect.objectContaining({ coveredApproverIds: ["absent-1"] }),
+		);
+	});
+
+	it("never opens an expense claim to a covering deputy", async () => {
+		mockState.getAbility.mockResolvedValue(createManagerAbility());
+		mockState.coversCurrentApprover.mockResolvedValue(true);
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			targetType: "compatibility_request",
+			entityId: "entity-1",
+			entityType: "travel_expense_claim",
+			approverId: "absent-1",
+			requesterEmployeeId: "requester-1",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		const response = await POST(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(404);
+		expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
+		mockState.coversCurrentApprover.mockResolvedValue(false);
 	});
 
 	it("rejects an active manager when approved membership is absent from the ability", async () => {

@@ -703,6 +703,79 @@ describe("getApprovalInboxListFromSources", () => {
 		]);
 	});
 
+	describe("covering for an absent approver (#1016)", () => {
+		const covering = [{ approverId: "absent-1", approverName: "Xenia Absent" }];
+
+		it("lists the covered approver's approvals in their section, with counts", async () => {
+			const absenceSource = source("absence_entry", [
+				item({ id: "own-approval" }),
+				item({ id: "covered-approval", approverId: "absent-1" }),
+			]);
+			const timeSource = source("time_entry", []);
+			const covered = canonicalItem("covered-canonical", "2026-05-30T09:00:00.000Z", "normal", "low");
+			covered.decisionTarget = { approverId: "absent-1" } as never;
+
+			const result = await getApprovalInboxListFromSources({
+				sources: [absenceSource, timeSource],
+				params: { approverId: "manager-1", organizationId: "org-1", limit: 20, covering },
+				loadCanonicalOrdinaryApprovals: async () => [covered],
+				countCanonicalOrdinaryApprovals: async (input) =>
+					input.approverId === "absent-1" ? 1 : 1,
+				now: new Date("2026-05-31T09:00:00.000Z"),
+			});
+
+			const byId = new Map(result.items.map((entry) => [entry.id, entry]));
+			expect(byId.get("covered-approval")?.coveringFor).toEqual({
+				approverId: "absent-1",
+				approverName: "Xenia Absent",
+			});
+			expect(byId.get("covered-canonical")?.coveringFor?.approverId).toBe("absent-1");
+			expect(byId.get("own-approval")?.coveringFor).toBeUndefined();
+			expect(absenceSource.handler.getApprovals).toHaveBeenCalledWith(
+				expect.objectContaining({ coveredApproverIds: ["absent-1"] }),
+			);
+			expect(absenceSource.handler.getCount).toHaveBeenCalledWith("manager-1", "org-1", {
+				eligibleApprovalScopes: undefined,
+				includeAllApprovers: undefined,
+				coveredApproverIds: ["absent-1"],
+			});
+			// The section's own count: what is assigned to the absent approver.
+			expect(absenceSource.handler.getCount).toHaveBeenCalledWith("absent-1", "org-1", {});
+			expect(result.covering).toEqual([
+				{ approverId: "absent-1", approverName: "Xenia Absent", count: 3 },
+			]);
+		});
+
+		it("shows a request whose earlier stage the deputy decided without decisions", async () => {
+			const result = await getApprovalInboxListFromSources({
+				sources: [
+					source("time_entry", [
+						item({ id: "four-eyes", approvalType: "time_entry", approverId: "absent-1" }),
+						item({ id: "fine", approvalType: "time_entry", approverId: "absent-1" }),
+					]),
+				],
+				params: { approverId: "manager-1", organizationId: "org-1", limit: 20, covering },
+				loadDeputyDecidedEarlierStages: async (input) => {
+					expect(input).toEqual({
+						organizationId: "org-1",
+						deputyEmployeeId: "manager-1",
+						approvalRequestIds: expect.arrayContaining(["four-eyes", "fine"]),
+					});
+					return new Set(["four-eyes"]);
+				},
+			});
+
+			const byId = new Map(result.items.map((entry) => [entry.id, entry]));
+			expect(byId.get("four-eyes")?.capabilities).toMatchObject({
+				canApprove: false,
+				canReject: false,
+				canBulkApprove: false,
+				decidedEarlierStage: true,
+			});
+			expect(byId.get("fine")?.capabilities.canApprove).toBe(true);
+		});
+	});
+
 	it("passes approval visibility options to count handlers", async () => {
 		const absenceSource = source("absence_entry", [item({ id: "approval-1" })]);
 		const eligibleApprovalScopes = [

@@ -816,6 +816,15 @@ describe("ordinary canonical inbox reads", () => {
 		).toHaveLength(1);
 	});
 
+	it("shows the covered approver's assignments to the covering deputy (#1016)", () => {
+		expect(
+			select([row()], { approverId: "deputy", coveredApproverIds: [ids.approver] }),
+		).toHaveLength(1);
+		expect(
+			select([row()], { approverId: "deputy", coveredApproverIds: ["someone-else"] }),
+		).toEqual([]);
+	});
+
 	it("suppresses fallback only for exact active-stage compatibility ownership", () => {
 		const compatibilityRequest = {
 			id: ids.compatibility,

@@ -33,6 +33,23 @@ export interface ActingFor {
 	absenceId: string;
 }
 
+export type DeputyDecisionEntityType = "absence_entry" | "time_entry" | "travel_expense_report";
+
+/**
+ * The approval kinds a covering deputy may list and decide (spec #802):
+ * absences, time approvals (corrections, manual submissions, policy
+ * clock-outs) and travel expense reports. Never expense claims.
+ */
+export const DEPUTY_DECISION_ENTITY_TYPES: readonly DeputyDecisionEntityType[] = [
+	"absence_entry",
+	"time_entry",
+	"travel_expense_report",
+];
+
+export function isDeputyDecisionEntityType(value: string): value is DeputyDecisionEntityType {
+	return (DEPUTY_DECISION_ENTITY_TYPES as readonly string[]).includes(value);
+}
+
 export type DeputyDecisionRefusalReason = "not_covering" | "four_eyes";
 
 export type DeputyDecisionRight =

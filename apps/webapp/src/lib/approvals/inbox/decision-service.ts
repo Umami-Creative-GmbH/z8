@@ -18,6 +18,10 @@ import {
 	ownRequestDecisionError,
 } from "@/lib/approvals/policies/self-decision";
 import {
+	isDeputyDecisionEntityType,
+	isDeputyDecisionRefusal,
+} from "@/lib/approvals/deputy/deputy-decision";
+import {
 	classifyTimeApprovalRequest,
 	type TimeApprovalKind,
 } from "@/lib/approvals/time-request-kind";
@@ -49,6 +53,12 @@ type EligibleApprovalScope = {
 type DecisionVisibilityInput = {
 	includeAllApprovers?: boolean;
 	eligibleApprovalScopes?: EligibleApprovalScope[];
+	/**
+	 * Absent approvers the actor covers for now (#1016): their items of the
+	 * deputy kinds may be attempted; the decision owners judge the deputy right
+	 * again inside the decision transaction.
+	 */
+	coveredApproverIds?: string[];
 };
 type BulkDecisionOutcome =
 	| { status: "succeeded"; success: ApprovalInboxDecisionSuccess }
@@ -176,6 +186,7 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 	reason,
 	includeAllApprovers,
 	eligibleApprovalScopes,
+	coveredApproverIds,
 	resolveHandler = getSupportedInboxHandler,
 	runEffect = defaultDecisionEffectRunner,
 }: {
@@ -185,6 +196,7 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 	reason?: string;
 	includeAllApprovers?: boolean;
 	eligibleApprovalScopes?: EligibleApprovalScope[];
+	coveredApproverIds?: string[];
 	resolveHandler?: (type: string) => ApprovalTypeHandler | null;
 	runEffect?: DecisionEffectRunner;
 }): Promise<ApprovalInboxBulkDecisionResult> {
@@ -198,6 +210,7 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 					actorEmployeeId,
 					includeAllApprovers,
 					eligibleApprovalScopes,
+					coveredApproverIds,
 				})
 			) {
 				return {
@@ -277,6 +290,7 @@ export async function approveApprovalInboxItem({
 	organizationId,
 	includeAllApprovers,
 	eligibleApprovalScopes,
+	coveredApproverIds,
 	acceptedReceiptExceptionItemIds,
 }: {
 	approvalId: string;
@@ -294,6 +308,7 @@ export async function approveApprovalInboxItem({
 		actorEmployeeId,
 		includeAllApprovers,
 		eligibleApprovalScopes,
+		coveredApproverIds,
 	});
 	const handler = getSupportedInboxHandler(request.entityType);
 	if (!handler) {
@@ -317,6 +332,7 @@ export async function rejectApprovalInboxItem({
 	reason,
 	includeAllApprovers,
 	eligibleApprovalScopes,
+	coveredApproverIds,
 }: {
 	approvalId: string;
 	actorEmployeeId: string;
@@ -332,6 +348,7 @@ export async function rejectApprovalInboxItem({
 		actorEmployeeId,
 		includeAllApprovers,
 		eligibleApprovalScopes,
+		coveredApproverIds,
 	});
 	const handler = getSupportedInboxHandler(request.entityType);
 	if (!handler) {
@@ -354,6 +371,7 @@ export async function bulkApproveApprovalInboxItems({
 	organizationId,
 	includeAllApprovers,
 	eligibleApprovalScopes,
+	coveredApproverIds,
 }: {
 	approvalIds: string[];
 	actorEmployeeId: string;
@@ -369,6 +387,7 @@ export async function bulkApproveApprovalInboxItems({
 		action: "approve",
 		includeAllApprovers,
 		eligibleApprovalScopes,
+		coveredApproverIds,
 	});
 
 	return withMissingApprovalFailures(approvalIds, requests, result);
@@ -381,6 +400,7 @@ export async function bulkRejectApprovalInboxItems({
 	reason,
 	includeAllApprovers,
 	eligibleApprovalScopes,
+	coveredApproverIds,
 }: {
 	approvalIds: string[];
 	actorEmployeeId: string;
@@ -398,6 +418,7 @@ export async function bulkRejectApprovalInboxItems({
 		reason,
 		includeAllApprovers,
 		eligibleApprovalScopes,
+		coveredApproverIds,
 	});
 
 	return withMissingApprovalFailures(approvalIds, requests, result);
@@ -770,6 +791,7 @@ function assertCanDecideRequest({
 	actorEmployeeId,
 	includeAllApprovers,
 	eligibleApprovalScopes,
+	coveredApproverIds,
 }: {
 	request: PersistedApprovalRequestForDecision;
 	actorEmployeeId: string;
@@ -780,6 +802,7 @@ function assertCanDecideRequest({
 			actorEmployeeId,
 			includeAllApprovers,
 			eligibleApprovalScopes,
+			coveredApproverIds,
 		})
 	) {
 		return;
@@ -797,11 +820,18 @@ function canDecideRequest({
 	actorEmployeeId,
 	includeAllApprovers,
 	eligibleApprovalScopes,
+	coveredApproverIds,
 }: {
 	request: PersistedApprovalRequestForDecision;
 	actorEmployeeId: string;
 } & DecisionVisibilityInput): boolean {
 	if (request.approverId === actorEmployeeId || includeAllApprovers === true) {
+		return true;
+	}
+	if (
+		coveredApproverIds?.includes(request.approverId) &&
+		isDeputyDecisionEntityType(request.entityType)
+	) {
 		return true;
 	}
 
@@ -832,6 +862,11 @@ function mapDecisionFailure(
 
 	if (message.startsWith("Unsupported approval type")) {
 		return { id, code: "unsupported", message };
+	}
+
+	// Four-eyes for a covering deputy (#1016): a refusal, not a stale request.
+	if (isDeputyDecisionRefusal(message)) {
+		return { id, code: "forbidden", message };
 	}
 
 	if (
@@ -870,7 +905,8 @@ function mapDecisionFailure(
 
 function getSafeAuthorizationMessage(message: string): string {
 	return message === "You are not authorized to decide this request" ||
-		isOwnRequestDecisionRefusal(message)
+		isOwnRequestDecisionRefusal(message) ||
+		isDeputyDecisionRefusal(message)
 		? message
 		: "You are not authorized to decide this request";
 }
