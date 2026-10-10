@@ -84,6 +84,7 @@
       "breakTooLong": "Die Pausendauer muss kürzer sein als Ihre aktuelle Sitzung.",
       "clockAttributionNotAllowed": "Das ausgewählte Projekt oder die ausgewählte Kategorie ist nicht verfügbar",
       "clockCommandRejected": "Der Server hat diese Stempelaktion nicht akzeptiert",
+      "clockConnectionRequired": "In dieser Organisation braucht das Stempeln eine Verbindung. Stellen Sie die Verbindung wieder her und versuchen Sie es erneut.",
       "clockInAppendReview": "Ihr Zeitverlauf muss überprüft werden, bevor Sie sich einstempeln können. Bitte wenden Sie sich an Ihren Administrator.",
       "clockInCollision": "Dieses Einstempeln steht in Konflikt mit einer früheren Anfrage. Bitte aktualisieren und erneut versuchen.",
       "clockInFailed": "Fehler beim Einstempeln",

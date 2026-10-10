@@ -8,7 +8,7 @@ import * as React from "react";
 import { describe, expect, it } from "vitest";
 import { render } from "@/test/render-with-translations";
 
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "./sheet";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "./sheet";
 
 describe("Sheet", () => {
 	it("opens an accessible right-side sheet from its trigger", async () => {
@@ -91,6 +91,55 @@ describe("Sheet", () => {
 
 		expect(overlay?.getAttribute("data-sheet-open")).toBe("false");
 		expect(dialog.getAttribute("data-sheet-open")).toBe("false");
+	});
+
+	it("passes the safe-area insets of the screen edges a side sheet touches (#846)", () => {
+		render(
+			<Sheet defaultOpen>
+				<SheetContent side="right">
+					<SheetTitle>Edge panel</SheetTitle>
+				</SheetContent>
+			</Sheet>,
+		);
+
+		const dialog = screen.getByRole("dialog", { name: "Edge panel" });
+		expect(dialog.className).toContain("[--sheet-inset-top:env(safe-area-inset-top)]");
+		expect(dialog.className).toContain("[--sheet-inset-bottom:env(safe-area-inset-bottom)]");
+	});
+
+	it("lets a bottom sheet clear only the home indicator (#846)", () => {
+		render(
+			<Sheet defaultOpen>
+				<SheetContent side="bottom">
+					<SheetTitle>Bottom panel</SheetTitle>
+				</SheetContent>
+			</Sheet>,
+		);
+
+		const dialog = screen.getByRole("dialog", { name: "Bottom panel" });
+		expect(dialog.className).not.toContain("--sheet-inset-top");
+		expect(dialog.className).toContain("[--sheet-inset-bottom:env(safe-area-inset-bottom)]");
+	});
+
+	it("keeps header, footer and close button clear of the status bar and home indicator (#846)", () => {
+		render(
+			<Sheet defaultOpen>
+				<SheetContent side="right">
+					<SheetHeader>
+						<SheetTitle>Inset panel</SheetTitle>
+					</SheetHeader>
+					<SheetFooter>Footer</SheetFooter>
+				</SheetContent>
+			</Sheet>,
+		);
+
+		const header = document.querySelector('[data-slot="sheet-header"]');
+		const footer = document.querySelector('[data-slot="sheet-footer"]');
+		const close = screen.getByRole("button", { name: "Close" });
+		expect(header?.className).toContain("mt-[var(--sheet-inset-top,0px)]");
+		expect(footer?.className).toContain("mb-[var(--sheet-inset-bottom,0px)]");
+		expect(close.className).toContain("top-[calc(1rem+var(--sheet-inset-top,0px))]");
+		expect(close.className).toContain("pointer-coarse:after:absolute");
 	});
 
 	it("uses wrapper-owned CSS state for opening", async () => {

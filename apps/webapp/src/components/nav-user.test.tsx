@@ -72,6 +72,11 @@ vi.mock("@/lib/auth-client", () => ({
 	authClient: { signOut: vi.fn() },
 }));
 
+const mockNativePush = vi.hoisted(() => ({
+	removeNativePushTokenBeforeSignOut: vi.fn(async () => undefined),
+}));
+vi.mock("@/lib/store-app/native-push", () => mockNativePush);
+
 vi.mock("@/tolgee/shared", () => ({
 	ALL_LANGUAGES: ["en", "de"],
 }));
@@ -156,6 +161,7 @@ vi.mock("sonner", () => ({
 
 const toastErrorMock = vi.mocked(toast.error);
 
+import { authClient } from "@/lib/auth-client";
 import { NavUser } from "./nav-user";
 import { NavUserPreferences } from "./nav-user-preferences";
 
@@ -294,5 +300,18 @@ describe("NavUser", () => {
 		expect(selectedFontSize?.className).toContain("data-checked:bg-accent");
 		expect(selectedFontSize?.className).toContain("pl-2");
 		expect(selectedFontSize?.className).not.toContain("pl-8");
+	});
+
+	it("removes the store app's push token before signing out (#843)", async () => {
+		vi.mocked(authClient.signOut).mockResolvedValue(undefined as never);
+
+		render(<NavUser user={{ id: "user-1", name: "Kai", email: "kai@example.com" }} />);
+		fireEvent.click(screen.getByRole("button", { name: /log out/i }));
+
+		await waitFor(() => expect(authClient.signOut).toHaveBeenCalledOnce());
+		expect(mockNativePush.removeNativePushTokenBeforeSignOut).toHaveBeenCalledOnce();
+		expect(
+			mockNativePush.removeNativePushTokenBeforeSignOut.mock.invocationCallOrder[0],
+		).toBeLessThan(vi.mocked(authClient.signOut).mock.invocationCallOrder[0]);
 	});
 });

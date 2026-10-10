@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLayoutEffect, useRef, useState } from "react";
 import { queryKeys } from "@/lib/query/keys";
+import { getNativePushClient, type NativePushClient } from "@/lib/store-app/native-push";
 
 type PushPermission = "default" | "granted" | "denied" | "unsupported";
 
@@ -35,6 +36,8 @@ interface PushBootstrapState {
 	isSubscribed: boolean;
 	registration: ServiceWorkerRegistration | null;
 	vapidPublicKey: string | null;
+	/** Set in the store app shell: push goes through FCM instead of web push (#843). */
+	nativeClient: NativePushClient | null;
 }
 
 const UNSUPPORTED_PUSH_STATE: PushBootstrapState = {
@@ -43,6 +46,7 @@ const UNSUPPORTED_PUSH_STATE: PushBootstrapState = {
 	isSubscribed: false,
 	registration: null,
 	vapidPublicKey: null,
+	nativeClient: null,
 };
 
 let isBrowserPushActionInFlight = false;
@@ -62,9 +66,27 @@ function invokeCallback(callback: (() => unknown) | undefined) {
 	}
 }
 
+async function loadNativePushBootstrap(
+	nativeClient: NativePushClient,
+): Promise<PushBootstrapState> {
+	const state = await nativeClient.loadState();
+	if (!state.available) return UNSUPPORTED_PUSH_STATE;
+	return {
+		isSupported: true,
+		permission: state.permission,
+		isSubscribed: state.subscribed,
+		registration: null,
+		vapidPublicKey: null,
+		nativeClient,
+	};
+}
+
 async function loadPushBootstrap(
 	signal: AbortSignal,
 ): Promise<PushBootstrapState> {
+	const nativeClient = await getNativePushClient();
+	if (nativeClient) return loadNativePushBootstrap(nativeClient);
+
 	if (
 		!("serviceWorker" in navigator) ||
 		!("PushManager" in window) ||
@@ -92,6 +114,7 @@ async function loadPushBootstrap(
 		isSubscribed: Boolean(subscription),
 		registration,
 		vapidPublicKey: publicKey,
+		nativeClient: null,
 	};
 }
 
@@ -155,6 +178,7 @@ export function usePushNotifications(
 		isSubscribed,
 		registration,
 		vapidPublicKey,
+		nativeClient,
 	} = bootstrap;
 	const error =
 		bootstrapQuery.error instanceof Error ? bootstrapQuery.error : null;
@@ -179,7 +203,9 @@ export function usePushNotifications(
 		}
 
 		try {
-			const result = await Notification.requestPermission();
+			const result = nativeClient
+				? await nativeClient.requestPermission()
+				: await Notification.requestPermission();
 			updateBootstrap({ permission: result });
 			return { permission: result, error: null };
 		} catch (error) {
@@ -197,8 +223,46 @@ export function usePushNotifications(
 		return result.permission;
 	};
 
+	/** Native push in the store app shell: the client owns permission and token. */
+	const runNativeAction = async (
+		client: NativePushClient,
+		action: "subscribe" | "unsubscribe",
+	): Promise<boolean> => {
+		if (isBrowserPushActionInFlight) {
+			return false;
+		}
+		isBrowserPushActionInFlight = true;
+		setIsActionPending(true);
+		let actionResult = false;
+		let callbackError: Error | null = null;
+		try {
+			actionResult = await (action === "subscribe" ? client.subscribe() : client.unsubscribe());
+			const state = await client.loadState();
+			updateBootstrap({ permission: state.permission, isSubscribed: state.subscribed });
+		} catch (error) {
+			console.error(`Failed to ${action} native push notifications:`, error);
+			callbackError = error instanceof Error ? error : new Error(String(error));
+		}
+		isBrowserPushActionInFlight = false;
+		setIsActionPending(false);
+
+		if (callbackError) {
+			reportError(callbackError);
+		} else if (actionResult) {
+			invokeCallback(
+				action === "subscribe"
+					? callbacksRef.current.onSubscribe
+					: callbacksRef.current.onUnsubscribe,
+			);
+		}
+		return actionResult;
+	};
+
 	// Subscribe to push notifications
 	const subscribe = async (deviceName?: string): Promise<boolean> => {
+		if (isSupported && nativeClient) {
+			return runNativeAction(nativeClient, "subscribe");
+		}
 		if (!isSupported || !registration || !vapidPublicKey) {
 			return false;
 		}
@@ -300,6 +364,9 @@ export function usePushNotifications(
 
 	// Unsubscribe from push notifications
 	const unsubscribe = async (): Promise<boolean> => {
+		if (nativeClient) {
+			return runNativeAction(nativeClient, "unsubscribe");
+		}
 		if (!registration) {
 			return false;
 		}

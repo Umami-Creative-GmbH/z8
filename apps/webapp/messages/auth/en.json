@@ -159,7 +159,19 @@
     "wrong-account": "Wrong account",
     "wrong-account-description": "You're signed in as a different email. Sign out and use the invited email address to accept this invitation.",
     "wrong-account-description-short": "Use the invited email address to switch accounts and continue.",
-    "you-are-invited": "You're invited"
+    "you-are-invited": "You're invited",
+    "storeApp": {
+      "continue": "Continue",
+      "description": "Enter your work email. You then sign in on your organization's sign-in page in your phone's browser.",
+      "error": {
+        "browser": "The sign-in page could not be opened. Please try again.",
+        "expired": "Sign-in did not complete or has expired. Please try again.",
+        "rateLimited": "Too many sign-in attempts. Please wait a moment and try again.",
+        "unavailable": "Z8 could not be reached. Check your connection and try again."
+      },
+      "title": "Sign in to Z8",
+      "waiting": "Waiting for sign-in…"
+    }
   },
   "profile": {
     "change-password": "Change Password",

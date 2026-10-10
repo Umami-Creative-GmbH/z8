@@ -75,6 +75,8 @@ export function WorkLocationSelector({
 	onChange: (value: WorkLocationType) => void;
 	t: TFnType;
 }) {
+	// Labels need 24rem: on phones German labels ("Homeoffice") overflow their segment. Segments
+	// are 44 px tall on touch screens (#846).
 	return (
 		<ToggleGroup
 			type="single"
@@ -86,29 +88,29 @@ export function WorkLocationSelector({
 					onChange(nextValue as WorkLocationType);
 				}
 			}}
-			className="w-full"
+			className="w-full pointer-coarse:*:h-11"
 		>
 			<ToggleGroupItem value="office" aria-label={t("timeTracking.workLocationOffice", "Office")}>
 				<IconBuilding className="size-4" />
-				<span className="hidden @[20rem]/widget:inline text-xs">
+				<span className="hidden @[24rem]/widget:inline text-xs">
 					{t("timeTracking.workLocationOffice", "Office")}
 				</span>
 			</ToggleGroupItem>
 			<ToggleGroupItem value="home" aria-label={t("timeTracking.workLocationHome", "Home")}>
 				<IconHome className="size-4" />
-				<span className="hidden @[20rem]/widget:inline text-xs">
+				<span className="hidden @[24rem]/widget:inline text-xs">
 					{t("timeTracking.workLocationHome", "Home")}
 				</span>
 			</ToggleGroupItem>
 			<ToggleGroupItem value="remote" aria-label={t("timeTracking.workLocationRemote", "Remote")}>
 				<IconMapPin className="size-4" />
-				<span className="hidden @[20rem]/widget:inline text-xs">
+				<span className="hidden @[24rem]/widget:inline text-xs">
 					{t("timeTracking.workLocationRemote", "Remote")}
 				</span>
 			</ToggleGroupItem>
 			<ToggleGroupItem value="other" aria-label={t("timeTracking.workLocationOther", "Other")}>
 				<IconCompass className="size-4" />
-				<span className="hidden @[20rem]/widget:inline text-xs">
+				<span className="hidden @[24rem]/widget:inline text-xs">
 					{t("timeTracking.workLocationOther", "Other")}
 				</span>
 			</ToggleGroupItem>

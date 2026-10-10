@@ -55,6 +55,25 @@ function buildAbsence(overrides: Partial<AbsenceWithCategory>): AbsenceWithCateg
 }
 
 describe("AbsenceEntriesTable", () => {
+	it("keeps the cancel action on a phone screen with a visible label (#846)", () => {
+		render(
+			<AbsenceEntriesTable
+				currentDate="2026-05-20"
+				absences={[buildAbsence({ id: "pending", status: "pending", startDate: "2026-05-21" })]}
+			/>,
+		);
+
+		const cancel = screen.getByRole("button", { name: "Cancel absence" });
+		// The actions column stays pinned at the right edge while the other columns scroll.
+		expect(cancel.closest("td")?.className).toContain("sticky");
+		expect(cancel.closest("td")?.className).toContain("right-0");
+		// Touch screens cannot show the tooltip, so phones see the label in the button.
+		const label = Array.from(cancel.querySelectorAll("span")).find(
+			(span) => span.textContent === "Cancel absence",
+		);
+		expect(label?.className).toContain("sm:sr-only");
+	});
+
 	it("shows sick detail labels for sick absences only", () => {
 		render(
 			<AbsenceEntriesTable

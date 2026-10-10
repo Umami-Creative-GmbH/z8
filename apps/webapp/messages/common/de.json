@@ -729,6 +729,42 @@
       "read": "Gelesen",
       "unread": "Ungelesen"
     },
+    "nativePush": {
+      "attention": {
+        "title": "Etwas erfordert Ihre Aufmerksamkeit"
+      },
+      "body": "Öffnen Sie Z8, um die Details zu sehen.",
+      "document": {
+        "title": "Neuigkeiten zu Ihren Dokumenten"
+      },
+      "project": {
+        "title": "Neuigkeiten zu einem Projekt"
+      },
+      "reminder": {
+        "title": "Erinnerung von Z8"
+      },
+      "requestUpdate": {
+        "title": "Ihre Anfrage wurde aktualisiert"
+      },
+      "review": {
+        "title": "Eine Anfrage wartet auf Ihre Prüfung"
+      },
+      "schedule": {
+        "title": "Ihr Dienstplan hat sich geändert"
+      },
+      "security": {
+        "title": "Sicherheitshinweis zu Ihrem Konto"
+      },
+      "team": {
+        "title": "Ihre Teams haben sich geändert"
+      },
+      "travelExpense": {
+        "title": "Neuigkeiten zu Ihren Reisekosten"
+      },
+      "workingTime": {
+        "title": "Neuigkeiten zu Ihrer Arbeitszeit"
+      }
+    },
     "preferences": {
       "categories": {
         "personnelFile": {
@@ -877,6 +913,12 @@
   "status": {
     "active": "Aktiv",
     "inactive": "Inaktiv"
+  },
+  "storeAppBanner": {
+    "title": "Z8 für Ihr Smartphone",
+    "description": "Erhalten Sie Erinnerungen und Benachrichtigungen zu Genehmigungen in der App.",
+    "getApp": "App laden",
+    "dismiss": "App-Hinweis ausblenden"
   },
   "table": {
     "clearFilters": "Filter löschen",
