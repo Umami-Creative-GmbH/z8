@@ -251,7 +251,7 @@ function ConfirmForm({
 						<TFormDescription>
 							{t(
 								"travelExpenses.finance.payrollRun.confirm.paydayHint",
-								"The date the payslips were paid. Every reimbursement of this run is recorded on it.",
+								"The payday on which payroll paid this run. Every reimbursement of this run is recorded on it.",
 							)}
 						</TFormDescription>
 						<TFormMessage field={field} />

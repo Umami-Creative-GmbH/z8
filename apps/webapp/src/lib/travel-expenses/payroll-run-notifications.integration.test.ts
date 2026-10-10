@@ -490,7 +490,7 @@ describe("payroll run notifications for expense officers (#855)", () => {
 		expect(await readyRecipients(taxi)).toEqual(["t855-allOfficer", "t855-berlinOfficer"]);
 		expect(await readyRecipients(hotel)).toEqual([]);
 		expect((await readyNotifications())[0]?.message).toBe(
-			"requester's expense report Taxi Hamburg is not paid with a payroll run. Awaiting reimbursement: 12.00 EUR.",
+			"requester's expense report Taxi Hamburg isn't reimbursed through a payroll run. Awaiting reimbursement: 12.00 EUR.",
 		);
 		expect((await runNotifications()).map((row) => row.message)).toEqual([
 			runMessage(current, "DATEV Lohn & Gehalt", 1),

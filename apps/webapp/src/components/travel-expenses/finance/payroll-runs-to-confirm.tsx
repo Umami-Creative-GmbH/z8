@@ -44,7 +44,7 @@ export function PayrollRunsToConfirm({
 				<CardDescription>
 					{t(
 						"travelExpenses.finance.payrollRuns.description",
-						"These payroll exports carry expense reports. Once payroll has paid a run, confirm it to record the reimbursements.",
+						"These payroll runs carry expense reports awaiting reimbursement. Once payroll has paid a run, confirm it to record the reimbursements.",
 					)}
 				</CardDescription>
 			</CardHeader>

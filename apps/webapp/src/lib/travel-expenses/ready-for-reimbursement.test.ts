@@ -296,7 +296,7 @@ describe("leftOutOfPayrollRun (#855)", () => {
 			type: "travel_expense_ready_for_reimbursement",
 			title: "Ready for reimbursement",
 			message:
-				"Erin Employee's expense report Customer workshop is not paid with a payroll run. Awaiting reimbursement: 89.90 EUR.",
+				"Erin Employee's expense report Customer workshop isn't reimbursed through a payroll run. Awaiting reimbursement: 89.90 EUR.",
 			idempotencyKey: "travel-expense-ready-for-reimbursement:revision-1:user-all",
 		});
 		expect(notification.metadata?.i18n).toMatchObject({

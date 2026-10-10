@@ -41,7 +41,7 @@ const readyCopy = {
 	leftOut: {
 		messageKey: "common:notifications.content.travelExpenseLeftOutOfPayrollRun.message",
 		messageDefault:
-			"{employee}'s expense report {report} is not paid with a payroll run. Awaiting reimbursement: {amounts}.",
+			"{employee}'s expense report {report} isn't reimbursed through a payroll run. Awaiting reimbursement: {amounts}.",
 	},
 } as const;
 const readyTitle = {
