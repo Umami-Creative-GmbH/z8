@@ -3,7 +3,7 @@
  */
 
 import type { BillableFigures, BillableFiguresAccess } from "@/lib/billable-time/report-figures";
-import type { PeriodPreset, ReportDateRange } from "./types";
+import type { CustomFieldReportValue, PeriodPreset, ReportDateRange } from "./types";
 
 export type { BillableFigures, BillableFiguresAccess };
 
@@ -30,6 +30,11 @@ export interface BillableTimeReportContext {
 export interface ProjectCustomerInfo {
 	id: string;
 	name: string;
+	/**
+	 * The customer's active custom fields the reader sees, in order, as of the
+	 * report period's last day (#820). Only the detailed project report sets it.
+	 */
+	customFields?: CustomFieldReportValue[];
 }
 
 export type ProjectHealthSeverity = "none" | "warning" | "critical";
@@ -70,6 +75,11 @@ export interface ProjectInfo {
 	deadline: Date | null;
 	/** The project's current customer, if it has one. */
 	customer?: ProjectCustomerInfo | null;
+	/**
+	 * The project's active custom fields the reader sees, in order, as of the
+	 * report period's last day (#820). Only the detailed project report sets it.
+	 */
+	customFields?: CustomFieldReportValue[];
 }
 export interface ProjectSummary extends ProjectInfo, ProjectHealthFields {
 	totalHours: number;
