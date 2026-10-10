@@ -11,6 +11,8 @@ import {
 	PeriodSubmissionDecisionError,
 } from "@/lib/time-tracking/period-submissions/submission-service";
 import { decodeApprovalDatabaseTimestamptz } from "../approval-database-row";
+import { isPeriodSubmissionSubmittedFacts } from "../evidence/period-submission-facts";
+import { buildPeriodSubmissionReviewSections } from "../presentation/period-submission-review";
 import { ApprovalTransitionEngineError } from "../workflow/transition-engine";
 import type {
 	CanonicalInboxApproval,
@@ -33,8 +35,7 @@ import type {
 /**
  * The inbox read of period submissions (#1059): their pending canonical assignments, read from
  * canonical rows and the submission itself. There is no legacy request behind them (Approvals
- * ADR-0002). The card shows the employee, the period and its overall total; #1061 adds the rest
- * from the submitted revision.
+ * ADR-0002). The card (#1061) is built from the submitted revision's facts.
  */
 
 function resultRows(result: unknown): Record<string, unknown>[] {
@@ -148,6 +149,7 @@ function candidateQuery(input: CanonicalInboxLoadInput, now: Date, countOnly: bo
 			submission.end_date::text as "endDate", submission.timezone as "timezone",
 			submission.cadence as "cadence",
 			coalesce((revision.facts -> 'work' ->> 'totalMinutes')::integer, 0) as "totalMinutes",
+			revision.facts as "facts",
 			requester.team_id as "teamId", requester_user.name as "userName",
 			requester_user.email as "userEmail", requester_user.image as "userImage",
 			count(*) over()::integer as "totalCount"`;
@@ -277,40 +279,50 @@ function toApproval(row: Record<string, unknown>, now: Date): CanonicalInboxAppr
 		}),
 		capabilities,
 	};
+	const facts = isPeriodSubmissionSubmittedFacts(row.facts) ? row.facts : null;
 	const detail: ApprovalInboxDetailResult = {
 		item,
 		actions: capabilities,
-		sections: [
-			{
-				type: "key_value",
-				title: TITLE,
-				rows: [
+		sections: facts
+			? buildPeriodSubmissionReviewSections({
+					facts,
+					employeeName: requesterName,
+					submittedAt: submittedAt.toISOString(),
+				})
+			: [
 					{
-						label: { key: "approvals:approvals.periodSubmission.employee", fallback: "Employee" },
-						value: requesterName,
-					},
-					{
-						label: { key: "approvals:approvals.periodSubmission.period", fallback: "Period" },
-						value: range,
-					},
-					{
-						label: { key: "approvals:approvals.periodSubmission.total", fallback: "Total" },
-						value: {
-							key: "approvals:approvals.periodSubmission.totalHours",
-							fallback: "{total} h",
-							params: { total },
-						},
-					},
-					{
-						label: {
-							key: "approvals:approvals.periodSubmission.submittedAt",
-							fallback: "Submitted",
-						},
-						value: { kind: "instant", at: submittedAt.toISOString() },
+						type: "key_value",
+						title: TITLE,
+						rows: [
+							{
+								label: {
+									key: "approvals:approvals.periodSubmission.employee",
+									fallback: "Employee",
+								},
+								value: requesterName,
+							},
+							{
+								label: { key: "approvals:approvals.periodSubmission.period", fallback: "Period" },
+								value: range,
+							},
+							{
+								label: { key: "approvals:approvals.periodSubmission.total", fallback: "Total" },
+								value: {
+									key: "approvals:approvals.periodSubmission.totalHours",
+									fallback: "{total} h",
+									params: { total },
+								},
+							},
+							{
+								label: {
+									key: "approvals:approvals.periodSubmission.submittedAt",
+									fallback: "Submitted",
+								},
+								value: { kind: "instant", at: submittedAt.toISOString() },
+							},
+						],
 					},
 				],
-			},
-		],
 	};
 	return {
 		item,
