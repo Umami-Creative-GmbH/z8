@@ -55,6 +55,7 @@ import type {
 	CreateApiKeyResponse,
 } from "@/lib/validations/api-key";
 import { MAX_API_KEYS_PER_ORG } from "@/lib/validations/api-key";
+import { Link } from "@/navigation";
 
 // Dynamically import dialogs - they're only shown on user interaction
 const ApiKeyCreateDialog = dynamic(() =>
@@ -271,7 +272,12 @@ function ApiKeysCard({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 								return (
 									<TableRow key={apiKey.id}>
 										<TableCell>
-											<div className="font-medium">{apiKey.name}</div>
+											<Link
+												href={`/settings/enterprise/api-keys/${apiKey.id}`}
+												className="font-medium hover:underline"
+											>
+												{apiKey.name}
+											</Link>
 											<div className="text-xs text-muted-foreground">
 												{t("settings.apiKeys.createdOn", "Created {date}", {
 													date: formatDate(apiKey.createdAt),

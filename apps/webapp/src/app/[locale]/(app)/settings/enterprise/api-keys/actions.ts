@@ -12,10 +12,12 @@ import { createLogger } from "@/lib/logger";
 import {
 	type ApiKeyView,
 	createOrganizationApiKey,
+	getOrganizationApiKey,
 	listOrganizationApiKeys,
 	revokeOrganizationApiKey,
 	updateOrganizationApiKey,
 } from "@/lib/public-api/keys/key-store";
+import { listRecentKeyRequests } from "@/lib/public-api/request-log";
 import {
 	type ApiKeyResponse,
 	type CreateApiKeyData,
@@ -111,6 +113,58 @@ export async function listApiKeys(
 				listOrganizationApiKeys(dbService.db, organizationId),
 			);
 			return keys.map(toResponse);
+		}),
+	);
+}
+
+// =============================================================================
+// API Key Detail
+// =============================================================================
+
+export interface ApiKeyDetail {
+	key: ApiKeyResponse;
+	/** The key's most recent requests from the key request log, newest first. */
+	requests: {
+		id: string;
+		method: string;
+		route: string;
+		status: number;
+		rowCount: number | null;
+		ipAddress: string | null;
+		/** ISO date string */
+		requestedAt: string;
+	}[];
+}
+
+/**
+ * One API key of the organization with its recent requests.
+ * Requires admin or owner role.
+ */
+export async function getApiKeyDetail(
+	organizationId: string,
+	keyId: string,
+): Promise<ServerActionResult<ApiKeyDetail>> {
+	return runServerActionSafe(
+		Effect.gen(function* () {
+			yield* verifyApiKeyPermission(organizationId, "list");
+			const dbService = yield* DatabaseService;
+			const detail = yield* dbService.query("apiKeys.detail", async () => {
+				const key = await getOrganizationApiKey(dbService.db, organizationId, keyId);
+				if (!key) return null;
+				const requests = await listRecentKeyRequests(dbService.db, {
+					organizationId,
+					apiKeyId: key.id,
+				});
+				return { key, requests };
+			});
+			if (!detail) return yield* Effect.fail(keyNotFound(keyId));
+			return {
+				key: toResponse(detail.key),
+				requests: detail.requests.map((request) => ({
+					...request,
+					requestedAt: request.requestedAt.toISOString(),
+				})),
+			};
 		}),
 	);
 }
