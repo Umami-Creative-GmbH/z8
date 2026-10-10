@@ -282,5 +282,202 @@ describe("Clocking break in progress on PostgreSQL", () => {
 			expect(followUps.closures).toHaveLength(1);
 			expect(followUps.closures[0]?.end.toString()).toBe("2026-07-22T09:45:00Z");
 		});
+
+		it("refuses a start without live work, a second start and a resume without a break, without writes", async () => {
+			const { clocking } = newClocking(breakStart);
+			await expect(clocking.startBreak(breakCommand())).resolves.toEqual({
+				outcome: "refused",
+				failure: { code: "not_clocked_in" },
+			});
+			await startWork();
+			await expect(newClocking(resumeAt).clocking.resumeBreak(breakCommand())).resolves.toEqual({
+				outcome: "refused",
+				failure: { code: "no_break_in_progress" },
+			});
+			await startBreak();
+			const before = await snapshot();
+
+			await expect(newClocking(resumeAt).clocking.startBreak(breakCommand())).resolves.toEqual({
+				outcome: "refused",
+				failure: { code: "already_on_break" },
+			});
+			expect(await snapshot()).toEqual(before);
+		});
+
+		it("refuses a start on behalf, by another user and at or before the work's start", async () => {
+			await startWork();
+			const { clocking } = newClocking(breakStart);
+			const before = await snapshot();
+
+			await expect(
+				clocking.startBreak(breakCommand({ subject: { employeeId: ids.employee, onBehalf: true } })),
+			).resolves.toEqual({ outcome: "refused", failure: { code: "access_denied" } });
+			await expect(
+				clocking.startBreak(breakCommand({ principal: { kind: "user", userId: ids.managerUser } })),
+			).resolves.toEqual({ outcome: "refused", failure: { code: "access_denied" } });
+			await expect(newClocking(workStart).clocking.startBreak(breakCommand())).resolves.toEqual({
+				outcome: "refused",
+				failure: { code: "invalid_interval" },
+			});
+			expect(await snapshot()).toEqual(before);
+		});
+
+		it("replays a retried start and a retried resume without writes", async () => {
+			const active = await startWork();
+			const start = breakCommand();
+			const started = await newClocking(breakStart).clocking.startBreak(start);
+			await expect(newClocking(breakStart).clocking.startBreak(start)).resolves.toEqual({
+				...started,
+				outcome: "replayed",
+			});
+			const resume = breakCommand();
+			const resumed = await newClocking(resumeAt).clocking.resumeBreak(resume);
+			expect(resumed).toMatchObject({ outcome: "executed" });
+			const committed = await snapshot();
+
+			await expect(newClocking(resumeAt).clocking.resumeBreak(resume)).resolves.toEqual({
+				outcome: "replayed",
+				result: resumed.outcome === "executed" && { ...resumed.result },
+			});
+			// The start replays after its break ended, at the closed work's end.
+			await expect(newClocking(resumeAt).clocking.startBreak(start)).resolves.toEqual({
+				outcome: "replayed",
+				result: { workPeriodId: active.id, start: expect.anything() },
+			});
+			expect(await snapshot()).toEqual(committed);
+		});
+
+		it("refuses another break while a break in progress is open", async () => {
+			await startWork();
+			await startBreak();
+			const before = await snapshot();
+			const { clocking } = newClocking(resumeAt);
+
+			await expect(
+				clocking.run({ ...breakCommand(), body: { kind: "break", breakMinutes: 5 } }),
+			).resolves.toEqual({ outcome: "refused", failure: { code: "on_break" } });
+			expect(await snapshot()).toEqual(before);
+		});
+
+		it("ending the day while on break clocks out at the break's start and clears it", async () => {
+			const active = await startWork();
+			await startBreak();
+			const { clocking, followUps } = newClocking(parseInstant("2026-07-22T17:00:00Z"));
+
+			const outcome = await clocking.run(clockOut());
+
+			expect(outcome).toMatchObject({ outcome: "executed", durationMinutes: 105 });
+			expect(await periods()).toEqual([
+				{
+					id: active.id,
+					end_time: new Date("2026-07-22T09:45:00Z"),
+					is_active: false,
+					break_started_at: null,
+					break_started_zone: null,
+				},
+			]);
+			expect(followUps.closures[0]?.end.toString()).toBe("2026-07-22T09:45:00Z");
+			const { rows } = await admin.query(
+				`select type, timestamp, timezone from time_entry where employee_id = $1 and type = 'clock_out'`,
+				[ids.employee],
+			);
+			expect(rows).toEqual([
+				{
+					type: "clock_out",
+					timestamp: new Date("2026-07-22T09:45:00Z"),
+					timezone: "Europe/Berlin",
+				},
+			]);
+			await expect(newClocking(resumeAt).clocking.resumeBreak(breakCommand())).resolves.toEqual({
+				outcome: "refused",
+				failure: { code: "no_break_in_progress" },
+			});
+		});
+
+		it("an on-behalf clock-out ends the work at the open break's start and clears it", async () => {
+			const active = await startWork();
+			await startBreak();
+			const { clocking } = newClocking(parseInstant("2026-07-22T17:00:00Z"));
+
+			const outcome = await clocking.run(
+				clockOut({
+					principal: { kind: "user", userId: ids.managerUser },
+					subject: { employeeId: ids.employee, onBehalf: true },
+					body: {
+						kind: "clock_out",
+						target: { kind: "period", workPeriodId: active.id },
+						project: { kind: "preserve" },
+						workCategory: { kind: "preserve" },
+					},
+				}),
+			);
+
+			expect(outcome).toMatchObject({ outcome: "executed", durationMinutes: 105 });
+			expect(await periods()).toMatchObject([
+				{
+					end_time: new Date("2026-07-22T09:45:00Z"),
+					break_started_at: null,
+					break_started_zone: null,
+				},
+			]);
+		});
+
+		it("a clock-out that happened before the break started ends there and clears the break", async () => {
+			await startWork();
+			await startBreak();
+			const { clocking } = newClocking(resumeAt);
+
+			await expect(
+				clocking.run(
+					clockOut({ at: { kind: "occurred", instant: parseInstant("2026-07-22T09:30:00Z") } }),
+				),
+			).resolves.toMatchObject({ outcome: "executed", durationMinutes: 90 });
+			expect(await periods()).toMatchObject([
+				{ end_time: new Date("2026-07-22T09:30:00Z"), break_started_at: null },
+			]);
+		});
+
+		it("serializes a break that starts while a clock-out plans its closure: the work ends at the break's start", async () => {
+			await startWork();
+			const real = coordinatedTransactions();
+			let transactionsRun = 0;
+			// After the replay transaction the clock-out reads its target without a
+			// break; the break then commits before the closure's transaction locks.
+			const { clocking } = newClocking(parseInstant("2026-07-22T17:00:00Z"), {
+				...real,
+				async run(scope, operation) {
+					transactionsRun += 1;
+					if (transactionsRun === 2) await startBreak();
+					return real.run(scope, operation);
+				},
+			});
+
+			await expect(clocking.run(clockOut())).resolves.toMatchObject({
+				outcome: "executed",
+				durationMinutes: 105,
+			});
+			expect(await periods()).toMatchObject([
+				{ end_time: new Date("2026-07-22T09:45:00Z"), is_active: false, break_started_at: null },
+			]);
+		});
+
+		it("serializes a start and a clock-out sent together", async () => {
+			await startWork();
+			const [started, closed] = await Promise.all([
+				newClocking(breakStart).clocking.startBreak(breakCommand()),
+				newClocking(parseInstant("2026-07-22T17:00:00Z")).clocking.run(clockOut()),
+			]);
+
+			expect(closed).toMatchObject({ outcome: "executed" });
+			const [period] = await periods();
+			expect(period?.break_started_at).toBeNull();
+			if (started.outcome === "executed") {
+				// The break started first: the closure ended the work at its start.
+				expect(period?.end_time).toEqual(new Date("2026-07-22T09:45:00Z"));
+			} else {
+				expect(started).toEqual({ outcome: "refused", failure: { code: "not_clocked_in" } });
+				expect(period?.end_time).toEqual(new Date("2026-07-22T17:00:00Z"));
+			}
+		});
 	});
 });
