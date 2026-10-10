@@ -506,7 +506,10 @@ describe("coordinated organization creation on PostgreSQL", () => {
 					 from organization o
 					 cross join unnest(enum_range(null::approval_workflow_type)) as t(workflow_type)
 					 where not exists (select 1 from approval_workflow_rollout r
-					   where r.organization_id = o.id and r.workflow_type = t.workflow_type)`,
+					   where r.organization_id = o.id and r.workflow_type = t.workflow_type)
+					   and t.workflow_type::text <> all($1::text[])`,
+					// Canonical-only kinds need no backfilled row (#1058).
+					[APPROVAL_WORKFLOW_TYPES.filter((type) => APPROVAL_KIND_START[type] === "canonical_only")],
 				);
 				expect(rows[0]?.missing).toBe(0);
 			} finally {
