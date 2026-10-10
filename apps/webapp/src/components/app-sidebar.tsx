@@ -4,6 +4,7 @@ import {
 	IconBeach,
 	IconCalendar,
 	IconCalendarEvent,
+	IconCalendarTime,
 	IconCash,
 	IconClipboardCheck,
 	IconClock,
@@ -159,6 +160,16 @@ export function AppSidebar({
 			url: "/calendar",
 			icon: IconCalendarEvent,
 		},
+		// Employees reach their own shifts here; planners keep Scheduling in the Team section.
+		...(navigationCapabilities.scheduling && employeeRole === "employee"
+			? [
+					{
+						title: t("nav.my-schedule", "My Schedule"),
+						url: "/scheduling",
+						icon: IconCalendarTime,
+					},
+				]
+			: []),
 		{
 			title: t("nav.absences", "Absences"),
 			url: "/absences",

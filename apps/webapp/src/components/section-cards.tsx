@@ -13,6 +13,7 @@ import { QuickStatsWidget } from "@/components/dashboard/quick-stats-widget";
 import { RecentlyApprovedWidget } from "@/components/dashboard/recently-approved-widget";
 import { SortableWidgetGrid } from "@/components/dashboard/sortable-widget-grid";
 import { TeamOverviewWidget } from "@/components/dashboard/team-overview-widget";
+import { UpcomingShiftsWidget } from "@/components/dashboard/upcoming-shifts-widget";
 import { UpcomingTimeOffWidget } from "@/components/dashboard/upcoming-time-off-widget";
 import { useWidgetOrder } from "@/components/dashboard/use-widget-order";
 import { VacationBalanceWidget } from "@/components/dashboard/vacation-balance-widget";
@@ -35,6 +36,7 @@ const WIDGET_COMPONENTS: Record<WidgetId, React.ComponentType> = {
 	"pending-approvals": PendingApprovalsWidget,
 	"team-overview": TeamOverviewWidget,
 	"quick-stats": QuickStatsWidget,
+	"upcoming-shifts": UpcomingShiftsWidget,
 	"whos-out-today": WhosOutTodayWidget,
 	"upcoming-time-off": UpcomingTimeOffWidget,
 	"recently-approved": RecentlyApprovedWidget,
