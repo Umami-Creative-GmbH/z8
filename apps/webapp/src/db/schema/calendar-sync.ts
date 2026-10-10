@@ -183,7 +183,8 @@ export const syncedAbsence = pgTable(
  *
  * Enables read-only calendar subscriptions via standard ICS/iCal format.
  * URLs are secured with a random token (not authentication headers)
- * for compatibility with all calendar clients.
+ * for compatibility with all calendar clients. Only the token's digest is
+ * stored; see src/lib/calendar-sync/ics-feed-secret.ts.
  */
 export const icsFeed = pgTable(
 	"ics_feed",
@@ -198,18 +199,20 @@ export const icsFeed = pgTable(
 		employeeId: uuid("employee_id").references(() => employee.id, { onDelete: "cascade" }),
 		teamId: uuid("team_id").references(() => team.id, { onDelete: "cascade" }),
 
-		// Secret token for URL authentication (64-char hex string)
-		secret: text("secret").notNull().unique(),
+		// Hex SHA-256 of the URL secret; the secret itself is never stored
+		secretDigest: text("secret_digest").notNull(),
+		secretHashVersion: text("secret_hash_version").notNull(),
 
 		// Feed configuration
 		includeApproved: boolean("include_approved").default(true).notNull(),
 		includePending: boolean("include_pending").default(true).notNull(),
 
-		// Status
-		isActive: boolean("is_active").default(true).notNull(),
+		// Revocation; a feed is active while revokedAt is null
+		revokedAt: timestamp("revoked_at"),
+		revokedBy: text("revoked_by").references(() => user.id, { onDelete: "set null" }),
 
 		// Usage tracking
-		lastAccessedAt: timestamp("last_accessed_at"),
+		lastUsedAt: timestamp("last_used_at"),
 
 		// Audit
 		createdBy: text("created_by")
@@ -224,7 +227,7 @@ export const icsFeed = pgTable(
 		index("icsFeed_organizationId_idx").on(table.organizationId),
 		index("icsFeed_employeeId_idx").on(table.employeeId),
 		index("icsFeed_teamId_idx").on(table.teamId),
-		index("icsFeed_secret_idx").on(table.secret),
+		uniqueIndex("icsFeed_secretDigest_idx").on(table.secretDigest),
 	],
 );
 

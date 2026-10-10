@@ -148,6 +148,11 @@ export enum AuditAction {
 	PERSONNEL_FILE_ZIP_DOWNLOADED = "personnel_file.zip_downloaded",
 	PERSONNEL_FILE_ZIP_DOWNLOAD_ABORTED = "personnel_file.zip_download_aborted",
 
+	// ICS Feed Operations (#991)
+	ICS_FEED_CREATED = "ics_feed.created",
+	ICS_FEED_REGENERATED = "ics_feed.regenerated",
+	ICS_FEED_REVOKED = "ics_feed.revoked",
+
 	// App Access Operations
 	APP_ACCESS_GRANTED = "app_access.granted",
 	APP_ACCESS_REVOKED = "app_access.revoked",
@@ -317,7 +322,8 @@ export interface AuditLogEntry {
 		| "works_council_settings"
 		| "works_council_export"
 		| "travel_expense_policy_version"
-		| "travel_expense_export";
+		| "travel_expense_export"
+		| "ics_feed";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates

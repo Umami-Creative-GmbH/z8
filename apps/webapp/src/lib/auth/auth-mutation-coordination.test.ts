@@ -71,6 +71,7 @@ function coordinatedAuth() {
 function hooks() {
 	return createCoordinatedOrganizationHooks({
 		beforeUpdateOrganization: vi.fn(),
+		beforeCreateInvitation: vi.fn(),
 		afterAcceptInvitation: vi.fn(async () => {
 			mocks.events.push("after-accept");
 		}),
