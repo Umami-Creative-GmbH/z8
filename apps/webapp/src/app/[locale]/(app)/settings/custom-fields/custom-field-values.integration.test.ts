@@ -439,6 +439,93 @@ describe("custom field values in the settings actions on PostgreSQL", () => {
 			});
 		});
 
+		it("keep a tracked field's history through the customer forms (#819)", async () => {
+			const rateClass = await define({
+				entity: "customer",
+				name: "Rate class",
+				tracked: true,
+				required: true,
+				visibility: "manager",
+				editLevel: "manager",
+			});
+			const add = (validFrom: string, value: string) => ({ op: "add", validFrom, value });
+
+			// A required tracked field whose only value starts in the future is missing today.
+			expect(
+				await actAs(ids.ownerUser, () =>
+					failure(
+						createCustomer({
+							organizationId: ids.organization,
+							name: "Future",
+							customFieldValues: {
+								[fields.customerNo.id]: "C-9",
+								[rateClass.id]: { history: [add("2999-01-01", "R2")] },
+							},
+						}),
+					),
+				),
+			).toEqual({ error: 'Custom field "Rate class" is required', code: "ValidationError" });
+
+			const customer = await actAs(ids.ownerUser, () =>
+				ok(
+					createCustomer({
+						organizationId: ids.organization,
+						name: "Globex",
+						customFieldValues: {
+							[fields.customerNo.id]: "C-1",
+							[rateClass.id]: { history: [add("2020-01-01", "R1")] },
+						},
+					}),
+				),
+			);
+			let read = await actAs(ids.ownerUser, () => ok(section("customer", customer.id)));
+			expect(read.values[rateClass.id]).toEqual({ type: "text", value: "R1" });
+			const [first] = read.history[rateClass.id];
+
+			await actAs(ids.ownerUser, () =>
+				ok(
+					updateCustomer(customer.id, {
+						customFieldValues: {
+							[rateClass.id]: {
+								history: [
+									{ op: "correct", entryId: first.id, validFrom: "2020-01-01", value: "R0" },
+									add("2999-01-01", "R2"),
+								],
+							},
+						},
+					}),
+				),
+			);
+			read = await actAs(ids.ownerUser, () => ok(section("customer", customer.id)));
+			expect(read.values[rateClass.id]).toEqual({ type: "text", value: "R0" });
+			expect(read.history[rateClass.id].map((entry) => [entry.validFrom, entry.value])).toEqual([
+				["2999-01-01", { type: "text", value: "R2" }],
+				["2020-01-01", { type: "text", value: "R0" }],
+			]);
+
+			// Deleting the entry valid today leaves only a future one: the form refuses.
+			expect(
+				await actAs(ids.ownerUser, () =>
+					failure(
+						updateCustomer(customer.id, {
+							customFieldValues: {
+								[rateClass.id]: { history: [{ op: "delete", entryId: first.id }] },
+							},
+						}),
+					),
+				),
+			).toEqual({ error: 'Custom field "Rate class" is required', code: "ValidationError" });
+			// A plain value for a tracked field is refused.
+			expect(
+				await actAs(ids.ownerUser, () =>
+					failure(updateCustomer(customer.id, { customFieldValues: { [rateClass.id]: "R9" } })),
+				),
+			).toEqual({
+				error: 'Custom field "Rate class" keeps a history; add a dated change instead',
+				code: "ValidationError",
+			});
+		});
+
 		it("refuse project and customer forms with missing required values or broken type rules", async () => {
 			expect(
 				await actAs(ids.ownerUser, () =>

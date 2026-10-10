@@ -10,6 +10,7 @@ import {
 	type CustomFieldNumberSettings,
 	type CustomFieldType,
 } from "./definition-rules";
+import type { CustomFieldHistoryInput } from "./history-rules";
 
 /**
  * A custom field value. `number` is a canonical decimal string ("-1.5"),
@@ -28,8 +29,14 @@ export type CustomFieldValue =
  */
 export type CustomFieldValueInput = string | boolean | null;
 
-/** Values a form sends, by field id. Fields left out keep their value. */
-export type CustomFieldValuesInput = Record<string, CustomFieldValueInput>;
+/**
+ * Values a form sends, by field id. Fields left out keep their value. A
+ * tracked field takes its history changes instead of a value (#819).
+ */
+export type CustomFieldValuesInput = Record<
+	string,
+	CustomFieldValueInput | CustomFieldHistoryInput
+>;
 
 export type CustomFieldValueRefusal =
 	| "invalid_value"

@@ -223,6 +223,10 @@ export enum AuditAction {
 	CUSTOM_FIELD_VALUE_SET = "custom_field_value.set",
 	CUSTOM_FIELD_VALUE_CHANGED = "custom_field_value.changed",
 	CUSTOM_FIELD_VALUE_CLEARED = "custom_field_value.cleared",
+	// Tracked custom field history (#819): dated entries added, corrected or deleted.
+	CUSTOM_FIELD_VALUE_HISTORY_ADDED = "custom_field_value.history_added",
+	CUSTOM_FIELD_VALUE_HISTORY_CORRECTED = "custom_field_value.history_corrected",
+	CUSTOM_FIELD_VALUE_HISTORY_DELETED = "custom_field_value.history_deleted",
 
 	// Location Operations
 	LOCATION_CREATED = "location.created",

@@ -1,7 +1,8 @@
 /**
  * #818: the custom field value store on PostgreSQL. Typed rows, same-organization
  * foreign keys, cascades, type rules, edit levels, required fields, audit, the
- * viewer level loader and the as-of read contract.
+ * viewer level loader and the as-of read contract. #819: tracked fields' dated
+ * history.
  */
 
 import { Temporal } from "temporal-polyfill";
@@ -13,6 +14,7 @@ const { changeCustomFields } = await import("./definitions");
 const {
 	CustomFieldValuesRefused,
 	loadCustomFieldViewerLevel,
+	readCustomFieldSection,
 	readCustomFieldValues,
 	writeCustomFieldValues,
 } = await import("./values");
@@ -532,6 +534,252 @@ describe("custom field values on PostgreSQL", () => {
 			await write("employee", employeeId, { [field.id]: "4.12" });
 			const result = await read("employee", [employeeId, otherEmployeeId]);
 			expect(Object.keys(result.values)).toEqual([employeeId]);
+		});
+	});
+
+	describe("tracked custom fields (#819)", () => {
+		const day = (iso: string) => Temporal.PlainDate.from(iso);
+		const add = (validFrom: string, value: unknown) => ({ op: "add", validFrom, value });
+		const history = (...changes: unknown[]) => ({ history: changes });
+
+		async function readAsOf(
+			field: { id: string },
+			date: string,
+			entity: Entity = "employee",
+			recordId = employeeId,
+		) {
+			const result = await readCustomFieldValues(db, {
+				organizationId: ids.organization,
+				entity,
+				recordIds: [recordId],
+				asOf: day(date),
+				viewer: { kind: "system" },
+			});
+			return result.values[recordId]?.[field.id] ?? null;
+		}
+
+		async function entriesOf(field: { id: string }) {
+			const section = await readCustomFieldSection(db, {
+				organizationId: ids.organization,
+				entity: "employee",
+				recordId: employeeId,
+				level: "admin",
+			});
+			return section.history[field.id] ?? [];
+		}
+
+		it("reads the value as of a date from the valid-from history", async () => {
+			const grade = await define(ids.organization, { name: "Pay grade", tracked: true });
+			await write("employee", employeeId, {
+				[grade.id]: history(add("2026-03-01", "E5"), add("2026-07-01", "E6")),
+			});
+
+			expect(await readAsOf(grade, "2026-02-28")).toBeNull();
+			expect(await readAsOf(grade, "2026-03-01")).toEqual({ type: "text", value: "E5" });
+			expect(await readAsOf(grade, "2026-06-30")).toEqual({ type: "text", value: "E5" });
+			expect(await readAsOf(grade, "2026-07-01")).toEqual({ type: "text", value: "E6" });
+			expect(await readAsOf(grade, "2030-01-01")).toEqual({ type: "text", value: "E6" });
+		});
+
+		it("returns a back-dated change entered later from its valid-from date on", async () => {
+			const grade = await define(ids.organization, {
+				entity: "project",
+				name: "Rate class",
+				tracked: true,
+			});
+			await write("project", projectId, { [grade.id]: history(add("2026-07-01", "B")) });
+			await write("project", projectId, { [grade.id]: history(add("2026-03-01", "A")) });
+
+			expect(await readAsOf(grade, "2026-02-28", "project", projectId)).toBeNull();
+			expect(await readAsOf(grade, "2026-03-01", "project", projectId)).toEqual({
+				type: "text",
+				value: "A",
+			});
+			expect(await readAsOf(grade, "2026-06-30", "project", projectId)).toEqual({
+				type: "text",
+				value: "A",
+			});
+			expect(await readAsOf(grade, "2026-07-01", "project", projectId)).toEqual({
+				type: "text",
+				value: "B",
+			});
+		});
+
+		it("rejects two entries with the same valid-from date for one record and field", async () => {
+			const grade = await define(ids.organization, { name: "Pay grade", tracked: true });
+			await write("employee", employeeId, { [grade.id]: history(add("2026-03-01", "E5")) });
+			expect(
+				await refusal(
+					write("employee", employeeId, { [grade.id]: history(add("2026-03-01", "E6")) }),
+				),
+			).toBe("duplicate_valid_from");
+			// Another record may use the same date.
+			expect(
+				await refusal(
+					write("employee", managerEmployeeId, { [grade.id]: history(add("2026-03-01", "E6")) }),
+				),
+			).toBe("accepted");
+
+			await expect(
+				admin.query(
+					`insert into custom_field_value (organization_id, definition_id, employee_id, text_value, valid_from, tracked)
+					 values ($1, $2, $3, 'E7', '2026-03-01', true)`,
+					[ids.organization, grade.id, employeeId],
+				),
+			).rejects.toThrow(/custom_field_value_employee_dated_unique/);
+		});
+
+		it("lists the history newest first and corrects and deletes entries, audited", async () => {
+			const grade = await define(ids.organization, { name: "Pay grade", tracked: true });
+			await write("employee", employeeId, {
+				[grade.id]: history(add("2026-03-01", "E5"), add("2026-07-01", "E6")),
+			});
+			const [july, march] = await entriesOf(grade);
+			expect([july, march].map((entry) => [entry.validFrom, entry.value])).toEqual([
+				["2026-07-01", { type: "text", value: "E6" }],
+				["2026-03-01", { type: "text", value: "E5" }],
+			]);
+
+			await write("employee", employeeId, {
+				[grade.id]: history(
+					{ op: "correct", entryId: march.id, validFrom: "2026-02-01", value: "E4" },
+					{ op: "delete", entryId: july.id },
+				),
+			});
+			expect(await entriesOf(grade)).toEqual([
+				{ id: march.id, validFrom: "2026-02-01", value: { type: "text", value: "E4" } },
+			]);
+			expect(await readAsOf(grade, "2026-08-01")).toEqual({ type: "text", value: "E4" });
+
+			const entries = await audit();
+			expect(entries.map((entry) => entry.action)).toEqual([
+				"custom_field_value.history_added",
+				"custom_field_value.history_added",
+				"custom_field_value.history_corrected",
+				"custom_field_value.history_deleted",
+			]);
+			expect(entries.every((entry) => entry.entity_id === employeeId)).toBe(true);
+			expect(entries[2].changes).toEqual({
+				before: { validFrom: "2026-03-01", value: "E5" },
+				after: { validFrom: "2026-02-01", value: "E4" },
+			});
+			expect(entries[2].metadata).toMatchObject({
+				fieldId: grade.id,
+				fieldName: "Pay grade",
+				entryId: march.id,
+				entity: "employee",
+			});
+			expect(entries[3].changes).toEqual({
+				before: { validFrom: "2026-07-01", value: "E6" },
+				after: null,
+			});
+		});
+
+		it("refuses history changes below the field's edit level", async () => {
+			const grade = await define(ids.organization, {
+				name: "Pay grade",
+				tracked: true,
+				visibility: "manager",
+				editLevel: "admin",
+			});
+			await write("employee", employeeId, { [grade.id]: history(add("2026-03-01", "E5")) });
+			const [entry] = await entriesOf(grade);
+			for (const change of [
+				add("2026-04-01", "E6"),
+				{ op: "correct", entryId: entry.id, validFrom: "2026-03-01", value: "E9" },
+				{ op: "delete", entryId: entry.id },
+			]) {
+				expect(
+					await refusal(
+						write("employee", employeeId, { [grade.id]: history(change) }, { level: "manager" }),
+					),
+				).toBe("not_editable");
+			}
+			expect(await entriesOf(grade)).toHaveLength(1);
+		});
+
+		it("counts a required tracked field whose only value starts in the future as missing today", async () => {
+			const grade = await define(ids.organization, {
+				name: "Pay grade",
+				tracked: true,
+				required: true,
+			});
+			const future = history(add("2999-01-01", "E9"));
+			expect(
+				await refusal(
+					write("employee", employeeId, { [grade.id]: future }, { requireComplete: true }),
+				),
+			).toBe("missing_required");
+			await write("employee", employeeId, { [grade.id]: future });
+			const section = await readCustomFieldSection(db, {
+				organizationId: ids.organization,
+				entity: "employee",
+				recordId: employeeId,
+				level: "admin",
+			});
+			expect(section.missingRequiredFieldIds).toEqual([grade.id]);
+			expect(section.values[grade.id]).toBeUndefined();
+
+			expect(
+				await refusal(
+					write(
+						"employee",
+						employeeId,
+						{ [grade.id]: history(add("2020-01-01", "E1")) },
+						{ requireComplete: true },
+					),
+				),
+			).toBe("accepted");
+			expect(
+				(
+					await readCustomFieldSection(db, {
+						organizationId: ids.organization,
+						entity: "employee",
+						recordId: employeeId,
+						level: "admin",
+					})
+				).missingRequiredFieldIds,
+			).toEqual([]);
+		});
+
+		it("keeps plain values for untracked fields and dated changes for tracked ones", async () => {
+			const grade = await define(ids.organization, { name: "Pay grade", tracked: true });
+			const desk = await define(ids.organization, { name: "Desk" });
+			expect(await refusal(write("employee", employeeId, { [grade.id]: "E5" }))).toBe(
+				"tracked_field",
+			);
+			expect(
+				await refusal(
+					write("employee", employeeId, { [desk.id]: history(add("2026-03-01", "4.12")) }),
+				),
+			).toBe("invalid_value");
+			await write("employee", employeeId, { [desk.id]: "4.12" });
+			expect(await readAsOf(desk, "1990-01-01")).toEqual({ type: "text", value: "4.12" });
+			expect(await readAsOf(desk, "2999-01-01")).toEqual({ type: "text", value: "4.12" });
+		});
+
+		it("requires a valid-from date on tracked values and none on untracked ones", async () => {
+			const grade = await define(ids.organization, { name: "Pay grade", tracked: true });
+			const desk = await define(ids.organization, { name: "Desk" });
+			const insert = (definitionId: string, validFrom: string | null, tracked: boolean) =>
+				admin.query(
+					`insert into custom_field_value (organization_id, definition_id, employee_id, text_value, valid_from, tracked)
+					 values ($1, $2, $3, 'x', $4, $5)`,
+					[ids.organization, definitionId, employeeId, validFrom, tracked],
+				);
+			await expect(insert(grade.id, null, true)).rejects.toThrow(
+				/custom_field_value_valid_from_check/,
+			);
+			await expect(insert(desk.id, "2026-03-01", false)).rejects.toThrow(
+				/custom_field_value_valid_from_check/,
+			);
+			// The flag can't disagree with the field's.
+			await expect(insert(grade.id, null, false)).rejects.toThrow(
+				/custom_field_value_definition_fk/,
+			);
+			await expect(insert(desk.id, "2026-03-01", true)).rejects.toThrow(
+				/custom_field_value_definition_fk/,
+			);
 		});
 	});
 

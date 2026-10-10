@@ -1,6 +1,7 @@
 import "server-only";
 
-import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
+import { and, eq, inArray, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { auditLog, customFieldValue, customRole, employee, employeeCustomRole } from "@/db/schema";
@@ -14,6 +15,14 @@ import {
 	listActiveCustomFields,
 	listCustomFieldDefinitions,
 } from "./definitions";
+import {
+	applyCustomFieldHistoryChanges,
+	type CustomFieldHistoryEffect,
+	type CustomFieldHistoryEntry,
+	type CustomFieldHistoryRefusal,
+	customFieldValueAsOf,
+	newestFirst,
+} from "./history-rules";
 import {
 	type CustomFieldValue,
 	type CustomFieldValueRefusal,
@@ -171,20 +180,12 @@ function canonicalNumeric(value: string): string {
 	return canonical === "-0" ? "0" : canonical;
 }
 
-/**
- * Whether `row` is the value as of `asOf`: dated rows count from their
- * valid-from date; an undated row counts always and loses to any dated row
- * that applies. (Untracked fields only have undated rows; #819 adds dated ones.)
- */
-function appliesAsOf(row: ValueRow, asOf: string): boolean {
-	return row.validFrom === null || row.validFrom <= asOf;
-}
-
-function newer(candidate: ValueRow, current: ValueRow | undefined): boolean {
-	if (!current) return true;
-	if (candidate.validFrom === current.validFrom) return false;
-	if (current.validFrom === null) return true;
-	return candidate.validFrom !== null && candidate.validFrom > current.validFrom;
+/** A tracked field's dated row as a history entry (null for an undated row). */
+function historyEntryOf(row: ValueRow, type: CustomFieldType): CustomFieldHistoryEntry | null {
+	const value = storedValue(row, type);
+	return row.validFrom === null || value === null
+		? null
+		: { id: row.id, validFrom: row.validFrom, value };
 }
 
 async function levelOf(
@@ -208,8 +209,9 @@ async function levelOf(
  *
  * Every query is organization scoped: record ids of another organization
  * simply have no values. Values of fields the viewer can't see never leave
- * this function. In #818 the as-of date doesn't change the result yet, since
- * there are no dated values.
+ * this function. A tracked field's value is the one with the latest valid-from
+ * on or before `asOf` (none before its first valid-from date); an untracked
+ * field's single value applies whatever the date (#819).
  */
 export async function readCustomFieldValues(
 	reader: CustomFieldReader,
@@ -250,23 +252,34 @@ export async function readCustomFieldValues(
 						customFieldValue.definitionId,
 						fields.map((field) => field.id),
 					),
+					or(
+						isNull(customFieldValue.validFrom),
+						lte(customFieldValue.validFrom, input.asOf.toString()),
+					),
 				),
 			);
-		const asOf = input.asOf.toString();
-		const latest = new Map<string, ValueRow>();
+		const fieldById = new Map(fields.map((field) => [field.id, field]));
+		const byRecordField = new Map<string, { recordId: string; rows: ValueRow[] }>();
 		for (const row of rows) {
-			if (!appliesAsOf(row, asOf)) continue;
-			const key = `${recordIdOf(row, input.entity)}:${row.definitionId}`;
-			if (newer(row, latest.get(key))) latest.set(key, row);
-		}
-		const typeOf = new Map(fields.map((field) => [field.id, field.type]));
-		for (const row of latest.values()) {
 			const recordId = recordIdOf(row, input.entity);
-			const type = typeOf.get(row.definitionId);
-			const value = type ? storedValue(row, type) : null;
-			if (!recordId || !value) continue;
+			if (!recordId) continue;
+			const key = `${recordId}:${row.definitionId}`;
+			const group = byRecordField.get(key) ?? { recordId, rows: [] };
+			group.rows.push(row);
+			byRecordField.set(key, group);
+		}
+		for (const { recordId, rows: group } of byRecordField.values()) {
+			const field = fieldById.get(group[0].definitionId);
+			if (!field) continue;
+			const value = field.tracked
+				? customFieldValueAsOf(
+						group.flatMap((row) => historyEntryOf(row, field.type) ?? []),
+						input.asOf,
+					)
+				: storedValue(group.find((row) => row.validFrom === null) ?? group[0], field.type);
+			if (!value) continue;
 			values[recordId] ??= {};
-			values[recordId][row.definitionId] = value;
+			values[recordId][field.id] = value;
 		}
 	}
 
@@ -292,6 +305,13 @@ export interface CustomFieldSection {
 	values: Record<string, CustomFieldValue>;
 	/** Required fields in `fields` without a value today (the "missing required values" indicator). */
 	missingRequiredFieldIds: string[];
+	/**
+	 * The dated history of each tracked field in `fields`, newest first (#819).
+	 * A tracked field without entries is absent.
+	 */
+	history: Record<string, CustomFieldHistoryEntry[]>;
+	/** Today in the organization's timezone ("YYYY-MM-DD"), the date `values` are read as of. */
+	today: string;
 }
 
 /**
@@ -308,13 +328,15 @@ export async function readCustomFieldSection(
 		level: CustomFieldViewerLevel | null;
 	},
 ): Promise<CustomFieldSection> {
+	const today = await customFieldsToday(reader, input.organizationId);
 	const read = await readCustomFieldValues(reader, {
 		organizationId: input.organizationId,
 		entity: input.entity,
 		recordIds: input.recordId ? [input.recordId] : [],
-		asOf: await customFieldsToday(reader, input.organizationId),
+		asOf: today,
 		viewer: { kind: "level", level: input.level },
 	});
+	const tracked = read.fields.filter((field) => field.tracked);
 	return {
 		fields: read.fields.map((field) => ({
 			...field,
@@ -322,7 +344,54 @@ export async function readCustomFieldSection(
 		})),
 		values: input.recordId ? (read.values[input.recordId] ?? {}) : {},
 		missingRequiredFieldIds: input.recordId ? (read.missingRequired[input.recordId] ?? []) : [],
+		history:
+			input.recordId && tracked.length > 0
+				? await readHistory(reader, {
+						organizationId: input.organizationId,
+						entity: input.entity,
+						recordId: input.recordId,
+						fields: tracked,
+					})
+				: {},
+		today: today.toString(),
 	};
+}
+
+/** The dated history of some tracked fields of one record, newest first, by field id. */
+async function readHistory(
+	reader: CustomFieldReader,
+	input: {
+		organizationId: string;
+		entity: CustomFieldEntity;
+		recordId: string;
+		fields: readonly CustomFieldDefinitionView[];
+	},
+): Promise<Record<string, CustomFieldHistoryEntry[]>> {
+	if (!UUID.test(input.recordId)) return {};
+	const rows = await reader
+		.select()
+		.from(customFieldValue)
+		.where(
+			and(
+				eq(customFieldValue.organizationId, input.organizationId),
+				eq(RECORD_COLUMN[input.entity], input.recordId),
+				inArray(
+					customFieldValue.definitionId,
+					input.fields.map((field) => field.id),
+				),
+				isNotNull(customFieldValue.validFrom),
+			),
+		);
+	const typeOf = new Map(input.fields.map((field) => [field.id, field.type]));
+	const history: Record<string, CustomFieldHistoryEntry[]> = {};
+	for (const row of rows) {
+		const type = typeOf.get(row.definitionId);
+		const entry = type ? historyEntryOf(row, type) : null;
+		if (!entry) continue;
+		history[row.definitionId] = [...(history[row.definitionId] ?? []), entry];
+	}
+	for (const fieldId of Object.keys(history)) history[fieldId] = newestFirst(history[fieldId]);
+	return history;
 }
 
 /**
@@ -353,15 +422,23 @@ export async function findRecordsMissingRequiredValues(
 
 export type CustomFieldValuesRefusal =
 	| CustomFieldValueRefusal
+	| CustomFieldHistoryRefusal
 	/** Not an active-or-archived field of this record kind in this organization. */
 	| "unknown_field"
 	| "field_archived"
 	/** Above the writer's edit level (or a field they can't see). */
 	| "not_editable"
-	/** A required field the writer may edit is left without a value. */
+	/** A plain value for a tracked field, which takes dated changes (`{ history }`). */
+	| "tracked_field"
+	/** A required field the writer may edit is left without a value (as of today). */
 	| "missing_required";
 
 const REFUSAL_MESSAGES: Record<CustomFieldValuesRefusal, string> = {
+	invalid_valid_from: "needs a valid 'valid from' date",
+	duplicate_valid_from: "already has a value valid from that date",
+	unknown_history_entry: "has changed meanwhile; reload and try again",
+	missing_value: "needs a value for each date",
+	tracked_field: "keeps a history; add a dated change instead",
 	invalid_value: "has an invalid value",
 	text_too_long: "is longer than 255 characters",
 	invalid_number: "needs a number",
@@ -424,13 +501,18 @@ function auditValue(field: CustomFieldDefinitionView, value: CustomFieldValue | 
  *
  * - `values`: field id -> input (see `CustomFieldValueInput`). Fields left out
  *   keep their value; unchanged values are not written.
+ * - A tracked field (#819) takes dated changes instead of a value:
+ *   `{ history: CustomFieldHistoryChange[] }` adds entries with any valid-from
+ *   date, corrects or deletes existing ones (`applyCustomFieldHistoryChanges`).
+ *   A plain value for it is refused (`tracked_field`).
  * - Every listed field must be an active field of this record kind that the
  *   writer's `level` may edit, and the input must pass the field's type rules.
  * - `requireComplete` (form saves only): afterwards, every active required
- *   field the writer may edit must have a value. Provisioning paths (SCIM,
- *   invitations, SSO, invite codes, demo data) don't call this at all.
+ *   field the writer may edit must have a value, tracked ones as of today.
+ *   Provisioning paths (SCIM, invitations, SSO, invite codes, demo data) don't
+ *   call this at all.
  * - Every change writes an audit entry on the record naming the field and the
- *   old and new value.
+ *   old and new value (for tracked fields: with the valid-from dates).
  */
 export async function writeCustomFieldValues(
 	tx: CustomFieldWriter,
@@ -442,6 +524,8 @@ export async function writeCustomFieldValues(
 		recordId: string;
 		values: unknown;
 		requireComplete: boolean;
+		/** The date required tracked fields are checked as of. Default: today in the organization's timezone. */
+		today?: PlainDate;
 	},
 ): Promise<void> {
 	if (input.values !== undefined && input.values !== null && !isRecord(input.values)) {
@@ -464,16 +548,30 @@ export async function writeCustomFieldValues(
 			and(
 				eq(customFieldValue.organizationId, input.organizationId),
 				eq(RECORD_COLUMN[input.entity], input.recordId),
-				isNull(customFieldValue.validFrom),
 			),
 		);
-	const rowByField = new Map(rows.map((row) => [row.definitionId, row]));
+	const rowByField = new Map(
+		rows.filter((row) => row.validFrom === null).map((row) => [row.definitionId, row]),
+	);
+	const rowById = new Map(rows.map((row) => [row.id, row]));
+	const historyOf = (field: CustomFieldDefinitionView) =>
+		rows.flatMap((row) =>
+			row.definitionId === field.id ? (historyEntryOf(row, field.type) ?? []) : [],
+		);
 	const current = (field: CustomFieldDefinitionView) => {
 		const row = rowByField.get(field.id);
 		return row ? storedValue(row, field.type) : null;
 	};
-	const finalValues: Record<string, CustomFieldValue | null> = {};
-	for (const field of fields) finalValues[field.id] = current(field);
+	/** Untracked: the value; tracked: the history entries (read as of today below). */
+	const finalUntracked: Record<string, CustomFieldValue | null> = {};
+	const finalHistory: Record<
+		string,
+		readonly Pick<CustomFieldHistoryEntry, "validFrom" | "value">[]
+	> = {};
+	for (const field of fields) {
+		if (field.tracked) finalHistory[field.id] = historyOf(field);
+		else finalUntracked[field.id] = current(field);
+	}
 
 	for (const [fieldId, raw] of requested) {
 		const field = fieldById.get(fieldId);
@@ -482,10 +580,18 @@ export async function writeCustomFieldValues(
 			throw new CustomFieldValuesRefused("not_editable", fieldId, field.name);
 		}
 		if (field.archived) throw new CustomFieldValuesRefused("field_archived", fieldId, field.name);
+		if (field.tracked) {
+			if (!isRecord(raw)) throw new CustomFieldValuesRefused("tracked_field", fieldId, field.name);
+			const applied = applyCustomFieldHistoryChanges(field, historyOf(field), raw);
+			if (!applied.ok) throw new CustomFieldValuesRefused(applied.reason, fieldId, field.name);
+			finalHistory[fieldId] = applied.entries;
+			await writeHistory(tx, input, field, applied.effects, rowById);
+			continue;
+		}
 		const before = current(field);
 		const parsed = parseCustomFieldValueInput(field, raw, before);
 		if (!parsed.ok) throw new CustomFieldValuesRefused(parsed.reason, fieldId, field.name);
-		finalValues[fieldId] = parsed.value;
+		finalUntracked[fieldId] = parsed.value;
 		if (sameCustomFieldValue(before, parsed.value)) continue;
 		await writeOne(tx, input, field, rowByField.get(fieldId) ?? null, before, parsed.value);
 	}
@@ -494,6 +600,13 @@ export async function writeCustomFieldValues(
 		const editableRequired = fields.filter(
 			(field) => !field.archived && canEditCustomField(input.level, field.editLevel),
 		);
+		const finalValues: Record<string, CustomFieldValue | null> = { ...finalUntracked };
+		if (editableRequired.some((field) => field.tracked && field.required)) {
+			const today = input.today ?? (await customFieldsToday(tx, input.organizationId));
+			for (const [fieldId, entries] of Object.entries(finalHistory)) {
+				finalValues[fieldId] = customFieldValueAsOf(entries, today);
+			}
+		}
 		const [missing] = missingRequiredCustomFieldIds(editableRequired, finalValues);
 		if (missing) {
 			throw new CustomFieldValuesRefused(
@@ -535,6 +648,7 @@ async function writeOne(
 			projectId: input.entity === "project" ? input.recordId : null,
 			customerId: input.entity === "customer" ? input.recordId : null,
 			...columnsOf(after),
+			tracked: false,
 			createdBy: input.actorUserId,
 			updatedBy: input.actorUserId,
 		});
@@ -560,3 +674,115 @@ async function writeOne(
 		}),
 	});
 }
+
+type WriteScope = {
+	organizationId: string;
+	actorUserId: string;
+	entity: CustomFieldEntity;
+	recordId: string;
+};
+
+function recordColumns(input: WriteScope) {
+	return {
+		employeeId: input.entity === "employee" ? input.recordId : null,
+		projectId: input.entity === "project" ? input.recordId : null,
+		customerId: input.entity === "customer" ? input.recordId : null,
+	};
+}
+
+function auditEntry(
+	field: CustomFieldDefinitionView,
+	entry: Pick<CustomFieldHistoryEntry, "validFrom" | "value"> | null,
+) {
+	return entry ? { validFrom: entry.validFrom, value: auditValue(field, entry.value) } : null;
+}
+
+/**
+ * Writes a tracked field's history changes (#819) and audits each one. Rows
+ * leaving their date (deletions, and corrections that move the date) go
+ * first, then in-place value corrections, then rows at their new dates, so the
+ * per-date uniqueness never trips over an intermediate state. A moved entry
+ * keeps its id and creation stamp.
+ */
+async function writeHistory(
+	tx: CustomFieldWriter,
+	input: WriteScope,
+	field: CustomFieldDefinitionView,
+	effects: readonly CustomFieldHistoryEffect[],
+	rowById: ReadonlyMap<string, ValueRow>,
+) {
+	const scoped = (id: string) =>
+		and(eq(customFieldValue.organizationId, input.organizationId), eq(customFieldValue.id, id));
+	const steps = effects.map((effect) => {
+		const before = effect.kind === "added" ? null : effect.before;
+		const after = effect.kind === "deleted" ? null : effect.after;
+		return {
+			kind: effect.kind,
+			entryId: before?.id ?? randomUUID(),
+			before,
+			after,
+			moves: before !== null && after !== null && before.validFrom !== after.validFrom,
+		};
+	});
+
+	for (const step of steps) {
+		if (step.before && (step.after === null || step.moves)) {
+			await tx.delete(customFieldValue).where(scoped(step.entryId));
+		}
+	}
+	for (const step of steps) {
+		if (step.before && step.after && !step.moves) {
+			await tx
+				.update(customFieldValue)
+				.set({
+					...columnsOf(step.after.value),
+					updatedAt: sql`now()`,
+					updatedBy: input.actorUserId,
+				})
+				.where(scoped(step.entryId));
+		}
+	}
+	for (const step of steps) {
+		if (!step.after || (step.before && !step.moves)) continue;
+		const original = step.before ? rowById.get(step.entryId) : undefined;
+		await tx.insert(customFieldValue).values({
+			id: step.entryId,
+			organizationId: input.organizationId,
+			definitionId: field.id,
+			...recordColumns(input),
+			...columnsOf(step.after.value),
+			validFrom: step.after.validFrom,
+			tracked: true,
+			...(original ? { createdAt: original.createdAt } : {}),
+			createdBy: original ? original.createdBy : input.actorUserId,
+			updatedBy: input.actorUserId,
+		});
+	}
+
+	for (const step of steps) {
+		await tx.insert(auditLog).values({
+			organizationId: input.organizationId,
+			entityType: input.entity,
+			entityId: input.recordId,
+			action: HISTORY_AUDIT_ACTIONS[step.kind],
+			performedBy: input.actorUserId,
+			changes: JSON.stringify({
+				before: auditEntry(field, step.before),
+				after: auditEntry(field, step.after),
+			}),
+			metadata: JSON.stringify({
+				fieldId: field.id,
+				fieldName: field.name,
+				fieldType: field.type,
+				entity: input.entity,
+				entryId: step.entryId,
+			}),
+		});
+	}
+}
+
+const HISTORY_AUDIT_ACTIONS = {
+	added: AuditAction.CUSTOM_FIELD_VALUE_HISTORY_ADDED,
+	corrected: AuditAction.CUSTOM_FIELD_VALUE_HISTORY_CORRECTED,
+	deleted: AuditAction.CUSTOM_FIELD_VALUE_HISTORY_DELETED,
+} as const;

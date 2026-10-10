@@ -53,7 +53,13 @@ describe("CustomFieldValuesSection", () => {
 	it("renders nothing when the viewer sees no field", () => {
 		const { container } = render(
 			<CustomFieldValuesSection
-				section={{ fields: [], values: {}, missingRequiredFieldIds: [] }}
+				section={{
+					fields: [],
+					values: {},
+					missingRequiredFieldIds: [],
+					history: {},
+					today: "2026-10-10",
+				}}
 				drafts={{}}
 				onDraftChange={() => {}}
 			/>,
@@ -80,6 +86,8 @@ describe("CustomFieldValuesSection", () => {
 				badge: { type: "boolean", value: false },
 			},
 			missingRequiredFieldIds: [],
+			history: {},
+			today: "2026-10-10",
 		});
 
 		const desk = screen.getByLabelText("Desk *");
@@ -99,10 +107,44 @@ describe("CustomFieldValuesSection", () => {
 				fields: [field({ id: "desk", name: "Desk", required: true })],
 				values: {},
 				missingRequiredFieldIds: ["desk"],
+				history: {},
+				today: "2026-10-10",
 			},
 			{ desk: "7.01" },
 		);
 		expect((screen.getByLabelText("Desk *") as HTMLInputElement).value).toBe("7.01");
 		expect(screen.getByText("Missing required values")).toBeTruthy();
+	});
+
+	it("shows tracked fields with their history, editable only at the edit level", () => {
+		const history = {
+			grade: [{ id: "e-1", validFrom: "2026-03-01", value: { type: "text", value: "E5" } }],
+			band: [{ id: "e-2", validFrom: "2026-01-01", value: { type: "text", value: "B1" } }],
+		} as const;
+		render(
+			<CustomFieldValuesSection
+				section={{
+					fields: [
+						field({ id: "grade", name: "Pay grade", tracked: true }),
+						field({ id: "band", name: "Band", tracked: true, editable: false }),
+					],
+					values: {
+						grade: { type: "text", value: "E5" },
+						band: { type: "text", value: "B1" },
+					},
+					missingRequiredFieldIds: [],
+					history: { grade: [...history.grade], band: [...history.band] },
+					today: "2026-10-10",
+				}}
+				drafts={{}}
+				onDraftChange={() => {}}
+				onHistoryChange={() => {}}
+			/>,
+		);
+		expect(screen.getByRole("list", { name: "History of Pay grade" })).toBeTruthy();
+		expect(screen.getByRole("list", { name: "History of Band" })).toBeTruthy();
+		expect(screen.getAllByRole("button", { name: "Add change" })).toHaveLength(1);
+		// No plain value input: tracked fields take dated changes.
+		expect(screen.queryByRole("textbox")).toBeNull();
 	});
 });
