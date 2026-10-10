@@ -68,12 +68,38 @@ An employee's work within one local day in their timezone: their completed work 
 _Avoid_: Daily sum, actual hours, today's minutes
 
 **Closed month**:
-A calendar month closed for an organization or for a team. For each employee covered, it is that month in the employee's timezone, fixed when the month is closed: a later timezone or team change does not move or lift it. A team close covers the employees whose primary team it was at that moment; an organization close also covers employees added later. Nobody may change work, attribution or absences that touch a closed month, even in part, whoever or whatever is writing; notes are not frozen, and erasing an employee or organization entirely is not a change. Closing is independent of any payroll export, and is refused while requests about the month are undecided or work that started in it is still live.
+A calendar month closed for an organization or for a team. For each employee covered, it is that month in the employee's timezone, fixed when the month is closed: a later timezone or team change does not move or lift it. A team close covers the employees whose primary team it was at that moment; an organization close also covers employees added later. Nobody may change work, attribution, absences or balance adjustments that touch a closed month, even in part, whoever or whatever is writing; notes are not frozen, and erasing an employee or organization entirely is not a change. Closing is independent of any payroll export, and is refused while requests about the month are undecided or work that started in it is still live.
 _Avoid_: Locked period, payroll period, frozen month, closed balance period
 
 **Reopening**:
 Lifting a month's close for some or all of the employees it covers, with a stated reason, by someone permitted to reopen. It is the only way to change work inside a closed month, and the month stays open for them until it is closed again.
 _Avoid_: Unlock
+
+### Work balance
+
+**Required time**:
+The work an employee's work policy expects of them on a local day, less what public holidays and approved absences release. Time off in lieu releases none.
+_Avoid_: Target hours, expected hours, Sollzeit
+
+**Work balance**:
+An employee's completed work minus their required time, accumulated since they started, together with their balance adjustments.
+_Avoid_: Overtime account, time account, flextime balance
+
+**Balance adjustment**:
+A recorded change to an employee's work balance that is neither work nor required time: an opening balance or an overtime payout. It counts from the end of its day, carries who recorded it and why, and is never edited; a mistaken one is cancelled, and stays visible as cancelled.
+_Avoid_: Manual correction, balance edit, booking
+
+**Opening balance**:
+The work balance an employee brings from before their time was kept in Z8, as of a day; it may be negative. It replaces their work balance up to and including that day: earlier work and required time stay on record but no longer count. An employee has at most one in effect.
+_Avoid_: Carry-over (reserved for vacation), starting balance, initial balance
+
+**Overtime payout**:
+A balance adjustment recording that part of an employee's positive work balance was paid as wages. It lowers the work balance by that time, and is never recorded for more than the work balance on its day; later corrections to work may still leave the balance negative.
+_Avoid_: Payout (alone), cash-out, overtime settlement
+
+**Time off in lieu**:
+An absence taken against the work balance instead of against vacation. No work is expected on it, yet its required time still counts, so the work balance falls by that time.
+_Avoid_: TOIL, compensatory leave, overtime reduction
 
 **Admission**:
 How an organization's work records accept new entries: `legacy` or `append`. An organization whose admission is `append` is **adopted**.

@@ -4,6 +4,7 @@
 
 - [Delivery](./.github/GLOSSARY.md): verifies proposed Z8 changes, provides desktop installers for review, and prepares releases for publication
 
+- [Absences](./apps/webapp/src/lib/absences/CONTEXT.md): counts the working days employees take off, draws vacation from their allowance, and records who covers for them while they are away
 - [Approvals](./apps/webapp/src/lib/approvals/CONTEXT.md): decides approval requests and delivers their cards while each approval kind moves from legacy requests to canonical workflows
 - [Billable Time](./apps/webapp/src/lib/billable-time/CONTEXT.md): prices customer-chargeable work, reports its revenue and margin, and hands it to accounting tools as invoice drafts
 - [Organization](./apps/webapp/src/lib/organization/CONTEXT.md): holds an organization's master data about its employees and customers, and the custom fields it defines on employees, projects and customers
@@ -13,7 +14,6 @@
 - [Public API](./apps/webapp/src/lib/public-api/CONTEXT.md): lets an organization's own systems read its data with an API key, limited to the key's scopes
 - [Personnel File](./apps/webapp/src/lib/personnel-file/CONTEXT.md): keeps each employee's documents and controls which of them the employee sees
 - [Scheduling](./apps/webapp/src/lib/scheduling/CONTEXT.md): plans shifts ahead of time and helps planners staff open shifts
-- [Absences](./apps/webapp/src/lib/absences/CONTEXT.md): records employees' time away from work and who covers for them while they are away
 
 ## Relationships
 
@@ -30,6 +30,8 @@
 - **Organization → Projects**: an organization defines project custom fields in Organization; a project holds custom field values for them, and Projects owns the project itself
 - **Employee lifecycle → Time Tracking**: a departure closes live work inside a Time Tracking **work transaction**
 - **Employee lifecycle → Personnel File**: a departure revokes the personnel file officer grant the employee holds and starts the **retention** clock of their documents; a rehire stops it
+- **Absences → Personnel File**: a sick-leave absence can have sick notes, which are employee documents in the personnel file; the absence knows only that they exist, and personnel file access decides who sees them
 - **Public API → Time Tracking**: the Public API reads work records and never writes them in v1
-- **Absences → Approvals**: an absence request is an approval kind; Approvals decides it, and an approver's deputy named on their absence receives the approvals that reach them while they are away
+- **Absences → Approvals**: an absence request is an approval kind; Approvals decides it, and while an approver is away the deputy named on their absence may decide their approvals as a **deputy decision**
+- **Work policy → Absences**: the schedule of an employee's work policy decides which of their days are working days; Absences reads it to count absence days and never changes it
 - **Scheduling → Time Tracking**: a shift is planned work and a work period is recorded work; a staffing suggestion reads a candidate's work periods to judge compliance and never writes them

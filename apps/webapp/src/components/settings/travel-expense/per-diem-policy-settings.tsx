@@ -215,16 +215,26 @@ function PerDiemPolicyContent({
 			)}
 
 			<p className="text-sm text-muted-foreground">
-				{t(
-					"settings.travelExpenses.perDiem.rules",
-					"Eligibility follows {reference} ({version}), verified for travel days from {from} to {through}. Trips abroad are priced per day only with adopted foreign rates; other days and special itineraries are flagged for a manual calculation.",
-					{
-						reference: data.rules.reference,
-						version: data.rules.version,
-						from: formatPlainDate(locale, data.rules.validFrom),
-						through: formatPlainDate(locale, data.rules.validThrough),
-					},
-				)}
+				{data.rules.validThrough
+					? t(
+							"settings.travelExpenses.perDiem.rules",
+							"Eligibility follows {reference} ({version}), verified for travel days from {from} to {through}. Trips abroad are priced per day only with adopted foreign rates; other days and special itineraries are flagged for a manual calculation.",
+							{
+								reference: data.rules.reference,
+								version: data.rules.version,
+								from: formatPlainDate(locale, data.rules.validFrom),
+								through: formatPlainDate(locale, data.rules.validThrough),
+							},
+						)
+					: t(
+							"settings.travelExpenses.perDiem.rulesOpenEnded",
+							"Eligibility follows {reference} ({version}), verified for travel days from {from} until the law changes. Trips abroad are priced per day only with adopted foreign rates; other days and special itineraries are flagged for a manual calculation.",
+							{
+								reference: data.rules.reference,
+								version: data.rules.version,
+								from: formatPlainDate(locale, data.rules.validFrom),
+							},
+						)}
 			</p>
 
 			<div className="flex flex-wrap gap-2">
