@@ -9,7 +9,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { queryKeys } from "@/lib/query";
 import { InviteMemberDialog } from "./invite-member-dialog";
 
-const { listTeamsMock, refreshMock, sendInvitationMock, toastErrorMock } = vi.hoisted(() => ({
+const {
+	createKioskOnlyEmployeeMock,
+	listTeamsMock,
+	refreshMock,
+	sendInvitationMock,
+	toastErrorMock,
+} = vi.hoisted(() => ({
+	createKioskOnlyEmployeeMock: vi.fn(),
 	listTeamsMock: vi.fn(),
 	refreshMock: vi.fn(),
 	sendInvitationMock: vi.fn(),
@@ -35,6 +42,17 @@ vi.mock("@/navigation", () => ({
 
 vi.mock("@/app/[locale]/(app)/settings/organizations/actions", () => ({
 	sendInvitation: sendInvitationMock,
+}));
+
+vi.mock("@/app/[locale]/(app)/settings/employees/kiosk-actions", () => ({
+	createKioskOnlyEmployeeAction: createKioskOnlyEmployeeMock,
+	getKioskOnlyEmployeeLocationsAction: async () => ({
+		success: true,
+		data: [
+			{ id: "loc-store", name: "Store" },
+			{ id: "loc-warehouse", name: "Warehouse" },
+		],
+	}),
 }));
 
 vi.mock("@/app/[locale]/(app)/settings/teams/actions", () => ({
@@ -150,6 +168,54 @@ describe("InviteMemberDialog target team form", () => {
 		await waitFor(() => expect(toastErrorMock).toHaveBeenCalledWith("Invitation failed"));
 		expect(invalidateQueries).not.toHaveBeenCalled();
 		expect(refreshMock).not.toHaveBeenCalled();
+	});
+
+	it("creates a kiosk-only employee without an email instead of inviting (#857)", async () => {
+		createKioskOnlyEmployeeMock.mockResolvedValue({ success: true, data: { employeeId: "e-1" } });
+		const { invalidateQueries, onOpenChange } = renderDialog();
+
+		fireEvent.click(screen.getByRole("checkbox", { name: "Kiosk only, no email" }));
+		expect(screen.queryByLabelText("Email Address")).toBeNull();
+		fireEvent.change(screen.getByLabelText("First name"), { target: { value: "Jamie" } });
+		fireEvent.change(screen.getByLabelText("Last name"), { target: { value: "Doe" } });
+		// The admin picks the assigned locations whose kiosks accept the employee (#761).
+		fireEvent.click(await screen.findByRole("checkbox", { name: "Warehouse" }));
+		fireEvent.click(screen.getByRole("checkbox", { name: "Store" }));
+		fireEvent.click(screen.getByRole("button", { name: "Create employee" }));
+
+		await waitFor(() =>
+			expect(createKioskOnlyEmployeeMock).toHaveBeenCalledWith({
+				firstName: "Jamie",
+				lastName: "Doe",
+				teamId: null,
+				locationIds: ["loc-warehouse", "loc-store"],
+			}),
+		);
+		expect(sendInvitationMock).not.toHaveBeenCalled();
+		await waitFor(() =>
+			expect(invalidateQueries).toHaveBeenCalledWith({
+				queryKey: queryKeys.employees.organization("org-1"),
+			}),
+		);
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
+
+	it("shows why a kiosk-only employee could not be created", async () => {
+		createKioskOnlyEmployeeMock.mockResolvedValue({
+			success: false,
+			error: "Only organization owners and admins can manage kiosk-only employees.",
+			code: "not_allowed",
+		});
+		const { onOpenChange } = renderDialog();
+
+		fireEvent.click(screen.getByRole("checkbox", { name: "Kiosk only, no email" }));
+		fireEvent.change(screen.getByLabelText("First name"), { target: { value: "Jamie" } });
+		fireEvent.click(screen.getByRole("button", { name: "Create employee" }));
+
+		await waitFor(() =>
+			expect(toastErrorMock).toHaveBeenCalledWith("You are not allowed to do this."),
+		);
+		expect(onOpenChange).not.toHaveBeenCalled();
 	});
 
 	it("renders an accessible target team select below role", () => {

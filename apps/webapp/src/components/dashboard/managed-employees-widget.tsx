@@ -35,6 +35,9 @@ type ManagedEmployee = {
 	clockStatus?: EmployeeClockStatus;
 	lastActivityAt?: string | null;
 	lastActivityUtcOffsetMinutes?: number | null;
+	/** A break in progress (#861). */
+	breakStartedAt?: string | null;
+	breakStartedZone?: string | null;
 };
 
 function EmployeeCard({ employee }: { employee: ManagedEmployee }) {
@@ -72,6 +75,8 @@ function EmployeeCard({ employee }: { employee: ManagedEmployee }) {
 					lastActivityUtcOffsetMinutes={
 						employee.lastActivityUtcOffsetMinutes ?? null
 					}
+					breakStartedAt={employee.breakStartedAt}
+					breakStartedZone={employee.breakStartedZone}
 				/>
 			</div>
 
@@ -151,6 +156,7 @@ export function ManagedEmployeesWidget() {
 			lastActivityAt: activity?.lastActivityAt ?? null,
 			lastActivityUtcOffsetMinutes:
 				activity?.lastActivityUtcOffsetMinutes ?? null,
+			...presence.getBreak(employee.id),
 		};
 	});
 	const isManager = managedEmployeesQuery.data?.isManager ?? false;

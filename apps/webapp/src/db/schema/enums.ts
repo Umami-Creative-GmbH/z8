@@ -407,15 +407,6 @@ export const memberStatusEnum = pgEnum("member_status", [
 	"suspended", // temporarily disabled
 ]);
 
-// Payroll export format enum
-export const payrollExportFormatEnum = pgEnum("payroll_export_format_type", [
-	"datev_lohn",
-	"personio",
-	"sage",
-	"lexware",
-	"custom",
-]);
-
 // Payroll export status enum
 export const payrollExportStatusEnum = pgEnum("payroll_export_status", [
 	"pending",

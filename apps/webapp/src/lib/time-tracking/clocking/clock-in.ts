@@ -10,12 +10,7 @@ import {
 	instantToCanonicalString,
 } from "@/lib/datetime/temporal-core";
 import { clockingService } from "../clocking-service";
-import {
-	type ClockChannel,
-	CompletedWorkCollisionError,
-	clockSource,
-	liveClockOutWriter,
-} from "../close-active-work";
+import { type ClockChannel, CompletedWorkCollisionError } from "../close-active-work";
 import {
 	findLiveWorkOccupant,
 	replayStartLiveWork,
@@ -31,6 +26,7 @@ import {
 	isFrozen,
 	receiptCommandOf,
 } from "./frozen";
+import { clockWriterOf, kioskReceiptEvidence } from "./kiosk";
 import { assertLegacyAccepted } from "./legacy-command";
 import type { ClockInCommand, ClockInRefusal, ClockInResult } from "./types";
 
@@ -70,13 +66,15 @@ export function planClockIn(command: ClockInCommand, employee: Employee): ClockI
 		requestedInstant: at.kind === "occurred" ? instantToCanonicalString(at.instant) : null,
 		browserTimezone: zone.device,
 		deviceInfo: channel,
+		...kioskReceiptEvidence(command),
 	};
 	return {
 		command,
 		employee,
 		receiptCommand: receiptCommandOf<StartLiveWorkOperationCommand>(command, receiptCommand),
-		// The live channel's writer names the channel, not the kind, as for web breaks.
-		writer: liveClockOutWriter(channel),
+		// The live channel's writer names the channel, not the kind, as for web breaks;
+		// a kiosk's also names the kiosk (#860).
+		writer: clockWriterOf(command),
 	};
 }
 
@@ -84,8 +82,8 @@ export function planClockIn(command: ClockInCommand, employee: Employee): ClockI
  * The device evidence a legacy start of this command may carry. Before #483 the
  * legacy route marked its extension replays apart from its other commands.
  */
-function legacyDeviceEvidence(command: ClockInCommand): string[] {
-	return command.legacy ? [command.channel, "extension-replay"] : [command.channel];
+function legacyDeviceEvidence({ command, writer }: ClockInPlan): string[] {
+	return command.legacy ? [writer.deviceInfo, "extension-replay"] : [writer.deviceInfo];
 }
 
 /**
@@ -126,7 +124,7 @@ async function replayLegacyClockIn(
 	if (
 		entry.type !== "clock_in" ||
 		entry.isSuperseded ||
-		!legacyDeviceEvidence(command).includes(entry.deviceInfo ?? "") ||
+		!legacyDeviceEvidence(plan).includes(entry.deviceInfo ?? "") ||
 		(at.kind === "occurred" &&
 			compareInstants(instantFromDate(entry.timestamp), at.instant) !== 0) ||
 		!period ||
@@ -222,7 +220,7 @@ export async function startClockIn(
 		...scopeIds,
 		createdBy: command.principal.userId,
 		action: { instant: eventInstant, ...capture },
-		source: clockSource(command.channel),
+		source: { ipAddress: plan.writer.ipAddress ?? null, deviceInfo: plan.writer.deviceInfo },
 		workLocationType: command.body.workLocationType,
 	});
 	return { disposition: "executed", entry: entry as ClockInResult };

@@ -2,6 +2,7 @@ import "server-only";
 
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
 import { compareInstants } from "@/lib/datetime/temporal-core";
+import { autoClockOutClosureEnd } from "../automatic-clock-out/policy";
 import type { AutoClockOutDecision } from "../automatic-clock-out/types";
 import { createOrdinaryApprovalRuntime } from "../ordinary-approval-runtime";
 import {
@@ -133,7 +134,8 @@ export function automaticClockOutTransactions(
 				input.userId !== bound.provenanceUserId ||
 				input.submissionId !== bound.operationId ||
 				(input.workPeriodId !== undefined && input.workPeriodId !== bound.workPeriodId) ||
-				(input.endTime !== undefined && compareInstants(input.endTime, bound.cutoff) !== 0)
+				(input.endTime !== undefined &&
+					compareInstants(input.endTime, autoClockOutClosureEnd(bound)) !== 0)
 			)
 				return Promise.reject(new Error("Clock command is outside its automatic closure"));
 			return scope.savepoint((savepoint) => operation(enlistedContext(savepoint)));

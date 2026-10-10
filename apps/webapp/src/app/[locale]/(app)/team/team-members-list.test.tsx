@@ -41,6 +41,7 @@ vi.mock("@/lib/query", () => ({
 	useEmployeeClockStatuses: () => ({
 		getStatus: () => "unknown",
 		getActivity: getActivityMock,
+		getBreak: () => null,
 	}),
 }));
 vi.mock("@/navigation", () => ({

@@ -306,7 +306,7 @@ describe("organization API keys on PostgreSQL", () => {
 
 	it("migrates user-owned keys to the organization in their metadata", async () => {
 		const migration = await readFile(
-			join(import.meta.dirname, "../../../../drizzle/0182_organization_api_keys.sql"),
+			join(import.meta.dirname, "../../../../drizzle/0188_organization_api_keys.sql"),
 			"utf8",
 		);
 		const legacy = (id: string, referenceId: string, metadata: unknown, extra = "") =>

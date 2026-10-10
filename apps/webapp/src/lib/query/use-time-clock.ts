@@ -35,6 +35,9 @@ export interface TimeClockState {
 		id: string;
 		startTime: Date;
 		currentTask?: BookedProjectTask | null;
+		/** An open break in progress (#861), read-only on the web. */
+		breakStartedAt?: Date | null;
+		breakStartedZone?: string | null;
 	} | null;
 }
 

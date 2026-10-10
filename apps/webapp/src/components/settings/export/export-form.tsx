@@ -153,14 +153,14 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 							</li>
 							<li>
 								{t(
-									"settings.dataExport.form.aboutLinkValidity",
-									"Download links are valid for 24 hours",
+									"settings.dataExport.form.aboutDownloadFromHistory",
+									"Download finished exports from Export History",
 								)}
 							</li>
 							<li>
 								{t(
-									"settings.dataExport.form.aboutStorageDuration",
-									"Export files are stored for 7 days",
+									"settings.dataExport.form.aboutFileRetention",
+									"Export files are deleted after 30 days",
 								)}
 							</li>
 							<li>

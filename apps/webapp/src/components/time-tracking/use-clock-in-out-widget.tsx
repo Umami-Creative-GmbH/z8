@@ -27,6 +27,8 @@ interface ActiveWorkPeriodData {
 	id: string;
 	startTime: Date;
 	endTime: Date | null;
+	breakStartedAt?: Date | null;
+	breakStartedZone?: string | null;
 }
 
 interface ClockInOutWidgetState {
@@ -128,7 +130,12 @@ export function useClockInOutWidget(
 		employeeId: null,
 		isClockedIn: !!initialWorkPeriod,
 		activeWorkPeriod: initialWorkPeriod
-			? { id: initialWorkPeriod.id, startTime: initialWorkPeriod.startTime }
+			? {
+					id: initialWorkPeriod.id,
+					startTime: initialWorkPeriod.startTime,
+					breakStartedAt: initialWorkPeriod.breakStartedAt ?? null,
+					breakStartedZone: initialWorkPeriod.breakStartedZone ?? null,
+				}
 			: null,
 	};
 

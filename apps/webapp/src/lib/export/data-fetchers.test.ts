@@ -28,6 +28,9 @@ vi.mock("@/db", () => ({
 		employeeId: "workPeriod.employeeId",
 		startTime: "workPeriod.startTime",
 	},
+	auditLog: {
+		organizationId: "auditLog.organizationId",
+	},
 }));
 
 vi.mock("@/lib/auth/derived-user-name", () => ({
@@ -113,7 +116,7 @@ test("streams audit logs with the configured batch limit and offset", async () =
 		entityType: "organization",
 		entityId: "org-1",
 		action: "updated",
-		performedBy: null,
+		performedBy: "user-1",
 		changes: null,
 		metadata: null,
 		timestamp: new Date("2026-01-01T00:00:00.000Z"),
@@ -123,13 +126,7 @@ test("streams audit logs with the configured batch limit and offset", async () =
 		.mockResolvedValueOnce([row("audit-3")]);
 
 	const batches = [];
-	for await (const batch of streamAuditLogs(
-		"org-1",
-		new Set(),
-		new Set(),
-		new Set(),
-	))
-		batches.push(batch);
+	for await (const batch of streamAuditLogs("org-1")) batches.push(batch);
 
 	expect(batches.map((batch) => batch.map(({ id }) => id))).toEqual([
 		["audit-1", "audit-2"],

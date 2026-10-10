@@ -184,6 +184,17 @@ describe("email template settings actions", () => {
 		expect(exportReady?.starterDraftPlainText).not.toContain("Time entries, Absences");
 	});
 
+	it("states how long the export file stays available instead of a link lifetime", async () => {
+		const templates = await listEmailTemplates();
+		const exportReady = templates.find((entry) => entry.key === "export-ready");
+		const plainText = exportReady?.starterDraftPlainText ?? "";
+
+		expect(plainText).not.toMatch(/valid for 24 hours/i);
+		expect(plainText).not.toMatch(/link expires/i);
+		expect(plainText).toMatch(/available until\s+{{expiresAt}}/i);
+		expect(plainText).toContain("{{downloadUrl}}");
+	});
+
 	it("restores numeric preview values without corrupting unrelated HTML", async () => {
 		const templates = await listEmailTemplates();
 		const absenceSubmitted = templates.find((entry) => entry.key === "absence-request-submitted");

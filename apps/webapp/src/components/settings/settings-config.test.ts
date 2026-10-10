@@ -162,6 +162,21 @@ describe("settings visibility tiers", () => {
 		});
 	});
 
+	it("shows kiosks in administration to org admins only", () => {
+		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
+		const managerEntries = getVisibleSettings("manager", true);
+		const memberEntries = getVisibleSettings("member", true);
+
+		expect(orgAdminEntries.find((entry) => entry.id === "kiosks")).toMatchObject({
+			href: "/settings/kiosks",
+			icon: "device-tablet",
+			minimumTier: "orgAdmin",
+			group: "administration",
+		});
+		expect(managerEntries.some((entry) => entry.id === "kiosks")).toBe(false);
+		expect(memberEntries.some((entry) => entry.id === "kiosks")).toBe(false);
+	});
+
 	it("shows custom fields to org admins next to customers and projects", () => {
 		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
 		const managerEntries = getVisibleSettings("manager", true);

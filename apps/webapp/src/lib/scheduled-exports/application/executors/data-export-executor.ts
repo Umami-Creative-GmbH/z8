@@ -8,8 +8,8 @@ import { and, eq } from "drizzle-orm";
 import { dataExport, db, employee } from "@/db";
 import { getExportById, processExport } from "@/lib/export/export-service";
 import { createLogger } from "@/lib/logger";
-import { getPresignedUrl } from "@/lib/storage/export-s3-client";
 import type { DataExportReportConfig, ExecutionResult, ReportConfig } from "../../domain/types";
+import { signFileUrl } from "../../infrastructure/signed-file-url";
 import type { ExecuteParams, IReportExecutor } from "./base-executor";
 
 const logger = createLogger("DataExportExecutor");
@@ -99,9 +99,9 @@ export class DataExportExecutor implements IReportExecutor {
 				};
 			}
 
-			// Generate presigned URL for the completed export
-			const s3Url = completedRecord.s3Key
-				? await getPresignedUrl(organizationId, completedRecord.s3Key, 604800)
+			// Generate a 7-day download link for the completed export
+			const fileUrl = completedRecord.s3Key
+				? await signFileUrl(organizationId, completedRecord.s3Key, 604800)
 				: undefined;
 
 			return {
@@ -109,7 +109,7 @@ export class DataExportExecutor implements IReportExecutor {
 				underlyingJobId: exportRecord.id,
 				underlyingJobType: "data_export",
 				s3Key: completedRecord.s3Key || undefined,
-				s3Url,
+				fileUrl,
 				fileSizeBytes: completedRecord.fileSizeBytes || undefined,
 			};
 		} catch (error) {
