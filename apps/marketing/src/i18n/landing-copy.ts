@@ -31,7 +31,7 @@ const navConfig = {
 const comparisonAvailability = {
 	"time-clock": { z8: true, others: true },
 	"gobd-archiving": { z8: true, others: false },
-	"payroll-export": { z8: true, others: false },
+	"payroll-export": { z8: true, others: true },
 	"enterprise-sso": { z8: true, others: false },
 	"scim-provisioning": { z8: true, others: false },
 	"multi-tenant": { z8: true, others: false },
