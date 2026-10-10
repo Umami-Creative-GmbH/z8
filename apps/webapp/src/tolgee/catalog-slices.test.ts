@@ -51,10 +51,8 @@ function predecessor(locale: string, namespaces: readonly Namespace[]) {
 	}
 	for (const { data } of sources) merge(merged, data);
 	for (const { namespace, data } of sources)
-		if (namespace !== "common") {
-			for (const [key, value] of Object.entries(data))
-				merged[`${namespace}:${key}`] = value;
-		}
+		for (const [key, value] of Object.entries(data))
+			merged[`${namespace}:${key}`] = value;
 	return { [locale]: merged };
 }
 

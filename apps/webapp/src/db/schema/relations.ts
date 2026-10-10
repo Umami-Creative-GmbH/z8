@@ -69,7 +69,12 @@ import {
 	userRoleTemplateAssignment,
 } from "./identity";
 import { inviteCode, inviteCodeUsage, memberApproval } from "./invite-code";
-import { notification, notificationPreference, pushSubscription } from "./notification";
+import {
+	notification,
+	notificationPreference,
+	pushDeviceToken,
+	pushSubscription,
+} from "./notification";
 // Import tables from all domain files
 import {
 	employee,
@@ -1914,6 +1919,17 @@ export const pushSubscriptionRelations = relations(pushSubscription, ({ one }) =
 	user: one(user, {
 		fields: [pushSubscription.userId],
 		references: [user.id],
+	}),
+}));
+
+export const pushDeviceTokenRelations = relations(pushDeviceToken, ({ one }) => ({
+	user: one(user, {
+		fields: [pushDeviceToken.userId],
+		references: [user.id],
+	}),
+	session: one(session, {
+		fields: [pushDeviceToken.sessionId],
+		references: [session.id],
 	}),
 }));
 

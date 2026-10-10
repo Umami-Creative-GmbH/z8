@@ -270,15 +270,14 @@ function isTreeTranslationsData(value: unknown): value is TreeTranslationsData {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+// Every namespace, including the default one, needs its `ns:` aliases: the extractor strips the
+// prefix from `t("common:user.theme-toggle")`, but Tolgee looks the key up literally (#976).
+// Aliases reuse the primary subtrees, so RSC serializes them as references.
 function addNamespaceKeyAliases(
 	target: TreeTranslationsData,
 	namespace: Namespace,
 	data: TreeTranslationsData,
 ) {
-	if (namespace === DEFAULT_NAMESPACE) {
-		return;
-	}
-
 	for (const [key, value] of Object.entries(data)) {
 		target[`${namespace}:${key}`] = value;
 	}

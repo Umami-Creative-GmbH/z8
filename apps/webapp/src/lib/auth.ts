@@ -37,6 +37,7 @@ import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-mem
 import { rejectOrganizationSsoApprovalUpdate } from "@/lib/auth/organization-sso-approval-update-guard";
 import { rejectOrganizationTimezoneUpdate } from "@/lib/auth/organization-timezone-update-guard";
 import { socialOrgOAuthPlugin } from "@/lib/auth/social-org-oauth";
+import { storeAppSessionPlugin } from "@/lib/auth/store-app-session";
 import {
 	provisionSsoProviderOrganization,
 	ssoVerifiedDomainMembershipPlugin,
@@ -799,6 +800,8 @@ export const auth = betterAuth({
 			enableMetadata: true,
 		}),
 		createSsoEnforcementPlugin(sessionSsoStore),
+		// Server-only: hands an exchanged store app session to the web view (#842).
+		storeAppSessionPlugin(),
 		nextCookies(),
 		createSCIMCallbackModelRegistration(),
 	],

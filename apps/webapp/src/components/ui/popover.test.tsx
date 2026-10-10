@@ -94,6 +94,18 @@ describe("PopoverContent", () => {
 		await waitFor(() => expect(document.activeElement).toBe(before));
 	});
 
+	it("scrolls content taller than the space left on screen (#846)", async () => {
+		const user = userEvent.setup();
+		const ref = React.createRef<HTMLDivElement>();
+		render(<SearchablePopover ref={ref} />);
+
+		await user.click(screen.getByRole("button", { name: "Open" }));
+
+		await waitFor(() => expect(ref.current).not.toBeNull());
+		expect(ref.current?.className).toContain("max-h-(--available-height)");
+		expect(ref.current?.className).toContain("overflow-y-auto");
+	});
+
 	it("still forwards a ref to the popup element", async () => {
 		const user = userEvent.setup();
 		const ref = React.createRef<HTMLDivElement>();

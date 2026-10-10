@@ -93,6 +93,49 @@ export function frozenClockCommandsAvailable(
 }
 
 /**
+ * Whether a clock command may be captured on this device while offline (#845).
+ * Only an adopted organization accepts frozen clock commands (time-tracking ADR
+ * 0002), so a capture anywhere else could never be sent. The page decides from
+ * the capabilities it last read online for this account and organization;
+ * none read, or read for another context, count as not adopted. Adoption shows
+ * up the next time the device is online.
+ */
+export function offlineClockCaptureAllowed(
+	capabilities: BrowserClockCommandCapabilities | null | undefined,
+	session: Pick<PageSession, "userId" | "organizationId">,
+): boolean {
+	return Boolean(
+		capabilities &&
+			capabilities.submit === "available" &&
+			capabilities.context.userId === session.userId &&
+			capabilities.context.organizationId === session.organizationId,
+	);
+}
+
+/** The outcome code of a clock command refused offline before anything was captured (#845). */
+export const CLOCK_CONNECTION_REQUIRED = "connection_required";
+
+/** How the page words that refusal. */
+export const CLOCK_CONNECTION_REQUIRED_MESSAGE = [
+	"timeTracking.errors.clockConnectionRequired",
+	"Clocking needs a connection in this organization. Reconnect and try again.",
+] as const;
+
+/** Refused offline in an organization that is not adopted: nothing was captured or stored. */
+export function clockConnectionRequired() {
+	return {
+		success: false as const,
+		code: CLOCK_CONNECTION_REQUIRED,
+		error: CLOCK_CONNECTION_REQUIRED_MESSAGE[1],
+	};
+}
+
+/** Whether a clock command result is that refusal, shown inline rather than as an error. */
+export function isClockConnectionRequired(result: { success: boolean; code?: unknown }): boolean {
+	return !result.success && result.code === CLOCK_CONNECTION_REQUIRED;
+}
+
+/**
  * Freeze only when the server offers version 2 submission for exactly the
  * session the page is in. Anything else keeps the legacy path; a command that
  * was never frozen is not a downgrade.

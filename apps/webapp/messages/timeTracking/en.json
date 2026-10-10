@@ -84,6 +84,7 @@
       "breakTooLong": "Break duration must be shorter than your current session.",
       "clockAttributionNotAllowed": "The selected project or category is not available",
       "clockCommandRejected": "The server did not accept this clock action",
+      "clockConnectionRequired": "Clocking needs a connection in this organization. Reconnect and try again.",
       "clockInAppendReview": "Your time history needs review before you can clock in. Please contact your administrator.",
       "clockInCollision": "This clock-in conflicts with an earlier request. Please refresh and try again.",
       "clockInFailed": "Failed to clock in",
