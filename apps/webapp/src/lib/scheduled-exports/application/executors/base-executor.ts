@@ -15,6 +15,8 @@ import type {
  * Parameters for report execution
  */
 export interface ExecuteParams {
+	/** The id of the run's record (`scheduled_export_execution`) */
+	executionId: string;
 	organizationId: string;
 	reportConfig: ReportConfig;
 	dateRange: CalculatedDateRange;

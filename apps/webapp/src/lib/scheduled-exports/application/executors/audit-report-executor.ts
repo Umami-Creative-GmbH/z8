@@ -14,6 +14,17 @@ import type { ExecuteParams, IReportExecutor } from "./base-executor";
 const logger = createLogger("AuditReportExecutor");
 
 /**
+ * An identifier used as one storage key segment. Refusing separators and dots
+ * keeps every key under its own organization's prefix.
+ */
+function assertKeySegment(id: string): string {
+	if (!/^[A-Za-z0-9_-]+$/.test(id)) {
+		throw new Error("Invalid identifier for an audit report storage key");
+	}
+	return id;
+}
+
+/**
  * Audit Report Executor
  *
  * Exports audit logs for a date range, optionally filtered by event type.
@@ -26,7 +37,7 @@ export class AuditReportExecutor implements IReportExecutor {
 	 * Execute an audit report export
 	 */
 	async execute(params: ExecuteParams): Promise<ExecutionResult> {
-		const { organizationId, reportConfig, dateRange } = params;
+		const { executionId, organizationId, reportConfig, dateRange } = params;
 		const config = reportConfig as AuditReportConfig;
 
 		logger.info(
@@ -69,9 +80,11 @@ export class AuditReportExecutor implements IReportExecutor {
 			// Generate CSV content
 			const csvContent = this.generateCsv(filteredLogs, config.includeMetadata);
 
-			// Generate S3 key
-			const timestamp = dateRange.start.toFormat("yyyyMMdd");
-			const s3Key = `audit-reports/${organizationId}/${timestamp}_audit_report.csv`;
+			// One object per run, so a later run never replaces a file an earlier
+			// one linked to. The file name keeps the date range readable.
+			const start = dateRange.start.toFormat("yyyyMMdd");
+			const end = dateRange.end.toFormat("yyyyMMdd");
+			const s3Key = `audit-reports/${assertKeySegment(organizationId)}/${assertKeySegment(executionId)}/audit_report_${start}_${end}.csv`;
 
 			// Upload to S3
 			await uploadExport(organizationId, s3Key, Buffer.from(csvContent, "utf-8"), "text/csv");
