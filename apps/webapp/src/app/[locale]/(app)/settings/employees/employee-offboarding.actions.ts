@@ -385,7 +385,7 @@ async function loadOffboardingWorkBalance(input: {
 	const [subject, balance, mayRecordPayouts] = await Promise.all([
 		loadWorkBalanceEmployee(scope),
 		getEmployeeWorkBalance(scope),
-		mayWriteBalanceAdjustments(input.organizationId),
+		mayWriteBalanceAdjustments(scope),
 	]);
 	if (!subject) return null;
 	return offboardingWorkBalance({

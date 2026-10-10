@@ -261,6 +261,67 @@ describe("final overtime payout in the offboarding review on PostgreSQL", () => 
 		expect(lifecycleAfter).toEqual(lifecycleBefore);
 	});
 
+	it("offers the final payout to a manager whose payroll grant covers the employee who left", async () => {
+		const payrollManager = await fixture.seedEmployee();
+		await fixture.pool.query(`update employee set role = 'manager' where id = $1`, [
+			payrollManager.employeeId,
+		]);
+		await fixture.pool.query(
+			`insert into employee_managers (employee_id, manager_id, is_primary, assigned_by)
+			 values ($1, $2, false, $3)`,
+			[departing.employeeId, payrollManager.employeeId, fixture.ownerUserId],
+		);
+		const grantId = randomUUID();
+		await fixture.pool.query(
+			`insert into payroll_access_grant
+			 (id, organization_id, payroll_employee_id, scope, is_active, created_by, updated_at)
+			 values ($1, $2, $3, 'specific', true, $4, now())`,
+			[grantId, fixture.organizationId, payrollManager.employeeId, fixture.ownerUserId],
+		);
+		await fixture.pool.query(
+			`insert into payroll_access_employee (organization_id, grant_id, employee_id, created_by)
+			 values ($1, $2, $3, $4)`,
+			[fixture.organizationId, grantId, departing.employeeId, fixture.ownerUserId],
+		);
+
+		const view = await review(payrollManager.userId);
+		const finalPayout = view.workBalance?.finalPayout;
+		expect(finalPayout).toEqual({
+			defaultDay: yesterday.toString(),
+			defaultMinutes: 360,
+			latestDay: today.toString(),
+		});
+		// Read-only for the departure itself: the grant only adds the payout.
+		expect(view.capabilities).toEqual({
+			schedule: false,
+			cancel: false,
+			offboardNow: false,
+			rehire: false,
+			resolve: false,
+		});
+
+		const recorded = await workBalanceActions.recordOvertimePayoutAction({
+			employeeId: departing.employeeId,
+			day: finalPayout?.defaultDay ?? "",
+			hours: 6,
+			minutes: 0,
+			reason: "Final payout on leaving",
+		});
+		expect(recorded).toMatchObject({ success: true });
+		const audit = await fixture.pool.query<{ performed_by: string; metadata: unknown }>(
+			`select performed_by, metadata from audit_log where organization_id = $1 and entity_id = $2`,
+			[fixture.organizationId, recorded.success ? recorded.data.adjustmentId : ""],
+		);
+		expect(audit.rows).toHaveLength(1);
+		expect(audit.rows[0]?.performed_by).toBe(payrollManager.userId);
+		const metadata = audit.rows[0]?.metadata;
+		expect(typeof metadata === "string" ? JSON.parse(metadata) : metadata).toMatchObject({
+			via: "payroll_access_grant",
+			grantId,
+		});
+		expect((await review(payrollManager.userId)).workBalance?.balance?.balanceMinutes).toBe(0);
+	});
+
 	it("leaves the review of an employee who is not departing without a work balance", async () => {
 		const view = await review(admin.userId, staying);
 
