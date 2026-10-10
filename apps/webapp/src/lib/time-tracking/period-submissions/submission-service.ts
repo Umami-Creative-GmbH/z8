@@ -1,18 +1,15 @@
 import { createHash } from "node:crypto";
-import { and, eq, gt, lt } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db as applicationDatabase } from "@/db";
 import { user } from "@/db/auth-schema";
-import { approvalStageAssignment, employee, workPeriod } from "@/db/schema";
+import { approvalStageAssignment, employee } from "@/db/schema";
 import { kickApprovalDelivery } from "@/lib/approvals/delivery/kick";
 import { periodSubmissionRoutingContext } from "@/lib/approvals/domain-adapters/period-submission.adapter";
 import {
 	PERIOD_SUBMISSION_SOURCE_TYPE,
 	PERIOD_SUBMISSION_WORKFLOW_TYPE,
 } from "@/lib/approvals/domain-adapters/period-submission-contract";
-import {
-	PERIOD_SUBMISSION_EVIDENCE_SCHEMA_VERSION,
-	type PeriodSubmissionSubmittedFacts,
-} from "@/lib/approvals/evidence/period-submission-facts";
+import { PERIOD_SUBMISSION_EVIDENCE_SCHEMA_VERSION } from "@/lib/approvals/evidence/period-submission-facts";
 import { capturePeriodSubmissionSubmittedRevision } from "@/lib/approvals/evidence/store";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { createPeriodSubmissionApprovalRuntime } from "@/lib/approvals/server/period-submission-runtime";
@@ -21,17 +18,14 @@ import {
 	startApprovalWorkflow,
 } from "@/lib/approvals/workflow/start-workflow";
 import { AuditAction } from "@/lib/audit-logger";
-import { buildDailyCompletedMinutes } from "@/lib/calendar/work-hours-summary";
 import {
 	type Clock,
 	comparePlainDates,
-	dateFromInstant,
 	type Instant,
 	parsePlainDate,
 	plainDateAt,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { isUuid } from "@/lib/validations/uuid";
 import { loadExpectedSubmissionPeriods } from "./employee-expected-periods";
 import type { ExpectedSubmissionPeriod } from "./expected-periods";
@@ -45,6 +39,7 @@ import {
 	lockEmployeePeriodSubmissions,
 	type PeriodSubmissionDatabase,
 } from "./submission-store";
+import { loadPeriodSubmissionContent } from "./submitted-content";
 
 /**
  * Period submission entry points (#1059): submitting a period and deciding a submission. Both
@@ -95,46 +90,6 @@ function rangeOf(period: ExpectedSubmissionPeriod): { start: Instant; end: Insta
 	return {
 		start: period.startDate.toZonedDateTime(period.timezone).toInstant(),
 		end: period.endDate.add({ days: 1 }).toZonedDateTime(period.timezone).toInstant(),
-	};
-}
-
-/** Completed work of the range, per local day of the period's zone (the submitted totals). */
-async function loadSubmittedWork(
-	database: PeriodSubmissionDatabase,
-	input: {
-		organizationId: string;
-		employeeId: string;
-		timezone: string;
-		range: { start: Instant; end: Instant };
-	},
-): Promise<PeriodSubmissionSubmittedFacts["work"]> {
-	const start = dateFromInstant(input.range.start);
-	const end = dateFromInstant(input.range.end);
-	const rows = await database
-		.select({ startTime: workPeriod.startTime, endTime: workPeriod.endTime })
-		.from(workPeriod)
-		.where(
-			and(
-				eq(workPeriod.organizationId, input.organizationId),
-				eq(workPeriod.employeeId, input.employeeId),
-				completedWorkPeriodCondition(),
-				lt(workPeriod.startTime, end),
-				gt(workPeriod.endTime, start),
-			),
-		);
-	const dayTotals = buildDailyCompletedMinutes(
-		rows.flatMap((row) =>
-			row.endTime ? [{ startedAt: row.startTime, endedAt: row.endTime }] : [],
-		),
-		input.timezone,
-		{ start, endExclusive: end },
-	);
-	const sorted = Object.fromEntries(
-		Object.entries(dayTotals).toSorted(([a], [b]) => a.localeCompare(b)),
-	);
-	return {
-		totalMinutes: Object.values(sorted).reduce((total, minutes) => total + minutes, 0),
-		dayTotals: sorted,
 	};
 }
 
@@ -222,12 +177,15 @@ export async function submitPeriodSubmission(
 				submittedBy: input.userId,
 				submittedAt: now,
 			});
-			const work = await loadSubmittedWork(tx, {
+			const content = await loadPeriodSubmissionContent(tx, {
 				organizationId: input.organizationId,
 				employeeId: submitter.id,
 				timezone: period.timezone,
+				startDate: period.startDate,
+				endDate: period.endDate,
 				range,
 			});
+			const { work } = content;
 			const teamIds = submitter.teamId ? [submitter.teamId] : [];
 			const defaultApproverEmployeeId = await getPrimaryEligibleManagerIdForRequester({
 				db: tx as never,
@@ -340,7 +298,7 @@ export async function submitPeriodSubmission(
 						rangeStart: range.start.toString(),
 						rangeEnd: range.end.toString(),
 					},
-					work,
+					...content,
 				},
 				labels: { subjectName: submitter.name },
 				submitter: { employeeId: submitter.id, userId: input.userId },

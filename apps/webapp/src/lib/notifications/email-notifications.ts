@@ -48,6 +48,7 @@ const LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES: Partial<
 	missed_clock_in_reminder: "/time-tracking",
 	forgotten_clock_out_reminder: "/time-tracking",
 	break_due_reminder: "/time-tracking",
+	period_submission_reminder: "/time-tracking",
 	personnel_file_document_shared: "/my-documents",
 	personnel_file_employee_upload: "/personnel-files/",
 	// Officers get the employee's personnel file, the employee My documents (#869).

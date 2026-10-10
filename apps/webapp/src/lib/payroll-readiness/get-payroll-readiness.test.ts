@@ -12,10 +12,15 @@ const mockState = vi.hoisted(() => ({
 	travelExpenseClaimFindMany: vi.fn(),
 	travelExpenseReportFindMany: vi.fn(),
 	findOpenDepartureClockRepairs: vi.fn(),
+	loadPeriodSubmissionGaps: vi.fn(),
 }));
 
 vi.mock("@/lib/employee-lifecycle/reviews", () => ({
 	findOpenDepartureClockRepairs: mockState.findOpenDepartureClockRepairs,
+}));
+
+vi.mock("@/lib/time-tracking/period-submissions/submission-gaps-store", () => ({
+	loadPeriodSubmissionGaps: mockState.loadPeriodSubmissionGaps,
 }));
 
 const operatorState = vi.hoisted(() => ({
@@ -152,6 +157,11 @@ function mockReadyQueries() {
 	mockState.travelExpenseClaimFindMany.mockResolvedValue([]);
 	mockState.travelExpenseReportFindMany.mockResolvedValue([]);
 	mockState.findOpenDepartureClockRepairs.mockResolvedValue([]);
+	mockState.loadPeriodSubmissionGaps.mockResolvedValue({ collected: false, gaps: [] });
+}
+
+function findCheck(result: Awaited<ReturnType<typeof getPayrollReadiness>>, id: string) {
+	return result.groups.flatMap((group) => group.checks).find((item) => item.id === id);
 }
 
 function getCheck(result: Awaited<ReturnType<typeof getPayrollReadiness>>, id: string) {
@@ -189,6 +199,66 @@ describe("getPayrollReadiness", () => {
 		]) {
 			expect(JSON.stringify(findMany.mock.calls[0]?.[0]?.where)).toContain("org-1");
 		}
+	});
+
+	it("has no period submission check while the organization collects no submissions", async () => {
+		const result = await getPayrollReadiness(defaultInput());
+
+		expect(findCheck(result, "period-submissions")).toBeUndefined();
+		expect(mockState.loadPeriodSubmissionGaps).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ organizationId: "org-1" }),
+		);
+		const [, request] = mockState.loadPeriodSubmissionGaps.mock.calls[0];
+		expect([request.window.from.toString(), request.window.to.toString()]).toEqual([
+			"2026-04-01",
+			"2026-04-30",
+		]);
+	});
+
+	it("warns, without blocking, about missing or unapproved period submissions in the range", async () => {
+		mockState.loadPeriodSubmissionGaps.mockResolvedValue({
+			collected: true,
+			gaps: [
+				{
+					employeeId: "employee-1",
+					employeeName: "Ada Lovelace",
+					timezone: "Europe/Berlin",
+					startDate: "2026-04-06",
+					endDate: "2026-04-12",
+					status: "awaiting_submission",
+				},
+				{
+					employeeId: "employee-1",
+					employeeName: "Ada Lovelace",
+					timezone: "Europe/Berlin",
+					startDate: "2026-04-13",
+					endDate: "2026-04-19",
+					status: "submitted",
+				},
+			],
+		});
+
+		const result = await getPayrollReadiness(defaultInput());
+
+		expect(result.status).toBe("ready");
+		expect(result.summary.warningCount).toBe(1);
+		expect(getCheck(result, "period-submissions")).toMatchObject({
+			group: "time",
+			status: "warning",
+			severity: "warning",
+			required: false,
+			count: 2,
+			affectedEmployees: [{ id: "employee-1", name: "Ada Lovelace", employeeNumber: null }],
+		});
+	});
+
+	it("passes the period submission check when every expected submission is approved", async () => {
+		mockState.loadPeriodSubmissionGaps.mockResolvedValue({ collected: true, gaps: [] });
+
+		const result = await getPayrollReadiness(defaultInput());
+
+		expect(getCheck(result, "period-submissions")).toMatchObject({ status: "pass", count: 0 });
 	});
 
 	it("blocks while a departure timer repair is open in the period", async () => {

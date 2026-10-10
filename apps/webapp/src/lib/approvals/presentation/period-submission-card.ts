@@ -14,6 +14,7 @@ import {
 	type DisplayContext,
 	formatInstant,
 	formatPlainDate,
+	formatPlainDateRange,
 } from "@/lib/datetime/temporal-format";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
 import { readApprovalPresentationMode } from "../evidence/invocation";
@@ -25,6 +26,7 @@ import type {
 	ApprovalCardFact,
 	ApprovalReviewSummary,
 } from "./bound-card";
+import { periodSubmissionDifference, periodSubmissionHours } from "./period-submission-review";
 import { approvalReviewUrl } from "./review-navigation";
 
 /** The exact pending assignment of a canonical-only kind a card is prepared for (#1059). */
@@ -43,19 +45,27 @@ export interface CanonicalOnlyReviewNotice {
 	reviewUrl: string;
 }
 
-function hoursAndMinutes(totalMinutes: number): string {
-	return `${Math.floor(totalMinutes / 60)}:${String(totalMinutes % 60).padStart(2, "0")}`;
-}
-
-function periodFacts(
+/**
+ * The bot card's shorter form of the approver card (#1061): the employee, the period, its total,
+ * target and difference, the absences and holidays in it and how many violations were recorded.
+ * The day totals and the calendar link are on the review page the card links to.
+ */
+export function periodSubmissionCardFacts(
 	revision: PeriodSubmissionSubmittedRevisionRecord,
 	display: DisplayContext,
 	t: BotTranslateFn,
 ): ApprovalCardFact[] {
-	const { period, work } = revision.facts;
+	const { period, work, target, absences, holidays, violations } = revision.facts;
 	const start = formatPlainDate(parsePlainDate(period.startDate), display.locale, "dateMedium");
 	const end = formatPlainDate(parsePlainDate(period.endDate), display.locale, "dateMedium");
-	return [
+	const days = (startDate: string, endDate: string) =>
+		formatPlainDateRange(
+			parsePlainDate(startDate),
+			parsePlainDate(endDate),
+			display.locale,
+			"monthDay",
+		);
+	const facts: ApprovalCardFact[] = [
 		{
 			label: t("bot.approval.card.employee", "Employee"),
 			value: revision.labels.subjectName ?? t("bot.approval.card.unavailable", "Unavailable"),
@@ -67,14 +77,53 @@ function periodFacts(
 		{
 			label: t("bot.approval.card.periodTotal", "Total"),
 			value: t("bot.approval.card.periodTotalHours", "{total} h", {
-				total: hoursAndMinutes(work.totalMinutes),
+				total: periodSubmissionHours(work.totalMinutes),
 			}),
 		},
-		{
-			label: t("bot.approval.card.submittedAt", "Submitted"),
-			value: `${formatInstant(revision.submittedAt, display, "dateTimeMedium")} (${display.timezone})`,
-		},
 	];
+	if (target) {
+		facts.push(
+			{
+				label: t("bot.approval.card.periodTarget", "Target"),
+				value: t("bot.approval.card.periodTotalHours", "{total} h", {
+					total: periodSubmissionHours(target.totalMinutes),
+				}),
+			},
+			{
+				label: t("bot.approval.card.periodDifference", "Difference"),
+				value: t("bot.approval.card.periodDifferenceHours", "{difference} h", {
+					difference: periodSubmissionDifference(work.totalMinutes - target.totalMinutes),
+				}),
+			},
+		);
+	}
+	if (absences.length > 0) {
+		facts.push({
+			label: t("bot.approval.card.periodAbsences", "Absences"),
+			value: absences
+				.map((absence) => `${absence.categoryName} (${days(absence.startDate, absence.endDate)})`)
+				.join("; "),
+		});
+	}
+	if (holidays.length > 0) {
+		facts.push({
+			label: t("bot.approval.card.periodHolidays", "Public holidays"),
+			value: holidays
+				.map((holiday) => `${holiday.name} (${days(holiday.startDate, holiday.endDate)})`)
+				.join("; "),
+		});
+	}
+	if (violations.length > 0) {
+		facts.push({
+			label: t("bot.approval.card.periodViolations", "Compliance violations"),
+			value: String(violations.length),
+		});
+	}
+	facts.push({
+		label: t("bot.approval.card.submittedAt", "Submitted"),
+		value: `${formatInstant(revision.submittedAt, display, "dateTimeMedium")} (${display.timezone})`,
+	});
+	return facts;
 }
 
 /**
@@ -177,7 +226,7 @@ export async function prepareCanonicalOnlyPresentation(input: {
 	});
 	const title = t("bot.approval.card.periodSubmissionTitle", "Period submission");
 	if (revision && input.provider) {
-		const facts = periodFacts(revision, display, t);
+		const facts = periodSubmissionCardFacts(revision, display, t);
 		const mode = await readApprovalPresentationMode(db, {
 			organizationId: input.organizationId,
 			workflowType: "period_submission",
