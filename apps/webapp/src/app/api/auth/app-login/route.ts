@@ -8,6 +8,7 @@ import {
 import {
 	getAllowedAppRedirect,
 	getValidatedAppRedirectUrl,
+	isStoreApp,
 } from "@/lib/auth/app-redirect";
 import { createLogger } from "@/lib/logger";
 import {
@@ -79,7 +80,7 @@ export async function GET(request: NextRequest) {
 		if (!session?.user) {
 			stage = "sign_in_redirect";
 			return await createAppSignInRedirect(request, {
-				clearStaleSession: app === "mobile",
+				clearStaleSession: isStoreApp(app),
 			});
 		}
 

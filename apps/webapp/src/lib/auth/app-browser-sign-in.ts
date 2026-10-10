@@ -65,12 +65,13 @@ const mobileHandoffCopy: HandoffCopy = {
 		hint: "If Z8 does not open automatically, use the button above.",
 		close: "Once Z8 opens, you can close this page.",
 	},
+	// Formal "Sie", like the app's own sign-in screen (auth.storeApp.*).
 	de: {
 		title: "Weiter zu Z8",
-		description: "Deine Anmeldung ist bereit. Wir öffnen die Z8 App.",
+		description: "Ihre Anmeldung ist bereit. Wir öffnen die Z8 App.",
 		action: "Z8 öffnen",
-		hint: "Falls Z8 nicht automatisch startet, nutze den Button oben.",
-		close: "Sobald Z8 geöffnet ist, kannst du diese Seite schließen.",
+		hint: "Falls Z8 nicht automatisch startet, nutzen Sie die Schaltfläche oben.",
+		close: "Sobald Z8 geöffnet ist, können Sie diese Seite schließen.",
 	},
 };
 
@@ -90,15 +91,8 @@ function escapeHtml(value: string) {
 
 /** A real page provides an initiating origin and a user-gesture fallback for external protocols.
  * Only the PKCE-bound one-time code enters this isolated, uncached document.
- */
-export function createDesktopCallbackResponse(
-	request: NextRequest,
-	callback: URL,
-) {
-	return createAppCallbackResponse(request, callback, "desktop");
-}
-
-/** The same handoff for either app. Android's Custom Tabs, like desktop browsers,
+ *
+ * The same handoff serves either app. Android's Custom Tabs, like desktop browsers,
  * may block an external launch that no user gesture started; iOS's
  * ASWebAuthenticationSession intercepts the callback before it loads.
  */

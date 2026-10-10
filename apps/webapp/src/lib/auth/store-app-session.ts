@@ -2,7 +2,13 @@ import type { BetterAuthPlugin } from "better-auth";
 import { APIError, createAuthEndpoint } from "better-auth/api";
 import { setSessionCookie } from "better-auth/cookies";
 import { z } from "zod";
+import { compareInstants, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import { isAccountBanned } from "./account-ban";
+
+/** The session row's expiry (a database `Date`) has been reached. */
+function hasExpired(expiresAt: Date): boolean {
+	return compareInstants(instantFromDate(expiresAt), systemClock.nowInstant()) <= 0;
+}
 
 /**
  * Store app sign-in (#842): the shell's web view receives the session that the
@@ -24,11 +30,7 @@ export function storeAppSessionPlugin() {
 				},
 				async (ctx) => {
 					const found = await ctx.context.internalAdapter.findSession(ctx.body.sessionToken);
-					if (
-						!found ||
-						found.session.expiresAt.getTime() <= Date.now() ||
-						isAccountBanned(found.user)
-					) {
+					if (!found || hasExpired(found.session.expiresAt) || isAccountBanned(found.user)) {
 						throw new APIError("UNAUTHORIZED", { message: "Session unavailable" });
 					}
 					await setSessionCookie(ctx, found);

@@ -7,8 +7,7 @@ import { getNativePushClient, nativePushTapTarget } from "@/lib/store-app/native
 async function activeOrganizationId(): Promise<string | null> {
 	try {
 		const { data } = await authClient.getSession();
-		const session = data?.session as { activeOrganizationId?: string | null } | undefined;
-		return session?.activeOrganizationId ?? null;
+		return data?.session.activeOrganizationId ?? null;
 	} catch {
 		return null;
 	}

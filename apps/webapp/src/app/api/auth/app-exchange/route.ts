@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { consumeAppAuthCode, type SupportedApp } from "@/lib/auth/app-auth-code";
+import { isStoreApp } from "@/lib/auth/app-redirect";
 import { resolvePublicRequestOrigin } from "@/lib/domain/request-origin";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
 
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
 		return NextResponse.json({ error: "Supported app type required" }, { status: 400 });
 	}
 
-	if (app === "mobile" && !(await isSameOriginWebViewRequest(request))) {
+	if (isStoreApp(app) && !(await isSameOriginWebViewRequest(request))) {
 		return NextResponse.json({ error: "Same-origin request required" }, { status: 403 });
 	}
 
@@ -87,7 +88,7 @@ export async function POST(request: Request) {
 		return invalidCode();
 	}
 
-	if (app === "mobile") {
+	if (isStoreApp(app)) {
 		return handOffStoreAppSession(request, result.sessionToken);
 	}
 

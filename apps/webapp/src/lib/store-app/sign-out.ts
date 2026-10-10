@@ -33,9 +33,7 @@ async function cleanUpDeviceBeforeSignOut(): Promise<void> {
 }
 
 /** Sign out: device cleanup while the session still exists, then Better Auth. */
-export async function signOut(
-	...args: Parameters<typeof authClient.signOut>
-): ReturnType<typeof authClient.signOut> {
+export async function signOut(...args: Parameters<typeof authClient.signOut>) {
 	await cleanUpDeviceBeforeSignOut();
 	return authClient.signOut(...args);
 }
