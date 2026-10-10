@@ -79,6 +79,10 @@ vi.mock("@/lib/time-tracking/calculations", () => ({
 	calculateWorkHours: vi.fn(),
 }));
 
+vi.mock("@/lib/organization/custom-fields/report-reads", () => ({
+	readCustomFieldReportValues: vi.fn(async () => ({ columns: [], byRecord: {} })),
+}));
+
 const { aggregateHomeOfficeDays } = await import("./report-generator");
 
 describe("report generator", () => {
