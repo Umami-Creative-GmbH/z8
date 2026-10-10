@@ -1,11 +1,14 @@
 /**
- * #1001: the DATEV, Lexware and Sage payroll files carry overtime payouts as
- * hours under the wage type mapped to the "overtime" special category, and
- * report the payouts they cannot carry for want of that mapping.
+ * #1001, #1050: the DATEV, Lexware, Sage and SAP SuccessFactors CSV payroll
+ * files carry overtime payouts as hours under the wage type mapped to the
+ * "overtime" special category, and report the payouts they cannot carry for
+ * want of that mapping.
  */
 
+import { DateTime } from "luxon";
 import { describe, expect, it, vi } from "vitest";
-import type { OvertimePayoutData, WageTypeMapping } from "../types";
+import { SuccessFactorsFormatter } from "../exporters/successfactors/successfactors-formatter";
+import type { OvertimePayoutData, WageTypeMapping, WorkPeriodData } from "../types";
 import { DatevLohnFormatter } from "./datev-lohn-formatter";
 import { LexwareLohnFormatter } from "./lexware-lohn-formatter";
 import { SageLohnFormatter } from "./sage-lohn-formatter";
@@ -191,5 +194,112 @@ describe("Sage Lohn overtime payouts", () => {
 		expect(result.metadata.unmappedOvertimePayouts).toEqual([
 			{ id: "payout-1", employeeId: "employee-1", day: "2026-09-15", minutes: 300 },
 		]);
+	});
+});
+
+describe("SAP SuccessFactors CSV overtime payouts (#1050)", () => {
+	const config = { employeeMatchStrategy: "userId", includeZeroHours: false };
+	const HEADER = '"User ID";"Date";"Time Type";"Hours";"Comment"';
+
+	function workPeriod(overrides: Partial<WorkPeriodData> = {}): WorkPeriodData {
+		return {
+			id: "period-1",
+			employeeId: "employee-1",
+			employeeNumber: "P-1",
+			firstName: "Ada",
+			lastName: "Lovelace",
+			startTime: DateTime.fromISO("2026-09-15T08:00:00", { zone: "utc" }),
+			endTime: DateTime.fromISO("2026-09-15T11:00:00", { zone: "utc" }),
+			durationMinutes: 180,
+			workCategoryId: "category-overtime",
+			workCategoryName: "Overtime",
+			workCategoryFactor: null,
+			projectId: null,
+			projectName: null,
+			...overrides,
+		};
+	}
+
+	it("writes a 5h payout as 5.00 hours on its day under the time type mapped to overtime", () => {
+		const result = new SuccessFactorsFormatter().transform(
+			[],
+			[],
+			[],
+			[overtimeMapping({ successFactorsTimeTypeCode: "OT_PAY" })],
+			config,
+			[payout()],
+		);
+
+		expect(rows(String(result.content).replace(/^﻿/, ""))).toEqual([
+			HEADER,
+			'"P-1";"2026-09-15";"OT_PAY";"5.00";"Overtime payout"',
+		]);
+		expect(result.metadata.unmappedOvertimePayouts).toEqual([]);
+		expect(result.metadata.employeeCount).toBe(1);
+		expect(result.metadata.dateRange).toEqual({ start: "2026-09-15", end: "2026-09-15" });
+		expect(result.fileName).toMatch(/^sap_successfactors_2026-09_/);
+	});
+
+	it("merges a payout into the work-period row of the same day and time type", () => {
+		const result = new SuccessFactorsFormatter().transform(
+			[workPeriod()],
+			[],
+			[],
+			[
+				overtimeMapping({ successFactorsTimeTypeCode: "OT_PAY" }),
+				{
+					...overtimeMapping({ successFactorsTimeTypeCode: "OT_PAY" }),
+					id: "mapping-work",
+					specialCategory: null,
+					workCategoryId: "category-overtime",
+				},
+			],
+			config,
+			[payout()],
+		);
+
+		expect(rows(String(result.content).replace(/^﻿/, ""))).toEqual([
+			HEADER,
+			'"P-1";"2026-09-15";"OT_PAY";"8.00";"Overtime"',
+		]);
+	});
+
+	it("widens the date range to payout days outside the work periods", () => {
+		const result = new SuccessFactorsFormatter().transform(
+			[workPeriod({ workCategoryId: null })],
+			[],
+			[],
+			[overtimeMapping({ successFactorsTimeTypeCode: "OT_PAY" })],
+			config,
+			[payout({ day: "2026-08-31" }), payout({ id: "payout-2", day: "2026-09-30", minutes: 90 })],
+		);
+
+		expect(result.metadata.dateRange).toEqual({ start: "2026-08-31", end: "2026-09-30" });
+		expect(result.fileName).toMatch(/^sap_successfactors_2026-08_/);
+	});
+
+	it("emits no payout row without a SuccessFactors code for overtime and reports the payouts as unmapped", () => {
+		const result = new SuccessFactorsFormatter().transform(
+			[],
+			[],
+			[],
+			// Mapped for every other format: SuccessFactors never borrows another format's code.
+			[
+				overtimeMapping({
+					wageTypeCode: "1900",
+					datevWageTypeCode: "1900",
+					lexwareWageTypeCode: "300",
+					sageWageTypeCode: "2900",
+				}),
+			],
+			config,
+			[payout()],
+		);
+
+		expect(rows(String(result.content).replace(/^﻿/, ""))).toEqual([HEADER]);
+		expect(result.metadata.unmappedOvertimePayouts).toEqual([
+			{ id: "payout-1", employeeId: "employee-1", day: "2026-09-15", minutes: 300 },
+		]);
+		expect(result.metadata.employeeCount).toBe(0);
 	});
 });

@@ -10,8 +10,9 @@ import { type WageTypeCodeFormat, wageTypeCodeFor } from "../wage-type-code";
 
 /**
  * Shared rules for the overtime payouts of the DATEV, Lexware and Sage files
- * (#1001): the special category they are paid under, the label of their rows,
- * and the split into payouts a format carries and payouts it reports unmapped.
+ * (#1001) and the SAP SuccessFactors CSV file (#1050): the special category
+ * they are paid under, the label of their rows, and the split into payouts a
+ * format carries and payouts it reports unmapped.
  */
 
 /** The special category whose wage type an overtime payout is paid under. */
@@ -19,8 +20,7 @@ export const OVERTIME_PAYOUT_CATEGORY: SpecialWageCategory = "overtime";
 
 /**
  * The file formats of the format registry (#823) that carry overtime payouts,
- * with the code column each reads. SuccessFactors CSV and the API connectors do
- * not (follow-ups of #1004).
+ * with the code column each reads. The API connectors do not (#1004).
  */
 const OVERTIME_PAYOUT_FORMATS: Readonly<
 	Partial<Record<PayrollExportFileFormatId, WageTypeCodeFormat>>
@@ -28,6 +28,7 @@ const OVERTIME_PAYOUT_FORMATS: Readonly<
 	datev_lohn: "datev",
 	lexware_lohn: "lexware",
 	sage_lohn: "sage",
+	successfactors_csv: "successFactors",
 };
 
 /** The code column a format pays overtime payouts under; null when it carries none. */

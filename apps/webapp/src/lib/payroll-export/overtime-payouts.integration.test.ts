@@ -1,5 +1,6 @@
 /**
- * #1001: overtime payouts in the DATEV payroll file, against a disposable
+ * #1001, #1050: overtime payouts in the DATEV and SAP SuccessFactors CSV
+ * payroll files, against a disposable
  * PostgreSQL database. Payouts are balance adjustments (#993) read at
  * processing time; the export runs through the real export service. Only
  * object storage is replaced.
@@ -14,7 +15,8 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 	uploadExport: async () => undefined,
 }));
 
-const { createExportJob, getExportJobHistory, processExportJob } = await import("./export-service");
+const { createExportJob, getExportJobHistory, processExportJob, unmappedOvertimePayoutsForExport } =
+	await import("./export-service");
 
 const admin = integrationAdminPool();
 const ORG = "t1001-org";
@@ -34,6 +36,8 @@ const DATEV = {
 	includeZeroHours: false,
 };
 const HEADER = '"Personalnummer";"Lohnart";"Betrag";"Datum";"Bemerkung"';
+const SUCCESSFACTORS = { employeeMatchStrategy: "userId", includeZeroHours: false };
+const SF_HEADER = '﻿"User ID";"Date";"Time Type";"Hours";"Comment"';
 
 async function cleanup() {
 	await admin.query("delete from organization where id in ($1, $2)", [ORG, OTHER_ORG]);
@@ -62,22 +66,28 @@ async function seed() {
 	);
 	await admin.query(
 		`insert into payroll_export_format (id, name, version, updated_at) values
-		 ('datev_lohn', 'DATEV Lohn & Gehalt', '2024.1', now())
+		 ('datev_lohn', 'DATEV Lohn & Gehalt', '2024.1', now()),
+		 ('successfactors_csv', 'SAP SuccessFactors (CSV)', '1.0.0', now())
 		 on conflict (id) do nothing`,
 	);
 	await admin.query(
 		`insert into payroll_export_config (organization_id, format_id, config, created_by, updated_at)
-		 values ($1, 'datev_lohn', $2::jsonb, 't1001-owner', now())`,
-		[ORG, JSON.stringify(DATEV)],
+		 values ($1, 'datev_lohn', $2::jsonb, 't1001-owner', now()),
+		        ($1, 'successfactors_csv', $3::jsonb, 't1001-owner', now())`,
+		[ORG, JSON.stringify(DATEV), JSON.stringify(SUCCESSFACTORS)],
 	);
 }
 
-async function mapOvertime(datevCode: string | null) {
+async function mapOvertime(
+	datevCode: string | null,
+	codes: { sage?: string; successFactors?: string } = {},
+) {
 	await admin.query(
 		`insert into payroll_wage_type_mapping
-		   (organization_id, special_category, wage_type_code, datev_wage_type_code, lexware_wage_type_code, created_by, updated_at)
-		 values ($1, 'overtime', $2, $3, 'LX-OT', 't1001-owner', now())`,
-		[ORG, datevCode ?? "LX-OT", datevCode],
+		   (organization_id, special_category, wage_type_code, datev_wage_type_code, lexware_wage_type_code,
+		    sage_wage_type_code, successfactors_time_type_code, created_by, updated_at)
+		 values ($1, 'overtime', $2, $3, 'LX-OT', $4, $5, 't1001-owner', now())`,
+		[ORG, datevCode ?? "LX-OT", datevCode, codes.sage ?? null, codes.successFactors ?? null],
 	);
 }
 
@@ -111,10 +121,10 @@ async function adjustment(input: {
 	return rows[0].id;
 }
 
-async function exportJuly(employeeIds?: string[]) {
+async function exportJuly(employeeIds?: string[], formatId = "datev_lohn") {
 	const { jobId } = await createExportJob({
 		organizationId: ORG,
-		formatId: "datev_lohn",
+		formatId,
 		requestedById: ids.owner,
 		filters: {
 			dateRange: {
@@ -193,6 +203,88 @@ describe("overtime payouts in payroll files on PostgreSQL", () => {
 
 		expect(rows).toEqual([HEADER]);
 		const unmapped = [{ id: payoutId, employeeId: ids.worker, day: "2026-07-15", minutes: 300 }];
+		expect(result?.metadata.unmappedOvertimePayouts).toEqual(unmapped);
+		const { rows: jobs } = await admin.query(
+			"select status, unmapped_overtime_payouts from payroll_export_job where id = $1",
+			[jobId],
+		);
+		expect(jobs).toEqual([{ status: "completed", unmapped_overtime_payouts: unmapped }]);
+		const [summary] = await getExportJobHistory(ORG);
+		expect(summary).toMatchObject({ id: jobId, unmappedOvertimePayoutCount: 1 });
+	});
+});
+
+describe("overtime payouts in the SAP SuccessFactors CSV file on PostgreSQL (#1050)", () => {
+	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
+	beforeEach(seed);
+	afterAll(cleanup);
+
+	const exportSuccessFactors = (employeeIds?: string[]) =>
+		exportJuly(employeeIds, "successfactors_csv");
+
+	it("exports each uncancelled payout dated in the range under the mapped time type, and nothing else", async () => {
+		await mapOvertime("1900", { successFactors: "OT_PAY" });
+		await adjustment({ employeeId: ids.worker, day: "2026-07-15", minutes: -300 });
+		await adjustment({ employeeId: ids.worker, day: "2026-07-01", minutes: -60 });
+		// Not exported: cancelled, outside the range, an opening balance, another organization.
+		await adjustment({ employeeId: ids.worker, day: "2026-07-16", minutes: -120, cancelled: true });
+		await adjustment({ employeeId: ids.worker, day: "2026-06-30", minutes: -45 });
+		await adjustment({ employeeId: ids.worker, day: "2026-08-01", minutes: -45 });
+		await adjustment({
+			employeeId: ids.worker,
+			kind: "opening_balance",
+			day: "2026-06-01",
+			minutes: 600,
+		});
+		await adjustment({
+			organizationId: OTHER_ORG,
+			employeeId: ids.foreign,
+			day: "2026-07-15",
+			minutes: -300,
+		});
+
+		const { rows, result } = await exportSuccessFactors();
+
+		expect(rows).toEqual([
+			SF_HEADER,
+			'"WRK-1";"2026-07-01";"OT_PAY";"1.00";"Overtime payout"',
+			'"WRK-1";"2026-07-15";"OT_PAY";"5.00";"Overtime payout"',
+		]);
+		expect(result?.metadata.unmappedOvertimePayouts).toEqual([]);
+		expect(result?.metadata.dateRange).toEqual({ start: "2026-07-01", end: "2026-07-15" });
+	});
+
+	it("exports only the payouts of the employees the export is restricted to", async () => {
+		await mapOvertime("1900", { successFactors: "OT_PAY" });
+		await adjustment({ employeeId: ids.worker, day: "2026-07-15", minutes: -300 });
+		await adjustment({ employeeId: ids.peer, day: "2026-07-15", minutes: -180 });
+
+		const scoped = await exportSuccessFactors([ids.worker]);
+
+		expect(scoped.rows).toEqual([
+			SF_HEADER,
+			'"WRK-1";"2026-07-15";"OT_PAY";"5.00";"Overtime payout"',
+		]);
+	});
+
+	it("without a SuccessFactors code for overtime, writes no payout row and records the payouts as unmapped", async () => {
+		// Codes for DATEV, Lexware and Sage: SuccessFactors never borrows another format's code.
+		await mapOvertime("1900", { sage: "2900" });
+		const payoutId = await adjustment({ employeeId: ids.worker, day: "2026-07-15", minutes: -300 });
+		const filters = {
+			dateRange: {
+				start: DateTime.fromISO("2026-07-01", { zone: "utc" }),
+				end: DateTime.fromISO("2026-07-31", { zone: "utc" }),
+			},
+		};
+		const unmapped = [{ id: payoutId, employeeId: ids.worker, day: "2026-07-15", minutes: 300 }];
+
+		await expect(
+			unmappedOvertimePayoutsForExport(ORG, "successfactors_csv", filters),
+		).resolves.toEqual(unmapped);
+		const { jobId, rows, result } = await exportSuccessFactors();
+
+		expect(rows).toEqual([SF_HEADER]);
 		expect(result?.metadata.unmappedOvertimePayouts).toEqual(unmapped);
 		const { rows: jobs } = await admin.query(
 			"select status, unmapped_overtime_payouts from payroll_export_job where id = $1",
