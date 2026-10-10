@@ -1,9 +1,10 @@
 import { and, eq, inArray } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
 import { member, user } from "@/db/auth-schema";
 import { employee, employeeManagers } from "@/db/schema";
 import { isReservedEmail } from "@/lib/auth/reserved-email";
+import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import type { WorkTransactionClient } from "@/lib/time-tracking/web-clock-out-transaction";
+import type { CreateNotificationParams } from "./types";
 
 /**
  * Who receives a notification addressed to a user (#860, spec #761). A
@@ -17,9 +18,11 @@ export type NotificationRecipients =
 	| {
 			kind: "forwarded";
 			/** The kiosk-only employee the notification was for. */
-			employee: { userId: string; employeeId: string; name: string };
+			employee: ForwardedFor;
 			userIds: string[];
 	  };
+
+export type ForwardedFor = { userId: string; employeeId: string; name: string };
 
 type Reader = Pick<WorkTransactionClient, "select">;
 
@@ -40,19 +43,19 @@ export async function resolveNotificationRecipients(
 		return { kind: "self" };
 	}
 
-	const manager = alias(employee, "manager");
+	// Managers who may still use the organization, as for the who-is-in view.
 	const managers = await client
-		.select({ userId: manager.userId, email: user.email })
+		.select({ userId: employee.userId, email: user.email })
 		.from(employeeManagers)
 		.innerJoin(
-			manager,
+			employee,
 			and(
-				eq(manager.id, employeeManagers.managerId),
-				eq(manager.organizationId, input.organizationId),
-				eq(manager.isActive, true),
+				eq(employee.id, employeeManagers.managerId),
+				eq(employee.organizationId, input.organizationId),
+				employeeHasOrganizationAccess(),
 			),
 		)
-		.innerJoin(user, eq(user.id, manager.userId))
+		.innerJoin(user, eq(user.id, employee.userId))
 		.where(eq(employeeManagers.employeeId, recipient.employeeId));
 	let userIds = managers.filter((row) => !isReservedEmail(row.email)).map((row) => row.userId);
 	if (userIds.length === 0) {
@@ -73,5 +76,27 @@ export async function resolveNotificationRecipients(
 		kind: "forwarded",
 		employee: { userId: input.userId, employeeId: recipient.employeeId, name: recipient.name },
 		userIds: [...new Set(userIds)],
+	};
+}
+
+/**
+ * A kiosk-only employee's notification as one of their managers receives it:
+ * the title names the employee, the metadata records whom it was for, and the
+ * employee's own link is dropped. Every channel that forwards uses this shape.
+ */
+export function forwardedNotification(
+	params: CreateNotificationParams,
+	forwardedFor: ForwardedFor,
+	recipientUserId: string,
+): CreateNotificationParams {
+	return {
+		...params,
+		userId: recipientUserId,
+		title: `${forwardedFor.name}: ${params.title}`,
+		actionUrl: undefined,
+		metadata: { ...params.metadata, forwardedFor },
+		idempotencyKey: params.idempotencyKey
+			? `${params.idempotencyKey}:kiosk-only:${recipientUserId}`
+			: undefined,
 	};
 }

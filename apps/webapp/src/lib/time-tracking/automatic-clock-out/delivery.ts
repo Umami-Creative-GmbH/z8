@@ -12,6 +12,10 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import {
+	forwardedNotification,
+	resolveNotificationRecipients,
+} from "@/lib/notifications/kiosk-only-recipients";
+import {
 	type CreateNotificationParams,
 	NOTIFICATION_CHANNELS,
 	type NotificationChannel,
@@ -174,6 +178,8 @@ export function createAutoClockOutDelivery(deps: {
 	transport: AutoClockOutNotificationTransport;
 }) {
 	const outbox = createAutoClockOutTaskOutbox(deps.database);
+	const resolveRecipients = (userId: string, organizationId: string) =>
+		resolveNotificationRecipients(deps.database, { userId, organizationId });
 	return async (limit: number): Promise<AutoClockOutDeliveryResult> => {
 		if (!Number.isSafeInteger(limit) || limit < 1 || limit > 1000)
 			throw new Error("invalid_task_limit");
@@ -197,7 +203,10 @@ export function createAutoClockOutDelivery(deps: {
 							deps.effects,
 						);
 					} else if (claim.kind === "plan_notification") {
-						const stageChannels = async (channels: NotificationChannel[]) => {
+						const stageChannels = async (
+							recipientUserId: string,
+							channels: NotificationChannel[],
+						) => {
 							if (channels.length === 0) return;
 							const now = dateFromInstant(deps.clock.nowInstant());
 							await deps.database
@@ -208,11 +217,11 @@ export function createAutoClockOutDelivery(deps: {
 										employeeId: claim.employeeId,
 										operationId: claim.operationId,
 										kind: "notification_channel" as const,
-										dedupeKey: `notification:${claim.operationId}:${facts.recipientUserId}:${channel}`,
+										dedupeKey: `notification:${claim.operationId}:${recipientUserId}:${channel}`,
 										payload: {
 											version: 1,
 											operationId: claim.operationId,
-											recipientUserId: facts.recipientUserId,
+											recipientUserId,
 											channel,
 										},
 										availableAt: now,
@@ -224,33 +233,52 @@ export function createAutoClockOutDelivery(deps: {
 									target: [automaticClockOutTask.organizationId, automaticClockOutTask.dedupeKey],
 								});
 						};
+						// A kiosk-only employee's notice goes to their managers instead (spec #761).
+						const recipients = await resolveRecipients(facts.recipientUserId, claim.organizationId);
+						const recipientUserIds =
+							recipients.kind === "self" ? [facts.recipientUserId] : recipients.userIds;
+						if (recipientUserIds.length === 0)
+							logger.warn(
+								{ organizationId: claim.organizationId, employeeId: claim.employeeId },
+								"Kiosk-only employee's automatic clock-out notice has no manager to receive it",
+							);
 						// Optional configuration/transport outages must not delay the mandatory inbox.
-						await stageChannels(["in_app"]);
-						const preferences = await deps.transport.preferences(facts.recipientUserId);
-						// Each enabled channel owns its availability lookup and retry independently.
-						const channels = planAutoClockOutChannels(preferences);
-						await stageChannels(channels);
+						for (const recipientUserId of recipientUserIds)
+							await stageChannels(recipientUserId, ["in_app"]);
+						for (const recipientUserId of recipientUserIds) {
+							const preferences = await deps.transport.preferences(recipientUserId);
+							// Each enabled channel owns its availability lookup and retry independently.
+							await stageChannels(recipientUserId, planAutoClockOutChannels(preferences));
+						}
 					} else if (claim.kind === "notification_channel") {
 						const channel = z.enum(NOTIFICATION_CHANNELS).parse(claim.payload.channel);
-						if (claim.payload.recipientUserId !== facts.recipientUserId)
+						const recipientUserId = String(claim.payload.recipientUserId);
+						const recipients = await resolveRecipients(facts.recipientUserId, claim.organizationId);
+						if (
+							recipients.kind === "self"
+								? recipientUserId !== facts.recipientUserId
+								: !recipients.userIds.includes(recipientUserId)
+						)
 							throw new Error("invalid_notification_recipient");
 						if (!["sent", "unavailable", "suppressed"].includes(String(claim.payload.outcome))) {
 							const preferences =
-								channel === "in_app"
-									? null
-									: await deps.transport.preferences(facts.recipientUserId);
+								channel === "in_app" ? null : await deps.transport.preferences(recipientUserId);
 							if (preferences && !preferences[channel])
 								await recordProgress({ outcome: "suppressed" });
 							else {
 								const locale = await deps.transport.locale({
-									userId: facts.recipientUserId,
+									userId: recipientUserId,
 									organizationId: claim.organizationId,
 								});
-								const notification = buildAutoClockOutNotification({
+								const own = buildAutoClockOutNotification({
 									decision: facts.decision,
 									recipientUserId: facts.recipientUserId,
 									locale,
 								});
+								const notification =
+									recipients.kind === "self"
+										? own
+										: forwardedNotification(own, recipients.employee, recipientUserId);
 								if (channel === "in_app") {
 									await deps.transport.insertInApp(notification);
 									await recordProgress({ outcome: "sent" });

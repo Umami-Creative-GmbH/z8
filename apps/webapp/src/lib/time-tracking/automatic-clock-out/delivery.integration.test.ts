@@ -5,7 +5,11 @@ import {
 	deliverNotificationToChannel,
 	insertInAppNotification,
 } from "@/lib/notifications/notification-service";
-import { NOTIFICATION_CHANNELS, type NotificationChannel } from "@/lib/notifications/types";
+import {
+	type CreateNotificationParams,
+	NOTIFICATION_CHANNELS,
+	type NotificationChannel,
+} from "@/lib/notifications/types";
 import { assessRollbackReadiness } from "@/lib/rollout/rollback/readiness";
 import { readRollbackSnapshot } from "@/lib/rollout/rollback/readiness-reader";
 import { createClocking } from "../clocking/clocking";
@@ -283,12 +287,56 @@ describe("automatic clock-out durable delivery", () => {
 			},
 		]);
 	});
+	it("sends a kiosk-only employee's notice to their managers instead (#761)", async () => {
+		const { facts, person } = await seedExecution(fixture);
+		await fixture.pool.query(`update "user" set email=$2, name='Kim Kiosk' where id=$1`, [
+			person.userId,
+			`kiosk-${person.userId.replaceAll("-", "")}@kiosk.invalid`,
+		]);
+		const manager = await fixture.seedEmployee({ organizationId: facts.organizationId });
+		const formerManager = await fixture.seedEmployee({
+			organizationId: facts.organizationId,
+			isActive: false,
+		});
+		for (const managerId of [manager.employeeId, formerManager.employeeId])
+			await fixture.pool.query(
+				"insert into employee_managers (employee_id, manager_id, assigned_by) values ($1, $2, $3)",
+				[person.employeeId, managerId, manager.userId],
+			);
+		const delivered: { channel: string; userId: string; title: string }[] = [];
+
+		expect(
+			await runner({
+				deliver: async (channel, params) => {
+					delivered.push({ channel, userId: params.userId, title: params.title });
+					return "sent";
+				},
+			})(100),
+		).toMatchObject({ deferred: 0, failed: 0 });
+
+		const { rows } = await fixture.pool.query(
+			"select user_id, title, action_url, metadata from notification where organization_id=$1",
+			[facts.organizationId],
+		);
+		expect(rows).toEqual([
+			{
+				user_id: manager.userId,
+				title: "Kim Kiosk: Automatisch ausgestempelt",
+				action_url: null,
+				metadata: expect.stringContaining(`"forwardedFor":{"userId":"${person.userId}"`),
+			},
+		]);
+		expect(delivered).toEqual([
+			{ channel: "email", userId: manager.userId, title: "Kim Kiosk: Automatisch ausgestempelt" },
+		]);
+	});
 	function runner(
 		options: {
 			enabled?: NotificationChannel[];
 			insert?: typeof insertInAppNotification;
 			deliver?: (
 				channel: Exclude<NotificationChannel, "in_app">,
+				params: CreateNotificationParams,
 			) => Promise<"sent" | "unavailable">;
 		} = {},
 	) {

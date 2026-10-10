@@ -12,6 +12,7 @@ import { createLogger } from "@/lib/logger";
 import { isDiscordAvailable, sendDiscordNotification } from "./discord-channel";
 import { sendEmailNotification } from "./email-notifications";
 import {
+	forwardedNotification,
 	type NotificationRecipients,
 	resolveNotificationRecipients,
 } from "./kiosk-only-recipients";
@@ -492,11 +493,7 @@ export async function createNotification(
 	}
 }
 
-/**
- * A kiosk-only employee's notification, sent to each of their managers: the
- * title names the employee, the metadata records whom it was for, and the
- * employee's own link is dropped.
- */
+/** A kiosk-only employee's notification, sent to each of their managers (`forwardedNotification`). */
 async function forwardNotification(
 	params: CreateNotificationParams,
 	recipients: Extract<NotificationRecipients, { kind: "forwarded" }>,
@@ -512,16 +509,7 @@ async function forwardNotification(
 	let first: Notification | null = null;
 	for (const userId of recipients.userIds) {
 		const created = await createNotification(
-			{
-				...params,
-				userId,
-				title: `${employee.name}: ${params.title}`,
-				actionUrl: undefined,
-				metadata: { ...params.metadata, forwardedFor: employee },
-				idempotencyKey: params.idempotencyKey
-					? `${params.idempotencyKey}:kiosk-only:${userId}`
-					: undefined,
-			},
+			forwardedNotification(params, employee, userId),
 			options,
 		);
 		first ??= created;
